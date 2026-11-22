@@ -1,0 +1,211 @@
+# Message boxes and file dialogs. Each waits for the person, so an answer
+# or a choice the program injected (`ui.inject`) is taken first, in the
+# order injected, and no dialog is shown: that is how a headless app, whose
+# person is the program, gets one, and how a test of a native app goes past
+# one. Where none was injected, a native app shows the system's own dialog;
+# a headless app fails `closed`, since no person will ever answer.
+
+use bytes
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/loop
+
+# The button the person pressed in a message box (`ui.message`).
+function message(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: ui.Buttons) -> ui.Answer?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: text, one_line: false, what: "the text")?
+    offered = offered_by(buttons)
+
+    if app.answers.len() > 0
+        answer = app.answers[0]
+        app.answers @ app.answers.slice(from: 1, to: app.answers.len())
+
+        for o in offered
+            if o == answer
+                return ok(answer)
+
+        return fail(
+            code: failure.INVALID,
+            msg: f"the answer injected, {answer_name(answer)}, is no button of the message box \"{title}\""
+        )
+
+    if !app.native
+        return fail(
+            code: failure.CLOSED,
+            msg: f"no answer was injected for the message box \"{title}\", and a headless app has no person to answer it"
+        )
+    loop.settle(@app)?
+    title_bytes @= bytes.from_text(title)
+    text_bytes @= bytes.from_text(text)
+
+    tone_code = match tone
+        .info    => hero_ui.HERO_UI_TONE_INFO
+        .warning => hero_ui.HERO_UI_TONE_WARNING
+        .error   => hero_ui.HERO_UI_TONE_ERROR
+
+    buttons_code = match buttons
+        .ok            => hero_ui.HERO_UI_BUTTONS_OK
+        .ok_cancel     => hero_ui.HERO_UI_BUTTONS_OK_CANCEL
+        .yes_no        => hero_ui.HERO_UI_BUTTONS_YES_NO
+        .yes_no_cancel => hero_ui.HERO_UI_BUTTONS_YES_NO_CANCEL
+
+    pressed = hero_ui.message(
+        app.handle,
+        window: w.id,
+        tone: tone_code,
+        buttons: buttons_code,
+        title: @title_bytes,
+        title_count: to_u64(title_bytes.len()).must(),
+        text: @text_bytes,
+        text_count: to_u64(text_bytes.len()).must()
+    )
+
+    if pressed < 0
+        return failure.last(f"showing the message box \"{title}\"")
+    return ok(answer_of(pressed))
+
+# The buttons `buttons` offers, as answers.
+function offered_by(buttons: ui.Buttons) -> [ui.Answer]
+    return match buttons
+        .ok            => [.ok]
+        .ok_cancel     => [.ok, .cancel]
+        .yes_no        => [.yes, .no]
+        .yes_no_cancel => [.yes, .no, .cancel]
+
+# The answer the layer's `pressed` names; an unknown number is Cancel, as a
+# box closed by Escape is.
+function answer_of(pressed: i64) -> ui.Answer
+    if pressed == hero_ui.HERO_UI_ANSWER_OK
+        return .ok
+
+    if pressed == hero_ui.HERO_UI_ANSWER_YES
+        return .yes
+
+    if pressed == hero_ui.HERO_UI_ANSWER_NO
+        return .no
+    return .cancel
+
+# The name an answer is told by in a message.
+function answer_name(answer: ui.Answer) -> str
+    return match answer
+        .ok     => "OK"
+        .cancel => "Cancel"
+        .yes    => "Yes"
+        .no     => "No"
+
+# What the person did in a file dialog (`ui.open_files`, `ui.save_file`).
+function files(@app: ui.App, over: ui.Widget, title: str, name: str, filters: [ui.Filter], save: bool, multiple: bool) -> ui.Choice?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: name, one_line: true, what: "the name")?
+    spelled = filters_of(filters)?
+
+    if app.choices.len() > 0
+        choice = app.choices[0]
+        app.choices @ app.choices.slice(from: 1, to: app.choices.len())
+
+        match choice
+            .cancelled => return ok(choice)
+            .chosen c =>
+                if c.paths.len() > 1 && (save || !multiple)
+                    return fail(
+                        code: failure.INVALID,
+                        msg: f"{c.paths.len()} paths were injected for the dialog \"{title}\", which takes one"
+                    )
+                return ok(choice)
+
+    if !app.native
+        return fail(
+            code: failure.CLOSED,
+            msg: f"no choice was injected for the file dialog \"{title}\", and a headless app has no person to choose"
+        )
+    loop.settle(@app)?
+    title_bytes @= bytes.from_text(title)
+    name_bytes @= bytes.from_text(name)
+    filter_bytes @= spelled
+    got = hero_ui.file_dialog(
+        app.handle,
+        window: w.id,
+        save: check.number_of(save),
+        multiple: check.number_of(multiple),
+        title: @title_bytes,
+        title_count: to_u64(title_bytes.len()).must(),
+        name: @name_bytes,
+        name_count: to_u64(name_bytes.len()).must(),
+        filters: @filter_bytes,
+        filters_count: to_u64(filter_bytes.len()).must()
+    )
+
+    if got < 0
+        return failure.last(f"showing the file dialog \"{title}\"")
+
+    if got == 0
+        return ok(.cancelled)
+    buffer: [u8] @= []
+
+    if hero_ui.dialog_paths(app.handle, @buffer, count: to_u64(got).must()) != got
+        return failure.last(f"reading the paths of the file dialog \"{title}\"")
+    return ok(.chosen(paths: split_zeros(buffer.slice(from: 0, to: got))?))
+
+# `filters` spelled as the layer takes them: each name, then its extensions
+# joined by `;`, each followed by a zero byte. Fails `invalid` where a name
+# or an extension holds a zero byte, a line feed or a `;`, or an extension a
+# dot.
+function filters_of(filters: [ui.Filter]) -> [u8]?
+    out: [u8] @= []
+
+    for f in filters
+        check.text_ok(text: f.name, one_line: true, what: "a filter's name")?
+
+        for e in f.extensions
+            check.text_ok(text: e, one_line: true, what: "an extension")?
+
+            for at in range(from: 0, to: e.len())
+                if e[at] == ';' || e[at] == '.'
+                    return fail(
+                        code: failure.INVALID,
+                        msg: f"the extension \"{e}\" holds a `;` or a dot; it is written without its dot, `png`"
+                    )
+
+        bytes.push_text(@out, s: f.name)
+        out @ out.push(0)
+        bytes.push_text(@out, s: f.extensions.join(";"))
+        out @ out.push(0)
+
+    return ok(out)
+
+# The texts `joined` holds, each followed by a zero byte.
+function split_zeros(joined: [u8]) -> [str]?
+    out: [str] @= []
+    start @= 0
+
+    for at in range(from: 0, to: joined.len())
+        if joined[at] == 0
+            out @ out.push(bytes.to_text(joined.slice(from: start, to: at))?)
+            start @ at + 1
+
+    return ok(out)
+
+## Tests
+
+test "filters_of: none, two filters, and an extension written with its dot"
+    assert filters_of([]).must().len() == 0
+    spelled = filters_of(
+        [ui.Filter(name: "Images", extensions: ["png", "jpg"]), ui.Filter(name: "All", extensions: [])]
+    ).must()
+    assert split_zeros(spelled).must() == ["Images", "png;jpg", "All", ""]
+    assert filters_of([ui.Filter(name: "Images", extensions: [".png"])]).is_err()
+
+test "split_zeros: none, one, and two paths"
+    assert split_zeros([]).must().len() == 0
+    assert split_zeros([97, 0]).must() == ["a"]
+    assert split_zeros([97, 0, 98, 99, 0]).must() == ["a", "bc"]
+
+test "offered_by and answer_of: every set of buttons, and an unknown number taken as Cancel"
+    assert offered_by(.yes_no_cancel) == [.yes, .no, .cancel]
+    assert answer_of(hero_ui.HERO_UI_ANSWER_YES) == .yes
+    assert answer_of(99) == .cancel
+    assert answer_name(.no) == "No"

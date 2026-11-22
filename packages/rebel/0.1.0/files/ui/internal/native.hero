@@ -1,0 +1,388 @@
+# The native side of an app: each node the table holds that the system
+# draws is made by the floor `ui/hero_ui` under the same number, every
+# change of its state pushed to it, its place set from the layout, and what
+# the person changed read back from it. The table stays the truth of what
+# the program set; the system is the truth of what the person typed, chose
+# and dragged, read at each event. Only a native app calls this module.
+
+use bytes
+use ui
+use ui/hero_ui
+use ui/internal/failure
+use ui/internal/model
+
+# The bytes a text is first read into; a longer one is read again with room
+# for it.
+constant TEXT_ROOM: i64
+    4096
+
+# Makes `n`'s native widget and pushes every part of its state to it.
+function made(app: ui.App, n: model.Node) -> ()?
+    if hero_ui.create(app.handle, id: n.id, kind: n.kind, parent: native_parent(app, n: n)) < 0
+        return failure.last(f"making the {model.kind_name(n.kind)} {n.id}")
+
+    if model.has_text(n.kind) && n.text.len() > 0
+        push_text(app, n: n)?
+
+    if model.has_items(n.kind)
+        push_items(app, n: n)?
+
+    if model.has_range(n.kind)
+        push_range(app, n: n)?
+
+    if model.has_range(n.kind) || n.kind == hero_ui.HERO_UI_CHECKBOX
+        push_value(app, n: n)?
+
+    if n.kind == hero_ui.HERO_UI_IMAGE
+        push_image(app, n: n)?
+
+    if n.kind == hero_ui.HERO_UI_WINDOW
+        if hero_ui.set_size(app.handle, id: n.id, width: n.width, height: n.height) < 0
+            return failure.last(f"sizing window {n.id}")
+    return ok()
+
+# The native parent of `n`: none for a window, the window for a widget or a
+# menu, the menu for a menu's item.
+function native_parent(app: ui.App, n: model.Node) -> i64
+    if n.kind == hero_ui.HERO_UI_WINDOW
+        return 0
+
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+        return n.parent
+    _ = app
+    return n.window
+
+# Pushes `n`'s text.
+function push_text(app: ui.App, n: model.Node) -> ()?
+    text @= bytes.from_text(n.text)
+
+    if hero_ui.set_text(app.handle, id: n.id, @text, count: to_u64(text.len()).must()) < 0
+        return failure.last(f"setting the text of widget {n.id}")
+    return ok()
+
+# Pushes `n`'s items, then what it has chosen.
+function push_items(app: ui.App, n: model.Node) -> ()?
+    joined: [u8] @= []
+
+    for item in n.items
+        bytes.push_text(@joined, s: item)
+        joined @ joined.push(0)
+
+    if hero_ui.set_items(app.handle, id: n.id, @joined, count: to_u64(joined.len()).must()) < 0
+        return failure.last(f"setting the items of widget {n.id}")
+    return push_chosen(app, n: n)
+
+# Pushes what `n`, a list, a combo box or a radio group, has chosen.
+function push_chosen(app: ui.App, n: model.Node) -> ()?
+    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE
+        chosen @= n.chosen
+
+        if hero_ui.set_selection(app.handle, id: n.id, @chosen, count: to_u64(chosen.len()).must()) < 0
+            return failure.last(f"choosing items of widget {n.id}")
+        return ok()
+
+    at = if n.chosen.len() > 0
+        n.chosen[0]
+    else
+        -1
+
+    if hero_ui.set_value(app.handle, id: n.id, value: at) < 0
+        return failure.last(f"choosing an item of widget {n.id}")
+    return ok()
+
+# Pushes `n`'s value: a checkbox's state, a slider's or a progress bar's
+# value.
+function push_value(app: ui.App, n: model.Node) -> ()?
+    if hero_ui.set_value(app.handle, id: n.id, value: n.value) < 0
+        return failure.last(f"setting the value of widget {n.id}")
+    return ok()
+
+# Pushes the range of `n`, a slider or a progress bar.
+function push_range(app: ui.App, n: model.Node) -> ()?
+    if hero_ui.set_range(app.handle, id: n.id, least: n.least, most: n.most) < 0
+        return failure.last(f"setting the range of widget {n.id}")
+    return ok()
+
+# Pushes whether the person may use `n`.
+function push_enabled(app: ui.App, n: model.Node) -> ()?
+    if hero_ui.set_enabled(app.handle, id: n.id, on: number_of(n.enabled)) < 0
+        return failure.last(f"enabling widget {n.id}")
+    return ok()
+
+# Pushes `n`'s pixels.
+function push_image(app: ui.App, n: model.Node) -> ()?
+    pixels @= n.pixels
+
+    if hero_ui.set_image(app.handle, id: n.id, @pixels, count: to_u64(pixels.len()).must(), width: n.width, height: n.height) < 0
+        return failure.last(f"setting the pixels of picture {n.id}")
+    return ok()
+
+# Pushes the shortcut of menu item `n`.
+function push_shortcut(app: ui.App, n: model.Node) -> ()?
+    key @= bytes.from_text(n.key)
+
+    if hero_ui.set_shortcut(app.handle, id: n.id, @key, count: to_u64(key.len()).must(), modifiers: n.modifiers) < 0
+        return failure.last(f"setting the shortcut of item {n.id}")
+    return ok()
+
+# Pushes whether the person may resize window `n`.
+function push_resizable(app: ui.App, n: model.Node) -> ()?
+    if hero_ui.set_resizable(app.handle, id: n.id, on: number_of(n.resizable)) < 0
+        return failure.last(f"setting whether window {n.id} resizes")
+    return ok()
+
+# The size the system draws `n` at, as `[width, height]` in points.
+function measure(app: ui.App, n: model.Node) -> [i64]?
+    width @= 0
+    height @= 0
+
+    if hero_ui.preferred(app.handle, id: n.id, width: @width, height: @height) < 0
+        return failure.last(f"measuring widget {n.id}")
+    return ok([width, height])
+
+# Places every native widget of window `window` at the rectangle the layout
+# gave it, the items of a radio group one under another in equal parts of
+# its own, and gives the window the size the layout found and the least size
+# it needs.
+function placed(app: ui.App, nodes: {i64: model.Node}, window: i64) -> ()?
+    w = nodes[window].must()
+
+    if hero_ui.set_min_size(app.handle, id: window, width: w.need_width, height: w.need_height) < 0
+        return failure.last(f"setting the least size of window {window}")
+
+    if hero_ui.set_size(app.handle, id: window, width: w.w, height: w.h) < 0
+        return failure.last(f"sizing window {window}")
+
+    for id in model.subtree(model.Model(nodes: nodes, next_id: 0, windows: [], timers: []), id: window)
+        n = nodes[id].must()
+
+        if !model.is_native(n.kind) || !model.is_placed(n.kind)
+            continue
+
+        if hero_ui.place(app.handle, id: id, x: n.x, y: n.y, width: n.w, height: n.h) < 0
+            return failure.last(f"placing widget {id}")
+
+        if n.kind == hero_ui.HERO_UI_RADIO_GROUP
+            count = n.items.len()
+
+            for i in range(from: 0, to: count)
+                top = n.y + n.h * i / count
+                bottom = n.y + n.h * (i + 1) / count
+
+                if hero_ui.place_item(app.handle, id: id, index: i, x: n.x, y: top, width: n.w, height: bottom - top) < 0
+                    return failure.last(f"placing item {i} of radio group {id}")
+
+    return ok()
+
+# Shows or hides every native widget under `id`, and `id` itself, as each
+# stands: shown where it and every box up to its window are shown.
+function shown(app: ui.App, nodes: {i64: model.Node}, id: i64) -> ()?
+    seen = seen_up(nodes, id: nodes[id].must().parent)
+    return shown_down(app, nodes: nodes, id: id, above: seen)
+
+# Whether every node from `id` up to its window is shown; true at 0.
+function seen_up(nodes: {i64: model.Node}, id: i64) -> bool
+    at @= id
+
+    while at != 0
+        n = nodes[at].must()
+
+        if !n.visible
+            return false
+
+        if n.kind == hero_ui.HERO_UI_WINDOW
+            return true
+        at @ n.parent
+
+    return true
+
+# Shows or hides `id` and every node under it, `above` saying whether
+# everything over `id` is shown. A window is the program's to show, at its
+# first layout, and is left out.
+function shown_down(app: ui.App, nodes: {i64: model.Node}, id: i64, above: bool) -> ()?
+    n = nodes[id].must()
+    visible = above && n.visible
+
+    if model.is_native(n.kind) && n.kind != hero_ui.HERO_UI_WINDOW
+        if hero_ui.set_visible(app.handle, id: id, on: number_of(visible)) < 0
+            return failure.last(f"showing widget {id}")
+
+    for child in n.children
+        shown_down(app, nodes: nodes, id: child, above: visible)?
+
+    return ok()
+
+# The text native widget `id` holds now.
+function read_text(app: ui.App, id: i64) -> str?
+    room: i64 @= TEXT_ROOM
+
+    for _ in range(from: 0, to: 4)
+        buffer: [u8] @= []
+        got = hero_ui.text_of(app.handle, id: id, @buffer, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last(f"reading the text of widget {id}")
+
+        if got <= room
+            return bytes.to_text(buffer.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: f"the text of widget {id} kept growing while it was read")
+
+# The value native widget `id` holds now.
+function read_value(app: ui.App, id: i64) -> i64?
+    value @= 0
+
+    if hero_ui.value_of(app.handle, id: id, value: @value) < 0
+        return failure.last(f"reading the value of widget {id}")
+    return ok(value)
+
+# The indices native widget `id` has chosen now, ascending.
+function read_selection(app: ui.App, id: i64) -> [i64]?
+    room: i64 @= 64
+
+    for _ in range(from: 0, to: 4)
+        indices: [i64] @= []
+        got = hero_ui.selection_of(app.handle, id: id, @indices, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last(f"reading what widget {id} has chosen")
+
+        if got <= room
+            return ok(indices.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: f"what widget {id} has chosen kept growing while it was read")
+
+# The queue's oldest event as `[kind, id, value, second]`, or nothing where
+# the queue is empty.
+function take(app: ui.App) -> [i64]?
+    kind @= 0
+    id @= 0
+    value @= 0
+    second @= 0
+    got = hero_ui.next(app.handle, kind: @kind, id: @id, value: @value, second: @second)
+
+    if got < 0
+        return failure.last("taking an event")
+
+    if got == 0
+        none: [i64] = []
+        return ok(none)
+    return ok([kind, id, value, second])
+
+# The text the last event taken carries.
+function event_text(app: ui.App) -> str?
+    room: i64 @= TEXT_ROOM
+
+    for _ in range(from: 0, to: 4)
+        buffer: [u8] @= []
+        got = hero_ui.event_text(app.handle, @buffer, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last("reading the text of an event")
+
+        if got <= room
+            return bytes.to_text(buffer.slice(from: 0, to: got))
+        room @ got
+
+    return fail(code: failure.FAILED, msg: "the text of an event kept growing while it was read")
+
+# Runs the system's loop for at most `ms` milliseconds or until an event is
+# queued.
+function pump(app: ui.App, ms: i64) -> ()?
+    if hero_ui.wait(app.handle, ms: ms) < 0
+        return failure.last("running the system's loop")
+    return ok()
+
+# Does what `input` says through the system's own path, so its event is
+# queued as the person's would be.
+function give(app: ui.App, input: ui.Input) -> ()?
+    match input
+        .click c => return injected(
+            app,
+            kind: hero_ui.HERO_UI_EVENT_CLICK,
+            id: c.widget.id,
+            value: 0,
+            second: 0,
+            text: ""
+        )
+        .type_text t =>
+            return injected(app, kind: hero_ui.HERO_UI_EVENT_TEXT, id: t.widget.id, value: 0, second: 0, text: t.text)
+        .choose c =>
+            if c.indices.len() == 0
+                return injected(
+                    app,
+                    kind: hero_ui.HERO_UI_EVENT_SELECT,
+                    id: c.widget.id,
+                    value: -1,
+                    second: 0,
+                    text: ""
+                )
+
+            for i in range(from: 0, to: c.indices.len())
+                injected(app, kind: hero_ui.HERO_UI_EVENT_SELECT, id: c.widget.id, value: c.indices[i], second: number_of(i > 0), text: "")?
+
+            return ok()
+        .toggle t => return injected(
+            app,
+            kind: hero_ui.HERO_UI_EVENT_TOGGLE,
+            id: t.widget.id,
+            value: 0,
+            second: 0,
+            text: ""
+        )
+        .slide s => return injected(
+            app,
+            kind: hero_ui.HERO_UI_EVENT_VALUE,
+            id: s.widget.id,
+            value: s.value,
+            second: 0,
+            text: ""
+        )
+        .choose_menu m => return injected(
+            app,
+            kind: hero_ui.HERO_UI_EVENT_MENU,
+            id: m.item.id,
+            value: 0,
+            second: 0,
+            text: ""
+        )
+        .ask_close a => return injected(
+            app,
+            kind: hero_ui.HERO_UI_EVENT_CLOSE,
+            id: a.window.id,
+            value: 0,
+            second: 0,
+            text: ""
+        )
+        .resize r =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_RESIZE,
+                id: r.window.id,
+                value: r.width,
+                second: r.height,
+                text: ""
+            )
+        .answer _ | .pick_files _ | .cancel_files => return ok()
+
+# One act injected through the floor.
+function injected(app: ui.App, kind: i64, id: i64, value: i64, second: i64, text: str) -> ()?
+    typed @= bytes.from_text(text)
+
+    if hero_ui.inject(app.handle, kind: kind, id: id, value: value, second: second, @typed, count: to_u64(typed.len()).must()) < 0
+        return failure.last(f"acting on widget {id}")
+    return ok()
+
+# Destroys native widget `id`.
+function destroyed(app: ui.App, id: i64) -> ()?
+    if hero_ui.destroy(app.handle, id: id) < 0
+        return failure.last(f"destroying widget {id}")
+    return ok()
+
+# 1 for true, 0 for false.
+function number_of(on: bool) -> i64
+    if on
+        return 1
+    return 0

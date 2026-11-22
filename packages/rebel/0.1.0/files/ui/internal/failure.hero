@@ -1,0 +1,94 @@
+# The codes `ui` fails with, and the one place a kind of the floor
+# `ui/hero_ui` becomes one of them, its message saying what was asked and
+# what the layer answered (README § A4). The face's code constants are these.
+
+use bytes
+use ui/hero_ui
+
+# A widget, a window or an app that has ended, or a headless app whose
+# injected inputs are spent.
+constant CLOSED: str
+    "closed"
+
+# An argument the call cannot take.
+constant INVALID: str
+    "invalid"
+
+# A wait that ran out with nothing to answer.
+constant TIMEOUT: str
+    "timeout"
+
+# No native user interface here, or a call from a thread other than main's.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# A second native app while one is open.
+constant EXISTS: str
+    "exists"
+
+# The system has no memory or no room for the call.
+constant LIMIT: str
+    "limit"
+
+# The system refused for a reason no other code names.
+constant FAILED: str
+    "failed"
+
+# The code of README § A4 for `kind`, one of `HERO_UI_*`; a kind the floor
+# does not name is `failed`.
+function code_of(kind: i64) -> str
+    if kind == hero_ui.HERO_UI_INVALID
+        return INVALID
+
+    if kind == hero_ui.HERO_UI_NOT_OPEN || kind == hero_ui.HERO_UI_NOT_FOUND
+        return CLOSED
+
+    if kind == hero_ui.HERO_UI_WRONG_THREAD || kind == hero_ui.HERO_UI_UNSUPPORTED
+        return UNSUPPORTED
+
+    if kind == hero_ui.HERO_UI_BUSY
+        return EXISTS
+
+    if kind == hero_ui.HERO_UI_LIMIT
+        return LIMIT
+    return FAILED
+
+# The words of the floor's last failure on this thread.
+function words() -> str
+    room: [u8] @= []
+    got = hero_ui.last_message(@room, count: 512)
+
+    if got <= 0
+        return "the user interface refused, giving no words"
+    return bytes.to_text_lossy(room.slice(from: 0, to: got))
+
+# The failure the floor's last call on this thread named, as a `T?`: its code,
+# and `asked` then the layer's words.
+function last<T>(asked: str) -> T?
+    code = code_of(hero_ui.last_error())
+    return fail(code: code, msg: f"{asked}: {words()}")
+
+## Tests
+
+test "code_of: every kind of the floor is a code of README § A4, an unknown one failed"
+    assert code_of(hero_ui.HERO_UI_INVALID) == INVALID
+    assert code_of(hero_ui.HERO_UI_NOT_OPEN) == CLOSED
+    assert code_of(hero_ui.HERO_UI_NOT_FOUND) == CLOSED
+    assert code_of(hero_ui.HERO_UI_WRONG_THREAD) == UNSUPPORTED
+    assert code_of(hero_ui.HERO_UI_UNSUPPORTED) == UNSUPPORTED
+    assert code_of(hero_ui.HERO_UI_BUSY) == EXISTS
+    assert code_of(hero_ui.HERO_UI_LIMIT) == LIMIT
+    assert code_of(hero_ui.HERO_UI_OTHER) == FAILED
+    assert code_of(77) == FAILED
+    assert code_of(hero_ui.HERO_UI_OK) == FAILED
+
+test "last: the floor's refusal of an unknown backend becomes invalid, its message what was asked then the layer's words"
+    app = hero_ui.open(42)
+    assert app == nullptr
+    r: ()? = last("opening an app")
+
+    match r
+        .ok _ => assert false
+        .err e =>
+            assert e.code == INVALID
+            assert e.msg == "opening an app: the backend 42 is neither HERO_UI_HEADLESS nor HERO_UI_NATIVE"

@@ -1,0 +1,172 @@
+# An app's windows written as text, one line a window and one a widget, as
+# `ui.render` documents the lines: the headless side's way to be seen, and
+# the transcript a demo prints. Nothing here reads a clock, a path or the
+# machine, so the same app writes the same lines everywhere.
+
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/loop
+use ui/internal/model
+
+# Every window of `app` as lines, laid out first (`ui.render`).
+function lines(@app: ui.App) -> [str]?
+    check.opened(app)?
+    loop.settle(@app)?
+    out: [str] @= []
+
+    for window in app.table.windows
+        drawn(app.table, id: window, depth: 0, shown: true, @out)
+
+    return ok(out)
+
+# Writes node `id` and what it holds into `out`, `depth` levels deep;
+# `shown` says whether everything above it is shown, so a widget under a
+# hidden box gets no place.
+function drawn(m: model.Model, id: i64, depth: i64, shown: bool, @out: [str])
+    n = m.nodes[id].must()
+    visible = shown && n.visible
+    out @ out.push(repeat("  ", to_u64(depth).must()) + line_of(n, visible: visible))
+
+    for menu in n.menus
+        drawn(m, id: menu, depth: depth + 1, shown: visible, @out)
+
+    for child in n.children
+        drawn(m, id: child, depth: depth + 1, shown: visible, @out)
+
+# The line of `n`: its kind and number, what it shows, its flags, and where
+# it stands where `visible`.
+function line_of(n: model.Node, visible: bool) -> str
+    parts: [str] @= [model.kind_name(n.kind) + " #" + n.id.to_str()]
+    k = n.kind
+
+    if k == hero_ui.HERO_UI_WINDOW
+        parts @ parts.push(quoted(n.text)).push(f"{n.w}x{n.h}")
+
+        if !n.resizable
+            parts @ parts.push("fixed")
+    else if k == hero_ui.HERO_UI_CHECKBOX
+        mark = if n.value == 1
+            "[x]"
+        else
+            "[ ]"
+
+        parts @ parts.push(mark).push(quoted(n.text))
+    else if model.has_text(k)
+        parts @ parts.push(quoted(n.text))
+    else if model.has_items(k)
+        if k == hero_ui.HERO_UI_LIST_MULTIPLE
+            parts @ parts.push("multiple")
+        parts @ parts.push(quoted_all(n.items)).push("chosen " + numbers(n.chosen))
+    else if model.has_range(k)
+        parts @ parts.push(f"value {n.value} in {n.least}..{n.most}")
+    else if k == hero_ui.HERO_UI_GRID
+        parts @ parts.push(f"{n.columns} columns")
+
+    if k == hero_ui.HERO_UI_MENU_ITEM && n.key.len() > 0
+        parts @ parts.push(shortcut_of(n))
+
+    if !n.enabled
+        parts @ parts.push("disabled")
+
+    if !n.visible
+        parts @ parts.push("hidden")
+
+    if visible && model.is_placed(k)
+        parts @ parts.push(f"at {n.x},{n.y} {n.w}x{n.h}")
+    return parts.join(" ")
+
+# A menu item's shortcut as text: the keys held, then the key, joined by
+# `+`.
+function shortcut_of(n: model.Node) -> str
+    keys_held: [str] @= []
+
+    if n.modifiers & hero_ui.HERO_UI_PRIMARY != 0
+        keys_held @ keys_held.push("primary")
+
+    if n.modifiers & hero_ui.HERO_UI_SHIFT != 0
+        keys_held @ keys_held.push("shift")
+
+    if n.modifiers & hero_ui.HERO_UI_ALT != 0
+        keys_held @ keys_held.push("alt")
+    keys_held @ keys_held.push(n.key)
+    return keys_held.join("+")
+
+# `text` between double quotes, a quote, a backslash, a line feed and a tab
+# escaped as a Heroes string writes them.
+function quoted(text: str) -> str
+    parts: [str] @= ["\""]
+    start @= 0
+
+    for at in range(from: 0, to: text.len())
+        c = text[at]
+
+        if c == '"' || c == '\\' || c == '\n' || c == '\t'
+            parts @ parts.push(text.slice(from: start, to: at))
+
+            if c == '"'
+                parts @ parts.push("\\\"")
+            else if c == '\\'
+                parts @ parts.push("\\\\")
+            else if c == '\n'
+                parts @ parts.push("\\n")
+            else
+                parts @ parts.push("\\t")
+            start @ at + 1
+
+    parts @ parts.push(text.slice(from: start, to: text.len())).push("\"")
+    return parts.join("")
+
+# `texts` each quoted, in brackets, joined by `, `.
+function quoted_all(texts: [str]) -> str
+    parts: [str] @= []
+
+    for t in texts
+        parts @ parts.push(quoted(t))
+
+    return "[" + parts.join(", ") + "]"
+
+# `values` in brackets, joined by `, `.
+function numbers(values: [i64]) -> str
+    parts: [str] @= []
+
+    for v in values
+        parts @ parts.push(v.to_str())
+
+    return "[" + parts.join(", ") + "]"
+
+## Tests
+
+test "quoted: plain text, every escape, and text of more than one byte"
+    assert quoted("abc") == "\"abc\""
+    assert quoted("a\"b\\c\nd\te") == "\"a\\\"b\\\\c\\nd\\te\""
+    assert quoted("café") == "\"café\""
+    assert quoted("") == "\"\""
+
+test "line_of: a checkbox checked, a list of several choices, a slider, a hidden button, a disabled item with its shortcut"
+    c @= model.blank(id: 3, kind: hero_ui.HERO_UI_CHECKBOX, parent: 1, window: 1)
+    c.text @ "Wrap"
+    c.value @ 1
+    c.x @ 12
+    c.y @ 12
+    c.w @ 56
+    c.h @ 20
+    assert line_of(c, visible: true) == "checkbox #3 [x] \"Wrap\" at 12,12 56x20"
+    l @= model.blank(id: 4, kind: hero_ui.HERO_UI_LIST_MULTIPLE, parent: 1, window: 1)
+    l.items @ ["a", "b"]
+    l.chosen @ [0, 1]
+    assert line_of(l, visible: false) == "list #4 multiple [\"a\", \"b\"] chosen [0, 1]"
+    s @= model.blank(id: 5, kind: hero_ui.HERO_UI_SLIDER, parent: 1, window: 1)
+    s.least @ -5
+    s.most @ 5
+    assert line_of(s, visible: false) == "slider #5 value 0 in -5..5"
+    b @= model.blank(id: 6, kind: hero_ui.HERO_UI_BUTTON, parent: 1, window: 1)
+    b.text @ "Go"
+    b.visible @ false
+    assert line_of(b, visible: false) == "button #6 \"Go\" hidden"
+    i @= model.blank(id: 7, kind: hero_ui.HERO_UI_MENU_ITEM, parent: 2, window: 1)
+    i.text @ "Quit"
+    i.key @ "q"
+    i.modifiers @ hero_ui.HERO_UI_PRIMARY + hero_ui.HERO_UI_SHIFT
+    i.enabled @ false
+    assert line_of(i, visible: true) == "menu_item #7 \"Quit\" primary+shift+q disabled"

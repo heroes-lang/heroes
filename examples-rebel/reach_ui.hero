@@ -1,0 +1,244 @@
+# Reaches Rebel's `ui`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), and shows it at work: one window holding
+# every kind of widget, a person's session given by the program itself
+# (`ui.inject`), each event printed as `wait` answers it, the state the
+# person left read back, a question answered, and the app closed.
+#
+# With no argument it runs on the headless side and prints the same lines on
+# every machine, the window drawn as text first. With `--native` it opens
+# the system's own widgets (AppKit on macOS), drives the same session
+# through the system's own paths, a button pressed by `performClick` and the
+# like, and prints the same events and state; the window shows for the
+# moment the session takes.
+
+use <rebel>/image
+use <rebel>/threads
+use <rebel>/time
+use <rebel>/ui
+
+# The widgets of the window, as the program keeps them.
+record Widgets
+    # The window.
+    window: ui.Widget
+    # The button that counts.
+    button: ui.Widget
+    # The name typed.
+    name: ui.Widget
+    # The note typed.
+    note: ui.Widget
+    # The checkbox.
+    wrap: ui.Widget
+    # The sizes.
+    size: ui.Widget
+    # The fruits, several of which may be chosen.
+    fruits: ui.Widget
+    # The days.
+    day: ui.Widget
+    # The progress made.
+    done: ui.Widget
+    # The volume.
+    volume: ui.Widget
+    # The File menu's item Open.
+    open_item: ui.Widget
+
+# Makes the window and every widget in it.
+function made(@app: ui.App) -> Widgets?
+    w = ui.window(@app, title: "Rebel ui", width: 420, height: 300)?
+    file = ui.menu(@app, into: w, title: "File")?
+    open_item = ui.menu_item(@app, into: file, text: "Open")?
+    ui.set_shortcut(@app, item: open_item, shortcut: ui.Shortcut(key: "o", primary: true, shift: false, alt: false))?
+    _ = ui.menu_separator(@app, into: file)?
+    form = ui.grid(@app, into: w, columns: 2)?
+    _ = ui.label(@app, into: form, text: "Name")?
+    name = ui.text_field(@app, into: form, text: "")?
+    _ = ui.label(@app, into: form, text: "Day")?
+    day = ui.combo(@app, into: form, items: ["Monday", "Tuesday", "Wednesday"])?
+    choices = ui.row(@app, into: w)?
+    size = ui.radio_group(@app, into: choices, items: ["Small", "Large"])?
+    fruits = ui.list(@app, into: choices, items: ["apple", "pear", "plum"], multiple: true)?
+    note = ui.text_area(@app, into: choices, text: "")?
+    wrap = ui.checkbox(@app, into: w, text: "Wrap lines", checked: false)?
+    volume = ui.slider(@app, into: w, least: 0, most: 100, value: 50)?
+    done = ui.progress(@app, into: w, most: 3)?
+    _ = ui.picture(@app, into: w, img: image.blank(width: 16, height: 16, format: .rgba)?)?
+    actions = ui.row(@app, into: w)?
+    button = ui.button(@app, into: actions, text: "Count")?
+    stretch @= ui.default_fit()
+    stretch.stretch @ 1
+    ui.set_fit(@app, widget: note, fit: stretch)?
+    return ok(
+        Widgets(window: w, button: button, name: name, note: note, wrap: wrap, size: size, fruits: fruits, day: day, done: done, volume: volume, open_item: open_item)
+    )
+
+# The session a person gives, in order: what the program injects.
+function session(ws: Widgets) -> [ui.Input]
+    return [
+        .click(widget: ws.button)
+        .type_text(widget: ws.name, text: "Ada")
+        .type_text(widget: ws.note, text: "first\nsecond")
+        .toggle(widget: ws.wrap)
+        .choose(widget: ws.size, indices: [1])
+        .choose(widget: ws.fruits, indices: [0, 2])
+        .choose(widget: ws.day, indices: [2])
+        .slide(widget: ws.volume, value: 80)
+        .choose_menu(item: ws.open_item)
+        .click(widget: ws.button)
+        .ask_close(window: ws.window)
+    ]
+
+# What an event says, as a line, the widget named by `ws`.
+function told(ws: Widgets, event: ui.Event) -> str
+    return match event
+        .clicked c           => "clicked " + named(ws, widget: c.widget)
+        .text_changed t      => "text_changed " + named(ws, widget: t.widget) + " " + t.text.len().to_str() + " bytes"
+        .selection_changed s => "selection_changed " + named(ws, widget: s.widget) + " " + numbers(s.indices)
+        .toggled t           => "toggled " + named(ws, widget: t.widget) + " " + t.checked.to_str()
+        .value_changed v     => "value_changed " + named(ws, widget: v.widget) + " " + v.value.to_str()
+        .menu_chosen m       => "menu_chosen " + named(ws, widget: m.item)
+        .close_asked c       => "close_asked " + named(ws, widget: c.window)
+        .timer_fired _       => "timer_fired"
+        .resized r           => "resized " + named(ws, widget: r.window)
+        .message m           => "message " + named(ws, widget: m.widget)
+
+# The name the program gives `widget`.
+function named(ws: Widgets, widget: ui.Widget) -> str
+    if widget == ws.window
+        return "window"
+
+    if widget == ws.button
+        return "button"
+
+    if widget == ws.name
+        return "name"
+
+    if widget == ws.note
+        return "note"
+
+    if widget == ws.wrap
+        return "wrap"
+
+    if widget == ws.size
+        return "size"
+
+    if widget == ws.fruits
+        return "fruits"
+
+    if widget == ws.day
+        return "day"
+
+    if widget == ws.volume
+        return "volume"
+
+    if widget == ws.open_item
+        return "open"
+    return "widget " + widget.id.to_str()
+
+# `values` in brackets, joined by `, `.
+function numbers(values: [i64]) -> str
+    parts: [str] @= []
+
+    for v in values
+        parts @ parts.push(v.to_str())
+
+    return "[" + parts.join(", ") + "]"
+
+# Runs the session on `app`, printing each event and the state left.
+function run(@app: ui.App) -> ()?
+    ws = made(@app)?
+
+    if !ui.is_native(app)
+        for line in ui.render(@app)?
+            print(line)
+
+    for input in session(ws)
+        ui.inject(@app, input: input)?
+
+    counted @= 0
+    closing @= false
+
+    while !closing
+        event = ui.wait(@app, within: time.seconds(5)?)?
+        print(told(ws, event: event))
+
+        match event
+            .clicked _ =>
+                counted @ counted + 1
+                ui.set_value(@app, widget: ws.done, value: counted)?
+            .close_asked _ => closing @ true
+            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ =>
+                _ = 0
+
+    print("name: " + ui.text_of(app, widget: ws.name)?)
+    print("note: " + ui.text_of(app, widget: ws.note)?.len().to_str() + " bytes")
+    print("wrap: " + ui.is_checked(app, widget: ws.wrap)?.to_str())
+    print("size: " + numbers(ui.selection_of(app, widget: ws.size)?))
+    print("fruits: " + numbers(ui.selection_of(app, widget: ws.fruits)?))
+    print("day: " + numbers(ui.selection_of(app, widget: ws.day)?))
+    print("volume: " + ui.value_of(app, widget: ws.volume)?.to_str())
+    print("done: " + ui.value_of(app, widget: ws.done)?.to_str())
+    ui.inject(@app, input: .answer(answer: .yes))?
+    answer = ui.message(@app, over: ws.window, title: "Quit?", text: "Close the window?", tone: .info, buttons: .yes_no)?
+    print("answered: " + (answer == .yes).to_str())
+    ui.destroy(@app, widget: ws.window)?
+    return ok()
+
+function main()
+    given = args()
+
+    backend: ui.Backend = if given.len() > 0 && given[0] == "--native"
+        .native
+    else
+        .headless
+
+    app @= ui.open(backend).must()
+    ran = run(@app)
+    closed = ui.close(@app)
+
+    match ran
+        .ok _ => _ = 0
+        .err e =>
+            print("ui: " + e.code + ": " + e.msg)
+            exit(code: 1)
+
+    if closed.is_err()
+        print("ui: the app did not close")
+        exit(code: 1)
+
+test "the driver: the session on the headless side, every event and the state left"
+    app @= ui.open(.headless).must()
+    ws = made(@app).must()
+
+    for input in session(ws)
+        ui.inject(@app, input: input).must()
+
+    lines: [str] @= []
+
+    while true
+        match ui.wait(@app, within: time.seconds(1).must())
+            .ok event => lines @ lines.push(told(ws, event: event))
+            .err e =>
+                assert e.code == ui.CLOSED
+                break
+
+    assert lines == ["clicked button", "text_changed name 3 bytes", "text_changed note 12 bytes", "toggled wrap true", "selection_changed size [1]", "selection_changed fruits [0, 2]", "selection_changed day [2]", "value_changed volume 80", "menu_chosen open", "clicked button", "close_asked window"]
+    ui.close(@app).must()
+
+# What a thread other than `main`'s gets when it opens an app: 1 where it is
+# refused `unsupported`, as a value, 0 where it opened one, 2 for another
+# code. `_` is the thread's argument, unused.
+function opened_elsewhere(_: i64) -> i64
+    match ui.open(.headless)
+        .ok app =>
+            opened @= app
+            _ = ui.close(@opened).is_err()
+            return 0
+        .err e =>
+            if e.code == ui.UNSUPPORTED
+                return 1
+            return 2
+
+test "the driver: an app opened on another thread is refused as a value, and main's thread opens one after it"
+    worker @= threads.spawn(opened_elsewhere, arg: 0).must()
+    assert threads.wait(@worker) == 1
+    app @= ui.open(.headless).must()
+    ui.close(@app).must()

@@ -1,0 +1,164 @@
+# What a person does, given by the program through `ui.inject`: checked
+# against its widget when it is queued, and given when `wait` reaches it.
+# On the headless side this module is the person: it changes the table as
+# the system would change its widget, and makes the event the system would
+# queue. An input the person could not give makes no event: on a widget
+# greyed out, or hidden, or in a box or window hidden, on a window the
+# person may not resize, or a choice that changes nothing.
+
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/layout
+use ui/internal/model
+
+# Fails where `input` cannot be given to `app` as its widget stands now:
+# `closed` where the widget's life has ended, `invalid` where it is of
+# another kind than the input acts on, or a value is outside its range.
+function checked(app: ui.App, input: ui.Input) -> ()?
+    match input
+        .click c =>
+            _ = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_BUTTON], what: "a button")?
+        .type_text t =>
+            n = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD, hero_ui.HERO_UI_TEXT_AREA], what: "a text field or a text area")?
+            check.text_ok(text: t.text, one_line: n.kind == hero_ui.HERO_UI_TEXT_FIELD, what: "the text typed")?
+        .choose c =>
+            n = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP], what: "a list, a combo box or a radio group")?
+            check.indices_ok(n, indices: c.indices)?
+
+            if (n.kind == hero_ui.HERO_UI_COMBO || n.kind == hero_ui.HERO_UI_RADIO_GROUP) && c.indices.len() != 1
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"a person chooses exactly one item of {model.kind_name(n.kind)} {n.id}, and {c.indices.len()} were given"
+                )
+        .toggle t =>
+            _ = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")?
+        .slide s =>
+            n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_SLIDER], what: "a slider")?
+
+            if s.value < n.least || s.value > n.most
+                return fail(code: failure.INVALID, msg: f"the value {s.value} is outside {n.least} to {n.most}")
+        .choose_menu m =>
+            _ = check.node_kind(app, widget: m.item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
+        .ask_close a =>
+            _ = check.node_kind(app, widget: a.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+        .resize r =>
+            _ = check.node_kind(app, widget: r.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+            check.size_ok(r.width, what: "the width")?
+            check.size_ok(r.height, what: "the height")?
+        .answer _ => _ = 0
+        .pick_files p =>
+            if p.paths.len() == 0
+                return fail(code: failure.INVALID, msg: "a choice of files holds one path or more, and none was given")
+
+            for i in range(from: 0, to: p.paths.len())
+                check.text_ok(text: p.paths[i], one_line: false, what: f"path {i}")?
+        .cancel_files => _ = 0
+
+    return ok()
+
+# Whether the widget `input` acts on still lives; an input on no widget
+# always does.
+function alive(app: ui.App, input: ui.Input) -> bool
+    id = match input
+        .click c                                  => c.widget.id
+        .type_text t                              => t.widget.id
+        .choose c                                 => c.widget.id
+        .toggle t                                 => t.widget.id
+        .slide s                                  => s.widget.id
+        .choose_menu m                            => m.item.id
+        .ask_close a                              => a.window.id
+        .resize r                                 => r.window.id
+        .answer _ | .pick_files _ | .cancel_files => 0
+
+    if id == 0
+        return true
+    return !model.node_of(app.table, id: id).is_err()
+
+# Gives `input` to the headless side's table as the person would, and
+# answers the events it makes: one, or none where the person could not
+# have given it or it changed nothing.
+function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
+    none: [ui.Event] = []
+
+    match input
+        .click c =>
+            if reachable(app, id: c.widget.id)
+                return [.clicked(widget: c.widget)]
+        .type_text t =>
+            if reachable(app, id: t.widget.id)
+                n @= app.table.nodes[t.widget.id].must()
+
+                if n.text != t.text
+                    n.text @ t.text
+                    model.put(@app.table, n: n)
+                    return [.text_changed(widget: t.widget, text: t.text)]
+        .choose c =>
+            if reachable(app, id: c.widget.id)
+                n @= app.table.nodes[c.widget.id].must()
+
+                if n.chosen != c.indices
+                    n.chosen @ c.indices
+                    model.put(@app.table, n: n)
+                    return [.selection_changed(widget: c.widget, indices: c.indices)]
+        .toggle t =>
+            if reachable(app, id: t.widget.id)
+                n @= app.table.nodes[t.widget.id].must()
+                n.value @ 1 - n.value
+                model.put(@app.table, n: n)
+                return [.toggled(widget: t.widget, checked: n.value == 1)]
+        .slide s =>
+            if reachable(app, id: s.widget.id)
+                n @= app.table.nodes[s.widget.id].must()
+
+                if n.value != s.value
+                    n.value @ s.value
+                    model.put(@app.table, n: n)
+                    return [.value_changed(widget: s.widget, value: s.value)]
+        .choose_menu m =>
+            n = app.table.nodes[m.item.id].must()
+            menu = app.table.nodes[n.parent].must()
+
+            if n.enabled && menu.enabled && app.table.nodes[n.window].must().visible
+                return [.menu_chosen(item: m.item)]
+        .ask_close a =>
+            if app.table.nodes[a.window.id].must().visible
+                return [.close_asked(window: a.window)]
+        .resize r =>
+            n @= app.table.nodes[r.window.id].must()
+
+            if n.visible && n.resizable
+                n.width @ r.width
+                n.height @ r.height
+                model.put(@app.table, n: n)
+                nodes @= app.table.nodes
+                layout.lay_out(@nodes, window: n.id)
+                app.table.nodes @ nodes
+                laid = app.table.nodes[n.id].must()
+                return [.resized(window: r.window, width: laid.w, height: laid.h)]
+        .answer _ | .pick_files _ | .cancel_files =>
+            _ = 0
+
+    return none
+
+# Whether the person can reach widget `id`: it is enabled, and it and every
+# box up to its window, and the window, are shown.
+function reachable(app: ui.App, id: i64) -> bool
+    n = app.table.nodes[id].must()
+
+    if !n.enabled
+        return false
+    at @= id
+
+    while at != 0
+        node = app.table.nodes[at].must()
+
+        if !node.visible
+            return false
+
+        if node.kind == hero_ui.HERO_UI_WINDOW
+            return true
+        at @ node.parent
+
+    return true
