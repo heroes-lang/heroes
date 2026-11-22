@@ -26,6 +26,17 @@
  * modules include is two flags, and the second module's was never read (panel
  * 247's spec-warden, `swp6`, SIGINT ignored 2 runs of 2 at exit 0).
  *
+ * SIGINT AND SIGTERM ARE COUNTED HERE ONLY AS THE PLATFORM LAYER HANDS THEM
+ * OVER (feature 2669). `hero_signal_watch` refuses them, as panel 247's R7
+ * rules: the two are the stop's, and the stop is the layer's. A program that
+ * wants each Ctrl-C counted and none to end it, a shell or a REPL, asks the
+ * layer (`hero_net_count_signal`), which holds the stop and the count apart
+ * under its own lock and then calls `hero_signal_take_over` below
+ * (`platform/hero_layer_signal.h`): the counter, the pipe and
+ * `hero_signal_take` are this file's, one for every signal. On Windows the
+ * console's handler counts Ctrl-C and Ctrl-Break as SIGINT through
+ * `hero_signal_count_one`, on the thread the system makes for it.
+ *
  * WHAT A COUNT IS: deliveries, never sends. The kernel merges a standard
  * signal sent while one is pending, so a storm is counted short of what was
  * sent (the sitting measured a quarter to three quarters merged); a signal the
@@ -33,7 +44,19 @@
  * each is counted. While `heroes run`'s runner waits on a child it holds
  * SIGHUP and SIGQUIT itself, to pass them on (`parts/run.c`), and puts the
  * door back after; SIGURG is borrowed for an instant by `parts/sigguard.c`'s
- * probe, the first time the program hands C a function, and put back. */
+ * probe, the first time the program hands C a function, and put back.
+ *
+ * A SIGNAL THAT REACHES A CHILD FORKED BEFORE ITS `exec` IS THE CHILD'S, as
+ * the stop's handler rules for its two (`hero_net.c`): such a child shares
+ * this handler and the pipe until its `exec`, so the handler counts only in
+ * the process that installed it and, anywhere else, puts the signal's default
+ * back and sends it again, so a Ctrl-C meant for a child that has not yet
+ * become its program ends it, or stops it, as it would have, and no byte of
+ * the child's reaches this process's pipe.
+ *
+ * WHAT A NAME IS: `hero_signal_number` gives the number this platform gives a
+ * signal `hero_os.h` names the same on every platform (SIGTSTP is 18 on
+ * Darwin and 20 on Linux), read from `<signal.h>` where it is compiled. */
 
 #if !defined(_WIN32)
 #include <errno.h>
@@ -51,10 +74,25 @@ static _Atomic int64_t hero_sigdoor_count[HERO_SIGDOOR_MAX];
 /* The pipe, made once by the first watch; -1 until then. */
 static _Atomic int hero_sigdoor_fds[2] = {-1, -1};
 
-/* The handler: the count, then one byte, `errno` kept for the code it
- * interrupted. A full pipe drops the byte, and the count keeps the delivery. */
+/* The process that installed the handler, published before the handler is:
+ * a forked child sees another pid of its own. */
+static _Atomic int hero_sigdoor_owner = -1;
+
+/* The handler: in the process that installed it, the count, then one byte,
+ * `errno` kept for the code it interrupted; a full pipe drops the byte, and
+ * the count keeps the delivery. In a forked child before its `exec`, the
+ * signal's default back and the signal sent again, which is the child's. */
 static void hero_sigdoor_on(int sig) {
     int saved = errno;
+    if ((int)getpid() != atomic_load_explicit(&hero_sigdoor_owner, memory_order_acquire)) {
+        struct sigaction plain = { 0 };
+        plain.sa_handler = SIG_DFL;
+        sigemptyset(&plain.sa_mask);
+        (void)sigaction(sig, &plain, NULL);
+        (void)kill(getpid(), sig);
+        errno = saved;
+        return;
+    }
     if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
     int fd = atomic_load_explicit(&hero_sigdoor_fds[1], memory_order_acquire);
     if (fd >= 0) {
@@ -85,6 +123,20 @@ static int hero_sigdoor_pipe(void) {
     return 0;
 }
 
+/* The handler installed for `sig`, the pipe made first and the owner
+ * published before either: 0, or -1 where the system gave no pipe or refused
+ * the handler. */
+static int64_t hero_sigdoor_install(int sig) {
+    if (hero_sigdoor_pipe() != 0) return -1;
+    atomic_store_explicit(&hero_sigdoor_owner, (int)getpid(), memory_order_release);
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = hero_sigdoor_on;
+    sa.sa_flags = SA_RESTART;
+    sigemptyset(&sa.sa_mask);
+    return sigaction(sig, &sa, NULL) == 0 ? 0 : -1;
+}
+
 /* 0, or -1 for a signal this door does not take: a fault's (the runtime's
  * stack guard and lease handler own them, and returning from one runs the
  * faulting instruction again), SIGKILL and SIGSTOP (no handler can take them),
@@ -95,13 +147,20 @@ int64_t hero_signal_watch(int32_t sig) {
         sig == SIGTRAP || sig == SIGABRT || sig == SIGSYS || sig == SIGKILL || sig == SIGSTOP || sig == SIGINT ||
         sig == SIGTERM)
         return -1;
-    if (hero_sigdoor_pipe() != 0) return -1;
-    struct sigaction sa;
-    memset(&sa, 0, sizeof sa);
-    sa.sa_handler = hero_sigdoor_on;
-    sa.sa_flags = SA_RESTART;
-    sigemptyset(&sa.sa_mask);
-    return sigaction(sig, &sa, NULL) == 0 ? 0 : -1;
+    return hero_sigdoor_install(sig);
+}
+
+/* The two the stop owns, handed over by the platform layer under its lock
+ * once it has refused the stop for them (`hero_net_count_signal`). */
+int64_t hero_signal_take_over(int32_t sig) {
+    if (sig != SIGINT && sig != SIGTERM) return -1;
+    return hero_sigdoor_install(sig);
+}
+
+/* One delivery counted from outside a handler; POSIX counts in the handler,
+ * so the platform layer never calls this here. */
+void hero_signal_count_one(int32_t sig) {
+    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
 }
 
 /* The deliveries counted since the last take, and the count set back to 0. */
@@ -116,22 +175,73 @@ int32_t hero_signal_fd(void) { return atomic_load_explicit(&hero_sigdoor_fds[0],
 
 #else
 
-/* Windows has nothing for this door to watch: UCRT raises SIGINT and SIGBREAK
- * for the console's events, the stop's (`hero_net.h`), never generates SIGILL
- * or SIGTERM, and its other signals are faults (Microsoft's `signal` page,
- * read by panel 247's ffi-pragmatist). So every signal is one it does not
- * take, nothing is counted, and there is no descriptor. Compiled for both of
- * Windows' targets by zig, never run on the box. */
+/* Windows has nothing for `hero_signal_watch` to watch: UCRT raises SIGINT and
+ * SIGBREAK for the console's events, which are the platform layer's (the
+ * stop's, or counted as SIGINT where the program asked the layer to count
+ * Ctrl-C), never generates SIGILL or SIGTERM, and its other signals are faults
+ * (Microsoft's `signal` page, read by panel 247's ffi-pragmatist). So every
+ * signal is one the watch does not take, and there is no descriptor; the one
+ * count is SIGINT's, which the console's handler adds to on the thread the
+ * system makes for it (`hero_net.c`). Compiled for both of Windows' targets by
+ * zig, never run on the box. */
+#include <signal.h>
+
+/* UCRT's numbers stop at SIGABRT_COMPAT, 6, and SIGBREAK, 21. */
+#define HERO_SIGDOOR_MAX 23
+
+static _Atomic int64_t hero_sigdoor_count[HERO_SIGDOOR_MAX];
+
 int64_t hero_signal_watch(int32_t sig) {
     (void)sig;
     return -1;
 }
 
-int64_t hero_signal_take(int32_t sig) {
+/* No handler is installed for a console's events: the layer's handler counts
+ * them itself. */
+int64_t hero_signal_take_over(int32_t sig) {
     (void)sig;
-    return 0;
+    return -1;
+}
+
+void hero_signal_count_one(int32_t sig) {
+    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
+}
+
+int64_t hero_signal_take(int32_t sig) {
+    if (sig <= 0 || sig >= HERO_SIGDOOR_MAX) return 0;
+    return atomic_exchange_explicit(&hero_sigdoor_count[sig], 0, memory_order_relaxed);
 }
 
 int32_t hero_signal_fd(void) { return -1; }
 
 #endif
+
+/* The platform's number for each name `hero_os.h` gives, from the platform's
+ * own `<signal.h>`; -1 for a signal that never comes here. One table for both
+ * arms, so a name is answered the same way wherever the header has it. */
+int32_t hero_signal_number(int32_t name) {
+    switch (name) {
+#if !defined(_WIN32)
+        case HERO_SIGNAL_HANGUP: return SIGHUP;
+        case HERO_SIGNAL_INTERRUPT: return SIGINT;
+        case HERO_SIGNAL_QUIT: return SIGQUIT;
+        case HERO_SIGNAL_KILL: return SIGKILL;
+        case HERO_SIGNAL_USER1: return SIGUSR1;
+        case HERO_SIGNAL_USER2: return SIGUSR2;
+        case HERO_SIGNAL_TERMINATE: return SIGTERM;
+        case HERO_SIGNAL_CHILD: return SIGCHLD;
+        case HERO_SIGNAL_CONTINUE: return SIGCONT;
+        case HERO_SIGNAL_STOP: return SIGSTOP;
+        case HERO_SIGNAL_TERMINAL_STOP: return SIGTSTP;
+        case HERO_SIGNAL_TERMINAL_INPUT: return SIGTTIN;
+        case HERO_SIGNAL_TERMINAL_OUTPUT: return SIGTTOU;
+        case HERO_SIGNAL_WINDOW: return SIGWINCH;
+#else
+        /* UCRT's SIGINT is what the console's Ctrl-C and Ctrl-Break are
+         * counted as; its SIGTERM is never generated, and no other of these
+         * exists for a console program. */
+        case HERO_SIGNAL_INTERRUPT: return SIGINT;
+#endif
+        default: return -1;
+    }
+}

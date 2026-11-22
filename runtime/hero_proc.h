@@ -103,6 +103,10 @@ typedef struct hero_proc hero_proc;
  * (`.bat`, `.cmd`), which the layer refuses itself, since `cmd.exe` runs it
  * and reads its line by rules no quoting here can meet. */
 #define HERO_PROC_NOT_A_PROGRAM 14
+/* The process has ended, where the call needs one that has not: a group is
+ * named by a process of it that runs or is stopped (`hero_proc_signal`,
+ * `hero_proc_give_terminal`, a start joining a group). */
+#define HERO_PROC_ENDED 15
 
 /* What each of the child's input, output and error is, for
  * `hero_proc_start`. */
@@ -124,6 +128,21 @@ typedef struct hero_proc hero_proc;
 #define HERO_PROC_ENV_PARENT 0
 /* Exactly the list handed, and no variable of this process's. */
 #define HERO_PROC_ENV_GIVEN 1
+
+/* Which process group the child starts in, for `hero_proc_start` (feature
+ * 2670): what a shell's job control stands on. */
+/* This process's own, as every child before it: a Ctrl-C at the terminal
+ * reaches the child and this process both. */
+#define HERO_PROC_GROUP_PARENT 0
+/* A group of its own, the child its leader and its number the child's own: a
+ * job's first program, which the terminal can be handed to and a signal can
+ * reach alone. */
+#define HERO_PROC_GROUP_NEW 1
+/* The group `leader` stands in, read when the child starts: a job's later
+ * programs join its first. `leader` is a process this layer started and the
+ * program holds, which has not ended and does not stand in this process's
+ * own group. */
+#define HERO_PROC_GROUP_JOIN 2
 
 /* Which of the child's three streams, for `hero_proc_pipe`. */
 #define HERO_PROC_INPUT 0
@@ -170,8 +189,21 @@ typedef struct hero_proc hero_proc;
  * SIGNALS (POSIX): the child starts with the calling thread's signal mask,
  * with every signal this process handles at its default and those it ignores
  * still ignored, but SIGPIPE, which it starts with at its default whatever
- * this process does with it. It stays in this process's group, so a Ctrl-C
- * at the terminal reaches both. */
+ * this process does with it.
+ *
+ * THE GROUP (POSIX; feature 2670): `group_kind` one of `HERO_PROC_GROUP_*`,
+ * and `leader` NULL for all but `HERO_PROC_GROUP_JOIN`, where it names the
+ * process whose group the child joins. The group is set in the child before
+ * it becomes the program (a spawn's attribute, or `setpgid` after the fork),
+ * so it stands when this call returns. With `HERO_PROC_GROUP_PARENT` the child
+ * stays in this process's group, so a Ctrl-C at the terminal reaches both.
+ * A `leader` that has ended is `HERO_PROC_ENDED`, one in this process's own
+ * group or any other mismatch of the two `HERO_PROC_INVALID`, and on Windows,
+ * where a console program has no such group, every kind but the parent's is
+ * `HERO_PROC_UNSUPPORTED`. The leader's group is read under the table's lock
+ * while nothing has taken the leader's status, so its number is its group's
+ * (`hero_proc_signal` says why); a leader waited for by another thread while
+ * this call runs is the caller's race. */
 hero_proc *hero_proc_start(const char *program,
                            const void *arguments, uint64_t arguments_count,
                            int64_t environment_kind,
@@ -179,7 +211,8 @@ hero_proc *hero_proc_start(const char *program,
                            const char *folder,
                            int64_t input_kind, hero_stream *input,
                            int64_t output_kind, hero_stream *output,
-                           int64_t error_kind, hero_stream *error);
+                           int64_t error_kind, hero_stream *error,
+                           int64_t group_kind, hero_proc *leader);
 
 /* The program's end of the pipe that is the child's `which`, one of
  * `HERO_PROC_INPUT`, `HERO_PROC_OUTPUT` and `HERO_PROC_ERROR`: a stream to
@@ -206,8 +239,27 @@ hero_stream *hero_proc_pipe(hero_proc *p, int64_t which);
 int64_t hero_proc_wait(hero_proc *p, int64_t *code, int64_t *by_signal);
 
 /* 1 where the process has ended, 0 where it still runs, without waiting; or
- * -1. Once it answers 1, `hero_proc_wait` answers at once. */
+ * -1. Once it answers 1, `hero_proc_wait` answers at once. A stopped process
+ * still runs here. */
 int64_t hero_proc_ended(hero_proc *p);
+
+/* WHERE THE PROCESS STANDS, A STOP TOLD (feature 2670): 0 it runs, 1 it has
+ * ended (`hero_proc_wait` then answers at once), 2 a signal stopped it,
+ * `*stop_signal` that signal's number (0 for the other answers); or -1.
+ *
+ * `waits` 0 never waits, and sees a stop, a going on and an end: a process seen
+ * stopped answers 2 until it is seen to go on or to end. `waits` 1 waits until
+ * the process ends or stops, so it never answers 0; a stop it was seen in
+ * before this call is none of the two, and the call waits past it for the
+ * next, so a caller sends SIGCONT first to wait for a stopped process again.
+ * The wait is `waitid` with `WNOWAIT` outside the table's lock, as
+ * `hero_proc_wait`'s, and what it saw is taken under it.
+ *
+ * `HERO_PROC_INVALID` for a `waits` that is neither, and `HERO_PROC_OTHER`
+ * where something else in the process waited for it first. On Windows no
+ * process of this layer's stops: `waits` 0 answers 0 or 1, and `waits` 1
+ * waits for the end. */
+int64_t hero_proc_state(hero_proc *p, int64_t waits, int64_t *stop_signal);
 
 /* Asks the process to end: SIGTERM, which a program may catch to finish its
  * work, or ignore. Answers 0 once it is asked, also where the process has
@@ -226,6 +278,47 @@ int64_t hero_proc_terminate(hero_proc *p);
  * already; or -1. The process has ended when `hero_proc_wait` returns, which
  * may be a moment later. Processes it started itself are not ended. */
 int64_t hero_proc_kill(hero_proc *p);
+
+/* A SIGNAL TO THE PROCESS, OR TO ITS GROUP (POSIX; feature 2670): `sig`
+ * this platform's number for it (`hero_os.h`'s `hero_signal_number`), 1 or
+ * above and below the platform's count; `group` 0 sends it to the process
+ * alone, 1 to every process of the group it stands in, read from the system
+ * at this call. Answers 0 once the system took it; a process seen to have
+ * ended is sent nothing, 0 with `group` 0, as `hero_proc_terminate`, and -1
+ * with `HERO_PROC_ENDED` with `group` 1, whose group it no longer names.
+ *
+ * NEVER A GROUP NUMBER THE SYSTEM MAY HAVE GIVEN AWAY: the group is read and
+ * signalled under the table's lock, while nothing has taken the process's
+ * status, so the process is a member of that group and its number names it
+ * (POSIX gives no new process a number while a group of that number lives).
+ * A process that moves itself to another group at that very moment is the
+ * one case outside it.
+ *
+ * -1 with `HERO_PROC_INVALID` for a `sig` or a `group` out of range, and for
+ * a group that is this process's own, which a signal to it would reach too.
+ * On Windows `HERO_PROC_UNSUPPORTED`, the process untouched: a console's
+ * events reach its whole group, never one process a program names. */
+int64_t hero_proc_signal(hero_proc *p, int64_t sig, int64_t group);
+
+/* THE TERMINAL'S FOREGROUND (POSIX; feature 2670): `terminal` a stream on
+ * this process's controlling terminal, a shell's input. The group in front
+ * is the one Ctrl-C, Ctrl-Z and the terminal's reads reach.
+ *
+ * `hero_proc_give_terminal` puts the group `p` stands in in front, read as
+ * `hero_proc_signal` reads it; `hero_proc_take_terminal` puts this process's
+ * own group in front again. Each holds SIGTTOU on the calling thread across
+ * the call, so a process that is not in front sets it rather than being
+ * stopped (POSIX's `tcsetpgrp`). `hero_proc_holds_terminal` answers 1 where
+ * this process's group is in front, 0 where another is.
+ *
+ * -1 with `HERO_PROC_UNSUPPORTED` where the stream is no terminal, is not this
+ * process's controlling one, or stands on no descriptor; `HERO_PROC_ENDED` and
+ * `HERO_PROC_INVALID` as `hero_proc_signal` answers them; the stream's own
+ * kind where it is no open stream. On Windows `HERO_PROC_UNSUPPORTED`: a
+ * console has no group in front for a program to set. */
+int64_t hero_proc_give_terminal(hero_stream *terminal, hero_proc *p);
+int64_t hero_proc_take_terminal(hero_stream *terminal);
+int64_t hero_proc_holds_terminal(hero_stream *terminal);
 
 /* The system's own number for the process, its pid, or -1. A number to show
  * or to log: the system gives it to another process once this one has ended

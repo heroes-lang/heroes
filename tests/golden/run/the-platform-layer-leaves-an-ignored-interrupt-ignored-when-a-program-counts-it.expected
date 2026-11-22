@@ -1,0 +1,4 @@
+the program starts with the interrupt ignored: 1
+the layer counts it: 0
+an interrupt comes: 1, survived, counted 0
+the stop refused: -1

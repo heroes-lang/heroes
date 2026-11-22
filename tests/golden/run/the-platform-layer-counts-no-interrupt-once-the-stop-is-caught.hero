@@ -1,0 +1,41 @@
+# The stop and the count of Ctrl-C are one or the other for the process's
+# life (feature 2669), so no Ctrl-C is a stop to one reader and a count to
+# another: once the stop is caught, the layer refuses to count SIGINT and
+# SIGTERM, each as invalid, and an interrupt then asks the stop as it always
+# did, the program going on, the stop asked, nothing counted. On Windows the
+# request to end is the console's Ctrl-Break, which the stop takes too
+# (unrun there).
+extern "hero_net.h"
+    constant HERO_NET_INVALID: i64
+    function hero_net_count_signal(sig: i32) -> i64
+    function hero_net_catch_stop() -> i64
+    function hero_net_stop_asked() -> i64
+    function hero_net_last_error() -> i64
+
+extern "hero_os.h"
+    constant HERO_SIGNAL_INTERRUPT: i32
+    function hero_signal_number(name: i32) -> i32
+    function hero_signal_take(sig: i32) -> i64
+
+extern "signal.h"
+    constant SIGTERM: i32
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+
+function main()
+    print(f"the program starts with the interrupt at its default: {stop_begin(interrupt_ignored: 0)}")
+    interrupt = hero_signal_number(HERO_SIGNAL_INTERRUPT)
+    print(f"the stop is caught: {hero_net_catch_stop()}")
+    print(
+        f"counting the interrupt refused: {hero_net_count_signal(interrupt)}, as invalid: {hero_net_last_error() == HERO_NET_INVALID}"
+    )
+    print(
+        f"counting the request to end refused: {hero_net_count_signal(SIGTERM)}, as invalid: {hero_net_last_error() == HERO_NET_INVALID}"
+    )
+    print(f"an interrupt comes: {stop_send_now(what: STOP_INTERRUPT)}")
+    print(
+        f"the program went on, its stop asked: {hero_net_stop_asked() == 1}, nothing counted: {hero_signal_take(interrupt) == 0}"
+    )

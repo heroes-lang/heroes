@@ -208,8 +208,8 @@ function run_shell(exe: str, asked: Asked) -> i64
     run.release_jobs(@sh)
 
     return match sh.flow
-        .exiting e                                         => e.code
-        .normal | .breaking _ | .continuing _ | .returning => sh.status
+        .exiting e                                                        => e.code
+        .normal | .breaking _ | .continuing _ | .returning | .interrupted => sh.status
 
 # Takes every variable of the process's environment into the shell,
 # exported, as a shell started by another program does.

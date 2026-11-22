@@ -35,7 +35,7 @@ package moves its row in the same change. There is no cycle.
 | 0 | `maps` | what the built-ins do not do for a `{K: V}`: values, merging, removing; its entries as one list of pairs refused, the language having no generic record |  |  |
 | 0 | `numbers` | a number read from text and written as text, in every base and precision |  |  |
 | 0 | `path` | a path as text, by POSIX's rules and by Windows', touching no disk |  |  |
-| 0 | `os` | the process's world: environment, working folder, who and where it runs, the program's stop on Ctrl-C |  | `hero_sys.h`, `hero_os.h`, `hero_net.h` (the stop alone) |
+| 0 | `os` | the process's world: environment, working folder, who and where it runs, the program's stop on Ctrl-C, the signals it counts |  | `hero_sys.h`, `hero_os.h`, `hero_net.h` (the stop, and Ctrl-C counted in its place) |
 | 0 | `hash` | checksums and fast non-cryptographic hashes: CRC-32, Adler-32, FNV |  |  |
 | 0 | `sets` | set operations over a `{K: bool}`, since the language has no set type |  |  |
 | 0 | `errors` | context added to a failure without losing its code, several failures joined, a failure told to a person |  |  |
@@ -136,7 +136,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes`, `compress`, `hash` |  |
 | 4 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes`, `compress` |  |
 | 4 | `compress/bzip2` | bzip2 read and written | `bytes`, `compress` |  |
-| 4 | `process` | another program run, fed, read and waited for | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
+| 4 | `process` | another program run, fed, read and waited for, and a shell's job control: groups, signals, stops, the terminal's front | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |

@@ -5,9 +5,11 @@
 # `.shell_history` in the home folder, between sessions.
 #
 # Ctrl-C at the prompt gives the line up; Ctrl-D on an empty line ends the
-# shell. While a command runs, the first Ctrl-C ends it and not the shell,
-# as the stop `os.catch_stop` catches; a second one ends the shell too, a
-# limit of `os` this shell cannot lift.
+# shell. While a command line runs, each Ctrl-C ends the program in front,
+# which shares the shell's group and has the signal at its default, and the
+# rest of the line, and the shell goes on to its prompt however many times it
+# comes: the shell counts it (`os.count_signal`) and the executor asks the
+# count before each command.
 
 use <rebel>/os
 use <rebel>/path
@@ -30,7 +32,7 @@ use syntax/words
 #
 # - `sh`: the shell, its options marked interactive.
 function run(@sh: state.Shell) -> i64
-    _ = os.catch_stop().is_err()
+    _ = os.count_signal(.interrupt).is_err()
     editor @= term.line_editor("$ ")
     history_path = history_file(sh)
     _ = term.read_history(@editor, path: history_path).is_err()
@@ -69,7 +71,12 @@ function run(@sh: state.Shell) -> i64
                     continue
                 pending @ ""
 
+        _ = os.take_signals(.interrupt)
         _ = script.run_text(@sh, name: "typed", text: text, place: place, transcript: false)
+
+        if sh.flow == .interrupted
+            sh.flow @ .normal
+            streams.write_err(@sh, place: place, text: "\n")
 
     _ = term.write_history(editor, path: history_path).is_err()
     return sh.status

@@ -1,21 +1,30 @@
 # The platform layer's program stop, the three doors of `hero_net.h` that ask
-# it and catch it, bound thin: one function per C function, each answering
-# what C answers. The floor of `os`'s stop (`catch_stop`, `ask_stop`,
-# `is_stop_asked`), which the program asks whatever it waits on: every wait of
-# the platform layer, a socket's, a serial port's, a poller's, a watcher's or
-# a channel's, fails stopped once it is asked, so a program that reads a
-# serial port ends on Ctrl-C without naming `net`.
+# it and catch it, and the door that counts Ctrl-C or SIGTERM in its place,
+# bound thin: one function per C function, each answering what C answers. The
+# floor of `os`'s stop (`catch_stop`, `ask_stop`, `is_stop_asked`), which the
+# program asks whatever it waits on: every wait of the platform layer, a
+# socket's, a serial port's, a poller's, a watcher's or a channel's, fails
+# stopped once it is asked, so a program that reads a serial port ends on
+# Ctrl-C without naming `net`; and of `os.count_signal` for the stop's two
+# signals, which the layer hands to the runtime's count instead of the stop,
+# the one or the other for the process's life.
 #
 # The stop's C stands in `hero_net.h` (spec § 13), the header that holds the
-# flag the waits read; this group binds those three doors and the system's
-# number of the last failure, and `net`'s own floor binds them again for its
-# waits and its tests. The layer is C of the language's own beside the
-# runtime, so the group names its header and no `link`.
+# flag the waits read; this group binds those four doors, the kind and the
+# system's number of the last failure, and `net`'s own floor binds the stop's
+# again for its waits and its tests. The layer is C of the language's own
+# beside the runtime, so the group names its header and no `link`.
+
+use os/hero_os
 
 extern "hero_net.h"
+    constant HERO_NET_INVALID: i64
+    constant HERO_NET_UNSUPPORTED: i64
     function hero_net_catch_stop() -> i64
     function hero_net_stop_asked() -> i64
     function hero_net_ask_stop()
+    function hero_net_count_signal(sig: i32) -> i64
+    function hero_net_last_error() -> i64
     function hero_net_last_os_error() -> i64
 
 # 0 once SIGINT and SIGTERM ask a stop instead of ending the program, or -1.
@@ -36,6 +45,24 @@ function stop_asked() -> i64
 # after it does not end the program, a second does.
 function ask_stop()
     hero_net_ask_stop()
+
+# 0 once `sig`, SIGINT or SIGTERM, is counted by the runtime's signal door
+# each time it comes and neither ends the program nor asks the stop, or -1:
+# `HERO_NET_INVALID` for any other signal, or where `catch_stop` caught the
+# two, which `catch_stop` then answers too; on Windows, where SIGINT is Ctrl-C
+# and Ctrl-Break, `HERO_NET_UNSUPPORTED` for SIGTERM. One inherited ignored
+# stays ignored.
+#
+# - `sig`: the platform's number for SIGINT or SIGTERM, `os/hero_os`'s
+#   `signal_number` answer.
+function count_signal(sig: i32) -> i64
+    return hero_net_count_signal(sig)
+
+# The kind of the last call's failure on this thread, 0 after one that did
+# not fail: `HERO_NET_INVALID`, `HERO_NET_UNSUPPORTED`, or another of
+# `hero_net.h`'s kinds.
+function last_error() -> i64
+    return hero_net_last_error()
 
 # The platform's own number for the last call's failure on this thread, 0
 # where the layer refused before asking the system.
@@ -58,3 +85,27 @@ test "ask_stop asks the stop, and stop_asked reads it"
     assert stop_asked() == 1
     ask_stop()
     assert stop_asked() == 1
+
+# Each test is a process of its own, so the count armed here leaves every
+# other test's Ctrl-C at its default.
+test "count_signal: SIGINT counted, a second call, the stop refused after it, and a signal not the stop's"
+    sigint = hero_os.signal_number(hero_os.HERO_SIGNAL_INTERRUPT)
+    assert count_signal(sigint) == 0
+    assert count_signal(sigint) == 0
+    assert catch_stop() == -1 && last_error() == HERO_NET_INVALID
+    assert count_signal(hero_os.signal_number(hero_os.HERO_SIGNAL_USER1)) == -1 && last_error() == HERO_NET_INVALID
+    assert count_signal(0) == -1 && last_error() == HERO_NET_INVALID
+    assert hero_os.signal_take(sigint) == 0
+
+test "count_signal: refused once the stop is caught, SIGTERM as SIGINT"
+    assert catch_stop() == 0
+
+    for name in [hero_os.HERO_SIGNAL_INTERRUPT, hero_os.HERO_SIGNAL_TERMINATE]
+        assert count_signal(hero_os.signal_number(name)) == -1 && last_error() == HERO_NET_INVALID
+
+test "count_signal: SIGTERM counted on POSIX, unsupported on Windows"
+    if hero_os.run_exe_suffix() == ".exe"
+        assert count_signal(15) == -1 && last_error() == HERO_NET_UNSUPPORTED
+    else
+        assert count_signal(hero_os.signal_number(hero_os.HERO_SIGNAL_TERMINATE)) == 0
+        assert catch_stop() == -1 && last_error() == HERO_NET_INVALID

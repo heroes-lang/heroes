@@ -102,6 +102,13 @@
  * POSIX's list of async-signal-safe functions); a Heroes function there that
  * allocates kills its program (the sitting's critic, item 12).
  *
+ * AND THE TWO COUNTED INSTEAD (feature 2669): `hero_net_count_signal` hands
+ * SIGINT or SIGTERM to the runtime's signal door, whose handler counts each
+ * one and ends nothing (`platform/hero_layer_signal.h`), or on Windows counts
+ * Ctrl-C and Ctrl-Break in a console handler of its own. It and the stop are
+ * armed under the one lock and refuse each other, so one handler alone ever
+ * holds each of the two signals.
+ *
  * A SEND MAY SEND FEWER BYTES THAN IT WAS HANDED, AND SAYS HOW MANY: on a
  * non-blocking socket the system takes what its buffer has room for and the
  * call answers that count at once, waiting only while the buffer has no room
@@ -135,6 +142,9 @@
 #include "hero_layer_alloc.h"
 /* The runtime's word for the stop, so a mailbox's receive answers it too. */
 #include "hero_layer_stop.h"
+/* The runtime's signal door, handed SIGINT or SIGTERM where the program
+ * counts them instead of the stop (feature 2669). */
+#include "hero_layer_signal.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -162,6 +172,9 @@
  * which `iphlpapi` holds too; after `iphlpapi.h`, which defines what it
  * names. */
 #include <icmpapi.h>
+/* SIGINT, the number Ctrl-C and Ctrl-Break are counted as where the program
+ * counts them (`hero_net_count_signal`). */
+#include <signal.h>
 typedef SOCKET hero_net_fd;
 typedef int hero_net_len;
 #define HERO_NET_NO_FD INVALID_SOCKET
@@ -704,6 +717,11 @@ static _Atomic int hero_net_stop_asks;
  * request, a user's one Ctrl-C would end a server draining its own stop
  * (measured on three systems by the sitting's ffi-pragmatist). */
 static _Atomic int hero_net_stop_own;
+/* Which of the stop's two signals the program counts instead
+ * (`hero_net_count_signal`, feature 2669): 1 SIGINT, 2 SIGTERM. Written under
+ * `hero_net_lock`, as `hero_net_stop_armed` is, so whichever of the two is
+ * armed first, the other is refused for the process's life. */
+static _Atomic int hero_net_counted;
 
 #if !defined(_WIN32)
 /* The pipe's two ends, -1 until the stop is armed: the handler writes down
@@ -1410,6 +1428,33 @@ static int64_t hero_net_stop_arm(void) {
     atomic_store(&hero_net_stop_armed, 1);
     return 0;
 }
+
+/* Ctrl-C and Ctrl-Break counted as SIGINT and handled, every time, on the
+ * thread Windows makes for each event; any other event is left to the next
+ * handler, the system's own at the end, so the console closing still ends the
+ * process. */
+static BOOL WINAPI hero_net_on_console_counted(DWORD event) {
+    if (event != CTRL_C_EVENT && event != CTRL_BREAK_EVENT) {
+        return FALSE;
+    }
+    hero_signal_count_one(SIGINT);
+    return TRUE;
+}
+
+/* `sig` handed to the count, once: SIGINT by the console handler above;
+ * SIGTERM, which nothing sends a console program, `HERO_NET_UNSUPPORTED`.
+ * Under the lock. */
+static int64_t hero_net_count_arm(int sig) {
+    if (sig != SIGINT) {
+        hero_net_fail(HERO_NET_UNSUPPORTED, 0);
+        return -1;
+    }
+    if (!SetConsoleCtrlHandler(hero_net_on_console_counted, TRUE)) {
+        hero_net_fail(HERO_NET_OTHER, (int64_t)GetLastError());
+        return -1;
+    }
+    return 0;
+}
 #else
 /* THE HANDLER, the stop's one piece of code a signal runs. The first signal
  * of the process that armed it counts itself and writes one byte; any other,
@@ -1522,11 +1567,68 @@ static int64_t hero_net_stop_arm(void) {
     atomic_store(&hero_net_stop_armed, 1);
     return 0;
 }
+
+/* `sig` handed to the runtime's count, once; one the process inherited
+ * ignored is left ignored, the shell's word, as the stop leaves it. -1 with
+ * the system's number where it is refused. Under the lock. */
+static int64_t hero_net_count_arm(int sig) {
+    struct sigaction was;
+
+    if (sigaction(sig, NULL, &was) != 0) {
+        hero_net_failed_with(hero_net_os_code());
+        return -1;
+    }
+    if (!(was.sa_flags & SA_SIGINFO) && was.sa_handler == SIG_IGN) {
+        return 0;
+    }
+    if (hero_signal_take_over(sig) != 0) {
+        hero_net_failed_with(hero_net_os_code());
+        return -1;
+    }
+    return 0;
+}
 #endif
 
 int64_t hero_net_catch_stop(void) {
+    int64_t answer = 0;
+
     hero_net_enter();
-    int64_t answer = atomic_load(&hero_net_stop_armed) != 0 ? 0 : hero_net_stop_arm();
+    if (atomic_load(&hero_net_stop_armed) == 0) {
+        if (atomic_load(&hero_net_counted) != 0) {
+            hero_net_fail(HERO_NET_INVALID, 0);
+            answer = -1;
+        } else {
+            answer = hero_net_stop_arm();
+        }
+    }
+    hero_net_leave();
+
+    if (answer == 0) {
+        hero_net_clear();
+    }
+    return answer;
+}
+
+/* The stop's arming and the count's are one lock's, so the first of the two
+ * wins for good (`hero_net.h`, feature 2669). */
+int64_t hero_net_count_signal(int32_t sig) {
+    int bit = sig == SIGINT ? 1 : (sig == SIGTERM ? 2 : 0);
+    int64_t answer = 0;
+
+    if (bit == 0) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        return -1;
+    }
+    hero_net_enter();
+    if (atomic_load(&hero_net_stop_armed) != 0) {
+        hero_net_fail(HERO_NET_INVALID, 0);
+        answer = -1;
+    } else if ((atomic_load(&hero_net_counted) & bit) == 0) {
+        answer = hero_net_count_arm(sig);
+        if (answer == 0) {
+            atomic_fetch_or(&hero_net_counted, bit);
+        }
+    }
     hero_net_leave();
 
     if (answer == 0) {

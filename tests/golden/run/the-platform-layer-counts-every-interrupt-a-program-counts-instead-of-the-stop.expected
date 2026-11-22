@@ -1,0 +1,9 @@
+the program starts with the interrupt at its default: 1
+the runtime's door alone refuses it: -1
+the layer counts it: 0
+counted before any came: 0
+interrupt 1 sent: 1, survived, counted 1
+interrupt 2 sent: 1, survived, counted 1
+interrupt 3 sent: 1, survived, counted 1
+the stop refused now: -1, as invalid: true
+counted a second time: 0

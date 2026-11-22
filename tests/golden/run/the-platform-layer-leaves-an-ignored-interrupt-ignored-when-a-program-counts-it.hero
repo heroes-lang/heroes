@@ -1,0 +1,26 @@
+# A program started with Ctrl-C ignored keeps it ignored when it asks the
+# layer to count it (feature 2669), as the stop leaves it (panel 246's R4):
+# the shell that started it as a job with `&` said so. The count is armed,
+# the interrupt that comes changes nothing and is not counted, and the stop
+# is refused all the same, the program having chosen the count. On Windows a
+# console that ignores Ctrl-C sends it to no handler (unrun there).
+extern "hero_net.h"
+    function hero_net_count_signal(sig: i32) -> i64
+    function hero_net_catch_stop() -> i64
+
+extern "hero_os.h"
+    constant HERO_SIGNAL_INTERRUPT: i32
+    function hero_signal_number(name: i32) -> i32
+    function hero_signal_take(sig: i32) -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+
+function main()
+    print(f"the program starts with the interrupt ignored: {stop_begin(interrupt_ignored: 1)}")
+    interrupt = hero_signal_number(HERO_SIGNAL_INTERRUPT)
+    print(f"the layer counts it: {hero_net_count_signal(interrupt)}")
+    print(f"an interrupt comes: {stop_send_now(what: STOP_INTERRUPT)}, survived, counted {hero_signal_take(interrupt)}")
+    print(f"the stop refused: {hero_net_catch_stop()}")

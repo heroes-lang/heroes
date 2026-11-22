@@ -17,6 +17,18 @@ record End
     # The stream, for `HERO_PROC_STDIO_STREAM`; `nullptr` otherwise.
     stream: hero_stream.Stream
 
+# Which process group a child starts in, as the floor takes it.
+record Grouping
+    # One of `HERO_PROC_GROUP_*`.
+    kind: i64
+    # The process whose group the child joins, for `HERO_PROC_GROUP_JOIN`;
+    # `nullptr` otherwise.
+    leader: hero_proc.Proc
+
+# This process's own group, every child's but where the command asks another.
+function ungrouped() -> Grouping
+    return Grouping(kind: hero_proc.HERO_PROC_GROUP_PARENT, leader: nullptr)
+
 # The end of `kind`, which reads no stream.
 function plain(kind: i64) -> End
     return End(kind: kind, stream: nullptr)
@@ -52,10 +64,11 @@ function packed(words: [str], asked: str) -> [u8]?
     return ok(out)
 
 # The process the floor started of `program` with `arguments`, the variables
-# `env`, working in `dir`, its three streams `input`, `output` and `error`.
-# Fails `invalid` where `program` is empty or a text holds a zero byte, and
-# with the code the floor's refusal turns into.
-function begun(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End) -> hero_proc.Proc?
+# `env`, working in `dir`, its three streams `input`, `output` and `error`,
+# in the process group `group` says. Fails `invalid` where `program` is empty
+# or a text holds a zero byte, and with the code the floor's refusal turns
+# into.
+function begun(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End, group: Grouping) -> hero_proc.Proc?
     asked = f"starting \"{program}\""
 
     if program.len() == 0
@@ -81,7 +94,9 @@ function begun(program: str, arguments: [str], env: environment.Given, dir: str,
         out_kind: output.kind,
         out_stream: output.stream,
         err_kind: error.kind,
-        err_stream: error.stream
+        err_stream: error.stream,
+        group_kind: group.kind,
+        leader: group.leader
     )
 
     if p == nullptr
@@ -120,12 +135,13 @@ function end_of(p: hero_proc.Proc, which: i64, asked_for: bool, name: str) -> io
         return io.of_handle(hero_proc.pipe(p, which), name: name)
     return closed(name)
 
-# The child `begun` starts, where its input is `fed`'s bytes through a
-# temporary file where `feeding`, and its error goes where its output goes
-# where `merged`: into one pipe made here where the output is a pipe. Fails
+# The child `begun` starts in the process group `group` says, where its input
+# is `fed`'s bytes through a temporary file where `feeding`, and its error goes
+# where its output goes where `merged`: into one pipe made here where the
+# output is a pipe. Fails
 # as `begun` does, and with the disk's code for the temporary file; nothing
 # made here is left behind then.
-function started(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End, fed: [u8], feeding: bool, merged: bool) -> Started?
+function started(program: str, arguments: [str], env: environment.Given, dir: str, input: End, output: End, error: End, fed: [u8], feeding: bool, merged: bool, group: Grouping) -> Started?
     in_end: End @= input
     held: io.Stream @= closed("the child's input file")
     fed_path: str @= ""
@@ -167,7 +183,8 @@ function started(program: str, arguments: [str], env: environment.Given, dir: st
         dir: dir,
         input: in_end,
         output: out_end,
-        error: err_end
+        error: err_end,
+        group: group
     )
     dropped(@held)
     dropped(@joined_writer)
@@ -238,7 +255,8 @@ function quiet(program: str, arguments: [str], dir: str) -> hero_proc.Proc?
         dir: dir,
         input: nothing,
         output: nothing,
-        error: nothing
+        error: nothing,
+        group: ungrouped()
     )
 
 # The code `quiet` fails with, or "" where it started a child, which is then

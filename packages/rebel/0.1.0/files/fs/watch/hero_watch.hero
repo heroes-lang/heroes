@@ -171,6 +171,33 @@ function kinds_told(w: Watch, ms: i64) -> [i64]
 
     return told
 
+# What a read with a buffer of four bytes answers of the first event naming a
+# path `want` bytes long, which that read leaves first, telling its lengths
+# in `numbers`: every event before it naming a path of another length is
+# taken whole and passed over, eight at most, each waited for two seconds at
+# most. A change made just before a watch began may be told first (`fs/watch`
+# says so), so a test reads past it to the change it looks for.
+#
+# - `w`: the watch read; it stays open.
+# - `want`: the length in bytes of the path looked for.
+# - `numbers`: set as `next` sets it, by the last short read.
+function short_read_of(w: Watch, want: i64, @numbers: [i64]) -> i64
+    short: [u8] @= [0, 0, 0, 0]
+    room: [u8] @= []
+
+    for _ in range(from: 0, to: 4096)
+        room @ room.push(0)
+
+    got @= next(w, limit_ns: 2000000000, @numbers, numbers_count: 4, @short, text_count: 4)
+    passed @= 0
+
+    while got == -1 && last_error() == HERO_WATCH_SHORT && numbers[2] != want && passed < 8
+        assert next(w, limit_ns: 0, @numbers, numbers_count: 4, @room, text_count: 4096) == 1
+        passed @ passed + 1
+        got @ next(w, limit_ns: 2000000000, @numbers, numbers_count: 4, @short, text_count: 4)
+
+    return got
+
 # Whether `xs` holds `x`.
 #
 # - `xs`: the numbers looked through.
@@ -250,17 +277,20 @@ test "hero_watch next: a limit of -2 and three numbers are refused; a limit of 0
     _ = close(@w)
     _ = fs.remove_all(root).is_err()
 
+# The folder was made just before the watch began, so a change of its own may
+# be told first, in an event of its own (defect 2686): the first event naming
+# the made file must be its creation, its lengths told where the buffer is too
+# short.
 test "hero_watch next: a file made is told created within two seconds, and a buffer too short leaves it first, its lengths told"
     root = scratch("short")
     w @= open(root, flags: 0, most: 16)
     fs.touch(root + "/made.txt").must()
-    numbers: [i64] @= [0, 0, 0, 0]
-    short: [u8] @= [0, 0, 0, 0]
-    got @= next(w, limit_ns: 2000000000, @numbers, numbers_count: 4, @short, text_count: 4)
-    assert got == -1
-    assert last_error() == HERO_WATCH_SHORT
     made = paths.join_all([root, "made.txt"])
     want = made.len()
+    numbers: [i64] @= [0, 0, 0, 0]
+    got @= short_read_of(w, want: want, numbers: @numbers)
+    assert got == -1
+    assert last_error() == HERO_WATCH_SHORT
     assert numbers[0] == HERO_WATCH_CREATED
     assert numbers[2] == want
     assert numbers[3] == 0
@@ -275,6 +305,29 @@ test "hero_watch next: a file made is told created within two seconds, and a buf
     assert numbers[0] == HERO_WATCH_CREATED
     assert numbers[1] == 0
     assert text.validated_bytes().must() == made
+    _ = close(@w)
+    _ = fs.remove_all(root).is_err()
+
+# A file made just before the watch began is told created first on this Mac
+# (20 runs of 20, 2026-11-22), the file made after it in a later answer most
+# times: the made file is still told created, read past the earlier one.
+test "hero_watch next: a file made just before the watch began may be told first, and the file made after it is still told created"
+    root = scratch("early")
+    fs.touch(root + "/early.txt").must()
+    w @= open(root, flags: 0, most: 16)
+    fs.touch(root + "/made-after.txt").must()
+    made = paths.join_all([root, "made-after.txt"])
+    numbers: [i64] @= [0, 0, 0, 0]
+    assert short_read_of(w, want: made.len(), numbers: @numbers) == -1
+    assert last_error() == HERO_WATCH_SHORT
+    assert numbers[0] == HERO_WATCH_CREATED && numbers[2] == made.len() && numbers[3] == 0
+    text: [u8] @= []
+
+    for _ in range(from: 0, to: made.len())
+        text @ text.push(0)
+
+    assert next(w, limit_ns: 0, @numbers, numbers_count: 4, @text, text_count: made.len().to_u64().must()) == 1
+    assert numbers[0] == HERO_WATCH_CREATED && text.validated_bytes().must() == made
     _ = close(@w)
     _ = fs.remove_all(root).is_err()
 
@@ -299,7 +352,15 @@ test "hero_watch next: room for 4 and 40 files made, nothing taken: four events 
     for i in range(from: 0, to: 40)
         fs.touch(f"{root}/f{i}").must()
 
-    time.sleep(time.nanoseconds(1500000000))
+    # The system tells the changes when it tells them: the test waits until
+    # the room and its overflow stand, ten seconds at most, never a guessed
+    # time.
+    looked @= 0
+
+    while count(w) < 5 && looked < 200
+        time.sleep(time.nanoseconds(50000000))
+        looked @ looked + 1
+
     assert count(w) == 5
     told = kinds_told(w, ms: 0)
     assert told.len() == 5
