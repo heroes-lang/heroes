@@ -188,6 +188,13 @@ typedef union hero_ui_gtk_iter {
 #define HERO_G_TYPE_STRING 64u
 #define HERO_G_SIGNAL_MATCH_FUNC_DATA 24
 #define HERO_G_IO_ERROR_NOT_FOUND 1
+#define HERO_G_BUS_TYPE_SESSION 2
+#define HERO_GTK_ACCESSIBLE_PROPERTY_LABEL 4
+#define HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY 10
+/* GTK 4.20's `GtkInterfaceColorScheme`, from its documentation (unread on a
+ * GTK that has it: GTK 4.18.6 has no such setting). */
+#define HERO_GTK_INTERFACE_COLOR_SCHEME_DARK 2
+#define HERO_GTK_INTERFACE_COLOR_SCHEME_LIGHT 3
 #define HERO_G_IO_ERROR_NOT_SUPPORTED 15
 /* A radio item's target, and its action's state when it is checked. */
 #define HERO_UI_GTK_RADIO_ON "on"
@@ -560,6 +567,26 @@ typedef struct hero_ui_gtk_functions {
     int (*widget_get_mapped)(void *widget);
     int (*window_is_active)(void *window);
     int (*text_grab_focus_without_selecting)(void *text);
+    void *(*window_get_toplevels)(void);
+    void *(*widget_get_first_child)(void *widget);
+    void *(*widget_get_next_sibling)(void *widget);
+    size_t (*button_get_type)(void);
+    const char *(*button_get_label)(void *button);
+    void (*native_dialog_hide)(void *dialog);
+    void *(*bus_get_sync)(int type, void *cancellable, hero_ui_gerror **error);
+    void *(*dbus_connection_call_sync)(void *connection, const char *name, const char *path, const char *interface, const char *method, void *parameters, const void *reply_type, int flags, int timeout, void *cancellable, hero_ui_gerror **error);
+    void *(*variant_new)(const char *format, ...);
+    void *(*variant_new_strv)(const char *const *strings, long length);
+    void *(*variant_new_array)(const char *type, void *const *children, size_t count);
+    void (*variant_unref)(void *variant);
+    const char *(*get_prgname)(void);
+    void *(*object_class_find_property)(void *klass, const char *name);
+    void (*object_set)(void *object, const char *first, ...);
+    void (*accessible_update_property)(void *accessible, int first, ...);
+    void (*accessible_reset_property)(void *accessible, int property);
+    void (*accessible_update_relation)(void *accessible, int first, ...);
+    void (*accessible_reset_relation)(void *accessible, int relation);
+    unsigned (*get_minor_version)(void);
     void *(*list_append)(void *list, void *data);
     void (*list_free)(void *list);
     int (*type_check_instance_is_a)(void *instance, size_t type);
@@ -954,6 +981,26 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(widget_get_mapped, "gtk_widget_get_mapped");
     HERO_UI_GTK_NEED(window_is_active, "gtk_window_is_active");
     HERO_UI_GTK_NEED(text_grab_focus_without_selecting, "gtk_text_grab_focus_without_selecting");
+    HERO_UI_GTK_NEED(window_get_toplevels, "gtk_window_get_toplevels");
+    HERO_UI_GTK_NEED(widget_get_first_child, "gtk_widget_get_first_child");
+    HERO_UI_GTK_NEED(widget_get_next_sibling, "gtk_widget_get_next_sibling");
+    HERO_UI_GTK_NEED(button_get_type, "gtk_button_get_type");
+    HERO_UI_GTK_NEED(button_get_label, "gtk_button_get_label");
+    HERO_UI_GTK_NEED(native_dialog_hide, "gtk_native_dialog_hide");
+    HERO_UI_GTK_NEED(bus_get_sync, "g_bus_get_sync");
+    HERO_UI_GTK_NEED(dbus_connection_call_sync, "g_dbus_connection_call_sync");
+    HERO_UI_GTK_NEED(variant_new, "g_variant_new");
+    HERO_UI_GTK_NEED(variant_new_strv, "g_variant_new_strv");
+    HERO_UI_GTK_NEED(variant_new_array, "g_variant_new_array");
+    HERO_UI_GTK_NEED(variant_unref, "g_variant_unref");
+    HERO_UI_GTK_NEED(get_prgname, "g_get_prgname");
+    HERO_UI_GTK_NEED(object_class_find_property, "g_object_class_find_property");
+    HERO_UI_GTK_NEED(object_set, "g_object_set");
+    HERO_UI_GTK_NEED(accessible_update_property, "gtk_accessible_update_property");
+    HERO_UI_GTK_NEED(accessible_reset_property, "gtk_accessible_reset_property");
+    HERO_UI_GTK_NEED(accessible_update_relation, "gtk_accessible_update_relation");
+    HERO_UI_GTK_NEED(accessible_reset_relation, "gtk_accessible_reset_relation");
+    HERO_UI_GTK_NEED(get_minor_version, "gtk_get_minor_version");
     HERO_UI_GTK_NEED(list_append, "g_list_append");
     HERO_UI_GTK_NEED(list_free, "g_list_free");
     HERO_UI_GTK_NEED(type_check_instance_is_a, "g_type_check_instance_is_a");
@@ -1139,6 +1186,8 @@ struct hero_ui_native {
     /* A table's sorter; a split's panes. */
     void *sorter;
     int64_t panes;
+    /* The accessible name the program gave, NULL for none. */
+    char *accessible;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1163,15 +1212,15 @@ static int hero_ui_gtk_divider(hero_ui_native *split);
 static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t value, int64_t second, bool usable);
 static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count);
 static void hero_ui_gtk_close_more(void);
-struct hero_ui_gtk_answer;
-static int64_t hero_ui_gtk_kept_paths(struct hero_ui_gtk_answer *got, int64_t result, int64_t *bytes);
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
+static void hero_ui_gtk_send_docked(hero_ui_native *window);
+static void hero_ui_gtk_watch_appearance(void);
+static void hero_ui_gtk_unwatch_appearance(void);
+static bool hero_ui_gtk_keep_path(void *file, uint8_t **paths, int64_t *count, int64_t *room);
+static void *hero_ui_gtk_filters(const uint8_t *filters, int64_t count, int64_t *made);
 
 /* Above 0 while `inject` acts, so a slider moved to where it stands is told. */
 static _Thread_local int64_t hero_ui_gtk_injecting;
-/* The paths the last file dialog answered, each followed by one zero byte. */
-static _Thread_local uint8_t *hero_ui_gtk_paths;
-static _Thread_local int64_t hero_ui_gtk_paths_count;
 
 /* -- Words, numbers and text ------------------------------------------------ */
 
@@ -1719,6 +1768,7 @@ int64_t hero_ui_arm_open(void) {
     hero_ui_unmute();
     hero_ui_gtk_injecting = 0;
     hero_ui_make_host();
+    hero_ui_gtk_watch_appearance();
     return HERO_UI_OK;
 }
 
@@ -1844,6 +1894,7 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
+    hero_layer_free(widget->accessible);
     hero_ui_ids_free(&widget->order);
     hero_ui_forget(widget->id);
     hero_layer_free(widget);
@@ -1892,9 +1943,6 @@ void hero_ui_arm_close(void) {
     }
     hero_ui_free_map();
     hero_ui_gtk_close_more();
-    hero_layer_free(hero_ui_gtk_paths);
-    hero_ui_gtk_paths = NULL;
-    hero_ui_gtk_paths_count = 0;
     /* GTK finishes a window's destruction in its own loop's turns: they are
      * given those turns before the app is gone, a bounded number, so a source
      * that is always ready cannot hold `close`. */
@@ -3295,164 +3343,6 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     return answer;
 }
 
-/* The `GtkWindow` of number `window` for a dialog to stand over, NULL for 0;
- * false where that number is no window. */
-static bool hero_ui_gtk_owner(int64_t window, void **owner, int64_t *answer) {
-    hero_ui_native *found;
-
-    *owner = NULL;
-    if (window == 0) {
-        return true;
-    }
-    found = hero_ui_find(window);
-    if (found == NULL || found->kind != HERO_UI_WINDOW) {
-        *answer = found == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
-        return false;
-    }
-    *owner = found->widget;
-    return true;
-}
-
-/* What a dialog run in a nested loop answers. */
-typedef struct hero_ui_gtk_answer {
-    bool done;
-    int response;
-    void *value;
-    hero_ui_gerror *error;
-    int multiple;
-} hero_ui_gtk_answer;
-
-/* Runs GLib's loop until `answer` is done: a dialog is the person's for as
- * long as they take, as every system's modal dialog is. */
-static void hero_ui_gtk_await(hero_ui_gtk_answer *answer) {
-    while (!answer->done) {
-        (void)hero_ui_gtk.main_context_iteration(NULL, 1);
-    }
-}
-
-static void hero_ui_gtk_alert_answered(void *dialog, void *result, void *data) {
-    hero_ui_gtk_answer *answer = data;
-
-    answer->response = hero_ui_gtk.alert_dialog_choose_finish(dialog, result, &answer->error);
-    answer->done = true;
-}
-
-static void hero_ui_gtk_dialog_answered(void *dialog, int response, void *data) {
-    hero_ui_gtk_answer *answer = data;
-
-    (void)dialog;
-    answer->response = response;
-    answer->done = true;
-}
-
-int64_t hero_ui_arm_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, int64_t *answer) {
-    void *owner;
-    int64_t refused = HERO_UI_OK;
-    char *heading = hero_ui_gtk_text(title, title_count, false);
-    char *said = hero_ui_gtk_text(text, text_count, false);
-    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
-    /* The buttons in the order shown, the answer each gives, GTK's own word
-     * for each, and which one a dismissed dialog answers. */
-    int64_t answers[3];
-    const char *msgids[3];
-    int shown = 0;
-    int cancel = -1;
-
-    if (heading == NULL || said == NULL) {
-        hero_layer_free(heading);
-        hero_layer_free(said);
-        return HERO_UI_LIMIT;
-    }
-    if (!hero_ui_gtk_owner(window, &owner, &refused)) {
-        hero_layer_free(heading);
-        hero_layer_free(said);
-        return refused;
-    }
-    if (buttons == HERO_UI_BUTTONS_YES_NO || buttons == HERO_UI_BUTTONS_YES_NO_CANCEL) {
-        if (buttons == HERO_UI_BUTTONS_YES_NO_CANCEL) {
-            cancel = shown;
-            answers[shown] = HERO_UI_ANSWER_CANCEL;
-            msgids[shown++] = "_Cancel";
-        }
-        answers[shown] = HERO_UI_ANSWER_NO;
-        msgids[shown++] = "_No";
-        answers[shown] = HERO_UI_ANSWER_YES;
-        msgids[shown++] = "_Yes";
-    } else {
-        if (buttons == HERO_UI_BUTTONS_OK_CANCEL) {
-            cancel = shown;
-            answers[shown] = HERO_UI_ANSWER_CANCEL;
-            msgids[shown++] = "_Cancel";
-        }
-        answers[shown] = HERO_UI_ANSWER_OK;
-        msgids[shown++] = "_OK";
-    }
-    if (hero_ui_gtk.alert_dialog_new != NULL && hero_ui_gtk.alert_dialog_choose != NULL && hero_ui_gtk.alert_dialog_choose_finish != NULL && hero_ui_gtk.alert_dialog_set_buttons != NULL && hero_ui_gtk.alert_dialog_set_detail != NULL && hero_ui_gtk.alert_dialog_set_cancel_button != NULL && hero_ui_gtk.alert_dialog_set_default_button != NULL && hero_ui_gtk.alert_dialog_set_modal != NULL) {
-        char words[3][64];
-        const char *labels[4] = {NULL, NULL, NULL, NULL};
-        void *dialog = hero_ui_gtk.alert_dialog_new("%s", heading);
-
-        if (dialog == NULL) {
-            hero_layer_free(heading);
-            hero_layer_free(said);
-            return HERO_UI_LIMIT;
-        }
-        for (int i = 0; i < shown; i += 1) {
-            hero_ui_gtk_words_of(msgids[i], words[i], sizeof words[i]);
-            labels[i] = words[i];
-        }
-        hero_ui_gtk.alert_dialog_set_detail(dialog, said);
-        hero_ui_gtk.alert_dialog_set_buttons(dialog, labels);
-        hero_ui_gtk.alert_dialog_set_cancel_button(dialog, cancel);
-        hero_ui_gtk.alert_dialog_set_default_button(dialog, shown - 1);
-        hero_ui_gtk.alert_dialog_set_modal(dialog, 1);
-        hero_ui_gtk.alert_dialog_choose(dialog, owner, NULL, hero_ui_gtk_alert_answered, &got);
-        hero_ui_gtk_await(&got);
-        if (got.error != NULL) {
-            hero_ui_gtk.error_free(got.error);
-        }
-        hero_ui_gtk.object_unref(dialog);
-    } else {
-        int type = tone == HERO_UI_TONE_ERROR ? HERO_GTK_MESSAGE_ERROR : (tone == HERO_UI_TONE_WARNING ? HERO_GTK_MESSAGE_WARNING : HERO_GTK_MESSAGE_INFO);
-        void *dialog = hero_ui_gtk.message_dialog_new(owner, HERO_GTK_DIALOG_MODAL | HERO_GTK_DIALOG_DESTROY_WITH_PARENT, type, HERO_GTK_BUTTONS_NONE, "%s", heading);
-
-        if (dialog == NULL) {
-            hero_layer_free(heading);
-            hero_layer_free(said);
-            return HERO_UI_LIMIT;
-        }
-        hero_ui_gtk.message_dialog_format_secondary_text(dialog, "%s", said);
-        for (int i = 0; i < shown; i += 1) {
-            (void)hero_ui_gtk.dialog_add_button(dialog, hero_ui_gtk.dgettext("gtk40", msgids[i]), i);
-        }
-        hero_ui_gtk.dialog_set_default_response(dialog, shown - 1);
-        /* The signal's data is the answer, not a widget's number. */
-        (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
-        hero_ui_gtk.window_present(dialog);
-        hero_ui_gtk_await(&got);
-        hero_ui_gtk.window_destroy(dialog);
-    }
-    hero_layer_free(heading);
-    hero_layer_free(said);
-    /* A dialog dismissed with no button pressed answers Cancel, as an
-     * answer no button gives is taken everywhere else. */
-    *answer = got.response >= 0 && got.response < shown ? answers[got.response] : HERO_UI_ANSWER_CANCEL;
-    return HERO_UI_OK;
-}
-
-static void hero_ui_gtk_file_answered(void *dialog, void *result, void *data) {
-    hero_ui_gtk_answer *answer = data;
-
-    if (answer->multiple == 1) {
-        answer->value = hero_ui_gtk.file_dialog_open_multiple_finish(dialog, result, &answer->error);
-    } else if (answer->multiple == 2) {
-        answer->value = hero_ui_gtk.file_dialog_save_finish(dialog, result, &answer->error);
-    } else {
-        answer->value = hero_ui_gtk.file_dialog_open_finish(dialog, result, &answer->error);
-    }
-    answer->done = true;
-}
-
 /* Keeps the path of GIO file `file`, followed by one zero byte, at the end
  * of `paths`; a file with no local path, or one that is no UTF-8, is passed
  * over, since `hero_ui.h` answers UTF-8 paths. */
@@ -3545,155 +3435,6 @@ static void *hero_ui_gtk_filters(const uint8_t *filters, int64_t count, int64_t 
     return store;
 }
 
-int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes) {
-    void *owner;
-    int64_t refused = HERO_UI_OK;
-    char *heading = hero_ui_gtk_text(title, title_count, false);
-    char *proposed = hero_ui_gtk_text(name, name_count, false);
-    int64_t filter_count = 0;
-    void *store;
-    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
-    int64_t result = HERO_UI_OK;
-
-    *bytes = 0;
-    if (heading == NULL || proposed == NULL) {
-        hero_layer_free(heading);
-        hero_layer_free(proposed);
-        return HERO_UI_LIMIT;
-    }
-    if (!hero_ui_gtk_owner(window, &owner, &refused)) {
-        hero_layer_free(heading);
-        hero_layer_free(proposed);
-        return refused;
-    }
-    store = hero_ui_gtk_filters(filters, filters_count, &filter_count);
-    if (hero_ui_gtk.file_dialog_new != NULL && hero_ui_gtk.file_dialog_set_title != NULL && hero_ui_gtk.file_dialog_set_modal != NULL && hero_ui_gtk.file_dialog_set_initial_name != NULL && hero_ui_gtk.file_dialog_set_filters != NULL && hero_ui_gtk.file_dialog_open != NULL && hero_ui_gtk.file_dialog_open_finish != NULL && hero_ui_gtk.file_dialog_open_multiple != NULL && hero_ui_gtk.file_dialog_open_multiple_finish != NULL && hero_ui_gtk.file_dialog_save != NULL && hero_ui_gtk.file_dialog_save_finish != NULL) {
-        void *dialog = hero_ui_gtk.file_dialog_new();
-
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            if (heading[0] != '\0') {
-                hero_ui_gtk.file_dialog_set_title(dialog, heading);
-            }
-            hero_ui_gtk.file_dialog_set_modal(dialog, 1);
-            if (store != NULL && filter_count > 0) {
-                hero_ui_gtk.file_dialog_set_filters(dialog, store);
-            }
-            if (save == 1) {
-                got.multiple = 2;
-                if (proposed[0] != '\0') {
-                    hero_ui_gtk.file_dialog_set_initial_name(dialog, proposed);
-                }
-                hero_ui_gtk.file_dialog_save(dialog, owner, NULL, hero_ui_gtk_file_answered, &got);
-            } else if (multiple == 1) {
-                got.multiple = 1;
-                hero_ui_gtk.file_dialog_open_multiple(dialog, owner, NULL, hero_ui_gtk_file_answered, &got);
-            } else {
-                hero_ui_gtk.file_dialog_open(dialog, owner, NULL, hero_ui_gtk_file_answered, &got);
-            }
-            hero_ui_gtk_await(&got);
-            hero_ui_gtk.object_unref(dialog);
-        }
-    } else {
-        char accept[64];
-        char cancel[64];
-        void *dialog;
-
-        hero_ui_gtk_words_of(save == 1 ? "_Save" : "_Open", accept, sizeof accept);
-        hero_ui_gtk_words_of("_Cancel", cancel, sizeof cancel);
-        dialog = hero_ui_gtk.file_chooser_native_new(heading[0] != '\0' ? heading : NULL, owner, save == 1 ? HERO_GTK_FILE_CHOOSER_ACTION_SAVE : HERO_GTK_FILE_CHOOSER_ACTION_OPEN, accept, cancel);
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            unsigned filters_made = store != NULL ? hero_ui_gtk.list_model_get_n_items(store) : 0;
-
-            hero_ui_gtk.native_dialog_set_modal(dialog, 1);
-            hero_ui_gtk.file_chooser_set_select_multiple(dialog, save == 0 && multiple == 1 ? 1 : 0);
-            if (save == 1 && proposed[0] != '\0') {
-                hero_ui_gtk.file_chooser_set_current_name(dialog, proposed);
-            }
-            for (unsigned i = 0; i < filters_made; i += 1) {
-                void *filter = hero_ui_gtk.list_model_get_item(store, i);
-
-                hero_ui_gtk.file_chooser_add_filter(dialog, filter);
-                hero_ui_gtk.object_unref(filter);
-            }
-            (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
-            hero_ui_gtk.native_dialog_show(dialog);
-            hero_ui_gtk_await(&got);
-            if (got.response == HERO_GTK_RESPONSE_ACCEPT) {
-                got.value = hero_ui_gtk.file_chooser_get_files(dialog);
-                got.multiple = 1;
-            }
-            hero_ui_gtk.object_unref(dialog);
-        }
-    }
-    if (store != NULL) {
-        hero_ui_gtk.object_unref(store);
-    }
-    hero_layer_free(heading);
-    hero_layer_free(proposed);
-    return hero_ui_gtk_kept_paths(&got, result, bytes);
-}
-
-/* Keeps the paths dialog answer `got` holds, its own failure `result` or
- * GTK's error answered where it failed; a dialog the person cancelled or
- * dismissed keeps none and answers 0 bytes. */
-static int64_t hero_ui_gtk_kept_paths(hero_ui_gtk_answer *got, int64_t result, int64_t *bytes) {
-    uint8_t *paths = NULL;
-    int64_t paths_count = 0;
-    int64_t paths_room = 0;
-    bool kept = true;
-
-    *bytes = 0;
-    if (got->error != NULL) {
-        if (got->error->domain != hero_ui_gtk.dialog_error_quark() || (got->error->code != HERO_GTK_DIALOG_ERROR_CANCELLED && got->error->code != HERO_GTK_DIALOG_ERROR_DISMISSED)) {
-            char words[HERO_UI_WORDS_MOST];
-
-            (void)snprintf(words, sizeof words, "GTK's file dialog failed: %s", got->error->message != NULL ? got->error->message : "no words");
-            result = hero_ui_refused(HERO_UI_OTHER, words);
-            (void)hero_ui_gtk_said_so(HERO_UI_OTHER, words);
-        }
-        hero_ui_gtk.error_free(got->error);
-    }
-    if (got->value != NULL) {
-        if (got->multiple == 1) {
-            unsigned files = hero_ui_gtk.list_model_get_n_items(got->value);
-
-            for (unsigned i = 0; i < files && kept; i += 1) {
-                void *file = hero_ui_gtk.list_model_get_item(got->value, i);
-
-                kept = hero_ui_gtk_keep_path(file, &paths, &paths_count, &paths_room);
-                hero_ui_gtk.object_unref(file);
-            }
-        } else {
-            kept = hero_ui_gtk_keep_path(got->value, &paths, &paths_count, &paths_room);
-        }
-        hero_ui_gtk.object_unref(got->value);
-    }
-    if (!kept) {
-        hero_layer_free(paths);
-        return HERO_UI_LIMIT;
-    }
-    if (result != HERO_UI_OK) {
-        hero_layer_free(paths);
-        return result;
-    }
-    hero_layer_free(hero_ui_gtk_paths);
-    hero_ui_gtk_paths = paths;
-    hero_ui_gtk_paths_count = paths_count;
-    *bytes = paths_count;
-    return HERO_UI_OK;
-}
-
-int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
-    if (hero_ui_gtk_paths_count > 0 && hero_ui_gtk_paths_count <= count) {
-        memcpy(buffer, hero_ui_gtk_paths, (size_t)hero_ui_gtk_paths_count);
-    }
-    return hero_ui_gtk_paths_count;
-}
-
 int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
 
@@ -3716,8 +3457,9 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
  * WHAT `hero_ui.c` ADDED AFTER THE WEB VIEW: boxes the system draws, a row
  * opened, Return and Escape, the widget with the keys, menus inside menus,
  * check and radio items, context menus, a masked field, a moving bar, the
- * clipboard, a table, a tree, windows among the screens, a key pressed, a
- * folder chosen and a message box of the program's words.
+ * clipboard, a table, a tree, windows among the screens, a key pressed,
+ * dialogs answered through the queue, the task bar, a notification, the
+ * appearance and accessible names.
  *
  * WHAT GTK 4 OR ITS DISPLAY CANNOT DO is answered `HERO_UI_UNSUPPORTED` with
  * words naming what is missing, kept by `hero_ui_gtk_said_so` and handed to
@@ -3747,6 +3489,8 @@ static _Thread_local void *hero_ui_gtk_icon;
  * windows' places is queued. */
 static _Thread_local bool hero_ui_gtk_xevents;
 static _Thread_local bool hero_ui_gtk_places_due;
+/* Whether the app's windows are kept out of the task bar (`set_docked`). */
+static _Thread_local bool hero_ui_gtk_undocked;
 
 /* `kind`, its words `words` kept for the entry point. */
 static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words) {
@@ -6445,6 +6189,9 @@ static int hero_ui_gtk_after_map(void *data) {
         if (window->on_top) {
             hero_ui_gtk_send_above(window);
         }
+        if (hero_ui_gtk_undocked) {
+            hero_ui_gtk_send_docked(window);
+        }
     }
     return 0;
 }
@@ -6482,7 +6229,7 @@ static void hero_ui_gtk_mapped(void *widget, void *data) {
         window->focus_given = true;
         hero_ui_gtk_first_focus(window);
     }
-    if (window->want_placed || window->on_top) {
+    if (window->want_placed || window->on_top || hero_ui_gtk_undocked) {
         (void)hero_ui_gtk.idle_add(hero_ui_gtk_after_map, data);
     }
 }
@@ -7120,172 +6867,948 @@ int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int
     return HERO_UI_OK;
 }
 
-/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS ----------------
+/* -- DIALOGS ANSWERED THROUGH THE QUEUE ----------------------------------------
  *
- * GTK 4.10's `GtkFileDialog` choosing one folder or several, and its
- * `GtkAlertDialog` with the program's buttons, the first pressed by Return
- * and the cancel button by Escape; GTK 4.0's `GtkFileChooserNative` and
- * `GtkMessageDialog` where the library is older. Each is waited for by
- * running GLib's loop, as the other dialogs are. */
+ * Every dialog of GTK 4 answers later by itself: GTK 4.10's `GtkAlertDialog`
+ * and `GtkFileDialog` by a callback, GTK 4.0's `GtkMessageDialog` and
+ * `GtkFileChooserNative` by their `response`. So each `show_*` shows its
+ * dialog over its window and returns at once, and the callback queues the
+ * person's answer (`hero_ui_tell_text`), the paths in its text. The arm keeps
+ * each dialog shown, with a `GCancellable` of its own, until its callback
+ * ran; one ended (its window going, or the app) is cancelled and marked so
+ * its callback queues nothing. An answer given as the person's presses the
+ * button of that label in the dialog's own window, which the arm found as
+ * the toplevel the dialog added; a file or folder dialog is only cancelled
+ * so, no program choosing in it. */
 
-/* The window a dialog of this part stands over, which `hero_ui.c` hands
- * the arm no number of: the modal window, else the window with the keys,
- * else the first shown; NULL where none is shown. */
-static void *hero_ui_gtk_dialog_owner(void) {
-    hero_ui_native *shown = NULL;
-    hero_ui_native *modal = hero_ui_gtk_modal != 0 ? hero_ui_gtk_window(hero_ui_gtk_modal) : NULL;
+#define HERO_UI_GTK_DIALOG_MESSAGE 1
+#define HERO_UI_GTK_DIALOG_ASK 2
+#define HERO_UI_GTK_DIALOG_FILES 3
+#define HERO_UI_GTK_DIALOG_FOLDERS 4
 
-    if (modal != NULL) {
-        return modal->widget;
+/* How a file or folder dialog chooses, which its callback finishes. */
+#define HERO_UI_GTK_CHOOSE_OPEN 0
+#define HERO_UI_GTK_CHOOSE_OPEN_MANY 1
+#define HERO_UI_GTK_CHOOSE_SAVE 2
+#define HERO_UI_GTK_CHOOSE_FOLDER 3
+#define HERO_UI_GTK_CHOOSE_FOLDERS 4
+
+/* A dialog shown and not yet answered. */
+typedef struct hero_ui_gtk_dialog {
+    int64_t dialog;
+    int64_t window;
+    int kind;
+    int choose;
+    /* A message box's and an ask's buttons in the order shown, and what each
+     * answers; an ask's cancel button. */
+    char **labels;
+    int64_t answers[3];
+    int64_t shown;
+    int64_t cancel;
+    void *cancellable;
+    /* GTK 4.0's dialog object the arm holds (a `GtkMessageDialog`'s window,
+     * a `GtkFileChooserNative`), and an alert's window, found as shown. */
+    void *object;
+    void *window_shown;
+    bool ended;
+    struct hero_ui_gtk_dialog *next;
+} hero_ui_gtk_dialog;
+
+/* The dialogs shown, in the order shown. */
+static _Thread_local hero_ui_gtk_dialog *hero_ui_gtk_dialogs;
+
+/* A dialog `dialog` over window `window`, kept at the end of the dialogs
+ * shown; NULL where no memory is left. */
+static hero_ui_gtk_dialog *hero_ui_gtk_dialog_new(int64_t dialog, int64_t window, int kind) {
+    hero_ui_gtk_dialog *made = hero_layer_alloc_zero(1, sizeof *made);
+    hero_ui_gtk_dialog **at = &hero_ui_gtk_dialogs;
+
+    if (made == NULL) {
+        return NULL;
     }
+    made->dialog = dialog;
+    made->window = window;
+    made->kind = kind;
+    made->cancel = -1;
+    made->cancellable = hero_ui_gtk.cancellable_new();
+    while (*at != NULL) {
+        at = &(*at)->next;
+    }
+    *at = made;
+    return made;
+}
+
+/* Takes dialog `gone` out of the dialogs shown and gives back what it held. */
+static void hero_ui_gtk_dialog_free(hero_ui_gtk_dialog *gone) {
+    for (hero_ui_gtk_dialog **at = &hero_ui_gtk_dialogs; *at != NULL; at = &(*at)->next) {
+        if (*at == gone) {
+            *at = gone->next;
+            break;
+        }
+    }
+    for (int64_t i = 0; gone->labels != NULL && i < gone->shown; i += 1) {
+        hero_layer_free(gone->labels[i]);
+    }
+    hero_layer_free(gone->labels);
+    if (gone->cancellable != NULL) {
+        hero_ui_gtk.object_unref(gone->cancellable);
+    }
+    if (gone->object != NULL && gone->kind >= HERO_UI_GTK_DIALOG_FILES) {
+        hero_ui_gtk.object_unref(gone->object);
+    }
+    hero_layer_free(gone);
+}
+
+/* Dialog `done` answered `value`, its paths `paths`: queued unless it was
+ * ended, and given back. */
+static void hero_ui_gtk_dialog_told(hero_ui_gtk_dialog *done, int64_t value, const uint8_t *paths, int64_t count) {
+    if (!done->ended) {
+        hero_ui_tell_text(HERO_UI_EVENT_DIALOG, done->dialog, value, 0, paths, count);
+    }
+    hero_ui_gtk_dialog_free(done);
+}
+
+/* What a message box's or an ask's button `index` answers. */
+static int64_t hero_ui_gtk_pressed(const hero_ui_gtk_dialog *shown, int64_t index) {
+    if (shown->kind == HERO_UI_GTK_DIALOG_MESSAGE) {
+        return index >= 0 && index < shown->shown ? shown->answers[index] : HERO_UI_ANSWER_CANCEL;
+    }
+    return index >= 0 && index < shown->shown ? index : shown->cancel;
+}
+
+static void hero_ui_gtk_alert_done(void *dialog, void *result, void *data) {
+    hero_ui_gerror *error = NULL;
+    int index = hero_ui_gtk.alert_dialog_choose_finish(dialog, result, &error);
+
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+        index = -1;
+    }
+    hero_ui_gtk_dialog_told(data, hero_ui_gtk_pressed(data, index), NULL, 0);
+}
+
+static void hero_ui_gtk_message_responded(void *dialog, int response, void *data) {
+    hero_ui_gtk_dialog *shown = data;
+
+    shown->object = NULL;
+    hero_ui_gtk.window_destroy(dialog);
+    hero_ui_gtk_dialog_told(shown, hero_ui_gtk_pressed(shown, response >= 0 ? response : -1), NULL, 0);
+}
+
+/* Queues the files GIO list or file `value` names, `many` for a list. */
+static void hero_ui_gtk_dialog_chose(hero_ui_gtk_dialog *shown, void *value, bool many) {
+    uint8_t *paths = NULL;
+    int64_t count = 0;
+    int64_t room = 0;
+    int64_t made = 0;
+    bool kept = true;
+
+    if (value != NULL && many) {
+        unsigned files = hero_ui_gtk.list_model_get_n_items(value);
+
+        for (unsigned i = 0; i < files && kept; i += 1) {
+            void *file = hero_ui_gtk.list_model_get_item(value, i);
+            int64_t before = count;
+
+            kept = hero_ui_gtk_keep_path(file, &paths, &count, &room);
+            made += count > before ? 1 : 0;
+            hero_ui_gtk.object_unref(file);
+        }
+    } else if (value != NULL) {
+        int64_t before = count;
+
+        kept = hero_ui_gtk_keep_path(value, &paths, &count, &room);
+        made += count > before ? 1 : 0;
+    }
+    if (!kept) {
+        /* No memory left for the paths: the choice is told as none rather
+         * than as fewer than the person chose. */
+        made = 0;
+        count = 0;
+    }
+    hero_ui_gtk_dialog_told(shown, made, made > 0 ? paths : NULL, made > 0 ? count : 0);
+    hero_layer_free(paths);
+}
+
+static void hero_ui_gtk_files_done(void *dialog, void *result, void *data) {
+    hero_ui_gtk_dialog *shown = data;
+    hero_ui_gerror *error = NULL;
+    void *value;
+    bool many = shown->choose == HERO_UI_GTK_CHOOSE_OPEN_MANY || shown->choose == HERO_UI_GTK_CHOOSE_FOLDERS;
+
+    switch (shown->choose) {
+    case HERO_UI_GTK_CHOOSE_OPEN_MANY:
+        value = hero_ui_gtk.file_dialog_open_multiple_finish(dialog, result, &error);
+        break;
+    case HERO_UI_GTK_CHOOSE_SAVE:
+        value = hero_ui_gtk.file_dialog_save_finish(dialog, result, &error);
+        break;
+    case HERO_UI_GTK_CHOOSE_FOLDER:
+        value = hero_ui_gtk.file_dialog_select_folder_finish(dialog, result, &error);
+        break;
+    case HERO_UI_GTK_CHOOSE_FOLDERS:
+        value = hero_ui_gtk.file_dialog_select_multiple_folders_finish(dialog, result, &error);
+        break;
+    default:
+        value = hero_ui_gtk.file_dialog_open_finish(dialog, result, &error);
+        break;
+    }
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+    }
+    hero_ui_gtk_dialog_chose(shown, value, many);
+    if (value != NULL) {
+        hero_ui_gtk.object_unref(value);
+    }
+}
+
+static void hero_ui_gtk_chooser_responded(void *chooser, int response, void *data) {
+    hero_ui_gtk_dialog *shown = data;
+    void *files = response == HERO_GTK_RESPONSE_ACCEPT ? hero_ui_gtk.file_chooser_get_files(chooser) : NULL;
+
+    hero_ui_gtk_dialog_chose(shown, files, true);
+    if (files != NULL) {
+        hero_ui_gtk.object_unref(files);
+    }
+}
+
+/* The toplevel window GTK lists now and not in `before`, `count` of them:
+ * the window a dialog just shown added. */
+static void *hero_ui_gtk_added_toplevel(void *const *before, unsigned count) {
+    void *toplevels = hero_ui_gtk.window_get_toplevels();
+    unsigned now = toplevels != NULL ? hero_ui_gtk.list_model_get_n_items(toplevels) : 0;
+    void *added = NULL;
+
+    for (unsigned i = 0; i < now && added == NULL; i += 1) {
+        void *each = hero_ui_gtk.list_model_get_item(toplevels, i);
+        bool known = false;
+
+        for (unsigned j = 0; j < count && !known; j += 1) {
+            known = before[j] == each;
+        }
+        added = known ? NULL : each;
+        hero_ui_gtk.object_unref(each);
+    }
+    return added;
+}
+
+/* The toplevel windows GTK lists now, into `into`, at most `most`; how many. */
+static unsigned hero_ui_gtk_toplevels(void **into, unsigned most) {
+    void *toplevels = hero_ui_gtk.window_get_toplevels();
+    unsigned now = toplevels != NULL ? hero_ui_gtk.list_model_get_n_items(toplevels) : 0;
+    unsigned made = 0;
+
+    for (unsigned i = 0; i < now && made < most; i += 1) {
+        void *each = hero_ui_gtk.list_model_get_item(toplevels, i);
+
+        into[made++] = each;
+        hero_ui_gtk.object_unref(each);
+    }
+    return made;
+}
+
+/* The most toplevel windows a dialog's window is told apart from. */
+#define HERO_UI_GTK_TOPLEVELS_MOST 512
+
+/* Shows message box or ask `shown`, over window `owner`, its heading,
+ * words and tone given: GTK 4.10's alert where the library has it. */
+static int64_t hero_ui_gtk_show_box(hero_ui_gtk_dialog *shown, hero_ui_native *owner, int64_t tone, const char *heading, const char *said) {
+    if (hero_ui_gtk.alert_dialog_new != NULL && hero_ui_gtk.alert_dialog_choose != NULL && hero_ui_gtk.alert_dialog_choose_finish != NULL && hero_ui_gtk.alert_dialog_set_buttons != NULL && hero_ui_gtk.alert_dialog_set_detail != NULL &&
+        hero_ui_gtk.alert_dialog_set_cancel_button != NULL && hero_ui_gtk.alert_dialog_set_default_button != NULL && hero_ui_gtk.alert_dialog_set_modal != NULL) {
+        void *alert = hero_ui_gtk.alert_dialog_new("%s", heading);
+        void *before[HERO_UI_GTK_TOPLEVELS_MOST];
+        unsigned count;
+
+        if (alert == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.alert_dialog_set_detail(alert, said);
+        hero_ui_gtk.alert_dialog_set_buttons(alert, (const char *const *)shown->labels);
+        hero_ui_gtk.alert_dialog_set_cancel_button(alert, (int)(shown->kind == HERO_UI_GTK_DIALOG_ASK ? shown->cancel : (shown->answers[0] == HERO_UI_ANSWER_CANCEL ? 0 : -1)));
+        hero_ui_gtk.alert_dialog_set_default_button(alert, (int)(shown->kind == HERO_UI_GTK_DIALOG_ASK ? 0 : shown->shown - 1));
+        hero_ui_gtk.alert_dialog_set_modal(alert, 1);
+        count = hero_ui_gtk_toplevels(before, HERO_UI_GTK_TOPLEVELS_MOST);
+        hero_ui_gtk.alert_dialog_choose(alert, owner->widget, shown->cancellable, hero_ui_gtk_alert_done, shown);
+        shown->window_shown = hero_ui_gtk_added_toplevel(before, count);
+        hero_ui_gtk.object_unref(alert);
+        return HERO_UI_OK;
+    }
+    {
+        int type = tone == HERO_UI_TONE_ERROR ? HERO_GTK_MESSAGE_ERROR : (tone == HERO_UI_TONE_WARNING ? HERO_GTK_MESSAGE_WARNING : HERO_GTK_MESSAGE_INFO);
+        void *dialog = hero_ui_gtk.message_dialog_new(owner->widget, HERO_GTK_DIALOG_MODAL | HERO_GTK_DIALOG_DESTROY_WITH_PARENT, type, HERO_GTK_BUTTONS_NONE, "%s", heading);
+
+        if (dialog == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.message_dialog_format_secondary_text(dialog, "%s", said);
+        for (int64_t i = 0; i < shown->shown; i += 1) {
+            (void)hero_ui_gtk.dialog_add_button(dialog, shown->labels[i], (int)i);
+        }
+        hero_ui_gtk.dialog_set_default_response(dialog, (int)(shown->kind == HERO_UI_GTK_DIALOG_ASK ? 0 : shown->shown - 1));
+        (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_message_responded, shown, NULL, 0);
+        shown->object = dialog;
+        shown->window_shown = dialog;
+        hero_ui_gtk.window_present(dialog);
+        return HERO_UI_OK;
+    }
+}
+
+int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    hero_ui_native *owner = hero_ui_gtk_window(window);
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    char *said = hero_ui_gtk_text(text, text_count, false);
+    hero_ui_gtk_dialog *shown = owner != NULL ? hero_ui_gtk_dialog_new(dialog, window, HERO_UI_GTK_DIALOG_MESSAGE) : NULL;
+    const char *msgids[3];
+    int64_t answer = HERO_UI_LIMIT;
+
+    if (owner == NULL) {
+        hero_layer_free(heading);
+        hero_layer_free(said);
+        return hero_ui_find(window) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    if (shown != NULL) {
+        shown->labels = hero_layer_alloc_zero(4, sizeof *shown->labels);
+    }
+    if (heading != NULL && said != NULL && shown != NULL && shown->labels != NULL) {
+        if (buttons == HERO_UI_BUTTONS_YES_NO_CANCEL || buttons == HERO_UI_BUTTONS_OK_CANCEL) {
+            shown->answers[shown->shown] = HERO_UI_ANSWER_CANCEL;
+            msgids[shown->shown++] = "_Cancel";
+        }
+        if (buttons == HERO_UI_BUTTONS_YES_NO || buttons == HERO_UI_BUTTONS_YES_NO_CANCEL) {
+            shown->answers[shown->shown] = HERO_UI_ANSWER_NO;
+            msgids[shown->shown++] = "_No";
+            shown->answers[shown->shown] = HERO_UI_ANSWER_YES;
+            msgids[shown->shown++] = "_Yes";
+        } else {
+            shown->answers[shown->shown] = HERO_UI_ANSWER_OK;
+            msgids[shown->shown++] = "_OK";
+        }
+        answer = HERO_UI_OK;
+        for (int64_t i = 0; i < shown->shown; i += 1) {
+            char words[64];
+
+            hero_ui_gtk_words_of(msgids[i], words, sizeof words);
+            shown->labels[i] = hero_ui_gtk_text((const uint8_t *)words, (int64_t)strlen(words), false);
+            answer = shown->labels[i] == NULL ? HERO_UI_LIMIT : answer;
+        }
+        if (answer == HERO_UI_OK) {
+            answer = hero_ui_gtk_show_box(shown, owner, tone, heading, said);
+        }
+    }
+    if (answer != HERO_UI_OK && shown != NULL) {
+        hero_ui_gtk_dialog_free(shown);
+    }
+    hero_layer_free(heading);
+    hero_layer_free(said);
+    return answer;
+}
+
+int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel) {
+    hero_ui_native *owner = hero_ui_gtk_window(window);
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    char *said = hero_ui_gtk_text(text, text_count, false);
+    int64_t count = hero_ui_texts_in(buttons, buttons_count);
+    hero_ui_gtk_dialog *shown = owner != NULL ? hero_ui_gtk_dialog_new(dialog, window, HERO_UI_GTK_DIALOG_ASK) : NULL;
+    int64_t answer = HERO_UI_LIMIT;
+
+    if (owner == NULL) {
+        hero_layer_free(heading);
+        hero_layer_free(said);
+        return hero_ui_find(window) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    if (shown != NULL) {
+        shown->labels = hero_layer_alloc_zero((size_t)count + 1, sizeof *shown->labels);
+        shown->cancel = cancel;
+    }
+    if (heading != NULL && said != NULL && shown != NULL && shown->labels != NULL) {
+        answer = HERO_UI_OK;
+        for (int64_t i = 0; i < count; i += 1) {
+            int64_t length = 0;
+            const uint8_t *label = hero_ui_text_at(buttons, buttons_count, i, &length);
+
+            shown->labels[i] = hero_ui_gtk_text(label, length, false);
+            shown->shown = i + 1;
+            answer = shown->labels[i] == NULL ? HERO_UI_LIMIT : answer;
+        }
+        if (answer == HERO_UI_OK) {
+            answer = hero_ui_gtk_show_box(shown, owner, tone, heading, said);
+        }
+    }
+    if (answer != HERO_UI_OK && shown != NULL) {
+        hero_ui_gtk_dialog_free(shown);
+    }
+    hero_layer_free(heading);
+    hero_layer_free(said);
+    return answer;
+}
+
+/* Shows file or folder dialog `shown` over window `owner`, titled
+ * `heading`, its filters `store` (NULL for none) and its proposed name
+ * `proposed` (empty for none): GTK 4.10's `GtkFileDialog` where the library
+ * has it, else GTK 4.0's `GtkFileChooserNative`. */
+static int64_t hero_ui_gtk_show_chooser(hero_ui_gtk_dialog *shown, hero_ui_native *owner, const char *heading, void *store, const char *proposed) {
+    if (hero_ui_gtk.file_dialog_new != NULL && hero_ui_gtk.file_dialog_set_title != NULL && hero_ui_gtk.file_dialog_set_modal != NULL && hero_ui_gtk.file_dialog_set_initial_name != NULL && hero_ui_gtk.file_dialog_set_filters != NULL &&
+        hero_ui_gtk.file_dialog_open != NULL && hero_ui_gtk.file_dialog_open_finish != NULL && hero_ui_gtk.file_dialog_open_multiple != NULL && hero_ui_gtk.file_dialog_open_multiple_finish != NULL && hero_ui_gtk.file_dialog_save != NULL &&
+        hero_ui_gtk.file_dialog_save_finish != NULL && hero_ui_gtk.file_dialog_select_folder != NULL && hero_ui_gtk.file_dialog_select_folder_finish != NULL && hero_ui_gtk.file_dialog_select_multiple_folders != NULL &&
+        hero_ui_gtk.file_dialog_select_multiple_folders_finish != NULL) {
+        void *chooser = hero_ui_gtk.file_dialog_new();
+
+        if (chooser == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        if (heading[0] != '\0') {
+            hero_ui_gtk.file_dialog_set_title(chooser, heading);
+        }
+        hero_ui_gtk.file_dialog_set_modal(chooser, 1);
+        if (store != NULL) {
+            hero_ui_gtk.file_dialog_set_filters(chooser, store);
+        }
+        if (shown->choose == HERO_UI_GTK_CHOOSE_SAVE && proposed[0] != '\0') {
+            hero_ui_gtk.file_dialog_set_initial_name(chooser, proposed);
+        }
+        switch (shown->choose) {
+        case HERO_UI_GTK_CHOOSE_OPEN_MANY:
+            hero_ui_gtk.file_dialog_open_multiple(chooser, owner->widget, shown->cancellable, hero_ui_gtk_files_done, shown);
+            break;
+        case HERO_UI_GTK_CHOOSE_SAVE:
+            hero_ui_gtk.file_dialog_save(chooser, owner->widget, shown->cancellable, hero_ui_gtk_files_done, shown);
+            break;
+        case HERO_UI_GTK_CHOOSE_FOLDER:
+            hero_ui_gtk.file_dialog_select_folder(chooser, owner->widget, shown->cancellable, hero_ui_gtk_files_done, shown);
+            break;
+        case HERO_UI_GTK_CHOOSE_FOLDERS:
+            hero_ui_gtk.file_dialog_select_multiple_folders(chooser, owner->widget, shown->cancellable, hero_ui_gtk_files_done, shown);
+            break;
+        default:
+            hero_ui_gtk.file_dialog_open(chooser, owner->widget, shown->cancellable, hero_ui_gtk_files_done, shown);
+            break;
+        }
+        hero_ui_gtk.object_unref(chooser);
+        return HERO_UI_OK;
+    }
+    {
+        bool save = shown->choose == HERO_UI_GTK_CHOOSE_SAVE;
+        bool folders = shown->choose == HERO_UI_GTK_CHOOSE_FOLDER || shown->choose == HERO_UI_GTK_CHOOSE_FOLDERS;
+        char accept[64];
+        char cancel[64];
+        void *chooser;
+
+        hero_ui_gtk_words_of(save ? "_Save" : (folders ? "_Select" : "_Open"), accept, sizeof accept);
+        hero_ui_gtk_words_of("_Cancel", cancel, sizeof cancel);
+        chooser = hero_ui_gtk.file_chooser_native_new(heading[0] != '\0' ? heading : NULL, owner->widget, save ? HERO_GTK_FILE_CHOOSER_ACTION_SAVE : (folders ? HERO_GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER : HERO_GTK_FILE_CHOOSER_ACTION_OPEN), accept, cancel);
+        if (chooser == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.native_dialog_set_modal(chooser, 1);
+        hero_ui_gtk.file_chooser_set_select_multiple(chooser, shown->choose == HERO_UI_GTK_CHOOSE_OPEN_MANY || shown->choose == HERO_UI_GTK_CHOOSE_FOLDERS ? 1 : 0);
+        if (save && proposed[0] != '\0') {
+            hero_ui_gtk.file_chooser_set_current_name(chooser, proposed);
+        }
+        for (unsigned i = 0; store != NULL && i < hero_ui_gtk.list_model_get_n_items(store); i += 1) {
+            void *filter = hero_ui_gtk.list_model_get_item(store, i);
+
+            hero_ui_gtk.file_chooser_add_filter(chooser, filter);
+            hero_ui_gtk.object_unref(filter);
+        }
+        (void)hero_ui_gtk.signal_connect_data(chooser, "response", (hero_ui_gtk_callback)hero_ui_gtk_chooser_responded, shown, NULL, 0);
+        shown->object = chooser;
+        hero_ui_gtk.native_dialog_show(chooser);
+        return HERO_UI_OK;
+    }
+}
+
+int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count) {
+    hero_ui_native *owner = hero_ui_gtk_window(window);
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    char *proposed = hero_ui_gtk_text(name, name_count, false);
+    int64_t made = 0;
+    void *store = NULL;
+    hero_ui_gtk_dialog *shown = NULL;
+    int64_t answer = HERO_UI_LIMIT;
+
+    if (owner == NULL) {
+        hero_layer_free(heading);
+        hero_layer_free(proposed);
+        return hero_ui_find(window) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    if (heading != NULL && proposed != NULL) {
+        store = hero_ui_gtk_filters(filters, filters_count, &made);
+        shown = hero_ui_gtk_dialog_new(dialog, window, HERO_UI_GTK_DIALOG_FILES);
+    }
+    if (shown != NULL) {
+        shown->choose = save == 1 ? HERO_UI_GTK_CHOOSE_SAVE : (multiple == 1 ? HERO_UI_GTK_CHOOSE_OPEN_MANY : HERO_UI_GTK_CHOOSE_OPEN);
+        answer = hero_ui_gtk_show_chooser(shown, owner, heading, made > 0 ? store : NULL, proposed);
+        if (answer != HERO_UI_OK) {
+            hero_ui_gtk_dialog_free(shown);
+        }
+    }
+    if (store != NULL) {
+        hero_ui_gtk.object_unref(store);
+    }
+    hero_layer_free(heading);
+    hero_layer_free(proposed);
+    return answer;
+}
+
+int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count) {
+    hero_ui_native *owner = hero_ui_gtk_window(window);
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    hero_ui_gtk_dialog *shown = NULL;
+    int64_t answer = HERO_UI_LIMIT;
+
+    if (owner == NULL) {
+        hero_layer_free(heading);
+        return hero_ui_find(window) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    if (heading != NULL) {
+        shown = hero_ui_gtk_dialog_new(dialog, window, HERO_UI_GTK_DIALOG_FOLDERS);
+    }
+    if (shown != NULL) {
+        shown->choose = multiple == 1 ? HERO_UI_GTK_CHOOSE_FOLDERS : HERO_UI_GTK_CHOOSE_FOLDER;
+        answer = hero_ui_gtk_show_chooser(shown, owner, heading, NULL, "");
+        if (answer != HERO_UI_OK) {
+            hero_ui_gtk_dialog_free(shown);
+        }
+    }
+    hero_layer_free(heading);
+    return answer;
+}
+
+/* The button labelled `label` in widget `root` and every widget inside it,
+ * or NULL. */
+static void *hero_ui_gtk_button_labelled(void *root, const char *label) {
+    for (void *child = hero_ui_gtk.widget_get_first_child(root); child != NULL; child = hero_ui_gtk.widget_get_next_sibling(child)) {
+        void *found;
+
+        if (hero_ui_gtk.type_check_instance_is_a(child, hero_ui_gtk.button_get_type())) {
+            const char *own = hero_ui_gtk.button_get_label(child);
+
+            if (own != NULL && strcmp(own, label) == 0) {
+                return child;
+            }
+        }
+        found = hero_ui_gtk_button_labelled(child, label);
+        if (found != NULL) {
+            return found;
+        }
+    }
+    return NULL;
+}
+
+/* Whether GTK still lists toplevel window `window`. */
+static bool hero_ui_gtk_still_shown(void *window) {
+    void *now[HERO_UI_GTK_TOPLEVELS_MOST];
+    unsigned count = hero_ui_gtk_toplevels(now, HERO_UI_GTK_TOPLEVELS_MOST);
+
+    for (unsigned i = 0; window != NULL && i < count; i += 1) {
+        if (now[i] == window) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count) {
+    hero_ui_gtk_dialog *shown = hero_ui_gtk_dialogs;
+
+    (void)paths;
+    (void)count;
+    while (shown != NULL && (shown->dialog != dialog || shown->ended)) {
+        shown = shown->next;
+    }
+    if (shown == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (shown->kind == HERO_UI_GTK_DIALOG_FILES || shown->kind == HERO_UI_GTK_DIALOG_FOLDERS) {
+        if (value != 0) {
+            return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "GTK's file dialog takes its files from the person alone: no program chooses in it, though one may cancel it");
+        }
+        if (shown->object != NULL) {
+            /* GTK 4.0's chooser, hidden: its response never comes. */
+            hero_ui_gtk.native_dialog_hide(shown->object);
+            hero_ui_gtk_dialog_told(shown, 0, NULL, 0);
+        } else {
+            hero_ui_gtk.cancellable_cancel(shown->cancellable);
+        }
+        return HERO_UI_OK;
+    }
+    {
+        int64_t index = -1;
+        void *button;
+
+        for (int64_t i = 0; i < shown->shown; i += 1) {
+            index = index < 0 && hero_ui_gtk_pressed(shown, i) == value ? i : index;
+        }
+        if (index < 0) {
+            return HERO_UI_INVALID;
+        }
+        button = hero_ui_gtk_still_shown(shown->window_shown) ? hero_ui_gtk_button_labelled(shown->window_shown, shown->labels[index]) : NULL;
+        if (button == NULL) {
+            return hero_ui_gtk_said_so(HERO_UI_OTHER, "the dialog's window holds no button of that label");
+        }
+        /* Pressed as the person's click presses it. */
+        (void)hero_ui_gtk.widget_activate(button);
+        return HERO_UI_OK;
+    }
+}
+
+void hero_ui_arm_dialogs_end(int64_t window) {
+    hero_ui_gtk_dialog *shown = hero_ui_gtk_dialogs;
+
+    while (shown != NULL) {
+        hero_ui_gtk_dialog *next = shown->next;
+
+        if (!shown->ended && (window == 0 || shown->window == window)) {
+            shown->ended = true;
+            if (shown->kind <= HERO_UI_GTK_DIALOG_ASK && shown->object != NULL) {
+                /* GTK 4.0's message box, destroyed: its response never
+                 * comes. */
+                hero_ui_gtk.window_destroy(shown->object);
+                hero_ui_gtk_dialog_free(shown);
+            } else if (shown->object != NULL) {
+                hero_ui_gtk.native_dialog_hide(shown->object);
+                hero_ui_gtk_dialog_free(shown);
+            } else {
+                /* Its callback comes once GTK took the cancel in. */
+                hero_ui_gtk.cancellable_cancel(shown->cancellable);
+            }
+        }
+        shown = next;
+    }
+}
+
+int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
+    return hero_ui_arm_windows_words(words, count);
+}
+
+/* -- THE DOCK, A NOTIFICATION, THE APPEARANCE, ACCESSIBLE NAMES -------------
+ *
+ * GTK 4 keeps no window out of the task bar, but X11 does: EWMH's
+ * `_NET_WM_STATE_SKIP_TASKBAR`, asked of the window manager for every
+ * window and each new one as it maps. A notification goes to the desktop's
+ * notification server, `org.freedesktop.Notifications` on the session bus,
+ * as libnotify hands it, so no application id is needed (GTK's
+ * `GNotification` asks one). The appearance is GTK's: 4.20's
+ * `gtk-interface-color-scheme` where GTK has it, else the dark variant GTK
+ * draws (`gtk-application-prefer-dark-theme`, or a theme named dark);
+ * turning it sets `gtk-application-prefer-dark-theme`, and its turns are told
+ * from `GtkSettings`' notifications. An accessible name is GTK's own
+ * `GTK_ACCESSIBLE_PROPERTY_LABEL`, and a label ties to its field by
+ * `GTK_ACCESSIBLE_RELATION_LABELLED_BY`; GTK reads neither back, so the
+ * arm keeps the name the program gave. */
+
+/* Asks the window manager to keep window `window` out of the task bar and
+ * the pager, or not. */
+static void hero_ui_gtk_send_docked(hero_ui_native *window) {
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    hero_ui_x_event event;
+
+    if (xd == NULL || surface == NULL) {
+        return;
+    }
+    memset(&event, 0, sizeof event);
+    event.client.type = HERO_X_CLIENT_MESSAGE;
+    event.client.send_event = 1;
+    event.client.window = hero_ui_gtk.x11_surface_get_xid(surface);
+    event.client.message_type = hero_ui_gtk_atom("_NET_WM_STATE");
+    event.client.format = 32;
+    event.client.data[0] = hero_ui_gtk_undocked ? 1 : 0;
+    event.client.data[1] = (long)hero_ui_gtk_atom("_NET_WM_STATE_SKIP_TASKBAR");
+    event.client.data[2] = (long)hero_ui_gtk_atom("_NET_WM_STATE_SKIP_PAGER");
+    event.client.data[3] = 1;
+    (void)hero_ui_gtk.x_send_event(xd, hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default()), 0, HERO_X_SUBSTRUCTURE_MASKS, &event);
+    (void)hero_ui_gtk.x_sync(xd, 0);
+}
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    void *xd = hero_ui_gtk_xdisplay();
+
+    if (xd == NULL) {
+        return hero_ui_gtk_not_x11("Wayland lets no program keep its windows out of the task bar: xdg_toplevel has no such request, and GTK 4 removed skip-taskbar");
+    }
+    if (!hero_ui_gtk_manager_runs(xd)) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, hero_ui_gtk_no_manager);
+    }
+    if (!hero_ui_gtk_manager_offers(xd, "_NET_WM_STATE_SKIP_TASKBAR")) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "the window manager running here does not offer _NET_WM_STATE_SKIP_TASKBAR, which keeps a window out of the task bar");
+    }
+    hero_ui_gtk_undocked = on == 0;
     for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
         hero_ui_native *each = hero_ui_at(at);
 
-        if (each == NULL || each->kind != HERO_UI_WINDOW || !each->visible) {
-            continue;
+        if (each != NULL && each->kind == HERO_UI_WINDOW && hero_ui_gtk_viewable(each)) {
+            hero_ui_gtk_send_docked(each);
         }
-        if (hero_ui_gtk.window_is_active(each->widget)) {
-            return each->widget;
-        }
-        shown = shown != NULL ? shown : each;
     }
-    return shown != NULL ? shown->widget : NULL;
+    return HERO_UI_OK;
 }
 
-static void hero_ui_gtk_folder_answered(void *dialog, void *result, void *data) {
-    hero_ui_gtk_answer *answer = data;
+/* The program's name, as the notification server shows it: GLib's, else
+ * the executable's file name. */
+static void hero_ui_gtk_program_name(char *into, size_t room) {
+    const char *named = hero_ui_gtk.get_prgname();
+    char path[4096];
+    ssize_t length;
 
-    if (answer->multiple == 1) {
-        answer->value = hero_ui_gtk.file_dialog_select_multiple_folders_finish(dialog, result, &answer->error);
-    } else {
-        answer->value = hero_ui_gtk.file_dialog_select_folder_finish(dialog, result, &answer->error);
+    if (named != NULL && named[0] != '\0') {
+        (void)hero_ui_copy_text(into, room, named);
+        return;
     }
-    answer->done = true;
+    length = readlink("/proc/self/exe", path, sizeof path - 1);
+    if (length <= 0) {
+        (void)hero_ui_copy_text(into, room, "program");
+        return;
+    }
+    path[length] = '\0';
+    (void)hero_ui_copy_text(into, room, strrchr(path, '/') != NULL ? strrchr(path, '/') + 1 : path);
 }
 
-int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
-    char *heading = hero_ui_gtk_text(title, title_count, false);
-    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
-    int64_t result = HERO_UI_OK;
-
-    *bytes = 0;
-    if (heading == NULL) {
-        return HERO_UI_LIMIT;
-    }
-    got.multiple = multiple == 1 ? 1 : 0;
-    if (hero_ui_gtk.file_dialog_new != NULL && hero_ui_gtk.file_dialog_set_title != NULL && hero_ui_gtk.file_dialog_set_modal != NULL && hero_ui_gtk.file_dialog_select_folder != NULL && hero_ui_gtk.file_dialog_select_folder_finish != NULL &&
-        hero_ui_gtk.file_dialog_select_multiple_folders != NULL && hero_ui_gtk.file_dialog_select_multiple_folders_finish != NULL) {
-        void *dialog = hero_ui_gtk.file_dialog_new();
-
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            if (heading[0] != '\0') {
-                hero_ui_gtk.file_dialog_set_title(dialog, heading);
-            }
-            hero_ui_gtk.file_dialog_set_modal(dialog, 1);
-            if (got.multiple == 1) {
-                hero_ui_gtk.file_dialog_select_multiple_folders(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_folder_answered, &got);
-            } else {
-                hero_ui_gtk.file_dialog_select_folder(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_folder_answered, &got);
-            }
-            hero_ui_gtk_await(&got);
-            hero_ui_gtk.object_unref(dialog);
-        }
-    } else {
-        char accept[64];
-        char cancel[64];
-        void *dialog;
-
-        hero_ui_gtk_words_of("_Select", accept, sizeof accept);
-        hero_ui_gtk_words_of("_Cancel", cancel, sizeof cancel);
-        dialog = hero_ui_gtk.file_chooser_native_new(heading[0] != '\0' ? heading : NULL, hero_ui_gtk_dialog_owner(), HERO_GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, accept, cancel);
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            hero_ui_gtk.native_dialog_set_modal(dialog, 1);
-            hero_ui_gtk.file_chooser_set_select_multiple(dialog, got.multiple);
-            (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
-            hero_ui_gtk.native_dialog_show(dialog);
-            hero_ui_gtk_await(&got);
-            if (got.response == HERO_GTK_RESPONSE_ACCEPT) {
-                got.value = hero_ui_gtk.file_chooser_get_files(dialog);
-                got.multiple = 1;
-            }
-            hero_ui_gtk.object_unref(dialog);
-        }
-    }
-    hero_layer_free(heading);
-    return hero_ui_gtk_kept_paths(&got, result, bytes);
-}
-
-int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
     char *heading = hero_ui_gtk_text(title, title_count, false);
     char *said = hero_ui_gtk_text(text, text_count, false);
-    int64_t shown = hero_ui_texts_in(buttons, buttons_count);
-    char **labels = hero_layer_alloc_zero((size_t)shown + 1, sizeof *labels);
-    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
-    int64_t result = HERO_UI_OK;
+    char name[256];
+    char words[HERO_UI_WORDS_MOST];
+    hero_ui_gerror *error = NULL;
+    void *bus;
+    void *reply;
+    void *arguments;
 
-    for (int64_t i = 0; labels != NULL && i < shown; i += 1) {
-        int64_t length = 0;
-        const uint8_t *label = hero_ui_text_at(buttons, buttons_count, i, &length);
-
-        labels[i] = hero_ui_gtk_text(label, length, false);
-        if (labels[i] == NULL) {
-            result = HERO_UI_LIMIT;
+    if (heading == NULL || said == NULL) {
+        hero_layer_free(heading);
+        hero_layer_free(said);
+        return HERO_UI_LIMIT;
+    }
+    bus = hero_ui_gtk.bus_get_sync(HERO_G_BUS_TYPE_SESSION, NULL, &error);
+    if (bus == NULL) {
+        (void)snprintf(words, sizeof words, "no D-Bus session bus answers (%s), and a notification reaches the desktop through org.freedesktop.Notifications on it", error != NULL && error->message != NULL ? error->message : "no words");
+        if (error != NULL) {
+            hero_ui_gtk.error_free(error);
         }
+        hero_layer_free(heading);
+        hero_layer_free(said);
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, words);
     }
-    if (heading == NULL || said == NULL || labels == NULL) {
-        result = HERO_UI_LIMIT;
-    }
-    if (result == HERO_UI_OK && hero_ui_gtk.alert_dialog_new != NULL && hero_ui_gtk.alert_dialog_choose != NULL && hero_ui_gtk.alert_dialog_choose_finish != NULL && hero_ui_gtk.alert_dialog_set_buttons != NULL &&
-        hero_ui_gtk.alert_dialog_set_detail != NULL && hero_ui_gtk.alert_dialog_set_cancel_button != NULL && hero_ui_gtk.alert_dialog_set_default_button != NULL && hero_ui_gtk.alert_dialog_set_modal != NULL) {
-        void *dialog = hero_ui_gtk.alert_dialog_new("%s", heading);
-
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            hero_ui_gtk.alert_dialog_set_detail(dialog, said);
-            hero_ui_gtk.alert_dialog_set_buttons(dialog, (const char *const *)labels);
-            hero_ui_gtk.alert_dialog_set_default_button(dialog, 0);
-            hero_ui_gtk.alert_dialog_set_cancel_button(dialog, (int)cancel);
-            hero_ui_gtk.alert_dialog_set_modal(dialog, 1);
-            hero_ui_gtk.alert_dialog_choose(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_alert_answered, &got);
-            hero_ui_gtk_await(&got);
-            if (got.error != NULL) {
-                hero_ui_gtk.error_free(got.error);
-            }
-            hero_ui_gtk.object_unref(dialog);
-        }
-    } else if (result == HERO_UI_OK) {
-        int type = tone == HERO_UI_TONE_ERROR ? HERO_GTK_MESSAGE_ERROR : (tone == HERO_UI_TONE_WARNING ? HERO_GTK_MESSAGE_WARNING : HERO_GTK_MESSAGE_INFO);
-        void *dialog = hero_ui_gtk.message_dialog_new(hero_ui_gtk_dialog_owner(), HERO_GTK_DIALOG_MODAL | HERO_GTK_DIALOG_DESTROY_WITH_PARENT, type, HERO_GTK_BUTTONS_NONE, "%s", heading);
-
-        if (dialog == NULL) {
-            result = HERO_UI_LIMIT;
-        } else {
-            hero_ui_gtk.message_dialog_format_secondary_text(dialog, "%s", said);
-            for (int64_t i = 0; i < shown; i += 1) {
-                (void)hero_ui_gtk.dialog_add_button(dialog, labels[i], (int)i);
-            }
-            hero_ui_gtk.dialog_set_default_response(dialog, 0);
-            (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
-            hero_ui_gtk.window_present(dialog);
-            hero_ui_gtk_await(&got);
-            hero_ui_gtk.window_destroy(dialog);
-        }
-    }
-    for (int64_t i = 0; labels != NULL && i < shown; i += 1) {
-        hero_layer_free(labels[i]);
-    }
-    hero_layer_free(labels);
+    hero_ui_gtk_program_name(name, sizeof name);
+    arguments = hero_ui_gtk.variant_new("(susss@as@a{sv}i)", name, 0u, "", heading, said, hero_ui_gtk.variant_new_strv(NULL, 0), hero_ui_gtk.variant_new_array("{sv}", NULL, 0), -1);
+    reply = arguments != NULL ? hero_ui_gtk.dbus_connection_call_sync(bus, "org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify", arguments, NULL, 0, 5000, NULL, &error) : NULL;
+    hero_ui_gtk.object_unref(bus);
     hero_layer_free(heading);
     hero_layer_free(said);
-    /* A dialog dismissed with no button pressed answers its cancel button,
-     * or none, -1. */
-    *pressed = got.response >= 0 && got.response < shown ? got.response : cancel;
-    return result;
+    if (reply == NULL) {
+        (void)snprintf(words, sizeof words, "the desktop's notification server did not take it (%s)", error != NULL && error->message != NULL ? error->message : "no words");
+        if (error != NULL) {
+            hero_ui_gtk.error_free(error);
+        }
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, words);
+    }
+    hero_ui_gtk.variant_unref(reply);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
+/* GTK's settings' property `name`, where GTK has it. */
+static bool hero_ui_gtk_has_setting(void *settings, const char *name) {
+    /* An instance's first member is its class (`GTypeInstance`). */
+    void *klass = *(void **)settings;
+
+    return hero_ui_gtk.object_class_find_property(klass, name) != NULL;
+}
+
+/* The appearance GTK draws in now. */
+static int64_t hero_ui_gtk_appearance_now(void) {
+    void *settings = hero_ui_gtk.settings_get_default();
+    int dark = 0;
+    char *theme = NULL;
+    bool named_dark = false;
+
+    if (settings == NULL) {
+        return HERO_UI_APPEARANCE_LIGHT;
+    }
+    if (hero_ui_gtk_has_setting(settings, "gtk-interface-color-scheme")) {
+        int scheme = 0;
+
+        hero_ui_gtk.object_get(settings, "gtk-interface-color-scheme", &scheme, NULL);
+        if (scheme == HERO_GTK_INTERFACE_COLOR_SCHEME_DARK) {
+            return HERO_UI_APPEARANCE_DARK;
+        }
+        if (scheme == HERO_GTK_INTERFACE_COLOR_SCHEME_LIGHT) {
+            return HERO_UI_APPEARANCE_LIGHT;
+        }
+    }
+    hero_ui_gtk.object_get(settings, "gtk-application-prefer-dark-theme", &dark, NULL);
+    hero_ui_gtk.object_get(settings, "gtk-theme-name", &theme, NULL);
+    for (const char *at = theme; at != NULL && *at != '\0' && !named_dark; at += 1) {
+        named_dark = (at[0] == 'd' || at[0] == 'D') && strncmp(at + 1, "ark", 3) == 0;
+    }
+    hero_ui_gtk.g_free(theme);
+    return dark || named_dark ? HERO_UI_APPEARANCE_DARK : HERO_UI_APPEARANCE_LIGHT;
+}
+
+/* The appearance told last, and whether the system's own dark preference
+ * was read as the app opened, so the system's is given back. */
+static _Thread_local int64_t hero_ui_gtk_appearance_told;
+static _Thread_local int hero_ui_gtk_prefer_dark_first;
+static _Thread_local bool hero_ui_gtk_appearance_watched;
+
+static void hero_ui_gtk_appearance_turned(void *settings, void *spec, void *data) {
+    int64_t now = hero_ui_gtk_appearance_now();
+
+    (void)settings;
+    (void)spec;
+    (void)data;
+    if (now != hero_ui_gtk_appearance_told) {
+        hero_ui_gtk_appearance_told = now;
+        hero_ui_tell(HERO_UI_EVENT_APPEARANCE, 0, now, 0);
+    }
+}
+
+/* Watches GTK's settings for the appearance's turns, from the app's open. */
+static void hero_ui_gtk_watch_appearance(void) {
+    void *settings = hero_ui_gtk.settings_get_default();
+    static const char *const watched[] = {"notify::gtk-application-prefer-dark-theme", "notify::gtk-theme-name", "notify::gtk-interface-color-scheme"};
+
+    if (settings == NULL || hero_ui_gtk_appearance_watched) {
+        return;
+    }
+    hero_ui_gtk.object_get(settings, "gtk-application-prefer-dark-theme", &hero_ui_gtk_prefer_dark_first, NULL);
+    hero_ui_gtk_appearance_told = hero_ui_gtk_appearance_now();
+    for (size_t i = 0; i < sizeof watched / sizeof watched[0]; i += 1) {
+        if (i < 2 || hero_ui_gtk_has_setting(settings, "gtk-interface-color-scheme")) {
+            (void)hero_ui_gtk.signal_connect_data(settings, watched[i], (hero_ui_gtk_callback)hero_ui_gtk_appearance_turned, NULL, NULL, 0);
+        }
+    }
+    hero_ui_gtk_appearance_watched = true;
+}
+
+/* Lets go of GTK's settings as the app closes, the system's dark preference
+ * given back. */
+static void hero_ui_gtk_unwatch_appearance(void) {
+    void *settings = hero_ui_gtk.settings_get_default();
+
+    if (settings == NULL || !hero_ui_gtk_appearance_watched) {
+        return;
+    }
+    (void)hero_ui_gtk.signal_handlers_disconnect_matched(settings, HERO_G_SIGNAL_MATCH_FUNC_DATA, 0, 0, NULL, (hero_ui_gtk_callback)hero_ui_gtk_appearance_turned, NULL);
+    hero_ui_gtk.object_set(settings, "gtk-application-prefer-dark-theme", hero_ui_gtk_prefer_dark_first, NULL);
+    hero_ui_gtk_appearance_watched = false;
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    hero_ui_gtk_watch_appearance();
+    *appearance = hero_ui_gtk_appearance_now();
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    void *settings = hero_ui_gtk.settings_get_default();
+
+    if (settings == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "GTK holds no settings on this display");
+    }
+    hero_ui_gtk_watch_appearance();
+    hero_ui_gtk.object_set(settings, "gtk-application-prefer-dark-theme", appearance == 0 ? hero_ui_gtk_prefer_dark_first : (appearance == HERO_UI_APPEARANCE_DARK ? 1 : 0), NULL);
+    /* GTK notifies a setting changed as it is set; a turn it did not tell
+     * (the theme's own name already dark) is told here. */
+    hero_ui_gtk_appearance_turned(settings, NULL, NULL);
+    return HERO_UI_OK;
+}
+
+/* The GTK widget a screen reader reads for `widget`, or NULL for a kind
+ * GTK draws none of (a menu and its items, a context menu). */
+static void *hero_ui_gtk_accessible_of(const hero_ui_native *widget) {
+    switch (widget->kind) {
+    case HERO_UI_TEXT_AREA:
+    case HERO_UI_LIST:
+    case HERO_UI_LIST_MULTIPLE:
+    case HERO_UI_TABLE:
+    case HERO_UI_TREE:
+        return widget->inner;
+    case HERO_UI_MENU:
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_MENU_SEPARATOR:
+    case HERO_UI_CONTEXT_MENU:
+        return NULL;
+    default:
+        return widget->widget;
+    }
+}
+
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    void *target;
+    char *made;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    target = hero_ui_gtk_accessible_of(widget);
+    if (target == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (count == 0) {
+        hero_ui_gtk.accessible_reset_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL);
+        hero_layer_free(widget->accessible);
+        widget->accessible = NULL;
+        return HERO_UI_OK;
+    }
+    made = hero_ui_gtk_text(name, count, false);
+    if (made == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.accessible_update_property(target, HERO_GTK_ACCESSIBLE_PROPERTY_LABEL, made, -1);
+    hero_layer_free(widget->accessible);
+    widget->accessible = made;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    size_t bytes;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (hero_ui_gtk_accessible_of(widget) == NULL) {
+        return HERO_UI_INVALID;
+    }
+    bytes = widget->accessible != NULL ? strlen(widget->accessible) : 0;
+    *length = (int64_t)bytes;
+    if (bytes > 0 && *length <= count) {
+        memcpy(buffer, widget->accessible, bytes);
+    }
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *caption = label != 0 ? hero_ui_find(label) : NULL;
+    void *target;
+
+    if (widget == NULL || (label != 0 && caption == NULL)) {
+        return HERO_UI_NOT_FOUND;
+    }
+    target = hero_ui_gtk_accessible_of(widget);
+    if (target == NULL || (caption != NULL && caption->kind != HERO_UI_LABEL)) {
+        return HERO_UI_INVALID;
+    }
+    if (caption == NULL) {
+        hero_ui_gtk.accessible_reset_relation(target, HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY);
+    } else if (hero_ui_gtk.get_minor_version() >= 14) {
+        /* GTK 4.14 on takes a relation's references as a list NULL ends
+         * (measured on 4.18.6); before it, as a `GList` (its documentation,
+         * unrun here). */
+        hero_ui_gtk.accessible_update_relation(target, HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY, caption->widget, NULL, -1);
+    } else {
+        void *labels = hero_ui_gtk.list_append(NULL, caption->widget);
+
+        hero_ui_gtk.accessible_update_relation(target, HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY, labels, -1);
+        hero_ui_gtk.list_free(labels);
+    }
+    return HERO_UI_OK;
 }
 
 /* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
@@ -7305,6 +7828,14 @@ bool hero_ui_arm_acts(int64_t act) {
 
 /* What this part keeps for the app, given back as it closes. */
 static void hero_ui_gtk_close_more(void) {
+    /* Every dialog ended, and its callback given GTK's turns to come, a
+     * bounded number, so the records it holds go with it. */
+    hero_ui_arm_dialogs_end(0);
+    for (int turns = 0; turns < 1000 && hero_ui_gtk_dialogs != NULL; turns += 1) {
+        (void)hero_ui_gtk.main_context_iteration(NULL, 0);
+    }
+    hero_ui_gtk_unwatch_appearance();
+    hero_ui_gtk_undocked = false;
     hero_ui_gtk_modal = 0;
     hero_layer_free(hero_ui_gtk_clip);
     hero_ui_gtk_clip = NULL;
