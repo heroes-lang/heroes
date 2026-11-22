@@ -633,7 +633,6 @@ constant LOCALES: [str]
         "ug"
         "uk"
         "und"
-        "und"
         "ur"
         "ur-IN"
         "uz"
@@ -1297,7 +1296,6 @@ constant LOCALE_DATA: [str]
         "latn latn|latn:1,6,0,0"
         "latn arabext|arabext:83,9,244,245;latn:2,9,244,245"
         "latn latn|latn:84,6,246,247"
-        "latn latn|latn:2,0,0,0"
         "latn latn|latn:2,0,0,0"
         "latn arabext|arabext:83,1,248,249;latn:85,1,248,249"
         "arabext arabext|arabext:83,1,248,249;latn:85,1,248,249"
@@ -2747,7 +2745,6 @@ constant LOCALE_CURRENCIES: [i64]
         0
         289
         290
-        291
         291
         292
         279
