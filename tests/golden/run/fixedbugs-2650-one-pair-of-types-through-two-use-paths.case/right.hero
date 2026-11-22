@@ -1,0 +1,10 @@
+# The same two `Value`s, mapped each way, through `use` lines that bind them
+# under other names.
+use one as uno
+use two as dos
+
+function go(xs: [uno.Value], f: (function(uno.Value) -> dos.Value)) -> [dos.Value]
+    return xs.map(f)
+
+function back(xs: [dos.Value], f: (function(dos.Value) -> uno.Value)) -> [uno.Value]
+    return xs.map(f)

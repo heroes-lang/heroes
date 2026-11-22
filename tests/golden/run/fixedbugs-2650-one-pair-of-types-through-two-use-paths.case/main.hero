@@ -1,0 +1,28 @@
+# fixedbugs, defect 2650, 2026-11-21: one pair of types of one name, `one`'s
+# and `two`'s `Value`, reached from two modules, `left` and `right`, one of
+# them binding the two under other names. Each way round was one C typedef in
+# every unit; the type is one wherever it is reached from, so its name is
+# one in every unit, and the two ways round are two.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use left
+use one
+use right
+use two
+
+function there(v: one.Value) -> two.Value
+    return two.Value(n: v.n + 1)
+
+function here(v: two.Value) -> one.Value
+    return one.Value(n: v.n * 2)
+
+function main()
+    a = left.go(xs: [one.Value(n: 1)], f: there)
+    b = right.back(xs: a, f: here)
+    c = right.go(xs: b, f: there)
+    d = left.back(xs: c, f: here)
+    print(d[0].n)

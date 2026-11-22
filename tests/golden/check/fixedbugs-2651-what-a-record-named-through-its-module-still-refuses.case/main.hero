@@ -1,0 +1,36 @@
+# fixedbugs, defect 2651, 2026-11-21: the other half of
+# `run/fixedbugs-2651-a-field-read-on-a-record-built-through-its-module`.
+# A construction through a module is a value, so what is refused of a value
+# in the declaring module is refused of it here, each with the message the
+# declaring module gives: `::` on it, which until the repair was accepted
+# as the field's name, a field it does not have, and a field of another type
+# than the position asks. A record's own name through its module,
+# `m.Pair.a`, is still `dot_on_a_record_name`, and a variant's value still
+# reads its case's field through `match` alone.
+#
+# The cause: for a construction through a module, `m.Pair(...)`, the
+# resolver records the record on the call as it records it on the record's
+# name, and the checker read that as the base naming a record. It now asks
+# the base expression's own form first: only a name, `Pair` or `m.Pair`,
+# names a record, and a construction is a value
+# (`selfhost/check/field_names.hero`).
+use m
+
+function the_name_with_a_dot()
+    print(m.Pair.a)  #~ dot_on_a_record_name
+
+function colons_on_a_value() -> str
+    return m.Pair(a: 1, b: 2)::a  #~ not_a_record_name
+
+function a_field_it_lacks() -> i64
+    return m.Pair(a: 1, b: 2).c  #~ no_such_field
+
+function a_str_asked() -> str
+    return m.Pair(a: 1, b: 2).a  #~ type_mismatch
+
+function a_variant_case_field(s: m.Shape) -> i64
+    return s.r  #~ no_such_field
+
+function main()
+    the_name_with_a_dot()
+    print(colons_on_a_value(), a_field_it_lacks(), a_str_asked(), a_variant_case_field(.circle(r: 1)))

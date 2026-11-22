@@ -1,0 +1,37 @@
+# fixedbugs, defect 2650, 2026-11-21: the records' case with two variants of
+# one name, `Shape` here and in `other`: the function types each way round
+# were one C typedef, and `map` at each one C function.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use other
+
+variant Shape
+    circle
+        r: i64
+    square
+        side: i64
+
+function to_other(s: Shape) -> other.Shape
+    return match s
+        .circle c => .circle(r: c.r)
+        .square q => .square(side: q.side)
+
+function of_other(s: other.Shape) -> Shape
+    return match s
+        .circle c => .circle(r: c.r * 10)
+        .square q => .square(side: q.side)
+
+function size(s: Shape) -> i64
+    return match s
+        .circle c => c.r
+        .square q => q.side
+
+function main()
+    mine: [Shape] = [.circle(r: 1), .square(side: 2)]
+    there = mine.map(to_other)
+    back = there.map(of_other)
+    print(size(back[0]) + size(back[1]))

@@ -1,0 +1,9 @@
+# The two `Value`s, mapped each way, through plain `use` lines.
+use one
+use two
+
+function go(xs: [one.Value], f: (function(one.Value) -> two.Value)) -> [two.Value]
+    return xs.map(f)
+
+function back(xs: [two.Value], f: (function(two.Value) -> one.Value)) -> [one.Value]
+    return xs.map(f)

@@ -1,0 +1,5 @@
+# A record of a package, built and read by the program that uses it.
+
+record Point
+    x: i64
+    y: i64

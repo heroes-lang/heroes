@@ -1,0 +1,5 @@
+tests/golden/check/fixedbugs-2651-what-a-record-named-through-its-module-still-refuses.case/main.hero:20:17: error[dot_on_a_record_name]: `m.Pair` names a record, so `m.Pair.a` reads a field from a value that is not there — `m.Pair::a` is the NAME of that field, and `m.Pair(field: value, …)` builds one
+tests/golden/check/fixedbugs-2651-what-a-record-named-through-its-module-still-refuses.case/main.hero:23:12: error[not_a_record_name]: `m.Pair(a: 1, b: 2)` does not name a record, so `m.Pair(a: 1, b: 2)::` has no field to name — `::` takes a record's own name on its left, and `x.field` reads a field from a value
+tests/golden/check/fixedbugs-2651-what-a-record-named-through-its-module-still-refuses.case/main.hero:26:31: error[no_such_field]: `Pair` has no field `c` — `Pair` has `a`, `b`
+tests/golden/check/fixedbugs-2651-what-a-record-named-through-its-module-still-refuses.case/main.hero:29:12: error[type_mismatch]: expected `str`, found `i64`
+tests/golden/check/fixedbugs-2651-what-a-record-named-through-its-module-still-refuses.case/main.hero:32:14: error[no_such_field]: `m.Shape` is a variant, so `.r` belongs to one of its cases — reach it through `match`

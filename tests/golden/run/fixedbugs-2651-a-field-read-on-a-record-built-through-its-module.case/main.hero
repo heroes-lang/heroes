@@ -1,0 +1,35 @@
+# fixedbugs, defect 2651, 2026-11-21: `m.Pair(a: 1, b: 2).a`, a field read on
+# a record built inline and named through its module, was refused
+# `dot_on_a_record_name`, *names a record*, with a guessed fix writing `::`,
+# where `Pair(a: 1, b: 2).a` in the module that declares `Pair` is accepted.
+#
+# The cause: for a construction through a module, `m.Pair(...)`, the
+# resolver records the record on the call as it records it on the record's
+# name, and the checker read that as the base naming a record. It now asks
+# the base expression's own form first: only a name, `Pair` or `m.Pair`,
+# names a record, and a construction is a value
+# (`selfhost/check/field_names.hero`).
+#
+# The shapes beside it, each read as it is in the declaring module: a nested
+# record read through two fields; a function called on the inline value, and
+# a built-in on its field; a read where the position asks for an `i64`; a
+# read in a string's hole; and a variant built through the module, its case's
+# field read through `match`.
+use m
+
+function twice(p: m.Pair) -> i64
+    return p.a * 2
+
+function size(s: m.Shape) -> i64
+    return match s
+        .circle c => c.r
+        .square q => q.side
+
+function main()
+    print(m.Pair(a: 1, b: 2).a)
+    print(m.Outer(inner: m.Inner(x: 5), tag: "t").inner.x)
+    print(m.Pair(a: 3, b: 4).twice(), " ", m.Pair(a: 3, b: 4).b.to_str())
+    n: i64 = m.Pair(a: 6, b: 7).b
+    print(n + m.total(m.Pair(a: 1, b: 1)))
+    print(f"{m.Pair(a: 8, b: 9).b}")
+    print(size(.square(side: 10)))

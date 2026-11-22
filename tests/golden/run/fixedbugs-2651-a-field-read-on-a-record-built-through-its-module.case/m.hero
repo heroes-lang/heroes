@@ -1,0 +1,21 @@
+# The records and the variant the reads reach through this module.
+
+record Pair
+    a: i64
+    b: i64
+
+record Inner
+    x: i64
+
+record Outer
+    inner: Inner
+    tag: str
+
+variant Shape
+    circle
+        r: i64
+    square
+        side: i64
+
+function total(p: Pair) -> i64
+    return p.a + p.b

@@ -1,0 +1,29 @@
+# fixedbugs, defect 2650, 2026-11-21: a generic, `same`, at a case of each of
+# two variants of one name, `Token.num` here and in `other`. A case put its
+# variant in no set, so the key was the rendering `Token.num` alone, and the
+# two instances were one C function, which clang refused at exit 2.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use other
+
+variant Token
+    num
+        v: i64
+
+function same<T>(x: T) -> T
+    return x
+
+function mine(t: Token) -> i64
+    return match t
+        .num n => same(n).v
+
+function theirs(t: other.Token) -> i64
+    return match t
+        .num n => same(n).v * 10
+
+function main()
+    print(mine(.num(v: 1)) + theirs(.num(v: 2)))

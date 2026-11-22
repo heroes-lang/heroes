@@ -1,0 +1,47 @@
+# fixedbugs, defect 2650, 2026-11-21: the two `Value`s each way round inside
+# a map, `{Value: other.Value}` and `{other.Value: Value}`, gave one instance
+# of `count_of`; inside an array and an option, `[Value] -> [other.Value]?`
+# and back, one C typedef and one instance of `apply`.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use other
+
+record Value
+    n: i64
+
+function count_of<K, V>(m: {K: V}) -> i64
+    return keys(m).len()
+
+function to_other(vs: [Value]) -> [other.Value]?
+    out: [other.Value] @= []
+
+    for v in vs
+        out @ out.push(other.Value(n: v.n))
+
+    return ok(out)
+
+function of_other(vs: [other.Value]) -> [Value]?
+    out: [Value] @= []
+
+    for v in vs
+        out @ out.push(Value(n: v.n + 1))
+
+    return ok(out)
+
+function apply<A, B>(f: (function(A) -> B), x: A) -> B
+    return f(x)
+
+function main()
+    there: {Value: other.Value} @= {}
+    there[Value(n: 1)] @ other.Value(n: 2)
+    back: {other.Value: Value} @= {}
+    back[other.Value(n: 3)] @ Value(n: 4)
+    back[other.Value(n: 5)] @ Value(n: 6)
+    print(count_of(there) + count_of(back) * 10)
+    lists = apply(f: to_other, x: [Value(n: 1)])
+    again = apply(f: of_other, x: lists.default([]))
+    print(again.default([])[0].n)

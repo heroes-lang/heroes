@@ -89,7 +89,7 @@ function insert_rows(@db: sqlite.Db, name: str, columns: [str], t: model.Table l
     batch: [[sql.Value]] @= []
 
     for row in t.rows
-        batch @ batch.push(parameters_of(row))
+        batch @ batch.push(row.map(value_of))
 
         if batch.len() == per_insert
             run_insert(@db, name: name, columns: columns, rows: batch)?
@@ -168,21 +168,6 @@ function type_of_column(t: model.Table lent, column: i64) -> str
         return " INTEGER"
     return ""
 
-# The parameters of a row, in order.
-#
-# - `row`: the row's values.
-#
-# A loop and not `row.map(value_of)`: this module also maps the other way,
-# `sql.Value` to `model.Value`, and the two instances of `map` over two types
-# both named `Value` are given one C name in one unit, which clang refuses.
-function parameters_of(row: [model.Value]) -> [sql.Value]
-    out: [sql.Value] @= []
-
-    for v in row
-        out @ out.push(value_of(v))
-
-    return out
-
 # A value as an SQL parameter: an integer an `i64` holds as an integer, any
 # other number as the nearest `f64`, a moment as its RFC 3339 text, a list or
 # an object as its JSON.
@@ -230,21 +215,9 @@ function run(@db: sqlite.Db, statement: str, name: str) -> model.Table?
     out: [[model.Value]] @= []
 
     for r in rows.rows
-        out @ out.push(values_of(r.values))
+        out @ out.push(r.values.map(of_sql))
 
     return ok(model.Table(name: name, columns: columns, rows: out))
-
-# The values of a row SQLite answered, in order; a loop for the reason
-# `parameters_of` gives.
-#
-# - `values`: the row's values.
-function values_of(values: [sql.Value]) -> [model.Value]
-    out: [model.Value] @= []
-
-    for v in values
-        out @ out.push(of_sql(v))
-
-    return out
 
 # The value of an SQL value.
 #

@@ -1,0 +1,27 @@
+# fixedbugs, defect 2650, 2026-11-21: a generic of a generic, `through`
+# calling `map`, at the two `Value`s one way and back: `through` at each was
+# one C function, and so was the `map` it calls.
+#
+# The cause, for every case of defect 2650: a synthetic C name was the hash
+# of the type's rendering, which writes no module, and of the sorted set of the
+# declared types it names, the same set either way round. Where that set does
+# not tell which declaration each name stands for, the key also carries those
+# declarations in the rendering's order (`selfhost/emit/synth_places.hero`).
+use other
+
+record Value
+    n: i64
+
+function to_other(v: Value) -> other.Value
+    return other.Value(n: v.n)
+
+function of_other(v: other.Value) -> Value
+    return Value(n: v.n * 3)
+
+function through<A, B>(xs: [A], f: (function(A) -> B)) -> [B]
+    return xs.map(f)
+
+function main()
+    there = through(xs: [Value(n: 1), Value(n: 2)], f: to_other)
+    back = through(xs: there, f: of_other)
+    print(back[1].n)
