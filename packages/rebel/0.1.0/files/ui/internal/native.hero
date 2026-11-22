@@ -8,6 +8,7 @@
 use bytes
 use ui
 use ui/hero_ui
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/model
 
@@ -374,7 +375,31 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: 0,
                 text: s.text
             )
+        .drag_window d =>
+            return window_act(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_MOVE,
+                id: d.window.id,
+                value: d.screen,
+                second: d.x,
+                third: d.y
+            )
+        .change_state c =>
+            return window_act(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_STATE,
+                id: c.window.id,
+                value: desk.state_code(c.state),
+                second: 0,
+                third: 0
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
+
+# One act on window `id` among the screens, injected through the floor.
+function window_act(app: ui.App, kind: i64, id: i64, value: i64, second: i64, third: i64) -> ()?
+    if hero_ui.inject_window(app.handle, kind: kind, id: id, value: value, second: second, third: third) < 0
+        return failure.last(f"acting on window {id}")
+    return ok()
 
 # One act injected through the floor.
 function injected(app: ui.App, kind: i64, id: i64, value: i64, second: i64, text: str) -> ()?

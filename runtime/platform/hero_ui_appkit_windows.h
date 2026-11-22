@@ -26,4 +26,34 @@ int64_t hero_ui_appkit_windows_words(char *words, int64_t count);
 
 int64_t hero_ui_appkit_press_key(void *window, void *typed, const uint8_t *key, int64_t count, int64_t modifiers);
 
+int64_t hero_ui_appkit_windows_watch(void *window, int64_t id, void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
+int64_t hero_ui_appkit_screens(int64_t *values, int64_t count, int64_t *screens);
+
+int64_t hero_ui_appkit_frame_of(void *window, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height);
+
+int64_t hero_ui_appkit_set_position(void *window, int64_t screen, int64_t x, int64_t y, int64_t person);
+
+int64_t hero_ui_appkit_center(void *window, void *over);
+
+int64_t hero_ui_appkit_set_state(void *window, int64_t state, int64_t person);
+
+int64_t hero_ui_appkit_state(void *window, int64_t *state);
+
+int64_t hero_ui_appkit_set_on_top(void *window, int64_t on);
+
+int64_t hero_ui_appkit_set_framed(void *window, int64_t on);
+
+int64_t hero_ui_appkit_set_opacity(void *window, int64_t alpha);
+
+int64_t hero_ui_appkit_set_backdrop(void *window, int64_t backdrop);
+
+int64_t hero_ui_appkit_set_icon(const uint8_t *rgba, int64_t width, int64_t height);
+
+int64_t hero_ui_appkit_set_modal(void *window, int64_t on);
+
+int64_t hero_ui_appkit_modal_here(void);
+
+int64_t hero_ui_appkit_modal_pump(int64_t ms, int64_t (*held)(void));
+
 #endif

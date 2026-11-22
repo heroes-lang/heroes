@@ -162,6 +162,19 @@ public typealias HeroUiAsk = @convention(c) (Int64, Int64, UnsafePointer<UInt8>?
 /// That a web view is gone: `hero_ui_web_gone_fn`.
 public typealias HeroUiGone = @convention(c) (Int64) -> Void
 
+// A window of the program's: AppKit gives the keys to a window with no
+// title bar only where it says it can take them, and a window the program
+// takes its frame from (`hero_ui_set_framed`) must keep its text fields.
+private final class KeyedWindow: NSWindow {
+    override var canBecomeKey: Bool {
+        return true
+    }
+
+    override var canBecomeMain: Bool {
+        return true
+    }
+}
+
 // A window's content: its y axis down, as `hero_ui.h` places widgets.
 private final class FlippedView: NSView {
     override var isFlipped: Bool {
@@ -251,7 +264,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         let made = Native(id: id, kind: kind, parent: parent)
         if kind == kindWindow {
-            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
+            let window = KeyedWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentView = FlippedView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
             window.delegate = self
@@ -897,8 +910,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerOk
         }
         if window.contentLayoutRect.size != size {
+            // AppKit keeps a window's bottom-left corner where its size
+            // changes; `hero_ui.h` places a window by its top-left corner,
+            // so that corner is kept, and a window the program placed stays
+            // where it was put when its layout grows it.
+            let top = window.frame.maxY
             muted = true
             window.setContentSize(size)
+            window.setFrameTopLeftPoint(NSPoint(x: window.frame.minX, y: top))
             muted = false
         }
         return answerOk
@@ -1560,6 +1579,7 @@ private let objectView: Int64 = 2
 private let objectTyped: Int64 = 3
 private let objectMenu: Int64 = 4
 private let objectItem: Int64 = 5
+private let objectOwnWindow: Int64 = 6
 
 // The AppKit object widget `id` stands on, `hero_ui_appkit.h`'s
 // `HERO_UI_APPKIT_OBJECT_*`, unretained: what the arm's other Swift
@@ -1592,6 +1612,8 @@ public func hero_ui_appkit_object(_ id: Int64, _ which: Int64) -> UnsafeMutableR
             return widget.menu
         case objectItem:
             return widget.item
+        case objectOwnWindow:
+            return widget.window
         default:
             return nil
         }

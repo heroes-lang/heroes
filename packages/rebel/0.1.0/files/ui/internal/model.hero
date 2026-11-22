@@ -50,6 +50,9 @@ record Node
     visible: bool
     # Whether the person may resize a window.
     resizable: bool
+    # How a window stands among the screens; a blank one for every other
+    # node.
+    standing: Standing
     # A window's content size as the program asked it, or an image's
     # columns, in points.
     width: i64
@@ -138,6 +141,67 @@ record WebAsset
     # Its body's bytes.
     size: i64
 
+# How a window stands among the screens, as the program and the person left
+# it (`ui/internal/desk`).
+record Standing
+    # Whether the program or the person gave the window a position; until
+    # then it stands where the system first puts it, which the headless side
+    # takes as the middle of screen 0's work area.
+    placed: bool
+    # The screen it stands on, from 0.
+    screen: i64
+    # Its frame's left edge from that screen's left edge, in points.
+    x: i64
+    # Its frame's top edge from that screen's top edge, in points.
+    y: i64
+    # Its state, one of `hero_ui.h`'s `HERO_UI_STATE_*`.
+    state: i64
+    # Whether it stands above every other application's windows.
+    on_top: bool
+    # Whether it has its frame, a title bar and a border.
+    framed: bool
+    # Its opacity, 0 to 255.
+    opacity: i64
+    # What stands behind its widgets, one of `HERO_UI_BACKDROP_*`.
+    backdrop: i64
+    # Whether it is the app's modal window.
+    modal: bool
+    # The content's width asked when it last left the normal state, which it
+    # takes back on its return.
+    normal_width: i64
+    # The content's height asked then.
+    normal_height: i64
+    # Whether it had a position then.
+    normal_placed: bool
+    # The screen it stood on then.
+    normal_screen: i64
+    # Its left edge then.
+    normal_x: i64
+    # Its top edge then.
+    normal_y: i64
+
+# A window's standing as it is made: never placed, in the normal state,
+# framed, opaque, on the system's plain background, not modal.
+function blank_standing() -> Standing
+    return Standing(
+        placed: false,
+        screen: 0,
+        x: 0,
+        y: 0,
+        state: hero_ui.HERO_UI_STATE_NORMAL,
+        on_top: false,
+        framed: true,
+        opacity: 255,
+        backdrop: hero_ui.HERO_UI_BACKDROP_NONE,
+        modal: false,
+        normal_width: 0,
+        normal_height: 0,
+        normal_placed: false,
+        normal_screen: 0,
+        normal_x: 0,
+        normal_y: 0
+    )
+
 # The table of one app.
 record Model
     # Every node by its number.
@@ -182,6 +246,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         enabled: true,
         visible: true,
         resizable: true,
+        standing: blank_standing(),
         width: 0,
         height: 0,
         columns: 1,

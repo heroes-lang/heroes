@@ -12,7 +12,10 @@
 # library holds no user interface and no crate of each system's own widgets
 # is Rust's common one, so its column is `-` but where Tauri 2.12.5, which
 # this machine holds and whose public structs were looked up in it, names
-# the same thing: the web view and the tray.
+# the same thing: the web view and the tray. A block's `wx` line names the
+# classes and members of wxWidgets 3.2, the library whose manner this package
+# takes, as its reference lists them (https://docs.wxwidgets.org/3.2/, the
+# class list and each class's page, read 2026-11-22).
 
 capability ui/app  a user interface opened on the system's own widgets or with no screen, and closed
   heroes  ui.open, ui.close, ui.is_native, ui.App, ui.Backend
@@ -40,7 +43,8 @@ capability ui/keys-pressed  a key pressed by the program as the person's keyboar
   go      -
   rust    -
   python  -
-  note    wxWidgets' `wxUIActionSimulator`; native on macOS (the key goes down and up through `NSApp.sendEvent`, the window made the key window of the active application first), Windows pending, Linux pending; on the headless side a key chooses the menu item whose shortcut it is
+  wx      wxUIActionSimulator (KeyDown, KeyUp, Char)
+  note    native on macOS (the key goes down and up through `NSApp.sendEvent`, the window made the key window of the active application first), Windows pending, Linux pending; on the headless side a key chooses the menu item whose shortcut it is
 
 capability ui/edit-menu  the system's Edit menu in every text widget: undo, redo, cut, copy, paste, delete and select all, by the mouse and by their keys
   heroes  ui.text_field, ui.text_area
@@ -88,6 +92,54 @@ capability ui/window  a window: its title, its size, whether the person may resi
   rust    -
   python  tkinter.Toplevel, tkinter.Wm
   note    a window lays its children out in a column, so it needs no child of its own, `Window.SetChild`'s
+
+capability ui/screens  the screens of the system: each one's whole area, its work area and its scale, the main one first
+  heroes  ui.screens, ui.Screen
+  go      -
+  rust    tauri::Monitor, tauri::Window::available_monitors, tauri::Window::primary_monitor, tauri::Window::current_monitor
+  python  tkinter.Misc.winfo_screenwidth, tkinter.Misc.winfo_screenheight, tkinter.Misc.winfo_vrootwidth, tkinter.Misc.winfo_vrootheight
+  wx      wxDisplay (GetCount, GetGeometry, GetClientArea, GetScaleFactor, IsPrimary)
+  note    in points from the main screen's top-left corner, the y axis down, the scale in hundredths (200 on a Retina screen); macOS by `NSScreen`, Windows pending (`EnumDisplayMonitors`, `GetMonitorInfoW`, `GetDpiForMonitor`), Linux pending (`GdkDisplay`'s monitors); the headless side has one screen of 1920 by 1080 points
+
+capability ui/window-position  where a window stands on a screen, set and read, centred on its screen or over another window, and its moves told
+  heroes  ui.set_position, ui.frame_of, ui.center, ui.center_over, ui.Frame, ui.Event.moved, ui.Event.screen_changed, ui.Input.drag_window
+  go      -
+  rust    tauri::Window::set_position, tauri::Window::outer_position, tauri::Window::center, tauri::WindowEvent::Moved
+  python  tkinter.Wm.wm_geometry, tkinter.Misc.winfo_x, tkinter.Misc.winfo_y, tkinter.Misc.winfo_rootx, tkinter.Misc.winfo_rooty
+  wx      wxTopLevelWindow (SetPosition, GetPosition, GetScreenPosition, Centre, CentreOnParent, CentreOnScreen), wxMoveEvent
+  note    a position is the frame's top-left corner, its title bar included, from the top-left corner of the screen it is on; macOS (the arm keeps a window's top-left corner where its layout resizes it), Windows pending (`SetWindowPos`, `MonitorFromWindow`), Linux pending and refused on Wayland, which lets no program place or read a toplevel (`xdg_toplevel` has no such request), the face answering `unsupported` there
+
+capability ui/window-state  a window minimized, maximized, in full screen or restored, asked which, and the person's change told
+  heroes  ui.set_state, ui.state_of, ui.WindowState, ui.Event.state_changed, ui.Input.change_state
+  go      -
+  rust    tauri::Window::minimize, tauri::Window::maximize, tauri::Window::unmaximize, tauri::Window::unminimize, tauri::Window::set_fullscreen, tauri::Window::is_minimized, tauri::Window::is_maximized, tauri::Window::is_fullscreen
+  python  tkinter.Wm.wm_state, tkinter.Wm.wm_iconify, tkinter.Wm.wm_deiconify, tkinter.Wm.wm_attributes
+  wx      wxTopLevelWindow (Iconize, Maximize, Restore, ShowFullScreen, IsIconized, IsMaximized, IsFullScreen), wxIconizeEvent, wxMaximizeEvent, wxFullScreenEvent
+  note    the call returns once the system has made the state, its animation included; the new size comes as `.resized`; macOS (`miniaturize`, `zoom`, `toggleFullScreen`), Windows pending (`ShowWindow`, `IsIconic`, `IsZoomed`), Linux pending (`gtk_window_minimize` and the rest), where Wayland lets no program read or undo a minimized state and the face answers `unsupported`
+
+capability ui/window-look  a window kept above every other, without its frame, see-through, or on the system's translucent material
+  heroes  ui.set_on_top, ui.set_framed, ui.set_opacity, ui.set_backdrop, ui.Backdrop
+  go      Window.Borderless, Window.SetBorderless
+  rust    tauri::Window::set_always_on_top, tauri::Window::set_decorations, tauri::window::Effect, tauri::Window::set_effects
+  python  tkinter.Wm.wm_attributes, tkinter.Wm.wm_overrideredirect
+  wx      wxFrame (the wxSTAY_ON_TOP style), wxWindow (the wxBORDER_NONE style), wxTopLevelWindow (SetTransparent, CanSetTransparent)
+  note    a window with no frame is moved by a drag on its background; the material is `NSVisualEffectView` behind the window on macOS, Mica on Windows 11 (pending, `DwmSetWindowAttribute`), and none in GTK 4, which answers `unsupported`; always on top is refused on Wayland, which has no such level; libui's borderless window, dropped here until this block, is `set_framed`
+
+capability ui/app-icon  the application's icon, set at run time
+  heroes  ui.set_icon
+  go      -
+  rust    tauri::Window::set_icon
+  python  tkinter.Wm.wm_iconphoto, tkinter.Wm.wm_iconbitmap
+  wx      wxTopLevelWindow (SetIcon, SetIcons)
+  note    the Dock's on macOS, every window's and the task bar's on Windows (pending, `WM_SETICON`); GTK 4 takes an icon by its theme name only, never from pixels, so the face answers `unsupported` there
+
+capability ui/modal  a window of the program's own that the person answers before any other
+  heroes  ui.set_modal
+  go      -
+  rust    -
+  python  tkinter.Misc.grab_set, tkinter.Misc.grab_release
+  wx      wxDialog (ShowModal, EndModal, IsModal)
+  note    the program goes on asking `wait`, no loop of the system's runs in its place; macOS by an `NSApp` modal session run in place of the system's loop, Windows pending (an owner disabled with `EnableWindow`), Linux pending (`gtk_window_set_modal`)
 
 capability ui/boxes  widgets side by side and one under another, with spacing, padding, and the room left shared by weights
   heroes  ui.row, ui.column, ui.set_spacing, ui.set_fit, ui.default_fit, ui.Fit, ui.Align
@@ -354,5 +406,5 @@ capability ui/styles  widgets drawn in a style the program chooses
   python  ttk.Style
 
 dropped
-  go      ui.Control, ui.ControlBase, ui.NewControlBase, ui.ControlFromLibui, ControlBase.Handle, ControlBase.LibuiControl (the interface every widget shares and the system's handle beneath it, which a program never holds here: a widget is a number); ui.LibuiFreeText, Image.Free (memory freed by hand, which the language does itself); Window.Margined, Window.SetMargined (a window's padding, `set_spacing`'s); Window.Borderless, Window.SetBorderless (a window with no frame, which the systems' guidelines keep for their own); ui.NewSearchEntry (a text field the system draws as a search field, which behaves as a text field)
+  go      ui.Control, ui.ControlBase, ui.NewControlBase, ui.ControlFromLibui, ControlBase.Handle, ControlBase.LibuiControl (the interface every widget shares and the system's handle beneath it, which a program never holds here: a widget is a number); ui.LibuiFreeText, Image.Free (memory freed by hand, which the language does itself); Window.Margined, Window.SetMargined (a window's padding, `set_spacing`'s); ui.NewSearchEntry (a text field the system draws as a search field, which behaves as a text field)
   python  tkinter.Tcl, tkinter.CallWrapper, tkinter.getboolean, tkinter.Misc, tkinter.BaseWidget, tkinter.Widget, ttk.Widget, ttk.tclobjs_to_py, ttk.setup_master (Tcl's interpreter and the classes every widget inherits, which a program never names here); ttk.Sizegrip (the corner a window is resized by, which the system draws); scrolledtext.example, filedialog.test, dnd.Tester, dnd.test (the modules' own demonstrations)

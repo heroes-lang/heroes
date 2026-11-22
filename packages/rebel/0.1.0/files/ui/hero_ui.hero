@@ -120,6 +120,33 @@ extern "hero_ui.h"
     function hero_ui_file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64, @name: [u8] counted_by name_count lent, name_count: u64, @filters: [u8] counted_by filters_count lent, filters_count: u64) -> i64
     function hero_ui_dialog_paths(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_press_key(app: App, id: i64, @key: [u8] counted_by count lent, count: u64, modifiers: i64) -> i64
+    # Windows on the screen: the numbers a screen takes, a window's states
+    # and backdrops, the events of the person's acts on a window, and the
+    # farthest a position goes.
+    constant HERO_UI_SCREEN_FIELDS: i64
+    constant HERO_UI_STATE_NORMAL: i64
+    constant HERO_UI_STATE_MINIMIZED: i64
+    constant HERO_UI_STATE_MAXIMIZED: i64
+    constant HERO_UI_STATE_FULL_SCREEN: i64
+    constant HERO_UI_BACKDROP_NONE: i64
+    constant HERO_UI_BACKDROP_TRANSLUCENT: i64
+    constant HERO_UI_EVENT_MOVE: i64
+    constant HERO_UI_EVENT_STATE: i64
+    constant HERO_UI_EVENT_SCREEN: i64
+    constant HERO_UI_POSITION_MOST: i64
+    function hero_ui_screens(app: App, @values: [i64] counted_by count lent, count: u64) -> i64
+    function hero_ui_frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
+    function hero_ui_set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
+    function hero_ui_center(app: App, id: i64, over: i64) -> i64
+    function hero_ui_set_state(app: App, id: i64, state: i64) -> i64
+    function hero_ui_state(app: App, id: i64, @state: i64) -> i64
+    function hero_ui_set_on_top(app: App, id: i64, on: i64) -> i64
+    function hero_ui_set_framed(app: App, id: i64, on: i64) -> i64
+    function hero_ui_set_opacity(app: App, id: i64, alpha: i64) -> i64
+    function hero_ui_set_backdrop(app: App, id: i64, backdrop: i64) -> i64
+    function hero_ui_set_icon(app: App, @rgba: [u8] counted_by count lent, count: u64, width: i64, height: i64) -> i64
+    function hero_ui_set_modal(app: App, id: i64, on: i64) -> i64
+    function hero_ui_inject_window(app: App, kind: i64, id: i64, value: i64, second: i64, third: i64) -> i64
     function hero_ui_last_error() -> i64
     function hero_ui_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
     # A web view's limits, and the policy its responses carry where the
@@ -586,6 +613,129 @@ function last_message(@buffer: [u8], count: u64) -> i64
 function press_key(app: App, id: i64, @key: [u8], count: u64, modifiers: i64) -> i64
     return hero_ui_press_key(app, id: id, @key, count: count, modifiers: modifiers)
 
+# The number of screens, their `HERO_UI_SCREEN_FIELDS` numbers each written
+# into `values` where they fit; or -1.
+#
+# - `app`: the app asking; a headless one is `HERO_UI_UNSUPPORTED`.
+# - `values`: where each screen's whole area, work area and scale are
+#   written, left `count` long.
+# - `count`: the numbers `values` holds.
+function screens(app: App, @values: [i64], count: u64) -> i64
+    return hero_ui_screens(app, @values, count: count)
+
+# 0 once window `id`'s screen and frame are written through the five
+# places, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `screen`: written the screen it stands on most.
+# - `x`: written its frame's left edge from that screen's, in points.
+# - `y`: written its frame's top edge from that screen's, in points.
+# - `width`: written its frame's width, in points.
+# - `height`: written its frame's height, its title bar included.
+function frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
+    return hero_ui_frame_of(app, id: id, screen: @screen, x: @x, y: @y, width: @width, height: @height)
+
+# 0 once window `id`'s frame stands at `x`, `y` on screen `screen`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `screen`: a screen, from 0.
+# - `x`: points from the screen's left edge, at most
+#   `HERO_UI_POSITION_MOST` either way.
+# - `y`: points from the screen's top edge, the same range.
+function set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
+    return hero_ui_set_position(app, id: id, screen: screen, x: x, y: y)
+
+# 0 once window `id` is centred in its screen's work area, or over window
+# `over`; or -1.
+#
+# - `app`: the app holding them.
+# - `id`: the window moved.
+# - `over`: another window, or 0 for its screen's work area.
+function center(app: App, id: i64, over: i64) -> i64
+    return hero_ui_center(app, id: id, over: over)
+
+# 0 once window `id` stands in `state`, the system having made it; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `state`: one of `HERO_UI_STATE_NORMAL` to `HERO_UI_STATE_FULL_SCREEN`.
+function set_state(app: App, id: i64, state: i64) -> i64
+    return hero_ui_set_state(app, id: id, state: state)
+
+# 0 once window `id`'s state is written through `state`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `state`: written one of the `HERO_UI_STATE_*`.
+function state_of(app: App, id: i64, @state: i64) -> i64
+    return hero_ui_state(app, id: id, state: @state)
+
+# 0 once window `id` stands above every other application's windows, or
+# among them; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `on`: 1 on top, 0 among the others.
+function set_on_top(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_on_top(app, id: id, on: on)
+
+# 0 once window `id` has its frame, or has none; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `on`: 1 for its frame, 0 for none.
+function set_framed(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_framed(app, id: id, on: on)
+
+# 0 once window `id` is `alpha` opaque, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `alpha`: 0, see-through, to 255, opaque.
+function set_opacity(app: App, id: i64, alpha: i64) -> i64
+    return hero_ui_set_opacity(app, id: id, alpha: alpha)
+
+# 0 once `backdrop` stands behind window `id`'s widgets, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `backdrop`: `HERO_UI_BACKDROP_NONE` or `HERO_UI_BACKDROP_TRANSLUCENT`.
+function set_backdrop(app: App, id: i64, backdrop: i64) -> i64
+    return hero_ui_set_backdrop(app, id: id, backdrop: backdrop)
+
+# 0 once the app shows the icon `rgba` holds, or -1.
+#
+# - `app`: the app.
+# - `rgba`: 8-bit RGBA, row after row from the top; left as it was handed.
+# - `count`: its bytes, `width * height * 4`.
+# - `width`: the icon's columns; 0 with `height` 0 gives the system's own
+#   back.
+# - `height`: its rows.
+function set_icon(app: App, @rgba: [u8], count: u64, width: i64, height: i64) -> i64
+    return hero_ui_set_icon(app, @rgba, count: count, width: width, height: height)
+
+# 0 once window `id` is the app's modal window, or is no longer; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `on`: 1 to make it modal, 0 to end it.
+function set_modal(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_modal(app, id: id, on: on)
+
+# 0 once the person's act `kind` on window `id` went through the system's
+# own path, its event queued as theirs; or -1.
+#
+# - `app`: the app holding it.
+# - `kind`: `HERO_UI_EVENT_MOVE` or `HERO_UI_EVENT_STATE`.
+# - `id`: a window.
+# - `value`: the screen moved to, or the state brought to.
+# - `second`: the position's left edge for a move; else 0.
+# - `third`: the position's top edge for a move; else 0.
+function inject_window(app: App, kind: i64, id: i64, value: i64, second: i64, third: i64) -> i64
+    return hero_ui_inject_window(app, kind: kind, id: id, value: value, second: second, third: third)
+
 ## Tests
 
 test "create, value_of, selection_of, text_of: on the native side a widget the layer does not hold is not found, one of another kind invalid (defect 2681)"
@@ -623,6 +773,19 @@ test "create, value_of, selection_of, text_of: on the native side a widget the l
     assert last_error() == HERO_UI_NOT_FOUND
     assert set_enabled(app, id: 3, on: 0) == 0
     assert set_enabled(app, id: 3, on: 1) == 0
+    assert close(@app) == 0
+
+test "screens, set_position, set_state and the rest: a headless app holds no system's windows, and says so"
+    app @= open(HERO_UI_HEADLESS)
+    values: [i64] @= []
+    assert screens(app, @values, count: 9) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    assert set_position(app, id: 1, screen: 0, x: 0, y: 0) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    assert set_state(app, id: 1, state: HERO_UI_STATE_MAXIMIZED) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    assert set_modal(app, id: 1, on: 1) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
     assert close(@app) == 0
 
 test "press_key: a headless app holds no system to press a key in, and says so"

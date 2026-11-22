@@ -1,0 +1,753 @@
+# Windows on the screen: the screens and their work areas, where a window
+# stands among them, the state it stands in, how the system draws it (on
+# top, with or without its frame, its opacity, a translucent backdrop), the
+# app's icon, and the window the person answers before any other
+# (`ui.set_position`, `ui.set_state` and the rest). The native side asks
+# and tells the system through the floor; the headless side keeps each
+# window's standing in its node and answers by fixed rules, the same on
+# every machine: one screen of `SCREEN_WIDTH` by `SCREEN_HEIGHT` points at
+# scale 100, its work area all of it but a task bar `TASK_BAR` points high
+# along its bottom, a window's frame its content with a title bar
+# `TITLE_BAR` points high above it, and a window the program never placed
+# standing centred in that work area.
+
+use image
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/layout
+use ui/internal/loop
+use ui/internal/model
+
+# The headless side's one screen, in points.
+constant SCREEN_WIDTH: i64
+    1920
+
+# Its height.
+constant SCREEN_HEIGHT: i64
+    1080
+
+# The task bar along the bottom of the headless screen, which its work area
+# leaves out, in points high.
+constant TASK_BAR: i64
+    40
+
+# The title bar a framed window of the headless side carries above its
+# content, in points high.
+constant TITLE_BAR: i64
+    28
+
+# The icon an app gave itself, kept on both sides.
+record Icon
+    # Its pixels as 8-bit RGBA, none where the program set none.
+    pixels: [u8]
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+
+# The icon of an app that set none.
+function no_icon() -> Icon
+    return Icon(pixels: [], width: 0, height: 0)
+
+# The headless side's screens: its one.
+function headless_screens() -> [ui.Screen]
+    return [
+        ui.Screen(area: ui.Rect(x: 0, y: 0, width: SCREEN_WIDTH, height: SCREEN_HEIGHT), work: ui.Rect(x: 0, y: 0, width: SCREEN_WIDTH, height: SCREEN_HEIGHT - TASK_BAR), scale: 100)
+    ]
+
+# The screens of the system (`ui.screens`).
+function screens(app: ui.App) -> [ui.Screen]?
+    check.opened(app)?
+
+    if !app.native
+        return ok(headless_screens())
+    room: i64 @= 8 * hero_ui.HERO_UI_SCREEN_FIELDS
+
+    for _ in range(from: 0, to: 4)
+        values: [i64] @= []
+        got = hero_ui.screens(app.handle, @values, count: to_u64(room).must())
+
+        if got < 0
+            return failure.last("reading the screens")
+
+        if got * hero_ui.HERO_UI_SCREEN_FIELDS <= room
+            out: [ui.Screen] @= []
+
+            for i in range(from: 0, to: got)
+                at = i * hero_ui.HERO_UI_SCREEN_FIELDS
+                out @ out.push(
+                    ui.Screen(area: ui.Rect(x: values[at], y: values[at + 1], width: values[at + 2], height: values[at + 3]), work: ui.Rect(x: values[at + 4], y: values[at + 5], width: values[at + 6], height: values[at + 7]), scale: values[at + 8])
+                )
+
+            return ok(out)
+        room @ got * hero_ui.HERO_UI_SCREEN_FIELDS
+
+    return fail(code: failure.FAILED, msg: "the screens kept growing while they were read")
+
+# The node of `window`, a window of `app`.
+function window_node(app: ui.App, window: ui.Widget) -> model.Node?
+    return check.node_kind(app, widget: window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")
+
+# The headless side's frame of window node `n`, laid out: on its screen,
+# its title bar above its content where it has its frame and is not in full
+# screen, centred in the work area where it was never placed.
+function headless_frame(n: model.Node) -> ui.Frame
+    s = n.standing
+
+    high = if s.framed && s.state != hero_ui.HERO_UI_STATE_FULL_SCREEN
+        n.h + TITLE_BAR
+    else
+        n.h
+
+    if s.placed
+        return ui.Frame(screen: s.screen, x: s.x, y: s.y, width: n.w, height: high)
+    work = headless_screens()[0].work
+    return ui.Frame(
+        screen: 0,
+        x: work.x + (work.width - n.w) / 2,
+        y: work.y + (work.height - high) / 2,
+        width: n.w,
+        height: high
+    )
+
+# Where window `window` stands (`ui.frame_of`).
+function frame_of(@app: ui.App, window: ui.Widget) -> ui.Frame?
+    n = window_node(app, window: window)?
+    loop.settle(@app)?
+
+    if app.native
+        screen @= 0
+        x @= 0
+        y @= 0
+        width @= 0
+        height @= 0
+
+        if hero_ui.frame_of(app.handle, id: n.id, screen: @screen, x: @x, y: @y, width: @width, height: @height) < 0
+            return failure.last(f"reading the frame of window {n.id}")
+        return ok(ui.Frame(screen: screen, x: x, y: y, width: width, height: height))
+    return ok(headless_frame(model.node_of(app.table, id: n.id)?))
+
+# Fails `invalid` where `screen` is no screen of `app`, or `x` or `y` is past
+# `ui.MOST_SIZE` either way.
+function position_ok(app: ui.App, screen: i64, x: i64, y: i64) -> ()?
+    count = screens(app)?.len()
+
+    if screen < 0 || screen >= count
+        return fail(code: failure.INVALID, msg: f"screen {screen}; this system has {count}, numbered from 0")
+
+    if x < 0 - ui.MOST_SIZE || x > ui.MOST_SIZE || y < 0 - ui.MOST_SIZE || y > ui.MOST_SIZE
+        return fail(
+            code: failure.INVALID,
+            msg: f"the position {x}, {y} is past {ui.MOST_SIZE} points from the screen's corner"
+        )
+    return ok()
+
+# Moves window `window` (`ui.set_position`).
+function set_position(@app: ui.App, window: ui.Widget, screen: i64, x: i64, y: i64) -> ()?
+    n @= window_node(app, window: window)?
+    position_ok(app, screen: screen, x: x, y: y)?
+
+    if app.native && hero_ui.set_position(app.handle, id: n.id, screen: screen, x: x, y: y) < 0
+        return failure.last(f"placing window {n.id} on screen {screen}")
+    n.standing.placed @ true
+    n.standing.screen @ screen
+    n.standing.x @ x
+    n.standing.y @ y
+    model.put(@app.table, n: n)
+    return ok()
+
+# Centres window `window` over window `over` (`ui.center_over`).
+function centered_over(@app: ui.App, window: ui.Widget, over: ui.Widget) -> ()?
+    n = window_node(app, window: window)?
+    o = window_node(app, window: over)?
+
+    if o.id == n.id
+        return fail(code: failure.INVALID, msg: f"window {n.id} is centred over another window, and was named itself")
+    return centered(@app, window: window, over: o.id)
+
+# Centres window `window` on its screen's work area, or over window `over`
+# where it is not 0 (`ui.center`, `ui.center_over`).
+function centered(@app: ui.App, window: ui.Widget, over: i64) -> ()?
+    _ = window_node(app, window: window)?
+    loop.settle(@app)?
+    n @= model.node_of(app.table, id: window.id)?
+
+    if app.native
+        if hero_ui.center(app.handle, id: n.id, over: over) < 0
+            return failure.last(f"centring window {n.id}")
+        at = frame_of(@app, window: window)?
+        n.standing.placed @ true
+        n.standing.screen @ at.screen
+        n.standing.x @ at.x
+        n.standing.y @ at.y
+        model.put(@app.table, n: n)
+        return ok()
+    own = headless_frame(n)
+    work = headless_screens()[0].work
+
+    around = if over == 0
+        work
+    else
+        o = headless_frame(model.node_of(app.table, id: over)?)
+        ui.Rect(x: o.x, y: o.y, width: o.width, height: o.height)
+
+    x = within(at: around.x + (around.width - own.width) / 2, least: work.x, most: work.x + work.width - own.width)
+    y = within(at: around.y + (around.height - own.height) / 2, least: work.y, most: work.y + work.height - own.height)
+    n.standing.placed @ true
+    n.standing.screen @ 0
+    n.standing.x @ x
+    n.standing.y @ y
+    model.put(@app.table, n: n)
+    return ok()
+
+# `at` kept from `least` to `most`, `least` winning where they cross: a
+# window larger than its work area stands at its top-left corner.
+function within(at: i64, least: i64, most: i64) -> i64
+    if at > most
+        if most < least
+            return least
+        return most
+
+    if at < least
+        return least
+    return at
+
+# The layer's number for `state`.
+function state_code(state: ui.WindowState) -> i64
+    return match state
+        .normal      => hero_ui.HERO_UI_STATE_NORMAL
+        .minimized   => hero_ui.HERO_UI_STATE_MINIMIZED
+        .maximized   => hero_ui.HERO_UI_STATE_MAXIMIZED
+        .full_screen => hero_ui.HERO_UI_STATE_FULL_SCREEN
+
+# The state the layer's `code` names; a number it does not name is normal.
+function state_of_code(code: i64) -> ui.WindowState
+    if code == hero_ui.HERO_UI_STATE_MINIMIZED
+        return .minimized
+
+    if code == hero_ui.HERO_UI_STATE_MAXIMIZED
+        return .maximized
+
+    if code == hero_ui.HERO_UI_STATE_FULL_SCREEN
+        return .full_screen
+    return .normal
+
+# Brings window `window` to `state` (`ui.set_state`). On the native side the
+# events the change queued, its content's new size among them, are read at
+# once, so the table holds the size the system gave before anything is laid
+# out again.
+function set_state(@app: ui.App, window: ui.Widget, state: ui.WindowState) -> ()?
+    n = window_node(app, window: window)?
+    code = state_code(state)
+
+    if app.native
+        loop.settle(@app)?
+
+        if hero_ui.set_state(app.handle, id: n.id, state: code) < 0
+            return failure.last(f"bringing window {n.id} to a state")
+        loop.drained(@app)?
+        put_state(@app, id: n.id, code: code)
+        return ok()
+
+    for event in headless_state(@app, id: n.id, code: code)
+        app.events @ app.events.push(event)
+
+    return ok()
+
+# Writes `code` as window `id`'s state in the table.
+function put_state(@app: ui.App, id: i64, code: i64)
+    n @= app.table.nodes[id].must()
+    n.standing.state @ code
+    model.put(@app.table, n: n)
+
+# Brings headless window `id` to the state `code`, as the system would: a
+# maximized window fills its screen's work area under its title bar, one in
+# full screen the whole screen with no frame, and a restored one takes back
+# the size and the place it had; answers `.resized` where its content took
+# a new size by it.
+function headless_state(@app: ui.App, id: i64, code: i64) -> [ui.Event]
+    n @= app.table.nodes[id].must()
+    before = n.standing.state
+    none: [ui.Event] = []
+
+    if before == code
+        return none
+    was_w = n.w
+    was_h = n.h
+
+    # The size and the place it leaves the normal state with are what it
+    # takes back when it returns to it.
+    if before == hero_ui.HERO_UI_STATE_NORMAL
+        n.standing.normal_width @ n.width
+        n.standing.normal_height @ n.height
+        n.standing.normal_placed @ n.standing.placed
+        n.standing.normal_screen @ n.standing.screen
+        n.standing.normal_x @ n.standing.x
+        n.standing.normal_y @ n.standing.y
+
+    screen = headless_screens()[0]
+
+    if code == hero_ui.HERO_UI_STATE_MAXIMIZED
+        n.width @ screen.work.width
+        n.height @ screen.work.height - title_of(n)
+        n.standing.placed @ true
+        n.standing.screen @ 0
+        n.standing.x @ screen.work.x
+        n.standing.y @ screen.work.y
+    else if code == hero_ui.HERO_UI_STATE_FULL_SCREEN
+        n.width @ screen.area.width
+        n.height @ screen.area.height
+        n.standing.placed @ true
+        n.standing.screen @ 0
+        n.standing.x @ 0
+        n.standing.y @ 0
+    else if code == hero_ui.HERO_UI_STATE_NORMAL
+        n.width @ n.standing.normal_width
+        n.height @ n.standing.normal_height
+        n.standing.placed @ n.standing.normal_placed
+        n.standing.screen @ n.standing.normal_screen
+        n.standing.x @ n.standing.normal_x
+        n.standing.y @ n.standing.normal_y
+
+    n.standing.state @ code
+    n.dirty @ true
+    model.put(@app.table, n: n)
+    nodes @= app.table.nodes
+    layout.lay_out(@nodes, window: id)
+    app.table.nodes @ nodes
+    laid = app.table.nodes[id].must()
+
+    if laid.w != was_w || laid.h != was_h
+        return [.resized(window: check.widget_of(app, id: id), width: laid.w, height: laid.h)]
+    return none
+
+# The title bar's height a framed headless window carries, 0 for one with
+# no frame.
+function title_of(n: model.Node) -> i64
+    if n.standing.framed
+        return TITLE_BAR
+    return 0
+
+# The state window `window` stands in (`ui.state_of`): on the native side
+# as the system holds it, the person's last act included.
+function state_of(app: ui.App, window: ui.Widget) -> ui.WindowState?
+    n = window_node(app, window: window)?
+
+    if app.native
+        code @= 0
+
+        if hero_ui.state_of(app.handle, id: n.id, state: @code) < 0
+            return failure.last(f"reading the state of window {n.id}")
+        return ok(state_of_code(code))
+    return ok(state_of_code(n.standing.state))
+
+# Keeps a window on top, or not (`ui.set_on_top`).
+function set_on_top(@app: ui.App, window: ui.Widget, on: bool) -> ()?
+    n @= window_node(app, window: window)?
+
+    if app.native && hero_ui.set_on_top(app.handle, id: n.id, on: check.number_of(on)) < 0
+        return failure.last(f"keeping window {n.id} on top")
+    n.standing.on_top @ on
+    model.put(@app.table, n: n)
+    return ok()
+
+# Gives a window its frame, or takes it away (`ui.set_framed`).
+function set_framed(@app: ui.App, window: ui.Widget, on: bool) -> ()?
+    n @= window_node(app, window: window)?
+
+    if n.standing.state == hero_ui.HERO_UI_STATE_FULL_SCREEN
+        return fail(
+            code: failure.FAILED,
+            msg: f"window {n.id} is in full screen, which keeps its frame until it leaves"
+        )
+
+    if app.native
+        if hero_ui.set_framed(app.handle, id: n.id, on: check.number_of(on)) < 0
+            return failure.last(f"giving window {n.id} its frame")
+        loop.drained(@app)?
+        n @ model.node_of(app.table, id: n.id)?
+    n.standing.framed @ on
+    model.put(@app.table, n: n)
+    return ok()
+
+# Sets a window's opacity (`ui.set_opacity`).
+function set_opacity(@app: ui.App, window: ui.Widget, opacity: i64) -> ()?
+    n @= window_node(app, window: window)?
+
+    if opacity < 0 || opacity > 255
+        return fail(code: failure.INVALID, msg: f"an opacity of {opacity}; it runs from 0, see-through, to 255, opaque")
+
+    if app.native && hero_ui.set_opacity(app.handle, id: n.id, alpha: opacity) < 0
+        return failure.last(f"setting the opacity of window {n.id}")
+    n.standing.opacity @ opacity
+    model.put(@app.table, n: n)
+    return ok()
+
+# Puts a backdrop behind a window's widgets (`ui.set_backdrop`).
+function set_backdrop(@app: ui.App, window: ui.Widget, backdrop: ui.Backdrop) -> ()?
+    n @= window_node(app, window: window)?
+
+    code = match backdrop
+        .plain       => hero_ui.HERO_UI_BACKDROP_NONE
+        .translucent => hero_ui.HERO_UI_BACKDROP_TRANSLUCENT
+
+    if app.native && hero_ui.set_backdrop(app.handle, id: n.id, backdrop: code) < 0
+        return failure.last(f"setting the backdrop of window {n.id}")
+    n.standing.backdrop @ code
+    model.put(@app.table, n: n)
+    return ok()
+
+# The modal window of `app`, 0, the number no widget takes, where none is.
+function modal_of(app: ui.App) -> i64
+    for id in app.table.windows
+        if app.table.nodes[id].must().standing.modal
+            return id
+
+    return 0
+
+# Makes a window modal, or ends it (`ui.set_modal`).
+function set_modal(@app: ui.App, window: ui.Widget, on: bool) -> ()?
+    n @= window_node(app, window: window)?
+    held = modal_of(app)
+
+    if on && held != 0 && held != n.id
+        return fail(code: failure.FAILED, msg: f"window {held} is modal already; end its session first")
+
+    if app.native
+        loop.settle(@app)?
+
+        if hero_ui.set_modal(app.handle, id: n.id, on: check.number_of(on)) < 0
+            return failure.last(f"making window {n.id} modal")
+        n @ model.node_of(app.table, id: n.id)?
+    n.standing.modal @ on
+    model.put(@app.table, n: n)
+    return ok()
+
+# Gives the app its icon (`ui.set_icon`).
+function set_icon(@app: ui.App, img: image.Image) -> ()?
+    check.opened(app)?
+
+    if !image.is_valid(img)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the image of {img.width} by {img.height} holds {img.pixels.len()} bytes, which its format does not fill"
+        )
+
+    if img.width > 1024 || img.height > 1024
+        return fail(
+            code: failure.INVALID,
+            msg: f"an icon of {img.width} by {img.height} pixels; an icon takes at most 1024 by 1024"
+        )
+    rgba = image.convert(img, to: .rgba)
+
+    if app.native
+        pixels @= rgba.pixels
+
+        if hero_ui.set_icon(app.handle, @pixels, count: to_u64(pixels.len()).must(), width: rgba.width, height: rgba.height) < 0
+            return failure.last("setting the app's icon")
+    app.icon @ Icon(pixels: rgba.pixels, width: rgba.width, height: rgba.height)
+    return ok()
+
+# Whether the person can reach window `window` with an act: it is shown, and
+# no other window of the app is modal.
+function open_to_person(app: ui.App, window: i64) -> bool
+    held = modal_of(app)
+
+    if held != 0 && held != window
+        return false
+    return app.table.nodes[window].must().visible
+
+# What the person did to window `id` among the screens, the system's event
+# `taken`, `[kind, id, value, second]`, read into the table and answered as
+# the events it makes: a move, a new state, another screen. The layer
+# queues a window's new screen before the move that took it there.
+function read(@app: ui.App, taken: [i64]) -> [ui.Event]
+    n @= app.table.nodes[taken[1]].must()
+    w = check.widget_of(app, id: n.id)
+    none: [ui.Event] = []
+
+    # A move to another screen comes after that screen's event, so the
+    # screen the table holds is the one the position is on.
+    if taken[0] == hero_ui.HERO_UI_EVENT_MOVE
+        n.standing.placed @ true
+        n.standing.x @ taken[2]
+        n.standing.y @ taken[3]
+        model.put(@app.table, n: n)
+        return [.moved(window: w, screen: n.standing.screen, x: taken[2], y: taken[3])]
+
+    if taken[0] == hero_ui.HERO_UI_EVENT_STATE
+        n.standing.state @ taken[2]
+        model.put(@app.table, n: n)
+        return [.state_changed(window: w, state: state_of_code(taken[2]))]
+
+    if taken[0] == hero_ui.HERO_UI_EVENT_SCREEN
+        n.standing.screen @ taken[2]
+        model.put(@app.table, n: n)
+        return [.screen_changed(window: w, screen: taken[2])]
+    return none
+
+## Tests
+
+# Every event `app` has ready, as their names, waiting no time.
+function names_of(@app: ui.App) -> [str]
+    out: [str] @= []
+
+    while true
+        match ui.wait(@app, within: time.nanoseconds(0))
+            .ok event =>
+                name = match event
+                    .moved m          => f"moved {m.window.id} {m.screen}:{m.x},{m.y}"
+                    .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
+                    .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
+                    .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ =>
+                        "another"
+
+                out @ out.push(name)
+            .err _ => break
+
+    return out
+
+test "screens: the headless side's one screen of 1920 by 1080 points at scale 100, its work area above a task bar of 40"
+    app @= fixture.test_app()
+    seen = ui.screens(app).must()
+    assert seen.len() == 1
+    assert seen[0].area == ui.Rect(x: 0, y: 0, width: 1920, height: 1080)
+    assert seen[0].work == ui.Rect(x: 0, y: 0, width: 1920, height: 1040)
+    assert seen[0].scale == 100
+    ui.close(@app).must()
+
+test "frame_of: a window never placed stands in the middle of the work area, its title bar of 28 above its content, none without its frame"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 810, y: 406, width: 300, height: 228)
+    ui.set_framed(@app, widget: w, on: false).must()
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 810, y: 420, width: 300, height: 200)
+    label = ui.label(@app, into: w, text: "x").must()
+    assert fixture.code_of(ui.frame_of(@app, widget: label)) == ui.INVALID
+    ui.close(@app).must()
+
+test "set_position: placed on screen 0 and read back, at the edges of its range; no such screen, a position past them and a widget no window refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.set_position(@app, widget: w, screen: 0, x: 40, y: 30).must()
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 40, y: 30, width: 300, height: 228)
+    ui.set_position(@app, widget: w, screen: 0, x: 0 - ui.MOST_SIZE, y: ui.MOST_SIZE).must()
+    assert fixture.code_of(ui.set_position(@app, widget: w, screen: 1, x: 0, y: 0)) == ui.INVALID
+    assert fixture.code_of(ui.set_position(@app, widget: w, screen: -1, x: 0, y: 0)) == ui.INVALID
+    assert fixture.code_of(ui.set_position(@app, widget: w, screen: 0, x: ui.MOST_SIZE + 1, y: 0)) == ui.INVALID
+    assert fixture.code_of(ui.set_position(@app, widget: w, screen: 0, x: 0, y: 0 - ui.MOST_SIZE - 1)) == ui.INVALID
+    label = ui.label(@app, into: w, text: "x").must()
+    assert fixture.code_of(ui.set_position(@app, widget: label, screen: 0, x: 0, y: 0)) == ui.INVALID
+    assert names_of(@app).len() == 0
+    ui.close(@app).must()
+
+test "center and center_over: in the work area, over another window kept within it, a window wider than the work area at its corner, and over itself refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.set_position(@app, widget: w, screen: 0, x: 0, y: 0).must()
+    ui.center(@app, widget: w).must()
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 810, y: 406, width: 300, height: 228)
+    small = ui.window(@app, title: "Small", width: 100, height: 50).must()
+    ui.set_position(@app, widget: w, screen: 0, x: 1700, y: 900).must()
+    ui.center_over(@app, widget: small, over: w).must()
+    assert ui.frame_of(@app, widget: small).must() == ui.Frame(screen: 0, x: 1800, y: 962, width: 100, height: 78)
+    wide = ui.window(@app, title: "Wide", width: 3000, height: 50).must()
+    ui.center(@app, widget: wide).must()
+    assert ui.frame_of(@app, widget: wide).must().x == 0
+    assert fixture.code_of(ui.center_over(@app, widget: w, over: w)) == ui.INVALID
+    ui.close(@app).must()
+
+test "set_state: maximized fills the work area under its title bar, normal gives back its size and place, minimized keeps its size, full screen the whole screen; each new size told, no state"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.set_position(@app, widget: w, screen: 0, x: 40, y: 30).must()
+    ui.set_state(@app, widget: w, to: .maximized).must()
+    assert ui.state_of(app, widget: w).must() == .maximized
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 0, y: 0, width: 1920, height: 1040)
+    ui.set_state(@app, widget: w, to: .maximized).must()
+    ui.set_state(@app, widget: w, to: .normal).must()
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 40, y: 30, width: 300, height: 228)
+    ui.set_state(@app, widget: w, to: .minimized).must()
+    assert ui.state_of(app, widget: w).must() == .minimized
+    ui.set_state(@app, widget: w, to: .full_screen).must()
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 0, y: 0, width: 1920, height: 1080)
+    ui.set_state(@app, widget: w, to: .normal).must()
+    assert names_of(@app) == ["resized 1 1920x1012", "resized 1 300x200", "resized 1 1920x1080", "resized 1 300x200"]
+    ui.close(@app).must()
+
+test "set_on_top, set_framed, set_opacity, set_backdrop: kept and drawn; an opacity outside 0 to 255 invalid, a frame taken in full screen refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.set_on_top(@app, widget: w, on: true).must()
+    ui.set_framed(@app, widget: w, on: false).must()
+    ui.set_opacity(@app, widget: w, opacity: 0).must()
+    ui.set_opacity(@app, widget: w, opacity: 128).must()
+    ui.set_backdrop(@app, widget: w, backdrop: .translucent).must()
+    assert ui.render(@app).must()[0] == "window #1 \"Test\" 300x200 on_top frameless opacity 128 translucent"
+    assert fixture.code_of(ui.set_opacity(@app, widget: w, opacity: 256)) == ui.INVALID
+    assert fixture.code_of(ui.set_opacity(@app, widget: w, opacity: -1)) == ui.INVALID
+    ui.set_framed(@app, widget: w, on: true).must()
+    ui.set_state(@app, widget: w, to: .full_screen).must()
+    assert fixture.code_of(ui.set_framed(@app, widget: w, on: false)) == ui.FAILED
+    ui.close(@app).must()
+
+test "set_modal: the modal window takes the person's acts alone, a second refused, and ended the other windows take them again"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    go = ui.button(@app, into: w, text: "Go").must()
+    dialog = ui.window(@app, title: "Ask", width: 120, height: 60).must()
+    ok_button = ui.button(@app, into: dialog, text: "OK").must()
+    ui.set_modal(@app, widget: dialog, on: true).must()
+    assert fixture.code_of(ui.set_modal(@app, widget: w, on: true)) == ui.FAILED
+    ui.inject(@app, input: .click(widget: go)).must()
+    ui.inject(@app, input: .ask_close(window: w)).must()
+    ui.inject(@app, input: .click(widget: ok_button)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
+    assert ui.render(@app).must()[2] == "window #3 \"Ask\" 120x60 modal"
+    ui.set_modal(@app, widget: dialog, on: false).must()
+    ui.inject(@app, input: .click(widget: go)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: go)
+    ui.close(@app).must()
+
+test "set_icon: kept; an image its pixels do not fill, and one past 1024 pixels a side, invalid"
+    app @= fixture.test_app()
+    ui.set_icon(@app, img: image.blank(width: 16, height: 16, format: .rgba).must()).must()
+    assert app.icon.width == 16
+    assert app.icon.pixels.len() == 16 * 16 * 4
+    broken = image.Image(width: 4, height: 4, format: .rgba, pixels: [1, 2, 3])
+    assert fixture.code_of(ui.set_icon(@app, img: broken)) == ui.INVALID
+    assert fixture.code_of(ui.set_icon(@app, img: image.blank(width: 1025, height: 1, format: .gray).must())) == ui.INVALID
+    ui.close(@app).must()
+
+test "inject drag_window and change_state: the person's moves and states told with the sizes they give; a hidden window takes none; a screen past the one refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.inject(@app, input: .drag_window(window: w, screen: 0, x: 100, y: 50)).must()
+    ui.inject(@app, input: .change_state(window: w, state: .maximized)).must()
+    ui.inject(@app, input: .change_state(window: w, state: .maximized)).must()
+    ui.inject(@app, input: .change_state(window: w, state: .normal)).must()
+    assert names_of(@app) == ["moved 1 0:100,50", "state_changed 1 3", "resized 1 1920x1012", "state_changed 1 1", "resized 1 300x200"]
+    assert ui.frame_of(@app, widget: w).must() == ui.Frame(screen: 0, x: 100, y: 50, width: 300, height: 228)
+    assert fixture.code_of(ui.inject(@app, input: .drag_window(window: w, screen: 1, x: 0, y: 0))) == ui.INVALID
+    ui.set_visible(@app, widget: w, on: false).must()
+    ui.inject(@app, input: .drag_window(window: w, screen: 0, x: 0, y: 0)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "render: a window placed by the program, minimized, says where and how"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.set_position(@app, widget: w, screen: 0, x: 12, y: 34).must()
+    ui.set_state(@app, widget: w, to: .minimized).must()
+    assert ui.render(@app).must()[0] == "window #1 \"Test\" 300x200 on screen 0 at 12,34 minimized"
+    ui.close(@app).must()
+
+# The words a native test skips with where this machine offers the session
+# no native user interface (`hero_ui.h`, THE SYSTEMS).
+constant NO_NATIVE: str
+    "no native user interface for this session: no window server, no window station that shows, or no display named"
+
+test "native: the screens read, a window placed, centred, maximized, minimized, in full screen and restored, drawn otherwise, made modal, and the person's moves and states told"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= ui.open(.native).must()
+    seen = ui.screens(app).must()
+    assert seen.len() >= 1
+    main = seen[0]
+    assert main.area.x == 0 && main.area.y == 0
+    assert main.scale >= 100
+    assert main.work.width > 0 && main.work.width <= main.area.width
+    assert main.work.height > 0 && main.work.height <= main.area.height
+    w = ui.window(@app, title: "Desk", width: 320, height: 200).must()
+    at_x = main.work.x + 60
+    at_y = main.work.y + 40
+    ui.set_position(@app, widget: w, screen: 0, x: at_x, y: at_y).must()
+    placed = ui.frame_of(@app, widget: w).must()
+    assert placed.screen == 0 && placed.x == at_x && placed.y == at_y
+    assert placed.width == 320 && placed.height > 200
+    ui.center(@app, widget: w).must()
+    centred = ui.frame_of(@app, widget: w).must()
+    middle = main.work.x + (main.work.width - centred.width) / 2
+    assert centred.x >= middle - 1 && centred.x <= middle + 1
+    assert names_of(@app).len() == 0
+
+    # Each state reached, read back, and its size told as a resize.
+    ui.set_state(@app, widget: w, to: .maximized).must()
+    assert ui.state_of(app, widget: w).must() == .maximized
+    ui.set_state(@app, widget: w, to: .normal).must()
+    assert ui.state_of(app, widget: w).must() == .normal
+    ui.set_state(@app, widget: w, to: .minimized).must()
+    assert ui.state_of(app, widget: w).must() == .minimized
+    ui.set_state(@app, widget: w, to: .full_screen).must()
+    assert ui.state_of(app, widget: w).must() == .full_screen
+    ui.set_state(@app, widget: w, to: .normal).must()
+    assert ui.state_of(app, widget: w).must() == .normal
+
+    for name in names_of(@app)
+        assert name.len() > 8 && name.slice(from: 0, to: 8) == "resized "
+
+    # Drawn otherwise: on top, with no frame, see-through, on the system's
+    # material, then as made again.
+    ui.set_on_top(@app, widget: w, on: true).must()
+    ui.set_framed(@app, widget: w, on: false).must()
+    bare = ui.frame_of(@app, widget: w).must()
+    assert bare.height == 200
+    ui.set_opacity(@app, widget: w, opacity: 200).must()
+    ui.set_backdrop(@app, widget: w, backdrop: .translucent).must()
+    ui.set_backdrop(@app, widget: w, backdrop: .plain).must()
+    ui.set_framed(@app, widget: w, on: true).must()
+    ui.set_on_top(@app, widget: w, on: false).must()
+    ui.set_opacity(@app, widget: w, opacity: 255).must()
+    ui.set_icon(@app, img: image.blank(width: 32, height: 32, format: .rgba).must()).must()
+
+    # Modal, one at a time.
+    dialog = ui.window(@app, title: "Ask", width: 120, height: 60).must()
+    ui.set_modal(@app, widget: dialog, on: true).must()
+    assert fixture.code_of(ui.set_modal(@app, widget: w, on: true)) == ui.FAILED
+    _ = ui.wait(@app, within: time.milliseconds(50).must()).is_err()
+    ui.set_modal(@app, widget: dialog, on: false).must()
+    ui.destroy(@app, widget: dialog).must()
+
+    # What the person does, through the system's own path.
+    ui.inject(@app, input: .drag_window(window: w, screen: 0, x: at_x + 20, y: at_y + 10)).must()
+    ui.inject(@app, input: .change_state(window: w, state: .minimized)).must()
+    ui.inject(@app, input: .change_state(window: w, state: .normal)).must()
+    told = names_of_waiting(@app)
+    assert has(told, item: f"moved {w.id} 0:{at_x + 20},{at_y + 10}")
+    assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_MINIMIZED}")
+    assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_NORMAL}")
+    ui.close(@app).must()
+
+# Every event `app` gives within 300 milliseconds of the last, as their
+# names: the system's own come as its loop runs.
+function names_of_waiting(@app: ui.App) -> [str]
+    out: [str] @= []
+
+    while true
+        match ui.wait(@app, within: time.milliseconds(300).must())
+            .ok event =>
+                name = match event
+                    .moved m          => f"moved {m.window.id} {m.screen}:{m.x},{m.y}"
+                    .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
+                    .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
+                    .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ =>
+                        "another"
+
+                out @ out.push(name)
+            .err _ => break
+
+    return out
+
+# Whether `items` holds `item`.
+function has(items: [str], item: str) -> bool
+    for each in items
+        if each == item
+            return true
+
+    return false

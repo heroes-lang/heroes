@@ -682,7 +682,7 @@ static hero_ui_slot *hero_ui_enter_native(hero_ui_app *app) {
 /* Whether two events of `kind` for one widget with nothing between are
  * queued once, the later's values kept. */
 static bool hero_ui_coalesced(int64_t kind) {
-    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE;
+    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE || kind == HERO_UI_EVENT_MOVE;
 }
 
 static bool hero_ui_is_utf8(const uint8_t *text, uint64_t length);
@@ -1791,8 +1791,20 @@ int64_t hero_ui_set_enabled(hero_ui_app *app, int64_t id, int64_t on) {
     return hero_ui_flag(app, id, HERO_UI_FLAG_ENABLED, on, "enabling a widget");
 }
 
+static int64_t hero_ui_arm_watch(int64_t id);
+static bool hero_ui_arm_modal_here(void);
+static int64_t hero_ui_arm_modal_pump(int64_t ms);
+
 int64_t hero_ui_set_visible(hero_ui_app *app, int64_t id, int64_t on) {
-    return hero_ui_flag(app, id, HERO_UI_FLAG_VISIBLE, on, "showing a widget");
+    int64_t answer = hero_ui_flag(app, id, HERO_UI_FLAG_VISIBLE, on, "showing a widget");
+
+    /* A window is watched from the first time it is shown, so what the
+     * person does to it among the screens is queued (WINDOWS ON THE SCREEN,
+     * below); a widget's number names no window there, and nothing is. */
+    if (answer == 0 && on == 1) {
+        (void)hero_ui_arm_watch(id);
+    }
+    return answer;
 }
 
 int64_t hero_ui_set_resizable(hero_ui_app *app, int64_t id, int64_t on) {
@@ -1938,7 +1950,10 @@ int64_t hero_ui_wait(hero_ui_app *app, int64_t ms) {
     if (slot->held > 0 || slot->backend != HERO_UI_NATIVE) {
         return slot->held > 0 ? 1 : 0;
     }
-    kind = hero_ui_arm_pump(ms);
+    /* While a window is modal its session runs in place of the system's
+     * loop, so the app's other windows take no input (WINDOWS ON THE
+     * SCREEN, below). */
+    kind = hero_ui_arm_modal_here() ? hero_ui_arm_modal_pump(ms) : hero_ui_arm_pump(ms);
     if (kind != HERO_UI_OK) {
         return hero_ui_answered(kind, "running the system's loop", 0);
     }
@@ -2373,4 +2388,377 @@ int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_
         return hero_ui_said(HERO_UI_INVALID, "the keys held are HERO_UI_PRIMARY, HERO_UI_SHIFT and HERO_UI_ALT added");
     }
     return hero_ui_windows_answered(hero_ui_arm_press_key(id, key, (int64_t)count, modifiers), "pressing a key", id);
+}
+
+/* -- WINDOWS ON THE SCREEN ------------------------------------------------- */
+
+/* Which of a window's settings an arm's `window_set` makes, `value`
+ * checked by the entry point. */
+#define HERO_UI_WINDOW_SET_ON_TOP 1
+#define HERO_UI_WINDOW_SET_FRAMED 2
+#define HERO_UI_WINDOW_SET_OPACITY 3
+#define HERO_UI_WINDOW_SET_BACKDROP 4
+#define HERO_UI_WINDOW_SET_MODAL 5
+
+#if defined(__APPLE__)
+
+/* The `NSWindow` of window `id`, or NULL with `*kind` the answer: NOT_FOUND
+ * where the native side holds no widget `id`, INVALID where it is no
+ * window. */
+static void *hero_ui_own_window(int64_t id, int64_t *kind) {
+    void *window = hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    if (window == NULL) {
+        *kind = hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_WINDOW) == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    }
+    return window;
+}
+
+static int64_t hero_ui_arm_watch(int64_t id) {
+    void *window = hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    return window == NULL ? HERO_UI_OK : hero_ui_appkit_windows_watch(window, id, hero_ui_push);
+}
+
+static int64_t hero_ui_arm_screens(int64_t *values, int64_t count, int64_t *screens) {
+    return hero_ui_appkit_screens(values, count, screens);
+}
+
+static int64_t hero_ui_arm_frame_of(int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+
+    return window == NULL ? kind : hero_ui_appkit_frame_of(window, screen, x, y, width, height);
+}
+
+static int64_t hero_ui_arm_set_position(int64_t id, int64_t screen, int64_t x, int64_t y, int64_t person) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+
+    return window == NULL ? kind : hero_ui_appkit_set_position(window, screen, x, y, person);
+}
+
+static int64_t hero_ui_arm_center(int64_t id, int64_t over) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+    void *anchor = NULL;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (over != 0) {
+        anchor = hero_ui_own_window(over, &kind);
+        if (anchor == NULL) {
+            return kind;
+        }
+    }
+    return hero_ui_appkit_center(window, anchor);
+}
+
+static int64_t hero_ui_arm_set_state(int64_t id, int64_t state, int64_t person) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+
+    return window == NULL ? kind : hero_ui_appkit_set_state(window, state, person);
+}
+
+static int64_t hero_ui_arm_state(int64_t id, int64_t *state) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+
+    return window == NULL ? kind : hero_ui_appkit_state(window, state);
+}
+
+static int64_t hero_ui_arm_window_set(int64_t id, int64_t which, int64_t value) {
+    int64_t kind = HERO_UI_OK;
+    void *window = hero_ui_own_window(id, &kind);
+
+    if (window == NULL) {
+        return kind;
+    }
+    switch (which) {
+    case HERO_UI_WINDOW_SET_ON_TOP:
+        return hero_ui_appkit_set_on_top(window, value);
+    case HERO_UI_WINDOW_SET_FRAMED:
+        return hero_ui_appkit_set_framed(window, value);
+    case HERO_UI_WINDOW_SET_OPACITY:
+        return hero_ui_appkit_set_opacity(window, value);
+    case HERO_UI_WINDOW_SET_BACKDROP:
+        return hero_ui_appkit_set_backdrop(window, value);
+    default:
+        return hero_ui_appkit_set_modal(window, value);
+    }
+}
+
+static int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height) {
+    return hero_ui_appkit_set_icon(rgba, width, height);
+}
+
+/* How many events the native app's queue holds: what the modal session's
+ * loop asks to know when to hand back. */
+static int64_t hero_ui_held_now(void) {
+    return hero_ui_native_slot == 0 ? 0 : hero_ui_slots[hero_ui_native_slot - 1].held;
+}
+
+static bool hero_ui_arm_modal_here(void) {
+    return hero_ui_appkit_modal_here() == 1;
+}
+
+static int64_t hero_ui_arm_modal_pump(int64_t ms) {
+    return hero_ui_appkit_modal_pump(ms, hero_ui_held_now);
+}
+
+#else
+
+static int64_t hero_ui_arm_watch(int64_t id) {
+    (void)id;
+    return HERO_UI_OK;
+}
+
+static int64_t hero_ui_arm_screens(int64_t *values, int64_t count, int64_t *screens) {
+    (void)values;
+    (void)count;
+    (void)screens;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_frame_of(int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height) {
+    (void)id;
+    (void)screen;
+    (void)x;
+    (void)y;
+    (void)width;
+    (void)height;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_set_position(int64_t id, int64_t screen, int64_t x, int64_t y, int64_t person) {
+    (void)id;
+    (void)screen;
+    (void)x;
+    (void)y;
+    (void)person;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_center(int64_t id, int64_t over) {
+    (void)id;
+    (void)over;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_set_state(int64_t id, int64_t state, int64_t person) {
+    (void)id;
+    (void)state;
+    (void)person;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_state(int64_t id, int64_t *state) {
+    (void)id;
+    (void)state;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_window_set(int64_t id, int64_t which, int64_t value) {
+    (void)id;
+    (void)which;
+    (void)value;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height) {
+    (void)rgba;
+    (void)width;
+    (void)height;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static bool hero_ui_arm_modal_here(void) {
+    return false;
+}
+
+static int64_t hero_ui_arm_modal_pump(int64_t ms) {
+    (void)ms;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_screens(hero_ui_app *app, int64_t *values, uint64_t count) {
+    int64_t screens = 0;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (count > 0 && values == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the screens and none given");
+    }
+    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
+        count = (uint64_t)HERO_UI_TEXT_MOST;
+    }
+    if (hero_ui_windows_answered(hero_ui_arm_screens(values, (int64_t)count, &screens), "reading the screens", 0) != 0) {
+        return -1;
+    }
+    return screens;
+}
+
+int64_t hero_ui_frame_of(hero_ui_app *app, int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height) {
+    int64_t on = 0;
+    int64_t left = 0;
+    int64_t top = 0;
+    int64_t wide = 0;
+    int64_t high = 0;
+    int64_t answer;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (screen == NULL || x == NULL || y == NULL || width == NULL || height == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the frame");
+    }
+    answer = hero_ui_windows_answered(hero_ui_arm_frame_of(id, &on, &left, &top, &wide, &high), "reading a window's frame", id);
+    if (answer == 0) {
+        *screen = on;
+        *x = left;
+        *y = top;
+        *width = wide;
+        *height = high;
+    }
+    return answer;
+}
+
+/* Whether `x` and `y` are a position a window takes, else the failure
+ * said. */
+static bool hero_ui_position_given(int64_t screen, int64_t x, int64_t y) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (screen < 0 || x < -HERO_UI_POSITION_MOST || x > HERO_UI_POSITION_MOST || y < -HERO_UI_POSITION_MOST || y > HERO_UI_POSITION_MOST) {
+        (void)snprintf(words, sizeof words, "the position %lld, %lld on screen %lld; a screen is 0 or more, and a position at most %d points from its corner either way", (long long)x, (long long)y, (long long)screen, HERO_UI_POSITION_MOST);
+        (void)hero_ui_said(HERO_UI_INVALID, words);
+        return false;
+    }
+    return true;
+}
+
+int64_t hero_ui_set_position(hero_ui_app *app, int64_t id, int64_t screen, int64_t x, int64_t y) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_position_given(screen, x, y)) {
+        return -1;
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_position(id, screen, x, y, 0), "placing a window on a screen", id);
+}
+
+int64_t hero_ui_center(hero_ui_app *app, int64_t id, int64_t over) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (over < 0 || over == id) {
+        return hero_ui_said(HERO_UI_INVALID, "a window is centred over another window, or over none, 0");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_center(id, over), "centring a window", id);
+}
+
+/* Whether `state` is one of the four, else the failure said. */
+static bool hero_ui_state_given(int64_t state) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (state < HERO_UI_STATE_NORMAL || state > HERO_UI_STATE_FULL_SCREEN) {
+        (void)snprintf(words, sizeof words, "the state %lld is none of HERO_UI_STATE_NORMAL to HERO_UI_STATE_FULL_SCREEN", (long long)state);
+        (void)hero_ui_said(HERO_UI_INVALID, words);
+        return false;
+    }
+    return true;
+}
+
+int64_t hero_ui_set_state(hero_ui_app *app, int64_t id, int64_t state) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_state_given(state)) {
+        return -1;
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_state(id, state, 0), "bringing a window to a state", id);
+}
+
+int64_t hero_ui_state(hero_ui_app *app, int64_t id, int64_t *state) {
+    int64_t got = HERO_UI_STATE_NORMAL;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (state == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the state");
+    }
+    if (hero_ui_windows_answered(hero_ui_arm_state(id, &got), "reading a window's state", id) != 0) {
+        return -1;
+    }
+    *state = got;
+    return 0;
+}
+
+/* One of a window's settings, `value` within `least` and `most`. */
+static int64_t hero_ui_window_set(hero_ui_app *app, int64_t id, int64_t which, int64_t value, int64_t least, int64_t most, const char *what) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (value < least || value > most) {
+        (void)snprintf(words, sizeof words, "%s: %lld is outside %lld to %lld", what, (long long)value, (long long)least, (long long)most);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_window_set(id, which, value), what, id);
+}
+
+int64_t hero_ui_set_on_top(hero_ui_app *app, int64_t id, int64_t on) {
+    return hero_ui_window_set(app, id, HERO_UI_WINDOW_SET_ON_TOP, on, 0, 1, "keeping a window on top");
+}
+
+int64_t hero_ui_set_framed(hero_ui_app *app, int64_t id, int64_t on) {
+    return hero_ui_window_set(app, id, HERO_UI_WINDOW_SET_FRAMED, on, 0, 1, "giving a window its frame");
+}
+
+int64_t hero_ui_set_opacity(hero_ui_app *app, int64_t id, int64_t alpha) {
+    return hero_ui_window_set(app, id, HERO_UI_WINDOW_SET_OPACITY, alpha, 0, 255, "setting a window's opacity");
+}
+
+int64_t hero_ui_set_backdrop(hero_ui_app *app, int64_t id, int64_t backdrop) {
+    return hero_ui_window_set(app, id, HERO_UI_WINDOW_SET_BACKDROP, backdrop, HERO_UI_BACKDROP_NONE, HERO_UI_BACKDROP_TRANSLUCENT, "setting a window's backdrop");
+}
+
+int64_t hero_ui_set_modal(hero_ui_app *app, int64_t id, int64_t on) {
+    return hero_ui_window_set(app, id, HERO_UI_WINDOW_SET_MODAL, on, 0, 1, "making a window modal");
+}
+
+int64_t hero_ui_set_icon(hero_ui_app *app, const void *rgba, uint64_t count, int64_t width, int64_t height) {
+    uint64_t pixels;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_sizes_given(width, height)) {
+        return -1;
+    }
+    if (__builtin_mul_overflow((uint64_t)width, (uint64_t)height, &pixels) || __builtin_mul_overflow(pixels, (uint64_t)4, &pixels) || pixels != count || (count > 0 && rgba == NULL) || count > (uint64_t)HERO_UI_TEXT_MOST) {
+        (void)snprintf(words, sizeof words, "%llu bytes of pixels for an icon of %lld by %lld, which takes 4 a pixel and at most %d bytes", (unsigned long long)count, (long long)width, (long long)height, HERO_UI_TEXT_MOST);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_icon(rgba, width, height), "setting the app's icon", 0);
+}
+
+int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, int64_t third) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (kind == HERO_UI_EVENT_MOVE) {
+        if (!hero_ui_position_given(value, second, third)) {
+            return -1;
+        }
+        return hero_ui_windows_answered(hero_ui_arm_set_position(id, value, second, third, 1), "moving a window as the person", id);
+    }
+    if (kind == HERO_UI_EVENT_STATE) {
+        if (!hero_ui_state_given(value)) {
+            return -1;
+        }
+        return hero_ui_windows_answered(hero_ui_arm_set_state(id, value, 1), "bringing a window to a state as the person", id);
+    }
+    (void)snprintf(words, sizeof words, "the act %lld is no act a person does to a window among the screens", (long long)kind);
+    return hero_ui_said(HERO_UI_INVALID, words);
 }

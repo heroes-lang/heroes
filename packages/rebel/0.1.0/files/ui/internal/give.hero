@@ -9,6 +9,7 @@
 use ui
 use ui/hero_ui
 use ui/internal/check
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/layout
 use ui/internal/model
@@ -58,6 +59,11 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .send s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
             check.text_ok(text: s.text, one_line: false, what: "the text sent")?
+        .drag_window d =>
+            _ = check.node_kind(app, widget: d.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+            desk.position_ok(app, screen: d.screen, x: d.x, y: d.y)?
+        .change_state c =>
+            _ = check.node_kind(app, widget: c.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
 
     return ok()
 
@@ -74,6 +80,8 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .ask_close a                              => a.window.id
         .resize r                                 => r.window.id
         .send s                                   => s.widget.id
+        .drag_window d                            => d.window.id
+        .change_state c                           => c.window.id
         .answer _ | .pick_files _ | .cancel_files => 0
 
     if id == 0
@@ -124,15 +132,15 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             n = app.table.nodes[m.item.id].must()
             menu = app.table.nodes[n.parent].must()
 
-            if n.enabled && menu.enabled && app.table.nodes[n.window].must().visible
+            if n.enabled && menu.enabled && desk.open_to_person(app, window: n.window)
                 return [.menu_chosen(item: m.item)]
         .ask_close a =>
-            if app.table.nodes[a.window.id].must().visible
+            if desk.open_to_person(app, window: a.window.id)
                 return [.close_asked(window: a.window)]
         .resize r =>
             n @= app.table.nodes[r.window.id].must()
 
-            if n.visible && n.resizable
+            if desk.open_to_person(app, window: n.id) && n.resizable
                 n.width @ r.width
                 n.height @ r.height
                 model.put(@app.table, n: n)
@@ -145,13 +153,37 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             # A web view showing no page runs no script that could send.
             if app.table.nodes[s.widget.id].must().web.page.len() > 0
                 return [.message(widget: s.widget, text: s.text)]
+        .drag_window d =>
+            if desk.open_to_person(app, window: d.window.id)
+                n @= app.table.nodes[d.window.id].must()
+                told: [ui.Event] @= []
+
+                if n.standing.screen != d.screen
+                    told @ told.push(.screen_changed(window: d.window, screen: d.screen))
+                n.standing.placed @ true
+                n.standing.screen @ d.screen
+                n.standing.x @ d.x
+                n.standing.y @ d.y
+                model.put(@app.table, n: n)
+                return told.push(.moved(window: d.window, screen: d.screen, x: d.x, y: d.y))
+        .change_state c =>
+            code = desk.state_code(c.state)
+
+            if desk.open_to_person(app, window: c.window.id) && app.table.nodes[c.window.id].must().standing.state != code
+                told: [ui.Event] @= [.state_changed(window: c.window, state: c.state)]
+
+                for event in desk.headless_state(@app, id: c.window.id, code: code)
+                    told @ told.push(event)
+
+                return told
         .answer _ | .pick_files _ | .cancel_files =>
             _ = 0
 
     return none
 
 # Whether the person can reach widget `id`: it is enabled, and it and every
-# box up to its window, and the window, are shown.
+# box up to its window, and the window, are shown, and no other window of
+# the app is modal.
 function reachable(app: ui.App, id: i64) -> bool
     n = app.table.nodes[id].must()
 
@@ -166,7 +198,7 @@ function reachable(app: ui.App, id: i64) -> bool
             return false
 
         if node.kind == hero_ui.HERO_UI_WINDOW
-            return true
+            return desk.open_to_person(app, window: node.id)
         at @ node.parent
 
     return true

@@ -45,6 +45,9 @@ function line_of(n: model.Node, visible: bool) -> str
 
         if !n.resizable
             parts @ parts.push("fixed")
+
+        for word in standing_words(n.standing)
+            parts @ parts.push(word)
     else if k == hero_ui.HERO_UI_CHECKBOX
         mark = if n.value == 1
             "[x]"
@@ -82,6 +85,39 @@ function line_of(n: model.Node, visible: bool) -> str
     if visible && model.is_placed(k)
         parts @ parts.push(f"at {n.x},{n.y} {n.w}x{n.h}")
     return parts.join(" ")
+
+# What a window's line says of how it stands among the screens, where it
+# stands otherwise than a new window: the position the program or the
+# person gave it, its state, on top, with no frame, its opacity, its
+# backdrop, modal.
+function standing_words(s: model.Standing) -> [str]
+    out: [str] @= []
+
+    if s.placed
+        out @ out.push(f"on screen {s.screen} at {s.x},{s.y}")
+
+    if s.state == hero_ui.HERO_UI_STATE_MINIMIZED
+        out @ out.push("minimized")
+    else if s.state == hero_ui.HERO_UI_STATE_MAXIMIZED
+        out @ out.push("maximized")
+    else if s.state == hero_ui.HERO_UI_STATE_FULL_SCREEN
+        out @ out.push("full_screen")
+
+    if s.on_top
+        out @ out.push("on_top")
+
+    if !s.framed
+        out @ out.push("frameless")
+
+    if s.opacity != 255
+        out @ out.push(f"opacity {s.opacity}")
+
+    if s.backdrop == hero_ui.HERO_UI_BACKDROP_TRANSLUCENT
+        out @ out.push("translucent")
+
+    if s.modal
+        out @ out.push("modal")
+    return out
 
 # A menu item's shortcut as text: the keys held, then the key, joined by
 # `+`.

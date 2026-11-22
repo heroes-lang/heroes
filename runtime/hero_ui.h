@@ -544,4 +544,146 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count);
  * the system keeps another application in front, `UNSUPPORTED`. */
 int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_t count, int64_t modifiers);
 
+/* -- WINDOWS ON THE SCREEN ----------------------------------------------------
+ *
+ * Where a window stands among the screens, the state it stands in, how the
+ * system draws it, the app's icon, and the window the person must answer
+ * before any other, as wxWidgets' `wxTopLevelWindow`, `wxDisplay` and
+ * `wxDialog::ShowModal` offer them.
+ *
+ * THE SCREENS are numbered from 0, the system's main one first (on macOS
+ * the screen holding the menu bar, on Windows the primary monitor), then in
+ * the order the system lists them. Each is given by `HERO_UI_SCREEN_FIELDS`
+ * numbers: its whole area's left, top, width and height, then its work
+ * area's (the whole less the menu bar, the Dock or the task bar), in the
+ * desktop's points, whose origin is screen 0's top-left corner and whose y
+ * axis goes down; and its scale in hundredths, the pixels a point takes on
+ * each axis times 100 (100 on an ordinary screen, 200 on a Retina one).
+ *
+ * A WINDOW'S POSITION is its frame's top-left corner, its title bar and its
+ * border included, in points from the top-left corner of the screen it is
+ * given on, or that it stands on most when it is read; the system may keep
+ * part of a frame on a screen (macOS keeps a title bar below the menu bar).
+ *
+ * WHAT THE PERSON DOES to a window among the screens is queued as the events
+ * below, each naming the window; what the program sets is not, but for the
+ * new size a change of state gives the content, queued as
+ * `HERO_UI_EVENT_RESIZE` as any resize is. Each of these calls answers
+ * `UNSUPPORTED` on a headless app, and on a system whose arm does not offer
+ * it. */
+
+/* How many numbers give one screen, and the place of each. */
+#define HERO_UI_SCREEN_FIELDS 9
+#define HERO_UI_SCREEN_LEFT 0
+#define HERO_UI_SCREEN_TOP 1
+#define HERO_UI_SCREEN_WIDTH 2
+#define HERO_UI_SCREEN_HEIGHT 3
+#define HERO_UI_SCREEN_WORK_LEFT 4
+#define HERO_UI_SCREEN_WORK_TOP 5
+#define HERO_UI_SCREEN_WORK_WIDTH 6
+#define HERO_UI_SCREEN_WORK_HEIGHT 7
+#define HERO_UI_SCREEN_SCALE 8
+
+/* The states a window stands in: shown at the size the program or the
+ * person gave it, minimized into the Dock or the task bar, maximized over
+ * its screen's work area (zoomed, on macOS), or filling its screen with no
+ * frame (on macOS in a space of its own). */
+#define HERO_UI_STATE_NORMAL 1
+#define HERO_UI_STATE_MINIMIZED 2
+#define HERO_UI_STATE_MAXIMIZED 3
+#define HERO_UI_STATE_FULL_SCREEN 4
+
+/* What stands behind a window's widgets: the system's plain background, or
+ * its translucent material, which blurs what stands behind the window
+ * (`NSVisualEffectView` on macOS, Mica on Windows 11). */
+#define HERO_UI_BACKDROP_NONE 0
+#define HERO_UI_BACKDROP_TRANSLUCENT 1
+
+/* The person moved window `id`: `value` and `second` its new position on
+ * the screen it stands on, which `hero_ui_frame_of` names. */
+#define HERO_UI_EVENT_MOVE 10
+/* Window `id` stands in a new state, `value`, by the person's act (its
+ * buttons, the Dock, a key of the system's). */
+#define HERO_UI_EVENT_STATE 11
+/* Window `id` stands on another screen, `value`, moved there or left there
+ * by a screen that changed. */
+#define HERO_UI_EVENT_SCREEN 12
+
+/* Writes the screens through `values`, `HERO_UI_SCREEN_FIELDS` numbers
+ * each, and answers how many there are; where they take more than `count`
+ * numbers, nothing is written and the number of screens is answered all the
+ * same. -1 on failure. */
+int64_t hero_ui_screens(hero_ui_app *app, int64_t *values, uint64_t count);
+
+/* Writes window `id`'s frame through the five places: the screen it stands
+ * on most, its position on that screen, and its frame's width and height in
+ * points, its title bar and border included. 0, or -1: `INVALID` for a
+ * widget no window, `NOT_FOUND`. */
+int64_t hero_ui_frame_of(hero_ui_app *app, int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height);
+
+/* Moves window `id` to position `x`, `y` on screen `screen`. No event is
+ * queued. 0, or -1: `INVALID` (no such screen, a position past
+ * `HERO_UI_POSITION_MOST` either way, a widget no window), `NOT_FOUND`. */
+int64_t hero_ui_set_position(hero_ui_app *app, int64_t id, int64_t screen, int64_t x, int64_t y);
+
+/* The farthest a position goes from its screen's corner either way, in
+ * points: a million, past every desktop. */
+#define HERO_UI_POSITION_MOST 1000000
+
+/* Centres window `id`'s frame in the work area of the screen it stands on,
+ * `over` 0, or over window `over`'s frame, keeping it within that screen's
+ * work area as far as its size allows. No event is queued. 0, or -1. */
+int64_t hero_ui_center(hero_ui_app *app, int64_t id, int64_t over);
+
+/* Brings window `id` to `state`, leaving the one it stands in first, and
+ * waits for the system to finish it (each step is animated, and a full
+ * screen moves the window to a space of its own on macOS): 0, or -1:
+ * `INVALID` (a state these four do not name, a widget no window), `NOT_FOUND`,
+ * `OTHER` where the system did not bring it there within five seconds, or
+ * would not (a window with no frame is never minimized on macOS). No state
+ * event is queued; the size its content takes is, as `HERO_UI_EVENT_RESIZE`. */
+int64_t hero_ui_set_state(hero_ui_app *app, int64_t id, int64_t state);
+
+/* Writes the state window `id` stands in through `state`. 0, or -1. */
+int64_t hero_ui_state(hero_ui_app *app, int64_t id, int64_t *state);
+
+/* Keeps window `id` above every other application's windows, 1, or at the
+ * level of an ordinary window, 0. 0, or -1. */
+int64_t hero_ui_set_on_top(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Gives window `id` its frame, a title bar with its buttons and a border,
+ * 1, as a window is made, or takes them away, 0, its content keeping its
+ * size; a window with no frame is moved by a drag on its background. 0, or
+ * -1: `OTHER` for a window in full screen. */
+int64_t hero_ui_set_framed(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Sets window `id`'s opacity, `alpha` from 0, wholly see-through, to 255,
+ * wholly opaque, as a window is made. 0, or -1. */
+int64_t hero_ui_set_opacity(hero_ui_app *app, int64_t id, int64_t alpha);
+
+/* Puts `backdrop`, a `HERO_UI_BACKDROP_*`, behind window `id`'s widgets.
+ * 0, or -1: `UNSUPPORTED` where the system offers no translucent material. */
+int64_t hero_ui_set_backdrop(hero_ui_app *app, int64_t id, int64_t backdrop);
+
+/* Gives the app the icon of `width` by `height` pixels of 8-bit RGBA,
+ * alpha straight, row after row from the top, `count` bytes: the Dock's on
+ * macOS, every window's and the task bar's on Windows; a size of 0 by 0
+ * gives the system's own back. 0, or -1 `INVALID` where `count` is not
+ * `width * height * 4`. */
+int64_t hero_ui_set_icon(hero_ui_app *app, const void *rgba, uint64_t count, int64_t width, int64_t height);
+
+/* Makes window `id` modal, 1: until the program ends it, 0, or destroys the
+ * window, it takes the person's every act and the app's other windows take
+ * none, as `wxDialog::ShowModal` holds them; the program goes on asking
+ * `wait` as before, and the window is brought to the front. One window at a
+ * time. 0, or -1: `OTHER` where another window is modal already. */
+int64_t hero_ui_set_modal(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Does what the person does to window `id` among the screens, through the
+ * system's own path, so its event comes as theirs would:
+ * `HERO_UI_EVENT_MOVE` drags it to position `second`, `third` on screen
+ * `value`; `HERO_UI_EVENT_STATE` brings it to state `value` as its buttons
+ * would. 0, or -1, as `set_position` and `set_state` answer. */
+int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, int64_t third);
+
 #endif

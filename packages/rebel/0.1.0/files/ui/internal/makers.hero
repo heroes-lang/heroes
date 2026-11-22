@@ -10,6 +10,7 @@ use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/clock
+use ui/internal/desk
 use ui/internal/failure
 use ui/internal/model
 use ui/internal/native
@@ -49,7 +50,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).

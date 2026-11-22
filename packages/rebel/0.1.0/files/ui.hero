@@ -89,6 +89,7 @@ use image
 use time
 use ui/hero_ui
 use ui/internal/check
+use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/fixture
@@ -174,6 +175,8 @@ record App
     native: bool
     # The widgets as data. Only this package reads it.
     table: model.Model
+    # The icon the program gave the app, kept on both sides.
+    icon: desk.Icon
     # The inputs `inject` queued and `wait` has not given yet, in order.
     inputs: [Input]
     # The events made and not yet answered by `wait`, in order.
@@ -353,6 +356,223 @@ function set_size(@app: App, widget: Widget, width: i64, height: i64) -> ()?
 # Fails `closed`, `invalid`, `failed`.
 function set_resizable(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_resizable(@app, window: widget, on: on)
+
+## Windows on the screen
+
+# A screen of the system: its whole area and its work area, the whole less
+# the menu bar, the Dock or the task bar, in the desktop's points, whose
+# origin is the top-left corner of the system's main screen and whose y axis
+# goes down; and its scale.
+record Screen
+    # Its whole area.
+    area: Rect
+    # The part of it a window is given room in.
+    work: Rect
+    # The pixels a point takes on each axis, times 100: 100 on an ordinary
+    # screen, 200 on a Retina one.
+    scale: i64
+
+# Where a window stands: the screen it stands on most, and its frame on that
+# screen, its title bar and its border included.
+record Frame
+    # The screen, from 0, the system's main one.
+    screen: i64
+    # The frame's left edge from the screen's left edge, in points.
+    x: i64
+    # The frame's top edge from the screen's top edge, in points, the y axis
+    # down.
+    y: i64
+    # The frame's width, in points.
+    width: i64
+    # The frame's height, in points, its title bar included.
+    height: i64
+
+# The state a window stands in.
+variant WindowState
+    # Shown at the size the program or the person gave it.
+    normal
+    # Minimized into the Dock or the task bar.
+    minimized
+    # Maximized over its screen's work area; zoomed, on macOS.
+    maximized
+    # Filling its screen with no frame; on macOS in a space of its own.
+    full_screen
+
+# What stands behind a window's widgets.
+variant Backdrop
+    # The system's plain window background.
+    plain
+    # The system's translucent material, which blurs what stands behind the
+    # window: the under-window material on macOS, Mica on Windows 11.
+    translucent
+
+# Every screen of the system, the main one first (on macOS the one holding
+# the menu bar, on Windows the primary monitor), in the order the system
+# lists them.
+#
+# - `app`: the app asking.
+#
+# The headless side has one screen of `ui/internal/desk`'s size, 1920 by
+# 1080 points at scale 100, its work area all of it but a task bar 40
+# points high along its bottom. Fails `closed`, `failed`. On Windows and
+# Linux the native side is pending: `unsupported`.
+function screens(app: App) -> [Screen]?
+    return desk.screens(app)
+
+# Where window `widget` stands: the screen it stands on most and its frame
+# there, laid out and shown first as `wait` would.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# A window the program never placed stands where the system first put it;
+# the headless side puts it in the middle of its screen's work area. Fails
+# `closed`, `invalid` for a widget no window, `failed`; `unsupported` where
+# the system offers no position, as Wayland's compositors do not.
+function frame_of(@app: App, widget: Widget) -> Frame?
+    return desk.frame_of(@app, window: widget)
+
+# Moves window `widget` so its frame's top-left corner stands at `x`, `y` on
+# screen `screen`. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: the window, shown or not; a window placed before it is first
+#   shown appears there.
+# - `screen`: a screen of `screens`, from 0.
+# - `x`: points from the screen's left edge, `-MOST_SIZE` to `MOST_SIZE`.
+# - `y`: points from the screen's top edge, the same range.
+#
+# The system may keep part of the frame on a screen: macOS keeps a title bar
+# below the menu bar. Fails `closed`, `invalid` for no such screen or a
+# position out of its range, `failed`; `unsupported` where the system lets
+# no program place its windows, as Wayland's compositors do not. See also
+# `frame_of`, `center`.
+function set_position(@app: App, widget: Widget, screen: i64, x: i64, y: i64) -> ()?
+    return desk.set_position(@app, window: widget, screen: screen, x: x, y: y)
+
+# Centres window `widget` in the work area of the screen it stands on. No
+# event comes of it.
+#
+# - `app`: the app holding it; its windows are laid out first.
+# - `widget`: the window.
+#
+# A window larger than the work area stands at its top-left corner. Fails
+# `closed`, `invalid`, `failed`, `unsupported` as `set_position` does. See
+# also `center_over`.
+function center(@app: App, widget: Widget) -> ()?
+    return desk.centered(@app, window: widget, over: 0)
+
+# Centres window `widget` over window `over`'s frame, kept within the work
+# area of the screen `over` stands on: a dialog over its document. No event
+# comes of it.
+#
+# - `app`: the app holding them; its windows are laid out first.
+# - `widget`: the window moved.
+# - `over`: another window of the app.
+#
+# Fails `closed`, `invalid` where `over` is `widget` or no window, `failed`,
+# `unsupported` as `set_position` does. See also `center`.
+function center_over(@app: App, widget: Widget, over: Widget) -> ()?
+    return desk.centered_over(@app, window: widget, over: over)
+
+# Brings window `widget` to `state`, leaving the one it stands in first, and
+# returns once the system has made it. The content's new size it takes comes
+# as `.resized`, as any resize does; the state itself gives no event.
+#
+# - `app`: the app holding it; its windows are laid out and shown first.
+# - `widget`: the window.
+# - `to`: the state; `.normal` gives back the size and the place it had
+#   before it was maximized or put in full screen.
+#
+# Fails `closed`, `invalid`, `failed` where the system did not make it within
+# five seconds; `unsupported` where the system cannot, as a Wayland
+# compositor cannot restore a minimized window. See also `state_of`.
+function set_state(@app: App, widget: Widget, to: WindowState) -> ()?
+    return desk.set_state(@app, window: widget, state: to)
+
+# The state window `widget` stands in now, as the system holds it, the
+# person's last act included.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system will
+# not tell, as Wayland does not tell a minimized window. See also
+# `set_state`.
+function state_of(app: App, widget: Widget) -> WindowState?
+    return desk.state_of(app, window: widget)
+
+# Keeps window `widget` above every other application's windows, or lets it
+# stand among them, as a new window does.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `on`: true to keep it on top.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system has no
+# such level, as Wayland has none.
+function set_on_top(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_on_top(@app, window: widget, on: on)
+
+# Gives window `widget` its frame, a title bar with its buttons and a
+# border, as a new window has, or takes them away, its content keeping its
+# size; a window with no frame is moved by a drag on its background.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `on`: true for a frame.
+#
+# Fails `closed`, `invalid`, `failed` for a window in full screen, which
+# keeps its frame until it leaves.
+function set_framed(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_framed(@app, window: widget, on: on)
+
+# Sets how opaque window `widget` is, its widgets with it.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `opacity`: from 0, wholly see-through, to 255, wholly opaque, as a new
+#   window is.
+#
+# Fails `closed`, `invalid` for an opacity out of its range, `failed`.
+function set_opacity(@app: App, widget: Widget, opacity: i64) -> ()?
+    return desk.set_opacity(@app, window: widget, opacity: opacity)
+
+# Puts `backdrop` behind window `widget`'s widgets.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `backdrop`: the backdrop; `.plain` as a new window has.
+#
+# Fails `closed`, `invalid`, `failed`; `unsupported` where the system has no
+# translucent material.
+function set_backdrop(@app: App, widget: Widget, backdrop: Backdrop) -> ()?
+    return desk.set_backdrop(@app, window: widget, backdrop: backdrop)
+
+# Gives the app its icon: the one the Dock shows on macOS, and every window's
+# and the task bar's on Windows.
+#
+# - `app`: the app.
+# - `img`: the image, of any format, at most 1024 by 1024 pixels.
+#
+# Fails `closed`, `invalid` for an image that is not valid or too large,
+# `failed`; `unsupported` where the system takes an icon only from the
+# program's files, as GTK 4 does.
+function set_icon(@app: App, img: image.Image) -> ()?
+    return desk.set_icon(@app, img: img)
+
+# Makes window `widget` modal: until the program ends it or destroys the
+# window, the person acts on it alone and the app's other windows take no
+# input, as a dialog of the program's own needs. The program goes on asking
+# `wait`; the window is brought to the front. One window at a time.
+#
+# - `app`: the app holding it; its windows are laid out and shown first.
+# - `widget`: the window.
+# - `on`: true to make it modal, false to end it.
+#
+# Fails `closed`, `invalid`, `failed` where another window is modal already.
+function set_modal(@app: App, widget: Widget, on: bool) -> ()?
+    return desk.set_modal(@app, window: widget, on: on)
 
 ## Layout
 
@@ -861,6 +1081,31 @@ variant Event
         width: i64
         # Its content's height now, in points.
         height: i64
+    # The person moved a window, by its title bar or a key of the system's.
+    moved
+        # The window.
+        window: Widget
+        # The screen it stands on now, from 0.
+        screen: i64
+        # Its frame's left edge from that screen's left edge, in points.
+        x: i64
+        # Its frame's top edge from that screen's top edge, in points.
+        y: i64
+    # The person brought a window to another state, by its buttons, the
+    # Dock or the task bar, or a key of the system's; the size its content
+    # took comes as `.resized`.
+    state_changed
+        # The window.
+        window: Widget
+        # Its state now.
+        state: WindowState
+    # A window stands on another screen, moved there by the person or left
+    # there by a screen that changed; its `.moved` comes after.
+    screen_changed
+        # The window.
+        window: Widget
+        # The screen, from 0.
+        screen: i64
     # A web view's page sent a text by its bridge, `heroes.send` (the
     # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
@@ -934,6 +1179,23 @@ variant Input
         width: i64
         # The height asked, 0 to `MOST_SIZE`.
         height: i64
+    # Drags a window by its title bar to a position on a screen.
+    drag_window
+        # The window.
+        window: Widget
+        # The screen, a screen of `screens`.
+        screen: i64
+        # Its frame's left edge from that screen's left edge, in points,
+        # `-MOST_SIZE` to `MOST_SIZE`.
+        x: i64
+        # Its frame's top edge from that screen's top edge, the same range.
+        y: i64
+    # Brings a window to a state, as its buttons or the system's keys would.
+    change_state
+        # The window.
+        window: Widget
+        # The state.
+        state: WindowState
     # Presses a button of the next message box `message` shows.
     answer
         # The button.
@@ -1100,7 +1362,10 @@ function save_file(@app: App, over: Widget, title: str, name: str, filters: [Fil
 # the number, then what it shows and its state, then `at X,Y WxH`
 # where the layout placed it; a window says its title and its content's
 # size, a hidden widget `hidden` and no place, a greyed-out one `disabled`.
-# Texts are quoted, a quote, a backslash, a line feed and a tab escaped. The
+# A window that stands otherwise than a new one says so after its size:
+# `on screen S at X,Y` once the program or the person placed it, then
+# `minimized`, `maximized` or `full_screen`, `on_top`, `frameless`,
+# `opacity N`, `translucent` and `modal`. Texts are quoted, a quote, a backslash, a line feed and a tab escaped. The
 # same app draws the same lines on every machine and on both sides.
 #
 # On the headless side each widget takes the size `ui/internal/sizes` gives
@@ -1339,7 +1604,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -1874,6 +2139,112 @@ test "press_key: the primary key and o"
     set_shortcut(@app, item: item, shortcut: o).must()
     press_key(@app, widget: w, shortcut: o).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
+    close(@app).must()
+
+# The screens a headless app reports: its one, the same on every machine.
+test "screens: the headless side's one"
+    app @= open(.headless).must()
+    assert screens(app).must().len() == 1
+    assert screens(app).must()[0].scale == 100
+    close(@app).must()
+
+# Where a new window stands on the headless side: the middle of the work
+# area, its title bar above its content.
+test "frame_of: a new window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    assert frame_of(@app, widget: w).must() == Frame(screen: 0, x: 910, y: 476, width: 100, height: 88)
+    close(@app).must()
+
+# A window put at the top-left corner of the main screen.
+test "set_position: the corner of the screen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    set_position(@app, widget: w, screen: 0, x: 0, y: 0).must()
+    assert frame_of(@app, widget: w).must().x == 0
+    close(@app).must()
+
+# A window moved away, then centred again.
+test "center: back in the middle"
+    app @= open(.headless).must()
+    w = window(@app, title: "Here", width: 100, height: 60).must()
+    set_position(@app, widget: w, screen: 0, x: 0, y: 0).must()
+    center(@app, widget: w).must()
+    assert frame_of(@app, widget: w).must().x == 910
+    close(@app).must()
+
+# A dialog centred over its document.
+test "center_over: a dialog over its document"
+    app @= open(.headless).must()
+    document = window(@app, title: "Notes", width: 400, height: 300).must()
+    set_position(@app, widget: document, screen: 0, x: 100, y: 100).must()
+    dialog = window(@app, title: "Find", width: 200, height: 100).must()
+    center_over(@app, widget: dialog, over: document).must()
+    assert frame_of(@app, widget: dialog).must().x == 200
+    close(@app).must()
+
+# A window maximized over the work area.
+test "set_state: maximized"
+    app @= open(.headless).must()
+    w = window(@app, title: "Big", width: 100, height: 60).must()
+    set_state(@app, widget: w, to: .maximized).must()
+    assert state_of(app, widget: w).must() == .maximized
+    close(@app).must()
+
+# A new window stands in the normal state.
+test "state_of: as made"
+    app @= open(.headless).must()
+    w = window(@app, title: "New", width: 100, height: 60).must()
+    assert state_of(app, widget: w).must() == .normal
+    close(@app).must()
+
+# A timer's window kept above the others.
+test "set_on_top: a timer that floats"
+    app @= open(.headless).must()
+    w = window(@app, title: "Timer", width: 100, height: 60).must()
+    set_on_top(@app, widget: w, on: true).must()
+    assert render(@app).must()[0] == "window #1 \"Timer\" 100x60 on_top"
+    close(@app).must()
+
+# A panel with no title bar.
+test "set_framed: a panel with no frame"
+    app @= open(.headless).must()
+    w = window(@app, title: "Panel", width: 100, height: 60).must()
+    set_framed(@app, widget: w, on: false).must()
+    assert frame_of(@app, widget: w).must().height == 60
+    close(@app).must()
+
+# An overlay half see-through.
+test "set_opacity: half see-through"
+    app @= open(.headless).must()
+    w = window(@app, title: "Overlay", width: 100, height: 60).must()
+    set_opacity(@app, widget: w, opacity: 128).must()
+    assert render(@app).must()[0] == "window #1 \"Overlay\" 100x60 opacity 128"
+    close(@app).must()
+
+# A sidebar on the system's translucent material.
+test "set_backdrop: translucent"
+    app @= open(.headless).must()
+    w = window(@app, title: "Sidebar", width: 100, height: 60).must()
+    set_backdrop(@app, widget: w, backdrop: .translucent).must()
+    assert render(@app).must()[0] == "window #1 \"Sidebar\" 100x60 translucent"
+    close(@app).must()
+
+# The app's icon, a blank square.
+test "set_icon: a blank square"
+    app @= open(.headless).must()
+    set_icon(@app, img: image.blank(width: 32, height: 32, format: .rgba).must()).must()
+    close(@app).must()
+
+# A dialog the person answers before any other window.
+test "set_modal: a dialog"
+    app @= open(.headless).must()
+    document = window(@app, title: "Notes", width: 200, height: 100).must()
+    dialog = window(@app, title: "Save?", width: 120, height: 60).must()
+    set_modal(@app, widget: dialog, on: true).must()
+    inject(@app, input: .ask_close(window: document)).must()
+    inject(@app, input: .ask_close(window: dialog)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: dialog)
     close(@app).must()
 
 # A question answered Yes by an injected answer.

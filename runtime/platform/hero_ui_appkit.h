@@ -45,12 +45,13 @@ int64_t hero_ui_appkit_words(char *words, int64_t count);
  * view placed in its window's content, the view the person types into or
  * chooses in (a text area's `NSTextView`, a list's `NSTableView`, else the
  * placed view), a menu's `NSMenu`, or a menu's or a menu item's
- * `NSMenuItem`. */
+ * `NSMenuItem`; or a window's own `NSWindow`, NULL for every other kind. */
 #define HERO_UI_APPKIT_OBJECT_WINDOW 1
 #define HERO_UI_APPKIT_OBJECT_VIEW 2
 #define HERO_UI_APPKIT_OBJECT_TYPED 3
 #define HERO_UI_APPKIT_OBJECT_MENU 4
 #define HERO_UI_APPKIT_OBJECT_ITEM 5
+#define HERO_UI_APPKIT_OBJECT_OWN_WINDOW 6
 
 /* The AppKit object `which` of widget `id`, unretained, or NULL where the
  * native side holds no such widget or the widget no such object: what
