@@ -619,6 +619,30 @@ before answering: a catalogue of every capability area of Go's, Python's, Rust's
 Node's libraries against Rebel's ledgers (`rebel-scratch/coord/rebel-gap-catalogue.md`), each absent area
 with a verdict, put to the author.
 
+## The author's answers of 2026-11-23, after midnight: panel 256 ratified, the dialogs stay events, the gaps enter the round
+
+Put as three questions by `/decide` (the open `decision` queue held issue 2697, panel 256's ratification, and
+the coordinator's own choice DG04), the author answered *1a 2a 3c*:
+
+- **Panel 256 ratified by the author's reading, R1 to R12, R5 staying queued and not adopted** (issue 2697,
+  closed with the sitting's commit `d812dbce7`). The two implementation lanes, `lane-p256-check` (R1 to R4) and
+  `lane-p256-wait` (R6 to R10 and R12), merge only once the blind seat's scoring shows no row read wrong by two
+  of five readers, and a row it reopens comes back alone, as panel 254's did.
+- **The dialogs of the user interface answer through the event queue** (DG04, the coordinator's choice of
+  2026-11-22, confirmed): a file or folder dialog and an alert never block the program, their answer is an event
+  of the queue the clicks come through. macOS and GTK 4 have it; the Win32 arm's agent is making it.
+- **The gaps enter the round** (*3c*): the four `must` areas of `rebel-gap-catalogue.md` Rebel lacked (the
+  machine's processes listed, G20; a Windows service, H13; fonts read and embedded, K10; certificates, requests
+  and revocation lists made and signed, J08) and every `should` area it lacks or has in part. The measured list
+  is `rebel-scratch/coord/gap-3c-rows.tsv`: 44 rows, of which K14 and K16 (audio and printing) and K24 and K25
+  (the ui lanes) are lanes of their own, G09 and H17 are rows of the ui catalogue (SY11, AP18), and N09 (files
+  embedded in the program) is a language form, so it goes to a sitting of its own and not to this round. The
+  other 37 are nine lanes (`gap-os`, `gap-service`, `gap-font`, `gap-pki`, `gap-image`, `gap-net`, `gap-mail`,
+  `gap-data`, `gap-i18n`, step letters 107 to 115), the four `must` rows first (`coord/gap-lanes.md`). The
+  catalogue's `could` rows and its 32 refusals stay as issues for after the landing. It turns the author's
+  *we add nothing more* of the afternoon of 2026-11-22 by the author's own later word, as the audio and
+  printing answer did.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds

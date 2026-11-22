@@ -1,0 +1,9 @@
+use kinds
+
+function use_it(b: kinds.Boxed) -> i64
+    c @= b
+    return kinds.release(@c).to_str().len()
+
+function main()
+    t = spawn(use_it, kinds.boxed()).must()
+    print(t.wait())

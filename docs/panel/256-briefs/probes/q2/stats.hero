@@ -1,0 +1,6 @@
+extern "sys/stat.h"
+    record FileStat tag stat partial
+        st_size: i64
+
+function zero() -> FileStat
+    return FileStat(st_size: 0, rest: zero)

@@ -1158,4 +1158,44 @@ int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go);
  * window does until asked. 0, or -1, `INVALID` where `id` is no window. */
 int64_t hero_ui_set_drop(hero_ui_app *app, int64_t id, int64_t on);
 
+/* -- UNDO AND THE SELECTION IN TEXT WIDGETS ---------------------------------
+ *
+ * wxWidgets' `wxTextEntry::Undo`, `Redo`, `CanUndo`, `CanRedo`,
+ * `SetSelection` and `GetSelection`: an editor's own Undo and Redo, and its
+ * find, replace and go to line, which select what they found and show it.
+ * A text area keeps the person's edits from the last text the program set,
+ * which none undoes past; a text field keeps those the person makes while
+ * it has the keys, as the system's fields do. A text the program sets puts
+ * the caret at its end. */
+#define HERO_UI_UNDO 1
+#define HERO_UI_REDO 2
+
+/* Undoes the last edit of text field or text area `id`, `which`
+ * `HERO_UI_UNDO`, or redoes the last undone, `HERO_UI_REDO`, as the Edit
+ * menu's Undo and Redo do. Nothing is queued, as for every change the
+ * program makes: the text it leaves is read by `hero_ui_text`. Answers 1
+ * where an edit was undone or redone, 0 where none was there, -1 on
+ * failure. */
+int64_t hero_ui_undo(hero_ui_app *app, int64_t id, int64_t which);
+
+/* 1 where `hero_ui_undo` with `which` would undo or redo an edit of text
+ * field or text area `id` now, 0 where it would not, -1 on failure. */
+int64_t hero_ui_can_undo(hero_ui_app *app, int64_t id, int64_t which);
+
+/* Selects bytes `start` to `end` of the text of text field or text area
+ * `id`, as `hero_ui_text` gives it: each at the first byte of a character
+ * or at the text's end, `start` at most `end`; equal, they put the caret
+ * there with nothing selected. A text area shows the selection, scrolled
+ * to it; a text field takes the keys, where the system shows a field's
+ * selection. 0, or -1, `INVALID` where either is outside the text or
+ * inside a character, or the text field is hidden or greyed out. */
+int64_t hero_ui_set_text_selection(hero_ui_app *app, int64_t id, int64_t start, int64_t end);
+
+/* Writes the selection of text field or text area `id` through `start` and
+ * `end`, in bytes of its text as `hero_ui_text` gives it; with nothing
+ * selected both are the caret. A text field without the keys answers the
+ * selection it had when it last held them, or its text's end where it
+ * never held them since the program set its text. 0, or -1. */
+int64_t hero_ui_text_selection(hero_ui_app *app, int64_t id, int64_t *start, int64_t *end);
+
 #endif

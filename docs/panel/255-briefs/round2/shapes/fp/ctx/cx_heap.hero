@@ -1,0 +1,7 @@
+extern "ctx.h"
+    function cx_heap() -> i64
+    function cx_co_freed() -> i64
+
+function main()
+    print("context: ", cx_heap())
+    print("coroutine freed: ", cx_co_freed())

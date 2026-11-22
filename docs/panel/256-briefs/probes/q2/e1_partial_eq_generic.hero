@@ -1,0 +1,7 @@
+use stats
+
+function same<T>(a: T, b: T) -> bool
+    return a == b
+
+function main()
+    print(same(a: stats.zero(), b: stats.zero()))

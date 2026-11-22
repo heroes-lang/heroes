@@ -214,12 +214,15 @@ private final class Session: NSObject, NSApplicationDelegate {
     let push: HeroUiSystemPush
     // The quit events suspended, oldest first.
     var held: [NSAppleEventManager.SuspensionID] = []
+    // How many asks to end it were told.
+    var asks = 0
 
     init(push: @escaping HeroUiSystemPush) {
         self.push = push
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        asks += 1
         push(eventQuit, 0, 0, 0, nil, 0)
         return .terminateCancel
     }
@@ -257,6 +260,7 @@ private final class QuitHandler: NSObject {
             if let id = NSAppleEventManager.shared().suspendCurrentAppleEvent() {
                 open.held.append(id)
             }
+            open.asks += 1
             open.push(eventQuit, 0, ending, 0, nil, 0)
         }
     }
@@ -306,7 +310,14 @@ public func hero_ui_appkit_answer_quit(_ go: Int64) -> Int64 {
 
 // Sends this process the quit Apple event the system sends, with the
 // session's end as its reason where `sessionEnd` is 1: what a case injects,
-// taken by the same handler as the system's.
+// taken by the same handler as the system's. An event a process sends
+// itself is handed to its handler at once, and the handler suspends it, so
+// the send waits for the reply until its deadline (measured 2026-11-23:
+// errAETimeout, -1712, after the five seconds asked, the event taken all
+// the same): the deadline is short, and a send whose event the handler
+// took is the system's path taken, its timeout no failure. Sending it from
+// another queue instead trips Swift's check that the main actor's code
+// runs on the main queue.
 @c
 public func hero_ui_appkit_ask_quit(_ sessionEnd: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
@@ -315,11 +326,14 @@ public func hero_ui_appkit_ask_quit(_ sessionEnd: Int64) -> Int64 {
         if sessionEnd == 1 {
             event.setAttribute(NSAppleEventDescriptor(enumCode: fourCharacters("rlgo")), forKeyword: quitReason)
         }
+        let before = session?.asks ?? 0
         do {
-            _ = try event.sendEvent(options: [.noReply], timeout: 5)
+            _ = try event.sendEvent(options: [.noReply], timeout: 0.05)
         } catch {
-            said = "the system refused its own quit event: \(error.localizedDescription)"
-            return answerOther
+            if (session?.asks ?? 0) == before {
+                said = "the system refused its own quit event: \(error.localizedDescription)"
+                return answerOther
+            }
         }
         return answerOk
     }

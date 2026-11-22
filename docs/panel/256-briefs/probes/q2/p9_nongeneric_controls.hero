@@ -1,0 +1,5 @@
+use kinds
+
+function main()
+    m: (mailbox kinds.Boxed) = mailbox()
+    print(m.send(kinds.boxed()).is_err())

@@ -1,0 +1,12 @@
+use db
+
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function main()
+    m: (mailbox db.Db) = mailbox()
+    d @= db.open_memory()
+    print(relay(m, d))
+    got @= m.receive(within_ms: 0).must()
+    print(db.shut(@got))
+    print(db.shut(@d))

@@ -71,8 +71,9 @@ function injected(app: ui.App, window: ui.Widget, x: i64, y: i64, paths: [str]) 
     return ok()
 
 # The drops a native app's wait gives within half a second, its other
-# events passed over.
-function drops_of(@app: ui.App) -> [ui.Event]
+# events passed over; fails as the wait does but for its timeout, so an
+# injected drop the system refuses is told by its words.
+function drops_of(@app: ui.App) -> [ui.Event]?
     out: [ui.Event] @= []
 
     for _ in range(from: 0, to: 5)
@@ -82,9 +83,11 @@ function drops_of(@app: ui.App) -> [ui.Event]
                     .files_dropped _ => out @ out.push(event)
                     .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
                         _ = 0
-            .err _ => _ = 0
+            .err e =>
+                if e.code != failure.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
 
-    return out
+    return ok(out)
 
 ## Tests
 
@@ -124,10 +127,19 @@ test "set_drop: on the native side a drop through AppKit's drag destination, on 
         @app,
         input: .drop_files(window: window, x: spot.x + 4, y: spot.y + 4, paths: ["/tmp/a b.txt", "/tmp/c"])
     ).must()
-    on_area = drops_of(@app)
+    dropped = drops_of(@app)
+
+    # A system that takes drops but drops none as the person tells it when
+    # the wait gives the input (defect 2698's shape).
+    given_refusal = fixture.unsupported_words(dropped)
+
+    if given_refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: given_refusal)
+    on_area = dropped.must()
     place = ui.rect_of(@app, widget: button).must()
     ui.inject(@app, input: .drop_files(window: window, x: place.x + 2, y: place.y + 2, paths: ["/tmp/d"])).must()
-    on_button = drops_of(@app)
+    on_button = drops_of(@app).must()
     kept = ui.text_of(app, widget: area).must()
     ui.set_drop(@app, widget: window, on: false).must()
     refused = ui.inject(@app, input: .drop_files(window: window, x: 1, y: 1, paths: ["/tmp/a"]))

@@ -1,0 +1,39 @@
+# Panel 256, Q2's probes run by the coordinator, 2026-11-22, with the frozen commit's stage 2
+# (heroes-next --version: heroes 0.6.0 sources 031aaabb358218fd ), by: bash run.sh <that compiler>
+p1_defect                        check 1  p1_defect.hero:7:20: error[marker_mismatch]: `send` does not change this argument — the `@` says it does
+p2_relay_only                    check 0  
+                                 build 0  
+                                 run   0  false true
+p3_spawn_generic                 check 0  
+                                 build 0  
+                                 run   0  4
+p3b_spawn_generic_copy_kept      check 0  
+                                 build 0  
+run.sh: line 5: 24094 Abort trap: 6           timeout -s KILL 20 "build/$p" > "build/$p.out" 2>&1
+                                 run   134  4 panic: a C handle reached the argument `f` of `fclose` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that addr
+c3_spawn_nongeneric              check 1  c3_spawn_nongeneric.hero:8:23: error[thread_crossing]: `kinds.Boxed` holds a C handle, which crosses into another thread only through a mailbox, `m.se
+p4_ptr_generic                   check 1  p4_ptr_generic.hero:7:8: error[thread_crossing]: `(mailbox kinds.Pointed)` crosses between threads and reaches `ptr`, which never crosses
+p5_ptr_written_generic           check 0  
+                                 build 0  
+                                 run   0  false
+p5c_inferred_nongeneric_send     check 0  
+                                 build 0  
+                                 run   0  false false
+p6b_unit_generic                 check 0  
+                                 build 134  panic: .must() on an error: none: no descriptor for this type
+c6_unit_nongeneric               check 1  c6_unit_nongeneric.hero:2:8: error[empty_mailbox]: a mailbox of `()` carries nothing: no value of `()` can be written to send
+p7_spawn_ptr_generic             check 0  
+                                 build 0  
+                                 run   0  1
+c7_spawn_ptr_nongeneric          check 1  c7_spawn_ptr_nongeneric.hero:9:15: error[thread_crossing]: `(function(kinds.Pointed) -> i64)` crosses between threads and reaches `ptr`, which never c
+p8_answer_ptr_generic            check 0  
+                                 build 0  
+                                 run   0  true
+p9_nongeneric_controls           check 1  p9_nongeneric_controls.hero:5:18: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too
+e1_partial_eq_generic            check 1  e1_partial_eq_generic.hero:4:12: error[generic_equality]: `==` compares two values of one type structurally, and `T` is a type parameter — this line c
+e2_partial_key_generic           check 0  
+                                 build 0  
+run.sh: line 5: 24820 Abort trap: 6           timeout -s KILL 20 "build/$p" > "build/$p.out" 2>&1
+                                 run   134  panic: h_stats_0FileStat_eq: a partial record has no structural equality   called from 0x1000281df, in stats.FileStat_eq   called from 0x100028197, in
+e3_partial_eq_nongeneric         check 1  e3_partial_eq_nongeneric.hero:4:11: error[ffi_partial_operation]: `FileStat` is `partial`, so it cannot be compared with `==` — reached through `stats
+e4_partial_key_nongeneric        check 1  e4_partial_key_nongeneric.hero:4:9: error[ffi_partial_operation]: `FileStat` is `partial`, so it cannot be a map key — reached through `stats.FileStat

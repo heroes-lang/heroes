@@ -1,0 +1,14 @@
+use db
+
+function inner<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function outer<A>(m: (mailbox A), v: A) -> bool
+    return inner(m, v)
+
+function main()
+    m: (mailbox db.Db) = mailbox()
+    d = db.open_memory()
+    print(outer(m, d))
+    got @= m.receive(within_ms: 0).must()
+    print(db.shut(@got))

@@ -1,0 +1,9 @@
+# Panel 256: the generic functions whose body sends, spawns, waits, receives or makes a mailbox, over every
+# tracked .hero file. Run from the frozen commit's root, 2026-11-22 21:00; it printed the four lines below.
+git ls-files '*.hero' | LC_ALL=C xargs awk 'FNR==1{g=0} /^function [a-z_0-9]+</{g=1; name=FILENAME":"FNR": "$2; next} /^[^ #]/{g=0} g && /(\.send\(|spawn\(|spawn_sized\(|\.wait\(\)|\.receive\(|mailbox\(\))/{print name; g=0}' | sort -u
+# examples-rebel/certs/demo/stage.hero:137: start<S>(body:
+# examples-rebel/iothub/demo/world.hero:244: start_thread<S>(@w:
+# tests/golden/run/fixedbugs-2682-ok-of-a-unit-a-thread-answered.hero:10: run<T>(f:
+# tests/golden/run/threads-handles-in-lists-maps-and-generic-functions.hero:13: relay<A>(into:
+# What it does not see: a generic whose crossing is in another generic it calls (transitive), and a body line
+# that wraps; a seat that needs the whole set reads it from the checker's instantiations instead.

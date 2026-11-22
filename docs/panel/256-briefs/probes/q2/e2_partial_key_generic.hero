@@ -1,0 +1,9 @@
+use stats
+
+function index<T>(k: T) -> {T: i64}
+    m: {T: i64} @= {}
+    m[k] @ 1
+    return m
+
+function main()
+    print(index(stats.zero()).len())
