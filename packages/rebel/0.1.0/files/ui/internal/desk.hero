@@ -570,7 +570,7 @@ function names_of(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                         "another"
 
                 out @ out.push(name)
@@ -809,7 +809,7 @@ function names_of_waiting(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                         "another"
 
                 out @ out.push(name)
@@ -905,7 +905,7 @@ function events_of(@app: ui.App) -> [ui.Event]
             .ok event =>
                 match event
                     .appearance_changed _ => out @ out.push(event)
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .quit_asked _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .quit_asked _ | .files_dropped _ =>
                         _ = 0
             .err _ => _ = 0
 

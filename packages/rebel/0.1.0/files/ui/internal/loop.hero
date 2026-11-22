@@ -21,6 +21,7 @@
 # An event naming a widget whose life ended before it was answered (the
 # program destroyed it after the person acted) is dropped.
 
+use bytes
 use time
 use ui
 use ui/hero_ui
@@ -111,7 +112,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => dialogs.answered_by(@app, answer: a.answer)?
         .pick_files p => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
         .cancel_files => dialogs.chosen_by(@app, choice: .cancelled)?
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ | .ask_quit _ | .drop_files _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -198,6 +199,9 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         app.events @ app.events.push(.menu_chosen(item: w))
     else if kind == hero_ui.HERO_UI_EVENT_CLOSE
         app.events @ app.events.push(.close_asked(window: w))
+    else if kind == hero_ui.HERO_UI_EVENT_DROP
+        paths = dialogs.split_zeros(bytes.from_text(native.event_text(app)?))?
+        app.events @ app.events.push(.files_dropped(window: w, x: taken[2], y: taken[3], paths: paths))
     else if kind == hero_ui.HERO_UI_EVENT_RESIZE
         was_w = n.w
         was_h = n.h
@@ -325,6 +329,7 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .files_chosen _       => 0
         .appearance_changed _ => 0
         .quit_asked _         => 0
+        .files_dropped f      => f.window.id
 
     return id == 0 || !model.node_of(app.table, id: id).is_err()
 

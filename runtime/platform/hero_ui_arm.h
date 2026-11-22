@@ -178,6 +178,15 @@ int64_t hero_ui_arm_appearance_set(int64_t appearance);
 int64_t hero_ui_arm_answer_quit(int64_t go);
 int64_t hero_ui_arm_ask_quit(int64_t session_end);
 
+/* FILES DROPPED ON A WINDOW (`hero_ui.h`): `set_drop` has window `id` take
+ * them or not; `drop` drops `count` bytes of paths, each followed by one zero
+ * byte, at `x`, `y` of its content as the person would, for
+ * `hero_ui_inject`. On macOS the arm queues `HERO_UI_EVENT_DROP` with the
+ * paths; refusals for the Win32 and GTK 4 arms in `hero_ui.c`'s CALLS NO C
+ * ARM DRAWS YET. */
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on);
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
  * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits

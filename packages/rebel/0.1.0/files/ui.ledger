@@ -507,11 +507,12 @@ capability ui/notification  a notification of the system's: a title and its word
   note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows pending (a toast of the AppUserModelID's), Linux pending (`GNotification` through the portal)
 
 capability ui/drag-drop  a file dragged onto a window
-  heroes  pending
+  heroes  ui.set_drop, ui.Event.files_dropped, ui.Input.drop_files
   go      -
   rust    -
   python  dnd.dnd_start, dnd.DndHandler, dnd.Icon
-  wx      wxFileDropTarget (OnDropFiles), wxDropTarget, wxDropSource
+  wx      wxFileDropTarget (OnDropFiles), wxDropTarget, wxDropSource, wxWindow (DragAcceptFiles), wxDropFilesEvent
+  note    catalogue DD01 (must); files dropped on a window that takes them, told with the point in its content and the paths in the person's order; a drop on a text area of the window is the window's, on a web view the page's own, on a text field being typed in the path typed, as the system's fields do; text dragged, drag feedback, a drag out of the app and a drop on one widget (DD02 to DD05) are not offered; macOS by the window registered for file URLs, `NSWindow` handing the drag to its delegate, and a text area's text view handing a file drag to its window; an injected drop goes through the same destination methods with a drag of the layer's own making on a pasteboard of its own (a drag by the person's mouse is unrun in a case); Windows pending (`DragAcceptFiles` and `WM_DROPFILES`, `DragQueryFileW`, `DragQueryPoint`), Linux pending (`GtkDropTarget` of `GDK_TYPE_FILE_LIST` on the window)
 
 capability ui/bound-values  a value a widget and the program share, which calls back when it changes
   heroes  refused: the program holds its own state and sets the widget, and a value that calls back is a closure the language does not have

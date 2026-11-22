@@ -87,6 +87,7 @@ use ui/hero_ui
 use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
+use ui/internal/drops
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/frames
@@ -1238,6 +1239,24 @@ function appearance_of(app: App) -> Appearance?
 function answer_quit(@app: App, go: bool) -> ()?
     return session.answer_quit(@app, go: go)
 
+# Has window `widget` take files the person drops on it, `on` true, or
+# take none, as a window does until asked, as wxWidgets'
+# `wxWindow::DragAcceptFiles`: each drop is told as `.files_dropped`, its
+# point and its paths, so an editor opens each. A drop on a text area of
+# the window is the window's; one on a web view is the page's own, and on
+# a text field the person is typing in it types the path, as the system's
+# fields do.
+#
+# - `app`: the app.
+# - `widget`: the window.
+# - `on`: whether it takes them.
+#
+# Fails `closed`, `invalid` for a widget no window, `unsupported` where
+# the system's arm takes no dropped files (Windows and Linux, pending),
+# `failed`.
+function set_drop(@app: App, widget: Widget, on: bool) -> ()?
+    return drops.set_drop(@app, widget: widget, on: on)
+
 # Gives `widget` the name a screen reader says for it, where it shows no
 # words of its own (a picture, a slider, a button of an image) or its words
 # do not say what it is, as Qt's `QWidget::setAccessibleName` and ARIA's
@@ -1792,6 +1811,17 @@ variant Event
         # True where the person is logging out, restarting or shutting
         # down; false for another quit, the Dock's or another program's.
         session_end: bool
+    # The person dropped files on a window that takes them (`set_drop`).
+    files_dropped
+        # The window.
+        window: Widget
+        # The point of the drop, in points from the top-left corner of the
+        # window's content.
+        x: i64
+        # Its height from that corner.
+        y: i64
+        # The files' paths, in the order the person dragged them.
+        paths: [str]
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -1929,6 +1959,19 @@ variant Input
     ask_quit
         # Whether it is the session's end.
         session_end: bool
+    # Drops files on a window that takes them, as the person's drag from
+    # the system's file manager would: on macOS through the window's drag
+    # destination, or a text area's where one stands at the point.
+    drop_files
+        # The window.
+        window: Widget
+        # The point, in points from the top-left corner of its content,
+        # inside it.
+        x: i64
+        # Its height from that corner.
+        y: i64
+        # The paths, one or more, none empty.
+        paths: [str]
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
     # app's own origin, which on the headless side is once `ui/webview`'s
@@ -2421,7 +2464,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

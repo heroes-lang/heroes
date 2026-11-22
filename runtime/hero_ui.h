@@ -1137,4 +1137,25 @@ int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label);
  * nothing. 0, or -1. */
 int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go);
 
+/* -- FILES DROPPED ON A WINDOW ----------------------------------------------
+ *
+ * wxWidgets' `wxWindow::DragAcceptFiles` and `wxDropFilesEvent`: the person
+ * drags files from the system's file manager and drops them on a window, an
+ * editor opening each. */
+
+/* The person dropped files on window `id`, which takes them
+ * (`hero_ui_set_drop`): `value` and `second` the point of the drop, in
+ * points from the top-left corner of the window's content; the text the
+ * paths, each followed by one zero byte, read by `hero_ui_event_text`. A
+ * drop on a text area of the window is the window's; one on a web view is
+ * the page's own, and one on a text field the person is typing in types
+ * the path, as the system's fields do. `hero_ui_inject` with this kind
+ * drops the paths `text` holds, each followed by one zero byte, on window
+ * `id` at `value`, `second`, as the person would. */
+#define HERO_UI_EVENT_DROP 20
+
+/* Has window `id` take files dropped on it, `on` 1, or take none, 0, as a
+ * window does until asked. 0, or -1, `INVALID` where `id` is no window. */
+int64_t hero_ui_set_drop(hero_ui_app *app, int64_t id, int64_t on);
+
 #endif

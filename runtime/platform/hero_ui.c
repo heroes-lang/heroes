@@ -1845,6 +1845,7 @@ int64_t hero_ui_number(hero_ui_app *app) {
 static int64_t hero_ui_elsewhere(const char *what);
 static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count);
 static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id);
+static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const void *paths, uint64_t count);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -2175,6 +2176,9 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
             return hero_ui_said(HERO_UI_INVALID, "an appearance turned names no widget, 0, and is HERO_UI_APPEARANCE_* or 0 for the system's");
         }
         return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would", 0);
+    }
+    if (kind == HERO_UI_EVENT_DROP) {
+        return hero_ui_drop_as_person(id, value, second, text, count);
     }
     if (kind == HERO_UI_EVENT_QUIT) {
         if (id != 0 || (value != 0 && value != 1) || second != 0 || count != 0) {
@@ -3629,6 +3633,14 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     return hero_ui_appkit_ask_quit(session_end);
 }
 
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    return hero_ui_appkit_set_drop(id, on);
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    return hero_ui_appkit_drop(id, x, y, paths, count);
+}
+
 #else
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
@@ -3698,6 +3710,21 @@ int64_t hero_ui_arm_answer_quit(int64_t go) {
 int64_t hero_ui_arm_ask_quit(int64_t session_end) {
     (void)session_end;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    (void)id;
+    (void)on;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer takes files dropped on a window on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    (void)id;
+    (void)x;
+    (void)y;
+    (void)paths;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
 }
 
 #endif
@@ -3804,4 +3831,38 @@ int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go) {
         return hero_ui_said(HERO_UI_INVALID, "whether the app ends is 0 or 1");
     }
     return hero_ui_system_answered(hero_ui_arm_answer_quit(go), "answering the system's ask to end the app", 0);
+}
+
+/* -- FILES DROPPED ON A WINDOW ---------------------------------------------- */
+
+int64_t hero_ui_set_drop(hero_ui_app *app, int64_t id, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether a window takes dropped files is 0 or 1");
+    }
+    return hero_ui_system_answered(hero_ui_arm_set_drop(id, on), "having a window take dropped files", id);
+}
+
+/* `hero_ui_inject`'s `HERO_UI_EVENT_DROP`: drops the paths `paths` holds,
+ * each followed by one zero byte, on window `id` at `x`, `y`. */
+static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const void *paths, uint64_t count) {
+    const uint8_t *bytes = paths;
+
+    if (!hero_ui_id_given(id) || !hero_ui_text_given(paths, count, "the paths dropped", true)) {
+        return -1;
+    }
+    if (count == 0) {
+        return hero_ui_said(HERO_UI_INVALID, "a drop holds one path or more");
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == 0 && (at == 0 || bytes[at - 1] == 0)) {
+            return hero_ui_said(HERO_UI_INVALID, "a path dropped is empty");
+        }
+    }
+    if (x < 0 || y < 0 || x > HERO_UI_POSITION_MOST || y > HERO_UI_POSITION_MOST) {
+        return hero_ui_said(HERO_UI_INVALID, "a drop's point is 0 or more in the window's content");
+    }
+    return hero_ui_system_answered(hero_ui_arm_drop(id, x, y, bytes, (int64_t)count), "dropping files on a window as the person", id);
 }
