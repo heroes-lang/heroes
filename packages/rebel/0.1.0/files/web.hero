@@ -3704,20 +3704,36 @@ test "verify_value: one byte changed is refused"
         now: now
     ).is_err()
 
-# A value sealed for a cookie, where the system seals.
+# A value sealed for a cookie, where the system seals: the client holds a
+# nonce, a ciphertext and a tag, the value's bytes nowhere among them, and a
+# key not the server's opens none of it.
 test "seal_value: a secret kept by the client, unreadable"
     if !seal.is_available(.aes_128_gcm)
         skip_test(reason: "this platform's cryptography offers no AES-128-GCM to seal")
     k @= seal.generate(.aes_128_gcm).must()
+    other @= seal.generate(.aes_128_gcm).must()
     now = fixture.clock().must()
-    sealed = seal_value(
-        [k],
-        name: "c",
-        value: "42",
-        expires: time.add(now, d: time.seconds(60).must()).must()
-    ).must()
-    assert !strings.contains(s: sealed, substr: "42") && open_value([k], name: "c", sealed: sealed, now: now).must() == "42"
+    expires = time.add(now, d: time.seconds(60).must()).must()
+    secret = "a secret the client keeps and never reads"
+    sealed = seal_value([k], name: "c", value: secret, expires: expires).must()
+    data = bytes.parse_base64_url_unpadded(sealed).must()
+
+    # The end and the value sealed together, behind a nonce of 12 bytes and
+    # before a tag of 16, as Go 1.27.4's AES-GCM writes a text and refuses it
+    # to another key (`message authentication failed`), observed 2026-11-22.
+    # The value's 41 bytes stand among the 79 sealed ones by chance less often
+    # than once in 2^300 seals, and another key opens a seal less often than
+    # once in 2^128, so no run fails by a draw.
+    assert data.len() == seal.NONCE_BYTES + bytes.from_text(f"{time.unix_seconds(expires)}.{secret}").len() + seal.TAG_BYTES
+    assert !bytes.contains(s: data, substr: bytes.from_text(secret))
+
+    match open_value([other], name: "c", sealed: sealed, now: now)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert open_value([k], name: "c", sealed: sealed, now: now).must() == secret
     seal.close(@k).must()
+    seal.close(@other).must()
 
 # A sealed value no key opens, refused.
 test "open_value: a value no key of the ring opens"
