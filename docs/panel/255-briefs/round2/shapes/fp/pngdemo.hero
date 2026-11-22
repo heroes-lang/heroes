@@ -1,0 +1,8 @@
+extern "pngdemo.h" pkgconfig "libpng"
+    function pd_decode(path: cstr lent) -> i32
+
+function main()
+    print("good ", pd_decode(path: "good.png".cstr()))
+    print("truncated ", pd_decode(path: "trunc.png".cstr()))
+    print("good again ", pd_decode(path: "good.png".cstr()))
+    print("truncated again ", pd_decode(path: "trunc.png".cstr()))

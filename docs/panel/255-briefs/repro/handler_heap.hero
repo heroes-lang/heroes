@@ -1,0 +1,5 @@
+extern "shapes.h"
+    function shape_handler_heap() -> i32
+
+function main()
+    print("handler_heap: " + shape_handler_heap().to_str())

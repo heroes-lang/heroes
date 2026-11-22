@@ -1,0 +1,9 @@
+extern "nest.h"
+    function ns_run(onstack: i32, cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("nested out, onstack 1: ", ns_run(onstack: 1, cb: answer))

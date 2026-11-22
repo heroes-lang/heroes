@@ -1,0 +1,22 @@
+heap plain exit=0 heap: 0 | 
+heap sanitize exit=1 ============================================================ | ==215==ERROR: AddressSanitizer: heap-use-after-free on address 0xfd1fb43e0040 at pc 0xaaaad8e5e590 bp 0xfffffc192e20 sp 0xfffffc192e18
+mmap plain exit=139 Segmentation fault | 
+mmap sanitize exit=1 AddressSanitizer:DEADLYSIGNAL | ==300==ERROR: AddressSanitizer: SEGV on unknown address 0xffff8438d000 (pc 0xaaaae36ce598 bp 0xffffeb6c8af0 sp 0xffffeb6c8a90 T0)
+context plain exit=0 context: 0 | 
+context sanitize exit=1 ============================================================ | ==385==ERROR: AddressSanitizer: heap-use-after-free on address 0xfe0fa47e0100 at pc 0xaaaadd17e550 bp 0xfffff6337740 sp 0xfffff6337738
+stack plain exit=0 stack: 0 | 
+stack sanitize exit=0 stack: 0 | 
+handler_heap plain exit=0 handler_heap: 1 | 
+handler_heap sanitize exit=1 ============================================================ | ==556==ERROR: AddressSanitizer: heap-use-after-free on address 0xfd1fba1e0040 at pc 0xaaaac173e690 bp 0xffffd340c6b0 sp 0xffffd340c6a8
+handler_mmap plain exit=139 Segmentation fault | 
+handler_mmap sanitize exit=1 AddressSanitizer:DEADLYSIGNAL | ==641==ERROR: AddressSanitizer: SEGV on unknown address 0xffffbb0c1000 (pc 0xaaaadb62e698 bp 0xffffe7cbe800 sp 0xffffe7cbe7a0 T0)
+lin-out/context-sanitize.log:  #0 hero_jmp_fingerprint /w/runtime/parts/sigjump.c:138:53; #1 hero_jmp_read_pending /w/runtime/parts/sigjump.c:148:34;
+lin-out/handler_heap-sanitize.log:  #0 hero_jmp_fingerprint /w/runtime/parts/sigjump.c:138:53; #1 hero_jmp_read_pending /w/runtime/parts/sigjump.c:148:34;
+lin-out/handler_mmap-sanitize.log:  #0 hero_jmp_fingerprint /w/runtime/parts/sigjump.c:138:53; #1 hero_jmp_read_pending /w/runtime/parts/sigjump.c:148:34;
+lin-out/heap-sanitize.log:  #0 hero_jmp_fingerprint /w/runtime/parts/sigjump.c:138:53; #1 hero_jmp_read_pending /w/runtime/parts/sigjump.c:148:34;
+lin-out/mmap-sanitize.log:  #0 hero_jmp_fingerprint /w/runtime/parts/sigjump.c:138:53; #1 hero_jmp_read_pending /w/runtime/parts/sigjump.c:148:34;
+lin-out/stack-sanitize.log: 
+sizeof jmp_buf: 312
+real 81.34
+user 0.01
+sys 0.02

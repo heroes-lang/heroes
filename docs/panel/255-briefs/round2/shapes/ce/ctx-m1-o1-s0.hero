@@ -1,0 +1,10 @@
+extern "extra.h"
+    function x_ctx(mode: i64, order: i64, onstack: i64, cb: (function(i64) -> i64)) -> i64
+
+function answer(v: i64) -> i64
+    said = f"answer ran for {v}"
+    print(said)
+    return v * 2
+
+function main()
+    print(x_ctx(mode: 1, order: 1, onstack: 0, cb: answer))

@@ -1,0 +1,5 @@
+extern "shapes.h"
+    function shape_stack() -> i32
+
+function main()
+    print("stack: " + shape_stack().to_str())
