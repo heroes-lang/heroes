@@ -1278,3 +1278,95 @@ int64_t hero_ui_dialog_paths(hero_ui_app *app, void *buffer, uint64_t count) {
     }
     return bytes;
 }
+
+/* -- THE CALLS ON A WINDOW AS THE SYSTEM SHOWS IT ----------------------------
+ *
+ * Their macOS arm is `platform/hero_ui_appkit_windows.swift`, a Swift member
+ * of its own, which reads none of `hero_ui_appkit.swift`'s widgets: each
+ * arm below asks that member for the AppKit object it acts on
+ * (`hero_ui_appkit_object`) and hands it on within the same call, so a
+ * widget the native side does not hold is `HERO_UI_NOT_FOUND` here, before
+ * the member is reached. Every other system's arm answers
+ * `HERO_UI_UNSUPPORTED`, and the entry point says so in its own words
+ * (`hero_ui_elsewhere`). */
+
+#if defined(__APPLE__)
+
+#include "hero_ui_appkit_windows.h"
+
+static int64_t hero_ui_arm_windows_words(char *words, int64_t count) {
+    return hero_ui_appkit_windows_words(words, count);
+}
+
+static int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
+    void *window = hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_WINDOW);
+
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return hero_ui_appkit_press_key(window, hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_TYPED), key, count, modifiers);
+}
+
+#else
+
+static int64_t hero_ui_arm_windows_words(char *words, int64_t count) {
+    (void)words;
+    (void)count;
+    return 0;
+}
+
+static int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
+    (void)id;
+    (void)key;
+    (void)count;
+    (void)modifiers;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+/* -1 with `HERO_UI_UNSUPPORTED`, the words naming the call `what` and where
+ * the layer offers it: these calls are drawn on macOS alone, and the arm of
+ * every other system answers none of them. */
+static int64_t hero_ui_elsewhere(const char *what) {
+    char words[HERO_UI_WORDS_MOST];
+
+    (void)snprintf(words, sizeof words, "%s: the layer offers it on macOS alone, and this system's arm answers no such call", what);
+    return hero_ui_said(HERO_UI_UNSUPPORTED, words);
+}
+
+/* The answer `kind` of an arm of this part for the call `what` names on
+ * widget `id`, as the entry point answers it: `hero_ui_answered`'s, but for
+ * `HERO_UI_OTHER`, whose words are this part's member's own, and
+ * `HERO_UI_UNSUPPORTED`, which names the one system that offers the call
+ * (`hero_ui_elsewhere`). */
+static int64_t hero_ui_windows_answered(int64_t kind, const char *what, int64_t id) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+
+    if (kind == HERO_UI_OTHER) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_windows_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "the system refused, giving no words");
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(HERO_UI_OTHER, words);
+    }
+    if (kind == HERO_UI_UNSUPPORTED) {
+        return hero_ui_elsewhere(what);
+    }
+    return hero_ui_answered(kind, what, id);
+}
+
+int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_t count, int64_t modifiers) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(key, count, "the key", false)) {
+        return -1;
+    }
+    if (count == 0) {
+        return hero_ui_said(HERO_UI_INVALID, "pressing a key: no key was named");
+    }
+    if (modifiers < 0 || modifiers > (HERO_UI_PRIMARY | HERO_UI_SHIFT | HERO_UI_ALT)) {
+        return hero_ui_said(HERO_UI_INVALID, "the keys held are HERO_UI_PRIMARY, HERO_UI_SHIFT and HERO_UI_ALT added");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_press_key(id, key, (int64_t)count, modifiers), "pressing a key", id);
+}

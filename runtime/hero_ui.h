@@ -377,4 +377,24 @@ int64_t hero_ui_last_error(void);
  * with `INVALID` where `buffer` is NULL or `count` is 0. */
 int64_t hero_ui_last_message(void *buffer, uint64_t count);
 
+/* -- KEYS PRESSED BY THE PROGRAM ----------------------------------------------
+ *
+ * A key pressed as the person's keyboard presses it, through the system's
+ * own path, as wxWidgets' `wxUIActionSimulator` presses one: a menu item's
+ * shortcut, the Edit menu's commands and the widget with the keys take it as
+ * they take the person's. What a test of a native app drives the keys with;
+ * a headless app holds no system to press them in. */
+
+/* Presses the key `key`, `count` bytes naming a key as `hero_ui_set_shortcut`
+ * names one (not empty), with the keys `modifiers` adds up held, in window
+ * `id`, or with widget `id` holding the keys, given them first as the
+ * person's click would. The system hands a key to the key window of the
+ * active application alone, so the window is first made that (on macOS the
+ * app is activated and the window brought to the front); the key goes down
+ * and up. Its events are queued as the person's would be. 0, or -1:
+ * `INVALID` (a key no shortcut names, held keys past the three, or a widget
+ * that takes no keys), `NOT_FOUND`, `OTHER` where the window is hidden or
+ * the system keeps another application in front, `UNSUPPORTED`. */
+int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_t count, int64_t modifiers);
+
 #endif

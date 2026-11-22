@@ -119,6 +119,7 @@ extern "hero_ui.h"
     function hero_ui_message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     function hero_ui_file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64, @name: [u8] counted_by name_count lent, name_count: u64, @filters: [u8] counted_by filters_count lent, filters_count: u64) -> i64
     function hero_ui_dialog_paths(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_press_key(app: App, id: i64, @key: [u8] counted_by count lent, count: u64, modifiers: i64) -> i64
     function hero_ui_last_error() -> i64
     function hero_ui_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
 
@@ -473,7 +474,27 @@ function last_error() -> i64
 function last_message(@buffer: [u8], count: u64) -> i64
     return hero_ui_last_message(@buffer, count: count)
 
+# 0 once the key `key` names went down and up in window `id`, or with
+# widget `id` holding the keys, as the person's keyboard presses it; or -1.
+#
+# - `app`: the app holding it; a headless one is `HERO_UI_UNSUPPORTED`.
+# - `id`: a window, or a widget given the keys first, as a click gives them.
+# - `key`: a key's name as `set_shortcut` takes one, not empty; left as it
+#   was handed.
+# - `count`: how many of its first bytes.
+# - `modifiers`: `HERO_UI_PRIMARY`, `HERO_UI_SHIFT` and `HERO_UI_ALT` added,
+#   the keys held with it; 0 for none.
+function press_key(app: App, id: i64, @key: [u8], count: u64, modifiers: i64) -> i64
+    return hero_ui_press_key(app, id: id, @key, count: count, modifiers: modifiers)
+
 ## Tests
+
+test "press_key: a headless app holds no system to press a key in, and says so"
+    app @= open(HERO_UI_HEADLESS)
+    key: [u8] @= [97]
+    assert press_key(app, id: 1, @key, count: 1, modifiers: 0) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    assert close(@app) == 0
 
 test "open: a headless app opens on the main thread, is numbered, and closes"
     assert on_ui_thread() == 1

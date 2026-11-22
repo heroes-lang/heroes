@@ -35,6 +35,20 @@ capability ui/inject  what a person does, given by the program, to drive a test 
   python  tkinter.Misc.event_generate
   note    on the native side each input goes through the system's own path (`performClick` on macOS), so its event comes as the person's would
 
+capability ui/keys-pressed  a key pressed by the program as the person's keyboard presses it, through the system's own path
+  heroes  ui.press_key
+  go      -
+  rust    -
+  python  -
+  note    wxWidgets' `wxUIActionSimulator`; native on macOS (the key goes down and up through `NSApp.sendEvent`, the window made the key window of the active application first), Windows pending, Linux pending; on the headless side a key chooses the menu item whose shortcut it is
+
+capability ui/edit-menu  the system's Edit menu in every text widget: undo, redo, cut, copy, paste, delete and select all, by the mouse and by their keys
+  heroes  ui.text_field, ui.text_area
+  go      -
+  rust    -
+  python  -
+  note    wxWidgets' standard identifiers `wxID_UNDO` to `wxID_SELECTALL`; on macOS the arm's menu bar holds the standard Edit menu after the window's first menu, each item sending AppKit's own action to the widget with the keys (without it Command+C and the rest reached no text widget); Windows' and GTK's edit controls take Ctrl+C and the rest themselves (their arms pending)
+
 capability ui/headless  the widgets kept and laid out with no screen, and drawn as text
   heroes  ui.render, ui.Backend
   go      -

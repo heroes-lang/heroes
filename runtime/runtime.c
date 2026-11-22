@@ -409,6 +409,8 @@
 #include "platform/hero_ui.c"
 #include "platform/hero_ui_appkit.h"
 #include "platform/hero_ui_appkit.swift"
+#include "platform/hero_ui_appkit_windows.h"
+#include "platform/hero_ui_appkit_windows.swift"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #endif

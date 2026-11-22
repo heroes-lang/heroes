@@ -92,6 +92,7 @@ use ui/internal/check
 use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/keyboard
 use ui/internal/loop
 use ui/internal/makers
 use ui/internal/model
@@ -959,6 +960,30 @@ variant Input
 # of another kind than the input acts on or a value is outside its range.
 function inject(@app: App, input: Input) -> ()?
     return loop.inject(@app, input: input)
+
+# Presses a key now, as the person's keyboard would, with `widget` holding
+# the keys, given them first as the person's click would; the events it
+# makes come at the next `wait`s. On the native side the key goes through
+# the system's own path, so the menu item whose shortcut it is, the
+# system's Edit menu (undo, redo, cut, copy, paste and select all in a text
+# widget) and the widget take it as the person's; on the headless side,
+# whose widgets no system edits, it chooses the first item of the window's
+# menus whose shortcut it is, the item and its menu enabled, as
+# `.menu_chosen`, and does nothing else. A widget greyed out or hidden takes
+# no key, as a person could not give it one.
+#
+# - `app`: the app it is pressed in; a native one's windows are laid out and
+#   shown first.
+# - `widget`: a window, or a text field, a text area or a list of one.
+# - `shortcut`: the key and the keys held with it, as a menu item's
+#   shortcut names them; not an empty key.
+#
+# Fails `closed`, `invalid` for an empty key, one no shortcut names or a
+# widget of another kind; `failed` where the system keeps another
+# application in front, so no window of this app can take a key. See also
+# `set_shortcut`, `inject`.
+function press_key(@app: App, widget: Widget, shortcut: Shortcut) -> ()?
+    return keyboard.press(@app, widget: widget, shortcut: shortcut)
 
 ## Dialogs
 
@@ -1828,6 +1853,18 @@ test "inject: the close button"
     inject(@app, input: .ask_close(window: w)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: w)
     destroy(@app, widget: w).must()
+    close(@app).must()
+
+# A menu item chosen by its shortcut, the program pressing its keys.
+test "press_key: the primary key and o"
+    app @= open(.headless).must()
+    w = window(@app, title: "Keys", width: 100, height: 60).must()
+    file = menu(@app, into: w, title: "File").must()
+    item = menu_item(@app, into: file, text: "Open").must()
+    o = Shortcut(key: "o", primary: true, shift: false, alt: false)
+    set_shortcut(@app, item: item, shortcut: o).must()
+    press_key(@app, widget: w, shortcut: o).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
     close(@app).must()
 
 # A question answered Yes by an injected answer.

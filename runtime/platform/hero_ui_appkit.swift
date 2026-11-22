@@ -258,6 +258,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             scroll.borderType = .bezelBorder
             let text = NSTextView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
             text.isRichText = false
+            // An `NSTextView` made in code keeps no undo of its own until
+            // asked, where a text field's field editor keeps one: the Edit
+            // menu's Undo and Redo then reach both alike.
+            text.allowsUndo = true
             text.autoresizingMask = [.width]
             text.delegate = self
             scroll.documentView = text
@@ -356,7 +360,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
 
     // MARK: the menu bar
 
-    // The application's menu bar: its own menu, then `menus`' items.
+    // The application's menu bar: its own menu, then `menus`' items, the
+    // standard Edit menu after the first of them (the place Apple's order of
+    // a menu bar gives File) or after the application's own where there is
+    // none. AppKit hands a key held with Command to the main menu's key
+    // equivalents before any widget sees it, so without this menu Command+X,
+    // Command+C, Command+V, Command+A and Command+Z reach no text field and
+    // no text area, and do nothing.
     func appMenuBar(menus: [NSMenuItem]) -> NSMenu {
         let bar = NSMenu(title: "")
         let appItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -370,7 +380,43 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             item.menu?.removeItem(item)
             bar.addItem(item)
         }
+        bar.insertItem(editMenuItem(), at: menus.isEmpty ? 1 : 2)
         return bar
+    }
+
+    // The standard Edit menu, as the item that holds it in the bar. Each
+    // item sends AppKit's own action with no target, so it goes to the first
+    // responder: the field editor of the text field with the keys, or the
+    // text area's `NSTextView`, which cut, copy and paste through the
+    // general pasteboard and undo through their window's undo manager. The
+    // menu enables its items itself (`autoenablesItems`), so an item no
+    // responder takes is greyed, as a person expects.
+    func editMenuItem() -> NSMenuItem {
+        let edit = NSMenu(title: "Edit")
+        // Each item's title, its action (none for a separator), its key and
+        // the keys held with it, in the order of every Mac program's menu.
+        let entries: [(String, Selector?, String, NSEvent.ModifierFlags)] = [
+            ("Undo", Selector(("undo:")), "z", [.command]),
+            ("Redo", Selector(("redo:")), "z", [.command, .shift]),
+            ("", nil, "", []),
+            ("Cut", #selector(NSText.cut(_:)), "x", [.command]),
+            ("Copy", #selector(NSText.copy(_:)), "c", [.command]),
+            ("Paste", #selector(NSText.paste(_:)), "v", [.command]),
+            ("Delete", #selector(NSText.delete(_:)), "", []),
+            ("Select All", #selector(NSText.selectAll(_:)), "a", [.command]),
+        ]
+        for (title, action, key, held) in entries {
+            guard let action = action else {
+                edit.addItem(NSMenuItem.separator())
+                continue
+            }
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: key)
+            item.keyEquivalentModifierMask = held
+            edit.addItem(item)
+        }
+        let holder = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
+        holder.submenu = edit
+        return holder
     }
 
     // Puts the menus of the window in front into the application's bar.
@@ -1112,6 +1158,55 @@ public func hero_ui_appkit_words(_ words: UnsafeMutablePointer<CChar>?, _ count:
     }
     words[length] = 0
     return Int64(length)
+}
+
+// `hero_ui_appkit.h`'s `HERO_UI_APPKIT_OBJECT_*`: which object of a widget
+// `hero_ui_appkit_object` answers.
+private let objectWindow: Int64 = 1
+private let objectView: Int64 = 2
+private let objectTyped: Int64 = 3
+private let objectMenu: Int64 = 4
+private let objectItem: Int64 = 5
+
+// The AppKit object widget `id` stands on, `hero_ui_appkit.h`'s
+// `HERO_UI_APPKIT_OBJECT_*`, unretained: what the arm's other Swift
+// members act on, each compiled as a module of its own and so unable to
+// read `Backend`, which `hero_ui.c` asks here and hands them within one
+// call on the main thread. The object lives while `widgets` holds the
+// widget, which no call between the asking and the handing changes; nil
+// where the widget is none, or holds no such object.
+@c
+public func hero_ui_appkit_object(_ id: Int64, _ which: Int64) -> UnsafeMutableRawPointer? {
+    let found = MainActor.assumeIsolated { () -> AnyObject? in
+        guard let widgets = backend()?.widgets, let widget = widgets[id] else {
+            return nil
+        }
+        switch which {
+        case objectWindow:
+            var at: Native? = widget
+            while let each = at {
+                if let window = each.window ?? each.view?.window {
+                    return window
+                }
+                at = widgets[each.parent]
+            }
+            return nil
+        case objectView:
+            return widget.view
+        case objectTyped:
+            return widget.textView ?? widget.table ?? widget.view
+        case objectMenu:
+            return widget.menu
+        case objectItem:
+            return widget.item
+        default:
+            return nil
+        }
+    }
+    guard let object = found else {
+        return nil
+    }
+    return Unmanaged.passUnretained(object).toOpaque()
 }
 
 @c
