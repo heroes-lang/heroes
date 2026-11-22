@@ -1,0 +1,104 @@
+# Every term the index holds, in a prefix tree with how many pages hold it:
+# what a search box completes a word to as it is typed, and where a
+# misspelt word looks for the word it meant.
+#
+# `search.terms_with_prefix` answers the same words, but it reads every term
+# of the index for each prefix; a search box asks at every key pressed, so
+# the terms are put once into a trie (`containers/trie`), which answers a
+# prefix at the cost of the prefix and of the terms under it. The trie is a
+# map whose values are the counts, kept in a list beside it by slot.
+
+use <rebel>/containers/trie
+use <rebel>/lists
+use <rebel>/search
+
+# The terms of an index, by prefix.
+record Terms
+    # Each term, the trie's keys.
+    trie: trie.Trie
+    # How many pages hold each term, by the trie's slot.
+    counts: [i64]
+
+# A term a prefix completes to, and how many pages hold it.
+record Completion
+    # The term.
+    term: str
+    # The pages holding it.
+    pages: i64
+
+# The terms of `index` and the pages holding each.
+#
+# - `index`: the full-text index.
+function of_index(index: search.Index lent) -> Terms
+    t @= trie.new_map()
+    counts: [i64] @= []
+
+    for term in search.terms_with_prefix(index, prefix: "")
+        trie.put(@t, @counts, key: term, value: search.document_frequency(index, term: term))
+
+    return Terms(trie: t, counts: counts)
+
+# How many pages hold `term`; 0 where none does.
+#
+# - `terms`: the terms.
+# - `term`: a folded term.
+function pages_of(terms: Terms lent, term: str) -> i64
+    return trie.get(terms.trie, value_list: terms.counts, key: term).default(0)
+
+# The terms that begin with `prefix`, the ones most pages hold first, terms
+# held by as many pages in the order of their bytes; at most `most`.
+#
+# - `terms`: the terms.
+# - `prefix`: a folded beginning; the empty one completes to every term.
+# - `most`: the most answered, 0 or more.
+function completions(terms: Terms lent, prefix: str, most: i64) -> [Completion]
+    found: [Completion] @= []
+
+    for at in trie.slots_with_prefix(terms.trie, prefix: prefix)
+        found @ found.push(Completion(term: trie.key_at(terms.trie, at: at), pages: terms.counts[at]))
+
+    return lists.take(lists.sort_by(found, less: more_pages), n: most)
+
+# Whether `a` is held by more pages than `b`: the order of completions,
+# stable, so terms held by as many keep the trie's order of bytes.
+#
+# - `a`: a completion.
+# - `b`: another.
+function more_pages(a: Completion, b: Completion) -> bool
+    return a.pages > b.pages
+
+# The terms that begin with the first character of `word`, where a misspelt
+# word looks for its correction first; empty for the empty word.
+#
+# - `terms`: the terms.
+# - `word`: a folded word.
+function sharing_first(terms: Terms lent, word: str) -> [str]
+    for c in word.chars()
+        return trie.keys_with_prefix(terms.trie, prefix: c)
+
+    return []
+
+# Every term, in the order of its bytes.
+#
+# - `terms`: the terms.
+function every(terms: Terms lent) -> [str]
+    return trie.keys_in_order(terms.trie)
+
+test "of_index: each term with the pages holding it, completed by prefix"
+    index @= search.new_index(search.default_options()).must()
+    search.insert(@index, id: 1, text: "cardamom buns").must()
+    search.insert(@index, id: 2, text: "cardamom cake and carrots").must()
+    search.insert(@index, id: 3, text: "card games").must()
+    t = of_index(index)
+    assert pages_of(t, term: "cardamom") == 2 && pages_of(t, term: "nothing") == 0
+    assert completions(t, prefix: "car", most: 10) == [Completion(term: "cardamom", pages: 2), Completion(term: "card", pages: 1), Completion(term: "carrots", pages: 1)]
+    assert completions(t, prefix: "car", most: 1).len() == 1
+    assert completions(t, prefix: "zz", most: 5) == []
+
+test "sharing_first: the terms of the first character, and none for the empty word"
+    index @= search.new_index(search.default_options()).must()
+    search.insert(@index, id: 1, text: "semlor sugar fika").must()
+    t = of_index(index)
+    assert sharing_first(t, word: "semla") == ["semlor", "sugar"]
+    assert sharing_first(t, word: "") == []
+    assert every(t) == ["fika", "semlor", "sugar"]

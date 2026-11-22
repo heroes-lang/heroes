@@ -1,0 +1,255 @@
+# What a query is answered from: every page crawled, the two full-text
+# indexes, the vector index, the terms by prefix, and the site's order of
+# titles. `index/builder` makes one from a crawl; `index/persist` writes the
+# parts that cost to make and reads them back; `assemble` makes the parts
+# that are cheap to make again from those, so the files hold nothing twice.
+#
+# Two full-text indexes, because `search` holds one text a page and gives a
+# title no weight of its own (its ledger names fields of several weights
+# pending): `full` holds the title, the description and the text, and
+# answers which pages match; `titles` holds the title and the headings, and
+# its score is added to a match's, as BM25F weighs a title field above the
+# body.
+
+use <rebel>/containers/trie
+use <rebel>/i18n
+use <rebel>/i18n/collate
+use <rebel>/lists
+use <rebel>/search
+use <rebel>/vectors
+
+use index/embedder
+use index/links
+use index/terms
+
+# A page as the engine knows it.
+record Doc
+    # Its number: its place in the crawl's order of pages.
+    id: i64
+    # Its URL, in normal form.
+    url: str
+    # Its path and query, which the pages and the API show.
+    path: str
+    # Its title, as the page writes it.
+    title: str
+    # Its description meta tag.
+    description: str
+    # The language it names.
+    language: str
+    # The URL its canonical link names, "" where none.
+    canonical: str
+    # Its headings.
+    headings: [str]
+    # Its text as the page writes it, one block a line.
+    text: str
+    # Whether the indexes hold it: false for a page whose robots meta tag
+    # refuses the index, which still counts in the graph.
+    indexed: bool
+    # The pages it links to, by number.
+    links: [i64]
+    # How many pages link to it.
+    inbound: i64
+    # Its PageRank; the ranks of every page sum to one.
+    rank: f64
+    # The fewest links from the start to it, -1 where none reaches it.
+    depth: i64
+    # The smallest number of its group of near-duplicates, its own where it
+    # has none.
+    group: i64
+
+# The engine.
+record Engine
+    # Whether the indexes hold texts with their marks dropped.
+    fold_marks: bool
+    # The site's language, a BCP 47 tag.
+    language: str
+    # The number of the start page.
+    start: i64
+    # Every page crawled, by number.
+    docs: [Doc]
+    # The title, description and text of each indexed page.
+    full: search.Index
+    # The title and headings of each indexed page.
+    titles: search.Index
+    # Each indexed page's vector, by its number.
+    semantic: vectors.Index
+    # What makes a query's vector, as the pages' were made.
+    embedder: embedder.Embedder
+    # The terms of `full`, by prefix.
+    words: terms.Terms
+    # The site's order of texts.
+    collator: collate.Collator
+    # The indexed pages' numbers, by their titles in the site's order.
+    title_order: [i64]
+    # The rounds PageRank took.
+    rounds: i64
+
+# A page's number and its title's sort key.
+record Keyed
+    # The page's number.
+    id: i64
+    # The collator's key of its title.
+    key: [u8]
+
+# The engine of the parts that are costly to make, the cheap parts made
+# again: the embedder, the terms, the collator and the order of titles.
+#
+# - `docs`: every page, by number.
+# - `full`: the full-text index.
+# - `titles`: the titles' index.
+# - `semantic`: the vector index.
+# - `meta`: the settings the parts were made with.
+function assemble(docs: [Doc], full: search.Index, titles: search.Index, semantic: vectors.Index, meta: Meta) -> Engine
+    words = terms.of_index(full)
+    collator = collator_for(meta.language)
+    return Engine(
+        fold_marks: meta.fold_marks,
+        language: meta.language,
+        start: meta.start,
+        docs: docs,
+        full: full,
+        titles: titles,
+        semantic: semantic,
+        embedder: embedder.with_counts(embedder.new(vectors.dimension_of(semantic)), holding: meta.holding, pages: meta.counted),
+        words: words,
+        collator: collator,
+        title_order: order_of_titles(docs, collator: collator),
+        rounds: meta.rounds
+    )
+
+# What an engine was made with, kept beside its parts.
+record Meta
+    # Whether marks were dropped.
+    fold_marks: bool
+    # The site's language.
+    language: str
+    # The start page's number.
+    start: i64
+    # The rounds PageRank took.
+    rounds: i64
+    # How many indexed pages hold each feature of the vectors, by its number.
+    holding: {i64: i64}
+    # How many pages the features were counted over.
+    counted: i64
+
+# The collator of `language`, or of the root order where the tag does not
+# read.
+#
+# - `language`: a BCP 47 tag.
+function collator_for(language: str) -> collate.Collator
+    locale = match i18n.parse_locale(language)
+        .ok got => got
+        .err _  => i18n.parse_locale("und").must()
+
+    return collate.collator_of(locale)
+
+# The indexed pages' numbers, their titles in `collator`'s order, pages of
+# one title in the order of their numbers.
+#
+# - `docs`: the pages.
+# - `collator`: the site's order.
+function order_of_titles(docs: [Doc], collator: collate.Collator) -> [i64]
+    keyed: [Keyed] @= []
+
+    for d in docs
+        if d.indexed
+            keyed @ keyed.push(Keyed(id: d.id, key: collate.sort_key(collator, s: d.title)))
+
+    ids: [i64] @= []
+
+    for k in lists.sort_by(keyed, less: key_before)
+        ids @ ids.push(k.id)
+
+    return ids
+
+# Whether `a`'s key comes before `b`'s, byte by byte, a key that begins the
+# other first.
+#
+# - `a`: a keyed page.
+# - `b`: another.
+function key_before(a: Keyed, b: Keyed) -> bool
+    at @= 0
+
+    while at < a.key.len() && at < b.key.len()
+        if a.key[at] != b.key[at]
+            return a.key[at] < b.key[at]
+
+        at @ at + 1
+
+    return a.key.len() < b.key.len()
+
+# The page numbered `id`. Fails `not_found` where the engine holds none.
+#
+# - `e`: the engine.
+# - `id`: a page's number, from anywhere.
+function doc_of(e: Engine lent, id: i64) -> Doc?
+    if id < 0 || id >= e.docs.len()
+        return fail(code: "not_found", msg: f"no page numbered {id}")
+
+    return ok(e.docs[id])
+
+# How many pages the indexes hold.
+#
+# - `e`: the engine.
+function indexed_count(e: Engine lent) -> i64
+    return search.size(e.full)
+
+# How many distinct terms the full-text index holds.
+#
+# - `e`: the engine.
+function term_count(e: Engine lent) -> i64
+    return trie.size(e.words.trie)
+
+# How many vectors the vector index holds: the indexed pages whose text
+# gave a vector.
+#
+# - `e`: the engine.
+function vector_count(e: Engine lent) -> i64
+    return vectors.size(e.semantic)
+
+# The site's graph of links, as the pages hold it.
+#
+# - `e`: the engine.
+function graph_of(e: Engine lent) -> links.Graph
+    out: [[i64]] @= []
+    inbound: [i64] @= []
+
+    for d in e.docs
+        out @ out.push(d.links)
+        inbound @ inbound.push(d.inbound)
+
+    return links.Graph(links: out, inbound: inbound)
+
+# The numbers of the `most` pages of the highest PageRank, the highest
+# first, pages of one rank by number.
+#
+# - `e`: the engine.
+# - `most`: how many, 0 or more.
+function ranked_highest(e: Engine lent, most: i64) -> [i64]
+    ids: [i64] @= []
+
+    for d in lists.take(lists.sort_by(e.docs, less: ranked_before), n: most)
+        ids @ ids.push(d.id)
+
+    return ids
+
+# Whether `a` has a higher PageRank than `b`, or as high and a smaller
+# number.
+#
+# - `a`: a page.
+# - `b`: another.
+function ranked_before(a: Doc, b: Doc) -> bool
+    if a.rank != b.rank
+        return a.rank > b.rank
+
+    return a.id < b.id
+
+test "key_before: bytes first, then length"
+    a = Keyed(id: 0, key: [1, 2])
+    b = Keyed(id: 1, key: [1, 3])
+    c = Keyed(id: 2, key: [1, 2, 0])
+    assert key_before(a: a, b: b) && !key_before(a: b, b: a) && key_before(a: a, b: c) && !key_before(a: a, b: a)
+
+test "collator_for: a tag that does not read takes the root order"
+    assert collator_for("sv").locale == "sv"
+    assert collator_for("not a tag!").locale == "und"

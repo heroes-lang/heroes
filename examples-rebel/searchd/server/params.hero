@@ -1,0 +1,70 @@
+# A request's query parameters read with their bounds, so a handler never
+# meets a value it cannot use: a parameter left out takes its default, and
+# one that does not read or stands outside its range fails `invalid` with a
+# message the client is answered 400 with.
+
+use <rebel>/http
+use <rebel>/numbers
+use <rebel>/url
+
+# The pairs of `r`'s query. Fails `invalid` where the query does not read.
+#
+# - `r`: the request.
+function pairs_of(r: http.Request) -> [url.Pair]?
+    return match http.query_of(r)
+        .ok got => ok(got)
+        .err e  => fail(code: "invalid", msg: f"the query does not read: {e.msg}")
+
+# The text of the parameter `key`, `fallback` where it is left out.
+#
+# - `pairs`: the query's pairs.
+# - `key`: the parameter.
+# - `fallback`: its value where it is left out.
+function text_of(pairs: [url.Pair], key: str, fallback: str) -> str
+    return url.value_of(pairs, key: key).default(fallback)
+
+# The whole number of the parameter `key`, `fallback` where it is left out.
+#
+# - `pairs`: the query's pairs.
+# - `key`: the parameter.
+# - `fallback`: its value where it is left out.
+# - `lowest`: the smallest value allowed.
+# - `highest`: the largest value allowed.
+#
+# Fails `invalid` where it is no whole number or stands outside `lowest` to
+# `highest`.
+function int_of(pairs: [url.Pair], key: str, fallback: i64, lowest: i64, highest: i64) -> i64?
+    text = match url.value_of(pairs, key: key)
+        .ok got => got
+        .err _  => return ok(fallback)
+
+    return number_in(text: text, name: key, lowest: lowest, highest: highest)
+
+# The whole number `text` writes, from `lowest` to `highest`.
+#
+# - `text`: the text, as a query or a path writes it.
+# - `name`: what the number is, for the message.
+# - `lowest`: the smallest value allowed.
+# - `highest`: the largest value allowed.
+#
+# Fails `invalid` where it is no whole number or stands outside the range.
+function number_in(text: str, name: str, lowest: i64, highest: i64) -> i64?
+    n = match numbers.parse_int(text)
+        .ok got => got
+        .err _  => return fail(code: "invalid", msg: f"{name} \"{text}\" is not a whole number")
+
+    if n < lowest || n > highest
+        return fail(code: "invalid", msg: f"{name} {n} is outside {lowest} to {highest}")
+
+    return ok(n)
+
+test "int_of: left out, read, out of range and not a number"
+    pairs = url.parse_query("limit=7&big=900&word=ten").must()
+    assert int_of(pairs, key: "missing", fallback: 10, lowest: 1, highest: 50).must() == 10
+    assert int_of(pairs, key: "limit", fallback: 10, lowest: 1, highest: 50).must() == 7
+
+    match int_of(pairs, key: "big", fallback: 10, lowest: 1, highest: 50)
+        .ok _  => assert false
+        .err e => assert e.msg == "big 900 is outside 1 to 50"
+
+    assert int_of(pairs, key: "word", fallback: 10, lowest: 1, highest: 50).is_err()

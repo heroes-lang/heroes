@@ -1,0 +1,134 @@
+# The part of a page a result shows: the run of its own words that holds
+# the most words of the query, each of them marked, as HTML that may stand
+# inside an element of a page.
+#
+# `search` does not say which part of a text a query matched (its ledger
+# names that pending), so the snippet finds it here: the page's text is cut
+# at white space into the words a reader reads, each word's terms are
+# folded as the index folded them, and a word is marked where one of its
+# terms is a word of the query or begins with one of its prefixes. The
+# window kept is the one of `width` words holding the most marked words,
+# the earliest of several; a text no word of which is marked shows its
+# beginning. Every word is escaped, so the snippet of a page holding markup
+# as text writes it as text.
+
+use <rebel>/html
+use <rebel>/strings
+
+use text/folding
+
+# The ellipsis written where the snippet cuts the text.
+constant CUT: str
+    "…"
+
+# What a snippet marks: the query's words and prefixes, folded.
+record Marking
+    # Words a marked word's term equals.
+    words: [str]
+    # Prefixes a marked word's term begins with.
+    prefixes: [str]
+    # Whether marks are dropped in folding.
+    marks: bool
+
+# The snippet of `text`, at most `width` words, as HTML: the words of
+# `marking` inside `<mark>`, a cut at either end written as an ellipsis.
+#
+# - `text`: the page's text, as the page writes it.
+# - `marking`: what to mark.
+# - `width`: the most words shown, 1 or more.
+function snippet(text: str, marking: Marking, width: i64) -> str
+    words = strings.words(text)
+    hits: [bool] @= []
+
+    for w in words
+        hits @ hits.push(is_marked(w, marking: marking))
+
+    start = best_start(hits, width: width)
+    end = least(a: start + width, b: words.len())
+    pieces: [str] @= []
+
+    if start > 0
+        pieces @ pieces.push(CUT)
+
+    for i in range(from: start, to: end)
+        if hits[i]
+            pieces @ pieces.push("<mark>" + html.escape_text(words[i]) + "</mark>")
+        else
+            pieces @ pieces.push(html.escape_text(words[i]))
+
+    if end < words.len()
+        pieces @ pieces.push(CUT)
+
+    return pieces.join(" ")
+
+# Whether `word` holds a term `marking` marks.
+#
+# - `word`: one word as the page writes it, punctuation and all.
+# - `marking`: what to mark.
+function is_marked(word: str, marking: Marking lent) -> bool
+    for term in folding.terms_of(word, marks: marking.marks)
+        for w in marking.words
+            if term == w
+                return true
+
+        for p in marking.prefixes
+            if strings.has_prefix(s: term, prefix: p)
+                return true
+
+    return false
+
+# Where the window of `width` words holding the most marked words begins,
+# the earliest of several; 0 where no word is marked.
+#
+# - `hits`: whether each word is marked.
+# - `width`: the window's width.
+function best_start(hits: [bool], width: i64) -> i64
+    if hits.len() <= width
+        return 0
+
+    count @= 0
+
+    for i in range(from: 0, to: least(a: width, b: hits.len()))
+        if hits[i]
+            count @ count + 1
+
+    best @= count
+    at @= 0
+
+    for start in range(from: 1, to: hits.len() - width + 1)
+        if hits[start - 1]
+            count @ count - 1
+
+        if hits[start + width - 1]
+            count @ count + 1
+
+        if count > best
+            best @ count
+            at @ start
+
+    return at
+
+# The smaller of `a` and `b`.
+#
+# - `a`: a number.
+# - `b`: another.
+function least(a: i64, b: i64) -> i64
+    if a < b
+        return a
+
+    return b
+
+test "snippet: the earliest window of the most marked words, cut at both ends"
+    text = "one two three cardamom four five six seven cardamom buns eight nine ten"
+    m = Marking(words: ["cardamom", "buns"], prefixes: [], marks: true)
+    assert snippet(text, marking: m, width: 4) == "… six seven <mark>cardamom</mark> <mark>buns</mark> …"
+
+test "snippet: folded words, a prefix, punctuation kept and markup escaped"
+    text = "Café <b>culture</b>, a Kar-de-mumma tale"
+    m = Marking(words: ["cafe"], prefixes: ["kar"], marks: true)
+    assert snippet(text, marking: m, width: 10) == "<mark>Café</mark> &lt;b&gt;culture&lt;/b&gt;, a <mark>Kar-de-mumma</mark> tale"
+
+test "snippet: nothing marked shows the beginning, and an empty text is empty"
+    m = Marking(words: ["zzz"], prefixes: [], marks: true)
+    assert snippet("a b c d", marking: m, width: 2) == "a b …"
+    assert snippet("", marking: m, width: 2) == ""

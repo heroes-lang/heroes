@@ -1,0 +1,146 @@
+# searchd: a search engine for one website, in the family of a small
+# Meilisearch or Elasticsearch. It crawls the site from a start URL as a
+# polite crawler does, asking `robots.txt` and the pages' robots meta tags,
+# following redirects as links and leaving other sites alone; it reads each
+# page's text as a reader reads it, folded so that accents, ligatures, case
+# and soft hyphens never keep a query from a page; it indexes the pages for
+# full-text search ranked by BM25, and as vectors made from their tokens for
+# the queries whose words the pages write otherwise; it ranks the pages by
+# the site's own links with PageRank, folds near-duplicate pages into one
+# result, corrects misspelt words, completes a query as it is typed, and
+# serves a web UI and a JSON API.
+#
+#     heroes build examples-rebel/searchd/main.hero -o searchd
+#     ./searchd init searchd.toml                 # a settings file to edit
+#     ./searchd crawl --config searchd.toml       # the site into the crawl store
+#     ./searchd index --config searchd.toml       # the store into the indexes
+#     ./searchd serve --config searchd.toml       # the UI and the API, until Ctrl-C
+#     ./searchd query --server http://127.0.0.1:7700 "cardamom buns"
+#     ./searchd suggest --server http://127.0.0.1:7700 "pearl s"
+#     ./searchd demo                              # the self-contained session below
+#
+# `demo` serves a small baking site on loopback, crawls it, indexes it,
+# serves searchd on a second port and runs scripted queries through its own
+# client, printing a transcript that is the same on every run; its folder
+# under `build/` is removed at its end.
+#
+# Rebel's packages, and what for: `http` fetches the pages, serves the site
+# and the API, and is the client; `web` routes the UI and the API, answers
+# 404 and 405, entity tags, health and security headers; `html` reads the
+# pages and the UI's answers; `html/sanitize` cleans a page down to the text
+# a reader reads; `url` resolves links and puts them in one form; `search`
+# is the full-text index and its BM25; `unicode/normalize` folds texts; the
+# `tokenizer` cuts them into `cl100k_base`'s tokens, from
+# `tokenizer/tables/cl100k_base`, which the vectors are hashed from;
+# `vectors` holds them in an HNSW index and fingerprints near-duplicates;
+# `containers/trie` holds the terms for suggestions and spelling;
+# `containers/disjoint` gathers near-duplicates; `graphs` gives click depths
+# and paths; `math/linear` multiplies PageRank's link matrix in blocks;
+# `i18n` and `i18n/collate` order titles as the site's language orders
+# them; `hash` hashes the fingerprints' word runs; `toml` reads the
+# settings; `flags` reads the command line; `json` is the crawl store, the
+# index's pages and the API; `net`, `io`, `threads`, `os`, `time`, `fs`,
+# `strings`, `bytes`, `numbers`, `lists`, `math` and `unicode` do the rest.
+
+use <rebel>/flags
+
+use app/commands
+use demo/demo
+
+# The folder the demo works in by default.
+constant DEMO_FOLDER: str
+    "build/searchd-demo"
+
+# The command line: a subcommand and its options.
+function command_line() -> flags.Command
+    root @= flags.command(name: "searchd", about: "A search engine for one website: crawl, index, serve, query.")
+    init @= flags.command(name: "init", about: "Write a settings file to edit; never replaces one.")
+    flags.add(@init, a: flags.positional(name: "file", help: "where the settings go"))
+    crawl @= flags.command(name: "crawl", about: "Crawl the site the settings name into the crawl store.")
+    flags.add(@crawl, a: config_option())
+    index @= flags.command(name: "index", about: "Make the indexes from the crawl store.")
+    flags.add(@index, a: config_option())
+    serve @= flags.command(name: "serve", about: "Serve the web UI and the JSON API until Ctrl-C or SIGTERM.")
+    flags.add(@serve, a: config_option())
+    query @= flags.command(name: "query", about: "Ask a running searchd and print its results.")
+    flags.add(@query, a: server_option())
+    flags.add(
+        @query,
+        a: flags.with_default(flags.option(long: "mode", short: "m", value_name: "MODE", help: "hybrid or keyword"), value: "hybrid")
+    )
+    flags.add(
+        @query,
+        a: flags.with_default(flags.with_kind(flags.option(long: "limit", short: "n", value_name: "N", help: "the most results"), kind: .integer), value: "10")
+    )
+    flags.add(@query, a: flags.positional(name: "words", help: "the query, in quotes where it has several words"))
+    suggest @= flags.command(name: "suggest", about: "Ask a running searchd what a query being typed may become.")
+    flags.add(@suggest, a: server_option())
+    flags.add(@suggest, a: flags.positional(name: "typed", help: "what has been typed so far"))
+    demo_command @= flags.command(name: "demo", about: "Run the self-contained demo on loopback.")
+    flags.add(
+        @demo_command,
+        a: flags.with_default(flags.option(long: "folder", short: "", value_name: "DIR", help: "the folder the demo works in"), value: DEMO_FOLDER)
+    )
+    flags.add_command(c: @root, sub: init)
+    flags.add_command(c: @root, sub: crawl)
+    flags.add_command(c: @root, sub: index)
+    flags.add_command(c: @root, sub: serve)
+    flags.add_command(c: @root, sub: query)
+    flags.add_command(c: @root, sub: suggest)
+    flags.add_command(c: @root, sub: demo_command)
+    return root
+
+# The `--config` option every command that reads the settings takes.
+function config_option() -> flags.Argument
+    return flags.with_required(flags.option(long: "config", short: "c", value_name: "FILE", help: "the settings file"))
+
+# The `--server` option of the commands that ask a running searchd.
+function server_option() -> flags.Argument
+    return flags.with_default(
+        flags.option(long: "server", short: "s", value_name: "URL", help: "the server's root URL"),
+        value: "http://127.0.0.1:7700"
+    )
+
+function main()
+    found = match flags.parse(command_line(), arguments: args())
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            exit(code: 2)
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        exit(code: 0)
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            exit(code: 2)
+
+    name = flags.name_of(sub)
+
+    code = if name == "init"
+        commands.init(flags.value_of(sub, name: "file").must())
+    else if name == "crawl"
+        commands.crawl(flags.value_of(sub, name: "config").must())
+    else if name == "index"
+        commands.index(flags.value_of(sub, name: "config").must())
+    else if name == "serve"
+        commands.serve(flags.value_of(sub, name: "config").must())
+    else if name == "query"
+        commands.query(
+            server: flags.value_of(sub, name: "server").must(),
+            words: flags.value_of(sub, name: "words").must(),
+            mode: flags.value_of(sub, name: "mode").must(),
+            limit: flags.int_of(sub, name: "limit").must()
+        )
+    else if name == "suggest"
+        commands.suggest(
+            server: flags.value_of(sub, name: "server").must(),
+            typed: flags.value_of(sub, name: "typed").must()
+        )
+    else
+        demo.run(flags.value_of(sub, name: "folder").must())
+
+    exit(code: code)

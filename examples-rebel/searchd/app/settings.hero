@@ -1,0 +1,257 @@
+# searchd's settings, read from one TOML file: which site to crawl and how
+# far, where the crawl and the index are kept, how texts are folded, and
+# where the server listens. `searchd init` writes a commented sample, and
+# every key may be left out to take the sample's value.
+
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/toml
+
+## Codes
+
+# The code of a settings file that does not read, or holds a value out of
+# its range; the message names the key.
+constant INVALID: str
+    "invalid"
+
+## Defaults
+
+# The `User-Agent` the crawler sends, whose product token `searchd` is the
+# name `robots.txt` and robots meta tags bind it by.
+constant AGENT: str
+    "searchd/0.1"
+
+# The query keys a link loses by default: the trackers of campaigns and
+# clicks, which change nothing a page says.
+constant TRACKERS: [str]
+    ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid", "fbclid"]
+
+## The settings
+
+# What searchd runs with.
+record Settings
+    # The URL the crawl begins at; the crawl keeps to its scheme, host and
+    # port.
+    start: str
+    # The site's language, a BCP 47 tag: the order its titles are listed in.
+    language: str
+    # The `User-Agent` the crawler sends.
+    agent: str
+    # The most URLs fetched in one crawl, 1 or more.
+    max_pages: i64
+    # The most links followed from the start, 0 or more.
+    max_depth: i64
+    # The most bytes of one page's body, 1 or more.
+    max_page_bytes: i64
+    # How long one request may take.
+    timeout: time.Duration
+    # The query keys a link loses.
+    trackers: [str]
+    # The folder the crawl store and the index files are kept in.
+    data: str
+    # Whether combining marks are dropped, "café" found by "cafe".
+    fold_marks: bool
+    # How many components a page's vector has, 8 or more.
+    dimension: i64
+    # How many of the 64 bits two near-duplicate pages' fingerprints may
+    # differ in, 0 to 16.
+    duplicate_bits: i64
+    # The address the server listens on.
+    host: str
+    # The port the server listens on, 0 for one the system chooses.
+    port: i64
+
+# The settings file `searchd init` writes: every key with its value and
+# what it means.
+#
+# - `start`: the URL the crawl begins at.
+# - `language`: the site's language, a BCP 47 tag.
+# - `data`: the data folder.
+function sample(start: str, data: str, language: str) -> str
+    lines = [
+        "# searchd's settings. Every key may be left out to take the value written here."
+        ""
+        "[site]"
+        "# The URL the crawl begins at; the crawl keeps to its scheme, host and port."
+        f"start = {quoted(start)}"
+        "# The site's language: the order its titles are listed in."
+        f"language = {quoted(language)}"
+        ""
+        "[crawl]"
+        "# The User-Agent sent; robots.txt binds the crawler by its first word."
+        f"agent = {quoted(AGENT)}"
+        "max_pages = 1000"
+        "max_depth = 12"
+        "max_page_bytes = 2000000"
+        "timeout_seconds = 20"
+        "# Query keys a link loses, which change nothing a page says."
+        f"trackers = [{TRACKERS.map(quoted).join(", ")}]"
+        ""
+        "[index]"
+        "# The folder the crawl and the index are kept in."
+        f"data = {quoted(data)}"
+        "# Whether accents are dropped, so that \"cafe\" finds \"café\"."
+        "fold_marks = true"
+        "# Components of a page's vector."
+        "dimension = 1024"
+        "# Bits of 64 two near-duplicate pages' fingerprints may differ in."
+        "duplicate_bits = 3"
+        ""
+        "[server]"
+        "host = \"127.0.0.1\""
+        "port = 7700"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# `s` as a TOML basic string.
+#
+# - `s`: any text without a control character.
+function quoted(s: str) -> str
+    escaped = strings.replace_all(s: strings.replace_all(s: s, old: "\\", new: "\\\\"), old: "\"", new: "\\\"")
+    return "\"" + escaped + "\""
+
+# The settings the TOML text `text` writes.
+#
+# - `text`: the file's text.
+#
+# Fails `invalid` where it is not TOML, a value is of another kind than its
+# key's, or a number is out of its range, the message naming the key.
+function parse(text: str) -> Settings?
+    doc = toml.to_json(toml.parse(text)?)?
+    seconds = integer_at(doc, path: ["crawl", "timeout_seconds"], fallback: 20, lowest: 1, highest: 3600)?
+    made = Settings(
+        start: text_at(doc, path: ["site", "start"], fallback: "")?,
+        language: text_at(doc, path: ["site", "language"], fallback: "en")?,
+        agent: text_at(doc, path: ["crawl", "agent"], fallback: AGENT)?,
+        max_pages: integer_at(doc, path: ["crawl", "max_pages"], fallback: 1000, lowest: 1, highest: 1_000_000)?,
+        max_depth: integer_at(doc, path: ["crawl", "max_depth"], fallback: 12, lowest: 0, highest: 1000)?,
+        max_page_bytes: integer_at(doc, path: ["crawl", "max_page_bytes"], fallback: 2_000_000, lowest: 1, highest: 1_000_000_000)?,
+        timeout: time.seconds(seconds)?,
+        trackers: texts_at(doc, path: ["crawl", "trackers"], fallback: TRACKERS)?,
+        data: text_at(doc, path: ["index", "data"], fallback: "searchd-data")?,
+        fold_marks: boolean_at(doc, path: ["index", "fold_marks"], fallback: true)?,
+        dimension: integer_at(doc, path: ["index", "dimension"], fallback: 1024, lowest: 8, highest: 4096)?,
+        duplicate_bits: integer_at(doc, path: ["index", "duplicate_bits"], fallback: 3, lowest: 0, highest: 16)?,
+        host: text_at(doc, path: ["server", "host"], fallback: "127.0.0.1")?,
+        port: integer_at(doc, path: ["server", "port"], fallback: 7700, lowest: 0, highest: 65535)?
+    )
+    return ok(made)
+
+# The settings of the file at `path`. Fails as `read_file` and `parse` do.
+#
+# - `path`: the settings file.
+function read(path: str) -> Settings?
+    return parse(read_file(path)?)
+
+# The value at `path` of `doc`. Fails `not_found` where the file leaves
+# it out, and `invalid` where a table on the way is not one.
+#
+# - `doc`: the document, as JSON.
+# - `path`: the table and the key.
+function lookup(doc: json.Value, path: [str]) -> json.Value?
+    v @= doc
+
+    for key in path
+        v @ json.member(v, key: key)?
+
+    return ok(v)
+
+# The text at `path` of `doc`, or `fallback` where the file leaves it out.
+#
+# - `doc`: the document, as JSON.
+# - `path`: the table and the key.
+# - `fallback`: the value of a key left out.
+function text_at(doc: json.Value, path: [str], fallback: str) -> str?
+    v = match lookup(doc, path: path)
+        .ok got => got
+        .err _  => return ok(fallback)
+
+    return match json.text_of(v)
+        .ok t  => ok(t)
+        .err _ => fail(code: INVALID, msg: f"{path.join(".")} is not a string")
+
+# The integer at `path` of `doc`, or `fallback` where the file leaves it
+# out; fails `invalid` outside `lowest` to `highest`.
+#
+# - `doc`: the document, as JSON.
+# - `path`: the table and the key.
+# - `fallback`: the value of a key left out.
+# - `lowest`: the smallest value allowed.
+# - `highest`: the largest value allowed.
+function integer_at(doc: json.Value, path: [str], fallback: i64, lowest: i64, highest: i64) -> i64?
+    n = match lookup(doc, path: path)
+        .ok got =>
+            match json.int_of(got)
+                .ok i  => i
+                .err _ => return fail(code: INVALID, msg: f"{path.join(".")} is not an integer")
+        .err _ => fallback
+
+    if n < lowest || n > highest
+        return fail(code: INVALID, msg: f"{path.join(".")} is {n}, outside {lowest} to {highest}")
+
+    return ok(n)
+
+# The boolean at `path` of `doc`, or `fallback` where the file leaves it out.
+#
+# - `doc`: the document, as JSON.
+# - `path`: the table and the key.
+# - `fallback`: the value of a key left out.
+function boolean_at(doc: json.Value, path: [str], fallback: bool) -> bool?
+    v = match lookup(doc, path: path)
+        .ok got => got
+        .err _  => return ok(fallback)
+
+    return match json.bool_of(v)
+        .ok b  => ok(b)
+        .err _ => fail(code: INVALID, msg: f"{path.join(".")} is not true or false")
+
+# The array of strings at `path` of `doc`, or `fallback` where the file
+# leaves it out.
+#
+# - `doc`: the document, as JSON.
+# - `path`: the table and the key.
+# - `fallback`: the value of a key left out.
+function texts_at(doc: json.Value, path: [str], fallback: [str]) -> [str]?
+    v = match lookup(doc, path: path)
+        .ok got => got
+        .err _  => return ok(fallback)
+
+    items = match json.items_of(v)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"{path.join(".")} is not an array")
+
+    found: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t  => found @ found.push(t)
+            .err _ => return fail(code: INVALID, msg: f"{path.join(".")} holds something other than strings")
+
+    return ok(found)
+
+test "parse: the sample reads back with its own values"
+    s = parse(sample(start: "http://127.0.0.1:8080/", data: "build/data", language: "sv")).must()
+    assert s.start == "http://127.0.0.1:8080/" && s.data == "build/data" && s.agent == AGENT
+    assert s.max_pages == 1000 && s.fold_marks && s.dimension == 1024 && s.trackers == TRACKERS
+    assert s.timeout == time.seconds(20).must() && s.port == 7700
+
+test "parse: every key left out takes its default"
+    s = parse("").must()
+    assert s.start == "" && s.language == "en" && s.max_depth == 12 && s.duplicate_bits == 3
+
+test "parse: a value of the wrong kind or out of its range names its key"
+    match parse("[crawl]\nmax_pages = \"many\"\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "crawl.max_pages is not an integer"
+
+    match parse("[index]\ndimension = 2\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "index.dimension is 2, outside 8 to 4096"
+
+    assert parse("[site\n").is_err()
+
+test "quoted: a quote and a backslash escaped"
+    assert quoted("a\"b\\c") == "\"a\\\"b\\\\c\""

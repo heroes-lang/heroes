@@ -1,0 +1,313 @@
+# searchd's client: the JSON API read into records, so a program (`searchd
+# query`, the demo's session) reads results and never JSON. A status the
+# API answers with a message is a failure with that message: 400 fails
+# `invalid` and 404 `not_found`, as the server meant them; anything else
+# not 200 fails `failed`.
+
+use <rebel>/html
+use <rebel>/http
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/unicode
+use <rebel>/url
+
+use crawl/store
+
+# A client of the server at `base`.
+record Client
+    # The server's root, `http://127.0.0.1:7700`, with no final `/`.
+    base: str
+    # How requests are sent.
+    http: http.Client
+
+# A word the server put right.
+record Change
+    # The word as typed, folded.
+    from: str
+    # The word searched.
+    to: str
+
+# One result of a query.
+record Result
+    # The page's number.
+    id: i64
+    # Its path.
+    path: str
+    # Its title.
+    title: str
+    # Its snippet, as HTML.
+    snippet: str
+    # Its score in the order it was answered by.
+    score: f64
+    # The paths of the near-duplicates folded under it.
+    folded: [str]
+
+# A query's results.
+record Results
+    # The query as searched.
+    query: str
+    # The mode it was answered in.
+    mode: str
+    # The words put right.
+    corrected: [Change]
+    # How many results it matched.
+    matched: i64
+    # The results shown.
+    hits: [Result]
+
+# A suggestion for what is being typed.
+record Suggestion
+    # The query offered.
+    text: str
+    # The pages it matches.
+    pages: i64
+
+# A page in the site's order of titles.
+record Listed
+    # Its number.
+    id: i64
+    # Its path.
+    path: str
+    # Its title.
+    title: str
+
+# What the server knows of a page.
+record PageInfo
+    # Its number.
+    id: i64
+    # Its path.
+    path: str
+    # Its title.
+    title: str
+    # Whether the indexes hold it.
+    indexed: bool
+    # Its PageRank.
+    rank: f64
+    # Links from the start, -1 where none reaches it.
+    depth: i64
+    # How many pages link to it.
+    inbound: i64
+    # The paths it links to.
+    links: [str]
+    # The paths of its click path from the start, both ends included.
+    path_from_start: [str]
+    # The paths of its near-duplicates.
+    duplicates: [str]
+
+# A page of a high rank.
+record Ranked
+    # Its path.
+    path: str
+    # Its PageRank.
+    rank: f64
+
+# The server's counts.
+record Stats
+    # Pages crawled.
+    pages: i64
+    # Pages indexed.
+    indexed: i64
+    # Distinct terms.
+    terms: i64
+    # Vectors held.
+    vectors: i64
+    # Groups of near-duplicates.
+    duplicate_groups: i64
+    # PageRank's rounds.
+    rank_rounds: i64
+    # The pages ranked highest.
+    top: [Ranked]
+
+# A client of the server at `base`, its requests bounded by `http`'s usual
+# thirty seconds.
+#
+# - `base`: the server's root; a final `/` is dropped.
+function new(base: str) -> Client
+    return Client(base: strings.trim_suffix(s: base, suffix: "/"), http: http.default_client())
+
+# The response to a `GET` of `target` on the server, whatever its status.
+#
+# - `c`: the client.
+# - `target`: the path and query, beginning with `/`.
+function fetch(c: Client, target: str) -> http.Response?
+    return http.get(c.http, target: c.base + target)
+
+# The JSON answer to a `GET` of `target`, a status other than 200 a failure.
+#
+# - `c`: the client.
+# - `target`: the path and query.
+function fetch_json(c: Client, target: str) -> json.Value?
+    response = fetch(c, target: target)?
+
+    if response.status == 200
+        return http.json_of(response)
+
+    message = match http.json_of(response)
+        .ok v  => store.text_at(v, key: "message").default(f"status {response.status}")
+        .err _ => f"status {response.status}"
+
+    code = if response.status == 400
+        "invalid"
+    else if response.status == 404
+        "not_found"
+    else
+        "failed"
+    return fail(code: code, msg: message)
+
+# The results of `query` in `mode`, at most `limit`.
+#
+# - `c`: the client.
+# - `query`: the query, as typed.
+# - `mode`: `keyword` or `hybrid`.
+# - `limit`: the most results, 1 to 50.
+function search(c: Client, query: str, mode: str, limit: i64) -> Results?
+    pairs = [
+        url.Pair(key: "q", value: query)
+        url.Pair(key: "mode", value: mode)
+        url.Pair(key: "limit", value: to_str(limit))
+    ]
+    v = fetch_json(c, target: "/api/search?" + url.format_query(pairs))?
+    corrected: [Change] @= []
+
+    for item in json.items_of(json.member(v, key: "corrected")?)?
+        corrected @ corrected.push(Change(from: store.text_at(item, key: "from")?, to: store.text_at(item, key: "to")?))
+
+    hits: [Result] @= []
+
+    for item in json.items_of(json.member(v, key: "hits")?)?
+        entry = Result(
+            id: store.int_at(item, key: "id")?,
+            path: store.text_at(item, key: "path")?,
+            title: store.text_at(item, key: "title")?,
+            snippet: store.text_at(item, key: "snippet")?,
+            score: json.number_of(json.member(item, key: "score")?)?,
+            folded: store.texts_at(item, key: "folded")?
+        )
+        hits @ hits.push(entry)
+
+    made = Results(
+        query: store.text_at(v, key: "query")?,
+        mode: store.text_at(v, key: "mode")?,
+        corrected: corrected,
+        matched: store.int_at(v, key: "matched")?,
+        hits: hits
+    )
+    return ok(made)
+
+# The suggestions for `typed`, at most `limit`.
+#
+# - `c`: the client.
+# - `typed`: what has been typed so far.
+# - `limit`: the most, 1 to 20.
+function suggest(c: Client, typed: str, limit: i64) -> [Suggestion]?
+    pairs = [url.Pair(key: "q", value: typed), url.Pair(key: "limit", value: to_str(limit))]
+    v = fetch_json(c, target: "/api/suggest?" + url.format_query(pairs))?
+    found: [Suggestion] @= []
+
+    for item in json.items_of(json.member(v, key: "suggestions")?)?
+        entry = Suggestion(
+            text: store.text_at(item, key: "text")?,
+            pages: store.int_at(item, key: "pages")?
+        )
+        found @ found.push(entry)
+
+    return ok(found)
+
+# Every indexed page, by its title in the site's order.
+#
+# - `c`: the client.
+function pages(c: Client) -> [Listed]?
+    v = fetch_json(c, target: "/api/pages")?
+    found: [Listed] @= []
+
+    for item in json.items_of(json.member(v, key: "pages")?)?
+        entry = Listed(
+            id: store.int_at(item, key: "id")?,
+            path: store.text_at(item, key: "path")?,
+            title: store.text_at(item, key: "title")?
+        )
+        found @ found.push(entry)
+
+    return ok(found)
+
+# What the server knows of the page numbered `id`.
+#
+# - `c`: the client.
+# - `id`: the page's number.
+function page(c: Client, id: i64) -> PageInfo?
+    v = fetch_json(c, target: f"/api/pages/{id}")?
+    made = PageInfo(
+        id: store.int_at(v, key: "id")?,
+        path: store.text_at(v, key: "path")?,
+        title: store.text_at(v, key: "title")?,
+        indexed: json.bool_of(json.member(v, key: "indexed")?)?,
+        rank: json.number_of(json.member(v, key: "rank")?)?,
+        depth: store.int_at(v, key: "depth")?,
+        inbound: store.int_at(v, key: "inbound")?,
+        links: store.texts_at(v, key: "links")?,
+        path_from_start: store.texts_at(v, key: "path_from_start")?,
+        duplicates: store.texts_at(v, key: "duplicates")?
+    )
+    return ok(made)
+
+# Every group of near-duplicates, each its pages' paths.
+#
+# - `c`: the client.
+function duplicates(c: Client) -> [[str]]?
+    v = fetch_json(c, target: "/api/duplicates")?
+    found: [[str]] @= []
+
+    for item in json.items_of(json.member(v, key: "groups")?)?
+        paths: [str] @= []
+
+        for p in json.items_of(item)?
+            paths @ paths.push(json.text_of(p)?)
+
+        found @ found.push(paths)
+
+    return ok(found)
+
+# The server's counts.
+#
+# - `c`: the client.
+function stats(c: Client) -> Stats?
+    v = fetch_json(c, target: "/api/stats")?
+    top: [Ranked] @= []
+
+    for item in json.items_of(json.member(v, key: "top")?)?
+        entry = Ranked(
+            path: store.text_at(item, key: "path")?,
+            rank: json.number_of(json.member(item, key: "rank")?)?
+        )
+        top @ top.push(entry)
+
+    made = Stats(
+        pages: store.int_at(v, key: "pages")?,
+        indexed: store.int_at(v, key: "indexed")?,
+        terms: store.int_at(v, key: "terms")?,
+        vectors: store.int_at(v, key: "vectors")?,
+        duplicate_groups: store.int_at(v, key: "duplicate_groups")?,
+        rank_rounds: store.int_at(v, key: "rank_rounds")?,
+        top: top
+    )
+    return ok(made)
+
+# A snippet's HTML as a terminal shows it: each marked word in brackets, the
+# escapes read back, and the soft hyphens (U+00AD) dropped, since a terminal
+# breaks no word where a soft hyphen allows it and shows one otherwise as
+# nothing or as a hyphen, terminal by terminal.
+#
+# - `snippet`: a snippet, as the API answers it.
+function for_terminal(snippet: str) -> str
+    bracketed = strings.replace_all(
+        s: strings.replace_all(s: snippet, old: "<mark>", new: "["),
+        old: "</mark>",
+        new: "]"
+    )
+    shy = unicode.from_code_point(0xad).must()
+    return strings.replace_all(s: html.unescape(bracketed), old: shy, new: "")
+
+test "for_terminal: marks as brackets, escapes read"
+    assert for_terminal("<mark>Café</mark> &lt;b&gt; …") == "[Café] <b> …"
+    shy = unicode.from_code_point(0xad).must()
+    assert for_terminal(f"<mark>kar{shy}de{shy}mumma</mark>") == "[kardemumma]"

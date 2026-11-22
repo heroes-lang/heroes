@@ -1,0 +1,204 @@
+# The engine kept in the data folder, so the server starts from files and
+# never crawls: `searchd index` writes them, `searchd serve` reads them.
+#
+# Four files under `index/`: `pages.json`, every page with its rank, depth
+# and group and the settings the indexes were made with; `full.idx` and
+# `titles.idx`, the two full-text indexes in `search`'s own format; and
+# `vectors.idx`, the vector index in `vectors`'. Each is written to a
+# temporary file and renamed, and each is checked whole as it is read back,
+# so a file cut short or changed is refused and never half read. What is
+# cheap to make again (the terms by prefix, the collator, the order of
+# titles, the embedder) is made by `engine.assemble`.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/search
+use <rebel>/vectors
+
+use crawl/store
+use index/engine
+
+# The version of `pages.json`'s shape; a file of another is refused.
+constant VERSION: i64
+    1
+
+# The folder of the index files in the data folder `data`.
+#
+# - `data`: the data folder.
+function folder_of(data: str) -> str
+    return data + "/index"
+
+# Writes `e` into the data folder `data`.
+#
+# - `data`: the data folder, made where it is missing.
+# - `e`: the engine.
+#
+# Fails as `fs.make_dir_all` and `fs.write_atomic_bytes` do.
+function write(data: str, e: engine.Engine lent) -> ()?
+    folder = folder_of(data)
+    fs.make_dir_all(folder)?
+    docs: [json.Value] @= []
+
+    for d in e.docs
+        docs @ docs.push(doc_json(d))
+
+    members: {str: json.Value} = {
+        "version": store.number(VERSION)
+        "fold_marks": .boolean(v: e.fold_marks)
+        "language": .text(v: e.language)
+        "start": store.number(e.start)
+        "rounds": store.number(e.rounds)
+        "counted": store.number(e.embedder.pages)
+        "features": features_json(e.embedder.holding)
+        "pages": .list(items: docs)
+    }
+    fs.write_atomic_text(path: folder + "/pages.json", text: json.format(.object(members: members))?)?
+    fs.write_atomic_bytes(folder + "/full.idx", data: search.to_bytes(e.full))?
+    fs.write_atomic_bytes(folder + "/titles.idx", data: search.to_bytes(e.titles))?
+    fs.write_atomic_bytes(folder + "/vectors.idx", data: vectors.to_bytes(e.semantic))?
+    return ok()
+
+# The engine written into the data folder `data`.
+#
+# - `data`: the data folder.
+#
+# Fails as `read_file` and `fs.read_bytes` do where a file is missing, and
+# `invalid` where one does not read or `pages.json` is of another version.
+function read(data: str) -> engine.Engine?
+    folder = folder_of(data)
+    v = json.parse(read_file(folder + "/pages.json")?)?
+    version = store.int_at(v, key: "version")?
+
+    if version != VERSION
+        return fail(code: "invalid", msg: f"pages.json is of version {version}, and this searchd reads {VERSION}")
+
+    docs: [engine.Doc] @= []
+
+    for item in json.items_of(json.member(v, key: "pages")?)?
+        d = doc_of(item)?
+
+        if d.id != docs.len()
+            return fail(code: "invalid", msg: f"pages.json numbers a page {d.id} where {docs.len()} was due")
+
+        docs @ docs.push(d)
+
+    full = search.from_bytes(fs.read_bytes(folder + "/full.idx")?)?
+    titles = search.from_bytes(fs.read_bytes(folder + "/titles.idx")?)?
+    semantic = vectors.from_bytes(fs.read_bytes(folder + "/vectors.idx")?)?
+    meta = engine.Meta(
+        fold_marks: json.bool_of(json.member(v, key: "fold_marks")?)?,
+        language: store.text_at(v, key: "language")?,
+        start: store.int_at(v, key: "start")?,
+        rounds: store.int_at(v, key: "rounds")?,
+        holding: features_of(json.member(v, key: "features")?)?,
+        counted: store.int_at(v, key: "counted")?
+    )
+    return ok(engine.assemble(docs, full: full, titles: titles, semantic: semantic, meta: meta))
+
+# How many pages hold each feature, as a JSON object keyed by the feature's
+# number in decimal, a JSON object's keys being texts.
+#
+# - `holding`: the pages holding each feature.
+function features_json(holding: {i64: i64}) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for f in keys(holding)
+        members[to_str(f)] @ store.number(holding[f].must())
+
+    return .object(members: members)
+
+# The pages holding each feature, as `features_json` wrote them.
+#
+# - `v`: the JSON object.
+function features_of(v: json.Value) -> {i64: i64}?
+    held: {i64: i64} @= {}
+    members = json.members_of(v)?
+
+    for key in keys(members)
+        held[numbers.parse_int(key)?] @ json.int_of(members[key]?)?
+
+    return ok(held)
+
+# `d` as a JSON value.
+#
+# - `d`: the page.
+function doc_json(d: engine.Doc) -> json.Value
+    out: [json.Value] @= []
+
+    for i in d.links
+        out @ out.push(store.number(i))
+
+    members: {str: json.Value} = {
+        "id": store.number(d.id)
+        "url": .text(v: d.url)
+        "path": .text(v: d.path)
+        "title": .text(v: d.title)
+        "description": .text(v: d.description)
+        "language": .text(v: d.language)
+        "canonical": .text(v: d.canonical)
+        "headings": store.texts(d.headings)
+        "text": .text(v: d.text)
+        "indexed": .boolean(v: d.indexed)
+        "links": .list(items: out)
+        "inbound": store.number(d.inbound)
+        "rank": .number(v: d.rank)
+        "depth": store.number(d.depth)
+        "group": store.number(d.group)
+    }
+
+    return .object(members: members)
+
+# The page a JSON value holds, as `doc_json` wrote it.
+#
+# - `v`: the value.
+function doc_of(v: json.Value) -> engine.Doc?
+    out: [i64] @= []
+
+    for item in json.items_of(json.member(v, key: "links")?)?
+        out @ out.push(json.int_of(item)?)
+
+    made = engine.Doc(
+        id: store.int_at(v, key: "id")?,
+        url: store.text_at(v, key: "url")?,
+        path: store.text_at(v, key: "path")?,
+        title: store.text_at(v, key: "title")?,
+        description: store.text_at(v, key: "description")?,
+        language: store.text_at(v, key: "language")?,
+        canonical: store.text_at(v, key: "canonical")?,
+        headings: store.texts_at(v, key: "headings")?,
+        text: store.text_at(v, key: "text")?,
+        indexed: json.bool_of(json.member(v, key: "indexed")?)?,
+        links: out,
+        inbound: store.int_at(v, key: "inbound")?,
+        rank: json.number_of(json.member(v, key: "rank")?)?,
+        depth: store.int_at(v, key: "depth")?,
+        group: store.int_at(v, key: "group")?
+    )
+    return ok(made)
+
+test "features_json and features_of: the counts written and read back"
+    held = {4: 2, 4294967300: 1}
+    assert features_of(features_json(held)).must() == held
+    assert features_of(json.parse("{\"x\": 1}").must()).is_err()
+
+test "doc_json and doc_of: a page written and read back, its rank exact"
+    d = engine.Doc(
+        id: 3,
+        url: "http://h/recipes/semlor",
+        path: "/recipes/semlor",
+        title: "Semlor",
+        description: "Buns",
+        language: "en",
+        canonical: "",
+        headings: ["Semlor"],
+        text: "Cardamom buns",
+        indexed: true,
+        links: [0, 1],
+        inbound: 2,
+        rank: 0.0712345678901234,
+        depth: 2,
+        group: 3
+    )
+    assert doc_of(doc_json(d)).must() == d
+    assert doc_of(json.parse(json.format(doc_json(d)).must()).must()).must() == d

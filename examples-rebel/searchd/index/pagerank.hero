@@ -1,0 +1,161 @@
+# How much the site's own links vouch for each page: PageRank, as Brin and
+# Page described it (1998), computed by power iteration on the block matrix
+# of `index/blocks`.
+#
+# A reader on a page follows one of its links, each as likely, with the
+# probability `damping`, and otherwise jumps to any page of the site; a page
+# with no link to follow sends its reader anywhere. A page's rank is how
+# often such a reader stands on it in the long run, and the ranks of a site
+# sum to one. Each round multiplies the link matrix, whose column `j` holds
+# `1 / links(j)` at every page `j` links to, by the ranks of the round
+# before, then adds what the pages with no link and the jumps spread over
+# every page; the rounds end once the ranks move less than `TOLERANCE` in
+# sum, or after `MOST_ROUNDS`. A link from a page to itself, and a second
+# link from one page to another, count as nothing more.
+
+use <rebel>/math
+use <rebel>/math/linear
+
+use index/blocks
+
+# The share of a reader's moves that follow a link: 0.85, the value Brin and
+# Page's paper gives.
+constant DAMPING: f64
+    0.85
+
+# The change of the ranks, summed over every page, below which they are
+# taken as settled.
+constant TOLERANCE: f64
+    0.000000001
+
+# The most rounds, after which the ranks are taken as they stand.
+constant MOST_ROUNDS: i64
+    100
+
+# The ranks of a site's pages, and how long they took.
+record Ranked
+    # Each page's rank, by its number; they sum to one.
+    ranks: [f64]
+    # The rounds run.
+    rounds: i64
+
+# The ranks of the pages `links` describes.
+#
+# - `links`: for each page, by its number from 0, the numbers of the pages
+#   it links to; a number outside the list is left out.
+function rank(links: [[i64]]) -> Ranked
+    n = links.len()
+
+    if n == 0
+        return Ranked(ranks: [], rounds: 0)
+
+    m @= blocks.zeros(n)
+    dangling: [i64] @= []
+
+    for j in range(from: 0, to: n)
+        targets = targets_of(links[j], from: j, order: n)
+
+        if targets.len() == 0
+            dangling @ dangling.push(j)
+
+        for i in targets
+            blocks.add(@m, row: i, column: j, value: 1.0 / to_f64(targets.len()))
+
+    share = 1.0 / to_f64(n)
+    mask = blocks.to_slices(filled(n, value: 1.0))
+    r @= blocks.to_slices(filled(n, value: share))
+    rounds @= 0
+
+    while rounds < MOST_ROUNDS
+        rounds @ rounds + 1
+        product = blocks.multiply(m, vs: r)
+        lost @= 0.0
+
+        for j in dangling
+            lost @ lost + blocks.component(r[j / 4], at: j % 4)
+
+        spread = DAMPING * lost * share + (1.0 - DAMPING) * share
+        level = linear.Vec4(x: spread, y: spread, z: spread, w: spread)
+        next: [linear.Vec4] @= []
+        moved @= 0.0
+
+        for k in range(from: 0, to: product.len())
+            part = linear.add_vec4(
+                a: linear.scale_vec4(product[k], by: DAMPING),
+                b: linear.multiply_vec4(a: mask[k], b: level)
+            )
+            moved @ moved + absolute_sum(linear.subtract_vec4(a: part, b: r[k]))
+            next @ next.push(part)
+
+        r @ next
+
+        if moved < TOLERANCE
+            break
+
+    return Ranked(ranks: blocks.from_slices(r, order: n), rounds: rounds)
+
+# The pages `out` names, each once, without `from` itself and without a
+# number outside `0` to `order` less one, in the order first named.
+#
+# - `out`: the numbers a page links to.
+# - `from`: the page's own number.
+# - `order`: how many pages there are.
+function targets_of(out: [i64], from: i64, order: i64) -> [i64]
+    seen: {i64: bool} @= {}
+    kept: [i64] @= []
+
+    for i in out
+        if i != from && i >= 0 && i < order && !seen[i].default(false)
+            seen[i] @ true
+            kept @ kept.push(i)
+
+    return kept
+
+# `n` copies of `value`.
+#
+# - `n`: how many, 0 or more.
+# - `value`: the value.
+function filled(n: i64, value: f64) -> [f64]
+    out: [f64] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(value)
+
+    return out
+
+# The sum of the absolute values of `v`'s four components.
+#
+# - `v`: the vector.
+function absolute_sum(v: linear.Vec4) -> f64
+    return math.abs(v.x) + math.abs(v.y) + math.abs(v.z) + math.abs(v.w)
+
+# The sum of `xs`.
+#
+# - `xs`: the numbers.
+function total(xs: [f64]) -> f64
+    sum @= 0.0
+
+    for x in xs
+        sum @ sum + x
+
+    return sum
+
+test "rank: a ring of three pages ranks each a third"
+    got = rank([[1], [2], [0]])
+    assert got.ranks.len() == 3
+
+    for x in got.ranks
+        assert math.abs(x - 1.0 / 3.0) < 0.000001
+
+test "rank: a page every other page links to stands first, and the ranks sum to one"
+    got = rank([[], [0], [0, 0, 1], [0, 3, 9]])
+    assert got.ranks[0] > got.ranks[1] && got.ranks[1] > got.ranks[2]
+    assert math.abs(total(got.ranks) - 1.0) < 0.000001
+    assert got.rounds > 1 && got.rounds <= MOST_ROUNDS
+
+test "rank: no page, and one page with no link"
+    assert rank([]).ranks == []
+    assert math.abs(rank([[]]).ranks[0] - 1.0) < 0.000001
+
+test "targets_of: a self link, a repeat and a number outside dropped"
+    assert targets_of([2, 0, 2, 7, -1, 1], from: 0, order: 3) == [2, 1]

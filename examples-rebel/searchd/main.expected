@@ -1,0 +1,120 @@
+searchd demo: Fika Notes, a site of 21 pages, served on loopback
+-- crawl
+robots.txt binds searchd/0.1 by its own group, "searchd": 4 rules
+  /                              page: 12 links, 1 nofollow, 1 outside the site
+  /recipes/                      page: 15 links, 1 nofollow
+  /techniques/                   page: 8 links, 1 nofollow
+  /blog/                         page: 8 links, 1 nofollow
+  /about/                        page: 6 links, 1 nofollow
+  /recipes/kanelbullar           page: 9 links, 1 nofollow
+  /old-recipes                   redirect to /recipes/
+  /files/menu.pdf                refused by robots.txt
+  /images/logo.png               not HTML: image/png
+  /search?q=buns                 refused by robots.txt
+  /drafts/spring-menu            page: 7 links, 1 nofollow
+  /about/imprint                 page, not indexed: 6 links, 1 nofollow
+  /recipes/kardemummabullar      page: 7 links, 1 nofollow
+  /recipes/semlor                page: 7 links, 1 nofollow
+  /recipes/kladdkaka             page: 7 links, 1 nofollow
+  /recipes/chokladbollar         page: 6 links, 1 nofollow
+  /recipes/appelkaka             page: 6 links, 1 nofollow
+  /recipes/alandsk-pannkaka      page: 6 links, 1 nofollow
+  /recipes/zucchinibrod          page: 6 links, 1 nofollow
+  /recipes/lussekatter           missing: 404
+  /techniques/proving-dough      page: 6 links, 1 nofollow
+  /techniques/pearl-sugar        page: 8 links, 1 nofollow
+  /blog/2019/cinnamon-bun-day    page: 8 links, 1 nofollow
+  /blog/cafe-culture             page: 6 links, 1 nofollow
+  /print/kanelbullar             page: 8 links, 1 nofollow
+  /drafts/surstromming-buns      refused by robots.txt
+visited 26 URLs: 19 pages, 1 not indexed, 1 redirect, 1 not HTML, 1 missing, 3 refused; 1 link outside the site left
+the site answered 24 requests, every one from searchd/0.1
+-- index
+indexed 19 of 20 pages: 316 terms, 19 vectors of 1024
+PageRank settled in 12 rounds; the highest:
+  /recipes/                      0.126
+  /                              0.119
+  /techniques/                   0.119
+near-duplicates: 1 group
+  /recipes/kanelbullar, /blog/2019/cinnamon-bun-day, /print/kanelbullar
+the index written and read back: 20 pages, 19 indexed
+GET /api/stats: 19 of 20 pages indexed, 316 terms, 19 vectors
+-- queries
+search cardamom
+  5 results (keyword)
+  1. Kardemummabullar  /recipes/kardemummabullar
+     … knots of the same soft dough as kanelbullar, filled with butter, sugar and freshly ground [cardamom] instead of cinnamon. The Swedish word for [cardamom] …
+  2. Kanelbullar  /recipes/kanelbullar, also at /blog/2019/cinnamon-bun-day, /print/kanelbullar
+     … [cardamom,] rolled around butter, sugar and cinnamon, and topped with pearl sugar. Ingredients 500 g flour 75 g sugar 2 teaspoons of ground [cardamom] …
+  3. Åländsk pannkaka  /recipes/alandsk-pannkaka
+     Åländsk pannkaka Åländsk pannkaka, the pancake of the Åland islands, is baked in the oven from semolina, milk, eggs and [cardamom,] and served warm …
+search "pearl sugar"
+  6 results (keyword)
+  1. Pearl sugar  /techniques/pearl-sugar
+     [Pearl] [sugar] [Pearl] [sugar,] pärlsocker in Swedish, is [sugar] pressed into hard white grains that do not melt in the oven. Scatter [pearl] [sugar] …
+  2. Techniques  /techniques/
+     Techniques Proving dough [Pearl] [sugar]
+  3. Fika Notes  /
+     … cakes and cookies of a Swedish kitchen, written down as they are baked. Start here Every recipe Techniques, from proving dough to [pearl] [sugar] …
+search sugar -chocolate -cinnamon
+  4 results (keyword)
+  1. Pearl sugar  /techniques/pearl-sugar
+     Pearl [sugar] Pearl [sugar,] pärlsocker in Swedish, is [sugar] pressed into hard white grains that do not melt in the oven. Scatter pearl [sugar] …
+  2. Techniques  /techniques/
+     Techniques Proving dough Pearl [sugar]
+  3. Fika Notes  /
+     … cakes and cookies of a Swedish kitchen, written down as they are baked. Start here Every recipe Techniques, from proving dough to pearl [sugar] …
+search cafe fika
+  7 results (keyword)
+  1. Fika Notes  /
+     [Fika] Notes [Fika] is the Swedish pause for coffee and something sweet. These notes keep the buns, cakes and cookies of a Swedish kitchen, …
+  2. Café culture  /blog/cafe-culture
+     [Café] culture In a Swedish [café] the coffee is refilled for free, and [ﬁka] is taken twice a day at many workplaces. Kaffe and …
+  3. Blog  /blog/
+     Blog Cinnamon bun day, 2019 [Café] culture
+search kardemumma
+  1 result (keyword)
+  1. Kardemummabullar  /recipes/kardemummabullar
+     … the same soft dough as kanelbullar, filled with butter, sugar and freshly ground cardamom instead of cinnamon. The Swedish word for cardamom is [kardemumma,] …
+search cardamon buns
+  showing results for cardamom buns (cardamon -> cardamom)
+  7 results (keyword)
+  1. Semlor  /recipes/semlor
+     Semlor Semlor are [cardamom] [buns] filled with almond paste and whipped cream, eaten on Fat Tuesday, fettisdagen, and in every café from January to …
+  2. Kanelbullar  /recipes/kanelbullar, also at /blog/2019/cinnamon-bun-day, /print/kanelbullar
+     Kanelbullar Kanelbullar are the cinnamon [buns] of every Swedish bakery: a soft dough scented with [cardamom,] rolled around butter, sugar and cinnamon, and topped …
+  3. Recipes  /recipes/
+     Recipes Every recipe of Fika Notes, from the [buns] of a Sunday morning to the cake of a birthday. Kanelbullar Kardemummabullar Semlor Kladdkaka Chokladbollar …
+search semla
+  0 results (keyword)
+search semla
+  2 results (hybrid)
+  1. Semlor  /recipes/semlor
+     Semlor Semlor are cardamom buns filled with almond paste and whipped cream, eaten on Fat Tuesday, fettisdagen, and in every café from January to …
+  2. Spring menu  /drafts/spring-menu
+     Spring menu Semlor until Easter, then rhubarb cake and the first strawberries, and one joke.
+-- suggestions as you type
+suggest "ka": kanelbullar (8), kardemummabullar (2), kaffe (1), kanelbullens (1)
+suggest "pearl s": pearl sugar (8), pearl swedish (6), pearl soft (4), pearl scatter (4)
+-- the site
+GET /api/pages: 19 pages, their titles in Swedish order:
+  About; Blog; Café culture; Chokladbollar; Cinnamon bun day, 2019; Fika Notes; Kanelbullar; Kanelbullar (print); Kardemummabullar; Kladdkaka; Pearl sugar; Proving dough; Recipes; Semlor; Spring menu; Techniques; Zucchinibröd; Åländsk pannkaka; Äppelkaka
+GET /api/duplicates: /recipes/kanelbullar, /blog/2019/cinnamon-bun-day, /print/kanelbullar
+GET /api/pages/5: Kanelbullar, PageRank 0.037, linked from 5 pages
+  1 link from the start: / > /recipes/kanelbullar
+  near-duplicates: /blog/2019/cinnamon-bun-day, /print/kanelbullar
+-- the web UI
+GET /: 200, 19 pages listed, a search box: true
+GET /search?q=cardamom+buns: 200, "7 results.", 7 shown, 10 words marked
+  Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'
+GET /search?q=<script>...: 200, 0 script elements, the box holds <script>alert(1)</script> buns
+-- refusals
+search "pearl sugar: invalid, the quote opened at character 0 is not closed
+GET /api/pages/999: not_found, no page numbered "999"
+search buns in mode fuzzy: invalid, no mode "fuzzy"; keyword or hybrid
+GET /nowhere: 404
+POST /api/search: 405, Allow GET, HEAD, OPTIONS
+GET /api/stats with its ETag: 304
+GET /healthz: 200 ok
+the server stopped, asked as Ctrl-C asks: 25 requests answered, 0 cut
+the demo's folder removed

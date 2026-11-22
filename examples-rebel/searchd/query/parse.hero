@@ -1,0 +1,232 @@
+# A query as a person types it, read into its parts: the language `search`
+# reads (`word`, `+word`, `-word`, `"a phrase"`, `prefix*`), read here too
+# because the engine needs each part's terms before it searches: to correct
+# a misspelt word, to mark the words of a snippet, to keep the vector half
+# of a hybrid query to the pages the words require and refuse, and to make
+# the query's vector.
+#
+# Every part's words are folded as the pages' were, so the query written
+# back by `format` is in the indexes' own form. A word that gives no term
+# (punctuation alone) is dropped; a word that gives several, `e-mail`, is
+# the phrase of them, as `search` reads one.
+
+use <rebel>/strings
+
+use text/folding
+
+## Codes
+
+# The code of a query that does not read: a quote not closed.
+constant INVALID: str
+    "invalid"
+
+## The parts
+
+# What a part asks of a page.
+variant Need
+    # Nothing: a page holding it scores higher.
+    optional
+    # A page must hold it, `+word`.
+    required
+    # A page must not hold it, `-word`.
+    refused
+
+# One part of a query.
+record Part
+    # What it asks of a page.
+    need: Need
+    # Its folded terms: one for a word, several for a phrase.
+    words: [str]
+    # Whether its one word is a prefix, `word*`.
+    prefix: bool
+
+# A query read.
+record Query
+    # Its parts, in the order written.
+    parts: [Part]
+
+# The query `text` writes.
+#
+# - `text`: what was typed, any text; the empty text is the query of no part.
+# - `marks`: whether combining marks are dropped, as the indexes were made.
+#
+# Fails `invalid` where a quote is not closed.
+function parse(text: str, marks: bool) -> Query?
+    cs = text.chars()
+    parts: [Part] @= []
+    at @= 0
+
+    while at < cs.len()
+        if is_space(cs[at])
+            at @ at + 1
+            continue
+
+        need: Need @= .optional
+
+        if cs[at] == "+"
+            need @ .required
+            at @ at + 1
+        else if cs[at] == "-"
+            need @ .refused
+            at @ at + 1
+
+        if at < cs.len() && cs[at] == "\""
+            close @= at + 1
+
+            while close < cs.len() && cs[close] != "\""
+                close @ close + 1
+
+            if close >= cs.len()
+                return fail(code: INVALID, msg: f"the quote opened at character {at} is not closed")
+
+            words = folding.terms_of(cs.slice(from: at + 1, to: close).join(""), marks: marks)
+            at @ close + 1
+
+            if words.len() > 0
+                parts @ parts.push(Part(need: need, words: words, prefix: false))
+        else
+            end @= at
+
+            while end < cs.len() && !is_space(cs[end])
+                end @ end + 1
+
+            token = cs.slice(from: at, to: end).join("")
+            at @ end
+            starred = strings.has_suffix(s: token, suffix: "*")
+            words = folding.terms_of(strings.trim_suffix_all(s: token, suffix: "*"), marks: marks)
+
+            if words.len() > 0
+                parts @ parts.push(Part(need: need, words: words, prefix: starred && words.len() == 1))
+
+    return ok(Query(parts: parts))
+
+# Whether `c`, one character, is white space a query parts its words by.
+#
+# - `c`: one character.
+function is_space(c: str) -> bool
+    return c == " " || c == "\t" || c == "\n" || c == "\r"
+
+# `q` written in the language `search` reads, in the indexes' folded form.
+#
+# - `q`: the query.
+function format(q: Query) -> str
+    pieces: [str] @= []
+
+    for p in q.parts
+        pieces @ pieces.push(sign_of(p.need) + body_of(p))
+
+    return pieces.join(" ")
+
+# The sign a part's need is written with.
+#
+# - `need`: the need.
+function sign_of(need: Need) -> str
+    return match need
+        .optional => ""
+        .required => "+"
+        .refused  => "-"
+
+# A part without its sign: its word, its word and `*`, or its phrase quoted.
+#
+# - `p`: the part.
+function body_of(p: Part) -> str
+    if p.words.len() > 1
+        return "\"" + p.words.join(" ") + "\""
+
+    if p.prefix
+        return p.words[0] + "*"
+
+    return p.words[0]
+
+# `q`'s parts that are not refused, each written as an optional part: what a
+# page's title is scored by, where only holding the words counts.
+#
+# - `q`: the query.
+function wanted(q: Query) -> str
+    pieces: [str] @= []
+
+    for p in q.parts
+        if !is_refused(p)
+            pieces @ pieces.push(body_of(p))
+
+    return pieces.join(" ")
+
+# `q`'s required and refused parts alone, written for `search`: the pages it
+# answers are those every required part admits, refused parts kept out.
+# Empty where `q` requires nothing.
+#
+# - `q`: the query.
+function requirements(q: Query) -> str
+    pieces: [str] @= []
+    required @= false
+
+    for p in q.parts
+        match p.need
+            .optional => _ = 0
+            .required =>
+                required @ true
+                pieces @ pieces.push("+" + body_of(p))
+            .refused => pieces @ pieces.push("-" + body_of(p))
+
+    if !required
+        return ""
+
+    return pieces.join(" ")
+
+# `q`'s refused parts, each written as an optional part: the pages any of
+# them would refuse. Empty where nothing is refused.
+#
+# - `q`: the query.
+function refusals(q: Query) -> str
+    pieces: [str] @= []
+
+    for p in q.parts
+        if is_refused(p)
+            pieces @ pieces.push(body_of(p))
+
+    return pieces.join(" ")
+
+# Whether `p` is refused.
+#
+# - `p`: the part.
+function is_refused(p: Part) -> bool
+    return match p.need
+        .refused              => true
+        .optional | .required => false
+
+# The terms of every part that is not refused, in order: the words a
+# snippet marks, a query's vector is made of, and a misspelling is looked
+# for among.
+#
+# - `q`: the query.
+function wanted_words(q: Query) -> [str]
+    found: [str] @= []
+
+    for p in q.parts
+        if !is_refused(p)
+            for w in p.words
+                found @ found.push(w)
+
+    return found
+
+test "parse: words, signs, a phrase, a prefix, and folding"
+    q = parse("Café +\"Pearl  Sugar\" -chocolate kar*", marks: true).must()
+    assert format(q) == "cafe +\"pearl sugar\" -chocolate kar*"
+    assert wanted(q) == "cafe \"pearl sugar\" kar*"
+    assert requirements(q) == "+\"pearl sugar\" -chocolate"
+    assert refusals(q) == "chocolate"
+    assert wanted_words(q) == ["cafe", "pearl", "sugar", "kar"]
+
+test "parse: a word of several terms is a phrase, and punctuation alone is dropped"
+    q = parse("e-mail !! + - \"\"", marks: true).must()
+    assert format(q) == "\"e mail\""
+    assert parse("", marks: true).must().parts == []
+
+test "parse: a quote not closed"
+    match parse("pearl \"sugar", marks: true)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the quote opened at character 6 is not closed"
+
+test "requirements: nothing required asks nothing of a page"
+    assert requirements(parse("buns -chocolate", marks: true).must()) == ""
+    assert refusals(parse("buns", marks: true).must()) == ""

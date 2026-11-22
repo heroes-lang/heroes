@@ -1,0 +1,142 @@
+# The site as a graph of its pages: each page a number, each link an edge to
+# the page it lands on once its redirects are followed, so a link to a page
+# that moved counts for the page it moved to. From the graph come the click
+# depth of every page, the fewest links a reader follows from the start to
+# reach it, and the click path the page view shows, both by `graphs`'
+# shortest paths with every link weighing one.
+
+use <rebel>/graphs
+
+# The most redirects followed from one URL: past them a chain is taken as a
+# loop, and the link as landing nowhere.
+constant MOST_HOPS: i64
+    10
+
+# The pages of a crawl and their links, by page number.
+record Graph
+    # For each page, the pages it links to, each once, itself left out.
+    links: [[i64]]
+    # For each page, how many other pages link to it.
+    inbound: [i64]
+
+# The URL `link` lands on once the redirects in `moved` are followed; `link`
+# itself where none moves it, and "" where the chain is longer than
+# `MOST_HOPS`.
+#
+# - `link`: a URL in normal form.
+# - `moved`: each URL a redirect answered, with the URL it named.
+function landing(link: str, moved: {str: str}) -> str
+    at @= link
+    hops @= 0
+
+    while hops <= MOST_HOPS
+        match moved[at]
+            .ok next => at @ next
+            .err _   => return at
+
+        hops @ hops + 1
+
+    return ""
+
+# The graph of the pages `urls`, the page `i` linking to `links[i]`.
+#
+# - `urls`: each page's URL, by its number.
+# - `links`: each page's links, by its number, as URLs in normal form; a
+#   link landing on no page of `urls` is left out.
+# - `moved`: the redirects met.
+function of_pages(urls: [str], links: [[str]], moved: {str: str}) -> Graph
+    number: {str: i64} @= {}
+
+    for i in range(from: 0, to: urls.len())
+        number[urls[i]] @ i
+
+    out: [[i64]] @= []
+    inbound: [i64] @= []
+
+    for _ in urls
+        inbound @ inbound.push(0)
+
+    for i in range(from: 0, to: urls.len())
+        seen: {i64: bool} @= {}
+        targets: [i64] @= []
+
+        for link in links[i]
+            match number[landing(link, moved: moved)]
+                .ok j =>
+                    if j != i && !seen[j].default(false)
+                        seen[j] @ true
+                        targets @ targets.push(j)
+                        inbound[j] @ inbound[j] + 1
+                .err _ => _ = 0
+
+        out @ out.push(targets)
+
+    return Graph(links: out, inbound: inbound)
+
+# `g` with each link weighing one, every page a node even where it links
+# nowhere, as `graphs` reads a weighted graph.
+#
+# - `g`: the graph.
+function weighted(g: Graph lent) -> {i64: {i64: f64}}
+    out: {i64: {i64: f64}} @= {}
+
+    for i in range(from: 0, to: g.links.len())
+        edges: {i64: f64} @= {}
+
+        for j in g.links[i]
+            edges[j] @ 1.0
+
+        out[i] @ edges
+
+    return out
+
+# For every page, the fewest links from `start` to it; -1 where no path of
+# links reaches it.
+#
+# - `g`: the graph.
+# - `start`: the start's number; a number outside the graph reaches nothing.
+function depths(g: Graph lent, start: i64) -> [i64]
+    found: [i64] @= []
+
+    for _ in g.links
+        found @ found.push(-1)
+
+    distances = match graphs.distances_from(weighted(g), from: start)
+        .ok got => got
+        .err _  => return found
+
+    for page in keys(distances)
+        # A distance counts links of weight one, so it is a whole number no
+        # larger than the pages.
+        found[page] @ to_i64(distances[page].must()).must()
+
+    return found
+
+# The pages of a shortest path of links from `start` to `to`, both included;
+# empty where none reaches it.
+#
+# - `g`: the graph.
+# - `start`: the start's number.
+# - `to`: the page's number.
+function path_to(g: Graph lent, start: i64, to: i64) -> [i64]
+    return graphs.shortest_path(weighted(g), from: start, to: to).default([])
+
+test "landing: a chain of redirects followed, and a loop given up"
+    moved = {"a": "b", "b": "c", "x": "y", "y": "x"}
+    assert landing("a", moved: moved) == "c" && landing("c", moved: moved) == "c"
+    assert landing("x", moved: moved) == ""
+
+test "of_pages: links through a redirect, a repeat, a self link and a link to no page"
+    g = of_pages(
+        ["/", "/recipes/", "/recipes/semlor"],
+        links: [["/old", "/recipes/", "/", "/nowhere"], ["/recipes/semlor", "/"], []],
+        moved: {"/old": "/recipes/"}
+    )
+    assert g.links == [[1], [2, 0], []]
+    assert g.inbound == [1, 1, 1]
+
+test "depths and path_to: clicks from the start, and a page no link reaches"
+    g = Graph(links: [[1], [2], [], []], inbound: [0, 1, 1, 0])
+    assert depths(g, start: 0) == [0, 1, 2, -1]
+    assert path_to(g, start: 0, to: 2) == [0, 1, 2]
+    assert path_to(g, start: 0, to: 3) == []

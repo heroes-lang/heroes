@@ -1,0 +1,71 @@
+# How searchd reads a text before any index sees it: one form for every way
+# of writing the same word, so that a query finds a page whatever keys the
+# page's writer pressed. `search` cuts terms and lowers their case with
+# `strings.to_lower` and folds nothing else (its ledger names accent folding
+# pending), so every text goes through `folded` first, the pages' and the
+# queries' alike, and the two always meet in the same form.
+#
+# The fold is Unicode's NFKC_Casefold: ligatures and full-width letters
+# become their plain letters ("ﬁka" is "fika"), case is folded in full
+# ("Straße" is "strasse"), and the default ignorable characters are dropped,
+# so a soft hyphen a writer put inside a long word does not cut it in two.
+# Then, where the settings ask, every combining mark of the canonical
+# decomposition is dropped, so "café" and "cafe" meet. Dropping marks merges
+# what a language may keep apart (Swedish "å", "ä" and "ö" become "a" and
+# "o"), which is why it is a setting and not the rule.
+
+use <rebel>/search
+use <rebel>/unicode
+use <rebel>/unicode/normalize
+
+# `s` in the form the indexes hold.
+#
+# - `s`: any text; the empty text answers itself.
+# - `marks`: whether combining marks are dropped, "café" read as "cafe".
+function folded(s: str, marks: bool) -> str
+    caseless = normalize.to_nfkc_casefold(s)
+
+    if !marks
+        return caseless
+
+    return without_marks(caseless)
+
+# `s` with every combining mark of its canonical decomposition dropped, put
+# back in NFC. A mark is a character whose canonical combining class is not
+# zero, which is every accent, ring, diaeresis and cedilla of the Latin
+# letters.
+#
+# - `s`: any text.
+function without_marks(s: str) -> str
+    kept: [str] @= []
+
+    for c in normalize.to_nfd(s).chars()
+        if normalize.combining_class(c) == 0
+            kept @ kept.push(c)
+
+    return normalize.to_nfc(kept.join(""))
+
+# The terms of `s` as the indexes hold them: folded, then cut as `search`
+# cuts a text, with no stop word left out.
+#
+# - `s`: any text; a text of no letter or digit has no term.
+# - `marks`: whether combining marks are dropped.
+function terms_of(s: str, marks: bool) -> [str]
+    return search.terms(folded(s, marks: marks), stop_words: [])
+
+test "folded: accents, a ligature, a sharp s, case and a soft hyphen"
+    assert folded("Café", marks: true) == "cafe"
+    assert folded("Café", marks: false) == "café"
+    assert folded("ﬁka", marks: true) == "fika"
+    assert folded("Straße", marks: true) == "strasse"
+    shy = unicode.from_code_point(0xad).must()
+    assert folded(f"Kar{shy}de{shy}mumma", marks: true) == "kardemumma"
+    assert folded("", marks: true) == ""
+
+test "folded: Swedish letters kept or folded, as the setting asks"
+    assert folded("Äppelkaka på Åland", marks: false) == "äppelkaka på åland"
+    assert folded("Äppelkaka på Åland", marks: true) == "appelkaka pa aland"
+
+test "terms_of: a heading cut into folded terms"
+    assert terms_of("Åländsk pannkaka, with ﬁve SPOONS", marks: true) == ["alandsk", "pannkaka", "with", "five", "spoons"]
+    assert terms_of("-- !! --", marks: true) == []

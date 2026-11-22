@@ -1,0 +1,255 @@
+# A text made a vector for the vector index, here and with no service: the
+# hashed bag of its tokens.
+#
+# The tokens are `cl100k_base`'s, the encoding OpenAI's embedding models
+# read, so a word the encoding does not hold whole is cut into the pieces it
+# does: "kanelbullar" is ` k`, `anel`, `bull`, `ar` and "kanelbulle" is
+# ` k`, `anel`, `bul`, `le`. Two forms of one word share pieces where
+# BM25's whole-word terms share nothing, which is what the vector half of a
+# hybrid query adds. The English stop words `search` knows are left out
+# first: they are most of a text's tokens and say nothing of what it is
+# about, so left in they would make every page's vector alike. Each token,
+# and each pair of neighbouring tokens at half the weight, is hashed to one
+# of the vector's components with a sign (feature hashing, Weinberger and
+# others, ICML 2009), weighed by one more than the logarithm of how often
+# it stands times its inverse document frequency over the site's pages,
+# `ln(1 + pages / pages holding it)`, and the vector is scaled to length one
+# so that the cosine compares texts of any length.
+#
+# The weighting is what lets a word of a query find a page: unweighed, the
+# one token "semla" shares with a page about semlor weighed as much as each
+# of the page's other tokens, and its cosine, 0.058, stood at the level of
+# the collisions of a query of nonsense words with unrelated pages, up to
+# 0.056 (both measured on the demo's site at 1024 components). A feature no
+# page holds is dropped from a query's vector, since it brings no page
+# nearer and would only lengthen the query.
+#
+# The vector is the same on every machine: the tokens are the encoding's,
+# the hashes are integer arithmetic, and the sums are taken in one order.
+
+use <rebel>/math
+use <rebel>/search
+use <rebel>/tokenizer
+use <rebel>/tokenizer/tables/cl100k_base
+use <rebel>/vectors
+
+# Knuth's multiplicative constant, 2^32 over the golden ratio: a product
+# with it spreads consecutive feature numbers over every component.
+constant SPREAD: i64
+    2_654_435_761
+
+# A prime above every token number of `cl100k_base`, so that a pair of
+# tokens makes one number neither token alone makes.
+constant PAIR_BASE: i64
+    100_291
+
+# Where the feature numbers of pairs of tokens begin, above every token's
+# own number: a pair's feature is `PAIRS` plus its key.
+constant PAIRS: i64
+    4_294_967_296
+
+# What makes vectors: the encoding, made once and kept, the length, and
+# how many of the site's pages hold each feature.
+record Embedder
+    # The encoding the tokens are cut by.
+    encoding: tokenizer.Encoding
+    # How many components a vector has.
+    dimension: i64
+    # The words left out of a vector: `search`'s English stop words, which
+    # are most of a text's tokens and say nothing of what it is about.
+    stop_words: {str: bool}
+    # How many pages hold each feature, by its number; empty before the
+    # site's pages are counted.
+    holding: {i64: i64}
+    # How many pages were counted; 0 before they are, which weighs every
+    # feature alike.
+    pages: i64
+
+# An embedder of `dimension` components, no page counted yet. It reads the
+# whole encoding's table, so a program makes one and keeps it.
+#
+# - `dimension`: the vectors' length, 8 or more.
+function new(dimension: i64) -> Embedder
+    stop_words: {str: bool} @= {}
+
+    for w in search.english_stop_words()
+        stop_words[w] @ true
+
+    return Embedder(
+        encoding: cl100k_base.encoding(),
+        dimension: dimension,
+        stop_words: stop_words,
+        holding: {},
+        pages: 0
+    )
+
+# `e` weighing each feature by the site's pages: `holding` says how many of
+# the `pages` hold each.
+#
+# - `e`: the embedder.
+# - `holding`: the pages holding each feature, as `pages_holding` counts them.
+# - `pages`: how many pages were counted.
+function with_counts(e: Embedder, holding: {i64: i64}, pages: i64) -> Embedder
+    out @= e
+    out.holding @ holding
+    out.pages @ pages
+    return out
+
+# The features of the words `words`, each with its weight in the text: one
+# more than the logarithm of its count, halved for a pair. Each word is cut
+# after one space, so a word gives the same tokens wherever it stood (the
+# encoding cuts ` semlor` after a space otherwise than `semlor` after a
+# line's end); stop words are left out first.
+#
+# - `e`: the embedder.
+# - `words`: folded terms, in order.
+function features_of(e: Embedder lent, words: [str]) -> {i64: f64}
+    meaning: [str] @= []
+
+    for w in words
+        if !e.stop_words[w].default(false)
+            meaning @ meaning.push(w)
+
+    found: {i64: f64} @= {}
+
+    if meaning.len() == 0
+        return found
+
+    counts: {i64: i64} @= {}
+    previous @= -1
+
+    for t in tokenizer.encode_ordinary(e.encoding, text: " " + meaning.join(" "))
+        counts[t] @ counts[t].default(0) + 1
+
+        if previous >= 0
+            pair = PAIRS + (previous * PAIR_BASE + t) % 2_147_483_648
+            counts[pair] @ counts[pair].default(0) + 1
+
+        previous @ t
+
+    for f in keys(counts)
+        weight = if f >= PAIRS
+            0.5
+        else
+            1.0
+        found[f] @ weight * (1.0 + math.ln(to_f64(counts[f].must())))
+
+    return found
+
+# How many of the texts `texts` hold each feature.
+#
+# - `texts`: the features of each text, as `features_of` gives them.
+function pages_holding(texts: [{i64: f64}]) -> {i64: i64}
+    held: {i64: i64} @= {}
+
+    for t in texts
+        for f in keys(t)
+            held[f] @ held[f].default(0) + 1
+
+    return held
+
+# The weight `e` gives the feature `f` across the site: one where no page
+# was counted, zero for a feature no page holds, else `ln(1 + pages / held)`.
+#
+# - `e`: the embedder.
+# - `f`: a feature's number.
+function idf(e: Embedder lent, f: i64) -> f64
+    if e.pages == 0
+        return 1.0
+
+    held = e.holding[f].default(0)
+
+    if held == 0
+        return 0.0
+
+    return math.ln(1.0 + to_f64(e.pages) / to_f64(held))
+
+# The vector of the features `features`, of length one; all zeros where
+# none weighs anything, which the vector index refuses and the caller
+# leaves out.
+#
+# - `e`: the embedder.
+# - `features`: a text's features, as `features_of` gives them.
+function vector_of(e: Embedder lent, features: {i64: f64}) -> [f32]
+    sums: [f64] @= []
+
+    for _ in range(from: 0, to: e.dimension)
+        sums @ sums.push(0.0)
+
+    for f in keys(features)
+        value = features[f].must() * idf(e, f: f)
+
+        if value != 0.0
+            add_feature(@sums, f: f, value: value)
+
+    raw: [f32] @= []
+
+    for x in sums
+        raw @ raw.push(to_f32(x))
+
+    return vectors.normalize(raw).default(raw)
+
+# The vector of the words `words`: their features, weighed and hashed.
+#
+# - `e`: the embedder.
+# - `words`: folded terms, in order.
+function embed_words(e: Embedder lent, words: [str]) -> [f32]
+    return vector_of(e, features: features_of(e, words: words))
+
+# Adds one feature to `sums`: its value, signed by its hash, to the
+# component its hash names. The feature's number is first taken below 2^31,
+# so its product with `SPREAD` fits an `i64`.
+#
+# - `sums`: the components, the caller's own.
+# - `f`: the feature's number.
+# - `value`: its weighed value.
+function add_feature(@sums: [f64], f: i64, value: f64)
+    mixed = f % 2_147_483_647 * SPREAD % 4_294_967_296
+    at = mixed % sums.len()
+
+    if mixed >> 16 & 1 == 1
+        sums[at] @ sums[at] + value
+    else
+        sums[at] @ sums[at] - value
+
+# Whether `v` holds no direction: every component zero.
+#
+# - `v`: a vector.
+function is_zero(v: [f32]) -> bool
+    for x in v
+        if x != 0.0
+            return false
+
+    return true
+
+test "embed_words: one length, unit size, and the same vector for the same words"
+    e = new(64)
+    a = embed_words(e, words: ["kanelbullar", "with", "cardamom"])
+    assert a.len() == 64 && a == embed_words(e, words: ["kanelbullar", "with", "cardamom"])
+    assert math.abs(to_f64(vectors.norm(a)) - 1.0) < 0.000001
+
+test "embed_words: two forms of a word nearer than two unrelated words"
+    e = new(256)
+    bun = embed_words(e, words: ["kanelbullar"])
+    near = vectors.cosine_similarity(a: bun, b: embed_words(e, words: ["kanelbulle"])).must()
+    far = vectors.cosine_similarity(a: bun, b: embed_words(e, words: ["chocolate"])).must()
+    assert near > far
+
+test "embed_words: stop words left out, and none left gives zeros"
+    e = new(32)
+    assert embed_words(e, words: ["the", "semla", "and", "buns"]) == embed_words(e, words: ["semla", "buns"])
+    assert is_zero(embed_words(e, words: [])) && is_zero(embed_words(e, words: ["the", "of"]))
+
+test "idf: a feature every page holds weighs least, and one no page holds nothing"
+    e = new(64)
+    common = features_of(e, words: ["cake"])
+    rare = features_of(e, words: ["semlor"])
+    counted = with_counts(e, holding: pages_holding([common, rare, common]), pages: 3)
+
+    for f in keys(common)
+        assert idf(counted, f: f) == math.ln(1.0 + 3.0 / 2.0)
+
+    for f in keys(rare)
+        assert idf(counted, f: f) == math.ln(1.0 + 3.0 / 1.0)
+
+    assert is_zero(embed_words(counted, words: ["zqxv"])) && !is_zero(embed_words(counted, words: ["semlor"]))

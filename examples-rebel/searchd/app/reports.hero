@@ -1,0 +1,197 @@
+# What searchd tells a person after each command: every URL a crawl visited
+# and how the visit ended, what an index holds, and a query's results as a
+# terminal shows them. The commands and the demo print the same lines, and
+# a line names a page by its path alone, so a report reads the same on any
+# port and from any folder.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use client/client
+use crawl/frontier
+use crawl/store
+use index/duplicates
+use index/engine
+
+# The column a visit's outcome starts at.
+constant PATH_WIDTH: i64
+    30
+
+# The report of `c`: the robots group that bound the crawl, a line a URL
+# visited, and the counts.
+#
+# - `c`: what the crawl found.
+function crawl_lines(c: store.Crawl) -> [str]
+    group = if c.robots_group == ""
+        "no group, so every path"
+    else if c.robots_group == "*"
+        "the group of every agent"
+    else
+        f"its own group, \"{c.robots_group}\""
+    lines: [str] @= [f"robots.txt binds {c.agent} by {group}: {plural(c.robots_rules, one: "rule", many: "rules")}"]
+    counts: {str: i64} @= {}
+
+    for v in c.visits
+        lines @ lines.push(
+            "  " + strings.pad_end(s: frontier.path_of(v.url), width: PATH_WIDTH, pad: " ") + " " + outcome_text(v)
+        )
+        counts[v.outcome] @ counts[v.outcome].default(0) + 1
+
+    parts: [str] @= []
+
+    for outcome in [store.PAGE, store.NOINDEX, store.REDIRECT, store.NOT_HTML, store.MISSING, store.REFUSED, store.FAILED]
+        n = counts[outcome].default(0)
+
+        if n > 0
+            parts @ parts.push(outcome_count(outcome, n: n))
+
+    lines @ lines.push(
+        f"visited {c.visits.len()} URLs: {parts.join(", ")}; {plural(c.external, one: "link", many: "links")} outside the site left"
+    )
+    return lines
+
+# What a visit's outcome says, after its path.
+#
+# - `v`: the visit.
+function outcome_text(v: store.Visit) -> str
+    if v.outcome == store.PAGE
+        return "page: " + v.detail
+
+    if v.outcome == store.NOINDEX
+        return "page, not indexed: " + v.detail
+
+    if v.outcome == store.REDIRECT
+        return "redirect to " + v.detail
+
+    if v.outcome == store.NOT_HTML
+        return "not HTML: " + v.detail
+
+    if v.outcome == store.MISSING
+        return "missing: " + v.detail
+
+    if v.outcome == store.REFUSED
+        return "refused by robots.txt"
+
+    return "failed: " + v.detail
+
+# A count of visits of one outcome, as the report's last line says it.
+#
+# - `outcome`: one of the store's outcomes.
+# - `n`: how many visits ended so, 1 or more.
+function outcome_count(outcome: str, n: i64) -> str
+    if outcome == store.PAGE
+        return plural(n, one: "page", many: "pages")
+
+    if outcome == store.NOINDEX
+        return f"{n} not indexed"
+
+    if outcome == store.REDIRECT
+        return plural(n, one: "redirect", many: "redirects")
+
+    if outcome == store.NOT_HTML
+        return f"{n} not HTML"
+
+    if outcome == store.MISSING
+        return f"{n} missing"
+
+    if outcome == store.REFUSED
+        return f"{n} refused"
+
+    return f"{n} failed"
+
+# What `e` holds: pages, terms, vectors, PageRank's rounds and the groups of
+# near-duplicates.
+#
+# - `e`: the engine.
+function index_lines(e: engine.Engine lent) -> [str]
+    labels: [i64] @= []
+
+    for d in e.docs
+        labels @ labels.push(d.group)
+
+    groups = duplicates.clusters(labels)
+    lines: [str] @= [
+        f"indexed {engine.indexed_count(e)} of {e.docs.len()} pages: {engine.term_count(e)} terms, {engine.vector_count(e)} vectors of {e.embedder.dimension}"
+    ]
+    lines @ lines.push(f"PageRank settled in {e.rounds} rounds; the highest:")
+
+    for id in engine.ranked_highest(e, most: 3)
+        d = e.docs[id]
+        lines @ lines.push(
+            "  " + strings.pad_end(s: d.path, width: PATH_WIDTH, pad: " ") + " " + numbers.format_float(d.rank, precision: 3)
+        )
+
+    lines @ lines.push(f"near-duplicates: {plural(groups.len(), one: "group", many: "groups")}")
+
+    for g in groups
+        paths: [str] @= []
+
+        for id in g
+            paths @ paths.push(e.docs[id].path)
+
+        lines @ lines.push("  " + paths.join(", "))
+
+    return lines
+
+# A query's results as a terminal shows them: the query searched, a word
+# put right, the count, and each result with its path, the near-duplicates
+# folded under it and its snippet, marked words in brackets.
+#
+# - `r`: the results.
+function results_lines(r: client.Results) -> [str]
+    lines: [str] @= []
+
+    if r.corrected.len() > 0
+        fixes: [str] @= []
+
+        for c in r.corrected
+            fixes @ fixes.push(f"{c.from} -> {c.to}")
+
+        lines @ lines.push(f"  showing results for {r.query} ({fixes.join(", ")})")
+
+    lines @ lines.push(f"  {plural(r.matched, one: "result", many: "results")} ({r.mode})")
+
+    for i in range(from: 0, to: r.hits.len())
+        h = r.hits[i]
+
+        folded = if h.folded.len() > 0
+            f", also at {h.folded.join(", ")}"
+        else
+            ""
+        lines @ lines.push(f"  {i + 1}. {h.title}  {h.path}{folded}")
+        lines @ lines.push("     " + client.for_terminal(h.snippet))
+
+    return lines
+
+# `n` and the word that counts it.
+#
+# - `n`: the count.
+# - `one`: the word for one.
+# - `many`: the word for any other count.
+function plural(n: i64, one: str, many: str) -> str
+    if n == 1
+        return f"1 {one}"
+
+    return f"{n} {many}"
+
+test "outcome_text: each outcome after its path"
+    v = store.Visit(url: "http://h/a", depth: 1, outcome: store.REDIRECT, detail: "/b")
+    assert outcome_text(v) == "redirect to /b"
+    refused = store.Visit(url: "http://h/a", depth: 1, outcome: store.REFUSED, detail: "robots.txt")
+    assert outcome_text(refused) == "refused by robots.txt"
+
+test "crawl_lines: the group, a line a visit, and the counts"
+    c = store.Crawl(
+        start: "http://h/",
+        agent: "searchd/0.1",
+        robots_group: "*",
+        robots_rules: 2,
+        pages: [],
+        visits: [store.Visit(url: "http://h/", depth: 0, outcome: store.PAGE, detail: "3 links"), store.Visit(url: "http://h/x.pdf", depth: 1, outcome: store.REFUSED, detail: "robots.txt")],
+        redirects: {},
+        external: 1
+    )
+    lines = crawl_lines(c)
+    assert lines[0] == "robots.txt binds searchd/0.1 by the group of every agent: 2 rules"
+    assert lines[1] == "  /                              page: 3 links"
+    assert lines[3] == "visited 2 URLs: 1 page, 1 refused; 1 link outside the site left"

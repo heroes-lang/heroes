@@ -1,0 +1,380 @@
+# The pages of Fika Notes, the small baking site the demo serves on
+# loopback and crawls: what a real site holds and a crawler meets, in a few
+# pages. Every page shares one layout, a menu and a footer around the text
+# with a style and a script in its head, which the crawler's cleaning must
+# leave out; the script's words ("cardamom cinnamon sugar") would otherwise
+# make every page match them.
+#
+# What each page is there to show: the start page links to a redirect, a
+# PDF and a search page `robots.txt` refuses, an image, a draft it allows,
+# a link with a tracking query, and a site elsewhere; a recipe has a print
+# version naming it canonical and an old blog post that copied it, the
+# near-duplicates; a page writes "kardemumma" with soft hyphens inside, a
+# café page writes "ﬁka" with a ligature and "café" with its accent; the
+# imprint's robots meta tag refuses the index; the footer's sign-in link is
+# `nofollow`; and the recipe index links to a recipe that is not there.
+
+use <rebel>/unicode
+
+# Every page of the site by its path, as HTML.
+function pages() -> {str: str}
+    shy = unicode.from_code_point(0xad).must()
+    return {
+        "/": home()
+        "/recipes/": recipes()
+        "/recipes/kanelbullar": kanelbullar()
+        "/print/kanelbullar": kanelbullar_print()
+        "/blog/2019/cinnamon-bun-day": cinnamon_bun_day()
+        "/recipes/kardemummabullar": kardemummabullar(shy)
+        "/recipes/semlor": semlor()
+        "/recipes/kladdkaka": kladdkaka()
+        "/recipes/chokladbollar": chokladbollar()
+        "/recipes/appelkaka": appelkaka()
+        "/recipes/alandsk-pannkaka": alandsk_pannkaka()
+        "/recipes/zucchinibrod": zucchinibrod()
+        "/techniques/": techniques()
+        "/techniques/proving-dough": proving_dough()
+        "/techniques/pearl-sugar": pearl_sugar()
+        "/blog/": blog()
+        "/blog/cafe-culture": cafe_culture()
+        "/about/": about()
+        "/about/imprint": imprint()
+        "/drafts/spring-menu": spring_menu()
+        "/drafts/surstromming-buns": surstromming_buns()
+    }
+
+# The site's `robots.txt`: a group for every agent, a group of this crawler's
+# own that allows one draft and refuses PDFs, and a group of another agent.
+function robots_txt() -> str
+    lines = [
+        "# Fika Notes"
+        "User-agent: *"
+        "Disallow: /drafts/"
+        "Disallow: /search"
+        ""
+        "User-agent: searchd"
+        "Disallow: /drafts/"
+        "Allow: /drafts/spring-menu"
+        "Disallow: /search"
+        "Disallow: /*.pdf$"
+        ""
+        "User-agent: archiver"
+        "Disallow: /"
+        ""
+    ]
+
+    return lines.join("\n")
+
+# A page of the site: its layout around `body`.
+#
+# - `title`: the title.
+# - `description`: the description meta tag's content.
+# - `head`: more of the head, "" for nothing.
+# - `body`: the main text, as HTML.
+function layout(title: str, description: str, head: str, body: str) -> str
+    parts = [
+        "<!DOCTYPE html>"
+        "<html lang=\"en\"><head><meta charset=\"utf-8\">"
+        f"<title>{title}</title>"
+        f"<meta name=\"description\" content=\"{description}\">"
+        head
+        "<style>body { font-family: Georgia, serif } .cardamom { color: brown }</style>"
+        "<script>var tracked = \"cardamom cinnamon sugar\"; window.analytics = true;</script>"
+        "</head><body>"
+        "<nav><a href=\"/\">Home</a> <a href=\"/recipes/\">Recipes</a> <a href=\"/techniques/\">Techniques</a> <a href=\"/blog/\">Blog</a> <a href=\"/about/\">About</a></nav>"
+        "<main>"
+        body
+        "</main>"
+        "<footer>Fika Notes, baked in Uppsala."
+        "<a href=\"/about/imprint\">Imprint</a> <a href=\"/login\" rel=\"nofollow\">Sign in</a></footer>"
+        "</body></html>"
+    ]
+
+    return parts.join("\n")
+
+# The start page.
+function home() -> str
+    body = [
+        "<h1>Fika Notes</h1>"
+        "<p>Fika is the Swedish pause for coffee and something sweet."
+        "These notes keep the buns, cakes and cookies of a Swedish kitchen, written down as they are baked.</p>"
+        "<h2>Start here</h2><ul>"
+        "<li><a href=\"/recipes/\">Every recipe</a></li>"
+        "<li><a href=\"/techniques/\">Techniques</a>, from proving dough to pearl sugar</li>"
+        "<li><a href=\"/blog/\">The blog</a></li>"
+        "<li><a href=\"/recipes/kanelbullar?utm_source=newsletter#top\">This week: kanelbullar</a></li>"
+        "<li><a href=\"/old-recipes\">The old recipe index</a></li>"
+        "<li><a href=\"/files/menu.pdf\">The café menu</a></li>"
+        "<li><a href=\"/images/logo.png\">Our logo</a></li>"
+        "<li><a href=\"/search?q=buns\">Search the old site</a></li>"
+        "<li><a href=\"/drafts/spring-menu\">Coming soon: the spring menu</a></li>"
+        "<li><a href=\"https://www.example.org/fika\">More about fika elsewhere</a></li>"
+        "</ul>"
+    ]
+
+    return layout(
+        title: "Fika Notes",
+        description: "Swedish baking for the coffee break.",
+        head: "",
+        body: body.join("\n")
+    )
+
+# The recipe index, one of whose links names a recipe that is not there.
+function recipes() -> str
+    body = [
+        "<h1>Recipes</h1>"
+        "<p>Every recipe of Fika Notes, from the buns of a Sunday morning to the cake of a birthday.</p><ul>"
+        "<li><a href=\"kanelbullar\">Kanelbullar</a></li>"
+        "<li><a href=\"kardemummabullar\">Kardemummabullar</a></li>"
+        "<li><a href=\"semlor\">Semlor</a></li>"
+        "<li><a href=\"kladdkaka\">Kladdkaka</a></li>"
+        "<li><a href=\"chokladbollar\">Chokladbollar</a></li>"
+        "<li><a href=\"appelkaka\">Äppelkaka</a></li>"
+        "<li><a href=\"alandsk-pannkaka\">Åländsk pannkaka</a></li>"
+        "<li><a href=\"zucchinibrod\">Zucchinibröd</a></li>"
+        "<li><a href=\"lussekatter\">Lussekatter</a>, for Lucia</li>"
+        "</ul>"
+    ]
+
+    return layout(
+        title: "Recipes",
+        description: "Every recipe, buns, cakes and cookies.",
+        head: "",
+        body: body.join("\n")
+    )
+
+# The text the cinnamon bun recipe, its print version and the old blog post
+# share.
+function kanelbullar_text() -> str
+    lines = [
+        "<p>Kanelbullar are the cinnamon buns of every Swedish bakery: a soft dough scented with cardamom, rolled around butter, sugar and cinnamon, and topped with pearl sugar.</p>"
+        "<h2>Ingredients</h2><ul>"
+        "<li>500 g flour</li>"
+        "<li>75 g sugar</li>"
+        "<li>2 teaspoons of ground cardamom</li>"
+        "<li>25 g fresh yeast</li>"
+        "<li>300 ml milk</li>"
+        "<li>100 g butter</li>"
+        "<li>Cinnamon, sugar and soft butter for the filling</li>"
+        "<li>Pearl sugar for the top</li></ul>"
+        "<h2>Method</h2>"
+        "<p>Warm the milk with the butter until the butter melts, then let it cool until it feels warm to a finger."
+        "Stir in the yeast, the sugar and the cardamom, add the flour, and knead the dough until it is smooth and shiny."
+        "Let it rise under a cloth until it has doubled, as <a href=\"/techniques/proving-dough\">proving dough</a> tells.</p>"
+        "<p>Roll the dough out thin, spread it with soft butter, and scatter sugar and cinnamon over it."
+        "Roll it up, cut it into slices, and set each slice in a paper case."
+        "Let the buns rise again under the cloth, brush them with beaten egg, and scatter <a href=\"/techniques/pearl-sugar\">pearl sugar</a> over them.</p>"
+        "<p>Bake them at 225 degrees for eight to ten minutes, until they are golden, and let them cool on a rack under a cloth so they stay soft."
+        "Kanelbullar keep for a day in a tin, and for a month in the freezer, warmed for a minute before they are eaten with coffee.</p>"
+    ]
+
+    return lines.join("\n")
+
+# The cinnamon bun recipe, its link to the print version in an aside, as a
+# recipe site's tools stand beside its text.
+function kanelbullar() -> str
+    tools = "<aside><a href=\"/print/kanelbullar\">Print this recipe</a></aside>"
+    body = "<h1>Kanelbullar</h1>\n" + tools + "\n" + kanelbullar_text()
+    return layout(
+        title: "Kanelbullar",
+        description: "Swedish cinnamon buns with cardamom and pearl sugar.",
+        head: "",
+        body: body
+    )
+
+# The cinnamon bun recipe's print version, which names the recipe canonical
+# and says at its foot where it was printed from.
+function kanelbullar_print() -> str
+    body = "<h1>Kanelbullar</h1>\n" + kanelbullar_text() + "\n<p>Printed from Fika Notes.</p>"
+    head = "<link rel=\"canonical\" href=\"/recipes/kanelbullar\">"
+    return layout(
+        title: "Kanelbullar (print)",
+        description: "Swedish cinnamon buns, for printing.",
+        head: head,
+        body: body
+    )
+
+# The old blog post that copied the recipe: the post's title and date in
+# its header, as a blog writes a post's, and the recipe under a heading.
+function cinnamon_bun_day() -> str
+    header = "<header><h1>Cinnamon bun day</h1><p>Posted on kanelbullens dag, 4 October 2019.</p></header>"
+    body = header + "\n<h2>Kanelbullar</h2>\n" + kanelbullar_text()
+    return layout(title: "Cinnamon bun day, 2019", description: "The buns of kanelbullens dag.", head: "", body: body)
+
+# The cardamom knots, the Swedish word for cardamom written with soft
+# hyphens inside, as a hyphenating editor writes a long word.
+#
+# - `shy`: the soft hyphen, U+00AD.
+function kardemummabullar(shy: str) -> str
+    body = [
+        "<h1>Kardemummabullar</h1>"
+        "<p>Kardemummabullar are knots of the same soft dough as kanelbullar, filled with butter, sugar and freshly ground cardamom instead of cinnamon."
+        f"The Swedish word for cardamom is kar{shy}de{shy}mumma, and the spice came to Sweden with the Vikings, or so the bakers say.</p>"
+        "<h2>Method</h2>"
+        "<p>Make the dough as for <a href=\"/recipes/kanelbullar\">kanelbullar</a>."
+        "Crush the seeds of twenty pods of cardamom, mix them with soft butter and sugar, spread the dough, fold it in three, cut it in strips and twist each strip into a knot."
+        "Top with pearl sugar and bake at 225 degrees.</p>"
+    ]
+
+    return layout(title: "Kardemummabullar", description: "Cardamom knots.", head: "", body: body.join("\n"))
+
+# The cream buns of Fat Tuesday.
+function semlor() -> str
+    body = [
+        "<h1>Semlor</h1>"
+        "<p>Semlor are cardamom buns filled with almond paste and whipped cream, eaten on Fat Tuesday, fettisdagen, and in every café from January to Easter.</p>"
+        "<p>Bake round buns of the <a href=\"/recipes/kanelbullar\">kanelbullar</a> dough."
+        "Cut a lid from each bun, scoop out the middle, mix it with grated almond paste and a little milk, fill the bun, pipe whipped cream on top and set the lid back, dusted with icing sugar.</p>"
+    ]
+
+    return layout(title: "Semlor", description: "Cream buns for Fat Tuesday.", head: "", body: body.join("\n"))
+
+# The sticky chocolate cake.
+function kladdkaka() -> str
+    body = [
+        "<h1>Kladdkaka</h1>"
+        "<p>Kladdkaka is a sticky chocolate cake, crisp on top and soft in the middle."
+        "Melt the butter, stir in sugar, eggs, flour and cocoa, pour it into a tin and bake it for only fifteen minutes."
+        "Serve it with whipped cream and <a href=\"/recipes/chokladbollar\">chokladbollar</a> for the children.</p>"
+    ]
+
+    return layout(title: "Kladdkaka", description: "Sticky chocolate cake.", head: "", body: body.join("\n"))
+
+# The chocolate balls.
+function chokladbollar() -> str
+    body = [
+        "<h1>Chokladbollar</h1>"
+        "<p>Chokladbollar are chocolate balls that need no oven: oats, sugar, cocoa, butter and a spoon of cold coffee, rolled into balls and turned in pearl sugar or coconut.</p>"
+    ]
+
+    return layout(title: "Chokladbollar", description: "Chocolate balls with oats.", head: "", body: body.join("\n"))
+
+# The apple cake.
+function appelkaka() -> str
+    body = [
+        "<h1>Äppelkaka</h1>"
+        "<p>Äppelkaka is the apple cake of a Swedish autumn: slices of apple pressed into a butter batter, scattered with cinnamon and sugar, and baked until the edges are brown.</p>"
+    ]
+
+    return layout(title: "Äppelkaka", description: "Apple cake with cinnamon.", head: "", body: body.join("\n"))
+
+# The pancake of the Åland islands.
+function alandsk_pannkaka() -> str
+    body = [
+        "<h1>Åländsk pannkaka</h1>"
+        "<p>Åländsk pannkaka, the pancake of the Åland islands, is baked in the oven from semolina, milk, eggs and cardamom, and served warm with prune jam and whipped cream.</p>"
+    ]
+
+    return layout(title: "Åländsk pannkaka", description: "The oven pancake of Åland.", head: "", body: body.join("\n"))
+
+# The courgette loaf.
+function zucchinibrod() -> str
+    body = [
+        "<h1>Zucchinibröd</h1>"
+        "<p>Zucchinibröd is a moist loaf of grated courgette, walnuts and cinnamon, baked when the garden gives more courgettes than anyone can eat.</p>"
+    ]
+
+    return layout(title: "Zucchinibröd", description: "A courgette loaf.", head: "", body: body.join("\n"))
+
+# The techniques' index.
+function techniques() -> str
+    body = [
+        "<h1>Techniques</h1>"
+        "<ul>"
+        "<li><a href=\"proving-dough\">Proving dough</a></li>"
+        "<li><a href=\"pearl-sugar\">Pearl sugar</a></li></ul>"
+    ]
+
+    return layout(title: "Techniques", description: "How the baking is done.", head: "", body: body.join("\n"))
+
+# How a yeast dough rises.
+function proving_dough() -> str
+    body = [
+        "<h1>Proving dough</h1>"
+        "<p>Yeast dough rises best in a warm place, covered with a cloth, until it has doubled in size."
+        "Press a finger into it: where the dent springs back slowly, the dough is ready to shape."
+        "A dough with cardamom rises more slowly, since the spice holds the yeast back.</p>"
+    ]
+
+    return layout(title: "Proving dough", description: "How a yeast dough rises.", head: "", body: body.join("\n"))
+
+# What pearl sugar is.
+function pearl_sugar() -> str
+    body = [
+        "<h1>Pearl sugar</h1>"
+        "<p>Pearl sugar, pärlsocker in Swedish, is sugar pressed into hard white grains that do not melt in the oven."
+        "Scatter pearl sugar over <a href=\"/recipes/kanelbullar\">kanelbullar</a> and <a href=\"/recipes/chokladbollar\">chokladbollar</a> just before baking."
+        "Crushed sugar cubes stand in for it where no shop sells it.</p>"
+    ]
+
+    return layout(title: "Pearl sugar", description: "Sugar that does not melt.", head: "", body: body.join("\n"))
+
+# The blog's index.
+function blog() -> str
+    body = [
+        "<h1>Blog</h1>"
+        "<ul>"
+        "<li><a href=\"2019/cinnamon-bun-day\">Cinnamon bun day, 2019</a></li>"
+        "<li><a href=\"cafe-culture\">Café culture</a></li></ul>"
+    ]
+
+    return layout(title: "Blog", description: "Notes from the kitchen.", head: "", body: body.join("\n"))
+
+# The café page, "ﬁka" written with the ligature of f and i.
+function cafe_culture() -> str
+    body = [
+        "<h1>Café culture</h1>"
+        "<p>In a Swedish café the coffee is refilled for free, and ﬁka is taken twice a day at many workplaces."
+        "Kaffe and a bun, or a slice of cake: fika is a pause, not a meal.</p>"
+    ]
+
+    return layout(title: "Café culture", description: "Coffee, twice a day.", head: "", body: body.join("\n"))
+
+# The about page.
+function about() -> str
+    body = [
+        "<h1>About</h1>"
+        "<p>Fika Notes is written by two bakers in Uppsala who could not find their grandmothers' recipes written down anywhere.</p>"
+    ]
+
+    return layout(title: "About", description: "Who bakes here.", head: "", body: body.join("\n"))
+
+# The imprint, whose robots meta tag refuses the index.
+function imprint() -> str
+    body = [
+        "<h1>Imprint</h1>"
+        "<p>Fika Notes, Uppsala."
+        "Write to the bakers at the address on the café menu, or start again from the <a href=\"/recipes/\">recipes</a>.</p>"
+    ]
+
+    return layout(
+        title: "Imprint",
+        description: "Who answers for the site.",
+        head: "<meta name=\"robots\" content=\"noindex\">",
+        body: body.join("\n")
+    )
+
+# A draft the site's own group of rules lets this crawler read.
+function spring_menu() -> str
+    body = [
+        "<h1>Spring menu</h1>"
+        "<p>Semlor until Easter, then rhubarb cake and the first strawberries, and <a href=\"/drafts/surstromming-buns\">one joke</a>.</p>"
+    ]
+
+    return layout(title: "Spring menu", description: "What spring will bring.", head: "", body: body.join("\n"))
+
+# A draft no crawler may read.
+function surstromming_buns() -> str
+    return layout(
+        title: "Surströmming buns",
+        description: "Not yet.",
+        head: "",
+        body: "<h1>Surströmming buns</h1><p>Not yet, and perhaps never.</p>"
+    )
+
+test "pages: every page is a whole document, and the soft hyphens are inside one word"
+    all_pages = pages()
+    assert all_pages.len() == 21
+    assert all_pages["/"].must().slice(from: 0, to: 15) == "<!DOCTYPE html>"
+    shy = unicode.from_code_point(0xad).must()
+    assert unicode.code_points(shy) == [0xad]

@@ -1,0 +1,357 @@
+# The crawl: from the start URL, every page of the site its links reach,
+# breadth first, within the settings' bounds, asking `robots.txt` before
+# each fetch.
+#
+# A redirect is not followed by the HTTP client but read as a link of its
+# own, so its target is asked of `robots.txt`, kept inside the site, and
+# fetched once however many URLs lead to it; the indexer then counts a link
+# to the old URL for the new one. A page is read only where it answers 200
+# with an HTML type; its links are queued unless its robots meta tag says
+# `nofollow` or a link is `rel="nofollow"`, and a link outside the site is
+# counted and never followed. One page is fetched at a time, which is what
+# a small site's server expects of a polite crawler.
+
+use <rebel>/http
+use <rebel>/strings
+use <rebel>/url
+
+use app/settings
+use crawl/extract
+use crawl/frontier
+use crawl/robots
+use crawl/store
+
+# What one visit gave the crawl.
+record Visited
+    # The visit, as the store keeps it.
+    visit: store.Visit
+    # The page read, none or one.
+    pages: [store.Page]
+    # The URLs to queue one link further: a page's links, or a redirect's
+    # target at the same depth, which `again` says.
+    links: [str]
+    # Whether `links` stand at the visit's own depth: a redirect's target.
+    again: bool
+    # The target of a redirect inside the site, "" for anything else.
+    moved_to: str
+    # How many links led outside the site.
+    external: i64
+
+# Crawls the site `s` names.
+#
+# - `s`: the settings: the start, the bounds, the agent and the trackers.
+#
+# Fails `invalid` where the start is no absolute `http` or `https` URL;
+# every failure of a page is a visit of the crawl, never a failure of it.
+function crawl(s: settings.Settings) -> store.Crawl?
+    given = url.parse(s.start)?
+
+    if given.scheme != "http" && given.scheme != "https" || given.host == ""
+        return fail(code: "invalid", msg: f"the start \"{s.start}\" is no absolute http or https URL")
+
+    start = frontier.normal(given, trackers: s.trackers)
+    scope = frontier.scope_of(start)
+    client = client_of(s)
+    token = robots.product_token(s.agent)
+    rules = read_robots(s, start: start, token: token)
+    f @= frontier.starting(url.format(start))
+    pages: [store.Page] @= []
+    visits: [store.Visit] @= []
+    redirects: {str: str} @= {}
+    external @= 0
+    fetched @= 0
+
+    while fetched < s.max_pages
+        q = match frontier.take(@f)
+            .ok got => got
+            .err _  => break
+
+        target = match url.parse(q.url)
+            .ok got => got
+            .err _ =>
+                entry = store.Visit(
+                    url: q.url,
+                    depth: q.depth,
+                    outcome: store.FAILED,
+                    detail: "not a URL"
+                )
+                visits @ visits.push(entry)
+                continue
+
+        if !robots.allows(rules, target: url.request_target(target))
+            visits @ visits.push(store.Visit(url: q.url, depth: q.depth, outcome: store.REFUSED, detail: "robots.txt"))
+            continue
+
+        fetched @ fetched + 1
+        v = visit(s, client: client, scope: scope, target: target, depth: q.depth, token: token)
+        visits @ visits.push(v.visit)
+        external @ external + v.external
+
+        for p in v.pages
+            pages @ pages.push(p)
+
+        if v.moved_to != ""
+            redirects[q.url] @ v.moved_to
+
+        next_depth = if v.again
+            q.depth
+        else
+            q.depth + 1
+
+        if next_depth <= s.max_depth
+            for link in v.links
+                _ = frontier.offer(@f, link: link, depth: next_depth)
+
+    made = store.Crawl(
+        start: url.format(start),
+        agent: s.agent,
+        robots_group: rules.group,
+        robots_rules: rules.rules.len(),
+        pages: pages,
+        visits: visits,
+        redirects: redirects,
+        external: external
+    )
+    return ok(made)
+
+# The HTTP client of a crawl: no redirect followed, the settings' time
+# limit, body size and `User-Agent`.
+#
+# - `s`: the settings.
+function client_of(s: settings.Settings) -> http.Client
+    c @= http.default_client()
+    c.max_redirects @ 0
+    c.deadline @ s.timeout
+    c.limits.body_bytes @ s.max_page_bytes
+    c.user_agent @ s.agent
+    return c
+
+# The rules `robots.txt` sets for the crawler: read where the file answers
+# 200, every path allowed where it answers 4xx, every path refused where it
+# answers 5xx or not at all, as RFC 9309 § 2.3.1 asks. Up to five redirects
+# are followed to reach it, as § 2.3.1.2 allows.
+#
+# - `s`: the settings.
+# - `start`: the start, whose scheme, host and port the file stands on.
+# - `token`: the crawler's product token.
+function read_robots(s: settings.Settings, start: url.Url, token: str) -> robots.Robots
+    c @= client_of(s)
+    c.max_redirects @ 5
+    place @= start
+    place.path @ "/robots.txt"
+    place.query @ ""
+    place.empty_query @ false
+
+    response = match fetch(c, target: url.format(place))
+        .ok got => got
+        .err _  => return robots.refuse_all()
+
+    if response.status == 200
+        return robots.parse(text: http.text_of(response).default(""), token: token)
+
+    if response.status >= 400 && response.status <= 499
+        return robots.allow_all()
+
+    return robots.refuse_all()
+
+# The response to a `GET` of `target`, asking for HTML first.
+#
+# - `c`: the client.
+# - `target`: an absolute URL.
+function fetch(c: http.Client, target: str) -> http.Response?
+    r @= http.request(method: "GET", target: target)?
+    r.headers @ http.with_header(r.headers, name: "Accept", value: "text/html, application/xhtml+xml;q=0.9, */*;q=0.1")
+    return http.send(c, r: r)
+
+# One URL fetched and read.
+#
+# - `s`: the settings.
+# - `client`: the crawl's client.
+# - `scope`: where the crawl may go.
+# - `target`: the URL, in normal form.
+# - `depth`: its links from the start.
+# - `token`: the crawler's product token.
+function visit(s: settings.Settings, client: http.Client, scope: frontier.Scope, target: url.Url, depth: i64, token: str) -> Visited
+    address = url.format(target)
+
+    response = match fetch(client, target: address)
+        .ok got => got
+        .err e  => return nothing_more(address: address, depth: depth, outcome: store.FAILED, detail: e.code)
+
+    status = response.status
+
+    if status == 301 || status == 302 || status == 303 || status == 307 || status == 308
+        return redirected(s, scope: scope, target: target, depth: depth, response: response)
+
+    if status == 404 || status == 410
+        return nothing_more(address: address, depth: depth, outcome: store.MISSING, detail: f"{status}")
+
+    if status != 200
+        return nothing_more(address: address, depth: depth, outcome: store.FAILED, detail: f"status {status}")
+
+    media = media_type(http.value_of(response.headers, name: "Content-Type").default(""))
+
+    if media != "text/html" && media != "application/xhtml+xml"
+        return nothing_more(address: address, depth: depth, outcome: store.NOT_HTML, detail: media)
+
+    body = match http.text_of(response)
+        .ok got => got
+        .err _  => return nothing_more(address: address, depth: depth, outcome: store.FAILED, detail: "not text")
+
+    return read_page(s, scope: scope, target: target, depth: depth, body: body, token: token)
+
+# The visit of a redirect: its target, read against the URL that answered,
+# queued at the same depth where it stands inside the site.
+#
+# - `s`: the settings.
+# - `scope`: where the crawl may go.
+# - `target`: the URL that answered.
+# - `depth`: its links from the start.
+# - `response`: the redirect.
+function redirected(s: settings.Settings, scope: frontier.Scope, target: url.Url, depth: i64, response: http.Response) -> Visited
+    address = url.format(target)
+
+    location = match http.value_of(response.headers, name: "Location")
+        .ok got => got
+        .err _ => return nothing_more(
+            address: address,
+            depth: depth,
+            outcome: store.FAILED,
+            detail: "a redirect with no Location"
+        )
+
+    moved = match frontier.resolve(target, href: location, trackers: s.trackers)
+        .ok got => got
+        .err _ => return nothing_more(
+            address: address,
+            depth: depth,
+            outcome: store.FAILED,
+            detail: "a Location that does not read"
+        )
+
+    if !frontier.is_inside(scope, u: moved)
+        v = store.Visit(url: address, depth: depth, outcome: store.REDIRECT, detail: "outside the site")
+        return Visited(visit: v, pages: [], links: [], again: true, moved_to: "", external: 1)
+
+    to = url.format(moved)
+    v = store.Visit(url: address, depth: depth, outcome: store.REDIRECT, detail: url.request_target(moved))
+    return Visited(visit: v, pages: [], links: [to], again: true, moved_to: to, external: 0)
+
+# The visit of an HTML page: what it says, and its links to follow.
+#
+# - `s`: the settings.
+# - `scope`: where the crawl may go.
+# - `target`: the page's URL.
+# - `depth`: its links from the start.
+# - `body`: its HTML.
+# - `token`: the crawler's product token.
+function read_page(s: settings.Settings, scope: frontier.Scope, target: url.Url, depth: i64, body: str, token: str) -> Visited
+    e = extract.extract(target, body: body, agent: token, trackers: s.trackers)
+    inside: [str] @= []
+    nofollow @= 0
+    outside @= 0
+
+    for link in e.links
+        if link.nofollow
+            nofollow @ nofollow + 1
+        else
+            match url.parse(link.url)
+                .ok u =>
+                    if frontier.is_inside(scope, u: u)
+                        inside @ inside.push(link.url)
+                    else
+                        outside @ outside + 1
+                .err _ => _ = 0
+
+    follow: [str] = if e.follow
+        inside
+    else
+        []
+    page = store.Page(
+        url: url.format(target),
+        depth: depth,
+        title: e.title,
+        description: e.description,
+        language: e.language,
+        canonical: e.canonical,
+        index: e.index,
+        links: follow,
+        headings: e.headings,
+        text: e.text
+    )
+
+    outcome = if e.index
+        store.PAGE
+    else
+        store.NOINDEX
+    detail = link_counts(inside: inside.len(), nofollow: nofollow, outside: outside, follow: e.follow)
+    v = store.Visit(url: page.url, depth: depth, outcome: outcome, detail: detail)
+    return Visited(visit: v, pages: [page], links: follow, again: false, moved_to: "", external: outside)
+
+# What a page's links were, as the crawl's report says it.
+#
+# - `inside`: links inside the site.
+# - `nofollow`: links marked `nofollow`.
+# - `outside`: links outside the site.
+# - `follow`: whether the page let its links be followed.
+function link_counts(inside: i64, nofollow: i64, outside: i64, follow: bool) -> str
+    parts: [str] @= [plural(inside, one: "link", many: "links")]
+
+    if nofollow > 0
+        parts @ parts.push(f"{nofollow} nofollow")
+
+    if outside > 0
+        parts @ parts.push(f"{outside} outside the site")
+
+    if !follow
+        parts @ parts.push("none followed")
+
+    return parts.join(", ")
+
+# `n` and the word that counts it.
+#
+# - `n`: the count.
+# - `one`: the word for one.
+# - `many`: the word for any other count.
+function plural(n: i64, one: str, many: str) -> str
+    if n == 1
+        return f"1 {one}"
+
+    return f"{n} {many}"
+
+# A visit that gave nothing to follow and no page.
+#
+# - `address`: the URL.
+# - `depth`: its links from the start.
+# - `outcome`: how it ended.
+# - `detail`: what a reader needs of it.
+function nothing_more(address: str, depth: i64, outcome: str, detail: str) -> Visited
+    return Visited(
+        visit: store.Visit(url: address, depth: depth, outcome: outcome, detail: detail),
+        pages: [],
+        links: [],
+        again: false,
+        moved_to: "",
+        external: 0
+    )
+
+# The media type of a `Content-Type` value, in lower case, its parameters
+# dropped: `text/html` of `text/html; charset=utf-8`.
+#
+# - `value`: the field's value; "" where the response sent none.
+function media_type(value: str) -> str
+    bare = match strings.index_of(s: value, substr: ";")
+        .ok at => value.slice(from: 0, to: at)
+        .err _ => value
+
+    return strings.to_lower_ascii(strings.trim(bare))
+
+test "media_type: parameters dropped and case lowered"
+    assert media_type("Text/HTML; charset=utf-8") == "text/html"
+    assert media_type("image/png") == "image/png"
+    assert media_type("") == ""
+
+test "link_counts: every part said only where it counts"
+    assert link_counts(inside: 1, nofollow: 0, outside: 0, follow: true) == "1 link"
+    assert link_counts(inside: 9, nofollow: 1, outside: 2, follow: true) == "9 links, 1 nofollow, 2 outside the site"
+    assert link_counts(inside: 0, nofollow: 0, outside: 0, follow: false) == "0 links, none followed"
