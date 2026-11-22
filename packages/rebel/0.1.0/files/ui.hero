@@ -1012,6 +1012,38 @@ record Shortcut
 function set_shortcut(@app: App, item: Widget, shortcut: Shortcut) -> ()?
     return state.set_shortcut(@app, item: item, shortcut: shortcut)
 
+# What a menu item stands for among what every program of the system has,
+# in the manner of wxWidgets' `wxID_ABOUT`, `wxID_PREFERENCES` and
+# `wxID_EXIT`.
+variant MenuRole
+    # Nothing but itself, as a new item.
+    plain
+    # The program's About box.
+    about
+    # The program's settings.
+    settings
+    # Quitting the program.
+    quit
+
+# Gives menu item `item` the role `role`. On macOS an item with a role stands
+# in the application's menu, in the place every Mac program has it (About
+# first, Settings with Command+, where it has no shortcut of its own, Quit
+# last), and is hidden in the menu it was made in; elsewhere it stays where
+# it was made. Choosing it is `.menu_chosen` naming it on every system. The
+# application's menu of macOS holds the system's Services, Hide, Hide Others
+# and Show All whatever the program gives; without an item of the role
+# `about` it shows the system's own About panel, and without one of `quit`
+# its Quit asks every window to close.
+#
+# - `app`: the app holding it.
+# - `item`: the menu item.
+# - `role`: its role; `.plain` takes one away.
+#
+# Fails `closed`, `invalid` for a widget no menu item, `failed`. See also
+# `menu_item`, `set_shortcut`.
+function set_role(@app: App, item: Widget, role: MenuRole) -> ()?
+    return state.set_role(@app, item: item, role: role)
+
 ## Timers
 
 # A new timer of `app` that fires every `every`, as `.timer_fired`, the
@@ -2107,6 +2139,18 @@ test "set_shortcut: the primary key and o"
     item = menu_item(@app, into: m, text: "Open").must()
     set_shortcut(@app, item: item, shortcut: Shortcut(key: "o", primary: true, shift: false, alt: false)).must()
     assert render(@app).must()[2] == "    menu_item #3 \"Open\" primary+o"
+    close(@app).must()
+
+# The About item of a Help menu, which macOS shows in the application's menu.
+test "set_role: About in the Help menu"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    help = menu(@app, into: w, title: "Help").must()
+    about = menu_item(@app, into: help, text: "About Notes").must()
+    set_role(@app, item: about, role: .about).must()
+    assert render(@app).must()[2] == "    menu_item #3 \"About Notes\" role about"
+    inject(@app, input: .choose_menu(item: about)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: about)
     close(@app).must()
 
 # A timer firing on a headless app's clock.

@@ -220,6 +220,8 @@ private final class Native {
     var items: [String] = []
     // A window's menus, in order.
     var menus: [Int64] = []
+    // A menu item's role, `hero_ui.h`'s `HERO_UI_ROLE_*`: 0 for none.
+    var role: Int64 = 0
     // A web view's page and what it keeps.
     var page: WebPage?
 
@@ -310,6 +312,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             menu.addItem(item)
             made.item = item
             widgets[id] = made
+            // A menu the bar left out, every item of it standing in the
+            // application's menu by its role, has an item to show again.
+            if owner.item?.isHidden == true {
+                refreshMenuBar()
+            }
             return answerOk
         }
         guard let owner = widgets[parent] else {
@@ -498,21 +505,85 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     // equivalents before any widget sees it, so without this menu Command+X,
     // Command+C, Command+V, Command+A and Command+Z reach no text field and
     // no text area, and do nothing.
-    func appMenuBar(menus: [NSMenuItem]) -> NSMenu {
+    func appMenuBar(menus: [NSMenuItem], roles: [Int64: Native] = [:]) -> NSMenu {
         let bar = NSMenu(title: "")
         let appItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
-        let appMenu = NSMenu(title: ProcessInfo.processInfo.processName)
-        let quit = NSMenuItem(title: "Quit " + ProcessInfo.processInfo.processName, action: #selector(quitAsked(_:)), keyEquivalent: "q")
-        quit.target = self
-        appMenu.addItem(quit)
-        appItem.submenu = appMenu
+        appItem.submenu = appMenu(roles)
         bar.addItem(appItem)
         for item in menus {
             item.menu?.removeItem(item)
+            // A menu whose every item a role took to the application's menu
+            // stands empty; it is left out of the bar.
+            if let menu = item.submenu {
+                item.isHidden = !menu.items.isEmpty && menu.items.allSatisfy { $0.isHidden }
+            }
             bar.addItem(item)
         }
         bar.insertItem(editMenuItem(), at: menus.isEmpty ? 1 : 2)
         return bar
+    }
+
+    // The application's menu, as every Mac program has it: About, Settings
+    // where the program gave an item that role, Services, Hide, Hide Others,
+    // Show All and Quit (Apple's Human Interface Guidelines, The menu bar,
+    // the app menu). An item of the program's own with a role
+    // (`HERO_UI_ROLE_*`) stands here in the place of the system's, its
+    // choosing told as the item's `HERO_UI_EVENT_MENU`, and is hidden in the
+    // menu the program put it in; without one, About shows the system's own
+    // panel and Quit asks every window to close. Hide, Hide Others, Show All
+    // and Services are the system's, and tell the program nothing.
+    func appMenu(_ roles: [Int64: Native]) -> NSMenu {
+        let name = ProcessInfo.processInfo.processName
+        let menu = NSMenu(title: name)
+        menu.autoenablesItems = false
+        if let about = roles[roleAbout], let item = about.item {
+            menu.addItem(proxy(item, about.id, item.keyEquivalent))
+        } else {
+            menu.addItem(withTitle: "About " + name, action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)), keyEquivalent: "").target = NSApp
+        }
+        if let settings = roles[roleSettings], let item = settings.item {
+            menu.addItem(NSMenuItem.separator())
+            // Command+, is every Mac program's key for its settings, given
+            // where the program gave the item none of its own.
+            let made = proxy(item, settings.id, item.keyEquivalent.isEmpty ? "," : item.keyEquivalent)
+            if item.keyEquivalent.isEmpty {
+                made.keyEquivalentModifierMask = [.command]
+            }
+            menu.addItem(made)
+        }
+        menu.addItem(NSMenuItem.separator())
+        let services = NSMenuItem(title: "Services", action: nil, keyEquivalent: "")
+        let servicesMenu = NSMenu(title: "Services")
+        services.submenu = servicesMenu
+        NSApp.servicesMenu = servicesMenu
+        menu.addItem(services)
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(withTitle: "Hide " + name, action: #selector(NSApplication.hide(_:)), keyEquivalent: "h").target = NSApp
+        let others = menu.addItem(withTitle: "Hide Others", action: #selector(NSApplication.hideOtherApplications(_:)), keyEquivalent: "h")
+        others.keyEquivalentModifierMask = [.command, .option]
+        others.target = NSApp
+        menu.addItem(withTitle: "Show All", action: #selector(NSApplication.unhideAllApplications(_:)), keyEquivalent: "").target = NSApp
+        menu.addItem(NSMenuItem.separator())
+        if let quit = roles[roleQuit], let item = quit.item {
+            menu.addItem(proxy(item, quit.id, item.keyEquivalent.isEmpty ? "q" : item.keyEquivalent))
+        } else {
+            let made = NSMenuItem(title: "Quit " + name, action: #selector(quitAsked(_:)), keyEquivalent: "q")
+            made.target = self
+            menu.addItem(made)
+        }
+        return menu
+    }
+
+    // An item of the application's menu standing for the program's `item`,
+    // widget `id`: its title, its key, its state; choosing it is choosing
+    // the program's item.
+    func proxy(_ item: NSMenuItem, _ id: Int64, _ key: String) -> NSMenuItem {
+        let made = NSMenuItem(title: item.title, action: #selector(menuChosen(_:)), keyEquivalent: key)
+        made.keyEquivalentModifierMask = item.keyEquivalentModifierMask
+        made.target = self
+        made.tag = Int(id)
+        made.isEnabled = item.isEnabled
+        return made
     }
 
     // The standard Edit menu, as the item that holds it in the bar. Each
@@ -559,14 +630,22 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
         }
         var items: [NSMenuItem] = []
+        var roles: [Int64: Native] = [:]
         if let window = front {
             for id in window.menus {
                 if let item = widgets[id]?.item {
                     items.append(item)
                 }
             }
+            // The first item of each role, by its number, in the window's
+            // menus.
+            for widget in widgets.values.sorted(by: { $0.id < $1.id }) where widget.role != 0 && roles[widget.role] == nil {
+                if let menu = widgets[widget.parent], window.menus.contains(menu.id) {
+                    roles[widget.role] = widget
+                }
+            }
         }
-        NSApp.mainMenu = appMenuBar(menus: items)
+        NSApp.mainMenu = appMenuBar(menus: items, roles: roles)
     }
 
     // MARK: what the person does
@@ -699,6 +778,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widget.item?.title = text
         case kindMenuItem:
             widget.item?.title = text
+            if widget.role != roleNone {
+                refreshMenuBar()
+            }
         default:
             return answerInvalid
         }
@@ -853,6 +935,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if which == flagEnabled {
             if let item = widget.item {
                 item.isEnabled = on
+                if widget.role != roleNone {
+                    refreshMenuBar()
+                }
             } else if let table = widget.table {
                 table.isEnabled = on
             } else if let text = widget.textView {
@@ -896,6 +981,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         item.keyEquivalent = equivalent
         item.keyEquivalentModifierMask = mask
+        if widget.role != roleNone {
+            refreshMenuBar()
+        }
         return answerOk
     }
 
@@ -1621,6 +1709,36 @@ public func hero_ui_appkit_words(_ words: UnsafeMutablePointer<CChar>?, _ count:
     }
     words[length] = 0
     return Int64(length)
+}
+
+// A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.
+private let roleNone: Int64 = 0
+private let roleAbout: Int64 = 1
+private let roleSettings: Int64 = 2
+private let roleQuit: Int64 = 3
+
+extension Backend {
+    // Gives menu item `id` the role `role`: it stands in the application's
+    // menu in the system's place and is hidden in its own (`appMenu`).
+    func setRole(_ id: Int64, _ role: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindMenuItem, let item = widget.item, role >= roleNone, role <= roleQuit else {
+            return answerInvalid
+        }
+        widget.role = role
+        item.isHidden = role != roleNone
+        refreshMenuBar()
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_role(_ id: Int64, _ role: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setRole(id, role) ?? answerNotFound
+    }
 }
 
 // `hero_ui_appkit.h`'s `HERO_UI_APPKIT_OBJECT_*`: which object of a widget

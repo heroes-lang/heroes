@@ -7,10 +7,12 @@
 # event: only what the person does is one.
 
 use image
+use time
 use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
+use ui/internal/fixture
 use ui/internal/loop
 use ui/internal/makers
 use ui/internal/model
@@ -396,6 +398,21 @@ function set_shortcut(@app: ui.App, item: ui.Widget, shortcut: ui.Shortcut) -> (
         native.push_shortcut(app, n: n)?
     return stored(@app, n: n, measured: false)
 
+# Gives a menu item its role (`ui.set_role`).
+function set_role(@app: ui.App, item: ui.Widget, role: ui.MenuRole) -> ()?
+    n @= check.node_kind(app, widget: item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
+
+    code = match role
+        .plain    => hero_ui.HERO_UI_ROLE_NONE
+        .about    => hero_ui.HERO_UI_ROLE_ABOUT
+        .settings => hero_ui.HERO_UI_ROLE_SETTINGS
+        .quit     => hero_ui.HERO_UI_ROLE_QUIT
+
+    if app.native && hero_ui.set_role(app.handle, id: n.id, role: code) < 0
+        return failure.last(f"giving menu item {n.id} its role")
+    n.role @ code
+    return stored(@app, n: n, measured: false)
+
 # Puts `n` back in the table, measured again where `measured` (its text,
 # items or pixels moved), and marks its window for a layout.
 function stored(@app: ui.App, n: model.Node, measured: bool) -> ()?
@@ -431,3 +448,47 @@ test "of_code: every kind of the layer is a kind of ui"
     assert of_code(hero_ui.HERO_UI_IMAGE) == .picture
     assert of_code(hero_ui.HERO_UI_WEBVIEW) == .webview
     assert of_code(hero_ui.HERO_UI_TIMER) == .timer
+
+test "set_role: each role drawn and taken away, a widget no menu item invalid, an item destroyed closed"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    file = ui.menu(@app, into: w, title: "File").must()
+    item = ui.menu_item(@app, into: file, text: "Settings").must()
+    button = ui.button(@app, into: w, text: "Go").must()
+    ui.set_role(@app, item: item, role: .settings).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\" role settings"
+    ui.set_role(@app, item: item, role: .quit).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\" role quit"
+    ui.set_role(@app, item: item, role: .plain).must()
+    assert ui.render(@app).must()[2] == "    menu_item #3 \"Settings\""
+    assert fixture.code_of(ui.set_role(@app, item: button, role: .about)) == ui.INVALID
+    assert fixture.code_of(ui.set_role(@app, item: file, role: .about)) == ui.INVALID
+    ui.destroy(@app, widget: item).must()
+    assert fixture.code_of(ui.set_role(@app, item: item, role: .about)) == ui.CLOSED
+    ui.close(@app).must()
+
+test "set_role: on the native side the About, Settings and Quit items take their places in the application's menu, each still chosen as itself"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Roles", width: 200, height: 100).must()
+    help = ui.menu(@app, into: w, title: "Help").must()
+    about = ui.menu_item(@app, into: help, text: "About Roles").must()
+    file = ui.menu(@app, into: w, title: "File").must()
+    settings = ui.menu_item(@app, into: file, text: "Settings...").must()
+    quit = ui.menu_item(@app, into: file, text: "Quit Roles").must()
+    ui.set_role(@app, item: about, role: .about).must()
+    ui.set_role(@app, item: settings, role: .settings).must()
+    ui.set_role(@app, item: quit, role: .quit).must()
+    ui.set_enabled(@app, widget: settings, on: false).must()
+    ui.set_enabled(@app, widget: settings, on: true).must()
+    ui.inject(@app, input: .choose_menu(item: about)).must()
+    ui.inject(@app, input: .choose_menu(item: quit)).must()
+    first = ui.wait(@app, within: time.seconds(2).must()).must()
+    second = ui.wait(@app, within: time.seconds(2).must()).must()
+    assert first == .menu_chosen(item: about)
+    assert second == .menu_chosen(item: quit)
+    ui.set_role(@app, item: about, role: .plain).must()
+    ui.close(@app).must()

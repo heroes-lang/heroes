@@ -76,6 +76,13 @@ function line_of(n: model.Node, visible: bool) -> str
     if k == hero_ui.HERO_UI_MENU_ITEM && n.key.len() > 0
         parts @ parts.push(shortcut_of(n))
 
+    if n.role == hero_ui.HERO_UI_ROLE_ABOUT
+        parts @ parts.push("role about")
+    else if n.role == hero_ui.HERO_UI_ROLE_SETTINGS
+        parts @ parts.push("role settings")
+    else if n.role == hero_ui.HERO_UI_ROLE_QUIT
+        parts @ parts.push("role quit")
+
     if !n.enabled
         parts @ parts.push("disabled")
 

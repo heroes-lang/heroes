@@ -697,4 +697,27 @@ int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_
  * client opens the message. */
 #define HERO_UI_EVENT_ACTIVATE 13
 
+/* -- A MENU ITEM'S ROLE ----------------------------------------------------
+ *
+ * An item of the program's own that stands for something every program of
+ * the system has, as wxWidgets' `wxID_ABOUT`, `wxID_PREFERENCES` and
+ * `wxID_EXIT` and Qt's `QAction::MenuRole` mark it. On macOS such an item
+ * stands in the application's menu, in the place Apple's guidelines give
+ * it, and is hidden in the menu the program put it in; its choosing is
+ * still `HERO_UI_EVENT_MENU` naming it. Elsewhere it stays where the
+ * program put it, the system having no such menu, and the call is done. */
+#define HERO_UI_ROLE_NONE 0
+#define HERO_UI_ROLE_ABOUT 1
+/* The program's settings; macOS gives it Command+, where the item has no
+ * shortcut of its own. */
+#define HERO_UI_ROLE_SETTINGS 2
+/* Quit: on macOS the application menu's Quit, which without such an item
+ * asks every window to close (`HERO_UI_EVENT_CLOSE` for each). */
+#define HERO_UI_ROLE_QUIT 3
+
+/* Gives menu item `id` the role `role`, `HERO_UI_ROLE_NONE` taking it
+ * away. 0, or -1: `INVALID` (a role these do not name, a widget no menu
+ * item), `NOT_FOUND`. */
+int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role);
+
 #endif

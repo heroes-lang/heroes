@@ -2766,3 +2766,38 @@ int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_
     (void)snprintf(words, sizeof words, "the act %lld is no act a person does to a window among the screens", (long long)kind);
     return hero_ui_said(HERO_UI_INVALID, words);
 }
+
+/* -- A MENU ITEM'S ROLE ---------------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
+    return hero_ui_appkit_set_role(id, role);
+}
+
+#else
+
+/* Win32 and GTK 4 hold no application menu, so their arm, once written,
+ * checks the item and answers it done, the item staying where the program
+ * put it (`hero_ui.h`, A MENU ITEM'S ROLE); until then no native app opens
+ * here and this is not reached. */
+static int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
+    (void)id;
+    (void)role;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (role < HERO_UI_ROLE_NONE || role > HERO_UI_ROLE_QUIT) {
+        (void)snprintf(words, sizeof words, "the role %lld is none of HERO_UI_ROLE_NONE to HERO_UI_ROLE_QUIT", (long long)role);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_role(id, role), "giving a menu item its role", id);
+}

@@ -87,6 +87,8 @@ record Node
     key: str
     # The keys held with it, `HERO_UI_PRIMARY` and the rest added.
     modifiers: i64
+    # A menu item's role, one of `hero_ui.h`'s `HERO_UI_ROLE_*`.
+    role: i64
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -263,6 +265,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         pixels: [],
         key: "",
         modifiers: 0,
+        role: hero_ui.HERO_UI_ROLE_NONE,
         every: 0,
         due: 0,
         preferred_width: 0,

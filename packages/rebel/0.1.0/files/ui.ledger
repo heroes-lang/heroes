@@ -51,7 +51,8 @@ capability ui/edit-menu  the system's Edit menu in every text widget: undo, redo
   go      -
   rust    -
   python  -
-  note    wxWidgets' standard identifiers `wxID_UNDO` to `wxID_SELECTALL`; on macOS the arm's menu bar holds the standard Edit menu after the window's first menu, each item sending AppKit's own action to the widget with the keys (without it Command+C and the rest reached no text widget); Windows' and GTK's edit controls take Ctrl+C and the rest themselves (their arms pending)
+  wx      the stock identifiers wxID_UNDO, wxID_REDO, wxID_CUT, wxID_COPY, wxID_PASTE, wxID_DELETE, wxID_SELECTALL
+  note    on macOS the arm's menu bar holds the standard Edit menu after the window's first menu, each item sending AppKit's own action to the widget with the keys (without it Command+C and the rest reached no text widget); Windows' and GTK's edit controls take Ctrl+C and the rest themselves (their arms pending)
 
 capability ui/headless  the widgets kept and laid out with no screen, and drawn as text
   heroes  ui.render, ui.Backend
@@ -276,6 +277,14 @@ capability ui/menus  a window's menu bar, its menus, their items and separators,
   rust    -
   python  tkinter.Menu, tkinter.Menubutton, ttk.Menubutton
   note    a shortcut's `primary` key is Command on macOS and Control elsewhere, as each system's own programs take it
+
+capability ui/app-menu  the application's menu of macOS: About, Settings, Services, Hide, Hide Others, Show All, Quit, and the program's items that stand there
+  heroes  ui.set_role, ui.MenuRole
+  go      -
+  rust    tauri::menu::PredefinedMenuItem::about, tauri::menu::PredefinedMenuItem::services, tauri::menu::PredefinedMenuItem::hide, tauri::menu::PredefinedMenuItem::hide_others, tauri::menu::PredefinedMenuItem::show_all, tauri::menu::PredefinedMenuItem::quit
+  python  -
+  wx      wxMenuBar (OSXGetAppleMenu), the stock identifiers wxID_ABOUT, wxID_PREFERENCES, wxID_EXIT
+  note    on macOS the arm's application menu holds the system's Services, Hide, Hide Others and Show All, and an item of the program's with a role stands in About's, Settings' (Command+,) or Quit's place, hidden where it was made, its choosing told as itself; without one, About shows the system's panel and Quit asks every window to close; Windows and Linux have no such menu and keep the item where it was made (their arms pending)
 
 capability ui/submenu  a menu inside a menu
   heroes  pending
