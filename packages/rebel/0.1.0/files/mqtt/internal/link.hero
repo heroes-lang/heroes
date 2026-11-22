@@ -258,8 +258,11 @@ test "read: over a WebSocket, every message one read completes, nothing where it
     l: Link @= .socket(
         conn: websocket.conn_of(@two.first.stream, role: .client, settings: websocket.default_settings())
     )
-    websocket.write_binary(@server, data: [1, 2]).must()
-    websocket.write_binary(@server, data: [3]).must()
+
+    # Both messages in one write: two writes on a pair with Nagle's algorithm
+    # on may come in two reads.
+    both = bytes.concat([websocket.prepare(.binary(data: [1, 2])).frame, websocket.prepare(.binary(data: [3])).frame])
+    io.write(server.stream, data: both).must()
     assert read(@l, target: "t").must() == [1, 2, 3]
     io.write(server.stream, data: [130, 3, 9]).must()
     assert read(@l, target: "t").must() == []
