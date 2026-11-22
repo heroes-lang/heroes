@@ -6599,8 +6599,10 @@ static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int
  * are shown unfolded. Folding an item whose descendant is chosen lets the
  * choice go before the fold, as the layer's other systems do, where the
  * tree view would move it to the folded item; Rebel tells that choice gone
- * after the fold it was told; an item taken out takes the choice under it
- * with it. A double click or Return opens the item chosen. */
+ * after the fold it was told; a choice the tree view would make of its own
+ * accord (its first item when it takes the keys with none chosen) is
+ * refused, and an item taken out takes the choice under it with it. A
+ * double click or Return opens the item chosen. */
 
 /* The item of tree `tree` numbered `item`, or NULL; 0, the top, is none. */
 static hero_ui_win_node *hero_ui_win_node_of(const hero_ui_native *tree, int64_t item) {
@@ -6852,6 +6854,18 @@ static void hero_ui_win_choose_item(hero_ui_native *tree, int64_t item) {
 /* What tree `tree` notifies; answers what its parent's procedure answers. */
 static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head) {
     switch (head->code) {
+    case TVN_SELCHANGINGW:
+    {
+        /* An item chosen by no person's click or key, no call of the
+         * program's and no act given as the person's is the tree view's
+         * own: its first item when it takes the keys with none chosen,
+         * which Windows Server 2025 was measured to notify with an action
+         * of 0x1000, none of the documented `TVC_*`. Refused, so the choice
+         * is the person's and the program's alone. */
+        UINT action = ((const NMTREEVIEWW *)(void *)head)->action;
+
+        return action == TVC_BYMOUSE || action == TVC_BYKEYBOARD || hero_ui_is_muted() || hero_ui_win_injecting > 0 ? FALSE : TRUE;
+    }
     case TVN_SELCHANGEDW:
         if (!hero_ui_is_muted()) {
             hero_ui_tell(HERO_UI_EVENT_SELECT, tree->id, hero_ui_win_item_chosen(tree), 0);
