@@ -1,0 +1,215 @@
+# Who an invoice is from and who it is to: the company, as its
+# configuration describes it, and a customer, as the books keep them. Each
+# text a party holds is one line with no tab, checked where it enters
+# (`clean_line`), because every document the program writes lays its texts
+# out line by line: the layout of a PDF (`render/layout`) separates its
+# fields by tabs, and a CSV row or a mail header must not be split by a
+# line break hidden in a name.
+
+use <rebel>/strings
+
+## Codes
+
+# The code of a field that is not of the form the program keeps.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most characters of a name, a street or a city.
+constant MAX_LINE: i64
+    120
+
+# The most characters of a customer's key.
+constant MAX_KEY: i64
+    32
+
+## The parties
+
+# The company that issues the documents, as its configuration describes it
+# (`conf/settings`).
+record Company
+    # Its legal name, as invoices print it.
+    name: str
+    # Its street and number.
+    street: str
+    # Its postal code.
+    postcode: str
+    # Its city.
+    city: str
+    # Its country, an ISO 3166 code of two capitals: `IT`.
+    country: str
+    # Its VAT identification number, its country's prefix first:
+    # `IT01234567897`.
+    vat_id: str
+    # The address its documents are mailed from.
+    email: str
+    # The IBAN payments are made to, compact.
+    iban: str
+    # The BIC of its bank, "" where invoices print none.
+    bic: str
+    # The currency its prices are kept in, an ISO 4217 code.
+    currency: str
+    # The locale its own reports are written in, a BCP 47 tag: `it-IT`.
+    locale: str
+    # Whether it charges a consumer elsewhere in the European Union the VAT
+    # of the consumer's country, as a seller registered for the Union's
+    # One-Stop Shop does (`tax/regime`).
+    oss: bool
+
+# A customer, as the books keep them.
+record Customer
+    # The key the program and its user name the customer by: letters,
+    # digits and `-`, `ROSSI`.
+    key: str
+    # The name invoices are addressed to.
+    name: str
+    # Its street and number.
+    street: str
+    # Its postal code.
+    postcode: str
+    # Its city.
+    city: str
+    # Its country, an ISO 3166 code of two capitals.
+    country: str
+    # Its VAT identification number, "" for a consumer.
+    vat_id: str
+    # The address documents are mailed to.
+    email: str
+    # The locale its documents are written in, a BCP 47 tag: `fr-FR`.
+    locale: str
+    # The currency it is invoiced in, an ISO 4217 code.
+    currency: str
+    # The days it has to pay an invoice, 0 or more.
+    payment_days: i64
+
+## Checks
+
+# `value`, checked to be one line of at most `most` characters with no tab
+# and no other control character.
+#
+# - `what`: what the value is, named in the message.
+# - `value`: the text.
+# - `most`: the most characters.
+#
+# Fails `invalid` where it holds a control character or more characters.
+function clean_line(what: str, value: str, most: i64) -> str?
+    count @= 0
+
+    for c in value.chars()
+        count @ count + 1
+
+        if c.len() == 1 && (c[0] < 32 || c[0] == 127)
+            return fail(code: INVALID, msg: f"{what} holds a line break, a tab or another control character")
+
+    if count > most
+        return fail(code: INVALID, msg: f"{what} holds {count} characters, more than {most}")
+    return ok(value)
+
+# `value` checked as `clean_line` checks it, and not empty.
+#
+# - `what`: what the value is, named in the message.
+# - `value`: the text.
+# - `most`: the most characters.
+#
+# Fails as `clean_line` fails, and `invalid` where it is empty or blank.
+function required_line(what: str, value: str, most: i64) -> str?
+    if strings.trim(value) == ""
+        return fail(code: INVALID, msg: f"{what} is empty")
+    return clean_line(what: what, value: value, most: most)
+
+# The country `text` names, as two capitals.
+#
+# - `text`: an ISO 3166 code of two ASCII letters, in either case.
+#
+# Fails `invalid` where it is not two ASCII letters.
+function parse_country(text: str) -> str?
+    s = strings.to_upper_ascii(text)
+
+    if s.len() != 2 || s[0] < 'A' || s[0] > 'Z' || s[1] < 'A' || s[1] > 'Z'
+        return fail(code: INVALID, msg: f"a country is its ISO 3166 code of two letters, and \"{text}\" is not")
+    return ok(s)
+
+# The customer's key `text` writes, in capitals.
+#
+# - `text`: 1 to `MAX_KEY` ASCII letters, digits and `-`.
+#
+# Fails `invalid` where it is empty, too long, or holds another character.
+function parse_key(text: str) -> str?
+    s = strings.to_upper_ascii(text)
+
+    if s == "" || s.len() > MAX_KEY
+        return fail(
+            code: INVALID,
+            msg: f"a key holds 1 to {MAX_KEY} letters, digits and dashes, and \"{text}\" does not"
+        )
+
+    for i in range(from: 0, to: s.len())
+        c = s[i]
+
+        if !(c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '-')
+            return fail(code: INVALID, msg: f"a key holds letters, digits and dashes alone, and \"{text}\" does not")
+
+    return ok(s)
+
+# The lines of `customer`'s postal address, as a document prints it:
+# name, street, then postal code and city, then country.
+#
+# - `customer`: the customer.
+function customer_address(customer: Customer) -> [str]
+    return [customer.name, customer.street, customer.postcode + " " + customer.city, customer.country]
+
+# The lines of `company`'s postal address, as a document prints it.
+#
+# - `company`: the company.
+function company_address(company: Company) -> [str]
+    return [company.name, company.street, company.postcode + " " + company.city, company.country]
+
+# The domain of `address`, the part after its last `@`: the domain the
+# company's mail identifiers are made on.
+#
+# - `address`: a mail address, `billing@example.org`.
+#
+# Fails `invalid` where it holds no `@` or nothing after it.
+function domain_of(address: str) -> str?
+    match strings.split_once_last(s: address, sep: "@")
+        .err _ => return fail(code: INVALID, msg: f"\"{address}\" is no mail address")
+        .ok h =>
+            if h.after == "" || h.before == ""
+                return fail(code: INVALID, msg: f"\"{address}\" is no mail address")
+            return ok(h.after)
+
+test "clean_line: accents kept, control characters and length refused"
+    assert clean_line(what: "a name", value: "Café Müller & Søn", most: 40).must() == "Café Müller & Søn"
+    assert clean_line(what: "a name", value: "a\tb", most: 40).is_err()
+    assert clean_line(what: "a name", value: "a\nb", most: 40).is_err()
+    assert clean_line(what: "a name", value: "àèìòù", most: 5).must() == "àèìòù"
+    assert clean_line(what: "a name", value: "àèìòùx", most: 5).is_err()
+    assert clean_line(what: "a name", value: "", most: 5).must() == ""
+    assert required_line(what: "a name", value: "  ", most: 5).is_err()
+
+test "parse_country and parse_key: capitals made, other shapes refused"
+    assert parse_country("it").must() == "IT" && parse_country("ITA").is_err() && parse_country("I1").is_err()
+    assert parse_key("rossi-1").must() == "ROSSI-1"
+    assert parse_key("").is_err() && parse_key("a b").is_err() && parse_key("é").is_err()
+
+test "domain_of: the part after the last at sign"
+    assert domain_of("billing@tessera.example").must() == "tessera.example"
+    assert domain_of("\"a@b\"@c.example").must() == "c.example"
+    assert domain_of("nobody").is_err() && domain_of("a@").is_err()
+
+test "customer_address: four lines, the city after its code"
+    c = Customer(
+        key: "K",
+        name: "N",
+        street: "S 1",
+        postcode: "00100",
+        city: "Roma",
+        country: "IT",
+        vat_id: "",
+        email: "n@example.org",
+        locale: "it-IT",
+        currency: "EUR",
+        payment_days: 30
+    )
+    assert customer_address(c) == ["N", "S 1", "00100 Roma", "IT"]

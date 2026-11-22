@@ -1,0 +1,165 @@
+# Customers and items read into the books from CSV files, the form a
+# company's old tool or a spreadsheet exports them in. Each file has a
+# header row naming its columns, in any order; each row is checked as the
+# books check one (`store/registry`) and written, or refused with its line
+# and its reason, so a file with one bad row still brings in the others and
+# says which to correct.
+#
+#     key,name,street,postcode,city,country,vat_id,email,locale,currency,payment_days
+#     sku,description,unit,price,tax_class
+#
+# A key or a SKU already in the books is replaced by its row, so a file can
+# be imported again after it is corrected.
+
+use <rebel>/csv
+use <rebel>/numbers
+use <rebel>/sql/sqlite
+
+use model/documents
+use model/parties
+use money/amount
+use store/registry
+
+## Codes
+
+# The code of a file whose header lacks a column.
+constant INVALID: str
+    "invalid"
+
+## Imports
+
+# What an import did.
+record Imported
+    # The rows written.
+    written: i64
+    # Each row refused, as `line N: <reason>`.
+    refused: [str]
+
+# The columns a customers file holds.
+function customer_columns() -> [str]
+    return [
+        "key"
+        "name"
+        "street"
+        "postcode"
+        "city"
+        "country"
+        "vat_id"
+        "email"
+        "locale"
+        "currency"
+        "payment_days"
+    ]
+
+# The columns an items file holds.
+function item_columns() -> [str]
+    return ["sku", "description", "unit", "price", "tax_class"]
+
+# Reads the customers of the CSV `text` into the books.
+#
+# - `db`: the books.
+# - `text`: the file's text, its header first.
+#
+# Fails `invalid` where the text is not CSV or its header lacks a column,
+# and as `sqlite` fails; a row that is refused is told in the answer.
+function customers(@db: sqlite.Db, text: str) -> Imported?
+    rows = rows_of(text, columns: customer_columns())?
+    written @= 0
+    refused: [str] @= []
+
+    for i in range(from: 0, to: rows.len())
+        r = rows[i]
+
+        match customer_of(r)
+            .err e => refused @ refused.push(f"line {i + 2}: {e.msg}")
+            .ok c =>
+                match registry.put_customer(@db, c: c)
+                    .ok _  => written @ written + 1
+                    .err e => refused @ refused.push(f"line {i + 2}: {e.msg}")
+
+    return ok(Imported(written: written, refused: refused))
+
+# Reads the items of the CSV `text` into the books.
+#
+# - `db`: the books.
+# - `text`: the file's text, its header first.
+#
+# Fails as `customers` fails.
+function items(@db: sqlite.Db, text: str) -> Imported?
+    rows = rows_of(text, columns: item_columns())?
+    written @= 0
+    refused: [str] @= []
+
+    for i in range(from: 0, to: rows.len())
+        r = rows[i]
+        sku = r["sku"].default("")
+
+        match amount.parse_price(text: r["price"].default(""), what: f"the price of {sku}")
+            .err e => refused @ refused.push(f"line {i + 2}: {e.msg}")
+            .ok price =>
+                item = documents.Item(
+                    sku: sku,
+                    description: r["description"].default(""),
+                    unit: r["unit"].default(""),
+                    price: price,
+                    tax_class: r["tax_class"].default("")
+                )
+
+                match registry.put_item(@db, item: item)
+                    .ok _  => written @ written + 1
+                    .err e => refused @ refused.push(f"line {i + 2}: {e.msg}")
+
+    return ok(Imported(written: written, refused: refused))
+
+# The rows of `text` keyed by its header, the header checked to hold
+# `columns`.
+#
+# - `text`: the CSV text.
+# - `columns`: the columns the import reads.
+#
+# Fails `invalid` as `csv.parse_records` fails, and where a column is
+# missing from the header, naming it.
+function rows_of(text: str, columns: [str]) -> [{str: str}]?
+    header = csv.parse(text)?
+
+    if header.len() == 0
+        return fail(code: INVALID, msg: "the file is empty: its first row names its columns")
+
+    for c in columns
+        found @= false
+
+        for h in header[0]
+            if h == c
+                found @ true
+
+        if !found
+            return fail(code: INVALID, msg: f"the file's header has no column {c}")
+
+    return csv.parse_records(text, options: csv.strict_read_options())
+
+# The customer a row names, its payment days read.
+#
+# - `r`: the row.
+#
+# Fails `invalid` where its payment days are not a whole number.
+function customer_of(r: {str: str}) -> parties.Customer?
+    key = r["key"].default("")
+
+    days = match numbers.parse_int(r["payment_days"].default(""))
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: f"customer {key}'s payment days are no whole number")
+
+    return ok(
+        parties.Customer(key: key, name: r["name"].default(""), street: r["street"].default(""), postcode: r["postcode"].default(""), city: r["city"].default(""), country: r["country"].default(""), vat_id: r["vat_id"].default(""), email: r["email"].default(""), locale: r["locale"].default(""), currency: r["currency"].default(""), payment_days: days)
+    )
+
+test "rows_of: a header in any order, and one that lacks a column"
+    rows = rows_of("unit,sku,price,tax_class,description\npc,A,1,books,Atlas\n", columns: item_columns()).must()
+    assert rows.len() == 1 && rows[0]["sku"].must() == "A"
+    assert rows_of("sku,price\nA,1\n", columns: item_columns()).is_err()
+    assert rows_of("", columns: item_columns()).is_err()
+
+test "customer_of: payment days read, and days that are no number"
+    r = {"key": "A", "payment_days": "30"}
+    assert customer_of(r).must().payment_days == 30
+    assert customer_of({"key": "A", "payment_days": "thirty"}).is_err()

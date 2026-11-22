@@ -1,0 +1,228 @@
+# What the books hold besides the parties: the items a company sells, and
+# the documents it issues, invoices and credit notes, each with its lines
+# and its taxes summed by rate. A document is complete when it is made: it
+# carries the customer as the customer was on its date, its currency and
+# exchange rate, and every amount already rounded, so a document read back
+# years later prints what it printed the day it was issued, whatever has
+# changed in the customers and items since.
+#
+# Documents are numbered in two series a year, `INV-2026-0001` for
+# invoices and `CN-2026-0001` for credit notes, each without a gap
+# (`store/documents` gives the next number in the transaction that writes
+# the document).
+
+use <rebel>/big
+use <rebel>/strings
+use <rebel>/time
+
+use model/parties
+use tax/regime
+
+## Codes
+
+# The code of a document's number or kind that is not one.
+constant INVALID: str
+    "invalid"
+
+## Items
+
+# Something the company sells.
+record Item
+    # Its stock-keeping unit, the key it is named by: `BOOK-ATLAS`.
+    sku: str
+    # The line a document prints for it.
+    description: str
+    # The unit its quantity counts, as documents print it: `h`, `pc`.
+    unit: str
+    # Its price for one unit, in the company's currency, VAT not included.
+    price: big.Decimal
+    # The tax class the configuration gives a rate for in each country:
+    # `books`, `services`.
+    tax_class: str
+
+## Documents
+
+# What a document is.
+variant Kind
+    # An invoice: an amount the customer owes.
+    invoice
+    # A credit note: an amount credited back against an invoice.
+    credit_note
+
+# One line of a document.
+record Line
+    # Its place among the document's lines, from 1.
+    position: i64
+    # The item's stock-keeping unit.
+    sku: str
+    # The item's description as on the day of the document.
+    description: str
+    # The unit its quantity counts.
+    unit: str
+    # How many units, more than zero.
+    quantity: big.Decimal
+    # The price of one unit in the document's currency, rounded to its
+    # digits, VAT not included.
+    unit_price: big.Decimal
+    # The quantity times the unit price, rounded to the currency's digits.
+    net: big.Decimal
+    # The tax class it was taxed by.
+    tax_class: str
+    # The rate it was taxed at, in percent; 0 where the regime charges no VAT.
+    rate: big.Decimal
+
+# The VAT of a document at one rate: the lines' net amounts at that rate
+# summed, and the tax on that sum rounded once.
+record TaxRow
+    # The rate, in percent.
+    rate: big.Decimal
+    # The sum of the net amounts of the lines at this rate.
+    net: big.Decimal
+    # The tax on `net`, rounded to the currency's digits.
+    tax: big.Decimal
+
+# An invoice or a credit note, complete.
+record Document
+    # Its number, unique in the books: `INV-2026-0001`.
+    number: str
+    # What it is.
+    kind: Kind
+    # The day it was issued, at midnight UTC.
+    issued: time.Instant
+    # The day it is due, at midnight UTC; the day it was issued for a credit
+    # note, which asks no payment.
+    due: time.Instant
+    # The customer as on the day it was issued.
+    customer: parties.Customer
+    # Its currency, an ISO 4217 code.
+    currency: str
+    # How many units of its currency one unit of the company's currency
+    # bought on the day it was issued; 1 where the two are one.
+    exchange_rate: big.Decimal
+    # Its VAT regime.
+    regime: regime.Regime
+    # Its lines, in order.
+    lines: [Line]
+    # Its VAT by rate, from the lowest rate.
+    taxes: [TaxRow]
+    # The sum of the lines' net amounts.
+    net: big.Decimal
+    # The sum of the taxes.
+    tax: big.Decimal
+    # The net and the tax together: what the customer owes, or what a credit
+    # note credits.
+    gross: big.Decimal
+    # The invoice a credit note credits; "" for an invoice.
+    refers_to: str
+    # The RF creditor reference a payment of it names.
+    reference: str
+
+## Numbers
+
+# The prefix of the series of `kind`: `INV` or `CN`.
+#
+# - `kind`: the kind.
+function series_of(kind: Kind) -> str
+    match kind
+        .invoice     => return "INV"
+        .credit_note => return "CN"
+
+# The name the books and the export write `kind` with.
+#
+# - `kind`: the kind.
+function kind_name(kind: Kind) -> str
+    match kind
+        .invoice     => return "invoice"
+        .credit_note => return "credit-note"
+
+# The kind `name` names, as `kind_name` writes it.
+#
+# - `name`: the name.
+#
+# Fails `invalid` where it names none.
+function parse_kind(name: str) -> Kind?
+    if name == "invoice"
+        return ok(.invoice)
+
+    if name == "credit-note"
+        return ok(.credit_note)
+    return fail(code: INVALID, msg: f"\"{name}\" is neither an invoice nor a credit note")
+
+# The number of the `sequence`th document of `kind` in `year`:
+# `INV-2026-0001`, four digits at least.
+#
+# - `kind`: the series.
+# - `year`: the year, four digits.
+# - `sequence`: its place in the series, from 1.
+function number_of(kind: Kind, year: i64, sequence: i64) -> str
+    return f"{series_of(kind)}-{year}-{strings.pad_zeros(f"{sequence}", 4)}"
+
+# The year a document's number names: 2026 for `INV-2026-0001`.
+#
+# - `number`: a document's number.
+#
+# Fails `invalid` where it is not of the form `number_of` writes.
+function year_of_number(number: str) -> i64?
+    parts = strings.split(s: number, sep: "-")
+
+    if parts.len() != 3 || parts[1].len() != 4
+        return fail(code: INVALID, msg: f"\"{number}\" is no document number such as INV-2026-0001")
+
+    match to_year(parts[1])
+        .ok y  => return ok(y)
+        .err _ => return fail(code: INVALID, msg: f"\"{number}\" is no document number such as INV-2026-0001")
+
+# The year four digits write.
+#
+# - `digits`: four ASCII digits.
+#
+# Fails `invalid` where they are not.
+function to_year(digits: str) -> i64?
+    year @= 0
+
+    for i in range(from: 0, to: digits.len())
+        c = digits[i]
+
+        if c < '0' || c > '9'
+            return fail(code: INVALID, msg: f"\"{digits}\" is no year")
+        year @ year * 10 + to_i64(c - '0').must()
+
+    return ok(year)
+
+# The calendar year of the day `t`, in UTC.
+#
+# - `t`: a day at midnight UTC.
+function year_of(t: time.Instant) -> i64
+    return time.to_date_time(t).year
+
+# The day `t` as the books write it: `2026-03-14`.
+#
+# - `t`: a day at midnight UTC.
+function day_text(t: time.Instant) -> str
+    return time.format(t, layout: .date_only)
+
+# The day `text` writes, at midnight UTC.
+#
+# - `text`: a date `2026-03-14`.
+#
+# Fails `invalid` where it is no such date.
+function parse_day(text: str) -> time.Instant?
+    match time.parse(text, layout: .date_only)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: INVALID, msg: f"a day is written as 2026-03-14, and \"{text}\" is not one")
+
+test "number_of: four digits at least, and the year read back"
+    assert number_of(.invoice, year: 2026, sequence: 1) == "INV-2026-0001"
+    assert number_of(.credit_note, year: 2026, sequence: 12345) == "CN-2026-12345"
+    assert year_of_number("INV-2026-0001").must() == 2026
+    assert year_of_number("INV-26-0001").is_err() && year_of_number("INV2026").is_err() && year_of_number("INV-20x6-1").is_err()
+
+test "parse_kind: both names read back, and another refused"
+    assert parse_kind(kind_name(.invoice)).must() == .invoice
+    assert parse_kind(kind_name(.credit_note)).must() == .credit_note
+    assert parse_kind("receipt").is_err()
+
+test "parse_day: a day read and written back, and texts that are none"
+    t = parse_day("2026-03-14").must()
+    assert day_text(t) == "2026-03-14" && year_of(t) == 2026
+    assert parse_day("2026-02-30").is_err() && parse_day("14/03/2026").is_err()

@@ -1,0 +1,92 @@
+== the mail server, on loopback
+smtp: ready
+== the books
+company: Tessera Editions S.r.l., Ravenna, IT; EUR; logo 96 by 96 pixels
+customers.csv: 3 written, 1 refused
+  line 5: a country is its ISO 3166 code of two letters, and "AUT" is not
+items.csv: 5 written, 1 refused
+  line 7: the price of POSTER-B is written with digits and at most one point, as 12.50, and "12,50" is not
+== invoices and credit notes
+INV-2026-0001 to ROSSI (it-IT, domestic), 2 marzo 2026: 798,54 €, due 1 aprile 2026
+  pdf: 1 page, its text c8993bca721e; xlsx: 19 rows, its cells 0c8e5f84b6f9
+  payment code: version 5, BCD|002|1|SCT||Tessera Editions S.r.l.|IT60X0542811101000000123456|EUR798.54||RF16INV20260001
+    | Tessera Editions S.r.l.
+    | Via dei Mosaici 12
+    | 48121 Ravenna
+    | IT
+    | Partita IVA IT02468135790
+    | billing@tessera.example
+    | Fattura
+    | Numero: INV-2026-0001
+    | Data: 2 marzo 2026
+    | Scadenza: 1 aprile 2026
+    | Destinatario
+    | Studio Rossi Architetti
+    | Via Cavour 21
+    | 00184 Roma
+    | IT
+    | Partita IVA IT12345670017
+    | Descrizione Quantità U.M. Prezzo unitario IVA Importo
+    | Atlas of Byzantine Mosaics 3 pc 39,90 € 4% 119,70 €
+    | Mosaic design consultancy 6,5 h 85,00 € 22% 552,50 €
+    | Aliquota Imponibile Imposta
+    | 4% 119,70 € 4,79 €
+    | 22% 552,50 € 121,55 €
+    | Totale imponibile 672,20 €
+    | Totale IVA 126,34 €
+    | Totale da saldare 798,54 €
+    | Pagamento con bonifico a
+    | Tessera Editions S.r.l.
+    | IBAN IT60 X054 2811 1010 0000 0123 456
+    | Riferimento RF16INV20260001
+    | Totale da saldare 798,54 €
+    | Inquadra per pagare
+    | Tessera Editions S.r.l. · Partita IVA IT02468135790 · billing@tessera.example
+INV-2026-0002 to DUBOIS (fr-FR, oss), 5 mars 2026: 1 399,52 €, due 20 mars 2026
+  pdf: 1 page, its text e53114559ea8; xlsx: 19 rows, its cells 2c3d25da69be
+  payment code: version 5, BCD|002|1|SCT||Tessera Editions S.r.l.|IT60X0542811101000000123456|EUR1399.52||RF86INV20260002
+INV-2026-0003 to HARBOR (en-US, export), March 9, 2026: $2,935.80, due April 23, 2026
+  pdf: 1 page, its text 58264fb83961; xlsx: 19 rows, its cells 320b8a825745
+  no payment code: a SEPA credit transfer is in euro, and this invoice is in USD
+refused: an invoice to ROSSI dated 2026-03-08: the last invoice of 2026 is dated 2026-03-09, and a later number cannot bear 2026-03-08
+CN-2026-0001 to ROSSI (it-IT, domestic), 12 marzo 2026: 41,50 €, crediting INV-2026-0001
+  pdf: 1 page, its text ac0c7867dff4; xlsx: 17 rows, its cells 235468752c36
+  no payment code: a credit note asks no payment
+refused: a credit of 3 BOOK-ATLAS on INV-2026-0001: INV-2026-0001 has 2 pc of BOOK-ATLAS left to credit, not 3
+== mail, through the stand-in
+INV-2026-0001: 250 2.0.0 queued INV-2026-0001.pdf, 1 page, naming INV-2026-0001
+INV-2026-0002: 250 2.0.0 queued INV-2026-0002.pdf, 1 page, naming INV-2026-0002
+INV-2026-0003: 250 2.0.0 queued INV-2026-0003.pdf, 1 page, naming INV-2026-0003
+CN-2026-0001: 250 2.0.0 queued CN-2026-0001.pdf, 1 page, naming CN-2026-0001
+refused: INV-2026-0001 with a wrong password: permission: 535 5.7.8 authentication credentials invalid: the server refused the login AUTH PLAIN of billing@tessera.example
+== the accountant's CSV of 2026
+accounts-2026.csv: 6 rows, read back:
+  date,number,kind,credits,customer,name,country,vat_id,regime,currency,exchange_rate,rate,net,tax,company_currency,company_net,company_tax
+  2026-03-02,INV-2026-0001,invoice,,ROSSI,Studio Rossi Architetti,IT,IT12345670017,domestic,EUR,1,4,119.70,4.79,EUR,119.70,4.79
+  2026-03-02,INV-2026-0001,invoice,,ROSSI,Studio Rossi Architetti,IT,IT12345670017,domestic,EUR,1,22,552.50,121.55,EUR,552.50,121.55
+  2026-03-05,INV-2026-0002,invoice,,DUBOIS,Claire Dubois,FR,,oss,EUR,1,5.5,18.50,1.02,EUR,18.50,1.02
+  2026-03-05,INV-2026-0002,invoice,,DUBOIS,Claire Dubois,FR,,oss,EUR,1,20,1150.00,230.00,EUR,1150.00,230.00
+  2026-03-09,INV-2026-0003,invoice,,HARBOR,"Harbor Books, LLC",US,,export,USD,1.085,0,2935.80,0.00,EUR,2705.81,0.00
+  2026-03-12,CN-2026-0001,credit-note,INV-2026-0001,ROSSI,Studio Rossi Architetti,IT,IT12345670017,domestic,EUR,1,4,-39.90,-1.60,EUR,-39.90,-1.60
+== totals per tax rate, 2026, in EUR
+regime          rate  documents           net         tax
+domestic            4%          2         79.80        3.19
+domestic           22%          1        552.50      121.55
+oss               5.5%          1         18.50        1.02
+oss                20%          1       1150.00      230.00
+export              0%          1       2705.81        0.00
+total EUR                                 4506.61      355.76
+== the archive of 2026
+archives/2026.tar.gz: 10 members, every one as its manifest says
+  2026/INV-2026-0001.pdf
+  2026/INV-2026-0001.xlsx
+  2026/INV-2026-0002.pdf
+  2026/INV-2026-0002.xlsx
+  2026/INV-2026-0003.pdf
+  2026/INV-2026-0003.xlsx
+  2026/CN-2026-0001.pdf
+  2026/CN-2026-0001.xlsx
+  2026/accounts-2026.csv
+  2026/MANIFEST.sha256
+== the mail server, stopped
+smtp stand-in: 5 connections, 4 messages taken, 0 refused, 1 login refused

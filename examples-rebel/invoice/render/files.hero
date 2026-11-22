@@ -1,0 +1,187 @@
+# A document made into its two files, the PDF a customer receives and the
+# XLSX an accountant reads, and where they are kept: the data folder's
+# `documents/<year>/<number>.pdf` and `.xlsx`.
+#
+# The PDF comes from the layout (`render/sheet`) rendered over the
+# document's view (`render/view`), with the company's logo and, on an
+# invoice in euro with something to pay, the payment code of a SEPA
+# credit transfer for its total, naming its RF reference
+# (`bank/epc`). A credit note asks no payment, and a transfer in another
+# currency is no SEPA credit transfer, so neither carries a code.
+
+use <rebel>/i18n
+use <rebel>/path
+use <rebel>/pdf
+use <rebel>/qr
+use <rebel>/template
+
+use bank/epc
+use model/documents
+use model/parties
+use money/amount
+use render/drawing
+use render/sheet
+use render/view
+use render/workbook
+
+## Codes
+
+# The code of a document that cannot be drawn: a layout that does not
+# parse or does not render, a code past its bounds.
+constant INVALID: str
+    "invalid"
+
+## The files
+
+# A document's two files, and what its payment code holds.
+record Rendered
+    # The PDF's bytes.
+    pdf: [u8]
+    # The XLSX's bytes.
+    xlsx: [u8]
+    # The text the payment code holds, "" where it carries none.
+    payload: str
+
+# What a document is drawn with beside itself: the same for every document
+# of a run.
+record Kit
+    # The company.
+    company: parties.Company
+    # The layout, read and ready.
+    layout: template.Template
+    # The company's logo as a PNG file's bytes, [] for none.
+    logo: [u8]
+
+# The kit of a run: the layout `layout_text` read.
+#
+# - `company`: the company.
+# - `layout_text`: the layout's template, `layout.default_layout()` where
+#   the company gives none.
+# - `logo`: the logo's PNG bytes, [] for none.
+#
+# Fails `invalid` where the layout is not a template, with `template`'s
+# line and column.
+function kit_of(company: parties.Company, layout_text: str, logo: [u8]) -> Kit?
+    match template.parse(layout_text)
+        .ok t  => return ok(Kit(company: company, layout: t, logo: logo))
+        .err e => return fail(code: INVALID, msg: "the layout: " + e.msg)
+
+# Whether `doc` carries a payment code: an invoice in euro with something
+# to pay.
+#
+# - `doc`: the document.
+function has_code(doc: documents.Document) -> bool
+    return doc.kind == .invoice && doc.currency == "EUR" && !amount.is_zero(doc.gross) && !amount.is_negative(doc.gross)
+
+# The payload of `doc`'s payment code, for its total, to the company.
+#
+# - `doc`: an invoice `has_code` takes.
+# - `company`: the company.
+#
+# Fails as `epc.payload` fails: a company name past 70 characters among
+# its reasons.
+function payload_of(doc: documents.Document, company: parties.Company) -> str?
+    return epc.payload(
+        epc.Transfer(bic: company.bic, name: company.name, iban: company.iban, amount: doc.gross, reference: doc.reference, text: "", note: "")
+    )
+
+# `doc`'s two files.
+#
+# - `doc`: the document.
+# - `kit`: the company, the layout and the logo.
+# - `catalog`: the customer's language's catalog.
+#
+# Fails `invalid` where the layout does not render or what it writes is no
+# page description, the message naming the document; and as
+# `render/drawing`, `render/workbook` and `bank/epc` fail.
+function rendered(doc: documents.Document, kit: Kit, catalog: i18n.Catalog) -> Rendered?
+    coded = has_code(doc)
+
+    payload = if coded
+        payload_of(doc, company: kit.company)?
+    else
+        ""
+
+    code: qr.Code? = if coded
+        ok(epc.code_of(payload)?)
+    else
+        fail(code: "not_found", msg: "no payment code")
+    value = view.view_of(doc, company: kit.company, catalog: catalog, has_logo: kit.logo.len() > 0, has_code: coded)?
+
+    page = match template.render(kit.layout, value)
+        .ok text => text
+        .err e   => return fail(code: INVALID, msg: f"{doc.number}: the layout: {e.msg}")
+
+    marks = match sheet.parse_sheet(page)
+        .ok m  => m
+        .err e => return fail(code: INVALID, msg: f"{doc.number}: {e.msg}")
+
+    labels = view_title(doc, catalog: catalog)
+    info = {
+        "Title": labels + " " + doc.number
+        "Author": kit.company.name
+        "Subject": doc.customer.name
+        "Creator": "invoice"
+        "CreationDate": pdf.format_date(doc.issued)
+    }
+    data = drawing.draw(marks, assets: drawing.Assets(logo: kit.logo, code: code, info: info))?
+    sheet_data = workbook.workbook_of(doc, company: kit.company, catalog: catalog)?
+    return ok(Rendered(pdf: data, xlsx: sheet_data, payload: payload))
+
+# The title of `doc` in the catalog's language: "Fattura", "Avoir".
+#
+# - `doc`: the document.
+# - `catalog`: the catalog.
+function view_title(doc: documents.Document, catalog: i18n.Catalog) -> str
+    match doc.kind
+        .invoice     => return i18n.translate(catalog, id: "Invoice")
+        .credit_note => return i18n.translate(catalog, id: "Credit note")
+
+## Where the files are kept
+
+# The folder of `year`'s documents under `data_dir`.
+#
+# - `data_dir`: the data folder.
+# - `year`: the year.
+function folder_of(data_dir: str, year: i64) -> str
+    return path.join_all([data_dir, "documents", f"{year}"])
+
+# The path of `doc`'s file of extension `ext` under `data_dir`.
+#
+# - `data_dir`: the data folder.
+# - `doc`: the document.
+# - `ext`: `pdf` or `xlsx`.
+function file_of(data_dir: str, doc: documents.Document, ext: str) -> str
+    return path.join_all([folder_of(data_dir, year: documents.year_of(doc.issued)), doc.number + "." + ext])
+
+test "has_code: a euro invoice to pay, and the three that carry none"
+    doc @= ledger_free_sample()
+    assert has_code(doc)
+    doc.kind @ .credit_note
+    assert !has_code(doc)
+    doc.kind @ .invoice
+    doc.currency @ "USD"
+    assert !has_code(doc)
+    doc.currency @ "EUR"
+    doc.gross @ amount.zero()
+    assert !has_code(doc)
+
+# A document of the tests, with no store: an invoice in euro of one line.
+function ledger_free_sample() -> documents.Document
+    return documents.Document(
+        number: "INV-2026-0001",
+        kind: .invoice,
+        issued: documents.parse_day("2026-03-14").must(),
+        due: documents.parse_day("2026-04-13").must(),
+        customer: parties.Customer(key: "K", name: "N", street: "S", postcode: "1", city: "C", country: "IT", vat_id: "", email: "k@example.org", locale: "it-IT", currency: "EUR", payment_days: 30),
+        currency: "EUR",
+        exchange_rate: amount.of_int(1),
+        regime: .domestic,
+        lines: [],
+        taxes: [],
+        net: amount.of_int(100),
+        tax: amount.of_int(22),
+        gross: amount.of_int(122),
+        refers_to: "",
+        reference: "RF18539007547034"
+    )

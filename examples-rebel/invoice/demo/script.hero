@@ -1,0 +1,315 @@
+# The demo, run by `invoice demo`: a month of a small publisher's
+# invoicing, from an empty folder to the year's archive, against a mail
+# server the demo carries. It makes a work folder under `build/`, writes
+# the company's files there (`demo/fixtures`), starts the SMTP stand-in on
+# loopback on a thread of its own, and drives the same functions the
+# command line drives (`ops/workspace`): the customers and items imported,
+# three invoices and a credit note issued with their PDF and XLSX, two
+# requests the books refuse, every document mailed and one mail refused
+# for a wrong password, the accountant's CSV, the totals by rate, and the
+# archive of the year, made and checked. Then it stops the stand-in and
+# removes the folder.
+#
+# The clock is fixed: documents bear the days the script gives, and the
+# mail says it was sent at `SENT_AT`. Nothing printed holds a port, a path,
+# a random value or the wall clock; a document is told by digests of what
+# its files hold when read back (`demo/readback`).
+
+use <rebel>/csv
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/threads
+use <rebel>/time
+
+use billing/issue
+use demo/fixtures
+use demo/readback
+use mailing/message
+use model/documents
+use money/amount
+use ops/imports
+use ops/workspace
+use render/files
+use standins/smtp_server
+use store/ledger
+
+## The clock
+
+# The moment every mail of the demo says it was sent: 16 March 2026, 9:00
+# UTC.
+function sent_at() -> time.Instant
+    return time.from_date_time(
+        time.DateTime(year: 2026, month: 3, day: 16, hour: 9, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+
+## The run
+
+# Runs the demo and answers the program's exit code: 0 where every step
+# went as the script expects.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match made_folder()
+        .err e =>
+            print("demo: the work folder: " + e.msg)
+            return 1
+        .ok folder =>
+            code = in_folder(folder)
+            _ = fs.remove_all(folder).is_err()
+            return code
+
+# A new work folder under `build/`.
+function made_folder() -> str?
+    fs.make_dir_all("build")?
+    return fs.make_temp_dir(dir: "build", pattern: "invoice-demo-*")
+
+# The demo inside its work folder: the stand-in started, the script run,
+# the stand-in stopped and waited for.
+#
+# - `folder`: the work folder.
+function in_folder(folder: str) -> i64
+    match net.listen(host: "127.0.0.1", port: 0)
+        .err e =>
+            print("demo: the control port: " + e.msg)
+            return 1
+        .ok listening =>
+            control @= listening
+            print("== the mail server, on loopback")
+            arg = f"{control.address.port}\n{fixtures.MAIL_USER}\n{fixtures.MAIL_PASSWORD}"
+
+            match threads.spawn_text(body: smtp_server.run, arg: arg)
+                .err e =>
+                    _ = net.close_listener(@control).is_err()
+                    print("demo: the stand-in would not start: " + e.msg)
+                    return 1
+                .ok started =>
+                    server @= started
+
+                    code = match awaited_port(control)
+                        .err e =>
+                            print("demo: the stand-in never said it was ready: " + e.msg)
+                            1
+                        .ok port =>
+                            print("smtp: ready")
+                            scripted(folder, smtp_port: port)
+
+                    os.ask_stop()
+                    _ = net.close_listener(@control).is_err()
+                    print("== the mail server, stopped")
+                    print(threads.wait_text(@server))
+                    return code
+
+# The port the stand-in's notice names, awaited ten seconds at most.
+#
+# - `control`: the demo's control listener.
+#
+# Fails `timeout` where no notice comes, and as `smtp_server.parse_notice`
+# fails.
+function awaited_port(control: net.Listener) -> i64?
+    made = net.accept(control, deadline_ms: smtp_server.NOTICE_MS)?
+    conn @= made
+    text = io.read_all_text(conn.stream)
+    _ = io.close(@conn.stream).is_err()
+    return smtp_server.parse_notice(text?)
+
+# The company's files written, the books opened, the script run, the books
+# closed.
+#
+# - `folder`: the work folder.
+# - `smtp_port`: the stand-in's port.
+function scripted(folder: str, smtp_port: i64) -> i64
+    match written(folder, smtp_port: smtp_port)
+        .err e =>
+            print("demo: the company's files: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match workspace.open(folder + "/invoice.toml", env: {"INVOICE_SMTP__PASSWORD": fixtures.MAIL_PASSWORD})
+        .err e =>
+            print("demo: the books: " + e.msg)
+            return 1
+        .ok opened =>
+            ws @= opened
+
+            code = match month(@ws, folder: folder)
+                .ok _ => 0
+                .err e =>
+                    print("demo: " + e.msg)
+                    1
+
+            _ = workspace.close(@ws).is_err()
+            return code
+
+# Writes the company's files into `folder`.
+#
+# - `folder`: the work folder.
+# - `smtp_port`: the stand-in's port, which the configuration names.
+#
+# Fails as `fs` fails.
+function written(folder: str, smtp_port: i64) -> ()?
+    fs.write_bytes(folder + "/logo.png", data: fixtures.logo_png()?)?
+    fs.write_atomic_text(path: folder + "/invoice.toml", text: fixtures.config_toml(smtp_port))?
+    fs.make_dir_all(folder + "/po")?
+    fs.write_atomic_text(path: folder + "/po/it.po", text: fixtures.italian_po())?
+    fs.write_atomic_text(path: folder + "/customers.csv", text: fixtures.customers_csv())?
+    return fs.write_atomic_text(path: folder + "/items.csv", text: fixtures.items_csv())
+
+# The script, a month of invoicing, every step printed.
+#
+# - `ws`: the books.
+# - `folder`: the work folder.
+#
+# Fails where a step the script expects to succeed fails, or one it
+# expects to be refused is taken.
+function month(@ws: workspace.Workspace, folder: str) -> ()?
+    c = ws.settings.company
+    print("== the books")
+    print(
+        f"company: {c.name}, {c.city}, {c.country}; {c.currency}; logo {fixtures.LOGO_SIDE} by {fixtures.LOGO_SIDE} pixels"
+    )
+    told_import("customers.csv", got: imports.customers(@ws.db, text: read_file(path: folder + "/customers.csv")?)?)
+    told_import("items.csv", got: imports.items(@ws.db, text: read_file(path: folder + "/items.csv")?)?)
+    print("== invoices and credit notes")
+    first = workspace.invoice(@ws, order: order(customer: "ROSSI", day: "2026-03-02", lines: [["BOOK-ATLAS", "3"], ["DESIGN-HOUR", "6.5"]], rate: "0")?)?
+    told(ws, done: first)?
+
+    for line in readback.page_lines(first)?
+        print(line)
+
+    second = workspace.invoice(@ws, order: order(customer: "DUBOIS", day: "2026-03-05", lines: [["PRINT-CANVAS", "1"], ["BOOK-GUIDE", "1"]], rate: "0")?)?
+    told(ws, done: second)?
+    third = workspace.invoice(@ws, order: order(customer: "HARBOR", day: "2026-03-09", lines: [["BOOK-ATLAS", "40"], ["BOOK-GUIDE", "60"]], rate: "1.0850")?)?
+    told(ws, done: third)?
+    refused("an invoice to ROSSI dated 2026-03-08", outcome: workspace.invoice(@ws, order: order(customer: "ROSSI", day: "2026-03-08", lines: [["BOOK-GUIDE", "1"]], rate: "0")?))?
+    note = workspace.credit_note(@ws, number: "INV-2026-0001", day: documents.parse_day("2026-03-12")?, returned: ordered([["BOOK-ATLAS", "1"]])?)?
+    told(ws, done: note)?
+    refused("a credit of 3 BOOK-ATLAS on INV-2026-0001", outcome: workspace.credit_note(@ws, number: "INV-2026-0001", day: documents.parse_day("2026-03-13")?, returned: ordered([["BOOK-ATLAS", "3"]])?))?
+    print("== mail, through the stand-in")
+
+    for number in ["INV-2026-0001", "INV-2026-0002", "INV-2026-0003", "CN-2026-0001"]
+        r = workspace.mail(@ws, number: number, sent_at: sent_at())?
+        print(f"{number}: {r.code} {r.enhanced} {r.lines.join(" ")}")
+
+    wrong_password(@ws)?
+    print("== the accountant's CSV of 2026")
+    export_file = folder + "/accounts-2026.csv"
+    fs.write_atomic_text(path: export_file, text: workspace.export(@ws, year: 2026)?)?
+    rows = csv.parse(read_file(path: export_file)?)?
+    print(f"accounts-2026.csv: {rows.len() - 1} rows, read back:")
+    lf @= csv.minimal_write_options()
+    lf.line_end @ "\n"
+
+    for row in rows
+        print("  " + strings.trim_suffix(s: csv.format_row(row, options: lf), suffix: "\n"))
+
+    print(f"== totals per tax rate, 2026, in {c.currency}")
+
+    for line in workspace.report(@ws, year: 2026)?
+        print(line)
+
+    print("== the archive of 2026")
+    a = workspace.archive_year(@ws, year: 2026)?
+    print(f"archives/2026.tar.gz: {a.checked.names.len()} members, every one as its manifest says")
+
+    for name in a.checked.names
+        print("  " + name)
+
+    return ok()
+
+## The steps
+
+# Prints what an import did: the rows written, and each row refused.
+#
+# - `name`: the file's name.
+# - `got`: what the import did.
+function told_import(name: str, got: imports.Imported)
+    print(f"{name}: {got.written} written, {got.refused.len()} refused")
+
+    for line in got.refused
+        print("  " + line)
+
+# Prints a document done, as its files read back.
+#
+# - `ws`: the books.
+# - `done`: the document and its files.
+#
+# Fails where its files do not read back, or the PDF kept in the data
+# folder is not the one made.
+function told(ws: workspace.Workspace lent, done: workspace.Done) -> ()?
+    for line in readback.lines_of(done)?
+        print(line)
+
+    if !readback.is_kept(ws, done: done)
+        return fail(code: "invalid", msg: f"{done.doc.number}'s kept PDF is not the one made")
+    return ok()
+
+# Prints a request the books refused, and why.
+#
+# - `what`: the request.
+# - `outcome`: what the books answered.
+#
+# Fails where the books took it.
+function refused(what: str, outcome: workspace.Done?) -> ()?
+    match outcome
+        .ok d => return fail(
+            code: "invalid",
+            msg: f"{what} was taken as {d.doc.number}, and the books should refuse it"
+        )
+        .err e =>
+            print(f"refused: {what}: {e.msg}")
+            return ok()
+
+# An order of the script.
+#
+# - `customer`: the customer's key.
+# - `day`: the day, `2026-03-02`.
+# - `lines`: each SKU and its quantity as text.
+# - `rate`: the exchange rate as text, `0` for none.
+#
+# Fails as the readers of a day, a quantity and a rate fail.
+function order(customer: str, day: str, lines: [[str]], rate: str) -> issue.Order?
+    exchange = amount.parse_plain(text: rate, what: "the exchange rate", most_fraction: amount.MAX_RATE_FRACTION)?
+    return ok(
+        issue.Order(customer: customer, day: documents.parse_day(day)?, lines: ordered(lines)?, exchange_rate: exchange)
+    )
+
+# Each SKU and its quantity read.
+#
+# - `lines`: each SKU and its quantity as text.
+#
+# Fails as `amount.parse_quantity` fails.
+function ordered(lines: [[str]]) -> [issue.Ordered]?
+    found: [issue.Ordered] @= []
+
+    for pair in lines
+        found @ found.push(issue.Ordered(sku: pair[0], quantity: amount.parse_quantity(text: pair[1], what: pair[0])?))
+
+    return ok(found)
+
+# The first invoice's message sent again with a password that is not the
+# user's: the server refuses the login, and the program says so with the
+# server's reply.
+#
+# - `ws`: the books.
+#
+# Fails where the server takes it.
+function wrong_password(@ws: workspace.Workspace) -> ()?
+    doc = ledger.document_named(@ws.db, number: "INV-2026-0001")?
+    pdf = fs.read_bytes(files.file_of(data_dir: ws.settings.data_dir, doc: doc, ext: "pdf"))?
+    catalog = workspace.catalog_of(ws, tag: doc.customer.locale)?
+    out = message.outgoing(doc, company: ws.settings.company, catalog: catalog, pdf: pdf, sent_at: sent_at())?
+    server @= ws.settings.mail
+    server.password @ "not the password"
+
+    match message.send(server, local_name: "", out: out)
+        .ok _ => return fail(code: "invalid", msg: "the server took a wrong password")
+        .err e =>
+            print(f"refused: INV-2026-0001 with a wrong password: {e.code}: {e.msg}")
+            return ok()

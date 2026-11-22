@@ -1,0 +1,163 @@
+# Crediting an invoice: a credit note for some of its lines, or for all
+# that is left of it, priced exactly as the invoice priced them (the same
+# unit price, rate, regime, currency and exchange rate, whatever the
+# catalogue says today), so that an invoice and its credit notes always
+# net to what the customer really owes.
+#
+# A credit note never credits more than was invoiced: each SKU's quantity
+# is held against what the invoice billed less what earlier credit notes
+# credited, and a return past it is refused with what is left.
+
+use <rebel>/big
+use <rebel>/sql/sqlite
+use <rebel>/strings
+use <rebel>/time
+
+use billing/issue
+use model/documents
+use money/amount
+use store/ledger
+use tax/pricing
+
+## Codes
+
+# The code of a credit the program refuses.
+constant INVALID: str
+    "invalid"
+
+# The code of a SKU the invoice has no line of.
+constant NOT_FOUND: str
+    "not_found"
+
+## Credit notes
+
+# The credit note of `returned` against the invoice `number`, written to
+# the books under its number.
+#
+# - `db`: the books.
+# - `number`: the invoice's number.
+# - `day`: the credit note's day, at midnight UTC; not before the invoice's.
+# - `returned`: the SKUs and quantities credited; none credits everything
+#   the invoice still holds.
+#
+# Fails `not_found` where the books hold no such invoice or it has no line
+# of a SKU; `invalid` where it is a credit note, the day is before the
+# invoice's, a SKU is named twice, a quantity passes what is left of it, or
+# nothing is left at all; and as `ledger.issue` fails.
+function credit_note(@db: sqlite.Db, number: str, day: time.Instant, returned: [issue.Ordered]) -> documents.Document?
+    invoice = ledger.document_named(@db, number: number)?
+
+    if invoice.kind != .invoice
+        return fail(code: INVALID, msg: f"{number} is a credit note, and a credit note credits an invoice")
+
+    if time.is_before(a: day, b: invoice.issued)
+        return fail(
+            code: INVALID,
+            msg: f"a credit note of {number} cannot be dated before the invoice, {documents.day_text(invoice.issued)}"
+        )
+    issue.distinct(returned)?
+    left = left_of(invoice, earlier: ledger.credit_notes_of(@db, number: number)?)
+
+    wanted = if returned.len() == 0
+        everything_left(invoice, left: left)
+    else
+        returned
+    digits = amount.digits_of(invoice.currency)
+    lines: [documents.Line] @= []
+
+    for o in wanted
+        source = line_of_sku(invoice, sku: o.sku)?
+        remaining = left[source.sku].default(amount.zero())
+
+        if amount.compare(a: o.quantity, b: remaining) > 0
+            return fail(
+                code: INVALID,
+                msg: f"{number} has {amount.short(remaining)} {source.unit} of {source.sku} left to credit, not {amount.short(o.quantity)}"
+            )
+        credited @= source
+        credited.position @ lines.len() + 1
+        credited.quantity @ o.quantity
+        credited.net @ amount.times(a: o.quantity, b: source.unit_price, digits: digits)
+        lines @ lines.push(credited)
+
+    if lines.len() == 0
+        return fail(code: INVALID, msg: f"{number} is credited whole already")
+    taxes = pricing.taxes_of(lines, digits: digits)
+    totals = pricing.totals_of(taxes, digits: digits)
+    note = documents.Document(
+        number: "",
+        kind: .credit_note,
+        issued: day,
+        due: day,
+        customer: invoice.customer,
+        currency: invoice.currency,
+        exchange_rate: invoice.exchange_rate,
+        regime: invoice.regime,
+        lines: lines,
+        taxes: taxes,
+        net: totals.net,
+        tax: totals.tax,
+        gross: totals.gross,
+        refers_to: invoice.number,
+        reference: ""
+    )
+    return ledger.issue(@db, doc: note)
+
+# What is left to credit of each SKU of `invoice`: what it billed less what
+# `earlier` credited.
+#
+# - `invoice`: the invoice.
+# - `earlier`: its credit notes so far.
+function left_of(invoice: documents.Document, earlier: [documents.Document]) -> {str: big.Decimal}
+    left: {str: big.Decimal} @= {}
+
+    for l in invoice.lines
+        left[l.sku] @ amount.plus(a: left[l.sku].default(amount.zero()), b: l.quantity)
+
+    for note in earlier
+        for l in note.lines
+            left[l.sku] @ amount.minus(a: left[l.sku].default(amount.zero()), b: l.quantity)
+
+    return left
+
+# Every SKU of `invoice` with something left, and how much.
+#
+# - `invoice`: the invoice.
+# - `left`: what is left of each SKU.
+function everything_left(invoice: documents.Document, left: {str: big.Decimal}) -> [issue.Ordered]
+    wanted: [issue.Ordered] @= []
+
+    for l in invoice.lines
+        q = left[l.sku].default(amount.zero())
+
+        if amount.compare(a: q, b: amount.zero()) > 0
+            wanted @ wanted.push(issue.Ordered(sku: l.sku, quantity: q))
+
+    return wanted
+
+# The line of `invoice` that bills `sku`.
+#
+# - `invoice`: the invoice.
+# - `sku`: the SKU, in any case.
+#
+# Fails `not_found` where it has none.
+function line_of_sku(invoice: documents.Document, sku: str) -> documents.Line?
+    for l in invoice.lines
+        if l.sku == strings.to_upper_ascii(sku)
+            return ok(l)
+
+    return fail(code: NOT_FOUND, msg: f"{invoice.number} has no line of {strings.to_upper_ascii(sku)}")
+
+test "left_of: billed less credited, by SKU"
+    inv = ledger.sample(.invoice, day: "2026-03-01")
+    note @= ledger.sample(.credit_note, day: "2026-03-02")
+    note.lines[0].quantity @ big.parse_decimal("0.5").must()
+    left = left_of(inv, earlier: [note])
+    assert amount.short(left["BOOK-A"].must()) == "1.5"
+    assert everything_left(inv, left: left)[0].quantity == left["BOOK-A"].must()
+    assert everything_left(inv, left: {"BOOK-A": amount.zero()}).len() == 0
+
+test "line_of_sku: a SKU in small letters, and one the invoice does not bill"
+    inv = ledger.sample(.invoice, day: "2026-03-01")
+    assert line_of_sku(inv, sku: "book-a").must().position == 1
+    assert line_of_sku(inv, sku: "BOOK-B").is_err()

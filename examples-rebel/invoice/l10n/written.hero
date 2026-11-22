@@ -1,0 +1,120 @@
+# Numbers and days written the way the customer's language writes them, by
+# CLDR's data through `i18n/numbers` and `i18n/dates`: an amount with its
+# currency's symbol and digits where the language puts them, "1.234,50 €"
+# in Italian and "$1,234.50" in American English; a quantity and a rate
+# with the language's decimal mark; a day with the month's name, "14 marzo
+# 2026". Every number is handed over as exact decimal text, so the digits
+# written are the digits the books hold.
+
+use <rebel>/big
+use <rebel>/bytes
+use <rebel>/i18n
+use <rebel>/i18n/dates
+use <rebel>/i18n/numbers as i18n_numbers
+use <rebel>/time
+
+use money/amount
+
+## Writing
+
+# `d` written as an amount of `currency` in `locale`'s language, with the
+# currency's own digits.
+#
+# - `locale`: the reader's locale.
+# - `d`: the amount, rounded to the currency's digits where it has more.
+# - `currency`: its ISO 4217 code.
+#
+# Fails as `i18n_numbers.format_currency` fails.
+function money(locale: i18n.Locale, d: big.Decimal, currency: str) -> str?
+    text = amount.plain(d, digits: amount.digits_of(currency))
+    return i18n_numbers.format_currency(locale, number: text, currency: currency)
+
+# `d` written as a quantity in `locale`'s language: grouped, with no zero
+# ending its fraction and four digits after the point at most.
+#
+# - `locale`: the reader's locale.
+# - `d`: the quantity.
+#
+# Fails as `i18n_numbers.format_number` fails.
+function quantity(locale: i18n.Locale, d: big.Decimal) -> str?
+    options @= i18n_numbers.number_options(.decimal)
+    options.min_fraction_digits @ 0
+    options.max_fraction_digits @ amount.MAX_FRACTION
+    return i18n_numbers.format_number(locale, number: amount.short(d), options: options)
+
+# `percent`, a rate, written as `locale`'s language writes one: "22%" in
+# English, "5,5 %" in French.
+#
+# - `locale`: the reader's locale.
+# - `percent`: the rate in percent, 22 for 22 %.
+#
+# Fails as `i18n_numbers.format_number` fails.
+function rate(locale: i18n.Locale, percent: big.Decimal) -> str?
+    fraction = big.divide_decimal(
+        n: percent,
+        by: amount.of_int(100),
+        scale: percent.scale + 2,
+        rounding: .half_away_from_zero
+    )
+    options @= i18n_numbers.number_options(.percent)
+    options.min_fraction_digits @ 0
+    options.max_fraction_digits @ amount.MAX_FRACTION
+    return i18n_numbers.format_number(locale, number: amount.short(fraction), options: options)
+
+# An exchange rate written as a plain number in `locale`'s language, with
+# every digit it holds.
+#
+# - `locale`: the reader's locale.
+# - `d`: the rate.
+#
+# Fails as `i18n_numbers.format_number` fails.
+function exchange(locale: i18n.Locale, d: big.Decimal) -> str?
+    options @= i18n_numbers.number_options(.decimal)
+    options.min_fraction_digits @ 0
+    options.max_fraction_digits @ amount.MAX_RATE_FRACTION
+    return i18n_numbers.format_number(locale, number: amount.short(d), options: options)
+
+# The day `t` written in full in `locale`'s language, with its month's
+# name: "14 marzo 2026", "March 14, 2026".
+#
+# - `locale`: the reader's locale.
+# - `t`: a day at midnight UTC.
+function day(locale: i18n.Locale, t: time.Instant) -> str
+    return dates.format_date(locale, t: t, zone: time.utc_zone(), style: .long)
+
+# The locale `tag` names.
+#
+# - `tag`: a BCP 47 tag, `fr-FR`.
+#
+# Fails as `i18n.parse_locale` fails.
+function locale_of(tag: str) -> i18n.Locale?
+    return i18n.parse_locale(tag)
+
+# CLDR writes the euro after the amount in Italian, with a no-break space
+# between, and the dollar before it in American English. Observed of
+# `i18n/numbers` 2026-11-22.
+test "money: the euro in Italian, the dollar in English, digits kept"
+    italian = locale_of("it-IT").must()
+    assert money(italian, d: big.parse_decimal("1234.5").must(), currency: "EUR").must() == "1234,50" + bytes_nbsp() + "€"
+    assert money(locale_of("en-US").must(), d: big.parse_decimal("1234.5").must(), currency: "USD").must() == "$1,234.50"
+    assert money(locale_of("en-US").must(), d: big.parse_decimal("0.005").must(), currency: "USD").must() == "$0.01"
+
+test "quantity and rate: a decimal mark of the language, no zero ending a fraction"
+    french = locale_of("fr-FR").must()
+    assert quantity(french, d: big.parse_decimal("2.50").must()).must() == "2,5"
+    assert quantity(locale_of("en").must(), d: amount.of_int(3)).must() == "3"
+    assert rate(locale_of("en").must(), percent: amount.of_int(22)).must() == "22%"
+    assert rate(locale_of("en").must(), percent: big.parse_decimal("5.5").must()).must() == "5.5%"
+    assert rate(locale_of("en").must(), percent: amount.zero()).must() == "0%"
+    assert exchange(locale_of("en").must(), d: big.parse_decimal("1.0850").must()).must() == "1.085"
+
+test "day: a day in full in three languages"
+    t = time.date(year: 2026, month: 3, day: 14).must()
+    assert day(locale_of("it-IT").must(), t: t) == "14 marzo 2026"
+    assert day(locale_of("fr-FR").must(), t: t) == "14 mars 2026"
+    assert day(locale_of("en-US").must(), t: t) == "March 14, 2026"
+
+# The no-break space, U+00A0, made from its UTF-8 bytes so that no source
+# line holds an invisible character.
+function bytes_nbsp() -> str
+    return bytes.to_text([0xc2, 0xa0]).must()

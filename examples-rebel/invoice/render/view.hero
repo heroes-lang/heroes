@@ -1,0 +1,118 @@
+# What a layout reads of a document: a `json.Value` built from the
+# document, the company and the customer's catalog, every amount, quantity,
+# rate and day already written in the customer's language
+# (`l10n/written`), every label translated (`l10n/catalogs`), and every
+# text escaped as the layout's fields read them (`sheet.escape`). A
+# template computes nothing and calls no function of the program, so
+# whatever the page shows is decided here.
+#
+# The paths a layout may read:
+#
+#     .kind .title .number .date .due .is_invoice .refers_to .exchange
+#     .company.name .company.block .company.footer
+#     .customer.name .customer.block
+#     .labels.<key>                   every key of `catalogs.labels`
+#     .lines[].description .quantity .unit .unit_price .rate .net
+#     .taxes[].rate .net .tax
+#     .net .tax .gross .note .has_logo
+#     .payment.block .payment.reference .payment.qr
+
+use <rebel>/i18n
+use <rebel>/json
+
+use bank/iban
+use l10n/catalogs
+use l10n/written
+use model/documents
+use model/parties
+use render/sheet
+use tax/regime
+
+## The view
+
+# The view of `doc` for its layout.
+#
+# - `doc`: the document.
+# - `company`: the company.
+# - `catalog`: the customer's language's catalog.
+# - `has_logo`: whether the company has a logo to draw.
+# - `has_code`: whether a payment code is drawn: a euro invoice.
+#
+# Fails as `l10n/written` fails on a locale or a currency CLDR does not
+# know.
+function view_of(doc: documents.Document, company: parties.Company, catalog: i18n.Catalog, has_logo: bool, has_code: bool) -> json.Value?
+    locale = written.locale_of(doc.customer.locale)?
+    labels = catalogs.labels_in(catalog)
+    label_members: {str: json.Value} @= {}
+
+    for key in keys(labels)
+        label_members[key] @ text(labels[key].default(key))
+
+    lines: [json.Value] @= []
+
+    for l in doc.lines
+        lines @ lines.push(
+            .object(members: {"description": text(l.description), "quantity": text(written.quantity(locale, d: l.quantity)?), "unit": text(l.unit), "unit_price": text(written.money(locale, d: l.unit_price, currency: doc.currency)?), "rate": text(written.rate(locale, percent: l.rate)?), "net": text(written.money(locale, d: l.net, currency: doc.currency)?)})
+        )
+
+    taxes: [json.Value] @= []
+
+    for t in doc.taxes
+        taxes @ taxes.push(
+            .object(members: {"rate": text(written.rate(locale, percent: t.rate)?), "net": text(written.money(locale, d: t.net, currency: doc.currency)?), "tax": text(written.money(locale, d: t.tax, currency: doc.currency)?)})
+        )
+
+    is_invoice = doc.kind == .invoice
+
+    title_key = if is_invoice
+        "invoice"
+    else
+        "credit_note"
+    vat_label = labels["vat_id"].default("VAT ID")
+
+    exchange = if doc.currency == company.currency
+        ""
+    else
+        f"1 {company.currency} = {written.exchange(locale, d: doc.exchange_rate)?} {doc.currency}"
+    note_id = regime.note_of(doc.regime)
+
+    note = if note_id == ""
+        ""
+    else
+        i18n.translate(catalog, id: note_id)
+    gross = written.money(locale, d: doc.gross, currency: doc.currency)?
+    payment_lines @= [company.name, "IBAN " + iban.format_iban(company.iban)]
+
+    if company.bic != ""
+        payment_lines @ payment_lines.push("BIC " + company.bic)
+    payment_lines @ payment_lines.push(labels["reference"].default("Reference") + " " + doc.reference)
+    payment_lines @ payment_lines.push(labels["total_due"].default("Total due") + " " + gross)
+    customer_lines @= parties.customer_address(doc.customer)
+
+    if doc.customer.vat_id != ""
+        customer_lines @ customer_lines.push(vat_label + " " + doc.customer.vat_id)
+    company_lines = [
+        company.street
+        company.postcode + " " + company.city
+        company.country
+        vat_label + " " + company.vat_id
+        company.email
+    ]
+
+    due = if is_invoice
+        written.day(locale, t: doc.due)
+    else
+        ""
+    return ok(
+        .object(members: {"kind": text(documents.kind_name(doc.kind)), "title": text(labels[title_key].default(title_key)), "number": text(doc.number), "date": text(written.day(locale, t: doc.issued)), "due": text(due), "is_invoice": .boolean(v: is_invoice), "refers_to": text(doc.refers_to), "exchange": text(exchange), "company": .object(members: {"name": text(company.name), "block": text(company_lines.join("\n")), "footer": text(f"{company.name} · {vat_label} {company.vat_id} · {company.email}")}), "customer": .object(members: {"name": text(doc.customer.name), "block": text(customer_lines.join("\n"))}), "labels": .object(members: label_members), "lines": .list(items: lines), "taxes": .list(items: taxes), "net": text(written.money(locale, d: doc.net, currency: doc.currency)?), "tax": text(written.money(locale, d: doc.tax, currency: doc.currency)?), "gross": text(gross), "note": text(note), "has_logo": .boolean(v: has_logo), "payment": .object(members: {"block": text(payment_lines.join("\n")), "reference": text(doc.reference), "qr": .boolean(v: has_code)})})
+    )
+
+# `s` as a text of the view, escaped as a layout's field reads it.
+#
+# - `s`: any text.
+function text(s: str) -> json.Value
+    return .text(v: sheet.escape(s))
+
+test "text: a value's line breaks and tabs cannot add a field or a line"
+    expected: json.Value = .text(v: "Via Roma 1\\nRoma\\tIT")
+    assert text("Via Roma 1\nRoma\tIT") == expected

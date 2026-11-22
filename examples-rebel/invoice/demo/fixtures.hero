@@ -1,0 +1,157 @@
+# What the demo's company starts from, written into the demo's folder the
+# way a real company writes its own: the configuration, the customers and
+# items as CSV files exported from an older tool (each with one row the
+# books refuse), a `.po` file changing one Italian wording, and the logo, a
+# small mosaic drawn with `image` and written as a PNG by `image/png`.
+#
+# The company is an art publisher in Ravenna, Italy, registered for the
+# One-Stop Shop. Its three customers are an architects' studio in Rome, a
+# consumer in Lyon and a bookshop in Seattle invoiced in dollars, so the
+# demo crosses three VAT regimes, two currencies and three languages. Every
+# address is under `.example`, a domain RFC 2606 keeps for examples, and
+# the IBAN is an example of Italy's form whose check digits hold (Python's
+# own arithmetic said so, 2026-11-22).
+
+use <rebel>/image
+use <rebel>/image/png
+
+## The accounts
+
+# The mail server's one user, the company's own address.
+constant MAIL_USER: str
+    "billing@tessera.example"
+
+# That user's password, given to the program by its environment's
+# variable `INVOICE_SMTP__PASSWORD`, as a real deployment would, never
+# written in the configuration file.
+constant MAIL_PASSWORD: str
+    "stand-in password, not a secret"
+
+## The files
+
+# The configuration, its mail server on the loopback port `port`. The VAT
+# rates are Italy's and France's from Your Europe's table of rates (last
+# checked by its editors 13 July 2026, read 2026-11-22): books at the
+# super-reduced 4 % and the reduced 5.5 %, prints and services at the
+# standard 22 % and 20 %.
+#
+# - `port`: the stand-in's port.
+function config_toml(port: i64) -> str
+    parts = [
+        "data = \"books\""
+        "translations = \"po\""
+        ""
+        "[company]"
+        "name = \"Tessera Editions S.r.l.\""
+        "street = \"Via dei Mosaici 12\""
+        "postcode = \"48121\""
+        "city = \"Ravenna\""
+        "country = \"IT\""
+        "vat_id = \"IT02468135790\""
+        "email = \"billing@tessera.example\""
+        "iban = \"IT60 X054 2811 1010 0000 0123 456\""
+        "currency = \"EUR\""
+        "locale = \"it-IT\""
+        "logo = \"logo.png\""
+        "oss = true"
+        ""
+        "[taxes.IT]"
+        "books = \"4\""
+        "prints = \"22\""
+        "services = \"22\""
+        ""
+        "[taxes.FR]"
+        "books = \"5.5\""
+        "prints = \"20\""
+        "services = \"20\""
+        ""
+        "[smtp]"
+        "host = \"127.0.0.1\""
+        f"port = {port}"
+        "security = \"plain\""
+        f"user = \"{MAIL_USER}\""
+        ""
+    ]
+    return parts.join("\n")
+
+# The customers, as an older tool exported them: the last row names its
+# country with three letters, which the books refuse.
+function customers_csv() -> str
+    parts = [
+        "key,name,street,postcode,city,country,vat_id,email,locale,currency,payment_days"
+        "rossi,Studio Rossi Architetti,Via Cavour 21,00184,Roma,IT,IT12345670017,amministrazione@studiorossi.example,it-IT,EUR,30"
+        "dubois,Claire Dubois,12 rue des Lilas,69003,Lyon,FR,,claire.dubois@courriel.example,fr-FR,EUR,15"
+        "harbor,\"Harbor Books, LLC\",500 Pine Street,98101,Seattle,US,,ap@harborbooks.example,en-US,USD,45"
+        "hofer,Galerie Hofer,Ringstrasse 5,1010,Wien,AUT,ATU12345678,office@hofer.example,de-AT,EUR,30"
+        ""
+    ]
+    return parts.join("\n")
+
+# The items, the last with a price written with a comma, which the books
+# refuse.
+function items_csv() -> str
+    parts = [
+        "sku,description,unit,price,tax_class"
+        "BOOK-ATLAS,Atlas of Byzantine Mosaics,pc,39.90,books"
+        "BOOK-GUIDE,Ravenna: a Guide to the Mosaics,pc,18.50,books"
+        "PRINT-A2,\"Fine art print A2, San Vitale\",pc,45.00,prints"
+        "PRINT-CANVAS,\"Mosaic on canvas, 120 x 80 cm\",pc,1150.00,prints"
+        "DESIGN-HOUR,Mosaic design consultancy,h,85.00,services"
+        "POSTER-B,Poster of the Baptistery,pc,\"12,50\",prints"
+        ""
+    ]
+    return parts.join("\n")
+
+# The company's own Italian wording of one message, over the one the
+# program carries.
+function italian_po() -> str
+    parts = [
+        "msgid \"\""
+        "msgstr \"\""
+        "\"Language: it\\n\""
+        "\"Content-Type: text/plain; charset=UTF-8\\n\""
+        ""
+        "msgid \"Total due\""
+        "msgstr \"Totale da saldare\""
+        ""
+    ]
+    return parts.join("\n")
+
+## The logo
+
+# The side of the logo, in pixels.
+constant LOGO_SIDE: i64
+    96
+
+# The logo: four rows of four tiles in the colours of Ravenna's mosaics,
+# gold, lapis, terracotta and green, on a transparent ground, with a white
+# disc at its centre.
+function logo() -> image.Image
+    img @= image.blank(width: LOGO_SIDE, height: LOGO_SIDE, format: .rgba).must()
+    colours = [
+        image.Color(r: 201, g: 162, b: 39, a: 255)
+        image.Color(r: 31, g: 59, b: 107, a: 255)
+        image.Color(r: 178, g: 84, b: 50, a: 255)
+        image.Color(r: 47, g: 110, b: 82, a: 255)
+    ]
+
+    for row in range(from: 0, to: 4)
+        for column in range(from: 0, to: 4)
+            colour = colours[(row + column) % 4]
+            image.fill_rect(@img, x: 2 + column * 24, y: 2 + row * 24, width: 20, height: 20, color: colour)
+
+    image.fill_circle(@img, center_x: 48, center_y: 48, radius: 14, color: image.Color(r: 255, g: 255, b: 255, a: 255))
+    return img
+
+# The logo as a PNG file's bytes.
+#
+# Fails as `png.encode` fails.
+function logo_png() -> [u8]?
+    return png.encode(logo(), options: png.default_encode_options())
+
+test "logo_png: the logo read back, a tile and the disc where they were drawn"
+    back = png.decode_image(logo_png().must(), limits: image.default_limits()).must()
+    assert back.width == LOGO_SIDE && back.height == LOGO_SIDE
+    assert image.color_at(back, x: 10, y: 10) == image.Color(r: 201, g: 162, b: 39, a: 255)
+    assert image.color_at(back, x: 48, y: 48) == image.Color(r: 255, g: 255, b: 255, a: 255)
+    assert image.color_at(back, x: 0, y: 0).a == 0

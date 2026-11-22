@@ -1,0 +1,319 @@
+# The command line of the invoicing tool: each command reads the
+# configuration it is given, opens the books, does one thing, and says what
+# it did on the standard output, or on the standard error why it could not,
+# with the exit code 0 for done, 1 for refused or failed and 2 for a command
+# line that is not one.
+#
+#     invoice init CONFIG
+#     invoice import CONFIG customers|items FILE.csv
+#     invoice issue CONFIG CUSTOMER DAY SKU=QUANTITY... [--rate RATE]
+#     invoice credit CONFIG INVOICE DAY [SKU=QUANTITY...]
+#     invoice render CONFIG NUMBER
+#     invoice mail CONFIG NUMBER
+#     invoice export CONFIG YEAR FILE.csv
+#     invoice report CONFIG YEAR
+#     invoice archive CONFIG YEAR
+#
+# A DAY is `2026-03-14` or `today`, the clock's day in UTC. `--rate` is the
+# exchange rate of a customer invoiced in another currency than the
+# company's: how many of the customer's units one of the company's buys.
+# A credit with no SKU credits everything the invoice has left. The
+# configuration's environment is the process's own, so
+# `INVOICE_SMTP__PASSWORD` gives the mail server's password.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+
+use billing/issue
+use model/documents
+use money/amount
+use ops/imports
+use ops/workspace
+
+## Exit codes
+
+# The exit code of a command done.
+constant DONE: i64
+    0
+
+# The exit code of a command refused or failed.
+constant FAILED: i64
+    1
+
+# The exit code of a command line that is not one.
+constant USAGE: i64
+    2
+
+## Running
+
+# Runs the command `words` names and answers its exit code.
+#
+# - `words`: the program's arguments.
+function run(words: [str]) -> i64
+    if words.len() < 2
+        return usage("")
+    verb = words[0]
+    known @= false
+
+    for k in ["init", "import", "issue", "credit", "render", "mail", "export", "report", "archive"]
+        if k == verb
+            known @ true
+
+    if !known
+        return usage(f"\"{verb}\" is no command")
+    env = os.env_all().default({})
+
+    match workspace.open(words[1], env: env)
+        .err e => return failed(f"{words[1]}: {e.msg}")
+        .ok opened =>
+            ws @= opened
+            code = dispatched(@ws, verb: verb, rest: words.slice(from: 2, to: words.len()))
+
+            match workspace.close(@ws)
+                .ok _  => return code
+                .err e => return failed("the books: " + e.msg)
+
+# The command `verb` run on the open books.
+#
+# - `ws`: the workspace.
+# - `verb`: the command.
+# - `rest`: its arguments after the configuration.
+function dispatched(@ws: workspace.Workspace, verb: str, rest: [str]) -> i64
+    if verb == "init"
+        print(f"the books are ready in {ws.settings.data_dir}")
+        return DONE
+
+    if verb == "import"
+        return imported(@ws, rest: rest)
+
+    if verb == "issue"
+        return issued(@ws, rest: rest)
+
+    if verb == "credit"
+        return credited(@ws, rest: rest)
+
+    if verb == "render"
+        if rest.len() != 1
+            return usage("render takes a document's number")
+
+        match workspace.render(@ws, number: rest[0])
+            .ok done => return told(done)
+            .err e   => return failed(e.msg)
+
+    if verb == "mail"
+        if rest.len() != 1
+            return usage("mail takes a document's number")
+
+        match time.now()
+            .err e => return failed(e.msg)
+            .ok now =>
+                match workspace.mail(@ws, number: rest[0], sent_at: now)
+                    .ok r =>
+                        print(f"{rest[0]}: {r.code} {r.enhanced} {r.lines.join(" ")}")
+                        return DONE
+                    .err e => return failed(f"{rest[0]}: {e.msg}")
+
+    year = match year_of(rest)
+        .ok y  => y
+        .err e => return usage(e.msg)
+
+    if verb == "export"
+        if rest.len() != 2
+            return usage("export takes a year and a file")
+
+        match workspace.export(@ws, year: year)
+            .err e => return failed(e.msg)
+            .ok text =>
+                match fs.write_atomic_text(path: rest[1], text: text)
+                    .ok _ =>
+                        print(f"{rest[1]}: the accounts of {year}")
+                        return DONE
+                    .err e => return failed(f"{rest[1]}: {e.msg}")
+
+    if verb == "report"
+        match workspace.report(@ws, year: year)
+            .err e => return failed(e.msg)
+            .ok lines =>
+                for line in lines
+                    print(line)
+
+                return DONE
+
+    match workspace.archive_year(@ws, year: year)
+        .err e => return failed(e.msg)
+        .ok a =>
+            print(f"{a.file}: {a.checked.names.len()} members, every one as its manifest says")
+            return DONE
+
+# `import`: a CSV of customers or items read into the books.
+#
+# - `ws`: the workspace.
+# - `rest`: `customers` or `items`, then the file.
+function imported(@ws: workspace.Workspace, rest: [str]) -> i64
+    if rest.len() != 2 || rest[0] != "customers" && rest[0] != "items"
+        return usage("import takes customers or items, and a CSV file")
+
+    text = match read_file(path: rest[1])
+        .ok t  => t
+        .err e => return failed(f"{rest[1]}: {e.msg}")
+
+    outcome = if rest[0] == "customers"
+        imports.customers(@ws.db, text: text)
+    else
+        imports.items(@ws.db, text: text)
+
+    match outcome
+        .err e => return failed(f"{rest[1]}: {e.msg}")
+        .ok got =>
+            print(f"{rest[1]}: {got.written} written, {got.refused.len()} refused")
+
+            for line in got.refused
+                print("  " + line)
+
+            if got.refused.len() > 0
+                return FAILED
+            return DONE
+
+# `issue`: an invoice from the customer, the day, the quantities and the
+# exchange rate given.
+#
+# - `ws`: the workspace.
+# - `rest`: the customer, the day, `SKU=QUANTITY` words and `--rate RATE`.
+function issued(@ws: workspace.Workspace, rest: [str]) -> i64
+    if rest.len() < 3
+        return usage("issue takes a customer, a day and at least one SKU=QUANTITY")
+
+    day = match day_of(rest[1])
+        .ok d  => d
+        .err e => return usage(e.msg)
+
+    rate @= amount.zero()
+    words: [str] @= []
+    at @= 2
+
+    while at < rest.len()
+        if rest[at] == "--rate"
+            if at + 1 == rest.len()
+                return usage("--rate takes the exchange rate")
+
+            match amount.parse_exchange_rate(text: rest[at + 1], what: "the exchange rate")
+                .ok r  => rate @ r
+                .err e => return usage(e.msg)
+
+            at @ at + 2
+        else
+            words @ words.push(rest[at])
+            at @ at + 1
+
+    lines = match quantities(words)
+        .ok q  => q
+        .err e => return usage(e.msg)
+
+    match workspace.invoice(@ws, order: issue.Order(customer: rest[0], day: day, lines: lines, exchange_rate: rate))
+        .ok done => return told(done)
+        .err e   => return failed(e.msg)
+
+# `credit`: a credit note against an invoice.
+#
+# - `ws`: the workspace.
+# - `rest`: the invoice's number, the day, and `SKU=QUANTITY` words.
+function credited(@ws: workspace.Workspace, rest: [str]) -> i64
+    if rest.len() < 2
+        return usage("credit takes an invoice's number and a day")
+
+    day = match day_of(rest[1])
+        .ok d  => d
+        .err e => return usage(e.msg)
+
+    returned = match quantities(rest.slice(from: 2, to: rest.len()))
+        .ok q  => q
+        .err e => return usage(e.msg)
+
+    match workspace.credit_note(@ws, number: rest[0], day: day, returned: returned)
+        .ok done => return told(done)
+        .err e   => return failed(e.msg)
+
+## Words
+
+# The SKUs and quantities `words` write, each `SKU=QUANTITY`.
+#
+# - `words`: the words.
+#
+# Fails `invalid` where a word holds no `=` or its quantity is none.
+function quantities(words: [str]) -> [issue.Ordered]?
+    found: [issue.Ordered] @= []
+
+    for w in words
+        match strings.split_once(s: w, sep: "=")
+            .err _ => return fail(code: "invalid", msg: f"\"{w}\" is no SKU=QUANTITY")
+            .ok h  => found @ found.push(
+                issue.Ordered(sku: h.before, quantity: amount.parse_quantity(text: h.after, what: f"the quantity of {h.before}")?)
+            )
+
+    return ok(found)
+
+# The day `text` names: `2026-03-14`, or `today`, the clock's day in UTC.
+#
+# - `text`: the word.
+#
+# Fails `invalid` where it is neither, and as `time.now` fails.
+function day_of(text: str) -> time.Instant?
+    if text == "today"
+        return time.truncate(time.now()?, unit: time.days(1)?)
+    return documents.parse_day(text)
+
+# The year the first of `rest` names.
+#
+# - `rest`: the arguments.
+#
+# Fails `invalid` where there is none or it is no year of four digits.
+function year_of(rest: [str]) -> i64?
+    if rest.len() == 0 || rest[0].len() != 4
+        return fail(code: "invalid", msg: "a year of four digits, 2026, is asked")
+    return numbers.parse_int(rest[0])
+
+## Telling
+
+# Says what a document done holds, and answers `DONE`.
+#
+# - `done`: the document and its files.
+function told(done: workspace.Done) -> i64
+    d = done.doc
+    print(
+        f"{d.number}: {documents.kind_name(d.kind)} to {d.customer.key}, {amount.plain(d.gross, digits: amount.digits_of(d.currency))} {d.currency}, {done.rendered.pdf.len()} bytes of PDF"
+    )
+    return DONE
+
+# Tells the standard error `message` and answers `FAILED`.
+#
+# - `message`: why.
+function failed(message: str) -> i64
+    _ = io.write_line(io.stderr(), line: "invoice: " + message).is_err()
+    return FAILED
+
+# Tells the standard error how the program is run, after `message` where
+# it is not empty, and answers `USAGE`.
+#
+# - `message`: what was wrong.
+function usage(message: str) -> i64
+    if message != ""
+        _ = io.write_line(io.stderr(), line: "invoice: " + message).is_err()
+    _ = io.write_line(
+        io.stderr(),
+        line: "usage: invoice init|import|issue|credit|render|mail|export|report|archive CONFIG ..., or invoice demo"
+    ).is_err()
+    return USAGE
+
+test "quantities: SKU=QUANTITY words, and words that are none"
+    q = quantities(["BOOK-A=2", "design=6.5"]).must()
+    assert q.len() == 2 && q[1].sku == "design" && amount.short(q[1].quantity) == "6.5"
+    assert quantities(["BOOK-A"]).is_err() && quantities(["BOOK-A=0"]).is_err() && quantities(["A=1,5"]).is_err()
+
+test "day_of and year_of: a day and a year, and words that are neither"
+    assert documents.day_text(day_of("2026-03-14").must()) == "2026-03-14"
+    assert day_of("14/03/2026").is_err()
+    assert year_of(["2026"]).must() == 2026 && year_of(["26"]).is_err() && year_of([]).is_err()

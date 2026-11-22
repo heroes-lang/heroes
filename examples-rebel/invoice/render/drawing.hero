@@ -1,0 +1,232 @@
+# A document's page drawn as a PDF from the marks of its layout
+# (`render/sheet`): text in the standard fonts, rules, boxes, the lines'
+# table across as many pages as it needs, the company's logo from its PNG,
+# and the payment code drawn as an image of its modules.
+#
+# The standard fonts show WinAnsiEncoding's characters alone, and CLDR's
+# French writes a number's groups with a narrow no-break space, U+202F,
+# which they lack: every text is mapped first (`printable`), the spaces
+# Unicode has for numbers made the no-break space the fonts have, and a
+# character no mapping reaches fails the document `unsupported`, naming it,
+# rather than being drawn as a wrong one. A document's information carries
+# its number, its company and its day, never the clock, so the same
+# document makes the same bytes.
+
+use <rebel>/bytes
+use <rebel>/image
+use <rebel>/pdf
+use <rebel>/qr
+
+use render/sheet
+
+## Codes
+
+# The code of a text the standard fonts cannot show.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Bounds
+
+# The pixels a module of the payment code takes in its image: four, so a
+# code of version 13, 69 modules and its quiet zone, is a few hundred
+# pixels a side.
+constant QR_SCALE: i64
+    4
+
+# The modules of quiet zone around the payment code, ISO/IEC 18004's four.
+constant QR_BORDER: i64
+    4
+
+## Drawing
+
+# What a page needs beside its marks.
+record Assets
+    # The company's logo as a PNG file's bytes, [] for none.
+    logo: [u8]
+    # The payment code, `not_found` where the document carries none.
+    code: qr.Code?
+    # The document's information, `Title`, `Author`, `Subject`,
+    # `CreationDate`, written as given.
+    info: {str: str}
+
+# The PDF `marks` draw.
+#
+# - `marks`: the page's marks, the page first, as `sheet.parse_sheet`
+#   answers them.
+# - `assets`: the logo, the payment code and the information.
+#
+# Fails `unsupported` where a text holds a character the fonts cannot
+# show; `invalid` where the first mark is not the page, and as
+# `pdf.add_png`, `pdf.draw_table` and `pdf.encode` fail.
+function draw(marks: [sheet.Mark], assets: Assets) -> [u8]?
+    if marks.len() == 0 || !is_page(marks[0])
+        return fail(code: sheet.INVALID, msg: "the layout's first mark is not its page")
+    doc @= pdf.document()
+
+    for key in keys(assets.info)
+        pdf.set_info(@doc, key: key, value: assets.info[key].default(""))
+
+    font: pdf.Font @= .helvetica
+    cursor @= 0.0
+
+    for m in marks
+        match m
+            .page p =>
+                pdf.add_page(@doc, size: p.size)
+                cursor @ p.size.height
+            .font f =>
+                font @ f.font
+                pdf.set_font(@doc, font: f.font, size: f.size)
+            .color c =>
+                color: pdf.Color = .rgb(red: c.red, green: c.green, blue: c.blue)
+                pdf.set_fill_color(@doc, color: color)
+                pdf.set_stroke_color(@doc, color: color)
+            .text t => pdf.draw_text(@doc, x: t.x, y: at(t.y, cursor: cursor), text: printable(t.text, font: font)?, align: t.align)?
+            .para p =>
+                _ = pdf.draw_text_box(@doc, x: p.x, top: at(p.top, cursor: cursor), width: p.width, text: printable(p.text, font: font)?, align: p.align, line_height: p.line_height)?
+            .rule r =>
+                y = at(r.y, cursor: cursor)
+                pdf.set_line_width(@doc, width: r.width)
+                pdf.draw_line(@doc, from_x: r.from_x, from_y: y, to_x: r.to_x, to_y: y)
+            .box b => pdf.draw_rect(
+                @doc,
+                x: b.x,
+                y: at(b.y, cursor: cursor),
+                width: b.width,
+                height: b.height,
+                paint: .fill
+            )
+            .logo l =>
+                if assets.logo.len() > 0
+                    id = pdf.add_png(@doc, data: assets.logo)?
+                    height = l.width * to_f64(id.height) / to_f64(id.width)
+                    pdf.draw_image(@doc, id: id, x: l.x, y: at(l.y, cursor: cursor), width: l.width, height: height)
+            .qr q =>
+                match assets.code
+                    .err _ => _ = 0
+                    .ok code =>
+                        id = pdf.add_image(@doc, img: code_image(code)?)?
+                        pdf.draw_image(@doc, id: id, x: q.x, y: at(q.y, cursor: cursor), width: q.size, height: q.size)
+            .table t =>
+                rows: [[str]] @= []
+
+                for r in t.rows
+                    cells: [str] @= []
+
+                    # A table draws its cells in Helvetica and its header in
+                    # Helvetica bold, which show the same characters.
+                    for c in r
+                        cells @ cells.push(printable(c, font: .helvetica)?)
+
+                    rows @ rows.push(cells)
+
+                table @= pdf.table(t.widths, rows: rows)
+
+                for i in range(from: 0, to: t.aligns.len())
+                    table.columns[i].align @ t.aligns[i]
+
+                cursor @ pdf.draw_table(@doc, x: t.x, top: at(t.top, cursor: cursor), bottom: t.bottom, t: table)?
+
+    return pdf.encode(doc)
+
+# Whether `m` is the page, which every other mark needs drawn first.
+#
+# - `m`: a mark.
+function is_page(m: sheet.Mark) -> bool
+    match m
+        .page _                                                                                => return true
+        .font _ | .color _ | .text _ | .para _ | .rule _ | .box _ | .logo _ | .qr _ | .table _ => return false
+
+# The height `h` stands at, with the cursor where the last table ended.
+#
+# - `h`: the height.
+# - `cursor`: where the last table ended, or the page's top before any.
+function at(h: sheet.Height, cursor: f64) -> f64
+    if h.from_cursor
+        return cursor + h.value
+    return h.value
+
+# The image of `code`: its modules black on white, with its quiet zone,
+# `QR_SCALE` pixels a module.
+#
+# - `code`: the payment code.
+#
+# Fails as `image.from_pixels` fails.
+function code_image(code: qr.Code) -> image.Image?
+    side = (code.size + 2 * QR_BORDER) * QR_SCALE
+    return image.from_pixels(
+        width: side,
+        height: side,
+        format: .gray,
+        pixels: qr.to_pixels(code, scale: QR_SCALE, border: QR_BORDER)
+    )
+
+## Text the fonts can show
+
+# `s` with every space Unicode writes inside a number made the no-break
+# space, which WinAnsiEncoding holds, and the minus sign made a hyphen.
+#
+# - `s`: the text.
+# - `font`: the font it is drawn in.
+#
+# Fails `unsupported` where a character of what is left has no glyph in
+# `font`, naming it and its code point.
+function printable(s: str, font: pdf.Font) -> str?
+    nbsp = bytes.to_text([0xc2, 0xa0]).must()
+    mapped: [str] @= []
+
+    for c in s.chars()
+        if is_number_space(c)
+            mapped @ mapped.push(nbsp)
+        else if c == bytes.to_text([0xe2, 0x88, 0x92]).must()
+            mapped @ mapped.push("-")
+        else
+            mapped @ mapped.push(c)
+
+    text = mapped.join("")
+
+    if pdf.has_glyphs(font, text: text)
+        return ok(text)
+
+    for c in text.chars()
+        if !pdf.has_glyphs(font, text: c)
+            return fail(
+                code: UNSUPPORTED,
+                msg: f"\"{c}\" (U+{bytes.format_hex(bytes.from_text(c))} in UTF-8) has no glyph in {pdf.base_font_of(font)}: the standard fonts show Latin-1's letters and the euro"
+            )
+
+    return ok(text)
+
+# Whether `c` is one of the spaces CLDR writes between a number's groups or
+# beside a currency: U+202F (narrow no-break), U+2007 (figure), U+2009
+# (thin) and U+200A (hair).
+#
+# - `c`: one character.
+function is_number_space(c: str) -> bool
+    if c.len() != 3 || c[0] != 0xe2 || c[1] != 0x80
+        return false
+    return c[2] == 0xaf || c[2] == 0x87 || c[2] == 0x89 || c[2] == 0x8a
+
+test "printable: French grouping made a no-break space, a minus made a hyphen"
+    narrow = bytes.to_text([0xe2, 0x80, 0xaf]).must()
+    minus = bytes.to_text([0xe2, 0x88, 0x92]).must()
+    nbsp = bytes.to_text([0xc2, 0xa0]).must()
+    assert printable("1" + narrow + "234,50" + nbsp + "€", font: .helvetica).must() == "1" + nbsp + "234,50" + nbsp + "€"
+    assert printable(minus + "5", font: .helvetica).must() == "-5"
+    assert printable("Città, Müller, Œuvre", font: .times_roman).must() == "Città, Müller, Œuvre"
+
+test "printable: a letter of no Latin font is refused by name"
+    match printable("Łódź", font: .helvetica)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED && e.msg == "\"Ł\" (U+c581 in UTF-8) has no glyph in Helvetica: the standard fonts show Latin-1's letters and the euro"
+
+test "draw: a page of every mark, its text read back"
+    marks = sheet.parse_sheet(
+        "page\ta4\nfont\tHelvetica-Bold\t12\ntext\t56\t800\tleft\tHello\ntable\t56\t700\t100\t100,60\tlr\nrow\tItem\tPrice\nrow\tTea\t3,50\nend\nfont\tHelvetica\t9\ntext\t56\t@-20\tleft\tbelow the table\nrule\t56\t@-24\t200\t0.5\nbox\t1\t1\t2\t2\nlogo\t1\t1\t10\nqr\t400\t100\t90"
+    ).must()
+    code = qr.make(text: "x", level: .medium).must()
+    data = draw(marks, assets: Assets(logo: [], code: ok(code), info: {"Title": "T"})).must()
+    f = pdf.decode(data, password: "", limits: pdf.default_limits()).must()
+    assert pdf.text_of(f, page: pdf.pages_of(f)[0]).must() == "Hello\nItem Price\nTea 3,50\nbelow the table"
+    assert pdf.info_of(f)["Title"].must() == "T"
+    assert draw(marks, assets: Assets(logo: [], code: ok(code), info: {})).must() == draw(marks, assets: Assets(logo: [], code: ok(code), info: {})).must()

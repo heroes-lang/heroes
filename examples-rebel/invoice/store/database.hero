@@ -1,0 +1,194 @@
+# The books' database: one SQLite file in the data folder, `books.db`,
+# holding the customers, the items, the documents with their lines and
+# taxes, and the numbering of each series. Every amount, quantity and rate
+# is kept as exact decimal text, never as a REAL, so the books read back
+# the very digits they were given; every day as its ISO 8601 text,
+# `2026-03-14`, which sorts as the calendar does.
+#
+# The schema's version is SQLite's `user_version`: 0 is a new file, which
+# `open_books` makes the schema in, and `SCHEMA_VERSION` is the one this
+# program writes; any other is refused rather than read wrong. Foreign keys
+# are switched on for every connection, so a line cannot outlive its
+# document.
+
+use <rebel>/fs
+use <rebel>/sql
+use <rebel>/sql/sqlite
+
+## Codes
+
+# The code of a database written by another version of the program.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## The schema
+
+# The version of the schema this program writes and reads.
+constant SCHEMA_VERSION: i64
+    1
+
+# The statements that make the schema in a new file.
+function schema() -> str
+    parts = [
+        "CREATE TABLE customers ("
+        "    key TEXT PRIMARY KEY,"
+        "    name TEXT NOT NULL,"
+        "    street TEXT NOT NULL,"
+        "    postcode TEXT NOT NULL,"
+        "    city TEXT NOT NULL,"
+        "    country TEXT NOT NULL,"
+        "    vat_id TEXT NOT NULL,"
+        "    email TEXT NOT NULL,"
+        "    locale TEXT NOT NULL,"
+        "    currency TEXT NOT NULL,"
+        "    payment_days INTEGER NOT NULL CHECK (payment_days >= 0)"
+        ");"
+        "CREATE TABLE items ("
+        "    sku TEXT PRIMARY KEY,"
+        "    description TEXT NOT NULL,"
+        "    unit TEXT NOT NULL,"
+        "    price TEXT NOT NULL,"
+        "    tax_class TEXT NOT NULL"
+        ");"
+        "CREATE TABLE sequences ("
+        "    series TEXT NOT NULL,"
+        "    year INTEGER NOT NULL,"
+        "    last INTEGER NOT NULL,"
+        "    PRIMARY KEY (series, year)"
+        ");"
+        "CREATE TABLE documents ("
+        "    number TEXT PRIMARY KEY,"
+        "    kind TEXT NOT NULL CHECK (kind IN ('invoice', 'credit-note')),"
+        "    year INTEGER NOT NULL,"
+        "    issued TEXT NOT NULL,"
+        "    due TEXT NOT NULL,"
+        "    customer_key TEXT NOT NULL REFERENCES customers (key),"
+        "    customer_name TEXT NOT NULL,"
+        "    customer_street TEXT NOT NULL,"
+        "    customer_postcode TEXT NOT NULL,"
+        "    customer_city TEXT NOT NULL,"
+        "    customer_country TEXT NOT NULL,"
+        "    customer_vat_id TEXT NOT NULL,"
+        "    customer_email TEXT NOT NULL,"
+        "    customer_locale TEXT NOT NULL,"
+        "    payment_days INTEGER NOT NULL,"
+        "    currency TEXT NOT NULL,"
+        "    exchange_rate TEXT NOT NULL,"
+        "    regime TEXT NOT NULL,"
+        "    net TEXT NOT NULL,"
+        "    tax TEXT NOT NULL,"
+        "    gross TEXT NOT NULL,"
+        "    refers_to TEXT NOT NULL,"
+        "    reference TEXT NOT NULL"
+        ");"
+        "CREATE INDEX documents_by_year ON documents (year, kind, issued);"
+        "CREATE INDEX documents_by_invoice ON documents (refers_to);"
+        "CREATE TABLE lines ("
+        "    number TEXT NOT NULL REFERENCES documents (number),"
+        "    position INTEGER NOT NULL,"
+        "    sku TEXT NOT NULL,"
+        "    description TEXT NOT NULL,"
+        "    unit TEXT NOT NULL,"
+        "    quantity TEXT NOT NULL,"
+        "    unit_price TEXT NOT NULL,"
+        "    net TEXT NOT NULL,"
+        "    tax_class TEXT NOT NULL,"
+        "    rate TEXT NOT NULL,"
+        "    PRIMARY KEY (number, position)"
+        ");"
+        "CREATE TABLE taxes ("
+        "    number TEXT NOT NULL REFERENCES documents (number),"
+        "    rate TEXT NOT NULL,"
+        "    net TEXT NOT NULL,"
+        "    tax TEXT NOT NULL,"
+        "    PRIMARY KEY (number, rate)"
+        ");"
+        f"PRAGMA user_version = {SCHEMA_VERSION}"
+    ]
+    return parts.join("\n")
+
+## Opening
+
+# The books at `file`, the schema made where the file is new.
+#
+# - `file`: the database's path; a file that is not there is made.
+#
+# The connection is the caller's to close with `sqlite.close`. Fails as
+# `sqlite.open` and `sqlite.exec_script` fail, and `unsupported` where the
+# file's schema is of another version, which it then leaves closed.
+function open_books(file: str) -> sqlite.Db?
+    db @= sqlite.open(file)?
+
+    match prepared(@db)
+        .ok _ => return ok(db)
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# The connection's foreign keys switched on and its schema made or
+# checked.
+#
+# - `db`: a connection just opened.
+#
+# Fails as `open_books` says.
+function prepared(@db: sqlite.Db) -> ()?
+    _ = sqlite.exec(@db, "PRAGMA foreign_keys = ON", [])?
+    version = sql.integer_at(sqlite.query_one(@db, "PRAGMA user_version", [])?, 0)?
+
+    if version == 0
+        sqlite.begin(@db)?
+
+        match sqlite.exec_script(@db, schema())
+            .ok _ => return sqlite.commit(@db)
+            .err e =>
+                _ = sqlite.rollback(@db).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+    if version != SCHEMA_VERSION
+        return fail(
+            code: UNSUPPORTED,
+            msg: f"the books are of schema {version}, and this program reads schema {SCHEMA_VERSION}"
+        )
+    return ok()
+
+# Ends the transaction a caller opened with `sqlite.begin` by what the
+# work inside it answered: committed where it succeeded, rolled back where
+# it failed, so the books never hold half of a change.
+#
+# - `db`: the connection, inside a transaction.
+# - `outcome`: what the work between `begin` and here answered.
+#
+# Fails with `outcome`'s failure, or as `sqlite.commit` fails.
+function settle(@db: sqlite.Db, outcome: ()?) -> ()?
+    match outcome
+        .ok _ => return sqlite.commit(@db)
+        .err e =>
+            _ = sqlite.rollback(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+test "open_books: a new file made, opened again, and one of another version refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-db-*").must()
+    file = dir + "/books.db"
+    db @= open_books(file).must()
+    assert sql.integer_at(sqlite.query_one(@db, "SELECT COUNT(*) FROM customers", []).must(), 0).must() == 0
+    sqlite.close(@db).must()
+    again @= open_books(file).must()
+    _ = sqlite.exec(@again, "PRAGMA user_version = 7", []).must()
+    sqlite.close(@again).must()
+
+    match open_books(file)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    fs.remove_all(dir).must()
+
+test "prepared: a line whose document is not there is refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-db-*").must()
+    db @= open_books(dir + "/books.db").must()
+    assert sqlite.exec(
+        @db,
+        "INSERT INTO lines VALUES ('X', 1, 's', 'd', 'u', '1', '1', '1', 'c', '0')",
+        []
+    ).is_err()
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()

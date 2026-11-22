@@ -1,0 +1,175 @@
+# A document mailed to its customer: a message in the customer's language,
+# its subject and its text made from the catalog's templates
+# (`l10n/catalogs`: a translator moves the number where the language puts
+# it), the PDF attached under the document's number, and sent through the
+# company's mail server by SMTP (`mail/smtp`), logged in where the
+# configuration names a user.
+#
+# The message's `Date` is the moment the program says it is sent, handed in
+# by the caller (the clock for a real run, a fixed moment for the demo), and
+# its `Message-ID` is drawn by `mail` from the system's random bytes, so
+# that no two messages share one.
+
+use <rebel>/i18n
+use <rebel>/json
+use <rebel>/mail
+use <rebel>/mail/smtp
+use <rebel>/template
+use <rebel>/time
+
+use conf/settings
+use l10n/catalogs
+use l10n/written
+use model/documents
+use model/parties
+
+## Codes
+
+# The code of a document that cannot be mailed: no server configured, an
+# address that is none, a template a translation broke.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long each step of a conversation with the mail server may take, in
+# seconds.
+constant STEP_SECONDS: i64
+    30
+
+## The message
+
+# A message ready to send: who it is from and to, and its bytes.
+record Outgoing
+    # The sender's address alone, the company's.
+    from: str
+    # The recipients' addresses alone, the customer's.
+    to: [str]
+    # The message as it is sent.
+    data: [u8]
+
+# The message that sends `doc` to its customer.
+#
+# - `doc`: the document.
+# - `company`: the company.
+# - `catalog`: the customer's language's catalog.
+# - `pdf`: the document's PDF.
+# - `sent_at`: the moment it is sent, its `Date`.
+#
+# Fails `invalid` where an address is none or a translated template does
+# not parse or render, and as `mail` fails.
+function outgoing(doc: documents.Document, company: parties.Company, catalog: i18n.Catalog, pdf: [u8], sent_at: time.Instant) -> Outgoing?
+    locale = written.locale_of(doc.customer.locale)?
+
+    title = match doc.kind
+        .invoice     => i18n.translate(catalog, id: "Invoice")
+        .credit_note => i18n.translate(catalog, id: "Credit note")
+
+    values: json.Value = .object(
+        members: {"kind": .text(v: title), "number": .text(v: doc.number), "company": .text(v: company.name), "customer": .text(v: doc.customer.name), "date": .text(v: written.day(locale, t: doc.issued)), "due": .text(v: written.day(locale, t: doc.due)), "total": .text(v: written.money(locale, d: doc.gross, currency: doc.currency)?), "refers_to": .text(v: doc.refers_to)}
+    )
+
+    body_id = match doc.kind
+        .invoice     => catalogs.INVOICE_BODY
+        .credit_note => catalogs.CREDIT_BODY
+
+    subject = filled(i18n.translate(catalog, id: catalogs.SUBJECT), values: values)?
+    body = filled(i18n.translate(catalog, id: body_id), values: values)?
+    sender = address_of(address: company.email, name: company.name)?
+    recipient = address_of(address: doc.customer.email, name: doc.customer.name)?
+    attachment = mail.Attachment(
+        filename: doc.number + ".pdf",
+        media_type: "application/pdf",
+        data: pdf,
+        content_id: ""
+    )
+    m @= mail.compose(text: body, html: "", attachments: [attachment])?
+    m @ mail.with_field(m, name: "From", value: mail.format_address(sender))
+    m @ mail.with_field(m, name: "To", value: mail.format_address(recipient))
+    m @ mail.with_field(m, name: "Subject", value: subject)
+    m @ mail.with_field(m, name: "Date", value: mail.format_date(mail.date_at(t: sent_at, zone: time.utc_zone())))
+    m @ mail.with_field(m, name: "Message-ID", value: mail.make_message_id(sender.domain)?)
+    data = mail.encode_message(m, mail.standard_options())?
+    return ok(Outgoing(from: mail.format_addr_spec(sender), to: [mail.format_addr_spec(recipient)], data: data))
+
+# The text `source`, a template of a catalog, makes of `values`.
+#
+# - `source`: the template.
+# - `values`: what it reads.
+#
+# Fails `invalid` where the template does not parse or does not render,
+# naming the template's first line.
+function filled(source: str, values: json.Value) -> str?
+    match template.parse(source)
+        .err e => return fail(code: INVALID, msg: f"the mail's template \"{first_line(source)}\": {e.msg}")
+        .ok t =>
+            match template.render(t, values)
+                .ok text => return ok(text)
+                .err e   => return fail(code: INVALID, msg: f"the mail's template \"{first_line(source)}\": {e.msg}")
+
+# The first line of `s`.
+#
+# - `s`: any text.
+function first_line(s: str) -> str
+    for i in range(from: 0, to: s.len())
+        if s[i] == '\n'
+            return s.slice(from: 0, to: i)
+
+    return s
+
+# The mailbox `address` names, with `name` shown.
+#
+# - `address`: a mail address alone, `billing@tessera.example`.
+# - `name`: the name shown with it.
+#
+# Fails `invalid` where `address` is no mail address.
+function address_of(address: str, name: str) -> mail.Address?
+    match mail.parse_address(address)
+        .err e => return fail(code: INVALID, msg: f"\"{address}\" is no mail address: {e.msg}")
+        .ok a  => return ok(mail.Address(name: name, local: a.local, domain: a.domain))
+
+## Sending
+
+# Sends `out` through the server `server` describes, and answers the
+# server's reply to the message.
+#
+# - `server`: how the company's mail is sent.
+# - `local_name`: the name this client gives itself, `localhost` where "".
+# - `out`: the message.
+#
+# Fails `invalid` where no server is configured, and as `smtp.send_mail`
+# fails, with the code of the server's refusal.
+function send(server: settings.Mail, local_name: str, out: Outgoing) -> smtp.Reply?
+    if server.host == ""
+        return fail(code: INVALID, msg: "the configuration names no mail server: add [smtp] with its host")
+    opts @= smtp.options(server.host, security: server.security)
+    opts.port @ server.port
+    opts.deadline @ time.seconds(STEP_SECONDS)?
+
+    if local_name != ""
+        opts.local_name @ local_name
+
+    auth: smtp.Auth = if server.user == ""
+        .none
+    else
+        .password(user: server.user, password: server.password)
+    sent = smtp.send_mail(opts, auth: auth, from: out.from, to: out.to, message: out.data)?
+    return ok(sent.reply)
+
+test "filled: a translated template, and one a translator broke"
+    values: json.Value = .object(members: {"number": .text(v: "INV-2026-0001")})
+    assert filled("Fattura {{ .number }}", values: values).must() == "Fattura INV-2026-0001"
+    assert filled("Fattura {{ .numero }}\nseconda", values: values).is_err()
+
+    match filled("{{ if }", values: values)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "address_of: a name shown beside an address, and a text that is none"
+    a = address_of(address: "billing@tessera.example", name: "Tessera Editions S.r.l.").must()
+    assert a.local == "billing" && a.domain == "tessera.example" && a.name == "Tessera Editions S.r.l."
+    assert address_of(address: "nobody", name: "N").is_err()
+
+test "send: no server configured is told before any connection"
+    none = settings.Mail(host: "", port: 0, security: .plain, user: "", password: "")
+    assert send(none, local_name: "", out: Outgoing(from: "a@b.example", to: ["c@d.example"], data: [])).is_err()
