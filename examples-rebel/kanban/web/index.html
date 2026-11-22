@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ .title }}</title>
+<link rel="stylesheet" href="/app.css">
+<script src="/app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <h1 class="brand">{{ .title }}</h1>
+  <label class="field">
+    <span class="hidden-label">Board</span>
+    <select id="board-select" aria-label="Board"></select>
+  </label>
+  <button id="board-new" type="button" title="A new board">New board</button>
+  <button id="board-rename" type="button" title="Rename this board">Rename</button>
+  <button id="board-delete" type="button" title="Delete this board">Delete</button>
+  <span class="spacer"></span>
+  <input id="search" type="search" placeholder="Search cards" aria-label="Search cards">
+  <button id="undo" type="button" title="Undo">Undo</button>
+  <button id="redo" type="button" title="Redo">Redo</button>
+  <button id="export" type="button" title="Save this board as JSON">Export</button>
+  <button id="import" type="button" title="Open a board saved as JSON">Import</button>
+  <button id="report" type="button" title="A page of this board to print">Report</button>
+</header>
+<main>
+  <section id="results" class="results" hidden></section>
+  <section id="board" class="board" aria-live="polite"></section>
+  <p id="empty" class="empty" hidden>No board yet: make one with <em>New board</em>.</p>
+</main>
+<dialog id="editor" class="editor">
+  <form id="editor-form" method="dialog">
+    <label>Title <input id="editor-title" required maxlength="200"></label>
+    <div class="panes">
+      <label>Notes, in Markdown <textarea id="editor-body" rows="12"></textarea></label>
+      <div class="preview-pane">
+        <span class="caption">Preview</span>
+        <div id="editor-preview" class="markdown"></div>
+      </div>
+    </div>
+    <menu>
+      <button id="editor-delete" type="button" class="danger">Delete card</button>
+      <span class="spacer"></span>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button id="editor-save" value="save">Save</button>
+    </menu>
+  </form>
+</dialog>
+<dialog id="ask" class="ask">
+  <form id="ask-form" method="dialog">
+    <label><span id="ask-label">Name</span> <input id="ask-input" required maxlength="200"></label>
+    <menu>
+      <button value="cancel" formnovalidate>Cancel</button>
+      <button value="ok">OK</button>
+    </menu>
+  </form>
+</dialog>
+<p id="status" class="status" role="status"></p>
+<footer class="foot">Kanban {{ .version }} · the board is kept in SQLite by the program; this page holds nothing.</footer>
+</body>
+</html>

@@ -1,0 +1,71 @@
+# A board saved to a file and read back from one, through the system's own
+# file dialogs: the person chooses where, the program writes the board's JSON
+# (`store/snapshot`) whole or not at all (`fs.write_atomic_text`), and reads
+# a file back as a new board. On the headless side the demo answers the
+# dialogs itself with `ui.inject`, so the same code runs with no screen.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/path
+use <rebel>/ui
+
+use api/views
+use app/desk
+use store/boards
+use store/snapshot
+
+# The most bytes a board's file may hold: the most cards, each at its most,
+# and room for their titles.
+constant FILE_MOST: i64
+    1100000000
+
+# The files the dialogs offer.
+function filters() -> [ui.Filter]
+    return [ui.Filter(name: "Kanban boards", extensions: ["json"])]
+
+# Asks the person where to save board `board`, and writes it there.
+# Answers `{"saved": true, "name": NAME}`, the file's name alone, or
+# `{"saved": false}` where they cancelled. Fails `not_found` for no such
+# board, and as the dialog and the write fail.
+#
+# - `d`: the desk, whose window the dialog stands over.
+# - `board`: the board's name.
+function export_board(@d: desk.Desk, board: str) -> json.Value?
+    b = boards.board_named(@d.store, id: board)?
+    text = snapshot.text_of(@d.store, board: board)?
+
+    match ui.save_file(@d.app, over: d.window, title: "Export the board", name: b.title + ".json", filters: filters())?
+        .cancelled => return ok(views.object([views.pair("saved", .boolean(v: false))]))
+        .chosen c =>
+            target = c.paths[0]
+            fs.write_atomic_text(path: target, text: text + "\n")?
+            return ok(
+                views.object([views.pair("saved", .boolean(v: true)), views.pair("name", views.text(path.name(target).default(target)))])
+            )
+
+# The file the person chose to import, "" where they cancelled.
+#
+# - `d`: the desk, whose window the dialog stands over.
+function chosen_import(@d: desk.Desk) -> str?
+    match ui.open_files(@d.app, over: d.window, title: "Import a board", filters: filters(), multiple: false)?
+        .cancelled => return ok("")
+        .chosen c  => return ok(c.paths[0])
+
+# The text of the board file at `file`. Fails `invalid` where it is larger
+# than any board, and as the read fails.
+#
+# - `file`: the file's path.
+function read_board_file(file: str) -> str?
+    size = fs.info(file)?.size
+
+    if size > FILE_MOST
+        return fail(code: "invalid", msg: f"the file takes {size} bytes, more than any board's")
+    return read_file(file)
+
+# The board `text` holds, made as a new board with new names, inside the
+# caller's change; its name.
+#
+# - `d`: the desk.
+# - `text`: the file's text.
+function restored(@d: desk.Desk, text: str) -> str?
+    return snapshot.restore(@d.store, text: text, fresh: true)

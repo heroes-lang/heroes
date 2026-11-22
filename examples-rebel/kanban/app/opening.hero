@@ -1,0 +1,50 @@
+# The desk made: the window, the web view filling it, the page's files put
+# into it and shown, and the store over a database the caller opened. The
+# window on the desktop and the demo on the headless side are made here
+# alike, so the demo drives the very page and handler the desktop shows.
+
+use <rebel>/sql/sqlite
+use <rebel>/ui
+use <rebel>/ui/webview
+
+use app/assets
+use app/desk
+use store/finder
+use store/store
+use support/clock
+use support/ids
+
+# The program's version, which the page's footer shows.
+constant VERSION: str
+    "1.0"
+
+# The window's first size, in points: room for four columns.
+constant WIDTH: i64
+    1180
+
+constant HEIGHT: i64
+    760
+
+# A desk on `app` showing the page from `web`, over `db`. Fails as the
+# window, the web view, the page's files or the index fail; the caller
+# closes `app` and `db` where it fails.
+#
+# - `app`: the app, which the desk then holds.
+# - `db`: the database, its tables made; the desk then holds it.
+# - `web`: the folder of the page's files.
+# - `dates`: the clock the store dates its changes with.
+# - `names`: where the store's names come from.
+function made(app: ui.App, db: sqlite.Db, web: str, dates: clock.Clock, names: ids.Ids) -> desk.Desk?
+    held @= app
+    window = ui.window(@held, title: "Kanban", width: WIDTH, height: HEIGHT)?
+    ui.set_spacing(@held, box: window, spacing: 0, padding: 0)?
+    view = webview.webview(@held, into: window)?
+    fit @= ui.default_fit()
+    fit.stretch @ 1
+    fit.fill @ true
+    ui.set_fit(@held, widget: view, fit: fit)?
+    report = assets.load(@held, view: view, folder: web, version: VERSION)?
+    webview.navigate(@held, view: view, path: "/")?
+    s @= store.over(db, dates: dates, names: names)?
+    finder.rebuild(@s)?
+    return ok(desk.Desk(app: held, window: window, view: view, store: s, report: report))

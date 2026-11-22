@@ -1,0 +1,70 @@
+# The demo's session, as a person would click it: each step one call the
+# page makes, its arguments JSON in which `$name` stands for a name an
+# earlier answer gave (a board, a column, a card), what of its answer is
+# kept under a name, and the file a dialog is answered with. The steps make
+# a board, fill and change it, search it, undo and redo, export it, delete
+# it, import it back, write its report, and are refused where a person's
+# mistake would be.
+
+# What of an answer is kept: a name, and the JSON pointer of the value in
+# the answer's `ok`.
+record Keep
+    # The name a later step writes as `$name`.
+    name: str
+    # Where the value stands in the answer, RFC 6901.
+    pointer: str
+
+# One call of the session.
+record Step
+    # The call's name.
+    call: str
+    # Its arguments, JSON, `$name` for a kept name; "null" for none.
+    args: str
+    # What of its answer is kept.
+    keep: [Keep]
+    # The file the dialog it shows is answered with, beside the demo's
+    # database; "" where it shows none.
+    pick: str
+
+function step(call: str, given: str) -> Step
+    return Step(call: call, args: given, keep: [], pick: "")
+
+function keeping(call: str, given: str, keep: [Keep]) -> Step
+    return Step(call: call, args: given, keep: keep, pick: "")
+
+function kept(name: str, pointer: str) -> Keep
+    return Keep(name: name, pointer: pointer)
+
+# Every step, in order.
+function steps() -> [Step]
+    return [
+        step(call: "boards.list", given: "null")
+        keeping(call: "board.create", given: "{\"title\":\"Launch\"}", keep: [kept(name: "board", pointer: "/id")])
+        keeping(call: "board.get", given: "{\"board\":\"$board\"}", keep: [kept(name: "todo", pointer: "/columns/0/id"), kept(name: "doing", pointer: "/columns/1/id")])
+        keeping(call: "card.add", given: "{\"column\":\"$todo\",\"title\":\"Write the press release\",\"body\":\"Draft **two** paragraphs:\\n\\n- the problem\\n- the answer\\n\\n<script>alert(1)</script>\"}", keep: [kept(name: "press", pointer: "/id")])
+        keeping(call: "card.add", given: "{\"column\":\"$todo\",\"title\":\"Book the venue\"}", keep: [kept(name: "venue", pointer: "/id")])
+        keeping(call: "card.add", given: "{\"column\":\"$doing\",\"title\":\"Fix the sign-in bug\",\"body\":\"See `auth.hero`.\\n\\n| step | who |\\n|---|---|\\n| repro | Ada |\"}", keep: [kept(name: "bug", pointer: "/id")])
+        step(call: "card.move", given: "{\"card\":\"$press\",\"column\":\"$doing\",\"position\":0}")
+        step(call: "card.edit", given: "{\"card\":\"$venue\",\"title\":\"Book the venue\",\"body\":\"[The hall](https://example.com) <img src=x onerror=alert(1)>\"}")
+        step(call: "search", given: "{\"board\":\"$board\",\"query\":\"press\"}")
+        step(call: "search", given: "{\"board\":\"$board\",\"query\":\"venue sign*\"}")
+        keeping(call: "column.add", given: "{\"board\":\"$board\",\"title\":\"Review\"}", keep: [kept(name: "review", pointer: "/id")])
+        step(call: "column.rename", given: "{\"column\":\"$review\",\"title\":\"Checked\"}")
+        step(call: "card.delete", given: "{\"card\":\"$bug\"}")
+        step(call: "undo", given: "null")
+        step(call: "undo", given: "null")
+        step(call: "redo", given: "null")
+        step(call: "board.get", given: "{\"board\":\"$board\"}")
+        step(call: "preview", given: "{\"body\":\"# Notes\\n\\n*soon*, see [docs](javascript:alert(1))\"}")
+        Step(call: "export.file", args: "{\"board\":\"$board\"}", keep: [], pick: "launch.json")
+        step(call: "board.delete", given: "{\"board\":\"$board\"}")
+        Step(call: "import.file", args: "null", keep: [kept(name: "copy", pointer: "/board")], pick: "launch.json")
+        keeping(call: "board.get", given: "{\"board\":\"$copy\"}", keep: [kept(name: "copy_todo", pointer: "/columns/0/id")])
+        step(call: "report", given: "{\"board\":\"$copy\"}")
+        step(call: "card.add", given: "{\"column\":\"$copy_todo\",\"title\":\"   \"}")
+        step(call: "card.move", given: "{\"card\":\"$press\",\"column\":\"$copy_todo\",\"position\":0}")
+        step(call: "card.add", given: "{\"column\":\"$copy_todo\"}")
+        step(call: "undo", given: "null")
+        step(call: "boards.list", given: "null")
+        step(call: "board.archive", given: "{}")
+    ]

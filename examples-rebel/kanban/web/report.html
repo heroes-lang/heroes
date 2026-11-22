@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ .title }}: a report</title>
+<link rel="stylesheet" href="/report.css">
+</head>
+<body>
+<p class="back"><a href="/?board={{ .id }}">Back to the board</a></p>
+<h1>{{ .title }}</h1>
+<p class="when">{{ .cards }} cards in {{ .columns | length }} columns, as of {{ .now }}.</p>
+{{- for $column in .columns }}
+<section>
+  <h2>{{ $column.title }} <span class="count">{{ $column.cards | length }}</span></h2>
+  {{- for $card in $column.cards }}
+  <article>
+    <h3>{{ $card.title }}</h3>
+    <p class="meta">Made {{ $card.created }}, changed {{ $card.updated }}</p>
+  </article>
+  {{- else }}
+  <p class="none">No card.</p>
+  {{- end }}
+</section>
+{{- end }}
+</body>
+</html>

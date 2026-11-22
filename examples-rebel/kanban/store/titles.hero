@@ -1,0 +1,72 @@
+# What a title of a board, a column or a card may be: one line of text,
+# its spaces at either end dropped, not empty, at most `model.TITLE_MOST`
+# bytes, holding no control character. A title is shown in the page, in a
+# report and in a file the person exports, so one rule holds it everywhere.
+
+use store/model
+
+# `title` with its spaces at either end dropped, where it is a title.
+# Fails `invalid` saying why, `what` naming it.
+#
+# - `title`: the title given.
+# - `what`: what it is the title of, for the message.
+function checked(title: str, what: str) -> str?
+    kept = trimmed(title)
+
+    if kept.len() == 0
+        return fail(code: "invalid", msg: f"{what} is empty")
+
+    if kept.len() > model.TITLE_MOST
+        return fail(code: "invalid", msg: f"{what} takes {kept.len()} bytes, past the {model.TITLE_MOST} a title takes")
+
+    for i in range(from: 0, to: kept.len())
+        if kept[i] < 0x20 || kept[i] == 0x7f
+            return fail(code: "invalid", msg: f"{what} holds a control character at byte {i}; a title is one line")
+
+    return ok(kept)
+
+# `body` where it is a card's notes: at most `model.BODY_MOST` bytes, no zero
+# byte. Fails `invalid` saying why.
+#
+# - `body`: the notes given.
+function body_checked(body: str) -> str?
+    if body.len() > model.BODY_MOST
+        return fail(code: "invalid", msg: f"the notes take {body.len()} bytes, past the {model.BODY_MOST} a card holds")
+
+    for i in range(from: 0, to: body.len())
+        if body[i] == 0
+            return fail(code: "invalid", msg: f"the notes hold a zero byte at byte {i}")
+
+    return ok(body)
+
+# `text` without the spaces, tabs and line breaks at either end.
+function trimmed(text: str) -> str
+    start @= 0
+    end @= text.len()
+
+    while start < end && blank(text[start])
+        start @ start + 1
+
+    while end > start && blank(text[end - 1])
+        end @ end - 1
+
+    return text.slice(from: start, to: end)
+
+# Whether `c` is a space, a tab or a line break.
+function blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+
+## Tests
+
+test "checked: a title trimmed, an empty one, one too long, one of two lines, one of many bytes"
+    assert checked(title: "  Launch  ", what: "t").must() == "Launch"
+    assert checked(title: "   ", what: "t").is_err()
+    assert checked(title: repeat("a", 201), what: "t").is_err()
+    assert checked(title: repeat("a", 200), what: "t").must().len() == 200
+    assert checked(title: "a\nb", what: "t").is_err()
+    assert checked(title: "Café ☕", what: "t").must() == "Café ☕"
+
+test "body_checked: notes at the most, past it, and a zero byte"
+    assert body_checked(body: repeat("a", 102400)).must().len() == 102400
+    assert body_checked(body: repeat("a", 102401)).is_err()
+    assert body_checked(body: "a" + "b").must() == "ab"

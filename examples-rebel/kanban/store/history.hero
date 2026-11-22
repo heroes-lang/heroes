@@ -1,0 +1,109 @@
+# Undo and redo: each change of a board is kept as the board's JSON before
+# and after it (`store/snapshot`), with a label a person reads, "add the card
+# «Book the venue»". Undo puts the newest change's board back as it was
+# before, redo as it was after; a new change forgets what was undone, as
+# every editor does. A board is put back whole, its names and places kept,
+# so an undo is exact whatever the change was: a card moved, a column
+# deleted with its cards, a board deleted or imported. The history keeps
+# the `KEPT` newest changes.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+
+use store/boards
+use store/snapshot
+use store/store
+
+# The most changes the history keeps.
+constant KEPT: i64
+    200
+
+# What undo or redo did: the board it put back, and the change's label.
+record Done
+    # The board's name.
+    board: str
+    # The change, as a person reads it.
+    label: str
+
+# Keeps a change of board `board`: `before` and `after` its JSON, "" where it
+# was not there; what was undone is forgotten, and the oldest past `KEPT`.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+# - `label`: the change, as a person reads it.
+# - `before`: the board's JSON before.
+# - `after`: the board's JSON after.
+function keep(@s: store.Store, board: str, label: str, before: str, after: str) -> ()?
+    _ = sqlite.exec(@s.db, statement: "DELETE FROM history WHERE undone = 1", params: [])?
+    _ = sqlite.exec(@s.db, statement: "INSERT INTO history (board, label, before, after) VALUES (?1, ?2, ?3, ?4)", params: [.text(v: board), .text(v: label), .text(v: before), .text(v: after)])?
+    _ = sqlite.exec(@s.db, statement: "DELETE FROM history WHERE seq <= (SELECT MAX(seq) FROM history) - ?1", params: [.integer(v: KEPT)])?
+    return ok()
+
+# The label undo would undo, "" where nothing is kept.
+#
+# - `s`: the store.
+function undo_label(@s: store.Store) -> str?
+    return label_of(@s, statement: "SELECT label FROM history WHERE undone = 0 ORDER BY seq DESC LIMIT 1")
+
+# The label redo would redo, "" where nothing was undone.
+#
+# - `s`: the store.
+function redo_label(@s: store.Store) -> str?
+    return label_of(@s, statement: "SELECT label FROM history WHERE undone = 1 ORDER BY seq ASC LIMIT 1")
+
+function label_of(@s: store.Store, statement: str) -> str?
+    match sqlite.query_one(@s.db, statement: statement, params: [])
+        .ok row => return sql.text_at(row, index: 0)
+        .err e =>
+            if e.code == "not_found"
+                return ok("")
+            return fail(code: e.code, msg: e.msg)
+
+# Puts the newest change's board back as it was before it. Fails
+# `not_found` where nothing is kept to undo.
+#
+# - `s`: the store, inside the caller's transaction.
+function undo(@s: store.Store) -> Done?
+    return stepped(
+        @s,
+        statement: "SELECT seq, board, label, before FROM history WHERE undone = 0 ORDER BY seq DESC LIMIT 1",
+        undone: 1,
+        what: "undo"
+    )
+
+# Puts the oldest change undone back as it was after it. Fails `not_found`
+# where nothing was undone.
+#
+# - `s`: the store, inside the caller's transaction.
+function redo(@s: store.Store) -> Done?
+    return stepped(
+        @s,
+        statement: "SELECT seq, board, label, after FROM history WHERE undone = 1 ORDER BY seq ASC LIMIT 1",
+        undone: 0,
+        what: "redo"
+    )
+
+# Reads the change `statement` answers, puts its board as its JSON says,
+# and marks it `undone`.
+function stepped(@s: store.Store, statement: str, undone: i64, what: str) -> Done?
+    row = match sqlite.query_one(@s.db, statement: statement, params: [])
+        .ok r => r
+        .err e =>
+            if e.code == "not_found"
+                return fail(code: "not_found", msg: f"nothing to {what}")
+            return fail(code: e.code, msg: e.msg)
+
+    seq = sql.integer_at(row, index: 0)?
+    board = sql.text_at(row, index: 1)?
+    put_back(@s, board: board, text: sql.text_at(row, index: 3)?)?
+    _ = sqlite.exec(@s.db, statement: "UPDATE history SET undone = ?2 WHERE seq = ?1", params: [.integer(v: seq), .integer(v: undone)])?
+    return ok(Done(board: board, label: sql.text_at(row, index: 2)?))
+
+# Board `board` made as `text` says, or taken away where `text` is "".
+function put_back(@s: store.Store, board: str, text: str) -> ()?
+    if !boards.board_named(@s, id: board).is_err()
+        boards.delete(@s, id: board)?
+
+    if text.len() > 0
+        _ = snapshot.restore(@s, text: text, fresh: false)?
+    return ok()

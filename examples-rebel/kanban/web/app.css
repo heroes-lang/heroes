@@ -1,0 +1,185 @@
+:root {
+  --paper: #f6f4ef;
+  --ink: #1d1f24;
+  --muted: #6b6f78;
+  --line: #d9d5cc;
+  --column: #ebe7de;
+  --card: #ffffff;
+  --accent: #2f5fd0;
+  --danger: #b3261e;
+  --focus: #f2c94c;
+  color-scheme: light dark;
+  font: 14px/1.45 -apple-system, "Segoe UI", system-ui, "Cantarell", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17181b;
+    --ink: #e8e6e1;
+    --muted: #9a9ea8;
+    --line: #34363c;
+    --column: #212327;
+    --card: #2a2c31;
+    --accent: #7fa2ff;
+    --danger: #ff8a80;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+button:disabled { opacity: 0.45; cursor: default; }
+button.danger { color: var(--danger); }
+
+input, select, textarea {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+  padding: 4px 8px;
+}
+
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { font-size: 17px; margin: 0 8px 0 0; }
+.spacer { flex: 1; }
+.hidden-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+main { flex: 1; overflow: auto; }
+
+.board {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  min-height: 100%;
+}
+
+.column {
+  flex: 0 0 280px;
+  background: var(--column);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.column.dropping { outline: 2px dashed var(--accent); }
+
+.column-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.column-head h2 {
+  flex: 1;
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.count { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.cards { display: flex; flex-direction: column; gap: 8px; min-height: 24px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: grab;
+}
+
+.card.dragging { opacity: 0.4; }
+.card h3 { margin: 0 0 4px; font-size: 14px; }
+.card .moves { display: flex; gap: 4px; margin-top: 6px; }
+.card .moves button { padding: 0 6px; }
+
+.markdown { overflow-wrap: anywhere; }
+.markdown :first-child { margin-top: 0; }
+.markdown :last-child { margin-bottom: 0; }
+.markdown pre, .markdown code { font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; font-size: 12px; }
+.markdown pre { background: var(--column); padding: 6px; border-radius: 4px; overflow: auto; }
+.markdown table { border-collapse: collapse; }
+.markdown td, .markdown th { border: 1px solid var(--line); padding: 2px 6px; }
+
+.add-card { display: flex; gap: 6px; }
+.add-card input { flex: 1; min-width: 0; }
+
+.add-column {
+  flex: 0 0 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.results {
+  margin: 12px 16px 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.results ol { margin: 4px 0 0; padding-left: 20px; }
+.results .where { color: var(--muted); }
+
+.empty { padding: 32px; color: var(--muted); }
+
+.editor, .ask {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 16px;
+}
+
+.editor { width: min(900px, 92vw); }
+.editor form, .ask form { display: flex; flex-direction: column; gap: 10px; }
+.editor label, .ask label { display: flex; flex-direction: column; gap: 4px; }
+.editor .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.editor textarea { resize: vertical; font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace; }
+.preview-pane { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.preview-pane .markdown { border: 1px solid var(--line); border-radius: 6px; padding: 8px; min-height: 200px; background: var(--card); }
+.caption { color: var(--muted); }
+menu { display: flex; gap: 8px; margin: 0; padding: 0; }
+
+.status { position: fixed; bottom: 28px; left: 16px; margin: 0; color: var(--muted); }
+.status.error { color: var(--danger); }
+.foot { padding: 6px 16px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); }

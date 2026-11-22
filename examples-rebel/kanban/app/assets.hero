@@ -1,0 +1,47 @@
+# The page's files put into the web view's table, from the folder `web/`
+# the program was given: `index.html`, a template the program fills with its
+# title and version in `template`'s HTML mode, the style sheets and the
+# script as they stand, each with the content type its extension takes; and
+# `report.html`, the report's template, parsed once and kept for
+# `app/report`. No file is served from the disk: the table holds every byte
+# the page reads, so the page cannot reach a file the program did not put.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/template
+use <rebel>/ui
+use <rebel>/ui/webview
+
+use api/views
+
+# The files put as they stand, each served at `/` and its name.
+constant FILES: [str]
+    ["app.css", "app.js", "report.css"]
+
+# Puts the page's files from `folder` into `view` and answers the report's
+# template. Fails `file_not_found` where a file is missing, `invalid` where
+# a template is none, and as the web view fails.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `folder`: the folder holding the page's files.
+# - `version`: the program's version, which the page's footer shows.
+function load(@app: ui.App, view: ui.Widget, folder: str, version: str) -> template.Template?
+    index = template.parse_html(read_file(path.join_all([folder, "index.html"]))?)?
+    page = template.render(index, value: views.object([views.pair("title", views.text("Kanban")), views.pair("version", views.text(version))]))?
+    webview.put_asset(@app, view: view, file: webview.Asset(path: "/index.html", content_type: webview.content_type_of("/index.html"), body: text_bytes(page)))?
+
+    for name in FILES
+        body = fs.read_bytes(path.join_all([folder, name]))?
+        webview.put_asset(@app, view: view, file: webview.asset("/" + name, body: body)?)?
+
+    return template.parse_html(read_file(path.join_all([folder, "report.html"]))?)
+
+# The bytes of `text`.
+function text_bytes(text: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    return out
