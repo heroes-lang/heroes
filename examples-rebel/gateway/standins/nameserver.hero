@@ -3,14 +3,13 @@
 # server, both sockets waited on at once by one `poll` set. A UDP answer
 # longer than the asker can take is sent truncated, its sections empty, so
 # the asker asks again over TCP, as `dns.exchange` does. It runs on a thread
-# of its own, told its supervisor's control port, and serves until the
-# program is asked to stop.
+# of its own, tells its port on a mailbox its supervisor waits on, and
+# serves until the program is asked to stop.
 
 use <rebel>/bytes
 use <rebel>/dns
 use <rebel>/io
 use <rebel>/net
-use <rebel>/numbers
 use <rebel>/poll
 
 use demo/notify
@@ -47,26 +46,28 @@ record Counts
     updates: i64
 
 # The stand-in's thread: listens on a port the system chooses, tells the
-# supervisor at the control port `arg` holds, and serves until stopped.
+# supervisor on the mailbox it is handed, and serves until stopped.
 # Answers what it served, as a line, or why it could not serve.
 #
-# - `arg`: the supervisor's control port, in decimal.
-function run(arg: str) -> str
-    match numbers.parse_int(arg)
-        .err e => return "dns: no control port: " + e.msg
-        .ok control =>
-            match served(control)
-                .ok c  => return f"dns: queries answered {c.queries}, updates answered {c.updates}"
-                .err e => return "dns: " + e.msg
+# - `told`: where the supervisor waits to hear the service listens; closed
+#   as the thread ends, so a service that ends before telling is told at
+#   once.
+function run(told: (mailbox notify.Ready)) -> str
+    outcome = served(told)
+    told.close()
+
+    match outcome
+        .ok c  => return f"dns: queries answered {c.queries}, updates answered {c.updates}"
+        .err e => return "dns: " + e.msg
 
 # The zone served on a TCP listener and a UDP socket of one port until the
 # program is asked to stop.
 #
-# - `control`: the supervisor's control port.
+# - `told`: where the supervisor waits to hear the service listens.
 #
 # Fails as `net.listen`, `net.open_udp`, `notify.ready` and `poll.make`
 # fail.
-function served(control: i64) -> Counts?
+function served(told: (mailbox notify.Ready)) -> Counts?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
     match net.open_udp(host: "127.0.0.1", port: listener.address.port)
@@ -75,20 +76,20 @@ function served(control: i64) -> Counts?
             return fail(code: e.code, msg: e.msg)
         .ok opened =>
             socket @= opened
-            counts = looped(control, listener: listener, socket: socket)
+            counts = looped(told, listener: listener, socket: socket)
             _ = net.close_udp(@socket).is_err()
             _ = net.close_listener(@listener).is_err()
             return counts
 
 # The loop of `served`, once both sockets are open.
 #
-# - `control`: the supervisor's control port.
+# - `told`: where the supervisor waits to hear the service listens.
 # - `listener`: the TCP listener.
 # - `socket`: the UDP socket, on the listener's port.
 #
 # Fails as `notify.ready` and `poll.make` fail; a stop ends the loop and
 # answers the counts.
-function looped(control: i64, listener: net.Listener, socket: net.UdpSocket) -> Counts?
+function looped(told: (mailbox notify.Ready), listener: net.Listener, socket: net.UdpSocket) -> Counts?
     set @= poll.make(2)?
     counts @= Counts(queries: 0, updates: 0)
     z @= zone.new(ORIGIN)?
@@ -98,7 +99,7 @@ function looped(control: i64, listener: net.Listener, socket: net.UdpSocket) -> 
             _ = poll.close(@set).is_err()
             return fail(code: e.code, msg: e.msg)
         .ok added =>
-            match notify.ready(control_port: control, service: SERVICE, port: listener.address.port)
+            match notify.ready(told, service: SERVICE, port: listener.address.port)
                 .err e =>
                     _ = poll.close(@set).is_err()
                     return fail(code: e.code, msg: e.msg)

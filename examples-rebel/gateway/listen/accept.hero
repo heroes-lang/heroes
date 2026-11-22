@@ -1,18 +1,22 @@
-# The gateway's listener: TLS connections accepted one after another, each
-# served in the protocol ALPN chose for it (`h2` or `http/1.1`) on the
-# thread that holds the gateway's state, until the program is asked to stop
-# (Ctrl-C, SIGTERM, or `os.ask_stop` from the demo's client), which ends the
-# wait for the next connection and the one served.
+# The gateway's listener: the thread that owns the gateway's state
+# (`core/owner`) and `workers.WORKERS` workers started, then TLS connections
+# accepted one after another, each handed whole to the next free worker
+# with `m.send(@conn)` (`listen/workers`), until the program is asked to
+# stop (Ctrl-C, SIGTERM, or `os.ask_stop` from the demo's client), which
+# ends the wait for the next connection. The workers' mailbox is then
+# closed, every worker waited for, and the owner told to stop and waited
+# for, so no thread outlives the serving (panel 254's R4: a stop drains
+# what was queued, then holds).
 
 use <rebel>/io
 use <rebel>/net
 use <rebel>/time
 use <rebel>/tls
 
-use core/state
-use core/telemetry
-use listen/h1
-use listen/h2
+use config/settings
+use core/clock
+use core/owner
+use listen/workers
 
 ## Bounds
 
@@ -38,10 +42,59 @@ function protocols() -> [str]
 # Serves every connection `listener` accepts until the program is asked to
 # stop or the listener is closed.
 #
-# - `gw`: the state, which every request reads and changes.
+# - `s`: the routing file, read and checked; the owner makes the state from
+#   it.
+# - `ticks`: the gateway's clock: the wall's, or a fixed one in the demo.
+# - `spread`: where a retry wait's spread comes from.
 # - `listener`: the TLS listener, offering `protocols()`; its owner closes
 #   it.
-function serve(@gw: state.Gateway, listener: tls.Listener) -> Served
+#
+# Fails where the owner could not make the state, or where no thread could
+# be started; every thread started is waited for before it answers.
+function serve(s: settings.Settings, ticks: clock.Clock, spread: clock.Chance, listener: tls.Listener) -> Served?
+    asks: (mailbox owner.Ask) = mailbox()
+    begun: (mailbox owner.Begun) = mailbox()
+    holder = spawn(owner.own, owner.Start(settings: s, ticks: ticks, spread: spread, asks: asks, begun: begun))?
+
+    began: ()? = match begun.receive(within_ms: -1)
+        .err e => fail(code: e.code, msg: e.msg)
+        .ok said =>
+            match said
+                .ready    => ok()
+                .failed f => fail(code: settings.INVALID, msg: f.msg)
+
+    conns: (mailbox net.Conn) = mailbox()
+    pool: [(thread i64)] @= []
+    refused: ()? @= began
+
+    while !refused.is_err() && pool.len() < workers.WORKERS
+        match spawn(workers.work, workers.Start(conns: conns, asks: asks))
+            .ok t  => pool @ pool.push(t)
+            .err e => refused @ fail(code: e.code, msg: e.msg)
+
+    done @= Served(connections: 0, requests: 0, failed: 0)
+
+    if !refused.is_err()
+        done @ accepted(listener, conns: conns)
+
+    conns.close()
+
+    for t in pool
+        done.requests @ done.requests + t.wait()
+
+    owner.stop(asks)
+    _ = holder.wait()
+    asks.close()
+    refused?
+    return ok(done)
+
+# Every connection `listener` accepts handed to a worker through `conns`,
+# until the program is asked to stop or the listener is closed; the counts
+# of what was accepted, its requests left for the workers to count.
+#
+# - `listener`: the TLS listener.
+# - `conns`: the workers' mailbox of connections.
+function accepted(listener: tls.Listener, conns: (mailbox net.Conn)) -> Served
     done @= Served(connections: 0, requests: 0, failed: 0)
     handshake = time.seconds(HANDSHAKE_SECONDS).default(time.max_duration())
 
@@ -51,17 +104,17 @@ function serve(@gw: state.Gateway, listener: tls.Listener) -> Served
                 if e.code == tls.STOPPED || e.code == tls.CLOSED
                     break
                 done.failed @ done.failed + 1
-            .ok accepted =>
-                conn @= accepted
-                protocol = tls.protocol_of(conn.stream).default("http/1.1")
-                telemetry.connected(@gw.registry, protocol: protocol)
+            .ok taken =>
+                conn @= taken
                 done.connections @ done.connections + 1
 
-                if protocol == "h2"
-                    done.requests @ done.requests + h2.serve(@gw, @conn)
-                else
-                    done.requests @ done.requests + h1.serve(@gw, conn: conn)
-                    _ = io.close(@conn.stream).is_err()
+                match conns.send(@conn)
+                    .ok _ => _ = 0
+                    .err _ =>
+                        # Not sent, the workers' mailbox having answered the
+                        # program's stop: the connection is still this
+                        # thread's, and it ends it.
+                        _ = io.close(@conn.stream).is_err()
 
     return done
 

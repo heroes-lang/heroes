@@ -10,7 +10,10 @@
 # connection is tried again on the next instance, an idempotent call after a
 # failure too, and an instance that refused is skipped by its circuit
 # breaker for a while. The gateway serves its own metrics in Prometheus's
-# format.
+# format. Its connections are served by worker threads, each handed its TLS
+# connection whole; its state, the cache, the buckets, the breakers and the
+# metrics, is owned by one thread the workers ask by message
+# (`core/owner`, `listen/workers`), so a slow client holds only its worker.
 #
 # Run for real:
 #
@@ -37,8 +40,8 @@
 # - `dns`, `retries`, `math`: discovery by SRV, retries with backoff and
 #   jitter, circuit breakers, weighted choice;
 # - `metrics`: the gateway's own metrics; `toml`: the routing file;
-# - `poll`, `threads`, `os`: the DNS stand-in's two sockets, the demo's
-#   threads and the stop;
+# - `poll`, `os`: the DNS stand-in's two sockets, the stop; the threads and
+#   mailboxes are the language's own (`spawn`, `mailbox()`);
 # - `time`, `strings`, `bytes`, `numbers`, `maps`: throughout.
 
 use demo/supervise

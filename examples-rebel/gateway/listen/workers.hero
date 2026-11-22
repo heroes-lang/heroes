@@ -1,0 +1,60 @@
+# The workers that serve the gateway's client connections: each a thread
+# that takes the next connection the listener accepted from one mailbox,
+# the TLS connection handed over whole with `m.send(@conn)` and the
+# worker's from then on (spec § 11; panel 254's R3), and serves it in the
+# protocol ALPN chose (`listen/h1`, `listen/h2`), asking the thread that
+# owns the gateway's state (`core/owner`) for every answer. A slow client
+# holds its worker alone.
+#
+# A worker ends when the mailbox is closed and empty, which the listener
+# does once it stops accepting, or when the program's stop finds it empty;
+# a connection still queued then is served first, its reads answering the
+# stop at once, so none is dropped unclosed (spec § 11's drain).
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/tls
+
+use core/owner
+use listen/h1
+use listen/h2
+
+## Bounds
+
+# How many workers serve connections at once: each holds one connection
+# until its client leaves or goes quiet past `h1.IDLE_SECONDS`.
+constant WORKERS: i64
+    8
+
+## The workers
+
+# What a worker's thread is handed, whole.
+record Start
+    # The connections the listener accepted, each taken by one worker.
+    conns: (mailbox net.Conn)
+    # The owner's mailbox of asks.
+    asks: (mailbox owner.Ask)
+
+# A worker's thread: connections taken and served until the mailbox is
+# closed and empty, or the program's stop finds it empty. Answers how many
+# requests it answered.
+#
+# - `start`: the connections' mailbox and the owner's.
+function work(start: Start) -> i64
+    answered @= 0
+
+    while true
+        match start.conns.receive(within_ms: -1)
+            .err _ => break
+            .ok taken =>
+                conn @= taken
+                protocol = tls.protocol_of(conn.stream).default("http/1.1")
+                owner.connected(start.asks, protocol: protocol)
+
+                if protocol == "h2"
+                    answered @ answered + h2.serve(start.asks, @conn)
+                else
+                    answered @ answered + h1.serve(start.asks, conn: conn)
+                    _ = io.close(@conn.stream).is_err()
+
+    return answered

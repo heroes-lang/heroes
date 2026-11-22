@@ -44,13 +44,17 @@ function started(path: str) -> i64?
     key = read_file(beside(path: path, name: s.listener.key))?
     subject = certificate_checked(chain)?
     os.catch_stop()?
-    gw @= state.new(s, ticks: .wall, spread: .drawn)?
+
+    # Made here once, so a routing file whose schemas do not read is refused
+    # before anything listens; the owner thread makes its own.
+    _ = state.new(s, ticks: .wall, spread: .drawn)?
     listener @= accept.listening(host: s.listener.host, port: s.listener.port, chain: chain, key: key)?
     print(
         f"gateway: {s.routes.len()} routes, presenting {subject}, listening on {accept.address_of(host: s.listener.host, listener: listener)} until Ctrl-C"
     )
-    done = accept.serve(@gw, listener: listener)
+    served = accept.serve(s, ticks: .wall, spread: .drawn, listener: listener)
     _ = tls.close_listener(@listener).is_err()
+    done = served?
     print(
         f"gateway: stopped after {done.connections} connections and {done.requests} requests, {done.failed} handshakes failed"
     )

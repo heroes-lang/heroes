@@ -2,11 +2,12 @@
 # input: everything a gateway stands among, started on loopback in one
 # process and stopped at the end. The supervisor makes the gateway's
 # certificate, starts the DNS stand-in and the three upstreams on threads of
-# their own (each tells its port by `notify`), registers the upstreams'
-# instances in DNS (one of the catalog's instances a port where nothing
-# listens, so the gateway meets a refused connection and retries), then
-# serves the gateway on this thread with a fixed clock and a fixed chance
-# while the client's thread runs its session. The transcript is the
+# their own (each tells its port on a mailbox, `notify`), registers the
+# upstreams' instances in DNS (one of the catalog's instances a port where
+# nothing listens, so the gateway meets a refused connection and retries),
+# then serves the gateway, its listener on this thread and its state's
+# owner and its workers on threads of their own, with a fixed clock and a
+# fixed chance while the client's thread runs its session. The transcript is the
 # client's lines, then what each service served, every one free of ports,
 # times and keys.
 
@@ -14,7 +15,6 @@ use <rebel>/dns
 use <rebel>/io
 use <rebel>/net
 use <rebel>/os
-use <rebel>/threads
 use <rebel>/time
 use <rebel>/tls
 
@@ -84,20 +84,12 @@ function with_settings(s: settings.Settings) -> i64
             print(f"subject {made.checked.subject}, issued by {made.checked.issuer}")
             print("for " + made.checked.names.join(", ") + "; its chain verified for a TLS server at 127.0.0.1")
 
-            match net.listen(host: "127.0.0.1", port: 0)
-                .err e =>
-                    print("demo: the control port: " + e.msg)
-                    return 1
-                .ok opened =>
-                    control @= opened
-                    code = with_control(s, identity: made.identity, control: control)
-                    _ = net.close_listener(@control).is_err()
-                    return code
+            return with_services(s, identity: made.identity)
 
 # A service started on its thread, and the port it said it listens on.
 record Started
-    # The thread, owed its wait.
-    thread: threads.TextThread
+    # The thread, owed its wait, which answers what the service served.
+    thread: (thread str)
     # The port its notification said, 0 where none came.
     port: i64
 
@@ -106,14 +98,13 @@ record Started
 #
 # - `s`: the routing file.
 # - `identity`: the gateway's certificate.
-# - `control`: the supervisor's control listener.
-function with_control(s: settings.Settings, identity: certs.Identity, control: net.Listener) -> i64
+function with_services(s: settings.Settings, identity: certs.Identity) -> i64
     print("== services, started on loopback and told ready")
     started: [Started] @= []
     failed @= false
 
     for service in ["dns", "catalog", "inventory", "reviews"]
-        match started_service(service, control: control)
+        match started_service(service)
             .err e =>
                 print(f"demo: {service}: {e.msg}")
                 failed @ true
@@ -134,29 +125,28 @@ function with_control(s: settings.Settings, identity: certs.Identity, control: n
     os.ask_stop()
 
     for one in started
-        thread @= one.thread
-        print(threads.wait_text(@thread))
+        print(one.thread.wait())
 
     return code
 
-# One service started on a thread of its own, and its notification awaited:
-# the port it said, or 0 where none came or another service spoke, the
-# thread owed its wait either way.
+# One service started on a thread of its own, handed the mailbox it tells
+# its port on, and its notification awaited: the port it said, or 0 where
+# none came or another service spoke, the thread owed its wait either way.
 #
 # - `service`: `dns`, `catalog`, `inventory` or `reviews`.
-# - `control`: the supervisor's control listener.
 #
 # Fails where the thread cannot start.
-function started_service(service: str, control: net.Listener) -> Started?
+function started_service(service: str) -> Started?
     body = match service
         "dns"       => nameserver.run
         "catalog"   => catalog.run
         "inventory" => inventory.run
         _           => reviews.run
 
-    thread = threads.start_text(body: body, arg: f"{control.address.port}")?
+    notices: (mailbox notify.Ready) = mailbox()
+    thread = spawn(body, notices)?
 
-    match notify.await_ready(control)
+    match notify.await_ready(notices)
         .err _ => return ok(Started(thread: thread, port: 0))
         .ok r =>
             if r.service != service
@@ -194,20 +184,23 @@ function served(s: settings.Settings, identity: certs.Identity, started: [Starte
     )
     spread = clock.fixed_chance(0.5).default(.drawn)
 
+    # Made here once, so a routing file whose schemas do not read is told
+    # before anything listens; the gateway's owner thread makes its own.
     match state.new(local, ticks: ticks, spread: spread)
         .err e =>
             print("demo: " + e.msg)
             return 1
-        .ok made =>
-            gw @= made
-            return gateway_served(@gw, identity: identity)
+        .ok _ => return gateway_served(local, ticks: ticks, spread: spread, identity: identity)
 
 # The gateway's listener opened, the client started against it, and the
-# gateway served on this thread until the client asks the stop.
+# gateway served, its owner and workers on threads of their own, until the
+# client asks the stop.
 #
-# - `gw`: the gateway's state.
+# - `local`: the routing file, pointed at the stand-ins.
+# - `ticks`: the fixed clock.
+# - `spread`: the fixed chance.
 # - `identity`: the gateway's certificate.
-function gateway_served(@gw: state.Gateway, identity: certs.Identity) -> i64
+function gateway_served(local: settings.Settings, ticks: clock.Clock, spread: clock.Chance, identity: certs.Identity) -> i64
     match accept.listening(host: "127.0.0.1", port: 0, chain: identity.chain, key: identity.key)
         .err e =>
             print("demo: the gateway's listener: " + e.msg)
@@ -215,21 +208,26 @@ function gateway_served(@gw: state.Gateway, identity: certs.Identity) -> i64
         .ok opened =>
             listener @= opened
 
-            match threads.start_text(body: client.run, arg: f"{listener.port}\n{identity.roots}")
+            match spawn(client.run, client.Start(port: listener.port, roots: identity.roots))
                 .err e =>
                     _ = tls.close_listener(@listener).is_err()
                     print("demo: the client: " + e.msg)
                     return 1
-                .ok spawned =>
-                    session @= spawned
-                    done = accept.serve(@gw, listener: listener)
+                .ok session =>
+                    outcome = accept.serve(local, ticks: ticks, spread: spread, listener: listener)
                     _ = tls.close_listener(@listener).is_err()
-                    print(threads.wait_text(@session))
+                    print(session.wait())
                     print("== what each service served")
-                    print(
-                        f"gateway: connections {done.connections}, requests {done.requests}, handshakes failed {done.failed}"
-                    )
-                    return 0
+
+                    match outcome
+                        .err e =>
+                            print("demo: the gateway: " + e.msg)
+                            return 1
+                        .ok done =>
+                            print(
+                                f"gateway: connections {done.connections}, requests {done.requests}, handshakes failed {done.failed}"
+                            )
+                            return 0
 
 # The three upstreams' instances registered with the DNS stand-in at
 # `dns_address`: the catalog's first instance a port nothing listens on, at a

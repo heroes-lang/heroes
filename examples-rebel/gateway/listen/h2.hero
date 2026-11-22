@@ -1,30 +1,26 @@
-# A client connection that chose HTTP/2: each request of its streams read
-# whole, a gRPC call (`content-type: application/grpc`) routed and rate
-# limited like any request and then relayed by `relay` with its answers
-# streamed back, and every other request handed to the pipeline as HTTP,
-# until the client sends GOAWAY or closes the connection.
+# A client connection that chose HTTP/2, served on a worker thread: each
+# request of its streams read whole, a gRPC call (`content-type:
+# application/grpc`) handed with the connection to the thread that owns the
+# gateway's state, which routes, limits and relays it (`listen/calls`), and
+# every other request asked of that thread as HTTP (`core/owner`), until
+# the client sends GOAWAY or closes the connection.
 
-use <rebel>/grpc
 use <rebel>/http
 use <rebel>/http2
 use <rebel>/io
 use <rebel>/net
 use <rebel>/strings
 
-use core/state
-use core/telemetry
-use proxy/relay
-use proxy/replies
-use route/pipeline
+use core/owner
 
 ## Serving
 
 # Answers every request of `conn` and answers how many were answered.
 #
-# - `gw`: the state.
+# - `asks`: the owner's mailbox of asks.
 # - `conn`: the client's connection, TLS with `h2` chosen; its stream
 #   passes to the HTTP/2 connection made here, which closes it.
-function serve(@gw: state.Gateway, @conn: net.Conn) -> i64
+function serve(asks: (mailbox owner.Ask), @conn: net.Conn) -> i64
     remote = net.format_address(conn.remote)
 
     match http2.server(@conn.stream, options: http2.default_options())
@@ -34,18 +30,20 @@ function serve(@gw: state.Gateway, @conn: net.Conn) -> i64
         .ok made =>
             h2 @= made
             answered @= 0
+            held @= true
 
-            while true
+            while held
                 match http2.next_request(@h2)
                     .err _ => break
                     .ok r =>
                         if is_grpc(r)
-                            called(@gw, @h2, r: r, remote: remote)
+                            held @ owner.relayed(asks, @h2, r: r, remote: remote)
                         else
-                            asked(@gw, @h2, r: r, remote: remote)
+                            asked(asks, @h2, r: r, remote: remote)
                         answered @ answered + 1
 
-            _ = http2.close(@h2).is_err()
+            if held
+                _ = http2.close(@h2).is_err()
             return answered
 
 # Whether `r` is a gRPC call: its content type `application/grpc`, alone or
@@ -59,84 +57,23 @@ function is_grpc(r: http2.Request) -> bool
 
     return false
 
-# A plain HTTP request on an HTTP/2 stream, handed to the pipeline.
+# A plain HTTP request on an HTTP/2 stream, asked of the owner; `503` where
+# the owner no longer answers, the program stopping.
 #
-# - `gw`: the state.
+# - `asks`: the owner's mailbox of asks.
 # - `h2`: the connection; the answer is written on the request's stream.
 # - `r`: the request.
 # - `remote`: the client's address.
-function asked(@gw: state.Gateway, @h2: http2.Conn, r: http2.Request, remote: str)
+function asked(asks: (mailbox owner.Ask), @h2: http2.Conn, r: http2.Request, remote: str)
     match http.from_h2_request(r, remote: remote)
         .err e =>
             refusal = http.respond_text(400, text: e.msg + "\n")
             _ = http2.answer(@h2, stream: r.stream, response: http.to_h2_response(refusal, method: r.method)).is_err()
         .ok request =>
-            response = pipeline.handle(@gw, r: request, protocol: "h2")
+            response = owner.answer(asks, r: request, protocol: "h2").default(
+                http.respond_text(503, text: "the gateway is stopping\n")
+            )
             _ = http2.answer(@h2, stream: r.stream, response: http.to_h2_response(response, method: r.method)).is_err()
-
-# A gRPC call, routed and admitted as any request, then relayed; a call no
-# gRPC route takes is answered `UNIMPLEMENTED`, one past its rate limit
-# `RESOURCE_EXHAUSTED`, as gRPC's own servers answer them.
-#
-# - `gw`: the state.
-# - `h2`: the connection.
-# - `r`: the call.
-# - `remote`: the client's address.
-function called(@gw: state.Gateway, @h2: http2.Conn, r: http2.Request, remote: str)
-    client = pipeline.client_named(key: key_of(r.headers, name: gw.settings.client_header), remote: remote)
-
-    match pipeline.admit(@gw, host: r.authority, target: r.path, client: client)
-        .refused refusal =>
-            code = if refusal.response.status == 429
-                grpc.STATUS_RESOURCE_EXHAUSTED
-            else
-                grpc.STATUS_UNIMPLEMENTED
-
-            done = relay.refuse(@h2, stream: r.stream, code: code, message: replies.problem_of(refusal.response))
-            counted(@gw, route: refusal.route, method: r.path, done: done)
-        .admitted a =>
-            match a.routed.route.kind
-                .grpc =>
-                    done = relay.relay(@gw, @h2, r: r, routed: a.routed, client: client)
-                    counted(@gw, route: a.routed.route.name, method: r.path, done: done)
-                .proxy | .graphql | .metrics | .transcode _ =>
-                    done = relay.refuse(
-                        @h2,
-                        stream: r.stream,
-                        code: grpc.STATUS_UNIMPLEMENTED,
-                        message: f"the route {a.routed.route.name} takes no gRPC call"
-                    )
-                    counted(@gw, route: a.routed.route.name, method: r.path, done: done)
-
-# A relayed call counted: its request, its bytes and its status.
-#
-# - `gw`: the state.
-# - `route`: the route's name.
-# - `method`: the call's path.
-# - `done`: what the relay came to.
-function counted(@gw: state.Gateway, route: str, method: str, done: relay.Relayed)
-    telemetry.answered_bytes(@gw.registry, route: route, status: 200, size: done.bytes)
-    telemetry.relayed(
-        @gw.registry,
-        method: method,
-        status: grpc.status_name(done.code).default(f"{done.code}"),
-        count: done.messages
-    )
-
-# The value of the field `name` among `fields`.
-#
-# - `fields`: an HTTP/2 header list.
-# - `name`: the name sought, in any case.
-#
-# Fails `not_found` where none is so named.
-function key_of(fields: [http2.Field], name: str) -> str?
-    wanted = strings.to_lower_ascii(name)
-
-    for f in fields
-        if strings.to_lower_ascii(f.name) == wanted
-            return ok(f.value)
-
-    return fail(code: http.NOT_FOUND, msg: f"no field {name}")
 
 test "is_grpc: the gRPC content types and no other"
     head = http2.Request(

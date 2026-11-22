@@ -1,0 +1,202 @@
+# The thread that owns the gateway's state (`core/state`): its routes, its
+# response cache, its rate limiters, its upstreams' breakers, its metrics,
+# its clock. The state is made on this thread and never leaves it; the
+# workers that read the clients' connections (`listen/workers`) ask it by
+# message (spec § 11), each request carrying the mailbox its answer comes
+# back on, so no value is held by two threads and nothing is locked
+# (panel 254; feature 2647).
+#
+# The owner answers one ask after another, in the order they come, so the
+# cache, the limits and the metrics see the requests one at a time, as one
+# thread serving them all saw them; what runs side by side is each client's
+# TLS, framing and waiting, which a slow client no longer makes the others
+# share. A gRPC call is relayed here too, since its answers stream from an
+# upstream channel the owner opens into the client's HTTP/2 connection: the
+# worker hands the connection over with the call (`m.send(@v)`) and has it
+# back once the call is relayed.
+#
+# The owner ends when it is told to stop, which the listener does once
+# every worker has ended, or when the program's stop finds its mailbox
+# empty: a stop drains what was already asked, then holds (spec § 11).
+
+use <rebel>/http
+use <rebel>/http2
+
+use config/settings
+use core/clock
+use core/state
+use core/telemetry
+use listen/calls
+use route/pipeline
+
+## Asking
+
+# What a worker asks of the owner.
+variant Ask
+    # A connection was handed to a worker: counted by its protocol.
+    connected
+        # `h2` or `http/1.1`, as ALPN chose.
+        protocol: str
+    # A request read whole, answered on `back`.
+    request
+        # The request.
+        r: http.Request
+        # The protocol it came over.
+        protocol: str
+        # Where its answer goes.
+        back: (mailbox http.Response)
+    # A gRPC call, its client's connection handed over with it to relay its
+    # answers on; the connection comes back on `back`.
+    call
+        # The call.
+        r: http2.Request
+        # The client's address.
+        remote: str
+        # The client's connection, the owner's until it is sent back.
+        conn: http2.Conn
+        # Where the connection comes back.
+        back: (mailbox Returned)
+    # Every worker has ended: the owner ends.
+    stop
+
+# A client's connection given back once its call was relayed.
+record Returned
+    # The connection, the worker's again.
+    conn: http2.Conn
+
+# What the owner says once it has made the state, or why it could not.
+variant Begun
+    # The state is made; asks are answered from now on.
+    ready
+    # The state could not be made, and the owner has ended.
+    failed
+        # Why.
+        msg: str
+
+# What the owner's thread is handed, whole.
+record Start
+    # The routing file, as read.
+    settings: settings.Settings
+    # The gateway's clock: the wall's, or a fixed one in the demo.
+    ticks: clock.Clock
+    # Where a retry wait's spread comes from.
+    spread: clock.Chance
+    # Where the workers' asks come.
+    asks: (mailbox Ask)
+    # Where the owner says it has begun.
+    begun: (mailbox Begun)
+
+## The owner
+
+# The owner's thread: the state made, `begun` told, then every ask answered
+# until it is told to stop or the program's stop finds no ask waiting.
+# Answers how many requests and calls it answered.
+#
+# - `start`: the settings, the clock, the chance and the two mailboxes.
+function own(start: Start) -> i64
+    made = state.new(start.settings, ticks: start.ticks, spread: start.spread)
+
+    match made
+        .err e =>
+            _ = start.begun.send(.failed(msg: e.msg)).is_err()
+            start.begun.close()
+            return 0
+        .ok first =>
+            gw @= first
+            _ = start.begun.send(.ready).is_err()
+            start.begun.close()
+            return served(@gw, asks: start.asks)
+
+# Every ask on `asks` answered from `gw`, in the order they came, until a
+# `stop` or the program's stop.
+#
+# - `gw`: the state.
+# - `asks`: the workers' asks.
+function served(@gw: state.Gateway, asks: (mailbox Ask)) -> i64
+    answered @= 0
+
+    while true
+        match asks.receive(within_ms: -1)
+            .err _ => break
+            .ok ask =>
+                match ask
+                    .stop        => break
+                    .connected c => telemetry.connected(@gw.registry, protocol: c.protocol)
+                    .request q =>
+                        answered @ answered + 1
+                        _ = q.back.send(pipeline.handle(@gw, r: q.r, protocol: q.protocol)).is_err()
+                    .call c =>
+                        answered @ answered + 1
+                        conn @= c.conn
+                        calls.called(@gw, @conn, r: c.r, remote: c.remote)
+                        given @= Returned(conn: conn)
+
+                        match c.back.send(@given)
+                            .ok _ => _ = 0
+                            .err _ =>
+                                # The worker no longer waits, the program
+                                # being stopped: the connection is still the
+                                # owner's, and the owner ends it.
+                                _ = http2.close(@given.conn).is_err()
+
+    return answered
+
+## What a worker calls
+
+# The answer to `r`, which came over `protocol`, from the owner.
+#
+# - `owner`: the owner's mailbox of asks.
+# - `r`: the request, read whole.
+# - `protocol`: `h2` or `http/1.1`.
+#
+# Fails `stopped` or `closed` where the owner no longer answers: the
+# program is stopping.
+function answer(owner: (mailbox Ask), r: http.Request, protocol: str) -> http.Response?
+    back: (mailbox http.Response) = mailbox()
+
+    # `Ask` may carry a connection, so every ask is sent with `@`, which
+    # empties the cell; this one holds no handle.
+    ask: Ask @= .request(r: r, protocol: protocol, back: back)
+    owner.send(@ask)?
+    return back.receive(within_ms: -1)
+
+# Hands `conn` to the owner with the gRPC call `r`, and has it back once the
+# call is relayed. Answers whether `conn` is the worker's again: false where
+# the program's stop came while the owner held it, which then ends it.
+#
+# - `owner`: the owner's mailbox of asks.
+# - `conn`: the client's connection.
+# - `r`: the call.
+# - `remote`: the client's address.
+function relayed(owner: (mailbox Ask), @conn: http2.Conn, r: http2.Request, remote: str) -> bool
+    back: (mailbox Returned) = mailbox()
+    ask: Ask @= .call(r: r, remote: remote, conn: conn, back: back)
+
+    match owner.send(@ask)
+        .err _ =>
+            # Not sent, so the connection never left this worker: the call
+            # is refused as a stopping server refuses it.
+            calls.refused_while_stopping(@conn, r: r)
+            return true
+        .ok _ =>
+            match back.receive(within_ms: -1)
+                .ok given =>
+                    conn @ given.conn
+                    return true
+                .err _ => return false
+
+# Tells the owner a connection of `protocol` was handed to a worker.
+#
+# - `owner`: the owner's mailbox of asks.
+# - `protocol`: `h2` or `http/1.1`.
+function connected(owner: (mailbox Ask), protocol: str)
+    ask: Ask @= .connected(protocol: protocol)
+    _ = owner.send(@ask).is_err()
+
+# Tells the owner every worker has ended, so it ends; nothing where it has
+# ended already, the program's stop having found its mailbox empty.
+#
+# - `owner`: the owner's mailbox of asks.
+function stop(owner: (mailbox Ask))
+    ask: Ask @= .stop
+    _ = owner.send(@ask).is_err()
