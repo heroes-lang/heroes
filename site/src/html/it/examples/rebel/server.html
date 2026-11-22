@@ -1,0 +1,5 @@
+<p class="tagline">Il piccolo server web riscritto con http, net e threads di Rebel, che serve ancora ogni connessione su un thread tutto suo.</p>
+
+<p>Il pacchetto <code>http</code> di Rebel legge ogni richiesta secondo l&rsquo;RFC 9112, lo standard dei messaggi HTTP/1.1, entro limiti fissati, risponde 400 a ciò che non è una richiesta e scrive ogni risposta; <code>net</code> ascolta, accetta e si collega; <code>threads</code> avvia ogni thread e ne aspetta la fine. Insieme sostituiscono <code>http.hero</code> e <code>net.hero</code> dell&rsquo;originale e le sue chiamate dirette alle funzioni del runtime per i thread.</p>
+
+<p>Il ciclo che dà a ogni connessione il suo thread resta di questo programma: <code>http.serve</code> di Rebel serve una connessione alla volta e lascia quel ciclo al programma. Una connessione passa al suo thread come numero e lì viene ripresa con quel numero, perché un thread di Heroes riceve un numero e nient&rsquo;altro. Eseguito senza parole fa entrambe le parti in un solo processo e stampa la stessa cosa a ogni esecuzione; eseguito come <code>serve 8080</code> aspetta connessioni su quella porta, solo dalla macchina stessa.</p>

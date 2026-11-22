@@ -1,0 +1,5 @@
+<p class="tagline">The SQLite ledger, written again with Rebel&rsquo;s sql/sqlite in place of its own bindings, every total still checked twice.</p>
+
+<p>Rebel&rsquo;s <code>sql/sqlite</code> opens the database in memory, runs statements with their values bound to placeholders, prepares a statement once to run it many times, and answers a query&rsquo;s rows. It replaces the original&rsquo;s own binding of SQLite&rsquo;s C interface, with its handles and its care that every statement is released and every error message freed on every path. Rebel&rsquo;s <code>sql</code> reads a row&rsquo;s values by their type, refusing a text read as a number rather than answering zero, and <code>strings</code> pads the report&rsquo;s columns.</p>
+
+<p>The book, the money kept in cents, the report and the check stay this program&rsquo;s own: every total is computed twice, once by SQLite&rsquo;s own SQL and once by Heroes over the same rows, and the program prints <code>yes</code> only where the two agree to the cent.</p>

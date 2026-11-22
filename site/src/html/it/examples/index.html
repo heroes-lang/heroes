@@ -5,8 +5,8 @@
   eseguirli e i risultati verificati dai test, quando disponibili.</p>
 
   <p>
-    Il sito legge il codice dai file del progetto. Gli esempi dei gruppi dopo il
-    primo, fino al penultimo, servono anche a verificare il compilatore: a ogni modifica vengono compilati
+    Il sito legge il codice dai file del progetto. Gli esempi dei gruppi tra il
+    primo e quelli scritti con Rebel servono anche a verificare il compilatore: a ogni modifica vengono compilati
     ed eseguiti in tre configurazioni. Quando un programma ha un risultato
     atteso, la pagina lo mostra sotto il comando e i test lo confrontano byte
     per byte con quello ottenuto durante l&rsquo;esecuzione. Se manca una libreria
@@ -21,14 +21,19 @@
   </p>
   <p>
     Gli esempi sono due gruppi, tenuti separati perché un nome non si possa
-    scambiare per quello dell&rsquo;altro. Tutti i programmi prima
-    dell&rsquo;ultimo titolo stanno in <code>examples/</code> e non usano
-    nessuna libreria: dove servirebbe una funzione che una libreria darebbe,
-    se la portano dietro scritta da loro. L&rsquo;ultimo gruppo,
-    <code>examples-rebel/</code>, contiene programmi scritti con
+    scambiare per quello dell&rsquo;altro. Tutti i programmi prima dei gruppi
+    scritti con Rebel stanno in <code>examples/</code> e non usano nessuna
+    libreria: dove servirebbe una funzione che una libreria darebbe, se la
+    portano dietro scritta da loro. Gli ultimi tre gruppi,
+    <code>examples-rebel/</code>, contengono programmi scritti con
     <a href="/it/rebel/">Rebel</a>, la libreria che questo progetto scrive,
-    ognuno con un nome sotto <code>rebel/</code>. Dove lo stesso programma è
-    scritto in tutti e due i modi, ogni pagina porta all&rsquo;altra.
+    ognuno con un nome sotto <code>rebel/</code> e ognuno un progetto con il
+    proprio catalogo. Gli strumenti e i servizi sono programmi che qualcuno
+    userebbe davvero, ognuno registrato mentre esegue una sessione
+    prestabilita che non raggiunge niente fuori dalla macchina. I gemelli sono
+    programmi di <code>examples/</code> riscritti con Rebel, che stampano byte
+    per byte quello che stampa il loro originale, e la pagina di un gemello e
+    quella del suo originale portano l&rsquo;una all&rsquo;altra.
   </p>
 
   <p class="shelves"><a href="#gallery">Da dove partire</a> &middot;
@@ -39,4 +44,6 @@
   <a href="#c">Librerie C</a> &middot;
   <a href="#threads">Thread</a> &middot;
   <a href="#games">Giochi e simulazioni</a> &middot;
-  <a href="#rebel">Scritti con Rebel</a></p>
+  <a href="#rebel">Strumenti scritti con Rebel</a> &middot;
+  <a href="#rebel-services">Servizi scritti con Rebel</a> &middot;
+  <a href="#rebel-twins">Gli stessi programmi, scritti con Rebel</a></p>

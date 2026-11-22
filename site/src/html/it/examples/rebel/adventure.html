@@ -1,0 +1,3 @@
+<p class="tagline">L&rsquo;avventura testuale riscritta con Rebel: lo stesso gioco, guidato dalla stessa sequenza di comandi, che stampa lo stesso testo byte per byte.</p>
+
+<p>Il pacchetto <code>strings</code> di Rebel legge i comandi e separa il verbo dal resto della riga, <code>graphs</code> percorre la mappa per il test che verifica che ogni stanza sia raggiungibile e <code>maps</code> dà le uscite di una stanza: tre lavori che l&rsquo;originale fa con funzioni scritte da sé. Il gioco resta di questo programma: ogni turno riceve lo stato del gioco e restituisce quello nuovo insieme alle righe da stampare, e il programma termina arrivando alla fine di <code>main</code> senza chiamare exit, così i test possono ancora verificare che non resti memoria mai liberata.</p>
