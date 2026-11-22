@@ -1,0 +1,265 @@
+# Differences between two snapshots, as git writes them: for each path that
+# differs, a `diff --git a/<path> b/<path>` header, the lines that say a file
+# was made or deleted or changed its mode, an `index <old>..<new>` line of
+# the two blobs' short names, then the unified difference of the two
+# contents (git-diff(1), "Generating patch text"). A content that is not
+# UTF-8 or holds a zero byte is binary and is said to differ, not shown. The
+# same comparison counts the lines added and removed, which `commit`
+# reports as git does.
+#
+# A snapshot's blob may not be stored yet: the work tree's files are hashed
+# for comparison and not written, so such a content is read from the work
+# file it came from.
+
+use <rebel>/bytes
+use <rebel>/diff
+
+use objects/ids
+use objects/trees
+use repo/layout
+use snapshot/tree_files
+use store/database
+use work/tree_scan
+
+## Contents
+
+# The content of `name` at version `v`: the stored blob, else the work file.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `name`: the path.
+# - `v`: the version.
+#
+# Fails where neither holds it.
+function content_of(repo: layout.Repo, db: database.Database lent, name: str, v: tree_files.Version) -> [u8]?
+    match database.read_object(db, id: v.id)
+        .ok o => return ok(o.data)
+        .err e =>
+            if e.code != "not_found"
+                return fail(code: e.code, msg: e.msg)
+
+    return tree_scan.content_of(repo, file: tree_scan.stat(repo, name: name)?)
+
+# The lines of `data` where it is text: none for an empty content.
+#
+# - `data`: a file's content.
+#
+# Fails `not_text` where it is not UTF-8 or holds a zero byte: a binary
+# content.
+function text_lines(data: [u8]) -> [str]?
+    if bytes.contains(s: data, substr: [0])
+        return fail(code: "not_text", msg: "the content holds a zero byte")
+    return ok(diff.lines_of(bytes.to_text(data)?))
+
+## Patches
+
+# The patch of one path between `before` and `after`, either of which may be
+# absent.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `name`: the path.
+# - `before`: its older version, or `not_found` where it was added.
+# - `after`: its newer version, or `not_found` where it was deleted.
+#
+# Fails where a content cannot be read.
+function patch_of(repo: layout.Repo, db: database.Database lent, name: str, before: tree_files.Version?, after: tree_files.Version?) -> str?
+    lines: [str] @= [f"diff --git a/{name} b/{name}"]
+    old_lines: [str] @= []
+    new_lines: [str] @= []
+    old_name @= "a/" + name
+    new_name @= "b/" + name
+    old_id @= ids.ZERO
+    new_id @= ids.ZERO
+    binary @= false
+
+    match before
+        .ok v =>
+            old_id @ v.id
+
+            match text_lines(content_of(repo, db: db, name: name, v: v)?)
+                .ok t  => old_lines @ t
+                .err _ => binary @ true
+        .err _ => old_name @ "/dev/null"
+
+    match after
+        .ok v =>
+            new_id @ v.id
+
+            match text_lines(content_of(repo, db: db, name: name, v: v)?)
+                .ok t  => new_lines @ t
+                .err _ => binary @ true
+        .err _ => new_name @ "/dev/null"
+
+    index_line @= f"index {ids.short(old_id)}..{ids.short(new_id)}"
+
+    match before
+        .err _ =>
+            lines @ lines.push("new file mode " + trees.mode_text(after?.mode))
+        .ok b =>
+            match after
+                .err _ => lines @ lines.push("deleted file mode " + trees.mode_text(b.mode))
+                .ok a =>
+                    if a.mode != b.mode
+                        lines @ lines.push("old mode " + trees.mode_text(b.mode))
+                        lines @ lines.push("new mode " + trees.mode_text(a.mode))
+                    else
+                        index_line @ index_line + " " + trees.mode_text(a.mode)
+
+    if old_id != new_id
+        lines @ lines.push(index_line)
+
+    if binary
+        lines @ lines.push(f"Binary files {old_name} and {new_name} differ")
+        return ok(lines.join("\n") + "\n")
+    body = diff.format_unified(
+        old: old_lines,
+        new: new_lines,
+        options: diff.default_options(old_name: old_name, new_name: new_name)
+    )
+    return ok(lines.join("\n") + "\n" + body)
+
+# The patch from the snapshot `older` to `newer`, path by path in order;
+# empty where they hold the same files.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `older`: the older snapshot's files.
+# - `newer`: the newer snapshot's files.
+#
+# Fails where a content cannot be read.
+function patch_between(repo: layout.Repo, db: database.Database lent, older: {str: tree_files.Version}, newer: {str: tree_files.Version}) -> str?
+    parts: [str] @= []
+
+    for name in changed_paths(older: older, newer: newer)
+        parts @ parts.push(patch_of(repo, db: db, name: name, before: older[name], after: newer[name])?)
+
+    return ok(parts.join(""))
+
+# The paths whose version differs between `older` and `newer`, sorted.
+#
+# - `older`: a snapshot's files.
+# - `newer`: another's.
+function changed_paths(older: {str: tree_files.Version}, newer: {str: tree_files.Version}) -> [str]
+    every: {str: bool} @= {}
+
+    for name in keys(older)
+        every[name] @ true
+
+    for name in keys(newer)
+        every[name] @ true
+
+    out: [str] @= []
+
+    for name in sort(keys(every))
+        if !tree_files.same_version(a: older[name], b: newer[name])
+            out @ out.push(name)
+
+    return out
+
+## Counting
+
+# How much a change touches, as `commit` and `diff --stat` count it.
+record Stat
+    # The paths that differ.
+    files: i64
+    # The lines added.
+    insertions: i64
+    # The lines removed.
+    deletions: i64
+
+# The lines added and removed from `older` to `newer`; a binary content
+# counts as no line.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `older`: the older snapshot's files.
+# - `newer`: the newer snapshot's files.
+#
+# Fails where a content cannot be read.
+function stat_between(repo: layout.Repo, db: database.Database lent, older: {str: tree_files.Version}, newer: {str: tree_files.Version}) -> Stat?
+    names = changed_paths(older: older, newer: newer)
+    added @= 0
+    removed @= 0
+
+    for name in names
+        old_lines: [str] @= []
+        new_lines: [str] @= []
+
+        match older[name]
+            .ok v  => old_lines @ text_lines(content_of(repo, db: db, name: name, v: v)?).default([])
+            .err _ => _ = 0
+
+        match newer[name]
+            .ok v  => new_lines @ text_lines(content_of(repo, db: db, name: name, v: v)?).default([])
+            .err _ => _ = 0
+
+        counts = line_counts(old: old_lines, new: new_lines)
+        added @ added + counts.insertions
+        removed @ removed + counts.deletions
+
+    return ok(Stat(files: names.len(), insertions: added, deletions: removed))
+
+# The lines added and removed from `old` to `new`, as one file's `Stat`:
+# the runs an edit script changes, never the lines it keeps.
+#
+# - `old`: the older lines.
+# - `new`: the newer lines.
+function line_counts(old: [str], new: [str]) -> Stat
+    added @= 0
+    removed @= 0
+
+    for op in diff.edits(old: old, new: new)
+        if op.tag != .equal
+            added @ added + op.new_to - op.new_from
+            removed @ removed + op.old_to - op.old_from
+
+    return Stat(files: 1, insertions: added, deletions: removed)
+
+# `n` and `word`, the word in the plural where `n` is not one.
+#
+# - `n`: a count.
+# - `word`: the singular, which takes an `s` for the plural.
+function counted(n: i64, word: str) -> str
+    if n == 1
+        return f"1 {word}"
+    return f"{n} {word}s"
+
+# `stat` as git's summary line writes it: ` 2 files changed, 5
+# insertions(+), 1 deletion(-)`, a count of none left out unless both are.
+#
+# - `stat`: the counts.
+function format_stat(stat: Stat) -> str
+    out @= " " + counted(stat.files, word: "file") + " changed"
+
+    if stat.insertions > 0 || stat.deletions == 0
+        out @ out + ", " + counted(stat.insertions, word: "insertion") + "(+)"
+
+    if stat.deletions > 0 || stat.insertions == 0
+        out @ out + ", " + counted(stat.deletions, word: "deletion") + "(-)"
+    return out
+
+test "format_stat: one of each, plurals, and a count of none left out"
+    assert format_stat(Stat(files: 1, insertions: 1, deletions: 1)) == " 1 file changed, 1 insertion(+), 1 deletion(-)"
+    assert format_stat(Stat(files: 3, insertions: 12, deletions: 0)) == " 3 files changed, 12 insertions(+)"
+    assert format_stat(Stat(files: 1, insertions: 0, deletions: 2)) == " 1 file changed, 2 deletions(-)"
+    assert format_stat(Stat(files: 1, insertions: 0, deletions: 0)) == " 1 file changed, 0 insertions(+), 0 deletions(-)"
+
+test "text_lines: text, empty, and a zero byte"
+    assert text_lines(bytes.from_text("a\nb")).must() == ["a\n", "b"]
+    assert text_lines([]).must() == []
+    assert text_lines([1, 0, 2]).is_err()
+
+test "changed_paths: added, removed, changed and unchanged paths"
+    a = tree_files.Version(mode: .file, id: ids.ZERO)
+    b = tree_files.Version(mode: .executable, id: ids.ZERO)
+    older = {"same": a, "gone": a, "mode": a}
+    newer = {"same": a, "new": a, "mode": b}
+    assert changed_paths(older: older, newer: newer) == ["gone", "mode", "new"]
+
+test "line_counts: a line added at the end, one replaced, none changed, all new"
+    old = diff.lines_of("a\nb\nc\n")
+    assert line_counts(old: old, new: diff.lines_of("a\nb\nc\nd\n")) == Stat(files: 1, insertions: 1, deletions: 0)
+    assert line_counts(old: old, new: diff.lines_of("a\nB\nc\n")) == Stat(files: 1, insertions: 1, deletions: 1)
+    assert line_counts(old: old, new: old) == Stat(files: 1, insertions: 0, deletions: 0)
+    assert line_counts(old: [], new: old) == Stat(files: 1, insertions: 3, deletions: 0)

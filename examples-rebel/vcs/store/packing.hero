@@ -1,0 +1,205 @@
+# A packfile written, with its index: what `gc` does with the loose
+# objects. The pack is version 2 of gitformat-pack(5), read back by
+# `store/pack_files` and by git. Its objects are chosen to be stored as
+# deltas the way git's own packing goes about it, in a simpler form: the
+# objects are ordered by kind, then by the path they were found at, then
+# largest first, so the versions of one file stand side by side with the
+# largest, usually the newest, first; each object then tries the few that
+# stand before it as a base, and keeps the smallest delta that is under half
+# its own size. Every base stands before its delta, so each delta names its
+# base by distance (type 6), and the pack needs nothing outside itself.
+
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/crypto
+use <rebel>/hash
+use <rebel>/lists
+use <rebel>/strings
+
+use objects/framing
+use store/deltas
+use store/pack_files
+use store/pack_index
+
+## Limits
+
+# How many objects before it each object tries as a base: git's own default
+# window.
+constant WINDOW: i64
+    10
+
+# The longest chain of deltas written, so reading an object inflates at most
+# this many deltas and one whole object: git's own default depth.
+constant MAX_DEPTH: i64
+    50
+
+## Packing
+
+# An object to pack.
+record Packable
+    # Its name.
+    id: str
+    # Its kind.
+    kind: framing.Kind
+    # Its content.
+    data: [u8]
+    # Where it was found, a file's path or a folder's for a tree, empty for
+    # a commit or a tag: objects of one path are tried as each other's
+    # bases.
+    hint: str
+
+# What `build_pack` made.
+record Built
+    # The pack's bytes.
+    pack: [u8]
+    # Its index's bytes.
+    index: [u8]
+    # The pack's trailing checksum in hexadecimal: its file is
+    # `pack-<checksum>.pack`.
+    checksum: str
+    # How many objects it stores as deltas.
+    delta_count: i64
+
+# The rank of `kind` in a pack's order: commits, then tags, trees and blobs.
+#
+# - `kind`: the kind.
+function kind_rank(kind: framing.Kind) -> i64
+    return match kind
+        .commit => 0
+        .tag    => 1
+        .tree   => 2
+        .blob   => 3
+
+# Whether `a` goes before `b` in the order deltas are sought in: by kind,
+# by path, then the larger first, then by name so the order is total.
+#
+# - `a`: an object.
+# - `b`: another.
+function packable_before(a: Packable, b: Packable) -> bool
+    if kind_rank(a.kind) != kind_rank(b.kind)
+        return kind_rank(a.kind) < kind_rank(b.kind)
+    by_hint = strings.compare(a: a.hint, b: b.hint)
+
+    if by_hint != 0
+        return by_hint < 0
+
+    if a.data.len() != b.data.len()
+        return a.data.len() > b.data.len()
+    return strings.compare(a: a.id, b: b.id) < 0
+
+# The choice of a base for each object of `ordered`: the index of the object
+# it is a delta of, or -1, and the delta itself.
+record Choices
+    # For each object, the index of its base, or -1 where it is stored
+    # whole.
+    bases: [i64]
+    # For each object, its delta, empty where it is stored whole.
+    deltas: [[u8]]
+
+# The base each object of `ordered` takes, among the `WINDOW` before it of
+# its kind, its chain no deeper than `MAX_DEPTH`.
+#
+# - `ordered`: the objects, in the order `packable_before` gives.
+function choose_bases(ordered: [Packable] lent) -> Choices
+    bases: [i64] @= []
+    made: [[u8]] @= []
+    depth: [i64] @= []
+    i @= 0
+
+    while i < ordered.len()
+        best @= -1
+        best_delta: [u8] @= []
+        j @= i - 1
+
+        while j >= 0 && j >= i - WINDOW
+            if ordered[j].kind == ordered[i].kind && depth[j] < MAX_DEPTH
+                d = deltas.make_delta(base: ordered[j].data, target: ordered[i].data)
+
+                if d.len() < ordered[i].data.len() / 2 && (best < 0 || d.len() < best_delta.len())
+                    best @ j
+                    best_delta @ d
+            j @ j - 1
+
+        bases @ bases.push(best)
+        made @ made.push(best_delta)
+
+        level = if best < 0
+            0
+        else
+            depth[best] + 1
+        depth @ depth.push(level)
+        i @ i + 1
+
+    return Choices(bases: bases, deltas: made)
+
+# The pack of `objects` and its index, deltas chosen as this module's
+# comment says.
+#
+# - `objects`: the objects to pack, each once.
+#
+# Fails `invalid` where an object's name is not whole; compression of
+# DEFLATE's default options does not fail.
+function build_pack(objects: [Packable]) -> Built?
+    ordered = lists.sort_by(objects, less: packable_before)
+    choices = choose_bases(ordered)
+    out @= bytes.from_text("PACK")
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(2))
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(ordered.len())?))
+    offsets: [i64] @= []
+    located: [pack_index.Located] @= []
+    delta_count @= 0
+    options = compress.default_options(.zlib)
+    i @= 0
+
+    while i < ordered.len()
+        o = ordered[i]
+        start = out.len()
+
+        entry @= if choices.bases[i] < 0
+            pack_files.encode_header(type_number: pack_files.type_of(o.kind), size: o.data.len())
+        else
+            pack_files.encode_header(type_number: pack_files.TYPE_OFS_DELTA, size: choices.deltas[i].len())
+
+        if choices.bases[i] < 0
+            bytes.push_all(to: @entry, from: compress.compress(o.data, options: options)?)
+        else
+            delta_count @ delta_count + 1
+            bytes.push_all(to: @entry, from: pack_files.encode_distance(start - offsets[choices.bases[i]]))
+            bytes.push_all(to: @entry, from: compress.compress(choices.deltas[i], options: options)?)
+        offsets @ offsets.push(start)
+        located @ located.push(pack_index.Located(id: o.id, crc: hash.crc32(entry), offset: start))
+        bytes.push_all(to: @out, from: entry)
+        i @ i + 1
+
+    checksum = crypto.sha1(out)
+    bytes.push_all(to: @out, from: checksum)
+    index = pack_index.encode_index(located, pack_checksum: checksum)?
+    return ok(Built(pack: out, index: index, checksum: bytes.format_hex(checksum), delta_count: delta_count))
+
+test "packable_before: kinds first, then paths, then the larger"
+    small = Packable(id: "b", kind: .blob, data: [1], hint: "a.txt")
+    large = Packable(id: "c", kind: .blob, data: [1, 2], hint: "a.txt")
+    other = Packable(id: "a", kind: .blob, data: [1, 2, 3], hint: "b.txt")
+    commit = Packable(id: "d", kind: .commit, data: [], hint: "")
+    assert packable_before(a: commit, b: small)
+    assert packable_before(a: large, b: small)
+    assert packable_before(a: small, b: other)
+
+test "choose_bases: two versions of one file, the second a delta of the first"
+    first = bytes.from_text(repeat("a line of the first version of the file\n", 20))
+    second = bytes.concat([first, bytes.from_text("and one line more\n")])
+    ordered = [
+        Packable(id: "2", kind: .blob, data: second, hint: "f")
+        Packable(id: "1", kind: .blob, data: first, hint: "f")
+    ]
+    c = choose_bases(ordered)
+    assert c.bases == [-1, 0]
+    assert deltas.apply_delta(base: second, delta: c.deltas[1]).must() == first
+
+test "choose_bases: objects of different kinds are never each other's bases"
+    text = bytes.from_text(repeat("the same text in a tree and in a blob\n", 10))
+    ordered = [
+        Packable(id: "1", kind: .tree, data: text, hint: "")
+        Packable(id: "2", kind: .blob, data: text, hint: "")
+    ]
+    assert choose_bases(ordered).bases == [-1, -1]

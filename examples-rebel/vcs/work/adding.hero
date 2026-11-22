@@ -1,0 +1,158 @@
+# Staging: `add` and `rm`, what moves the work tree's state into the index.
+# `add` takes files, folders, or `.` for the whole tree: each file the
+# ignore patterns leave in is stored as a blob and staged, and each tracked
+# path under a folder named that is gone from disk is staged as deleted, as
+# git's `add` has done since 2.0. A path the patterns ignore is refused when
+# named on its own, unless it is tracked already. Adding a conflicted path
+# marks its conflict resolved: its three stages give way to stage 0. `rm`
+# unstages a path and, unless asked to keep it, deletes its file.
+
+use <rebel>/fs
+use <rebel>/strings
+
+use repo/layout
+use repo/staging
+use store/database
+use work/tree_scan
+
+## Adding
+
+# What `add_paths` did.
+record Added
+    # The paths staged with new or changed content, in order.
+    staged: [str]
+    # The paths staged as deleted, in order.
+    removed: [str]
+
+# Whether `name` is `prefix` or stands below it, both paths joined by `/`;
+# the prefix `.` or empty holds every path.
+#
+# - `name`: a path.
+# - `prefix`: a folder's path, or a file's.
+function is_within(name: str, prefix: str) -> bool
+    if prefix == "." || prefix == ""
+        return true
+    return name == prefix || strings.has_prefix(s: name, prefix: strings.trim_suffix(s: prefix, suffix: "/") + "/")
+
+# Stages the work file `file`: its blob stored, its entry put at stage 0 and
+# any conflict stages of its path taken out.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `index`: the index, which the caller owns.
+# - `file`: the work file.
+#
+# Fails where it cannot be read or its blob written.
+function stage_file(repo: layout.Repo, db: database.Database lent, @index: staging.Index, file: tree_scan.WorkFile) -> ()?
+    id = database.write_object(db, kind: .blob, data: tree_scan.content_of(repo, file: file)?)?
+    _ = staging.remove_path(@index, name: file.name)
+    staging.put(
+        @index,
+        entry: staging.Entry(name: file.name, stage: 0, mode: file.mode, id: id, size: file.size, seconds: file.seconds, nanoseconds: file.nanoseconds)
+    )
+    return ok()
+
+# Stages every path `names` names: files, folders, or `.` for all.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `index`: the index, which the caller owns and saves.
+# - `names`: paths below the top of the work tree, joined by `/`.
+#
+# Fails `not_found` where a name matches neither a file on disk nor a tracked
+# path, `invalid` where a file named alone is ignored and not tracked, and
+# where a file cannot be read or stored.
+function add_paths(repo: layout.Repo, db: database.Database lent, @index: staging.Index, names: [str]) -> Added?
+    files = tree_scan.scan(repo)?
+    staged: [str] @= []
+    removed: [str] @= []
+    on_disk: {str: bool} @= {}
+
+    for f in files
+        on_disk[f.name] @ true
+
+    for given in names
+        wanted = strings.trim_suffix(s: given, suffix: "/")
+        matched @= false
+
+        for f in files
+            if is_within(name: f.name, prefix: wanted)
+                matched @ true
+                stage_file(repo, db: db, @index, file: f)?
+                staged @ staged.push(f.name)
+
+        for e in staging.all_entries(index)
+            if is_within(name: e.name, prefix: wanted) && on_disk[e.name].is_err()
+                matched @ true
+
+                if !fs.exists(layout.work_file(repo, name: e.name)).default(false)
+                    _ = staging.remove_path(@index, name: e.name)
+                    removed @ removed.push(e.name)
+
+        if !matched
+            alone = tree_scan.stat(repo, name: wanted)
+
+            if alone.is_err()
+                return fail(code: "not_found", msg: f"\"{given}\" matches no file and no tracked path")
+
+            if tree_scan.is_ignored(repo, name: wanted)? && staging.entry_of(index, name: wanted).is_err()
+                return fail(code: "invalid", msg: f"\"{given}\" is ignored by a {tree_scan.IGNORE_FILE} pattern")
+            stage_file(repo, db: db, @index, file: alone?)?
+            staged @ staged.push(wanted)
+
+    return ok(Added(staged: sort(dedupe(staged)), removed: sort(dedupe(removed))))
+
+# `names` with each repeated name kept once.
+#
+# - `names`: any names.
+function dedupe(names: [str]) -> [str]
+    seen: {str: bool} @= {}
+
+    for n in names
+        seen[n] @ true
+
+    return keys(seen)
+
+## Removing
+
+# Unstages every tracked path under `names` and, unless `keep_files`, deletes
+# its file from the work tree, answering the paths removed.
+#
+# - `repo`: the repository.
+# - `index`: the index, which the caller owns and saves.
+# - `names`: tracked paths or folders, joined by `/`.
+# - `keep_files`: true to leave the files on disk, as `rm --cached` does.
+#
+# Fails `not_found` where a name matches no tracked path, and where a file
+# cannot be deleted.
+function remove_paths(repo: layout.Repo, @index: staging.Index, names: [str], keep_files: bool) -> [str]?
+    removed: [str] @= []
+
+    for given in names
+        wanted = strings.trim_suffix(s: given, suffix: "/")
+        matched @= false
+
+        for e in staging.all_entries(index)
+            if is_within(name: e.name, prefix: wanted)
+                matched @ true
+                _ = staging.remove_path(@index, name: e.name)
+                removed @ removed.push(e.name)
+                file = layout.work_file(repo, name: e.name)
+
+                if !keep_files && fs.exists(file).default(false)
+                    fs.remove(file)?
+
+        if !matched
+            return fail(code: "not_found", msg: f"\"{given}\" matches no tracked path")
+
+    return ok(sort(dedupe(removed)))
+
+test "is_within: the path itself, a file below, a sibling with a common prefix, and the whole tree"
+    assert is_within(name: "src", prefix: "src")
+    assert is_within(name: "src/a.txt", prefix: "src")
+    assert is_within(name: "src/a.txt", prefix: "src/")
+    assert !is_within(name: "srcs/a.txt", prefix: "src")
+    assert is_within(name: "a.txt", prefix: ".")
+
+test "dedupe: a name given twice kept once"
+    assert sort(dedupe(["b", "a", "b"])) == ["a", "b"]

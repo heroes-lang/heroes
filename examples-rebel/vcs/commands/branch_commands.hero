@@ -1,0 +1,244 @@
+# The commands that work on history and names: `branch`, `checkout`,
+# `tag`, `merge` and `log`. Like the work tree's commands, each answers the
+# text a person reads.
+
+use history/ancestry
+use history/committing
+use history/log_view
+use merging/merge_command
+use objects/annotated
+use objects/commits
+use objects/ids
+use objects/signatures
+use repo/layout
+use repo/refs
+use store/database
+use work/switching
+
+## branch
+
+# The branches, one a line, the one checked out marked `*`; a detached
+# `HEAD` first, as `(HEAD detached at 1a2b3c4)`.
+#
+# - `repo`: the repository.
+#
+# Fails where a ref cannot be read.
+function list_branches(repo: layout.Repo) -> str?
+    head = refs.read_head(repo)?
+    lines: [str] @= []
+
+    current = match head
+        .branch b => b.name
+        .detached d =>
+            lines @ lines.push(f"* (HEAD detached at {ids.short(d.id)})")
+            ""
+
+    for b in refs.list_refs(repo, folder: "refs/heads")?
+        mark = if b.name == current
+            "* "
+        else
+            "  "
+        lines @ lines.push(mark + b.name)
+
+    return ok(lines.join("\n"))
+
+# Makes the branch `name` at the commit `start` names, `HEAD` where it is
+# empty, and answers nothing: git's `branch` is silent.
+#
+# - `repo`: the repository.
+# - `name`: the new branch's name.
+# - `start`: a revision, or empty for `HEAD`.
+#
+# Fails `invalid` where the name may not name a branch, `exists` where the
+# branch is there, and `not_found` where the start names nothing.
+function create_branch(repo: layout.Repo, name: str, start: str) -> str?
+    if !refs.is_ref_name(name)
+        return fail(code: "invalid", msg: f"\"{name}\" is not a valid branch name")
+
+    if !refs.read_ref(repo, full: "refs/heads/" + name).is_err()
+        return fail(code: "exists", msg: f"a branch named '{name}' already exists")
+    db = database.open_database(layout.objects_dir(repo))?
+
+    text = if start == ""
+        "HEAD"
+    else
+        start
+    id = refs.resolve_commit(repo, db: db, text: text)?
+    refs.write_ref(repo, full: "refs/heads/" + name, id: id)?
+    return ok("")
+
+# Deletes the branch `name`; unless `force`, only where its commit is in
+# `HEAD`'s history, so no commit is left without a name by mistake.
+#
+# - `repo`: the repository.
+# - `name`: the branch.
+# - `force`: true to delete it whatever it holds, as `-D` does.
+#
+# Fails `not_found` where there is no such branch, and `invalid` where it is
+# checked out or, without `force`, not merged.
+function delete_branch(repo: layout.Repo, name: str, force: bool) -> str?
+    full = "refs/heads/" + name
+    id = refs.read_ref(repo, full: full)?
+
+    match refs.read_head(repo)?
+        .branch b =>
+            if b.name == name
+                return fail(code: "invalid", msg: f"cannot delete the branch '{name}', which is checked out")
+        .detached _ => _ = 0
+
+    if !force
+        db = database.open_database(layout.objects_dir(repo))?
+        head = refs.head_commit(repo)?
+
+        if !ancestry.is_ancestor(db, ancestor: id, id: head)?
+            return fail(code: "invalid", msg: f"the branch '{name}' is not fully merged; delete it with -D to lose it")
+    refs.delete_ref(repo, full: full)?
+    return ok(f"Deleted branch {name} (was {ids.short(id)}).")
+
+## checkout
+
+# Checks out `target`: a branch, which `HEAD` then names; with `create`, a
+# new branch made at `HEAD`; or any other revision, with `HEAD` detached at
+# it. Answers git's line.
+#
+# - `repo`: the repository.
+# - `target`: a branch, a new branch's name, or a revision.
+# - `create`: true to make the branch first, as `-b` does.
+#
+# Fails `invalid` where a merge waits or local changes would be lost, and
+# where the target names nothing.
+function checkout(repo: layout.Repo, target: str, create: bool) -> str?
+    if !refs.merge_head(repo).is_err()
+        return fail(code: "invalid", msg: "a merge is waiting: commit it before switching")
+    db = database.open_database(layout.objects_dir(repo))?
+
+    if create
+        _ = create_branch(repo, name: target, start: "")?
+        refs.set_head_branch(repo, name: target)?
+        return ok(f"Switched to a new branch '{target}'")
+    current = refs.head_commit(repo).default("")
+    before = committing.files_of_commit(db, id: current)?
+    branch = refs.read_ref(repo, full: "refs/heads/" + target)
+
+    match branch
+        .ok id =>
+            match refs.read_head(repo)?
+                .branch b =>
+                    if b.name == target
+                        return ok(f"Already on '{target}'")
+                .detached _ => _ = 0
+
+            switching.move(repo, db: db, before: before, after: committing.files_of_commit(db, id: id)?)?
+            refs.set_head_branch(repo, name: target)?
+            return ok(f"Switched to branch '{target}'")
+        .err _ =>
+            id = refs.resolve_commit(repo, db: db, text: target)?
+            switching.move(repo, db: db, before: before, after: committing.files_of_commit(db, id: id)?)?
+            refs.set_head_detached(repo, id: id)?
+            c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+            return ok(f"HEAD is now at {ids.short(id)} {commits.subject_of(c.message)}")
+
+## tag
+
+# The tags, one a line, in name order.
+#
+# - `repo`: the repository.
+#
+# Fails where a ref cannot be read.
+function list_tags(repo: layout.Repo) -> str?
+    names: [str] @= []
+
+    for t in refs.list_refs(repo, folder: "refs/tags")?
+        names @ names.push(t.name)
+
+    return ok(names.join("\n"))
+
+# Makes the tag `name` at the commit `target` names, `HEAD` where empty: an
+# annotated tag object with `message` and `who` as its tagger where
+# `message` is not empty, else a lightweight tag, a ref alone.
+#
+# - `repo`: the repository.
+# - `name`: the tag's name.
+# - `target`: a revision, or empty for `HEAD`.
+# - `message`: the tag's message, or empty for a lightweight tag.
+# - `who`: who tags, and when.
+#
+# Fails `invalid` where the name may not name a tag, `exists` where the tag
+# is there, and `not_found` where the target names nothing.
+function create_tag(repo: layout.Repo, name: str, target: str, message: str, who: signatures.Signature) -> str?
+    if !refs.is_ref_name(name)
+        return fail(code: "invalid", msg: f"\"{name}\" is not a valid tag name")
+
+    if !refs.read_ref(repo, full: "refs/tags/" + name).is_err()
+        return fail(code: "exists", msg: f"the tag '{name}' already exists")
+    db = database.open_database(layout.objects_dir(repo))?
+
+    text = if target == ""
+        "HEAD"
+    else
+        target
+    id = refs.resolve_commit(repo, db: db, text: text)?
+
+    if message == ""
+        refs.write_ref(repo, full: "refs/tags/" + name, id: id)?
+        return ok("")
+    body = committing.clean_message(message)?
+    tag = annotated.Tag(target: id, kind: .commit, name: name, tagger: who, message: body)
+    tag_id = database.write_object(db, kind: .tag, data: annotated.encode_tag(tag))?
+    refs.write_ref(repo, full: "refs/tags/" + name, id: tag_id)?
+    return ok("")
+
+# Deletes the tag `name`.
+#
+# - `repo`: the repository.
+# - `name`: the tag.
+#
+# Fails `not_found` where there is no such tag.
+function delete_tag(repo: layout.Repo, name: str) -> str?
+    full = "refs/tags/" + name
+    id = refs.read_ref(repo, full: full)?
+    refs.delete_ref(repo, full: full)?
+    return ok(f"Deleted tag '{name}' (was {ids.short(id)})")
+
+## merge
+
+# Merges `other` into the branch checked out.
+#
+# - `repo`: the repository.
+# - `other`: a branch, a tag or a commit.
+# - `who`: who makes the merge commit, and when.
+#
+# Fails as `merge_command.merge` does.
+function merge(repo: layout.Repo, other: str, who: signatures.Signature) -> str?
+    db = database.open_database(layout.objects_dir(repo))?
+    return merge_command.merge(repo, db: db, other_name: other, who: who)
+
+## log
+
+# The log from `revisions`, `HEAD` where none is given, or from every branch
+# and tag with `all`.
+#
+# - `repo`: the repository.
+# - `revisions`: where to start.
+# - `all_refs`: true to start from every branch and tag.
+# - `options`: the form.
+#
+# Fails `not_found` where the branch has no commit or a revision names
+# nothing.
+function log(repo: layout.Repo, revisions: [str], all_refs: bool, options: log_view.Options) -> str?
+    db = database.open_database(layout.objects_dir(repo))?
+    tips: [str] @= []
+
+    if all_refs
+        for folder in ["refs/heads", "refs/tags"]
+            for r in refs.list_refs(repo, folder: folder)?
+                tips @ tips.push(refs.peel_to_commit(db, id: r.id)?)
+
+    for text in revisions
+        tips @ tips.push(refs.resolve_commit(repo, db: db, text: text)?)
+
+    if tips.len() == 0
+        match refs.head_commit(repo)
+            .ok id => tips @ tips.push(id)
+            .err _ => return fail(code: "not_found", msg: "the branch has no commits yet")
+    return log_view.render(repo, db: db, tips: tips, options: options)

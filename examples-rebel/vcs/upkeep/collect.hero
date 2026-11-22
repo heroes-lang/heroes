@@ -1,0 +1,86 @@
+# `gc`: every object the repository still needs packed into one new pack,
+# then the loose copies and the old packs it replaces removed, as `git gc`
+# repacks (git-gc(1)). The pack is written before anything is removed, and
+# its index after the pack, since a reader looks for the index; so at every
+# moment each needed object has a readable copy. Objects nothing reaches
+# are left loose rather than deleted: one may be the only copy of work the
+# person staged and then unstaged, and git too keeps them for weeks before
+# pruning.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use repo/layout
+use store/database
+use store/loose
+use store/packing
+use upkeep/reach
+
+## Collecting
+
+# Packs every object `repo` reaches into one pack, removes the loose copies
+# and the old packs, and answers what it did.
+#
+# - `repo`: the repository.
+#
+# Fails where an object cannot be read, the pack cannot be written, or a
+# file cannot be removed; a failure before the pack's index is written
+# leaves every old copy in place.
+function collect(repo: layout.Repo) -> str?
+    dir = layout.objects_dir(repo)
+    db = database.open_database(dir)?
+    met = reach.reachable(db, starts: reach.roots(repo)?)?
+
+    if met.len() == 0
+        return ok("Nothing to pack.")
+    objects: [packing.Packable] @= []
+    needed: {str: bool} @= {}
+
+    for m in met
+        o = database.read_object(db, id: m.id)?
+        objects @ objects.push(packing.Packable(id: m.id, kind: o.kind, data: o.data, hint: m.hint))
+        needed[m.id] @ true
+
+    built = packing.build_pack(objects)?
+    name = "pack-" + built.checksum
+    folder = database.pack_dir(dir)
+    fs.make_dir_all(folder)?
+    fs.write_atomic_bytes(path: path.join_all([folder, name + ".pack"]), data: built.pack)?
+    fs.write_atomic_bytes(path: path.join_all([folder, name + ".idx"]), data: built.index)?
+    old_packs @= 0
+
+    for pack in db.packs
+        if pack.name != name
+            fs.remove(path.join_all([folder, pack.name + ".idx"]))?
+            fs.remove(path.join_all([folder, pack.name + ".pack"]))?
+            old_packs @ old_packs + 1
+
+    removed @= 0
+    kept @= 0
+
+    for id in loose.loose_ids(dir)?
+        if !needed[id].is_err()
+            loose.remove_loose(dir: dir, id: id)?
+            removed @ removed + 1
+        else
+            kept @ kept + 1
+
+    lines = [
+        f"Packed {met.len()} objects ({built.delta_count} as deltas) into {short_pack(name)}"
+        f"Removed {removed} loose objects and {old_packs} old packs; {kept} unreachable objects left loose"
+    ]
+    return ok(lines.join("\n"))
+
+# A pack's name cut for a person to read: `pack-` and the first twelve
+# digits of its checksum.
+#
+# - `name`: `pack-` and 40 digits.
+function short_pack(name: str) -> str
+    if name.len() <= 17
+        return name
+    return name.slice(from: 0, to: 17) + "..."
+
+test "short_pack: a pack's name cut, and one already short"
+    assert short_pack("pack-0123456789abcdef0123456789abcdef01234567") == "pack-0123456789ab..."
+    assert strings.has_prefix(s: short_pack("pack-1"), prefix: "pack-")

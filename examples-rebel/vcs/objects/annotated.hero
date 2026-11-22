@@ -1,0 +1,85 @@
+# An annotated tag object: a name given to another object, with who gave it,
+# when and why, in the header shape of `objects/headers` (`git tag`'s and
+# the Git Book's "Git Objects"): `object`, `type`, `tag`, `tagger`, an
+# empty line, the message. A lightweight tag is only a ref and has no object;
+# `vcs tag -m` makes this one, and its ref names it rather than the commit.
+
+use objects/framing
+use objects/headers
+use objects/ids
+use objects/signatures
+
+## Tags
+
+# An annotated tag, read or about to be written.
+record Tag
+    # The name of the object tagged, a commit in every tag this program
+    # makes.
+    target: str
+    # The kind of the object tagged.
+    kind: framing.Kind
+    # The tag's own name, `v1.0`.
+    name: str
+    # Who tagged, and when.
+    tagger: signatures.Signature
+    # Why, ending with a line feed.
+    message: str
+
+# The content of the tag object `t`.
+#
+# - `t`: the tag.
+function encode_tag(t: Tag) -> [u8]
+    lines = [
+        headers.Header(key: "object", value: t.target)
+        headers.Header(key: "type", value: framing.kind_name(t.kind))
+        headers.Header(key: "tag", value: t.name)
+        headers.Header(key: "tagger", value: signatures.format_signature(t.tagger))
+    ]
+    return headers.format(lines, message: t.message)
+
+# The tag whose content is `data`.
+#
+# - `data`: a tag object's content.
+#
+# Fails `invalid` where its object, type, name or tagger is missing or does
+# not read, and `not_text` where it is not UTF-8.
+function decode_tag(data: [u8]) -> Tag?
+    p = headers.parse(data)?
+
+    target = match headers.value_of(p, key: "object")
+        .ok v  => v
+        .err _ => return fail(code: "invalid", msg: "a tag names no object")
+
+    if !ids.is_id(target)
+        return fail(code: "invalid", msg: f"a tag's object \"{target}\" is no object name")
+
+    kind = match headers.value_of(p, key: "type")
+        .ok v  => framing.parse_kind(v)?
+        .err _ => return fail(code: "invalid", msg: "a tag names no type")
+
+    name = match headers.value_of(p, key: "tag")
+        .ok v  => v
+        .err _ => return fail(code: "invalid", msg: "a tag has no name")
+
+    tagger = match headers.value_of(p, key: "tagger")
+        .ok v  => signatures.parse_signature(v)?
+        .err _ => return fail(code: "invalid", msg: "a tag names no tagger")
+
+    return ok(Tag(target: target, kind: kind, name: name, tagger: tagger, message: p.message))
+
+test "decode_tag: what encode_tag wrote"
+    ada = signatures.parse_signature("Ada Lovelace <ada@example.org> 1795251600 +0100").must()
+    t = Tag(target: ids.ZERO, kind: .commit, name: "v1.0", tagger: ada, message: "First release\n")
+    assert decode_tag(encode_tag(t)).must() == t
+
+test "decode_tag: no object, a kind that is none, no tagger"
+    no_object = [headers.Header(key: "type", value: "commit")]
+    assert decode_tag(headers.format(no_object, message: "")).is_err()
+    bad_kind = [headers.Header(key: "object", value: ids.ZERO), headers.Header(key: "type", value: "wood")]
+    assert decode_tag(headers.format(bad_kind, message: "")).is_err()
+    no_tagger = [
+        headers.Header(key: "object", value: ids.ZERO)
+        headers.Header(key: "type", value: "commit")
+        headers.Header(key: "tag", value: "v1")
+    ]
+    assert decode_tag(headers.format(no_tagger, message: "")).is_err()

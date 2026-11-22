@@ -1,0 +1,342 @@
+# The staging index: what the next commit will hold, one entry per path,
+# stored in `.vcs/index` in version 2 of gitformat-index(5) so git reads it
+# too. The file is `DIRC`, the version and the count, each four bytes
+# big-endian; then each entry, sorted by its path's bytes and then by its
+# stage: ten four-byte numbers (the change and modification times, seconds
+# and nanoseconds, the device, the inode, the mode, the owner, the group, the
+# size), the object's 20 raw bytes, two bytes of flags (the stage in bits 12
+# and 13, the path's length in the low twelve), the path, and one to eight
+# zero bytes so the entry's length is a multiple of eight; then the SHA-1 of
+# everything before it.
+#
+# Stage 0 is an ordinary entry. While a merge waits for its conflicts, a
+# conflicted path has no stage 0 and up to three others instead: 1 the
+# common ancestor's version, 2 ours, 3 theirs; `add` puts the path back at
+# stage 0. The entries are held in an ordered map keyed by path and stage,
+# so they are kept in the file's order whatever order they are added in.
+#
+# Of the facts of the file on disk this program records the size and the
+# modification time, and writes 0 for the device, the inode, the owner and
+# the group; it compares a file with its entry by size and then by content,
+# never trusting the time, since two writes within one tick of the clock
+# leave it unchanged.
+
+use <rebel>/bytes
+use <rebel>/containers/ordered
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/strings
+
+use objects/ids
+use objects/trees
+use repo/layout
+
+## Entries
+
+# Where an entry stands in the index: its path, then its stage.
+record Key
+    # The path below the top of the work tree, its parts joined by `/`.
+    name: str
+    # 0 for an ordinary entry; 1, 2 or 3 for a conflict's ancestor, ours
+    # and theirs.
+    stage: i64
+
+# One entry of the index.
+record Entry
+    # The path below the top of the work tree, its parts joined by `/`.
+    name: str
+    # 0, or 1 to 3 during a conflict, as `Key.stage`.
+    stage: i64
+    # A file, an executable, a link, or a submodule's commit.
+    mode: trees.Mode
+    # The blob holding the file's content.
+    id: str
+    # The file's size in bytes when it was added, as the index's four bytes
+    # hold it: below 2^32.
+    size: i64
+    # The whole seconds of its modification time when it was added.
+    seconds: i64
+    # The nanoseconds past them.
+    nanoseconds: i64
+
+# Whether `a` stands before `b` in the index: by path bytes, then stage.
+#
+# - `a`: a key.
+# - `b`: another.
+function key_before(a: Key, b: Key) -> bool
+    order = strings.compare(a: a.name, b: b.name)
+
+    if order != 0
+        return order < 0
+    return a.stage < b.stage
+
+## The index
+
+# The index: an ordered map from `Key` to `Entry`, in the parts
+# `containers/ordered` keeps one in.
+record Index
+    # The tree of the map.
+    shape: ordered.Ordered
+    # Its keys.
+    names: [Key]
+    # Its entries, beside their keys.
+    entries: [Entry]
+
+# An index holding nothing, the one a new repository starts with.
+function empty() -> Index
+    return Index(shape: ordered.new_map(), names: [], entries: [])
+
+# Puts `entry` in `index`, replacing the entry of its path and stage.
+#
+# - `index`: the index, which the caller owns.
+# - `entry`: the entry.
+function put(@index: Index, entry: Entry)
+    ordered.put(
+        @index.shape,
+        @index.names,
+        @index.entries,
+        key: Key(name: entry.name, stage: entry.stage),
+        value: entry,
+        less: key_before
+    )
+
+# Takes every entry of `name` out of `index`, at every stage, and answers
+# whether there was one.
+#
+# - `index`: the index, which the caller owns.
+# - `name`: the path.
+function remove_path(@index: Index, name: str) -> bool
+    removed @= false
+
+    for stage in [0, 1, 2, 3]
+        match ordered.remove(@index.shape, @index.names, @index.entries, key: Key(name: name, stage: stage), less: key_before)
+            .ok _  => removed @ true
+            .err _ => _ = 0
+
+    return removed
+
+# Every entry of `index`, in its order.
+#
+# - `index`: the index.
+function all_entries(index: Index lent) -> [Entry]
+    out: [Entry] @= []
+
+    for slot in ordered.slots(index.shape)
+        out @ out.push(index.entries[slot])
+
+    return out
+
+# The ordinary entry of `name`.
+#
+# - `index`: the index.
+# - `name`: the path.
+#
+# Fails `not_found` where `name` has no entry at stage 0.
+function entry_of(index: Index lent, name: str) -> Entry?
+    return ordered.get(
+        index.shape,
+        key_list: index.names,
+        value_list: index.entries,
+        key: Key(name: name, stage: 0),
+        less: key_before
+    )
+
+# The entry of `name` at `stage`.
+#
+# - `index`: the index.
+# - `name`: the path.
+# - `stage`: 0 to 3.
+#
+# Fails `not_found` where there is none.
+function entry_at(index: Index lent, name: str, stage: i64) -> Entry?
+    return ordered.get(
+        index.shape,
+        key_list: index.names,
+        value_list: index.entries,
+        key: Key(name: name, stage: stage),
+        less: key_before
+    )
+
+# The paths that wait for a conflict to be resolved, each once, in order.
+#
+# - `index`: the index.
+function conflicted(index: Index lent) -> [str]
+    out: [str] @= []
+
+    for e in all_entries(index)
+        if e.stage > 0 && (out.len() == 0 || out[out.len() - 1] != e.name)
+            out @ out.push(e.name)
+
+    return out
+
+## The file
+
+# The bytes of the index file holding `index`.
+#
+# - `index`: the index.
+#
+# Fails `invalid` where an entry's object name is not whole, or its size or
+# time does not fit the file's four bytes.
+function encode(index: Index lent) -> [u8]?
+    found = all_entries(index)
+    out @= bytes.from_text("DIRC")
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(2))
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(found.len())?))
+
+    for e in found
+        start = out.len()
+        seconds = to_u32(e.seconds)?
+        nanoseconds = to_u32(e.nanoseconds)?
+
+        for value in [seconds, nanoseconds, seconds, nanoseconds, 0, 0, to_u32(trees.mode_bits(e.mode))?, 0, 0, to_u32(e.size)?]
+            bytes.push_all(to: @out, from: bytes.encode_u32_be(value))
+
+        bytes.push_all(to: @out, from: ids.raw_of(e.id)?)
+
+        length = if e.name.len() < 0xfff
+            e.name.len()
+        else
+            0xfff
+        bytes.push_all(to: @out, from: bytes.encode_u16_be(to_u16(e.stage << 12 | length)?))
+        bytes.push_text(to: @out, s: e.name)
+        out @ out.push(0)
+
+        while (out.len() - start) % 8 != 0
+            out @ out.push(0)
+
+    bytes.push_all(to: @out, from: crypto.sha1(out))
+    return ok(out)
+
+# The index whose file holds `data`, its checksum checked. Extensions after
+# the entries, which git may write, are passed over.
+#
+# - `data`: the index file's bytes.
+#
+# Fails `invalid` where it does not begin `DIRC` version 2, its checksum is
+# not its content's, an entry is cut short or its mode or path does not
+# read.
+function decode(data: [u8]) -> Index?
+    if data.len() < 32 || data.slice(from: 0, to: 4) != bytes.from_text("DIRC")
+        return fail(code: "invalid", msg: "the index does not begin as version 2 does")
+
+    if bytes.decode_u32_be(data, at: 4)? != 2
+        return fail(code: "invalid", msg: "the index is of a version other than 2")
+    end = data.len() - 20
+
+    if crypto.sha1(data.slice(from: 0, to: end)) != data.slice(from: end, to: data.len())
+        return fail(code: "invalid", msg: "the index's checksum is not its content's")
+    count = to_i64(bytes.decode_u32_be(data, at: 8)?).must()
+    index @= empty()
+    at @= 12
+
+    for _ in range(from: 0, to: count)
+        if at + 62 > end
+            return fail(code: "invalid", msg: "the index ends inside an entry")
+        number = to_i64(bytes.decode_u32_be(data, at: at + 24)?).must()
+        size = to_i64(bytes.decode_u32_be(data, at: at + 36)?).must()
+        flags = to_i64(bytes.decode_u16_be(data, at: at + 60)?).must()
+        length @= flags & 0xfff
+        name_at = at + 62
+
+        if length == 0xfff
+            length @ bytes.index_of_from(s: data, substr: [0], from: name_at)? - name_at
+
+        if name_at + length > end
+            return fail(code: "invalid", msg: "the index ends inside a path")
+        entry = Entry(
+            name: bytes.to_text(data.slice(from: name_at, to: name_at + length))?,
+            stage: flags >> 12 & 3,
+            mode: trees.mode_of_bits(number)?,
+            id: ids.hex_of(data.slice(from: at + 40, to: at + 60))?,
+            size: size,
+            seconds: to_i64(bytes.decode_u32_be(data, at: at + 8)?).must(),
+            nanoseconds: to_i64(bytes.decode_u32_be(data, at: at + 12)?).must()
+        )
+        put(@index, entry: entry)
+        at @ at + (62 + length + 8) / 8 * 8
+
+    return ok(index)
+
+# The path of the index file of `repo`.
+#
+# - `repo`: the repository.
+function index_file(repo: layout.Repo) -> str
+    return layout.file_in(repo, name: "index")
+
+# The index of `repo`, empty where it has none yet.
+#
+# - `repo`: the repository.
+#
+# Fails where the file cannot be read or does not read as an index.
+function load(repo: layout.Repo) -> Index?
+    file = index_file(repo)
+
+    if !fs.is_file(file).default(false)
+        return ok(empty())
+    return decode(fs.read_bytes(file)?)
+
+# Writes `index` as `repo`'s index file, in one step no reader sees half of.
+#
+# - `repo`: the repository.
+# - `index`: the index.
+#
+# Fails where it cannot be written or an entry does not encode.
+function save(repo: layout.Repo, index: Index lent) -> ()?
+    return fs.write_atomic_bytes(path: index_file(repo), data: encode(index)?)
+
+test "put and all_entries: entries kept in the order of their paths' bytes"
+    index @= empty()
+
+    for name in ["src/b.txt", "README", "src/a.txt", "a-b"]
+        put(@index, entry: Entry(name: name, stage: 0, mode: .file, id: ids.ZERO, size: 0, seconds: 0, nanoseconds: 0))
+
+    names = all_entries(index).map(entry_name)
+    assert names == ["README", "a-b", "src/a.txt", "src/b.txt"]
+
+test "remove_path and conflicted: three stages of one path, then none"
+    index @= empty()
+
+    for stage in [3, 1, 2]
+        put(
+            @index,
+            entry: Entry(name: "f", stage: stage, mode: .file, id: ids.ZERO, size: 0, seconds: 0, nanoseconds: 0)
+        )
+
+    assert conflicted(index) == ["f"]
+    assert entry_of(index, name: "f").is_err()
+    assert entry_at(index, name: "f", stage: 2).must().stage == 2
+    assert remove_path(@index, name: "f")
+    assert all_entries(index).len() == 0
+    assert !remove_path(@index, name: "f")
+
+test "encode and decode: an index there and back, a stage kept, a flipped byte refused"
+    index @= empty()
+    put(
+        @index,
+        entry: Entry(name: "a.txt", stage: 0, mode: .executable, id: "ce013625030ba8dba906f756967f9e9ca394464a", size: 6, seconds: 1795251600, nanoseconds: 5)
+    )
+    put(@index, entry: Entry(name: "b", stage: 2, mode: .file, id: ids.ZERO, size: 0, seconds: 0, nanoseconds: 0))
+    data = encode(index).must()
+    back = decode(data).must()
+    assert all_entries(back) == all_entries(index)
+    flipped @= data
+    flipped[20] @ 9
+    assert decode(flipped).is_err()
+    assert decode(data.slice(from: 0, to: 30)).is_err()
+
+test "encode: each entry padded to a multiple of eight bytes"
+    for length in range(from: 1, to: 12)
+        index @= empty()
+        put(
+            @index,
+            entry: Entry(name: repeat("x", to_u64(length).must()), stage: 0, mode: .file, id: ids.ZERO, size: 0, seconds: 0, nanoseconds: 0)
+        )
+        data = encode(index).must()
+        assert (data.len() - 12 - 20) % 8 == 0
+        assert decode(data).must().entries[0].name.len() == length
+
+# The path of `e`, for the tests' `map`.
+#
+# - `e`: an entry.
+function entry_name(e: Entry) -> str
+    return e.name

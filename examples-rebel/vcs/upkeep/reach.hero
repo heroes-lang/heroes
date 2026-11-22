@@ -1,0 +1,122 @@
+# Which objects a repository still needs: everything its refs, `HEAD`, a
+# waiting merge and the index reach, following a commit to its tree and its
+# parents, a tree to its entries and a tag to what it tags. `gc` packs
+# exactly these, and `fsck` checks every reference on the way. Each object
+# is met once, with the path it was first met at, which `gc` uses to put the
+# versions of one file side by side.
+
+use objects/annotated
+use objects/commits
+use objects/framing
+use objects/trees
+use repo/layout
+use repo/refs
+use repo/staging
+use store/database
+
+## Roots
+
+# Every object the repository names directly: each branch and tag, `HEAD`,
+# the commit a waiting merge brings, and each blob the index holds.
+#
+# - `repo`: the repository.
+#
+# Fails where a ref or the index cannot be read.
+function roots(repo: layout.Repo) -> [str]?
+    out: [str] @= []
+
+    for folder in ["refs/heads", "refs/tags"]
+        for r in refs.list_refs(repo, folder: folder)?
+            out @ out.push(r.id)
+
+    match refs.head_commit(repo)
+        .ok id => out @ out.push(id)
+        .err _ => _ = 0
+
+    match refs.merge_head(repo)
+        .ok id => out @ out.push(id)
+        .err _ => _ = 0
+
+    for e in staging.all_entries(staging.load(repo)?)
+        if e.mode != .gitlink
+            out @ out.push(e.id)
+
+    return ok(out)
+
+## The walk
+
+# An object met by the walk.
+record Met
+    # Its name.
+    id: str
+    # Its kind.
+    kind: framing.Kind
+    # The path it was first met at: a file's or a folder's below the top,
+    # empty for a commit, a tag, or a blob only the index or a ref names.
+    hint: str
+
+# An object still to visit, and the path it is reached by.
+record Visit
+    # Its name.
+    id: str
+    # The path, as `Met.hint`.
+    hint: str
+
+# Every object `starts` reach, each once, in the order the walk met them.
+#
+# - `db`: the database.
+# - `starts`: the names to start from.
+#
+# Fails `not_found` where a referenced object is missing, naming the
+# reference, and where an object does not decode.
+function reachable(db: database.Database lent, starts: [str]) -> [Met]?
+    seen: {str: bool} @= {}
+    out: [Met] @= []
+    stack: [Visit] @= []
+
+    for id in starts
+        stack @ stack.push(Visit(id: id, hint: ""))
+
+    while stack.len() > 0
+        v = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        if !seen[v.id].is_err()
+            continue
+        seen[v.id] @ true
+
+        o = match database.read_object(db, id: v.id)
+            .ok found => found
+            .err e =>
+                where = if v.hint == ""
+                    ""
+                else
+                    f" at {v.hint}"
+                return fail(code: e.code, msg: f"{v.id}{where}: {e.msg}")
+
+        out @ out.push(Met(id: v.id, kind: o.kind, hint: v.hint))
+
+        match o.kind
+            .commit =>
+                c = commits.decode_commit(o.data)?
+                stack @ stack.push(Visit(id: c.tree, hint: ""))
+
+                for p in c.parents
+                    stack @ stack.push(Visit(id: p, hint: ""))
+            .tree =>
+                for e in trees.decode_tree(o.data)?
+                    if e.mode != .gitlink
+                        stack @ stack.push(Visit(id: e.id, hint: v.hint + e.name + under(e.mode)))
+            .tag  => stack @ stack.push(Visit(id: annotated.decode_tag(o.data)?.target, hint: ""))
+            .blob => _ = 0
+
+    return ok(out)
+
+# `/` after a folder's name, so a subtree's entries take their whole paths;
+# nothing after a file's.
+#
+# - `mode`: an entry's mode.
+function under(mode: trees.Mode) -> str
+    if mode == .directory
+        return "/"
+    return ""

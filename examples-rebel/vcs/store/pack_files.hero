@@ -1,0 +1,388 @@
+# A packfile read: version 2 of gitformat-pack(5). The file opens with
+# `PACK`, the version and the count of objects, each four bytes big-endian,
+# and ends with the SHA-1 of everything before it. Each object begins with a
+# header whose first byte holds a continuation bit, a type of three bits
+# and the low four bits of the size, later bytes seven more bits each,
+# lowest first; the size is the length of what the compressed data inflates
+# to. Types 1 to 4 are a commit, a tree, a blob and a tag, whole; type 6 is
+# a delta whose base stands earlier in the pack, so many bytes back (an
+# offset written big-endian in groups of seven bits, each continued group
+# adding one before the shift); type 7 is a delta whose base is named by its
+# 20 raw bytes. A delta's base may itself be a delta: the chain is followed
+# to a whole object, then the deltas are applied back up it.
+#
+# The pack is read whole into memory and its index beside it, so an object
+# is a binary search in the index and one inflation per link of its chain.
+
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/hash
+
+use objects/framing
+use objects/ids
+use store/deltas
+use store/pack_index
+
+## Types
+
+# The type number of a commit in a pack.
+constant TYPE_COMMIT: i64
+    1
+
+# The type number of a tree.
+constant TYPE_TREE: i64
+    2
+
+# The type number of a blob.
+constant TYPE_BLOB: i64
+    3
+
+# The type number of an annotated tag.
+constant TYPE_TAG: i64
+    4
+
+# The type number of a delta whose base stands earlier, at an offset.
+constant TYPE_OFS_DELTA: i64
+    6
+
+# The type number of a delta whose base is named by its id.
+constant TYPE_REF_DELTA: i64
+    7
+
+# The longest chain of deltas this reader follows: one longer is a pack
+# built by another program to be costly, or a loop of offsets, and is
+# refused rather than followed.
+constant MAX_CHAIN: i64
+    4096
+
+# The type number a whole object of `kind` takes in a pack.
+#
+# - `kind`: the object's kind.
+function type_of(kind: framing.Kind) -> i64
+    return match kind
+        .commit => TYPE_COMMIT
+        .tree   => TYPE_TREE
+        .blob   => TYPE_BLOB
+        .tag    => TYPE_TAG
+
+# The kind of a whole object of type number `n`.
+#
+# - `n`: a type number read from a pack.
+#
+# Fails `invalid` for a delta's type or one no pack uses.
+function kind_of(n: i64) -> framing.Kind?
+    return match n
+        1 => ok(.commit)
+        2 => ok(.tree)
+        3 => ok(.blob)
+        4 => ok(.tag)
+        _ => fail(code: "invalid", msg: f"{n} is no type of a whole object in a pack")
+
+## Headers
+
+# The header of a packed object: its type, and the size of what its data
+# inflates to.
+#
+# - `type_number`: 1 to 4, 6 or 7.
+# - `size`: the size, 0 or more.
+function encode_header(type_number: i64, size: i64) -> [u8]
+    rest @= size >> 4
+    first @= type_number << 4 | size & 0x0f
+
+    if rest > 0
+        first @ first | 0x80
+    out: [u8] @= [to_u8(first).must()]
+
+    while rest > 0
+        b @= rest & 0x7f
+        rest @ rest >> 7
+
+        if rest > 0
+            b @ b | 0x80
+        out @ out.push(to_u8(b).must())
+
+    return out
+
+# A packed object's header read.
+record Header
+    # The type number.
+    type_number: i64
+    # The size of what its data inflates to.
+    size: i64
+    # Where the bytes after the header begin.
+    next: i64
+
+# The header that begins at byte `at` of `data`.
+#
+# - `data`: a pack.
+# - `at`: where an object begins.
+#
+# Fails `invalid` where the pack ends inside the header or the size runs
+# past 63 bits.
+function decode_header(data: [u8] lent, at: i64) -> Header?
+    if at >= data.len()
+        return fail(code: "invalid", msg: f"a pack ends before the object at {at}")
+    b @= to_i64(data[at]).must()
+    type_number = b >> 4 & 7
+    size @= b & 0x0f
+    shift @= 4
+    i @= at + 1
+
+    while b & 0x80 != 0
+        if i >= data.len() || shift > 56
+            return fail(code: "invalid", msg: f"the header of the object at {at} does not end")
+        b @ to_i64(data[i]).must()
+        size @ size | (b & 0x7f) << shift
+        shift @ shift + 7
+        i @ i + 1
+
+    return ok(Header(type_number: type_number, size: size, next: i))
+
+# How far back a delta's base stands, as a type 6 object writes it after its
+# header.
+#
+# - `distance`: the bytes from the base's start to the delta's, 1 or more.
+function encode_distance(distance: i64) -> [u8]
+    groups: [i64] @= [distance & 0x7f]
+    rest @= distance >> 7
+
+    while rest > 0
+        rest @ rest - 1
+        groups @ groups.push(rest & 0x7f | 0x80)
+        rest @ rest >> 7
+
+    out: [u8] @= []
+    i @= groups.len() - 1
+
+    while i >= 0
+        out @ out.push(to_u8(groups[i]).must())
+        i @ i - 1
+
+    return out
+
+# A base's distance read, and where the bytes after it begin.
+record Distance
+    # How far back the base stands.
+    value: i64
+    # Where the delta's compressed data begins.
+    next: i64
+
+# The distance that begins at byte `at` of `data`.
+#
+# - `data`: a pack.
+# - `at`: the byte after a type 6 object's header.
+#
+# Fails `invalid` where the pack ends inside it or it runs past 63 bits.
+function decode_distance(data: [u8] lent, at: i64) -> Distance?
+    if at >= data.len()
+        return fail(code: "invalid", msg: "a pack ends inside a delta's distance")
+    c @= to_i64(data[at]).must()
+    value @= c & 0x7f
+    i @= at + 1
+
+    while c & 0x80 != 0
+        if i >= data.len() || value >= 0x00ffffffffffffff
+            return fail(code: "invalid", msg: "a delta's distance does not end")
+        c @ to_i64(data[i]).must()
+        value @ value + 1 << 7 | c & 0x7f
+        i @ i + 1
+
+    return ok(Distance(value: value, next: i))
+
+## Reading a pack
+
+# A pack read whole, with its index.
+record Pack
+    # The pack's file name without its folder or extension:
+    # `pack-<checksum>`.
+    name: str
+    # Every byte of the pack.
+    data: [u8]
+    # Its index.
+    index: pack_index.PackIndex
+    # For each object's offset, where its bytes end: the next object's
+    # offset, or the trailing checksum's.
+    ends: {i64: i64}
+
+# The pack at `pack_file` and the index at `index_file`, checked against
+# each other.
+#
+# - `pack_file`: a `.pack` file.
+# - `index_file`: its `.idx`.
+# - `name`: what the pack is called in messages.
+#
+# Fails `invalid` where the pack does not begin `PACK` version 2, its count
+# is not the index's, its trailing checksum is not its content's or not the
+# one its index records; and where either file cannot be read.
+function open_pack(pack_file: str, index_file: str, name: str) -> Pack?
+    data = fs.read_bytes(pack_file)?
+    index = pack_index.decode_index(fs.read_bytes(index_file)?)?
+
+    if data.len() < 32 || data.slice(from: 0, to: 4) != bytes.from_text("PACK")
+        return fail(code: "invalid", msg: f"{name} does not begin as a pack does")
+
+    if bytes.decode_u32_be(data, at: 4)? != 2
+        return fail(code: "invalid", msg: f"{name} is a pack of a version other than 2")
+    count = to_i64(bytes.decode_u32_be(data, at: 8)?).must()
+
+    if count != index.objects.len()
+        return fail(code: "invalid", msg: f"{name} holds {count} objects and its index {index.objects.len()}")
+    trailer = data.slice(from: data.len() - 20, to: data.len())
+
+    if crypto.sha1(data.slice(from: 0, to: data.len() - 20)) != trailer || trailer != index.pack_checksum
+        return fail(code: "invalid", msg: f"{name}'s trailing checksum is not its content's or its index's")
+    starts: [i64] @= []
+
+    for o in index.objects
+        if o.offset < 12 || o.offset >= data.len() - 20
+            return fail(code: "invalid", msg: f"{name}'s index places {o.id} outside the pack")
+        starts @ starts.push(o.offset)
+
+    sorted = sort(starts)
+    ends: {i64: i64} @= {}
+    i @= 0
+
+    while i < sorted.len()
+        ends[sorted[i]] @ if i + 1 < sorted.len()
+            sorted[i + 1]
+        else
+            data.len() - 20
+        i @ i + 1
+
+    return ok(Pack(name: name, data: data, index: index, ends: ends))
+
+# The data of the object at `at` once inflated: `size` bytes from `from`.
+#
+# - `pack`: the pack.
+# - `at`: where the object begins, which names where its bytes end.
+# - `from`: where its compressed data begins.
+# - `size`: what its header says the data inflates to.
+#
+# Fails `invalid` where the data does not inflate to exactly `size` bytes.
+function inflate_at(pack: Pack lent, at: i64, from: i64, size: i64) -> [u8]?
+    end = pack.ends[at].default(pack.data.len() - 20)
+
+    if from > end
+        return fail(code: "invalid", msg: f"the object at {at} of {pack.name} ends before its data")
+    found = compress.decompress_leading(pack.data.slice(from: from, to: end), format: .zlib, limit: size)?
+
+    if found.data.len() != size
+        return fail(
+            code: "invalid",
+            msg: f"the object at {at} of {pack.name} inflates to {found.data.len()} bytes where its header says {size}"
+        )
+    return ok(found.data)
+
+# The object that begins at byte `offset` of `pack`, its deltas applied.
+#
+# - `pack`: the pack.
+# - `offset`: where the object begins, as its index records it.
+#
+# Fails `invalid` where a header or a distance does not read, a base stands
+# outside the pack or is not in it, a chain runs past `MAX_CHAIN`, or a
+# delta does not apply.
+function read_at(pack: Pack lent, offset: i64) -> framing.Object?
+    chain: [[u8]] @= []
+    at @= offset
+
+    while true
+        if chain.len() > MAX_CHAIN
+            return fail(
+                code: "invalid",
+                msg: f"the object at {offset} of {pack.name} has a chain of deltas past {MAX_CHAIN}"
+            )
+        h = decode_header(pack.data, at: at)?
+
+        if h.type_number == TYPE_OFS_DELTA
+            d = decode_distance(pack.data, at: h.next)?
+
+            if d.value <= 0 || d.value > at - 12
+                return fail(code: "invalid", msg: f"the delta at {at} of {pack.name} names a base outside the pack")
+            chain @ chain.push(inflate_at(pack, at: at, from: d.next, size: h.size)?)
+            at @ at - d.value
+        else if h.type_number == TYPE_REF_DELTA
+            if h.next + 20 > pack.data.len()
+                return fail(code: "invalid", msg: f"the delta at {at} of {pack.name} is cut short")
+            base = ids.hex_of(pack.data.slice(from: h.next, to: h.next + 20))?
+            slot = pack_index.slot_of(pack.index, id: base)?
+            chain @ chain.push(inflate_at(pack, at: at, from: h.next + 20, size: h.size)?)
+            at @ pack.index.objects[slot].offset
+        else
+            kind = kind_of(h.type_number)?
+            data @= inflate_at(pack, at: at, from: h.next, size: h.size)?
+            i @= chain.len() - 1
+
+            while i >= 0
+                data @ deltas.apply_delta(base: data, delta: chain[i])?
+                i @ i - 1
+
+            return ok(framing.Object(kind: kind, data: data))
+
+# The object `id` of `pack`, checked against its name.
+#
+# - `pack`: the pack.
+# - `id`: a whole object name.
+#
+# Fails `not_found` where the pack does not hold it, `invalid` where it does
+# not read or its content's hash is not `id`.
+function read_object(pack: Pack lent, id: str) -> framing.Object?
+    slot = pack_index.slot_of(pack.index, id: id)?
+    object = read_at(pack, offset: pack.index.objects[slot].offset)?
+    found = framing.id_of(object.kind, data: object.data)
+
+    if found != id
+        return fail(code: "invalid", msg: f"{pack.name} holds the content of {found} under the name {id}")
+    return ok(object)
+
+# Whether `pack` holds the object `id`.
+#
+# - `pack`: the pack.
+# - `id`: a whole object name.
+function has_id(pack: Pack lent, id: str) -> bool
+    return !pack_index.slot_of(pack.index, id: id).is_err()
+
+# Whether the CRC-32 of every object's packed bytes is the one the index
+# records: what `fsck` asks of a pack before reading its objects.
+#
+# - `pack`: the pack.
+#
+# Fails `invalid`, naming the first object whose bytes disagree.
+function check_crcs(pack: Pack lent) -> ()?
+    for o in pack.index.objects
+        end = pack.ends[o.offset].default(pack.data.len() - 20)
+
+        if hash.crc32(pack.data.slice(from: o.offset, to: end)) != o.crc
+            return fail(
+                code: "invalid",
+                msg: f"the packed bytes of {o.id} in {pack.name} are not the ones its index records"
+            )
+
+    return ok()
+
+test "encode_header and decode_header: a small size, a large one, every type"
+    for t in [1, 2, 3, 4, 6, 7]
+        for size in [0, 15, 16, 1000, 1 << 40]
+            h = decode_header(encode_header(type_number: t, size: size), at: 0).must()
+            assert h.type_number == t
+            assert h.size == size
+
+test "decode_header: a pack that ends inside one"
+    assert decode_header([0x95], at: 0).is_err()
+    assert decode_header([], at: 0).is_err()
+
+test "encode_distance and decode_distance: one byte, the edge of two, and far"
+    for d in [1, 127, 128, 16511, 16512, 1 << 30]
+        assert decode_distance(encode_distance(d), at: 0).must().value == d
+
+    assert encode_distance(128) == [0x80, 0]
+    assert decode_distance([0x80], at: 0).is_err()
+
+test "type_of and kind_of: every kind there and back, and a delta's type refused"
+    every: [framing.Kind] = [.commit, .tree, .blob, .tag]
+
+    for kind in every
+        assert kind_of(type_of(kind)).must() == kind
+
+    assert kind_of(TYPE_OFS_DELTA).is_err()

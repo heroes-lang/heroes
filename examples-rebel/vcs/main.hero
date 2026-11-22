@@ -1,0 +1,68 @@
+# vcs: a small version control system in git's model, written from git's
+# documented object model and behaviour.
+#
+# Every file, folder and snapshot is an object named by the SHA-1 of its
+# kind, size and content, so the names are git's own (`git hash-object`
+# gives the same), stored compressed by zlib, first loose and then, after
+# `gc`, in a packfile whose objects are mostly deltas of each other, with
+# the pack's index beside it. A staging index in git's binary format says
+# what the next commit holds; branches, tags and `HEAD` are files under
+# `refs/`. `status` walks the work tree, leaving out what `.vcsignore`
+# files ignore; `diff` writes unified differences between the work tree,
+# the index and any commit; `log` draws the commit graph; `merge`
+# fast-forwards, or merges three ways and writes conflicts between markers
+# for the person to resolve; `fsck` recomputes every object's hash. The
+# repository is the folder `.vcs`, laid out as `.git` is, so git itself
+# reads it with `git --git-dir=.vcs`.
+#
+# Run for real, in the folder of a project:
+#
+#     vcs init
+#     vcs add .
+#     vcs commit -m "First"
+#     vcs checkout -b topic
+#     vcs status
+#     vcs diff
+#     vcs log --graph --all
+#     vcs merge topic
+#     vcs tag -m "First release" v1.0
+#     vcs gc
+#     vcs fsck
+#
+# with `VCS_AUTHOR_NAME`, `VCS_AUTHOR_EMAIL` and, for names that never
+# change, `VCS_AUTHOR_DATE` (`1795251600 +0100`) in the environment; and
+# `vcs demo build/vcs-demo` runs a whole session in a folder it makes and
+# removes, printing a transcript that is the same on every run
+# (`main.args`, `main.expected`). Its one line that may differ between
+# machines is the line beginning `git hash-object:`, where the demo asks
+# this machine's git to name one object of each kind: `main.expected`
+# holds it as a machine with git prints it, `agrees on 4 objects`, and a
+# machine without git prints `skipped: no git on this machine` there.
+#
+# Rebel's packages and what for:
+#
+# - `crypto`: SHA-1, the name of every object and the checksum that ends the
+#   index, each pack and each pack's index; `hash`: the CRC-32 a pack's
+#   index keeps of every packed object, and the FNV-1a fingerprints a delta
+#   finds its copies by; `compress`: zlib, around every loose object and
+#   every object of a pack.
+# - `bytes`: the binary formats, the index's and the pack's numbers and
+#   their varints, names as hexadecimal; `containers/ordered`: the index,
+#   an ordered map from path and stage to entry, kept in the file's order.
+# - `diff`: the unified differences, the counts a commit reports, and the
+#   edit scripts the three-way merge of a text walks.
+# - `graphs`: the commit graph, what a commit reaches, the order a log
+#   shows, and from those the merge base.
+# - `fs`: the repository's files, written whole and atomically, and the
+#   work tree walked with its ignore files; `path`: the ignore patterns
+#   themselves and every path built; `time`: a signature's moment and its
+#   zone, and the dates a log writes.
+# - `flags`: this command line; `os`: the working folder and the
+#   environment's identity; `process`: `git hash-object` run by the demo;
+#   `io`, `strings`, `lists`, `numbers`: what the rest stands on.
+
+use cli/command_line
+
+# Runs the command the arguments name, and ends with its exit code.
+function main()
+    exit(code: command_line.run(args()))

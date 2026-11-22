@@ -1,0 +1,115 @@
+# A commit object: the tree it snapshots, the commits it follows, who wrote
+# it and who made it, and its message, in the header shape of
+# `objects/headers` (the Git Book's "Git Objects"): `tree`, one `parent` per
+# parent in order, `author`, `committer`, an empty line, the message. The
+# first parent is the branch the commit was made on; a merge has two.
+
+use objects/framing
+use objects/headers
+use objects/ids
+use objects/signatures
+
+## Commits
+
+# A commit, read or about to be written.
+record Commit
+    # The name of the tree it snapshots.
+    tree: str
+    # The names of the commits it follows, the first the one it was made on;
+    # none for a root commit, two for a merge.
+    parents: [str]
+    # Who wrote the change, and when.
+    author: signatures.Signature
+    # Who made the commit, and when.
+    committer: signatures.Signature
+    # Why, its first line the subject, ending with a line feed.
+    message: str
+
+# The content of the commit object `c`.
+#
+# - `c`: the commit.
+function encode_commit(c: Commit) -> [u8]
+    lines: [headers.Header] @= [headers.Header(key: "tree", value: c.tree)]
+
+    for p in c.parents
+        lines @ lines.push(headers.Header(key: "parent", value: p))
+
+    lines @ lines.push(headers.Header(key: "author", value: signatures.format_signature(c.author)))
+    lines @ lines.push(headers.Header(key: "committer", value: signatures.format_signature(c.committer)))
+    return headers.format(lines, message: c.message)
+
+# The commit whose content is `data`.
+#
+# - `data`: a commit object's content.
+#
+# Fails `invalid` where its tree, a parent, its author or its committer is
+# missing or does not read, and `not_text` where it is not UTF-8.
+function decode_commit(data: [u8]) -> Commit?
+    p = headers.parse(data)?
+
+    tree = match headers.value_of(p, key: "tree")
+        .ok v  => v
+        .err _ => return fail(code: "invalid", msg: "a commit names no tree")
+
+    if !ids.is_id(tree)
+        return fail(code: "invalid", msg: f"a commit's tree \"{tree}\" is no object name")
+    parents = headers.values_of(p, key: "parent")
+
+    for parent in parents
+        if !ids.is_id(parent)
+            return fail(code: "invalid", msg: f"a commit's parent \"{parent}\" is no object name")
+
+    author = match headers.value_of(p, key: "author")
+        .ok v  => signatures.parse_signature(v)?
+        .err _ => return fail(code: "invalid", msg: "a commit names no author")
+
+    committer = match headers.value_of(p, key: "committer")
+        .ok v  => signatures.parse_signature(v)?
+        .err _ => return fail(code: "invalid", msg: "a commit names no committer")
+
+    return ok(Commit(tree: tree, parents: parents, author: author, committer: committer, message: p.message))
+
+# The first line of `message`: what a short log shows of a commit or a tag.
+#
+# - `message`: a commit's or a tag's message; empty gives empty.
+function subject_of(message: str) -> str
+    at @= 0
+
+    while at < message.len() && message[at] != '\n'
+        at @ at + 1
+
+    return message.slice(from: 0, to: at)
+
+test "encode_commit: a root commit as git names it"
+    ada = signatures.parse_signature("Ada Lovelace <ada@example.org> 1795251600 +0100").must()
+    c = Commit(
+        tree: "0d8a474fc67971fb3dd7616e26323d3066442555",
+        parents: [],
+        author: ada,
+        committer: ada,
+        message: "First\n"
+    )
+    data = encode_commit(c)
+    assert framing.id_of(.commit, data: data) == "167623a0b55f0c06bcd1b4643b9756ebbd54fe9e"
+
+test "decode_commit: what encode_commit wrote, with two parents"
+    ada = signatures.parse_signature("Ada Lovelace <ada@example.org> 1795251600 +0100").must()
+    c = Commit(
+        tree: ids.ZERO,
+        parents: [ids.ZERO, "ce013625030ba8dba906f756967f9e9ca394464a"],
+        author: ada,
+        committer: ada,
+        message: "Merge\n"
+    )
+    assert decode_commit(encode_commit(c)).must() == c
+
+test "decode_commit: no tree, a parent that is no name, no author"
+    assert decode_commit(headers.format([headers.Header(key: "parent", value: ids.ZERO)], message: "")).is_err()
+    bad_parent = [headers.Header(key: "tree", value: ids.ZERO), headers.Header(key: "parent", value: "zz")]
+    assert decode_commit(headers.format(bad_parent, message: "")).is_err()
+    assert decode_commit(headers.format([headers.Header(key: "tree", value: ids.ZERO)], message: "")).is_err()
+
+test "subject_of: the first line, a message of one line, and none"
+    assert subject_of("Add a file\n\nBecause.\n") == "Add a file"
+    assert subject_of("One") == "One"
+    assert subject_of("") == ""

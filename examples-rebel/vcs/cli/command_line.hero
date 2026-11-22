@@ -1,0 +1,307 @@
+# The command line: one subcommand per command, read by `flags`, run on the
+# repository that holds the working folder (found by walking up to the
+# nearest `.vcs`), with the person and the moment `cli/identity` reads. A
+# command's answer is printed on standard output; a failure is printed on
+# one line of standard error, `vcs <command>: <code>: <message>`, and ends
+# the program with 1; arguments that do not read print the usage and end it
+# with 2. Paths given to `add` and `rm` are read from the working folder,
+# as git reads them, wherever in the work tree that folder is.
+
+use <rebel>/flags
+use <rebel>/io
+use <rebel>/os
+use <rebel>/path
+use <rebel>/strings
+
+use cli/identity
+use commands/branch_commands
+use commands/object_commands
+use commands/tree_commands
+use demo/session
+use history/log_view
+use repo/layout
+
+## Exit codes
+
+# The command did what it was asked.
+constant EXIT_OK: i64
+    0
+
+# The command failed.
+constant EXIT_FAILED: i64
+    1
+
+# The arguments did not read.
+constant EXIT_USAGE: i64
+    2
+
+## The commands
+
+# A subcommand named `name` taking `arguments`.
+#
+# - `name`: its name.
+# - `about`: what it does.
+# - `arguments`: its options and positionals, in order.
+function sub(name: str, about: str, arguments: [flags.Argument]) -> flags.Command
+    c @= flags.command(name: name, about: about)
+
+    for a in arguments
+        flags.add(@c, a: a)
+
+    return c
+
+# A positional that takes any number of values.
+#
+# - `name`: its name in the usage.
+# - `help`: what it is.
+function many(name: str, help: str) -> flags.Argument
+    return flags.with_arity(flags.positional(name: name, help: help), arity: .many)
+
+# A positional that may be left out.
+#
+# - `name`: its name in the usage.
+# - `help`: what it is.
+function optional(name: str, help: str) -> flags.Argument
+    return flags.with_arity(flags.positional(name: name, help: help), arity: .optional)
+
+# The declaration of every command and its arguments.
+function command() -> flags.Command
+    root @= flags.with_version(
+        flags.command(name: "vcs", about: "A small version control system in git's model."),
+        version: "0.1.0"
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "init", about: "Makes an empty repository in a folder, the working folder by default.", arguments: [optional(name: "DIR", help: "the folder")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "add", about: "Stages files, folders, or . for everything.", arguments: [flags.with_arity(flags.positional(name: "PATH", help: "what to stage"), arity: .at_least_one)])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "rm", about: "Unstages paths and deletes their files.", arguments: [flags.flag(long: "cached", short: "", help: "keep the files on disk"), flags.with_arity(flags.positional(name: "PATH", help: "what to remove"), arity: .at_least_one)])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "commit", about: "Commits the index.", arguments: [flags.option(long: "message", short: "m", value_name: "TEXT", help: "the message; a waiting merge's by default")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "status", about: "Says how the work tree, the index and HEAD differ.", arguments: [flags.flag(long: "short", short: "s", help: "two letters a path")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "diff", about: "Shows changes: the work tree against the index, or against commits.", arguments: [flags.flag(long: "cached", short: "", help: "HEAD against the index"), many(name: "REVISION", help: "one or two commits")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "log", about: "Shows the history.", arguments: [flags.flag(long: "oneline", short: "", help: "one line a commit"), flags.flag(long: "graph", short: "", help: "draw the commit graph"), flags.flag(long: "all", short: "", help: "start from every branch and tag"), flags.with_kind(flags.option(long: "max-count", short: "n", value_name: "N", help: "at most N commits"), kind: .integer), many(name: "REVISION", help: "where to start; HEAD by default")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "branch", about: "Lists, makes or deletes branches.", arguments: [flags.flag(long: "delete", short: "d", help: "delete a merged branch"), flags.flag(long: "force-delete", short: "D", help: "delete a branch whatever it holds"), optional(name: "NAME", help: "the branch"), optional(name: "START", help: "where it begins; HEAD by default")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "checkout", about: "Switches to a branch, or to a commit with HEAD detached.", arguments: [flags.flag(long: "new-branch", short: "b", help: "make the branch first"), flags.positional(name: "TARGET", help: "a branch or a commit")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "tag", about: "Lists, makes or deletes tags.", arguments: [flags.option(long: "message", short: "m", value_name: "TEXT", help: "make an annotated tag with this message"), flags.flag(long: "delete", short: "d", help: "delete the tag"), optional(name: "NAME", help: "the tag"), optional(name: "TARGET", help: "what it tags; HEAD by default")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "merge", about: "Merges another line of history into the branch.", arguments: [flags.positional(name: "REVISION", help: "a branch, a tag or a commit")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "gc", about: "Packs every needed object into one pack, with deltas.", arguments: [])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "fsck", about: "Checks every object's hash and every reference.", arguments: [])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "cat-file", about: "Shows an object, or its kind with -t.", arguments: [flags.flag(long: "type", short: "t", help: "the kind alone"), flags.flag(long: "pretty", short: "p", help: "the content, a tree an entry a line: what is shown without -t"), flags.positional(name: "OBJECT", help: "a revision or an object name")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "hash-object", about: "Names a file's content as a blob, storing it with -w.", arguments: [flags.flag(long: "write", short: "w", help: "store the blob"), flags.positional(name: "FILE", help: "the file")])
+    )
+    flags.add_command(
+        c: @root,
+        sub: sub(name: "demo", about: "Runs a scripted session in a folder it makes and removes.", arguments: [flags.positional(name: "DIR", help: "the folder, removed first")])
+    )
+    return root
+
+# Runs the command `arguments` name, and answers the program's exit code.
+#
+# - `arguments`: the program's arguments, after its name.
+function run(arguments: [str]) -> i64
+    found = match flags.parse(command(), arguments: arguments)
+        .ok f => f
+        .err e =>
+            _ = io.write_line(io.stderr(), line: e.msg).is_err()
+            return EXIT_USAGE
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return EXIT_OK
+
+    if flags.is_version(found)
+        print(flags.version_text(found))
+        return EXIT_OK
+
+    chosen = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_text(found))
+            return EXIT_USAGE
+
+    match dispatch(chosen)
+        .ok text =>
+            if text != ""
+                print(text)
+            return EXIT_OK
+        .err e =>
+            _ = io.write_line(io.stderr(), line: f"vcs {flags.name_of(chosen)}: {e.code}: {e.msg}").is_err()
+            return EXIT_FAILED
+
+# The repository that holds the working folder.
+#
+# Fails `not_found` where none does.
+function here() -> layout.Repo?
+    return layout.discover(os.working_dir()?)
+
+# Runs the subcommand `chosen` names and answers its text.
+#
+# - `chosen`: what the parse found for the subcommand.
+#
+# Fails as the command does.
+function dispatch(chosen: flags.Found) -> str?
+    name = flags.name_of(chosen)
+
+    if name == "demo"
+        return session.run(flags.value_of(chosen, "DIR")?)
+
+    if name == "init"
+        return tree_commands.init(flags.value_of(chosen, "DIR").default(os.working_dir()?))
+    repo = here()?
+
+    return match name
+        "add" => tree_commands.add(repo, names: from_top(repo, names: flags.values_of(chosen, "PATH"))?)
+        "rm" => tree_commands.remove(
+            repo,
+            names: from_top(repo, names: flags.values_of(chosen, "PATH"))?,
+            keep_files: flags.is_on(chosen, "cached")
+        )
+        "commit" => tree_commands.commit(
+            repo,
+            message: flags.value_of(chosen, "message").default(""),
+            who: identity.current()?
+        )
+        "status" => tree_commands.status(repo, short: flags.is_on(chosen, "short"))
+        "diff" => tree_commands.diff(
+            repo,
+            revisions: flags.values_of(chosen, "REVISION"),
+            cached: flags.is_on(chosen, "cached")
+        )
+        "log"    => run_log(repo, chosen: chosen)
+        "branch" => run_branch(repo, chosen: chosen)
+        "checkout" => branch_commands.checkout(
+            repo,
+            target: flags.value_of(chosen, "TARGET")?,
+            create: flags.is_on(chosen, "new-branch")
+        )
+        "tag"   => run_tag(repo, chosen: chosen)
+        "merge" => branch_commands.merge(repo, other: flags.value_of(chosen, "REVISION")?, who: identity.current()?)
+        "gc"    => object_commands.gc(repo)
+        "fsck"  => object_commands.fsck(repo)
+        "cat-file" => object_commands.cat_file(
+            repo,
+            name: flags.value_of(chosen, "OBJECT")?,
+            kind_only: flags.is_on(chosen, "type")
+        )
+        _ => object_commands.hash_object(
+            repo,
+            file: flags.value_of(chosen, "FILE")?,
+            write: flags.is_on(chosen, "write")
+        )
+
+# `names`, paths a person typed in the working folder, as paths below the
+# top of the work tree joined by `/`: what `add` and `rm` take, so `vcs add
+# .` in a folder of the project stages that folder, as git reads it.
+#
+# - `repo`: the repository, whose top holds the working folder.
+# - `names`: the paths as typed, relative to the working folder.
+#
+# Fails `invalid` where a path leads out of the work tree, and where the
+# working folder cannot be read.
+function from_top(repo: layout.Repo, names: [str]) -> [str]?
+    here_dir = os.working_dir()?
+    below = path.relative(path: here_dir, base: repo.root)?
+    out: [str] @= []
+
+    for name in names
+        joined = path.to_slash(path.clean(path.join_all([below, name])))
+
+        if joined == ".." || strings.has_prefix(s: joined, prefix: "../") || path.is_abs(joined)
+            return fail(code: "invalid", msg: f"\"{name}\" is outside the work tree")
+        out @ out.push(joined)
+
+    return ok(out)
+
+# Runs `log` with its options.
+#
+# - `repo`: the repository.
+# - `chosen`: what the parse found.
+#
+# Fails as `branch_commands.log` does.
+function run_log(repo: layout.Repo, chosen: flags.Found) -> str?
+    options = log_view.Options(
+        oneline: flags.is_on(chosen, "oneline"),
+        graph: flags.is_on(chosen, "graph"),
+        limit: flags.int_of(chosen, "max-count").default(0)
+    )
+    return branch_commands.log(
+        repo,
+        revisions: flags.values_of(chosen, "REVISION"),
+        all_refs: flags.is_on(chosen, "all"),
+        options: options
+    )
+
+# Runs `branch`: a list with no name, a deletion with `-d` or `-D`, else a
+# new branch.
+#
+# - `repo`: the repository.
+# - `chosen`: what the parse found.
+#
+# Fails as the branch command does.
+function run_branch(repo: layout.Repo, chosen: flags.Found) -> str?
+    name = match flags.value_of(chosen, "NAME")
+        .ok n  => n
+        .err _ => return branch_commands.list_branches(repo)
+
+    if flags.is_on(chosen, "delete") || flags.is_on(chosen, "force-delete")
+        return branch_commands.delete_branch(repo, name: name, force: flags.is_on(chosen, "force-delete"))
+    return branch_commands.create_branch(repo, name: name, start: flags.value_of(chosen, "START").default(""))
+
+# Runs `tag`: a list with no name, a deletion with `-d`, else a new tag,
+# annotated where `-m` gives a message.
+#
+# - `repo`: the repository.
+# - `chosen`: what the parse found.
+#
+# Fails as the tag command does.
+function run_tag(repo: layout.Repo, chosen: flags.Found) -> str?
+    name = match flags.value_of(chosen, "NAME")
+        .ok n  => n
+        .err _ => return branch_commands.list_tags(repo)
+
+    if flags.is_on(chosen, "delete")
+        return branch_commands.delete_tag(repo, name: name)
+    target = flags.value_of(chosen, "TARGET").default("")
+    message = flags.value_of(chosen, "message").default("")
+    return branch_commands.create_tag(repo, name: name, target: target, message: message, who: identity.current()?)

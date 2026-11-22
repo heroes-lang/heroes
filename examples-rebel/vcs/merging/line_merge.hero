@@ -1,0 +1,187 @@
+# The three-way merge of one text: the common ancestor's lines, ours and
+# theirs, merged as diff3 does. Each side's edit script from the ancestor
+# says which of the ancestor's lines it kept and where; walking the three
+# together, a run of lines both sides kept in place is STABLE and passes
+# through, and what lies between two stable runs is a CHUNK, in which each
+# side either left the ancestor's lines as they were or changed them. A
+# chunk only one side changed takes that side's lines; a chunk both changed
+# alike takes either; a chunk both changed differently is a conflict,
+# written between git's markers:
+#
+#     <<<<<<< HEAD
+#     our lines
+#     =======
+#     their lines
+#     >>>>>>> topic
+#
+# This is the procedure Khanna, Kuber and Pierce set out in "A Formal
+# Investigation of Diff3" (FSTTCS 2007) for the `diff3` utility.
+
+use <rebel>/diff
+
+## Merging lines
+
+# What a merge of three texts made.
+record Merged
+    # The merged lines, each with its line feed, conflicts written between
+    # markers.
+    lines: [str]
+    # How many chunks conflicted.
+    conflicts: i64
+
+# Where each of the ancestor's lines a side kept stands in that side: the
+# `equal` runs of the edit script from the ancestor to the side.
+#
+# - `base`: the ancestor's lines.
+# - `side`: one side's lines.
+function kept_lines(base: [str], side: [str]) -> {i64: i64}
+    out: {i64: i64} @= {}
+
+    for op in diff.edits(old: base, new: side)
+        if op.tag == .equal
+            k @= 0
+
+            while k < op.old_to - op.old_from
+                out[op.old_from + k] @ op.new_from + k
+                k @ k + 1
+
+    return out
+
+# Whether two runs of lines are the same.
+#
+# - `left`: lines.
+# - `right`: other lines.
+function same_lines(left: [str], right: [str]) -> bool
+    return left == right
+
+# `lines` with a line feed after the last one where it has none, so a marker
+# after it starts a line of its own.
+#
+# - `lines`: one side's lines of a conflict.
+function ended(lines: [str]) -> [str]
+    if lines.len() == 0
+        return lines
+    last = lines[lines.len() - 1]
+
+    if last.len() > 0 && last[last.len() - 1] == '\n'
+        return lines
+    out @= lines.slice(from: 0, to: lines.len() - 1)
+    out @ out.push(last + "\n")
+    return out
+
+# Adds `lines` to `out`, which the caller owns.
+#
+# - `out`: the merged lines so far.
+# - `lines`: the lines to add after them.
+function push_lines(@out: [str], lines: [str])
+    for line in lines
+        out @ out.push(line)
+
+# The three-way merge of `base`, `ours` and `theirs`.
+#
+# - `base`: the common ancestor's lines, as `diff.lines_of` cuts them; empty
+#   where both sides added the file.
+# - `ours`: our lines.
+# - `theirs`: their lines.
+# - `ours_label`: what the opening marker names: `HEAD`.
+# - `theirs_label`: what the closing marker names: the branch merged in.
+function merge_lines(base: [str], ours: [str], theirs: [str], ours_label: str, theirs_label: str) -> Merged
+    in_ours = kept_lines(base: base, side: ours)
+    in_theirs = kept_lines(base: base, side: theirs)
+    out: [str] @= []
+    conflicts @= 0
+    i @= 0
+    a @= 0
+    c @= 0
+
+    while true
+        k @= 0
+
+        while i + k < base.len() && a + k < ours.len() && c + k < theirs.len() && in_ours[i + k].default(-1) == a + k && in_theirs[i + k].default(-1) == c + k
+            k @ k + 1
+
+        if k > 0
+            push_lines(out: @out, lines: base.slice(from: i, to: i + k))
+            i @ i + k
+            a @ a + k
+            c @ c + k
+            continue
+
+        if i == base.len() && a == ours.len() && c == theirs.len()
+            break
+        o @= i
+
+        while o < base.len() && (in_ours[o].default(-1) < a || in_theirs[o].default(-1) < c)
+            o @ o + 1
+
+        next_a = if o < base.len()
+            in_ours[o].must()
+        else
+            ours.len()
+
+        next_c = if o < base.len()
+            in_theirs[o].must()
+        else
+            theirs.len()
+        chunk_base = base.slice(from: i, to: o)
+        chunk_ours = ours.slice(from: a, to: next_a)
+        chunk_theirs = theirs.slice(from: c, to: next_c)
+
+        if same_lines(left: chunk_ours, right: chunk_base)
+            push_lines(out: @out, lines: chunk_theirs)
+        else if same_lines(left: chunk_theirs, right: chunk_base) || same_lines(left: chunk_ours, right: chunk_theirs)
+            push_lines(out: @out, lines: chunk_ours)
+        else
+            conflicts @ conflicts + 1
+            out @ out.push("<<<<<<< " + ours_label + "\n")
+            push_lines(out: @out, lines: ended(chunk_ours))
+            out @ out.push("=======\n")
+            push_lines(out: @out, lines: ended(chunk_theirs))
+            out @ out.push(">>>>>>> " + theirs_label + "\n")
+        i @ o
+        a @ next_a
+        c @ next_c
+
+    return Merged(lines: out, conflicts: conflicts)
+
+test "merge_lines: changes to different lines both kept"
+    base = diff.lines_of("one\ntwo\nthree\nfour\n")
+    ours = diff.lines_of("ONE\ntwo\nthree\nfour\n")
+    theirs = diff.lines_of("one\ntwo\nthree\nFOUR\n")
+    m = merge_lines(base: base, ours: ours, theirs: theirs, ours_label: "HEAD", theirs_label: "topic")
+    assert m.conflicts == 0
+    assert m.lines.join("") == "ONE\ntwo\nthree\nFOUR\n"
+
+test "merge_lines: one line changed two ways conflicts, the rest merged"
+    base = diff.lines_of("a\nb\nc\nd\ne\n")
+    ours = diff.lines_of("a\nb\nours\nd\nE\n")
+    theirs = diff.lines_of("A\nb\ntheirs\nd\ne\n")
+    m = merge_lines(base: base, ours: ours, theirs: theirs, ours_label: "HEAD", theirs_label: "topic")
+    assert m.conflicts == 1
+    assert m.lines.join("") == "A\nb\n<<<<<<< HEAD\nours\n=======\ntheirs\n>>>>>>> topic\nd\nE\n"
+
+test "merge_lines: the same change on both sides, insertions at the end, and nothing changed"
+    base = diff.lines_of("x\ny\n")
+    both = diff.lines_of("x\nz\n")
+    assert merge_lines(base: base, ours: both, theirs: both, ours_label: "o", theirs_label: "t").lines == both
+    grown = diff.lines_of("x\ny\nmore\n")
+    assert merge_lines(base: base, ours: base, theirs: grown, ours_label: "o", theirs_label: "t").lines == grown
+    assert merge_lines(base: base, ours: base, theirs: base, ours_label: "o", theirs_label: "t").lines == base
+
+test "merge_lines: both sides add a file with different contents, no ancestor"
+    m = merge_lines(
+        base: [],
+        ours: diff.lines_of("mine"),
+        theirs: diff.lines_of("yours\n"),
+        ours_label: "HEAD",
+        theirs_label: "t"
+    )
+    assert m.conflicts == 1
+    assert m.lines.join("") == "<<<<<<< HEAD\nmine\n=======\nyours\n>>>>>>> t\n"
+
+test "merge_lines: one side deletes a line the other leaves"
+    base = diff.lines_of("a\nb\nc\n")
+    ours = diff.lines_of("a\nc\n")
+    m = merge_lines(base: base, ours: ours, theirs: base, ours_label: "o", theirs_label: "t")
+    assert m.conflicts == 0
+    assert m.lines == ours

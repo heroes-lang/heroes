@@ -1,0 +1,203 @@
+# Trees as flat maps, and back. A tree object holds one folder; status,
+# diff, checkout and merge all want the other shape, every file of the
+# snapshot by its whole path. `flatten` walks a tree and its subtrees into
+# that map, `write_from_index` writes the trees the index's entries make,
+# the deepest folder first so each folder knows its subtrees' names, and
+# `index_of_tree` makes an index that holds a tree, as `git read-tree` does.
+# Every walk keeps its own stack, so a deep tree never runs out of the
+# program's.
+
+use <rebel>/lists
+use <rebel>/strings
+
+use objects/framing
+use objects/trees
+use repo/staging
+use store/database
+
+## Versions
+
+# What a snapshot holds at one path: the file's mode and its blob.
+record Version
+    # A file, an executable, a link or a submodule's commit.
+    mode: trees.Mode
+    # The object's name.
+    id: str
+
+# The name of the empty tree, the one a repository with no files commits.
+constant EMPTY_TREE: str
+    "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+
+# Whether two lookups of one path agree: both find nothing, or both find
+# the same version. A lookup's failure is no value to compare, so absence is
+# asked of each side rather than compared.
+#
+# - `a`: one snapshot's version of a path, or `not_found`.
+# - `b`: another's.
+function same_version(a: Version?, b: Version?) -> bool
+    match a
+        .ok x =>
+            match b
+                .ok y  => return x == y
+                .err _ => return false
+        .err _ => return b.is_err()
+
+## Flattening
+
+# A folder still to walk, and the path it stands at.
+record Pending
+    # The tree's name.
+    id: str
+    # Its path, ending with `/`, or empty for the top.
+    prefix: str
+
+# Every file of the tree `id` by its whole path, its parts joined by `/`.
+#
+# - `db`: the database.
+# - `id`: a tree's name.
+#
+# Fails where a tree cannot be read or does not decode. The map's order is
+# the walk's; callers sort its keys where order matters.
+function flatten(db: database.Database lent, id: str) -> {str: Version}?
+    out: {str: Version} @= {}
+    stack: [Pending] @= [Pending(id: id, prefix: "")]
+
+    while stack.len() > 0
+        top = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+        entries = trees.decode_tree(database.read_kind(db, id: top.id, kind: .tree)?)?
+
+        for e in entries
+            if e.mode == .directory
+                stack @ stack.push(Pending(id: e.id, prefix: top.prefix + e.name + "/"))
+            else
+                out[top.prefix + e.name] @ Version(mode: e.mode, id: e.id)
+
+    return ok(out)
+
+# Every file the stage-0 entries of `index` hold, as `flatten` shapes a
+# tree's.
+#
+# - `index`: the index.
+function flatten_index(index: staging.Index lent) -> {str: Version}
+    out: {str: Version} @= {}
+
+    for e in staging.all_entries(index)
+        if e.stage == 0
+            out[e.name] @ Version(mode: e.mode, id: e.id)
+
+    return out
+
+## Writing trees
+
+# The folder that holds `name`: the path before its last `/`, or empty.
+#
+# - `name`: a path whose parts are joined by `/`.
+function folder_of(name: str) -> str
+    return match strings.index_of_last(s: name, substr: "/")
+        .ok at => name.slice(from: 0, to: at)
+        .err _ => ""
+
+# The last part of `name`.
+#
+# - `name`: a path whose parts are joined by `/`.
+function base_of(name: str) -> str
+    return match strings.index_of_last(s: name, substr: "/")
+        .ok at => name.slice(from: at + 1, to: name.len())
+        .err _ => name
+
+# How deep `folder` stands: 0 for the top, 1 for `src`, 2 for `src/lib`.
+#
+# - `folder`: a folder's path, empty for the top.
+function depth_of(folder: str) -> i64
+    if folder == ""
+        return 0
+    return strings.count_of(s: folder, substr: "/") + 1
+
+# Whether `a` is deeper than `b`, and so must be written first; folders of
+# one depth by their paths, so the order is the same on every run.
+#
+# - `a`: a folder's path.
+# - `b`: another.
+function deeper_first(a: str, b: str) -> bool
+    if depth_of(a) != depth_of(b)
+        return depth_of(a) > depth_of(b)
+    return strings.compare(a: a, b: b) < 0
+
+# Writes the trees the files of `files` make and answers the top tree's name.
+#
+# - `db`: the database the trees are written to.
+# - `files`: every file of the snapshot by its path.
+#
+# Fails where a tree cannot be encoded (a name a tree refuses) or written.
+function write_tree(db: database.Database lent, files: {str: Version}) -> str?
+    folders: {str: [trees.Entry]} @= {"": []}
+
+    for name in sort(keys(files))
+        v = files[name].must()
+        folder = folder_of(name)
+        here @= folder
+
+        while folders[here].is_err()
+            folders[here] @ []
+            here @ folder_of(here)
+
+        listed @= folders[folder].must()
+        listed @ listed.push(trees.Entry(mode: v.mode, name: base_of(name), id: v.id))
+        folders[folder] @ listed
+
+    order = lists.sort_by(keys(folders), less: deeper_first)
+    top @= EMPTY_TREE
+
+    for folder in order
+        id = database.write_object(db, kind: .tree, data: trees.encode_tree(folders[folder].must())?)?
+
+        if folder == ""
+            top @ id
+        else
+            parent = folder_of(folder)
+            listed @= folders[parent].must()
+            listed @ listed.push(trees.Entry(mode: .directory, name: base_of(folder), id: id))
+            folders[parent] @ listed
+
+    return ok(top)
+
+# Writes the trees the stage-0 entries of `index` make, and answers the top
+# tree's name: what a commit snapshots.
+#
+# - `db`: the database.
+# - `index`: the index.
+#
+# Fails as `write_tree` does.
+function write_from_index(db: database.Database lent, index: staging.Index lent) -> str?
+    return write_tree(db, files: flatten_index(index))
+
+# An index holding exactly the files of `files`, each entry's size and time
+# left at zero so the next status compares its file by content.
+#
+# - `files`: the snapshot's files.
+function index_of(files: {str: Version}) -> staging.Index
+    index @= staging.empty()
+
+    for name in keys(files)
+        v = files[name].must()
+        staging.put(
+            @index,
+            entry: staging.Entry(name: name, stage: 0, mode: v.mode, id: v.id, size: 0, seconds: 0, nanoseconds: 0)
+        )
+
+    return index
+
+test "folder_of, base_of and depth_of: the top, one folder, two"
+    assert folder_of("a.txt") == ""
+    assert folder_of("src/lib/a.txt") == "src/lib"
+    assert base_of("src/lib/a.txt") == "a.txt"
+    assert base_of("a.txt") == "a.txt"
+    assert depth_of("") == 0
+    assert depth_of("src/lib") == 2
+
+test "deeper_first: the deepest first, the top last"
+    assert lists.sort_by(["", "src", "src/lib", "doc"], less: deeper_first) == ["src/lib", "doc", "src", ""]
+
+test "EMPTY_TREE: the name of a tree of no entries"
+    assert framing.id_of(.tree, data: []) == EMPTY_TREE

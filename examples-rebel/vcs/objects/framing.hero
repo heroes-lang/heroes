@@ -1,0 +1,131 @@
+# The four kinds of object and the frame every object is hashed and stored
+# in. Git's documentation of its object storage (the Git Book's "Git
+# Objects", and `git hash-object`'s page) gives the frame: the kind's name,
+# a space, the content's size in decimal, a zero byte, then the content. The
+# SHA-1 of the framed bytes is the object's name, so two repositories that
+# hold the same content name it alike, and `git hash-object` on this machine
+# answers the same name for it.
+#
+# SHA-1 is chosen over SHA-256 because it is the object format every git
+# repository uses by default, so the names this program prints can be
+# checked against git's own; the frame and the stores do not depend on it.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/numbers
+use <rebel>/strings
+
+## Kinds
+
+# What an object holds.
+variant Kind
+    # The bytes of one file, with no name and no mode.
+    blob
+    # One folder: names, modes and the objects they name.
+    tree
+    # A snapshot: its tree, its parents, who made it and when, and why.
+    commit
+    # An annotated tag: a name given to another object, with its tagger and
+    # message.
+    tag
+
+# The name of `kind` as the frame and a commit's text write it.
+#
+# - `kind`: the kind.
+function kind_name(kind: Kind) -> str
+    return match kind
+        .blob   => "blob"
+        .tree   => "tree"
+        .commit => "commit"
+        .tag    => "tag"
+
+# The kind `name` names.
+#
+# - `name`: `blob`, `tree`, `commit` or `tag`.
+#
+# Fails `invalid` for any other word.
+function parse_kind(name: str) -> Kind?
+    return match name
+        "blob"   => ok(.blob)
+        "tree"   => ok(.tree)
+        "commit" => ok(.commit)
+        "tag"    => ok(.tag)
+        _        => fail(code: "invalid", msg: f"\"{name}\" is no kind of object")
+
+## Objects
+
+# An object read back: its kind and its content, the frame taken off.
+record Object
+    # What the object holds.
+    kind: Kind
+    # The content, without the frame.
+    data: [u8]
+
+# The framed bytes of an object: the header `<kind> <size>` and a zero byte,
+# then `data`. These are the bytes hashed, and the bytes a loose object
+# compresses.
+#
+# - `kind`: the object's kind.
+# - `data`: its content; empty is a valid blob.
+function framed(kind: Kind, data: [u8]) -> [u8]
+    out @= bytes.from_text(f"{kind_name(kind)} {data.len()}")
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: data)
+    return out
+
+# The object whose framed bytes are `raw`, its header checked against its
+# content.
+#
+# - `raw`: the bytes of a loose object once inflated.
+#
+# Fails `invalid` where no zero byte ends a header, the kind is unknown, the
+# size is not a decimal number, or the size disagrees with the content.
+function unframe(raw: [u8]) -> Object?
+    zero = match bytes.index_of(s: raw, substr: [0])
+        .ok at => at
+        .err _ => return fail(code: "invalid", msg: "an object's header has no zero byte to end it")
+
+    header = bytes.to_text(raw.slice(from: 0, to: zero))?
+
+    space = match strings.index_of(s: header, substr: " ")
+        .ok at => at
+        .err _ => return fail(code: "invalid", msg: f"an object's header \"{header}\" has no space")
+
+    kind = parse_kind(header.slice(from: 0, to: space))?
+    size = numbers.parse_int(header.slice(from: space + 1, to: header.len()))?
+    data = raw.slice(from: zero + 1, to: raw.len())
+
+    if size != data.len()
+        return fail(code: "invalid", msg: f"an object's header says {size} bytes and it holds {data.len()}")
+    return ok(Object(kind: kind, data: data))
+
+# The name of the object of `kind` holding `data`: the SHA-1 of its framed
+# bytes, as 40 lowercase hexadecimal digits.
+#
+# - `kind`: the object's kind.
+# - `data`: its content.
+function id_of(kind: Kind, data: [u8]) -> str
+    return bytes.format_hex(crypto.sha1(framed(kind, data: data)))
+
+test "framed: the header, a zero byte, then the content"
+    assert framed(.blob, data: bytes.from_text("hi")) == bytes.concat([bytes.from_text("blob 2"), [0, 'h', 'i']])
+
+test "id_of: the empty blob and a short text, as git hash-object names them"
+    assert id_of(.blob, data: []) == "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    assert id_of(.blob, data: bytes.from_text("hello\n")) == "ce013625030ba8dba906f756967f9e9ca394464a"
+
+test "unframe: a framed object back, and a header that lies about its size"
+    back = unframe(framed(.commit, data: bytes.from_text("x"))).must()
+    assert back.kind == .commit
+    assert back.data == bytes.from_text("x")
+    assert unframe(bytes.concat([bytes.from_text("blob 5"), [0, 'a']])).is_err()
+    assert unframe(bytes.from_text("blob 1")).is_err()
+    assert unframe(bytes.concat([bytes.from_text("wood 1"), [0, 'a']])).is_err()
+
+test "parse_kind: every kind back from its name, and an unknown word"
+    every: [Kind] = [.blob, .tree, .commit, .tag]
+
+    for kind in every
+        assert parse_kind(kind_name(kind)).must() == kind
+
+    assert parse_kind("Blob").is_err()

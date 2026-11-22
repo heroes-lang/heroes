@@ -1,0 +1,304 @@
+# Deltas: an object written as the changes that make it from another, the
+# way a packfile stores most of its objects (gitformat-pack(5), "Deltified
+# representation"). A delta is the base's size and the result's size, each
+# a varint of seven bits a byte, lowest first, then instructions: a byte
+# with its top bit set COPIES a run of the base, its low four bits saying
+# which of four offset bytes follow and the next three which of three size
+# bytes follow, a size of zero meaning 0x10000; a byte from 1 to 127 INSERTS
+# that many bytes that follow it; a byte of zero is reserved and refused.
+#
+# The deltas made here find their copies by fingerprints of the base's
+# blocks of 16 bytes: each block's FNV-1a hash is indexed, the result is
+# walked a byte at a time asking whether the 16 bytes there hash to a block
+# of the base, and a match is grown both ways as far as the bytes agree.
+# That finds every run of 16 bytes or more two versions of a text share,
+# which is what a file edited in a few places has.
+
+use <rebel>/bytes
+use <rebel>/hash
+
+## Limits
+
+# The length of the blocks of the base that are indexed, and so the
+# shortest run a delta copies.
+constant BLOCK: i64
+    16
+
+# The longest run one copy instruction is given here: 65,535 fits its two
+# low size bytes, so the size zero, which means 0x10000, is never written.
+constant MAX_COPY: i64
+    65535
+
+# The most bytes one insert instruction carries.
+constant MAX_INSERT: i64
+    127
+
+## Varints
+
+# A size as a delta's header writes it: seven bits a byte, the lowest first,
+# the top bit set on every byte but the last.
+#
+# - `n`: the size, 0 or more.
+function encode_size(n: i64) -> [u8]
+    out: [u8] @= []
+    rest @= n
+
+    while rest >= 0x80
+        out @ out.push(to_u8(rest & 0x7f | 0x80).must())
+        rest @ rest >> 7
+
+    out @ out.push(to_u8(rest).must())
+    return out
+
+# A size read from a delta's header, and where the bytes after it begin.
+record Size
+    # The size read.
+    value: i64
+    # The index of the byte after it.
+    next: i64
+
+# The size that begins at byte `at` of `data`, as `encode_size` writes one.
+#
+# - `data`: a delta.
+# - `at`: where the size begins.
+#
+# Fails `invalid` where the bytes end before the size does, or it runs past
+# 63 bits.
+function decode_size(data: [u8], at: i64) -> Size?
+    value @= 0
+    shift @= 0
+    i @= at
+
+    while true
+        if i >= data.len()
+            return fail(code: "invalid", msg: "a delta ends inside a size")
+
+        if shift > 56
+            return fail(code: "invalid", msg: "a delta's size runs past 63 bits")
+        b = to_i64(data[i]).must()
+        value @ value | (b & 0x7f) << shift
+        i @ i + 1
+        shift @ shift + 7
+
+        if b & 0x80 == 0
+            return ok(Size(value: value, next: i))
+
+## Making a delta
+
+# Adds the insert instructions that carry `data[from]` to `data[to]` to
+# `out`, at most `MAX_INSERT` bytes each.
+#
+# - `out`: the delta being written, which the caller owns.
+# - `data`: the result being described.
+# - `from`: the first byte to insert.
+# - `to`: the byte after the last; nothing is added where it is `from`.
+function push_inserts(@out: [u8], data: [u8] lent, from: i64, to: i64)
+    at @= from
+
+    while at < to
+        n = if to - at > MAX_INSERT
+            MAX_INSERT
+        else
+            to - at
+        out @ out.push(to_u8(n).must())
+        at2 = at + n
+        k @= at
+
+        while k < at2
+            out @ out.push(data[k])
+            k @ k + 1
+
+        at @ at2
+
+# Adds the copy instructions that take `size` bytes of the base from
+# `offset` to `out`, at most `MAX_COPY` bytes each.
+#
+# - `out`: the delta being written, which the caller owns.
+# - `offset`: where the run begins in the base, below 2^32.
+# - `size`: how many bytes it holds, 1 or more.
+function push_copies(@out: [u8], offset: i64, size: i64)
+    at @= offset
+    left @= size
+
+    while left > 0
+        n = if left > MAX_COPY
+            MAX_COPY
+        else
+            left
+        op @= 0x80
+        tail: [u8] @= []
+        shift @= 0
+
+        while shift < 4
+            b = at >> 8 * shift & 0xff
+
+            if b != 0
+                op @ op | 1 << shift
+                tail @ tail.push(to_u8(b).must())
+            shift @ shift + 1
+
+        shift @ 0
+
+        while shift < 2
+            b = n >> 8 * shift & 0xff
+
+            if b != 0
+                op @ op | 1 << 4 + shift
+                tail @ tail.push(to_u8(b).must())
+            shift @ shift + 1
+
+        out @ out.push(to_u8(op).must())
+        bytes.push_all(to: @out, from: tail)
+        at @ at + n
+        left @ left - n
+
+# The fingerprints of `base`'s blocks: each aligned block of `BLOCK` bytes
+# by its FNV-1a hash, the first block of each hash kept.
+#
+# - `base`: the object a delta copies from.
+function block_index(base: [u8] lent) -> {u32: i64}
+    found: {u32: i64} @= {}
+    at @= 0
+
+    while at + BLOCK <= base.len()
+        key = hash.fnv1a_32(base.slice(from: at, to: at + BLOCK))
+
+        if found[key].is_err()
+            found[key] @ at
+        at @ at + BLOCK
+
+    return found
+
+# The delta that makes `target` from `base`.
+#
+# - `base`: the object copied from; under 4 GiB.
+# - `target`: the object made.
+#
+# Its size is no guide to whether it pays: the caller compares it with
+# `target`'s and keeps the smaller. The time is linear in the two sizes,
+# times `BLOCK` for the hashing.
+function make_delta(base: [u8], target: [u8]) -> [u8]
+    out @= encode_size(base.len())
+    bytes.push_all(to: @out, from: encode_size(target.len()))
+    blocks = block_index(base)
+    pending @= 0
+    at @= 0
+
+    while at + BLOCK <= target.len()
+        key = hash.fnv1a_32(target.slice(from: at, to: at + BLOCK))
+        start = blocks[key].default(-1)
+
+        if start < 0 || base.slice(from: start, to: start + BLOCK) != target.slice(from: at, to: at + BLOCK)
+            at @ at + 1
+            continue
+        from_base @= start
+        from_target @= at
+
+        while from_base > 0 && from_target > pending && base[from_base - 1] == target[from_target - 1]
+            from_base @ from_base - 1
+            from_target @ from_target - 1
+
+        size @= at + BLOCK - from_target
+
+        while from_base + size < base.len() && from_target + size < target.len() && base[from_base + size] == target[from_target + size]
+            size @ size + 1
+
+        push_inserts(out: @out, data: target, from: pending, to: from_target)
+        push_copies(@out, offset: from_base, size: size)
+        at @ from_target + size
+        pending @ at
+
+    push_inserts(out: @out, data: target, from: pending, to: target.len())
+    return out
+
+## Applying a delta
+
+# The object `delta` makes from `base`.
+#
+# - `base`: the object it copies from.
+# - `delta`: the delta.
+#
+# Fails `invalid` where the delta's base size is not `base`'s, an
+# instruction is the reserved zero, a copy reaches past the base, an insert
+# past the delta, or the result is not the size the delta names.
+function apply_delta(base: [u8], delta: [u8]) -> [u8]?
+    source = decode_size(delta, at: 0)?
+
+    if source.value != base.len()
+        return fail(code: "invalid", msg: f"a delta for a base of {source.value} bytes, given one of {base.len()}")
+    result_size = decode_size(delta, at: source.next)?
+    out: [u8] @= []
+    at @= result_size.next
+
+    while at < delta.len()
+        op = to_i64(delta[at]).must()
+        at @ at + 1
+
+        if op & 0x80 != 0
+            offset @= 0
+            size @= 0
+            bit @= 0
+
+            while bit < 7
+                if op & 1 << bit != 0
+                    if at >= delta.len()
+                        return fail(code: "invalid", msg: "a delta ends inside a copy instruction")
+                    b = to_i64(delta[at]).must()
+                    at @ at + 1
+
+                    if bit < 4
+                        offset @ offset | b << 8 * bit
+                    else
+                        size @ size | b << 8 * (bit - 4)
+                bit @ bit + 1
+
+            if size == 0
+                size @ 0x10000
+
+            if offset + size > base.len()
+                return fail(
+                    code: "invalid",
+                    msg: f"a delta copies bytes {offset} to {offset + size} of a base of {base.len()}"
+                )
+            bytes.push_all(to: @out, from: base.slice(from: offset, to: offset + size))
+        else if op != 0
+            if at + op > delta.len()
+                return fail(code: "invalid", msg: "a delta ends inside an insert instruction")
+            bytes.push_all(to: @out, from: delta.slice(from: at, to: at + op))
+            at @ at + op
+        else
+            return fail(code: "invalid", msg: "a delta holds the reserved instruction 0")
+
+    if out.len() != result_size.value
+        return fail(code: "invalid", msg: f"a delta made {out.len()} bytes where it names {result_size.value}")
+    return ok(out)
+
+test "encode_size and decode_size: zero, one byte, several, and cut short"
+    assert encode_size(0) == [0]
+    assert encode_size(127) == [127]
+    assert encode_size(128) == [0x80, 1]
+    assert decode_size(encode_size(300000), at: 0).must().value == 300000
+    assert decode_size([0x80], at: 0).is_err()
+
+test "make_delta and apply_delta: an empty base, an empty target, the same bytes"
+    text = bytes.from_text("one line of text that is long enough to copy\n")
+    assert apply_delta(base: [], delta: make_delta(base: [], target: text)).must() == text
+    assert apply_delta(base: text, delta: make_delta(base: text, target: [])).must() == []
+    same = make_delta(base: text, target: text)
+    assert apply_delta(base: text, delta: same).must() == text
+    assert same.len() < 10
+
+test "make_delta: a line changed in the middle copies the rest"
+    old = bytes.from_text("alpha beta gamma delta epsilon\nzeta eta theta iota kappa\nlambda mu nu xi omicron pi\n")
+    new = bytes.from_text("alpha beta gamma delta epsilon\nZETA eta theta iota kappa\nlambda mu nu xi omicron pi\n")
+    d = make_delta(base: old, target: new)
+    assert apply_delta(base: old, delta: d).must() == new
+    assert d.len() < new.len() / 2
+
+test "apply_delta: the wrong base, a copy past it, the reserved byte, a short result"
+    old = bytes.from_text("abcdefghijklmnopqrstuvwxyz")
+    d = make_delta(base: old, target: old)
+    assert apply_delta(base: bytes.from_text("abc"), delta: d).is_err()
+    assert apply_delta(base: old, delta: [26, 30, 0x90, 30]).is_err()
+    assert apply_delta(base: old, delta: [26, 1, 0]).is_err()
+    assert apply_delta(base: old, delta: [26, 5, 1, 'a']).is_err()

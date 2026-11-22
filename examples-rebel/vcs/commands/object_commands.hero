@@ -1,0 +1,99 @@
+# The commands that work on objects themselves: `cat-file` and
+# `hash-object`, git's plumbing for reading an object and naming a file's
+# content, and `gc` and `fsck`, which pack the database and check it.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/strings
+
+use objects/framing
+use objects/trees
+use repo/layout
+use repo/refs
+use store/database
+use upkeep/collect
+use upkeep/verify
+
+## Reading objects
+
+# The object `name` names, as `cat-file` shows it: its kind with `kind_only`,
+# else its content, a tree written one entry a line, `<mode> <kind>
+# <id>\t<name>`, as `git cat-file -p` writes it.
+#
+# - `repo`: the repository.
+# - `name`: a revision or an object's whole or abbreviated name.
+# - `kind_only`: true for the kind alone, as `-t`.
+#
+# Fails `not_found` where the name names nothing, and `invalid` where a tree
+# does not decode or a content is not text.
+function cat_file(repo: layout.Repo, name: str, kind_only: bool) -> str?
+    db = database.open_database(layout.objects_dir(repo))?
+    id = refs.resolve_name(repo, db: db, name: name)?
+    o = database.read_object(db, id: id)?
+
+    if kind_only
+        return ok(framing.kind_name(o.kind))
+
+    if o.kind != .tree
+        return ok(strings.trim_end(bytes.to_text(o.data)?))
+    lines: [str] @= []
+
+    for e in trees.decode_tree(o.data)?
+        kind = match e.mode
+            .directory                  => "tree"
+            .gitlink                    => "commit"
+            .file | .executable | .link => "blob"
+
+        lines @ lines.push(f"{pad_mode(trees.mode_text(e.mode))} {kind} {e.id}\t{e.name}")
+
+    return ok(lines.join("\n"))
+
+# A mode as `cat-file -p` lines it up: six digits, a folder's `40000`
+# written `040000`.
+#
+# - `mode`: a tree's mode text.
+function pad_mode(mode: str) -> str
+    return strings.pad_start(s: mode, width: 6, pad: "0")
+
+# The name the blob holding the file at `file` would have, stored first
+# where `write` is true.
+#
+# - `repo`: the repository, whose database is written to.
+# - `file`: a path on disk.
+# - `write`: true to store the blob, as `-w`.
+#
+# Fails where the file cannot be read or the blob written.
+function hash_object(repo: layout.Repo, file: str, write: bool) -> str?
+    data = fs.read_bytes(file)?
+
+    if write
+        db = database.open_database(layout.objects_dir(repo))?
+        return database.write_object(db, kind: .blob, data: data)
+    return ok(framing.id_of(.blob, data: data))
+
+## Upkeep
+
+# Packs the repository and answers what `gc` did.
+#
+# - `repo`: the repository.
+#
+# Fails as `collect.collect` does.
+function gc(repo: layout.Repo) -> str?
+    return collect.collect(repo)
+
+# Checks the repository and answers what `fsck` found.
+#
+# - `repo`: the repository.
+#
+# Fails as `verify.check` does, and `invalid` with the report where damage
+# was found.
+function fsck(repo: layout.Repo) -> str?
+    checked = verify.check(repo)?
+
+    if !checked.sound
+        return fail(code: "invalid", msg: checked.text)
+    return ok(checked.text)
+
+test "pad_mode: a folder's mode padded, a file's as it is"
+    assert pad_mode("40000") == "040000"
+    assert pad_mode("100644") == "100644"

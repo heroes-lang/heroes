@@ -1,0 +1,158 @@
+# The object database: every object of a repository, wherever it is kept,
+# loose under `objects/` or in a pack under `objects/pack/`. A reader asks
+# for a name and is answered the object, its hash checked whichever store
+# held it; a new object is always written loose, and `gc` moves the loose
+# ones into a pack. An object loose and packed at once is the same object,
+# so which copy answers does not matter.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use objects/framing
+use objects/ids
+use store/loose
+use store/pack_files
+
+## The database
+
+# A repository's objects, with every pack read and indexed.
+record Database
+    # The `objects` folder.
+    dir: str
+    # Every pack under `objects/pack/`, in the order of their names.
+    packs: [pack_files.Pack]
+
+# The folder of packs under the folder of objects `dir`.
+#
+# - `dir`: the `objects` folder.
+function pack_dir(dir: str) -> str
+    return path.join_all([dir, "pack"])
+
+# The database whose objects are under `dir`, every pack read.
+#
+# - `dir`: the repository's `objects` folder.
+#
+# Fails where a pack or its index cannot be read or they disagree, with
+# `pack_files.open_pack`'s code; a `.pack` with no `.idx` is passed over,
+# as a pack still being written is.
+function open_database(dir: str) -> Database?
+    packs: [pack_files.Pack] @= []
+    folder = pack_dir(dir)
+
+    if fs.is_dir(folder).default(false)
+        for entry in fs.read_dir(folder)?
+            if !strings.has_suffix(s: entry.name, suffix: ".idx")
+                continue
+            name = strings.trim_suffix(s: entry.name, suffix: ".idx")
+            pack_file = path.join_all([folder, name + ".pack"])
+
+            if fs.is_file(pack_file).default(false)
+                packs @ packs.push(
+                    pack_files.open_pack(pack_file: pack_file, index_file: path.join_all([folder, entry.name]), name: name)?
+                )
+    return ok(Database(dir: dir, packs: packs))
+
+# The object `id`, from a loose file or from a pack.
+#
+# - `db`: the database.
+# - `id`: a whole object name.
+#
+# Fails `not_found` where no store holds it, and `invalid` where the copy
+# that holds it is damaged.
+function read_object(db: Database lent, id: str) -> framing.Object?
+    if loose.has_loose(dir: db.dir, id: id)
+        return loose.read_loose(dir: db.dir, id: id)
+
+    for pack in db.packs
+        match pack_files.read_object(pack, id: id)
+            .ok o => return ok(o)
+            .err e =>
+                if e.code != "not_found"
+                    return fail(code: e.code, msg: e.msg)
+
+    return fail(code: "not_found", msg: f"no object {id}")
+
+# The object `id`, which must be of `kind`.
+#
+# - `db`: the database.
+# - `id`: a whole object name.
+# - `kind`: the kind the caller needs.
+#
+# Fails as `read_object` does, and `invalid` where the object is of another
+# kind.
+function read_kind(db: Database lent, id: str, kind: framing.Kind) -> [u8]?
+    o = read_object(db, id: id)?
+
+    if o.kind != kind
+        return fail(
+            code: "invalid",
+            msg: f"{ids.short(id)} is a {framing.kind_name(o.kind)}, not a {framing.kind_name(kind)}"
+        )
+    return ok(o.data)
+
+# Whether some store holds `id`.
+#
+# - `db`: the database.
+# - `id`: a whole object name.
+function has_object(db: Database lent, id: str) -> bool
+    if loose.has_loose(dir: db.dir, id: id)
+        return true
+
+    for pack in db.packs
+        if pack_files.has_id(pack, id: id)
+            return true
+
+    return false
+
+# Stores the object of `kind` holding `data`, loose, and answers its name.
+#
+# - `db`: the database.
+# - `kind`: its kind.
+# - `data`: its content.
+#
+# Fails where its file cannot be written.
+function write_object(db: Database lent, kind: framing.Kind, data: [u8]) -> str?
+    return loose.write_loose(db.dir, kind: kind, data: data)
+
+# The names of every object the database holds, loose and packed, sorted and
+# each once.
+#
+# - `db`: the database.
+#
+# Fails where the folder of objects cannot be read.
+function every_id(db: Database lent) -> [str]?
+    seen: {str: bool} @= {}
+
+    for id in loose.loose_ids(db.dir)?
+        seen[id] @ true
+
+    for pack in db.packs
+        for o in pack.index.objects
+            seen[o.id] @ true
+
+    return ok(sort(keys(seen)))
+
+# The one whole name that begins with `prefix`.
+#
+# - `db`: the database.
+# - `prefix`: four or more lowercase hexadecimal digits.
+#
+# Fails `invalid` where `prefix` is shorter than four digits or is not
+# hexadecimal, `not_found` where no object's name begins so, and `invalid`
+# where several do, naming them.
+function expand_prefix(db: Database lent, prefix: str) -> str?
+    if prefix.len() < 4 || !ids.is_hex_prefix(prefix)
+        return fail(code: "invalid", msg: f"\"{prefix}\" is no abbreviated object name of four digits or more")
+    found: [str] @= []
+
+    for id in every_id(db)?
+        if strings.has_prefix(s: id, prefix: prefix)
+            found @ found.push(id)
+
+    if found.len() == 0
+        return fail(code: "not_found", msg: f"no object's name begins {prefix}")
+
+    if found.len() > 1
+        return fail(code: "invalid", msg: f"{prefix} is ambiguous: {found.join(", ")}")
+    return ok(found[0])

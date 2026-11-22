@@ -1,0 +1,152 @@
+# The work tree as the repository sees it: every file and link below its
+# top that the ignore patterns leave in, by its path with `/` between the
+# parts. The patterns are gitignore(5)'s: a `.vcsignore` in any folder, read
+# as git reads a `.gitignore`, and `.vcs/info/exclude` for the patterns that
+# belong to this copy alone; the repository's own folder is never listed.
+# A file's blob is its bytes; a link's blob is the text of its target, as
+# git stores a symbolic link.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path
+
+use objects/framing
+use objects/trees
+use repo/layout
+
+## The work tree
+
+# The name of the file of ignore patterns a folder may hold.
+constant IGNORE_FILE: str
+    ".vcsignore"
+
+# One file of the work tree.
+record WorkFile
+    # Its path below the top, its parts joined by `/`.
+    name: str
+    # A file, an executable (any execute bit set) or a link.
+    mode: trees.Mode
+    # Its size in bytes: a link's is its target's length.
+    size: i64
+    # The whole seconds of its modification time.
+    seconds: i64
+    # The nanoseconds past them.
+    nanoseconds: i64
+
+# The patterns that stand outside every folder: the repository's own folder,
+# and `.vcs/info/exclude` where it is there.
+#
+# - `repo`: the repository.
+#
+# Fails where the exclude file is there and cannot be read.
+function outer_ignores(repo: layout.Repo) -> path.Ignores?
+    exclude = layout.file_in(repo, name: "info/exclude")
+    text @= "/" + layout.DIR_NAME + "/\n"
+
+    if fs.is_file(exclude).default(false)
+        text @ text + read_file(exclude)?
+    return ok(path.parse_ignore(text))
+
+# The facts of the work file `name`, read from disk.
+#
+# - `repo`: the repository.
+# - `name`: its path below the top.
+#
+# Fails `file_not_found` where nothing is there, and `invalid` where a
+# folder or a special file is.
+function stat(repo: layout.Repo, name: str) -> WorkFile?
+    file = layout.work_file(repo, name: name)
+    facts = fs.link_info(file)?
+    written = facts.written.unix_nanoseconds
+    seconds = written / 1000000000
+    nanoseconds = written % 1000000000
+
+    return match facts.kind
+        .link =>
+            ok(WorkFile(name: name, mode: .link, size: facts.size, seconds: seconds, nanoseconds: nanoseconds))
+        .file =>
+            mode: trees.Mode = if facts.permission & 0o111 != 0
+                .executable
+            else
+                .file
+            ok(WorkFile(name: name, mode: mode, size: facts.size, seconds: seconds, nanoseconds: nanoseconds))
+        .directory | .other =>
+            fail(code: "invalid", msg: f"{name} is not a file or a link")
+
+# Every file and link of the work tree that the ignore patterns leave in,
+# sorted by path.
+#
+# - `repo`: the repository.
+#
+# Fails where a folder cannot be read or a file of patterns is not UTF-8.
+function scan(repo: layout.Repo) -> [WorkFile]?
+    found: [WorkFile] @= []
+
+    for entry in fs.walk_ignoring(root: repo.root, ignores: outer_ignores(repo)?, name: IGNORE_FILE)?
+        if entry.kind == .file || entry.kind == .link
+            found @ found.push(stat(repo, name: path.to_slash(entry.name))?)
+
+    return ok(sort_by_name(found))
+
+# `files` sorted by their paths' bytes.
+#
+# - `files`: work files.
+function sort_by_name(files: [WorkFile]) -> [WorkFile]
+    by_name: {str: WorkFile} @= {}
+
+    for f in files
+        by_name[f.name] @ f
+
+    out: [WorkFile] @= []
+
+    for name in sort(keys(by_name))
+        out @ out.push(by_name[name].must())
+
+    return out
+
+# Whether the patterns leave `name` out of the work tree, as `scan` would.
+#
+# - `repo`: the repository.
+# - `name`: a path below the top, its parts joined by `/`.
+#
+# Fails where a file of patterns cannot be read.
+function is_ignored(repo: layout.Repo, name: str) -> bool?
+    ignores @= outer_ignores(repo)?
+    folder @= ""
+    parts = path.parts_by(name, rules: .posix)
+
+    for part in parts.slice(from: 0, to: parts.len() - 1)
+        here = layout.work_file(repo, name: folder + IGNORE_FILE)
+
+        if fs.is_file(here).default(false)
+            ignores @ path.with_ignore_file(ignores, dir: folder, text: read_file(here)?)
+        folder @ folder + part + "/"
+
+    last = layout.work_file(repo, name: folder + IGNORE_FILE)
+
+    if fs.is_file(last).default(false)
+        ignores @ path.with_ignore_file(ignores, dir: folder, text: read_file(last)?)
+    return ok(path.is_ignored(ignores, path: name, is_dir: false))
+
+# The content of the work file `file` as its blob holds it: a file's bytes,
+# a link's target.
+#
+# - `repo`: the repository.
+# - `file`: the work file.
+#
+# Fails where it cannot be read.
+function content_of(repo: layout.Repo, file: WorkFile) -> [u8]?
+    on_disk = layout.work_file(repo, name: file.name)
+
+    if file.mode == .link
+        return ok(bytes.from_text(fs.read_link(on_disk)?))
+    return fs.read_bytes(on_disk)
+
+# The name the blob of `file` would have, hashed without being stored.
+#
+# - `repo`: the repository.
+# - `file`: the work file.
+#
+# Fails where it cannot be read.
+function blob_id(repo: layout.Repo, file: WorkFile) -> str?
+    return ok(framing.id_of(.blob, data: content_of(repo, file: file)?))
