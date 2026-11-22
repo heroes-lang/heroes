@@ -395,3 +395,253 @@ function number_of(on: bool) -> i64
     if on
         return 1
     return 0
+
+## Tests
+
+# The words a test skips with where this machine offers no native user
+# interface to the session (`hero_ui.h`, THE SYSTEMS).
+constant NO_NATIVE: str
+    "no native user interface here: no window server, no window station that shows, or no display named, for this session"
+
+# `items` as a list of texts, each followed by one zero byte.
+function texts_of(items: [str]) -> [u8]
+    joined: [u8] @= []
+
+    for item in items
+        bytes.push_text(@joined, s: item)
+        joined @ joined.push(0)
+
+    return joined
+
+# Sets the text of widget `id` of `handle` through the floor.
+function floor_set_text(handle: hero_ui.App, id: i64, text: str) -> i64
+    given @= bytes.from_text(text)
+    return hero_ui.set_text(handle, id: id, @given, count: to_u64(given.len()).must())
+
+# The text widget `id` of `handle` holds, read through the floor; `"?"` where
+# the floor refused.
+function floor_text(handle: hero_ui.App, id: i64) -> str
+    buffer: [u8] @= []
+    got = hero_ui.text_of(handle, id: id, @buffer, count: 256)
+
+    if got < 0 || got > 256
+        return "?"
+    return bytes.to_text_lossy(buffer.slice(from: 0, to: got))
+
+# The value of widget `id`, or -99 where the floor refused.
+function floor_value(handle: hero_ui.App, id: i64) -> i64
+    value @= 0
+
+    if hero_ui.value_of(handle, id: id, value: @value) < 0
+        return -99
+    return value
+
+# What widget `id` has chosen, or `[-99]` where the floor refused.
+function floor_selection(handle: hero_ui.App, id: i64) -> [i64]
+    indices: [i64] @= []
+    got = hero_ui.selection_of(handle, id: id, @indices, count: 16)
+
+    if got < 0 || got > 16
+        return [-99]
+    return indices.slice(from: 0, to: got)
+
+# Does what a person does to widget `id` through the floor.
+function floor_act(handle: hero_ui.App, kind: i64, id: i64, value: i64, second: i64, text: str) -> i64
+    typed @= bytes.from_text(text)
+    return hero_ui.inject(
+        handle,
+        kind: kind,
+        id: id,
+        value: value,
+        second: second,
+        @typed,
+        count: to_u64(typed.len()).must()
+    )
+
+# The next event of `handle` as `[kind, id, value, second]`, waiting up to two
+# seconds for the system to give it; `[]` where none came.
+function floor_event(handle: hero_ui.App) -> [i64]
+    kind @= 0
+    id @= 0
+    value @= 0
+    second @= 0
+
+    for _ in range(from: 0, to: 20)
+        if hero_ui.next(handle, kind: @kind, id: @id, value: @value, second: @second) == 1
+            return [kind, id, value, second]
+        _ = hero_ui.wait(handle, ms: 100)
+
+    none: [i64] = []
+    return none
+
+test "native: every kind the layer draws made, set and read back, each act a person gives told once, and every refusal a value"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= hero_ui.open(hero_ui.HERO_UI_NATIVE)
+    assert app != nullptr
+    second = hero_ui.open(hero_ui.HERO_UI_NATIVE)
+    assert second == nullptr
+    assert hero_ui.last_error() == hero_ui.HERO_UI_BUSY
+
+    # The window and one widget of every kind, numbered as `hero_ui.h` numbers
+    # the kinds, the menu's item and separator in the menu.
+    assert hero_ui.create(app, id: 1, kind: hero_ui.HERO_UI_WINDOW, parent: 0) == 0
+
+    for kind in range(from: hero_ui.HERO_UI_LABEL, to: hero_ui.HERO_UI_MENU + 1)
+        assert hero_ui.create(app, id: kind, kind: kind, parent: 1) == 0
+
+    assert hero_ui.create(app, id: 15, kind: hero_ui.HERO_UI_MENU_ITEM, parent: 14) == 0
+    assert hero_ui.create(app, id: 16, kind: hero_ui.HERO_UI_MENU_SEPARATOR, parent: 14) == 0
+
+    # The web view is made where the system has one and refused where it
+    # has none (a machine without WebView2's loader, or WebKitGTK 6.0),
+    # never a fault; one made is given back at once.
+    web = hero_ui.create(app, id: 17, kind: hero_ui.HERO_UI_WEBVIEW, parent: 1)
+    assert web == 0 || hero_ui.last_error() == hero_ui.HERO_UI_UNSUPPORTED
+
+    if web == 0
+        assert hero_ui.destroy(app, id: 17) == 0
+    assert hero_ui.create(app, id: 3, kind: hero_ui.HERO_UI_BUTTON, parent: 1) == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+    assert hero_ui.create(app, id: 18, kind: hero_ui.HERO_UI_LABEL, parent: 99) == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+
+    # Texts, set and read back; a line feed crosses as one.
+    assert floor_set_text(app, id: 1, text: "Rebel ui, native") == 0
+    assert floor_set_text(app, id: 2, text: "Name\nand more") == 0
+    assert floor_set_text(app, id: 3, text: "Count & go") == 0
+    assert floor_set_text(app, id: 4, text: "Ada") == 0
+    assert floor_set_text(app, id: 5, text: "first\nsecond") == 0
+    assert floor_set_text(app, id: 6, text: "Wrap lines") == 0
+    assert floor_set_text(app, id: 14, text: "File") == 0
+    assert floor_set_text(app, id: 15, text: "Open_it") == 0
+    assert floor_text(app, id: 4) == "Ada"
+    assert floor_text(app, id: 5) == "first\nsecond"
+    assert floor_set_text(app, id: 12, text: "no text") == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_INVALID
+
+    # Items: nothing is chosen after them, then a choice set, and none again.
+    radio @= texts_of(["Small", "Large"])
+    assert hero_ui.set_items(app, id: 7, @radio, count: to_u64(radio.len()).must()) == 0
+    fruits @= texts_of(["apple", "pear", "plum"])
+    assert hero_ui.set_items(app, id: 8, @fruits, count: to_u64(fruits.len()).must()) == 0
+    assert hero_ui.set_items(app, id: 9, @fruits, count: to_u64(fruits.len()).must()) == 0
+    days @= texts_of(["Monday", "Tuesday", "Wednesday"])
+    assert hero_ui.set_items(app, id: 10, @days, count: to_u64(days.len()).must()) == 0
+    assert floor_value(app, id: 7) == -1
+    assert floor_value(app, id: 10) == -1
+    assert floor_selection(app, id: 9) == []
+    assert hero_ui.set_value(app, id: 10, value: 2) == 0
+    assert floor_value(app, id: 10) == 2
+    assert floor_selection(app, id: 10) == [2]
+    assert hero_ui.set_value(app, id: 10, value: -1) == 0
+    assert floor_value(app, id: 10) == -1
+    assert hero_ui.set_value(app, id: 10, value: 3) == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_INVALID
+    assert hero_ui.set_value(app, id: 7, value: 1) == 0
+    assert floor_selection(app, id: 7) == [1]
+    chosen: [i64] @= [0, 2]
+    assert hero_ui.set_selection(app, id: 9, @chosen, count: 2) == 0
+    assert floor_selection(app, id: 9) == [0, 2]
+    assert hero_ui.set_selection(app, id: 8, @chosen, count: 2) == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_INVALID
+
+    # Values and ranges, one wider than 32 bits kept exact.
+    assert hero_ui.set_value(app, id: 6, value: 1) == 0
+    assert floor_value(app, id: 6) == 1
+    assert hero_ui.set_value(app, id: 6, value: 2) == -1
+    assert hero_ui.set_range(app, id: 12, least: -5000000000000, most: 5000000000000) == 0
+    assert hero_ui.set_value(app, id: 12, value: 123456789012) == 0
+    assert floor_value(app, id: 12) == 123456789012
+    assert hero_ui.set_range(app, id: 12, least: 0, most: 10) == 0
+    assert hero_ui.set_value(app, id: 12, value: 7) == 0
+    assert floor_value(app, id: 12) == 7
+    assert hero_ui.set_value(app, id: 12, value: 11) == -1
+    assert hero_ui.set_range(app, id: 11, least: 0, most: 3) == 0
+    assert hero_ui.set_value(app, id: 11, value: 2) == 0
+    assert floor_value(app, id: 11) == 2
+
+    # Pixels, a shortcut, places and sizes.
+    pixels: [u8] @= [255, 0, 0, 255, 0, 0, 255, 128]
+    assert hero_ui.set_image(app, id: 13, @pixels, count: 8, width: 2, height: 1) == 0
+    key @= bytes.from_text("o")
+    assert hero_ui.set_shortcut(app, id: 15, @key, count: 1, modifiers: hero_ui.HERO_UI_PRIMARY) == 0
+    capital @= bytes.from_text("O")
+    assert hero_ui.set_shortcut(app, id: 15, @capital, count: 1, modifiers: hero_ui.HERO_UI_PRIMARY) == -1
+    assert hero_ui.set_shortcut(app, id: 3, @key, count: 1, modifiers: 0) == -1
+    assert hero_ui.set_size(app, id: 1, width: 420, height: 320) == 0
+    assert hero_ui.set_min_size(app, id: 1, width: 200, height: 160) == 0
+    width @= 0
+    height @= 0
+    assert hero_ui.preferred(app, id: 13, width: @width, height: @height) == 0
+    assert width == 2 && height == 1
+
+    for id in [2, 3, 4, 6, 10, 11, 12]
+        assert hero_ui.preferred(app, id: id, width: @width, height: @height) == 0
+        assert width > 0 && height > 0
+
+    at @= 8
+
+    for id in range(from: 2, to: 14)
+        assert hero_ui.place(app, id: id, x: 8, y: at, width: 150, height: 22) == 0
+        at @ at + 24
+
+    assert hero_ui.place_item(app, id: 7, index: 0, x: 8, y: 152, width: 150, height: 11) == 0
+    assert hero_ui.place_item(app, id: 7, index: 1, x: 8, y: 163, width: 150, height: 11) == 0
+    assert hero_ui.place_item(app, id: 7, index: 2, x: 8, y: 174, width: 150, height: 11) == -1
+    assert hero_ui.set_visible(app, id: 1, on: 1) == 0
+    assert hero_ui.wait(app, ms: 200) >= 0
+    drained @= 0
+    kind @= 0
+    id @= 0
+    value @= 0
+    other @= 0
+
+    while hero_ui.next(app, kind: @kind, id: @id, value: @value, second: @other) == 1
+        drained @ drained + 1
+
+    # Each act a person gives, through the system's own path, told once.
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_CLICK, id: 3, value: 0, second: 0, text: "") == 0
+    assert floor_event(app) == [hero_ui.HERO_UI_EVENT_CLICK, 3, 0, 0]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_TEXT, id: 4, value: 0, second: 0, text: "Grace") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_TEXT, 4]
+    assert floor_text(app, id: 4) == "Grace"
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_TEXT, id: 5, value: 0, second: 0, text: "a\nb") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_TEXT, 5]
+    assert floor_text(app, id: 5) == "a\nb"
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_TOGGLE, id: 6, value: 0, second: 0, text: "") == 0
+    assert floor_event(app) == [hero_ui.HERO_UI_EVENT_TOGGLE, 6, 0, 0]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_SELECT, id: 7, value: 0, second: 0, text: "") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_SELECT, 7]
+    assert floor_value(app, id: 7) == 0
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_SELECT, id: 9, value: 1, second: 0, text: "") == 0
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_SELECT, id: 9, value: 2, second: 1, text: "") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_SELECT, 9]
+    assert floor_selection(app, id: 9) == [1, 2]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_SELECT, id: 10, value: 1, second: 0, text: "") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_SELECT, 10]
+    assert floor_value(app, id: 10) == 1
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_VALUE, id: 12, value: 3, second: 0, text: "") == 0
+    assert floor_event(app) == [hero_ui.HERO_UI_EVENT_VALUE, 12, 3, 0]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_MENU, id: 15, value: 0, second: 0, text: "") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_MENU, 15]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_RESIZE, id: 1, value: 400, second: 300, text: "") == 0
+    assert floor_event(app) == [hero_ui.HERO_UI_EVENT_RESIZE, 1, 400, 300]
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_CLOSE, id: 1, value: 0, second: 0, text: "") == 0
+    assert floor_event(app).slice(from: 0, to: 2) == [hero_ui.HERO_UI_EVENT_CLOSE, 1]
+
+    # What a person cannot do makes no event: a button greyed out.
+    assert hero_ui.set_enabled(app, id: 3, on: 0) == 0
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_CLICK, id: 3, value: 0, second: 0, text: "") == 0
+    assert hero_ui.wait(app, ms: 50) == 0
+    assert floor_act(app, kind: hero_ui.HERO_UI_EVENT_CLICK, id: 4, value: 0, second: 0, text: "") == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_INVALID
+
+    # Destroyed, a widget is gone; a window takes what stands in it.
+    assert hero_ui.destroy(app, id: 3) == 0
+    assert hero_ui.destroy(app, id: 3) == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+    assert hero_ui.destroy(app, id: 1) == 0
+    assert floor_set_text(app, id: 4, text: "gone") == -1
+    assert hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
+    assert hero_ui.close(@app) == 0

@@ -134,6 +134,9 @@ int64_t hero_ui_web_gtk_words(char *words, int64_t count) {
 
 /* The library opened, and the one every function is found in. */
 #define HERO_WEBKIT_LIBRARY "libwebkitgtk-6.0.so.4"
+/* GObject's `G_SIGNAL_MATCH_DATA`, `1 << 4`, read from GLib 2.84's
+ * `gobject/gsignal.h`. */
+#define HERO_G_SIGNAL_MATCH_DATA 16
 
 /* GLib's `GCallback` and `GDestroyNotify`. */
 typedef void (*hero_gcallback)(void);
@@ -148,7 +151,10 @@ typedef struct {
     void *(*object_ref)(void *object);
     void (*object_unref)(void *object);
     unsigned long (*signal_connect_data)(void *instance, const char *signal, hero_gcallback handler, void *data, hero_gdestroy destroy, int flags);
-    void (*signal_handlers_disconnect_by_data)(void *instance, void *data);
+    /* `g_signal_handlers_disconnect_by_data` is a macro of GLib's header over
+     * this function, never a name the library exports, so it is called as
+     * the macro calls it, matching the handlers' data alone. */
+    unsigned (*signal_handlers_disconnect_matched)(void *instance, int mask, unsigned signal_id, uint32_t detail, void *closure, void *func, void *data);
     void *(*g_malloc)(size_t size);
     void (*g_free)(void *memory);
     void *(*variant_new_parsed)(const char *format, ...);
@@ -225,7 +231,7 @@ static void hero_ui_web_gtk_load_library(void) {
     HERO_WEBKIT_FIND(object_ref, "g_object_ref");
     HERO_WEBKIT_FIND(object_unref, "g_object_unref");
     HERO_WEBKIT_FIND(signal_connect_data, "g_signal_connect_data");
-    HERO_WEBKIT_FIND(signal_handlers_disconnect_by_data, "g_signal_handlers_disconnect_by_data");
+    HERO_WEBKIT_FIND(signal_handlers_disconnect_matched, "g_signal_handlers_disconnect_matched");
     HERO_WEBKIT_FIND(g_malloc, "g_malloc");
     HERO_WEBKIT_FIND(g_free, "g_free");
     HERO_WEBKIT_FIND(variant_new_parsed, "g_variant_new_parsed");
@@ -629,7 +635,11 @@ static bool hero_ui_web_gtk_sealed(char seal[34]) {
 int64_t hero_ui_web_gtk_create(int64_t id, const hero_ui_web_host *host, void **widget) {
     const hero_ui_web_gtk_library *f = &hero_ui_web_gtk_functions;
     hero_ui_web_gtk_view *v;
-    char prelude[96];
+    /* The prelude takes 115 bytes and its zero; a buffer it does not fit
+     * would cut it into a script that does not parse, and no page would hold
+     * the seal. */
+    char prelude[160];
+    int written;
     void *script;
     char *bridge;
 
@@ -664,7 +674,13 @@ int64_t hero_ui_web_gtk_create(int64_t id, const hero_ui_web_host *host, void **
     v->manager = f->user_content_manager_new();
     /* The seal first, in the main frame alone, then the bridge, which takes
      * it away; 32 hexadecimal digits need no escaping in a script. */
-    (void)snprintf(prelude, sizeof prelude, "Object.defineProperty(window, \"__heroesSeal\", { value: \"%.32s\\n\", configurable: true });", v->seal);
+    written = snprintf(prelude, sizeof prelude, "Object.defineProperty(window, \"__heroesSeal\", { value: \"%.32s\\n\", configurable: true });", v->seal);
+    if (written < 0 || (size_t)written >= sizeof prelude) {
+        f->object_unref(v->manager);
+        f->object_unref(v->session);
+        hero_layer_free(v);
+        return hero_ui_web_gtk_said(HERO_UI_OTHER, "the bridge's seal did not fit its script");
+    }
     script = f->user_script_new(prelude, HERO_WEBKIT_INJECT_TOP_FRAME, HERO_WEBKIT_INJECT_AT_DOCUMENT_START, NULL, NULL);
     f->add_script(v->manager, script);
     f->user_script_unref(script);
@@ -713,9 +729,9 @@ int64_t hero_ui_web_gtk_destroy(int64_t id) {
             continue;
         }
         f->stop_loading(v->view);
-        f->signal_handlers_disconnect_by_data(v->view, v);
-        f->signal_handlers_disconnect_by_data(v->manager, v);
-        f->signal_handlers_disconnect_by_data(v->session, v);
+        (void)f->signal_handlers_disconnect_matched(v->view, HERO_G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, v);
+        (void)f->signal_handlers_disconnect_matched(v->manager, HERO_G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, v);
+        (void)f->signal_handlers_disconnect_matched(v->session, HERO_G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, v);
         f->unregister_message_handler(v->manager, "heroes", NULL);
         f->object_unref(v->view);
         f->object_unref(v->manager);

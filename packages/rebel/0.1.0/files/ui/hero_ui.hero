@@ -8,9 +8,9 @@
 #
 # The layer is C of the language's own beside the runtime, so this group
 # names its header and no `link`: on macOS the member's Swift half links
-# AppKit itself, and on Windows and Linux the native side answers
-# `HERO_UI_UNSUPPORTED` until its arm is written, so the same lines bind it
-# everywhere. An app is the one handle: `open` begins its life and `close`
+# AppKit itself, on Windows its Win32 arm links `user32` and the rest by the
+# object's own words, and elsewhere its GTK 4 arm opens `libgtk-4.so.1` at
+# the first call, so the same lines bind it everywhere. An app is the one handle: `open` begins its life and `close`
 # ends it. A widget is a number the program gives, never a handle.
 #
 # Every text crosses as bytes and a count, so a text holding a zero byte is
@@ -145,7 +145,8 @@ function on_ui_thread() -> i64
     return hero_ui_on_ui_thread()
 
 # 1 where the native side can open on this machine, 0 where it cannot: no
-# arm for this system, or no window server or display for this session.
+# window server, no window station that shows, no display named or no GTK 4
+# for this session.
 function native_here() -> i64
     return hero_ui_native_here()
 
