@@ -106,12 +106,12 @@ capability read/json  a JSON value read from the next message
   rust    -
   python  -
 
-capability read/ready  the messages what is held and one read complete, for one thread serving many connections with poll
-  heroes  websocket.read_ready
+capability read/ready  the messages what is held and one read complete, for one thread serving many connections with poll, and the count of frames held that the stream no longer tells of
+  heroes  websocket.read_ready, websocket.held_of
   go      -
   rust    tungstenite::util::NonBlockingError, tungstenite::util::NonBlockingResult, tungstenite::protocol::WebSocket::can_read, tungstenite::protocol::WebSocketContext::can_read
   python  websockets.protocol.SEND_EOF, websockets.asyncio.client.ClientConnection.connection_lost, websockets.asyncio.client.ClientConnection.connection_made, websockets.asyncio.client.ClientConnection.data_received, websockets.asyncio.client.ClientConnection.drain, websockets.asyncio.client.ClientConnection.eof_received, websockets.asyncio.client.ClientConnection.pause_writing, websockets.asyncio.client.ClientConnection.resume_writing, websockets.asyncio.server.ServerConnection.connection_lost, websockets.asyncio.server.ServerConnection.connection_made, websockets.asyncio.server.ServerConnection.data_received, websockets.asyncio.server.ServerConnection.drain, websockets.asyncio.server.ServerConnection.eof_received, websockets.asyncio.server.ServerConnection.pause_writing, websockets.asyncio.server.ServerConnection.resume_writing, websockets.asyncio.connection.Connection.connection_lost, websockets.asyncio.connection.Connection.connection_made, websockets.asyncio.connection.Connection.data_received, websockets.asyncio.connection.Connection.drain, websockets.asyncio.connection.Connection.eof_received, websockets.asyncio.connection.Connection.pause_writing, websockets.asyncio.connection.Connection.resume_writing, websockets.protocol.Protocol.data_to_send, websockets.protocol.Protocol.send_eof, websockets.protocol.Protocol.eof_sent, websockets.protocol.Protocol.writes, websockets.client.ClientProtocol.data_to_send, websockets.client.ClientProtocol.send_eof, websockets.client.ClientProtocol.eof_sent, websockets.client.ClientProtocol.writes, websockets.server.ServerProtocol.data_to_send, websockets.server.ServerProtocol.send_eof, websockets.server.ServerProtocol.eof_sent, websockets.server.ServerProtocol.writes
-  note    Go and Python reach many connections by goroutines and asyncio, tungstenite by a socket that would block; here poll tells the stream ready and read_ready reads it once
+  note    Go and Python reach many connections by goroutines and asyncio, tungstenite by a socket that would block; here poll tells the stream ready, held_of tells of the frames a read already brought, and read_ready takes them, reading the stream once where none was held
 
 capability text/utf8  a text checked as UTF-8 fragment by fragment, written and read, a wrong byte failing the connection with 1007 in the fragment that brings it
   heroes  websocket.read_message, websocket.read_part, websocket.write_part

@@ -64,6 +64,17 @@ function count(hub: Hub) -> i64
 function holds(hub: Hub, key: i64) -> bool
     return !hub.sockets[key].is_err()
 
+# How many frames the socket `key` holds read and not yet taken: what its
+# client wrote with the opening request, which the stream, drained, does not
+# tell of (`websocket`'s head); 0 for a key no socket has.
+#
+# - `hub`: the hub.
+# - `key`: a `poll` key.
+function held(hub: Hub, key: i64) -> i64
+    match hub.sockets[key]
+        .ok s  => return websocket.held_of(s.conn)
+        .err _ => return 0
+
 # What reading a socket found.
 variant Read
     # The socket stays open.
@@ -79,7 +90,8 @@ variant Read
 # they are read and dropped, which keeps the socket's buffer from growing.
 #
 # - `hub`: the hub.
-# - `key`: the socket's `poll` key, which `poll` told readable.
+# - `key`: the socket's `poll` key, which `poll` told readable or whose
+#   `held` is above 0.
 function on_readable(@hub: Hub, key: i64) -> Read
     s = match hub.sockets[key]
         .ok got => got

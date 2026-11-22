@@ -38,7 +38,9 @@ function wanted(on: bool) -> negotiating.Wanted
 # upgrades it as the rest of `arg` says (`plain`, `deflate`, `chat` with
 # the subprotocol `chat`, `tls`, which listens for TLS with the test
 # certificate of `localhost`, or `moved`, which first sends one request to
-# `/again` with a 302), echoes every message until the connection ends, and
+# `/again` with a 302, or `greet`, which writes its 101 by hand and a text
+# `hello` after it in one write, as a server greeting a client does), echoes
+# every message until the connection ends, and
 # answers how many it echoed and the path it upgraded: `echoed 2 /chat`.
 function echo_server(arg: str) -> str
     words = strings.split(s: arg, sep: " ")
@@ -100,7 +102,16 @@ function echoed_on(given: io.Stream, mode: str) -> str
         r,
         a: opening.Accepting(protocols: protocols, origins: [], every_origin: false, wanted: wanted(mode == "deflate"))
     )
-    http.write_response(reader.stream, response: opening.switching(j, extra: []), method: r.method).must()
+
+    if mode == "greet"
+        accept = opening.accept_of(http.value_of(r.headers, name: "Sec-WebSocket-Key").must())
+        head = bytes.from_text(
+            f"HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: {accept}\r\n\r\n"
+        )
+        hello = handmade.frame(opcode: 1, fin: true, rsv: 0, payload: bytes.from_text("hello"), masked: false)
+        io.write(reader.stream, data: bytes.concat([head, hello])).must()
+    else
+        http.write_response(reader.stream, response: opening.switching(j, extra: []), method: r.method).must()
     state @= engine.start(client: false, agreed: j.agreed, level: 6, min_bytes: 0, held: io.buffered(reader))
     echoed: i64 @= 0
 
