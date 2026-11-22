@@ -37,6 +37,7 @@
 #include <shobjidl.h>
 #include <shlobj.h>
 #include <dwmapi.h>
+#include <oleacc.h>
 #include <wchar.h>
 #include "hero_ui_web_win32.h"
 
@@ -270,6 +271,10 @@ struct hero_ui_native {
     bool tabs_stale;
     int64_t enter_button;
     int64_t escape_button;
+    /* Its name for a screen reader, the program's own (NULL for none), and
+     * the label tied to it, 0 for none (ACCESSIBLE NAMES). */
+    wchar_t *access_name;
+    int64_t label_for;
     /* A menu item's check mode, `HERO_UI_CHECK_*`, and its state. */
     int64_t check;
     bool checked;
@@ -355,6 +360,10 @@ static _Thread_local bool hero_ui_win_task_asked;
 /* Above 0 while the program's own call moves a window or changes its
  * state, so WINDOWS ON THE SCREEN tells none of it as the person's. */
 static _Thread_local int64_t hero_ui_win_quiet;
+/* The appearance a program injected, 0 for the system's own; the one last
+ * told. */
+static _Thread_local int64_t hero_ui_win_appearance_forced;
+static _Thread_local int64_t hero_ui_win_appearance_told;
 /* The window made modal, 0 for none. */
 static _Thread_local int64_t hero_ui_win_modal;
 /* The app's icon, NULL for the system's own. */
@@ -1461,6 +1470,7 @@ static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head);
 static void hero_ui_win_settle_rows(hero_ui_native *table);
 static void hero_ui_win_lay_box(hero_ui_native *widget);
 static hero_ui_native *hero_ui_win_widget_at(HWND hwnd);
+static void hero_ui_win_setting_changed(LPARAM name);
 
 /* A notification from a control to its parent (`WM_NOTIFY`): the person's
  * tab, a table's or a tree's. */
@@ -1556,6 +1566,9 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         break;
     case WM_DISPLAYCHANGE:
         hero_ui_win_moved(hwnd, false);
+        break;
+    case WM_SETTINGCHANGE:
+        hero_ui_win_setting_changed(lparam);
         break;
     case WM_SIZE:
         if (wparam != SIZE_MINIMIZED) {
@@ -1712,6 +1725,9 @@ static void hero_ui_win_take_styles(void) {
     }
 }
 
+static int64_t hero_ui_win_appearance_now(void);
+static void hero_ui_win_props_end(void);
+
 int64_t hero_ui_arm_open(void) {
     INITCOMMONCONTROLSEX controls;
 
@@ -1751,11 +1767,14 @@ int64_t hero_ui_arm_open(void) {
     hero_ui_win_injecting = 0;
     hero_ui_win_quiet = 0;
     hero_ui_win_modal = 0;
+    hero_ui_win_appearance_forced = 0;
+    hero_ui_win_appearance_told = hero_ui_win_appearance_now();
     hero_ui_make_host();
     return HERO_UI_OK;
 }
 
 static void hero_ui_win_hold_others(int64_t except, bool hold);
+static void hero_ui_win_label_changed(int64_t label, bool gone);
 static int hero_ui_win_page_index(const hero_ui_native *tabs, int64_t page);
 static void hero_ui_win_drop_cells(hero_ui_native *table);
 
@@ -1852,6 +1871,10 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     if (widget->kind == HERO_UI_TABLE) {
         hero_ui_win_drop_cells(widget);
     }
+    if (widget->kind == HERO_UI_LABEL) {
+        hero_ui_win_label_changed(widget->id, true);
+    }
+    hero_layer_free(widget->access_name);
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
@@ -1907,6 +1930,7 @@ void hero_ui_arm_close(void) {
         hero_ui_win_destroy_tree(first);
     }
     hero_ui_free_map();
+    hero_ui_win_props_end();
     hero_layer_free(hero_ui_win_paths);
     hero_ui_win_paths = NULL;
     hero_ui_win_paths_count = 0;
@@ -1974,6 +1998,7 @@ static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window, HWND ins
 }
 
 static void hero_ui_win_give_icon(HWND hwnd);
+static void hero_ui_win_dress(HWND hwnd);
 static bool hero_ui_win_subclass_edit(HWND hwnd);
 static void hero_ui_win_lay_pages(hero_ui_native *tabs);
 static void hero_ui_win_lay_panes(hero_ui_native *split);
@@ -2195,6 +2220,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (hero_ui_win_icon != NULL) {
             hero_ui_win_give_icon(made->hwnd);
         }
+        hero_ui_win_dress(made->hwnd);
         if (hero_ui_win_modal != 0) {
             /* Made while another window is modal: held as the others are. */
             made->held_by_modal = true;
@@ -2272,6 +2298,8 @@ static void hero_ui_win_first_shown(hero_ui_native *window);
 static void hero_ui_win_lay_scroll(hero_ui_native *scroll);
 static int64_t hero_ui_win_divider(UINT dpi);
 
+static void hero_ui_win_label_changed(int64_t label, bool gone);
+
 int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
     unsigned ways = 0;
@@ -2333,6 +2361,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_mute(1);
     set = SetWindowTextW(widget->hwnd, wide);
     code = GetLastError();
+    if (set && widget->kind == HERO_UI_LABEL) {
+        hero_ui_win_label_changed(id, false);
+    }
     if (set && (widget->kind == HERO_UI_TEXT_FIELD || widget->kind == HERO_UI_TEXT_AREA)) {
         (void)SendMessageW(widget->hwnd, EM_SETSEL, wcslen(wide), (LPARAM)wcslen(wide));
         (void)SendMessageW(widget->hwnd, EM_SCROLLCARET, 0, 0);
@@ -6905,6 +6936,261 @@ static int64_t hero_ui_win_choose_in_box(hero_ui_native *widget, const int64_t *
     default:
         return HERO_UI_INVALID;
     }
+}
+
+/* -- THE DARK OR LIGHT APPEARANCE --------------------------------------------
+ *
+ * The system's appearance is the person's choice for apps in Windows'
+ * settings, `AppsUseLightTheme` under the current user's `Personalize` key
+ * (light where Windows names none, as before Windows 10 1809), read again
+ * when Windows tells every window `WM_SETTINGCHANGE` of "ImmersiveColorSet".
+ * The app's windows follow it in what Windows draws for a program: their
+ * title bars and frames, by DWM's dark mode (`DWMWA_USE_IMMERSIVE_DARK_MODE`,
+ * attribute 20, 19 before Windows 10 20H1); Win32's own controls have no
+ * documented dark look and keep the system's light one. An appearance the
+ * program injects holds until it injects 0, the system's own again. */
+
+#define HERO_UI_WIN_DARK_TITLE 20
+#define HERO_UI_WIN_DARK_TITLE_BEFORE 19
+
+
+/* The appearance the person chose for apps in Windows' settings. */
+static int64_t hero_ui_win_system_appearance(void) {
+    DWORD light = 1;
+    DWORD size = (DWORD)sizeof light;
+
+    if (RegGetValueW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", L"AppsUseLightTheme", RRF_RT_REG_DWORD, NULL, &light, &size) != ERROR_SUCCESS) {
+        return HERO_UI_APPEARANCE_LIGHT;
+    }
+    return light == 0 ? HERO_UI_APPEARANCE_DARK : HERO_UI_APPEARANCE_LIGHT;
+}
+
+/* The appearance the app's windows are drawn in now. */
+static int64_t hero_ui_win_appearance_now(void) {
+    return hero_ui_win_appearance_forced != 0 ? hero_ui_win_appearance_forced : hero_ui_win_system_appearance();
+}
+
+/* Draws window `hwnd`'s title bar and frame in the appearance now. */
+static void hero_ui_win_dress(HWND hwnd) {
+    BOOL dark = hero_ui_win_appearance_now() == HERO_UI_APPEARANCE_DARK;
+
+    if (FAILED(DwmSetWindowAttribute(hwnd, HERO_UI_WIN_DARK_TITLE, &dark, (DWORD)sizeof dark))) {
+        (void)DwmSetWindowAttribute(hwnd, HERO_UI_WIN_DARK_TITLE_BEFORE, &dark, (DWORD)sizeof dark);
+    }
+}
+
+/* The appearance may have turned: every window drawn in it, and told where
+ * it differs from the one last told. */
+static void hero_ui_win_appearance_turned(void) {
+    int64_t now = hero_ui_win_appearance_now();
+
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+
+        if (window != NULL && window->kind == HERO_UI_WINDOW) {
+            hero_ui_win_dress(window->hwnd);
+        }
+    }
+    if (now != hero_ui_win_appearance_told) {
+        hero_ui_win_appearance_told = now;
+        hero_ui_tell(HERO_UI_EVENT_APPEARANCE, 0, now, 0);
+    }
+}
+
+/* Windows tells every top-level window a setting changed: the appearance's
+ * is "ImmersiveColorSet". */
+static void hero_ui_win_setting_changed(LPARAM name) {
+    if (name != 0 && wcscmp((const wchar_t *)name, L"ImmersiveColorSet") == 0 && hero_ui_win_appearance_forced == 0) {
+        hero_ui_win_appearance_turned();
+    }
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    *appearance = hero_ui_win_appearance_now();
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    hero_ui_win_appearance_forced = appearance;
+    hero_ui_win_appearance_turned();
+    return HERO_UI_OK;
+}
+
+/* -- ACCESSIBLE NAMES --------------------------------------------------------
+ *
+ * A control's name for a screen reader is the one Active Accessibility and
+ * UI Automation give it: its own words, or for a field the label standing
+ * before it. A name of the program's, or a tied label's words, is set over
+ * them by the accessibility property service (`IAccPropServices`'
+ * `SetHwndPropStr` with `PROPID_ACC_NAME`) and taken back by
+ * `ClearHwndProps`; the name is read back as the system holds it, by the
+ * control's `IAccessible` (`get_accName`). The program's own name comes
+ * first, then a tied label's words, kept again whenever the label's text
+ * changes. */
+
+#if defined(_MSC_VER)
+#pragma comment(lib, "oleacc.lib")
+#pragma comment(lib, "oleaut32.lib")
+#endif
+
+/* `oleacc.h`'s service, its interface, its name property and
+ * `IAccessible`, written here so no import library of GUIDs is needed. */
+static const CLSID hero_ui_win_props_class = {0xb5f8350b, 0x0548, 0x48b1, {0xa6, 0xee, 0x88, 0xbd, 0x00, 0xb4, 0xa5, 0xe7}};
+static const IID hero_ui_win_props_face = {0x6e26e776, 0x04f0, 0x495d, {0x80, 0xe4, 0x33, 0x30, 0x35, 0x2e, 0x31, 0x69}};
+static const GUID hero_ui_win_name_property = {0x608d3df8, 0x8128, 0x4aa7, {0xa4, 0x28, 0xf5, 0x5e, 0x49, 0x26, 0x72, 0x91}};
+static const IID hero_ui_win_accessible_face = {0x618736e0, 0x3c3d, 0x11cf, {0x81, 0x0c, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71}};
+
+/* The accessibility property service, made once the UI thread is in COM;
+ * NULL where it cannot be. */
+static _Thread_local IAccPropServices *hero_ui_win_props;
+static _Thread_local bool hero_ui_win_props_joined;
+
+static IAccPropServices *hero_ui_win_props_of(void) {
+    if (hero_ui_win_props == NULL) {
+        HRESULT joined = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+        hero_ui_win_props_joined = SUCCEEDED(joined);
+        if (FAILED(joined) && joined != RPC_E_CHANGED_MODE) {
+            return NULL;
+        }
+        if (FAILED(CoCreateInstance(&hero_ui_win_props_class, NULL, CLSCTX_INPROC_SERVER, &hero_ui_win_props_face, (void **)&hero_ui_win_props))) {
+            hero_ui_win_props = NULL;
+            if (hero_ui_win_props_joined) {
+                CoUninitialize();
+                hero_ui_win_props_joined = false;
+            }
+        }
+    }
+    return hero_ui_win_props;
+}
+
+/* Gives the service back at `close`. */
+static void hero_ui_win_props_end(void) {
+    if (hero_ui_win_props != NULL) {
+        hero_ui_win_props->lpVtbl->Release(hero_ui_win_props);
+        hero_ui_win_props = NULL;
+    }
+    if (hero_ui_win_props_joined) {
+        CoUninitialize();
+        hero_ui_win_props_joined = false;
+    }
+}
+
+/* Sets widget `widget`'s name as its record says: the program's own, else
+ * its tied label's words, else none of the arm's, the system's own then. */
+static int64_t hero_ui_win_name_again(hero_ui_native *widget) {
+    IAccPropServices *props = hero_ui_win_props_of();
+    hero_ui_native *label = widget->label_for != 0 ? hero_ui_find(widget->label_for) : NULL;
+    wchar_t *words = NULL;
+    HRESULT done;
+
+    if (props == NULL) {
+        return hero_ui_refused(HERO_UI_OTHER, "Windows' accessibility property service (IAccPropServices) could not be made");
+    }
+    if (widget->access_name == NULL && label != NULL && label->hwnd != NULL) {
+        words = hero_ui_win_wide_of(label->hwnd);
+    }
+    if (widget->access_name != NULL || words != NULL) {
+        done = props->lpVtbl->SetHwndPropStr(props, widget->hwnd, (DWORD)OBJID_CLIENT, CHILDID_SELF, hero_ui_win_name_property, widget->access_name != NULL ? widget->access_name : words);
+    } else {
+        MSAAPROPID name = hero_ui_win_name_property;
+
+        done = props->lpVtbl->ClearHwndProps(props, widget->hwnd, (DWORD)OBJID_CLIENT, CHILDID_SELF, &name, 1);
+    }
+    hero_layer_free(words);
+    return FAILED(done) ? hero_ui_win_failed("naming a widget for a screen reader", (DWORD)done) : HERO_UI_OK;
+}
+
+/* Label `label`'s words changed or it is gone: every widget it names is
+ * named again. */
+static void hero_ui_win_label_changed(int64_t label, bool gone) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *widget = hero_ui_at(at);
+
+        if (widget != NULL && widget->label_for == label && widget->id != label) {
+            if (gone) {
+                widget->label_for = 0;
+            }
+            (void)hero_ui_win_name_again(widget);
+        }
+    }
+}
+
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    hero_ui_native *widget = hero_ui_find(id);
+    wchar_t *wide = NULL;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->hwnd == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (count > 0) {
+        wide = hero_ui_win_wide(name, count, HERO_UI_WIN_TABS);
+        if (wide == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    hero_layer_free(widget->access_name);
+    widget->access_name = wide;
+    return hero_ui_win_name_again(widget);
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    hero_ui_native *widget = hero_ui_find(id);
+    IAccessible *object = NULL;
+    VARIANT self;
+    BSTR name = NULL;
+    HRESULT done;
+    uint8_t *narrow;
+
+    *length = 0;
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->hwnd == NULL) {
+        return HERO_UI_INVALID;
+    }
+    done = AccessibleObjectFromWindow(widget->hwnd, (DWORD)OBJID_CLIENT, &hero_ui_win_accessible_face, (void **)&object);
+    if (FAILED(done) || object == NULL) {
+        return hero_ui_win_failed("reading a widget's accessible name", (DWORD)done);
+    }
+    VariantInit(&self);
+    self.vt = VT_I4;
+    self.lVal = CHILDID_SELF;
+    done = object->lpVtbl->get_accName(object, self, &name);
+    object->lpVtbl->Release(object);
+    if (FAILED(done)) {
+        return hero_ui_win_failed("reading a widget's accessible name", (DWORD)done);
+    }
+    if (name == NULL) {
+        return HERO_UI_OK;
+    }
+    narrow = hero_ui_win_narrow(name, (int)SysStringLen(name), true, length);
+    SysFreeString(name);
+    if (narrow == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    if (*length > 0 && *length <= count) {
+        memcpy(buffer, narrow, (size_t)*length);
+    }
+    hero_layer_free(narrow);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *caption = label != 0 ? hero_ui_find(label) : NULL;
+
+    if (widget == NULL || (label != 0 && caption == NULL)) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->hwnd == NULL || (caption != NULL && caption->kind != HERO_UI_LABEL) || label == id) {
+        return HERO_UI_INVALID;
+    }
+    widget->label_for = label;
+    return hero_ui_win_name_again(widget);
 }
 
 #endif
