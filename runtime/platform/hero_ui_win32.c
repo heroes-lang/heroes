@@ -265,6 +265,7 @@ struct hero_ui_native {
     LONG_PTR extended_before;
     WINDOWPLACEMENT placement_before;
     bool unframed;
+    bool resizable;
     bool modal;
     bool held_by_modal;
     bool held_by_dialog;
@@ -1424,6 +1425,37 @@ static void hero_ui_win_quit(void) {
     }
 }
 
+/* Where on window `window`, which has no frame, the point `at` of the
+ * screen lands: on an edge or a corner, within the sizing border Windows
+ * gives a frame at its scale, where it may be resized and is neither
+ * maximized nor in full screen, so the person resizes it there; elsewhere
+ * on its background, its caption, so the person moves it. */
+static LRESULT hero_ui_win_edge(const hero_ui_native *window, LPARAM at) {
+    POINT point = {(short)LOWORD(at), (short)HIWORD(at)};
+    RECT area;
+    int border;
+    bool left;
+    bool right;
+    bool top;
+    bool bottom;
+
+    if (!window->resizable || window->full_screen || IsZoomed(window->hwnd) || !GetWindowRect(window->hwnd, &area)) {
+        return HTCAPTION;
+    }
+    border = hero_ui_win_metric(SM_CXSIZEFRAME, window->dpi) + hero_ui_win_metric(SM_CXPADDEDBORDER, window->dpi);
+    left = point.x < area.left + border;
+    right = point.x >= area.right - border;
+    top = point.y < area.top + border;
+    bottom = point.y >= area.bottom - border;
+    if (top) {
+        return left ? HTTOPLEFT : right ? HTTOPRIGHT : HTTOP;
+    }
+    if (bottom) {
+        return left ? HTBOTTOMLEFT : right ? HTBOTTOMRIGHT : HTBOTTOM;
+    }
+    return left ? HTLEFT : right ? HTRIGHT : HTCAPTION;
+}
+
 /* What the parts below the procedure handle, each defined in its part. */
 static void hero_ui_win_moved(HWND hwnd, bool moved);
 static void hero_ui_win_state_changed(HWND hwnd);
@@ -1562,7 +1594,7 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
                 if (hit != HTCLIENT || widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
                     return hit;
                 }
-                return widget->kind == HERO_UI_WINDOW && widget->hwnd == hwnd ? HTCAPTION : HTTRANSPARENT;
+                return widget->kind == HERO_UI_WINDOW && widget->hwnd == hwnd ? hero_ui_win_edge(window, lparam) : HTTRANSPARENT;
             }
         }
         break;
@@ -2048,6 +2080,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             made->content_width = 100;
             made->content_height = 100;
             made->inside = made->hwnd;
+            made->resizable = true;
         }
         break;
     case HERO_UI_LABEL:
@@ -2554,6 +2587,16 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
 
         if (widget->kind != HERO_UI_WINDOW) {
             return HERO_UI_INVALID;
+        }
+        widget->resizable = on == 1;
+        if (widget->unframed || widget->full_screen) {
+            /* No frame to resize it by: its edges answer the person's
+             * drag while it is resizable (WM_NCHITTEST), or the frame it
+             * is given back takes the flag. */
+            if (widget->full_screen) {
+                widget->style_before = on == 1 ? (widget->style_before | WS_THICKFRAME | WS_MAXIMIZEBOX) : (widget->style_before & ~(LONG_PTR)(WS_THICKFRAME | WS_MAXIMIZEBOX));
+            }
+            return HERO_UI_OK;
         }
         style = GetWindowLongPtrW(widget->hwnd, GWL_STYLE);
         style = on == 1 ? (style | WS_THICKFRAME | WS_MAXIMIZEBOX) : (style & ~(LONG_PTR)(WS_THICKFRAME | WS_MAXIMIZEBOX));
@@ -3370,7 +3413,7 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_RESIZE:
         if (widget->kind != HERO_UI_WINDOW) {
             answer = HERO_UI_INVALID;
-        } else if ((GetWindowLongPtrW(widget->hwnd, GWL_STYLE) & WS_THICKFRAME) != 0) {
+        } else if (widget->resizable && !widget->full_screen) {
             int width = hero_ui_win_px(hero_ui_between(value, widget->least_width, HERO_UI_WIN_POINTS_MOST), widget->dpi);
             int height = hero_ui_win_px(hero_ui_between(second, widget->least_height, HERO_UI_WIN_POINTS_MOST), widget->dpi);
             RECT frame = {0, 0, width, height};
@@ -4242,19 +4285,19 @@ int64_t hero_ui_arm_state(int64_t id, int64_t *state) {
 }
 
 /* Gives window `window` its frame, or takes it away, keeping its content's
- * size and its frame's top-left corner; a window that may be resized keeps
- * the border the person resizes it by. */
+ * size and its frame's top-left corner: with no frame the window is its
+ * content alone, no sizing border either, and a window that may be resized
+ * is resized by its content's edges (`hero_ui_win_edge`). */
 static int64_t hero_ui_win_set_framed(hero_ui_native *window, bool on) {
     LONG_PTR style = GetWindowLongPtrW(window->hwnd, GWL_STYLE);
-    bool resizable = (style & WS_THICKFRAME) != 0;
 
     if (window->full_screen) {
         return hero_ui_refused(HERO_UI_OTHER, "a window in full screen has no frame to give or take");
     }
     if (on) {
-        style = (style & ~(LONG_PTR)WS_POPUP) | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | (resizable ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
+        style = (style & ~(LONG_PTR)WS_POPUP) | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | (window->resizable ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
     } else {
-        style = (style & ~(LONG_PTR)(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)) | WS_POPUP;
+        style = (style & ~(LONG_PTR)(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME)) | WS_POPUP;
     }
     window->unframed = !on;
     (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);

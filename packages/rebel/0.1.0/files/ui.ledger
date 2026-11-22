@@ -135,7 +135,7 @@ capability ui/window-look  a window kept above every other, without its frame, s
   rust    tauri::Window::set_always_on_top, tauri::Window::set_decorations, tauri::window::Effect, tauri::Window::set_effects
   python  tkinter.Wm.wm_attributes, tkinter.Wm.wm_overrideredirect
   wx      wxFrame (the wxSTAY_ON_TOP style), wxWindow (the wxBORDER_NONE style), wxTopLevelWindow (SetTransparent, CanSetTransparent)
-  note    a window with no frame is moved by a drag on its background; the material is `NSVisualEffectView` behind the window on macOS, Mica on Windows 11 (pending, `DwmSetWindowAttribute`), and none in GTK 4, which answers `unsupported`; always on top is refused on Wayland, which has no such level; libui's borderless window, dropped here until this block, is `set_framed`
+  note    a window with no frame is moved by a drag on its background (on Windows its content alone, no sizing border, resized by its content's edges where it may be); the material is `NSVisualEffectView` behind the window on macOS, Mica on Windows 11 (`DwmSetWindowAttribute`'s system backdrop, `unsupported` before Windows 11 22H2), and none in GTK 4, which answers `unsupported`; always on top is refused on Wayland, which has no such level; libui's borderless window, dropped here until this block, is `set_framed`
 
 capability ui/app-icon  the application's icon, set at run time
   heroes  ui.set_icon
