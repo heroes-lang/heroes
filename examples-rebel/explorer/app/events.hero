@@ -51,7 +51,7 @@ function handle(@c: controller.Controller, e: ui.Event)
             commands.menu(@c, item: m.item)
         .close_asked w => closing(@c, window: w.window)
         .timer_fired _ => controller.tick(@c)
-        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ => _ = 0
+        .value_changed _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ => _ = 0
 
     controller.redraw(@c)
 

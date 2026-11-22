@@ -6,11 +6,13 @@
 # greyed out, or hidden, or in a box or window hidden, on a window the
 # person may not resize, or a choice that changes nothing.
 
+use time
 use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/desk
 use ui/internal/failure
+use ui/internal/fixture
 use ui/internal/layout
 use ui/internal/model
 
@@ -64,6 +66,14 @@ function checked(app: ui.App, input: ui.Input) -> ()?
             desk.position_ok(app, screen: d.screen, x: d.x, y: d.y)?
         .change_state c =>
             _ = check.node_kind(app, widget: c.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+        .activate a =>
+            n = check.node_kind(app, widget: a.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE], what: "a list")?
+
+            if a.index < 0 || a.index >= n.items.len()
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"row {a.index} is past the {n.items.len()} items of list {n.id}"
+                )
 
     return ok()
 
@@ -82,6 +92,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .send s                                   => s.widget.id
         .drag_window d                            => d.window.id
         .change_state c                           => c.window.id
+        .activate a                               => a.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
 
     if id == 0
@@ -176,10 +187,30 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
                     told @ told.push(event)
 
                 return told
+        .activate a =>
+            if reachable(app, id: a.widget.id)
+                n @= app.table.nodes[a.widget.id].must()
+                told: [ui.Event] @= []
+
+                # The first click chooses the row alone where it is not
+                # chosen, as the person's click does.
+                if !chosen(n.chosen, index: a.index)
+                    n.chosen @ [a.index]
+                    model.put(@app.table, n: n)
+                    told @ told.push(.selection_changed(widget: a.widget, indices: n.chosen))
+                return told.push(.activated(widget: a.widget, index: a.index))
         .answer _ | .pick_files _ | .cancel_files =>
             _ = 0
 
     return none
+
+# Whether `indices` holds `index`.
+function chosen(indices: [i64], index: i64) -> bool
+    for at in indices
+        if at == index
+            return true
+
+    return false
 
 # Whether the person can reach widget `id`: it is enabled, and it and every
 # box up to its window, and the window, are shown, and no other window of
@@ -202,3 +233,72 @@ function reachable(app: ui.App, id: i64) -> bool
         at @ node.parent
 
     return true
+
+## Tests
+
+# Every event `app` gives within `within`, each come within it of the last.
+function events_of(@app: ui.App, within: time.Duration) -> [ui.Event]
+    out: [ui.Event] @= []
+
+    while true
+        match ui.wait(@app, within: within)
+            .ok event => out @ out.push(event)
+            .err _    => break
+
+    return out
+
+test "activate: a row not chosen is chosen first and then opened, a chosen one opened alone, in a list of one choice and of several (feature 2685)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    files = ui.list(@app, into: w, items: ["a.txt", "b.txt", "c.txt"], multiple: false).must()
+    many = ui.list(@app, into: w, items: ["x", "y", "z"], multiple: true).must()
+    ui.set_selection(@app, widget: many, indices: [0, 2]).must()
+    ui.inject(@app, input: .activate(widget: files, index: 1)).must()
+    ui.inject(@app, input: .activate(widget: files, index: 1)).must()
+    ui.inject(@app, input: .activate(widget: many, index: 2)).must()
+    ui.inject(@app, input: .activate(widget: many, index: 1)).must()
+    expected: [ui.Event] = [
+        .selection_changed(widget: files, indices: [1])
+        .activated(widget: files, index: 1)
+        .activated(widget: files, index: 1)
+        .activated(widget: many, index: 2)
+        .selection_changed(widget: many, indices: [1])
+        .activated(widget: many, index: 1)
+    ]
+    assert events_of(@app, within: time.nanoseconds(0)) == expected
+    ui.close(@app).must()
+
+test "activate: the first row and the last, a row past the items and one below 0 invalid, a list greyed out or hidden opens nothing, and a widget no list invalid"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    files = ui.list(@app, into: w, items: ["a", "b"], multiple: false).must()
+    button = ui.button(@app, into: w, text: "Open").must()
+    ui.inject(@app, input: .activate(widget: files, index: 0)).must()
+    ui.inject(@app, input: .activate(widget: files, index: 1)).must()
+    assert events_of(@app, within: time.nanoseconds(0)).len() == 4
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 2))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: -1))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: button, index: 0))) == ui.INVALID
+    ui.set_enabled(@app, widget: files, on: false).must()
+    ui.inject(@app, input: .activate(widget: files, index: 0)).must()
+    ui.set_enabled(@app, widget: files, on: true).must()
+    ui.set_visible(@app, widget: files, on: false).must()
+    ui.inject(@app, input: .activate(widget: files, index: 0)).must()
+    assert events_of(@app, within: time.nanoseconds(0)).len() == 0
+    ui.close(@app).must()
+
+test "activate: on the native side a row opened through the system's own path, after the choice its first click gave (feature 2685)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Files", width: 240, height: 160).must()
+    files = ui.list(@app, into: w, items: ["a.txt", "b.txt", "c.txt"], multiple: false).must()
+    ui.inject(@app, input: .activate(widget: files, index: 2)).must()
+    ui.inject(@app, input: .activate(widget: files, index: 2)).must()
+    told = events_of(@app, within: time.milliseconds(300).must())
+    assert told == [.selection_changed(widget: files, indices: [2]), .activated(widget: files, index: 2), .activated(widget: files, index: 2)]
+    assert ui.selection_of(app, widget: files).must() == [2]
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 3))) == ui.INVALID
+    ui.close(@app).must()

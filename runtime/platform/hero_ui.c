@@ -2017,12 +2017,16 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
-    if (kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) {
+    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE) {
         (void)snprintf(words, sizeof words, "the act %lld is no act a person does", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     if (kind == HERO_UI_EVENT_RESIZE && !hero_ui_sizes_given(value, second)) {
         return -1;
+    }
+    if (kind == HERO_UI_EVENT_ACTIVATE && value < 0) {
+        (void)snprintf(words, sizeof words, "row %lld of a list; a row is 0 or more", (long long)value);
+        return hero_ui_said(HERO_UI_INVALID, words);
     }
     return hero_ui_answered(hero_ui_arm_inject(kind, id, value, second, text, (int64_t)count), "acting as the person", id);
 }

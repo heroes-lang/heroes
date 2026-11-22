@@ -94,6 +94,7 @@ private let eventMenu: Int64 = 6
 private let eventClose: Int64 = 7
 private let eventResize: Int64 = 8
 private let eventMessage: Int64 = 9
+private let eventActivate: Int64 = 13
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -172,6 +173,23 @@ private final class KeyedWindow: NSWindow {
 
     override var canBecomeMain: Bool {
         return true
+    }
+}
+
+// A list's table, which tells the Return key pressed while it has the keys
+// and a row chosen as that row opened, as a double click on it is: AppKit's
+// table sends its `doubleAction` for the click alone.
+private final class ActivatingTable: NSTableView {
+    var returned: ((Int) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        // The Return key and the keypad's Enter, HIToolbox's `kVK_Return`
+        // and `kVK_ANSI_KeypadEnter`.
+        if (event.keyCode == 0x24 || event.keyCode == 0x4C), let first = selectedRowIndexes.first, let returned = returned {
+            returned(first)
+            return
+        }
+        super.keyDown(with: event)
     }
 }
 
@@ -378,7 +396,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
             scroll.hasVerticalScroller = true
             scroll.borderType = .bezelBorder
-            let table = NSTableView(frame: scroll.bounds)
+            let table = ActivatingTable(frame: scroll.bounds)
             let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("items"))
             column.resizingMask = .autoresizingMask
             table.addTableColumn(column)
@@ -387,6 +405,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             table.allowsEmptySelection = true
             table.dataSource = self
             table.delegate = self
+            table.target = self
+            table.doubleAction = #selector(rowDoubleClicked(_:))
+            table.returned = { [weak self, weak table] row in
+                if let table = table {
+                    self?.activated(table, row)
+                }
+            }
             scroll.documentView = table
             widget.table = table
             tables[ObjectIdentifier(table)] = widget.id
@@ -570,6 +595,21 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
 
     @objc func slid(_ sender: NSSlider) {
         queue(eventValue, Int64(sender.tag), Int64(sender.doubleValue.rounded()), 0)
+    }
+
+    // A row double-clicked: the row under the click, nothing where the
+    // click fell past the last row.
+    @objc func rowDoubleClicked(_ sender: NSTableView) {
+        if sender.clickedRow >= 0 {
+            activated(sender, sender.clickedRow)
+        }
+    }
+
+    // Row `row` of `table` opened by the person (`HERO_UI_EVENT_ACTIVATE`).
+    func activated(_ table: NSTableView, _ row: Int) {
+        if let id = tables[ObjectIdentifier(table)], table.isEnabled {
+            queue(eventActivate, id, Int64(row), 0)
+        }
     }
 
     @objc func menuChosen(_ sender: NSMenuItem) {
@@ -1112,6 +1152,17 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
             if window.styleMask.contains(.resizable) {
                 window.setContentSize(NSSize(width: CGFloat(value), height: CGFloat(second)))
+            }
+        case eventActivate:
+            guard let table = widget.table, value >= 0, value < Int64(widget.items.count) else {
+                return answerInvalid
+            }
+            if table.isEnabled {
+                // The first click chooses the row, as the person's does.
+                if !table.selectedRowIndexes.contains(Int(value)) {
+                    table.selectRowIndexes(IndexSet(integer: Int(value)), byExtendingSelection: false)
+                }
+                activated(table, Int(value))
             }
         case eventMessage:
             guard let page = widget.page else {

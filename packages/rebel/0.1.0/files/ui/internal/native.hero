@@ -393,6 +393,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: 0,
                 third: 0
             )
+        .activate a =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_ACTIVATE,
+                id: a.widget.id,
+                value: a.index,
+                second: 0,
+                text: ""
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # One act on window `id` among the screens, injected through the floor.

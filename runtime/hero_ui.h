@@ -345,9 +345,10 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * `text` by its bridge, as the page's own script would, at once or once a
  * page of the app's own origin has loaded, so the message is checked and
  * queued as the page's is (THE WEB VIEW, below; `LIMIT` where
- * `HERO_UI_QUEUE_MOST` wait for the page already). Its event is
- * queued as the person's would be. 0, or -1, `UNSUPPORTED` where the system
- * offers no such path. */
+ * `HERO_UI_QUEUE_MOST` wait for the page already); `ACTIVATE` opens row
+ * `value` of list `id`, choosing it first where it is not chosen, as a
+ * double click does. Its event is queued as the person's would be. 0, or
+ * -1, `UNSUPPORTED` where the system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
 
 /* Shows a message box over window `window` (0 for none), with `title` and
@@ -685,5 +686,15 @@ int64_t hero_ui_set_modal(hero_ui_app *app, int64_t id, int64_t on);
  * `value`; `HERO_UI_EVENT_STATE` brings it to state `value` as its buttons
  * would. 0, or -1, as `set_position` and `set_state` answer. */
 int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, int64_t third);
+
+/* -- A LIST'S ROW OPENED -------------------------------------------------- */
+
+/* The person opened a row of list `id`, by a double click on it or by the
+ * Return key while the list had the keys: `value` the row, for the Return
+ * key the first row chosen. A first click's choice comes before it as
+ * `HERO_UI_EVENT_SELECT`, as the person's click gave it; `inject` gives it
+ * with `HERO_UI_EVENT_ACTIVATE`. A file manager enters the folder, a mail
+ * client opens the message. */
+#define HERO_UI_EVENT_ACTIVATE 13
 
 #endif

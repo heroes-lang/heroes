@@ -213,10 +213,12 @@ capability ui/radio  items of which the person chooses one, each with its round 
   python  tkinter.Radiobutton, ttk.Radiobutton
 
 capability ui/list  items in a box, of which the person chooses one or several
-  heroes  ui.list, ui.set_items, ui.set_selection, ui.selection_of, ui.Event.selection_changed
+  heroes  ui.list, ui.set_items, ui.set_selection, ui.selection_of, ui.Event.selection_changed, ui.Event.activated, ui.Input.activate
   go      -
   rust    -
   python  tkinter.Listbox
+  wx      wxListBox (wxEVT_LISTBOX_DCLICK), wxListCtrl (wxEVT_LIST_ITEM_ACTIVATED)
+  note    a row opened by a double click or the Return key is `.activated`, after the `.selection_changed` its first click gave (feature 2685); tkinter binds `<Double-Button-1>` itself and libui has no list; macOS by the table's double action and its Return key, Windows pending (`LBN_DBLCLK`, or `NM_DBLCLK` and `NM_RETURN` of a list view), Linux pending (`GtkListView`'s `activate`)
 
 capability ui/combo  items in a button that opens them, of which the person chooses one
   heroes  ui.combo, ui.set_items, ui.set_selection, ui.selection_of

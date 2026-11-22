@@ -745,7 +745,8 @@ function radio_group(@app: App, into: Widget, items: [str]) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_RADIO_GROUP, text: "", items: items)
 
 # A new list in `into` holding `items`, nothing chosen; each change of what
-# is chosen is `.selection_changed`.
+# is chosen is `.selection_changed`, and a row opened by a double click or
+# the Return key `.activated`.
 #
 # - `app`: the app it is made in.
 # - `into`: a window, a row, a column or a grid.
@@ -1106,6 +1107,15 @@ variant Event
         window: Widget
         # The screen, from 0.
         screen: i64
+    # The person opened a row of a list, by a double click on it or by the
+    # Return key while the list had the keys: a file manager enters the
+    # folder, a mail client opens the message. A first click's choice comes
+    # before it as `.selection_changed`.
+    activated
+        # The list.
+        widget: Widget
+        # The row opened, from 0; for the Return key, the first row chosen.
+        index: i64
     # A web view's page sent a text by its bridge, `heroes.send` (the
     # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
@@ -1196,6 +1206,13 @@ variant Input
         window: Widget
         # The state.
         state: WindowState
+    # Opens a row of a list as a double click on it does, choosing it first
+    # where it is not chosen.
+    activate
+        # The list.
+        widget: Widget
+        # The row, an index of its items.
+        index: i64
     # Presses a button of the next message box `message` shows.
     answer
         # The button.
@@ -1604,7 +1621,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

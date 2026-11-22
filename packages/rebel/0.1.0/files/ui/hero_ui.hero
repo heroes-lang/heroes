@@ -134,6 +134,8 @@ extern "hero_ui.h"
     constant HERO_UI_EVENT_STATE: i64
     constant HERO_UI_EVENT_SCREEN: i64
     constant HERO_UI_POSITION_MOST: i64
+    # A list's row opened by the person.
+    constant HERO_UI_EVENT_ACTIVATE: i64
     function hero_ui_screens(app: App, @values: [i64] counted_by count lent, count: u64) -> i64
     function hero_ui_frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
     function hero_ui_set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
