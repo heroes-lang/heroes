@@ -1,0 +1,46 @@
+# fixedbugs-2634-a-groups-first-member-keeps-the-comment-above-it
+
+The first member of an `extern` group takes the comment directly above it
+inside the block, as every other member does, and the reference prints it;
+the group's comment above the `extern` line documents the first member only
+where that member has none of its own (defect 2634, spec § 1).
+
+## function sqrt
+
+    function sqrt(x: f64) -> f64
+
+The square root.
+
+- `x`: a number, zero or more
+
+    sqrt(x)
+
+## function cbrt
+
+    function cbrt(x: f64) -> f64
+
+The cube root.
+
+- `x`: any number
+
+    cbrt(x)
+
+## function exp
+
+    function exp(x: f64) -> f64
+
+The exponential.
+
+- `x`: the power
+
+    exp(x)
+
+## function labs
+
+    function labs(x: i64) -> i64
+
+The magnitude, the group's comment, which its first member takes.
+
+- `x`: any number
+
+    labs(x)

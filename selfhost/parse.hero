@@ -286,6 +286,28 @@ test "text becomes a tree in one call, comments and all"
     assert p.comments.len() == 2
     assert p.decls[0].doc.len() == 1
 
+# The first doc line of each declaration of `text`, "" where it has none.
+function first_docs(text: str) -> [str]
+    out: [str] @= []
+
+    for d in parse(text).decls
+        if d.doc.len() == 0
+            out @ out.push("")
+        else
+            out @ out.push(text.slice(from: d.doc[0].start, to: d.doc[0].end))
+
+    return out
+
+test "an extern group's first member takes the comment above it inside the block, and the group's only where it has none (defect 2634)"
+    assert first_docs("extern \"x.h\"\n    # Opens.\n    function x_open() -> i64\n    # Closes.\n    function x_close()\n") == ["# Opens.", "# Closes."]
+    assert first_docs("# The group.\nextern \"x.h\"\n    function x_open() -> i64\n") == ["# The group."]
+    assert first_docs("# The group.\nextern \"x.h\"\n    # Opens.\n    function x_open() -> i64\n") == ["# Opens."]
+    assert first_docs("# The group.\nextern \"x.h\"\n    # a remark\n\n    function x_open() -> i64\n") == ["# The group."]
+    assert first_docs("extern \"x.h\"\n    # A handle.\n    record X tag x\n    # The size.\n    constant X_SIZE: i64\n") == ["# A handle.", "# The size."]
+
+    # A comment at another column is no doc, inside the block as above it.
+    assert first_docs("extern \"x.h\"\n# at column 0\n    function x_open() -> i64\n") == [""]
+
 test "diagnostics come out lexer-first, then parser"
     # A tab (the lexer's mistake) on line 2, a stray name at top level (the
     # parser's) on line 3: the lexer's diagnostic must come out first even

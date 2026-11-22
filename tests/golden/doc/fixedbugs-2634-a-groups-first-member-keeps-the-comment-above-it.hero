@@ -1,0 +1,27 @@
+# The first member of an `extern` group takes the comment directly above it
+# inside the block, as every other member does, and the reference prints it;
+# the group's comment above the `extern` line documents the first member only
+# where that member has none of its own (defect 2634, spec § 1).
+
+extern "math.h"
+    # The square root.
+    #
+    # - `x`: a number, zero or more
+    function sqrt(x: f64) -> f64
+    # The cube root.
+    #
+    # - `x`: any number
+    function cbrt(x: f64) -> f64
+
+# The exponentials, a comment that documents no declaration.
+extern "math.h"
+    # The exponential.
+    #
+    # - `x`: the power
+    function exp(x: f64) -> f64
+
+# The magnitude, the group's comment, which its first member takes.
+#
+# - `x`: any number
+extern "stdlib.h"
+    function labs(x: i64) -> i64

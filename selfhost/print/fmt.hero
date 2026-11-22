@@ -253,8 +253,26 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
             # The comments above, printed so the re-parse reads the doc the
             # parser read: a remark keeps its blank line under it, and gains
             # one where without it it would be read as the doc (defects 096
-            # and 100).
-            page.comments_above(@f, s, comments: comments, line: line, indent: indent, doc: doc, takes_docs: true)
+            # and 100). A group's first member documented inside its block
+            # takes no comment above its head (`parse/group.hero`'s
+            # `member_doc`, defect 2634), so those are printed as written and
+            # its doc under the head (`extern_head_once`).
+            above_doc: [token.Span] @= doc
+            takes: bool @= true
+
+            if !continues && under_head(s, doc: doc, head: head)
+                none: [token.Span] = []
+                above_doc @ none
+                takes @ false
+            page.comments_above(
+                @f,
+                s,
+                comments: comments,
+                line: line,
+                indent: indent,
+                doc: above_doc,
+                takes_docs: takes
+            )
 
             # A blank line between the comment group and this
             # declaration is preserved exactly: it makes those
@@ -276,8 +294,8 @@ function format_lexed(tree: ast.Ast, s: source.Source, all_comments: [token.Span
 
 # Which items continue the group above, decided before any line is printed:
 # a member sharing its head line with the member above joins that group
-# unless the merge would move a comment (`page.keeps_head`). A member of the
-# group above written under its own head drops that head.
+# unless the merge would move a comment (`page.keeps_head`, `above_head`). A
+# member of the group above written under its own head drops that head.
 function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [ast.Decl]) -> [bool]
     out: [bool] @= []
     open_group: str @= ""
@@ -295,12 +313,31 @@ function joins(s: source.Source, comments: [token.Span], items: [Item], decls: [
             decl = decls[item.at]
             group @ group_key(s, decl: decl)
             head = head_line(s, decl: decl)
-            continues @ group.len() > 0 && group == open_group && !page.keeps_head(s, comments: comments, from: from, doc: decl.doc, head: head, start: item.start)
+            continues @ group.len() > 0 && group == open_group && !page.keeps_head(s, comments: comments, from: from, doc: decl.doc, head: head, start: item.start) && !above_head(s, comments: comments, from: from, doc: decl.doc, head: head)
         out @ out.push(continues)
         open_group @ group
         previous @ item.start
 
     return out
+
+# Whether a comment stands directly above the head on line `head`, at its
+# column, after the member above (from `from`), where the member under that
+# head is documented under it (defect 2634): the comment documents no
+# declaration, and merged it would stand among the members of the group
+# above, read there as a remark about them, so the head is kept.
+function above_head(s: source.Source, comments: [token.Span], from: i64, doc: [token.Span], head: i64) -> bool
+    if !under_head(s, doc: doc, head: head)
+        return false
+    i: i64 @= from
+
+    while i < comments.len() && source.line_of(s, comments[i].start) < head
+        at = comments[i].start
+
+        if source.line_of(s, at) == head - 1 && (at == 0 || s.text[at - 1] == '\n')
+            return true
+        i @ i + 1
+
+    return false
 
 # The items in source order, a tie in the order given (`stable.order`;
 # defect 105: the insertion this was copied the list at every item).
@@ -411,10 +448,12 @@ function head_line(s: source.Source, decl: ast.Decl) -> i64
 # indent every member takes. The first member's own comments are
 # flushed here, after the head: the caller keys every comment rule on
 # the head's line, so a comment between the head and the first member
-# would otherwise belong to neither (panel 038's compiler-engineer). None
-# of them is ever that member's doc, which the parser reads above the
-# `extern`, so a remark there keeps the blank line under it where the
-# source has one and gains none (defect 096).
+# would otherwise belong to neither (panel 038's compiler-engineer). The
+# run directly above that member at its column is its doc where the parser
+# took it (`parse/group.hero`'s `member_doc`, defect 2634), printed
+# directly above it; a remark there keeps the blank line under it where the
+# source has one (defect 096), and gains one where the member's doc is the
+# one above the head, which the re-parse would otherwise take it in place of.
 function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span], decl: ast.Decl, header: token.Span?, library: ast.Library?, continues: bool) -> i64
     if header.is_err()
         return 0
@@ -422,17 +461,25 @@ function extern_head_once(@f: page.Fmt, s: source.Source, comments: [token.Span]
     if !continues
         page.put_line(@f, indent: 0, text: extern_head(s, header: header.must(), library: library))
         page.opened(@f, s, comments, line: source.line_of(s, header.must().start))
-        none: [token.Span] = []
+        own: [token.Span] @= []
+
+        if under_head(s, doc: decl.doc, head: source.line_of(s, header.must().start))
+            own @ decl.doc
         page.comments_above(
             @f,
             s,
             comments: comments,
             line: source.line_of(s, decl.name.start),
             indent: 4,
-            doc: none,
-            takes_docs: false
+            doc: own,
+            takes_docs: true
         )
     return 4
+
+# Whether a group member's doc is written under the head on line `head`,
+# inside the block, rather than above it.
+function under_head(s: source.Source, doc: [token.Span], head: i64) -> bool
+    return head > 0 && doc.len() > 0 && source.line_of(s, doc[0].start) > head
 
 ## One declaration (fmt_decl)
 
@@ -1593,9 +1640,9 @@ test "every place a comment can sit inside a parameter list survives, and a list
 # program `check` accepts. The shapes beside it, measured 2026-09-25 on the
 # seed of f8bebbfd: before a middle member and before the last, exit 2; two
 # remarks with a blank between and under, exit 2; before the FIRST member
-# the blank was deleted at exit 0 with the same tree, because no comment
-# between the head and its first member is ever a doc (`parse/group.hero`
-# gives that member the doc above `extern`), and it is kept now all the same; a
+# the blank was deleted at exit 0 with the same tree, because a comment
+# between the head and its first member with a blank under it is no doc
+# (`parse/group.hero` gives that member the doc above `extern`), and it is kept; a
 # doc directly above a member was untouched and stays so. The last text is
 # the shape `last_line` hid: a signature written across lines with no
 # comment inside joins, and the doc under it gained a blank ABOVE it at exit
@@ -1846,3 +1893,49 @@ test "fmt prints both marks of a group head as written, and the old word stays t
     old = parse.parse("extern \"raylib.h\" package \"raylib\"\n    function f() -> i32\n")
     assert old.diagnostics.len() == 1
     assert old.diagnostics[0].code == "old_package_word"
+
+# `text` formatted once, and the first doc line of each declaration the
+# re-parse of that output reads, "" where one has none.
+function formatted_docs(text: str) -> FormattedDocs
+    parsed = parse.parse(text)
+    assert parsed.diagnostics.len() == 0
+    s = source.new_source(name: "t.hero", text: text)
+    once = format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls)
+    docs: [str] @= []
+
+    for d in parse.parse(once).decls
+        if d.doc.len() == 0
+            docs @ docs.push("")
+        else
+            docs @ docs.push(once.slice(from: d.doc[0].start, to: d.doc[0].end))
+
+    return FormattedDocs(text: once, docs: docs)
+
+record FormattedDocs
+    text: str
+    docs: [str]
+
+# Defect 2634: a group's first member takes the comment directly above it
+# inside the block, and the group's above the head only where it has none.
+# `fmt` prints each where the re-parse reads the same doc: the comment above
+# the head as written, the member's doc under the head, a remark at another
+# column there with the blank line that keeps it one, and a second head
+# merged where its member's doc travels with it and kept where a comment
+# above that head would move.
+test "a group's first member documented inside its block is printed so it keeps its doc (defect 2634)"
+    own = "# about the group\nextern \"x.h\"\n    # the doc of Ob\n    record Ob tag ob\n\nfunction main()\n    print(0)\n"
+    kept = formatted_docs(own)
+    assert kept.text == own
+    assert kept.docs == ["# the doc of Ob", ""]
+    column = formatted_docs("extern \"x.h\"\n# at column 0\n    record Ob tag ob\n")
+    assert column.text == "extern \"x.h\"\n    # at column 0\n\n    record Ob tag ob\n"
+    assert column.docs == [""]
+    merged = formatted_docs(
+        "extern \"x.h\"\n    record Ob tag ob\nextern \"x.h\"\n    # the doc of Pool\n    record Pool tag pool\n"
+    )
+    assert merged.text == "extern \"x.h\"\n    record Ob tag ob\n    # the doc of Pool\n    record Pool tag pool\n"
+    assert merged.docs == ["", "# the doc of Pool"]
+    second = "extern \"x.h\"\n    record Ob tag ob\n\n# about the second head\nextern \"x.h\"\n    # the doc of Pool\n    record Pool tag pool\n"
+    held = formatted_docs(second)
+    assert held.text == second
+    assert held.docs == ["", "# the doc of Pool"]
