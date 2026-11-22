@@ -1,0 +1,180 @@
+# Reaches Rebel's `ui/webview`, so that `heroes test` on this file runs the
+# package's own tests (spec § 12), and shows it at work: a window holding a
+# web view, a page and its files put into the web view's table, the page's
+# calls answered over the bridge, and what each request is answered.
+#
+# With no argument it runs on `ui`'s headless side and prints the same lines
+# on every machine: the window drawn as text, the answers `response_of`
+# gives, and the calls the page's `heroes.invoke` would make, given by
+# `ui.inject` and answered by the same handler. With `--native` it opens the
+# system's own web view, whose page asks the layer for each of the same
+# requests with `fetch` and sends back what it was answered; the program
+# prints each line beside `response_of`'s and says whether they agree, so
+# the layer's rules and the face's are held to each other on a real engine.
+
+use <rebel>/json
+use <rebel>/time
+use <rebel>/ui
+use <rebel>/ui/webview
+
+# The requests asked, each a method and a path of the app's own origin.
+constant REQUESTS: [str]
+    [
+        "GET /"
+        "GET /app.js"
+        "HEAD /app.js"
+        "GET /data.json?x=1"
+        "GET /missing.css"
+        "GET /%2e%2e/data.json"
+        "POST /data.json"
+    ]
+
+# The page: its own script asks each request and answers each call.
+constant PAGE: str
+    "<!doctype html><html><head><meta charset=\"utf-8\"><title>reach</title><script src=\"/app.js\"></script></head><body><p>reach</p></body></html>"
+
+constant SCRIPT: str
+    "heroes.invoke('requests').then(function (all) { all.forEach(function (r) { var cut = r.indexOf(' '); fetch(r.slice(cut + 1), { method: r.slice(0, cut) }).then(function (a) { heroes.send('answered ' + r + ' ' + a.status + ' ' + a.headers.get('content-type') + ' ' + a.headers.get('content-length') + ' ' + (a.headers.get('content-security-policy') !== null)); }); }); }); heroes.invoke('sum', [2, 3]).then(function (v) { heroes.send('sum ' + v); }); heroes.invoke('nothing').catch(function (e) { heroes.send('refused ' + e.code); });"
+
+function main()
+    native = args_checked().len() == 1 && args_checked()[0].default("") == "--native"
+
+    backend: ui.Backend = if native
+        .native
+    else
+        .headless
+
+    match ui.open(backend)
+        .err e => print("no app: ", e.code, ": ", e.msg)
+        .ok opened =>
+            app @= opened
+            session(@app, native: native)
+            ui.close(@app).must()
+
+# The whole session on `app`.
+function session(@app: ui.App, native: bool)
+    w = ui.window(@app, title: "reach ui/webview", width: 480, height: 320).must()
+
+    view = match webview.webview(@app, into: w)
+        .ok v => v
+        .err e =>
+            print("no web view: ", e.code, ": ", e.msg)
+            return
+
+    fit @= ui.default_fit()
+    fit.stretch @ 1
+    fit.fill @ true
+    ui.set_fit(@app, widget: view, fit: fit).must()
+    webview.put_asset(@app, view: view, file: webview.asset("/app.js", body: bytes_of(SCRIPT)).must()).must()
+    webview.put_asset(@app, view: view, file: webview.asset("/data.json", body: bytes_of("{\"n\":1}")).must()).must()
+    webview.load_html(@app, view: view, html: PAGE).must()
+
+    if !native
+        for line in ui.render(@app).must()
+            print(line)
+
+        for r in REQUESTS
+            print(r, " -> ", told(app, view: view, request: r))
+
+        print("may go to file:///etc/hosts: ", webview.allows(app, view: view, url: "file:///etc/hosts").must())
+
+        # The page's calls, as its script makes them.
+        ui.inject(@app, input: .send(widget: view, text: "{\"heroes\":1,\"id\":1,\"call\":\"requests\"}")).must()
+        ui.inject(
+            @app,
+            input: .send(widget: view, text: "{\"heroes\":1,\"id\":2,\"call\":\"sum\",\"args\":[2,3]}")
+        ).must()
+        ui.inject(@app, input: .send(widget: view, text: "{\"heroes\":1,\"id\":3,\"call\":\"nothing\"}")).must()
+    agreed @= 0
+    heard @= 0
+    deadline @= 0
+
+    while heard < REQUESTS.len() + 2 && deadline < 100
+        deadline @ deadline + 1
+
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .err e =>
+                if e.code != webview.UNSUPPORTED && e.code != ui.TIMEOUT
+                    break
+            .ok event =>
+                match event
+                    .message m =>
+                        match webview.parse_call(m.text)
+                            .ok c =>
+                                reply = answered(c)
+                                print("call ", c.name, " -> ", reply)
+                                webview.post(@app, view: view, text: reply).must()
+                            .err _ =>
+                                heard @ heard + 1
+                                agreed @ agreed + compared(app, view: view, text: m.text)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ =>
+                        _ = 0
+
+    if native
+        print(agreed, " of ", REQUESTS.len(), " requests answered as response_of says")
+
+# What `request` is answered, as `response_of` gives it.
+function told(app: ui.App, view: ui.Widget, request: str) -> str
+    cut @= 0
+
+    while request[cut] != ' '
+        cut @ cut + 1
+
+    r = webview.response_of(
+        app,
+        view: view,
+        method: request.slice(from: 0, to: cut),
+        url: webview.ORIGIN + request.slice(from: cut + 1, to: request.len())
+    ).must()
+    return f"{r.status} {r.content_type} {r.length}"
+
+# The answer to the page's call `c`.
+function answered(c: webview.Call) -> str
+    if c.name == "requests"
+        items: [json.Value] @= []
+
+        for r in REQUESTS
+            items @ items.push(.text(v: r))
+
+        return webview.format_answer(c, value: .list(items: items)).must()
+
+    if c.name == "sum"
+        total @= 0
+
+        for v in json.items_of(c.args).default([])
+            total @ total + json.int_of(v).default(0)
+
+        return webview.format_answer(c, value: json.from_int(total).must()).must()
+    return webview.format_refusal(c, code: "not_found", msg: f"no call named \"{c.name}\"")
+
+# 1 where the page's line `text` says what `response_of` says for its
+# request, else 0; the line printed either way.
+function compared(app: ui.App, view: ui.Widget, text: str) -> i64
+    print(text)
+    head = "answered "
+
+    if text.len() <= head.len() || text.slice(from: 0, to: head.len()) != head
+        return 0
+
+    for r in REQUESTS
+        prefix = head + r + " "
+
+        if text.len() > prefix.len() && text.slice(from: 0, to: prefix.len()) == prefix
+            said = told(app, view: view, request: r)
+            fetched = text.slice(from: prefix.len(), to: text.len())
+
+            if fetched == said + " true" || r.slice(from: 0, to: 4) == "HEAD" && fetched == said + " true"
+                return 1
+            print("  differs from response_of: ", said)
+            return 0
+
+    return 0
+
+# The bytes of `text`.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    return out

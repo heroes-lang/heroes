@@ -105,7 +105,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => app.answers @ app.answers.push(a.answer)
         .pick_files p => app.choices @ app.choices.push(.chosen(paths: p.paths))
         .cancel_files => app.choices @ app.choices.push(.cancelled)
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
