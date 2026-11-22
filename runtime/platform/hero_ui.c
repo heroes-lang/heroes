@@ -80,6 +80,7 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
+#include "hero_ui_web_gtk.h"
 #endif
 
 /* -- THE LAST FAILURE, PER THREAD ------------------------------------------ */
@@ -4084,6 +4085,21 @@ static void hero_ui_gtk_words_of(const char *msgid, char *into, size_t room) {
     into[at] = '\0';
 }
 
+/* The WebKitGTK member's answer `answer`, its words kept where it refused
+ * `HERO_UI_OTHER` or `HERO_UI_UNSUPPORTED`, so the failure names what is
+ * missing. */
+static int64_t hero_ui_gtk_web(int64_t answer) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (answer != HERO_UI_OTHER && answer != HERO_UI_UNSUPPORTED) {
+        return answer;
+    }
+    if (hero_ui_web_gtk_words(words, (int64_t)sizeof words) <= 0) {
+        (void)snprintf(words, sizeof words, "WebKitGTK refused, giving no words");
+    }
+    return hero_ui_refused(answer, words);
+}
+
 /* Connects `handler` to `signal` of `instance`, carrying widget number `id`. */
 static void hero_ui_gtk_connect(void *instance, const char *signal, hero_ui_gtk_callback handler, int64_t id) {
     (void)hero_ui_gtk.signal_connect_data(instance, signal, handler, (void *)(intptr_t)id, NULL, 0);
@@ -4532,6 +4548,11 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
     default: {
         void *container = hero_ui_gtk_container(widget);
 
+        if (widget->kind == HERO_UI_WEBVIEW) {
+            /* The member lets go of its page and handlers and calls the
+             * host's `gone`, and then its widget goes as any other. */
+            (void)hero_ui_web_gtk_destroy(widget->id);
+        }
         if (container != NULL && widget->widget != NULL) {
             hero_ui_gtk.fixed_remove(container, widget->widget);
         }
@@ -4641,6 +4662,40 @@ static void hero_ui_gtk_stand(hero_ui_native *made, hero_ui_native *window) {
     hero_ui_gtk.fixed_put(window->fixed, made->widget, 0, 0);
 }
 
+/* Makes web view `id` in window `window`: THE WEB VIEW, kind 17, is
+ * `hero_ui_web_gtk.c`'s, which answers WebKitGTK's widget; this arm stands
+ * it in the window's content as any widget, hidden until placed. */
+static int64_t hero_ui_gtk_make_web(int64_t id, hero_ui_native *window) {
+    hero_ui_native *made = hero_layer_alloc_zero(1, sizeof *made);
+    int64_t answer;
+
+    if (made == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    made->id = id;
+    made->kind = HERO_UI_WEBVIEW;
+    made->parent = window->id;
+    made->window = window->id;
+    made->visible = true;
+    made->enabled = true;
+    if (!hero_ui_keep(id, made)) {
+        hero_layer_free(made);
+        return HERO_UI_LIMIT;
+    }
+    answer = hero_ui_gtk_web(hero_ui_web_gtk_create(id, &hero_ui_web_hosted, &made->widget));
+    if (answer == HERO_UI_OK && made->widget == NULL) {
+        (void)hero_ui_web_gtk_destroy(id);
+        answer = hero_ui_refused(HERO_UI_OTHER, "WebKitGTK made no widget");
+    }
+    if (answer != HERO_UI_OK) {
+        hero_ui_forget(id);
+        hero_layer_free(made);
+        return answer;
+    }
+    hero_ui_gtk_stand(made, window);
+    return HERO_UI_OK;
+}
+
 static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     hero_ui_native *owner = NULL;
     hero_ui_native *window = NULL;
@@ -4649,11 +4704,6 @@ static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
 
     if (hero_ui_find(id) != NULL) {
         return HERO_UI_NOT_FOUND;
-    }
-    if (kind == HERO_UI_WEBVIEW) {
-        /* THE WEB VIEW, kind 17, is an arm of its own; until it stands here
-         * this arm makes none. */
-        return hero_ui_refused(HERO_UI_UNSUPPORTED, "the system's web view is not written for GTK yet");
     }
     if (kind != HERO_UI_WINDOW) {
         owner = hero_ui_find(parent);
@@ -4667,6 +4717,9 @@ static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (window == NULL) {
             return HERO_UI_NOT_FOUND;
         }
+    }
+    if (kind == HERO_UI_WEBVIEW) {
+        return hero_ui_gtk_make_web(id, window);
     }
     made = hero_layer_alloc_zero(1, sizeof *made);
     if (made == NULL) {
@@ -5173,7 +5226,8 @@ static int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         }
     }
     if (which == HERO_UI_FLAG_ENABLED) {
-        if (widget->kind == HERO_UI_WINDOW) {
+        /* A window and a web view take no greying, as AppKit's take none. */
+        if (widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_WEBVIEW) {
             return HERO_UI_INVALID;
         }
         widget->enabled = on == 1;
@@ -5449,6 +5503,12 @@ static int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height
     case HERO_UI_IMAGE:
         *width = widget->image_width;
         *height = widget->image_height;
+        return HERO_UI_OK;
+    case HERO_UI_WEBVIEW:
+        /* The headless side's size of a web view, where nothing else decides
+         * it (`ui/internal/sizes.hero`). */
+        *width = 320;
+        *height = 240;
         return HERO_UI_OK;
     default:
         return HERO_UI_OK;
@@ -5730,6 +5790,11 @@ static int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64
         } else if (hero_ui_gtk_usable(widget)) {
             hero_ui_gtk.action_activate(widget->action, NULL);
         }
+        break;
+    case HERO_UI_EVENT_MESSAGE:
+        /* The page sends `text` by its own bridge, so the message comes as
+         * the page's would. */
+        answer = widget->kind == HERO_UI_WEBVIEW ? hero_ui_gtk_web(hero_ui_web_gtk_send(id, text, count)) : HERO_UI_INVALID;
         break;
     case HERO_UI_EVENT_CLOSE:
         if (widget->kind != HERO_UI_WINDOW) {
@@ -6156,17 +6221,21 @@ static int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
 }
 
 static int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
-    (void)id;
-    (void)url;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the web view is not wired into this arm");
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return widget->kind == HERO_UI_WEBVIEW ? hero_ui_gtk_web(hero_ui_web_gtk_load(id, url, count)) : HERO_UI_INVALID;
 }
 
 static int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
-    (void)id;
-    (void)text;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the web view is not wired into this arm");
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return widget->kind == HERO_UI_WEBVIEW ? hero_ui_gtk_web(hero_ui_web_gtk_post(id, text, count)) : HERO_UI_INVALID;
 }
 
 #endif

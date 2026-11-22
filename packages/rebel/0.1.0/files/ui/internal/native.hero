@@ -492,8 +492,15 @@ test "native: every kind the layer draws made, set and read back, each act a per
 
     assert hero_ui.create(app, id: 15, kind: hero_ui.HERO_UI_MENU_ITEM, parent: 14) == 0
     assert hero_ui.create(app, id: 16, kind: hero_ui.HERO_UI_MENU_SEPARATOR, parent: 14) == 0
-    assert hero_ui.create(app, id: 17, kind: hero_ui.HERO_UI_WEBVIEW, parent: 1) == -1
-    assert hero_ui.last_error() == hero_ui.HERO_UI_UNSUPPORTED
+
+    # The web view is made where the system has one and refused where it
+    # has none (a machine without WebView2's loader, or WebKitGTK 6.0),
+    # never a fault; one made is given back at once.
+    web = hero_ui.create(app, id: 17, kind: hero_ui.HERO_UI_WEBVIEW, parent: 1)
+    assert web == 0 || hero_ui.last_error() == hero_ui.HERO_UI_UNSUPPORTED
+
+    if web == 0
+        assert hero_ui.destroy(app, id: 17) == 0
     assert hero_ui.create(app, id: 3, kind: hero_ui.HERO_UI_BUTTON, parent: 1) == -1
     assert hero_ui.last_error() == hero_ui.HERO_UI_NOT_FOUND
     assert hero_ui.create(app, id: 18, kind: hero_ui.HERO_UI_LABEL, parent: 99) == -1
