@@ -43,16 +43,18 @@ capability ui/headless  the widgets kept and laid out with no screen, and drawn 
   note    every machine draws the same lines, so a demo's transcript is a test
 
 capability ui/native-windows  the native side on Windows, by Win32
-  heroes  pending
+  heroes  ui.open, ui.is_native, ui.Backend
   go      -
   rust    -
   python  -
+  note    Win32's own controls, aware of each monitor's scale and drawn in the common controls' current look; libui's Windows side draws Win32's controls too, under the same `ui.Main`, and tkinter draws Tk's own
 
-capability ui/native-linux  the native side on Linux, by GTK
-  heroes  pending
+capability ui/native-linux  the native side on Linux and every other system, by GTK 4
+  heroes  ui.open, ui.is_native, ui.Backend
   go      -
   rust    -
   python  -
+  note    GTK 4 opened at the first call with `dlopen`, so no build needs it and a machine without `libgtk-4.so.1` or a display opens headless under `.automatic`; libui's Unix side is GTK 3, and tkinter draws Tk's own widgets
 
 capability ui/webview  the system's web view as a widget, with a bridge to its scripts
   heroes  pending

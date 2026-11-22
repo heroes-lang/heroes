@@ -255,16 +255,21 @@ jobs:
       # opened by `runtime/platform/hero_odbc.c`; and SQLite's ODBC driver,
       # `libsqliteodbc`, which registers itself as `SQLite3`, the name
       # `sql/odbc`'s live tests look for
-      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`). Each
+      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
+      # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui.c`'s Linux arm,
+      # and Xvfb, an X server with no screen, which the drivers' step runs
+      # them under so `ui`'s native tests run here rather than skip. Each
       # asked for by the name the code asks, after the install.
       - name: Install what Rebel binds and opens, Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc
+          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc libgtk-4-1 xvfb xauth
           test -f /usr/include/sqlite3.h \
             || { echo '::error::sqlite3.h is not in /usr/include after the install, so sql/sqlite would be refused `ffi_missing_header`'; exit 1; }
-          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2'; do
+          command -v xvfb-run > /dev/null \
+            || { echo '::error::xvfb-run is missing after the install, so ui would answer `unsupported` and skip its native tests'; exit 1; }
+          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2' 'libgtk-4\.so\.1'; do
             ldconfig -p | grep -Eq "^[[:space:]]+$wanted " \
               || { echo "::error::the loader knows no $wanted after the install, so the member that opens it would answer \`unsupported\`"; exit 1; }
           done
@@ -402,7 +407,10 @@ jobs:
       # Service `hero_keyring.c` reaches through libsecret; a secret stored and
       # read back first, so `keyring`'s tests never answer `unsupported` on a
       # leg meant to run them. Darwin's login keychain and Windows' Credential
-      # Manager are the runner's own.
+      # Manager are the runner's own. And inside an X server with no screen,
+      # `xvfb-run`'s, GTK told to speak X11 to it (`GDK_BACKEND=x11`), so
+      # `ui`'s native tests draw GTK 4's own widgets there; its display is
+      # asked to answer first, as the keyring is.
       - name: The part's drivers
         if: ${{ matrix.slice.drivers != '' }}
         shell: bash
@@ -415,7 +423,8 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Linux" ] && [ -z "${REBEL_SESSION:-}" ]; then
             export REBEL_SESSION=1
-            exec dbus-run-session -- bash --noprofile --norc "$0"
+            export GDK_BACKEND=x11
+            exec dbus-run-session -- xvfb-run -a --server-args='-screen 0 1280x1024x24' bash --noprofile --norc "$0"
           fi
           set +e
           if [ "$RUNNER_OS" = "Linux" ]; then
@@ -426,6 +435,9 @@ jobs:
               && secret-tool clear service rebel-ci account probe \
               || { echo "::error::the Secret Service keeps no secret in this session, so keyring's tests would answer \`unsupported\` on a leg meant to run them"; exit 1; }
             echo "the Secret Service keeps a secret in this session"
+            [ -n "${DISPLAY:-}" ] && [ -S "/tmp/.X11-unix/X${DISPLAY#:}" ] \
+              || { echo "::error::no X server answers at DISPLAY='${DISPLAY:-}', so ui's native tests would skip on a leg meant to run them"; exit 1; }
+            echo "an X server with no screen answers at $DISPLAY"
           fi
           # `timeout` by its path, since Windows' System32 holds a
           # `timeout.exe` that waits instead: GNU's on Darwin (`gtimeout`) and
