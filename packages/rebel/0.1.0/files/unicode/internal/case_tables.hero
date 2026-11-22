@@ -2,11 +2,13 @@
 # upper, lower and title case, and the characters whose case is several
 # characters. `casing.hero` reads them.
 #
-# The table is data, made and not typed: a one-off program asked Python 3.15.2's
-# `unicodedata`, whose `unidata_version` is 17.0.0, and Go 1.27.3's `unicode`,
-# whose `Version` is 17.0.0, on 2026-11-15, reduced their answers to ranges,
-# held every lookup to the answers for each of the 1,114,112 code points, and
-# wrote this module whole. Nothing here is edited by hand.
+# Generated, never edited by hand: the Heroes program
+# `generators/unicode_tables/` read the Unicode Character Database 17.0.0
+# (https://www.unicode.org/Public/17.0.0/ucd/, fetched 2026-11-22), its
+# files `UnicodeData.txt` and `SpecialCasing.txt`, reduced them to ranges,
+# held every lookup to the files' answer for each of the 1,114,112 code points,
+# and wrote this module whole; its `check` command says whether this module is
+# still what it writes.
 #
 # Each entry is one range, `first << 22 | last << 1 | step - 1`: the code
 # points from `first` to `last`, every one where `step` is 1 and every second
