@@ -1,0 +1,418 @@
+# The executor of lists, and-or lists, pipelines and compound commands
+# (XCU 2.9): each runs in the shell it is handed and leaves its status in
+# `sh.status`. A `break`, `continue`, `return` or `exit` sets `sh.flow`, and
+# every loop over commands here stops at once while it is not `.normal`, so
+# the jump unwinds to the loop, the function or the shell that ends it.
+#
+# A subshell (`( )`, `$(...)`, a stage of a pipeline of several) runs in a
+# copy of the shell, so what it changes ends with it; only its status and
+# what it wrote to a capture come back.
+
+use <rebel>/process
+
+use diag/report
+use exec/background
+use exec/pipeline
+use exec/redirect
+use exec/simple
+use exec/state
+use exec/streams
+use expand/patterns
+use expand/words
+use syntax/ast
+
+# Runs `items` in order, stopping where a jump unwinds them.
+#
+# - `sh`: the shell.
+# - `items`: the commands.
+# - `place`: their three places.
+function run_items(@sh: state.Shell, items: [ast.Item], place: streams.Io)
+    for item in items
+        if !state.going_on(sh)
+            return
+        run_item(@sh, item: item, place: place)
+
+# Runs one item: its and-or list, in the foreground or as a background job.
+#
+# - `sh`: the shell.
+# - `item`: the item.
+# - `place`: its places.
+function run_item(@sh: state.Shell, item: ast.Item, place: streams.Io)
+    if item.background
+        background.start(@sh, item: item, place: place)
+        return
+
+    run_and_or(@sh, chain: item.chain, place: place)
+
+# Runs an and-or list: each pipeline after `&&` only where the status before
+# it is 0, after `||` only where it is not. Under `-e` a failure of the last
+# pipeline run, not negated and not tested, ends the shell.
+#
+# - `sh`: the shell.
+# - `chain`: the list.
+# - `place`: its places.
+function run_and_or(@sh: state.Shell, chain: ast.AndOr, place: streams.Io)
+    tested = chain.rest.len() > 0
+
+    if tested
+        sh.testing @ sh.testing + 1
+
+    status @= run_pipeline(@sh, p: chain.first, place: place)
+
+    if tested
+        sh.testing @ sh.testing - 1
+
+    final @= chain.rest.len() == 0
+    negated @= chain.first.negated
+
+    for i in range(from: 0, to: chain.rest.len())
+        if !state.going_on(sh)
+            return
+
+        link = chain.rest[i]
+
+        if link.after_success == (status == 0)
+            last = i == chain.rest.len() - 1
+
+            if !last
+                sh.testing @ sh.testing + 1
+
+            status @ run_pipeline(@sh, p: link.pipeline, place: place)
+
+            if !last
+                sh.testing @ sh.testing - 1
+
+            final @ last
+            negated @ link.pipeline.negated
+
+    sh.status @ status
+
+    if sh.options.errexit && status != 0 && final && !negated && sh.testing == 0 && state.going_on(sh)
+        sh.flow @ .exiting(code: status)
+
+# Runs a pipeline and answers its status, inverted where it began with `!`.
+#
+# - `sh`: the shell.
+# - `p`: the pipeline.
+# - `place`: its places.
+function run_pipeline(@sh: state.Shell, p: ast.Pipeline, place: streams.Io) -> i64
+    if p.negated
+        sh.testing @ sh.testing + 1
+
+    status @= if p.stages.len() == 1
+        run_command(@sh, cmd: p.stages[0], place: place)
+    else
+        pipeline.run(@sh, p: p, place: place)
+
+    if p.negated
+        sh.testing @ sh.testing - 1
+
+        status @ if status == 0
+            1
+        else
+            0
+
+    sh.status @ status
+    return status
+
+# Runs one command in this shell and answers its status.
+#
+# - `sh`: the shell.
+# - `cmd`: the command.
+# - `place`: its places.
+function run_command(@sh: state.Shell, cmd: ast.Command, place: streams.Io) -> i64
+    match cmd
+        .simple _   => return simple.run(@sh, cmd: cmd, place: place)
+        .group g    => return with_redirects(@sh, cmd: cmd, redirects: g.redirects, place: place)
+        .subshell s => return with_redirects(@sh, cmd: cmd, redirects: s.redirects, place: place)
+        .if_then i  => return with_redirects(@sh, cmd: cmd, redirects: i.redirects, place: place)
+        .repeat r   => return with_redirects(@sh, cmd: cmd, redirects: r.redirects, place: place)
+        .for_each f => return with_redirects(@sh, cmd: cmd, redirects: f.redirects, place: place)
+        .case_of c  => return with_redirects(@sh, cmd: cmd, redirects: c.redirects, place: place)
+        .define d =>
+            functions @= sh.functions
+            functions[d.name] @ state.Function(body: d.body[0], text: d.text)
+            sh.functions @ functions
+            sh.status @ 0
+            return 0
+
+# Runs a compound command with its redirections applied, its input made one
+# the shell can read a line at a time, and what they opened closed after.
+#
+# - `sh`: the shell.
+# - `cmd`: the compound command.
+# - `redirects`: its redirections.
+# - `place`: its places before them.
+function with_redirects(@sh: state.Shell, cmd: ast.Command, redirects: [ast.Redirect], place: streams.Io) -> i64
+    opened @= streams.nothing_opened()
+
+    inner @= match redirect.apply(@sh, redirects: redirects, base: place, @opened)
+        .ok p => p
+        .err e =>
+            report.tell(@sh, place: place, at: sh.error_at, message: e.msg)
+            streams.close_all(@opened)
+            sh.status @ 1
+            return 1
+
+    match streams.readable(inner.input, @opened)
+        .ok f => inner.input @ f
+        .err e =>
+            report.tell(@sh, place: place, at: at_of(cmd), message: f"the input cannot be read: {e.msg}")
+            streams.close_all(@opened)
+            sh.status @ 1
+            return 1
+
+    status = run_compound(@sh, cmd: cmd, place: inner)
+    streams.close_all(@opened)
+    sh.status @ status
+    return status
+
+# Where `cmd` begins.
+#
+# - `cmd`: the command.
+function at_of(cmd: ast.Command) -> ast.Place
+    return match cmd
+        .simple s   => s.at
+        .group g    => g.at
+        .subshell s => s.at
+        .if_then i  => i.at
+        .repeat r   => r.at
+        .for_each f => f.at
+        .case_of c  => c.at
+        .define d   => d.at
+
+# Runs the body of a compound command, its redirections applied.
+#
+# - `sh`: the shell.
+# - `cmd`: the command.
+# - `place`: its places.
+function run_compound(@sh: state.Shell, cmd: ast.Command, place: streams.Io) -> i64
+    match cmd
+        .group g =>
+            run_items(@sh, items: g.body, place: place)
+            return sh.status
+        .subshell s => return in_subshell(@sh, body: s.body, place: place)
+        .if_then i =>
+            for arm in i.arms
+                sh.testing @ sh.testing + 1
+                run_items(@sh, items: arm.condition, place: place)
+                sh.testing @ sh.testing - 1
+
+                if !state.going_on(sh)
+                    return sh.status
+
+                if sh.status == 0
+                    sh.status @ 0
+                    run_items(@sh, items: arm.body, place: place)
+                    return sh.status
+
+            sh.status @ 0
+            run_items(@sh, items: i.otherwise, place: place)
+            return sh.status
+        .repeat r => return run_loop(@sh, condition: r.condition, body: r.body, until: r.until, place: place)
+        .for_each f =>
+            values = if f.over_args
+                sh.positional
+            else
+                match words.fields_of(@sh, found: f.words)
+                    .ok v  => v
+                    .err e => return expansion_failed(@sh, place: place, message: e.msg)
+
+            return run_for(@sh, name: f.name, values: values, body: f.body, place: place)
+        .case_of c =>
+            subject = match words.text_of(@sh, w: c.subject)
+                .ok s  => s
+                .err e => return expansion_failed(@sh, place: place, message: e.msg)
+
+            for arm in c.arms
+                for p in arm.patterns
+                    pattern = match words.pattern_of(@sh, w: p)
+                        .ok x  => x
+                        .err e => return expansion_failed(@sh, place: place, message: e.msg)
+
+                    if patterns.matches_pattern(text: subject, pattern: pattern).default(false)
+                        sh.status @ 0
+                        run_items(@sh, items: arm.body, place: place)
+                        return sh.status
+
+            sh.status @ 0
+            return 0
+        .simple _ | .define _ => return run_command(@sh, cmd: cmd, place: place)
+
+# Tells a mistake an expansion found, kept in `sh.error_at`: the command
+# fails with 1, and a shell that is not interactive ends, as POSIX asks.
+#
+# - `sh`: the shell.
+# - `place`: the command's places.
+# - `message`: what is wrong.
+function expansion_failed(@sh: state.Shell, place: streams.Io, message: str) -> i64
+    report.tell(@sh, place: place, at: sh.error_at, message: message)
+    sh.status @ 1
+
+    if !sh.options.interactive
+        sh.flow @ .exiting(code: 1)
+
+    return 1
+
+# Whether a pass of a loop ends the loop after a jump: `break` takes one
+# level off and ends it; `continue` of one level goes on with the next pass,
+# of more ends this loop; anything else unwinding ends it.
+#
+# - `sh`: the shell, whose flow is put back where the loop takes the jump.
+function loop_ends(@sh: state.Shell) -> bool
+    match sh.flow
+        .normal => return false
+        .breaking b =>
+            sh.flow @ if b.levels > 1
+                .breaking(levels: b.levels - 1)
+            else
+                .normal
+            return true
+        .continuing c =>
+            if c.levels > 1
+                sh.flow @ .continuing(levels: c.levels - 1)
+                return true
+            sh.flow @ .normal
+            return false
+        .returning | .exiting _ => return true
+
+# `while` or `until`: the condition, then the body while it decides so.
+#
+# - `sh`: the shell.
+# - `condition`: the condition.
+# - `body`: the body.
+# - `until`: whether the loop goes on while the condition fails.
+# - `place`: its places.
+function run_loop(@sh: state.Shell, condition: [ast.Item], body: [ast.Item], until: bool, place: streams.Io) -> i64
+    sh.loops @ sh.loops + 1
+    status @= 0
+
+    while true
+        sh.testing @ sh.testing + 1
+        run_items(@sh, items: condition, place: place)
+        sh.testing @ sh.testing - 1
+
+        if loop_ends(@sh)
+            sh.loops @ sh.loops - 1
+            sh.status @ status
+            return status
+
+        if sh.status == 0 == until
+            sh.loops @ sh.loops - 1
+            sh.status @ status
+            return status
+
+        run_items(@sh, items: body, place: place)
+        status @ sh.status
+
+        if loop_ends(@sh)
+            sh.loops @ sh.loops - 1
+            sh.status @ status
+            return status
+
+    return status
+
+# `for`: the body once for each value, the variable holding it.
+#
+# - `sh`: the shell.
+# - `name`: the variable.
+# - `values`: the values.
+# - `body`: the body.
+# - `place`: its places.
+function run_for(@sh: state.Shell, name: str, values: [str], body: [ast.Item], place: streams.Io) -> i64
+    sh.loops @ sh.loops + 1
+    status @= 0
+
+    for v in values
+        state.set(@sh, name: name, value: v)
+        run_items(@sh, items: body, place: place)
+        status @ sh.status
+
+        if loop_ends(@sh)
+            sh.loops @ sh.loops - 1
+            sh.status @ status
+            return status
+
+    sh.loops @ sh.loops - 1
+    sh.status @ status
+    return status
+
+# A copy of `sh` for a subshell: its own jobs, none of the shell's, and its
+# own flow.
+#
+# - `sh`: the shell.
+function subshell_of(sh: state.Shell lent) -> state.Shell
+    sub @= sh
+    sub.jobs @ []
+    sub.flow @ .normal
+    sub.loops @ 0
+    return sub
+
+# Ends a subshell: its jobs given up, as the system keeps them running, and
+# what it wrote to the shell's captures kept.
+#
+# - `sh`: the shell.
+# - `sub`: the subshell, done.
+function end_subshell(@sh: state.Shell, @sub: state.Shell)
+    release_jobs(@sub)
+    sh.captures @ sub.captures
+
+# Gives up every child of every job of `sh`, which runs on without it.
+#
+# - `sh`: the shell.
+function release_jobs(@sh: state.Shell)
+    for j in range(from: 0, to: sh.jobs.len())
+        for k in range(from: 0, to: sh.jobs[j].children.len())
+            _ = process.release(@sh.jobs[j].children[k]).is_err()
+
+    sh.jobs @ []
+
+# `( list )`: the commands in a copy of the shell; an `exit` in them ends
+# the copy alone.
+#
+# - `sh`: the shell.
+# - `body`: the commands.
+# - `place`: their places.
+function in_subshell(@sh: state.Shell, body: [ast.Item], place: streams.Io) -> i64
+    sub @= subshell_of(sh)
+    run_items(@sub, items: body, place: place)
+
+    status = match sub.flow
+        .exiting e                                         => e.code
+        .normal | .breaking _ | .continuing _ | .returning => sub.status
+
+    end_subshell(sh: @sh, sub: @sub)
+    sh.status @ status
+    return status
+
+# `$(...)`: what the commands write, run in a copy of the shell, with every
+# line end at its end taken off. The shell's status becomes theirs.
+#
+# - `sh`: the shell.
+# - `body`: the commands.
+function substitute(@sh: state.Shell, body: [ast.Item]) -> str
+    sub @= subshell_of(sh)
+    level = state.open_capture(@sub)
+    run_items(
+        @sub,
+        items: body,
+        place: streams.Io(input: .stream(s: sh.input), output: .capture(level: level), error: .stream(s: sh.err))
+    )
+    text @= state.close_capture(@sub)
+
+    status = match sub.flow
+        .exiting e                                         => e.code
+        .normal | .breaking _ | .continuing _ | .returning => sub.status
+
+    end_subshell(sh: @sh, sub: @sub)
+    sh.status @ status
+
+    while text.len() > 0 && text[text.len() - 1] == '\n'
+        cut = if text.len() > 1 && text[text.len() - 2] == '\r'
+            2
+        else
+            1
+
+        text @ text.slice(from: 0, to: text.len() - cut)
+
+    return text

@@ -1,0 +1,93 @@
+# The interactive line editor driven by keys the demo writes, since the
+# demo has no terminal and a person is not there to type: the same editor,
+# history and completion the interactive shell reads every line with, each
+# line it answers then run as the shell runs a typed line. What the editor
+# draws on a terminal is left out; the keys pressed and the line they made
+# are written instead.
+
+use <rebel>/term
+
+use exec/script
+use exec/state
+use exec/streams
+use interactive/complete
+use interactive/repl
+
+# A run of keys and how the transcript names them.
+record Typing
+    # The keys, in order, the last of them Enter.
+    keys: [term.Key]
+    # The keys in words.
+    said: str
+
+# The keys of `text`, one character each.
+#
+# - `text`: what is typed.
+function typed(text: str) -> [term.Key]
+    out: [term.Key] @= []
+
+    for c in text.chars()
+        out @ out.push(.character(text: c))
+
+    return out
+
+# `xs` and then `more`.
+#
+# - `xs`: the keys before.
+# - `more`: the keys after.
+function then(xs: [term.Key], more: [term.Key]) -> [term.Key]
+    out @= xs
+
+    for k in more
+        out @ out.push(k)
+
+    return out
+
+# The runs of keys the demo types: a command and a file completed with Tab,
+# a line recalled from the history and changed, a word taken back with
+# Ctrl-W, and a character of two bytes stepped over as one.
+function typings() -> [Typing]
+    return [
+        Typing(keys: then(xs: then(xs: then(xs: typed("up"), more: [.tab]), more: typed(" no")), more: [.tab, .enter]), said: "u p Tab space n o Tab Enter")
+        Typing(keys: then(xs: [.up, .up, .end], more: then(xs: typed(" again"), more: [.enter])), said: "Up Up End, then \" again\" and Enter")
+        Typing(keys: then(xs: typed("echo one two"), more: then(xs: [.control(letter: "w")], more: then(xs: typed("three"), more: [.enter]))), said: "\"echo one two\" Ctrl-W \"three\" Enter")
+        Typing(keys: then(xs: typed("echo café"), more: [.left, .left, .backspace, .enter]), said: "\"echo café\" Left Left Backspace Enter")
+    ]
+
+# Types each run of keys into one editor whose history is the session's,
+# writes the keys and the line they made, and runs the line.
+#
+# - `sh`: the shell.
+function play(@sh: state.Shell)
+    editor @= term.line_editor("$ ")
+    editor.history @ sh.history
+    place = streams.standard(sh)
+    _ = streams.write_out(@sh, place: place, text: "\n# == the line editor, its keys scripted ==\n")
+
+    for t in typings()
+        line = line_of(@editor, pressed_keys: t.keys, known: repl.known_of(sh))
+        _ = streams.write_out(@sh, place: place, text: f"keys: {t.said}\n")
+        _ = script.run_text(@sh, name: "typed", text: line + "\n", place: place, transcript: true)
+
+# The line `pressed_keys` make in `editor`, Tab completing as the interactive shell
+# completes; "" where no key ends it.
+#
+# - `editor`: the editor.
+# - `pressed_keys`: the keys.
+# - `known`: what completion knows of the shell.
+function line_of(@editor: term.Editor, pressed_keys: [term.Key], known: complete.Known) -> str
+    for k in pressed_keys
+        pressed = term.press_completing(@editor, key: k, complete: complete.complete, state: known)
+
+        if pressed.ending == .entered
+            return pressed.line
+
+    return ""
+
+test "line_of: a command completed, a word taken back and a grapheme stepped over"
+    known = complete.Known(commands: ["echo", "upper"])
+    ed @= term.line_editor("$ ")
+    assert line_of(@ed, pressed_keys: then(xs: typed("up"), more: [.tab, .enter]), known: known) == "upper"
+    assert line_of(@ed, pressed_keys: then(xs: typed("echo one two"), more: [.control(letter: "w"), .enter]), known: known) == "echo one "
+    assert line_of(@ed, pressed_keys: then(xs: typed("echo café"), more: [.left, .left, .backspace, .enter]), known: known) == "echo cfé"
+    assert line_of(@ed, pressed_keys: [.up, .enter], known: known) == "echo cfé"

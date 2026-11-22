@@ -1,0 +1,168 @@
+# Background jobs (`&`, XCU 2.9.3.1). A pipeline of programs is started as
+# it would be in the foreground and not waited for. Anything else (a
+# builtin, a function, a compound command, an and-or list) needs a shell of
+# its own running beside this one, and a program cannot copy itself while it
+# runs, so this shell runs itself again with `-c`: the functions it defined,
+# its variables that are not exported, its positional parameters and the
+# job's text, written as a script, so the job sees what a forked subshell
+# would. Its input is nothing, as POSIX gives a background job of a script.
+
+use <rebel>/io
+use <rebel>/process
+
+use builtins/table
+use diag/report
+use exec/jobs
+use exec/pipeline
+use exec/simple
+use exec/state
+use exec/streams
+use syntax/ast
+use syntax/parser
+
+# Starts `item` as a background job, tells its number on an interactive
+# shell, and sets the status to 0 and `$!` to its last child.
+#
+# - `sh`: the shell.
+# - `item`: the item, which ended with `&`.
+# - `place`: its places; a capture is read as nowhere, since nothing waits
+#   for the job to read it.
+function start(@sh: state.Shell, item: ast.Item, place: streams.Io)
+    out: streams.Sink = if pipeline.is_capture(place.output)
+        .discard
+    else
+        place.output
+
+    err: streams.Sink = if pipeline.is_capture(place.error)
+        .discard
+    else
+        place.error
+
+    quiet = streams.Io(input: .nothing, output: out, error: err)
+
+    started = if is_direct(sh, item: item)
+        start_programs(@sh, item: item, place: quiet)
+    else
+        start_shell(@sh, item: item, place: quiet)
+
+    match started
+        .ok children =>
+            number = jobs.add(@sh, children: children, text: item.text)
+
+            if sh.options.interactive
+                streams.write_err(@sh, place: place, text: f"[{number}] {sh.last_pid}\n")
+
+            sh.status @ 0
+        .err _ => sh.status @ 1
+
+# Whether `item` is a pipeline of programs alone: no `&&` or `||`, every
+# stage a simple command whose name is written plainly, with no assignment
+# before it, and is no builtin and no function.
+#
+# - `sh`: the shell.
+# - `item`: the item.
+function is_direct(sh: state.Shell lent, item: ast.Item) -> bool
+    if item.chain.rest.len() > 0 || item.chain.first.negated
+        return false
+
+    for stage in item.chain.first.stages
+        match stage
+            .simple s =>
+                if s.assignments.len() > 0 || s.words.len() == 0
+                    return false
+
+                name = match ast.static_text(s.words[0])
+                    .ok n  => n
+                    .err _ => return false
+
+                if table.is_builtin(name) || table.is_special(name) || !sh.functions[name].is_err()
+                    return false
+            .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ | .define _ => return false
+
+    return true
+
+# Starts the programs of a direct item, joined by pipes.
+#
+# - `sh`: the shell.
+# - `item`: the item.
+# - `place`: its places.
+function start_programs(@sh: state.Shell, item: ast.Item, place: streams.Io) -> [process.Child]?
+    prepared: [simple.Prepared] @= []
+
+    for stage in item.chain.first.stages
+        p = match simple.prepare(@sh, cmd: stage)
+            .ok x => x
+            .err e =>
+                report.tell(@sh, place: place, at: sh.error_at, message: e.msg)
+                return fail(code: e.code, msg: e.msg)
+
+        match p.kind
+            .missing m =>
+                report.tell(@sh, place: place, at: p.at, message: m.reason)
+                return fail(code: "not_found", msg: m.reason)
+            .external _ | .assign_only | .builtin | .defined => prepared @ prepared.push(p)
+
+    return pipeline.start_all(@sh, prepared: prepared, place: place)
+
+# Starts this program again as a shell running `item` with `-c`.
+#
+# - `sh`: the shell.
+# - `item`: the item.
+# - `place`: its places.
+function start_shell(@sh: state.Shell, item: ast.Item, place: streams.Io) -> [process.Child]?
+    arguments: [str] @= ["-c", script_of(sh, item: item), sh.name]
+
+    for a in sh.positional
+        arguments @ arguments.push(a)
+
+    c = process.with_env_all(
+        process.with_env_cleared(process.command(sh.exe, arguments)),
+        variables: state.exported(sh)
+    )
+    fed = process.with_output(process.with_input(c, from: .nothing), to: streams.child_output(place.output))
+
+    full = if streams.same_sink(a: place.output, b: place.error)
+        process.with_error_to_output(fed)
+    else
+        process.with_error(fed, to: streams.child_output(place.error))
+
+    return match process.start(full)
+        .ok child => ok([child])
+        .err e =>
+            report.tell(@sh, place: place, at: item.at, message: f"the background shell did not start: {e.msg}")
+            fail(code: e.code, msg: e.msg)
+
+# The script a background shell runs for `item`: the options set, the
+# variables not exported, the functions, then the item.
+#
+# - `sh`: the shell.
+# - `item`: the item.
+function script_of(sh: state.Shell lent, item: ast.Item) -> str
+    lines: [str] @= []
+    letters = state.option_letters(sh)
+
+    for c in letters.chars()
+        if c != "i"
+            lines @ lines.push(f"set -{c}")
+
+    for name in keys(sh.vars)
+        v = sh.vars[name].must()
+
+        if !v.exported
+            lines @ lines.push(name + "=" + process.quote(v.value))
+
+    for name in keys(sh.functions)
+        lines @ lines.push(sh.functions[name].must().text)
+
+    lines @ lines.push(item.text)
+    return lines.join("\n") + "\n"
+
+test "script_of: a variable not exported, a function and the item"
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    state.set(@sh, name: "word", value: "it's")
+    items = parser.items_of("greet() { echo hi; }\n{ greet; echo $word; } &\n")
+    functions @= sh.functions
+    functions["greet"] @ state.Function(body: items[0].chain.first.stages[0], text: "greet() { echo hi; }")
+    sh.functions @ functions
+    assert script_of(sh, item: items[1]) == "word='it'\"'\"'s'\ngreet() { echo hi; }\n{ greet; echo $word; }\n"
+    assert !is_direct(sh, item: items[1])

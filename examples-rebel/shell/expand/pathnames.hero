@@ -1,0 +1,123 @@
+# Pathname expansion (XCU 2.6.6): a field holding an unquoted `*`, `?` or
+# `[` names the files whose paths match it, sorted, or stays as written where
+# none does. The pattern is read one `/`-separated part at a time, each part
+# matched against the names of the folders reached so far, so `*/notes/*.txt`
+# reads only the folders it must. A name beginning with `.` is matched only
+# by a part that begins with a literal `.`, as POSIX asks, so `*` never names
+# `.` and `..` and leaves a folder's hidden files alone.
+#
+# `fs.glob` matches paths by its own rules (`*` names hidden files, `**`
+# walks a tree), which are not the shell's, so the parts are matched here.
+
+use <rebel>/fs
+
+use expand/patterns
+
+# The paths `pattern` names, sorted by their bytes; none where nothing
+# matches or a folder on the way cannot be read.
+#
+# - `pattern`: a pattern of `expand/patterns`, its quoted characters escaped,
+#   with `/` between the names of a path.
+function expand(pattern: str) -> [str]
+    absolute = pattern.len() > 0 && pattern[0] == '/'
+
+    reached: [str] @= if absolute
+        ["/"]
+    else
+        [""]
+
+    parts = split_parts(pattern)
+
+    for i in range(from: 0, to: parts.len())
+        part = parts[i]
+        last = i == parts.len() - 1
+        next: [str] @= []
+
+        if !patterns.has_magic(part)
+            name = patterns.unescape(part)
+
+            for r in reached
+                p = joined(dir: r, name: name)
+
+                if last && fs.exists(p).default(false) || !last
+                    next @ next.push(p)
+        else
+            match patterns.compile(part)
+                .ok re =>
+                    for r in reached
+                        dir = if r == ""
+                            "."
+                        else
+                            r
+
+                        match fs.read_dir(dir)
+                            .ok entries =>
+                                for e in entries
+                                    hidden_ok = e.name.len() > 0 && e.name[0] != '.' || part.len() > 0 && part[0] == '.'
+
+                                    if hidden_ok && patterns.matches(e.name, re: re)
+                                        if last || is_folder(joined(dir: r, name: e.name))
+                                            next @ next.push(joined(dir: r, name: e.name))
+                            .err _ => _ = 0
+                .err _ => return []
+
+        reached @ next
+
+    if parts.len() == 0
+        return []
+
+    return sort(reached)
+
+# The `/`-separated parts of `pattern`, the empty ones left out.
+#
+# - `pattern`: the pattern.
+function split_parts(pattern: str) -> [str]
+    out: [str] @= []
+    start @= 0
+    i @= 0
+
+    while i <= pattern.len()
+        if i == pattern.len() || pattern[i] == '/'
+            if i > start
+                out @ out.push(pattern.slice(from: start, to: i))
+            start @ i + 1
+        i @ i + 1
+
+    return out
+
+# `dir` and `name` joined with one `/`.
+#
+# - `dir`: the folder reached, "" for the working folder.
+# - `name`: the name in it.
+function joined(dir: str, name: str) -> str
+    if dir == ""
+        return name
+
+    if dir[dir.len() - 1] == '/'
+        return dir + name
+
+    return dir + "/" + name
+
+# Whether `p` names a folder, its links followed.
+#
+# - `p`: the path.
+function is_folder(p: str) -> bool
+    return fs.is_dir(p).default(false)
+
+test "split_parts: a relative and an absolute pattern"
+    assert split_parts("a/*/c") == ["a", "*", "c"]
+    assert split_parts("/x//y/") == ["x", "y"]
+
+test "expand: files in a folder of the build, hidden ones left out"
+    dir = "build/shell-test-glob"
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(dir + "/sub").must()
+    write_file(path: dir + "/a.txt", text: "").must()
+    write_file(path: dir + "/b.txt", text: "").must()
+    write_file(path: dir + "/.hidden.txt", text: "").must()
+    write_file(path: dir + "/sub/c.txt", text: "").must()
+    assert expand(dir + "/*.txt") == [dir + "/a.txt", dir + "/b.txt"]
+    assert expand(dir + "/.*.txt") == [dir + "/.hidden.txt"]
+    assert expand(dir + "/*/c.txt") == [dir + "/sub/c.txt"]
+    assert expand(dir + "/*.none") == []
+    fs.remove_all(dir).must()

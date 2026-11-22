@@ -1,0 +1,134 @@
+# How the shell tells a mistake: which source, the line and the column where
+# it stands, and what is wrong, as `shell: <source>, line <n>, column <c>:
+# <what>`. A mistake in the grammar also shows its line with a caret under
+# the column. The column counts what a reader sees as one character, a
+# grapheme cluster of `unicode/segment`, so a line holding `é` written as `e`
+# and an accent, or a flag, names the column an editor shows; the caret is
+# placed by the cells the line's text before it takes on a terminal, so it
+# stands under the mistake behind a wide character too.
+
+use <rebel>/strings
+use <rebel>/unicode/segment
+
+use exec/state
+use exec/streams
+use syntax/ast
+
+# A place in a source, as a reader finds it.
+record Spot
+    # The source's name.
+    name: str
+    # The line, from 1.
+    line: i64
+    # The column, from 1, in grapheme clusters.
+    column: i64
+    # The line's text, without its line end.
+    text: str
+    # The cells the line's text before the column takes on a terminal.
+    indent: i64
+
+# Where `at` stands in its source.
+#
+# - `sh`: the shell, whose sources it reads.
+# - `at`: the place.
+function spot_of(sh: state.Shell lent, at: ast.Place) -> Spot
+    if at.source < 0 || at.source >= sh.sources.len()
+        return Spot(name: sh.name, line: 1, column: 1, text: "", indent: 0)
+
+    source = sh.sources[at.source]
+    return spot_in(name: source.name, text: source.text, offset: at.offset)
+
+# Where the byte `offset` of `text` stands.
+#
+# - `name`: the source's name.
+# - `text`: the source's text.
+# - `offset`: a byte offset, clamped to the text.
+function spot_in(name: str, text: str, offset: i64) -> Spot
+    at @= offset
+
+    if at > text.len()
+        at @ text.len()
+
+    if at < 0
+        at @ 0
+
+    at @ strings.floor_boundary(text, at: at)
+    line @= 1
+    line_start @= 0
+    i @= 0
+
+    while i < at
+        if text[i] == '\n'
+            line @ line + 1
+            line_start @ i + 1
+        i @ i + 1
+
+    line_end @= at
+
+    while line_end < text.len() && text[line_end] != '\n'
+        line_end @ line_end + 1
+
+    before = text.slice(from: line_start, to: at)
+    return Spot(
+        name: name,
+        line: line,
+        column: segment.graphemes(before).len() + 1,
+        text: strings.trim_end_any(s: text.slice(from: line_start, to: line_end), set: "\r"),
+        indent: segment.width_of(before)
+    )
+
+# `name, line n, column c` for `spot`.
+#
+# - `spot`: the place.
+function where(spot: Spot) -> str
+    return f"{spot.name}, line {spot.line}, column {spot.column}"
+
+# The one-line message of a mistake at `at`.
+#
+# - `sh`: the shell.
+# - `at`: where it stands.
+# - `message`: what is wrong.
+function line_of(sh: state.Shell lent, at: ast.Place, message: str) -> str
+    return f"shell: {where(spot_of(sh, at: at))}: {message}\n"
+
+# The message of a mistake in the grammar: its line, then the source's line
+# with a caret under the column.
+#
+# - `sh`: the shell.
+# - `at`: where it stands.
+# - `message`: what is wrong.
+function excerpt_of(sh: state.Shell lent, at: ast.Place, message: str) -> str
+    spot = spot_of(sh, at: at)
+    number = f"{spot.line}"
+    gutter = repeat(" ", number.len().to_u64().must())
+    return f"shell: {where(spot)}: syntax error: {message}\n  {number} | {spot.text}\n  {gutter} | {repeat(" ", spot.indent.to_u64().must())}^\n"
+
+# Tells a mistake at `at` on a command's error.
+#
+# - `sh`: the shell.
+# - `place`: the command's places.
+# - `at`: where it stands.
+# - `message`: what is wrong.
+function tell(@sh: state.Shell, place: streams.Io, at: ast.Place, message: str)
+    streams.write_err(@sh, place: place, text: line_of(sh, at: at, message: message))
+
+# Tells a mistake in the grammar at `at` on the shell's error stream.
+#
+# - `sh`: the shell.
+# - `at`: where it stands.
+# - `message`: what is wrong.
+function tell_syntax(@sh: state.Shell, at: ast.Place, message: str)
+    _ = streams.write_to(@sh, sink: .stream(s: sh.err), text: excerpt_of(sh, at: at, message: message))
+
+test "spot_in: the line and column of an offset, a line end before it"
+    s = spot_in(name: "t", text: "echo a\nif x; fi\n", offset: 13)
+    assert s.line == 2 && s.column == 7 && s.text == "if x; fi" && s.indent == 6
+
+test "spot_in: a column counted in graphemes and an indent in cells"
+    text = "echo 🇮🇹 é x"
+    s = spot_in(name: "t", text: text, offset: text.len() - 1)
+    assert s.column == 10 && s.indent == 10
+
+test "spot_in: an offset past the end is the end"
+    s = spot_in(name: "t", text: "ab", offset: 9)
+    assert s.line == 1 && s.column == 3

@@ -1,0 +1,61 @@
+# `history`: the command lines read, numbered from 1, the last `n` where a
+# number is given; `history -c` forgets them. An interactive shell keeps
+# them in the file `HISTFILE` names between sessions.
+
+use <rebel>/numbers
+use <rebel>/strings
+
+use builtins/table
+use exec/state
+use exec/streams
+
+# `history [n | -c]`.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function run(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands == ["-c"]
+        sh.history @ []
+        return 0
+
+    count @= sh.history.len()
+
+    if operands.len() > 0
+        count @ match numbers.parse_int(operands[0])
+            .ok n => n
+            .err _ => return table.complain(
+                @sh,
+                place: place,
+                name: "history",
+                message: f"`{operands[0]}` is not a number",
+                status: 2
+            )
+
+    _ = streams.write_out(@sh, place: place, text: listing(sh.history, last: count))
+    return 0
+
+# The last `last` lines of `lines`, each after its number from 1, the number
+# right-aligned in five columns as other shells write it, a line of several
+# lines indented under its first.
+#
+# - `lines`: the history, the oldest first.
+# - `last`: how many of the newest to write; all where it is larger.
+function listing(lines: [str], last: i64) -> str
+    first = if last >= lines.len() || last < 0
+        0
+    else
+        lines.len() - last
+
+    out: [str] @= []
+
+    for i in range(from: first, to: lines.len())
+        shown = strings.replace_all(s: lines[i], old: "\n", new: "\n       ")
+        out @ out.push(f"{strings.pad_start(s: f"{i + 1}", width: 5, pad: " ")}  {shown}\n")
+
+    return out.join("")
+
+test "listing: every line numbered, and the last two"
+    assert listing(["ls", "cd x"], last: 9) == "    1  ls\n    2  cd x\n"
+    assert listing(["a", "b", "c"], last: 2) == "    2  b\n    3  c\n"
+    assert listing(["if x\nthen y\nfi"], last: 1) == "    1  if x\n       then y\n       fi\n"

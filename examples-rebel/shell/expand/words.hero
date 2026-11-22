@@ -1,0 +1,170 @@
+# Word expansion (XCU 2.6), in POSIX's order: tilde, parameters, command
+# substitution and arithmetic, each part by part; then field splitting of
+# what the expansions gave outside quotes; then pathname expansion of every
+# field holding an unquoted glob character; and quote removal, which is the
+# text of each field. A command's words get every step; an assignment, a
+# redirection's file, a `case` subject and a here-document get the first
+# step alone, so they stay one text.
+
+use <rebel>/os
+
+use exec/run
+use exec/state
+use expand/arith
+use expand/fields
+use expand/params
+use expand/pathnames
+use syntax/ast
+
+# The code of a mistake an expansion finds: a parameter missing for `:?` or
+# `-u`, a bad pattern, an arithmetic expression that cannot be computed.
+constant EXPANSION: str
+    "expansion"
+
+# An `EXPANSION` failure at `at`, kept in `sh.error_at`.
+#
+# - `sh`: the shell.
+# - `at`: where the expansion stands.
+# - `message`: what is wrong.
+function mistake<T>(@sh: state.Shell, at: ast.Place, message: str) -> T?
+    sh.error_at @ at
+    return fail(code: EXPANSION, msg: message)
+
+# The pieces `parts` expand to.
+#
+# - `sh`: the shell; a command substitution runs in a copy of it, and an
+#   assignment by `:=` or in arithmetic changes it.
+# - `parts`: the parts of a word.
+# - `in_quotes`: whether they stand inside double quotes, so nothing they
+#   give is split or globbed.
+function pieces(@sh: state.Shell, parts: [ast.Part], in_quotes: bool) -> [fields.Piece]?
+    out: [fields.Piece] @= []
+
+    for p in parts
+        match p
+            .literal l => out @ out.push(.text(text: l.text, quoted: in_quotes))
+            .quoted q  => out @ out.push(.text(text: q.text, quoted: true))
+            .param x =>
+                quoted = x.in_quotes || in_quotes
+                got = params.pieces_of(@sh, name: x.name, op: x.op, arg: x.arg, in_quotes: quoted, at: x.at)?
+
+                for piece in got
+                    out @ out.push(piece)
+
+                if got.len() == 0 && quoted && !(x.op == "" && x.name == "@")
+                    out @ out.push(.value(text: "", quoted: true))
+            .length x  => out @ out.push(.value(text: params.length_of(@sh, name: x.name, at: x.at)?, quoted: true))
+            .command c => out @ out.push(
+                .value(text: run.substitute(@sh, body: c.body), quoted: c.in_quotes || in_quotes)
+            )
+            .arith a =>
+                text = parts_text(@sh, parts: a.parts)?
+
+                value = match arith.evaluate(@sh, text: text)
+                    .ok v  => v
+                    .err e => return mistake(@sh, at: a.at, message: f"arithmetic: {e.msg}")
+
+                out @ out.push(.value(text: f"{value}", quoted: a.in_quotes || in_quotes))
+            .tilde t => out @ out.push(.text(text: home_of(sh, user: t.user), quoted: true))
+
+    return ok(out)
+
+# The folder `~user` names: `HOME` for the shell's own user, and the text
+# itself for another, whose folder this shell does not look up.
+#
+# - `sh`: the shell.
+# - `user`: the user's name, "" for the shell's own.
+function home_of(sh: state.Shell lent, user: str) -> str
+    if user != ""
+        return "~" + user
+
+    return match state.get(sh, name: "HOME")
+        .ok h  => h
+        .err _ => os.home_dir().default("~")
+
+# The fields of `found`, the words of a command, every step done.
+#
+# - `sh`: the shell.
+# - `found`: the words.
+function fields_of(@sh: state.Shell, found: [ast.Word]) -> [str]?
+    out: [str] @= []
+
+    ifs = match state.get(sh, name: "IFS")
+        .ok v  => v
+        .err _ => fields.default_ifs()
+
+    for w in found
+        for f in fields.split(pieces(@sh, parts: w.parts, in_quotes: false)?, ifs: ifs)
+            if !sh.options.noglob && fields.has_glob(f)
+                named = pathnames.expand(fields.pattern_of(f))
+
+                if named.len() > 0
+                    for n in named
+                        out @ out.push(n)
+                else
+                    out @ out.push(fields.text_of(f))
+            else
+                out @ out.push(fields.text_of(f))
+
+    return ok(out)
+
+# The text of `w`, expanded and not split or globbed: an assignment's value,
+# a redirection's file, a `case` subject.
+#
+# - `sh`: the shell.
+# - `w`: the word.
+function text_of(@sh: state.Shell, w: ast.Word) -> str?
+    return joined(pieces(@sh, parts: w.parts, in_quotes: false)?)
+
+# The text of `parts`, expanded as inside double quotes: a here-document's
+# body, the word of `${name:=word}`, an arithmetic expression.
+#
+# - `sh`: the shell.
+# - `parts`: the parts.
+function parts_text(@sh: state.Shell, parts: [ast.Part]) -> str?
+    return joined(pieces(@sh, parts: parts, in_quotes: true)?)
+
+# The texts of `found` joined, a cut between arguments read as a space.
+#
+# - `found`: the pieces.
+function joined(found: [fields.Piece]) -> str?
+    texts: [str] @= []
+
+    for p in found
+        match p
+            .text t  => texts @ texts.push(t.text)
+            .value v => texts @ texts.push(v.text)
+            .cut     => texts @ texts.push(" ")
+
+    return ok(texts.join(""))
+
+# `w` expanded as a pattern of `case`: its quoted characters escaped, so
+# `"*"` matches a star and `*` anything.
+#
+# - `sh`: the shell.
+# - `w`: the pattern's word.
+function pattern_of(@sh: state.Shell, w: ast.Word) -> str?
+    return pattern_of_parts(@sh, parts: w.parts)
+
+# `parts` expanded as a pattern, as `pattern_of` expands a word.
+#
+# - `sh`: the shell.
+# - `parts`: the parts.
+function pattern_of_parts(@sh: state.Shell, parts: [ast.Part]) -> str?
+    texts: [str] @= []
+
+    for p in pieces(@sh, parts: parts, in_quotes: false)?
+        match p
+            .text t =>
+                if t.quoted
+                    texts @ texts.push(fields.escaped(t.text))
+                else
+                    texts @ texts.push(t.text)
+            .value v =>
+                if v.quoted
+                    texts @ texts.push(fields.escaped(v.text))
+                else
+                    texts @ texts.push(v.text)
+            .cut => texts @ texts.push(" ")
+
+    return ok(texts.join(""))

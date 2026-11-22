@@ -1,0 +1,220 @@
+# shell: a POSIX-flavoured command shell. It reads the shell's language
+# (words quoted with `'`, `"` and `\`; `$VAR`, `${VAR:-default}` and the
+# other parameter forms; `$(...)` and backquotes; `$((...))`; globs with
+# `*`, `?` and `[...]`) and runs pipelines of any length, each program a
+# child process joined to the next by a pipe; redirections `<`, `>`, `>>`,
+# `2>&1` and here-documents; `&&`, `||` and `;`; `if`, `while`, `until`,
+# `for` and `case`; functions; the builtins `cd`, `export`, `unset`, `exit`,
+# `echo`, `jobs`, `fg`, `wait`, `history` and the others `help` lists; and
+# background jobs started with `&`, kept in a table. On a terminal it reads
+# each line with a line editor that keeps a history and completes with Tab.
+# A mistake is told with the line and the column of the script it is in.
+#
+# Run for real:
+#
+#     shell                      an interactive shell, on a terminal
+#     shell script.sh a b        a script, with `$1` and `$2`
+#     shell -c 'echo $1' x       one command line
+#     shell -ex script.sh        options of `set` before the script
+#     shell --demo < main.stdin  the demo: the session on the input played
+#                                in `build/shell-demo/`
+#
+# The binary is also each of the small programs of `tools/kit` when it runs
+# under that program's name, as BusyBox is; the demo links it so.
+#
+# The Rebel packages it uses, and for what:
+# - `process`: every child: a program started with its arguments, its
+#   environment and its three places, waited for, or kept as a job; the
+#   quoting of `set -x` and of a background shell's script.
+# - `io`: the streams: the shell's own, the pipes between stages, the files
+#   of redirections, the input `read` reads a byte at a time.
+# - `term`: the interactive line editor with history and completion, and the
+#   columns of `help`.
+# - `os`: the working folder of `cd`, the environment the shell starts from,
+#   the home folder, this binary's own path, the stop on Ctrl-C.
+# - `fs` and `path`: the files of redirections and globs, the search of
+#   `PATH`, the tests of `test`, the demo's folder and links.
+# - `regex`: the shell's patterns, of globs, `case` and `${VAR%pattern}`,
+#   translated into regular expressions that match in linear time.
+# - `maps`: the variables, one taken out by `unset`, and a child's
+#   environment, the command's assignments merged over the exported ones.
+# - `lists`: the lines `sorted` keeps once or turns around and `first` cuts.
+# - `strings` and `numbers`: the text of words, lines and messages, and the
+#   numbers of `printf`, `shift`, `exit` and the small programs.
+# - `unicode/segment`: the column of a mistake counted in what a reader sees
+#   as characters, and the caret under it placed by terminal cells; the
+#   columns of `jobs`.
+# - `time`: the pause of `snooze`.
+
+use <rebel>/io
+use <rebel>/os
+use <rebel>/path
+
+use demo/stage
+use exec/run
+use exec/script
+use exec/state
+use exec/streams
+use interactive/repl
+use tools/kit
+
+# The usage `--help` writes.
+function usage() -> str
+    return "usage: shell [-efuvx] [-c command [name [arguments...]] | script [arguments...]]\n       shell --demo < session\nWith neither a command nor a script it reads commands from its input: a person's at a terminal, else a script.\n"
+
+# What the command line asks.
+record Asked
+    # The options of `set` given, letter by letter.
+    letters: [str]
+    # The text of `-c`, or "" for none.
+    command: str
+    # Whether `-c` was given.
+    has_command: bool
+    # Whether the demo is asked.
+    demo: bool
+    # Whether the usage is asked.
+    help: bool
+    # The words after the options: the script and its arguments, or the
+    # name and the arguments of `-c`.
+    rest: [str]
+
+# The command line read: options up to the first word that is none.
+#
+# - `words`: the program's arguments.
+function asked_of(words: [str]) -> Asked
+    a @= Asked(letters: [], command: "", has_command: false, demo: false, help: false, rest: [])
+    i @= 0
+
+    while i < words.len()
+        w = words[i]
+
+        if w == "--"
+            i @ i + 1
+            break
+
+        if w == "--demo"
+            a.demo @ true
+        else if w == "--help" || w == "-h"
+            a.help @ true
+        else if w == "-c" && i + 1 < words.len()
+            a.has_command @ true
+            a.command @ words[i + 1]
+            i @ i + 1
+        else if w.len() > 1 && w[0] == '-'
+            for c in w.slice(from: 1, to: w.len()).chars()
+                letters @= a.letters
+                letters @ letters.push(c)
+                a.letters @ letters
+        else
+            break
+
+        i @ i + 1
+
+    a.rest @ words.slice(from: i, to: words.len())
+    return a
+
+# Runs the program the binary was run as: one of `tools/kit`'s by its name,
+# else the shell; ends the process with the status.
+function main()
+    exe = os.executable_path().default("shell")
+    called = path.stem(exe).default("shell")
+
+    if kit.is_tool(called)
+        exit(code: kit.run(called, arguments: args()) & 255)
+
+    asked = asked_of(args())
+
+    if asked.help
+        _ = io.write_text(io.stdout(), text: usage()).is_err()
+        return
+
+    if asked.demo
+        status = match stage.play(exe)
+            .ok s => s
+            .err e =>
+                _ = io.write_text(io.stderr(), text: f"shell: the demo could not be played: {e.msg}\n").is_err()
+                1
+
+        exit(code: status & 255)
+
+    exit(code: run_shell(exe, asked: asked) & 255)
+
+# Runs the shell as `asked` says and answers its last status.
+#
+# - `exe`: this program's own path.
+# - `asked`: the command line.
+function run_shell(exe: str, asked: Asked) -> i64
+    sh @= state.new_shell(name: "shell", exe: exe, input: io.stdin(), out: io.stdout(), err: io.stderr())
+    inherit_environment(@sh)
+
+    for c in asked.letters
+        match c
+            "e" => sh.options.errexit @ true
+            "x" => sh.options.xtrace @ true
+            "u" => sh.options.nounset @ true
+            "v" => sh.options.verbose @ true
+            "f" => sh.options.noglob @ true
+            "i" => sh.options.interactive @ true
+            _ =>
+                _ = io.write_text(io.stderr(), text: f"shell: -{c}: no such option\n" + usage()).is_err()
+                return 2
+
+    place = streams.standard(sh)
+
+    if asked.has_command
+        if asked.rest.len() > 0
+            sh.name @ asked.rest[0]
+            sh.positional @ asked.rest.slice(from: 1, to: asked.rest.len())
+        _ = script.run_text(@sh, name: "-c", text: asked.command + "\n", place: place, transcript: false)
+    else if asked.rest.len() > 0
+        file = asked.rest[0]
+
+        text = match read_file(file)
+            .ok t => t
+            .err e =>
+                _ = io.write_text(io.stderr(), text: f"shell: {file}: {e.msg}\n").is_err()
+                return 127
+
+        sh.name @ file
+        sh.positional @ asked.rest.slice(from: 1, to: asked.rest.len())
+        _ = script.run_text(@sh, name: file, text: text, place: place, transcript: false)
+    else if sh.options.interactive || io.is_terminal(io.stdin()).default(false)
+        sh.options.interactive @ true
+        _ = repl.run(@sh)
+    else
+        text = match io.read_all_text(io.stdin())
+            .ok t => t
+            .err e =>
+                _ = io.write_text(io.stderr(), text: f"shell: the input: {e.msg}\n").is_err()
+                return 1
+
+        _ = script.run_text(@sh, name: "stdin", text: text, place: place, transcript: false)
+
+    run.release_jobs(@sh)
+
+    return match sh.flow
+        .exiting e                                         => e.code
+        .normal | .breaking _ | .continuing _ | .returning => sh.status
+
+# Takes every variable of the process's environment into the shell,
+# exported, as a shell started by another program does.
+#
+# - `sh`: the shell.
+function inherit_environment(@sh: state.Shell)
+    match os.env_all()
+        .ok found =>
+            for name in keys(found)
+                state.set(@sh, name: name, value: found[name].must())
+                state.export(@sh, name: name)
+        .err _ => _ = 0
+
+    match os.working_dir()
+        .ok dir => state.set(@sh, name: "PWD", value: path.to_slash(dir))
+        .err _  => _ = 0
+
+test "asked_of: options, a command with its name, and a script with arguments"
+    a = asked_of(["-ex", "-c", "echo $1", "me", "one"])
+    assert a.letters == ["e", "x"] && a.has_command && a.command == "echo $1" && a.rest == ["me", "one"]
+    b = asked_of(["script.sh", "-x"])
+    assert !b.has_command && b.rest == ["script.sh", "-x"]
+    assert asked_of(["--demo"]).demo

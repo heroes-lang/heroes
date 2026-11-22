@@ -1,0 +1,118 @@
+# The interactive shell: the prompt `PS1` (and `PS2` while a command is not
+# complete), a line read and edited by `term`'s line editor with its history
+# and Tab completion, the command run, and before each prompt the background
+# jobs that ended told. The history is kept in the file `HISTFILE` names, or
+# `.shell_history` in the home folder, between sessions.
+#
+# Ctrl-C at the prompt gives the line up; Ctrl-D on an empty line ends the
+# shell. While a command runs, the first Ctrl-C ends it and not the shell,
+# as the stop `os.catch_stop` catches; a second one ends the shell too, a
+# limit of `os` this shell cannot lift.
+
+use <rebel>/os
+use <rebel>/path
+use <rebel>/term
+
+use builtins/table
+use exec/jobs
+use exec/lookup
+use exec/script
+use exec/state
+use exec/streams
+use expand/words as expansion
+use interactive/complete
+use syntax/lexer
+use syntax/parser
+use syntax/words
+
+# Runs the interactive shell until `exit` or Ctrl-D, and answers the last
+# status.
+#
+# - `sh`: the shell, its options marked interactive.
+function run(@sh: state.Shell) -> i64
+    _ = os.catch_stop().is_err()
+    editor @= term.line_editor("$ ")
+    history_path = history_file(sh)
+    _ = term.read_history(@editor, path: history_path).is_err()
+    pending @= ""
+    place = streams.standard(sh)
+
+    while state.going_on(sh)
+        told = jobs.ended_lines(@sh)
+
+        if told != ""
+            streams.write_err(@sh, place: place, text: told)
+
+        editor.prompt @ if pending == ""
+            prompt(@sh, name: "PS1", fallback: "$ ")
+        else
+            prompt(@sh, name: "PS2", fallback: "> ")
+
+        line = match term.read_line_completing(@editor, input: sh.input, complete: complete.complete, state: known_of(sh))
+            .ok l => l
+            .err e =>
+                if e.code == term.STOPPED
+                    pending @ ""
+                    continue
+
+                if pending != ""
+                    streams.write_err(@sh, place: place, text: "shell: the input ended inside a command\n")
+                break
+
+        text = pending + line + "\n"
+
+        match parser.parse_all(text, source: -1, next_doc: sh.next_doc)
+            .ok _ => pending @ ""
+            .err e =>
+                if e.code == lexer.INCOMPLETE
+                    pending @ text
+                    continue
+                pending @ ""
+
+        _ = script.run_text(@sh, name: "typed", text: text, place: place, transcript: false)
+
+    _ = term.write_history(editor, path: history_path).is_err()
+    return sh.status
+
+# The file the history is kept in: `HISTFILE`, else `.shell_history` in the
+# home folder.
+#
+# - `sh`: the shell.
+function history_file(sh: state.Shell lent) -> str
+    return match state.get(sh, name: "HISTFILE")
+        .ok f  => f
+        .err _ => path.join_all([os.home_dir().default("."), ".shell_history"])
+
+# The prompt the variable `name` holds, its parameters expanded as POSIX
+# expands `PS1`; `fallback` where it is not set.
+#
+# - `sh`: the shell.
+# - `name`: `PS1` or `PS2`.
+# - `fallback`: the prompt where it is not set.
+function prompt(@sh: state.Shell, name: str, fallback: str) -> str
+    raw = state.get(sh, name: name).default(fallback)
+    lx @= lexer.new_lexer(raw, base: 0, source: -1, next_doc: 0)
+
+    parts = match words.body_parts(@lx, body: raw, at: 0)
+        .ok p  => p
+        .err _ => return raw
+
+    return expansion.parts_text(@sh, parts: parts).default(raw)
+
+# What completion knows of `sh`: its builtins, its functions and the
+# programs on its `PATH`.
+#
+# - `sh`: the shell.
+function known_of(sh: state.Shell lent) -> complete.Known
+    seen: {str: bool} @= {}
+
+    for n in table.names()
+        seen[n] @ true
+
+    for f in keys(sh.functions)
+        seen[f] @ true
+
+    for p in lookup.programs(sh)
+        seen[p] @ true
+
+    return complete.Known(commands: sort(keys(seen)))

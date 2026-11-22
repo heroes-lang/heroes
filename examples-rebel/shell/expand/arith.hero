@@ -1,0 +1,398 @@
+# Arithmetic expansion (XCU 2.6.4): `$((...))` computed over signed 64-bit
+# integers, with variables read by name (one unset or empty is 0), the
+# operators of C that POSIX lists, and `=`, `+=`, `-=`, `*=` assigning a
+# variable. A result that would not fit and a division by zero are told as
+# the shell's mistakes, never reached as the language's overflow, which would
+# end the shell (README § B2).
+
+use <rebel>/io
+use <rebel>/strings
+
+use exec/state
+use expand/integers
+use syntax/words
+
+# The reading state of one expression: its tokens and where the reading
+# stands.
+record Reader
+    # The tokens, the last `.end`.
+    tokens: [integers.Token]
+    # The index of the next token.
+    at: i64
+    # How many brackets and unary operators the reading stands inside.
+    depth: i64
+
+# The value of `text`, an arithmetic expression.
+#
+# - `sh`: the shell, whose variables it reads and assigns.
+# - `text`: the expression, its expansions done; empty is 0.
+#
+# Fails `invalid` with what is wrong.
+function evaluate(@sh: state.Shell, text: str) -> i64?
+    r @= Reader(tokens: integers.tokens_of(text)?, at: 0, depth: 0)
+
+    if r.tokens.len() == 1
+        return ok(0)
+
+    value = assignment(@sh, @r)?
+
+    if peek(r) != .end
+        return fail(code: "invalid", msg: f"{describe(peek(r))} was not expected in `{text}`")
+
+    return ok(value)
+
+# The next token, not taken.
+#
+# - `r`: the reader.
+function peek(r: Reader lent) -> integers.Token
+    return r.tokens[r.at]
+
+# The next token, taken.
+#
+# - `r`: the reader.
+function advance(@r: Reader) -> integers.Token
+    t = r.tokens[r.at]
+
+    if r.at < r.tokens.len() - 1
+        r.at @ r.at + 1
+
+    return t
+
+# Whether the next token is the operator `text`.
+#
+# - `r`: the reader.
+# - `text`: the operator.
+function at_op(r: Reader lent, text: str) -> bool
+    return peek(r) == .op(text: text)
+
+# `t` in words, for a message.
+#
+# - `t`: the token.
+function describe(t: integers.Token) -> str
+    return match t
+        .number n => f"`{n.value}`"
+        .name n   => f"`{n.text}`"
+        .op o     => f"`{o.text}`"
+        .end      => "the end"
+
+# A name and `=`, `+=`, `-=` or `*=`, then a value, assigned; else the
+# expression `||` reads.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function assignment(@sh: state.Shell, @r: Reader) -> i64?
+    match peek(r)
+        .name n =>
+            if r.at + 1 < r.tokens.len()
+                match r.tokens[r.at + 1]
+                    .op o =>
+                        if o.text == "=" || o.text == "+=" || o.text == "-=" || o.text == "*="
+                            _ = advance(@r)
+                            _ = advance(@r)
+                            right = assignment(@sh, @r)?
+                            old = variable(sh, name: n.text)?
+
+                            value = match o.text
+                                "+=" => integers.checked_add(a: old, b: right)?
+                                "-=" => integers.checked_sub(a: old, b: right)?
+                                "*=" => integers.checked_mul(a: old, b: right)?
+                                _    => right
+
+                            state.set(@sh, name: n.text, value: f"{value}")
+                            return ok(value)
+                    .number _ | .name _ | .end => _ = 0
+        .number _ | .op _ | .end => _ = 0
+
+    return either(@sh, @r)
+
+# `a || b`, 1 where either is not 0.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function either(@sh: state.Shell, @r: Reader) -> i64?
+    left @= both(@sh, @r)?
+
+    while at_op(r, text: "||")
+        _ = advance(@r)
+        right = both(@sh, @r)?
+
+        left @ if left != 0 || right != 0
+            1
+        else
+            0
+
+    return ok(left)
+
+# `a && b`, 1 where both are not 0.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function both(@sh: state.Shell, @r: Reader) -> i64?
+    left @= bitwise(@sh, @r)?
+
+    while at_op(r, text: "&&")
+        _ = advance(@r)
+        right = bitwise(@sh, @r)?
+
+        left @ if left != 0 && right != 0
+            1
+        else
+            0
+
+    return ok(left)
+
+# `|`, `^` and `&` between comparisons, left to right.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function bitwise(@sh: state.Shell, @r: Reader) -> i64?
+    left @= equality(@sh, @r)?
+
+    while at_op(r, text: "|") || at_op(r, text: "^") || at_op(r, text: "&")
+        o = advance(@r)
+        right = equality(@sh, @r)?
+
+        left @ match o
+            .op x =>
+                match x.text
+                    "|" => left | right
+                    "^" => left ^ right
+                    _   => left & right
+            .number _ | .name _ | .end => left
+
+    return ok(left)
+
+# `==` and `!=`, 1 for true and 0 for false.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function equality(@sh: state.Shell, @r: Reader) -> i64?
+    left @= relation(@sh, @r)?
+
+    while at_op(r, text: "==") || at_op(r, text: "!=")
+        equal = at_op(r, text: "==")
+        _ = advance(@r)
+        right = relation(@sh, @r)?
+        left @ truth(left == right == equal)
+
+    return ok(left)
+
+# `<`, `<=`, `>` and `>=`.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function relation(@sh: state.Shell, @r: Reader) -> i64?
+    left @= shift(@sh, @r)?
+
+    while at_op(r, text: "<") || at_op(r, text: "<=") || at_op(r, text: ">") || at_op(r, text: ">=")
+        o = advance(@r)
+        right = shift(@sh, @r)?
+
+        held = match o
+            .op x =>
+                match x.text
+                    "<"  => left < right
+                    "<=" => left <= right
+                    ">"  => left > right
+                    _    => left >= right
+            .number _ | .name _ | .end => false
+
+        left @ truth(held)
+
+    return ok(left)
+
+# `<<` and `>>`, the count 0 to 63.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function shift(@sh: state.Shell, @r: Reader) -> i64?
+    left @= sum(@sh, @r)?
+
+    while at_op(r, text: "<<") || at_op(r, text: ">>")
+        to_left = at_op(r, text: "<<")
+        _ = advance(@r)
+        count = sum(@sh, @r)?
+
+        if count < 0 || count > 63
+            return fail(code: "invalid", msg: f"a shift by {count}, outside 0 to 63")
+
+        left @ if to_left
+            left << count
+        else
+            left >> count
+
+    return ok(left)
+
+# `+` and `-`.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function sum(@sh: state.Shell, @r: Reader) -> i64?
+    left @= product(@sh, @r)?
+
+    while at_op(r, text: "+") || at_op(r, text: "-")
+        adding = at_op(r, text: "+")
+        _ = advance(@r)
+        right = product(@sh, @r)?
+
+        left @ if adding
+            integers.checked_add(a: left, b: right)?
+        else
+            integers.checked_sub(a: left, b: right)?
+
+    return ok(left)
+
+# `*`, `/` and `%`.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function product(@sh: state.Shell, @r: Reader) -> i64?
+    left @= unary(@sh, @r)?
+
+    while at_op(r, text: "*") || at_op(r, text: "/") || at_op(r, text: "%")
+        o = advance(@r)
+        right = unary(@sh, @r)?
+
+        left @ match o
+            .op x =>
+                match x.text
+                    "*" => integers.checked_mul(a: left, b: right)?
+                    "/" => integers.checked_div(a: left, b: right, remainder: false)?
+                    _   => integers.checked_div(a: left, b: right, remainder: true)?
+            .number _ | .name _ | .end => left
+
+    return ok(left)
+
+# `-`, `+`, `!` and `~` before a value.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function unary(@sh: state.Shell, @r: Reader) -> i64?
+    if r.depth >= 100
+        return fail(code: "invalid", msg: "the expression nests deeper than 100")
+
+    r.depth @ r.depth + 1
+    value = unary_value(@sh, @r)
+    r.depth @ r.depth - 1
+    return value
+
+# What `unary` reads, its depth counted there.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function unary_value(@sh: state.Shell, @r: Reader) -> i64?
+    if at_op(r, text: "-")
+        _ = advance(@r)
+        return integers.checked_sub(a: 0, b: unary(@sh, @r)?)
+
+    if at_op(r, text: "+")
+        _ = advance(@r)
+        return unary(@sh, @r)
+
+    if at_op(r, text: "!")
+        _ = advance(@r)
+        return ok(truth(unary(@sh, @r)? == 0))
+
+    if at_op(r, text: "~")
+        _ = advance(@r)
+        return ok(~unary(@sh, @r)?)
+
+    return primary(@sh, @r)
+
+# A number, a variable, or an expression in brackets.
+#
+# - `sh`: the shell.
+# - `r`: the reader.
+function primary(@sh: state.Shell, @r: Reader) -> i64?
+    t = advance(@r)
+
+    return match t
+        .number n => ok(n.value)
+        .name n   => variable(sh, name: n.text)
+        .op o =>
+            if o.text != "("
+                return fail(code: "invalid", msg: f"a value was expected, and `{o.text}` stands")
+
+            value = assignment(@sh, @r)?
+
+            if !at_op(r, text: ")")
+                return fail(code: "invalid", msg: "a `(` is never closed")
+
+            _ = advance(@r)
+            ok(value)
+        .end => fail(code: "invalid", msg: "a value was expected at the end")
+
+# The value of the variable `name` as a number: 0 where it is unset or empty.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+function variable(sh: state.Shell lent, name: str) -> i64?
+    text = strings.trim(state.get(sh, name: name).default(""))
+
+    if text == ""
+        return ok(0)
+
+    negative = text[0] == '-'
+
+    digits = if negative
+        text.slice(from: 1, to: text.len())
+    else
+        text
+
+    for c in digits.chars()
+        if !words.is_name_byte(c[0])
+            return fail(code: "invalid", msg: f"the variable `{name}` holds `{text}`, which is no number")
+
+    value = integers.number_of(digits)?
+
+    if negative
+        return integers.checked_sub(a: 0, b: value)
+
+    return ok(value)
+
+# 1 for `true` and 0 for `false`.
+#
+# - `held`: the truth.
+function truth(held: bool) -> i64
+    if held
+        return 1
+
+    return 0
+
+# The value of `text` in a shell with `i` set to 4, for the tests.
+#
+# - `text`: the expression.
+function value_of(text: str) -> i64?
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    state.set(@sh, name: "i", value: "4")
+    return evaluate(@sh, text: text)
+
+test "evaluate: precedence, brackets, a variable and C's division"
+    assert value_of("1 + 2 * 3").must() == 7
+    assert value_of("(1 + 2) * 3").must() == 9
+    assert value_of("i * i - 1").must() == 15
+    assert value_of("-7 / 2").must() == -3 && value_of("-7 % 2").must() == -1
+    assert value_of("0x10 + 010").must() == 24
+
+test "evaluate: comparisons and logic give 1 or 0"
+    assert value_of("i > 3 && i <= 4").must() == 1
+    assert value_of("!i").must() == 0
+    assert value_of("unset_name == 0").must() == 1
+
+test "evaluate: an assignment changes the variable"
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    assert evaluate(@sh, text: "n = 5").must() == 5
+    assert evaluate(@sh, text: "n += 2").must() == 7
+    assert state.get(sh, name: "n").must() == "7"
+
+test "evaluate: division by zero, overflow and a stray token are told"
+    assert value_of("1 / 0").is_err()
+    assert value_of("9223372036854775807 + 1").is_err()
+    assert value_of("2 * 4611686018427387904").is_err()
+    assert value_of("1 2").is_err()
+    assert value_of("").must() == 0
+
+test "evaluate: brackets and negations nested past the limit are told"
+    assert value_of(repeat("(", 150) + "1" + repeat(")", 150)).is_err()
+    assert value_of(repeat("!", 150) + "1").is_err()
+    assert value_of(repeat("(", 30) + "1" + repeat(")", 30)).must() == 1

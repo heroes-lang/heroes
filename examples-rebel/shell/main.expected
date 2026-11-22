@@ -1,0 +1,239 @@
+# A session of the shell, played by `shell --demo`. Every program it runs
+# is a small program of the shell's own binary, linked into PATH.
+
+# == words and quoting ==
+$ echo hello, world
+hello, world
+$ show "two words" 'single $quoted' "dollar \$escaped" back\ slash
+<two words>
+<single $quoted>
+<dollar $escaped>
+<back slash>
+$ name=Heroes
+$ show "hello, $name" ${name}s "${missing:-a default}" ${missing-} ${name:+set}
+<hello, Heroes>
+<Heroess>
+<a default>
+<set>
+$ echo $name has ${#name} characters
+Heroes has 6 characters
+$ words="  spaced   out  "
+$ show $words "$words"
+<spaced>
+<out>
+<  spaced   out  >
+
+# == expansions ==
+$ path=notes/today.txt
+$ echo ${path#*/} ${path%.txt} ${path##*.} ${path%%/*}
+today.txt notes/today txt notes
+$ echo today is $(echo saturday | upper)
+today is SATURDAY
+$ echo `echo backquoted` and $(echo $(echo nested))
+backquoted and nested
+$ echo $((6 * 7)) $(( (1 + 2) * 3 )) $((17 % 5))
+42 9 2
+$ i=0
+$ while [ $i -lt 3 ]; do i=$((i + 1)); echo pass $i; done
+pass 1
+pass 2
+pass 3
+$ echo ${unset_one:=assigned now} and still $unset_one
+assigned now and still assigned now
+
+# == files and redirections ==
+$ echo first line > notes.txt
+$ echo second line >> notes.txt
+$ upper < notes.txt
+FIRST LINE
+SECOND LINE
+$ count notes.txt
+2 lines, 4 words, 23 bytes
+$ fails 3 2>&1
+fails: ending with 3
+$ echo the status was $?
+the status was 3
+$ fails 4 something broke 2> errors.txt
+$ echo "errors.txt holds: $(upper < errors.txt)"
+errors.txt holds: FAILS: SOMETHING BROKE
+$ { echo one; echo two; } > pair.txt
+$ sorted -r pair.txt
+two
+one
+$ echo thrown away > /dev/null
+
+# == here-documents ==
+$ upper <<EOF
+> dear $name,
+> the sum is $((40 + 2))
+> EOF
+DEAR HEROES,
+THE SUM IS 42
+$ first 2 <<'END'
+> $name stays as written
+> and so does $(this)
+> END
+$name stays as written
+and so does $(this)
+
+# == globbing ==
+$ for n in alpha beta gamma; do echo $n > $n.txt; done
+$ echo *.txt
+alpha.txt beta.txt errors.txt gamma.txt notes.txt pair.txt
+$ echo ?eta.txt [ab]*.txt
+beta.txt alpha.txt beta.txt
+$ echo "*.txt" stays quoted, and *.none matches nothing
+*.txt stays quoted, and *.none matches nothing
+
+# == pipelines ==
+$ echo "pear apple fig apple" | upper
+PEAR APPLE FIG APPLE
+$ printf '%s\n' pear apple fig apple | sorted -u | count
+3 lines, 3 words, 15 bytes
+$ printf '%s\n' c b a | sorted | first 2 | upper
+A
+B
+$ printf '%s\n' b a | while read word; do echo "<$word>"; done | upper
+<B>
+<A>
+$ echo sorted: $(printf '%s\n' 3 1 2 | sorted)
+sorted: 1 2 3
+
+# == conditions and loops ==
+$ if [ -f notes.txt ]; then echo notes.txt is a file; else echo no notes; fi
+notes.txt is a file
+$ for f in *.txt; do
+>     case $f in
+>         a*|b*) echo "$f begins with a or b";;
+>         *) echo "$f";;
+>     esac
+> done
+alpha.txt begins with a or b
+beta.txt begins with a or b
+errors.txt
+gamma.txt
+notes.txt
+pair.txt
+$ true && echo and ran || echo or ran
+and ran
+$ false && echo never || echo the or branch ran
+the or branch ran
+$ ! false; echo negated: $?
+negated: 0
+$ for n in 1 2 3 4 5; do
+>     if [ $n -eq 2 ]; then continue; fi
+>     if [ $n -eq 4 ]; then break; fi
+>     echo n is $n
+> done
+n is 1
+n is 3
+
+# == functions ==
+$ greet() {
+>     local who=${1:-world}
+>     echo "hello, $who"
+>     return 3
+> }
+$ greet
+hello, world
+$ greet Heroes; echo greet returned $?
+hello, Heroes
+greet returned 3
+$ countdown() { n=$1; while [ $n -gt 0 ]; do echo -n "$n "; n=$((n - 1)); done; echo liftoff; }
+$ countdown 3
+3 2 1 liftoff
+$ type echo greet if
+echo is a shell builtin
+greet is a function
+if is a shell keyword
+
+# == variables and the environment ==
+$ cd ..; echo now in ${PWD##*/}; cd work; echo back in ${PWD##*/}
+now in shell-demo
+back in work
+$ export GREETING=hi
+$ shell -c 'echo a child shell sees $GREETING'
+a child shell sees hi
+$ unset GREETING
+$ shell -c 'echo "a child shell sees ${GREETING-nothing}"'
+a child shell sees nothing
+$ set -- one "two three"
+$ echo $# arguments: "$@"
+2 arguments: one two three
+$ for a in "$@"; do show "$a"; done
+<one>
+<two three>
+$ shift; echo after shift $# remains: $1
+after shift 1 remains: two three
+$ set -x; echo traced "two words"; set +x
++ echo traced 'two words'
+traced two words
++ set +x
+
+# == background jobs ==
+$ snooze 20 &
+$ snooze 40 > /dev/null &
+$ jobs
+[1]-  Running                 snooze 20 &
+[2]+  Running                 snooze 40 > /dev/null &
+$ wait %1; echo the first job ended with $?
+the first job ended with 0
+$ fg %2
+snooze 40 > /dev/null
+$ jobs
+$ { snooze 2; echo from a background group; } > bg.txt &
+$ wait
+$ upper < bg.txt
+FROM A BACKGROUND GROUP
+
+# == mistakes ==
+$ nosuchcommand --help
+shell: session, line 112, column 1: nosuchcommand: command not found
+$ echo the status was $?
+the status was 127
+$ ( echo ${required:?is required}; echo never written )
+shell: session, line 114, column 8: required: is required
+$ echo after the subshell: $?
+after the subshell: 1
+$ first 9 > broken.sh <<'END'
+> echo this line runs
+> if [ -f notes.txt ]
+>     echo "then is missing"
+> fi
+> END
+$ shell broken.sh; echo broken.sh ended with $?
+this line runs
+shell: broken.sh, line 4, column 1: syntax error: `then` was expected here, and `fi` stands
+  4 | fi
+    | ^
+broken.sh ended with 2
+$ shell -c 'echo "naïve ☕" )'
+shell: -c, line 1, column 16: syntax error: `)` cannot follow a command here
+  1 | echo "naïve ☕" )
+    |                 ^
+$ shell -e -c 'echo before; false; echo never'; echo "under -e it ended with $?"
+before
+under -e it ended with 1
+
+# == history ==
+$ history 3
+   75  shell -c 'echo "naïve ☕" )'
+   76  shell -e -c 'echo before; false; echo never'; echo "under -e it ended with $?"
+   77  history 3
+$ echo goodbye
+goodbye
+
+# == the line editor, its keys scripted ==
+keys: u p Tab space n o Tab Enter
+$ upper notes.txt
+FIRST LINE
+SECOND LINE
+keys: Up Up End, then " again" and Enter
+$ echo goodbye again
+goodbye again
+keys: "echo one two" Ctrl-W "three" Enter
+$ echo one three
+one three
+keys: "echo café" Left Left Backspace Enter
+$ echo cfé
+cfé

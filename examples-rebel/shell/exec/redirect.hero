@@ -1,0 +1,163 @@
+# Redirections (XCU 2.7), applied in the order written to a command's three
+# places: `<`, `>`, `>>`, `<>` open a file; `>&n` and `<&n` make a
+# descriptor go where another goes now, so `>out 2>&1` sends both to `out`
+# and `2>&1 >out` sends the error where the output went before; `>&-`
+# closes one; a here-document is its body, expanded unless its delimiter was
+# quoted. `/dev/null` is nowhere on every system, so a script that throws its
+# output away runs on Windows too.
+
+use <rebel>/fs
+use <rebel>/io
+
+use exec/state
+use exec/streams
+use expand/words
+use syntax/ast
+
+# The code of a redirection that cannot be made: a file that cannot be
+# opened, a descriptor that is not one.
+constant REDIRECT: str
+    "redirect"
+
+# A `REDIRECT` failure at `at`, kept in `sh.error_at`.
+#
+# - `sh`: the shell.
+# - `at`: where the redirection stands.
+# - `message`: what went wrong.
+function refused<T>(@sh: state.Shell, at: ast.Place, message: str) -> T?
+    sh.error_at @ at
+    return fail(code: REDIRECT, msg: message)
+
+# Whether `target` is the system's empty device as scripts write it.
+#
+# - `target`: the file's name.
+function is_null(target: str) -> bool
+    return target == "/dev/null"
+
+# `base` with every redirection of `redirects` applied, in order.
+#
+# - `sh`: the shell; the words are expanded in it.
+# - `redirects`: the redirections.
+# - `base`: the places before them.
+# - `opened`: what the command opened, which grows by each file.
+#
+# Fails `REDIRECT` or `words.EXPANSION`, the place kept in `sh.error_at`.
+function apply(@sh: state.Shell, redirects: [ast.Redirect], base: streams.Io, @opened: streams.Opened) -> streams.Io?
+    place @= base
+
+    for r in redirects
+        match r.op
+            .here_doc =>
+                doc = match sh.docs[r.heredoc]
+                    .ok d  => d
+                    .err _ => return refused(@sh, at: r.at, message: "the here-document's body was never read")
+
+                text = words.parts_text(@sh, parts: doc.parts)?
+                place @ with_input(@sh, place: place, fd: r.fd, feed: .text(text: text), at: r.at)?
+            .input =>
+                target = words.text_of(@sh, w: r.target)?
+
+                feed: streams.Feed = if is_null(target)
+                    .nothing
+                else
+                    .stream(s: opened_file(@sh, target: target, access: .read, at: r.at, @opened)?)
+
+                place @ with_input(@sh, place: place, fd: r.fd, feed: feed, at: r.at)?
+            .output | .append | .read_write =>
+                target = words.text_of(@sh, w: r.target)?
+
+                access: fs.Access = match r.op
+                    .output                                                     => .write
+                    .append                                                     => .append
+                    .input | .read_write | .dup_output | .dup_input | .here_doc => .read_write
+
+                if r.fd == 0
+                    feed: streams.Feed = if is_null(target)
+                        .nothing
+                    else
+                        .stream(s: opened_file(@sh, target: target, access: access, at: r.at, @opened)?)
+
+                    place @ with_input(@sh, place: place, fd: 0, feed: feed, at: r.at)?
+                else
+                    sink: streams.Sink = if is_null(target)
+                        .discard
+                    else
+                        .stream(s: opened_file(@sh, target: target, access: access, at: r.at, @opened)?)
+
+                    place @ with_sink(@sh, place: place, fd: r.fd, sink: sink, at: r.at)?
+            .dup_output =>
+                target = words.text_of(@sh, w: r.target)?
+
+                sink: streams.Sink = match target
+                    "-" => .discard
+                    "1" => place.output
+                    "2" => place.error
+                    _ => return refused(
+                        @sh,
+                        at: r.at,
+                        message: f"`>&{target}` names no output descriptor: 1 and 2 are, and `-` closes"
+                    )
+
+                place @ with_sink(@sh, place: place, fd: r.fd, sink: sink, at: r.at)?
+            .dup_input =>
+                target = words.text_of(@sh, w: r.target)?
+
+                feed: streams.Feed = match target
+                    "-" => .nothing
+                    "0" => place.input
+                    _ => return refused(
+                        @sh,
+                        at: r.at,
+                        message: f"`<&{target}` names no input descriptor: 0 is, and `-` closes"
+                    )
+
+                place @ with_input(@sh, place: place, fd: r.fd, feed: feed, at: r.at)?
+
+    return ok(place)
+
+# The file `target` opened for `access` and kept in `opened`.
+#
+# - `sh`: the shell.
+# - `target`: the file's name.
+# - `access`: what the stream does.
+# - `at`: where the redirection stands.
+# - `opened`: what the command opened.
+function opened_file(@sh: state.Shell, target: str, access: fs.Access, at: ast.Place, @opened: streams.Opened) -> io.Stream?
+    if target == ""
+        return refused(@sh, at: at, message: "a redirection names an empty file name")
+
+    s = match fs.open_with(target, access: access, permission: 0o666)
+        .ok s  => s
+        .err e => return refused(@sh, at: at, message: f"{target}: {e.msg}")
+
+    streams.keep_stream(@opened, s: s)
+    return ok(s)
+
+# `place` with descriptor `fd`, which must be 0, reading `feed`.
+#
+# - `sh`: the shell.
+# - `place`: the places.
+# - `fd`: the descriptor.
+# - `feed`: what it reads.
+# - `at`: where the redirection stands.
+function with_input(@sh: state.Shell, place: streams.Io, fd: i64, feed: streams.Feed, at: ast.Place) -> streams.Io?
+    if fd != 0
+        return refused(@sh, at: at, message: f"the descriptor {fd} writes and cannot be made to read")
+
+    return ok(streams.Io(input: feed, output: place.output, error: place.error))
+
+# `place` with descriptor `fd`, 1 or 2, writing to `sink`.
+#
+# - `sh`: the shell.
+# - `place`: the places.
+# - `fd`: the descriptor.
+# - `sink`: where it writes.
+# - `at`: where the redirection stands.
+function with_sink(@sh: state.Shell, place: streams.Io, fd: i64, sink: streams.Sink, at: ast.Place) -> streams.Io?
+    if fd == 1
+        return ok(streams.Io(input: place.input, output: sink, error: place.error))
+
+    if fd == 2
+        return ok(streams.Io(input: place.input, output: place.output, error: sink))
+
+    return refused(@sh, at: at, message: "the descriptor 0 reads and cannot be made to write")

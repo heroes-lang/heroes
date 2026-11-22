@@ -1,0 +1,378 @@
+# Everything a running shell knows, in one record passed with `@` to every
+# function that may change it: its variables and which of them are exported,
+# its functions, the positional parameters, the last status, its options,
+# its background jobs, its history, the sources it has read and the bodies of
+# their here-documents. The language has no global, so this record is the
+# shell; a subshell is a copy of it whose changes are dropped, which is
+# exactly what POSIX asks of `( )` and `$(...)` (XCU 2.12).
+
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/process
+
+use syntax/ast
+
+# A shell variable.
+record Var
+    # Its value.
+    value: str
+    # Whether it is exported, so every child starts with it.
+    exported: bool
+
+# A function the shell defined.
+record Function
+    # Its body, one compound command.
+    body: ast.Command
+    # Its definition as written, so a background shell can define it again.
+    text: str
+
+# A text the shell read commands from, so a message can quote its lines.
+record Source
+    # Its name in a message: a script's path, `stdin`, or `-c`.
+    name: str
+    # Its whole text.
+    text: str
+
+# Where the running commands stand after one of them: going on, or unwinding
+# to the loop, the function or the shell that a jump leaves.
+variant Flow
+    # Going on.
+    normal
+    # `break n`: leaving loops.
+    breaking
+        # How many loops are still to leave, at least 1.
+        levels: i64
+    # `continue n`: to the next pass of a loop.
+    continuing
+        # How many loops out the pass is, at least 1.
+        levels: i64
+    # `return`: leaving the function.
+    returning
+    # `exit` or a fatal mistake: leaving the shell.
+    exiting
+        # The status the shell ends with.
+        code: i64
+
+# The options `set` changes, each by its letter.
+record Options
+    # `-e`: the shell ends when a command it does not test fails.
+    errexit: bool
+    # `-x`: each command is written to the error stream before it runs.
+    xtrace: bool
+    # `-v`: each line is written to the error stream as it is read.
+    verbose: bool
+    # `-u`: a parameter that is not set is a mistake.
+    nounset: bool
+    # `-f`: no pathname expansion.
+    noglob: bool
+    # Whether lines are typed at a terminal: messages go on and jobs are
+    # told when they end.
+    interactive: bool
+    # Whether each line read is written to the output before it runs, with
+    # `$ ` before it, as a transcript of a session shows it.
+    transcript: bool
+
+# A background job: the children of one pipeline started with `&`.
+record Job
+    # Its number, `%1` and so on.
+    number: i64
+    # Its children, the last stage's last; the list empties once they end.
+    children: [process.Child]
+    # Its command as written.
+    text: str
+    # Whether every child has ended.
+    done: bool
+    # The status of its last stage, once done.
+    status: i64
+    # Whether its end was told, so it is told once.
+    told: bool
+
+# A variable's value before a function's `local` changed it.
+record Saved
+    # Whether it was set.
+    had: bool
+    # What it was, where it was set.
+    variable: Var
+
+# The shell.
+record Shell
+    # The variables, by name.
+    vars: {str: Var}
+    # The functions, by name.
+    functions: {str: Function}
+    # `$1`, `$2` and the rest.
+    positional: [str]
+    # `$0`: the shell's or the script's name.
+    name: str
+    # `$?`: the status of the last command.
+    status: i64
+    # `$!`: the process number of the last background child, -1 for none.
+    last_pid: i64
+    # The options.
+    options: Options
+    # The background jobs, oldest first.
+    jobs: [Job]
+    # The number the next job takes.
+    next_job: i64
+    # Every command line read, oldest first.
+    history: [str]
+    # Every source read, by number.
+    sources: [Source]
+    # The bodies of every here-document read, by number.
+    docs: {i64: ast.HereDoc}
+    # The number the next here-document takes.
+    next_doc: i64
+    # The texts written to each command substitution or captured pipeline
+    # stage being run, innermost last.
+    captures: [[str]]
+    # Where the running commands stand.
+    flow: Flow
+    # How many loops enclose the command running.
+    loops: i64
+    # How many function calls enclose it.
+    calls: i64
+    # How many function calls, `eval`s and `.`s enclose the command running,
+    # held under `MAX_DEPTH`.
+    depth: i64
+    # How deep the shell is in a condition (`if`, `while`, `&&`, `!`), where
+    # a failure does not end it under `-e`.
+    testing: i64
+    # The variables each running function's `local` changed, innermost last.
+    frames: [{str: Saved}]
+    # Where the last mistake of an expansion was.
+    error_at: ast.Place
+    # This program's own path, which a background job of shell commands
+    # runs again.
+    exe: str
+    # The shell's input, output and error streams.
+    input: io.Stream
+    # Where the output goes.
+    out: io.Stream
+    # Where the messages go: the error stream, or the output in a
+    # transcript.
+    err: io.Stream
+
+# How deeply function calls, `eval` and `.` may nest: deeper, the call is
+# refused with a message, before the recursion of the executor could run out
+# of stack and end the shell (README § B2).
+constant MAX_DEPTH: i64
+    100
+
+# A shell with no variable, function or job, reading `input`.
+#
+# - `name`: `$0`.
+# - `exe`: this program's own path.
+# - `input`: the stream commands and `read` read from.
+# - `out`: the output.
+# - `err`: where messages go.
+function new_shell(name: str, exe: str, input: io.Stream, out: io.Stream, err: io.Stream) -> Shell
+    vars: {str: Var} = {}
+    functions: {str: Function} = {}
+    docs: {i64: ast.HereDoc} = {}
+    return Shell(
+        vars: vars,
+        functions: functions,
+        positional: [],
+        name: name,
+        status: 0,
+        last_pid: -1,
+        options: Options(errexit: false, xtrace: false, verbose: false, nounset: false, noglob: false, interactive: false, transcript: false),
+        jobs: [],
+        next_job: 1,
+        history: [],
+        sources: [],
+        docs: docs,
+        next_doc: 0,
+        captures: [],
+        flow: .normal,
+        loops: 0,
+        calls: 0,
+        depth: 0,
+        testing: 0,
+        frames: [],
+        error_at: ast.Place(source: 0, offset: 0),
+        exe: exe,
+        input: input,
+        out: out,
+        err: err
+    )
+
+# The value of the variable `name`; fails `not_found` where it is not set.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+function get(sh: Shell lent, name: str) -> str?
+    return ok(sh.vars[name]?.value)
+
+# Sets the variable `name` to `value`, keeping whether it is exported.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+# - `value`: its value.
+function set(@sh: Shell, name: str, value: str)
+    was_exported = match sh.vars[name]
+        .ok v  => v.exported
+        .err _ => false
+
+    sh.vars[name] @ Var(value: value, exported: was_exported)
+
+# Marks `name` exported, setting it to "" where it is not set.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+function export(@sh: Shell, name: str)
+    value = get(sh, name: name).default("")
+    sh.vars[name] @ Var(value: value, exported: true)
+
+# Takes the variable `name` away; a name not set changes nothing.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+function unset(@sh: Shell, name: str)
+    sh.vars @ maps.remove(sh.vars, key: name)
+
+# The exported variables, name to value: what a child starts with.
+#
+# - `sh`: the shell.
+function exported(sh: Shell lent) -> {str: str}
+    found: {str: str} @= {}
+
+    for name in keys(sh.vars)
+        v = sh.vars[name].must()
+
+        if v.exported
+            found[name] @ v.value
+
+    return found
+
+# Adds a source and answers its number.
+#
+# - `sh`: the shell.
+# - `name`: its name in messages.
+# - `text`: its text.
+function add_source(@sh: Shell, name: str, text: str) -> i64
+    sources @= sh.sources
+    sources @ sources.push(Source(name: name, text: text))
+    sh.sources @ sources
+    return sh.sources.len() - 1
+
+# Keeps the bodies of here-documents a parse read.
+#
+# - `sh`: the shell.
+# - `docs`: the bodies, by number.
+# - `next_doc`: the number the next one takes.
+function keep_docs(@sh: Shell, docs: {i64: ast.HereDoc}, next_doc: i64)
+    every @= sh.docs
+
+    for k in keys(docs)
+        every[k] @ docs[k].must()
+
+    sh.docs @ every
+    sh.next_doc @ next_doc
+
+# Whether the running commands go on: no `break`, `continue`, `return` or
+# `exit` is unwinding them.
+#
+# - `sh`: the shell.
+function going_on(sh: Shell lent) -> bool
+    return sh.flow == .normal
+
+# The option letters set, as `$-` writes them.
+#
+# - `sh`: the shell.
+function option_letters(sh: Shell lent) -> str
+    letters: [str] @= []
+
+    if sh.options.errexit
+        letters @ letters.push("e")
+
+    if sh.options.noglob
+        letters @ letters.push("f")
+
+    if sh.options.interactive
+        letters @ letters.push("i")
+
+    if sh.options.nounset
+        letters @ letters.push("u")
+
+    if sh.options.verbose
+        letters @ letters.push("v")
+
+    if sh.options.xtrace
+        letters @ letters.push("x")
+
+    return letters.join("")
+
+# Opens a capture: what is written to it is kept until `close_capture`.
+# Answers its level, which a sink names.
+#
+# - `sh`: the shell.
+function open_capture(@sh: Shell) -> i64
+    captures @= sh.captures
+    captures @ captures.push([])
+    sh.captures @ captures
+    return sh.captures.len() - 1
+
+# Closes the innermost capture and answers what was written to it.
+#
+# - `sh`: the shell.
+function close_capture(@sh: Shell) -> str
+    captures @= sh.captures
+    text = captures[captures.len() - 1].join("")
+    captures @ captures.slice(from: 0, to: captures.len() - 1)
+    sh.captures @ captures
+    return text
+
+# Closes the innermost capture and answers what was written to it, where
+# `open` says a capture was opened; "" and nothing closed otherwise.
+#
+# - `sh`: the shell.
+# - `open`: whether the caller opened a capture to close.
+function close_capture_if(@sh: Shell, open: bool) -> str
+    if !open
+        return ""
+
+    return close_capture(@sh)
+
+# Adds `text` to the capture of level `level`.
+#
+# - `sh`: the shell.
+# - `level`: the capture's level, from `open_capture`.
+# - `text`: what was written.
+function add_captured(@sh: Shell, level: i64, text: str)
+    add_piece(@sh.captures[level], text: text)
+
+# Adds `text` to `pieces`, which the caller owns, in place.
+#
+# - `pieces`: the list.
+# - `text`: the piece.
+function add_piece(@pieces: [str], text: str)
+    pieces @ pieces.push(text)
+
+test "set: a variable set, read, exported and unset"
+    sh @= new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stderr())
+    set(@sh, name: "A", value: "1")
+    assert get(sh, name: "A").must() == "1"
+    assert exported(sh) == {}
+    export(@sh, name: "A")
+    set(@sh, name: "A", value: "2")
+    assert exported(sh) == {"A": "2"}
+    unset(@sh, name: "A")
+    assert get(sh, name: "A").is_err()
+
+test "open_capture: nested captures each keep their own text"
+    sh @= new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stderr())
+    outer = open_capture(@sh)
+    add_captured(@sh, level: outer, text: "a")
+    inner = open_capture(@sh)
+    add_captured(@sh, level: inner, text: "b")
+    assert close_capture(@sh) == "b"
+    add_captured(@sh, level: outer, text: "c")
+    assert close_capture(@sh) == "ac"
+
+test "option_letters: none, then two"
+    sh @= new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stderr())
+    assert option_letters(sh) == ""
+    sh.options.errexit @ true
+    sh.options.xtrace @ true
+    assert option_letters(sh) == "ex"

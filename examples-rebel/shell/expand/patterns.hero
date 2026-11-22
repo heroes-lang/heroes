@@ -1,0 +1,296 @@
+# The shell's patterns (XCU 2.13): `*` any text, `?` one character, `[...]`
+# one character of a class, `[!...]` one outside it, `\` before a character
+# making it stand for itself. A pattern is matched by translating it into a
+# regular expression of `regex`, which matches in time linear in the text, so
+# no pattern can hang the shell. Here a pattern matches any text, `/`
+# included, as `case` and `${name%pattern}` read one; `expand/pathnames`
+# matches one name at a time and keeps the rule for a leading dot itself.
+
+use <rebel>/regex
+
+# Whether `pattern` holds a glob character not escaped: a `*`, a `?`, or a
+# `[` that a later `]` closes.
+#
+# - `pattern`: the pattern.
+function has_magic(pattern: str) -> bool
+    i @= 0
+
+    while i < pattern.len()
+        b = pattern[i]
+
+        if b == '\\'
+            i @ i + 2
+        else if b == '*' || b == '?'
+            return true
+        else if b == '[' && class_end(pattern, at: i) > 0
+            return true
+        else
+            i @ i + 1
+
+    return false
+
+# `pattern` with its escaping backslashes taken out: the text it matches
+# where it holds no glob character.
+#
+# - `pattern`: the pattern.
+function unescape(pattern: str) -> str
+    pieces: [str] @= []
+    escaping @= false
+
+    for c in pattern.chars()
+        if c == "\\" && !escaping
+            escaping @ true
+        else
+            pieces @ pieces.push(c)
+            escaping @ false
+
+    return pieces.join("")
+
+# The byte index of the `]` that closes the class whose `[` is at `at`, or 0
+# where none does, so the `[` stands for itself. A `]` first in the class, or
+# right after its `!` or `^`, is one of its characters.
+#
+# - `pattern`: the pattern.
+# - `at`: the index of the `[`.
+function class_end(pattern: str, at: i64) -> i64
+    i @= at + 1
+
+    if i < pattern.len() && (pattern[i] == '!' || pattern[i] == '^')
+        i @ i + 1
+
+    if i < pattern.len() && pattern[i] == ']'
+        i @ i + 1
+
+    while i < pattern.len()
+        if pattern[i] == ']'
+            return i
+
+        if pattern[i] == '[' && i + 1 < pattern.len() && pattern[i + 1] == ':'
+            j @= i + 2
+
+            while j + 1 < pattern.len() && !(pattern[j] == ':' && pattern[j + 1] == ']')
+                j @ j + 1
+
+            i @ j + 2
+        else if pattern[i] == '\\'
+            i @ i + 2
+        else
+            i @ i + 1
+
+    return 0
+
+# The regular expression `pattern` means, anchored by `full_match`.
+#
+# - `pattern`: the pattern.
+function translate(pattern: str) -> str
+    out: [str] @= ["(?s)"]
+    i @= 0
+
+    while i < pattern.len()
+        b = pattern[i]
+        next = char_end(pattern, at: i)
+
+        if b == '\\'
+            if i + 1 < pattern.len()
+                after = char_end(pattern, at: i + 1)
+                out @ out.push(regex.escape(pattern.slice(from: i + 1, to: after)))
+                i @ after
+            else
+                out @ out.push("\\\\")
+                i @ i + 1
+        else if b == '*'
+            out @ out.push(".*")
+            i @ i + 1
+        else if b == '?'
+            out @ out.push(".")
+            i @ i + 1
+        else if b == '['
+            close = class_end(pattern, at: i)
+
+            if close == 0
+                out @ out.push("\\[")
+                i @ i + 1
+            else
+                out @ out.push(class_of(pattern.slice(from: i + 1, to: close)))
+                i @ close + 1
+        else
+            out @ out.push(regex.escape(pattern.slice(from: i, to: next)))
+            i @ next
+
+    return out.join("")
+
+# The regular expression's class for the inside of a pattern's class: `!`
+# first is `^`, a named class `[:alpha:]` is kept, a range is kept, and
+# every other character is escaped.
+#
+# - `inside`: the text between `[` and `]`.
+function class_of(inside: str) -> str
+    out: [str] @= ["["]
+    i @= 0
+
+    if inside.len() > 0 && (inside[0] == '!' || inside[0] == '^')
+        out @ out.push("^")
+        i @ 1
+
+    while i < inside.len()
+        if inside[i] == '[' && i + 1 < inside.len() && inside[i + 1] == ':'
+            j @= i + 2
+
+            while j + 1 < inside.len() && !(inside[j] == ':' && inside[j + 1] == ']')
+                j @ j + 1
+
+            out @ out.push(inside.slice(from: i, to: j + 2))
+            i @ j + 2
+        else if inside[i] == '-' && i > 0 && i + 1 < inside.len()
+            out @ out.push("-")
+            i @ i + 1
+        else if inside[i] == '\\' && i + 1 < inside.len()
+            after = char_end(inside, at: i + 1)
+            out @ out.push(regex.escape(inside.slice(from: i + 1, to: after)))
+            i @ after
+        else
+            after = char_end(inside, at: i)
+            out @ out.push(regex.escape(inside.slice(from: i, to: after)))
+            i @ after
+
+    out @ out.push("]")
+    return out.join("")
+
+# The byte index just past the character that begins at `at`.
+#
+# - `text`: the text.
+# - `at`: a character's first byte.
+function char_end(text: str, at: i64) -> i64
+    b = text[at]
+
+    n = if b < 128
+        1
+    else if b < 224
+        2
+    else if b < 240
+        3
+    else
+        4
+
+    if at + n > text.len()
+        return text.len()
+
+    return at + n
+
+# `pattern` compiled. Fails `invalid` where the regular expression it makes
+# is one `regex` refuses, which a pattern of the shell never makes but for a
+# class naming a class `regex` does not know.
+#
+# - `pattern`: the pattern.
+function compile(pattern: str) -> regex.Regex?
+    return regex.compile(translate(pattern))
+
+# Whether the whole of `text` matches `re`.
+#
+# - `text`: the text.
+# - `re`: a compiled pattern.
+function matches(text: str, re: regex.Regex) -> bool
+    return !regex.full_match(text, re: re).is_err()
+
+# Whether the whole of `text` matches `pattern`.
+#
+# - `text`: the text.
+# - `pattern`: the pattern.
+#
+# Fails as `compile` does.
+function matches_pattern(text: str, pattern: str) -> bool?
+    return ok(matches(text, re: compile(pattern)?))
+
+# The character boundaries of `text`, 0 and its length included, in order.
+#
+# - `text`: the text.
+function boundaries(text: str) -> [i64]
+    found: [i64] @= [0]
+    at @= 0
+
+    for c in text.chars()
+        at @ at + c.len()
+        found @ found.push(at)
+
+    return found
+
+# `text` without the shortest, or the longest, beginning that matches
+# `pattern`, as `${name#pattern}` and `${name##pattern}` take it; `text`
+# itself where no beginning matches.
+#
+# - `text`: the value.
+# - `pattern`: the pattern.
+# - `longest`: whether the longest matching beginning goes.
+function without_prefix(text: str, pattern: str, longest: bool) -> str?
+    re = compile(pattern)?
+    cuts = boundaries(text)
+
+    order = if longest
+        reversed(cuts)
+    else
+        cuts
+
+    for at in order
+        if matches(text.slice(from: 0, to: at), re: re)
+            return ok(text.slice(from: at, to: text.len()))
+
+    return ok(text)
+
+# `text` without the shortest, or the longest, ending that matches
+# `pattern`, as `${name%pattern}` and `${name%%pattern}` take it.
+#
+# - `text`: the value.
+# - `pattern`: the pattern.
+# - `longest`: whether the longest matching ending goes.
+function without_suffix(text: str, pattern: str, longest: bool) -> str?
+    re = compile(pattern)?
+    cuts = boundaries(text)
+
+    order = if longest
+        cuts
+    else
+        reversed(cuts)
+
+    for at in order
+        if matches(text.slice(from: at, to: text.len()), re: re)
+            return ok(text.slice(from: 0, to: at))
+
+    return ok(text)
+
+# `xs` from its last element to its first.
+#
+# - `xs`: the list.
+function reversed(xs: [i64]) -> [i64]
+    out: [i64] @= []
+    i @= xs.len() - 1
+
+    while i >= 0
+        out @ out.push(xs[i])
+        i @ i - 1
+
+    return out
+
+test "matches_pattern: stars, a question mark, classes and an escape"
+    assert matches_pattern(text: "notes.txt", pattern: "*.txt").must()
+    assert matches_pattern(text: "a/b.c", pattern: "*.c").must()
+    assert matches_pattern(text: "x1", pattern: "?[0-9]").must()
+    assert !matches_pattern(text: "xa", pattern: "?[!a-z]").must()
+    assert matches_pattern(text: "*", pattern: "\\*").must() && !matches_pattern(text: "a", pattern: "\\*").must()
+
+test "matches_pattern: a lone bracket, a dot and a character of two bytes"
+    assert matches_pattern(text: "[", pattern: "[").must()
+    assert !matches_pattern(text: "ab", pattern: "a.").must()
+    assert matches_pattern(text: "é", pattern: "?").must()
+
+test "without_prefix: shortest and longest, and none that matches"
+    assert without_prefix(text: "a/b/c", pattern: "*/", longest: false).must() == "b/c"
+    assert without_prefix(text: "a/b/c", pattern: "*/", longest: true).must() == "c"
+    assert without_prefix(text: "abc", pattern: "x*", longest: true).must() == "abc"
+
+test "without_suffix: shortest and longest"
+    assert without_suffix(text: "file.tar.gz", pattern: ".*", longest: false).must() == "file.tar"
+    assert without_suffix(text: "file.tar.gz", pattern: ".*", longest: true).must() == "file"
+
+test "has_magic: a star, an escaped star, and a bracket left open"
+    assert has_magic("*.c") && !has_magic("\\*.c") && !has_magic("[abc") && has_magic("[abc]")
+    assert unescape("a\\*b") == "a*b"

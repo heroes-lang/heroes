@@ -1,0 +1,425 @@
+# The shell's tokens, read one at a time as the parser asks for them: words,
+# operators, line ends and the end of the text. Shell tokens depend on what
+# came before (a word after `<<` is a delimiter, a reserved word is one only
+# where a command begins), so the parser drives the reading and this module
+# keeps the one token it may look ahead by.
+#
+# Here-documents are read here: the operator `<<` registers a pending body,
+# and the line end after it reads every pending body from the lines that
+# follow, as POSIX says (XCU 2.7.4). A body gets its number when its
+# operator is read, so a nested parse of a command substitution numbers its
+# own bodies after the ones already counted.
+
+use syntax/ast
+use syntax/words
+
+# The code of a mistake in the text: a token where none may stand, a quote or
+# a bracket never closed in a script.
+constant SYNTAX: str
+    "syntax"
+
+# The code of a text that ends where more must follow: a quote, a compound
+# command or a here-document left open. An interactive shell asks for
+# another line; a script is told it ended too soon.
+constant INCOMPLETE: str
+    "incomplete"
+
+# How deep constructs may nest in a text: deeper, the text is refused as a
+# mistake, before the reading, which recurses with the nesting, could run out
+# of stack and end the shell (README § B2).
+constant MAX_DEPTH: i64
+    100
+
+# Goes one construct deeper, failing `SYNTAX` past `MAX_DEPTH`.
+#
+# - `lx`: the lexer.
+# - `at`: where the construct begins.
+function enter(@lx: Lexer, at: i64) -> ()?
+    if lx.depth >= MAX_DEPTH
+        return mistake(@lx, at: at, message: f"constructs nest deeper than {MAX_DEPTH} here")
+
+    lx.depth @ lx.depth + 1
+    return ok()
+
+# Comes back out of a construct `enter` went into.
+#
+# - `lx`: the lexer.
+function leave(@lx: Lexer)
+    lx.depth @ lx.depth - 1
+
+# A here-document whose operator was read and whose body was not yet.
+record Pending
+    # The line that ends the body, its quotes taken out.
+    delimiter: str
+    # Whether the delimiter was quoted, so the body is not expanded.
+    quoted: bool
+    # Whether the operator was `<<-`, so each line's leading tabs go.
+    strip_tabs: bool
+    # The body's number.
+    id: i64
+
+# A token as the parser sees it.
+variant Token
+    # A word: a command's name, an argument, a file's name.
+    word
+        # Its parts.
+        word: ast.Word
+        # Its source text as written, quotes included.
+        raw: str
+    # Digits written right before `<` or `>`: the descriptor redirected.
+    number
+        # The descriptor.
+        fd: i64
+    # An operator: `&&` `||` `;;` `;` `&` `|` `(` `)` and the redirections.
+    op
+        # Its text.
+        text: str
+    # A line end, after which the pending here-documents' bodies were read.
+    newline
+    # The end of the text.
+    end
+
+# A token and where it stands in the lexer's text.
+record Lexed
+    # The token.
+    token: Token
+    # The byte index it begins at.
+    start: i64
+    # The byte index just past it.
+    end: i64
+
+# The reading state of one text: the text, where the reading stands, the
+# token looked ahead at, and the here-documents read and pending. Made by
+# `new_lexer`; every function of this module and of `syntax/words` keeps
+# `pos` at a character boundary of `text`.
+record Lexer
+    # The text read.
+    text: str
+    # The byte index the next token is read from.
+    pos: i64
+    # The offset of `text`'s first byte in its source, so a nested text
+    # names places of the whole source.
+    base: i64
+    # The source's number.
+    source: i64
+    # The token read ahead, none or one.
+    ahead: [Lexed]
+    # The byte index just past the last token taken.
+    last_end: i64
+    # The here-documents waiting for the next line end.
+    pending: [Pending]
+    # Every body read, by its number.
+    docs: {i64: ast.HereDoc}
+    # The number the next here-document takes.
+    next_doc: i64
+    # Where the last mistake was found, a byte offset in the source.
+    error_at: i64
+    # How many compound commands, substitutions and braced expansions the
+    # reading point stands inside, held under `MAX_DEPTH`.
+    depth: i64
+
+# A lexer at the start of `text`.
+#
+# - `text`: the text to read.
+# - `base`: the offset of its first byte in its source; 0 for a whole source.
+# - `source`: the source's number.
+# - `next_doc`: the number the first here-document read takes.
+function new_lexer(text: str, base: i64, source: i64, next_doc: i64) -> Lexer
+    docs: {i64: ast.HereDoc} = {}
+    return Lexer(
+        text: text,
+        pos: 0,
+        base: base,
+        source: source,
+        ahead: [],
+        last_end: 0,
+        pending: [],
+        docs: docs,
+        next_doc: next_doc,
+        error_at: base,
+        depth: 0
+    )
+
+# The place of the byte index `at` of the lexer's text.
+#
+# - `lx`: the lexer.
+# - `at`: a byte index of its text.
+function place(lx: Lexer lent, at: i64) -> ast.Place
+    return ast.Place(source: lx.source, offset: lx.base + at)
+
+# A `syntax` failure at the byte index `at`, kept in `lx.error_at`.
+#
+# - `lx`: the lexer, which keeps where the mistake is.
+# - `at`: the byte index of the text where it is.
+# - `message`: what is wrong, in words.
+function mistake<T>(@lx: Lexer, at: i64, message: str) -> T?
+    lx.error_at @ lx.base + at
+    return fail(code: SYNTAX, msg: message)
+
+# An `incomplete` failure at the byte index `at`, kept in `lx.error_at`.
+#
+# - `lx`: the lexer.
+# - `at`: where the open construct began.
+# - `message`: what is left open.
+function unfinished<T>(@lx: Lexer, at: i64, message: str) -> T?
+    lx.error_at @ lx.base + at
+    return fail(code: INCOMPLETE, msg: message)
+
+# The operators, longest first, so `<<-` is read before `<<` and `<`.
+function operators() -> [str]
+    return ["<<-", "&&", "||", ";;", "<<", ">>", "<&", ">&", "<>", ">|", ";", "&", "|", "(", ")", "<", ">"]
+
+# Whether `b` ends a bare word: a blank, a line end or an operator's first
+# byte.
+#
+# - `b`: the byte.
+function is_meta(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == '\n' || b == ';' || b == '&' || b == '|' || b == '(' || b == ')' || b == '<' || b == '>'
+
+# The next token, read ahead and kept, so the next `take` answers it.
+#
+# - `lx`: the lexer.
+function peek(@lx: Lexer) -> Lexed?
+    if lx.ahead.len() == 0
+        t = read_token(@lx)?
+        lx.ahead @ [t]
+
+    return ok(lx.ahead[0])
+
+# The next token, taken.
+#
+# - `lx`: the lexer.
+function take(@lx: Lexer) -> Lexed?
+    t = peek(@lx)?
+    lx.ahead @ []
+    lx.last_end @ t.end
+    return ok(t)
+
+# Registers a here-document whose operator and delimiter were just read: its
+# body is read at the next line end.
+#
+# - `lx`: the lexer.
+# - `delimiter`: the delimiter's word as written.
+# - `raw`: its source text, which says whether it was quoted.
+# - `strip_tabs`: whether the operator was `<<-`.
+#
+# Answers the body's number.
+function add_pending(@lx: Lexer, delimiter: ast.Word, raw: str, strip_tabs: bool) -> i64?
+    text = match ast.static_text(delimiter)
+        .ok t  => t
+        .err _ => return mistake(@lx, at: lx.last_end, message: "a here-document's delimiter may not hold an expansion")
+
+    quoted = raw.len() != text.len() || text.len() == 0
+    id = lx.next_doc
+    lx.next_doc @ id + 1
+    pending @= lx.pending
+    pending @ pending.push(Pending(delimiter: text, quoted: quoted, strip_tabs: strip_tabs, id: id))
+    lx.pending @ pending
+    return ok(id)
+
+# Reads the next token from the text.
+#
+# - `lx`: the lexer.
+function read_token(@lx: Lexer) -> Lexed?
+    skip_blanks(@lx)
+    start = lx.pos
+
+    if lx.pos >= lx.text.len()
+        if lx.pending.len() > 0
+            return unfinished(
+                @lx,
+                at: start,
+                message: f"the here-document ended by `{lx.pending[0].delimiter}` has no body"
+            )
+        return ok(Lexed(token: .end, start: start, end: start))
+
+    b = lx.text[lx.pos]
+
+    if b == '\n'
+        lx.pos @ lx.pos + 1
+        read_bodies(@lx)?
+        return ok(Lexed(token: .newline, start: start, end: start + 1))
+
+    for o in operators()
+        if has_text_at(text: lx.text, piece: o, at: lx.pos)
+            lx.pos @ lx.pos + o.len()
+            return ok(Lexed(token: .op(text: o), start: start, end: lx.pos))
+
+    digits = digits_at(lx.text, at: lx.pos)
+
+    if digits > 0 && lx.pos + digits < lx.text.len()
+        after = lx.text[lx.pos + digits]
+
+        if after == '<' || after == '>'
+            fd = to_i64_digits(lx.text.slice(from: lx.pos, to: lx.pos + digits))
+            lx.pos @ lx.pos + digits
+            return ok(Lexed(token: .number(fd: fd), start: start, end: lx.pos))
+
+    w = words.read_word(@lx)?
+    raw = lx.text.slice(from: start, to: lx.pos)
+    return ok(Lexed(token: .word(word: w, raw: raw), start: start, end: lx.pos))
+
+# Skips blanks, line continuations and a comment, stopping before a line end.
+#
+# - `lx`: the lexer.
+function skip_blanks(@lx: Lexer)
+    while lx.pos < lx.text.len()
+        b = lx.text[lx.pos]
+
+        if b == ' ' || b == '\t' || b == '\r' && lx.pos + 1 < lx.text.len() && lx.text[lx.pos + 1] == '\n'
+            lx.pos @ lx.pos + 1
+        else if b == '\\' && lx.pos + 1 < lx.text.len() && lx.text[lx.pos + 1] == '\n'
+            lx.pos @ lx.pos + 2
+        else if b == '#'
+            while lx.pos < lx.text.len() && lx.text[lx.pos] != '\n'
+                lx.pos @ lx.pos + 1
+        else
+            return
+
+# Reads the bodies of every pending here-document from the lines after the
+# line end just read, in the order their operators stood.
+#
+# - `lx`: the lexer, standing at the first line of the first body.
+function read_bodies(@lx: Lexer) -> ()?
+    waiting = lx.pending
+    lx.pending @ []
+
+    for p in waiting
+        body_start = lx.pos
+        lines: [str] @= []
+        ended @= false
+
+        while !ended && lx.pos < lx.text.len()
+            line_start = lx.pos
+
+            while lx.pos < lx.text.len() && lx.text[lx.pos] != '\n'
+                lx.pos @ lx.pos + 1
+
+            line @= lx.text.slice(from: line_start, to: lx.pos)
+
+            if lx.pos < lx.text.len()
+                lx.pos @ lx.pos + 1
+
+            if p.strip_tabs
+                while line.len() > 0 && line[0] == '\t'
+                    line @ line.slice(from: 1, to: line.len())
+
+            if line == p.delimiter || line == p.delimiter + "\r"
+                ended @ true
+            else
+                lines @ lines.push(line + "\n")
+
+        if !ended
+            return unfinished(@lx, at: lx.pos, message: f"the here-document ended by `{p.delimiter}` never ends")
+
+        body = lines.join("")
+
+        whole: [ast.Part] = [.quoted(text: body)]
+
+        parts = if p.quoted
+            whole
+        else
+            words.body_parts(@lx, body: body, at: body_start)?
+
+        docs @= lx.docs
+        docs[p.id] @ ast.HereDoc(parts: parts)
+        lx.docs @ docs
+
+    return ok()
+
+# Whether `text` holds `piece` at byte `at`.
+#
+# - `text`: the text.
+# - `piece`: what to look for.
+# - `at`: the byte index.
+function has_text_at(text: str, piece: str, at: i64) -> bool
+    if at + piece.len() > text.len()
+        return false
+
+    i @= 0
+
+    while i < piece.len()
+        if text[at + i] != piece[i]
+            return false
+        i @ i + 1
+
+    return true
+
+# How many ASCII digits stand at byte `at` of `text`.
+#
+# - `text`: the text.
+# - `at`: the byte index.
+function digits_at(text: str, at: i64) -> i64
+    n @= 0
+
+    while at + n < text.len() && text[at + n] >= '0' && text[at + n] <= '9'
+        n @ n + 1
+
+    return n
+
+# The number `digits` writes, a run of ASCII digits; one too long to be a
+# descriptor answers a number no descriptor has.
+#
+# - `digits`: the digits, at least one.
+function to_i64_digits(digits: str) -> i64
+    if digits.len() > 9
+        return 1000000000
+
+    n @= 0
+
+    for c in digits.chars()
+        n @ n * 10 + (c[0] - '0').to_i64().must()
+
+    return n
+
+# The tokens of a whole text, for the tests.
+#
+# - `text`: the text.
+function all_tokens(text: str) -> [Token]?
+    lx @= new_lexer(text, base: 0, source: 0, next_doc: 0)
+    found: [Token] @= []
+
+    while true
+        t = take(@lx)?
+        found @ found.push(t.token)
+
+        if t.token == .end
+            return ok(found)
+
+test "all_tokens: words, operators, a descriptor's number and a comment"
+    ts = all_tokens("a 2>&1 b && c # done\n").must()
+    assert ts.len() == 9
+    assert ts[1] == .number(fd: 2) && ts[2] == .op(text: ">&")
+    assert ts[5] == .op(text: "&&") && ts[7] == .newline && ts[8] == .end
+
+test "all_tokens: a here-document's body read after the line end"
+    lx @= new_lexer("cat <<EOF\nhello $x\nEOF\nnext\n", base: 0, source: 0, next_doc: 0)
+    _ = take(@lx).must()
+    assert take(@lx).must().token == .op(text: "<<")
+    d = take(@lx).must()
+
+    id = match d.token
+        .word w                             => add_pending(@lx, delimiter: w.word, raw: w.raw, strip_tabs: false).must()
+        .number _ | .op _ | .newline | .end => -1
+
+    assert take(@lx).must().token == .newline
+    assert lx.docs[id].must().parts.len() == 3
+
+test "read_token: an unclosed here-document is incomplete"
+    lx @= new_lexer("cat <<END\nline\n", base: 0, source: 0, next_doc: 0)
+    _ = take(@lx).must()
+    _ = take(@lx).must()
+    d = take(@lx).must()
+
+    match d.token
+        .word w                             => _ = add_pending(
+            @lx,
+            delimiter: w.word,
+            raw: w.raw,
+            strip_tabs: false
+        ).must()
+        .number _ | .op _ | .newline | .end => assert false
+
+    match take(@lx)
+        .ok _  => assert false
+        .err e => assert e.code == INCOMPLETE

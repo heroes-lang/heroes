@@ -1,0 +1,194 @@
+# Field splitting (XCU 2.6.5): what the expansions of a word gave, cut into
+# the fields a command receives. Only the text an expansion gave outside
+# double quotes is cut, at the characters of `IFS`; text written in the word
+# and anything quoted stays whole. Each field keeps, bit by bit, whether its
+# text was quoted, because pathname expansion after this reads the glob
+# characters of the unquoted bits alone.
+
+# What the expansion of one part of a word gave.
+variant Piece
+    # Text written in the word: never cut.
+    text
+        # The text.
+        text: str
+        # Whether it was quoted.
+        quoted: bool
+    # Text an expansion gave: cut at `IFS` where it was not quoted.
+    value
+        # The text.
+        text: str
+        # Whether the expansion stood inside double quotes.
+        quoted: bool
+    # A field ends here: `"$@"` between two arguments.
+    cut
+
+# A run of a field's text and whether it was quoted.
+record Bit
+    # The text.
+    text: str
+    # Whether it was quoted, so its glob characters stand for themselves.
+    quoted: bool
+
+# One field: its bits in order.
+record Field
+    # The bits.
+    bits: [Bit]
+
+# The characters `IFS` holds where it is not set: space, tab and line feed.
+function default_ifs() -> str
+    return " \t\n"
+
+# Whether `c`, one character of `IFS`, is white space, which several of in a
+# row and at either end of a value cut nothing more.
+#
+# - `c`: the character.
+function is_white(c: str) -> bool
+    return c == " " || c == "\t" || c == "\n"
+
+# The fields `pieces` cut into at the characters of `ifs`.
+#
+# - `pieces`: what a word's parts gave, in order.
+# - `ifs`: the characters that cut an unquoted value; "" cuts nothing.
+#
+# A field holding no quoted text and nothing else is dropped, so `$empty`
+# gives no field and `""` gives one empty field.
+function split(pieces: [Piece], ifs: str) -> [Field]
+    found: [Field] @= []
+    current: [Bit] @= []
+    present @= false
+
+    for p in pieces
+        match p
+            .text t =>
+                current @ current.push(Bit(text: t.text, quoted: t.quoted))
+
+                if t.quoted || t.text != ""
+                    present @ true
+            .value v =>
+                if v.quoted || ifs == ""
+                    current @ current.push(Bit(text: v.text, quoted: v.quoted))
+
+                    if v.quoted || v.text != ""
+                        present @ true
+                else
+                    run: [str] @= []
+
+                    for c in v.text.chars()
+                        if ifs_holds(ifs: ifs, c: c)
+                            if run.len() > 0
+                                current @ current.push(Bit(text: run.join(""), quoted: false))
+                                run @ []
+                                present @ true
+
+                            if present || !is_white(c)
+                                found @ found.push(Field(bits: current))
+                                current @ []
+                                present @ false
+                        else
+                            run @ run.push(c)
+
+                    if run.len() > 0
+                        current @ current.push(Bit(text: run.join(""), quoted: false))
+                        present @ true
+            .cut =>
+                found @ found.push(Field(bits: current))
+                current @ []
+                present @ false
+
+    if present
+        found @ found.push(Field(bits: current))
+
+    return found
+
+# Whether `ifs` holds the character `c`.
+#
+# - `ifs`: the separators.
+# - `c`: one character.
+function ifs_holds(ifs: str, c: str) -> bool
+    for d in ifs.chars()
+        if d == c
+            return true
+
+    return false
+
+# The text of `f`, its quotes taken out.
+#
+# - `f`: the field.
+function text_of(f: Field) -> str
+    pieces: [str] @= []
+
+    for b in f.bits
+        pieces @ pieces.push(b.text)
+
+    return pieces.join("")
+
+# `f` as a pattern of `expand/patterns`: its quoted characters escaped with
+# `\` so they stand for themselves, its unquoted ones as they are.
+#
+# - `f`: the field.
+function pattern_of(f: Field) -> str
+    pieces: [str] @= []
+
+    for b in f.bits
+        if b.quoted
+            pieces @ pieces.push(escaped(b.text))
+        else
+            pieces @ pieces.push(b.text)
+
+    return pieces.join("")
+
+# `text` with a `\` before each character a pattern reads specially.
+#
+# - `text`: the text.
+function escaped(text: str) -> str
+    pieces: [str] @= []
+
+    for c in text.chars()
+        if c == "\\" || c == "*" || c == "?" || c == "[" || c == "]"
+            pieces @ pieces.push("\\")
+        pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+# Whether `f` holds a glob character outside quotes, so it names files.
+#
+# - `f`: the field.
+function has_glob(f: Field) -> bool
+    for b in f.bits
+        if !b.quoted
+            for c in b.text.chars()
+                if c == "*" || c == "?" || c == "["
+                    return true
+
+    return false
+
+# The texts of `fields`, for the tests.
+#
+# - `fields`: the fields.
+function texts(fields: [Field]) -> [str]
+    out: [str] @= []
+
+    for f in fields
+        out @ out.push(text_of(f))
+
+    return out
+
+test "split: a value cut at blanks, its ends and runs cutting nothing more"
+    assert texts(split([.value(text: "  a  b ", quoted: false)], ifs: default_ifs())) == ["a", "b"]
+    assert texts(split([.text(text: "x", quoted: false), .value(text: " a", quoted: false)], ifs: default_ifs())) == ["x", "a"]
+
+test "split: an empty value gives no field, empty quotes one"
+    assert split([.value(text: "", quoted: false)], ifs: default_ifs()).len() == 0
+    assert texts(split([.text(text: "", quoted: true)], ifs: default_ifs())) == [""]
+
+test "split: a quoted value whole, and a cut between arguments"
+    assert texts(split([.value(text: "a b", quoted: true)], ifs: default_ifs())) == ["a b"]
+    assert texts(split([.text(text: "a b", quoted: true), .cut, .text(text: "c", quoted: true)], ifs: default_ifs())) == ["a b", "c"]
+
+test "split: a separator that is no blank keeps the empty field between two"
+    assert texts(split([.value(text: "a::b", quoted: false)], ifs: ":")) == ["a", "", "b"]
+
+test "pattern_of: a quoted star is escaped, a bare one is not"
+    f = Field(bits: [Bit(text: "*", quoted: true), Bit(text: "*.txt", quoted: false)])
+    assert pattern_of(f) == "\\**.txt" && has_glob(f)
+    assert !has_glob(Field(bits: [Bit(text: "*", quoted: true)]))

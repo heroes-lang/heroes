@@ -1,0 +1,443 @@
+# Simple commands (XCU 2.9.1): the words expanded into fields, the name
+# looked up as a special builtin, a function, a builtin or a program on
+# `PATH`, the redirections applied, then the command run in this shell or
+# as a child. Preparing and running are apart, so a pipeline can learn which
+# of its stages are programs before it decides how to join them.
+
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/process
+
+use builtins/table
+use diag/report
+use exec/lookup
+use exec/redirect
+use exec/run as executor
+use exec/state
+use exec/streams
+use expand/words
+use syntax/ast
+
+# What a simple command's name leads to.
+variant Kind
+    # No name: the assignments are made in the shell itself.
+    assign_only
+    # A builtin of `builtins/table`.
+    builtin
+    # A function the shell defined.
+    defined
+    # A program, found at this path.
+    external
+        # The program's path.
+        program: str
+    # Nothing: the name leads nowhere.
+    missing
+        # Why, in words.
+        reason: str
+
+# An assignment before a command's name, its value expanded.
+record Assigned
+    # The variable's name.
+    name: str
+    # Its value.
+    value: str
+
+# A simple command with its words expanded and its name looked up, ready to
+# run or to start.
+record Prepared
+    # The fields: the name, then the arguments.
+    argv: [str]
+    # Where the name leads.
+    kind: Kind
+    # The assignments, in order.
+    assigned: [Assigned]
+    # The redirections, applied when it runs.
+    redirects: [ast.Redirect]
+    # Whether an assignment's value held a command substitution, whose status
+    # a command of assignments alone takes.
+    substituted: bool
+    # Where the command begins.
+    at: ast.Place
+
+# `cmd`'s words expanded and its name looked up.
+#
+# - `sh`: the shell; the expansions run in it.
+# - `cmd`: a simple command.
+#
+# Fails `words.EXPANSION` with the place in `sh.error_at`.
+function prepare(@sh: state.Shell, cmd: ast.Command) -> Prepared?
+    match cmd
+        .simple s =>
+            argv = words.fields_of(@sh, found: s.words)?
+            assigned: [Assigned] @= []
+            substituted @= false
+
+            for a in s.assignments
+                for p in a.value.parts
+                    match p
+                        .command _                                                          => substituted @ true
+                        .literal _ | .quoted _ | .param _ | .length _ | .arith _ | .tilde _ => _ = 0
+
+                assigned @ assigned.push(Assigned(name: a.name, value: words.text_of(@sh, w: a.value)?))
+
+            return ok(
+                Prepared(argv: argv, kind: kind_of(sh, argv: argv), assigned: assigned, redirects: s.redirects, substituted: substituted, at: s.at)
+            )
+        .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ | .define _ =>
+            return fail(code: "invalid", msg: "only a simple command is prepared")
+
+# Where the name of `argv` leads: a special builtin first, then a function,
+# then a builtin, then a program on `PATH`.
+#
+# - `sh`: the shell.
+# - `argv`: the fields.
+function kind_of(sh: state.Shell lent, argv: [str]) -> Kind
+    if argv.len() == 0
+        return .assign_only
+
+    name = argv[0]
+
+    if table.is_special(name)
+        return .builtin
+
+    if !sh.functions[name].is_err()
+        return .defined
+
+    if table.is_builtin(name)
+        return .builtin
+
+    return match lookup.find_program(sh, name: name)
+        .ok p  => .external(program: p)
+        .err e => .missing(reason: e.msg)
+
+# Runs `cmd` in this shell and answers its status.
+#
+# - `sh`: the shell.
+# - `cmd`: a simple command.
+# - `place`: its places.
+function run(@sh: state.Shell, cmd: ast.Command, place: streams.Io) -> i64
+    prep = match prepare(@sh, cmd: cmd)
+        .ok p  => p
+        .err e => return executor.expansion_failed(@sh, place: place, message: e.msg)
+
+    return run_prepared(@sh, prep: prep, place: place)
+
+# Runs a prepared command, waiting for a program to end, and answers its
+# status: 127 where the name leads nowhere, 1 where a redirection fails.
+#
+# - `sh`: the shell.
+# - `prep`: the command.
+# - `place`: its places before its redirections.
+function run_prepared(@sh: state.Shell, prep: Prepared, place: streams.Io) -> i64
+    opened @= streams.nothing_opened()
+
+    inner @= match redirect.apply(@sh, redirects: prep.redirects, base: place, @opened)
+        .ok p => p
+        .err e =>
+            report.tell(@sh, place: place, at: sh.error_at, message: e.msg)
+            streams.close_all(@opened)
+            sh.status @ 1
+            return 1
+
+    trace(@sh, prep: prep, place: inner)
+
+    status = match prep.kind
+        .assign_only =>
+            for a in prep.assigned
+                state.set(@sh, name: a.name, value: a.value)
+
+            if prep.substituted
+                sh.status
+            else
+                0
+        .builtin | .defined =>
+            match streams.readable(inner.input, @opened)
+                .ok f  => inner.input @ f
+                .err e => report.tell(@sh, place: inner, at: prep.at, message: f"the input cannot be read: {e.msg}")
+
+            saved = assign_for_now(@sh, assigned: prep.assigned)
+
+            ran = if prep.kind == .builtin
+                table.run(@sh, argv: prep.argv, place: inner)
+            else
+                call_function(@sh, argv: prep.argv, place: inner)
+
+            restore(@sh, saved: saved)
+            ran
+        .external e => run_external(@sh, prep: prep, program: e.program, place: inner)
+        .missing m =>
+            report.tell(@sh, place: inner, at: prep.at, message: m.reason)
+            127
+
+    streams.close_all(@opened)
+    sh.status @ status
+    return status
+
+# Sets each assignment for one builtin or function call, answering what each
+# variable was so `restore` puts it back.
+#
+# - `sh`: the shell.
+# - `assigned`: the assignments.
+function assign_for_now(@sh: state.Shell, assigned: [Assigned]) -> {str: state.Saved}
+    saved: {str: state.Saved} @= {}
+
+    for a in assigned
+        if saved[a.name].is_err()
+            saved[a.name] @ saved_of(sh, name: a.name)
+        state.set(@sh, name: a.name, value: a.value)
+
+    return saved
+
+# What the variable `name` is now, to put back later.
+#
+# - `sh`: the shell.
+# - `name`: the variable's name.
+function saved_of(sh: state.Shell lent, name: str) -> state.Saved
+    return match sh.vars[name]
+        .ok v  => state.Saved(had: true, variable: v)
+        .err _ => state.Saved(had: false, variable: state.Var(value: "", exported: false))
+
+# Puts back every variable `saved` holds.
+#
+# - `sh`: the shell.
+# - `saved`: the variables as they were.
+function restore(@sh: state.Shell, saved: {str: state.Saved})
+    for name in keys(saved)
+        s = saved[name].must()
+
+        if s.had
+            vars @= sh.vars
+            vars[name] @ s.variable
+            sh.vars @ vars
+        else
+            state.unset(@sh, name: name)
+
+# Calls the function `argv[0]` with the rest of `argv` as its positional
+# parameters, and answers its status: what `return` gave, or its last
+# command's.
+#
+# - `sh`: the shell.
+# - `argv`: the name and the arguments.
+# - `place`: the call's places.
+function call_function(@sh: state.Shell, argv: [str], place: streams.Io) -> i64
+    f = match sh.functions[argv[0]]
+        .ok f  => f
+        .err _ => return 127
+
+    if sh.depth >= state.MAX_DEPTH
+        streams.write_err(
+            @sh,
+            place: place,
+            text: f"shell: {argv[0]}: functions, `eval` and `.` nest deeper than {state.MAX_DEPTH}\n"
+        )
+        return 1
+
+    outer = sh.positional
+    sh.positional @ argv.slice(from: 1, to: argv.len())
+    sh.calls @ sh.calls + 1
+    sh.depth @ sh.depth + 1
+    frames @= sh.frames
+    empty: {str: state.Saved} = {}
+    frames @ frames.push(empty)
+    sh.frames @ frames
+    _ = executor.run_command(@sh, cmd: f.body, place: place)
+    status = sh.status
+
+    if sh.flow == .returning
+        sh.flow @ .normal
+
+    frames @ sh.frames
+    restore(@sh, saved: frames[frames.len() - 1])
+    sh.frames @ frames.slice(from: 0, to: frames.len() - 1)
+    sh.positional @ outer
+    sh.calls @ sh.calls - 1
+    sh.depth @ sh.depth - 1
+    sh.status @ status
+    return status
+
+# Writes `+ ` and the command, its words quoted as the shell reads them back,
+# to its error, under `-x`.
+#
+# - `sh`: the shell.
+# - `prep`: the command.
+# - `place`: its places.
+function trace(@sh: state.Shell, prep: Prepared, place: streams.Io)
+    if !sh.options.xtrace
+        return
+
+    shown: [str] @= []
+
+    for a in prep.assigned
+        shown @ shown.push(a.name + "=" + process.quote(a.value))
+
+    for w in prep.argv
+        shown @ shown.push(process.quote(w))
+
+    streams.write_err(@sh, place: place, text: "+ " + shown.join(" ") + "\n")
+
+# The status a child's end gives: its exit code, 128 and the signal's number
+# for a signal, 124 for its time limit.
+#
+# - `status`: how it ended.
+function code_of(status: process.Status) -> i64
+    return match status
+        .exited e   => e.code
+        .signaled s => 128 + s.signal
+        .timed_out  => 124
+
+# The child command `prep` makes: its program, its arguments, the exported
+# variables with its assignments over them, and its three places.
+#
+# - `sh`: the shell.
+# - `prep`: the command.
+# - `program`: the program's path.
+# - `place`: its places, redirections applied.
+function command_of(sh: state.Shell lent, prep: Prepared, program: str, place: streams.Io) -> process.Command
+    assigned: {str: str} @= {}
+
+    for a in prep.assigned
+        assigned[a.name] @ a.value
+
+    c = process.with_env_all(
+        process.with_env_cleared(process.command(program, prep.argv.slice(from: 1, to: prep.argv.len()))),
+        variables: maps.merge(base: state.exported(sh), over: assigned)
+    )
+    fed = process.with_output(
+        process.with_input(c, from: streams.child_input(place.input)),
+        to: streams.child_output(place.output)
+    )
+
+    if streams.same_sink(a: place.output, b: place.error)
+        return process.with_error_to_output(fed)
+
+    return process.with_error(fed, to: streams.child_output(place.error))
+
+# Runs a program and waits for it; what it writes to a capture is read whole
+# and kept there.
+#
+# - `sh`: the shell.
+# - `prep`: the command.
+# - `program`: the program's path.
+# - `place`: its places, redirections applied.
+function run_external(@sh: state.Shell, prep: Prepared, program: str, place: streams.Io) -> i64
+    c = command_of(sh, prep: prep, program: program, place: place)
+
+    if place.output == .capture(level: level_of(place.output)) || place.error == .capture(level: level_of(place.error))
+        finished = match process.run(c)
+            .ok f  => f
+            .err e => return start_failed(@sh, prep: prep, place: place, code: e.code, message: e.msg)
+
+        keep_captured(@sh, sink: place.output, data: finished.output)
+
+        if !streams.same_sink(a: place.output, b: place.error)
+            keep_captured(@sh, sink: place.error, data: finished.error)
+
+        return code_of(finished.status)
+
+    child @= match process.start(c)
+        .ok ch => ch
+        .err e => return start_failed(@sh, prep: prep, place: place, code: e.code, message: e.msg)
+
+    return wait_child(@child)
+
+# The capture level `sink` names, -1 where it is no capture.
+#
+# - `sink`: the sink.
+function level_of(sink: streams.Sink) -> i64
+    return match sink
+        .capture c                   => c.level
+        .stream _ | .discard | .pipe => -1
+
+# Keeps `data`, what a child wrote to a pipe, in the capture `sink` names;
+# bytes that are not UTF-8 are kept as the text they begin with is not, so
+# they are told rather than kept.
+#
+# - `sh`: the shell.
+# - `sink`: the sink, a capture or not.
+# - `data`: the bytes.
+function keep_captured(@sh: state.Shell, sink: streams.Sink, data: [u8])
+    match sink
+        .capture c =>
+            match data.validated_bytes()
+                .ok text => state.add_captured(@sh, level: c.level, text: text)
+                .err _ => streams.write_err(
+                    @sh,
+                    place: streams.standard(sh),
+                    text: "shell: a command's output was not UTF-8 text and was dropped\n"
+                )
+        .stream _ | .discard | .pipe => _ = 0
+
+# How a child that did not start is told: 127 where the program is not
+# there, 126 where it cannot be run.
+#
+# - `sh`: the shell.
+# - `prep`: the command.
+# - `place`: its places.
+# - `code`: the failure's code.
+# - `message`: its message.
+function start_failed(@sh: state.Shell, prep: Prepared, place: streams.Io, code: str, message: str) -> i64
+    if code == process.NOT_FOUND
+        report.tell(@sh, place: place, at: prep.at, message: f"{prep.argv[0]}: command not found")
+        return 127
+
+    report.tell(@sh, place: place, at: prep.at, message: f"{prep.argv[0]}: {message}")
+    return 126
+
+# Waits for `child` and answers its status, 1 where it cannot be waited for.
+#
+# - `child`: the child, given back once it ends.
+function wait_child(@child: process.Child) -> i64
+    return match process.wait(@child)
+        .ok s => code_of(s)
+        .err _ =>
+            _ = process.release(@child).is_err()
+            1
+
+# Starts a prepared program as a child, its redirections applied and what
+# they opened closed again in the shell, which the child keeps its own copy
+# of.
+#
+# - `sh`: the shell.
+# - `prep`: the command, whose kind is `.external`.
+# - `place`: its places before its redirections.
+#
+# Fails where a redirection cannot be made or the child does not start,
+# after telling it; the code is the start's.
+function start_prepared(@sh: state.Shell, prep: Prepared, place: streams.Io) -> process.Child?
+    program = match prep.kind
+        .external e => e.program
+        .assign_only | .builtin | .defined | .missing _ => return fail(
+            code: "invalid",
+            msg: "only a program is started"
+        )
+
+    opened @= streams.nothing_opened()
+
+    inner = match redirect.apply(@sh, redirects: prep.redirects, base: place, @opened)
+        .ok p => p
+        .err e =>
+            report.tell(@sh, place: place, at: sh.error_at, message: e.msg)
+            streams.close_all(@opened)
+            return fail(code: e.code, msg: e.msg)
+
+    trace(@sh, prep: prep, place: inner)
+    started = process.start(command_of(sh, prep: prep, program: program, place: inner))
+    streams.close_all(@opened)
+
+    match started
+        .ok child => return ok(child)
+        .err e =>
+            _ = start_failed(@sh, prep: prep, place: inner, code: e.code, message: e.msg)
+            return fail(code: e.code, msg: e.msg)
+
+test "code_of: an exit code, a signal and a time limit"
+    assert code_of(.exited(code: 3)) == 3
+    assert code_of(.signaled(signal: 15)) == 143
+    assert code_of(.timed_out) == 124
+
+test "kind_of: assignments alone, a builtin and a name that leads nowhere"
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    state.set(@sh, name: "PATH", value: "")
+    assert kind_of(sh, argv: []) == .assign_only
+    assert kind_of(sh, argv: ["echo", "x"]) == .builtin
+    assert kind_of(sh, argv: ["no-such-command"]) == .missing(reason: "no-such-command: command not found")

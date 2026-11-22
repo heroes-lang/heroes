@@ -1,0 +1,80 @@
+# The programs of `tools/kit` that read no text:
+#
+#     snooze n           sleeps n tenths of a second, then ends with 0
+#     fails n [words]    writes the words, or why it fails, to its error and
+#                        ends with n
+#     show [words...]    writes each argument on a line of its own between
+#                        `<` and `>`, so a session sees exactly how the shell
+#                        cut and quoted its words
+
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/time
+
+# `snooze n`: sleeps `n` tenths of a second; a count that is no number, or
+# below 0, is told and the program ends with 2.
+#
+# - `arguments`: the count.
+function snooze(arguments: [str]) -> i64
+    tenths: i64? = match arguments.len()
+        1 => numbers.parse_int(arguments[0])
+        _ => fail(code: "invalid", msg: "takes one count of tenths of a second")
+
+    match tenths
+        .ok n =>
+            if n < 0 || n > 36000
+                _ = io.write_text(io.stderr(), text: f"snooze: {n} tenths is outside 0 to an hour\n").is_err()
+                return 2
+
+            match time.milliseconds(n * 100)
+                .ok d  => time.sleep(d)
+                .err _ => return 2
+
+            return 0
+        .err e =>
+            _ = io.write_text(io.stderr(), text: f"snooze: {e.msg}\n").is_err()
+            return 2
+
+# `fails n [words...]`: the words, or `fails: ending with n`, on the error,
+# and the status `n`.
+#
+# - `arguments`: the status, then the words.
+function fails(arguments: [str]) -> i64
+    code = match arguments.len()
+        0 => 1
+        _ => numbers.parse_int(arguments[0]).default(1) & 255
+
+    said = if arguments.len() > 1
+        arguments.slice(from: 1, to: arguments.len()).join(" ")
+    else
+        f"ending with {code}"
+
+    _ = io.write_text(io.stderr(), text: f"fails: {said}\n").is_err()
+    return code
+
+# `show [words...]`: each argument between `<` and `>`, one a line.
+#
+# - `arguments`: the arguments.
+function show(arguments: [str]) -> i64
+    if io.write_text(io.stdout(), text: shown(arguments)).is_err()
+        return 1
+
+    return 0
+
+# What `show` writes for `arguments`.
+#
+# - `arguments`: the arguments.
+function shown(arguments: [str]) -> str
+    if arguments.len() == 0
+        return "(no arguments)\n"
+
+    lines: [str] @= []
+
+    for a in arguments
+        lines @ lines.push("<" + a + ">\n")
+
+    return lines.join("")
+
+test "shown: two arguments, one with a space, and none"
+    assert shown(["a b", "c"]) == "<a b>\n<c>\n"
+    assert shown([]) == "(no arguments)\n"

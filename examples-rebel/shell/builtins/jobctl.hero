@@ -1,0 +1,129 @@
+# The builtins of background jobs: `jobs` lists them, `fg` brings one to the
+# foreground and waits for it, `wait` waits for one or for all, `kill` asks
+# one to end. A job that ended is listed once more as done and then taken
+# out of the table.
+
+use <rebel>/process
+
+use builtins/table
+use exec/jobs
+use exec/state
+use exec/streams
+
+# `jobs`: every job, its state and its command.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments, none read.
+# - `place`: its places.
+function list_jobs(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() > 0
+        return table.complain(@sh, place: place, name: "jobs", message: "takes no argument", status: 2)
+
+    jobs.refresh(@sh)
+    lines: [str] @= []
+
+    for i in range(from: 0, to: sh.jobs.len())
+        lines @ lines.push(jobs.line_of(sh, index: i))
+
+    _ = streams.write_out(@sh, place: place, text: lines.join(""))
+    i @= 0
+
+    while i < sh.jobs.len()
+        if sh.jobs[i].done
+            jobs.remove(@sh, index: i)
+        else
+            i @ i + 1
+
+    return 0
+
+# `fg [job]`: the job's command written, then waited for; its status is the
+# answer.
+#
+# - `sh`: the shell.
+# - `operands`: the job, the newest where none is given.
+# - `place`: its places.
+function fg(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    spec = if operands.len() > 0
+        operands[0]
+    else
+        ""
+
+    index = match jobs.find_job(sh, spec: spec)
+        .ok i  => i
+        .err e => return table.complain(@sh, place: place, name: "fg", message: e.msg, status: 1)
+
+    _ = streams.write_out(@sh, place: place, text: sh.jobs[index].text + "\n")
+    return jobs.wait_for(@sh, index: index)
+
+# `wait [job...]`: each job named waited for, the answer the last one's
+# status; with none named, every job, the answer 0.
+#
+# - `sh`: the shell.
+# - `operands`: the jobs.
+# - `place`: its places.
+function wait(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0
+        while sh.jobs.len() > 0
+            _ = jobs.wait_for(@sh, index: 0)
+
+        return 0
+
+    status @= 0
+
+    for spec in operands
+        status @ match jobs.find_job(sh, spec: spec)
+            .ok i  => jobs.wait_for(@sh, index: i)
+            .err e => table.complain(@sh, place: place, name: "wait", message: e.msg, status: 127)
+
+    return status
+
+# `kill [-9 | -KILL | -15 | -TERM] job...`: each job's children asked to end,
+# or ended at once with `-9`.
+#
+# - `sh`: the shell.
+# - `operands`: the signal, then the jobs.
+# - `place`: its places.
+function kill(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    at_once @= false
+    first @= 0
+
+    if operands.len() > 0 && operands[0].len() > 1 && operands[0][0] == '-'
+        match operands[0]
+            "-9" | "-KILL" | "-s KILL" => at_once @ true
+            "-15" | "-TERM"            => at_once @ false
+            _ => return table.complain(
+                @sh,
+                place: place,
+                name: "kill",
+                message: f"{operands[0]}: only TERM and KILL are sent",
+                status: 2
+            )
+
+        first @ 1
+
+    if first >= operands.len()
+        return table.complain(@sh, place: place, name: "kill", message: "a job is needed", status: 2)
+
+    status @= 0
+
+    for spec in operands.slice(from: first, to: operands.len())
+        match jobs.find_job(sh, spec: spec)
+            .ok index =>
+                for c in sh.jobs[index].children
+                    sent = if at_once
+                        process.kill(c)
+                    else
+                        process.terminate(c)
+
+                    match sent
+                        .ok _  => _ = 0
+                        .err e => status @ table.complain(
+                            @sh,
+                            place: place,
+                            name: "kill",
+                            message: f"{spec}: {e.msg}",
+                            status: 1
+                        )
+            .err e => status @ table.complain(@sh, place: place, name: "kill", message: e.msg, status: 1)
+
+    return status
