@@ -1,5 +1,6 @@
 # A `[u8]` searched, cut, joined and compared, and bytes written as text and
-# read back from it: as UTF-8, as hexadecimal and as base 64. It does for bytes
+# read back from it: as UTF-8, as hexadecimal, as base 32 and as base 64. It
+# does for bytes
 # what `strings` does for text, under the same names and with the parameters in
 # the same order and under the same labels. The difference is that a `[u8]`
 # has no characters: a position is simply an index, every index is a place
@@ -12,12 +13,14 @@
 # list it was made from.
 #
 # Not written yet, each a `pending` block of its ledger: bytes with each byte
-# looked up in a table of 256, some removed; bytes as base 32 and back, in its
-# two alphabets; bytes as base 85 and back, in its three forms; bytes as a line
-# of uuencode and back; bytes as quoted-printable and back.
+# looked up in a table of 256, some removed; bytes as base 85 and back, in its
+# three forms; bytes as a line of uuencode and back; bytes as quoted-printable
+# and back.
 
 use bytes/internal/ascii
 use bytes/internal/automaton
+use bytes/internal/base32
+use bytes/internal/base32_read
 use bytes/internal/base64
 use bytes/internal/base64_read
 use bytes/internal/binary
@@ -41,8 +44,8 @@ constant NOT_FOUND: str
     codes.NOT_FOUND
 
 # The code a reading fails with where the text is not what the function
-# reads: hexadecimal or base 64 with a byte that does not belong, or cut
-# short.
+# reads: hexadecimal, base 32 or base 64 with a byte that does not belong, or
+# cut short.
 constant INVALID: str
     codes.INVALID
 
@@ -816,6 +819,92 @@ function format_hex_dump(s: [u8]) -> str
 # space, a line end or a `0x` before the digits is not a digit.
 function parse_hex(s: str) -> [u8]?
     return hex.parsed(s)
+
+## Base 32
+
+# `s` as base 32 in RFC 4648's base 32 alphabet, `A` to `Z` then `2` to `7`,
+# upper case, padded with `=` to a length that is a multiple of 8.
+#
+# - `s`: the bytes written; the empty list is the empty text.
+#
+# Five bytes make eight characters. See also `parse_base32`,
+# `format_base32_unpadded`, `format_base32_hex`.
+function format_base32(s: [u8]) -> str
+    return base32.formatted(s, hex: false, padded: true)
+
+# `s` as base 32 in the base 32 alphabet with no padding, as an `otpauth`
+# URI writes a key.
+#
+# - `s`: the bytes written; the empty list is the empty text.
+#
+# See also `parse_base32_unpadded`.
+function format_base32_unpadded(s: [u8]) -> str
+    return base32.formatted(s, hex: false, padded: false)
+
+# `s` as base 32 in RFC 4648's extended hex alphabet, `0` to `9` then `A` to
+# `V`, upper case, padded with `=` to a length that is a multiple of 8: two
+# texts compared byte by byte keep their bytes' order, as DNSSEC's NSEC3
+# names need (RFC 5155).
+#
+# - `s`: the bytes written; the empty list is the empty text.
+#
+# See also `parse_base32_hex`, `format_base32`.
+function format_base32_hex(s: [u8]) -> str
+    return base32.formatted(s, hex: true, padded: true)
+
+# `s` as base 32 in the extended hex alphabet with no padding.
+#
+# - `s`: the bytes written; the empty list is the empty text.
+#
+# See also `parse_base32_hex_unpadded`.
+function format_base32_hex_unpadded(s: [u8]) -> str
+    return base32.formatted(s, hex: true, padded: false)
+
+# The bytes that `s`, padded base 32 in the base 32 alphabet, writes; a
+# letter reads alike in upper and lower case, as RFC 4648 § 6 makes base 32
+# for places that do not keep case.
+#
+# - `s`: the base 32 text, padded; the empty text is the empty list.
+#
+# Fails `invalid` where `s` holds a byte outside the alphabet, a line end
+# and a space included; where its length is not a multiple of 8, its padding
+# is not the one its bytes need, or its last group holds 1, 3 or 6
+# characters, which no writer makes; and where its last character sets bits
+# that belong to no byte (§ 3.5). The message says at which byte. So a text
+# has one reading, and given bytes are written by one text and its lower
+# case. See also `format_base32`, `parse_base32_unpadded`.
+function parse_base32(s: str) -> [u8]?
+    return base32_read.parsed(s, hex: false, padded: true)
+
+# The bytes that `s`, base 32 in the base 32 alphabet with no padding,
+# writes, a letter in either case: an `otpauth` URI's `secret`.
+#
+# - `s`: the base 32 text, unpadded; the empty text is the empty list.
+#
+# Fails `invalid` as `parse_base32` does, and where `s` holds a `=`. See also
+# `format_base32_unpadded`.
+function parse_base32_unpadded(s: str) -> [u8]?
+    return base32_read.parsed(s, hex: false, padded: false)
+
+# The bytes that `s`, padded base 32 in the extended hex alphabet, writes, a
+# letter in either case.
+#
+# - `s`: the base 32 text in the extended hex alphabet, padded.
+#
+# Fails `invalid` as `parse_base32` does, only `0` to `9` and `A` to `V`
+# belonging to this alphabet. See also `format_base32_hex`.
+function parse_base32_hex(s: str) -> [u8]?
+    return base32_read.parsed(s, hex: true, padded: true)
+
+# The bytes that `s`, base 32 in the extended hex alphabet with no padding,
+# writes, a letter in either case.
+#
+# - `s`: the base 32 text in the extended hex alphabet, unpadded.
+#
+# Fails `invalid` as `parse_base32_hex` does, and where `s` holds a `=`. See
+# also `format_base32_hex_unpadded`.
+function parse_base32_hex_unpadded(s: str) -> [u8]?
+    return base32_read.parsed(s, hex: true, padded: false)
 
 ## Base 64
 
@@ -2153,6 +2242,40 @@ test "format_hex_dump: three bytes"
 # A digest read back from hexadecimal, in either case.
 test "parse_hex: a digest"
     assert parse_hex("DEADbeef").must() == [0xde, 0xad, 0xbe, 0xef]
+
+# Bytes as base 32, padded to eight characters.
+test "format_base32: two bytes"
+    assert format_base32(from_text("hi")) == "NBUQ===="
+
+# The same without its padding, as an authenticator app reads a key.
+test "format_base32_unpadded: RFC 4226's key"
+    assert format_base32_unpadded(from_text("12345678901234567890")) == "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
+
+# Bytes in the extended hex alphabet, which keeps their order.
+test "format_base32_hex: two bytes"
+    assert format_base32_hex(from_text("hi")) == "D1KG===="
+
+# The same without its padding.
+test "format_base32_hex_unpadded: two bytes"
+    assert format_base32_hex_unpadded(from_text("hi")) == "D1KG"
+
+# Base 32 read back, in either case, and a text that is not base 32.
+test "parse_base32: a short text, its lower case, and a wrong one"
+    assert parse_base32("NBUQ====").must() == from_text("hi")
+    assert parse_base32("nbuq====").must() == from_text("hi")
+    assert parse_base32("NBUQ").is_err()
+
+# The secret of an `otpauth` URI read back.
+test "parse_base32_unpadded: RFC 4226's key"
+    assert parse_base32_unpadded("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ").must() == from_text("12345678901234567890")
+
+# Base 32 in the extended hex alphabet read back.
+test "parse_base32_hex: two bytes"
+    assert parse_base32_hex("D1KG====").must() == from_text("hi")
+
+# The same with no padding.
+test "parse_base32_hex_unpadded: two bytes"
+    assert parse_base32_hex_unpadded("D1KG").must() == from_text("hi")
 
 # A short text in base 64, padded.
 test "format_base64: two bytes"

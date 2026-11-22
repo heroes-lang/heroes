@@ -1388,8 +1388,9 @@ function verify_totp(otp: Otp, code: str, seconds: i64, window: i64) -> u64?
 # The otpauth URI that hands `otp`'s HOTP settings and the next counter to
 # an authenticator app, in Google Authenticator's Key Uri Format, often shown
 # as a QR code: `otpauth://hotp/`, the issuer, a colon and the account as
-# its label, then the key in base 32 with no padding, the issuer, the
-# digest's name, the digits and the counter. The label's and the issuer's
+# its label, then the key in base 32 with no padding
+# (`bytes.format_base32_unpadded`, which `bytes.parse_base32_unpadded` reads
+# back), the issuer, the digest's name, the digits and the counter. The label's and the issuer's
 # characters are escaped but for ASCII letters, digits, `-`, `.`, `_` and
 # `~` (RFC 3986's unreserved).
 #
@@ -1402,7 +1403,7 @@ function verify_totp(otp: Otp, code: str, seconds: i64, window: i64) -> u64?
 # The URI carries the key: show it to its user alone. Fails `invalid` where
 # `account` is empty, `account` or `issuer` holds a colon, which the label
 # keeps between the two, or `hotp` would fail for `otp`. See also
-# `format_totp_uri`.
+# `format_totp_uri` and `bytes.parse_base32_unpadded`.
 function format_hotp_uri(otp: Otp, account: str, issuer: str, counter: u64) -> str?
     return otp_work.uri(
         kind_word: "hotp",
@@ -1424,7 +1425,7 @@ function format_hotp_uri(otp: Otp, account: str, issuer: str, counter: u64) -> s
 #
 # The URI carries the key: show it to its user alone. Fails `invalid` where
 # `format_hotp_uri` does, or where `otp.period` is below 1. See also
-# `format_hotp_uri`.
+# `format_hotp_uri` and `bytes.parse_base32_unpadded`.
 function format_totp_uri(otp: Otp, account: str, issuer: str) -> str?
     kind = start(otp.algorithm).run.kind
     otp_work.check(kind: kind, key_len: otp.key.len(), digits: otp.digits, period: otp.period)?
@@ -1820,7 +1821,7 @@ test "verify_totp: the step itself, the step before, a code too old, the time 0,
         .ok _  => assert false
         .err e => assert e.code == NOT_FOUND && e.msg == "no time step within 1 of 1 makes the code given"
 
-test "format_totp_uri and format_hotp_uri: the refusals of the label and of the settings"
+test "format_totp_uri and format_hotp_uri: the refusals of the label and of the settings, and a key of every length to 11 read back from its URI"
     otp = new_otp([1, 2, 3])
     assert format_totp_uri(otp, account: "", issuer: "x").is_err()
     assert format_totp_uri(otp, account: "a:b", issuer: "x").is_err()
@@ -1833,6 +1834,13 @@ test "format_totp_uri and format_hotp_uri: the refusals of the label and of the 
         counter: 0
     ).is_err()
     assert format_totp_uri(otp, account: "a", issuer: "").must() == "otpauth://totp/a?secret=AEBAG&algorithm=SHA1&digits=6&period=30"
+    key: [u8] @= []
+
+    for length in range(from: 1, to: 12)
+        key @ key.push(to_u8(250 - length).must())
+        uri = format_totp_uri(new_otp(key), account: "a", issuer: "").must()
+        secret = uri.slice(from: 24, to: uri.len() - 34)
+        assert bytes.parse_base32_unpadded(secret).must() == key
 
 ## Examples
 

@@ -175,7 +175,7 @@ capability crypto/otp-uri  the otpauth URI that hands a one-time password's key 
   go      -
   rust    -
   python  -
-  note    Google Authenticator's Key Uri Format: the label `issuer:account`, the key in base 32 with no padding (RFC 4648), then `issuer`, `algorithm`, `digits`, and `counter` or `period`, all always written as that format's own example writes them, where pyotp's `provisioning_uri` leaves out a default; the label and the issuer escaped but for RFC 3986's unreserved characters, as Python's `urllib.parse.quote(s, safe="")` answered on 2026-11-17, and a colon in either refused `invalid`. The base 32 and the escape are written in `crypto/internal/otp`, since `bytes` holds base 32 `pending` and `url` stands on this package's own layer; they move to `bytes` once it has base 32. The URI is written, never read
+  note    Google Authenticator's Key Uri Format: the label `issuer:account`, the key in base 32 with no padding (RFC 4648), then `issuer`, `algorithm`, `digits`, and `counter` or `period`, all always written as that format's own example writes them, where pyotp's `provisioning_uri` leaves out a default; the label and the issuer escaped but for RFC 3986's unreserved characters, as Python's `urllib.parse.quote(s, safe="")` answered on 2026-11-17, and a colon in either refused `invalid`. The key is written by `bytes.format_base32_unpadded` and reads back by `bytes.parse_base32_unpadded`; the escape is written in `crypto/internal/otp`, since `url` stands on this package's own layer. The URI is written, never read
 
 dropped registry  Go's table of hash constructors filled at start-up: there are no mutable globals, and `Algorithm` is closed
   go      crypto.RegisterHash
