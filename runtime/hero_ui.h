@@ -54,8 +54,8 @@
  *
  * ONE THREAD. AppKit, Win32 and GTK each hold their windows on one thread,
  * and so does this layer: an app opens only on the process's main thread
- * (the thread `main` runs on; on Windows, which names no main thread, the
- * thread that opened the process's first app), and every call naming it
+ * (the thread `main` runs on, which on Windows, naming no main thread, the
+ * layer notes before `main` begins), and every call naming it
  * from another thread answers -1 with `HERO_UI_WRONG_THREAD` before it
  * touches anything. A call is never a crash for its thread.
  *

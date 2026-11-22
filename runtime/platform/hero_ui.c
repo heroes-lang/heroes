@@ -26,8 +26,10 @@
  * call from another thread touches nothing and answers
  * `HERO_UI_WRONG_THREAD`. On macOS the UI thread is the main thread
  * (`pthread_main_np`), on Linux the thread whose id is the process's
- * (`gettid() == getpid()`), on Windows the thread that opened the first app
- * (Windows names no main thread). So the table, the queues and the last
+ * (`gettid() == getpid()`), on Windows the thread a constructor of this
+ * member noted before `main` (Windows names no main thread, and its C
+ * library runs a program's constructors on the thread that then runs
+ * `main`). So the table, the queues and the last
  * failure are each the UI thread's own, `_Thread_local`, and only the count
  * of native apps, the numbers given and Windows' owner are shared, each
  * `_Atomic`.
@@ -6244,11 +6246,24 @@ static int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t cou
 /* -- THE THREAD ------------------------------------------------------------ */
 
 #if defined(_WIN32)
-/* The thread that opened the process's first app, by the runtime's number
- * for it (`hero_layer_thread.h`); 0 before it. A thread's id is not used:
- * Windows gives a thread started after the owner ended the same id, which
- * was then taken for the UI thread (defect 2673's shape). */
+/* The thread `main` runs on, by the runtime's number for it
+ * (`hero_layer_thread.h`), noted before `main` by the constructor below; 0
+ * where no constructor of this member ran (the layer in a library loaded
+ * after `main` began), and then the thread that opens the process's first
+ * app. A thread's id is not used: Windows gives a thread started after the
+ * owner ended the same id, which was then taken for the UI thread (defect
+ * 2673's shape). */
 static _Atomic uint64_t hero_ui_owner;
+
+/* Notes the thread `main` will run on: Windows' C library runs a program's
+ * constructors (`.CRT$XCU`) on its main thread, before `main`, so an app
+ * opened first by another thread is refused there as on macOS and Linux,
+ * where the system names the main thread. */
+__attribute__((constructor)) static void hero_ui_note_main(void) {
+    uint64_t none = 0;
+
+    (void)atomic_compare_exchange_strong(&hero_ui_owner, &none, hero_layer_thread());
+}
 #endif
 
 /* Whether the calling thread is the UI thread, or, on Windows before the
