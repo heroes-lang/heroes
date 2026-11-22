@@ -1099,7 +1099,7 @@ test "connect live, against the server REBEL_NATS_URL names: INFO, headers, a ro
                 .err e => assert e.code == "not_found"
 
             ready = subscribe(@c, "svc.ready").must()
-            t @= threads.spawn_text(body: live.responder, arg: url).must()
+            t @= threads.start_text(body: live.responder, arg: url).must()
             _ = next_message_of(@c, sid: ready, wait: time.seconds(10).must()).must()
             answer = request(
                 @c,

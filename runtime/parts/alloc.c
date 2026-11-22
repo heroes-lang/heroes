@@ -192,6 +192,14 @@ typedef struct {
      * exit when nothing ended it (M-panic-location step 9); kept by value,
      * `parts/panic.c` says why. */
     HeroPlace where;
+    /* THE THREAD HOLDING THIS LIFE (panel 254's R3), by this runtime's own
+     * thread number (`hero_this_thread`), never a `pthread_t`, which Darwin
+     * gives a new thread after an old one ended; HERO_HELD_IN_TRANSIT while a
+     * mailbox carries it. Only the holder reaches C through it. */
+    uint64_t holder;
+    /* Where the mailbox began whose last copy went with this handle inside one
+     * of its values, for the gate at exit to name; NULL for none. */
+    const HeroPlace *dropped_in;
 } hero_handle_entry;
 static hero_handle_entry *hero_handle_set = NULL;
 static size_t hero_handle_cap = 0;
@@ -204,6 +212,24 @@ static uint64_t hero_handle_lives = 0;
  * names the first one and the reader needs a number for the rest. */
 static size_t hero_handle_strays = 0;
 static const void *hero_handle_first_stray = NULL;
+
+/* THIS RUNTIME'S OWN THREAD NUMBER (panel 254's R3): 1 for the first thread
+ * that asks, and one more for each thread after, never reused, so a thread
+ * started after another ended is never taken for it, which a `pthread_t` is
+ * on Darwin (the sitting's critic, `deadthread`: three runs of three). The
+ * counter is atomic and the number `_Thread_local`, read only by the thread's
+ * own code and never inside a key's destructor, where Darwin reads it as 0
+ * (`hero_kept_note`, below, says how that was measured). */
+#define HERO_HELD_IN_TRANSIT UINT64_MAX
+static _Atomic uint64_t hero_thread_numbers = 0;
+static _Thread_local uint64_t hero_thread_number = 0;
+
+static uint64_t hero_this_thread(void) {
+    if (hero_thread_number == 0) {
+        hero_thread_number = atomic_fetch_add_explicit(&hero_thread_numbers, 1, memory_order_relaxed) + 1;
+    }
+    return hero_thread_number;
+}
 
 /* THE LIVE LEASES, BY ADDRESS, AND WHERE EACH WAS TAKEN (M-panic-location step
  * 9). `hero_live_held` counts them, and the gate and the fault handlers read
@@ -306,12 +332,18 @@ static int64_t hero_run_folders_held_at_exit(void);
 static int64_t hero_dir_names_held_at_exit(void);
 static int64_t hero_dir_blocks_held_at_exit(void);
 
+/* `parts/mail.c`, later in this translation unit. */
+static void hero_mail_check_alive(void);
+
 void hero_runtime_check_leaks(void) {
     /* THE THREADS FIRST (panel 251's R2): no balance below is read while a
      * thread the program started runs or waits unjoined, since what it holds
      * is no missing decref; one such thread is the program's mistake, told by
      * `parts/spawn.c` with how many, and the program aborts there. */
     hero_spawn_check_joined();
+    /* Then the mailboxes (panel 254's R5): once every thread was waited for, a
+     * queue still alive is held by a copy of itself inside a queue. */
+    hero_mail_check_alive();
     hero_lend_audit_given("found when the program ended");
     int64_t blocks = hero_live_blocks;
     if (blocks != 0) {
@@ -455,6 +487,10 @@ void hero_runtime_check_leaks(void) {
     uint64_t first_life = 0;
     size_t doors = 0;
     HeroPlaces taken = {.used = 0};
+    /* The lives a mailbox went with, and where the first eight mailboxes began
+     * (panel 254's R3, the compiler-engineer's Q2.5). */
+    size_t with_mail = 0;
+    const HeroPlace *mail_begun[8];
 
     /* THE FIRST IS THE EARLIEST LIFE STILL STANDING, the one the first place
      * beneath the report names (step 9). Until then it was the table's first
@@ -466,6 +502,10 @@ void hero_runtime_check_leaks(void) {
             first_life = hero_handle_set[i].life;
         }
         if (hero_place_is_a_door(&hero_handle_set[i].where)) doors++;
+        if (hero_handle_set[i].dropped_in != NULL) {
+            if (with_mail < 8) mail_begun[with_mail] = hero_handle_set[i].dropped_in;
+            with_mail++;
+        }
         hero_places_see(&taken, &hero_handle_set[i].where, hero_handle_set[i].life);
     }
     for (size_t i = 0; i < hero_handle_cap; i++)
@@ -490,6 +530,17 @@ void hero_runtime_check_leaks(void) {
                         "release, and this program is missing that many. The first is at %p\n",
                 (unsigned long long)live, began, first_live);
         hero_places_write(&taken, live);
+        if (with_mail > 0) {
+            hero_report_printf("  %llu of them went inside a value of a mailbox when its last copy went, never "
+                               "received: a mailbox's values are received, or dropped with its last copy, and a "
+                               "handle among them is then given back by nobody\n",
+                               (unsigned long long)with_mail);
+            for (size_t k = 0; k < with_mail && k < 8; k++) {
+                hero_report_printf("  a handle went with the mailbox begun at %s:%lld:%lld, in %s\n",
+                                   mail_begun[k]->path, (long long)mail_begun[k]->line,
+                                   (long long)mail_begun[k]->column, mail_begun[k]->name);
+            }
+        }
         hero_abort();
     }
 }
@@ -830,6 +881,8 @@ static void hero_handle_grow(void) {
         /* Every life sets its own place; an empty one is never garbage, so a
          * later path that began a life and set none reads as no place kept. */
         fresh[i].where = (HeroPlace){NULL, NULL, 0, 0};
+        fresh[i].holder = 0;
+        fresh[i].dropped_in = NULL;
     }
     for (size_t i = 0; i < hero_handle_cap; i++) {
         if (hero_handle_set[i].h != NULL)
@@ -882,6 +935,27 @@ static void *hero_handle_dead_map(void) {
     if (page == MAP_FAILED) hero_panic("cannot map the region a dead C handle points at");
     return page;
 #endif
+}
+
+/* THE VALUE A SEND LEAVES (panel 254's R3, the compiler-engineer's Q2.5): a
+ * second region of the dead one's span and kind, which `m.send(@v)` writes
+ * into every C handle the value held once the send succeeded, so a use of the
+ * emptied cell is told as the send's and never as a `consumes` call's, whose
+ * message would send its reader looking for a call that is not there. Mapped
+ * on the first send that empties a cell, never unmapped. */
+static _Atomic(void *) hero_handle_sent_page = NULL;
+
+static void *hero_handle_sent_value(void) {
+    void *page = atomic_load_explicit(&hero_handle_sent_page, memory_order_acquire);
+    if (page != NULL) return page;
+    hero_handle_lock_take(&hero_handle_lock);
+    page = atomic_load_explicit(&hero_handle_sent_page, memory_order_relaxed);
+    if (page == NULL) {
+        page = hero_handle_dead_map();
+        atomic_store_explicit(&hero_handle_sent_page, page, memory_order_release);
+    }
+    hero_handle_lock_drop(&hero_handle_lock);
+    return page;
 }
 
 void *hero_handle_dead(void) {
@@ -1074,14 +1148,93 @@ static void hero_handle_report_remembered(const char *where, const void *h, cons
 /* The body is the `_at` twin's, whose record is the call's place (panel 230's
  * R1, kind 2); the old name hands it NULL, as the callback's thunk does, which
  * C called and no call of the program stands at. */
+static void hero_handle_report_sent(const char *where, const HeroPlace *site) {
+    hero_report_begin();
+    hero_report_printf("panic: a C handle reached %s through a value `m.send(@v)` emptied: the send handed the "
+                       "handle to whichever thread receives it from that mailbox, and only that thread reaches C "
+                       "through it now. Use it before the send, or have the receiving thread send back what this "
+                       "one needs\n",
+                       where);
+    hero_place_line(site);
+    hero_abort();
+}
+
+/* THE HOLDER'S TWO REPORTS, by thread and never by copy (the sitting's
+ * critic): a handle sent back is its first thread's again, every copy there
+ * with it, which is sound, and a thread that ended and was followed by a new
+ * one is still another thread. */
+static void hero_handle_report_not_held(const char *where, const void *h, uint64_t holder, const HeroPlace *site) {
+    hero_report_begin();
+    if (holder == HERO_HELD_IN_TRANSIT) {
+        hero_report_printf("panic: a C handle reached %s while a mailbox carries it: `m.send(@v)` handed it to "
+                           "whichever thread receives it, and this is a copy kept from before the send. The "
+                           "handle is at %p\n",
+                           where, h);
+    } else {
+        hero_report_printf("panic: a C handle reached %s on a thread that does not hold it: a handle belongs to "
+                           "the thread that acquired it or last received it, from a mailbox or as a thread's "
+                           "answer, and only that thread reaches C through it. The handle is at %p\n",
+                           where, h);
+    }
+    hero_place_line(site);
+    hero_abort();
+}
+
 void hero_handle_alive_at(const void *h, const char *where, const HeroPlace *site) {
     if (h == NULL) return;
     void *dead = atomic_load_explicit(&hero_handle_dead_page, memory_order_acquire);
     if (dead != NULL && h == dead) hero_handle_report_poisoned(where, site);
+    void *sent = atomic_load_explicit(&hero_handle_sent_page, memory_order_acquire);
+    if (sent != NULL && h == sent) hero_handle_report_sent(where, site);
+    uint64_t me = hero_this_thread();
+    uint64_t holder = 0;
     hero_handle_lock_take(&hero_handle_lock);
     int remembered = hero_dead_holds_locked(h);
+    if (hero_handle_cap != 0) {
+        size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+        if (hero_handle_set[i].h == h) holder = hero_handle_set[i].holder;
+    }
     hero_handle_lock_drop(&hero_handle_lock);
     if (remembered) hero_handle_report_remembered(where, h, site);
+    if (holder != 0 && holder != me) hero_handle_report_not_held(where, h, holder, site);
+}
+
+/* `m.send(@v)` succeeded, or a thread's answer leaves the thread: the life is
+ * in transit until a receive, or the wait, takes it over (panel 254's R3). */
+static void hero_handle_hand_over(const void *h) {
+    if (h == NULL) return;
+    hero_handle_lock_take(&hero_handle_lock);
+    if (hero_handle_cap != 0) {
+        size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+        if (hero_handle_set[i].h == h) hero_handle_set[i].holder = HERO_HELD_IN_TRANSIT;
+    }
+    hero_handle_lock_drop(&hero_handle_lock);
+}
+
+static void hero_handle_take_over(const void *h) {
+    if (h == NULL) return;
+    uint64_t me = hero_this_thread();
+    hero_handle_lock_take(&hero_handle_lock);
+    if (hero_handle_cap != 0) {
+        size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+        if (hero_handle_set[i].h == h) hero_handle_set[i].holder = me;
+    }
+    hero_handle_lock_drop(&hero_handle_lock);
+}
+
+/* A handle inside a value of a mailbox whose last copy went: nobody holds it
+ * now, and the gate at exit says which mailbox it went with. */
+static void hero_handle_dropped_with_mail(const void *h, const HeroPlace *mailbox) {
+    if (h == NULL) return;
+    hero_handle_lock_take(&hero_handle_lock);
+    if (hero_handle_cap != 0) {
+        size_t i = hero_handle_slot(hero_handle_set, hero_handle_cap, h);
+        if (hero_handle_set[i].h == h) {
+            hero_handle_set[i].holder = HERO_HELD_IN_TRANSIT;
+            hero_handle_set[i].dropped_in = mailbox;
+        }
+    }
+    hero_handle_lock_drop(&hero_handle_lock);
 }
 
 void hero_handle_alive(const void *h, const char *where) { hero_handle_alive_at(h, where, NULL); }
@@ -1187,6 +1340,8 @@ void hero_handle_acquired_at(const void *h, const char *by, const HeroPlace *sit
     hero_handle_set[i].pending = 0;
     hero_handle_set[i].life = ++hero_handle_lives;
     hero_handle_set[i].where = hero_place_kept(site);
+    hero_handle_set[i].holder = hero_this_thread();
+    hero_handle_set[i].dropped_in = NULL;
     /* C handed this address out again, so whatever ended there is over: a copy
      * of the old life at this address is now the new life's, and only
      * `--sanitize`'s quarantine can still tell them apart (panel 177's item 4). */
@@ -1370,6 +1525,8 @@ void hero_handle_retained_at(const void *h, const char *releasers, int ends_here
         hero_handle_set[i].pending = 0;
         hero_handle_set[i].life = ++hero_handle_lives;
         hero_handle_set[i].where = hero_place_kept(site);
+        hero_handle_set[i].holder = hero_this_thread();
+        hero_handle_set[i].dropped_in = NULL;
     } else if (hero_handle_set[i].h == h) {
         const char *owed = hero_handle_set[i].by;
         if (owed != NULL && releasers != NULL && !hero_handle_sets_share(owed, releasers)) {
@@ -1384,6 +1541,8 @@ void hero_handle_retained_at(const void *h, const char *releasers, int ends_here
         hero_handle_set[i].pending = 0;
         hero_handle_set[i].life = ++hero_handle_lives;
         hero_handle_set[i].where = hero_place_kept(site);
+        hero_handle_set[i].holder = hero_this_thread();
+        hero_handle_set[i].dropped_in = NULL;
         hero_handle_live++;
         /* A life begins on an address the set did not hold: C handed it out. */
         hero_dead_clear_locked(h);

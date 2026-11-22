@@ -2281,7 +2281,7 @@ test "client: over a connection net made"
 # asking on a thread of its own.
 test "server: one request read and answered"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /x").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2298,7 +2298,7 @@ test "server: one request read and answered"
 # A connection closed once: the second close fails.
 test "close: GOAWAY sent, the stream closed, a second close refused"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /c").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /c").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2548,7 +2548,7 @@ test "round_trip: a POST and its answer"
 # answer written.
 test "next_request: a request read whole"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /n?q=1").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /n?q=1").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2562,7 +2562,7 @@ test "next_request: a request read whole"
 # A response with trailers written by a server.
 test "answer: a response with trailers"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /a").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /a").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2580,7 +2580,7 @@ test "answer: a response with trailers"
 # that sends each request's body back.
 test "serve: one request echoed"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /s").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /s").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2593,7 +2593,7 @@ test "serve: one request echoed"
 # of the tests' answers to every request.
 test "serve_with: a health check's text"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /health").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /health").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()
@@ -2605,7 +2605,7 @@ test "serve_with: a health check's text"
 # The next stream a client opens, while another's events wait.
 test "accept_stream: the second request's head, the first's held"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
-    calling @= threads.spawn_text(body: fixture.get_plain, arg: f"{l.address.port} /h").must()
+    calling @= threads.start_text(body: fixture.get_plain, arg: f"{l.address.port} /h").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
     c @= server(@stream, options: default_options()).must()

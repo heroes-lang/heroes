@@ -180,7 +180,7 @@ function is_value_type(c: state.Checked, ty: i64) -> bool
         .error | .unit                                               => false
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .array   => true
         .fixed | .map | .fallible | .function_ty | .named | .case_ty => true
-        .failure | .generic                                          => true
+        .failure | .generic | .thread_ty | .mailbox_ty               => true
 
 # The type an index of `base` takes: `i64` for an array, a fixed array or a
 # `str`, a map's key type for a map, none for what the checker could not type.
@@ -189,4 +189,5 @@ function index_type(c: state.Checked, base: i64) -> i64
         .array | .fixed | .str                                          => table.int_ty_id(c.types)
         .map m                                                          => m.key
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fallible  => -1
+        .thread_ty | .mailbox_ty                                        => -1
         .function_ty | .named | .case_ty | .failure | .generic | .error => -1

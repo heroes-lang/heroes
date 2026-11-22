@@ -68,6 +68,11 @@ function pointer(c: state.Checked, names: ctype.Names, ty: i64) -> str?
         .failure    => return ok("&hero_desc_failure")
         .named n    => return ok("&" + ctype.satellite(names, decl: n.decl) + "_desc")
         .case_ty vc => return ok("&" + ctype.case_of(names, decl: vc.decl, at: vc.at) + "_desc")
+        # A thread's or a mailbox's number, copied, compared and hashed as the
+        # one word it is, each its own object so `sort.c` never takes it for an
+        # `i64` (the checker refuses ordering one).
+        .thread_ty  => return ok("&hero_desc_thread")
+        .mailbox_ty => return ok("&hero_desc_mailbox")
         .ptr | .cstr | .unit | .fixed | .generic | .error => return fail(
             code: "none",
             msg: "no descriptor for this type"
@@ -86,7 +91,7 @@ function hash_call(c: state.Checked, names: ctype.Names, ty: i64, place: str) ->
     match table.get(c.types, ty)
         .named n    => return ok(ctype.satellite(names, decl: n.decl) + "_hash(" + place + ")")
         .case_ty vc => return ok(ctype.case_of(names, decl: vc.decl, at: vc.at) + "_hash(" + place + ")")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return through_pointer(
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return through_pointer(
             c,
             names,
             ty: ty,
@@ -124,14 +129,15 @@ function through_pointer(c: state.Checked, names: ctype.Names, ty: i64, place: s
 # `constructed` narrows one of the worklist's three sources and nothing
 # else — see `descriptor_set.generated`, which is where the two sets
 # meet. `kinds` is the program's `phases.type_kinds`, found once per build.
-function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64])
+function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64], crossed: [i64])
     wanted = descriptor_set.generated(
         c,
         decls,
         reachable: reachable,
         constructed: constructed,
         want: want,
-        kinds: kinds
+        kinds: kinds,
+        crossed: crossed
     )
 
     for ty in wanted
@@ -155,7 +161,7 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, de
                 c_type @ prefix
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => skip @ true
             .array | .fixed | .map | .function_ty                     => skip @ true
-            .failure | .generic | .error                              => skip @ true
+            .failure | .generic | .error | .thread_ty | .mailbox_ty   => skip @ true
 
         if skip
             continue

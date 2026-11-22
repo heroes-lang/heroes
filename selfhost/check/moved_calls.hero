@@ -27,6 +27,53 @@ function ends_a_life(decls: [ast.Decl]) -> bool
 
     return false
 
+# What a dotted call of the language's own ends (feature 2647; panel 254's
+# S3): `t.wait()` its receiver, as a `consumes` call ends a handle, where
+# `handed` (`check/crossing.hero`'s, by the receiver's type) says the call is a
+# thread's or a mailbox's operation. A send ends nothing here: it may fail and
+# leave its value as it was, as a `when` mark's end is conditional, and the
+# runtime empties the cell once it succeeded.
+function after_operation(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, handed: {i64: bool}, at: i64, receiver: i64)
+    if is_operation(handed, at: at) && called(a, s, at: at) == "wait"
+        operation_ended(@f, a, r, s, receiver: receiver, name: "wait", span: a.exprs[at].span)
+
+# Whether the dotted call at `at` is a thread's or a mailbox's operation, as
+# the checker typed its receiver (`check/crossing.hero`'s `handed`): a
+# program's own function of the same name is called for any other receiver.
+function is_operation(handed: {i64: bool}, at: i64) -> bool
+    return !handed[at].is_err()
+
+# The name after the dot of the call at `at`, or "" for any other expression.
+function called(a: ast.Ast, s: source.Source, at: i64) -> str
+    return match a.exprs[at].kind
+        .method m                                                                      => source.span_text(s, m.name)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => ""
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => ""
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => ""
+
+# `t.wait()` ends the receiver's life, for every copy: a read of it after, on
+# every path, is refused as an extern's end is. The callee is written
+# `.wait()`, which tells `check/moved_errors.hero` the end is the language's
+# and not C's.
+function operation_ended(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, receiver: i64, name: str, span: token.Span)
+    path = place_of(a, r, s, id: receiver)
+
+    if !path.is_err()
+        flow.ended(
+            @f,
+            path: path.must(),
+            shown: source.span_text(s, a.exprs[receiver].span),
+            callee: "." + name + "()",
+            at: span
+        )
+
+# The first argument a dotted call to a declaration is handed: its receiver,
+# but where that is a module, `m.f(x)` being `f(x)`.
+function first_argument(receiver: i64, qualified: bool) -> i64?
+    if qualified
+        return fail(code: "none", msg: "no receiver")
+    return ok(receiver)
+
 # The receiver of a UFCS call is its first argument (§4.11), and never `@`:
 # `ufcs_on_mutable` refuses that spelling before this rule runs.
 function all_arguments(receiver: i64?, given: [ast.Arg]) -> [ast.Arg]

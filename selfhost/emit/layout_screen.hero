@@ -159,15 +159,15 @@ function slot(c: state.Checked, decls: [ast.Decl], s: source.Source, field: ast.
             element: str @= "0"
 
             match table.get(c.types, x.element)
-                .named | .fixed                                           => element @ "{}"
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ element
-                .array | .map | .fallible | .function_ty                  => element @ element
-                .case_ty | .failure | .generic | .error                   => element @ element
+                .named | .fixed                                                    => element @ "{}"
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => element @ element
+                .array | .map | .fallible | .function_ty                           => element @ element
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => element @ element
 
             return "{[0] = " + element + "}"
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "0"
-        .array | .map | .fallible | .function_ty                  => return "0"
-        .case_ty | .failure | .generic | .error                   => return "0"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return "0"
+        .array | .map | .fallible | .function_ty                           => return "0"
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return "0"
 
 # The zero of a nested record's first field: `{}` for an aggregate, whose
 # own record is screened on its own, and `0` for a scalar or a handle.
@@ -182,10 +182,10 @@ function inner_zero(c: state.Checked, decls: [ast.Decl], field: ast.Field) -> st
             if handles.is_handle(decls[n.decl])
                 return "0"
             return "{}"
-        .fixed                                                    => return "{}"
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "0"
-        .array | .map | .fallible | .function_ty                  => return "0"
-        .case_ty | .failure | .generic | .error                   => return "0"
+        .fixed                                                             => return "{}"
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return "0"
+        .array | .map | .fallible | .function_ty                           => return "0"
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return "0"
 
 # The records clang said anything about: every `hero_ly_screen:<n>:` in its
 # output names declaration n - 1.

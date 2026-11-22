@@ -80,7 +80,7 @@ function is_handle(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
         .named n                                                     => return handles.is_handle(decls[n.decl])
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
         .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
-        .failure | .generic | .error                                 => return false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty      => return false
 
     return false
 
@@ -108,12 +108,12 @@ function holds(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
                     inner @ fields_of(c, decls[n.decl], at: -1)
             .case_ty vc =>
                 inner @ fields_of(c, decls[vc.decl], at: vc.at)
-            .fixed x                                                  => inner @ [x.element]
-            .array arr                                                => inner @ [arr.element]
-            .fallible o                                               => inner @ [o.payload]
-            .map m                                                    => inner @ [m.key, m.value]
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .function_ty | .failure | .generic | .error               => continue
+            .fixed x                                                               => inner @ [x.element]
+            .array arr                                                             => inner @ [arr.element]
+            .fallible o                                                            => inner @ [o.payload]
+            .map m                                                                 => inner @ [m.key, m.value]
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit              => continue
+            .function_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
         for one in inner
             if live < stack.len()

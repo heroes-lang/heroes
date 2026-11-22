@@ -1,0 +1,44 @@
+# A copy of a `(thread T)`, bound, kept in a list or a map, or a `for` loop's
+# variable, is that one thread (spec § 11; panel 254's blind seat, its
+# choice point 6): a wait through any copy is the thread's one wait. So
+# waiting once per thread through a loop's variable, through an element at an
+# index the run knows, through a copy bound and through a map's entry are
+# legal, and a second wait is refused where one place, a name or an element
+# at a written index, was waited for on every path before; through any other
+# copy it aborts at run time (`run/threads-a-thread-in-a-list-waited-for-again-aborts`).
+#
+# Bulk regression case.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    threads: [(thread i64)] @= []
+    k: i64 @= 0
+
+    while k < 4
+        threads @ threads.push(spawn(twice, k).must())
+        k @ k + 1
+
+    sum: i64 @= 0
+
+    for t in threads
+        sum @ sum + t.wait()
+
+    print(sum)
+    kept: [(thread i64)] = [spawn(twice, 10).must(), spawn(twice, 11).must()]
+    print(kept[0].wait())
+    print(kept[0].wait())  #~ handle_used_after_end
+    i: i64 = 1
+    print(kept[i].wait())
+    one = spawn(twice, 5).must()
+    copy = one
+    print(copy.wait())
+    by_name: {str: (thread i64)} @= {}
+    by_name["a"] @ spawn(twice, 7).must()
+    print(by_name["a"].must().wait())
+    more = [spawn(twice, 1).must()]
+
+    for t in more
+        print(t.wait())
+        print(t.wait())  #~ handle_used_after_end

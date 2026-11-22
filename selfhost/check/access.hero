@@ -106,7 +106,7 @@ function field_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved
                 data_errors.no_such_field(holder: "the error", field: name, known: known, span: field)
             )
             return state.error_ty_of(c)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             got = state.show(c, s, decls, base)
             state.push_diagnostic(@c, data_errors.not_a_record(got: got, field: name, span: field))
             return state.error_ty_of(c)
@@ -148,7 +148,7 @@ function index_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], base
         .map m =>
             expect_index(@c, s, decls, got: index, want: m.key, span: span)
             return table.intern(@c.out.types, .fallible(payload: m.value))
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             got = state.show(c, s, decls, base)
             state.push_diagnostic(@c, flow_errors.not_indexable(got, span))
             return state.error_ty_of(c)
@@ -184,9 +184,9 @@ function fixed_bound_check(@c: state.Checker, a: ast.Ast, s: source.Source, decl
                     @c,
                     ffi_errors.fixed_index_out_of_range(shown: shown, length: x.length, got_text: rendered, span: span)
                 )
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .array | .map | .fallible | .function_ty | .named         => return
-        .case_ty | .failure | .generic | .error                   => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+        .array | .map | .fallible | .function_ty | .named                  => return
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
 
 # The key type a map asks of its index where the index has no type of its own,
 # a number literal, a `.case`, an empty literal (`contextual`), and adopts it
@@ -203,6 +203,7 @@ function key_asked(c: state.Checker, a: ast.Ast, decls: [ast.Decl], base: i64, i
             if contextual.adopts(c, a, decls, id: index, offered: m.key)
                 return ok(m.key)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "unasked", msg: "no key")
+        .thread_ty | .mailbox_ty                                  => return fail(code: "unasked", msg: "no key")
         .array | .fixed | .fallible | .function_ty | .named       => return fail(code: "unasked", msg: "no key")
         .case_ty | .failure | .generic | .error                   => return fail(code: "unasked", msg: "no key")
 
@@ -235,10 +236,10 @@ function refuse_str_element(@c: state.Checker, a: ast.Ast, place: i64)
     match a.exprs[place].kind
         .index i =>
             base_is_str = match table.get(c.out.types, c.out.expr_types[i.base])
-                .str                                               => true
-                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => false
-                .array | .fixed | .map | .fallible | .function_ty  => false
-                .named | .case_ty | .failure | .generic | .error   => false
+                .str                                                                        => true
+                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                          => false
+                .array | .fixed | .map | .fallible | .function_ty                           => false
+                .named | .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
             if base_is_str
                 state.push_diagnostic(@c, flow_errors.str_element_write(a.exprs[place].span))
@@ -257,17 +258,17 @@ function write_target(c: state.Checker, a: ast.Ast, place: i64, read: i64) -> i6
             base_ty = c.out.expr_types[i.base]
 
             base_is_map = match table.get(c.out.types, base_ty)
-                .map                                                      => true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-                .array | .fixed | .fallible | .function_ty | .named       => false
-                .case_ty | .failure | .generic | .error                   => false
+                .map                                                               => true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+                .array | .fixed | .fallible | .function_ty | .named                => false
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
             if base_is_map
                 match table.get(c.out.types, read)
-                    .fallible o                                               => return o.payload
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return read
-                    .array | .fixed | .map | .function_ty | .named            => return read
-                    .case_ty | .failure | .generic | .error                   => return read
+                    .fallible o                                                        => return o.payload
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return read
+                    .array | .fixed | .map | .function_ty | .named                     => return read
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return read
             return read
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return read
         .name | .hole | .unary | .binary | .field | .field_name | .call | .method      => return read
@@ -290,7 +291,7 @@ function try_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], inner:
 
     payload = match table.get(c.out.types, inner)
         .fallible o => o.payload
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             got = state.show(c, s, decls, inner)
             state.push_diagnostic(@c, flow_errors.not_fallible(got: got, span: span, inner: operand))
             return state.error_ty_of(c)

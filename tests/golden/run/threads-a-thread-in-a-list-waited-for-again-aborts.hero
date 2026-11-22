@@ -1,0 +1,16 @@
+# Every copy of a `(thread T)` is that one thread (spec § 11), so a thread
+# waited for through a `for` loop's variable has had its wait: waiting for it
+# again through the list that holds it, at an index the run knows, aborts
+# there, naming it.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    threads: [(thread i64)] = [spawn(twice, 1).must(), spawn(twice, 2).must()]
+
+    for t in threads
+        print(t.wait())
+
+    which = threads.len() - 1
+    print(threads[which].wait())

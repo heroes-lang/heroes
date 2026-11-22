@@ -1,0 +1,39 @@
+# Where a program begins: its `main`, and its `test` blocks by their titles
+# (spec § 1, § 12). Asked by the compile, which needs a `main` to build a
+# binary and the titles to run each test as a process of its own, and by the
+# root unit's shim, which calls the one or the other.
+
+use ir/containers
+
+# The test blocks in this program, in source order, by their titles.
+# heroes test needs the list before it runs anything: it compiles once
+# and runs the binary once per test, so each failure is its own
+# process and one abort does not hide the tests after it.
+function tests_of(p: containers.Program) -> [str]
+    out: [str] @= []
+
+    for f in p.functions
+        match f.kind
+            .test_kind                                     => out @ out.push(f.name)
+            .function_kind | .constant_kind | .extern_kind => continue
+
+    return out
+
+# Where a program's main is, or nothing. A file with no entry point is
+# a perfectly good translation unit — it just cannot become a binary,
+# and the difference belongs to the caller.
+function entry_point(p: containers.Program) -> i64?
+    index: i64 @= 0
+
+    for f in p.functions
+        is_main: bool @= false
+
+        match f.kind
+            .function_kind                             => is_main @ f.name == "main"
+            .constant_kind | .extern_kind | .test_kind => is_main @ is_main
+
+        if is_main
+            return ok(index)
+        index @ index + 1
+
+    return fail(code: "none", msg: "no main in this program")

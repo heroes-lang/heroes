@@ -990,6 +990,101 @@ const void *hero_map_find_at(const HeroMapHeader *m, const void *key, const Hero
  * 022 ranked first among the things a cheap implementation gets silently wrong. */
 bool hero_map_eq(const HeroMapHeader *a, const HeroMapHeader *b);
 
+/* -- threads and mailboxes: values crossing whole (spec § 3, § 11, § 13) ------
+ *
+ * `parts/mail.c` says the model (feature 2647; panel 254). Every value crosses
+ * a thread in a flat encoding: the sending thread writes it into a
+ * `HeroCross`, the runtime's own block, by a `HeroPutFn`, and the receiving
+ * thread rebuilds it into blocks of its own by the matching `HeroTakeFn`; the
+ * compiler writes one of each per type a program crosses, and the runtime's
+ * below serve the `str`, the failure, the array, the map, the mailbox, the
+ * thread and the C handle. A `HeroSentFn` hands over every handle a value
+ * holds and empties its cell, once a send succeeded. A thread's value is an
+ * `int64_t`, the runtime's slot and the generation of its start; a mailbox's
+ * is a `HeroMail *`, counted, its copies reaching one queue. Added beside the
+ * declarations above and changing none of them, the descriptor keeping its
+ * five members, so `HERO_RUNTIME_ABI` stands: a runtime without them is a
+ * compile error at the first unit that names one. */
+typedef struct HeroCross {
+    unsigned char *bytes;
+    size_t len;
+    size_t cap;
+    size_t at;
+} HeroCross;
+typedef void (*HeroPutFn)(HeroCross *into, const void *value);
+typedef void (*HeroTakeFn)(HeroCross *from, void *value);
+typedef void (*HeroSentFn)(void *cell);
+typedef struct HeroMail HeroMail;
+
+extern const HeroDesc hero_desc_thread;
+extern const HeroDesc hero_desc_mailbox;
+
+void hero_cross_put_raw(HeroCross *b, const void *p, int64_t size);
+void hero_cross_take_raw(HeroCross *b, void *p, int64_t size);
+void hero_cross_put_str(HeroCross *b, const void *p);
+void hero_cross_take_str(HeroCross *b, void *p);
+void hero_cross_put_failure(HeroCross *b, const void *p);
+void hero_cross_take_failure(HeroCross *b, void *p);
+void hero_cross_put_array(HeroCross *b, const void *p, HeroPutFn each);
+void hero_cross_take_array(HeroCross *b, void *p, const HeroDesc *elem, HeroTakeFn each);
+void hero_cross_put_map(HeroCross *b, const void *p, HeroPutFn key, HeroPutFn value);
+void hero_cross_take_map(HeroCross *b, void *p, const HeroDesc *kd, const HeroDesc *vd, HeroTakeFn key,
+                         HeroTakeFn value);
+void hero_cross_put_mail(HeroCross *b, const void *p);
+void hero_cross_take_mail(HeroCross *b, void *p);
+void hero_cross_put_thread(HeroCross *b, const void *p);
+void hero_cross_take_thread(HeroCross *b, void *p);
+void hero_cross_put_handle(HeroCross *b, const void *p);
+void hero_cross_take_handle(HeroCross *b, void *p);
+void hero_cross_free(HeroCross *b);
+/* The hand-overs a send makes once it succeeded: a thread's, a C handle's, and
+ * an array's or a map's that hold them, `each` handing over one element. */
+void hero_thread_sent(void *cell);
+void hero_handle_sent(void *cell);
+void hero_cross_sent_array(void *cell, HeroSentFn each);
+void hero_cross_sent_map(void *cell, HeroSentFn key, HeroSentFn value);
+
+/* A mailbox: begun with the way its values are rebuilt and given back; counted
+ * by every value reaching it; a send answers 0, or 2 `closed`, 3 `stopped`,
+ * `*value` then untouched; a receive answers 0 with the oldest value rebuilt
+ * into `*out`, or 1 `timeout`, 2 `closed`, 3 `stopped`; closing again does
+ * nothing. `hero_mail_hear_stop` is the platform layer's word. */
+HeroMail *hero_mail_new(HeroTakeFn take, const HeroDesc *desc, const HeroPlace *where);
+void hero_mail_incref(HeroMail *m);
+void hero_mail_decref(HeroMail *m);
+void hero_mail_release_at(HeroMail **slot);
+int64_t hero_mail_send(HeroMail *m, HeroPutFn put, HeroSentFn sent, void *value, const HeroPlace *where);
+int64_t hero_mail_receive(HeroMail *m, void *out, int64_t within_ms, const HeroPlace *where);
+void hero_mail_close(HeroMail *m, const HeroPlace *where);
+void hero_mail_hear_stop(void);
+HeroFailure hero_failure_timeout(void);
+HeroFailure hero_failure_stopped(void);
+HeroFailure hero_failure_closed(void);
+HeroFailure hero_failure_send_closed(void);
+HeroFailure hero_failure_send_stopped(void);
+HeroFailure hero_failure_limit(int64_t why);
+
+/* The head of the box a thread's start fills and its wait reads: the program's
+ * C lays its function after it, writes the argument into `arg`, and `run`,
+ * the program's own, rebuilds it on the new thread and writes the answer into
+ * `answer`, which the wait rebuilds on the waiting thread. `body` is the
+ * function the program handed `spawn`, kept to name the thread. */
+typedef struct HeroThreadBox HeroThreadBox;
+struct HeroThreadBox {
+    void (*run)(HeroThreadBox *box);
+    void (*body)(void);
+    HeroCross arg;
+    HeroCross answer;
+};
+
+void *hero_thread_box_new(int64_t size);
+void hero_thread_box_free(HeroThreadBox *box);
+/* The thread's number, or -1 where the system or the runtime's table of 256
+ * refused it, `*why` saying which (`hero_failure_limit`): the box is then
+ * still the caller's. */
+int64_t hero_thread_begin(HeroThreadBox *box, int64_t bytes, int64_t *why, const HeroPlace *where);
+HeroThreadBox *hero_thread_end(int64_t thread, const HeroPlace *where);
+
 /* -- the leak check ASan cannot do on this platform ------------------------
  * MEASURED (panel 021): AddressSanitizer on Darwin arm64 has NO
  * LeakSanitizer. `ASAN_OPTIONS=detect_leaks=1` aborts with "not supported on

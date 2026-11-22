@@ -1,0 +1,3 @@
+sent
+!at: threads-a-copy-kept-from-before-a-send-is-not-the-senders.hero:19:11
+!panic: a C handle reached the argument `c` of `counter_add` while a mailbox carries it: `m.send(@v)` handed it to whichever thread receives it, and this is a copy kept from before the send

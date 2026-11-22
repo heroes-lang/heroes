@@ -268,10 +268,10 @@ function verify(blk: containers.Block, f: containers.Function, c: state.Checked,
                 is_array: bool @= false
 
                 match table.get(c.types, f.slots[pg.place.root].ty)
-                    .array                                                    => is_array @ true
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_array @ is_array
-                    .fixed | .map | .fallible | .function_ty | .named         => is_array @ is_array
-                    .case_ty | .failure | .generic | .error                   => is_array @ is_array
+                    .array                                                             => is_array @ true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_array @ is_array
+                    .fixed | .map | .fallible | .function_ty | .named                  => is_array @ is_array
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_array @ is_array
 
                 if !is_array
                     problems @ problems.push(label + "a push_owned into a place that is not an array")

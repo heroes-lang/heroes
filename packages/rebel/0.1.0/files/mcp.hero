@@ -2842,7 +2842,7 @@ test "read_http: a GET, an origin, a notification, each field missing or not mat
 test "a client and a server of Heroes over one connection: every request, an elicitation retried, a subscription told"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     conn = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 10_000).must()
-    worker @= threads.spawn(body: fixture.serve_lines, arg: net.accept_number(l).must()).must()
+    worker @= threads.start(body: fixture.serve_lines, arg: net.accept_number(l).must()).must()
     c @= stream_client(
         reading: conn.stream,
         writing: conn.stream,
@@ -2905,7 +2905,7 @@ test "a client and a server of Heroes over one connection: every request, an eli
 
 test "a client and a server of Heroes over Streamable HTTP: a 401 read, then every call with a token"
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    worker @= threads.spawn(body: fixture.serve_http_many, arg: control.address.port).must()
+    worker @= threads.start(body: fixture.serve_http_many, arg: control.address.port).must()
     port = numbers.parse_int(fixture.told(control)).must()
     net.close_listener(@control).must()
     c @= http_client(

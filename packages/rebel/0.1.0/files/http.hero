@@ -3780,7 +3780,7 @@ test "serve_stream: a request over TLS from a client of the test authority"
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
-    t @= threads.spawn_text(
+    t @= threads.start_text(
         body: canned.ask_tls,
         arg: f"{l.port}" + canned.SEPARATOR + "TRACE /s HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n"
     ).must()
@@ -3926,7 +3926,7 @@ test "serve_tls: a client silent after its handshake dropped at the deadline, th
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
+    t @= threads.start_text(body: canned.ask_tls, arg: f"{l.port}" + canned.SEPARATOR).must()
     tls.set_accept_deadline(l, deadline: time.seconds(3).must()).must()
     s @= default_server()
     s.deadline @ time.milliseconds(300).must()
@@ -4906,7 +4906,7 @@ test "serve_tls: an HTTP/2 client answered over HTTP/2"
         port: 0,
         server: tls.Server(chain: tls.TEST_LOCALHOST_CHAIN, key: tls.TEST_LOCALHOST_KEY, protocols: ["h2", "http/1.1"])
     ).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
+    t @= threads.start_text(body: h2bridge.ask_h2_tls, arg: to_str(l.port)).must()
     tls.set_accept_deadline(l, deadline: time.seconds(5).must()).must()
 
     match serve_tls(default_server(), l: l, handler: respond_not_found)
@@ -4947,7 +4947,7 @@ test "round_trip_h2: two requests on one connection"
 test "serve_h2: one request answered 404 by respond_not_found"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     net.set_accept_deadline(l, deadline_ms: 30000).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
+    t @= threads.start_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     served @= 0
 
     for _ in range(from: 0, to: 10)
@@ -4975,7 +4975,7 @@ test "serve_h2: one request answered 404 by respond_not_found"
 test "serve_h2_with: a redirector over HTTP/2"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     net.set_accept_deadline(l, deadline_ms: 30000).must()
-    t @= threads.spawn_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
+    t @= threads.start_text(body: h2bridge.ask_h2_plain, arg: to_str(l.address.port)).must()
     served @= 0
 
     for _ in range(from: 0, to: 10)

@@ -217,7 +217,7 @@ function constant_function(c: state.Checker, decls: [ast.Decl], at: i64, id: i64
 
 function is_function(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .function_ty                                              => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .named               => false
-        .case_ty | .failure | .generic | .error                   => false
+        .function_ty                                                       => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .named                        => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false

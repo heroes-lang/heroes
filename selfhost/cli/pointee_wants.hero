@@ -108,10 +108,10 @@ function read_only(c: state.Checked, slot: containers.Slot) -> bool
         .local_slot | .synthetic_slot | .return_slot => return false
 
     return match table.get(c.types, slot.ty)
-        .cstr                                                      => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => false
-        .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .generic | .error                    => false
+        .cstr                                                              => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => false
+        .array | .fixed | .map | .fallible | .function_ty | .named         => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Whether the declaration says `lent` of the parameter at `index`: a `cstr`
 # that is not `@` and is `lent` is the one a `.cstr()` reaches (spec § 13), the
@@ -164,10 +164,10 @@ function by_value(c: state.Checked, slot: containers.Slot, decls: [ast.Decl], f:
 # `read_lend.record_to_c`'s, the probe's `const` asking the same.
 function lent_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl], f: containers.Function, index: i64) -> bool
     named = match table.get(c.types, slot.ty)
-        .named                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .named                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
     return read_lend.record_to_c(decls, decl: f.decl, at: index, named: named)
 
@@ -202,9 +202,9 @@ function whole_record(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]
             match decls[n.decl].kind
                 .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .map | .fallible | .function_ty         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -223,11 +223,11 @@ function numeric_out(c: state.Checked, slot: containers.Slot) -> str?
         return fail(code: "none", msg: "not an @ parameter")
 
     match table.get(c.types, slot.ty)
-        .int_ty ik                                                 => return ok(widths.int_c_type(ik.kind))
-        .float_ty fk                                               => return ok(widths.float_c_type(fk.kind))
-        .bool | .str | .ptr | .cstr | .unit                        => return fail(code: "none", msg: "not numeric")
-        .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not numeric")
-        .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not numeric")
+        .int_ty ik                                                     => return ok(widths.int_c_type(ik.kind))
+        .float_ty fk                                                   => return ok(widths.float_c_type(fk.kind))
+        .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(code: "none", msg: "not numeric")
+        .array | .fixed | .map | .fallible | .function_ty | .named     => return fail(code: "none", msg: "not numeric")
+        .case_ty | .failure | .generic | .error                        => return fail(code: "none", msg: "not numeric")
 
     return fail(code: "none", msg: "unreached")
 
@@ -266,6 +266,7 @@ function opaque_out(c: state.Checked, slot: containers.Slot, decls: [ast.Decl]) 
                 return ok("handle")
             return fail(code: "none", msg: "a record by value")
         .int_ty | .float_ty | .bool | .str | .cstr | .unit => return fail(code: "none", msg: "not opaque")
+        .thread_ty | .mailbox_ty                           => return fail(code: "none", msg: "not opaque")
         .array | .fixed | .map | .fallible | .function_ty  => return fail(code: "none", msg: "not opaque")
         .case_ty | .failure | .generic | .error            => return fail(code: "none", msg: "not opaque")
 

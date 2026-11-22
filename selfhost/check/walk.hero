@@ -75,6 +75,7 @@ use check/settling
 use check/state
 use check/table
 use check/test_only
+use check/thread_ops
 use check/type_fit
 use check/waiting as waits
 use check/waiting_order as settle_order
@@ -385,7 +386,7 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
                 # lowering walks to them and would otherwise find no type,
                 # which reaches the emitter as a type nobody wrote.
                 operands.record_through_neg(@c, a, id: id, ty: expected)
-            .float_ty | .bool | .str | .ptr | .cstr | .unit | .array =>
+            .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .thread_ty | .mailbox_ty =>
                 got = table.int_ty_id(c.out.types)
                 mismatch.shown(@c, s, decls, expected: expected, got: state.show(c, s, decls, got), span: span)
                 _ = state.record_expr(@c, at: id, ty: got)
@@ -404,10 +405,10 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
     # Rust's literals.rs, inlined where its one caller lives.
     if contextual.float_literal(a, id)
         is_float_width = match table.get(c.out.types, expected)
-            .float_ty                                              => true
-            .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named      => false
-            .case_ty | .failure | .generic | .error                => false
+            .float_ty                                                          => true
+            .int_ty | .bool | .str | .ptr | .cstr | .unit | .array             => false
+            .fixed | .map | .fallible | .function_ty | .named                  => false
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
         if is_float_width
             operands.record_through_neg(@c, a, id: id, ty: expected)
@@ -429,10 +430,10 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .array items =>
             if items.elements.len() == 0
                 is_array = match table.get(c.out.types, expected)
-                    .array                                                    => true
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-                    .fixed | .map | .fallible | .function_ty | .named         => false
-                    .case_ty | .failure | .generic | .error                   => false
+                    .array                                                             => true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+                    .fixed | .map | .fallible | .function_ty | .named                  => false
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
                 if !is_array
                     mismatch.shown(@c, s, decls, expected: expected, got: "[]", span: span)
@@ -450,10 +451,10 @@ function check(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .map entries =>
             if entries.entries.len() == 0
                 is_map = match table.get(c.out.types, expected)
-                    .map                                                      => true
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-                    .fixed | .array | .fallible | .function_ty | .named       => false
-                    .case_ty | .failure | .generic | .error                   => false
+                    .map                                                               => true
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+                    .fixed | .array | .fallible | .function_ty | .named                => false
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
                 if !is_map
                     mismatch.shown(@c, s, decls, expected: expected, got: "{}", span: span)
@@ -692,9 +693,9 @@ function checked_array_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
 
             _ = state.record_expr(@c, at: id, ty: expected)
             return true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .map | .fallible | .function_ty | .named                  => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .map | .fallible | .function_ty | .named                           => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -710,9 +711,9 @@ function checked_map_literal(@c: state.Checker, a: ast.Ast, r: resolved.Resolved
 
             _ = state.record_expr(@c, at: id, ty: expected)
             return true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .fallible | .function_ty | .named       => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .fallible | .function_ty | .named                => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -894,7 +895,7 @@ function for_loop(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source
         # the mistake worth naming.
 
         .error => element @ state.error_ty_of(c)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             shown = state.show(c, s, decls, over)
             state.push_diagnostic(@c, flow_errors.not_iterable(shown, a.exprs[iterable].span))
         .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic =>
@@ -1226,9 +1227,12 @@ function named_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sour
                     state.push_diagnostic(@c, contextless_errors.variant_not_callable(name, span))
                     return ok(state.error_ty_of(c))
                 .constant_decl | .test_decl => return fail(code: "indirect", msg: "a constant callee is a value")
-        .builtin b => return ok(
-            builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span)
-        )
+        .builtin b =>
+            if thread_ops.by_name(b.at)
+                return ok(thread_ops.named(@c, a, r, s, decls, b.at, given, expected, span))
+            return ok(
+                builtin_dispatch(@c, a, r, s, decls, index: b.at, given: given, receiver: fail(code: "absent", msg: "no receiver"), span: span)
+            )
         .unresolved | .local | .module => return fail(code: "indirect", msg: "the resolver did not name a declaration")
 
     return fail(code: "indirect", msg: "unreached")
@@ -1383,7 +1387,7 @@ function indirect_call(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: s
             if !labels_in_place.none_written(given) && labels_in_place.any_elsewhere(s.text, given: given, names: names, from: offset)
                 label_order.told_value(@c, a, s, decls, callee, names, params, given, from: offset, said: before)
             return f.result
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
             got = state.show(c, s, decls, callee_ty)
             state.push_diagnostic(@c, value_errors.not_callable(got, span))
             return state.error_ty_of(c)
@@ -1474,6 +1478,9 @@ function method(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.S
                 receiver: fail(code: "absent", msg: "the field call takes no receiver"),
                 span: span
             )
+
+    if thread_ops.dotted(c, r, at: at, receiver_ty: receiver_ty, name: name)
+        return thread_ops.operation(@c, a, r, s, decls, receiver_ty, called: called, given, span: span)
 
     match r.uses[at]
         .top t =>
@@ -1922,10 +1929,10 @@ function case_construct(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: 
     decl: i64 @= -1
 
     match table.get(c.out.types, expected)
-        .named n                                                  => decl @ n.decl
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ -1
-        .array | .fixed | .map | .fallible | .function_ty         => decl @ -1
-        .case_ty | .failure | .generic | .error                   => decl @ -1
+        .named n                                                           => decl @ n.decl
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => decl @ -1
+        .array | .fixed | .map | .fallible | .function_ty                  => decl @ -1
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => decl @ -1
 
     if decl < 0
         if !table.poisoned(c.out.types, expected)
@@ -1998,10 +2005,10 @@ function construction(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: so
     inner: i64 @= -1
 
     match table.get(c.out.types, expected)
-        .fallible o                                               => inner @ o.payload
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => inner @ -1
-        .array | .fixed | .map | .function_ty | .named            => inner @ -1
-        .case_ty | .failure | .generic | .error                   => inner @ -1
+        .fallible o                                                        => inner @ o.payload
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => inner @ -1
+        .array | .fixed | .map | .function_ty | .named                     => inner @ -1
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => inner @ -1
 
     if inner < 0
         if !table.poisoned(c.out.types, expected)

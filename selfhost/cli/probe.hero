@@ -68,6 +68,7 @@ constant FIXTURES: [str]
         "tests/golden/surface-fixtures/escape251"
         "tests/golden/surface-fixtures/mark235"
         "tests/golden/surface-fixtures/useorder238"
+        "tests/golden/surface-fixtures/thread2647"
     ]
 
 # How many failures past the first the report names.
@@ -384,7 +385,9 @@ test "a family the probe does not make is named with the seven, and a path that 
     # every shape a `use` line takes, the surface suite's `fmt` row over it.
     # 14 -> 15 on 2026-11-09: `useorder238`, panel 238's R1, the `use` block
     # in its one order, the surface suite's `fmt` rows over its three files.
-    assert FIXTURES.len() == 15
+    # 15 -> 16 on 2026-11-22: `thread2647`, feature 2647, a thread's and a
+    # mailbox's types and operations, the surface suite's `fmt` row over it.
+    assert FIXTURES.len() == 16
 
 test "a stride is a whole number from 1 up"
     assert judge.counted("2") == 2

@@ -71,10 +71,10 @@ function whole_slot(c: state.Checked, f: containers.Function, arg: ir.Arg) -> i6
                 return 0 - 1
 
             match table.get(c.types, f.slots[io.place.root].ty)
-                .array                                                    => return 0 - 1
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return io.place.root
-                .fixed | .map | .fallible | .function_ty | .named         => return io.place.root
-                .case_ty | .failure | .generic | .error                   => return io.place.root
+                .array                                                             => return 0 - 1
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return io.place.root
+                .fixed | .map | .fallible | .function_ty | .named                  => return io.place.root
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return io.place.root
         .value_arg => return 0 - 1
 
     return 0 - 1

@@ -157,6 +157,7 @@ function locked(s: source.Source, decls: [ast.Decl], c: state.Checked, found: {i
         .named n => return record_locked(s, decls, c, found: found, decl: n.decl, @why, depth: depth)
         .fixed f => return locked(s, decls, c, found: found, ty: f.element, @why, depth: depth + 1)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
+        .thread_ty | .mailbox_ty => return ""
         .array | .map | .fallible | .function_ty => return ""
         .case_ty | .failure | .generic | .error => return ""
 
@@ -325,10 +326,10 @@ function to_a_letter(a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl], c: sta
                 return false
 
             match table.get(c.types, written.must())
-                .generic                                                  => return true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-                .array | .fixed | .map | .fallible | .function_ty         => return false
-                .named | .case_ty | .failure | .error                     => return false
+                .generic                                                         => return true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit        => return false
+                .array | .fixed | .map | .fallible | .function_ty                => return false
+                .named | .case_ty | .failure | .error | .thread_ty | .mailbox_ty => return false
         .constant_decl | .record_decl | .variant_decl | .test_decl => return false
 
     return false

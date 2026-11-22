@@ -22,6 +22,8 @@ use emit/builtins
 use emit/c_main
 use emit/callback_guard
 use emit/callback_thunk
+use emit/crossing
+use emit/crossing_bodies
 use emit/ctype
 use emit/decls as emit_decls
 use emit/descriptors
@@ -32,6 +34,7 @@ use emit/large_size
 use emit/lend_local
 use emit/padding_tables
 use emit/perfn
+use emit/program_entry
 use emit/reach
 use emit/side_bodies
 use emit/sides
@@ -67,39 +70,6 @@ record Emitted
     # a name here is a QUESTION, answered by a file this program did
     # not write.
     pkgconfigs: [str]
-
-# The test blocks in this program, in source order, by their titles.
-# heroes test needs the list before it runs anything: it compiles once
-# and runs the binary once per test, so each failure is its own
-# process and one abort does not hide the tests after it.
-function tests_of(p: containers.Program) -> [str]
-    out: [str] @= []
-
-    for f in p.functions
-        match f.kind
-            .test_kind                                     => out @ out.push(f.name)
-            .function_kind | .constant_kind | .extern_kind => continue
-
-    return out
-
-# Where a program's main is, or nothing. A file with no entry point is
-# a perfectly good translation unit — it just cannot become a binary,
-# and the difference belongs to the caller.
-function entry_point(p: containers.Program) -> i64?
-    index: i64 @= 0
-
-    for f in p.functions
-        is_main: bool @= false
-
-        match f.kind
-            .function_kind                             => is_main @ f.name == "main"
-            .constant_kind | .extern_kind | .test_kind => is_main @ is_main
-
-        if is_main
-            return ok(index)
-        index @ index + 1
-
-    return fail(code: "none", msg: "no main in this program")
 
 # The functions the fused unit shows: the author's, plus exactly the
 # library functions the program reaches. The per-TU path (panel 093 R1)
@@ -259,6 +229,10 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
     # An `assert`'s sides, the renderers of the types they compare (panel 230's R2).
     compared = sides.wanted(c, names, decls, p, at: shown, target: target)
     side_bodies.prototypes(@w, c, s, decls, listed: compared)
+
+    # What crosses between the program's threads (feature 2647).
+    crossed = crossing.wanted(c, decls, p, at: shown, target: target)
+    crossing_bodies.prototypes(@w, c, names, s, decls, crossed: crossed)
     descriptors.definitions(
         @w,
         c,
@@ -267,7 +241,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         reachable: reached,
         constructed: constructed,
         want: synth.everything(),
-        kinds: kinds
+        kinds: kinds,
+        crossed: crossed.described
     )
 
     # Which functions C may call back, computed ONCE for the whole unit
@@ -299,10 +274,11 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
 
     perfn.bodies(@w, c, names, s, decls, want: synth.everything())
     side_bodies.bodies(@w, c, names, s, decls, listed: compared)
+    crossing_bodies.bodies(@w, c, names, s, decls, crossed: crossed)
 
     match target
         .program_build =>
-            entry = entry_point(p)
+            entry = program_entry.entry_point(p)
 
             if !entry.is_err()
                 c_main.shim(@w, p.functions[entry.must()], s, sources: sources)
@@ -401,10 +377,10 @@ test "one program, one unit: prelude, order, shim — and the same bytes twice"
     assert tests.diagnostics.len() == 0
     assert has(text: tests.c, needle: "int main(")
     assert tests.c != got.c
-    titles = tests_of(p)
+    titles = program_entry.tests_of(p)
     assert titles.len() == 1
     assert titles[0] == "\"grab reads the value\""
-    assert !entry_point(p).is_err()
+    assert !program_entry.entry_point(p).is_err()
     assert got.link.len() == 0
     assert got.pkgconfigs.len() == 0
 

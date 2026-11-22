@@ -19,6 +19,7 @@
 use ast
 use check/state
 use check/table
+use check/thread_types
 use check/type_fit
 use resolved
 use source
@@ -57,7 +58,7 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
                 .array actual =>
                     bind(@c, s, decls, @bindings, param: wanted.element, got: actual.element, span: span)
                     return
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
                     return
                 .fixed | .map | .fallible | .function_ty | .named =>
@@ -81,17 +82,17 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
                     got: actual.payload,
                     span: span
                 )
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .map | .array | .function_ty | .named            => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .map | .array | .function_ty | .named                     => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .map wanted =>
             match table.get(c.out.types, got)
                 .map actual =>
                     bind(@c, s, decls, @bindings, param: wanted.key, got: actual.key, span: span)
                     bind(@c, s, decls, @bindings, param: wanted.value, got: actual.value, span: span)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .array | .fallible | .function_ty | .named       => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .array | .fallible | .function_ty | .named                => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .function_ty wanted =>
             match table.get(c.out.types, got)
                 .function_ty actual =>
@@ -118,7 +119,7 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
 
                         return
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty =>
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
                     return
                 .fixed | .map | .fallible | .array | .named =>
@@ -127,6 +128,13 @@ function bind(@c: state.Checker, s: source.Source, decls: [ast.Decl], @bindings:
                 .case_ty | .failure | .generic | .error =>
                     mismatch_shape(@c, s, decls, param: param, got: got, span: span)
                     return
+        .thread_ty | .mailbox_ty =>
+            pair = thread_types.same_kind(c.out.types, wanted: param, got: got)
+
+            if pair.is_err()
+                mismatch_shape(@c, s, decls, param: param, got: got, span: span)
+                return
+            bind(@c, s, decls, @bindings, param: pair.must().wanted, got: pair.must().got, span: span)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit =>
             if param != got && !table.poisoned(c.out.types, param) && !table.poisoned(c.out.types, got)
                 mismatch_shape(@c, s, decls, param: param, got: got, span: span)
@@ -171,21 +179,21 @@ function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
                 .array actual => bind_missing(c, @bindings, param: wanted.element, got: actual.element)
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
                 .fixed | .map | .fallible | .function_ty | .named => return
-                .case_ty | .failure | .generic | .error => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .fallible wanted =>
             match table.get(c.out.types, got)
                 .fallible actual => bind_missing(c, @bindings, param: wanted.payload, got: actual.payload)
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
                 .fixed | .map | .array | .function_ty | .named => return
-                .case_ty | .failure | .generic | .error => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .map wanted =>
             match table.get(c.out.types, got)
                 .map actual =>
                     bind_missing(c, @bindings, param: wanted.key, got: actual.key)
                     bind_missing(c, @bindings, param: wanted.value, got: actual.value)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .array | .fallible | .function_ty | .named       => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .array | .fallible | .function_ty | .named                => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .function_ty wanted =>
             match table.get(c.out.types, got)
                 .function_ty actual =>
@@ -200,9 +208,14 @@ function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
                             i @ i + 1
 
                         bind_missing(c, @bindings, param: wanted.result, got: actual.result)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .map | .fallible | .array | .named               => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .map | .fallible | .array | .named                        => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
+        .thread_ty | .mailbox_ty =>
+            pair = thread_types.same_kind(c.out.types, wanted: param, got: got)
+
+            if !pair.is_err()
+                bind_missing(c, @bindings, param: pair.must().wanted, got: pair.must().got)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
         .fixed | .named | .case_ty | .failure | .error            => return
 
@@ -213,11 +226,12 @@ function bind_missing(c: state.Checker, @bindings: [i64?], param: i64, got: i64)
 # refused, and the declaration is the one line that can be fixed.
 function mentions(c: state.Checker, ty: i64, at: i64) -> bool
     match table.get(c.out.types, ty)
-        .generic g  => return g.at == at
-        .array a    => return mentions(c, ty: a.element, at: at)
-        .fallible o => return mentions(c, ty: o.payload, at: at)
-        .fixed x    => return mentions(c, ty: x.element, at: at)
-        .map m      => return mentions(c, ty: m.key, at: at) || mentions(c, ty: m.value, at: at)
+        .generic g               => return g.at == at
+        .array a                 => return mentions(c, ty: a.element, at: at)
+        .fallible o              => return mentions(c, ty: o.payload, at: at)
+        .fixed x                 => return mentions(c, ty: x.element, at: at)
+        .map m                   => return mentions(c, ty: m.key, at: at) || mentions(c, ty: m.value, at: at)
+        .thread_ty | .mailbox_ty => return mentions(c, ty: thread_types.element_of(c.out.types, ty).must(), at: at)
         .function_ty f =>
             for p in table.params_of(c.out.types, f.params)
                 if mentions(c, ty: p, at: at)
@@ -299,6 +313,9 @@ function substitute(@c: state.Checker, ty: i64, bindings: [i64?]) -> i64
             key = substitute(@c, m.key, bindings)
             value = substitute(@c, m.value, bindings)
             return table.intern(@c.out.types, .map(key: key, value: value))
+        .thread_ty | .mailbox_ty =>
+            element = substitute(@c, thread_types.element_of(c.out.types, ty).must(), bindings)
+            return thread_types.with_element(@c.out.types, id: ty, element: element)
         .function_ty f =>
             rebuilt: [i64] @= []
 

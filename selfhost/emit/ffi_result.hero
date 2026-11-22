@@ -199,7 +199,7 @@ function type_span(s: source.Source, decls: [ast.Decl], tree: ast.Ast, name: str
                 if !fd.value.header.is_err()
                     match tree.types[fd.value.result].kind
                         .unit => return fail(code: "none", msg: "no result written")
-                        .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error => return ok(
+                        .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error | .thread_of | .mailbox_of => return ok(
                             tree.types[fd.value.result].span
                         )
             .record_decl | .variant_decl | .test_decl => continue

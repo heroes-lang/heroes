@@ -72,7 +72,7 @@ function payload_of(c: state.Checker, ty: i64) -> i64
         .fallible f                                               => f.payload
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => ty
         .array | .fixed | .map | .function_ty | .named | .case_ty => ty
-        .failure | .generic | .error                              => ty
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => ty
 
 # What `ops.binary` takes, for two operands of these types: one type both
 # sides, and the operator's own set (§4.14).
@@ -96,7 +96,7 @@ function unary_takes(c: state.Checker, op: ast.UnaryOp, operand: i64) -> bool
 
 function numeric(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty | .float_ty                                   => true
-        .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
-        .map | .fallible | .function_ty | .named | .case_ty   => false
-        .failure | .generic | .error                          => false
+        .int_ty | .float_ty                                     => true
+        .bool | .str | .ptr | .cstr | .unit | .array | .fixed   => false
+        .map | .fallible | .function_ty | .named | .case_ty     => false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => false

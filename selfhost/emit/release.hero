@@ -78,9 +78,14 @@ function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64,
                 line @ "    hero_failure_retain(&" + name + ");"
             else
                 line @ "    hero_failure_release(&" + name + ");"
+        .mailbox_ty =>
+            if keep
+                line @ "    hero_mail_incref(" + name + ");"
+            else
+                line @ "    hero_mail_decref(" + name + ");"
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
         .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
-        .generic | .error                                     => line @ line
+        .generic | .error | .thread_ty                        => line @ line
 
     if line == ""
         found = aggregate.retain_named(c, names, ty: ty, name: name, keep: keep)
@@ -104,9 +109,10 @@ function slot(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, 
         .array                                                => line @ "    hero_array_release_at(&" + name + ");"
         .map                                                  => line @ "    hero_map_release_at(&" + name + ");"
         .failure                                              => line @ "    hero_failure_release(&" + name + ");"
+        .mailbox_ty                                           => line @ "    hero_mail_release_at(&" + name + ");"
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
         .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
-        .generic | .error                                     => line @ line
+        .generic | .error | .thread_ty                        => line @ line
 
     if line == ""
         # C converts the `void *` to the release's own pointer type with no
