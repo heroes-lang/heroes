@@ -115,7 +115,8 @@ typedef struct hero_ui_app hero_ui_app;
  * window is a top-level window, its `parent` 0; a widget's parent is the
  * window it stands in; a menu's parent is the window whose menu bar holds
  * it (on macOS the application's menu bar shows the menus of the window in
- * front); a menu item's and a separator's parent is its menu. */
+ * front), or a menu, inside which it stands as a submenu after the items
+ * made before it; a menu item's and a separator's parent is its menu. */
 #define HERO_UI_WINDOW 1
 #define HERO_UI_LABEL 2
 #define HERO_UI_BUTTON 3
@@ -791,5 +792,24 @@ int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple
  * (-1 for none). Waits for the person and answers the index of the button
  * pressed, or -1. */
 int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
+
+/* -- CHECK AND RADIO MENU ITEMS ----------------------------------------------
+ *
+ * A menu item checked and unchecked (View > Show Sidebar), or one of a
+ * group of which one is checked (View > as Icons, as List), as wxWidgets'
+ * `wxITEM_CHECK` and `wxITEM_RADIO` items: the person's choosing turns a
+ * check item over, and checks a radio item and unchecks the other radio
+ * items of its group, the radio items of its menu no other item or
+ * separator stands between, before the item's `HERO_UI_EVENT_MENU`, whose
+ * `value` is its state after. `hero_ui_set_value` and `hero_ui_value` set
+ * and read the state, 1 checked, 0 not, no event queued for a set. */
+#define HERO_UI_CHECK_NONE 0
+#define HERO_UI_CHECK_BOX 1
+#define HERO_UI_CHECK_RADIO 2
+
+/* Makes menu item `id` a check item, a radio item, or neither,
+ * `HERO_UI_CHECK_NONE`; unchecked. 0, or -1: `INVALID` (a mode these do not
+ * name, a widget no menu item), `NOT_FOUND`. */
+int64_t hero_ui_set_check(hero_ui_app *app, int64_t id, int64_t mode);
 
 #endif

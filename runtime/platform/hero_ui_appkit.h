@@ -67,6 +67,8 @@ int64_t hero_ui_appkit_set_focus(int64_t id);
 
 int64_t hero_ui_appkit_focus(int64_t id, int64_t *focus);
 
+int64_t hero_ui_appkit_set_check(int64_t id, int64_t mode);
+
 int64_t hero_ui_appkit_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes);
 
 int64_t hero_ui_appkit_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed);

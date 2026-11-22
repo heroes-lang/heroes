@@ -37,6 +37,13 @@ function made(app: ui.App, n: model.Node) -> ()?
     if n.kind == hero_ui.HERO_UI_IMAGE
         push_image(app, n: n)?
 
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM && n.check != hero_ui.HERO_UI_CHECK_NONE
+        if hero_ui.set_check(app.handle, id: n.id, mode: n.check) < 0
+            return failure.last(f"making menu item {n.id} checkable")
+
+        if hero_ui.set_value(app.handle, id: n.id, value: n.value) < 0
+            return failure.last(f"checking menu item {n.id}")
+
     if n.kind == hero_ui.HERO_UI_WINDOW
         if hero_ui.set_size(app.handle, id: n.id, width: n.width, height: n.height) < 0
             return failure.last(f"sizing window {n.id}")
@@ -49,6 +56,10 @@ function native_parent(app: ui.App, n: model.Node) -> i64
         return 0
 
     if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+        return n.parent
+
+    # A menu inside a menu stands in that menu.
+    if n.kind == hero_ui.HERO_UI_MENU && app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_MENU
         return n.parent
     _ = app
     return n.window

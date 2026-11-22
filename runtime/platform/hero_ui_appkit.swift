@@ -223,6 +223,8 @@ private final class Native {
     var menus: [Int64] = []
     // A menu item's role, `hero_ui.h`'s `HERO_UI_ROLE_*`: 0 for none.
     var role: Int64 = 0
+    // A menu item's check, `hero_ui.h`'s `HERO_UI_CHECK_*`: 0 for none.
+    var check: Int64 = 0
     // A web view's page and what it keeps.
     var page: WebPage?
 
@@ -326,6 +328,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         guard let owner = widgets[parent] else {
             return answerNotFound
+        }
+        // A menu inside a menu: its item holds it among the outer menu's
+        // items, in the order made.
+        if kind == kindMenu && owner.kind == kindMenu, let outer = owner.menu {
+            let menu = NSMenu(title: "")
+            menu.autoenablesItems = false
+            let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            item.submenu = menu
+            outer.addItem(item)
+            made.menu = menu
+            made.item = item
+            widgets[id] = made
+            return answerOk
         }
         guard owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
             return answerInvalid
@@ -705,8 +720,20 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
     }
 
+    // A menu item chosen: a check item turns over, a radio item is checked
+    // and the other radio items of its group unchecked, before its event,
+    // whose value is the item's state after it.
     @objc func menuChosen(_ sender: NSMenuItem) {
-        queue(eventMenu, Int64(sender.tag), 0, 0)
+        let id = Int64(sender.tag)
+        guard let widget = widgets[id] else {
+            return
+        }
+        if widget.check == checkBox, let item = widget.item {
+            item.state = item.state == .on ? .off : .on
+        } else if widget.check == checkRadio {
+            radioChecked(widget)
+        }
+        queue(eventMenu, id, widget.item?.state == .on ? 1 : 0, 0)
     }
 
     @objc func quitAsked(_ sender: NSMenuItem) {
@@ -841,6 +868,17 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func setValue(_ id: Int64, _ value: Int64) -> Int64 {
         guard let widget = widgets[id] else {
             return answerNotFound
+        }
+        if widget.kind == kindMenuItem {
+            guard widget.check != checkNone, value == 0 || value == 1, let item = widget.item else {
+                return answerInvalid
+            }
+            if widget.check == checkRadio && value == 1 {
+                radioChecked(widget)
+            } else {
+                item.state = value == 1 ? .on : .off
+            }
+            return answerOk
         }
         switch widget.kind {
         case kindCheckbox:
@@ -1132,6 +1170,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func value(_ id: Int64) -> Int64? {
         guard let widget = widgets[id] else {
             return nil
+        }
+        if widget.kind == kindMenuItem && widget.check != checkNone {
+            return widget.item?.state == .on ? 1 : 0
         }
         switch widget.kind {
         case kindCheckbox:
@@ -1933,6 +1974,62 @@ public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ 
     }
     pressed.pointee = index
     return answerOk
+}
+
+// A menu item's checks, `hero_ui.h`'s `HERO_UI_CHECK_*`.
+private let checkNone: Int64 = 0
+private let checkBox: Int64 = 1
+private let checkRadio: Int64 = 2
+
+extension Backend {
+    // Makes menu item `id` a check item, a radio item or neither, unchecked.
+    func setCheck(_ id: Int64, _ mode: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindMenuItem, let item = widget.item, mode >= checkNone, mode <= checkRadio else {
+            return answerInvalid
+        }
+        widget.check = mode
+        item.state = .off
+        return answerOk
+    }
+
+    // Checks radio item `widget` and unchecks every other radio item of its
+    // group: the radio items of its menu that no separator and no other item
+    // stands between, as a menu shows a group.
+    func radioChecked(_ widget: Native) {
+        guard let item = widget.item, let menu = item.menu else {
+            return
+        }
+        let at = menu.index(of: item)
+        var first = at
+        while first > 0, let other = native(menu.item(at: first - 1)), other.check == checkRadio {
+            first -= 1
+        }
+        var last = at
+        while last + 1 < menu.numberOfItems, let other = native(menu.item(at: last + 1)), other.check == checkRadio {
+            last += 1
+        }
+        for index in first...last {
+            menu.item(at: index)?.state = index == at ? .on : .off
+        }
+    }
+
+    // The widget whose menu item `item` is.
+    func native(_ item: NSMenuItem?) -> Native? {
+        guard let item = item, !item.isSeparatorItem, let widget = widgets[Int64(item.tag)], widget.item === item else {
+            return nil
+        }
+        return widget
+    }
+}
+
+@c
+public func hero_ui_appkit_set_check(_ id: Int64, _ mode: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setCheck(id, mode) ?? answerNotFound
+    }
 }
 
 // A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.

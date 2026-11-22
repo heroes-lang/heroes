@@ -76,19 +76,17 @@
 # title and a frame around it; a text field whose text is masked; a combo
 # box the person may type into; a progress bar that moves with no value; a
 # number typed, or stepped up and down; a line between the widgets of a box;
-# a menu inside a menu; pages chosen by tabs; rows of cells in columns; a
-# tree of items folded and unfolded; a box whose content scrolls; two panes
-# whose border the person drags; an area the program draws into, with its
-# keys and its mouse; a tip shown over a widget; the system's clipboard; a
-# date, a colour or a font chosen in the system's own picker; an icon in the
-# system's tray or menu bar, and its notifications; a file dragged onto a
-# window.
+# pages chosen by tabs; rows of cells in columns; a tree of items folded and
+# unfolded; a box whose content scrolls; two panes whose border the person
+# drags; an area the program draws into, with its keys and its mouse; a tip
+# shown over a widget; the system's clipboard; a date, a colour or a font
+# chosen in the system's own picker; an icon in the system's tray or menu
+# bar, and its notifications; a file dragged onto a window.
 
 use bytes
 use image
 use time
 use ui/hero_ui
-use ui/internal/check
 use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
@@ -96,6 +94,7 @@ use ui/internal/fixture
 use ui/internal/keyboard
 use ui/internal/loop
 use ui/internal/makers
+use ui/internal/menus
 use ui/internal/model
 use ui/internal/render as drawing
 use ui/internal/state
@@ -880,24 +879,29 @@ function set_enabled(@app: App, widget: Widget, on: bool) -> ()?
 function set_visible(@app: App, widget: Widget, on: bool) -> ()?
     return state.set_visible(@app, widget: widget, on: on)
 
-# Checks or unchecks checkbox `widget`. No event comes of it.
+# Checks or unchecks checkbox `widget`, or a check or radio item of a menu;
+# a radio item checked unchecks the others of its group. No event comes of
+# it.
 #
 # - `app`: the app holding it.
-# - `widget`: the checkbox.
+# - `widget`: the checkbox, or the menu's check or radio item.
 # - `checked`: whether it is checked.
 #
-# Fails `closed`, `invalid`, `failed`.
+# Fails `closed`, `invalid` for a widget of another kind or a plain menu
+# item, `failed`. See also `check_item`, `radio_item`.
 function set_checked(@app: App, widget: Widget, checked: bool) -> ()?
-    return state.set_value(@app, widget: widget, value: check.number_of(checked), kind: hero_ui.HERO_UI_CHECKBOX)
+    return state.set_checked(@app, widget: widget, checked: checked)
 
-# Whether checkbox `widget` is checked now.
+# Whether checkbox `widget`, or a check or radio item of a menu, is checked
+# now, the person's last choice included.
 #
 # - `app`: the app holding it.
-# - `widget`: the checkbox.
+# - `widget`: the checkbox, or the menu's check or radio item.
 #
-# Fails `closed`, `invalid`, `failed`.
+# Fails `closed`, `invalid` for a widget of another kind or a plain menu
+# item, `failed`.
 function is_checked(app: App, widget: Widget) -> bool?
-    return ok(state.value_of(app, widget: widget, kind: hero_ui.HERO_UI_CHECKBOX)? == 1)
+    return state.is_checked(app, widget: widget)
 
 # Moves a slider's knob, or fills a progress bar, to `value`. No event comes
 # of it.
@@ -978,12 +982,13 @@ function set_picture(@app: App, widget: Widget, img: image.Image) -> ()?
 
 ## Menus
 
-# A new menu titled `title` at the end of window `into`'s menu bar. On
-# macOS the menu bar at the top of the screen shows the menus of the window
-# in front, after the application's own menu.
+# A new menu titled `title` at the end of window `into`'s menu bar, or at
+# the end of menu `into`, a menu inside a menu (Open Recent, Format > Font).
+# On macOS the menu bar at the top of the screen shows the menus of the
+# window in front, after the application's own menu.
 #
 # - `app`: the app it is made in.
-# - `into`: the window.
+# - `into`: the window, or the menu.
 # - `title`: one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -1009,6 +1014,36 @@ function menu_item(@app: App, into: Widget, text: str) -> Widget?
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function menu_separator(@app: App, into: Widget) -> Widget?
     return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU_SEPARATOR, text: "")
+
+# A new item at the end of menu `into` that the person checks and unchecks
+# by choosing it (View > Show Sidebar), as wxWidgets' `wxITEM_CHECK`; each
+# choice turns it over before its `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu.
+# - `text`: one line without a zero byte.
+# - `checked`: whether it starts checked.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `is_checked`,
+# `set_checked`.
+function check_item(@app: App, into: Widget, text: str, checked: bool) -> Widget?
+    return menus.checkable(@app, into: into, text: text, mode: hero_ui.HERO_UI_CHECK_BOX, checked: checked)
+
+# A new item at the end of menu `into` of a group of which one is checked
+# (View > as Icons, as List), as wxWidgets' `wxITEM_RADIO`: the radio items
+# of a menu no other item or separator stands between are one group, and
+# choosing one checks it and unchecks the others before its `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu.
+# - `text`: one line without a zero byte.
+# - `checked`: whether it starts checked, the others of its group then
+#   unchecked.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `is_checked`,
+# `set_checked`.
+function radio_item(@app: App, into: Widget, text: str, checked: bool) -> Widget?
+    return menus.checkable(@app, into: into, text: text, mode: hero_ui.HERO_UI_CHECK_RADIO, checked: checked)
 
 # A key and the keys held with it, which choose a menu item.
 record Shortcut
@@ -2255,6 +2290,40 @@ test "set_role: About in the Help menu"
     assert render(@app).must()[2] == "    menu_item #3 \"About Notes\" role about"
     inject(@app, input: .choose_menu(item: about)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: about)
+    close(@app).must()
+
+# A menu inside the File menu.
+test "menu: Open Recent inside File"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    file = menu(@app, into: w, title: "File").must()
+    recent = menu(@app, into: file, title: "Open Recent").must()
+    item = menu_item(@app, into: recent, text: "notes.txt").must()
+    inject(@app, input: .choose_menu(item: item)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
+    close(@app).must()
+
+# View > Show Sidebar, turned off by the person.
+test "check_item: Show Sidebar"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    view = menu(@app, into: w, title: "View").must()
+    sidebar = check_item(@app, into: view, text: "Show Sidebar", checked: true).must()
+    inject(@app, input: .choose_menu(item: sidebar)).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert !is_checked(app, widget: sidebar).must()
+    close(@app).must()
+
+# View > as Icons or as List, the second chosen.
+test "radio_item: as Icons, as List"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    view = menu(@app, into: w, title: "View").must()
+    icons = radio_item(@app, into: view, text: "as Icons", checked: true).must()
+    as_list = radio_item(@app, into: view, text: "as List", checked: false).must()
+    inject(@app, input: .choose_menu(item: as_list)).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert is_checked(app, widget: as_list).must() && !is_checked(app, widget: icons).must()
     close(@app).must()
 
 # A timer firing on a headless app's clock.

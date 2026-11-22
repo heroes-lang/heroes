@@ -55,6 +55,17 @@ function line_of(n: model.Node, visible: bool) -> str
             "[ ]"
 
         parts @ parts.push(mark).push(quoted(n.text))
+    else if k == hero_ui.HERO_UI_MENU_ITEM && n.check != hero_ui.HERO_UI_CHECK_NONE
+        mark = if n.check == hero_ui.HERO_UI_CHECK_RADIO && n.value == 1
+            "(x)"
+        else if n.check == hero_ui.HERO_UI_CHECK_RADIO
+            "( )"
+        else if n.value == 1
+            "[x]"
+        else
+            "[ ]"
+
+        parts @ parts.push(mark).push(quoted(n.text))
     else if model.has_text(k)
         parts @ parts.push(quoted(n.text))
 

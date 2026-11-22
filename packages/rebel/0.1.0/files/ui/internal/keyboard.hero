@@ -18,6 +18,7 @@ use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/give
 use ui/internal/loop
+use ui/internal/menus
 use ui/internal/model
 use ui/internal/state
 
@@ -72,6 +73,7 @@ function press(@app: ui.App, widget: ui.Widget, shortcut: ui.Shortcut) -> ()?
     item = item_for(app.table, window: n.window, key: shortcut.key, modifiers: held)
 
     if item != 0
+        menus.chosen(@app, id: item)
         app.events @ app.events.push(.menu_chosen(item: check.widget_of(app, id: item)))
     else if held == 0 && shortcut.key == "Enter" && n.kind == hero_ui.HERO_UI_TEXT_FIELD
         app.events @ app.events.push(.submitted(widget: widget))
@@ -187,19 +189,11 @@ function modifiers_of(shortcut: ui.Shortcut) -> i64
 # shortcut is `key` with `modifiers` held, and which the person can choose:
 # it and its menu enabled. 0, the number no widget takes, where none is.
 function item_for(m: model.Model, window: i64, key: str, modifiers: i64) -> i64
-    w = m.nodes[window].must()
+    for id in menus.items_of(m, window: window)
+        item = m.nodes[id].must()
 
-    for menu in w.menus
-        holder = m.nodes[menu].must()
-
-        if !holder.enabled
-            continue
-
-        for id in holder.children
-            item = m.nodes[id].must()
-
-            if item.kind == hero_ui.HERO_UI_MENU_ITEM && item.enabled && item.key == key && item.modifiers == modifiers
-                return id
+        if item.key == key && item.modifiers == modifiers && menus.open_item(m, id: id)
+            return id
 
     return 0
 

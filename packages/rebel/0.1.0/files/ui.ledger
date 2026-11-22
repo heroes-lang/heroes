@@ -296,10 +296,20 @@ capability ui/app-menu  the application's menu of macOS: About, Settings, Servic
   note    on macOS the arm's application menu holds the system's Services, Hide, Hide Others and Show All, and an item of the program's with a role stands in About's, Settings' (Command+,) or Quit's place, hidden where it was made, its choosing told as itself; without one, About shows the system's panel and Quit asks every window to close; Windows and Linux have no such menu and keep the item where it was made (their arms pending)
 
 capability ui/submenu  a menu inside a menu
-  heroes  pending
+  heroes  ui.menu
   go      -
-  rust    -
+  rust    tauri::menu::Submenu
   python  tkinter.Menu
+  wx      wxMenu (AppendSubMenu)
+  note    `menu` takes a menu as well as a window; a shortcut of an item deep inside one is taken as any; macOS by an item holding the inner `NSMenu`, Windows pending (`AppendMenuW` with `MF_POPUP`), Linux pending (a `GMenu` submenu)
+
+capability ui/menu-checks  menu items checked and unchecked, and groups of which one is checked
+  heroes  ui.check_item, ui.radio_item, ui.set_checked, ui.is_checked
+  go      -
+  rust    tauri::menu::CheckMenuItem
+  python  tkinter.Menu
+  wx      wxMenu (AppendCheckItem, AppendRadioItem, the kinds wxITEM_CHECK and wxITEM_RADIO)
+  note    the person's choice turns a check item over and checks a radio item alone in its group, the radio items no other item or separator stands between, before `.menu_chosen`; macOS by `NSMenuItem.state`, Windows pending (`CheckMenuItem`, `CheckMenuRadioItem`), Linux pending (a `GSimpleAction` with a state)
 
 capability ui/timer  a clock that fires at a period, among the person's events
   heroes  ui.timer, ui.Event.timer_fired

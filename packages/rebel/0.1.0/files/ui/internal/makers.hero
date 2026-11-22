@@ -173,7 +173,7 @@ function with_pixels(@n: model.Node, img: image.Image) -> ()?
 # A new menu, menu item or separator of `kind` in `into`, showing `text`.
 function menu_part(@app: ui.App, into: ui.Widget, kind: i64, text: str) -> ui.Widget?
     parent = if kind == hero_ui.HERO_UI_MENU
-        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_MENU], what: "a window or a menu")?
     else
         check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU], what: "a menu")?
 

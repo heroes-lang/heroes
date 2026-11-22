@@ -2966,3 +2966,34 @@ int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *
     }
     return pressed;
 }
+
+/* -- CHECK AND RADIO MENU ITEMS -------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
+    return hero_ui_appkit_set_check(id, mode);
+}
+
+#else
+
+static int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
+    (void)id;
+    (void)mode;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_check(hero_ui_app *app, int64_t id, int64_t mode) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (mode < HERO_UI_CHECK_NONE || mode > HERO_UI_CHECK_RADIO) {
+        (void)snprintf(words, sizeof words, "the mode %lld is none of HERO_UI_CHECK_NONE to HERO_UI_CHECK_RADIO", (long long)mode);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_check(id, mode), "making a menu item checkable", id);
+}

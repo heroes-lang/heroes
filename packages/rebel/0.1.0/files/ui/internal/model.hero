@@ -93,6 +93,8 @@ record Node
     button_key: i64
     # The widget of a window that has the keys, 0 for none.
     focus: i64
+    # A menu item's check, one of `HERO_UI_CHECK_*`; its state is `value`.
+    check: i64
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -272,6 +274,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         role: hero_ui.HERO_UI_ROLE_NONE,
         button_key: hero_ui.HERO_UI_BUTTON_KEY_NONE,
         focus: 0,
+        check: hero_ui.HERO_UI_CHECK_NONE,
         every: 0,
         due: 0,
         preferred_width: 0,
@@ -317,7 +320,9 @@ function add(@m: Model, n: Node)
     else
         parent @= node_of(m, id: n.parent).must()
 
-        if n.kind == hero_ui.HERO_UI_MENU
+        # A window's menus stand in its bar; a menu inside a menu stands
+        # among that menu's items, in the order made.
+        if n.kind == hero_ui.HERO_UI_MENU && parent.kind == hero_ui.HERO_UI_WINDOW
             parent.menus @ parent.menus.push(n.id)
         else
             parent.children @ parent.children.push(n.id)
