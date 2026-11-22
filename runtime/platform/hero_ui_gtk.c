@@ -644,6 +644,7 @@ typedef struct hero_ui_gtk_functions {
      * on a window (FILES DROPPED ON A WINDOW). */
     void *(*drop_target_new)(size_t type, int actions);
     void (*event_controller_set_propagation_phase)(void *controller, int phase);
+    void *(*widget_pick)(void *widget, double x, double y, int flags);
     void *(*file_new_for_path)(const char *path);
     void *(*value_init)(hero_ui_gtk_value *value, size_t type);
     void (*value_take_boxed)(hero_ui_gtk_value *value, void *boxed);
@@ -1098,6 +1099,7 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(keyval_name, "gdk_keyval_name");
     HERO_UI_GTK_NEED(drop_target_new, "gtk_drop_target_new");
     HERO_UI_GTK_NEED(event_controller_set_propagation_phase, "gtk_event_controller_set_propagation_phase");
+    HERO_UI_GTK_NEED(widget_pick, "gtk_widget_pick");
     HERO_UI_GTK_NEED(file_new_for_path, "g_file_new_for_path");
     HERO_UI_GTK_NEED(value_init, "g_value_init");
     HERO_UI_GTK_NEED(value_take_boxed, "g_value_take_boxed");
@@ -7994,6 +7996,165 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
         hero_ui_gtk.accessible_update_relation(target, HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY, labels, -1);
         hero_ui_gtk.list_free(labels);
     }
+    return HERO_UI_OK;
+}
+
+/* -- FILES DROPPED ON A WINDOW ----------------------------------------------------
+ *
+ * A window that takes dropped files holds a `GtkDropTarget` of
+ * `GDK_TYPE_FILE_LIST`, for a copy, on its content, the overlay its widgets
+ * stand in, so a drop's point is in its content's points and the menu bar
+ * and a title bar GTK draws take none. The target runs in the capture phase,
+ * before any widget of the content, so a drop on a text area is the
+ * window's, as `hero_ui.h` says, rather than the text view's, which would
+ * type the paths. Over a web view it declines (`motion` offers no action and
+ * `drop` takes none), the drop the page's (unread whether WebKitGTK's own
+ * target then takes one the capture phase declined). The paths come from
+ * `gdk_file_list_get_files` (GTK 4.6), each file's local path, in the
+ * person's order, a file with none passed over. `inject` emits the target's
+ * own `drop` with a file list of the paths (`gdk_file_list_new_from_array`,
+ * GTK 4.8), so a case runs the handler a person's drop runs; a drag by the
+ * person's mouse is unrun under Xvfb. */
+
+/* GDK's `GDK_ACTION_COPY`, and GTK's `GTK_PHASE_CAPTURE`. */
+#define HERO_GDK_ACTION_COPY 1
+#define HERO_GTK_PHASE_CAPTURE 1
+
+/* The window of number `data` while `target` is still its drop target. */
+static hero_ui_native *hero_ui_gtk_drop_window(void *target, void *data) {
+    hero_ui_native *window = hero_ui_gtk_window((int64_t)(intptr_t)data);
+
+    return window != NULL && target != NULL && window->drop_target == target ? window : NULL;
+}
+
+/* Whether point `x`, `y` of window `window`'s content falls on one of its
+ * web views: the widget GTK finds there, or one it stands in. */
+static bool hero_ui_gtk_on_web(const hero_ui_native *window, double x, double y) {
+    void *content = hero_ui_gtk.widget_get_parent(window->area);
+
+    for (void *at = content != NULL ? hero_ui_gtk.widget_pick(content, x, y, 0) : NULL; at != NULL && at != content; at = hero_ui_gtk.widget_get_parent(at)) {
+        for (size_t slot = 0; slot < hero_ui_map_room(); slot += 1) {
+            const hero_ui_native *each = hero_ui_at(slot);
+
+            if (each != NULL && each->kind == HERO_UI_WEBVIEW && each->window == window->id && each->widget == at) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/* Whether window `window` takes the person's drop at `x`, `y` now: none
+ * on a web view, and none while another window is modal. */
+static bool hero_ui_gtk_drop_taken(const hero_ui_native *window, double x, double y) {
+    return (hero_ui_gtk_modal == 0 || hero_ui_gtk_modal == window->id) && !hero_ui_gtk_on_web(window, x, y);
+}
+
+static int hero_ui_gtk_drop_motion(void *target, double x, double y, void *data) {
+    hero_ui_native *window = hero_ui_gtk_drop_window(target, data);
+
+    return window != NULL && hero_ui_gtk_drop_taken(window, x, y) ? HERO_GDK_ACTION_COPY : 0;
+}
+
+/* The person dropped files at `x`, `y` of the content: told with their
+ * paths, each followed by one zero byte. */
+static int hero_ui_gtk_dropped(void *target, const hero_ui_gtk_value *value, double x, double y, void *data) {
+    hero_ui_native *window = hero_ui_gtk_drop_window(target, data);
+    void *list = window != NULL && hero_ui_gtk_drop_taken(window, x, y) ? hero_ui_gtk.value_get_boxed(value) : NULL;
+    hero_ui_gtk_slist *files = list != NULL ? hero_ui_gtk.file_list_get_files(list) : NULL;
+    uint8_t *paths = NULL;
+    int64_t count = 0;
+    int64_t room = 0;
+    bool kept = true;
+
+    for (hero_ui_gtk_slist *each = files; each != NULL && kept; each = each->next) {
+        kept = hero_ui_gtk_keep_path(each->data, &paths, &count, &room);
+    }
+    hero_ui_gtk.slist_free(files);
+    if (kept && count > 0) {
+        hero_ui_tell_text(HERO_UI_EVENT_DROP, window->id, (int64_t)x, (int64_t)y, paths, count);
+    }
+    hero_layer_free(paths);
+    return kept && count > 0 ? 1 : 0;
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    hero_ui_native *window = hero_ui_find(id);
+    void *content;
+    void *target;
+
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (window->kind != HERO_UI_WINDOW) {
+        return HERO_UI_INVALID;
+    }
+    content = hero_ui_gtk.widget_get_parent(window->area);
+    if (on == 0 || window->drop_target != NULL) {
+        if (on == 0 && window->drop_target != NULL) {
+            hero_ui_gtk.widget_remove_controller(content, window->drop_target);
+            window->drop_target = NULL;
+        }
+        return HERO_UI_OK;
+    }
+    if (hero_ui_gtk.file_list_get_files == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "GTK 4.6 reads the files of a drop (gdk_file_list_get_files), and this GTK lacks it");
+    }
+    target = content != NULL ? hero_ui_gtk.drop_target_new(hero_ui_gtk.file_list_get_type(), HERO_GDK_ACTION_COPY) : NULL;
+    if (target == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.event_controller_set_propagation_phase(target, HERO_GTK_PHASE_CAPTURE);
+    hero_ui_gtk_connect(target, "motion", (hero_ui_gtk_callback)hero_ui_gtk_drop_motion, id);
+    hero_ui_gtk_connect(target, "drop", (hero_ui_gtk_callback)hero_ui_gtk_dropped, id);
+    /* The content holds the target from here, and lets it go when it is
+     * taken away or the window is destroyed. */
+    hero_ui_gtk.widget_add_controller(content, target);
+    window->drop_target = target;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    hero_ui_native *window = hero_ui_find(id);
+    hero_ui_gtk_value value;
+    int64_t files = 0;
+    void **made;
+    void *list;
+    int handled = 0;
+
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (window->kind != HERO_UI_WINDOW || window->drop_target == NULL || x >= window->content_width || y >= window->content_height) {
+        return HERO_UI_INVALID;
+    }
+    if (hero_ui_gtk.file_list_new_from_array == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "GTK 4.8 makes the file list a drop holds (gdk_file_list_new_from_array), and this GTK lacks it");
+    }
+    for (int64_t at = 0; at < count; at += 1) {
+        files += paths[at] == 0 ? 1 : 0;
+    }
+    made = hero_layer_alloc_zero((size_t)files, sizeof *made);
+    if (made == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    for (int64_t at = 0, each = 0; at < count && each < files; each += 1) {
+        made[each] = hero_ui_gtk.file_new_for_path((const char *)(paths + at));
+        at += (int64_t)strlen((const char *)(paths + at)) + 1;
+    }
+    list = hero_ui_gtk.file_list_new_from_array(made, (size_t)files);
+    for (int64_t each = 0; each < files; each += 1) {
+        hero_ui_gtk.object_unref(made[each]);
+    }
+    hero_layer_free(made);
+    if (list == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    memset(&value, 0, sizeof value);
+    (void)hero_ui_gtk.value_init(&value, hero_ui_gtk.file_list_get_type());
+    hero_ui_gtk.value_take_boxed(&value, list);
+    hero_ui_gtk.signal_emit_by_name(window->drop_target, "drop", &value, (double)x, (double)y, &handled);
+    hero_ui_gtk.value_unset(&value);
     return HERO_UI_OK;
 }
 
