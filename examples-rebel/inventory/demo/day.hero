@@ -1,0 +1,128 @@
+# The demo's scripted day at a small chain of three locations, a warehouse
+# and two shops, run the same way against each store: the locations made,
+# the catalogue imported from a spreadsheet, the opening count from CSV,
+# then the day's requests at the times a fixed clock gives them, from the
+# first delivery at nine to the evening's counts. Three requests are
+# refused on purpose (a shop selling a variant it does not stock, and so
+# on), and two counts find the books right, so the account shows each kind
+# of answer.
+
+use <rebel>/time
+
+use demo/fixtures
+use files/tables
+use imports/counts
+use imports/products
+use model/requests
+use service/ledger
+use store/store
+
+## The clock
+
+# The day's first moment, 2026-03-14T08:00:00Z, in seconds since 1970.
+constant DAY_SECONDS: i64
+    1_773_475_200
+
+# The day the account is of.
+constant DAY: str
+    "2026-03-14"
+
+# The moment `minutes` after eight in the morning of the day.
+#
+# - `minutes`: 0 or more.
+function at_minute(minutes: i64) -> time.Instant
+    return time.from_unix(whole_seconds: DAY_SECONDS + minutes * 60, extra_nanoseconds: 0).default(time.epoch())
+
+## The day
+
+# One request of the day and when it comes.
+record Step
+    # Minutes after eight.
+    minute: i64
+    # The request.
+    request: requests.Request
+
+# The day's requests, in the order they come.
+function steps() -> [Step]
+    none: i64? = fail(code: "not_found", msg: "the variant's own price")
+    return [
+        Step(minute: 60, request: .receipt(sku: "TEE-BLK-M", location: "WH", quantity: 24, unit_cost_cents: 710, reference: "PO-1042"))
+        Step(minute: 75, request: .transfer(sku: "TEE-BLK-M", from: "WH", to: "SHOP-N", quantity: 12, reference: "TR-7"))
+        Step(minute: 80, request: .transfer(sku: "MUG-RED", from: "WH", to: "SHOP-S", quantity: 6, reference: "TR-8"))
+        Step(minute: 125, request: .sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 5, unit_price_cents: none, reference: "TILL-N-0001"))
+        Step(minute: 160, request: .sale(sku: "MUG-RED", location: "SHOP-S", quantity: 4, unit_price_cents: none, reference: "TILL-S-0001"))
+        Step(minute: 190, request: .sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 15, unit_price_cents: none, reference: "TILL-N-0002"))
+        Step(minute: 195, request: .sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 9, unit_price_cents: none, reference: "TILL-N-0002"))
+        Step(minute: 210, request: .sale(sku: "MUG-BLU", location: "SHOP-S", quantity: 2, unit_price_cents: none, reference: "TILL-S-0002"))
+        Step(minute: 240, request: .adjustment(sku: "TEE-BLK-M", location: "SHOP-N", change: -1, reason: "damaged"))
+        Step(minute: 300, request: .sale(sku: "POSTER-A2", location: "WH", quantity: 2, unit_price_cents: ok(1200), reference: "WEB-501"))
+        Step(minute: 360, request: .transfer(sku: "TEE-WHT-M", from: "WH", to: "SHOP-S", quantity: 8, reference: "TR-9"))
+        Step(minute: 420, request: .sale(sku: "TEE-WHT-M", location: "SHOP-S", quantity: 3, unit_price_cents: none, reference: "TILL-S-0003"))
+        Step(minute: 480, request: .count(sku: "TEE-WHT-M", location: "SHOP-S", counted: 4, unit_cost_cents: fail(code: "not_found", msg: "the moving average cost"), reason: "evening count"))
+        Step(minute: 540, request: .count(sku: "MUG-RED", location: "SHOP-S", counted: 2, unit_cost_cents: fail(code: "not_found", msg: "the moving average cost"), reason: "evening count"))
+        Step(minute: 570, request: .receipt(sku: "MUG-BLU", location: "WH", quantity: 12, unit_cost_cents: 340, reference: "PO-1043"))
+        Step(minute: 585, request: .sale(sku: "TEE-BLK-L", location: "SHOP-N", quantity: 1, unit_price_cents: none, reference: "TILL-N-0003"))
+    ]
+
+# How the day's requests were answered.
+record Tally
+    # The requests made, imports' rows not counted.
+    requests: i64
+    # The movements written.
+    applied: i64
+    # The requests refused.
+    refused: i64
+    # The counts that found the books right.
+    confirmed: i64
+
+# Runs the day against `s`, its files in `folder`, and answers how its
+# requests were answered.
+#
+# - `s`: the store, set up and empty.
+# - `folder`: the demo's work folder, where the day's files are written.
+# - `actor`: who the audit trail names.
+#
+# Fails where an import refuses a row of its clean files, and as a request
+# or the store fails.
+function run(@s: store.Store, folder: str, actor: str) -> Tally?
+    for place in [["WH", "Warehouse"], ["SHOP-N", "Shop North"], ["SHOP-S", "Shop South"]]
+        _ = ledger.add_location(@s, code: place[0], name: place[1], at: at_minute(0), actor: actor)?
+
+    catalogue_path = folder + "/catalogue.xlsx"
+    fixtures.write_catalogue(catalogue_path)?
+    taken = products.import_products(@s, t: tables.read_table(catalogue_path)?, at: at_minute(5), actor: actor)?
+
+    if taken.rejected.len() > 0
+        return fail(code: "invalid", msg: f"the catalogue's {taken.rejected[0].place}: {taken.rejected[0].reason}")
+    opening_path = folder + "/opening.csv"
+    write_file(path: opening_path, text: fixtures.opening_csv())?
+    opened = counts.import_counts(@s, t: tables.read_table(opening_path)?, at: at_minute(10), actor: actor)?
+
+    if opened.rejected.len() > 0
+        return fail(
+            code: "invalid",
+            msg: f"the opening count's {opened.rejected[0].place}: {opened.rejected[0].reason}"
+        )
+    tally @= Tally(requests: 0, applied: 0, refused: 0, confirmed: 0)
+
+    for step in steps()
+        outcome = ledger.submit(@s, r: step.request, at: at_minute(step.minute), actor: actor)?
+        tally.requests @ tally.requests + 1
+
+        match outcome
+            .applied _   => tally.applied @ tally.applied + 1
+            .refused _   => tally.refused @ tally.refused + 1
+            .confirmed _ => tally.confirmed @ tally.confirmed + 1
+
+    return ok(tally)
+
+test "at_minute: the day's first moment and an hour after"
+    assert time.format(at_minute(0), .rfc3339_seconds) == "2026-03-14T08:00:00Z"
+    assert time.format(at_minute(60), .rfc3339_seconds) == "2026-03-14T09:00:00Z"
+
+test "steps: sixteen requests, in the order of their times"
+    s = steps()
+    assert s.len() == 16
+
+    for i in range(from: 1, to: s.len())
+        assert s[i - 1].minute < s[i].minute

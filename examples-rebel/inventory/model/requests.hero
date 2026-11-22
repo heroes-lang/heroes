@@ -1,0 +1,106 @@
+# A movement of stock as somebody asks for it: a till, a receiving dock, a
+# count sheet or the command line names its variant and its locations by
+# the codes a person types, never by key. `model/movements` decides what a
+# request does to the books; this module holds the request itself and the
+# words the audit trail and the refusals tell it in.
+
+## Requests
+
+# A movement as somebody asks for it, by codes: a till, a receiving dock, a
+# count sheet or the command line.
+variant Request
+    # Units arriving from a supplier.
+    receipt
+        # The variant's SKU.
+        sku: str
+        # The location's code.
+        location: str
+        # The units, 1 or more.
+        quantity: i64
+        # What each unit cost, in cents.
+        unit_cost_cents: i64
+        # The supplier's delivery note or the order, "" for none.
+        reference: str
+    # Units sold to a customer.
+    sale
+        # The variant's SKU.
+        sku: str
+        # The location's code.
+        location: str
+        # The units, 1 or more.
+        quantity: i64
+        # The price of each unit, in cents; failing `not_found`, the variant's
+        # own price.
+        unit_price_cents: i64?
+        # The till's receipt, "" for none.
+        reference: str
+    # Units moved from one location to another.
+    transfer
+        # The variant's SKU.
+        sku: str
+        # The code of the location the units leave.
+        from: str
+        # The code of the location they arrive at.
+        to: str
+        # The units, 1 or more.
+        quantity: i64
+        # The transfer note, "" for none.
+        reference: str
+    # Units found or lost at a location.
+    adjustment
+        # The variant's SKU.
+        sku: str
+        # The location's code.
+        location: str
+        # The units found, or lost where it is negative; never 0.
+        change: i64
+        # Why: `damaged`, `found in the back room`.
+        reason: str
+    # The units a person counted on a location's shelf.
+    count
+        # The variant's SKU.
+        sku: str
+        # The location's code.
+        location: str
+        # The units counted, 0 or more.
+        counted: i64
+        # What each unit found beyond the books cost, in cents; failing
+        # `not_found`, the variant's moving average cost.
+        unit_cost_cents: i64?
+        # Why it was counted: `opening count`, `weekly count`.
+        reason: str
+
+# The SKU a request names.
+#
+# - `r`: the request.
+function sku_of(r: Request) -> str
+    return match r
+        .receipt x    => x.sku
+        .sale x       => x.sku
+        .transfer x   => x.sku
+        .adjustment x => x.sku
+        .count x      => x.sku
+
+# A request in words, as the audit trail and the refusals tell it: `sale of
+# 9 TEE-BLK-M at SHOP-N`.
+#
+# - `r`: the request.
+function describe(r: Request) -> str
+    return match r
+        .receipt x    => f"receipt of {x.quantity} {x.sku} at {x.location}"
+        .sale x       => f"sale of {x.quantity} {x.sku} at {x.location}"
+        .transfer x   => f"transfer of {x.quantity} {x.sku} from {x.from} to {x.to}"
+        .adjustment x => f"adjustment of {signed(x.change)} {x.sku} at {x.location}"
+        .count x      => f"count of {x.counted} {x.sku} at {x.location}"
+
+# `n` with its sign always written: `+3`, `-1`, `0`.
+#
+# - `n`: the number.
+function signed(n: i64) -> str
+    if n > 0
+        return f"+{n}"
+    return f"{n}"
+
+test "describe: each kind of request in words"
+    assert describe(.transfer(sku: "MUG-RED", from: "WH", to: "SHOP-S", quantity: 6, reference: "")) == "transfer of 6 MUG-RED from WH to SHOP-S"
+    assert describe(.adjustment(sku: "MUG-RED", location: "WH", change: -1, reason: "damaged")) == "adjustment of -1 MUG-RED at WH"

@@ -1,0 +1,208 @@
+# The account of the books: the catalogue counted, the movements totalled
+# by kind, the stock on hand at every location, the valuation of each
+# variant at its moving average cost, what is due to be reordered, and the
+# audit trail. It is made only from what a store answers (`model/books`),
+# ordered by the program and never by a database's collation, and holds no
+# key and no clock but the program's own, so the same books give the same
+# account, byte for byte, from MySQL, from an ODBC database and from
+# MongoDB.
+
+use <rebel>/strings
+
+use model/books
+use model/catalog
+use model/ids
+use model/money
+use model/movements
+
+## The account
+
+# The account's lines.
+#
+# - `day`: the day the account is of, `2026-03-14`.
+# - `held`: the catalogue and its levels.
+# - `totals`: the movements of each kind, as the store totalled them.
+# - `trail`: the audit trail.
+function lines_of(day: str, held: books.Snapshot, totals: [books.KindTotal], trail: [books.AuditEntry]) -> [str]
+    out: [str] @= []
+    out @ out.push(f"== the account of {day}")
+    out @ out.push(catalogue_line(held))
+    out @ out.push("movements, totalled by the store:")
+
+    for t in totals
+        out @ out.push(total_line(t))
+
+    out @ out.push("stock on hand:")
+    ordered = ordered_levels(held)
+
+    for l in ordered
+        out @ out.push(level_line(held, l: l))
+
+    out @ out.push("valuation at moving average cost:")
+    units @= 0
+    value @= 0
+
+    for v in held.variants
+        out @ out.push(valuation_line(v))
+        units @ units + v.units
+        value @ value + v.value_cents
+
+    out @ out.push(
+        "  " + strings.pad_end(s: "total", width: 11, pad: " ") + strings.pad_start(s: f"{units}", width: 5, pad: " ") + " units" + strings.pad_start(s: money.format_amount(value), width: 21, pad: " ")
+    )
+    due = due_lines(held, levels: ordered)
+    out @ out.push(f"to reorder: {due.len()}")
+
+    for d in due
+        out @ out.push(d)
+
+    out @ out.push(f"audit trail: {trail.len()} entries")
+
+    for e in trail
+        out @ out.push(entry_line(e))
+
+    return out
+
+# The line counting the catalogue, and saying whether every key is a UUID
+# of version 7.
+#
+# - `held`: the catalogue.
+function catalogue_line(held: books.Snapshot) -> str
+    every_key @= true
+
+    for l in held.locations
+        every_key @ every_key && ids.is_v7(l.id)
+
+    for p in held.products
+        every_key @ every_key && ids.is_v7(p.id)
+
+    for v in held.variants
+        every_key @ every_key && ids.is_v7(v.id)
+
+    keys_said = if every_key
+        "every key a UUID of version 7"
+    else
+        "a key that is no UUID of version 7"
+    return f"catalogue: {held.locations.len()} locations, {held.products.len()} products, {held.variants.len()} variants, {keys_said}"
+
+# One kind's line of the movements' totals.
+#
+# - `t`: the kind's totals.
+function total_line(t: books.KindTotal) -> str
+    head = "  " + strings.pad_end(s: t.kind, width: 11, pad: " ") + strings.pad_start(s: f"{t.count}", width: 3, pad: " ") + " moved" + strings.pad_start(s: f"{t.units}", width: 5, pad: " ") + " units, value " + strings.pad_start(s: signed_amount(t.value_cents), width: 8, pad: " ")
+
+    if t.kind == movements.SALE
+        return head + ", revenue " + money.format_amount(t.revenue_cents)
+    return head
+
+# The levels of `held` ordered by SKU, then by location code.
+#
+# - `held`: the catalogue.
+function ordered_levels(held: books.Snapshot) -> [catalog.Level]
+    out: [catalog.Level] @= []
+
+    for v in held.variants
+        for l in held.locations
+            for level in held.levels
+                if level.variant_id == v.id && level.location_id == l.id
+                    out @ out.push(level)
+
+    return out
+
+# One level's line of the stock on hand.
+#
+# - `held`: the catalogue.
+# - `l`: the level.
+function level_line(held: books.Snapshot, l: catalog.Level) -> str
+    sku = sku_of(held, id: l.variant_id)
+    where = books.location_by_id(held, id: l.location_id).code
+    head = "  " + strings.pad_end(s: sku, width: 11, pad: " ") + strings.pad_end(s: where, width: 8, pad: " ") + strings.pad_start(s: f"{l.on_hand}", width: 5, pad: " ")
+
+    if l.reorder_point > 0
+        return head + f"  reorder at {l.reorder_point}"
+    return head
+
+# One variant's line of the valuation.
+#
+# - `v`: the variant.
+function valuation_line(v: catalog.Variant) -> str
+    average = if v.units == 0
+        0
+    else
+        money.share(value: v.value_cents, part: 1, whole: v.units)
+    return "  " + strings.pad_end(s: v.sku, width: 11, pad: " ") + strings.pad_start(s: f"{v.units}", width: 5, pad: " ") + " units at " + strings.pad_start(s: money.format_amount(average), width: 6, pad: " ") + strings.pad_start(s: money.format_amount(v.value_cents), width: 12, pad: " ")
+
+# The lines of the levels at or below their reorder point, each with the
+# order it asks for.
+#
+# - `held`: the catalogue.
+# - `levels`: the levels, in the account's order.
+function due_lines(held: books.Snapshot, levels: [catalog.Level]) -> [str]
+    out: [str] @= []
+
+    for l in levels
+        if l.reorder_point > 0 && l.on_hand <= l.reorder_point
+            where = books.location_by_id(held, id: l.location_id).code
+            out @ out.push(
+                f"  {where} {sku_of(held, id: l.variant_id)}: {l.on_hand} on hand, reorder point {l.reorder_point}, order {l.reorder_quantity}"
+            )
+
+    return out
+
+# One entry's line of the audit trail: its number, its time of day, what
+# was done and to what.
+#
+# - `e`: the entry.
+function entry_line(e: books.AuditEntry) -> str
+    clock = if e.at.len() >= 16
+        e.at.slice(from: 11, to: 16)
+    else
+        e.at
+    return "  " + strings.pad_start(s: f"{e.seq}", width: 2, pad: " ") + f" {clock} {e.actor} {e.action} {e.subject}: {e.detail}"
+
+# The SKU of the variant whose key is `id`, `?` where the catalogue has none.
+#
+# - `held`: the catalogue.
+# - `id`: the variant's key.
+function sku_of(held: books.Snapshot, id: str) -> str
+    return match books.variant_by_id(held, id: id)
+        .ok v  => v.sku
+        .err _ => "?"
+
+# An amount with its sign written where it is not zero.
+#
+# - `cents`: the amount.
+function signed_amount(cents: i64) -> str
+    if cents > 0
+        return "+" + money.format_amount(cents)
+    return money.format_amount(cents)
+
+test "valuation_line: units, their average cost and their value"
+    v = catalog.Variant(
+        id: "v",
+        product_id: "p",
+        sku: "TEE-BLK-M",
+        label: "",
+        price_cents: 0,
+        units: 3,
+        value_cents: 1000,
+        applied_seq: 0
+    )
+    assert valuation_line(v) == "  TEE-BLK-M      3 units at   3.33       10.00"
+
+test "total_line: a sale's revenue, a transfer's none"
+    sales = books.KindTotal(kind: "sale", count: 3, units: 11, value_cents: -7315, revenue_cents: 19800)
+    assert total_line(sales) == "  sale         3 moved   11 units, value   -73.15, revenue 198.00"
+    moved = books.KindTotal(kind: "transfer", count: 2, units: 18, value_cents: 0, revenue_cents: 0)
+    assert total_line(moved) == "  transfer     2 moved   18 units, value     0.00"
+
+test "entry_line: the time of day of an entry"
+    e = books.AuditEntry(
+        seq: 7,
+        at: "2026-03-14T09:30:00Z",
+        actor: "demo",
+        action: "refused",
+        subject: "MUG-RED",
+        detail: "sale of 2 MUG-RED at SHOP-S: 0 on hand at SHOP-S, 2 asked"
+    )
+    assert entry_line(e) == "   7 09:30 demo refused MUG-RED: sale of 2 MUG-RED at SHOP-S: 0 on hand at SHOP-S, 2 asked"

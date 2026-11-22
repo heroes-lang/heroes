@@ -1,0 +1,90 @@
+# The keys of the inventory's records: UUIDs of version 7 (RFC 9562 5.7),
+# made by the program rather than by a store, so one catalogue keeps one
+# set of keys in every store and a record can be written before any store
+# has answered. A version 7 key opens with the milliseconds of its making,
+# so keys made in order sit side by side in a B-tree index, which a
+# version 4 key's randomness would scatter; the time is the program's
+# clock, which the demo fixes. A key is held as its standard text, which
+# SQL stores in a `CHAR(36)` and `store/mongo_docs` turns into a BSON
+# binary of subtype 4.
+
+use <rebel>/time
+use <rebel>/uuid
+
+## Codes
+
+# The code of a text that is no key.
+constant INVALID: str
+    "invalid"
+
+## Keys
+
+# A new key for a record made at `at`.
+#
+# - `at`: the moment the record is made, as the program's clock reads it.
+#
+# Fails as `uuid.new_v7_at` fails: where the system's generator for keys
+# answers nothing, or `at` is before 1970.
+function new_id(at: time.Instant) -> str?
+    made = uuid.new_v7_at(time.unix_milliseconds(at))?
+    return ok(uuid.format(made))
+
+# `text` once it is known to be a key: a UUID in its standard lower-case
+# form, as `new_id` writes one.
+#
+# - `text`: the key as a store gave it back.
+#
+# Fails `invalid` where `text` is no UUID, or not in the standard form, so a
+# key written two ways never stands as two keys.
+function id_of(text: str) -> str?
+    match uuid.parse(text)
+        .err e => return fail(code: INVALID, msg: f"\"{text}\" is no key: {e.msg}")
+        .ok u =>
+            if uuid.format(u) != text
+                return fail(code: INVALID, msg: f"\"{text}\" is a key not written in its standard form")
+            return ok(text)
+
+# Whether `text` is a key of version 7.
+#
+# - `text`: a key.
+function is_v7(text: str) -> bool
+    return match uuid.parse(text)
+        .ok u  => uuid.version_of(u) == 7
+        .err _ => false
+
+# The sixteen bytes of the key `text`, as a store keeps a UUID in binary.
+#
+# - `text`: a key in its standard form.
+#
+# Fails `invalid` where `text` is no UUID.
+function bytes_of(text: str) -> [u8]?
+    match uuid.parse(text)
+        .ok u  => return ok(uuid.to_bytes(u))
+        .err e => return fail(code: INVALID, msg: f"\"{text}\" is no key: {e.msg}")
+
+# The key the sixteen bytes `data` hold, in its standard text form.
+#
+# - `data`: a UUID's bytes, the first the highest.
+#
+# Fails `invalid` where `data` is not sixteen bytes.
+function text_of(data: [u8]) -> str?
+    match uuid.from_bytes(data)
+        .ok u  => return ok(uuid.format(u))
+        .err e => return fail(code: INVALID, msg: f"no key in {data.len()} bytes: {e.msg}")
+
+test "new_id: a version 7 key in its standard form, read back"
+    at = time.date(year: 2026, month: 3, day: 14).must()
+    id = new_id(at).must()
+    assert id.len() == 36 && is_v7(id) && id_of(id).must() == id
+
+test "id_of: upper case, braces and no hyphens are refused, and so is a word"
+    assert id_of("F81D4FAE-7DEC-11D0-A765-00A0C91E6BF6").is_err()
+    assert id_of("f81d4fae7dec11d0a76500a0c91e6bf6").is_err()
+    assert id_of("not a key").is_err()
+    assert id_of("f81d4fae-7dec-11d0-a765-00a0c91e6bf6").must() == "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+
+test "bytes_of: sixteen bytes that read back as the same key"
+    key = "f81d4fae-7dec-11d0-a765-00a0c91e6bf6"
+    assert text_of(bytes_of(key).must()).must() == key
+    assert bytes_of(key).must().len() == 16
+    assert text_of([1, 2, 3]).is_err()

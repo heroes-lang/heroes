@@ -1,0 +1,228 @@
+# The import of the catalogue: a file of variants, one a row, each naming
+# its product, read from CSV or XLSX (`files/tables`). Its columns are
+# `product`, `product_name`, `category`, `sku`, `variant` and `price`. A
+# product named by several rows is made once; a SKU the store holds already
+# is given the row's label and price, and keeps its stock.
+#
+# Every row is checked before anything is written, and a row that fails a
+# check is told with its place and reason and left out while the others are
+# taken: a SKU or a code that is not one, a price that is no amount, a SKU
+# named twice in the file, a product the file names with two names, or a
+# SKU the store holds for another product. The SKUs are kept in the order
+# the file first names them, each with the line that named it, in an
+# indexed map (`containers/indexed`), which answers both whether a SKU
+# came before and where.
+
+use <rebel>/containers/indexed
+use <rebel>/time
+
+use files/tables
+use imports/columns
+use model/books
+use model/catalog
+use model/ids
+use model/money
+use service/ledger
+use store/store
+
+## The columns
+
+# The columns a file of variants has.
+function required() -> [str]
+    return ["product", "product_name", "category", "sku", "variant", "price"]
+
+## The import
+
+# A row checked and taken.
+record Taken
+    # The product it names.
+    product: catalog.Product
+    # The variant it describes, its `product_id` set once the product is
+    # stored.
+    item: catalog.Variant
+
+# Imports the variants of `t` into `s`, and answers what became of each row.
+#
+# - `s`: the store.
+# - `t`: the file, read.
+# - `at`: when, as the program's clock reads it.
+# - `actor`: who asks.
+#
+# Fails `invalid` where the header is not a file of variants, and as the
+# store fails; a row that fails a check fails nothing, and is told in the
+# report.
+function import_products(@s: store.Store, t: tables.Table, at: time.Instant, actor: str) -> columns.Report?
+    at_column = columns.columns_of(t, required: required(), optional: [])?
+    held = store.snapshot(@s)?
+    report @= columns.report_of(t)
+    shape @= indexed.new()
+    sku_list: [str] @= []
+    line_list: [i64] @= []
+    lookup: {str: i64} @= {}
+    named: {str: catalog.Product} @= {}
+    named_on: {str: i64} @= {}
+    taken: [Taken] @= []
+
+    for row in t.rows
+        match checked(t, row: row, at_column: at_column, at: at)
+            .err e => report.rejected @ report.rejected.push(
+                columns.Rejection(place: columns.place_of(t, row: row), reason: e.msg)
+            )
+            .ok x =>
+                reason = conflict_of(
+                    t,
+                    x: x,
+                    held: held,
+                    shape: shape,
+                    line_list: line_list,
+                    lookup: lookup,
+                    named: named,
+                    named_on: named_on
+                )
+
+                if reason != ""
+                    report.rejected @ report.rejected.push(
+                        columns.Rejection(place: columns.place_of(t, row: row), reason: reason)
+                    )
+                else
+                    _ = indexed.put(@shape, @sku_list, @line_list, @lookup, key: x.item.sku, value: row.line)
+
+                    match named[x.product.code]
+                        .ok _ => _ = 0
+                        .err _ =>
+                            named[x.product.code] @ x.product
+                            named_on[x.product.code] @ row.line
+
+                    taken @ taken.push(x)
+
+    stored: {str: catalog.Product} @= {}
+
+    for x in taken
+        product = match stored[x.product.code]
+            .ok p => p
+            .err _ =>
+                p = store.put_product(@s, p: named[x.product.code].must())?
+                stored[x.product.code] @ p
+                p
+
+        item @= x.item
+        item.product_id @ product.id
+        put = store.put_variant(@s, v: item)?
+        report.done @ report.done.push(
+            f"{put.sku} ({product.code}, {put.label}) at {money.format_amount(put.price_cents)}"
+        )
+        report.accepted @ report.accepted + 1
+
+    detail = f"{report.accepted} variants of {size_of(stored)} products imported, {report.rejected.len()} rows rejected"
+    ledger.note(@s, at: at, actor: actor, action: "import", subject: t.name, detail: detail)?
+    return ok(report)
+
+# The row's product and variant once every cell is checked.
+#
+# - `t`: the table.
+# - `row`: the row.
+# - `at_column`: the header's positions.
+# - `at`: when, for the keys made.
+#
+# Fails `invalid` with the first check the row fails.
+function checked(t: tables.Table, row: tables.Row, at_column: {str: i64}, at: time.Instant) -> Taken?
+    match columns.shape_of(t, row: row)
+        .ok wrong => return fail(code: catalog.INVALID, msg: wrong)
+        .err _    => _ = 0
+
+    code = catalog.code_of(kind: "product", text: columns.cell(row, columns: at_column, name: "product"))?
+    name = catalog.name_of(kind: "product name", text: columns.cell(row, columns: at_column, name: "product_name"))?
+    category = catalog.name_of(kind: "category", text: columns.cell(row, columns: at_column, name: "category"))?
+    sku = catalog.code_of(kind: "SKU", text: columns.cell(row, columns: at_column, name: "sku"))?
+    label = catalog.name_of(kind: "variant", text: columns.cell(row, columns: at_column, name: "variant"))?
+    price_text = columns.cell(row, columns: at_column, name: "price")
+
+    price = match money.parse_amount(price_text)
+        .ok cents => cents
+        .err e    => return fail(code: catalog.INVALID, msg: f"the price {e.msg}")
+
+    product = catalog.Product(id: ids.new_id(at)?, code: code, name: name, category: category)
+    item = catalog.Variant(
+        id: ids.new_id(at)?,
+        product_id: product.id,
+        sku: sku,
+        label: label,
+        price_cents: price,
+        units: 0,
+        value_cents: 0,
+        applied_seq: 0
+    )
+    return ok(Taken(product: product, item: item))
+
+# Why a checked row cannot be taken beside the rows before it and the store,
+# or "" where it can.
+#
+# - `t`: the table.
+# - `x`: the row's product and variant.
+# - `held`: the store's catalogue.
+# - `shape`: the indexed map of the SKUs taken so far.
+# - `line_list`: the line each of them was taken from.
+# - `lookup`: their positions.
+# - `named`: the products the file has named so far, by code.
+# - `named_on`: the line each was first named on.
+function conflict_of(t: tables.Table, x: Taken, held: books.Snapshot, shape: indexed.Indexed, line_list: [i64], lookup: {str: i64}, named: {str: catalog.Product}, named_on: {str: i64}) -> str
+    match indexed.get(shape, value_list: line_list, lookup: lookup, key: x.item.sku)
+        .ok line => return f"the SKU {x.item.sku} is on {t.unit} {line} already"
+        .err _   => _ = 0
+
+    match named[x.product.code]
+        .ok first =>
+            if first.name != x.product.name || first.category != x.product.category
+                return f"the product {x.product.code} is named \"{first.name}\" in {first.category} on {t.unit} {named_on[x.product.code].default(0)}"
+        .err _ => _ = 0
+
+    for v in held.variants
+        if v.sku == x.item.sku
+            match books.product_by_id(held, id: v.product_id)
+                .ok owner =>
+                    if owner.code != x.product.code
+                        return f"the SKU {x.item.sku} belongs to the product {owner.code}"
+                .err _ => _ = 0
+
+    return ""
+
+# How many entries `m` holds.
+#
+# - `m`: a map.
+function size_of(m: {str: catalog.Product}) -> i64
+    return keys(m).len()
+
+test "required: the six columns of a file of variants"
+    assert required().len() == 6 && required()[3] == "sku"
+
+test "checked: a row of six good cells, and a price with a comma"
+    t = tables.Table(
+        name: "p.csv",
+        unit: "line",
+        header: required(),
+        rows: [],
+        broken: fail(code: "not_found", msg: "end")
+    )
+    at_column = columns.columns_of(t, required: required(), optional: []).must()
+    good = tables.Row(line: 2, cells: ["TEE", "Heroes tee", "apparel", "TEE-BLK-M", "black / M", "18.00"])
+    x = checked(t, row: good, at_column: at_column, at: time.epoch()).must()
+    assert x.item.sku == "TEE-BLK-M" && x.item.price_cents == 1800 && x.product.code == "TEE"
+    comma = tables.Row(line: 3, cells: ["TEE", "Heroes tee", "apparel", "TEE-BLK-L", "black / L", "18,00"])
+
+    match checked(t, row: comma, at_column: at_column, at: time.epoch())
+        .ok _  => assert false
+        .err e => assert e.msg == "the price \"18,00\" is not an amount like 12.50"
+
+test "checked: a short row tells its count of fields"
+    t = tables.Table(
+        name: "p.csv",
+        unit: "line",
+        header: required(),
+        rows: [],
+        broken: fail(code: "not_found", msg: "end")
+    )
+    at_column = columns.columns_of(t, required: required(), optional: []).must()
+
+    match checked(t, row: tables.Row(line: 4, cells: ["MUG", "Mug"]), at_column: at_column, at: time.epoch())
+        .ok _  => assert false
+        .err e => assert e.msg == "2 fields where the header names 6"

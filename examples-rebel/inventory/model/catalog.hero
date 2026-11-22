@@ -1,0 +1,280 @@
+# What the inventory holds, whatever store keeps it: the chain's locations,
+# its products and their variants, and each variant's stock at each
+# location. Every record is keyed by a UUID the program makes
+# (`model/ids`), so the same catalogue lands in MySQL, in any ODBC database
+# and in MongoDB with the same keys, and by a code a person types: a
+# location's `WH`, a product's `TEE`, a variant's SKU `TEE-BLK-M`.
+#
+# A code is upper-case ASCII letters, digits and `-`, one to 32 of them,
+# neither first nor last a `-`: it stands in a file name, in a column of a
+# spreadsheet and, in MongoDB, as the name of a field (a variant's level at
+# a location is the field named by the location's code), which may hold no
+# `.` and open with no `$`.
+
+## Codes
+
+# The code of a text that is no code, no quantity, or no name.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most units a variant may hold across the chain, and the most one
+# movement may move: 1,000,000,000. With `money.MOST_UNIT_CENTS` this keeps
+# every value inside an `i64`.
+constant MOST_UNITS: i64
+    1_000_000_000
+
+# The longest code: 32 characters.
+constant MOST_CODE_LEN: i64
+    32
+
+# The longest name or label: 200 bytes, the width of the SQL columns.
+constant MOST_NAME_LEN: i64
+    200
+
+## The records
+
+# One place of the chain that holds stock: the warehouse or a shop.
+record Location
+    # The location's UUID, in its standard text form.
+    id: str
+    # Its code, `WH`, `SHOP-N`.
+    code: str
+    # Its name as people call it.
+    name: str
+
+# A product as the shops sell it, whatever its sizes and colours.
+record Product
+    # The product's UUID, in its standard text form.
+    id: str
+    # Its code, `TEE`.
+    code: str
+    # Its name, `Heroes tee`.
+    name: str
+    # The group it is reported under, `apparel`.
+    category: str
+
+# One variant of a product, the thing a shelf holds and a till sells, with
+# the moving average cost of every unit the chain holds of it.
+record Variant
+    # The variant's UUID, in its standard text form.
+    id: str
+    # The UUID of its product.
+    product_id: str
+    # Its SKU, `TEE-BLK-M`, unique across the chain.
+    sku: str
+    # What tells it from the product's other variants, `black / M`.
+    label: str
+    # Its selling price, in cents.
+    price_cents: i64
+    # The units the whole chain holds: the sum of its levels' `on_hand`.
+    units: i64
+    # The value of those units at cost, in cents: the pool the moving
+    # average cost is `value_cents / units`.
+    value_cents: i64
+    # The number of the last movement applied to it, 0 for none: a movement
+    # is applied only over a smaller one, so applying one twice changes
+    # nothing.
+    applied_seq: i64
+
+# A variant's stock at one location, and when to order more of it.
+record Level
+    # The UUID of the variant.
+    variant_id: str
+    # The UUID of the location.
+    location_id: str
+    # The units on hand there, 0 or more.
+    on_hand: i64
+    # At or below this many units on hand the location orders more; 0 for
+    # never.
+    reorder_point: i64
+    # How many units an order asks for.
+    reorder_quantity: i64
+
+## Checks
+
+# `text` as a code, once checked.
+#
+# - `kind`: what the code names, for the message: `SKU`, `location`.
+# - `text`: the code as given, blanks at its ends ignored.
+#
+# Fails `invalid` where it is empty, longer than `MOST_CODE_LEN`, holds a
+# character other than `A` to `Z`, `0` to `9` and `-`, or opens or ends
+# with `-`; the message names the kind and the first character refused.
+function code_of(kind: str, text: str) -> str?
+    s = trim_ascii(text)
+
+    if s == ""
+        return fail(code: INVALID, msg: f"no {kind}")
+
+    if s.len() > MOST_CODE_LEN
+        return fail(code: INVALID, msg: f"the {kind} \"{s}\" is longer than {MOST_CODE_LEN} characters")
+
+    for c in s.chars()
+        upper = c[0] >= 'A' && c[0] <= 'Z'
+        digit = c[0] >= '0' && c[0] <= '9'
+
+        if !upper && !digit && c != "-"
+            shown = if c == " "
+                "a space"
+            else
+                f"\"{c}\""
+            return fail(
+                code: INVALID,
+                msg: f"the {kind} \"{s}\" holds {shown}: a {kind} is upper-case letters, digits and '-'"
+            )
+
+    if s[0] == '-' || s[s.len() - 1] == '-'
+        return fail(code: INVALID, msg: f"the {kind} \"{s}\" opens or ends with '-'")
+    return ok(s)
+
+# `text` as a name or a label, once checked.
+#
+# - `kind`: what it names, for the message.
+# - `text`: the name as given, blanks at its ends ignored.
+#
+# Fails `invalid` where it is empty or longer than `MOST_NAME_LEN` bytes.
+function name_of(kind: str, text: str) -> str?
+    s = trim_ascii(text)
+
+    if s == ""
+        return fail(code: INVALID, msg: f"no {kind}")
+
+    if s.len() > MOST_NAME_LEN
+        return fail(code: INVALID, msg: f"the {kind} is longer than {MOST_NAME_LEN} bytes")
+    return ok(s)
+
+# The whole number of units `text` writes.
+#
+# - `kind`: what is counted, for the message: `quantity`, `counted`.
+# - `text`: decimal digits, blanks at its ends ignored.
+# - `least`: the smallest allowed, 0 or 1.
+#
+# Fails `invalid` where `text` is empty, holds anything but digits, or is
+# below `least` or above `MOST_UNITS`.
+function units_of(kind: str, text: str, least: i64) -> i64?
+    s = trim_ascii(text)
+
+    if s == ""
+        return fail(code: INVALID, msg: f"no {kind}")
+
+    if s.len() > 1 && s[0] == '-' && is_digits(s.slice(from: 1, to: s.len()))
+        return fail(code: INVALID, msg: f"the {kind} {s} is below {least}")
+    n @= 0
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return fail(code: INVALID, msg: f"the {kind} \"{s}\" is not a whole number of units")
+
+        if n > MOST_UNITS
+            return fail(code: INVALID, msg: f"the {kind} {s} is more than {MOST_UNITS}")
+        n @ n * 10 + to_i64(s[i] - '0').must()
+
+    return checked_units(kind, n: n, least: least)
+
+# The whole number of units a spreadsheet's number holds.
+#
+# - `kind`: what is counted, for the message.
+# - `x`: the cell's number.
+# - `least`: the smallest allowed, 0 or 1.
+#
+# Fails `invalid` where `x` has a fraction, is a NaN, or is below `least`
+# or above `MOST_UNITS`.
+function units_of_number(kind: str, x: f64, least: i64) -> i64?
+    if x != x || x < to_f64(least) || x > to_f64(MOST_UNITS)
+        return fail(code: INVALID, msg: f"the {kind} {x} is not between {least} and {MOST_UNITS}")
+    n = to_i64(x).must()
+
+    if to_f64(n) != x
+        return fail(code: INVALID, msg: f"the {kind} {x} is not a whole number of units")
+    return ok(n)
+
+# `n` once it is known to lie between `least` and `MOST_UNITS`.
+#
+# - `kind`: what is counted, for the message.
+# - `n`: the number.
+# - `least`: the smallest allowed.
+function checked_units(kind: str, n: i64, least: i64) -> i64?
+    if n < least
+        return fail(code: INVALID, msg: f"the {kind} {n} is below {least}")
+
+    if n > MOST_UNITS
+        return fail(code: INVALID, msg: f"the {kind} {n} is more than {MOST_UNITS}")
+    return ok(n)
+
+# Whether `s` is one ASCII digit or more and nothing else.
+#
+# - `s`: any text.
+function is_digits(s: str) -> bool
+    if s == ""
+        return false
+
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return false
+
+    return true
+
+# `s` without the ASCII blanks at its ends: spaces, tabs and line ends.
+#
+# - `s`: any text.
+function trim_ascii(s: str) -> str
+    first @= 0
+    last @= s.len()
+
+    while first < last && is_blank(s[first])
+        first @ first + 1
+
+    while last > first && is_blank(s[last - 1])
+        last @ last - 1
+
+    return s.slice(from: first, to: last)
+
+# Whether the byte `c` is a space, a tab or a line end.
+#
+# - `c`: the byte.
+function is_blank(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n'
+
+test "code_of: a SKU, blanks around it, and the longest"
+    assert code_of(kind: "SKU", text: " TEE-BLK-M ").must() == "TEE-BLK-M"
+    assert code_of(kind: "SKU", text: "A").must() == "A"
+    assert code_of(kind: "SKU", text: repeat("A", 32)).must().len() == 32
+
+test "code_of: empty, too long, lower case, a space, a dot, a dash at either end, and a character of two bytes"
+    assert code_of(kind: "SKU", text: "").is_err()
+    assert code_of(kind: "SKU", text: repeat("A", 33)).is_err()
+    assert code_of(kind: "SKU", text: "tee").is_err()
+
+    match code_of(kind: "SKU", text: "TEE BLK")
+        .ok _  => assert false
+        .err e => assert e.msg == "the SKU \"TEE BLK\" holds a space: a SKU is upper-case letters, digits and '-'"
+
+    assert code_of(kind: "location", text: "SHOP.N").is_err()
+    assert code_of(kind: "SKU", text: "-TEE").is_err()
+    assert code_of(kind: "SKU", text: "TEE-").is_err()
+    assert code_of(kind: "SKU", text: "TÉE").is_err()
+
+test "units_of: zero, one, the bound, and what is refused"
+    assert units_of(kind: "counted", text: "0", least: 0).must() == 0
+    assert units_of(kind: "quantity", text: " 12 ", least: 1).must() == 12
+    assert units_of(kind: "quantity", text: "1000000000", least: 1).must() == MOST_UNITS
+    assert units_of(kind: "quantity", text: "0", least: 1).is_err()
+    assert units_of(kind: "quantity", text: "1000000001", least: 1).is_err()
+    assert units_of(kind: "quantity", text: "99999999999999999999999", least: 1).is_err()
+    assert units_of(kind: "quantity", text: "-3", least: 0).is_err()
+    assert units_of(kind: "quantity", text: "2.5", least: 0).is_err()
+    assert units_of(kind: "quantity", text: "", least: 0).is_err()
+
+test "units_of_number: whole, fractional, negative and NaN"
+    assert units_of_number(kind: "counted", x: 40.0, least: 0).must() == 40
+    assert units_of_number(kind: "counted", x: 2.5, least: 0).is_err()
+    assert units_of_number(kind: "counted", x: -1.0, least: 0).is_err()
+    nan = 0.0 / 0.0
+    assert units_of_number(kind: "counted", x: nan, least: 0).is_err()
+
+test "name_of: trimmed, empty and too long"
+    assert name_of(kind: "name", text: "  Heroes tee ").must() == "Heroes tee"
+    assert name_of(kind: "name", text: " ").is_err()
+    assert name_of(kind: "name", text: repeat("x", 201)).is_err()

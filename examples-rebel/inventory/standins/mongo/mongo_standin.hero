@@ -1,0 +1,447 @@
+# The demo's MongoDB server: a loopback stand-in that speaks MongoDB's wire
+# protocol (OP_MSG, `standins/mongo/wire`) far enough for the inventory's
+# MongoDB store, so the demo runs with no MongoDB installed. It answers the
+# commands the `mongodb` client sends for the store, as a standalone
+# MongoDB 7.0 answers them: `hello` (and the legacy `isMaster`), `ping`,
+# `endSessions`, `insert`, `update`, `delete`, `find`, `aggregate`,
+# `createIndexes`, `drop`, `killCursors` and `getMore`. Its data is in
+# memory (`standins/mongo/collections`), its filters, updates and stages
+# are MongoDB's as far as `standins/mongo/matching`, `updating` and
+# `pipeline` say, and a command it does not know is answered as the server
+# answers one, `CommandNotFound`. A query's answer comes whole in its first
+# batch, the cursor id 0, which a driver reads as a cursor already
+# exhausted. It logs nobody in: the demo's configuration names no user.
+#
+# It runs on a thread of its own, tells the demo its port
+# (`standins/ready`), and serves one connection after another until the
+# program is asked to stop; its thread answers what it served.
+
+use <rebel>/bson
+use <rebel>/io
+use <rebel>/net
+use <rebel>/strings
+
+use standins/mongo/collections
+use standins/mongo/pipeline
+use standins/mongo/wire
+use standins/ready
+
+## The server
+
+# The stand-in's thread.
+#
+# - `arg`: the demo's control port, in decimal.
+function run(arg: str) -> str
+    match served(arg)
+        .ok said => return said
+        .err e   => return "mongodb stand-in: " + e.msg
+
+# Every connection served, then what was served.
+#
+# - `control`: the demo's control port, in decimal.
+function served(control: str) -> str?
+    data @= collections.empty()?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+    control_port = net.parse_port(strings.trim(control))?
+
+    match ready.tell(control_port: control_port, service: "mongodb", port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    connections @= 0
+    commands @= 0
+
+    while true
+        match net.accept(listener, deadline_ms: net.FOREVER)
+            .err _ => break
+            .ok made =>
+                conn @= made
+                connections @ connections + 1
+                commands @ commands + session(@data, stream: conn.stream, id: connections)
+                _ = io.close(@conn.stream).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    return ok(f"mongodb stand-in: {connections} connections served, {commands} commands answered")
+
+# One connection's commands answered until the client leaves; answers how
+# many.
+#
+# - `data`: the stand-in's data.
+# - `stream`: the connection.
+# - `id`: the connection's number.
+function session(@data: collections.Store, stream: io.Stream, id: i64) -> i64
+    r @= io.reader(stream)
+    count @= 0
+
+    while true
+        match wire.read_request(@r)
+            .err _ => break
+            .ok request =>
+                count @ count + 1
+                reply = answer(@data, command: request.command, connection: id)
+
+                if !request.no_reply
+                    match wire.reply(id: count, responds_to: request.id, doc: reply)
+                        .err _ => break
+                        .ok b =>
+                            if io.write(stream, data: b).is_err()
+                                break
+
+    return count
+
+## Commands
+
+# The reply to `command`.
+#
+# - `data`: the stand-in's data.
+# - `command`: the command, its name its first field.
+# - `connection`: the connection's number, which `hello` tells.
+function answer(@data: collections.Store, command: bson.Document, connection: i64) -> bson.Document
+    if command.fields.len() == 0
+        return error(code: 9, name: "FailedToParse", message: "an empty command")
+    name = command.fields[0].name
+
+    database = match bson.member(command, name: "$db")
+        .ok v  => bson.text_of(v).default("")
+        .err _ => ""
+
+    if database == ""
+        return error(
+            code: 40414,
+            name: "Location40414",
+            message: "BSON field 'OperationRequest.$db' is missing but a required field"
+        )
+
+    if name == "hello" || name == "isMaster" || name == "ismaster"
+        return hello(legacy: name != "hello", connection: connection)
+
+    if name == "ping" || name == "endSessions"
+        return ok_doc([])
+
+    match answered(@data, name: name, database: database, command: command)
+        .ok reply => return reply
+        .err e =>
+            if e.code == "exists"
+                return error(code: 85, name: "IndexOptionsConflict", message: e.msg)
+            return error(code: 2, name: "BadValue", message: e.msg)
+
+# The reply to a command on a collection.
+#
+# - `data`: the stand-in's data.
+# - `name`: the command's name.
+# - `database`: the database it names.
+# - `command`: the command.
+#
+# Fails `invalid` where a field is not of its kind, and as the data refuses.
+function answered(@data: collections.Store, name: str, database: str, command: bson.Document) -> bson.Document?
+    if name == "insert" || name == "update" || name == "delete" || name == "find" || name == "aggregate" || name == "createIndexes" || name == "drop"
+        collection = bson.text_of(command.fields[0].value)?
+        ns = database + "." + collection
+
+        if name == "insert"
+            return ok(inserted(@data, ns: ns, command: command)?)
+
+        if name == "update"
+            return ok(updated(@data, ns: ns, command: command)?)
+
+        if name == "delete"
+            return ok(deleted(@data, ns: ns, command: command)?)
+
+        if name == "find"
+            return ok(found(data, ns: ns, command: command)?)
+
+        if name == "aggregate"
+            stages: [bson.Document] @= []
+
+            for s in bson.items_of(bson.member(command, name: "pipeline")?)?
+                stages @ stages.push(bson.document_of(s)?)
+
+            match pipeline.run(docs: collections.collection_of(data, ns: ns).docs, pipeline: stages)
+                .ok docs => return ok(batch(ns, docs: docs))
+                .err e   => return ok(error(code: 40324, name: "Location40324", message: e.msg))
+
+        if name == "createIndexes"
+            return ok(indexed(@data, ns: ns, command: command)?)
+
+        match data.collections[ns]
+            .err _ => return ok(error(code: 26, name: "NamespaceNotFound", message: "ns not found"))
+            .ok c =>
+                before = c.indexes.len()
+                data.collections @ without(data.collections, ns: ns)
+                return ok(
+                    ok_doc([bson.Field(name: "ns", value: .text(v: ns)), bson.Field(name: "nIndexesWas", value: int32(before))])
+                )
+
+    if name == "killCursors"
+        ids = bson.member(command, name: "cursors").default(.array(items: []))
+        return ok(
+            ok_doc([bson.Field(name: "cursorsKilled", value: .array(items: [])), bson.Field(name: "cursorsNotFound", value: ids), bson.Field(name: "cursorsAlive", value: .array(items: [])), bson.Field(name: "cursorsUnknown", value: .array(items: []))])
+        )
+
+    if name == "getMore"
+        return ok(
+            error(code: 43, name: "CursorNotFound", message: "cursor id not found: this server answers every query in its first batch")
+        )
+    return ok(error(code: 59, name: "CommandNotFound", message: f"no such command: '{name}'"))
+
+# The reply to `hello`: a standalone server of wire version 21 that keeps
+# logical sessions, MongoDB 7.0's limits.
+#
+# - `legacy`: whether it was asked as `isMaster`, which answers `ismaster`.
+# - `connection`: the connection's number.
+function hello(legacy: bool, connection: i64) -> bson.Document
+    primary_field = if legacy
+        "ismaster"
+    else
+        "isWritablePrimary"
+    return ok_doc(
+        [bson.Field(name: "helloOk", value: .boolean(v: true)), bson.Field(name: primary_field, value: .boolean(v: true)), bson.Field(name: "maxBsonObjectSize", value: int32(collections.MOST_DOCUMENT)), bson.Field(name: "maxMessageSizeBytes", value: int32(wire.MOST_MESSAGE)), bson.Field(name: "maxWriteBatchSize", value: int32(100000)), bson.Field(name: "logicalSessionTimeoutMinutes", value: int32(30)), bson.Field(name: "connectionId", value: int32(connection)), bson.Field(name: "minWireVersion", value: int32(0)), bson.Field(name: "maxWireVersion", value: int32(21)), bson.Field(name: "readOnly", value: .boolean(v: false))]
+    )
+
+# The reply to `insert`: the documents of `documents` inserted, and each
+# refused one told in `writeErrors`.
+#
+# - `data`: the stand-in's data.
+# - `ns`: the namespace.
+# - `command`: the command.
+function inserted(@data: collections.Store, ns: str, command: bson.Document) -> bson.Document?
+    docs: [bson.Document] @= []
+
+    for v in bson.items_of(bson.member(command, name: "documents")?)?
+        docs @ docs.push(bson.document_of(v)?)
+
+    ordered = bson.bool_of(bson.member(command, name: "ordered").default(.boolean(v: true))).default(true)
+    errors = collections.insert(@data, ns: ns, docs: docs, ordered: ordered)
+
+    taken = if ordered && errors.len() > 0
+        errors[0].index
+    else
+        docs.len() - errors.len()
+    return ok(write_reply([bson.Field(name: "n", value: int32(taken))], errors: errors))
+
+# The reply to `update`: each statement of `updates` run in order.
+#
+# - `data`: the stand-in's data.
+# - `ns`: the namespace.
+# - `command`: the command.
+function updated(@data: collections.Store, ns: str, command: bson.Document) -> bson.Document?
+    matched @= 0
+    modified @= 0
+    upserted: [bson.Value] @= []
+    errors: [collections.WriteError] @= []
+    statements = bson.items_of(bson.member(command, name: "updates")?)?
+
+    for i in range(from: 0, to: statements.len())
+        st = bson.document_of(statements[i])?
+        query = bson.document_of(bson.member(st, name: "q")?)?
+
+        change = match bson.document_of(bson.member(st, name: "u")?)
+            .ok d => d
+            .err _ => return ok(
+                error(code: 2, name: "BadValue", message: "the stand-in runs no update written as a pipeline")
+            )
+
+        upsert = bson.bool_of(bson.member(st, name: "upsert").default(.boolean(v: false))).default(false)
+        multi = bson.bool_of(bson.member(st, name: "multi").default(.boolean(v: false))).default(false)
+
+        match collections.update_docs(@data, ns: ns, query: query, update: change, upsert: upsert, multi: multi)
+            .err e => errors @ errors.push(collections.WriteError(index: i, code: 9, message: e.msg))
+            .ok u =>
+                matched @ matched + u.matched
+                modified @ modified + u.modified
+
+                match u.upserted
+                    .ok id =>
+                        matched @ matched + 1
+                        upserted @ upserted.push(
+                            .document(doc: bson.Document(fields: [bson.Field(name: "index", value: int32(i)), bson.Field(name: "_id", value: id)]))
+                        )
+                    .err _ => _ = 0
+
+                if u.refusal.code != 0
+                    errors @ errors.push(
+                        collections.WriteError(index: i, code: u.refusal.code, message: u.refusal.message)
+                    )
+
+    fields: [bson.Field] @= [
+        bson.Field(name: "n", value: int32(matched))
+        bson.Field(name: "nModified", value: int32(modified))
+    ]
+
+    if upserted.len() > 0
+        fields @ fields.push(bson.Field(name: "upserted", value: .array(items: upserted)))
+    return ok(write_reply(fields, errors: errors))
+
+# The reply to `delete`: each statement of `deletes` run in order.
+#
+# - `data`: the stand-in's data.
+# - `ns`: the namespace.
+# - `command`: the command.
+function deleted(@data: collections.Store, ns: str, command: bson.Document) -> bson.Document?
+    total @= 0
+
+    for v in bson.items_of(bson.member(command, name: "deletes")?)?
+        st = bson.document_of(v)?
+        query = bson.document_of(bson.member(st, name: "q")?)?
+        limit = bson.int_of(bson.member(st, name: "limit").default(.int32(v: 0))).default(0)
+        total @ total + collections.delete(@data, ns: ns, query: query, limit: limit)?
+
+    return ok(write_reply([bson.Field(name: "n", value: int32(total))], errors: []))
+
+# The reply to `find`: every match in the first batch.
+#
+# - `data`: the stand-in's data.
+# - `ns`: the namespace.
+# - `command`: the command.
+function found(data: collections.Store, ns: str, command: bson.Document) -> bson.Document?
+    query = bson.document_of(bson.member(command, name: "filter").default(.document(doc: bson.Document(fields: []))))?
+    order = bson.document_of(bson.member(command, name: "sort").default(.document(doc: bson.Document(fields: []))))?
+    projection = bson.document_of(bson.member(command, name: "projection").default(.document(doc: bson.Document(fields: []))))?
+
+    if projection.fields.len() > 0
+        return ok(error(code: 2, name: "BadValue", message: "the stand-in applies no projection"))
+    skip = bson.int_of(bson.member(command, name: "skip").default(.int32(v: 0))).default(0)
+    limit = bson.int_of(bson.member(command, name: "limit").default(.int32(v: 0))).default(0)
+
+    most = if limit < 0
+        -limit
+    else
+        limit
+    docs = collections.query_docs(data, ns: ns, query: query, order: order, skip: skip, limit: most)?
+    return ok(batch(ns, docs: docs))
+
+# The reply to `createIndexes`.
+#
+# - `data`: the stand-in's data.
+# - `ns`: the namespace.
+# - `command`: the command.
+function indexed(@data: collections.Store, ns: str, command: bson.Document) -> bson.Document?
+    created_collection = match data.collections[ns]
+        .ok _  => false
+        .err _ => true
+
+    before @= -1
+    after @= 0
+
+    for v in bson.items_of(bson.member(command, name: "indexes")?)?
+        spec = bson.document_of(v)?
+        name = bson.text_of(bson.member(spec, name: "name")?)?
+        keys_doc = bson.document_of(bson.member(spec, name: "key")?)?
+        unique = bson.bool_of(bson.member(spec, name: "unique").default(.boolean(v: false))).default(false)
+        counts = collections.create_index(@data, ns: ns, name: name, paths: bson.names_of(keys_doc), unique: unique)?
+
+        if before < 0
+            before @ counts[0]
+        after @ counts[1]
+
+    return ok(
+        ok_doc([bson.Field(name: "createdCollectionAutomatically", value: .boolean(v: created_collection)), bson.Field(name: "numIndexesBefore", value: int32(before)), bson.Field(name: "numIndexesAfter", value: int32(after))])
+    )
+
+## Replies
+
+# A cursor's reply holding every document in its first batch.
+#
+# - `ns`: the namespace.
+# - `docs`: the documents.
+function batch(ns: str, docs: [bson.Document]) -> bson.Document
+    items: [bson.Value] @= []
+
+    for d in docs
+        items @ items.push(.document(doc: d))
+
+    cursor = bson.Document(
+        fields: [bson.Field(name: "firstBatch", value: .array(items: items)), bson.Field(name: "id", value: .int64(v: 0)), bson.Field(name: "ns", value: .text(v: ns))]
+    )
+    return ok_doc([bson.Field(name: "cursor", value: .document(doc: cursor))])
+
+# A write's reply: `fields`, the refused statements in `writeErrors`, and
+# `ok`.
+#
+# - `fields`: the counts.
+# - `errors`: the refusals.
+function write_reply(fields: [bson.Field], errors: [collections.WriteError]) -> bson.Document
+    out: [bson.Field] @= fields
+
+    if errors.len() > 0
+        items: [bson.Value] @= []
+
+        for e in errors
+            items @ items.push(
+                .document(doc: bson.Document(fields: [bson.Field(name: "index", value: int32(e.index)), bson.Field(name: "code", value: int32(e.code)), bson.Field(name: "errmsg", value: .text(v: e.message))]))
+            )
+
+        out @ out.push(bson.Field(name: "writeErrors", value: .array(items: items)))
+    out @ out.push(bson.Field(name: "ok", value: .double(v: 1.0)))
+    return bson.Document(fields: out)
+
+# A successful reply: `fields`, then `ok: 1.0`.
+#
+# - `fields`: what it says.
+function ok_doc(fields: [bson.Field]) -> bson.Document
+    out: [bson.Field] @= fields
+    out @ out.push(bson.Field(name: "ok", value: .double(v: 1.0)))
+    return bson.Document(fields: out)
+
+# A failed reply, as the server writes one.
+#
+# - `code`: MongoDB's error code.
+# - `name`: its name, `CommandNotFound`.
+# - `message`: its words.
+function error(code: i64, name: str, message: str) -> bson.Document
+    return bson.Document(
+        fields: [bson.Field(name: "ok", value: .double(v: 0.0)), bson.Field(name: "errmsg", value: .text(v: message)), bson.Field(name: "code", value: int32(code)), bson.Field(name: "codeName", value: .text(v: name))]
+    )
+
+# `n` as an `int32`, as the server writes its counts; clamped where it
+# does not fit.
+#
+# - `n`: the count.
+function int32(n: i64) -> bson.Value
+    return .int32(v: to_i32(n).default(2147483647))
+
+# `m` without the namespace `ns`.
+#
+# - `m`: the collections.
+# - `ns`: the namespace.
+function without(m: {str: collections.Collection}, ns: str) -> {str: collections.Collection}
+    out: {str: collections.Collection} @= {}
+
+    for k in keys(m)
+        if k != ns
+            out[k] @ m[k].must()
+
+    return out
+
+test "answer: hello, an unknown command, and a command naming no database"
+    data @= collections.empty().must()
+    h = answer(@data, command: bson.parse_json("{\"hello\": 1, \"$db\": \"admin\"}").must(), connection: 1)
+    assert bson.member(h, name: "isWritablePrimary").must() == .boolean(v: true)
+    nope = answer(@data, command: bson.parse_json("{\"shutdown\": 1, \"$db\": \"admin\"}").must(), connection: 1)
+    assert bson.member(nope, name: "code").must() == .int32(v: 59)
+    bare = answer(@data, command: bson.parse_json("{\"ping\": 1}").must(), connection: 1)
+    assert bson.member(bare, name: "ok").must() == .double(v: 0.0)
+
+test "answer: an insert, a duplicate refused in writeErrors, a find in one batch"
+    data @= collections.empty().must()
+    first = answer(
+        @data,
+        command: bson.parse_json("{\"insert\": \"c\", \"documents\": [{\"_id\": 1}], \"$db\": \"d\"}").must(),
+        connection: 1
+    )
+    assert bson.member(first, name: "n").must() == .int32(v: 1)
+    again = answer(
+        @data,
+        command: bson.parse_json("{\"insert\": \"c\", \"documents\": [{\"_id\": 1}], \"$db\": \"d\"}").must(),
+        connection: 1
+    )
+    assert bson.member(again, name: "n").must() == .int32(v: 0) && bson.has_member(again, name: "writeErrors")
+    got = answer(
+        @data,
+        command: bson.parse_json("{\"find\": \"c\", \"filter\": {}, \"$db\": \"d\"}").must(),
+        connection: 1
+    )
+    cursor = bson.document_of(bson.member(got, name: "cursor").must()).must()
+    assert bson.items_of(bson.member(cursor, name: "firstBatch").must()).must().len() == 1

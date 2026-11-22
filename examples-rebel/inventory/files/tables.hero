@@ -1,0 +1,198 @@
+# A file of rows an import reads, CSV or XLSX alike: its header, then each
+# row as text cells with the place a person finds it at in the file, the
+# CSV's line (`csv.line_of`, so a quoted field across two lines still names
+# the line its row began on) or the spreadsheet's row number as Excel shows
+# it. A spreadsheet's typed cell becomes the text `xlsx.format_value`
+# writes, the fewest digits that read back as the number, so `12.5` is
+# `12.5` and an import reads both kinds of file with one set of checks.
+#
+# A CSV row whose fields do not match the header is kept, with its own
+# count, so the import can say which line is short; where the text stops
+# being CSV (a quote never closed) the rows before it are kept and the
+# table says where the file broke, rather than nothing being read.
+
+use <rebel>/csv
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/strings
+use <rebel>/xlsx
+
+## Codes
+
+# The code of a file that is neither CSV nor XLSX, or holds no header.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most cells a spreadsheet's sheet may hold for an import: a million.
+constant MOST_CELLS: i64
+    1_000_000
+
+## Tables
+
+# One row of a file.
+record Row
+    # Where a person finds it: its line in a CSV, its row number in a
+    # spreadsheet, from 1.
+    line: i64
+    # Its cells as text, as many as the file gave.
+    cells: [str]
+
+# A file's rows under its header.
+record Table
+    # The file's name, as the import names it in messages.
+    name: str
+    # What a row's place is called: `line` for a CSV, `row` for a spreadsheet.
+    unit: str
+    # The header's names, as written.
+    header: [str]
+    # The rows after the header, empty ones left out.
+    rows: [Row]
+    # Where the file stopped being readable, `line 9: ...`; failing
+    # `not_found` where it was read to its end.
+    broken: str?
+
+# The table in the file at `path`, read as its extension says: `.csv`, or
+# `.xlsx` (its first sheet).
+#
+# - `path`: the file.
+#
+# Fails `invalid` where the extension is neither or the file holds no
+# header, and as `fs.open` or `xlsx.load` fail on the file.
+function read_table(path: str) -> Table?
+    lower = strings.to_lower_ascii(path)
+
+    if strings.has_suffix(s: lower, suffix: ".csv")
+        return read_csv(path)
+
+    if strings.has_suffix(s: lower, suffix: ".xlsx")
+        return read_xlsx(path)
+    return fail(code: INVALID, msg: f"{path} is neither .csv nor .xlsx")
+
+# The table of a CSV file, read row by row from a stream.
+#
+# - `path`: the file.
+function read_csv(path: str) -> Table?
+    stream @= fs.open(path)?
+    options @= csv.strict_read_options()
+    options.ragged @ true
+    reader @= csv.reader(stream, options)
+    rows: [Row] @= []
+    header: [str] @= []
+    broken: str? @= fail(code: "not_found", msg: "read to its end")
+
+    while true
+        match csv.read_row(@reader)
+            .err e =>
+                broken @ ok(e.msg)
+                break
+            .ok cells =>
+                if cells.len() == 0
+                    break
+
+                if header.len() == 0
+                    header @ cells
+                else
+                    rows @ rows.push(Row(line: csv.line_of(reader), cells: cells))
+
+    _ = io.close(@stream).is_err()
+
+    if header.len() == 0
+        return fail(code: INVALID, msg: f"{path} holds no header")
+    return ok(Table(name: base_name(path), unit: "line", header: header, rows: rows, broken: broken))
+
+# The table of a spreadsheet's first sheet.
+#
+# - `path`: the file.
+function read_xlsx(path: str) -> Table?
+    book = xlsx.load(path)?
+
+    if book.sheets.len() == 0
+        return fail(code: INVALID, msg: f"{path} holds no sheet")
+    values = xlsx.rows_of(book.sheets[0], limit: MOST_CELLS)?
+    header: [str] @= []
+    rows: [Row] @= []
+
+    for i in range(from: 0, to: values.len())
+        cells: [str] @= []
+        filled @= false
+
+        for v in values[i]
+            text = xlsx.format_value(v)
+            cells @ cells.push(text)
+
+            if text != ""
+                filled @ true
+
+        if filled
+            if header.len() == 0
+                header @ trim_trailing_empty(cells)
+            else
+                rows @ rows.push(Row(line: i + 1, cells: trim_trailing_empty(cells)))
+
+    if header.len() == 0
+        return fail(code: INVALID, msg: f"{path} holds no header")
+    return ok(
+        Table(name: base_name(path), unit: "row", header: header, rows: rows, broken: fail(code: "not_found", msg: "read to its end"))
+    )
+
+# `cells` without the empty cells after its last filled one, as a
+# spreadsheet's rows are padded to the sheet's widest.
+#
+# - `cells`: a row's cells.
+function trim_trailing_empty(cells: [str]) -> [str]
+    end @= cells.len()
+
+    while end > 0 && cells[end - 1] == ""
+        end @ end - 1
+
+    return cells.slice(from: 0, to: end)
+
+# The last part of `path`, after its last `/` or `\`.
+#
+# - `path`: a path.
+function base_name(path: str) -> str
+    at @= path.len()
+
+    while at > 0 && path[at - 1] != '/' && path[at - 1] != '\\'
+        at @ at - 1
+
+    return path.slice(from: at, to: path.len())
+
+test "base_name: a path of folders, a file alone, and a Windows path"
+    assert base_name("build/demo/products.csv") == "products.csv"
+    assert base_name("counts.xlsx") == "counts.xlsx"
+    assert base_name("C:\\data\\counts.xlsx") == "counts.xlsx"
+
+test "read_table: a CSV's header, its rows with their lines, a short row kept, a quoted field over two lines"
+    path = "build/inventory-tables-test.csv"
+    write_file(path: path, text: "sku,counted\nTEE-BLK-M,4\n\n\"MUG\nRED\",2\nPOSTER\n").must()
+    t = read_table(path).must()
+    assert t.header == ["sku", "counted"] && t.unit == "line" && t.broken.is_err()
+    assert t.rows.len() == 3
+    assert t.rows[0].line == 2 && t.rows[1].line == 4 && t.rows[2].line == 6
+    assert t.rows[2].cells == ["POSTER"]
+
+test "read_table: a CSV broken by a quote never closed keeps the rows before it"
+    path = "build/inventory-tables-test-2.csv"
+    write_file(path: path, text: "sku,counted\nTEE-BLK-M,4\n\"MUG,2\n").must()
+    t = read_table(path).must()
+    assert t.rows.len() == 1 && !t.broken.is_err()
+
+test "read_table: an extension neither CSV nor XLSX"
+    assert read_table("counts.ods").is_err()
+
+test "read_table: a spreadsheet's typed cells as text, its row numbers, empty rows skipped"
+    path = "build/inventory-tables-test.xlsx"
+    sheet @= xlsx.new_sheet("Counts")
+    xlsx.add_row(@sheet, values: [.text(v: "sku"), .text(v: "counted"), .text(v: "unit_cost")]).must()
+    xlsx.set_value(@sheet, row: 2, column: 0, value: .text(v: "TEE-BLK-M")).must()
+    xlsx.set_value(@sheet, row: 2, column: 1, value: .number(v: 40.0)).must()
+    xlsx.set_value(@sheet, row: 2, column: 2, value: .number(v: 6.5)).must()
+    book @= xlsx.new_workbook()
+    xlsx.add_sheet(@book, sheet).must()
+    xlsx.save(book, path: path).must()
+    t = read_table(path).must()
+    assert t.unit == "row" && t.rows.len() == 1 && t.rows[0].line == 3
+    assert t.rows[0].cells == ["TEE-BLK-M", "40", "6.5"]

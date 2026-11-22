@@ -1,0 +1,187 @@
+# Amounts of money in whole cents, read from the decimal text an operator
+# types or a spreadsheet holds (`12.50`, `3`, `0.05`) and written back the
+# same way. A cent is the smallest unit the inventory counts, so every sum
+# of the books is exact; the one division, a pool of value shared among
+# units, is rounded once, half up, by `share`.
+#
+# Amounts are bounded so that no product of an amount and a quantity can
+# pass an `i64`: a unit's cost or price is at most `MOST_UNIT_CENTS`, and
+# `model/catalog` bounds the units a variant holds, so a pool of value stays
+# below 10^17 cents.
+
+use <rebel>/strings
+
+## Codes
+
+# The code of a text or a number that is no amount of money.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest unit cost or price an amount may state, in cents:
+# 1,000,000.00 a unit.
+constant MOST_UNIT_CENTS: i64
+    100_000_000
+
+## Reading
+
+# The cents an amount written as decimal text states: digits, then at most
+# one point and at most two digits after it.
+#
+# - `text`: the amount, blanks at its ends ignored; no sign, no thousands
+#   separator and no currency, since a comma could be either a separator or
+#   a decimal mark and the reader cannot tell which.
+#
+# Fails `invalid` where `text` is empty, holds any other character, more
+# than two digits after the point, or states more than `MOST_UNIT_CENTS`.
+function parse_amount(text: str) -> i64?
+    s = strings.trim(text)
+
+    if s == ""
+        return fail(code: INVALID, msg: "no amount")
+    whole @= 0
+    fraction @= 0
+    fraction_digits @= 0
+    seen_point @= false
+    whole_digits @= 0
+
+    for i in range(from: 0, to: s.len())
+        c = s[i]
+
+        if c == '.'
+            if seen_point
+                return fail(code: INVALID, msg: f"\"{s}\" holds two points")
+            seen_point @ true
+        else if c >= '0' && c <= '9'
+            digit = to_i64(c - '0').must()
+
+            if seen_point
+                if fraction_digits == 2
+                    return fail(code: INVALID, msg: f"\"{s}\" has more than two digits after the point")
+                fraction @ fraction * 10 + digit
+                fraction_digits @ fraction_digits + 1
+            else
+                if whole > MOST_UNIT_CENTS / 100
+                    return fail(code: INVALID, msg: f"\"{s}\" is more than {format_amount(MOST_UNIT_CENTS)}")
+                whole @ whole * 10 + digit
+                whole_digits @ whole_digits + 1
+        else
+            return fail(code: INVALID, msg: f"\"{s}\" is not an amount like 12.50")
+
+    if whole_digits == 0
+        return fail(code: INVALID, msg: f"\"{s}\" has no digit before the point")
+
+    if seen_point && fraction_digits == 0
+        return fail(code: INVALID, msg: f"\"{s}\" has no digit after the point")
+
+    if fraction_digits == 1
+        fraction @ fraction * 10
+    cents = whole * 100 + fraction
+
+    if cents > MOST_UNIT_CENTS
+        return fail(code: INVALID, msg: f"\"{s}\" is more than {format_amount(MOST_UNIT_CENTS)}")
+    return ok(cents)
+
+# The cents a spreadsheet's number states, as a cell holding `12.5` means
+# 12.50.
+#
+# - `x`: the number as the cell holds it, a binary float.
+#
+# Fails `invalid` where `x` is negative, more than `MOST_UNIT_CENTS` cents,
+# or not a whole number of cents within a millionth of a cent: `12.345` is
+# refused rather than rounded, since a rounding nobody asked for would
+# change the books.
+function amount_of_number(x: f64) -> i64?
+    if x != x || x < 0.0
+        return fail(code: INVALID, msg: f"{x} is not an amount")
+
+    if x > to_f64(MOST_UNIT_CENTS) / 100.0
+        return fail(code: INVALID, msg: f"{x} is more than {format_amount(MOST_UNIT_CENTS)}")
+    scaled = x * 100.0
+    cents = to_i64(scaled + 0.5).must()
+    gap = scaled - to_f64(cents)
+
+    if gap > 0.000001 || gap < -0.000001
+        return fail(code: INVALID, msg: f"{x} is not a whole number of cents")
+    return ok(cents)
+
+## Writing
+
+# `cents` as decimal text with two digits after the point: `1250` is
+# `12.50`, `-1358` is `-13.58`, `5` is `0.05`.
+#
+# - `cents`: any amount, negative ones included.
+function format_amount(cents: i64) -> str
+    if cents < 0
+        if cents == -9223372036854775807 - 1
+            return "-92233720368547758.08"
+        return "-" + format_amount(-cents)
+    units = cents / 100
+    rest = cents % 100
+
+    if rest < 10
+        return f"{units}.0{rest}"
+    return f"{units}.{rest}"
+
+## Sharing a pool
+
+# The part of `value` that `part` of `whole` units carry, rounded half up:
+# the cost of `part` units leaving a pool of `value` cents held by `whole`
+# units at their moving average cost.
+#
+# - `value`: the pool, 0 or more cents.
+# - `part`: the units leaving or arriving, 0 or more.
+# - `whole`: the units the pool belongs to, 1 or more.
+#
+# Where `part` is `whole` the answer is `value` exactly, so the last unit
+# sold takes the rest of the pool and no cent is left behind. Aborts where
+# `whole` is below 1 or `value` or `part` below 0, a precondition the
+# caller checks; the products stay inside an `i64` by the bounds of the
+# module's comment.
+function share(value: i64, part: i64, whole: i64) -> i64
+    assert whole >= 1 && value >= 0 && part >= 0
+    return value / whole * part + (value % whole * part + whole / 2) / whole
+
+test "parse_amount: whole, one and two decimals, blanks, the bound"
+    assert parse_amount("12.50").must() == 1250
+    assert parse_amount(" 3 ").must() == 300
+    assert parse_amount("0.5").must() == 50
+    assert parse_amount("0.05").must() == 5
+    assert parse_amount("1000000.00").must() == MOST_UNIT_CENTS
+
+test "parse_amount: comma, sign, three decimals, empty, a lone point and past the bound refused"
+    assert parse_amount("12,50").is_err()
+    assert parse_amount("-1").is_err()
+    assert parse_amount("1.234").is_err()
+    assert parse_amount("").is_err()
+    assert parse_amount(".").is_err()
+    assert parse_amount("5.").is_err()
+    assert parse_amount(".5").is_err()
+    assert parse_amount("1.2.3").is_err()
+    assert parse_amount("1000000.01").is_err()
+    assert parse_amount("99999999999999999999999").is_err()
+    assert parse_amount("€5").is_err()
+
+test "amount_of_number: a spreadsheet's numbers, exact and not"
+    assert amount_of_number(12.5).must() == 1250
+    assert amount_of_number(0.1).must() == 10
+    assert amount_of_number(0.0).must() == 0
+    assert amount_of_number(12.345).is_err()
+    assert amount_of_number(-1.0).is_err()
+    assert amount_of_number(1000000.01).is_err()
+
+test "format_amount: zero, cents, negatives and the smallest i64"
+    assert format_amount(0) == "0.00"
+    assert format_amount(5) == "0.05"
+    assert format_amount(1250) == "12.50"
+    assert format_amount(-1358) == "-13.58"
+    assert format_amount(-9223372036854775807 - 1) == "-92233720368547758.08"
+
+test "share: half up, the whole pool, nothing, and a pool of one cent"
+    assert share(value: 1000, part: 1, whole: 3) == 333
+    assert share(value: 1000, part: 2, whole: 3) == 667
+    assert share(value: 1000, part: 3, whole: 3) == 1000
+    assert share(value: 1000, part: 0, whole: 3) == 0
+    assert share(value: 1, part: 1, whole: 2) == 1
+    assert share(value: 0, part: 5, whole: 7) == 0

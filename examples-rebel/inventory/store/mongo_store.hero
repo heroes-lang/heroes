@@ -1,0 +1,467 @@
+# The inventory kept in MongoDB, in five collections: `locations`,
+# `products`, `variants` (each holding its levels, `store/mongo_docs`),
+# `movements` and `audit`, with a unique index on every code, on every SKU
+# and on a movement's number.
+#
+# A movement is written as three writes, since a standalone server runs no
+# transaction: its document first, which takes its number (the unique index
+# on `seq` refuses a number another writer took); then one update of the
+# variant's document whose filter names every value the movement was
+# planned over (the totals, each level's units, and an `applied_seq` below
+# the movement's) and whose `$set` writes them all at once; then its entry
+# of the audit trail. Where the update matches nothing, another writer got
+# there first: the movement's document is taken back and the store answers
+# `books.CHANGED`. A movement whose document stands without its update, a
+# process stopped between the two, is told apart by its number being above
+# its variant's `applied_seq`, which is what applying it again would check.
+
+use <rebel>/bson
+use <rebel>/lists
+use <rebel>/mongodb
+use <rebel>/strings
+
+use model/books
+use model/catalog
+use model/movements
+use store/mongo_docs as docs
+
+## Codes
+
+# The code of a SKU no document holds.
+constant NOT_FOUND: str
+    "not_found"
+
+## Collections
+
+# The collection of locations.
+constant LOCATIONS: str
+    "locations"
+
+# The collection of products.
+constant PRODUCTS: str
+    "products"
+
+# The collection of variants and their levels.
+constant VARIANTS: str
+    "variants"
+
+# The collection of movements.
+constant MOVEMENTS: str
+    "movements"
+
+# The collection of the audit trail.
+constant AUDIT: str
+    "audit"
+
+## The store
+
+# A client and the database the inventory's collections are in.
+record Mongo
+    # The client, one connection to one server.
+    client: mongodb.Client
+    # The database's name.
+    database: str
+
+# Makes the unique indexes, where they are not there yet.
+#
+# - `m`: the store.
+#
+# Fails as the server refuses an index.
+function setup(@m: Mongo) -> ()?
+    unique = docs.doc([docs.field("unique", .boolean(v: true))])
+    wanted = [
+        [LOCATIONS, catalog.Location::code]
+        [PRODUCTS, catalog.Product::code]
+        [VARIANTS, catalog.Variant::sku]
+        [MOVEMENTS, movements.Movement::seq]
+    ]
+
+    for w in wanted
+        pattern = docs.doc([docs.field(w[1], .int32(v: 1))])
+        _ = mongodb.create_index(@m.client, database: m.database, collection: w[0], model: mongodb.IndexModel(keys: pattern, options: unique))?
+
+    return ok()
+
+## The catalogue
+
+# Puts `l` in the store, by its code, as the SQL store does.
+#
+# - `m`: the store.
+# - `l`: the location, with a key made for it.
+function put_location(@m: Mongo, l: catalog.Location) -> catalog.Location?
+    match by_field(@m, collection: LOCATIONS, name: catalog.Location::code, value: l.code)
+        .ok d =>
+            held = docs.location_of(d)?
+            set(@m, collection: LOCATIONS, id: held.id, fields: [docs.field(catalog.Location::name, docs.text(l.name))])?
+            return ok(catalog.Location(id: held.id, code: held.code, name: l.name))
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+            _ = mongodb.insert_one(@m.client, database: m.database, collection: LOCATIONS, doc: docs.location_doc(l)?)?
+            return ok(l)
+
+# Puts `p` in the store, by its code.
+#
+# - `m`: the store.
+# - `p`: the product, with a key made for it.
+function put_product(@m: Mongo, p: catalog.Product) -> catalog.Product?
+    match by_field(@m, collection: PRODUCTS, name: catalog.Product::code, value: p.code)
+        .ok d =>
+            held = docs.product_of(d)?
+            changes = [
+                docs.field(catalog.Product::name, docs.text(p.name))
+                docs.field(catalog.Product::category, docs.text(p.category))
+            ]
+            set(@m, collection: PRODUCTS, id: held.id, fields: changes)?
+            return ok(catalog.Product(id: held.id, code: held.code, name: p.name, category: p.category))
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+            _ = mongodb.insert_one(@m.client, database: m.database, collection: PRODUCTS, doc: docs.product_doc(p)?)?
+            return ok(p)
+
+# Puts `v` in the store by its SKU, as the SQL store does.
+#
+# - `m`: the store.
+# - `v`: the variant, with a key made for it.
+function put_variant(@m: Mongo, v: catalog.Variant) -> catalog.Variant?
+    match state_of(@m, sku: v.sku)
+        .ok held =>
+            changes = [
+                docs.field(catalog.Variant::label, docs.text(v.label))
+                docs.field(catalog.Variant::price_cents, docs.long(v.price_cents))
+            ]
+            set(@m, collection: VARIANTS, id: held.item.id, fields: changes)?
+            kept @= held.item
+            kept.label @ v.label
+            kept.price_cents @ v.price_cents
+            return ok(kept)
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+            made @= v
+            made.units @ 0
+            made.value_cents @ 0
+            made.applied_seq @ 0
+            _ = mongodb.insert_one(@m.client, database: m.database, collection: VARIANTS, doc: docs.variant_doc(made)?)?
+            return ok(made)
+
+# Sets when `v` is reordered at `l`, its level made with no units where it
+# has none: made only where the level is still missing when the write
+# lands, so a level a movement made meanwhile keeps its units.
+#
+# - `m`: the store.
+# - `v`: the variant.
+# - `l`: the location.
+# - `reorder_point`: at or below this many units on hand, reorder.
+# - `reorder_quantity`: how many an order asks for.
+function put_reorder(@m: Mongo, v: catalog.Variant, l: catalog.Location, reorder_point: i64, reorder_quantity: i64) -> ()?
+    id = docs.key(v.id)?
+    missing = docs.doc([docs.field("$exists", .boolean(v: false))])
+    query = docs.doc(
+        [docs.field("_id", id), docs.field(docs.level_path(code: l.code, name: ""), .document(doc: missing))]
+    )
+    made = docs.level_doc(location_id: l.id, on_hand: 0, reorder_point: reorder_point, reorder_quantity: reorder_quantity)?
+    first = mongodb.update_one(@m.client, database: m.database, collection: VARIANTS, query: query, update: operator("$set", fields: [docs.field(docs.level_path(code: l.code, name: ""), .document(doc: made))]), opts: mongodb.default_write_options())?
+
+    if first.matched == 1
+        return ok()
+    changes = [
+        docs.field(docs.level_path(code: l.code, name: catalog.Level::reorder_point), docs.long(reorder_point))
+        docs.field(docs.level_path(code: l.code, name: catalog.Level::reorder_quantity), docs.long(reorder_quantity))
+    ]
+    return set(@m, collection: VARIANTS, id: v.id, fields: changes)
+
+## Reading
+
+# Every location, by code.
+#
+# - `m`: the store.
+function locations(@m: Mongo) -> [catalog.Location]?
+    out: [catalog.Location] @= []
+
+    for d in every(@m, collection: LOCATIONS, sort_by: catalog.Location::code)?
+        out @ out.push(docs.location_of(d)?)
+
+    return ok(lists.sort_by(out, less: location_before))
+
+# The variant whose SKU is `sku`, with its levels.
+#
+# - `m`: the store.
+# - `sku`: the SKU.
+#
+# Fails `not_found` where no document has it.
+function state_of(@m: Mongo, sku: str) -> books.State?
+    match by_field(@m, collection: VARIANTS, name: catalog.Variant::sku, value: sku)
+        .ok d => return docs.state_of(d)
+        .err e =>
+            if e.code == NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"no variant {sku}")
+            return fail(code: e.code, msg: e.msg)
+
+# The whole catalogue and every level.
+#
+# - `m`: the store.
+function snapshot(@m: Mongo) -> books.Snapshot?
+    held_locations = locations(@m)?
+    products: [catalog.Product] @= []
+
+    for d in every(@m, collection: PRODUCTS, sort_by: catalog.Product::code)?
+        products @ products.push(docs.product_of(d)?)
+
+    variants: [catalog.Variant] @= []
+    levels: [catalog.Level] @= []
+
+    for d in every(@m, collection: VARIANTS, sort_by: catalog.Variant::sku)?
+        s = docs.state_of(d)?
+        variants @ variants.push(s.item)
+
+        for l in s.levels
+            levels @ levels.push(l)
+
+    return ok(
+        books.Snapshot(locations: held_locations, products: lists.sort_by(products, less: product_before), variants: lists.sort_by(variants, less: variant_before), levels: levels)
+    )
+
+# The movements of each kind, totalled by the server: a `$group` stage
+# summing each kind's fields, then a `$sort` by kind.
+#
+# - `m`: the store.
+function totals(@m: Mongo) -> [books.KindTotal]?
+    group = docs.doc(
+        [docs.field("_id", docs.text("$" + movements.Movement::kind)), docs.field(books.KindTotal::count, sum_of(.int32(v: 1))), docs.field(books.KindTotal::units, sum_of(docs.text("$" + movements.Movement::quantity))), docs.field(books.KindTotal::value_cents, sum_of(docs.text("$" + movements.Movement::value_cents))), docs.field(books.KindTotal::revenue_cents, sum_of(docs.text("$" + movements.Movement::revenue_cents)))]
+    )
+    order = docs.doc([docs.field("_id", .int32(v: 1))])
+    pipeline = [
+        docs.doc([docs.field("$group", .document(doc: group))])
+        docs.doc([docs.field("$sort", .document(doc: order))])
+    ]
+    cursor @= mongodb.aggregate(@m.client, database: m.database, collection: MOVEMENTS, pipeline: pipeline, opts: mongodb.default_aggregate_options())?
+    out: [books.KindTotal] @= []
+
+    for d in mongodb.read_all(@m.client, @cursor)?
+        out @ out.push(
+            books.KindTotal(kind: docs.text_at(d, name: "_id")?, count: docs.int_at(d, name: books.KindTotal::count)?, units: docs.int_at(d, name: books.KindTotal::units)?, value_cents: docs.int_at(d, name: books.KindTotal::value_cents)?, revenue_cents: docs.int_at(d, name: books.KindTotal::revenue_cents)?)
+        )
+
+    return ok(out)
+
+# Every entry of the audit trail, in the order written.
+#
+# - `m`: the store.
+function audit_trail(@m: Mongo) -> [books.AuditEntry]?
+    out: [books.AuditEntry] @= []
+
+    for d in every(@m, collection: AUDIT, sort_by: "_id")?
+        out @ out.push(docs.entry_of(d)?)
+
+    return ok(out)
+
+## Writing a movement
+
+# Writes `plan`'s movement, its variant's change and its entry of the
+# audit trail, and answers the movement's number.
+#
+# - `m`: the store.
+# - `plan`: the movement and what it changes.
+# - `entry`: its entry of the audit trail, its `seq` given here.
+#
+# Fails `changed` (`books.CHANGED`) where the variant is no longer what
+# `plan` was made over or another writer took the number, its document then
+# taken back; and as the server refuses a write.
+function apply(@m: Mongo, plan: movements.Plan, entry: books.AuditEntry) -> i64?
+    seq = next_seq(@m, collection: MOVEMENTS, name: movements.Movement::seq)?
+    numbered @= plan.movement
+    numbered.seq @ seq
+
+    match mongodb.insert_one(@m.client, database: m.database, collection: MOVEMENTS, doc: docs.movement_doc(numbered)?)
+        .ok _ => _ = 0
+        .err e =>
+            if e.code == "exists"
+                return fail(code: books.CHANGED, msg: f"movement {seq} was taken by another writer")
+            return fail(code: e.code, msg: e.msg)
+
+    below = docs.doc([docs.field("$lt", docs.long(seq))])
+    guards: [bson.Field] @= [
+        docs.field("_id", docs.key(numbered.variant_id)?)
+        docs.field(catalog.Variant::units, docs.long(plan.units_before))
+        docs.field(catalog.Variant::value_cents, docs.long(plan.value_before))
+        docs.field(catalog.Variant::applied_seq, .document(doc: below))
+    ]
+    changes: [bson.Field] @= [
+        docs.field(catalog.Variant::units, docs.long(plan.units_after))
+        docs.field(catalog.Variant::value_cents, docs.long(plan.value_after))
+        docs.field(catalog.Variant::applied_seq, docs.long(seq))
+    ]
+
+    for ch in plan.changes
+        if ch.exists
+            guards @ guards.push(
+                docs.field(docs.level_path(code: ch.location_code, name: catalog.Level::on_hand), docs.long(ch.before))
+            )
+            changes @ changes.push(
+                docs.field(docs.level_path(code: ch.location_code, name: catalog.Level::on_hand), docs.long(ch.before + ch.delta))
+            )
+        else
+            missing = docs.doc([docs.field("$exists", .boolean(v: false))])
+            guards @ guards.push(docs.field(docs.level_path(code: ch.location_code, name: ""), .document(doc: missing)))
+            made = docs.level_doc(location_id: ch.location_id, on_hand: ch.delta, reorder_point: 0, reorder_quantity: 0)?
+            changes @ changes.push(docs.field(docs.level_path(code: ch.location_code, name: ""), .document(doc: made)))
+
+    updated = mongodb.update_one(
+        @m.client,
+        database: m.database,
+        collection: VARIANTS,
+        query: docs.doc(guards),
+        update: operator("$set", fields: changes),
+        opts: mongodb.default_write_options()
+    )
+    taken_back = docs.doc([docs.field("_id", docs.key(numbered.id)?)])
+
+    match updated
+        .err e =>
+            _ = mongodb.delete_one(
+                @m.client,
+                database: m.database,
+                collection: MOVEMENTS,
+                query: taken_back,
+                opts: mongodb.default_write_options()
+            ).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok u =>
+            if u.matched != 1
+                _ = mongodb.delete_one(
+                    @m.client,
+                    database: m.database,
+                    collection: MOVEMENTS,
+                    query: taken_back,
+                    opts: mongodb.default_write_options()
+                ).is_err()
+                return fail(code: books.CHANGED, msg: f"the variant of movement {seq} changed since it was read")
+
+    _ = add_entry(@m, entry: entry)?
+    return ok(seq)
+
+# Writes `entry` as the next entry of the audit trail, its number its
+# `_id`, and answers the number; a number another writer took first is
+# tried again with the next, three times in all.
+#
+# - `m`: the store.
+# - `entry`: the entry.
+function add_entry(@m: Mongo, entry: books.AuditEntry) -> i64?
+    tries @= 0
+
+    while true
+        seq = next_seq(@m, collection: AUDIT, name: "_id")?
+        numbered @= entry
+        numbered.seq @ seq
+
+        match mongodb.insert_one(@m.client, database: m.database, collection: AUDIT, doc: docs.entry_doc(numbered)?)
+            .ok _ => return ok(seq)
+            .err e =>
+                tries @ tries + 1
+
+                if e.code != "exists" || tries == 3
+                    return fail(code: e.code, msg: e.msg)
+
+# Closes the store's client.
+#
+# - `m`: the store.
+function close(@m: Mongo) -> ()?
+    return mongodb.close(@m.client)
+
+## Helpers
+
+# The number after the largest `name` of `collection`, 1 for an empty one.
+#
+# - `m`: the store.
+# - `collection`: the collection.
+# - `name`: the field holding the number.
+function next_seq(@m: Mongo, collection: str, name: str) -> i64?
+    opts @= mongodb.default_find_options()
+    opts.sort @ docs.doc([docs.field(name, .int32(v: -1))])
+
+    match mongodb.find_one(@m.client, database: m.database, collection: collection, query: docs.doc([]), opts: opts)
+        .ok d => return ok(docs.int_at(d, name: name)? + 1)
+        .err e =>
+            if e.code == NOT_FOUND
+                return ok(1)
+            return fail(code: e.code, msg: e.msg)
+
+# The document of `collection` whose `name` is the text `value`.
+#
+# - `m`: the store.
+# - `collection`: the collection.
+# - `name`: the field.
+# - `value`: the text.
+#
+# Fails `not_found` where none has it.
+function by_field(@m: Mongo, collection: str, name: str, value: str) -> bson.Document?
+    query = docs.doc([docs.field(name, docs.text(value))])
+    return mongodb.find_one(
+        @m.client,
+        database: m.database,
+        collection: collection,
+        query: query,
+        opts: mongodb.default_find_options()
+    )
+
+# Every document of `collection`, in the order of the field `sort_by`.
+#
+# - `m`: the store.
+# - `collection`: the collection.
+# - `sort_by`: the field.
+function every(@m: Mongo, collection: str, sort_by: str) -> [bson.Document]?
+    opts @= mongodb.default_find_options()
+    opts.sort @ docs.doc([docs.field(sort_by, .int32(v: 1))])
+    cursor @= mongodb.find_many(@m.client, database: m.database, collection: collection, query: docs.doc([]), opts: opts)?
+    return mongodb.read_all(@m.client, @cursor)
+
+# Sets `fields` of the document of `collection` whose key is `id`.
+#
+# - `m`: the store.
+# - `collection`: the collection.
+# - `id`: the document's key.
+# - `fields`: the fields and their new values.
+function set(@m: Mongo, collection: str, id: str, fields: [bson.Field]) -> ()?
+    query = docs.doc([docs.field("_id", docs.key(id)?)])
+    _ = mongodb.update_one(@m.client, database: m.database, collection: collection, query: query, update: operator("$set", fields: fields), opts: mongodb.default_write_options())?
+    return ok()
+
+# The update document `{name: {fields}}`.
+#
+# - `name`: the operator, `$set`.
+# - `fields`: what it sets.
+function operator(name: str, fields: [bson.Field]) -> bson.Value
+    return .document(doc: docs.doc([docs.field(name, .document(doc: docs.doc(fields)))]))
+
+# The accumulator `{"$sum": value}`.
+#
+# - `value`: what is summed, `1` or a field's path `$quantity`.
+function sum_of(value: bson.Value) -> bson.Value
+    return .document(doc: docs.doc([docs.field("$sum", value)]))
+
+# Whether `a`'s code orders before `b`'s, byte by byte.
+#
+# - `a`: a location.
+# - `b`: another.
+function location_before(a: catalog.Location, b: catalog.Location) -> bool
+    return strings.compare(a: a.code, b: b.code) < 0
+
+# Whether `a`'s code orders before `b`'s, byte by byte.
+#
+# - `a`: a product.
+# - `b`: another.
+function product_before(a: catalog.Product, b: catalog.Product) -> bool
+    return strings.compare(a: a.code, b: b.code) < 0
+
+# Whether `a`'s SKU orders before `b`'s, byte by byte.
+#
+# - `a`: a variant.
+# - `b`: another.
+function variant_before(a: catalog.Variant, b: catalog.Variant) -> bool
+    return strings.compare(a: a.sku, b: b.sku) < 0
+
+test "operator: a $set of two fields"
+    u = operator("$set", fields: [docs.field("a", docs.long(1))])
+    assert u == .document(doc: docs.doc([docs.field("$set", .document(doc: docs.doc([docs.field("a", .int64(v: 1))])))]))

@@ -1,0 +1,357 @@
+# The wire of MySQL's client/server protocol as the stand-in server speaks
+# it: packets (a three-byte length, a sequence number, the payload),
+# length-encoded integers and strings, and the server's answers that every
+# command shares: OK, ERR, the end of a result (an EOF packet, or an OK
+# packet opening `0xFE` where the client asked for `CLIENT_DEPRECATE_EOF`),
+# and a column's definition, as the client/server protocol of MySQL 8.4
+# defines them; the demo's run is what shows `sql/mysql` reads each one.
+#
+# Every read of what the client sent is bounded and answers a failure,
+# never an abort: a client is input from outside the program.
+
+use <rebel>/bytes
+use <rebel>/io
+
+## Codes
+
+# The code of bytes that are no packet, or a packet cut short.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest payload one packet carries: 2^24 - 1 bytes. A payload of
+# exactly this many continues in the next packet, which the stand-in does
+# not join: it answers such a request with an error.
+constant MOST_PAYLOAD: i64
+    16_777_215
+
+## Flags
+
+# The server's status: a transaction is open.
+constant STATUS_IN_TRANS: i64
+    0x0001
+
+# The server's status: each statement commits on its own.
+constant STATUS_AUTOCOMMIT: i64
+    0x0002
+
+# A column's flag: its value is never `NULL`.
+constant FLAG_NOT_NULL: i64
+    0x0001
+
+# A column's flag: it holds bytes, compared as bytes.
+constant FLAG_BINARY: i64
+    0x0080
+
+# A column's flag: it is a `BLOB` or a `TEXT`.
+constant FLAG_BLOB: i64
+    0x0010
+
+## Packets
+
+# One packet as it came.
+record Packet
+    # Its sequence number, 0 to 255.
+    seq: i64
+    # Its payload.
+    payload: [u8]
+
+# The next packet from `r`.
+#
+# - `r`: the reader over the connection.
+#
+# Fails `closed` where the client closed the connection before a packet,
+# `invalid` where it carries a payload of `MOST_PAYLOAD` bytes or more, and
+# as `io.read_n` fails.
+function read_packet(@r: io.Reader) -> Packet?
+    head = io.read_n(@r, 4)?
+
+    if head.len() < 4
+        return fail(code: "closed", msg: "the client closed the connection")
+    size = to_i64(head[0]).must() + to_i64(head[1]).must() * 256 + to_i64(head[2]).must() * 65536
+
+    if size >= MOST_PAYLOAD
+        return fail(code: INVALID, msg: f"a packet of {size} bytes, which the stand-in does not join")
+    payload = io.read_n(@r, size)?
+
+    if payload.len() < size
+        return fail(code: "closed", msg: "the client closed the connection inside a packet")
+    return ok(Packet(seq: to_i64(head[3]).must(), payload: payload))
+
+# Writes `payload` as one packet numbered `seq`.
+#
+# - `s`: the connection's stream.
+# - `seq`: its sequence number, 0 to 255, kept to its low byte.
+# - `payload`: the payload, fewer than `MOST_PAYLOAD` bytes.
+#
+# Fails as `io.write` fails.
+function write_packet(s: io.Stream, seq: i64, payload: [u8]) -> ()?
+    size = payload.len()
+    framed: [u8] @= [low(size), low(size >> 8), low(size >> 16), low(seq)]
+    bytes.push_all(to: @framed, from: payload)
+    return io.write(s, data: framed)
+
+# The low byte of `n`.
+#
+# - `n`: any number.
+function low(n: i64) -> u8
+    return to_u8(n & 0xff).must()
+
+## Writing values
+
+# `n` as a length-encoded integer.
+#
+# - `n`: 0 or more.
+function lenenc(n: i64) -> [u8]
+    if n < 251
+        return [low(n)]
+
+    if n < 65536
+        return [0xfc, low(n), low(n >> 8)]
+
+    if n < 16777216
+        return [0xfd, low(n), low(n >> 8), low(n >> 16)]
+    out: [u8] @= [0xfe]
+
+    for i in range(from: 0, to: 8)
+        out @ out.push(low(n >> 8 * i))
+
+    return out
+
+# `data` as a length-encoded string: its length, then its bytes.
+#
+# - `data`: the bytes.
+function lenenc_bytes(data: [u8]) -> [u8]
+    out: [u8] @= lenenc(data.len())
+    bytes.push_all(to: @out, from: data)
+    return out
+
+# `n` as `width` little-endian bytes.
+#
+# - `n`: the number, 0 or more.
+# - `width`: 1 to 8.
+function le(n: i64, width: i64) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: width)
+        out @ out.push(low(n >> 8 * i))
+
+    return out
+
+# The text `s` and a zero byte after it.
+#
+# - `s`: the text, holding no zero byte.
+function nul_text(s: str) -> [u8]
+    out: [u8] @= bytes.from_text(s)
+    out @ out.push(0)
+    return out
+
+## Answers
+
+# An OK packet: the rows a statement changed, the id it made, the status
+# and the warnings.
+#
+# - `affected`: the rows changed.
+# - `last_id`: the `AUTO_INCREMENT` id made, 0 for none.
+# - `status`: the server's status flags.
+function ok_packet(affected: i64, last_id: i64, status: i64) -> [u8]
+    out: [u8] @= [0x00]
+    bytes.push_all(to: @out, from: lenenc(affected))
+    bytes.push_all(to: @out, from: lenenc(last_id))
+    bytes.push_all(to: @out, from: le(n: status, width: 2))
+    bytes.push_all(to: @out, from: le(n: 0, width: 2))
+    return out
+
+# The packet that ends a result: an EOF packet, or, where the client asked
+# for `CLIENT_DEPRECATE_EOF`, an OK packet opening `0xFE`.
+#
+# - `deprecate_eof`: what the client asked.
+# - `status`: the server's status flags.
+function end_packet(deprecate_eof: bool, status: i64) -> [u8]
+    if deprecate_eof
+        out: [u8] @= [0xfe, 0x00, 0x00]
+        bytes.push_all(to: @out, from: le(n: status, width: 2))
+        bytes.push_all(to: @out, from: le(n: 0, width: 2))
+        return out
+    out: [u8] @= [0xfe]
+    bytes.push_all(to: @out, from: le(n: 0, width: 2))
+    bytes.push_all(to: @out, from: le(n: status, width: 2))
+    return out
+
+# An ERR packet.
+#
+# - `code`: MySQL's error number, `1062`.
+# - `state`: its SQLSTATE, five characters, `23000`.
+# - `message`: its words.
+function err_packet(code: i64, state: str, message: str) -> [u8]
+    out: [u8] @= [0xff]
+    bytes.push_all(to: @out, from: le(n: code, width: 2))
+    out @ out.push('#')
+    bytes.push_all(to: @out, from: bytes.from_text(state))
+    bytes.push_all(to: @out, from: bytes.from_text(message))
+    return out
+
+# What a column's definition says of it.
+record Column
+    # Its name.
+    name: str
+    # Its type's number: 8 `LONGLONG`, 5 `DOUBLE`, 253 `VAR_STRING`, 252
+    # `BLOB`, 12 `DATETIME`, 1 `TINY`.
+    kind: i64
+    # Its character set: 255 for `utf8mb4_0900_ai_ci`, 63 for bytes.
+    charset: i64
+    # The longest value it holds, in bytes.
+    length: i64
+    # Its flags.
+    flags: i64
+    # The digits after a point it shows; 31 for a float of any.
+    decimals: i64
+
+# The definition packet of `c` (Protocol::ColumnDefinition41).
+#
+# - `c`: the column.
+# - `table`: the table it is read from, "" for an expression.
+function column_packet(c: Column, table: str) -> [u8]
+    out: [u8] @= []
+
+    for part in ["def", "inventory", table, table, c.name, c.name]
+        bytes.push_all(to: @out, from: lenenc_bytes(bytes.from_text(part)))
+
+    out @ out.push(0x0c)
+    bytes.push_all(to: @out, from: le(n: c.charset, width: 2))
+    bytes.push_all(to: @out, from: le(n: c.length, width: 4))
+    out @ out.push(low(c.kind))
+    bytes.push_all(to: @out, from: le(n: c.flags, width: 2))
+    out @ out.push(low(c.decimals))
+    bytes.push_all(to: @out, from: [0, 0])
+    return out
+
+## Reading values
+
+# A place in a payload being read.
+record Cursor
+    # The payload.
+    data: [u8]
+    # The index of the next byte.
+    at: i64
+
+# A cursor at the start of `data`.
+#
+# - `data`: the payload.
+function cursor(data: [u8]) -> Cursor
+    return Cursor(data: data, at: 0)
+
+# Whether the cursor has read every byte.
+#
+# - `c`: the cursor.
+function at_end(c: Cursor) -> bool
+    return c.at >= c.data.len()
+
+# The next `n` bytes.
+#
+# - `c`: the cursor, advanced past them.
+# - `n`: how many, 0 or more.
+#
+# Fails `invalid` where fewer are left.
+function take(@c: Cursor, n: i64) -> [u8]?
+    if n < 0 || c.at + n > c.data.len()
+        return fail(code: INVALID, msg: f"{n} bytes asked at byte {c.at} of a packet of {c.data.len()}")
+    out = c.data.slice(from: c.at, to: c.at + n)
+    c.at @ c.at + n
+    return ok(out)
+
+# The next `width` bytes as a little-endian unsigned number.
+#
+# - `c`: the cursor, advanced.
+# - `width`: 1 to 7 bytes, so the number fits an `i64`.
+function read_le(@c: Cursor, width: i64) -> i64?
+    b = take(@c, n: width)?
+    n @= 0
+
+    for i in range(from: 0, to: width)
+        n @ n + (to_i64(b[i]).must() << 8 * i)
+
+    return ok(n)
+
+# The next length-encoded integer.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` where it is cut short, is the `NULL` marker `0xFB`, or
+# passes an `i64`.
+function read_lenenc(@c: Cursor) -> i64?
+    first = take(@c, n: 1)?[0]
+
+    if first < 0xfb
+        return ok(to_i64(first).must())
+
+    if first == 0xfc
+        return read_le(@c, width: 2)
+
+    if first == 0xfd
+        return read_le(@c, width: 3)
+
+    if first == 0xfe
+        low_part = read_le(@c, width: 4)?
+        high_part = read_le(@c, width: 4)?
+
+        if high_part >= 0x80000000
+            return fail(code: INVALID, msg: "a length past an i64")
+        return ok(low_part + (high_part << 32))
+    return fail(code: INVALID, msg: f"a length opening with {first}")
+
+# The next length-encoded string's bytes.
+#
+# - `c`: the cursor, advanced.
+function read_lenenc_bytes(@c: Cursor) -> [u8]?
+    n = read_lenenc(@c)?
+    return take(@c, n: n)
+
+# The text up to the next zero byte, the zero passed.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` where no zero byte comes, or the text is not UTF-8.
+function read_nul_text(@c: Cursor) -> str?
+    start = c.at
+
+    while c.at < c.data.len() && c.data[c.at] != 0
+        c.at @ c.at + 1
+
+    if c.at >= c.data.len()
+        return fail(code: INVALID, msg: f"a text from byte {start} that no zero byte ends")
+    text = bytes.to_text(c.data.slice(from: start, to: c.at))?
+    c.at @ c.at + 1
+    return ok(text)
+
+# The bytes left.
+#
+# - `c`: the cursor, advanced to the end.
+function rest(@c: Cursor) -> [u8]
+    out = c.data.slice(from: c.at, to: c.data.len())
+    c.at @ c.data.len()
+    return out
+
+test "lenenc: each width, read back"
+    for n in [0, 250, 251, 65535, 65536, 16777215, 16777216, 9007199254740993]
+        c @= cursor(lenenc(n))
+        assert read_lenenc(@c).must() == n && at_end(c)
+
+test "read_lenenc: the NULL marker, a length cut short, and past an i64 are refused"
+    c @= cursor([0xfb])
+    assert read_lenenc(@c).is_err()
+    d @= cursor([0xfc, 1])
+    assert read_lenenc(@d).is_err()
+    e @= cursor([0xfe, 0, 0, 0, 0, 0, 0, 0, 0x80])
+    assert read_lenenc(@e).is_err()
+
+test "err_packet: the number, the state and the words"
+    p = err_packet(code: 1062, state: "23000", message: "x")
+    assert p == [0xff, 0x26, 0x04, '#', '2', '3', '0', '0', '0', 'x']
+
+test "read_nul_text: a name, and one never ended"
+    c @= cursor([0x61, 0x62, 0, 0x63])
+    assert read_nul_text(@c).must() == "ab" && c.at == 3
+    d @= cursor([0x61])
+    assert read_nul_text(@d).is_err()

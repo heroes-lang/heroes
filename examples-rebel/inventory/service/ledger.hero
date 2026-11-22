@@ -1,0 +1,175 @@
+# What the inventory does with a request, whichever store holds the books:
+# read the variant's state, plan the movement (`model/movements`), write it
+# with its entry of the audit trail, and plan it again over fresh state
+# where another writer changed the variant in between, at most
+# `MOST_TRIES` times. A refusal and a count that confirms the books are
+# written to the audit trail too, so the trail tells everything asked of
+# the inventory and not only what moved stock.
+
+use <rebel>/time
+
+use model/books
+use model/catalog
+use model/ids
+use model/money
+use model/movements
+use model/requests
+use store/store
+
+## Codes
+
+# The code of a request naming a SKU or a location the store does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# How many times a movement is planned before a store that keeps changing
+# under it is reported: three.
+constant MOST_TRIES: i64
+    3
+
+## Requests
+
+# What became of a request.
+variant Outcome
+    # The movement was written.
+    applied
+        # Its number.
+        seq: i64
+        # The movement as written.
+        movement: movements.Movement
+    # It was refused, and the refusal written to the audit trail.
+    refused
+        # Why.
+        reason: str
+    # It was a count that found the books right.
+    confirmed
+        # What it found.
+        note: str
+
+# Does `r` at `at` for `actor`, and answers what became of it.
+#
+# - `s`: the store.
+# - `r`: the request.
+# - `at`: when it happens, as the program's clock reads it.
+# - `actor`: who asks.
+#
+# Fails `not_found` where `r` names a SKU or a location the store does not
+# hold, `invalid` where it moves no units, `changed` where the variant
+# changed under it `MOST_TRIES` times, and as the store fails.
+function submit(@s: store.Store, r: requests.Request, at: time.Instant, actor: str) -> Outcome?
+    tries @= 0
+    sku = requests.sku_of(r)
+
+    while true
+        state = match store.state_of(@s, sku: sku)
+            .ok found => found
+            .err e =>
+                if e.code == NOT_FOUND
+                    return fail(code: NOT_FOUND, msg: f"no variant {sku}")
+                return fail(code: e.code, msg: e.msg)
+
+        context = movements.Context(
+            item: state.item,
+            levels: state.levels,
+            locations: store.locations(@s)?,
+            at: at,
+            actor: actor,
+            id: ids.new_id(at)?
+        )
+
+        match movements.plan(r, c: context)?
+            .refuse x =>
+                _ = store.add_entry(@s, entry: entry(at, actor: actor, action: "refused", subject: sku, detail: f"{requests.describe(r)}: {x.reason}"))?
+                return ok(.refused(reason: x.reason))
+            .confirm x =>
+                _ = store.add_entry(@s, entry: entry(at, actor: actor, action: "confirmed", subject: sku, detail: f"{requests.describe(r)}: {x.note}"))?
+                return ok(.confirmed(note: x.note))
+            .apply x =>
+                detail = f"{requests.describe(r)}, value {signed_amount(x.plan.movement.value_cents)}"
+
+                match store.apply(@s, plan: x.plan, entry: entry(at, actor: actor, action: "movement", subject: sku, detail: detail))
+                    .ok seq =>
+                        written @= x.plan.movement
+                        written.seq @ seq
+                        return ok(.applied(seq: seq, movement: written))
+                    .err e =>
+                        tries @ tries + 1
+
+                        if e.code != books.CHANGED || tries == MOST_TRIES
+                            return fail(code: e.code, msg: e.msg)
+
+# Writes an entry of the audit trail of its own: an import, a location
+# added.
+#
+# - `s`: the store.
+# - `at`: when.
+# - `actor`: who.
+# - `action`: what was done.
+# - `subject`: to what.
+# - `detail`: what happened.
+function note(@s: store.Store, at: time.Instant, actor: str, action: str, subject: str, detail: str) -> ()?
+    _ = store.add_entry(@s, entry: entry(at, actor: actor, action: action, subject: subject, detail: detail))?
+    return ok()
+
+# Adds the location `code` named `name`, or renames the one holding the
+# code, and notes it in the audit trail.
+#
+# - `s`: the store.
+# - `code`: the location's code, checked.
+# - `name`: its name.
+# - `at`: when.
+# - `actor`: who asks.
+#
+# Fails `invalid` where the code or the name is not one, and as the store
+# fails.
+function add_location(@s: store.Store, code: str, name: str, at: time.Instant, actor: str) -> catalog.Location?
+    l = catalog.Location(
+        id: ids.new_id(at)?,
+        code: catalog.code_of(kind: "location", text: code)?,
+        name: catalog.name_of(kind: "location's name", text: name)?
+    )
+    stored = store.put_location(@s, l: l)?
+    note(@s, at: at, actor: actor, action: "location", subject: stored.code, detail: f"location {stored.code}, {stored.name}")?
+    return ok(stored)
+
+# An entry of the audit trail, its number still to be given by the store.
+#
+# - `at`: when.
+# - `actor`: who.
+# - `action`: what was done.
+# - `subject`: to what.
+# - `detail`: what happened.
+function entry(at: time.Instant, actor: str, action: str, subject: str, detail: str) -> books.AuditEntry
+    return books.AuditEntry(
+        seq: 0,
+        at: time.format(at, .rfc3339_seconds),
+        actor: actor,
+        action: action,
+        subject: subject,
+        detail: detail
+    )
+
+# An amount with its sign always written: `+260.00`, `-6.50`, `0.00`.
+#
+# - `cents`: the amount.
+function signed_amount(cents: i64) -> str
+    if cents > 0
+        return "+" + money.format_amount(cents)
+    return money.format_amount(cents)
+
+test "signed_amount: a gain, a loss and nothing"
+    assert signed_amount(26000) == "+260.00"
+    assert signed_amount(-650) == "-6.50"
+    assert signed_amount(0) == "0.00"
+
+test "entry: the moment written to the second"
+    e = entry(
+        time.date(year: 2026, month: 3, day: 14).must(),
+        actor: "demo",
+        action: "movement",
+        subject: "TEE",
+        detail: "d"
+    )
+    assert e.at == "2026-03-14T00:00:00Z" && e.seq == 0

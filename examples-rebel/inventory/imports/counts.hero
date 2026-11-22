@@ -1,0 +1,282 @@
+# The import of a count sheet: what a person counted on each shelf, read
+# from CSV or XLSX (`files/tables`). Its columns are `sku`, `location` and
+# `counted`, and may be `unit_cost` (what each unit found beyond the books
+# cost, an opening count's cost), `reorder_point` and `reorder_quantity`
+# (when the location reorders the variant, and how many). Each row taken
+# becomes a count (`model/movements`), so the books move by exactly the
+# difference and the audit trail tells which sheet moved them.
+#
+# A row is left out, with its place and reason, where its SKU or location is
+# not in the store, a number is not one, only one of the two reorder
+# columns is filled, or the file counts that SKU at that location twice:
+# two counts of one shelf on one sheet cannot both be right. The pairs are
+# kept in an indexed map (`containers/indexed`), in the sheet's order, each
+# with its line.
+
+use <rebel>/containers/indexed
+use <rebel>/time
+
+use files/tables
+use imports/columns
+use model/books
+use model/catalog
+use model/money
+use model/movements
+use model/requests
+use service/ledger
+use store/store
+
+## The columns
+
+# The columns every count sheet has.
+function required() -> [str]
+    return ["sku", "location", "counted"]
+
+# The columns a count sheet may have.
+function optional() -> [str]
+    return ["unit_cost", "reorder_point", "reorder_quantity"]
+
+## The import
+
+# A row checked and taken.
+record Counted
+    # The variant counted.
+    item: catalog.Variant
+    # The location.
+    location: catalog.Location
+    # The units counted.
+    counted: i64
+    # What each unit found beyond the books cost; failing `not_found`, the
+    # moving average cost.
+    unit_cost: i64?
+    # When to reorder, and how many; failing `not_found` where the row sets
+    # neither.
+    reorder: Reorder?
+
+# When a location reorders a variant.
+record Reorder
+    # At or below this many units on hand.
+    point: i64
+    # How many an order asks for.
+    quantity: i64
+
+# Imports the counts of `t` into `s`, and answers what became of each row.
+#
+# - `s`: the store.
+# - `t`: the file, read.
+# - `at`: when, as the program's clock reads it.
+# - `actor`: who asks.
+#
+# Fails `invalid` where the header is not a count sheet, and as the store
+# fails.
+function import_counts(@s: store.Store, t: tables.Table, at: time.Instant, actor: str) -> columns.Report?
+    at_column = columns.columns_of(t, required: required(), optional: optional())?
+    held = store.snapshot(@s)?
+    report @= columns.report_of(t)
+    shape @= indexed.new()
+    pair_list: [str] @= []
+    line_list: [i64] @= []
+    lookup: {str: i64} @= {}
+    taken: [Counted] @= []
+    places: [str] @= []
+
+    for row in t.rows
+        place = columns.place_of(t, row: row)
+
+        match checked(t, row: row, at_column: at_column, held: held)
+            .err e => report.rejected @ report.rejected.push(columns.Rejection(place: place, reason: e.msg))
+            .ok x =>
+                pair = x.item.sku + "@" + x.location.code
+
+                match indexed.get(shape, value_list: line_list, lookup: lookup, key: pair)
+                    .ok line =>
+                        reason = f"{x.item.sku} at {x.location.code} is counted on {t.unit} {line} already"
+                        report.rejected @ report.rejected.push(columns.Rejection(place: place, reason: reason))
+                    .err _ =>
+                        _ = indexed.put(@shape, @pair_list, @line_list, @lookup, key: pair, value: row.line)
+                        taken @ taken.push(x)
+                        places @ places.push(place)
+
+    for i in range(from: 0, to: taken.len())
+        x = taken[i]
+
+        match x.reorder
+            .ok r => store.put_reorder(@s, v: x.item, l: x.location, reorder_point: r.point, reorder_quantity: r.quantity)?
+            .err _ => _ = 0
+
+        request: requests.Request = .count(
+            sku: x.item.sku,
+            location: x.location.code,
+            counted: x.counted,
+            unit_cost_cents: x.unit_cost,
+            reason: "count sheet " + t.name
+        )
+
+        match ledger.submit(@s, r: request, at: at, actor: actor)
+            .err e => report.rejected @ report.rejected.push(columns.Rejection(place: places[i], reason: e.msg))
+            .ok outcome =>
+                report.accepted @ report.accepted + 1
+                report.done @ report.done.push(f"{places[i]}: {x.item.sku} at {x.location.code}: {said(outcome)}")
+
+    detail = f"{report.accepted} counts taken, {report.rejected.len()} rows rejected"
+    ledger.note(@s, at: at, actor: actor, action: "import", subject: t.name, detail: detail)?
+    return ok(report)
+
+# What became of a count, in a few words.
+#
+# - `outcome`: what `ledger.submit` answered.
+function said(outcome: ledger.Outcome) -> str
+    return match outcome
+        .applied x => f"{requests.signed(signed_units(x.movement))} units, value {ledger.signed_amount(x.movement.value_cents)}"
+        .refused x   => "refused: " + x.reason
+        .confirmed x => x.note
+
+# The units a count's movement added, negative where it wrote units off.
+#
+# - `m`: the movement.
+function signed_units(m: movements.Movement) -> i64
+    if m.from_location != ""
+        return -m.quantity
+    return m.quantity
+
+# The row's count once every cell is checked.
+#
+# - `t`: the table.
+# - `row`: the row.
+# - `at_column`: the header's positions.
+# - `held`: the store's catalogue.
+#
+# Fails `invalid` or `not_found` with the first check the row fails.
+function checked(t: tables.Table, row: tables.Row, at_column: {str: i64}, held: books.Snapshot) -> Counted?
+    match columns.shape_of(t, row: row)
+        .ok wrong => return fail(code: catalog.INVALID, msg: wrong)
+        .err _    => _ = 0
+
+    sku = catalog.code_of(kind: "SKU", text: columns.cell(row, columns: at_column, name: "sku"))?
+    code = catalog.code_of(kind: "location", text: columns.cell(row, columns: at_column, name: "location"))?
+    item = variant_named(held, sku: sku)?
+    place = location_named(held, code: code)?
+    counted = catalog.units_of(kind: "count", text: columns.cell(row, columns: at_column, name: "counted"), least: 0)?
+    cost_text = columns.cell(row, columns: at_column, name: "unit_cost")
+
+    unit_cost: i64? = if cost_text == ""
+        fail(code: "not_found", msg: "no unit cost")
+    else
+        match money.parse_amount(cost_text)
+            .ok cents => ok(cents)
+            .err e    => return fail(code: catalog.INVALID, msg: f"the unit cost {e.msg}")
+    point_text = columns.cell(row, columns: at_column, name: "reorder_point")
+    quantity_text = columns.cell(row, columns: at_column, name: "reorder_quantity")
+
+    if point_text == "" && quantity_text == ""
+        return ok(
+            Counted(item: item, location: place, counted: counted, unit_cost: unit_cost, reorder: fail(code: "not_found", msg: "no reorder"))
+        )
+
+    if point_text == "" || quantity_text == ""
+        return fail(code: catalog.INVALID, msg: "a reorder point and a reorder quantity go together")
+    point = catalog.units_of(kind: "reorder point", text: point_text, least: 0)?
+    quantity = catalog.units_of(kind: "reorder quantity", text: quantity_text, least: 1)?
+    return ok(
+        Counted(item: item, location: place, counted: counted, unit_cost: unit_cost, reorder: ok(Reorder(point: point, quantity: quantity)))
+    )
+
+# The variant of `held` whose SKU is `sku`.
+#
+# - `held`: the store's catalogue.
+# - `sku`: the SKU.
+#
+# Fails `not_found` where none has it.
+function variant_named(held: books.Snapshot, sku: str) -> catalog.Variant?
+    for v in held.variants
+        if v.sku == sku
+            return ok(v)
+
+    return fail(code: "not_found", msg: f"no variant {sku} in the store")
+
+# The location of `held` whose code is `code`.
+#
+# - `held`: the store's catalogue.
+# - `code`: the code.
+#
+# Fails `not_found` where none has it.
+function location_named(held: books.Snapshot, code: str) -> catalog.Location?
+    for l in held.locations
+        if l.code == code
+            return ok(l)
+
+    return fail(code: "not_found", msg: f"no location {code} in the store")
+
+# A catalogue of one variant at one location, for the tests.
+function sample() -> books.Snapshot
+    v = catalog.Variant(
+        id: "v",
+        product_id: "p",
+        sku: "TEE-BLK-M",
+        label: "black / M",
+        price_cents: 1800,
+        units: 0,
+        value_cents: 0,
+        applied_seq: 0
+    )
+    return books.Snapshot(
+        locations: [catalog.Location(id: "l", code: "WH", name: "Warehouse")],
+        products: [],
+        variants: [v],
+        levels: []
+    )
+
+test "checked: a full row, an unknown location, half a reorder, a fractional count"
+    t = tables.Table(
+        name: "c.csv",
+        unit: "line",
+        header: ["sku", "location", "counted", "unit_cost", "reorder_point", "reorder_quantity"],
+        rows: [],
+        broken: fail(code: "not_found", msg: "end")
+    )
+    at_column = columns.columns_of(t, required: required(), optional: optional()).must()
+    x = checked(
+        t,
+        row: tables.Row(line: 2, cells: ["TEE-BLK-M", "WH", "40", "6.50", "10", "24"]),
+        at_column: at_column,
+        held: sample()
+    ).must()
+    assert x.counted == 40 && x.unit_cost.must() == 650 && x.reorder.must().quantity == 24
+    assert checked(
+        t,
+        row: tables.Row(line: 3, cells: ["TEE-BLK-M", "SHOP-X", "4", "", "", ""]),
+        at_column: at_column,
+        held: sample()
+    ).is_err()
+    assert checked(
+        t,
+        row: tables.Row(line: 4, cells: ["TEE-BLK-M", "WH", "4", "", "10", ""]),
+        at_column: at_column,
+        held: sample()
+    ).is_err()
+    assert checked(
+        t,
+        row: tables.Row(line: 5, cells: ["TEE-BLK-M", "WH", "4.5", "", "", ""]),
+        at_column: at_column,
+        held: sample()
+    ).is_err()
+
+test "said: a count that wrote units off"
+    m = movements.Movement(
+        id: "m",
+        seq: 1,
+        at: "",
+        kind: movements.ADJUSTMENT,
+        variant_id: "v",
+        from_location: "l",
+        to_location: "",
+        quantity: 1,
+        unit_cost_cents: 650,
+        unit_price_cents: 0,
+        revenue_cents: 0,
+        value_cents: -650,
+        reason: "",
+        reference: "",
+        actor: "a"
+    )
+    assert said(.applied(seq: 1, movement: m)) == "-1 units, value -6.50"

@@ -1,0 +1,297 @@
+# How the MongoDB stand-in compares values and matches a document against a
+# query filter, as far as the demo's store asks and as MongoDB does it:
+# BSON's order across types (MongoDB's "Comparison/Sort Order": null, then
+# numbers, then strings, documents, arrays, binary data, ObjectIds,
+# booleans, dates), numbers compared by value whatever their type, so an
+# `int64` 40 equals an `int32` 40; a field named by a dotted path through
+# embedded documents; and the operators `$eq`, `$ne`, `$gt`, `$gte`, `$lt`,
+# `$lte`, `$in`, `$nin`, `$exists`, `$and` and `$or`. An operator it does
+# not know is refused as the server refuses one, `unknown operator`, so a
+# filter the stand-in passes is one MongoDB reads the same way. A field that
+# holds an array is matched as a whole value: the demo's store keeps no
+# array a filter looks into.
+
+use <rebel>/bson
+use <rebel>/strings
+
+## Codes
+
+# The code of a filter that names an operator the stand-in does not know.
+constant INVALID: str
+    "invalid"
+
+## Values
+
+# A value's place in BSON's order across types.
+#
+# - `v`: the value.
+function rank_of(v: bson.Value) -> i64
+    return match v
+        .min_key                                                            => 0
+        .null_value | .undefined                                            => 1
+        .double _ | .int32 _ | .int64 _ | .decimal128 _                     => 2
+        .text _ | .symbol _                                                 => 3
+        .document _                                                         => 4
+        .array _                                                            => 5
+        .binary _                                                           => 6
+        .object_id _                                                        => 7
+        .boolean _                                                          => 8
+        .datetime _                                                         => 9
+        .timestamp _                                                        => 10
+        .regex _ | .db_pointer _ | .javascript _ | .javascript_with_scope _ => 11
+        .max_key                                                            => 12
+
+# Which of `a` and `b` orders first: negative, zero or positive.
+#
+# - `a`: a value.
+# - `b`: another.
+function compare(a: bson.Value, b: bson.Value) -> i64
+    ra = rank_of(a)
+    rb = rank_of(b)
+
+    if ra != rb
+        return ra - rb
+
+    if ra == 2
+        return compare_numbers(a: a, b: b)
+
+    match a
+        .text x =>
+            match b
+                .text y => return strings.compare(a: x.v, b: y.v)
+                .double _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => return 0
+        .boolean x =>
+            match b
+                .boolean y => return bool_number(x.v) - bool_number(y.v)
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => return 0
+        .datetime x =>
+            match b
+                .datetime y => return sign(x.ms - y.ms)
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => return 0
+        .binary x =>
+            match b
+                .binary y =>
+                    if x.data.len() != y.data.len()
+                        return x.data.len() - y.data.len()
+
+                    if x.subtype != y.subtype
+                        return to_i64(x.subtype).must() - to_i64(y.subtype).must()
+                    return compare_bytes(a: x.data, b: y.data)
+                .double _ | .text _ | .document _ | .array _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => return 0
+        .object_id x =>
+            match b
+                .object_id y => return compare_bytes(a: x.id.bytes, b: y.id.bytes)
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => return 0
+        .double _ | .document _ | .array _ | .undefined | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            if a == b
+                return 0
+            return 1
+
+# Whether `a` and `b` are equal as MongoDB compares them.
+#
+# - `a`: a value.
+# - `b`: another.
+function same(a: bson.Value, b: bson.Value) -> bool
+    return compare(a: a, b: b) == 0
+
+# Two numbers compared by value: as integers where both are, else as floats.
+#
+# - `a`: a number.
+# - `b`: another.
+function compare_numbers(a: bson.Value, b: bson.Value) -> i64
+    match bson.int_of(a)
+        .ok x =>
+            match bson.int_of(b)
+                .ok y  => return sign(x - y)
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+    x = bson.number_of(a).default(0.0)
+    y = bson.number_of(b).default(0.0)
+
+    if x < y
+        return -1
+
+    if x > y
+        return 1
+    return 0
+
+# -1, 0 or 1, as `n` is negative, zero or positive.
+#
+# - `n`: the number.
+function sign(n: i64) -> i64
+    if n < 0
+        return -1
+
+    if n > 0
+        return 1
+    return 0
+
+# 1 for `true`, 0 for `false`.
+#
+# - `b`: the truth value.
+function bool_number(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# Which of two byte strings of one length orders first.
+#
+# - `a`: bytes.
+# - `b`: as many bytes.
+function compare_bytes(a: [u8], b: [u8]) -> i64
+    for i in range(from: 0, to: a.len())
+        if a[i] != b[i]
+            return to_i64(a[i]).must() - to_i64(b[i]).must()
+
+    return 0
+
+## Paths
+
+# The value the dotted `path` names in `doc`, failing `not_found` where a
+# part names nothing or stands on a value that is no document.
+#
+# - `doc`: the document.
+# - `path`: names joined by `.`.
+function value_at(doc: bson.Document, path: str) -> bson.Value?
+    here @= doc
+    parts = strings.split(s: path, sep: ".")
+
+    for i in range(from: 0, to: parts.len())
+        v = bson.member(here, name: parts[i])?
+
+        if i == parts.len() - 1
+            return ok(v)
+
+        match bson.document_of(v)
+            .ok inner => here @ inner
+            .err _    => return fail(code: "not_found", msg: f"{path} stands on a {bson.kind_of(v)}")
+
+    return fail(code: "not_found", msg: f"no {path}")
+
+## Filters
+
+# Whether `doc` matches `query`.
+#
+# - `doc`: the document.
+# - `query`: the query filter; the empty one matches every document.
+#
+# Fails `invalid` where it names an operator the stand-in does not know, or
+# an operator is given the wrong kind of value.
+function matches(doc: bson.Document, query: bson.Document) -> bool?
+    for f in query.fields
+        if f.name == "$and" || f.name == "$or"
+            parts = bson.items_of(f.value)?
+            any_held @= false
+            all_held @= true
+
+            for p in parts
+                held = matches(doc: doc, query: bson.document_of(p)?)?
+                any_held @ any_held || held
+                all_held @ all_held && held
+
+            if f.name == "$and" && !all_held
+                return ok(false)
+
+            if f.name == "$or" && !any_held
+                return ok(false)
+        else if strings.has_prefix(s: f.name, prefix: "$")
+            return fail(code: INVALID, msg: f"unknown top level operator: {f.name}")
+        else
+            found = value_at(doc, path: f.name)
+
+            if !holds(found, condition: f.value)?
+                return ok(false)
+
+    return ok(true)
+
+# Whether a field's value, or its absence, meets `condition`: a value it
+# must equal, or a document of operators.
+#
+# - `found`: the field's value, failing where the document has none.
+# - `condition`: the condition.
+function holds(found: bson.Value?, condition: bson.Value) -> bool?
+    match bson.document_of(condition)
+        .ok ops =>
+            if ops.fields.len() > 0 && strings.has_prefix(s: ops.fields[0].name, prefix: "$")
+                for op in ops.fields
+                    if !operator_holds(found, op: op.name, operand: op.value)?
+                        return ok(false)
+
+                return ok(true)
+        .err _ => _ = 0
+
+    return ok(equals_or_null(found, value: condition))
+
+# Whether one operator holds of a field's value.
+#
+# - `found`: the field's value, failing where the document has none.
+# - `op`: the operator, `$gte`.
+# - `operand`: its value.
+function operator_holds(found: bson.Value?, op: str, operand: bson.Value) -> bool?
+    if op == "$exists"
+        wanted = bson.bool_of(operand).default(true)
+        return ok(wanted != found.is_err())
+
+    if op == "$eq"
+        return ok(equals_or_null(found, value: operand))
+
+    if op == "$ne"
+        return ok(!equals_or_null(found, value: operand))
+
+    if op == "$in" || op == "$nin"
+        inside @= false
+
+        for item in bson.items_of(operand)?
+            if equals_or_null(found, value: item)
+                inside @ true
+
+        if op == "$in"
+            return ok(inside)
+        return ok(!inside)
+
+    if op == "$gt" || op == "$gte" || op == "$lt" || op == "$lte"
+        match found
+            .err _ => return ok(false)
+            .ok v =>
+                if rank_of(v) != rank_of(operand)
+                    return ok(false)
+                c = compare(a: v, b: operand)
+
+                held = match op
+                    "$gt"  => c > 0
+                    "$gte" => c >= 0
+                    "$lt"  => c < 0
+                    _      => c <= 0
+
+                return ok(held)
+    return fail(code: INVALID, msg: f"unknown operator: {op}")
+
+# Whether a field's value equals `value`, a `null` matching a missing field
+# too, as MongoDB's equality does.
+#
+# - `found`: the field's value, failing where the document has none.
+# - `value`: the value compared.
+function equals_or_null(found: bson.Value?, value: bson.Value) -> bool
+    match found
+        .ok v  => return same(a: v, b: value)
+        .err _ => return value == .null_value
+
+test "compare: an int64 and an int32 of one value are equal, numbers before strings"
+    assert same(a: .int64(v: 40), b: .int32(v: 40))
+    assert compare(a: .int32(v: 1), b: .text(v: "a")) < 0
+    assert compare(a: .text(v: "WH"), b: .text(v: "SHOP-N")) > 0
+
+test "matches: equality, a dotted path, $gte, $lt, $exists and $in"
+    doc = bson.parse_json("{\"sku\": \"TEE\", \"units\": 40, \"levels\": {\"WH\": {\"on_hand\": 40}}}").must()
+    assert matches(doc: doc, query: bson.parse_json("{\"sku\": \"TEE\", \"levels.WH.on_hand\": 40}").must()).must()
+    assert matches(doc: doc, query: bson.parse_json("{\"units\": {\"$gte\": 40, \"$lt\": 41}}").must()).must()
+    assert matches(doc: doc, query: bson.parse_json("{\"levels.SHOP-N\": {\"$exists\": false}}").must()).must()
+    assert !matches(doc: doc, query: bson.parse_json("{\"levels.WH\": {\"$exists\": false}}").must()).must()
+    assert matches(doc: doc, query: bson.parse_json("{\"sku\": {\"$in\": [\"MUG\", \"TEE\"]}}").must()).must()
+    assert !matches(doc: doc, query: bson.parse_json("{\"units\": 39}").must()).must()
+
+test "matches: an operator the stand-in does not know is refused"
+    doc = bson.parse_json("{\"a\": 1}").must()
+    assert matches(doc: doc, query: bson.parse_json("{\"a\": {\"$where\": 1}}").must()).is_err()
+    assert matches(doc: doc, query: bson.parse_json("{\"$nor\": []}").must()).is_err()

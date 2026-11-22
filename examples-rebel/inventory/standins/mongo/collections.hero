@@ -1,0 +1,391 @@
+# The MongoDB stand-in's data: collections of documents held in memory by
+# namespace (`inventory.variants`), each with its indexes, and the writes a
+# server makes to them. A unique index is enforced as MongoDB enforces it,
+# on insert and on update, the index on `_id` among them, and a write that
+# would break one is refused with MongoDB's own error, 11000 and its
+# `E11000 duplicate key error` words; the demo's store depends on that to
+# know two writers took one movement's number. An index that is not unique
+# is kept by name and orders nothing: the stand-in scans.
+
+use <rebel>/bson
+use <rebel>/strings
+
+use standins/mongo/matching
+use standins/mongo/pipeline
+use standins/mongo/updating
+
+## Codes
+
+# The code of a write the stand-in refuses.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest document stored: 16 MiB, MongoDB's `maxBsonObjectSize`.
+constant MOST_DOCUMENT: i64
+    16_777_216
+
+## The data
+
+# An index of a collection.
+record Index
+    # Its name, `sku_1`.
+    name: str
+    # The paths of its keys, in order.
+    paths: [str]
+    # Whether no two documents may share its keys.
+    unique: bool
+
+# A collection.
+record Collection
+    # Its documents, in the order they were inserted.
+    docs: [bson.Document]
+    # Its indexes, `_id_` first.
+    indexes: [Index]
+
+# Everything the stand-in holds.
+record Store
+    # The collections, by namespace.
+    collections: {str: Collection}
+    # The ObjectIds of documents inserted without an `_id`.
+    maker: bson.ObjectIdMaker
+
+# A store holding nothing.
+#
+# Fails as `bson.object_id_maker` fails.
+function empty() -> Store?
+    return ok(Store(collections: {}, maker: bson.object_id_maker()?))
+
+# The collection `ns` names, empty where it does not exist.
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+function collection_of(s: Store, ns: str) -> Collection
+    return s.collections[ns].default(Collection(docs: [], indexes: [Index(name: "_id_", paths: ["_id"], unique: true)]))
+
+## Writes
+
+# A write refused, as a reply's `writeErrors` tells it.
+record WriteError
+    # The place of the statement in the command, from 0.
+    index: i64
+    # MongoDB's error code.
+    code: i64
+    # Its words.
+    message: str
+
+# Inserts `docs` into `ns`, in order; an ordered insert stops at its first
+# refusal. Answers how many were inserted and the refusals.
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+# - `docs`: the documents.
+# - `ordered`: whether to stop at the first refusal.
+function insert(@s: Store, ns: str, docs: [bson.Document], ordered: bool) -> [WriteError]
+    c @= collection_of(s, ns: ns)
+    errors: [WriteError] @= []
+
+    for i in range(from: 0, to: docs.len())
+        d @= docs[i]
+
+        if !bson.has_member(d, name: "_id")
+            match bson.next_object_id(@s.maker)
+                .ok id => d @ bson.Document(
+                    fields: prepended(bson.Field(name: "_id", value: .object_id(id: id)), rest: d.fields)
+                )
+                .err e => errors @ errors.push(WriteError(index: i, code: 1, message: e.msg))
+
+        refusal = refusal_of(c, ns: ns, d: d, except: -1)
+
+        if refusal.code != 0
+            errors @ errors.push(WriteError(index: i, code: refusal.code, message: refusal.message))
+
+            if ordered
+                break
+        else
+            c.docs @ c.docs.push(d)
+
+    s.collections[ns] @ c
+    return errors
+
+# Why `d` cannot stand in `c`, or a refusal of code 0 where it can: a field
+# opening with `$`, a size past `MOST_DOCUMENT`, or a unique key another
+# document holds.
+#
+# - `c`: the collection.
+# - `ns`: its namespace, for the message.
+# - `d`: the document.
+# - `except`: the place of the document `d` replaces, -1 for none.
+function refusal_of(c: Collection, ns: str, d: bson.Document, except: i64) -> WriteError
+    for f in d.fields
+        if strings.has_prefix(s: f.name, prefix: "$")
+            return WriteError(index: 0, code: 52, message: f"Document can't have $ prefixed field names: {f.name}")
+
+    size = match bson.encode(d)
+        .ok b  => b.len()
+        .err _ => MOST_DOCUMENT + 1
+
+    if size > MOST_DOCUMENT
+        return WriteError(index: 0, code: 10334, message: f"BSONObj size: {size} is invalid")
+
+    for index in c.indexes
+        if index.unique
+            key = key_of(d, index: index)
+
+            for i in range(from: 0, to: c.docs.len())
+                if i != except && key_of(c.docs[i], index: index) == key
+                    return WriteError(
+                        index: 0,
+                        code: 11000,
+                        message: f"E11000 duplicate key error collection: {ns} index: {index.name} dup key: {key_text(index, key: key)}"
+                    )
+
+    return WriteError(index: 0, code: 0, message: "")
+
+# The values of `index`'s keys in `d`, `null` for a key it lacks; numbers
+# as `double`s, so an `int32` and an `int64` of one value are one key.
+#
+# - `d`: the document.
+# - `index`: the index.
+function key_of(d: bson.Document, index: Index) -> [bson.Value]
+    out: [bson.Value] @= []
+
+    for p in index.paths
+        v = matching.value_at(d, path: p).default(.null_value)
+
+        if matching.rank_of(v) == 2
+            out @ out.push(.double(v: bson.number_of(v).default(0.0)))
+        else
+            out @ out.push(v)
+
+    return out
+
+# A key as MongoDB's message writes it: `{ sku: "TEE-BLK-M" }`.
+#
+# - `index`: the index.
+# - `key`: its values.
+function key_text(index: Index, key: [bson.Value]) -> str
+    parts: [str] @= []
+
+    for i in range(from: 0, to: index.paths.len())
+        shown = match key[i]
+            .text t => f"\"{t.v}\""
+            .double x =>
+                whole = to_i64(x.v).default(0)
+
+                if to_f64(whole) == x.v
+                    f"{whole}"
+                else
+                    f"{x.v}"
+            .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key => bson.kind_of(
+                key[i]
+            )
+
+        parts @ parts.push(f"{index.paths[i]}: {shown}")
+
+    return "{ " + parts.join(", ") + " }"
+
+# `first` and then `rest`.
+#
+# - `first`: the field first.
+# - `rest`: the fields after it.
+function prepended(first: bson.Field, rest: [bson.Field]) -> [bson.Field]
+    out: [bson.Field] @= [first]
+
+    for f in rest
+        out @ out.push(f)
+
+    return out
+
+# What one update statement did.
+record Updated
+    # The documents its filter matched.
+    matched: i64
+    # The documents it changed.
+    modified: i64
+    # The `_id` an upsert inserted; failing `not_found` where none.
+    upserted: bson.Value?
+    # Why it was refused, a refusal of code 0 where it was not.
+    refusal: WriteError
+
+# Runs one update statement of `ns`.
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+# - `query`: its filter.
+# - `update`: its operators, or a replacement.
+# - `upsert`: whether to insert where nothing matches.
+# - `multi`: whether to change every match, or the first.
+#
+# Fails `invalid` where the filter or the update cannot be read.
+function update_docs(@s: Store, ns: str, query: bson.Document, update: bson.Document, upsert: bool, multi: bool) -> Updated?
+    c @= collection_of(s, ns: ns)
+    matched @= 0
+    modified @= 0
+    no_upsert: bson.Value? = fail(code: "not_found", msg: "nothing upserted")
+
+    for i in range(from: 0, to: c.docs.len())
+        if (multi || matched == 0) && matching.matches(doc: c.docs[i], query: query)?
+            matched @ matched + 1
+            changed = updating.updated(doc: c.docs[i], update: update, inserting: false)?
+
+            if changed != c.docs[i]
+                refusal = refusal_of(c, ns: ns, d: changed, except: i)
+
+                if refusal.code != 0
+                    s.collections[ns] @ c
+                    return ok(Updated(matched: matched, modified: modified, upserted: no_upsert, refusal: refusal))
+                c.docs[i] @ changed
+                modified @ modified + 1
+
+    if matched == 0 && upsert
+        made @= updating.upserted(query: query, update: update)?
+
+        if !bson.has_member(made, name: "_id")
+            made @ bson.Document(
+                fields: prepended(bson.Field(name: "_id", value: .object_id(id: bson.next_object_id(@s.maker)?)), rest: made.fields)
+            )
+        refusal = refusal_of(c, ns: ns, d: made, except: -1)
+
+        if refusal.code != 0
+            return ok(Updated(matched: 0, modified: 0, upserted: no_upsert, refusal: refusal))
+        c.docs @ c.docs.push(made)
+        s.collections[ns] @ c
+        return ok(
+            Updated(matched: 0, modified: 0, upserted: bson.member(made, name: "_id"), refusal: WriteError(index: 0, code: 0, message: ""))
+        )
+    s.collections[ns] @ c
+    return ok(
+        Updated(matched: matched, modified: modified, upserted: no_upsert, refusal: WriteError(index: 0, code: 0, message: ""))
+    )
+
+# Deletes the documents of `ns` that `query` matches, the first alone where
+# `limit` is 1, and answers how many.
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+# - `query`: the filter.
+# - `limit`: 1 for the first match, 0 for every one.
+function delete(@s: Store, ns: str, query: bson.Document, limit: i64) -> i64?
+    c @= collection_of(s, ns: ns)
+    kept: [bson.Document] @= []
+    deleted @= 0
+
+    for d in c.docs
+        if (limit == 0 || deleted == 0) && matching.matches(doc: d, query: query)?
+            deleted @ deleted + 1
+        else
+            kept @ kept.push(d)
+
+    c.docs @ kept
+    s.collections[ns] @ c
+    return ok(deleted)
+
+## Reads
+
+# The documents of `ns` that `query` matches, ordered by `order`, past
+# `skip` of them, at most `limit` (0 for no limit).
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+# - `query`: the filter.
+# - `order`: the order, empty for the order of insertion.
+# - `skip`: how many to pass over.
+# - `limit`: the most answered.
+function query_docs(s: Store, ns: str, query: bson.Document, order: bson.Document, skip: i64, limit: i64) -> [bson.Document]?
+    stages: [bson.Document] @= [bson.Document(fields: [bson.Field(name: "$match", value: .document(doc: query))])]
+
+    if order.fields.len() > 0
+        stages @ stages.push(bson.Document(fields: [bson.Field(name: "$sort", value: .document(doc: order))]))
+
+    if skip > 0
+        stages @ stages.push(bson.Document(fields: [bson.Field(name: "$skip", value: .int64(v: skip))]))
+
+    if limit > 0
+        stages @ stages.push(bson.Document(fields: [bson.Field(name: "$limit", value: .int64(v: limit))]))
+    return pipeline.run(docs: collection_of(s, ns: ns).docs, pipeline: stages)
+
+## Indexes
+
+# Makes the index `name` of `ns` over `paths`, where no index of that name
+# is there; answers the indexes before and after.
+#
+# - `s`: the store.
+# - `ns`: the namespace.
+# - `name`: the index's name.
+# - `paths`: its keys' paths.
+# - `unique`: whether it is unique.
+#
+# Fails `exists` where an index of that name has other keys or options, and
+# `invalid` where a unique index would find two documents sharing a key, as
+# MongoDB refuses to build it.
+function create_index(@s: Store, ns: str, name: str, paths: [str], unique: bool) -> [i64]?
+    c @= collection_of(s, ns: ns)
+    before = c.indexes.len()
+
+    for index in c.indexes
+        if index.name == name
+            if index.paths != paths || index.unique != unique
+                return fail(code: "exists", msg: f"An existing index has the same name as the requested index: {name}")
+            return ok([before, before])
+
+    made = Index(name: name, paths: paths, unique: unique)
+
+    if unique
+        for i in range(from: 0, to: c.docs.len())
+            for j in range(from: i + 1, to: c.docs.len())
+                if key_of(c.docs[i], index: made) == key_of(c.docs[j], index: made)
+                    return fail(code: INVALID, msg: f"E11000 duplicate key error collection: {ns} index: {name}")
+
+    c.indexes @ c.indexes.push(made)
+    s.collections[ns] @ c
+    return ok([before, before + 1])
+
+test "insert: a unique key refused as E11000, the _id index included"
+    s @= empty().must()
+    first = bson.parse_json("{\"_id\": 1, \"sku\": \"TEE\"}").must()
+    _ = create_index(@s, ns: "inventory.variants", name: "sku_1", paths: ["sku"], unique: true).must()
+    assert insert(@s, ns: "inventory.variants", docs: [first], ordered: true).len() == 0
+    again = insert(
+        @s,
+        ns: "inventory.variants",
+        docs: [bson.parse_json("{\"_id\": 2, \"sku\": \"TEE\"}").must()],
+        ordered: true
+    )
+    assert again.len() == 1 && again[0].code == 11000
+    same_id = insert(
+        @s,
+        ns: "inventory.variants",
+        docs: [bson.parse_json("{\"_id\": 1, \"sku\": \"MUG\"}").must()],
+        ordered: true
+    )
+    assert same_id.len() == 1 && same_id[0].message == "E11000 duplicate key error collection: inventory.variants index: _id_ dup key: { _id: 1 }"
+
+test "update_docs: a guarded $set matches once, then the guard holds no more"
+    s @= empty().must()
+    _ = insert(@s, ns: "db.c", docs: [bson.parse_json("{\"_id\": 1, \"n\": 5}").must()], ordered: true)
+    q = bson.parse_json("{\"_id\": 1, \"n\": 5}").must()
+    u = bson.parse_json("{\"$set\": {\"n\": 4}}").must()
+    assert update_docs(@s, ns: "db.c", query: q, update: u, upsert: false, multi: false).must().matched == 1
+    assert update_docs(@s, ns: "db.c", query: q, update: u, upsert: false, multi: false).must().matched == 0
+
+test "query_docs: sorted and limited, then the first match deleted"
+    s @= empty().must()
+    _ = insert(
+        @s,
+        ns: "db.c",
+        docs: [bson.parse_json("{\"_id\": 1, \"n\": 5}").must(), bson.parse_json("{\"_id\": 2, \"n\": 9}").must()],
+        ordered: true
+    )
+    top = query_docs(
+        s,
+        ns: "db.c",
+        query: bson.Document(fields: []),
+        order: bson.parse_json("{\"n\": -1}").must(),
+        skip: 0,
+        limit: 1
+    ).must()
+    assert top.len() == 1 && bson.member(top[0], name: "_id").must() == .int32(v: 2)
+    assert delete(@s, ns: "db.c", query: bson.Document(fields: []), limit: 1).must() == 1
+    assert collection_of(s, ns: "db.c").docs.len() == 1

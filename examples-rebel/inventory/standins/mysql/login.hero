@@ -1,0 +1,252 @@
+# The stand-in's side of a MySQL login: the greeting it sends
+# (Protocol::HandshakeV10), the client's answer it reads
+# (Protocol::HandshakeResponse41), and the check of the password the answer
+# proves, by `caching_sha2_password`, MySQL's default plugin since 8.0.
+#
+# The client proves the password without sending it: it sends
+# `SHA256(password) XOR SHA256(SHA256(SHA256(password)) + nonce)`, and the
+# server, which keeps `SHA256(SHA256(password))`, recovers
+# `SHA256(password)` with its own half and checks that it hashes to what it
+# keeps. This is the plugin's fast path, which a real server takes once a
+# login over TLS or RSA has put the user in its cache; the stand-in starts
+# with its one user in that cache, and offers no TLS, as a server started
+# with `--tls-version=''` would not.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/random
+
+use standins/mysql/packets
+
+## Capabilities
+
+# The client speaks the 4.1 protocol.
+constant PROTOCOL_41: i64
+    0x0200
+
+# The client names a database in its answer.
+constant CONNECT_WITH_DB: i64
+    0x0008
+
+# The client asks for TLS, which the stand-in does not offer.
+constant SSL: i64
+    0x0800
+
+# The answer's proof is preceded by one byte of its length.
+constant SECURE_CONNECTION: i64
+    0x8000
+
+# The answer names its authentication plugin.
+constant PLUGIN_AUTH: i64
+    0x80000
+
+# The answer carries connection attributes.
+constant CONNECT_ATTRS: i64
+    0x100000
+
+# The answer's proof is a length-encoded string.
+constant PLUGIN_AUTH_LENENC: i64
+    0x200000
+
+# Results end with an OK packet rather than an EOF packet.
+constant DEPRECATE_EOF: i64
+    0x1000000
+
+# What the stand-in offers: the 4.1 protocol, long passwords and flags, a
+# database named at login, transactions, the plugins and their attributes,
+# several results and the end of a result as an OK packet; never TLS, nor
+# several statements in one text.
+function offered() -> i64
+    return 0x0001 | 0x0004 | CONNECT_WITH_DB | PROTOCOL_41 | 0x2000 | SECURE_CONNECTION | 0x20000 | 0x40000 | PLUGIN_AUTH | CONNECT_ATTRS | PLUGIN_AUTH_LENENC | DEPRECATE_EOF
+
+## The greeting
+
+# The plugin the stand-in logs users in with.
+constant PLUGIN: str
+    "caching_sha2_password"
+
+# A nonce of 20 bytes for one login, each a printable ASCII character but
+# `$`, as MySQL's own are, so no zero byte cuts it short in the greeting.
+#
+# Fails as `random.secure_below` fails.
+function new_nonce() -> [u8]?
+    out: [u8] @= []
+
+    while out.len() < 20
+        b = to_u8(33 + to_i64(random.secure_below(94)?).must()).must()
+
+        if b != '$'
+            out @ out.push(b)
+
+    return ok(out)
+
+# The greeting's payload.
+#
+# - `version`: the server's version, as `SELECT VERSION()` answers it.
+# - `connection_id`: the connection's number.
+# - `nonce`: the 20 bytes the client's proof is made with.
+function greeting(version: str, connection_id: i64, nonce: [u8]) -> [u8]
+    caps = offered()
+    out: [u8] @= [0x0a]
+    bytes.push_all(to: @out, from: packets.nul_text(version))
+    bytes.push_all(to: @out, from: packets.le(n: connection_id, width: 4))
+    bytes.push_all(to: @out, from: nonce.slice(from: 0, to: 8))
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: packets.le(n: caps & 0xffff, width: 2))
+    out @ out.push(255)
+    bytes.push_all(to: @out, from: packets.le(n: packets.STATUS_AUTOCOMMIT, width: 2))
+    bytes.push_all(to: @out, from: packets.le(n: caps >> 16, width: 2))
+    out @ out.push(21)
+
+    for _ in range(from: 0, to: 10)
+        out @ out.push(0)
+
+    bytes.push_all(to: @out, from: nonce.slice(from: 8, to: 20))
+    out @ out.push(0)
+    bytes.push_all(to: @out, from: packets.nul_text(PLUGIN))
+    return out
+
+## The client's answer
+
+# What the client answered the greeting with.
+record Answer
+    # The capabilities it asked for.
+    capabilities: i64
+    # The user it logs in as.
+    user: str
+    # Its proof of the password; empty where it sends none.
+    proof: [u8]
+    # The database it names, "" for none.
+    database: str
+    # The plugin it answered with.
+    plugin: str
+
+# The client's answer in `payload`.
+#
+# - `payload`: the packet's payload.
+#
+# Fails `invalid` where it is not a HandshakeResponse41, asks for TLS, or
+# speaks an older protocol.
+function read_answer(payload: [u8]) -> Answer?
+    c @= packets.cursor(payload)
+    caps = packets.read_le(@c, width: 4)?
+
+    if caps & PROTOCOL_41 == 0
+        return fail(code: packets.INVALID, msg: "a client of the protocol before 4.1")
+
+    if caps & SSL != 0
+        return fail(code: packets.INVALID, msg: "a client asking for TLS, which this server does not offer")
+    _ = packets.take(@c, n: 4 + 1 + 23)?
+    user = packets.read_nul_text(@c)?
+
+    proof = if caps & PLUGIN_AUTH_LENENC != 0
+        packets.read_lenenc_bytes(@c)?
+    else if caps & SECURE_CONNECTION != 0
+        n = packets.take(@c, n: 1)?[0]
+        packets.take(@c, n: to_i64(n).must())?
+    else
+        bytes.from_text(packets.read_nul_text(@c)?)
+
+    database = if caps & CONNECT_WITH_DB != 0 && !packets.at_end(c)
+        packets.read_nul_text(@c)?
+    else
+        ""
+
+    plugin = if caps & PLUGIN_AUTH != 0 && !packets.at_end(c)
+        packets.read_nul_text(@c)?
+    else
+        ""
+    return ok(Answer(capabilities: caps, user: user, proof: proof, database: database, plugin: plugin))
+
+## The proof
+
+# What the server keeps of a password: `SHA256(SHA256(password))`.
+#
+# - `password`: the password.
+function kept_of(password: str) -> [u8]
+    return crypto.sha256(crypto.sha256_text(password))
+
+# Whether `proof` proves the password whose `kept_of` is `kept`, for the
+# login whose nonce is `nonce`.
+#
+# - `proof`: what the client sent, 32 bytes; none for an empty password.
+# - `kept`: `kept_of` the user's password.
+# - `nonce`: the login's 20 bytes.
+# - `empty_password`: whether the user's password is empty, which the
+#   client proves by sending no proof.
+function proves(proof: [u8], kept: [u8], nonce: [u8], empty_password: bool) -> bool
+    if proof.len() == 0
+        return empty_password
+
+    if proof.len() != 32
+        return false
+    salted: [u8] @= []
+    bytes.push_all(to: @salted, from: kept)
+    bytes.push_all(to: @salted, from: nonce)
+    mask = crypto.sha256(salted)
+    first: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        first @ first.push(xor_byte(a: proof[i], b: mask[i]))
+
+    return crypto.equals_constant_time(a: crypto.sha256(first), b: kept)
+
+# The proof a client makes of `password` for `nonce`, as the plugin says:
+# the tests' client.
+#
+# - `password`: the password.
+# - `nonce`: the login's 20 bytes.
+function proof_of(password: str, nonce: [u8]) -> [u8]
+    first = crypto.sha256_text(password)
+    salted: [u8] @= crypto.sha256(first)
+    bytes.push_all(to: @salted, from: nonce)
+    mask = crypto.sha256(salted)
+    out: [u8] @= []
+
+    for i in range(from: 0, to: 32)
+        out @ out.push(xor_byte(a: first[i], b: mask[i]))
+
+    return out
+
+# The exclusive or of two bytes.
+#
+# - `a`: a byte.
+# - `b`: another.
+function xor_byte(a: u8, b: u8) -> u8
+    return to_u8(to_i64(a).must() ^ to_i64(b).must()).must()
+
+test "proves: the right password, a wrong one, a proof cut short, and an empty password"
+    nonce = bytes.from_text("abcdefghijklmnopqrst")
+    kept = kept_of("s3cret")
+    assert proves(proof: proof_of("s3cret", nonce: nonce), kept: kept, nonce: nonce, empty_password: false)
+    assert !proves(proof: proof_of("other", nonce: nonce), kept: kept, nonce: nonce, empty_password: false)
+    assert !proves(proof: [1, 2, 3], kept: kept, nonce: nonce, empty_password: false)
+    assert proves(proof: [], kept: kept_of(""), nonce: nonce, empty_password: true)
+    assert !proves(proof: [], kept: kept, nonce: nonce, empty_password: false)
+
+test "greeting: the version, the nonce's two parts and the plugin"
+    nonce = bytes.from_text("abcdefghijklmnopqrst")
+    g = greeting("8.4.3", connection_id: 7, nonce: nonce)
+    assert g[0] == 0x0a && bytes.contains(s: g, substr: bytes.from_text("caching_sha2_password"))
+    assert bytes.contains(s: g, substr: bytes.from_text("ijklmnopqrst"))
+
+test "new_nonce: twenty printable bytes, none a dollar"
+    n = new_nonce().must()
+    assert n.len() == 20
+
+    for b in n
+        assert b >= 33 && b <= 126 && b != '$'
+
+test "read_answer: a client of 4.1 with a lenenc proof, a database and a plugin"
+    payload: [u8] @= packets.le(n: PROTOCOL_41 | PLUGIN_AUTH_LENENC | CONNECT_WITH_DB | PLUGIN_AUTH, width: 4)
+    bytes.push_all(to: @payload, from: [0, 0, 0, 1, 255])
+
+    for _ in range(from: 0, to: 23)
+        payload @ payload.push(0)
+
+    bytes.push_all(to: @payload, from: packets.nul_text("inventory"))
+    bytes.push_all(to: @payload, from: [2, 9, 9])
+    bytes.push_all(to: @payload, from: packets.nul_text("shop"))
+    bytes.push_all(to: @payload, from: packets.nul_text(PLUGIN))
+    a = read_answer(payload).must()
+    assert a.user == "inventory" && a.proof == [9, 9] && a.database == "shop" && a.plugin == PLUGIN

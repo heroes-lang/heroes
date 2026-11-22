@@ -1,0 +1,260 @@
+# How the MongoDB stand-in runs an aggregation pipeline and orders a query's
+# answer, as far as the demo asks: the stages `$match`, `$group` (its `_id`
+# a field's path or a constant, its accumulators `$sum`, `$min` and `$max`),
+# `$sort`, `$skip` and `$limit`, and a sort specification of fields each
+# `1` or `-1`. `$sum` adds as MongoDB's does: `int32`s give an `int32`
+# where the sum fits, any `int64` an `int64`, any `double` a `double`, and
+# a value that is no number adds nothing. A stage or an accumulator the
+# stand-in does not know is refused as the server refuses one
+# (`Unrecognized pipeline stage name`).
+
+use <rebel>/bson
+use <rebel>/lists
+use <rebel>/strings
+
+use standins/mongo/matching
+
+## Codes
+
+# The code of a pipeline the stand-in cannot run.
+constant INVALID: str
+    "invalid"
+
+## Pipelines
+
+# The documents `pipeline` makes of `docs`.
+#
+# - `docs`: the collection's documents, in their order.
+# - `pipeline`: the stages, in order.
+#
+# Fails `invalid` where a stage is not one the stand-in runs or is not
+# written as its stage asks.
+function run(docs: [bson.Document], pipeline: [bson.Document]) -> [bson.Document]?
+    out @= docs
+
+    for stage in pipeline
+        if stage.fields.len() != 1
+            return fail(code: INVALID, msg: "A pipeline stage specification object must contain exactly one field.")
+        name = stage.fields[0].name
+        spec = stage.fields[0].value
+
+        if name == "$match"
+            kept: [bson.Document] @= []
+            query = bson.document_of(spec)?
+
+            for d in out
+                if matching.matches(doc: d, query: query)?
+                    kept @ kept.push(d)
+
+            out @ kept
+        else if name == "$group"
+            out @ grouped(out, spec: bson.document_of(spec)?)?
+        else if name == "$sort"
+            out @ sorted(out, spec: bson.document_of(spec)?)?
+        else if name == "$skip"
+            n = bson.int_of(spec)?
+
+            if n >= out.len()
+                out @ []
+            else
+                out @ out.slice(from: n, to: out.len())
+        else if name == "$limit"
+            n = bson.int_of(spec)?
+
+            if n < out.len()
+                out @ out.slice(from: 0, to: n)
+        else
+            return fail(code: INVALID, msg: f"Unrecognized pipeline stage name: '{name}'")
+
+    return ok(out)
+
+# The groups `$group` makes of `docs`, in the order each group's key first
+# came.
+#
+# - `docs`: the documents.
+# - `spec`: the stage's specification: `_id`, then each output field's
+#   accumulator.
+function grouped(docs: [bson.Document], spec: bson.Document) -> [bson.Document]?
+    id_spec = bson.member(spec, name: "_id")?
+    group_keys: [bson.Value] @= []
+    members: [[bson.Document]] @= []
+
+    for d in docs
+        key = evaluated(d, expression: id_spec)
+        at @= -1
+
+        for i in range(from: 0, to: group_keys.len())
+            if at < 0 && matching.same(a: group_keys[i], b: key)
+                at @ i
+
+        if at < 0
+            group_keys @ group_keys.push(key)
+            members @ members.push([d])
+        else
+            members[at] @ members[at].push(d)
+
+    out: [bson.Document] @= []
+
+    for i in range(from: 0, to: group_keys.len())
+        fields: [bson.Field] @= [bson.Field(name: "_id", value: group_keys[i])]
+
+        for f in spec.fields
+            if f.name != "_id"
+                fields @ fields.push(
+                    bson.Field(name: f.name, value: accumulated(members[i], accumulator: bson.document_of(f.value)?)?)
+                )
+
+        out @ out.push(bson.Document(fields: fields))
+
+    return ok(out)
+
+# One accumulator over a group's documents.
+#
+# - `docs`: the group's documents.
+# - `accumulator`: `{"$sum": expression}`, `{"$min": ...}` or `{"$max": ...}`.
+function accumulated(docs: [bson.Document], accumulator: bson.Document) -> bson.Value?
+    if accumulator.fields.len() != 1
+        return fail(code: INVALID, msg: "an accumulator is an object of exactly one field")
+    name = accumulator.fields[0].name
+    expression = accumulator.fields[0].value
+
+    if name == "$sum"
+        total @= 0
+        float_total @= 0.0
+        any_double @= false
+        any_long @= false
+
+        for d in docs
+            v = evaluated(d, expression: expression)
+
+            match v
+                .int32 x => total @ total + to_i64(x.v).must()
+                .int64 x =>
+                    total @ total + x.v
+                    any_long @ true
+                .double x =>
+                    float_total @ float_total + x.v
+                    any_double @ true
+                .decimal128 _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .timestamp _ | .min_key | .max_key => _ = 0
+
+        if any_double
+            return ok(.double(v: float_total + to_f64(total)))
+
+        if !any_long
+            match to_i32(total)
+                .ok small => return ok(.int32(v: small))
+                .err _    => _ = 0
+        return ok(.int64(v: total))
+
+    if name == "$min" || name == "$max"
+        best: bson.Value @= .null_value
+
+        for d in docs
+            v = evaluated(d, expression: expression)
+
+            if v != .null_value
+                if best == .null_value || name == "$min" && matching.compare(a: v, b: best) < 0 || name == "$max" && matching.compare(a: v, b: best) > 0
+                    best @ v
+
+        return ok(best)
+    return fail(code: INVALID, msg: f"Unknown group operator '{name}'")
+
+# The value `expression` gives for `d`: a text opening with `$` is a
+# field's path, anything else is itself.
+#
+# - `d`: the document.
+# - `expression`: the expression.
+function evaluated(d: bson.Document, expression: bson.Value) -> bson.Value
+    match expression
+        .text t =>
+            if strings.has_prefix(s: t.v, prefix: "$")
+                return matching.value_at(d, path: t.v.slice(from: 1, to: t.v.len())).default(.null_value)
+            return expression
+        .double _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+            return expression
+
+## Sorting
+
+# `docs` ordered by `spec`, stably: a document whose keys are all equal to
+# another's keeps its place before it.
+#
+# - `docs`: the documents.
+# - `spec`: each field and its direction, `1` or `-1`, the first the most
+#   significant.
+#
+# Fails `invalid` where a direction is neither.
+function sorted(docs: [bson.Document], spec: bson.Document) -> [bson.Document]?
+    for f in spec.fields
+        d = bson.int_of(f.value)?
+
+        if d != 1 && d != -1
+            return fail(
+                code: INVALID,
+                msg: f"$sort key ordering must be 1 (for ascending) or -1 (for descending), not {d} for {f.name}"
+            )
+
+    keyed: [bson.Document] @= []
+
+    for i in range(from: 0, to: docs.len())
+        keyed @ keyed.push(
+            bson.Document(fields: [bson.Field(name: "spec", value: .document(doc: spec)), bson.Field(name: "doc", value: .document(doc: docs[i])), bson.Field(name: "at", value: .int64(v: i))])
+        )
+
+    ordered = lists.sort_by(keyed, less: before)
+    out: [bson.Document] @= []
+
+    for k in ordered
+        out @ out.push(bson.document_of(bson.member(k, name: "doc").must()).must())
+
+    return ok(out)
+
+# Whether the keyed document `a` sorts before `b` by the specification both
+# carry, their places breaking a tie.
+#
+# - `a`: a document as `sorted` keys it.
+# - `b`: another.
+function before(a: bson.Document, b: bson.Document) -> bool
+    spec = bson.document_of(bson.member(a, name: "spec").default(.null_value)).default(bson.Document(fields: []))
+    da = bson.document_of(bson.member(a, name: "doc").default(.null_value)).default(bson.Document(fields: []))
+    db = bson.document_of(bson.member(b, name: "doc").default(.null_value)).default(bson.Document(fields: []))
+
+    for f in spec.fields
+        va = matching.value_at(da, path: f.name).default(.null_value)
+        vb = matching.value_at(db, path: f.name).default(.null_value)
+        c = matching.compare(a: va, b: vb)
+
+        if c != 0
+            if bson.int_of(f.value).default(1) < 0
+                return c > 0
+            return c < 0
+
+    return bson.int_of(bson.member(a, name: "at").default(.int64(v: 0))).default(0) < bson.int_of(bson.member(b, name: "at").default(.int64(v: 0))).default(0)
+
+test "run: $group by kind with sums, then $sort by _id"
+    docs = [
+        bson.parse_json("{\"kind\": \"sale\", \"quantity\": {\"$numberLong\": \"5\"}}").must()
+        bson.parse_json("{\"kind\": \"receipt\", \"quantity\": {\"$numberLong\": \"24\"}}").must()
+        bson.parse_json("{\"kind\": \"sale\", \"quantity\": {\"$numberLong\": \"4\"}}").must()
+    ]
+    stages = [
+        bson.parse_json("{\"$group\": {\"_id\": \"$kind\", \"count\": {\"$sum\": 1}, \"units\": {\"$sum\": \"$quantity\"}}}").must()
+        bson.parse_json("{\"$sort\": {\"_id\": 1}}").must()
+    ]
+    out = run(docs: docs, pipeline: stages).must()
+    assert out.len() == 2
+    assert bson.member(out[0], name: "_id").must() == .text(v: "receipt")
+    assert bson.member(out[1], name: "count").must() == .int32(v: 2)
+    assert bson.member(out[1], name: "units").must() == .int64(v: 9)
+
+test "run: a stage the stand-in does not know is refused"
+    assert run(docs: [], pipeline: [bson.parse_json("{\"$lookup\": {}}").must()]).is_err()
+
+test "sorted: descending by a number, a tie kept in its order"
+    docs = [
+        bson.parse_json("{\"n\": 1, \"t\": \"a\"}").must()
+        bson.parse_json("{\"n\": 2}").must()
+        bson.parse_json("{\"n\": 1, \"t\": \"b\"}").must()
+    ]
+    out = sorted(docs, spec: bson.parse_json("{\"n\": -1}").must()).must()
+    assert bson.member(out[0], name: "n").must() == .int32(v: 2)
+    assert bson.member(out[1], name: "t").must() == .text(v: "a")

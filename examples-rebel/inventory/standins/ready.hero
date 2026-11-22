@@ -1,0 +1,96 @@
+# How a stand-in started on a thread tells the demo it is ready, and on
+# which port. A thread is handed one text and gives one back only when it
+# ends (spec § 13), so a stand-in listening on a port the system chose says
+# so over a connection of its own: it connects to the demo's control port
+# and writes `READY=1`, its name and its port, one `KEY=value` a line, as
+# systemd's `sd_notify` writes a service's state; the demo starts no store
+# against it before the line has come.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/strings
+
+## Codes
+
+# The code of a notice that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long a notice may take to be written or to come, in milliseconds.
+constant NOTICE_MS: i64
+    10_000
+
+## Notices
+
+# What a stand-in said once it was ready.
+record Ready
+    # Its name.
+    service: str
+    # The port it listens on.
+    port: i64
+
+# Tells the demo at `control_port` that `service` listens on `port`.
+#
+# - `control_port`: the demo's control port on 127.0.0.1.
+# - `service`: the stand-in's name, one word.
+# - `port`: the port it listens on.
+#
+# Fails as `net.connect` and `io.write_text` fail.
+function tell(control_port: i64, service: str, port: i64) -> ()?
+    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: NOTICE_MS)?
+    conn @= made
+    written = io.write_text(conn.stream, text: f"READY=1\nSERVICE={service}\nPORT={port}\n")
+    _ = io.close(@conn.stream).is_err()
+    return written
+
+# The next notice on `control`, awaited `NOTICE_MS` at most.
+#
+# - `control`: the demo's control listener.
+#
+# Fails `timeout` where none comes in time, `invalid` where what came is no
+# notice, and as `net.accept` and `io.read_all_text` fail.
+function await_ready(control: net.Listener) -> Ready?
+    net.set_accept_deadline(control, deadline_ms: NOTICE_MS)?
+    made = net.accept(control, deadline_ms: NOTICE_MS)?
+    conn @= made
+    text = io.read_all_text(conn.stream)
+    _ = io.close(@conn.stream).is_err()
+    return parse_ready(text?)
+
+# The notice `text` writes.
+#
+# - `text`: `KEY=value` lines.
+#
+# Fails `invalid` where `READY=1`, a `SERVICE` or a `PORT` of 1 to 65535 is
+# missing.
+function parse_ready(text: str) -> Ready?
+    values: {str: str} @= {}
+
+    for line in strings.lines(text)
+        match strings.split_once(s: line, sep: "=")
+            .ok h  => values[h.before] @ h.after
+            .err _ => _ = 0
+
+    if values["READY"].default("") != "1"
+        return fail(code: INVALID, msg: "a notice says READY=1")
+    service = values["SERVICE"].default("")
+
+    if service == ""
+        return fail(code: INVALID, msg: "a notice names its SERVICE")
+
+    match numbers.parse_int(values["PORT"].default(""))
+        .err _ => return fail(code: INVALID, msg: f"{service}'s notice holds no PORT")
+        .ok port =>
+            if port < 1 || port > 65535
+                return fail(code: INVALID, msg: f"{service}'s notice says PORT={port}")
+            return ok(Ready(service: service, port: port))
+
+test "parse_ready: a notice read, and three that are not"
+    r = parse_ready("READY=1\nSERVICE=mysql\nPORT=3306\n").must()
+    assert r.service == "mysql" && r.port == 3306
+    assert parse_ready("SERVICE=mysql\nPORT=1\n").is_err()
+    assert parse_ready("READY=1\nPORT=1\n").is_err()
+    assert parse_ready("READY=1\nSERVICE=mysql\nPORT=0\n").is_err()

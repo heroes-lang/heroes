@@ -1,0 +1,317 @@
+# The inventory's records as MongoDB documents and back. A key is a BSON
+# binary of subtype 4 (`bson.from_uuid`), as MongoDB's drivers store a UUID
+# in their standard representation, so `_id` sorts and indexes as sixteen
+# bytes rather than thirty-six characters; a moment is a BSON date; a count
+# and an amount an `int64`, whatever their size, so a sum over them never
+# changes type.
+#
+# A variant's levels are not documents of their own but one embedded
+# document, `levels`, holding a document per location named by the
+# location's code: `{"levels": {"WH": {"on_hand": 40, ...}}}`. Every change a
+# movement makes, a transfer's two levels and the variant's totals
+# together, is then a change of one document, which MongoDB makes atomically
+# without a transaction; and a filter names the level it guards by a dotted
+# path, `levels.SHOP-N.on_hand`, which is why a location's code may hold no
+# `.` and open with no `$` (`model/catalog`).
+
+use <rebel>/bson
+use <rebel>/time
+
+use model/books
+use model/catalog
+use model/ids
+use model/movements
+
+## Codes
+
+# The code of a document that is not the inventory's: a field missing, a
+# key that is no UUID, a number that is no integer.
+constant INVALID: str
+    "invalid"
+
+## Building
+
+# A field named `name` holding `value`.
+#
+# - `name`: the field's name.
+# - `value`: its value.
+function field(name: str, value: bson.Value) -> bson.Field
+    return bson.Field(name: name, value: value)
+
+# A document of `fields`, in order.
+#
+# - `fields`: the fields.
+function doc(fields: [bson.Field]) -> bson.Document
+    return bson.Document(fields: fields)
+
+# A text value.
+#
+# - `s`: the text.
+function text(s: str) -> bson.Value
+    return .text(v: s)
+
+# An `int64` value, whatever the size of `n`.
+#
+# - `n`: the number.
+function long(n: i64) -> bson.Value
+    return .int64(v: n)
+
+# The key `id` as a binary of subtype 4, or `null` for no key ("").
+#
+# - `id`: a key in its standard text form, or "".
+#
+# Fails `invalid` where `id` is no UUID.
+function key(id: str) -> bson.Value?
+    if id == ""
+        return ok(.null_value)
+    return bson.from_uuid(ids.bytes_of(id)?, representation: .standard)
+
+# The moment `at` writes, RFC 3339 to the second, as a BSON date.
+#
+# - `at`: the moment's text.
+#
+# Fails `invalid` where `at` is no such moment.
+function date(at: str) -> bson.Value?
+    t = time.parse(at, .rfc3339_seconds)?
+    return ok(.datetime(ms: time.unix_milliseconds(t)))
+
+## Reading
+
+# The text of the field `name` of `d`.
+#
+# - `d`: the document.
+# - `name`: the field's name.
+#
+# Fails `invalid` where it is missing or not a string.
+function text_at(d: bson.Document, name: str) -> str?
+    match bson.member(d, name: name)
+        .err _ => return fail(code: INVALID, msg: f"a document has no {name}")
+        .ok v =>
+            match bson.text_of(v)
+                .ok s  => return ok(s)
+                .err _ => return fail(code: INVALID, msg: f"the field {name} holds a {bson.kind_of(v)}, not a string")
+
+# The integer of the field `name` of `d`: an `int32`, an `int64`, or a
+# whole `double`, as a server's sums and counts may come.
+#
+# - `d`: the document.
+# - `name`: the field's name.
+#
+# Fails `invalid` where it is missing or holds no integer.
+function int_at(d: bson.Document, name: str) -> i64?
+    match bson.member(d, name: name)
+        .err _ => return fail(code: INVALID, msg: f"a document has no {name}")
+        .ok v =>
+            match bson.int_of(v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: INVALID, msg: f"the field {name} holds a {bson.kind_of(v)}, not an integer")
+
+# The key of the field `name` of `d`, in its standard text form; "" for a
+# `null`.
+#
+# - `d`: the document.
+# - `name`: the field's name.
+#
+# Fails `invalid` where it is missing or no UUID of subtype 4.
+function key_at(d: bson.Document, name: str) -> str?
+    match bson.member(d, name: name)
+        .err _ => return fail(code: INVALID, msg: f"a document has no {name}")
+        .ok v =>
+            if v == .null_value
+                return ok("")
+
+            match bson.uuid_of(v, representation: .standard)
+                .ok b  => return ids.text_of(b)
+                .err _ => return fail(code: INVALID, msg: f"the field {name} holds a {bson.kind_of(v)}, not a UUID")
+
+# The moment of the BSON date in the field `name` of `d`, as RFC 3339 text
+# to the second.
+#
+# - `d`: the document.
+# - `name`: the field's name.
+#
+# Fails `invalid` where it is missing or no date.
+function moment_at(d: bson.Document, name: str) -> str?
+    match bson.member(d, name: name)
+        .err _ => return fail(code: INVALID, msg: f"a document has no {name}")
+        .ok v =>
+            match v
+                .datetime x =>
+                    t = time.from_unix_milliseconds(x.ms)?
+                    return ok(time.format(t, .rfc3339_seconds))
+                .double _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .int32 _ | .timestamp _ | .int64 _ | .decimal128 _ | .min_key | .max_key =>
+                    return fail(code: INVALID, msg: f"the field {name} holds a {bson.kind_of(v)}, not a date")
+
+# The embedded document in the field `name` of `d`.
+#
+# - `d`: the document.
+# - `name`: the field's name.
+#
+# Fails `invalid` where it is missing or no document.
+function document_at(d: bson.Document, name: str) -> bson.Document?
+    match bson.member(d, name: name)
+        .err _ => return fail(code: INVALID, msg: f"a document has no {name}")
+        .ok v =>
+            match bson.document_of(v)
+                .ok inner => return ok(inner)
+                .err _ => return fail(code: INVALID, msg: f"the field {name} holds a {bson.kind_of(v)}, not a document")
+
+## The records
+
+# The document of `l`.
+#
+# - `l`: the location.
+function location_doc(l: catalog.Location) -> bson.Document?
+    return ok(
+        doc([field("_id", key(l.id)?), field(catalog.Location::code, text(l.code)), field(catalog.Location::name, text(l.name))])
+    )
+
+# The location `d` holds.
+#
+# - `d`: a document of the `locations` collection.
+function location_of(d: bson.Document) -> catalog.Location?
+    return ok(
+        catalog.Location(id: key_at(d, name: "_id")?, code: text_at(d, name: catalog.Location::code)?, name: text_at(d, name: catalog.Location::name)?)
+    )
+
+# The document of `p`.
+#
+# - `p`: the product.
+function product_doc(p: catalog.Product) -> bson.Document?
+    return ok(
+        doc([field("_id", key(p.id)?), field(catalog.Product::code, text(p.code)), field(catalog.Product::name, text(p.name)), field(catalog.Product::category, text(p.category))])
+    )
+
+# The product `d` holds.
+#
+# - `d`: a document of the `products` collection.
+function product_of(d: bson.Document) -> catalog.Product?
+    return ok(
+        catalog.Product(id: key_at(d, name: "_id")?, code: text_at(d, name: catalog.Product::code)?, name: text_at(d, name: catalog.Product::name)?, category: text_at(d, name: catalog.Product::category)?)
+    )
+
+# The document of a new variant `v`, holding no level yet.
+#
+# - `v`: the variant.
+function variant_doc(v: catalog.Variant) -> bson.Document?
+    return ok(
+        doc([field("_id", key(v.id)?), field(catalog.Variant::product_id, key(v.product_id)?), field(catalog.Variant::sku, text(v.sku)), field(catalog.Variant::label, text(v.label)), field(catalog.Variant::price_cents, long(v.price_cents)), field(catalog.Variant::units, long(v.units)), field(catalog.Variant::value_cents, long(v.value_cents)), field(catalog.Variant::applied_seq, long(v.applied_seq)), field(LEVELS, .document(doc: doc([])))])
+    )
+
+# The name of a variant's embedded document of levels.
+constant LEVELS: str
+    "levels"
+
+# The variant `d` holds, and its levels.
+#
+# - `d`: a document of the `variants` collection.
+function state_of(d: bson.Document) -> books.State?
+    v = catalog.Variant(
+        id: key_at(d, name: "_id")?,
+        product_id: key_at(d, name: catalog.Variant::product_id)?,
+        sku: text_at(d, name: catalog.Variant::sku)?,
+        label: text_at(d, name: catalog.Variant::label)?,
+        price_cents: int_at(d, name: catalog.Variant::price_cents)?,
+        units: int_at(d, name: catalog.Variant::units)?,
+        value_cents: int_at(d, name: catalog.Variant::value_cents)?,
+        applied_seq: int_at(d, name: catalog.Variant::applied_seq)?
+    )
+    levels: [catalog.Level] @= []
+
+    for f in document_at(d, name: LEVELS)?.fields
+        match bson.document_of(f.value)
+            .err _ => return fail(code: INVALID, msg: f"the level {f.name} of {v.sku} is no document")
+            .ok level =>
+                levels @ levels.push(
+                    catalog.Level(variant_id: v.id, location_id: key_at(level, name: catalog.Level::location_id)?, on_hand: int_at(level, name: catalog.Level::on_hand)?, reorder_point: int_at(level, name: catalog.Level::reorder_point)?, reorder_quantity: int_at(level, name: catalog.Level::reorder_quantity)?)
+                )
+
+    return ok(books.State(item: v, levels: levels))
+
+# The embedded document of a level at `location_id`.
+#
+# - `location_id`: the location's key.
+# - `on_hand`: the units on hand.
+# - `reorder_point`: when to reorder.
+# - `reorder_quantity`: how many to order.
+function level_doc(location_id: str, on_hand: i64, reorder_point: i64, reorder_quantity: i64) -> bson.Document?
+    return ok(
+        doc([field(catalog.Level::location_id, key(location_id)?), field(catalog.Level::on_hand, long(on_hand)), field(catalog.Level::reorder_point, long(reorder_point)), field(catalog.Level::reorder_quantity, long(reorder_quantity))])
+    )
+
+# The dotted path of a field of the level at the location `code`:
+# `levels.SHOP-N.on_hand`, or `levels.SHOP-N` where `name` is "".
+#
+# - `code`: the location's code.
+# - `name`: the level's field, "" for the whole level.
+function level_path(code: str, name: str) -> str
+    if name == ""
+        return LEVELS + "." + code
+    return LEVELS + "." + code + "." + name
+
+# The document of `m`.
+#
+# - `m`: the movement, numbered.
+function movement_doc(m: movements.Movement) -> bson.Document?
+    return ok(
+        doc([field("_id", key(m.id)?), field(movements.Movement::seq, long(m.seq)), field(movements.Movement::at, date(m.at)?), field(movements.Movement::kind, text(m.kind)), field(movements.Movement::variant_id, key(m.variant_id)?), field(movements.Movement::from_location, key(m.from_location)?), field(movements.Movement::to_location, key(m.to_location)?), field(movements.Movement::quantity, long(m.quantity)), field(movements.Movement::unit_cost_cents, long(m.unit_cost_cents)), field(movements.Movement::unit_price_cents, long(m.unit_price_cents)), field(movements.Movement::revenue_cents, long(m.revenue_cents)), field(movements.Movement::value_cents, long(m.value_cents)), field(movements.Movement::reason, text(m.reason)), field(movements.Movement::reference, text(m.reference)), field(movements.Movement::actor, text(m.actor))])
+    )
+
+# The document of an entry of the audit trail, its number its `_id`.
+#
+# - `e`: the entry, numbered.
+function entry_doc(e: books.AuditEntry) -> bson.Document?
+    return ok(
+        doc([field("_id", long(e.seq)), field(books.AuditEntry::at, date(e.at)?), field(books.AuditEntry::actor, text(e.actor)), field(books.AuditEntry::action, text(e.action)), field(books.AuditEntry::subject, text(e.subject)), field(books.AuditEntry::detail, text(e.detail))])
+    )
+
+# The entry of the audit trail `d` holds.
+#
+# - `d`: a document of the `audit` collection.
+function entry_of(d: bson.Document) -> books.AuditEntry?
+    return ok(
+        books.AuditEntry(seq: int_at(d, name: "_id")?, at: moment_at(d, name: books.AuditEntry::at)?, actor: text_at(d, name: books.AuditEntry::actor)?, action: text_at(d, name: books.AuditEntry::action)?, subject: text_at(d, name: books.AuditEntry::subject)?, detail: text_at(d, name: books.AuditEntry::detail)?)
+    )
+
+test "location_doc: a key as a UUID of subtype 4, read back"
+    l = catalog.Location(id: "0195f3a4-1b2c-7d3e-8f40-123456789abc", code: "WH", name: "Warehouse")
+    d = location_doc(l).must()
+    assert bson.member(d, name: "_id").must() == .binary(subtype: bson.SUBTYPE_UUID, data: ids.bytes_of(l.id).must())
+    assert location_of(d).must() == l
+
+test "state_of: a variant and its levels, read back from its document"
+    v = catalog.Variant(
+        id: "0195f3a4-1b2c-7d3e-8f40-123456789abc",
+        product_id: "0195f3a4-1b2c-7d3e-8f40-123456789abd",
+        sku: "TEE-BLK-M",
+        label: "black / M",
+        price_cents: 1800,
+        units: 0,
+        value_cents: 0,
+        applied_seq: 0
+    )
+    d = variant_doc(v).must()
+    level = level_doc(
+        location_id: "0195f3a4-1b2c-7d3e-8f40-123456789abe",
+        on_hand: 7,
+        reorder_point: 8,
+        reorder_quantity: 12
+    ).must()
+    with_level = bson.with_member(d, name: LEVELS, value: .document(doc: doc([field("SHOP-N", .document(doc: level))])))
+    s = state_of(with_level).must()
+    assert s.item == v && s.levels.len() == 1 && s.levels[0].on_hand == 7
+
+test "entry_doc: a moment kept to the second, read back"
+    e = books.AuditEntry(
+        seq: 3,
+        at: "2026-03-14T09:30:00Z",
+        actor: "demo",
+        action: "movement",
+        subject: "TEE-BLK-M",
+        detail: "sale"
+    )
+    assert entry_of(entry_doc(e).must()).must() == e
+
+test "level_path: a field of a level, and the whole level"
+    assert level_path(code: "SHOP-N", name: "on_hand") == "levels.SHOP-N.on_hand"
+    assert level_path(code: "WH", name: "") == "levels.WH"

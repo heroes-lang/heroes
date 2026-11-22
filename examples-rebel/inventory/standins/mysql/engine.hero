@@ -1,0 +1,308 @@
+# Where the MySQL stand-in runs a statement: SQLite, in memory, through
+# `sql/sqlite`. The stand-in speaks MySQL's protocol to its client; behind
+# the protocol it needs a SQL engine, and SQLite reads the portable SQL the
+# inventory writes for MySQL (backquoted names, bare `?`, `VARCHAR`,
+# `BIGINT`, table-level keys) as MySQL does. Two differences are named
+# where they meet the demo: MySQL counts the rows an `UPDATE` changed and
+# SQLite the rows it matched, which agree for the inventory because each of
+# its updates changes every row it matches; and MySQL answers a `SUM` as a
+# `DECIMAL`, which the inventory reads as text or as an integer alike.
+#
+# The stand-in checks what MySQL would read otherwise and SQLite would let
+# pass: a double-quoted text, which MySQL's default SQL mode reads as a
+# string (so `SELECT "sku"` would answer the word `sku` on every row), and
+# a numbered placeholder `?1`, which MySQL does not read. Both are refused
+# with MySQL's syntax error, so a statement the stand-in runs is one MySQL
+# would run the same way.
+#
+# A failure of SQLite becomes the error MySQL gives for it: a unique key
+# broken is 1062, a table unknown 1146, a column unknown 1054, a statement
+# not read 1064, and every other 1105, each with its SQLSTATE.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use standins/mysql/packets
+
+## Answers
+
+# What a statement answered.
+variant Answer
+    # Rows, with their columns.
+    rows
+        # The columns, as the client is told them.
+        columns: [packets.Column]
+        # The rows' values, one list per row.
+        values: [[sql.Value]]
+    # A statement that answers no rows.
+    done
+        # The rows it changed.
+        affected: i64
+    # An error, as MySQL reports it.
+    refused
+        # MySQL's error number.
+        code: i64
+        # Its SQLSTATE.
+        state: str
+        # Its words.
+        message: str
+
+## Running
+
+# The statement `text` checked as MySQL reads it and run with `params`.
+#
+# - `db`: the engine.
+# - `text`: the statement, its values written as `?`.
+# - `params`: the values, in order.
+function run(@db: sqlite.Db, text: str, params: [sql.Value]) -> Answer
+    match mysql_text_of(text)
+        .err e => return .refused(code: 1064, state: "42000", message: e.msg)
+        .ok _  => _ = 0
+
+    match sqlite.prepare(@db, text)
+        .err e => return refused_of(code: e.code, msg: e.msg)
+        .ok first =>
+            prepared @= first
+            answers_rows = prepared.columns.len() > 0
+            _ = sqlite.close_statement(@db, @prepared).is_err()
+
+            if answers_rows
+                match sqlite.query(@db, text, params)
+                    .err e    => return refused_of(code: e.code, msg: e.msg)
+                    .ok found => return .rows(columns: columns_of(found), values: values_of(found))
+
+            match sqlite.exec(@db, text, params)
+                .err e   => return refused_of(code: e.code, msg: e.msg)
+                .ok done => return .done(affected: done.rows_affected)
+
+# What a statement is before it runs: what a `COM_STMT_PREPARE` is
+# answered with.
+variant Shaped
+    # The statement reads, with its placeholders and its columns.
+    ready
+        # The placeholders.
+        params: i64
+        # The columns, typed by their declared types; a column of an
+        # expression as a string, its type known only once it has a value.
+        columns: [packets.Column]
+    # The statement cannot be read, as MySQL reports it.
+    refused
+        # MySQL's error number.
+        code: i64
+        # Its SQLSTATE.
+        state: str
+        # Its words.
+        message: str
+
+# The shape of `text`, or the error MySQL gives where it cannot be read.
+#
+# - `db`: the engine.
+# - `text`: the statement.
+function shape_of(@db: sqlite.Db, text: str) -> Shaped
+    match mysql_text_of(text)
+        .err e => return .refused(code: 1064, state: "42000", message: e.msg)
+        .ok _  => _ = 0
+
+    match sqlite.prepare(@db, text)
+        .err e =>
+            return match refused_of(code: e.code, msg: e.msg)
+                .refused r        => .refused(code: r.code, state: r.state, message: r.message)
+                .rows _ | .done _ => .refused(code: 1105, state: "HY000", message: e.msg)
+        .ok first =>
+            prepared @= first
+            columns: [packets.Column] @= []
+
+            for c in prepared.columns
+                columns @ columns.push(declared(c))
+
+            count = prepared.parameter_count
+            _ = sqlite.close_statement(@db, @prepared).is_err()
+            return .ready(params: count, columns: columns)
+
+# Checks that `text` means in MySQL what it means in SQLite.
+#
+# - `text`: the statement.
+#
+# Fails `invalid` where a double quote stands outside a string or a
+# backquoted name, or a `?` is followed by a digit.
+function mysql_text_of(text: str) -> ()?
+    at @= 0
+
+    while at < text.len()
+        c = text[at]
+
+        if c == '\'' || c == '`'
+            at @ at + 1
+
+            while at < text.len() && text[at] != c
+                at @ at + 1
+
+            at @ at + 1
+        else if c == '"'
+            return fail(
+                code: packets.INVALID,
+                msg: f"You have an error in your SQL syntax: \"...\" at byte {at} is a string in MySQL's default SQL mode; a name is quoted with backquotes"
+            )
+        else if c == '?' && at + 1 < text.len() && text[at + 1] >= '0' && text[at + 1] <= '9'
+            return fail(
+                code: packets.INVALID,
+                msg: f"You have an error in your SQL syntax near '{text.slice(from: at, to: at + 2)}': MySQL's placeholder is a bare ?"
+            )
+        else
+            at @ at + 1
+
+    return ok()
+
+# The error MySQL gives for SQLite's failure.
+#
+# - `code`: the failure's code.
+# - `msg`: its message, SQLite's words in it.
+function refused_of(code: str, msg: str) -> Answer
+    if code == "exists"
+        key = strings.split_once(s: msg, sep: "failed: ").default(strings.Halves(before: "", after: msg)).after
+        return .refused(code: 1062, state: "23000", message: f"Duplicate entry for key '{key}'")
+
+    if strings.contains(s: msg, substr: "no such table: ")
+        table = strings.split_once(s: msg, sep: "no such table: ").default(strings.Halves(before: "", after: msg)).after
+        return .refused(code: 1146, state: "42S02", message: f"Table 'inventory.{table}' doesn't exist")
+
+    if strings.contains(s: msg, substr: "no such column: ")
+        column = strings.split_once(s: msg, sep: "no such column: ").default(strings.Halves(before: "", after: msg)).after
+        return .refused(code: 1054, state: "42S22", message: f"Unknown column '{column}' in 'field list'")
+
+    if strings.contains(s: msg, substr: "syntax error")
+        return .refused(code: 1064, state: "42000", message: "You have an error in your SQL syntax: " + msg)
+    return .refused(code: 1105, state: "HY000", message: msg)
+
+## Columns
+
+# The column a declared type makes, before any value is seen.
+#
+# - `c`: the column as SQLite describes it.
+function declared(c: sql.Column) -> packets.Column
+    t = strings.to_upper_ascii(c.type_name)
+
+    if strings.contains(s: t, substr: "INT")
+        return integer_column(c.name)
+
+    if strings.contains(s: t, substr: "REAL") || strings.contains(s: t, substr: "DOUB") || strings.contains(s: t, substr: "FLOA")
+        return double_column(c.name)
+
+    if strings.contains(s: t, substr: "BLOB")
+        return blob_column(c.name)
+
+    if strings.contains(s: t, substr: "DATE") || strings.contains(s: t, substr: "TIME")
+        return packets.Column(name: c.name, kind: 12, charset: 63, length: 26, flags: packets.FLAG_BINARY, decimals: 6)
+    return text_column(c.name)
+
+# The columns of `found`, each typed by its values: a column whose every
+# value is an integer as `LONGLONG`, one of numbers as `DOUBLE`, one with
+# bytes as `BLOB`, one of moments as `DATETIME`, any other as `VAR_STRING`,
+# and one with no value by its declared type.
+#
+# - `found`: the rows.
+function columns_of(found: sql.Rows) -> [packets.Column]
+    out: [packets.Column] @= []
+
+    for i in range(from: 0, to: found.columns.len())
+        integers @= 0
+        floats @= 0
+        blobs @= 0
+        moments @= 0
+        others @= 0
+
+        for row in found.rows
+            match row.values[i]
+                .null_value => _ = 0
+                .integer _  => integers @ integers + 1
+                .boolean _  => integers @ integers + 1
+                .float _    => floats @ floats + 1
+                .blob _     => blobs @ blobs + 1
+                .instant _  => moments @ moments + 1
+                .text _     => others @ others + 1
+
+        name = found.columns[i].name
+        seen = integers + floats + blobs + moments + others
+
+        column = if seen == 0
+            declared(found.columns[i])
+        else if integers == seen
+            integer_column(name)
+        else if integers + floats == seen
+            double_column(name)
+        else if blobs > 0
+            blob_column(name)
+        else if moments == seen
+            packets.Column(name: name, kind: 12, charset: 63, length: 26, flags: packets.FLAG_BINARY, decimals: 6)
+        else
+            text_column(name)
+        out @ out.push(column)
+
+    return out
+
+# The values of `found`, one list per row.
+#
+# - `found`: the rows.
+function values_of(found: sql.Rows) -> [[sql.Value]]
+    out: [[sql.Value]] @= []
+
+    for row in found.rows
+        out @ out.push(row.values)
+
+    return out
+
+# A `BIGINT` column.
+#
+# - `name`: its name.
+function integer_column(name: str) -> packets.Column
+    return packets.Column(name: name, kind: 8, charset: 63, length: 20, flags: packets.FLAG_BINARY, decimals: 0)
+
+# A `DOUBLE` column.
+#
+# - `name`: its name.
+function double_column(name: str) -> packets.Column
+    return packets.Column(name: name, kind: 5, charset: 63, length: 22, flags: packets.FLAG_BINARY, decimals: 31)
+
+# A `BLOB` column.
+#
+# - `name`: its name.
+function blob_column(name: str) -> packets.Column
+    return packets.Column(
+        name: name,
+        kind: 252,
+        charset: 63,
+        length: 65535,
+        flags: packets.FLAG_BLOB | packets.FLAG_BINARY,
+        decimals: 0
+    )
+
+# A `VARCHAR` column of `utf8mb4`.
+#
+# - `name`: its name.
+function text_column(name: str) -> packets.Column
+    return packets.Column(name: name, kind: 253, charset: 255, length: 4 * 500, flags: 0, decimals: 0)
+
+test "mysql_text_of: backquotes and strings pass, a double quote and ?1 are refused"
+    assert !mysql_text_of("SELECT `sku` FROM `variants` WHERE `label` = 'a \"b\"' AND `id` = ?").is_err()
+    assert mysql_text_of("SELECT \"sku\" FROM `variants`").is_err()
+    assert mysql_text_of("SELECT `sku` FROM `variants` WHERE `id` = ?1").is_err()
+
+test "run: a table made, a row in, its unique key broken as MySQL's 1062, rows back typed"
+    db @= sqlite.open_memory().must()
+    assert run(@db, text: "CREATE TABLE `t` (`id` VARCHAR(36) NOT NULL, `n` BIGINT NOT NULL, PRIMARY KEY (`id`))", params: []) == .done(affected: 0)
+    assert run(@db, text: "INSERT INTO `t` (`id`, `n`) VALUES (?, ?)", params: [.text(v: "a"), .integer(v: 7)]) == .done(affected: 1)
+
+    match run(@db, text: "INSERT INTO `t` (`id`, `n`) VALUES (?, ?)", params: [.text(v: "a"), .integer(v: 8)])
+        .refused r        => assert r.code == 1062 && r.state == "23000"
+        .rows _ | .done _ => assert false
+
+    match run(@db, text: "SELECT `id`, `n`, SUM(`n`) AS `total` FROM `t`", params: [])
+        .rows r              => assert r.columns[0].kind == 253 && r.columns[1].kind == 8 && r.columns[2].kind == 8
+        .done _ | .refused _ => assert false
+
+    match run(@db, text: "SELECT * FROM `nope`", params: [])
+        .refused r        => assert r.code == 1146
+        .rows _ | .done _ => assert false
+
+    sqlite.close(@db).must()

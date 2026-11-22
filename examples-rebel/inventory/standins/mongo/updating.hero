@@ -1,0 +1,240 @@
+# How the MongoDB stand-in changes a document by an update: the operators
+# `$set`, `$inc`, `$unset` and `$setOnInsert`, each over dotted paths that
+# make the embedded documents they pass through, as MongoDB's update
+# operators do; a document with no operator, which replaces the document
+# and keeps its `_id`; and the document an upsert inserts, made from the
+# filter's equalities and then updated. `$inc` adds as MongoDB adds:
+# `int32` and `int32` give an `int32` where the sum fits, an `int64`
+# otherwise, any `int64` an `int64`, and a sum past an `int64` is refused
+# as the server refuses it, never wrapped. An operator the stand-in does
+# not know is refused as the server refuses one (`Unknown modifier`).
+
+use <rebel>/bson
+use <rebel>/strings
+
+use standins/mongo/matching
+
+## Codes
+
+# The code of an update the stand-in cannot apply: an unknown operator, a
+# path through a value that is no document, `$inc` of a value that is no
+# number, a sum past an `int64`.
+constant INVALID: str
+    "invalid"
+
+## Updates
+
+# `doc` changed by `update`.
+#
+# - `doc`: the document as it is.
+# - `update`: a document of operators, or a replacement.
+# - `inserting`: whether the document is being inserted by an upsert, the
+#   one time `$setOnInsert` applies.
+#
+# Fails `invalid` where an operator is unknown or cannot apply.
+function updated(doc: bson.Document, update: bson.Document, inserting: bool) -> bson.Document?
+    if update.fields.len() == 0 || !strings.has_prefix(s: update.fields[0].name, prefix: "$")
+        for f in update.fields
+            if strings.has_prefix(s: f.name, prefix: "$")
+                return fail(code: INVALID, msg: "a replacement may not hold an operator, and an update must")
+
+        kept: [bson.Field] @= []
+
+        match bson.member(doc, name: "_id")
+            .ok id => kept @ kept.push(bson.Field(name: "_id", value: id))
+            .err _ => _ = 0
+
+        for f in update.fields
+            if f.name != "_id"
+                kept @ kept.push(f)
+
+        return ok(bson.Document(fields: kept))
+    out @= doc
+
+    for op in update.fields
+        changes = bson.document_of(op.value)?
+
+        for c in changes.fields
+            if c.name == "_id" || strings.has_prefix(s: c.name, prefix: "_id.")
+                return fail(
+                    code: INVALID,
+                    msg: "Performing an update on the path '_id' would modify the immutable field '_id'"
+                )
+
+            if op.name == "$set" || op.name == "$setOnInsert" && inserting
+                out @ set_path(out, path: c.name, value: c.value)?
+            else if op.name == "$setOnInsert"
+                _ = 0
+            else if op.name == "$unset"
+                out @ unset_path(out, path: c.name)
+            else if op.name == "$inc"
+                current = matching.value_at(out, path: c.name)
+
+                sum = match current
+                    .err _ => c.value
+                    .ok v  => added(value: v, by: c.value, path: c.name)?
+
+                out @ set_path(out, path: c.name, value: sum)?
+            else
+                return fail(code: INVALID, msg: f"Unknown modifier: {op.name}")
+
+    return ok(out)
+
+# `value` set at the dotted `path` of `doc`, the embedded documents on the
+# way made where they are missing.
+#
+# - `doc`: the document.
+# - `path`: names joined by `.`.
+# - `value`: the value.
+#
+# Fails `invalid` where a part of the path stands on a value that is no
+# document.
+function set_path(doc: bson.Document, path: str, value: bson.Value) -> bson.Document?
+    dot = strings.index_of(s: path, substr: ".")
+
+    match dot
+        .err _ => return ok(with_field(doc, name: path, value: value))
+        .ok at =>
+            head = path.slice(from: 0, to: at)
+            tail = path.slice(from: at + 1, to: path.len())
+
+            inner = match bson.member(doc, name: head)
+                .err _ => bson.Document(fields: [])
+                .ok v =>
+                    match bson.document_of(v)
+                        .ok d => d
+                        .err _ => return fail(
+                            code: INVALID,
+                            msg: f"Cannot create field '{tail}' in element {{{head}: {bson.kind_of(v)}}}"
+                        )
+
+            changed = set_path(inner, path: tail, value: value)?
+            return ok(with_field(doc, name: head, value: .document(doc: changed)))
+
+# `doc` without the field the dotted `path` names, as it was where none.
+#
+# - `doc`: the document.
+# - `path`: names joined by `.`.
+function unset_path(doc: bson.Document, path: str) -> bson.Document
+    match strings.index_of(s: path, substr: ".")
+        .err _ => return bson.without_member(doc, name: path)
+        .ok at =>
+            head = path.slice(from: 0, to: at)
+
+            match bson.member(doc, name: head)
+                .err _ => return doc
+                .ok v =>
+                    match bson.document_of(v)
+                        .err _ => return doc
+                        .ok inner => return with_field(
+                            doc,
+                            name: head,
+                            value: .document(doc: unset_path(inner, path: path.slice(from: at + 1, to: path.len())))
+                        )
+
+# `doc` with its field `name` replaced in its place, or added last.
+#
+# - `doc`: the document.
+# - `name`: the field's name.
+# - `value`: its value.
+function with_field(doc: bson.Document, name: str, value: bson.Value) -> bson.Document
+    out: [bson.Field] @= []
+    replaced @= false
+
+    for f in doc.fields
+        if f.name == name && !replaced
+            out @ out.push(bson.Field(name: name, value: value))
+            replaced @ true
+        else
+            out @ out.push(f)
+
+    if !replaced
+        out @ out.push(bson.Field(name: name, value: value))
+    return bson.Document(fields: out)
+
+# `value` plus `by`, as `$inc` adds.
+#
+# - `value`: the field's value.
+# - `by`: the increment.
+# - `path`: the field, for the message.
+#
+# Fails `invalid` where either is no number or the sum passes an `int64`.
+function added(value: bson.Value, by: bson.Value, path: str) -> bson.Value?
+    if matching.rank_of(value) != 2 || matching.rank_of(by) != 2
+        return fail(code: INVALID, msg: f"Cannot apply $inc to a value of non-numeric type at {path}")
+
+    match value
+        .double x => return ok(.double(v: x.v + bson.number_of(by)?))
+        .int32 _ | .int64 _ | .decimal128 _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .timestamp _ | .min_key | .max_key => _ = 0
+
+    match by
+        .double y => return ok(.double(v: bson.number_of(value)? + y.v))
+        .int32 _ | .int64 _ | .decimal128 _ | .text _ | .document _ | .array _ | .binary _ | .undefined | .object_id _ | .boolean _ | .datetime _ | .null_value | .regex _ | .db_pointer _ | .javascript _ | .symbol _ | .javascript_with_scope _ | .timestamp _ | .min_key | .max_key => _ = 0
+
+    a = bson.int_of(value)?
+    b = bson.int_of(by)?
+
+    if b > 0 && a > 9223372036854775807 - b || b < 0 && a < -9223372036854775807 - 1 - b
+        return fail(code: INVALID, msg: f"Failed to apply $inc operations to current value for {path}: overflow")
+    sum = a + b
+    both_small = bson.kind_of(value) == "int" && bson.kind_of(by) == "int"
+
+    match to_i32(sum)
+        .ok small =>
+            if both_small
+                return ok(.int32(v: small))
+        .err _ => _ = 0
+
+    return ok(.int64(v: sum))
+
+## Upserts
+
+# The document an upsert inserts where its filter matched none: the
+# filter's equalities on plain values (an operator's condition gives
+# nothing), then the update applied as an insert.
+#
+# - `query`: the update's filter.
+# - `update`: the update.
+#
+# Fails as `updated` fails.
+function upserted(query: bson.Document, update: bson.Document) -> bson.Document?
+    base @= bson.Document(fields: [])
+
+    for f in query.fields
+        if !strings.has_prefix(s: f.name, prefix: "$")
+            plain = match bson.document_of(f.value)
+                .ok d  => d.fields.len() == 0 || !strings.has_prefix(s: d.fields[0].name, prefix: "$")
+                .err _ => true
+
+            if plain
+                base @ set_path(base, path: f.name, value: f.value)?
+
+    return updated(doc: base, update: update, inserting: true)
+
+test "updated: $set through a missing embedded document, $inc of an int64, $unset"
+    doc = bson.parse_json("{\"_id\": 1, \"units\": {\"$numberLong\": \"40\"}}").must()
+    update = bson.parse_json("{\"$set\": {\"levels.WH.on_hand\": 3}, \"$inc\": {\"units\": -5}}").must()
+    out = updated(doc: doc, update: update, inserting: false).must()
+    assert matching.value_at(out, path: "levels.WH.on_hand").must() == .int32(v: 3)
+    assert bson.member(out, name: "units").must() == .int64(v: 35)
+    assert bson.has_member(unset_path(out, path: "units"), name: "units") == false
+
+test "updated: an unknown modifier, a change of _id and $inc of a text are refused"
+    doc = bson.parse_json("{\"_id\": 1, \"name\": \"a\"}").must()
+    assert updated(doc: doc, update: bson.parse_json("{\"$push\": {\"a\": 1}}").must(), inserting: false).is_err()
+    assert updated(doc: doc, update: bson.parse_json("{\"$set\": {\"_id\": 2}}").must(), inserting: false).is_err()
+    assert updated(doc: doc, update: bson.parse_json("{\"$inc\": {\"name\": 1}}").must(), inserting: false).is_err()
+
+test "updated: a replacement keeps the _id"
+    doc = bson.parse_json("{\"_id\": 1, \"name\": \"a\"}").must()
+    out = updated(doc: doc, update: bson.parse_json("{\"label\": \"b\"}").must(), inserting: false).must()
+    assert bson.names_of(out) == ["_id", "label"]
+
+test "added: int32 sums, an overflow refused"
+    assert added(value: .int32(v: 1), by: .int32(v: 2), path: "n").must() == .int32(v: 3)
+    assert added(value: .int64(v: 9223372036854775807), by: .int32(v: 1), path: "n").is_err()
+
+test "upserted: the filter's equalities, then $set"
+    query = bson.parse_json("{\"code\": \"WH\", \"n\": {\"$gte\": 1}}").must()
+    out = upserted(query: query, update: bson.parse_json("{\"$set\": {\"name\": \"Warehouse\"}}").must()).must()
+    assert bson.names_of(out) == ["code", "name"]

@@ -1,0 +1,192 @@
+# MongoDB's wire protocol as the stand-in server reads and writes it:
+# OP_MSG (opcode 2013), the one message every command and every reply of a
+# driver of MongoDB 3.6 and later travels in. A message is a header of four
+# little-endian `int32`s (its length, its request id, the id it answers,
+# its opcode), flag bits, and sections: one of kind 0 holding the command's
+# document, and any of kind 1 holding a sequence of documents under a name
+# (`documents` of an `insert`), which a server reads as a field of the
+# command, as MongoDB's OP_MSG specification lays a message out.
+#
+# A message from a client is input from outside the program: its length is
+# bounded and every read of it answers a failure, never an abort. An
+# OP_MSG's optional CRC-32C checksum is read past and not checked; the
+# demo's client sends none.
+
+use <rebel>/bson
+use <rebel>/bytes
+use <rebel>/io
+
+## Codes
+
+# The code of bytes that are no OP_MSG.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest message the stand-in reads or announces: 48,000,000 bytes,
+# MongoDB's `maxMessageSizeBytes`.
+constant MOST_MESSAGE: i64
+    48_000_000
+
+# OP_MSG's opcode.
+constant OP_MSG: i64
+    2013
+
+## Messages
+
+# One command as it came.
+record Request
+    # The client's id of the message, which the reply answers.
+    id: i64
+    # Whether the client asked for no reply (`moreToCome`).
+    no_reply: bool
+    # The command: the kind 0 section, each kind 1 section joined to it as an
+    # array under its name.
+    command: bson.Document
+
+# The next message from `r`, as a command.
+#
+# - `r`: the reader over the connection.
+#
+# Fails `closed` where the client closed the connection before a message,
+# `invalid` where the message is past `MOST_MESSAGE`, of another opcode, or
+# not well formed.
+function read_request(@r: io.Reader) -> Request?
+    head = io.read_n(@r, 16)?
+
+    if head.len() < 16
+        return fail(code: "closed", msg: "the client closed the connection")
+    size = to_i64(bytes.decode_i32_le(head, at: 0)?).must()
+    id = to_i64(bytes.decode_i32_le(head, at: 4)?).must()
+    opcode = to_i64(bytes.decode_i32_le(head, at: 12)?).must()
+
+    if size < 21 || size > MOST_MESSAGE
+        return fail(code: INVALID, msg: f"a message of {size} bytes")
+    body = io.read_n(@r, size - 16)?
+
+    if body.len() < size - 16
+        return fail(code: "closed", msg: "the client closed the connection inside a message")
+
+    if opcode != OP_MSG
+        return fail(code: INVALID, msg: f"a message of opcode {opcode}, where this server reads OP_MSG's {OP_MSG}")
+    flags = to_i64(bytes.decode_u32_le(body, at: 0)?).must()
+
+    end = if flags & 1 != 0
+        body.len() - 4
+    else
+        body.len()
+    return ok(Request(id: id, no_reply: flags & 2 != 0, command: sections_of(body, end: end)?))
+
+# The command the sections of `body`, from byte 4 to `end`, hold.
+#
+# - `body`: the message after its header.
+# - `end`: where the sections end, before any checksum.
+#
+# Fails `invalid` where there is not exactly one section of kind 0, a
+# section is cut short, or a kind is neither 0 nor 1.
+function sections_of(body: [u8], end: i64) -> bson.Document?
+    at @= 4
+    command: [bson.Field] @= []
+    seen_body @= false
+    sequences: [bson.Field] @= []
+
+    while at < end
+        kind = body[at]
+        at @ at + 1
+
+        if kind == 0
+            if seen_body
+                return fail(code: INVALID, msg: "two sections of kind 0")
+            n = to_i64(bytes.decode_i32_le(body, at: at)?).must()
+
+            if n < 5 || at + n > end
+                return fail(code: INVALID, msg: f"a document of {n} bytes at byte {at}")
+            doc = bson.decode(body.slice(from: at, to: at + n))?
+            command @ doc.fields
+            seen_body @ true
+            at @ at + n
+        else if kind == 1
+            n = to_i64(bytes.decode_i32_le(body, at: at)?).must()
+
+            if n < 5 || at + n > end
+                return fail(code: INVALID, msg: f"a sequence of {n} bytes at byte {at}")
+            sequence_end = at + n
+            name_start = at + 4
+            name_end @= name_start
+
+            while name_end < sequence_end && body[name_end] != 0
+                name_end @ name_end + 1
+
+            if name_end >= sequence_end
+                return fail(code: INVALID, msg: "a sequence whose name no zero byte ends")
+            name = bytes.to_text(body.slice(from: name_start, to: name_end))?
+            docs = bson.decode_all(body.slice(from: name_end + 1, to: sequence_end))?
+            items: [bson.Value] @= []
+
+            for d in docs
+                items @ items.push(.document(doc: d))
+
+            sequences @ sequences.push(bson.Field(name: name, value: .array(items: items)))
+            at @ sequence_end
+        else
+            return fail(code: INVALID, msg: f"a section of kind {kind}")
+
+    if !seen_body
+        return fail(code: INVALID, msg: "a message with no section of kind 0")
+
+    for f in sequences
+        command @ command.push(f)
+
+    return ok(bson.Document(fields: command))
+
+# The bytes of a reply: `doc` in one section of kind 0, answering the
+# client's message `responds_to`.
+#
+# - `id`: the reply's own id.
+# - `responds_to`: the id of the message it answers.
+# - `doc`: the reply.
+#
+# Fails as `bson.encode` fails.
+function reply(id: i64, responds_to: i64, doc: bson.Document) -> [u8]?
+    encoded = bson.encode(doc)?
+    size = 16 + 4 + 1 + encoded.len()
+    out: [u8] @= []
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(size)?))
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(id)?))
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(responds_to)?))
+    bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(OP_MSG)?))
+    bytes.push_all(to: @out, from: [0, 0, 0, 0, 0])
+    bytes.push_all(to: @out, from: encoded)
+    return ok(out)
+
+test "sections_of: a body and a sequence of two documents joined as an array"
+    one = bson.encode(bson.Document(fields: [bson.Field(name: "insert", value: .text(v: "t"))])).must()
+    a = bson.encode(bson.Document(fields: [bson.Field(name: "n", value: .int32(v: 1))])).must()
+    b = bson.encode(bson.Document(fields: [bson.Field(name: "n", value: .int32(v: 2))])).must()
+    body: [u8] @= [0, 0, 0, 0, 0]
+    bytes.push_all(to: @body, from: one)
+    body @ body.push(1)
+    sequence: [u8] @= bytes.encode_i32_le(to_i32(4 + 10 + a.len() + b.len()).must())
+    bytes.push_all(to: @sequence, from: bytes.from_text("documents"))
+    sequence @ sequence.push(0)
+    bytes.push_all(to: @sequence, from: a)
+    bytes.push_all(to: @sequence, from: b)
+    bytes.push_all(to: @body, from: sequence)
+    command = sections_of(body, end: body.len()).must()
+    assert bson.names_of(command) == ["insert", "documents"]
+    assert bson.items_of(bson.member(command, name: "documents").must()).must().len() == 2
+
+test "sections_of: no body, two bodies, and a kind of 2 are refused"
+    one = bson.encode(bson.Document(fields: [])).must()
+    two: [u8] @= [0, 0, 0, 0, 0]
+    bytes.push_all(to: @two, from: one)
+    two @ two.push(0)
+    bytes.push_all(to: @two, from: one)
+    assert sections_of(two, end: two.len()).is_err()
+    assert sections_of([0, 0, 0, 0], end: 4).is_err()
+    assert sections_of([0, 0, 0, 0, 2], end: 5).is_err()
+
+test "reply: a header answering the client's id, OP_MSG's opcode"
+    r = reply(id: 7, responds_to: 3, doc: bson.Document(fields: [])).must()
+    assert bytes.decode_i32_le(r, at: 0).must() == to_i32(r.len()).must() && bytes.decode_i32_le(r, at: 8).must() == 3 && bytes.decode_i32_le(r, at: 12).must() == 2013
