@@ -61,7 +61,7 @@
  *       is the face's.
  *   (6) PBKDF2 (feature 2655): `crypto`'s own, written in Heroes, took
  *       4.85 s for the 600,000 iterations of HMAC-SHA-256 OWASP asks of a
- *       login, built at `-O2` on an Apple M3 (2026-11-22), most of it in
+ *       login, built at `-O2` on an Apple silicon Mac (2026-11-22), most of it in
  *       the lists each HMAC allocates. The four HMACs every platform's
  *       library offers are the system's here; CNG has no SHA-224, so the
  *       face computes it, MD5, SHA-512/224, SHA-512/256 and SHA-3 itself.

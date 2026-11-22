@@ -220,7 +220,7 @@ test "parsed, padded: RFC 4648's vectors in both alphabets, lower case, and the 
 # "number of data characters (3) cannot be 1, 3, or 6 more than a multiple of
 # 8", "Excess data after padding" and "Discontinuous padding not allowed".
 test "parsed, padded, fails invalid at the byte: outside the alphabet, a line end, a group of 1, 3 or 6, padding short, broken or followed"
-    match parsed("M1======", hex: false, padded: true)
+    match parsed("A1======", hex: false, padded: true)
         .ok _  => assert false
         .err e => assert e.code == "invalid" && e.msg == "byte 1 of the base 32 is \"1\", which is not of the base 32 alphabet"
 

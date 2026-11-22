@@ -242,8 +242,10 @@ test "parse: a key read twice kept once, at its first place, with its last value
     assert parse("").must().len() == 0
 
 test "parse: a byte order mark kept in the first key, as Java keeps it"
-    entries = parse("﻿k=1\n").must()
-    assert entries[0].key == "﻿k" && !has_key(entries, key: "k")
+    mark: [u8] = [0xef, 0xbb, 0xbf]
+    bom = mark.validated_bytes().must()
+    entries = parse(bom + "k=1\n").must()
+    assert entries[0].key == bom + "k" && !has_key(entries, key: "k")
 
 # Java's `PropertyResourceBundle` read "k=é" written in UTF-8 as "é", and
 # "k=é" in ISO 8859-1 beside "j=é" in UTF-8 as "é" and "Ã©", the whole file

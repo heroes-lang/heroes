@@ -43,4 +43,4 @@ test "key_of: the key of a URI crypto writes, a secret in lower case, and one th
     uri = crypto.format_totp_uri(crypto.new_otp(key), account: "ana", issuer: "Example").must()
     assert key_of(uri).must() == key
     assert key_of("otpauth://totp/ana?secret=mzxw6ytb").must() == bytes.from_text("fooba")
-    assert key_of("otpauth://totp/ana?secret=M1").is_err()
+    assert key_of("otpauth://totp/ana?secret=A1").is_err()

@@ -7,7 +7,7 @@
 # PBKDF2 of the four HMACs every platform's library computes, by SHA-1,
 # SHA-256, SHA-384 and SHA-512, is asked of the system first (`by_system`):
 # the code below took 4.85 s for the 600,000 iterations of HMAC-SHA-256 OWASP
-# asks of a login, built at `-O2` on an Apple M3 (2026-11-22, feature 2655),
+# asks of a login, built at `-O2` on an Apple silicon Mac (2026-11-22, feature 2655),
 # most of it in the lists each HMAC allocates, where the system's library
 # takes a fraction of a second. The code below gives the same bytes, and
 # serves every other digest and a machine whose system has none.
