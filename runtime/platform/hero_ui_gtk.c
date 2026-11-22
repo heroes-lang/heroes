@@ -39,7 +39,11 @@
  * THE GTK ARM: GTK 4's own widgets, `GtkButton`, `GtkEntry`, `GtkTextView`,
  * `GtkCheckButton`, `GtkListBox`, `GtkDropDown`, `GtkProgressBar`,
  * `GtkScale`, `GtkPicture`, `GtkLabel`, and GMenu's models in a
- * `GtkPopoverMenuBar`, on every system that is neither Apple's nor Windows.
+ * `GtkPopoverMenuBar`, on every system that is neither Apple's nor Windows;
+ * and, from WHAT `hero_ui.c` ADDED AFTER THE WEB VIEW on, `GtkNotebook`,
+ * `GtkScrolledWindow`, `GtkPaned`, `GtkColumnView`, a `GtkListView` over a
+ * `GtkTreeListModel`, `GtkPasswordEntry`, `GtkPopoverMenu`, `GdkClipboard`,
+ * GTK 4.10's folder and alert dialogs, and a window among the screens.
  *
  * WHY `dlopen`, as `hero_keyring.c` says of libsecret: the layer's archive is
  * compiled for every program a machine builds, so a member that included
@@ -51,7 +55,9 @@
  * and the two structures it reads, `GError` and `GtkRequisition`, as their
  * headers lay them out; the first call opens the library once, `RTLD_LOCAL`,
  * and finds every function by `dlsym` on its handle, which searches the
- * library and the libraries it needs. A function GTK 4.0 has missing is the
+ * library and the libraries it needs, Xlib among them where GTK has its X11
+ * backend; XTest's `libXtst.so.6` alone is opened beside it, where it is
+ * installed. A function GTK 4.0 has missing is the
  * library missing: then `native_here` answers 0 and `open` refuses
  * `HERO_UI_UNSUPPORTED`, naming the library. GTK 4.10's dialogs,
  * `GtkAlertDialog` and `GtkFileDialog`, are used where the library has them
@@ -165,8 +171,43 @@ typedef union hero_ui_gtk_iter {
 #define HERO_GTK_DIALOG_ERROR_DISMISSED 2
 #define HERO_GDK_MEMORY_R8G8B8A8 5
 #define HERO_GTK_INVALID_LIST_POSITION 0xFFFFFFFFu
-/* GDK's key values of the keys `hero_ui.h` names. */
+#define HERO_GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER 2
+#define HERO_GTK_RESPONSE_DELETE_EVENT (-4)
+#define HERO_GTK_OVERFLOW_HIDDEN 1
+#define HERO_GTK_SORT_ASCENDING 0
+#define HERO_GTK_SORT_DESCENDING 1
+#define HERO_GTK_ALIGN_START 1
+#define HERO_GTK_PHASE_BUBBLE 2
+#define HERO_GTK_EVENT_SEQUENCE_CLAIMED 1
+#define HERO_GTK_SHORTCUT_SCOPE_GLOBAL 2
+#define HERO_GDK_BUTTON_SECONDARY 3u
+#define HERO_GDK_TOPLEVEL_STATE_MINIMIZED 1u
+#define HERO_GDK_TOPLEVEL_STATE_MAXIMIZED 2u
+#define HERO_GDK_TOPLEVEL_STATE_FULLSCREEN 8u
+#define HERO_GDK_TOPLEVEL_STATE_ABOVE 16u
+#define HERO_G_TYPE_STRING 64u
+#define HERO_G_SIGNAL_MATCH_FUNC_DATA 24
+#define HERO_G_IO_ERROR_NOT_FOUND 1
+#define HERO_G_IO_ERROR_NOT_SUPPORTED 15
+/* A radio item's target, and its action's state when it is checked. */
+#define HERO_UI_GTK_RADIO_ON "on"
+#define HERO_UI_GTK_RADIO_OFF "off"
+/* GDK's key values of the keys `hero_ui.h` names, which are X11's keysyms. */
 #define HERO_GDK_KEY_F1 0xFFBEu
+#define HERO_GDK_KEY_F10 0xFFC7u
+#define HERO_GDK_KEY_ESCAPE 0xFF1Bu
+#define HERO_GDK_KEY_MENU 0xFF67u
+#define HERO_GDK_KEY_SHIFT_L 0xFFE1u
+#define HERO_GDK_KEY_CONTROL_L 0xFFE3u
+#define HERO_GDK_KEY_ALT_L 0xFFE9u
+/* Xlib's numbers, read from libX11 1.8.12's headers (Debian 13, arm64). */
+#define HERO_X_CLIENT_MESSAGE 33
+#define HERO_X_CONFIGURE_NOTIFY 22
+#define HERO_X_PROPERTY_NOTIFY 28
+#define HERO_X_SUBSTRUCTURE_MASKS ((1L << 20) | (1L << 19))
+#define HERO_XA_CARDINAL 6ul
+#define HERO_XA_ATOM 4ul
+#define HERO_XA_WINDOW 33ul
 
 /* The most a slider or a progress bar is told apart by, where its range is
  * wider than a double holds every integer of: 2^53. */
@@ -360,6 +401,203 @@ typedef struct hero_ui_gtk_functions {
     void *(*file_dialog_save_finish)(void *dialog, void *result, hero_ui_gerror **error);
     /* GTK 4.4's suffix filter, which matches its letters in either case. */
     void (*file_filter_add_suffix)(void *filter, const char *suffix);
+    /* Boxes the system draws: tabs, a scrolled box, two panes (GTK 4.0). */
+    void *(*notebook_new)(void);
+    int (*notebook_append_page)(void *notebook, void *child, void *label);
+    void (*notebook_remove_page)(void *notebook, int page);
+    int (*notebook_page_num)(void *notebook, void *child);
+    void (*notebook_set_current_page)(void *notebook, int page);
+    int (*notebook_get_current_page)(void *notebook);
+    void (*notebook_set_tab_label_text)(void *notebook, void *child, const char *text);
+    void (*notebook_set_scrollable)(void *notebook, int scrollable);
+    int (*notebook_get_n_pages)(void *notebook);
+    void (*widget_remove_controller)(void *widget, void *controller);
+    void *(*settings_get_default)(void);
+    void (*object_get)(void *object, const char *first, ...);
+    int (*surface_get_mapped)(void *surface);
+    void (*column_view_column_set_expand)(void *column, int expand);
+    void *(*paned_new)(int orientation);
+    void (*paned_set_start_child)(void *paned, void *child);
+    void (*paned_set_end_child)(void *paned, void *child);
+    void (*paned_set_position)(void *paned, int position);
+    int (*paned_get_position)(void *paned);
+    void (*paned_set_shrink_start_child)(void *paned, int shrink);
+    void (*paned_set_shrink_end_child)(void *paned, int shrink);
+    void (*paned_set_resize_start_child)(void *paned, int resize);
+    void (*paned_set_resize_end_child)(void *paned, int resize);
+    void (*widget_set_overflow)(void *widget, int overflow);
+    int (*widget_compute_point)(void *widget, void *target, const float *point, float *out);
+    int (*scrolled_window_get_overlay_scrolling)(void *scrolled);
+    void *(*scrolled_window_get_vscrollbar)(void *scrolled);
+    /* Rows opened, Return, the keys (GTK 4.0). */
+    void (*list_box_set_activate_on_single_click)(void *box, int single);
+    int (*list_box_row_get_index)(void *row);
+    int (*widget_activate)(void *widget);
+    void *(*editable_get_delegate)(void *editable);
+    int (*widget_grab_focus)(void *widget);
+    void *(*root_get_focus)(void *root);
+    void *(*widget_get_parent)(void *widget);
+    void (*window_set_default_widget)(void *window, void *widget);
+    void (*shortcut_controller_set_scope)(void *controller, int scope);
+    void *(*activate_action_get)(void);
+    void *(*callback_action_new)(hero_ui_gtk_callback callback, void *data, void *destroy);
+    void (*shortcut_set_arguments)(void *shortcut, void *arguments);
+    void (*text_buffer_begin_irreversible_action)(void *buffer);
+    void (*text_buffer_end_irreversible_action)(void *buffer);
+    /* A masked field, a progress bar with no value (GTK 4.0). */
+    void *(*password_entry_new)(void);
+    void (*progress_bar_pulse)(void *bar);
+    void (*progress_bar_set_pulse_step)(void *bar, double step);
+    /* Menus inside menus, check and radio items, context menus (GTK 4.0,
+     * GLib 2.28). */
+    void *(*simple_action_new_stateful)(const char *name, void *parameter_type, void *state);
+    void (*simple_action_set_state)(void *action, void *state);
+    void *(*variant_new_boolean)(int value);
+    void *(*variant_type_new)(const char *type);
+    void (*variant_type_free)(void *type);
+    void (*menu_item_set_action_and_target_value)(void *item, const char *action, void *target);
+    void *(*popover_menu_new_from_model)(void *model);
+    void (*widget_set_parent)(void *widget, void *parent);
+    void (*widget_unparent)(void *widget);
+    void (*popover_set_pointing_to)(void *popover, const int *rectangle);
+    void (*popover_set_has_arrow)(void *popover, int arrow);
+    void (*popover_popup)(void *popover);
+    void (*widget_set_halign)(void *widget, int align);
+    void *(*gesture_click_new)(void);
+    void (*gesture_single_set_button)(void *gesture, unsigned button);
+    int (*gesture_set_state)(void *gesture, int state);
+    void (*entry_set_extra_menu)(void *entry, void *model);
+    void (*password_entry_set_extra_menu)(void *entry, void *model);
+    void (*text_view_set_extra_menu)(void *view, void *model);
+    /* The clipboard (GTK 4.0, GLib 2.16). */
+    void *(*widget_get_display)(void *widget);
+    void *(*display_get_default)(void);
+    void *(*display_get_clipboard)(void *display);
+    void (*clipboard_set_text)(void *clipboard, const char *text);
+    void (*clipboard_set_texture)(void *clipboard, void *texture);
+    int (*clipboard_set_content)(void *clipboard, void *provider);
+    void *(*content_provider_new_for_bytes)(const char *mime_type, void *bytes);
+    void *(*content_provider_new_union)(void **providers, size_t count);
+    void (*clipboard_read_text_async)(void *clipboard, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    char *(*clipboard_read_text_finish)(void *clipboard, void *result, hero_ui_gerror **error);
+    void (*clipboard_read_value_async)(void *clipboard, size_t type, int priority, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    const void *(*clipboard_read_value_finish)(void *clipboard, void *result, hero_ui_gerror **error);
+    void (*clipboard_read_texture_async)(void *clipboard, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    void *(*clipboard_read_texture_finish)(void *clipboard, void *result, hero_ui_gerror **error);
+    size_t (*file_list_get_type)(void);
+    void *(*file_list_get_files)(void *list);
+    void (*slist_free)(void *list);
+    void *(*value_get_boxed)(const void *value);
+    char *(*filename_to_uri)(const char *path, const char *hostname, hero_ui_gerror **error);
+    int (*texture_get_width)(void *texture);
+    int (*texture_get_height)(void *texture);
+    void (*texture_download)(void *texture, uint8_t *data, size_t stride);
+    uint32_t (*io_error_quark)(void);
+    void *(*cancellable_new)(void);
+    void (*cancellable_cancel)(void *cancellable);
+    /* A table and a tree (GTK 4.0). */
+    void *(*column_view_new)(void *model);
+    void (*column_view_append_column)(void *view, void *column);
+    void (*column_view_remove_column)(void *view, void *column);
+    void *(*column_view_get_sorter)(void *view);
+    void (*column_view_sort_by_column)(void *view, void *column, int direction);
+    void (*column_view_set_reorderable)(void *view, int reorderable);
+    void *(*column_view_column_new)(const char *title, void *factory);
+    void (*column_view_column_set_sorter)(void *column, void *sorter);
+    void (*column_view_column_set_resizable)(void *column, int resizable);
+    void *(*custom_sorter_new)(void *function, void *data, void *destroy);
+    void *(*signal_list_item_factory_new)(void);
+    void (*list_item_set_child)(void *item, void *child);
+    void *(*list_item_get_child)(void *item);
+    void *(*list_item_get_item)(void *item);
+    void *(*multi_selection_new)(void *model);
+    void *(*single_selection_new)(void *model);
+    void (*single_selection_set_autoselect)(void *selection, int autoselect);
+    void (*single_selection_set_can_unselect)(void *selection, int can);
+    unsigned (*single_selection_get_selected)(void *selection);
+    void (*single_selection_set_selected)(void *selection, unsigned position);
+    int (*selection_model_select_item)(void *model, unsigned position, int unselect_rest);
+    int (*selection_model_unselect_all)(void *model);
+    int (*selection_model_is_selected)(void *model, unsigned position);
+    const char *(*string_object_get_string)(void *object);
+    const char *(*string_list_get_string)(void *list, unsigned position);
+    void *(*tree_list_model_new)(void *root, int passthrough, int autoexpand, void *(*create)(void *item, void *data), void *data, void *destroy);
+    void *(*tree_list_model_get_row)(void *model, unsigned position);
+    void *(*tree_list_model_get_child_row)(void *model, unsigned position);
+    void *(*tree_list_row_get_child_row)(void *row, unsigned position);
+    void *(*tree_list_row_get_item)(void *row);
+    int (*tree_list_row_get_expanded)(void *row);
+    void (*tree_list_row_set_expanded)(void *row, int expanded);
+    unsigned (*tree_list_row_get_position)(void *row);
+    void *(*tree_expander_new)(void);
+    void (*tree_expander_set_list_row)(void *expander, void *row);
+    void (*tree_expander_set_child)(void *expander, void *child);
+    void *(*list_view_new)(void *model, void *factory);
+    void *(*object_ref)(void *object);
+    void (*object_set_data)(void *object, const char *key, void *data);
+    void *(*object_get_data)(void *object, const char *key);
+    unsigned (*signal_handlers_disconnect_matched)(void *instance, int mask, unsigned signal, uint32_t detail, void *closure, hero_ui_gtk_callback function, void *data);
+    /* Windows on the screen (GTK 4.0). */
+    void *(*native_get_surface)(void *native);
+    void *(*display_get_monitors)(void *display);
+    void (*monitor_get_geometry)(void *monitor, int *rectangle);
+    int (*monitor_get_scale_factor)(void *monitor);
+    int (*surface_get_scale_factor)(void *surface);
+    int (*surface_get_width)(void *surface);
+    int (*surface_get_height)(void *surface);
+    void (*window_maximize)(void *window);
+    void (*window_unmaximize)(void *window);
+    void (*window_minimize)(void *window);
+    void (*window_unminimize)(void *window);
+    void (*window_fullscreen)(void *window);
+    void (*window_unfullscreen)(void *window);
+    unsigned (*toplevel_get_state)(void *toplevel);
+    void (*toplevel_set_icon_list)(void *toplevel, void *list);
+    void (*window_set_decorated)(void *window, int decorated);
+    void (*widget_set_opacity)(void *widget, double opacity);
+    void (*window_set_modal)(void *window, int modal);
+    void (*window_set_transient_for)(void *window, void *parent);
+    int (*widget_get_mapped)(void *widget);
+    int (*window_is_active)(void *window);
+    int (*text_grab_focus_without_selecting)(void *text);
+    void *(*list_append)(void *list, void *data);
+    void (*list_free)(void *list);
+    int (*type_check_instance_is_a)(void *instance, size_t type);
+    /* GTK 4.10's, GTK 4.14's and the X11 backend's, NULL where the library
+     * has none of them. */
+    void (*file_dialog_select_folder)(void *dialog, void *parent, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    void *(*file_dialog_select_folder_finish)(void *dialog, void *result, hero_ui_gerror **error);
+    void (*file_dialog_select_multiple_folders)(void *dialog, void *parent, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    void *(*file_dialog_select_multiple_folders_finish)(void *dialog, void *result, hero_ui_gerror **error);
+    void *(*texture_downloader_new)(void *texture);
+    void (*texture_downloader_set_format)(void *downloader, int format);
+    void (*texture_downloader_download_into)(void *downloader, uint8_t *data, size_t stride);
+    void (*texture_downloader_free)(void *downloader);
+    void *(*column_view_sorter_get_primary_sort_column)(void *sorter);
+    int (*column_view_sorter_get_primary_sort_order)(void *sorter);
+    double (*monitor_get_scale)(void *monitor);
+    size_t (*x11_display_get_type)(void);
+    void *(*x11_display_get_xdisplay)(void *display);
+    unsigned long (*x11_display_get_xrootwindow)(void *display);
+    unsigned long (*x11_surface_get_xid)(void *surface);
+    unsigned long (*x11_get_xatom_by_name_for_display)(void *display, const char *name);
+    void (*x11_monitor_get_workarea)(void *monitor, int *rectangle);
+    /* Xlib's, which GTK's X11 backend loads, and the XTest extension's. */
+    int (*x_move_window)(void *display, unsigned long window, int x, int y);
+    int (*x_translate_coordinates)(void *display, unsigned long from, unsigned long to, int x, int y, int *to_x, int *to_y, unsigned long *child);
+    int (*x_get_window_property)(void *display, unsigned long window, unsigned long property, long offset, long length, int remove, unsigned long type, unsigned long *actual_type, int *actual_format, unsigned long *items, unsigned long *after, unsigned char **data);
+    int (*x_free)(void *data);
+    int (*x_sync)(void *display, int discard);
+    int (*x_send_event)(void *display, unsigned long window, int propagate, long mask, void *event);
+    int (*x_get_window_attributes)(void *display, unsigned long window, void *attributes);
+    int (*x_get_input_focus)(void *display, unsigned long *focus, int *revert);
+    int (*x_set_input_focus)(void *display, unsigned long focus, int revert, unsigned long time);
+    int (*x_query_tree)(void *display, unsigned long window, unsigned long *root, unsigned long *parent, unsigned long **children, unsigned *count);
+    void *(*x11_display_get_primary_monitor)(void *display);
+    size_t (*wayland_display_get_type)(void);
+    unsigned char (*x_keysym_to_keycode)(void *display, unsigned long keysym);
+    int (*x_test_query_extension)(void *display, int *event, int *error, int *major, int *minor);
+    int (*x_test_fake_key_event)(void *display, unsigned keycode, int press, unsigned long delay);
 } hero_ui_gtk_functions;
 
 static hero_ui_gtk_functions hero_ui_gtk;
@@ -367,6 +605,7 @@ static bool hero_ui_gtk_found;
 static pthread_once_t hero_ui_gtk_once = PTHREAD_ONCE_INIT;
 
 #define HERO_UI_GTK_LIBRARY "libgtk-4.so.1"
+#define HERO_UI_GTK_XTEST_LIBRARY "libXtst.so.6"
 
 /* One function by name into `*slot`; false where the library has none. C11
  * has no conversion between an object pointer and a function pointer, so the
@@ -565,6 +804,200 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_MAY(file_dialog_save, "gtk_file_dialog_save");
     HERO_UI_GTK_MAY(file_dialog_save_finish, "gtk_file_dialog_save_finish");
     HERO_UI_GTK_MAY(file_filter_add_suffix, "gtk_file_filter_add_suffix");
+    HERO_UI_GTK_NEED(notebook_new, "gtk_notebook_new");
+    HERO_UI_GTK_NEED(notebook_append_page, "gtk_notebook_append_page");
+    HERO_UI_GTK_NEED(notebook_remove_page, "gtk_notebook_remove_page");
+    HERO_UI_GTK_NEED(notebook_page_num, "gtk_notebook_page_num");
+    HERO_UI_GTK_NEED(notebook_set_current_page, "gtk_notebook_set_current_page");
+    HERO_UI_GTK_NEED(notebook_get_current_page, "gtk_notebook_get_current_page");
+    HERO_UI_GTK_NEED(notebook_set_tab_label_text, "gtk_notebook_set_tab_label_text");
+    HERO_UI_GTK_NEED(notebook_set_scrollable, "gtk_notebook_set_scrollable");
+    HERO_UI_GTK_NEED(notebook_get_n_pages, "gtk_notebook_get_n_pages");
+    HERO_UI_GTK_NEED(widget_remove_controller, "gtk_widget_remove_controller");
+    HERO_UI_GTK_NEED(settings_get_default, "gtk_settings_get_default");
+    HERO_UI_GTK_NEED(object_get, "g_object_get");
+    HERO_UI_GTK_NEED(surface_get_mapped, "gdk_surface_get_mapped");
+    HERO_UI_GTK_NEED(column_view_column_set_expand, "gtk_column_view_column_set_expand");
+    HERO_UI_GTK_NEED(paned_new, "gtk_paned_new");
+    HERO_UI_GTK_NEED(paned_set_start_child, "gtk_paned_set_start_child");
+    HERO_UI_GTK_NEED(paned_set_end_child, "gtk_paned_set_end_child");
+    HERO_UI_GTK_NEED(paned_set_position, "gtk_paned_set_position");
+    HERO_UI_GTK_NEED(paned_get_position, "gtk_paned_get_position");
+    HERO_UI_GTK_NEED(paned_set_shrink_start_child, "gtk_paned_set_shrink_start_child");
+    HERO_UI_GTK_NEED(paned_set_shrink_end_child, "gtk_paned_set_shrink_end_child");
+    HERO_UI_GTK_NEED(paned_set_resize_start_child, "gtk_paned_set_resize_start_child");
+    HERO_UI_GTK_NEED(paned_set_resize_end_child, "gtk_paned_set_resize_end_child");
+    HERO_UI_GTK_NEED(widget_set_overflow, "gtk_widget_set_overflow");
+    HERO_UI_GTK_NEED(widget_compute_point, "gtk_widget_compute_point");
+    HERO_UI_GTK_NEED(scrolled_window_get_overlay_scrolling, "gtk_scrolled_window_get_overlay_scrolling");
+    HERO_UI_GTK_NEED(scrolled_window_get_vscrollbar, "gtk_scrolled_window_get_vscrollbar");
+    HERO_UI_GTK_NEED(list_box_set_activate_on_single_click, "gtk_list_box_set_activate_on_single_click");
+    HERO_UI_GTK_NEED(list_box_row_get_index, "gtk_list_box_row_get_index");
+    HERO_UI_GTK_NEED(widget_activate, "gtk_widget_activate");
+    HERO_UI_GTK_NEED(editable_get_delegate, "gtk_editable_get_delegate");
+    HERO_UI_GTK_NEED(widget_grab_focus, "gtk_widget_grab_focus");
+    HERO_UI_GTK_NEED(root_get_focus, "gtk_root_get_focus");
+    HERO_UI_GTK_NEED(widget_get_parent, "gtk_widget_get_parent");
+    HERO_UI_GTK_NEED(window_set_default_widget, "gtk_window_set_default_widget");
+    HERO_UI_GTK_NEED(shortcut_controller_set_scope, "gtk_shortcut_controller_set_scope");
+    HERO_UI_GTK_NEED(activate_action_get, "gtk_activate_action_get");
+    HERO_UI_GTK_NEED(callback_action_new, "gtk_callback_action_new");
+    HERO_UI_GTK_NEED(shortcut_set_arguments, "gtk_shortcut_set_arguments");
+    HERO_UI_GTK_NEED(text_buffer_begin_irreversible_action, "gtk_text_buffer_begin_irreversible_action");
+    HERO_UI_GTK_NEED(text_buffer_end_irreversible_action, "gtk_text_buffer_end_irreversible_action");
+    HERO_UI_GTK_NEED(password_entry_new, "gtk_password_entry_new");
+    HERO_UI_GTK_NEED(progress_bar_pulse, "gtk_progress_bar_pulse");
+    HERO_UI_GTK_NEED(progress_bar_set_pulse_step, "gtk_progress_bar_set_pulse_step");
+    HERO_UI_GTK_NEED(simple_action_new_stateful, "g_simple_action_new_stateful");
+    HERO_UI_GTK_NEED(simple_action_set_state, "g_simple_action_set_state");
+    HERO_UI_GTK_NEED(variant_new_boolean, "g_variant_new_boolean");
+    HERO_UI_GTK_NEED(variant_type_new, "g_variant_type_new");
+    HERO_UI_GTK_NEED(variant_type_free, "g_variant_type_free");
+    HERO_UI_GTK_NEED(menu_item_set_action_and_target_value, "g_menu_item_set_action_and_target_value");
+    HERO_UI_GTK_NEED(popover_menu_new_from_model, "gtk_popover_menu_new_from_model");
+    HERO_UI_GTK_NEED(widget_set_parent, "gtk_widget_set_parent");
+    HERO_UI_GTK_NEED(widget_unparent, "gtk_widget_unparent");
+    HERO_UI_GTK_NEED(popover_set_pointing_to, "gtk_popover_set_pointing_to");
+    HERO_UI_GTK_NEED(popover_set_has_arrow, "gtk_popover_set_has_arrow");
+    HERO_UI_GTK_NEED(popover_popup, "gtk_popover_popup");
+    HERO_UI_GTK_NEED(widget_set_halign, "gtk_widget_set_halign");
+    HERO_UI_GTK_NEED(gesture_click_new, "gtk_gesture_click_new");
+    HERO_UI_GTK_NEED(gesture_single_set_button, "gtk_gesture_single_set_button");
+    HERO_UI_GTK_NEED(gesture_set_state, "gtk_gesture_set_state");
+    HERO_UI_GTK_NEED(entry_set_extra_menu, "gtk_entry_set_extra_menu");
+    HERO_UI_GTK_NEED(password_entry_set_extra_menu, "gtk_password_entry_set_extra_menu");
+    HERO_UI_GTK_NEED(text_view_set_extra_menu, "gtk_text_view_set_extra_menu");
+    HERO_UI_GTK_NEED(widget_get_display, "gtk_widget_get_display");
+    HERO_UI_GTK_NEED(display_get_default, "gdk_display_get_default");
+    HERO_UI_GTK_NEED(display_get_clipboard, "gdk_display_get_clipboard");
+    HERO_UI_GTK_NEED(clipboard_set_text, "gdk_clipboard_set_text");
+    HERO_UI_GTK_NEED(clipboard_set_texture, "gdk_clipboard_set_texture");
+    HERO_UI_GTK_NEED(clipboard_set_content, "gdk_clipboard_set_content");
+    HERO_UI_GTK_NEED(content_provider_new_for_bytes, "gdk_content_provider_new_for_bytes");
+    HERO_UI_GTK_NEED(content_provider_new_union, "gdk_content_provider_new_union");
+    HERO_UI_GTK_NEED(clipboard_read_text_async, "gdk_clipboard_read_text_async");
+    HERO_UI_GTK_NEED(clipboard_read_text_finish, "gdk_clipboard_read_text_finish");
+    HERO_UI_GTK_NEED(clipboard_read_value_async, "gdk_clipboard_read_value_async");
+    HERO_UI_GTK_NEED(clipboard_read_value_finish, "gdk_clipboard_read_value_finish");
+    HERO_UI_GTK_NEED(clipboard_read_texture_async, "gdk_clipboard_read_texture_async");
+    HERO_UI_GTK_NEED(clipboard_read_texture_finish, "gdk_clipboard_read_texture_finish");
+    HERO_UI_GTK_NEED(file_list_get_type, "gdk_file_list_get_type");
+    HERO_UI_GTK_NEED(slist_free, "g_slist_free");
+    HERO_UI_GTK_NEED(value_get_boxed, "g_value_get_boxed");
+    HERO_UI_GTK_NEED(filename_to_uri, "g_filename_to_uri");
+    HERO_UI_GTK_NEED(texture_get_width, "gdk_texture_get_width");
+    HERO_UI_GTK_NEED(texture_get_height, "gdk_texture_get_height");
+    HERO_UI_GTK_NEED(texture_download, "gdk_texture_download");
+    HERO_UI_GTK_NEED(io_error_quark, "g_io_error_quark");
+    HERO_UI_GTK_NEED(cancellable_new, "g_cancellable_new");
+    HERO_UI_GTK_NEED(cancellable_cancel, "g_cancellable_cancel");
+    HERO_UI_GTK_NEED(column_view_new, "gtk_column_view_new");
+    HERO_UI_GTK_NEED(column_view_append_column, "gtk_column_view_append_column");
+    HERO_UI_GTK_NEED(column_view_remove_column, "gtk_column_view_remove_column");
+    HERO_UI_GTK_NEED(column_view_get_sorter, "gtk_column_view_get_sorter");
+    HERO_UI_GTK_NEED(column_view_sort_by_column, "gtk_column_view_sort_by_column");
+    HERO_UI_GTK_NEED(column_view_set_reorderable, "gtk_column_view_set_reorderable");
+    HERO_UI_GTK_NEED(column_view_column_new, "gtk_column_view_column_new");
+    HERO_UI_GTK_NEED(column_view_column_set_sorter, "gtk_column_view_column_set_sorter");
+    HERO_UI_GTK_NEED(column_view_column_set_resizable, "gtk_column_view_column_set_resizable");
+    HERO_UI_GTK_NEED(custom_sorter_new, "gtk_custom_sorter_new");
+    HERO_UI_GTK_NEED(signal_list_item_factory_new, "gtk_signal_list_item_factory_new");
+    HERO_UI_GTK_NEED(list_item_set_child, "gtk_list_item_set_child");
+    HERO_UI_GTK_NEED(list_item_get_child, "gtk_list_item_get_child");
+    HERO_UI_GTK_NEED(list_item_get_item, "gtk_list_item_get_item");
+    HERO_UI_GTK_NEED(multi_selection_new, "gtk_multi_selection_new");
+    HERO_UI_GTK_NEED(single_selection_new, "gtk_single_selection_new");
+    HERO_UI_GTK_NEED(single_selection_set_autoselect, "gtk_single_selection_set_autoselect");
+    HERO_UI_GTK_NEED(single_selection_set_can_unselect, "gtk_single_selection_set_can_unselect");
+    HERO_UI_GTK_NEED(single_selection_get_selected, "gtk_single_selection_get_selected");
+    HERO_UI_GTK_NEED(single_selection_set_selected, "gtk_single_selection_set_selected");
+    HERO_UI_GTK_NEED(selection_model_select_item, "gtk_selection_model_select_item");
+    HERO_UI_GTK_NEED(selection_model_unselect_all, "gtk_selection_model_unselect_all");
+    HERO_UI_GTK_NEED(selection_model_is_selected, "gtk_selection_model_is_selected");
+    HERO_UI_GTK_NEED(string_object_get_string, "gtk_string_object_get_string");
+    HERO_UI_GTK_NEED(string_list_get_string, "gtk_string_list_get_string");
+    HERO_UI_GTK_NEED(tree_list_model_new, "gtk_tree_list_model_new");
+    HERO_UI_GTK_NEED(tree_list_model_get_row, "gtk_tree_list_model_get_row");
+    HERO_UI_GTK_NEED(tree_list_model_get_child_row, "gtk_tree_list_model_get_child_row");
+    HERO_UI_GTK_NEED(tree_list_row_get_child_row, "gtk_tree_list_row_get_child_row");
+    HERO_UI_GTK_NEED(tree_list_row_get_item, "gtk_tree_list_row_get_item");
+    HERO_UI_GTK_NEED(tree_list_row_get_expanded, "gtk_tree_list_row_get_expanded");
+    HERO_UI_GTK_NEED(tree_list_row_set_expanded, "gtk_tree_list_row_set_expanded");
+    HERO_UI_GTK_NEED(tree_list_row_get_position, "gtk_tree_list_row_get_position");
+    HERO_UI_GTK_NEED(tree_expander_new, "gtk_tree_expander_new");
+    HERO_UI_GTK_NEED(tree_expander_set_list_row, "gtk_tree_expander_set_list_row");
+    HERO_UI_GTK_NEED(tree_expander_set_child, "gtk_tree_expander_set_child");
+    HERO_UI_GTK_NEED(list_view_new, "gtk_list_view_new");
+    HERO_UI_GTK_NEED(object_ref, "g_object_ref");
+    HERO_UI_GTK_NEED(object_set_data, "g_object_set_data");
+    HERO_UI_GTK_NEED(object_get_data, "g_object_get_data");
+    HERO_UI_GTK_NEED(signal_handlers_disconnect_matched, "g_signal_handlers_disconnect_matched");
+    HERO_UI_GTK_NEED(native_get_surface, "gtk_native_get_surface");
+    HERO_UI_GTK_NEED(display_get_monitors, "gdk_display_get_monitors");
+    HERO_UI_GTK_NEED(monitor_get_geometry, "gdk_monitor_get_geometry");
+    HERO_UI_GTK_NEED(monitor_get_scale_factor, "gdk_monitor_get_scale_factor");
+    HERO_UI_GTK_NEED(surface_get_scale_factor, "gdk_surface_get_scale_factor");
+    HERO_UI_GTK_NEED(surface_get_width, "gdk_surface_get_width");
+    HERO_UI_GTK_NEED(surface_get_height, "gdk_surface_get_height");
+    HERO_UI_GTK_NEED(window_maximize, "gtk_window_maximize");
+    HERO_UI_GTK_NEED(window_unmaximize, "gtk_window_unmaximize");
+    HERO_UI_GTK_NEED(window_minimize, "gtk_window_minimize");
+    HERO_UI_GTK_NEED(window_unminimize, "gtk_window_unminimize");
+    HERO_UI_GTK_NEED(window_fullscreen, "gtk_window_fullscreen");
+    HERO_UI_GTK_NEED(window_unfullscreen, "gtk_window_unfullscreen");
+    HERO_UI_GTK_NEED(toplevel_get_state, "gdk_toplevel_get_state");
+    HERO_UI_GTK_NEED(toplevel_set_icon_list, "gdk_toplevel_set_icon_list");
+    HERO_UI_GTK_NEED(window_set_decorated, "gtk_window_set_decorated");
+    HERO_UI_GTK_NEED(widget_set_opacity, "gtk_widget_set_opacity");
+    HERO_UI_GTK_NEED(window_set_modal, "gtk_window_set_modal");
+    HERO_UI_GTK_NEED(window_set_transient_for, "gtk_window_set_transient_for");
+    HERO_UI_GTK_NEED(widget_get_mapped, "gtk_widget_get_mapped");
+    HERO_UI_GTK_NEED(window_is_active, "gtk_window_is_active");
+    HERO_UI_GTK_NEED(text_grab_focus_without_selecting, "gtk_text_grab_focus_without_selecting");
+    HERO_UI_GTK_NEED(list_append, "g_list_append");
+    HERO_UI_GTK_NEED(list_free, "g_list_free");
+    HERO_UI_GTK_NEED(type_check_instance_is_a, "g_type_check_instance_is_a");
+    HERO_UI_GTK_MAY(file_list_get_files, "gdk_file_list_get_files");
+    HERO_UI_GTK_MAY(file_dialog_select_folder, "gtk_file_dialog_select_folder");
+    HERO_UI_GTK_MAY(file_dialog_select_folder_finish, "gtk_file_dialog_select_folder_finish");
+    HERO_UI_GTK_MAY(file_dialog_select_multiple_folders, "gtk_file_dialog_select_multiple_folders");
+    HERO_UI_GTK_MAY(file_dialog_select_multiple_folders_finish, "gtk_file_dialog_select_multiple_folders_finish");
+    HERO_UI_GTK_MAY(texture_downloader_new, "gdk_texture_downloader_new");
+    HERO_UI_GTK_MAY(texture_downloader_set_format, "gdk_texture_downloader_set_format");
+    HERO_UI_GTK_MAY(texture_downloader_download_into, "gdk_texture_downloader_download_into");
+    HERO_UI_GTK_MAY(texture_downloader_free, "gdk_texture_downloader_free");
+    HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_column, "gtk_column_view_sorter_get_primary_sort_column");
+    HERO_UI_GTK_MAY(column_view_sorter_get_primary_sort_order, "gtk_column_view_sorter_get_primary_sort_order");
+    HERO_UI_GTK_MAY(monitor_get_scale, "gdk_monitor_get_scale");
+    HERO_UI_GTK_MAY(x11_display_get_type, "gdk_x11_display_get_type");
+    HERO_UI_GTK_MAY(x11_display_get_xdisplay, "gdk_x11_display_get_xdisplay");
+    HERO_UI_GTK_MAY(x11_display_get_xrootwindow, "gdk_x11_display_get_xrootwindow");
+    HERO_UI_GTK_MAY(x11_surface_get_xid, "gdk_x11_surface_get_xid");
+    HERO_UI_GTK_MAY(x11_get_xatom_by_name_for_display, "gdk_x11_get_xatom_by_name_for_display");
+    HERO_UI_GTK_MAY(x11_monitor_get_workarea, "gdk_x11_monitor_get_workarea");
+    HERO_UI_GTK_MAY(x_move_window, "XMoveWindow");
+    HERO_UI_GTK_MAY(x_translate_coordinates, "XTranslateCoordinates");
+    HERO_UI_GTK_MAY(x_get_window_property, "XGetWindowProperty");
+    HERO_UI_GTK_MAY(x_free, "XFree");
+    HERO_UI_GTK_MAY(x_sync, "XSync");
+    HERO_UI_GTK_MAY(x_send_event, "XSendEvent");
+    HERO_UI_GTK_MAY(x_keysym_to_keycode, "XKeysymToKeycode");
+    HERO_UI_GTK_MAY(x_get_window_attributes, "XGetWindowAttributes");
+    HERO_UI_GTK_MAY(x_get_input_focus, "XGetInputFocus");
+    HERO_UI_GTK_MAY(x_set_input_focus, "XSetInputFocus");
+    HERO_UI_GTK_MAY(x_query_tree, "XQueryTree");
+    HERO_UI_GTK_MAY(x11_display_get_primary_monitor, "gdk_x11_display_get_primary_monitor");
+    HERO_UI_GTK_MAY(wayland_display_get_type, "gdk_wayland_display_get_type");
+    {
+        /* X11's XTest extension, the one way X11 lets a client press a key
+         * as the keyboard does; GTK needs none, so it may be missing. */
+        void *xtest = dlopen(HERO_UI_GTK_XTEST_LIBRARY, RTLD_NOW | RTLD_LOCAL);
+
+        if (xtest != NULL) {
+            (void)hero_ui_gtk_find(xtest, "XTestQueryExtension", &hero_ui_gtk.x_test_query_extension, sizeof hero_ui_gtk.x_test_query_extension);
+            (void)hero_ui_gtk_find(xtest, "XTestFakeKeyEvent", &hero_ui_gtk.x_test_fake_key_event, sizeof hero_ui_gtk.x_test_fake_key_event);
+        }
+    }
     hero_ui_gtk_found = ok;
 }
 
@@ -644,7 +1077,95 @@ struct hero_ui_native {
     void *shortcut;
     unsigned keyval;
     unsigned held;
+    /* A menu item's check mode (`HERO_UI_CHECK_*`), whether it is checked,
+     * and its role. */
+    int64_t check;
+    bool checked;
+    int64_t role;
+    /* The widget's context menu, 0 for none; a context menu's popover, its
+     * click and its keys, on the widget `inner` names. */
+    int64_t context;
+    void *popover;
+    void *gesture;
+    void *keys;
+    /* A button's key (`HERO_UI_BUTTON_KEY_*`) and the controller holding its
+     * Escape; a window's buttons for Return and Escape, 0 for none. */
+    int64_t button_key;
+    void *key_controller;
+    int64_t enter_button;
+    int64_t escape_button;
+    /* A text field drawn masked; a progress bar's pulse, 0 while it stands. */
+    bool masked;
+    unsigned pulse;
+    /* A split's divider: its size along the split's axis when its place was
+     * last told, and whether a pane is its first or its second. */
+    int split_extent;
+    int pane_slot;
+    /* A table's or a tree's selection model, a table's columns and cells, a
+     * tree's items (A TABLE, A TREE). */
+    void *selection;
+    void **columns;
+    int64_t column_count;
+    char **cells;
+    int64_t rows;
+    struct hero_ui_gtk_tree *tree;
+    /* A window among the screens (WINDOWS ON THE SCREEN): the place the
+     * program asked while it was not shown, whether it is watched, what was
+     * told of it last, and whether the program's own call is moving it. */
+    bool want_placed;
+    int64_t want_screen;
+    int64_t want_x;
+    int64_t want_y;
+    bool watched;
+    bool quiet;
+    int64_t told_state;
+    int64_t told_screen;
+    int64_t told_x;
+    int64_t told_y;
+    bool on_top;
+    int64_t asked_state;
+    bool placed_known;
+    bool focus_given;
+    bool want_framed;
+    /* What a move asks beyond the frame's place to land it there: learned
+     * from the window manager's last move, the gravity it reads. */
+    bool move_known;
+    int64_t move_dx;
+    int64_t move_dy;
+    /* Whether the content size is the program's, not yet given by GTK, so
+     * that a content of another size in a window of the size asked is GTK
+     * still laying the window out rather than the person's resize. */
+    bool content_asked;
+    /* A table's sorter; a split's panes. */
+    void *sorter;
+    int64_t panes;
 };
+
+/* What the calls below `hero_ui_arm_create` define and it calls. */
+static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner);
+static bool hero_ui_gtk_make_table(hero_ui_native *made);
+static bool hero_ui_gtk_make_tree(hero_ui_native *made);
+static void hero_ui_gtk_free_view(hero_ui_native *widget);
+static int64_t hero_ui_gtk_hang(hero_ui_native *made, hero_ui_native *owner);
+static int64_t hero_ui_gtk_attach_context(hero_ui_native *menu, hero_ui_native *owner);
+static void hero_ui_gtk_detach_context(hero_ui_native *menu);
+static void hero_ui_gtk_returned(void *entry, void *data);
+static void hero_ui_gtk_row_opened(void *box, void *row, void *data);
+static void hero_ui_gtk_realized(void *window, void *data);
+static void hero_ui_gtk_mapped(void *window, void *data);
+static void hero_ui_gtk_unhang(hero_ui_native *widget, hero_ui_native *owner);
+static void hero_ui_gtk_forget_keys(hero_ui_native *button);
+static bool hero_ui_gtk_takes_keys(int64_t kind);
+static int64_t hero_ui_gtk_tree_select(hero_ui_native *tree, int64_t item);
+static int64_t hero_ui_gtk_tree_chosen(const hero_ui_native *tree);
+static int64_t hero_ui_gtk_context_refill(hero_ui_native *owner);
+static int hero_ui_gtk_divider(hero_ui_native *split);
+static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t value, int64_t second, bool usable);
+static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count);
+static void hero_ui_gtk_close_more(void);
+struct hero_ui_gtk_answer;
+static int64_t hero_ui_gtk_kept_paths(struct hero_ui_gtk_answer *got, int64_t result, int64_t *bytes);
+static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words);
 
 /* Above 0 while `inject` acts, so a slider moved to where it stands is told. */
 static _Thread_local int64_t hero_ui_gtk_injecting;
@@ -728,7 +1249,8 @@ static hero_ui_native *hero_ui_gtk_of(void *data, void *instance) {
     if (widget == NULL) {
         return NULL;
     }
-    if (widget->widget == instance || widget->inner == instance || widget->buffer == instance || widget->action == instance || widget->area == instance) {
+    if (widget->widget == instance || widget->inner == instance || widget->buffer == instance || widget->action == instance || widget->area == instance || widget->selection == instance || widget->sorter == instance ||
+        widget->gesture == instance) {
         return widget;
     }
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
@@ -796,6 +1318,7 @@ static void hero_ui_gtk_size_content(hero_ui_native *window) {
     }
     window->asked_width = hero_ui_gtk_int(window->content_width) + extra_width;
     window->asked_height = hero_ui_gtk_int(window->content_height) + extra_height;
+    window->content_asked = true;
     hero_ui_gtk.window_set_default_size(window->widget, window->asked_width, window->asked_height);
 }
 
@@ -820,36 +1343,71 @@ static void hero_ui_gtk_resized(void *area, int width, int height, void *data) {
     }
     if (width == hero_ui_gtk_int(window->content_width) && height == hero_ui_gtk_int(window->content_height)) {
         window->resize_injected = false;
+        window->content_asked = false;
         return;
     }
-    if (!window->resize_injected && hero_ui_gtk.widget_get_width(window->widget) == window->asked_width && hero_ui_gtk.widget_get_height(window->widget) == window->asked_height) {
+    if (window->content_asked && !window->resize_injected && hero_ui_gtk.widget_get_width(window->widget) == window->asked_width && hero_ui_gtk.widget_get_height(window->widget) == window->asked_height) {
         /* The window took the size asked and its content another: the room
          * the menu bar and the title bar take was not yet known. */
         (void)hero_ui_gtk.idle_add(hero_ui_gtk_resize_again, data);
         return;
     }
     window->resize_injected = false;
+    window->content_asked = false;
     window->content_width = width;
     window->content_height = height;
     hero_ui_tell(HERO_UI_EVENT_RESIZE, window->id, width, height);
 }
 
-/* The person asked window `instance` to close: told, and nothing closed. */
+/* The modal window (`hero_ui_set_modal`), 0 while none is. */
+static _Thread_local int64_t hero_ui_gtk_modal;
+
+/* The person asked window `instance` to close: told, and nothing closed;
+ * while another window is modal, the others take no act of the person's. */
 static int hero_ui_gtk_close_asked(void *instance, void *data) {
     hero_ui_native *window = hero_ui_gtk_of(data, instance);
 
-    if (window != NULL && window->kind == HERO_UI_WINDOW) {
+    if (window != NULL && window->kind == HERO_UI_WINDOW && (hero_ui_gtk_modal == 0 || hero_ui_gtk_modal == window->id)) {
         hero_ui_tell(HERO_UI_EVENT_CLOSE, window->id, 0, 0);
     }
     return 1;
 }
 
-/* Whether menu item `item`, its menu and the showing of both let the person
- * choose it. */
+/* Whether menu item `item`, each menu it stands in and the showing of each
+ * let the person choose it, and, in a context menu, whether the widget the
+ * menu belongs to takes the person's acts. */
 static bool hero_ui_gtk_usable(const hero_ui_native *item) {
-    const hero_ui_native *menu = hero_ui_find(item->parent);
+    const hero_ui_native *at = item;
 
-    return item->kind == HERO_UI_MENU_ITEM && item->enabled && item->visible && menu != NULL && menu->enabled && menu->visible;
+    if (item->kind != HERO_UI_MENU_ITEM) {
+        return false;
+    }
+    while (at != NULL && (at->kind == HERO_UI_MENU_ITEM || at->kind == HERO_UI_MENU || at->kind == HERO_UI_CONTEXT_MENU)) {
+        if (!at->enabled || !at->visible) {
+            return false;
+        }
+        if (at->kind == HERO_UI_CONTEXT_MENU) {
+            const hero_ui_native *owner = hero_ui_find(at->parent);
+
+            return owner != NULL && owner->enabled;
+        }
+        at = hero_ui_find(at->parent);
+    }
+    return at != NULL && at->kind == HERO_UI_WINDOW;
+}
+
+/* Whether menu item `item` stands in a context menu, at any depth: its
+ * shortcut is shown there and takes no key. */
+static bool hero_ui_gtk_in_context(const hero_ui_native *item) {
+    for (const hero_ui_native *at = hero_ui_find(item->parent); at != NULL; at = hero_ui_find(at->parent)) {
+        if (at->kind == HERO_UI_CONTEXT_MENU) {
+            return true;
+        }
+        if (at->kind != HERO_UI_MENU) {
+            return false;
+        }
+    }
+    return false;
 }
 
 /* The action's name of item `id`, `item<id>`, into `into`. */
@@ -874,6 +1432,9 @@ static int64_t hero_ui_gtk_fill_menu(hero_ui_native *menu) {
         }
         if (item->action != NULL) {
             hero_ui_gtk.simple_action_set_enabled(item->action, hero_ui_gtk_usable(item) ? 1 : 0);
+        }
+        if (item->kind == HERO_UI_MENU && hero_ui_gtk_fill_menu(item) != HERO_UI_OK) {
+            answer = HERO_UI_LIMIT;
         }
         if (!item->visible) {
             continue;
@@ -900,7 +1461,21 @@ static int64_t hero_ui_gtk_fill_menu(hero_ui_native *menu) {
                 continue;
             }
             hero_ui_gtk_action_name(item->id, true, action, sizeof action);
-            entry = hero_ui_gtk.menu_item_new(label, action);
+            if (item->kind == HERO_UI_MENU) {
+                /* A menu inside this one: its own model, filled above. */
+                hero_ui_gtk.menu_append_submenu(section, label, item->menu_model);
+                hero_layer_free(label);
+                in_section += 1;
+                continue;
+            }
+            if (item->check == HERO_UI_CHECK_RADIO) {
+                /* A radio item is drawn so where its action's state is a
+                 * string and the item names one, its target. */
+                entry = hero_ui_gtk.menu_item_new(label, NULL);
+                hero_ui_gtk.menu_item_set_action_and_target_value(entry, action, hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON));
+            } else {
+                entry = hero_ui_gtk.menu_item_new(label, action);
+            }
             hero_layer_free(label);
             if (item->keyval != 0) {
                 char *accel = hero_ui_gtk.accelerator_name(item->keyval, item->held);
@@ -957,14 +1532,59 @@ static int64_t hero_ui_gtk_fill_bar(hero_ui_native *window) {
     return answer;
 }
 
-/* An item's action was activated: by its menu, its shortcut, or `inject`. */
+/* Shows menu item `item`'s check as its action's state. */
+static void hero_ui_gtk_show_check(hero_ui_native *item) {
+    if (item->action == NULL || item->check == HERO_UI_CHECK_NONE) {
+        return;
+    }
+    if (item->check == HERO_UI_CHECK_BOX) {
+        hero_ui_gtk.simple_action_set_state(item->action, hero_ui_gtk.variant_new_boolean(item->checked ? 1 : 0));
+    } else {
+        hero_ui_gtk.simple_action_set_state(item->action, hero_ui_gtk.variant_new_string(item->checked ? HERO_UI_GTK_RADIO_ON : HERO_UI_GTK_RADIO_OFF));
+    }
+}
+
+/* Checks radio item `item` and unchecks the other radio items of its group:
+ * the radio items of its menu no other item or separator stands between. */
+static void hero_ui_gtk_check_radio(hero_ui_native *item) {
+    hero_ui_native *menu = hero_ui_find(item->parent);
+    int64_t at = -1;
+
+    item->checked = true;
+    hero_ui_gtk_show_check(item);
+    for (int64_t i = 0; menu != NULL && i < menu->order.count; i += 1) {
+        at = menu->order.at[i] == item->id ? i : at;
+    }
+    for (int64_t step = -1; at >= 0 && step <= 1; step += 2) {
+        for (int64_t i = at + step; i >= 0 && i < menu->order.count; i += step) {
+            hero_ui_native *other = hero_ui_find(menu->order.at[i]);
+
+            if (other == NULL || other->kind != HERO_UI_MENU_ITEM || other->check != HERO_UI_CHECK_RADIO) {
+                break;
+            }
+            other->checked = false;
+            hero_ui_gtk_show_check(other);
+        }
+    }
+}
+
+/* An item's action was activated: by its menu, its shortcut, or `inject`.
+ * A check item turns over and a radio item is checked alone in its group
+ * before the choice is told, its `value` the state after. */
 static void hero_ui_gtk_chosen(void *action, void *parameter, void *data) {
     hero_ui_native *item = hero_ui_gtk_of(data, action);
 
     (void)parameter;
-    if (item != NULL && hero_ui_gtk_usable(item)) {
-        hero_ui_tell(HERO_UI_EVENT_MENU, item->id, 0, 0);
+    if (item == NULL || !hero_ui_gtk_usable(item)) {
+        return;
     }
+    if (item->check == HERO_UI_CHECK_BOX) {
+        item->checked = !item->checked;
+        hero_ui_gtk_show_check(item);
+    } else if (item->check == HERO_UI_CHECK_RADIO) {
+        hero_ui_gtk_check_radio(item);
+    }
+    hero_ui_tell(HERO_UI_EVENT_MENU, item->id, item->check != HERO_UI_CHECK_NONE && item->checked ? 1 : 0, 0);
 }
 
 /* -- What the person does ---------------------------------------------------- */
@@ -1102,12 +1722,43 @@ int64_t hero_ui_arm_open(void) {
     return HERO_UI_OK;
 }
 
-/* The container `widget` stands in: its window's content, or its radio
- * group's own fixed for an item. */
-static void *hero_ui_gtk_container(const hero_ui_native *widget) {
-    hero_ui_native *window = hero_ui_gtk_window(widget->window);
+/* Whether a frame, a window or one of the boxes the system draws whose
+ * content holds widgets: a page, a scrolled box, a pane. */
+static bool hero_ui_gtk_is_frame(int64_t kind) {
+    return kind == HERO_UI_WINDOW || kind == HERO_UI_PAGE || kind == HERO_UI_SCROLL || kind == HERO_UI_PANE;
+}
 
-    return window != NULL ? window->fixed : NULL;
+/* The `GtkFixed` `widget` stands in: the content of the window, page,
+ * scrolled box or pane that is its parent; NULL for what stands in none (a
+ * page in its tabs, a pane in its split, a menu and its items). */
+static void *hero_ui_gtk_container(const hero_ui_native *widget) {
+    hero_ui_native *owner = hero_ui_find(widget->parent);
+
+    return owner != NULL && hero_ui_gtk_is_frame(owner->kind) ? owner->fixed : NULL;
+}
+
+/* Whether `owner` may hold a widget of `kind`: a menu's items in a menu or a
+ * context menu, a menu in a window's bar, a menu or a context menu, a page
+ * in tabs, a pane in a split holding fewer than two, one context menu on a
+ * widget that is none of the menus' and holds none, and every other kind in
+ * a frame. */
+static bool hero_ui_gtk_takes(const hero_ui_native *owner, int64_t kind) {
+    switch (kind) {
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_MENU_SEPARATOR:
+        return owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
+    case HERO_UI_MENU:
+        return owner->kind == HERO_UI_WINDOW || owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
+    case HERO_UI_PAGE:
+        return owner->kind == HERO_UI_TABS;
+    case HERO_UI_PANE:
+        return (owner->kind == HERO_UI_SPLIT_ROW || owner->kind == HERO_UI_SPLIT_COLUMN) && owner->panes < 2;
+    case HERO_UI_CONTEXT_MENU:
+        return owner->context == 0 && owner->kind != HERO_UI_MENU && owner->kind != HERO_UI_MENU_ITEM && owner->kind != HERO_UI_MENU_SEPARATOR && owner->kind != HERO_UI_CONTEXT_MENU && owner->kind != HERO_UI_PAGE &&
+               owner->kind != HERO_UI_PANE;
+    default:
+        return hero_ui_gtk_is_frame(owner->kind);
+    }
 }
 
 /* Destroys `widget`'s GTK objects and gives back its record; its children
@@ -1117,6 +1768,9 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
 
     switch (widget->kind) {
     case HERO_UI_WINDOW:
+        if (hero_ui_gtk_modal == widget->id) {
+            hero_ui_gtk_modal = 0;
+        }
         if (widget->widget != NULL) {
             hero_ui_gtk.window_destroy(widget->widget);
         }
@@ -1128,9 +1782,12 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
         }
         break;
     case HERO_UI_MENU:
-        if (owner != NULL) {
+    case HERO_UI_CONTEXT_MENU:
+        if (widget->kind == HERO_UI_CONTEXT_MENU) {
+            hero_ui_gtk_detach_context(widget);
+        } else if (owner != NULL) {
             hero_ui_ids_drop(&owner->order, widget->id);
-            (void)hero_ui_gtk_fill_bar(owner);
+            (void)(owner->kind == HERO_UI_WINDOW ? hero_ui_gtk_fill_bar(owner) : hero_ui_gtk_fill_menu(owner));
         }
         if (widget->menu_model != NULL) {
             hero_ui_gtk.object_unref(widget->menu_model);
@@ -1158,6 +1815,10 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
         }
         break;
     }
+    case HERO_UI_PAGE:
+    case HERO_UI_PANE:
+        hero_ui_gtk_unhang(widget, owner);
+        break;
     default: {
         void *container = hero_ui_gtk_container(widget);
 
@@ -1166,9 +1827,17 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
              * host's `gone`, and then its widget goes as any other. */
             (void)hero_ui_web_gtk_destroy(widget->id);
         }
+        if (widget->kind == HERO_UI_BUTTON) {
+            hero_ui_gtk_forget_keys(widget);
+        }
+        if (widget->pulse != 0) {
+            (void)hero_ui_gtk.source_remove(widget->pulse);
+            widget->pulse = 0;
+        }
         if (container != NULL && widget->widget != NULL) {
             hero_ui_gtk.fixed_remove(container, widget->widget);
         }
+        hero_ui_gtk_free_view(widget);
         break;
     }
     }
@@ -1222,6 +1891,7 @@ void hero_ui_arm_close(void) {
         hero_ui_gtk_destroy_tree(first);
     }
     hero_ui_free_map();
+    hero_ui_gtk_close_more();
     hero_layer_free(hero_ui_gtk_paths);
     hero_ui_gtk_paths = NULL;
     hero_ui_gtk_paths_count = 0;
@@ -1269,16 +1939,17 @@ static bool hero_ui_gtk_make_window(hero_ui_native *made) {
     return true;
 }
 
-/* Puts `made`'s widget in its window's content, at no place and hidden. */
-static void hero_ui_gtk_stand(hero_ui_native *made, hero_ui_native *window) {
+/* Puts `made`'s widget in the content of the frame it was made in, at no
+ * place and hidden. */
+static void hero_ui_gtk_stand(hero_ui_native *made) {
     hero_ui_gtk.widget_set_visible(made->widget, 0);
-    hero_ui_gtk.fixed_put(window->fixed, made->widget, 0, 0);
+    hero_ui_gtk.fixed_put(hero_ui_gtk_container(made), made->widget, 0, 0);
 }
 
 /* Makes web view `id` in window `window`: THE WEB VIEW, kind 17, is
  * `hero_ui_web_gtk.c`'s, which answers WebKitGTK's widget; this arm stands
  * it in the window's content as any widget, hidden until placed. */
-static int64_t hero_ui_gtk_make_web(int64_t id, hero_ui_native *window) {
+static int64_t hero_ui_gtk_make_web(int64_t id, hero_ui_native *owner, hero_ui_native *window) {
     hero_ui_native *made = hero_layer_alloc_zero(1, sizeof *made);
     int64_t answer;
 
@@ -1287,7 +1958,7 @@ static int64_t hero_ui_gtk_make_web(int64_t id, hero_ui_native *window) {
     }
     made->id = id;
     made->kind = HERO_UI_WEBVIEW;
-    made->parent = window->id;
+    made->parent = owner->id;
     made->window = window->id;
     made->visible = true;
     made->enabled = true;
@@ -1305,7 +1976,7 @@ static int64_t hero_ui_gtk_make_web(int64_t id, hero_ui_native *window) {
         hero_layer_free(made);
         return answer;
     }
-    hero_ui_gtk_stand(made, window);
+    hero_ui_gtk_stand(made);
     return HERO_UI_OK;
 }
 
@@ -1318,12 +1989,18 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     if (hero_ui_find(id) != NULL) {
         return HERO_UI_NOT_FOUND;
     }
+    if (kind == HERO_UI_TRAY) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "GTK 4 has no tray icon (GTK 3's GtkStatusIcon is gone), and this arm draws no StatusNotifierItem over D-Bus in its place");
+    }
+    if (kind == HERO_UI_TABLE && (hero_ui_gtk.column_view_sorter_get_primary_sort_column == NULL || hero_ui_gtk.column_view_sorter_get_primary_sort_order == NULL)) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "a table's sort is read from GTK 4.10's gtk_column_view_sorter_get_primary_sort_column, which this GTK lacks");
+    }
     if (kind != HERO_UI_WINDOW) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
             return HERO_UI_NOT_FOUND;
         }
-        if ((kind == HERO_UI_MENU_ITEM || kind == HERO_UI_MENU_SEPARATOR) != (owner->kind == HERO_UI_MENU) || (owner->kind != HERO_UI_MENU && owner->kind != HERO_UI_WINDOW)) {
+        if (!hero_ui_gtk_takes(owner, kind)) {
             return HERO_UI_INVALID;
         }
         window = hero_ui_gtk_window(owner->window);
@@ -1332,7 +2009,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         }
     }
     if (kind == HERO_UI_WEBVIEW) {
-        return hero_ui_gtk_make_web(id, window);
+        return hero_ui_gtk_make_web(id, owner, window);
     }
     made = hero_layer_alloc_zero(1, sizeof *made);
     if (made == NULL) {
@@ -1362,6 +2039,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     case HERO_UI_TEXT_FIELD:
         made->widget = hero_ui_gtk.entry_new();
         hero_ui_gtk_connect(made->widget, "changed", (hero_ui_gtk_callback)hero_ui_gtk_edited, id);
+        hero_ui_gtk_connect(made->widget, "activate", (hero_ui_gtk_callback)hero_ui_gtk_returned, id);
         break;
     case HERO_UI_TEXT_AREA:
         made->widget = hero_ui_gtk.scrolled_window_new();
@@ -1388,7 +2066,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         hero_ui_gtk.scrolled_window_set_policy(made->widget, HERO_GTK_POLICY_NEVER, HERO_GTK_POLICY_AUTOMATIC);
         hero_ui_gtk.scrolled_window_set_has_frame(made->widget, 1);
         hero_ui_gtk.scrolled_window_set_child(made->widget, made->inner);
+        hero_ui_gtk.list_box_set_activate_on_single_click(made->inner, 0);
         hero_ui_gtk_connect(made->inner, "selected-rows-changed", (hero_ui_gtk_callback)hero_ui_gtk_rows_chosen, id);
+        hero_ui_gtk_connect(made->inner, "row-activated", (hero_ui_gtk_callback)hero_ui_gtk_row_opened, id);
         break;
     case HERO_UI_COMBO:
         made->strings = hero_ui_gtk.string_list_new(NULL);
@@ -1429,11 +2109,32 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     }
     case HERO_UI_MENU_SEPARATOR:
         break;
+    case HERO_UI_TABS:
+    case HERO_UI_PAGE:
+    case HERO_UI_SCROLL:
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+    case HERO_UI_PANE:
+        ok = hero_ui_gtk_make_box(made, owner);
+        break;
+    case HERO_UI_TABLE:
+        ok = hero_ui_gtk_make_table(made);
+        break;
+    case HERO_UI_TREE:
+        ok = hero_ui_gtk_make_tree(made);
+        break;
+    case HERO_UI_CONTEXT_MENU:
+        made->menu_model = hero_ui_gtk.menu_new();
+        ok = made->menu_model != NULL;
+        break;
     default:
         hero_layer_free(made);
         return HERO_UI_INVALID;
     }
-    if (!ok || (made->widget == NULL && kind != HERO_UI_WINDOW && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR) || !hero_ui_keep(id, made)) {
+    if (!ok || (made->widget == NULL && kind != HERO_UI_WINDOW && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR && kind != HERO_UI_CONTEXT_MENU) || !hero_ui_keep(id, made)) {
+        if (made->tree != NULL || made->selection != NULL) {
+            hero_ui_gtk_free_view(made);
+        }
         if (kind == HERO_UI_WINDOW && made->widget != NULL) {
             hero_ui_gtk.window_destroy(made->widget);
         }
@@ -1455,13 +2156,15 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     switch (kind) {
     case HERO_UI_WINDOW:
         hero_ui_gtk_size_content(made);
+        hero_ui_gtk_connect(made->widget, "realize", (hero_ui_gtk_callback)hero_ui_gtk_realized, id);
+        hero_ui_gtk_connect(made->widget, "map", (hero_ui_gtk_callback)hero_ui_gtk_mapped, id);
         return HERO_UI_OK;
     case HERO_UI_MENU:
         if (!hero_ui_ids_add(&owner->order, id)) {
             hero_ui_gtk_drop(made);
             return HERO_UI_LIMIT;
         }
-        return hero_ui_gtk_fill_bar(owner);
+        return owner->kind == HERO_UI_WINDOW ? hero_ui_gtk_fill_bar(owner) : hero_ui_gtk_fill_menu(owner);
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR:
         if (!hero_ui_ids_add(&owner->order, id)) {
@@ -1472,8 +2175,13 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             hero_ui_gtk.action_map_add_action(window->actions, made->action);
         }
         return hero_ui_gtk_fill_menu(owner);
+    case HERO_UI_PAGE:
+    case HERO_UI_PANE:
+        return hero_ui_gtk_hang(made, owner);
+    case HERO_UI_CONTEXT_MENU:
+        return hero_ui_gtk_attach_context(made, owner);
     default:
-        hero_ui_gtk_stand(made, window);
+        hero_ui_gtk_stand(made);
         return HERO_UI_OK;
     }
 }
@@ -1490,7 +2198,10 @@ int64_t hero_ui_arm_destroy(int64_t id) {
 static void hero_ui_gtk_area_text(hero_ui_native *widget, const char *text) {
     hero_ui_gtk_iter end;
 
+    /* The program's text is no step the person's Undo takes back. */
+    hero_ui_gtk.text_buffer_begin_irreversible_action(widget->buffer);
     hero_ui_gtk.text_buffer_set_text(widget->buffer, text, -1);
+    hero_ui_gtk.text_buffer_end_irreversible_action(widget->buffer);
     hero_ui_gtk.text_buffer_get_end_iter(widget->buffer, &end);
     hero_ui_gtk.text_buffer_place_cursor(widget->buffer, &end);
 }
@@ -1511,6 +2222,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_CHECKBOX:
     case HERO_UI_MENU:
     case HERO_UI_MENU_ITEM:
+    case HERO_UI_PAGE:
         break;
     default:
         return HERO_UI_INVALID;
@@ -1540,6 +2252,14 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_TEXT_AREA:
         hero_ui_gtk_area_text(widget, made);
         break;
+    case HERO_UI_PAGE: {
+        hero_ui_native *tabs = hero_ui_find(widget->parent);
+
+        if (tabs != NULL) {
+            hero_ui_gtk.notebook_set_tab_label_text(tabs->widget, widget->widget, made);
+        }
+        break;
+    }
     default:
         hero_layer_free(widget->label);
         widget->label = made;
@@ -1549,7 +2269,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_mute(-1);
     hero_layer_free(made);
     if (widget->kind == HERO_UI_MENU) {
-        return hero_ui_gtk_fill_bar(hero_ui_find(widget->parent));
+        hero_ui_native *owner = hero_ui_find(widget->parent);
+
+        return owner->kind == HERO_UI_WINDOW ? hero_ui_gtk_fill_bar(owner) : hero_ui_gtk_fill_menu(owner);
     }
     if (widget->kind == HERO_UI_MENU_ITEM) {
         return hero_ui_gtk_fill_menu(hero_ui_find(widget->parent));
@@ -1579,6 +2301,9 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TABLE) {
+        return hero_ui_gtk_table_rows(widget, items, count);
     }
     if (widget->kind != HERO_UI_LIST && widget->kind != HERO_UI_LIST_MULTIPLE && widget->kind != HERO_UI_COMBO && widget->kind != HERO_UI_RADIO_GROUP) {
         return HERO_UI_INVALID;
@@ -1705,7 +2430,7 @@ static void hero_ui_gtk_show_range(hero_ui_native *widget) {
     if (widget->kind == HERO_UI_SLIDER) {
         hero_ui_gtk.range_set_range(widget->widget, hero_ui_gtk_double(widget, widget->least), hero_ui_gtk_double(widget, widget->most));
         hero_ui_gtk.range_set_value(widget->widget, hero_ui_gtk_double(widget, widget->value));
-    } else {
+    } else if (widget->pulse == 0) {
         hero_ui_gtk.progress_bar_set_fraction(widget->widget, hero_ui_fraction(widget->value, widget->least, widget->most));
     }
 }
@@ -1751,6 +2476,27 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
             hero_ui_gtk.check_button_set_active(widget->radios[i], i == value ? 1 : 0);
         }
         break;
+    case HERO_UI_MENU_ITEM:
+        if (widget->check == HERO_UI_CHECK_NONE || (value != 0 && value != 1)) {
+            answer = HERO_UI_INVALID;
+            break;
+        }
+        if (widget->check == HERO_UI_CHECK_RADIO && value == 1) {
+            hero_ui_gtk_check_radio(widget);
+        } else {
+            widget->checked = value == 1;
+            hero_ui_gtk_show_check(widget);
+        }
+        break;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        if (value < 0) {
+            answer = HERO_UI_INVALID;
+            break;
+        }
+        widget->value = value;
+        hero_ui_gtk.paned_set_position(widget->widget, hero_ui_gtk_int(value));
+        break;
     default:
         answer = HERO_UI_INVALID;
         break;
@@ -1764,6 +2510,12 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
+        /* Where the person may drag the divider: kept by `hero_ui_gtk_divided`. */
+        widget->least = least;
+        widget->most = most;
+        return HERO_UI_OK;
     }
     if (widget->kind != HERO_UI_SLIDER && widget->kind != HERO_UI_PROGRESS) {
         return HERO_UI_INVALID;
@@ -1782,6 +2534,35 @@ int64_t hero_ui_arm_set_selection(int64_t id, const int64_t *indices, int64_t co
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TABS) {
+        if (count != 1 || indices[0] >= hero_ui_gtk.notebook_get_n_pages(widget->widget)) {
+            return HERO_UI_INVALID;
+        }
+        hero_ui_mute(1);
+        hero_ui_gtk.notebook_set_current_page(widget->widget, (int)indices[0]);
+        hero_ui_mute(-1);
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TABLE) {
+        for (int64_t i = 0; i < count; i += 1) {
+            if (indices[i] >= widget->rows) {
+                return HERO_UI_INVALID;
+            }
+        }
+        hero_ui_mute(1);
+        (void)hero_ui_gtk.selection_model_unselect_all(widget->selection);
+        for (int64_t i = 0; i < count; i += 1) {
+            (void)hero_ui_gtk.selection_model_select_item(widget->selection, (unsigned)indices[i], 0);
+        }
+        hero_ui_mute(-1);
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TREE) {
+        if (count > 1) {
+            return HERO_UI_INVALID;
+        }
+        return hero_ui_gtk_tree_select(widget, count == 1 ? indices[0] : -1);
     }
     if ((widget->kind != HERO_UI_LIST && widget->kind != HERO_UI_LIST_MULTIPLE) || (count > 1 && widget->kind != HERO_UI_LIST_MULTIPLE)) {
         return HERO_UI_INVALID;
@@ -1828,11 +2609,20 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
                 hero_ui_gtk.widget_set_visible(widget->widget, 0);
             }
             return HERO_UI_OK;
-        case HERO_UI_MENU:
-            return hero_ui_gtk_fill_bar(hero_ui_find(widget->parent));
+        case HERO_UI_MENU: {
+            hero_ui_native *owner = hero_ui_find(widget->parent);
+
+            return owner->kind == HERO_UI_WINDOW ? hero_ui_gtk_fill_bar(owner) : hero_ui_gtk_fill_menu(owner);
+        }
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
-            return hero_ui_gtk_fill_menu(hero_ui_find(widget->parent));
+        case HERO_UI_CONTEXT_MENU:
+            return hero_ui_gtk_fill_menu(widget->kind == HERO_UI_CONTEXT_MENU ? widget : hero_ui_find(widget->parent));
+        case HERO_UI_PAGE:
+        case HERO_UI_PANE:
+            /* The system sizes them, so they stand shown as the program asks. */
+            hero_ui_gtk.widget_set_visible(widget->widget, on == 1 ? 1 : 0);
+            return HERO_UI_OK;
         default:
             hero_ui_gtk_show_placed(widget);
             return HERO_UI_OK;
@@ -1846,6 +2636,7 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         widget->enabled = on == 1;
         switch (widget->kind) {
         case HERO_UI_MENU:
+        case HERO_UI_CONTEXT_MENU:
             return hero_ui_gtk_fill_menu(widget);
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
@@ -1855,7 +2646,8 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
                 hero_ui_gtk.widget_set_sensitive(widget->radios[i], on == 1 ? 1 : 0);
             }
             hero_ui_gtk.widget_set_sensitive(widget->widget, on == 1 ? 1 : 0);
-            return HERO_UI_OK;
+            /* A greyed-out widget's context menu chooses nothing. */
+            return hero_ui_gtk_context_refill(widget);
         }
     }
     return HERO_UI_INVALID;
@@ -1921,7 +2713,9 @@ int64_t hero_ui_arm_set_shortcut(int64_t id, const uint8_t *key, int64_t count, 
     }
     item->keyval = keyval;
     item->held = ((modifiers & HERO_UI_PRIMARY) != 0 ? HERO_GDK_CONTROL_MASK : 0u) | ((modifiers & HERO_UI_SHIFT) != 0 ? HERO_GDK_SHIFT_MASK : 0u) | ((modifiers & HERO_UI_ALT) != 0 ? HERO_GDK_ALT_MASK : 0u);
-    if (keyval != 0) {
+    /* A context menu's item shows its shortcut and takes no key, as the
+     * systems' context menus do. */
+    if (keyval != 0 && !hero_ui_gtk_in_context(item)) {
         char action[64];
         void *trigger = hero_ui_gtk.keyval_trigger_new(keyval, item->held);
         void *named;
@@ -1931,6 +2725,9 @@ int64_t hero_ui_arm_set_shortcut(int64_t id, const uint8_t *key, int64_t count, 
         item->shortcut = trigger != NULL && named != NULL ? hero_ui_gtk.shortcut_new(trigger, named) : NULL;
         if (item->shortcut == NULL) {
             return HERO_UI_LIMIT;
+        }
+        if (item->check == HERO_UI_CHECK_RADIO) {
+            hero_ui_gtk.shortcut_set_arguments(item->shortcut, hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON));
         }
         hero_ui_gtk.shortcut_controller_add_shortcut(window->shortcuts, item->shortcut);
     }
@@ -1978,6 +2775,12 @@ int64_t hero_ui_arm_set_size(int64_t id, int64_t which, int64_t width, int64_t h
     if (window == NULL) {
         return HERO_UI_NOT_FOUND;
     }
+    if (window->kind == HERO_UI_SCROLL && which == HERO_UI_SIZE_CONTENT) {
+        /* A scrolled box's content: its fixed's size, which the scrolled
+         * window scrolls over. */
+        hero_ui_gtk.widget_set_size_request(window->fixed, hero_ui_gtk_int(width), hero_ui_gtk_int(height));
+        return HERO_UI_OK;
+    }
     if (window->kind != HERO_UI_WINDOW) {
         return HERO_UI_INVALID;
     }
@@ -2004,7 +2807,7 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         return HERO_UI_NOT_FOUND;
     }
     container = hero_ui_gtk_container(widget);
-    if (widget->widget == NULL || widget->kind == HERO_UI_WINDOW || container == NULL) {
+    if (widget->widget == NULL || widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE || container == NULL) {
         return HERO_UI_INVALID;
     }
     if (index >= 0) {
@@ -2110,9 +2913,24 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         break;
     case HERO_UI_LIST:
     case HERO_UI_LIST_MULTIPLE:
+    case HERO_UI_TREE:
         size.width = 160;
         size.height = 96;
         break;
+    case HERO_UI_TABLE:
+        /* The headless side's: a hundred points a column, at least a text
+         * field's width, and a row of headers above a text area's height. */
+        size.width = 100 * widget->column_count > 160 ? 100 * (int)widget->column_count : 160;
+        size.height = 96 + 24;
+        break;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN: {
+        int thick = hero_ui_gtk_divider(widget);
+
+        *width = thick;
+        *height = thick;
+        return HERO_UI_OK;
+    }
     case HERO_UI_IMAGE:
         *width = widget->image_width;
         *height = widget->image_height;
@@ -2200,6 +3018,16 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_RADIO_GROUP:
         *value = hero_ui_gtk_checked_radio(widget);
         return HERO_UI_OK;
+    case HERO_UI_MENU_ITEM:
+        if (widget->check == HERO_UI_CHECK_NONE) {
+            return HERO_UI_INVALID;
+        }
+        *value = widget->checked ? 1 : 0;
+        return HERO_UI_OK;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        *value = hero_ui_gtk.paned_get_position(widget->widget);
+        return HERO_UI_OK;
     default:
         return HERO_UI_INVALID;
     }
@@ -2228,10 +3056,30 @@ int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64
         *chosen = found;
         return HERO_UI_OK;
     }
+    if (widget->kind == HERO_UI_TABLE) {
+        int64_t found = 0;
+
+        for (int64_t i = 0; i < widget->rows; i += 1) {
+            if (hero_ui_gtk.selection_model_is_selected(widget->selection, (unsigned)i)) {
+                if (found < count) {
+                    indices[found] = i;
+                }
+                found += 1;
+            }
+        }
+        *chosen = found;
+        return HERO_UI_OK;
+    }
     if (widget->kind == HERO_UI_COMBO) {
         one = hero_ui_gtk_combo_choice(widget);
     } else if (widget->kind == HERO_UI_RADIO_GROUP) {
         one = hero_ui_gtk_checked_radio(widget);
+    } else if (widget->kind == HERO_UI_TABS) {
+        one = hero_ui_gtk.notebook_get_current_page(widget->widget);
+    } else if (widget->kind == HERO_UI_TREE) {
+        int64_t item = hero_ui_gtk_tree_chosen(widget);
+
+        one = item > 0 ? item : -1;
     } else {
         return HERO_UI_INVALID;
     }
@@ -2381,11 +3229,13 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
                 }
             }
         } else {
-            answer = HERO_UI_INVALID;
+            answer = hero_ui_gtk_act(kind, widget, value, second, usable);
         }
         break;
     case HERO_UI_EVENT_VALUE:
-        if (widget->kind != HERO_UI_SLIDER) {
+        if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
+            answer = hero_ui_gtk_act(kind, widget, value, second, usable);
+        } else if (widget->kind != HERO_UI_SLIDER) {
             answer = HERO_UI_INVALID;
         } else if (usable) {
             int64_t held = hero_ui_between(value, widget->least, widget->most);
@@ -2401,7 +3251,8 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
         if (widget->kind != HERO_UI_MENU_ITEM) {
             answer = HERO_UI_INVALID;
         } else if (hero_ui_gtk_usable(widget)) {
-            hero_ui_gtk.action_activate(widget->action, NULL);
+            /* A radio item's action takes its target, as its menu hands it. */
+            hero_ui_gtk.action_activate(widget->action, widget->check == HERO_UI_CHECK_RADIO ? hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON) : NULL);
         }
         break;
     case HERO_UI_EVENT_MESSAGE:
@@ -2437,7 +3288,7 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
         }
         break;
     default:
-        answer = HERO_UI_INVALID;
+        answer = hero_ui_gtk_act(kind, widget, value, second, usable);
         break;
     }
     hero_ui_gtk_injecting -= 1;
@@ -2702,10 +3553,6 @@ int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, 
     int64_t filter_count = 0;
     void *store;
     hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
-    uint8_t *paths = NULL;
-    int64_t paths_count = 0;
-    int64_t paths_room = 0;
-    bool kept = true;
     int64_t result = HERO_UI_OK;
 
     *bytes = 0;
@@ -2787,29 +3634,43 @@ int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, 
     }
     hero_layer_free(heading);
     hero_layer_free(proposed);
-    if (got.error != NULL) {
-        if (got.error->domain != hero_ui_gtk.dialog_error_quark() || (got.error->code != HERO_GTK_DIALOG_ERROR_CANCELLED && got.error->code != HERO_GTK_DIALOG_ERROR_DISMISSED)) {
+    return hero_ui_gtk_kept_paths(&got, result, bytes);
+}
+
+/* Keeps the paths dialog answer `got` holds, its own failure `result` or
+ * GTK's error answered where it failed; a dialog the person cancelled or
+ * dismissed keeps none and answers 0 bytes. */
+static int64_t hero_ui_gtk_kept_paths(hero_ui_gtk_answer *got, int64_t result, int64_t *bytes) {
+    uint8_t *paths = NULL;
+    int64_t paths_count = 0;
+    int64_t paths_room = 0;
+    bool kept = true;
+
+    *bytes = 0;
+    if (got->error != NULL) {
+        if (got->error->domain != hero_ui_gtk.dialog_error_quark() || (got->error->code != HERO_GTK_DIALOG_ERROR_CANCELLED && got->error->code != HERO_GTK_DIALOG_ERROR_DISMISSED)) {
             char words[HERO_UI_WORDS_MOST];
 
-            (void)snprintf(words, sizeof words, "GTK's file dialog failed: %s", got.error->message != NULL ? got.error->message : "no words");
+            (void)snprintf(words, sizeof words, "GTK's file dialog failed: %s", got->error->message != NULL ? got->error->message : "no words");
             result = hero_ui_refused(HERO_UI_OTHER, words);
+            (void)hero_ui_gtk_said_so(HERO_UI_OTHER, words);
         }
-        hero_ui_gtk.error_free(got.error);
+        hero_ui_gtk.error_free(got->error);
     }
-    if (got.value != NULL) {
-        if (got.multiple == 1) {
-            unsigned files = hero_ui_gtk.list_model_get_n_items(got.value);
+    if (got->value != NULL) {
+        if (got->multiple == 1) {
+            unsigned files = hero_ui_gtk.list_model_get_n_items(got->value);
 
             for (unsigned i = 0; i < files && kept; i += 1) {
-                void *file = hero_ui_gtk.list_model_get_item(got.value, i);
+                void *file = hero_ui_gtk.list_model_get_item(got->value, i);
 
                 kept = hero_ui_gtk_keep_path(file, &paths, &paths_count, &paths_room);
                 hero_ui_gtk.object_unref(file);
             }
         } else {
-            kept = hero_ui_gtk_keep_path(got.value, &paths, &paths_count, &paths_room);
+            kept = hero_ui_gtk_keep_path(got->value, &paths, &paths_count, &paths_room);
         }
-        hero_ui_gtk.object_unref(got.value);
+        hero_ui_gtk.object_unref(got->value);
     }
     if (!kept) {
         hero_layer_free(paths);
@@ -2851,282 +3712,3614 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
     return widget->kind == HERO_UI_WEBVIEW ? hero_ui_gtk_web(hero_ui_web_gtk_post(id, text, count)) : HERO_UI_INVALID;
 }
 
-/* -- WHAT THIS ARM DOES NOT DRAW -------------------------------------------
+/* ==========================================================================
+ * WHAT `hero_ui.c` ADDED AFTER THE WEB VIEW: boxes the system draws, a row
+ * opened, Return and Escape, the widget with the keys, menus inside menus,
+ * check and radio items, context menus, a masked field, a moving bar, the
+ * clipboard, a table, a tree, windows among the screens, a key pressed, a
+ * folder chosen and a message box of the program's words.
  *
- * The calls `hero_ui.c` adds after THE WEB VIEW'S ENTRY POINTS that only the
- * macOS arm draws: each answers `HERO_UI_UNSUPPORTED` here, which the entry
- * point tells in `hero_ui_elsewhere`'s words, and `hero_ui_arm_makes` and
- * `hero_ui_arm_acts` answer false for the kinds and acts this arm does not
- * draw. Drawing one is writing its function here, and answering true for
- * its kind or act. */
+ * WHAT GTK 4 OR ITS DISPLAY CANNOT DO is answered `HERO_UI_UNSUPPORTED` with
+ * words naming what is missing, kept by `hero_ui_gtk_said_so` and handed to
+ * the entry point by `hero_ui_arm_windows_words`, which empties them as it
+ * reads them, so no call reads another's. On Wayland no program places, reads
+ * or raises its own window or reads whether it is minimized (`xdg_toplevel`
+ * has no such request, and of `set_minimized` it says "the client cannot
+ * query or undo this"), and GTK 4 makes no key event. On X11 a position is
+ * the X server's own, read and set through the window's XID; a window's
+ * state and its stacking are a window manager's, so with none running (no
+ * `_NET_SUPPORTING_WM_CHECK` on the root window) they are refused; a key is
+ * pressed through the XTest extension, `libXtst.so.6`, opened beside GTK
+ * where it is installed, GTK itself needing none. No system of GTK 4 puts a
+ * translucent material behind a window.
+ * ========================================================================== */
 
-/* -- THE CALLS ON A WINDOW AS THE SYSTEM SHOWS IT ---------------------- */
+/* The words of this part's last refusal, which `hero_ui_arm_windows_words`
+ * hands on once. */
+static _Thread_local char hero_ui_gtk_said[HERO_UI_WORDS_MOST];
+/* What the last read of the clipboard found, and whether it found any. */
+static _Thread_local uint8_t *hero_ui_gtk_clip;
+static _Thread_local int64_t hero_ui_gtk_clip_count;
+static _Thread_local bool hero_ui_gtk_clip_kept;
+/* The app's icon, a `GdkTexture`, NULL for the system's own. */
+static _Thread_local void *hero_ui_gtk_icon;
+/* Whether the X11 display's events are watched, and whether a check of the
+ * windows' places is queued. */
+static _Thread_local bool hero_ui_gtk_xevents;
+static _Thread_local bool hero_ui_gtk_places_due;
 
-/* This part's kinds from `HERO_UI_TABS` on, a menu inside a menu, and the
- * acts `ACTIVATE`, `SUBMIT`, `SORT` and `UNFOLD` are drawn on macOS alone:
- * every other arm answers false here, so the entry point tells
- * `HERO_UI_UNSUPPORTED` in `hero_ui_elsewhere`'s words before that arm's
- * `create` or `inject`, which knows none of them, could call the kind or
- * the act `HERO_UI_INVALID`. An arm that draws one answers true for it. */
-bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
-    const hero_ui_native *owner;
-
-    if (kind >= HERO_UI_TABS) {
-        return false;
-    }
-    if (kind != HERO_UI_MENU) {
-        return true;
-    }
-    owner = hero_ui_find(parent);
-    return owner == NULL || owner->kind != HERO_UI_MENU;
-}
-
-bool hero_ui_arm_acts(int64_t act) {
-    return act != HERO_UI_EVENT_ACTIVATE && act != HERO_UI_EVENT_SUBMIT && act != HERO_UI_EVENT_SORT && act != HERO_UI_EVENT_UNFOLD;
+/* `kind`, its words `words` kept for the entry point. */
+static int64_t hero_ui_gtk_said_so(int64_t kind, const char *words) {
+    (void)hero_ui_copy_text(hero_ui_gtk_said, sizeof hero_ui_gtk_said, words);
+    return kind;
 }
 
 int64_t hero_ui_arm_windows_words(char *words, int64_t count) {
-    (void)words;
+    int64_t given;
+
+    if (words == NULL || count <= 0 || hero_ui_gtk_said[0] == '\0') {
+        return 0;
+    }
+    given = (int64_t)hero_ui_copy_text(words, (size_t)count, hero_ui_gtk_said);
+    hero_ui_gtk_said[0] = '\0';
+    return given;
+}
+
+/* Runs GLib's loop for up to `ms` milliseconds, or until `done` reads true
+ * (NULL for the whole time); true where `done` came true. */
+static bool hero_ui_gtk_spin(int64_t ms, bool (*done)(void *data), void *data) {
+    int64_t deadline = hero_ui_gtk_now() + ms;
+
+    for (;;) {
+        int64_t now;
+        bool woke = false;
+        unsigned timer;
+
+        while (hero_ui_gtk.main_context_iteration(NULL, 0)) {
+            if (done != NULL && done(data)) {
+                return true;
+            }
+        }
+        if (done != NULL && done(data)) {
+            return true;
+        }
+        now = hero_ui_gtk_now();
+        if (now >= deadline) {
+            return false;
+        }
+        /* Waking at least every 20 ms, since what `done` reads may change
+         * with no event of GLib's (an X server's answer read by Xlib). */
+        timer = hero_ui_gtk.timeout_add((unsigned)(deadline - now < 20 ? deadline - now : 20), hero_ui_gtk_woke, &woke);
+        (void)hero_ui_gtk.main_context_iteration(NULL, 1);
+        if (!woke) {
+            (void)hero_ui_gtk.source_remove(timer);
+        }
+    }
+}
+
+/* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
+ *
+ * Tabs are a `GtkNotebook`, a page a `GtkFixed` it holds, its tab a label; a
+ * scrolled box a `GtkScrolledWindow` over a `GtkFixed` the program sizes; a
+ * split a `GtkPaned`, a pane a `GtkFixed` it holds first or second. A page's,
+ * a scrolled box's and a pane's widgets stand in its fixed as a window's
+ * stand in its content (`hero_ui_gtk_container`). The person choosing a tab
+ * is the notebook's `page` changing; the person dragging the divider is the
+ * paned's `position` changing while its own size along its axis does not,
+ * which a resize of its place changes; the divider is kept within the range
+ * the program set by putting it back at the nearest end. */
+
+/* The pane of split `split` hung first, `slot` 0, or second, else NULL;
+ * `apart` is never answered. */
+static hero_ui_native *hero_ui_gtk_pane(const hero_ui_native *split, int slot, const hero_ui_native *apart) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *each = hero_ui_at(at);
+
+        if (each != NULL && each != apart && each->kind == HERO_UI_PANE && each->parent == split->id && each->pane_slot == slot) {
+            return each;
+        }
+    }
+    return NULL;
+}
+
+/* The person chose another tab of notebook `notebook`. */
+static void hero_ui_gtk_page_shown(void *notebook, void *spec, void *data) {
+    hero_ui_native *tabs = hero_ui_gtk_of(data, notebook);
+
+    (void)spec;
+    if (tabs != NULL && tabs->kind == HERO_UI_TABS) {
+        hero_ui_tell(HERO_UI_EVENT_SELECT, tabs->id, hero_ui_gtk.notebook_get_current_page(notebook), 0);
+    }
+}
+
+/* The divider of paned `paned` moved: by the person's drag, kept within the
+ * program's range and told; by a resize of the split's own place, not told;
+ * by the program, muted. */
+static void hero_ui_gtk_divided(void *paned, void *spec, void *data) {
+    hero_ui_native *split = hero_ui_gtk_of(data, paned);
+    int extent;
+    int64_t at;
+    int64_t held;
+
+    (void)spec;
+    if (split == NULL || (split->kind != HERO_UI_SPLIT_ROW && split->kind != HERO_UI_SPLIT_COLUMN) || hero_ui_is_muted()) {
+        return;
+    }
+    extent = split->kind == HERO_UI_SPLIT_ROW ? hero_ui_gtk.widget_get_width(paned) : hero_ui_gtk.widget_get_height(paned);
+    at = hero_ui_gtk.paned_get_position(paned);
+    if (extent != split->split_extent && hero_ui_gtk_injecting == 0) {
+        split->split_extent = extent;
+        split->value = at;
+        return;
+    }
+    held = hero_ui_between(at, split->least, split->most);
+    if (held != at) {
+        hero_ui_mute(1);
+        hero_ui_gtk.paned_set_position(paned, hero_ui_gtk_int(held));
+        hero_ui_mute(-1);
+    }
+    if (held != split->value || hero_ui_gtk_injecting > 0) {
+        split->value = held;
+        hero_ui_tell(HERO_UI_EVENT_VALUE, split->id, held, 0);
+    }
+}
+
+static bool hero_ui_gtk_make_box(hero_ui_native *made, hero_ui_native *owner) {
+    (void)owner;
+    switch (made->kind) {
+    case HERO_UI_TABS:
+        made->widget = hero_ui_gtk.notebook_new();
+        if (made->widget == NULL) {
+            return false;
+        }
+        hero_ui_gtk.notebook_set_scrollable(made->widget, 1);
+        hero_ui_gtk_connect(made->widget, "notify::page", (hero_ui_gtk_callback)hero_ui_gtk_page_shown, made->id);
+        return true;
+    case HERO_UI_PAGE:
+    case HERO_UI_PANE:
+        made->widget = hero_ui_gtk.fixed_new();
+        made->fixed = made->widget;
+        if (made->widget != NULL) {
+            /* What stands past a page's or a pane's edge is cut there, as a
+             * window's content is. */
+            hero_ui_gtk.widget_set_overflow(made->widget, HERO_GTK_OVERFLOW_HIDDEN);
+        }
+        return made->widget != NULL;
+    case HERO_UI_SCROLL:
+        made->widget = hero_ui_gtk.scrolled_window_new();
+        made->fixed = hero_ui_gtk.fixed_new();
+        if (made->widget == NULL || made->fixed == NULL) {
+            return false;
+        }
+        hero_ui_gtk.scrolled_window_set_policy(made->widget, HERO_GTK_POLICY_NEVER, HERO_GTK_POLICY_AUTOMATIC);
+        hero_ui_gtk.scrolled_window_set_child(made->widget, made->fixed);
+        return true;
+    default:
+        made->widget = hero_ui_gtk.paned_new(made->kind == HERO_UI_SPLIT_ROW ? HERO_GTK_ORIENTATION_HORIZONTAL : HERO_GTK_ORIENTATION_VERTICAL);
+        if (made->widget == NULL) {
+            return false;
+        }
+        /* The program's range bounds the divider, never GTK's least sizes;
+         * the first pane keeps its size as the split's place grows. */
+        hero_ui_gtk.paned_set_shrink_start_child(made->widget, 1);
+        hero_ui_gtk.paned_set_shrink_end_child(made->widget, 1);
+        hero_ui_gtk.paned_set_resize_start_child(made->widget, 0);
+        hero_ui_gtk.paned_set_resize_end_child(made->widget, 1);
+        made->least = 0;
+        made->most = INT32_MAX;
+        made->value = 0;
+        hero_ui_gtk_connect(made->widget, "notify::position", (hero_ui_gtk_callback)hero_ui_gtk_divided, made->id);
+        return true;
+    }
+}
+
+static int64_t hero_ui_gtk_hang(hero_ui_native *made, hero_ui_native *owner) {
+    if (made->kind == HERO_UI_PAGE) {
+        int at;
+
+        hero_ui_mute(1);
+        at = hero_ui_gtk.notebook_append_page(owner->widget, made->widget, NULL);
+        hero_ui_mute(-1);
+        if (at < 0) {
+            hero_ui_gtk_drop(made);
+            return hero_ui_refused(HERO_UI_OTHER, "GTK's notebook took no page");
+        }
+        return HERO_UI_OK;
+    }
+    made->pane_slot = hero_ui_gtk_pane(owner, 0, made) != NULL ? 1 : 0;
+    hero_ui_mute(1);
+    if (made->pane_slot == 0) {
+        hero_ui_gtk.paned_set_start_child(owner->widget, made->widget);
+    } else {
+        hero_ui_gtk.paned_set_end_child(owner->widget, made->widget);
+    }
+    hero_ui_mute(-1);
+    owner->panes += 1;
+    return HERO_UI_OK;
+}
+
+static void hero_ui_gtk_unhang(hero_ui_native *widget, hero_ui_native *owner) {
+    if (owner == NULL) {
+        return;
+    }
+    hero_ui_mute(1);
+    if (widget->kind == HERO_UI_PAGE) {
+        int at = hero_ui_gtk.notebook_page_num(owner->widget, widget->widget);
+
+        if (at >= 0) {
+            hero_ui_gtk.notebook_remove_page(owner->widget, at);
+        }
+    } else {
+        if (widget->pane_slot == 0) {
+            hero_ui_gtk.paned_set_start_child(owner->widget, NULL);
+        } else {
+            hero_ui_gtk.paned_set_end_child(owner->widget, NULL);
+        }
+        owner->panes -= 1;
+    }
+    hero_ui_mute(-1);
+}
+
+/* The thickness of split `split`'s divider: the paned's natural size along
+ * its axis less its two panes', a pane it does not hold yet stood in for by
+ * an empty fixed while it is measured. */
+static int hero_ui_gtk_divider(hero_ui_native *split) {
+    bool row = split->kind == HERO_UI_SPLIT_ROW;
+    hero_ui_native *first = hero_ui_gtk_pane(split, 0, NULL);
+    hero_ui_native *second = hero_ui_gtk_pane(split, 1, NULL);
+    void *start = first != NULL ? first->widget : hero_ui_gtk.fixed_new();
+    void *end = second != NULL ? second->widget : hero_ui_gtk.fixed_new();
+    hero_ui_gtk_size whole;
+    hero_ui_gtk_size one;
+    hero_ui_gtk_size two;
+    int thick;
+
+    hero_ui_mute(1);
+    if (first == NULL) {
+        hero_ui_gtk.paned_set_start_child(split->widget, start);
+    }
+    if (second == NULL) {
+        hero_ui_gtk.paned_set_end_child(split->widget, end);
+    }
+    whole = hero_ui_gtk_natural(split->widget);
+    one = hero_ui_gtk_natural(start);
+    two = hero_ui_gtk_natural(end);
+    if (first == NULL) {
+        hero_ui_gtk.paned_set_start_child(split->widget, NULL);
+    }
+    if (second == NULL) {
+        hero_ui_gtk.paned_set_end_child(split->widget, NULL);
+    }
+    hero_ui_mute(-1);
+    thick = row ? whole.width - one.width - two.width : whole.height - one.height - two.height;
+    return thick > 0 ? thick : 1;
+}
+
+int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    *left = 0;
+    *top = 0;
+    *right = 0;
+    *bottom = 0;
+    if (widget->kind == HERO_UI_SCROLL) {
+        int overlay = 1;
+        void *settings = hero_ui_gtk.settings_get_default();
+
+        if (settings != NULL) {
+            hero_ui_gtk.object_get(settings, "gtk-overlay-scrolling", &overlay, NULL);
+        }
+        if (!overlay || !hero_ui_gtk.scrolled_window_get_overlay_scrolling(widget->widget)) {
+            /* The scroll bar stands beside the content rather than over it. */
+            *right = hero_ui_gtk_natural(hero_ui_gtk.scrolled_window_get_vscrollbar(widget->widget)).width;
+        }
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_TABS) {
+        /* Measured around a page of 400 by 300 points put in for the
+         * moment: the room left beside and below it is the border, the room
+         * above it the tabs and the border. */
+        void *probe = hero_ui_gtk.fixed_new();
+        hero_ui_gtk_size whole;
+        int at;
+        int64_t wide;
+        int64_t high;
+
+        if (probe == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.widget_set_size_request(probe, 400, 300);
+        hero_ui_mute(1);
+        at = hero_ui_gtk.notebook_append_page(widget->widget, probe, NULL);
+        whole = hero_ui_gtk_natural(widget->widget);
+        if (at >= 0) {
+            hero_ui_gtk.notebook_remove_page(widget->widget, at);
+        }
+        hero_ui_mute(-1);
+        wide = whole.width > 400 ? whole.width - 400 : 0;
+        high = whole.height > 300 ? whole.height - 300 : 0;
+        *left = wide / 2;
+        *right = wide - wide / 2;
+        *bottom = *left < high ? *left : 0;
+        *top = high - *bottom;
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+/* -- A LIST'S ROW OPENED, RETURN AND ESCAPE, THE WIDGET WITH THE KEYS ---------
+ *
+ * A list opens a row on a double click and on Return, its `row-activated`
+ * (single-click activation is off). A text field's `activate` is Return in
+ * it: its window's button for Return is clicked where the person reaches it,
+ * else the field is submitted; the button is also the window's default
+ * widget, so Return anywhere else in the window clicks it, as GTK draws and
+ * does for a dialog's. Escape is a shortcut of the window's, held by a
+ * controller on its button in the window's global scope, activating it. */
+
+static void hero_ui_gtk_row_opened(void *box, void *row, void *data) {
+    hero_ui_native *list = hero_ui_gtk_of(data, box);
+
+    if (list != NULL && (list->kind == HERO_UI_LIST || list->kind == HERO_UI_LIST_MULTIPLE)) {
+        hero_ui_tell(HERO_UI_EVENT_ACTIVATE, list->id, hero_ui_gtk.list_box_row_get_index(row), 0);
+    }
+}
+
+/* Button `id` where the person reaches it: shown and taking their acts. */
+static hero_ui_native *hero_ui_gtk_reachable_button(int64_t id) {
+    hero_ui_native *button = id != 0 ? hero_ui_find(id) : NULL;
+
+    if (button == NULL || button->kind != HERO_UI_BUTTON || !hero_ui_gtk.widget_get_visible(button->widget) || !hero_ui_gtk.widget_is_sensitive(button->widget)) {
+        return NULL;
+    }
+    return button;
+}
+
+static void hero_ui_gtk_returned(void *entry, void *data) {
+    hero_ui_native *field = hero_ui_gtk_of(data, entry);
+    hero_ui_native *window;
+    hero_ui_native *button;
+
+    if (field == NULL || field->kind != HERO_UI_TEXT_FIELD) {
+        return;
+    }
+    window = hero_ui_gtk_window(field->window);
+    button = window != NULL ? hero_ui_gtk_reachable_button(window->enter_button) : NULL;
+    if (button != NULL) {
+        (void)hero_ui_gtk.widget_activate(button->widget);
+        return;
+    }
+    hero_ui_tell(HERO_UI_EVENT_SUBMIT, field->id, 0, 0);
+}
+
+static void hero_ui_gtk_forget_keys(hero_ui_native *button) {
+    hero_ui_native *window = hero_ui_gtk_window(button->window);
+
+    if (window != NULL && window->enter_button == button->id) {
+        window->enter_button = 0;
+        hero_ui_gtk.window_set_default_widget(window->widget, NULL);
+    }
+    if (window != NULL && window->escape_button == button->id) {
+        window->escape_button = 0;
+    }
+    if (button->key_controller != NULL) {
+        hero_ui_gtk.widget_remove_controller(button->widget, button->key_controller);
+        button->key_controller = NULL;
+    }
+    button->button_key = HERO_UI_BUTTON_KEY_NONE;
+}
+
+int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
+    hero_ui_native *button = hero_ui_find(id);
+    hero_ui_native *window;
+
+    if (button == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (button->kind != HERO_UI_BUTTON) {
+        return HERO_UI_INVALID;
+    }
+    window = hero_ui_gtk_window(button->window);
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    hero_ui_gtk_forget_keys(button);
+    if (key == HERO_UI_BUTTON_KEY_ENTER) {
+        hero_ui_native *before = hero_ui_find(window->enter_button);
+
+        if (before != NULL) {
+            hero_ui_gtk_forget_keys(before);
+        }
+        window->enter_button = id;
+        hero_ui_gtk.window_set_default_widget(window->widget, button->widget);
+    } else if (key == HERO_UI_BUTTON_KEY_ESCAPE) {
+        hero_ui_native *before = hero_ui_find(window->escape_button);
+        void *controller = hero_ui_gtk.shortcut_controller_new();
+        void *trigger = hero_ui_gtk.keyval_trigger_new(HERO_GDK_KEY_ESCAPE, 0);
+        void *shortcut;
+
+        if (before != NULL) {
+            hero_ui_gtk_forget_keys(before);
+        }
+        if (controller == NULL || trigger == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        shortcut = hero_ui_gtk.shortcut_new(trigger, hero_ui_gtk.object_ref(hero_ui_gtk.activate_action_get()));
+        if (shortcut == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.shortcut_controller_set_scope(controller, HERO_GTK_SHORTCUT_SCOPE_GLOBAL);
+        hero_ui_gtk.shortcut_controller_add_shortcut(controller, shortcut);
+        hero_ui_gtk.widget_add_controller(button->widget, controller);
+        button->key_controller = controller;
+        window->escape_button = id;
+    }
+    button->button_key = key;
+    return HERO_UI_OK;
+}
+
+static bool hero_ui_gtk_takes_keys(int64_t kind) {
+    return kind == HERO_UI_TEXT_FIELD || kind == HERO_UI_TEXT_AREA || kind == HERO_UI_LIST || kind == HERO_UI_LIST_MULTIPLE;
+}
+
+/* The GTK widget given the keys for `widget`: the field, the text view, or
+ * a list's first chosen row, else its first row, else the list box. */
+static void *hero_ui_gtk_key_target(const hero_ui_native *widget) {
+    if (widget->kind == HERO_UI_TEXT_FIELD) {
+        return widget->widget;
+    }
+    if (widget->kind == HERO_UI_TEXT_AREA) {
+        return widget->inner;
+    }
+    for (int64_t i = 0; i < widget->items; i += 1) {
+        void *row = hero_ui_gtk.list_box_get_row_at_index(widget->inner, (int)i);
+
+        if (row != NULL && hero_ui_gtk.list_box_row_is_selected(row)) {
+            return row;
+        }
+    }
+    {
+        void *first = hero_ui_gtk.list_box_get_row_at_index(widget->inner, 0);
+
+        return first != NULL ? first : widget->inner;
+    }
+}
+
+int64_t hero_ui_arm_set_focus(int64_t id) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!hero_ui_gtk_takes_keys(widget->kind) || !widget->visible || !hero_ui_gtk.widget_get_visible(widget->widget) || !hero_ui_gtk.widget_is_sensitive(widget->widget)) {
+        return HERO_UI_INVALID;
+    }
+    return hero_ui_gtk.widget_grab_focus(hero_ui_gtk_key_target(widget)) ? HERO_UI_OK : HERO_UI_INVALID;
+}
+
+/* The widget of window `window` that takes the keys and holds GTK widget
+ * `gtk`, or NULL. */
+static hero_ui_native *hero_ui_gtk_keyed(const hero_ui_native *window, const void *gtk) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *each = hero_ui_at(at);
+
+        if (each != NULL && each->window == window->id && hero_ui_gtk_takes_keys(each->kind) && (each->widget == gtk || each->inner == gtk)) {
+            return each;
+        }
+    }
+    return NULL;
+}
+
+/* The widget of window `window` with the keys, or NULL where none of its
+ * widgets that take them has them. */
+static hero_ui_native *hero_ui_gtk_focused(const hero_ui_native *window) {
+    for (void *at = hero_ui_gtk.root_get_focus(window->widget); at != NULL && at != window->widget; at = hero_ui_gtk.widget_get_parent(at)) {
+        hero_ui_native *found = hero_ui_gtk_keyed(window, at);
+
+        if (found != NULL) {
+            return found;
+        }
+    }
+    return NULL;
+}
+
+int64_t hero_ui_arm_focus(int64_t id, int64_t *focus) {
+    hero_ui_native *window = hero_ui_find(id);
+    hero_ui_native *found;
+
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (window->kind != HERO_UI_WINDOW) {
+        return HERO_UI_INVALID;
+    }
+    found = hero_ui_gtk_focused(window);
+    *focus = found != NULL ? found->id : id;
+    return HERO_UI_OK;
+}
+
+/* Gives the first widget of window `window` that takes the keys, in reading
+ * order, the keys, where none of them has them: what a window shown the
+ * first time does on every system (GTK's own first focus may be a button). */
+static void hero_ui_gtk_first_focus(hero_ui_native *window) {
+    hero_ui_native *best = NULL;
+    double best_x = 0;
+    double best_y = 0;
+
+    if (hero_ui_gtk_focused(window) != NULL) {
+        return;
+    }
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *each = hero_ui_at(at);
+        float origin[2] = {0.0f, 0.0f};
+        float found[2] = {0.0f, 0.0f};
+
+        if (each == NULL || each->window != window->id || !hero_ui_gtk_takes_keys(each->kind) || !hero_ui_gtk.widget_get_visible(each->widget) || !hero_ui_gtk.widget_is_sensitive(each->widget)) {
+            continue;
+        }
+        if (!hero_ui_gtk.widget_compute_point(each->widget, window->widget, origin, found)) {
+            found[0] = (float)each->x;
+            found[1] = (float)each->y;
+        }
+        if (best == NULL || found[1] < best_y || (found[1] == best_y && found[0] < best_x)) {
+            best = each;
+            best_x = found[0];
+            best_y = found[1];
+        }
+    }
+    if (best != NULL) {
+        (void)hero_ui_gtk.widget_grab_focus(hero_ui_gtk_key_target(best));
+    }
+}
+
+/* -- MENUS INSIDE MENUS, CHECK AND RADIO ITEMS, ROLES, CONTEXT MENUS ---------
+ *
+ * A menu inside a menu is a submenu of the GMenu it stands in. A check item's
+ * action has a boolean state, which GTK draws as a check; a radio item's
+ * action a string state and the item a target, `on`, which GTK draws as a
+ * radio checked where the two match; the arm turns them itself before it
+ * tells the choice (`hero_ui_gtk_chosen`). GTK 4 holds no application menu,
+ * so a role leaves an item where the program put it. A context menu is a
+ * `GtkPopoverMenu` over the widget's GMenu, opened by a secondary click or
+ * by Shift+F10 and the Menu key on its widget; a text field's and a text
+ * area's are their own context menu's extra items, beside Cut, Copy and
+ * Paste, as GTK gives a text widget's. */
+
+int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
+    hero_ui_native *item = hero_ui_find(id);
+
+    if (item == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (item->kind != HERO_UI_MENU_ITEM) {
+        return HERO_UI_INVALID;
+    }
+    item->role = role;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
+    hero_ui_native *item = hero_ui_find(id);
+    hero_ui_native *window;
+    char name[64];
+    void *action;
+
+    if (item == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (item->kind != HERO_UI_MENU_ITEM) {
+        return HERO_UI_INVALID;
+    }
+    window = hero_ui_gtk_window(item->window);
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    hero_ui_gtk_action_name(id, false, name, sizeof name);
+    if (mode == HERO_UI_CHECK_BOX) {
+        action = hero_ui_gtk.simple_action_new_stateful(name, NULL, hero_ui_gtk.variant_new_boolean(0));
+    } else if (mode == HERO_UI_CHECK_RADIO) {
+        void *type = hero_ui_gtk.variant_type_new("s");
+
+        action = type != NULL ? hero_ui_gtk.simple_action_new_stateful(name, type, hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_OFF)) : NULL;
+        if (type != NULL) {
+            hero_ui_gtk.variant_type_free(type);
+        }
+    } else {
+        action = hero_ui_gtk.simple_action_new(name, NULL);
+    }
+    if (action == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.action_map_remove_action(window->actions, name);
+    hero_ui_gtk.object_unref(item->action);
+    item->action = action;
+    item->check = mode;
+    item->checked = false;
+    hero_ui_gtk_connect(action, "activate", (hero_ui_gtk_callback)hero_ui_gtk_chosen, id);
+    hero_ui_gtk.action_map_add_action(window->actions, action);
+    if (item->shortcut != NULL) {
+        hero_ui_gtk.shortcut_set_arguments(item->shortcut, mode == HERO_UI_CHECK_RADIO ? hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON) : NULL);
+    }
+    return hero_ui_gtk_fill_menu(hero_ui_find(item->parent));
+}
+
+/* The person's secondary click on context menu `data`'s widget. */
+static void hero_ui_gtk_context_pressed(void *gesture, int presses, double x, double y, void *data) {
+    hero_ui_native *menu = hero_ui_gtk_of(data, gesture);
+    hero_ui_native *owner = menu != NULL ? hero_ui_find(menu->parent) : NULL;
+    int point[4];
+
+    (void)presses;
+    if (menu == NULL || owner == NULL || !owner->enabled || !menu->visible) {
+        return;
+    }
+    (void)hero_ui_gtk.gesture_set_state(gesture, HERO_GTK_EVENT_SEQUENCE_CLAIMED);
+    point[0] = (int)x;
+    point[1] = (int)y;
+    point[2] = 1;
+    point[3] = 1;
+    hero_ui_gtk.popover_set_pointing_to(menu->popover, point);
+    hero_ui_gtk.popover_popup(menu->popover);
+}
+
+/* Shift+F10 or the Menu key on context menu `data`'s widget: the menu shown
+ * at the widget's corner. */
+static int hero_ui_gtk_context_keyed(void *widget, void *arguments, void *data) {
+    hero_ui_native *menu = hero_ui_find((int64_t)(intptr_t)data);
+    hero_ui_native *owner = menu != NULL && menu->kind == HERO_UI_CONTEXT_MENU ? hero_ui_find(menu->parent) : NULL;
+    int point[4] = {0, 0, 1, 1};
+
+    (void)widget;
+    (void)arguments;
+    if (owner == NULL || !owner->enabled || !menu->visible) {
+        return 0;
+    }
+    hero_ui_gtk.popover_set_pointing_to(menu->popover, point);
+    hero_ui_gtk.popover_popup(menu->popover);
+    return 1;
+}
+
+/* Sets text field `field`'s, or text area `area`'s, extra menu `model`. */
+static void hero_ui_gtk_extra_menu(hero_ui_native *owner, void *model) {
+    if (owner->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk.text_view_set_extra_menu(owner->inner, model);
+    } else if (owner->masked) {
+        hero_ui_gtk.password_entry_set_extra_menu(owner->widget, model);
+    } else {
+        hero_ui_gtk.entry_set_extra_menu(owner->widget, model);
+    }
+}
+
+static int64_t hero_ui_gtk_attach_context(hero_ui_native *menu, hero_ui_native *owner) {
+    static const struct {
+        unsigned keyval;
+        unsigned held;
+    } opening[] = {{HERO_GDK_KEY_F10, HERO_GDK_SHIFT_MASK}, {HERO_GDK_KEY_MENU, 0u}};
+    void *target;
+
+    owner->context = menu->id;
+    if (owner->kind == HERO_UI_TEXT_FIELD || owner->kind == HERO_UI_TEXT_AREA) {
+        hero_ui_gtk_extra_menu(owner, menu->menu_model);
+        return hero_ui_gtk_fill_menu(menu);
+    }
+    target = owner->kind == HERO_UI_WINDOW ? hero_ui_gtk.widget_get_parent(owner->area) : owner->widget;
+    menu->inner = target;
+    menu->popover = hero_ui_gtk.popover_menu_new_from_model(menu->menu_model);
+    menu->gesture = hero_ui_gtk.gesture_click_new();
+    menu->keys = hero_ui_gtk.shortcut_controller_new();
+    if (target == NULL || menu->popover == NULL || menu->gesture == NULL || menu->keys == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_gtk.popover_set_has_arrow(menu->popover, 0);
+    hero_ui_gtk.widget_set_halign(menu->popover, HERO_GTK_ALIGN_START);
+    hero_ui_gtk.widget_set_parent(menu->popover, target);
+    hero_ui_gtk.gesture_single_set_button(menu->gesture, HERO_GDK_BUTTON_SECONDARY);
+    hero_ui_gtk_connect(menu->gesture, "pressed", (hero_ui_gtk_callback)hero_ui_gtk_context_pressed, menu->id);
+    hero_ui_gtk.widget_add_controller(target, menu->gesture);
+    for (size_t i = 0; i < sizeof opening / sizeof opening[0]; i += 1) {
+        void *trigger = hero_ui_gtk.keyval_trigger_new(opening[i].keyval, opening[i].held);
+        void *action = hero_ui_gtk.callback_action_new((hero_ui_gtk_callback)hero_ui_gtk_context_keyed, (void *)(intptr_t)menu->id, NULL);
+        void *shortcut = trigger != NULL && action != NULL ? hero_ui_gtk.shortcut_new(trigger, action) : NULL;
+
+        if (shortcut != NULL) {
+            hero_ui_gtk.shortcut_controller_add_shortcut(menu->keys, shortcut);
+        }
+    }
+    hero_ui_gtk.widget_add_controller(target, menu->keys);
+    return hero_ui_gtk_fill_menu(menu);
+}
+
+static void hero_ui_gtk_detach_context(hero_ui_native *menu) {
+    hero_ui_native *owner = hero_ui_find(menu->parent);
+
+    if (owner != NULL && owner->context == menu->id) {
+        owner->context = 0;
+        if (owner->kind == HERO_UI_TEXT_FIELD || owner->kind == HERO_UI_TEXT_AREA) {
+            hero_ui_gtk_extra_menu(owner, NULL);
+        }
+    }
+    if (menu->popover != NULL) {
+        hero_ui_gtk.widget_unparent(menu->popover);
+        menu->popover = NULL;
+    }
+    if (menu->inner != NULL && menu->gesture != NULL) {
+        hero_ui_gtk.widget_remove_controller(menu->inner, menu->gesture);
+    }
+    if (menu->inner != NULL && menu->keys != NULL) {
+        hero_ui_gtk.widget_remove_controller(menu->inner, menu->keys);
+    }
+    menu->gesture = NULL;
+    menu->keys = NULL;
+}
+
+static int64_t hero_ui_gtk_context_refill(hero_ui_native *owner) {
+    hero_ui_native *menu = owner->context != 0 ? hero_ui_find(owner->context) : NULL;
+
+    return menu != NULL ? hero_ui_gtk_fill_menu(menu) : HERO_UI_OK;
+}
+
+/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE ------------------------
+ *
+ * A masked field is a `GtkPasswordEntry` put in the text field's place, its
+ * text, its place, its greying, its keys and its context menu carried over,
+ * as macOS puts an `NSSecureTextField` there; GTK refuses to copy its text
+ * and shows Caps Lock held. A moving bar is pulsed every 100 ms by a timeout
+ * of its own, removed when it stops or goes. */
+
+int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
+    hero_ui_native *field = hero_ui_find(id);
+    hero_ui_native *window;
+    void *container;
+    void *old;
+    void *fresh;
+    const char *held;
+    char *text;
+    bool focused;
+
+    if (field == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (field->kind != HERO_UI_TEXT_FIELD) {
+        return HERO_UI_INVALID;
+    }
+    if (field->masked == (on == 1)) {
+        return HERO_UI_OK;
+    }
+    window = hero_ui_gtk_window(field->window);
+    container = hero_ui_gtk_container(field);
+    old = field->widget;
+    held = hero_ui_gtk.editable_get_text(old);
+    text = hero_ui_gtk_text((const uint8_t *)(held != NULL ? held : ""), held != NULL ? (int64_t)strlen(held) : 0, false);
+    fresh = on == 1 ? hero_ui_gtk.password_entry_new() : hero_ui_gtk.entry_new();
+    if (text == NULL || fresh == NULL || container == NULL || window == NULL) {
+        hero_layer_free(text);
+        return HERO_UI_LIMIT;
+    }
+    focused = hero_ui_gtk_focused(window) == field;
+    hero_ui_mute(1);
+    hero_ui_gtk.editable_set_text(fresh, text);
+    hero_ui_mute(-1);
+    hero_layer_free(text);
+    hero_ui_gtk.widget_set_sensitive(fresh, field->enabled ? 1 : 0);
+    hero_ui_gtk.widget_set_visible(fresh, 0);
+    hero_ui_gtk.fixed_put(container, fresh, (double)hero_ui_gtk_int(field->x), (double)hero_ui_gtk_int(field->y));
+    if (field->placed) {
+        hero_ui_gtk.widget_set_size_request(fresh, hero_ui_gtk_int(field->width), hero_ui_gtk_int(field->height));
+    }
+    hero_ui_gtk_connect(fresh, "changed", (hero_ui_gtk_callback)hero_ui_gtk_edited, id);
+    hero_ui_gtk_connect(fresh, "activate", (hero_ui_gtk_callback)hero_ui_gtk_returned, id);
+    field->widget = fresh;
+    field->masked = on == 1;
+    if (field->context != 0) {
+        hero_ui_native *menu = hero_ui_find(field->context);
+
+        if (menu != NULL) {
+            hero_ui_gtk_extra_menu(field, menu->menu_model);
+        }
+    }
+    hero_ui_gtk_show_placed(field);
+    hero_ui_gtk.fixed_remove(container, old);
+    if (focused) {
+        (void)hero_ui_gtk.widget_grab_focus(fresh);
+    }
+    return HERO_UI_OK;
+}
+
+/* Pulses moving bar `data` once more. */
+static int hero_ui_gtk_pulsed(void *data) {
+    hero_ui_native *bar = hero_ui_find((int64_t)(intptr_t)data);
+
+    if (bar == NULL || bar->kind != HERO_UI_PROGRESS || bar->pulse == 0) {
+        return 0;
+    }
+    hero_ui_gtk.progress_bar_pulse(bar->widget);
+    return 1;
+}
+
+int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
+    hero_ui_native *bar = hero_ui_find(id);
+
+    if (bar == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (bar->kind != HERO_UI_PROGRESS) {
+        return HERO_UI_INVALID;
+    }
+    if (on == 1 && bar->pulse == 0) {
+        hero_ui_gtk.progress_bar_set_pulse_step(bar->widget, 0.1);
+        hero_ui_gtk.progress_bar_pulse(bar->widget);
+        bar->pulse = hero_ui_gtk.timeout_add(100, hero_ui_gtk_pulsed, (void *)(intptr_t)id);
+    } else if (on == 0 && bar->pulse != 0) {
+        (void)hero_ui_gtk.source_remove(bar->pulse);
+        bar->pulse = 0;
+        hero_ui_gtk_show_range(bar);
+    }
+    return HERO_UI_OK;
+}
+
+/* -- THE CLIPBOARD -----------------------------------------------------------
+ *
+ * The display's `GdkClipboard`. What a write puts is offered as its own kind
+ * alone, so a read of another kind finds nothing, as `hero_ui.h` says: text
+ * as `text/plain;charset=utf-8`, its bytes exact; paths as `text/uri-list`
+ * and as GNOME's `x-special/gnome-copied-files`, which file managers paste,
+ * and never as text, which a `GdkFileList` value would also have offered; an
+ * image as a `GdkMemoryTexture` of straight RGBA. A read is asynchronous: the
+ * arm runs GLib's loop until its callback, which keeps what it found, ran, or
+ * cancels it after five seconds where the program holding the clipboard does
+ * not answer. A read that finds no format of the kind asked is NOT_FOUND. */
+
+/* What one read of the clipboard found. */
+typedef struct hero_ui_gtk_read {
+    bool done;
+    int64_t kind;
+    int64_t answer;
+    uint8_t *bytes;
+    int64_t count;
+    int64_t room;
+    int64_t width;
+    int64_t height;
+    char words[HERO_UI_WORDS_MOST];
+} hero_ui_gtk_read;
+
+/* GLib's `GSList`. */
+typedef struct hero_ui_gtk_slist {
+    void *data;
+    struct hero_ui_gtk_slist *next;
+} hero_ui_gtk_slist;
+
+/* The display's clipboard, or NULL. */
+static void *hero_ui_gtk_clipboard(void) {
+    void *display = hero_ui_gtk.display_get_default();
+
+    return display != NULL ? hero_ui_gtk.display_get_clipboard(display) : NULL;
+}
+
+/* Appends `count` bytes at `bytes` to `read`'s, growing them; false where
+ * no memory is left. */
+static bool hero_ui_gtk_read_add(hero_ui_gtk_read *read, const void *bytes, int64_t count) {
+    if (read->count + count > read->room) {
+        int64_t room = (read->room + count) * 2 + 64;
+        uint8_t *grown = hero_layer_grow(read->bytes, (size_t)room);
+
+        if (grown == NULL) {
+            return false;
+        }
+        read->bytes = grown;
+        read->room = room;
+    }
+    if (count > 0) {
+        memcpy(read->bytes + read->count, bytes, (size_t)count);
+    }
+    read->count += count;
+    return true;
+}
+
+/* Keeps the error `error` of a read as its answer: an empty clipboard, and
+ * one holding no format of the kind asked, NOT_FOUND (GIO's `NOT_FOUND` and
+ * `NOT_SUPPORTED`, measured under Xvfb on GTK 4.18.6); any other, GTK's
+ * words. */
+static void hero_ui_gtk_read_failed(hero_ui_gtk_read *read, hero_ui_gerror *error) {
+    if (error->domain == hero_ui_gtk.io_error_quark() && (error->code == HERO_G_IO_ERROR_NOT_FOUND || error->code == HERO_G_IO_ERROR_NOT_SUPPORTED)) {
+        read->answer = HERO_UI_NOT_FOUND;
+    } else {
+        (void)snprintf(read->words, sizeof read->words, "GTK's clipboard failed: %s", error->message != NULL ? error->message : "no words");
+        read->answer = HERO_UI_OTHER;
+    }
+    hero_ui_gtk.error_free(error);
+}
+
+/* Writes texture `texture`'s pixels into `read` as 8-bit RGBA, alpha
+ * straight, rows from the top: GTK 4.10's downloader where the library has
+ * it, else Cairo's premultiplied 32-bit pixels taken back to straight. */
+static void hero_ui_gtk_read_texture(hero_ui_gtk_read *read, void *texture) {
+    int64_t width = hero_ui_gtk.texture_get_width(texture);
+    int64_t height = hero_ui_gtk.texture_get_height(texture);
+    int64_t count = width * height * 4;
+
+    if (width <= 0 || height <= 0 || count > HERO_UI_CLIP_MOST) {
+        (void)snprintf(read->words, sizeof read->words, "an image of %lld by %lld pixels is past the %d bytes a read takes", (long long)width, (long long)height, HERO_UI_CLIP_MOST);
+        read->answer = HERO_UI_LIMIT;
+        return;
+    }
+    read->bytes = hero_layer_alloc((size_t)count);
+    if (read->bytes == NULL) {
+        read->answer = HERO_UI_LIMIT;
+        return;
+    }
+    if (hero_ui_gtk.texture_downloader_new != NULL && hero_ui_gtk.texture_downloader_set_format != NULL && hero_ui_gtk.texture_downloader_download_into != NULL && hero_ui_gtk.texture_downloader_free != NULL) {
+        void *downloader = hero_ui_gtk.texture_downloader_new(texture);
+
+        hero_ui_gtk.texture_downloader_set_format(downloader, HERO_GDK_MEMORY_R8G8B8A8);
+        hero_ui_gtk.texture_downloader_download_into(downloader, read->bytes, (size_t)width * 4);
+        hero_ui_gtk.texture_downloader_free(downloader);
+    } else {
+        hero_ui_gtk.texture_download(texture, read->bytes, (size_t)width * 4);
+        for (int64_t at = 0; at < count; at += 4) {
+            uint32_t pixel;
+            uint32_t alpha;
+            uint32_t channel[3];
+
+            memcpy(&pixel, read->bytes + at, sizeof pixel);
+            alpha = pixel >> 24;
+            channel[0] = (pixel >> 16) & 0xFFu;
+            channel[1] = (pixel >> 8) & 0xFFu;
+            channel[2] = pixel & 0xFFu;
+            for (int c = 0; c < 3; c += 1) {
+                uint32_t straight = alpha == 0 ? 0 : (channel[c] * 255u + alpha / 2u) / alpha;
+
+                read->bytes[at + c] = (uint8_t)(straight > 255u ? 255u : straight);
+            }
+            read->bytes[at + 3] = (uint8_t)alpha;
+        }
+    }
+    read->count = count;
+    read->room = count;
+    read->width = width;
+    read->height = height;
+}
+
+/* A read's callback: what was found kept in the read, before GLib frees the
+ * result that holds it. */
+static void hero_ui_gtk_clip_answered(void *clipboard, void *result, void *data) {
+    hero_ui_gtk_read *read = data;
+    hero_ui_gerror *error = NULL;
+
+    read->answer = HERO_UI_OK;
+    if (read->kind == HERO_UI_CLIP_TEXT) {
+        char *text = hero_ui_gtk.clipboard_read_text_finish(clipboard, result, &error);
+
+        if (text != NULL) {
+            if (!hero_ui_gtk_read_add(read, text, (int64_t)strlen(text))) {
+                read->answer = HERO_UI_LIMIT;
+            }
+            hero_ui_gtk.g_free(text);
+        }
+    } else if (read->kind == HERO_UI_CLIP_FILES) {
+        const void *value = hero_ui_gtk.clipboard_read_value_finish(clipboard, result, &error);
+
+        if (value != NULL) {
+            void *list = hero_ui_gtk.value_get_boxed(value);
+            hero_ui_gtk_slist *files = list != NULL ? hero_ui_gtk.file_list_get_files(list) : NULL;
+
+            for (hero_ui_gtk_slist *each = files; each != NULL && read->answer == HERO_UI_OK; each = each->next) {
+                char *path = hero_ui_gtk.file_get_path(each->data);
+                size_t bytes = path != NULL ? strlen(path) : 0;
+
+                /* A file with no local path, or none of UTF-8, is passed over,
+                 * as the file dialogs pass it over. */
+                if (bytes > 0 && hero_ui_is_utf8((const uint8_t *)path, bytes) && (!hero_ui_gtk_read_add(read, path, (int64_t)bytes) || !hero_ui_gtk_read_add(read, "", 1))) {
+                    read->answer = HERO_UI_LIMIT;
+                }
+                hero_ui_gtk.g_free(path);
+            }
+            hero_ui_gtk.slist_free(files);
+            if (read->answer == HERO_UI_OK && read->count == 0) {
+                read->answer = HERO_UI_NOT_FOUND;
+            }
+        }
+    } else {
+        void *texture = hero_ui_gtk.clipboard_read_texture_finish(clipboard, result, &error);
+
+        if (texture != NULL) {
+            hero_ui_gtk_read_texture(read, texture);
+            hero_ui_gtk.object_unref(texture);
+        }
+    }
+    if (error != NULL) {
+        hero_ui_gtk_read_failed(read, error);
+    }
+    if (read->answer == HERO_UI_OK && read->count > HERO_UI_CLIP_MOST) {
+        read->answer = HERO_UI_LIMIT;
+    }
+    read->done = true;
+}
+
+/* Whether read `data` is done. */
+static bool hero_ui_gtk_read_done(void *data) {
+    return ((hero_ui_gtk_read *)data)->done;
+}
+
+int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height) {
+    void *clipboard = hero_ui_gtk_clipboard();
+    bool ok = true;
+
+    if (clipboard == NULL) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "GTK holds no display, so no clipboard");
+    }
+    if (kind == HERO_UI_CLIP_NOTHING) {
+        ok = hero_ui_gtk.clipboard_set_content(clipboard, NULL) != 0;
+    } else if (kind == HERO_UI_CLIP_TEXT) {
+        void *held = hero_ui_gtk.bytes_new(bytes, (size_t)count);
+        void *provider = held != NULL ? hero_ui_gtk.content_provider_new_for_bytes("text/plain;charset=utf-8", held) : NULL;
+
+        if (held != NULL) {
+            hero_ui_gtk.bytes_unref(held);
+        }
+        if (provider == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        ok = hero_ui_gtk.clipboard_set_content(clipboard, provider) != 0;
+        hero_ui_gtk.object_unref(provider);
+    } else if (kind == HERO_UI_CLIP_FILES) {
+        hero_ui_gtk_read uris = {0};
+        hero_ui_gtk_read copied = {0};
+        void *providers[2] = {NULL, NULL};
+        void *both = NULL;
+
+        ok = hero_ui_gtk_read_add(&copied, "copy", 4);
+        for (int64_t at = 0; ok && at < count;) {
+            const uint8_t *end = memchr(bytes + at, 0, (size_t)(count - at));
+            hero_ui_gerror *error = NULL;
+            char *uri = hero_ui_gtk.filename_to_uri((const char *)(bytes + at), NULL, &error);
+
+            if (uri == NULL) {
+                if (error != NULL) {
+                    hero_ui_gtk.error_free(error);
+                }
+                hero_layer_free(uris.bytes);
+                hero_layer_free(copied.bytes);
+                return HERO_UI_INVALID;
+            }
+            ok = hero_ui_gtk_read_add(&uris, uri, (int64_t)strlen(uri)) && hero_ui_gtk_read_add(&uris, "\r\n", 2) && hero_ui_gtk_read_add(&copied, "\n", 1) && hero_ui_gtk_read_add(&copied, uri, (int64_t)strlen(uri));
+            hero_ui_gtk.g_free(uri);
+            at = (int64_t)(end - bytes) + 1;
+        }
+        if (ok) {
+            void *listed = hero_ui_gtk.bytes_new(uris.bytes, (size_t)uris.count);
+            void *gnome = hero_ui_gtk.bytes_new(copied.bytes, (size_t)copied.count);
+
+            providers[0] = listed != NULL ? hero_ui_gtk.content_provider_new_for_bytes("text/uri-list", listed) : NULL;
+            providers[1] = gnome != NULL ? hero_ui_gtk.content_provider_new_for_bytes("x-special/gnome-copied-files", gnome) : NULL;
+            if (listed != NULL) {
+                hero_ui_gtk.bytes_unref(listed);
+            }
+            if (gnome != NULL) {
+                hero_ui_gtk.bytes_unref(gnome);
+            }
+            both = providers[0] != NULL && providers[1] != NULL ? hero_ui_gtk.content_provider_new_union(providers, 2) : NULL;
+        }
+        hero_layer_free(uris.bytes);
+        hero_layer_free(copied.bytes);
+        if (both == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        ok = hero_ui_gtk.clipboard_set_content(clipboard, both) != 0;
+        hero_ui_gtk.object_unref(both);
+    } else {
+        void *held = hero_ui_gtk.bytes_new(bytes, (size_t)count);
+        void *texture = held != NULL && width <= INT32_MAX / 4 && height <= INT32_MAX ? hero_ui_gtk.memory_texture_new((int)width, (int)height, HERO_GDK_MEMORY_R8G8B8A8, held, (size_t)width * 4) : NULL;
+
+        if (held != NULL) {
+            hero_ui_gtk.bytes_unref(held);
+        }
+        if (texture == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.clipboard_set_texture(clipboard, texture);
+        hero_ui_gtk.object_unref(texture);
+    }
+    return ok ? HERO_UI_OK : hero_ui_gtk_said_so(HERO_UI_OTHER, "GTK's clipboard refused what was put on it");
+}
+
+int64_t hero_ui_arm_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height) {
+    void *clipboard = hero_ui_gtk_clipboard();
+    void *cancel;
+    hero_ui_gtk_read read = {0};
+
+    *bytes = 0;
+    if (clipboard == NULL) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "GTK holds no display, so no clipboard");
+    }
+    if (kind == HERO_UI_CLIP_FILES && hero_ui_gtk.file_list_get_files == NULL) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "GTK 4.6 reads a clipboard's paths, and this GTK lacks gdk_file_list_get_files");
+    }
+    cancel = hero_ui_gtk.cancellable_new();
+    read.kind = kind;
+    if (kind == HERO_UI_CLIP_TEXT) {
+        hero_ui_gtk.clipboard_read_text_async(clipboard, cancel, hero_ui_gtk_clip_answered, &read);
+    } else if (kind == HERO_UI_CLIP_FILES) {
+        hero_ui_gtk.clipboard_read_value_async(clipboard, hero_ui_gtk.file_list_get_type(), 0, cancel, hero_ui_gtk_clip_answered, &read);
+    } else {
+        hero_ui_gtk.clipboard_read_texture_async(clipboard, cancel, hero_ui_gtk_clip_answered, &read);
+    }
+    if (!hero_ui_gtk_spin(5000, hero_ui_gtk_read_done, &read)) {
+        /* The program holding the clipboard did not answer: the read is
+         * cancelled, and its callback runs once more before `read` goes. */
+        hero_ui_gtk.cancellable_cancel(cancel);
+        while (!read.done) {
+            (void)hero_ui_gtk.main_context_iteration(NULL, 1);
+        }
+        hero_layer_free(read.bytes);
+        hero_ui_gtk.object_unref(cancel);
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "the program holding the clipboard did not answer within five seconds");
+    }
+    hero_ui_gtk.object_unref(cancel);
+    if (read.answer != HERO_UI_OK) {
+        hero_layer_free(read.bytes);
+        if (read.words[0] != '\0') {
+            (void)hero_ui_gtk_said_so(read.answer, read.words);
+        }
+        return read.answer;
+    }
+    hero_layer_free(hero_ui_gtk_clip);
+    hero_ui_gtk_clip = read.bytes;
+    hero_ui_gtk_clip_count = read.count;
+    hero_ui_gtk_clip_kept = true;
+    *bytes = read.count;
+    *width = read.width;
+    *height = read.height;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
+    if (!hero_ui_gtk_clip_kept) {
+        return -1;
+    }
+    if (hero_ui_gtk_clip_count > 0 && hero_ui_gtk_clip_count <= count) {
+        memcpy(buffer, hero_ui_gtk_clip, (size_t)hero_ui_gtk_clip_count);
+    }
+    return hero_ui_gtk_clip_count;
+}
+
+/* -- A TABLE ------------------------------------------------------------------
+ *
+ * A `GtkColumnView` in a scrolled window, over a `GtkMultiSelection` of a
+ * `GtkStringList` whose strings are the rows' numbers, each column a
+ * `GtkSignalListItemFactory` whose labels read the row's cell from the arm's
+ * own cells. Every column has a sorter that finds every two rows equal, so
+ * its header is clicked as a sortable one's and the view's sorter tells the
+ * click, which the arm tells as `SORT` (GTK 4.10's primary sort column and
+ * order), while the rows are never reordered: the program sorts them and
+ * gives them again. A row opened is the view's `activate`. */
+
+static void hero_ui_gtk_rows_picked(void *model, unsigned position, unsigned count, void *data) {
+    hero_ui_native *table = hero_ui_gtk_of(data, model);
+
+    (void)position;
     (void)count;
+    if (table != NULL && table->kind == HERO_UI_TABLE) {
+        hero_ui_tell(HERO_UI_EVENT_SELECT, table->id, 0, 0);
+    }
+}
+
+static void hero_ui_gtk_table_opened(void *view, unsigned position, void *data) {
+    hero_ui_native *table = hero_ui_gtk_of(data, view);
+
+    if (table != NULL && table->kind == HERO_UI_TABLE) {
+        hero_ui_tell(HERO_UI_EVENT_ACTIVATE, table->id, (int64_t)position, 0);
+    }
+}
+
+/* The column and the order table `table` is sorted by, -1 for none. */
+static int64_t hero_ui_gtk_sorted_by(const hero_ui_native *table, bool *ascending) {
+    void *column = hero_ui_gtk.column_view_sorter_get_primary_sort_column(table->sorter);
+
+    *ascending = hero_ui_gtk.column_view_sorter_get_primary_sort_order(table->sorter) == HERO_GTK_SORT_ASCENDING;
+    for (int64_t i = 0; column != NULL && i < table->column_count; i += 1) {
+        if (table->columns[i] == column) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void hero_ui_gtk_sort_asked(void *sorter, int change, void *data) {
+    hero_ui_native *table = hero_ui_gtk_of(data, sorter);
+    bool ascending = true;
+    int64_t column;
+
+    (void)change;
+    if (table == NULL || table->kind != HERO_UI_TABLE || hero_ui_is_muted()) {
+        return;
+    }
+    column = hero_ui_gtk_sorted_by(table, &ascending);
+    if (column >= 0) {
+        hero_ui_tell(HERO_UI_EVENT_SORT, table->id, column, ascending ? 1 : 0);
+    }
+}
+
+static void hero_ui_gtk_cell_made(void *factory, void *item, void *data) {
+    void *label = hero_ui_gtk.label_new("");
+
+    (void)factory;
+    (void)data;
+    if (label != NULL) {
+        hero_ui_gtk.label_set_xalign(label, 0.0f);
+        hero_ui_gtk.list_item_set_child(item, label);
+    }
+}
+
+/* The number text `number` writes in decimal, -1 where it writes none. */
+static int64_t hero_ui_gtk_number_of(const char *number) {
+    char *end = NULL;
+    long long value;
+
+    if (number == NULL) {
+        return -1;
+    }
+    value = strtoll(number, &end, 10);
+    return end != number && *end == '\0' && value >= 0 ? (int64_t)value : -1;
+}
+
+/* The row a list item's string object names, -1 where none. */
+static int64_t hero_ui_gtk_row_named(void *object) {
+    return hero_ui_gtk_number_of(object != NULL ? hero_ui_gtk.string_object_get_string(object) : NULL);
+}
+
+static void hero_ui_gtk_cell_shown(void *factory, void *item, void *data) {
+    hero_ui_native *table = hero_ui_find((int64_t)(intptr_t)data);
+    void *label = hero_ui_gtk.list_item_get_child(item);
+    int64_t column = (int64_t)(intptr_t)hero_ui_gtk.object_get_data(factory, "hero-column");
+    int64_t row = hero_ui_gtk_row_named(hero_ui_gtk.list_item_get_item(item));
+
+    if (label == NULL) {
+        return;
+    }
+    if (table != NULL && table->kind == HERO_UI_TABLE && row >= 0 && row < table->rows && column >= 0 && column < table->column_count) {
+        hero_ui_gtk.label_set_text(label, table->cells[row * table->column_count + column]);
+    } else {
+        hero_ui_gtk.label_set_text(label, "");
+    }
+}
+
+static bool hero_ui_gtk_make_table(hero_ui_native *made) {
+    made->strings = hero_ui_gtk.string_list_new(NULL);
+    made->selection = made->strings != NULL ? hero_ui_gtk.multi_selection_new(made->strings) : NULL;
+    made->inner = made->selection != NULL ? hero_ui_gtk.column_view_new(made->selection) : NULL;
+    made->widget = hero_ui_gtk.scrolled_window_new();
+    if (made->inner == NULL || made->widget == NULL) {
+        return false;
+    }
+    hero_ui_gtk.column_view_set_reorderable(made->inner, 0);
+    hero_ui_gtk.scrolled_window_set_policy(made->widget, HERO_GTK_POLICY_AUTOMATIC, HERO_GTK_POLICY_AUTOMATIC);
+    hero_ui_gtk.scrolled_window_set_has_frame(made->widget, 1);
+    hero_ui_gtk.scrolled_window_set_child(made->widget, made->inner);
+    made->sorter = hero_ui_gtk.column_view_get_sorter(made->inner);
+    hero_ui_gtk_connect(made->inner, "activate", (hero_ui_gtk_callback)hero_ui_gtk_table_opened, made->id);
+    hero_ui_gtk_connect(made->selection, "selection-changed", (hero_ui_gtk_callback)hero_ui_gtk_rows_picked, made->id);
+    if (made->sorter != NULL) {
+        hero_ui_gtk_connect(made->sorter, "changed", (hero_ui_gtk_callback)hero_ui_gtk_sort_asked, made->id);
+    }
+    return made->sorter != NULL;
+}
+
+/* Gives back table `table`'s cells. */
+static void hero_ui_gtk_free_cells(hero_ui_native *table) {
+    for (int64_t i = 0; table->cells != NULL && i < table->rows * table->column_count; i += 1) {
+        hero_layer_free(table->cells[i]);
+    }
+    hero_layer_free(table->cells);
+    table->cells = NULL;
+}
+
+/* Gives the rows `rows` to table `table`'s list, as the numbers 0 to
+ * `rows` - 1, in place of what it held, muted: a choice of a row it held is
+ * let go. */
+static bool hero_ui_gtk_number_rows(hero_ui_native *table, int64_t rows) {
+    char (*numbers)[24] = rows > 0 ? hero_layer_alloc((size_t)rows * sizeof *numbers) : NULL;
+    const char **additions = hero_layer_alloc_zero((size_t)rows + 1, sizeof *additions);
+
+    if ((rows > 0 && numbers == NULL) || additions == NULL) {
+        hero_layer_free(numbers);
+        hero_layer_free(additions);
+        return false;
+    }
+    for (int64_t i = 0; i < rows; i += 1) {
+        (void)snprintf(numbers[i], sizeof numbers[i], "%lld", (long long)i);
+        additions[i] = numbers[i];
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.string_list_splice(table->strings, 0, hero_ui_gtk.list_model_get_n_items(table->strings), (const char *const *)additions);
+    hero_ui_mute(-1);
+    hero_layer_free(numbers);
+    hero_layer_free(additions);
+    return true;
+}
+
+int64_t hero_ui_arm_set_columns(int64_t id, const uint8_t *titles, int64_t count) {
+    hero_ui_native *table = hero_ui_find(id);
+    int64_t made = hero_ui_texts_in(titles, count);
+    void **columns;
+
+    if (table == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (table->kind != HERO_UI_TABLE || made < 1) {
+        return HERO_UI_INVALID;
+    }
+    columns = hero_layer_alloc_zero((size_t)made, sizeof *columns);
+    if (columns == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    hero_ui_mute(1);
+    for (int64_t i = 0; i < table->column_count; i += 1) {
+        hero_ui_gtk.column_view_remove_column(table->inner, table->columns[i]);
+        hero_ui_gtk.object_unref(table->columns[i]);
+    }
+    hero_layer_free(table->columns);
+    hero_ui_gtk_free_cells(table);
+    table->columns = columns;
+    table->column_count = 0;
+    table->rows = 0;
+    (void)hero_ui_gtk_number_rows(table, 0);
+    for (int64_t i = 0; i < made; i += 1) {
+        int64_t length = 0;
+        const uint8_t *text = hero_ui_text_at(titles, count, i, &length);
+        char *title = hero_ui_gtk_text(text, length, false);
+        void *factory = hero_ui_gtk.signal_list_item_factory_new();
+        void *sorter = hero_ui_gtk.custom_sorter_new(NULL, NULL, NULL);
+        void *column;
+
+        if (title == NULL || factory == NULL || sorter == NULL) {
+            hero_layer_free(title);
+            hero_ui_mute(-1);
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.object_set_data(factory, "hero-column", (void *)(intptr_t)i);
+        hero_ui_gtk_connect(factory, "setup", (hero_ui_gtk_callback)hero_ui_gtk_cell_made, id);
+        hero_ui_gtk_connect(factory, "bind", (hero_ui_gtk_callback)hero_ui_gtk_cell_shown, id);
+        column = hero_ui_gtk.column_view_column_new(title, factory);
+        hero_layer_free(title);
+        if (column == NULL) {
+            hero_ui_gtk.object_unref(sorter);
+            hero_ui_mute(-1);
+            return HERO_UI_LIMIT;
+        }
+        hero_ui_gtk.column_view_column_set_resizable(column, 1);
+        hero_ui_gtk.column_view_column_set_sorter(column, sorter);
+        hero_ui_gtk.object_unref(sorter);
+        hero_ui_gtk.column_view_column_set_expand(column, i == made - 1 ? 1 : 0);
+        hero_ui_gtk.column_view_append_column(table->inner, column);
+        table->columns[i] = column;
+        table->column_count = i + 1;
+    }
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
+}
+
+/* Gives table `table` the cells `items`, row after row. */
+static int64_t hero_ui_gtk_table_rows(hero_ui_native *table, const uint8_t *items, int64_t count) {
+    int64_t texts = hero_ui_texts_in(items, count);
+    char **cells;
+
+    if (table->column_count < 1 || texts % table->column_count != 0) {
+        return HERO_UI_INVALID;
+    }
+    cells = texts > 0 ? hero_layer_alloc_zero((size_t)texts, sizeof *cells) : NULL;
+    if (texts > 0 && cells == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    for (int64_t i = 0; i < texts; i += 1) {
+        int64_t length = 0;
+        const uint8_t *text = hero_ui_text_at(items, count, i, &length);
+
+        cells[i] = hero_ui_gtk_text(text, length, false);
+        if (cells[i] == NULL) {
+            for (int64_t j = 0; j < i; j += 1) {
+                hero_layer_free(cells[j]);
+            }
+            hero_layer_free(cells);
+            return HERO_UI_LIMIT;
+        }
+    }
+    hero_ui_gtk_free_cells(table);
+    table->cells = cells;
+    table->rows = texts / table->column_count;
+    return hero_ui_gtk_number_rows(table, table->rows) ? HERO_UI_OK : HERO_UI_LIMIT;
+}
+
+int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending) {
+    hero_ui_native *table = hero_ui_find(id);
+
+    if (table == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (table->kind != HERO_UI_TABLE || column >= table->column_count) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.column_view_sort_by_column(table->inner, column < 0 ? NULL : table->columns[column], ascending == 1 ? HERO_GTK_SORT_ASCENDING : HERO_GTK_SORT_DESCENDING);
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
+}
+
+/* -- A TREE -------------------------------------------------------------------
+ *
+ * A `GtkListView` of `GtkTreeExpander` rows over a `GtkSingleSelection` of a
+ * `GtkTreeListModel`, whose root and each item's children are a
+ * `GtkStringList` of the items' numbers. The arm keeps each item, sorted by
+ * its number: its text, the item it stands under, whether it is foldable,
+ * and its children's list, made when it first holds or may hold an item;
+ * the model asks for that list when a row unfolds, and a row is foldable
+ * where its item is or holds items. GTK decides once whether a row unfolds,
+ * so an item given its first child is put in its list again, its row made
+ * anew. The person unfolding or folding a row is its `expanded` changing,
+ * watched while the row is shown; folding a row that holds the item chosen
+ * lets the choice go before GTK tells the fold, so the arm tells the fold
+ * first, then the choice, as macOS tells them. */
+
+typedef struct hero_ui_gtk_item {
+    int64_t item;
+    int64_t under;
+    char *text;
+    bool foldable;
+    void *children;
+} hero_ui_gtk_item;
+
+typedef struct hero_ui_gtk_tree {
+    hero_ui_gtk_item *items;
+    int64_t count;
+    int64_t room;
+    void *root;
+    void *model;
+    /* The item chosen as the arm last told it, 0 for none; the item whose
+     * fold was told before the choice it let go; whether an act's unfolding
+     * was told. */
+    int64_t chosen;
+    int64_t folding;
+    bool told;
+} hero_ui_gtk_tree;
+
+/* Where item `item` stands in the tree's sorted items, or where it would. */
+static int64_t hero_ui_gtk_item_at(const hero_ui_gtk_tree *tree, int64_t item, bool *found) {
+    int64_t low = 0;
+    int64_t high = tree->count;
+
+    while (low < high) {
+        int64_t middle = low + (high - low) / 2;
+
+        if (tree->items[middle].item < item) {
+            low = middle + 1;
+        } else {
+            high = middle;
+        }
+    }
+    *found = low < tree->count && tree->items[low].item == item;
+    return low;
+}
+
+/* Item `item` of tree `tree`, or NULL. */
+static hero_ui_gtk_item *hero_ui_gtk_item_of(const hero_ui_gtk_tree *tree, int64_t item) {
+    bool found = false;
+    int64_t at = hero_ui_gtk_item_at(tree, item, &found);
+
+    return found ? &tree->items[at] : NULL;
+}
+
+/* The number a tree's string object names, 0 where none. */
+static int64_t hero_ui_gtk_item_named(void *object) {
+    int64_t item = hero_ui_gtk_row_named(object);
+
+    return item > 0 ? item : 0;
+}
+
+/* The model's create function: the list of an item's children, where it is
+ * foldable or holds items, else NULL, so its row does not unfold. */
+static void *hero_ui_gtk_children_of(void *object, void *data) {
+    hero_ui_native *widget = hero_ui_find((int64_t)(intptr_t)data);
+    hero_ui_gtk_item *item;
+
+    if (widget == NULL || widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return NULL;
+    }
+    item = hero_ui_gtk_item_of(widget->tree, hero_ui_gtk_item_named(object));
+    if (item == NULL) {
+        return NULL;
+    }
+    if (item->children == NULL && item->foldable) {
+        item->children = hero_ui_gtk.string_list_new(NULL);
+    }
+    if (item->children == NULL || (!item->foldable && hero_ui_gtk.list_model_get_n_items(item->children) == 0)) {
+        return NULL;
+    }
+    return hero_ui_gtk.object_ref(item->children);
+}
+
+/* The list item `under` holds its items in: the root for 0. */
+static void *hero_ui_gtk_list_under(const hero_ui_gtk_tree *tree, int64_t under) {
+    hero_ui_gtk_item *item;
+
+    if (under == 0) {
+        return tree->root;
+    }
+    item = hero_ui_gtk_item_of(tree, under);
+    return item != NULL ? item->children : NULL;
+}
+
+/* Where item `item` stands in list `list`, -1 where it does not. */
+static int64_t hero_ui_gtk_position_in(void *list, int64_t item) {
+    unsigned count = list != NULL ? hero_ui_gtk.list_model_get_n_items(list) : 0;
+    char number[24];
+
+    (void)snprintf(number, sizeof number, "%lld", (long long)item);
+    for (unsigned i = 0; i < count; i += 1) {
+        const char *each = hero_ui_gtk.string_list_get_string(list, i);
+
+        if (each != NULL && strcmp(each, number) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* The row of item `item` where the person sees it, every item over it
+ * unfolded; NULL where one is folded. A reference the caller gives back. */
+static void *hero_ui_gtk_tree_row(const hero_ui_gtk_tree *tree, int64_t item) {
+    int64_t path[64];
+    int64_t depth = 0;
+    void *row = NULL;
+
+    for (int64_t at = item; at != 0 && depth < (int64_t)(sizeof path / sizeof path[0]); depth += 1) {
+        hero_ui_gtk_item *each = hero_ui_gtk_item_of(tree, at);
+
+        if (each == NULL) {
+            return NULL;
+        }
+        path[depth] = at;
+        at = each->under;
+    }
+    for (int64_t level = depth - 1; level >= 0; level -= 1) {
+        int64_t under = level == depth - 1 ? 0 : path[level + 1];
+        int64_t position = hero_ui_gtk_position_in(hero_ui_gtk_list_under(tree, under), path[level]);
+        void *next;
+
+        if (position < 0) {
+            next = NULL;
+        } else if (row == NULL) {
+            next = hero_ui_gtk.tree_list_model_get_child_row(tree->model, (unsigned)position);
+        } else {
+            next = hero_ui_gtk.tree_list_row_get_child_row(row, (unsigned)position);
+        }
+        if (row != NULL) {
+            hero_ui_gtk.object_unref(row);
+        }
+        row = next;
+        if (row == NULL) {
+            return NULL;
+        }
+    }
+    return row;
+}
+
+/* The item of tree `widget` chosen in GTK's selection, 0 for none. */
+static int64_t hero_ui_gtk_tree_chosen(const hero_ui_native *widget) {
+    unsigned position = hero_ui_gtk.single_selection_get_selected(widget->selection);
+    void *row;
+    void *object;
+    int64_t item;
+
+    if (position == HERO_GTK_INVALID_LIST_POSITION || widget->tree == NULL) {
+        return 0;
+    }
+    row = hero_ui_gtk.tree_list_model_get_row(widget->tree->model, position);
+    object = row != NULL ? hero_ui_gtk.tree_list_row_get_item(row) : NULL;
+    item = hero_ui_gtk_item_named(object);
+    if (object != NULL) {
+        hero_ui_gtk.object_unref(object);
+    }
+    if (row != NULL) {
+        hero_ui_gtk.object_unref(row);
+    }
+    return item;
+}
+
+/* The item folded that holds item `item` and stands where the person sees
+ * it, every item over it unfolded; 0 for none. */
+static int64_t hero_ui_gtk_fold_over(const hero_ui_gtk_tree *tree, int64_t item) {
+    int64_t path[64];
+    int64_t depth = 0;
+    hero_ui_gtk_item *each = hero_ui_gtk_item_of(tree, item);
+
+    for (int64_t at = each != NULL ? each->under : 0; at != 0 && depth < (int64_t)(sizeof path / sizeof path[0]); depth += 1) {
+        hero_ui_gtk_item *over = hero_ui_gtk_item_of(tree, at);
+
+        if (over == NULL) {
+            return 0;
+        }
+        path[depth] = at;
+        at = over->under;
+    }
+    for (int64_t level = depth - 1; level >= 0; level -= 1) {
+        void *row = hero_ui_gtk_tree_row(tree, path[level]);
+        bool unfolded = row != NULL && hero_ui_gtk.tree_list_row_get_expanded(row);
+
+        if (row != NULL) {
+            hero_ui_gtk.object_unref(row);
+        }
+        if (!unfolded) {
+            return path[level];
+        }
+    }
     return 0;
 }
 
-int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
-    (void)id;
-    (void)key;
-    (void)count;
-    (void)modifiers;
-    return HERO_UI_UNSUPPORTED;
+/* The tree's choice changed: told where the item chosen is another, the
+ * fold that let it go told first. */
+static void hero_ui_gtk_tree_picked(void *selection, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, selection);
+    int64_t now;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return;
+    }
+    now = hero_ui_gtk_tree_chosen(widget);
+    if (now == widget->tree->chosen) {
+        return;
+    }
+    if (now == 0 && !hero_ui_is_muted()) {
+        int64_t folded = hero_ui_gtk_fold_over(widget->tree, widget->tree->chosen);
+
+        if (folded != 0) {
+            hero_ui_tell(HERO_UI_EVENT_UNFOLD, widget->id, folded, 0);
+            widget->tree->folding = folded;
+            widget->tree->told = true;
+        }
+    }
+    widget->tree->chosen = now;
+    hero_ui_tell(HERO_UI_EVENT_SELECT, widget->id, now, 0);
 }
 
-/* -- WINDOWS ON THE SCREEN ------------------------------------------------- */
+/* Row `row` of tree `data` unfolded or folded. */
+static void hero_ui_gtk_row_folded(void *row, void *spec, void *data) {
+    hero_ui_native *widget = hero_ui_find((int64_t)(intptr_t)data);
+    void *object;
+    int64_t item;
+
+    (void)spec;
+    if (widget == NULL || widget->kind != HERO_UI_TREE || widget->tree == NULL || hero_ui_is_muted()) {
+        return;
+    }
+    object = hero_ui_gtk.tree_list_row_get_item(row);
+    item = hero_ui_gtk_item_named(object);
+    if (object != NULL) {
+        hero_ui_gtk.object_unref(object);
+    }
+    if (item == 0) {
+        return;
+    }
+    if (widget->tree->folding == item) {
+        widget->tree->folding = 0;
+        return;
+    }
+    widget->tree->told = true;
+    hero_ui_tell(HERO_UI_EVENT_UNFOLD, widget->id, item, hero_ui_gtk.tree_list_row_get_expanded(row) ? 1 : 0);
+}
+
+static void hero_ui_gtk_tree_row_made(void *factory, void *item, void *data) {
+    void *expander = hero_ui_gtk.tree_expander_new();
+    void *label = hero_ui_gtk.label_new("");
+
+    (void)factory;
+    (void)data;
+    if (expander == NULL || label == NULL) {
+        return;
+    }
+    hero_ui_gtk.label_set_xalign(label, 0.0f);
+    hero_ui_gtk.tree_expander_set_child(expander, label);
+    hero_ui_gtk.object_set_data(expander, "hero-label", label);
+    hero_ui_gtk.list_item_set_child(item, expander);
+}
+
+static void hero_ui_gtk_tree_row_shown(void *factory, void *item, void *data) {
+    hero_ui_native *widget = hero_ui_find((int64_t)(intptr_t)data);
+    void *row = hero_ui_gtk.list_item_get_item(item);
+    void *expander = hero_ui_gtk.list_item_get_child(item);
+    void *label = expander != NULL ? hero_ui_gtk.object_get_data(expander, "hero-label") : NULL;
+    void *object;
+    hero_ui_gtk_item *shown = NULL;
+
+    (void)factory;
+    if (row == NULL || expander == NULL || label == NULL || widget == NULL || widget->tree == NULL) {
+        return;
+    }
+    hero_ui_gtk.tree_expander_set_list_row(expander, row);
+    object = hero_ui_gtk.tree_list_row_get_item(row);
+    shown = hero_ui_gtk_item_of(widget->tree, hero_ui_gtk_item_named(object));
+    if (object != NULL) {
+        hero_ui_gtk.object_unref(object);
+    }
+    hero_ui_gtk.label_set_text(label, shown != NULL && shown->text != NULL ? shown->text : "");
+    (void)hero_ui_gtk.signal_connect_data(row, "notify::expanded", (hero_ui_gtk_callback)hero_ui_gtk_row_folded, data, NULL, 0);
+}
+
+static void hero_ui_gtk_tree_row_hidden(void *factory, void *item, void *data) {
+    void *row = hero_ui_gtk.list_item_get_item(item);
+    void *expander = hero_ui_gtk.list_item_get_child(item);
+
+    (void)factory;
+    if (row != NULL) {
+        (void)hero_ui_gtk.signal_handlers_disconnect_matched(row, HERO_G_SIGNAL_MATCH_FUNC_DATA, 0, 0, NULL, (hero_ui_gtk_callback)hero_ui_gtk_row_folded, data);
+    }
+    if (expander != NULL) {
+        hero_ui_gtk.tree_expander_set_list_row(expander, NULL);
+    }
+}
+
+static void hero_ui_gtk_tree_opened(void *view, unsigned position, void *data) {
+    hero_ui_native *widget = hero_ui_gtk_of(data, view);
+    void *row;
+    void *object;
+    int64_t item;
+
+    if (widget == NULL || widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return;
+    }
+    row = hero_ui_gtk.tree_list_model_get_row(widget->tree->model, position);
+    object = row != NULL ? hero_ui_gtk.tree_list_row_get_item(row) : NULL;
+    item = hero_ui_gtk_item_named(object);
+    if (object != NULL) {
+        hero_ui_gtk.object_unref(object);
+    }
+    if (row != NULL) {
+        hero_ui_gtk.object_unref(row);
+    }
+    if (item != 0) {
+        hero_ui_tell(HERO_UI_EVENT_ACTIVATE, widget->id, item, 0);
+    }
+}
+
+static bool hero_ui_gtk_make_tree(hero_ui_native *made) {
+    void *factory = hero_ui_gtk.signal_list_item_factory_new();
+
+    made->tree = hero_layer_alloc_zero(1, sizeof *made->tree);
+    if (made->tree == NULL || factory == NULL) {
+        return false;
+    }
+    made->tree->root = hero_ui_gtk.string_list_new(NULL);
+    made->tree->model = made->tree->root != NULL ? hero_ui_gtk.tree_list_model_new(made->tree->root, 0, 0, hero_ui_gtk_children_of, (void *)(intptr_t)made->id, NULL) : NULL;
+    made->selection = made->tree->model != NULL ? hero_ui_gtk.single_selection_new(made->tree->model) : NULL;
+    if (made->selection == NULL) {
+        return false;
+    }
+    hero_ui_gtk.single_selection_set_autoselect(made->selection, 0);
+    hero_ui_gtk.single_selection_set_can_unselect(made->selection, 1);
+    hero_ui_gtk.single_selection_set_selected(made->selection, HERO_GTK_INVALID_LIST_POSITION);
+    hero_ui_gtk_connect(factory, "setup", (hero_ui_gtk_callback)hero_ui_gtk_tree_row_made, made->id);
+    hero_ui_gtk_connect(factory, "bind", (hero_ui_gtk_callback)hero_ui_gtk_tree_row_shown, made->id);
+    hero_ui_gtk_connect(factory, "unbind", (hero_ui_gtk_callback)hero_ui_gtk_tree_row_hidden, made->id);
+    made->inner = hero_ui_gtk.list_view_new(made->selection, factory);
+    made->widget = hero_ui_gtk.scrolled_window_new();
+    if (made->inner == NULL || made->widget == NULL) {
+        return false;
+    }
+    hero_ui_gtk.scrolled_window_set_policy(made->widget, HERO_GTK_POLICY_AUTOMATIC, HERO_GTK_POLICY_AUTOMATIC);
+    hero_ui_gtk.scrolled_window_set_has_frame(made->widget, 1);
+    hero_ui_gtk.scrolled_window_set_child(made->widget, made->inner);
+    hero_ui_gtk_connect(made->selection, "notify::selected", (hero_ui_gtk_callback)hero_ui_gtk_tree_picked, made->id);
+    hero_ui_gtk_connect(made->inner, "activate", (hero_ui_gtk_callback)hero_ui_gtk_tree_opened, made->id);
+    return true;
+}
+
+static void hero_ui_gtk_free_view(hero_ui_native *widget) {
+    hero_ui_gtk_free_cells(widget);
+    for (int64_t i = 0; i < widget->column_count; i += 1) {
+        hero_ui_gtk.object_unref(widget->columns[i]);
+    }
+    hero_layer_free(widget->columns);
+    widget->columns = NULL;
+    widget->column_count = 0;
+    if (widget->tree != NULL) {
+        for (int64_t i = 0; i < widget->tree->count; i += 1) {
+            hero_layer_free(widget->tree->items[i].text);
+            if (widget->tree->items[i].children != NULL) {
+                hero_ui_gtk.object_unref(widget->tree->items[i].children);
+            }
+        }
+        hero_layer_free(widget->tree->items);
+        hero_layer_free(widget->tree);
+        widget->tree = NULL;
+    }
+}
+
+/* Puts item `item`'s number in its list again at the same place, so GTK
+ * asks again whether its row unfolds; its choice kept, muted. */
+static void hero_ui_gtk_remake_row(hero_ui_native *widget, int64_t item) {
+    hero_ui_gtk_item *each = hero_ui_gtk_item_of(widget->tree, item);
+    void *list = each != NULL ? hero_ui_gtk_list_under(widget->tree, each->under) : NULL;
+    int64_t position = hero_ui_gtk_position_in(list, item);
+    char number[24];
+    const char *again[2] = {number, NULL};
+    int64_t chosen = widget->tree->chosen;
+
+    if (position < 0) {
+        return;
+    }
+    (void)snprintf(number, sizeof number, "%lld", (long long)item);
+    hero_ui_mute(1);
+    hero_ui_gtk.string_list_splice(list, (unsigned)position, 1, again);
+    hero_ui_mute(-1);
+    if (chosen != 0 && hero_ui_gtk_tree_chosen(widget) != chosen) {
+        (void)hero_ui_gtk_tree_select(widget, chosen);
+    }
+}
+
+int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_gtk_tree *tree;
+    hero_ui_gtk_item *parent = NULL;
+    bool found = false;
+    bool listed = true;
+    int64_t at;
+    char *shown;
+    char number[24];
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return HERO_UI_INVALID;
+    }
+    tree = widget->tree;
+    at = hero_ui_gtk_item_at(tree, item, &found);
+    parent = under != 0 ? hero_ui_gtk_item_of(tree, under) : NULL;
+    if (found || (under != 0 && parent == NULL)) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (parent != NULL && parent->children == NULL) {
+        listed = false;
+        parent->children = hero_ui_gtk.string_list_new(NULL);
+        if (parent->children == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    shown = hero_ui_gtk_text(text, count, false);
+    if (shown == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    if (tree->count == tree->room) {
+        int64_t room = tree->room * 2 + 16;
+        hero_ui_gtk_item *grown = hero_layer_grow(tree->items, (size_t)room * sizeof *grown);
+
+        if (grown == NULL) {
+            hero_layer_free(shown);
+            return HERO_UI_LIMIT;
+        }
+        tree->items = grown;
+        tree->room = room;
+    }
+    memmove(&tree->items[at + 1], &tree->items[at], (size_t)(tree->count - at) * sizeof tree->items[0]);
+    tree->items[at] = (hero_ui_gtk_item){item, under, shown, foldable == 1, NULL};
+    tree->count += 1;
+    /* The items moved: the parent is found again. */
+    parent = under != 0 ? hero_ui_gtk_item_of(tree, under) : NULL;
+    (void)snprintf(number, sizeof number, "%lld", (long long)item);
+    hero_ui_mute(1);
+    hero_ui_gtk.string_list_append(under == 0 ? tree->root : parent->children, number);
+    hero_ui_mute(-1);
+    if (parent != NULL && !parent->foldable && (!listed || hero_ui_gtk.list_model_get_n_items(parent->children) == 1)) {
+        /* Its first item: GTK is to ask again whether its row unfolds. */
+        hero_ui_gtk_remake_row(widget, under);
+    }
+    return HERO_UI_OK;
+}
+
+/* Takes item `item` and every item under it out of tree `tree`'s items. */
+static void hero_ui_gtk_forget_item(hero_ui_gtk_tree *tree, int64_t item) {
+    bool found = false;
+    int64_t at = hero_ui_gtk_item_at(tree, item, &found);
+    void *children;
+
+    if (!found) {
+        return;
+    }
+    children = tree->items[at].children;
+    while (children != NULL && hero_ui_gtk.list_model_get_n_items(children) > 0) {
+        int64_t child = hero_ui_gtk_number_of(hero_ui_gtk.string_list_get_string(children, 0));
+
+        hero_ui_gtk.string_list_remove(children, 0);
+        hero_ui_gtk_forget_item(tree, child);
+    }
+    at = hero_ui_gtk_item_at(tree, item, &found);
+    hero_layer_free(tree->items[at].text);
+    if (tree->items[at].children != NULL) {
+        hero_ui_gtk.object_unref(tree->items[at].children);
+    }
+    memmove(&tree->items[at], &tree->items[at + 1], (size_t)(tree->count - at - 1) * sizeof tree->items[0]);
+    tree->count -= 1;
+}
+
+int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_gtk_item *each;
+    void *list;
+    int64_t under;
+    int64_t position;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return HERO_UI_INVALID;
+    }
+    each = hero_ui_gtk_item_of(widget->tree, item);
+    if (each == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    under = each->under;
+    list = hero_ui_gtk_list_under(widget->tree, under);
+    position = hero_ui_gtk_position_in(list, item);
+    hero_ui_mute(1);
+    if (position >= 0) {
+        hero_ui_gtk.string_list_remove(list, (unsigned)position);
+    }
+    hero_ui_gtk_forget_item(widget->tree, item);
+    widget->tree->chosen = hero_ui_gtk_tree_chosen(widget);
+    hero_ui_mute(-1);
+    {
+        hero_ui_gtk_item *parent = under != 0 ? hero_ui_gtk_item_of(widget->tree, under) : NULL;
+
+        if (parent != NULL && !parent->foldable && parent->children != NULL && hero_ui_gtk.list_model_get_n_items(parent->children) == 0) {
+            /* Its last item gone: its row no longer unfolds. */
+            hero_ui_gtk_remake_row(widget, under);
+        }
+    }
+    return HERO_UI_OK;
+}
+
+/* Unfolds every item over item `item` of tree `widget`, muted. */
+static void hero_ui_gtk_unfold_over(hero_ui_native *widget, int64_t item) {
+    hero_ui_gtk_item *each = hero_ui_gtk_item_of(widget->tree, item);
+    int64_t path[64];
+    int64_t depth = 0;
+
+    for (int64_t at = each != NULL ? each->under : 0; at != 0 && depth < (int64_t)(sizeof path / sizeof path[0]); depth += 1) {
+        hero_ui_gtk_item *over = hero_ui_gtk_item_of(widget->tree, at);
+
+        if (over == NULL) {
+            return;
+        }
+        path[depth] = at;
+        at = over->under;
+    }
+    hero_ui_mute(1);
+    for (int64_t level = depth - 1; level >= 0; level -= 1) {
+        void *row = hero_ui_gtk_tree_row(widget->tree, path[level]);
+
+        if (row != NULL) {
+            hero_ui_gtk.tree_list_row_set_expanded(row, 1);
+            hero_ui_gtk.object_unref(row);
+        }
+    }
+    hero_ui_mute(-1);
+}
+
+static int64_t hero_ui_gtk_tree_select(hero_ui_native *widget, int64_t item) {
+    void *row;
+
+    if (widget->tree == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (item < 0) {
+        hero_ui_mute(1);
+        hero_ui_gtk.single_selection_set_selected(widget->selection, HERO_GTK_INVALID_LIST_POSITION);
+        widget->tree->chosen = 0;
+        hero_ui_mute(-1);
+        return HERO_UI_OK;
+    }
+    if (hero_ui_gtk_item_of(widget->tree, item) == NULL) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_gtk_unfold_over(widget, item);
+    row = hero_ui_gtk_tree_row(widget->tree, item);
+    if (row == NULL) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.single_selection_set_selected(widget->selection, hero_ui_gtk.tree_list_row_get_position(row));
+    widget->tree->chosen = item;
+    hero_ui_mute(-1);
+    hero_ui_gtk.object_unref(row);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_gtk_item *each;
+    void *row;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind != HERO_UI_TREE || widget->tree == NULL) {
+        return HERO_UI_INVALID;
+    }
+    each = hero_ui_gtk_item_of(widget->tree, item);
+    if (each == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!each->foldable && (each->children == NULL || hero_ui_gtk.list_model_get_n_items(each->children) == 0)) {
+        return HERO_UI_INVALID;
+    }
+    if (on == 1) {
+        hero_ui_gtk_unfold_over(widget, item);
+    }
+    row = hero_ui_gtk_tree_row(widget->tree, item);
+    if (row == NULL) {
+        return HERO_UI_OK;
+    }
+    hero_ui_mute(1);
+    hero_ui_gtk.tree_list_row_set_expanded(row, on == 1 ? 1 : 0);
+    widget->tree->chosen = hero_ui_gtk_tree_chosen(widget);
+    hero_ui_mute(-1);
+    hero_ui_gtk.object_unref(row);
+    return HERO_UI_OK;
+}
+
+/* -- WHAT THE PERSON DOES TO THE NEW KINDS -------------------------------- */
+
+static int64_t hero_ui_gtk_act(int64_t kind, hero_ui_native *widget, int64_t value, int64_t second, bool usable) {
+    if (kind == HERO_UI_EVENT_SELECT && widget->kind == HERO_UI_TABS) {
+        if (value < 0 || value >= hero_ui_gtk.notebook_get_n_pages(widget->widget)) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            if (hero_ui_gtk.notebook_get_current_page(widget->widget) == value) {
+                hero_ui_tell(HERO_UI_EVENT_SELECT, widget->id, value, 0);
+            } else {
+                hero_ui_gtk.notebook_set_current_page(widget->widget, (int)value);
+            }
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_SELECT && widget->kind == HERO_UI_TABLE) {
+        if (value >= widget->rows) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            if (value < 0) {
+                (void)hero_ui_gtk.selection_model_unselect_all(widget->selection);
+            } else {
+                (void)hero_ui_gtk.selection_model_select_item(widget->selection, (unsigned)value, second == 1 ? 0 : 1);
+            }
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_SELECT && widget->kind == HERO_UI_TREE) {
+        void *row;
+
+        if (value < 0) {
+            if (usable) {
+                hero_ui_gtk.single_selection_set_selected(widget->selection, HERO_GTK_INVALID_LIST_POSITION);
+            }
+            return HERO_UI_OK;
+        }
+        row = hero_ui_gtk_tree_row(widget->tree, value);
+        if (row == NULL) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            if (widget->tree->chosen == value) {
+                hero_ui_tell(HERO_UI_EVENT_SELECT, widget->id, value, 0);
+            } else {
+                hero_ui_gtk.single_selection_set_selected(widget->selection, hero_ui_gtk.tree_list_row_get_position(row));
+            }
+        }
+        hero_ui_gtk.object_unref(row);
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_VALUE) {
+        int64_t held = hero_ui_between(value, widget->least, widget->most);
+
+        if (usable) {
+            widget->split_extent = widget->kind == HERO_UI_SPLIT_ROW ? hero_ui_gtk.widget_get_width(widget->widget) : hero_ui_gtk.widget_get_height(widget->widget);
+            if (hero_ui_gtk.paned_get_position(widget->widget) == held) {
+                widget->value = held;
+                hero_ui_tell(HERO_UI_EVENT_VALUE, widget->id, held, 0);
+            } else {
+                hero_ui_gtk.paned_set_position(widget->widget, hero_ui_gtk_int(held));
+            }
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_ACTIVATE && (widget->kind == HERO_UI_LIST || widget->kind == HERO_UI_LIST_MULTIPLE)) {
+        void *row;
+
+        if (value < 0 || value >= widget->items) {
+            return HERO_UI_INVALID;
+        }
+        row = hero_ui_gtk.list_box_get_row_at_index(widget->inner, (int)value);
+        if (usable && row != NULL) {
+            /* A row not chosen is chosen first, as the first click of a
+             * double click chooses it. */
+            if (!hero_ui_gtk.list_box_row_is_selected(row)) {
+                hero_ui_gtk.list_box_unselect_all(widget->inner);
+                hero_ui_gtk.list_box_select_row(widget->inner, row);
+            }
+            (void)hero_ui_gtk.widget_activate(row);
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_ACTIVATE && widget->kind == HERO_UI_TABLE) {
+        if (value < 0 || value >= widget->rows) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            if (!hero_ui_gtk.selection_model_is_selected(widget->selection, (unsigned)value)) {
+                (void)hero_ui_gtk.selection_model_select_item(widget->selection, (unsigned)value, 1);
+            }
+            hero_ui_gtk.signal_emit_by_name(widget->inner, "activate", (unsigned)value);
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_ACTIVATE && widget->kind == HERO_UI_TREE) {
+        void *row = hero_ui_gtk_tree_row(widget->tree, value);
+        unsigned position;
+
+        if (row == NULL) {
+            return HERO_UI_INVALID;
+        }
+        position = hero_ui_gtk.tree_list_row_get_position(row);
+        hero_ui_gtk.object_unref(row);
+        if (usable) {
+            if (widget->tree->chosen != value) {
+                hero_ui_gtk.single_selection_set_selected(widget->selection, position);
+            }
+            hero_ui_gtk.signal_emit_by_name(widget->inner, "activate", position);
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_SUBMIT) {
+        if (widget->kind != HERO_UI_TEXT_FIELD) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            /* Return in the field: the signal GTK's Return key emits on the
+             * field's text widget, which the field hands on as its own. */
+            void *text = hero_ui_gtk.editable_get_delegate(widget->widget);
+
+            hero_ui_gtk.signal_emit_by_name(text != NULL ? text : widget->widget, "activate");
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_SORT && widget->kind == HERO_UI_TABLE) {
+        bool ascending = true;
+        int64_t column;
+
+        if (value < 0 || value >= widget->column_count || (second != 0 && second != 1)) {
+            return HERO_UI_INVALID;
+        }
+        if (usable) {
+            column = hero_ui_gtk_sorted_by(widget, &ascending);
+            if (column == value && ascending == (second == 1)) {
+                hero_ui_tell(HERO_UI_EVENT_SORT, widget->id, value, second);
+            } else {
+                hero_ui_gtk.column_view_sort_by_column(widget->inner, widget->columns[value], second == 1 ? HERO_GTK_SORT_ASCENDING : HERO_GTK_SORT_DESCENDING);
+            }
+        }
+        return HERO_UI_OK;
+    }
+    if (kind == HERO_UI_EVENT_UNFOLD && widget->kind == HERO_UI_TREE) {
+        hero_ui_gtk_item *each = hero_ui_gtk_item_of(widget->tree, value);
+        void *row;
+
+        if (each == NULL || (second != 0 && second != 1) || (!each->foldable && (each->children == NULL || hero_ui_gtk.list_model_get_n_items(each->children) == 0))) {
+            return HERO_UI_INVALID;
+        }
+        row = hero_ui_gtk_tree_row(widget->tree, value);
+        if (row == NULL) {
+            return HERO_UI_INVALID;
+        }
+        if (usable && hero_ui_gtk.tree_list_row_get_expanded(row) != (second == 1)) {
+            widget->tree->told = false;
+            widget->tree->folding = 0;
+            hero_ui_gtk.tree_list_row_set_expanded(row, second == 1 ? 1 : 0);
+            if (!widget->tree->told) {
+                /* Its row was not shown, so no watch of it told the fold. */
+                hero_ui_tell(HERO_UI_EVENT_UNFOLD, widget->id, value, second);
+            }
+            widget->tree->folding = 0;
+        }
+        hero_ui_gtk.object_unref(row);
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+/* -- WINDOWS ON THE SCREEN ----------------------------------------------------
+ *
+ * THE SCREENS are GDK's monitors, in the desktop's points (GDK's
+ * application pixels), the X server's primary monitor first where the
+ * display is X11, its top-left corner the desktop's origin; a work area is
+ * the X11 backend's (`_NET_WORKAREA` or GNOME's per-monitor areas, set by a
+ * window manager), else the whole area, Wayland telling a program none.
+ *
+ * ON X11 a window's frame is read from the X server: its X window's place
+ * on the root window, less the frame a window manager draws around it
+ * (`_NET_FRAME_EXTENTS`) and the shadow GTK draws inside it
+ * (`_GTK_FRAME_EXTENTS`), in pixels over the surface's scale. A window is
+ * moved by `XMoveWindow` on its X window, which a window manager reads by
+ * the window's gravity: the arm asks once, reads where the frame went, and
+ * asks again corrected for what the manager added, until it stands where
+ * asked. A place asked while the window is not shown is kept and given
+ * once it is mapped. A window's moves are told from the X server's
+ * `ConfigureNotify`, read through GDK's `xevent` signal and checked from an
+ * idle source, each window's screen before its place.
+ *
+ * A STATE is GTK's (`gtk_window_maximize` and the rest), read back from the
+ * surface's `GdkToplevelState`, whose changes are told as the person's
+ * unless the program's own call is bringing the window there. Keeping a
+ * window above the others is `_NET_WM_STATE_ABOVE`, asked of the window
+ * manager by the client message EWMH names. The app's icon is
+ * `gdk_toplevel_set_icon_list` on every window's surface, X11's
+ * `_NET_WM_ICON`, given again to each window as it is realized. A modal
+ * window is GTK's, `gtk_window_set_modal`, transient for another window of
+ * the app's, whose grab keeps the other windows from the person's acts. */
+
+/* The most screens read. */
+#define HERO_UI_GTK_SCREENS_MOST 64
+
+/* Xlib's `XClientMessageEvent` inside its `XEvent`, as libX11 1.8.12 lays
+ * them out on every 64-bit target: 192 bytes, the window at 32, the message's
+ * type at 40, its format at 48, its data at 56. */
+typedef union hero_ui_x_event {
+    struct {
+        int type;
+        unsigned long serial;
+        int send_event;
+        void *display;
+        unsigned long window;
+        unsigned long message_type;
+        int format;
+        long data[5];
+    } client;
+    long pad[24];
+} hero_ui_x_event;
+
+_Static_assert(sizeof(hero_ui_x_event) == 192, "XEvent is 192 bytes on a 64-bit target");
+
+/* Xlib's `XWindowAttributes`, 136 bytes, read for its map state at 92. */
+typedef union hero_ui_x_attributes {
+    unsigned char bytes[136];
+    long align;
+} hero_ui_x_attributes;
+
+#define HERO_X_MAP_STATE_AT 92
+#define HERO_X_IS_VIEWABLE 2
+#define HERO_X_REVERT_TO_PARENT 2
+
+typedef struct hero_ui_gtk_rect {
+    int64_t x;
+    int64_t y;
+    int64_t width;
+    int64_t height;
+} hero_ui_gtk_rect;
+
+typedef struct hero_ui_gtk_screen {
+    hero_ui_gtk_rect area;
+    hero_ui_gtk_rect work;
+    int64_t scale;
+    void *monitor;
+} hero_ui_gtk_screen;
+
+static const char hero_ui_gtk_wayland_place[] = "Wayland lets no program place or read its own window's position: xdg_toplevel has no such request";
+static const char hero_ui_gtk_wayland_top[] = "Wayland lets no program keep its window above every other: xdg_toplevel has no such request";
+static const char hero_ui_gtk_wayland_minimized[] = "Wayland lets no program read whether its window is minimized: xdg_toplevel's set_minimized says the client cannot query or undo it";
+static const char hero_ui_gtk_wayland_key[] = "Wayland lets no program press a key: GTK 4 makes no key event, and the compositor takes keys from the person's devices alone";
+static const char hero_ui_gtk_no_manager[] =
+    "no window manager runs on this X display (its root window names none in _NET_SUPPORTING_WM_CHECK), and X11 leaves a window's state and its stacking to one";
+
+/* Xlib's display GTK opened, where the display is X11 and the backend's
+ * functions and Xlib's are all found; else NULL. */
+static void *hero_ui_gtk_xdisplay(void) {
+    void *display = hero_ui_gtk.display_get_default();
+
+    if (display == NULL || hero_ui_gtk.x11_display_get_type == NULL || hero_ui_gtk.x11_display_get_xdisplay == NULL || hero_ui_gtk.x11_display_get_xrootwindow == NULL || hero_ui_gtk.x11_surface_get_xid == NULL ||
+        hero_ui_gtk.x11_get_xatom_by_name_for_display == NULL || hero_ui_gtk.x_move_window == NULL || hero_ui_gtk.x_translate_coordinates == NULL || hero_ui_gtk.x_get_window_property == NULL ||
+        hero_ui_gtk.x_free == NULL || hero_ui_gtk.x_sync == NULL || hero_ui_gtk.x_send_event == NULL || hero_ui_gtk.x_get_window_attributes == NULL) {
+        return NULL;
+    }
+    if (!hero_ui_gtk.type_check_instance_is_a(display, hero_ui_gtk.x11_display_get_type())) {
+        return NULL;
+    }
+    return hero_ui_gtk.x11_display_get_xdisplay(display);
+}
+
+/* `words` where the display is Wayland's; else what GTK's backend there,
+ * neither X11 nor Wayland, offers no program. */
+static int64_t hero_ui_gtk_not_x11(const char *words) {
+    void *display = hero_ui_gtk.display_get_default();
+
+    if (display != NULL && hero_ui_gtk.wayland_display_get_type != NULL && hero_ui_gtk.type_check_instance_is_a(display, hero_ui_gtk.wayland_display_get_type())) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, words);
+    }
+    return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "GTK's backend on this display is neither X11 nor Wayland, and offers no program this");
+}
+
+/* The X atom of `name`. */
+static unsigned long hero_ui_gtk_atom(const char *name) {
+    return hero_ui_gtk.x11_get_xatom_by_name_for_display(hero_ui_gtk.display_get_default(), name);
+}
+
+/* The first `count` 32-bit numbers of property `name` of type `type` on X
+ * window `window`, into `into`; false where it holds fewer. */
+static bool hero_ui_gtk_x_numbers(void *xd, unsigned long window, const char *name, unsigned long type, long *into, long count) {
+    unsigned long actual = 0;
+    unsigned long items = 0;
+    unsigned long after = 0;
+    int format = 0;
+    unsigned char *data = NULL;
+    bool ok;
+
+    if (hero_ui_gtk.x_get_window_property(xd, window, hero_ui_gtk_atom(name), 0, count, 0, type, &actual, &format, &items, &after, &data) != 0 || data == NULL) {
+        return false;
+    }
+    /* Xlib hands a property of format 32 as C `long`s. */
+    ok = actual == type && format == 32 && items >= (unsigned long)count;
+    if (ok) {
+        memcpy(into, data, (size_t)count * sizeof *into);
+    }
+    (void)hero_ui_gtk.x_free(data);
+    return ok;
+}
+
+/* Whether a window manager runs on X display `xd`, by EWMH's check: the
+ * root window names a window that names itself. */
+static bool hero_ui_gtk_manager_runs(void *xd) {
+    unsigned long root = hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default());
+    long checked = 0;
+    long again = 0;
+
+    return hero_ui_gtk_x_numbers(xd, root, "_NET_SUPPORTING_WM_CHECK", HERO_XA_WINDOW, &checked, 1) && hero_ui_gtk_x_numbers(xd, (unsigned long)checked, "_NET_SUPPORTING_WM_CHECK", HERO_XA_WINDOW, &again, 1) && again == checked;
+}
+
+/* Whether the window manager on X display `xd` names `hint` among the hints
+ * it supports (`_NET_SUPPORTED`). */
+static bool hero_ui_gtk_manager_offers(void *xd, const char *hint) {
+    unsigned long root = hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default());
+    unsigned long wanted = hero_ui_gtk_atom(hint);
+    unsigned long actual = 0;
+    unsigned long items = 0;
+    unsigned long after = 0;
+    int format = 0;
+    unsigned char *data = NULL;
+    bool found = false;
+
+    if (hero_ui_gtk.x_get_window_property(xd, root, hero_ui_gtk_atom("_NET_SUPPORTED"), 0, 4096, 0, HERO_XA_ATOM, &actual, &format, &items, &after, &data) != 0 || data == NULL) {
+        return false;
+    }
+    for (unsigned long i = 0; actual == HERO_XA_ATOM && format == 32 && i < items && !found; i += 1) {
+        long each;
+
+        memcpy(&each, data + i * sizeof each, sizeof each);
+        found = (unsigned long)each == wanted;
+    }
+    (void)hero_ui_gtk.x_free(data);
+    return found;
+}
+
+/* The screens, at most `most`, the main one first; their count. */
+static int64_t hero_ui_gtk_screens_now(hero_ui_gtk_screen *into, int64_t most) {
+    void *display = hero_ui_gtk.display_get_default();
+    void *monitors = display != NULL ? hero_ui_gtk.display_get_monitors(display) : NULL;
+    unsigned count = monitors != NULL ? hero_ui_gtk.list_model_get_n_items(monitors) : 0;
+    void *primary = NULL;
+    int64_t made = 0;
+    int64_t main = 0;
+    bool x11 = hero_ui_gtk_xdisplay() != NULL;
+
+    if (x11 && hero_ui_gtk.x11_display_get_primary_monitor != NULL) {
+        primary = hero_ui_gtk.x11_display_get_primary_monitor(display);
+    }
+    for (unsigned i = 0; i < count && made < most; i += 1) {
+        void *monitor = hero_ui_gtk.list_model_get_item(monitors, i);
+        int area[4] = {0, 0, 0, 0};
+        int work[4];
+
+        if (monitor == NULL) {
+            continue;
+        }
+        hero_ui_gtk.monitor_get_geometry(monitor, area);
+        memcpy(work, area, sizeof work);
+        if (x11 && hero_ui_gtk.x11_monitor_get_workarea != NULL) {
+            hero_ui_gtk.x11_monitor_get_workarea(monitor, work);
+        }
+        into[made].area = (hero_ui_gtk_rect){area[0], area[1], area[2], area[3]};
+        into[made].work = (hero_ui_gtk_rect){work[0], work[1], work[2], work[3]};
+        if (hero_ui_gtk.monitor_get_scale != NULL) {
+            into[made].scale = (int64_t)(hero_ui_gtk.monitor_get_scale(monitor) * 100.0 + 0.5);
+        } else {
+            into[made].scale = (int64_t)hero_ui_gtk.monitor_get_scale_factor(monitor) * 100;
+        }
+        into[made].monitor = monitor;
+        if (monitor == primary) {
+            main = made;
+        }
+        hero_ui_gtk.object_unref(monitor);
+        made += 1;
+    }
+    for (int64_t i = 0; primary == NULL && i < made; i += 1) {
+        /* With no primary monitor named, the one at the desktop's origin. */
+        if (into[i].area.x == 0 && into[i].area.y == 0) {
+            main = i;
+            break;
+        }
+    }
+    if (main > 0) {
+        hero_ui_gtk_screen first = into[main];
+
+        memmove(&into[1], &into[0], (size_t)main * sizeof into[0]);
+        into[0] = first;
+    }
+    for (int64_t i = made - 1; i >= 0; i -= 1) {
+        /* The desktop's origin is the main screen's top-left corner. */
+        into[i].area.x -= into[0].area.x;
+        into[i].area.y -= into[0].area.y;
+        into[i].work.x -= into[0].area.x;
+        into[i].work.y -= into[0].area.y;
+        if (i == 0) {
+            into[0].area.x = 0;
+            into[0].area.y = 0;
+        }
+    }
+    return made;
+}
+
+/* The screen rectangle `rect` stands on most, by the area they share; 0
+ * where it shares none with any. */
+static int64_t hero_ui_gtk_screen_under(const hero_ui_gtk_screen *screens, int64_t count, hero_ui_gtk_rect rect) {
+    int64_t best = 0;
+    int64_t most = -1;
+
+    for (int64_t i = 0; i < count; i += 1) {
+        const hero_ui_gtk_rect *area = &screens[i].area;
+        int64_t wide = (rect.x + rect.width < area->x + area->width ? rect.x + rect.width : area->x + area->width) - (rect.x > area->x ? rect.x : area->x);
+        int64_t high = (rect.y + rect.height < area->y + area->height ? rect.y + rect.height : area->y + area->height) - (rect.y > area->y ? rect.y : area->y);
+        int64_t shared = wide > 0 && high > 0 ? wide * high : 0;
+
+        if (shared > most) {
+            best = i;
+            most = shared;
+        }
+    }
+    return best;
+}
+
+/* Window `window`'s surface, or NULL where it was never realized. */
+static void *hero_ui_gtk_surface(const hero_ui_native *window) {
+    return window->widget != NULL ? hero_ui_gtk.native_get_surface(window->widget) : NULL;
+}
+
+/* Whether window `window`'s X window is viewable, mapped with every window
+ * over it. */
+static bool hero_ui_gtk_viewable(void *data) {
+    hero_ui_native *window = data;
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    hero_ui_x_attributes attributes;
+    int state;
+
+    if (xd == NULL || surface == NULL) {
+        return false;
+    }
+    memset(&attributes, 0, sizeof attributes);
+    if (hero_ui_gtk.x_get_window_attributes(xd, hero_ui_gtk.x11_surface_get_xid(surface), &attributes) == 0) {
+        return false;
+    }
+    memcpy(&state, attributes.bytes + HERO_X_MAP_STATE_AT, sizeof state);
+    return state == HERO_X_IS_VIEWABLE;
+}
+
+/* The state window `window` stands in, as GDK last read it. */
+static int64_t hero_ui_gtk_state_of(const hero_ui_native *window) {
+    void *surface = hero_ui_gtk_surface(window);
+    unsigned flags;
+
+    if (surface == NULL) {
+        return window->asked_state != 0 ? window->asked_state : HERO_UI_STATE_NORMAL;
+    }
+    flags = hero_ui_gtk.toplevel_get_state(surface);
+    if ((flags & HERO_GDK_TOPLEVEL_STATE_MINIMIZED) != 0) {
+        return HERO_UI_STATE_MINIMIZED;
+    }
+    if ((flags & HERO_GDK_TOPLEVEL_STATE_FULLSCREEN) != 0) {
+        return HERO_UI_STATE_FULL_SCREEN;
+    }
+    if ((flags & HERO_GDK_TOPLEVEL_STATE_MAXIMIZED) != 0) {
+        return HERO_UI_STATE_MAXIMIZED;
+    }
+    return HERO_UI_STATE_NORMAL;
+}
+
+/* Window `window`'s frame in the desktop's pixels and the scale of its
+ * surface; false where it has no X window. */
+static bool hero_ui_gtk_x_frame(const hero_ui_native *window, hero_ui_gtk_rect *frame, int *scale) {
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    unsigned long xid;
+    unsigned long child = 0;
+    int x = 0;
+    int y = 0;
+    long managed[4] = {0, 0, 0, 0};
+    long shadow[4] = {0, 0, 0, 0};
+
+    if (xd == NULL || surface == NULL) {
+        return false;
+    }
+    xid = hero_ui_gtk.x11_surface_get_xid(surface);
+    if (!hero_ui_gtk.x_translate_coordinates(xd, xid, hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default()), 0, 0, &x, &y, &child)) {
+        return false;
+    }
+    *scale = hero_ui_gtk.surface_get_scale_factor(surface);
+    if (*scale < 1) {
+        *scale = 1;
+    }
+    (void)hero_ui_gtk_x_numbers(xd, xid, "_NET_FRAME_EXTENTS", HERO_XA_CARDINAL, managed, 4);
+    (void)hero_ui_gtk_x_numbers(xd, xid, "_GTK_FRAME_EXTENTS", HERO_XA_CARDINAL, shadow, 4);
+    frame->x = (int64_t)x + shadow[0] - managed[0];
+    frame->y = (int64_t)y + shadow[2] - managed[2];
+    frame->width = (int64_t)hero_ui_gtk.surface_get_width(surface) * *scale - shadow[0] - shadow[1] + managed[0] + managed[1];
+    frame->height = (int64_t)hero_ui_gtk.surface_get_height(surface) * *scale - shadow[2] - shadow[3] + managed[2] + managed[3];
+    return true;
+}
+
+/* Window `window`'s frame in the desktop's points, the screen it stands on
+ * most and its place there; an estimate from its content where it has no X
+ * window yet, at the place the program asked. */
+static void hero_ui_gtk_frame_points(const hero_ui_native *window, const hero_ui_gtk_screen *screens, int64_t count, hero_ui_gtk_rect *frame, int64_t *screen) {
+    int scale = 1;
+
+    if (hero_ui_gtk_x_frame(window, frame, &scale)) {
+        frame->x /= scale;
+        frame->y /= scale;
+        frame->width /= scale;
+        frame->height /= scale;
+    } else {
+        frame->x = 0;
+        frame->y = 0;
+        frame->width = window->content_width;
+        frame->height = window->content_height;
+    }
+    if (window->want_placed && window->want_screen < count) {
+        frame->x = screens[window->want_screen].area.x + window->want_x;
+        frame->y = screens[window->want_screen].area.y + window->want_y;
+    }
+    *screen = hero_ui_gtk_screen_under(screens, count, *frame);
+}
+
+/* What `hero_ui_gtk_moved` waits for. */
+typedef struct hero_ui_gtk_move {
+    hero_ui_native *window;
+    hero_ui_gtk_rect before;
+    int64_t x;
+    int64_t y;
+} hero_ui_gtk_move;
+
+/* Whether the frame of the move `data` waits for left where it stood. */
+static bool hero_ui_gtk_moved(void *data) {
+    hero_ui_gtk_move *move = data;
+    hero_ui_gtk_rect now;
+    int scale = 1;
+
+    return hero_ui_gtk_x_frame(move->window, &now, &scale) && (now.x != move->before.x || now.y != move->before.y || (now.x == move->x && now.y == move->y));
+}
+
+/* Moves window `window`'s frame to `x`, `y` in the desktop's points, as
+ * this part's words say; the person's move told where `person`, else the
+ * window's moves kept quiet until it stands there. */
+static int64_t hero_ui_gtk_move_to(hero_ui_native *window, int64_t x, int64_t y, bool person) {
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    hero_ui_gtk_move move = {window, {0, 0, 0, 0}, 0, 0};
+    int64_t ask_x;
+    int64_t ask_y;
+    int scale = 1;
+    bool there = false;
+
+    if (xd == NULL || surface == NULL || !hero_ui_gtk_x_frame(window, &move.before, &scale)) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "the window has no X window to move");
+    }
+    move.x = x * scale;
+    move.y = y * scale;
+    window->quiet = !person;
+    if (!window->move_known) {
+        int client_x = 0;
+        int client_y = 0;
+        unsigned long child = 0;
+
+        /* A window manager reads a move by the window's gravity, which
+         * ICCCM puts at the frame's corner; with none, the X window itself
+         * stands where it is moved. */
+        (void)hero_ui_gtk.x_translate_coordinates(xd, hero_ui_gtk.x11_surface_get_xid(surface), hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default()), 0, 0, &client_x, &client_y, &child);
+        window->move_dx = hero_ui_gtk_manager_runs(xd) ? 0 : client_x - move.before.x;
+        window->move_dy = hero_ui_gtk_manager_runs(xd) ? 0 : client_y - move.before.y;
+    }
+    ask_x = move.x + window->move_dx;
+    ask_y = move.y + window->move_dy;
+    for (int attempt = 0; attempt < 3 && !there; attempt += 1) {
+        hero_ui_gtk_rect now;
+
+        if (move.before.x == move.x && move.before.y == move.y) {
+            there = true;
+            break;
+        }
+        (void)hero_ui_gtk.x_move_window(xd, hero_ui_gtk.x11_surface_get_xid(surface), (int)hero_ui_between(ask_x, INT32_MIN / 2, INT32_MAX / 2), (int)hero_ui_between(ask_y, INT32_MIN / 2, INT32_MAX / 2));
+        (void)hero_ui_gtk.x_sync(xd, 0);
+        (void)hero_ui_gtk_spin(1000, hero_ui_gtk_moved, &move);
+        if (!hero_ui_gtk_x_frame(window, &now, &scale)) {
+            break;
+        }
+        there = now.x == move.x && now.y == move.y;
+        /* The window manager put the frame off by what it adds: asked
+         * again, corrected by that much, and the correction kept for the
+         * window's next move. */
+        ask_x -= now.x - move.x;
+        ask_y -= now.y - move.y;
+        window->move_dx = ask_x - move.x;
+        window->move_dy = ask_y - move.y;
+        window->move_known = true;
+        move.before = now;
+    }
+    if (!person) {
+        hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+        int64_t count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+        hero_ui_gtk_rect frame;
+        int64_t screen = 0;
+
+        /* What the program set is no move of the person's. */
+        (void)hero_ui_gtk_spin(0, NULL, NULL);
+        hero_ui_gtk_frame_points(window, screens, count, &frame, &screen);
+        window->told_screen = screen;
+        window->told_x = frame.x - (count > 0 ? screens[screen].area.x : 0);
+        window->told_y = frame.y - (count > 0 ? screens[screen].area.y : 0);
+        window->placed_known = true;
+        window->quiet = false;
+    }
+    return there ? HERO_UI_OK : hero_ui_gtk_said_so(HERO_UI_OTHER, "the window manager did not put the window where it was asked within three seconds");
+}
+
+/* Asks the window manager to keep window `window` above every other, or
+ * not, by EWMH's `_NET_WM_STATE` client message. */
+static void hero_ui_gtk_send_above(hero_ui_native *window) {
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    hero_ui_x_event event;
+
+    if (xd == NULL || surface == NULL) {
+        return;
+    }
+    memset(&event, 0, sizeof event);
+    event.client.type = HERO_X_CLIENT_MESSAGE;
+    event.client.send_event = 1;
+    event.client.window = hero_ui_gtk.x11_surface_get_xid(surface);
+    event.client.message_type = hero_ui_gtk_atom("_NET_WM_STATE");
+    event.client.format = 32;
+    event.client.data[0] = window->on_top ? 1 : 0;
+    event.client.data[1] = (long)hero_ui_gtk_atom("_NET_WM_STATE_ABOVE");
+    event.client.data[2] = 0;
+    /* 1: the request is an application's. */
+    event.client.data[3] = 1;
+    (void)hero_ui_gtk.x_send_event(xd, hero_ui_gtk.x11_display_get_xrootwindow(hero_ui_gtk.display_get_default()), 0, HERO_X_SUBSTRUCTURE_MASKS, &event);
+    (void)hero_ui_gtk.x_sync(xd, 0);
+}
+
+/* Waits up to two seconds for window `window`, shown, to be viewable, and
+ * gives it the place the program asked while it was not. */
+static void hero_ui_gtk_settle(hero_ui_native *window) {
+    if (!window->visible || hero_ui_gtk_xdisplay() == NULL || hero_ui_gtk_state_of(window) == HERO_UI_STATE_MINIMIZED) {
+        return;
+    }
+    (void)hero_ui_gtk_spin(2000, hero_ui_gtk_viewable, window);
+    if (window->want_placed && hero_ui_gtk_viewable(window)) {
+        hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+        int64_t count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+
+        window->want_placed = false;
+        if (window->want_screen < count) {
+            (void)hero_ui_gtk_move_to(window, screens[window->want_screen].area.x + window->want_x, screens[window->want_screen].area.y + window->want_y, false);
+        }
+    }
+}
+
+/* Gives window `data`, mapped a moment ago, the place and the stacking the
+ * program asked while it was not shown. */
+static int hero_ui_gtk_after_map(void *data) {
+    hero_ui_native *window = hero_ui_gtk_window((int64_t)(intptr_t)data);
+
+    if (window != NULL) {
+        hero_ui_gtk_settle(window);
+        if (window->on_top) {
+            hero_ui_gtk_send_above(window);
+        }
+    }
+    return 0;
+}
+
+/* Gives window `window`'s surface the app's icon, or none. */
+static void hero_ui_gtk_give_icon(const hero_ui_native *window) {
+    void *surface = hero_ui_gtk_surface(window);
+    void *icons;
+
+    if (surface == NULL) {
+        return;
+    }
+    icons = hero_ui_gtk_icon != NULL ? hero_ui_gtk.list_append(NULL, hero_ui_gtk_icon) : NULL;
+    hero_ui_gtk.toplevel_set_icon_list(surface, icons);
+    if (icons != NULL) {
+        hero_ui_gtk.list_free(icons);
+    }
+}
+
+static void hero_ui_gtk_realized(void *widget, void *data) {
+    hero_ui_native *window = hero_ui_gtk_of(data, widget);
+
+    if (window != NULL && window->kind == HERO_UI_WINDOW && hero_ui_gtk_icon != NULL) {
+        hero_ui_gtk_give_icon(window);
+    }
+}
+
+static void hero_ui_gtk_mapped(void *widget, void *data) {
+    hero_ui_native *window = hero_ui_gtk_of(data, widget);
+
+    if (window == NULL || window->kind != HERO_UI_WINDOW) {
+        return;
+    }
+    if (!window->focus_given) {
+        window->focus_given = true;
+        hero_ui_gtk_first_focus(window);
+    }
+    if (window->want_placed || window->on_top) {
+        (void)hero_ui_gtk.idle_add(hero_ui_gtk_after_map, data);
+    }
+}
+
+/* Checks each watched window's screen and place against what was told of
+ * them, from an idle source after the X server moved a window, and tells
+ * what the person changed: its screen before its place. */
+static int hero_ui_gtk_check_places(void *data) {
+    hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+    int64_t count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+
+    (void)data;
+    hero_ui_gtk_places_due = false;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+        hero_ui_gtk_rect frame;
+        int64_t screen = 0;
+        int64_t x;
+        int64_t y;
+
+        if (window == NULL || window->kind != HERO_UI_WINDOW || !window->watched || window->quiet || !hero_ui_gtk_viewable(window) || count == 0) {
+            continue;
+        }
+        hero_ui_gtk_frame_points(window, screens, count, &frame, &screen);
+        x = frame.x - screens[screen].area.x;
+        y = frame.y - screens[screen].area.y;
+        if (window->placed_known && screen != window->told_screen) {
+            hero_ui_tell(HERO_UI_EVENT_SCREEN, window->id, screen, 0);
+        }
+        if (window->placed_known && (screen != window->told_screen || x != window->told_x || y != window->told_y)) {
+            hero_ui_tell(HERO_UI_EVENT_MOVE, window->id, x, y);
+        }
+        window->told_screen = screen;
+        window->told_x = x;
+        window->told_y = y;
+        window->placed_known = true;
+    }
+    return 0;
+}
+
+/* An X event GDK read: a window configured queues a check of the places. */
+static int hero_ui_gtk_x_event(void *display, void *event, void *data) {
+    int type;
+
+    (void)display;
+    (void)data;
+    memcpy(&type, event, sizeof type);
+    if (type == HERO_X_CONFIGURE_NOTIFY && !hero_ui_gtk_places_due) {
+        hero_ui_gtk_places_due = true;
+        (void)hero_ui_gtk.idle_add(hero_ui_gtk_check_places, NULL);
+    }
+    return 0;
+}
+
+/* Window `data`'s surface changed its state: told where the person changed
+ * it, never while the program's own call brings it there. */
+static void hero_ui_gtk_restated(void *surface, void *spec, void *data) {
+    hero_ui_native *window = hero_ui_gtk_window((int64_t)(intptr_t)data);
+    int64_t state;
+
+    (void)spec;
+    if (window == NULL || !window->watched || hero_ui_gtk_surface(window) != surface) {
+        return;
+    }
+    state = hero_ui_gtk_state_of(window);
+    if (state == window->told_state) {
+        return;
+    }
+    window->told_state = state;
+    if (!window->quiet) {
+        hero_ui_tell(HERO_UI_EVENT_STATE, window->id, state, 0);
+    }
+}
+
+/* Window `data`'s surface entered monitor `monitor`, away from X11: its new
+ * screen told. */
+static void hero_ui_gtk_entered(void *surface, void *monitor, void *data) {
+    hero_ui_native *window = hero_ui_gtk_window((int64_t)(intptr_t)data);
+    hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+    int64_t count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+
+    if (window == NULL || !window->watched || hero_ui_gtk_surface(window) != surface) {
+        return;
+    }
+    for (int64_t i = 0; i < count; i += 1) {
+        if (screens[i].monitor == monitor && i != window->told_screen) {
+            window->told_screen = i;
+            hero_ui_tell(HERO_UI_EVENT_SCREEN, window->id, i, 0);
+        }
+    }
+}
 
 int64_t hero_ui_arm_watch(int64_t id) {
-    (void)id;
+    hero_ui_native *window = hero_ui_gtk_window(id);
+    void *surface;
+
+    if (window == NULL || window->watched) {
+        return HERO_UI_OK;
+    }
+    surface = hero_ui_gtk_surface(window);
+    if (surface == NULL) {
+        return HERO_UI_OK;
+    }
+    window->watched = true;
+    window->told_state = hero_ui_gtk_state_of(window);
+    hero_ui_gtk_connect(surface, "notify::state", (hero_ui_gtk_callback)hero_ui_gtk_restated, id);
+    if (hero_ui_gtk_xdisplay() != NULL) {
+        if (!hero_ui_gtk_xevents) {
+            (void)hero_ui_gtk.signal_connect_data(hero_ui_gtk.display_get_default(), "xevent", (hero_ui_gtk_callback)hero_ui_gtk_x_event, NULL, NULL, 0);
+            hero_ui_gtk_xevents = true;
+        }
+    } else {
+        hero_ui_gtk_connect(surface, "enter-monitor", (hero_ui_gtk_callback)hero_ui_gtk_entered, id);
+    }
     return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_screens(int64_t *values, int64_t count, int64_t *screens) {
-    (void)values;
-    (void)count;
-    (void)screens;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_gtk_screen found[HERO_UI_GTK_SCREENS_MOST];
+    int64_t made = hero_ui_gtk_screens_now(found, HERO_UI_GTK_SCREENS_MOST);
+
+    *screens = made;
+    if (made == 0) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "GDK lists no monitor on this display");
+    }
+    if (made * HERO_UI_SCREEN_FIELDS > count) {
+        return HERO_UI_OK;
+    }
+    for (int64_t i = 0; i < made; i += 1) {
+        int64_t *at = &values[i * HERO_UI_SCREEN_FIELDS];
+
+        at[HERO_UI_SCREEN_LEFT] = found[i].area.x;
+        at[HERO_UI_SCREEN_TOP] = found[i].area.y;
+        at[HERO_UI_SCREEN_WIDTH] = found[i].area.width;
+        at[HERO_UI_SCREEN_HEIGHT] = found[i].area.height;
+        at[HERO_UI_SCREEN_WORK_LEFT] = found[i].work.x;
+        at[HERO_UI_SCREEN_WORK_TOP] = found[i].work.y;
+        at[HERO_UI_SCREEN_WORK_WIDTH] = found[i].work.width;
+        at[HERO_UI_SCREEN_WORK_HEIGHT] = found[i].work.height;
+        at[HERO_UI_SCREEN_SCALE] = found[i].scale;
+    }
+    return HERO_UI_OK;
+}
+
+/* Window `id` of the native side, or NULL with `*kind` the answer. */
+static hero_ui_native *hero_ui_gtk_own_window(int64_t id, int64_t *kind) {
+    hero_ui_native *found = hero_ui_find(id);
+
+    if (found == NULL) {
+        *kind = HERO_UI_NOT_FOUND;
+        return NULL;
+    }
+    if (found->kind != HERO_UI_WINDOW) {
+        *kind = HERO_UI_INVALID;
+        return NULL;
+    }
+    return found;
 }
 
 int64_t hero_ui_arm_frame_of(int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height) {
-    (void)id;
-    (void)screen;
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+    hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+    int64_t count;
+    hero_ui_gtk_rect frame;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (hero_ui_gtk_xdisplay() == NULL) {
+        return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_place);
+    }
+    hero_ui_gtk_settle(window);
+    count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+    if (count == 0) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "GDK lists no monitor on this display");
+    }
+    hero_ui_gtk_frame_points(window, screens, count, &frame, screen);
+    *x = frame.x - screens[*screen].area.x;
+    *y = frame.y - screens[*screen].area.y;
+    *width = frame.width;
+    *height = frame.height;
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_set_position(int64_t id, int64_t screen, int64_t x, int64_t y, int64_t person) {
-    (void)id;
-    (void)screen;
-    (void)x;
-    (void)y;
-    (void)person;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+    hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+    int64_t count;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (hero_ui_gtk_xdisplay() == NULL) {
+        return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_place);
+    }
+    count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+    if (screen >= count) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_gtk_settle(window);
+    if (!window->visible || !hero_ui_gtk_viewable(window)) {
+        /* Given once the window is mapped (`hero_ui_gtk_after_map`). */
+        window->want_placed = true;
+        window->want_screen = screen;
+        window->want_x = x;
+        window->want_y = y;
+        return HERO_UI_OK;
+    }
+    window->want_placed = false;
+    return hero_ui_gtk_move_to(window, screens[screen].area.x + x, screens[screen].area.y + y, person == 1);
 }
 
 int64_t hero_ui_arm_center(int64_t id, int64_t over) {
-    (void)id;
-    (void)over;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+    hero_ui_native *anchor = NULL;
+    hero_ui_gtk_screen screens[HERO_UI_GTK_SCREENS_MOST];
+    int64_t count;
+    hero_ui_gtk_rect frame;
+    hero_ui_gtk_rect around;
+    hero_ui_gtk_rect work;
+    int64_t screen = 0;
+    int64_t x;
+    int64_t y;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (over != 0) {
+        anchor = hero_ui_gtk_own_window(over, &kind);
+        if (anchor == NULL) {
+            return kind;
+        }
+    }
+    if (hero_ui_gtk_xdisplay() == NULL) {
+        return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_place);
+    }
+    hero_ui_gtk_settle(window);
+    count = hero_ui_gtk_screens_now(screens, HERO_UI_GTK_SCREENS_MOST);
+    if (count == 0) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "GDK lists no monitor on this display");
+    }
+    hero_ui_gtk_frame_points(window, screens, count, &frame, &screen);
+    if (anchor != NULL) {
+        hero_ui_gtk_settle(anchor);
+        hero_ui_gtk_frame_points(anchor, screens, count, &around, &screen);
+    } else {
+        around = screens[screen].work;
+    }
+    work = screens[screen].work;
+    x = around.x + (around.width - frame.width) / 2;
+    y = around.y + (around.height - frame.height) / 2;
+    /* Within the work area as far as the window's size allows. */
+    x = x + frame.width > work.x + work.width ? work.x + work.width - frame.width : x;
+    y = y + frame.height > work.y + work.height ? work.y + work.height - frame.height : y;
+    x = x < work.x ? work.x : x;
+    y = y < work.y ? work.y : y;
+    if (!window->visible || !hero_ui_gtk_viewable(window)) {
+        window->want_placed = true;
+        window->want_screen = screen;
+        window->want_x = x - screens[screen].area.x;
+        window->want_y = y - screens[screen].area.y;
+        return HERO_UI_OK;
+    }
+    return hero_ui_gtk_move_to(window, x, y, false);
+}
+
+/* Waits, up to a second, for window `window`'s frame to read the same
+ * twice 50 ms apart. */
+static void hero_ui_gtk_still(const hero_ui_native *window) {
+    hero_ui_gtk_rect before = {0, 0, 0, 0};
+    int scale = 1;
+
+    (void)hero_ui_gtk_x_frame(window, &before, &scale);
+    for (int turn = 0; turn < 20; turn += 1) {
+        hero_ui_gtk_rect now = {0, 0, 0, 0};
+
+        (void)hero_ui_gtk_spin(50, NULL, NULL);
+        (void)hero_ui_gtk_x_frame(window, &now, &scale);
+        if (now.x == before.x && now.y == before.y && now.width == before.width && now.height == before.height) {
+            return;
+        }
+        before = now;
+    }
+}
+
+/* What `hero_ui_gtk_reached` waits for. */
+typedef struct hero_ui_gtk_goal {
+    hero_ui_native *window;
+    int64_t state;
+} hero_ui_gtk_goal;
+
+static bool hero_ui_gtk_reached(void *data) {
+    hero_ui_gtk_goal *goal = data;
+
+    return hero_ui_gtk_state_of(goal->window) == goal->state;
 }
 
 int64_t hero_ui_arm_set_state(int64_t id, int64_t state, int64_t person) {
-    (void)id;
-    (void)state;
-    (void)person;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+    void *xd;
+    int64_t now;
+    hero_ui_gtk_goal goal;
+    bool reached;
+
+    if (window == NULL) {
+        return kind;
+    }
+    xd = hero_ui_gtk_xdisplay();
+    if (xd != NULL && !hero_ui_gtk_manager_runs(xd)) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, hero_ui_gtk_no_manager);
+    }
+    hero_ui_gtk_settle(window);
+    now = hero_ui_gtk_state_of(window);
+    window->asked_state = state;
+    if (now == state) {
+        return HERO_UI_OK;
+    }
+    window->quiet = person != 1;
+    if (now == HERO_UI_STATE_MINIMIZED) {
+        hero_ui_gtk.window_unminimize(window->widget);
+    }
+    if (now == HERO_UI_STATE_FULL_SCREEN && state != HERO_UI_STATE_MINIMIZED) {
+        hero_ui_gtk.window_unfullscreen(window->widget);
+    }
+    if (now == HERO_UI_STATE_MAXIMIZED && state != HERO_UI_STATE_MINIMIZED) {
+        hero_ui_gtk.window_unmaximize(window->widget);
+    }
+    if (state == HERO_UI_STATE_MINIMIZED) {
+        hero_ui_gtk.window_minimize(window->widget);
+    } else if (state == HERO_UI_STATE_MAXIMIZED) {
+        hero_ui_gtk.window_maximize(window->widget);
+    } else if (state == HERO_UI_STATE_FULL_SCREEN) {
+        hero_ui_gtk.window_fullscreen(window->widget);
+    }
+    if (xd == NULL && state == HERO_UI_STATE_MINIMIZED) {
+        /* Wayland tells no program its window was minimized. */
+        window->quiet = false;
+        return HERO_UI_OK;
+    }
+    goal.window = window;
+    goal.state = state;
+    reached = hero_ui_gtk_spin(5000, hero_ui_gtk_reached, &goal);
+    if (reached && state != HERO_UI_STATE_MINIMIZED) {
+        /* The window manager names the state before it gives the window
+         * its new size: waited for until its frame stands still. */
+        hero_ui_gtk_still(window);
+    }
+    if (window->quiet) {
+        window->told_state = hero_ui_gtk_state_of(window);
+        window->quiet = false;
+    }
+    return reached ? HERO_UI_OK : hero_ui_gtk_said_so(HERO_UI_OTHER, "the window manager did not bring the window to that state within five seconds");
 }
 
 int64_t hero_ui_arm_state(int64_t id, int64_t *state) {
-    (void)id;
-    (void)state;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+
+    if (window == NULL) {
+        return kind;
+    }
+    *state = hero_ui_gtk_state_of(window);
+    if (hero_ui_gtk_xdisplay() == NULL && *state == HERO_UI_STATE_NORMAL && window->asked_state == HERO_UI_STATE_MINIMIZED) {
+        return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_minimized);
+    }
+    return HERO_UI_OK;
+}
+
+/* Whether window `data`'s frame extents read as framed, `true`, or bare. */
+static bool hero_ui_gtk_framed_now(void *data) {
+    hero_ui_native *window = data;
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    long managed[4] = {0, 0, 0, 0};
+    bool framed;
+
+    if (xd == NULL || surface == NULL) {
+        return true;
+    }
+    (void)hero_ui_gtk_x_numbers(xd, hero_ui_gtk.x11_surface_get_xid(surface), "_NET_FRAME_EXTENTS", HERO_XA_CARDINAL, managed, 4);
+    framed = managed[0] + managed[1] + managed[2] + managed[3] > 0;
+    return framed == window->want_framed;
+}
+
+/* Whether window `data`'s surface reads as kept above, as asked. */
+static bool hero_ui_gtk_above_now(void *data) {
+    hero_ui_native *window = data;
+    void *surface = hero_ui_gtk_surface(window);
+
+    return surface != NULL && ((hero_ui_gtk.toplevel_get_state(surface) & HERO_GDK_TOPLEVEL_STATE_ABOVE) != 0) == window->on_top;
 }
 
 int64_t hero_ui_arm_window_set(int64_t id, int64_t which, int64_t value) {
-    (void)id;
-    (void)which;
-    (void)value;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind = HERO_UI_OK;
+    hero_ui_native *window = hero_ui_gtk_own_window(id, &kind);
+    void *xd = hero_ui_gtk_xdisplay();
+
+    if (window == NULL) {
+        return kind;
+    }
+    switch (which) {
+    case HERO_UI_WINDOW_SET_ON_TOP:
+        if (xd == NULL) {
+            return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_top);
+        }
+        if (!hero_ui_gtk_manager_runs(xd)) {
+            return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, hero_ui_gtk_no_manager);
+        }
+        if (!hero_ui_gtk_manager_offers(xd, "_NET_WM_STATE_ABOVE")) {
+            return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "the window manager running here does not offer _NET_WM_STATE_ABOVE, which keeps a window above every other");
+        }
+        window->on_top = value == 1;
+        hero_ui_gtk_settle(window);
+        if (hero_ui_gtk_viewable(window)) {
+            hero_ui_gtk_send_above(window);
+            (void)hero_ui_gtk_spin(1000, hero_ui_gtk_above_now, window);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_WINDOW_SET_FRAMED:
+        if (hero_ui_gtk_state_of(window) == HERO_UI_STATE_FULL_SCREEN) {
+            return hero_ui_gtk_said_so(HERO_UI_OTHER, "a window in full screen has no frame to give or take");
+        }
+        hero_ui_gtk.window_set_decorated(window->widget, value == 1 ? 1 : 0);
+        if (xd != NULL && hero_ui_gtk_manager_runs(xd) && hero_ui_gtk_viewable(window)) {
+            /* The window manager draws the frame: waited for, so a frame
+             * read next reads it as it now stands. */
+            window->want_framed = value == 1;
+            (void)hero_ui_gtk_spin(1000, hero_ui_gtk_framed_now, window);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_WINDOW_SET_OPACITY:
+        hero_ui_gtk.widget_set_opacity(window->widget, (double)value / 255.0);
+        return HERO_UI_OK;
+    case HERO_UI_WINDOW_SET_BACKDROP:
+        if (value == HERO_UI_BACKDROP_NONE) {
+            return HERO_UI_OK;
+        }
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "GTK 4 offers no translucent material behind a window: a see-through background drawn by CSS is not the system's blur");
+    default:
+        if (value == 1) {
+            hero_ui_native *other = NULL;
+            char words[HERO_UI_WORDS_MOST];
+
+            if (hero_ui_gtk_modal != 0 && hero_ui_gtk_modal != id) {
+                (void)snprintf(words, sizeof words, "window %lld is modal already, and one window is modal at a time", (long long)hero_ui_gtk_modal);
+                return hero_ui_gtk_said_so(HERO_UI_OTHER, words);
+            }
+            for (size_t at = 0; at < hero_ui_map_room() && other == NULL; at += 1) {
+                hero_ui_native *each = hero_ui_at(at);
+
+                other = each != NULL && each->kind == HERO_UI_WINDOW && each->id != id && each->visible ? each : NULL;
+            }
+            hero_ui_gtk.window_set_transient_for(window->widget, other != NULL ? other->widget : NULL);
+            hero_ui_gtk.window_set_modal(window->widget, 1);
+            if (window->visible) {
+                hero_ui_gtk.window_present(window->widget);
+            }
+            hero_ui_gtk_modal = id;
+        } else if (hero_ui_gtk_modal == id) {
+            hero_ui_gtk.window_set_modal(window->widget, 0);
+            hero_ui_gtk.window_set_transient_for(window->widget, NULL);
+            hero_ui_gtk_modal = 0;
+        }
+        return HERO_UI_OK;
+    }
 }
 
 int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height) {
-    (void)rgba;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    void *texture = NULL;
+
+    if (width > 0 && height > 0) {
+        void *bytes = hero_ui_gtk.bytes_new(rgba, (size_t)(width * height * 4));
+
+        texture = bytes != NULL && width <= INT32_MAX / 4 && height <= INT32_MAX ? hero_ui_gtk.memory_texture_new((int)width, (int)height, HERO_GDK_MEMORY_R8G8B8A8, bytes, (size_t)width * 4) : NULL;
+        if (bytes != NULL) {
+            hero_ui_gtk.bytes_unref(bytes);
+        }
+        if (texture == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    if (hero_ui_gtk_icon != NULL) {
+        hero_ui_gtk.object_unref(hero_ui_gtk_icon);
+    }
+    hero_ui_gtk_icon = texture;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *each = hero_ui_at(at);
+
+        if (each != NULL && each->kind == HERO_UI_WINDOW) {
+            hero_ui_gtk_give_icon(each);
+        }
+    }
+    return HERO_UI_OK;
 }
 
+/* GTK's own loop serves while a window is modal: its modality is the grab
+ * GTK holds, not a loop of its own. */
 bool hero_ui_arm_modal_here(void) {
     return false;
 }
 
 int64_t hero_ui_arm_modal_pump(int64_t ms) {
-    (void)ms;
-    return HERO_UI_UNSUPPORTED;
+    return hero_ui_arm_pump(ms);
 }
 
-/* -- A MENU ITEM'S ROLE ---------------------------------------------------- */
+/* -- A KEY PRESSED --------------------------------------------------------- */
 
-/* Win32 and GTK 4 hold no application menu, so their arm, once written,
- * checks the item and answers it done, the item staying where the program
- * put it (`hero_ui.h`, A MENU ITEM'S ROLE); until then no native app opens
- * here and this is not reached. */
-int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
-    (void)id;
-    (void)role;
-    return HERO_UI_UNSUPPORTED;
+/* Whether the X server gives window `data` the keys: its focus is the
+ * window's X window or one inside it (GDK's focus window, where a window
+ * manager gives the focus). GTK's `is-active` is no such answer: it reads
+ * true before the X server mapped the window (measured under Xvfb, GTK
+ * 4.18.6), and a key pressed then is lost. */
+static bool hero_ui_gtk_keyed_window(void *data) {
+    const hero_ui_native *window = data;
+    void *xd = hero_ui_gtk_xdisplay();
+    void *surface = hero_ui_gtk_surface(window);
+    unsigned long xid;
+    unsigned long at = 0;
+    int revert = 0;
+
+    if (xd == NULL || surface == NULL || hero_ui_gtk.x_get_input_focus == NULL || hero_ui_gtk.x_query_tree == NULL || !hero_ui_gtk.window_is_active(window->widget)) {
+        return false;
+    }
+    xid = hero_ui_gtk.x11_surface_get_xid(surface);
+    (void)hero_ui_gtk.x_get_input_focus(xd, &at, &revert);
+    for (int depth = 0; at > 1 && depth < 16; depth += 1) {
+        unsigned long root = 0;
+        unsigned long parent = 0;
+        unsigned long *children = NULL;
+        unsigned count = 0;
+
+        if (at == xid) {
+            return true;
+        }
+        if (!hero_ui_gtk.x_query_tree(xd, at, &root, &parent, &children, &count)) {
+            return false;
+        }
+        if (children != NULL) {
+            (void)hero_ui_gtk.x_free(children);
+        }
+        at = parent == root ? 0 : parent;
+    }
+    return false;
 }
 
-/* -- RETURN AND ESCAPE ----------------------------------------------------- */
+int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+    unsigned keyval = 0;
+    unsigned held[3];
+    int holding = 0;
+    unsigned code;
+    void *xd;
+    int event = 0;
+    int error = 0;
+    int major = 0;
+    int minor = 0;
 
-int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
-    (void)id;
-    (void)key;
-    return HERO_UI_UNSUPPORTED;
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = hero_ui_gtk_window(widget->window);
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if ((widget != window && !hero_ui_gtk_takes_keys(widget->kind)) || !hero_ui_gtk_key_of(key, count, &keyval)) {
+        return HERO_UI_INVALID;
+    }
+    xd = hero_ui_gtk_xdisplay();
+    if (xd == NULL) {
+        return hero_ui_gtk_not_x11(hero_ui_gtk_wayland_key);
+    }
+    if (hero_ui_gtk.x_test_query_extension == NULL || hero_ui_gtk.x_test_fake_key_event == NULL || hero_ui_gtk.x_keysym_to_keycode == NULL) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, HERO_UI_GTK_XTEST_LIBRARY " is not installed: X11 lets a program press a key as the keyboard does only through its XTest extension");
+    }
+    if (!hero_ui_gtk.x_test_query_extension(xd, &event, &error, &major, &minor)) {
+        return hero_ui_gtk_said_so(HERO_UI_UNSUPPORTED, "this X server offers no XTEST extension, through which alone X11 lets a program press a key");
+    }
+    if (!window->visible) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "the window is hidden, and a key reaches a window shown alone");
+    }
+    hero_ui_gtk_settle(window);
+    hero_ui_gtk.window_present(window->widget);
+    if (!hero_ui_gtk_manager_runs(xd) && hero_ui_gtk.x_set_input_focus != NULL && hero_ui_gtk_viewable(window)) {
+        /* With no window manager the X server's focus follows the pointer
+         * until a client sets it: given to the window, as GDK's own
+         * present gives it where the window was viewable. */
+        (void)hero_ui_gtk.x_set_input_focus(xd, hero_ui_gtk.x11_surface_get_xid(hero_ui_gtk_surface(window)), HERO_X_REVERT_TO_PARENT, 0);
+        (void)hero_ui_gtk.x_sync(xd, 0);
+    }
+    if (!hero_ui_gtk_spin(2000, hero_ui_gtk_keyed_window, window)) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "the window could not be given the keys within two seconds: the window manager keeps another in front");
+    }
+    if (widget != window && hero_ui_gtk_focused(window) != widget) {
+        /* Given the keys as the person's click gives them: a field's text
+         * is not chosen whole, as GTK's own focus by Tab chooses it. */
+        void *text = widget->kind == HERO_UI_TEXT_FIELD ? hero_ui_gtk.editable_get_delegate(widget->widget) : NULL;
+
+        if (!widget->visible || !hero_ui_gtk.widget_get_visible(widget->widget) || !hero_ui_gtk.widget_is_sensitive(widget->widget)) {
+            return HERO_UI_INVALID;
+        }
+        if (text != NULL ? !hero_ui_gtk.text_grab_focus_without_selecting(text) : hero_ui_arm_set_focus(id) != HERO_UI_OK) {
+            return HERO_UI_INVALID;
+        }
+    }
+    code = hero_ui_gtk.x_keysym_to_keycode(xd, keyval);
+    if (code == 0) {
+        return hero_ui_gtk_said_so(HERO_UI_OTHER, "this keyboard's layout has no key for it");
+    }
+    if ((modifiers & HERO_UI_PRIMARY) != 0) {
+        held[holding++] = hero_ui_gtk.x_keysym_to_keycode(xd, HERO_GDK_KEY_CONTROL_L);
+    }
+    if ((modifiers & HERO_UI_SHIFT) != 0) {
+        held[holding++] = hero_ui_gtk.x_keysym_to_keycode(xd, HERO_GDK_KEY_SHIFT_L);
+    }
+    if ((modifiers & HERO_UI_ALT) != 0) {
+        held[holding++] = hero_ui_gtk.x_keysym_to_keycode(xd, HERO_GDK_KEY_ALT_L);
+    }
+    for (int i = 0; i < holding; i += 1) {
+        (void)hero_ui_gtk.x_test_fake_key_event(xd, held[i], 1, 0);
+    }
+    (void)hero_ui_gtk.x_test_fake_key_event(xd, code, 1, 0);
+    (void)hero_ui_gtk.x_test_fake_key_event(xd, code, 0, 0);
+    for (int i = holding - 1; i >= 0; i -= 1) {
+        (void)hero_ui_gtk.x_test_fake_key_event(xd, held[i], 0, 0);
+    }
+    /* The server has made the key's events once it answers; GTK then reads
+     * and handles them in its loop's turns. */
+    (void)hero_ui_gtk.x_sync(xd, 0);
+    (void)hero_ui_gtk_spin(30, NULL, NULL);
+    return HERO_UI_OK;
 }
 
-/* -- THE WIDGET WITH THE KEYS ---------------------------------------------- */
+/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS ----------------
+ *
+ * GTK 4.10's `GtkFileDialog` choosing one folder or several, and its
+ * `GtkAlertDialog` with the program's buttons, the first pressed by Return
+ * and the cancel button by Escape; GTK 4.0's `GtkFileChooserNative` and
+ * `GtkMessageDialog` where the library is older. Each is waited for by
+ * running GLib's loop, as the other dialogs are. */
 
-int64_t hero_ui_arm_set_focus(int64_t id) {
-    (void)id;
-    return HERO_UI_UNSUPPORTED;
+/* The window a dialog of this part stands over, which `hero_ui.c` hands
+ * the arm no number of: the modal window, else the window with the keys,
+ * else the first shown; NULL where none is shown. */
+static void *hero_ui_gtk_dialog_owner(void) {
+    hero_ui_native *shown = NULL;
+    hero_ui_native *modal = hero_ui_gtk_modal != 0 ? hero_ui_gtk_window(hero_ui_gtk_modal) : NULL;
+
+    if (modal != NULL) {
+        return modal->widget;
+    }
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *each = hero_ui_at(at);
+
+        if (each == NULL || each->kind != HERO_UI_WINDOW || !each->visible) {
+            continue;
+        }
+        if (hero_ui_gtk.window_is_active(each->widget)) {
+            return each->widget;
+        }
+        shown = shown != NULL ? shown : each;
+    }
+    return shown != NULL ? shown->widget : NULL;
 }
 
-int64_t hero_ui_arm_focus(int64_t id, int64_t *focus) {
-    (void)id;
-    (void)focus;
-    return HERO_UI_UNSUPPORTED;
-}
+static void hero_ui_gtk_folder_answered(void *dialog, void *result, void *data) {
+    hero_ui_gtk_answer *answer = data;
 
-/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS -------------- */
+    if (answer->multiple == 1) {
+        answer->value = hero_ui_gtk.file_dialog_select_multiple_folders_finish(dialog, result, &answer->error);
+    } else {
+        answer->value = hero_ui_gtk.file_dialog_select_folder_finish(dialog, result, &answer->error);
+    }
+    answer->done = true;
+}
 
 int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
-    (void)multiple;
-    (void)title;
-    (void)title_count;
-    (void)bytes;
-    return HERO_UI_UNSUPPORTED;
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
+    int64_t result = HERO_UI_OK;
+
+    *bytes = 0;
+    if (heading == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    got.multiple = multiple == 1 ? 1 : 0;
+    if (hero_ui_gtk.file_dialog_new != NULL && hero_ui_gtk.file_dialog_set_title != NULL && hero_ui_gtk.file_dialog_set_modal != NULL && hero_ui_gtk.file_dialog_select_folder != NULL && hero_ui_gtk.file_dialog_select_folder_finish != NULL &&
+        hero_ui_gtk.file_dialog_select_multiple_folders != NULL && hero_ui_gtk.file_dialog_select_multiple_folders_finish != NULL) {
+        void *dialog = hero_ui_gtk.file_dialog_new();
+
+        if (dialog == NULL) {
+            result = HERO_UI_LIMIT;
+        } else {
+            if (heading[0] != '\0') {
+                hero_ui_gtk.file_dialog_set_title(dialog, heading);
+            }
+            hero_ui_gtk.file_dialog_set_modal(dialog, 1);
+            if (got.multiple == 1) {
+                hero_ui_gtk.file_dialog_select_multiple_folders(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_folder_answered, &got);
+            } else {
+                hero_ui_gtk.file_dialog_select_folder(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_folder_answered, &got);
+            }
+            hero_ui_gtk_await(&got);
+            hero_ui_gtk.object_unref(dialog);
+        }
+    } else {
+        char accept[64];
+        char cancel[64];
+        void *dialog;
+
+        hero_ui_gtk_words_of("_Select", accept, sizeof accept);
+        hero_ui_gtk_words_of("_Cancel", cancel, sizeof cancel);
+        dialog = hero_ui_gtk.file_chooser_native_new(heading[0] != '\0' ? heading : NULL, hero_ui_gtk_dialog_owner(), HERO_GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER, accept, cancel);
+        if (dialog == NULL) {
+            result = HERO_UI_LIMIT;
+        } else {
+            hero_ui_gtk.native_dialog_set_modal(dialog, 1);
+            hero_ui_gtk.file_chooser_set_select_multiple(dialog, got.multiple);
+            (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
+            hero_ui_gtk.native_dialog_show(dialog);
+            hero_ui_gtk_await(&got);
+            if (got.response == HERO_GTK_RESPONSE_ACCEPT) {
+                got.value = hero_ui_gtk.file_chooser_get_files(dialog);
+                got.multiple = 1;
+            }
+            hero_ui_gtk.object_unref(dialog);
+        }
+    }
+    hero_layer_free(heading);
+    return hero_ui_gtk_kept_paths(&got, result, bytes);
 }
 
 int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
-    (void)tone;
-    (void)title;
-    (void)title_count;
-    (void)text;
-    (void)text_count;
-    (void)buttons;
-    (void)buttons_count;
-    (void)cancel;
-    (void)pressed;
-    return HERO_UI_UNSUPPORTED;
+    char *heading = hero_ui_gtk_text(title, title_count, false);
+    char *said = hero_ui_gtk_text(text, text_count, false);
+    int64_t shown = hero_ui_texts_in(buttons, buttons_count);
+    char **labels = hero_layer_alloc_zero((size_t)shown + 1, sizeof *labels);
+    hero_ui_gtk_answer got = {false, -1, NULL, NULL, 0};
+    int64_t result = HERO_UI_OK;
+
+    for (int64_t i = 0; labels != NULL && i < shown; i += 1) {
+        int64_t length = 0;
+        const uint8_t *label = hero_ui_text_at(buttons, buttons_count, i, &length);
+
+        labels[i] = hero_ui_gtk_text(label, length, false);
+        if (labels[i] == NULL) {
+            result = HERO_UI_LIMIT;
+        }
+    }
+    if (heading == NULL || said == NULL || labels == NULL) {
+        result = HERO_UI_LIMIT;
+    }
+    if (result == HERO_UI_OK && hero_ui_gtk.alert_dialog_new != NULL && hero_ui_gtk.alert_dialog_choose != NULL && hero_ui_gtk.alert_dialog_choose_finish != NULL && hero_ui_gtk.alert_dialog_set_buttons != NULL &&
+        hero_ui_gtk.alert_dialog_set_detail != NULL && hero_ui_gtk.alert_dialog_set_cancel_button != NULL && hero_ui_gtk.alert_dialog_set_default_button != NULL && hero_ui_gtk.alert_dialog_set_modal != NULL) {
+        void *dialog = hero_ui_gtk.alert_dialog_new("%s", heading);
+
+        if (dialog == NULL) {
+            result = HERO_UI_LIMIT;
+        } else {
+            hero_ui_gtk.alert_dialog_set_detail(dialog, said);
+            hero_ui_gtk.alert_dialog_set_buttons(dialog, (const char *const *)labels);
+            hero_ui_gtk.alert_dialog_set_default_button(dialog, 0);
+            hero_ui_gtk.alert_dialog_set_cancel_button(dialog, (int)cancel);
+            hero_ui_gtk.alert_dialog_set_modal(dialog, 1);
+            hero_ui_gtk.alert_dialog_choose(dialog, hero_ui_gtk_dialog_owner(), NULL, hero_ui_gtk_alert_answered, &got);
+            hero_ui_gtk_await(&got);
+            if (got.error != NULL) {
+                hero_ui_gtk.error_free(got.error);
+            }
+            hero_ui_gtk.object_unref(dialog);
+        }
+    } else if (result == HERO_UI_OK) {
+        int type = tone == HERO_UI_TONE_ERROR ? HERO_GTK_MESSAGE_ERROR : (tone == HERO_UI_TONE_WARNING ? HERO_GTK_MESSAGE_WARNING : HERO_GTK_MESSAGE_INFO);
+        void *dialog = hero_ui_gtk.message_dialog_new(hero_ui_gtk_dialog_owner(), HERO_GTK_DIALOG_MODAL | HERO_GTK_DIALOG_DESTROY_WITH_PARENT, type, HERO_GTK_BUTTONS_NONE, "%s", heading);
+
+        if (dialog == NULL) {
+            result = HERO_UI_LIMIT;
+        } else {
+            hero_ui_gtk.message_dialog_format_secondary_text(dialog, "%s", said);
+            for (int64_t i = 0; i < shown; i += 1) {
+                (void)hero_ui_gtk.dialog_add_button(dialog, labels[i], (int)i);
+            }
+            hero_ui_gtk.dialog_set_default_response(dialog, 0);
+            (void)hero_ui_gtk.signal_connect_data(dialog, "response", (hero_ui_gtk_callback)hero_ui_gtk_dialog_answered, &got, NULL, 0);
+            hero_ui_gtk.window_present(dialog);
+            hero_ui_gtk_await(&got);
+            hero_ui_gtk.window_destroy(dialog);
+        }
+    }
+    for (int64_t i = 0; labels != NULL && i < shown; i += 1) {
+        hero_layer_free(labels[i]);
+    }
+    hero_layer_free(labels);
+    hero_layer_free(heading);
+    hero_layer_free(said);
+    /* A dialog dismissed with no button pressed answers its cancel button,
+     * or none, -1. */
+    *pressed = got.response >= 0 && got.response < shown ? got.response : cancel;
+    return result;
 }
 
-/* -- CHECK AND RADIO MENU ITEMS -------------------------------------------- */
+/* -- WHAT THIS ARM DRAWS --------------------------------------------------- */
 
-int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
-    (void)id;
-    (void)mode;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE ----------------------- */
-
-int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
-    (void)id;
-    (void)on;
-    return HERO_UI_UNSUPPORTED;
-}
-
-int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
-    (void)id;
-    (void)on;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- THE CLIPBOARD --------------------------------------------------------- */
-
-int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height) {
+/* Every kind and act of `hero_ui.h` is drawn here, so neither switch
+ * refuses one before `create` and `inject`, which check each. */
+bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     (void)kind;
-    (void)bytes;
-    (void)count;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    (void)parent;
+    return true;
 }
 
-int64_t hero_ui_arm_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height) {
-    (void)kind;
-    (void)bytes;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+bool hero_ui_arm_acts(int64_t act) {
+    (void)act;
+    return true;
 }
 
-int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
-    (void)buffer;
-    (void)count;
-    return -1;
-}
-
-/* -- BOXES THE SYSTEM DRAWS ------------------------------------------------ */
-
-int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
-    (void)id;
-    (void)left;
-    (void)top;
-    (void)right;
-    (void)bottom;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- A TABLE --------------------------------------------------------------- */
-
-int64_t hero_ui_arm_set_columns(int64_t id, const uint8_t *titles, int64_t count) {
-    (void)id;
-    (void)titles;
-    (void)count;
-    return HERO_UI_UNSUPPORTED;
-}
-
-int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending) {
-    (void)id;
-    (void)column;
-    (void)ascending;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- A TREE ---------------------------------------------------------------- */
-
-int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
-    (void)id;
-    (void)item;
-    (void)under;
-    (void)text;
-    (void)count;
-    (void)foldable;
-    return HERO_UI_UNSUPPORTED;
-}
-
-int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
-    (void)id;
-    (void)item;
-    return HERO_UI_UNSUPPORTED;
-}
-
-int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
-    (void)id;
-    (void)item;
-    (void)on;
-    return HERO_UI_UNSUPPORTED;
+/* What this part keeps for the app, given back as it closes. */
+static void hero_ui_gtk_close_more(void) {
+    hero_ui_gtk_modal = 0;
+    hero_layer_free(hero_ui_gtk_clip);
+    hero_ui_gtk_clip = NULL;
+    hero_ui_gtk_clip_count = 0;
+    hero_ui_gtk_clip_kept = false;
+    if (hero_ui_gtk_icon != NULL) {
+        hero_ui_gtk.object_unref(hero_ui_gtk_icon);
+        hero_ui_gtk_icon = NULL;
+    }
+    if (hero_ui_gtk_xevents) {
+        (void)hero_ui_gtk.signal_handlers_disconnect_matched(hero_ui_gtk.display_get_default(), HERO_G_SIGNAL_MATCH_FUNC_DATA, 0, 0, NULL, (hero_ui_gtk_callback)hero_ui_gtk_x_event, NULL);
+        hero_ui_gtk_xevents = false;
+    }
+    hero_ui_gtk_places_due = false;
+    hero_ui_gtk_said[0] = '\0';
 }
 
 #endif
