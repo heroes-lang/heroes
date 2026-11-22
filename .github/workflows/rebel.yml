@@ -277,6 +277,9 @@ jobs:
       - name: generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
         run: ./heroes run generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
+      - name: generators/i18n_numbers, CLDR 49's number table of i18n/numbers
+        run: ./heroes run generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
