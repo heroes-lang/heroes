@@ -168,13 +168,15 @@ jobs:
 
   # ─────────────── Every generated table still its generator's ───────────────
   #
-  # Each program under `generators/` writes one of Rebel's generated tables
-  # from pinned public data and has a `check` that reads the table in the tree
-  # and exits 0 where it is byte for byte what the generator writes, 1 where
-  # it is not (naming the first line that differs), and 2 where its input's
-  # digest is not the pinned one. The input is fetched here by the URL the
-  # generator records, so no generator can rot unseen. One leg: the tables
-  # are text, the same on every platform.
+  # Each program under `generators/` writes one or more of Rebel's generated
+  # tables from pinned public data and has a `check` that reads the tables in
+  # the tree and exits 0 where each is byte for byte what the generator
+  # writes, 1 where one is not (naming the first line that differs), and 2
+  # where its input is not the one it is pinned to. An input whose licence
+  # lets it be copied and whose source serves only its latest version is kept
+  # in the generator's own folder; any other is fetched here by the URL the
+  # generator records and held to the SHA-256 it pins, so no generator can rot
+  # unseen. One leg: the tables are text, the same on every platform.
   generators:
     name: Linux x86-64, every generated table checked against its generator
     runs-on: ubuntu-26.04
@@ -201,6 +203,20 @@ jobs:
           curl --fail --location --silent --show-error -o build/generators/cldr-49.0.0-json-full.zip \
             https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
           ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`.
+      - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
+        run: ./heroes run generators/unicode_encodings/main.hero -- check
+
+      # The tests of `generators/tablekit/`, the package every generator
+      # writes its tables with. A generator's own tests are left to whoever
+      # changes it: `heroes test` runs every test its program reaches, Rebel's
+      # packages' among them (1,875 tests and three minutes for `tablekit`
+      # alone on 2026-11-22, on a Mac running other builds), which the
+      # `coherence` job runs already, and each `check` above judges a
+      # generator's whole output byte for byte.
+      - name: generators/tablekit, its tests
+        run: ./heroes test generators/tablekit/tablekit.hero
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #

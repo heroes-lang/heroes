@@ -1,0 +1,136 @@
+# An index of the WHATWG Encoding Standard read as the standard says to read
+# one (its section "Indexes"): every line that is not empty and does not open
+# with `#` holds a pointer, a tab, and a code point written `0x` and
+# hexadecimal, then optionally a tab and words for the reader; the comment
+# at its head holds the lines `# Identifier: ` and `# Date: `, which say which
+# version of the index this is.
+
+use <rebel>/strings
+
+# The most a code point is: U+10FFFF.
+constant LAST_POINT: i64
+    1114111
+
+# An index read from its file.
+record Index
+    # The file's name, as the standard serves it: `index-big5.txt`.
+    file: str
+    # The index's identifier, from its line `# Identifier: `.
+    identifier: str
+    # The index's date, from its line `# Date: `.
+    date: str
+    # The pointer of each line, in the file's order.
+    pointers: [i64]
+    # The code point of each line, at the same place as its pointer.
+    points: [i64]
+
+# The index `file` read from `text`.
+#
+# - `file`: its name, as the standard serves it.
+# - `text`: its whole text.
+#
+# Fails `invalid` where a line is neither a comment, nor empty, nor a
+# pointer and a code point, where a code point is past U+10FFFF, where a
+# pointer is not above the one before it, or where the head names no
+# identifier or no date.
+function read_index(file: str, text: str) -> Index?
+    identifier @= ""
+    date @= ""
+    pointers: [i64] @= []
+    points: [i64] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        if strings.has_prefix(s: line, prefix: "# Identifier: ")
+            identifier @ strings.trim(strings.trim_prefix(s: line, prefix: "# Identifier: "))
+        else if strings.has_prefix(s: line, prefix: "# Date: ")
+            date @ strings.trim(strings.trim_prefix(s: line, prefix: "# Date: "))
+        else if !strings.has_prefix(s: line, prefix: "#") && strings.trim(line) != ""
+            fields = strings.split(s: strings.trim(line), sep: "\t")
+            pointer = number_of(file: file, text: fields[0], base: 10)?
+
+            if fields.len() < 2 || !strings.has_prefix(s: fields[1], prefix: "0x")
+                return fail(code: "invalid", msg: f"{file}: the line \"{line}\" holds no code point written 0x")
+            point = number_of(file: file, text: strings.trim_prefix(s: fields[1], prefix: "0x"), base: 16)?
+
+            if point > LAST_POINT
+                return fail(code: "invalid", msg: f"{file}: pointer {pointer} names {point}, past U+10FFFF")
+
+            if pointers.len() > 0 && pointer <= pointers[pointers.len() - 1]
+                return fail(code: "invalid", msg: f"{file}: pointer {pointer} is not above the one before it")
+            pointers @ pointers.push(pointer)
+            points @ points.push(point)
+
+    if identifier == "" || date == ""
+        return fail(code: "invalid", msg: f"{file}: its head names no identifier or no date")
+    return ok(Index(file: file, identifier: identifier, date: date, pointers: pointers, points: points))
+
+# `text`, digits of `base` and nothing else, as a number of 0 or more.
+#
+# - `file`: the index, which a failure names.
+# - `text`: the digits.
+# - `base`: 10 or 16.
+#
+# Fails `invalid` where `text` is empty or holds anything else.
+function number_of(file: str, text: str, base: i64) -> i64?
+    digits = "0123456789abcdef"
+    lower = strings.to_lower_ascii(text)
+    value @= 0
+
+    if lower == ""
+        return fail(code: "invalid", msg: f"{file}: a pointer or a code point is empty")
+
+    for c in lower.chars()
+        digit = match strings.index_of(s: digits, substr: c)
+            .ok at => at
+            .err _ => base
+
+        if digit >= base
+            return fail(code: "invalid", msg: f"{file}: \"{text}\" is not a number of base {base}")
+        value @ value * base + digit
+
+    return ok(value)
+
+# One more than the largest pointer of `index`, 0 for an index with none: the
+# number of pointers a decoder's table holds.
+#
+# - `index`: the index.
+function size_of(index: Index lent) -> i64
+    if index.pointers.len() == 0
+        return 0
+    return index.pointers[index.pointers.len() - 1] + 1
+
+# The line the table's header writes for `index`: its file, its identifier
+# and its date.
+#
+# - `index`: the index.
+function source_line(index: Index lent) -> str
+    return f"# - `{index.file}`, Identifier {index.identifier}, Date {index.date}"
+
+## Tests
+
+test "read_index: the head's identifier and date, lines with and without words, and comments and empty lines left"
+    text = "# For details see the Encoding Standard\n#\n# Identifier: abc\n# Date: 2024-09-18\n\n    0\t0x0410\tA (A)\n   36\t0x00A5\n"
+    index = read_index(file: "index-x.txt", text: text).must()
+    assert index.identifier == "abc" && index.date == "2024-09-18"
+    assert index.pointers == [0, 36] && index.points == [0x410, 0xa5]
+    assert size_of(index) == 37
+    assert source_line(index) == "# - `index-x.txt`, Identifier abc, Date 2024-09-18"
+
+test "read_index: a pointer out of order, a code point past U+10FFFF, a line with no code point, and a head with no date"
+    head = "# Identifier: abc\n# Date: d\n"
+    assert read_index(file: "f", text: head + "1\t0x41\n1\t0x42\n").is_err()
+    assert read_index(file: "f", text: head + "1\t0x110000\n").is_err()
+    assert read_index(file: "f", text: head + "1\t65\n").is_err()
+    assert read_index(file: "f", text: head + "1 0x41\n").is_err()
+    assert read_index(file: "f", text: "# Identifier: abc\n1\t0x41\n").is_err()
+
+test "number_of: decimal, hexadecimal in either case, empty, and a stray character"
+    assert number_of(file: "f", text: "19781", base: 10).must() == 19781
+    assert number_of(file: "f", text: "27267", base: 16).must() == 0x27267
+    assert number_of(file: "f", text: "Ab", base: 16).must() == 171
+    assert number_of(file: "f", text: "", base: 10).is_err()
+    assert number_of(file: "f", text: "1a", base: 10).is_err()
+    assert number_of(file: "f", text: "-1", base: 10).is_err()
+
+test "size_of: an index with no pointer"
+    assert size_of(Index(file: "f", identifier: "i", date: "d", pointers: [], points: [])) == 0

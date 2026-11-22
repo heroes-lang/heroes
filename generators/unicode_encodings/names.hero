@@ -1,0 +1,108 @@
+# The WHATWG Encoding Standard's `encodings.json` read: every encoding's name
+# in the standard's order, the heading it stands under, and its labels; and
+# the text of `names_table`, which `unicode/encodings`' `registry.hero` reads
+# to find an encoding by any of its labels.
+
+use <rebel>/json
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use layout
+
+# The heading of `encodings.json` the single-byte encodings stand under.
+constant SINGLE_BYTE: str
+    "Legacy single-byte encodings"
+
+# One encoding of `encodings.json`.
+record Encoding
+    # Its name, as the standard writes it.
+    name: str
+    # The heading it stands under.
+    heading: str
+    # Its labels, as the file lists them.
+    labels: [str]
+
+# Every encoding of `text`, the whole of `encodings.json`, in its order.
+#
+# - `text`: the file's text.
+#
+# Fails as reading its JSON fails, and `not_found` where an entry lacks a
+# heading, a name or its labels.
+function read_encodings(text: str) -> [Encoding]?
+    out: [Encoding] @= []
+
+    for group in json.items_of(json.parse(text)?)?
+        heading = json.text_of(json.member(group, key: "heading")?)?
+
+        for one in json.items_of(json.member(group, key: "encodings")?)?
+            labels: [str] @= []
+
+            for label in json.items_of(json.member(one, key: "labels")?)?
+                labels @ labels.push(json.text_of(label)?)
+
+            out @ out.push(
+                Encoding(name: json.text_of(json.member(one, key: "name")?)?, heading: heading, labels: labels)
+            )
+
+    return ok(out)
+
+# The names of the encodings of `encodings` under `SINGLE_BYTE`, in their
+# order.
+#
+# - `encodings`: every encoding, as `read_encodings` answers.
+function single_byte_names(encodings: [Encoding] lent) -> [str]
+    out: [str] @= []
+
+    for one in encodings
+        if one.heading == SINGLE_BYTE
+            out @ out.push(one.name)
+
+    return out
+
+# The text of `names_table`.
+#
+# - `encodings`: every encoding, as `read_encodings` answers.
+# - `digest`: the SHA-256 of `encodings.json`, in lowercase hexadecimal.
+#
+# Fails `invalid` where two encodings share a label, and as writing a
+# literal fails.
+function module_text(encodings: [Encoding] lent, digest: str) -> str?
+    names: [str] @= []
+    number_of: {str: i64} @= {}
+
+    for one in encodings
+        for label in one.labels
+            if !number_of[label].is_err()
+                return fail(code: "invalid", msg: f"the label {label} names two encodings")
+            number_of[label] @ names.len()
+
+        names @ names.push(one.name)
+
+    labels = sort(keys(number_of))
+    numbers: [i64] @= []
+
+    for label in labels
+        numbers @ numbers.push(number_of[label].must())
+
+    return ok(
+        layout.module_text(intro: ["# The names of the encodings of the WHATWG Encoding Standard, in its order,", "# and every label that names one: the tables `registry.hero` reads."], sources: [f"# - `encodings.json`, sha256 {digest}"], constants: [tablekit.strings_constant(comment: ["# Each encoding's name, in the standard's order: its number is its index."], name: "NAMES", items: names)?, tablekit.strings_constant(comment: ["# Every label, in lower case, in the order of its bytes."], name: "LABELS", items: labels)?, tablekit.numbers_constant(comment: ["# The number of the encoding each label of `LABELS` names, at the same index."], name: "LABEL_ENCODINGS", items: numbers)])
+    )
+
+## Tests
+
+test "read_encodings and single_byte_names: two headings, their names and labels in order"
+    text = "[{\"encodings\": [{\"labels\": [\"utf8\", \"utf-8\"], \"name\": \"UTF-8\"}], \"heading\": \"The Encoding\"}, {\"encodings\": [{\"labels\": [\"866\"], \"name\": \"IBM866\"}], \"heading\": \"Legacy single-byte encodings\"}]"
+    encodings = read_encodings(text).must()
+    assert encodings.len() == 2 && encodings[0].labels == ["utf8", "utf-8"] && encodings[1].heading == SINGLE_BYTE
+    assert single_byte_names(encodings) == ["IBM866"]
+    table = module_text(encodings, digest: "abc").must()
+    assert strings.contains(s: table, substr: "\"866\"\n        \"utf-8\"\n        \"utf8\"\n")
+    assert strings.contains(
+        s: table,
+        substr: "constant LABEL_ENCODINGS: [i64]\n    [\n        1\n        0\n        0\n    ]"
+    )
+
+test "read_encodings and module_text: an entry with no name, and a label naming two"
+    assert read_encodings("[{\"encodings\": [{\"labels\": []}], \"heading\": \"h\"}]").is_err()
+    two = [Encoding(name: "A", heading: "h", labels: ["x"]), Encoding(name: "B", heading: "h", labels: ["x"])]
+    assert module_text(two, digest: "abc").is_err()

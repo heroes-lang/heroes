@@ -1,0 +1,291 @@
+# What every generator under `generators/` writes a table of Rebel with: the
+# Heroes text of a constant, in the form `heroes fmt` leaves as it is, so a
+# table in the tree is compared with a generator's output byte for byte; the
+# input read and held to the SHA-256 it is pinned to; and the two commands a
+# generator answers, `write`, which writes its table, and `check`, which says
+# whether the table in the tree is still what `write` would write.
+#
+# A generator's `main` reads its words with `command_words`, makes each
+# table's whole text, and hands it to `settle`, which writes or compares it;
+# the program exits with the worst of the codes `settle` answered, `worst`.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/unicode
+
+use tablekit/internal/spelling
+
+# What a generator exits with where it did what it was asked: the table
+# written, or the table in the tree found to be what it writes.
+constant DONE: i64
+    0
+
+# What `check` exits with where a table in the tree is not what the generator
+# writes.
+constant DIFFERS: i64
+    1
+
+# What a generator exits with where its words, its input or the input's data
+# are not what it reads.
+constant REFUSED: i64
+    2
+
+# `s` as a string literal the compiler reads back as `s`, every character in
+# its one spelling (`selfhost/code_escape.hero`): `\n`, `\t`, `\r`, `\"` and
+# `\\` by their letters, a character no line shows by `\u{…}`, every other
+# one as itself.
+#
+# - `s`: the text.
+#
+# Fails `invalid` where `s` holds a NUL, which no literal writes.
+function literal(s: str) -> str?
+    out: [str] @= ["\""]
+
+    for c in s.chars()
+        code = unicode.code_point(c)
+
+        if code == 0
+            return fail(code: "invalid", msg: "a text holds a NUL, which no string literal writes")
+
+        if code == 10
+            out @ out.push("\\n")
+        else if code == 9
+            out @ out.push("\\t")
+        else if code == 13
+            out @ out.push("\\r")
+        else if code == 34
+            out @ out.push("\\\"")
+        else if code == 92
+            out @ out.push("\\\\")
+        else if spelling.by_code(code)
+            out @ out.push("\\u{" + spelling.hex_of(code) + "}")
+        else
+            out @ out.push(c)
+
+    out @ out.push("\"")
+    return ok(out.join(""))
+
+# A constant of `[str]`: its comment, its declaration, and one literal of
+# `items` a line.
+#
+# - `comment`: the lines of its comment, each opening with `#`.
+# - `name`: the constant's name.
+# - `items`: its elements, as texts.
+#
+# Fails as `literal` fails.
+function strings_constant(comment: [str], name: str, items: [str]) -> str?
+    lines: [str] @= []
+
+    for item in items
+        lines @ lines.push(literal(item)?)
+
+    return ok(list_constant(comment: comment, head: "constant " + name + ": [str]", lines: lines))
+
+# A constant of `[i64]`: its comment, its declaration, and one element of
+# `items` a line, in decimal.
+#
+# - `comment`: the lines of its comment, each opening with `#`.
+# - `name`: the constant's name.
+# - `items`: its elements.
+function numbers_constant(comment: [str], name: str, items: [i64]) -> str
+    lines: [str] @= []
+
+    for item in items
+        lines @ lines.push(to_str(item))
+
+    return list_constant(comment: comment, head: "constant " + name + ": [i64]", lines: lines)
+
+# A constant of `i64`: its comment, its declaration and its value in decimal.
+#
+# - `comment`: the lines of its comment, each opening with `#`.
+# - `name`: the constant's name.
+# - `value`: its value.
+function number_constant(comment: [str], name: str, value: i64) -> str
+    lines: [str] @= []
+
+    for line in comment
+        lines @ lines.push(line)
+
+    lines @ lines.push("constant " + name + ": i64")
+    lines @ lines.push("    " + to_str(value))
+    return lines.join("\n")
+
+# A constant of `str`: its comment, its declaration and its value as one
+# literal.
+#
+# - `comment`: the lines of its comment, each opening with `#`.
+# - `name`: the constant's name.
+# - `value`: its value.
+#
+# Fails as `literal` fails.
+function string_constant(comment: [str], name: str, value: str) -> str?
+    lines: [str] @= []
+
+    for line in comment
+        lines @ lines.push(line)
+
+    lines @ lines.push("constant " + name + ": str")
+    lines @ lines.push("    " + literal(value)?)
+    return ok(lines.join("\n"))
+
+# A constant whose value is a list written one element a line: the comment,
+# `head`, the opening bracket, each of `lines` indented twice, the closing
+# bracket.
+function list_constant(comment: [str], head: str, lines: [str]) -> str
+    out: [str] @= []
+
+    for line in comment
+        out @ out.push(line)
+
+    out @ out.push(head)
+    out @ out.push("    [")
+
+    for line in lines
+        out @ out.push("        " + line)
+
+    out @ out.push("    ]")
+    return out.join("\n")
+
+# The SHA-256 of `data`, in lowercase hexadecimal.
+#
+# - `data`: the bytes.
+function sha256_hex(data: [u8]) -> str
+    return bytes.format_hex(crypto.sha256(data))
+
+# The bytes of the file at `path`, held to `sha256`.
+#
+# - `path`: the file, as the generator's words or its folder name it.
+# - `sha256`: the SHA-256 it is pinned to, in lowercase hexadecimal.
+#
+# Fails as reading it fails, and `invalid` where its digest is another, the
+# message naming both.
+function pinned_bytes(path: str, sha256: str) -> [u8]?
+    data = fs.read_bytes(path)?
+    digest = sha256_hex(data)
+
+    if digest != sha256
+        return fail(
+            code: "invalid",
+            msg: f"{path} has SHA-256 {digest}, and the input this table is pinned to has {sha256}"
+        )
+    return ok(data)
+
+# The text of the file at `path`, held to `sha256`.
+#
+# - `path`: the file.
+# - `sha256`: the SHA-256 it is pinned to, in lowercase hexadecimal.
+#
+# Fails as `pinned_bytes` fails, and as reading its bytes as UTF-8 fails.
+function pinned_text(path: str, sha256: str) -> str?
+    return bytes.to_text(pinned_bytes(path: path, sha256: sha256)?)
+
+# The first line, counted from 1, where `present` and `wanted` differ, 0
+# where they are the same text.
+#
+# - `present`: the table in the tree.
+# - `wanted`: what the generator writes.
+function first_difference(present: str, wanted: str) -> i64
+    if present == wanted
+        return 0
+    have = strings.split(s: present, sep: "\n")
+    want = strings.split(s: wanted, sep: "\n")
+    at @= 0
+
+    while at < have.len() && at < want.len()
+        if have[at] != want[at]
+            return at + 1
+        at @ at + 1
+
+    return at + 1
+
+# Does what `command` asks with one table, and answers the code it reached.
+#
+# - `command`: `write`, which writes `text` to `path`, or `check`, which reads
+#   the table at `path` and compares it with `text` byte for byte.
+# - `path`: the table, from the repository's root.
+# - `text`: the table's whole text, as the generator writes it.
+#
+# Fails where the table cannot be read or written.
+function settle(command: str, path: str, text: str) -> i64?
+    if command == "write"
+        write_file(path: path, text: text)?
+        print("wrote ", path)
+        return ok(DONE)
+    present = read_file(path)?
+    first = first_difference(present: present, wanted: text)
+
+    if first == 0
+        print(path, " is what its generator writes")
+        return ok(DONE)
+    print(path, " is not what its generator writes: the first line that differs is ", first)
+    return ok(DIFFERS)
+
+# The worse of two codes a generator reached: `REFUSED` before `DIFFERS`
+# before `DONE`.
+#
+# - `a`: one code.
+# - `b`: the other.
+function worst(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program exits
+# `REFUSED`, where `args()` would abort.
+#
+# - `program`: the generator's name, which the message opens with.
+function command_words(program: str) -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"{program}: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+## Tests
+
+test "literal: plain, the five letter escapes, a control, a bidirectional mark, a no-break space and the zero-width space as themselves, a NUL refused"
+    assert literal("{0} hour").must() == "\"{0} hour\""
+    assert literal("").must() == "\"\""
+    assert literal("a\"b\\c\nd\te\rf").must() == "\"a\\\"b\\\\c\\nd\\te\\rf\""
+    assert literal("\u{1}").must() == "\"\\u{1}\""
+    assert literal("\u{200f}{0}").must() == "\"\\u{200f}{0}\""
+    no_break = unicode.from_code_point(160).must()
+    assert literal("{0}" + no_break + "h").must() == "\"{0}" + no_break + "h\""
+    zero_width = unicode.from_code_point(8203).must()
+    assert literal(zero_width).must() == "\"" + zero_width + "\""
+    assert literal("\u{7f}\u{9f}\u{2028}\u{61c}").must() == "\"\\u{7f}\\u{9f}\\u{2028}\\u{61c}\""
+    nul: [u8] = [0]
+    assert literal(nul.validated_bytes().default("")).is_err()
+
+test "strings_constant, numbers_constant, number_constant and string_constant: the form `heroes fmt` keeps"
+    assert strings_constant(comment: ["# Two."], name: "A", items: ["x", "y\"z"]).must() == "# Two.\nconstant A: [str]\n    [\n        \"x\"\n        \"y\\\"z\"\n    ]"
+    assert numbers_constant(comment: [], name: "B", items: [0, -1, 9223372036854775807]) == "constant B: [i64]\n    [\n        0\n        -1\n        9223372036854775807\n    ]"
+    assert numbers_constant(comment: [], name: "E", items: []) == "constant E: [i64]\n    [\n    ]"
+    assert number_constant(comment: ["# One.", "# Two."], name: "C", value: 42) == "# One.\n# Two.\nconstant C: i64\n    42"
+    assert string_constant(comment: [], name: "D", value: "a\nb").must() == "constant D: str\n    \"a\\nb\""
+
+test "first_difference: the same text, a line changed, and a text longer than the other"
+    assert first_difference(present: "a\nb\n", wanted: "a\nb\n") == 0
+    assert first_difference(present: "a\nb\n", wanted: "a\nc\n") == 2
+    assert first_difference(present: "a\n", wanted: "a\nb\n") == 2
+    assert first_difference(present: "", wanted: "a") == 1
+
+test "sha256_hex: the digest of nothing and of `abc`, FIPS 180-2's examples"
+    assert sha256_hex([]) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    assert sha256_hex(bytes.from_text("abc")) == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+test "pinned_bytes: a file that is not there fails"
+    assert pinned_bytes(path: "generators/tablekit/no such file", sha256: "").is_err()
+
+test "worst: the worse of two codes, either way round"
+    assert worst(a: DONE, b: DIFFERS) == DIFFERS
+    assert worst(a: REFUSED, b: DIFFERS) == REFUSED
+    assert worst(a: DONE, b: DONE) == DONE
