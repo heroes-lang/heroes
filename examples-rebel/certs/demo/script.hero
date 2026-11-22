@@ -23,7 +23,6 @@
 use <rebel>/bytes
 use <rebel>/http
 use <rebel>/io
-use <rebel>/net
 use <rebel>/os
 use <rebel>/path
 use <rebel>/time
@@ -33,7 +32,7 @@ use challenges/responder
 use challenges/solve
 use config/loader
 use config/settings
-use core/fields
+use core/ready
 use demo/days
 use demo/stage
 use standins/ca
@@ -89,30 +88,22 @@ function run() -> i64
 # - `text`: the configuration.
 # - `place`: the folder and the key store.
 function with_place(text: str, place: stage.Place) -> i64
-    control @= match net.listen(host: "127.0.0.1", port: 0)
-        .ok l => l
-        .err e =>
-            print("demo: the control port: " + e.msg)
-            return 1
-
     started: [stage.Service] @= []
-    code = staged(text, place: place, control: control, @started)
-    lines = stage.stopped(@started)
+    code = staged(text, place: place, @started)
+    lines = stage.stopped(started)
     print("== what each stand-in served")
 
     for line in lines
         print(line)
 
-    _ = net.close_listener(@control).is_err()
     return code
 
 # The configuration read, the stand-ins started and the session run.
 #
 # - `text`: the configuration.
 # - `place`: the folder and the key store.
-# - `control`: the control listener.
 # - `started`: the services started, each added as it starts.
-function staged(text: str, place: stage.Place, control: net.Listener, @started: [stage.Service]) -> i64
+function staged(text: str, place: stage.Place, @started: [stage.Service]) -> i64
     written = match loader.parse(text)
         .ok s => s
         .err e =>
@@ -138,12 +129,12 @@ function staged(text: str, place: stage.Place, control: net.Listener, @started: 
             print("demo: the clock: " + e.msg)
             return 1
 
-    match stood(text, written: written, place: place, origin: origin, control: control, @started)
+    match stood(text, written: written, place: place, origin: origin, @started)
         .err e =>
             print("demo: " + e.msg)
             return 1
         .ok loaded => return days.session(
-            days.Stand(loaded: loaded, store: place.store, origin: origin, control: control),
+            days.Stand(loaded: loaded, store: place.store, origin: origin),
             @started
         )
 
@@ -169,27 +160,44 @@ function day_zero() -> time.Instant?
 # - `written`: what it says.
 # - `place`: the folder and the key store.
 # - `origin`: day 0.
-# - `control`: the control listener.
 # - `started`: the services started.
 #
 # The configuration file as the demo runs it. Fails where a service does
 # not start or a root cannot be fetched or written.
-function stood(text: str, written: settings.Settings, place: stage.Place, origin: time.Instant, control: net.Listener, @started: [stage.Service]) -> stage.Loaded?
+function stood(text: str, written: settings.Settings, place: stage.Place, origin: time.Instant, @started: [stage.Service]) -> stage.Loaded?
     print("== the stand-ins, started on 127.0.0.1")
     secret = os.random_bytes(32)?
     vault.put(place.store, name: solve.tsig_name(written.dns01.tsig_key), secret: bytes.format_base64(secret))?
-    dns = stage.start(nameserver.run, arg: {"ORIGIN": written.dns01.zone, "IDENTITY": IDENTITY, "TSIG_NAME": written.dns01.tsig_key + ".", "TSIG_SECRET": bytes.format_base64(secret)}, control: control, @started)?
+    dns_box: (mailbox ready.Ready) = mailbox()
+    dns_setup = nameserver.Setup(
+        origin: written.dns01.zone,
+        identity: IDENTITY,
+        tsig_name: written.dns01.tsig_key + ".",
+        tsig_secret: secret,
+        told: dns_box
+    )
+    dns = stage.start(nameserver.run, setup: dns_setup, told: dns_box, @started)?
     print(
         f"dns: ready, the authority of {written.dns01.zone}, taking updates signed with the TSIG key {written.dns01.tsig_key}"
     )
     webroot = path.join_all([place.folder, "webroot"])
-    answering = stage.start(responder.run, arg: {"WEBROOT": fields.encoded(webroot)}, control: control, @started)?
+    responder_box: (mailbox ready.Ready) = mailbox()
+    answering = stage.start(responder.run, setup: responder.Setup(webroot: webroot, told: responder_box), told: responder_box, @started)?
     print("http-01 responder: ready, serving the webroot")
-    seconds = time.unix_seconds(origin)
-    acme_told = stage.start(ca.run, arg: {"DNS_PORT": to_str(stage.port_of(dns)), "HTTP01_PORT": to_str(stage.port_of(answering)), "START": to_str(seconds), "SEED": SEED_HEX, "IDENTITY": IDENTITY, "ORIGIN": written.dns01.zone}, control: control, @started)?
-    base = f"https://127.0.0.1:{stage.port_of(acme_told)}"
+    acme_box: (mailbox ready.Ready) = mailbox()
+    acme_setup = ca.Setup(
+        dns_port: dns.port,
+        http01_port: answering.port,
+        start: origin,
+        seed: bytes.parse_hex(SEED_HEX)?,
+        identity: IDENTITY,
+        origin: written.dns01.zone,
+        told: acme_box
+    )
+    acme_said = stage.start(ca.run, setup: acme_setup, told: acme_box, @started)?
+    base = f"https://127.0.0.1:{acme_said.port}"
     roots_file = path.join_all([place.folder, "acme-https-root.pem"])
-    write_file(path: roots_file, text: fields.decoded_of(acme_told, name: "HTTPS_ROOT")?)?
+    write_file(path: roots_file, text: acme_said.https_root)?
     print("acme: ready, the root of its own HTTPS handed to the client")
     trust = fetched(url: base + "/roots/0", roots: read_file(roots_file)?)?
     trust_file = path.join_all([place.folder, "trust.pem"])
@@ -204,7 +212,7 @@ function stood(text: str, written: settings.Settings, place: stage.Place, origin
         directory: base + "/directory",
         roots: roots_file,
         trust: trust_file,
-        dns: f"127.0.0.1:{stage.port_of(dns)}",
+        dns: f"127.0.0.1:{dns.port}",
         folder: place.folder,
         keyring_service: service
     )

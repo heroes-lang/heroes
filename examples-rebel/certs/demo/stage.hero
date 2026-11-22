@@ -11,15 +11,12 @@
 
 use <rebel>/bytes
 use <rebel>/fs
-use <rebel>/net
 use <rebel>/os
 use <rebel>/path
-use <rebel>/threads
 use <rebel>/toml
 
 use config/loader
 use config/settings
-use core/fields
 use core/ready
 use store/vault
 
@@ -120,55 +117,43 @@ record Loaded
 
 # A service started on its thread.
 record Service
-    # Its name, as it told it.
+    # Its name, as it told it; "" until it has.
     name: str
-    # The thread, owed its wait.
-    thread: threads.TextThread
-    # What it told when it was ready, `PORT` among it.
-    told: {str: str}
+    # The thread, owed its wait, which answers the service's last line.
+    thread: (thread str)
 
-# `body` started on a thread with `arg`, and its notification awaited on
-# `control`.
+# `body` started on a thread with `setup`, handed whole, and what the
+# service says once it listens awaited on `told`, the mailbox `setup`
+# carries to it.
 #
 # - `body`: the service's thread.
-# - `arg`: its named values, `CONTROL` added here.
-# - `control`: the starter's control listener.
+# - `setup`: what the service is handed.
+# - `told`: the readiness mailbox `setup` holds.
 # - `started`: the services started so far, this one added once its thread
 #   runs, so it is waited for whatever happens next.
 #
-# What it told. Fails as `threads.spawn_text` and `ready.await_ready` fail.
-function start(body: (function(str) -> str), arg: {str: str}, control: net.Listener, @started: [Service]) -> {str: str}?
-    named @= arg
-    named["CONTROL"] @ to_str(control.address.port)
-    thread = threads.spawn_text(body, arg: fields.format_fields(named))?
+# What it said. Fails `limit` where no thread can be started, and as
+# `ready.await_ready` fails.
+function start<S>(body: (function(S) -> str), setup: S, told: (mailbox ready.Ready), @started: [Service]) -> ready.Ready?
+    thread = spawn(body, setup)?
     at = started.len()
-    started @ started.push(Service(name: "", thread: thread, told: {}))
-    told = ready.await_ready(control)?
-    started[at].told @ told
-    started[at].name @ told["SERVICE"].default("")
-    return ok(told)
+    started @ started.push(Service(name: "", thread: thread))
+    said = ready.await_ready(told)?
+    started[at].name @ said.service
+    return ok(said)
 
 # Every service stopped and waited for: the program's stop asked, which
 # every waiting call answers from then on, and each thread's last line.
 #
-# - `started`: the services, each waited for once and its thread's place,
-#   emptied by the wait, written back.
-function stopped(@started: [Service]) -> [str]
+# - `started`: the services, each waited for once.
+function stopped(started: [Service]) -> [str]
     os.ask_stop()
     lines: [str] @= []
 
-    for at in range(from: 0, to: started.len())
-        thread @= started[at].thread
-        lines @ lines.push(threads.wait_text(@thread))
-        started[at].thread @ thread
+    for one in started
+        lines @ lines.push(one.thread.wait())
 
     return lines
-
-# The port a service told.
-#
-# - `told`: its notification.
-function port_of(told: {str: str}) -> i64
-    return fields.int_of(told, name: "PORT").default(0)
 
 test "pointed: the stand-ins' places set, the person's comments kept"
     text = "# mine\n[acme]\ndirectory = \"https://ca.example/dir\"\n\n[store]\nfolder = \"/var/lib/certs\"\n"

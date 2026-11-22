@@ -14,25 +14,24 @@ use <rebel>/strings
 use <rebel>/time
 
 use challenges/webroot
-use core/fields
 use core/ready
 
 ## Serving
 
 # Serves the webroot `folder` on `host` at `port` until the program is asked to stop,
-# telling the starter at `control_port` once it listens.
+# telling the starter on `told` once it listens.
 #
 # - `folder`: the webroot, whose answers are served.
 # - `host`: the address listened on, `127.0.0.1` or "" for every one.
 # - `port`: the port, 0 for one the system chooses.
-# - `control_port`: the starter's control port, 0 for none.
+# - `told`: where the starter waits to hear the responder listens.
 #
 # The counts of what it served. Fails as `net.listen`, `ready.tell` and
 # `http.serve_until_stopped` fail.
-function serve(folder: str, host: str, port: i64, control_port: i64) -> http.Served?
+function serve(folder: str, host: str, port: i64, told: (mailbox ready.Ready)) -> http.Served?
     listener @= net.listen(host: host, port: port)?
 
-    match ready.tell(control_port, facts: {"SERVICE": "responder", "PORT": to_str(listener.address.port)})
+    match ready.tell(told, said: ready.Ready(service: "responder", port: listener.address.port, https_root: ""))
         .ok _ => _ = 0
         .err e =>
             _ = net.close_listener(@listener).is_err()
@@ -48,21 +47,25 @@ function serve(folder: str, host: str, port: i64, control_port: i64) -> http.Ser
     _ = net.close_listener(@listener).is_err()
     return served
 
-# The responder's thread: its named values say `CONTROL`, the starter's
-# control port, and `WEBROOT`, the folder. Answers its last line, what it
-# served or why it could not.
-#
-# - `arg`: the named values, `core/fields`' text.
-function run(arg: str) -> str
-    match fields.parse_fields(arg)
-        .err e => return "responder: " + e.msg
-        .ok named =>
-            control = fields.int_of(named, name: "CONTROL").default(0)
-            folder = fields.decoded_of(named, name: "WEBROOT").default("")
+# What the responder's thread is handed, whole.
+record Setup
+    # The webroot, whose answers are served.
+    webroot: str
+    # Where the starter waits to hear the responder listens.
+    told: (mailbox ready.Ready)
 
-            match serve(folder: folder, host: "127.0.0.1", port: 0, control_port: control)
-                .ok served => return f"http-01 responder: requests answered {served.answered}"
-                .err e     => return "http-01 responder: " + e.msg
+# The responder's thread. Answers its last line, what it served or why it
+# could not. The readiness mailbox is closed on every path, so a responder
+# that could not listen is told to its starter at once.
+#
+# - `setup`: the webroot and the readiness mailbox.
+function run(setup: Setup) -> str
+    outcome = match serve(folder: setup.webroot, host: "127.0.0.1", port: 0, told: setup.told)
+        .ok served => f"http-01 responder: requests answered {served.answered}"
+        .err e     => "http-01 responder: " + e.msg
+
+    setup.told.close()
+    return outcome
 
 # The answer to `r`: the key authorization a token's file holds, 404 for any
 # other path or a token with no file, 405 for a method other than GET and
