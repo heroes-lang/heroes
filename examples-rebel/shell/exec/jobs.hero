@@ -3,7 +3,8 @@
 # numbered from 1, asked where they stand without waiting, and given back
 # to the system once they have ended, so no ended child stays a zombie. A
 # job a signal stopped is told once, as `Stopped`, and sent on before it is
-# waited for. A job is
+# waited for; a wait for a job ends where it stops again or Ctrl-C comes, the
+# job left in the table. A job is
 # named `%n` by its number, `%%` or `%+` for the newest, `%-` for the one
 # before it, `%text` by the start of its command, or by a child's process
 # number.
@@ -12,6 +13,7 @@ use <rebel>/io
 use <rebel>/os
 use <rebel>/process
 use <rebel>/strings
+use <rebel>/time
 use <rebel>/unicode/segment
 
 use exec/state
@@ -56,7 +58,7 @@ function refresh(@sh: state.Shell)
                     all_ended @ false
 
             if all_ended
-                finish(@sh.jobs[j])
+                _ = finish(@sh.jobs[j])
             else if stop_of(sh.jobs[j]) == 0
                 sh.jobs[j].told @ false
 
@@ -72,16 +74,53 @@ function stop_of(job: state.Job) -> i64
 
     return 0
 
-# Waits for every child of `job`, gives them back and marks it done.
+# How a wait for a job ended: every child ended, one stopped again, or a
+# Ctrl-C the shell counts came first.
+variant Waited
+    # Every child ended, and the job is done.
+    done
+    # A child was stopped by a signal while it was waited for.
+    stopped
+    # Ctrl-C came; the job runs on, left as it stands.
+    interrupted
+
+# Waits for every child of `job`, a stopped one sent on first, gives them
+# back and marks it done; or leaves the job as it stands where one stops
+# again or a Ctrl-C the shell counts comes first, as a shell's `fg` and
+# `wait` end on either. No wait of `process` ends on a signal, so each child
+# is asked where it stands every ten milliseconds.
 #
 # - `job`: the job.
-function finish(@job: state.Job)
+function finish(@job: state.Job) -> Waited
     status @= 0
 
     for k in range(from: 0, to: job.children.len())
+        seen_running @= true
+
         match job.children[k].state
-            .stopped _          => _ = process.send_signal(job.children[k], signal: .resume).is_err()
+            .stopped _ =>
+                _ = process.send_signal(job.children[k], signal: .resume).is_err()
+                seen_running @ false
             .running | .ended _ => _ = 0
+
+        waiting @= true
+
+        while waiting
+            match process.state_of(@job.children[k])
+                .ok s =>
+                    match s
+                        .ended _ => waiting @ false
+                        .stopped _ =>
+                            if seen_running
+                                return .stopped
+                            time.sleep(time.milliseconds(10).must())
+                        .running =>
+                            seen_running @ true
+
+                            if os.take_signals(.interrupt) > 0
+                                return .interrupted
+                            time.sleep(time.milliseconds(10).must())
+                .err _ => waiting @ false
 
         status @ match process.wait(@job.children[k])
             .ok s =>
@@ -96,15 +135,23 @@ function finish(@job: state.Job)
     job.children @ []
     job.done @ true
     job.status @ status
+    return .done
 
 # Waits for the job at `index` in the table and takes it out; answers its
-# status.
+# status. Where a child stops again the job stays, told stopped, and 128 and
+# the signal is answered; where Ctrl-C comes first it stays too, the command
+# line is left (`.interrupted`) and 130 is answered.
 #
 # - `sh`: the shell.
 # - `index`: its index in `sh.jobs`.
 function wait_for(@sh: state.Shell, index: i64) -> i64
     if !sh.jobs[index].done
-        finish(@sh.jobs[index])
+        match finish(@sh.jobs[index])
+            .done    => _ = 0
+            .stopped => return 128 + stop_of(sh.jobs[index])
+            .interrupted =>
+                sh.flow @ .interrupted
+                return 130
 
     status = sh.jobs[index].status
     remove(@sh, index: index)
@@ -261,4 +308,18 @@ test "state_word and ended_lines: a job a signal stopped is told once as stopped
         assert ended_lines(@sh) == ""
         process.send_group_signal(sh.jobs[0].children[0], signal: .terminate).must()
         assert wait_for(@sh, index: 0) == 143
+        assert sh.jobs.len() == 0
+
+test "wait_for: a job stopped while it is waited for stays in the table, its stop answered, and is waited for to its end once ended"
+    if os.system() != .windows
+        sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+        child = process.start(process.with_own_group(process.command("sleep", ["30"]))).must()
+        _ = add(@sh, children: [child], text: "sleep 30")
+        stopper @= process.start(process.shell(f"sleep 0.2; kill -STOP {child.id}").must()).must()
+        stop = os.signal_number(.stop).must()
+        assert wait_for(@sh, index: 0) == 128 + stop
+        assert sh.jobs.len() == 1 && state_word(sh.jobs[0]) == "Stopped (signal)"
+        _ = process.wait(@stopper).must()
+        process.send_group_signal(sh.jobs[0].children[0], signal: .kill).must()
+        assert wait_for(@sh, index: 0) == 137
         assert sh.jobs.len() == 0
