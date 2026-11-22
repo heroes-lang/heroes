@@ -1,0 +1,239 @@
+# CLDR's root collation, `common/uca/allkeys_CLDR.txt`, as `collate_tables`
+# holds it.
+#
+# A line of the file maps one code point, or a contraction of several, to its
+# collation elements: `0061 ; [.2075.0020.0002] # LATIN SMALL LETTER A`, an
+# element `[.primary.secondary.tertiary]` in hexadecimal, `*` in place of the
+# `.` marking a variable one. A single code point's elements are appended to
+# `elements` in the order of the file's lines, and its entry names the first's
+# position and their count; a contraction's elements are written beside it.
+
+use <rebel>/strings
+use <rebel>/unicode
+
+# The characters a number is written with, its digits in base 64.
+constant ALPHABET: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+
+# The leads of UCA's implicit weights, Tangut's `FB00` to the unassigned code
+# points' `FBC0`: a primary from the first to the last is a lead, and the
+# element after one holds the rest of the implicit weight.
+constant FIRST_IMPLICIT: i64
+    0xfb00
+
+constant LAST_IMPLICIT: i64
+    0xfbff
+
+# The root collation as `collate_tables` holds it.
+record Root
+    # Each single code point's entry, `code point << 21 | position << 5 |
+    # count`, by code point.
+    entries: {i64: i64}
+    # Every single code point's elements, in the order of the file's lines.
+    elements: [i64]
+    # Each contraction's elements, written in six characters each.
+    contractions: {str: str}
+    # Each single code point's first primary weight that is not 0.
+    primaries: {i64: i64}
+    # The largest primary below the implicit weights' leads, on no element
+    # following a lead.
+    last_regular: i64
+
+# `n` in `width` characters of `ALPHABET`, the most significant first.
+#
+# - `n`: the number, 0 or above.
+# - `width`: how many characters.
+#
+# Fails `invalid` where `n` is below 0 or does not fit.
+function code_of(n: i64, width: i64) -> str?
+    if n < 0
+        return fail(code: "invalid", msg: f"{n} is below 0, which no code writes")
+    out @= ""
+    rest @= n
+    at @= 0
+
+    while at < width
+        out @ ALPHABET.slice(from: rest % 64, to: rest % 64 + 1) + out
+        rest @ rest / 64
+        at @ at + 1
+
+    if rest != 0
+        return fail(code: "invalid", msg: f"{n} does not fit {width} characters of base 64")
+    return ok(out)
+
+# `text`, hexadecimal digits alone, as a number.
+#
+# Fails `invalid` where it is empty, longer than six digits, or holds
+# anything else.
+function hex(text: str) -> i64?
+    if text == "" || text.len() > 6
+        return fail(code: "invalid", msg: f"\"{text}\" is not a hexadecimal number of one to six digits")
+    value @= 0
+
+    for c in text.chars()
+        b = c[0]
+        digit @= 0
+
+        if b >= '0' && b <= '9'
+            digit @ to_i64(b - '0').must()
+        else if b >= 'A' && b <= 'F'
+            digit @ to_i64(b - 'A').must() + 10
+        else
+            return fail(code: "invalid", msg: f"\"{text}\" is not a hexadecimal number")
+        value @ value * 16 + digit
+
+    return ok(value)
+
+# The collation elements `text` writes, each `[.p.s.t]` or `[*p.s.t]`.
+#
+# Fails `invalid` where an element is not of that form, or a weight does not
+# fit its bits: 16 for the primary, 9 for the secondary, 5 for the tertiary.
+function elements_of(text: str) -> [i64]?
+    out: [i64] @= []
+
+    for piece in strings.split(s: strings.trim(text), sep: "]")
+        if piece == ""
+            continue
+
+        if !strings.has_prefix(s: piece, prefix: "[.") && !strings.has_prefix(s: piece, prefix: "[*")
+            return fail(code: "invalid", msg: f"\"{piece}]\" is not a collation element")
+        weights = strings.split(s: piece.slice(from: 2, to: piece.len()), sep: ".")
+
+        if weights.len() != 3
+            return fail(code: "invalid", msg: f"\"{piece}]\" does not hold three weights")
+        primary = hex(weights[0])?
+        secondary = hex(weights[1])?
+        tertiary = hex(weights[2])?
+
+        if primary > 0xffff || secondary > 0x1ff || tertiary > 0x1f
+            return fail(code: "invalid", msg: f"\"{piece}]\" has a weight wider than its bits")
+        variable @= 0
+
+        if piece[1] == '*'
+            variable @ 1
+        out @ out.push(variable * 0x40000000 + primary * 0x4000 + secondary * 0x20 + tertiary)
+
+    if out.len() == 0
+        return fail(code: "invalid", msg: f"\"{text}\" holds no collation element")
+    return ok(out)
+
+# The primary weight of the element `element`.
+function primary_of(element: i64) -> i64
+    return element / 0x4000 % 0x10000
+
+# The root collation the text of `allkeys_CLDR.txt` writes.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid`, naming the line, where a line is neither a comment, a
+# directive (`@version`) nor a mapping, where a code point is mapped twice, or
+# where an entry's position or count does not fit its bits.
+function read_root(text: str) -> Root?
+    root @= Root(entries: {}, elements: [], contractions: {}, primaries: {}, last_regular: 0)
+    number @= 0
+
+    for line in strings.split(s: text, sep: "\n")
+        number @ number + 1
+
+        if strings.trim(line) == "" || strings.has_prefix(s: line, prefix: "#") || strings.has_prefix(s: line, prefix: "@")
+            continue
+
+        halves = match strings.split_once(s: line, sep: ";")
+            .ok found => found
+            .err _    => return fail(code: "invalid", msg: f"allkeys_CLDR.txt line {number} maps nothing: {line}")
+
+        weights = match strings.split_once(s: halves.after, sep: "#")
+            .ok found => found.before
+            .err _    => halves.after
+
+        points: [i64] @= []
+
+        for word in strings.words(halves.before)
+            points @ points.push(hex(word)?)
+
+        elements = elements_of(weights)?
+        add_regular(@root, elements: elements)
+
+        if points.len() == 1
+            add_single(@root, point: points[0], elements: elements, line: number)?
+        else
+            add_contraction(@root, points: points, elements: elements, line: number)?
+
+    return ok(root)
+
+# Raises `root.last_regular` to the primaries of `elements` below the implicit
+# leads, but for an element following a lead.
+function add_regular(@root: Root, elements: [i64] lent)
+    at @= 0
+
+    while at < elements.len()
+        primary = primary_of(elements[at])
+        after_lead = at > 0 && primary_of(elements[at - 1]) >= FIRST_IMPLICIT && primary_of(elements[at - 1]) <= LAST_IMPLICIT
+
+        if !after_lead && primary < FIRST_IMPLICIT && primary > root.last_regular
+            root.last_regular @ primary
+        at @ at + 1
+
+# Adds the single code point `point`'s entry, its elements and its first
+# primary that is not 0.
+#
+# Fails `invalid` where `point` is mapped already, or its position or count
+# does not fit its bits.
+function add_single(@root: Root, point: i64, elements: [i64] lent, line: i64) -> ()?
+    if !root.entries[point].is_err()
+        return fail(code: "invalid", msg: f"allkeys_CLDR.txt line {line} maps a code point mapped already")
+    position = root.elements.len()
+
+    if position > 0xffff || elements.len() > 0x1f || point > 0x10ffff
+        return fail(code: "invalid", msg: f"allkeys_CLDR.txt line {line}: its entry does not fit 42 bits")
+    root.entries[point] @ point * 0x200000 + position * 0x20 + elements.len()
+
+    for element in elements
+        root.elements @ root.elements.push(element)
+
+    for element in elements
+        if primary_of(element) != 0
+            root.primaries[point] @ primary_of(element)
+            break
+
+    return ok()
+
+# Adds the contraction of `points` and its elements.
+#
+# Fails `invalid` where it is mapped already, and as
+# `unicode.from_code_points` fails where a code point is not a character's.
+function add_contraction(@root: Root, points: [i64] lent, elements: [i64] lent, line: i64) -> ()?
+    key = unicode.from_code_points(points)?
+
+    if !root.contractions[key].is_err()
+        return fail(code: "invalid", msg: f"allkeys_CLDR.txt line {line} maps a contraction mapped already")
+    codes: [str] @= []
+
+    for element in elements
+        codes @ codes.push(code_of(n: element, width: 6)?)
+
+    root.contractions[key] @ codes.join("")
+    return ok()
+
+## Tests
+
+test "code_of: zero, a number in its width, and one too wide"
+    assert code_of(n: 0, width: 6).must() == "000000" && code_of(n: 64, width: 2).must() == "10"
+    assert code_of(n: 4095, width: 2).must() == "//"
+    assert code_of(n: 4096, width: 2).is_err() && code_of(n: -1, width: 2).is_err()
+
+test "elements_of: a regular element, a variable one, two, and broken ones"
+    assert elements_of(" [.0000.0000.0000] ").must() == [0]
+    assert elements_of("[*0209.0020.0002]").must() == [0x40000000 + 0x209 * 0x4000 + 0x20 * 0x20 + 2]
+    assert elements_of("[.FB40.0020.0004][.CE00.0000.0000]").must().len() == 2
+    assert elements_of("[.0209.0020]").is_err() && elements_of("[.0209.0200.0002]").is_err()
+    assert elements_of("").is_err() && elements_of("[:0209.0020.0002]").is_err()
+
+test "read_root: singles in the file's order, a contraction, the last regular primary past an implicit pair"
+    text = "# c\n@version 18.0.0\n\n0062 ; [.2000.0020.0002] # b\n0061 ; [.1FFF.0020.0002] # a\n0061 0062 ; [.2001.0020.0002][.0000.0021.0002]\n4E00 ; [.FB40.0020.0002][.CE00.0000.0000]\n"
+    root = read_root(text).must()
+    assert root.entries[0x62].must() == 0x62 * 0x200000 + 1 && root.entries[0x61].must() == 0x61 * 0x200000 + 0x20 + 1
+    assert root.elements.len() == 4 && root.contractions["ab"].must().len() == 12
+    assert root.primaries[0x4e00].must() == 0xfb40 && root.last_regular == 0x2001
+    assert read_root("0061 ; [.1FFF.0020.0002]\n0061 ; [.2000.0020.0002]\n").is_err()
+    assert read_root("0061 [.1FFF.0020.0002]\n").is_err()

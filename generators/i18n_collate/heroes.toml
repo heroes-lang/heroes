@@ -1,0 +1,9 @@
+[dependencies.rebel]
+path = "../../packages/rebel/0.1.0/files"
+packages = ["strings", "unicode", "xml"]
+
+[dependencies.tablekit]
+path = "../tablekit"
+
+[dependencies.cldrkit]
+path = "../cldrkit"
