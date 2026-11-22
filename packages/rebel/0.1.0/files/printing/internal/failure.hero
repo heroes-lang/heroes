@@ -1,0 +1,66 @@
+# A failure of the floor `printing/hero_printing` turned into the face's code
+# (README § A4) and a message saying what was asked, then the system's own
+# words.
+
+use bytes
+use printing
+use printing/hero_printing
+
+# The code of a kind of the floor; `failed` for one the floor does not name.
+#
+# - `kind`: what `hero_printing.last_error` answered.
+function code_of(kind: i64) -> str
+    if kind == hero_printing.HERO_PRINTING_INVALID
+        return printing.INVALID
+
+    if kind == hero_printing.HERO_PRINTING_NOT_FOUND
+        return printing.NOT_FOUND
+
+    if kind == hero_printing.HERO_PRINTING_DENIED
+        return printing.PERMISSION
+
+    if kind == hero_printing.HERO_PRINTING_LIMIT
+        return printing.LIMIT
+
+    if kind == hero_printing.HERO_PRINTING_UNSUPPORTED
+        return printing.UNSUPPORTED
+    return printing.FAILED
+
+# The words of the last failure on this thread, or a sentence saying there
+# were none.
+function words() -> str
+    room: [u8] @= []
+    got = hero_printing.last_message(@room, n: 1024)
+
+    if got <= 0
+        return "the print system refused, giving no words"
+
+    if got > 1024
+        return bytes.to_text_lossy(room)
+    return bytes.to_text_lossy(room.slice(from: 0, to: got))
+
+# The last failure on this thread as a `T?`, its message `asked` then the
+# system's words.
+#
+# - `asked`: what the call was asked, for the message.
+function last<T>(asked: str) -> T?
+    code = code_of(hero_printing.last_error())
+    return fail(code: code, msg: f"{asked}: {words()}")
+
+test "code_of: every kind of the floor is a code of README § A4, an unknown one failed"
+    assert code_of(hero_printing.HERO_PRINTING_INVALID) == printing.INVALID
+    assert code_of(hero_printing.HERO_PRINTING_NOT_FOUND) == printing.NOT_FOUND
+    assert code_of(hero_printing.HERO_PRINTING_DENIED) == printing.PERMISSION
+    assert code_of(hero_printing.HERO_PRINTING_LIMIT) == printing.LIMIT
+    assert code_of(hero_printing.HERO_PRINTING_UNSUPPORTED) == printing.UNSUPPORTED
+    assert code_of(hero_printing.HERO_PRINTING_OTHER) == printing.FAILED
+    assert code_of(hero_printing.HERO_PRINTING_OK) == printing.FAILED
+    assert code_of(77) == printing.FAILED
+
+test "last: the floor's refusal of a wait past an hour becomes invalid, its message what was asked then the layer's words"
+    assert hero_printing.wait("p", job: 1, within_ms: 3600001) == -1
+    got: i64? = last("waiting")
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.code == printing.INVALID && e.msg == "waiting: a wait of 3600001 ms was asked, where it is 0 to an hour"

@@ -400,6 +400,8 @@
 #include "platform/hero_odbc.c"
 #include "hero_poll.h"
 #include "platform/hero_poll.c"
+#include "hero_printing.h"
+#include "platform/hero_printing.c"
 #include "hero_proc.h"
 #include "platform/hero_proc.c"
 #include "hero_serial.h"

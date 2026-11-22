@@ -1,0 +1,75 @@
+# What the face's examples that print need: the printer a test may print on,
+# and the page it prints. A test never prints on a printer by chance, a real
+# one wasting paper: the printer is the one `REBEL_PRINT_TEST_PRINTER` names
+# (a CUPS queue over a virtual printer, `cups-pdf`'s, or Windows' Microsoft
+# Print to PDF on a file's port), and a test where it names none is skipped by
+# its name.
+
+use bytes
+use os
+use printing
+
+# The variable naming the printer a test may print on.
+constant VARIABLE: str
+    "REBEL_PRINT_TEST_PRINTER"
+
+# The name of the printer a test may print on.
+#
+# Fails `not_found` where `REBEL_PRINT_TEST_PRINTER` is unset or empty.
+function printer() -> str?
+    match os.env(VARIABLE)
+        .ok name =>
+            if name.len() > 0
+                return ok(name)
+            return fail(code: printing.NOT_FOUND, msg: f"no printer a test may print on: {VARIABLE} is empty")
+        .err _ => return fail(code: printing.NOT_FOUND, msg: f"no printer a test may print on: {VARIABLE} names none")
+
+# `n` written in ten digits, zeros before it, as a PDF's cross-reference
+# table writes an offset.
+#
+# - `n`: 0 to 9,999,999,999.
+function ten_digits(n: i64) -> str
+    digits = to_str(n)
+    return repeat("0", to_u64(10 - digits.len()).must()) + digits
+
+# A one-page A4 PDF saying `Rebel printing` in Helvetica: whole, its
+# cross-reference table's offsets the bytes' own, so every reader takes it as
+# it is.
+function page() -> [u8]
+    text = "BT /F1 24 Tf 72 760 Td (Rebel printing) Tj ET\n"
+    objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>"
+        "<< /Type /Pages /Kids [3 0 R] /Count 1 >>"
+        "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>"
+        f"<< /Length {text.len()} >>\nstream\n{text}endstream"
+        "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+    ]
+    out @= "%PDF-1.4\n"
+    offsets: [i64] @= []
+
+    for i in range(from: 0, to: objects.len())
+        offsets @ offsets.push(out.len())
+        out @ out + f"{i + 1} 0 obj\n{objects[i]}\nendobj\n"
+
+    table = out.len()
+    out @ out + f"xref\n0 {objects.len() + 1}\n0000000000 65535 f \n"
+
+    for o in offsets
+        out @ out + f"{ten_digits(o)} 00000 n \n"
+
+    out @ out + f"trailer\n<< /Size {objects.len() + 1} /Root 1 0 R >>\nstartxref\n{table}\n%%EOF\n"
+    return bytes.from_text(out)
+
+test "ten_digits: zero, one digit, and ten"
+    assert ten_digits(0) == "0000000000"
+    assert ten_digits(9) == "0000000009"
+    assert ten_digits(1234567890) == "1234567890"
+
+test "page: a PDF whose cross-reference table points at each object it names"
+    pdf = bytes.to_text(page()).must()
+    assert pdf.slice(from: 0, to: 8) == "%PDF-1.4"
+    at = bytes.index_of(s: page(), substr: bytes.from_text("xref\n")).must()
+    assert pdf.slice(from: at, to: at + 4) == "xref"
+    first = bytes.index_of(s: page(), substr: bytes.from_text("1 0 obj")).must()
+    assert first == 9
+    assert bytes.index_of(s: page(), substr: bytes.from_text(f"{ten_digits(first)} 00000 n")).must() > at

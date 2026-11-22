@@ -1,0 +1,650 @@
+# The system's printers: the printers this machine knows listed with their
+# state, the papers each takes and what it can do, a PDF document submitted to
+# one as a job with the settings a print dialog asks (copies, paper,
+# orientation, sides, colour, pages, collation), the job's state and pages
+# told while it runs and when it ends, waited for, and cancelled.
+#
+# The systems: on macOS and Linux CUPS, the print system both ship, its
+# library opened at the first call, so a printer is a CUPS queue; on Windows
+# the print spooler, the document drawn by the system's own PDF renderer
+# (`Windows.Data.Pdf`) through Direct2D's print control into an XPS print job
+# the printer's driver receives with a print ticket of the job's settings.
+# Nothing else is started: no shell verb, no other program.
+#
+# What it does NOT do: make the document (`pdf` writes one, text, fonts,
+# images and tables, and its bytes are what `submit` takes); show the print
+# and page-setup dialogs, which are `ui`'s, answered through its events with
+# `Settings`; print a web page, which `ui/webview` does; add, share or remove
+# printers, which is the system's settings' work and needs its privileges.
+#
+# **One document form, PDF, on every system**, so a program that prints on
+# one prints on all. **A page larger than the paper is fitted to it**,
+# centred, as CUPS fits one; a smaller page is printed at its size. **A job is
+# a printer's name and a number**, no handle: it is the system's from the
+# moment `submit` answers, and stands after the program ends. **A wait is
+# bounded** (`wait`, `FOREVER` for none) and fails `stopped` once the
+# program's stop is asked (`os.ask_stop`).
+#
+# It fails with `invalid`, `not_found`, `permission`, `limit`, `unsupported`,
+# `timeout`, `stopped` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: a document in the
+# printer's own language sent as it is; the print quality, pages per sheet,
+# scaling, finishing and the input tray asked of a job.
+
+use os
+use printing/hero_printing
+use printing/internal/calls
+use printing/internal/checks
+use printing/internal/failure
+use printing/internal/fields
+use printing/internal/trial
+
+## Codes
+
+# An argument refused: a name empty where it may not be, holding a zero byte
+# or past `MAX_NAME_BYTES`; bytes that are not a PDF; settings outside their
+# values; a wait below `FOREVER`. Every function that takes one fails with
+# it.
+constant INVALID: str
+    "invalid"
+
+# No printer of that name, no paper of that name on the printer, no job of
+# that number on the printer, or no default printer. Every function that
+# names a printer or a job fails with it, and `default_printer` and
+# `default_paper`.
+constant NOT_FOUND: str
+    "not_found"
+
+# The system refuses this to the program: the job is another user's, or the
+# print service asks for credentials. Every function that reaches the system
+# fails with it.
+constant PERMISSION: str
+    "permission"
+
+# The system has no memory, or the printer no room for another job. Every
+# function that reaches the system fails with it.
+constant LIMIT: str
+    "limit"
+
+# This machine has no print system the package reaches (Linux with no CUPS
+# library, or no scheduler running), or the printer takes no such setting
+# (two sides on a printer of one, colour on one of grey). Every function that
+# reaches the system fails with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+# The job had not ended when the time given ran out. `wait` fails with it.
+constant TIMEOUT: str
+    "timeout"
+
+# The program's stop was asked while the call waited. `wait` fails with it.
+constant STOPPED: str
+    "stopped"
+
+# The system refused for a reason none of the above names, a printer that
+# takes no job now among them; the message carries the system's words. Every
+# function that reaches the system fails with it.
+constant FAILED: str
+    "failed"
+
+## Limits
+
+# The most bytes a printer's name, a paper's name or a job's title holds:
+# IPP's bound on a name.
+constant MAX_NAME_BYTES: i64
+    255
+
+# The most copies a job asks.
+constant MAX_COPIES: i64
+    999
+
+# The most page ranges a job names.
+constant MAX_RANGES: i64
+    100
+
+# No bound on a wait, in milliseconds: `wait` waits until the job ends.
+constant FOREVER: i64
+    -1
+
+## Printers
+
+# A printer this machine knows.
+record Printer
+    # The system's name for it, which every other function takes: a CUPS
+    # queue's name, the spooler's printer name on Windows.
+    name: str
+    # The words a person reads for it: CUPS' `printer-info`, the name again
+    # on Windows.
+    description: str
+    # Where it stands, as its owner wrote it; empty where nobody did.
+    location: str
+    # Its make and model, or its driver's name on Windows.
+    model: str
+    # Whether it waits, prints, or has stopped.
+    state: State
+    # Why, as IPP's `printer-state-reasons` keywords (`media-empty`,
+    # `offline-report`, `paused`); none where nothing is wrong.
+    reasons: [str]
+    # The system's own words about its state; empty where it has none.
+    message: str
+    # Whether it takes jobs now.
+    accepting: bool
+    # Whether it is this machine's default printer.
+    is_default: bool
+
+# What a printer is doing.
+variant State
+    # Waiting for a job.
+    idle
+    # Printing, or holding jobs it has not printed.
+    processing
+    # Stopped: paused by a person, or kept from printing by what `reasons`
+    # names.
+    stopped
+
+# The printers this machine knows, in the system's order; none where it knows
+# none.
+#
+# Fails `unsupported` where the machine has no print system the package
+# reaches, `permission`, `limit` and `failed`. See also `default_printer` and
+# `printer_named`.
+function printers() -> [Printer]?
+    asked = "listing this machine's printers"
+    list = calls.read(.printers, asked: asked)?
+
+    match fields.printers_of(list)
+        .ok found => return ok(found)
+        .err e    => return fail(code: e.code, msg: f"{asked}: {e.msg}")
+
+# This machine's default printer.
+#
+# Fails `not_found` where it has none, and as `printers` fails. See also
+# `printers`.
+function default_printer() -> Printer?
+    for p in printers()?
+        if p.is_default
+            return ok(p)
+
+    return fail(code: NOT_FOUND, msg: "this machine has no default printer")
+
+# The printer named `name`.
+#
+# - `name`: the printer's name, as `printers` lists it.
+#
+# Fails `invalid` for a name the package refuses, `not_found` where no printer
+# is so named, and as `printers` fails. See also `printers`.
+function printer_named(name: str) -> Printer?
+    checks.name(s: name, what: "printer's name", may_be_empty: false)?
+
+    for p in printers()?
+        if p.name == name
+            return ok(p)
+
+    return fail(code: NOT_FOUND, msg: f"no printer named \"{name}\"")
+
+## Papers
+
+# A paper a printer takes.
+record Paper
+    # Its PWG 5101.1 name, the same on every system: `iso_a4_210x297mm`,
+    # `na_letter_8.5x11in`; on Windows a paper of no standard size is named
+    # `om_dmpaper-<its number>_<w>x<h>mm`. `Settings.paper` takes it.
+    name: str
+    # The words a person reads for it, the system's own: `A4`, `Letter`.
+    label: str
+    # Its width upright, in millimetres, more than 0.
+    width_mm: f64
+    # Its height upright, in millimetres, more than 0.
+    height_mm: f64
+    # The margin the printer cannot print at the left, in millimetres, 0 or
+    # more; 0 for a borderless paper.
+    left_mm: f64
+    # The margin at the right, in millimetres.
+    right_mm: f64
+    # The margin at the top, in millimetres.
+    top_mm: f64
+    # The margin at the bottom, in millimetres.
+    bottom_mm: f64
+    # Whether it is the printer's default paper.
+    is_default: bool
+
+# The papers `printer` takes, in the system's order; none where it names
+# none. Asked of the printer's driver or of the printer itself, so it may take
+# a second.
+#
+# - `printer`: the printer's name.
+#
+# Fails `invalid`, `not_found` where no printer is so named, `unsupported`,
+# `permission`, `limit` and `failed`. See also `default_paper`.
+function papers(printer: str) -> [Paper]?
+    asked = f"reading the papers of printer \"{printer}\""
+    checks.name(s: printer, what: "printer's name", may_be_empty: false)?
+    list = calls.read(.media(printer: printer), asked: asked)?
+
+    match fields.papers_of(list)
+        .ok found => return ok(found)
+        .err e    => return fail(code: e.code, msg: f"{asked}: {e.msg}")
+
+# The paper `printer` prints on where a job names none.
+#
+# - `printer`: the printer's name.
+#
+# Fails `not_found` where the printer names no default paper, and as `papers`
+# fails. See also `papers`.
+function default_paper(printer: str) -> Paper?
+    for p in papers(printer)?
+        if p.is_default
+            return ok(p)
+
+    return fail(code: NOT_FOUND, msg: f"printer \"{printer}\" names no default paper")
+
+## What a printer can do
+
+# What a printer can do, which `submit` holds a job to.
+record Capabilities
+    # Whether it prints on both sides of a sheet.
+    two_sided: bool
+    # Whether it prints colour.
+    color: bool
+    # The most copies a job may ask of it, 1 to `MAX_COPIES`.
+    copies_most: i64
+
+# What `printer` can do. Asked of the printer's driver or of the printer
+# itself.
+#
+# - `printer`: the printer's name.
+#
+# Fails `invalid`, `not_found` where no printer is so named, `unsupported`,
+# `permission`, `limit` and `failed`. See also `submit`.
+function capabilities(printer: str) -> Capabilities?
+    asked = f"asking what printer \"{printer}\" can do"
+    checks.name(s: printer, what: "printer's name", may_be_empty: false)?
+    list = calls.read(.capabilities(printer: printer), asked: asked)?
+
+    match fields.capabilities_of(list)
+        .ok found => return ok(found)
+        .err e    => return fail(code: e.code, msg: f"{asked}: {e.msg}")
+
+## Settings
+
+# Which way up a page prints on the paper.
+variant Orientation
+    # Upright.
+    portrait
+    # Turned a quarter, the long edge across.
+    landscape
+    # Turned a quarter the other way.
+    reverse_landscape
+    # Upside down.
+    reverse_portrait
+
+# Which sides of a sheet a job prints.
+variant Sides
+    # One side.
+    one_sided
+    # Both, turned on the long edge, as a book is.
+    two_sided_long_edge
+    # Both, turned on the short edge, as a notepad is.
+    two_sided_short_edge
+
+# The colour a job prints in.
+variant ColorMode
+    # What the printer prints by default.
+    printer_default
+    # Colour.
+    color
+    # Shades of grey.
+    monochrome
+
+# Pages of a document, `first` to `last`, both printed.
+record PageRange
+    # The first page, from 1.
+    first: i64
+    # The last page, `first` or after.
+    last: i64
+
+# What a job asks of its printer: what a print dialog answers, and what
+# `submit` takes. Built directly, or by `default_settings` and changed.
+record Settings
+    # The printer's name.
+    printer: str
+    # The copies, 1 to `MAX_COPIES`.
+    copies: i64
+    # The paper's PWG name, one `papers` lists; empty for the printer's
+    # default.
+    paper: str
+    # Which way up each page prints.
+    orientation: Orientation
+    # Which sides of a sheet are printed.
+    sides: Sides
+    # The colour.
+    color: ColorMode
+    # The pages printed, each range after the one before it and not touching
+    # it, at most `MAX_RANGES`; none for every page.
+    pages: [PageRange]
+    # Whether each copy is printed whole before the next, or each page's
+    # copies together.
+    collate: bool
+
+# The settings a job on `printer` starts from: one copy, the printer's paper,
+# upright, one side, the printer's colour, every page, collated.
+#
+# - `printer`: the printer's name, not checked here.
+#
+# See also `submit`.
+function default_settings(printer: str) -> Settings
+    return Settings(
+        printer: printer,
+        copies: 1,
+        paper: "",
+        orientation: .portrait,
+        sides: .one_sided,
+        color: .printer_default,
+        pages: [],
+        collate: true
+    )
+
+## Jobs
+
+# A job on a printer: what `submit` and `jobs` answer. Built directly by a
+# program that kept its two fields; compare two with `==`.
+record Job
+    # The printer's name.
+    printer: str
+    # The system's number for the job on that printer, more than 0.
+    id: i64
+
+# The state of a job.
+variant JobState
+    # Waiting for its turn.
+    pending
+    # Held, by a person or by the system, until released.
+    held
+    # Printing.
+    processing
+    # Stopped by its printer, which `reasons` says why; it goes on once the
+    # printer does.
+    stopped
+    # Cancelled, by `cancel` or by a person. An end.
+    cancelled
+    # Ended by the system for an error. An end.
+    aborted
+    # Printed whole. An end.
+    completed
+
+# How a job goes.
+record Status
+    # Its state.
+    state: JobState
+    # Why, as IPP's `job-state-reasons` keywords (`job-printing`,
+    # `job-canceled-by-user`); none where the system names none.
+    reasons: [str]
+    # The system's own words about it; empty where it has none.
+    message: str
+    # The pages printed so far, IPP's `job-impressions-completed`; 0 where the
+    # system counts none.
+    pages_printed: i64
+
+# Submits the PDF `pdf` to the printer `settings` names as one job titled
+# `title`, and answers it once the system holds the whole document: what is
+# printed is the system's from then on, and `status_of` tells how it goes.
+#
+# - `settings`: what the job asks; its printer must take its paper, its sides
+#   and its colour (`capabilities`).
+# - `title`: the job's title, as the printer's queue shows it, at most
+#   `MAX_NAME_BYTES` bytes; empty for `Untitled`.
+# - `pdf`: the document, a PDF, as `pdf.encode` writes one.
+#
+# Fails `invalid` for settings outside their values, a title past its bound or
+# bytes that are not a PDF; `not_found` where the printer or its paper is not
+# found; `unsupported` where the printer takes no such sides, colour or copies;
+# `permission`, `limit` and `failed`. No job stands after a failure. The
+# document is copied once to the system, as it arrives. See also `status_of`,
+# `cancel` and `wait`.
+function submit(settings: Settings, title: str, pdf: [u8]) -> Job?
+    asked = f"submitting \"{title}\" to printer \"{settings.printer}\""
+    checks.settings(settings)?
+    checks.name(s: title, what: "job's title", may_be_empty: true)?
+    document @= pdf
+    ranges @= checks.range_numbers(settings.pages)
+    collate @= 0
+
+    if settings.collate
+        collate @ 1
+    got = hero_printing.submit(
+        printer: settings.printer,
+        title: title,
+        @document,
+        size: to_u64(document.len()).must(),
+        copies: settings.copies,
+        media: settings.paper,
+        orientation: checks.orientation_number(settings.orientation),
+        sides: checks.sides_number(settings.sides),
+        color: checks.color_number(settings.color),
+        collate: collate,
+        @ranges,
+        range_count: to_u64(ranges.len()).must()
+    )
+
+    if got < 0
+        return failure.last(asked)
+    return ok(Job(printer: settings.printer, id: got))
+
+# How `job` goes now.
+#
+# - `job`: the job.
+#
+# Fails `not_found` where its printer holds no such job (CUPS forgets an
+# ended job after a day; Windows' spooler as soon as it ends, the package
+# telling then the end this process saw of a job it submitted), `invalid`,
+# `unsupported`, `permission` and `failed`. See also `wait` and `is_ended`.
+function status_of(job: Job) -> Status?
+    asked = f"reading job {job.id} on printer \"{job.printer}\""
+    checks.name(s: job.printer, what: "printer's name", may_be_empty: false)?
+    list = calls.read(.job(printer: job.printer, id: job.id), asked: asked)?
+
+    match fields.status_of(list)
+        .ok found => return ok(found)
+        .err e    => return fail(code: e.code, msg: f"{asked}: {e.msg}")
+
+# Whether `state` is an end: `cancelled`, `aborted` or `completed`.
+#
+# - `state`: a job's state.
+function is_ended(state: JobState) -> bool
+    return match state
+        .cancelled | .aborted | .completed        => true
+        .pending | .held | .processing | .stopped => false
+
+# The jobs on `printer` that have not ended, oldest first: this program's,
+# other programs' and other users' as far as the system shows them.
+#
+# - `printer`: the printer's name.
+#
+# Fails `invalid`, `not_found` where no printer is so named, `unsupported`,
+# `permission` and `failed`. See also `status_of`.
+function jobs(printer: str) -> [Job]?
+    asked = f"listing the jobs of printer \"{printer}\""
+    checks.name(s: printer, what: "printer's name", may_be_empty: false)?
+    list = calls.read(.jobs(printer: printer), asked: asked)?
+
+    match fields.jobs_of(list, printer: printer)
+        .ok found => return ok(found)
+        .err e    => return fail(code: e.code, msg: f"{asked}: {e.msg}")
+
+# Cancels `job`; a job that had already ended stays as it ended, and is no
+# failure.
+#
+# - `job`: the job.
+#
+# Fails `not_found` where its printer holds no such job, `permission` where it
+# is another user's, `invalid`, `unsupported` and `failed`. See also `submit`.
+function cancel(job: Job) -> ()?
+    asked = f"cancelling job {job.id} on printer \"{job.printer}\""
+    checks.name(s: job.printer, what: "printer's name", may_be_empty: false)?
+
+    if hero_printing.cancel(job.printer, job: job.id) < 0
+        return failure.last(asked)
+    return ok()
+
+# The milliseconds one wait of the layer takes at most, between which the
+# program's stop is asked.
+constant SLICE_MS: i64
+    250
+
+# Waits at most `within_ms` milliseconds for `job` to end, asking its state
+# every quarter of a second, and answers how it ended.
+#
+# - `job`: the job.
+# - `within_ms`: the milliseconds to wait, 0 to ask once and wait not at all,
+#   `FOREVER` for no bound.
+#
+# Fails `timeout` where it had not ended when the time ran out, `stopped`
+# once the program's stop is asked, `invalid` for a span below `FOREVER`, and
+# as `status_of` fails. See also `status_of`.
+function wait(job: Job, within_ms: i64) -> Status?
+    asked = f"waiting for job {job.id} on printer \"{job.printer}\""
+    checks.name(s: job.printer, what: "printer's name", may_be_empty: false)?
+
+    if within_ms < FOREVER
+        return fail(code: INVALID, msg: f"{asked}: a wait of {within_ms} ms, where it is 0 or more, or FOREVER")
+    left @= within_ms
+
+    while true
+        step_ms @= SLICE_MS
+
+        if within_ms != FOREVER && left < SLICE_MS
+            step_ms @ left
+        got = hero_printing.wait(job.printer, job: job.id, within_ms: step_ms)
+
+        if got < 0
+            return failure.last(asked)
+
+        if got == 1
+            return status_of(job)
+
+        if within_ms != FOREVER
+            left @ left - step_ms
+
+            if left <= 0
+                return fail(code: TIMEOUT, msg: f"{asked}: it had not ended after {within_ms} ms")
+
+        if os.is_stop_asked()
+            return fail(code: STOPPED, msg: f"{asked}: the program's stop was asked")
+
+## Examples
+
+# The printers this machine knows, each with its state.
+test "printers: each printer's name and state"
+    match printers()
+        .ok found =>
+            for p in found
+                assert p.name != "" && p.description != ""
+        .err e => skip_test(reason: f"no print system this program may use: {e.code}, {e.msg}")
+
+# The default printer, where the machine has one.
+test "default_printer: the one printer marked the default"
+    match default_printer()
+        .ok p  => assert p.is_default
+        .err e => skip_test(reason: f"no default printer here: {e.code}, {e.msg}")
+
+# A printer found by its name.
+test "printer_named: the default printer found again by its name"
+    match default_printer()
+        .ok p  => assert printer_named(p.name).must().name == p.name
+        .err e => skip_test(reason: f"no default printer here: {e.code}, {e.msg}")
+
+# The papers of the default printer, its default among them.
+test "papers: the default printer's papers, each larger than its margins"
+    match default_printer()
+        .ok p =>
+            for paper in papers(p.name).must()
+                assert paper.width_mm > paper.left_mm + paper.right_mm
+        .err e => skip_test(reason: f"no default printer here: {e.code}, {e.msg}")
+
+# The paper a job prints on where it names none.
+test "default_paper: the default printer's own default paper"
+    match default_printer()
+        .ok p =>
+            match default_paper(p.name)
+                .ok paper => assert paper.is_default && paper.name != ""
+                .err e    => assert e.code == NOT_FOUND
+        .err e => skip_test(reason: f"no default printer here: {e.code}, {e.msg}")
+
+# What a printer can do, asked before a job asks for two sides.
+test "capabilities: whether the default printer prints on both sides"
+    match default_printer()
+        .ok p  => assert capabilities(p.name).must().copies_most >= 1
+        .err e => skip_test(reason: f"no default printer here: {e.code}, {e.msg}")
+
+# Settings for two copies on A4, turned on the long edge.
+test "default_settings: two copies on A4, both sides"
+    s = default_settings("office")
+    two = Settings(
+        printer: s.printer,
+        copies: 2,
+        paper: "iso_a4_210x297mm",
+        orientation: s.orientation,
+        sides: .two_sided_long_edge,
+        color: s.color,
+        pages: s.pages,
+        collate: s.collate
+    )
+    assert two.copies == 2 && two.printer == "office" && two.pages.len() == 0
+
+# Whether a state is an end.
+test "is_ended: completed is an end, processing is not"
+    assert is_ended(.completed)
+    assert !is_ended(.processing)
+
+# A one-page PDF printed, waited for and its end read; run only where
+# `REBEL_PRINT_TEST_PRINTER` names a printer a test may print on, never a
+# real one by chance.
+test "submit: a one-page PDF, waited for, then cancelled if it had not ended"
+    match trial.printer()
+        .ok name =>
+            job = submit(default_settings(name), title: "rebel printing example", pdf: trial.page()).must()
+
+            match wait(job, within_ms: 2000)
+                .ok s => assert is_ended(s.state)
+                .err e =>
+                    assert e.code == TIMEOUT
+                    cancel(job).must()
+        .err e => skip_test(reason: e.msg)
+
+# A job's state read once.
+test "status_of: a submitted job's state, then cancelled"
+    match trial.printer()
+        .ok name =>
+            job = submit(default_settings(name), title: "rebel printing status", pdf: trial.page()).must()
+            assert status_of(job).must().pages_printed >= 0
+            cancel(job).must()
+        .err e => skip_test(reason: e.msg)
+
+# The jobs waiting on a printer.
+test "jobs: a submitted job stands among the printer's jobs until it ends"
+    match trial.printer()
+        .ok name =>
+            job = submit(default_settings(name), title: "rebel printing jobs", pdf: trial.page()).must()
+            waiting = jobs(name).must()
+            assert waiting.len() >= 0
+            cancel(job).must()
+        .err e => skip_test(reason: e.msg)
+
+# A job cancelled, and cancelled again once it has ended.
+test "cancel: a job cancelled, then cancelled again"
+    match trial.printer()
+        .ok name =>
+            job = submit(default_settings(name), title: "rebel printing cancel", pdf: trial.page()).must()
+            cancel(job).must()
+            cancel(job).must()
+        .err e => skip_test(reason: e.msg)
+
+# A cancelled job waited for: it has ended.
+test "wait: a cancelled job ends within a second"
+    match trial.printer()
+        .ok name =>
+            job = submit(default_settings(name), title: "rebel printing wait", pdf: trial.page()).must()
+            cancel(job).must()
+            assert is_ended(wait(job, within_ms: 1000).must().state)
+        .err e => skip_test(reason: e.msg)

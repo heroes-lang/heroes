@@ -1,0 +1,161 @@
+# What the face refuses before the floor is asked: a name or a title holding a
+# zero byte, which would abort at `.cstr()`, and one past the layer's bound;
+# settings outside their values. The layer refuses the same, so these are the
+# words a program reads first, and the ones the tests reach with no print
+# system.
+
+use bytes
+use printing
+use printing/hero_printing
+
+# `s` where it is a name the layer takes, else `invalid`.
+#
+# - `s`: the name, a printer's, a paper's or a title.
+# - `what`: what the name is, for the message.
+# - `may_be_empty`: whether the empty name is taken.
+#
+# Fails `invalid` where `s` is empty and may not be, holds a zero byte, or is
+# past `printing.MAX_NAME_BYTES` bytes.
+function name(s: str, what: str, may_be_empty: bool) -> ()?
+    if s.len() == 0 && !may_be_empty
+        return fail(code: printing.INVALID, msg: f"the {what} is empty")
+
+    if s.len() > printing.MAX_NAME_BYTES
+        return fail(
+            code: printing.INVALID,
+            msg: f"the {what} is {s.len()} bytes long, past the {printing.MAX_NAME_BYTES} a name may hold"
+        )
+
+    for i in range(from: 0, to: s.len())
+        if s[i] == 0
+            return fail(code: printing.INVALID, msg: f"the {what} holds a zero byte at {i}")
+
+    return ok()
+
+# `settings` where every field is within its values, else `invalid`.
+#
+# - `asked`: what a job asks.
+#
+# Fails `invalid` where the printer or the paper is no name the layer takes,
+# the copies are outside 1 to `printing.MAX_COPIES`, or the page ranges are
+# more than `printing.MAX_RANGES`, out of order or touching.
+function settings(asked: printing.Settings) -> ()?
+    name(s: asked.printer, what: "printer's name", may_be_empty: false)?
+    name(s: asked.paper, what: "paper's name", may_be_empty: true)?
+
+    if asked.copies < 1 || asked.copies > printing.MAX_COPIES
+        return fail(
+            code: printing.INVALID,
+            msg: f"{asked.copies} copies were asked, and a job takes 1 to {printing.MAX_COPIES}"
+        )
+
+    if asked.pages.len() > printing.MAX_RANGES
+        return fail(
+            code: printing.INVALID,
+            msg: f"{asked.pages.len()} page ranges were given, past the {printing.MAX_RANGES} a job takes"
+        )
+    before @= 0
+
+    for r in asked.pages
+        if r.first < 1 || r.last < r.first || r.first <= before + 1 && before > 0
+            return fail(
+                code: printing.INVALID,
+                msg: f"page range {r.first}-{r.last} is out of order: a range runs from page 1 or later to a page not before its first, each after the one before it and not touching it"
+            )
+        before @ r.last
+
+    return ok()
+
+# The layer's number of an orientation.
+#
+# - `o`: the orientation.
+function orientation_number(o: printing.Orientation) -> i64
+    return match o
+        .portrait          => hero_printing.HERO_PRINTING_PORTRAIT
+        .landscape         => hero_printing.HERO_PRINTING_LANDSCAPE
+        .reverse_landscape => hero_printing.HERO_PRINTING_REVERSE_LANDSCAPE
+        .reverse_portrait  => hero_printing.HERO_PRINTING_REVERSE_PORTRAIT
+
+# The layer's number of the sides.
+#
+# - `s`: the sides.
+function sides_number(s: printing.Sides) -> i64
+    return match s
+        .one_sided            => hero_printing.HERO_PRINTING_ONE_SIDED
+        .two_sided_long_edge  => hero_printing.HERO_PRINTING_TWO_SIDED_LONG_EDGE
+        .two_sided_short_edge => hero_printing.HERO_PRINTING_TWO_SIDED_SHORT_EDGE
+
+# The layer's number of a colour mode.
+#
+# - `c`: the colour mode.
+function color_number(c: printing.ColorMode) -> i64
+    return match c
+        .printer_default => hero_printing.HERO_PRINTING_COLOR_DEFAULT
+        .color           => hero_printing.HERO_PRINTING_COLOR
+        .monochrome      => hero_printing.HERO_PRINTING_MONOCHROME
+
+# The page ranges as the layer takes them, a first and a last page each.
+#
+# - `pages`: the ranges, in order.
+function range_numbers(pages: [printing.PageRange]) -> [i64]
+    out: [i64] @= []
+
+    for r in pages
+        out @ out.push(r.first)
+        out @ out.push(r.last)
+
+    return out
+
+test "name: empty where it may be and may not, the largest a name holds and one byte past it, a zero byte, and characters of more than one byte"
+    assert !name(s: "", what: "title", may_be_empty: true).is_err()
+
+    match name(s: "", what: "printer's name", may_be_empty: false)
+        .ok _  => assert false
+        .err e => assert e.code == printing.INVALID && e.msg == "the printer's name is empty"
+
+    assert !name(s: repeat("a", 255), what: "x", may_be_empty: false).is_err()
+    assert name(s: repeat("a", 256), what: "x", may_be_empty: false).is_err()
+    assert !name(s: "a\u{1}b", what: "x", may_be_empty: false).is_err()
+
+    match name(s: bytes.to_text([97, 0, 98]).must(), what: "paper's name", may_be_empty: false)
+        .ok _  => assert false
+        .err e => assert e.code == printing.INVALID && e.msg == "the paper's name holds a zero byte at 1"
+
+    assert !name(s: "Bureau d'été", what: "x", may_be_empty: false).is_err()
+
+test "settings: one copy and the most, none and one past it, ranges in order, touching, reversed and too many"
+    base = printing.default_settings("office")
+    assert !settings(base).is_err()
+    assert !settings(printing.Settings(printer: "office", copies: 999, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: [], collate: true)).is_err()
+    assert settings(
+        printing.Settings(printer: "office", copies: 0, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: [], collate: true)
+    ).is_err()
+    assert settings(
+        printing.Settings(printer: "office", copies: 1000, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: [], collate: true)
+    ).is_err()
+    ok_ranges = [printing.PageRange(first: 1, last: 2), printing.PageRange(first: 4, last: 4)]
+    assert !settings(printing.Settings(printer: "office", copies: 1, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: ok_ranges, collate: true)).is_err()
+    touching = [printing.PageRange(first: 1, last: 2), printing.PageRange(first: 3, last: 4)]
+    assert settings(
+        printing.Settings(printer: "office", copies: 1, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: touching, collate: true)
+    ).is_err()
+    reversed = [printing.PageRange(first: 5, last: 4)]
+    assert settings(
+        printing.Settings(printer: "office", copies: 1, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: reversed, collate: true)
+    ).is_err()
+    many: [printing.PageRange] @= []
+
+    for i in range(from: 0, to: 101)
+        many @ many.push(printing.PageRange(first: 3 * i + 1, last: 3 * i + 1))
+
+    assert settings(
+        printing.Settings(printer: "office", copies: 1, paper: "", orientation: .portrait, sides: .one_sided, color: .printer_default, pages: many, collate: true)
+    ).is_err()
+
+test "orientation_number, sides_number, color_number and range_numbers: IPP's numbers, and the ranges as pairs"
+    assert orientation_number(.portrait) == 3 && orientation_number(.landscape) == 4
+    assert orientation_number(.reverse_landscape) == 5 && orientation_number(.reverse_portrait) == 6
+    assert sides_number(.one_sided) == 1 && sides_number(.two_sided_long_edge) == 2 && sides_number(.two_sided_short_edge) == 3
+    assert color_number(.printer_default) == 0 && color_number(.color) == 1 && color_number(.monochrome) == 2
+    assert range_numbers([]).len() == 0
+    assert range_numbers([printing.PageRange(first: 1, last: 3), printing.PageRange(first: 7, last: 9)]) == [1, 3, 7, 9]

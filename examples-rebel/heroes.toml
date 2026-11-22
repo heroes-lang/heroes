@@ -113,6 +113,8 @@ packages = [
     "pem",
     "poll",
     "poll/hero_poll",
+    "printing",
+    "printing/hero_printing",
     "process",
     "process/hero_proc",
     "property",

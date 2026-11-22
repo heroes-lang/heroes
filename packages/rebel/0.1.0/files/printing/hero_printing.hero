@@ -1,0 +1,227 @@
+# The platform layer's printers, `hero_printing.h`, bound thin: one function
+# per C function, each answering what C answers, in C's order. Where a call
+# fails it answers -1, and `last_error` then names the kind, `last_message` the
+# system's own words. Rebel's floor of `printing` (`examples-rebel/README.md`
+# § A2): no policy stands here, and the face above it turns every kind into a
+# code and every list of fields into records.
+#
+# The layer is C of the language's own beside the runtime, so this group names
+# its header and no `link`: on Windows the member links the spooler's
+# libraries itself, and on macOS and Linux it opens CUPS's library at its
+# first call, so the same lines bind it everywhere. No call hands out a
+# handle: a job is a printer's name and a number, and each call is whole.
+#
+# A name and a title cross as `cstr`, so one holding a zero byte aborts at
+# `.cstr()` before C runs: the face refuses one first, `invalid`.
+
+extern "hero_printing.h"
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_PRINTING_OK: i64
+    constant HERO_PRINTING_INVALID: i64
+    constant HERO_PRINTING_NOT_FOUND: i64
+    constant HERO_PRINTING_DENIED: i64
+    constant HERO_PRINTING_LIMIT: i64
+    constant HERO_PRINTING_UNSUPPORTED: i64
+    constant HERO_PRINTING_OTHER: i64
+    # The most bytes a name holds, the most copies and page ranges a job asks.
+    constant HERO_PRINTING_NAME_MOST: i64
+    constant HERO_PRINTING_COPIES_MOST: i64
+    constant HERO_PRINTING_RANGES_MOST: i64
+    # The fields of each item of a list.
+    constant HERO_PRINTING_PRINTER_FIELDS: i64
+    constant HERO_PRINTING_MEDIA_FIELDS: i64
+    constant HERO_PRINTING_JOB_FIELDS: i64
+    constant HERO_PRINTING_CAPABILITY_FIELDS: i64
+    # The settings' numbers, IPP's own.
+    constant HERO_PRINTING_PORTRAIT: i64
+    constant HERO_PRINTING_LANDSCAPE: i64
+    constant HERO_PRINTING_REVERSE_LANDSCAPE: i64
+    constant HERO_PRINTING_REVERSE_PORTRAIT: i64
+    constant HERO_PRINTING_ONE_SIDED: i64
+    constant HERO_PRINTING_TWO_SIDED_LONG_EDGE: i64
+    constant HERO_PRINTING_TWO_SIDED_SHORT_EDGE: i64
+    constant HERO_PRINTING_COLOR_DEFAULT: i64
+    constant HERO_PRINTING_COLOR: i64
+    constant HERO_PRINTING_MONOCHROME: i64
+    function hero_printing_printers(@buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_printing_media(printer: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_printing_capabilities(printer: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_printing_submit(printer: cstr lent, title: cstr lent, @pdf: [u8] counted_by size lent, size: u64, copies: i64, media: cstr lent, orientation: i64, sides: i64, color: i64, collate: i64, @ranges: [i64] counted_by range_count lent, range_count: u64) -> i64
+    function hero_printing_job(printer: cstr lent, job: i64, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_printing_jobs(printer: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
+    function hero_printing_cancel(printer: cstr lent, job: i64) -> i64
+    function hero_printing_wait(printer: cstr lent, job: i64, within_ms: i64) -> i64
+    function hero_printing_last_error() -> i64
+    function hero_printing_last_os_error() -> i64
+    function hero_printing_last_message(@buffer: [u8] counted_by n lent, n: u64) -> i64
+
+# The bytes the list of this machine's printers takes, its fields written into
+# `buffer` where they fit in `n`; or -1. It leaves `buffer` `n` bytes long.
+#
+# - `buffer`: where the fields are written, each followed by a zero byte,
+#   `HERO_PRINTING_PRINTER_FIELDS` to a printer, where the whole list fits;
+#   left `n` long.
+# - `n`: the bytes `buffer` holds; 0 asks the length alone, and a shorter room
+#   than the list gets nothing written and the length all the same.
+function printers(@buffer: [u8], n: u64) -> i64
+    return hero_printing_printers(@buffer, n: n)
+
+# The bytes the list of the papers `printer` takes needs, its fields written
+# into `buffer` where they fit in `n`; or -1. Aborts where `printer` holds a
+# zero byte.
+#
+# - `printer`: the printer's name, as `printers` lists it.
+# - `buffer`: where the fields are written, `HERO_PRINTING_MEDIA_FIELDS` to a
+#   paper, where the whole list fits; left `n` long.
+# - `n`: the bytes `buffer` holds; a shorter room than the list gets nothing
+#   written and the length all the same.
+function papers(printer: str, @buffer: [u8], n: u64) -> i64
+    return hero_printing_media(printer.cstr(), @buffer, n: n)
+
+# The bytes what `printer` can do takes, its
+# `HERO_PRINTING_CAPABILITY_FIELDS` fields written into `buffer` where they fit
+# in `n`; or -1. Aborts where `printer` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `buffer`: where the fields are written; left `n` long.
+# - `n`: the bytes `buffer` holds.
+function capabilities(printer: str, @buffer: [u8], n: u64) -> i64
+    return hero_printing_capabilities(printer.cstr(), @buffer, n: n)
+
+# The number of the job the first `size` bytes of `pdf` make on `printer`, more
+# than 0; or -1, no job standing then. Aborts where `printer`, `title` or
+# `media` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `title`: the job's title, at most `HERO_PRINTING_NAME_MOST` bytes; empty
+#   for `Untitled`.
+# - `pdf`: the document, a PDF; read, never written.
+# - `size`: the bytes of `pdf` the job takes.
+# - `copies`: 1 to `HERO_PRINTING_COPIES_MOST`.
+# - `media`: a paper's PWG name the printer takes; empty for its default.
+# - `orientation`: one of the four `HERO_PRINTING_*` orientations.
+# - `sides`: one of the three `HERO_PRINTING_*` sides.
+# - `color`: one of the three `HERO_PRINTING_*` colours.
+# - `collate`: 1 for each copy whole before the next, 0 for each page's copies
+#   together.
+# - `ranges`: pairs of a first and a last page, from 1, each after the one
+#   before it and not touching it; read, never written.
+# - `range_count`: the numbers of `ranges` the job takes, twice its ranges; 0
+#   for every page.
+function submit(printer: str, title: str, @pdf: [u8], size: u64, copies: i64, media: str, orientation: i64, sides: i64, color: i64, collate: i64, @ranges: [i64], range_count: u64) -> i64
+    return hero_printing_submit(
+        printer: printer.cstr(),
+        title: title.cstr(),
+        @pdf,
+        size: size,
+        copies: copies,
+        media: media.cstr(),
+        orientation: orientation,
+        sides: sides,
+        color: color,
+        collate: collate,
+        @ranges,
+        range_count: range_count
+    )
+
+# The bytes the state of job `job` on `printer` takes, its
+# `HERO_PRINTING_JOB_FIELDS` fields written into `buffer` where they fit in
+# `n`; or -1. Aborts where `printer` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `job`: the job's number, as `submit` or `jobs` gave it.
+# - `buffer`: where the fields are written; left `n` long.
+# - `n`: the bytes `buffer` holds.
+function job_state(printer: str, job: i64, @buffer: [u8], n: u64) -> i64
+    return hero_printing_job(printer.cstr(), job: job, @buffer, n: n)
+
+# The bytes the numbers of the jobs on `printer` that have not ended take,
+# each a decimal field, oldest first, written into `buffer` where they fit in
+# `n`; or -1. Aborts where `printer` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `buffer`: where the numbers are written; left `n` long.
+# - `n`: the bytes `buffer` holds.
+function jobs(printer: str, @buffer: [u8], n: u64) -> i64
+    return hero_printing_jobs(printer.cstr(), @buffer, n: n)
+
+# 0 once job `job` on `printer` is cancelled, or had already ended; or -1.
+# Aborts where `printer` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `job`: the job's number.
+function cancel(printer: str, job: i64) -> i64
+    return hero_printing_cancel(printer.cstr(), job: job)
+
+# 1 once job `job` on `printer` has ended, 0 where it has not after
+# `within_ms` milliseconds; or -1. Aborts where `printer` holds a zero byte.
+#
+# - `printer`: the printer's name.
+# - `job`: the job's number.
+# - `within_ms`: the milliseconds to wait at most, 0 to an hour; 0 asks once.
+function wait(printer: str, job: i64, within_ms: i64) -> i64
+    return hero_printing_wait(printer.cstr(), job: job, within_ms: within_ms)
+
+# The kind of the last failure on this thread, `HERO_PRINTING_OK` where the
+# last call did not fail.
+function last_error() -> i64
+    return hero_printing_last_error()
+
+# The system's number for the last failure on this thread: IPP's status on
+# CUPS, the Win32 error or the HRESULT on Windows; 0 where the layer refused
+# the call itself.
+function last_os_error() -> i64
+    return hero_printing_last_os_error()
+
+# The length of the words of the last failure on this thread, written into
+# `buffer` where they fit in `n`. It leaves `buffer` `n` bytes long.
+#
+# - `buffer`: where the words are written, UTF-8; left `n` long.
+# - `n`: the bytes `buffer` holds.
+function last_message(@buffer: [u8], n: u64) -> i64
+    return hero_printing_last_message(@buffer, n: n)
+
+test "printers: the length alone, asked with no room, is the list's or -1 with a kind"
+    room: [u8] @= []
+    got = printers(@room, n: 0)
+    assert room.len() == 0
+    assert got >= 0 || last_error() != HERO_PRINTING_OK
+
+test "papers: a printer no system names is not found, or the machine has no print system"
+    room: [u8] @= []
+    assert papers("heroes-no-such-printer-a1", @room, n: 0) == -1
+    assert last_error() == HERO_PRINTING_NOT_FOUND || last_error() == HERO_PRINTING_UNSUPPORTED
+
+test "submit: bytes that are no PDF are refused before any system is asked"
+    pdf: [u8] @= [104, 105]
+    ranges: [i64] @= []
+    got = submit(
+        printer: "heroes-no-such-printer-a1",
+        title: "",
+        @pdf,
+        size: 2,
+        copies: 1,
+        media: "",
+        orientation: HERO_PRINTING_PORTRAIT,
+        sides: HERO_PRINTING_ONE_SIDED,
+        color: HERO_PRINTING_COLOR_DEFAULT,
+        collate: 1,
+        @ranges,
+        range_count: 0
+    )
+    assert got == -1
+    assert last_error() == HERO_PRINTING_INVALID
+    words: [u8] @= []
+    length = last_message(@words, n: 200)
+    assert length > 0 && length <= 200
+
+test "job_state, cancel, wait: a number below 1 names no job; a wait past an hour is refused"
+    room: [u8] @= []
+    assert job_state("heroes-no-such-printer-a1", job: 0, @room, n: 0) == -1
+    assert last_error() == HERO_PRINTING_NOT_FOUND || last_error() == HERO_PRINTING_UNSUPPORTED
+    assert cancel("heroes-no-such-printer-a1", job: -5) == -1
+    assert wait("heroes-no-such-printer-a1", job: 1, within_ms: 3600001) == -1
+    assert last_error() == HERO_PRINTING_INVALID
+    assert jobs("heroes-no-such-printer-a1", @room, n: 0) == -1
+    assert last_os_error() >= 0 || last_os_error() < 0
