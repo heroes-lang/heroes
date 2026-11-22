@@ -365,13 +365,22 @@ function format_event(e: Event) -> str
 
 ## Examples
 
-# A folder watched, a file made in it, and the creation told within a second.
+# A folder watched, a file made in it, and the creation told. The folder was
+# made just before the watch began, so a change of its own may be told first,
+# and the waits go on until the file's creation is told.
 test "open: a folder's file made is told created"
     root = fs.make_temp_dir(dir: "", pattern: "watch-open-*").must()
     w @= open(root).must()
     fs.touch(root + "/notes.txt").must()
-    told = wait(w, limit: time.seconds(2).must()).must()
-    assert told[0] == Event(path: paths.join_all([root, "notes.txt"]), change: .created, directory: false)
+    made = Event(path: paths.join_all([root, "notes.txt"]), change: .created, directory: false)
+    seen @= false
+
+    for _ in range(from: 0, to: 4)
+        if !seen
+            for e in wait(w, limit: time.seconds(2).must()).must()
+                seen @ seen || e == made
+
+    assert seen
     close(@w).must()
     fs.remove_all(root).must()
 
@@ -401,7 +410,14 @@ test "open_with: room for two, and an overflow where the rest were lost"
     for i in range(from: 0, to: 10)
         fs.touch(f"{root}/f{i}").must()
 
-    time.sleep(time.milliseconds(1500).must())
+    # The changes are told when the system tells them: wait until the room and
+    # its overflow stand, ten seconds at most.
+    looked @= 0
+
+    while count(w).must() < 3 && looked < 200
+        time.sleep(time.milliseconds(50).must())
+        looked @ looked + 1
+
     told = wait(w, limit: time.nanoseconds(0)).must()
     assert told.len() == 3
     assert told[2].change == .overflow
