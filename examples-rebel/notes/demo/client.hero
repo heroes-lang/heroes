@@ -19,18 +19,18 @@ use demo/steps_writing
 
 ## The session
 
-# The demo's session against the server at `port`; its answer is `ok`, or
-# `failed` after a line saying where. A thread's body, so it takes and gives
-# one text.
+# The demo's session against the server at `port`, run as a thread's
+# body; answers whether every step went as written, after a line saying
+# where one did not.
 #
-# - `port`: the server's port, as text.
-function run(port: str) -> str
-    return match session(port)
-        .ok _ => "ok"
+# - `port`: the server's port on 127.0.0.1.
+function run(port: i64) -> bool
+    return match session(to_str(port))
+        .ok _ => true
         .err e =>
             print(f"client: failed: {e.code}: {e.msg}")
             os.ask_stop()
-            "failed"
+            false
 
 # Every step, in order. A step that fails ends the session, and `run` then
 # asks the process's stop, the signal's own path, so the server's loop ends

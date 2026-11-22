@@ -1,0 +1,249 @@
+# The workers that read the server's HTTP connections: each a thread that
+# takes the next connection the server's loop accepted from one mailbox,
+# handed whole with `m.send(@conn)` (spec § 11), reads its requests as their
+# bytes come (`http.read_ready`), asks the loop's thread, which owns the
+# state (`http/server`), for each answer, and writes it back. A connection
+# that asks to become a WebSocket is handed back to the loop's thread whole,
+# which upgrades it and keeps it, since the hub that writes to every
+# WebSocket is the state's.
+#
+# A `poll` set waits on sockets and a mailbox waits alone, and nothing joins
+# the two (`poll.ledger`'s `poll/wake` is pending), so each worker and the
+# loop ring each other on two loopback pairs of their own (`net.pair`), as a
+# Python program rings a selector through a pipe: the worker writes one byte
+# on its ring after each ask, which wakes the loop's wait, and the loop
+# writes one on the worker's stop bell at the stop, which wakes the
+# worker's. Each end is held by one thread, as a handle must be (panel 254's
+# R3).
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/time
+
+## Asking
+
+# What a worker asks of the loop's thread.
+variant Ask
+    # A request read whole, answered on `back`.
+    request
+        # The request, its `remote` set.
+        r: http.Request
+        # Where its answer goes.
+        back: (mailbox Reply)
+    # A connection whose request the loop answered `upgrade`, handed over
+    # whole: the loop writes its 101 and keeps it as a WebSocket.
+    adopt
+        # The connection's reader, what it holds of the stream unread
+        # included.
+        reader: io.Reader
+        # The opening request.
+        r: http.Request
+        # The account's number.
+        user_id: i64
+        # The account's name.
+        user: str
+
+# What the loop's thread answers a request.
+variant Reply
+    # Write this response.
+    respond
+        # The response.
+        response: http.Response
+    # Hand the connection over to become the WebSocket of `user`.
+    upgrade
+        # The account's number.
+        user_id: i64
+        # The account's name.
+        user: str
+    # The server is stopping: close the connection.
+    stopping
+
+# A worker's two ends of its bells with the loop's thread.
+record Bells
+    # The end the worker writes a byte on after each ask, to wake the loop.
+    ring: net.Conn
+    # The end the loop writes a byte on at the stop, to wake the worker.
+    stop: net.Conn
+
+# What a worker's thread is handed, whole.
+record Start
+    # The connections the loop accepted, each taken by one worker.
+    conns: (mailbox net.Conn)
+    # The loop's mailbox of asks.
+    asks: (mailbox Ask)
+    # Where the worker takes its bells from, handed with `@`.
+    bells: (mailbox Bells)
+    # What a request may hold.
+    limits: http.Limits
+    # How long a connection may stay quiet, in milliseconds.
+    idle_ms: i64
+
+# What a worker did, told as it ends.
+record Worked
+    # The connections it served.
+    connections: i64
+    # The connections it closed while they waited for a request, at the
+    # stop.
+    idle_closed: i64
+
+## The loop's side
+
+# Hands `b` to the worker that takes it from `to`.
+#
+# - `to`: the workers' mailbox of bells.
+# - `b`: the bells; emptied, the worker's from then on.
+#
+# Fails `closed` or `stopped` where no worker takes it any more, `b` then
+# left as it was.
+function hand(to: (mailbox Bells), @b: Bells) -> ()?
+    return to.send(@b)
+
+# Answers what the loop's thread found for `r` on `back`; nothing where the
+# worker no longer waits.
+#
+# - `back`: the worker's mailbox for the answer.
+# - `reply`: the answer.
+function answer(back: (mailbox Reply), reply: Reply)
+    _ = back.send(reply).is_err()
+
+## The worker
+
+# A worker's thread: its bells taken, then connections taken and served
+# until the mailbox is closed and empty, or the program's stop finds it
+# empty. Answers what it did.
+#
+# - `w`: the mailboxes, the limits and the idle bound.
+function work(w: Start) -> Worked
+    done @= Worked(connections: 0, idle_closed: 0)
+
+    b @= match w.bells.receive(within_ms: -1)
+        .ok got => got
+        .err _  => return done
+
+    match poll.make(2)
+        .err _ => _ = 0
+        .ok made =>
+            set @= made
+
+            match poll.add_conn(set, c: b.stop, interest: .read)
+                .err _ => _ = 0
+                .ok stop_key =>
+                    while true
+                        match w.conns.receive(within_ms: -1)
+                            .err _ => break
+                            .ok conn =>
+                                done.connections @ done.connections + 1
+
+                                if served(w, set: set, stop_key: stop_key, ring: b.ring, conn: conn)
+                                    done.idle_closed @ done.idle_closed + 1
+
+            _ = poll.close(@set).is_err()
+
+    _ = io.close(@b.ring.stream).is_err()
+    _ = io.close(@b.stop.stream).is_err()
+    return done
+
+# Serves `conn` until its client leaves, it goes quiet past `w.idle_ms`, it
+# becomes a WebSocket, or the stop bell rings. Answers whether the stop bell
+# closed it while it waited for a request.
+#
+# - `w`: what the worker was handed.
+# - `set`: the worker's poll set, its stop bell in it.
+# - `stop_key`: the stop bell's key.
+# - `ring`: the worker's end of its ring.
+# - `conn`: the connection, closed by this call unless handed over.
+function served(w: Start, set: poll.Set, stop_key: i64, ring: net.Conn, conn: net.Conn) -> bool
+    key = match poll.add_conn(set, c: conn, interest: .read)
+        .ok k => k
+        .err _ =>
+            stream @= conn.stream
+            _ = io.close(@stream).is_err()
+            return false
+
+    requests @= http.request_reader(io.reader(conn.stream))
+    remote = net.format_address(conn.remote)
+    idle = time.milliseconds(w.idle_ms).default(time.seconds(30).default(time.nanoseconds(0)))
+
+    while true
+        # No event is the idle bound passed, or the program's stop; the stop
+        # bell is the loop's stop.
+        events: [poll.Event] = match poll.wait(set, limit: idle)
+            .ok got => got
+            .err _  => []
+
+        rang @= false
+
+        for e in events
+            if e.key == stop_key
+                rang @ true
+
+        if rang || events.len() == 0
+            _ = poll.remove(set, key: key).is_err()
+            _ = io.close(@requests.reader.stream).is_err()
+            return rang
+
+        while true
+            read = match http.read_ready(@requests, limits: w.limits)
+                .ok got => got
+                .err _ =>
+                    _ = poll.remove(set, key: key).is_err()
+                    _ = io.close(@requests.reader.stream).is_err()
+                    return false
+
+            r: http.Request @= match read
+                .request got => got.request
+                .waiting     => break
+
+            r.remote @ remote
+
+            match asked(w, ring: ring, r: r)
+                .respond rs =>
+                    if http.write_answer(requests.reader.stream, r: r, response: rs.response).is_err() || r.closing || rs.response.closing
+                        _ = poll.remove(set, key: key).is_err()
+                        _ = io.close(@requests.reader.stream).is_err()
+                        return false
+                .upgrade u =>
+                    _ = poll.remove(set, key: key).is_err()
+                    handed_over(w, ring: ring, @requests.reader, r: r, user_id: u.user_id, user: u.user)
+                    return false
+                .stopping =>
+                    _ = poll.remove(set, key: key).is_err()
+                    _ = io.close(@requests.reader.stream).is_err()
+                    return false
+
+    return false
+
+# The loop's answer to `r`: the request sent, the loop rung, the answer
+# awaited; `stopping` where the loop no longer answers.
+#
+# - `w`: what the worker was handed.
+# - `ring`: the worker's end of its ring.
+# - `r`: the request.
+function asked(w: Start, ring: net.Conn, r: http.Request) -> Reply
+    back: (mailbox Reply) = mailbox()
+    ask: Ask @= .request(r: r, back: back)
+
+    if w.asks.send(@ask).is_err()
+        return .stopping
+    _ = io.write(ring.stream, data: [1]).is_err()
+    return back.receive(within_ms: -1).default(.stopping)
+
+# Hands the connection `reader` reads to the loop's thread to become a
+# WebSocket; where the loop no longer takes it, closes it.
+#
+# - `w`: what the worker was handed.
+# - `ring`: the worker's end of its ring.
+# - `reader`: the connection's reader, emptied.
+# - `r`: the opening request.
+# - `user_id`: the account's number.
+# - `user`: the account's name.
+function handed_over(w: Start, ring: net.Conn, @reader: io.Reader, r: http.Request, user_id: i64, user: str)
+    ask: Ask @= .adopt(reader: reader, r: r, user_id: user_id, user: user)
+
+    match w.asks.send(@ask)
+        .ok _ => _ = io.write(ring.stream, data: [1]).is_err()
+        .err _ =>
+            # Not sent, so the connection is still this worker's.
+            _ = io.close(@reader.stream).is_err()
