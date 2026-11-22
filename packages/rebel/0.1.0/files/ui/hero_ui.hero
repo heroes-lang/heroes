@@ -194,6 +194,8 @@ extern "hero_ui.h"
     # An icon in the tray, and an app out of the Dock.
     constant HERO_UI_TRAY: i64
     function hero_ui_set_docked(app: App, on: i64) -> i64
+    # A notification of the system's.
+    function hero_ui_notify(app: App, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
@@ -1007,6 +1009,16 @@ function ask(app: App, dialog: i64, window: i64, tone: i64, @title: [u8], title_
 # - `on`: 1 or 0.
 function set_docked(app: App, on: i64) -> i64
     return hero_ui_set_docked(app, on: on)
+
+# 0 once the system shows a notification of `title` and `text`; or -1.
+#
+# - `app`: the app.
+# - `title`: one line, not empty, UTF-8; left as it was handed.
+# - `title_count`: how many of its first bytes.
+# - `text`: UTF-8 with no zero byte; left as it was handed.
+# - `text_count`: how many of its first bytes.
+function notify(app: App, @title: [u8], title_count: u64, @text: [u8], text_count: u64) -> i64
+    return hero_ui_notify(app, title: @title, title_count: title_count, text: @text, text_count: text_count)
 
 ## Tests
 

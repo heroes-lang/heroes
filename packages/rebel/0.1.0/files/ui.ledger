@@ -499,11 +499,12 @@ capability ui/docked  an app out of the Dock and the menu bar, living in the tra
   note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows pending (no task bar button: `WS_EX_TOOLWINDOW` on its windows, unread), Linux pending (GTK 4 removed skip-taskbar, so `unsupported` there)
 
 capability ui/notification  a notification of the system's: a title and its words
-  heroes  pending
+  heroes  ui.notify
   go      -
   rust    -
   python  -
   wx      wxNotificationMessage
+  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows pending (a toast of the AppUserModelID's), Linux pending (`GNotification` through the portal)
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  pending

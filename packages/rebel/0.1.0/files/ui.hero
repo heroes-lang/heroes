@@ -196,6 +196,9 @@ record App
     # Whether the app stands in the Dock and with a menu bar of its own
     # (`set_docked`), as it opens.
     docked: bool
+    # The notifications the app showed (`notify`), in order. Only this
+    # package reads it.
+    notices: [desk.Notice]
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -1192,6 +1195,22 @@ function tray(@app: App, text: str) -> Widget?
 # (Windows and Linux, pending), `failed`. See also `tray`.
 function set_docked(@app: App, on: bool) -> ()?
     return desk.set_docked(@app, on: on)
+
+# Shows a notification of the system's, `title` and its words `text`, in
+# the system's own place beside every application's, as wxWidgets'
+# `wxNotificationMessage` and Electron's `Notification`. The system may hold
+# it back where the person has not allowed this program's notifications,
+# and tells the program nothing then. Kept on the headless side.
+#
+# - `app`: the app.
+# - `title`: one line, not empty, without a zero byte.
+# - `text`: its words, without a zero byte.
+#
+# Fails `closed`, `invalid`, `unsupported` where the system shows none for
+# this program (on macOS a program outside an application bundle; Windows
+# and Linux, pending), `failed`. See also `tray`.
+function notify(@app: App, title: str, text: str) -> ()?
+    return desk.notify(@app, title: title, text: text)
 
 # A new item at the end of menu or context menu `into`, showing `text`;
 # choosing it, by the mouse or its shortcut, is `.menu_chosen`.

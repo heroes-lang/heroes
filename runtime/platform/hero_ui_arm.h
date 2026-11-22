@@ -154,6 +154,14 @@ int64_t hero_ui_arm_dialogs_words(char *words, int64_t count);
  * CALLS NO C ARM DRAWS YET until an arm defines its own. */
 int64_t hero_ui_arm_set_docked(int64_t on);
 
+/* A NOTIFICATION (`hero_ui.h`), and the words of the last refusal of a
+ * call on the system around the program. `hero_ui.c` defines `notify` on
+ * macOS by `hero_ui_appkit_system.swift`, and for the Win32 and GTK 4 arms
+ * as a refusal in CALLS NO C ARM DRAWS YET until an arm defines its own;
+ * `system_words` is the shared words on those two arms. */
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count);
+int64_t hero_ui_arm_system_words(char *words, int64_t count);
+
 /* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
  * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
  * person has answered, writing the answer through its last parameter (the

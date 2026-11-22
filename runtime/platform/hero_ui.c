@@ -3566,8 +3566,18 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
 
 #if defined(__APPLE__)
 
+#include "hero_ui_appkit_system.h"
+
 int64_t hero_ui_arm_set_docked(int64_t on) {
     return hero_ui_appkit_set_docked(on);
+}
+
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    return hero_ui_appkit_notify(title, title_count, text, text_count);
+}
+
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_appkit_system_words(words, count);
 }
 
 #else
@@ -3582,6 +3592,18 @@ int64_t hero_ui_arm_set_docked(int64_t on) {
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer keeps an app out of the Dock on macOS alone, and this system's arm has no such call");
 }
 
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    (void)title;
+    (void)title_count;
+    (void)text;
+    (void)text_count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows a notification on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
 #endif
 
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
@@ -3592,4 +3614,33 @@ int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
         return hero_ui_said(HERO_UI_INVALID, "whether the app stands in the Dock is 0 or 1");
     }
     return hero_ui_answered(hero_ui_arm_set_docked(on), "keeping the app in the Dock or out of it", 0);
+}
+
+/* 0 where the arm answered `kind` `HERO_UI_OK`, else -1 with the failure
+ * said as `what`, in the words of the member that answered it. */
+static int64_t hero_ui_system_answered(int64_t kind, const char *what) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+
+    if (kind == HERO_UI_UNSUPPORTED || kind == HERO_UI_OTHER) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_system_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "the system refused, giving no words");
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(kind, words);
+    }
+    return hero_ui_answered(kind, what, 0);
+}
+
+int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count) {
+    const uint8_t *heading = title;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false)) {
+        return -1;
+    }
+    if (title_count == 0 || memchr(heading, '\n', (size_t)title_count) != NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "a notification's title is one line, not empty");
+    }
+    return hero_ui_system_answered(hero_ui_arm_notify(title, (int64_t)title_count, text, (int64_t)text_count), "showing a notification");
 }

@@ -11,6 +11,7 @@
 # `TITLE_BAR` points high above it, and a window the program never placed
 # standing centred in that work area.
 
+use bytes
 use image
 use time
 use ui
@@ -437,6 +438,38 @@ function set_docked(@app: ui.App, on: bool) -> ()?
     app.docked @ on
     return ok()
 
+# A notification the app showed, as the headless side keeps it.
+record Notice
+    # Its title.
+    title: str
+    # Its words.
+    text: str
+
+# Shows a notification (`ui.notify`): kept on the headless side, in order.
+function notify(@app: ui.App, title: str, text: str) -> ()?
+    check.opened(app)?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: text, one_line: false, what: "the text")?
+
+    if title.len() == 0
+        return fail(code: failure.INVALID, msg: "a notification's title is empty, and the person reads none")
+
+    if app.native
+        title_bytes @= bytes.from_text(title)
+        text_bytes @= bytes.from_text(text)
+        shown = hero_ui.notify(
+            app.handle,
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must(),
+            text: @text_bytes,
+            text_count: to_u64(text_bytes.len()).must()
+        )
+
+        if shown < 0
+            return failure.last(f"showing the notification \"{title}\"")
+    app.notices @ app.notices.push(Notice(title: title, text: text))
+    return ok()
+
 # Gives the app its icon (`ui.set_icon`).
 function set_icon(@app: ui.App, img: image.Image) -> ()?
     check.opened(app)?
@@ -774,3 +807,25 @@ function has(items: [str], item: str) -> bool
             return true
 
     return false
+
+test "notify: kept on the headless side in order; an empty title and one of two lines refused, and a closed app (catalogue SY05)"
+    app @= fixture.test_app()
+    ui.notify(@app, title: "Synced", text: "3 files").must()
+    ui.notify(@app, title: "Mail", text: "").must()
+    assert app.notices == [Notice(title: "Synced", text: "3 files"), Notice(title: "Mail", text: "")]
+    assert fixture.code_of(ui.notify(@app, title: "", text: "x")) == ui.INVALID
+    assert fixture.code_of(ui.notify(@app, title: "a\nb", text: "x")) == ui.INVALID
+    ui.close(@app).must()
+    assert fixture.code_of(ui.notify(@app, title: "Late", text: "")) == ui.CLOSED
+
+test "notify: on the native side shown by the system, or refused by its words where the system shows none for this program, as on macOS outside an application bundle (catalogue SY05)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.notify(@app, title: "Heroes", text: "a notification of the ui package's native case")
+    refusal = fixture.unsupported_words(shown)
+    ui.close(@app).must()
+
+    if refusal != ""
+        skip_test(reason: refusal)
+    shown.must()

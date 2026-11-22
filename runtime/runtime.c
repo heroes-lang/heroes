@@ -425,6 +425,8 @@
 #include "platform/hero_ui_appkit_windows.swift"
 #include "platform/hero_ui_appkit_dialogs.h"
 #include "platform/hero_ui_appkit_dialogs.swift"
+#include "platform/hero_ui_appkit_system.h"
+#include "platform/hero_ui_appkit_system.swift"
 #include "platform/hero_ui_web.h"
 #include "hero_ui_gtk.h"
 #include "platform/hero_ui_gtk.c"

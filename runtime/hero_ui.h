@@ -1055,4 +1055,17 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
  * a utility of the tray alone (macOS's accessory application). 0, or -1. */
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on);
 
+/* -- A NOTIFICATION ----------------------------------------------------------
+ *
+ * wxWidgets' `wxNotificationMessage`, Electron's `Notification`: a title and
+ * its words the system shows in its own place, beside every application's,
+ * and keeps in its list. */
+
+/* Shows a notification of `title`, one line, not empty, and `text`. 0, or
+ * -1: `UNSUPPORTED` where the system shows none for this program, on macOS a
+ * program outside an application bundle. The system may hold it back where
+ * the person has not allowed this program's notifications, and tells the
+ * program nothing then. */
+int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count);
+
 #endif
