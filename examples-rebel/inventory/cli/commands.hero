@@ -1,0 +1,288 @@
+# The inventory's command line: each command reads the configuration file
+# it is given (`conf/settings`, the environment's `INVENTORY_` variables
+# over it), opens the store the file names, does one thing, closes the
+# store, and answers the program's exit code: 0 where it was done, 1 where
+# it failed or a movement was refused, 2 where the command line is not one
+# of these.
+#
+#     inventory init <config.toml>
+#     inventory location <config.toml> <code> <name>
+#     inventory import <config.toml> products|counts <file.csv|file.xlsx>
+#     inventory receive <config.toml> <sku> <location> <quantity> <unit cost> [reference]
+#     inventory sell <config.toml> <sku> <location> <quantity> [unit price]
+#     inventory transfer <config.toml> <sku> <from> <to> <quantity>
+#     inventory adjust <config.toml> <sku> <location> <change> <reason>
+#     inventory count <config.toml> <sku> <location> <counted>
+#     inventory account <config.toml>
+#     inventory export <config.toml> <file.csv|file.xlsx>
+#
+# Every movement is timed by the wall clock and audited under the
+# configuration's `actor`.
+
+use <rebel>/os
+use <rebel>/time
+
+use conf/settings
+use exports/stock
+use files/tables
+use imports/columns
+use imports/counts
+use imports/products
+use model/catalog
+use model/money
+use model/requests
+use report/account
+use service/ledger
+use store/store
+
+## Codes
+
+# The code of a command line that is not one of the program's.
+constant INVALID: str
+    "invalid"
+
+## The command line
+
+# The usage, as the program prints it for a command line it cannot read.
+function usage() -> str
+    return "usage: inventory demo | inventory <init|account> <config.toml> | inventory location <config.toml> <code> <name> | inventory import <config.toml> products|counts <file> | inventory receive <config.toml> <sku> <location> <quantity> <unit cost> [reference] | inventory sell <config.toml> <sku> <location> <quantity> [unit price] | inventory transfer <config.toml> <sku> <from> <to> <quantity> | inventory adjust <config.toml> <sku> <location> <change> <reason> | inventory count <config.toml> <sku> <location> <counted> | inventory export <config.toml> <file>"
+
+# Runs the command `words` names, and answers the exit code.
+#
+# - `words`: the program's arguments, the command first, the
+#   configuration's path second.
+function run(words: [str]) -> i64
+    if words.len() < 2
+        print(usage())
+        return 2
+    command = words[0]
+    rest = words.slice(from: 2, to: words.len())
+
+    match settings.load(words[1], env: os.env_all().default({}))
+        .err e =>
+            print(f"inventory: {words[1]}: {e.msg}")
+            return 1
+        .ok s =>
+            match store.open(s)
+                .err e =>
+                    print(f"inventory: the {s.kind} store: {e.msg}")
+                    return 1
+                .ok opened =>
+                    st @= opened
+
+                    exit_code = match done(@st, command: command, words: rest, actor: s.actor)
+                        .ok c => c
+                        .err e =>
+                            if e.code == INVALID
+                                print(e.msg)
+                                print(usage())
+                                2
+                            else
+                                print("inventory: " + e.msg)
+                                1
+
+                    _ = store.close(@st).is_err()
+                    return exit_code
+
+# One command done on an open store; answers the exit code.
+#
+# - `s`: the store.
+# - `command`: the command's name.
+# - `words`: its arguments after the configuration's path.
+# - `actor`: who the audit trail names.
+#
+# Fails `invalid` where the command or its arguments are not one of the
+# program's, and as the store fails.
+function done(@s: store.Store, command: str, words: [str], actor: str) -> i64?
+    now = time.now()?
+
+    if command == "init" && words.len() == 0
+        store.setup(@s)?
+        print(f"the {s.name} store is ready")
+        return ok(0)
+
+    if command == "location" && words.len() == 2
+        l = ledger.add_location(@s, code: words[0], name: words[1], at: now, actor: actor)?
+        print(f"location {l.code}, {l.name}")
+        return ok(0)
+
+    if command == "import" && words.len() == 2
+        t = tables.read_table(words[1])?
+
+        report = if words[0] == "products"
+            products.import_products(@s, t: t, at: now, actor: actor)?
+        else if words[0] == "counts"
+            counts.import_counts(@s, t: t, at: now, actor: actor)?
+        else
+            return fail(code: INVALID, msg: f"import reads products or counts, not {words[0]}")
+        print_report(report)
+
+        if report.rejected.len() > 0
+            return ok(1)
+        return ok(0)
+
+    if command == "account" && words.len() == 0
+        lines = account.lines_of(
+            time.format(now, .date_only),
+            held: store.snapshot(@s)?,
+            totals: store.totals(@s)?,
+            trail: store.audit_trail(@s)?
+        )
+
+        for line in lines
+            print(line)
+
+        return ok(0)
+
+    if command == "export" && words.len() == 1
+        rows = stock.export_stock(store.snapshot(@s)?, path: words[0])?
+        print(f"{words[0]}: {rows} rows")
+        return ok(0)
+    request = request_of(command, words: words)?
+    return ok(said(ledger.submit(@s, r: request, at: now, actor: actor)?))
+
+# The movement a command line asks for.
+#
+# - `command`: `receive`, `sell`, `transfer`, `adjust` or `count`.
+# - `words`: its arguments.
+#
+# Fails `invalid` where it is none of them, or an argument is not of its
+# kind.
+function request_of(command: str, words: [str]) -> requests.Request?
+    if command == "receive" && (words.len() == 4 || words.len() == 5)
+        reference = if words.len() == 5
+            words[4]
+        else
+            ""
+        return ok(
+            .receipt(sku: sku(words[0])?, location: code(words[1])?, quantity: quantity(words[2])?, unit_cost_cents: amount(words[3])?, reference: reference)
+        )
+
+    if command == "sell" && (words.len() == 3 || words.len() == 4)
+        price: i64? = if words.len() == 4
+            ok(amount(words[3])?)
+        else
+            fail(code: "not_found", msg: "the variant's own price")
+        return ok(
+            .sale(sku: sku(words[0])?, location: code(words[1])?, quantity: quantity(words[2])?, unit_price_cents: price, reference: "")
+        )
+
+    if command == "transfer" && words.len() == 4
+        return ok(
+            .transfer(sku: sku(words[0])?, from: code(words[1])?, to: code(words[2])?, quantity: quantity(words[3])?, reference: "")
+        )
+
+    if command == "adjust" && words.len() == 4
+        return ok(
+            .adjustment(sku: sku(words[0])?, location: code(words[1])?, change: change(words[2])?, reason: words[3])
+        )
+
+    if command == "count" && words.len() == 3
+        no_cost: i64? = fail(code: "not_found", msg: "the moving average cost")
+        return ok(
+            .count(sku: sku(words[0])?, location: code(words[1])?, counted: counted(words[2])?, unit_cost_cents: no_cost, reason: "count")
+        )
+    return fail(code: INVALID, msg: f"inventory: {command} with {words.len()} arguments is no command")
+
+# What became of a movement, printed; answers the exit code: 1 for a
+# refusal, 0 otherwise.
+#
+# - `outcome`: what the ledger answered.
+function said(outcome: ledger.Outcome) -> i64
+    match outcome
+        .applied x =>
+            print(
+                f"movement {x.seq}: {x.movement.kind} of {x.movement.quantity}, value {ledger.signed_amount(x.movement.value_cents)}"
+            )
+            return 0
+        .refused x =>
+            print("refused: " + x.reason)
+            return 1
+        .confirmed x =>
+            print(x.note)
+            return 0
+
+# Prints an import's report.
+#
+# - `r`: the report.
+function print_report(r: columns.Report)
+    print(f"{r.file}: {r.rows} rows, {r.accepted} taken, {r.rejected.len()} rejected")
+
+    for x in r.rejected
+        print(f"  {x.place}: {x.reason}")
+
+    match r.broken
+        .ok where => print("  the file stopped being readable: " + where)
+        .err _    => _ = 0
+
+## Arguments
+
+# A SKU argument.
+#
+# - `text`: the argument.
+function sku(text: str) -> str?
+    return as_invalid(catalog.code_of(kind: "SKU", text: text))
+
+# A location's code argument.
+#
+# - `text`: the argument.
+function code(text: str) -> str?
+    return as_invalid(catalog.code_of(kind: "location", text: text))
+
+# A quantity argument, 1 or more.
+#
+# - `text`: the argument.
+function quantity(text: str) -> i64?
+    return as_invalid(catalog.units_of(kind: "quantity", text: text, least: 1))
+
+# A count argument, 0 or more.
+#
+# - `text`: the argument.
+function counted(text: str) -> i64?
+    return as_invalid(catalog.units_of(kind: "count", text: text, least: 0))
+
+# An amount argument.
+#
+# - `text`: the argument, `12.50`.
+function amount(text: str) -> i64?
+    return as_invalid(money.parse_amount(text))
+
+# A signed change argument, `-3` or `+2`.
+#
+# - `text`: the argument.
+function change(text: str) -> i64?
+    if text.len() > 1 && text[0] == '-'
+        return ok(-quantity(text.slice(from: 1, to: text.len()))?)
+
+    if text.len() > 1 && text[0] == '+'
+        return quantity(text.slice(from: 1, to: text.len()))
+    return quantity(text)
+
+# `v`, its failure made `invalid` so the command line's usage is printed.
+#
+# - `v`: a value read from an argument.
+function as_invalid<T>(v: T?) -> T?
+    match v
+        .ok x  => return ok(x)
+        .err e => return fail(code: INVALID, msg: "inventory: " + e.msg)
+
+test "request_of: a receipt, a sale at its own price, an adjustment of -1"
+    match request_of("receive", words: ["TEE-BLK-M", "WH", "24", "7.10", "PO-1"]).must()
+        .receipt r                                       => assert r.quantity == 24 && r.unit_cost_cents == 710 && r.reference == "PO-1"
+        .sale _ | .transfer _ | .adjustment _ | .count _ => assert false
+
+    match request_of("sell", words: ["TEE-BLK-M", "SHOP-N", "2"]).must()
+        .sale x                                             => assert x.unit_price_cents.is_err()
+        .receipt _ | .transfer _ | .adjustment _ | .count _ => assert false
+
+    match request_of("adjust", words: ["TEE-BLK-M", "SHOP-N", "-1", "damaged"]).must()
+        .adjustment a                                 => assert a.change == -1
+        .receipt _ | .sale _ | .transfer _ | .count _ => assert false
+
+test "request_of: an unknown command, a missing argument and a bad amount are invalid"
+    assert request_of("steal", words: ["TEE-BLK-M"]).is_err()
+    assert request_of("sell", words: ["TEE-BLK-M", "SHOP-N"]).is_err()
+
+    match request_of("receive", words: ["TEE-BLK-M", "WH", "24", "7,10"])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID

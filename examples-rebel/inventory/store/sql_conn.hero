@@ -1,0 +1,277 @@
+# One connection to a SQL database, through either of the two drivers the
+# inventory speaks SQL with: `sql/mysql` (MySQL's own protocol) and
+# `sql/odbc` (any database the system's ODBC manager reaches). Both keep the
+# API every driver of Rebel keeps, so the inventory's SQL store
+# (`store/sql_store`) is written once over this module; what differs is the
+# connection and the text of a statement, which `store/dialect` re-spells
+# for each.
+#
+# A query is composed with `sql/build` as a value and written here, never
+# by gluing text, so a value always travels as a parameter. The readers at
+# the end take a column's number however the database sent it: an
+# `integer`, or the digits of a `text` where MySQL answers a `SUM` as a
+# `DECIMAL` and SQLite's ODBC driver an expression's column as text.
+
+use <rebel>/sql
+use <rebel>/sql/build
+use <rebel>/sql/mysql
+use <rebel>/sql/odbc
+
+use store/dialect
+
+## Codes
+
+# The code of a column whose value is not of the kind read.
+constant INVALID: str
+    "invalid"
+
+## The connection
+
+# A connection, by its driver.
+variant Conn
+    # MySQL or MariaDB, over their own protocol.
+    mysql
+        # The driver's connection.
+        db: mysql.Db
+    # Any database, through ODBC.
+    odbc
+        # The driver's connection.
+        db: odbc.Db
+
+# The dialect a connection's statements are written in.
+#
+# - `c`: the connection.
+function dialect_of(c: Conn) -> dialect.Dialect
+    return match c
+        .mysql _ => .mysql
+        .odbc _  => .odbc
+
+# `q` written for `c`'s database: its text and its values.
+#
+# - `c`: the connection.
+# - `q`: the statement, as `sql/build` composes one.
+#
+# Fails as `build.to_sql` and `dialect.text_for` fail.
+function written(c: Conn, q: build.Query) -> build.Statement?
+    s = build.to_sql(q, .sqlite)?
+    return ok(build.Statement(text: dialect.text_for(s, dialect: dialect_of(c))?, params: s.params))
+
+# Runs `q`, a statement that answers no rows.
+#
+# - `c`: the connection.
+# - `q`: the statement.
+#
+# Fails as `written` fails and as the driver fails.
+function exec(@c: Conn, q: build.Query) -> sql.Result?
+    s = written(c, q: q)?
+    return exec_text(@c, text: s.text, params: s.params)
+
+# Runs `q` and answers its rows.
+#
+# - `c`: the connection.
+# - `q`: a SELECT.
+#
+# Fails as `written` fails and as the driver fails.
+function query(@c: Conn, q: build.Select) -> sql.Rows?
+    s = written(c, q: .select(query: q))?
+
+    match c
+        .mysql x =>
+            db @= x.db
+            answered = mysql.query(@db, s.text, s.params)
+            c @ .mysql(db: db)
+            return answered
+        .odbc x =>
+            db @= x.db
+            answered = odbc.query(@db, s.text, s.params)
+            c @ .odbc(db: db)
+            return answered
+
+# Runs `text`, one statement of the database's own text, with `params`.
+#
+# - `c`: the connection.
+# - `text`: the statement, its values written as `?`.
+# - `params`: the values, in order.
+#
+# Fails as the driver fails.
+function exec_text(@c: Conn, text: str, params: [sql.Value]) -> sql.Result?
+    match c
+        .mysql x =>
+            db @= x.db
+            done = mysql.exec(@db, text, params)
+            c @ .mysql(db: db)
+            return done
+        .odbc x =>
+            db @= x.db
+            done = odbc.exec(@db, text, params)
+            c @ .odbc(db: db)
+            return done
+
+# Opens a transaction.
+#
+# - `c`: the connection.
+#
+# Fails as the driver's `begin` fails, `invalid` where one is open.
+function begin(@c: Conn) -> ()?
+    match c
+        .mysql x =>
+            db @= x.db
+            done = mysql.begin(@db)
+            c @ .mysql(db: db)
+            return done
+        .odbc x =>
+            db @= x.db
+            done = odbc.begin(@db)
+            c @ .odbc(db: db)
+            return done
+
+# Commits the open transaction.
+#
+# - `c`: the connection.
+#
+# Fails as the driver's `commit` fails.
+function commit(@c: Conn) -> ()?
+    match c
+        .mysql x =>
+            db @= x.db
+            done = mysql.commit(@db)
+            c @ .mysql(db: db)
+            return done
+        .odbc x =>
+            db @= x.db
+            done = odbc.commit(@db)
+            c @ .odbc(db: db)
+            return done
+
+# Rolls the open transaction back, whatever went wrong inside it; a
+# rollback that fails leaves nothing to do but say so, which the failure
+# that led here already does, so it answers nothing.
+#
+# - `c`: the connection.
+function rollback(@c: Conn)
+    match c
+        .mysql x =>
+            db @= x.db
+            _ = mysql.rollback(@db).is_err()
+            c @ .mysql(db: db)
+        .odbc x =>
+            db @= x.db
+            _ = odbc.rollback(@db).is_err()
+            c @ .odbc(db: db)
+
+# Ends the connection.
+#
+# - `c`: the connection, closed.
+#
+# Fails as the driver's `close` fails.
+function close(@c: Conn) -> ()?
+    match c
+        .mysql x =>
+            db @= x.db
+            done = mysql.close(@db)
+            c @ .mysql(db: db)
+            return done
+        .odbc x =>
+            db @= x.db
+            done = odbc.close(@db)
+            c @ .odbc(db: db)
+            return done
+
+## Reading a row
+
+# The whole number in the column `name` of `row`: an `integer`, or the
+# decimal digits of a `text`, as a `DECIMAL` or an expression may come.
+#
+# - `row`: the row.
+# - `name`: the column's name.
+#
+# Fails `not_found` where the row has no such column, and `invalid` where
+# its value is `NULL`, a fraction, or anything else.
+function whole_named(row: sql.Row, name: str) -> i64?
+    v = sql.value_named(row, name)?
+
+    match v
+        .integer n => return ok(n.v)
+        .text t    => return whole_of_text(text: t.v, name: name)
+        .float f =>
+            n = to_i64(f.v).default(0)
+
+            if to_f64(n) != f.v
+                return fail(code: INVALID, msg: f"the column {name} holds {f.v}, not a whole number")
+            return ok(n)
+        .null_value | .boolean _ | .blob _ | .instant _ =>
+            return fail(code: INVALID, msg: f"the column {name} holds a {sql.kind_of(v)}, not a whole number")
+
+# The whole number `text` writes in decimal, a `.0...` after it allowed as
+# MySQL writes a `DECIMAL` sum of whole numbers.
+#
+# - `text`: the digits, with a leading `-` for a negative number.
+# - `name`: the column's name, for the message.
+#
+# Fails `invalid` where it is no whole number or does not fit an `i64`.
+function whole_of_text(text: str, name: str) -> i64?
+    end @= text.len()
+    point @= -1
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '.' && point < 0
+            point @ i
+
+    if point >= 0
+        for i in range(from: point + 1, to: text.len())
+            if text[i] != '0'
+                return fail(code: INVALID, msg: f"the column {name} holds {text}, not a whole number")
+
+        end @ point
+    digits = text.slice(from: 0, to: end)
+    negative = digits.len() > 0 && digits[0] == '-'
+
+    first = if negative
+        1
+    else
+        0
+
+    if digits.len() == first
+        return fail(code: INVALID, msg: f"the column {name} holds \"{text}\", not a number")
+    n @= 0
+
+    for i in range(from: first, to: digits.len())
+        if digits[i] < '0' || digits[i] > '9'
+            return fail(code: INVALID, msg: f"the column {name} holds \"{text}\", not a number")
+        d = to_i64(digits[i] - '0').must()
+
+        if n > (9223372036854775807 - d) / 10
+            return fail(code: INVALID, msg: f"the column {name} holds {text}, past an i64")
+        n @ n * 10 + d
+
+    if negative
+        return ok(-n)
+    return ok(n)
+
+# The text in the column `name` of `row`.
+#
+# - `row`: the row.
+# - `name`: the column's name.
+#
+# Fails as `sql.text_named` fails.
+function text_named(row: sql.Row, name: str) -> str?
+    return sql.text_named(row, name)
+
+test "whole_of_text: digits, a negative, a decimal of zeros, and what is refused"
+    assert whole_of_text(text: "42", name: "n").must() == 42
+    assert whole_of_text(text: "-13", name: "n").must() == -13
+    assert whole_of_text(text: "1250.000", name: "n").must() == 1250
+    assert whole_of_text(text: "12.5", name: "n").is_err()
+    assert whole_of_text(text: "", name: "n").is_err()
+    assert whole_of_text(text: "-", name: "n").is_err()
+    assert whole_of_text(text: "9223372036854775807", name: "n").must() == 9223372036854775807
+    assert whole_of_text(text: "9223372036854775808", name: "n").is_err()
+    assert whole_of_text(text: "1e3", name: "n").is_err()
+
+test "whole_named: an integer, the text of a DECIMAL, a whole float, and NULL refused"
+    row = sql.Row(names: ["a", "b", "c", "d"], values: [.integer(v: 7), .text(v: "8.00"), .float(v: 9.0), .null_value])
+    assert whole_named(row, name: "a").must() == 7
+    assert whole_named(row, name: "b").must() == 8
+    assert whole_named(row, name: "c").must() == 9
+    assert whole_named(row, name: "d").is_err()
+    assert whole_named(row, name: "e").is_err()

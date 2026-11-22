@@ -1,0 +1,106 @@
+# What a store answers when the inventory reads its books back: the whole
+# catalogue with every level (`Snapshot`), one variant with its levels
+# (`State`), the totals of the movements of each kind (`KindTotal`), and the
+# entries of the audit trail (`AuditEntry`). Every store fills the same
+# records, so the account made from them (`report/account`) is the same
+# text whichever store holds the books.
+
+use model/catalog
+
+## Codes
+
+# The code of a write refused because the variant changed between the read
+# that planned it and the write: another till sold the unit first. The
+# movement is planned again over what the store holds now.
+constant CHANGED: str
+    "changed"
+
+## Records
+
+# A variant as a store holds it now, with its levels: what a movement is
+# planned over.
+record State
+    # The variant.
+    item: catalog.Variant
+    # Its levels, one per location that has one, in no order.
+    levels: [catalog.Level]
+
+# Everything the catalogue holds, each list in the order of its codes.
+record Snapshot
+    # The locations, by code.
+    locations: [catalog.Location]
+    # The products, by code.
+    products: [catalog.Product]
+    # The variants, by SKU.
+    variants: [catalog.Variant]
+    # The levels, by the variant's SKU and then the location's code.
+    levels: [catalog.Level]
+
+# The movements of one kind, totalled by the store that keeps them: by
+# `GROUP BY` in SQL, by a `$group` stage in MongoDB.
+record KindTotal
+    # The kind: `adjustment`, `receipt`, `sale` or `transfer`.
+    kind: str
+    # How many movements.
+    count: i64
+    # The units they moved.
+    units: i64
+    # The change they made to the pools of value, in cents.
+    value_cents: i64
+    # What the sales among them brought in, in cents.
+    revenue_cents: i64
+
+# One entry of the audit trail: something the inventory did or refused,
+# with who asked and when. Its fields are named as the stores name their
+# columns, by `AuditEntry::field`.
+record AuditEntry
+    # Its number, from 1, in the order the entries were written.
+    seq: i64
+    # When, RFC 3339 to the second in UTC.
+    at: str
+    # Who asked.
+    actor: str
+    # What was done: `movement`, `refused`, `confirmed`, `import`, `location`.
+    action: str
+    # What it was done to: a SKU, a location's code, a file's name.
+    subject: str
+    # What happened, in words.
+    detail: str
+
+# The location of `snapshot` whose key is `id`, or a location named `?`
+# where none has it.
+#
+# - `snapshot`: the catalogue.
+# - `id`: the location's key.
+function location_by_id(snapshot: Snapshot, id: str) -> catalog.Location
+    for l in snapshot.locations
+        if l.id == id
+            return l
+
+    return catalog.Location(id: id, code: "?", name: "?")
+
+# The variant of `snapshot` whose key is `id`, or `not_found`.
+#
+# - `snapshot`: the catalogue.
+# - `id`: the variant's key.
+#
+# Fails `not_found` where none has it.
+function variant_by_id(snapshot: Snapshot, id: str) -> catalog.Variant?
+    for v in snapshot.variants
+        if v.id == id
+            return ok(v)
+
+    return fail(code: "not_found", msg: f"no variant {id}")
+
+# The product of `snapshot` whose key is `id`, or `not_found`.
+#
+# - `snapshot`: the catalogue.
+# - `id`: the product's key.
+#
+# Fails `not_found` where none has it.
+function product_by_id(snapshot: Snapshot, id: str) -> catalog.Product?
+    for p in snapshot.products
+        if p.id == id
+            return ok(p)
+
+    return fail(code: "not_found", msg: f"no product {id}")

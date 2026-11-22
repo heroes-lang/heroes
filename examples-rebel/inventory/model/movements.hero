@@ -1,0 +1,575 @@
+# Movements of stock and what each does to the books, decided here once for
+# every store: a receipt from a supplier, a sale at a till, a transfer
+# between two locations, an adjustment (damage, loss, a unit found) and a
+# count, which becomes the adjustment that makes the books agree with the
+# shelf. A request (`model/requests`) names its variant and locations by
+# their codes; `plan`
+# reads the variant's state as a store gave it and answers either the
+# movement to write with the change of every level it touches, or the
+# reason it is refused, so that MySQL, ODBC and MongoDB apply the same
+# decision and keep the same books.
+#
+# Value follows the moving average cost: a receipt adds its units at their
+# cost to the variant's pool, and every unit leaving takes its share of the
+# pool (`money.share`), so the pool is always exactly the value of the
+# units held and a variant sold out holds no value.
+
+use <rebel>/time
+
+use model/catalog
+use model/money
+use model/requests
+
+## Codes
+
+# The code of a request that cannot be a movement: no units, a transfer to
+# where it comes from.
+constant INVALID: str
+    "invalid"
+
+# The code of a location a request names that the chain does not have.
+constant NOT_FOUND: str
+    "not_found"
+
+## Kinds
+
+# The name a receipt is stored and reported under.
+constant RECEIPT: str
+    "receipt"
+
+# The name a sale is stored and reported under.
+constant SALE: str
+    "sale"
+
+# The name a transfer is stored and reported under.
+constant TRANSFER: str
+    "transfer"
+
+# The name an adjustment, a count's included, is stored and reported under.
+constant ADJUSTMENT: str
+    "adjustment"
+
+## Movements
+
+# A movement as every store keeps it: one row of the movements table, one
+# document of the movements collection. Its fields are named as the stores
+# name their columns, by `Movement::field`.
+record Movement
+    # The movement's key, a UUID of version 7.
+    id: str
+    # Its number in the chain's sequence, from 1; 0 until a store gives it one.
+    seq: i64
+    # When it happened, RFC 3339 to the second in UTC.
+    at: str
+    # `receipt`, `sale`, `transfer` or `adjustment`.
+    kind: str
+    # The key of the variant moved.
+    variant_id: str
+    # The key of the location the units leave, "" for a receipt or a unit
+    # found.
+    from_location: str
+    # The key of the location they arrive at, "" for a sale or a unit lost.
+    to_location: str
+    # The units moved, 1 or more.
+    quantity: i64
+    # For a receipt, what each unit cost; otherwise the moving average cost
+    # at the moment, rounded half up; in cents.
+    unit_cost_cents: i64
+    # For a sale, the price of each unit; otherwise 0; in cents.
+    unit_price_cents: i64
+    # For a sale, the units times their price; otherwise 0; in cents.
+    revenue_cents: i64
+    # The change the movement made to the variant's pool of value, negative
+    # where units left, 0 for a transfer; in cents.
+    value_cents: i64
+    # Why, for an adjustment; "" otherwise.
+    reason: str
+    # The document it came with, "" for none.
+    reference: str
+    # Who asked for it, as the configuration names the program's user.
+    actor: str
+
+# The change a movement makes to one level.
+record Change
+    # The key of the location.
+    location_id: str
+    # The location's code, which a MongoDB document names its level by.
+    location_code: str
+    # The units on hand before, as the state read said.
+    before: i64
+    # The units added, negative where they leave.
+    delta: i64
+    # Whether the level is there already; a store makes one that is not.
+    exists: bool
+
+# What a movement does: the movement written, the levels it changes, and
+# the variant's totals before and after, which a store checks are still the
+# ones it holds when it writes, so two writers never both spend one unit.
+record Plan
+    # The movement, its `seq` 0 until a store numbers it.
+    movement: Movement
+    # The levels changed, in the order the movement names them.
+    changes: [Change]
+    # The variant's units before.
+    units_before: i64
+    # The variant's units after.
+    units_after: i64
+    # The variant's pool of value before, in cents.
+    value_before: i64
+    # The variant's pool of value after, in cents.
+    value_after: i64
+
+# What `plan` decides of a request.
+variant Decision
+    # The request is a movement.
+    apply
+        # What it does.
+        plan: Plan
+    # The request cannot be done as asked: too few units, too many.
+    refuse
+        # Why, in words a person acts on: `7 on hand at SHOP-N, 9 asked`.
+        reason: str
+    # A count that finds the books right: nothing to move.
+    confirm
+        # What it found: `9 on hand at SHOP-S, as counted`.
+        note: str
+
+# What a request is decided against: the variant as a store read it, its
+# levels, the chain's locations, and who asks when.
+record Context
+    # The variant, as the store holds it now.
+    item: catalog.Variant
+    # Its levels, one per location that has one.
+    levels: [catalog.Level]
+    # Every location of the chain.
+    locations: [catalog.Location]
+    # When the movement happens.
+    at: time.Instant
+    # Who asks for it.
+    actor: str
+    # The key the movement takes, made by `ids.new_id`.
+    id: str
+
+# The decision on `r` against `c`.
+#
+# - `r`: the request; its SKU is `c.variant`'s.
+# - `c`: the state it is decided against.
+#
+# Fails `not_found` where `r` names a location the chain does not have, and
+# `invalid` where it moves no units, more than `catalog.MOST_UNITS` at once,
+# or a transfer's two locations are one.
+function plan(r: requests.Request, c: Context) -> Decision?
+    return match r
+        .receipt x => receipt_plan(
+            location: x.location,
+            quantity: x.quantity,
+            unit_cost: x.unit_cost_cents,
+            reference: x.reference,
+            c: c
+        )
+        .sale x => sale_plan(
+            location: x.location,
+            quantity: x.quantity,
+            unit_price: x.unit_price_cents,
+            reference: x.reference,
+            c: c
+        )
+        .transfer x => transfer_plan(from: x.from, to: x.to, quantity: x.quantity, reference: x.reference, c: c)
+        .adjustment x => adjustment_plan(
+            location: x.location,
+            change: x.change,
+            unit_cost: fail(code: NOT_FOUND, msg: "no cost given"),
+            reason: x.reason,
+            c: c
+        )
+        .count x => count_plan(
+            location: x.location,
+            counted: x.counted,
+            unit_cost: x.unit_cost_cents,
+            reason: x.reason,
+            c: c
+        )
+
+# The plan of a receipt of `quantity` units at `unit_cost` cents each.
+#
+# - `location`: the location's code.
+# - `quantity`: the units.
+# - `unit_cost`: what each cost, in cents.
+# - `reference`: the delivery note.
+# - `c`: the state.
+function receipt_plan(location: str, quantity: i64, unit_cost: i64, reference: str, c: Context) -> Decision?
+    checked_quantity(quantity)?
+
+    if unit_cost < 0 || unit_cost > money.MOST_UNIT_CENTS
+        return fail(code: INVALID, msg: f"a unit cost of {money.format_amount(unit_cost)}")
+    at = location_named(c.locations, code: location)?
+
+    if c.item.units > catalog.MOST_UNITS - quantity
+        return ok(.refuse(reason: f"{c.item.sku} would hold more than {catalog.MOST_UNITS} units"))
+    added = quantity * unit_cost
+    m @= movement(c, kind: RECEIPT, quantity: quantity)
+    m.to_location @ at.id
+    m.unit_cost_cents @ unit_cost
+    m.value_cents @ added
+    m.reference @ reference
+    return ok(
+        .apply(plan: planned(c, m: m, changes: [arriving(c, at: at, quantity: quantity)], units_delta: quantity, value_delta: added))
+    )
+
+# The plan of a sale of `quantity` units.
+#
+# - `location`: the location's code.
+# - `quantity`: the units.
+# - `unit_price`: the price of each, or the variant's own where it fails.
+# - `reference`: the till's receipt.
+# - `c`: the state.
+function sale_plan(location: str, quantity: i64, unit_price: i64?, reference: str, c: Context) -> Decision?
+    checked_quantity(quantity)?
+    at = location_named(c.locations, code: location)?
+    level = level_at(c, location_id: at.id)
+
+    if level.on_hand < quantity
+        return ok(.refuse(reason: f"{level.on_hand} on hand at {at.code}, {quantity} asked"))
+    price = unit_price.default(c.item.price_cents)
+
+    if price < 0 || price > money.MOST_UNIT_CENTS
+        return fail(code: INVALID, msg: f"a unit price of {money.format_amount(price)}")
+    cost = money.share(value: c.item.value_cents, part: quantity, whole: c.item.units)
+    m @= movement(c, kind: SALE, quantity: quantity)
+    m.from_location @ at.id
+    m.unit_cost_cents @ average_cost(c.item)
+    m.unit_price_cents @ price
+    m.revenue_cents @ price * quantity
+    m.value_cents @ -cost
+    m.reference @ reference
+    return ok(
+        .apply(plan: planned(c, m: m, changes: [leaving(c, at: at, quantity: quantity)], units_delta: -quantity, value_delta: -cost))
+    )
+
+# The plan of a transfer of `quantity` units between two locations.
+#
+# - `from`: the code of the location they leave.
+# - `to`: the code of the location they arrive at.
+# - `quantity`: the units.
+# - `reference`: the transfer note.
+# - `c`: the state.
+function transfer_plan(from: str, to: str, quantity: i64, reference: str, c: Context) -> Decision?
+    checked_quantity(quantity)?
+    source = location_named(c.locations, code: from)?
+    target = location_named(c.locations, code: to)?
+
+    if source.id == target.id
+        return fail(code: INVALID, msg: f"a transfer from {from} to itself")
+    level = level_at(c, location_id: source.id)
+
+    if level.on_hand < quantity
+        return ok(.refuse(reason: f"{level.on_hand} on hand at {source.code}, {quantity} asked"))
+    m @= movement(c, kind: TRANSFER, quantity: quantity)
+    m.from_location @ source.id
+    m.to_location @ target.id
+    m.unit_cost_cents @ average_cost(c.item)
+    m.reference @ reference
+    changes = [leaving(c, at: source, quantity: quantity), arriving(c, at: target, quantity: quantity)]
+    return ok(.apply(plan: planned(c, m: m, changes: changes, units_delta: 0, value_delta: 0)))
+
+# The plan of an adjustment of `change` units: lost where it is negative,
+# found where it is positive.
+#
+# - `location`: the location's code.
+# - `change`: the units, never 0.
+# - `unit_cost`: what each unit found cost, or the moving average cost where
+#   it fails.
+# - `reason`: why.
+# - `c`: the state.
+function adjustment_plan(location: str, change: i64, unit_cost: i64?, reason: str, c: Context) -> Decision?
+    if change == 0
+        return fail(code: INVALID, msg: "an adjustment of no units")
+
+    moved = if change < 0
+        -change
+    else
+        change
+    checked_quantity(moved)?
+    at = location_named(c.locations, code: location)?
+    m @= movement(c, kind: ADJUSTMENT, quantity: 0)
+    m.reason @ reason
+    m.unit_cost_cents @ average_cost(c.item)
+
+    if change < 0
+        lost = -change
+        level = level_at(c, location_id: at.id)
+
+        if level.on_hand < lost
+            return ok(.refuse(reason: f"{level.on_hand} on hand at {at.code}, {lost} to write off"))
+        cost = money.share(value: c.item.value_cents, part: lost, whole: c.item.units)
+        m.quantity @ lost
+        m.from_location @ at.id
+        m.value_cents @ -cost
+        return ok(
+            .apply(plan: planned(c, m: m, changes: [leaving(c, at: at, quantity: lost)], units_delta: change, value_delta: -cost))
+        )
+
+    if c.item.units > catalog.MOST_UNITS - change
+        return ok(.refuse(reason: f"{c.item.sku} would hold more than {catalog.MOST_UNITS} units"))
+
+    added = match unit_cost
+        .ok cost => cost * change
+        .err _ =>
+            if c.item.units == 0
+                0
+            else
+                money.share(value: c.item.value_cents, part: change, whole: c.item.units)
+
+    match unit_cost
+        .ok cost => m.unit_cost_cents @ cost
+        .err _   => _ = 0
+
+    m.quantity @ change
+    m.to_location @ at.id
+    m.value_cents @ added
+    return ok(
+        .apply(plan: planned(c, m: m, changes: [arriving(c, at: at, quantity: change)], units_delta: change, value_delta: added))
+    )
+
+# The plan of a count of `counted` units: the adjustment that makes the
+# books agree, or a confirmation where they already do.
+#
+# - `location`: the location's code.
+# - `counted`: the units on the shelf, 0 or more.
+# - `unit_cost`: what each unit found beyond the books cost, or the moving
+#   average cost where it fails.
+# - `reason`: why it was counted.
+# - `c`: the state.
+function count_plan(location: str, counted: i64, unit_cost: i64?, reason: str, c: Context) -> Decision?
+    if counted < 0 || counted > catalog.MOST_UNITS
+        return fail(code: INVALID, msg: f"a count of {counted}")
+    at = location_named(c.locations, code: location)?
+    level = level_at(c, location_id: at.id)
+
+    if counted == level.on_hand
+        return ok(.confirm(note: f"{counted} on hand at {at.code}, as counted"))
+
+    match unit_cost
+        .ok cost =>
+            if cost < 0 || cost > money.MOST_UNIT_CENTS
+                return fail(code: INVALID, msg: f"a unit cost of {money.format_amount(cost)}")
+        .err _ => _ = 0
+
+    return adjustment_plan(
+        location: location,
+        change: counted - level.on_hand,
+        unit_cost: unit_cost,
+        reason: reason,
+        c: c
+    )
+
+## Helpers
+
+# Checks that `quantity` is a number of units one movement may move.
+#
+# - `quantity`: the units asked.
+#
+# Fails `invalid` where it is below 1 or above `catalog.MOST_UNITS`.
+function checked_quantity(quantity: i64) -> ()?
+    if quantity < 1 || quantity > catalog.MOST_UNITS
+        return fail(code: INVALID, msg: f"a movement of {quantity} units")
+    return ok()
+
+# The location of `locations` whose code is `code`.
+#
+# - `locations`: the chain's locations.
+# - `code`: the code asked.
+#
+# Fails `not_found` where none has it.
+function location_named(locations: [catalog.Location], code: str) -> catalog.Location?
+    for l in locations
+        if l.code == code
+            return ok(l)
+
+    return fail(code: NOT_FOUND, msg: f"no location {code}")
+
+# The level of `c`'s variant at the location `location_id`, or an empty one
+# where it has none there.
+#
+# - `c`: the state.
+# - `location_id`: the location's key.
+function level_at(c: Context, location_id: str) -> catalog.Level
+    for l in c.levels
+        if l.location_id == location_id
+            return l
+
+    return catalog.Level(
+        variant_id: c.item.id,
+        location_id: location_id,
+        on_hand: 0,
+        reorder_point: 0,
+        reorder_quantity: 0
+    )
+
+# Whether `c`'s variant has a level at `location_id`.
+#
+# - `c`: the state.
+# - `location_id`: the location's key.
+function has_level(c: Context, location_id: str) -> bool
+    for l in c.levels
+        if l.location_id == location_id
+            return true
+
+    return false
+
+# The moving average cost of one unit of `v`, rounded half up; 0 where it
+# holds none.
+#
+# - `v`: the variant.
+function average_cost(v: catalog.Variant) -> i64
+    if v.units == 0
+        return 0
+    return money.share(value: v.value_cents, part: 1, whole: v.units)
+
+# A movement of `kind` for `c`, every field but its kind, its units and its
+# key and moment still to be set.
+#
+# - `c`: the state.
+# - `kind`: the kind's name.
+# - `quantity`: the units moved.
+function movement(c: Context, kind: str, quantity: i64) -> Movement
+    return Movement(
+        id: c.id,
+        seq: 0,
+        at: time.format(c.at, .rfc3339_seconds),
+        kind: kind,
+        variant_id: c.item.id,
+        from_location: "",
+        to_location: "",
+        quantity: quantity,
+        unit_cost_cents: 0,
+        unit_price_cents: 0,
+        revenue_cents: 0,
+        value_cents: 0,
+        reason: "",
+        reference: "",
+        actor: c.actor
+    )
+
+# The change of `quantity` units leaving `at`.
+#
+# - `c`: the state.
+# - `at`: the location.
+# - `quantity`: the units leaving.
+function leaving(c: Context, at: catalog.Location, quantity: i64) -> Change
+    return Change(
+        location_id: at.id,
+        location_code: at.code,
+        before: level_at(c, location_id: at.id).on_hand,
+        delta: -quantity,
+        exists: has_level(c, location_id: at.id)
+    )
+
+# The change of `quantity` units arriving at `at`.
+#
+# - `c`: the state.
+# - `at`: the location.
+# - `quantity`: the units arriving.
+function arriving(c: Context, at: catalog.Location, quantity: i64) -> Change
+    return Change(
+        location_id: at.id,
+        location_code: at.code,
+        before: level_at(c, location_id: at.id).on_hand,
+        delta: quantity,
+        exists: has_level(c, location_id: at.id)
+    )
+
+# The plan of `m` over `c`'s variant.
+#
+# - `c`: the state.
+# - `m`: the movement.
+# - `changes`: the levels it changes.
+# - `units_delta`: the change of the variant's units.
+# - `value_delta`: the change of its pool of value, in cents.
+function planned(c: Context, m: Movement, changes: [Change], units_delta: i64, value_delta: i64) -> Plan
+    return Plan(
+        movement: m,
+        changes: changes,
+        units_before: c.item.units,
+        units_after: c.item.units + units_delta,
+        value_before: c.item.value_cents,
+        value_after: c.item.value_cents + value_delta
+    )
+
+## Tests
+
+# The context of the tests: a tee with 10 units at SHOP-N worth 65.00.
+function sample(units: i64, value: i64) -> Context
+    item = catalog.Variant(
+        id: "v1",
+        product_id: "p1",
+        sku: "TEE-BLK-M",
+        label: "black / M",
+        price_cents: 1800,
+        units: units,
+        value_cents: value,
+        applied_seq: 0
+    )
+    locations = [
+        catalog.Location(id: "l1", code: "WH", name: "Warehouse")
+        catalog.Location(id: "l2", code: "SHOP-N", name: "Shop North")
+    ]
+    levels = [
+        catalog.Level(variant_id: "v1", location_id: "l2", on_hand: units, reorder_point: 4, reorder_quantity: 12)
+    ]
+    return Context(item: item, levels: levels, locations: locations, at: time.epoch(), actor: "test", id: "m1")
+
+test "plan: a receipt adds its units at their cost"
+    match plan(.receipt(sku: "TEE-BLK-M", location: "WH", quantity: 5, unit_cost_cents: 700, reference: "PO-1"), sample(units: 10, value: 6500)).must()
+        .apply p =>
+            assert p.plan.units_after == 15 && p.plan.value_after == 10000 && p.plan.movement.value_cents == 3500
+            assert p.plan.changes == [Change(location_id: "l1", location_code: "WH", before: 0, delta: 5, exists: false)]
+        .refuse _ | .confirm _ => assert false
+
+test "plan: a sale takes its share of the pool, and the last units take the rest"
+    match plan(.sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 3, unit_price_cents: fail(code: NOT_FOUND, msg: "none"), reference: ""), sample(units: 10, value: 6505)).must()
+        .apply p =>
+            assert p.plan.value_after == 6505 - 1952 && p.plan.movement.revenue_cents == 5400 && p.plan.movement.value_cents == -1952
+        .refuse _ | .confirm _ => assert false
+
+    match plan(.sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 10, unit_price_cents: ok(1500), reference: ""), sample(units: 10, value: 6505)).must()
+        .apply p               => assert p.plan.value_after == 0 && p.plan.units_after == 0 && p.plan.movement.revenue_cents == 15000
+        .refuse _ | .confirm _ => assert false
+
+test "plan: a sale of more than is on hand is refused with both numbers"
+    match plan(.sale(sku: "TEE-BLK-M", location: "SHOP-N", quantity: 11, unit_price_cents: ok(1500), reference: ""), sample(units: 10, value: 6500)).must()
+        .refuse r             => assert r.reason == "10 on hand at SHOP-N, 11 asked"
+        .apply _ | .confirm _ => assert false
+
+test "plan: a transfer to itself, an unknown location and no units fail"
+    assert plan(
+        .transfer(sku: "TEE-BLK-M", from: "WH", to: "WH", quantity: 1, reference: ""),
+        sample(units: 10, value: 0)
+    ).is_err()
+    assert plan(
+        .transfer(sku: "TEE-BLK-M", from: "SHOP-N", to: "SHOP-X", quantity: 1, reference: ""),
+        sample(units: 10, value: 0)
+    ).is_err()
+    assert plan(
+        .receipt(sku: "TEE-BLK-M", location: "WH", quantity: 0, unit_cost_cents: 1, reference: ""),
+        sample(units: 10, value: 0)
+    ).is_err()
+
+test "plan: a count that agrees confirms, one that finds fewer writes them off"
+    match plan(.count(sku: "TEE-BLK-M", location: "SHOP-N", counted: 10, unit_cost_cents: fail(code: NOT_FOUND, msg: "none"), reason: "weekly count"), sample(units: 10, value: 6500)).must()
+        .confirm n           => assert n.note == "10 on hand at SHOP-N, as counted"
+        .apply _ | .refuse _ => assert false
+
+    match plan(.count(sku: "TEE-BLK-M", location: "SHOP-N", counted: 9, unit_cost_cents: fail(code: NOT_FOUND, msg: "none"), reason: "weekly count"), sample(units: 10, value: 6500)).must()
+        .apply p               => assert p.plan.movement.kind == ADJUSTMENT && p.plan.movement.quantity == 1 && p.plan.movement.value_cents == -650
+        .refuse _ | .confirm _ => assert false
+
+test "plan: an opening count values the units found at the cost given"
+    match plan(.count(sku: "TEE-BLK-M", location: "WH", counted: 40, unit_cost_cents: ok(650), reason: "opening count"), sample(units: 0, value: 0)).must()
+        .apply p               => assert p.plan.units_after == 40 && p.plan.value_after == 26000
+        .refuse _ | .confirm _ => assert false
+
+test "plan: a receipt past the most units a variant holds is refused"
+    match plan(.receipt(sku: "TEE-BLK-M", location: "WH", quantity: catalog.MOST_UNITS, unit_cost_cents: 1, reference: ""), sample(units: 10, value: 0)).must()
+        .refuse r             => assert r.reason == "TEE-BLK-M would hold more than 1000000000 units"
+        .apply _ | .confirm _ => assert false

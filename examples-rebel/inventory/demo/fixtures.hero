@@ -1,0 +1,106 @@
+# The files the demo imports, written into its work folder before the day
+# begins, so the demo carries no file of its own beside its code: the
+# catalogue as a spreadsheet and the opening count as CSV, both clean, which
+# every store is given; and, for the import with bad rows at the end, a CSV
+# of variants and a spreadsheet of counts in which most rows are wrong in a
+# way an operator's file is: a price written with a comma, a SKU in lower
+# case, a row cut short, a SKU twice, a location that does not exist, a
+# count of half a unit.
+
+use <rebel>/xlsx
+
+## The clean files
+
+# The catalogue's rows: product, its name, category, SKU, variant, price.
+function catalogue() -> [[str]]
+    return [
+        ["TEE", "Heroes tee", "apparel", "TEE-BLK-M", "black / M", "18.00"]
+        ["TEE", "Heroes tee", "apparel", "TEE-BLK-L", "black / L", "18.00"]
+        ["TEE", "Heroes tee", "apparel", "TEE-WHT-M", "white / M", "18.00"]
+        ["MUG", "Mug 350 ml", "homeware", "MUG-RED", "red", "9.50"]
+        ["MUG", "Mug 350 ml", "homeware", "MUG-BLU", "blue", "9.50"]
+        ["POSTER", "Low poster", "prints", "POSTER-A2", "A2", "14.00"]
+    ]
+
+# Writes the catalogue as a spreadsheet, its prices typed as numbers, as a
+# person's workbook holds them.
+#
+# - `path`: the `.xlsx` file made.
+#
+# Fails as `xlsx` fails to write it.
+function write_catalogue(path: str) -> ()?
+    sheet @= xlsx.new_sheet("Catalogue")
+    xlsx.add_row(@sheet, values: [.text(v: "product"), .text(v: "product_name"), .text(v: "category"), .text(v: "sku"), .text(v: "variant"), .text(v: "price")])?
+
+    for row in catalogue()
+        price: xlsx.Value = match numbers_of(row[5])
+            .ok x  => .number(v: x)
+            .err _ => .text(v: row[5])
+
+        xlsx.add_row(@sheet, values: [.text(v: row[0]), .text(v: row[1]), .text(v: row[2]), .text(v: row[3]), .text(v: row[4]), price])?
+
+    book @= xlsx.new_workbook()
+    xlsx.add_sheet(@book, s: sheet)?
+    return xlsx.save(book, path: path)
+
+# The opening count, as CSV: each variant's units at each location, what
+# they cost, and when each location reorders it.
+function opening_csv() -> str
+    return "sku,location,counted,unit_cost,reorder_point,reorder_quantity\n" + "TEE-BLK-M,WH,40,6.50,10,24\n" + "TEE-BLK-M,SHOP-N,6,6.50,8,12\n" + "TEE-BLK-L,WH,30,6.50,10,24\n" + "TEE-WHT-M,WH,25,6.80,10,24\n" + "MUG-RED,WH,24,3.20,6,12\n" + "MUG-RED,SHOP-S,0,,4,6\n" + "MUG-BLU,WH,18,3.10,6,12\n" + "POSTER-A2,WH,12,4.00,3,6\n"
+
+## The files with bad rows
+
+# A CSV of variants, two rows of it good.
+function bad_products_csv() -> str
+    return "product,product_name,category,sku,variant,price\n" + "TEE,Heroes tee,apparel,TEE-RED-M,red / M,18.00\n" + "TEE,Heroes tee,apparel,TEE-RED-M,red / M,18.00\n" + "MUG,Mug 350 ml,homeware,MUG-GRN,green,\"9,50\"\n" + "CAP,Heroes cap,apparel,cap-blk,black,12.00\n" + "POSTER,Low poster,prints,POSTER-A1,A1\n" + "TEE,Heroes T-shirt,apparel,TEE-RED-L,red / L,18.00\n" + "MUG,Mug 350 ml,homeware,POSTER-A2,poster mug,9.00\n" + "CAP,Heroes cap,apparel,CAP-BLK,black,12.00\n"
+
+# Writes a spreadsheet of counts, two rows of it good, one row left empty
+# between them as a person leaves one.
+#
+# - `path`: the `.xlsx` file made.
+function write_bad_counts(path: str) -> ()?
+    sheet @= xlsx.new_sheet("Counts")
+    xlsx.add_row(@sheet, values: [.text(v: "sku"), .text(v: "location"), .text(v: "counted"), .text(v: "unit_cost")])?
+    xlsx.add_row(@sheet, values: [.text(v: "TEE-RED-M"), .text(v: "WH"), .number(v: 10.0), .number(v: 7.0)])?
+    xlsx.add_row(@sheet, values: [.text(v: "TEE-RED-M"), .text(v: "SHOP-X"), .number(v: 2.0)])?
+    xlsx.add_row(@sheet, values: [.text(v: "MUG-RED"), .text(v: "WH"), .number(v: 2.5)])?
+    xlsx.set_value(@sheet, row: 5, column: 0, value: .text(v: "NOPE-1"))?
+    xlsx.set_value(@sheet, row: 5, column: 1, value: .text(v: "WH"))?
+    xlsx.set_value(@sheet, row: 5, column: 2, value: .number(v: 3.0))?
+    xlsx.add_row(@sheet, values: [.text(v: "TEE-RED-M"), .text(v: "WH"), .number(v: 9.0)])?
+    xlsx.add_row(@sheet, values: [.text(v: "MUG-BLU"), .text(v: "WH"), .number(v: 29.0)])?
+    xlsx.add_row(@sheet, values: [.text(v: "POSTER-A2"), .text(v: "WH"), .number(v: -1.0)])?
+    book @= xlsx.new_workbook()
+    xlsx.add_sheet(@book, s: sheet)?
+    return xlsx.save(book, path: path)
+
+# The number an amount of the catalogue writes, `18.00` as 18.
+#
+# - `text`: digits, a point and two digits.
+#
+# Fails `invalid` where it is no such amount.
+function numbers_of(text: str) -> f64?
+    whole @= 0
+    cents @= 0
+    seen_point @= false
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        if c == '.'
+            seen_point @ true
+        else if c >= '0' && c <= '9'
+            if seen_point
+                cents @ cents * 10 + to_i64(c - '0').must()
+            else
+                whole @ whole * 10 + to_i64(c - '0').must()
+        else
+            return fail(code: "invalid", msg: f"\"{text}\" is no amount")
+
+    return ok(to_f64(whole) + to_f64(cents) / 100.0)
+
+test "numbers_of: the catalogue's prices as numbers"
+    assert numbers_of("18.00").must() == 18.0 && numbers_of("9.50").must() == 9.5 && numbers_of("9,50").is_err()
+
+test "catalogue: six variants of three products"
+    assert catalogue().len() == 6

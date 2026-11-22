@@ -1,0 +1,165 @@
+# The inventory's configuration: a TOML file naming the store the books are
+# kept in and how to reach it, read in three layers by `config`, each over
+# the one before it: the program's defaults, the file, and the environment's
+# variables beginning `INVENTORY_` (`INVENTORY_STORE__MYSQL__PASSWORD` is
+# `store.mysql.password`), so a secret need not stand in a file. A key the
+# program does not read is refused by name, so a misspelt one is never
+# silently ignored.
+#
+#     actor = "backoffice"            # who the audit trail names
+#
+#     [store]
+#     kind = "mysql"                  # or "odbc", or "mongodb"
+#
+#     [store.mysql]
+#     url = "mysql://inventory@db.example.com:3306/inventory"
+#     password = ""                   # or INVENTORY_STORE__MYSQL__PASSWORD
+#
+#     [store.odbc]
+#     connection = "DSN=inventory"    # or "Driver=SQLite3;Database=/srv/inventory.db"
+#
+#     [store.mongodb]
+#     url = "mongodb://inventory@db.example.com:27017/?authSource=admin"
+#     password = ""                   # or INVENTORY_STORE__MONGODB__PASSWORD
+#     database = "inventory"
+#
+# Only the section `store.kind` names is read; the others may stand beside
+# it, so one file keeps every store an operator moves between. A MySQL URL
+# is read by `mysql.parse_url` and is TLS-checked by default; its
+# `ssl-mode=DISABLED` is for a server on the machine itself.
+
+use <rebel>/config
+use <rebel>/json
+use <rebel>/mongodb
+use <rebel>/sql/mysql
+use <rebel>/sql/odbc
+
+## Codes
+
+# The code of a configuration that names no store the program speaks to.
+constant INVALID: str
+    "invalid"
+
+## The settings
+
+# Where the books are kept, and how to reach them.
+variant Target
+    # MySQL or MariaDB, over their own protocol.
+    mysql
+        # The connection's options, the password from its own key where one
+        # is given.
+        opts: mysql.Options
+    # Any database the system's ODBC manager reaches.
+    odbc
+        # The connection's options.
+        opts: odbc.Options
+    # MongoDB.
+    mongodb
+        # The client's options.
+        opts: mongodb.Options
+        # The database the collections are in.
+        database: str
+
+# What the configuration says.
+record Settings
+    # The store's kind as the file names it: `mysql`, `odbc` or `mongodb`.
+    kind: str
+    # Where it is.
+    target: Target
+    # Who the audit trail names as asking for each movement.
+    actor: str
+
+# The paths the program reads; any other is a mistake in the file.
+function known_paths() -> [str]
+    return [
+        "actor"
+        "store.kind"
+        "store.mysql.url"
+        "store.mysql.password"
+        "store.mysql.application_name"
+        "store.odbc.connection"
+        "store.mongodb.url"
+        "store.mongodb.password"
+        "store.mongodb.database"
+    ]
+
+# The settings of the file at `path`, under the variables of `env`.
+#
+# - `path`: the TOML file.
+# - `env`: the environment's variables: `os.env_all()`'s answer for a real
+#   run, a map of the program's own where nothing outside may change it.
+#
+# Fails as `config.read_layer` fails on the file; `invalid` where a key is
+# misspelt, a value is not of its kind, `store.kind` is none of the three,
+# or the store's URL is not one; `not_found` where a key the store needs is
+# missing.
+function load(path: str, env: {str: str}) -> Settings?
+    defaults = config.from_value("defaults", json.parse("{\"actor\": \"inventory\"}")?)?
+    file = config.read_layer(path)?
+    environment = config.from_env(name: "environment", env: env, options: config.env_options("INVENTORY_"))?
+    s = config.merge([defaults, file, environment])
+    config.check_known(s, known_paths())?
+    config.require(s, ["store.kind"])?
+    kind = config.text_of(s, "store.kind")?
+    actor = config.text_of(s, "actor")?
+
+    if kind == "mysql"
+        opts @= mysql.parse_url(config.text_of(s, "store.mysql.url")?)?
+
+        if config.has_path(s, "store.mysql.password")
+            opts.password @ config.text_of(s, "store.mysql.password")?
+
+        if config.has_path(s, "store.mysql.application_name")
+            opts.application_name @ config.text_of(s, "store.mysql.application_name")?
+        return ok(Settings(kind: kind, target: .mysql(opts: opts), actor: actor))
+
+    if kind == "odbc"
+        opts = odbc.options(config.text_of(s, "store.odbc.connection")?)
+        return ok(Settings(kind: kind, target: .odbc(opts: opts), actor: actor))
+
+    if kind == "mongodb"
+        opts @= mongodb.parse_url(config.text_of(s, "store.mongodb.url")?)?
+
+        if config.has_path(s, "store.mongodb.password")
+            opts.password @ config.text_of(s, "store.mongodb.password")?
+
+        database = if config.has_path(s, "store.mongodb.database")
+            config.text_of(s, "store.mongodb.database")?
+        else
+            "inventory"
+        return ok(Settings(kind: kind, target: .mongodb(opts: opts, database: database), actor: actor))
+    return fail(code: INVALID, msg: f"store.kind is mysql, odbc or mongodb, and the configuration says \"{kind}\"")
+
+test "load: a MySQL store, its password from the environment"
+    path = "build/inventory-settings-test.toml"
+    write_file(
+        path: path,
+        text: "actor = \"tills\"\n[store]\nkind = \"mysql\"\n[store.mysql]\nurl = \"mysql://inv@127.0.0.1:3307/shop?ssl-mode=DISABLED\"\n"
+    ).must()
+    s = load(path, env: {"INVENTORY_STORE__MYSQL__PASSWORD": "s3cret"}).must()
+    assert s.kind == "mysql" && s.actor == "tills"
+
+    match s.target
+        .mysql x             => assert x.opts.port == 3307 && x.opts.password == "s3cret" && x.opts.security == .plain
+        .odbc _ | .mongodb _ => assert false
+
+test "load: a misspelt key, an unknown kind, and no kind are refused"
+    path = "build/inventory-settings-test-2.toml"
+    write_file(path: path, text: "[store]\nkind = \"mysql\"\n[store.mysql]\nurll = \"mysql://a@b/c\"\n").must()
+    assert load(path, env: {}).is_err()
+    write_file(path: path, text: "[store]\nkind = \"oracle\"\n").must()
+    assert load(path, env: {}).is_err()
+    write_file(path: path, text: "actor = \"x\"\n").must()
+    assert load(path, env: {}).is_err()
+
+test "load: MongoDB, its database by default"
+    path = "build/inventory-settings-test-3.toml"
+    write_file(
+        path: path,
+        text: "[store]\nkind = \"mongodb\"\n[store.mongodb]\nurl = \"mongodb://127.0.0.1:27018/\"\n"
+    ).must()
+    s = load(path, env: {}).must()
+
+    match s.target
+        .mongodb x         => assert x.database == "inventory" && x.opts.hosts[0].port == 27018 && s.actor == "inventory"
+        .mysql _ | .odbc _ => assert false

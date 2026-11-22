@@ -1,0 +1,330 @@
+# The values of MySQL's two protocols as the stand-in writes and reads
+# them: a row of the text protocol (each value its text, length-encoded, or
+# `0xFB` for `NULL`), a row of the binary protocol of prepared statements
+# (a bitmap of its `NULL`s, then each value in its column's binary form),
+# and the parameters a `COM_STMT_EXECUTE` carries, typed by the client.
+# Their layout is MySQL 8.4's binary protocol (`Binary Protocol Resultset`,
+# `COM_STMT_EXECUTE`).
+
+use <rebel>/bytes
+use <rebel>/numbers
+use <rebel>/sql
+use <rebel>/time
+
+use standins/mysql/packets
+
+## Codes
+
+# The code of a parameter the stand-in cannot read: a type it does not
+# know, bytes cut short, text that is not UTF-8.
+constant INVALID: str
+    "invalid"
+
+## Rows written
+
+# A row of the text protocol.
+#
+# - `values`: the row's values.
+function text_row(values: [sql.Value]) -> [u8]
+    out: [u8] @= []
+
+    for v in values
+        match v
+            .null_value => out @ out.push(0xfb)
+            .integer x  => bytes.push_all(to: @out, from: packets.lenenc_bytes(bytes.from_text(f"{x.v}")))
+            .boolean x =>
+                digit = if x.v
+                    "1"
+                else
+                    "0"
+                bytes.push_all(to: @out, from: packets.lenenc_bytes(bytes.from_text(digit)))
+            .float x => bytes.push_all(
+                to: @out,
+                from: packets.lenenc_bytes(bytes.from_text(numbers.format_float_shortest(x.v)))
+            )
+            .text x    => bytes.push_all(to: @out, from: packets.lenenc_bytes(bytes.from_text(x.v)))
+            .blob x    => bytes.push_all(to: @out, from: packets.lenenc_bytes(x.v))
+            .instant x => bytes.push_all(to: @out, from: packets.lenenc_bytes(bytes.from_text(datetime_text(x.v))))
+
+    return out
+
+# A row of the binary protocol, each value in the form its column's type
+# asks.
+#
+# - `columns`: the row's columns, as the client was told them.
+# - `values`: the row's values, as many.
+function binary_row(columns: [packets.Column], values: [sql.Value]) -> [u8]
+    bitmap_len = (values.len() + 7 + 2) / 8
+    bitmap: [u8] @= []
+
+    for _ in range(from: 0, to: bitmap_len)
+        bitmap @ bitmap.push(0)
+
+    body: [u8] @= []
+
+    for i in range(from: 0, to: values.len())
+        v = values[i]
+
+        if v == .null_value
+            at = (i + 2) / 8
+            bitmap[at] @ packets.low(to_i64(bitmap[at]).must() | 1 << (i + 2) % 8)
+        else
+            bytes.push_all(to: @body, from: binary_value(columns[i].kind, v: v))
+
+    out: [u8] @= [0x00]
+    bytes.push_all(to: @out, from: bitmap)
+    bytes.push_all(to: @out, from: body)
+    return out
+
+# One value in the binary form of the column type `kind`.
+#
+# - `kind`: the column's type: 8, 5, 12, 1, or a string's or a blob's.
+# - `v`: the value, not `NULL`.
+function binary_value(kind: i64, v: sql.Value) -> [u8]
+    if kind == 8
+        return bytes.encode_i64_le(integer_of(v))
+
+    if kind == 1
+        return [packets.low(integer_of(v))]
+
+    if kind == 5
+        return bytes.encode_f64_le(float_of(v))
+
+    if kind == 12
+        return match v
+            .instant x                                                           => datetime_bytes(x.v)
+            .null_value | .boolean _ | .integer _ | .float _ | .text _ | .blob _ => [0]
+
+    return match v
+        .text x => packets.lenenc_bytes(bytes.from_text(x.v))
+        .blob x => packets.lenenc_bytes(x.v)
+        .null_value | .boolean _ | .integer _ | .float _ | .instant _ => packets.lenenc_bytes(
+            bytes.from_text(text_of(v))
+        )
+
+# The integer `v` holds, 0 for any other kind.
+#
+# - `v`: the value.
+function integer_of(v: sql.Value) -> i64
+    return match v
+        .integer x => x.v
+        .boolean x =>
+            if x.v
+                1
+            else
+                0
+        .null_value | .float _ | .text _ | .blob _ | .instant _ => 0
+
+# The number `v` holds as a float.
+#
+# - `v`: the value, an integer or a float.
+function float_of(v: sql.Value) -> f64
+    return match v
+        .float x                                                  => x.v
+        .integer x                                                => to_f64(x.v)
+        .null_value | .boolean _ | .text _ | .blob _ | .instant _ => 0.0
+
+# The text of a value that is not text, as the text protocol writes it.
+#
+# - `v`: the value.
+function text_of(v: sql.Value) -> str
+    return match v
+        .text x    => x.v
+        .integer x => f"{x.v}"
+        .float x   => numbers.format_float_shortest(x.v)
+        .instant x => datetime_text(x.v)
+        .boolean x =>
+            if x.v
+                "1"
+            else
+                "0"
+        .null_value | .blob _ => ""
+
+# `t` as MySQL writes a `DATETIME(6)`: `2026-03-14 09:30:00.000000`.
+#
+# - `t`: the moment, in UTC.
+function datetime_text(t: time.Instant) -> str
+    d = time.to_date_time(t)
+    micros = d.nanosecond / 1000
+    return time.format(t, .date_time) + "." + pad6(micros)
+
+# `n` as six digits, zeros before it.
+#
+# - `n`: 0 to 999,999.
+function pad6(n: i64) -> str
+    s @= f"{n}"
+
+    while s.len() < 6
+        s @ "0" + s
+
+    return s
+
+# `t` in the binary form of a `DATETIME`: eleven bytes after their count.
+#
+# - `t`: the moment, in UTC.
+function datetime_bytes(t: time.Instant) -> [u8]
+    d = time.to_date_time(t)
+    out: [u8] @= [11]
+    bytes.push_all(to: @out, from: packets.le(n: d.year, width: 2))
+
+    for part in [d.month, d.day, d.hour, d.minute, d.second]
+        out @ out.push(packets.low(part))
+
+    bytes.push_all(to: @out, from: packets.le(n: d.nanosecond / 1000, width: 4))
+    return out
+
+## Parameters read
+
+# The values of `count` parameters a `COM_STMT_EXECUTE` carries after its
+# statement's number, its flags and its iteration count.
+#
+# - `c`: the payload's cursor, at the parameters.
+# - `count`: the statement's placeholders.
+# - `types`: the types the client bound last, two bytes each; written here
+#   where the payload binds new ones.
+#
+# Fails `invalid` where the payload is cut short, binds no type before its
+# first value, names a type the stand-in does not read, or holds text that
+# is not UTF-8.
+function read_params(@c: packets.Cursor, count: i64, @types: [u8]) -> [sql.Value]?
+    if count == 0
+        return ok([])
+    bitmap = packets.take(@c, n: (count + 7) / 8)?
+    bound = packets.take(@c, n: 1)?[0]
+
+    if bound == 1
+        types @ packets.take(@c, n: 2 * count)?
+
+    if types.len() != 2 * count
+        return fail(code: INVALID, msg: "values with no types bound before them")
+    out: [sql.Value] @= []
+
+    for i in range(from: 0, to: count)
+        is_null = to_i64(bitmap[i / 8]).must() & 1 << i % 8 != 0
+
+        if is_null
+            out @ out.push(.null_value)
+        else
+            out @ out.push(read_value(@c, kind: types[2 * i], unsigned: to_i64(types[2 * i + 1]).must() & 0x80 != 0)?)
+
+    return ok(out)
+
+# One parameter's value, in the binary form of its type.
+#
+# - `c`: the cursor.
+# - `kind`: the type the client bound.
+# - `unsigned`: whether the client flagged it unsigned.
+function read_value(@c: packets.Cursor, kind: u8, unsigned: bool) -> sql.Value?
+    if kind == 0x06
+        return ok(.null_value)
+
+    if kind == 0x01
+        return ok(.integer(v: signed_of(raw: packets.read_le(@c, width: 1)?, width: 1, unsigned: unsigned)))
+
+    if kind == 0x02 || kind == 0x0d
+        return ok(.integer(v: signed_of(raw: packets.read_le(@c, width: 2)?, width: 2, unsigned: unsigned)))
+
+    if kind == 0x03 || kind == 0x09
+        return ok(.integer(v: signed_of(raw: packets.read_le(@c, width: 4)?, width: 4, unsigned: unsigned)))
+
+    if kind == 0x08
+        raw = bytes.decode_i64_le(packets.take(@c, n: 8)?, at: 0)?
+
+        if unsigned && raw < 0
+            return fail(code: INVALID, msg: "an unsigned BIGINT past the largest signed one")
+        return ok(.integer(v: raw))
+
+    if kind == 0x04
+        return ok(.float(v: to_f64(bytes.decode_f32_le(packets.take(@c, n: 4)?, at: 0)?)))
+
+    if kind == 0x05
+        return ok(.float(v: bytes.decode_f64_le(packets.take(@c, n: 8)?, at: 0)?))
+
+    if kind == 0x07 || kind == 0x0a || kind == 0x0c
+        return ok(.instant(v: read_datetime(@c)?))
+
+    if kind == 0xf9 || kind == 0xfa || kind == 0xfb || kind == 0xfc
+        return ok(.blob(v: packets.read_lenenc_bytes(@c)?))
+
+    if kind == 0x0f || kind == 0xfd || kind == 0xfe || kind == 0xf6 || kind == 0xf5 || kind == 0xf7 || kind == 0xf8
+        data = packets.read_lenenc_bytes(@c)?
+
+        match bytes.to_text(data)
+            .ok text => return ok(.text(v: text))
+            .err _   => return fail(code: INVALID, msg: "a string parameter that is not UTF-8")
+    return fail(code: INVALID, msg: f"a parameter of type {kind}, which the stand-in does not read")
+
+# `raw`, read as `width` bytes, as a signed number where the client did not
+# flag it unsigned.
+#
+# - `raw`: the bytes as an unsigned number.
+# - `width`: 1, 2 or 4.
+# - `unsigned`: whether the client flagged it unsigned.
+function signed_of(raw: i64, width: i64, unsigned: bool) -> i64
+    top = 1 << 8 * width - 1
+
+    if unsigned || raw < top
+        return raw
+    return raw - (top << 1)
+
+# A moment in the binary form of a `DATE`, `DATETIME` or `TIMESTAMP`: a
+# count of bytes, 0, 4, 7 or 11, then the parts it holds.
+#
+# - `c`: the cursor.
+#
+# Fails `invalid` where the count is another or the parts name no moment.
+function read_datetime(@c: packets.Cursor) -> time.Instant?
+    n = to_i64(packets.take(@c, n: 1)?[0]).must()
+
+    if n != 0 && n != 4 && n != 7 && n != 11
+        return fail(code: INVALID, msg: f"a moment of {n} bytes")
+
+    if n == 0
+        return ok(time.epoch())
+    year = packets.read_le(@c, width: 2)?
+    month = packets.read_le(@c, width: 1)?
+    day = packets.read_le(@c, width: 1)?
+    hour @= 0
+    minute @= 0
+    second @= 0
+    micro @= 0
+
+    if n >= 7
+        hour @ packets.read_le(@c, width: 1)?
+        minute @ packets.read_le(@c, width: 1)?
+        second @ packets.read_le(@c, width: 1)?
+
+    if n == 11
+        micro @ packets.read_le(@c, width: 4)?
+    return time.from_date_time(
+        time.DateTime(year: year, month: month, day: day, hour: hour, minute: minute, second: second, nanosecond: micro * 1000)
+    )
+
+test "text_row: an integer, NULL and a text"
+    assert text_row([.integer(v: 42), .null_value, .text(v: "ab")]) == [2, '4', '2', 0xfb, 2, 'a', 'b']
+
+test "binary_row: a BIGINT and a NULL, the bitmap offset by two bits"
+    columns = [
+        packets.Column(name: "n", kind: 8, charset: 63, length: 20, flags: 0, decimals: 0)
+        packets.Column(name: "s", kind: 253, charset: 255, length: 80, flags: 0, decimals: 0)
+    ]
+    assert binary_row(columns, values: [.integer(v: 1), .null_value]) == [0x00, 0x08, 1, 0, 0, 0, 0, 0, 0, 0]
+
+test "read_params: a BIGINT, a string and a NULL, types bound"
+    payload: [u8] @= [0x04, 1, 0x08, 0, 0xfd, 0, 0x06, 0]
+    bytes.push_all(to: @payload, from: bytes.encode_i64_le(-5))
+    bytes.push_all(to: @payload, from: [2, 'h', 'i'])
+    c @= packets.cursor(payload)
+    types: [u8] @= []
+    assert read_params(@c, count: 3, @types).must() == [.integer(v: -5), .text(v: "hi"), .null_value]
+
+test "read_params: a type the stand-in does not read, and a payload cut short"
+    c @= packets.cursor([0, 1, 0xff, 0, 1])
+    types: [u8] @= []
+    assert read_params(@c, count: 1, @types).is_err()
+    d @= packets.cursor([0, 1, 0x08, 0, 1, 2])
+    more: [u8] @= []
+    assert read_params(@d, count: 1, @more).is_err()
+
+test "signed_of: a TINY of 255 is -1 unless unsigned"
+    assert signed_of(raw: 255, width: 1, unsigned: false) == -1 && signed_of(raw: 255, width: 1, unsigned: true) == 255

@@ -1,0 +1,181 @@
+# How the SQL store's rows and the inventory's records map onto each other:
+# the columns of each table, named by the records' own fields
+# (`catalog.Variant::sku`), so a column read is a field written and the
+# compiler checks both; the values of a movement's row; each record read
+# back from a row, its numbers read whatever form the database sent them
+# in (`sql_conn.whole_named`); and the orders the store sorts by, byte for
+# byte, so no database's collation reorders the account.
+
+use <rebel>/sql
+use <rebel>/strings
+
+use model/books
+use model/catalog
+use model/movements
+use store/sql_conn
+
+## Rows and records
+
+# The columns of a location, in its record's order.
+function location_names() -> [str]
+    return [catalog.Location::id, catalog.Location::code, catalog.Location::name]
+
+# The columns of a product, in its record's order.
+function product_names() -> [str]
+    return [catalog.Product::id, catalog.Product::code, catalog.Product::name, catalog.Product::category]
+
+# The columns of a variant, in its record's order.
+function variant_names() -> [str]
+    return [
+        catalog.Variant::id
+        catalog.Variant::product_id
+        catalog.Variant::sku
+        catalog.Variant::label
+        catalog.Variant::price_cents
+        catalog.Variant::units
+        catalog.Variant::value_cents
+        catalog.Variant::applied_seq
+    ]
+
+# The columns of a level, in its record's order.
+function level_names() -> [str]
+    return [
+        catalog.Level::variant_id
+        catalog.Level::location_id
+        catalog.Level::on_hand
+        catalog.Level::reorder_point
+        catalog.Level::reorder_quantity
+    ]
+
+# The columns of a movement, in its record's order.
+function movement_names() -> [str]
+    return [
+        movements.Movement::id
+        movements.Movement::seq
+        movements.Movement::at
+        movements.Movement::kind
+        movements.Movement::variant_id
+        movements.Movement::from_location
+        movements.Movement::to_location
+        movements.Movement::quantity
+        movements.Movement::unit_cost_cents
+        movements.Movement::unit_price_cents
+        movements.Movement::revenue_cents
+        movements.Movement::value_cents
+        movements.Movement::reason
+        movements.Movement::reference
+        movements.Movement::actor
+    ]
+
+# The columns of an entry of the audit trail, in its record's order.
+function audit_names() -> [str]
+    return [
+        books.AuditEntry::seq
+        books.AuditEntry::at
+        books.AuditEntry::actor
+        books.AuditEntry::action
+        books.AuditEntry::subject
+        books.AuditEntry::detail
+    ]
+
+# The values of `m`'s row, in `movement_names`' order.
+#
+# - `m`: the movement.
+function movement_row(m: movements.Movement) -> [sql.Value]
+    return [
+        .text(v: m.id)
+        .integer(v: m.seq)
+        .text(v: m.at)
+        .text(v: m.kind)
+        .text(v: m.variant_id)
+        .text(v: m.from_location)
+        .text(v: m.to_location)
+        .integer(v: m.quantity)
+        .integer(v: m.unit_cost_cents)
+        .integer(v: m.unit_price_cents)
+        .integer(v: m.revenue_cents)
+        .integer(v: m.value_cents)
+        .text(v: m.reason)
+        .text(v: m.reference)
+        .text(v: m.actor)
+    ]
+
+# The location a row of `location_names`' columns holds.
+#
+# - `row`: the row.
+function location_of(row: sql.Row) -> catalog.Location?
+    return ok(
+        catalog.Location(id: sql_conn.text_named(row, name: catalog.Location::id)?, code: sql_conn.text_named(row, name: catalog.Location::code)?, name: sql_conn.text_named(row, name: catalog.Location::name)?)
+    )
+
+# The product a row of `product_names`' columns holds.
+#
+# - `row`: the row.
+function product_of(row: sql.Row) -> catalog.Product?
+    return ok(
+        catalog.Product(id: sql_conn.text_named(row, name: catalog.Product::id)?, code: sql_conn.text_named(row, name: catalog.Product::code)?, name: sql_conn.text_named(row, name: catalog.Product::name)?, category: sql_conn.text_named(row, name: catalog.Product::category)?)
+    )
+
+# The variant a row of `variant_names`' columns holds.
+#
+# - `row`: the row.
+function variant_of(row: sql.Row) -> catalog.Variant?
+    return ok(
+        catalog.Variant(id: sql_conn.text_named(row, name: catalog.Variant::id)?, product_id: sql_conn.text_named(row, name: catalog.Variant::product_id)?, sku: sql_conn.text_named(row, name: catalog.Variant::sku)?, label: sql_conn.text_named(row, name: catalog.Variant::label)?, price_cents: sql_conn.whole_named(row, name: catalog.Variant::price_cents)?, units: sql_conn.whole_named(row, name: catalog.Variant::units)?, value_cents: sql_conn.whole_named(row, name: catalog.Variant::value_cents)?, applied_seq: sql_conn.whole_named(row, name: catalog.Variant::applied_seq)?)
+    )
+
+# The level a row of `level_names`' columns holds.
+#
+# - `row`: the row.
+function level_of(row: sql.Row) -> catalog.Level?
+    return ok(
+        catalog.Level(variant_id: sql_conn.text_named(row, name: catalog.Level::variant_id)?, location_id: sql_conn.text_named(row, name: catalog.Level::location_id)?, on_hand: sql_conn.whole_named(row, name: catalog.Level::on_hand)?, reorder_point: sql_conn.whole_named(row, name: catalog.Level::reorder_point)?, reorder_quantity: sql_conn.whole_named(row, name: catalog.Level::reorder_quantity)?)
+    )
+
+## Orders
+
+# Whether `a`'s code orders before `b`'s, byte by byte: the order is the
+# program's, so no database's collation changes the account.
+#
+# - `a`: a location.
+# - `b`: another.
+function location_before(a: catalog.Location, b: catalog.Location) -> bool
+    return strings.compare(a: a.code, b: b.code) < 0
+
+# Whether `a`'s code orders before `b`'s, byte by byte.
+#
+# - `a`: a product.
+# - `b`: another.
+function product_before(a: catalog.Product, b: catalog.Product) -> bool
+    return strings.compare(a: a.code, b: b.code) < 0
+
+# Whether `a`'s SKU orders before `b`'s, byte by byte.
+#
+# - `a`: a variant.
+# - `b`: another.
+function variant_before(a: catalog.Variant, b: catalog.Variant) -> bool
+    return strings.compare(a: a.sku, b: b.sku) < 0
+
+test "names_of: the columns' bare names, in order"
+    assert location_names() == ["id", "code", "name"]
+    assert level_names().len() == 5
+
+test "movement_row: one value per column"
+    m = movements.Movement(
+        id: "m",
+        seq: 1,
+        at: "2026-03-14T08:00:00Z",
+        kind: "receipt",
+        variant_id: "v",
+        from_location: "",
+        to_location: "l",
+        quantity: 1,
+        unit_cost_cents: 1,
+        unit_price_cents: 0,
+        revenue_cents: 0,
+        value_cents: 1,
+        reason: "",
+        reference: "",
+        actor: "a"
+    )
+    assert movement_row(m).len() == movement_names().len()

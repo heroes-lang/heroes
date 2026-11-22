@@ -1,0 +1,292 @@
+# The one model of the books over the three stores an operator may choose:
+# every call here is answered by the SQL store (`store/sql_store`, MySQL or
+# ODBC) or by the MongoDB store (`store/mongo_store`), as the configuration
+# says, and answers the same records (`model/books`) either way. Nothing
+# above this module knows which store holds the books.
+
+use <rebel>/mongodb
+use <rebel>/sql/mysql
+use <rebel>/sql/odbc
+
+use conf/settings
+use model/books
+use model/catalog
+use model/movements
+use store/mongo_store
+use store/sql_conn
+use store/sql_store
+
+## The store
+
+# The store's connection, by its kind.
+variant Backend
+    # A SQL database.
+    sql
+        # The connection.
+        conn: sql_conn.Conn
+    # A MongoDB server.
+    mongo
+        # The client and its database.
+        m: mongo_store.Mongo
+
+# An open store.
+record Store
+    # Its kind as the configuration names it: `mysql`, `odbc`, `mongodb`.
+    name: str
+    # Its connection.
+    backend: Backend
+
+# The store `s` names, connected.
+#
+# - `s`: the settings.
+#
+# Fails as the driver's `open` or `connect` fails. The store owes a `close`.
+function open(s: settings.Settings) -> Store?
+    match s.target
+        .mysql x =>
+            db = mysql.open(x.opts)?
+            return ok(Store(name: s.kind, backend: .sql(conn: .mysql(db: db))))
+        .odbc x =>
+            db = odbc.open(x.opts)?
+            return ok(Store(name: s.kind, backend: .sql(conn: .odbc(db: db))))
+        .mongodb x =>
+            client = mongodb.connect(x.opts)?
+            return ok(Store(name: s.kind, backend: .mongo(m: mongo_store.Mongo(client: client, database: x.database))))
+
+# Makes the store's tables or indexes, where they are not there yet.
+#
+# - `s`: the store.
+function setup(@s: Store) -> ()?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.setup(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.setup(@m)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Puts a location, by its code; answers it as stored.
+#
+# - `s`: the store.
+# - `l`: the location.
+function put_location(@s: Store, l: catalog.Location) -> catalog.Location?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.put_location(@c, l: l)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.put_location(@m, l: l)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Puts a product, by its code; answers it as stored.
+#
+# - `s`: the store.
+# - `p`: the product.
+function put_product(@s: Store, p: catalog.Product) -> catalog.Product?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.put_product(@c, p: p)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.put_product(@m, p: p)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Puts a variant, by its SKU; answers it as stored.
+#
+# - `s`: the store.
+# - `v`: the variant.
+function put_variant(@s: Store, v: catalog.Variant) -> catalog.Variant?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.put_variant(@c, v: v)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.put_variant(@m, v: v)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Sets when `v` is reordered at `l`.
+#
+# - `s`: the store.
+# - `v`: the variant.
+# - `l`: the location.
+# - `reorder_point`: at or below this many units on hand, reorder.
+# - `reorder_quantity`: how many an order asks for.
+function put_reorder(@s: Store, v: catalog.Variant, l: catalog.Location, reorder_point: i64, reorder_quantity: i64) -> ()?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.put_reorder(
+                @c,
+                variant_id: v.id,
+                location_id: l.id,
+                reorder_point: reorder_point,
+                reorder_quantity: reorder_quantity
+            )
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.put_reorder(
+                @m,
+                v: v,
+                l: l,
+                reorder_point: reorder_point,
+                reorder_quantity: reorder_quantity
+            )
+            s.backend @ .mongo(m: m)
+            return done
+
+# Every location, by code.
+#
+# - `s`: the store.
+function locations(@s: Store) -> [catalog.Location]?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.locations(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.locations(@m)
+            s.backend @ .mongo(m: m)
+            return done
+
+# The variant whose SKU is `sku`, with its levels.
+#
+# - `s`: the store.
+# - `sku`: the SKU.
+#
+# Fails `not_found` where no variant has it.
+function state_of(@s: Store, sku: str) -> books.State?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.state_of(@c, sku: sku)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.state_of(@m, sku: sku)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Writes a planned movement and its entry of the audit trail; answers its
+# number.
+#
+# - `s`: the store.
+# - `plan`: the movement.
+# - `entry`: its entry of the audit trail.
+#
+# Fails `changed` (`books.CHANGED`) where the variant changed since the
+# plan was made.
+function apply(@s: Store, plan: movements.Plan, entry: books.AuditEntry) -> i64?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.apply(@c, plan: plan, entry: entry)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.apply(@m, plan: plan, entry: entry)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Writes an entry of the audit trail that no movement carries: a refusal, a
+# confirmation, an import; answers its number.
+#
+# - `s`: the store.
+# - `entry`: the entry.
+function add_entry(@s: Store, entry: books.AuditEntry) -> i64?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.add_entry(@c, entry: entry)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.add_entry(@m, entry: entry)
+            s.backend @ .mongo(m: m)
+            return done
+
+# The whole catalogue and every level.
+#
+# - `s`: the store.
+function snapshot(@s: Store) -> books.Snapshot?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.snapshot(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.snapshot(@m)
+            s.backend @ .mongo(m: m)
+            return done
+
+# The movements of each kind, totalled by the store itself.
+#
+# - `s`: the store.
+function totals(@s: Store) -> [books.KindTotal]?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.totals(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.totals(@m)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Every entry of the audit trail, in the order written.
+#
+# - `s`: the store.
+function audit_trail(@s: Store) -> [books.AuditEntry]?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_store.audit_trail(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.audit_trail(@m)
+            s.backend @ .mongo(m: m)
+            return done
+
+# Closes the store's connection.
+#
+# - `s`: the store, closed.
+function close(@s: Store) -> ()?
+    match s.backend
+        .sql x =>
+            c @= x.conn
+            done = sql_conn.close(@c)
+            s.backend @ .sql(conn: c)
+            return done
+        .mongo x =>
+            m @= x.m
+            done = mongo_store.close(@m)
+            s.backend @ .mongo(m: m)
+            return done

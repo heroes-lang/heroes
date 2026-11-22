@@ -1,0 +1,102 @@
+== the stand-ins, on loopback
+mysql: ready
+mongodb: ready
+== the day, run against each store
+mysql: 16 requests: 12 moved stock, 3 refused, 1 confirmed; account e117f0007a0a, 58 lines
+odbc: skipped: no ODBC driver
+mongodb: 16 requests: 12 moved stock, 3 refused, 1 confirmed; account e117f0007a0a, 58 lines
+== the account of 2026-03-14
+catalogue: 3 locations, 3 products, 6 variants, every key a UUID of version 7
+movements, totalled by the store:
+  adjustment   9 moved  157 units, value  +831.09
+  receipt      2 moved   36 units, value  +211.20
+  sale         5 moved   23 units, value  -135.08, revenue 368.00
+  transfer     3 moved   26 units, value     0.00
+stock on hand:
+  MUG-BLU    WH         30  reorder at 6
+  MUG-RED    SHOP-S      2  reorder at 4
+  MUG-RED    WH         18  reorder at 6
+  POSTER-A2  WH         10  reorder at 3
+  TEE-BLK-L  WH         30  reorder at 10
+  TEE-BLK-M  SHOP-N      3  reorder at 8
+  TEE-BLK-M  WH         52  reorder at 10
+  TEE-WHT-M  SHOP-S      4
+  TEE-WHT-M  WH         17  reorder at 10
+valuation at moving average cost:
+  MUG-BLU       30 units at   3.22       96.60
+  MUG-RED       20 units at   3.20       64.00
+  POSTER-A2     10 units at   4.00       40.00
+  TEE-BLK-L     30 units at   6.50      195.00
+  TEE-BLK-M     55 units at   6.71      368.81
+  TEE-WHT-M     21 units at   6.80      142.80
+  total        166 units               907.21
+to reorder: 2
+  SHOP-S MUG-RED: 2 on hand, reorder point 4, order 6
+  SHOP-N TEE-BLK-M: 3 on hand, reorder point 8, order 12
+audit trail: 29 entries
+   1 08:00 demo location WH: location WH, Warehouse
+   2 08:00 demo location SHOP-N: location SHOP-N, Shop North
+   3 08:00 demo location SHOP-S: location SHOP-S, Shop South
+   4 08:05 demo import catalogue.xlsx: 6 variants of 3 products imported, 0 rows rejected
+   5 08:10 demo movement TEE-BLK-M: count of 40 TEE-BLK-M at WH, value +260.00
+   6 08:10 demo movement TEE-BLK-M: count of 6 TEE-BLK-M at SHOP-N, value +39.00
+   7 08:10 demo movement TEE-BLK-L: count of 30 TEE-BLK-L at WH, value +195.00
+   8 08:10 demo movement TEE-WHT-M: count of 25 TEE-WHT-M at WH, value +170.00
+   9 08:10 demo movement MUG-RED: count of 24 MUG-RED at WH, value +76.80
+  10 08:10 demo confirmed MUG-RED: count of 0 MUG-RED at SHOP-S: 0 on hand at SHOP-S, as counted
+  11 08:10 demo movement MUG-BLU: count of 18 MUG-BLU at WH, value +55.80
+  12 08:10 demo movement POSTER-A2: count of 12 POSTER-A2 at WH, value +48.00
+  13 08:10 demo import opening.csv: 8 counts taken, 0 rows rejected
+  14 09:00 demo movement TEE-BLK-M: receipt of 24 TEE-BLK-M at WH, value +170.40
+  15 09:15 demo movement TEE-BLK-M: transfer of 12 TEE-BLK-M from WH to SHOP-N, value 0.00
+  16 09:20 demo movement MUG-RED: transfer of 6 MUG-RED from WH to SHOP-S, value 0.00
+  17 10:05 demo movement TEE-BLK-M: sale of 5 TEE-BLK-M at SHOP-N, value -33.53
+  18 10:40 demo movement MUG-RED: sale of 4 MUG-RED at SHOP-S, value -12.80
+  19 11:10 demo refused TEE-BLK-M: sale of 15 TEE-BLK-M at SHOP-N: 13 on hand at SHOP-N, 15 asked
+  20 11:15 demo movement TEE-BLK-M: sale of 9 TEE-BLK-M at SHOP-N, value -60.35
+  21 11:30 demo refused MUG-BLU: sale of 2 MUG-BLU at SHOP-S: 0 on hand at SHOP-S, 2 asked
+  22 12:00 demo movement TEE-BLK-M: adjustment of -1 TEE-BLK-M at SHOP-N, value -6.71
+  23 13:00 demo movement POSTER-A2: sale of 2 POSTER-A2 at WH, value -8.00
+  24 14:00 demo movement TEE-WHT-M: transfer of 8 TEE-WHT-M from WH to SHOP-S, value 0.00
+  25 15:00 demo movement TEE-WHT-M: sale of 3 TEE-WHT-M at SHOP-S, value -20.40
+  26 16:00 demo movement TEE-WHT-M: count of 4 TEE-WHT-M at SHOP-S, value -6.80
+  27 17:00 demo confirmed MUG-RED: count of 2 MUG-RED at SHOP-S: 2 on hand at SHOP-S, as counted
+  28 17:30 demo movement MUG-BLU: receipt of 12 MUG-BLU at WH, value +40.80
+  29 17:45 demo refused TEE-BLK-L: sale of 1 TEE-BLK-L at SHOP-N: 0 on hand at SHOP-N, 1 asked
+every store that ran gave this account, byte for byte
+== an import with bad rows, into the MySQL store
+products.csv: 8 rows, 2 taken, 6 rejected
+  line 3: the SKU TEE-RED-M is on line 2 already
+  line 4: the price "9,50" is not an amount like 12.50
+  line 5: the SKU "cap-blk" holds "c": a SKU is upper-case letters, digits and '-'
+  line 6: 5 fields where the header names 6
+  line 7: the product TEE is named "Heroes tee" in apparel on line 2
+  line 8: the SKU POSTER-A2 belongs to the product POSTER
+  taken: TEE-RED-M (TEE, red / M) at 18.00
+  taken: CAP-BLK (CAP, black) at 12.00
+counts.xlsx: 7 rows, 2 taken, 5 rejected
+  row 3: no location SHOP-X in the store
+  row 4: the count "2.5" is not a whole number of units
+  row 6: no variant NOPE-1 in the store
+  row 7: TEE-RED-M at WH is counted on row 2 already
+  row 9: the count -1 is below 0
+  taken: row 2: TEE-RED-M at WH: +10 units, value +70.00
+  taken: row 8: MUG-BLU at WH: -1 units, value -3.22
+== the stock, exported and read back
+stock.csv: 10 rows under its header, its lines ending CR LF as RFC 4180 writes them
+  sku,product,variant,location,on_hand,reorder_point,reorder_quantity,average_cost,value
+  MUG-BLU,MUG,blue,WH,29,6,12,3.22,93.38
+  MUG-RED,MUG,red,SHOP-S,2,4,6,3.20,6.40
+  MUG-RED,MUG,red,WH,18,6,12,3.20,57.60
+  POSTER-A2,POSTER,A2,WH,10,3,6,4.00,40.00
+  TEE-BLK-L,TEE,black / L,WH,30,10,24,6.50,195.00
+  TEE-BLK-M,TEE,black / M,SHOP-N,3,8,12,6.71,20.12
+  TEE-BLK-M,TEE,black / M,WH,52,10,24,6.71,348.69
+  TEE-RED-M,TEE,red / M,WH,10,0,0,7.00,70.00
+  TEE-WHT-M,TEE,white / M,SHOP-S,4,0,0,6.80,27.20
+  TEE-WHT-M,TEE,white / M,WH,17,10,24,6.80,115.60
+stock.xlsx: sheets Stock and Valuation; Stock 10 rows under its header
+  Valuation's total 973.99, from =SUM(D2:D9)
+== the stand-ins, stopped
+mysql stand-in: 2 connections served, 754 requests answered
+mongodb stand-in: 1 connections served, 212 commands answered

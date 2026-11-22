@@ -1,0 +1,375 @@
+# The demo, run by `inventory demo`: the inventory's three stores given the
+# same day, and their accounts compared. It makes a work folder under
+# `build/`, starts on loopback the two stand-ins it carries, for MySQL and
+# for MongoDB, each on a thread of its own, and writes for each store the
+# TOML configuration an operator would write, read back by the same
+# `conf/settings` the real program reads. The ODBC store reaches SQLite
+# through the system's ODBC manager and SQLite's driver, registered as
+# `SQLite3`, where the machine has them.
+#
+# Each store is set up, given the day (`demo/day`), and asked for its
+# account (`report/account`); the account is printed once, and each store's
+# line carries the digest of its own, so equal digests are the demo's
+# point: one model, three stores, one set of books. Then the MySQL store
+# imports a CSV and a spreadsheet full of bad rows, each told with its
+# place and reason, and exports the stock as CSV and as XLSX, both read
+# back.
+#
+# Nothing printed holds a port, a path, a key or the wall clock. The one
+# line that depends on the machine is the ODBC store's, which reads
+# `odbc: skipped: no ODBC driver` where no driver manager or no SQLite
+# driver is installed.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/net
+use <rebel>/os
+use <rebel>/sql/odbc
+use <rebel>/threads
+use <rebel>/xlsx
+
+use conf/settings
+use demo/day
+use demo/fixtures
+use exports/stock
+use files/tables
+use imports/columns
+use imports/counts
+use imports/products
+use report/account
+use standins/mongo/mongo_standin
+use standins/mysql/mysql_standin
+use standins/ready
+use store/store
+
+## The stand-ins' accounts
+
+# The MySQL stand-in's one user.
+constant MYSQL_USER: str
+    "inventory"
+
+# That user's password, given to the program by its environment's variable
+# `INVENTORY_STORE__MYSQL__PASSWORD`, as a real deployment would, never
+# written in the configuration file.
+constant MYSQL_PASSWORD: str
+    "stand-in password, not a secret"
+
+# The database both stand-ins hold.
+constant DATABASE: str
+    "inventory"
+
+## The demo
+
+# A stand-in started on its thread, and the port it said it listens on.
+record Started
+    # The thread, owed its wait.
+    thread: threads.TextThread
+    # The port it said, 0 where it said none.
+    port: i64
+
+# What one store's run gave.
+record Run
+    # Its line of the transcript.
+    line: str
+    # Its account; empty where it did not run.
+    account: [str]
+
+# Runs the demo and answers the program's exit code: 0 where every store
+# that ran gave the same account and every part ran.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match made_folder()
+        .err e =>
+            print("demo: the work folder: " + e.msg)
+            return 1
+        .ok folder =>
+            code = in_folder(folder)
+            _ = fs.remove_all(folder).is_err()
+            return code
+
+# A new work folder under `build/`.
+function made_folder() -> str?
+    fs.make_dir_all("build")?
+    return fs.make_temp_dir(dir: "build", pattern: "inventory-demo-*")
+
+# The demo inside its work folder: the stand-ins started, the stores run,
+# the stand-ins stopped and waited for.
+#
+# - `folder`: the work folder.
+function in_folder(folder: str) -> i64
+    match net.listen(host: "127.0.0.1", port: 0)
+        .err e =>
+            print("demo: the control port: " + e.msg)
+            return 1
+        .ok listening =>
+            control @= listening
+            port = control.address.port
+            print("== the stand-ins, on loopback")
+            mysql_arg = f"{port}\n{MYSQL_USER}\n{MYSQL_PASSWORD}\n{DATABASE}"
+            mysql_side = started(service: "mysql", body: mysql_standin.run, arg: mysql_arg, control: control)
+            mongo_side = started(service: "mongodb", body: mongo_standin.run, arg: f"{port}", control: control)
+            code @= 1
+
+            if mysql_side.port > 0 && mongo_side.port > 0
+                code @ with_stand_ins(folder, mysql_port: mysql_side.port, mongo_port: mongo_side.port)
+            os.ask_stop()
+            _ = net.close_listener(@control).is_err()
+            print("== the stand-ins, stopped")
+
+            for side in [mysql_side, mongo_side]
+                thread @= side.thread
+                print(threads.wait_text(@thread))
+
+            return code
+
+# A stand-in started on a thread, and its notice awaited.
+#
+# - `service`: its name, as its notice says it.
+# - `body`: its thread's function.
+# - `arg`: what its thread is handed.
+# - `control`: the demo's control listener.
+function started(service: str, body: (function(str) -> str), arg: str, control: net.Listener) -> Started
+    match threads.spawn_text(body: body, arg: arg)
+        .err e =>
+            print(f"demo: {service} would not start: {e.msg}")
+            return Started(thread: threads.spawn_text(body: nothing_to_do, arg: "").must(), port: 0)
+        .ok thread =>
+            match ready.await_ready(control)
+                .err e =>
+                    print(f"demo: {service} never said it was ready: {e.msg}")
+                    return Started(thread: thread, port: 0)
+                .ok r =>
+                    if r.service != service
+                        print(f"demo: {r.service} answered where {service} was awaited")
+                        return Started(thread: thread, port: 0)
+                    print(f"{service}: ready")
+                    return Started(thread: thread, port: r.port)
+
+# The body of a thread that has nothing to do: what a stand-in that would
+# not start is replaced by, so every place holds a thread to wait for.
+#
+# - `arg`: ignored.
+function nothing_to_do(arg: str) -> str
+    return "a stand-in that did not start" + arg
+
+# The stores run, the accounts compared, then the import with bad rows and
+# the export.
+#
+# - `folder`: the work folder.
+# - `mysql_port`: the MySQL stand-in's port.
+# - `mongo_port`: the MongoDB stand-in's port.
+function with_stand_ins(folder: str, mysql_port: i64, mongo_port: i64) -> i64
+    env = {"INVENTORY_STORE__MYSQL__PASSWORD": MYSQL_PASSWORD}
+    mysql_toml = "actor = \"demo\"\n\n[store]\nkind = \"mysql\"\n\n[store.mysql]\n" + f"url = \"mysql://{MYSQL_USER}@127.0.0.1:{mysql_port}/{DATABASE}?ssl-mode=DISABLED\"\n" + "application_name = \"inventory demo\"\n"
+    odbc_toml = "actor = \"demo\"\n\n[store]\nkind = \"odbc\"\n\n[store.odbc]\n" + f"connection = \"Driver=SQLite3;Database={folder}/odbc.db\"\n"
+    mongo_toml = "actor = \"demo\"\n\n[store]\nkind = \"mongodb\"\n\n[store.mongodb]\n" + f"url = \"mongodb://127.0.0.1:{mongo_port}/?directConnection=true\"\n" + f"database = \"{DATABASE}\"\n"
+    print("== the day, run against each store")
+    runs = [
+        store_run(name: "mysql", folder: folder, toml: mysql_toml, env: env)
+        store_run(name: "odbc", folder: folder, toml: odbc_toml, env: env)
+        store_run(name: "mongodb", folder: folder, toml: mongo_toml, env: env)
+    ]
+    reference: [str] @= []
+    agree @= true
+    ran @= 0
+
+    for r in runs
+        print(r.line)
+
+        if r.account.len() > 0
+            ran @ ran + 1
+
+            if reference.len() == 0
+                reference @ r.account
+            else if r.account != reference
+                agree @ false
+
+    if reference.len() == 0
+        print("demo: no store gave an account")
+        return 1
+
+    for line in reference
+        print(line)
+
+    if !agree || ran < 2
+        print("the stores' accounts differ")
+        return 1
+    print("every store that ran gave this account, byte for byte")
+    return bad_rows_and_export(folder: folder, toml: mysql_toml, env: env)
+
+# One store given the day: its configuration written and read, the store
+# opened and set up, the day run, its account taken.
+#
+# - `name`: the store's kind.
+# - `folder`: the work folder.
+# - `toml`: its configuration.
+# - `env`: the environment's variables the configuration is read under.
+function store_run(name: str, folder: str, toml: str, env: {str: str}) -> Run
+    path = folder + "/" + name + ".toml"
+
+    match opened(path: path, toml: toml, env: env)
+        .err e =>
+            if name == "odbc" && (e.code == "unsupported" || e.code == "not_found")
+                return Run(line: "odbc: skipped: no ODBC driver", account: [])
+            return Run(line: f"{name}: {e.msg}", account: [])
+        .ok first =>
+            s @= first
+
+            match ran_day(@s, folder: folder)
+                .err e =>
+                    _ = store.close(@s).is_err()
+                    return Run(line: f"{name}: {e.msg}", account: [])
+                .ok got =>
+                    _ = store.close(@s).is_err()
+                    digest = bytes.format_hex(crypto.sha256_text(got.account.join("\n"))).slice(from: 0, to: 12)
+                    t = got.tally
+                    line = f"{name}: {t.requests} requests: {t.applied} moved stock, {t.refused} refused, {t.confirmed} confirmed; account {digest}, {got.account.len()} lines"
+                    return Run(line: line, account: got.account)
+
+# The store a configuration names, opened. ODBC is asked for its driver
+# manager first, so a machine without one is told apart from a store that
+# failed.
+#
+# - `path`: where the configuration is written.
+# - `toml`: the configuration.
+# - `env`: the environment's variables.
+function opened(path: str, toml: str, env: {str: str}) -> store.Store?
+    write_file(path: path, text: toml)?
+    s = settings.load(path, env: env)?
+
+    if s.kind == "odbc"
+        _ = odbc.manager()?
+    return store.open(s)
+
+# What a store's day gave.
+record Day
+    # How its requests were answered.
+    tally: day.Tally
+    # Its account.
+    account: [str]
+
+# The day run against `s`, and its account.
+#
+# - `s`: the store, open.
+# - `folder`: the work folder.
+function ran_day(@s: store.Store, folder: str) -> Day?
+    store.setup(@s)?
+    tally = day.run(@s, folder: folder, actor: "demo")?
+    return ok(Day(tally: tally, account: account_of(@s)?))
+
+# The account of the books `s` holds.
+#
+# - `s`: the store.
+function account_of(@s: store.Store) -> [str]?
+    held = store.snapshot(@s)?
+    totals = store.totals(@s)?
+    trail = store.audit_trail(@s)?
+    return ok(account.lines_of(day.DAY, held: held, totals: totals, trail: trail))
+
+## The import with bad rows, and the export
+
+# The MySQL store given a CSV of variants and a spreadsheet of counts, most
+# of their rows wrong, then its stock exported as CSV and as XLSX and read
+# back.
+#
+# - `folder`: the work folder.
+# - `toml`: the MySQL store's configuration.
+# - `env`: the environment's variables.
+function bad_rows_and_export(folder: str, toml: str, env: {str: str}) -> i64
+    match opened(path: folder + "/mysql.toml", toml: toml, env: env)
+        .err e =>
+            print("demo: the MySQL store: " + e.msg)
+            return 1
+        .ok first =>
+            s @= first
+
+            code = match imported_and_exported(@s, folder: folder)
+                .ok _ => 0
+                .err e =>
+                    print("demo: " + e.msg)
+                    1
+
+            _ = store.close(@s).is_err()
+            return code
+
+# The imports and the exports of `bad_rows_and_export`.
+#
+# - `s`: the MySQL store, open.
+# - `folder`: the work folder.
+function imported_and_exported(@s: store.Store, folder: str) -> ()?
+    print("== an import with bad rows, into the MySQL store")
+    products_path = folder + "/products.csv"
+    write_file(path: products_path, text: fixtures.bad_products_csv())?
+    said(products.import_products(@s, t: tables.read_table(products_path)?, at: day.at_minute(600), actor: "demo")?)
+    counts_path = folder + "/counts.xlsx"
+    fixtures.write_bad_counts(counts_path)?
+    said(counts.import_counts(@s, t: tables.read_table(counts_path)?, at: day.at_minute(605), actor: "demo")?)
+    print("== the stock, exported and read back")
+    held = store.snapshot(@s)?
+    csv_path = folder + "/stock.csv"
+    written = stock.export_stock(held, path: csv_path)?
+    text = read_file(csv_path)?
+    print(f"stock.csv: {written} rows under its header, its lines ending CR LF as RFC 4180 writes them")
+
+    for line in text.split_lines()
+        print("  " + line)
+
+    xlsx_path = folder + "/stock.xlsx"
+    _ = stock.export_stock(held, path: xlsx_path)?
+    book = xlsx.load(xlsx_path)?
+    names = xlsx.sheet_names(book)
+    values = xlsx.sheet_of(book, name: "Stock")?
+    rows = xlsx.rows_of(values, limit: 10000)?
+    valuation = xlsx.sheet_of(book, name: "Valuation")?
+    last = held.variants.len() + 1
+    total = xlsx.cell_at(valuation, row: last, column: 3)?
+    sheets = names.join(" and ")
+    print(f"stock.xlsx: sheets {sheets}; Stock {rows.len() - 1} rows under its header")
+    print(f"  Valuation's total {xlsx.format_value(total.value)}, from ={total.formula}")
+    return ok()
+
+# Prints what an import did with a file.
+#
+# - `r`: the import's report.
+function said(r: columns.Report)
+    print(f"{r.file}: {r.rows} rows, {r.accepted} taken, {r.rejected.len()} rejected")
+
+    for x in r.rejected
+        print(f"  {x.place}: {x.reason}")
+
+    for d in r.done
+        print("  taken: " + d)
+
+    match r.broken
+        .ok where => print("  the file stopped being readable: " + where)
+        .err _    => _ = 0
+
+# The lines of `text`, each without the `\r` a CR LF leaves.
+#
+# - `text`: the text.
+function split_lines(text: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            end = if i > start && text[i - 1] == '\r'
+                i - 1
+            else
+                i
+            out @ out.push(text.slice(from: start, to: end))
+            start @ i + 1
+
+    if start < text.len()
+        out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+test "split_lines: CR LF and LF, and a last line with no end"
+    assert split_lines("a\r\nb\nc") == ["a", "b", "c"]
+    assert split_lines("") == []

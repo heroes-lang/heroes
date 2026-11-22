@@ -1,0 +1,199 @@
+# The demo's MySQL server: a loopback stand-in that speaks MySQL's
+# client/server protocol far enough for the inventory's MySQL store, so the
+# demo runs with no MySQL installed. It greets, logs one user in by
+# `caching_sha2_password` (`standins/mysql/login`), and answers the
+# commands the `sql/mysql` driver sends: `COM_QUERY` in the text protocol
+# (the driver's `SET time_zone`, `START TRANSACTION`, `COMMIT` and
+# `ROLLBACK` among them), `COM_STMT_PREPARE`, `COM_STMT_EXECUTE` and
+# `COM_STMT_CLOSE` in the binary protocol, which carries every statement
+# with values, `COM_PING`, `COM_INIT_DB` and `COM_QUIT`. Its statements run
+# on SQLite (`standins/mysql/engine`). Any other command is answered with
+# MySQL's own `Unknown command`, and a statement with several statements in
+# its text with a syntax error, since it offers no
+# `CLIENT_MULTI_STATEMENTS`.
+#
+# It runs on a thread of its own, tells the demo its port
+# (`standins/ready`), and serves one connection after another until the
+# program is asked to stop; its thread answers what it served.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use standins/mysql/answers
+use standins/mysql/login
+use standins/mysql/packets
+use standins/ready
+
+## The server
+
+# The version the stand-in greets with: MySQL's, then what it is.
+constant VERSION: str
+    "8.4.3-inventory-stand-in"
+
+# Who may log in, and to what.
+record Account
+    # The user's name.
+    user: str
+    # What the server keeps of the user's password (`login.kept_of`).
+    kept: [u8]
+    # Whether the password is empty.
+    empty_password: bool
+    # The one database the server holds.
+    database: str
+
+# The stand-in's thread: listens on 127.0.0.1 at a port the system
+# chooses, tells the demo, and serves until the program is asked to stop.
+#
+# - `arg`: four lines: the demo's control port, the user, the password and
+#   the database.
+function run(arg: str) -> str
+    lines = strings.split(s: arg, sep: "\n")
+
+    if lines.len() != 4
+        return "mysql stand-in: four lines asked, the control port, the user, the password and the database"
+
+    match served(lines[0], account: Account(user: lines[1], kept: login.kept_of(lines[2]), empty_password: lines[2] == "", database: lines[3]))
+        .ok said => return said
+        .err e   => return "mysql stand-in: " + e.msg
+
+# Every connection served, then what was served.
+#
+# - `control`: the demo's control port, in decimal.
+# - `account`: who may log in.
+function served(control: str, account: Account) -> str?
+    port = strings.trim(control)
+    db @= sqlite.open_memory()?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+    control_port = net.parse_port(port)?
+
+    match ready.tell(control_port: control_port, service: "mysql", port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    connections @= 0
+    requests @= 0
+
+    while true
+        match net.accept(listener, deadline_ms: net.FOREVER)
+            .err _ => break
+            .ok made =>
+                conn @= made
+                connections @ connections + 1
+                requests @ requests + session(@db, stream: conn.stream, account: account, id: connections)
+                _ = io.close(@conn.stream).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    _ = sqlite.close(@db).is_err()
+    return ok(f"mysql stand-in: {connections} connections served, {requests} requests answered")
+
+# One connection: the login, then each command until the client leaves;
+# answers how many commands it answered. A transaction the client left open
+# is rolled back, as a server does for a connection that ends.
+#
+# - `db`: the engine.
+# - `stream`: the connection.
+# - `account`: who may log in.
+# - `id`: the connection's number.
+function session(@db: sqlite.Db, stream: io.Stream, account: Account, id: i64) -> i64
+    r @= io.reader(stream)
+
+    match logged_in(@r, stream: stream, account: account, id: id)
+        .err _ => return 0
+        .ok s =>
+            sess @= s
+
+            while true
+                match packets.read_packet(@r)
+                    .err _ => break
+                    .ok p =>
+                        sess.requests @ sess.requests + 1
+
+                        match answers.answered(@db, @sess, stream: stream, payload: p.payload)
+                            .ok go_on =>
+                                if !go_on
+                                    break
+                            .err _ => break
+
+            if sqlite.in_transaction(db)
+                _ = sqlite.rollback(@db).is_err()
+            return sess.requests
+
+# The greeting sent and the client's answer checked; the session where the
+# login holds.
+#
+# - `r`: the reader over the connection.
+# - `stream`: the connection.
+# - `account`: who may log in.
+# - `id`: the connection's number.
+#
+# Fails where the client is refused, after its error was sent.
+function logged_in(@r: io.Reader, stream: io.Stream, account: Account, id: i64) -> answers.Session?
+    nonce = login.new_nonce()?
+    packets.write_packet(stream, seq: 0, payload: login.greeting(VERSION, connection_id: id, nonce: nonce))?
+    p = packets.read_packet(@r)?
+    next = p.seq + 1
+
+    match login.read_answer(p.payload)
+        .err e =>
+            _ = packets.write_packet(
+                stream,
+                seq: next,
+                payload: packets.err_packet(code: 1043, state: "08S01", message: "Bad handshake: " + e.msg)
+            ).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok a =>
+            if a.plugin != "" && a.plugin != login.PLUGIN
+                return refused(
+                    stream,
+                    seq: next,
+                    code: 1251,
+                    state: "08004",
+                    message: f"Client does not support authentication protocol requested by server; consider {login.PLUGIN}"
+                )
+
+            if a.user != account.user || !login.proves(proof: a.proof, kept: account.kept, nonce: nonce, empty_password: account.empty_password)
+                using = if a.proof.len() > 0
+                    "YES"
+                else
+                    "NO"
+                return refused(
+                    stream,
+                    seq: next,
+                    code: 1045,
+                    state: "28000",
+                    message: f"Access denied for user '{a.user}'@'127.0.0.1' (using password: {using})"
+                )
+
+            if a.database != "" && a.database != account.database
+                return refused(
+                    stream,
+                    seq: next,
+                    code: 1049,
+                    state: "42000",
+                    message: f"Unknown database '{a.database}'"
+                )
+            packets.write_packet(stream, seq: next, payload: [0x01, 0x03])?
+            packets.write_packet(stream, seq: next + 1, payload: packets.ok_packet(affected: 0, last_id: 0, status: packets.STATUS_AUTOCOMMIT))?
+            return ok(
+                answers.Session(id: id, deprecate_eof: a.capabilities & login.DEPRECATE_EOF != 0, prepared: {}, next_statement: 1, requests: 0)
+            )
+
+# Sends the error of a refused login, and fails with it.
+#
+# - `stream`: the connection.
+# - `seq`: the packet's number.
+# - `code`: MySQL's error number.
+# - `state`: its SQLSTATE.
+# - `message`: its words.
+function refused(stream: io.Stream, seq: i64, code: i64, state: str, message: str) -> answers.Session?
+    _ = packets.write_packet(
+        stream,
+        seq: seq,
+        payload: packets.err_packet(code: code, state: state, message: message)
+    ).is_err()
+    return fail(code: "permission", msg: message)

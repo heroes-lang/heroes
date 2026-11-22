@@ -1,0 +1,428 @@
+# The inventory kept in a SQL database, MySQL or any database ODBC reaches,
+# in six tables (`store/dialect`'s schema): `locations`, `products`,
+# `variants` (each with its units and its pool of value), `stock` (a level
+# per variant and location), `movements` and `audit`.
+#
+# A movement is written in one transaction with everything it changes: its
+# row, the variant's totals, each level, and its entry of the audit trail.
+# Every `UPDATE` names the value it read beside the key (`units = 40 AND
+# value_cents = 26000`, `on_hand = 12`), so where another writer changed the
+# row since the read, the update matches nothing, the transaction is rolled
+# back and the store answers `books.CHANGED`; the movement is then planned
+# again over what is there. That is optimistic locking, chosen over `SELECT
+# ... FOR UPDATE` because `sql/build` writes no row lock yet and because it
+# asks nothing of the database a transaction does not already give.
+#
+# The column names are the records' field names, `catalog.Variant::sku`,
+# so the compiler checks that a column read is a field written.
+
+use <rebel>/lists
+use <rebel>/sql
+use <rebel>/sql/build
+
+use model/books
+use model/catalog
+use model/movements
+use store/dialect
+use store/sql_conn
+use store/sql_rows
+
+## Codes
+
+# The code of a key a row holds that is no key.
+constant INVALID: str
+    "invalid"
+
+# The code of a SKU or a code no row holds.
+constant NOT_FOUND: str
+    "not_found"
+
+## The schema
+
+# Makes the tables that are not there yet; a store made before keeps its
+# rows.
+#
+# - `c`: the connection.
+#
+# Fails as the database refuses a statement, naming the table.
+function setup(@c: sql_conn.Conn) -> ()?
+    for text in dialect.create_tables(sql_conn.dialect_of(c))
+        match sql_conn.exec_text(@c, text: text, params: [])
+            .ok _  => _ = 0
+            .err e => return fail(code: e.code, msg: f"{e.msg}, making a table with: {text}")
+
+    return ok()
+
+## The catalogue
+
+# Puts `l` in the store: a new location, or the one holding its code
+# renamed. Answers the location as stored, its key the one it already had.
+#
+# - `c`: the connection.
+# - `l`: the location, with a key made for it.
+#
+# Fails as the database refuses a statement.
+function put_location(@c: sql_conn.Conn, l: catalog.Location) -> catalog.Location?
+    q @= build.select(from: "locations", columns: build.columns_named(sql_rows.location_names()))
+    q.where @ [build.equal(catalog.Location::code, .text(v: l.code))]
+    found = sql_conn.query(@c, q: q)?
+
+    if found.rows.len() > 0
+        held = sql_rows.location_of(found.rows[0])?
+        u @= build.update("locations", set: [build.assign(catalog.Location::name, .text(v: l.name))])
+        u.where @ [build.equal(catalog.Location::id, .text(v: held.id))]
+        _ = sql_conn.exec(@c, q: .update(query: u))?
+        return ok(catalog.Location(id: held.id, code: held.code, name: l.name))
+    row: [sql.Value] = [.text(v: l.id), .text(v: l.code), .text(v: l.name)]
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "locations", columns: sql_rows.location_names(), rows: [row])))?
+    return ok(l)
+
+# Puts `p` in the store, as `put_location` puts a location, by its code.
+#
+# - `c`: the connection.
+# - `p`: the product, with a key made for it.
+#
+# Fails as the database refuses a statement.
+function put_product(@c: sql_conn.Conn, p: catalog.Product) -> catalog.Product?
+    q @= build.select(from: "products", columns: build.columns_named(sql_rows.product_names()))
+    q.where @ [build.equal(catalog.Product::code, .text(v: p.code))]
+    found = sql_conn.query(@c, q: q)?
+
+    if found.rows.len() > 0
+        held = sql_rows.product_of(found.rows[0])?
+        u @= build.update(
+            "products",
+            set: [build.assign(catalog.Product::name, .text(v: p.name)), build.assign(catalog.Product::category, .text(v: p.category))]
+        )
+        u.where @ [build.equal(catalog.Product::id, .text(v: held.id))]
+        _ = sql_conn.exec(@c, q: .update(query: u))?
+        return ok(catalog.Product(id: held.id, code: held.code, name: p.name, category: p.category))
+    row: [sql.Value] = [.text(v: p.id), .text(v: p.code), .text(v: p.name), .text(v: p.category)]
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "products", columns: sql_rows.product_names(), rows: [row])))?
+    return ok(p)
+
+# Puts `v` in the store by its SKU: a new variant holding no units, or the
+# one holding its SKU given `v`'s label and price, its units, value and
+# product kept.
+#
+# - `c`: the connection.
+# - `v`: the variant, with a key made for it.
+#
+# Fails as the database refuses a statement.
+function put_variant(@c: sql_conn.Conn, v: catalog.Variant) -> catalog.Variant?
+    match variant_named(@c, sku: v.sku)
+        .ok held =>
+            u @= build.update(
+                "variants",
+                set: [build.assign(catalog.Variant::label, .text(v: v.label)), build.assign(catalog.Variant::price_cents, .integer(v: v.price_cents))]
+            )
+            u.where @ [build.equal(catalog.Variant::id, .text(v: held.id))]
+            _ = sql_conn.exec(@c, q: .update(query: u))?
+            kept @= held
+            kept.label @ v.label
+            kept.price_cents @ v.price_cents
+            return ok(kept)
+        .err e =>
+            if e.code != NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    row: [sql.Value] = [
+        .text(v: v.id)
+        .text(v: v.product_id)
+        .text(v: v.sku)
+        .text(v: v.label)
+        .integer(v: v.price_cents)
+        .integer(v: 0)
+        .integer(v: 0)
+        .integer(v: 0)
+    ]
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "variants", columns: sql_rows.variant_names(), rows: [row])))?
+    made @= v
+    made.units @ 0
+    made.value_cents @ 0
+    made.applied_seq @ 0
+    return ok(made)
+
+# Sets when the variant `variant_id` is reordered at `location_id`: its
+# level there made with no units where it has none, its units kept where it
+# has one.
+#
+# - `c`: the connection.
+# - `variant_id`: the variant's key.
+# - `location_id`: the location's key.
+# - `reorder_point`: at or below this many units on hand, reorder.
+# - `reorder_quantity`: how many an order asks for.
+#
+# Fails as the database refuses a statement.
+function put_reorder(@c: sql_conn.Conn, variant_id: str, location_id: str, reorder_point: i64, reorder_quantity: i64) -> ()?
+    q @= build.select(from: "stock", columns: build.columns_named(sql_rows.level_names()))
+    q.where @ [
+        build.equal(catalog.Level::variant_id, .text(v: variant_id))
+        build.equal(catalog.Level::location_id, .text(v: location_id))
+    ]
+    found = sql_conn.query(@c, q: q)?
+
+    if found.rows.len() > 0
+        u @= build.update(
+            "stock",
+            set: [build.assign(catalog.Level::reorder_point, .integer(v: reorder_point)), build.assign(catalog.Level::reorder_quantity, .integer(v: reorder_quantity))]
+        )
+        u.where @ q.where
+        _ = sql_conn.exec(@c, q: .update(query: u))?
+        return ok()
+    row: [sql.Value] = [
+        .text(v: variant_id)
+        .text(v: location_id)
+        .integer(v: 0)
+        .integer(v: reorder_point)
+        .integer(v: reorder_quantity)
+    ]
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "stock", columns: sql_rows.level_names(), rows: [row])))?
+    return ok()
+
+## Reading
+
+# Every location, by code.
+#
+# - `c`: the connection.
+#
+# Fails as the database refuses the query or a row holds no location.
+function locations(@c: sql_conn.Conn) -> [catalog.Location]?
+    q @= build.select(from: "locations", columns: build.columns_named(sql_rows.location_names()))
+    q.order_by @ [build.ascending(catalog.Location::code)]
+    found = sql_conn.query(@c, q: q)?
+    out: [catalog.Location] @= []
+
+    for row in found.rows
+        out @ out.push(sql_rows.location_of(row)?)
+
+    return ok(lists.sort_by(out, less: sql_rows.location_before))
+
+# The variant whose SKU is `sku`, with its levels.
+#
+# - `c`: the connection.
+# - `sku`: the SKU.
+#
+# Fails `not_found` where no variant has it.
+function state_of(@c: sql_conn.Conn, sku: str) -> books.State?
+    v = variant_named(@c, sku: sku)?
+    q @= build.select(from: "stock", columns: build.columns_named(sql_rows.level_names()))
+    q.where @ [build.equal(catalog.Level::variant_id, .text(v: v.id))]
+    found = sql_conn.query(@c, q: q)?
+    levels: [catalog.Level] @= []
+
+    for row in found.rows
+        levels @ levels.push(sql_rows.level_of(row)?)
+
+    return ok(books.State(item: v, levels: levels))
+
+# The variant whose SKU is `sku`.
+#
+# - `c`: the connection.
+# - `sku`: the SKU.
+#
+# Fails `not_found` where no variant has it.
+function variant_named(@c: sql_conn.Conn, sku: str) -> catalog.Variant?
+    q @= build.select(from: "variants", columns: build.columns_named(sql_rows.variant_names()))
+    q.where @ [build.equal(catalog.Variant::sku, .text(v: sku))]
+    found = sql_conn.query(@c, q: q)?
+
+    if found.rows.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no variant {sku}")
+    return sql_rows.variant_of(found.rows[0])
+
+# The whole catalogue and every level.
+#
+# - `c`: the connection.
+#
+# Fails as the database refuses a query or a row is not of its table.
+function snapshot(@c: sql_conn.Conn) -> books.Snapshot?
+    held_locations = locations(@c)?
+    pq @= build.select(from: "products", columns: build.columns_named(sql_rows.product_names()))
+    pq.order_by @ [build.ascending(catalog.Product::code)]
+    products: [catalog.Product] @= []
+
+    for row in sql_conn.query(@c, q: pq)?.rows
+        products @ products.push(sql_rows.product_of(row)?)
+
+    vq @= build.select(from: "variants", columns: build.columns_named(sql_rows.variant_names()))
+    vq.order_by @ [build.ascending(catalog.Variant::sku)]
+    variants: [catalog.Variant] @= []
+
+    for row in sql_conn.query(@c, q: vq)?.rows
+        variants @ variants.push(sql_rows.variant_of(row)?)
+
+    lq = build.select(from: "stock", columns: build.columns_named(sql_rows.level_names()))
+    levels: [catalog.Level] @= []
+
+    for row in sql_conn.query(@c, q: lq)?.rows
+        levels @ levels.push(sql_rows.level_of(row)?)
+
+    return ok(
+        books.Snapshot(locations: held_locations, products: lists.sort_by(products, less: sql_rows.product_before), variants: lists.sort_by(variants, less: sql_rows.variant_before), levels: levels)
+    )
+
+# The movements of each kind, totalled by the database (`GROUP BY`), in the
+# order of the kinds' names.
+#
+# - `c`: the connection.
+#
+# Fails as the database refuses the query.
+function totals(@c: sql_conn.Conn) -> [books.KindTotal]?
+    columns = [
+        build.column(movements.Movement::kind)
+        build.aliased(build.count_all(), alias: books.KindTotal::count)
+        build.aliased(build.call("SUM", [build.column(movements.Movement::quantity)]), alias: books.KindTotal::units)
+        build.aliased(build.call("SUM", [build.column(movements.Movement::value_cents)]), alias: books.KindTotal::value_cents)
+        build.aliased(build.call("SUM", [build.column(movements.Movement::revenue_cents)]), alias: books.KindTotal::revenue_cents)
+    ]
+    q @= build.select(from: "movements", columns: columns)
+    q.group_by @ [build.column(movements.Movement::kind)]
+    q.order_by @ [build.ascending(movements.Movement::kind)]
+    out: [books.KindTotal] @= []
+
+    for row in sql_conn.query(@c, q: q)?.rows
+        out @ out.push(
+            books.KindTotal(kind: sql_conn.text_named(row, name: movements.Movement::kind)?, count: sql_conn.whole_named(row, name: books.KindTotal::count)?, units: sql_conn.whole_named(row, name: books.KindTotal::units)?, value_cents: sql_conn.whole_named(row, name: books.KindTotal::value_cents)?, revenue_cents: sql_conn.whole_named(row, name: books.KindTotal::revenue_cents)?)
+        )
+
+    return ok(out)
+
+# Every entry of the audit trail, in the order written.
+#
+# - `c`: the connection.
+#
+# Fails as the database refuses the query.
+function audit_trail(@c: sql_conn.Conn) -> [books.AuditEntry]?
+    q @= build.select(from: "audit", columns: build.columns_named(sql_rows.audit_names()))
+    q.order_by @ [build.ascending(books.AuditEntry::seq)]
+    out: [books.AuditEntry] @= []
+
+    for row in sql_conn.query(@c, q: q)?.rows
+        out @ out.push(
+            books.AuditEntry(seq: sql_conn.whole_named(row, name: books.AuditEntry::seq)?, at: sql_conn.text_named(row, name: books.AuditEntry::at)?, actor: sql_conn.text_named(row, name: books.AuditEntry::actor)?, action: sql_conn.text_named(row, name: books.AuditEntry::action)?, subject: sql_conn.text_named(row, name: books.AuditEntry::subject)?, detail: sql_conn.text_named(row, name: books.AuditEntry::detail)?)
+        )
+
+    return ok(out)
+
+## Writing a movement
+
+# Writes `plan`'s movement and its entry of the audit trail in one
+# transaction, and answers the movement's number.
+#
+# - `c`: the connection.
+# - `plan`: the movement and what it changes.
+# - `entry`: its entry of the audit trail, its `seq` given here.
+#
+# Fails `changed` (`books.CHANGED`) where the variant or a level is no
+# longer what `plan` was made over, and as the database refuses a
+# statement; either way nothing of it is written.
+function apply(@c: sql_conn.Conn, plan: movements.Plan, entry: books.AuditEntry) -> i64?
+    sql_conn.begin(@c)?
+
+    match applied(@c, plan: plan, entry: entry)
+        .err e =>
+            sql_conn.rollback(@c)
+
+            if e.code == "exists"
+                return fail(code: books.CHANGED, msg: e.msg)
+            return fail(code: e.code, msg: e.msg)
+        .ok seq =>
+            match sql_conn.commit(@c)
+                .ok _ => return ok(seq)
+                .err e =>
+                    sql_conn.rollback(@c)
+                    return fail(code: e.code, msg: e.msg)
+
+# The statements of `apply`, inside its transaction.
+#
+# - `c`: the connection, in a transaction.
+# - `plan`: the movement.
+# - `entry`: its entry of the audit trail.
+function applied(@c: sql_conn.Conn, plan: movements.Plan, entry: books.AuditEntry) -> i64?
+    seq = next_seq(@c, table: "movements")?
+    m @= plan.movement
+    m.seq @ seq
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "movements", columns: sql_rows.movement_names(), rows: [sql_rows.movement_row(m)])))?
+    u @= build.update(
+        "variants",
+        set: [build.assign(catalog.Variant::units, .integer(v: plan.units_after)), build.assign(catalog.Variant::value_cents, .integer(v: plan.value_after)), build.assign(catalog.Variant::applied_seq, .integer(v: seq))]
+    )
+    u.where @ [
+        build.equal(catalog.Variant::id, .text(v: m.variant_id))
+        build.equal(catalog.Variant::units, .integer(v: plan.units_before))
+        build.equal(catalog.Variant::value_cents, .integer(v: plan.value_before))
+        build.less(catalog.Variant::applied_seq, .integer(v: seq))
+    ]
+    changed = sql_conn.exec(@c, q: .update(query: u))?
+
+    if changed.rows_affected != 1
+        return fail(code: books.CHANGED, msg: f"the variant of movement {seq} changed since it was read")
+
+    for ch in plan.changes
+        level_changed(@c, variant_id: m.variant_id, ch: ch)?
+
+    _ = add_entry(@c, entry: entry)?
+    return ok(seq)
+
+# Writes one level's change: the row updated where it was read, made where
+# there was none.
+#
+# - `c`: the connection, in a transaction.
+# - `variant_id`: the variant's key.
+# - `ch`: the change.
+function level_changed(@c: sql_conn.Conn, variant_id: str, ch: movements.Change) -> ()?
+    if !ch.exists
+        row: [sql.Value] = [
+            .text(v: variant_id)
+            .text(v: ch.location_id)
+            .integer(v: ch.delta)
+            .integer(v: 0)
+            .integer(v: 0)
+        ]
+        _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "stock", columns: sql_rows.level_names(), rows: [row])))?
+        return ok()
+    u @= build.update("stock", set: [build.assign(catalog.Level::on_hand, .integer(v: ch.before + ch.delta))])
+    u.where @ [
+        build.equal(catalog.Level::variant_id, .text(v: variant_id))
+        build.equal(catalog.Level::location_id, .text(v: ch.location_id))
+        build.equal(catalog.Level::on_hand, .integer(v: ch.before))
+    ]
+    done = sql_conn.exec(@c, q: .update(query: u))?
+
+    if done.rows_affected != 1
+        return fail(code: books.CHANGED, msg: f"the level at {ch.location_code} changed since it was read")
+    return ok()
+
+# Writes `entry` to the audit trail as its next entry, and answers its
+# number.
+#
+# - `c`: the connection; a movement's entry is written in its transaction.
+# - `entry`: the entry, its `seq` given here.
+#
+# Fails as the database refuses the statement, `exists` where another
+# writer took the number first.
+function add_entry(@c: sql_conn.Conn, entry: books.AuditEntry) -> i64?
+    seq = next_seq(@c, table: "audit")?
+    row: [sql.Value] = [
+        .integer(v: seq)
+        .text(v: entry.at)
+        .text(v: entry.actor)
+        .text(v: entry.action)
+        .text(v: entry.subject)
+        .text(v: entry.detail)
+    ]
+    _ = sql_conn.exec(@c, q: .insert(query: build.insert(into: "audit", columns: sql_rows.audit_names(), rows: [row])))?
+    return ok(seq)
+
+# The number after the largest `seq` of `table`, 1 for an empty one.
+#
+# - `c`: the connection.
+# - `table`: `movements` or `audit`.
+function next_seq(@c: sql_conn.Conn, table: str) -> i64?
+    q = build.select(from: table, columns: [build.aliased(build.call("MAX", [build.column("seq")]), alias: "top")])
+    found = sql_conn.query(@c, q: q)?
+
+    if found.rows.len() == 0 || sql.is_null_named(found.rows[0], "top")?
+        return ok(1)
+    return ok(sql_conn.whole_named(found.rows[0], name: "top")? + 1)

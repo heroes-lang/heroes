@@ -1,0 +1,314 @@
+# The MySQL stand-in's answers to the commands of a logged-in connection:
+# `COM_QUERY` in the text protocol (a session's `SET` and a transaction's
+# words answered by the stand-in itself, every other statement by its
+# engine, `standins/mysql/engine`), `COM_STMT_PREPARE`, `COM_STMT_EXECUTE`
+# and `COM_STMT_CLOSE` in the binary protocol, `COM_PING`, `COM_INIT_DB`,
+# `COM_STMT_RESET` and `COM_QUIT`; any other command is MySQL's own
+# `Unknown command`. A result set is written as the client asked at login:
+# its columns closed by an EOF packet, or not where it asked for
+# `CLIENT_DEPRECATE_EOF`, its end an OK packet opening `0xFE` then.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/sql/sqlite
+use <rebel>/strings
+
+use standins/mysql/engine
+use standins/mysql/packets
+use standins/mysql/rows
+
+## Sessions
+
+# A statement a client prepared.
+record Prepared
+    # Its text.
+    text: str
+    # Its placeholders.
+    params: i64
+    # The types the client bound last, two bytes a placeholder.
+    types: [u8]
+
+# One connection's state.
+record Session
+    # The connection's number.
+    id: i64
+    # Whether results end with an OK packet rather than an EOF packet.
+    deprecate_eof: bool
+    # The statements it prepared, by number.
+    prepared: {i64: Prepared}
+    # The number the next one takes.
+    next_statement: i64
+    # The requests it answered.
+    requests: i64
+
+## Commands
+
+# One command answered; answers whether the connection goes on.
+#
+# - `db`: the engine.
+# - `sess`: the connection's state.
+# - `stream`: the connection.
+# - `payload`: the command's packet.
+#
+# Fails where the answer cannot be written.
+function answered(@db: sqlite.Db, @sess: Session, stream: io.Stream, payload: [u8]) -> bool?
+    if payload.len() == 0
+        packets.write_packet(stream, seq: 1, payload: packets.err_packet(code: 1047, state: "08S01", message: "Unknown command"))?
+        return ok(true)
+    command = payload[0]
+    body = payload.slice(from: 1, to: payload.len())
+
+    if command == 0x01
+        return ok(false)
+
+    if command == 0x0e || command == 0x1a
+        packets.write_packet(stream, seq: 1, payload: packets.ok_packet(affected: 0, last_id: 0, status: status_of(db)))?
+        return ok(true)
+
+    if command == 0x02
+        name = bytes.to_text_lossy(body)
+
+        answer = if name == "inventory"
+            packets.ok_packet(affected: 0, last_id: 0, status: status_of(db))
+        else
+            packets.err_packet(code: 1049, state: "42000", message: f"Unknown database '{name}'")
+        packets.write_packet(stream, seq: 1, payload: answer)?
+        return ok(true)
+
+    if command == 0x03
+        text_answered(@db, sess: sess, stream: stream, text: bytes.to_text_lossy(body))?
+        return ok(true)
+
+    if command == 0x16
+        prepare_answered(@db, @sess, stream: stream, text: bytes.to_text_lossy(body))?
+        return ok(true)
+
+    if command == 0x17
+        execute_answered(@db, @sess, stream: stream, body: body)?
+        return ok(true)
+
+    if command == 0x19
+        c @= packets.cursor(body)
+        sess.prepared @ maps.remove(sess.prepared, key: packets.read_le(@c, width: 4).default(0))
+        return ok(true)
+    packets.write_packet(stream, seq: 1, payload: packets.err_packet(code: 1047, state: "08S01", message: "Unknown command"))?
+    return ok(true)
+
+# A statement of the text protocol answered: a session's `SET` and a
+# transaction's words by the stand-in itself, any other by the engine.
+#
+# - `db`: the engine.
+# - `sess`: the connection's state.
+# - `stream`: the connection.
+# - `text`: the statement.
+function text_answered(@db: sqlite.Db, sess: Session, stream: io.Stream, text: str) -> ()?
+    word = strings.to_upper_ascii(strings.trim(text))
+
+    if strings.has_prefix(s: word, prefix: "SET ")
+        known = strings.has_prefix(s: word, prefix: "SET TIME_ZONE") || strings.has_prefix(s: word, prefix: "SET NAMES") || strings.has_prefix(s: word, prefix: "SET AUTOCOMMIT")
+
+        if known
+            return packets.write_packet(
+                stream,
+                seq: 1,
+                payload: packets.ok_packet(affected: 0, last_id: 0, status: status_of(db))
+            )
+        return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.err_packet(code: 1193, state: "HY000", message: f"Unknown system variable in '{text}'")
+        )
+
+    if word == "START TRANSACTION" || word == "BEGIN"
+        if sqlite.in_transaction(db)
+            _ = sqlite.commit(@db).is_err()
+        return transaction_answered(stream, done: sqlite.begin(@db), status: status_of(db))
+
+    if word == "COMMIT"
+        if sqlite.in_transaction(db)
+            return transaction_answered(stream, done: sqlite.commit(@db), status: status_of(db))
+        return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.ok_packet(affected: 0, last_id: 0, status: status_of(db))
+        )
+
+    if word == "ROLLBACK"
+        if sqlite.in_transaction(db)
+            return transaction_answered(stream, done: sqlite.rollback(@db), status: status_of(db))
+        return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.ok_packet(affected: 0, last_id: 0, status: status_of(db))
+        )
+    return result_written(
+        stream,
+        sess: sess,
+        answer: engine.run(@db, text: text, params: []),
+        binary: false,
+        status: status_of(db)
+    )
+
+# The answer of a transaction's word: OK, or the engine's failure.
+#
+# - `stream`: the connection.
+# - `done`: what the engine answered.
+# - `status`: the server's status after it.
+function transaction_answered(stream: io.Stream, done: ()?, status: i64) -> ()?
+    match done
+        .ok _ => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.ok_packet(affected: 0, last_id: 0, status: status)
+        )
+        .err e => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.err_packet(code: 1105, state: "HY000", message: e.msg)
+        )
+
+# A `COM_STMT_PREPARE` answered: the statement's number, its placeholders
+# and its columns.
+#
+# - `db`: the engine.
+# - `sess`: the connection's state, the statement kept in it.
+# - `stream`: the connection.
+# - `text`: the statement.
+function prepare_answered(@db: sqlite.Db, @sess: Session, stream: io.Stream, text: str) -> ()?
+    match engine.shape_of(@db, text: text)
+        .refused x => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.err_packet(code: x.code, state: x.state, message: x.message)
+        )
+        .ready x =>
+            id = sess.next_statement
+            sess.next_statement @ id + 1
+            sess.prepared[id] @ Prepared(text: text, params: x.params, types: [])
+            head: [u8] @= [0x00]
+            bytes.push_all(to: @head, from: packets.le(n: id, width: 4))
+            bytes.push_all(to: @head, from: packets.le(n: x.columns.len(), width: 2))
+            bytes.push_all(to: @head, from: packets.le(n: x.params, width: 2))
+            head @ head.push(0)
+            bytes.push_all(to: @head, from: packets.le(n: 0, width: 2))
+            seq @= 1
+            packets.write_packet(stream, seq: seq, payload: head)?
+            seq @ seq + 1
+            placeholders: [packets.Column] @= []
+
+            for _ in range(from: 0, to: x.params)
+                placeholders @ placeholders.push(engine.text_column("?"))
+
+            for group in [placeholders, x.columns]
+                if group.len() > 0
+                    for c in group
+                        packets.write_packet(stream, seq: seq, payload: packets.column_packet(c, table: ""))?
+                        seq @ seq + 1
+
+                    if !sess.deprecate_eof
+                        packets.write_packet(stream, seq: seq, payload: packets.end_packet(deprecate_eof: false, status: status_of(db)))?
+                        seq @ seq + 1
+
+            return ok()
+
+# A `COM_STMT_EXECUTE` answered: its parameters read, its statement run,
+# its rows in the binary protocol.
+#
+# - `db`: the engine.
+# - `sess`: the connection's state.
+# - `stream`: the connection.
+# - `body`: the command's payload after its first byte.
+function execute_answered(@db: sqlite.Db, @sess: Session, stream: io.Stream, body: [u8]) -> ()?
+    c @= packets.cursor(body)
+    id = packets.read_le(@c, width: 4).default(0)
+
+    match sess.prepared[id]
+        .err _ => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.err_packet(code: 1243, state: "HY000", message: f"Unknown prepared statement handler ({id}) given to mysqld_stmt_execute")
+        )
+        .ok p =>
+            statement @= p
+            _ = packets.take(@c, n: 5).is_err()
+
+            match rows.read_params(@c, count: statement.params, @statement.types)
+                .err e => return packets.write_packet(
+                    stream,
+                    seq: 1,
+                    payload: packets.err_packet(code: 1210, state: "HY000", message: "Incorrect arguments to mysqld_stmt_execute: " + e.msg)
+                )
+                .ok params =>
+                    sess.prepared[id] @ statement
+                    return result_written(
+                        stream,
+                        sess: sess,
+                        answer: engine.run(@db, text: statement.text, params: params),
+                        binary: true,
+                        status: status_of(db)
+                    )
+
+# Writes `answer`: OK, an error, or a result set with its columns, its rows
+# in the text or the binary protocol, and its end.
+#
+# - `stream`: the connection.
+# - `sess`: the connection's state.
+# - `answer`: what the engine answered.
+# - `binary`: whether rows go in the binary protocol.
+# - `status`: the server's status after the statement.
+function result_written(stream: io.Stream, sess: Session, answer: engine.Answer, binary: bool, status: i64) -> ()?
+    match answer
+        .done x => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.ok_packet(affected: x.affected, last_id: 0, status: status)
+        )
+        .refused x => return packets.write_packet(
+            stream,
+            seq: 1,
+            payload: packets.err_packet(code: x.code, state: x.state, message: x.message)
+        )
+        .rows x =>
+            seq @= 1
+            packets.write_packet(stream, seq: seq, payload: packets.lenenc(x.columns.len()))?
+            seq @ seq + 1
+
+            for c in x.columns
+                packets.write_packet(stream, seq: seq, payload: packets.column_packet(c, table: ""))?
+                seq @ seq + 1
+
+            if !sess.deprecate_eof
+                packets.write_packet(stream, seq: seq, payload: packets.end_packet(deprecate_eof: false, status: status))?
+                seq @ seq + 1
+
+            for values in x.values
+                row = if binary
+                    rows.binary_row(x.columns, values: values)
+                else
+                    rows.text_row(values)
+                packets.write_packet(stream, seq: seq, payload: row)?
+                seq @ seq + 1
+
+            return packets.write_packet(
+                stream,
+                seq: seq,
+                payload: packets.end_packet(deprecate_eof: sess.deprecate_eof, status: status)
+            )
+
+# The server's status flags: autocommit, and a transaction where one is
+# open.
+#
+# - `db`: the engine.
+function status_of(db: sqlite.Db) -> i64
+    if sqlite.in_transaction(db)
+        return packets.STATUS_AUTOCOMMIT | packets.STATUS_IN_TRANS
+    return packets.STATUS_AUTOCOMMIT
+
+test "status_of: a transaction's flag"
+    db @= sqlite.open_memory().must()
+    assert status_of(db) == packets.STATUS_AUTOCOMMIT
+    sqlite.begin(@db).must()
+    assert status_of(db) & packets.STATUS_IN_TRANS != 0
+    sqlite.rollback(@db).must()
+    sqlite.close(@db).must()

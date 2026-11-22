@@ -1,0 +1,158 @@
+# What every import shares: the header of a file read against the columns
+# the import knows, and the report it answers, every rejected row told with
+# its place in the file and its reason. A header is read by its names, in
+# any order and any case, so a spreadsheet whose columns a person moved is
+# still read right; a column the import does not know refuses the file
+# rather than being skipped, since a misspelt `countd` would otherwise make
+# every row's count silently empty.
+
+use <rebel>/strings
+
+use files/tables
+
+## Codes
+
+# The code of a header that names a column twice, names one the import does
+# not know, or misses one it needs.
+constant INVALID: str
+    "invalid"
+
+## Reports
+
+# A row an import did not take.
+record Rejection
+    # Where it is: `line 4`, `row 7`.
+    place: str
+    # Why, in words a person fixes the file with.
+    reason: str
+
+# What an import did with a file.
+record Report
+    # The file's name.
+    file: str
+    # The rows it read after the header.
+    rows: i64
+    # The rows it took.
+    accepted: i64
+    # The rows it did not take, in the file's order.
+    rejected: [Rejection]
+    # What each row taken did, in the file's order.
+    done: [str]
+    # Where the file stopped being readable, failing `not_found` where it was
+    # read to its end.
+    broken: str?
+
+# A report of `t` with nothing taken yet.
+#
+# - `t`: the table.
+function report_of(t: tables.Table) -> Report
+    return Report(file: t.name, rows: t.rows.len(), accepted: 0, rejected: [], done: [], broken: t.broken)
+
+# Where `row` of `t` is, in the words a person looks for it by.
+#
+# - `t`: the table.
+# - `row`: one of its rows.
+function place_of(t: tables.Table, row: tables.Row) -> str
+    return f"{t.unit} {row.line}"
+
+## Headers
+
+# The position of each column of `t`'s header, by its name in lower case.
+#
+# - `t`: the table.
+# - `required`: the columns every row must have, in lower case.
+# - `optional`: the columns a file may have, in lower case.
+#
+# Fails `invalid` where a column is none of them, stands twice, or a
+# required one is missing; the message names them.
+function columns_of(t: tables.Table, required: [str], optional: [str]) -> {str: i64}?
+    at: {str: i64} @= {}
+
+    for i in range(from: 0, to: t.header.len())
+        name = strings.to_lower_ascii(strings.trim(t.header[i]))
+
+        if !is_one_of(name, names: required) && !is_one_of(name, names: optional)
+            known = join_all(required: required, then: optional)
+            return fail(code: INVALID, msg: f"{t.name}: the column \"{name}\" is none of {known}")
+
+        match at[name]
+            .ok _  => return fail(code: INVALID, msg: f"{t.name}: the column {name} stands twice")
+            .err _ => at[name] @ i
+
+    for name in required
+        match at[name]
+            .ok _  => _ = 0
+            .err _ => return fail(code: INVALID, msg: f"{t.name}: no column {name}")
+
+    return ok(at)
+
+# The cell of `row` under the column `name`, "" where the row is shorter or
+# the file has no such column.
+#
+# - `row`: the row.
+# - `columns`: the header's positions, from `columns_of`.
+# - `name`: the column's name in lower case.
+function cell(row: tables.Row, columns: {str: i64}, name: str) -> str
+    match columns[name]
+        .err _ => return ""
+        .ok i =>
+            if i < row.cells.len()
+                return strings.trim(row.cells[i])
+            return ""
+
+# The message of a row whose count of fields is not the header's, or
+# failing `not_found` where it matches.
+#
+# - `t`: the table.
+# - `row`: the row.
+function shape_of(t: tables.Table, row: tables.Row) -> str?
+    if t.unit == "line" && row.cells.len() != t.header.len()
+        return ok(f"{row.cells.len()} fields where the header names {t.header.len()}")
+    return fail(code: "not_found", msg: "the row has the header's shape")
+
+# Whether `name` is one of `names`.
+#
+# - `name`: the name.
+# - `names`: the names.
+function is_one_of(name: str, names: [str]) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# `required` and `optional` written as one list, `sku, location, counted`.
+#
+# - `required`: the first names.
+# - `then`: the names after them.
+function join_all(required: [str], then: [str]) -> str
+    all_names: [str] @= required
+
+    for n in then
+        all_names @ all_names.push(n)
+
+    return all_names.join(", ")
+
+test "columns_of: names in any order and case, an optional one absent"
+    t = tables.Table(
+        name: "c.csv",
+        unit: "line",
+        header: ["Counted", " SKU", "location"],
+        rows: [],
+        broken: fail(code: "not_found", msg: "end")
+    )
+    at = columns_of(t, required: ["sku", "location", "counted"], optional: ["unit_cost"]).must()
+    assert at["sku"].must() == 1 && at["counted"].must() == 0
+
+test "columns_of: an unknown column, a column twice, and one missing refuse the file"
+    end: str? = fail(code: "not_found", msg: "end")
+    unknown = tables.Table(name: "c.csv", unit: "line", header: ["sku", "countd"], rows: [], broken: end)
+    assert columns_of(unknown, required: ["sku"], optional: ["counted"]).is_err()
+    twice = tables.Table(name: "c.csv", unit: "line", header: ["sku", "SKU"], rows: [], broken: end)
+    assert columns_of(twice, required: ["sku"], optional: []).is_err()
+    missing = tables.Table(name: "c.csv", unit: "line", header: ["sku"], rows: [], broken: end)
+    assert columns_of(missing, required: ["sku", "counted"], optional: []).is_err()
+
+test "cell: a short row answers the empty text"
+    row = tables.Row(line: 3, cells: ["TEE"])
+    assert cell(row, columns: {"sku": 0, "counted": 1}, name: "counted") == "" && cell(row, columns: {"sku": 0}, name: "sku") == "TEE"

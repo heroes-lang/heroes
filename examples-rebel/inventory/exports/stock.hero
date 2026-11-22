@@ -1,0 +1,195 @@
+# The stock exported for people who work in a spreadsheet: one row per
+# variant and location, as CSV (RFC 4180, written by `csv`) or as an XLSX
+# workbook (written by `xlsx`) holding the same rows on a sheet `Stock` and
+# a sheet `Valuation` of each variant's value, its total a `SUM` formula
+# beside the value the program computed, so the file reads right in a
+# program that computes no formula.
+#
+# A level's value is its share of its variant's pool (`money.share`), so a
+# variant's levels may differ from its total by a cent of rounding; the
+# `Valuation` sheet holds each variant's exact value.
+
+use <rebel>/csv
+use <rebel>/strings
+use <rebel>/xlsx
+
+use model/books
+use model/money
+use report/account
+
+## Codes
+
+# The code of a path whose extension names neither format.
+constant INVALID: str
+    "invalid"
+
+## Rows
+
+# The header of the stock's rows.
+function header() -> [str]
+    return [
+        "sku"
+        "product"
+        "variant"
+        "location"
+        "on_hand"
+        "reorder_point"
+        "reorder_quantity"
+        "average_cost"
+        "value"
+    ]
+
+# The rows of the stock, as text, in the account's order.
+#
+# - `held`: the catalogue and its levels.
+function rows_of(held: books.Snapshot) -> [[str]]
+    out: [[str]] @= []
+
+    for l in account.ordered_levels(held)
+        match books.variant_by_id(held, id: l.variant_id)
+            .err _ => _ = 0
+            .ok v =>
+                product = match books.product_by_id(held, id: v.product_id)
+                    .ok p  => p.code
+                    .err _ => "?"
+
+                average = if v.units == 0
+                    0
+                else
+                    money.share(value: v.value_cents, part: 1, whole: v.units)
+
+                value = if v.units == 0
+                    0
+                else
+                    money.share(value: v.value_cents, part: l.on_hand, whole: v.units)
+                out @ out.push(
+                    [v.sku, product, v.label, books.location_by_id(held, id: l.location_id).code, f"{l.on_hand}", f"{l.reorder_point}", f"{l.reorder_quantity}", money.format_amount(average), money.format_amount(value)]
+                )
+
+    return out
+
+## Files
+
+# Writes the stock to `path`, as its extension says, and answers how many
+# rows it wrote.
+#
+# - `held`: the catalogue and its levels.
+# - `path`: a `.csv` or `.xlsx` file, made or replaced.
+#
+# Fails `invalid` where the extension is neither, and as the file cannot be
+# written.
+function export_stock(held: books.Snapshot, path: str) -> i64?
+    rows = rows_of(held)
+    lower = strings.to_lower_ascii(path)
+
+    if strings.has_suffix(s: lower, suffix: ".csv")
+        all_rows: [[str]] @= [header()]
+
+        for r in rows
+            all_rows @ all_rows.push(r)
+
+        write_file(path: path, text: csv.format(all_rows))?
+        return ok(rows.len())
+
+    if strings.has_suffix(s: lower, suffix: ".xlsx")
+        xlsx.save(workbook(held, rows: rows)?, path: path)?
+        return ok(rows.len())
+    return fail(code: INVALID, msg: f"{path} is neither .csv nor .xlsx")
+
+# The workbook of the stock: a sheet of the rows, numbers typed, and a
+# sheet of each variant's value with their total.
+#
+# - `held`: the catalogue.
+# - `rows`: the stock's rows, from `rows_of`.
+#
+# Fails as `xlsx` refuses a value or a sheet.
+function workbook(held: books.Snapshot, rows: [[str]]) -> xlsx.Workbook?
+    book @= xlsx.new_workbook()
+    bold_style @= xlsx.default_style()
+    bold_style.font.bold @ true
+    bold = xlsx.add_style(@book, style: bold_style)
+    money_style @= xlsx.default_style()
+    money_style.number_format @ "0.00"
+    cents = xlsx.add_style(@book, style: money_style)
+    stock @= xlsx.new_sheet("Stock")
+    header_row: [xlsx.Value] @= []
+
+    for name in header()
+        header_row @ header_row.push(.text(v: name))
+
+    xlsx.add_row(@stock, values: header_row)?
+
+    for i in range(from: 0, to: header().len())
+        xlsx.set_style(@stock, row: 0, column: i, style: bold)?
+
+    for r in rows
+        typed: [xlsx.Value] @= [.text(v: r[0]), .text(v: r[1]), .text(v: r[2]), .text(v: r[3])]
+
+        for k in range(from: 4, to: 7)
+            typed @ typed.push(.number(v: number_of(r[k])))
+
+        typed @ typed.push(.number(v: amount_number(r[7])))
+        typed @ typed.push(.number(v: amount_number(r[8])))
+        xlsx.add_row(@stock, values: typed)?
+
+    for row in range(from: 1, to: rows.len() + 1)
+        xlsx.set_style(@stock, row: row, column: 7, style: cents)?
+        xlsx.set_style(@stock, row: row, column: 8, style: cents)?
+
+    xlsx.freeze(@stock, rows: 1, columns: 0)?
+    xlsx.set_column_width(@stock, first: 0, last: 3, width: 14.0)?
+    xlsx.add_sheet(@book, s: stock)?
+    valuation @= xlsx.new_sheet("Valuation")
+    xlsx.add_row(@valuation, values: [.text(v: "sku"), .text(v: "units"), .text(v: "average_cost"), .text(v: "value")])?
+    total @= 0
+
+    for v in held.variants
+        average = if v.units == 0
+            0
+        else
+            money.share(value: v.value_cents, part: 1, whole: v.units)
+        xlsx.add_row(@valuation, values: [.text(v: v.sku), .number(v: to_f64(v.units)), .number(v: cents_number(average)), .number(v: cents_number(v.value_cents))])?
+        total @ total + v.value_cents
+
+    last = held.variants.len() + 1
+    xlsx.set_value(@valuation, row: last, column: 0, value: .text(v: "total"))?
+    xlsx.set_formula(@valuation, row: last, column: 3, formula: f"SUM(D2:D{last})")?
+    xlsx.set_value(@valuation, row: last, column: 3, value: .number(v: cents_number(total)))?
+
+    for row in range(from: 1, to: last + 1)
+        xlsx.set_style(@valuation, row: row, column: 2, style: cents)?
+        xlsx.set_style(@valuation, row: row, column: 3, style: cents)?
+
+    xlsx.freeze(@valuation, rows: 1, columns: 0)?
+    xlsx.add_sheet(@book, s: valuation)?
+    return ok(book)
+
+# The number a cell of whole units holds.
+#
+# - `text`: decimal digits, as `rows_of` wrote them.
+function number_of(text: str) -> f64
+    n @= 0
+
+    for i in range(from: 0, to: text.len())
+        n @ n * 10 + to_i64(text[i] - '0').must()
+
+    return to_f64(n)
+
+# The number of currency units an amount written by `money.format_amount`
+# holds.
+#
+# - `text`: the amount, `12.50`.
+function amount_number(text: str) -> f64
+    return cents_number(money.parse_amount(text).default(0))
+
+# `cents` as a number of currency units, for a cell formatted `0.00`.
+#
+# - `cents`: the amount.
+function cents_number(cents: i64) -> f64
+    return to_f64(cents) / 100.0
+
+test "header: nine columns, the SKU first"
+    assert header().len() == 9 && header()[0] == "sku"
+
+test "number_of and amount_number: whole units and an amount"
+    assert number_of("40") == 40.0 && amount_number("12.50") == 12.5
