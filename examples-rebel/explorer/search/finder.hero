@@ -180,7 +180,7 @@ function excerpt_of(line: str, first: i64, past: i64) -> str
 
     return strings.trim(head + line.slice(from: first, to: past) + tail)
 
-# A hit as one line of the results: `docs/notes.txt:3: crème brûlée` for a
+# A hit as one line of the results: `notes.txt:3: crème brûlée` for a
 # line, the path alone for a name.
 #
 # - `h`: the hit.

@@ -5,8 +5,8 @@
 # either that does (`go doc` finds no `github.com/webview/webview_go`, and
 # `python3 -I -c "import webview"` answers `ModuleNotFoundError`), so their
 # columns are `-`. Rust's is Tauri 2.12.5's, which this machine holds under
-# `~/.cargo/registry`, its `Webview` and `WebviewBuilder` read from its
-# `src/webview/mod.rs`, its scheme, its commands and its events named where
+# `~/.cargo/registry`, its `Webview` and `WebviewBuilder` read from the
+# crate's own `webview` module, its scheme, its commands and its events named where
 # they stand; Tauri is the shape this package takes.
 
 capability webview/make  the system's own web view, made in a window of a `ui` app
