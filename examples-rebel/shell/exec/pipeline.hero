@@ -166,6 +166,9 @@ function run_inside(@sh: state.Shell, stage: ast.Command, prepared: [simple.Prep
     match sub.flow
         .exiting e                                         => status @ e.code
         .normal | .breaking _ | .continuing _ | .returning => _ = 0
+        .interrupted =>
+            status @ 130
+            sh.flow @ .interrupted
 
     executor.end_subshell(sh: @sh, sub: @sub)
     streams.close_all(@opened)

@@ -52,6 +52,9 @@ variant Flow
     exiting
         # The status the shell ends with.
         code: i64
+    # Ctrl-C while an interactive shell ran a command line: leaving every
+    # command of it, the shell itself going on to its next prompt.
+    interrupted
 
 # The options `set` changes, each by its letter.
 record Options
@@ -84,7 +87,8 @@ record Job
     done: bool
     # The status of its last stage, once done.
     status: i64
-    # Whether its end was told, so it is told once.
+    # Whether its stop was told, so a stopped job is told once until it goes
+    # on; an ended job is told as it leaves the table.
     told: bool
 
 # A variable's value before a function's `local` changed it.

@@ -56,8 +56,8 @@ function play(exe: str) -> i64?
     run.release_jobs(@sh)
 
     status = match sh.flow
-        .exiting e                                         => e.code
-        .normal | .breaking _ | .continuing _ | .returning => sh.status
+        .exiting e                                                        => e.code
+        .normal | .breaking _ | .continuing _ | .returning | .interrupted => sh.status
 
     os.change_dir(started_in)?
     fs.remove_all(ROOT)?
