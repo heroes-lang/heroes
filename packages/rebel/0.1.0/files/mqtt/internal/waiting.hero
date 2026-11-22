@@ -3,12 +3,16 @@
 # `PINGREQ` sent where the keep-alive asks one, and the connection made again
 # where it is found lost.
 
+use io
 use mqtt/internal/dialing
 use mqtt/internal/fixture
 use mqtt/internal/link
 use mqtt/internal/model
 use mqtt/internal/reading
 use mqtt/internal/state
+use poll
+use strings
+use time
 
 # The moment `wait_ms` from now on the monotonic clock, a wait of 0 given
 # one millisecond to read what has come.
@@ -77,7 +81,7 @@ function wait_once(@s: state.Session, until: i64) -> ()?
 function step_until(@s: state.Session, until: i64) -> reading.Event?
     while true
         if s.closed
-            return dialing.closed_failure(s)
+            return dialing.closed_failure(@s)
 
         if !s.open
             dialing.recover(@s, code: model.CLOSED, msg: "the connection was lost")?
@@ -96,7 +100,9 @@ function step_until(@s: state.Session, until: i64) -> reading.Event?
                     wait_once(@s, until: until)?
 
 # The acknowledgement of type `kind` for `packet_id`, or `other` where the
-# connection was made again meanwhile, so the request is sent again.
+# connection was made again meanwhile, so the request is sent again. What
+# came behind it is left for the call that waits to `settle` once its whole
+# exchange is done: QoS 2's `PUBCOMP` follows its `PUBREC` in one call.
 #
 # - `s`: the session.
 # - `kind`: 4, 5, 7, 9 or 11.
@@ -131,11 +137,13 @@ function next(@s: state.Session, wait_ms: i64) -> model.Message?
 
     while true
         match state.take_first(@s)
-            .ok m  => return ok(m)
+            .ok m =>
+                settle(@s)
+                return ok(m)
             .err _ => _ = 0
 
         if s.closed
-            return dialing.closed_failure(s)
+            return dialing.closed_failure(@s)
         _ = step_until(@s, until: until)?
 
 # Sends a `PINGREQ` and waits for its `PINGRESP`.
@@ -158,17 +166,23 @@ function ping(@s: state.Session, wait_ms: i64) -> ()?
             _ = step_until(@s, until: until)?
 
         if s.stats.reconnects == made
+            settle(@s)
             return ok()
 
-# The messages held and those one read completes.
+# The messages held and those one read completes; what the buffer holds
+# whole is acted on first, and the read is made only where nothing is held.
 #
 # - `s`: the session.
 function read_ready(@s: state.Session) -> [model.Message]?
     if state.held_count(s) == 0 && s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
 
-    if state.held_count(s) == 0 && s.open
-        whole(@s)?
+    if s.open
+        match whole(@s)
+            .ok _ => _ = 0
+            .err e =>
+                if state.held_count(s) == 0
+                    return fail(code: e.code, msg: e.msg)
 
         if state.held_count(s) == 0 && s.open
             match link.arm(s.link, ms: s.options.wait_ms)
@@ -204,6 +218,42 @@ function whole(@s: state.Session) -> ()?
             .err e => return dialing.lose(@s, code: e.code, msg: e.msg)
 
     return ok()
+
+# Acts on every packet whole in the buffer once a wait has its answer: one
+# read may bring the answer and what the server wrote after it, and a
+# message left there as bytes is one `held_count` does not count and that
+# `poll`, the stream drained, never tells a program of (defect 2675). The
+# answer came, so the call answers it whatever follows: a connection found
+# lost here is made again as `whole` does it, and where that fails the
+# session keeps the failure, which the next call answers.
+#
+# - `s`: the session.
+function settle(@s: state.Session)
+    match whole(@s)
+        .ok _ => _ = 0
+        .err e =>
+            if s.closed
+                s.kept @ fail(code: e.code, msg: e.msg)
+
+# For the tests: the payload of every message a loop on one thread takes in
+# `turns` turns, as a program serving several clients with `poll` writes
+# it: what the session holds is read at once, and otherwise its stream is
+# waited on for a tenth of a second and read where it is readable.
+#
+# - `s`: the session, open over a stream `poll` waits on.
+# - `turns`: the turns.
+function polled(@s: state.Session, turns: i64) -> [[u8]]
+    set @= poll.make(2).must()
+    _ = poll.add_stream(set, s: link.stream_of(s.link).must(), interest: .read).must()
+    got: [[u8]] @= []
+
+    for _ in range(from: 0, to: turns)
+        if state.held_count(s) > 0 || poll.wait(set, limit: time.milliseconds(100).must()).must().len() > 0
+            for m in read_ready(@s).must()
+                got @ got.push(m.payload)
+
+    poll.close(@set).must()
+    return got
 
 test "next: a message read, a held one first, a timeout where nothing comes, a wait below 0"
     r @= fixture.rig_bytes([48, 5, 0, 1, 97, 0, 7, 48, 5, 0, 1, 98, 0, 8])
@@ -243,11 +293,35 @@ test "await_ack: other packets held meanwhile, the acknowledgement asked for ans
     assert got == .ack(kind: 4, packet_id: 5, reason: 0, properties: []) && state.held_count(r.session) == 1
     fixture.close_rig(@r)
 
+test "ping and next: the messages read behind the PINGRESP and behind the message answered are held, and a loop on poll takes them"
+    r @= fixture.rig_bytes([208, 0, 48, 5, 0, 1, 97, 0, 7])
+    ping(@r.session, wait_ms: 1000).must()
+    assert state.held_count(r.session) == 1 && polled(@r.session, turns: 3) == [[7]]
+    io.write(r.peer.stream, data: [48, 5, 0, 1, 97, 0, 8, 48, 5, 0, 1, 98, 0, 9]).must()
+    assert next(@r.session, wait_ms: 1000).must().payload == [8]
+    assert state.held_count(r.session) == 1 && polled(@r.session, turns: 3) == [[9]]
+    fixture.close_rig(@r)
+
 test "read_ready: what one read completes, then nothing"
     r @= fixture.rig_bytes([48, 5, 0, 1, 97, 0, 7, 48, 5, 0, 1, 98, 0, 8])
     r.session.options.wait_ms @ 100
     assert read_ready(@r.session).must().len() == 2 && read_ready(@r.session).must().len() == 0
     fixture.close_rig(@r)
+
+test "ping: bytes that are no MQTT behind the PINGRESP end the session, ping answers, and the call after says why, once"
+    r @= fixture.rig_bytes([208, 0, 0, 0])
+    ping(@r.session, wait_ms: 1000).must()
+    assert r.session.closed
+
+    match next(@r.session, wait_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && strings.contains(s: e.msg, substr: "the options make it no more")
+
+    match next(@r.session, wait_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the client of the test's server is closed"
+
+    fixture.close(@r.peer.stream)
 
 test "a connection the server ends, with no reconnection allowed, closes the client"
     r @= fixture.rig("")

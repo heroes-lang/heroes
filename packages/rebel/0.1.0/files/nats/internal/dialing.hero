@@ -124,7 +124,8 @@ function armed(@s: state.Session, ms: i64) -> ()?
         .err e => return abandon(@s, code: e.code, msg: e.msg)
 
 # Connects to the server at `index` of the pool, logs in and waits for the
-# server's `PONG`; the session's bytes and counts begin anew.
+# server's `PONG`; the session's bytes and counts begin anew, and what came
+# after the `PONG` in the same read is acted on.
 #
 # - `s`: the session, open where it answers.
 # - `index`: the server's index in the pool.
@@ -200,6 +201,11 @@ function dial(@s: state.Session, index: i64) -> ()?
 
     if s.options.ping_interval_ms > 0
         s.ping_due @ reading.now_ms() + s.options.ping_interval_ms
+
+    # What the server wrote after its `PONG` in the same read, a `PING` or
+    # an `INFO`, acted on now: the session leaves the handshake holding no
+    # whole operation, which no later readiness of the stream would bring.
+    reading.apply_whole(@s)?
     return armed(@s, ms: 0)
 
 # Every subscription of the session sent again: `SUB`, and `UNSUB` with the
@@ -373,6 +379,20 @@ test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then 
     io.write_text(c2.stream, text: "-ERR 'Authorization Violation'\r\n").must()
     assert strings.has_prefix(s: threads.wait_text(@t2), prefix: "permission: ")
     io.close(@c2.stream).must()
+    net.close_listener(@l).must()
+
+test "dial: a PING the server sends behind its PONG, in the same read, is answered before the dial ends"
+    l @= net.listen("127.0.0.1", port: 0).must()
+    t @= threads.start_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}").must()
+    c @= net.accept(l, deadline_ms: 5000).must()
+    io.write_text(c.stream, text: "INFO {\"server_name\":\"fake\"}\r\n").must()
+    r @= io.reader(c.stream)
+    _ = io.read_line(@r).must()
+    assert io.read_line(@r).must() == "PING"
+    io.write_text(c.stream, text: "PONG\r\nPING\r\n").must()
+    assert threads.wait_text(@t) == "open fake 1048576 1"
+    assert io.read_line(@r).default("") == "PONG"
+    io.close(@c.stream).must()
     net.close_listener(@l).must()
 
 test "dial: a server that begins with something other than INFO"

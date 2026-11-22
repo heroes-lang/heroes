@@ -104,6 +104,10 @@ record Session
     cancellations: [model.Cancellation]
     # Whether the server holds publishes back.
     blocked: model.Blocked
+    # The failure that lost the connection while a call whose answer had
+    # come acted on what the server wrote after it: the next call that finds
+    # the connection closed answers it, once; `ok` where there is none.
+    kept: ()?
 
 # A closing that says nothing.
 function no_closing() -> model.Closing
@@ -182,7 +186,8 @@ function fresh(o: model.Options, target: str) -> Session
         returns: [],
         return_at: 0,
         cancellations: [],
-        blocked: model.Blocked(active: false, reason: "")
+        blocked: model.Blocked(active: false, reason: ""),
+        kept: ok()
     )
 
 # The values held unread: deliveries, returned messages and confirmations.

@@ -24,8 +24,8 @@ the same signed request sent twice: answered 200, then refused 400 badNonce
 a request whose payload was changed after signing: refused 400 malformed
 an update signed with a secret the authority does not hold: refused, the authority answered NOTAUTH
 an update with no signature: refused, the authority answered REFUSED
-other.certs.test, whose CAA names another CA: refused, the authorization of other.certs.test turned invalid: http-01: the CAA records of other.certs.test let no CA named standin.certs.test issue
-www.certs.test, answered with another account's key authorization: refused, the authorization of www.certs.test turned invalid: http-01: the HTTP-01 answer of www.certs.test is not this account's key authorization for its token
+other.certs.test, whose CAA names another CA: refused, the authorization of other.certs.test turned invalid: http-01: caa: the CAA records of other.certs.test let no CA named standin.certs.test issue
+www.certs.test, answered with another account's key authorization: refused, the authorization of www.certs.test turned invalid: http-01: incorrectResponse: the HTTP-01 answer of www.certs.test is not this account's key authorization for its token
 an order for example.org: refused, the server answered 400 rejectedIdentifier: this stand-in issues for names under certs.test alone, not example.org
 == day 30
 wild: revoked by its account, for its key's compromise (reason 1)

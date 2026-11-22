@@ -4,6 +4,7 @@
 # after a loss, with a backoff, the subscriptions made anew where the server
 # kept no session.
 
+use mqtt/internal/fixture
 use mqtt/internal/link
 use mqtt/internal/model
 use mqtt/internal/reading
@@ -13,11 +14,17 @@ use random
 use time
 use url
 
-# The failure of a closed session.
+# The failure of a closed session: the failure that ended it while a call
+# that had its answer acted on what followed, answered once by the call
+# after (`waiting.settle`); else that the client is closed.
 #
-# - `s`: the session.
-function closed_failure<T>(s: state.Session) -> T?
-    return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+# - `s`: the session; what it kept is answered once.
+function closed_failure<T>(@s: state.Session) -> T?
+    match s.kept
+        .ok _ => return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+        .err e =>
+            s.kept @ ok()
+            return fail(code: e.code, msg: e.msg)
 
 # The link the options' transport asks for.
 #
@@ -82,6 +89,16 @@ function dial(@s: state.Session) -> ()?
     s.aliases @ {}
     s.max_packet @ 0
     s.link @ opened(o)?
+    return greet(@s)
+
+# Sends `CONNECT` over the link `dial` opened and reads the `CONNACK`,
+# keeping what the server allowed and acting on what came after it in the
+# same read.
+#
+# - `s`: the session, its link open and nothing read on it yet; open where
+#   it answers.
+function greet(@s: state.Session) -> ()?
+    o = s.options
 
     match link.arm(s.link, ms: o.connect_ms)
         .ok _  => _ = 0
@@ -139,12 +156,19 @@ function dial(@s: state.Session) -> ()?
     s.open @ true
     s.ping_due @ reading.now_ms() + s.keep_alive_ms
 
+    # What the server wrote after its `CONNACK` in the same read, the
+    # messages of a session it kept, acted on now: the session leaves the
+    # greeting holding no whole packet, which no later readiness of the
+    # stream would bring.
+    reading.apply_whole(@s)?
+
     match link.arm(s.link, ms: 0)
         .ok _  => return ok()
         .err e => return reading.lost(@s, code: e.code, msg: e.msg)
 
 # Every subscription granted made again, on a new connection whose server
-# kept no session, waiting for its `SUBACK`.
+# kept no session, waiting for its `SUBACK` and acting on what came after it
+# in the same read.
 #
 # - `s`: the session, just connected.
 function resubscribe(@s: state.Session) -> ()?
@@ -163,6 +187,10 @@ function resubscribe(@s: state.Session) -> ()?
         match reading.apply(@s, p: p)?
             .acks a =>
                 if a.kind == 9 && a.packet_id == id
+                    # The retained messages a server sends at once after
+                    # the `SUBACK` come in the same read, and are held now.
+                    reading.apply_whole(@s)?
+
                     match link.arm(s.link, ms: 0)
                         .ok _  => return ok()
                         .err e => return reading.lost(@s, code: e.code, msg: e.msg)
@@ -266,7 +294,7 @@ function lose(@s: state.Session, code: str, msg: str) -> ()?
 # - `p`: the packet.
 function send(@s: state.Session, p: model.Packet) -> ()?
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
 
     if !s.open
         recover(@s, code: model.CLOSED, msg: "the connection was lost")?
@@ -307,6 +335,24 @@ test "wait_before: none first, doubling to the most, and the random part's bound
     assert wait_before(n: 1, r: r) == 0 && wait_before(n: 2, r: r) == 10 && wait_before(n: 3, r: r) == 20 && wait_before(n: 4, r: r) == 30
     j = wait_before(n: 2, r: model.Reconnect(attempts: 9, wait_ms: 10, most_wait_ms: 30, jitter_ms: 4))
     assert j >= 10 && j <= 14
+
+test "greet: a message the server wrote behind its CONNACK, in the same read, is held when the greeting ends"
+    r @= fixture.rig_bytes([32, 3, 1, 0, 0, 48, 5, 0, 1, 97, 0, 7])
+    r.session.open @ false
+    greet(@r.session).must()
+    assert r.session.open && r.session.connack.session_present && state.held_count(r.session) == 1
+    assert r.session.at == r.session.buf.len() && state.take_first(@r.session).must().payload == [7]
+    fixture.close_rig(@r)
+
+test "resubscribe: a retained message the server wrote behind its SUBACK, in the same read, is held"
+    r @= fixture.rig_bytes([144, 4, 0, 1, 0, 1, 49, 5, 0, 1, 97, 0, 7])
+    r.session.subs @ [
+        model.Subscription(filter: "a", qos: 1, no_local: false, retain_as_published: false, retain_handling: 0)
+    ]
+    resubscribe(@r.session).must()
+    assert state.held_count(r.session) == 1 && r.session.at == r.session.buf.len()
+    assert state.take_first(@r.session).must().retain
+    fixture.close_rig(@r)
 
 test "recover: with no attempt allowed the session closes"
     s @= state.fresh(state.sample_options())

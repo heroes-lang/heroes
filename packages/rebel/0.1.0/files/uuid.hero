@@ -9,17 +9,19 @@
 # bits are the milliseconds since 1970 and the rest is random, so identifiers
 # made a millisecond apart sort in the order they were made; two made within
 # one millisecond sort in no particular order, since no counter is kept.
-# Versions 1, 3, 5, 6 and 8 are read and written but not made.
+# `with_version` marks bits of the caller's as a version: a version 4 from a
+# seeded generator's bytes, for identifiers that repeat from one run to the
+# next, or a version 8, whose bits are the program's own. Versions 1, 3, 5
+# and 6 are read and written but not made.
 #
-# It fails with `invalid` where a text or bytes are not a UUID or a time
-# falls outside version 7's, and `new_v4` and `new_v7` with the codes of
-# `random.secure_below` and `time.now`.
+# It fails with `invalid` where a text or bytes are not a UUID, a time
+# falls outside version 7's or a version outside RFC 9562's, and `new_v4`
+# and `new_v7` with the codes of `random.secure_below` and `time.now`.
 #
 # Not written yet, each a `pending` block of its ledger: UUIDs of version 7 that
 # sort in the order made within one millisecond; a UUID's bytes in Microsoft's
 # mixed order; the fields of RFC 4122's version 1 layout; UUIDs of versions 3
-# and 5, made from a namespace and a name; a UUID of version 8, its bits the
-# caller's.
+# and 5, made from a namespace and a name.
 
 use random
 use time
@@ -28,8 +30,8 @@ use uuid/internal/text
 ## Codes
 
 # The code a function fails with where its input is not a UUID: a text,
-# bytes that are not 16, a time version 7 cannot hold, or a UUID that is not
-# of version 7 asked its time.
+# bytes that are not 16, a time version 7 cannot hold, a UUID that is not
+# of version 7 asked its time, or a version RFC 9562 does not define.
 constant INVALID: str
     text.INVALID
 
@@ -114,6 +116,28 @@ function new_v7_at(unix_milliseconds: i64) -> Uuid?
     middle = random.secure_below(4096)?
     last = random.secure_below(4611686018427387904)?
     return ok(Uuid(high: ms * 65536 + 0x7000 + middle, low: 9223372036854775808 + last))
+
+# `id` marked as a UUID of `version`: its four version bits set to
+# `version` and its variant to RFC 9562's, its other 122 bits kept, as
+# Python's `uuid.UUID(bytes=..., version=...)` makes one. It makes a version
+# 4 from bits of the caller's, a seeded generator's for identifiers that
+# must be the same on every run, and a version 8, whose bits RFC 9562 5.8
+# leaves to the program.
+#
+# - `id`: the UUID whose other bits are kept, `from_bytes` of the caller's
+#   16 bytes as a rule.
+# - `version`: the version, 1 to 8.
+#
+# Fails `invalid` where `version` is outside 1 to 8, the versions RFC 9562
+# defines, as Python refuses it. See also `from_bytes`, `new_v4`,
+# `version_of`.
+function with_version(id: Uuid, version: i64) -> Uuid?
+    if version < 1 || version > 8
+        return fail(code: INVALID, msg: f"version {version}, where RFC 9562 defines 1 to 8")
+    kept_high = id.high - id.high / 4096 % 16 * 4096
+    return ok(
+        Uuid(high: kept_high + to_u64(version).must() * 4096, low: id.low % 4611686018427387904 + 9223372036854775808)
+    )
 
 ## Text and bytes
 
@@ -293,6 +317,33 @@ test "new_v7: version 7, its time now, and one made a millisecond later sorts af
     later = new_v7_at(made + 1).must()
     assert compare(a: id, b: later) == -1
 
+# Python 3.15.2's `uuid.UUID(bytes=..., version=...)` answered these on
+# 2026-11-22, and refused the versions 0, 9 and -1 alike.
+test "with_version: the versions 0, 9 and -1 refused, 1 and 8 at the edges, the nil and the max UUIDs, every other bit kept"
+    counted = from_bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]).must()
+
+    for refused in [0, 9, -1]
+        match with_version(counted, version: refused)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && e.msg == f"version {refused}, where RFC 9562 defines 1 to 8"
+
+    assert format(with_version(counted, version: 1).must()) == "00010203-0405-1607-8809-0a0b0c0d0e0f"
+    assert format(with_version(counted, version: 4).must()) == "00010203-0405-4607-8809-0a0b0c0d0e0f"
+    assert format(with_version(counted, version: 7).must()) == "00010203-0405-7607-8809-0a0b0c0d0e0f"
+    assert format(with_version(counted, version: 8).must()) == "00010203-0405-8607-8809-0a0b0c0d0e0f"
+    assert format(with_version(nil_uuid(), version: 4).must()) == "00000000-0000-4000-8000-000000000000"
+    assert format(with_version(max_uuid(), version: 4).must()) == "ffffffff-ffff-4fff-bfff-ffffffffffff"
+    marked = with_version(max_uuid(), version: 8).must()
+    assert format(marked) == "ffffffff-ffff-8fff-bfff-ffffffffffff" && version_of(marked) == 8 && variant_of(marked) == .rfc
+    assert with_version(marked, version: 8).must() == marked
+
+test "with_version: a seeded generator's bytes make the same identifier on every run"
+    first @= random.Generator(high: 1, low: 2)
+    again @= random.Generator(high: 1, low: 2)
+    a = with_version(from_bytes(random.next_bytes(@first, count: 16)).must(), version: 4).must()
+    b = with_version(from_bytes(random.next_bytes(@again, count: 16)).must(), version: 4).must()
+    assert a == b && version_of(a) == 4 && variant_of(a) == .rfc
+
 test "from_bytes and time_of: lengths refused, and a version that holds no time"
     assert from_bytes([]).is_err()
     assert from_bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).is_err()
@@ -320,6 +371,12 @@ test "new_v7: an identifier that sorts by time"
 test "new_v7_at: RFC 9562's moment"
     id = new_v7_at(1645557742000).must()
     assert format(id).slice(from: 0, to: 15) == "017f22e2-79b0-7"
+
+# A version 4 identifier over sixteen bytes of the caller's: Python's
+# `uuid.UUID(bytes=bytes(range(16)), version=4)`.
+test "with_version: version 4 over the bytes 0 to 15"
+    id = with_version(from_bytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]).must(), version: 4).must()
+    assert format(id) == "00010203-0405-4607-8809-0a0b0c0d0e0f"
 
 # An identifier read from a form or a file.
 test "parse: the standard form"

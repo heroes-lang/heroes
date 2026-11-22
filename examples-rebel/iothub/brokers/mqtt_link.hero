@@ -72,27 +72,6 @@ function take(@l: Link) -> [mqtt.Message]?
 function holds(l: Link lent) -> bool
     return l.clients.len() > 0 && mqtt.held_of(l.clients[0]) > 0
 
-# The messages the client has read and not given out, parsed or still in
-# its buffer, taken without reading the stream: a call that waited for an
-# acknowledgement may have read a message behind it, which `held_of` does
-# not count and `poll` will never report, and a zero
-# wait parses it.
-#
-# - `l`: the link, up.
-#
-# Fails as `mqtt.next_message` fails for another reason than nothing being
-# there.
-function take_buffered(@l: Link) -> [mqtt.Message]?
-    got: [mqtt.Message] @= []
-
-    while true
-        match mqtt.next_message(@l.clients[0], wait: time.nanoseconds(0))
-            .ok m => got @ got.push(m)
-            .err e =>
-                if e.code == mqtt.TIMEOUT
-                    return ok(got)
-                return fail(code: e.code, msg: e.msg)
-
 # Publishes `body` on `topic` at QoS 1, waiting for the broker's PUBACK.
 #
 # - `l`: the link, up.

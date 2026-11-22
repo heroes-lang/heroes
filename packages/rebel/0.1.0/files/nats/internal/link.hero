@@ -3,6 +3,7 @@
 # closed alike. A read answers what one read brings; the end of the
 # connection is a failure `closed`, so a caller never stands still on it.
 
+use bytes
 use io
 use nats/internal/model
 use net
@@ -183,7 +184,12 @@ function arm(l: Link, ms: i64) -> ()?
         .socket w    => websocket.set_deadline(w.conn, deadline: tls_deadline(ms)?)
         .gone        => fail(code: model.CLOSED, msg: "the connection is closed")
 
-# The bytes one read of `l` brings, at least one.
+# The bytes one read of `l` brings: at least one from a TCP or TLS stream;
+# from a WebSocket, the data of every message the read completes, joined in
+# order, and none where it completes none. A WebSocket's read takes every
+# message it completes because one read of its stream may bring several,
+# and a message the WebSocket kept is one `poll`, the stream drained, never
+# tells a program of (defect 2675).
 #
 # - `l`: the link; a WebSocket's state moves.
 # - `target`: how the server is named.
@@ -191,18 +197,24 @@ function arm(l: Link, ms: i64) -> ()?
 # Fails `closed` where the server ended the connection, and as the read
 # fails.
 function read(@l: Link, target: str) -> [u8]?
-    got = match l
-        .connected c => io.read(c.stream, n: CHUNK)?
+    match l
+        .connected c =>
+            got = io.read(c.stream, n: CHUNK)?
+
+            if got.len() == 0
+                return fail(code: model.CLOSED, msg: f"{target} closed the connection")
+            return ok(got)
         .socket w =>
             c @= w.conn
-            answer = websocket.read_message(@c)
+            answer = websocket.read_ready(@c)
             l @ .socket(conn: c)
-            websocket.data_of(answer?)
-        .gone => return closed_failure(target)
+            joined: [u8] @= []
 
-    if got.len() == 0
-        return fail(code: model.CLOSED, msg: f"{target} closed the connection")
-    return ok(got)
+            for m in answer?
+                bytes.push_all(to: @joined, from: websocket.data_of(m))
+
+            return ok(joined)
+        .gone => return closed_failure(target)
 
 # Writes `data` to `l`.
 #
@@ -273,3 +285,19 @@ test "a link over a pair of connections: written, read, armed, closed, and gone 
 
     close(@l)
     assert stream_of(l).is_err() && write(@l, data: [1]).is_err() && !is_secured(l, secure: false)
+
+test "read: over a WebSocket, every message one read completes, nothing where it completes none, then the rest"
+    two @= net.pair(5000).must()
+    server @= websocket.conn_of(@two.second.stream, role: .server, settings: websocket.default_settings())
+    l: Link @= .socket(
+        conn: websocket.conn_of(@two.first.stream, role: .client, settings: websocket.default_settings())
+    )
+    websocket.write_binary(@server, data: [1, 2]).must()
+    websocket.write_binary(@server, data: [3]).must()
+    assert read(@l, target: "t").must() == [1, 2, 3]
+    io.write(server.stream, data: [130, 3, 9]).must()
+    assert read(@l, target: "t").must() == []
+    io.write(server.stream, data: [8, 7]).must()
+    assert read(@l, target: "t").must() == [9, 8, 7]
+    close(@l)
+    _ = websocket.drop(@server).is_err()

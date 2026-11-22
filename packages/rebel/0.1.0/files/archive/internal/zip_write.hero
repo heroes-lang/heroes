@@ -1,7 +1,7 @@
 # A zip archive's members written to a stream or held in memory (APPNOTE.TXT 6.3): each
-# member's local header and data, whole when the data is in hand and with a
-# data descriptor after it when it is streamed, ZIP64's extra field where a
-# size passes 32 bits. Names and comments are written in UTF-8, flagged so
+# member's local header and data, whole when the data is in hand, and in
+# pieces otherwise (`begin_member`, `member_part`, `end_member`) with a data
+# descriptor after them, ZIP64's extra field where a size passes 32 bits. Names and comments are written in UTF-8, flagged so
 # where they are not ASCII; every member says it was made on Unix, with its
 # mode. `zip_end` writes the central directory and the end records.
 
@@ -68,22 +68,78 @@ record Sink
     zip64_at: i64
     # Whether the end has been written.
     ended: bool
+    # Whether a member `begin_member` began is in hand: its data still to
+    # come by `member_part`, its descriptor by `end_member`.
+    open: bool
+    # The member in hand, its sizes counted so far.
+    current: Written
+    # Its name, for messages.
+    current_name: str
+    # Whether its sizes are ZIP64's, in its descriptor and its header.
+    current_zip64: bool
+    # Whether it may hold data: false for a folder.
+    current_holds_data: bool
+    # Its deflater, made anew by `begin_member`.
+    deflater: compress.Compressor
+    # The CRC-32 of its data so far.
+    check: hash.State32
 
-# A sink writing to `stream`.
-function start(stream: io.Stream, zip64_at: i64) -> Sink
-    return Sink(holding: false, stream: stream, held: [], written: 0, members: [], zip64_at: zip64_at, ended: false)
-
-# A sink that holds the archive's bytes in memory, `held` once finished.
-function start_held(zip64_at: i64) -> Sink
+# A sink writing to `stream`, or holding its bytes where `holding`.
+function made(holding: bool, stream: io.Stream, zip64_at: i64) -> Sink
+    # The default options are in range, so the compressor is always made.
+    idle = compress.compressor(compress.default_options(.raw)).must()
     return Sink(
-        holding: true,
-        stream: codes.no_stream(),
+        holding: holding,
+        stream: stream,
         held: [],
         written: 0,
         members: [],
         zip64_at: zip64_at,
-        ended: false
+        ended: false,
+        open: false,
+        current: no_member(),
+        current_name: "",
+        current_zip64: false,
+        current_holds_data: false,
+        deflater: idle,
+        check: hash.start32(.crc32)
     )
+
+# What `Sink.current` holds while no member is in hand.
+function no_member() -> Written
+    return Written(
+        name: [],
+        comment: [],
+        flags: 0,
+        method: 0,
+        dos: zip_time.to_dos(time.epoch()),
+        seconds: 0,
+        crc: 0,
+        compressed: 0,
+        size: 0,
+        offset: 0,
+        external: 0
+    )
+
+# A sink writing to `stream`.
+function start(stream: io.Stream, zip64_at: i64) -> Sink
+    return made(holding: false, stream: stream, zip64_at: zip64_at)
+
+# A sink that holds the archive's bytes in memory, `held` once finished.
+function start_held(zip64_at: i64) -> Sink
+    return made(holding: true, stream: codes.no_stream(), zip64_at: zip64_at)
+
+# The failure of a call that writes a whole member or the end while a member
+# begun by `begin_member` is in hand, or `ok`.
+#
+# - `sink`: the sink.
+function none_open(sink: Sink lent) -> ()?
+    if sink.open
+        return fail(
+            code: codes.INVALID,
+            msg: f"the zip member \"{sink.current_name}\" is begun and not ended: `end_zip_member` ends it"
+        )
+    return ok()
 
 # Writes `data` and counts it.
 function put(@sink: Sink, data: [u8]) -> ()?
@@ -198,9 +254,10 @@ function external_of(mode: i64, kind: i64) -> i64
 
 # Writes a member whose `data` is in hand: compressed by `method` (0 or 8,
 # deflated at `level`), its local header stating sizes and CRC-32. Fails
-# `invalid` where the name or the comment passes 65,535 bytes, and as the
-# stream fails.
+# `invalid` where a member is in hand or the name or the comment passes
+# 65,535 bytes, and as the stream fails.
 function add_whole(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, data: [u8]) -> ()?
+    none_open(sink)?
     raw_name = bytes.from_text(name)
     raw_comment = bytes.from_text(comment)
     check_lengths(name, raw_name: raw_name, raw_comment: raw_comment)?
@@ -234,17 +291,39 @@ function check_lengths(name: str, raw_name: [u8] lent, raw_comment: [u8] lent) -
         return codes.refused(name: name, why: "its name or comment passes the 65,535 bytes a zip header holds")
     return ok()
 
-# Writes a member whose data is read from `from` to its end, `expected`
-# bytes (ZIP64 from the start where they pass 32 bits), compressed by
-# `method` as it is read, and a data descriptor after it. Fails `invalid`
-# where `from` holds more than `expected` past 32 bits allows, and as the
-# streams fail.
-function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, from: io.Stream, expected: i64) -> ()?
+# Whether a member of `size` bytes has ZIP64's sizes from its header on:
+# where its size is not known (below 0), or where deflate's growth could take
+# it past 32 bits, Python's `zipfile` judging that growth as 5 % of the size.
+# A reader that reads a data descriptor knows its width from the header, so
+# the header says it before the data.
+#
+# - `size`: the data's size in bytes, below 0 where it is not known.
+# - `zip64_at`: where ZIP64 begins.
+function needs_zip64(size: i64, zip64_at: i64) -> bool
+    return size < 0 || size >= zip64_at || size + size / 20 >= zip64_at
+
+# Begins a member whose data comes in pieces: its local header written with
+# no sizes and the descriptor's flag, the data to come by `member_part`, its
+# CRC-32 and its sizes by `end_member` in a data descriptor after it. Fails
+# `invalid` where a member is in hand already or the name or the comment
+# passes 65,535 bytes, and as the stream fails.
+#
+# - `sink`: the sink, with no member in hand.
+# - `name`, `comment`: the member's.
+# - `method`: 0 or 8.
+# - `level`: deflate's level.
+# - `modified`: its time.
+# - `external`: its external attributes.
+# - `size`: its data's size where it is known, below 0 where not: it decides
+#   ZIP64 (`needs_zip64`).
+# - `holds_data`: false for a folder, which `member_part` refuses data.
+function begin_member(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, size: i64, holds_data: bool) -> ()?
+    none_open(sink)?
     raw_name = bytes.from_text(name)
     raw_comment = bytes.from_text(comment)
     check_lengths(name, raw_name: raw_name, raw_comment: raw_comment)?
-    zip64 = expected >= sink.zip64_at
-    w @= Written(
+    zip64 = needs_zip64(size: size, zip64_at: sink.zip64_at)
+    w = Written(
         name: raw_name,
         comment: raw_comment,
         flags: flags_of(name: raw_name, comment: raw_comment, streamed: true),
@@ -257,51 +336,104 @@ function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: 
         offset: sink.written,
         external: external
     )
-    put(@sink, data: local_header(w, known: false, zip64: zip64))?
     o @= compress.default_options(.raw)
     o.level @ level
-    c @= compress.compressor(o)?
-    check @= hash.start32(.crc32)
+    deflater = compress.compressor(o)?
+    put(@sink, data: local_header(w, known: false, zip64: zip64))?
+    sink.open @ true
+    sink.current @ w
+    sink.current_name @ name
+    sink.current_zip64 @ zip64
+    sink.current_holds_data @ holds_data
+    sink.deflater @ deflater
+    sink.check @ hash.start32(.crc32)
+    return ok()
 
-    while true
-        got = io.read(from, n: 65536)?
+# Writes `data` as the next bytes of the member in hand, compressed as its
+# method says as they come; none write nothing. Fails `invalid` where no
+# member is in hand, it is a folder, or its data would pass the 32-bit
+# sizes its header was written with; and as the stream fails.
+#
+# - `sink`: the sink, a member in hand.
+# - `data`: the next bytes of its data.
+function member_part(@sink: Sink, data: [u8]) -> ()?
+    if !sink.open
+        return fail(code: codes.INVALID, msg: f"{data.len()} bytes of data written with no zip member begun")
 
-        if got.len() == 0
-            break
-        hash.update32(@check, got)
-        w.size @ w.size + got.len()
-        out @= got
+    if data.len() == 0
+        return ok()
 
-        if method == zip_read.DEFLATED
-            out @ compress.compress_part(@c, data: got)
+    if !sink.current_holds_data
+        return codes.refused(name: sink.current_name, why: "a folder holds no data")
 
-        if out.len() > 0
-            put(@sink, data: out)?
-            w.compressed @ w.compressed + out.len()
+    if !sink.current_zip64 && sink.current.size + data.len() >= sink.zip64_at
+        return codes.refused(
+            name: sink.current_name,
+            why: f"its data passes {sink.zip64_at - 1} bytes, the 32-bit sizes its header was written with for the size it was begun with"
+        )
+    hash.update32(@sink.check, data)
+    sink.current.size @ sink.current.size + data.len()
+    out @= data
 
-    if method == zip_read.DEFLATED
-        last = compress.compress_end(@c)
+    if sink.current.method == zip_read.DEFLATED
+        out @ compress.compress_part(@sink.deflater, data: data)
+
+    if out.len() > 0
+        put(@sink, data: out)?
+        sink.current.compressed @ sink.current.compressed + out.len()
+    return ok()
+
+# Ends the member in hand: the deflater's last bytes, then the data
+# descriptor with its CRC-32 and its sizes, 8 bytes each where they are
+# ZIP64's, and the member remembered for the central directory. Fails
+# `invalid` where no member is in hand or its compressed data passed the
+# 32-bit sizes its header was written with, the member left out of the
+# directory; and as the stream fails.
+#
+# - `sink`: the sink, its member in hand ended by this call.
+function end_member(@sink: Sink) -> ()?
+    if !sink.open
+        return fail(code: codes.INVALID, msg: "a zip member ended with none begun")
+    sink.open @ false
+    w @= sink.current
+
+    if w.method == zip_read.DEFLATED
+        last = compress.compress_end(@sink.deflater)
         put(@sink, data: last)?
         w.compressed @ w.compressed + last.len()
 
-    if !zip64 && (w.size >= sink.zip64_at || w.compressed >= sink.zip64_at)
+    if !sink.current_zip64 && w.compressed >= sink.zip64_at
         return codes.refused(
-            name: name,
-            why: f"it grew to {w.size} bytes while it was read, past the 32-bit sizes its header was written with"
+            name: sink.current_name,
+            why: f"it was compressed to {w.compressed} bytes, past the 32-bit sizes its header was written with"
         )
-    w.crc @ to_i64(check.value).must()
+    w.crc @ to_i64(sink.check.value).must()
     tail: [u8] @= []
     add(@tail, value: DESCRIPTOR, width: 4)
     add(@tail, value: w.crc, width: 4)
     width: i64 @= 4
 
-    if zip64
+    if sink.current_zip64
         width @ 8
     add(@tail, value: w.compressed, width: width)
     add(@tail, value: w.size, width: width)
     put(@sink, data: tail)?
     remember(members: @sink.members, w: w)
+    sink.current @ no_member()
     return ok()
+
+# Writes a member whose data is read from `from` to its end, `expected`
+# bytes, as `begin_member`, `member_part` and `end_member` write one, 65,536
+# bytes at a time. Fails as they fail, and as the stream `from` fails.
+function add_streamed(@sink: Sink, name: str, comment: str, method: i64, level: i64, modified: time.Instant, external: i64, from: io.Stream, expected: i64) -> ()?
+    begin_member(@sink, name: name, comment: comment, method: method, level: level, modified: modified, external: external, size: expected, holds_data: true)?
+
+    while true
+        got = io.read(from, n: 65536)?
+
+        if got.len() == 0
+            return end_member(@sink)
+        member_part(@sink, data: got)?
 
 test "time_field: a time 32 bits hold, and one they do not"
     assert time_field(1700000000).len() == 9

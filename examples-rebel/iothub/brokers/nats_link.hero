@@ -71,27 +71,6 @@ function holds(l: Link lent) -> bool
 function take(@l: Link) -> [nats.Message]?
     return nats.read_ready(@l.clients[0])
 
-# The messages the client has read and not given out, parsed or still in
-# its buffer, taken without reading the stream: a flush that waited for its
-# `PONG` may have read a message behind it, which `held_of` does not count
-# and `poll` will never report, and a zero wait parses
-# it.
-#
-# - `l`: the link, up.
-#
-# Fails as `nats.next_message` fails for another reason than nothing being
-# there.
-function take_buffered(@l: Link) -> [nats.Message]?
-    got: [nats.Message] @= []
-
-    while true
-        match nats.next_message(@l.clients[0], wait: time.nanoseconds(0))
-            .ok m => got @ got.push(m)
-            .err e =>
-                if e.code == nats.TIMEOUT
-                    return ok(got)
-                return fail(code: e.code, msg: e.msg)
-
 # Publishes `body` on `subject`, flushed at the end of the hub's turn.
 #
 # - `l`: the link, up.

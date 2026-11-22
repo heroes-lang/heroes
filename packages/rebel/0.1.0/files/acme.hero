@@ -27,6 +27,7 @@
 # the names.
 
 use acme/internal/fields
+use acme/internal/invalid
 use acme/internal/sample
 use acme/internal/wire
 use big
@@ -685,9 +686,10 @@ function accept_challenge(@client: Client, challenge: Challenge) -> Challenge?
 # - `timeout`: the longest to wait, zero or more, a part of a millisecond
 #   counting as a whole one: zero asks once.
 #
-# Fails `failed` where it turns "invalid", the challenge's problem said;
-# `timeout` where it is still pending after `timeout`; `invalid` where
-# `timeout` is below zero. See also `wait_order`.
+# Fails `failed` where it turns "invalid", each challenge's problems said
+# by their types and details, `http-01: caa: ...`, as every refusal of the
+# server says them; `timeout` where it is still pending after `timeout`;
+# `invalid` where `timeout` is below zero. See also `wait_order`.
 function wait_authorization(@client: Client, url: str, timeout: time.Duration) -> Authorization?
     timeout_ms = wire.ms_of(timeout)?
     waited: i64 @= 0
@@ -698,16 +700,7 @@ function wait_authorization(@client: Client, url: str, timeout: time.Duration) -
         got = parse_authorization(text: wire.text_of(answer)?, url: url)?
 
         if got.status == "invalid"
-            said: [str] @= []
-
-            for c in got.challenges
-                for p in c.problems
-                    said @ said.push(f"{c.kind}: {p.detail}")
-
-            return fail(
-                code: FAILED,
-                msg: f"the authorization of {got.identifier.value} turned invalid: {said.join("; ")}"
-            )
+            return fail(code: FAILED, msg: invalid.authorization_message(got))
 
         if got.status != "pending"
             return ok(got)
@@ -748,8 +741,9 @@ function finalize(@client: Client, order: Order, csr: [u8]) -> Order?
 # - `url`: the order's URL.
 # - `timeout`: the longest to wait, as `wait_authorization` takes it.
 #
-# Fails `failed` where it turns "invalid"; `timeout` past `timeout`;
-# `invalid` where `timeout` is below zero. See also `finalize`.
+# Fails `failed` where it turns "invalid", its problems said by their types
+# and details; `timeout` past `timeout`; `invalid` where `timeout` is below
+# zero. See also `finalize`.
 function wait_order(@client: Client, url: str, timeout: time.Duration) -> Order?
     timeout_ms = wire.ms_of(timeout)?
     waited: i64 @= 0
@@ -760,12 +754,7 @@ function wait_order(@client: Client, url: str, timeout: time.Duration) -> Order?
         got = parse_order(text: wire.text_of(answer)?, url: url)?
 
         if got.status == "invalid"
-            said: [str] @= []
-
-            for p in got.problems
-                said @ said.push(p.detail)
-
-            return fail(code: FAILED, msg: f"the order turned invalid: {said.join("; ")}")
+            return fail(code: FAILED, msg: invalid.order_message(got))
 
         if got.status != "pending" && got.status != "processing"
             return ok(got)

@@ -187,7 +187,7 @@ function is_amqplain(m: str) -> bool
 # - `s`: the session, closed after.
 function close(@s: state.Session) -> ()?
     if !s.open
-        return waiting.closed_failure(s)
+        return waiting.closed_failure(@s)
     until = waiting.deadline(s.options.wait_ms)
 
     for n in range(from: 1, to: s.chans.len())
