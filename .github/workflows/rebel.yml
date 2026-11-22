@@ -235,6 +235,21 @@ jobs:
             https://www.unicode.org/Public/17.0.0/ucd/NormalizationTest.txt
           ./heroes run generators/unicode_cases/main.hero -- check build/generators/ucd-17.0.0
 
+      # The four files of `generators/tokenizer_tables/main.hero`'s
+      # `RANKS_URL` and `TIKTOKEN_URL`; the generator holds each to its SHA-256.
+      - name: generators/tokenizer_tables, tiktoken's tables of tokenizer/tables
+        run: |
+          mkdir -p build/generators/tiktoken
+          for f in cl100k_base o200k_base; do
+            curl --fail --location --silent --show-error -o "build/generators/tiktoken/$f.tiktoken" \
+              "https://openaipublic.blob.core.windows.net/encodings/$f.tiktoken"
+          done
+          curl --fail --location --silent --show-error -o build/generators/tiktoken/openai_public.py \
+            https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken_ext/openai_public.py
+          curl --fail --location --silent --show-error -o build/generators/tiktoken/model.py \
+            https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken/model.py
+          ./heroes run generators/tokenizer_tables/main.hero -- check build/generators/tiktoken
+
       # The tests of `generators/tablekit/`, the package every generator
       # writes its tables with. A generator's own tests are left to whoever
       # changes it: `heroes test` runs every test its program reaches, Rebel's

@@ -1,12 +1,17 @@
 # The table of the encoding `o200k_base`, made data: its 199998 ordinary tokens, the
 # pattern that cuts a text into pieces before they are merged, and its
-# special tokens, as tiktoken 0.14.0 reads them. Nothing below this header is
-# edited by hand: a one-off program, `gen_tables.py`, which is not in the tree
-# (defect 2639), read the file OpenAI serves, fetched by tiktoken on
-# 2026-11-18 from
-# https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken,
-# checked its SHA-256 against the one tiktoken expects, 446a9538cb6c348e, held
-# every line of it to the rank tiktoken loaded, and wrote this module whole.
+# special tokens, as tiktoken 0.14.0 reads them.
+#
+# Generated, never edited by hand: the Heroes program
+# `generators/tokenizer_tables/` read the file OpenAI serves,
+# https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken
+# (SHA-256 446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d,
+# the one tiktoken 0.14.0 expects), each line's token at the rank the line
+# gives, held the pattern and the special tokens to tiktoken 0.14.0's
+# `tiktoken_ext/openai_public.py` (SHA-256
+# 954392738e60d0fb6dca1dad80872efc47c8e2733babecbbf0a23970ed66c2cb),
+# both fetched 2026-11-22, and wrote this module whole; its `check` command
+# says whether this module is still what it writes.
 #
 # Taken from OpenAI's tiktoken, whose licence travels with it here, as its
 # LICENSE states it:

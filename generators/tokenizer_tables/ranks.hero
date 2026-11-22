@@ -1,0 +1,85 @@
+# A `.tiktoken` file read as tiktoken's `load_tiktoken_bpe` reads one: each
+# line a token's bytes in the standard base 64, padded, a space, and its
+# rank in decimal. Here every rank must be the line's own place counted from
+# 0, so the tokens in the file's order are the tokens in rank order, which
+# is how the tables hold them.
+
+use <rebel>/strings
+
+# How many tokens a line of a table's `RANKS` holds.
+constant PER_LINE: i64
+    64
+
+# The tokens of `text`, a `.tiktoken` file, in rank order, each as its base
+# 64 text.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid` where a line is not a token, a space and a rank, a token
+# holds a character outside the standard base 64, or a rank is not the
+# line's place.
+function read_ranks(text: str) -> [str]?
+    out: [str] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        if line != ""
+            parts = strings.split(s: line, sep: " ")
+
+            if parts.len() != 2 || parts[0] == "" || !is_base64(parts[0])
+                return fail(code: "invalid", msg: f"the line \"{line}\" is not a token in base 64, a space and a rank")
+
+            if parts[1] != to_str(out.len())
+                return fail(
+                    code: "invalid",
+                    msg: f"the line \"{line}\" gives rank {parts[1]} where {out.len()} should stand"
+                )
+            out @ out.push(parts[0])
+
+    return ok(out)
+
+# Whether `s` holds only the characters of the standard base 64 and its
+# padding.
+function is_base64(s: str) -> bool
+    for c in s.chars()
+        if !strings.contains(s: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=", substr: c)
+            return false
+
+    return true
+
+# `tokens` written `PER_LINE` to a line, apart by one space.
+#
+# - `tokens`: the tokens in rank order.
+function rank_lines(tokens: [str] lent) -> [str]
+    out: [str] @= []
+    at @= 0
+
+    while at < tokens.len()
+        end = if at + PER_LINE < tokens.len()
+            at + PER_LINE
+        else
+            tokens.len()
+        out @ out.push(tokens.slice(from: at, to: end).join(" "))
+        at @ end
+
+    return out
+
+## Tests
+
+test "read_ranks: tokens in rank order, a gap, a rank out of place, and a line that is not a token"
+    assert read_ranks("IQ== 0\nIg== 1\n").must() == ["IQ==", "Ig=="]
+    assert read_ranks("").must() == []
+    assert read_ranks("IQ== 0\nIg== 2\n").is_err()
+    assert read_ranks("IQ== 1\n").is_err()
+    assert read_ranks("IQ==\n").is_err()
+    assert read_ranks("I-== 0\n").is_err()
+    assert read_ranks("IQ==  0\n").is_err()
+
+test "rank_lines: a full line, a short last one, and none"
+    tokens: [str] @= []
+
+    for n in range(from: 0, to: PER_LINE + 1)
+        tokens @ tokens.push(to_str(n))
+
+    lines = rank_lines(tokens)
+    assert lines.len() == 2 && strings.has_prefix(s: lines[0], prefix: "0 1 2 ") && lines[1] == to_str(PER_LINE)
+    assert rank_lines([]) == []

@@ -1,0 +1,261 @@
+# The generator of `tokenizer/tables`' four tables of OpenAI's encodings, as
+# tiktoken 0.14.0 reads them: `cl100k_base` and `o200k_base` (each encoding's
+# ordinary tokens, pattern and special tokens), `o200k_harmony` (its special
+# tokens) and `models` (which encoding each model reads), each written byte
+# for byte, or checked against the table in the tree.
+#
+# Its input is four files, fetched into one folder under these names and
+# each held to its SHA-256 below: `cl100k_base.tiktoken` and
+# `o200k_base.tiktoken`, which OpenAI serves at `RANKS_URL` (their digests
+# are the ones tiktoken 0.14.0 expects of them), and tiktoken 0.14.0's
+# `tiktoken_ext/openai_public.py` and `tiktoken/model.py`, from its tag at
+# `TIKTOKEN_URL`. The licence the tables carry is tiktoken's, read from
+# `vendor/tokenizers/LICENSE-tiktoken`. Run from the repository's root:
+#
+#     heroes run generators/tokenizer_tables/main.hero -- write <folder>
+#     heroes run generators/tokenizer_tables/main.hero -- check <folder>
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where a
+# file's digest is not the pinned one, or where a file is not what this
+# program reads from it.
+
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use encodings
+use model_table
+use ranks
+
+# Where OpenAI serves the encodings' files, and tiktoken 0.14.0's source.
+constant RANKS_URL: str
+    "https://openaipublic.blob.core.windows.net/encodings/"
+
+constant TIKTOKEN_URL: str
+    "https://raw.githubusercontent.com/openai/tiktoken/0.14.0/"
+
+# The day the four files were read for the digests below.
+constant FETCHED: str
+    "2026-11-22"
+
+# The licence of tiktoken, as the repository keeps it.
+constant LICENCE: str
+    "vendor/tokenizers/LICENSE-tiktoken"
+
+# The folder of the tables, from the repository's root.
+constant TABLES: str
+    "packages/rebel/0.1.0/files/tokenizer/tables/internal/"
+
+constant CL100K_SHA256: str
+    "223921b76ee99bde995b7ff738513eef100fb51d18c93597a113bcffe865b2a7"
+
+constant O200K_SHA256: str
+    "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d"
+
+constant OPENAI_PUBLIC_SHA256: str
+    "954392738e60d0fb6dca1dad80872efc47c8e2733babecbbf0a23970ed66c2cb"
+
+constant MODEL_SHA256: str
+    "600f26902d1cf6a1a5f54e37be988b3e0d911f1ff17ba7060bb361f9b5295521"
+
+# The licence's lines, each a comment, as the tables carry them after the
+# sentence that introduces them.
+#
+# Fails as reading `LICENCE` fails.
+function licence_lines() -> [str]?
+    out: [str] @= [
+        "#"
+        "# Taken from OpenAI's tiktoken, whose licence travels with it here, as its"
+        "# LICENSE states it:"
+        "#"
+    ]
+
+    for line in strings.split(s: strings.trim_suffix(s: read_file(LICENCE)?, suffix: "\n"), sep: "\n")
+        if line == ""
+            out @ out.push("#")
+        else
+            out @ out.push("# " + line)
+
+    return ok(out)
+
+# The constants every encoding's table writes its special tokens with.
+#
+# Fails as writing a literal fails.
+function special_constants(encoding: encodings.Encoding lent) -> [str]?
+    texts: [str] @= []
+    numbers: [i64] @= []
+
+    for one in encoding.specials
+        texts @ texts.push(one.text)
+        numbers @ numbers.push(one.number)
+
+    return ok(
+        [tablekit.strings_constant(comment: ["# The text of each special token, in the order of its number."], name: "SPECIAL_TEXTS", items: texts)?, tablekit.numbers_constant(comment: ["# The number of each special token, the same order as `SPECIAL_TEXTS`."], name: "SPECIAL_TOKENS", items: numbers)]
+    )
+
+# The text of the table of the encoding `name`.
+#
+# - `name`: `cl100k_base` or `o200k_base`.
+# - `tokens`: its ordinary tokens in rank order.
+# - `encoding`: its pattern and special tokens.
+# - `sha256`: the digest of its `.tiktoken` file.
+# - `licence`: the licence's lines.
+#
+# Fails as writing a literal fails.
+function encoding_text(name: str, tokens: [str] lent, encoding: encodings.Encoding lent, sha256: str, licence: [str]) -> str?
+    head: [str] @= [
+        f"# The table of the encoding `{name}`, made data: its {tokens.len()} ordinary tokens, the"
+        "# pattern that cuts a text into pieces before they are merged, and its"
+        "# special tokens, as tiktoken 0.14.0 reads them."
+        "#"
+        "# Generated, never edited by hand: the Heroes program"
+        "# `generators/tokenizer_tables/` read the file OpenAI serves,"
+        f"# {RANKS_URL}{name}.tiktoken"
+        f"# (SHA-256 {sha256},"
+        "# the one tiktoken 0.14.0 expects), each line's token at the rank the line"
+        "# gives, held the pattern and the special tokens to tiktoken 0.14.0's"
+        "# `tiktoken_ext/openai_public.py` (SHA-256"
+        f"# {OPENAI_PUBLIC_SHA256}),"
+        f"# both fetched {FETCHED}, and wrote this module whole; its `check` command"
+        "# says whether this module is still what it writes."
+    ]
+
+    for line in licence
+        head @ head.push(line)
+
+    parts: [str] @= [
+        head.join("\n")
+        tablekit.string_constant(comment: ["# The pattern, as tiktoken writes it, in the dialect of the Rust crate", "# `fancy-regex`; `tokenizer.new` reads it."], name: "PATTERN", value: encoding.pattern)?
+    ]
+
+    for one in special_constants(encoding)?
+        parts @ parts.push(one)
+
+    parts @ parts.push(
+        tablekit.strings_constant(comment: ["# The ordinary tokens in rank order, from 0, each as the standard base 64", "# of its bytes, padded, as the file writes it; a line holds 64 of them", "# apart from the last, separated by one space."], name: "RANKS", items: ranks.rank_lines(tokens))?
+    )
+    return ok(parts.join("\n\n") + "\n")
+
+# The text of `o200k_harmony`'s table.
+#
+# Fails as writing a literal fails.
+function harmony_text(encoding: encodings.Encoding lent, licence: [str]) -> str?
+    head: [str] @= [
+        "# The special tokens of the encoding `o200k_harmony`, the one OpenAI's"
+        "# gpt-oss models read: its ordinary tokens and its pattern are"
+        f"# `o200k_base`'s, and its {encoding.specials.len()} special tokens are these."
+        "#"
+        "# Generated, never edited by hand: the Heroes program"
+        "# `generators/tokenizer_tables/` held them, and that the encoding takes"
+        "# `o200k_base`'s pattern and ordinary tokens, to tiktoken 0.14.0's"
+        "# `tiktoken_ext/openai_public.py` (SHA-256"
+        f"# {OPENAI_PUBLIC_SHA256},"
+        f"# fetched {FETCHED}), and wrote this module whole; its `check` command"
+        "# says whether this module is still what it writes."
+    ]
+
+    for line in licence
+        head @ head.push(line)
+
+    parts: [str] @= [head.join("\n")]
+
+    for one in special_constants(encoding)?
+        parts @ parts.push(one)
+
+    return ok(parts.join("\n\n") + "\n")
+
+# The text of `models`, from `model.py`'s two tables.
+#
+# Fails as reading the tables and writing a literal fail.
+function models_text(source: str) -> str?
+    whole = model_table.entries(text: source, name: "MODEL_TO_ENCODING")?
+    starts = model_table.entries(text: source, name: "MODEL_PREFIX_TO_ENCODING")?
+    head = [
+        "# Which encoding each of OpenAI's models reads, by its whole name or by the"
+        "# start of it, as tiktoken 0.14.0 answers `encoding_name_for_model`: a"
+        "# whole name first, then the first start, in this order, that the name"
+        "# begins with."
+        "#"
+        "# Generated, never edited by hand: the Heroes program"
+        "# `generators/tokenizer_tables/` read tiktoken 0.14.0's two tables in"
+        f"# `tiktoken/model.py` (SHA-256 {MODEL_SHA256},"
+        f"# fetched {FETCHED}), and wrote this module whole; its `check` command"
+        "# says whether this module is still what it writes."
+    ]
+    return ok(
+        [head.join("\n"), tablekit.strings_constant(comment: ["# The whole names."], name: "MODELS", items: names_of(whole))?, tablekit.strings_constant(comment: ["# The encoding of each whole name, the same order as `MODELS`."], name: "MODEL_ENCODINGS", items: encodings_of(whole))?, tablekit.strings_constant(comment: ["# The starts of names, in the order they are tried."], name: "PREFIXES", items: names_of(starts))?, tablekit.strings_constant(comment: ["# The encoding of each start, the same order as `PREFIXES`."], name: "PREFIX_ENCODINGS", items: encodings_of(starts))?].join("\n\n") + "\n"
+    )
+
+function names_of(entries: [model_table.Entry] lent) -> [str]
+    out: [str] @= []
+
+    for one in entries
+        out @ out.push(one.name)
+
+    return out
+
+function encodings_of(entries: [model_table.Entry] lent) -> [str]
+    out: [str] @= []
+
+    for one in entries
+        out @ out.push(one.encoding)
+
+    return out
+
+# Does what `command` asks with every table, reading the files in `folder`,
+# and answers the worst code it reached.
+#
+# - `command`: `write` or `check`.
+# - `folder`: the folder holding the four files.
+#
+# Fails as reading a file or the licence, holding the encodings to
+# `openai_public.py` and writing or reading a table fail.
+function run(command: str, folder: str) -> i64?
+    public = tablekit.pinned_text(path: folder + "/openai_public.py", sha256: OPENAI_PUBLIC_SHA256)?
+    cl100k = encodings.cl100k_base()
+    o200k = encodings.o200k_base()
+    harmony = encodings.o200k_harmony()
+    encodings.held(cl100k, name: "cl100k_base", source: public)?
+    encodings.held(o200k, name: "o200k_base", source: public)?
+    encodings.held(harmony, name: "o200k_harmony", source: public)?
+    licence = licence_lines()?
+    models = models_text(tablekit.pinned_text(path: folder + "/model.py", sha256: MODEL_SHA256)?)?
+    harmony_table = harmony_text(harmony, licence: licence)?
+    cl100k_tokens = ranks.read_ranks(tablekit.pinned_text(path: folder + "/cl100k_base.tiktoken", sha256: CL100K_SHA256)?)?
+    cl100k_table = encoding_text(name: "cl100k_base", tokens: cl100k_tokens, encoding: cl100k, sha256: CL100K_SHA256, licence: licence)?
+    o200k_tokens = ranks.read_ranks(tablekit.pinned_text(path: folder + "/o200k_base.tiktoken", sha256: O200K_SHA256)?)?
+    o200k_table = encoding_text(name: "o200k_base", tokens: o200k_tokens, encoding: o200k, sha256: O200K_SHA256, licence: licence)?
+    code @= tablekit.settle(command: command, path: TABLES + "models.hero", text: models)?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "o200k_harmony.hero", text: harmony_table)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "cl100k_base.hero", text: cl100k_table)?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "o200k_base.hero", text: o200k_table)?
+    )
+    return ok(code)
+
+function main()
+    words = tablekit.command_words("tokenizer_tables")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/tokenizer_tables/main.hero -- write|check <folder of the two .tiktoken files of ",
+            RANKS_URL,
+            " and openai_public.py and model.py of ",
+            TIKTOKEN_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], folder: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
