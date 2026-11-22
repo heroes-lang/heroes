@@ -3,12 +3,9 @@
 # again together. The chance is drawn from a generator seeded by the run's
 # seed and the job's id, the attempt's own number of that sequence, so one
 # seed gives one job the same waits on every run, on every worker, which is
-# what makes a failure replayable and the demo's account fixed.
-#
-# The store's `fail_attempt` takes the wait from the worker's backoff and
-# draws its jitter from the system (`jobs.retry_wait`), with no way to hand
-# it a fraction; so the wait is drawn here, and the store is handed a
-# backoff whose every wait is exactly it.
+# what makes a failure replayable and the demo's account fixed. The wait is
+# `jobs.retry_wait_with` over that fraction, handed to the store's
+# `fail_attempt_with`.
 
 use <rebel>/jobs
 use <rebel>/random
@@ -50,29 +47,14 @@ function fraction_for(seed: i64, job: i64, attempt: i64) -> f64
 # - `job`: the job's id.
 # - `attempt`: the attempt that failed, from 1.
 #
-# Fails as `retries.wait_after` fails, where the policy is out of its bounds.
+# Fails as `jobs.retry_wait_with` fails, where the policy is out of its
+# bounds.
 function wait_for(policy: retries.Backoff, seed: i64, job: i64, attempt: i64) -> time.Duration?
-    fraction = fraction_for(seed: seed, job: job, attempt: attempt)
-    return retries.wait_after(policy, failures: attempt, previous: time.nanoseconds(0), fraction: fraction)
-
-# A copy of `worker` whose backoff waits exactly `wait` after any attempt,
-# for the store's `fail_attempt`, which reads the wait from it.
-#
-# - `worker`: the worker.
-# - `wait`: the wait drawn; one under a millisecond is taken as one, the
-#   least `retries.backoff` takes being above zero.
-#
-# Fails as `retries.backoff` fails, which it does not for a wait above zero.
-function store_worker(worker: jobs.Worker, wait: time.Duration) -> jobs.Worker?
-    least = time.milliseconds(1)?
-
-    exact = if time.is_shorter(a: wait, b: least)
-        least
-    else
-        wait
-    w @= worker
-    w.backoff @ retries.backoff(first: exact, multiplier: 1.0, longest: exact)?
-    return ok(w)
+    return jobs.retry_wait_with(
+        policy,
+        attempt: attempt,
+        fraction: fraction_for(seed: seed, job: job, attempt: attempt)
+    )
 
 test "wait_for: one seed, one job, one attempt draw one wait; another seed another"
     policy = policy_of(settings.default_settings()).must()
@@ -84,7 +66,3 @@ test "wait_for: within a fifth either side of the doubled wait"
     policy = policy_of(settings.default_settings()).must()
     w = wait_for(policy, seed: 1, job: 1, attempt: 2).must()
     assert w.nanoseconds >= 24_000_000_000 && w.nanoseconds <= 36_000_000_000
-
-test "store_worker: the store's wait is the one drawn, whatever the attempt"
-    w = store_worker(jobs.new_worker(["default"]), wait: time.seconds(17).must()).must()
-    assert jobs.retry_wait(w.backoff, attempt: 5).must() == time.seconds(17).must()

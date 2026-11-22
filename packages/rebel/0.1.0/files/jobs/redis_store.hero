@@ -177,10 +177,28 @@ function complete(@c: redis.Client, claimed: jobs.Info, output: json.Value) -> (
 #
 # Fails `not_found` where the attempt is no longer running; as
 # `jobs.check_worker` and `jobs.retry_wait` fail. See also `discard`,
-# `snooze`, `jobs.retry_wait`.
+# `snooze`, `fail_attempt_with`, `jobs.retry_wait`.
 function fail_attempt(@c: redis.Client, worker: jobs.Worker, claimed: jobs.Info, error: str) -> jobs.Info?
     jobs.check_worker(worker)?
     wait = jobs.retry_wait(worker.backoff, attempt: claimed.attempt)?
+    return fail_attempt_with(@c, claimed: claimed, error: error, wait: wait)
+
+# Marks the claimed attempt failed with `error`, as `fail_attempt` does, the
+# job waiting `wait` before its next attempt where it has one left: the wait
+# the program computed itself, `jobs.retry_wait_with` over a fraction it
+# drew from a generator it seeded, so its waits repeat run after run.
+#
+# - `c`: the client.
+# - `claimed`: the job as `claim` answered it.
+# - `error`: what went wrong, kept with the job's errors; any text.
+# - `wait`: how long before the next attempt may be claimed, zero or more;
+#   kept to the microsecond, as the store keeps every time.
+#
+# Fails `invalid` where `wait` is below zero, `not_found` where the attempt
+# is no longer running. See also `fail_attempt`, `jobs.retry_wait_with`.
+function fail_attempt_with(@c: redis.Client, claimed: jobs.Info, error: str, wait: time.Duration) -> jobs.Info?
+    if wait.nanoseconds < 0
+        return fail(code: jobs.INVALID, msg: f"the wait, {time.format_duration(wait)}, is below zero")
     r = redis.call(@c, ["EVAL", scripts.fail_attempt(), "0", PREFIX, to_str(claimed.id), to_str(claimed.attempt), json.quote(error), "retry", to_str(replies.micros(wait))])?
     return replies.job_answered(r, claimed)
 
@@ -661,6 +679,48 @@ test "complete and fail_attempt live: a second completion refused, attempts spen
             assert counts(@c).must() == [jobs.Count(queue: "default", state: .completed, jobs: 1), jobs.Count(queue: "default", state: .failed, jobs: 1)]
             redis.close(@c).must()
 
+test "fail_attempt_with live: the job waits the wait given, zero runs it again at once, the last attempt fails for good, and a wait below zero refused"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
+            three @= jobs.new_job("thrice", .null_value)
+            three.max_attempts @ 3
+            id = enqueue(@c, three).must()
+            first_try = claim(@c, worker).must()
+
+            match fail_attempt_with(@c, claimed: first_try, error: "never", wait: time.Duration(nanoseconds: -1))
+                .ok _  => assert false
+                .err e => assert e.code == jobs.INVALID && e.msg == "the wait, -1ns, is below zero"
+
+            waiting = fail_attempt_with(@c, claimed: first_try, error: "first", wait: time.seconds(90).must()).must()
+            assert waiting.state == .available && waiting.errors.len() == 1
+            began = first_try.attempted_at.must()
+            assert time.is_after(a: waiting.run_at, b: time.add(began, time.seconds(89).must()).must())
+            assert time.is_after(a: time.add(began, time.seconds(150).must()).must(), b: waiting.run_at)
+            assert claim(@c, worker).is_err()
+            assert retry(@c, id).must().state == .available
+            second_try = claim(@c, worker).must()
+            again = fail_attempt_with(
+                @c,
+                claimed: second_try,
+                error: "second",
+                wait: time.Duration(nanoseconds: 0)
+            ).must()
+            assert again.state == .available
+            third_try = claim(@c, worker).must()
+            assert third_try.attempt == 3
+            ended = fail_attempt_with(@c, claimed: third_try, error: "third", wait: time.seconds(5).must()).must()
+            assert ended.state == .failed && ended.errors.len() == 3 && ended.errors[2].error == "third"
+            assert fail_attempt_with(
+                @c,
+                claimed: third_try,
+                error: "late",
+                wait: time.Duration(nanoseconds: 0)
+            ).is_err()
+            redis.close(@c).must()
+
 test "discard, snooze and extend live: failed for good at once, an attempt given back uncounted, a lease renewed, and a cancellation learnt"
     match live.connect()
         .err e => skip_test(reason: e.msg)
@@ -917,6 +977,24 @@ test "fail_attempt: the first attempt failed, the job waits"
             worker = jobs.new_worker([jobs.DEFAULT_QUEUE])
             after = fail_attempt(@c, worker, claim(@c, worker).must(), error: "the bank did not answer").must()
             assert after.state == .available && after.errors.len() == 1
+            redis.close(@c).must()
+
+# A failed attempt given the wait the program drew itself, the job waiting
+# exactly that long.
+test "fail_attempt_with: a wait of the program's own"
+    match live.connect()
+        .err e => skip_test(reason: e.msg)
+        .ok first =>
+            c @= first
+            id = enqueue(@c, jobs.new_job("charge", .null_value)).must()
+            claimed = claim(@c, jobs.new_worker([jobs.DEFAULT_QUEUE])).must()
+            after = fail_attempt_with(
+                @c,
+                claimed: claimed,
+                error: "the bank did not answer",
+                wait: time.minutes(3).must()
+            ).must()
+            assert after.state == .available && get(@c, id).must().errors.len() == 1
             redis.close(@c).must()
 
 # A job failed for good, whatever attempts it had left.

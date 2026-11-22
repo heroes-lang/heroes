@@ -100,7 +100,6 @@ function run(arg: str) -> events.Report?
                     @c,
                     @tr,
                     @log_file,
-                    worker: worker,
                     policy: policy,
                     seed: s.seed,
                     claimed: claimed,
@@ -138,12 +137,11 @@ function micros(t: time.Instant) -> i64
 # - `c`: the store's client.
 # - `tr`: the worker's tracer, which keeps the attempt's span.
 # - `log_file`: the worker's log, a line longer.
-# - `worker`: the worker.
 # - `policy`: the waits between attempts.
 # - `seed`: the run's seed, which spreads the waits.
 # - `claimed`: the job, as `claim` answered it.
 # - `client`: how a webhook is posted.
-function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journal, worker: jobs.Worker, policy: retries.Backoff, seed: i64, claimed: jobs.Info, client: http.Client) -> events.Attempt
+function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journal, policy: retries.Backoff, seed: i64, claimed: jobs.Info, client: http.Client) -> events.Attempt
     began = claimed.attempted_at.default(claimed.run_at)
     waited = micros(began) - micros(claimed.run_at)
     name = "process " + claimed.kind
@@ -171,7 +169,7 @@ function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journ
         .retry r =>
             a.error @ r.error
 
-            match told_failed(@c, worker: worker, policy: policy, seed: seed, claimed: claimed, error: r.error)
+            match told_failed(@c, policy: policy, seed: seed, claimed: claimed, error: r.error)
                 .ok after =>
                     a.outcome @ match after.state
                         .available            => "retrying"
@@ -222,21 +220,15 @@ function attempt(@c: redis.Client, @tr: tracing.Tracer, @log_file: journal.Journ
 # job and attempt; answers the job as it then stands.
 #
 # - `c`: the store's client.
-# - `worker`: the worker.
 # - `policy`: the waits between attempts.
 # - `seed`: the run's seed.
 # - `claimed`: the job.
 # - `error`: what went wrong.
 #
-# Fails as `redis_store.fail_attempt` fails.
-function told_failed(@c: redis.Client, worker: jobs.Worker, policy: retries.Backoff, seed: i64, claimed: jobs.Info, error: str) -> jobs.Info?
+# Fails as `redis_store.fail_attempt_with` fails.
+function told_failed(@c: redis.Client, policy: retries.Backoff, seed: i64, claimed: jobs.Info, error: str) -> jobs.Info?
     wait = backoff.wait_for(policy, seed: seed, job: claimed.id, attempt: claimed.attempt)?
-    return redis_store.fail_attempt(
-        @c,
-        worker: backoff.store_worker(worker, wait: wait)?,
-        claimed: claimed,
-        error: error
-    )
+    return redis_store.fail_attempt_with(@c, claimed: claimed, error: error, wait: wait)
 
 # The larger of `a` and `b`.
 #
