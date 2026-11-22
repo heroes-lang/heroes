@@ -1,0 +1,169 @@
+# One entry of a folder as the explorer shows it: its name, what it is, its
+# size, when it was last written, and the name of its type a person reads.
+# The facts come from the disk when the entry is made and are not asked
+# again: the listing makes a new entry when the watch tells of a change.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/strings
+use <rebel>/time
+
+# The type names of the extensions a person meets most, lower case, each
+# beside its name at the same index of `TYPE_NAMES`.
+constant TYPE_EXTENSIONS: [str]
+    [
+        "txt"
+        "md"
+        "csv"
+        "json"
+        "toml"
+        "yaml"
+        "xml"
+        "html"
+        "hero"
+        "c"
+        "h"
+        "pdf"
+        "png"
+        "jpg"
+        "jpeg"
+        "gif"
+        "bmp"
+        "zip"
+        "tar"
+        "gz"
+        "tgz"
+    ]
+
+# The names the extensions of `TYPE_EXTENSIONS` are shown with.
+constant TYPE_NAMES: [str]
+    [
+        "Text"
+        "Markdown"
+        "CSV"
+        "JSON"
+        "TOML"
+        "YAML"
+        "XML"
+        "HTML"
+        "Heroes source"
+        "C source"
+        "C header"
+        "PDF document"
+        "PNG image"
+        "JPEG image"
+        "JPEG image"
+        "GIF image"
+        "BMP image"
+        "ZIP archive"
+        "Tar archive"
+        "Gzip file"
+        "Tar archive"
+    ]
+
+# One entry of a folder.
+record Entry
+    # Its name in the folder, never a path.
+    name: str
+    # What it is; a link is a link, whatever it names.
+    kind: fs.Kind
+    # Its size in bytes; 0 for a folder, whose size is what it holds.
+    size: i64
+    # When its content was last written; the link's own time for a link.
+    modified: time.Instant
+    # The name of its type a person reads: `Folder`, `PNG image`, `Text`.
+    type_name: str
+    # Whether opening it goes into a folder: a folder, or a link to one.
+    opens: bool
+
+# The entry `name` of the folder `folder`, its facts read from the disk.
+#
+# - `folder`: the folder's path.
+# - `name`: the entry's name in it.
+# - `kind`: what `fs.read_dir` or the watch says it is; a link's own facts
+#   are read, and whether it names a folder.
+#
+# Fails as `fs.info` and `fs.link_info` fail, `file_not_found` where the
+# entry went away meanwhile.
+function entry_of(folder: str, name: str, kind: fs.Kind) -> Entry?
+    at = paths.join_all([folder, name])
+
+    match kind
+        .link =>
+            own = fs.link_info(at)?
+            opens = fs.is_dir(at).default(false)
+            return ok(
+                Entry(name: name, kind: .link, size: own.size, modified: own.written, type_name: type_of(name: name, kind: .link), opens: opens)
+            )
+        .file | .directory | .other =>
+            facts = fs.info(at)?
+
+            size = match facts.kind
+                .directory             => 0
+                .file | .link | .other => facts.size
+
+            return ok(
+                Entry(name: name, kind: facts.kind, size: size, modified: facts.written, type_name: type_of(name: name, kind: facts.kind), opens: facts.kind == .directory)
+            )
+
+# The entry at `at`, its folder and name read from the path.
+#
+# - `at`: the entry's path; it must name something.
+#
+# Fails `invalid` where the path has no name, and as `entry_of` fails.
+function entry_at(at: str) -> Entry?
+    name = paths.name(at)?
+    kind = fs.link_info(at)?.kind
+    return entry_of(folder: paths.parent(at), name: name, kind: kind)
+
+# The name a person reads for what `name` is, by its extension: `Folder`,
+# `Link`, `PNG image`, `Tar archive` for `.tar.gz` too, `RS file` for an
+# extension the table does not know, `Document` for none.
+#
+# - `name`: the entry's name.
+# - `kind`: what it is.
+function type_of(name: str, kind: fs.Kind) -> str
+    match kind
+        .directory => return "Folder"
+        .link      => return "Link"
+        .other     => return "Special file"
+        .file      => _ = 0
+
+    lower = strings.to_lower(name)
+
+    if strings.has_suffix(s: lower, suffix: ".tar.gz")
+        return "Tar archive"
+
+    ext = match paths.ext(lower)
+        .ok e  => strings.trim_prefix(s: e, prefix: ".")
+        .err _ => return "Document"
+
+    if ext == ""
+        return "Document"
+
+    for i in range(from: 0, to: TYPE_EXTENSIONS.len())
+        if TYPE_EXTENSIONS[i] == ext
+            return TYPE_NAMES[i]
+
+    return f"{strings.to_upper(ext)} file"
+
+# Whether `name` is hidden by the convention of macOS and Linux: it begins
+# with a dot.
+#
+# - `name`: the entry's name.
+function is_hidden(name: str) -> bool
+    return strings.has_prefix(s: name, prefix: ".")
+
+test "type_of: a folder, a link, known and unknown extensions, a double extension, none"
+    assert type_of(name: "docs", kind: .directory) == "Folder"
+    assert type_of(name: "here", kind: .link) == "Link"
+    assert type_of(name: "Photo.PNG", kind: .file) == "PNG image"
+    assert type_of(name: "backup.tar.gz", kind: .file) == "Tar archive"
+    assert type_of(name: "main.rs", kind: .file) == "RS file"
+    assert type_of(name: "Makefile", kind: .file) == "Document"
+    assert type_of(name: ".profile", kind: .file) == "Document"
+
+test "is_hidden: a dot first, and not"
+    assert is_hidden(".git")
+    assert !is_hidden("git.txt")
+    assert !is_hidden("")

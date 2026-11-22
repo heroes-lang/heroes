@@ -1,0 +1,485 @@
+# Extracting an archive into a new folder beside it, a step at a time: a ZIP
+# file member by member, a tar (plain or gzip-compressed) member by member
+# with a large member's bytes in pieces across steps, and a lone gzip file,
+# `notes.txt.gz`, decompressed to `notes.txt` in one step. The folder is
+# named for the archive without its extension, `photos.zip` into `photos/`,
+# given a free name where that one is taken.
+#
+# Nothing lands outside that folder: a member whose name is absolute or
+# climbs out with `..`, and a link whose target does, is passed over and
+# named in the summary: the Zip Slip Snyk disclosed on 5 June 2018
+# (security.snyk.io/research/zip-slip-vulnerability, read 2026-11-22).
+# Each member keeps its time from the archive; a folder's time is set once
+# everything in it is written. An extraction cancelled or failed removes
+# the folder it began, since half an archive's content is not what it holds.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path as paths
+use <rebel>/strings
+use <rebel>/time
+
+use ops/names
+
+# The most bytes one member may hold once decompressed, against an archive
+# made to fill the disk.
+constant MEMBER_LIMIT: i64
+    4294967296
+
+# The most bytes a tar may hold once decompressed, headers included.
+constant TAR_LIMIT: i64
+    68719476736
+
+# The bytes of a member written in one step at most.
+constant PIECE: i64
+    262144
+
+# What the archive is.
+variant Format
+    # A ZIP file.
+    zip
+    # A tar, plain.
+    tar
+    # A tar compressed by gzip.
+    tar_gz
+    # One file compressed by gzip.
+    gzip_file
+
+# An archive being extracted.
+record Unpacking
+    # The archive's path.
+    archive: str
+    # What it is.
+    format: Format
+    # The folder made for its members; the file written for a lone gzip
+    # file.
+    into: str
+    # The archive's stream, open while it is read.
+    stream: [io.Stream]
+    # The ZIP reader, its directory read.
+    zip: [archive.ZipReader]
+    # The tar reader.
+    tar: [archive.TarReader]
+    # The file of the tar member in hand, open while its bytes go in.
+    writing: [io.Stream]
+    # The path and the time of the tar member in hand.
+    pending: [Stamp]
+    # The index of the next ZIP member.
+    at: i64
+    # The members written, by their names in the archive.
+    written: [str]
+    # The members passed over, each with why.
+    skipped: [str]
+    # The folders made, with the times the archive gives them.
+    folders: [Stamp]
+    # Whether the archive's end was reached.
+    ended: bool
+    # The bytes written so far.
+    bytes: i64
+
+# A path and the time it is given once written.
+record Stamp
+    # The path.
+    at: str
+    # Its time.
+    modified: time.Instant
+
+# What `archive_path` is, read from its first bytes and, for gzip, its name:
+# a tar compressed by gzip where the name says `.tar.gz` or `.tgz`, a lone
+# gzip file otherwise.
+#
+# - `archive_path`: the archive's path.
+#
+# Fails `invalid` where it is none of the four, and as `fs.open` fails.
+function format_of(archive_path: str) -> Format?
+    s @= fs.open(archive_path)?
+    first = io.read(s, n: 512)
+    _ = io.close(@s).is_err()
+    head = first?
+    lower = strings.to_lower(archive_path)
+
+    match compress.format_of(head)
+        .ok f =>
+            if f == .gzip
+                if strings.has_suffix(s: lower, suffix: ".tar.gz") || strings.has_suffix(s: lower, suffix: ".tgz")
+                    return ok(.tar_gz)
+
+                return ok(.gzip_file)
+        .err _ => _ = 0
+
+    match archive.format_of(head)
+        .ok f =>
+            found: Format = match f
+                .zip => .zip
+                .tar => .tar
+
+            return ok(found)
+        .err _ => return fail(code: "invalid", msg: f"\"{archive_path}\" is neither a ZIP file, a tar nor a gzip file")
+
+# The name of what `archive_path` is extracted into: its name without the
+# archive's extension.
+#
+# - `archive_path`: the archive's path.
+# - `format`: what it is.
+function target_name(archive_path: str, format: Format) -> str
+    name = paths.name(archive_path).default("archive")
+    lower = strings.to_lower(name)
+
+    for ext in [".tar.gz", ".tgz", ".zip", ".tar", ".gz"]
+        if strings.has_suffix(s: lower, suffix: ext) && name.len() > ext.len()
+            return name.slice(from: 0, to: name.len() - ext.len())
+
+    return match format
+        .gzip_file            => name + ".out"
+        .zip | .tar | .tar_gz => name + " contents"
+
+# The extraction of `archive_path` begun: its folder made beside it and its
+# directory read.
+#
+# - `archive_path`: the archive's path.
+#
+# Fails as `format_of` fails, as `fs.make_dir` and the archive's reading
+# fail.
+function start(archive_path: str) -> Unpacking?
+    format = format_of(archive_path)?
+    folder = paths.parent(archive_path)
+    into = paths.join_all([folder, names.free_name(folder: folder, wanted: target_name(archive_path, format: format))])
+    no_zip: [archive.ZipReader] = []
+    no_tar: [archive.TarReader] = []
+    no_stream: [io.Stream] = []
+    no_stamps: [Stamp] = []
+    no_names: [str] = []
+    u @= Unpacking(
+        archive: archive_path,
+        format: format,
+        into: into,
+        stream: no_stream,
+        zip: no_zip,
+        tar: no_tar,
+        writing: no_stream,
+        pending: no_stamps,
+        at: 0,
+        written: no_names,
+        skipped: no_names,
+        folders: no_stamps,
+        ended: false,
+        bytes: 0
+    )
+
+    match format
+        .gzip_file            => return ok(u)
+        .zip | .tar | .tar_gz => fs.make_dir(into)?
+
+    s = fs.open(archive_path)?
+    u.stream @ [s]
+
+    match format
+        .zip =>
+            match archive.zip_reader(s)
+                .ok r => u.zip @ [r]
+                .err x =>
+                    abandon(@u)
+                    return fail(code: x.code, msg: x.msg)
+        .tar       => u.tar @ [archive.tar_reader(s, compression: .none, limit: TAR_LIMIT)]
+        .tar_gz    => u.tar @ [archive.tar_reader(s, compression: .gzip, limit: TAR_LIMIT)]
+        .gzip_file => _ = 0
+
+    return ok(u)
+
+# Whether every member is out.
+#
+# - `u`: the extraction.
+function is_done(u: Unpacking) -> bool
+    return u.ended
+
+# How far the extraction is, for a progress bar: the members done of all of
+# them for a ZIP file, whose directory says how many; the archive's bytes
+# read for a tar, as far as its stream says.
+#
+# - `u`: the extraction.
+function progress_of(u: Unpacking) -> i64
+    if u.zip.len() > 0
+        return u.at
+
+    if u.stream.len() > 0
+        return io.position(u.stream[0]).default(0)
+
+    return 0
+
+# The end `progress_of` goes to: the ZIP file's members, or the archive's
+# size in bytes.
+#
+# - `u`: the extraction.
+function progress_end(u: Unpacking) -> i64
+    if u.zip.len() > 0
+        return u.zip[0].entries.len()
+
+    return fs.info(u.archive).default(fs.Info(kind: .file, size: 1, permission: 0, written: time.epoch(), read: time.epoch(), links: 1)).size
+
+# Writes the next member, or the next piece of a tar member.
+#
+# - `u`: the extraction; it moves on.
+#
+# Fails as the archive's reading and the disk fail; a member refused for
+# its name is passed over, never a failure.
+function step(@u: Unpacking) -> ()?
+    if u.ended
+        return ok()
+
+    match u.format
+        .gzip_file     => return step_gzip(@u)
+        .zip           => return step_zip(@u)
+        .tar | .tar_gz => return step_tar(@u)
+
+# Decompresses a lone gzip file whole into its target.
+#
+# - `u`: the extraction.
+#
+# Fails `limit` past `MEMBER_LIMIT` bytes, `invalid` where the file is not
+# gzip, and as the disk fails.
+function step_gzip(@u: Unpacking) -> ()?
+    plain = compress.decompress(fs.read_bytes(u.archive)?, format: .gzip, limit: MEMBER_LIMIT)?
+    fs.write_new_bytes(u.into, data: plain)?
+
+    stamp = match compress.header_of(fs.read_bytes(u.archive)?)
+        .ok h =>
+            if h.modified != 0
+                time.from_unix(whole_seconds: to_i64(h.modified).must(), extra_nanoseconds: 0).default(time.epoch())
+            else
+                fs.info(u.archive)?.written
+        .err _ => fs.info(u.archive)?.written
+
+    fs.set_times(u.into, written: stamp, read: stamp)?
+    u.written @ u.written.push(paths.name(u.into).default(u.into))
+    u.bytes @ plain.len()
+    u.ended @ true
+    return ok()
+
+# Writes the next ZIP member.
+#
+# - `u`: the extraction.
+#
+# Fails as `archive.read_zip_entry` and the disk fail.
+function step_zip(@u: Unpacking) -> ()?
+    r = u.zip[0]
+
+    if u.at >= r.entries.len()
+        u.ended @ true
+        return ok()
+
+    e = r.entries[u.at]
+    u.at @ u.at + 1
+
+    if !paths.is_local(e.name)
+        u.skipped @ u.skipped.push(f"{e.name}: its name leads outside the folder")
+        return ok()
+
+    target = paths.join_all([u.into, paths.from_slash(e.name)])
+
+    match e.kind
+        .directory =>
+            fs.make_dir_all(target)?
+            u.folders @ u.folders.push(Stamp(at: target, modified: e.modified))
+        .file =>
+            fs.make_dir_all(paths.parent(target))?
+            data = archive.read_zip_entry(r, entry: e, limit: MEMBER_LIMIT)?
+            fs.write_new_bytes(target, data: data)?
+            fs.set_times(target, written: e.modified, read: e.modified)?
+            u.bytes @ u.bytes + data.len()
+        .symlink =>
+            link_target = strings.trim(bytes.to_text_lossy(archive.read_zip_entry(r, entry: e, limit: 4096)?))
+            make_link(@u, name: e.name, target: target, link_target: link_target)?
+        .hard_link | .other =>
+            u.skipped @ u.skipped.push(f"{e.name}: neither a file, a folder nor a link")
+            return ok()
+
+    u.written @ u.written.push(e.name)
+    return ok()
+
+# Makes the link `name` holds at `target`, where its target stays inside the
+# folder; passes it over otherwise.
+#
+# - `u`: the extraction.
+# - `name`: the member's name in the archive.
+# - `target`: where the link is made.
+# - `link_target`: what the link holds.
+#
+# Fails as `fs.symlink` fails.
+function make_link(@u: Unpacking, name: str, target: str, link_target: str) -> ()?
+    below = paths.join_all([paths.parent(paths.from_slash(name)), link_target])
+
+    if link_target == "" || paths.is_abs(link_target) || !paths.is_local(below)
+        u.skipped @ u.skipped.push(f"{name}: a link leading outside the folder")
+        return ok()
+
+    fs.make_dir_all(paths.parent(target))?
+    fs.symlink(target: link_target, name: target)?
+    return ok()
+
+# Writes the next tar member, or the next piece of the one in hand.
+#
+# - `u`: the extraction.
+#
+# Fails as `archive.next_tar_entry` and the disk fail.
+function step_tar(@u: Unpacking) -> ()?
+    r @= u.tar[0]
+
+    if u.writing.len() > 0
+        piece = archive.read_tar_data(@r, most: PIECE)?
+        u.tar @ [r]
+
+        if piece.len() == 0
+            held @= u.writing[0]
+            u.writing @ []
+            io.close(@held)?
+            stamp = u.pending[0]
+            u.pending @ []
+            fs.set_times(stamp.at, written: stamp.modified, read: stamp.modified)?
+            return ok()
+
+        io.write(u.writing[0], data: piece)?
+        u.bytes @ u.bytes + piece.len()
+        return ok()
+
+    next = archive.next_tar_entry(@r)?
+    u.tar @ [r]
+
+    match next
+        .end =>
+            u.ended @ true
+            return ok()
+        .entry found =>
+            e = found.value
+            name = strings.trim_suffix(s: e.name, suffix: "/")
+
+            if name == "" || !paths.is_local(name)
+                u.skipped @ u.skipped.push(f"{e.name}: its name leads outside the folder")
+                return ok()
+
+            target = paths.join_all([u.into, paths.from_slash(name)])
+
+            match e.kind
+                .directory =>
+                    fs.make_dir_all(target)?
+                    u.folders @ u.folders.push(Stamp(at: target, modified: e.modified))
+                .file =>
+                    fs.make_dir_all(paths.parent(target))?
+                    out = fs.open_with(target, access: .create_new, permission: e.mode & 0o777)?
+                    u.writing @ [out]
+                    u.pending @ [Stamp(at: target, modified: e.modified)]
+                .symlink => make_link(@u, name: name, target: target, link_target: e.link)?
+                .hard_link | .other =>
+                    u.skipped @ u.skipped.push(f"{name}: neither a file, a folder nor a link")
+                    return ok()
+
+            u.written @ u.written.push(name)
+            return ok()
+
+# Ends the extraction: the archive closed, each folder given its time from
+# the archive, the deepest first, and the folder made for it the time
+# `made`.
+#
+# - `u`: the extraction, done.
+# - `made`: the time of the folder made for the members, the explorer's
+#   clock's; a lone gzip file's target keeps the time its header gives.
+#
+# Fails as `fs.set_times` fails.
+function finish(@u: Unpacking, made: time.Instant) -> ()?
+    close_all(@u)
+    at @= u.folders.len() - 1
+
+    while at >= 0
+        stamp = u.folders[at]
+        fs.set_times(stamp.at, written: stamp.modified, read: stamp.modified)?
+        at @ at - 1
+
+    if u.format != .gzip_file
+        fs.set_times(u.into, written: made, read: made)?
+
+    return ok()
+
+# Stops the extraction and removes what it wrote.
+#
+# - `u`: the extraction; its streams are closed.
+function abandon(@u: Unpacking)
+    close_all(@u)
+    _ = fs.remove_all(u.into).is_err()
+
+# Closes the archive and the member's file where they are open.
+#
+# - `u`: the extraction.
+function close_all(@u: Unpacking)
+    if u.writing.len() > 0
+        held @= u.writing[0]
+        _ = io.close(@held).is_err()
+
+    u.writing @ []
+
+    if u.stream.len() > 0
+        held @= u.stream[0]
+        _ = io.close(@held).is_err()
+
+    u.stream @ []
+
+test "target_name: each archive's extension taken off, any case, and a name that is only an extension"
+    assert target_name("a/photos.zip", format: .zip) == "photos"
+    assert target_name("backup.TAR.GZ", format: .tar_gz) == "backup"
+    assert target_name("notes.txt.gz", format: .gzip_file) == "notes.txt"
+    assert target_name(".zip", format: .zip) == ".zip contents"
+    assert target_name("data", format: .gzip_file) == "data.out"
+
+test "start and step: a ZIP file extracted beside itself, a member named outside the folder passed over"
+    base = "build/explorer-tests/unpacking"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base).must()
+    good = archive.zip_entry("ok.txt", kind: .file)
+    bad = archive.zip_entry("../escaped.txt", kind: .file)
+    data = archive.encode_zip(
+        [archive.ZipMember(entry: good, data: [104, 105]), archive.ZipMember(entry: bad, data: [120])],
+        comment: ""
+    ).must()
+    fs.write_bytes(base + "/evil.zip", data: data).must()
+    u @= start(base + "/evil.zip").must()
+
+    while !is_done(u)
+        step(@u).must()
+
+    finish(@u, made: time.epoch()).must()
+    assert u.into == base + "/evil"
+    assert u.written == ["ok.txt"]
+    assert u.skipped.len() == 1
+    assert read_file(base + "/evil/ok.txt").must() == "hi"
+    assert !fs.exists(base + "/escaped.txt").must()
+    fs.remove_all(base).must()
+
+test "start and step: a gzip-compressed tar extracted with its folder and its times, and a lone gzip file decompressed"
+    base = "build/explorer-tests/untar"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base).must()
+    folder = archive.tar_entry("kept", kind: .directory)
+    file @= archive.tar_entry("kept/a.txt", kind: .file)
+    file.modified @ time.from_unix(whole_seconds: 1000000000, extra_nanoseconds: 0).must()
+    tar = archive.encode_tar(
+        [archive.TarMember(entry: folder, data: []), archive.TarMember(entry: file, data: [97, 10])],
+        compression: .gzip
+    ).must()
+    fs.write_bytes(base + "/kept.tar.gz", data: tar).must()
+    u @= start(base + "/kept.tar.gz").must()
+
+    while !is_done(u)
+        step(@u).must()
+
+    finish(@u, made: time.epoch()).must()
+    assert read_file(base + "/kept/kept/a.txt").must() == "a\n"
+    assert fs.info(base + "/kept/kept/a.txt").must().written == file.modified
+    fs.write_bytes(
+        base + "/note.txt.gz",
+        data: compress.compress([104, 105], options: compress.default_options(.gzip)).must()
+    ).must()
+    g @= start(base + "/note.txt.gz").must()
+    step(@g).must()
+    assert is_done(g) && read_file(base + "/note.txt").must() == "hi"
+    fs.remove_all(base).must()

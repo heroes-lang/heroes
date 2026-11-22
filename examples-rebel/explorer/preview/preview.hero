@@ -1,0 +1,197 @@
+# What the preview pane shows of the entry chosen: a folder's count of
+# entries, an image's picture and its facts, an archive's members, a text
+# file's first lines in its own encoding with its line breaks named, and
+# the first bytes of anything else as a hexadecimal dump; and for each, its
+# size and when it was last written, in the person's locale, with how long
+# ago by the explorer's clock.
+#
+# A file is read whole only up to `MOST_BYTES`; a larger one shows its
+# facts and its first bytes, so choosing a disk image in a folder never
+# reads gigabytes to fill a small pane.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/image
+use <rebel>/io
+use <rebel>/path as paths
+use <rebel>/time
+
+use locale/formats
+use model/entry
+use preview/archives
+use preview/decoding
+use preview/pictures
+
+# The most bytes of a file the preview reads whole.
+constant MOST_BYTES: i64
+    33554432
+
+# The lines of a text the preview shows.
+constant TEXT_LINES: i64
+    12
+
+# The bytes a hexadecimal dump shows.
+constant DUMP_BYTES: i64
+    128
+
+# What the preview pane shows.
+record Preview
+    # The entry's name; empty where nothing is chosen.
+    title: str
+    # The facts, one a line.
+    facts: [str]
+    # The text shown: a text's first lines, an archive's members, a dump.
+    text: str
+    # The picture, scaled to the pane; none for the rest.
+    pictures: [image.Image]
+
+# The preview of nothing chosen.
+function nothing_chosen() -> Preview
+    none: [image.Image] = []
+    return Preview(title: "", facts: ["Nothing chosen"], text: "", pictures: none)
+
+# The preview of several entries chosen at once: how many, and the bytes of
+# the files among them.
+#
+# - `f`: the formats.
+# - `chosen`: the entries.
+function of_several(f: formats.Formats, chosen: [entry.Entry]) -> Preview
+    total @= 0
+
+    for e in chosen
+        total @ total + e.size
+
+    none: [image.Image] = []
+    count = formats.count_text(f, n: chosen.len(), one: "item", other: "items")
+    return Preview(title: f"{count} chosen", facts: [formats.size_text(f, size: total)], text: "", pictures: none)
+
+# The preview of the entry `e` of the folder `folder`.
+#
+# - `f`: the formats.
+# - `folder`: the folder holding it.
+# - `e`: the entry.
+# - `now`: the explorer's clock's time, which its age is told from.
+function of_entry(f: formats.Formats, folder: str, e: entry.Entry, now: time.Instant) -> Preview
+    at = paths.join_all([folder, e.name])
+    none: [image.Image] = []
+    stamp = f"Modified {formats.date_text(f, t: e.modified)} ({formats.age_text(f, t: e.modified, now: now)})"
+
+    if e.opens
+        held = match fs.read_dir(at)
+            .ok es => formats.count_text(f, n: es.len(), one: "item", other: "items")
+            .err x => f"unreadable: {x.msg}"
+
+        return Preview(title: e.name, facts: [e.type_name, held, stamp], text: "", pictures: none)
+
+    if e.kind != .file
+        return Preview(title: e.name, facts: [e.type_name, stamp], text: "", pictures: none)
+
+    size_line = formats.size_text(f, size: e.size)
+
+    if e.size > MOST_BYTES
+        return Preview(
+            title: e.name,
+            facts: [e.type_name, size_line, stamp, "too large to preview"],
+            text: dump_of(first_of(at)),
+            pictures: none
+        )
+
+    data = match fs.read_bytes(at)
+        .ok d => d
+        .err x => return Preview(
+            title: e.name,
+            facts: [e.type_name, size_line, stamp, f"unreadable: {x.msg}"],
+            text: "",
+            pictures: none
+        )
+
+    if pictures.is_image(data)
+        shown = pictures.shown_of(data)
+        return Preview(
+            title: e.name,
+            facts: joined(xs: shown.facts, then: [size_line, stamp]),
+            text: "",
+            pictures: shown.pictures
+        )
+
+    if archives.is_archive(data)
+        shown = archives.shown_of(f, file: at, data: data)
+        return Preview(
+            title: e.name,
+            facts: joined(xs: shown.facts, then: [size_line, stamp]),
+            text: shown.lines.join("\n"),
+            pictures: none
+        )
+
+    if decoding.is_binary(data)
+        return Preview(
+            title: e.name,
+            facts: [e.type_name, size_line, stamp, "data, not text"],
+            text: dump_of(data),
+            pictures: none
+        )
+
+    text = decoding.decode(data)
+    lines = decoding.lines_of(text.text)
+    count = formats.count_text(f, n: lines.len(), one: "line", other: "lines")
+    facts = [e.type_name, f"{text.encoding}, {text.how}", f"{count}, line breaks {text.line_break}", size_line, stamp]
+    shown_lines = lines.slice(from: 0, to: min_of(a: lines.len(), b: TEXT_LINES))
+    return Preview(title: e.name, facts: facts, text: shown_lines.join("\n"), pictures: none)
+
+# The first `DUMP_BYTES` of the file at `at`; none where it cannot be read.
+#
+# - `at`: the file's path.
+function first_of(at: str) -> [u8]
+    s @= match fs.open(at)
+        .ok opened => opened
+        .err _     => return []
+
+    data = io.read(s, n: DUMP_BYTES).default([])
+    _ = io.close(@s).is_err()
+    return data
+
+# The first `DUMP_BYTES` of `data` as a hexadecimal dump, its last line
+# break taken off.
+#
+# - `data`: the bytes.
+function dump_of(data: [u8]) -> str
+    shown = data.slice(from: 0, to: min_of(a: data.len(), b: DUMP_BYTES))
+    dump = bytes.format_hex_dump(shown)
+
+    if dump.len() > 0 && dump[dump.len() - 1] == '\n'
+        return dump.slice(from: 0, to: dump.len() - 1)
+
+    return dump
+
+# `xs` followed by `then`.
+#
+# - `xs`: the first lines.
+# - `then`: the lines after them.
+function joined(xs: [str], then: [str]) -> [str]
+    out @= xs
+
+    for x in then
+        out @ out.push(x)
+
+    return out
+
+# The smaller of two numbers.
+#
+# - `a`: one.
+# - `b`: the other.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+
+    return b
+
+test "dump_of: sixteen bytes a line, the ASCII beside them, no break at the end"
+    d = dump_of([0x89, 0x50, 0x4e, 0x47])
+    assert d == "00000000  89 50 4e 47                                       |.PNG|"
+
+test "of_several: the count and the bytes of the files chosen"
+    f = formats.german()
+    a = entry.Entry(name: "a", kind: .file, size: 1500, modified: time.epoch(), type_name: "Text", opens: false)
+    b = entry.Entry(name: "b", kind: .directory, size: 0, modified: time.epoch(), type_name: "Folder", opens: true)
+    p = of_several(f, chosen: [a, b])
+    assert p.title == "2 items chosen" && p.facts == ["1,5 kB"]

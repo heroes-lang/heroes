@@ -1,0 +1,345 @@
+# The entries of the folder shown, kept in the order the person chose as an
+# ordered map from each entry's key to the entry (`containers/ordered`). The
+# watch tells of entries made, removed and renamed one at a time, and each
+# goes in or out at the cost of the logarithm of the folder's size, never by
+# sorting the folder again; the entry shown after a deleted one is the
+# map's nearest key, and an entry's row on the screen is its rank.
+#
+# Its parts are the ordered map's: the shape, the key list and the value
+# list at the same slots, and beside them the key of each name, so a name
+# the watch tells of finds its slot. Hidden entries are kept out where the
+# person asked so, and an entry that went away between the folder's reading
+# and its own is left out: the watch tells of it later.
+
+use <rebel>/containers/ordered
+use <rebel>/fs
+use <rebel>/maps
+use <rebel>/path as paths
+use <rebel>/time
+
+use locale/formats
+use model/entry
+use model/sorting
+
+# The entries of one folder in one order.
+record Listing
+    # The folder's path, as the explorer names it.
+    folder: str
+    # The order the rows are shown in.
+    order: sorting.Order
+    # Whether entries whose names begin with a dot are shown.
+    show_hidden: bool
+    # The ordered map's shape.
+    shape: ordered.Ordered
+    # The map's keys, at its slots.
+    keys: [sorting.Key]
+    # The map's values, the entries, at the same slots.
+    entries: [entry.Entry]
+    # The key each name holds now.
+    by_name: {str: sorting.Key}
+
+# A listing of `folder` with no entry in it.
+#
+# - `folder`: the folder's path.
+# - `order`: the order of its rows.
+# - `show_hidden`: whether names beginning with a dot are shown.
+function empty(folder: str, order: sorting.Order, show_hidden: bool) -> Listing
+    no_keys: [sorting.Key] = []
+    no_entries: [entry.Entry] = []
+    no_names: {str: sorting.Key} = {}
+    return Listing(
+        folder: folder,
+        order: order,
+        show_hidden: show_hidden,
+        shape: ordered.new_map(),
+        keys: no_keys,
+        entries: no_entries,
+        by_name: no_names
+    )
+
+# The listing of `folder` as the disk holds it now.
+#
+# - `folder`: the folder's path.
+# - `f`: the formats, whose collation orders the names.
+# - `order`: the order of its rows.
+# - `show_hidden`: whether names beginning with a dot are shown.
+#
+# Fails as `fs.read_dir` fails: `file_not_found`, `not_a_directory`,
+# `permission`.
+function read(folder: str, f: formats.Formats, order: sorting.Order, show_hidden: bool) -> Listing?
+    l @= empty(folder, order: order, show_hidden: show_hidden)
+
+    for found in fs.read_dir(folder)?
+        match entry.entry_of(folder: folder, name: found.name, kind: found.kind)
+            .ok e  => put(@l, f: f, e: e)
+            .err _ => _ = 0
+
+    return ok(l)
+
+# Puts `e` in the listing, in its place by the order, taking the place of
+# the entry of the same name; a hidden one is left out where hidden entries
+# are not shown.
+#
+# - `l`: the listing; it gains or changes one entry.
+# - `f`: the formats.
+# - `e`: the entry.
+function put(@l: Listing, f: formats.Formats, e: entry.Entry)
+    if entry.is_hidden(e.name) && !l.show_hidden
+        return
+
+    _ = drop(@l, name: e.name)
+    key = sorting.key_of(f, e: e, order: l.order)
+    ordered.put(@l.shape, @l.keys, @l.entries, key: key, value: e, less: sorting.key_less)
+    l.by_name[e.name] @ key
+
+# Takes the entry `name` out of the listing, answering whether it was there.
+#
+# - `l`: the listing; it loses the entry.
+# - `name`: the entry's name.
+function drop(@l: Listing, name: str) -> bool
+    key = match l.by_name[name]
+        .ok k  => k
+        .err _ => return false
+
+    _ = ordered.remove(@l.shape, @l.keys, @l.entries, key: key, less: sorting.key_less).is_err()
+    l.by_name @ maps.remove(l.by_name, key: name)
+    return true
+
+# Reads the entry `name` of the listing's folder again: put in where it is
+# there, taken out where it went away.
+#
+# - `l`: the listing.
+# - `f`: the formats.
+# - `name`: the entry's name.
+function refresh_name(@l: Listing, f: formats.Formats, name: str)
+    kind = match fs.link_info(paths.join_all([l.folder, name]))
+        .ok facts => facts.kind
+        .err _ =>
+            _ = drop(@l, name: name)
+            return
+
+    match entry.entry_of(folder: l.folder, name: name, kind: kind)
+        .ok e  => put(@l, f: f, e: e)
+        .err _ => _ = drop(@l, name: name)
+
+# The listing in another order, every entry weighed again.
+#
+# - `l`: the listing.
+# - `f`: the formats.
+# - `order`: the new order.
+function resorted(l: Listing, f: formats.Formats, order: sorting.Order) -> Listing
+    out @= empty(l.folder, order: order, show_hidden: l.show_hidden)
+
+    for e in l.entries.slice(from: 0, to: ordered.size(l.shape))
+        put(@out, f: f, e: e)
+
+    return out
+
+# The entries in the order the rows show them.
+#
+# - `l`: the listing.
+function rows(l: Listing) -> [entry.Entry]
+    out: [entry.Entry] @= []
+
+    for slot in walk(l)
+        out @ out.push(l.entries[slot])
+
+    return out
+
+# The slots of the map in the order the rows show them: the keys' order, or
+# its reverse for a descending order.
+#
+# - `l`: the listing.
+function walk(l: Listing) -> [i64]
+    slots = ordered.slots(l.shape)
+
+    if !l.order.descending
+        return slots
+
+    out: [i64] @= []
+    at @= slots.len() - 1
+
+    while at >= 0
+        out @ out.push(slots[at])
+        at @ at - 1
+
+    return out
+
+# How many entries the listing holds.
+#
+# - `l`: the listing.
+function count(l: Listing) -> i64
+    return ordered.size(l.shape)
+
+# Whether the listing holds an entry named `name`.
+#
+# - `l`: the listing.
+# - `name`: the name.
+function has(l: Listing, name: str) -> bool
+    return !l.by_name[name].is_err()
+
+# The entry named `name`.
+#
+# - `l`: the listing.
+# - `name`: the name.
+#
+# Fails `not_found` where the listing holds none.
+function entry_named(l: Listing, name: str) -> entry.Entry?
+    key = l.by_name[name]?
+    slot = ordered.slot_of(l.shape, l.keys, key: key, less: sorting.key_less)?
+    return ok(l.entries[slot])
+
+# The row `name` is shown at, from 0: its rank in the order.
+#
+# - `l`: the listing.
+# - `name`: the name.
+#
+# Fails `not_found` where the listing holds none.
+function row_of(l: Listing, name: str) -> i64?
+    key = match l.by_name[name]
+        .ok k  => k
+        .err _ => return fail(code: "not_found", msg: f"no entry \"{name}\" in \"{l.folder}\"")
+
+    rank = ordered.rank_of(l.shape, l.keys, key: key, less: sorting.key_less)
+
+    if l.order.descending
+        return ok(count(l) - 1 - rank)
+
+    return ok(rank)
+
+# The rows `names` are shown at, ascending; a name the listing does not hold
+# is left out.
+#
+# - `l`: the listing.
+# - `names`: the names.
+function rows_of(l: Listing, names: [str]) -> [i64]
+    found: [i64] @= []
+
+    for n in names
+        match row_of(l, name: n)
+            .ok r  => found @ found.push(r)
+            .err _ => _ = 0
+
+    return sort(found)
+
+# The names shown at `indices`, in their order; an index past the rows is
+# left out.
+#
+# - `l`: the listing.
+# - `indices`: row indices.
+function names_at(l: Listing, indices: [i64]) -> [str]
+    shown = rows(l)
+    out: [str] @= []
+
+    for i in indices
+        if i >= 0 && i < shown.len()
+            out @ out.push(shown[i].name)
+
+    return out
+
+# The entry the selection moves to when `name` goes away: the one shown
+# after it, else the one shown before it, as a file manager selects after a
+# deletion.
+#
+# - `l`: the listing, still holding `name`.
+# - `name`: the name going away.
+#
+# Fails `not_found` where `name` is not held or is the only entry.
+function neighbour_of(l: Listing, name: str) -> str?
+    key = l.by_name[name]?
+    after = ordered.higher_slot(l.shape, l.keys, key: key, less: sorting.key_less)
+    before = ordered.lower_slot(l.shape, l.keys, key: key, less: sorting.key_less)
+
+    first_try = if l.order.descending
+        before
+    else
+        after
+
+    second_try = if l.order.descending
+        after
+    else
+        before
+
+    match first_try
+        .ok slot => return ok(l.entries[slot].name)
+        .err _   => _ = 0
+
+    slot = second_try?
+    return ok(l.entries[slot].name)
+
+# The bytes of every file the listing holds, folders counting none.
+#
+# - `l`: the listing.
+function total_size(l: Listing) -> i64
+    total @= 0
+
+    for slot in ordered.slots(l.shape)
+        total @ total + l.entries[slot].size
+
+    return total
+
+# An entry of a test, of `size` bytes, a folder where `folder` says.
+#
+# - `name`: its name.
+# - `size`: its size in bytes.
+# - `folder`: whether it is a folder.
+function sample(name: str, size: i64, folder: bool) -> entry.Entry
+    kind: fs.Kind = if folder
+        .directory
+    else
+        .file
+
+    return entry.Entry(
+        name: name,
+        kind: kind,
+        size: size,
+        modified: time_of(size),
+        type_name: entry.type_of(name: name, kind: kind),
+        opens: folder
+    )
+
+# The instant `n` seconds after the epoch, which a test's entry is given.
+#
+# - `n`: seconds.
+function time_of(n: i64) -> time.Instant
+    return time.from_unix(whole_seconds: n, extra_nanoseconds: 0).must()
+
+# A listing of a test holding a folder and three files.
+function sample_listing() -> Listing
+    f = formats.german()
+    l @= empty("here", order: sorting.by_name(), show_hidden: false)
+
+    for e in [sample("file10", size: 30, folder: false), sample("docs", size: 0, folder: true), sample("file9", size: 20, folder: false), sample("Äpfel", size: 10, folder: false), sample(".hidden", size: 5, folder: false)]
+        put(@l, f: f, e: e)
+
+    return l
+
+test "rows: folders first, then names in the locale's order with numbers as numbers, hidden left out"
+    l = sample_listing()
+    assert names_at(l, indices: [0, 1, 2, 3]) == ["docs", "Äpfel", "file9", "file10"]
+    assert count(l) == 4
+    assert !has(l, name: ".hidden")
+
+test "resorted: by size descending keeps the folder first, the largest file next"
+    l = resorted(sample_listing(), f: formats.german(), order: sorting.Order(column: .size, descending: true))
+    assert names_at(l, indices: [0, 1, 2, 3]) == ["docs", "file10", "file9", "Äpfel"]
+    assert row_of(l, name: "Äpfel").must() == 3
+
+test "drop and neighbour_of: the next row, the row before at the end, none for the last one left"
+    l @= sample_listing()
+    assert neighbour_of(l, name: "file9").must() == "file10"
+    assert neighbour_of(l, name: "file10").must() == "file9"
+    assert drop(@l, name: "file9")
+    assert !drop(@l, name: "file9")
+    assert names_at(l, indices: [0, 1, 2]) == ["docs", "Äpfel", "file10"]
+    one @= empty("x", order: sorting.by_name(), show_hidden: true)
+    put(@one, f: formats.german(), e: sample("only", size: 1, folder: false))
+    assert neighbour_of(one, name: "only").is_err()
+
+test "put: an entry of the same name takes the old one's place, and rows_of skips names not held"
+    l @= sample_listing()
+    put(@l, f: formats.german(), e: sample("file9", size: 999, folder: false))
+    assert count(l) == 4
+    assert entry_named(l, name: "file9").must().size == 999
+    assert rows_of(l, names: ["file10", "gone", "docs"]) == [0, 3]
+    assert total_size(l) == 1039

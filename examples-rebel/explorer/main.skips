@@ -1,0 +1,2 @@
+# The platforms where the demo's transcript cannot be the one main.expected holds.
+windows: the explorer joins and cleans every path by the system's rules (`path.join_all`, `path.clean`), so on Windows each path the window shows (the path bar, the tree's rows, the results, the status line) is written with `\` where main.expected holds `/`

@@ -1,0 +1,289 @@
+# Compressing the selected entries into one archive beside them, a ZIP file
+# or a gzip-compressed tar, a step at a time: the members are planned first,
+# every folder, file and link under each entry with its name below the
+# folder shown, and each step adds the next. A tar member's bytes go in
+# pieces across steps, so a large file never holds the window; a ZIP member
+# goes whole in one step, since `archive` writes a ZIP member in one call
+# (`add_zip_file`, which reads the file 65,536 bytes at a time).
+#
+# The archive is named for the one entry it holds, `photos.zip`, or
+# `Archive.zip` for several, given a free name where that one is taken. Each member keeps its entry's time and mode; the
+# archive's own time is the explorer's clock's. A packing cancelled or
+# failed removes the archive, since half an archive is none.
+
+use <rebel>/archive
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path as paths
+use <rebel>/time
+
+use ops/names
+
+# The bytes of a tar member written in one step at most.
+constant PIECE: i64
+    262144
+
+# Which archive is written.
+variant Kind
+    # A ZIP file, its members deflated.
+    zip
+    # A tar archive compressed by gzip, `.tar.gz`.
+    tar_gz
+
+# One member of the archive.
+record Member
+    # The entry on the disk.
+    from: str
+    # Its name in the archive, parts joined by `/`.
+    name: str
+    # What it is.
+    kind: fs.Kind
+    # A file's size in bytes, 0 for the rest.
+    size: i64
+
+# An archive being written.
+record Packing
+    # Which archive.
+    kind: Kind
+    # The archive's path.
+    archive: str
+    # Every member, each folder before what it holds.
+    members: [Member]
+    # The index of the member in hand.
+    at: i64
+    # The archive's stream, open while it is written.
+    stream: [io.Stream]
+    # The ZIP writer, for a ZIP file.
+    zip: [archive.ZipWriter]
+    # The tar writer, for a tar.
+    tar: [archive.TarWriter]
+    # The file of the tar member in hand, open while its bytes go in.
+    reading: [io.Stream]
+    # The bytes of every file the archive holds.
+    bytes: i64
+    # The bytes packed so far.
+    packed: i64
+
+# The extension of `kind`'s archives, with its dot.
+#
+# - `kind`: the archive's kind.
+function ext_of(kind: Kind) -> str
+    return match kind
+        .zip    => ".zip"
+        .tar_gz => ".tar.gz"
+
+# The archive of `sources`, planned in `folder` and its file opened.
+#
+# - `sources`: the entries' paths, each in `folder`.
+# - `folder`: the folder the archive goes in, which the members' names are
+#   read from.
+# - `kind`: which archive.
+#
+# Fails `invalid` where `sources` is empty, and as `fs.walk` and
+# `fs.create` fail.
+function start(sources: [str], folder: str, kind: Kind) -> Packing?
+    if sources.len() == 0
+        return fail(code: "invalid", msg: "nothing chosen to compress")
+
+    stem = if sources.len() == 1
+        paths.name(sources[0])?
+    else
+        "Archive"
+
+    archive_path = paths.join_all([folder, names.free_name(folder: folder, wanted: stem + ext_of(kind))])
+    members: [Member] @= []
+    total @= 0
+
+    for source in sources
+        top = paths.name(source)?
+        own = fs.link_info(source)?
+        members @ members.push(Member(from: source, name: top, kind: own.kind, size: file_size(own)))
+        total @ total + file_size(own)
+
+        if own.kind == .directory
+            for e in fs.walk(source)?
+                facts = fs.link_info(paths.join_all([source, e.name]))?
+                members @ members.push(
+                    Member(from: paths.join_all([source, e.name]), name: top + "/" + paths.to_slash(e.name), kind: facts.kind, size: file_size(facts))
+                )
+                total @ total + file_size(facts)
+
+    s = fs.create(archive_path)?
+    no_zip: [archive.ZipWriter] = []
+    no_tar: [archive.TarWriter] = []
+    no_stream: [io.Stream] = []
+    p @= Packing(
+        kind: kind,
+        archive: archive_path,
+        members: members,
+        at: 0,
+        stream: [s],
+        zip: no_zip,
+        tar: no_tar,
+        reading: no_stream,
+        bytes: total,
+        packed: 0
+    )
+
+    match kind
+        .zip    => p.zip @ [archive.zip_writer(s)]
+        .tar_gz => p.tar @ [archive.tar_writer(s, compression: .gzip)]
+
+    return ok(p)
+
+# A file's size; nothing for a folder or a link.
+#
+# - `facts`: the entry's own facts.
+function file_size(facts: fs.Info) -> i64
+    if facts.kind == .file
+        return facts.size
+
+    return 0
+
+# Whether every member is in the archive.
+#
+# - `p`: the packing.
+function is_done(p: Packing) -> bool
+    return p.at >= p.members.len()
+
+# Adds the next member, or the next piece of a tar member, and answers the
+# bytes it packed.
+#
+# - `p`: the packing; it moves on.
+#
+# Fails `unsupported` for a member that is neither a folder, a file nor a
+# link, and as the archive's writing and the disk fail.
+function step(@p: Packing) -> i64?
+    if is_done(p)
+        return ok(0)
+
+    m = p.members[p.at]
+
+    if p.zip.len() > 0
+        w @= p.zip[0]
+        archive.add_zip_file(@w, file: m.from, name: m.name, method: .deflated)?
+        p.zip @ [w]
+        p.at @ p.at + 1
+        p.packed @ p.packed + m.size
+        return ok(m.size)
+
+    w @= p.tar[0]
+
+    if p.reading.len() == 0
+        facts = fs.link_info(m.from)?
+
+        kind: archive.Kind = match m.kind
+            .directory => .directory
+            .link      => .symlink
+            .file      => .file
+            .other     => return fail(code: "unsupported", msg: f"\"{m.from}\" is neither a file, a folder nor a link")
+
+        entry @= archive.tar_entry(m.name, kind: kind)
+        entry.mode @ facts.permission
+        entry.modified @ facts.written
+        entry.size @ m.size
+
+        if m.kind == .link
+            entry.link @ fs.read_link(m.from)?
+
+        archive.write_tar_header(@w, entry: entry)?
+
+        if m.kind != .file
+            p.tar @ [w]
+            p.at @ p.at + 1
+            return ok(0)
+
+        p.reading @ [fs.open(m.from)?]
+
+    piece = io.read(p.reading[0], n: PIECE)?
+
+    if piece.len() == 0
+        held @= p.reading[0]
+        p.reading @ []
+        _ = io.close(@held).is_err()
+        p.tar @ [w]
+        p.at @ p.at + 1
+        return ok(0)
+
+    archive.write_tar_data(@w, data: piece)?
+    p.tar @ [w]
+    p.packed @ p.packed + piece.len()
+    return ok(piece.len())
+
+# Ends the archive: its last records written, its file closed and given the
+# time `stamp`.
+#
+# - `p`: the packing, every member added.
+# - `stamp`: the archive's time, the explorer's clock's.
+#
+# Fails as the archive's writing and the disk fail.
+function finish(@p: Packing, stamp: time.Instant) -> ()?
+    if p.zip.len() > 0
+        w @= p.zip[0]
+        archive.finish_zip(@w, comment: "")?
+
+    if p.tar.len() > 0
+        w @= p.tar[0]
+        archive.finish_tar(@w)?
+
+    close_all(@p)?
+    fs.set_times(p.archive, written: stamp, read: stamp)?
+    return ok()
+
+# Stops the packing and removes the archive it began.
+#
+# - `p`: the packing; its streams are closed.
+function abandon(@p: Packing)
+    _ = close_all(@p).is_err()
+    _ = fs.remove(p.archive).is_err()
+
+# Closes the archive's stream and the member's file where they are open.
+#
+# - `p`: the packing.
+#
+# Fails as `io.close` fails on the archive.
+function close_all(@p: Packing) -> ()?
+    if p.reading.len() > 0
+        held @= p.reading[0]
+        _ = io.close(@held).is_err()
+
+    p.reading @ []
+
+    if p.stream.len() > 0
+        held @= p.stream[0]
+        p.stream @ []
+        io.close(@held)?
+
+    return ok()
+
+test "ext_of: each kind's extension"
+    assert ext_of(.zip) == ".zip"
+    assert ext_of(.tar_gz) == ".tar.gz"
+
+test "start, step and finish: a folder packed into a ZIP file and a tar.gz, read back by archive"
+    base = "build/explorer-tests/packing"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base + "/docs").must()
+    write_file(path: base + "/docs/a.txt", text: "alpha").must()
+    stamp = time.from_unix(whole_seconds: 1700000000, extra_nanoseconds: 0).must()
+
+    kinds: [Kind] = [.zip, .tar_gz]
+
+    for kind in kinds
+        p @= start([base + "/docs"], folder: base, kind: kind).must()
+
+        while !is_done(p)
+            _ = step(@p).must()
+
+        finish(@p, stamp: stamp).must()
+        assert fs.info(p.archive).must().written == stamp
+
+    zip = archive.decode_zip(fs.read_bytes(base + "/docs.zip").must()).must()
+    assert zip.entries.len() == 2
+    tar = archive.decode_tar(fs.read_bytes(base + "/docs.tar.gz").must(), compression: .gzip, limit: 1000000).must()
+    assert tar[1].entry.name == "docs/a.txt" && tar[1].data == [97, 108, 112, 104, 97]
+    again @= start([base + "/docs"], folder: base, kind: .zip).must()
+    assert again.archive == base + "/docs 2.zip"
+    abandon(@again)
+    assert !fs.exists(base + "/docs 2.zip").must()
+    fs.remove_all(base).must()

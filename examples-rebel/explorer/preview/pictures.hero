@@ -1,0 +1,143 @@
+# An image file previewed: PNG and JPEG decoded (`image/png`, `image/jpeg`),
+# a JPEG turned the way its EXIF orientation says a camera held it, and
+# scaled down to fit the preview pane with its proportions kept. The facts
+# shown are the file's own: its pixels as stored, its colours and its bit
+# depth. A file that says it is an image and does not decode is told as
+# broken, never a crash: `image` reads a broken file as `invalid`.
+#
+# GIF, BMP and the Netpbm formats are told by their signature and named,
+# and shown without a picture, since the explorer carries only the two
+# decoders a person's photos and screenshots need.
+
+use <rebel>/image
+use <rebel>/image/jpeg
+use <rebel>/image/png
+
+# The widest a picture in the preview pane is, in points.
+constant MOST_WIDTH: i64
+    160
+
+# The highest a picture in the preview pane is, in points.
+constant MOST_HEIGHT: i64
+    120
+
+# What a preview shows of an image file.
+record Shown
+    # The facts a person reads: `PNG image`, `64 × 48 pixels`, `RGBA, 8 bits
+    # a sample`.
+    facts: [str]
+    # The picture scaled to the pane; none where it could not be decoded.
+    pictures: [image.Image]
+
+# Whether `data` begins as an image of any kind `image` names.
+#
+# - `data`: the file's first bytes.
+function is_image(data: [u8]) -> bool
+    return !image.kind_of(data).is_err()
+
+# What the preview shows of the image file whose bytes are `data`.
+#
+# - `data`: the whole file.
+function shown_of(data: [u8]) -> Shown
+    nothing: [image.Image] = []
+
+    kind = match image.kind_of(data)
+        .ok k  => k
+        .err _ => return Shown(facts: ["not an image"], pictures: nothing)
+
+    match kind
+        .png =>
+            match png.decode(data, limits: image.default_limits())
+                .ok p =>
+                    facts = [
+                        "PNG image"
+                        size_words(p.image)
+                        f"{format_words(p.image.format)}, {p.bit_depth} bits a sample{interlace_words(p.interlaced)}"
+                    ]
+                    return Shown(facts: facts, pictures: fitted(p.image))
+                .err x => return Shown(facts: ["PNG image", f"broken: {x.msg}"], pictures: nothing)
+        .jpeg =>
+            match jpeg.decode(data, limits: image.default_limits())
+                .ok j =>
+                    upright = image.apply_orientation(j.image, orientation: j.orientation).default(j.image)
+                    facts = [
+                        "JPEG image"
+                        size_words(j.image)
+                        f"{format_words(j.image.format)}{orientation_words(j.orientation)}{progressive_words(j.progressive)}"
+                    ]
+                    return Shown(facts: facts, pictures: fitted(upright))
+                .err x => return Shown(facts: ["JPEG image", f"broken: {x.msg}"], pictures: nothing)
+        .gif    => return Shown(facts: ["GIF image", "no preview of GIF"], pictures: nothing)
+        .bmp    => return Shown(facts: ["BMP image", "no preview of BMP"], pictures: nothing)
+        .netpbm => return Shown(facts: ["Netpbm image", "no preview of Netpbm"], pictures: nothing)
+
+# `img` scaled down to fit the pane, never enlarged, as RGBA.
+#
+# - `img`: the decoded image, valid.
+function fitted(img: image.Image) -> [image.Image]
+    match image.thumbnail(img, max_width: MOST_WIDTH, max_height: MOST_HEIGHT, resampling: .box)
+        .ok small => return [small]
+        .err _ =>
+            nothing: [image.Image] = []
+            return nothing
+
+# `64 × 48 pixels`.
+#
+# - `img`: the image.
+function size_words(img: image.Image) -> str
+    return f"{img.width} × {img.height} pixels"
+
+# The colours a format holds, as a person reads them.
+#
+# - `format`: the format.
+function format_words(format: image.Format) -> str
+    return match format
+        .gray | .gray16             => "gray"
+        .gray_alpha | .gray_alpha16 => "gray with alpha"
+        .rgb | .rgb16               => "RGB"
+        .rgba | .rgba16             => "RGBA"
+
+# `, interlaced` for an interlaced PNG, nothing otherwise.
+#
+# - `interlaced`: whether it is.
+function interlace_words(interlaced: bool) -> str
+    if interlaced
+        return ", interlaced"
+
+    return ""
+
+# `, progressive` for a progressive JPEG, nothing otherwise.
+#
+# - `progressive`: whether it is.
+function progressive_words(progressive: bool) -> str
+    if progressive
+        return ", progressive"
+
+    return ""
+
+# How the camera was held, where the EXIF orientation says it was turned.
+#
+# - `orientation`: the EXIF orientation, 1 to 8.
+function orientation_words(orientation: i64) -> str
+    return match orientation
+        3             => ", turned upside down"
+        6             => ", turned a quarter clockwise"
+        8             => ", turned a quarter counter-clockwise"
+        2 | 4 | 5 | 7 => ", mirrored"
+        _             => ""
+
+test "shown_of: a PNG decoded and fitted to the pane, its facts its own"
+    img @= image.blank(width: 320, height: 80, format: .rgb).must()
+    image.fill_rect(@img, x: 0, y: 0, width: 160, height: 80, color: image.Color(r: 200, g: 30, b: 30, a: 255))
+    data = png.encode(img, options: png.default_encode_options()).must()
+    s = shown_of(data)
+    assert s.facts == ["PNG image", "320 × 80 pixels", "RGB, 8 bits a sample"]
+    assert s.pictures[0].width == 160 && s.pictures[0].height == 40
+
+test "shown_of: a PNG cut short is broken, bytes of no image are none"
+    img = image.blank(width: 4, height: 4, format: .gray).must()
+    data = png.encode(img, options: png.default_encode_options()).must()
+    cut = shown_of(data.slice(from: 0, to: 40))
+    assert cut.facts[0] == "PNG image" && cut.pictures.len() == 0
+    assert shown_of([1, 2, 3]).facts == ["not an image"]
+    assert !is_image([1, 2, 3])

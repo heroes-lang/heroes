@@ -1,0 +1,59 @@
+# The explorer's one source of the time of day. Every instant the program
+# writes or shows as "now" (a trashed item's date, a folder it makes, an
+# archive it writes, the relative age of a file) comes from a `Clock`, never
+# from `time.now` called in place, so a demo or a test hands the program a
+# clock that stands still and moves only when told, and prints the same
+# transcript on every run.
+
+use <rebel>/time
+
+# Where the time of day comes from.
+record Clock
+    # Whether the clock is the injected one: true for a demo's or a test's,
+    # which answers `at` until `advance` moves it; false for the system's.
+    fixed: bool
+    # The instant a fixed clock answers; unused by the system's.
+    at: time.Instant
+
+# The system's clock, which answers the moment it is asked.
+function system_clock() -> Clock
+    return Clock(fixed: false, at: time.epoch())
+
+# A clock that answers `at` until it is moved.
+#
+# - `at`: the instant it stands at.
+function fixed_clock(at: time.Instant) -> Clock
+    return Clock(fixed: true, at: at)
+
+# The instant `c` answers now: the injected instant for a fixed clock, the
+# system's time for the other, and the epoch where the system cannot say.
+#
+# - `c`: the clock.
+function now(c: Clock) -> time.Instant
+    if c.fixed
+        return c.at
+
+    return time.now().default(time.epoch())
+
+# Moves a fixed clock on by `by`; the system's clock moves by itself and is
+# left as it is.
+#
+# - `c`: the clock; a fixed one's `at` moves.
+# - `by`: how far, zero or more.
+#
+# A move past the last instant a `time.Instant` holds leaves it where it was.
+function advance(@c: Clock, by: time.Duration)
+    if c.fixed
+        c.at @ time.add(c.at, d: by).default(c.at)
+
+test "now: a fixed clock answers its instant until advanced, then the later one"
+    start = time.date(year: 2026, month: 3, day: 14).must()
+    c @= fixed_clock(start)
+    assert now(c) == start
+    advance(@c, by: time.minutes(5).must())
+    assert time.between(from: start, to: now(c)).must() == time.minutes(5).must()
+
+test "advance: the system's clock is left as it is"
+    c @= system_clock()
+    advance(@c, by: time.hours(1).must())
+    assert !c.fixed && c.at == time.epoch()
