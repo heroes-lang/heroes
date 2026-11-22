@@ -352,7 +352,8 @@
  * the CryptoKit member and the AppKit member written in Swift and their C
  * headers, which the layer compiles on an Apple target alone
  * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
- * `.swift`); and Monocypher's, which
+ * `.swift`); the header every web view's arm and `hero_ui.c` share,
+ * `platform/hero_ui_web.h`; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -401,6 +402,7 @@
 #include "platform/hero_ui.c"
 #include "platform/hero_ui_appkit.h"
 #include "platform/hero_ui_appkit.swift"
+#include "platform/hero_ui_web.h"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #endif

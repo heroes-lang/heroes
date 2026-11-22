@@ -48,6 +48,7 @@
 
 #include "hero_handle_tag.h"
 #include "hero_layer_alloc.h"
+#include "hero_ui_web.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -146,7 +147,17 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
  * `hero_ui.h`'s functions of the same name; `which` chooses between the
  * flags (`HERO_UI_FLAG_*`) and the two sizes (`HERO_UI_SIZE_*`), and
  * `place` with an `index` of -1 places the widget, with 0 or more a radio
- * group's item. */
+ * group's item.
+ *
+ * A web view's arm takes two more: `web_load` shows a whole URL of the
+ * app's own origin, which this file built from a path it checked, and
+ * `web_post` hands the page a text, or keeps it until the page has loaded.
+ * What a web view serves and where it may go are this file's (THE WEB VIEW,
+ * below), so every system answers alike: an arm asks `hero_ui_web_serve`
+ * what to answer a request of the app's scheme, `hero_ui_web_ask` whether a
+ * navigation or a message's sender is allowed, and tells
+ * `hero_ui_web_gone` when it destroyed a web view; `open` hands it the
+ * three, with `hero_ui_push` and the bridge's script. */
 
 #define HERO_UI_FLAG_ENABLED 1
 #define HERO_UI_FLAG_VISIBLE 2
@@ -155,6 +166,10 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 #define HERO_UI_SIZE_LEAST 2
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts);
+static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count);
+static void hero_ui_web_gone(int64_t id);
+static const char *hero_ui_web_bridge(int64_t *count);
 
 #if defined(__APPLE__)
 
@@ -163,7 +178,10 @@ static int64_t hero_ui_arm_here(void) {
 }
 
 static int64_t hero_ui_arm_open(void) {
-    return hero_ui_appkit_open(hero_ui_push);
+    int64_t count = 0;
+    const char *bridge = hero_ui_web_bridge(&count);
+
+    return hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
 }
 
 static void hero_ui_arm_close(void) {
@@ -258,6 +276,14 @@ static int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
     return hero_ui_appkit_dialog_paths(buffer, count);
 }
 
+static int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
+    return hero_ui_appkit_web_load(id, url, count);
+}
+
+static int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
+    return hero_ui_appkit_web_post(id, text, count);
+}
+
 #else
 
 /* THE ARM OF A SYSTEM NOT WRITTEN YET: no native side, so `native_here`
@@ -270,9 +296,13 @@ static int64_t hero_ui_arm_here(void) {
 }
 
 static int64_t hero_ui_arm_open(void) {
-    /* Named so it is not an unused function here; only an arm that draws
-     * hands it to its system. */
+    /* Named so they are not unused functions here; only an arm that draws
+     * hands them to its system. */
     (void)hero_ui_push;
+    (void)hero_ui_web_serve;
+    (void)hero_ui_web_ask;
+    (void)hero_ui_web_gone;
+    (void)hero_ui_web_bridge;
     return HERO_UI_UNSUPPORTED;
 }
 
@@ -446,6 +476,20 @@ static int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
     (void)buffer;
     (void)count;
     return -1;
+}
+
+static int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
+    (void)id;
+    (void)url;
+    (void)count;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
+    (void)id;
+    (void)text;
+    (void)count;
+    return HERO_UI_UNSUPPORTED;
 }
 
 #endif
@@ -636,8 +680,13 @@ static bool hero_ui_coalesced(int64_t kind) {
     return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE;
 }
 
+static bool hero_ui_is_utf8(const uint8_t *text, uint64_t length);
+
 /* Queues an event on the native app's queue: what an arm calls, on the UI
- * thread, while it runs the system's loop or acts for `inject`. */
+ * thread, while it runs the system's loop or acts for `inject`. A web view's
+ * message is held to the bridge's rule here, for every arm alike: at most
+ * `HERO_UI_WEB_MESSAGE_MOST` bytes of UTF-8 holding no zero byte, else it is
+ * dropped and counted lost, as the page could not have sent it. */
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
     hero_ui_slot *slot;
     hero_ui_event *last;
@@ -648,6 +697,10 @@ static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second
         return;
     }
     slot = &hero_ui_slots[hero_ui_native_slot - 1];
+    if (kind == HERO_UI_EVENT_MESSAGE && (count < 0 || count > HERO_UI_WEB_MESSAGE_MOST || (count > 0 && (text == NULL || memchr(text, 0, (size_t)count) != NULL || !hero_ui_is_utf8(text, (uint64_t)count))))) {
+        slot->lost += 1;
+        return;
+    }
     if (slot->ring == NULL) {
         slot->ring = hero_layer_alloc_zero(HERO_UI_QUEUE_MOST, sizeof *slot->ring);
         if (slot->ring == NULL) {
@@ -839,6 +892,720 @@ static int64_t hero_ui_answered(int64_t kind, const char *what, int64_t id) {
     return hero_ui_said(kind, words);
 }
 
+/* -- THE WEB VIEW ---------------------------------------------------------- *
+ *
+ * What every system's web view shares, written once so each answers alike
+ * (`hero_ui.h`, THE WEB VIEW; `platform/hero_ui_web.h`): the table of assets
+ * a web view serves, its policy and the origins its page may go to, kept
+ * here by the web view's number; the answer to every request of the app's
+ * scheme; whether a navigation or a message's sender is allowed; and the
+ * bridge's script. A web view's record lives from its `create` until its
+ * arm says it is gone (`hero_ui_web_gone`, at a `destroy` of it or of its
+ * window) or the native app closes, and every record is the UI thread's, as
+ * the table of apps is.
+ *
+ * MEMORY: a record, each asset's three copies and the policy are taken from
+ * `hero_layer_alloc` and given back with the record; a call that finds no
+ * memory answers `LIMIT` and leaves the table as it was. */
+
+/* One asset: its path, its content type and its body, the layer's copies. */
+typedef struct hero_ui_asset {
+    char *path;
+    size_t path_count;
+    char *type;
+    size_t type_count;
+    uint8_t *body;
+    size_t body_count;
+} hero_ui_asset;
+
+/* One web view's table, policy and origins. */
+typedef struct hero_ui_web {
+    int64_t id;
+    /* The assets, `held` of them in a block of `room`. */
+    hero_ui_asset *assets;
+    int64_t held;
+    int64_t room;
+    /* The bytes their bodies take in all. */
+    uint64_t bytes;
+    /* The program's policy, NULL for `HERO_UI_WEB_POLICY_DEFAULT`. */
+    char *policy;
+    size_t policy_count;
+    /* The origins the page may go to, each as `normal_origin` writes it. */
+    int64_t origin_count;
+    char origins[HERO_UI_WEB_ORIGINS_MOST][HERO_UI_WEB_ORIGIN_MOST + 1];
+} hero_ui_web;
+
+/* The web views of the native app, `hero_ui_web_held` of them in a block of
+ * `hero_ui_web_room`. */
+static _Thread_local hero_ui_web **hero_ui_webs;
+static _Thread_local int64_t hero_ui_web_held;
+static _Thread_local int64_t hero_ui_web_room;
+
+/* The bridge (`hero_ui.h`, THE BRIDGE): written for WebKit's
+ * `window.webkit.messageHandlers` and WebView2's `window.chrome.webview`
+ * alike, so one script serves every system; it does nothing in a frame
+ * inside the page, nor where neither is there. */
+static const char hero_ui_web_bridge_text[] =
+    "(function () {\n"
+    "    \"use strict\";\n"
+    "    if (window !== window.top || window.heroes !== undefined) {\n"
+    "        return;\n"
+    "    }\n"
+    "    var MOST = 16777216;\n"
+    "    var HELD_MOST = 4096;\n"
+    "    var handlers = window.webkit && window.webkit.messageHandlers;\n"
+    "    var webkit = handlers && handlers.heroes;\n"
+    "    var chrome = window.chrome && window.chrome.webview;\n"
+    "    if (!webkit && !chrome) {\n"
+    "        return;\n"
+    "    }\n"
+    "    var post = webkit ? webkit.postMessage.bind(webkit) : chrome.postMessage.bind(chrome);\n"
+    "    var encoder = new TextEncoder();\n"
+    "    var receiver = null;\n"
+    "    var held = [];\n"
+    "    var calls = new Map();\n"
+    "    var listeners = new Map();\n"
+    "    var next = 1;\n"
+    "    function send(text) {\n"
+    "        if (typeof text !== \"string\") {\n"
+    "            throw new TypeError(\"heroes.send takes a string\");\n"
+    "        }\n"
+    "        if (text.indexOf(\"\\u0000\") >= 0) {\n"
+    "            throw new TypeError(\"heroes.send: the text holds U+0000\");\n"
+    "        }\n"
+    "        if (text.length * 3 > MOST && encoder.encode(text).length > MOST) {\n"
+    "            throw new RangeError(\"heroes.send: the text is longer than \" + MOST + \" bytes of UTF-8\");\n"
+    "        }\n"
+    "        post(text);\n"
+    "    }\n"
+    "    function deliver(text) {\n"
+    "        if (typeof text !== \"string\") {\n"
+    "            return;\n"
+    "        }\n"
+    "        var framed = null;\n"
+    "        if (text.charAt(0) === \"{\") {\n"
+    "            try {\n"
+    "                framed = JSON.parse(text);\n"
+    "            } catch (e) {\n"
+    "                framed = null;\n"
+    "            }\n"
+    "        }\n"
+    "        if (framed !== null && typeof framed === \"object\" && framed.heroes === 1) {\n"
+    "            if (typeof framed.id === \"number\" && calls.has(framed.id)) {\n"
+    "                var call = calls.get(framed.id);\n"
+    "                calls.delete(framed.id);\n"
+    "                if (Object.prototype.hasOwnProperty.call(framed, \"error\")) {\n"
+    "                    var told = framed.error !== null && typeof framed.error === \"object\" ? framed.error : {};\n"
+    "                    var error = new Error(typeof told.msg === \"string\" ? told.msg : \"the program refused the call\");\n"
+    "                    error.code = typeof told.code === \"string\" ? told.code : \"failed\";\n"
+    "                    call.reject(error);\n"
+    "                } else {\n"
+    "                    call.resolve(framed.ok);\n"
+    "                }\n"
+    "                return;\n"
+    "            }\n"
+    "            if (typeof framed.event === \"string\") {\n"
+    "                var hearers = listeners.get(framed.event);\n"
+    "                if (hearers !== undefined) {\n"
+    "                    hearers.slice().forEach(function (hear) {\n"
+    "                        hear(framed.data);\n"
+    "                    });\n"
+    "                }\n"
+    "                return;\n"
+    "            }\n"
+    "        }\n"
+    "        if (receiver !== null) {\n"
+    "            receiver(text);\n"
+    "        } else if (held.length < HELD_MOST) {\n"
+    "            held.push(text);\n"
+    "        }\n"
+    "    }\n"
+    "    function receive(fn) {\n"
+    "        if (typeof fn !== \"function\") {\n"
+    "            throw new TypeError(\"heroes.receive takes a function\");\n"
+    "        }\n"
+    "        receiver = fn;\n"
+    "        var waiting = held;\n"
+    "        held = [];\n"
+    "        waiting.forEach(function (text) {\n"
+    "            fn(text);\n"
+    "        });\n"
+    "    }\n"
+    "    function invoke(name, args) {\n"
+    "        return new Promise(function (resolve, reject) {\n"
+    "            var id = next;\n"
+    "            next += 1;\n"
+    "            var text = JSON.stringify({ heroes: 1, id: id, call: String(name), args: args === undefined ? null : args });\n"
+    "            calls.set(id, { resolve: resolve, reject: reject });\n"
+    "            try {\n"
+    "                send(text);\n"
+    "            } catch (e) {\n"
+    "                calls.delete(id);\n"
+    "                reject(e);\n"
+    "            }\n"
+    "        });\n"
+    "    }\n"
+    "    function on(name, fn) {\n"
+    "        if (typeof name !== \"string\" || typeof fn !== \"function\") {\n"
+    "            throw new TypeError(\"heroes.on takes a name and a function\");\n"
+    "        }\n"
+    "        var hearers = listeners.get(name);\n"
+    "        if (hearers === undefined) {\n"
+    "            hearers = [];\n"
+    "            listeners.set(name, hearers);\n"
+    "        }\n"
+    "        hearers.push(fn);\n"
+    "    }\n"
+    "    if (!webkit) {\n"
+    "        chrome.addEventListener(\"message\", function (event) {\n"
+    "            deliver(event.data);\n"
+    "        });\n"
+    "    }\n"
+    "    Object.defineProperty(window, \"heroes\", {\n"
+    "        value: Object.freeze({ send: send, receive: receive, invoke: invoke, on: on, deliver: deliver }),\n"
+    "        writable: false,\n"
+    "        configurable: false,\n"
+    "        enumerable: false\n"
+    "    });\n"
+    "})();\n"
+    ;
+
+static const char *hero_ui_web_bridge(int64_t *count) {
+    *count = (int64_t)(sizeof hero_ui_web_bridge_text - 1);
+    return hero_ui_web_bridge_text;
+}
+
+/* The record of web view `id`, or NULL. */
+static hero_ui_web *hero_ui_web_of(int64_t id) {
+    for (int64_t i = 0; i < hero_ui_web_held; i += 1) {
+        if (hero_ui_webs[i]->id == id) {
+            return hero_ui_webs[i];
+        }
+    }
+    return NULL;
+}
+
+static void hero_ui_web_free_asset(hero_ui_asset *asset) {
+    hero_layer_free(asset->path);
+    hero_layer_free(asset->type);
+    hero_layer_free(asset->body);
+}
+
+/* Gives back `web` and everything it holds. */
+static void hero_ui_web_free(hero_ui_web *web) {
+    for (int64_t i = 0; i < web->held; i += 1) {
+        hero_ui_web_free_asset(&web->assets[i]);
+    }
+    hero_layer_free(web->assets);
+    hero_layer_free(web->policy);
+    hero_layer_free(web);
+}
+
+static void hero_ui_web_gone(int64_t id) {
+    for (int64_t i = 0; i < hero_ui_web_held; i += 1) {
+        if (hero_ui_webs[i]->id == id) {
+            hero_ui_web_free(hero_ui_webs[i]);
+            hero_ui_webs[i] = hero_ui_webs[hero_ui_web_held - 1];
+            hero_ui_web_held -= 1;
+            return;
+        }
+    }
+}
+
+/* Gives back every web view's record, at the native app's close, after its
+ * arm destroyed every widget. */
+static void hero_ui_web_give_back_all(void) {
+    for (int64_t i = 0; i < hero_ui_web_held; i += 1) {
+        hero_ui_web_free(hero_ui_webs[i]);
+    }
+    hero_layer_free(hero_ui_webs);
+    hero_ui_webs = NULL;
+    hero_ui_web_held = 0;
+    hero_ui_web_room = 0;
+}
+
+/* Makes web view `id` in window `parent`: its record first, so the arm may
+ * serve the page at once, then the system's widget; a refusal gives the
+ * record back. */
+static int64_t hero_ui_web_create(int64_t id, int64_t parent) {
+    hero_ui_web *web;
+    int64_t kind;
+
+    if (hero_ui_web_of(id) != NULL) {
+        return hero_ui_answered(HERO_UI_NOT_FOUND, "making a web view", id);
+    }
+    if (hero_ui_web_held == hero_ui_web_room) {
+        int64_t room = hero_ui_web_room == 0 ? 4 : hero_ui_web_room * 2;
+        hero_ui_web **grown = hero_layer_grow(hero_ui_webs, (size_t)room * sizeof *grown);
+
+        if (grown == NULL) {
+            return hero_ui_answered(HERO_UI_LIMIT, "making a web view", id);
+        }
+        hero_ui_webs = grown;
+        hero_ui_web_room = room;
+    }
+    web = hero_layer_alloc_zero(1, sizeof *web);
+    if (web == NULL) {
+        return hero_ui_answered(HERO_UI_LIMIT, "making a web view", id);
+    }
+    web->id = id;
+    hero_ui_webs[hero_ui_web_held] = web;
+    hero_ui_web_held += 1;
+    kind = hero_ui_arm_create(id, HERO_UI_WEBVIEW, parent);
+    if (kind != HERO_UI_OK) {
+        hero_ui_web_gone(id);
+    }
+    return hero_ui_answered(kind, "making a web view", id);
+}
+
+/* Whether `c` may stand in a segment of an asset's path. */
+static bool hero_ui_web_path_byte(uint8_t c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '.' || c == '_' || c == '~';
+}
+
+/* Whether the `count` bytes at `path` are an asset's path, or, where
+ * `folder`, a folder's too, ending in `/` (`hero_ui.h`, THE WEB VIEW). */
+static bool hero_ui_web_path_ok(const uint8_t *path, size_t count, bool folder) {
+    size_t start = 1;
+
+    if (count < 1 || count > HERO_UI_WEB_PATH_MOST || path[0] != '/') {
+        return false;
+    }
+    if (count == 1) {
+        return folder;
+    }
+    for (size_t at = 1; at <= count; at += 1) {
+        if (at == count || path[at] == '/') {
+            size_t length = at - start;
+
+            if (length == 0) {
+                /* An empty segment is a folder's end alone. */
+                return folder && at == count;
+            }
+            if ((length == 1 && path[start] == '.') || (length == 2 && path[start] == '.' && path[start + 1] == '.')) {
+                return false;
+            }
+            start = at + 1;
+            continue;
+        }
+        if (!hero_ui_web_path_byte(path[at])) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* Whether `c` belongs to a token of a content type (RFC 9110 § 5.6.2). */
+static bool hero_ui_web_token_byte(uint8_t c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c != 0 && strchr("!#$%&'*+-.^_`|~", c) != NULL);
+}
+
+/* Whether the `count` bytes at `type` are a content type: a token, `/`, a
+ * token, then parameters of printable ASCII. */
+static bool hero_ui_web_type_ok(const uint8_t *type, size_t count) {
+    size_t at = 0;
+    size_t slash;
+
+    if (count < 3 || count > HERO_UI_WEB_TYPE_MOST) {
+        return false;
+    }
+    while (at < count && hero_ui_web_token_byte(type[at])) {
+        at += 1;
+    }
+    if (at == 0 || at == count || type[at] != '/') {
+        return false;
+    }
+    slash = at;
+    at += 1;
+    while (at < count && hero_ui_web_token_byte(type[at])) {
+        at += 1;
+    }
+    if (at == slash + 1) {
+        return false;
+    }
+    for (; at < count; at += 1) {
+        if (type[at] < 0x20 || type[at] > 0x7E) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* Whether the `count` bytes at `text` are printable ASCII, a header's value
+ * that no line feed can end. */
+static bool hero_ui_web_printable(const uint8_t *text, size_t count) {
+    for (size_t at = 0; at < count; at += 1) {
+        if (text[at] < 0x20 || text[at] > 0x7E) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* `c` in lower case, for the ASCII letters. */
+static uint8_t hero_ui_web_lower(uint8_t c) {
+    return (c >= 'A' && c <= 'Z') ? (uint8_t)(c - 'A' + 'a') : c;
+}
+
+/* Whether the `count` bytes at `text` begin with `head`, its letters in any
+ * case. */
+static bool hero_ui_web_begins(const uint8_t *text, size_t count, const char *head) {
+    size_t length = strlen(head);
+
+    if (count < length) {
+        return false;
+    }
+    for (size_t at = 0; at < length; at += 1) {
+        if (hero_ui_web_lower(text[at]) != (uint8_t)head[at]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* The origin of the URL `url`, written into `into` as `scheme://host` and
+ * `:port` where it is not the scheme's own, lower case, with its zero; true
+ * where `url` is an `http`, an `https` or the app's own scheme's URL with a
+ * host of lower-case letters, digits, `-` and `.` and a port from 1 to
+ * 65535, followed by its end, `/`, `?` or `#`. `port_written` says whether
+ * the scheme's own port was written out. */
+static bool hero_ui_web_origin_of(const uint8_t *url, size_t count, char *into, size_t room, bool *port_written) {
+    const char *scheme;
+    size_t at;
+    size_t host_start;
+    size_t host_end;
+    uint32_t port = 0;
+    uint32_t own;
+    int written;
+
+    if (hero_ui_web_begins(url, count, "https://")) {
+        scheme = "https";
+        own = 443;
+    } else if (hero_ui_web_begins(url, count, "http://")) {
+        scheme = "http";
+        own = 80;
+    } else if (hero_ui_web_begins(url, count, HERO_UI_WEB_SCHEME "://")) {
+        scheme = HERO_UI_WEB_SCHEME;
+        own = 0;
+    } else {
+        return false;
+    }
+    at = strlen(scheme) + 3;
+    host_start = at;
+    while (at < count && url[at] != ':' && url[at] != '/' && url[at] != '?' && url[at] != '#') {
+        uint8_t c = hero_ui_web_lower(url[at]);
+
+        if (!((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '-' || c == '.')) {
+            return false;
+        }
+        at += 1;
+    }
+    host_end = at;
+    if (host_end == host_start || url[host_start] == '.' || url[host_end - 1] == '.' || host_end - host_start > 253) {
+        return false;
+    }
+    *port_written = false;
+    if (at < count && url[at] == ':') {
+        size_t digits = 0;
+
+        at += 1;
+        while (at < count && url[at] >= '0' && url[at] <= '9') {
+            if (digits == 5) {
+                return false;
+            }
+            port = port * 10u + (uint32_t)(url[at] - '0');
+            digits += 1;
+            at += 1;
+        }
+        if (digits == 0 || port == 0 || port > 65535u || (digits > 1 && url[at - digits] == '0')) {
+            return false;
+        }
+        if (port == own) {
+            *port_written = true;
+            port = 0;
+        }
+    }
+    if (at < count && url[at] != '/' && url[at] != '?' && url[at] != '#') {
+        return false;
+    }
+    written = snprintf(into, room, "%s://", scheme);
+    if (written < 0 || (size_t)written + (host_end - host_start) + 7 > room) {
+        return false;
+    }
+    for (size_t i = host_start; i < host_end; i += 1) {
+        into[written] = (char)hero_ui_web_lower(url[i]);
+        written += 1;
+    }
+    into[written] = '\0';
+    if (port != 0) {
+        (void)snprintf(into + written, room - (size_t)written, ":%u", (unsigned)port);
+    }
+    return true;
+}
+
+/* Whether the `count` bytes at `url` are a URL of the app's own origin. */
+static bool hero_ui_web_is_ours(const uint8_t *url, size_t count) {
+    char origin[HERO_UI_WEB_ORIGIN_MOST + 1];
+    bool port_written = false;
+
+    return hero_ui_web_origin_of(url, count, origin, sizeof origin, &port_written) && !port_written && strcmp(origin, HERO_UI_WEB_SCHEME "://" HERO_UI_WEB_HOST) == 0;
+}
+
+/* Whether the `count` bytes at `url` are `about:blank` or `about:srcdoc`,
+ * perhaps with a query or a fragment: a frame's empty page, which inherits
+ * the origin of the page that made it. */
+static bool hero_ui_web_is_empty_page(const uint8_t *url, size_t count) {
+    static const char *const pages[] = { "about:blank", "about:srcdoc" };
+
+    for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i += 1) {
+        size_t length = strlen(pages[i]);
+
+        if (hero_ui_web_begins(url, count, pages[i]) && (count == length || url[length] == '?' || url[length] == '#')) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count) {
+    hero_ui_web *web = hero_ui_web_of(id);
+    char origin[HERO_UI_WEB_ORIGIN_MOST + 1];
+    bool port_written = false;
+
+    if (web == NULL || count < 0 || (url == NULL && count > 0)) {
+        return 0;
+    }
+    if (what == HERO_UI_WEB_ASK_SENDER) {
+        if (hero_ui_web_is_ours(url, (size_t)count)) {
+            return 1;
+        }
+        if (hero_ui_native_slot != 0) {
+            hero_ui_slots[hero_ui_native_slot - 1].lost += 1;
+        }
+        return 0;
+    }
+    if (what == HERO_UI_WEB_ASK_OURS) {
+        return hero_ui_web_is_ours(url, (size_t)count) ? 1 : 0;
+    }
+    if (what != HERO_UI_WEB_ASK_FRAME && what != HERO_UI_WEB_ASK_SUBFRAME) {
+        return 0;
+    }
+    if (hero_ui_web_is_ours(url, (size_t)count) || hero_ui_web_is_empty_page(url, (size_t)count)) {
+        return 1;
+    }
+    if (!hero_ui_web_origin_of(url, (size_t)count, origin, sizeof origin, &port_written)) {
+        return 0;
+    }
+    for (int64_t i = 0; i < web->origin_count; i += 1) {
+        if (strcmp(web->origins[i], origin) == 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* The value of the hexadecimal digit `c`, or -1. */
+static int hero_ui_web_hex(uint8_t c) {
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    }
+    c = hero_ui_web_lower(c);
+    if (c >= 'a' && c <= 'f') {
+        return c - 'a' + 10;
+    }
+    return -1;
+}
+
+/* Whether the `count` bytes at `segment` are the WHATWG URL standard's
+ * single-dot segment, `.` or `%2e` in any case, or, where `two`, its
+ * double-dot one, `..`, `.%2e`, `%2e.` or `%2e%2e`. */
+static bool hero_ui_web_dots(const uint8_t *segment, size_t count, bool two) {
+    size_t dots = 0;
+    size_t at = 0;
+
+    while (at < count) {
+        if (segment[at] == '.') {
+            at += 1;
+        } else if (count - at >= 3 && segment[at] == '%' && segment[at + 1] == '2' && hero_ui_web_lower(segment[at + 2]) == 'e') {
+            at += 3;
+        } else {
+            return false;
+        }
+        dots += 1;
+    }
+    return dots == (two ? 2u : 1u);
+}
+
+/* The `count` bytes at `path`, a URL's path that begins with `/`, with its
+ * dot segments resolved as the WHATWG URL standard's path state resolves
+ * them, every web view's own parser having done so before it asks: a `.`
+ * dropped, a `..` dropping the segment before it and none above the root,
+ * and a path that ends in either ending in `/`; every other segment kept,
+ * an empty one too. Written into `into` (`room` bytes, at least `count` +
+ * 2) with its zero; answers its length. Read 2026-11-22 from the
+ * standard's "path state"; measured the same day on WebKit, whose request
+ * for `/%2e%2e/data.json` reached the scheme's handler as `/data.json`. */
+static size_t hero_ui_web_dots_resolved(const uint8_t *path, size_t count, char *into, size_t room) {
+    size_t starts[HERO_UI_WEB_PATH_MOST + 1];
+    size_t kept = 0;
+    size_t written = 0;
+    size_t start = 1;
+    bool ends_open = false;
+
+    for (size_t at = 1; at <= count && kept <= HERO_UI_WEB_PATH_MOST; at += 1) {
+        if (at < count && path[at] != '/') {
+            continue;
+        }
+        if (hero_ui_web_dots(path + start, at - start, true)) {
+            if (kept > 0) {
+                kept -= 1;
+                written = starts[kept];
+            }
+            ends_open = at == count;
+        } else if (hero_ui_web_dots(path + start, at - start, false)) {
+            ends_open = at == count;
+        } else if (written + 1 + (at - start) + 2 <= room) {
+            starts[kept] = written;
+            kept += 1;
+            into[written] = '/';
+            memcpy(into + written + 1, path + start, at - start);
+            written += 1 + (at - start);
+            ends_open = false;
+        }
+        start = at + 1;
+    }
+    if (kept == 0) {
+        into[0] = '/';
+        written = 1;
+    } else if (ends_open) {
+        into[written] = '/';
+        written += 1;
+    }
+    into[written] = '\0';
+    return written;
+}
+
+/* The asset path a request of the app's scheme asks, written into `path`
+ * (`room` bytes, at least `HERO_UI_WEB_PATH_MOST` + 11) with its zero, its
+ * dot segments resolved, its escapes undone and a folder's `index.html`
+ * added; false where the URL is not of the app's own origin or its path is
+ * none an asset could have. */
+static bool hero_ui_web_asked_path(const uint8_t *url, size_t count, char *path, size_t room, size_t *length) {
+    size_t from = strlen(HERO_UI_WEB_SCHEME "://" HERO_UI_WEB_HOST);
+    size_t end = from;
+    uint8_t raw[HERO_UI_WEB_PATH_MOST + 1];
+    char resolved[HERO_UI_WEB_PATH_MOST + 2];
+    size_t raw_count = 0;
+    size_t resolved_count;
+    size_t written = 0;
+
+    if (!hero_ui_web_is_ours(url, count)) {
+        return false;
+    }
+    while (end < count && url[end] != '?' && url[end] != '#') {
+        end += 1;
+    }
+    if (end == from || url[from] != '/') {
+        raw[raw_count] = '/';
+        raw_count += 1;
+    }
+    if (end - from > HERO_UI_WEB_PATH_MOST - raw_count) {
+        return false;
+    }
+    memcpy(raw + raw_count, url + from, end - from);
+    raw_count += end - from;
+    resolved_count = hero_ui_web_dots_resolved(raw, raw_count, resolved, sizeof resolved);
+    for (size_t at = 0; at < resolved_count; at += 1) {
+        uint8_t c = (uint8_t)resolved[at];
+
+        if (c == '%') {
+            int high = at + 2 < resolved_count ? hero_ui_web_hex((uint8_t)resolved[at + 1]) : -1;
+            int low = at + 2 < resolved_count ? hero_ui_web_hex((uint8_t)resolved[at + 2]) : -1;
+
+            if (high < 0 || low < 0) {
+                return false;
+            }
+            c = (uint8_t)(high * 16 + low);
+            at += 2;
+        }
+        if (written == HERO_UI_WEB_PATH_MOST || c == 0) {
+            return false;
+        }
+        path[written] = (char)c;
+        written += 1;
+    }
+    if (written > 0 && path[written - 1] == '/') {
+        if (written + 10 + 1 > room) {
+            return false;
+        }
+        memcpy(path + written, "index.html", 10);
+        written += 10;
+    }
+    path[written] = '\0';
+    *length = written;
+    return hero_ui_web_path_ok((const uint8_t *)path, written, false);
+}
+
+/* The index of the asset at `path` in `web`'s table, or -1. */
+static int64_t hero_ui_web_find(const hero_ui_web *web, const char *path, size_t count) {
+    for (int64_t i = 0; i < web->held; i += 1) {
+        if (web->assets[i].path_count == count && memcmp(web->assets[i].path, path, count) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts) {
+    static const char plain[] = "text/plain; charset=utf-8";
+    static const char missing[] = "not found\n";
+    static const char refused[] = "method not allowed\n";
+    hero_ui_web *web = hero_ui_web_of(id);
+    char path[HERO_UI_WEB_PATH_MOST + 11];
+    size_t length = 0;
+    bool head = method_count == 4 && memcmp(method, "HEAD", 4) == 0;
+    bool get = method_count == 3 && memcmp(method, "GET", 3) == 0;
+    int64_t found = -1;
+
+    if (numbers == NULL || texts == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (web != NULL && web->policy != NULL) {
+        texts[HERO_UI_WEB_POLICY] = (const uint8_t *)web->policy;
+        numbers[HERO_UI_WEB_POLICY_COUNT] = (int64_t)web->policy_count;
+    } else {
+        texts[HERO_UI_WEB_POLICY] = (const uint8_t *)HERO_UI_WEB_POLICY_DEFAULT;
+        numbers[HERO_UI_WEB_POLICY_COUNT] = (int64_t)strlen(HERO_UI_WEB_POLICY_DEFAULT);
+    }
+    texts[HERO_UI_WEB_TYPE] = (const uint8_t *)plain;
+    numbers[HERO_UI_WEB_TYPE_COUNT] = (int64_t)(sizeof plain - 1);
+    if (!head && !get) {
+        numbers[HERO_UI_WEB_STATUS] = 405;
+        texts[HERO_UI_WEB_BODY] = (const uint8_t *)refused;
+        numbers[HERO_UI_WEB_LENGTH] = (int64_t)(sizeof refused - 1);
+        numbers[HERO_UI_WEB_BODY_COUNT] = numbers[HERO_UI_WEB_LENGTH];
+        return HERO_UI_OK;
+    }
+    if (web != NULL && url != NULL && url_count > 0 && hero_ui_web_asked_path(url, (size_t)url_count, path, sizeof path, &length)) {
+        found = hero_ui_web_find(web, path, length);
+    }
+    if (found < 0) {
+        numbers[HERO_UI_WEB_STATUS] = 404;
+        texts[HERO_UI_WEB_BODY] = (const uint8_t *)missing;
+        numbers[HERO_UI_WEB_LENGTH] = (int64_t)(sizeof missing - 1);
+    } else {
+        const hero_ui_asset *asset = &web->assets[found];
+
+        numbers[HERO_UI_WEB_STATUS] = 200;
+        texts[HERO_UI_WEB_TYPE] = (const uint8_t *)asset->type;
+        numbers[HERO_UI_WEB_TYPE_COUNT] = (int64_t)asset->type_count;
+        texts[HERO_UI_WEB_BODY] = asset->body;
+        numbers[HERO_UI_WEB_LENGTH] = (int64_t)asset->body_count;
+    }
+    numbers[HERO_UI_WEB_BODY_COUNT] = head ? 0 : numbers[HERO_UI_WEB_LENGTH];
+    return HERO_UI_OK;
+}
+
 /* -- THE ENTRY POINTS ------------------------------------------------------ */
 
 hero_ui_app *hero_ui_open(int64_t backend) {
@@ -908,6 +1675,7 @@ int64_t hero_ui_close(hero_ui_app *app) {
     }
     if (slot->backend == HERO_UI_NATIVE) {
         hero_ui_arm_close();
+        hero_ui_web_give_back_all();
         hero_ui_native_slot = 0;
         atomic_store(&hero_ui_natives, 0);
     }
@@ -934,6 +1702,9 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if ((kind == HERO_UI_WINDOW) != (parent == 0) || parent < 0) {
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window has none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (kind == HERO_UI_WEBVIEW) {
+        return hero_ui_web_create(id, parent);
     }
     return hero_ui_answered(hero_ui_arm_create(id, kind, parent), "making a widget", id);
 }
@@ -1220,7 +1991,7 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
-    if (kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_RESIZE) {
+    if (kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) {
         (void)snprintf(words, sizeof words, "the act %lld is no act a person does", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -1277,4 +2048,226 @@ int64_t hero_ui_dialog_paths(hero_ui_app *app, void *buffer, uint64_t count) {
         return hero_ui_said(HERO_UI_OTHER, "no file dialog has answered paths");
     }
     return bytes;
+}
+
+/* -- THE WEB VIEW'S ENTRY POINTS ------------------------------------------- */
+
+/* The record of web view `id` of `app`, on the UI thread; NULL with the
+ * failure said. */
+static hero_ui_web *hero_ui_web_enter(hero_ui_app *app, int64_t id) {
+    hero_ui_web *web;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return NULL;
+    }
+    web = hero_ui_web_of(id);
+    if (web == NULL) {
+        (void)snprintf(words, sizeof words, "the native side holds no web view %lld", (long long)id);
+        (void)hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    return web;
+}
+
+/* Whether `count` bytes at `text` are given, as `hero_ui_text_given` asks
+ * of a pointer and its count alone. */
+static bool hero_ui_web_bytes_given(const void *text, uint64_t count, const char *what) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (count > 0 && text == NULL) {
+        (void)snprintf(words, sizeof words, "%s: %llu bytes were named and none given", what, (unsigned long long)count);
+        (void)hero_ui_said(HERO_UI_INVALID, words);
+        return false;
+    }
+    return true;
+}
+
+/* Whether `count` bytes at `path` are an asset's path, else the failure
+ * said. */
+static bool hero_ui_web_path_given(const void *path, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (!hero_ui_web_bytes_given(path, count, "the path")) {
+        return false;
+    }
+    if (count == 0 || !hero_ui_web_path_ok(path, (size_t)count, false)) {
+        (void)snprintf(words, sizeof words, "the path of %llu bytes is no asset's: `/` and segments of A-Z, a-z, 0-9, `-`, `.`, `_` and `~` joined by `/`, never `.` or `..`, at most %d bytes", (unsigned long long)count, HERO_UI_WEB_PATH_MOST);
+        (void)hero_ui_said(HERO_UI_INVALID, words);
+        return false;
+    }
+    return true;
+}
+
+int64_t hero_ui_web_asset(hero_ui_app *app, int64_t id, const void *path, uint64_t path_count, const void *type, uint64_t type_count, const void *body, uint64_t body_count) {
+    hero_ui_web *web = hero_ui_web_enter(app, id);
+    hero_ui_asset made;
+    int64_t at;
+    uint64_t before = 0;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (web == NULL || !hero_ui_web_path_given(path, path_count) || !hero_ui_web_bytes_given(type, type_count, "the content type") || !hero_ui_web_bytes_given(body, body_count, "the body")) {
+        return -1;
+    }
+    if (!hero_ui_web_type_ok(type, (size_t)type_count)) {
+        return hero_ui_said(HERO_UI_INVALID, "the content type is no `type/subtype`, then parameters, of printable ASCII, at most 255 bytes");
+    }
+    if (body_count > (uint64_t)HERO_UI_WEB_ASSET_MOST) {
+        (void)snprintf(words, sizeof words, "a body of %llu bytes, past the %d an asset holds", (unsigned long long)body_count, HERO_UI_WEB_ASSET_MOST);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    at = hero_ui_web_find(web, path, (size_t)path_count);
+    if (at >= 0) {
+        before = web->assets[at].body_count;
+    } else if (web->held == HERO_UI_WEB_ASSETS_MOST) {
+        (void)snprintf(words, sizeof words, "web view %lld holds %d assets already, as many as its table takes", (long long)id, HERO_UI_WEB_ASSETS_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (web->bytes - before + body_count > (uint64_t)HERO_UI_WEB_BYTES_MOST) {
+        (void)snprintf(words, sizeof words, "web view %lld's assets would take %llu bytes, past the %d its table takes", (long long)id, (unsigned long long)(web->bytes - before + body_count), HERO_UI_WEB_BYTES_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (at < 0 && web->held == web->room) {
+        int64_t room = web->room == 0 ? 16 : web->room * 2;
+        hero_ui_asset *grown = hero_layer_grow(web->assets, (size_t)room * sizeof *grown);
+
+        if (grown == NULL) {
+            return hero_ui_said(HERO_UI_LIMIT, "the system has no memory left for the asset table");
+        }
+        web->assets = grown;
+        web->room = room;
+    }
+    made.path = hero_layer_alloc((size_t)path_count);
+    made.type = hero_layer_alloc((size_t)type_count);
+    made.body = hero_layer_alloc((size_t)body_count);
+    if (made.path == NULL || made.type == NULL || made.body == NULL) {
+        hero_ui_web_free_asset(&made);
+        return hero_ui_said(HERO_UI_LIMIT, "the system has no memory left for the asset");
+    }
+    memcpy(made.path, path, (size_t)path_count);
+    made.path_count = (size_t)path_count;
+    memcpy(made.type, type, (size_t)type_count);
+    made.type_count = (size_t)type_count;
+    if (body_count > 0) {
+        memcpy(made.body, body, (size_t)body_count);
+    }
+    made.body_count = (size_t)body_count;
+    if (at >= 0) {
+        hero_ui_web_free_asset(&web->assets[at]);
+        web->assets[at] = made;
+    } else {
+        web->assets[web->held] = made;
+        web->held += 1;
+    }
+    web->bytes = web->bytes - before + body_count;
+    return 0;
+}
+
+int64_t hero_ui_web_remove(hero_ui_app *app, int64_t id, const void *path, uint64_t path_count) {
+    hero_ui_web *web = hero_ui_web_enter(app, id);
+    int64_t at;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (web == NULL || !hero_ui_web_path_given(path, path_count)) {
+        return -1;
+    }
+    at = hero_ui_web_find(web, path, (size_t)path_count);
+    if (at < 0) {
+        (void)snprintf(words, sizeof words, "web view %lld holds no asset at that path", (long long)id);
+        return hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    web->bytes -= web->assets[at].body_count;
+    hero_ui_web_free_asset(&web->assets[at]);
+    web->assets[at] = web->assets[web->held - 1];
+    web->held -= 1;
+    return 0;
+}
+
+int64_t hero_ui_web_policy(hero_ui_app *app, int64_t id, const void *policy, uint64_t count) {
+    hero_ui_web *web = hero_ui_web_enter(app, id);
+    char *copy = NULL;
+
+    if (web == NULL || !hero_ui_web_bytes_given(policy, count, "the policy")) {
+        return -1;
+    }
+    if (count > (uint64_t)HERO_UI_WEB_POLICY_MOST || !hero_ui_web_printable(policy, (size_t)count)) {
+        return hero_ui_said(HERO_UI_INVALID, "a policy is printable ASCII, at most 4096 bytes");
+    }
+    if (count > 0) {
+        copy = hero_layer_alloc((size_t)count);
+        if (copy == NULL) {
+            return hero_ui_said(HERO_UI_LIMIT, "the system has no memory left for the policy");
+        }
+        memcpy(copy, policy, (size_t)count);
+    }
+    hero_layer_free(web->policy);
+    web->policy = copy;
+    web->policy_count = (size_t)count;
+    return 0;
+}
+
+int64_t hero_ui_web_allow(hero_ui_app *app, int64_t id, const void *origin, uint64_t count) {
+    hero_ui_web *web = hero_ui_web_enter(app, id);
+    char normal[HERO_UI_WEB_ORIGIN_MOST + 1];
+    bool port_written = false;
+    bool read;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (web == NULL || !hero_ui_web_bytes_given(origin, count, "the origin")) {
+        return -1;
+    }
+    read = count > 0 && count <= (uint64_t)HERO_UI_WEB_ORIGIN_MOST && hero_ui_web_origin_of(origin, (size_t)count, normal, sizeof normal, &port_written);
+    if (read && port_written) {
+        return hero_ui_said(HERO_UI_INVALID, "the origin names its scheme's own port; it is written without it");
+    }
+    if (!read || strncmp(normal, "http", 4) != 0 || strlen(normal) != (size_t)count) {
+        return hero_ui_said(HERO_UI_INVALID, "an origin is `https://` or `http://`, a host of a-z, 0-9, `-` and `.`, and a port where it is not the scheme's own, with no path, at most 255 bytes");
+    }
+    for (int64_t i = 0; i < web->origin_count; i += 1) {
+        if (strcmp(web->origins[i], normal) == 0) {
+            return 0;
+        }
+    }
+    if (web->origin_count == HERO_UI_WEB_ORIGINS_MOST) {
+        (void)snprintf(words, sizeof words, "web view %lld allows %d origins already, as many as it takes", (long long)id, HERO_UI_WEB_ORIGINS_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    memcpy(web->origins[web->origin_count], normal, strlen(normal) + 1);
+    web->origin_count += 1;
+    return 0;
+}
+
+int64_t hero_ui_web_navigate(hero_ui_app *app, int64_t id, const void *path, uint64_t count) {
+    static const char origin[] = HERO_UI_WEB_SCHEME "://" HERO_UI_WEB_HOST;
+    hero_ui_web *web = hero_ui_web_enter(app, id);
+    const uint8_t *bytes = path;
+    uint8_t url[sizeof origin - 1 + HERO_UI_WEB_PATH_MOST];
+    size_t end = 0;
+
+    if (web == NULL || !hero_ui_web_bytes_given(path, count, "the path")) {
+        return -1;
+    }
+    while (end < count && bytes[end] != '?' && bytes[end] != '#') {
+        end += 1;
+    }
+    for (size_t at = end; at < count; at += 1) {
+        uint8_t c = bytes[at];
+
+        if (!hero_ui_web_path_byte(c) && (c == 0 || strchr("!$&'()*+,;=:@/?%#", c) == NULL)) {
+            end = 0;
+            break;
+        }
+    }
+    if (count > (uint64_t)HERO_UI_WEB_PATH_MOST || end == 0 || !hero_ui_web_path_ok(bytes, end, true)) {
+        return hero_ui_said(HERO_UI_INVALID, "a page's path is an asset's or a folder's ending in `/`, then perhaps a query and a fragment, at most 1024 bytes");
+    }
+    memcpy(url, origin, sizeof origin - 1);
+    memcpy(url + sizeof origin - 1, bytes, (size_t)count);
+    return hero_ui_answered(hero_ui_arm_web_load(id, url, (int64_t)(sizeof origin - 1 + count)), "showing a page", id);
+}
+
+int64_t hero_ui_web_post(hero_ui_app *app, int64_t id, const void *text, uint64_t count) {
+    if (hero_ui_web_enter(app, id) == NULL || !hero_ui_text_given(text, count, "the text posted", false)) {
+        return -1;
+    }
+    return hero_ui_answered(hero_ui_arm_web_post(id, text, (int64_t)count), "posting a text to the page", id);
 }
