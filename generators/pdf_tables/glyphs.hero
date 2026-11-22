@@ -1,0 +1,156 @@
+# `pdf/internal/glyph_list.hero`: Adobe's Glyph List and its ZapfDingbats
+# list merged, sorted by name and held in parts of `PART_SIZE` entries.
+
+use <rebel>/strings
+use <tablekit>/tablekit
+
+# How many entries a part of the list holds, the last fewer.
+constant PART_SIZE: i64
+    600
+
+# One entry of a list: the glyph's name and the code points it stands for,
+# in hexadecimal, apart by a space, as the list writes them.
+record Glyph
+    name: str
+    points: str
+
+# The entries of `text`, the whole of `glyphlist.txt` or `zapfdingbats.txt`,
+# in the order the file gives them: every line but a comment, `name;points`.
+#
+# Fails `invalid` where a line is not a name, a `;` and one or more code
+# points of four to six capital hexadecimal digits apart by a space.
+function read_list(text: str) -> [Glyph]?
+    out: [Glyph] @= []
+
+    for line in strings.split_terminated(s: text, sep: "\n")
+        if strings.has_prefix(s: line, prefix: "#")
+            continue
+        halves = strings.split_once(s: line, sep: ";")?
+
+        if halves.before == "" || strings.contains_any(s: halves.before, set: " |;")
+            return fail(code: "invalid", msg: f"the line \"{line}\" names no glyph")
+
+        for point in strings.split(s: halves.after, sep: " ")
+            if point.len() < 4 || point.len() > 6 || strings.trim_any(s: point, set: "0123456789ABCDEF") != ""
+                return fail(
+                    code: "invalid",
+                    msg: f"the line \"{line}\" holds a code point that is not four to six capital hexadecimal digits"
+                )
+
+        out @ out.push(Glyph(name: halves.before, points: halves.after))
+
+    return ok(out)
+
+# The entries of both lists, in the order of their names' bytes.
+#
+# Fails `invalid` where a name stands in both lists, or twice in one.
+function merged(lists: [[Glyph]] lent) -> [Glyph]?
+    by_name: {str: str} @= {}
+
+    for list in lists
+        for one in list
+            if !by_name[one.name].is_err()
+                return fail(code: "invalid", msg: f"the glyph name {one.name} is listed twice")
+            by_name[one.name] @ one.points
+
+    out: [Glyph] @= []
+
+    for name in sort(keys(by_name))
+        out @ out.push(Glyph(name: name, points: by_name[name].must()))
+
+    return ok(out)
+
+# The whole text of `glyph_list.hero`.
+#
+# - `glyphs`: every entry, in the order of their names' bytes.
+# - `commit`: the commit of agl-aglfn the lists are read at.
+#
+# Fails as writing a literal fails.
+function module_text(glyphs: [Glyph] lent, commit: str) -> str?
+    head = [
+        "# Adobe's Glyph List 2.0 and its ZapfDingbats list (github.com/adobe-type-tools"
+        "# /agl-aglfn, `glyphlist.txt` and `zapfdingbats.txt`; BSD-3-Clause, Copyright"
+        "# 2002-2019 Adobe), which turn a glyph's name into the characters it stands"
+        "# for: sorted by name, as `name` then `;` then the code points in"
+        "# hexadecimal, entries apart by `|`; read only by `glyphs`, which searches"
+        "# it by halves."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`"
+        f"# read the two lists at commit {commit.slice(from: 0, to: 12)} of agl-aglfn, each held to"
+        "# its SHA-256, and wrote this module whole; its `check` command says whether"
+        "# this module is still what it writes."
+    ]
+    parts: [str] @= [
+        head.join("\n")
+        tablekit.number_constant(comment: ["# How many parts the list is held in."], name: "PARTS", value: (glyphs.len() + PART_SIZE - 1) / PART_SIZE)
+    ]
+    firsts: [str] @= []
+    cases: [str] @= []
+    from @= 0
+
+    while from < glyphs.len()
+        to = if from + PART_SIZE < glyphs.len()
+            from + PART_SIZE
+        else
+            glyphs.len()
+        entries: [str] @= []
+        at @= from
+
+        while at < to
+            entries @ entries.push(glyphs[at].name + ";" + glyphs[at].points)
+            at @ at + 1
+
+        number = firsts.len()
+        comment = f"# Entries {from} to {to - 1} of the list, the first named `{glyphs[from].name}`."
+        parts @ parts.push(
+            tablekit.string_constant(comment: [comment], name: f"PART_{number}", value: entries.join("|"))?
+        )
+        firsts @ firsts.push(tablekit.literal(glyphs[from].name)?)
+        cases @ cases.push(f"        {number} => PART_{number}")
+        from @ to
+
+    choose = [
+        "# The part numbered `at`, 0 to `PARTS` - 1. Aborts on another."
+        "function part_of(at: i64) -> str"
+        "    return match at"
+        cases.join("\n")
+        "        _ => abort_part(at)"
+    ]
+    parts @ parts.push(choose.join("\n"))
+    abort = [
+        "# Aborts: a part number outside the list is a fault of this package."
+        "function abort_part(at: i64) -> str"
+        "    assert at >= 0 && at < PARTS"
+        "    return \"\""
+    ]
+    parts @ parts.push(abort.join("\n"))
+    parts @ parts.push(
+        "# The first name of each part, to choose the part a name is in.\nconstant FIRSTS: [str]\n    [" + firsts.join(", ") + "]"
+    )
+    return ok(parts.join("\n\n") + "\n")
+
+## Tests
+
+test "read_list and merged: comments left, one code point and two, sorted by bytes, a name twice and a bad point refused"
+    one = read_list("# a comment\nb;0062\nA;0041\n").must()
+    two = read_list("a1;2701\ndalethatafpatah;05D3 05B2\n").must()
+    both = merged([one, two]).must()
+    assert both.len() == 4 && both[0].name == "A" && both[1].name == "a1" && both[3].points == "05D3 05B2"
+    assert merged([one, one]).is_err()
+    assert read_list("x;41\n").is_err() && read_list("x;004g\n").is_err() && read_list(";0041\n").is_err()
+
+test "module_text: parts of 600, the last shorter, each named by its first"
+    glyphs: [Glyph] @= []
+    at @= 0
+
+    while at < 601
+        glyphs @ glyphs.push(Glyph(name: "g" + strings.pad_zeros(to_str(at), width: 4), points: "0041"))
+        at @ at + 1
+
+    text = module_text(glyphs, commit: "4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6").must()
+    assert strings.contains(s: text, substr: "constant PARTS: i64\n    2\n")
+    assert strings.contains(
+        s: text,
+        substr: "# Entries 600 to 600 of the list, the first named `g0600`.\nconstant PART_1: str\n    \"g0600;0041\""
+    )
+    assert strings.has_suffix(s: text, suffix: "constant FIRSTS: [str]\n    [\"g0000\", \"g0600\"]\n")

@@ -1,0 +1,280 @@
+# `pdf/internal/metrics.hero`: the widths and the global metrics of the 14
+# standard fonts of PDF, read from their AFM files.
+
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use afm
+
+# The 14 fonts, in the order of the face's `Font`, as their files are named.
+constant FONTS: [str]
+    [
+        "Helvetica"
+        "Helvetica-Bold"
+        "Helvetica-Oblique"
+        "Helvetica-BoldOblique"
+        "Times-Roman"
+        "Times-Bold"
+        "Times-Italic"
+        "Times-BoldItalic"
+        "Courier"
+        "Courier-Bold"
+        "Courier-Oblique"
+        "Courier-BoldOblique"
+        "Symbol"
+        "ZapfDingbats"
+    ]
+
+# The widths of `font` by code: a Latin font's by WinAnsiEncoding code, each
+# the width of its glyph whose character is the code's, 0xA0 the glyph
+# `space` and 0xAD the glyph `hyphen` (PDF 32000-1:2008 Annex D), 0 where
+# none; Symbol's and ZapfDingbats' by the code of their built-in encoding.
+#
+# - `win_ansi`: WinAnsiEncoding's code points.
+# - `points`: the first code point of each glyph name.
+#
+# Fails `invalid` where a glyph's name is not in the glyph list, two glyphs
+# of one character have two widths, or a Latin font has no `space` or
+# `hyphen`.
+function widths_of(font: afm.Font lent, win_ansi: [i64] lent, points: {str: i64} lent) -> [i64]?
+    out: [i64] @= []
+
+    while out.len() < 256
+        out @ out.push(0)
+
+    if font.name == "Symbol" || font.name == "ZapfDingbats"
+        for glyph in font.glyphs
+            if glyph.code >= 0
+                out[glyph.code] @ glyph.width
+
+        return ok(out)
+    by_point: {i64: i64} @= {}
+    by_name: {str: i64} @= {}
+
+    for glyph in font.glyphs
+        point = match points[glyph.name]
+            .ok found => found
+            .err _ => return fail(
+                code: "invalid",
+                msg: f"the glyph {glyph.name} of {font.name} is not in the glyph list"
+            )
+
+        match by_point[point]
+            .ok width =>
+                if width != glyph.width
+                    return fail(code: "invalid", msg: f"two glyphs of {font.name} for one character have two widths")
+            .err _ => by_point[point] @ glyph.width
+
+        by_name[glyph.name] @ glyph.width
+
+    code @= 0
+
+    while code < 256
+        if win_ansi[code] != 0
+            out[code] @ by_point[win_ansi[code]].default(0)
+        code @ code + 1
+
+    out[0xa0] @ by_name["space"]?
+    out[0xad] @ by_name["hyphen"]?
+    return ok(out)
+
+# The value of the global key `key` of `font`.
+#
+# Fails `invalid` where the file does not give it.
+function global(font: afm.Font lent, key: str) -> str?
+    match font.globals[key]
+        .ok value => return ok(value)
+        .err _    => return fail(code: "invalid", msg: f"{font.name}.afm gives no {key}")
+
+# The function `global_<name>` of `font`: its comment and its body.
+#
+# Fails `invalid` where the font gives an ascender but not a descender, a
+# cap height or an x-height, or the other way, and as `global` and reading a
+# number fail.
+function global_function(font: afm.Font lent, symbol: str) -> str?
+    box = strings.words(global(font, key: "FontBBox")?)
+
+    if box.len() != 4
+        return fail(code: "invalid", msg: f"{font.name}.afm's FontBBox is not four numbers")
+
+    for one in box
+        _ = afm.whole(one)?
+
+    named @= 0
+
+    for key in ["Ascender", "Descender", "CapHeight", "XHeight"]
+        if !font.globals[key].is_err()
+            named @ named + 1
+
+    comment @= f"# The global metrics of {font.name}, from `{font.name}.afm`."
+    ascent @= ""
+    descent @= ""
+    cap @= "0"
+    x @= "0"
+
+    if named == 4
+        ascent @ to_str(afm.whole(global(font, key: "Ascender")?)?)
+        descent @ to_str(afm.whole(global(font, key: "Descender")?)?)
+        cap @ to_str(afm.whole(global(font, key: "CapHeight")?)?)
+        x @ to_str(afm.whole(global(font, key: "XHeight")?)?)
+    else if named == 0
+        comment @ f"# The global metrics of {font.name}, from `{font.name}.afm`; it names no ascender, descender, cap height or x-height, so the first two are its box's bottom and top, and the others 0."
+        ascent @ box[3]
+        descent @ box[1]
+    else
+        return fail(
+            code: "invalid",
+            msg: f"{font.name}.afm names some of its ascender, descender, cap height and x-height, not all"
+        )
+    angle @= global(font, key: "ItalicAngle")?
+    _ = afm.whole(strings.replace_all(s: angle, old: ".", new: ""))?
+
+    if !strings.contains(s: angle, substr: ".")
+        angle @ angle + ".0"
+    lines = [
+        comment
+        f"function global_{symbol}() -> Global"
+        "    return Global("
+        f"        ascent: {ascent},"
+        f"        descent: {descent},"
+        f"        cap_height: {cap},"
+        f"        x_height: {x},"
+        f"        italic_angle: {angle},"
+        f"        underline_position: {afm.whole(global(font, key: "UnderlinePosition")?)?},"
+        f"        underline_thickness: {afm.whole(global(font, key: "UnderlineThickness")?)?},"
+        "        box: [" + box.join(", ") + "],"
+        f"        stem: {afm.whole(global(font, key: "StdVW")?)?}"
+        "    )"
+    ]
+    return ok(lines.join("\n"))
+
+# A `match font` of the 14 fonts, `0  => ` to `13 => `, then `_  => `.
+function font_match(values: [str], otherwise: str) -> str
+    out: [str] @= ["    return match font"]
+    at @= 0
+
+    while at < values.len()
+        out @ out.push("        " + strings.pad_end(s: to_str(at), width: 2, pad: " ") + " => " + values[at])
+        at @ at + 1
+
+    out @ out.push("        _  => " + otherwise)
+    return out.join("\n")
+
+# The whole text of `metrics.hero`.
+#
+# - `fonts`: the 14 fonts read, in the order of `FONTS`.
+# - `win_ansi`: WinAnsiEncoding's code points.
+# - `points`: the first code point of each glyph name.
+# - `tag`: the Matplotlib release the AFM files are read from.
+#
+# Fails as `widths_of` and `global_function` fail.
+function module_text(fonts: [afm.Font] lent, win_ansi: [i64] lent, points: {str: i64} lent, tag: str) -> str?
+    head = [
+        "# The metrics of the 14 standard fonts of PDF, taken from Adobe's Core 14"
+        "# AFM files (Adobe Font Metrics 4.1, 1997; Helvetica, Times and Courier"
+        "# version 002.000 and 003.000, Symbol 001.008, ZapfDingbats 002.000), as"
+        f"# Matplotlib {tag} ships them in `mpl-data/fonts/pdfcorefonts`. Widths are in"
+        "# thousandths of the font's size; the Latin fonts' widths are listed by"
+        "# WinAnsiEncoding code (PDF 32000-1:2008 Annex D), Symbol's and"
+        "# ZapfDingbats' by the code of their own built-in encoding; 0 is a code the"
+        "# font has no glyph for."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`"
+        "# read the 14 AFM files, each held to its SHA-256, and wrote this module"
+        "# whole; its `check` command says whether this module is still what it"
+        "# writes."
+        "#"
+        "# The AFM files carry this notice, kept as their licence asks: Copyright (c)"
+        "# 1985, 1987, 1989, 1990, 1991, 1992, 1993, 1997 Adobe Systems Incorporated."
+        "# All Rights Reserved. Helvetica and Times are trademarks of Linotype-Hell AG"
+        "# and/or its subsidiaries. \"This file and the 14 PostScript(R) AFM files it"
+        "# accompanies may be used, copied, and distributed for any purpose and"
+        "# without charge, with or without modification, provided that all copyright"
+        "# notices are retained; that the AFM files are not distributed without this"
+        "# file; that all modifications to this file or any of the AFM files are"
+        "# prominently noted in the modified file(s); and that this paragraph is not"
+        "# modified. Adobe Systems has no responsibility or obligation to support the"
+        "# use of the AFM files.\" This module holds no AFM file: it holds the widths"
+        "# and the global metrics read from them, a modification noted here."
+    ]
+    record_text = [
+        "# What an AFM file says of a font as a whole, in thousandths of its size."
+        "record Global"
+        "    # The highest a letter with an ascender reaches, above the baseline."
+        "    ascent: i64"
+        "    # How far a descender reaches, below the baseline: negative."
+        "    descent: i64"
+        "    # The height of a capital letter; 0 where the file names none."
+        "    cap_height: i64"
+        "    # The height of a small letter without an ascender; 0 where none."
+        "    x_height: i64"
+        "    # The slant of the upright strokes, in degrees, negative leaning right."
+        "    italic_angle: f64"
+        "    # Where an underline stands, below the baseline: negative."
+        "    underline_position: i64"
+        "    # How thick an underline is."
+        "    underline_thickness: i64"
+        "    # The box every glyph fits in: left, bottom, right, top."
+        "    box: [i64]"
+        "    # The thickness of an upright stroke."
+        "    stem: i64"
+    ]
+    parts: [str] @= [head.join("\n"), record_text.join("\n")]
+    widths_names: [str] @= []
+    globals_names: [str] @= []
+    base_names: [str] @= []
+
+    for font in fonts
+        constant_name = "WIDTHS_" + strings.to_upper(strings.replace_all(s: font.name, old: "-", new: "_"))
+        symbol = strings.to_lower(strings.replace_all(s: font.name, old: "-", new: "_"))
+
+        by = if font.name == "Symbol" || font.name == "ZapfDingbats"
+            "by the code of its built-in encoding"
+        else
+            "by WinAnsiEncoding code"
+        parts @ parts.push(
+            tablekit.numbers_constant(comment: [f"# The widths of {font.name}, {by}, from `{font.name}.afm`."], name: constant_name, items: widths_of(font, win_ansi: win_ansi, points: points)?)
+        )
+        parts @ parts.push(global_function(font, symbol: symbol)?)
+        widths_names @ widths_names.push(constant_name)
+        globals_names @ globals_names.push(f"global_{symbol}()")
+        base_names @ base_names.push(tablekit.literal(font.name)?)
+
+    parts @ parts.push(
+        "# The widths of the font numbered `font`, 0 to 13 in the order of the face's\n# `Font`, by code. Aborts on another number.\nfunction widths_of(font: i64) -> [i64]\n" + font_match(widths_names, otherwise: "abort_font(font)")
+    )
+    parts @ parts.push(
+        "# The global metrics of the font numbered `font`, 0 to 13. Aborts on another.\nfunction global_of(font: i64) -> Global\n" + font_match(globals_names, otherwise: "abort_global(font)")
+    )
+    parts @ parts.push(
+        "# The name of the font numbered `font`, 0 to 13, as PDF's `/BaseFont` writes it.\nfunction base_font_of(font: i64) -> str\n" + font_match(base_names, otherwise: "abort_name(font)")
+    )
+    tail = [
+        "# Aborts: a font number outside 0 to 13 is a fault of this package."
+        "function abort_font(font: i64) -> [i64]"
+        "    assert font >= 0 && font <= 13"
+        "    return []"
+        ""
+        "# Aborts, as `abort_font`."
+        "function abort_global(font: i64) -> Global"
+        "    assert font >= 0 && font <= 13"
+        "    return global_helvetica()"
+        ""
+        "# Aborts, as `abort_font`."
+        "function abort_name(font: i64) -> str"
+        "    assert font >= 0 && font <= 13"
+        "    return \"\""
+        ""
+        "test \"widths_of: Helvetica's space, A and the euro, Courier's 600, Times-Italic's slant\""
+        "    assert widths_of(0)[32] == 278 && widths_of(0)[65] == 667 && widths_of(0)[0x80] == 556"
+        "    assert widths_of(8)[65] == 600 && widths_of(8)[31] == 0"
+        "    assert global_of(6).italic_angle == -15.5"
+        "    assert base_font_of(13) == \"ZapfDingbats\""
+    ]
+    parts @ parts.push(tail.join("\n"))
+    return ok(parts.join("\n\n") + "\n")
+
+## Tests
+
+test "font_match: the keys padded to two, `_` last"
+    assert font_match(["A", "B"], otherwise: "x()") == "    return match font\n        0  => A\n        1  => B\n        _  => x()"

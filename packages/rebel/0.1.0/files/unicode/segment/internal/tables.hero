@@ -2,23 +2,20 @@
 # the classes UAX #29 and UAX #14 cut a text by, its East Asian width, and
 # the few other properties the rules and the width of a text read.
 #
-# The table is data, made and not typed: a one-off program read the Unicode
-# Character Database 17.0.0 (UCD.zip of https://www.unicode.org/Public/17.0.0/ucd/,
-# fetched 2026-11-17), held every code point's value to Python 3.15.2's
-# `unicodedata` (17.0.0: the grapheme and Indic conjunct classes, the East
-# Asian width, Extended_Pictographic, the general category) and to ICU 78.3
-# (Unicode 17.0: the word, sentence and line classes, the emoji properties,
-# Default_Ignorable_Code_Point), packed the values into runs, held each
-# lookup of the packed runs to the value, and wrote this module whole.
-# Nothing here is edited by hand. What it read:
+# Generated, never edited by hand: the Heroes program
+# `generators/unicode_segment/` read the Unicode Character Database 17.0.0,
+# each file held to its SHA-256, packed every code point's values into
+# runs, and wrote this module whole; its `check` command says whether this
+# module is still what it writes. What it read:
 #
-# - `LineBreak.txt`, SHA-256 e6a18fa91f8f6a6f
-# - `WordBreakProperty.txt`, SHA-256 72274cac1e6b9195
-# - `SentenceBreakProperty.txt`, SHA-256 871c0c985ad95125
-# - `GraphemeBreakProperty.txt`, SHA-256 d6b51d1d2ae5c33b
-# - `EastAsianWidth.txt`, SHA-256 ea7ce50f3444a050
-# - `DerivedCoreProperties.txt`, SHA-256 24c7fed1195c482f
-# - `emoji-data.txt`, SHA-256 2cb2bb9455cda83e
+# - `LineBreak.txt`, SHA-256 e6a18fa91f8f6a6f8e534b1d3f128c21ada45bfe152eb6b1bcc5e15fd8ac92e6
+# - `WordBreakProperty.txt`, SHA-256 72274cac1e6b919507db35655c3e175aa27274668a1ece95c28d2069f2ad9852
+# - `SentenceBreakProperty.txt`, SHA-256 871c0c985ad95125e25b302414065a10839d068970bceb383ecec138f22a0a18
+# - `GraphemeBreakProperty.txt`, SHA-256 d6b51d1d2ae5c33b451b7ed994b48f1f4dc62b2272a5831e7fd418514a6bae89
+# - `EastAsianWidth.txt`, SHA-256 ea7ce50f3444a050333448dffef1cadd9325af55cbb764b4a2280faf52170a33
+# - `DerivedCoreProperties.txt`, SHA-256 24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08
+# - `emoji-data.txt`, SHA-256 2cb2bb9455cda83e8481541ecf5b6dfda66a3bb89efa3fa7c5297eccf607b72b
+# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c
 
 # The Line_Break values, in the order the runs number them.
 constant LINE_NAMES: [str]

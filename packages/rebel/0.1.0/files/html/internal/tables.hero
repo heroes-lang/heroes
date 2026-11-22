@@ -3,10 +3,14 @@
 # attribute names written in mixed case (13.2.6.1) and the SVG element names
 # written in mixed case (13.2.6.5).
 #
-# The tables are data, made and not typed: a one-off program read them from
-# the standard's text fetched from html.spec.whatwg.org on 2026-11-16 and
-# wrote this module whole. Nothing here is edited by hand. Every public and
-# system identifier is compared in any ASCII case.
+# Generated, never edited by hand: the Heroes program
+# `generators/html_tables/` read them from the standard's source, the file
+# `source` of github.com/whatwg/html at commit
+# efcc0bcdec596651e2cb316ab076c0bdc7c4d120
+# (SHA-256 3ce0e875a92394f6d3194373a45a291ef43ac9764eb161538227fc6689731d13),
+# and wrote this module whole; its `check` command says whether this module
+# is still what it writes. Every public and system identifier is compared
+# in any ASCII case.
 
 # The public identifiers that set quirks mode, exactly.
 constant QUIRKS_PUBLIC: [str]
