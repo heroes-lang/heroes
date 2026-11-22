@@ -1,0 +1,112 @@
+# The cold export of one day: for each topic, every archived window of the
+# day read back from the bucket (each object a Zstandard frame), its
+# events joined in the order of the keys, and the whole day written once
+# as one bzip2 object, the form a warehouse's bulk load takes. An export
+# is refused while a write of that day waits for a replay, since a day
+# exported with a window missing would be exported wrong; the replay
+# comes first. The day's object is checked against its raw bytes like
+# every other copy, and written into the ledger.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/s3
+use <rebel>/strings
+use <rebel>/time
+
+use codecs/tiers
+use core/pipeline
+use ops/telemetry
+use storage/layout
+use storage/writer
+use store/ledger
+
+## Codes
+
+# The code of an export refused because a write of its day waits.
+constant FAILED: str
+    "failed"
+
+## Exporting
+
+# One topic's day, exported.
+record Exported
+    # The topic.
+    topic: str
+    # The object written.
+    key: str
+    # The archived windows read.
+    sources: i64
+    # The events in it.
+    events: i64
+    # Its raw size, in bytes.
+    raw_bytes: i64
+    # Its stored size, in bytes.
+    stored_bytes: i64
+
+# Exports `day` of every topic the pipeline reads.
+#
+# - `p`: the pipeline.
+# - `day`: the day, `YYYY-MM-DD`, in UTC.
+#
+# Fails `failed` where a write of the day waits for a replay, naming how
+# many; `invalid` for a day that is no date; and as reading the bucket and
+# writing the export fail. A topic with nothing archived that day is left
+# out.
+function export_day(@p: pipeline.Pipeline, day: str) -> [Exported]?
+    from = time.parse(day + "T00:00:00Z", .rfc3339)?
+    to = time.add(from, d: time.days(1)?)?
+
+    for topic in p.settings.kafka.topics
+        waiting = ledger.pending_between(@p.db, topic: topic, from: from, to: to)?
+
+        if waiting > 0
+            return fail(
+                code: FAILED,
+                msg: f"{day} of {topic} still has {waiting} write kept for a replay: replay it first"
+            )
+
+    out: [Exported] @= []
+
+    for topic in sort(p.settings.kafka.topics)
+        match export_topic(@p, topic: topic, day: day, from: from)
+            .ok one =>
+                if one.sources > 0
+                    out @ out.push(one)
+            .err e => return fail(code: e.code, msg: f"{topic}: {e.msg}")
+
+    return ok(out)
+
+# One topic's day, exported.
+#
+# - `p`: the pipeline.
+# - `topic`: the topic.
+# - `day`: the day.
+# - `from`: the day's midnight.
+function export_topic(@p: pipeline.Pipeline, topic: str, day: str, from: time.Instant) -> Exported?
+    listed = s3.list_all_objects(p.bucket.client, bucket: p.bucket.name, prefix: layout.archive_prefix(topic: topic, day: day))?
+    parts: [[u8]] @= []
+
+    for o in listed
+        fetched = s3.get_object(p.bucket.client, bucket: p.bucket.name, key: o.key)?
+        parts @ parts.push(tiers.decompress("zstd", data: fetched.data)?)
+
+    raw = bytes.concat(parts)
+    key = layout.key_of(.cold, topic: topic, window_start_ms: time.unix_milliseconds(from))
+
+    if listed.len() == 0
+        return ok(Exported(topic: topic, key: key, sources: 0, events: 0, raw_bytes: 0, stored_bytes: 0))
+    sha = bytes.format_hex(crypto.sha256(raw))
+    copy = tiers.checked_copy(codec: "bzip2", raw: raw, sha256: sha)?
+    events = strings.count_of(s: bytes.to_text(raw)?, substr: "\n")
+    put = writer.put(
+        p.bucket,
+        key: key,
+        data: copy,
+        meta: [s3.Meta(name: "events", value: to_str(events)), s3.Meta(name: "codec", value: "bzip2"), s3.Meta(name: "raw-sha256", value: sha)]
+    )
+    _ = put.etag?
+    ledger.record_entry(@p.db, e: ledger.Entry(key: key, topic: topic, tier: "cold", codec: "bzip2", window_start: from, events: events, raw_bytes: raw.len(), stored_bytes: copy.len(), sha256: sha, state: "stored"))?
+    telemetry.batch_written(@p.registry, tier: "cold", raw_bytes: raw.len(), stored_bytes: copy.len())
+    return ok(
+        Exported(topic: topic, key: key, sources: listed.len(), events: events, raw_bytes: raw.len(), stored_bytes: copy.len())
+    )

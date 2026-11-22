@@ -1,0 +1,98 @@
+# The pipeline's metrics served to Prometheus at `/metrics` on the address
+# the settings name. The pipeline's loop is one thread that polls Kafka,
+# and a thread shares nothing, so the registry stays on it: between two
+# polls the loop answers every scrape already waiting (the listener asked
+# with no wait at all), and a scrape never stalls the consumer longer than
+# one answer takes. `metrics.respond` writes the text format, or
+# OpenMetrics where the scraper asks for it.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/metrics
+use <rebel>/net
+
+## Bounds
+
+# How long, in milliseconds, one scrape's connection may take.
+constant SCRAPE_MS: i64
+    2_000
+
+## The exporter
+
+# A listener for scrapers.
+record Exporter
+    # The listener.
+    listener: net.Listener
+    # The scrapes answered.
+    answered: i64
+
+# An exporter listening on `listen`, `host:port`; port 0 for one the
+# system chooses.
+#
+# - `listen`: the address.
+#
+# The program owes the exporter a `close`. Fails `invalid` where `listen`
+# is no `host:port`, and as `net.listen` fails.
+function open(listen: str) -> Exporter?
+    hp = net.split_host_port(listen)?
+    return ok(Exporter(listener: net.listen(host: hp.host, port: hp.port)?, answered: 0))
+
+# The port the exporter listens on.
+#
+# - `e`: the exporter.
+function port_of(e: Exporter lent) -> i64
+    return e.listener.address.port
+
+# Answers every scrape waiting now, waiting for none.
+#
+# - `e`: the exporter; its count of scrapes moves.
+# - `registry`: the metrics, read.
+function answer_waiting(@e: Exporter, registry: metrics.Registry lent)
+    while true
+        if net.set_accept_deadline(e.listener, deadline_ms: 0).is_err()
+            return
+
+        match net.accept(e.listener, deadline_ms: SCRAPE_MS)
+            .err _   => return
+            .ok conn => answer_conn(@e, registry: registry, conn: conn)
+
+# Answers one scrape, waiting up to `wait_ms` for it to come.
+#
+# - `e`: the exporter.
+# - `registry`: the metrics, read.
+# - `wait_ms`: how long to wait for the scraper, in milliseconds.
+#
+# Fails `timeout` where no scraper came, and as `net.accept` fails.
+function answer_one(@e: Exporter, registry: metrics.Registry lent, wait_ms: i64) -> ()?
+    net.set_accept_deadline(e.listener, deadline_ms: wait_ms)?
+    conn = net.accept(e.listener, deadline_ms: SCRAPE_MS)?
+    answer_conn(@e, registry: registry, conn: conn)
+    return ok()
+
+# The requests of one scraper's connection answered: `/metrics` with the
+# registry's families, any other path with 404.
+#
+# - `e`: the exporter.
+# - `registry`: the metrics.
+# - `conn`: the connection, closed here.
+function answer_conn(@e: Exporter, registry: metrics.Registry lent, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+
+    match http.next_request(@reader, limits: http.default_limits())
+        .err _ => _ = 0
+        .ok r =>
+            response = if r.url.path == "/metrics"
+                metrics.respond(registry, r: r)
+            else
+                http.respond_not_found(r)
+            _ = http.write_answer(conn.stream, r: r, response: response).is_err()
+            e.answered @ e.answered + 1
+
+    closing @= conn
+    _ = io.close(@closing.stream).is_err()
+
+# Stops listening.
+#
+# - `e`: the exporter, its listener closed.
+function close(@e: Exporter)
+    _ = net.close_listener(@e.listener).is_err()

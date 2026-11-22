@@ -1,0 +1,197 @@
+# The server's side of SCRAM-SHA-256 (RFC 5802, RFC 7677), which the
+# PostgreSQL and Kafka stand-ins log their client in with: `scram` holds
+# the client's side alone. A server keeps no password, only a verifier
+# (the salt, the iteration count, the stored key and the server key), as
+# PostgreSQL keeps `SCRAM-SHA-256$<iterations>:<salt>$<StoredKey>:<ServerKey>`
+# in `pg_authid`; it checks the client's proof against the stored key and
+# answers its own signature, which proves to the client that the server
+# knew the password too.
+#
+# The client's first message carries no channel binding here (`n,,`): no
+# stand-in speaks TLS, so `y` and `p` are refused as a server offering no
+# `-PLUS` mechanism refuses them.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/scram
+use <rebel>/strings
+
+## Codes
+
+# The code of a client message that is not SCRAM's, or asks what this
+# server does not offer.
+constant INVALID: str
+    "invalid"
+
+# The code of a proof that is not the password's: the login is refused.
+constant PERMISSION: str
+    "permission"
+
+## The verifier
+
+# What a server keeps of a password.
+record Verifier
+    # The salt, chosen when the password was set.
+    salt: [u8]
+    # The iteration count of PBKDF2.
+    iterations: i64
+    # SHA-256 of the client key.
+    stored_key: [u8]
+    # The key the server signs with.
+    server_key: [u8]
+
+# The verifier of `password` under `salt` and `iterations`, the password
+# prepared by SASLprep as `scram.prepared_password` prepares it, so a
+# client and this server salt the same bytes.
+#
+# - `password`: the password.
+# - `salt`: the salt, 16 bytes as PostgreSQL chooses.
+# - `iterations`: PBKDF2's count, 4096 as PostgreSQL's default.
+#
+# Fails as `crypto.pbkdf2` fails for a count below 1.
+function verifier_of(password: str, salt: [u8], iterations: i64) -> Verifier?
+    salted = crypto.pbkdf2(.sha256, password: scram.prepared_password(password), salt: salt, iterations: iterations, length: 32)?
+    client_key = crypto.hmac_text(.sha256, key: salted, s: "Client Key")
+    server_key = crypto.hmac_text(.sha256, key: salted, s: "Server Key")
+    return ok(
+        Verifier(salt: salt, iterations: iterations, stored_key: crypto.sha256(client_key), server_key: server_key)
+    )
+
+## The exchange
+
+# Where one login stands.
+record Exchange
+    # The client's first message without its header, `n=user,r=nonce`.
+    client_first_bare: str
+    # The server's first message.
+    server_first: str
+    # The nonce both share: the client's, then the server's.
+    nonce: str
+    # The user named in the client's first message, `=2C` and `=3D` read.
+    user: str
+
+# The server's first message, answering the client's first: the client's
+# nonce extended by `server_nonce`, the verifier's salt and count.
+#
+# - `client_first`: `n,,n=<user>,r=<nonce>`.
+# - `v`: the user's verifier.
+# - `server_nonce`: printable characters other than `,`, fresh for each
+#   login.
+#
+# Fails `invalid` where the header asks for channel binding, an extension
+# (`m=`) or an authorization identity this server does not take, or where
+# no nonce is given.
+function first(client_first: str, v: Verifier, server_nonce: str) -> Exchange?
+    if !strings.has_prefix(s: client_first, prefix: "n,,")
+        return fail(
+            code: INVALID,
+            msg: "the first message asks for channel binding or an authorization identity, which this server does not offer"
+        )
+    bare = client_first.slice(from: 3, to: client_first.len())
+    user: str @= ""
+    nonce: str @= ""
+
+    for part in strings.split(s: bare, sep: ",")
+        if strings.has_prefix(s: part, prefix: "m=")
+            return fail(
+                code: INVALID,
+                msg: "the first message names an extension (m=), which this server does not read"
+            )
+
+        if strings.has_prefix(s: part, prefix: "n=")
+            user @ unescape(part.slice(from: 2, to: part.len()))
+
+        if strings.has_prefix(s: part, prefix: "r=")
+            nonce @ part.slice(from: 2, to: part.len())
+
+    if nonce == ""
+        return fail(code: INVALID, msg: "the first message holds no nonce")
+    shared = nonce + server_nonce
+    server = f"r={shared},s={bytes.format_base64(v.salt)},i={v.iterations}"
+    return ok(Exchange(client_first_bare: bare, server_first: server, nonce: shared, user: user))
+
+# The server's final message, `v=<signature>`, once the client's final
+# message has proven the password.
+#
+# - `e`: the exchange, after `first`.
+# - `client_final`: `c=biws,r=<nonce>,p=<proof>`.
+# - `v`: the user's verifier.
+#
+# Fails `invalid` where the message is not SCRAM's final message, binds a
+# channel, or names another nonce; `permission` where the proof is not the
+# password's, compared in constant time.
+function final(e: Exchange, client_final: str, v: Verifier) -> str?
+    binding: str @= ""
+    nonce: str @= ""
+    proof: str @= ""
+    without_proof: [str] @= []
+
+    for part in strings.split(s: client_final, sep: ",")
+        if strings.has_prefix(s: part, prefix: "p=")
+            proof @ part.slice(from: 2, to: part.len())
+        else
+            without_proof @ without_proof.push(part)
+
+            if strings.has_prefix(s: part, prefix: "c=")
+                binding @ part.slice(from: 2, to: part.len())
+
+            if strings.has_prefix(s: part, prefix: "r=")
+                nonce @ part.slice(from: 2, to: part.len())
+
+    if binding != "biws"
+        return fail(code: INVALID, msg: "the final message binds a channel, or binds none as the first message said")
+
+    if nonce != e.nonce
+        return fail(code: INVALID, msg: "the final message's nonce is not the one both sides share")
+
+    given = match bytes.parse_base64(proof)
+        .ok b  => b
+        .err _ => return fail(code: INVALID, msg: "the final message's proof is not base 64")
+
+    auth_message = e.client_first_bare + "," + e.server_first + "," + without_proof.join(",")
+    signature = crypto.hmac_text(.sha256, key: v.stored_key, s: auth_message)
+
+    if given.len() != signature.len()
+        return fail(code: PERMISSION, msg: "the proof is not the password's")
+    client_key: [u8] @= []
+
+    for i in range(from: 0, to: given.len())
+        client_key @ client_key.push(to_u8(to_i64(given[i]).must() ^ to_i64(signature[i]).must()).must())
+
+    if !crypto.equals_constant_time(a: crypto.sha256(client_key), b: v.stored_key)
+        return fail(code: PERMISSION, msg: "the proof is not the password's")
+    return ok("v=" + bytes.format_base64(crypto.hmac_text(.sha256, key: v.server_key, s: auth_message)))
+
+# A SCRAM name as its message writes it read back: `=2C` is `,` and `=3D`
+# is `=`.
+#
+# - `s`: the name as written.
+function unescape(s: str) -> str
+    return strings.replace_all(s: strings.replace_all(s: s, old: "=2C", new: ","), old: "=3D", new: "=")
+
+test "first, final: a client of the scram package logs in, and the client checks the server's signature"
+    v = verifier_of("pencil", salt: bytes.from_text("0123456789abcdef"), iterations: 4096).must()
+    c @= scram.start(.sha256, user: "", nonce: "rOprNGfwEbeRWgbNEkqO", least_iterations: 4096)
+    e = first(client_first: scram.client_first(c), v: v, server_nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0").must()
+    client_final = scram.client_final(@c, password: "pencil", server_first: e.server_first).must()
+    server_final = final(e, client_final: client_final, v: v).must()
+    scram.verify(c, server_final: server_final).must()
+
+test "final: a wrong password is refused, and a nonce the server did not answer"
+    v = verifier_of("pencil", salt: bytes.from_text("0123456789abcdef"), iterations: 4096).must()
+    c @= scram.start(.sha256, user: "", nonce: "abc", least_iterations: 4096)
+    e = first(client_first: scram.client_first(c), v: v, server_nonce: "xyz").must()
+    wrong = scram.client_final(@c, password: "pen", server_first: e.server_first).must()
+
+    match final(e, client_final: wrong, v: v)
+        .ok _  => assert false
+        .err x => assert x.code == PERMISSION
+
+    assert final(e, client_final: "c=biws,r=abc,p=AAAA", v: v).is_err()
+
+test "first: channel binding, an extension and no nonce are refused; a user's escapes are read"
+    v = verifier_of("p", salt: [1, 2, 3], iterations: 1).must()
+    assert first(client_first: "y,,n=,r=abc", v: v, server_nonce: "s").is_err()
+    assert first(client_first: "n,,m=x,n=,r=abc", v: v, server_nonce: "s").is_err()
+    assert first(client_first: "n,,n=a", v: v, server_nonce: "s").is_err()
+    assert first(client_first: "n,,n=a=2Cb=3D,r=abc", v: v, server_nonce: "s").must().user == "a,b="

@@ -1,0 +1,273 @@
+# The log of one partition, as the broker stand-in keeps it: the record
+# batches producers wrote, each checked as a broker checks it before it is
+# appended, and given its offsets. A batch of the record format 2 (Kafka
+# 0.11 and after) opens with a header of 61 bytes, by the protocol guide's
+# "Record Batch" section (kafka.apache.org/documentation, read 2026-11-21):
+#
+#     baseOffset INT64, batchLength INT32, partitionLeaderEpoch INT32,
+#     magic INT8, crc UINT32, attributes INT16, lastOffsetDelta INT32,
+#     baseTimestamp INT64, maxTimestamp INT64, producerId INT64,
+#     producerEpoch INT16, baseSequence INT32, records INT32
+#
+# `batchLength` counts the bytes after itself, and `crc` is the CRC-32C of
+# every byte from `attributes` to the end. The broker rewrites
+# `baseOffset`, which the CRC does not cover, and keeps the batch as it
+# came, so a fetch answers the producer's own bytes.
+
+use <rebel>/bytes
+use <rebel>/hash
+
+## Codes
+
+# The code of a batch a broker refuses: cut short, of another format, or
+# whose CRC-32C is not its bytes'.
+constant INVALID: str
+    "invalid"
+
+## The header
+
+# The bytes before a batch's records.
+constant HEADER_BYTES: i64
+    61
+
+# Where `magic` stands in a batch.
+constant MAGIC_AT: i64
+    16
+
+# Where `crc` stands.
+constant CRC_AT: i64
+    17
+
+# Where `attributes` begins, the first byte the CRC covers.
+constant ATTRIBUTES_AT: i64
+    21
+
+# Where `lastOffsetDelta` stands.
+constant LAST_DELTA_AT: i64
+    23
+
+# Where `maxTimestamp` stands.
+constant MAX_TIMESTAMP_AT: i64
+    35
+
+# Where the record count stands.
+constant COUNT_AT: i64
+    57
+
+## The log
+
+# One batch appended to a partition.
+record Batch
+    # The offset of its first record.
+    base_offset: i64
+    # The offset of its last record.
+    last_offset: i64
+    # Its largest record time, milliseconds since 1970, as the producer
+    # wrote it.
+    max_timestamp: i64
+    # How many records it holds.
+    records: i64
+    # Its bytes, `baseOffset` set to `base_offset`.
+    data: [u8]
+
+# A partition's log.
+record Log
+    # The topic.
+    topic: str
+    # The partition's number.
+    partition: i64
+    # The batches, in the order of their offsets.
+    batches: [Batch]
+    # The offset the next record takes: the high watermark, a single copy
+    # being in step with itself.
+    end_offset: i64
+
+# An empty log of `partition` of `topic`.
+#
+# - `topic`: the topic.
+# - `partition`: the partition.
+function empty(topic: str, partition: i64) -> Log
+    return Log(topic: topic, partition: partition, batches: [], end_offset: 0)
+
+# The batches `data` holds, one after the other, each checked: its length
+# within the bytes, magic 2, its CRC-32C its own bytes'.
+#
+# - `data`: a produce request's records for one partition.
+#
+# Fails `invalid` where no batch is whole or one is refused, the message
+# saying which and why.
+function split_batches(data: [u8]) -> [Batch]?
+    out: [Batch] @= []
+    at: i64 @= 0
+
+    while at < data.len()
+        if data.len() - at < HEADER_BYTES
+            return fail(code: INVALID, msg: f"a batch at byte {at} is cut short: {data.len() - at} bytes")
+        length = to_i64(bytes.decode_i32_be(data, at: at + 8)?).must()
+        whole = 12 + length
+
+        if length < HEADER_BYTES - 12 || whole > data.len() - at
+            return fail(code: INVALID, msg: f"the batch at byte {at} says {length} bytes follow its length")
+        one = data.slice(from: at, to: at + whole)
+        out @ out.push(checked(one, at: at)?)
+        at @ at + whole
+
+    if out.len() == 0
+        return fail(code: INVALID, msg: "the request holds no batch")
+    return ok(out)
+
+# One batch's header read and its CRC-32C checked.
+#
+# - `one`: the batch's bytes, whole.
+# - `at`: where it began in the request, for the message.
+#
+# Fails `invalid` for a magic other than 2, a CRC-32C that disagrees, or a
+# record count that is not `lastOffsetDelta` plus one.
+function checked(one: [u8], at: i64) -> Batch?
+    magic = one[MAGIC_AT]
+
+    if magic != 2
+        return fail(code: INVALID, msg: f"the batch at byte {at} is of the format {magic}, and this broker reads 2")
+    said = bytes.decode_u32_be(one, at: CRC_AT)?
+    computed = hash.crc32c(one.slice(from: ATTRIBUTES_AT, to: one.len()))
+
+    if said != computed
+        return fail(
+            code: INVALID,
+            msg: f"the batch at byte {at} says the CRC-32C {said}, and its bytes give {computed}"
+        )
+    delta = to_i64(bytes.decode_i32_be(one, at: LAST_DELTA_AT)?).must()
+    count = to_i64(bytes.decode_i32_be(one, at: COUNT_AT)?).must()
+    compressed = to_i64(one[ATTRIBUTES_AT + 1]).must() & 0x07 != 0
+
+    if delta < 0 || !compressed && count != delta + 1
+        return fail(
+            code: INVALID,
+            msg: f"the batch at byte {at} holds {count} records and says its last is {delta} after its first"
+        )
+    return ok(
+        Batch(base_offset: 0, last_offset: delta, max_timestamp: bytes.decode_i64_be(one, at: MAX_TIMESTAMP_AT)?, records: delta + 1, data: one)
+    )
+
+# Appends `batches` to `log`, each given the offsets after the last, and
+# answers the first offset given.
+#
+# - `log`: the partition's log.
+# - `batches`: checked batches, as `split_batches` answers them.
+function append(@log: Log, batches: [Batch]) -> i64
+    first = log.end_offset
+
+    for b in batches
+        base = log.end_offset
+        data = b.data
+        rewritten: [u8] @= []
+        shift: i64 @= 56
+
+        while shift >= 0
+            rewritten @ rewritten.push(to_u8(base >> shift & 0xff).must())
+            shift @ shift - 8
+
+        for i in range(from: 8, to: data.len())
+            rewritten @ rewritten.push(data[i])
+
+        log.batches @ log.batches.push(
+            Batch(base_offset: base, last_offset: base + b.last_offset, max_timestamp: b.max_timestamp, records: b.records, data: rewritten)
+        )
+        log.end_offset @ base + b.last_offset + 1
+
+    return first
+
+# The bytes of the batches holding `offset` and after, at most `most` bytes
+# but never less than one batch where there is one, as a fetch answers.
+#
+# - `log`: the partition's log.
+# - `offset`: the first offset asked, 0 to the end offset.
+# - `most`: the most bytes, past which no further batch is added.
+function read_from(log: Log lent, offset: i64, most: i64) -> [u8]
+    out: [u8] @= []
+
+    for b in log.batches
+        if b.last_offset >= offset
+            if out.len() > 0 && out.len() + b.data.len() > most
+                break
+
+            for x in b.data
+                out @ out.push(x)
+
+    return out
+
+# The first offset of the first batch whose time reaches `at`, or the end
+# offset where none does; the precision is a batch's, the stand-in reading
+# no record inside one.
+#
+# - `log`: the partition's log.
+# - `at`: milliseconds since 1970.
+function offset_at_time(log: Log lent, at: i64) -> i64
+    for b in log.batches
+        if b.max_timestamp >= at
+            return b.base_offset
+
+    return log.end_offset
+
+# How many records the log holds.
+#
+# - `log`: the partition's log.
+function record_count(log: Log lent) -> i64
+    total: i64 @= 0
+
+    for b in log.batches
+        total @ total + b.records
+
+    return total
+
+# A batch of `records` records, uncompressed, with a right CRC-32C: the
+# shape `split_batches` reads, for the tests. Its record bytes are zeros,
+# which the broker does not read.
+#
+# - `records`: how many records it says, 1 or more.
+function sample_batch(records: i64) -> [u8]
+    tail: [u8] @= []
+
+    for b in bytes.encode_i32_be(to_i32(records - 1).must())
+        tail @ tail.push(b)
+
+    for _ in range(from: 0, to: 30)
+        tail @ tail.push(0)
+
+    for b in bytes.encode_i32_be(to_i32(records).must())
+        tail @ tail.push(b)
+
+    tail @ tail.push(7)
+    crc = bytes.encode_u32_be(hash.crc32c(bytes.concat([[0, 0], tail])))
+    length = bytes.encode_i32_be(to_i32(11 + tail.len()).must())
+    return bytes.concat([[0, 0, 0, 0, 0, 0, 0, 0], length, [0, 0, 0, 0, 2], crc, [0, 0], tail])
+
+test "split_batches, append: two batches checked, given offsets after each other"
+    data = bytes.concat([sample_batch(3), sample_batch(2)])
+    batches = split_batches(data).must()
+    assert batches.len() == 2 && batches[0].records == 3 && batches[1].records == 2
+    log @= empty("t", partition: 0)
+    assert append(@log, batches: batches) == 0
+    assert log.end_offset == 5 && log.batches[1].base_offset == 3
+    assert bytes.decode_i64_be(log.batches[1].data, at: 0).must() == 3
+    assert record_count(log) == 5
+
+test "split_batches: a CRC that disagrees, another format, a batch cut short and nothing at all are refused"
+    good = sample_batch(1)
+    bad_crc @= good
+    bad_crc[good.len() - 1] @ 8
+    assert split_batches(bad_crc).is_err()
+    old_format @= good
+    old_format[MAGIC_AT] @ 1
+    assert split_batches(old_format).is_err()
+    assert split_batches(good.slice(from: 0, to: 40)).is_err()
+    assert split_batches([]).is_err()
+
+test "read_from: the batch holding the offset and after, at least one batch past the bound"
+    log @= empty("t", partition: 0)
+    _ = append(@log, batches: split_batches(bytes.concat([sample_batch(2), sample_batch(2)])).must())
+    one = sample_batch(2).len()
+    assert read_from(log, offset: 0, most: 1).len() == one
+    assert read_from(log, offset: 3, most: 1_000_000).len() == one
+    assert read_from(log, offset: 1, most: 1_000_000).len() == 2 * one
+    assert read_from(log, offset: 4, most: 1_000_000) == []

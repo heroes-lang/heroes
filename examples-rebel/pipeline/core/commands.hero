@@ -1,0 +1,189 @@
+# The pipeline's commands against real services, each reading the TOML
+# file its path names: `check` reads the file and says what it names;
+# `migrate` applies the schema; `run` migrates, then consumes until Ctrl-C
+# or SIGTERM, serving its metrics where `[metrics] listen` names an
+# address, and writes the windows still open before it ends; `replay`
+# writes the writes kept as jobs; `export` writes one day's cold export.
+# Each answers the program's exit code: 0 done, 1 failed, 2 for a file
+# that cannot be read.
+
+use <rebel>/errors
+use <rebel>/os
+
+use config/loader
+use config/settings
+use core/consume
+use core/pipeline
+use ops/exporter
+use replay/export
+use replay/replayer
+use store/migrator
+
+## Reading the file
+
+# The settings the file at `path` holds.
+#
+# - `path`: the TOML file.
+#
+# Fails as `read_file` and `loader.parse` fail, the message opening with
+# what was being read.
+function settings_of(path: str) -> settings.Settings?
+    text = errors.context(read_file(path), what: "reading the file")?
+    return errors.context(loader.parse(text), what: "reading its settings")
+
+# The settings, or a message and exit code 2.
+#
+# - `path`: the TOML file.
+function read_or_say(path: str) -> settings.Settings?
+    match settings_of(path)
+        .ok s => return ok(s)
+        .err e =>
+            print(f"pipeline: {path}: {e.msg}")
+            return fail(code: e.code, msg: e.msg)
+
+## The commands
+
+# `pipeline check <file>`: what the file names, nothing opened.
+#
+# - `path`: the TOML file.
+function check(path: str) -> i64
+    match read_or_say(path)
+        .err _ => return 2
+        .ok s =>
+            print(f"kafka: {s.kafka.brokers.join(", ")}, group {s.kafka.group}, topics {s.kafka.topics.join(", ")}")
+            print(f"s3: bucket {s.storage.bucket} in {s.storage.region}")
+            print(
+                f"windows of {s.windows.length.nanoseconds / 1_000_000_000} s, grace {s.windows.grace.nanoseconds / 1_000_000_000} s; {s.retrying.attempts} attempts a write"
+            )
+            return 0
+
+# `pipeline migrate <file>`: the schema applied.
+#
+# - `path`: the TOML file.
+function migrate(path: str) -> i64
+    match opened(path)
+        .err _ => return 2
+        .ok made =>
+            p @= made
+
+            code = match migrator.migrate_up(@p.db)
+                .ok names =>
+                    for n in names
+                        print("applied " + n)
+
+                    0
+                .err e =>
+                    print("pipeline: migrating: " + e.msg)
+                    1
+
+            pipeline.close(@p)
+            return code
+
+# `pipeline run <file>`: migrated, then consumed until the stop.
+#
+# - `path`: the TOML file.
+function run(path: str) -> i64
+    match os.catch_stop()
+        .err e =>
+            print("pipeline: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match opened(path)
+        .err _ => return 2
+        .ok made =>
+            p @= made
+            code = served(@p)
+            pipeline.close(@p)
+            return code
+
+# The schema applied, the metrics served where asked, and the loop run.
+#
+# - `p`: the pipeline.
+function served(@p: pipeline.Pipeline) -> i64
+    match migrator.migrate_up(@p.db)
+        .err e =>
+            print("pipeline: migrating: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    scrapes: [exporter.Exporter] @= []
+
+    if p.settings.metrics.listen != ""
+        match exporter.open(p.settings.metrics.listen)
+            .ok e => scrapes @ scrapes.push(e)
+            .err e =>
+                print("pipeline: the metrics' listener: " + e.msg)
+                return 1
+    outcome = consume.run(@p, catch_up: false, scrapes: @scrapes)
+
+    for i in range(from: 0, to: scrapes.len())
+        exporter.close(@scrapes[i])
+
+    match outcome
+        .err e =>
+            print("pipeline: " + e.msg)
+            return 1
+        .ok _ =>
+            c = p.counts
+            print(
+                f"pipeline: stopped after {c.json_events + c.msgpack_events} events, {c.windows} windows, {c.kept.len()} writes kept for a replay"
+            )
+            return 0
+
+# `pipeline replay <file>`: every kept write that is ready, written.
+#
+# - `path`: the TOML file.
+function replay(path: str) -> i64
+    match opened(path)
+        .err _ => return 2
+        .ok made =>
+            p @= made
+
+            code = match replayer.replay(@p)
+                .ok replayed =>
+                    for r in replayed
+                        print(f"job {r.id}: {r.key}: {r.state}")
+
+                    0
+                .err e =>
+                    print("pipeline: replaying: " + e.msg)
+                    1
+
+            pipeline.close(@p)
+            return code
+
+# `pipeline export <file> <day>`: the day's cold export.
+#
+# - `path`: the TOML file.
+# - `day`: the day, `YYYY-MM-DD`.
+function export_command(path: str, day: str) -> i64
+    match opened(path)
+        .err _ => return 2
+        .ok made =>
+            p @= made
+
+            code = match export.export_day(@p, day: day)
+                .ok exported =>
+                    for x in exported
+                        print(f"{x.key}: {x.events} events from {x.sources} windows")
+
+                    0
+                .err e =>
+                    print("pipeline: exporting: " + e.msg)
+                    1
+
+            pipeline.close(@p)
+            return code
+
+# The pipeline the file's settings make, opened.
+#
+# - `path`: the TOML file.
+function opened(path: str) -> pipeline.Pipeline?
+    s = read_or_say(path)?
+
+    match pipeline.open(s)
+        .ok p => return ok(p)
+        .err e =>
+            print("pipeline: opening: " + e.msg)
+            return fail(code: e.code, msg: e.msg)

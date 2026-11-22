@@ -1,0 +1,258 @@
+# The casts of the PostgreSQL stand-in's engine, as PostgreSQL makes them:
+# the explicit ones `::` asks (an untyped text read as any type, a numeric
+# rounded to an integer half away from zero, a truth value as `1` or `0`),
+# the implicit coercion an untyped literal or parameter meets in a place of
+# a type, and an integer held to the range of `smallint` or `integer`. A
+# text not of its type's form is refused `22P02` or `22007`, a number past
+# its type `22003`, a cast PostgreSQL has not `42846`; nothing a client
+# sends aborts the stand-in.
+
+use <rebel>/json
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/strings
+
+use standins/sql_datum
+use standins/sql_tree
+
+## Casts and coercions
+
+# The characters of a `text` or an untyped value, and the text form of any
+# other.
+#
+# - `d`: the value.
+function text_value(d: sql_tree.Datum) -> str
+    return match d
+        .text t    => t.v
+        .unknown u => u.v
+        .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .instant _ | .interval _ | .jsonb _ => sql_datum.text_of(
+            d
+        )
+
+# `d` cast to `to`, as `d::to` asks.
+#
+# - `d`: the value.
+# - `to`: the type, as the engine names it.
+#
+# Fails `invalid` with `22P02` or `22007` for a text not of the type's form,
+# `22003` for a number out of the type's range, and `42846` for a cast
+# PostgreSQL has not.
+function cast(d: sql_tree.Datum, to: str) -> sql_tree.Datum?
+    if d == .null_value
+        return ok(.null_value)
+
+    if to == "text"
+        return match d
+            .boolean b => ok(.text(v: truth_word(b.v)))
+            .null_value | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => ok(
+                .text(v: sql_datum.text_of(d))
+            )
+
+    if to == "int8" || to == "int4" || to == "int2"
+        n = integer_of(d)?
+        return ranged(n, to: to)
+
+    return match to
+        "float8" =>
+            match d
+                .integer n => ok(.float(v: to_f64(n.v)))
+                .float _ => ok(d)
+                .numeric n => ok(.float(v: to_f64(n.unscaled) / math.pow(base: 10.0, exponent: to_f64(n.scale))))
+                .text _ | .unknown _ => float_of_text(text_value(d))
+                .null_value | .boolean _ | .instant _ | .interval _ | .jsonb _ => no_cast(d, to: to)
+        "numeric" =>
+            match d
+                .integer n => ok(.numeric(unscaled: n.v, scale: 0))
+                .numeric _ => ok(d)
+                .null_value | .boolean _ | .float _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => no_cast(
+                    d,
+                    to: to
+                )
+        "bool" =>
+            match d
+                .boolean _                                                                => ok(d)
+                .integer n                                                                => ok(.boolean(v: n.v != 0))
+                .text _ | .unknown _                                                      => bool_of_text(text_value(d))
+                .null_value | .float _ | .numeric _ | .instant _ | .interval _ | .jsonb _ => no_cast(d, to: to)
+        "timestamptz" =>
+            match d
+                .instant _           => ok(d)
+                .text _ | .unknown _ => ok(.instant(micros: sql_datum.parse_instant(text_value(d))?))
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .interval _ | .jsonb _ => no_cast(
+                    d,
+                    to: to
+                )
+        "interval" =>
+            match d
+                .interval _ => ok(d)
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .jsonb _ => no_cast(
+                    d,
+                    to: to
+                )
+        "jsonb" =>
+            match d
+                .jsonb _ => ok(d)
+                .text _ | .unknown _ =>
+                    match json.parse(text_value(d))
+                        .ok v => ok(.jsonb(v: v))
+                        .err e => sql_datum.refused(
+                            state: "22P02",
+                            message: f"invalid input syntax for type json: {e.msg}"
+                        )
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .instant _ | .interval _ => no_cast(
+                    d,
+                    to: to
+                )
+        _ => no_cast(d, to: to)
+
+# The failure of a cast PostgreSQL has not.
+#
+# - `d`: the value.
+# - `to`: the type asked.
+function no_cast(d: sql_tree.Datum, to: str) -> sql_tree.Datum?
+    return sql_datum.refused(state: "42846", message: f"cannot cast type {sql_datum.type_of(d)} to {to}")
+
+# The value `d` takes in a place of type `to` where nothing casts it: an
+# untyped literal or parameter read as `to`, an integer widened to a
+# float or a numeric, and every value already of `to` as it is.
+#
+# - `d`: the value.
+# - `to`: the place's type.
+#
+# Fails `invalid` with `42804` where `d` is of another type no implicit
+# coercion reaches, and as `cast` fails for an untyped text.
+function coerce(d: sql_tree.Datum, to: str) -> sql_tree.Datum?
+    if d == .null_value || to == "unknown"
+        return ok(d)
+    have = sql_datum.type_of(d)
+
+    if have == "unknown"
+        return cast(d, to: to)
+
+    if have == to || have == "int8" && (to == "int4" || to == "int2")
+        if have == "int8"
+            return ranged(integer_of(d)?, to: to)
+        return ok(d)
+
+    if have == "int8" && (to == "float8" || to == "numeric")
+        return cast(d, to: to)
+
+    if have == "numeric" && to == "float8"
+        return cast(d, to: to)
+    return sql_datum.refused(state: "42804", message: f"the value is of type {have} where {to} is asked")
+
+# The whole number `d` holds, rounding a numeric or a float half away from
+# zero, reading a text.
+#
+# - `d`: the value.
+#
+# Fails `invalid` with `22P02` for a text that is no integer, `22003` past
+# `bigint`, and `42846` for a value of another kind.
+function integer_of(d: sql_tree.Datum) -> i64?
+    return match d
+        .integer n => ok(n.v)
+        .boolean b => ok(truth_number(b.v))
+        .numeric n => round_numeric(unscaled: n.unscaled, scale: n.scale)
+        .float x =>
+            if x.v != x.v || x.v > 9_200_000_000_000_000_000.0 || x.v < -9_200_000_000_000_000_000.0
+                sql_datum.refused(state: "22003", message: "bigint out of range")
+            else
+                ok(to_i64(math.round(x.v)).default(0))
+        .text _ | .unknown _ =>
+            match numbers.parse_int(strings.trim(text_value(d)))
+                .ok n => ok(n)
+                .err _ => sql_datum.refused(
+                    state: "22P02",
+                    message: f"invalid input syntax for type bigint: \"{text_value(d)}\""
+                )
+        .null_value | .instant _ | .interval _ | .jsonb _ => sql_datum.refused(
+            state: "42846",
+            message: f"cannot cast type {sql_datum.type_of(d)} to bigint"
+        )
+
+# `true` or `false`, as `boolean::text` writes a truth value.
+#
+# - `b`: the truth value.
+function truth_word(b: bool) -> str
+    if b
+        return "true"
+    return "false"
+
+# 1 or 0, as `boolean::integer` writes a truth value.
+#
+# - `b`: the truth value.
+function truth_number(b: bool) -> i64
+    if b
+        return 1
+    return 0
+
+# `n` where it fits `to`'s range.
+#
+# - `n`: the number.
+# - `to`: `int2`, `int4` or `int8`.
+function ranged(n: i64, to: str) -> sql_tree.Datum?
+    if to == "int2" && (n < -32768 || n > 32767)
+        return sql_datum.refused(state: "22003", message: "smallint out of range")
+
+    if to == "int4" && (n < -2147483648 || n > 2147483647)
+        return sql_datum.refused(state: "22003", message: "integer out of range")
+    return ok(.integer(v: n))
+
+# An exact numeric rounded to a whole number, half away from zero.
+#
+# - `unscaled`: the digits.
+# - `scale`: the digits after the point.
+function round_numeric(unscaled: i64, scale: i64) -> i64?
+    if scale <= 0
+        return ok(unscaled)
+    divisor = math.pow_i64(base: 10, exponent: scale).default(0)
+
+    if divisor == 0
+        return ok(0)
+    whole = unscaled / divisor
+    rest = math.abs_i64(unscaled % divisor).default(0)
+
+    if rest * 2 >= divisor
+        if unscaled < 0
+            return ok(whole - 1)
+        return ok(whole + 1)
+    return ok(whole)
+
+# A `float8` read from text.
+#
+# - `s`: the text.
+function float_of_text(s: str) -> sql_tree.Datum?
+    match numbers.parse_float(strings.trim(s))
+        .ok x => return ok(.float(v: x))
+        .err _ => return sql_datum.refused(
+            state: "22P02",
+            message: f"invalid input syntax for type double precision: \"{s}\""
+        )
+
+# A `boolean` read from text, as PostgreSQL reads `t`, `true`, `yes`,
+# `on`, `1` and their opposites.
+#
+# - `s`: the text.
+function bool_of_text(s: str) -> sql_tree.Datum?
+    word = strings.to_lower(strings.trim(s))
+
+    if word == "t" || word == "true" || word == "yes" || word == "on" || word == "1"
+        return ok(.boolean(v: true))
+
+    if word == "f" || word == "false" || word == "no" || word == "off" || word == "0"
+        return ok(.boolean(v: false))
+    return sql_datum.refused(state: "22P02", message: f"invalid input syntax for type boolean: \"{s}\"")
+
+test "cast: an untyped text read as each type, a numeric rounded, an int4 past its range refused"
+    assert cast(.unknown(v: "42"), to: "int8").must() == .integer(v: 42)
+    assert cast(.unknown(v: "[1]"), to: "jsonb").must() == .jsonb(v: .list(items: [.number(v: 1.0)]))
+    assert cast(.numeric(unscaled: 25, scale: 1), to: "int8").must() == .integer(v: 3)
+    assert cast(.integer(v: 3_000_000_000), to: "int4").is_err()
+    assert cast(.boolean(v: true), to: "int4").must() == .integer(v: 1)
+    assert cast(.jsonb(v: .list(items: [])), to: "text").must() == .text(v: "[]")
+    assert cast(.unknown(v: "x"), to: "int8").is_err()
+
+test "coerce: an untyped literal, a widening, and a text where an integer is asked"
+    assert coerce(.unknown(v: "t"), to: "bool").must() == .boolean(v: true)
+    assert coerce(.integer(v: 3), to: "float8").must() == .float(v: 3.0)
+    assert coerce(.text(v: "3"), to: "int8").is_err()

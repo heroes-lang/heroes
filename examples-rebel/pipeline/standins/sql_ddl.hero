@@ -1,0 +1,234 @@
+# The PostgreSQL stand-in's `CREATE TABLE` and `CREATE INDEX`: a table's
+# columns, its primary key (an index named `<table>_pkey`, as PostgreSQL
+# names it), its `UNIQUE` constraints (`<table>_<columns>_key`) and its
+# `CHECK` constraints made into the catalog; an index, partial or not,
+# unique or not, added to its table once every row already there agrees
+# with it. `IF NOT EXISTS` on a name taken does nothing and says so in a
+# notice, as PostgreSQL's `42P07` notice does.
+
+use standins/sql_datum
+use standins/sql_eval
+use standins/sql_ops
+use standins/sql_order
+use standins/sql_tree
+
+## Answers
+
+# What a statement of the catalog came to: its tag, and the notices it
+# raised.
+record Made
+    # The command's tag, `CREATE TABLE`.
+    tag: str
+    # The notices' words, none where it raised none.
+    notices: [str]
+
+## Tables
+
+# Makes the table `stmt` describes in `db`.
+#
+# - `db`: the database.
+# - `stmt`: the statement.
+#
+# Fails `invalid` with `42P07` where the name is taken and `IF NOT
+# EXISTS` was not written, `42701` for a column named twice, `42703` for a
+# key naming a column the table has not.
+function create_table(@db: sql_tree.Database, stmt: sql_tree.CreateTable) -> Made?
+    if sql_tree.table_at(db, name: stmt.name) >= 0
+        if stmt.if_not_exists
+            return ok(Made(tag: "CREATE TABLE", notices: [f"relation \"{stmt.name}\" already exists, skipping"]))
+        return sql_datum.refused(state: "42P07", message: f"relation \"{stmt.name}\" already exists")
+    columns: [sql_tree.Column] @= []
+
+    for c in stmt.columns
+        for d in columns
+            if d.name == c.name
+                return sql_datum.refused(state: "42701", message: f"column \"{c.name}\" specified more than once")
+
+        key_column = has_name(stmt.primary_key, name: c.name)
+        columns @ columns.push(
+            sql_tree.Column(name: c.name, type_name: c.type_name, not_null: c.not_null || c.serial || key_column, serial: c.serial, default_value: c.default_value)
+        )
+
+    table @= sql_tree.Table(
+        name: stmt.name,
+        columns: columns,
+        rows: [],
+        indexes: [],
+        checks: stmt.checks,
+        next_serial: 1
+    )
+
+    if stmt.primary_key.len() > 0
+        known(table, names: stmt.primary_key)?
+        table.indexes @ table.indexes.push(
+            sql_tree.Index(name: stmt.name + "_pkey", columns: stmt.primary_key, unique: true, predicate: [])
+        )
+
+    for u in stmt.uniques
+        known(table, names: u)?
+        table.indexes @ table.indexes.push(
+            sql_tree.Index(name: stmt.name + "_" + u.join("_") + "_key", columns: u, unique: true, predicate: [])
+        )
+
+    db.tables @ db.tables.push(table)
+    return ok(Made(tag: "CREATE TABLE", notices: []))
+
+# Checks that `t` has every column of `names`.
+#
+# - `t`: the table.
+# - `names`: the columns.
+#
+# Fails `invalid` with `42703` for the first it has not.
+function known(t: sql_tree.Table lent, names: [str]) -> ()?
+    for n in names
+        if sql_tree.column_at(t, name: n) < 0
+            return sql_datum.refused(state: "42703", message: f"column \"{n}\" named in key does not exist")
+
+    return ok()
+
+# Whether `names` holds `name`.
+#
+# - `names`: the names.
+# - `name`: the one asked about.
+function has_name(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+## Indexes
+
+# Adds the index `stmt` describes to its table.
+#
+# - `db`: the database.
+# - `stmt`: the statement.
+#
+# Fails `invalid` with `42P01` for a table that does not exist, `42P07`
+# for an index name taken without `IF NOT EXISTS`, `42703` for a column the
+# table has not, and `23505` where a unique index meets two rows already
+# sharing a key it covers.
+function create_index(@db: sql_tree.Database, stmt: sql_tree.CreateIndex) -> Made?
+    at = sql_tree.table_at(db, name: stmt.table)
+
+    if at < 0
+        return sql_datum.refused(state: "42P01", message: f"relation \"{stmt.table}\" does not exist")
+
+    for t in db.tables
+        for i in t.indexes
+            if i.name == stmt.name
+                if stmt.if_not_exists
+                    return ok(
+                        Made(tag: "CREATE INDEX", notices: [f"relation \"{stmt.name}\" already exists, skipping"])
+                    )
+                return sql_datum.refused(state: "42P07", message: f"relation \"{stmt.name}\" already exists")
+
+    table @= db.tables[at]
+    known(table, names: stmt.columns)?
+    index = sql_tree.Index(name: stmt.name, columns: stmt.columns, unique: stmt.unique, predicate: stmt.predicate)
+
+    if stmt.unique
+        for i in range(from: 0, to: table.rows.len())
+            if clash_at(db, table: table, index: index, row: table.rows[i], except: i)? >= 0
+                return sql_datum.refused(
+                    state: "23505",
+                    message: f"could not create unique index \"{stmt.name}\": two rows share a key"
+                )
+    table.indexes @ table.indexes.push(index)
+    db.tables[at] @ table
+    return ok(Made(tag: "CREATE INDEX", notices: []))
+
+## Unique keys
+
+# Whether `index` covers `row`: every row for a full index, the rows its
+# predicate holds for where it is partial.
+#
+# - `db`: the database, for the predicate's evaluation.
+# - `table`: the table.
+# - `index`: the index.
+# - `row`: the row.
+function covers(db: sql_tree.Database lent, table: sql_tree.Table lent, index: sql_tree.Index, row: [sql_tree.Datum]) -> bool?
+    if index.predicate.len() == 0
+        return ok(true)
+    names: [str] @= []
+
+    for c in table.columns
+        names @ names.push(c.name)
+
+    scope = sql_eval.Scope(
+        bound: [sql_eval.Bound(qualifier: table.name, names: names, values: row)],
+        params: [],
+        now_micros: 0
+    )
+    return sql_ops.truth(sql_eval.eval(index.predicate[0], scope: scope, db: db)?)
+
+# The place of a row of `table`, other than `except`, that shares `row`'s
+# key under the unique `index`, both covered by it; -1 where none does. A
+# key holding a NULL clashes with nothing, as PostgreSQL's unique indexes
+# hold.
+#
+# - `db`: the database.
+# - `table`: the table.
+# - `index`: a unique index.
+# - `row`: the row checked.
+# - `except`: the place of `row` itself in the table, -1 for a new row.
+function clash_at(db: sql_tree.Database lent, table: sql_tree.Table lent, index: sql_tree.Index, row: [sql_tree.Datum], except: i64) -> i64?
+    if !index.unique || !covers(db, table: table, index: index, row: row)?
+        return ok(-1)
+    places: [i64] @= []
+
+    for name in index.columns
+        place = sql_tree.column_at(table, name: name)
+
+        if row[place] == .null_value
+            return ok(-1)
+        places @ places.push(place)
+
+    for i in range(from: 0, to: table.rows.len())
+        if i != except
+            other = table.rows[i]
+            same @= true
+
+            for p in places
+                if same && (other[p] == .null_value || sql_order.compare(a: other[p], b: row[p])? != 0)
+                    same @ false
+
+            if same && covers(db, table: table, index: index, row: other)?
+                return ok(i)
+
+    return ok(-1)
+
+test "create_table: a key, a serial, IF NOT EXISTS told, a name taken refused"
+    db @= sql_tree.empty_database()
+    stmt = sql_tree.CreateTable(
+        name: "t",
+        if_not_exists: true,
+        columns: [sql_tree.ColumnDef(name: "id", type_name: "int8", not_null: false, serial: true, default_value: [])],
+        primary_key: ["id"],
+        uniques: [],
+        checks: []
+    )
+    assert create_table(@db, stmt: stmt).must().notices.len() == 0
+    assert db.tables[0].indexes[0].name == "t_pkey" && db.tables[0].columns[0].not_null
+    assert create_table(@db, stmt: stmt).must().notices.len() == 1
+    again @= stmt
+    again.if_not_exists @ false
+    assert create_table(@db, stmt: again).is_err()
+
+test "clash_at: a partial unique index covers only its rows; a NULL clashes with nothing"
+    db @= sql_tree.empty_database()
+    columns = [sql_tree.ColumnDef(name: "k", type_name: "text", not_null: false, serial: false, default_value: [])]
+    _ = create_table(
+        @db,
+        stmt: sql_tree.CreateTable(name: "t", if_not_exists: false, columns: columns, primary_key: [], uniques: [], checks: [])
+    ).must()
+    db.tables[0].rows @ [[.text(v: "a")], [.text(v: "")], [.null_value]]
+    partial = sql_tree.Index(
+        name: "u",
+        columns: ["k"],
+        unique: true,
+        predicate: [.operator(op: "<>", operands: [.column(qualifier: "", name: "k"), .literal(value: .unknown(v: ""))])]
+    )
+    assert clash_at(db, table: db.tables[0], index: partial, row: [.text(v: "a")], except: -1).must() == 0
+    assert clash_at(db, table: db.tables[0], index: partial, row: [.text(v: "")], except: -1).must() == -1
+    assert clash_at(db, table: db.tables[0], index: partial, row: [.null_value], except: -1).must() == -1

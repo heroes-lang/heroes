@@ -1,0 +1,211 @@
+# What the Kafka broker stand-in holds between requests: its topics and
+# their logs, its consumer groups, the one user it logs in by SCRAM, where
+# each connection's login stands, and what it counts for the demo's
+# account. It is one broker, node 1, which leads every partition and is
+# every group's coordinator, so a client that asks the cluster finds the
+# same broker everywhere it looks.
+
+use standins/kafka_groups
+use standins/kafka_log
+use standins/scram_server
+
+## What a request comes to
+
+# What the broker does with one request.
+variant Outcome
+    # Answers with this body, after the request's correlation.
+    reply
+        # The answer's body.
+        body: [u8]
+    # Answers with this body, then closes the connection, as a broker
+    # closes one whose login failed.
+    last_reply
+        # The answer's body.
+        body: [u8]
+    # Answers nothing, as a produce asking no acknowledgement is answered.
+    silent
+    # Holds the request until something changes or its time runs out, as
+    # a fetch waits for records and a join waits for the other members.
+    park
+        # When the wait ends, milliseconds since 1970.
+        deadline_ms: i64
+    # Closes the connection, as a broker closes one that sent a request it
+    # cannot read or may not send.
+    hang_up
+        # Why, for the stand-in's own account.
+        reason: str
+
+## The broker
+
+# The node every answer names.
+constant NODE_ID: i64
+    1
+
+# The host every answer names.
+constant HOST: str
+    "127.0.0.1"
+
+# A topic and how many partitions it has.
+record Topic
+    # Its name.
+    name: str
+    # Its partitions, 1 or more, numbered from 0.
+    partitions: i64
+
+# Where one connection's login stands.
+record Login
+    # The loop's number for the connection.
+    peer: i64
+    # 0 before `SaslHandshake`, 1 once it named SCRAM-SHA-256, 2 once the
+    # server's first message is sent, 3 once logged in.
+    stage: i64
+    # The exchange under way.
+    exchange: scram_server.Exchange
+
+# The broker's state.
+record Broker
+    # The port it listens on, which every answer names.
+    port: i64
+    # The cluster's identifier, as a real cluster names itself.
+    cluster_id: str
+    # Its topics, in the order they were made.
+    topics: [Topic]
+    # Every partition's log, by topic then partition.
+    logs: [kafka_log.Log]
+    # Its groups, in the order they were first named.
+    groups: [kafka_groups.Group]
+    # The one user it logs in, "" for no login at all.
+    user: str
+    # The user's verifier.
+    verifier: scram_server.Verifier
+    # Each connection's login.
+    logins: [Login]
+    # The batches appended, in all.
+    batches: i64
+    # The records appended, in all.
+    records: i64
+    # The batches refused, in all.
+    refused: i64
+
+# A broker on `port` holding `topics`, each partition's log empty, logging
+# in `user` by `verifier`.
+#
+# - `port`: the port it listens on.
+# - `topics`: the topics.
+# - `user`: the user it logs in, "" for none.
+# - `verifier`: the user's verifier.
+function new(port: i64, topics: [Topic], user: str, verifier: scram_server.Verifier) -> Broker
+    logs: [kafka_log.Log] @= []
+
+    for t in topics
+        for p in range(from: 0, to: t.partitions)
+            logs @ logs.push(kafka_log.empty(t.name, partition: p))
+
+    return Broker(
+        port: port,
+        cluster_id: "pipeline-demo-cluster",
+        topics: topics,
+        logs: logs,
+        groups: [],
+        user: user,
+        verifier: verifier,
+        logins: [],
+        batches: 0,
+        records: 0,
+        refused: 0
+    )
+
+# The partitions of `topic`, -1 where the broker has no such topic.
+#
+# - `b`: the broker.
+# - `topic`: the topic's name.
+function partitions_of(b: Broker lent, topic: str) -> i64
+    for t in b.topics
+        if t.name == topic
+            return t.partitions
+
+    return -1
+
+# The place of the log of `partition` of `topic`, -1 where there is none.
+#
+# - `b`: the broker.
+# - `topic`: the topic.
+# - `partition`: the partition.
+function log_at(b: Broker lent, topic: str, partition: i64) -> i64
+    for i in range(from: 0, to: b.logs.len())
+        if b.logs[i].topic == topic && b.logs[i].partition == partition
+            return i
+
+    return -1
+
+# The place of the group `group_id`, made empty where the broker had none,
+# as a coordinator makes a group the first time it is named.
+#
+# - `b`: the broker.
+# - `group_id`: the group.
+function group_at(@b: Broker, group_id: str) -> i64
+    for i in range(from: 0, to: b.groups.len())
+        if b.groups[i].group_id == group_id
+            return i
+
+    b.groups @ b.groups.push(kafka_groups.new(group_id))
+    return b.groups.len() - 1
+
+# The place of connection `peer`'s login, made where it had none.
+#
+# - `b`: the broker.
+# - `peer`: the connection.
+function login_at(@b: Broker, peer: i64) -> i64
+    for i in range(from: 0, to: b.logins.len())
+        if b.logins[i].peer == peer
+            return i
+
+    blank = scram_server.Exchange(client_first_bare: "", server_first: "", nonce: "", user: "")
+    b.logins @ b.logins.push(Login(peer: peer, stage: 0, exchange: blank))
+    return b.logins.len() - 1
+
+# Whether connection `peer` may send requests past the login: every one
+# where the broker logs nobody in, else once its login is done.
+#
+# - `b`: the broker.
+# - `peer`: the connection.
+function is_logged_in(b: Broker lent, peer: i64) -> bool
+    if b.user == ""
+        return true
+
+    for l in b.logins
+        if l.peer == peer
+            return l.stage == 3
+
+    return false
+
+# Forgets connection `peer`'s login, once it has closed.
+#
+# - `b`: the broker.
+# - `peer`: the connection.
+function forget(@b: Broker, peer: i64)
+    kept: [Login] @= []
+
+    for l in b.logins
+        if l.peer != peer
+            kept @ kept.push(l)
+
+    b.logins @ kept
+
+test "new, partitions_of, log_at: a log per partition, a topic it has not"
+    v = scram_server.verifier_of("p", salt: [1], iterations: 1).must()
+    b = new(9092, topics: [Topic(name: "a", partitions: 2), Topic(name: "b", partitions: 1)], user: "", verifier: v)
+    assert b.logs.len() == 3 && partitions_of(b, topic: "a") == 2 && partitions_of(b, topic: "z") == -1
+    assert log_at(b, topic: "b", partition: 0) == 2 && log_at(b, topic: "b", partition: 1) == -1
+    assert is_logged_in(b, peer: 1)
+
+test "group_at, login_at, forget: made once, found again, and forgotten"
+    v = scram_server.verifier_of("p", salt: [1], iterations: 1).must()
+    b @= new(9092, topics: [], user: "u", verifier: v)
+    assert group_at(@b, group_id: "g") == 0 && group_at(@b, group_id: "g") == 0 && b.groups.len() == 1
+    at = login_at(@b, peer: 4)
+    assert !is_logged_in(b, peer: 4)
+    b.logins[at].stage @ 3
+    assert is_logged_in(b, peer: 4)
+    forget(@b, peer: 4)
+    assert b.logins.len() == 0 && !is_logged_in(b, peer: 4)

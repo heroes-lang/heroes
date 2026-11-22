@@ -1,0 +1,183 @@
+# One connection of the PostgreSQL stand-in, message by message, as
+# protocol 3.0 has a server answer: the startup message (a request for TLS
+# or GSSAPI answered `N`, this stand-in speaking neither), the role and the
+# database checked, the login by SASL with SCRAM-SHA-256 alone, the
+# parameters a server reports, then each message handed to its flow: the
+# simple query flow (`Query`, `pg_query.simple`) or the extended one
+# (`pg_extended`).
+
+use <rebel>/bytes
+use <rebel>/scram
+
+use standins/pg_extended
+use standins/pg_query
+use standins/pg_state
+use standins/pg_wire
+use standins/scram_server
+use standins/sql_datum
+
+## Answering
+
+# The answers to message `m` of the connection `s`; `s.closing` set where
+# the connection ends after them.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `m`: the message.
+function answer(@shared: pg_state.Shared, @s: pg_state.Session, m: pg_wire.Message) -> [u8]
+    if s.phase == "startup"
+        return startup(@shared, s: @s, body: m.body)
+
+    if s.phase == "sasl_first" || s.phase == "sasl_final"
+        return login(@shared, s: @s, m: m)
+
+    if m.kind == 'X'
+        s.closing @ true
+
+        if s.block != .none
+            _ = pg_query.close_block(@shared, s: @s, commit: false).is_err()
+        return []
+
+    if s.skipping && m.kind != 'S'
+        return []
+
+    if m.kind == 'Q'
+        return query(@shared, s: @s, body: m.body)
+
+    if m.kind == 'E'
+        return pg_extended.execute(@shared, s: @s, body: m.body)
+
+    if m.kind == 'S'
+        return pg_extended.sync(@shared, s: @s)
+
+    if m.kind == 'H'
+        return []
+    answered: [u8]? @= sql_datum.refused(state: "08P01", message: "no message")
+
+    if m.kind == 'P'
+        answered @ pg_extended.parse(@s, body: m.body)
+    else if m.kind == 'B'
+        answered @ pg_extended.bind(@s, body: m.body)
+    else if m.kind == 'D'
+        answered @ pg_extended.describe(shared, s: s, body: m.body)
+    else if m.kind == 'C'
+        answered @ pg_extended.close(@s, body: m.body)
+    else
+        return fatal(@s, state: "08P01", text: f"invalid frontend message type {m.kind}")
+    return pg_extended.extended(@s, answered: answered)
+
+# A fatal error: the connection ends after it.
+#
+# - `s`: the session, closing.
+# - `state`: the SQLSTATE.
+# - `text`: the words.
+function fatal(@s: pg_state.Session, state: str, text: str) -> [u8]
+    s.closing @ true
+    return pg_wire.report('E', severity: "FATAL", state: state, text: text)
+
+## Startup and login
+
+# The answer to a startup message: `N` to a request for TLS or GSSAPI,
+# else the role and the database checked and SCRAM-SHA-256 offered.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `body`: the message's body.
+function startup(@shared: pg_state.Shared, @s: pg_state.Session, body: [u8]) -> [u8]
+    b @= pg_wire.body_of(body)
+    code = pg_wire.take_i32(@b).default(0)
+
+    if code == pg_wire.SSL_REQUEST || code == pg_wire.GSS_REQUEST
+        return ['N']
+
+    if code != pg_wire.PROTOCOL_3
+        return fatal(
+            @s,
+            state: "0A000",
+            text: f"unsupported frontend protocol {code / 65536}.{code % 65536}: server supports 3.0 to 3.0"
+        )
+    params: {str: str} @= {}
+
+    while b.at < b.data.len() && b.data[b.at] != 0
+        name = pg_wire.take_cstring(@b).default("")
+        params[name] @ pg_wire.take_cstring(@b).default("")
+
+    user = params["user"].default("")
+    database = params["database"].default(user)
+
+    if user != shared.user
+        shared.refused_logins @ shared.refused_logins + 1
+        return fatal(@s, state: "28000", text: f"role \"{user}\" does not exist")
+
+    if database != shared.database
+        shared.refused_logins @ shared.refused_logins + 1
+        return fatal(@s, state: "3D000", text: f"database \"{database}\" does not exist")
+    s.user @ user
+    s.phase @ "sasl_first"
+    mechanisms: [u8] @= []
+    pg_wire.push_cstring(@mechanisms, s: "SCRAM-SHA-256")
+    mechanisms @ mechanisms.push(0)
+    return pg_wire.authentication(10, data: mechanisms)
+
+# The answer to a `SASLInitialResponse` or a `SASLResponse`.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `m`: the message, of type `p`.
+function login(@shared: pg_state.Shared, @s: pg_state.Session, m: pg_wire.Message) -> [u8]
+    refused = f"password authentication failed for user \"{s.user}\""
+
+    if m.kind != 'p'
+        return fatal(@s, state: "08P01", text: "expected SASL response")
+    b @= pg_wire.body_of(m.body)
+
+    if s.phase == "sasl_first"
+        mechanism = pg_wire.take_cstring(@b).default("")
+        length = pg_wire.take_i32(@b).default(-1)
+
+        if mechanism != "SCRAM-SHA-256"
+            shared.refused_logins @ shared.refused_logins + 1
+            return fatal(@s, state: "28000", text: "client selected an invalid SASL authentication mechanism")
+        first = bytes.to_text(pg_wire.take_raw(@b, n: length).default([])).default("")
+        nonce = scram.new_nonce().default("")
+
+        match scram_server.first(client_first: first, v: shared.verifier, server_nonce: nonce)
+            .err e =>
+                shared.refused_logins @ shared.refused_logins + 1
+                return fatal(@s, state: "08P01", text: e.msg)
+            .ok e =>
+                s.exchange @ e
+                s.phase @ "sasl_final"
+                return pg_wire.authentication(11, data: bytes.from_text(e.server_first))
+    final_message = bytes.to_text(m.body).default("")
+
+    match scram_server.final(s.exchange, client_final: final_message, v: shared.verifier)
+        .err _ =>
+            shared.refused_logins @ shared.refused_logins + 1
+            return fatal(@s, state: "28P01", text: refused)
+        .ok server_final =>
+            shared.logins @ shared.logins + 1
+            s.phase @ "ready"
+            out: [u8] @= pg_wire.authentication(12, data: bytes.from_text(server_final))
+            pg_query.append(out: @out, data: pg_wire.authentication(0, data: []))
+
+            for pair in [["server_version", "17.0"], ["server_encoding", "UTF8"], ["client_encoding", "UTF8"], ["DateStyle", "ISO, MDY"], ["TimeZone", "UTC"], ["integer_datetimes", "on"], ["standard_conforming_strings", "on"], ["IntervalStyle", "postgres"]]
+                pg_query.append(out: @out, data: pg_wire.parameter_status(name: pair[0], value: pair[1]))
+
+            pg_query.append(out: @out, data: pg_wire.backend_key_data(pid: s.pid, secret: s.pid * 7919))
+            pg_query.append(out: @out, data: pg_wire.ready_for_query('I'))
+            return out
+
+## The simple query flow
+
+# The answers to `Query`.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `body`: the message's body: the statements and a zero byte.
+function query(@shared: pg_state.Shared, @s: pg_state.Session, body: [u8]) -> [u8]
+    b @= pg_wire.body_of(body)
+
+    match pg_wire.take_cstring(@b)
+        .err e   => return fatal(@s, state: "08P01", text: e.msg)
+        .ok text => return pg_query.simple(@shared, s: @s, text: text)

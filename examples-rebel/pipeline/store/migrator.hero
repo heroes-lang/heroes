@@ -1,0 +1,75 @@
+# The pipeline's migrations applied to its database, as `sql/migrate`
+# plans them and `sql/postgres` runs them: the advisory lock taken, the
+# table of applied versions made where it is not, the versions read and
+# checked against the migrations (one whose script changed after it ran
+# is refused), each waiting migration applied in its own transaction with
+# its version recorded, and the lock let go whatever happened.
+
+use <rebel>/sql
+use <rebel>/sql/migrate
+use <rebel>/sql/postgres
+
+use store/schema
+
+## Migrating
+
+# Applies every migration waiting and answers their names, in order.
+#
+# - `db`: the connection.
+#
+# Fails as `migrate.status` fails for a migration changed since it ran, and
+# with the database's failure, the failing migration's transaction rolled
+# back and the ones before it kept.
+function migrate_up(@db: postgres.Db) -> [str]?
+    opts = migrate.options(.postgres)
+    lock = migrate.lock_statement(opts)?
+    _ = postgres.query(@db, lock.text, lock.params)?
+    applied = applying(@db, opts: opts)
+    unlock = migrate.unlock_statement(opts)?
+    _ = postgres.query(@db, unlock.text, unlock.params).is_err()
+    return applied
+
+# The steps planned and applied, under the lock.
+#
+# - `db`: the connection.
+# - `opts`: the migrations' options.
+function applying(@db: postgres.Db, opts: migrate.Options) -> [str]?
+    made = migrate.create_table_statement(opts)?
+    _ = postgres.exec(@db, made.text, made.params)?
+    asked = migrate.select_applied_statement(opts)?
+    applied = migrate.applied_of(postgres.query(@db, asked.text, asked.params)?)?
+    names: [str] @= []
+
+    for step in migrate.plan_up(schema.migrations(), applied: applied, opts: opts)?
+        if step.in_transaction
+            postgres.begin(@db)?
+
+        match ran(@db, step: step)
+            .ok _ =>
+                if step.in_transaction
+                    postgres.commit(@db)?
+            .err e =>
+                if step.in_transaction
+                    _ = postgres.rollback(@db).is_err()
+                return fail(code: e.code, msg: f"migration {step.version} {step.name}: {e.msg}")
+
+        names @ names.push(f"{step.version} {step.name}")
+
+    return ok(names)
+
+# One step's script and its version's record.
+#
+# - `db`: the connection.
+# - `step`: the step.
+function ran(@db: postgres.Db, step: migrate.Step) -> ()?
+    postgres.exec_script(@db, step.script)?
+    _ = postgres.exec(@db, step.version_statement.text, step.version_statement.params)?
+    return ok()
+
+# The versions applied, as the table of versions holds them.
+#
+# - `db`: the connection.
+function applied_versions(@db: postgres.Db) -> [migrate.Applied]?
+    asked = migrate.select_applied_statement(migrate.options(.postgres))?
+    rows: sql.Rows = postgres.query(@db, asked.text, asked.params)?
+    return migrate.applied_of(rows)

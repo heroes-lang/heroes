@@ -1,0 +1,37 @@
+# The pipeline's own schema as numbered migrations, kept in the program
+# rather than in files beside it, so the binary that writes the tables is
+# the one that knows their shape: the aggregates of each window, the
+# ledger of every object written, and the tables of the jobs store
+# (`jobs/postgres_store.schema`), which keeps the batches whose writes
+# failed until a replay writes them. `migrator` applies them, each in its
+# own transaction, under PostgreSQL's advisory lock so two pipelines
+# starting together do not apply one twice.
+
+use <rebel>/jobs/postgres_store
+use <rebel>/sql/migrate
+
+## Migrations
+
+# The aggregates of each window, by topic and event type: how many events,
+# the sum of their values, and three percentiles of them.
+constant AGGREGATES: str
+    "CREATE TABLE window_aggregates (window_start timestamptz NOT NULL, topic text NOT NULL, event_type text NOT NULL, events bigint NOT NULL, value_sum double precision NOT NULL, value_p50 double precision NOT NULL, value_p95 double precision NOT NULL, value_p99 double precision NOT NULL, PRIMARY KEY (window_start, topic, event_type))"
+
+# Every object the pipeline wrote or keeps to write, by key: its tier and
+# codec, its window, its sizes raw and stored, the raw bytes' SHA-256, and
+# whether it is stored or waits for a replay.
+constant LEDGER: str
+    "CREATE TABLE batches (key text PRIMARY KEY, topic text NOT NULL, tier text NOT NULL, codec text NOT NULL, window_start timestamptz NOT NULL, events bigint NOT NULL, raw_bytes bigint NOT NULL, stored_bytes bigint NOT NULL, sha256 text NOT NULL, state text NOT NULL CHECK (state IN ('stored', 'pending_replay')), written_at timestamptz NOT NULL DEFAULT now()); CREATE INDEX batches_by_window ON batches (topic, window_start)"
+
+# The pipeline's migrations, oldest first.
+function migrations() -> [migrate.Migration]
+    return [
+        migrate.Migration(version: 1, name: "window_aggregates", up: AGGREGATES, down: ok("DROP TABLE window_aggregates"))
+        migrate.Migration(version: 2, name: "batches_ledger", up: LEDGER, down: ok("DROP TABLE batches"))
+        migrate.Migration(version: 3, name: "jobs_store", up: postgres_store.schema(), down: fail(code: migrate.NOT_FOUND, msg: "the jobs store's tables hold the jobs kept: they are dropped by hand"))
+    ]
+
+test "migrations: three, in order of their versions, the last one the jobs store's"
+    m = migrations()
+    assert m.len() == 3 && m[0].version == 1 && m[2].version == 3 && m[2].up == postgres_store.schema()
+    assert m[2].down.is_err()

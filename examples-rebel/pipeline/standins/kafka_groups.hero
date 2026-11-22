@@ -1,0 +1,579 @@
+# The broker stand-in's group coordinator, by the classic consumer group
+# protocol (KIP-62, KIP-394): a member joins with no identifier and is
+# answered `MEMBER_ID_REQUIRED` with one, joins again with it, and waits
+# until every member has joined; the generation then moves, the first
+# member to have joined leads, and the leader's `SyncGroup` hands each
+# member its partitions. A member not heard for its session's time is
+# removed and the group rebalances. Offsets are kept by group, topic and
+# partition. Every function here is a step of the group's state; the
+# broker holds the requests that wait and answers them when a step says.
+
+use <rebel>/time
+
+## Error codes
+
+# Kafka's code for no error.
+constant NONE: i64
+    0
+
+# `ILLEGAL_GENERATION`: a request of a generation that is not the group's.
+constant ILLEGAL_GENERATION: i64
+    22
+
+# `INCONSISTENT_GROUP_PROTOCOL`: a member whose protocol the group does not
+# speak.
+constant INCONSISTENT_GROUP_PROTOCOL: i64
+    23
+
+# `UNKNOWN_MEMBER_ID`: a member the group does not hold.
+constant UNKNOWN_MEMBER_ID: i64
+    25
+
+# `REBALANCE_IN_PROGRESS`: the group is rebalancing; the member joins
+# again.
+constant REBALANCE_IN_PROGRESS: i64
+    27
+
+# `MEMBER_ID_REQUIRED`: a member's first join, answered with the
+# identifier it joins again with.
+constant MEMBER_ID_REQUIRED: i64
+    79
+
+## The group
+
+# One member of a group.
+record Member
+    # Its identifier, the client's own identifier and a number.
+    member_id: str
+    # The client's identifier.
+    client_id: str
+    # Its subscription, as the consumer protocol writes it.
+    metadata: [u8]
+    # How long, in milliseconds, the group waits for its heartbeat.
+    session_ms: i64
+    # How long, in milliseconds, the group waits for it to join again.
+    rebalance_ms: i64
+    # When it was last heard, milliseconds since 1970.
+    heard_ms: i64
+    # Whether it has joined in the rebalance under way.
+    joined: bool
+    # The partitions its leader gave it, as the consumer protocol writes
+    # them.
+    assignment: [u8]
+
+# An offset a group keeps.
+record Committed
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The offset of the next record to read.
+    offset: i64
+    # The text kept beside it.
+    metadata: str
+
+# Where a group stands.
+variant Phase
+    # No member.
+    empty
+    # Waiting for every member to join.
+    preparing
+    # Waiting for the leader's assignment.
+    completing
+    # Every member holds its partitions.
+    stable
+
+# A group the coordinator keeps.
+record Group
+    # Its identifier.
+    group_id: str
+    # Where it stands.
+    phase: Phase
+    # Its generation, 0 before the first rebalance ends.
+    generation: i64
+    # The leader's identifier, "" for none.
+    leader: str
+    # The assignor its members agreed, "" before any.
+    protocol: str
+    # Its members, pending ones among them, in the order they first came.
+    members: [Member]
+    # Its offsets, in the order they were first committed.
+    offsets: [Committed]
+    # The number the next member's identifier takes.
+    next_member: i64
+    # When the rebalance under way began, milliseconds since 1970.
+    rebalance_began_ms: i64
+
+# A group of no member.
+#
+# - `group_id`: its identifier.
+function new(group_id: str) -> Group
+    return Group(
+        group_id: group_id,
+        phase: .empty,
+        generation: 0,
+        leader: "",
+        protocol: "",
+        members: [],
+        offsets: [],
+        next_member: 1,
+        rebalance_began_ms: 0
+    )
+
+# The name Kafka gives the group's phase, as `DescribeGroups` writes it.
+#
+# - `g`: the group.
+function phase_name(g: Group lent) -> str
+    return match g.phase
+        .empty      => "Empty"
+        .preparing  => "PreparingRebalance"
+        .completing => "CompletingRebalance"
+        .stable     => "Stable"
+
+# The place of member `member_id`, -1 where the group holds none.
+#
+# - `g`: the group.
+# - `member_id`: the identifier.
+function member_at(g: Group lent, member_id: str) -> i64
+    for i in range(from: 0, to: g.members.len())
+        if g.members[i].member_id == member_id
+            return i
+
+    return -1
+
+## Joining
+
+# What a join answered at once: an error, or the member waiting for the
+# rebalance to end.
+record JoinStep
+    # The error to answer now, `NONE` where the member waits.
+    error: i64
+    # The member's identifier: a new one with `MEMBER_ID_REQUIRED`.
+    member_id: str
+
+# A member's `JoinGroup`: a new member given its identifier, a known one
+# marked joined and the group made to rebalance.
+#
+# - `g`: the group.
+# - `member_id`: the identifier sent, "" for a member's first join.
+# - `client_id`: the client's identifier.
+# - `protocol_type`: `consumer`.
+# - `protocols`: the assignors the member speaks, in its order of choice.
+# - `metadata`: its subscription for the first of them.
+# - `session_ms`: its session's time.
+# - `rebalance_ms`: its time to join again.
+# - `now_ms`: the time now, milliseconds since 1970.
+function join_member(@g: Group, member_id: str, client_id: str, protocol_type: str, protocols: [str], metadata: [u8], session_ms: i64, rebalance_ms: i64, now_ms: i64) -> JoinStep
+    if protocol_type != "consumer" || protocols.len() == 0
+        return JoinStep(error: INCONSISTENT_GROUP_PROTOCOL, member_id: member_id)
+
+    if g.protocol != "" && g.members.len() > 0 && !contains(protocols, g.protocol)
+        return JoinStep(error: INCONSISTENT_GROUP_PROTOCOL, member_id: member_id)
+
+    if member_id == ""
+        id = f"{client_id}-{g.next_member}"
+        g.next_member @ g.next_member + 1
+        g.members @ g.members.push(
+            Member(member_id: id, client_id: client_id, metadata: metadata, session_ms: session_ms, rebalance_ms: rebalance_ms, heard_ms: now_ms, joined: false, assignment: [])
+        )
+        return JoinStep(error: MEMBER_ID_REQUIRED, member_id: id)
+    at = member_at(g, member_id: member_id)
+
+    if at < 0
+        return JoinStep(error: UNKNOWN_MEMBER_ID, member_id: member_id)
+    g.members[at].metadata @ metadata
+    g.members[at].session_ms @ session_ms
+    g.members[at].rebalance_ms @ rebalance_ms
+    g.members[at].heard_ms @ now_ms
+    g.members[at].joined @ true
+
+    if g.phase != .preparing
+        begin_rebalance(@g, now_ms: now_ms)
+    g.protocol @ protocols[0]
+    return JoinStep(error: NONE, member_id: member_id)
+
+# Whether `names` holds `name`.
+#
+# - `names`: the names.
+# - `name`: the one asked about.
+function contains(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# Moves the group to wait for every member to join again.
+#
+# - `g`: the group.
+# - `now_ms`: the time now.
+function begin_rebalance(@g: Group, now_ms: i64)
+    g.phase @ .preparing
+    g.rebalance_began_ms @ now_ms
+
+# Whether the rebalance under way can end: every member has joined, or the
+# longest of the members' times to join again has passed, those that did
+# not join then removed.
+#
+# - `g`: the group; members that did not join in time are removed.
+# - `now_ms`: the time now.
+#
+# Where it ends the generation moves, the first member that joined leads,
+# and the group waits for the leader's assignment; a group left with no
+# member is empty.
+function settle_join(@g: Group, now_ms: i64) -> bool
+    if g.phase != .preparing
+        return false
+    waiting: i64 @= 0
+    longest: i64 @= 0
+
+    for m in g.members
+        if !m.joined
+            waiting @ waiting + 1
+
+        if m.rebalance_ms > longest
+            longest @ m.rebalance_ms
+
+    if waiting > 0 && now_ms - g.rebalance_began_ms < longest
+        return false
+    kept: [Member] @= []
+
+    for m in g.members
+        if m.joined
+            kept @ kept.push(m)
+
+    g.members @ kept
+
+    if kept.len() == 0
+        g.phase @ .empty
+        g.leader @ ""
+        return true
+    g.generation @ g.generation + 1
+
+    if member_at(g, member_id: g.leader) < 0
+        g.leader @ kept[0].member_id
+    g.phase @ .completing
+
+    for i in range(from: 0, to: g.members.len())
+        g.members[i].joined @ false
+        g.members[i].assignment @ []
+
+    return true
+
+## Synchronizing
+
+# A member's `SyncGroup`: its error where it may not sync now; else, from
+# the leader, every member's assignment kept and the group stable.
+#
+# - `g`: the group.
+# - `member_id`: the member.
+# - `generation`: the generation it joined.
+# - `members`: the members the leader assigns, in its order; none from a
+#   follower.
+# - `assignments`: their assignments, in the same order.
+# - `now_ms`: the time now.
+#
+# Answers `NONE` where the member may read its assignment, now or once the
+# leader has synced.
+function sync(@g: Group, member_id: str, generation: i64, members: [str], assignments: [[u8]], now_ms: i64) -> i64
+    at = member_at(g, member_id: member_id)
+
+    if at < 0
+        return UNKNOWN_MEMBER_ID
+
+    if g.phase == .preparing
+        return REBALANCE_IN_PROGRESS
+
+    if generation != g.generation
+        return ILLEGAL_GENERATION
+    g.members[at].heard_ms @ now_ms
+
+    if member_id == g.leader && g.phase == .completing
+        for i in range(from: 0, to: members.len())
+            target = member_at(g, member_id: members[i])
+
+            if target >= 0
+                g.members[target].assignment @ assignments[i]
+
+        g.phase @ .stable
+    return NONE
+
+# Whether a member that synced may be answered its assignment: the leader
+# has synced the generation.
+#
+# - `g`: the group.
+function assignments_ready(g: Group lent) -> bool
+    return g.phase == .stable
+
+## Heartbeats and departures
+
+# A member's `Heartbeat`: its error, `REBALANCE_IN_PROGRESS` telling it to
+# join again.
+#
+# - `g`: the group; the member counted heard.
+# - `member_id`: the member.
+# - `generation`: the generation it holds.
+# - `now_ms`: the time now.
+function heartbeat(@g: Group, member_id: str, generation: i64, now_ms: i64) -> i64
+    at = member_at(g, member_id: member_id)
+
+    if at < 0
+        return UNKNOWN_MEMBER_ID
+    g.members[at].heard_ms @ now_ms
+
+    if g.phase == .preparing
+        return REBALANCE_IN_PROGRESS
+
+    if generation != g.generation
+        return ILLEGAL_GENERATION
+    return NONE
+
+# A member's `LeaveGroup`: it is removed, and the others rebalance.
+#
+# - `g`: the group.
+# - `member_id`: the member.
+# - `now_ms`: the time now.
+function leave(@g: Group, member_id: str, now_ms: i64) -> i64
+    at = member_at(g, member_id: member_id)
+
+    if at < 0
+        return UNKNOWN_MEMBER_ID
+    remove_at(@g, at: at, now_ms: now_ms)
+    return NONE
+
+# Removes every member not heard within its session's time, and answers how
+# many were removed.
+#
+# - `g`: the group.
+# - `now_ms`: the time now.
+function expire(@g: Group, now_ms: i64) -> i64
+    removed: i64 @= 0
+    i: i64 @= 0
+
+    while i < g.members.len()
+        if now_ms - g.members[i].heard_ms > g.members[i].session_ms
+            remove_at(@g, at: i, now_ms: now_ms)
+            removed @ removed + 1
+        else
+            i @ i + 1
+
+    return removed
+
+# Removes the member at `at`: the group empty where none is left, else
+# rebalancing.
+#
+# - `g`: the group.
+# - `at`: the member's place.
+# - `now_ms`: the time now.
+function remove_at(@g: Group, at: i64, now_ms: i64)
+    kept: [Member] @= []
+
+    for i in range(from: 0, to: g.members.len())
+        if i != at
+            kept @ kept.push(g.members[i])
+
+    g.members @ kept
+
+    if kept.len() == 0
+        g.phase @ .empty
+        g.leader @ ""
+    else
+        begin_rebalance(@g, now_ms: now_ms)
+
+## Offsets
+
+# The error a commit of `generation` by `member_id` meets: a commit from
+# outside the group's membership (generation -1, no member) is taken only
+# where the group has no member.
+#
+# - `g`: the group.
+# - `member_id`: the member, "" from outside.
+# - `generation`: the generation, -1 from outside.
+function commit_error(g: Group lent, member_id: str, generation: i64) -> i64
+    if generation < 0 && member_id == ""
+        if g.members.len() > 0
+            return UNKNOWN_MEMBER_ID
+        return NONE
+
+    if member_at(g, member_id: member_id) < 0
+        return UNKNOWN_MEMBER_ID
+
+    if g.phase == .preparing
+        return REBALANCE_IN_PROGRESS
+
+    if generation != g.generation
+        return ILLEGAL_GENERATION
+    return NONE
+
+# Keeps `offset` for `partition` of `topic`, replacing one kept before.
+#
+# - `g`: the group.
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `offset`: the offset of the next record to read.
+# - `metadata`: the text kept beside it.
+function keep_offset(@g: Group, topic: str, partition: i64, offset: i64, metadata: str)
+    for i in range(from: 0, to: g.offsets.len())
+        if g.offsets[i].topic == topic && g.offsets[i].partition == partition
+            g.offsets[i].offset @ offset
+            g.offsets[i].metadata @ metadata
+            return
+
+    g.offsets @ g.offsets.push(Committed(topic: topic, partition: partition, offset: offset, metadata: metadata))
+
+# The offset kept for `partition` of `topic`, -1 where none is.
+#
+# - `g`: the group.
+# - `topic`: the topic.
+# - `partition`: the partition.
+function offset_of(g: Group lent, topic: str, partition: i64) -> i64
+    for c in g.offsets
+        if c.topic == topic && c.partition == partition
+            return c.offset
+
+    return -1
+
+# The time now, milliseconds since 1970, for the coordinator's clock; the
+# epoch where the system's clock cannot be read.
+function clock_ms() -> i64
+    return time.unix_milliseconds(time.now().default(time.epoch()))
+
+test "join: a first join is given an identifier, the second waits, and the rebalance ends with it leading"
+    g @= new("g")
+    first = join_member(
+        @g,
+        member_id: "",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [1],
+        session_ms: 10_000,
+        rebalance_ms: 60_000,
+        now_ms: 0
+    )
+    assert first.error == MEMBER_ID_REQUIRED && first.member_id == "c-1"
+    again = join_member(
+        @g,
+        member_id: "c-1",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [1],
+        session_ms: 10_000,
+        rebalance_ms: 60_000,
+        now_ms: 1
+    )
+    assert again.error == NONE && g.phase == .preparing
+    assert settle_join(@g, now_ms: 2)
+    assert g.generation == 1 && g.leader == "c-1" && g.phase == .completing
+
+test "sync: the leader's assignment makes the group stable; an old generation and a stranger are refused"
+    g @= new("g")
+    _ = join_member(
+        @g,
+        member_id: "",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 10_000,
+        rebalance_ms: 60_000,
+        now_ms: 0
+    )
+    _ = join_member(
+        @g,
+        member_id: "c-1",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 10_000,
+        rebalance_ms: 60_000,
+        now_ms: 0
+    )
+    _ = settle_join(@g, now_ms: 0)
+    assert sync(@g, member_id: "c-1", generation: 0, members: [], assignments: [], now_ms: 0) == ILLEGAL_GENERATION
+    assert sync(@g, member_id: "x", generation: 1, members: [], assignments: [], now_ms: 0) == UNKNOWN_MEMBER_ID
+    assert sync(@g, member_id: "c-1", generation: 1, members: ["c-1"], assignments: [[9]], now_ms: 0) == NONE
+    assert assignments_ready(g) && g.members[0].assignment == [9]
+
+test "settle_join: a member that never joins again is removed once the time to join has passed"
+    g @= new("g")
+    _ = join_member(
+        @g,
+        member_id: "",
+        client_id: "a",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 10_000,
+        rebalance_ms: 100,
+        now_ms: 0
+    )
+    _ = join_member(
+        @g,
+        member_id: "",
+        client_id: "b",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 10_000,
+        rebalance_ms: 100,
+        now_ms: 0
+    )
+    _ = join_member(
+        @g,
+        member_id: "a-1",
+        client_id: "a",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 10_000,
+        rebalance_ms: 100,
+        now_ms: 0
+    )
+    assert !settle_join(@g, now_ms: 50)
+    assert settle_join(@g, now_ms: 100)
+    assert g.members.len() == 1 && g.leader == "a-1"
+
+test "heartbeat, expire, commit_error: a rebalance told, a silent member removed, a commit from outside refused while members remain"
+    g @= new("g")
+    _ = join_member(
+        @g,
+        member_id: "",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 100,
+        rebalance_ms: 100,
+        now_ms: 0
+    )
+    _ = join_member(
+        @g,
+        member_id: "c-1",
+        client_id: "c",
+        protocol_type: "consumer",
+        protocols: ["range"],
+        metadata: [],
+        session_ms: 100,
+        rebalance_ms: 100,
+        now_ms: 0
+    )
+    assert heartbeat(@g, member_id: "c-1", generation: 0, now_ms: 1) == REBALANCE_IN_PROGRESS
+    _ = settle_join(@g, now_ms: 1)
+    assert commit_error(g, member_id: "", generation: -1) == UNKNOWN_MEMBER_ID
+    assert expire(@g, now_ms: 500) == 1 && g.phase == .empty
+    assert commit_error(g, member_id: "", generation: -1) == NONE
+
+test "keep_offset, offset_of: kept, replaced, and none"
+    g @= new("g")
+    keep_offset(@g, topic: "t", partition: 0, offset: 5, metadata: "")
+    keep_offset(@g, topic: "t", partition: 0, offset: 9, metadata: "x")
+    assert offset_of(g, topic: "t", partition: 0) == 9 && g.offsets.len() == 1
+    assert offset_of(g, topic: "t", partition: 1) == -1
+
+test "join: a protocol type other than consumer and a stranger are refused"
+    g @= new("g")
+    assert join_member(@g, member_id: "", client_id: "c", protocol_type: "connect", protocols: ["range"], metadata: [], session_ms: 1, rebalance_ms: 1, now_ms: 0).error == INCONSISTENT_GROUP_PROTOCOL
+    assert join_member(@g, member_id: "who", client_id: "c", protocol_type: "consumer", protocols: ["range"], metadata: [], session_ms: 1, rebalance_ms: 1, now_ms: 0).error == UNKNOWN_MEMBER_ID

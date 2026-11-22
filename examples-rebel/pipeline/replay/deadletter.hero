@@ -1,0 +1,124 @@
+# A write the pipeline could not make, kept as a job of the jobs store in
+# PostgreSQL rather than lost or retried for ever: its bucket, key, tier
+# and codec, the SHA-256 of the raw batch and of the stored copy, the copy
+# itself in base 64, and why the write failed. It is enqueued in the same
+# transaction as the window's aggregates and its ledger rows, so the job
+# exists exactly where the window was counted. Its unique key is the
+# object's key: a window written again while its job waits does not keep a
+# second job for one object. `replayer` claims and writes these jobs.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/jobs
+use <rebel>/jobs/postgres_store
+use <rebel>/json
+use <rebel>/sql/postgres
+
+## Codes
+
+# The code of a job's payload that is not a kept write.
+constant INVALID: str
+    "invalid"
+
+## The job
+
+# The queue kept writes wait in.
+constant QUEUE: str
+    "replay"
+
+# The kind of a kept write.
+constant KIND: str
+    "s3_put"
+
+# The attempts a replay of one write has in all.
+constant MAX_ATTEMPTS: i64
+    8
+
+# A write kept for a replay.
+record Kept
+    # The bucket.
+    bucket: str
+    # The object's key.
+    key: str
+    # The tier, `hot`, `archive` or `cold`.
+    tier: str
+    # The codec.
+    codec: str
+    # The events the object holds.
+    events: i64
+    # The raw batch's size, in bytes.
+    raw_bytes: i64
+    # The raw batch's SHA-256.
+    sha256: str
+    # The stored copy.
+    data: [u8]
+    # Why the write failed.
+    error: str
+
+# The job's payload of `k`: every field by name, the copy in base 64 with
+# its own SHA-256 beside it.
+#
+# - `k`: the kept write.
+function payload_of(k: Kept) -> json.Value
+    members: {str: json.Value} @= {}
+    members["bucket"] @ .text(v: k.bucket)
+    members["key"] @ .text(v: k.key)
+    members["tier"] @ .text(v: k.tier)
+    members["codec"] @ .text(v: k.codec)
+    members["events"] @ .number(v: to_f64(k.events))
+    members["raw_bytes"] @ .number(v: to_f64(k.raw_bytes))
+    members["sha256"] @ .text(v: k.sha256)
+    members["stored_sha256"] @ .text(v: bytes.format_hex(crypto.sha256(k.data)))
+    members["data"] @ .text(v: bytes.format_base64(k.data))
+    members["error"] @ .text(v: k.error)
+    return .object(members: members)
+
+# The kept write a job's payload holds, its copy checked against the
+# SHA-256 kept beside it.
+#
+# - `v`: the payload.
+#
+# Fails `invalid` where a field is missing or of the wrong kind, or the
+# copy is not the one kept.
+function kept_of(v: json.Value) -> Kept?
+    data = bytes.parse_base64(json.text_of(json.member(v, key: "data")?)?)?
+    stored = json.text_of(json.member(v, key: "stored_sha256")?)?
+
+    if bytes.format_hex(crypto.sha256(data)) != stored
+        return fail(code: INVALID, msg: "the kept copy's SHA-256 is not the one kept beside it")
+    return ok(
+        Kept(bucket: json.text_of(json.member(v, key: "bucket")?)?, key: json.text_of(json.member(v, key: "key")?)?, tier: json.text_of(json.member(v, key: "tier")?)?, codec: json.text_of(json.member(v, key: "codec")?)?, events: json.int_of(json.member(v, key: "events")?)?, raw_bytes: json.int_of(json.member(v, key: "raw_bytes")?)?, sha256: json.text_of(json.member(v, key: "sha256")?)?, data: data, error: json.text_of(json.member(v, key: "error")?)?)
+    )
+
+# Enqueues `k` as a job of the replay queue and answers its id.
+#
+# - `db`: the connection, in the caller's transaction.
+# - `k`: the kept write.
+#
+# Fails `exists` where a job for the same object waits already, and as
+# `postgres_store.enqueue` fails.
+function keep(@db: postgres.Db, k: Kept) -> i64?
+    job @= jobs.new_job(KIND, payload: payload_of(k))
+    job.queue @ QUEUE
+    job.max_attempts @ MAX_ATTEMPTS
+    job.unique_key @ k.key
+    return postgres_store.enqueue(@db, job)
+
+test "payload_of, kept_of: a kept write reads back, a copy changed is refused"
+    k = Kept(
+        bucket: "b",
+        key: "archive/x.zst",
+        tier: "archive",
+        codec: "zstd",
+        events: 3,
+        raw_bytes: 120,
+        sha256: "ab",
+        data: [1, 2, 3],
+        error: "SlowDown"
+    )
+    back = kept_of(payload_of(k)).must()
+    assert back == k
+    changed: json.Value = .object(
+        members: {"data": .text(v: bytes.format_base64([9])), "stored_sha256": .text(v: bytes.format_hex(crypto.sha256([1])))}
+    )
+    assert kept_of(changed).is_err()

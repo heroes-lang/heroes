@@ -1,0 +1,240 @@
+# The cursor the PostgreSQL stand-in's parser reads a statement's tokens
+# with, the two failures every part of the parser gives (`42601` for what
+# is no SQL, `0A000` for SQL the engine does not run), and the values a
+# single token reads to: a number, an integer or an exact `numeric`, and
+# the text of an `interval` literal.
+
+use <rebel>/numbers
+use <rebel>/sql
+
+use standins/sql_lex
+use standins/sql_tree
+
+## Codes
+
+# The code of a statement that is no SQL the engine reads.
+constant INVALID: str
+    "invalid"
+
+# The code of SQL the engine does not run.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## The cursor
+
+# The tokens of a statement and where reading stands.
+record Parser
+    # The tokens, ending with one of kind `end`.
+    tokens: [sql_lex.Token]
+    # The place of the next token.
+    at: i64
+
+# A parser at the start of `tokens`.
+#
+# - `tokens`: the tokens, as `sql_lex.tokens` answers them.
+function parser(tokens: [sql_lex.Token]) -> Parser
+    return Parser(tokens: tokens, at: 0)
+
+# The next token, not taken.
+#
+# - `p`: the parser.
+function peek(p: Parser lent) -> sql_lex.Token
+    return p.tokens[p.at]
+
+# The token after the next, not taken; the end where there is none.
+#
+# - `p`: the parser.
+function peek_second(p: Parser lent) -> sql_lex.Token
+    if p.at + 1 < p.tokens.len()
+        return p.tokens[p.at + 1]
+    return p.tokens[p.tokens.len() - 1]
+
+# Takes the next token.
+#
+# - `p`: the parser, moved past it unless it is the end.
+function advance(@p: Parser) -> sql_lex.Token
+    t = p.tokens[p.at]
+
+    if t.kind != "end"
+        p.at @ p.at + 1
+    return t
+
+# Whether the next token is the word `word`.
+#
+# - `p`: the parser.
+# - `word`: the word, in lower case.
+function at_word(p: Parser lent, word: str) -> bool
+    t = peek(p)
+    return t.kind == "word" && t.text == word
+
+# Whether the next token is the operator `op`.
+#
+# - `p`: the parser.
+# - `op`: the operator.
+function at_op(p: Parser lent, op: str) -> bool
+    t = peek(p)
+    return t.kind == "op" && t.text == op
+
+# Takes the word `word` where it is next, and answers whether it was.
+#
+# - `p`: the parser.
+# - `word`: the word.
+function take_word(@p: Parser, word: str) -> bool
+    if at_word(p, word: word)
+        _ = advance(@p)
+        return true
+    return false
+
+# Takes the operator `op` where it is next, and answers whether it was.
+#
+# - `p`: the parser.
+# - `op`: the operator.
+function take_op(@p: Parser, op: str) -> bool
+    if at_op(p, op: op)
+        _ = advance(@p)
+        return true
+    return false
+
+# Takes the word `word`, which must be next.
+#
+# - `p`: the parser.
+# - `word`: the word.
+#
+# Fails `invalid` with `42601` where another token is next.
+function expect_word(@p: Parser, word: str) -> ()?
+    if take_word(@p, word: word)
+        return ok()
+    return syntax_error(p)
+
+# Takes the operator `op`, which must be next.
+#
+# - `p`: the parser.
+# - `op`: the operator.
+#
+# Fails `invalid` with `42601` where another token is next.
+function expect_op(@p: Parser, op: str) -> ()?
+    if take_op(@p, op: op)
+        return ok()
+    return syntax_error(p)
+
+# Takes a name: an unquoted word or a quoted name.
+#
+# - `p`: the parser.
+#
+# Fails `invalid` with `42601` where no name is next.
+function take_name(@p: Parser) -> str?
+    t = peek(p)
+
+    if t.kind == "word" || t.kind == "name"
+        _ = advance(@p)
+        return ok(t.text)
+    return syntax_error(p)
+
+# The failure PostgreSQL gives for the token where reading stopped.
+#
+# - `p`: the parser.
+function syntax_error<T>(p: Parser lent) -> T?
+    t = peek(p)
+
+    near = if t.kind == "end"
+        "end of input"
+    else
+        f"\"{t.text}\""
+    return fail(
+        code: INVALID,
+        msg: sql.failure_message(database_code: "42601", message: f"syntax error at or near {near}")
+    )
+
+# The failure for SQL the engine does not run.
+#
+# - `what`: what it is, in a few words.
+function unsupported<T>(what: str) -> T?
+    return fail(
+        code: UNSUPPORTED,
+        msg: sql.failure_message(database_code: "0A000", message: f"the stand-in does not run {what}")
+    )
+
+## Literals
+
+# A number as written: an integer, or a `numeric` where it has a point.
+#
+# - `text`: the digits, and a point at most once.
+#
+# Fails `invalid` with `22003` for an integer past `bigint`'s, and
+# `42601` for two points.
+function number_literal(text: str) -> sql_tree.Expr?
+    point: i64 @= -1
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '.'
+            if point >= 0
+                return fail(
+                    code: INVALID,
+                    msg: sql.failure_message(database_code: "42601", message: f"syntax error at or near \"{text}\"")
+                )
+            point @ i
+
+    if point < 0
+        return match numbers.parse_int(text)
+            .ok n => ok(.literal(value: .integer(v: n)))
+            .err _ => fail(
+                code: INVALID,
+                msg: sql.failure_message(database_code: "22003", message: f"value \"{text}\" is out of range for type bigint")
+            )
+
+    digits = text.slice(from: 0, to: point) + text.slice(from: point + 1, to: text.len())
+    scale = text.len() - point - 1
+
+    return match numbers.parse_int(digits)
+        .ok n => ok(.literal(value: .numeric(unscaled: n, scale: scale)))
+        .err _ => fail(
+            code: INVALID,
+            msg: sql.failure_message(database_code: "22003", message: f"the numeric \"{text}\" has more digits than the stand-in keeps")
+        )
+
+# `interval '<n> <unit>'` as microseconds, for the units the engine reads:
+# microsecond, millisecond, second, minute, hour and day, singular or
+# plural.
+#
+# - `text`: the string after `interval`.
+#
+# Fails `invalid` with `22007` for another form.
+function interval_literal(text: str) -> sql_tree.Expr?
+    space: i64 @= -1
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == ' ' && space < 0
+            space @ i
+
+    refused: sql_tree.Expr? = fail(
+        code: INVALID,
+        msg: sql.failure_message(database_code: "22007", message: f"invalid input syntax for type interval: \"{text}\"")
+    )
+
+    if space < 0
+        return refused
+
+    n = match numbers.parse_int(text.slice(from: 0, to: space))
+        .ok v  => v
+        .err _ => return refused
+
+    unit = text.slice(from: space + 1, to: text.len())
+
+    each = match unit
+        "microsecond" | "microseconds" => 1
+        "millisecond" | "milliseconds" => 1_000
+        "second" | "seconds"           => 1_000_000
+        "minute" | "minutes"           => 60_000_000
+        "hour" | "hours"               => 3_600_000_000
+        "day" | "days"                 => 86_400_000_000
+        _                              => 0
+
+    if each == 0 || n < 0 || n > 100_000_000
+        return refused
+    return ok(.literal(value: .interval(micros: n * each)))
+
+test "interval_literal, number_literal: each unit, a number with a point, and what is neither"
+    assert interval_literal("2 seconds").must() == .literal(value: .interval(micros: 2_000_000))
+    assert interval_literal("2 fortnights").is_err()
+    assert number_literal("1.25").must() == .literal(value: .numeric(unscaled: 125, scale: 2))
+    assert number_literal("1.2.3").is_err()

@@ -1,0 +1,369 @@
+# PostgreSQL's frontend/backend protocol 3.0 as the stand-in reads and
+# writes it, by the "Message Formats" chapter of PostgreSQL 17's
+# documentation (read 2026-11-21): a startup message is an `Int32` length
+# then its body, every later message a type byte, an `Int32` length that
+# counts itself, then its body; a string is UTF-8 ended by a zero byte.
+# Each backend message the stand-in sends is written here whole, and each
+# frontend message read back into its parts. A message from outside never
+# aborts the stand-in: a read past a body fails `invalid`.
+
+use <rebel>/bytes
+
+use standins/sql_datum
+use standins/sql_tree
+
+## Codes
+
+# The code of bytes that are no message of the protocol.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest message read, in bytes; a longer one ends its connection.
+constant MOST_MESSAGE_BYTES: i64
+    104_857_600
+
+# The protocol's version 3.0, as a startup message names it.
+constant PROTOCOL_3: i64
+    196_608
+
+# The code a startup message gives for a request for TLS.
+constant SSL_REQUEST: i64
+    80_877_103
+
+# The code a startup message gives for a request for GSSAPI encryption.
+constant GSS_REQUEST: i64
+    80_877_104
+
+# The code a startup message gives for a request to cancel a statement.
+constant CANCEL_REQUEST: i64
+    80_877_102
+
+## Frontend messages
+
+# One message a client sent.
+record Message
+    # Its type byte, 0 for a startup message, which has none.
+    kind: u8
+    # Its body, after the length.
+    body: [u8]
+
+# The first whole message `pending` holds, and the bytes it took; none
+# where it does not hold one yet.
+record Taken
+    # Whether a whole message was there.
+    whole: bool
+    # The message.
+    message: Message
+    # How many bytes of `pending` it took.
+    used: i64
+
+# The first whole message of `pending`.
+#
+# - `pending`: the bytes a client sent and the stand-in has not read.
+# - `startup`: whether the next message is a startup message, which has no
+#   type byte.
+#
+# Fails `invalid` for a length below 4 or past `MOST_MESSAGE_BYTES`.
+function take(pending: [u8], startup: bool) -> Taken?
+    none = Taken(whole: false, message: Message(kind: 0, body: []), used: 0)
+
+    at = if startup
+        0
+    else
+        1
+
+    if pending.len() < at + 4
+        return ok(none)
+    length = to_i64(bytes.decode_i32_be(pending, at: at)?).default(-1)
+
+    if length < 4 || length > MOST_MESSAGE_BYTES
+        return fail(code: INVALID, msg: f"a message says it is {length} bytes long")
+
+    if pending.len() < at + length
+        return ok(none)
+
+    kind: u8 = if startup
+        0
+    else
+        pending[0]
+    body = pending.slice(from: at + 4, to: at + length)
+    return ok(Taken(whole: true, message: Message(kind: kind, body: body), used: at + length))
+
+# A message's body being read.
+record Body
+    # The bytes.
+    data: [u8]
+    # Where the next read begins.
+    at: i64
+
+# A reader at the start of `data`.
+#
+# - `data`: a message's body.
+function body_of(data: [u8]) -> Body
+    return Body(data: data, at: 0)
+
+# The next `Int16`.
+#
+# - `b`: the body.
+#
+# Fails `invalid` past the end.
+function take_i16(@b: Body) -> i64?
+    if b.data.len() - b.at < 2
+        return fail(code: INVALID, msg: "a message ends inside an Int16")
+    n = to_i64(bytes.decode_i16_be(b.data, at: b.at)?).default(0)
+    b.at @ b.at + 2
+    return ok(n)
+
+# The next `Int32`.
+#
+# - `b`: the body.
+#
+# Fails `invalid` past the end.
+function take_i32(@b: Body) -> i64?
+    if b.data.len() - b.at < 4
+        return fail(code: INVALID, msg: "a message ends inside an Int32")
+    n = to_i64(bytes.decode_i32_be(b.data, at: b.at)?).default(0)
+    b.at @ b.at + 4
+    return ok(n)
+
+# The next `n` bytes.
+#
+# - `b`: the body.
+# - `n`: how many.
+#
+# Fails `invalid` where fewer remain or `n` is below 0.
+function take_raw(@b: Body, n: i64) -> [u8]?
+    if n < 0 || n > b.data.len() - b.at
+        return fail(code: INVALID, msg: f"a message holds no {n} bytes more")
+    out = b.data.slice(from: b.at, to: b.at + n)
+    b.at @ b.at + n
+    return ok(out)
+
+# The next string, ended by a zero byte.
+#
+# - `b`: the body.
+#
+# Fails `invalid` where no zero byte ends it or it is not UTF-8.
+function take_cstring(@b: Body) -> str?
+    start = b.at
+
+    while b.at < b.data.len() && b.data[b.at] != 0
+        b.at @ b.at + 1
+
+    if b.at >= b.data.len()
+        return fail(code: INVALID, msg: "a string of a message has no zero byte to end it")
+    raw = b.data.slice(from: start, to: b.at)
+    b.at @ b.at + 1
+
+    match bytes.to_text(raw)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: INVALID, msg: "a string of a message is not UTF-8")
+
+## Backend messages
+
+# A message of type `kind` holding `body`, framed.
+#
+# - `kind`: the type byte.
+# - `body`: the body.
+function message(kind: u8, body: [u8]) -> [u8]
+    out: [u8] @= [kind]
+    push_i32(@out, v: body.len() + 4)
+
+    for x in body
+        out @ out.push(x)
+
+    return out
+
+# `out` with the `Int32` `v` after it.
+#
+# - `out`: the bytes being written.
+# - `v`: the value.
+function push_i32(@out: [u8], v: i64)
+    for b in bytes.encode_i32_be(to_i32(v).default(0))
+        out @ out.push(b)
+
+# `out` with the `Int16` `v` after it.
+#
+# - `out`: the bytes being written.
+# - `v`: the value.
+function push_i16(@out: [u8], v: i64)
+    for b in bytes.encode_i16_be(to_i16(v).default(0))
+        out @ out.push(b)
+
+# `out` with the string `s` and its zero byte after it.
+#
+# - `out`: the bytes being written.
+# - `s`: the text, holding no zero byte.
+function push_cstring(@out: [u8], s: str)
+    for b in bytes.from_text(s)
+        out @ out.push(b)
+
+    out @ out.push(0)
+
+# `AuthenticationOk`, `AuthenticationSASL`, `AuthenticationSASLContinue` or
+# `AuthenticationSASLFinal`: the code, then its data.
+#
+# - `code`: 0, 10, 11 or 12.
+# - `data`: the mechanisms' names each ended by a zero byte and a last
+#   zero for 10, the server's SCRAM message for 11 and 12, none for 0.
+function authentication(code: i64, data: [u8]) -> [u8]
+    body: [u8] @= []
+    push_i32(@body, v: code)
+
+    for x in data
+        body @ body.push(x)
+
+    return message('R', body: body)
+
+# `ParameterStatus`.
+#
+# - `name`: the parameter.
+# - `value`: its value.
+function parameter_status(name: str, value: str) -> [u8]
+    body: [u8] @= []
+    push_cstring(@body, s: name)
+    push_cstring(@body, s: value)
+    return message('S', body: body)
+
+# `BackendKeyData`: the number and the secret a cancel request names.
+#
+# - `pid`: the session's number.
+# - `secret`: its secret.
+function backend_key_data(pid: i64, secret: i64) -> [u8]
+    body: [u8] @= []
+    push_i32(@body, v: pid)
+    push_i32(@body, v: secret)
+    return message('K', body: body)
+
+# `ReadyForQuery`.
+#
+# - `status`: `I` idle, `T` in a transaction, `E` in a failed one.
+function ready_for_query(status: u8) -> [u8]
+    return message('Z', body: [status])
+
+# `RowDescription` of columns named `names` of types `types`, every one in
+# the text format.
+#
+# - `names`: the columns' names.
+# - `types`: their types, as the engine names them.
+function row_description(names: [str], types: [str]) -> [u8]
+    body: [u8] @= []
+    push_i16(@body, v: names.len())
+
+    for i in range(from: 0, to: names.len())
+        push_cstring(@body, s: names[i])
+        push_i32(@body, v: 0)
+        push_i16(@body, v: 0)
+
+        kind = if i < types.len()
+            types[i]
+        else
+            "text"
+        push_i32(@body, v: sql_datum.oid_of(kind))
+        push_i16(@body, v: size_of(kind))
+        push_i32(@body, v: -1)
+        push_i16(@body, v: 0)
+
+    return message('T', body: body)
+
+# The size `pg_type` gives a type, -1 for one of varying length.
+#
+# - `kind`: the type.
+function size_of(kind: str) -> i64
+    return match kind
+        "bool"        => 1
+        "int2"        => 2
+        "int4"        => 4
+        "int8"        => 8
+        "float8"      => 8
+        "timestamptz" => 8
+        "interval"    => 16
+        "void"        => 4
+        _             => -1
+
+# `DataRow` of `values` in the text format, NULL as no value.
+#
+# - `values`: the row's values.
+function data_row(values: [sql_tree.Datum]) -> [u8]
+    body: [u8] @= []
+    push_i16(@body, v: values.len())
+
+    for v in values
+        if v == .null_value
+            push_i32(@body, v: -1)
+        else
+            text = bytes.from_text(sql_datum.text_of(v))
+            push_i32(@body, v: text.len())
+
+            for x in text
+                body @ body.push(x)
+
+    return message('D', body: body)
+
+# `CommandComplete`.
+#
+# - `tag`: the command's tag.
+function command_complete(tag: str) -> [u8]
+    body: [u8] @= []
+    push_cstring(@body, s: tag)
+    return message('C', body: body)
+
+# `ParameterDescription`.
+#
+# - `types`: each parameter's type.
+function parameter_description(types: [str]) -> [u8]
+    body: [u8] @= []
+    push_i16(@body, v: types.len())
+
+    for t in types
+        push_i32(@body, v: sql_datum.oid_of(t))
+
+    return message('t', body: body)
+
+# `ErrorResponse` or `NoticeResponse`: the severity in both its fields, the
+# SQLSTATE and the message.
+#
+# - `kind`: `E` for an error, `N` for a notice.
+# - `severity`: `ERROR`, `FATAL`, `NOTICE` or `WARNING`.
+# - `state`: the SQLSTATE.
+# - `text`: the words.
+function report(kind: u8, severity: str, state: str, text: str) -> [u8]
+    body: [u8] @= []
+    body @ body.push('S')
+    push_cstring(@body, s: severity)
+    body @ body.push('V')
+    push_cstring(@body, s: severity)
+    body @ body.push('C')
+    push_cstring(@body, s: state)
+    body @ body.push('M')
+    push_cstring(@body, s: text)
+    body @ body.push(0)
+    return message(kind, body: body)
+
+test "take: a startup message without a type byte, a typed one, and one not whole yet"
+    startup: [u8] = [0, 0, 0, 8, 0, 3, 0, 0]
+    t = take(startup, startup: true).must()
+    assert t.whole && t.used == 8 && t.message.body == [0, 3, 0, 0]
+    q = message('Q', body: [65, 0])
+    typed = take(q, startup: false).must()
+    assert typed.whole && typed.message.kind == 'Q' && typed.message.body == [65, 0] && typed.used == 7
+    assert !take(q.slice(from: 0, to: 6), startup: false).must().whole
+    assert take([81, 0, 0, 0, 2], startup: false).is_err()
+
+test "take_cstring, take_i16, take_i32: what the push functions write reads back; a string with no end is refused"
+    out: [u8] @= []
+    push_cstring(@out, s: "user")
+    push_i16(@out, v: -1)
+    push_i32(@out, v: 196608)
+    b @= body_of(out)
+    assert take_cstring(@b).must() == "user" && take_i16(@b).must() == -1 && take_i32(@b).must() == 196608
+    open @= body_of([65, 66])
+    assert take_cstring(@open).is_err()
+
+test "data_row, row_description: a NULL is a length of -1, a type's number named"
+    row = data_row([.null_value, .integer(v: 42)])
+    assert row == ['D', 0, 0, 0, 16, 0, 2, 255, 255, 255, 255, 0, 0, 0, 2, '4', '2']
+    described = row_description(names: ["n"], types: ["int8"])
+    assert described[0] == 'T' && described.len() == 1 + 4 + 2 + 2 + 18

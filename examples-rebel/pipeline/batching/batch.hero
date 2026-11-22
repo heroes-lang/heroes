@@ -1,0 +1,105 @@
+# A closed window cut into batches, one per topic: the topic's events in
+# the order Kafka kept them (partition, then offset), each written as one
+# NDJSON line, and the SHA-256 of those raw bytes, which every compressed
+# copy and every replay is checked against before it counts as written.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/lists
+
+use batching/windows
+use events/event
+
+## Batches
+
+# The events of one topic in one window, written.
+record Batch
+    # The topic.
+    topic: str
+    # The window's start, milliseconds since 1970.
+    window_start_ms: i64
+    # The events, by partition then offset.
+    events: [event.Event]
+    # The NDJSON: a line per event, each ended by a line feed.
+    raw: [u8]
+    # The SHA-256 of `raw`, in lower-case hexadecimal.
+    sha256: str
+
+# The batches of `w`, one per topic, by the topics' names.
+#
+# - `w`: a closed window.
+function batches_of(w: windows.Window) -> [Batch]
+    topics: [str] @= []
+
+    for e in w.events
+        seen @= false
+
+        for t in topics
+            if t == e.topic
+                seen @ true
+
+        if !seen
+            topics @ topics.push(e.topic)
+
+    out: [Batch] @= []
+
+    for topic in sort(topics)
+        mine: [event.Event] @= []
+
+        for e in w.events
+            if e.topic == topic
+                mine @ mine.push(e)
+
+        out @ out.push(
+            batch_of(topic, window_start_ms: w.start_ms, events: lists.sort_by(mine, less: event.comes_before))
+        )
+
+    return out
+
+# A batch of `events`, already in their order.
+#
+# - `topic`: the topic.
+# - `window_start_ms`: the window's start.
+# - `events`: the events.
+function batch_of(topic: str, window_start_ms: i64, events: [event.Event]) -> Batch
+    lines: [str] @= []
+
+    for e in events
+        lines @ lines.push(event.line_of(e) + "\n")
+
+    raw = bytes.from_text(lines.join(""))
+    return Batch(
+        topic: topic,
+        window_start_ms: window_start_ms,
+        events: events,
+        raw: raw,
+        sha256: bytes.format_hex(crypto.sha256(raw))
+    )
+
+# An event of `kind` carrying `value`, for the tests of the modules that
+# read batches.
+#
+# - `kind`: its type.
+# - `value`: its value.
+function sample_event(kind: str, value: f64) -> event.Event
+    return event.Event(
+        topic: "orders",
+        partition: 0,
+        offset: 0,
+        id: "e",
+        kind: kind,
+        at_ms: 0,
+        user: "",
+        value: value,
+        format: "json"
+    )
+
+test "batches_of: one batch per topic, by name, its events by partition then offset"
+    e1 = windows.sample("orders", partition: 1, offset: 0, at_ms: 1_000)
+    e2 = windows.sample("clicks", partition: 0, offset: 4, at_ms: 2_000)
+    e3 = windows.sample("orders", partition: 0, offset: 9, at_ms: 3_000)
+    batches = batches_of(windows.Window(start_ms: 0, events: [e1, e2, e3]))
+    assert batches.len() == 2 && batches[0].topic == "clicks" && batches[1].topic == "orders"
+    assert batches[1].events[0].partition == 0 && batches[1].events[1].partition == 1
+    assert batches[1].sha256 == bytes.format_hex(crypto.sha256(batches[1].raw))
+    assert bytes.to_text(batches[0].raw).must() == event.line_of(e2) + "\n"

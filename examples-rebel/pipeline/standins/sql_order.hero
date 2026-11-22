@@ -1,0 +1,241 @@
+# The order of the PostgreSQL stand-in's values and rows, as PostgreSQL
+# orders them: an untyped side read as the other's type, integers, exact
+# numerics and floats compared by value (a NaN after every number), texts
+# by their bytes as the C collation orders them, and rows by their `ORDER
+# BY` keys, stably, NULLs last ascending and first descending. Two types
+# PostgreSQL does not compare are refused `42883`.
+
+use <rebel>/json
+use <rebel>/math
+
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_tree
+
+## Values
+
+# How `a` stands to `b`: -1 before, 0 equal, 1 after; an untyped side read
+# as the other's type.
+#
+# - `a`: a value, not NULL.
+# - `b`: another, not NULL.
+#
+# Fails `invalid` with `42883` where the two are of types PostgreSQL does
+# not compare, and as `coerce` fails.
+function compare(a: sql_tree.Datum, b: sql_tree.Datum) -> i64?
+    left: sql_tree.Datum @= a
+    right: sql_tree.Datum @= b
+
+    if sql_datum.type_of(a) == "unknown" && sql_datum.type_of(b) != "unknown"
+        left @ sql_cast.cast(a, to: sql_datum.type_of(b))?
+
+    if sql_datum.type_of(b) == "unknown" && sql_datum.type_of(a) != "unknown"
+        right @ sql_cast.cast(b, to: sql_datum.type_of(a))?
+
+    match left
+        .integer x =>
+            match right
+                .integer y => return ok(sign(x.v - y.v))
+                .float y   => return ok(order_floats(a: to_f64(x.v), b: y.v))
+                .numeric y => return compare_numeric(
+                    a_unscaled: x.v,
+                    a_scale: 0,
+                    b_unscaled: y.unscaled,
+                    b_scale: y.scale
+                )
+                .null_value | .boolean _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .float x =>
+            match right
+                .float y => return ok(order_floats(a: x.v, b: y.v))
+                .integer y => return ok(order_floats(a: x.v, b: to_f64(y.v)))
+                .null_value | .boolean _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .numeric x =>
+            match right
+                .numeric y => return compare_numeric(
+                    a_unscaled: x.unscaled,
+                    a_scale: x.scale,
+                    b_unscaled: y.unscaled,
+                    b_scale: y.scale
+                )
+                .integer y => return compare_numeric(
+                    a_unscaled: x.unscaled,
+                    a_scale: x.scale,
+                    b_unscaled: y.v,
+                    b_scale: 0
+                )
+                .null_value | .boolean _ | .float _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .text _ | .unknown _ =>
+            match right
+                .text _ | .unknown _ => return ok(
+                    compare_text(a: sql_cast.text_value(left), b: sql_cast.text_value(right))
+                )
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .boolean x =>
+            match right
+                .boolean y => return ok(sign(sql_cast.truth_number(x.v) - sql_cast.truth_number(y.v)))
+                .null_value | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .instant x =>
+            match right
+                .instant y => return ok(sign(x.micros - y.micros))
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .interval _ | .jsonb _ => _ = 0
+        .interval x =>
+            match right
+                .interval y => return ok(sign(x.micros - y.micros))
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .jsonb _ => _ = 0
+        .jsonb x =>
+            match right
+                .jsonb y => return ok(compare_text(a: json.format(x.v).default(""), b: json.format(y.v).default("")))
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ => _ = 0
+        .null_value => _ = 0
+
+    return sql_datum.refused(
+        state: "42883",
+        message: f"operator does not exist: {sql_datum.type_of(a)} = {sql_datum.type_of(b)}"
+    )
+
+# -1, 0 or 1, as `n` is below, at or above zero.
+#
+# - `n`: the number.
+function sign(n: i64) -> i64
+    if n < 0
+        return -1
+
+    if n > 0
+        return 1
+    return 0
+
+# The order of two floats, a NaN after every other, as PostgreSQL orders
+# them.
+#
+# - `a`: a float.
+# - `b`: another.
+function order_floats(a: f64, b: f64) -> i64
+    if a != a || b != b
+        if a != a && b != b
+            return 0
+
+        if a != a
+            return 1
+        return -1
+
+    if a < b
+        return -1
+
+    if a > b
+        return 1
+    return 0
+
+# The order of two exact numerics, each brought to the larger scale.
+#
+# - `a_unscaled`: the first's digits.
+# - `a_scale`: its scale.
+# - `b_unscaled`: the second's digits.
+# - `b_scale`: its scale.
+function compare_numeric(a_unscaled: i64, a_scale: i64, b_unscaled: i64, b_scale: i64) -> i64?
+    scale = math.max_i64(a: a_scale, b: b_scale)
+    a = rescaled(unscaled: a_unscaled, from: a_scale, to: scale)?
+    b = rescaled(unscaled: b_unscaled, from: b_scale, to: scale)?
+    return ok(sign(a - b))
+
+# `unscaled` of scale `from` written at scale `to`, at least `from`.
+#
+# - `unscaled`: the digits.
+# - `from`: their scale.
+# - `to`: the scale asked.
+#
+# Fails `invalid` with `22003` where the digits would pass an `i64`.
+function rescaled(unscaled: i64, from: i64, to: i64) -> i64?
+    out: i64 @= unscaled
+
+    for _ in range(from: from, to: to)
+        match math.multiply_i64(a: out, b: 10)
+            .ok n  => out @ n
+            .err _ => return sql_datum.refused(state: "22003", message: "numeric field overflow")
+
+    return ok(out)
+
+# The order of two texts by their bytes, as PostgreSQL's C collation
+# orders them.
+#
+# - `a`: a text.
+# - `b`: another.
+function compare_text(a: str, b: str) -> i64
+    i: i64 @= 0
+
+    while i < a.len() && i < b.len()
+        if a[i] != b[i]
+            if a[i] < b[i]
+                return -1
+            return 1
+        i @ i + 1
+
+    return sign(a.len() - b.len())
+
+## Rows
+
+# `rows` in the order of their keys, stable, NULLs after every value where
+# a key ascends and before where it descends.
+#
+# - `rows`: the rows.
+# - `sort_keys`: each row's keys.
+# - `orders`: which way each key goes.
+function ordered_rows(rows: [[sql_tree.Datum]], sort_keys: [[sql_tree.Datum]], orders: [sql_tree.Order]) -> [[sql_tree.Datum]]?
+    places: [i64] @= []
+
+    for i in range(from: 0, to: rows.len())
+        j: i64 @= places.len()
+
+        while j > 0 && order_of(a: sort_keys[i], b: sort_keys[places[j - 1]], orders: orders)? < 0
+            j @ j - 1
+
+        moved: [i64] @= []
+
+        for k in range(from: 0, to: places.len())
+            if k == j
+                moved @ moved.push(i)
+            moved @ moved.push(places[k])
+
+        if j == places.len()
+            moved @ moved.push(i)
+        places @ moved
+
+    out: [[sql_tree.Datum]] @= []
+
+    for p in places
+        out @ out.push(rows[p])
+
+    return ok(out)
+
+# How a row's keys stand to another's: -1 before, 0 tied, 1 after.
+#
+# - `a`: one row's keys.
+# - `b`: the other's.
+# - `orders`: which way each key goes.
+function order_of(a: [sql_tree.Datum], b: [sql_tree.Datum], orders: [sql_tree.Order]) -> i64?
+    for i in range(from: 0, to: orders.len())
+        x = a[i]
+        y = b[i]
+        step: i64 @= 0
+
+        if x == .null_value && y == .null_value
+            step @ 0
+        else if x == .null_value
+            step @ 1
+        else if y == .null_value
+            step @ -1
+        else
+            step @ compare(a: x, b: y)?
+
+        if orders[i].descending
+            step @ 0 - step
+
+        if step != 0
+            return ok(step)
+
+    return ok(0)
+
+test "compare: an untyped side read as the other's type; integers against numerics; types that do not compare"
+    assert compare(a: .integer(v: 5), b: .unknown(v: "5")).must() == 0
+    assert compare(a: .integer(v: 2), b: .numeric(unscaled: 25, scale: 1)).must() == -1
+    assert compare(a: .text(v: "b"), b: .text(v: "a")).must() == 1
+    assert compare(a: .text(v: "a"), b: .integer(v: 1)).is_err()

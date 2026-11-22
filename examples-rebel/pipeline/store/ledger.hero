@@ -1,0 +1,94 @@
+# The ledger of the objects the pipeline wrote, or keeps to write: one row
+# by key, saying its tier and codec, its window, how many events it holds,
+# its sizes raw and stored, the SHA-256 of its raw bytes, and whether it is
+# stored or waits for a replay. A batch's rows are written in the same
+# transaction as its aggregates and any job that keeps a failed write, so
+# the database never says a window was written that was not, nor loses a
+# write that failed.
+
+use <rebel>/sql
+use <rebel>/sql/postgres
+use <rebel>/time
+
+## Rows
+
+# One object of the ledger.
+record Entry
+    # The object's key.
+    key: str
+    # The topic.
+    topic: str
+    # `hot`, `archive` or `cold`.
+    tier: str
+    # `lz4`, `zstd` or `bzip2`.
+    codec: str
+    # The window's start; for a cold export, its day's midnight.
+    window_start: time.Instant
+    # The events it holds.
+    events: i64
+    # Its raw size, in bytes.
+    raw_bytes: i64
+    # Its stored size, in bytes.
+    stored_bytes: i64
+    # The SHA-256 of its raw bytes.
+    sha256: str
+    # `stored`, or `pending_replay` while a job keeps its write.
+    state: str
+
+# The statement an entry is written with.
+constant UPSERT: str
+    "INSERT INTO batches (key, topic, tier, codec, window_start, events, raw_bytes, stored_bytes, sha256, state) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (key) DO UPDATE SET events = excluded.events, raw_bytes = excluded.raw_bytes, stored_bytes = excluded.stored_bytes, sha256 = excluded.sha256, state = excluded.state, written_at = now()"
+
+# Writes `e`, replacing the row of its key.
+#
+# - `db`: the connection, in the caller's transaction or not.
+# - `e`: the entry.
+#
+# Fails with the database's failure.
+function record_entry(@db: postgres.Db, e: Entry) -> ()?
+    _ = postgres.exec(@db, UPSERT, [.text(v: e.key), .text(v: e.topic), .text(v: e.tier), .text(v: e.codec), .instant(v: e.window_start), .integer(v: e.events), .integer(v: e.raw_bytes), .integer(v: e.stored_bytes), .text(v: e.sha256), .text(v: e.state)])?
+    return ok()
+
+# Marks the object `key` stored, once a replay wrote it.
+#
+# - `db`: the connection.
+# - `key`: the object's key.
+#
+# Fails `not_found` where the ledger holds no such key, and with the
+# database's failure.
+function mark_stored(@db: postgres.Db, key: str) -> ()?
+    r = postgres.exec(@db, "UPDATE batches SET state = 'stored', written_at = now() WHERE key = $1", [.text(v: key)])?
+
+    if r.rows_affected == 0
+        return fail(code: sql.NOT_FOUND, msg: f"the ledger holds no object {key}")
+    return ok()
+
+# How many objects of `topic` whose window starts from `from` and before
+# `to` wait for a replay.
+#
+# - `db`: the connection.
+# - `topic`: the topic.
+# - `from`: the first instant counted.
+# - `to`: the first instant not counted.
+#
+# Fails with the database's failure.
+function pending_between(@db: postgres.Db, topic: str, from: time.Instant, to: time.Instant) -> i64?
+    row = postgres.query_one(@db, "SELECT count(*) AS pending FROM batches WHERE topic = $1 AND state = 'pending_replay' AND window_start >= $2 AND window_start < $3", [.text(v: topic), .instant(v: from), .instant(v: to)])?
+    return sql.integer_at(row, 0)
+
+# Every entry, by key.
+#
+# - `db`: the connection.
+#
+# Fails with the database's failure, or where a row is not of the table's
+# shape.
+function all_entries(@db: postgres.Db) -> [Entry]?
+    rows = postgres.query(@db, "SELECT key, topic, tier, codec, window_start, events, raw_bytes, stored_bytes, sha256, state FROM batches ORDER BY key", [])?
+    out: [Entry] @= []
+
+    for r in rows.rows
+        out @ out.push(
+            Entry(key: sql.text_at(r, 0)?, topic: sql.text_at(r, 1)?, tier: sql.text_at(r, 2)?, codec: sql.text_at(r, 3)?, window_start: sql.instant_at(r, 4)?, events: sql.integer_at(r, 5)?, raw_bytes: sql.integer_at(r, 6)?, stored_bytes: sql.integer_at(r, 7)?, sha256: sql.text_at(r, 8)?, state: sql.text_at(r, 9)?)
+        )
+
+    return ok(out)

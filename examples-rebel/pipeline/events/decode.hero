@@ -1,0 +1,192 @@
+# A Kafka message read into an event. Its payload is MessagePack or JSON:
+# the `content-type` header says which (`application/msgpack`,
+# `application/x-msgpack`, `application/json`), and where a producer sent
+# none, the first byte does (a JSON object opens with `{`, a MessagePack
+# map with a byte from 0x80 to 0x8f, 0xde or 0xdf). The payload is a map
+# of `id`, `type`, `at`, `user` and `value`; `at` is the event time, a
+# MessagePack timestamp (extension -1) or a JSON text in RFC 3339, or
+# milliseconds since 1970 in either. A message that is no such event is
+# refused `invalid` with the reason, and the pipeline sends it to its
+# dead-letter topic rather than lose it or stop.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/kafka
+use <rebel>/msgpack
+use <rebel>/strings
+use <rebel>/time
+
+use events/event
+
+## Codes
+
+# The code of a message that is no event.
+constant INVALID: str
+    "invalid"
+
+## Decoding
+
+# The event `m` carries.
+#
+# - `m`: the message, as `kafka.poll` answers it.
+#
+# Fails `invalid` for a tombstone, a payload in neither format, a payload
+# that is no map, a field missing or of the wrong kind, an event time
+# before 1970.
+function event_of(m: kafka.Message) -> event.Event?
+    payload = match m.value
+        .ok v  => v
+        .err _ => return fail(code: INVALID, msg: "a tombstone carries no event")
+
+    format = format_of(m, payload: payload)?
+    blank = event.Event(
+        topic: m.topic,
+        partition: m.partition,
+        offset: m.offset,
+        id: "",
+        kind: "",
+        at_ms: 0,
+        user: "",
+        value: 0.0,
+        format: format
+    )
+
+    if format == "msgpack"
+        return from_msgpack(msgpack.decode(payload)?, blank: blank)
+
+    match json.parse(text_of(payload)?)
+        .ok v  => return from_json(v, blank: blank)
+        .err e => return fail(code: INVALID, msg: "the JSON payload: " + e.msg)
+
+# `json` or `msgpack`: what the header says, else what the first byte is.
+#
+# - `m`: the message.
+# - `payload`: its value.
+#
+# Fails `invalid` for a content type of neither format, or a payload whose
+# first byte opens neither.
+function format_of(m: kafka.Message, payload: [u8]) -> str?
+    for h in m.headers
+        if strings.to_lower(h.key) == "content-type"
+            kind = strings.to_lower(strings.trim(text_of(h.value).default("")))
+
+            if kind == "application/msgpack" || kind == "application/x-msgpack" || kind == "application/vnd.msgpack"
+                return ok("msgpack")
+
+            if kind == "application/json" || strings.has_prefix(s: kind, prefix: "application/json;")
+                return ok("json")
+            return fail(code: INVALID, msg: f"the content type \"{kind}\" is neither JSON nor MessagePack")
+
+    if payload.len() == 0
+        return fail(code: INVALID, msg: "the payload is empty")
+    first = payload[0]
+
+    if first == '{' || first == ' ' || first == '\n'
+        return ok("json")
+
+    if first >= 0x80 && first <= 0x8f || first == 0xde || first == 0xdf
+        return ok("msgpack")
+    return fail(
+        code: INVALID,
+        msg: f"the payload opens with the byte {first}, which opens neither a JSON object nor a MessagePack map"
+    )
+
+# `data` as text.
+#
+# - `data`: bytes.
+#
+# Fails `invalid` where they are not UTF-8.
+function text_of(data: [u8]) -> str?
+    match bytes.to_text(data)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: INVALID, msg: "the payload is not UTF-8")
+
+## Reading the payload
+
+# The event a MessagePack map holds.
+#
+# - `v`: the payload, read.
+# - `blank`: the event with its place set.
+function from_msgpack(v: msgpack.Value, blank: event.Event) -> event.Event?
+    out @= blank
+    out.id @ msgpack.text_of(msgpack.member(v, key: "id")?)?
+    out.kind @ msgpack.text_of(msgpack.member(v, key: "type")?)?
+    out.user @ msgpack.text_of(msgpack.member(v, key: "user").default(.text(v: "")))?
+    at = msgpack.member(v, key: "at")?
+
+    out.at_ms @ match at
+        .extension _              => time.unix_milliseconds(msgpack.instant_of(at)?)
+        .unsigned _ | .negative _ => msgpack.int_of(at)?
+        .text t                   => time.unix_milliseconds(time.parse(t.v, .rfc3339)?)
+        .nil_value | .boolean _ | .float _ | .binary _ | .list _ | .pairs _ => return fail(
+            code: INVALID,
+            msg: "the event's `at` is no time"
+        )
+
+    value = msgpack.member(v, key: "value").default(.float(v: 0.0))
+
+    out.value @ match value
+        .float x                  => x.v
+        .unsigned _ | .negative _ => to_f64(msgpack.int_of(value)?)
+        .nil_value | .boolean _ | .text _ | .binary _ | .list _ | .pairs _ | .extension _ => return fail(
+            code: INVALID,
+            msg: "the event's `value` is no number"
+        )
+
+    return checked(out)
+
+# The event a JSON object holds.
+#
+# - `v`: the payload, read.
+# - `blank`: the event with its place set.
+function from_json(v: json.Value, blank: event.Event) -> event.Event?
+    out @= blank
+    out.id @ json.text_of(json.member(v, key: "id")?)?
+    out.kind @ json.text_of(json.member(v, key: "type")?)?
+    out.user @ json.text_of(json.member(v, key: "user").default(.text(v: "")))?
+    at = json.member(v, key: "at")?
+
+    out.at_ms @ match at
+        .text t                                        => time.unix_milliseconds(time.parse(t.v, .rfc3339)?)
+        .number _                                      => json.int_of(at)?
+        .null_value | .boolean _ | .list _ | .object _ => return fail(code: INVALID, msg: "the event's `at` is no time")
+
+    out.value @ json.number_of(json.member(v, key: "value").default(.number(v: 0.0)))?
+    return checked(out)
+
+# `e` where its fields are within their bounds.
+#
+# - `e`: the event read.
+#
+# Fails `invalid` for an empty identifier or type, or a time before 1970.
+function checked(e: event.Event) -> event.Event?
+    if e.id == "" || e.kind == ""
+        return fail(code: INVALID, msg: "the event has no `id` or no `type`")
+
+    if e.at_ms < 0
+        return fail(code: INVALID, msg: "the event's time is before 1970")
+    return ok(e)
+
+test "event_of: a JSON event named by its header, its time in RFC 3339"
+    plain = kafka.message(
+        bytes.from_text("{\"id\":\"o-1\",\"type\":\"order.placed\",\"at\":\"2026-03-14T09:00:12Z\",\"user\":\"u-3\",\"value\":1250}")
+    )
+    m = kafka.with_header(plain, key: "content-type", value: bytes.from_text("application/json"))
+    e = event_of(m).must()
+    assert e.id == "o-1" && e.kind == "order.placed" && e.at_ms == 1_773_478_812_000 && e.value == 1250.0 && e.format == "json"
+
+test "event_of: a MessagePack event known by its first byte, its time a timestamp extension"
+    at = time.from_unix_milliseconds(1_773_478_812_000).must()
+    payload: msgpack.Value = .pairs(
+        entries: [msgpack.Entry(key: .text(v: "id"), value: .text(v: "c-1")), msgpack.Entry(key: .text(v: "type"), value: .text(v: "page.viewed")), msgpack.Entry(key: .text(v: "at"), value: msgpack.from_instant(at)), msgpack.Entry(key: .text(v: "value"), value: msgpack.from_int(35))]
+    )
+    e = event_of(kafka.message(msgpack.encode(payload).must())).must()
+    assert e.format == "msgpack" && e.at_ms == 1_773_478_812_000 && e.value == 35.0 && e.user == ""
+
+test "event_of: a tombstone, an unknown content type, a payload of neither format and a missing type are refused"
+    assert event_of(kafka.tombstone([1])).is_err()
+    assert event_of(
+        kafka.with_header(kafka.message([1]), key: "content-type", value: bytes.from_text("text/csv"))
+    ).is_err()
+    assert event_of(kafka.message(bytes.from_text("id,type"))).is_err()
+    assert event_of(kafka.message(bytes.from_text("{\"id\":\"x\",\"at\":0}"))).is_err()

@@ -1,0 +1,29 @@
+# The pipeline's connection to PostgreSQL: the settings' URL read as libpq
+# reads one (`sslmode=verify-full` unless it says `disable`), the password
+# the settings give where the URL holds none, and the login by
+# SCRAM-SHA-256, which `sql/postgres` makes through `scram` without the
+# password ever crossing the wire.
+
+use <rebel>/sql/postgres
+
+use config/settings
+
+## Opening
+
+# A connection to the database the settings name, logged in.
+#
+# - `d`: where the database is and the role's password.
+#
+# The caller owes the connection a `postgres.close`. Fails as
+# `postgres.parse_url` and `postgres.open` fail: `permission` for a
+# password refused, `not_found` for a database that does not exist.
+function open(d: settings.Database) -> postgres.Db?
+    opts @= postgres.parse_url(d.url)?
+
+    if d.password != ""
+        opts.password @ d.password
+    opts.application_name @ "pipeline"
+    return postgres.open(opts)
+
+test "open: a URL that is no PostgreSQL URL is refused before any connection"
+    assert open(settings.Database(url: "mysql://h/d", password: "")).is_err()

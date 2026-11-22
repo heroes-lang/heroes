@@ -1,0 +1,192 @@
+# What the PostgreSQL stand-in holds: what every connection shares (the
+# database, the one role and its SCRAM verifier, the advisory locks held),
+# and what each connection holds (where its login stands, its transaction
+# block and savepoints, its prepared statements and portals). A
+# transaction works on its own copy of the database, made when it began,
+# and commits by putting that copy in the shared one's place; a copy that
+# began before another transaction committed is refused `40001` at its
+# commit, as a serializable transaction is, so no committed change is lost.
+
+use standins/scram_server
+use standins/sql_tree
+
+## Shared
+
+# An advisory lock held.
+record Lock
+    # The lock's key.
+    key: i64
+    # The connection that holds it.
+    holder: i64
+    # Whether it ends with the holder's transaction, else with its session
+    # or its unlock.
+    xact: bool
+
+# What every connection shares.
+record Shared
+    # The database as committed.
+    db: sql_tree.Database
+    # The one role that may log in.
+    user: str
+    # The one database it may open.
+    database: str
+    # The role's SCRAM-SHA-256 verifier.
+    verifier: scram_server.Verifier
+    # The advisory locks held.
+    locks: [Lock]
+    # The logins taken.
+    logins: i64
+    # The logins refused.
+    refused_logins: i64
+    # The number the next session is given.
+    next_pid: i64
+
+## Each connection
+
+# A savepoint of a transaction block.
+record Savepoint
+    # Its name.
+    name: str
+    # The block's database when it was set.
+    db: sql_tree.Database
+
+# A statement a Parse message prepared.
+record Prepared
+    # Its name, "" for the unnamed one.
+    name: str
+    # The statement; `empty` for a text with none.
+    statement: sql_tree.Statement
+    # Each parameter's type, as the client named it or `unknown`.
+    param_types: [str]
+
+# A portal a Bind message made: a prepared statement and its values.
+record Portal
+    # Its name, "" for the unnamed one.
+    name: str
+    # The statement.
+    statement: sql_tree.Statement
+    # The values, `$1` first.
+    params: [sql_tree.Datum]
+    # Their types, as the Parse named them.
+    param_types: [str]
+
+# Where a connection's transaction stands.
+variant Block
+    # None: each statement or simple query commits on its own.
+    none
+    # One the server opened for a simple query of several statements, or
+    # for the extended protocol until Sync.
+    implicit
+    # One `BEGIN` opened.
+    explicit
+
+# What one connection holds.
+record Session
+    # The loop's number for the connection.
+    peer: i64
+    # `startup`, `sasl_first`, `sasl_final` or `ready`.
+    phase: str
+    # The role it logged in as.
+    user: str
+    # The login's exchange under way.
+    exchange: scram_server.Exchange
+    # Its transaction block.
+    block: Block
+    # Whether a statement of its block failed, so the block ignores every
+    # statement but its end.
+    failed: bool
+    # The block's own copy of the database.
+    private: sql_tree.Database
+    # The shared database's count of changes when the block began.
+    base_version: i64
+    # Whether the block changed its copy.
+    wrote: bool
+    # The block's moment, which `now()` answers all through it.
+    block_now: i64
+    # Its savepoints, the newest last.
+    savepoints: [Savepoint]
+    # Its prepared statements.
+    prepared: [Prepared]
+    # Its portals.
+    portals: [Portal]
+    # Whether an error of the extended protocol has it pass over every
+    # message until Sync.
+    skipping: bool
+    # Whether the connection ends once its answers are written.
+    closing: bool
+    # Its number, as `BackendKeyData` tells it.
+    pid: i64
+
+# A connection that has sent nothing yet.
+#
+# - `peer`: the loop's number for it.
+# - `pid`: its number.
+function new_session(peer: i64, pid: i64) -> Session
+    return Session(
+        peer: peer,
+        phase: "startup",
+        user: "",
+        exchange: scram_server.Exchange(client_first_bare: "", server_first: "", nonce: "", user: ""),
+        block: .none,
+        failed: false,
+        private: sql_tree.empty_database(),
+        base_version: 0,
+        wrote: false,
+        block_now: 0,
+        savepoints: [],
+        prepared: [],
+        portals: [],
+        skipping: false,
+        closing: false,
+        pid: pid
+    )
+
+# The status byte `ReadyForQuery` gives `s`: `I`, `T`, or `E` for a failed
+# block.
+#
+# - `s`: the session.
+function status_of(s: Session lent) -> u8
+    return match s.block
+        .explicit =>
+            if s.failed
+                'E'
+            else
+                'T'
+        .none | .implicit => 'I'
+
+# The place of the prepared statement `name`, -1 where there is none.
+#
+# - `s`: the session.
+# - `name`: its name.
+function prepared_at(s: Session lent, name: str) -> i64
+    for i in range(from: 0, to: s.prepared.len())
+        if s.prepared[i].name == name
+            return i
+
+    return -1
+
+# The place of the portal `name`, -1 where there is none.
+#
+# - `s`: the session.
+# - `name`: its name.
+function portal_at(s: Session lent, name: str) -> i64
+    for i in range(from: 0, to: s.portals.len())
+        if s.portals[i].name == name
+            return i
+
+    return -1
+
+test "status_of: idle, in a block, in a failed one"
+    v = scram_server.verifier_of("p", salt: [1], iterations: 1).must()
+    s @= new_session(peer: 1, pid: 7)
+    assert status_of(s) == 'I' && v.iterations == 1
+    s.block @ .explicit
+    assert status_of(s) == 'T'
+    s.failed @ true
+    assert status_of(s) == 'E'
+
+test "prepared_at, portal_at: none, then one"
+    s @= new_session(peer: 1, pid: 7)
+    assert prepared_at(s, name: "") == -1 && portal_at(s, name: "p") == -1
+    s.prepared @ [Prepared(name: "", statement: .empty, param_types: [])]
+    assert prepared_at(s, name: "") == 0

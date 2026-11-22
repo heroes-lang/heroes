@@ -1,0 +1,228 @@
+# The three places a batch is kept and the codec each is written with: the
+# hot path in LZ4 frames, fast to write and to read back for recent
+# queries; the archive in Zstandard, smaller and still quick to read; the
+# cold export in bzip2, the smallest, for a day's events handed to a
+# warehouse. Every copy is decompressed again and its SHA-256 compared with
+# the raw batch's before it is written, so a codec's fault can never put a
+# wrong object in the bucket. A window's batches are compressed on threads,
+# each thread handed its codec and its bytes as text and answering the
+# compressed bytes as text, since a thread is handed one value and answers
+# one (spec § 13).
+
+use <rebel>/bytes
+use <rebel>/compress/bzip2
+use <rebel>/compress/lz4
+use <rebel>/compress/zstd
+use <rebel>/crypto
+use <rebel>/strings
+use <rebel>/threads
+
+## Codes
+
+# The code of a copy that does not decompress to its batch, or of a
+# codec's name that is none of the three.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most bytes a copy may decompress to while it is checked: a batch is
+# never larger than this.
+constant MOST_BATCH_BYTES: i64
+    268_435_456
+
+## Tiers
+
+# Where a copy of a batch is kept.
+variant Tier
+    # The hot path: LZ4.
+    hot
+    # The archive: Zstandard.
+    archive
+    # The cold export: bzip2.
+    cold
+
+# The tier's name, as keys and metrics write it.
+#
+# - `tier`: the tier.
+function tier_name(tier: Tier) -> str
+    return match tier
+        .hot     => "hot"
+        .archive => "archive"
+        .cold    => "cold"
+
+# The tier `name` names.
+#
+# - `name`: `hot`, `archive` or `cold`.
+#
+# Fails `invalid` for another name.
+function parse_tier(name: str) -> Tier?
+    return match name
+        "hot"     => ok(.hot)
+        "archive" => ok(.archive)
+        "cold"    => ok(.cold)
+        _         => fail(code: INVALID, msg: f"\"{name}\" names no tier: hot, archive or cold")
+
+# The codec's name a tier is written with: `lz4`, `zstd`, `bzip2`.
+#
+# - `tier`: the tier.
+function codec_of(tier: Tier) -> str
+    return match tier
+        .hot     => "lz4"
+        .archive => "zstd"
+        .cold    => "bzip2"
+
+# The extension of a tier's objects after `.ndjson`: `.lz4`, `.zst`,
+# `.bz2`.
+#
+# - `tier`: the tier.
+function extension_of(tier: Tier) -> str
+    return match tier
+        .hot     => ".lz4"
+        .archive => ".zst"
+        .cold    => ".bz2"
+
+## Compressing
+
+# `raw` compressed by `codec`: an LZ4 frame with its content's checksum,
+# a Zstandard frame with its checksum, or a bzip2 stream at its highest
+# level.
+#
+# - `codec`: `lz4`, `zstd` or `bzip2`.
+# - `raw`: the bytes.
+#
+# Fails `invalid` for another codec, and as the codec's `compress` fails.
+function compress(codec: str, raw: [u8]) -> [u8]?
+    if codec == "lz4"
+        opts @= lz4.default_options()
+        opts.content_checksum @ true
+        opts.content_size @ true
+        return lz4.compress(raw, options: opts)
+
+    if codec == "zstd"
+        opts @= zstd.default_options()
+        opts.checksum @ true
+        return zstd.compress(raw, options: opts)
+
+    if codec == "bzip2"
+        return bzip2.compress(raw, options: bzip2.default_options())
+    return fail(code: INVALID, msg: f"\"{codec}\" names no codec: lz4, zstd or bzip2")
+
+# `data` decompressed by `codec`.
+#
+# - `codec`: `lz4`, `zstd` or `bzip2`.
+# - `data`: a copy.
+#
+# Fails `invalid` for another codec or a copy that is not one, `limit`
+# past `MOST_BATCH_BYTES`.
+function decompress(codec: str, data: [u8]) -> [u8]?
+    return match codec
+        "lz4"   => lz4.decompress(data, limit: MOST_BATCH_BYTES)
+        "zstd"  => zstd.decompress(data, limit: MOST_BATCH_BYTES)
+        "bzip2" => bzip2.decompress(data, limit: MOST_BATCH_BYTES)
+        _       => fail(code: INVALID, msg: f"\"{codec}\" names no codec: lz4, zstd or bzip2")
+
+# `raw` compressed by `codec`, then decompressed again and held to
+# `sha256`.
+#
+# - `codec`: the codec.
+# - `raw`: the bytes.
+# - `sha256`: their SHA-256, in hexadecimal.
+#
+# Fails `invalid` where the copy does not give `raw` back, and as
+# `compress` fails.
+function checked_copy(codec: str, raw: [u8], sha256: str) -> [u8]?
+    copy = compress(codec, raw: raw)?
+    back = decompress(codec, data: copy)?
+
+    if bytes.format_hex(crypto.sha256(back)) != sha256
+        return fail(code: INVALID, msg: f"the {codec} copy does not decompress to its batch")
+    return ok(copy)
+
+## On threads
+
+# What one thread is asked: a codec, the batch's hash, and its bytes.
+record Job
+    # The codec.
+    codec: str
+    # The batch's SHA-256.
+    sha256: str
+    # The bytes.
+    raw: [u8]
+
+# A job as the text a thread is handed: the codec, the hash and the bytes
+# in base 64, a line each.
+#
+# - `job`: the job.
+function format_job(job: Job) -> str
+    return f"{job.codec}\n{job.sha256}\n{bytes.format_base64(job.raw)}"
+
+# A thread's body: the job its text holds, compressed and checked, and
+# answered as `ok ` and the copy in base 64, or `error ` and why.
+#
+# - `arg`: a job, as `format_job` writes it.
+function compress_job(arg: str) -> str
+    parts = strings.split_n(s: arg, sep: "\n", n: 3)
+
+    if parts.len() != 3
+        return "error the job is not three lines"
+
+    raw = match bytes.parse_base64(parts[2])
+        .ok b  => b
+        .err e => return "error " + e.msg
+
+    match checked_copy(codec: parts[0], raw: raw, sha256: parts[1])
+        .ok copy => return "ok " + bytes.format_base64(copy)
+        .err e   => return "error " + e.msg
+
+# Every job's copy, compressed on as many threads as `workers` allows, in
+# the jobs' order.
+#
+# - `jobs`: the jobs.
+# - `workers`: at most how many threads at once, 1 or more.
+#
+# Fails `invalid` with the first job's failure, and as `threads.run_all_text`
+# fails where the system refuses a thread.
+function compress_all(jobs: [Job], workers: i64) -> [[u8]]?
+    texts: [str] @= []
+
+    for j in jobs
+        texts @ texts.push(format_job(j))
+
+    answers = threads.run_all_text(body: compress_job, values: texts, workers: workers)?
+    out: [[u8]] @= []
+
+    for a in answers
+        if strings.has_prefix(s: a, prefix: "ok ")
+            out @ out.push(bytes.parse_base64(a.slice(from: 3, to: a.len()))?)
+        else
+            return fail(code: INVALID, msg: a.slice(from: 6, to: a.len()))
+
+    return ok(out)
+
+test "checked_copy: each codec's copy decompresses to its batch"
+    raw = bytes.from_text(repeat("{\"id\":\"o-1\",\"type\":\"order.placed\"}\n", 20))
+    sha = bytes.format_hex(crypto.sha256(raw))
+
+    for codec in ["lz4", "zstd", "bzip2"]
+        copy = checked_copy(codec: codec, raw: raw, sha256: sha).must()
+        assert copy.len() < raw.len()
+        assert decompress(codec, data: copy).must() == raw
+
+test "checked_copy: a hash that is not the batch's, and a codec of no name, are refused"
+    assert checked_copy(codec: "lz4", raw: [1, 2, 3], sha256: "00").is_err()
+    assert checked_copy(codec: "gzip", raw: [1], sha256: "").is_err()
+
+test "compress_all: copies made on threads come back in the jobs' order"
+    a = bytes.from_text("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    b = bytes.from_text("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb")
+    jobs = [
+        Job(codec: "zstd", sha256: bytes.format_hex(crypto.sha256(a)), raw: a)
+        Job(codec: "lz4", sha256: bytes.format_hex(crypto.sha256(b)), raw: b)
+    ]
+    copies = compress_all(jobs, workers: 2).must()
+    assert decompress("zstd", data: copies[0]).must() == a && decompress("lz4", data: copies[1]).must() == b
+
+test "tier_name, parse_tier, codec_of, extension_of: each tier's names"
+    assert parse_tier(tier_name(.archive)).must() == .archive && codec_of(.cold) == "bzip2" && extension_of(.hot) == ".lz4"
+    assert parse_tier("warm").is_err()

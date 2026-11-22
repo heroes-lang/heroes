@@ -1,0 +1,67 @@
+# The demo's Prometheus: a thread that scrapes the pipeline's `/metrics`
+# over HTTP, as a scraper does, and answers the counters it read. The
+# pipeline answers on its own thread (`exporter.answer_one`), the registry
+# never leaving it, so the scrape reads what a real one would.
+
+use <rebel>/http
+use <rebel>/metrics
+use <rebel>/numbers
+use <rebel>/strings
+
+## Scraping
+
+# The thread's body: the counters `/metrics` on the port `arg` names
+# answered, one `name{labels} value` a line in the order the text format
+# writes them, or `scrape: ` and why it failed.
+#
+# - `arg`: the exporter's port on 127.0.0.1, in decimal.
+function run(arg: str) -> str
+    port = match numbers.parse_int(arg)
+        .ok n  => n
+        .err e => return "scrape: " + e.msg
+
+    match http.get(http.default_client(), target: f"http://127.0.0.1:{port}/metrics")
+        .err e => return "scrape: " + e.msg
+        .ok response =>
+            match http.text_of(response)
+                .err e   => return "scrape: " + e.msg
+                .ok text => return counters_of(text)
+
+# The counter whose value depends on when the run's polls fell rather than
+# on what it read: how many times it committed. It is scraped like the
+# others and left out of the transcript.
+constant TIMING_COUNTER: str
+    "pipeline_kafka_commits_total"
+
+# The counters of a text in Prometheus's format, one sample a line as it
+# writes them: the comments, the histograms' samples and `TIMING_COUNTER`
+# left out.
+#
+# - `text`: the text a scrape answered.
+function counters_of(text: str) -> str
+    match metrics.parse_text(text)
+        .err e => return "scrape: " + e.msg
+        .ok families =>
+            lines: [str] @= []
+
+            for f in families
+                if f.kind == .counter && f.name != TIMING_COUNTER
+                    for s in f.samples
+                        labels: [str] @= []
+
+                        for l in s.labels
+                            labels @ labels.push(f"{l.name}=\"{l.value}\"")
+
+                        shown = if labels.len() == 0
+                            s.name
+                        else
+                            s.name + "{" + labels.join(",") + "}"
+                        lines @ lines.push(
+                            shown + " " + strings.trim_suffix(s: numbers.format_float_general(s.value, digits: 15), suffix: ".0")
+                        )
+
+            return lines.join("\n")
+
+test "counters_of: the counters a text holds, a histogram left out"
+    text = "# TYPE a_total counter\na_total{x=\"1\"} 2\n# TYPE h histogram\nh_bucket{le=\"+Inf\"} 1\nh_sum 1\nh_count 1\n"
+    assert counters_of(text) == "a_total{x=\"1\"} 2"

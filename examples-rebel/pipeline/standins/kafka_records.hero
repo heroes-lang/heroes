@@ -1,0 +1,241 @@
+# The requests of the Kafka broker stand-in that write and read records:
+# `Produce` 8, each partition's batches checked and appended to its log
+# (`kafka_log`); `Fetch` 11, the batches from an offset, held where none
+# is there yet for as long as the client asked to wait; and `ListOffsets`
+# 5. Each is read and answered in the layout the protocol guide gives that
+# version (kafka.apache.org/protocol, read 2026-11-21), and a body that is
+# no such request fails `invalid`, which closes its connection.
+
+use standins/kafka_api
+use standins/kafka_codec
+use standins/kafka_log
+use standins/kafka_state
+
+## Records
+
+# What `Produce` 8 comes to: its answer, or none where it asked no
+# acknowledgement.
+#
+# - `b`: the broker; each partition's batches checked and appended.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function produce(@b: kafka_state.Broker, body: [u8]) -> kafka_state.Outcome?
+    r @= kafka_codec.reader(body)
+    _ = kafka_codec.take_string(@r, what: "Produce's transactional id")?
+    acks = kafka_codec.take_i16(@r, what: "Produce's acks")?
+    _ = kafka_codec.take_i32(@r, what: "Produce's timeout")?
+    topics = kafka_codec.take_count(@r, what: "Produce's topics")?
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: topics)
+
+    for _ in range(from: 0, to: topics)
+        name = kafka_codec.take_string(@r, what: "a topic's name")?
+        kafka_codec.put_string(@out, s: name)
+        partitions = kafka_codec.take_count(@r, what: "a topic's partitions")?
+        kafka_codec.put_i32(@out, v: partitions)
+
+        for _ in range(from: 0, to: partitions)
+            index = kafka_codec.take_i32(@r, what: "a partition's index")?
+            records = kafka_codec.take_bytes(@r, what: "a partition's records")?
+            kafka_codec.put_i32(@out, v: index)
+            at = kafka_state.log_at(b, topic: name, partition: index)
+            error: i64 @= 0
+            base: i64 @= -1
+            message: str @= ""
+
+            if acks != 0 && acks != 1 && acks != -1
+                error @ kafka_api.INVALID_REQUIRED_ACKS
+            else if at < 0
+                error @ kafka_api.UNKNOWN_TOPIC_OR_PARTITION
+            else
+                match kafka_log.split_batches(records)
+                    .err e =>
+                        error @ kafka_api.CORRUPT_MESSAGE
+                        message @ e.msg
+                        b.refused @ b.refused + 1
+                    .ok batches =>
+                        log @= b.logs[at]
+                        base @ kafka_log.append(@log, batches: batches)
+                        b.logs[at] @ log
+
+                        for one in batches
+                            b.batches @ b.batches + 1
+                            b.records @ b.records + one.records
+
+            kafka_codec.put_i16(@out, v: error)
+            kafka_codec.put_i64(@out, v: base)
+            kafka_codec.put_i64(@out, v: -1)
+            kafka_codec.put_i64(@out, v: 0)
+            kafka_codec.put_i32(@out, v: 0)
+
+            if message == ""
+                kafka_codec.put_null_string(@out)
+            else
+                kafka_codec.put_string(@out, s: message)
+
+    kafka_codec.put_i32(@out, v: 0)
+
+    if acks == 0
+        return ok(.silent)
+    return ok(.reply(body: out))
+
+# What `Fetch` 11 comes to: the records of each partition asked from its
+# offset, or a wait where none has any yet and the client asked to wait.
+#
+# - `b`: the broker.
+# - `body`: the request's body.
+# - `expired`: whether the wait it asked has passed, so it is answered
+#   whatever it holds.
+#
+# Fails `invalid` where the body is no such request.
+function fetch(b: kafka_state.Broker lent, body: [u8], expired: bool) -> kafka_state.Outcome?
+    r @= kafka_codec.reader(body)
+    _ = kafka_codec.take_i32(@r, what: "Fetch's replica")?
+    wait_ms = kafka_codec.take_i32(@r, what: "Fetch's wait")?
+    _ = kafka_codec.take_i32(@r, what: "Fetch's least bytes")?
+    _ = kafka_codec.take_i32(@r, what: "Fetch's most bytes")?
+    isolation = kafka_codec.take_i8(@r, what: "Fetch's isolation")?
+    _ = kafka_codec.take_i32(@r, what: "Fetch's session")?
+    _ = kafka_codec.take_i32(@r, what: "Fetch's session epoch")?
+    topics = kafka_codec.take_count(@r, what: "Fetch's topics")?
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: 0)
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i32(@out, v: topics)
+    found: i64 @= 0
+
+    for _ in range(from: 0, to: topics)
+        name = kafka_codec.take_string(@r, what: "a topic's name")?
+        kafka_codec.put_string(@out, s: name)
+        partitions = kafka_codec.take_count(@r, what: "a topic's partitions")?
+        kafka_codec.put_i32(@out, v: partitions)
+
+        for _ in range(from: 0, to: partitions)
+            index = kafka_codec.take_i32(@r, what: "a partition")?
+            _ = kafka_codec.take_i32(@r, what: "a partition's leader epoch")?
+            offset = kafka_codec.take_i64(@r, what: "a partition's fetch offset")?
+            _ = kafka_codec.take_i64(@r, what: "a partition's log start")?
+            most = kafka_codec.take_i32(@r, what: "a partition's most bytes")?
+            at = kafka_state.log_at(b, topic: name, partition: index)
+            kafka_codec.put_i32(@out, v: index)
+            end: i64 @= -1
+            data: [u8] @= []
+            error: i64 @= 0
+
+            if at < 0
+                error @ kafka_api.UNKNOWN_TOPIC_OR_PARTITION
+            else
+                end @ b.logs[at].end_offset
+
+                if offset < 0 || offset > end
+                    error @ kafka_api.OFFSET_OUT_OF_RANGE
+                else
+                    data @ kafka_log.read_from(b.logs[at], offset: offset, most: most)
+                    found @ found + data.len()
+
+            kafka_codec.put_i16(@out, v: error)
+            kafka_codec.put_i64(@out, v: end)
+            kafka_codec.put_i64(@out, v: end)
+            kafka_codec.put_i64(@out, v: 0)
+
+            aborted = if isolation == 1
+                0
+            else
+                -1
+            kafka_codec.put_i32(@out, v: aborted)
+            kafka_codec.put_i32(@out, v: -1)
+            kafka_codec.put_bytes(out: @out, data: data)
+
+    if found == 0 && wait_ms > 0 && !expired
+        return ok(.park(deadline_ms: kafka_api.now_ms() + wait_ms))
+    return ok(.reply(body: out))
+
+# The answer to `ListOffsets` 5: each partition's first offset (-2), next
+# offset (-1), or the first offset of the first batch whose time reaches
+# the one asked.
+#
+# - `b`: the broker.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function list_offsets(b: kafka_state.Broker lent, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    _ = kafka_codec.take_i32(@r, what: "ListOffsets' replica")?
+    _ = kafka_codec.take_i8(@r, what: "ListOffsets' isolation")?
+    topics = kafka_codec.take_count(@r, what: "ListOffsets' topics")?
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i32(@out, v: topics)
+
+    for _ in range(from: 0, to: topics)
+        name = kafka_codec.take_string(@r, what: "a topic's name")?
+        kafka_codec.put_string(@out, s: name)
+        partitions = kafka_codec.take_count(@r, what: "a topic's partitions")?
+        kafka_codec.put_i32(@out, v: partitions)
+
+        for _ in range(from: 0, to: partitions)
+            index = kafka_codec.take_i32(@r, what: "a partition")?
+            _ = kafka_codec.take_i32(@r, what: "a partition's leader epoch")?
+            at_time = kafka_codec.take_i64(@r, what: "a partition's time")?
+            at = kafka_state.log_at(b, topic: name, partition: index)
+            kafka_codec.put_i32(@out, v: index)
+
+            if at < 0
+                kafka_codec.put_i16(@out, v: kafka_api.UNKNOWN_TOPIC_OR_PARTITION)
+                kafka_codec.put_i64(@out, v: -1)
+                kafka_codec.put_i64(@out, v: -1)
+            else
+                offset = if at_time == -2
+                    0
+                else if at_time == -1
+                    b.logs[at].end_offset
+                else
+                    kafka_log.offset_at_time(b.logs[at], at: at_time)
+                kafka_codec.put_i16(@out, v: 0)
+                kafka_codec.put_i64(@out, v: -1)
+                kafka_codec.put_i64(@out, v: offset)
+
+            kafka_codec.put_i32(@out, v: 0)
+
+    return ok(out)
+
+test "produce, fetch: a batch written, its offset answered, and fetched back from offset 0"
+    b @= kafka_state.new(
+        9092,
+        topics: [kafka_state.Topic(name: "t", partitions: 1)],
+        user: "",
+        verifier: kafka_api.standins_verifier()
+    )
+    req: [u8] @= []
+    kafka_codec.put_null_string(@req)
+    kafka_codec.put_i16(@req, v: 1)
+    kafka_codec.put_i32(@req, v: 1000)
+    kafka_codec.put_i32(@req, v: 1)
+    kafka_codec.put_string(@req, s: "t")
+    kafka_codec.put_i32(@req, v: 1)
+    kafka_codec.put_i32(@req, v: 0)
+    kafka_codec.put_bytes(out: @req, data: kafka_log.sample_batch(2))
+
+    match produce(@b, body: req).must()
+        .reply _                                       => assert b.records == 2 && b.logs[0].end_offset == 2
+        .last_reply _ | .silent | .park _ | .hang_up _ => assert false
+
+    f: [u8] @= []
+    kafka_codec.put_all(
+        out: @f,
+        data: [255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 100, 0, 0, 0, 0, 0, 255, 255, 255, 255]
+    )
+    kafka_codec.put_i32(@f, v: 1)
+    kafka_codec.put_string(@f, s: "t")
+    kafka_codec.put_i32(@f, v: 1)
+    kafka_codec.put_i32(@f, v: 0)
+    kafka_codec.put_i32(@f, v: 0)
+    kafka_codec.put_i64(@f, v: 0)
+    kafka_codec.put_i64(@f, v: 0)
+    kafka_codec.put_i32(@f, v: 1_000_000)
+
+    match fetch(b, body: f, expired: false).must()
+        .reply body                                    => assert body.body.len() > kafka_log.sample_batch(2).len()
+        .last_reply _ | .silent | .park _ | .hang_up _ => assert false

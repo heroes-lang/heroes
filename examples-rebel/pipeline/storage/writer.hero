@@ -1,0 +1,131 @@
+# The bucket as the pipeline writes it: an S3 client of the settings,
+# addressed by path where an endpoint is named, and each put tried again
+# by the pipeline's own backoff, exponential and spread by chance, until
+# its attempts are spent. The client's own retries are turned off, so one
+# policy says how often and how long. A refusal no retry mends (a
+# signature or a permission refused, a key or an argument refused) is
+# given up at once. A put given up is not lost: the caller keeps it as a
+# job (`replay/deadletter`).
+
+use <rebel>/retries
+use <rebel>/s3
+use <rebel>/time
+
+use config/settings
+
+## Codes
+
+# The code of a policy the settings make that `retries` refuses.
+constant INVALID: str
+    "invalid"
+
+## The bucket
+
+# A bucket and how its puts are tried.
+record Bucket
+    # The client, its own retries off.
+    client: s3.Client
+    # The bucket's name.
+    name: str
+    # The waits between attempts.
+    policy: retries.Backoff
+    # The fraction every wait's spread is drawn at, below 0 to draw it at
+    # each wait.
+    fraction: f64
+
+# The bucket the settings name.
+#
+# - `storage`: where the bucket is.
+# - `retrying`: how a put is tried again.
+#
+# Fails `invalid` where the waits are not a policy `retries` takes.
+function bucket_of(storage: settings.Storage, retrying: settings.Retrying) -> Bucket?
+    credentials = s3.Credentials(
+        access_key_id: storage.access_key_id,
+        secret_access_key: storage.secret_access_key,
+        session_token: ""
+    )
+
+    client @= if storage.endpoint == ""
+        s3.aws_client(region: storage.region, credentials: credentials)
+    else
+        s3.minio_client(endpoint: storage.endpoint, credentials: credentials)
+    client.region @ storage.region
+    client.max_attempts @ 1
+    first = retries.backoff(first: retrying.first, multiplier: 2.0, longest: retrying.longest)?
+    spread = retries.with_jitter(first, .spread(factor: 0.2))?
+    policy = retries.with_attempts(spread, attempts: retrying.attempts)?
+    return ok(Bucket(client: client, name: storage.bucket, policy: policy, fraction: retrying.fraction))
+
+## Putting
+
+# What a put came to.
+record Put
+    # The ETag S3 answered, where it took the object; the last failure
+    # where every attempt failed or one was refused for good.
+    etag: str?
+    # The attempts made.
+    attempts: i64
+
+# Whether a failure of S3 may pass if the put is tried again: S3 throttled
+# it, failed inside, or the connection failed.
+#
+# - `code`: the failure's code.
+function is_passing(code: str) -> bool
+    return code == s3.LIMIT || code == s3.FAILED || code == s3.CLOSED || code == s3.TIMEOUT || code == s3.UNSUPPORTED
+
+# Puts `data` as `key`, trying again by the bucket's policy.
+#
+# - `b`: the bucket.
+# - `key`: the object's key.
+# - `data`: its bytes.
+# - `meta`: its metadata, sent as `x-amz-meta-<name>`.
+function put(b: Bucket, key: str, data: [u8], meta: [s3.Meta]) -> Put
+    opts @= s3.default_put_options()
+    opts.content_type @ "application/x-ndjson"
+    opts.metadata @ meta
+    retry @= retries.new_retry(b.policy)
+    attempts: i64 @= 0
+    begun = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while true
+        attempts @ attempts + 1
+
+        match s3.put_object(b.client, bucket: b.name, key: key, data: data, options: opts)
+            .ok stored => return Put(etag: ok(stored.etag), attempts: attempts)
+            .err e =>
+                if !is_passing(e.code)
+                    return Put(etag: fail(code: e.code, msg: e.msg), attempts: attempts)
+                spent = time.elapsed(begun).default(time.nanoseconds(0))
+
+                fraction = if b.fraction >= 0.0
+                    b.fraction
+                else
+                    retries.random_fraction().default(0.5)
+
+                match retries.next_wait(@retry, spent: spent, fraction: fraction)
+                    .err _   => return Put(etag: fail(code: e.code, msg: e.msg), attempts: attempts)
+                    .ok wait => time.sleep(wait)
+
+    return Put(etag: fail(code: s3.FAILED, msg: "no attempt was made"), attempts: attempts)
+
+test "is_passing: throttling and a lost connection pass, a refused signature does not"
+    assert is_passing(s3.LIMIT) && is_passing(s3.CLOSED)
+    assert !is_passing(s3.PERMISSION) && !is_passing(s3.INVALID)
+
+test "bucket_of: an endpoint is reached by path, the client's own retries off"
+    storage = settings.Storage(
+        endpoint: "http://127.0.0.1:9000",
+        region: "us-east-1",
+        bucket: "b",
+        access_key_id: "a",
+        secret_access_key: "s"
+    )
+    retrying = settings.Retrying(
+        attempts: 3,
+        first: time.milliseconds(10).must(),
+        longest: time.milliseconds(100).must(),
+        fraction: 0.5
+    )
+    b = bucket_of(storage, retrying: retrying).must()
+    assert b.client.max_attempts == 1 && b.client.addressing == .path && b.name == "b" && b.policy.attempts == 3

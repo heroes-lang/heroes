@@ -1,0 +1,124 @@
+# The aggregates of a window's batch, by event type: how many events, the
+# sum of their values, and their 50th, 95th and 99th percentiles, computed
+# by `stats.quantiles_inclusive` over the batch's values (the method
+# Python's `statistics.quantiles` calls inclusive, which reads them as the
+# whole population, so no percentile passes the largest value or the
+# smallest, as none of a window's own events does). They are written with `ON CONFLICT DO UPDATE`, so writing a
+# window again after a restart replaces its rows rather than doubling
+# them, and read back in the order of window, topic and type.
+
+use <rebel>/sql
+use <rebel>/sql/postgres
+use <rebel>/stats
+use <rebel>/time
+
+use batching/batch
+
+## Codes
+
+# The code of a batch with no event, whose aggregates have no meaning.
+constant INVALID: str
+    "invalid"
+
+## Aggregates
+
+# The aggregates of one event type in one window of one topic.
+record Aggregate
+    # The window's start.
+    window_start: time.Instant
+    # The topic.
+    topic: str
+    # The event type.
+    event_type: str
+    # How many events.
+    events: i64
+    # The sum of their values.
+    value_sum: f64
+    # Their 50th percentile.
+    p50: f64
+    # Their 95th percentile.
+    p95: f64
+    # Their 99th percentile.
+    p99: f64
+
+# The aggregates of `b`, one per event type, by the types' names.
+#
+# - `b`: the batch, one event or more.
+#
+# Fails `invalid` for a batch of no event.
+function of_batch(b: batch.Batch) -> [Aggregate]?
+    if b.events.len() == 0
+        return fail(code: INVALID, msg: f"the batch of {b.topic} holds no event")
+    kinds: [str] @= []
+
+    for e in b.events
+        seen @= false
+
+        for k in kinds
+            if k == e.kind
+                seen @ true
+
+        if !seen
+            kinds @ kinds.push(e.kind)
+
+    start = time.from_unix_milliseconds(b.window_start_ms)?
+    out: [Aggregate] @= []
+
+    for kind in sort(kinds)
+        values: [f64] @= []
+        total: f64 @= 0.0
+
+        for e in b.events
+            if e.kind == kind
+                values @ values.push(e.value)
+                total @ total + e.value
+
+        cuts = stats.quantiles_inclusive(values, parts: 100)?
+        out @ out.push(
+            Aggregate(window_start: start, topic: b.topic, event_type: kind, events: values.len(), value_sum: total, p50: cuts[49], p95: cuts[94], p99: cuts[98])
+        )
+
+    return ok(out)
+
+## Writing and reading
+
+# The statement every aggregate is written with.
+constant UPSERT: str
+    "INSERT INTO window_aggregates (window_start, topic, event_type, events, value_sum, value_p50, value_p95, value_p99) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT (window_start, topic, event_type) DO UPDATE SET events = excluded.events, value_sum = excluded.value_sum, value_p50 = excluded.value_p50, value_p95 = excluded.value_p95, value_p99 = excluded.value_p99"
+
+# Writes `a`, replacing the row of its window, topic and type.
+#
+# - `db`: the connection, in the caller's transaction or not.
+# - `a`: the aggregate.
+#
+# Fails with the database's failure.
+function upsert(@db: postgres.Db, a: Aggregate) -> ()?
+    _ = postgres.exec(@db, UPSERT, [.instant(v: a.window_start), .text(v: a.topic), .text(v: a.event_type), .integer(v: a.events), .float(v: a.value_sum), .float(v: a.p50), .float(v: a.p95), .float(v: a.p99)])?
+    return ok()
+
+# Every aggregate kept, by window, topic and type.
+#
+# - `db`: the connection.
+#
+# Fails with the database's failure, or where a row is not of the table's
+# shape.
+function all_rows(@db: postgres.Db) -> [Aggregate]?
+    rows = postgres.query(@db, "SELECT window_start, topic, event_type, events, value_sum, value_p50, value_p95, value_p99 FROM window_aggregates ORDER BY window_start, topic, event_type", [])?
+    out: [Aggregate] @= []
+
+    for r in rows.rows
+        out @ out.push(
+            Aggregate(window_start: sql.instant_at(r, 0)?, topic: sql.text_at(r, 1)?, event_type: sql.text_at(r, 2)?, events: sql.integer_at(r, 3)?, value_sum: sql.float_at(r, 4)?, p50: sql.float_at(r, 5)?, p95: sql.float_at(r, 6)?, p99: sql.float_at(r, 7)?)
+        )
+
+    return ok(out)
+
+test "of_batch: one row per type, by name; one value is its own every percentile"
+    e1 = batch.sample_event(kind: "order.placed", value: 100.0)
+    e2 = batch.sample_event(kind: "order.placed", value: 300.0)
+    e3 = batch.sample_event(kind: "order.refunded", value: 50.0)
+    b = batch.batch_of("orders", window_start_ms: 1_773_478_800_000, events: [e1, e2, e3])
+    rows = of_batch(b).must()
+    assert rows.len() == 2 && rows[0].event_type == "order.placed" && rows[0].events == 2 && rows[0].value_sum == 400.0
+    assert rows[1].p50 == 50.0 && rows[1].p99 == 50.0
+    assert of_batch(batch.batch_of("orders", window_start_ms: 0, events: [])).is_err()

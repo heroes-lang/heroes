@@ -1,0 +1,163 @@
+# The events the demo's producers write, fixed so every run reads the same
+# records: a morning's orders and clicks of 2026-03-14 between 09:00 and
+# 09:03 UTC, keyed by their user so each user's events keep their order in
+# one partition, half of them JSON and half MessagePack, each named by its
+# `content-type` header. Two are there on purpose: an order stamped 09:00:30
+# written after its partition has reached 09:02:14, which the pipeline
+# drops as late, and a message in CSV, which holds no event the pipeline
+# reads and goes to the dead-letter topic.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/kafka
+use <rebel>/msgpack
+use <rebel>/time
+
+## The script
+
+# The first moment of the script, 2026-03-14T09:00:00Z, in milliseconds
+# since 1970.
+constant START_MS: i64
+    1_773_478_800_000
+
+# One event the producers write.
+record Scripted
+    # The topic.
+    topic: str
+    # The producer's identifier for it.
+    id: str
+    # What happened.
+    kind: str
+    # The user, which keys the message.
+    user: str
+    # Seconds after `START_MS` it happened.
+    second: i64
+    # Its value.
+    value: i64
+    # `json`, `msgpack`, or `csv` for the message that holds no event.
+    format: str
+
+# The script, in the order it is written.
+function script() -> [Scripted]
+    return [
+        Scripted(topic: "orders", id: "o-1001", kind: "order.placed", user: "u-7", second: 5, value: 4200, format: "json")
+        Scripted(topic: "orders", id: "o-1002", kind: "order.placed", user: "u-3", second: 21, value: 1250, format: "msgpack")
+        Scripted(topic: "orders", id: "o-1003", kind: "order.placed", user: "u-7", second: 48, value: 990, format: "json")
+        Scripted(topic: "orders", id: "o-1004", kind: "order.refunded", user: "u-3", second: 55, value: 1250, format: "json")
+        Scripted(topic: "orders", id: "o-1005", kind: "order.placed", user: "u-9", second: 70, value: 15800, format: "msgpack")
+        Scripted(topic: "orders", id: "o-1006", kind: "order.placed", user: "u-4", second: 92, value: 2300, format: "json")
+        Scripted(topic: "orders", id: "o-1007", kind: "order.placed", user: "u-7", second: 119, value: 640, format: "msgpack")
+        Scripted(topic: "orders", id: "o-1008", kind: "order.placed", user: "u-3", second: 134, value: 5100, format: "json")
+        Scripted(topic: "orders", id: "o-1009", kind: "order.placed", user: "u-9", second: 160, value: 870, format: "msgpack")
+        Scripted(topic: "orders", id: "o-1010", kind: "order.placed", user: "u-3", second: 30, value: 300, format: "json")
+        Scripted(topic: "orders", id: "o-1011", kind: "order.placed", user: "u-5", second: 100, value: 0, format: "csv")
+        Scripted(topic: "clicks", id: "c-1", kind: "page.viewed", user: "u-7", second: 2, value: 120, format: "json")
+        Scripted(topic: "clicks", id: "c-2", kind: "page.viewed", user: "u-3", second: 40, value: 310, format: "msgpack")
+        Scripted(topic: "clicks", id: "c-3", kind: "button.clicked", user: "u-7", second: 59, value: 1, format: "json")
+        Scripted(topic: "clicks", id: "c-4", kind: "page.viewed", user: "u-9", second: 80, value: 95, format: "msgpack")
+        Scripted(topic: "clicks", id: "c-5", kind: "page.viewed", user: "u-4", second: 105, value: 480, format: "json")
+        Scripted(topic: "clicks", id: "c-6", kind: "page.viewed", user: "u-3", second: 125, value: 220, format: "json")
+        Scripted(topic: "clicks", id: "c-7", kind: "button.clicked", user: "u-9", second: 170, value: 1, format: "msgpack")
+    ]
+
+# The message `s` is written as: keyed by its user, stamped with its time,
+# its payload and `content-type` of its format.
+#
+# - `s`: the scripted event.
+#
+# Fails as `msgpack.encode` and `json.format` fail, which a scripted event
+# never makes them do.
+function message_of(s: Scripted) -> kafka.Message?
+    at = time.from_unix_milliseconds(START_MS + s.second * 1000)?
+    payload: [u8] @= []
+    kind: str @= "application/json"
+
+    if s.format == "msgpack"
+        kind @ "application/msgpack"
+        payload @ msgpack.encode(.pairs(entries: [entry("id", value: .text(v: s.id)), entry("type", value: .text(v: s.kind)), entry("at", value: msgpack.from_instant(at)), entry("user", value: .text(v: s.user)), entry("value", value: msgpack.from_int(s.value))]))?
+    else if s.format == "csv"
+        kind @ "text/csv"
+        payload @ bytes.from_text(f"{s.id},{s.kind},{s.user},{s.value}\n")
+    else
+        members: {str: json.Value} @= {}
+        members["id"] @ .text(v: s.id)
+        members["type"] @ .text(v: s.kind)
+        members["at"] @ .text(v: time.format(at, .rfc3339))
+        members["user"] @ .text(v: s.user)
+        members["value"] @ .number(v: to_f64(s.value))
+        payload @ bytes.from_text(json.format(.object(members: members))?)
+    m @= kafka.with_header(
+        kafka.with_key(kafka.message(payload), key: bytes.from_text(s.user)),
+        key: "content-type",
+        value: bytes.from_text(kind)
+    )
+    m.topic @ s.topic
+    m.timestamp @ ok(at)
+    return ok(m)
+
+# A MessagePack map's entry of a text key.
+#
+# - `key`: the key.
+# - `value`: its value.
+function entry(key: str, value: msgpack.Value) -> msgpack.Entry
+    return msgpack.Entry(key: .text(v: key), value: value)
+
+## Producing
+
+# What the producers wrote, by topic.
+record Written
+    # The topic.
+    topic: str
+    # JSON payloads.
+    json_count: i64
+    # MessagePack payloads.
+    msgpack_count: i64
+    # Payloads of neither format.
+    other: i64
+
+# Writes the script through a client of `opts`, every message at once, and
+# answers how many of each format each topic took, by the topics' names.
+#
+# - `opts`: the cluster and the login.
+#
+# Fails as `kafka.connect` and `kafka.send` fail.
+function produce(opts: kafka.Options) -> [Written]?
+    messages: [kafka.Message] @= []
+
+    for s in script()
+        messages @ messages.push(message_of(s)?)
+
+    made = kafka.connect(opts)?
+    client @= made
+    sent = kafka.send(@client, messages: messages)
+    _ = kafka.close(@client).is_err()
+    _ = sent?
+    out: [Written] @= []
+
+    for topic in ["clicks", "orders"]
+        w @= Written(topic: topic, json_count: 0, msgpack_count: 0, other: 0)
+
+        for s in script()
+            if s.topic == topic
+                if s.format == "json"
+                    w.json_count @ w.json_count + 1
+                else if s.format == "msgpack"
+                    w.msgpack_count @ w.msgpack_count + 1
+                else
+                    w.other @ w.other + 1
+
+        out @ out.push(w)
+
+    return ok(out)
+
+test "message_of: a MessagePack event and a JSON one carry their key, time and type"
+    m = message_of(script()[1]).must()
+    assert m.topic == "orders" && m.key.must() == bytes.from_text("u-3") && time.unix_milliseconds(m.timestamp.must()) == START_MS + 21_000
+    assert m.headers[0].value == bytes.from_text("application/msgpack")
+    j = message_of(script()[0]).must()
+    assert j.headers[0].value == bytes.from_text("application/json")
+
+test "script: eighteen messages, the late order after its partition's later ones"
+    s = script()
+    assert s.len() == 18
+    assert s[9].id == "o-1010" && s[9].second < s[7].second && s[9].user == s[7].user

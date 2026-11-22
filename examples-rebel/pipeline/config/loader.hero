@@ -1,0 +1,231 @@
+# The pipeline's TOML file read into its settings. A secret is never
+# required in the file: a `password_env`, `access_key_id_env` or
+# `secret_access_key_env` names the environment variable that holds it, a
+# `password` or `secret_access_key` written in the file is taken where a
+# program writes the file itself, and S3's keys fall back to the
+# environment and the shared files AWS's tools read (`s3.default_credentials`).
+# A whole file:
+#
+#     [kafka]
+#     brokers = ["kafka-1.internal:9092", "kafka-2.internal:9092"]
+#     group = "events-archiver"
+#     topics = ["orders", "clicks"]
+#     client_id = "pipeline"
+#     username = "pipeline"
+#     password_env = "KAFKA_PASSWORD"
+#     tls = true
+#
+#     [s3]
+#     region = "eu-west-1"
+#     bucket = "events-archive"
+#
+#     [postgres]
+#     url = "postgres://pipeline@db.internal:5432/events"
+#     password_env = "PGPASSWORD"
+#
+#     [windows]
+#     seconds = 60
+#     grace_seconds = 30
+#
+#     [retries]
+#     attempts = 4
+#     first_ms = 200
+#     longest_ms = 10000
+#
+#     [metrics]
+#     listen = "127.0.0.1:9464"
+
+use <rebel>/os
+use <rebel>/s3
+use <rebel>/time
+use <rebel>/toml
+
+use config/settings
+
+## Codes
+
+# The code of a file that is no TOML, or of a value of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# The settings `source` holds, checked.
+#
+# - `source`: the TOML file's text.
+#
+# Fails `invalid` where it is no TOML or a value is of the wrong kind, the
+# message naming its key; `not_found` where a secret's variable is unset;
+# and as `settings.check` fails.
+function parse(source: str) -> settings.Settings?
+    doc = toml.parse(source)?
+    kafka_password = secret(doc, table: "kafka", key: "password")?
+    storage = storage_of(doc)?
+    s = settings.Settings(
+        kafka: settings.Kafka(brokers: texts_at(doc, path: ["kafka", "brokers"])?, group: text_at(doc, path: ["kafka", "group"], fallback: "")?, topics: texts_at(doc, path: ["kafka", "topics"])?, client_id: text_at(doc, path: ["kafka", "client_id"], fallback: "pipeline")?, username: text_at(doc, path: ["kafka", "username"], fallback: "")?, password: kafka_password, tls: flag_at(doc, path: ["kafka", "tls"], fallback: false)?),
+        storage: storage,
+        database: settings.Database(url: text_at(doc, path: ["postgres", "url"], fallback: "")?, password: secret(doc, table: "postgres", key: "password")?),
+        windows: settings.Windows(length: time.seconds(integer_at(doc, path: ["windows", "seconds"], fallback: 60)?)?, grace: time.seconds(integer_at(doc, path: ["windows", "grace_seconds"], fallback: 0)?)?),
+        retrying: settings.Retrying(attempts: integer_at(doc, path: ["retries", "attempts"], fallback: 4)?, first: time.milliseconds(integer_at(doc, path: ["retries", "first_ms"], fallback: 200)?)?, longest: time.milliseconds(integer_at(doc, path: ["retries", "longest_ms"], fallback: 10_000)?)?, fraction: fraction_of(doc)?),
+        metrics: settings.Metrics(listen: text_at(doc, path: ["metrics", "listen"], fallback: "")?)
+    )
+    settings.check(s)?
+    return ok(s)
+
+# The `[s3]` table: the bucket, and the keys from the file, the
+# environment's variables it names, or AWS's own places.
+#
+# - `doc`: the file.
+function storage_of(doc: toml.Value) -> settings.Storage?
+    id: str @= text_at(doc, path: ["s3", "access_key_id"], fallback: "")?
+    id_env = text_at(doc, path: ["s3", "access_key_id_env"], fallback: "")?
+
+    if id_env != ""
+        id @ os.env(id_env)?
+    key = secret(doc, table: "s3", key: "secret_access_key")?
+    out @= settings.Storage(
+        endpoint: text_at(doc, path: ["s3", "endpoint"], fallback: "")?,
+        region: text_at(doc, path: ["s3", "region"], fallback: "us-east-1")?,
+        bucket: text_at(doc, path: ["s3", "bucket"], fallback: "")?,
+        access_key_id: id,
+        secret_access_key: key
+    )
+
+    if id == "" || key == ""
+        found = s3.default_credentials()?
+        out.access_key_id @ found.access_key_id
+        out.secret_access_key @ found.secret_access_key
+    return ok(out)
+
+# The fraction retries are spread at: `[retries] fraction`, or drawn at
+# each wait where it is not written.
+#
+# - `doc`: the file.
+function fraction_of(doc: toml.Value) -> f64?
+    match toml.value_at(doc, path: ["retries", "fraction"])
+        .err _ => return ok(-1.0)
+        .ok v =>
+            return match v
+                .float x   => ok(x.v)
+                .integer n => ok(to_f64(n.v))
+                .text _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: "[retries] fraction is a number from 0 to 1"
+                )
+
+## Values
+
+# A secret of `table`: the variable `<key>_env` names, else `<key>` as
+# written, else "".
+#
+# - `doc`: the file.
+# - `table`: the table.
+# - `key`: the secret's key.
+#
+# Fails `not_found` where the variable named is unset.
+function secret(doc: toml.Value, table: str, key: str) -> str?
+    variable = text_at(doc, path: [table, key + "_env"], fallback: "")?
+
+    if variable != ""
+        match os.env(variable)
+            .ok v => return ok(v)
+            .err _ => return fail(
+                code: "not_found",
+                msg: f"[{table}] {key}_env names {variable}, which the environment does not hold"
+            )
+    return text_at(doc, path: [table, key], fallback: "")
+
+# The text under `path`, `fallback` where there is none.
+#
+# - `doc`: the file.
+# - `path`: the table and the key.
+# - `fallback`: what no value means.
+#
+# Fails `invalid` where the value is not a text.
+function text_at(doc: toml.Value, path: [str], fallback: str) -> str?
+    match toml.value_at(doc, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            return match v
+                .text t => ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: f"[{path[0]}] {path[1]} is a text"
+                )
+
+# The integer under `path`, `fallback` where there is none.
+#
+# - `doc`: the file.
+# - `path`: the table and the key.
+# - `fallback`: what no value means.
+#
+# Fails `invalid` where the value is not an integer.
+function integer_at(doc: toml.Value, path: [str], fallback: i64) -> i64?
+    match toml.value_at(doc, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            return match v
+                .integer n => ok(n.v)
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: f"[{path[0]}] {path[1]} is an integer"
+                )
+
+# The truth value under `path`, `fallback` where there is none.
+#
+# - `doc`: the file.
+# - `path`: the table and the key.
+# - `fallback`: what no value means.
+#
+# Fails `invalid` where the value is not a boolean.
+function flag_at(doc: toml.Value, path: [str], fallback: bool) -> bool?
+    match toml.value_at(doc, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            return match v
+                .boolean b => ok(b.v)
+                .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => fail(
+                    code: INVALID,
+                    msg: f"[{path[0]}] {path[1]} is true or false"
+                )
+
+# The texts of the array under `path`, none where there is none.
+#
+# - `doc`: the file.
+# - `path`: the table and the key.
+#
+# Fails `invalid` where it is not an array of texts.
+function texts_at(doc: toml.Value, path: [str]) -> [str]?
+    match toml.value_at(doc, path: path)
+        .err _ => return ok([])
+        .ok v =>
+            match v
+                .array a =>
+                    out: [str] @= []
+
+                    for item in a.items
+                        match item
+                            .text t => out @ out.push(t.v)
+                            .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ => return fail(
+                                code: INVALID,
+                                msg: f"[{path[0]}] {path[1]} is an array of texts"
+                            )
+
+                    return ok(out)
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ => return fail(
+                    code: INVALID,
+                    msg: f"[{path[0]}] {path[1]} is an array of texts"
+                )
+
+test "parse: a whole file, its secrets written in it, the defaults where it is silent"
+    text_of_file = "[kafka]\nbrokers = [\"127.0.0.1:9092\"]\ngroup = \"g\"\ntopics = [\"orders\"]\nusername = \"u\"\npassword = \"p\"\n\n[s3]\nendpoint = \"http://127.0.0.1:9000\"\nbucket = \"b\"\naccess_key_id = \"AK\"\nsecret_access_key = \"SK\"\n\n[postgres]\nurl = \"postgres://u@127.0.0.1:5432/d?sslmode=disable\"\npassword = \"pg\"\n\n[windows]\nseconds = 60\ngrace_seconds = 30\n\n[retries]\nattempts = 3\nfirst_ms = 10\nlongest_ms = 100\nfraction = 0.5\n"
+    s = parse(text_of_file).must()
+    assert s.kafka.brokers == ["127.0.0.1:9092"] && s.kafka.password == "p" && s.kafka.client_id == "pipeline" && !s.kafka.tls
+    assert s.storage.access_key_id == "AK" && s.storage.region == "us-east-1" && s.database.password == "pg"
+    assert s.windows.length == time.seconds(60).must() && s.retrying.attempts == 3 && s.retrying.fraction == 0.5 && s.metrics.listen == ""
+
+test "parse: a value of the wrong kind and a file with no topic are refused"
+    assert parse("[kafka]\nbrokers = \"one\"\n").is_err()
+    assert parse(
+        "[kafka]\nbrokers = [\"k:1\"]\ngroup = \"g\"\n[s3]\nbucket = \"b\"\naccess_key_id = \"a\"\nsecret_access_key = \"s\"\n[postgres]\nurl = \"u\"\n"
+    ).is_err()

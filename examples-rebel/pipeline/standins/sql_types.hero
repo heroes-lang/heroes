@@ -1,0 +1,241 @@
+# The type of each column a statement answers, known before it runs, as
+# PostgreSQL knows it when a client describes a portal: a table's column
+# has its declared type, a cast the type it casts to, a function its
+# return type, an operator the type its operands give, and an untyped
+# literal or parameter `text`. The RowDescription names these types, and
+# the client reads each value by the type named, so a value the engine
+# computes is always of the type said here.
+
+use standins/sql_tree
+
+## Scope
+
+# A row's columns as the typing sees them: its qualifier, names and types.
+record Shape
+    # The table's name or alias.
+    qualifier: str
+    # The columns' names.
+    names: [str]
+    # Their types, one per name.
+    types: [str]
+
+# The shape of `table`'s rows under `alias`; none for no table.
+#
+# - `db`: the database.
+# - `table`: the table, "" for none.
+# - `alias`: its alias.
+function shape_of(db: sql_tree.Database lent, table: str, alias: str) -> [Shape]
+    at = sql_tree.table_at(db, name: table)
+
+    if at < 0
+        return []
+    names: [str] @= []
+    types: [str] @= []
+
+    for c in db.tables[at].columns
+        names @ names.push(c.name)
+        types @ types.push(c.type_name)
+
+    return [Shape(qualifier: alias, names: names, types: types)]
+
+## Typing
+
+# The type `e` answers.
+#
+# - `e`: the expression.
+# - `shapes`: the rows in scope, the innermost first.
+# - `params`: the parameters' types, `unknown` where the client named none.
+# - `db`: the database, for a subquery's table.
+function type_of(e: sql_tree.Expr, shapes: [Shape], params: [str], db: sql_tree.Database lent) -> str
+    return match e
+        .literal l => literal_type(l.value)
+        .param p =>
+            if p.number >= 1 && p.number <= params.len() && params[p.number - 1] != "unknown"
+                params[p.number - 1]
+            else
+                "text"
+        .column c   => column_type(shapes, qualifier: c.qualifier, name: c.name)
+        .operator o => operator_type(o.op, operands: o.operands, shapes: shapes, params: params, db: db)
+        .call c     => call_type(c.name, given: c.args, shapes: shapes, params: params, db: db)
+        .cast c     => c.to
+        .case_of c  => first_typed(c.results, shapes: shapes, params: params, db: db)
+        .scalar s =>
+            first_item_type(s.query[0], shapes: shapes, params: params, db: db)
+        .in_list _ | .in_query _ | .exists _ | .is_null _ => "bool"
+
+# The type a literal's value answers, an untyped one as `text`.
+#
+# - `d`: the value.
+function literal_type(d: sql_tree.Datum) -> str
+    return match d
+        .null_value => "text"
+        .boolean _  => "bool"
+        .integer _  => "int8"
+        .float _    => "float8"
+        .numeric _  => "numeric"
+        .text _     => "text"
+        .unknown _  => "text"
+        .instant _  => "timestamptz"
+        .interval _ => "interval"
+        .jsonb _    => "jsonb"
+
+# The declared type of a column in scope, `text` where none is found, the
+# evaluation then refusing it.
+#
+# - `shapes`: the rows in scope.
+# - `qualifier`: the qualifier written, "" for any.
+# - `name`: the column.
+function column_type(shapes: [Shape], qualifier: str, name: str) -> str
+    for s in shapes
+        if qualifier == "" || s.qualifier == qualifier
+            for i in range(from: 0, to: s.names.len())
+                if s.names[i] == name
+                    return s.types[i]
+
+    return "text"
+
+# The type an operator answers.
+#
+# - `op`: the operator.
+# - `operands`: one or two.
+# - `shapes`: the rows in scope.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function operator_type(op: str, operands: [sql_tree.Expr], shapes: [Shape], params: [str], db: sql_tree.Database lent) -> str
+    if op == "and" || op == "or" || op == "not" || op == "=" || op == "<>" || op == "<" || op == "<=" || op == ">" || op == ">="
+        return "bool"
+    a = type_of(operands[0], shapes: shapes, params: params, db: db)
+
+    if op == "neg"
+        return a
+    b = type_of(operands[1], shapes: shapes, params: params, db: db)
+
+    if op == "||"
+        if a == "jsonb" || b == "jsonb"
+            return "jsonb"
+        return "text"
+
+    if a == "timestamptz" && b == "timestamptz"
+        return "interval"
+
+    if a == "timestamptz" || b == "timestamptz"
+        return "timestamptz"
+
+    if a == "interval" || b == "interval"
+        return "interval"
+
+    if a == "float8" || b == "float8"
+        return "float8"
+
+    if a == "numeric" || b == "numeric"
+        return "numeric"
+
+    if a == "text"
+        return b
+    return a
+
+# The type a function answers.
+#
+# - `name`: the function.
+# - `given`: its arguments.
+# - `shapes`: the rows in scope.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function call_type(name: str, given: [sql_tree.Expr], shapes: [Shape], params: [str], db: sql_tree.Database lent) -> str
+    return match name
+        "now"                                        => "timestamptz"
+        "extract"                                    => "numeric"
+        "jsonb_build_array" | "jsonb_build_object"   => "jsonb"
+        "hashtext"                                   => "int4"
+        "count"                                      => "int8"
+        "pg_advisory_lock" | "pg_advisory_xact_lock" => "void"
+        "pg_advisory_unlock"                         => "bool"
+        "sum" =>
+            if given.len() == 1 && type_of(given[0], shapes: shapes, params: params, db: db) == "float8"
+                "float8"
+            else
+                "int8"
+        _ => first_typed(given, shapes: shapes, params: params, db: db)
+
+# The type of the first of `exprs` that has one other than `text`, else
+# `text`, as `coalesce`, `least` and `CASE` resolve their types.
+#
+# - `exprs`: the expressions.
+# - `shapes`: the rows in scope.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function first_typed(exprs: [sql_tree.Expr], shapes: [Shape], params: [str], db: sql_tree.Database lent) -> str
+    for x in exprs
+        t = type_of(x, shapes: shapes, params: params, db: db)
+
+        if t != "text"
+            return t
+
+    return "text"
+
+# The type of a query's first item, as a scalar subquery answers it.
+#
+# - `s`: the query.
+# - `shapes`: the rows around it.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function first_item_type(s: sql_tree.Select, shapes: [Shape], params: [str], db: sql_tree.Database lent) -> str
+    types = select_types(s, outer: shapes, params: params, db: db)
+
+    if types.len() == 0
+        return "text"
+    return types[0]
+
+# The type of each column `s` answers, `*` as its table's columns.
+#
+# - `s`: the query.
+# - `outer`: the rows around it.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function select_types(s: sql_tree.Select, outer: [Shape], params: [str], db: sql_tree.Database lent) -> [str]
+    return items_types(s.items, table: s.table, alias: s.alias, outer: outer, params: params, db: db)
+
+# The type of each item over the rows of `table`, as a `SELECT` or a
+# `RETURNING` answers them.
+#
+# - `items`: the items.
+# - `table`: the table, "" for none.
+# - `alias`: its alias.
+# - `outer`: the rows around it.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function items_types(items: [sql_tree.Item], table: str, alias: str, outer: [Shape], params: [str], db: sql_tree.Database lent) -> [str]
+    shapes: [Shape] @= shape_of(db, table: table, alias: alias)
+
+    for s in outer
+        shapes @ shapes.push(s)
+
+    out: [str] @= []
+
+    for item in items
+        if item.star
+            for s in shape_of(db, table: table, alias: alias)
+                for t in s.types
+                    out @ out.push(t)
+        else
+            out @ out.push(type_of(item.expr, shapes: shapes, params: params, db: db))
+
+    return out
+
+test "type_of: a cast, a comparison, a jsonb join, a timestamp moved, a column of a table, an untyped parameter"
+    t = sql_tree.Table(
+        name: "t",
+        columns: [sql_tree.Column(name: "a", type_name: "int4", not_null: false, serial: false, default_value: [])],
+        rows: [],
+        indexes: [],
+        checks: [],
+        next_serial: 1
+    )
+    db = sql_tree.Database(tables: [t], version: 0)
+    shapes = shape_of(db, table: "t", alias: "t")
+    assert type_of(.cast(to: "text", operand: [.param(number: 1)]), shapes: shapes, params: ["unknown"], db: db) == "text"
+    assert type_of(.column(qualifier: "", name: "a"), shapes: shapes, params: [], db: db) == "int4"
+    assert type_of(.operator(op: "=", operands: [.param(number: 1), .param(number: 1)]), shapes: shapes, params: [], db: db) == "bool"
+    assert type_of(.operator(op: "+", operands: [.call(name: "now", args: [], star: false), .literal(value: .interval(micros: 1))]), shapes: shapes, params: [], db: db) == "timestamptz"
+    assert type_of(.param(number: 1), shapes: shapes, params: ["int8"], db: db) == "int8"
+    assert type_of(.param(number: 1), shapes: shapes, params: ["unknown"], db: db) == "text"

@@ -1,0 +1,78 @@
+== services, started on loopback and told ready
+kafka: ready
+s3: ready
+postgres: ready
+== events produced by a client logged in by SCRAM-SHA-256
+clicks: 4 JSON, 3 MessagePack, 0 of neither
+orders: 6 JSON, 4 MessagePack, 1 of neither
+== the schema migrated, logged in by SCRAM-SHA-256
+applied 1 window_aggregates
+applied 2 batches_ledger
+applied 3 jobs_store
+== the pipeline, caught up with the group events-archiver
+read 10 JSON events, 7 MessagePack, 1 message of neither sent to events.rejected
+late events dropped: 1
+windows written: 3, copies stored: 11, put attempts: 14
+kept for a replay: archive/orders/year=2026/month=03/day=14/orders-20260314T090100Z.ndjson.zst
+== the cold export, asked before the replay
+refused (failed): 2026-03-14 of orders still has 1 write kept for a replay: replay it first
+== the replay of the writes kept
+job 1: archive/orders/year=2026/month=03/day=14/orders-20260314T090100Z.ndjson.zst stored at its attempt 1, ETag "4844f361126b49bc87372ea696cf919e"; completed
+== the cold export of 2026-03-14
+cold/clicks/2026-03-14.ndjson.bz2: 7 events from 3 archived windows, 932 bytes raw, 289 stored
+cold/orders/2026-03-14.ndjson.bz2: 9 events from 3 archived windows, 1242 bytes raw, 324 stored
+== objects in s3://events-archive, as the ledger holds them
+archive/clicks/year=2026/month=03/day=14/clicks-20260314T090000Z.ndjson.zst: 3 events, 400 bytes raw, 202 stored (zstd, stored)
+archive/clicks/year=2026/month=03/day=14/clicks-20260314T090100Z.ndjson.zst: 2 events, 265 bytes raw, 175 stored (zstd, stored)
+archive/clicks/year=2026/month=03/day=14/clicks-20260314T090200Z.ndjson.zst: 2 events, 267 bytes raw, 185 stored (zstd, stored)
+archive/orders/year=2026/month=03/day=14/orders-20260314T090000Z.ndjson.zst: 4 events, 553 bytes raw, 216 stored (zstd, stored)
+archive/orders/year=2026/month=03/day=14/orders-20260314T090100Z.ndjson.zst: 3 events, 414 bytes raw, 200 stored (zstd, stored)
+archive/orders/year=2026/month=03/day=14/orders-20260314T090200Z.ndjson.zst: 2 events, 275 bytes raw, 175 stored (zstd, stored)
+cold/clicks/2026-03-14.ndjson.bz2: 7 events, 932 bytes raw, 289 stored (bzip2, stored)
+cold/orders/2026-03-14.ndjson.bz2: 9 events, 1242 bytes raw, 324 stored (bzip2, stored)
+hot/clicks/dt=2026-03-14/hour=09/clicks-20260314T090000Z.ndjson.lz4: 3 events, 400 bytes raw, 228 stored (lz4, stored)
+hot/clicks/dt=2026-03-14/hour=09/clicks-20260314T090100Z.ndjson.lz4: 2 events, 265 bytes raw, 192 stored (lz4, stored)
+hot/clicks/dt=2026-03-14/hour=09/clicks-20260314T090200Z.ndjson.lz4: 2 events, 267 bytes raw, 202 stored (lz4, stored)
+hot/orders/dt=2026-03-14/hour=09/orders-20260314T090000Z.ndjson.lz4: 4 events, 553 bytes raw, 253 stored (lz4, stored)
+hot/orders/dt=2026-03-14/hour=09/orders-20260314T090100Z.ndjson.lz4: 3 events, 414 bytes raw, 229 stored (lz4, stored)
+hot/orders/dt=2026-03-14/hour=09/orders-20260314T090200Z.ndjson.lz4: 2 events, 275 bytes raw, 197 stored (lz4, stored)
+the bucket lists the same 14 objects at the same sizes
+== aggregates in PostgreSQL
+2026-03-14T09:00:00Z clicks button.clicked: events 1, sum 1.00, p50 1.00, p95 1.00, p99 1.00
+2026-03-14T09:00:00Z clicks page.viewed: events 2, sum 430.00, p50 215.00, p95 300.50, p99 308.10
+2026-03-14T09:00:00Z orders order.placed: events 3, sum 6440.00, p50 1250.00, p95 3905.00, p99 4141.00
+2026-03-14T09:00:00Z orders order.refunded: events 1, sum 1250.00, p50 1250.00, p95 1250.00, p99 1250.00
+2026-03-14T09:01:00Z clicks page.viewed: events 2, sum 575.00, p50 287.50, p95 460.75, p99 476.15
+2026-03-14T09:01:00Z orders order.placed: events 3, sum 18740.00, p50 2300.00, p95 14450.00, p99 15530.00
+2026-03-14T09:02:00Z clicks button.clicked: events 1, sum 1.00, p50 1.00, p95 1.00, p99 1.00
+2026-03-14T09:02:00Z clicks page.viewed: events 1, sum 220.00, p50 220.00, p95 220.00, p99 220.00
+2026-03-14T09:02:00Z orders order.placed: events 2, sum 5970.00, p50 2985.00, p95 4888.50, p99 5057.70
+== jobs in PostgreSQL
+queue replay: 1 completed
+== metrics, as a scraper reads /metrics
+pipeline_batches_written_total{tier="archive"} 6
+pipeline_batches_written_total{tier="cold"} 2
+pipeline_batches_written_total{tier="hot"} 6
+pipeline_events_late_total{topic="orders"} 1
+pipeline_events_total{format="json",topic="clicks"} 4
+pipeline_events_total{format="json",topic="orders"} 6
+pipeline_events_total{format="msgpack",topic="clicks"} 3
+pipeline_events_total{format="msgpack",topic="orders"} 4
+pipeline_messages_rejected_total{topic="orders"} 1
+pipeline_raw_bytes_total{tier="archive"} 2174
+pipeline_raw_bytes_total{tier="cold"} 2174
+pipeline_raw_bytes_total{tier="hot"} 2174
+pipeline_s3_put_attempts_total{outcome="given_up"} 1
+pipeline_s3_put_attempts_total{outcome="retried"} 2
+pipeline_s3_put_attempts_total{outcome="stored"} 11
+pipeline_stored_bytes_total{tier="archive"} 1153
+pipeline_stored_bytes_total{tier="cold"} 613
+pipeline_stored_bytes_total{tier="hot"} 1301
+pipeline_windows_closed_total 3
+pipeline_writes_kept_total 1
+pipeline_writes_replayed_total 1
+== what each service saw
+kafka: 19 records in 4 batches appended, 0 refused
+kafka: group events-archiver at generation 1, Empty, offsets clicks/0=7 orders/0=1 orders/1=10
+s3: 14 objects, 3067 bytes in events-archive; 14 puts taken, 3 refused on purpose, 0 refused for their signature; 6 objects read, 3 listings
+postgres: 1 logins taken, 0 refused; rows by table: applied_migrations 3, batches 14, rebel_jobs 1, rebel_jobs_periodic 0, rebel_jobs_queues 0, window_aggregates 9

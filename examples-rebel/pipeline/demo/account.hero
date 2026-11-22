@@ -1,0 +1,85 @@
+# The demo's account of what the pipeline left behind, every line free of
+# times, ports and keys of the run: each object the ledger holds, checked
+# against the bucket's own listing (same key, same stored size); each
+# aggregate row of PostgreSQL; and the jobs of the jobs store by queue and
+# state.
+
+use <rebel>/jobs
+use <rebel>/jobs/postgres_store
+use <rebel>/numbers
+use <rebel>/s3
+use <rebel>/time
+
+use core/pipeline
+use store/aggregates
+use store/ledger
+
+## The account
+
+# The lines that tell the objects: one per ledger row, then whether the
+# bucket holds exactly those objects at those sizes.
+#
+# - `p`: the pipeline.
+#
+# Fails as reading the ledger and listing the bucket fail.
+function objects(@p: pipeline.Pipeline) -> [str]?
+    entries = ledger.all_entries(@p.db)?
+    listed = s3.list_all_objects(p.bucket.client, bucket: p.bucket.name, prefix: "")?
+    lines: [str] @= []
+    agree @= listed.len() == entries.len()
+
+    for e in entries
+        lines @ lines.push(
+            f"{e.key}: {e.events} events, {e.raw_bytes} bytes raw, {e.stored_bytes} stored ({e.codec}, {e.state})"
+        )
+        found @= false
+
+        for o in listed
+            if o.key == e.key && o.size == e.stored_bytes
+                found @ true
+
+        if !found
+            agree @ false
+
+    if agree
+        lines @ lines.push(f"the bucket lists the same {listed.len()} objects at the same sizes")
+    else
+        lines @ lines.push(f"the bucket lists {listed.len()} objects, and they are not the ledger's")
+    return ok(lines)
+
+# The lines that tell the aggregates, by window, topic and type.
+#
+# - `p`: the pipeline.
+#
+# Fails as reading them fails.
+function aggregate_lines(@p: pipeline.Pipeline) -> [str]?
+    lines: [str] @= []
+
+    for a in aggregates.all_rows(@p.db)?
+        lines @ lines.push(
+            f"{time.format(a.window_start, .rfc3339)} {a.topic} {a.event_type}: events {a.events}, sum {money(a.value_sum)}, p50 {money(a.p50)}, p95 {money(a.p95)}, p99 {money(a.p99)}"
+        )
+
+    return ok(lines)
+
+# The lines that tell the jobs by queue and state.
+#
+# - `p`: the pipeline.
+#
+# Fails as `postgres_store.counts` fails.
+function job_lines(@p: pipeline.Pipeline) -> [str]?
+    lines: [str] @= []
+
+    for c in postgres_store.counts(@p.db)?
+        lines @ lines.push(f"queue {c.queue}: {c.jobs} {jobs.state_name(c.state)}")
+
+    return ok(lines)
+
+# `x` with two decimals.
+#
+# - `x`: a number.
+function money(x: f64) -> str
+    return numbers.format_float(x, precision: 2)
+
+test "money: two decimals, rounded"
+    assert money(1250.0) == "1250.00" && money(0.125) == "0.12"

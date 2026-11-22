@@ -1,0 +1,643 @@
+# How the PostgreSQL stand-in's engine computes an expression over the rows
+# in scope, and runs a `SELECT`: its table's rows filtered by `WHERE`,
+# grouped where it groups or aggregates, ordered by `ORDER BY` with NULLs
+# last ascending and first descending as PostgreSQL places them, cut by
+# `OFFSET` and `LIMIT`. Logic is three-valued: a comparison with NULL is
+# NULL, `false AND NULL` is false, `true OR NULL` is true. A subquery sees
+# the rows of the queries around it, so a correlated `NOT EXISTS` reads its
+# outer row. `FOR UPDATE SKIP LOCKED` takes no lock: the stand-in runs one
+# statement at a time, so no row is ever locked by another.
+#
+# **This module is one knot and is kept whole**: an expression may hold a
+# query and a query computes expressions, and Heroes refuses a cycle of
+# modules. Its map: `eval` is the entry for a value and `run_select` for a
+# query; `eval` calls `operator`, `case_value`, `membership` and, for
+# `IN (SELECT ...)`, `EXISTS` and a scalar subquery, `run_select`, which
+# reads `source_rows`, groups with `group_rows`, computes each item with
+# `eval_group` (by `aggregate_over` for an aggregate, else `eval`) and
+# each `ORDER BY` key with `order_value`, and orders and cuts the rows with
+# `sql_order.ordered_rows` and `bound_of`.
+
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_functions
+use standins/sql_ops
+use standins/sql_order
+use standins/sql_tree
+
+## Scope
+
+# A row in scope: its table's name or alias, and its columns.
+record Bound
+    # The name a qualified column names it by.
+    qualifier: str
+    # Its columns' names.
+    names: [str]
+    # Its values, one per name.
+    values: [sql_tree.Datum]
+
+# What an expression may read: the rows in scope, the innermost first, the
+# statement's parameters, and its moment.
+record Scope
+    # The rows, the innermost query's first.
+    bound: [Bound]
+    # The parameters, `$1` first.
+    params: [sql_tree.Datum]
+    # The statement's moment, microseconds since 1970.
+    now_micros: i64
+
+# `scope` with `row` in front of the rows it holds.
+#
+# - `scope`: the scope around.
+# - `row`: the row of the inner query.
+function inside(scope: Scope lent, row: Bound) -> Scope
+    rows: [Bound] @= [row]
+
+    for b in scope.bound
+        rows @ rows.push(b)
+
+    return Scope(bound: rows, params: scope.params, now_micros: scope.now_micros)
+
+# The value of the column `name`, qualified by `qualifier` where it is
+# written.
+#
+# - `scope`: the rows in scope.
+# - `qualifier`: the table's name or alias, "" for any.
+# - `name`: the column's name.
+#
+# Fails `invalid` with `42703` where no row in scope has the column, or
+# `42P01` where no row is named by the qualifier.
+function column_value(scope: Scope lent, qualifier: str, name: str) -> sql_tree.Datum?
+    for b in scope.bound
+        if qualifier == "" || b.qualifier == qualifier
+            for i in range(from: 0, to: b.names.len())
+                if b.names[i] == name
+                    return ok(b.values[i])
+
+    for b in scope.bound
+        if b.qualifier == qualifier
+            return sql_datum.refused(state: "42703", message: f"column {qualifier}.{name} does not exist")
+
+    if qualifier != ""
+        return sql_datum.refused(state: "42P01", message: f"missing FROM-clause entry for table \"{qualifier}\"")
+    return sql_datum.refused(state: "42703", message: f"column \"{name}\" does not exist")
+
+## Expressions
+
+# The value of `e` over `scope`, subqueries run against `db`.
+#
+# - `e`: the expression.
+# - `scope`: the rows in scope, the parameters and the moment.
+# - `db`: the database a subquery reads.
+#
+# Fails `invalid` with the SQLSTATE of what PostgreSQL would refuse: a
+# column or a parameter that does not exist, an operator or a function
+# for the types, an aggregate outside a grouped query, a subquery of more
+# than one row where one value is asked.
+function eval(e: sql_tree.Expr, scope: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    return match e
+        .literal l => ok(l.value)
+        .param p =>
+            if p.number < 1 || p.number > scope.params.len()
+                sql_datum.refused(state: "42P02", message: f"there is no parameter ${p.number}")
+            else
+                ok(scope.params[p.number - 1])
+        .column c   => column_value(scope, qualifier: c.qualifier, name: c.name)
+        .operator o => operator(o.op, operands: o.operands, scope: scope, db: db)
+        .call c =>
+            if sql_functions.is_aggregate(c.name)
+                sql_datum.refused(state: "42803", message: f"aggregate function {c.name} is not allowed here")
+            else
+                sql_functions.call(c.name, given: eval_all(c.args, scope: scope, db: db)?, now_micros: scope.now_micros)
+        .cast c => sql_cast.cast(eval(c.operand[0], scope: scope, db: db)?, to: c.to)
+        .case_of c =>
+            case_value(conditions: c.conditions, results: c.results, otherwise: c.otherwise, scope: scope, db: db)
+        .in_list l =>
+            membership(
+                eval(l.operand[0], scope: scope, db: db)?,
+                candidates: eval_all(l.items, scope: scope, db: db)?,
+                negated: l.negated
+            )
+        .in_query q =>
+            membership(
+                eval(q.operand[0], scope: scope, db: db)?,
+                candidates: first_column(run_select(q.query[0], outer: scope, db: db)?),
+                negated: q.negated
+            )
+        .exists x =>
+            exists_value(found: run_select(x.query[0], outer: scope, db: db)?.rows.len() > 0, negated: x.negated)
+        .scalar s =>
+            scalar_value(run_select(s.query[0], outer: scope, db: db)?)
+        .is_null n =>
+            null_test(eval(n.operand[0], scope: scope, db: db)?, negated: n.negated)
+
+# The values of `exprs`, in order.
+#
+# - `exprs`: the expressions.
+# - `scope`: the scope.
+# - `db`: the database.
+function eval_all(exprs: [sql_tree.Expr], scope: Scope lent, db: sql_tree.Database lent) -> [sql_tree.Datum]?
+    out: [sql_tree.Datum] @= []
+
+    for x in exprs
+        out @ out.push(eval(x, scope: scope, db: db)?)
+
+    return ok(out)
+
+# An operator's value: `AND`, `OR` and `NOT` in three-valued logic, a
+# comparison NULL where a side is NULL, and the rest by `sql_ops`.
+#
+# - `op`: the operator.
+# - `operands`: one or two.
+# - `scope`: the scope.
+# - `db`: the database.
+function operator(op: str, operands: [sql_tree.Expr], scope: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    if op == "and" || op == "or"
+        a = eval(operands[0], scope: scope, db: db)?
+        decided = op == "or"
+
+        if a != .null_value && sql_ops.truth(a)? == decided
+            return ok(.boolean(v: decided))
+        b = eval(operands[1], scope: scope, db: db)?
+
+        if b != .null_value && sql_ops.truth(b)? == decided
+            return ok(.boolean(v: decided))
+
+        if a == .null_value || b == .null_value
+            return ok(.null_value)
+        return ok(.boolean(v: !decided))
+    a = eval(operands[0], scope: scope, db: db)?
+
+    if op == "not"
+        if a == .null_value
+            return ok(.null_value)
+        return ok(.boolean(v: !sql_ops.truth(a)?))
+
+    if op == "neg"
+        return sql_ops.negate(a)
+    b = eval(operands[1], scope: scope, db: db)?
+
+    if op == "||"
+        return sql_ops.concat(a: a, b: b)
+
+    if op == "+" || op == "-" || op == "*" || op == "/"
+        return sql_ops.arithmetic(op, a: a, b: b)
+
+    if a == .null_value || b == .null_value
+        return ok(.null_value)
+    order = sql_order.compare(a: a, b: b)?
+
+    held = match op
+        "="  => order == 0
+        "<>" => order != 0
+        "<"  => order < 0
+        "<=" => order <= 0
+        ">"  => order > 0
+        _    => order >= 0
+
+    return ok(.boolean(v: held))
+
+# A `CASE`'s value: the result of the first condition that holds.
+#
+# - `conditions`: the conditions.
+# - `results`: their values.
+# - `otherwise`: the `ELSE`, none for NULL.
+# - `scope`: the scope.
+# - `db`: the database.
+function case_value(conditions: [sql_tree.Expr], results: [sql_tree.Expr], otherwise: [sql_tree.Expr], scope: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    for i in range(from: 0, to: conditions.len())
+        if sql_ops.truth(eval(conditions[i], scope: scope, db: db)?)?
+            return eval(results[i], scope: scope, db: db)
+
+    if otherwise.len() == 0
+        return ok(.null_value)
+    return eval(otherwise[0], scope: scope, db: db)
+
+# `v IN candidates`: true on an equal one, NULL where none is equal and one
+# is NULL or `v` is, false otherwise; `NOT IN` its negation.
+#
+# - `v`: the value sought.
+# - `candidates`: the values.
+# - `negated`: whether `NOT IN`.
+function membership(v: sql_tree.Datum, candidates: [sql_tree.Datum], negated: bool) -> sql_tree.Datum?
+    if v == .null_value
+        return ok(.null_value)
+    unknown_seen @= false
+
+    for c in candidates
+        if c == .null_value
+            unknown_seen @ true
+        else if sql_order.compare(a: v, b: c)? == 0
+            return ok(.boolean(v: !negated))
+
+    if unknown_seen
+        return ok(.null_value)
+    return ok(.boolean(v: negated))
+
+# `EXISTS`'s value.
+#
+# - `found`: whether the subquery answered a row.
+# - `negated`: whether `NOT EXISTS`.
+function exists_value(found: bool, negated: bool) -> sql_tree.Datum?
+    return ok(.boolean(v: found != negated))
+
+# `IS [NOT] NULL`'s value, never NULL.
+#
+# - `v`: the value.
+# - `negated`: whether `IS NOT NULL`.
+function null_test(v: sql_tree.Datum, negated: bool) -> sql_tree.Datum?
+    return ok(.boolean(v: v == .null_value != negated))
+
+# The one value a scalar subquery answers: NULL for no row.
+#
+# - `a`: what it answered.
+#
+# Fails `invalid` with `21000` for more than one row.
+function scalar_value(a: Answer) -> sql_tree.Datum?
+    if a.rows.len() > 1
+        return sql_datum.refused(
+            state: "21000",
+            message: "more than one row returned by a subquery used as an expression"
+        )
+
+    if a.rows.len() == 0 || a.rows[0].len() == 0
+        return ok(.null_value)
+    return ok(a.rows[0][0])
+
+# The first column of every row of `a`.
+#
+# - `a`: an answer.
+function first_column(a: Answer) -> [sql_tree.Datum]
+    out: [sql_tree.Datum] @= []
+
+    for row in a.rows
+        if row.len() > 0
+            out @ out.push(row[0])
+
+    return out
+
+## SELECT
+
+# What a query answered.
+record Answer
+    # Its columns' names.
+    names: [str]
+    # Its rows, each a value per column.
+    rows: [[sql_tree.Datum]]
+
+# The rows of `table` in `db`, each bound under `alias`; one empty row
+# where `table` is "", as a `SELECT` with no `FROM` reads.
+#
+# - `db`: the database.
+# - `table`: the table's name, "" for none.
+# - `alias`: the name its rows go by.
+#
+# Fails `invalid` with `42P01` where there is no such table.
+function source_rows(db: sql_tree.Database lent, table: str, alias: str) -> [Bound]?
+    if table == ""
+        return ok([Bound(qualifier: "", names: [], values: [])])
+    at = sql_tree.table_at(db, name: table)
+
+    if at < 0
+        return sql_datum.refused(state: "42P01", message: f"relation \"{table}\" does not exist")
+    names: [str] @= []
+
+    for c in db.tables[at].columns
+        names @ names.push(c.name)
+
+    out: [Bound] @= []
+
+    for row in db.tables[at].rows
+        out @ out.push(Bound(qualifier: alias, names: names, values: row))
+
+    return ok(out)
+
+# Whether `e` holds an aggregate call outside any subquery.
+#
+# - `e`: the expression.
+function has_aggregate(e: sql_tree.Expr) -> bool
+    return match e
+        .call c =>
+            if sql_functions.is_aggregate(c.name)
+                true
+            else
+                any_aggregate(c.args)
+        .operator o => any_aggregate(o.operands)
+        .cast c => any_aggregate(c.operand)
+        .case_of c => any_aggregate(c.conditions) || any_aggregate(c.results) || any_aggregate(c.otherwise)
+        .in_list l => any_aggregate(l.operand) || any_aggregate(l.items)
+        .is_null n => any_aggregate(n.operand)
+        .literal _ | .param _ | .column _ | .in_query _ | .exists _ | .scalar _ => false
+
+# Whether any of `exprs` holds an aggregate.
+#
+# - `exprs`: the expressions.
+function any_aggregate(exprs: [sql_tree.Expr]) -> bool
+    for x in exprs
+        if has_aggregate(x)
+            return true
+
+    return false
+
+# The rows `s` answers.
+#
+# - `s`: the query.
+# - `outer`: the scope of the queries around it; the parameters and the
+#   moment come from it.
+# - `db`: the database.
+#
+# Fails as `eval` fails, `42P01` for a table that does not exist, and
+# `22023` for a negative `LIMIT` or `OFFSET`.
+function run_select(s: sql_tree.Select, outer: Scope lent, db: sql_tree.Database lent) -> Answer?
+    kept: [Bound] @= []
+
+    for row in source_rows(db, table: s.table, alias: s.alias)?
+        match s.condition
+            .err _ => kept @ kept.push(row)
+            .ok c =>
+                if sql_ops.truth(eval(c, scope: inside(outer, row: row), db: db)?)?
+                    kept @ kept.push(row)
+
+    grouped = s.group_by.len() > 0 || item_aggregates(s.items) || order_aggregates(s.order_by)
+    groups: [[Bound]] @= []
+
+    if grouped
+        groups @ group_rows(kept, by: s.group_by, outer: outer, db: db)?
+    else
+        for row in kept
+            groups @ groups.push([row])
+
+    names = column_names(s, db: db)
+    rows: [[sql_tree.Datum]] @= []
+    sort_keys: [[sql_tree.Datum]] @= []
+
+    for g in groups
+        values: [sql_tree.Datum] @= []
+
+        for item in s.items
+            if item.star
+                for v in g[0].values
+                    values @ values.push(v)
+            else
+                values @ values.push(eval_group(item.expr, group: g, outer: outer, db: db)?)
+
+        keys_of: [sql_tree.Datum] @= []
+
+        for o in s.order_by
+            keys_of @ keys_of.push(order_value(o.expr, group: g, names: names, values: values, outer: outer, db: db)?)
+
+        rows @ rows.push(values)
+        sort_keys @ sort_keys.push(keys_of)
+
+    ordered = sql_order.ordered_rows(rows: rows, sort_keys: sort_keys, orders: s.order_by)?
+    first = bound_of(s.offset, outer: outer, db: db, fallback: 0)?
+    most = bound_of(s.limit, outer: outer, db: db, fallback: ordered.len())?
+    out: [[sql_tree.Datum]] @= []
+
+    for i in range(from: first, to: ordered.len())
+        if out.len() >= most
+            break
+        out @ out.push(ordered[i])
+
+    return ok(Answer(names: names, rows: out))
+
+# Whether an item aggregates.
+#
+# - `items`: the items.
+function item_aggregates(items: [sql_tree.Item]) -> bool
+    for i in items
+        if !i.star && has_aggregate(i.expr)
+            return true
+
+    return false
+
+# Whether an `ORDER BY` key aggregates.
+#
+# - `orders`: the keys.
+function order_aggregates(orders: [sql_tree.Order]) -> bool
+    for o in orders
+        if has_aggregate(o.expr)
+            return true
+
+    return false
+
+# The columns' names of `s`'s answer, `*` written as its table's columns.
+#
+# - `s`: the query.
+# - `db`: the database.
+function column_names(s: sql_tree.Select, db: sql_tree.Database lent) -> [str]
+    out: [str] @= []
+
+    for item in s.items
+        if item.star
+            at = sql_tree.table_at(db, name: s.table)
+
+            if at >= 0
+                for c in db.tables[at].columns
+                    out @ out.push(c.name)
+        else
+            out @ out.push(item.name)
+
+    return out
+
+# `rows` cut into groups of equal keys, in the order each key was first
+# met; one group of every row, even none, where no key is given.
+#
+# - `rows`: the rows kept by `WHERE`.
+# - `by`: the keys.
+# - `outer`: the scope around.
+# - `db`: the database.
+function group_rows(rows: [Bound], by: [sql_tree.Expr], outer: Scope lent, db: sql_tree.Database lent) -> [[Bound]]?
+    if by.len() == 0
+        return ok([rows])
+    keys_seen: [[sql_tree.Datum]] @= []
+    groups: [[Bound]] @= []
+
+    for row in rows
+        key = eval_all(by, scope: inside(outer, row: row), db: db)?
+        at: i64 @= -1
+
+        for i in range(from: 0, to: keys_seen.len())
+            if keys_seen[i] == key
+                at @ i
+
+        if at < 0
+            keys_seen @ keys_seen.push(key)
+            groups @ groups.push([row])
+        else
+            members @= groups[at]
+            members @ members.push(row)
+            groups[at] @ members
+
+    return ok(groups)
+
+# The value of `e` over a group: an aggregate computed over every row, any
+# other part read on the group's first row.
+#
+# - `e`: the expression.
+# - `group`: the group's rows; one row in a query that does not group.
+# - `outer`: the scope around.
+# - `db`: the database.
+function eval_group(e: sql_tree.Expr, group: [Bound], outer: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    if !has_aggregate(e)
+        if group.len() == 0
+            return eval(e, scope: outer, db: db)
+        return eval(e, scope: inside(outer, row: group[0]), db: db)
+
+    return match e
+        .call c =>
+            if sql_functions.is_aggregate(c.name)
+                aggregate_over(c.name, star: c.star, args_of: c.args, group: group, outer: outer, db: db)
+            else
+                sql_functions.call(
+                    c.name,
+                    given: eval_group_all(c.args, group: group, outer: outer, db: db)?,
+                    now_micros: outer.now_micros
+                )
+        .cast c => sql_cast.cast(eval_group(c.operand[0], group: group, outer: outer, db: db)?, to: c.to)
+        .operator o =>
+            if o.operands.len() == 1
+                sql_ops.negate(eval_group(o.operands[0], group: group, outer: outer, db: db)?)
+            else
+                combined(
+                    o.op,
+                    a: eval_group(o.operands[0], group: group, outer: outer, db: db)?,
+                    b: eval_group(o.operands[1], group: group, outer: outer, db: db)?
+                )
+        .literal _ | .param _ | .column _ | .case_of _ | .in_list _ | .in_query _ | .exists _ | .scalar _ | .is_null _ =>
+            sql_datum.refused(
+                state: "0A000",
+                message: "the stand-in aggregates inside a call, a cast or an operator alone"
+            )
+
+# The values of `exprs` over a group.
+#
+# - `exprs`: the expressions.
+# - `group`: the group's rows.
+# - `outer`: the scope around.
+# - `db`: the database.
+function eval_group_all(exprs: [sql_tree.Expr], group: [Bound], outer: Scope lent, db: sql_tree.Database lent) -> [sql_tree.Datum]?
+    out: [sql_tree.Datum] @= []
+
+    for x in exprs
+        out @ out.push(eval_group(x, group: group, outer: outer, db: db)?)
+
+    return ok(out)
+
+# Two values combined by `op` outside `eval`: an arithmetic, `||`, or a
+# comparison.
+#
+# - `op`: the operator.
+# - `a`: the left value.
+# - `b`: the right value.
+function combined(op: str, a: sql_tree.Datum, b: sql_tree.Datum) -> sql_tree.Datum?
+    if op == "+" || op == "-" || op == "*" || op == "/"
+        return sql_ops.arithmetic(op, a: a, b: b)
+
+    if op == "||"
+        return sql_ops.concat(a: a, b: b)
+    return operator(
+        op,
+        operands: [.literal(value: a), .literal(value: b)],
+        scope: Scope(bound: [], params: [], now_micros: 0),
+        db: sql_tree.empty_database()
+    )
+
+# An aggregate over a group.
+#
+# - `name`: the aggregate.
+# - `star`: whether called with `*`.
+# - `args_of`: its argument, one, or none with `*`.
+# - `group`: the group's rows.
+# - `outer`: the scope around.
+# - `db`: the database.
+function aggregate_over(name: str, star: bool, args_of: [sql_tree.Expr], group: [Bound], outer: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    values: [sql_tree.Datum] @= []
+
+    for row in group
+        if star
+            values @ values.push(.integer(v: 1))
+        else if args_of.len() == 1
+            values @ values.push(eval(args_of[0], scope: inside(outer, row: row), db: db)?)
+        else
+            return sql_datum.refused(state: "42883", message: f"function {name} takes one argument")
+
+    return sql_functions.aggregate(name, values: values, star: star)
+
+# The value an `ORDER BY` key sorts by: the expression over the row, or,
+# where it names no column of the table, the item of that name.
+#
+# - `e`: the key.
+# - `group`: the row's group.
+# - `names`: the answer's columns' names.
+# - `values`: the row's answered values.
+# - `outer`: the scope around.
+# - `db`: the database.
+function order_value(e: sql_tree.Expr, group: [Bound], names: [str], values: [sql_tree.Datum], outer: Scope lent, db: sql_tree.Database lent) -> sql_tree.Datum?
+    match eval_group(e, group: group, outer: outer, db: db)
+        .ok v => return ok(v)
+        .err failure =>
+            match e
+                .column c =>
+                    if c.qualifier == ""
+                        for i in range(from: 0, to: names.len())
+                            if names[i] == c.name
+                                return ok(values[i])
+                .literal _ | .param _ | .operator _ | .call _ | .cast _ | .case_of _ | .in_list _ | .in_query _ | .exists _ | .scalar _ | .is_null _ => _ = 0
+
+            return fail(code: failure.code, msg: failure.msg)
+
+# The number a `LIMIT` or an `OFFSET` gives.
+#
+# - `bound`: the clause, a failure where none is written.
+# - `outer`: the scope, for its parameters.
+# - `db`: the database.
+# - `fallback`: what no clause, or `LIMIT NULL`, means.
+function bound_of(bound: sql_tree.Expr?, outer: Scope lent, db: sql_tree.Database lent, fallback: i64) -> i64?
+    match bound
+        .err _ => return ok(fallback)
+        .ok e =>
+            v = eval(e, scope: outer, db: db)?
+
+            if v == .null_value
+                return ok(fallback)
+            n = sql_cast.integer_of(v)?
+
+            if n < 0
+                return sql_datum.refused(state: "22023", message: "LIMIT and OFFSET must not be negative")
+            return ok(n)
+
+test "run_select: WHERE, ORDER BY with DESC and NULLs, LIMIT and OFFSET over a table"
+    t = sql_tree.Table(
+        name: "t",
+        columns: [sql_tree.Column(name: "a", type_name: "int8", not_null: false, serial: false, default_value: []), sql_tree.Column(name: "b", type_name: "text", not_null: false, serial: false, default_value: [])],
+        rows: [[.integer(v: 2), .text(v: "x")], [.integer(v: 1), .null_value], [.integer(v: 3), .text(v: "y")]],
+        indexes: [],
+        checks: [],
+        next_serial: 1
+    )
+    db = sql_tree.Database(tables: [t], version: 0)
+    s @= sql_tree.bare_select([sql_tree.Item(expr: .column(qualifier: "", name: "a"), name: "a", star: false)])
+    s.table @ "t"
+    s.alias @ "t"
+    s.order_by @ [sql_tree.Order(expr: .column(qualifier: "", name: "b"), descending: true)]
+    scope = Scope(bound: [], params: [], now_micros: 0)
+    a = run_select(s, outer: scope, db: db).must()
+    assert a.rows == [[.integer(v: 1)], [.integer(v: 3)], [.integer(v: 2)]]
+    s.condition @ ok(.operator(op: ">", operands: [.column(qualifier: "", name: "a"), .param(number: 1)]))
+    s.limit @ ok(.literal(value: .integer(v: 1)))
+    narrowed = run_select(s, outer: Scope(bound: [], params: [.integer(v: 1)], now_micros: 0), db: db).must()
+    assert narrowed.rows == [[.integer(v: 3)]]
+
+test "eval: three-valued AND and OR, IN with a NULL, a missing column"
+    scope = Scope(bound: [], params: [], now_micros: 0)
+    db = sql_tree.empty_database()
+    t: sql_tree.Expr = .literal(value: .boolean(v: true))
+    f: sql_tree.Expr = .literal(value: .boolean(v: false))
+    n: sql_tree.Expr = .literal(value: .null_value)
+    assert eval(.operator(op: "and", operands: [f, n]), scope: scope, db: db).must() == .boolean(v: false)
+    assert eval(.operator(op: "and", operands: [t, n]), scope: scope, db: db).must() == .null_value
+    assert eval(.operator(op: "or", operands: [t, n]), scope: scope, db: db).must() == .boolean(v: true)
+    one: sql_tree.Expr = .literal(value: .integer(v: 1))
+    assert eval(.in_list(negated: false, operand: [one], items: [n]), scope: scope, db: db).must() == .null_value
+    assert eval(.column(qualifier: "", name: "zz"), scope: scope, db: db).is_err()
