@@ -6,6 +6,7 @@
 # again. A text that is no framed call is no message this page sends, and is
 # left unanswered.
 
+use <rebel>/ui
 use <rebel>/ui/webview
 
 use api/calls
@@ -14,8 +15,9 @@ use app/desk
 
 # Answers the message `text` of the page, and answers the texts it posted,
 # in order: the answer or the refusal, then the event where a board changed;
-# none for a text that is no call. Fails where posting fails, the web view
-# or the app being closed.
+# none for a text that is no call, and none yet for a call that showed a
+# dialog, which `chosen` answers once the person has. Fails where posting
+# fails, the web view or the app being closed.
 #
 # - `d`: the desk.
 # - `text`: the message.
@@ -26,27 +28,70 @@ function handle(@d: desk.Desk, text: str) -> [str]?
         .ok c  => c
         .err _ => return ok(none)
 
-    posted: [str] @= []
+    got = calls.answer(@d, name: call.name, given: call.args)
+
+    match got
+        .ok outcome =>
+            if outcome.asked.len() > 0
+                d.waiting @ d.waiting.push(desk.Waiting(dialog: outcome.asked[0], call: call))
+                return ok(none)
+        .err _ => _ = 0
+
+    return posting(@d, texts: texts_for(call, got: got))
+
+# Answers the call that waits on `dialog`, which the person answered with
+# `choice`, and answers the texts it posted, as `handle` does; none where
+# no call waits on it. Fails where posting fails.
+#
+# - `d`: the desk.
+# - `dialog`: the dialog answered.
+# - `choice`: what the person chose in it.
+function chosen(@d: desk.Desk, dialog: ui.Dialog, choice: ui.Choice) -> [str]?
+    none: [str] = []
+
+    for at in range(from: 0, to: d.waiting.len())
+        w = d.waiting[at]
+
+        if w.dialog == dialog
+            kept: [desk.Waiting] @= []
+
+            for i in range(from: 0, to: d.waiting.len())
+                if i != at
+                    kept @ kept.push(d.waiting[i])
+
+            d.waiting @ kept
+            got = calls.finished(@d, name: w.call.name, given: w.call.args, choice: choice)
+            return posting(@d, texts: texts_for(w.call, got: got))
+
+    return ok(none)
+
+# The texts that answer `call` with `got`: the answer or the refusal, then
+# the event `board.changed` where a board changed.
+function texts_for(call: webview.Call, got: calls.Outcome?) -> [str]
+    out: [str] @= []
     changed @= ""
 
-    match calls.answer(@d, name: call.name, given: call.args)
+    match got
         .ok outcome =>
             changed @ outcome.changed
 
             match webview.format_answer(call, value: outcome.value)
-                .ok t  => posted @ posted.push(t)
-                .err e => posted @ posted.push(webview.format_refusal(call, code: e.code, msg: e.msg))
-        .err e => posted @ posted.push(webview.format_refusal(call, code: e.code, msg: e.msg))
+                .ok t  => out @ out.push(t)
+                .err e => out @ out.push(webview.format_refusal(call, code: e.code, msg: e.msg))
+        .err e => out @ out.push(webview.format_refusal(call, code: e.code, msg: e.msg))
 
     if changed.len() > 0
-        posted @ posted.push(
+        out @ out.push(
             webview.format_event("board.changed", data: views.object([views.pair("board", views.text(changed))])).must()
         )
+    return out
 
-    for t in posted
+# Posts `texts` to the page, in order, and answers them.
+function posting(@d: desk.Desk, texts: [str]) -> [str]?
+    for t in texts
         webview.post(@d.app, view: d.view, text: t)?
 
-    return ok(posted)
+    return ok(texts)
 
 # Does the call `name`, which the person chose from the menu bar rather
 # than the page asked, and answers the texts it posted: the event where a

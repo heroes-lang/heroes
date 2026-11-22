@@ -184,10 +184,15 @@ record App
     inputs: [Input]
     # The events made and not yet answered by `wait`, in order.
     events: [Event]
-    # The answers `inject` queued for message boxes, in order.
+    # The answers `inject` queued for the next message boxes, in order.
     answers: [Answer]
-    # The choices `inject` queued for file dialogs, in order.
+    # The choices `inject` queued for the next file dialogs, in order.
     choices: [Choice]
+    # The dialogs shown and not yet answered, oldest first. Only this
+    # package reads it.
+    shown: [dialogs.Shown]
+    # The number of the last dialog the app showed, 0 before the first.
+    dialogs_made: i64
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -1630,6 +1635,20 @@ variant Event
         widget: Widget
         # What the page sent.
         text: str
+    # The person pressed a button of a message box `message` or `ask`
+    # showed.
+    dialog_answered
+        # The message box.
+        dialog: Dialog
+        # The button: OK, Cancel, Yes or No for `message`, `.button` for
+        # `ask`.
+        answer: Answer
+    # The person chose in a file or a folder dialog, or cancelled it.
+    files_chosen
+        # The dialog.
+        dialog: Dialog
+        # What they chose.
+        choice: Choice
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -1741,16 +1760,19 @@ variant Input
         item: i64
         # True to unfold, false to fold.
         open: bool
-    # Presses a button of the next message box `message` shows.
+    # Presses a button of the oldest message box shown, `message`'s or
+    # `ask`'s, or of the next one shown; `.cancel` presses the button
+    # Escape presses in a box of `ask`.
     answer
         # The button.
         answer: Answer
-    # Chooses files in the next file dialog `open_files` or `save_file`
-    # shows.
+    # Chooses files or folders in the oldest file or folder dialog shown,
+    # or in the next one shown.
     pick_files
-        # The paths chosen, one or more; exactly one for `save_file`.
+        # The paths chosen, one or more; exactly one for `save_file`, and
+        # for a dialog that takes one.
         paths: [str]
-    # Cancels the next file dialog.
+    # Cancels the oldest file or folder dialog shown, or the next one.
     cancel_files
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
@@ -1764,8 +1786,10 @@ variant Input
 
 # Queues `input`, what a person does: the next `wait` that has no event
 # ready gives it, through the system's own path on the native side, so its
-# event comes as the person's would; an answer or a file dialog's choice
-# waits for the next dialog instead. An input on a widget greyed out,
+# event comes as the person's would. An answer or a choice answers the
+# oldest dialog shown that takes it at once, through the system where the
+# system shows it, or waits for the next such dialog, which it then answers
+# with nothing shown. An input on a widget greyed out,
 # hidden, or destroyed before it is given, gives no event, as a person's
 # could not.
 #
@@ -1773,7 +1797,11 @@ variant Input
 # - `input`: the input, checked now against the widget as it stands.
 #
 # Fails `closed` where `app` or the widget is, `invalid` where the widget is
-# of another kind than the input acts on or a value is outside its range.
+# of another kind than the input acts on, a value is outside its range, or
+# an answer or a choice does not fit the dialog shown it answers;
+# `unsupported` where the system offers no path for it (on macOS, a choice
+# in a file or a folder dialog, which AppKit takes from the person alone);
+# `failed`.
 function inject(@app: App, input: Input) -> ()?
     return loop.inject(@app, input: input)
 
@@ -1882,78 +1910,98 @@ variant Choice
         # The paths, one or more; one for a save.
         paths: [str]
 
-# Shows a message box over window `over` and waits for the person to press
-# one of its buttons; an answer `inject` queued is taken instead, and no box
-# is shown.
+# A dialog an app showed: a message box, a box of the program's words, a
+# file or a folder dialog, which `wait` names in its answer. Made only by
+# `message`, `ask`, `open_files`, `save_file` and `open_folders`; compare
+# two with `==`.
+record Dialog
+    # The number of the app that showed it.
+    app: i64
+    # The app's number for it, from 1, never given twice by one app.
+    id: i64
+
+# Shows a message box over window `over` and answers at once with it, as
+# wxWidgets' `wxMessageDialog::ShowWindowModal` and GTK 4's
+# `gtk_alert_dialog_choose`: the button the person presses comes later
+# from `wait`, `.dialog_answered` naming the box, while the program's
+# timers fire and its other windows answer. On macOS it is a sheet of
+# `over`. An answer `inject` queued answers it at once, and no box is
+# shown.
 #
 # - `app`: the app showing it.
-# - `over`: the window it stands over.
+# - `over`: the window it stands over; destroying it ends the box
+#   unanswered.
 # - `title`: its title, one line without a zero byte.
 # - `text`: what it says, without a zero byte.
 # - `tone`: its tone.
 # - `buttons`: its buttons.
 #
 # Fails `closed`; `invalid` where an injected answer is no button of the
-# box; `closed` on a headless app where no answer was injected, since no
-# person will ever answer; `failed`.
-function message(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: Buttons) -> Answer?
+# box; `failed`. See also `ask`.
+function message(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: Buttons) -> Dialog?
     return dialogs.message(@app, over: over, title: title, text: text, tone: tone, buttons: buttons)
 
-# Shows the system's dialog to open files over window `over` and waits for
-# the person; a choice `inject` queued is taken instead, and no dialog is
-# shown.
+# Shows the system's dialog to open files over window `over` and answers at
+# once with it: what the person chooses comes later from `wait`,
+# `.files_chosen` naming the dialog. A choice `inject` queued answers it at
+# once, and no dialog is shown.
 #
 # - `app`: the app showing it.
-# - `over`: the window it stands over.
+# - `over`: the window it stands over; destroying it ends the dialog
+#   unanswered.
 # - `title`: its title, one line without a zero byte.
 # - `filters`: the files offered; none offers every file.
 # - `multiple`: whether the person may choose several.
 #
-# Fails `closed`, and `closed` on a headless app where no choice was
-# injected; `invalid` where an injected choice holds several paths and
-# `multiple` is false; `failed`.
-function open_files(@app: App, over: Widget, title: str, filters: [Filter], multiple: bool) -> Choice?
+# Fails `closed`; `invalid` where an injected choice holds several paths
+# and `multiple` is false; `failed`. See also `save_file`.
+function open_files(@app: App, over: Widget, title: str, filters: [Filter], multiple: bool) -> Dialog?
     return dialogs.files(@app, over: over, title: title, name: "", filters: filters, save: false, multiple: multiple)
 
 # Shows the system's dialog to save a file over window `over`, proposing the
-# name `name`, and waits for the person; a choice `inject` queued is taken
-# instead.
+# name `name`, and answers at once with it: the path the person chooses
+# comes later from `wait`, `.files_chosen` naming the dialog. A choice
+# `inject` queued answers it at once.
 #
 # - `app`: the app showing it.
-# - `over`: the window it stands over.
+# - `over`: the window it stands over; destroying it ends the dialog
+#   unanswered.
 # - `title`: its title, one line without a zero byte.
 # - `name`: the file name proposed, without a zero byte.
 # - `filters`: the files offered; none offers every file.
 #
-# Fails `closed`, and `closed` on a headless app where no choice was
-# injected; `invalid` where an injected choice holds more than one path;
-# `failed`.
-function save_file(@app: App, over: Widget, title: str, name: str, filters: [Filter]) -> Choice?
+# Fails `closed`; `invalid` where an injected choice holds more than one
+# path; `failed`. See also `open_files`.
+function save_file(@app: App, over: Widget, title: str, name: str, filters: [Filter]) -> Dialog?
     return dialogs.files(@app, over: over, title: title, name: name, filters: filters, save: true, multiple: false)
 
-# Shows the system's dialog to choose a folder over window `over` and waits
-# for the person, as wxWidgets' `wxDirDialog`; a choice `inject` queued is
-# taken instead, and no dialog is shown.
+# Shows the system's dialog to choose a folder over window `over`, as
+# wxWidgets' `wxDirDialog`, and answers at once with it: the folders the
+# person chooses come later from `wait`, `.files_chosen` naming the dialog.
+# A choice `inject` queued answers it at once, and no dialog is shown.
 #
 # - `app`: the app showing it.
-# - `over`: the window it stands over.
+# - `over`: the window it stands over; destroying it ends the dialog
+#   unanswered.
 # - `title`: its title, one line without a zero byte.
 # - `multiple`: whether the person may choose several folders.
 #
-# The paths are the folders'. Fails `closed`, and `closed` on a headless app
-# where no choice was injected; `invalid` where an injected choice holds
-# several paths and `multiple` is false; `failed`. See also `open_files`.
-function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Choice?
+# Fails `closed`; `invalid` where an injected choice holds several paths and
+# `multiple` is false; `failed`. See also `open_files`.
+function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Dialog?
     return dialogs.folders(@app, over: over, title: title, multiple: multiple)
 
 # Shows a message box over window `over` whose buttons say the program's
 # own words, as "Save", "Don't Save" and "Cancel" before a document closes,
-# and waits for the person to press one; answers its index. An answer
-# `inject` queued is taken instead and no box is shown: `.button(index:)`,
-# or `.cancel` for the button Escape presses.
+# and answers at once with it: the button the person presses comes later
+# from `wait`, `.dialog_answered` naming the box, its answer `.button` and
+# the button's index. An answer `inject` queued answers it at once and no
+# box is shown: `.button(index:)`, or `.cancel` for the button Escape
+# presses.
 #
 # - `app`: the app showing it.
-# - `over`: the window it stands over.
+# - `over`: the window it stands over; destroying it ends the box
+#   unanswered.
 # - `title`: its title, one line without a zero byte.
 # - `text`: what it says, without a zero byte.
 # - `tone`: its tone.
@@ -1963,9 +2011,9 @@ function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Ch
 # - `cancel`: the index of the button Escape presses, or -1 for none.
 #
 # Fails `closed`; `invalid` for a label or a `cancel` out of its range, or
-# an injected answer that is no button of the box; `closed` on a headless
-# app where no answer was injected; `failed`. See also `message`.
-function ask(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: [str], cancel: i64) -> i64?
+# an injected answer that is no button of the box; `failed`. See also
+# `message`.
+function ask(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: [str], cancel: i64) -> Dialog?
     return dialogs.ask(@app, over: over, title: title, text: text, tone: tone, buttons: buttons, cancel: cancel)
 
 ## Drawing as text
@@ -2218,7 +2266,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -2252,24 +2300,29 @@ test "resize: a window asked smaller than its content needs keeps its need, and 
     assert rect_of(@app, widget: f).must() == Rect(x: 12, y: 12, width: 376, height: 24)
     close(@app).must()
 
-test "message: no answer injected on a headless app is closed, an answer that is no button of the box invalid"
+test "message: shown with no answer injected on a headless app, it waits for one; an answer that is no button of the box invalid"
     app @= fixture.test_app()
     w = fixture.window_of(app)
-    assert fixture.code_of(message(@app, over: w, title: "Hi", text: "Hello", tone: .info, buttons: .ok)) == CLOSED
+    shown = message(@app, over: w, title: "Hi", text: "Hello", tone: .info, buttons: .ok).must()
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(0))) == CLOSED
+    assert fixture.code_of(inject(@app, input: .answer(answer: .yes))) == INVALID
+    inject(@app, input: .answer(answer: .ok)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: shown, answer: .ok)
     inject(@app, input: .answer(answer: .yes)).must()
     assert fixture.code_of(message(@app, over: w, title: "Hi", text: "Hello", tone: .info, buttons: .ok_cancel)) == INVALID
     inject(@app, input: .answer(answer: .cancel)).must()
-    assert message(@app, over: w, title: "Hi", text: "Hello", tone: .error, buttons: .ok_cancel).must() == .cancel
+    cancelled = message(@app, over: w, title: "Hi", text: "Hello", tone: .error, buttons: .ok_cancel).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: cancelled, answer: .cancel)
     close(@app).must()
 
-test "open_files: several paths for a dialog of one, and none injected on a headless app, refused"
+test "open_files: several paths for a dialog of one refused, several for one of several chosen, and a filter written with its dot refused"
     app @= fixture.test_app()
     w = fixture.window_of(app)
     inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
     assert fixture.code_of(open_files(@app, over: w, title: "Open", filters: [], multiple: false)) == INVALID
     inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
-    assert open_files(@app, over: w, title: "Open", filters: [], multiple: true).must() == .chosen(paths: ["/a", "/b"])
-    assert fixture.code_of(save_file(@app, over: w, title: "Save", name: "x", filters: [Filter(name: "Text", extensions: ["txt"])])) == CLOSED
+    several = open_files(@app, over: w, title: "Open", filters: [], multiple: true).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: several, choice: .chosen(paths: ["/a", "/b"]))
     assert fixture.code_of(open_files(@app, over: w, title: "Open", filters: [Filter(name: "Bad", extensions: [".txt"])], multiple: false)) == INVALID
     close(@app).must()
 
@@ -3156,8 +3209,9 @@ test "set_button_key: OK by Return"
 test "open_folders: one chosen"
     app @= open(.headless).must()
     w = window(@app, title: "Project", width: 100, height: 60).must()
+    asked = open_folders(@app, over: w, title: "Choose the project's folder", multiple: false).must()
     inject(@app, input: .pick_files(paths: ["/tmp/project"])).must()
-    assert open_folders(@app, over: w, title: "Choose the project's folder", multiple: false).must() == .chosen(paths: ["/tmp/project"])
+    assert wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: asked, choice: .chosen(paths: ["/tmp/project"]))
     close(@app).must()
 
 # Save, Don't Save or Cancel before a document closes, the person choosing
@@ -3165,8 +3219,7 @@ test "open_folders: one chosen"
 test "ask: Save, Don't Save, Cancel"
     app @= open(.headless).must()
     w = window(@app, title: "Notes", width: 100, height: 60).must()
-    inject(@app, input: .answer(answer: .button(index: 1))).must()
-    pressed = ask(
+    asked = ask(
         @app,
         over: w,
         title: "Save the changes?",
@@ -3175,38 +3228,41 @@ test "ask: Save, Don't Save, Cancel"
         buttons: ["Save", "Don't Save", "Cancel"],
         cancel: 2
     ).must()
-    assert pressed == 1
+    inject(@app, input: .answer(answer: .button(index: 1))).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: asked, answer: .button(index: 1))
     close(@app).must()
 
 # A question answered Yes by an injected answer.
 test "message: answered yes"
     app @= open(.headless).must()
     w = window(@app, title: "Ask", width: 100, height: 60).must()
+    asked = message(@app, over: w, title: "Save?", text: "Save the changes?", tone: .warning, buttons: .yes_no).must()
     inject(@app, input: .answer(answer: .yes)).must()
-    assert message(@app, over: w, title: "Save?", text: "Save the changes?", tone: .warning, buttons: .yes_no).must() == .yes
+    assert wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: asked, answer: .yes)
     close(@app).must()
 
 # A file chosen to open.
 test "open_files: one chosen"
     app @= open(.headless).must()
     w = window(@app, title: "Open", width: 100, height: 60).must()
-    inject(@app, input: .pick_files(paths: ["/tmp/a.txt"])).must()
-    chosen = open_files(
+    asked = open_files(
         @app,
         over: w,
         title: "Open",
         filters: [Filter(name: "Text", extensions: ["txt"])],
         multiple: false
     ).must()
-    assert chosen == .chosen(paths: ["/tmp/a.txt"])
+    inject(@app, input: .pick_files(paths: ["/tmp/a.txt"])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: asked, choice: .chosen(paths: ["/tmp/a.txt"]))
     close(@app).must()
 
 # A save dialog cancelled.
 test "save_file: cancelled"
     app @= open(.headless).must()
     w = window(@app, title: "Save", width: 100, height: 60).must()
+    asked = save_file(@app, over: w, title: "Save", name: "notes.txt", filters: []).must()
     inject(@app, input: .cancel_files).must()
-    assert save_file(@app, over: w, title: "Save", name: "notes.txt", filters: []).must() == .cancelled
+    assert wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: asked, choice: .cancelled)
     close(@app).must()
 
 # A small window drawn as text.

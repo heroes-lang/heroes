@@ -54,7 +54,6 @@
  */
 
 import AppKit
-import UniformTypeIdentifiers
 import WebKit
 
 // The kinds of failure, `hero_ui.h`'s numbers.
@@ -108,17 +107,6 @@ private let flagVisible: Int64 = 2
 private let flagResizable: Int64 = 3
 private let sizeContent: Int64 = 1
 private let sizeLeast: Int64 = 2
-
-// A message box's tone and buttons, and the answers, `hero_ui.h`'s numbers.
-private let toneWarning: Int64 = 2
-private let toneError: Int64 = 3
-private let buttonsOkCancel: Int64 = 2
-private let buttonsYesNo: Int64 = 3
-private let buttonsYesNoCancel: Int64 = 4
-private let pressedOk: Int64 = 1
-private let pressedCancel: Int64 = 2
-private let pressedYes: Int64 = 3
-private let pressedNo: Int64 = 4
 
 // The sizes a widget takes where AppKit's has no width of its own to give,
 // the headless side's own (`ui/internal/sizes.hero`), so a window looks
@@ -250,7 +238,6 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     var widgets: [Int64: Native] = [:]
     var tables: [ObjectIdentifier: Int64] = [:]
     var words = ""
-    var paths: [UInt8] = []
     var pushed = 0
     // Set while the program sets what would otherwise queue an event.
     var muted = false
@@ -1435,91 +1422,6 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         return page.post(text) ? answerOk : answerLimit
     }
-
-    // MARK: dialogs
-
-    func message(_ tone: Int64, _ buttons: Int64, _ title: String, _ text: String) -> Int64 {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = text
-        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
-        var answers: [Int64]
-        switch buttons {
-        case buttonsOkCancel:
-            answers = [pressedOk, pressedCancel]
-        case buttonsYesNo:
-            answers = [pressedYes, pressedNo]
-        case buttonsYesNoCancel:
-            answers = [pressedYes, pressedNo, pressedCancel]
-        default:
-            answers = [pressedOk]
-        }
-        for answer in answers {
-            switch answer {
-            case pressedYes:
-                alert.addButton(withTitle: "Yes")
-            case pressedNo:
-                alert.addButton(withTitle: "No")
-            case pressedCancel:
-                alert.addButton(withTitle: "Cancel")
-            default:
-                alert.addButton(withTitle: "OK")
-            }
-        }
-        let response = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
-        if response >= 0 && response < answers.count {
-            return answers[response]
-        }
-        return pressedCancel
-    }
-
-    func fileDialog(_ save: Bool, _ multiple: Bool, _ title: String, _ name: String, _ extensions: [String]) -> Int64 {
-        var types: [UTType] = []
-        for ext in extensions {
-            if let type = UTType(filenameExtension: ext) {
-                types.append(type)
-            }
-        }
-        let urls: [URL]
-        if save {
-            let panel = NSSavePanel()
-            panel.title = title
-            panel.nameFieldStringValue = name
-            if !types.isEmpty {
-                panel.allowedContentTypes = types
-            }
-            guard panel.runModal() == .OK, let url = panel.url else {
-                paths = []
-                return 0
-            }
-            urls = [url]
-        } else {
-            let panel = NSOpenPanel()
-            panel.title = title
-            panel.allowsMultipleSelection = multiple
-            panel.canChooseFiles = true
-            panel.canChooseDirectories = false
-            if !types.isEmpty {
-                panel.allowedContentTypes = types
-            }
-            guard panel.runModal() == .OK else {
-                paths = []
-                return 0
-            }
-            urls = panel.urls
-        }
-        var joined: [UInt8] = []
-        for url in urls {
-            let path = Array(url.path.utf8)
-            if path.contains(0) {
-                continue
-            }
-            joined.append(contentsOf: path)
-            joined.append(0)
-        }
-        paths = joined
-        return Int64(joined.count)
-    }
 }
 
 // What WebKit keeps a strong hold on, its script message handler and its
@@ -1966,93 +1868,6 @@ public func hero_ui_appkit_focus(_ id: Int64, _ focus: UnsafeMutablePointer<Int6
 }
 
 extension Backend {
-    // Shows the system's dialog to choose folders, one or, where
-    // `multiple`, several, and keeps the paths chosen, each followed by one
-    // zero byte, for `dialog_paths`; answers their bytes, 0 where the person
-    // cancelled. It waits for the person, as the file dialogs do.
-    func folderDialog(_ multiple: Bool, _ title: String) -> Int64 {
-        let panel = NSOpenPanel()
-        panel.title = title
-        panel.message = title
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = multiple
-        guard panel.runModal() == .OK else {
-            paths = []
-            return 0
-        }
-        var joined: [UInt8] = []
-        for url in panel.urls {
-            let path = Array(url.path.utf8)
-            if path.contains(0) {
-                continue
-            }
-            joined.append(contentsOf: path)
-            joined.append(0)
-        }
-        paths = joined
-        return Int64(joined.count)
-    }
-
-    // Shows a message box of `tone` whose buttons are `buttons`, in order,
-    // the first its default (Return) and the one at `cancel` pressed by
-    // Escape where it is 0 or more, and waits for the person: answers the
-    // index of the button pressed.
-    func ask(_ tone: Int64, _ title: String, _ text: String, _ buttons: [String], _ cancel: Int64) -> Int64 {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = text
-        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
-        for label in buttons {
-            alert.addButton(withTitle: label)
-        }
-        if cancel >= 0 && cancel < Int64(alert.buttons.count) && cancel != 0 {
-            alert.buttons[Int(cancel)].keyEquivalent = "\u{1b}"
-        }
-        let pressed = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
-        if pressed >= 0 && pressed < buttons.count {
-            return Int64(pressed)
-        }
-        return cancel >= 0 ? cancel : 0
-    }
-}
-
-@c
-public func hero_ui_appkit_folder_dialog(_ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let bytes = bytes else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.folderDialog(multiple == 1, heading)
-    }
-    guard let length = got else {
-        return answerNotFound
-    }
-    bytes.pointee = length
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ said: UnsafePointer<UInt8>?, _ saidCount: Int64, _ buttons: UnsafePointer<UInt8>?, _ buttonsCount: Int64, _ cancel: Int64, _ pressed: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let pressed = pressed else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let words = text(said, saidCount)
-    let labels = texts(buttons, buttonsCount)
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.ask(tone, heading, words, labels, cancel)
-    }
-    guard let index = got else {
-        return answerNotFound
-    }
-    pressed.pointee = index
-    return answerOk
-}
-
-extension Backend {
     // Masks text field `id`'s text, `on`, or shows it: AppKit masks a field
     // of its own class, `NSSecureTextField`, so the field's view is
     // replaced by one of the other class in its place, with its text, its
@@ -2449,69 +2264,29 @@ public func hero_ui_appkit_pump(_ ms: Int64) -> Int64 {
     return answerOk
 }
 
+// Ends the wait of the loop `pump` runs, once another member queued an
+// event (a sheet's answer, which AppKit hands its completion handler outside
+// any event): the event is counted as this member's, and an event of the
+// application's own is posted so `nextEvent` returns to see it.
+@c
+public func hero_ui_appkit_wake() {
+    MainActor.assumeIsolated {
+        guard let shared = backend() else {
+            return
+        }
+        shared.pushed += 1
+        if let nudge = NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, subtype: 0, data1: 0, data2: 0) {
+            NSApp.postEvent(nudge, atStart: false)
+        }
+    }
+}
+
 @c
 public func hero_ui_appkit_inject(_ kind: Int64, _ id: Int64, _ value: Int64, _ second: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
     let typed = text(bytes, count)
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.inject(kind, id, value, second, typed) ?? answerNotFound
     }
-}
-
-@c
-public func hero_ui_appkit_message(_ window: Int64, _ tone: Int64, _ buttons: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64, _ answer: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let answer = answer else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let said = text(bytes, count)
-    let pressed = MainActor.assumeIsolated { () -> Int64? in
-        _ = window
-        return backend()?.message(tone, buttons, heading, said)
-    }
-    guard let found = pressed else {
-        return answerNotFound
-    }
-    answer.pointee = found
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_file_dialog(_ window: Int64, _ save: Int64, _ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ name: UnsafePointer<UInt8>?, _ nameCount: Int64, _ filters: UnsafePointer<UInt8>?, _ filtersCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let bytes = bytes else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let proposed = text(name, nameCount)
-    let spelled = texts(filters, filtersCount)
-    var extensions: [String] = []
-    var at = 1
-    while at < spelled.count {
-        extensions.append(contentsOf: spelled[at].split(separator: ";").map { String($0) })
-        at += 2
-    }
-    let found = extensions
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        _ = window
-        return backend()?.fileDialog(save == 1, multiple == 1, heading, proposed, found)
-    }
-    guard let length = got else {
-        return answerNotFound
-    }
-    bytes.pointee = length
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_dialog_paths(_ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64) -> Int64 {
-    let kept = MainActor.assumeIsolated { () -> [UInt8] in
-        return backend()?.paths ?? []
-    }
-    if let buffer = buffer, kept.count <= Int(count) {
-        for at in 0..<kept.count {
-            buffer[at] = kept[at]
-        }
-    }
-    return Int64(kept.count)
 }
 
 @c

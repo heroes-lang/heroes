@@ -77,14 +77,15 @@ function type_into(@c: controller.Controller, widget: ui.Widget, text: str) -> (
 function menu(@c: controller.Controller, item: ui.Widget) -> ()?
     return give(@c, input: .choose_menu(item: item))
 
-# Says which button the person will press in the next message box.
+# Presses the button `answer` of the message box shown, as the person
+# would once it asks.
 #
 # - `c`: the controller.
 # - `answer`: the button.
 #
-# Fails as `ui.inject` fails.
-function will_answer(@c: controller.Controller, answer: ui.Answer) -> ()?
-    return ui.inject(@c.app, input: .answer(answer: answer))
+# Fails as `give` fails.
+function press_answer(@c: controller.Controller, answer: ui.Answer) -> ()?
+    return give(@c, input: .answer(answer: answer))
 
 # Chooses the entries named `names` in the list of the folder shown.
 #

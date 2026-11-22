@@ -359,20 +359,20 @@ capability ui/state  a widget greyed out or used, shown or hidden, destroyed, an
   note    a widget whose life has ended is told `closed` by every call, never another widget's state
 
 capability ui/message-box  a message box: a tone, buttons, and the button pressed
-  heroes  ui.message, ui.Tone, ui.Buttons, ui.Answer
+  heroes  ui.message, ui.Tone, ui.Buttons, ui.Answer, ui.Event.dialog_answered
   go      ui.MsgBox, ui.MsgBoxError
   rust    -
   python  messagebox.showinfo, messagebox.showwarning, messagebox.showerror, messagebox.askquestion, messagebox.askokcancel, messagebox.askyesno, messagebox.askyesnocancel, messagebox.askretrycancel, messagebox.Message, dialog.Dialog, simpledialog.SimpleDialog
   wx      wxMessageDialog, wxMessageBox
-  note    a box of Retry and Cancel is one of OK and Cancel; an answer the program injected is taken before any box is shown
+  note    a box of Retry and Cancel is one of OK and Cancel; it answers through the queue (ui/dialogs-answered-later), and an answer the program injected before it answers it at once, no box shown
 
 capability ui/file-dialogs  the system's dialogs to open files and to save one, by their extensions
-  heroes  ui.open_files, ui.save_file, ui.Filter, ui.Choice
+  heroes  ui.open_files, ui.save_file, ui.Filter, ui.Choice, ui.Event.files_chosen
   go      ui.OpenFile, ui.SaveFile
   rust    -
   python  filedialog.askopenfilename, filedialog.askopenfilenames, filedialog.asksaveasfilename, filedialog.askopenfile, filedialog.askopenfiles, filedialog.asksaveasfile, filedialog.Open, filedialog.SaveAs, filedialog.FileDialog, filedialog.LoadFileDialog, filedialog.SaveFileDialog, commondialog.Dialog
   wx      wxFileDialog (wxFD_OPEN, wxFD_SAVE, wxFD_MULTIPLE, wxFD_OVERWRITE_PROMPT)
-  note    a dialog answers paths; a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
+  note    a dialog answers paths, through the queue (ui/dialogs-answered-later); a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
 
 capability ui/folder-dialog  the system's dialog to choose a folder, or several
   heroes  ui.open_folders
@@ -380,7 +380,7 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
-  note    it waits for the person, as the file dialogs do, an injected choice taken first; macOS by `NSOpenPanel` choosing folders, Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
+  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
 
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
@@ -388,7 +388,15 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   rust    -
   python  -
   wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
-  note    the first button is pressed by Return and the one the program names by Escape; it answers the button's index and waits for the person, as `message` does; macOS by `NSAlert`'s buttons, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+
+capability ui/dialogs-answered-later  a dialog that answers its call at once and the person later, through the queue, the program's timers and windows going on meanwhile
+  heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files
+  go      -
+  rust    -
+  python  -
+  wx      wxDialog (ShowWindowModal, unread)
+  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Windows and Linux pending: the layer wraps their waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner; `GtkAlertDialog.choose`, `GtkFileDialog`)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system

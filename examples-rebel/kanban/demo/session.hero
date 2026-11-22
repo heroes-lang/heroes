@@ -87,14 +87,22 @@ function steps(@d: desk.Desk) -> ()?
         match ui.wait(@d.app, within: time.nanoseconds(0))?
             .message m =>
                 print("page    ", m.text)
-                posted = handler.handle(@d, text: m.text)?
+                posted @= handler.handle(@d, text: m.text)?
+
+                # A call that showed a dialog is answered once the dialog
+                # is, its choice injected above.
+                if d.waiting.len() > 0
+                    match ui.wait(@d.app, within: time.nanoseconds(0))?
+                        .files_chosen f => posted @ handler.chosen(@d, dialog: f.dialog, choice: f.choice)?
+                        .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ =>
+                            return fail(code: "failed", msg: "the dialog's choice did not come")
 
                 for p in posted
                     print("program ", p)
 
                 if posted.len() > 0
                     keep(posted[0], keeps: s.keep, @names)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
                 return fail(code: "failed", msg: "the page's message did not come")
 
     print("== the report, as the page is answered for it")

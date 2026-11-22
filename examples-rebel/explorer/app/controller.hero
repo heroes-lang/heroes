@@ -68,6 +68,9 @@ record Controller
     regex_on: bool
     # Whether the person asked to leave.
     done: bool
+    # The question whether to empty the trash, shown and not yet answered;
+    # none where none is.
+    trash_asked: [ui.Dialog]
 
 # The explorer `ex` in a new main window of `app`.
 #
@@ -104,7 +107,8 @@ function new_controller(app: ui.App, ex: explorer.Explorer) -> Controller?
         ticks: 0,
         scope: .names,
         regex_on: false,
-        done: false
+        done: false,
+        trash_asked: []
     )
     redraw(@c)
     return ok(c)

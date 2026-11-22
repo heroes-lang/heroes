@@ -6,9 +6,12 @@
 #
 # The calls that show the person a dialog, export and import, and the one
 # that writes the report's page, are `transfer/files`' and `app/report`'s,
-# since they need the window.
+# since they need the window. A dialog answers later, so export and import
+# answer with the dialog they showed, and `finished` answers them once the
+# person has chosen.
 
 use <rebel>/json
+use <rebel>/ui
 
 use api/arguments
 use api/optional
@@ -23,16 +26,40 @@ use store/history
 use text/notes
 use transfer/files
 
-# What a call answered: its value, and the board it changed, "" for none.
+# What a call answered: its value, and the board it changed, "" for none;
+# or the dialog it showed, whose answer finishes it (`finished`).
 record Outcome
     # The value the page's promise resolves with.
     value: json.Value
     # The board the call changed, "" where it changed none.
     changed: str
+    # The dialog the call showed and waits on, which the person answers
+    # later; none where the call is answered now.
+    asked: [ui.Dialog]
 
 # The outcome of a call that changed no board.
 function read_only(value: json.Value) -> Outcome
-    return Outcome(value: value, changed: "")
+    return Outcome(value: value, changed: "", asked: [])
+
+# The outcome of a call that showed `dialog` and waits on its answer.
+function asking(dialog: ui.Dialog) -> Outcome
+    return Outcome(value: .null_value, changed: "", asked: [dialog])
+
+# The answer to the call `name` with `given`, which showed a dialog the
+# person has now answered with `choice` (`answer`'s `asked`). Fails
+# `not_found` for a name no such call has, and as the call fails.
+#
+# - `d`: the desk.
+# - `name`: the call's name.
+# - `given`: its arguments.
+# - `choice`: what the person chose in its dialog.
+function finished(@d: desk.Desk, name: str, given: json.Value, choice: ui.Choice) -> Outcome?
+    match name
+        "export.file" => return ok(
+            read_only(files.exported(@d, board: arguments.text(given, key: "board")?, choice: choice)?)
+        )
+        "import.file" => return imported(@d, chosen: files.chosen_import(choice))
+        _             => return fail(code: "not_found", msg: f"no call named \"{name}\" waits on a dialog")
 
 # The answer to the call `name` with `given`. Fails `not_found` for a name
 # no call has, and as the call fails.
@@ -65,8 +92,8 @@ function answer(@d: desk.Desk, name: str, given: json.Value) -> Outcome?
         )
         "undo"        => return stepped(@d, redo: false)
         "redo"        => return stepped(@d, redo: true)
-        "export.file" => return ok(read_only(files.export_board(@d, board: arguments.text(given, key: "board")?)?))
-        "import.file" => return imported(@d)
+        "export.file" => return ok(asking(files.export_asked(@d, board: arguments.text(given, key: "board")?)?))
+        "import.file" => return ok(asking(files.import_asked(@d)?))
         "report"      => return ok(read_only(report.shown(@d, board: arguments.text(given, key: "board")?)?))
         _             => return fail(code: "not_found", msg: f"no call is named \"{name}\"")
 
@@ -82,7 +109,7 @@ function board_create(@d: desk.Desk, given: json.Value) -> Outcome?
 
     changes.finish(@d.store, board: made.id, label: f"make the board \"{made.title}\"", before: before)?
     return ok(
-        Outcome(value: views.object([views.pair("id", views.text(made.id)), views.pair("title", views.text(made.title))]), changed: made.id)
+        Outcome(value: views.object([views.pair("id", views.text(made.id)), views.pair("title", views.text(made.title))]), changed: made.id, asked: [])
     )
 
 function board_rename(@d: desk.Desk, given: json.Value) -> Outcome?
@@ -95,7 +122,7 @@ function board_rename(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: f"rename the board \"{title}\"", before: before)?
-    return ok(Outcome(value: .boolean(v: true), changed: board))
+    return ok(Outcome(value: .boolean(v: true), changed: board, asked: []))
 
 function board_delete(@d: desk.Desk, given: json.Value) -> Outcome?
     board = arguments.text(given, key: "board")?
@@ -107,7 +134,7 @@ function board_delete(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: f"delete the board \"{title}\"", before: before)?
-    return ok(Outcome(value: .boolean(v: true), changed: board))
+    return ok(Outcome(value: .boolean(v: true), changed: board, asked: []))
 
 ## Columns
 
@@ -121,7 +148,7 @@ function column_add(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: f"add the column \"{made.title}\"", before: before)?
-    return ok(Outcome(value: views.column_json(made), changed: board))
+    return ok(Outcome(value: views.column_json(made), changed: board, asked: []))
 
 function column_rename(@d: desk.Desk, given: json.Value) -> Outcome?
     column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
@@ -133,7 +160,7 @@ function column_rename(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: column.board, label: f"rename the column \"{column.title}\"", before: before)?
-    return ok(Outcome(value: .boolean(v: true), changed: column.board))
+    return ok(Outcome(value: .boolean(v: true), changed: column.board, asked: []))
 
 function column_delete(@d: desk.Desk, given: json.Value) -> Outcome?
     column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
@@ -144,7 +171,7 @@ function column_delete(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: column.board, label: f"delete the column \"{column.title}\"", before: before)?
-    return ok(Outcome(value: .boolean(v: true), changed: column.board))
+    return ok(Outcome(value: .boolean(v: true), changed: column.board, asked: []))
 
 ## Cards
 
@@ -159,7 +186,7 @@ function card_add(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: column.board, label: f"add the card \"{made.title}\"", before: before)?
-    return ok(Outcome(value: views.card_json(made), changed: column.board))
+    return ok(Outcome(value: views.card_json(made), changed: column.board, asked: []))
 
 function card_edit(@d: desk.Desk, given: json.Value) -> Outcome?
     card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
@@ -173,7 +200,7 @@ function card_edit(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: f"edit the card \"{made.title}\"", before: before)?
-    return ok(Outcome(value: views.card_json(made), changed: board))
+    return ok(Outcome(value: views.card_json(made), changed: board, asked: []))
 
 function card_move(@d: desk.Desk, given: json.Value) -> Outcome?
     card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
@@ -186,7 +213,7 @@ function card_move(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: column.board, label: f"move the card \"{made.title}\" to \"{column.title}\"", before: before)?
-    return ok(Outcome(value: views.card_json(made), changed: column.board))
+    return ok(Outcome(value: views.card_json(made), changed: column.board, asked: []))
 
 function card_delete(@d: desk.Desk, given: json.Value) -> Outcome?
     card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
@@ -198,7 +225,7 @@ function card_delete(@d: desk.Desk, given: json.Value) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: f"delete the card \"{card.title}\"", before: before)?
-    return ok(Outcome(value: .boolean(v: true), changed: board))
+    return ok(Outcome(value: .boolean(v: true), changed: board, asked: []))
 
 ## Undo, redo and import
 
@@ -219,14 +246,13 @@ function stepped(@d: desk.Desk, redo: bool) -> Outcome?
 
     changes.commit(@d.store)?
     return ok(
-        Outcome(value: views.object([views.pair("board", views.text(done.board)), views.pair("label", views.text(done.label))]), changed: done.board)
+        Outcome(value: views.object([views.pair("board", views.text(done.board)), views.pair("label", views.text(done.label))]), changed: done.board, asked: [])
     )
 
-# Import: the person chooses a file, and the board it holds is made, a new
-# board with new names, a change undo takes back.
-function imported(@d: desk.Desk) -> Outcome?
-    chosen = files.chosen_import(@d)?
-
+# Import: the person chose the file `chosen`, "" where they cancelled, and
+# the board it holds is made, a new board with new names, a change undo
+# takes back.
+function imported(@d: desk.Desk, chosen: str) -> Outcome?
     if chosen.len() == 0
         return ok(read_only(views.object([views.pair("board", .null_value)])))
     text = files.read_board_file(chosen)?
@@ -237,4 +263,4 @@ function imported(@d: desk.Desk) -> Outcome?
         .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
 
     changes.finish(@d.store, board: board, label: "import a board", before: before)?
-    return ok(Outcome(value: views.object([views.pair("board", views.text(board))]), changed: board))
+    return ok(Outcome(value: views.object([views.pair("board", views.text(board))]), changed: board, asked: []))
