@@ -48,6 +48,8 @@ function shape(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64) -> 
             key = lower_ty(@c, a, r, m.key)
             value = lower_ty(@c, a, r, m.value)
             table.intern(@c.out.types, .map(key: key, value: value))
+        .thread_of t  => table.intern(@c.out.types, .thread_ty(element: lower_ty(@c, a, r, t.element)))
+        .mailbox_of m => table.intern(@c.out.types, .mailbox_ty(element: lower_ty(@c, a, r, m.element)))
         .function_type f =>
             lowered: [i64] @= []
 
@@ -108,10 +110,10 @@ test "a type written twice is one id both times"
         got = c.out.written_types[id].must()
 
         found = match table.get(c.out.types, got)
-            .array                                                    => true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-            .fixed | .map | .fallible | .function_ty | .named         => false
-            .case_ty | .failure | .generic | .error                   => false
+            .array                                                             => true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+            .fixed | .map | .fallible | .function_ty | .named                  => false
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
         if found
             ids @ ids.push(got)

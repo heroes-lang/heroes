@@ -32,6 +32,7 @@ use check/counted
 use check/render
 use check/state
 use check/table
+use check/thread_types
 use checker
 use diag
 use ir
@@ -285,6 +286,9 @@ function apply(@c: state.Checked, ty: i64, bound: [i64]) -> i64
             key = apply(@c, ty: m.key, bound: bound)
             value = apply(@c, ty: m.value, bound: bound)
             return table.intern(@c.types, .map(key: key, value: value))
+        .thread_ty | .mailbox_ty =>
+            element = apply(@c, ty: thread_types.element_of(c.types, ty).must(), bound: bound)
+            return thread_types.with_element(@c.types, id: ty, element: element)
         .function_ty fn_ty =>
             spelled: [i64] @= []
 
@@ -390,9 +394,10 @@ function contains(c: state.Checked, big: i64, small: i64) -> bool
         return true
 
     match table.get(c.types, big)
-        .array arr  => return contains(c, big: arr.element, small: small)
+        .array arr => return contains(c, big: arr.element, small: small)
         .fallible o => return contains(c, big: o.payload, small: small)
-        .map m      => return contains(c, big: m.key, small: small) || contains(c, big: m.value, small: small)
+        .map m => return contains(c, big: m.key, small: small) || contains(c, big: m.value, small: small)
+        .thread_ty | .mailbox_ty => return contains(c, big: thread_types.element_of(c.types, big).must(), small: small)
         .function_ty fn_ty =>
             for p in table.params_of(c.types, fn_ty.params)
                 if contains(c, big: p, small: small)

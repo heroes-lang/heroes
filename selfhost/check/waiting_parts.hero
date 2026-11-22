@@ -73,8 +73,8 @@ function walk(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, id: i64, para
                 .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
                 .hole | .name | .unary | .binary | .field | .field_name | .index | .array      => return
                 .call | .method | .variant_case | .try_expr | .if_expr | .match_expr | .error  => return
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .fixed | .fallible => return
-        .function_ty | .named | .case_ty | .failure | .error                           => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .fixed | .fallible  => return
+        .function_ty | .named | .case_ty | .failure | .error | .thread_ty | .mailbox_ty => return
 
 # The type of a part that needs no synthesis to say it: with `defaults`
 # false, a string, an interpolation, a `bool` or a local whose type is no

@@ -264,6 +264,7 @@ function declared_reach(c: state.Checked, decls: [ast.Decl], seed: {i64: bool}) 
 
             .fixed fx                                                 => next @ next.push(fx.element)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written_ids @ written_ids
+            .thread_ty | .mailbox_ty                                  => written_ids @ written_ids
             .array | .map | .fallible | .function_ty                  => written_ids @ written_ids
             .failure | .generic | .error                              => written_ids @ written_ids
 

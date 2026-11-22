@@ -1,0 +1,43 @@
+# A value holding a C handle crosses into another thread through a mailbox,
+# written `m.send(@v)`, which empties `v`: the thread that receives it holds
+# the handle from then on, reaches C through it and gives it back (spec
+# § 11; panel 254's S11 and R3). A hundred counters made on `main` are each
+# added to and freed on a worker; every life ends, so nothing is told when
+# `main` returns.
+
+extern "threads-a-c-handle-sent-is-held-by-the-thread-that-receives-it.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+record Job
+    name: str
+    counter: Counter
+
+function worker(inbox: (mailbox Job)) -> i64
+    total: i64 @= 0
+
+    while true
+        got = inbox.receive(within_ms: 0 - 1)
+
+        if got.is_err()
+            return total
+        job = got.must()
+        total @ total + counter_add(c: job.counter, by: 1)
+        counter_free(c: job.counter)
+
+    return total
+
+function main()
+    inbox: (mailbox Job) = mailbox()
+    t = spawn(worker, inbox).must()
+    k: i64 @= 0
+
+    while k < 100
+        job: Job @= Job(name: f"job {k}", counter: counter_new(n: k))
+        inbox.send(@job).must()
+        k @ k + 1
+
+    inbox.close()
+    print(t.wait())

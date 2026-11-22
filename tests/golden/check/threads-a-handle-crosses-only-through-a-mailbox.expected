@@ -1,0 +1,4 @@
+tests/golden/check/threads-a-handle-crosses-only-through-a-mailbox.hero:30:22: error[thread_crossing]: `Held` holds a C handle, which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives
+tests/golden/check/threads-a-handle-crosses-only-through-a-mailbox.hero:33:22: error[thread_crossing]: `(thread i64)` holds a thread, which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives
+tests/golden/check/threads-a-handle-crosses-only-through-a-mailbox.hero:36:15: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too
+tests/golden/check/threads-a-handle-crosses-only-through-a-mailbox.hero:40:19: error[marker_mismatch]: `send` does not change this argument — the `@` says it does

@@ -60,9 +60,9 @@ record World
 # - `body`: the thread's function.
 # - `arg`: what it is given.
 #
-# Fails as `threads.spawn_text` fails and as `told.heard` fails.
+# Fails as `threads.start_text` fails and as `told.heard` fails.
 function start_thread(@w: World, ear: net.UdpSocket lent, body: (function(str) -> str), arg: str) -> i64?
-    t = threads.spawn_text(body: body, arg: arg)?
+    t = threads.start_text(body: body, arg: arg)?
     started @= w.started
     started @ started.push(t)
     w.started @ started

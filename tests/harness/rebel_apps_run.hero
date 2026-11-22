@@ -1,6 +1,6 @@
 # One program of `examples-rebel/` found, built, run and judged, for the
-# check of Rebel's programs (`rebel_apps.hero`; `examples-rebel/README.md`
-# § A10):
+# check of Rebel's programs (`rebel_apps.hero`;
+# `examples-rebel/README.md` § A10):
 #
 # - **an application**, a folder holding `main.expected`: built, run with its
 #   own `main.args` and `main.stdin`, and its transcript held to its own

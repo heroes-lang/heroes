@@ -1,0 +1,34 @@
+# Once a worker received a handle from a mailbox it holds it: the sender's
+# copy kept from before the send reaches C on a thread that does not hold it,
+# and aborts there, naming the call, though the send is over and the queue
+# empty (spec § 11; panel 254's R3, the holder told by thread and never by
+# copy).
+
+extern "threads-a-handle-a-worker-received-is-not-the-senders.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+record Hand
+    counter: Counter
+    done: (mailbox i64)
+
+function keeper(inbox: (mailbox Hand)) -> i64
+    hand = inbox.receive(within_ms: 0 - 1).must()
+    hand.done.send(counter_add(c: hand.counter, by: 10)).must()
+    _ = inbox.receive(within_ms: 0 - 1).is_err()
+    counter_free(c: hand.counter)
+    return 0
+
+function main()
+    inbox: (mailbox Hand) = mailbox()
+    done: (mailbox i64) = mailbox()
+    t = spawn(keeper, inbox).must()
+    hand: Hand @= Hand(counter: counter_new(n: 1), done: done)
+    keep = hand.counter
+    inbox.send(@hand).must()
+    print(done.receive(within_ms: 0 - 1).must())
+    print(counter_add(c: keep, by: 1))
+    inbox.close()
+    print(t.wait())

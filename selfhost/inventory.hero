@@ -135,6 +135,9 @@ function table() -> [Builtin]
         Builtin(name: "end_lease", tier: .runtime)
         Builtin(name: "validated_bytes", tier: .runtime)
         Builtin(name: "ptr", tier: .runtime)
+        Builtin(name: "spawn", tier: .runtime)
+        Builtin(name: "spawn_sized", tier: .runtime)
+        Builtin(name: "mailbox", tier: .runtime)
     ]
 
 # `table()`'s names in its order, which is their identity (above).
@@ -181,12 +184,43 @@ constant NAMES: [str]
         "end_lease"
         "validated_bytes"
         "ptr"
+        "spawn"
+        "spawn_sized"
+        "mailbox"
+    ]
+
+# A thread's and a mailbox's operations (spec § 11; feature 2647), written only
+# after a dot and chosen by the receiver's type alone, so their names stay free
+# for the program: a program's own `send` is called `send(x)`, and `x.send(v)`
+# is the mailbox's where `x` is one. They are no reserved name, so they stand
+# apart from `NAMES`, which every reader of that list takes as reserved, and a
+# `Ref`'s builtin case names one past `NAMES`' end (`name_of`).
+constant OPERATIONS: [str]
+    [
+        "wait"
+        "send"
+        "receive"
+        "close"
     ]
 
 # The name of the built-in a `Ref`'s builtin case points at: one read of the
 # constant, nothing built.
 function name_of(at: i64) -> str
+    if at >= NAMES.len()
+        return OPERATIONS[at - NAMES.len()]
     return NAMES[at]
+
+# The index an operation's dotted call carries, past `NAMES`, or absent for a
+# name that is no operation.
+function operation_of(name: str) -> i64?
+    at: i64 @= 0
+
+    while at < OPERATIONS.len()
+        if OPERATIONS[at] == name
+            return ok(NAMES.len() + at)
+        at @ at + 1
+
+    return fail(code: "free", msg: "no operation has this name")
 
 # The banner, and only the banner (panel 054): the one program
 # measurement 007 found NO route to without it.
@@ -262,6 +296,10 @@ function arity_of(name: str) -> i64?
         "push" | "join" | "repeat" | "default" => ok(2)
         "len" | "chars" | "keys" | "sort" | "must" | "is_err" => ok(1)
         "cstr" | "lease" | "end_lease" | "validated_bytes" | "ptr" => ok(1)
+        "spawn" | "send" | "receive" => ok(2)
+        "spawn_sized" => ok(3)
+        "mailbox" => ok(0)
+        "wait" | "close" => ok(1)
         "to_f32" | "to_f64" | "to_str" | "to_i8" | "to_i16" => ok(1)
         "to_i32" | "to_i64" | "to_u8" | "to_u16" | "to_u32" | "to_u64" => ok(1)
         _ => fail(code: "uncounted", msg: "any number, a construction, or a declaration's count")
@@ -275,7 +313,7 @@ test "a reserved name answers with its index, a free one with absence"
     assert index_of("Builder").is_err()
     assert index_of("banner").is_err()
 
-test "the inventory is forty-one names and the order is identity"
+test "the inventory is forty-four names and the order is identity"
     entries = table()
 
     # 37 -> 39 on 2026-09-09: `lease` and `end_lease`, §4.19's fourth case
@@ -288,7 +326,11 @@ test "the inventory is forty-one names and the order is identity"
     # It shares its name with the TYPE `ptr`, exactly as `cstr` has since
     # §4.19 landed: a built-in and a type live in different namespaces here,
     # and the resolver is what decides which one a name is.
-    assert entries.len() == 41
+    # 41 -> 44 on 2026-11-22: `spawn`, `spawn_sized` and `mailbox`, feature
+    # 2647, appended for the same reason.
+    assert entries.len() == 44
+    assert entries[41].name == "spawn"
+    assert entries[43].name == "mailbox"
     assert entries[37].name == "lease"
     assert entries[38].name == "end_lease"
     assert entries[39].name == "validated_bytes"
@@ -368,3 +410,13 @@ test "every built-in typed by name has a count, and no other has one"
 
     assert arity_of("slice").must() == 3
     assert arity_of("repeat").must() == 2
+
+test "an operation is no reserved name, and its index lies past them"
+    for name in OPERATIONS
+        assert index_of(name).is_err()
+        at = operation_of(name).must()
+        assert at >= NAMES.len()
+        assert name_of(at) == name
+
+    assert operation_of("spawn").is_err()
+    assert operation_of("print").is_err()

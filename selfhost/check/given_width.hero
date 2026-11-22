@@ -147,7 +147,7 @@ function after_write(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [as
                         .constant_decl | .function_decl | .variant_decl | .test_decl => return
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => return
                 .fixed | .map | .fallible | .function_ty | .case_ty | .failure     => return
-                .generic | .error                                                  => return
+                .generic | .error | .thread_ty | .mailbox_ty                       => return
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return
         .name | .hole | .unary | .binary | .field_name | .index | .call | .method      => return
         .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => return
@@ -177,7 +177,7 @@ function amend(@c: state.Checker, a: ast.Ast, value: i64, ty: i64, whose: str, f
                         d @ d + 1
         .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed => return
         .map | .fallible | .function_ty | .named | .case_ty | .failure    => return
-        .generic | .error                                                 => return
+        .generic | .error | .thread_ty | .mailbox_ty                      => return
 
 # The literals a value hands the width its position asks for: itself, under
 # its minus signs; each operand of an arithmetic operator, which takes the

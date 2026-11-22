@@ -49,9 +49,9 @@ function compare(@c: state.Checker, s: source.Source, decls: [ast.Decl], expecte
 
 function integer(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty                                                                     => true
-        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed | .map    => false
-        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
+        .int_ty                                                                                             => true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array | .fixed | .map | .thread_ty | .mailbox_ty => false
+        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error                         => false
 
 # The got side rendered by the caller, a literal's own spelling. A poisoned
 # expectation was told where it was born, so the literal says nothing

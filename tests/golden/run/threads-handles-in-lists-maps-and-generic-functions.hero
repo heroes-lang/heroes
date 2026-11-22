@@ -1,0 +1,52 @@
+# A thread and a mailbox are values like any (spec § 3, § 11; feature 2647):
+# held in a list, a map and a record, handed to a generic function, copied,
+# each copy reaching the one queue; a thread may answer nothing; a sized
+# thread runs on the stack it asked for; and a function of the program's own
+# named `send` is called by name beside a mailbox's `send` after a dot.
+
+record Counter
+    count: i64
+
+function send(c: Counter, by: i64) -> Counter
+    return Counter(count: c.count + by)
+
+function relay<A>(into: (mailbox A), value: A)
+    into.send(value).must()
+
+function quiet(m: (mailbox i64))
+    m.send(7).must()
+
+function depth(n: i64) -> i64
+    if n == 0
+        return 0
+    return 1 + depth(n - 1)
+
+function main()
+    boxes: [(mailbox i64)] @= []
+    k: i64 @= 0
+
+    while k < 3
+        fresh: (mailbox i64) = mailbox()
+        boxes @ boxes.push(fresh)
+        k @ k + 1
+
+    by_name: {str: (mailbox i64)} @= {}
+    by_name["first"] @ boxes[0]
+    relay(by_name["first"].must(), 41)
+    relay(boxes[1], 42)
+    copy = boxes[2]
+    copy.send(43).must()
+
+    for b in boxes
+        print(b.receive(within_ms: 1000).must())
+
+    t = spawn(quiet, boxes[0]).must()
+    t.wait()
+    print(boxes[0].receive(within_ms: 1000).must())
+
+    for b in boxes
+        b.close()
+
+    deep = spawn_sized(depth, 100000, bytes: 268435456).must()
+    print(deep.wait())
+    print(Counter(count: 1).send(2).count)

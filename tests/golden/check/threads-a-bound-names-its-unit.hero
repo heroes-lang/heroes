@@ -1,0 +1,17 @@
+# How long a receive may wait is written with its unit, `within_ms:`, and a
+# sized thread's stack with its own, `bytes:` (spec § 11; feature 2647): a
+# number alone could be seconds, or a count of anything. The fix writes the
+# name, certain, since the position holds one bound and the name is its own.
+#
+# Bulk regression case.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    m: (mailbox str) = mailbox()
+    m.send("a").must()
+    print(m.receive(5).must())  #~ bound_unnamed
+    m.close()
+    t = spawn_sized(twice, 2, 8388608).must()  #~ bound_unnamed
+    print(t.wait())

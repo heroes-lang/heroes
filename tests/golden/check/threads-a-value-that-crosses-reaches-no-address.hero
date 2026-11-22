@@ -1,0 +1,45 @@
+# A value crosses between threads whole, as a copy (spec § 11; feature 2647):
+# so a `(mailbox T)` or a `(thread T)` whose `T` reaches a `ptr` or a `cstr`,
+# an address C owns, is refused where the type is written, and so is a
+# `spawn` whose function takes or answers one. A mailbox of `()` carries
+# nothing no expression can write, and is refused too.
+#
+# Bulk regression case.
+
+record Holder
+    name: str
+    raw: ptr
+
+record Fine
+    name: str
+    box: (mailbox str)
+
+function keep(inbox: (mailbox Holder)) -> i64  #~ thread_crossing
+    _ = inbox
+    return 0
+
+function names(t: (thread cstr))  #~ thread_crossing
+    _ = t
+
+function nothing(signals: (mailbox ()))  #~ empty_mailbox
+    _ = signals
+
+function deep(rows: (mailbox [{str: Holder}]))  #~ thread_crossing
+    _ = rows
+
+function raw_of(h: Holder) -> i64
+    _ = h
+    return 1
+
+function fine(f: Fine) -> i64
+    _ = f
+    return 2
+
+function main()
+    h = Holder(name: "h", raw: nullptr)
+    t = spawn(raw_of, h).must()  #~ thread_crossing
+    print(t.wait())
+    box: (mailbox str) = mailbox()
+    u = spawn(fine, Fine(name: "f", box: box)).must()
+    print(u.wait())
+    box.close()

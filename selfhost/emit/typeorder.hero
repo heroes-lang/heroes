@@ -68,9 +68,9 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
                 .function_ty =>
                     if !names.funcs[id].is_err()
                         wanted @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => wanted @ wanted
-                .array | .fixed | .map | .named                           => wanted @ wanted
-                .case_ty | .failure | .generic | .error                   => wanted @ wanted
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => wanted @ wanted
+                .array | .fixed | .map | .named | .thread_ty | .mailbox_ty => wanted @ wanted
+                .case_ty | .failure | .generic | .error                    => wanted @ wanted
 
             if wanted && synth.wants_type(w: want, ty: id)
                 seeds @ seeds.push(id * 2 + 1)
@@ -105,9 +105,9 @@ function definitions(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
                         result: fn_ty.result
                     )
                     owed_blank @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-                .array | .fixed | .map | .named                           => continue
-                .case_ty | .failure | .generic | .error                   => continue
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => continue
+                .array | .fixed | .map | .named | .thread_ty | .mailbox_ty => continue
+                .case_ty | .failure | .generic | .error                    => continue
 
     if owed_blank
         writer.blank(@w)
@@ -187,10 +187,10 @@ function struct_named(c: state.Checked, names: ctype.Names, decls: [ast.Decl], i
         ty = item / 2
 
         match table.get(c.types, ty)
-            .fallible                                                 => return ctype.option_of(names, ty: ty)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
-            .array | .fixed | .map | .named | .function_ty            => return ""
-            .case_ty | .failure | .generic | .error                   => return ""
+            .fallible                                                          => return ctype.option_of(names, ty: ty)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return ""
+            .array | .fixed | .map | .named | .function_ty                     => return ""
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return ""
     decl = item / 2
 
     match decls[decl].kind

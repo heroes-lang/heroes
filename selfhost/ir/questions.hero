@@ -198,7 +198,7 @@ function cases_of(c: state.Checked, s: source.Source, decls: [ast.Decl], subject
         .fallible                                                 => return ok(FALLIBLE_CASES)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no cases")
         .array | .fixed | .map | .function_ty | .case_ty          => return fail(code: "none", msg: "no cases")
-        .failure | .generic | .error                              => return fail(code: "none", msg: "no cases")
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return fail(code: "none", msg: "no cases")
 
     return fail(code: "none", msg: "unreached")
 
