@@ -556,7 +556,7 @@ test "navigate: a page with a query and a fragment, a folder, and paths refused"
     assert page_of(app, view: v).must() == "/boards/"
     ui.close(@app).must()
 
-test "response_of: a hit, a folder's index, a query, a head, a miss, another host, an escape out, another method"
+test "response_of: a hit, a folder's index, a query, a head, a miss, another host, dots resolved as the URL standard does, another method"
     app @= ui.open(.headless).must()
     v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
     load_html(@app, view: v, html: "<!doctype html>").must()
@@ -567,7 +567,8 @@ test "response_of: a hit, a folder's index, a query, a head, a miss, another hos
     assert response_of(app, view: v, method: "HEAD", url: "app://localhost/index.html").must().length == 15
     assert response_of(app, view: v, method: "GET", url: "app://localhost/missing.css").must().status == 404
     assert response_of(app, view: v, method: "GET", url: "app://elsewhere/data.json").must().status == 404
-    assert response_of(app, view: v, method: "GET", url: "app://localhost/%2e%2e/data.json").must().status == 404
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/%2e%2e/data.json").must().status == 200
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/%252e%252e/data.json").must().status == 404
     refused = response_of(app, view: v, method: "POST", url: "app://localhost/data.json").must()
     assert refused.status == 405
     assert refused.length == 19

@@ -944,7 +944,11 @@ static _Thread_local int64_t hero_ui_web_room;
 /* The bridge (`hero_ui.h`, THE BRIDGE): written for WebKit's
  * `window.webkit.messageHandlers` and WebView2's `window.chrome.webview`
  * alike, so one script serves every system; it does nothing in a frame
- * inside the page, nor where neither is there. */
+ * inside the page, nor where neither is there. Where an arm's system says
+ * not which frame a message came from (WebKitGTK), the arm gives the main
+ * frame, before this script, a seal of its own as `window.__heroesSeal`,
+ * which the script takes away and puts before every text it sends, so a
+ * frame inside the page, which never held it, is not heard. */
 static const char hero_ui_web_bridge_text[] =
     "(function () {\n"
     "    \"use strict\";\n"
@@ -959,7 +963,12 @@ static const char hero_ui_web_bridge_text[] =
     "    if (!webkit && !chrome) {\n"
     "        return;\n"
     "    }\n"
-    "    var post = webkit ? webkit.postMessage.bind(webkit) : chrome.postMessage.bind(chrome);\n"
+    "    var seal = \"\";\n"
+    "    if (typeof window.__heroesSeal === \"string\") {\n"
+    "        seal = window.__heroesSeal;\n"
+    "        delete window.__heroesSeal;\n"
+    "    }\n"
+    "    var post = webkit ? function (text) { webkit.postMessage(seal + text); } : chrome.postMessage.bind(chrome);\n"
     "    var encoder = new TextEncoder();\n"
     "    var receiver = null;\n"
     "    var held = [];\n"
@@ -1354,17 +1363,14 @@ static bool hero_ui_web_is_ours(const uint8_t *url, size_t count) {
 /* Whether the `count` bytes at `url` are `about:blank` or `about:srcdoc`,
  * perhaps with a query or a fragment: a frame's empty page, which inherits
  * the origin of the page that made it. */
+static bool hero_ui_web_is_page(const uint8_t *url, size_t count, const char *page) {
+    size_t length = strlen(page);
+
+    return hero_ui_web_begins(url, count, page) && (count == length || url[length] == '?' || url[length] == '#');
+}
+
 static bool hero_ui_web_is_empty_page(const uint8_t *url, size_t count) {
-    static const char *const pages[] = { "about:blank", "about:srcdoc" };
-
-    for (size_t i = 0; i < sizeof pages / sizeof pages[0]; i += 1) {
-        size_t length = strlen(pages[i]);
-
-        if (hero_ui_web_begins(url, count, pages[i]) && (count == length || url[length] == '?' || url[length] == '#')) {
-            return true;
-        }
-    }
-    return false;
+    return hero_ui_web_is_page(url, count, "about:blank") || hero_ui_web_is_page(url, count, "about:srcdoc");
 }
 
 static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count) {

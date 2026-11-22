@@ -411,6 +411,10 @@
 #include "platform/hero_ui_appkit.h"
 #include "platform/hero_ui_appkit.swift"
 #include "platform/hero_ui_web.h"
+#include "hero_ui_web_gtk.h"
+#include "platform/hero_ui_web_gtk.c"
+#include "hero_ui_web_win32.h"
+#include "platform/hero_ui_web_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #endif
