@@ -180,7 +180,10 @@ jobs:
   generators:
     name: Linux x86-64, every generated table checked against its generator
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    # Each step builds a generator with the Rebel packages it reads, one to
+    # four minutes apiece on a Mac running other builds on 2026-11-22; how
+    # long the job takes on a runner is unrun, so the limit leaves room.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -254,15 +257,23 @@ jobs:
       - name: generators/http_suffixes, the Public Suffix List of http/suffixes
         run: ./heroes run generators/http_suffixes/main.hero -- check
 
-      # The tests of `generators/tablekit/`, the package every generator
-      # writes its tables with. A generator's own tests are left to whoever
-      # changes it: `heroes test` runs every test its program reaches, Rebel's
-      # packages' among them (1,875 tests and three minutes for `tablekit`
-      # alone on 2026-11-22, on a Mac running other builds), which the
-      # `coherence` job runs already, and each `check` above judges a
-      # generator's whole output byte for byte.
-      - name: generators/tablekit, its tests
-        run: ./heroes test generators/tablekit/tablekit.hero
+      # The zip `generators/i18n_units` fetched above; `generators/cldrkit`
+      # holds it to its SHA-256.
+      - name: generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
+        run: ./heroes run generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      # The tests of the packages the generators share: `generators/tablekit/`,
+      # which every generator writes its tables with, and `generators/cldrkit/`,
+      # which reads CLDR's zip. A generator's own tests are left
+      # to whoever changes it: `heroes test` runs every test its program
+      # reaches, Rebel's packages' among them (1,875 tests and three minutes
+      # for `tablekit` alone on 2026-11-22, on a Mac running other builds),
+      # which the `coherence` job runs already, and each `check` above judges
+      # a generator's whole output byte for byte.
+      - name: generators/tablekit and cldrkit, their tests
+        run: |
+          ./heroes test generators/tablekit/tablekit.hero
+          ./heroes test generators/cldrkit/cldrkit.hero
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #
