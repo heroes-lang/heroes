@@ -79,6 +79,6 @@ function loop(@d: desk.Desk, menus: Menus) -> ()?
                         _ = handler.act(@d, name: call)?
                     .files_chosen f => _ = handler.chosen(@d, dialog: f.dialog, choice: f.choice)?
                     .close_asked _ => return ok()
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .appearance_changed _ => _ = 0
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .appearance_changed _ | .quit_asked _ => _ = 0
 
     return ok()

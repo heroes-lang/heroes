@@ -169,6 +169,15 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count);
 int64_t hero_ui_arm_appearance(int64_t *appearance);
 int64_t hero_ui_arm_appearance_set(int64_t appearance);
 
+/* THE SESSION'S END ASKING THE PROGRAM (`hero_ui.h`): on macOS the arm
+ * holds each ask from `open` to `close`, queuing `HERO_UI_EVENT_QUIT` and
+ * answering it once the program does, or as ending at `close`;
+ * `answer_quit` answers every ask held, `ask_quit` asks as the system would
+ * for `hero_ui_inject`. Refusals for the Win32 and GTK 4 arms in
+ * `hero_ui.c`'s CALLS NO C ARM DRAWS YET. */
+int64_t hero_ui_arm_answer_quit(int64_t go);
+int64_t hero_ui_arm_ask_quit(int64_t session_end);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
  * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits

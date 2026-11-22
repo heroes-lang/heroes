@@ -548,12 +548,12 @@ capability ui/text-selection  a text widget's selection and caret set and read, 
   note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the system's own undo already (ui/edit-menu); macOS `NSTextView.selectedRange` and its `undoManager`, Windows `EM_SETSEL` and the Rich Edit's undo levels, Linux `GtkEditable` and `GtkTextBuffer`'s undo
 
 capability ui/session-end  the person logging out or shutting down, asked of the program first
-  heroes  pending
+  heroes  ui.Event.quit_asked, ui.answer_quit, ui.Input.ask_quit
   go      -
   rust    -
   python  tkinter.Wm.protocol
   wx      wxCloseEvent (wxEVT_QUERY_END_SESSION, wxEVT_END_SESSION, CanVeto, Veto)
-  note    catalogue AP04 (must); macOS `applicationShouldTerminate`, Windows `WM_QUERYENDSESSION` with `ShutdownBlockReasonCreate`, Linux GTK's `query-end` (unread)
+  note    catalogue AP04 (must); nothing ends until the program answers, `close` answering that the app ends; macOS by the system's quit Apple event taken in a handler of the layer's own and suspended until the answer (resumed with no error to end, with `userCanceledErr` to stay, which cancels the session's end), its reason telling the session's end from the Dock's or another program's quit, and `terminate(_:)` of any other sender cancelled and told the same way; the app menu's Quit still asks each window to close; a real logout is unrun (the case sends the process its own quit event); Windows pending (`WM_QUERYENDSESSION` answered at once, `ShutdownBlockReasonCreate` held until the answer), Linux pending (`GtkApplication`'s `query-end` with `gtk_application_inhibit`)
 
 capability ui/appearance  the system's dark or light appearance, and its change
   heroes  ui.appearance_of, ui.Appearance, ui.Event.appearance_changed, ui.Input.change_appearance

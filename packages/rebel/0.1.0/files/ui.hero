@@ -96,6 +96,7 @@ use ui/internal/makers
 use ui/internal/menus
 use ui/internal/model
 use ui/internal/render as drawing
+use ui/internal/session
 use ui/internal/state
 use ui/internal/tables
 use ui/internal/trees
@@ -202,6 +203,8 @@ record App
     # The appearance the app is drawn in as the last turn told, the
     # headless side's own.
     appearance: Appearance
+    # The asks to end the app the headless side holds, not yet answered.
+    quits_held: i64
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -1218,6 +1221,23 @@ variant Appearance
 function appearance_of(app: App) -> Appearance?
     return desk.appearance_of(app)
 
+# Answers every ask to end the app that `.quit_asked` told and nothing has
+# answered yet, as wxWidgets' `wxCloseEvent::Veto` on
+# `wxEVT_QUERY_END_SESSION` and Qt's `QSessionManager::cancel`: with `go`
+# true the app ends and the session's end goes on once it has, so the
+# program then closes the app; with `go` false the app stays, and a
+# session's end waiting on it is cancelled, as the person's Cancel in
+# "save changes?" would. `close` answers as `go` true. With no ask held it
+# answers nothing.
+#
+# - `app`: the app.
+# - `go`: whether the app ends.
+#
+# Fails `closed`, `unsupported` where the system's arm holds no such ask
+# (Windows and Linux, pending), `failed`.
+function answer_quit(@app: App, go: bool) -> ()?
+    return session.answer_quit(@app, go: go)
+
 # Gives `widget` the name a screen reader says for it, where it shows no
 # words of its own (a picture, a slider, a button of an image) or its words
 # do not say what it is, as Qt's `QWidget::setAccessibleName` and ARIA's
@@ -1763,6 +1783,15 @@ variant Event
     appearance_changed
         # The appearance now.
         appearance: Appearance
+    # The system asks the app to end, and waits: the program saves what the
+    # person would lose, then closes the app, or answers that it stays
+    # (`answer_quit`). On macOS the session's end and the Dock's Quit ask
+    # it; the app menu's Quit asks each window to close instead
+    # (`.close_asked`).
+    quit_asked
+        # True where the person is logging out, restarting or shutting
+        # down; false for another quit, the Dock's or another program's.
+        session_end: bool
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -1894,6 +1923,12 @@ variant Input
     change_appearance
         # The appearance.
         appearance: Appearance
+    # Asks the app to end, as the system would: on macOS through the quit
+    # Apple event the system sends, its reason the session's end where
+    # `session_end` is.
+    ask_quit
+        # Whether it is the session's end.
+        session_end: bool
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
     # app's own origin, which on the headless side is once `ui/webview`'s
@@ -2386,7 +2421,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

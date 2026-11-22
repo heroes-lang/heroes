@@ -180,11 +180,13 @@ int64_t hero_ui_arm_open(void) {
 
     if (kind == HERO_UI_OK) {
         hero_ui_appkit_appearance_watch(hero_ui_dialog_told);
+        hero_ui_appkit_session_watch(hero_ui_dialog_told);
     }
     return kind;
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_appkit_session_watch(NULL);
     hero_ui_appkit_appearance_watch(NULL);
     hero_ui_appkit_close();
 }
@@ -2174,6 +2176,12 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
         }
         return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would", 0);
     }
+    if (kind == HERO_UI_EVENT_QUIT) {
+        if (id != 0 || (value != 0 && value != 1) || second != 0 || count != 0) {
+            return hero_ui_said(HERO_UI_INVALID, "an ask to end the app names no widget, 0, and is 1 for the session's end or 0 for another quit");
+        }
+        return hero_ui_system_answered(hero_ui_arm_ask_quit(value), "asking the app to end as the system would", 0);
+    }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
@@ -3613,6 +3621,14 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
     return hero_ui_appkit_set_label_for(id, label);
 }
 
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    return hero_ui_appkit_answer_quit(go);
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    return hero_ui_appkit_ask_quit(session_end);
+}
+
 #else
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
@@ -3673,6 +3689,16 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
 }
 
 #endif /* !_WIN32 */
+
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    (void)go;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer holds the session's end for the program's answer on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    (void)session_end;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
+}
 
 #endif
 
@@ -3766,4 +3792,16 @@ int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label) {
         return hero_ui_said(HERO_UI_INVALID, "the label tied to a widget is another widget, 1 or more, or 0 for none");
     }
     return hero_ui_system_answered(hero_ui_arm_set_label_for(id, label), "tying a label to its widget", id);
+}
+
+/* -- THE SESSION'S END ASKING THE PROGRAM ----------------------------------- */
+
+int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (go != 0 && go != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether the app ends is 0 or 1");
+    }
+    return hero_ui_system_answered(hero_ui_arm_answer_quit(go), "answering the system's ask to end the app", 0);
 }

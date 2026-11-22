@@ -495,6 +495,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: 0,
                 text: ""
             )
+        .ask_quit q =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_QUIT,
+                id: 0,
+                value: number_of(q.session_end),
+                second: 0,
+                text: ""
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # The layer's number for `appearance`.
