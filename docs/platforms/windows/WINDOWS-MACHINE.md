@@ -33,20 +33,77 @@ on when CI says so.
 The machine is an [appOnFly](https://apponfly.com) Windows VPS and **the author
 pays for the hours it is awake**. **It is off between sessions — that is the
 resting state, not an accident** (author instruction 2026-08-31, given while
-turning it off after the milestone closed). Every session that needs it starts
-by asking the author to power it on, in so many words, and does the
-machine-free parts of the work while waiting.
+turning it off after the milestone closed). A session that needs it **turns it
+on itself** with the one command of § Turning it on, below; who may and what
+binds them is `.claude/rules/platforms.md` § The Windows box. Until 2026-11-20
+every session that needed it started by asking the author to power it on, in so
+many words, and did the machine-free parts of the work while waiting.
 
 - **The symptom of "off"** is an SSH connect timeout, or the Tailscale row reading
   `offline` instead of `idle`. It is not an authentication error — a key failure
   means something else broke.
-- **Nobody but the author can turn it on**: it is powered from the appOnFly web
-  console. So when it is off, the assistant's move is to **ask the author to start
-  it** and, while waiting, do the parts of the work that do not need it. Do not
-  wait on it in a loop; do not treat it as always-available infrastructure.
+- **Until 2026-11-20 nobody but the author could turn it on**: it was powered
+  from the appOnFly web console alone, so the assistant's move was to ask the
+  author to start it. `power-on.py` now presses the console's buttons over the
+  portal's own API (§ Turning it on). Still: do not wait on it in a loop, and do
+  not treat it as always-available infrastructure; start it when the work needs
+  it.
 - **Shut nothing down on the author's behalf** unless asked, and do not assume a
   session survives: treat every visit as arriving on a machine that may have been
   rebooted since the last one. Everything below is re-checkable in one command.
+
+## Turning it on
+
+Written 2026-11-20, the day the program first ran and the author's instruction
+let a session use it. One command from the Mac, no browser, the Python standard
+library alone:
+
+```sh
+python3 -I docs/platforms/windows/power-on.py             # start, arm the timer, wait for ssh win
+python3 -I docs/platforms/windows/power-on.py --hours 8   # ... at least 8 h before the auto shutdown
+python3 -I docs/platforms/windows/power-on.py --dry-run   # sign in and read the state, change nothing
+```
+
+It exits 0 once `ssh win` answers. On a box already Running it starts nothing,
+lengthens the timer where it would end sooner than asked and never shortens
+it, presses Connect and waits for SSH, so it is also the command to run when
+the portal reads Running and `ssh win` does not answer (below).
+
+**The credentials** are the appOnFly account's: `APPONFLY_EMAIL` in the
+environment or in the repository's `.env`, and the password in the login
+keychain item `apponfly-portal` (preferred, since it keeps the secret off disk)
+or in `APPONFLY_PASSWORD`. `.env.example` carries both names. The program
+prints neither value. A different appOnFly account means changing only these:
+the subscription, the machine and the timer are found at run time.
+
+**What it does**, each call read from the portal's web bundle and run against
+the live account on 2026-11-20; the program's docstring has the detail:
+
+1. signs in at Firebase's password endpoint, which this project does not guard
+   with reCAPTCHA (a wrong password reads `INVALID_PASSWORD`, measured);
+2. finds the subscription with a Firestore query over
+   `customers/<uid>/subscriptions`, passing over a canceled one, and reads the
+   machine's state from the document `virtualMachines/<vmId>`;
+3. calls `subscription-start` on a Stopped machine and polls until Running;
+4. **arms the auto shutdown** by writing `autoShutdownTime` in
+   `customers/<uid>/shutdowns/<subscription>`. The portal's web page writes that
+   field when it sees Running (read in the bundle); whether the server also
+   arms it on a start is unrun, so a start with no page open could leave the
+   box billing with no timer. A real run always makes sure one is armed;
+5. **presses Connect**, `subscription-select`, which answers
+   `actionTaken: "connect"`. The author observed on the portal that the box is
+   not truly up until Connect is pressed. Whether SSH alone needs it is unrun,
+   since no run has left it out; `--no-connect` exists for that experiment;
+6. waits for `ssh win`, and past its time says what Tailscale reads of the box.
+
+**The first run, 2026-11-20**, from Stopped: the start was accepted at
+14:44:45, the machine read Starting at 14:44:52 and Running at 14:45:06, the
+timer was armed to 5 h 59 m, Connect answered `connect`, and `ssh win`
+answered at 14:45:33, 48 s after the start request. **Earlier the same day the
+portal read Running, 3 h 35 m on its timer, while Tailscale read the box
+offline, last seen 7 h before, and `ssh win` timed out**: a Running the box did
+not live up to. That is the case the author meets by pressing Connect, and the
+program presses it too.
 
 ## Rebuilding the box
 
