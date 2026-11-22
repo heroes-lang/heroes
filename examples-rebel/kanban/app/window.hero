@@ -78,6 +78,6 @@ function loop(@d: desk.Desk, menus: Menus) -> ()?
 
                         _ = handler.act(@d, name: call)?
                     .close_asked _ => return ok()
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ => _ = 0
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .submitted _ => _ = 0
 
     return ok()

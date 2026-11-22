@@ -403,12 +403,13 @@ capability ui/tabs  pages chosen by tabs
   wx      wxNotebook (AddPage, SetSelection, GetSelection, wxEVT_NOTEBOOK_PAGE_CHANGED)
   note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows pending (the tab control, `WC_TABCONTROL`, with a child window a page), Linux pending (`GtkNotebook`); a page taken out and put back in another place, and a tab's icon, are not offered
 
-capability ui/table  rows of cells in columns
-  heroes  pending
+capability ui/table  rows of cells in columns, several chosen, one opened, sorted by the header the person clicks
+  heroes  ui.table, ui.set_rows, ui.rows_of, ui.set_sort, ui.sort_of, ui.Sort, ui.set_selection, ui.selection_of, ui.Event.sort_asked, ui.Event.activated, ui.Input.sort, ui.Kind.table
   go      ui.NewTable, Table.AppendTextColumn, Table.AppendImageColumn, Table.AppendImageTextColumn, Table.AppendCheckboxColumn, Table.AppendCheckboxTextColumn, Table.AppendProgressBarColumn, Table.AppendButtonColumn, ui.NewTableModel, TableModel.RowInserted, TableModel.RowChanged, TableModel.RowDeleted, TableModel.Free, ui.TableModelHandler, ui.TableParams, ui.TableValue, ui.TableString, ui.TableInt, ui.TableImage, ui.TableColor, ui.TableTextColumnOptionalParams
   rust    -
   python  ttk.Treeview
   wx      wxDataViewListCtrl, wxListCtrl (wxLC_REPORT), wxDataViewCtrl
+  note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows pending (the list view in report mode, `LVN_COLUMNCLICK`, `HDF_SORTUP`), Linux pending (`GtkColumnView`); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
 
 capability ui/tree  a tree of items folded and unfolded
   heroes  pending

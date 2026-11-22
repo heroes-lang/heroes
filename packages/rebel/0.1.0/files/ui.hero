@@ -75,11 +75,10 @@
 # the user interface, through feature 2647's mailbox; a box drawn with a
 # title and a frame around it; a combo box the person may type into; a
 # number typed, or stepped up and down; a line between the widgets of a box;
-# rows of cells in columns; a tree of items folded and unfolded; an area the
-# program draws into, with its keys and its mouse; a tip shown over a
-# widget; a date, a colour or a font chosen in the system's own picker; an
-# icon in the system's tray or menu bar, and its notifications; a file
-# dragged onto a window.
+# a tree of items folded and unfolded; an area the program draws into, with
+# its keys and its mouse; a tip shown over a widget; a date, a colour or a
+# font chosen in the system's own picker; an icon in the system's tray or
+# menu bar, and its notifications; a file dragged onto a window.
 
 use bytes
 use image
@@ -98,6 +97,7 @@ use ui/internal/menus
 use ui/internal/model
 use ui/internal/render as drawing
 use ui/internal/state
+use ui/internal/tables
 
 ## Codes
 
@@ -285,6 +285,8 @@ variant Kind
     split
     # A pane of a split.
     pane
+    # Rows of cells in columns.
+    table
 
 # What `widget` is.
 #
@@ -1078,12 +1080,14 @@ function set_items(@app: App, widget: Widget, items: [str]) -> ()?
     return state.set_items(@app, widget: widget, items: items)
 
 # Chooses the items at `indices` of a list, a combo box or a radio group,
-# or shows the page of tabs at its one index. No event comes of it.
+# or the rows of a table, or shows the page of tabs at its one index. No
+# event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box, a radio group or tabs.
-# - `indices`: item indices, ascending and each once, at most one but for a
-#   list of several choices; none chooses nothing; exactly one for tabs.
+# - `widget`: a list, a combo box, a radio group, tabs or a table.
+# - `indices`: item or row indices, ascending and each once, at most one
+#   but for a list of several choices and a table; none chooses nothing;
+#   exactly one for tabs.
 #
 # Fails `closed`, `invalid` where an index is past the items or the indices
 # are out of order, `failed`.
@@ -1091,10 +1095,11 @@ function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
     return state.set_selection(@app, widget: widget, indices: indices)
 
 # The indices of the items a list, a combo box or a radio group has chosen
-# now, ascending, empty where none is; the index of the page tabs show.
+# now, or the rows of a table, ascending, empty where none is; the index of
+# the page tabs show.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box, a radio group or tabs.
+# - `widget`: a list, a combo box, a radio group, tabs or a table.
 #
 # Fails `closed`, `invalid`, `failed`.
 function selection_of(app: App, widget: Widget) -> [i64]?
@@ -1232,6 +1237,80 @@ variant MenuRole
 # `menu_item`, `set_shortcut`.
 function set_role(@app: App, item: Widget, role: MenuRole) -> ()?
     return state.set_role(@app, item: item, role: role)
+
+## Tables
+
+# How a table shows itself sorted.
+variant Sort
+    # By no column.
+    unsorted
+    # By one column.
+    by
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
+
+# A new table in `into`: rows of cells under the headers `columns`, which
+# the person drags to widen and clicks to ask for the rows sorted, several
+# rows chosen at once, as a file manager's details or a mail client's
+# messages, wxWidgets' `wxDataViewListCtrl`. It holds no row until
+# `set_rows`; `set_selection` and `selection_of` choose and read rows; the
+# person choosing rows is `.selection_changed`, opening one by a double
+# click or Return `.activated`, clicking a header `.sort_asked`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+# - `columns`: the headers' titles, 1 to 64, each one line without a zero
+#   byte.
+#
+# Fails `closed`, `invalid`, `failed`. See also `set_rows`, `set_sort`.
+function table(@app: App, into: Widget, columns: [str]) -> Widget?
+    return tables.table(@app, into: into, columns: columns)
+
+# Gives table `widget` the rows `rows`, in the order they are shown, none
+# chosen. No event comes of it. A program sorting its rows on
+# `.sort_asked` gives them here again in their new order.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+# - `rows`: each a cell for every column, one line without a zero byte.
+#
+# Fails `closed`, `invalid` for a row of another count of cells or a cell
+# of two lines, `failed`. See also `rows_of`.
+function set_rows(@app: App, widget: Widget, rows: [[str]]) -> ()?
+    return tables.set_rows(@app, widget: widget, rows: rows)
+
+# The rows table `widget` holds, in the order shown.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+#
+# Fails `closed`, `invalid`.
+function rows_of(app: App, widget: Widget) -> [[str]]?
+    return tables.rows_of(app, widget: widget)
+
+# Shows table `widget` sorted as `order` says, its column's header showing
+# the arrow. No event comes of it, and the rows stand as they are.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+# - `order`: `.unsorted`, or `.by` one of its columns.
+#
+# Fails `closed`, `invalid`, `failed`. See also `.sort_asked`.
+function set_sort(@app: App, widget: Widget, order: Sort) -> ()?
+    return tables.set_sort(@app, widget: widget, order: order)
+
+# How table `widget` shows itself sorted: as the program set it or the
+# person's click left it.
+#
+# - `app`: the app holding it.
+# - `widget`: a table.
+#
+# Fails `closed`, `invalid`.
+function sort_of(app: App, widget: Widget) -> Sort?
+    return tables.sort_of(app, widget: widget)
 
 ## The clipboard
 
@@ -1409,10 +1488,21 @@ variant Event
     # folder, a mail client opens the message. A first click's choice comes
     # before it as `.selection_changed`.
     activated
-        # The list.
+        # The list or the table.
         widget: Widget
         # The row opened, from 0; for the Return key, the first row chosen.
         index: i64
+    # The person clicked a table's column header, asking for its rows
+    # sorted by that column: the column sorted by already turns over,
+    # another starts ascending, and its arrow shows it at once
+    # (`set_sort`). The program sorts its rows and gives them again.
+    sort_asked
+        # The table.
+        widget: Widget
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
     # A web view's page sent a text by its bridge, `heroes.send` (the
     # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
@@ -1507,13 +1597,22 @@ variant Input
     submit
         # The text field.
         widget: Widget
-    # Opens a row of a list as a double click on it does, choosing it first
-    # where it is not chosen.
+    # Opens a row of a list or a table as a double click on it does,
+    # choosing it first where it is not chosen.
     activate
-        # The list.
+        # The list or the table.
         widget: Widget
-        # The row, an index of its items.
+        # The row, an index of its items or rows.
         index: i64
+    # Clicks a table's column header until the table stands sorted by it in
+    # the order asked.
+    sort
+        # The table.
+        widget: Widget
+        # The column, from 0.
+        column: i64
+        # Whether ascending.
+        ascending: bool
     # Presses a button of the next message box `message` shows.
     answer
         # The button.
@@ -1991,7 +2090,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .submitted _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -2738,6 +2837,51 @@ test "pane: a list on the left"
     places = list(@app, into: pane(@app, into: sides).must(), items: ["Home", "Desktop"], multiple: false).must()
     _ = pane(@app, into: sides).must()
     assert rect_of(@app, widget: places).must().x == 0
+    close(@app).must()
+
+# A file manager's details, sorted by size where the person asks.
+test "table: name and size"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name", "Size"]).must()
+    set_rows(@app, widget: files, rows: [["notes.txt", "12"], ["plan.md", "3"]]).must()
+    inject(@app, input: .sort(widget: files, column: 1, ascending: true)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .sort_asked(widget: files, column: 1, ascending: true)
+    set_rows(@app, widget: files, rows: [["plan.md", "3"], ["notes.txt", "12"]]).must()
+    close(@app).must()
+
+# Rows given, then read back.
+test "set_rows: two files"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    set_rows(@app, widget: files, rows: [["a.txt"], ["b.txt"]]).must()
+    assert rows_of(app, widget: files).must() == [["a.txt"], ["b.txt"]]
+    close(@app).must()
+
+# The rows of a table as the program holds them.
+test "rows_of: none yet"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    assert rows_of(app, widget: files).must() == []
+    close(@app).must()
+
+# A table shown sorted by its first column, descending.
+test "set_sort: by name, descending"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name", "Size"]).must()
+    set_sort(@app, widget: files, order: .by(column: 0, ascending: false)).must()
+    assert sort_of(app, widget: files).must() == .by(column: 0, ascending: false)
+    close(@app).must()
+
+# A table no one sorted.
+test "sort_of: unsorted"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 300, height: 200).must()
+    files = table(@app, into: w, columns: ["Name"]).must()
+    assert sort_of(app, widget: files).must() == .unsorted
     close(@app).must()
 
 # Paths copied as a file manager copies them, and read back by a Paste.

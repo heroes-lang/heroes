@@ -504,7 +504,7 @@ function names_of(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .submitted _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .submitted _ =>
                         "another"
 
                 out @ out.push(name)
@@ -736,7 +736,7 @@ function names_of_waiting(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .submitted _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .submitted _ =>
                         "another"
 
                 out @ out.push(name)

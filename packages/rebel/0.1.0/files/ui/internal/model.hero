@@ -105,6 +105,12 @@ record Node
     # Whether the program or the person placed a split's divider, which
     # stands in the middle until one does.
     divided: bool
+    # A table's columns' titles; its cells are its `items`, row after row.
+    titles: [str]
+    # The column a table shows itself sorted by, -1 for none.
+    sorted_by: i64
+    # Whether a table is sorted ascending.
+    ascending: bool
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -289,6 +295,9 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         moving: false,
         insets: [0, 0, 0, 0],
         divided: false,
+        titles: [],
+        sorted_by: -1,
+        ascending: true,
         every: 0,
         due: 0,
         preferred_width: 0,
@@ -451,7 +460,14 @@ function is_split(kind: i64) -> bool
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind)
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE
+
+# The rows list or table `n` holds: a list's items, a table's cells over
+# its columns.
+function rows_of(n: Node) -> i64
+    if n.kind == hero_ui.HERO_UI_TABLE && n.titles.len() > 0
+        return n.items.len() / n.titles.len()
+    return n.items.len()
 
 # Whether a node of `kind` is placed in its window's content by the layout:
 # every widget but a window, a menu, a menu's items and a timer.
@@ -501,6 +517,7 @@ function kind_name(kind: i64) -> str
         "split_row"
         "split_column"
         "pane"
+        "table"
     ]
 
     if kind < 0 || kind >= names.len()

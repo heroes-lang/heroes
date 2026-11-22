@@ -70,6 +70,12 @@ constant TAB_SIDE: i64
 constant TAB_TOP: i64
     32
 
+# The width of a table's column on the headless side; a table is as wide
+# as its columns, a text field's width at least, and a list's height with a
+# control's for its headers.
+constant TABLE_COLUMN: i64
+    100
+
 # The thickness of the headless side's divider between two panes.
 constant DIVIDER: i64
     1
@@ -91,6 +97,13 @@ function of(n: model.Node) -> [i64]
 
     if model.is_split(k)
         return [DIVIDER, DIVIDER]
+
+    if k == hero_ui.HERO_UI_TABLE
+        wide = TABLE_COLUMN * n.titles.len()
+
+        if wide < FIELD
+            return [FIELD, AREA_HEIGHT + CONTROL]
+        return [wide, AREA_HEIGHT + CONTROL]
 
     if k == hero_ui.HERO_UI_LABEL
         lines = lines_of(n.text)

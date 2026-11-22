@@ -1706,7 +1706,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_PANE) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TABLE) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2017,7 +2017,7 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
-    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT) {
+    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT && kind != HERO_UI_EVENT_SORT) {
         (void)snprintf(words, sizeof words, "the act %lld is no act a person does", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2026,6 +2026,10 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     }
     if (kind == HERO_UI_EVENT_ACTIVATE && value < 0) {
         (void)snprintf(words, sizeof words, "row %lld of a list; a row is 0 or more", (long long)value);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (kind == HERO_UI_EVENT_SORT && (value < 0 || (second != 0 && second != 1))) {
+        (void)snprintf(words, sizeof words, "a sort by column %lld, %lld; a column is 0 or more and the order 0 or 1", (long long)value, (long long)second);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     return hero_ui_answered(hero_ui_arm_inject(kind, id, value, second, text, (int64_t)count), "acting as the person", id);
@@ -3262,4 +3266,67 @@ int64_t hero_ui_insets(hero_ui_app *app, int64_t id, int64_t *left, int64_t *top
     *right = 0;
     *bottom = 0;
     return hero_ui_answered(hero_ui_arm_insets(id, left, top, right, bottom), "reading the room a widget draws around its content", id);
+}
+
+/* -- A TABLE --------------------------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_columns(int64_t id, const uint8_t *titles, int64_t count) {
+    return hero_ui_appkit_set_columns(id, titles, count);
+}
+
+static int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending) {
+    return hero_ui_appkit_set_sort(id, column, ascending);
+}
+
+#else
+
+static int64_t hero_ui_arm_set_columns(int64_t id, const uint8_t *titles, int64_t count) {
+    (void)id;
+    (void)titles;
+    (void)count;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending) {
+    (void)id;
+    (void)column;
+    (void)ascending;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_columns(hero_ui_app *app, int64_t id, const void *titles, uint64_t count) {
+    const uint8_t *bytes = titles;
+    uint64_t columns = 0;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(titles, count, "the columns' titles", true)) {
+        return -1;
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == '\n') {
+            return hero_ui_said(HERO_UI_INVALID, "a column's title holds a line feed, and a header shows one line");
+        }
+        if (bytes[at] == 0) {
+            columns += 1;
+        }
+    }
+    if (columns < 1 || columns > (uint64_t)HERO_UI_COLUMNS_MOST) {
+        (void)snprintf(words, sizeof words, "a table of %llu columns; it holds 1 to %d", (unsigned long long)columns, HERO_UI_COLUMNS_MOST);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_columns(id, bytes, (int64_t)count), "giving a table its columns", id);
+}
+
+int64_t hero_ui_set_sort(hero_ui_app *app, int64_t id, int64_t column, int64_t ascending) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (column < -1 || column >= HERO_UI_COLUMNS_MOST || (ascending != 0 && ascending != 1)) {
+        return hero_ui_said(HERO_UI_INVALID, "a sort is a column from -1, none, and a flag of 0 or 1");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_sort(id, column, ascending), "showing a table's sort", id);
 }

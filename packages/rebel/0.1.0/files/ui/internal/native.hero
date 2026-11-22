@@ -22,6 +22,13 @@ function made(app: ui.App, n: model.Node) -> ()?
     if hero_ui.create(app.handle, id: n.id, kind: n.kind, parent: native_parent(app, n: n)) < 0
         return failure.last(f"making the {model.kind_name(n.kind)} {n.id}")
 
+    # A table's columns stand before its cells, which fill them.
+    if n.kind == hero_ui.HERO_UI_TABLE
+        push_columns(app, n: n)?
+
+        if n.items.len() > 0
+            push_items(app, n: n)?
+
     if model.has_text(n.kind) && n.text.len() > 0
         push_text(app, n: n)?
 
@@ -93,9 +100,25 @@ function push_items(app: ui.App, n: model.Node) -> ()?
         return failure.last(f"setting the items of widget {n.id}")
     return push_chosen(app, n: n)
 
-# Pushes what `n`, a list, a combo box, a radio group or tabs, has chosen.
+# Pushes table `n`'s columns, and the column it is sorted by.
+function push_columns(app: ui.App, n: model.Node) -> ()?
+    titles: [u8] @= []
+
+    for title in n.titles
+        bytes.push_text(@titles, s: title)
+        titles @ titles.push(0)
+
+    if hero_ui.set_columns(app.handle, id: n.id, @titles, count: to_u64(titles.len()).must()) < 0
+        return failure.last(f"giving table {n.id} its columns")
+
+    if hero_ui.set_sort(app.handle, id: n.id, column: n.sorted_by, ascending: number_of(n.ascending)) < 0
+        return failure.last(f"showing the sort of table {n.id}")
+    return ok()
+
+# Pushes what `n`, a list, a combo box, a radio group, tabs or a table, has
+# chosen.
 function push_chosen(app: ui.App, n: model.Node) -> ()?
-    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS
+    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS || n.kind == hero_ui.HERO_UI_TABLE
         chosen @= n.chosen
 
         if hero_ui.set_selection(app.handle, id: n.id, @chosen, count: to_u64(chosen.len()).must()) < 0
@@ -444,6 +467,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
             )
         .submit s =>
             return injected(app, kind: hero_ui.HERO_UI_EVENT_SUBMIT, id: s.widget.id, value: 0, second: 0, text: "")
+        .sort s =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_SORT,
+                id: s.widget.id,
+                value: s.column,
+                second: number_of(s.ascending),
+                text: ""
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # One act on window `id` among the screens, injected through the floor.

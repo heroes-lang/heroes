@@ -1,0 +1,218 @@
+# A table (`ui.table`): rows of cells under column headers, as wxWidgets'
+# `wxDataViewListCtrl` and a report-mode `wxListCtrl`. Its cells are the
+# node's `items`, row after row, its headers its `titles`; the rows chosen
+# are its `chosen`, any number of them, as a list of several choices holds
+# them. The person clicking a header asks for the rows sorted by that column
+# (`.sort_asked`): the column already sorted by turns over, another starts
+# ascending, and the arrow shows it at once; the program sorts its own rows
+# and gives them again (`ui.set_rows`), the table never reordering them
+# itself, so the rows the program holds and the rows shown are one order.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/give
+use ui/internal/makers
+use ui/internal/model
+use ui/internal/native
+
+# A new table in `into` with the columns `columns` (`ui.table`), holding no
+# row.
+function table(@app: ui.App, into: ui.Widget, columns: [str]) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+    titles_ok(columns)?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_TABLE,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.titles @ columns
+    return makers.added(@app, n: n)
+
+# Fails `invalid` where `columns` is no list of 1 to `HERO_UI_COLUMNS_MOST`
+# titles of one line.
+function titles_ok(columns: [str]) -> ()?
+    if columns.len() < 1 || columns.len() > hero_ui.HERO_UI_COLUMNS_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"a table of {columns.len()} columns; it holds 1 to {hero_ui.HERO_UI_COLUMNS_MOST}"
+        )
+
+    for i in range(from: 0, to: columns.len())
+        check.text_ok(text: columns[i], one_line: true, what: f"column {i}'s title")?
+
+    return ok()
+
+# Gives table `widget` the rows `rows` (`ui.set_rows`), none chosen.
+function set_rows(@app: ui.App, widget: ui.Widget, rows: [[str]]) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TABLE], what: "a table")?
+    cells: [str] @= []
+    total @= 0
+
+    for r in range(from: 0, to: rows.len())
+        if rows[r].len() != n.titles.len()
+            return fail(
+                code: failure.INVALID,
+                msg: f"row {r} holds {rows[r].len()} cells, and table {n.id} has {n.titles.len()} columns"
+            )
+
+        for c in range(from: 0, to: rows[r].len())
+            check.text_ok(text: rows[r][c], one_line: true, what: f"the cell of row {r}, column {c}")?
+            total @ total + rows[r][c].len() + 1
+
+            if total > hero_ui.HERO_UI_TEXT_MOST
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"the rows take past the {hero_ui.HERO_UI_TEXT_MOST} bytes a table holds"
+                )
+            cells @ cells.push(rows[r][c])
+
+    n.items @ cells
+    n.chosen @ []
+
+    if app.native
+        native.push_items(app, n: n)?
+    model.put(@app.table, n: n)
+    return ok()
+
+# The rows table `widget` holds (`ui.rows_of`).
+function rows_of(app: ui.App, widget: ui.Widget) -> [[str]]?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TABLE], what: "a table")?
+    return ok(rows_in(n))
+
+# The rows of table `n`, row after row.
+function rows_in(n: model.Node) -> [[str]]
+    out: [[str]] @= []
+    width = n.titles.len()
+
+    for r in range(from: 0, to: model.rows_of(n))
+        out @ out.push(n.items.slice(from: r * width, to: (r + 1) * width))
+
+    return out
+
+# Shows table `widget` sorted as `order` says (`ui.set_sort`); no event.
+function set_sort(@app: ui.App, widget: ui.Widget, order: ui.Sort) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TABLE], what: "a table")?
+
+    match order
+        .unsorted =>
+            n.sorted_by @ -1
+            n.ascending @ true
+        .by b =>
+            column_ok(n, column: b.column)?
+            n.sorted_by @ b.column
+            n.ascending @ b.ascending
+
+    if app.native && hero_ui.set_sort(app.handle, id: n.id, column: n.sorted_by, ascending: check.number_of(n.ascending)) < 0
+        return failure.last(f"showing the sort of table {n.id}")
+    model.put(@app.table, n: n)
+    return ok()
+
+# How table `widget` shows itself sorted (`ui.sort_of`).
+function sort_of(app: ui.App, widget: ui.Widget) -> ui.Sort?
+    n = check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TABLE], what: "a table")?
+
+    if n.sorted_by < 0
+        return ok(.unsorted)
+    return ok(.by(column: n.sorted_by, ascending: n.ascending))
+
+# Fails `invalid` where `column` is none of table `n`'s columns.
+function column_ok(n: model.Node, column: i64) -> ()?
+    if column < 0 || column >= n.titles.len()
+        return fail(code: failure.INVALID, msg: f"column {column} is past the {n.titles.len()} columns of table {n.id}")
+    return ok()
+
+# What the person's click asking table `id` sorted by `column` in the order
+# `ascending` does to the table: the arrow shown, and the event that tells
+# it.
+function sorted(@app: ui.App, id: i64, column: i64, ascending: bool) -> ui.Event
+    n @= app.table.nodes[id].must()
+    n.sorted_by @ column
+    n.ascending @ ascending
+    model.put(@app.table, n: n)
+    return .sort_asked(widget: check.widget_of(app, id: id), column: column, ascending: ascending)
+
+## Tests
+
+test "table, set_rows, set_sort: refused for no column, past HERO_UI_COLUMNS_MOST, a title of two lines, a row of another count of cells, a cell of two lines, a sort by a column past them, rows given to a list; the person's sort past the columns, a row opened past the rows and a choice past them"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    assert fixture.code_of(ui.table(@app, into: w, columns: [])) == ui.INVALID
+    many: [str] @= []
+
+    for i in range(from: 0, to: hero_ui.HERO_UI_COLUMNS_MOST + 1)
+        many @ many.push(f"c{i}")
+
+    assert fixture.code_of(ui.table(@app, into: w, columns: many)) == ui.INVALID
+    assert fixture.code_of(ui.table(@app, into: w, columns: ["Name\nSize"])) == ui.INVALID
+    files = ui.table(@app, into: w, columns: ["Name", "Size"]).must()
+    assert fixture.code_of(ui.set_rows(@app, widget: files, rows: [["a.txt"]])) == ui.INVALID
+    assert fixture.code_of(ui.set_rows(@app, widget: files, rows: [["a.txt", "1\n2"]])) == ui.INVALID
+    assert fixture.code_of(ui.set_sort(@app, widget: files, order: .by(column: 2, ascending: true))) == ui.INVALID
+    names = ui.list(@app, into: w, items: ["a"], multiple: false).must()
+    assert fixture.code_of(ui.set_rows(@app, widget: names, rows: [["a"]])) == ui.INVALID
+    ui.set_rows(@app, widget: files, rows: [["a.txt", "1"]]).must()
+    assert fixture.code_of(ui.inject(@app, input: .sort(widget: files, column: 2, ascending: true))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 1))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .choose(widget: files, indices: [1]))) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: files, indices: [0, 1])) == ui.INVALID
+    ui.close(@app).must()
+
+test "table: as wide as its columns, its rows given, read back and drawn; several rows chosen by the person and the program; a row opened; a header clicked asking the rows sorted, the arrow shown at once, the program's rows given again with no row chosen (catalogue CT32, CT33, CT30)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Files", width: 300, height: 200).must()
+    files = ui.table(@app, into: w, columns: ["Name", "Size", "Kind"]).must()
+    assert ui.rect_of(@app, widget: files).must() == ui.Rect(x: 12, y: 12, width: 300, height: 120)
+    rows = [["notes.txt", "12", "text"], ["plan.md", "3", "text"], ["photo.png", "900", "image"]]
+    ui.set_rows(@app, widget: files, rows: rows).must()
+    assert ui.rows_of(app, widget: files).must() == rows
+    assert ui.render(@app).must()[1] == "  table #2 [\"Name\", \"Size\", \"Kind\"] 3 rows chosen [] at 12,12 300x120"
+    ui.inject(@app, input: .choose(widget: files, indices: [0, 2])).must()
+    ui.inject(@app, input: .activate(widget: files, index: 1)).must()
+    ui.inject(@app, input: .sort(widget: files, column: 1, ascending: true)).must()
+    ui.inject(@app, input: .sort(widget: files, column: 1, ascending: false)).must()
+    told = give.events_of(@app, within: time.nanoseconds(0))
+    assert told == [.selection_changed(widget: files, indices: [0, 2]), .selection_changed(widget: files, indices: [1]), .activated(widget: files, index: 1), .sort_asked(widget: files, column: 1, ascending: true), .sort_asked(widget: files, column: 1, ascending: false)]
+    assert ui.sort_of(app, widget: files).must() == .by(column: 1, ascending: false)
+    assert ui.render(@app).must()[1] == "  table #2 [\"Name\", \"Size\", \"Kind\"] 3 rows chosen [1] sorted by 1 descending at 12,12 300x120"
+    ui.set_rows(@app, widget: files, rows: [rows[2], rows[0], rows[1]]).must()
+    assert ui.selection_of(app, widget: files).must() == []
+    ui.set_selection(@app, widget: files, indices: [0, 1]).must()
+    assert ui.selection_of(app, widget: files).must() == [0, 1]
+    ui.set_sort(@app, widget: files, order: .unsorted).must()
+    assert ui.sort_of(app, widget: files).must() == .unsorted
+    ui.close(@app).must()
+
+test "table: on the native side its columns and rows given, rows chosen and one opened through the system's own path, headers clicked and told in the order the system turns them, the program's sort shown with no event, and its rows given again with none chosen (catalogue CT32, CT33, CT30)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Files", width: 400, height: 240).must()
+    files = ui.table(@app, into: w, columns: ["Name", "Size"]).must()
+    rows = [["notes.txt", "12"], ["plan.md", "3"], ["photo.png", "900"]]
+    ui.set_rows(@app, widget: files, rows: rows).must()
+    _ = ui.rect_of(@app, widget: files).must()
+    ui.inject(@app, input: .choose(widget: files, indices: [0, 2])).must()
+    _ = give.events_of(@app, within: time.milliseconds(200).must())
+    assert ui.selection_of(app, widget: files).must() == [0, 2]
+    ui.inject(@app, input: .activate(widget: files, index: 1)).must()
+    opened = give.events_of(@app, within: time.milliseconds(200).must())
+    assert opened.len() > 0 && opened[opened.len() - 1] == .activated(widget: files, index: 1)
+    ui.inject(@app, input: .sort(widget: files, column: 1, ascending: true)).must()
+    ui.inject(@app, input: .sort(widget: files, column: 1, ascending: false)).must()
+    asked = give.events_of(@app, within: time.milliseconds(200).must())
+    assert asked == [.sort_asked(widget: files, column: 1, ascending: true), .sort_asked(widget: files, column: 1, ascending: false)]
+    assert ui.sort_of(app, widget: files).must() == .by(column: 1, ascending: false)
+    ui.set_sort(@app, widget: files, order: .by(column: 0, ascending: true)).must()
+    assert give.events_of(@app, within: time.milliseconds(200).must()) == []
+    ui.set_rows(@app, widget: files, rows: [rows[1], rows[0], rows[2]]).must()
+    assert ui.selection_of(app, widget: files).must() == []
+    ui.set_selection(@app, widget: files, indices: [1, 2]).must()
+    assert ui.selection_of(app, widget: files).must() == [1, 2]
+    ui.close(@app).must()

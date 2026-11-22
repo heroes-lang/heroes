@@ -341,16 +341,19 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * event comes as the person's would: `HERO_UI_EVENT_CLICK` presses button
  * `id`; `TEXT` replaces a text field's or a text area's text by `text` as
  * an edit; `SELECT` chooses the item `value` of a list, a combo box or a
- * radio group (-1 for none); `TOGGLE` clicks a checkbox; `VALUE` moves a
- * slider to `value`; `MENU` chooses menu item `id`; `CLOSE` presses window
+ * radio group (-1 for none), the row of a table, or the page of tabs;
+ * `TOGGLE` clicks a checkbox; `VALUE` moves a slider to `value`, or a
+ * split's divider; `MENU` chooses menu item `id`; `CLOSE` presses window
  * `id`'s close button; `RESIZE` gives window `id`'s content the size
  * `value` by `second`; `MESSAGE` has the page web view `id` shows send
  * `text` by its bridge, as the page's own script would, at once or once a
  * page of the app's own origin has loaded, so the message is checked and
  * queued as the page's is (THE WEB VIEW, below; `LIMIT` where
  * `HERO_UI_QUEUE_MOST` wait for the page already); `ACTIVATE` opens row
- * `value` of list `id`, choosing it first where it is not chosen, as a
- * double click does; `SUBMIT` presses Return in text field `id`. Its event
+ * `value` of list or table `id`, choosing it first where it is not chosen,
+ * as a double click does; `SUBMIT` presses Return in text field `id`;
+ * `SORT` clicks the header of column `value` of table `id` until the table
+ * stands sorted by it in the order `second` names. Its event
  * is queued as the person's would be. 0, or -1, `UNSUPPORTED` where the
  * system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
@@ -915,5 +918,43 @@ int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count);
  * the system draws it beside the content rather than over it. 0, or -1:
  * `INVALID` (a widget of another kind), `NOT_FOUND`. */
 int64_t hero_ui_insets(hero_ui_app *app, int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom);
+
+/* -- A TABLE: ROWS OF CELLS IN COLUMNS --------------------------------------
+ *
+ * Rows of cells under column headers whose widths the person drags, several
+ * rows chosen, as wxWidgets' `wxDataViewListCtrl` or a report-mode
+ * `wxListCtrl`: a file manager's details, a mail client's messages. A
+ * table's parent is a window or a container. `hero_ui_set_items` gives its
+ * cells, row after row, a whole number of rows of `hero_ui_set_columns`'
+ * count; `hero_ui_set_selection` and `hero_ui_selection` set and read the
+ * rows chosen, any number of them, and the person choosing queues
+ * `HERO_UI_EVENT_SELECT`; a row opened queues `HERO_UI_EVENT_ACTIVATE`, as
+ * a list's does. The person clicking a column's header asks for the rows
+ * sorted by it, `HERO_UI_EVENT_SORT`; the program sorts its rows, gives
+ * them again, and shows the column it sorted by with
+ * `hero_ui_set_sort`. */
+#define HERO_UI_TABLE 28
+
+/* The person clicked the header of column `value` of table `id`, asking for
+ * the rows sorted by it, ascending where `second` is 1 and descending where
+ * it is 0: the column already sorted by turns over, another starts
+ * ascending. The arrow is shown at once. */
+#define HERO_UI_EVENT_SORT 15
+
+/* The most columns a table holds. */
+#define HERO_UI_COLUMNS_MOST 64
+
+/* Gives table `id` its columns, each header's title one line of UTF-8
+ * followed by one zero byte, `count` bytes in all, 1 to
+ * `HERO_UI_COLUMNS_MOST` of them, in place of the columns and the cells it
+ * held. 0, or -1: `INVALID` (a widget no table, titles not so),
+ * `NOT_FOUND`. */
+int64_t hero_ui_set_columns(hero_ui_app *app, int64_t id, const void *titles, uint64_t count);
+
+/* Shows table `id` sorted by column `column`, ascending where `ascending`
+ * is 1, descending where it is 0, its header's arrow showing it; by none
+ * where `column` is -1. No event is queued. 0, or -1: `INVALID` (a widget
+ * no table, a column past its columns), `NOT_FOUND`. */
+int64_t hero_ui_set_sort(hero_ui_app *app, int64_t id, int64_t column, int64_t ascending);
 
 #endif

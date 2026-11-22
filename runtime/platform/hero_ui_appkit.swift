@@ -790,14 +790,18 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id] else {
             return 0
         }
-        return widget.items.count
+        return rowsOf(widget)
     }
 
     func tableView(_ table: NSTableView, viewFor column: NSTableColumn?, row: Int) -> NSView? {
-        guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id], row >= 0, row < widget.items.count else {
+        guard let id = tables[ObjectIdentifier(table)], let widget = widgets[id], row >= 0, row < rowsOf(widget) else {
             return nil
         }
-        let cell = NSTextField(labelWithString: widget.items[row])
+        let at = cellAt(widget, table, column, row)
+        guard at >= 0, at < widget.items.count else {
+            return nil
+        }
+        let cell = NSTextField(labelWithString: widget.items[at])
         cell.lineBreakMode = .byTruncatingTail
         return cell
     }
@@ -847,9 +851,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindTable, let table = widget.table, items.count % max(table.tableColumns.count, 1) != 0 {
+            return answerInvalid
+        }
         widget.items = items
         switch widget.kind {
-        case kindList, kindListMultiple:
+        case kindList, kindListMultiple, kindTable:
             muted = true
             widget.table?.reloadData()
             widget.table?.deselectAll(nil)
@@ -962,12 +969,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let table = widget.table else {
             return answerInvalid
         }
-        if indices.count > 1 && widget.kind != kindListMultiple {
+        if indices.count > 1 && widget.kind != kindListMultiple && widget.kind != kindTable {
             return answerInvalid
         }
         var chosen = IndexSet()
         for index in indices {
-            guard index >= 0, index < Int64(widget.items.count) else {
+            guard index >= 0, index < Int64(rowsOf(widget)) else {
                 return answerInvalid
             }
             chosen.insert(Int(index))
@@ -1164,7 +1171,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return nil
         }
-        if let size = boxPreferred(widget) {
+        if let size = boxPreferred(widget) ?? tablePreferred(widget) {
             return size
         }
         switch widget.kind {
@@ -1270,6 +1277,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let answer = injectBox(kind, widget, value) {
             return answer
         }
+        if kind == eventSort {
+            return widget.kind == kindTable ? injectSort(widget, value, second == 1) : answerInvalid
+        }
         switch kind {
         case eventClick, eventToggle:
             guard let button = widget.view as? NSButton else {
@@ -1295,7 +1305,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
                 if value < 0 {
                     table.deselectAll(nil)
-                } else if value < Int64(widget.items.count) {
+                } else if value < Int64(rowsOf(widget)) {
                     table.selectRowIndexes(IndexSet(integer: Int(value)), byExtendingSelection: second == 1)
                 } else {
                     return answerInvalid
@@ -1358,7 +1368,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
             }
         case eventActivate:
-            guard let table = widget.table, value >= 0, value < Int64(widget.items.count) else {
+            guard let table = widget.table, value >= 0, value < Int64(rowsOf(widget)) else {
                 return answerInvalid
             }
             if table.isEnabled {
@@ -1883,7 +1893,7 @@ extension Backend {
             return answerNotFound
         }
         let typed: NSView? = widget.textView ?? widget.table ?? widget.view
-        guard [kindTextField, kindTextArea, kindList, kindListMultiple].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
+        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
             return answerInvalid
         }
         return window.makeFirstResponder(view) ? answerOk : answerInvalid
@@ -2579,12 +2589,14 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             pane.clipsToBounds = true
             split.addArrangedSubview(pane)
             made.view = pane
-        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn:
+        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable:
             guard let content = contentOf(owner) else {
                 return answerInvalid
             }
             let view: NSView
-            if kind == kindTabs {
+            if kind == kindTable {
+                view = makeTable(made)
+            } else if kind == kindTabs {
                 let tabs = NSTabView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
                 tabs.delegate = self
                 view = tabs
@@ -2791,4 +2803,162 @@ public func hero_ui_appkit_insets(_ id: Int64, _ left: UnsafeMutablePointer<Int6
     right.pointee = r
     bottom.pointee = b
     return answerOk
+}
+
+// MARK: a table: rows of cells in columns
+
+// `hero_ui.h`'s `HERO_UI_TABLE` and `HERO_UI_EVENT_SORT`.
+private let kindTable: Int64 = 28
+private let eventSort: Int64 = 15
+
+// The width a table's column takes where nothing else decides it.
+private let columnWidth: CGFloat = 100
+
+extension Backend {
+    // The rows list or table `widget` holds: a list's items, a table's
+    // cells over its columns.
+    func rowsOf(_ widget: Native) -> Int {
+        guard widget.kind == kindTable, let table = widget.table else {
+            return widget.items.count
+        }
+        return widget.items.count / max(table.tableColumns.count, 1)
+    }
+
+    // The index among `widget`'s items of the cell at `row` in `column` of
+    // `table`: a list's one column holds its items, a table's cells run
+    // row after row.
+    func cellAt(_ widget: Native, _ table: NSTableView, _ column: NSTableColumn?, _ row: Int) -> Int {
+        guard widget.kind == kindTable else {
+            return row
+        }
+        guard let column = column, let at = table.tableColumns.firstIndex(of: column) else {
+            return -1
+        }
+        return row * table.tableColumns.count + at
+    }
+
+    // A table's view: a list's, with headers the person clicks to sort by
+    // and drags to widen, and several rows chosen.
+    func makeTable(_ widget: Native) -> NSView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
+        scroll.hasVerticalScroller = true
+        scroll.hasHorizontalScroller = true
+        scroll.autohidesScrollers = true
+        scroll.borderType = .bezelBorder
+        let table = ActivatingTable(frame: scroll.bounds)
+        table.allowsMultipleSelection = true
+        table.allowsEmptySelection = true
+        table.allowsColumnResizing = true
+        table.allowsColumnReordering = false
+        table.columnAutoresizingStyle = .lastColumnOnlyAutoresizingStyle
+        table.usesAlternatingRowBackgroundColors = true
+        table.dataSource = self
+        table.delegate = self
+        table.target = self
+        table.doubleAction = #selector(rowDoubleClicked(_:))
+        table.returned = { [weak self, weak table] row in
+            if let table = table {
+                self?.activated(table, row)
+            }
+        }
+        scroll.documentView = table
+        widget.table = table
+        tables[ObjectIdentifier(table)] = widget.id
+        return scroll
+    }
+
+    // Gives table `id` the columns `titles`, its cells and its sort gone.
+    func setColumns(_ id: Int64, _ titles: [String]) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTable, let table = widget.table, !titles.isEmpty else {
+            return answerInvalid
+        }
+        muted = true
+        table.sortDescriptors = []
+        for column in table.tableColumns {
+            table.removeTableColumn(column)
+        }
+        for (at, title) in titles.enumerated() {
+            let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("column\(at)"))
+            column.title = title
+            column.width = columnWidth
+            column.minWidth = 24
+            column.resizingMask = .userResizingMask
+            column.sortDescriptorPrototype = NSSortDescriptor(key: "\(at)", ascending: true)
+            table.addTableColumn(column)
+        }
+        widget.items = []
+        table.reloadData()
+        muted = false
+        return answerOk
+    }
+
+    // Shows table `id` sorted by `column`, by none where it is -1; nothing is
+    // queued.
+    func setSort(_ id: Int64, _ column: Int64, _ ascending: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTable, let table = widget.table, column < Int64(table.tableColumns.count) else {
+            return answerInvalid
+        }
+        muted = true
+        table.sortDescriptors = column < 0 ? [] : [NSSortDescriptor(key: "\(column)", ascending: ascending)]
+        muted = false
+        return answerOk
+    }
+
+    // What the person clicking a header of table `widget` does, through the
+    // system's own path: the table's sort set as a click sets it, the
+    // column's header showing its arrow, and the system's call told.
+    func injectSort(_ widget: Native, _ column: Int64, _ ascending: Bool) -> Int64 {
+        guard let table = widget.table, column >= 0, column < Int64(table.tableColumns.count) else {
+            return answerInvalid
+        }
+        table.sortDescriptors = [NSSortDescriptor(key: "\(column)", ascending: ascending)]
+        return answerOk
+    }
+
+    // The person clicked a header: the column its first descriptor names,
+    // and its order.
+    func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
+        guard let id = tables[ObjectIdentifier(tableView)], let first = tableView.sortDescriptors.first, let key = first.key, let column = Int64(key) else {
+            return
+        }
+        queue(eventSort, id, column, first.ascending ? 1 : 0)
+    }
+
+    // A table's size where nothing else decides it: its columns at their
+    // width, and a list's height with its header.
+    func tablePreferred(_ widget: Native) -> NSSize? {
+        guard widget.kind == kindTable, let table = widget.table else {
+            return nil
+        }
+        let header = table.headerView?.frame.height ?? 0
+        let wide = table.tableColumns.reduce(CGFloat(0)) { $0 + $1.width + table.intercellSpacing.width }
+        return NSSize(width: max(fieldWidth, wide), height: areaHeight + header)
+    }
+}
+
+@c
+public func hero_ui_appkit_set_columns(_ id: Int64, _ titles: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let bytes: [UInt8] = titles.map { Array(UnsafeBufferPointer(start: $0, count: Int(count))) } ?? []
+    var names: [String] = []
+    var start = 0
+    for at in 0..<bytes.count where bytes[at] == 0 {
+        names.append(String(decoding: bytes[start..<at], as: UTF8.self))
+        start = at + 1
+    }
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setColumns(id, names) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_set_sort(_ id: Int64, _ column: Int64, _ ascending: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setSort(id, column, ascending == 1) ?? answerNotFound
+    }
 }

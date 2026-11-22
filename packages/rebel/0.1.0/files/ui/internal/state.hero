@@ -97,6 +97,9 @@ function of_code(code: i64) -> ui.Kind
     if model.is_split(code)
         return .split
 
+    if code == hero_ui.HERO_UI_TABLE
+        return .table
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -347,8 +350,8 @@ function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS],
-        what: "a list, a combo box, a radio group or tabs"
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE],
+        what: "a list, a combo box, a radio group, tabs or a table"
     )
 
 # Shows an image in a picture (`ui.set_picture`).

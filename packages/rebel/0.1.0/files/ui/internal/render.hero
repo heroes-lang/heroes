@@ -94,6 +94,16 @@ function line_of(n: model.Node, visible: bool) -> str
         parts @ parts.push(f"content {n.width}x{n.height}")
     else if model.is_split(k)
         parts @ parts.push(f"divider {n.value} in {n.least}..{n.most}")
+    else if k == hero_ui.HERO_UI_TABLE
+        parts @ parts.push(quoted_all(n.titles)).push(f"{model.rows_of(n)} rows").push("chosen " + numbers(n.chosen))
+
+        if n.sorted_by >= 0
+            order = if n.ascending
+                "ascending"
+            else
+                "descending"
+
+            parts @ parts.push(f"sorted by {n.sorted_by} {order}")
     else if k == hero_ui.HERO_UI_WEBVIEW
         page = if n.web.page.len() > 0
             "page " + quoted(n.web.page)
