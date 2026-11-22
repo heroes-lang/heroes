@@ -1,0 +1,221 @@
+# The tree of folders beside the listing: the root folder and, under each
+# folder the person unfolded, its folders in the locale's order. It is shown
+# in a list of rows, each indented by its depth and marked unfolded, folded
+# or with nothing to unfold, since `ui` has no tree widget yet (the ledger's
+# `ui/tree`, pending); choosing a row opens its folder and unfolds it.
+#
+# The tree holds only which folders are unfolded; the rows are read from the
+# disk each time they are asked for, so a folder made or removed elsewhere
+# shows at the next reading, and the walk keeps its own stack so a deep tree
+# cannot run the program out of stack.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/strings
+
+use locale/formats
+use model/entry
+
+# The mark of an unfolded folder.
+constant UNFOLDED: str
+    "▾"
+
+# The mark of a folded folder that holds folders.
+constant FOLDED: str
+    "▸"
+
+# The folders shown as a tree.
+record Tree
+    # The folder at the top.
+    root: str
+    # The folders unfolded, the root among them.
+    unfolded: [str]
+
+# One row of the tree as it is shown.
+record Row
+    # The folder's path.
+    folder: str
+    # Its name; a root with none, `/`, shows its path.
+    name: str
+    # How deep it stands: 0 for the root.
+    depth: i64
+    # Whether its folders are shown under it.
+    unfolded: bool
+    # Whether it holds a folder to unfold.
+    has_folders: bool
+
+# A tree of `root`, unfolded one level.
+#
+# - `root`: the folder at the top.
+function new_tree(root: str) -> Tree
+    return Tree(root: root, unfolded: [root])
+
+# Whether `folder` is unfolded.
+#
+# - `t`: the tree.
+# - `folder`: the folder's path.
+function is_unfolded(t: Tree, folder: str) -> bool
+    for u in t.unfolded
+        if u == folder
+            return true
+
+    return false
+
+# Unfolds `folder` where it is folded, and folds it where it is unfolded,
+# its unfolded folders with it.
+#
+# - `t`: the tree.
+# - `folder`: the folder's path.
+function toggle(@t: Tree, folder: str)
+    if !is_unfolded(t, folder: folder)
+        t.unfolded @ t.unfolded.push(folder)
+        return
+
+    kept: [str] @= []
+
+    for u in t.unfolded
+        if u != folder && !paths.is_under(path: u, root: folder)
+            kept @ kept.push(u)
+
+    t.unfolded @ kept
+
+# Unfolds every folder from the root down to `folder` and `folder` itself,
+# so its row is shown; a folder outside the root becomes the root.
+#
+# - `t`: the tree.
+# - `folder`: the folder's path.
+function reveal(@t: Tree, folder: str)
+    if !paths.is_under(path: folder, root: t.root)
+        t.root @ folder
+        t.unfolded @ [folder]
+        return
+
+    at @= folder
+
+    while true
+        if !is_unfolded(t, folder: at)
+            t.unfolded @ t.unfolded.push(at)
+
+        if at == t.root || paths.parent(at) == at
+            break
+
+        at @ paths.parent(at)
+
+# The rows of the tree, depth first, each folder's folders in the locale's
+# order under it where it is unfolded; a folder that cannot be read shows
+# with nothing under it.
+#
+# - `t`: the tree.
+# - `f`: the formats, whose collation orders the names.
+# - `show_hidden`: whether folders whose names begin with a dot are shown.
+function rows(t: Tree, f: formats.Formats, show_hidden: bool) -> [Row]
+    out: [Row] @= []
+    pending: [Row] @= [
+        row_of(t, folder: t.root, name: paths.name(t.root).default(t.root), depth: 0, show_hidden: show_hidden)
+    ]
+
+    while pending.len() > 0
+        r = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        out @ out.push(r)
+
+        if r.unfolded
+            names = formats.sorted_names(f, names: folders_in(r.folder, show_hidden: show_hidden))
+            at @= names.len() - 1
+
+            while at >= 0
+                child = paths.join_all([r.folder, names[at]])
+                pending @ pending.push(
+                    row_of(t, folder: child, name: names[at], depth: r.depth + 1, show_hidden: show_hidden)
+                )
+                at @ at - 1
+
+    return out
+
+# The row of `folder`.
+#
+# - `t`: the tree.
+# - `folder`: the folder's path.
+# - `name`: the name shown.
+# - `depth`: its depth.
+# - `show_hidden`: whether hidden folders count as folders to unfold.
+function row_of(t: Tree, folder: str, name: str, depth: i64, show_hidden: bool) -> Row
+    return Row(
+        folder: folder,
+        name: name,
+        depth: depth,
+        unfolded: is_unfolded(t, folder: folder),
+        has_folders: folders_in(folder, show_hidden: show_hidden).len() > 0
+    )
+
+# The names of the folders `folder` holds, links to folders left out so a
+# link cannot make the tree loop; none where it cannot be read.
+#
+# - `folder`: the folder's path.
+# - `show_hidden`: whether names beginning with a dot are kept.
+function folders_in(folder: str, show_hidden: bool) -> [str]
+    found = match fs.read_dir(folder)
+        .ok es => es
+        .err _ =>
+            nothing: [str] = []
+            return nothing
+
+    names: [str] @= []
+
+    for e in found
+        if e.kind == .directory && (show_hidden || !entry.is_hidden(e.name))
+            names @ names.push(e.name)
+
+    return names
+
+# The text of `r` in the tree's list: two spaces a level, then its mark and
+# its name.
+#
+# - `r`: the row.
+function label_of(r: Row) -> str
+    mark = if r.unfolded
+        UNFOLDED
+    else if r.has_folders
+        FOLDED
+    else
+        " "
+
+    return f"{repeat("  ", to_u64(r.depth).must())}{mark} {r.name}"
+
+# The index of the row of `folder` among `shown`.
+#
+# - `shown`: the rows.
+# - `folder`: the folder's path.
+#
+# Fails `not_found` where no row shows it.
+function index_of(shown: [Row], folder: str) -> i64?
+    for i in range(from: 0, to: shown.len())
+        if shown[i].folder == folder
+            return ok(i)
+
+    return fail(code: "not_found", msg: f"no row of \"{folder}\"")
+
+test "toggle: unfolding and folding again folds what was unfolded beneath"
+    t @= new_tree("r")
+    toggle(@t, folder: "r/a")
+    toggle(@t, folder: "r/a/b")
+    assert is_unfolded(t, folder: "r/a/b")
+    toggle(@t, folder: "r/a")
+    assert !is_unfolded(t, folder: "r/a") && !is_unfolded(t, folder: "r/a/b")
+    assert is_unfolded(t, folder: "r")
+
+test "reveal: every folder down to the one shown, and a folder outside the root becomes the root"
+    t @= new_tree("r")
+    reveal(@t, folder: "r/a/b")
+    assert is_unfolded(t, folder: "r/a") && is_unfolded(t, folder: "r/a/b")
+    reveal(@t, folder: "elsewhere")
+    assert t.root == "elsewhere" && t.unfolded == ["elsewhere"]
+
+test "label_of: the marks and the indentation"
+    assert label_of(Row(folder: "r", name: "r", depth: 0, unfolded: true, has_folders: true)) == "▾ r"
+    assert label_of(Row(folder: "r/a", name: "a", depth: 1, unfolded: false, has_folders: true)) == "  ▸ a"
+    assert label_of(Row(folder: "r/b", name: "b", depth: 2, unfolded: false, has_folders: false)) == "      b"
+    assert strings.has_prefix(
+        s: label_of(Row(folder: "x", name: "x", depth: 0, unfolded: false, has_folders: false)),
+        prefix: " "
+    )

@@ -1,0 +1,180 @@
+# The person's bookmarks: folders named and kept in a TOML file, one
+# `[[bookmark]]` table each with its `name` and its `path`, in the order the
+# person added them. The file is edited in place as a `toml.Document`, so a
+# comment the person wrote in it, or a key the explorer does not read, stays
+# where it was when a bookmark is added or removed; it is written back whole
+# and atomically, so a crash leaves the old file or the new one, never half.
+#
+# A bookmark of a folder that went away stays in the file and is shown
+# greyed: the folder may be on a disk that is not mounted.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/toml
+
+# The text a new bookmarks file starts with.
+constant HEADER: str
+    "# The explorer's bookmarks, one [[bookmark]] table each: its name and the folder's path.\n"
+
+# One bookmark.
+record Bookmark
+    # What the person calls it.
+    name: str
+    # The folder it opens.
+    folder: str
+
+# The bookmarks and the file they are kept in.
+record Bookmarks
+    # The file's path.
+    file: str
+    # The file as a document, edited in place.
+    document: toml.Document
+    # The bookmarks, in the file's order.
+    items: [Bookmark]
+
+# The bookmarks kept in `file`; none where the file is not there yet.
+#
+# - `file`: the bookmarks file's path.
+#
+# Fails `invalid` where the file is not TOML or a bookmark lacks its name or
+# its path, and as `read_file` fails otherwise.
+function load(file: str) -> Bookmarks?
+    text = match read_file(file)
+        .ok t => t
+        .err x =>
+            if x.code != "file_not_found"
+                return fail(code: x.code, msg: x.msg)
+
+            HEADER
+
+    document = toml.parse_document(text)?
+    return ok(Bookmarks(file: file, document: document, items: items_of(document, file: file)?))
+
+# The bookmarks a document holds, in its order.
+#
+# - `document`: the document.
+# - `file`: the file's path, named by a failure's message.
+#
+# Fails `invalid` where `bookmark` is not an array of tables or one of them
+# lacks a text `name` or `path`.
+function items_of(document: toml.Document, file: str) -> [Bookmark]?
+    found: [Bookmark] @= []
+
+    tables = match toml.value_of(document, path: ["bookmark"])
+        .ok v  => v
+        .err _ => return ok(found)
+
+    match tables
+        .array a =>
+            for item in a.items
+                name = text_at(item, key: "name", file: file)?
+                folder = text_at(item, key: "path", file: file)?
+                found @ found.push(Bookmark(name: name, folder: folder))
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+            return fail(code: "invalid", msg: f"{file}: `bookmark` is not an array of tables")
+
+    return ok(found)
+
+# The text under `key` of a bookmark's table.
+#
+# - `item`: the table.
+# - `key`: the key.
+# - `file`: the file's path, named by a failure's message.
+#
+# Fails `invalid` where it is missing or not a text.
+function text_at(item: toml.Value, key: str, file: str) -> str?
+    match toml.value_at(item, path: [key])
+        .ok v =>
+            match v
+                .text t => return ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    _ = 0
+        .err _ => _ = 0
+
+    return fail(code: "invalid", msg: f"{file}: a bookmark has no text `{key}`")
+
+# Adds a bookmark of `folder` named `name` at the end, and writes the file.
+#
+# - `b`: the bookmarks; changed only where the call answers `ok`.
+# - `name`: what the person calls it; not empty.
+# - `folder`: the folder's path.
+#
+# Fails `exists` where a bookmark of `folder` is there already, `invalid`
+# where `name` is empty, and as `save` fails.
+function add(@b: Bookmarks, name: str, folder: str) -> ()?
+    if name == ""
+        return fail(code: "invalid", msg: "a bookmark needs a name")
+
+    for item in b.items
+        if item.folder == folder
+            return fail(code: "exists", msg: f"\"{folder}\" is bookmarked already, as \"{item.name}\"")
+
+    members: {str: toml.Value} = {"name": .text(v: name), "path": .text(v: folder)}
+    changed @= b.document
+    _ = toml.add_table_entry(@changed, path: ["bookmark"], entry: .table(members: members))?
+    save(file: b.file, document: changed)?
+    b.document @ changed
+    b.items @ b.items.push(Bookmark(name: name, folder: folder))
+    return ok()
+
+# Removes the bookmark at `index`, and writes the file.
+#
+# - `b`: the bookmarks; changed only where the call answers `ok`.
+# - `index`: its place in `items`, from 0.
+#
+# Fails `not_found` where `index` is past the bookmarks, and as `save`
+# fails.
+function remove(@b: Bookmarks, index: i64) -> ()?
+    if index < 0 || index >= b.items.len()
+        return fail(code: "not_found", msg: f"no bookmark at {index}")
+
+    changed @= b.document
+    toml.remove_value(@changed, path: ["bookmark", index.to_str()])?
+    save(file: b.file, document: changed)?
+    b.document @ changed
+    kept: [Bookmark] @= []
+
+    for i in range(from: 0, to: b.items.len())
+        if i != index
+            kept @ kept.push(b.items[i])
+
+    b.items @ kept
+    return ok()
+
+# The index of the bookmark of `folder`.
+#
+# - `b`: the bookmarks.
+# - `folder`: the folder's path.
+#
+# Fails `not_found` where none is bookmarked.
+function index_of(b: Bookmarks, folder: str) -> i64?
+    for i in range(from: 0, to: b.items.len())
+        if b.items[i].folder == folder
+            return ok(i)
+
+    return fail(code: "not_found", msg: f"\"{folder}\" is not bookmarked")
+
+# Writes `document` to `file` whole and atomically, its folder made where it
+# is not there yet.
+#
+# - `file`: the file's path.
+# - `document`: the document.
+#
+# Fails as `fs.make_dir_all` and `fs.write_atomic_text` fail.
+function save(file: str, document: toml.Document) -> ()?
+    fs.make_dir_all(paths.parent(file))?
+    return fs.write_atomic_text(path: file, text: toml.format_document(document))
+
+test "items_of: two bookmarks in order, a comment kept, a table without a path refused"
+    d = toml.parse_document(
+        "# mine\n[[bookmark]]\nname = \"A\"\npath = \"/a\"\n\n[[bookmark]]\nname = \"B\"\npath = \"/b\"\n"
+    ).must()
+    assert items_of(d, file: "f").must() == [Bookmark(name: "A", folder: "/a"), Bookmark(name: "B", folder: "/b")]
+    bad = toml.parse_document("[[bookmark]]\nname = \"A\"\n").must()
+    assert items_of(bad, file: "f").is_err()
+    none = toml.parse_document("").must()
+    assert items_of(none, file: "f").must().len() == 0
+
+test "items_of: a bookmark key that is a table and not an array is refused"
+    d = toml.parse_document("[bookmark]\nname = \"A\"\npath = \"/a\"\n").must()
+    assert items_of(d, file: "f").is_err()

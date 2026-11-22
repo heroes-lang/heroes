@@ -1,0 +1,330 @@
+# Undo and redo of what the explorer did to the disk: a rename, a move, a
+# copy, a folder made, an archive made or extracted, entries moved to the
+# trash and put back. Each action
+# is kept as what it did, and reversing it does the opposite on the disk and
+# answers the action that reverses it in turn, so Undo and Redo are one
+# operation run on two stacks: undoing a move moves the entries back and
+# keeps a move the other way for Redo; undoing a copy moves the copies to
+# the trash, where Redo finds them to put them back.
+#
+# An action reversed in part (one of three entries moved back, the other two
+# refused) answers the failure and is dropped from both stacks, since the
+# disk no longer matches either way; what was done stays done.
+
+use <rebel>/fs
+use <rebel>/time
+
+use ops/trash
+
+# The most actions Undo remembers.
+constant MOST: i64
+    50
+
+# An entry's path before and after an action.
+record Pair
+    # Where it was.
+    from: str
+    # Where it is.
+    to: str
+
+# Something the explorer did to the disk.
+variant Action
+    # Entries renamed in their folder, one or several at once.
+    renamed
+        # Each entry's paths, in the order they were renamed.
+        pairs: [Pair]
+    # Entries moved to another folder.
+    moved
+        # Each entry's paths, in the order they moved.
+        pairs: [Pair]
+    # Entries copied; `from` the original, `to` the copy.
+    copied
+        # Each copy.
+        pairs: [Pair]
+    # A folder made, empty.
+    made_folder
+        # Its path.
+        folder: str
+    # An empty folder removed.
+    removed_folder
+        # Its path.
+        folder: str
+    # Entries moved to the trash.
+    trashed
+        # Each entry, where it came from and where the trash keeps it.
+        items: [trash.Trashed]
+    # Entries put back from the trash.
+    restored
+        # Where each came back to.
+        paths: [str]
+    # Entries the explorer made from others: an archive, a folder an
+    # archive was extracted into. Undo moves them to the trash.
+    made
+        # Their paths.
+        paths: [str]
+        # What made them, as a menu names it: `Compress`, `Extract`.
+        what: str
+
+# What can be undone and what can be done again.
+record Undo
+    # The actions done, the latest last.
+    done: [Action]
+    # The actions undone, the latest last.
+    undone: [Action]
+
+# An empty history.
+function new_undo() -> Undo
+    nothing: [Action] = []
+    return Undo(done: nothing, undone: nothing)
+
+# Keeps `a`, done just now, for Undo; what Redo held is forgotten.
+#
+# - `u`: the history.
+# - `a`: the action.
+function keep(@u: Undo, a: Action)
+    u.done @ u.done.push(a)
+
+    if u.done.len() > MOST
+        u.done @ u.done.slice(from: u.done.len() - MOST, to: u.done.len())
+
+    u.undone @ []
+
+# Undoes the latest action, and answers its words for the status line.
+#
+# - `u`: the history; the action moves to Redo's stack, reversed.
+# - `trash_dir`: the trash folder, where undoing a copy puts the copies.
+# - `at`: the time of a move to the trash.
+#
+# Fails `not_found` where nothing is to undo; where the reversal fails, with
+# its code, and the action is dropped.
+function undo(@u: Undo, trash_dir: str, at: time.Instant) -> str?
+    if u.done.len() == 0
+        return fail(code: "not_found", msg: "nothing to undo")
+
+    a = u.done[u.done.len() - 1]
+    u.done @ u.done.slice(from: 0, to: u.done.len() - 1)
+    back = reverse(a, trash_dir: trash_dir, at: at)?
+    u.undone @ u.undone.push(back)
+    return ok("undid " + label_of(a))
+
+# Does again the latest action undone, and answers its words.
+#
+# - `u`: the history; the action moves back to Undo's stack, reversed.
+# - `trash_dir`: the trash folder.
+# - `at`: the time of a move to the trash.
+#
+# Fails `not_found` where nothing is to redo; where the reversal fails, with
+# its code, and the action is dropped.
+function redo(@u: Undo, trash_dir: str, at: time.Instant) -> str?
+    if u.undone.len() == 0
+        return fail(code: "not_found", msg: "nothing to redo")
+
+    a = u.undone[u.undone.len() - 1]
+    u.undone @ u.undone.slice(from: 0, to: u.undone.len() - 1)
+    again = reverse(a, trash_dir: trash_dir, at: at)?
+    u.done @ u.done.push(again)
+    return ok("redid " + label_of(again))
+
+# The words of the next Undo, `Undo Rename`; `Undo` alone where nothing is
+# to undo.
+#
+# - `u`: the history.
+function undo_text(u: Undo) -> str
+    if u.done.len() == 0
+        return "Undo"
+
+    return "Undo " + label_of(u.done[u.done.len() - 1])
+
+# The words of the next Redo, `Redo Move`; `Redo` alone where nothing is to
+# redo.
+#
+# - `u`: the history.
+function redo_text(u: Undo) -> str
+    if u.undone.len() == 0
+        return "Redo"
+
+    return "Redo " + label_of(reversed_label_source(u.undone[u.undone.len() - 1]))
+
+# The action whose name Redo shows for `a`, an action Undo reversed: the
+# name of what will be done again.
+#
+# - `a`: the reversed action on Redo's stack.
+function reversed_label_source(a: Action) -> Action
+    return match a
+        .trashed _                                  => .restored(paths: [])
+        .restored _                                 => .trashed(items: [])
+        .made_folder m                              => .removed_folder(folder: m.folder)
+        .removed_folder r                           => .made_folder(folder: r.folder)
+        .renamed _ | .moved _ | .copied _ | .made _ => a
+
+# What `a` is called in a menu: `Rename`, `Move`, `Copy`, `New Folder`,
+# `Move to Trash`, `Put Back`, `Remove Folder`.
+#
+# - `a`: the action.
+function label_of(a: Action) -> str
+    return match a
+        .renamed _        => "Rename"
+        .moved _          => "Move"
+        .copied _         => "Copy"
+        .made_folder _    => "New Folder"
+        .removed_folder _ => "Remove Folder"
+        .trashed _        => "Move to Trash"
+        .restored _       => "Put Back"
+        .made m           => m.what
+
+# Does the opposite of `a` on the disk and answers the action that reverses
+# it again.
+#
+# - `a`: the action to reverse.
+# - `trash_dir`: the trash folder.
+# - `at`: the time of a move to the trash.
+#
+# Fails where an entry cannot be put back, with the disk's code: something
+# now stands where it would go (`exists`), it is gone (`file_not_found`), a
+# folder to remove holds something (`not_empty`).
+function reverse(a: Action, trash_dir: str, at: time.Instant) -> Action?
+    match a
+        .renamed r =>
+            back: [Pair] @= []
+            at_pair @= r.pairs.len() - 1
+
+            while at_pair >= 0
+                p = r.pairs[at_pair]
+                refuse_taken(p.from)?
+                fs.rename(from: p.to, to: p.from)?
+                back @ back.push(Pair(from: p.to, to: p.from))
+                at_pair @ at_pair - 1
+
+            return ok(.renamed(pairs: back))
+        .moved m =>
+            back: [Pair] @= []
+            at_pair @= m.pairs.len() - 1
+
+            while at_pair >= 0
+                p = m.pairs[at_pair]
+                refuse_taken(p.from)?
+                fs.move(from: p.to, to: p.from)?
+                back @ back.push(Pair(from: p.to, to: p.from))
+                at_pair @ at_pair - 1
+
+            return ok(.moved(pairs: back))
+        .copied c =>
+            items: [trash.Trashed] @= []
+
+            for p in c.pairs
+                items @ items.push(trash.put_in(trash: trash_dir, item: p.to, at: at)?)
+
+            return ok(.trashed(items: items))
+        .made_folder m =>
+            fs.remove(m.folder)?
+            return ok(.removed_folder(folder: m.folder))
+        .removed_folder r =>
+            fs.make_dir(r.folder)?
+            return ok(.made_folder(folder: r.folder))
+        .trashed t =>
+            back: [str] @= []
+
+            for item in t.items
+                back @ back.push(trash.restore(item)?)
+
+            return ok(.restored(paths: back))
+        .restored r =>
+            items: [trash.Trashed] @= []
+
+            for p in r.paths
+                items @ items.push(trash.put_in(trash: trash_dir, item: p, at: at)?)
+
+            return ok(.trashed(items: items))
+        .made m =>
+            items: [trash.Trashed] @= []
+
+            for p in m.paths
+                items @ items.push(trash.put_in(trash: trash_dir, item: p, at: at)?)
+
+            return ok(.trashed(items: items))
+
+# Every path `a` names, where each entry was and where it is, in order.
+#
+# - `a`: the action.
+function paths_of(a: Action) -> [str]
+    out: [str] @= []
+
+    match a
+        .renamed r =>
+            for p in r.pairs
+                out @ out.push(p.from)
+                out @ out.push(p.to)
+        .moved m =>
+            for p in m.pairs
+                out @ out.push(p.from)
+                out @ out.push(p.to)
+        .copied c =>
+            for p in c.pairs
+                out @ out.push(p.to)
+        .made_folder m    => out @ out.push(m.folder)
+        .removed_folder r => out @ out.push(r.folder)
+        .trashed t =>
+            for item in t.items
+                out @ out.push(item.original)
+                out @ out.push(item.stored)
+        .restored r =>
+            for p in r.paths
+                out @ out.push(p)
+        .made m =>
+            for p in m.paths
+                out @ out.push(p)
+
+    return out
+
+# Refuses to put an entry back at `target` where something stands there
+# now, since a rename or a move there would replace it.
+#
+# - `target`: where the entry would go.
+#
+# Fails `exists` where something is at `target`.
+function refuse_taken(target: str) -> ()?
+    if !fs.link_info(target).is_err()
+        return fail(code: "exists", msg: f"\"{target}\" is there now, so nothing was put back over it")
+
+    return ok()
+
+test "label_of and the texts: the next undo and redo named, plain where there is none"
+    u @= new_undo()
+    assert undo_text(u) == "Undo" && redo_text(u) == "Redo"
+    keep(@u, a: .renamed(pairs: [Pair(from: "a", to: "b")]))
+    keep(@u, a: .made_folder(folder: "c"))
+    assert undo_text(u) == "Undo New Folder"
+    u.undone @ [.removed_folder(folder: "c")]
+    assert redo_text(u) == "Redo New Folder"
+
+test "keep: Redo is forgotten, and the oldest goes past the most"
+    u @= new_undo()
+    u.undone @ [.made_folder(folder: "x")]
+
+    for i in range(from: 0, to: MOST + 3)
+        keep(@u, a: .made_folder(folder: f"f{i}"))
+
+    assert u.undone.len() == 0
+    assert u.done.len() == MOST
+    assert u.done[0] == .made_folder(folder: "f3")
+
+test "undo and redo: an empty history answers not_found"
+    u @= new_undo()
+    assert undo(@u, trash_dir: "t", at: time.epoch()).is_err()
+    assert redo(@u, trash_dir: "t", at: time.epoch()).is_err()
+
+test "undo and redo: a rename on the disk taken back and done again, and refused where the old name was taken meanwhile"
+    base = "build/explorer-tests/undo"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base).must()
+    write_file(path: base + "/new.txt", text: "x").must()
+    u @= new_undo()
+    keep(@u, a: .renamed(pairs: [Pair(from: base + "/old.txt", to: base + "/new.txt")]))
+    assert undo(@u, trash_dir: base + "/t", at: time.epoch()).must() == "undid Rename"
+    assert fs.exists(base + "/old.txt").must()
+    assert redo(@u, trash_dir: base + "/t", at: time.epoch()).must() == "redid Rename"
+    assert fs.exists(base + "/new.txt").must()
+    write_file(path: base + "/old.txt", text: "in the way").must()
+    assert undo(@u, trash_dir: base + "/t", at: time.epoch()).is_err()
+    assert u.done.len() == 0 && u.undone.len() == 0
+    fs.remove_all(base).must()

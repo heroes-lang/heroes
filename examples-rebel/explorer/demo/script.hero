@@ -1,0 +1,483 @@
+# The demo: the explorer opened headless on a folder tree it writes under
+# `build/explorer/`, driven by the inputs a person would give (clicks,
+# choices in the lists, words typed, menu items, the answers to a question)
+# through a session that uses every command: ordering by the locale's
+# collation, the tree, Back and Forward, the preview of texts in four
+# encodings, pictures and archives, search by content across encodings and
+# by name, rename and a rename by pattern with Undo and Redo, a new folder,
+# copy, a copy cancelled, a move undone, the trash and Put Back, compressing
+# to ZIP and to tar.gz, extracting four archives one of which tries to climb
+# out of its folder, checksums, bookmarks, hidden files, a change another
+# program makes on the disk, and emptying the trash. After each step it
+# prints what changed in the windows' headless drawing.
+#
+# The locale is German in a zone one hour east of UTC, the clock stands
+# still and moves a minute a scene, and every path is below the working
+# folder, so the transcript is the same on every run.
+
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/ui
+
+use app/controller
+use demo/hands
+use demo/transcript
+use demo/tree as demo_tree
+use locale/formats
+use model/clock
+use model/explorer
+use store/bookmarks
+use store/settings
+
+# Plays the whole demo and answers the program's exit code: 0, or 1 where a
+# step failed, said on the last line.
+function run() -> i64
+    match play()
+        .ok _ =>
+            match demo_tree.remove_all()
+                .ok _ =>
+                    print("")
+                    print("the demo's folder was removed")
+                    return 0
+                .err x =>
+                    print(f"the demo's folder could not be removed: {x.msg}")
+                    return 1
+        .err x =>
+            print(f"the demo stopped: {x.msg}")
+            _ = demo_tree.remove_all().is_err()
+            return 1
+
+# Writes the tree, opens the explorer, plays the scenes, and stops the
+# explorer whether they all played or one failed, so its app and its watch
+# are closed either way.
+#
+# Fails where the tree, the explorer or a scene fails.
+function play() -> ()?
+    demo_tree.write_all()?
+    c @= open_explorer()?
+    played = scenes(@c)
+    controller.stop(@c)
+    return played
+
+# The scenes in order.
+#
+# - `c`: the controller.
+#
+# Fails where a step fails.
+function scenes(@c: controller.Controller) -> ()?
+    t @= transcript.new_transcript()
+    transcript.heading("The explorer opens on the demo's folder, in German, folders first")
+    transcript.whole(@t, @c)
+    scene_order(@c, @t)?
+    scene_tree(@c, @t)?
+    scene_history(@c, @t)?
+    scene_pictures(@c, @t)?
+    scene_search(@c, @t)?
+    scene_rename(@c, @t)?
+    scene_pattern(@c, @t)?
+    scene_copy(@c, @t)?
+    scene_move(@c, @t)?
+    scene_trash(@c, @t)?
+    scene_compress(@c, @t)?
+    scene_extract(@c, @t)?
+    scene_checksums(@c, @t)?
+    scene_bookmarks(@c, @t)?
+    scene_hidden(@c, @t)?
+    scene_disk(@c, @t)?
+    scene_empty_trash(@c, @t)?
+    scene_close(@c)?
+    return ok()
+
+# The explorer on the demo's root, its settings and bookmarks read from the
+# demo's files, in a headless window.
+#
+# Fails as the settings, the bookmarks, the folder or `ui` fail.
+function open_explorer() -> controller.Controller?
+    s = settings.read(demo_tree.at_state("explorer.toml"), base: settings.defaults())?
+    zone = time.fixed_zone(name: "CET", offset: time.hours(1)?)?
+    f = formats.formats_of(s.locale, zone: zone)?
+    marks = bookmarks.load(s.bookmarks)?
+    ex = explorer.open_at(demo_tree.ROOT, s: s, f: f, c: clock.fixed_clock(demo_tree.opening_time()), b: marks)?
+    app = ui.open(.headless)?
+    return controller.new_controller(app, ex: ex)
+
+# Moves the demo's clock on by a minute, between two scenes.
+#
+# - `c`: the controller.
+function minute(@c: controller.Controller)
+    clock.advance(@c.ex.clock, by: time.minutes(1).must())
+
+# Prints a step's heading, then what it changed.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+# - `title`: what the step did.
+function shown(@c: controller.Controller, @t: transcript.Transcript, title: str)
+    transcript.heading(title)
+    transcript.changes(@t, @c)
+
+# Chooses an entry, then orders by size, turns the order over, and goes
+# back to names.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_order(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_named(@c, names: ["Äpfel.txt"])?
+    shown(@c, @t, title: "Äpfel.txt chosen: its text, its encoding, its date in German and its age")
+    hands.menu(@c, item: c.menus.by_size)?
+    shown(@c, @t, title: "View, By Size: the smallest file first, folders first still")
+    hands.menu(@c, item: c.menus.by_size)?
+    shown(@c, @t, title: "View, By Size again: the order turned over, the largest first")
+    hands.menu(@c, item: c.menus.by_name)?
+    shown(@c, @t, title: "View, By Name: the locale's collation, so Äpfel stands beside apricot")
+    return ok()
+
+# Opens a folder from the tree and previews texts in three encodings.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_tree(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_folder(@c, folder: demo_tree.at_root("docs"))?
+    shown(@c, @t, title: "The tree's row docs chosen: the folder opens and unfolds")
+    hands.choose_named(@c, names: ["prices.txt"])?
+    shown(@c, @t, title: "prices.txt: windows-1252 detected, CRLF breaks, the euro sign read")
+    hands.choose_named(@c, names: ["greeting.txt"])?
+    shown(@c, @t, title: "greeting.txt: UTF-16LE by its byte order mark")
+    hands.choose_named(@c, names: ["japanese.txt"])?
+    shown(@c, @t, title: "japanese.txt: Shift_JIS detected")
+    return ok()
+
+# Back, Forward and Up.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_history(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.back)?
+    shown(@c, @t, title: "Back: the root again")
+    hands.click(@c, widget: c.w.forward)?
+    shown(@c, @t, title: "Forward: docs again")
+    hands.click(@c, widget: c.w.up)?
+    shown(@c, @t, title: "Up: the root, with docs chosen")
+    return ok()
+
+# A PNG and a JPEG previewed.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_pictures(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_folder(@c, folder: demo_tree.at_root("photos"))?
+    shown(@c, @t, title: "photos: IMG_9 before IMG_10, as numbers")
+    hands.choose_named(@c, names: ["sunset.png"])?
+    shown(@c, @t, title: "sunset.png decoded and fitted to the pane")
+    hands.choose_named(@c, names: ["portrait.jpg"])?
+    shown(@c, @t, title: "portrait.jpg decoded")
+    return ok()
+
+# A search by content across encodings, a result shown in its folder, and a
+# search by name with wildcards.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_search(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.up)?
+    hands.type_into(@c, widget: c.w.query, text: "crème")?
+    hands.choose(@c, widget: c.w.scope, indices: [1])?
+    hands.click(@c, widget: c.w.search)?
+    shown(@c, @t, title: "Searching the contents for crème: the progress window")
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "Found in UTF-8 and in windows-1252, whatever the case")
+    hands.choose(@c, widget: c.w.entries, indices: [1])?
+    shown(@c, @t, title: "The second result chosen: its file previewed")
+    hands.click(@c, widget: c.w.open)?
+    shown(@c, @t, title: "Open on a result: its folder, the file chosen")
+    hands.click(@c, widget: c.w.up)?
+    hands.type_into(@c, widget: c.w.query, text: "*.png")?
+    hands.choose(@c, widget: c.w.scope, indices: [0])?
+    hands.click(@c, widget: c.w.search)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "Searching the names for *.png")
+    hands.click(@c, widget: c.w.clear)?
+    shown(@c, @t, title: "Clear: the folder's entries again")
+    return ok()
+
+# A rename, undone, redone and undone again.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_rename(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_folder(@c, folder: demo_tree.at_root("docs"))?
+    hands.choose_named(@c, names: ["notes.txt"])?
+    hands.menu(@c, item: c.menus.rename)?
+    shown(@c, @t, title: "File, Rename: a window asks for the new name")
+    hands.type_into(@c, widget: c.asks[0].first, text: "prices.txt")?
+    hands.click(@c, widget: c.asks[0].ok)?
+    shown(@c, @t, title: "OK on a name the folder holds: refused, the window stays")
+    hands.type_into(@c, widget: c.asks[0].first, text: "notes 2026.txt")?
+    hands.click(@c, widget: c.asks[0].ok)?
+    shown(@c, @t, title: "OK: renamed, and Undo names it")
+    hands.menu(@c, item: c.menus.undo_item)?
+    shown(@c, @t, title: "Edit, Undo Rename")
+    hands.menu(@c, item: c.menus.redo_item)?
+    shown(@c, @t, title: "Edit, Redo Rename")
+    hands.menu(@c, item: c.menus.undo_item)?
+    shown(@c, @t, title: "Edit, Undo Rename again")
+    return ok()
+
+# Two entries renamed at once by a regular expression, and undone.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_pattern(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_folder(@c, folder: demo_tree.at_root("photos"))?
+    hands.choose_named(@c, names: ["IMG_9.png", "IMG_10.png"])?
+    hands.menu(@c, item: c.menus.rename_pattern)?
+    hands.type_into(@c, widget: c.asks[0].first, text: "^IMG_(\\d+)")?
+    hands.type_into(@c, widget: c.asks[0].second[0], text: "photo-$1")?
+    shown(@c, @t, title: "File, Rename with Pattern: IMG_(digits) becomes photo-(digits)")
+    hands.click(@c, widget: c.asks[0].ok)?
+    shown(@c, @t, title: "OK: both renamed at once")
+    hands.menu(@c, item: c.menus.undo_item)?
+    shown(@c, @t, title: "Edit, Undo Rename: both names back")
+    return ok()
+
+# A new folder, a copy with its progress, and a copy cancelled.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_copy(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.up)?
+    hands.menu(@c, item: c.menus.new_folder)?
+    hands.type_into(@c, widget: c.asks[0].first, text: "Drafts")?
+    hands.click(@c, widget: c.asks[0].ok)?
+    shown(@c, @t, title: "File, New Folder: Drafts made and chosen")
+    hands.choose_named(@c, names: ["video.bin"])?
+    hands.menu(@c, item: c.menus.copy)?
+    hands.choose_folder(@c, folder: demo_tree.at_root("Drafts"))?
+    hands.menu(@c, item: c.menus.paste)?
+    hands.tick(@c, n: 1)
+    shown(@c, @t, title: "Edit, Copy on video.bin, then Paste in Drafts: the progress after one tick")
+    ticks = hands.run_job(@c)?
+    shown(@c, @t, title: f"The copy done, {ticks + 1} ticks in all")
+    hands.menu(@c, item: c.menus.paste)?
+    hands.tick(@c, n: 1)
+    hands.click(@c, widget: c.progress[0].cancel)?
+    shown(@c, @t, title: "Paste again, then Cancel after one tick: the half copy removed")
+    return ok()
+
+# A move by Cut and Paste, undone.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_move(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.up)?
+    hands.choose_named(@c, names: ["zoo.md"])?
+    hands.menu(@c, item: c.menus.cut)?
+    hands.choose_folder(@c, folder: demo_tree.at_root("Drafts"))?
+    hands.menu(@c, item: c.menus.paste)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "Edit, Cut on zoo.md, then Paste in Drafts: moved")
+    hands.menu(@c, item: c.menus.undo_item)?
+    shown(@c, @t, title: "Edit, Undo Move: zoo.md back where it was")
+    return ok()
+
+# An entry moved to the trash, the trash shown, and the entry put back.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_trash(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.up)?
+    hands.choose_named(@c, names: ["Zebra.md"])?
+    hands.menu(@c, item: c.menus.trash_item)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "File, Move to Trash on Zebra.md: the next entry chosen")
+    hands.menu(@c, item: c.menus.trash_folder)?
+    shown(@c, @t, title: "Go, Trash")
+    hands.choose_named(@c, names: ["Zebra.md"])?
+    hands.menu(@c, item: c.menus.put_back)?
+    shown(@c, @t, title: "File, Put Back")
+    hands.click(@c, widget: c.w.back)?
+    shown(@c, @t, title: "Back: Zebra.md in the root again")
+    return ok()
+
+# Two folders compressed into a ZIP file and one into a gzip-compressed
+# tar, each previewed.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_compress(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_named(@c, names: ["docs", "photos"])?
+    hands.menu(@c, item: c.menus.compress_zip)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "File, Compress to ZIP on docs and photos: Archive.zip, its members listed")
+    hands.choose_named(@c, names: ["docs"])?
+    hands.menu(@c, item: c.menus.compress_tar)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "File, Compress to tar.gz on docs: docs.tar.gz")
+    return ok()
+
+# Four archives extracted, one of which names a member outside its folder.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_extract(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+
+    for name in ["site.zip", "backup.tar.gz", "readme.txt.gz", "evil.zip"]
+        hands.choose_named(@c, names: [name])?
+        shown(@c, @t, title: f"{name} chosen: what it holds")
+        hands.menu(@c, item: c.menus.extract)?
+        _ = hands.run_job(@c)?
+        shown(@c, @t, title: f"File, Extract on {name}")
+
+    outside = fs.exists(demo_tree.BASE + "/escaped.txt").default(true) || fs.exists(demo_tree.ROOT + "/escaped.txt").default(true)
+    print(f"a member named outside its folder landed there: {outside}")
+    return ok()
+
+# A large file's checksums, with the progress after one tick.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_checksums(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_named(@c, names: ["video.bin"])?
+    hands.menu(@c, item: c.menus.hash_item)?
+    hands.tick(@c, n: 1)
+    shown(@c, @t, title: "File, Checksums on video.bin: a megabyte a tick")
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "The checksums, each in a field to copy")
+    hands.click(@c, widget: c.digests[0].close)?
+    shown(@c, @t, title: "Close")
+    return ok()
+
+# A bookmark added, used and removed, the file keeping its comment.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_bookmarks(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_folder(@c, folder: demo_tree.at_root("photos"))?
+    hands.menu(@c, item: c.menus.add_mark)?
+    hands.type_into(@c, widget: c.asks[0].first, text: "Holiday photos")?
+    hands.click(@c, widget: c.asks[0].ok)?
+    shown(@c, @t, title: "Bookmarks, Add Bookmark on photos: in the list and the menu")
+    hands.click(@c, widget: c.w.up)?
+    hands.choose(@c, widget: c.w.places, indices: [1])?
+    shown(@c, @t, title: "The bookmark chosen: photos again")
+    hands.menu(@c, item: c.menus.mark_items[0])?
+    shown(@c, @t, title: "Bookmarks, Documents: docs")
+    hands.choose_folder(@c, folder: demo_tree.at_root("photos"))?
+    hands.menu(@c, item: c.menus.remove_mark)?
+    shown(@c, @t, title: "Bookmarks, Remove Bookmark on photos")
+    print("the bookmarks file now:")
+
+    for line in strings.lines(read_file(c.ex.settings.bookmarks)?)
+        print(f"  {line}")
+
+    return ok()
+
+# Hidden files shown and hidden again.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_hidden(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.click(@c, widget: c.w.up)?
+    hands.menu(@c, item: c.menus.hidden)?
+    shown(@c, @t, title: "View, Show Hidden Files: .hidden")
+    hands.menu(@c, item: c.menus.hidden)?
+    shown(@c, @t, title: "View, Hide Hidden Files")
+    return ok()
+
+# Another program writes a file in the folder shown and removes it, and the
+# watch tells the explorer each time.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails, or the watch tells nothing in time.
+function scene_disk(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    outside = demo_tree.at_root("from-outside.txt")
+    fs.write_bytes(outside, data: [104, 105, 10])?
+    demo_tree.stamp(outside, hours: 300)?
+    demo_tree.stamp(demo_tree.ROOT, hours: 300)?
+    hands.await_disk(@c, name: "from-outside.txt", present: true)?
+    shown(@c, @t, title: "Another program writes from-outside.txt: the watch tells, the list follows")
+    fs.remove(outside)?
+    demo_tree.stamp(demo_tree.ROOT, hours: 301)?
+    hands.await_disk(@c, name: "from-outside.txt", present: false)?
+    shown(@c, @t, title: "It removes the file: gone from the list")
+    return ok()
+
+# The trash emptied, after a No and then a Yes.
+#
+# - `c`: the controller.
+# - `t`: the transcript.
+#
+# Fails where a step fails.
+function scene_empty_trash(@c: controller.Controller, @t: transcript.Transcript) -> ()?
+    minute(@c)
+    hands.choose_named(@c, names: ["Archive.zip", "docs.tar.gz"])?
+    hands.menu(@c, item: c.menus.trash_item)?
+    _ = hands.run_job(@c)?
+    shown(@c, @t, title: "File, Move to Trash on the two archives")
+    hands.will_answer(@c, answer: .no)?
+    hands.menu(@c, item: c.menus.empty_trash)?
+    shown(@c, @t, title: "File, Empty Trash, answered No")
+    hands.will_answer(@c, answer: .yes)?
+    hands.menu(@c, item: c.menus.empty_trash)?
+    shown(@c, @t, title: "File, Empty Trash, answered Yes: removed for good, and Undo forgets")
+    return ok()
+
+# The window closed, which ends the explorer.
+#
+# - `c`: the controller.
+#
+# Fails where a step fails.
+function scene_close(@c: controller.Controller) -> ()?
+    hands.menu(@c, item: c.menus.close_item)?
+    transcript.heading("File, Close Window")
+    print(f"the explorer is done: {c.done}")
+    return ok()

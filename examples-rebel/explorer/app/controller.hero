@@ -1,0 +1,371 @@
+# The explorer running in a window: the app and its widgets, the
+# explorer's state, the small windows open, the watch on the folder shown,
+# and the window's timer. Each tick of the timer moves the operation
+# running by a step, or, when none runs, asks the watch what other programs
+# changed in the folder shown; after every event the window is drawn again
+# from the state (`views/show`).
+#
+# The watch is not asked while an operation runs: the folder is read again
+# when it ends, and an entry half copied is never shown as if it were whole.
+# What the watch tells is read from the disk again (`explorer.apply_changes`),
+# so a change told twice, late, or of the explorer's own doing changes
+# nothing the second time.
+
+use <rebel>/fs/watch
+use <rebel>/path as paths
+use <rebel>/time
+use <rebel>/ui
+
+use app/operations
+use model/clock
+use model/explorer
+use ops/jobs
+use search/query
+use views/dialogs
+use views/show
+use views/window
+
+# The period of the window's timer, in milliseconds.
+constant TICK_MS: i64
+    50
+
+# The ticks between two questions to the watch.
+constant WATCH_EVERY: i64
+    5
+
+# The longest a tick runs an operation on the system's clock, in
+# milliseconds, so the window answers between two ticks.
+constant WORK_MS: i64
+    30
+
+# The explorer in its window.
+record Controller
+    # The app, the system's widgets or the headless ones.
+    app: ui.App
+    # The main window's widgets.
+    w: window.Widgets
+    # Its menus.
+    menus: window.Menus
+    # The explorer's state.
+    ex: explorer.Explorer
+    # The question window open; none where none is.
+    asks: [dialogs.Ask]
+    # The progress window open while an operation runs.
+    progress: [dialogs.Progress]
+    # The checksums window open.
+    digests: [dialogs.Digests]
+    # The watch on the folder shown; none where it could not be opened.
+    watches: [watch.Watch]
+    # The folder the watch is on.
+    watched: str
+    # The window's timer.
+    timer: ui.Widget
+    # The ticks so far.
+    ticks: i64
+    # Where the next search looks, as the search bar's combo box says.
+    scope: query.Scope
+    # Whether the search bar's box says the query is a regular expression.
+    regex_on: bool
+    # Whether the person asked to leave.
+    done: bool
+
+# The explorer `ex` in a new main window of `app`.
+#
+# - `app`: the app; the controller holds it from here, and `stop` closes it.
+#   Where the window cannot be made, it is closed before the failure is
+#   answered, so no app is left open with nobody to close it.
+# - `ex`: the explorer's state.
+#
+# Fails as `ui`'s makers fail.
+function new_controller(app: ui.App, ex: explorer.Explorer) -> Controller?
+    held @= app
+
+    made = match window_parts(@held)
+        .ok parts => parts
+        .err x =>
+            _ = ui.close(@held).is_err()
+            return fail(code: x.code, msg: x.msg)
+
+    no_asks: [dialogs.Ask] = []
+    no_progress: [dialogs.Progress] = []
+    no_digests: [dialogs.Digests] = []
+    no_watches: [watch.Watch] = []
+    c @= Controller(
+        app: held,
+        w: made.w,
+        menus: made.menus,
+        ex: ex,
+        asks: no_asks,
+        progress: no_progress,
+        digests: no_digests,
+        watches: no_watches,
+        watched: "",
+        timer: made.timer,
+        ticks: 0,
+        scope: .names,
+        regex_on: false,
+        done: false
+    )
+    redraw(@c)
+    return ok(c)
+
+# The main window's widgets, its menus and its timer, made together.
+record Parts
+    # The window's widgets.
+    w: window.Widgets
+    # Its menus.
+    menus: window.Menus
+    # The timer.
+    timer: ui.Widget
+
+# Makes the main window, its menus and its timer.
+#
+# - `app`: the app they are made in.
+#
+# Fails as `ui`'s makers fail.
+function window_parts(@app: ui.App) -> Parts?
+    w = window.make_window(@app)?
+    menus = window.make_menus(@app, w: w.window)?
+    timer = ui.timer(@app, every: time.milliseconds(TICK_MS)?)?
+    return ok(Parts(w: w, menus: menus, timer: timer))
+
+# Draws the main window again from the state, follows the folder shown with
+# the watch, and moves the progress window.
+#
+# - `c`: the controller.
+function redraw(@c: Controller)
+    follow_folder(@c)
+
+    match show.sync(@c.app, @c.menus, w: c.w, ex: c.ex)
+        .ok _  => _ = 0
+        .err x => c.ex.status @ f"the window could not be drawn: {x.msg}"
+
+    if c.progress.len() > 0 && c.ex.running.len() > 0
+        _ = dialogs.show_progress(@c.app, p: c.progress[0], j: c.ex.running[0]).is_err()
+
+# Moves the watch onto the folder shown where it changed; a folder that
+# cannot be watched is shown without one.
+#
+# - `c`: the controller.
+function follow_folder(@c: Controller)
+    if c.watched == c.ex.folder
+        return
+
+    stop_watching(@c)
+    c.watched @ c.ex.folder
+
+    match watch.open(c.ex.folder)
+        .ok w  => c.watches @ [w]
+        .err _ => _ = 0
+
+# Closes the watch where one is open.
+#
+# - `c`: the controller.
+function stop_watching(@c: Controller)
+    if c.watches.len() > 0
+        held @= c.watches[0]
+        _ = watch.close(@held).is_err()
+
+    c.watches @ []
+    c.watched @ ""
+
+# Asks the watch what changed in the folder shown, waiting at most `limit`
+# for the first change, and reads those entries again. Answers what came
+# and what went.
+#
+# - `c`: the controller; the status line says what changed, where anything
+#   did.
+# - `limit`: how long to wait; zero between two ticks.
+function poll_disk(@c: Controller, limit: time.Duration) -> explorer.Changes
+    nothing = explorer.Changes(came: [], went: [])
+
+    if c.watches.len() == 0
+        return nothing
+
+    told = match watch.wait(c.watches[0], limit: limit)
+        .ok events => events
+        .err _     => return nothing
+
+    names: [str] @= []
+    again @= false
+
+    for e in told
+        match e.change
+            .overflow | .gone => again @ true
+            .renamed r =>
+                names @ named_here(names, folder: c.ex.folder, at: r.from)
+                names @ named_here(names, folder: c.ex.folder, at: e.path)
+            .created | .removed | .changed | .attributes => names @ named_here(names, folder: c.ex.folder, at: e.path)
+
+    if again
+        _ = explorer.refresh(@c.ex).is_err()
+
+    if names.len() == 0
+        return nothing
+
+    changes = explorer.apply_changes(@c.ex, names: names)
+
+    if changes.came.len() > 0 || changes.went.len() > 0
+        c.ex.status @ changed_words(changes)
+
+    return changes
+
+# `names` with the name of the entry at `at`, where it stands directly in
+# `folder` and is not there yet.
+#
+# - `names`: the names so far.
+# - `folder`: the folder shown.
+# - `at`: an entry's path, as the watch told it.
+function named_here(names: [str], folder: str, at: str) -> [str]
+    if !paths.is_same(path: paths.parent(at), other: folder)
+        return names
+
+    name = match paths.name(at)
+        .ok n  => n
+        .err _ => return names
+
+    for n in names
+        if n == name
+            return names
+
+    return names.push(name)
+
+# The status line's words for what the disk changed.
+#
+# - `changes`: what came and went.
+function changed_words(changes: explorer.Changes) -> str
+    parts: [str] @= []
+
+    if changes.came.len() > 0
+        parts @ parts.push(f"{changes.came.join(", ")} came")
+
+    if changes.went.len() > 0
+        parts @ parts.push(f"{changes.went.join(", ")} went")
+
+    return f"The folder changed on disk: {parts.join("; ")}"
+
+# Starts `j`, with its progress window.
+#
+# - `c`: the controller.
+# - `j`: the job.
+function start_job(@c: Controller, j: jobs.Job)
+    c.ex.running @ [j]
+    c.ex.status @ j.title + "…"
+
+    match dialogs.open_progress(@c.app, j: j)
+        .ok p  => c.progress @ [p]
+        .err _ => _ = 0
+
+# A tick of the window's timer: the operation running moves on, or the
+# watch is asked.
+#
+# - `c`: the controller.
+function tick(@c: Controller)
+    c.ticks @ c.ticks + 1
+
+    if c.ex.running.len() == 0
+        if c.ticks % WATCH_EVERY == 0
+            _ = poll_disk(@c, limit: time.nanoseconds(0))
+
+        return
+
+    j @= c.ex.running[0]
+    work(@j, clock_of: c.ex.clock)
+    c.ex.running @ [j]
+
+    if j.finished
+        finish_job(@c)
+
+# Runs steps of `j` for one tick: one step on a fixed clock, which moves
+# only when told, so a demo's ticks do the same work on every machine; on
+# the system's clock, steps until `WORK_MS` have passed.
+#
+# - `j`: the job.
+# - `clock_of`: the explorer's clock.
+function work(@j: jobs.Job, clock_of: clock.Clock)
+    if clock_of.fixed
+        jobs.step(@j, now: clock.now(clock_of))
+        return
+
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+    budget = time.milliseconds(WORK_MS).default(time.nanoseconds(0))
+
+    while !j.finished
+        jobs.step(@j, now: clock.now(clock_of))
+
+        match time.elapsed(began)
+            .ok spent =>
+                if !time.is_shorter(a: spent, b: budget)
+                    return
+            .err _ => return
+
+# Reads what the ended operation did into the state, closes its progress
+# window, and shows the checksums where it hashed a file.
+#
+# - `c`: the controller.
+function finish_job(@c: Controller)
+    j = c.ex.running[0]
+    digests = operations.finish(@c.ex, j: j)
+    close_progress(@c)
+
+    if digests.len() > 0
+        name = match j.work
+            .hashing h => paths.name(h.h.file).default(h.h.file)
+            .copying _ | .moving _ | .trashing _ | .packing _ | .unpacking _ | .searching _ => ""
+
+        close_digests(@c)
+
+        match dialogs.open_digests(@c.app, file: name, digests: digests)
+            .ok d  => c.digests @ [d]
+            .err _ => _ = 0
+
+# Destroys the progress window where one is open.
+#
+# - `c`: the controller.
+function close_progress(@c: Controller)
+    if c.progress.len() > 0
+        _ = ui.destroy(@c.app, widget: c.progress[0].window).is_err()
+
+    c.progress @ []
+
+# Destroys the checksums window where one is open.
+#
+# - `c`: the controller.
+function close_digests(@c: Controller)
+    if c.digests.len() > 0
+        _ = ui.destroy(@c.app, widget: c.digests[0].window).is_err()
+
+    c.digests @ []
+
+# Destroys the question window where one is open.
+#
+# - `c`: the controller.
+function close_ask(@c: Controller)
+    if c.asks.len() > 0
+        _ = ui.destroy(@c.app, widget: c.asks[0].window).is_err()
+
+    c.asks @ []
+
+# Ends the explorer: an operation running is cancelled, the watch closed and
+# the app closed.
+#
+# - `c`: the controller; its app is closed whatever happens.
+function stop(@c: Controller)
+    if c.ex.running.len() > 0
+        j @= c.ex.running[0]
+        jobs.cancel(@j)
+        c.ex.running @ []
+
+    stop_watching(@c)
+    _ = ui.close(@c.app).is_err()
+
+test "named_here: an entry of the folder once, one below it or elsewhere left out"
+    names = named_here([], folder: "r/docs", at: "r/docs/a.txt")
+    assert names == ["a.txt"]
+    assert named_here(names, folder: "r/docs", at: "r/docs/a.txt") == ["a.txt"]
+    assert named_here(names, folder: "r/docs", at: "r/docs/sub/b.txt") == ["a.txt"]
+    assert named_here(names, folder: "r/docs", at: "r/other/c.txt") == ["a.txt"]
+
+test "changed_words: what came and what went"
+    assert changed_words(explorer.Changes(came: ["a", "b"], went: [])) == "The folder changed on disk: a, b came"
+    assert changed_words(explorer.Changes(came: ["a"], went: ["c"])) == "The folder changed on disk: a came; c went"

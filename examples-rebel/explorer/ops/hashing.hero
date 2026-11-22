@@ -1,0 +1,135 @@
+# A file's checksums on request, computed a step at a time so a large file
+# never holds the window: CRC-32 (the check a ZIP member carries,
+# `archive.ZipEntry.crc`), CRC-64/ECMA-182 (the `xz` tool's usual check, as
+# `compress/xz` says) and xxHash64, each fed the same pieces as the file is
+# read. They
+# check that a copy or a download is whole; none of them is a cryptographic
+# hash, and the explorer says so in the window that shows them.
+
+use <rebel>/fs
+use <rebel>/hash
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/strings
+
+# The bytes read in one step at most.
+constant STEP_BYTES: i64
+    1048576
+
+# One checksum of the file, as the window shows it.
+record Digest
+    # The algorithm's name: `CRC-32`.
+    name: str
+    # The value in lower-case hexadecimal, its full width.
+    value: str
+
+# A file being hashed.
+record Hashing
+    # The file's path.
+    file: str
+    # Its stream, open while it is read.
+    stream: [io.Stream]
+    # Its size when the hashing began, in bytes.
+    size: i64
+    # The bytes read so far.
+    read: i64
+    # CRC-32 so far.
+    crc32: hash.State32
+    # CRC-64/ECMA-182 so far.
+    crc64: hash.State64
+    # xxHash64 so far, seed 0.
+    xxh64: hash.Xxh64
+    # Whether the file's end was read.
+    ended: bool
+
+# The hashing of `file` begun, its stream opened.
+#
+# - `file`: the file's path.
+#
+# Fails as `fs.open` fails, `is_a_directory` for a folder.
+function start(file: str) -> Hashing?
+    s = fs.open(file)?
+    size = io.size(s).default(0)
+    return ok(
+        Hashing(file: file, stream: [s], size: size, read: 0, crc32: hash.start32(.crc32), crc64: hash.start64(.crc64_ecma), xxh64: hash.start_xxh64(0), ended: false)
+    )
+
+# Reads the next `STEP_BYTES` at most and feeds them to the three.
+#
+# - `h`: the hashing; it moves on, and closes the file at its end.
+#
+# Fails as `io.read` fails.
+function step(@h: Hashing) -> ()?
+    if h.ended
+        return ok()
+
+    taken @= 0
+
+    while taken < STEP_BYTES
+        piece = io.read(h.stream[0], n: 65536)?
+
+        if piece.len() == 0
+            close(@h)
+            h.ended @ true
+            return ok()
+
+        hash.update32(@h.crc32, data: piece)
+        hash.update64(@h.crc64, data: piece)
+        hash.update_xxh64(@h.xxh64, data: piece)
+        taken @ taken + piece.len()
+        h.read @ h.read + piece.len()
+
+    return ok()
+
+# Closes the file where it is open.
+#
+# - `h`: the hashing.
+function close(@h: Hashing)
+    if h.stream.len() > 0
+        held @= h.stream[0]
+        _ = io.close(@held).is_err()
+
+    h.stream @ []
+
+# The three checksums as they stand: the file's own once the hashing ended.
+#
+# - `h`: the hashing.
+function digests(h: Hashing) -> [Digest]
+    return [
+        Digest(name: "CRC-32", value: hex_of(widened(h.crc32.value), width: 8))
+        Digest(name: "CRC-64/ECMA", value: hex_of(h.crc64.value, width: 16))
+        Digest(name: "xxHash64", value: hex_of(h.xxh64.value, width: 16))
+    ]
+
+# `n` in lower-case hexadecimal, zeros before it up to `width` digits.
+#
+# - `n`: the number.
+# - `width`: the digits, 1 or more.
+function hex_of(n: u64, width: i64) -> str
+    return strings.pad_zeros(numbers.format_u64(n, base: 16), width: width)
+
+# `v` as a `u64`, which every `u32` fits, so the conversion cannot fail.
+#
+# - `v`: the value.
+function widened(v: u32) -> u64
+    return to_u64(v).must()
+
+# The checksums of `data` at once, as the stepwise hashing of a file holding
+# it answers.
+#
+# - `data`: the bytes.
+function digests_of(data: [u8]) -> [Digest]
+    return [
+        Digest(name: "CRC-32", value: hex_of(widened(hash.crc32(data)), width: 8))
+        Digest(name: "CRC-64/ECMA", value: hex_of(hash.crc64_ecma(data), width: 16))
+        Digest(name: "xxHash64", value: hex_of(hash.xxh64(data, seed: 0), width: 16))
+    ]
+
+test "digests_of: the check values of 123456789 that each algorithm's catalogue gives"
+    d = digests_of([49, 50, 51, 52, 53, 54, 55, 56, 57])
+    assert d[0] == Digest(name: "CRC-32", value: "cbf43926")
+    assert d[1] == Digest(name: "CRC-64/ECMA", value: "995dc9bbdf1939fa")
+
+test "hex_of: zeros before a short value, none before a full one"
+    assert hex_of(255, width: 8) == "000000ff"
+    assert hex_of(18446744073709551615, width: 16) == "ffffffffffffffff"

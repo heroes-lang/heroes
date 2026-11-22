@@ -1,0 +1,167 @@
+# What each thing the person does to the window means: a button pressed, a
+# row chosen in a list, a box ticked, a menu item chosen, a window's close
+# button, and the timer's tick. `step` waits for the next one and hands it
+# to `handle`, which runs its command and draws the window again; the
+# native session and the demo both go through `step`, so the demo's clicks
+# are handled as a person's are.
+#
+# Typing in a field changes nothing until the person presses the button
+# that reads it (Go, Search, OK), as a path bar and a search field do; the
+# window is not drawn again while the person types, so nothing the program
+# sets takes the text from under their keys.
+
+use <rebel>/time
+use <rebel>/ui
+
+use app/actions
+use app/commands
+use app/controller
+use app/operations
+use model/explorer
+use ops/jobs
+use search/query
+
+# Waits at most `within` for the next thing the person did, or the timer,
+# and handles it. Answers false where nothing more will come: the app
+# closed, or a headless app's inputs spent with no timer running.
+#
+# - `c`: the controller.
+# - `within`: the longest to wait; zero answers only what is ready.
+function step(@c: controller.Controller, within: time.Duration) -> bool
+    match ui.wait(@c.app, within: within)
+        .ok e =>
+            handle(@c, e: e)
+            return true
+        .err x => return x.code == ui.TIMEOUT
+
+# Handles `e`, then draws the window again unless the person was typing.
+#
+# - `c`: the controller.
+# - `e`: the event.
+function handle(@c: controller.Controller, e: ui.Event)
+    match e
+        .clicked b           => clicked(@c, widget: b.widget)
+        .text_changed _      => return
+        .selection_changed s => chose(@c, widget: s.widget, indices: s.indices)
+        .toggled t =>
+            if t.widget == c.w.regex
+                c.regex_on @ t.checked
+        .menu_chosen m =>
+            c.ex.status @ ""
+            commands.menu(@c, item: m.item)
+        .close_asked w                             => closing(@c, window: w.window)
+        .timer_fired _                             => controller.tick(@c)
+        .value_changed _ | .resized _ | .message _ => _ = 0
+
+    controller.redraw(@c)
+
+# Handles a button pressed.
+#
+# - `c`: the controller.
+# - `widget`: the button.
+function clicked(@c: controller.Controller, widget: ui.Widget)
+    w = c.w
+    c.ex.status @ ""
+
+    if widget == w.back
+        commands.told(@c, done: explorer.go_back(@c.ex))
+    else if widget == w.forward
+        commands.told(@c, done: explorer.go_forward(@c.ex))
+    else if widget == w.up
+        commands.told(@c, done: explorer.go_up(@c.ex))
+    else if widget == w.go
+        typed = ui.text_of(c.app, widget: w.location).default(c.ex.folder)
+        commands.told(@c, done: explorer.go_to(@c.ex, folder: typed))
+    else if widget == w.open
+        commands.open_chosen(@c)
+    else if widget == w.search
+        text = ui.text_of(c.app, widget: w.query).default("")
+        commands.job_or_told(@c, made: operations.search(c.ex, text: text, scope: c.scope, is_regex: c.regex_on))
+    else if widget == w.clear
+        explorer.clear_results(@c.ex)
+    else
+        clicked_in_dialog(@c, widget: widget)
+
+# Handles a button of a small window: a question's OK and Cancel, the
+# progress window's Cancel, the checksums' Close.
+#
+# - `c`: the controller.
+# - `widget`: the button.
+function clicked_in_dialog(@c: controller.Controller, widget: ui.Widget)
+    if c.asks.len() > 0
+        if widget == c.asks[0].ok
+            commands.answer_ask(@c)
+            return
+
+        if widget == c.asks[0].cancel
+            controller.close_ask(@c)
+            return
+
+    if c.progress.len() > 0 && widget == c.progress[0].cancel
+        cancel_running(@c)
+        return
+
+    if c.digests.len() > 0 && widget == c.digests[0].close
+        controller.close_digests(@c)
+
+# Cancels the operation running and reads what it did so far.
+#
+# - `c`: the controller.
+function cancel_running(@c: controller.Controller)
+    if c.ex.running.len() == 0
+        return
+
+    j @= c.ex.running[0]
+    jobs.cancel(@j)
+    c.ex.running @ [j]
+    controller.finish_job(@c)
+
+# Handles a row chosen in a list, or an item in the combo box.
+#
+# - `c`: the controller.
+# - `widget`: the list or the combo box.
+# - `indices`: what is chosen now.
+function chose(@c: controller.Controller, widget: ui.Widget, indices: [i64])
+    w = c.w
+
+    if widget == w.entries
+        c.ex.status @ ""
+        explorer.choose_rows(@c.ex, indices: indices)
+    else if widget == w.tree && indices.len() == 1
+        c.ex.status @ ""
+        commands.chose_tree_row(@c, index: indices[0])
+    else if widget == w.places && indices.len() == 1
+        c.ex.status @ ""
+        commands.told(@c, done: actions.go_to_bookmark(@c.ex, index: indices[0]))
+    else if widget == w.scope && indices.len() == 1
+        c.scope @ scope_at(indices[0])
+
+# The scope the search bar's combo box shows at `index`: names first, then
+# contents.
+#
+# - `index`: the item chosen.
+function scope_at(index: i64) -> query.Scope
+    if index == 1
+        return .contents
+
+    return .names
+
+# Handles a window's close button: the main window ends the explorer, a
+# question is cancelled, the checksums closed, and the progress window's
+# operation cancelled.
+#
+# - `c`: the controller.
+# - `window`: the window.
+function closing(@c: controller.Controller, window: ui.Widget)
+    if window == c.w.window
+        c.done @ true
+    else if c.asks.len() > 0 && window == c.asks[0].window
+        controller.close_ask(@c)
+    else if c.digests.len() > 0 && window == c.digests[0].window
+        controller.close_digests(@c)
+    else if c.progress.len() > 0 && window == c.progress[0].window
+        cancel_running(@c)
+
+test "scope_at: the combo box's two items"
+    assert scope_at(0) == .names
+    assert scope_at(1) == .contents

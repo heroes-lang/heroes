@@ -1,0 +1,393 @@
+# The explorer's state, apart from any window: the folder shown and its
+# entries, what the person chose, where Back and Forward go, the tree of
+# folders, the bookmarks, the explorer's own clipboard, a search's results,
+# Undo, the operation running, the preview and the status line. Every
+# command changes this state, and the views (`views/`) only draw it, so the
+# same commands run behind the system's own widgets and behind the headless
+# ones a demo or a test drives.
+#
+# What the person chose is kept by names, never by rows: a row moves when
+# the order changes or the watch adds an entry, a name stays.
+
+use <rebel>/path as paths
+
+use locale/formats
+use model/clock
+use model/entry
+use model/history
+use model/listing
+use model/sorting
+use model/tree
+use ops/jobs
+use ops/undo
+use preview/preview
+use search/finder
+use store/bookmarks
+use store/settings
+
+# Entries the person cut or copied, waiting for Paste.
+record Clipboard
+    # Their paths.
+    paths: [str]
+    # Whether Paste moves them rather than copying them.
+    cut: bool
+
+# Everything the explorer holds.
+record Explorer
+    # What the person chose once and keeps.
+    settings: settings.Settings
+    # How numbers, dates and names are written and ordered.
+    formats: formats.Formats
+    # Where the time of day comes from.
+    clock: clock.Clock
+    # The folder shown.
+    folder: str
+    # Its entries, in the order chosen.
+    listing: listing.Listing
+    # The names chosen, in the order of their rows.
+    chosen: [str]
+    # Where Back and Forward go.
+    history: history.History
+    # The tree of folders.
+    tree: tree.Tree
+    # The bookmarks.
+    bookmarks: bookmarks.Bookmarks
+    # What Cut and Copy took.
+    clipboard: Clipboard
+    # The last search's results.
+    results: [finder.Hit]
+    # The folder the last search searched.
+    results_root: str
+    # Whether the list shows the results rather than the folder's entries.
+    showing_results: bool
+    # What can be undone and redone.
+    undo: undo.Undo
+    # The operation running; empty where none is.
+    running: [jobs.Job]
+    # What the preview pane shows.
+    preview: preview.Preview
+    # The status line's message; empty for the folder's own count.
+    status: str
+
+# The explorer showing `start`.
+#
+# - `start`: the folder shown first.
+# - `s`: the settings.
+# - `f`: the formats.
+# - `c`: the clock.
+# - `b`: the bookmarks.
+#
+# Fails as `listing.read` fails on `start`.
+function open_at(start: str, s: settings.Settings, f: formats.Formats, c: clock.Clock, b: bookmarks.Bookmarks) -> Explorer?
+    shown = listing.read(start, f: f, order: s.order, show_hidden: s.show_hidden)?
+    nothing: [str] = []
+    no_hits: [finder.Hit] = []
+    no_jobs: [jobs.Job] = []
+    return ok(
+        Explorer(settings: s, formats: f, clock: c, folder: start, listing: shown, chosen: nothing, history: history.new_history(), tree: tree.new_tree(start), bookmarks: b, clipboard: Clipboard(paths: nothing, cut: false), results: no_hits, results_root: "", showing_results: false, undo: undo.new_undo(), running: no_jobs, preview: preview.nothing_chosen(), status: "")
+    )
+
+# Shows `folder`, remembering the folder left for Back.
+#
+# - `ex`: the explorer.
+# - `folder`: the folder to show.
+#
+# Fails as `listing.read` fails, the folder shown left as it was.
+function go_to(@ex: Explorer, folder: str) -> ()?
+    target = paths.clean(folder)
+    leaving = ex.folder
+    show(@ex, folder: target)?
+
+    if leaving != target
+        history.visit(@ex.history, leaving: leaving)
+
+    return ok()
+
+# Shows `folder` without touching the history: the folder read, the tree
+# unfolded down to it, nothing chosen, the results put away.
+#
+# - `ex`: the explorer.
+# - `folder`: the folder.
+#
+# Fails as `listing.read` fails, the folder shown left as it was.
+function show(@ex: Explorer, folder: str) -> ()?
+    ex.listing @ listing.read(folder, f: ex.formats, order: ex.settings.order, show_hidden: ex.settings.show_hidden)?
+    ex.folder @ folder
+    tree.reveal(@ex.tree, folder: folder)
+    ex.chosen @ []
+    ex.showing_results @ false
+    ex.preview @ preview.nothing_chosen()
+    ex.status @ ""
+    return ok()
+
+# Goes back to the folder before.
+#
+# - `ex`: the explorer.
+#
+# Fails `not_found` where nothing is behind, and as `show` fails.
+function go_back(@ex: Explorer) -> ()?
+    to = history.back(@ex.history, current: ex.folder)?
+    return show(@ex, folder: to)
+
+# Goes forward to the folder Back left.
+#
+# - `ex`: the explorer.
+#
+# Fails `not_found` where nothing is ahead, and as `show` fails.
+function go_forward(@ex: Explorer) -> ()?
+    to = history.forward(@ex.history, current: ex.folder)?
+    return show(@ex, folder: to)
+
+# Goes to the folder holding the one shown, and chooses the folder left.
+#
+# - `ex`: the explorer.
+#
+# Fails `not_found` at a root, and as `show` fails.
+function go_up(@ex: Explorer) -> ()?
+    above = paths.parent(ex.folder)
+
+    if above == ex.folder || paths.name(ex.folder).is_err()
+        return fail(code: "not_found", msg: f"\"{ex.folder}\" has no folder above it")
+
+    left = paths.name(ex.folder)?
+    go_to(@ex, folder: above)?
+    choose_names(@ex, names: [left])
+    return ok()
+
+# Reads the folder shown again, keeping what was chosen where it is still
+# there.
+#
+# - `ex`: the explorer.
+#
+# Fails as `listing.read` fails.
+function refresh(@ex: Explorer) -> ()?
+    kept = ex.chosen
+    ex.listing @ listing.read(ex.folder, f: ex.formats, order: ex.settings.order, show_hidden: ex.settings.show_hidden)?
+    choose_names(@ex, names: kept)
+    return ok()
+
+# Reads again the entries `names` of the folder shown, as the watch tells
+# of them: each put in where it is there and taken out where it went away.
+# Answers the names that came and the names that went.
+#
+# - `ex`: the explorer; what was chosen and went away is no longer chosen.
+# - `names`: the entries' names.
+function apply_changes(@ex: Explorer, names: [str]) -> Changes
+    came: [str] @= []
+    went: [str] @= []
+
+    for name in names
+        was = listing.has(ex.listing, name: name)
+        listing.refresh_name(@ex.listing, f: ex.formats, name: name)
+        now_there = listing.has(ex.listing, name: name)
+
+        if now_there && !was
+            came @ came.push(name)
+        else if was && !now_there
+            went @ went.push(name)
+
+    choose_names(@ex, names: ex.chosen)
+    return Changes(came: came, went: went)
+
+# What a reading of the disk changed in the listing.
+record Changes
+    # The names that came, in the order told.
+    came: [str]
+    # The names that went, in the order told.
+    went: [str]
+
+# Chooses the rows at `indices` of the list shown: entries, or results.
+#
+# - `ex`: the explorer; the preview follows.
+# - `indices`: row indices, ascending.
+function choose_rows(@ex: Explorer, indices: [i64])
+    if ex.showing_results
+        picked: [str] @= []
+
+        for i in indices
+            if i >= 0 && i < ex.results.len()
+                picked @ picked.push(ex.results[i].below)
+
+        ex.chosen @ picked
+        update_preview(@ex)
+        return
+
+    choose_names(@ex, names: listing.names_at(ex.listing, indices: indices))
+
+# Chooses the entries named `names` that the folder holds, in row order.
+#
+# - `ex`: the explorer; the preview follows.
+# - `names`: the names.
+function choose_names(@ex: Explorer, names: [str])
+    if ex.showing_results
+        ex.chosen @ names
+        update_preview(@ex)
+        return
+
+    ex.chosen @ listing.names_at(ex.listing, indices: listing.rows_of(ex.listing, names: names))
+    update_preview(@ex)
+
+# Chooses every entry of the folder shown.
+#
+# - `ex`: the explorer.
+function choose_all(@ex: Explorer)
+    every: [str] @= []
+
+    for e in listing.rows(ex.listing)
+        every @ every.push(e.name)
+
+    choose_names(@ex, names: every)
+
+# The rows chosen, ascending, in the list shown.
+#
+# - `ex`: the explorer.
+function chosen_rows(ex: Explorer) -> [i64]
+    if ex.showing_results
+        rows: [i64] @= []
+
+        for i in range(from: 0, to: ex.results.len())
+            for name in ex.chosen
+                if ex.results[i].below == name && !holds_row(rows, row: i)
+                    rows @ rows.push(i)
+
+        return rows
+
+    return listing.rows_of(ex.listing, names: ex.chosen)
+
+# Whether `rows` holds `row`.
+#
+# - `rows`: rows.
+# - `row`: a row.
+function holds_row(rows: [i64], row: i64) -> bool
+    for r in rows
+        if r == row
+            return true
+
+    return false
+
+# The paths of the entries chosen.
+#
+# - `ex`: the explorer.
+function chosen_paths(ex: Explorer) -> [str]
+    out: [str] @= []
+
+    for name in ex.chosen
+        if ex.showing_results
+            out @ out.push(paths.join_all([ex.results_root, paths.from_slash(name)]))
+        else
+            out @ out.push(paths.join_all([ex.folder, name]))
+
+    return out
+
+# Sets what the preview pane shows from what is chosen.
+#
+# - `ex`: the explorer.
+function update_preview(@ex: Explorer)
+    if ex.chosen.len() == 0
+        ex.preview @ preview.nothing_chosen()
+        return
+
+    now = clock.now(ex.clock)
+
+    if ex.showing_results
+        if ex.chosen.len() > 1
+            ex.preview @ preview.of_several(ex.formats, chosen: [])
+            return
+
+        at = chosen_paths(ex)[0]
+
+        match entry.entry_at(at)
+            .ok e  => ex.preview @ preview.of_entry(ex.formats, folder: paths.parent(at), e: e, now: now)
+            .err _ => ex.preview @ preview.nothing_chosen()
+
+        return
+
+    if ex.chosen.len() > 1
+        picked: [entry.Entry] @= []
+
+        for name in ex.chosen
+            match listing.entry_named(ex.listing, name: name)
+                .ok e  => picked @ picked.push(e)
+                .err _ => _ = 0
+
+        ex.preview @ preview.of_several(ex.formats, chosen: picked)
+        return
+
+    match listing.entry_named(ex.listing, name: ex.chosen[0])
+        .ok e  => ex.preview @ preview.of_entry(ex.formats, folder: ex.folder, e: e, now: now)
+        .err _ => ex.preview @ preview.nothing_chosen()
+
+# Orders the entries by `column`; the column already in use turns the order
+# over, as a column header does.
+#
+# - `ex`: the explorer.
+# - `column`: the column.
+function order_by(@ex: Explorer, column: sorting.Column)
+    order @= ex.settings.order
+
+    if order.column == column
+        order.descending @ !order.descending
+    else
+        order.column @ column
+        order.descending @ false
+
+    ex.settings.order @ order
+    ex.listing @ listing.resorted(ex.listing, f: ex.formats, order: order)
+
+# Shows or hides the entries whose names begin with a dot.
+#
+# - `ex`: the explorer.
+#
+# Fails as `refresh` fails.
+function toggle_hidden(@ex: Explorer) -> ()?
+    ex.settings.show_hidden @ !ex.settings.show_hidden
+    ex.listing.show_hidden @ ex.settings.show_hidden
+    return refresh(@ex)
+
+# Shows the results of a search in the list in place of the folder's
+# entries.
+#
+# - `ex`: the explorer.
+# - `root`: the folder searched.
+# - `hits`: the results.
+function show_results(@ex: Explorer, root: str, hits: [finder.Hit])
+    ex.results @ hits
+    ex.results_root @ root
+    ex.showing_results @ true
+    ex.chosen @ []
+    ex.preview @ preview.nothing_chosen()
+
+# Puts the results away and shows the folder's entries again.
+#
+# - `ex`: the explorer.
+function clear_results(@ex: Explorer)
+    ex.showing_results @ false
+    ex.chosen @ []
+    ex.preview @ preview.nothing_chosen()
+
+# The status line: the message where there is one, else the folder's count
+# and its files' bytes, and what is chosen.
+#
+# - `ex`: the explorer.
+function status_line(ex: Explorer) -> str
+    if ex.status != ""
+        return ex.status
+
+    f = ex.formats
+
+    if ex.showing_results
+        return f"{formats.count_text(f, n: ex.results.len(), one: "result", other: "results")} under {ex.results_root}"
+
+    count = formats.count_text(f, n: listing.count(ex.listing), one: "item", other: "items")
+    size = formats.size_text(f, size: listing.total_size(ex.listing))
+
+    if ex.chosen.len() == 0
+        return f"{count}, {size}"
+
+    return f"{count}, {size}; {formats.int_text(f, n: ex.chosen.len())} chosen"
+
+# Whether an operation is running.
+#
+# - `ex`: the explorer.
+function is_busy(ex: Explorer) -> bool
+    return ex.running.len() > 0

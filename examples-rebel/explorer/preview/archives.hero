@@ -1,0 +1,231 @@
+# An archive previewed without extracting it: a ZIP file's central
+# directory, a tar's headers (plain or gzip-compressed, read through to the
+# end with the members' data skipped), and a lone gzip file's header with
+# its first lines decompressed. Each member is listed with its size, and the
+# whole with its count and what it would take on the disk.
+#
+# Reading a tar walks the whole stream, so it is bounded: past
+# `MOST_LISTED` members the listing says how many more it did not read.
+
+use <rebel>/archive
+use <rebel>/compress
+use <rebel>/fs
+use <rebel>/io
+
+use locale/formats
+use preview/decoding
+
+# The most members a preview lists.
+constant MOST_LISTED: i64
+    200
+
+# The most bytes of a lone gzip file the preview decompresses.
+constant GZIP_PEEK: i64
+    65536
+
+# What a preview shows of an archive.
+record Shown
+    # The facts a person reads: `ZIP archive`, `4 members, 12,3 kB`.
+    facts: [str]
+    # The members, one a line, or a gzip file's first lines.
+    lines: [str]
+
+# Whether `data` begins as a ZIP file, a tar or a gzip stream.
+#
+# - `data`: the file's first bytes, 512 at least for a tar.
+function is_archive(data: [u8]) -> bool
+    return !archive.format_of(data).is_err() || !compress.format_of(data).is_err()
+
+# What the preview shows of the archive at `file`.
+#
+# - `f`: the formats, for the sizes.
+# - `file`: the archive's path.
+# - `data`: the archive's whole bytes, read by the caller.
+function shown_of(f: formats.Formats, file: str, data: [u8]) -> Shown
+    match compress.format_of(data)
+        .ok format =>
+            if format == .gzip
+                return gzip_shown(f, file: file, data: data)
+        .err _ => _ = 0
+
+    match archive.format_of(data)
+        .ok format =>
+            return match format
+                .zip => zip_shown(f, data: data)
+                .tar => tar_shown(f, file: file, compression: .none, title: "Tar archive")
+        .err _ => return Shown(facts: ["not an archive"], lines: [])
+
+# A ZIP file's members from its central directory.
+#
+# - `f`: the formats.
+# - `data`: the file's bytes.
+function zip_shown(f: formats.Formats, data: [u8]) -> Shown
+    r = match archive.decode_zip(data)
+        .ok z  => z
+        .err x => return Shown(facts: ["ZIP archive", f"broken: {x.msg}"], lines: [])
+
+    lines: [str] @= []
+    total @= 0
+    packed @= 0
+
+    for e in r.entries
+        total @ total + e.size
+        packed @ packed + e.compressed_size
+
+        if lines.len() < MOST_LISTED
+            lines @ lines.push(member_line(f, name: e.name, kind: e.kind, size: e.size))
+
+    told = formats.count_text(f, n: r.entries.len(), one: "member", other: "members")
+    facts = [
+        "ZIP archive"
+        f"{told}, {formats.size_text(f, size: total)} unpacked, {formats.size_text(f, size: packed)} packed"
+    ]
+    return Shown(facts: facts, lines: more_line(lines, count: r.entries.len()))
+
+# A tar's members from its headers.
+#
+# - `f`: the formats.
+# - `file`: the archive's path, read as a stream.
+# - `compression`: how the tar is compressed.
+# - `title`: the archive's type as shown.
+function tar_shown(f: formats.Formats, file: str, compression: archive.Compression, title: str) -> Shown
+    s @= match fs.open(file)
+        .ok opened => opened
+        .err x     => return Shown(facts: [title, f"unreadable: {x.msg}"], lines: [])
+
+    r @= archive.tar_reader(s, compression: compression, limit: 68719476736)
+    lines: [str] @= []
+    count @= 0
+    total @= 0
+    broken @= ""
+
+    while true
+        match archive.next_tar_entry(@r)
+            .ok next =>
+                match next
+                    .end => break
+                    .entry found =>
+                        e = found.value
+                        count @ count + 1
+                        total @ total + e.size
+
+                        if lines.len() < MOST_LISTED
+                            lines @ lines.push(member_line(f, name: e.name, kind: e.kind, size: e.size))
+            .err x =>
+                broken @ x.msg
+                break
+
+    _ = io.close(@s).is_err()
+    facts: [str] @= [
+        title
+        f"{formats.count_text(f, n: count, one: "member", other: "members")}, {formats.size_text(f, size: total)} unpacked"
+    ]
+
+    if broken != ""
+        facts @ facts.push(f"broken after the last member listed: {broken}")
+
+    return Shown(facts: facts, lines: more_line(lines, count: count))
+
+# A gzip file: a tar inside it listed, or else its header and first lines.
+#
+# - `f`: the formats.
+# - `file`: the file's path.
+# - `data`: its bytes.
+function gzip_shown(f: formats.Formats, file: str, data: [u8]) -> Shown
+    inner = match compress.decompress_leading(data, format: .gzip, limit: GZIP_PEEK)
+        .ok l => l.data
+        .err x =>
+            if x.code != "limit"
+                return Shown(facts: ["Gzip file", f"broken: {x.msg}"], lines: [])
+
+            first_bytes(data)
+
+    if !archive.format_of(inner).is_err()
+        return tar_shown(f, file: file, compression: .gzip, title: "Tar archive, gzip")
+
+    facts: [str] @= ["Gzip file"]
+
+    match compress.header_of(data)
+        .ok h =>
+            if h.name != ""
+                facts @ facts.push(f"holds \"{h.name}\"")
+        .err _ => _ = 0
+
+    if decoding.is_binary(inner)
+        facts @ facts.push("holds data")
+        return Shown(facts: facts, lines: [])
+
+    text = decoding.decode(inner)
+    facts @ facts.push(f"holds text, {text.encoding}")
+    lines = decoding.lines_of(text.text)
+    return Shown(facts: facts, lines: lines.slice(from: 0, to: min_of(a: lines.len(), b: 12)))
+
+# The decompressed start of a gzip stream too long to decompress whole.
+#
+# - `data`: the gzip bytes.
+function first_bytes(data: [u8]) -> [u8]
+    d @= compress.decompressor(.gzip, limit: GZIP_PEEK)
+    return compress.decompress_part(@d, data: data, most: GZIP_PEEK).default([])
+
+# A member as one line: its name, then its size, or `folder` or `link`.
+#
+# - `f`: the formats.
+# - `name`: its name in the archive.
+# - `kind`: what it is.
+# - `size`: its size in bytes.
+function member_line(f: formats.Formats, name: str, kind: archive.Kind, size: i64) -> str
+    what = match kind
+        .file      => formats.size_text(f, size: size)
+        .directory => "folder"
+        .symlink   => "link"
+        .hard_link => "hard link"
+        .other     => "special"
+
+    return f"{name}  ({what})"
+
+# `lines` with a last line saying how many members were not listed.
+#
+# - `lines`: the members listed.
+# - `count`: the members there are.
+function more_line(lines: [str], count: i64) -> [str]
+    if count > lines.len()
+        return lines.push(f"… and {count - lines.len()} more")
+
+    return lines
+
+# The smaller of two numbers.
+#
+# - `a`: one.
+# - `b`: the other.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+
+    return b
+
+test "more_line: nothing added when every member is listed, the rest counted otherwise"
+    assert more_line(["a"], count: 1) == ["a"]
+    assert more_line(["a"], count: 3) == ["a", "… and 2 more"]
+
+test "zip_shown: the members of an archive made in memory, their sizes in the locale"
+    f = formats.german()
+    a = archive.zip_entry("docs", kind: .directory)
+    b = archive.zip_entry("docs/notes.txt", kind: .file)
+    data = archive.encode_zip(
+        [archive.ZipMember(entry: a, data: []), archive.ZipMember(entry: b, data: repeat_bytes(1500))],
+        comment: ""
+    ).must()
+    s = zip_shown(f, data: data)
+    assert s.facts[0] == "ZIP archive"
+    assert s.lines == ["docs  (folder)", "docs/notes.txt  (1,5 kB)"]
+
+# `n` bytes of the letter a.
+#
+# - `n`: how many.
+function repeat_bytes(n: i64) -> [u8]
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(97)
+
+    return out
