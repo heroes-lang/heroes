@@ -1,0 +1,135 @@
+# The bounds of the reordering groups a collator may treat as variable, read
+# from CLDR's `common/uca/FractionalUCA.txt`, which states the groups: a line
+# `FDD1 0020; [...] # SPACE first primary` opens the group `SPACE`, and every
+# line of one code point after it, up to the next such line, maps a character
+# of that group. A bound is the primary weight `allkeys_CLDR.txt` gives a
+# character of the group, its first that is not 0.
+
+use <rebel>/strings
+
+use allkeys
+
+# The bounds of the groups `collate_tables` holds.
+record Bounds
+    # The largest primary of the spaces, then of the punctuation.
+    last_space: i64
+    last_punct: i64
+    # The smallest primary of the currency signs.
+    first_currency: i64
+
+# The smallest and the largest primary met in one group.
+record Span
+    low: i64
+    high: i64
+
+# The group a marker line opens, `SPACE` of `FDD1 0020; [...] # SPACE first
+# primary starts new lead byte`, or "" where `line` is no marker.
+function group_of(line: str) -> str
+    if !strings.has_prefix(s: line, prefix: "FDD1 ")
+        return ""
+
+    return match strings.split_once(s: line, sep: "#")
+        .ok halves =>
+            match strings.split_once(s: strings.trim(halves.after), sep: " first primary")
+                .ok named => named.before
+                .err _    => ""
+        .err _ => ""
+
+# The code point a line of one code point maps, or -1 where `line` maps a
+# contraction, a prefix or nothing.
+#
+# Fails as `allkeys.hex` fails where its one word is not hexadecimal.
+function point_of(line: str) -> i64?
+    if line == "" || strings.has_prefix(s: line, prefix: "#") || strings.has_prefix(s: line, prefix: "[")
+        return ok(-1)
+
+    return match strings.split_once(s: line, sep: ";")
+        .ok halves =>
+            if strings.words(halves.before).len() == 1 && !strings.contains(s: halves.before, substr: "|")
+                allkeys.hex(strings.trim(halves.before))
+            else
+                ok(-1)
+        .err _ => ok(-1)
+
+# The bounds the text of `FractionalUCA.txt` states, each character's primary
+# read in `primaries`.
+#
+# - `text`: the file's whole text.
+# - `primaries`: each code point's first primary that is not 0, as
+#   `allkeys.read_root` reads it.
+#
+# Fails `invalid` where the groups `SPACE`, `PUNCTUATION` or `CURRENCY` are
+# not opened, or hold no character with a primary.
+function read_bounds(text: str, primaries: {i64: i64} lent) -> Bounds?
+    spans: {str: Span} @= {}
+    group @= ""
+
+    for line in strings.split(s: text, sep: "\n")
+        opened = group_of(line)
+
+        if opened != ""
+            group @ opened
+            continue
+        point = point_of(line)?
+
+        if point < 0 || group == ""
+            continue
+
+        match primaries[point]
+            .ok primary =>
+                span = match spans[group]
+                    .ok found => widened(found, primary: primary)
+                    .err _    => Span(low: primary, high: primary)
+
+                spans[group] @ span
+            .err _ => _ = 0
+
+    space = span_of(spans, group: "SPACE")?
+    punct = span_of(spans, group: "PUNCTUATION")?
+    currency = span_of(spans, group: "CURRENCY")?
+    return ok(Bounds(last_space: space.high, last_punct: punct.high, first_currency: currency.low))
+
+# `span` widened to hold `primary`.
+function widened(span: Span, primary: i64) -> Span
+    if primary < span.low
+        return Span(low: primary, high: span.high)
+
+    if primary > span.high
+        return Span(low: span.low, high: primary)
+    return span
+
+# The span of `group`.
+#
+# Fails `invalid` where the file opens no such group, or it holds no
+# character with a primary.
+function span_of(spans: {str: Span} lent, group: str) -> Span?
+    return match spans[group]
+        .ok found => ok(found)
+        .err _ => fail(
+            code: "invalid",
+            msg: f"FractionalUCA.txt states no group {group} holding a character with a primary"
+        )
+
+## Tests
+
+test "group_of: a marker, a script's marker, and lines that are none"
+    assert group_of("FDD1 00A0;\t[03 02 02, 05, 05]\t# SPACE first primary starts new lead byte") == "SPACE"
+    assert group_of("FDD1 03E2;\t[61 60 02, 05, 05]\t# COPTIC first primary (compressible)") == "COPTIC"
+    assert group_of("0020; [05, 05, 05]\t# Zyyy Zs\t[0209.0020.0002]\t* SPACE") == ""
+    assert group_of("FDD1 0020; [05, 05, 05]") == ""
+
+test "point_of: one code point, a contraction, a prefix, a comment and a bracket line"
+    assert point_of("00A4; [0D AB, 05, 05]\t# Zyyy Sc").must() == 0xa4
+    assert point_of("004C 00B7; [2E 7E, 05, 05]").must() == -1
+    assert point_of("3005 | 3005; [7B 8E, 05, 05]").must() == -1
+    assert point_of("# 0020").must() == -1 && point_of("[top_byte\t03\tSPACE ]").must() == -1
+
+test "read_bounds: each group's bound, and a group missing"
+    text = "FDD1 00A0;\t[03 02 02, 05, 05]\t# SPACE first primary\n0020; [x]\n3000; [x]\nFDD1 201C;\t[05 06 02, 05, 05]\t# PUNCTUATION first primary\n005F; [x]\nFDD1 20AC;\t[0D A9 02, 05, 05]\t# CURRENCY first primary\n0024; [x]\n00A4; [x]\n"
+    primaries = {0x20: 0x209, 0x3000: 0x209, 0x5f: 0x20a, 0x24: 0x2240, 0xa4: 0x223e}
+    got = read_bounds(text, primaries: primaries).must()
+    assert got.last_space == 0x209 && got.last_punct == 0x20a && got.first_currency == 0x223e
+    assert read_bounds(
+        "FDD1 00A0;\t[03 02 02, 05, 05]\t# SPACE first primary\n0020; [x]\n",
+        primaries: primaries
+    ).is_err()

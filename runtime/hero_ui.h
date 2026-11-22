@@ -363,31 +363,30 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * `SORT` clicks the header of column `value` of table `id` until the table
  * stands sorted by it in the order `second` names; `UNFOLD` unfolds item
  * `value` of tree `id`, `second` 1, or folds it, 0; `SELECT` and
- * `ACTIVATE` take a tree's item by its number. Its event
+ * `ACTIVATE` take a tree's item by its number; `DIALOG` answers dialog
+ * `id`, shown and not yet answered, as its person would: a message box's
+ * button `value` (`HERO_UI_ANSWER_*`, or a box of the program's words'
+ * index), or a file or folder dialog's choice of `value` paths, `text`
+ * holding them each followed by one zero byte, 0 cancelling it. Its event
  * is queued as the person's would be. 0, or -1, `UNSUPPORTED` where the
  * system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
 
-/* Shows a message box over window `window` (0 for none), with `title` and
- * `text`, a tone and buttons, and waits for the person: answers the button
- * pressed, `HERO_UI_ANSWER_*`, or -1. */
-int64_t hero_ui_message(hero_ui_app *app, int64_t window, int64_t tone, int64_t buttons, const void *title, uint64_t title_count, const void *text, uint64_t text_count);
+/* Shows a message box over window `window`, with `title` and `text`, a tone
+ * and buttons, and answers at once, 0, or -1: the person's button comes
+ * later as `HERO_UI_EVENT_DIALOG` naming `dialog`, its `value` the button,
+ * `HERO_UI_ANSWER_*` (DIALOGS ANSWERED THROUGH THE QUEUE, below). */
+int64_t hero_ui_message(hero_ui_app *app, int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const void *title, uint64_t title_count, const void *text, uint64_t text_count);
 
 /* Shows the system's dialog to open files (`save` 0; `multiple` 1 lets the
  * person choose several) or to save one (`save` 1, `name` the name it
- * proposes), over window `window` (0 for none), and waits for the person.
+ * proposes), over window `window`, and answers at once, 0, or -1.
  * `filters` is each filter's name and then its extensions joined by `;`,
  * each followed by one zero byte, `filters_count` bytes in all, none for
- * every file. Answers the bytes the chosen paths take, each followed by one
- * zero byte, which `hero_ui_dialog_paths` then writes; 0 where the person
- * cancelled; -1 on failure. */
-int64_t hero_ui_file_dialog(hero_ui_app *app, int64_t window, int64_t save, int64_t multiple, const void *title, uint64_t title_count, const void *name, uint64_t name_count, const void *filters, uint64_t filters_count);
-
-/* Writes the paths the last file dialog answered into `buffer`, as it
- * counted them, and answers their bytes; where they are more than `count`,
- * nothing is written and the bytes are answered all the same. -1 on
- * failure. */
-int64_t hero_ui_dialog_paths(hero_ui_app *app, void *buffer, uint64_t count);
+ * every file. The person's choice comes later as `HERO_UI_EVENT_DIALOG`
+ * naming `dialog`, its `value` how many paths they chose, 0 where they
+ * cancelled, its text the paths, each followed by one zero byte. */
+int64_t hero_ui_file_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t save, int64_t multiple, const void *title, uint64_t title_count, const void *name, uint64_t name_count, const void *filters, uint64_t filters_count);
 
 /* -- THE WEB VIEW -------------------------------------------------------------
  *
@@ -787,26 +786,27 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus);
  * wxWidgets' `wxDirDialog`, and `wxMessageDialog` with labels of the
  * program's (`SetYesNoCancelLabels`) or Electron's `showMessageBox` with
  * its `buttons`: "Save", "Don't Save", "Cancel" before a document closes.
- * Each waits for the person, as `hero_ui_message` and the file dialogs do. */
+ * Each answers through the queue, as `hero_ui_message` and the file dialogs
+ * do (DIALOGS ANSWERED THROUGH THE QUEUE, below). */
 
 /* The most buttons a message box of the program's words holds. */
 #define HERO_UI_ASK_BUTTONS_MOST 16
 
 /* Shows the system's dialog to choose a folder, or several where `multiple`
- * is 1, over window `window` (0 for none), titled `title`, and waits for
- * the person. Answers the bytes the chosen paths take, each followed by one
- * zero byte, which `hero_ui_dialog_paths` then writes; 0 where the person
- * cancelled; -1 on failure. */
-int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple, const void *title, uint64_t title_count);
+ * is 1, over window `window`, titled `title`, and answers at once, 0, or
+ * -1. The person's choice comes later as `HERO_UI_EVENT_DIALOG` naming
+ * `dialog`, as a file dialog's does. */
+int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t multiple, const void *title, uint64_t title_count);
 
-/* Shows a message box over window `window` (0 for none) of `tone`, with
- * `title` and `text`, whose buttons are `buttons`, each label one line of
- * UTF-8 followed by one zero byte, `buttons_count` bytes in all, 1 to
+/* Shows a message box over window `window` of `tone`, with `title` and
+ * `text`, whose buttons are `buttons`, each label one line of UTF-8
+ * followed by one zero byte, `buttons_count` bytes in all, 1 to
  * `HERO_UI_ASK_BUTTONS_MOST` of them, in the order the person reads them:
  * the first is pressed by Return, and the one at index `cancel` by Escape
- * (-1 for none). Waits for the person and answers the index of the button
- * pressed, or -1. */
-int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
+ * (-1 for none). Answers at once, 0, or -1; the button pressed comes later
+ * as `HERO_UI_EVENT_DIALOG` naming `dialog`, its `value` the button's
+ * index. */
+int64_t hero_ui_ask(hero_ui_app *app, int64_t dialog, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
 
 /* -- CHECK AND RADIO MENU ITEMS ----------------------------------------------
  *
@@ -1015,5 +1015,100 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
  * does; a shortcut of its items is shown and takes no key. Destroying it
  * takes it from the widget. */
 #define HERO_UI_CONTEXT_MENU 30
+
+/* -- DIALOGS ANSWERED THROUGH THE QUEUE --------------------------------------
+ *
+ * A message box, a box of the program's words, a file dialog and a folder
+ * dialog answer their call at once and the person later, through the queue,
+ * as GTK 4's `GtkAlertDialog` and `GtkFileDialog` and a macOS sheet do:
+ * while the person thinks, the program's timers fire and its other windows
+ * answer. A dialog is known by the number the program gives it, `dialog`,
+ * 1 or more and not one of a dialog still shown (`HERO_UI_NOT_FOUND`), as a
+ * widget is. It stands over window `window` of the app: on macOS it is a
+ * sheet of that window, and the dialogs shown over one window come one
+ * after the other, as the system shows them. Its answer is the event below,
+ * queued once; destroying the window it stands over, or closing the app,
+ * closes it unanswered, and no event comes for it. */
+
+/* A dialog was answered: `id` is its number; `value` the button pressed,
+ * `HERO_UI_ANSWER_*` for `hero_ui_message`, the index for `hero_ui_ask`, or,
+ * for a file or folder dialog, how many paths the person chose, 0 where
+ * they cancelled, the text holding them each followed by one zero byte,
+ * read by `hero_ui_event_text`. */
+#define HERO_UI_EVENT_DIALOG 17
+
+/* -- AN ICON IN THE TRAY, AND AN APP OUT OF THE DOCK -------------------------
+ *
+ * wxWidgets' `wxTaskBarIcon`, Tauri's tray: an icon the system shows in its
+ * tray, at the right of the menu bar on macOS, with a menu the person opens
+ * by clicking it, and a utility that lives there alone. A widget of kind
+ * `HERO_UI_TRAY` stands in no window, its parent 0, as a window's; one app
+ * may show several. `hero_ui_set_image` gives its icon, pixels as an
+ * image's, drawn at the menu bar's height on macOS; `hero_ui_set_text` its
+ * words, shown where it has no icon and as its tip. Its menu is a context
+ * menu whose parent is the tray (A CONTEXT MENU), each item's choosing
+ * queuing `HERO_UI_EVENT_MENU`. Destroying it takes it from the tray. */
+#define HERO_UI_TRAY 31
+
+/* Shows the app in the Dock and with a menu bar of its own, `on` 1, as it
+ * opens, or keeps it out of both, 0, its tray icons and its windows staying:
+ * a utility of the tray alone (macOS's accessory application). 0, or -1. */
+int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on);
+
+/* -- A NOTIFICATION ----------------------------------------------------------
+ *
+ * wxWidgets' `wxNotificationMessage`, Electron's `Notification`: a title and
+ * its words the system shows in its own place, beside every application's,
+ * and keeps in its list. */
+
+/* Shows a notification of `title`, one line, not empty, and `text`. 0, or
+ * -1: `UNSUPPORTED` where the system shows none for this program, on macOS a
+ * program outside an application bundle. The system may hold it back where
+ * the person has not allowed this program's notifications, and tells the
+ * program nothing then. */
+int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count);
+
+/* -- THE DARK OR LIGHT APPEARANCE --------------------------------------------
+ *
+ * wxWidgets' `wxSystemAppearance::IsDark` and its change: the appearance the
+ * system draws the app's windows in, which the person turns in the system's
+ * settings, and which a drawing, a web view's page or a tray icon follows. */
+#define HERO_UI_APPEARANCE_LIGHT 1
+#define HERO_UI_APPEARANCE_DARK 2
+
+/* The app's appearance turned: `value` the new one, `HERO_UI_APPEARANCE_*`;
+ * `id` 0. Queued once each time it turns, a second turn before the first is
+ * taken replacing it. `hero_ui_inject` with this kind draws the app in
+ * appearance `value`, as the system's turn would, or in the system's own
+ * again where `value` is 0, `id` 0. */
+#define HERO_UI_EVENT_APPEARANCE 18
+
+/* Writes the appearance the app's windows are drawn in now through
+ * `appearance`. 0, or -1. */
+int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance);
+
+/* -- ACCESSIBLE NAMES --------------------------------------------------------
+ *
+ * Qt's `QWidget::setAccessibleName` and `QLabel::setBuddy`, ARIA's
+ * `aria-label` and `aria-labelledby`: the name a screen reader says for a
+ * widget that shows no words of its own (a picture, a slider, a button of
+ * an image) or whose words do not say what it is, and a label tied to the
+ * field it names, so the field is read by the label's words. */
+
+/* Gives widget `id` the accessible name `name`, `count` bytes of one line;
+ * none, `count` 0, takes it back, the widget then named by its own words.
+ * 0, or -1. */
+int64_t hero_ui_set_accessible_name(hero_ui_app *app, int64_t id, const void *name, uint64_t count);
+
+/* Writes the accessible name widget `id` holds, as the system holds it,
+ * into `buffer` and answers its length, 0 for none; where it is longer than
+ * `count`, nothing is written and the length is answered all the same. -1
+ * on failure. */
+int64_t hero_ui_accessible_name(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
+
+/* Ties label `label` to widget `id`, which a screen reader then names by
+ * the label's words; `label` 0 unties it. 0, or -1, `INVALID` where `label`
+ * is no label. */
+int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label);
 
 #endif

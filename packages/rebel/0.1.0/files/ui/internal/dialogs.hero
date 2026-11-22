@@ -1,72 +1,457 @@
-# Message boxes and file dialogs. Each waits for the person, so an answer
-# or a choice the program injected (`ui.inject`) is taken first, in the
-# order injected, and no dialog is shown: that is how a headless app, whose
-# person is the program, gets one, and how a test of a native app goes past
-# one. Where none was injected, a native app shows the system's own dialog;
-# a headless app fails `closed`, since no person will ever answer.
+# Message boxes, boxes of the program's words, file dialogs and folder
+# dialogs (`hero_ui.h`'s DIALOGS ANSWERED THROUGH THE QUEUE). Each call
+# answers at once with the dialog it shows, and the person answers later:
+# `ui.wait` gives `.dialog_answered` or `.files_chosen` naming it, while the
+# program's timers fire and its other windows answer, as GTK 4's dialogs and
+# a macOS sheet answer.
+#
+# An answer or a choice the program injected (`ui.inject`) answers the
+# oldest dialog shown that takes it; where none is shown it waits, and the
+# next such dialog takes it at once and shows nothing. That is how a
+# headless app, whose person is the program, gets its answers, and how a
+# test of a native app goes past a dialog. A dialog the system shows takes
+# an injected answer through the system's own path, as from its person; one
+# shown on the headless side waits until an answer is injected. Destroying
+# the window a dialog stands over ends it unanswered.
 
 use bytes
+use time
 use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/loop
+use ui/internal/native
 
-# The button the person pressed in a message box (`ui.message`).
-function message(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: ui.Buttons) -> ui.Answer?
+# A dialog shown and not yet answered.
+record Shown
+    # The dialog.
+    dialog: ui.Dialog
+    # The number of the window it stands over.
+    over: i64
+    # Its title, which a refusal names.
+    title: str
+    # The answers it takes: a message box's buttons, or `.button` for each
+    # of a box of the program's words' buttons; none for a file or a folder
+    # dialog, which takes a choice.
+    offered: [ui.Answer]
+    # Whether it is a box of the program's words, answered by an index.
+    asking: bool
+    # The index of the button Escape presses in a box of the program's
+    # words, which an injected `.cancel` presses; -1 for none.
+    cancel: i64
+    # Whether a file or a folder dialog takes several paths.
+    several: bool
+    # Whether the system shows it, so an injected answer goes through it.
+    native: bool
+
+# The message box `ui.message` shows.
+function message(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: ui.Buttons) -> ui.Dialog?
     w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
     check.text_ok(text: title, one_line: true, what: "the title")?
     check.text_ok(text: text, one_line: false, what: "the text")?
-    offered = offered_by(buttons)
+    s = Shown(
+        dialog: next_dialog(app),
+        over: w.id,
+        title: title,
+        offered: offered_by(buttons),
+        asking: false,
+        cancel: -1,
+        several: false,
+        native: app.native
+    )
 
     if app.answers.len() > 0
-        answer = app.answers[0]
-        app.answers @ app.answers.slice(from: 1, to: app.answers.len())
+        return answered_at_once(@app, s: s)
 
-        for o in offered
-            if o == answer
-                return ok(answer)
+    if app.native
+        loop.settle(@app)?
+        title_bytes @= bytes.from_text(title)
+        text_bytes @= bytes.from_text(text)
 
+        buttons_code = match buttons
+            .ok            => hero_ui.HERO_UI_BUTTONS_OK
+            .ok_cancel     => hero_ui.HERO_UI_BUTTONS_OK_CANCEL
+            .yes_no        => hero_ui.HERO_UI_BUTTONS_YES_NO
+            .yes_no_cancel => hero_ui.HERO_UI_BUTTONS_YES_NO_CANCEL
+
+        shown_now = hero_ui.message(
+            app.handle,
+            dialog: s.dialog.id,
+            window: w.id,
+            tone: tone_code(tone),
+            buttons: buttons_code,
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must(),
+            text: @text_bytes,
+            text_count: to_u64(text_bytes.len()).must()
+        )
+
+        if shown_now < 0
+            return failure.last(f"showing the message box \"{title}\"")
+    return ok(kept(@app, s: s))
+
+# The box of the program's words `ui.ask` shows.
+function ask(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: [str], cancel: i64) -> ui.Dialog?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: text, one_line: false, what: "the text")?
+
+    if buttons.len() < 1 || buttons.len() > hero_ui.HERO_UI_ASK_BUTTONS_MOST
         return fail(
             code: failure.INVALID,
-            msg: f"the answer injected, {answer_name(answer)}, is no button of the message box \"{title}\""
+            msg: f"a message box of {buttons.len()} buttons; it holds 1 to {hero_ui.HERO_UI_ASK_BUTTONS_MOST}"
         )
 
-    if !app.native
+    for i in range(from: 0, to: buttons.len())
+        if buttons[i].len() == 0
+            return fail(code: failure.INVALID, msg: f"button {i}'s label is empty, and a person reads none")
+
+    check.items_ok(buttons)?
+
+    if cancel < -1 || cancel >= buttons.len()
         return fail(
-            code: failure.CLOSED,
-            msg: f"no answer was injected for the message box \"{title}\", and a headless app has no person to answer it"
+            code: failure.INVALID,
+            msg: f"the cancel button {cancel} is neither -1 nor one of the {buttons.len()} buttons"
         )
-    loop.settle(@app)?
-    title_bytes @= bytes.from_text(title)
-    text_bytes @= bytes.from_text(text)
+    offered: [ui.Answer] @= []
 
-    tone_code = match tone
+    for i in range(from: 0, to: buttons.len())
+        offered @ offered.push(.button(index: i))
+
+    s = Shown(
+        dialog: next_dialog(app),
+        over: w.id,
+        title: title,
+        offered: offered,
+        asking: true,
+        cancel: cancel,
+        several: false,
+        native: app.native
+    )
+
+    if app.answers.len() > 0
+        return answered_at_once(@app, s: s)
+
+    if app.native
+        loop.settle(@app)?
+        title_bytes @= bytes.from_text(title)
+        text_bytes @= bytes.from_text(text)
+        labels: [u8] @= []
+
+        for label in buttons
+            bytes.push_text(@labels, s: label)
+            labels @ labels.push(0)
+
+        shown_now = hero_ui.ask(
+            app.handle,
+            dialog: s.dialog.id,
+            window: w.id,
+            tone: tone_code(tone),
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must(),
+            text: @text_bytes,
+            text_count: to_u64(text_bytes.len()).must(),
+            buttons: @labels,
+            buttons_count: to_u64(labels.len()).must(),
+            cancel: cancel
+        )
+
+        if shown_now < 0
+            return failure.last(f"showing the message box \"{title}\"")
+    return ok(kept(@app, s: s))
+
+# The file dialog `ui.open_files` or `ui.save_file` shows.
+function files(@app: ui.App, over: ui.Widget, title: str, name: str, filters: [ui.Filter], save: bool, multiple: bool) -> ui.Dialog?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: name, one_line: true, what: "the name")?
+    spelled = filters_of(filters)?
+    s = Shown(
+        dialog: next_dialog(app),
+        over: w.id,
+        title: title,
+        offered: [],
+        asking: false,
+        cancel: -1,
+        several: multiple && !save,
+        native: app.native
+    )
+
+    if app.choices.len() > 0
+        return chosen_at_once(@app, s: s)
+
+    if app.native
+        loop.settle(@app)?
+        title_bytes @= bytes.from_text(title)
+        name_bytes @= bytes.from_text(name)
+        filter_bytes @= spelled
+        shown_now = hero_ui.file_dialog(
+            app.handle,
+            dialog: s.dialog.id,
+            window: w.id,
+            save: check.number_of(save),
+            multiple: check.number_of(s.several),
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must(),
+            name: @name_bytes,
+            name_count: to_u64(name_bytes.len()).must(),
+            filters: @filter_bytes,
+            filters_count: to_u64(filter_bytes.len()).must()
+        )
+
+        if shown_now < 0
+            return failure.last(f"showing the file dialog \"{title}\"")
+    return ok(kept(@app, s: s))
+
+# The folder dialog `ui.open_folders` shows.
+function folders(@app: ui.App, over: ui.Widget, title: str, multiple: bool) -> ui.Dialog?
+    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    s = Shown(
+        dialog: next_dialog(app),
+        over: w.id,
+        title: title,
+        offered: [],
+        asking: false,
+        cancel: -1,
+        several: multiple,
+        native: app.native
+    )
+
+    if app.choices.len() > 0
+        return chosen_at_once(@app, s: s)
+
+    if app.native
+        loop.settle(@app)?
+        title_bytes @= bytes.from_text(title)
+        shown_now = hero_ui.folder_dialog(
+            app.handle,
+            dialog: s.dialog.id,
+            window: w.id,
+            multiple: check.number_of(multiple),
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must()
+        )
+
+        if shown_now < 0
+            return failure.last(f"showing the folder dialog \"{title}\"")
+    return ok(kept(@app, s: s))
+
+# Gives `answer`, injected (`ui.inject`), to the oldest dialog shown that
+# takes an answer, through the system where the system shows it, or keeps
+# it for the next such dialog. Fails `invalid` where it is no button of
+# that dialog, `unsupported` or `failed` where the system refused it.
+function answered_by(@app: ui.App, answer: ui.Answer) -> ()?
+    at = oldest(app, answers: true)
+
+    if at < 0
+        app.answers @ app.answers.push(answer)
+        return ok()
+    s = app.shown[at]
+    resolved = resolve(s, answer: answer)?
+
+    if s.native
+        nothing: [u8] @= []
+        given = hero_ui.inject(
+            app.handle,
+            kind: hero_ui.HERO_UI_EVENT_DIALOG,
+            id: s.dialog.id,
+            value: code_of(resolved),
+            second: 0,
+            @nothing,
+            count: 0
+        )
+
+        if given < 0
+            return failure.last(f"answering the message box \"{s.title}\"")
+        return ok()
+    app.shown @ without(app.shown, at: at)
+    app.events @ app.events.push(.dialog_answered(dialog: s.dialog, answer: resolved))
+    return ok()
+
+# Gives `choice`, injected (`ui.inject`), to the oldest file or folder
+# dialog shown, through the system where the system shows it, or keeps it
+# for the next such dialog. Fails `invalid` where it holds several paths
+# for a dialog that takes one, `unsupported` or `failed` where the system
+# refused it.
+function chosen_by(@app: ui.App, choice: ui.Choice) -> ()?
+    at = oldest(app, answers: false)
+
+    if at < 0
+        app.choices @ app.choices.push(choice)
+        return ok()
+    s = app.shown[at]
+    fitting(s, choice: choice)?
+
+    if s.native
+        joined: [u8] @= []
+        count @= 0
+
+        match choice
+            .cancelled => _ = 0
+            .chosen c =>
+                for path in c.paths
+                    bytes.push_text(@joined, s: path)
+                    joined @ joined.push(0)
+
+                count @ c.paths.len()
+
+        given = hero_ui.inject(
+            app.handle,
+            kind: hero_ui.HERO_UI_EVENT_DIALOG,
+            id: s.dialog.id,
+            value: count,
+            second: 0,
+            @joined,
+            count: to_u64(joined.len()).must()
+        )
+
+        if given < 0
+            return failure.last(f"choosing in the dialog \"{s.title}\"")
+        return ok()
+    app.shown @ without(app.shown, at: at)
+    app.events @ app.events.push(.files_chosen(dialog: s.dialog, choice: choice))
+    return ok()
+
+# The event the system queued for dialog `id`, `value` its button or how
+# many paths the person chose, the paths read from the event's text; none
+# where no dialog of that number is shown, its window destroyed since.
+function read(@app: ui.App, id: i64, value: i64) -> [ui.Event]?
+    for at in range(from: 0, to: app.shown.len())
+        s = app.shown[at]
+
+        if s.dialog.id == id
+            app.shown @ without(app.shown, at: at)
+
+            if s.offered.len() > 0
+                pressed: ui.Answer = if s.asking
+                    .button(index: value)
+                else
+                    answer_of(value)
+
+                return ok([.dialog_answered(dialog: s.dialog, answer: pressed)])
+
+            if value == 0
+                return ok([.files_chosen(dialog: s.dialog, choice: .cancelled)])
+            paths = split_zeros(bytes.from_text(native.event_text(app)?))?
+            return ok([.files_chosen(dialog: s.dialog, choice: .chosen(paths: paths))])
+
+    none: [ui.Event] = []
+    return ok(none)
+
+# Ends unanswered every dialog shown over a window of `ids`, which are going:
+# the native side ends its sheet itself as the window goes.
+function closed_with(@app: ui.App, ids: [i64])
+    kept_now: [Shown] @= []
+
+    for s in app.shown
+        going @= false
+
+        for id in ids
+            if id == s.over
+                going @ true
+
+        if !going
+            kept_now @ kept_now.push(s)
+
+    app.shown @ kept_now
+
+# The dialog `app` shows next, numbered after the last it showed.
+function next_dialog(app: ui.App) -> ui.Dialog
+    return ui.Dialog(app: app.number, id: app.dialogs_made + 1)
+
+# `s` kept as shown, its number taken; answers its dialog.
+function kept(@app: ui.App, s: Shown) -> ui.Dialog
+    app.dialogs_made @ s.dialog.id
+    app.shown @ app.shown.push(s)
+    return s.dialog
+
+# `s` answered at once by the oldest answer injected, which it takes.
+function answered_at_once(@app: ui.App, s: Shown) -> ui.Dialog?
+    answer = app.answers[0]
+    app.answers @ app.answers.slice(from: 1, to: app.answers.len())
+    resolved = resolve(s, answer: answer)?
+    app.dialogs_made @ s.dialog.id
+    app.events @ app.events.push(.dialog_answered(dialog: s.dialog, answer: resolved))
+    return ok(s.dialog)
+
+# `s` answered at once by the oldest choice injected, which it takes.
+function chosen_at_once(@app: ui.App, s: Shown) -> ui.Dialog?
+    choice = app.choices[0]
+    app.choices @ app.choices.slice(from: 1, to: app.choices.len())
+    fitting(s, choice: choice)?
+    app.dialogs_made @ s.dialog.id
+    app.events @ app.events.push(.files_chosen(dialog: s.dialog, choice: choice))
+    return ok(s.dialog)
+
+# The index in `app.shown` of the oldest dialog that takes an answer, where
+# `answers`, or a choice, else; -1 for none.
+function oldest(app: ui.App, answers: bool) -> i64
+    for at in range(from: 0, to: app.shown.len())
+        if app.shown[at].offered.len() > 0 == answers
+            return at
+
+    return -1
+
+# `shown` without its entry at `at`.
+function without(shown: [Shown], at: i64) -> [Shown]
+    out: [Shown] @= []
+
+    for i in range(from: 0, to: shown.len())
+        if i != at
+            out @ out.push(shown[i])
+
+    return out
+
+# The button of `s` that `answer` presses: one it offers, or, for `.cancel`
+# in a box of the program's words, the button Escape presses. Fails
+# `invalid` for one it does not offer.
+function resolve(s: Shown, answer: ui.Answer) -> ui.Answer?
+    for o in s.offered
+        if o == answer
+            return ok(answer)
+
+    escaped = match answer
+        .cancel                      => s.asking && s.cancel >= 0
+        .ok | .yes | .no | .button _ => false
+
+    if escaped
+        return ok(.button(index: s.cancel))
+    return fail(
+        code: failure.INVALID,
+        msg: f"the answer injected, {answer_name(answer)}, is no button of the message box \"{s.title}\""
+    )
+
+# Whether `choice` fits file or folder dialog `s`: one path, or several
+# where it takes several. Fails `invalid` otherwise.
+function fitting(s: Shown, choice: ui.Choice) -> ()?
+    match choice
+        .cancelled => return ok()
+        .chosen c =>
+            if c.paths.len() > 1 && !s.several
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"{c.paths.len()} paths were injected for the dialog \"{s.title}\", which takes one"
+                )
+            return ok()
+
+# The layer's number for `answer`: `HERO_UI_ANSWER_*`, or a button's index.
+function code_of(answer: ui.Answer) -> i64
+    return match answer
+        .ok       => hero_ui.HERO_UI_ANSWER_OK
+        .cancel   => hero_ui.HERO_UI_ANSWER_CANCEL
+        .yes      => hero_ui.HERO_UI_ANSWER_YES
+        .no       => hero_ui.HERO_UI_ANSWER_NO
+        .button b => b.index
+
+# The layer's number for `tone`.
+function tone_code(tone: ui.Tone) -> i64
+    return match tone
         .info    => hero_ui.HERO_UI_TONE_INFO
         .warning => hero_ui.HERO_UI_TONE_WARNING
         .error   => hero_ui.HERO_UI_TONE_ERROR
-
-    buttons_code = match buttons
-        .ok            => hero_ui.HERO_UI_BUTTONS_OK
-        .ok_cancel     => hero_ui.HERO_UI_BUTTONS_OK_CANCEL
-        .yes_no        => hero_ui.HERO_UI_BUTTONS_YES_NO
-        .yes_no_cancel => hero_ui.HERO_UI_BUTTONS_YES_NO_CANCEL
-
-    pressed = hero_ui.message(
-        app.handle,
-        window: w.id,
-        tone: tone_code,
-        buttons: buttons_code,
-        title: @title_bytes,
-        title_count: to_u64(title_bytes.len()).must(),
-        text: @text_bytes,
-        text_count: to_u64(text_bytes.len()).must()
-    )
-
-    if pressed < 0
-        return failure.last(f"showing the message box \"{title}\"")
-    return ok(answer_of(pressed))
 
 # The buttons `buttons` offers, as answers.
 function offered_by(buttons: ui.Buttons) -> [ui.Answer]
@@ -76,8 +461,7 @@ function offered_by(buttons: ui.Buttons) -> [ui.Answer]
         .yes_no        => [.yes, .no]
         .yes_no_cancel => [.yes, .no, .cancel]
 
-# The answer the layer's `pressed` names; an unknown number is Cancel, as a
-# box closed by Escape is.
+# The answer the layer's `pressed` names; an unknown number is Cancel.
 function answer_of(pressed: i64) -> ui.Answer
     if pressed == hero_ui.HERO_UI_ANSWER_OK
         return .ok
@@ -97,60 +481,6 @@ function answer_name(answer: ui.Answer) -> str
         .yes      => "Yes"
         .no       => "No"
         .button b => f"button {b.index}"
-
-# What the person did in a file dialog (`ui.open_files`, `ui.save_file`).
-function files(@app: ui.App, over: ui.Widget, title: str, name: str, filters: [ui.Filter], save: bool, multiple: bool) -> ui.Choice?
-    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
-    check.text_ok(text: title, one_line: true, what: "the title")?
-    check.text_ok(text: name, one_line: true, what: "the name")?
-    spelled = filters_of(filters)?
-
-    if app.choices.len() > 0
-        choice = app.choices[0]
-        app.choices @ app.choices.slice(from: 1, to: app.choices.len())
-
-        match choice
-            .cancelled => return ok(choice)
-            .chosen c =>
-                if c.paths.len() > 1 && (save || !multiple)
-                    return fail(
-                        code: failure.INVALID,
-                        msg: f"{c.paths.len()} paths were injected for the dialog \"{title}\", which takes one"
-                    )
-                return ok(choice)
-
-    if !app.native
-        return fail(
-            code: failure.CLOSED,
-            msg: f"no choice was injected for the file dialog \"{title}\", and a headless app has no person to choose"
-        )
-    loop.settle(@app)?
-    title_bytes @= bytes.from_text(title)
-    name_bytes @= bytes.from_text(name)
-    filter_bytes @= spelled
-    got = hero_ui.file_dialog(
-        app.handle,
-        window: w.id,
-        save: check.number_of(save),
-        multiple: check.number_of(multiple),
-        title: @title_bytes,
-        title_count: to_u64(title_bytes.len()).must(),
-        name: @name_bytes,
-        name_count: to_u64(name_bytes.len()).must(),
-        filters: @filter_bytes,
-        filters_count: to_u64(filter_bytes.len()).must()
-    )
-
-    if got < 0
-        return failure.last(f"showing the file dialog \"{title}\"")
-
-    if got == 0
-        return ok(.cancelled)
-    buffer: [u8] @= []
-
-    if hero_ui.dialog_paths(app.handle, @buffer, count: to_u64(got).must()) != got
-        return failure.last(f"reading the paths of the file dialog \"{title}\"")
-    return ok(.chosen(paths: split_zeros(buffer.slice(from: 0, to: got))?))
 
 # `filters` spelled as the layer takes them: each name, then its extensions
 # joined by `;`, each followed by a zero byte. Fails `invalid` where a name
@@ -191,162 +521,73 @@ function split_zeros(joined: [u8]) -> [str]?
 
     return ok(out)
 
-# The folders the person chose (`ui.open_folders`).
-function folders(@app: ui.App, over: ui.Widget, title: str, multiple: bool) -> ui.Choice?
-    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
-    check.text_ok(text: title, one_line: true, what: "the title")?
-
-    if app.choices.len() > 0
-        choice = app.choices[0]
-        app.choices @ app.choices.slice(from: 1, to: app.choices.len())
-
-        match choice
-            .cancelled => return ok(choice)
-            .chosen c =>
-                if c.paths.len() > 1 && !multiple
-                    return fail(
-                        code: failure.INVALID,
-                        msg: f"{c.paths.len()} paths were injected for the dialog \"{title}\", which takes one"
-                    )
-                return ok(choice)
-
-    if !app.native
-        return fail(
-            code: failure.CLOSED,
-            msg: f"no choice was injected for the folder dialog \"{title}\", and a headless app has no person to choose"
-        )
-    loop.settle(@app)?
-    title_bytes @= bytes.from_text(title)
-    got = hero_ui.folder_dialog(
-        app.handle,
-        window: w.id,
-        multiple: check.number_of(multiple),
-        title: @title_bytes,
-        title_count: to_u64(title_bytes.len()).must()
-    )
-
-    if got < 0
-        return failure.last(f"showing the folder dialog \"{title}\"")
-
-    if got == 0
-        return ok(.cancelled)
-    buffer: [u8] @= []
-
-    if hero_ui.dialog_paths(app.handle, @buffer, count: to_u64(got).must()) != got
-        return failure.last(f"reading the paths of the folder dialog \"{title}\"")
-    return ok(.chosen(paths: split_zeros(buffer.slice(from: 0, to: got))?))
-
-# The index of the button the person pressed in a message box of the
-# program's words (`ui.ask`): an injected `.button(index:)`, or `.cancel`
-# for the button Escape presses, is taken first.
-function ask(@app: ui.App, over: ui.Widget, title: str, text: str, tone: ui.Tone, buttons: [str], cancel: i64) -> i64?
-    w = check.node_kind(app, widget: over, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
-    check.text_ok(text: title, one_line: true, what: "the title")?
-    check.text_ok(text: text, one_line: false, what: "the text")?
-
-    if buttons.len() < 1 || buttons.len() > hero_ui.HERO_UI_ASK_BUTTONS_MOST
-        return fail(
-            code: failure.INVALID,
-            msg: f"a message box of {buttons.len()} buttons; it holds 1 to {hero_ui.HERO_UI_ASK_BUTTONS_MOST}"
-        )
-
-    for i in range(from: 0, to: buttons.len())
-        if buttons[i].len() == 0
-            return fail(code: failure.INVALID, msg: f"button {i}'s label is empty, and a person reads none")
-
-    check.items_ok(buttons)?
-
-    if cancel < -1 || cancel >= buttons.len()
-        return fail(
-            code: failure.INVALID,
-            msg: f"the cancel button {cancel} is neither -1 nor one of the {buttons.len()} buttons"
-        )
-
-    if app.answers.len() > 0
-        answer = app.answers[0]
-        app.answers @ app.answers.slice(from: 1, to: app.answers.len())
-
-        match answer
-            .button b =>
-                if b.index >= 0 && b.index < buttons.len()
-                    return ok(b.index)
-            .cancel =>
-                if cancel >= 0
-                    return ok(cancel)
-            .ok | .yes | .no => _ = 0
-
-        return fail(
-            code: failure.INVALID,
-            msg: f"the answer injected, {answer_name(answer)}, is no button of the message box \"{title}\""
-        )
-
-    if !app.native
-        return fail(
-            code: failure.CLOSED,
-            msg: f"no answer was injected for the message box \"{title}\", and a headless app has no person to answer it"
-        )
-    loop.settle(@app)?
-    title_bytes @= bytes.from_text(title)
-    text_bytes @= bytes.from_text(text)
-    labels: [u8] @= []
-
-    for label in buttons
-        bytes.push_text(@labels, s: label)
-        labels @ labels.push(0)
-
-    tone_code = match tone
-        .info    => hero_ui.HERO_UI_TONE_INFO
-        .warning => hero_ui.HERO_UI_TONE_WARNING
-        .error   => hero_ui.HERO_UI_TONE_ERROR
-
-    pressed = hero_ui.ask(
-        app.handle,
-        window: w.id,
-        tone: tone_code,
-        title: @title_bytes,
-        title_count: to_u64(title_bytes.len()).must(),
-        text: @text_bytes,
-        text_count: to_u64(text_bytes.len()).must(),
-        buttons: @labels,
-        buttons_count: to_u64(labels.len()).must(),
-        cancel: cancel
-    )
-
-    if pressed < 0
-        return failure.last(f"showing the message box \"{title}\"")
-    return ok(pressed)
-
 ## Tests
-
-test "filters_of: none, two filters, and an extension written with its dot"
-    assert filters_of([]).must().len() == 0
-    spelled = filters_of(
-        [ui.Filter(name: "Images", extensions: ["png", "jpg"]), ui.Filter(name: "All", extensions: [])]
-    ).must()
-    assert split_zeros(spelled).must() == ["Images", "png;jpg", "All", ""]
-    assert filters_of([ui.Filter(name: "Images", extensions: [".png"])]).is_err()
-
-test "split_zeros: none, one, and two paths"
-    assert split_zeros([]).must().len() == 0
-    assert split_zeros([97, 0]).must() == ["a"]
-    assert split_zeros([97, 0, 98, 99, 0]).must() == ["a", "bc"]
 
 test "offered_by and answer_of: every set of buttons, and an unknown number taken as Cancel"
     assert offered_by(.yes_no_cancel) == [.yes, .no, .cancel]
     assert answer_of(hero_ui.HERO_UI_ANSWER_YES) == .yes
     assert answer_of(99) == .cancel
     assert answer_name(.no) == "No"
+    assert code_of(.button(index: 3)) == 3
+    assert code_of(.no) == hero_ui.HERO_UI_ANSWER_NO
 
-test "ask: an injected button and Cancel taken, the box's edges, and what is no button refused (catalogue DG02)"
+test "message: an answer injected first answers the box at once, through the queue, and one injected while it is shown answers it then (catalogue DG04)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.inject(@app, input: .answer(answer: .yes)).must()
+    first = ui.message(
+        @app,
+        over: w,
+        title: "Save?",
+        text: "Save the changes?",
+        tone: .warning,
+        buttons: .yes_no
+    ).must()
+    second = ui.message(@app, over: w, title: "Quit?", text: "", tone: .info, buttons: .ok_cancel).must()
+    assert first != second && first.id == 1 && second.id == 2
+    assert app.shown.len() == 1
+    ui.inject(@app, input: .answer(answer: .cancel)).must()
+    assert app.shown.len() == 0
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: first, answer: .yes)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: second, answer: .cancel)
+    ui.close(@app).must()
+
+test "message: an answer that is no button of the box refused, injected before it or while it is shown, and the box kept shown"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ui.inject(@app, input: .answer(answer: .ok)).must()
+    assert fixture.code_of(ui.message(@app, over: w, title: "Go?", text: "", tone: .info, buttons: .yes_no)) == ui.INVALID
+    box = ui.message(@app, over: w, title: "Go?", text: "", tone: .info, buttons: .yes_no).must()
+    assert fixture.code_of(ui.inject(@app, input: .answer(answer: .button(index: 0)))) == ui.INVALID
+    ui.inject(@app, input: .answer(answer: .no)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: box, answer: .no)
+    ui.close(@app).must()
+
+test "message: a box shown on the headless side with no answer leaves the wait to end as the inputs do, and goes unanswered with its window"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    _ = ui.message(@app, over: w, title: "Go?", text: "", tone: .info, buttons: .ok).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
+    ui.inject(@app, input: .answer(answer: .ok)).must()
+    assert app.answers == [.ok]
+    assert fixture.code_of(ui.message(@app, over: w, title: "Go?", text: "", tone: .info, buttons: .ok)) == ui.CLOSED
+    ui.close(@app).must()
+
+test "ask: an injected button and Cancel taken, the box's edges, and what is no button refused (catalogue DG02, DG04)"
     app @= fixture.test_app()
     w = fixture.window_of(app)
     words = ["Save", "Don't Save", "Cancel"]
     ui.inject(@app, input: .answer(answer: .button(index: 0))).must()
     ui.inject(@app, input: .answer(answer: .button(index: 2))).must()
     ui.inject(@app, input: .answer(answer: .cancel)).must()
-    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 0
-    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 2
-    assert ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must() == 2
+    a = ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must()
+    b = ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must()
+    c = ui.ask(@app, over: w, title: "Save?", text: "", tone: .warning, buttons: words, cancel: 2).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: a, answer: .button(index: 0))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: b, answer: .button(index: 2))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: c, answer: .button(index: 2))
     ui.inject(@app, input: .answer(answer: .cancel)).must()
     assert fixture.code_of(ui.ask(@app, over: w, title: "Go?", text: "", tone: .info, buttons: ["Go"], cancel: -1)) == ui.INVALID
     ui.inject(@app, input: .answer(answer: .button(index: 3))).must()
@@ -364,22 +605,110 @@ test "ask: an injected button and Cancel taken, the box's edges, and what is no 
     for i in range(from: 0, to: 16)
         sixteen @ sixteen.push(f"Button {i}")
 
+    many = ui.ask(@app, over: w, title: "Many", text: "", tone: .info, buttons: sixteen, cancel: -1).must()
     ui.inject(@app, input: .answer(answer: .button(index: 15))).must()
-    assert ui.ask(@app, over: w, title: "Many", text: "", tone: .info, buttons: sixteen, cancel: -1).must() == 15
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .dialog_answered(dialog: many, answer: .button(index: 15))
     assert fixture.code_of(ui.ask(@app, over: w, title: "Many", text: "", tone: .info, buttons: sixteen.push("one more"), cancel: -1)) == ui.INVALID
-    assert fixture.code_of(ui.ask(@app, over: w, title: "Save?", text: "", tone: .info, buttons: words, cancel: 2)) == ui.CLOSED
     ui.close(@app).must()
 
-test "open_folders: one chosen, several where several are asked, cancelled, several where one is asked refused, none injected closed (catalogue DG07)"
+test "open_folders and open_files: a choice injected first or while shown, several where several are asked, cancelled, several where one is asked refused (catalogue DG04, DG07)"
     app @= fixture.test_app()
     w = fixture.window_of(app)
     ui.inject(@app, input: .pick_files(paths: ["/a"])).must()
     ui.inject(@app, input: .pick_files(paths: ["/a", "/b c"])).must()
     ui.inject(@app, input: .cancel_files).must()
     ui.inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
-    assert ui.open_folders(@app, over: w, title: "Folder", multiple: false).must() == .chosen(paths: ["/a"])
-    assert ui.open_folders(@app, over: w, title: "Folders", multiple: true).must() == .chosen(paths: ["/a", "/b c"])
-    assert ui.open_folders(@app, over: w, title: "Folder", multiple: false).must() == .cancelled
+    one = ui.open_folders(@app, over: w, title: "Folder", multiple: false).must()
+    several = ui.open_folders(@app, over: w, title: "Folders", multiple: true).must()
+    cancelled = ui.open_folders(@app, over: w, title: "Folder", multiple: false).must()
     assert fixture.code_of(ui.open_folders(@app, over: w, title: "Folder", multiple: false)) == ui.INVALID
-    assert fixture.code_of(ui.open_folders(@app, over: w, title: "Folder", multiple: false)) == ui.CLOSED
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: one, choice: .chosen(paths: ["/a"]))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: several, choice: .chosen(paths: ["/a", "/b c"]))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: cancelled, choice: .cancelled)
+    saved = ui.save_file(@app, over: w, title: "Save", name: "notes.txt", filters: []).must()
+    opened = ui.open_files(@app, over: w, title: "Open", filters: [], multiple: false).must()
+    assert fixture.code_of(ui.inject(@app, input: .pick_files(paths: ["/a", "/b"]))) == ui.INVALID
+    ui.inject(@app, input: .pick_files(paths: ["/tmp/notes.txt"])).must()
+    ui.inject(@app, input: .cancel_files).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: saved, choice: .chosen(paths: ["/tmp/notes.txt"]))
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_chosen(dialog: opened, choice: .cancelled)
+    ui.close(@app).must()
+
+# The words a native app's arm refuses a dialog's answer with where its
+# dialogs wait for the person within the call that shows them, so that a
+# case cannot show one with no person there; "" where they answer through
+# the queue, as on macOS.
+function dialogs_wait(app: ui.App) -> str
+    nothing: [u8] @= []
+
+    if hero_ui.inject(app.handle, kind: hero_ui.HERO_UI_EVENT_DIALOG, id: 1, value: 0, second: 0, @nothing, count: 0) < 0 && hero_ui.last_error() == hero_ui.HERO_UI_UNSUPPORTED
+        return failure.words()
+    return ""
+
+# The next dialog's answer a native app's wait gives, its other events
+# passed over, within about five seconds; a failure where none comes.
+function next_answer(@app: ui.App) -> ui.Event?
+    for _ in range(from: 0, to: 50)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .dialog_answered _ | .files_chosen _ => return ok(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .appearance_changed _ =>
+                        _ = 0
+            .err e =>
+                if e.code != ui.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+
+    return fail(code: ui.TIMEOUT, msg: "no dialog was answered in five seconds")
+
+test "message, ask, save_file, open_files, open_folders: on the native side each a sheet of its window answered through the queue, an answer injected pressing its button as the person's click would, a dialog cancelled and a choice in a panel unsupported, two dialogs over one window answered in turn, and a box ended unanswered with its window (catalogue DG04)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    refusal = dialogs_wait(app)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    w = ui.window(@app, title: "Dialogs", width: 400, height: 300).must()
+    first = ui.message(
+        @app,
+        over: w,
+        title: "Save?",
+        text: "Save the changes?",
+        tone: .warning,
+        buttons: .yes_no_cancel
+    ).must()
+    ui.inject(@app, input: .answer(answer: .no)).must()
+    assert next_answer(@app).must() == .dialog_answered(dialog: first, answer: .no)
+    words = ["Save", "Don't Save", "Cancel"]
+    asked = ui.ask(@app, over: w, title: "Close?", text: "", tone: .warning, buttons: words, cancel: 2).must()
+    behind = ui.message(@app, over: w, title: "Then?", text: "", tone: .info, buttons: .ok).must()
+    ui.inject(@app, input: .answer(answer: .cancel)).must()
+    assert next_answer(@app).must() == .dialog_answered(dialog: asked, answer: .button(index: 2))
+    ui.inject(@app, input: .answer(answer: .ok)).must()
+    assert next_answer(@app).must() == .dialog_answered(dialog: behind, answer: .ok)
+    saved = ui.save_file(
+        @app,
+        over: w,
+        title: "Export",
+        name: "board.json",
+        filters: [ui.Filter(name: "JSON", extensions: ["json"])]
+    ).must()
+    picked = ui.inject(@app, input: .pick_files(paths: ["/Users/Shared/board.json"]))
+    assert fixture.unsupported_words(picked) != ""
+    ui.inject(@app, input: .cancel_files).must()
+    assert next_answer(@app).must() == .files_chosen(dialog: saved, choice: .cancelled)
+    opened = ui.open_files(@app, over: w, title: "Import", filters: [], multiple: false).must()
+    folder = ui.open_folders(@app, over: w, title: "Into", multiple: true).must()
+    ui.inject(@app, input: .cancel_files).must()
+    assert next_answer(@app).must() == .files_chosen(dialog: opened, choice: .cancelled)
+    ui.inject(@app, input: .cancel_files).must()
+    assert next_answer(@app).must() == .files_chosen(dialog: folder, choice: .cancelled)
+    _ = ui.message(@app, over: w, title: "Gone?", text: "", tone: .info, buttons: .ok).must()
+    ui.destroy(@app, widget: w).must()
+    assert app.shown.len() == 0
+    assert fixture.code_of(next_answer(@app)) == ui.TIMEOUT
     ui.close(@app).must()

@@ -20,8 +20,9 @@
  * Each answers a kind of `hero_ui.h`, `HERO_UI_OK` where done, and is called
  * on the main thread alone, with the arguments `hero_ui.c` has checked
  * (THE ARM there says which and what each means); `words` answers the bytes
- * of the last failure's words it wrote, and `dialog_paths` the bytes of the
- * last file dialog's paths, writing them where they fit. `open` takes, beside
+ * of the last failure's words it wrote, and `wake` ends the wait of the
+ * system's loop `pump` runs once another member has queued an event, which
+ * that loop would not see. `open` takes, beside
  * `push`, the three functions a web view asks and the bridge's script, as
  * `hero_ui_web.h`'s `hero_ui_web_host` names them, each a parameter of its
  * own since Swift reads no C structure here.
@@ -85,10 +86,6 @@ int64_t hero_ui_appkit_tree_remove(int64_t id, int64_t item);
 
 int64_t hero_ui_appkit_tree_unfold(int64_t id, int64_t item, int64_t on);
 
-int64_t hero_ui_appkit_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes);
-
-int64_t hero_ui_appkit_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed);
-
 int64_t hero_ui_appkit_create(int64_t id, int64_t kind, int64_t parent);
 
 int64_t hero_ui_appkit_destroy(int64_t id);
@@ -125,11 +122,15 @@ int64_t hero_ui_appkit_pump(int64_t ms);
 
 int64_t hero_ui_appkit_inject(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *bytes, int64_t count);
 
-int64_t hero_ui_appkit_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *bytes, int64_t count, int64_t *answer);
+void hero_ui_appkit_wake(void);
 
-int64_t hero_ui_appkit_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes);
+int64_t hero_ui_appkit_set_docked(int64_t on);
 
-int64_t hero_ui_appkit_dialog_paths(uint8_t *buffer, int64_t count);
+int64_t hero_ui_appkit_set_accessible_name(int64_t id, const uint8_t *name, int64_t count);
+
+int64_t hero_ui_appkit_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+
+int64_t hero_ui_appkit_set_label_for(int64_t id, int64_t label);
 
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 

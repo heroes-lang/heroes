@@ -72,7 +72,8 @@ function checked(app: ui.App, input: ui.Input) -> ()?
 
             for i in range(from: 0, to: p.paths.len())
                 check.text_ok(text: p.paths[i], one_line: false, what: f"path {i}")?
-        .cancel_files => _ = 0
+        .cancel_files        => _ = 0
+        .change_appearance _ => _ = 0
         .send s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
             check.text_ok(text: s.text, one_line: false, what: "the text sent")?
@@ -128,6 +129,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .sort s                                   => s.widget.id
         .unfold u                                 => u.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
+        .change_appearance _                      => 0
 
     if id == 0
         return true
@@ -245,6 +247,10 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
                     model.put(@app.table, n: n)
                     told @ told.push(.selection_changed(widget: a.widget, indices: n.chosen))
                 return told.push(.activated(widget: a.widget, index: a.index))
+        .change_appearance c =>
+            if c.appearance != app.appearance
+                app.appearance @ c.appearance
+                return [.appearance_changed(appearance: c.appearance)]
         .answer _ | .pick_files _ | .cancel_files =>
             _ = 0
 

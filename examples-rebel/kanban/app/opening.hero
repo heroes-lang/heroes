@@ -47,4 +47,4 @@ function made(app: ui.App, db: sqlite.Db, web: str, dates: clock.Clock, names: i
     webview.navigate(@held, view: view, path: "/")?
     s @= store.over(db, dates: dates, names: names)?
     finder.rebuild(@s)?
-    return ok(desk.Desk(app: held, window: window, view: view, store: s, report: report))
+    return ok(desk.Desk(app: held, window: window, view: view, store: s, report: report, waiting: []))

@@ -62,6 +62,13 @@
 #define HERO_UI_FLAG_RESIZABLE 3
 #define HERO_UI_SIZE_CONTENT 1
 #define HERO_UI_SIZE_LEAST 2
+/* Which of a window's settings `window_set` makes, `value` checked by the
+ * entry point. */
+#define HERO_UI_WINDOW_SET_ON_TOP 1
+#define HERO_UI_WINDOW_SET_FRAMED 2
+#define HERO_UI_WINDOW_SET_OPACITY 3
+#define HERO_UI_WINDOW_SET_BACKDROP 4
+#define HERO_UI_WINDOW_SET_MODAL 5
 
 /* The arm's functions, in the order `hero_ui.c` first defines them on macOS. */
 int64_t hero_ui_arm_here(void);
@@ -87,9 +94,6 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value);
 int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64_t *chosen);
 int64_t hero_ui_arm_pump(int64_t ms);
 int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
-int64_t hero_ui_arm_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, int64_t *answer);
-int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes);
-int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count);
 int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count);
 int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count);
 int64_t hero_ui_arm_windows_words(char *words, int64_t count);
@@ -111,8 +115,6 @@ int64_t hero_ui_arm_set_role(int64_t id, int64_t role);
 int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key);
 int64_t hero_ui_arm_set_focus(int64_t id);
 int64_t hero_ui_arm_focus(int64_t id, int64_t *focus);
-int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes);
-int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed);
 int64_t hero_ui_arm_set_check(int64_t id, int64_t mode);
 int64_t hero_ui_arm_set_masked(int64_t id, int64_t on);
 int64_t hero_ui_arm_set_moving(int64_t id, int64_t on);
@@ -125,6 +127,67 @@ int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending);
 int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable);
 int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item);
 int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on);
+
+/* DIALOGS ANSWERED THROUGH THE QUEUE (`hero_ui.h`). Each `show_*` shows
+ * dialog `dialog` over window `window` and answers at once; the person's
+ * answer is queued later by `hero_ui_push`, `HERO_UI_EVENT_DIALOG` naming
+ * `dialog`, with the value and the paths `hero_ui.h` says. `answer_dialog`
+ * does to a dialog shown what its person does, its answer then queued as
+ * theirs; `dialogs_end` ends unanswered every dialog over window `window`,
+ * or every one where `window` is 0, before the window or the app goes; and
+ * `dialogs_words` gives the words of the last `HERO_UI_OTHER` or
+ * `HERO_UI_UNSUPPORTED` they answered. `hero_ui.c` defines them on macOS,
+ * by `hero_ui_appkit_dialogs.swift`'s sheets, and for the Win32 and GTK 4
+ * arms by THE WAITING FORM below, until an arm defines its own. */
+int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count);
+int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel);
+int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count);
+int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count);
+int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count);
+void hero_ui_arm_dialogs_end(int64_t window);
+int64_t hero_ui_arm_dialogs_words(char *words, int64_t count);
+
+/* THE TRAY (`hero_ui.h`): a tray icon is a kind `hero_ui_arm_makes` and
+ * `create` answer, its words and its image `set_text`'s and `set_image`'s;
+ * `set_docked` keeps the app in the Dock or out of it. `hero_ui.c` defines
+ * `set_docked` on macOS, and for the Win32 and GTK 4 arms as a refusal in
+ * CALLS NO C ARM DRAWS YET until an arm defines its own. */
+int64_t hero_ui_arm_set_docked(int64_t on);
+
+/* A NOTIFICATION (`hero_ui.h`), and the words of the last refusal of a
+ * call on the system around the program. `hero_ui.c` defines `notify` on
+ * macOS by `hero_ui_appkit_system.swift`, and for the Win32 and GTK 4 arms
+ * as a refusal in CALLS NO C ARM DRAWS YET until an arm defines its own;
+ * `system_words` is the shared words on those two arms. */
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count);
+int64_t hero_ui_arm_system_words(char *words, int64_t count);
+
+/* THE DARK OR LIGHT APPEARANCE (`hero_ui.h`): asked, and turned as the
+ * system would turn it for `hero_ui_inject`; on macOS the arm watches it
+ * from `open` to `close`, queuing `HERO_UI_EVENT_APPEARANCE`. Refusals for
+ * the Win32 and GTK 4 arms in `hero_ui.c`'s CALLS NO C ARM DRAWS YET. */
+int64_t hero_ui_arm_appearance(int64_t *appearance);
+int64_t hero_ui_arm_appearance_set(int64_t appearance);
+
+/* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
+ * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
+ * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits
+ * and its length through `length`, as `text` does. */
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count);
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label);
+
+/* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
+ * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
+ * person has answered, writing the answer through its last parameter (the
+ * button, `HERO_UI_ANSWER_*`, or the index; the bytes of the paths chosen,
+ * each followed by one zero byte, 0 where the person cancelled, which
+ * `dialog_paths` then writes). macOS defines none of them. */
+int64_t hero_ui_arm_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, int64_t *answer);
+int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes);
+int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count);
+int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes);
+int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed);
 
 /* -- WHAT THE WIN32 AND GTK ARMS SHARE ----------------------------------------
  *

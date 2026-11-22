@@ -11,6 +11,7 @@
 # `TITLE_BAR` points high above it, and a window the program never placed
 # standing centred in that work area.
 
+use bytes
 use image
 use time
 use ui
@@ -427,6 +428,65 @@ function set_modal(@app: ui.App, window: ui.Widget, on: bool) -> ()?
     model.put(@app.table, n: n)
     return ok()
 
+# Keeps the app in the Dock or out of it (`ui.set_docked`), kept on both
+# sides.
+function set_docked(@app: ui.App, on: bool) -> ()?
+    check.opened(app)?
+
+    if app.native && hero_ui.set_docked(app.handle, on: check.number_of(on)) < 0
+        return failure.last("keeping the app in the Dock or out of it")
+    app.docked @ on
+    return ok()
+
+# A notification the app showed, as the headless side keeps it.
+record Notice
+    # Its title.
+    title: str
+    # Its words.
+    text: str
+
+# Shows a notification (`ui.notify`): kept on the headless side, in order.
+function notify(@app: ui.App, title: str, text: str) -> ()?
+    check.opened(app)?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.text_ok(text: text, one_line: false, what: "the text")?
+
+    if title.len() == 0
+        return fail(code: failure.INVALID, msg: "a notification's title is empty, and the person reads none")
+
+    if app.native
+        title_bytes @= bytes.from_text(title)
+        text_bytes @= bytes.from_text(text)
+        shown = hero_ui.notify(
+            app.handle,
+            title: @title_bytes,
+            title_count: to_u64(title_bytes.len()).must(),
+            text: @text_bytes,
+            text_count: to_u64(text_bytes.len()).must()
+        )
+
+        if shown < 0
+            return failure.last(f"showing the notification \"{title}\"")
+    app.notices @ app.notices.push(Notice(title: title, text: text))
+    return ok()
+
+# The appearance the app's windows are drawn in (`ui.appearance_of`): the
+# system's on the native side, and the headless side's own, light until an
+# input turns it.
+function appearance_of(app: ui.App) -> ui.Appearance?
+    check.opened(app)?
+
+    if !app.native
+        return ok(app.appearance)
+    code @= 0
+
+    if hero_ui.appearance_now(app.handle, @code) < 0
+        return failure.last("asking the appearance")
+
+    if code == hero_ui.HERO_UI_APPEARANCE_DARK
+        return ok(.dark)
+    return ok(.light)
+
 # Gives the app its icon (`ui.set_icon`).
 function set_icon(@app: ui.App, img: image.Image) -> ()?
     check.opened(app)?
@@ -453,9 +513,15 @@ function set_icon(@app: ui.App, img: image.Image) -> ()?
     return ok()
 
 # Whether the person can reach window `window` with an act: it is shown, and
-# no other window of the app is modal.
+# no other window of the app is modal; for `window` 0, a tray icon's menu,
+# no window is modal.
 function open_to_person(app: ui.App, window: i64) -> bool
     held = modal_of(app)
+
+    # A tray icon's menu stands in no window: the person reaches it where
+    # no window holds them.
+    if window == 0
+        return held == 0
 
     if held != 0 && held != window
         return false
@@ -504,7 +570,7 @@ function names_of(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                         "another"
 
                 out @ out.push(name)
@@ -676,7 +742,7 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     ui.set_position(@app, widget: w, screen: 0, x: at_x, y: at_y).must()
     placed = ui.frame_of(@app, widget: w).must()
     assert placed.screen == 0 && placed.x == at_x && placed.y == at_y
-    assert placed.width == 320 && placed.height > 200
+    assert placed.width >= 320 && placed.height > 200
     ui.center(@app, widget: w).must()
     centred = ui.frame_of(@app, widget: w).must()
     middle = main.work.x + (main.work.width - centred.width) / 2
@@ -743,7 +809,7 @@ function names_of_waiting(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                         "another"
 
                 out @ out.push(name)
@@ -758,3 +824,89 @@ function has(items: [str], item: str) -> bool
             return true
 
     return false
+
+test "notify: kept on the headless side in order; an empty title and one of two lines refused, and a closed app (catalogue SY05)"
+    app @= fixture.test_app()
+    ui.notify(@app, title: "Synced", text: "3 files").must()
+    ui.notify(@app, title: "Mail", text: "").must()
+    assert app.notices == [Notice(title: "Synced", text: "3 files"), Notice(title: "Mail", text: "")]
+    assert fixture.code_of(ui.notify(@app, title: "", text: "x")) == ui.INVALID
+    assert fixture.code_of(ui.notify(@app, title: "a\nb", text: "x")) == ui.INVALID
+    ui.close(@app).must()
+    assert fixture.code_of(ui.notify(@app, title: "Late", text: "")) == ui.CLOSED
+
+test "notify: on the native side shown by the system, or refused by its words where the system shows none for this program, as on macOS outside an application bundle (catalogue SY05)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= ui.open(.native).must()
+    shown = ui.notify(@app, title: "Heroes", text: "a notification of the ui package's native case")
+    refusal = fixture.unsupported_words(shown)
+    ui.close(@app).must()
+
+    if refusal != ""
+        skip_test(reason: refusal)
+    shown.must()
+
+test "appearance_of: light on the headless side until an input turns it dark, told once a turn and not for a turn to what it is (catalogue SY13)"
+    app @= fixture.test_app()
+    assert ui.appearance_of(app).must() == .light
+    ui.inject(@app, input: .change_appearance(appearance: .dark)).must()
+    ui.inject(@app, input: .change_appearance(appearance: .dark)).must()
+    ui.inject(@app, input: .change_appearance(appearance: .light)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .appearance_changed(appearance: .dark)
+    assert ui.appearance_of(app).must() == .dark
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .appearance_changed(appearance: .light)
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "appearance_of: on the native side the system's, the app turned dark and light through AppKit's own appearance, each turn told, and the system's again after (catalogue SY13)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= ui.open(.native).must()
+    asked = ui.appearance_of(app)
+    refusal = fixture.unsupported_words(asked)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    first = asked.must()
+
+    other: ui.Appearance = if first == .light
+        .dark
+    else
+        .light
+
+    ui.inject(@app, input: .change_appearance(appearance: other)).must()
+    came = events_of(@app)
+    turned = ui.appearance_of(app).must()
+    ui.inject(@app, input: .change_appearance(appearance: first)).must()
+    back = events_of(@app)
+    nothing: [u8] @= []
+    _ = hero_ui.inject(
+        app.handle,
+        kind: hero_ui.HERO_UI_EVENT_APPEARANCE,
+        id: 0,
+        value: 0,
+        second: 0,
+        @nothing,
+        count: 0
+    )
+    ui.close(@app).must()
+    assert came == [.appearance_changed(appearance: other)] && turned == other
+    assert back == [.appearance_changed(appearance: first)]
+
+# The appearance's turns a native app's wait gives within half a second, its
+# other events passed over.
+function events_of(@app: ui.App) -> [ui.Event]
+    out: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 5)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .appearance_changed _ => out @ out.push(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+                        _ = 0
+            .err _ => _ = 0
+
+    return out

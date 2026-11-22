@@ -280,6 +280,18 @@ jobs:
       - name: generators/i18n_numbers, CLDR 49's number table of i18n/numbers
         run: ./heroes run generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
+      - name: generators/i18n_dates, CLDR 49's calendar table of i18n/dates
+        run: ./heroes run generators/i18n_dates/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      # `generators/cldrkit/cldrkit.hero`'s `COMMON_URL`; `generators/cldrkit`
+      # holds the zip to its `COMMON_SHA256`.
+      - name: generators/i18n_collate, CLDR 49's root collation and tailorings of i18n/collate
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/cldr-common-49.zip \
+            https://unicode.org/Public/cldr/49/cldr-common-49.zip
+          ./heroes run generators/i18n_collate/main.hero -- check build/generators/cldr-common-49.zip
+
       # The five files of `generators/unicode_tables/main.hero`'s `UCD_URL`;
       # the generator holds each to its SHA-256.
       - name: generators/unicode_tables, Unicode 17.0.0's category, property, case and fold tables of unicode
@@ -382,7 +394,7 @@ jobs:
 
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
-      # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
+      # which reads CLDR's two zips, and `generators/ucdkit/`, which reads the
       # Unicode Character Database's files. A generator's own tests are left
       # to whoever changes it: `heroes test` runs every test its program
       # reaches, Rebel's packages' among them (1,875 tests and three minutes
