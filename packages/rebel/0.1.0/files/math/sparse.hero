@@ -7,8 +7,8 @@
 #
 # It does not hold the fixed sizes of geometry, vectors and matrices of two,
 # three and four, which are `math/linear`'s, nor vectors of `f32` compared
-# and searched, which are `vectors`'; and it does not solve a system or
-# decompose a matrix, a capability no package of Rebel offers yet.
+# and searched, which are `vectors`'; a dense matrix of any size, solved and
+# decomposed, is `math/matrix`'s, and no package solves a sparse system.
 #
 # Said once for every function: a vector is a `[f64]`; a matrix acts on it
 # from the left, `m * v`; every result is a new value.

@@ -1,0 +1,11 @@
+# Reaches Rebel's `math/matrix`, so that `heroes test` on this file runs the
+# tests of the package's modules (spec § 12). It prints the solution of
+# Strang's system of three equations.
+
+use <rebel>/math/matrix
+
+function main()
+    a = matrix.from_rows([[2.0, 1.0, 1.0], [4.0, -6.0, 0.0], [-2.0, 7.0, 2.0]]).must()
+
+    for x in matrix.solve(a, b: [5.0, -2.0, 9.0]).must()
+        print(x)

@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and fifty-two packages, in layers. **A package may use any package of a layer below
+A hundred and fifty-three packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -103,6 +103,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `json/patch` | JSON Patch (RFC 6902) and JSON Merge Patch (RFC 7386) made and applied | `json`, `strings` |  |
 | 3 | `json/path` | JSONPath queries (RFC 9535) | `json`, `numbers`, `regex`, `strings`, `unicode` |  |
 | 3 | `json/jq` | the jq language run over a `json.Value`, so over YAML, TOML, CBOR and MessagePack read into one | `bytes`, `json`, `math`, `numbers`, `regex`, `strings`, `unicode` |  |
+| 3 | `math/matrix` | dense matrices of any size: of floats multiplied, solved, inverted and decomposed (LU, QR, Cholesky, a symmetric matrix's eigenvalues, singular values, least squares); of fractions eliminated exactly | `big`, `math` |  |
 | 3 | `serial` | serial ports listed, opened, set and read and written as a stream | `io` | `hero_serial.h` |
 | 3 | `i18n/numbers` | numbers written and read as a language writes them: separators, percentages, money with its currency, compact forms | `bytes`, `i18n`, `strings`, `unicode` |  |
 | 3 | `i18n/collate` | texts ordered as a language orders them, by the Unicode Collation Algorithm over CLDR's root and tailorings | `bytes`, `i18n`, `strings`, `unicode`, `unicode/normalize` |  |

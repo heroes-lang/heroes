@@ -243,7 +243,7 @@ capability matrix/sizes  a matrix of another size than its own: the upper left 3
   note    the casts between widths are not offered: `f64` alone
 
 capability matrix/any-size  linear algebra of any size: a matrix of n columns, systems solved, decompositions, the pseudo-inverse
-  heroes  refused: outside this package, which holds the fixed sizes of geometry; a matrix of any size held sparse, its product with a vector and the power iterations of a steady state are `math/sparse`'s, and a solver of systems or a decomposition no package of Rebel offers yet
+  heroes  refused: outside this package, which holds the fixed sizes of geometry; a dense matrix of any size, its solvers and its decompositions are `math/matrix`'s, and one held sparse, with the power iterations of a steady state, is `math/sparse`'s
   go      -
   rust    -
   python  -

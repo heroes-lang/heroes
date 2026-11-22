@@ -1,0 +1,1185 @@
+# Dense matrices of any size: of `f64`, multiplied, solved, inverted and
+# decomposed by the published algorithms of floating point (LU with partial
+# pivoting, Householder QR, Cholesky, the Jacobi methods for a symmetric
+# matrix's eigenvalues and for singular values, least squares by QR); and of
+# `big`'s fractions, eliminated exactly by Gauss-Jordan (solve, inverse,
+# determinant, rank, reduced row echelon form), so a result a program must
+# trust to the last digit carries no rounding at all.
+#
+# It does not hold the fixed sizes of geometry, vectors and matrices of two,
+# three and four with their transforms, which are `math/linear`'s, nor a
+# matrix mostly of zeros, which `math/sparse` holds in compressed rows; and
+# it does not compute a general matrix's eigenvalues, its pseudo-inverse or
+# its full singular value decomposition, which the ledger says.
+#
+# Said once for every function: a vector is a column and a matrix acts on it
+# from the left, `a * x`; a matrix is held row by row; every result is a new
+# value. The checks of floating point are exact where an algorithm needs an
+# exact answer (a pivot of zero) and say their tolerance where it does not.
+#
+# It fails with `invalid` where a shape is not what a function takes (rows
+# of different lengths, a matrix not square, two shapes that do not fit), a
+# matrix is singular, not symmetric or not positive definite where the
+# function needs it so, or a float has no fraction (a nan, an infinity); the
+# message names which.
+#
+# Not written yet, each a `pending` block of its ledger: the least-squares
+# solution of a system whose columns are not independent, of least length.
+
+use big
+use math
+use math/matrix/internal/exact
+use math/matrix/internal/factor
+use math/matrix/internal/shapes
+
+## Codes
+
+# The code of a shape a function does not take, a singular matrix, one not
+# symmetric or not positive definite where that is needed, and a float with
+# no fraction: every function here that can fail.
+constant INVALID: str
+    "invalid"
+
+## Matrices of floats
+
+# A matrix of `rows` rows and `columns` columns of `f64`, held row by row.
+# Made by `from_rows`, `zeros`, `identity` and the functions here that answer
+# one; built by hand, `values` must hold `rows` times `columns` values, or a
+# function reading it aborts at the first place outside.
+record Matrix
+    # The count of rows, 0 or more.
+    rows: i64
+    # The count of columns, 0 or more.
+    columns: i64
+    # The entries row by row: row `r`, column `c` at `r * columns + c`.
+    values: [f64]
+
+# The matrix whose rows are `rows`.
+#
+# - `rows`: the rows, each of as many values; empty, the matrix of no rows
+#   and no columns.
+#
+# Fails `invalid` where two rows differ in length, naming the first. See
+# also `rows_of`.
+function from_rows(rows: [[f64]]) -> Matrix?
+    if rows.len() == 0
+        return ok(Matrix(rows: 0, columns: 0, values: []))
+    width = rows[0].len()
+    values: [f64] @= []
+
+    for r in range(from: 0, to: rows.len())
+        if rows[r].len() != width
+            return fail(code: INVALID, msg: f"row {r} holds {rows[r].len()} values, where row 0 holds {width}")
+
+        for x in rows[r]
+            values @ values.push(x)
+
+    return ok(Matrix(rows: rows.len(), columns: width, values: values))
+
+# The matrix of `rows` rows and `columns` columns of zeros.
+#
+# - `rows`: the rows, 0 or more.
+# - `columns`: the columns, 0 or more.
+#
+# Fails `invalid` where either is below 0. See also `identity`.
+function zeros(rows: i64, columns: i64) -> Matrix?
+    if rows < 0 || columns < 0
+        return fail(code: INVALID, msg: f"a matrix of {rows} rows and {columns} columns, where each is 0 or more")
+    values: [f64] @= []
+
+    for _ in range(from: 0, to: rows * columns)
+        values @ values.push(0.0)
+
+    return ok(Matrix(rows: rows, columns: columns, values: values))
+
+# The identity matrix of `n` rows and columns.
+#
+# - `n`: the size; 0 or below gives the matrix of no rows.
+function identity(n: i64) -> Matrix
+    size = if n < 0
+        0
+    else
+        n
+    values: [f64] @= []
+
+    for r in range(from: 0, to: size)
+        for c in range(from: 0, to: size)
+            one = if r == c
+                1.0
+            else
+                0.0
+            values @ values.push(one)
+
+    return Matrix(rows: size, columns: size, values: values)
+
+# The entry of `m` at `row` and `column`.
+#
+# - `m`: the matrix.
+# - `row`: the row, 0 to `m.rows` - 1.
+# - `column`: the column, 0 to `m.columns` - 1.
+#
+# Aborts where the place is outside `m`, a position the program holds.
+function value_at(m: Matrix, row: i64, column: i64) -> f64
+    assert row >= 0 && row < m.rows && column >= 0 && column < m.columns
+    return m.values[row * m.columns + column]
+
+# The rows of `m`, each a list of its values.
+#
+# - `m`: the matrix.
+#
+# See also `from_rows`.
+function rows_of(m: Matrix) -> [[f64]]
+    out: [[f64]] @= []
+
+    for r in range(from: 0, to: m.rows)
+        out @ out.push(m.values.slice(from: r * m.columns, to: (r + 1) * m.columns))
+
+    return out
+
+# `m` transposed: its rows made columns.
+#
+# - `m`: the matrix.
+function transpose(m: Matrix) -> Matrix
+    values: [f64] @= []
+
+    for c in range(from: 0, to: m.columns)
+        for r in range(from: 0, to: m.rows)
+            values @ values.push(m.values[r * m.columns + c])
+
+    return Matrix(rows: m.columns, columns: m.rows, values: values)
+
+# `a + b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: another of the same shape.
+#
+# Fails `invalid` where the shapes differ. See also `subtract`.
+function add(a: Matrix, b: Matrix) -> Matrix?
+    shapes.same_shape(a: a, b: b, what: "adding")?
+    values: [f64] @= []
+
+    for k in range(from: 0, to: a.values.len())
+        values @ values.push(a.values[k] + b.values[k])
+
+    return ok(Matrix(rows: a.rows, columns: a.columns, values: values))
+
+# `a - b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: another of the same shape.
+#
+# Fails `invalid` where the shapes differ. See also `add`.
+function subtract(a: Matrix, b: Matrix) -> Matrix?
+    shapes.same_shape(a: a, b: b, what: "subtracting")?
+    values: [f64] @= []
+
+    for k in range(from: 0, to: a.values.len())
+        values @ values.push(a.values[k] - b.values[k])
+
+    return ok(Matrix(rows: a.rows, columns: a.columns, values: values))
+
+# `m` with every entry multiplied by `by`.
+#
+# - `m`: the matrix.
+# - `by`: the factor.
+function scale(m: Matrix, by: f64) -> Matrix
+    values: [f64] @= []
+
+    for x in m.values
+        values @ values.push(x * by)
+
+    return Matrix(rows: m.rows, columns: m.columns, values: values)
+
+# The product `a * b`.
+#
+# - `a`: a matrix of n columns.
+# - `b`: a matrix of n rows.
+#
+# Fails `invalid` where `a`'s columns are not `b`'s rows. It costs `a.rows`
+# times `a.columns` times `b.columns` products. See also `multiply_vector`.
+function multiply(a: Matrix, b: Matrix) -> Matrix?
+    if a.columns != b.rows
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.columns} columns times one of {b.rows} rows, where the two must be as many"
+        )
+    values: [f64] @= []
+
+    for r in range(from: 0, to: a.rows)
+        for c in range(from: 0, to: b.columns)
+            sum: f64 @= 0.0
+
+            for k in range(from: 0, to: a.columns)
+                sum @ sum + a.values[r * a.columns + k] * b.values[k * b.columns + c]
+
+            values @ values.push(sum)
+
+    return ok(Matrix(rows: a.rows, columns: b.columns, values: values))
+
+# The product `m * v`, a vector of `m.rows` values.
+#
+# - `m`: the matrix.
+# - `v`: a vector of `m.columns` values.
+#
+# Fails `invalid` where `v` is of another length. See also `multiply`.
+function multiply_vector(m: Matrix, v: [f64]) -> [f64]?
+    if v.len() != m.columns
+        return fail(
+            code: INVALID,
+            msg: f"a vector of {v.len()} values, where a matrix of {m.columns} columns takes as many"
+        )
+    out: [f64] @= []
+
+    for r in range(from: 0, to: m.rows)
+        sum: f64 @= 0.0
+
+        for k in range(from: 0, to: m.columns)
+            sum @ sum + m.values[r * m.columns + k] * v[k]
+
+        out @ out.push(sum)
+
+    return ok(out)
+
+# The sum of the diagonal of `m`.
+#
+# - `m`: a square matrix.
+#
+# Fails `invalid` where `m` is not square.
+function trace(m: Matrix) -> f64?
+    shapes.squared(m, what: "a trace")?
+    sum: f64 @= 0.0
+
+    for k in range(from: 0, to: m.rows)
+        sum @ sum + m.values[k * m.columns + k]
+
+    return ok(sum)
+
+# The Frobenius norm of `m`: the square root of the sum of the squares of its
+# entries, computed over them divided by the largest so no square passes an
+# `f64`'s range where the norm does not.
+#
+# - `m`: the matrix; one of no entries has norm 0.
+function norm_frobenius(m: Matrix) -> f64
+    return factor.norm2(m.values)
+
+## Solving
+
+# The solution `x` of `a * x = b`, by LU with partial pivoting.
+#
+# - `a`: a square matrix that is not singular.
+# - `b`: the right-hand side, `a.rows` values.
+#
+# Fails `invalid` where `a` is not square or holds a nan or an infinity,
+# `b` is of another length, or a column of `a` holds no pivot but zeros on
+# the way (LAPACK's `dgesv`
+# refuses the same, and numpy's `solve` after it); a matrix nearly singular
+# gives an answer whose error `condition_number` bounds. See also
+# `solve_exact`, `least_squares`.
+function solve(a: Matrix, b: [f64]) -> [f64]?
+    shapes.squared(a, what: "solving")?
+    shapes.finite(a)?
+
+    if b.len() != a.rows
+        return fail(
+            code: INVALID,
+            msg: f"a right-hand side of {b.len()} values, where a matrix of {a.rows} rows takes as many"
+        )
+    size = shapes.largest_of(a)
+
+    if a.rows == 0
+        return ok([])
+
+    if size == 0.0
+        return fail(
+            code: INVALID,
+            msg: "the matrix is singular: a column holds no pivot, so the system has no single solution"
+        )
+    f = factor.lu(shapes.divided(a.values, by: size), n: a.rows)
+
+    if f.singular
+        return fail(
+            code: INVALID,
+            msg: "the matrix is singular: a column holds no pivot, so the system has no single solution"
+        )
+    return ok(factor.substituted(f, n: a.rows, b: shapes.divided(b, by: size)))
+
+# The inverse of `a`.
+#
+# - `a`: a square matrix that is not singular.
+#
+# Fails `invalid` where `a` is not square, holds a nan or an infinity, or is
+# singular, as `solve` says. See also `inverse_exact`.
+function inverse(a: Matrix) -> Matrix?
+    shapes.squared(a, what: "an inverse")?
+    shapes.finite(a)?
+    n = a.rows
+    size = shapes.largest_of(a)
+
+    if size == 0.0 && n > 0
+        return fail(code: INVALID, msg: "the matrix is singular: a column holds no pivot, so it has no inverse")
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    f = factor.lu(shapes.divided(a.values, by: divisor), n: n)
+
+    if f.singular
+        return fail(code: INVALID, msg: "the matrix is singular: a column holds no pivot, so it has no inverse")
+    values: [f64] @= []
+
+    for _ in range(from: 0, to: n * n)
+        values @ values.push(0.0)
+
+    for c in range(from: 0, to: n)
+        unit: [f64] @= []
+
+        for r in range(from: 0, to: n)
+            one = if r == c
+                1.0
+            else
+                0.0
+            unit @ unit.push(one)
+
+        column = factor.substituted(f, n: n, b: unit)
+
+        for r in range(from: 0, to: n)
+            values[r * n + c] @ column[r] / divisor
+
+    return ok(Matrix(rows: n, columns: n, values: values))
+
+# The determinant of `a`, the product of its LU factor's diagonal with the
+# permutation's sign; 0 where a column holds no pivot.
+#
+# - `a`: a square matrix; the one of no rows has determinant 1.
+#
+# Fails `invalid` where `a` is not square or holds a nan or an infinity.
+# See also `determinant_exact`.
+function determinant(a: Matrix) -> f64?
+    shapes.squared(a, what: "a determinant")?
+    shapes.finite(a)?
+    size = shapes.largest_of(a)
+
+    if size == 0.0
+        return if a.rows == 0
+            ok(1.0)
+        else
+            ok(0.0)
+    f = factor.lu(shapes.divided(a.values, by: size), n: a.rows)
+
+    if f.singular
+        return ok(0.0)
+    product: f64 @= f.sign
+
+    for k in range(from: 0, to: a.rows)
+        product @ product * f.upper[k * a.rows + k] * size
+
+    return ok(product)
+
+## Decompositions
+
+# An LU factorization with partial pivoting: `permuted * a == lower *
+# upper`, where row `k` of `permuted * a` is row `order[k]` of `a`.
+record Lu
+    # The lower triangle, ones on its diagonal, no entry above 1 in size.
+    lower: Matrix
+    # The upper triangle; a zero on its diagonal where `a` is singular.
+    upper: Matrix
+    # The row of `a` each row of `lower * upper` is.
+    order: [i64]
+    # 1.0 or -1.0, the permutation's sign.
+    sign: f64
+
+# The LU factorization of `a` with partial pivoting (Golub and Van Loan,
+# algorithm 3.4.1): at each column the entry of largest size from the
+# diagonal down is brought up.
+#
+# - `a`: a square matrix; a singular one is factored too, its `upper`
+#   holding a zero on its diagonal.
+#
+# Fails `invalid` where `a` is not square or holds a nan or an infinity. See
+# also `solve`.
+function lu(a: Matrix) -> Lu?
+    shapes.squared(a, what: "an LU factorization")?
+    shapes.finite(a)?
+    n = a.rows
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    f = factor.lu(shapes.divided(a.values, by: divisor), n: n)
+    upper = scale(Matrix(rows: n, columns: n, values: f.upper), by: divisor)
+    return ok(Lu(lower: Matrix(rows: n, columns: n, values: f.lower), upper: upper, order: f.order, sign: f.sign))
+
+# A reduced QR factorization: `q * r == a`, `q` with orthonormal columns and
+# `r` upper triangular.
+record Qr
+    # Q, `a.rows` by k, k the smaller of `a.rows` and `a.columns`.
+    q: Matrix
+    # R, k by `a.columns`, upper triangular; its diagonal takes the sign
+    # LAPACK's `dgeqrf` gives it, opposite to each column's first entry.
+    r: Matrix
+
+# The reduced QR factorization of `a` by Householder reflections (Golub and
+# Van Loan, algorithm 5.2.1).
+#
+# - `a`: a matrix of any shape.
+#
+# Fails `invalid` where an entry is a nan or an infinity. See also
+# `least_squares`.
+function qr(a: Matrix) -> Qr?
+    shapes.finite(a)?
+
+    k = if a.rows < a.columns
+        a.rows
+    else
+        a.columns
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    got = factor.qr(shapes.divided(a.values, by: divisor), m: a.rows, n: a.columns)
+    r = scale(Matrix(rows: k, columns: a.columns, values: got.r), by: divisor)
+    return ok(Qr(q: Matrix(rows: a.rows, columns: k, values: got.q), r: r))
+
+# The Cholesky factor of `a`: the lower triangle `l` with a positive
+# diagonal and `l * transpose(l) == a`.
+#
+# - `a`: a symmetric positive definite matrix.
+#
+# Fails `invalid` where `a` is not square, not symmetric (as
+# `eigen_symmetric` reads it), or not positive definite. See also `lu`.
+function cholesky(a: Matrix) -> Matrix?
+    shapes.squared(a, what: "a Cholesky factor")?
+    shapes.symmetric(a)?
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    l = factor.cholesky(shapes.divided(a.values, by: divisor), n: a.rows)
+
+    if l.len() != a.values.len()
+        return fail(
+            code: INVALID,
+            msg: "the matrix is not positive definite: a step of its Cholesky factor found no positive pivot"
+        )
+    return ok(scale(Matrix(rows: a.rows, columns: a.columns, values: l), by: math.sqrt(divisor)))
+
+# The eigenvalues of a symmetric matrix and its eigenvectors.
+record Eigen
+    # The eigenvalues, ascending, as numpy's `eigh` orders them.
+    values: [f64]
+    # The eigenvectors as columns, beside their values: column `j` belongs
+    # to `values[j]`, of length 1, its entry of largest size positive.
+    vectors: Matrix
+
+# The eigenvalues and eigenvectors of the symmetric matrix `a`, by cyclic
+# Jacobi rotations (Golub and Van Loan, algorithm 8.5.3), until the entries
+# off the diagonal are below the machine epsilon times the diagonal's size.
+#
+# - `a`: a symmetric matrix: each entry within 1e-12 of the largest entry's
+#   size of its mirror across the diagonal.
+#
+# Fails `invalid` where `a` is not square or not symmetric, naming the first
+# pair that differs. Each sweep costs n^3; a few sweeps settle it.
+function eigen_symmetric(a: Matrix) -> Eigen?
+    shapes.squared(a, what: "the eigenvalues of a symmetric matrix")?
+    shapes.symmetric(a)?
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    s = factor.jacobi(shapes.divided(a.values, by: divisor), n: a.rows)
+    values: [f64] @= []
+
+    for v in s.values
+        values @ values.push(v * divisor)
+
+    return ok(Eigen(values: values, vectors: Matrix(rows: a.rows, columns: a.rows, values: s.vectors)))
+
+# The `x` that makes `a * x` nearest to `b` in the euclidean norm, by `a`'s
+# QR factorization: `r * x = transpose(q) * b`.
+#
+# - `a`: a matrix of at least as many rows as columns, its columns
+#   independent.
+# - `b`: the observations, `a.rows` values.
+#
+# Fails `invalid` where `a` has fewer rows than columns or holds a nan or an
+# infinity, `b` is of another length, or `a`'s columns are not independent (a diagonal entry of R within
+# the machine epsilon of zero beside R's largest), whose least-squares
+# solution of least length is pending. See also `solve`.
+function least_squares(a: Matrix, b: [f64]) -> [f64]?
+    if a.rows < a.columns
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} rows and {a.columns} columns, where least squares takes at least as many rows"
+        )
+
+    if b.len() != a.rows
+        return fail(code: INVALID, msg: f"{b.len()} observations, where a matrix of {a.rows} rows takes as many")
+    shapes.finite(a)?
+    n = a.columns
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+    got = factor.qr(shapes.divided(a.values, by: divisor), m: a.rows, n: n)
+    scaled_b = shapes.divided(b, by: divisor)
+    largest: f64 @= 0.0
+
+    for k in range(from: 0, to: n)
+        largest @ math.max(a: largest, b: math.abs(got.r[k * n + k]))
+
+    for k in range(from: 0, to: n)
+        if math.abs(got.r[k * n + k]) <= factor.EPSILON * largest * to_f64(a.rows) || largest == 0.0
+            return fail(code: INVALID, msg: f"the columns are not independent: column {k} lies in the others' span")
+
+    qtb: [f64] @= []
+
+    for c in range(from: 0, to: n)
+        sum: f64 @= 0.0
+
+        for r in range(from: 0, to: a.rows)
+            sum @ sum + got.q[r * n + c] * scaled_b[r]
+
+        qtb @ qtb.push(sum)
+
+    x: [f64] @= qtb
+    i: i64 @= n - 1
+
+    while i >= 0
+        sum: f64 @= qtb[i]
+
+        for k in range(from: i + 1, to: n)
+            sum @ sum - got.r[i * n + k] * x[k]
+
+        x[i] @ sum / got.r[i * n + i]
+        i @ i - 1
+
+    return ok(x)
+
+# The singular values of `a`, descending, as many as the smaller of its
+# rows and columns, by Hestenes' one-sided Jacobi rotations.
+#
+# - `a`: a matrix of any shape; one with no entry has none.
+#
+# Fails `invalid` where an entry is a nan or an infinity. See also `rank`,
+# `condition_number`.
+function singular_values(a: Matrix) -> [f64]?
+    shapes.finite(a)?
+
+    size = shapes.largest_of(a)
+
+    divisor = if size == 0.0
+        1.0
+    else
+        size
+
+    t = if a.rows >= a.columns
+        a
+    else
+        transpose(a)
+    values: [f64] @= []
+
+    for v in factor.singular_values(shapes.divided(t.values, by: divisor), m: t.rows, n: t.columns)
+        values @ values.push(v * divisor)
+
+    return ok(values)
+
+# The rank of `a`: its singular values above the largest times the larger of
+# its rows and columns times the machine epsilon, numpy's `matrix_rank`
+# tolerance.
+#
+# - `a`: a matrix of any shape.
+#
+# Fails `invalid` where an entry is a nan or an infinity. See also
+# `rank_exact`, whose answer has no tolerance.
+function rank(a: Matrix) -> i64?
+    values = singular_values(a)?
+
+    if values.len() == 0
+        return ok(0)
+
+    larger = if a.rows > a.columns
+        a.rows
+    else
+        a.columns
+    bound = values[0] * to_f64(larger) * factor.EPSILON
+    count: i64 @= 0
+
+    for s in values
+        if s > bound
+            count @ count + 1
+
+    return ok(count)
+
+# The condition number of `a` in the euclidean norm: its largest singular
+# value over its smallest, an infinity where the smallest is zero.
+#
+# - `a`: a matrix with at least one entry.
+#
+# Fails `invalid` where `a` has no entry, or one is a nan or an infinity. A
+# solution of `a * x = b` may lose about the logarithm of it, in base 10, of
+# its sixteen digits.
+function condition_number(a: Matrix) -> f64?
+    values = singular_values(a)?
+
+    if values.len() == 0
+        return fail(code: INVALID, msg: "a matrix with no entry has no condition number")
+    smallest = values[values.len() - 1]
+
+    if smallest == 0.0
+        return ok(1.0 / 0.0)
+    return ok(values[0] / smallest)
+
+## Exact matrices
+
+# A matrix of `rows` rows and `columns` columns of `big` fractions, held row
+# by row: every result computed on it is exact. Made by `exact_from_rows`,
+# `exact_of` and the functions here that answer one.
+record Exact
+    # The count of rows, 0 or more.
+    rows: i64
+    # The count of columns, 0 or more.
+    columns: i64
+    # The entries row by row: row `r`, column `c` at `r * columns + c`.
+    values: [big.Fraction]
+
+# The exact matrix whose rows are `rows`.
+#
+# - `rows`: the rows, each of as many fractions; empty, the matrix of no
+#   rows.
+#
+# Fails `invalid` where two rows differ in length. See also `exact_of`.
+function exact_from_rows(rows: [[big.Fraction]]) -> Exact?
+    if rows.len() == 0
+        return ok(Exact(rows: 0, columns: 0, values: []))
+    width = rows[0].len()
+    values: [big.Fraction] @= []
+
+    for r in range(from: 0, to: rows.len())
+        if rows[r].len() != width
+            return fail(code: INVALID, msg: f"row {r} holds {rows[r].len()} values, where row 0 holds {width}")
+
+        for x in rows[r]
+            values @ values.push(x)
+
+    return ok(Exact(rows: rows.len(), columns: width, values: values))
+
+# `m` exactly: each float as the fraction it is, `0.1` as
+# 3602879701896397/36028797018963968.
+#
+# - `m`: the matrix of floats.
+#
+# Fails `invalid` where an entry is a nan or an infinity, which no fraction
+# is. See also `float_of_exact`.
+function exact_of(m: Matrix) -> Exact?
+    values: [big.Fraction] @= []
+
+    for k in range(from: 0, to: m.values.len())
+        match big.fraction_of_float(m.values[k])
+            .ok f  => values @ values.push(f)
+            .err _ => return fail(code: INVALID, msg: f"entry {k} is {m.values[k]}, which no fraction is")
+
+    return ok(Exact(rows: m.rows, columns: m.columns, values: values))
+
+# `e` as floats, each fraction rounded to the nearest `f64`.
+#
+# - `e`: the exact matrix.
+function float_of_exact(e: Exact) -> Matrix
+    values: [f64] @= []
+
+    for f in e.values
+        values @ values.push(big.float_of_fraction(f))
+
+    return Matrix(rows: e.rows, columns: e.columns, values: values)
+
+# The exact solution `x` of `a * x = b`, by Gauss-Jordan elimination.
+#
+# - `a`: a square exact matrix that is not singular.
+# - `b`: the right-hand side, `a.rows` fractions.
+#
+# Fails `invalid` where `a` is not square, `b` is of another length, or `a`
+# is singular. The fractions' sizes may grow with n. See also `solve`.
+function solve_exact(a: Exact, b: [big.Fraction]) -> [big.Fraction]?
+    if a.rows != a.columns
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} rows and {a.columns} columns, where solving asks a square one"
+        )
+
+    if b.len() != a.rows
+        return fail(
+            code: INVALID,
+            msg: f"a right-hand side of {b.len()} values, where a matrix of {a.rows} rows takes as many"
+        )
+    n = a.rows
+    joined: [big.Fraction] @= []
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            joined @ joined.push(a.values[r * n + c])
+
+        joined @ joined.push(b[r])
+
+    done = exact.reduced(joined, rows: n, columns: n + 1, limit: n)
+
+    if done.pivots.len() < n
+        return fail(
+            code: INVALID,
+            msg: "the matrix is singular: a column holds no pivot, so the system has no single solution"
+        )
+    x: [big.Fraction] @= []
+
+    for r in range(from: 0, to: n)
+        x @ x.push(done.values[r * (n + 1) + n])
+
+    return ok(x)
+
+# The exact inverse of `a`, by Gauss-Jordan elimination of `a` beside the
+# identity.
+#
+# - `a`: a square exact matrix that is not singular.
+#
+# Fails `invalid` where `a` is not square or is singular. See also
+# `inverse`.
+function inverse_exact(a: Exact) -> Exact?
+    if a.rows != a.columns
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} rows and {a.columns} columns, where an inverse asks a square one"
+        )
+    n = a.rows
+    joined: [big.Fraction] @= []
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            joined @ joined.push(a.values[r * n + c])
+
+        for c in range(from: 0, to: n)
+            unit = if r == c
+                exact.one()
+            else
+                exact.zero()
+            joined @ joined.push(unit)
+
+    done = exact.reduced(joined, rows: n, columns: 2 * n, limit: n)
+
+    if done.pivots.len() < n
+        return fail(code: INVALID, msg: "the matrix is singular: a column holds no pivot, so it has no inverse")
+    values: [big.Fraction] @= []
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            values @ values.push(done.values[r * 2 * n + n + c])
+
+    return ok(Exact(rows: n, columns: n, values: values))
+
+# The exact determinant of `a`: its pivots' product, the sign changed at
+# each swap of two rows; 0 where a column holds no pivot.
+#
+# - `a`: a square exact matrix; the one of no rows has determinant 1.
+#
+# Fails `invalid` where `a` is not square. See also `determinant`.
+function determinant_exact(a: Exact) -> big.Fraction?
+    if a.rows != a.columns
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} rows and {a.columns} columns, where a determinant asks a square one"
+        )
+    return ok(exact.reduced(a.values, rows: a.rows, columns: a.columns, limit: a.columns).product)
+
+# The rank of `a`, exactly: the pivots its elimination finds.
+#
+# - `a`: an exact matrix of any shape.
+#
+# See also `rank`.
+function rank_exact(a: Exact) -> i64
+    return exact.reduced(a.values, rows: a.rows, columns: a.columns, limit: a.columns).pivots.len()
+
+# The reduced row echelon form of `a`: each pivot 1, alone in its column,
+# the rows of zeros last.
+#
+# - `a`: an exact matrix of any shape.
+#
+# See also `rank_exact`.
+function reduced_echelon_exact(a: Exact) -> Exact
+    done = exact.reduced(a.values, rows: a.rows, columns: a.columns, limit: a.columns)
+    return Exact(rows: a.rows, columns: a.columns, values: done.values)
+
+## Tests
+
+# Python's `fractions` solved the exact cases on 2026-11-22; the
+# decompositions' cases are the published worked examples named beside
+# each, and every decomposition is also held to its own definition (the
+# product of its factors, orthonormal columns, `a * v = λ v`). Neither
+# NumPy nor gonum is installed on this machine to ask.
+
+test "from_rows, zeros, identity and rows_of: no rows, rows of different lengths, a shape below 0, and back"
+    assert from_rows([]).must() == Matrix(rows: 0, columns: 0, values: [])
+
+    match from_rows([[1.0, 2.0], [3.0]])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "row 1 holds 1 values, where row 0 holds 2"
+
+    assert zeros(rows: 2, columns: 0).must().values.len() == 0 && zeros(rows: -1, columns: 2).is_err()
+    assert identity(0).rows == 0 && identity(-3).rows == 0 && identity(2).values == [1.0, 0.0, 0.0, 1.0]
+    assert rows_of(from_rows([[1.0, 2.0], [3.0, 4.0]]).must()) == [[1.0, 2.0], [3.0, 4.0]]
+
+test "transpose, add, subtract, scale, multiply, multiply_vector, trace and norm_frobenius: shapes that do not fit refused"
+    a = from_rows([[1.0, 2.0], [3.0, 4.0]]).must()
+    b = from_rows([[5.0, 6.0], [7.0, 8.0]]).must()
+    wide = from_rows([[1.0, 2.0, 3.0]]).must()
+    assert transpose(wide).rows == 3 && transpose(wide).values == [1.0, 2.0, 3.0]
+    assert add(a: a, b: b).must().values == [6.0, 8.0, 10.0, 12.0] && subtract(a: b, b: a).must().values == [4.0, 4.0, 4.0, 4.0]
+    assert add(a: a, b: wide).is_err() && subtract(a: a, b: wide).is_err()
+    assert scale(a, by: -1.0).values == [-1.0, -2.0, -3.0, -4.0]
+    assert multiply(a: a, b: b).must().values == [19.0, 22.0, 43.0, 50.0] && multiply(a: a, b: wide).is_err()
+    assert multiply_vector(a, v: [1.0, 1.0]).must() == [3.0, 7.0] && multiply_vector(a, v: [1.0]).is_err()
+    assert trace(a).must() == 5.0 && trace(wide).is_err()
+    assert norm_frobenius(from_rows([[3.0, 4.0]]).must()) == 5.0 && norm_frobenius(identity(0)) == 0.0
+
+test "solve, inverse and determinant: Strang's system, a matrix singular or not square, no unknowns, a nan, and entries near an f64's range (2^660 times it)"
+    a = from_rows([[2.0, 1.0, 1.0], [4.0, -6.0, 0.0], [-2.0, 7.0, 2.0]]).must()
+    assert factor.close_to(a: solve(a, b: [5.0, -2.0, 9.0]).must(), b: [1.0, 1.0, 2.0], within: 0.000000000001)
+    assert math.abs(determinant(a).must() + 16.0) < 0.000000000001
+    huge = factor.power_of_two(660)
+    big_a = scale(a, by: huge)
+    assert factor.close_to(
+        a: solve(big_a, b: [5.0 * huge, -2.0 * huge, 9.0 * huge]).must(),
+        b: [1.0, 1.0, 2.0],
+        within: 0.000000000001
+    )
+    singular = from_rows([[1.0, 2.0], [2.0, 4.0]]).must()
+
+    match solve(singular, b: [1.0, 2.0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the matrix is singular: a column holds no pivot, so the system has no single solution"
+
+    assert inverse(singular).is_err() && determinant(singular).must() == 0.0
+    assert solve(from_rows([[1.0, 2.0]]).must(), b: [1.0]).is_err() && solve(a, b: [1.0]).is_err()
+    assert solve(identity(0), b: []).must().len() == 0 && determinant(identity(0)).must() == 1.0
+    assert solve(from_rows([[0.0 / 0.0]]).must(), b: [1.0]).is_err() && determinant(from_rows([[1.0 / 0.0]]).must()).is_err()
+    assert factor.close_to(
+        a: inverse(from_rows([[4.0, 7.0], [2.0, 6.0]]).must()).must().values,
+        b: [0.6, -0.7, -0.2, 0.4],
+        within: 0.000000000001
+    )
+    assert determinant(from_rows([[0.0, 1.0], [1.0, 0.0]]).must()).must() == -1.0
+    assert inverse(identity(0)).must().rows == 0
+
+test "lu: the permuted matrix is lower times upper, a pivot brought up, a singular matrix factored, and a matrix not square refused"
+    a = from_rows([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 10.0]]).must()
+    f = lu(a).must()
+    product = multiply(a: f.lower, b: f.upper).must()
+    permuted: [f64] @= []
+
+    for k in f.order
+        for c in range(from: 0, to: 3)
+            permuted @ permuted.push(value_at(a, row: k, column: c))
+
+    assert f.order[0] == 2 && factor.close_to(a: product.values, b: permuted, within: 0.000000000001)
+
+    for r in range(from: 0, to: 3)
+        for c in range(from: 0, to: 3)
+            assert r >= c || value_at(f.lower, row: r, column: c) == 0.0
+            assert r <= c || value_at(f.upper, row: r, column: c) == 0.0
+
+    assert value_at(lu(from_rows([[1.0, 2.0], [2.0, 4.0]]).must()).must().upper, row: 1, column: 1) == 0.0
+    assert lu(from_rows([[1.0, 2.0]]).must()).is_err()
+
+# Wikipedia's worked example of QR ("QR decomposition", read 2026-11-22):
+# R's rows 14 21 -14, 0 175 -70 and 0 0 35, each up to its sign, the first
+# diagonal entry negative as LAPACK signs it, the column's first entry being
+# positive.
+test "qr: the worked example's R up to each row's sign, Q orthonormal and Q times R the matrix, a tall and a wide matrix, and a nan refused"
+    a = from_rows([[12.0, -51.0, 4.0], [6.0, 167.0, -68.0], [-4.0, 24.0, -41.0]]).must()
+    got = qr(a).must()
+    assert factor.rows_up_to_sign(
+        a: got.r.values,
+        b: [14.0, 21.0, -14.0, 0.0, 175.0, -70.0, 0.0, 0.0, 35.0],
+        n: 3,
+        within: 0.000000001
+    )
+    assert value_at(got.r, row: 0, column: 0) < 0.0
+    assert factor.close_to(a: multiply(a: got.q, b: got.r).must().values, b: a.values, within: 0.000000001)
+    assert factor.close_to(
+        a: multiply(a: transpose(got.q), b: got.q).must().values,
+        b: identity(3).values,
+        within: 0.000000000001
+    )
+    tall = from_rows([[1.0, 2.0], [3.0, 4.0], [5.0, 6.0]]).must()
+    t = qr(tall).must()
+    assert t.q.rows == 3 && t.q.columns == 2 && t.r.rows == 2
+    assert factor.close_to(a: multiply(a: t.q, b: t.r).must().values, b: tall.values, within: 0.000000000001)
+    w = qr(transpose(tall)).must()
+    assert w.q.columns == 2 && w.r.columns == 3
+    assert qr(from_rows([[0.0 / 0.0]]).must()).is_err()
+
+# Wikipedia's worked example of the Cholesky factor ("Cholesky
+# decomposition", read 2026-11-22).
+test "cholesky: the worked example, a matrix not symmetric, one not positive definite, and entries near an f64's range (2^1000 times it)"
+    a = from_rows([[4.0, 12.0, -16.0], [12.0, 37.0, -43.0], [-16.0, -43.0, 98.0]]).must()
+    assert factor.close_to(
+        a: cholesky(a).must().values,
+        b: [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0],
+        within: 0.000000000001
+    )
+    root = factor.power_of_two(500)
+    huge = scale(cholesky(scale(a, by: root * root)).must(), by: 1.0 / root)
+    assert factor.close_to(a: huge.values, b: [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0], within: 0.000000000001)
+
+    match cholesky(from_rows([[1.0, 2.0], [3.0, 1.0]]).must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the matrix is not symmetric: entry (0, 1) is 2.0 and entry (1, 0) is 3.0"
+
+    match cholesky(from_rows([[1.0, 2.0], [2.0, 1.0]]).must())
+        .ok _  => assert false
+        .err e => assert e.msg == "the matrix is not positive definite: a step of its Cholesky factor found no positive pivot"
+
+# The spectra worked by hand: [[2, 1], [1, 2]] has 1 and 3, and a 3 by 3
+# block of [[3, 4], [4, 9]] beside a 2 has 1, 2 and 11.
+test "eigen_symmetric: two spectra worked by hand, each column a unit eigenvector, a matrix not symmetric or holding a nan refused"
+    s = eigen_symmetric(from_rows([[2.0, 1.0], [1.0, 2.0]]).must()).must()
+    assert factor.close_to(a: s.values, b: [1.0, 3.0], within: 0.000000000001)
+    half = math.sqrt(0.5)
+    assert factor.close_to(a: s.vectors.values, b: [-half, half, half, half], within: 0.000000000001) || factor.close_to(a: s.vectors.values, b: [half, half, -half, half], within: 0.000000000001)
+    a = from_rows([[2.0, 0.0, 0.0], [0.0, 3.0, 4.0], [0.0, 4.0, 9.0]]).must()
+    e = eigen_symmetric(a).must()
+    assert factor.close_to(a: e.values, b: [1.0, 2.0, 11.0], within: 0.000000000001)
+
+    for j in range(from: 0, to: 3)
+        v: [f64] @= []
+
+        for i in range(from: 0, to: 3)
+            v @ v.push(value_at(e.vectors, row: i, column: j))
+
+        av = multiply_vector(a, v: v).must()
+        lv: [f64] @= []
+
+        for x in v
+            lv @ lv.push(e.values[j] * x)
+
+        assert factor.close_to(a: av, b: lv, within: 0.000000000001) && math.abs(factor.norm2(v) - 1.0) < 0.000000000001
+
+    assert eigen_symmetric(from_rows([[1.0, 2.0], [3.0, 1.0]]).must()).is_err()
+    assert eigen_symmetric(from_rows([[0.0 / 0.0]]).must()).is_err()
+    assert eigen_symmetric(identity(0)).must().values.len() == 0
+
+# The line through (0, 1), (1, 3), (2, 4) and (3, 4), its normal equations
+# solved by Python's `fractions` on 2026-11-22: 3/2 + x.
+test "least_squares: a line fitted, an exact system, fewer rows than columns, a wrong length, and columns not independent"
+    a = from_rows([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0], [1.0, 3.0]]).must()
+    assert factor.close_to(a: least_squares(a, b: [1.0, 3.0, 4.0, 4.0]).must(), b: [1.5, 1.0], within: 0.000000000001)
+    assert factor.close_to(a: least_squares(identity(2), b: [3.0, 4.0]).must(), b: [3.0, 4.0], within: 0.000000000001)
+    assert least_squares(from_rows([[1.0, 2.0]]).must(), b: [1.0]).is_err() && least_squares(a, b: [1.0]).is_err()
+
+    match least_squares(from_rows([[1.0, 2.0], [2.0, 4.0], [3.0, 6.0]]).must(), b: [1.0, 2.0, 3.0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the columns are not independent: column 1 lies in the others' span"
+
+# [[3, 0], [4, 5]] times its transpose has eigenvalues 45 and 5, so its
+# singular values are their square roots, worked by hand.
+test "singular_values, rank and condition_number: worked values, a wide matrix, ranks of 0 to 3, a singular matrix, and no entry"
+    a = from_rows([[3.0, 0.0], [4.0, 5.0]]).must()
+    assert factor.close_to(a: singular_values(a).must(), b: [math.sqrt(45.0), math.sqrt(5.0)], within: 0.000000000001)
+    assert factor.close_to(
+        a: singular_values(transpose(a)).must(),
+        b: [math.sqrt(45.0), math.sqrt(5.0)],
+        within: 0.000000000001
+    )
+    assert singular_values(from_rows([[1.0, 2.0, 3.0]]).must()).must().len() == 1
+    assert rank(from_rows([[1.0, 2.0], [2.0, 4.0]]).must()).must() == 1 && rank(identity(3)).must() == 3
+    assert rank(zeros(rows: 2, columns: 3).must()).must() == 0 && rank(identity(0)).must() == 0
+    assert math.abs(condition_number(a).must() - 3.0) < 0.000000000001
+    assert condition_number(from_rows([[1.0, 2.0], [2.0, 4.0]]).must()).must() > 1000000000000000.0
+    assert condition_number(identity(0)).is_err() && rank(from_rows([[0.0 / 0.0]]).must()).is_err()
+
+# Python's `fractions` answered these on 2026-11-22.
+test "solve_exact, inverse_exact, determinant_exact, rank_exact and reduced_echelon_exact: exact answers, a singular matrix, shapes refused, and the empty matrix"
+    a = exact_from_rows([exact.whole([1, 2, 3]), exact.whole([4, 5, 6]), exact.whole([7, 8, 10])]).must()
+    assert big.format_fraction(determinant_exact(a).must()) == "-3"
+    assert exact.texts_of(inverse_exact(a).must().values) == ["-2/3", "-4/3", "1", "-2/3", "11/3", "-2", "1", "-2", "1"]
+    strang = exact_from_rows([exact.whole([2, 1, 1]), exact.whole([4, -6, 0]), exact.whole([-2, 7, 2])]).must()
+    assert exact.texts_of(solve_exact(strang, b: exact.whole([5, -2, 9])).must()) == ["1", "1", "2"]
+    dependent = exact_from_rows([exact.whole([1, 2, 3]), exact.whole([2, 4, 6]), exact.whole([1, 1, 1])]).must()
+    assert rank_exact(dependent) == 2
+    assert exact.texts_of(reduced_echelon_exact(dependent).values) == ["1", "0", "-1", "0", "1", "2", "0", "0", "0"]
+    assert big.format_fraction(determinant_exact(dependent).must()) == "0"
+
+    match inverse_exact(dependent)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the matrix is singular: a column holds no pivot, so it has no inverse"
+
+    assert solve_exact(dependent, b: exact.whole([1, 2, 3])).is_err() && solve_exact(a, b: exact.whole([1])).is_err()
+    wide = exact_from_rows([exact.whole([1, 2])]).must()
+    assert determinant_exact(wide).is_err() && inverse_exact(wide).is_err() && rank_exact(wide) == 1
+    assert exact_from_rows([exact.whole([1]), exact.whole([1, 2])]).is_err()
+    empty = exact_from_rows([]).must()
+    assert big.format_fraction(determinant_exact(empty).must()) == "1" && rank_exact(empty) == 0
+
+test "exact_of and float_of_exact: a float made the fraction it is, a nan and an infinity refused, and back"
+    m = exact_of(from_rows([[0.1, -2.5]]).must()).must()
+    assert exact.texts_of(m.values) == ["3602879701896397/36028797018963968", "-5/2"]
+    assert float_of_exact(m).values == [0.1, -2.5]
+    assert exact_of(from_rows([[0.0 / 0.0]]).must()).is_err() && exact_of(from_rows([[1.0 / 0.0]]).must()).is_err()
+
+## Examples
+
+# A matrix read from its rows.
+test "from_rows: two rows"
+    assert from_rows([[1.0, 2.0], [3.0, 4.0]]).must().columns == 2
+
+# A matrix of zeros to fill.
+test "zeros: two by three"
+    assert zeros(rows: 2, columns: 3).must().values.len() == 6
+
+# The identity, which leaves a vector as it is.
+test "identity: three"
+    assert multiply_vector(identity(3), v: [1.0, 2.0, 3.0]).must() == [1.0, 2.0, 3.0]
+
+# One entry read.
+test "value_at: a row and a column"
+    assert value_at(from_rows([[1.0, 2.0], [3.0, 4.0]]).must(), row: 1, column: 0) == 3.0
+
+# A matrix's rows, back as lists.
+test "rows_of: two rows"
+    assert rows_of(identity(2)) == [[1.0, 0.0], [0.0, 1.0]]
+
+# A row made a column.
+test "transpose: a row"
+    assert transpose(from_rows([[1.0, 2.0]]).must()).rows == 2
+
+# Two matrices added.
+test "add: two matrices"
+    assert add(a: identity(2), b: identity(2)).must().values == [2.0, 0.0, 0.0, 2.0]
+
+# One matrix taken from another.
+test "subtract: a matrix from itself"
+    assert subtract(a: identity(2), b: identity(2)).must().values == [0.0, 0.0, 0.0, 0.0]
+
+# Every entry halved.
+test "scale: halved"
+    assert scale(identity(1), by: 0.5).values == [0.5]
+
+# A product of two matrices.
+test "multiply: two by two"
+    a = from_rows([[1.0, 2.0], [3.0, 4.0]]).must()
+    assert multiply(a: a, b: identity(2)).must() == a
+
+# A matrix times a vector.
+test "multiply_vector: a rotation by a quarter turn"
+    turn = from_rows([[0.0, -1.0], [1.0, 0.0]]).must()
+    assert multiply_vector(turn, v: [1.0, 0.0]).must() == [0.0, 1.0]
+
+# The sum of a diagonal.
+test "trace: the identity of three"
+    assert trace(identity(3)).must() == 3.0
+
+# A matrix's size as one number.
+test "norm_frobenius: the identity of four"
+    assert norm_frobenius(identity(4)) == 2.0
+
+# Two equations in two unknowns.
+test "solve: two equations"
+    a = from_rows([[2.0, 1.0], [1.0, 3.0]]).must()
+    assert factor.close_to(a: solve(a, b: [3.0, 5.0]).must(), b: [0.8, 1.4], within: 0.000000000001)
+
+# An inverse that undoes the matrix.
+test "inverse: a two by two"
+    a = from_rows([[4.0, 7.0], [2.0, 6.0]]).must()
+    assert factor.close_to(
+        a: multiply(a: a, b: inverse(a).must()).must().values,
+        b: identity(2).values,
+        within: 0.000000000001
+    )
+
+# How a matrix scales areas.
+test "determinant: a two by two"
+    assert math.abs(determinant(from_rows([[4.0, 7.0], [2.0, 6.0]]).must()).must() - 10.0) < 0.000000000001
+
+# A matrix factored into two triangles.
+test "lu: a two by two"
+    f = lu(from_rows([[1.0, 2.0], [3.0, 4.0]]).must()).must()
+    assert f.order == [1, 0] && f.sign == -1.0
+
+# A matrix factored into a rotation and a triangle.
+test "qr: a tall matrix"
+    got = qr(from_rows([[3.0], [4.0]]).must()).must()
+    assert math.abs(math.abs(got.r.values[0]) - 5.0) < 0.000000000001
+
+# The square root of a covariance matrix.
+test "cholesky: a two by two"
+    assert factor.close_to(
+        a: cholesky(from_rows([[4.0, 2.0], [2.0, 2.0]]).must()).must().values,
+        b: [2.0, 0.0, 1.0, 1.0],
+        within: 0.000000000001
+    )
+
+# The principal axes of a symmetric matrix.
+test "eigen_symmetric: a diagonal matrix"
+    assert eigen_symmetric(from_rows([[3.0, 0.0], [0.0, 1.0]]).must()).must().values == [1.0, 3.0]
+
+# A line fitted to three points.
+test "least_squares: a line through three points"
+    a = from_rows([[1.0, 0.0], [1.0, 1.0], [1.0, 2.0]]).must()
+    assert factor.close_to(a: least_squares(a, b: [1.0, 2.0, 3.0]).must(), b: [1.0, 1.0], within: 0.000000000001)
+
+# How far a matrix stretches along its axes.
+test "singular_values: a diagonal matrix"
+    assert singular_values(from_rows([[2.0, 0.0], [0.0, 3.0]]).must()).must() == [3.0, 2.0]
+
+# How many independent rows a matrix has.
+test "rank: two rows of one direction"
+    assert rank(from_rows([[1.0, 2.0], [2.0, 4.0]]).must()).must() == 1
+
+# How much a solution's error may grow.
+test "condition_number: a diagonal matrix"
+    assert condition_number(from_rows([[2.0, 0.0], [0.0, 8.0]]).must()).must() == 4.0
+
+# An exact matrix of thirds.
+test "exact_from_rows: one row"
+    third = big.fraction(numerator: big.from_int(1), denominator: big.from_int(3))
+    assert exact_from_rows([[third, third]]).must().columns == 2
+
+# A float made the fraction it is.
+test "exact_of: a half"
+    assert exact.texts_of(exact_of(from_rows([[0.5]]).must()).must().values) == ["1/2"]
+
+# Fractions back as floats.
+test "float_of_exact: a half"
+    assert float_of_exact(exact_of(from_rows([[0.5]]).must()).must()).values == [0.5]
+
+# A system solved with no rounding.
+test "solve_exact: thirds"
+    a = exact_from_rows([exact.whole([3, 0]), exact.whole([0, 3])]).must()
+    assert exact.texts_of(solve_exact(a, b: exact.whole([1, 2])).must()) == ["1/3", "2/3"]
+
+# An inverse with no rounding.
+test "inverse_exact: a two by two"
+    a = exact_from_rows([exact.whole([2, 1]), exact.whole([1, 1])]).must()
+    assert exact.texts_of(inverse_exact(a).must().values) == ["1", "-1", "-1", "2"]
+
+# A determinant with no rounding.
+test "determinant_exact: a two by two"
+    a = exact_from_rows([exact.whole([2, 1]), exact.whole([1, 1])]).must()
+    assert big.format_fraction(determinant_exact(a).must()) == "1"
+
+# A rank with no tolerance.
+test "rank_exact: two rows of one direction"
+    assert rank_exact(exact_from_rows([exact.whole([1, 2]), exact.whole([2, 4])]).must()) == 1
+
+# A system's reduced row echelon form.
+test "reduced_echelon_exact: two equations"
+    a = exact_from_rows([exact.whole([1, 1, 3]), exact.whole([1, -1, 1])]).must()
+    assert exact.texts_of(reduced_echelon_exact(a).values) == ["1", "0", "2", "0", "1", "1"]

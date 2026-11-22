@@ -63,7 +63,7 @@ capability sparse/pagerank  the PageRank of the pages of a graph of links
   note    NetworkX's definition: links weighted, a page with no link out jumping to any page, the jump spread evenly; the change measured as the sum of absolute differences, where NetworkX compares it with the count of pages times its tolerance; no personalization vector
 
 capability sparse/solve  a system of equations solved, a matrix decomposed, a matrix times a matrix
-  heroes  refused: power iteration is what the steady states need; a solver of sparse systems and the products of two sparse matrices are numerical libraries of their own, which no package of Rebel offers
+  heroes  refused: power iteration is what the steady states need; a solver of sparse systems and the products of two sparse matrices are numerical libraries of their own, which no package of Rebel offers; a dense matrix is solved and decomposed by `math/matrix`
   go      -
   rust    -
   python  -

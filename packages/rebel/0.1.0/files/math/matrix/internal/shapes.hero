@@ -1,0 +1,101 @@
+# The checks every function of `math/matrix` makes before it computes: a
+# matrix square where one is asked, two of one shape, a symmetric one within
+# a stated tolerance, and every entry finite, since an ordering of a nan
+# aborts and a factorization orders its entries; each fails `invalid` with
+# a message naming what was asked and what was found.
+
+use math
+use math/matrix
+
+# Fails `invalid` where `m` is not square, naming `what` asked it.
+#
+# - `m`: the matrix.
+# - `what`: what needs it square, for the message.
+function squared(m: matrix.Matrix, what: str) -> ()?
+    if m.rows != m.columns
+        return fail(
+            code: matrix.INVALID,
+            msg: f"a matrix of {m.rows} rows and {m.columns} columns, where {what} asks a square one"
+        )
+    return ok()
+
+# Fails `invalid` where `a` and `b` differ in shape, naming `what` asked it.
+#
+# - `a`: one matrix.
+# - `b`: another.
+# - `what`: what needs them alike, for the message.
+function same_shape(a: matrix.Matrix, b: matrix.Matrix, what: str) -> ()?
+    if a.rows != b.rows || a.columns != b.columns
+        return fail(
+            code: matrix.INVALID,
+            msg: f"{what} a matrix of {a.rows} by {a.columns} and one of {b.rows} by {b.columns}, where both are of one shape"
+        )
+    return ok()
+
+# Fails `invalid` where `m`, square, is not symmetric: an entry farther than
+# 1e-12 times the largest entry's size from its mirror, or a nan.
+#
+# - `m`: a square matrix.
+function symmetric(m: matrix.Matrix) -> ()?
+    largest: f64 @= 0.0
+
+    for x in m.values
+        if !math.is_finite(x)
+            return fail(
+                code: matrix.INVALID,
+                msg: f"the matrix holds {x}, where a symmetric matrix of floats holds finite numbers"
+            )
+        largest @ math.max(a: largest, b: math.abs(x))
+
+    n = m.rows
+
+    for r in range(from: 0, to: n)
+        for c in range(from: r + 1, to: n)
+            a = m.values[r * n + c]
+            b = m.values[c * n + r]
+
+            if math.abs(a - b) > 0.000000000001 * largest
+                return fail(
+                    code: matrix.INVALID,
+                    msg: f"the matrix is not symmetric: entry ({r}, {c}) is {a} and entry ({c}, {r}) is {b}"
+                )
+
+    return ok()
+
+# Fails `invalid` where an entry of `m` is a nan or an infinity, naming the
+# first.
+#
+# - `m`: the matrix.
+function finite(m: matrix.Matrix) -> ()?
+    for k in range(from: 0, to: m.values.len())
+        if !math.is_finite(m.values[k])
+            return fail(
+                code: matrix.INVALID,
+                msg: f"entry ({k / m.columns}, {k % m.columns}) is {m.values[k]}, where a factorization takes finite numbers"
+            )
+
+    return ok()
+
+# The largest size of an entry of `m`, 0 where it has none or all are zero.
+#
+# - `m`: a matrix of finite entries.
+function largest_of(m: matrix.Matrix) -> f64
+    largest: f64 @= 0.0
+
+    for x in m.values
+        largest @ math.max(a: largest, b: math.abs(x))
+
+    return largest
+
+# `values` divided by `by`, which is above 0: a matrix brought to entries of
+# size 1 at most, so no product in a factorization passes an `f64`'s range.
+#
+# - `values`: the entries.
+# - `by`: the divisor, above 0.
+function divided(values: [f64], by: f64) -> [f64]
+    out: [f64] @= []
+
+    for x in values
+        out @ out.push(x / by)
+
+    return out
