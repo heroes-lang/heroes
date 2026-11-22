@@ -1,0 +1,21 @@
+# A mailbox's queue goes with the last copy of it, the values still in it
+# given back with it, whether it was closed or not (spec § 11; panel 254's
+# S5 and S8): nothing is told when `main` returns, since nothing is lost but
+# what the program chose not to receive. A mailbox inside a value inside a
+# queue goes the same way, its count given back as its holder is.
+
+record Letter
+    text: str
+    reply: (mailbox str)
+
+function main()
+    open: (mailbox str) = mailbox()
+    open.send("never read").must()
+    replies: (mailbox str) = mailbox()
+    replies.send("kept").must()
+    letters: (mailbox Letter) = mailbox()
+    letters.send(Letter(text: "carried", reply: replies)).must()
+    closed: (mailbox [str]) = mailbox()
+    closed.send(["one", "two"]).must()
+    closed.close()
+    print("main returns with four mailboxes and four values never received")

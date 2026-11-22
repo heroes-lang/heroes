@@ -174,8 +174,8 @@ function compares_bitwise(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
         deeper @ false
 
         match table.get(c.types, at)
-            .int_ty | .ptr | .cstr => answer @ true
-            .named n               => answer @ handles.is_handle(decls[n.decl])
+            .int_ty | .ptr | .cstr | .thread_ty | .mailbox_ty => answer @ true
+            .named n                                          => answer @ handles.is_handle(decls[n.decl])
             .fixed x =>
                 at @ x.element
                 deeper @ true

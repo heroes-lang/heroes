@@ -1,0 +1,1 @@
+tests/golden/check/threads-an-operation-is-written-after-a-dot.hero:10:5: error[dot_only]: `send` is a mailbox's operation, written after a dot: `m.send(v)`

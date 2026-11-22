@@ -18,6 +18,11 @@ and no $PYTHONPATH can shadow a stdlib module:
 HOW IT WORKS, every call read from the portal's bundle (main.452fce04.js) and
 confirmed against the live account on 2026-11-20:
 
+  0. Read the portal's configuration. The page ships its Firebase web key, its
+     Firebase project and its API's address to every visitor, in a REACT_APP_
+     block of its JavaScript bundle; the program reads them from there on every
+     run and keeps no copy (class Portal says why).
+
   1. Sign in. POST to Firebase's identitytoolkit accounts:signInWithPassword
      with the portal's public web API key. The project does not enforce
      reCAPTCHA on password sign-in (probed: a wrong password returns
@@ -86,17 +91,16 @@ import subprocess
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
-# --- what the portal exposes, all public (read from its web bundle) --------------
+# --- where things live -------------------------------------------------------------
 
-FIREBASE_API_KEY = "AIzaSyBsmgtKDJ_-ZJBbVrZVKHqYh5U2SVM9pjY"
-PROJECT = "apponfly-prod"
-FUNCTIONS = "https://europe-west2-apponfly-prod.cloudfunctions.net"
+PORTAL = "https://app.apponfly.com/"
+# Google's own endpoints for Firebase sign-in, the same for every Firebase project.
 IDENTITY = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword"
 SECURETOKEN = "https://securetoken.googleapis.com/v1/token"
-FIRESTORE = f"https://firestore.googleapis.com/v1/projects/{PROJECT}/databases/(default)/documents"
 
 ROOT = Path(__file__).resolve().parents[3]
 KEYCHAIN_SERVICE = "apponfly-portal"
@@ -168,7 +172,39 @@ def request(method: str, url: str, *, token: str | None = None, body: dict | Non
         return status, raw
 
 
-import urllib.parse  # noqa: E402  (used by request's error paths above)
+class Portal:
+    """Where the portal's backend lives, read from the portal's own JavaScript.
+
+    The page ships its Firebase web key, its project and its API's address to
+    every visitor, in a REACT_APP_ block of its bundle, and this program reads
+    them from there on every run instead of keeping a copy. A copy goes stale
+    when appOnFly rotates the key; and a key-shaped literal in this repository
+    reads as a leaked secret to GitHub's secret scanning, which flagged the
+    first version of this file on 2026-11-22. The key is appOnFly's and public
+    by design: a Firebase web key names a project, and what an account may
+    touch is decided by its sign-in and by Firestore's rules, not by the key."""
+
+    def __init__(self) -> None:
+        status, page = request("GET", PORTAL)
+        found = re.search(r'src="(/static/js/main\.[0-9a-f]+\.js)"', page) if isinstance(page, str) else None
+        if status != 200 or not found:
+            broken(f"the portal's page (HTTP {status}) names no main bundle; has its build changed?")
+        self.bundle = found[1]
+        status, code = request("GET", urllib.parse.urljoin(PORTAL, self.bundle), timeout=60)
+        if status != 200 or not isinstance(code, str):
+            broken(f"could not read the portal's bundle {self.bundle} (HTTP {status})")
+
+        def setting(name: str) -> str:
+            value = re.search(rf'REACT_APP_{name}:"([^"]+)"', code)
+            if not value:
+                broken(f"the portal's bundle {self.bundle} sets no REACT_APP_{name}; has its build changed?")
+            return value[1]
+
+        self.api_key = setting("FIREBASE_API_KEY")
+        self.project = setting("FIREBASE_PROJECT_ID")
+        self.functions = setting("API_URL").rstrip("/")
+        self.firestore = f"https://firestore.googleapis.com/v1/projects/{self.project}/databases/(default)/documents"
+        log(f"portal: bundle {self.bundle}, project {self.project}")
 
 
 # --- Firestore's wire shapes (the "typed value" encoding) ------------------------
@@ -211,9 +247,10 @@ def parse_rfc3339(text: str) -> dt.datetime:
 class Session:
     """A signed-in session: the token, the uid, and the account's one VM."""
 
-    def __init__(self, email: str, password: str, source: str) -> None:
+    def __init__(self, portal: Portal, email: str, password: str, source: str) -> None:
+        self.p = portal
         log(f"signing in as {email} (password from {source})")
-        status, body = request("POST", f"{IDENTITY}?key={FIREBASE_API_KEY}",
+        status, body = request("POST", f"{IDENTITY}?key={portal.api_key}",
                                body={"email": email, "password": password,
                                      "returnSecureToken": True, "clientType": "CLIENT_TYPE_WEB"})
         if status != 200:
@@ -234,7 +271,7 @@ class Session:
         """The idToken lasts an hour; a long wait refreshes it in time."""
         if time.monotonic() < self.token_deadline:
             return self.token
-        status, body = request("POST", f"{SECURETOKEN}?key={FIREBASE_API_KEY}",
+        status, body = request("POST", f"{SECURETOKEN}?key={self.p.api_key}",
                                body={"grant_type": "refresh_token", "refresh_token": self.refresh_token})
         if status == 200 and isinstance(body, dict) and "id_token" in body:
             self.token = body["id_token"]
@@ -250,7 +287,7 @@ class Session:
             "from": [{"collectionId": "subscriptions"}],
             "where": {"fieldFilter": {"field": {"fieldPath": "status"}, "op": "IN",
                                       "value": {"arrayValue": {"values": [{"stringValue": s} for s in SUB_STATUSES]}}}}}}
-        status, body = request("POST", f"{FIRESTORE}/customers/{self.uid}:runQuery",
+        status, body = request("POST", f"{self.p.firestore}/customers/{self.uid}:runQuery",
                                token=self.fresh_token(), body=query)
         if status != 200:
             fail(f"could not read the subscriptions (HTTP {status}): {body}")
@@ -284,7 +321,7 @@ class Session:
         log(f"machine: {product or 'a VM'} (subscription {self.subscription_id}, {status})")
 
     def vm_status(self) -> str | None:
-        status, body = request("GET", f"{FIRESTORE}/virtualMachines/{self.vm_id}", token=self.fresh_token())
+        status, body = request("GET", f"{self.p.firestore}/virtualMachines/{self.vm_id}", token=self.fresh_token())
         if status == 404:
             return None
         if status != 200:
@@ -293,7 +330,7 @@ class Session:
 
     def nudge(self) -> None:
         """Ask the backend to refresh the VM's state into Firestore."""
-        request("POST", f"{FUNCTIONS}/subscription-checkstatus", token=self.fresh_token(),
+        request("POST", f"{self.p.functions}/subscription-checkstatus", token=self.fresh_token(),
                 body={"subscriptionId": self.subscription_id})
 
     def refreshed_status(self) -> str | None:
@@ -301,7 +338,7 @@ class Session:
         return self.vm_status()
 
     def start(self) -> None:
-        status, body = request("POST", f"{FUNCTIONS}/subscription-start", token=self.fresh_token(),
+        status, body = request("POST", f"{self.p.functions}/subscription-start", token=self.fresh_token(),
                                body={"subscriptionId": self.subscription_id})
         if status != 200:
             fail(f"the portal refused the start (HTTP {status}): {body}")
@@ -313,7 +350,7 @@ class Session:
         returns {actionTaken, key, expiration}, and the user reports that
         pressing Connect is what makes the machine truly reachable, so the
         program makes this call too. The gateway key is not printed."""
-        status, body = request("POST", f"{FUNCTIONS}/subscription-select", token=self.fresh_token(),
+        status, body = request("POST", f"{self.p.functions}/subscription-select", token=self.fresh_token(),
                                body={"subscriptionId": self.subscription_id})
         if status != 200:
             log(f"WARNING: Connect (subscription-select) returned HTTP {status}: {body}")
@@ -325,7 +362,7 @@ class Session:
     # --- the auto shutdown, the one write a real run makes ----------------------
 
     def shutdown_doc(self) -> dict:
-        status, body = request("GET", f"{FIRESTORE}/customers/{self.uid}/shutdowns/{self.subscription_id}",
+        status, body = request("GET", f"{self.p.firestore}/customers/{self.uid}/shutdowns/{self.subscription_id}",
                                token=self.fresh_token())
         return fields_of(body) if status == 200 else {}
 
@@ -339,7 +376,7 @@ class Session:
     def set_shutdown(self, minutes: int) -> None:
         """Write autoShutdownTime = now + minutes, as the page does on Running."""
         when = dt.datetime.now(dt.timezone.utc) + dt.timedelta(minutes=minutes)
-        url = (f"{FIRESTORE}/customers/{self.uid}/shutdowns/{self.subscription_id}"
+        url = (f"{self.p.firestore}/customers/{self.uid}/shutdowns/{self.subscription_id}"
                "?updateMask.fieldPaths=autoShutdownTime&updateMask.fieldPaths=id")
         patch = {"fields": {"autoShutdownTime": {"timestampValue": rfc3339(when)},
                             "id": {"stringValue": self.subscription_id}}}
@@ -534,7 +571,7 @@ def arm(s: Session, hours: int | None) -> None:
 def run(argv=None) -> int:
     args = parse(argv)
     email, password, source = credentials()
-    s = Session(email, password, source)
+    s = Session(Portal(), email, password, source)
     s.find_machine(args.subscription)
 
     status = s.refreshed_status()

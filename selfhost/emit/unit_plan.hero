@@ -131,7 +131,7 @@ function plan(module: str, p: containers.Program, c: state.Checked, s: source.So
                     records[n.decl] @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => continue
             .array | .fixed | .map | .fallible | .function_ty | .case_ty => continue
-            .failure | .generic | .error                                 => continue
+            .failure | .generic | .error | .thread_ty | .mailbox_ty      => continue
 
     return Plan(
         module: module,

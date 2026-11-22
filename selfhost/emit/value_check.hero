@@ -81,10 +81,10 @@ function asked(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contain
         return false
 
     return match table.get(c.types, f.result)
-        .int_ty | .bool                                   => true
-        .float_ty | .str | .ptr | .cstr | .unit | .named  => false
-        .array | .fixed | .map | .fallible | .function_ty => false
-        .case_ty | .failure | .generic | .error           => false
+        .int_ty | .bool                                                    => true
+        .float_ty | .str | .ptr | .cstr | .unit | .named                   => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # The region's opening lines, on the generated file.
 function opened(@w: writer.Writer)

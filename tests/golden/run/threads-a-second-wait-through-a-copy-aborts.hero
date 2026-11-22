@@ -1,0 +1,12 @@
+# `t.wait()` ends the thread's life, and every copy of it with it: a wait
+# through a copy made before aborts, which no reading of one function can
+# see (spec § 11, § 13; feature 2647).
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    t = spawn(twice, 4).must()
+    copy = t
+    print(t.wait())
+    print(copy.wait())

@@ -88,7 +88,7 @@ function own_struct(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
         .fallible | .case_ty                                      => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
         .array | .fixed | .map | .function_ty                     => false
-        .failure | .generic | .error                              => false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => false
 
 function own_declaration(decl: ast.Decl) -> bool
     return match decl.kind

@@ -169,6 +169,7 @@ function held_record(c: state.Checked, ty: i64) -> i64?
             .fixed f                                                  => at @ f.element
             .named n                                                  => return ok(n.decl)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no record")
+            .thread_ty | .mailbox_ty                                  => return fail(code: "none", msg: "no record")
             .array | .map | .fallible | .function_ty                  => return fail(code: "none", msg: "no record")
             .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "no record")
 
@@ -182,10 +183,10 @@ function is_fixed(c: state.Checked, ty: i64) -> bool
         return false
 
     return match table.get(c.types, written.must())
-        .fixed                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .map | .fallible | .function_ty | .named         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fixed                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 ## Tests
 

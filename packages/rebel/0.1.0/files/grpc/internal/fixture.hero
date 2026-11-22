@@ -32,7 +32,7 @@ record Started
 # listen (defect 2633).
 function start(body: (function(str) -> str)) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: body, arg: to_str(control.address.port)).must()
+    t = threads.start_text(body: body, arg: to_str(control.address.port)).must()
     said = told(control)
     net.close_listener(@control).must()
     return Started(port: port_told(said).must(), thread: t)

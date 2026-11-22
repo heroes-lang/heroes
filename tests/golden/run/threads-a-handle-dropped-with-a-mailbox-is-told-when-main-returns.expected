@@ -1,0 +1,2 @@
+main returns with the counter in the mailbox
+!panic: 1 of them went inside a value of a mailbox when its last copy went, never received

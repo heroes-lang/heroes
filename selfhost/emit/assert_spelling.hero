@@ -109,6 +109,7 @@ function return_check(c: state.Checked, ty: i64) -> str?
             code: "bug",
             msg: "this type does not cross the FFI boundary"
         )
+        .thread_ty | .mailbox_ty => return fail(code: "bug", msg: "this type does not cross the FFI boundary")
         .case_ty | .failure | .generic | .error => return fail(
             code: "bug",
             msg: "this type does not cross the FFI boundary"
@@ -126,6 +127,7 @@ function return_argument(names: ctype.Names, c: state.Checked, ty: i64) -> str
     match table.get(c.types, ty)
         .named n                                                  => return ", " + ctype.of(names, decl: n.decl)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ""
+        .thread_ty | .mailbox_ty                                  => return ""
         .array | .fixed | .map | .fallible | .function_ty         => return ""
         .case_ty | .failure | .generic | .error                   => return ""
 
@@ -142,10 +144,10 @@ function return_argument(names: ctype.Names, c: state.Checked, ty: i64) -> str
 # bootstrap's suite.
 function asks_for_a_value(c: state.Checked, ty: i64) -> bool
     return match table.get(c.types, ty)
-        .named                                                    => false
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => true
-        .array | .fixed | .map | .fallible | .function_ty         => true
-        .case_ty | .failure | .generic | .error                   => true
+        .named                                                             => false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => true
+        .array | .fixed | .map | .fallible | .function_ty                  => true
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => true
 
 # A zero of the declared parameter type, cast so the call type-checks —
 # never evaluated, it exists only to make the expression well-formed.
@@ -171,10 +173,10 @@ function zero_of(names: ctype.Names, c: state.Checked, ty: i64, mutable: bool) -
     is_cstr: bool @= false
 
     match table.get(c.types, ty)
-        .cstr                                                      => is_cstr @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+        .cstr                                                              => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named         => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_cstr @ is_cstr
 
     if is_cstr
         return "0"
@@ -235,6 +237,7 @@ function zero_of(names: ctype.Names, c: state.Checked, ty: i64, mutable: bool) -
         .unit                                             => return "(void *)0"
         .cstr                                             => return "0"
         .array | .fixed | .map | .fallible | .function_ty => return "(void *)0"
+        .thread_ty | .mailbox_ty                          => return "(void *)0"
         .case_ty | .failure | .generic | .error           => return "(void *)0"
 
     return "(void *)0"

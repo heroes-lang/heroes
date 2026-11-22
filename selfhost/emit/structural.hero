@@ -121,6 +121,7 @@ function field_eq_expr(c: state.Checked, names: ctype.Names, ty: i64, member: st
         # hero_unreachable() at exit 134 on a correct program (panel
         # 062's spec-warden).
         .int_ty | .bool | .float_ty | .ptr | .cstr => return "a->" + member + " == b->" + member
+        .thread_ty | .mailbox_ty                   => return "a->" + member + " == b->" + member
         .str                                       => return "hero_str_eq(a->" + member + ", b->" + member + ")"
         .array                                     => return "hero_array_eq(a->" + member + ", b->" + member + ")"
         # A C array member is compared ELEMENTWISE: a->f == b->f
@@ -171,6 +172,7 @@ function fixed_eq_expr(c: state.Checked, names: ctype.Names, member: str, elemen
 function element_eq(c: state.Checked, names: ctype.Names, a_place: str, b_place: str, element: i64) -> str
     match table.get(c.types, element)
         .int_ty | .bool | .float_ty | .ptr | .cstr => return a_place + " == " + b_place
+        .thread_ty | .mailbox_ty => return a_place + " == " + b_place
         .named n => return ctype.satellite(names, decl: n.decl) + "_eq(&" + a_place + ", &" + b_place + ")"
         .str | .array | .fixed | .map | .fallible | .function_ty => return "(hero_unreachable(), false)"
         .unit | .case_ty | .failure | .generic | .error => return "(hero_unreachable(), false)"
@@ -271,9 +273,9 @@ function hash_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: s
                 is_fixed @ true
                 fixed_element @ x.element
                 fixed_count @ x.length
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-            .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
-            .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fixed @ is_fixed
+            .array | .map | .fallible | .function_ty | .named                  => is_fixed @ is_fixed
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fixed @ is_fixed
 
         if is_fixed
             i: i64 @= 0

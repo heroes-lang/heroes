@@ -1,0 +1,16 @@
+# A mailbox's values still in it when its last copy goes are given back with
+# it, and a C handle among them is given back by nobody: it is told when
+# `main` returns as one nobody consumed, with the mailbox it went with (spec
+# § 11; panel 254's S8 and R3, the compiler-engineer's Q2.5).
+
+extern "threads-a-handle-dropped-with-a-mailbox-is-told-when-main-returns.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+function main()
+    inbox: (mailbox Counter) = mailbox()
+    c: Counter @= counter_new(n: 1)
+    inbox.send(@c).must()
+    print("main returns with the counter in the mailbox")

@@ -51,10 +51,10 @@ constant BOTH: i64
 # Whether the type `ty` is one an arithmetic operator answers: a number.
 function numeric(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty | .float_ty                                   => true
-        .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
-        .map | .fallible | .function_ty | .named              => false
-        .case_ty | .failure | .generic | .error               => false
+        .int_ty | .float_ty                                                => true
+        .bool | .str | .ptr | .cstr | .unit | .array | .fixed              => false
+        .map | .fallible | .function_ty | .named                           => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Whether `id` takes its type from where it stands: a form with no type of its
 # own (`waiting.needs_context`), or an arithmetic operator or a minus whose

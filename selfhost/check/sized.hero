@@ -117,7 +117,8 @@ function by_value_target(a: ast.Ast, r: resolved.Resolved, ty: i64) -> i64?
         # neither lands its contents here — measured, three records
         # mutually recursive through arrays compile in the worst order.
 
-        .array_of | .map_of => return fail(code: "leaf", msg: "a pointer breaks the edge")
+        .array_of | .map_of      => return fail(code: "leaf", msg: "a pointer breaks the edge")
+        .thread_of | .mailbox_of => return fail(code: "leaf", msg: "a handle's number breaks the edge")
         # A fixed array is sized, and its size is the element's times N —
         # the OPPOSITE of [T], so this descends rather than stopping.
 

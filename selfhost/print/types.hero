@@ -20,10 +20,12 @@ function render_type(tree: ast.Ast, id: i64, s: source.Source) -> str
         # i32[4] — the length is part of the type, so it is part of
         # the text.
 
-        .fixed x    => return render_type(tree, x.element, s) + "[" + x.length.to_str() + "]"
-        .array_of a => return "[" + render_type(tree, a.element, s) + "]"
-        .map_of m   => return "{" + render_type(tree, m.key, s) + ": " + render_type(tree, m.value, s) + "}"
-        .fallible f => return render_type(tree, f.inner, s) + "?"
+        .fixed x      => return render_type(tree, x.element, s) + "[" + x.length.to_str() + "]"
+        .array_of a   => return "[" + render_type(tree, a.element, s) + "]"
+        .map_of m     => return "{" + render_type(tree, m.key, s) + ": " + render_type(tree, m.value, s) + "}"
+        .fallible f   => return render_type(tree, f.inner, s) + "?"
+        .thread_of t  => return "(thread " + render_type(tree, t.element, s) + ")"
+        .mailbox_of m => return "(mailbox " + render_type(tree, m.element, s) + ")"
         .function_type fn_ty =>
             parts: [str] @= []
             at: i64 @= 0
@@ -69,3 +71,19 @@ test "one spelling per type, nested shapes included"
     assert render_type(parsed.tree, fields[3], s) == "i64?"
     assert render_type(parsed.tree, fields[4], s) == "u8[4]"
     assert render_type(parsed.tree, fields[5], s) == "(function(i64) -> str)"
+
+test "a thread's and a mailbox's types keep their word and their element"
+    text = "function f(a: (thread i64), b: (mailbox [str]?), c: (mailbox (thread ())))\n    _ = a\n    _ = b\n    _ = c\n"
+    parsed = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    fields: [i64] @= []
+
+    match parsed.decls[0].kind
+        .function_decl fd =>
+            for p in fd.value.params
+                fields @ fields.push(p.ty)
+        .constant_decl | .record_decl | .variant_decl | .test_decl => assert false
+
+    assert render_type(parsed.tree, fields[0], s) == "(thread i64)"
+    assert render_type(parsed.tree, fields[1], s) == "(mailbox [str]?)"
+    assert render_type(parsed.tree, fields[2], s) == "(mailbox (thread ()))"

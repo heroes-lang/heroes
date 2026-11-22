@@ -86,6 +86,7 @@ function success_c(c: state.Checked, s: source.Source, decls: [ast.Decl], decl: 
                         if widths.int_signed(ik.kind)
                             suffix @ "LL"
                     .bool | .unit | .float_ty | .str | .ptr | .cstr | .array | .fixed | .map    => suffix @ suffix
+                    .thread_ty | .mailbox_ty                                                    => suffix @ suffix
                     .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => suffix @ suffix
             return ok(value.must().to_str() + suffix)
         .constant_decl | .record_decl | .variant_decl | .test_decl => return fail(code: "none", msg: "not a function")

@@ -1,0 +1,4 @@
+2
+4
+!at: threads-a-thread-in-a-list-waited-for-again-aborts.hero:16:11
+!panic: a thread was waited for twice, or one this program never started — `t.wait()` ends the thread's life, and every copy of it with it

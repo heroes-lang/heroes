@@ -46,20 +46,20 @@ use value_parts
 # first, which recurses into the payload.
 function is_fallible(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .fallible                                                 => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .function_ty | .named            => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fallible                                                          => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .function_ty | .named                     => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Whether the failure's payload is a value somebody could write, which
 # decides whether `.default(v)` is offered: a `()?` has none, and
 # `.default(())` is `expected_expression` on §4.19's own ground.
 function carries_a_payload(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .fallible o                                               => o.payload != table.unit_ty(c.out.types)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .function_ty | .named            => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fallible o                                                        => o.payload != table.unit_ty(c.out.types)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .function_ty | .named                     => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # `_ = e`. THE TYPE IS ASKED FIRST AND THE NAME TEXT SECOND, and the
 # order is the point: `source.span_text` slices the source, which

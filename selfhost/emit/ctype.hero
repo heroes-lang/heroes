@@ -221,10 +221,10 @@ function with_options(names: Names, c: state.Checked, s: source.Source, decls: [
             is_fallible: bool @= false
 
             match table.get(c.types, id)
-                .fallible                                                 => is_fallible @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fallible @ is_fallible
-                .array | .fixed | .map | .function_ty | .named            => is_fallible @ is_fallible
-                .case_ty | .failure | .generic | .error                   => is_fallible @ is_fallible
+                .fallible                                                          => is_fallible @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fallible @ is_fallible
+                .array | .fixed | .map | .function_ty | .named                     => is_fallible @ is_fallible
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fallible @ is_fallible
 
             if is_fallible
                 # CONTENT-NAMED, not walk-numbered (panel 093 R6): the
@@ -339,7 +339,7 @@ function satellite_name(names: Names, c: state.Checked, ty: i64) -> str?
         .case_ty vc => return ok(case_of(names, decl: vc.decl, at: vc.at))
         .fallible   => return ok(option_of(names, ty: ty))
         .failure    => return ok("hero_failure")
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
             code: "none",
             msg: "no generated functions"
         )
@@ -366,9 +366,15 @@ function c_type(names: Names, c: state.Checked, ty: i64) -> str?
         # cast and hands a refcount word to sqlite3_open; written by
         # value it is inexpressible rather than wrong.
 
-        .str  => return ok("HeroStr")
-        .ptr  => return ok("void *")
-        .cstr => return ok("const char *")
+        .str => return ok("HeroStr")
+        .ptr => return ok("void *")
+        # The runtime's number for a thread, its slot and its start's
+        # generation in one word (`parts/mail.c`): never an address, so a copy
+        # kept past the wait is told, not followed. A mailbox is the queue's
+        # address, counted (panel 254's S5).
+        .thread_ty  => return ok("int64_t")
+        .mailbox_ty => return ok("HeroMail *")
+        .cstr       => return ok("const char *")
         # A record is a C struct BY VALUE and a variant a tagged union
         # by value. A case is not a type of its own at runtime — it is
         # the whole variant with a known tag — but its PAYLOAD is,

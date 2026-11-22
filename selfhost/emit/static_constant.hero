@@ -207,10 +207,10 @@ function constructed(c: state.Checked, names: ctype.Names, s: source.Source, dec
             element: i64 @= 0 - 1
 
             match table.get(c.types, ty)
-                .array arr                                                => element @ arr.element
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ element
-                .fixed | .map | .fallible | .function_ty | .named         => element @ element
-                .case_ty | .failure | .generic | .error                   => element @ element
+                .array arr                                                         => element @ arr.element
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => element @ element
+                .fixed | .map | .fallible | .function_ty | .named                  => element @ element
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => element @ element
 
             if element < 0
                 return fail(code: "none", msg: "not a runtime array")
@@ -240,10 +240,10 @@ function constructed(c: state.Checked, names: ctype.Names, s: source.Source, dec
 
 function is_array(c: state.Checked, ty: i64) -> bool
     match table.get(c.types, ty)
-        .array                                                    => return true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .fixed | .map | .fallible | .function_ty | .named         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .array                                                             => return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .fixed | .map | .fallible | .function_ty | .named                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -252,6 +252,7 @@ function int_kind(c: state.Checked, ty: i64) -> widths.IntKind?
     match table.get(c.types, ty)
         .int_ty ik                                                 => return ok(ik.kind)
         .float_ty | .bool | .str | .ptr | .cstr | .unit            => return fail(code: "none", msg: "not an integer")
+        .thread_ty | .mailbox_ty                                   => return fail(code: "none", msg: "not an integer")
         .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not an integer")
         .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not an integer")
 
@@ -260,10 +261,10 @@ function int_kind(c: state.Checked, ty: i64) -> widths.IntKind?
 # Whether an element is an `f32`, whose literal is read as one (defect 2276).
 function is_f32(c: state.Checked, ty: i64) -> bool
     match table.get(c.types, ty)
-        .float_ty ft                                               => return widths.float_bits(ft.kind) == 32
-        .int_ty | .bool | .str | .ptr | .cstr | .unit              => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
+        .float_ty ft                                                       => return widths.float_bits(ft.kind) == 32
+        .int_ty | .bool | .str | .ptr | .cstr | .unit                      => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named         => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 

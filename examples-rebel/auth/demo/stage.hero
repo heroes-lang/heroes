@@ -91,7 +91,7 @@ function run(folder: str) -> ()?
     v: vault.Vault = .memory(secrets: {})
     print(vault.describe(v))
     l @= net.listen("127.0.0.1", port: 0)?
-    chain @= threads.spawn_text(directory_side, arg: f"{folder}\n{l.address.port}")?
+    chain @= threads.start_text(directory_side, arg: f"{folder}\n{l.address.port}")?
     mailed = smtp.serve(
         l,
         folder: path.join_all([folder, "mail"]),
@@ -149,7 +149,7 @@ function directory_side(arg: str) -> str
             os.ask_stop()
             return f"the directory stand-in could not listen: {e.msg}"
 
-    match threads.spawn_text(server_side, arg: f"{arg}\n{l.address.port}")
+    match threads.start_text(server_side, arg: f"{arg}\n{l.address.port}")
         .ok started =>
             rest @= started
             directory_done = ldap.serve(l)
@@ -188,7 +188,7 @@ function served(arg: str) -> str?
     )
     fixed: clock.Clock = .fixed(at: time.from_unix(whole_seconds: FIXED_CLOCK, extra_nanoseconds: 0)?)
     st @= state.open(s, issuer: issuer, c: fixed, g: ids.seeded_generator("server"), v: secrets)?
-    driver @= threads.spawn_text(script_side, arg: f"{folder}\n{issuer}")?
+    driver @= threads.start_text(script_side, arg: f"{folder}\n{issuer}")?
     looped = serve.serve(@st, l: l, mode: serve.Mode(scheduled: false, logged: false))
     _ = net.close_listener(@l).is_err()
     ran = threads.wait_text(@driver)

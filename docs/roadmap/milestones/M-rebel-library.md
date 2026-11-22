@@ -562,6 +562,42 @@ Given while the landing's last lanes ran, each meant as:
 - *put these cleanups as a rule: every so often the system must clean the worktrees and the
   agents*: `.claude/hooks/sweep.py`, `.claude/rules/records.md` § Working in lanes.
 
+## The author's answers of 2026-11-22, late morning: panel 254 ratified, GTK 4, and the coordinator's choices accepted
+
+Given in conversation to the coordinator's six recommendations (`1a 2b 3a 4a 5a`), each meant as:
+
+- **1a, panel 254 ratified by the author's reading**, R1 to R9 (issue 2674): `(thread T)` and
+  `(mailbox T)` enter the language. `lane-mailbox` merges only once the blind seat's scoring shows
+  no row of R2 read wrong by two of five readers (R9's condition); a row it reopens comes back to
+  the author alone.
+- **2b, with the author's reason**, *I want to try to stand on the latest technologies, provided
+  they are stable*: the `ui` package's Linux arm is **GTK 4**, opened at run time, and its web view
+  **WebKitGTK 6.0**, the GTK 4 build; the coordinator had recommended GTK 3 and WebKitGTK 4.1, the
+  pair Tauri 2 stands on, and no GTK 3 arm is written.
+- **3a**: the web view's page is served through the application's own scheme from the program's
+  memory, **no port opened**; the page reaches only `window.heroes.send`, and the program sets the
+  content security policy.
+- **4a**: the application `pipeline` is renamed **`ingest`**, since the site pairs the two groups'
+  examples by name and the compiler's `examples/pipeline` is another program.
+- **5a**: issue 2610, the register, gains its entry for panel 254 (decision 2498 and panel 251's
+  R3, a thread exchanging one `i64` or one `str` at its start and end, invalidated by R1) and closes
+  at the landing with the gate.
+- The sixth question, defect 2642's ruling (Ed25519 checked without the cofactor on every
+  platform), had no answer of its own; it is one of the coordinator's choices the last answer below
+  accepts.
+
+And two more the same minute:
+
+- **`args()` on an argument that is not UTF-8**, meant as *fix it*. The coordinator had put it
+  as a language question owing a sitting; read before applying, spec § 11 already holds
+  `args_checked() -> [str?]`, which does not abort, beside `args()`, which does. So the repair is
+  the programs': every program of the tree that reads a command line a person types moves to
+  `args_checked` and tells an argument that is not text as a usage error, never an abort (the
+  compiler already does: `heroes check` on a file whose name is not UTF-8 says so at exit 2).
+- **The coordinator's choices, accepted**, meant as *OK, I accept yours*: the coherence review's
+  D01 to D19, the settlements of the author's answer of 2026-11-20 about 20:4x, and every bullet of
+  § Decided on the fly by the coordinator below are turned as accepted, 2026-11-22.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds

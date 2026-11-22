@@ -266,7 +266,7 @@ function said_of(c: state.Checked, decls: [ast.Decl], ty: i64, @memo: {i64: [Sai
                 out @ element_said(c, decls, element: o.payload, container: "a `T?`", memo: @memo)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => out @ out
         .fixed | .function_ty | .named | .case_ty                 => out @ out
-        .failure | .generic | .error                              => out @ out
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => out @ out
 
     memo[ty] @ out
     return out
@@ -317,7 +317,7 @@ function element_said(c: state.Checked, decls: [ast.Decl], element: i64, contain
         .ptr => return [Said(code: "pointer_element", what: "`ptr` as the element of " + container)]
         .cstr => return [Said(code: "pointer_element", what: "`cstr` as the element of " + container)]
         .fixed => return [Said(code: "fixed_element", what: "a fixed array as the element of " + container)]
-        .int_ty | .float_ty | .bool | .str => fall @ fall
+        .int_ty | .float_ty | .bool | .str | .thread_ty | .mailbox_ty => fall @ fall
         .array | .map | .fallible | .function_ty | .named => fall @ fall
         .case_ty | .failure | .generic | .error => fall @ fall
 
@@ -395,10 +395,10 @@ function check_fixed_flow(@found: [GateNote], c: state.Checked, f: containers.Fu
 
 function is_fixed_value(c: state.Checked, f: containers.Function, value: i64) -> bool
     return match table.get(c.types, containers.value_type(f, value))
-        .fixed                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .map | .fallible | .function_ty | .named         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fixed                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Whether this value is the [a, b, c] an author wrote, as opposed to a
 # field read with the same type: a literal renders as {a, b, c}, which
@@ -507,9 +507,9 @@ test "a type's notes found once and said at each use are the walk's at each use,
                     .fixed =>
                         walk @ walk.push(Said(code: "fixed_element", what: "a fixed array as the element of " + where))
                         descend @ false
-                    .int_ty | .float_ty | .bool | .str                => descend @ descend
-                    .array | .map | .fallible | .function_ty | .named => descend @ descend
-                    .case_ty | .failure | .generic | .error           => descend @ descend
+                    .int_ty | .float_ty | .bool | .str | .thread_ty | .mailbox_ty => descend @ descend
+                    .array | .map | .fallible | .function_ty | .named             => descend @ descend
+                    .case_ty | .failure | .generic | .error                       => descend @ descend
 
                 if descend && where == "a map key"
                     reached = key_pointer.reaches_pointer(c, parsed.decls, ty: one)
@@ -536,7 +536,7 @@ test "a type's notes found once and said at each use are the walk's at each use,
                             wheres @ wheres.push("a `T?`")
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => descend @ descend
                     .fixed | .function_ty | .named | .case_ty                 => descend @ descend
-                    .failure | .generic | .error                              => descend @ descend
+                    .failure | .generic | .error | .thread_ty | .mailbox_ty   => descend @ descend
 
         for span in [token.Span(start: 1000 + ty, end: 1001 + ty), token.Span(start: ty, end: ty + 1)]
             for one in walk

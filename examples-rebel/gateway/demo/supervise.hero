@@ -154,7 +154,7 @@ function started_service(service: str, control: net.Listener) -> Started?
         "inventory" => inventory.run
         _           => reviews.run
 
-    thread = threads.spawn_text(body: body, arg: f"{control.address.port}")?
+    thread = threads.start_text(body: body, arg: f"{control.address.port}")?
 
     match notify.await_ready(control)
         .err _ => return ok(Started(thread: thread, port: 0))
@@ -215,7 +215,7 @@ function gateway_served(@gw: state.Gateway, identity: certs.Identity) -> i64
         .ok opened =>
             listener @= opened
 
-            match threads.spawn_text(body: client.run, arg: f"{listener.port}\n{identity.roots}")
+            match threads.start_text(body: client.run, arg: f"{listener.port}\n{identity.roots}")
                 .err e =>
                     _ = tls.close_listener(@listener).is_err()
                     print("demo: the client: " + e.msg)

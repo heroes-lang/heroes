@@ -165,7 +165,7 @@ function unknown(c: state.Checked, ty: i64) -> bool
         .error                                                     => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .generic                             => false
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty  => false
 
 # The record or variant a type names.
 function declared(c: state.Checked, ty: i64) -> i64?
@@ -173,7 +173,7 @@ function declared(c: state.Checked, ty: i64) -> i64?
         .named n                                                   => ok(n.decl)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => fail(code: "none", msg: "no declaration")
         .array | .fixed | .map | .fallible | .function_ty | .error => fail(code: "none", msg: "no declaration")
-        .case_ty | .failure | .generic                             => fail(code: "none", msg: "no declaration")
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty  => fail(code: "none", msg: "no declaration")
 
 # What the function holding the byte `at` returns, as `reader` writes it, ""
 # where it returns `()` or holds no result.
@@ -282,7 +282,7 @@ function is_unit_type(c: state.Checked, ty: i64) -> bool
         .unit                                                      => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .error => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .generic                             => false
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty  => false
 
 # A function's parameters as a hole's file reads them, each type the one the
 # checker lowered its written type to, written by `reader`: they were the

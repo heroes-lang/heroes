@@ -30,6 +30,7 @@ function hole(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl]
     match table.get(c.out.types, ty)
         .int_ty | .float_ty | .bool | .str                        => return
         .ptr | .cstr | .unit | .fixed | .map | .array | .fallible => report(@c, a, s, decls, at: at, ty: ty)
+        .thread_ty | .mailbox_ty                                  => report(@c, a, s, decls, at: at, ty: ty)
         .function_ty | .named | .case_ty | .failure | .generic    => report(@c, a, s, decls, at: at, ty: ty)
         .error                                                    => return
 

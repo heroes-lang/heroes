@@ -65,11 +65,12 @@ function renderer(c: state.Checked, names: ctype.Names, s: source.Source, decls:
             match fk.kind
                 .f32 => return "hero_show_f32"
                 .f64 => return "hero_show_f64"
-        .bool                       => return "hero_show_bool"
-        .str                        => return "hero_show_str"
-        .ptr | .cstr | .function_ty => return "hero_show_pointer"
-        .unit                       => return "hero_show_unit"
-        .failure                    => return "hero_show_failure"
+        .bool                                     => return "hero_show_bool"
+        .str                                      => return "hero_show_str"
+        .thread_ty                                => return "hero_show_i64"
+        .ptr | .cstr | .function_ty | .mailbox_ty => return "hero_show_pointer"
+        .unit                                     => return "hero_show_unit"
+        .failure                                  => return "hero_show_failure"
         .named n =>
             if !names.handle_decls[n.decl].is_err()
                 return "hero_show_pointer"
@@ -94,6 +95,7 @@ function generated(c: state.Checked, names: ctype.Names, ty: i64) -> bool
         .named n                                                  => return names.handle_decls[n.decl].is_err()
         .array | .map | .fallible | .case_ty                      => return true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .thread_ty | .mailbox_ty                                  => return false
         .fixed | .function_ty | .failure | .generic | .error      => return false
 
     return false
@@ -102,11 +104,11 @@ function generated(c: state.Checked, names: ctype.Names, ty: i64) -> bool
 # element, which the member's walk writes.
 function held(c: state.Checked, decls: [ast.Decl], ty: i64) -> [i64]
     match table.get(c.types, ty)
-        .named n                                                  => return field_types(c, decls, decl: n.decl)
-        .case_ty vc                                               => return field_types(c, decls, decl: vc.decl)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return table.contained(c.types, ty)
-        .array | .map | .fallible | .function_ty                  => return table.contained(c.types, ty)
-        .fixed | .failure | .generic | .error                     => return table.contained(c.types, ty)
+        .named n                                                         => return field_types(c, decls, decl: n.decl)
+        .case_ty vc                                                      => return field_types(c, decls, decl: vc.decl)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit        => return table.contained(c.types, ty)
+        .array | .map | .fallible | .function_ty                         => return table.contained(c.types, ty)
+        .fixed | .failure | .generic | .error | .thread_ty | .mailbox_ty => return table.contained(c.types, ty)
 
     return table.contained(c.types, ty)
 
@@ -116,10 +118,10 @@ function field_types(c: state.Checked, decls: [ast.Decl], decl: i64) -> [i64]
 
     for ty in synth.field_types(c, decls, decl: decl)
         match table.get(c.types, ty)
-            .fixed fx                                                 => out @ out.push(fx.element)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => out @ out.push(ty)
-            .array | .map | .fallible | .function_ty | .named         => out @ out.push(ty)
-            .case_ty | .failure | .generic | .error                   => out @ out.push(ty)
+            .fixed fx                                                          => out @ out.push(fx.element)
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => out @ out.push(ty)
+            .array | .map | .fallible | .function_ty | .named                  => out @ out.push(ty)
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => out @ out.push(ty)
 
     return out
 

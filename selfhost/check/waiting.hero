@@ -209,11 +209,11 @@ function takes(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64
             element: i64 @= -1
 
             match table.get(c.out.types, ty)
-                .array w                                                  => element @ w.element
-                .fixed w                                                  => element @ w.element
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-                .map | .fallible | .function_ty | .named                  => return false
-                .case_ty | .failure | .generic | .error                   => return false
+                .array w                                                           => element @ w.element
+                .fixed w                                                           => element @ w.element
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+                .map | .fallible | .function_ty | .named                           => return false
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
             for e in el.elements
                 if !takes(c, a, decls, id: e, ty: element)
@@ -224,9 +224,9 @@ function takes(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, ty: i64
                     for e in en.entries
                         if !takes(c, a, decls, id: e.key, ty: w.key) || !takes(c, a, decls, id: e.value, ty: w.value)
                             return false
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-                .array | .fixed | .fallible | .function_ty | .named       => return false
-                .case_ty | .failure | .generic | .error                   => return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+                .array | .fixed | .fallible | .function_ty | .named                => return false
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
         .binary b => return !arithmetic(b.op) || takes(c, a, decls, id: b.left, ty: ty) && takes(c, a, decls, id: b.right, ty: ty)
         .unary u => return u.op != .neg || takes(c, a, decls, id: u.operand, ty: ty)
         .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr => return true

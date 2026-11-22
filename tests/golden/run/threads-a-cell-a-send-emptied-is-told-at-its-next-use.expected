@@ -1,0 +1,3 @@
+sent
+!at: threads-a-cell-a-send-emptied-is-told-at-its-next-use.hero:20:11
+!panic: a C handle reached the argument `c` of `counter_add` through a value `m.send(@v)` emptied: the send handed the handle to whichever thread receives it from that mailbox, and only that thread reaches C through it now

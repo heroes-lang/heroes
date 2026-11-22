@@ -278,6 +278,7 @@ function shim(s: source.Source, tree: ast.Ast, decls: [ast.Decl], name: str, cou
                     match tree.types[fd.value.result].kind
                         .unit                                                                       => gives @ false
                         .named | .array_of | .fixed | .map_of | .fallible | .function_type | .error => gives @ true
+                        .thread_of | .mailbox_of                                                    => gives @ true
             .constant_decl | .record_decl | .variant_decl | .test_decl => continue
 
     head: str @= "(<its parameters, in C>)"

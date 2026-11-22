@@ -89,8 +89,8 @@ function crosses_the_boundary(c: state.Checker, decls: [ast.Decl], ty: i64) -> b
                     return false
 
             return crosses_the_boundary(c, decls, f.result)
-        .array | .fixed | .map | .fallible => return false
-        .case_ty | .failure | .generic     => return false
+        .array | .fixed | .map | .fallible | .thread_ty | .mailbox_ty => return false
+        .case_ty | .failure | .generic                                => return false
 
     return false
 
@@ -170,8 +170,8 @@ function carried_refusal(c: state.Checker, decls: [ast.Decl], ty: i64) -> i64
                 return f.result
 
             return -1
-        .named _ | .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error => return -1
-        .array | .fixed | .map | .fallible | .case_ty | .failure | .generic           => return -1
+        .named _ | .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .error                  => return -1
+        .array | .fixed | .map | .fallible | .case_ty | .failure | .generic | .thread_ty | .mailbox_ty => return -1
 
     return -1
 
@@ -198,10 +198,10 @@ function ffi_constant(@c: state.Checker, s: source.Source, decls: [ast.Decl], de
         # result_may_stand's case, reached through the one door that
         # does not go through a signature.
 
-        .function_ty                                        => why @ "a function value Heroes calls must be one this compiler emitted, and this asks the header for one of C's. Declare it `ptr` if the program only hands it back to C"
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .error => return
-        .array | .fixed | .map | .fallible | .named         => return
-        .case_ty | .failure | .generic                      => return
+        .function_ty                                                                   => why @ "a function value Heroes calls must be one this compiler emitted, and this asks the header for one of C's. Declare it `ptr` if the program only hands it back to C"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error | .thread_ty | .mailbox_ty => return
+        .array | .fixed | .map | .fallible | .named                                    => return
+        .case_ty | .failure | .generic                                                 => return
 
     shown = state.show(c, s, decls, declared)
     state.push_diagnostic(@c, ffi_errors.ffi_constant_type(name: shown, why: why, span: span))
@@ -223,9 +223,9 @@ function ffi_field(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i
         # A nested record is fine exactly when it is also the header's —
         # RenderTexture holds two Textures by value, and both are raylib's.
 
-        .named n                                                => header_owned(decls, n.decl)
-        .str | .unit | .array | .map | .fallible | .function_ty => false
-        .case_ty | .failure | .generic                          => false
+        .named n                                                  => header_owned(decls, n.decl)
+        .str | .unit | .array | .map | .fallible | .function_ty   => false
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty => false
 
     if fine
         return
@@ -242,7 +242,7 @@ function ffi_field(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i
         # Was "no C header can declare a field of this type" — §11's false
         # claim about the world; tiffio.h has float d_mat[3][3] (panel 081).
 
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .error => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .error | .thread_ty | .mailbox_ty => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one"
         .fixed | .function_ty | .case_ty | .failure | .generic => "this group has no spelling for that: a field is a number, `bool`, `ptr`, `cstr`, another record of the group, or a fixed array of one"
 
     shown = state.show(c, s, decls, ty)
@@ -253,7 +253,7 @@ function fixed_element_fine(c: state.Checker, decls: [ast.Decl], element: i64) -
         .int_ty | .float_ty | .bool | .ptr | .cstr | .error              => true
         .named n                                                         => header_owned(decls, n.decl)
         .str | .unit | .array | .fixed | .map | .fallible | .function_ty => false
-        .case_ty | .failure | .generic                                   => false
+        .case_ty | .failure | .generic | .thread_ty | .mailbox_ty        => false
 
 function header_owned(decls: [ast.Decl], decl: i64) -> bool
     return match decls[decl].kind
@@ -265,10 +265,10 @@ function header_owned(decls: [ast.Decl], decl: i64) -> bool
 # A field's value is read through the record, so no construction is named.
 function fixed_outside_group(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, span: token.Span)
     is_fixed = match table.get(c.out.types, ty)
-        .fixed                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .map | .fallible | .function_ty | .named         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fixed                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
     if !is_fixed
         return

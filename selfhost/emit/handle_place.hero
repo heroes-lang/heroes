@@ -233,10 +233,10 @@ function place_of(c: state.Checked, s: source.Source, decls: [ast.Decl], f: cont
 
 function is_fixed(c: state.Checked, f: containers.Function, value: i64) -> bool
     return match table.get(c.types, containers.value_type(f, value))
-        .fixed                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .map | .fallible | .function_ty | .named         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fixed                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # The one line that ends a life and poisons where it lay, or ends it alone
 # where the argument was no place. `value` and `place` are the C texts with
