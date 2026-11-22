@@ -1,0 +1,5 @@
+<p class="tagline">The INI reader, written again with Rebel&rsquo;s text functions, keeping its own rules for what a configuration file may repeat.</p>
+
+<p>Rebel&rsquo;s <code>strings</code> reads each line, trims its spaces, tells a section header from a comment and cuts a key from its value, in place of the original&rsquo;s own text helpers. The rules stay this program&rsquo;s: a key before any section goes into the empty section rather than being lost, a key given twice is an error because nobody can tell which one the writer meant, a section given twice is merged, and a line that is none of these is an error with its line number.</p>
+
+<p>Rebel has an <code>ini</code> package, and this program does not use it. That package reads INI as Python&rsquo;s configparser does, where one option decides for repeated sections and repeated keys together, while this program merges the one and refuses the other. Both rules are reasonable, so the program keeps its own and writes it over <code>strings</code>.</p>

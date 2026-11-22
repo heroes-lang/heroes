@@ -15,15 +15,22 @@
  *
  * **The examples are two groups** (`.claude/rules/rebel.md`, decision 7 of
  * M-rebel-library): `examples/` uses no library, and `examples-rebel/` holds
- * the programs written with Rebel. The second group's programs are the
- * `.hero` files at the top of `examples-rebel/` that are no package's driver,
- * and the folders there holding a `main.hero`, by `examples/`'s own rule; a
- * driver, `reach_<package>.hero` (`examples-rebel/README.md` § A2), is the
- * program a package's own tests run through, and its package is read on its
- * reference page, not here. Their slugs open `rebel/`, so no name of one group
- * can be read as the other's, and **a twin**, a program of one group whose
- * name a program of the other bears, is shown with a link to the other, the
- * same program with Rebel and without.
+ * the programs written with Rebel. The second group's programs are its
+ * folders, each a project holding a `main.hero` and its own catalogue, told
+ * apart as the check of Rebel's programs tells them
+ * (`examples-rebel/README.md` § A10, `tests/harness/rebel_apps_run.hero`):
+ * **an application** holds its own `main.expected`, its demo's transcript;
+ * **a twin** holds none and bears the name of a program of `examples/`, its
+ * original, and is run with the original's arguments and input and held to
+ * the original's output, which is what its page shows. A file at the top of
+ * `examples-rebel/` is a package's driver, `reach_<package>.hero` (§ A2),
+ * whose package is read on its reference page and not here, the README or
+ * the drivers' catalogue; anything else there, a folder that is neither, an
+ * application bearing an original's name, or a twin declaring what the check
+ * reads of an application alone, is a build error. Their slugs open
+ * `rebel/`, so no name of one group can be read as the other's, and a twin's
+ * page and its original's each link the other, the same program with Rebel
+ * and without.
  *
  * A program that uses a package carries two more kinds of file, and each is
  * read as what it is: `heroes.toml`, its catalogue, a document shown beside the
@@ -121,14 +128,22 @@ export interface FetchedPackage {
 export interface Example {
   /** `json`, `gallery/03-fallible` or `rebel/jq`. The URL is `/examples/<slug>/`. */
   slug: string;
-  /** A folder holding a `main.hero`, one file of the gallery, or one file of `examples-rebel/`. */
-  kind: 'program' | 'gallery' | 'file';
+  /** A folder holding a `main.hero`, or one file of the gallery. */
+  kind: 'program' | 'gallery';
   /** Which group it is in: the programs with no library, or those written with Rebel. */
   group: 'examples' | 'rebel';
-  /** The other group's program bearing its name, where one does. */
+  /** The other group's program bearing its name, where one does: a twin's original, or an original's twin. */
   twin: string | null;
   /** The directory the fingerprint is taken over. */
   dir: string;
+  /**
+   * The folder its `main.args`, `main.stdin` and `main.expected` are read
+   * from: its own, or a twin's original's, since a twin is run with its
+   * original's and held to its original's output (README § A10).
+   */
+  harnessDir: string;
+  /** The `main.expected` its output pane is cut from, where it has one. */
+  expectedPath: string | null;
   /** `main.hero` first, then the other modules in bytewise order. */
   modules: SourceFile[];
   /** The data files the program reads, and `main.stdin` where there is one. */
@@ -312,17 +327,18 @@ function checkIndex(): void {
 
 function buildExample(
   slug: string,
-  kind: 'program' | 'gallery' | 'file',
+  kind: 'program' | 'gallery',
   dir: string,
   heroPaths: string[],
   otherPaths: string[],
-  fetchedPaths: string[] = []
+  fetchedPaths: string[] = [],
+  harnessDir: string = dir
 ): Example {
   const modules = heroPaths.map((path) => sourceFile(path, dir));
   const sources = heroPaths.map((path) => readText(path));
   const text = sources.join('\n');
 
-  const argsPath = `${dir}/main.args`;
+  const argsPath = `${harnessDir}/main.args`;
   const args =
     kind === 'program' && isFile(argsPath)
       ? readText(argsPath)
@@ -338,11 +354,11 @@ function buildExample(
     );
   }
 
-  const stdinPath = kind === 'program' && isFile(`${dir}/main.stdin`) ? `${dir}/main.stdin` : null;
+  const stdinPath = kind === 'program' && isFile(`${harnessDir}/main.stdin`) ? `${harnessDir}/main.stdin` : null;
 
-  const expectedPath = `${dir}/main.expected`;
-  const expectation =
-    kind === 'program' && isFile(expectedPath) ? splitExpectation(readText(expectedPath), expectedPath) : null;
+  const expectedFile = `${harnessDir}/main.expected`;
+  const expectedPath = kind === 'program' && isFile(expectedFile) ? expectedFile : null;
+  const expectation = expectedPath === null ? null : splitExpectation(readText(expectedPath), expectedPath);
 
   const entry = kind === 'program' ? `${dir}/main.hero` : heroPaths[0];
   let command = `$ heroes run ${entry}`;
@@ -361,20 +377,21 @@ function buildExample(
     noOutputBecause =
       kind === 'gallery'
         ? 'gallery'
-        : kind === 'file'
-          ? 'rebel'
-          : groups.some((group) => group.header === 'curl/curl.h')
-            ? 'machine'
-            : 'unrecorded';
+        : groups.some((group) => group.header === 'curl/curl.h')
+          ? 'machine'
+          : 'unrecorded';
   }
 
   // What the program reads is asked of the program, never of its folder: a file
-  // a line of its `main.args` names, a header one of its `extern` groups names,
-  // and `main.stdin`. A folder also holds files the program never opens, the
-  // packages program's README and its cards among them, which the folder rule
-  // listed as input (defect 2332). A file that is neither read nor a document
-  // this module knows is a build error, never a skip.
+  // a line of its `main.args` names, or a file of a folder one names (`kanban`
+  // serves the page in the folder its `--web` names), a header one of its
+  // `extern` groups names, and `main.stdin`. A folder also holds files the
+  // program never opens, the packages program's README and its cards among
+  // them, which the folder rule listed as input (defect 2332). A file that is
+  // neither read nor a document this module knows is a build error, never a
+  // skip.
   const named = new Set(args);
+  const underNamed = (path: string) => args.some((one) => path.startsWith(`${one.replace(/\/+$/, '')}/`));
   const headers = new Set(groups.map((group) => `${dir}/${group.header}`));
   const cataloguePath = `${dir}/${CATALOGUE}`;
   const catalogue = kind !== 'gallery' && otherPaths.includes(cataloguePath) ? inputFile(cataloguePath, dir) : null;
@@ -383,20 +400,27 @@ function buildExample(
   for (const path of otherPaths) {
     if (HARNESS_FILES.has(basename(path))) continue;
     if (path === cataloguePath && catalogue !== null) continue;
-    if (named.has(path) || headers.has(path)) {
+    if (named.has(path) || underNamed(path) || headers.has(path)) {
       inputs.push(inputFile(path, dir));
       continue;
     }
     if (isDocument(path, dir)) continue;
     throw new Error(
       `${path} is in ${dir} and the program does not read it.\n` +
-        `  no line of main.args names it, no extern group names it as a header, and it\n` +
+        `  no line of main.args names it or a folder holding it, no extern group names it as a header, and it\n` +
         `  is neither the folder's README.md, its catalogue nor a file of a package it\n` +
         `  fetched. A page lists under Input only what its program reads (defect 2332):\n` +
         `  name the file in main.args, or teach this module what kind of file it is.`
     );
   }
-  if (stdinPath !== null) inputs.push(inputFile(stdinPath, dir));
+  // A twin reads what its original's arguments name, files of the original's
+  // folder (README § A10), so they are its input too, in the order named.
+  if (harnessDir !== dir) {
+    for (const path of args) {
+      if (path.startsWith(`${harnessDir}/`) && isFile(path)) inputs.push(inputFile(path, harnessDir));
+    }
+  }
+  if (stdinPath !== null) inputs.push(inputFile(stdinPath, harnessDir));
 
   const allPaths = [...heroPaths, ...otherPaths, ...fetchedPaths].sort(byBytes);
 
@@ -406,6 +430,8 @@ function buildExample(
     group: slug.startsWith('rebel/') ? 'rebel' : 'examples',
     twin: null,
     dir,
+    harnessDir,
+    expectedPath,
     modules,
     inputs,
     catalogue,
@@ -500,17 +526,19 @@ export function examples(): Example[] {
     );
   }
 
-  const rebel = rebelPrograms();
+  const rebel = rebelPrograms(programs);
 
-  // A twin is the same program in the two groups: `examples/<name>/` and a
-  // program of `examples-rebel/` named `<name>`. Each page links the other.
+  // A twin is the same program in the two groups: `examples/<name>/` and the
+  // folder of `examples-rebel/` named `<name>` that holds no transcript of its
+  // own, run with the original's words. Each page links the other.
   for (const one of rebel) {
-    const name = one.slug.slice('rebel/'.length);
-    const other = programs.find((program) => program.slug === name);
-    if (other !== undefined) {
-      one.twin = other.slug;
-      other.twin = one.slug;
+    if (one.harnessDir === one.dir) continue;
+    const original = programs.find((program) => program.dir === one.harnessDir);
+    if (original === undefined) {
+      throw new Error(`${one.dir} is read as the twin of ${one.harnessDir}, which is no program of examples/.`);
     }
+    one.twin = original.slug;
+    original.twin = one.slug;
   }
 
   cached = [...programs, ...gallery, ...rebel];
@@ -518,14 +546,19 @@ export function examples(): Example[] {
 }
 
 /**
- * The programs written with Rebel: each `.hero` at the top of `examples-rebel/`
- * that is no driver, and each folder there holding a `main.hero`. The folder's
- * README and its catalogue are documents; any other file at its top, or a
- * folder holding no `main.hero`, is a shape this module does not know, and a
- * build error.
+ * The programs written with Rebel, each a folder of `examples-rebel/` holding
+ * a `main.hero`, told apart as the check of Rebel's programs tells them
+ * (`tests/harness/rebel_apps_run.hero`, `program_named`): an application by
+ * its own `main.expected`, read first, and a twin by its original, the
+ * program of `examples/` bearing its name, whose words it is run with.
+ * `originals` are `examples/`'s programs. The top of the folder holds the
+ * drivers, the README and the drivers' catalogue (README § A2, § A10); any
+ * other file there, a folder holding no `main.hero`, a folder that is neither
+ * an application nor a twin, an application bearing an original's name, and
+ * a twin holding a file the check reads of an application alone are shapes
+ * this module does not know, and build errors.
  */
-function rebelPrograms(): Example[] {
-  const catalogue = `${REBEL}/${CATALOGUE}`;
+function rebelPrograms(originals: Example[]): Example[] {
   const out: Example[] = [];
   let drivers = 0;
   for (const path of walk(REBEL)) {
@@ -536,18 +569,44 @@ function rebelPrograms(): Example[] {
       drivers += 1;
       continue;
     }
-    if (!rest.endsWith('.hero')) {
-      throw new Error(
-        `${path} is at the top of ${REBEL}/ and is none of what stands there: a program, a package's\n` +
-          `  driver \`reach_<package>.hero\`, the README or the catalogue (examples-rebel/README.md § A2).`
-      );
-    }
-    const otherPaths = isFile(catalogue) ? [catalogue] : [];
-    out.push(buildExample(`rebel/${rest.slice(0, -'.hero'.length)}`, 'file', REBEL, [path], otherPaths));
+    throw new Error(
+      `${path} is at the top of ${REBEL}/ and is none of what stands there: a package's driver\n` +
+        `  \`reach_<package>.hero\`, the README or the drivers' catalogue. A program written with\n` +
+        `  Rebel is a folder of its own, a project with its own catalogue (examples-rebel/README.md § A10).`
+    );
   }
   for (const dir of directoriesIn(REBEL)) {
     if (!isFile(`${dir}/main.hero`)) {
       throw new Error(`${dir} is a folder of ${REBEL}/ holding no main.hero, so it is no program, and nothing else stands there.`);
+    }
+    const name = dir.slice(REBEL.length + 1);
+    const original = originals.find((one) => one.dir === `${EXAMPLES}/${name}`) ?? null;
+    const application = isFile(`${dir}/main.expected`);
+    if (application && original !== null) {
+      throw new Error(
+        `${dir} is an application, holding its own main.expected, and bears the name of\n` +
+          `  ${original.dir}/, a program of examples/. The site pairs the two groups' programs by name,\n` +
+          `  so its page would link a program it is not the twin of: name the application otherwise\n` +
+          `  (examples-rebel/README.md § A10; M-rebel-library, the author's answer 4a, \`pipeline\` named \`ingest\`).`
+      );
+    }
+    if (!application && original === null) {
+      throw new Error(
+        `${dir} holds no main.expected, and ${EXAMPLES}/${name}/ holds no main.hero: it is neither an\n` +
+          `  application, which carries its demo's transcript, nor a twin, which is held to its\n` +
+          `  original's (examples-rebel/README.md § A10), so its page would show nothing true about it.`
+      );
+    }
+    if (!application) {
+      for (const file of ['main.args', 'main.stdin', 'main.varies', 'main.skips']) {
+        if (isFile(`${dir}/${file}`)) {
+          throw new Error(
+            `${dir}/${file} stands in a twin's folder. A twin is run with its original's arguments and\n` +
+              `  input and held to its original's output on every platform (examples-rebel/README.md § A10),\n` +
+              `  so this file is one the check of Rebel's programs never reads: remove it.`
+          );
+        }
+      }
     }
     const all = walk(dir);
     const placed = `${dir}/${PLACED}/`;
@@ -556,12 +615,13 @@ function rebelPrograms(): Example[] {
     const entry = `${dir}/main.hero`;
     out.push(
       buildExample(
-        `rebel/${dir.slice(REBEL.length + 1)}`,
+        `rebel/${name}`,
         'program',
         dir,
         [entry, ...hero.filter((path) => path !== entry)],
         own.filter((path) => !path.endsWith('.hero')),
-        all.filter((path) => path.startsWith(placed))
+        all.filter((path) => path.startsWith(placed)),
+        original === null || application ? dir : original.dir
       )
     );
   }

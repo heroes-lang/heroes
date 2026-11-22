@@ -1,0 +1,3 @@
+<p class="tagline">The tiny assembler and its simulated machine, written again with Rebel, printing byte for byte what the original prints.</p>
+
+<p>Rebel&rsquo;s <code>strings</code> takes each line of assembly apart, its <code>numbers</code> reads the numbers an instruction carries, and its <code>math</code> does the machine&rsquo;s additions and subtractions, answering an error where the language&rsquo;s own <code>+</code> and <code>-</code> would stop the program on a result too large for 64 bits. The machine stays this program&rsquo;s own: one set of constants to encode an instruction and decode it, two passes over the file because a jump may name a label further down, and a step limit that stops a program that would run forever.</p>

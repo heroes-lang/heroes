@@ -21,7 +21,7 @@ import { shelfOf } from './descriptions.ts';
 
 export function examplesIndex(): string {
   const body = {
-    generated_from: 'examples/',
+    generated_from: ['examples/', 'examples-rebel/'],
     count: examples().length,
     totals: totals(),
     examples: examples().map((example) => ({

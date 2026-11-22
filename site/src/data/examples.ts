@@ -134,14 +134,75 @@ export const groups: Group[] = [
     it: 'Giochi e simulazioni',
     slugs: ['adventure', 'maze', 'board'],
   },
+  // The second group, `examples-rebel/`: the programs written with Rebel
+  // (`.claude/rules/rebel.md`), shelved apart from every shelf above, which is
+  // `examples/` and uses no library. Its applications come first, the tools a
+  // person runs and then the services other programs connect to, and the
+  // twins last (`examples-rebel/README.md` § A10), in the order their
+  // originals stand on the shelves above. `rebel` is the first shelf's key
+  // because Rebel's page links `/examples/#rebel`.
   {
-    // The second group, `examples-rebel/`: the programs written with Rebel
-    // (`.claude/rules/rebel.md`). Every shelf above is `examples/`, which uses
-    // no library.
     key: 'rebel',
-    en: 'Written with Rebel',
-    it: 'Scritti con Rebel',
-    slugs: ['rebel/jq'],
+    en: 'Tools written with Rebel',
+    it: 'Strumenti scritti con Rebel',
+    slugs: [
+      'rebel/jq',
+      'rebel/datakit',
+      'rebel/lab',
+      'rebel/build',
+      'rebel/vcs',
+      'rebel/shell',
+      'rebel/editor',
+      'rebel/explorer',
+      'rebel/kanban',
+      'rebel/backup',
+      'rebel/sitegen',
+      'rebel/l10n',
+      'rebel/invoice',
+      'rebel/inventory',
+      'rebel/certs',
+      'rebel/agent',
+    ],
+  },
+  {
+    key: 'rebel-services',
+    en: 'Services written with Rebel',
+    it: 'Servizi scritti con Rebel',
+    slugs: [
+      'rebel/notes',
+      'rebel/auth',
+      'rebel/chat',
+      'rebel/searchd',
+      'rebel/registry',
+      'rebel/gateway',
+      'rebel/worker',
+      'rebel/ingest',
+      'rebel/iothub',
+      'rebel/monitor',
+    ],
+  },
+  {
+    key: 'rebel-twins',
+    en: 'The same programs, written with Rebel',
+    it: 'Gli stessi programmi, scritti con Rebel',
+    slugs: [
+      'rebel/interpreter',
+      'rebel/json',
+      'rebel/markdown',
+      'rebel/ini',
+      'rebel/rpn',
+      'rebel/assembler',
+      'rebel/wrap',
+      'rebel/query',
+      'rebel/spreadsheet',
+      'rebel/todo',
+      'rebel/logs',
+      'rebel/ledger',
+      'rebel/server',
+      'rebel/wordbands',
+      'rebel/adventure',
+      'rebel/maze',
+    ],
   },
 ];
 

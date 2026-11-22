@@ -63,9 +63,14 @@ function shared(name: string, lang: Lang): string {
   return readText(path).trim();
 }
 
-/** What the footer of an examples page says before the shared tail. */
-function footer(lang: Lang): string {
-  return shared('from-examples', lang);
+/**
+ * What the footer of an examples page says before the shared tail: where its
+ * code is read from, and what holds its recorded output, which is the corpus
+ * suite for `examples/` and the check of Rebel's programs for
+ * `examples-rebel/`. The index, which shows no code, takes the first.
+ */
+function footer(lang: Lang, group: Example['group'] = 'examples'): string {
+  return shared(group === 'rebel' ? 'from-rebel' : 'from-examples', lang);
 }
 
 /** `671 lines · 3 modules · reads a file`, and only what is true. */
@@ -141,7 +146,7 @@ function runBlock(example: Example, lang: Lang): string {
     `  <h2>${t('runIt', lang)}</h2>\n` +
     `  <div class="demo run">\n` +
     `    <div class="bar">${escape(example.command)}</div>\n` +
-    `<pre data-src="${example.dir}/main.expected"><code>${escape(example.expectation.stdout.replace(/\n$/, ''))}</code></pre>\n` +
+    `<pre data-src="${example.expectedPath}"><code>${escape(example.expectation.stdout.replace(/\n$/, ''))}</code></pre>\n` +
     `    <p class="under">${status} &middot; ${count}</p>\n` +
     `  </div>`
   );
@@ -283,7 +288,7 @@ export function renderExamplePage(slug: string, lang: Lang): RenderedPage {
       `&middot; <a href="/examples/index.json">index.json</a></p>`
   );
   parts.push(walkLinks(slug, lang));
-  parts.push(`  <footer>\n${footer(lang)}\n  </footer>`);
+  parts.push(`  <footer>\n${footer(lang, example.group)}\n  </footer>`);
 
   return {
     url,
