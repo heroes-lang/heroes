@@ -403,7 +403,7 @@ capability ui/tabs  pages chosen by tabs
   rust    -
   python  ttk.Notebook
   wx      wxNotebook (AddPage, SetSelection, GetSelection, wxEVT_NOTEBOOK_PAGE_CHANGED)
-  note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows pending (the tab control, `WC_TABCONTROL`, with a child window a page), Linux pending (`GtkNotebook`); a page taken out and put back in another place, and a tab's icon, are not offered
+  note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows by the tab control, `WC_TABCONTROL`, each page a child window laid over its display area (`TCM_ADJUSTRECT`), Linux pending (`GtkNotebook`); a page taken out and put back in another place, and a tab's icon, are not offered
 
 capability ui/table  rows of cells in columns, several chosen, one opened, sorted by the header the person clicks
   heroes  ui.table, ui.set_rows, ui.rows_of, ui.set_sort, ui.sort_of, ui.Sort, ui.set_selection, ui.selection_of, ui.Event.sort_asked, ui.Event.activated, ui.Input.sort, ui.Kind.table
@@ -411,7 +411,7 @@ capability ui/table  rows of cells in columns, several chosen, one opened, sorte
   rust    -
   python  ttk.Treeview
   wx      wxDataViewListCtrl, wxListCtrl (wxLC_REPORT), wxDataViewCtrl
-  note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows pending (the list view in report mode, `LVN_COLUMNCLICK`, `HDF_SORTUP`), Linux pending (`GtkColumnView`); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
+  note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows by the list view in report mode with `LVS_OWNERDATA`, `LVN_COLUMNCLICK` and `HDF_SORTUP`, a click's choice told once its notifications have all come, Linux pending (`GtkColumnView`); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
 
 capability ui/tree  a tree of items folded and unfolded, one chosen and opened, what is under an item loaded when the person unfolds it
   heroes  ui.tree, ui.add_item, ui.remove_item, ui.items_under, ui.item_text, ui.set_unfolded, ui.is_unfolded, ui.set_selection, ui.selection_of, ui.Event.unfolded, ui.Event.activated, ui.Input.unfold, ui.Kind.tree
@@ -419,7 +419,7 @@ capability ui/tree  a tree of items folded and unfolded, one chosen and opened, 
   rust    -
   python  ttk.Treeview
   wx      wxTreeCtrl, wxDataViewTreeCtrl
-  note    catalogue CT35 and CT37 (must); items numbered by the tree, one chosen; macOS by `NSOutlineView`, folding an item measured to tell the fold and then let go of the choice under it; Windows pending (the tree view, `TVN_ITEMEXPANDINGW` with `cChildren` for a foldable item), Linux pending (`GtkListView` over a `GtkTreeListModel` with `GtkTreeExpander`); an item's text changed in place, icons and several items chosen are not offered
+  note    catalogue CT35 and CT37 (must); items numbered by the tree, one chosen; macOS by `NSOutlineView`, folding an item measured to tell the fold and then let go of the choice under it; Windows by the tree view, `TVN_ITEMEXPANDINGW` with `cChildren` for a foldable item, the choice under a folded item let go before the fold, Linux pending (`GtkListView` over a `GtkTreeListModel` with `GtkTreeExpander`); an item's text changed in place, icons and several items chosen are not offered
 
 capability ui/scrolled  a box whose content scrolls
   heroes  ui.scrolled, ui.Kind.scrolled
@@ -427,7 +427,7 @@ capability ui/scrolled  a box whose content scrolls
   rust    -
   python  tkinter.Scrollbar, ttk.Scrollbar, tkinter.XView, tkinter.YView
   wx      wxScrolled (SetScrollRate, SetVirtualSize), whose wxScrolledWindow is wxScrolled<wxPanel>
-  note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows pending (`WS_VSCROLL` and the arm moving a child window), Linux pending (`GtkScrolledWindow`); the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
+  note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows by `WS_VSCROLL`, always drawn (`SIF_DISABLENOSCROLL`), and the arm moving the content's child window, Linux pending (`GtkScrolledWindow`); the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
 
 capability ui/split  two panes whose border the person drags
   heroes  ui.split, ui.pane, ui.set_value, ui.value_of, ui.Event.value_changed, ui.Input.slide, ui.Kind.split, ui.Kind.pane
@@ -435,7 +435,7 @@ capability ui/split  two panes whose border the person drags
   rust    -
   python  tkinter.PanedWindow, ttk.Panedwindow
   wx      wxSplitterWindow (SplitVertically, SplitHorizontally, SetSashPosition, GetSashPosition, SetMinimumPaneSize, wxEVT_SPLITTER_SASH_POS_CHANGED)
-  note    catalogue LY09; two panes, the divider kept where neither gets less than it needs; macOS by `NSSplitView`, the person's drag told by its notification's divider index; Windows pending (no splitter control: the arm draws the divider and moves two child windows), Linux pending (`GtkPaned`); three panes or more, and a pane folded away, are not offered
+  note    catalogue LY09; two panes, the divider kept where neither gets less than it needs; macOS by `NSSplitView`, the person's drag told by its notification's divider index; Windows by the arm's own divider between two child windows, dragged with `SetCapture`, Linux pending (`GtkPaned`); three panes or more, and a pane folded away, are not offered
 
 capability ui/drawing  an area the program draws into, with its keys and its mouse
   heroes  pending

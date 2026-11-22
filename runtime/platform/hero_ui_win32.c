@@ -166,6 +166,9 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 #define HERO_UI_WIN_BACKDROP_MICA 2
 /* A monitor's own scale, `GetDpiForMonitor`'s effective one. */
 #define HERO_UI_WIN_EFFECTIVE_DPI 0
+/* The message a table posts itself to tell the rows chosen once a click's
+ * notifications have all come (A TABLE). */
+#define HERO_UI_WIN_SETTLE (WM_APP + 0x48)
 /* How long `press_key` waits for the key it sent to come back through the
  * queue, and how long the clipboard is asked of another program holding it. */
 #define HERO_UI_WIN_KEY_WAIT_MS 2000u
@@ -278,7 +281,41 @@ struct hero_ui_native {
     /* A menu item's check mode, `HERO_UI_CHECK_*`, and its state. */
     int64_t check;
     bool checked;
+    /* A split's divider dragged by the person: the offset of the mouse in
+     * it, in pixels. */
+    bool dragging;
+    int drag_offset;
+    /* A scrolled box's content size in points and its scroll, in pixels. */
+    int64_t scroll_width;
+    int64_t scroll_height;
+    int scrolled;
+    /* A table's columns, its cells row after row as UTF-16, the column it
+     * is shown sorted by (-1 for none) and its direction, the rows last told
+     * chosen, and whether a choice waits to be told. */
+    int64_t columns;
+    wchar_t **cells;
+    int64_t cell_count;
+    int64_t sort_column;
+    bool sort_ascending;
+    int64_t *told;
+    int64_t told_count;
+    bool choice_waits;
+    /* A tree's items, in the order added. */
+    struct hero_ui_win_node *nodes;
+    int64_t node_count;
+    int64_t node_room;
 };
+
+/* A tree's item: the program's number for it, the item it stands under (0
+ * the top), the tree view's handle, whether it shows its triangle while it
+ * holds none, and whether the person unfolded it while it held none. */
+typedef struct hero_ui_win_node {
+    int64_t item;
+    int64_t under;
+    HTREEITEM handle;
+    bool foldable;
+    bool waiting;
+} hero_ui_win_node;
 
 /* The scaling functions of `user32` (POINTS ARE MAPPED), NULL where this
  * Windows has none. */
@@ -670,11 +707,18 @@ static void hero_ui_win_size_content(hero_ui_native *window) {
 
 /* Places `widget` where the program placed it, at its window's scale, and
  * shows it where it is placed and asked to be. */
+static void hero_ui_win_lay_box(hero_ui_native *widget);
+
 static void hero_ui_win_put(hero_ui_native *widget) {
     hero_ui_native *window = hero_ui_win_window(widget->window);
     UINT dpi = window != NULL ? window->dpi : 96u;
     int height = hero_ui_win_px(widget->height, dpi);
     UINT shown = widget->placed && widget->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW;
+
+    if (widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE) {
+        /* The system's box places it (BOXES THE SYSTEM DRAWS). */
+        return;
+    }
 
     if (widget->kind == HERO_UI_WEBVIEW) {
         /* WebView2 draws into the window's client area where its member
@@ -700,6 +744,7 @@ static void hero_ui_win_put(hero_ui_native *widget) {
         height += (item > 0 ? item : 16) * 12 + 2;
     }
     (void)SetWindowPos(widget->hwnd, NULL, hero_ui_win_px(widget->x, dpi), hero_ui_win_px(widget->y, dpi), hero_ui_win_px(widget->width, dpi), height, SWP_NOZORDER | SWP_NOACTIVATE | shown);
+    hero_ui_win_lay_box(widget);
     for (int64_t i = 0; i < widget->radio_count; i += 1) {
         const int64_t *place = &widget->radio_places[i * 4];
 
@@ -1385,7 +1430,37 @@ static void hero_ui_win_state_changed(HWND hwnd);
 static bool hero_ui_win_window_activated(HWND hwnd, WPARAM state);
 static void hero_ui_win_dialog_key(HWND hwnd, UINT which);
 static bool hero_ui_win_show_context(HWND target, LPARAM at, bool inherit);
+static bool hero_ui_win_scroll_by(HWND hwnd, int request, int lines);
+static bool hero_ui_win_divider_mouse(HWND hwnd, UINT message, LPARAM lparam);
+static void hero_ui_win_page_chosen(hero_ui_native *tabs);
+static LRESULT hero_ui_win_table_notified(hero_ui_native *table, NMHDR *head);
+static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head);
+static void hero_ui_win_settle_rows(hero_ui_native *table);
+static void hero_ui_win_lay_box(hero_ui_native *widget);
 static hero_ui_native *hero_ui_win_widget_at(HWND hwnd);
+
+/* A notification from a control to its parent (`WM_NOTIFY`): the person's
+ * tab, a table's or a tree's. */
+static LRESULT hero_ui_win_notified(NMHDR *head) {
+    hero_ui_native *widget = head != NULL ? hero_ui_win_of(head->hwndFrom) : NULL;
+
+    if (widget == NULL) {
+        return 0;
+    }
+    switch (widget->kind) {
+    case HERO_UI_TABS:
+        if (head->code == TCN_SELCHANGE) {
+            hero_ui_win_page_chosen(widget);
+        }
+        return 0;
+    case HERO_UI_TABLE:
+        return hero_ui_win_table_notified(widget, head);
+    case HERO_UI_TREE:
+        return hero_ui_win_tree_notified(widget, head);
+    default:
+        return 0;
+    }
+}
 
 static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     hero_ui_native *widget;
@@ -1400,16 +1475,47 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         }
         hero_ui_win_command(HIWORD(wparam), LOWORD(wparam), (HWND)lparam);
         return 0;
+    case WM_NOTIFY:
+        return hero_ui_win_notified((NMHDR *)lparam);
     case WM_HSCROLL:
         if (lparam != 0) {
             hero_ui_win_slid((HWND)lparam);
         }
         return 0;
+    case WM_VSCROLL:
+        if (lparam == 0 && hero_ui_win_scroll_by(hwnd, LOWORD(wparam), 0)) {
+            return 0;
+        }
+        break;
+    case WM_MOUSEWHEEL:
+        if (hero_ui_win_scroll_by(hwnd, -1, MulDiv((short)HIWORD(wparam), 3, WHEEL_DELTA))) {
+            return 0;
+        }
+        break;
+    case WM_SETCURSOR:
+        if ((HWND)wparam == hwnd && LOWORD(lparam) == HTCLIENT && hero_ui_win_divider_mouse(hwnd, message, lparam)) {
+            return TRUE;
+        }
+        break;
+    case WM_LBUTTONDOWN:
+    case WM_MOUSEMOVE:
+    case WM_LBUTTONUP:
+    case WM_CAPTURECHANGED:
+        if (hero_ui_win_divider_mouse(hwnd, message, lparam)) {
+            return 0;
+        }
+        break;
     case WM_CONTEXTMENU:
         if (hero_ui_win_show_context((HWND)wparam, lparam, true)) {
             return 0;
         }
         break;
+    case HERO_UI_WIN_SETTLE:
+        widget = hero_ui_find((int64_t)lparam);
+        if (widget != NULL && widget->kind == HERO_UI_TABLE) {
+            hero_ui_win_settle_rows(widget);
+        }
+        return 0;
     case WM_CLOSE:
         widget = hero_ui_win_of(hwnd);
         if (widget != NULL && widget->kind == HERO_UI_WINDOW) {
@@ -1453,7 +1559,7 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             if (window != NULL && window->unframed) {
                 LRESULT hit = DefWindowProcW(hwnd, message, wparam, lparam);
 
-                if (hit != HTCLIENT) {
+                if (hit != HTCLIENT || widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
                     return hit;
                 }
                 return widget->kind == HERO_UI_WINDOW && widget->hwnd == hwnd ? HTCAPTION : HTTRANSPARENT;
@@ -1608,7 +1714,7 @@ int64_t hero_ui_arm_open(void) {
     }
     memset(&controls, 0, sizeof controls);
     controls.dwSize = (DWORD)sizeof controls;
-    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS;
+    controls.dwICC = ICC_STANDARD_CLASSES | ICC_BAR_CLASSES | ICC_PROGRESS_CLASS | ICC_TAB_CLASSES | ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES;
     (void)InitCommonControlsEx(&controls);
     if (!hero_ui_win_ready) {
         HBRUSH face = (HBRUSH)(INT_PTR)(COLOR_3DFACE + 1);
@@ -1627,11 +1733,15 @@ int64_t hero_ui_arm_open(void) {
 }
 
 static void hero_ui_win_hold_others(int64_t except, bool hold);
+static int hero_ui_win_page_index(const hero_ui_native *tabs, int64_t page);
+static void hero_ui_win_drop_cells(hero_ui_native *table);
 
 /* Destroys `widget`'s system objects and gives back its record; its children
  * are gone already. */
 static void hero_ui_win_drop(hero_ui_native *widget) {
     hero_ui_native *owner = hero_ui_find(widget->parent);
+    /* The box a page or a pane leaves, laid out again once it is gone. */
+    hero_ui_native *box = widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE ? owner : NULL;
 
     switch (widget->kind) {
     case HERO_UI_WINDOW:
@@ -1683,6 +1793,26 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
          * and calls the host's `gone`. */
         (void)hero_ui_web_win32_destroy(widget->id);
         break;
+    case HERO_UI_PAGE:
+        if (owner != NULL && owner->hwnd != NULL) {
+            int index = hero_ui_win_page_index(owner, widget->id);
+            int chosen = (int)SendMessageW(owner->hwnd, TCM_GETCURSEL, 0, 0);
+
+            if (index >= 0) {
+                int left;
+
+                hero_ui_mute(1);
+                (void)SendMessageW(owner->hwnd, TCM_DELETEITEM, (WPARAM)index, 0);
+                left = (int)SendMessageW(owner->hwnd, TCM_GETITEMCOUNT, 0, 0);
+                if (index == chosen && left > 0) {
+                    (void)SendMessageW(owner->hwnd, TCM_SETCURSEL, (WPARAM)(index < left ? index : left - 1), 0);
+                }
+                hero_ui_mute(-1);
+            }
+        }
+        (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
+        (void)DestroyWindow(widget->hwnd);
+        break;
     default:
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             (void)SetWindowLongPtrW(widget->radios[i], GWLP_USERDATA, 0);
@@ -1696,12 +1826,20 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
         }
         break;
     }
+    if (widget->kind == HERO_UI_TABLE) {
+        hero_ui_win_drop_cells(widget);
+    }
     hero_layer_free(widget->radios);
     hero_layer_free(widget->radio_places);
     hero_layer_free(widget->label);
+    hero_layer_free(widget->told);
+    hero_layer_free(widget->nodes);
     hero_ui_ids_free(&widget->order);
     hero_ui_forget(widget->id);
     hero_layer_free(widget);
+    if (box != NULL) {
+        hero_ui_win_lay_box(box);
+    }
 }
 
 /* Destroys widget `id` and every widget whose parent it is, children first. */
@@ -1814,6 +1952,8 @@ static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window, HWND ins
 
 static void hero_ui_win_give_icon(HWND hwnd);
 static bool hero_ui_win_subclass_edit(HWND hwnd);
+static void hero_ui_win_lay_pages(hero_ui_native *tabs);
+static void hero_ui_win_lay_panes(hero_ui_native *split);
 
 /* Whether `owner` holds a widget of `kind`: a menu bar's menu, a menu's
  * or a context menu's items and menus, a page in tabs, at most two panes in
@@ -1827,6 +1967,21 @@ static bool hero_ui_win_holds_kind(const hero_ui_native *owner, int64_t kind) {
         return owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
     case HERO_UI_MENU:
         return owner->kind == HERO_UI_WINDOW || owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
+    case HERO_UI_PAGE:
+        return owner->kind == HERO_UI_TABS;
+    case HERO_UI_PANE: {
+        int panes = 0;
+
+        if (owner->kind != HERO_UI_SPLIT_ROW && owner->kind != HERO_UI_SPLIT_COLUMN) {
+            return false;
+        }
+        for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+            const hero_ui_native *pane = hero_ui_at(at);
+
+            panes += pane != NULL && pane->kind == HERO_UI_PANE && pane->parent == owner->id ? 1 : 0;
+        }
+        return panes < 2;
+    }
     case HERO_UI_CONTEXT_MENU:
         if (owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_MENU_ITEM || owner->kind == HERO_UI_MENU_SEPARATOR || owner->kind == HERO_UI_CONTEXT_MENU || owner->kind == HERO_UI_PAGE || owner->kind == HERO_UI_PANE) {
             return false;
@@ -1936,6 +2091,47 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             answer = hero_ui_win_failed("making a menu", GetLastError());
         }
         break;
+    case HERO_UI_TABS:
+        made->hwnd = hero_ui_win_control(window, inside, WC_TABCONTROLW, WS_TABSTOP | WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        break;
+    case HERO_UI_PAGE:
+        made->hwnd = hero_ui_win_control(window, owner->hwnd, hero_ui_win_panel_class, WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        made->inside = made->hwnd;
+        made->placed = true;
+        break;
+    case HERO_UI_PANE:
+        made->hwnd = hero_ui_win_control(window, owner->hwnd, hero_ui_win_panel_class, WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        made->inside = made->hwnd;
+        made->placed = true;
+        break;
+    case HERO_UI_SCROLL:
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_panel_class, WS_VSCROLL | WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        if (made->hwnd != NULL) {
+            /* Its content: moved up and down within it, carrying its number
+             * so a click on it finds the box. */
+            made->inside = hero_ui_win_control(window, made->hwnd, hero_ui_win_panel_class, WS_VISIBLE | WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+            if (made->inside == NULL) {
+                (void)DestroyWindow(made->hwnd);
+                made->hwnd = NULL;
+            }
+        }
+        break;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_panel_class, WS_CLIPCHILDREN, WS_EX_CONTROLPARENT, id);
+        made->most = HERO_UI_WIN_POINTS_MOST;
+        break;
+    case HERO_UI_TABLE:
+        made->hwnd = hero_ui_win_control(window, inside, WC_LISTVIEWW, LVS_REPORT | LVS_SHOWSELALWAYS | LVS_OWNERDATA | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        made->sort_column = -1;
+        made->sort_ascending = true;
+        if (made->hwnd != NULL) {
+            (void)SendMessageW(made->hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+        }
+        break;
+    case HERO_UI_TREE:
+        made->hwnd = hero_ui_win_control(window, inside, WC_TREEVIEWW, TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        break;
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR:
         made->command = hero_ui_win_new_command();
@@ -1987,6 +2183,30 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         /* Where it fails the field shows its own menu alone. */
         (void)hero_ui_win_subclass_edit(made->hwnd);
         break;
+    case HERO_UI_PAGE: {
+        TCITEMW item;
+        LRESULT at;
+
+        memset(&item, 0, sizeof item);
+        item.mask = TCIF_TEXT | TCIF_PARAM;
+        item.pszText = L"";
+        item.lParam = (LPARAM)id;
+        hero_ui_mute(1);
+        at = SendMessageW(owner->hwnd, TCM_INSERTITEMW, (WPARAM)SendMessageW(owner->hwnd, TCM_GETITEMCOUNT, 0, 0), (LPARAM)&item);
+        if (at >= 0 && SendMessageW(owner->hwnd, TCM_GETCURSEL, 0, 0) < 0) {
+            (void)SendMessageW(owner->hwnd, TCM_SETCURSEL, (WPARAM)at, 0);
+        }
+        hero_ui_mute(-1);
+        if (at < 0) {
+            hero_ui_win_drop(made);
+            return hero_ui_win_failed("adding a page to tabs", GetLastError());
+        }
+        hero_ui_win_lay_pages(owner);
+        break;
+    }
+    case HERO_UI_PANE:
+        hero_ui_win_lay_panes(owner);
+        break;
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
         hero_ui_win_show_range(made);
@@ -2018,8 +2238,15 @@ int64_t hero_ui_arm_destroy(int64_t id) {
     return HERO_UI_OK;
 }
 
+static int64_t hero_ui_win_set_cells(hero_ui_native *table, const uint8_t *items, int64_t count);
+static int64_t hero_ui_win_choose_in_box(hero_ui_native *widget, const int64_t *indices, int64_t count);
+static bool hero_ui_win_rows_chosen(const hero_ui_native *table, int64_t **rows, int64_t *count);
+static int64_t hero_ui_win_item_chosen(const hero_ui_native *tree);
+static int64_t hero_ui_win_divider_at(const hero_ui_native *split);
 
 static void hero_ui_win_first_shown(hero_ui_native *window);
+static void hero_ui_win_lay_scroll(hero_ui_native *scroll);
+static int64_t hero_ui_win_divider(UINT dpi);
 
 int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
@@ -2040,6 +2267,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_CHECKBOX:
         ways = HERO_UI_WIN_PREFIX;
         break;
+    case HERO_UI_PAGE:
+        ways = HERO_UI_WIN_PREFIX | HERO_UI_WIN_TABS;
+        break;
     case HERO_UI_WINDOW:
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_MENU:
@@ -2051,6 +2281,25 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     wide = hero_ui_win_wide(text, count, ways);
     if (wide == NULL) {
         return HERO_UI_LIMIT;
+    }
+    if (widget->kind == HERO_UI_PAGE) {
+        /* Its tab's title, which the tab control draws with `&` as the
+         * underline of a key, so it is written doubled. */
+        hero_ui_native *tabs = hero_ui_find(widget->parent);
+        int index = tabs != NULL ? hero_ui_win_page_index(tabs, id) : -1;
+        TCITEMW item;
+
+        memset(&item, 0, sizeof item);
+        item.mask = TCIF_TEXT;
+        item.pszText = wide;
+        set = index >= 0 && SendMessageW(tabs->hwnd, TCM_SETITEMW, (WPARAM)index, (LPARAM)&item) != 0;
+        code = GetLastError();
+        hero_layer_free(wide);
+        if (set) {
+            /* A title of another width may change the room the tabs take. */
+            hero_ui_win_lay_pages(tabs);
+        }
+        return set ? HERO_UI_OK : hero_ui_win_failed("setting a tab's title", code);
     }
     if (widget->kind == HERO_UI_MENU || widget->kind == HERO_UI_MENU_ITEM) {
         hero_layer_free(widget->label);
@@ -2135,6 +2384,9 @@ int64_t hero_ui_arm_set_items(int64_t id, const uint8_t *items, int64_t count) {
     }
     if (widget->kind == HERO_UI_RADIO_GROUP) {
         return hero_ui_win_make_radios(widget, items, count);
+    }
+    if (widget->kind == HERO_UI_TABLE) {
+        return hero_ui_win_set_cells(widget, items, count);
     }
     if (widget->kind == HERO_UI_LIST || widget->kind == HERO_UI_LIST_MULTIPLE) {
         reset = LB_RESETCONTENT;
@@ -2222,6 +2474,14 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
             widget->checked = value == 1;
         }
         return hero_ui_win_refill_owner(widget);
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        if (value < 0) {
+            return HERO_UI_INVALID;
+        }
+        widget->value = hero_ui_between(value, 0, HERO_UI_WIN_POINTS_MOST);
+        hero_ui_win_lay_panes(widget);
+        return HERO_UI_OK;
     default:
         return HERO_UI_INVALID;
     }
@@ -2232,6 +2492,16 @@ int64_t hero_ui_arm_set_range(int64_t id, int64_t least, int64_t most) {
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
+        /* Where the person may drag the divider; the program's own place is
+         * kept as set. */
+        if (least < 0) {
+            return HERO_UI_INVALID;
+        }
+        widget->least = least;
+        widget->most = most;
+        return HERO_UI_OK;
     }
     if (widget->kind != HERO_UI_SLIDER && widget->kind != HERO_UI_PROGRESS) {
         return HERO_UI_INVALID;
@@ -2248,6 +2518,9 @@ int64_t hero_ui_arm_set_selection(int64_t id, const int64_t *indices, int64_t co
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TABS || widget->kind == HERO_UI_TABLE || widget->kind == HERO_UI_TREE) {
+        return hero_ui_win_choose_in_box(widget, indices, count);
     }
     if ((widget->kind != HERO_UI_LIST && widget->kind != HERO_UI_LIST_MULTIPLE) || (count > 1 && widget->kind != HERO_UI_LIST_MULTIPLE)) {
         return HERO_UI_INVALID;
@@ -2306,6 +2579,10 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
             } else {
                 (void)ShowWindow(widget->hwnd, SW_HIDE);
             }
+            return HERO_UI_OK;
+        case HERO_UI_PAGE:
+        case HERO_UI_PANE:
+            hero_ui_win_lay_box(hero_ui_find(widget->parent));
             return HERO_UI_OK;
         case HERO_UI_CONTEXT_MENU:
             return HERO_UI_OK;
@@ -2472,6 +2749,13 @@ int64_t hero_ui_arm_set_size(int64_t id, int64_t which, int64_t width, int64_t h
     if (window == NULL) {
         return HERO_UI_NOT_FOUND;
     }
+    if (window->kind == HERO_UI_SCROLL && which == HERO_UI_SIZE_CONTENT) {
+        /* A scrolled box's content, which scrolls within it. */
+        window->scroll_width = hero_ui_between(width, 0, HERO_UI_WIN_POINTS_MOST);
+        window->scroll_height = hero_ui_between(height, 0, HERO_UI_WIN_POINTS_MOST);
+        hero_ui_win_lay_scroll(window);
+        return HERO_UI_OK;
+    }
     if (window->kind != HERO_UI_WINDOW) {
         return HERO_UI_INVALID;
     }
@@ -2503,7 +2787,8 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW) {
+    /* A page and a pane are placed by their box. */
+    if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE) {
         return HERO_UI_INVALID;
     }
     if (index < 0 && (widget->x != x || widget->y != y)) {
@@ -2667,6 +2952,34 @@ int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height) {
         *width = 320;
         *height = 240;
         return HERO_UI_OK;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        /* The divider's thickness on both axes; a box's other room the
+         * layout finds from what it holds. */
+        *width = hero_ui_win_divider(dpi);
+        *height = *width;
+        return HERO_UI_OK;
+    case HERO_UI_TABLE: {
+        /* Its columns at their width, and a list's height with its header. */
+        HWND header = (HWND)SendMessageW(widget->hwnd, LVM_GETHEADER, 0, 0);
+        RECT bar = {0, 0, 0, 0};
+        int wide = 0;
+
+        for (int64_t i = 0; i < widget->columns; i += 1) {
+            wide += (int)SendMessageW(widget->hwnd, LVM_GETCOLUMNWIDTH, (WPARAM)i, 0);
+        }
+        if (header != NULL) {
+            (void)GetWindowRect(header, &bar);
+        }
+        *width = hero_ui_win_pt_up(wide + 2 * hero_ui_win_metric(SM_CXEDGE, dpi), dpi);
+        *width = *width > 160 ? *width : 160;
+        *height = 96 + hero_ui_win_pt_up(bar.bottom - bar.top, dpi);
+        return HERO_UI_OK;
+    }
+    case HERO_UI_TREE:
+        *width = 160;
+        *height = 96;
+        return HERO_UI_OK;
     default:
         return HERO_UI_OK;
     }
@@ -2726,6 +3039,10 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
         }
         *value = widget->checked ? 1 : 0;
         return HERO_UI_OK;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        *value = hero_ui_win_divider_at(widget);
+        return HERO_UI_OK;
     default:
         return HERO_UI_INVALID;
     }
@@ -2783,6 +3100,27 @@ int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64
     case HERO_UI_RADIO_GROUP:
         one = hero_ui_win_checked_radio(widget);
         break;
+    case HERO_UI_TABS:
+        one = (int64_t)SendMessageW(widget->hwnd, TCM_GETCURSEL, 0, 0);
+        break;
+    case HERO_UI_TREE:
+        one = hero_ui_win_item_chosen(widget);
+        one = one > 0 ? one : -1;
+        break;
+    case HERO_UI_TABLE: {
+        int64_t *rows = NULL;
+        int64_t got = 0;
+
+        if (!hero_ui_win_rows_chosen(widget, &rows, &got)) {
+            return HERO_UI_LIMIT;
+        }
+        *chosen = got;
+        if (got <= count && got > 0) {
+            memcpy(indices, rows, (size_t)got * sizeof *rows);
+        }
+        hero_layer_free(rows);
+        return HERO_UI_OK;
+    }
     default:
         return HERO_UI_INVALID;
     }
@@ -2845,7 +3183,11 @@ int64_t hero_ui_arm_pump(int64_t ms) {
     }
 }
 
+static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int64_t value, int64_t second);
+static int64_t hero_ui_win_tree_inject(hero_ui_native *tree, int64_t kind, int64_t value, int64_t second);
 static hero_ui_native *hero_ui_win_key_button(int64_t id);
+static int64_t hero_ui_win_choose_tab(hero_ui_native *tabs, int64_t index);
+static int64_t hero_ui_win_drag_to(hero_ui_native *split, int64_t value);
 
 /* Presses button `button`, a push button's, a checkbox's or a radio item's,
  * by `BM_CLICK`, and where Win32 dropped the press sends the `BN_CLICKED`
@@ -2903,6 +3245,12 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (widget->kind == HERO_UI_TABLE || widget->kind == HERO_UI_TREE) {
+        hero_ui_win_injecting += 1;
+        answer = widget->kind == HERO_UI_TABLE ? hero_ui_win_table_inject(widget, kind, value, second) : hero_ui_win_tree_inject(widget, kind, value, second);
+        hero_ui_win_injecting -= 1;
+        return answer;
     }
     hero_ui_win_injecting += 1;
     switch (kind) {
@@ -2978,12 +3326,16 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
             } else {
                 hero_ui_win_press(widget->radios[value], false);
             }
+        } else if (widget->kind == HERO_UI_TABS) {
+            answer = hero_ui_win_choose_tab(widget, value);
         } else {
             answer = HERO_UI_INVALID;
         }
         break;
     case HERO_UI_EVENT_VALUE:
-        if (widget->kind != HERO_UI_SLIDER) {
+        if (widget->kind == HERO_UI_SPLIT_ROW || widget->kind == HERO_UI_SPLIT_COLUMN) {
+            answer = hero_ui_win_drag_to(widget, value);
+        } else if (widget->kind != HERO_UI_SLIDER) {
             answer = HERO_UI_INVALID;
         } else if (IsWindowEnabled(widget->hwnd)) {
             int position = hero_ui_win_position(widget, value);
@@ -3309,21 +3661,18 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 
 /* -- THE KINDS AND ACTS THIS ARM DRAWS -------------------------------------
  *
- * Every kind and act of `hero_ui.h` but BOXES THE SYSTEM DRAWS, A TABLE and
- * A TREE, which the macOS arm alone draws yet (`hero_ui_elsewhere`'s words),
- * and a context menu on a web view: a web view's menu is WebView2's own,
+ * Every kind and act of `hero_ui.h` but one: a context menu belongs to a
+ * widget the person right-clicks, and a web view's menu is WebView2's own,
  * which this arm does not replace. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind >= HERO_UI_TABS && kind <= HERO_UI_TREE) {
-        return false;
-    }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
-    return act != HERO_UI_EVENT_SORT && act != HERO_UI_EVENT_UNFOLD;
+    (void)act;
+    return true;
 }
 
 /* Every `HERO_UI_OTHER` and `HERO_UI_UNSUPPORTED` of this arm is said
@@ -4169,6 +4518,9 @@ static bool hero_ui_win_takes_keys(int64_t kind) {
     case HERO_UI_LIST_MULTIPLE:
     case HERO_UI_COMBO:
     case HERO_UI_SLIDER:
+    case HERO_UI_TABS:
+    case HERO_UI_TABLE:
+    case HERO_UI_TREE:
         return true;
     default:
         return false;
@@ -4227,6 +4579,9 @@ static void hero_ui_win_order_tabs(HWND parent) {
     for (int64_t i = 0; i < count; i += 1) {
         if (row[i]->inside != NULL) {
             hero_ui_win_order_tabs(row[i]->inside);
+        }
+        if (row[i]->kind == HERO_UI_TABS) {
+            hero_ui_win_order_tabs(row[i]->hwnd);
         }
     }
     hero_layer_free(row);
@@ -4326,6 +4681,8 @@ int64_t hero_ui_arm_set_focus(int64_t id) {
     case HERO_UI_TEXT_AREA:
     case HERO_UI_LIST:
     case HERO_UI_LIST_MULTIPLE:
+    case HERO_UI_TABLE:
+    case HERO_UI_TREE:
         hero_ui_win_give_keys(window, widget->hwnd);
         return HERO_UI_OK;
     default:
@@ -4466,6 +4823,10 @@ static hero_ui_native *hero_ui_win_key_button(int64_t id) {
     return button != NULL && button->kind == HERO_UI_BUTTON && hero_ui_win_reachable(button) && IsWindowEnabled(button->hwnd) ? button : NULL;
 }
 
+/* The first row table `table` has chosen, -1 for none. */
+static int64_t hero_ui_win_first_chosen(const hero_ui_native *table);
+/* The item tree `tree` has chosen, 0 for none. */
+static int64_t hero_ui_win_item_chosen(const hero_ui_native *tree);
 
 /* Return, `IDOK`, or Escape, `IDCANCEL`, the dialog manager gave window
  * `hwnd`: its button for that key pressed where the person reaches it; else
@@ -4495,11 +4856,14 @@ static void hero_ui_win_dialog_key(HWND hwnd, UINT which) {
         hero_ui_tell(HERO_UI_EVENT_SUBMIT, focused->id, 0, 0);
         break;
     case HERO_UI_LIST:
-    case HERO_UI_LIST_MULTIPLE: {
+    case HERO_UI_LIST_MULTIPLE:
+    case HERO_UI_TABLE: {
         /* The first row chosen, which the header says Return opens. */
         int64_t first = -1;
 
-        if (focused->kind == HERO_UI_LIST) {
+        if (focused->kind == HERO_UI_TABLE) {
+            first = hero_ui_win_first_chosen(focused);
+        } else if (focused->kind == HERO_UI_LIST) {
             first = (int64_t)SendMessageW(focused->hwnd, LB_GETCURSEL, 0, 0);
         } else {
             for (int64_t i = 0; i < focused->items && first < 0; i += 1) {
@@ -4508,6 +4872,14 @@ static void hero_ui_win_dialog_key(HWND hwnd, UINT which) {
         }
         if (first >= 0) {
             hero_ui_tell(HERO_UI_EVENT_ACTIVATE, focused->id, first, 0);
+        }
+        break;
+    }
+    case HERO_UI_TREE: {
+        int64_t item = hero_ui_win_item_chosen(focused);
+
+        if (item > 0) {
+            hero_ui_tell(HERO_UI_EVENT_ACTIVATE, focused->id, item, 0);
         }
         break;
     }
@@ -5369,56 +5741,1131 @@ int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count,
     return answer;
 }
 
-/* -- BOXES THE SYSTEM DRAWS ------------------------------------------------ */
+/* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
+ *
+ * CONTAINERS: a page, a pane and a scrolled box's content are windows of
+ * this arm's panel class, so the controls standing in them send their
+ * notifications to this arm's procedure as a window's do, and each is
+ * `WS_EX_CONTROLPARENT`, so the dialog manager's Tab goes into it. A widget
+ * whose parent is one is made in it and placed from its top-left corner.
+ *
+ * TABS are the tab control, `WC_TABCONTROL`, each page a child of it laid
+ * over its display area (`TCM_ADJUSTRECT`), the page chosen shown alone; a
+ * tab's item carries its page's number. A SCROLLED BOX is a panel with its
+ * vertical scroll bar always drawn (`SIF_DISABLENOSCROLL`), so the room it
+ * takes beside the content never changes, and its content a panel moved up
+ * and down within it. A SPLIT is a panel holding its two panes, the divider
+ * the strip of the split itself between them, which the person drags with
+ * the mouse held (`SetCapture`) within the range the program set; this arm
+ * lays the panes out wherever the split or its divider moves. */
 
-int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
-    (void)id;
-    (void)left;
-    (void)top;
-    (void)right;
-    (void)bottom;
-    return HERO_UI_UNSUPPORTED;
+/* The divider's thickness, in points: Windows' own sizing border's. */
+static int64_t hero_ui_win_divider(UINT dpi) {
+    int64_t thickness = hero_ui_win_pt_up(hero_ui_win_metric(SM_CXSIZEFRAME, dpi), dpi);
+
+    return thickness > 0 ? thickness : 4;
 }
 
-/* -- A TABLE --------------------------------------------------------------- */
+/* The index of page `page` among tabs `tabs`' items, -1 where it is none. */
+static int hero_ui_win_page_index(const hero_ui_native *tabs, int64_t page) {
+    int count = (int)SendMessageW(tabs->hwnd, TCM_GETITEMCOUNT, 0, 0);
+
+    for (int i = 0; i < count; i += 1) {
+        TCITEMW item;
+
+        memset(&item, 0, sizeof item);
+        item.mask = TCIF_PARAM;
+        if (SendMessageW(tabs->hwnd, TCM_GETITEMW, (WPARAM)i, (LPARAM)&item) && item.lParam == (LPARAM)page) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* Lays tabs `tabs`' pages over its display area, the one chosen shown. */
+static void hero_ui_win_lay_pages(hero_ui_native *tabs) {
+    RECT area;
+    int chosen = (int)SendMessageW(tabs->hwnd, TCM_GETCURSEL, 0, 0);
+    int count = (int)SendMessageW(tabs->hwnd, TCM_GETITEMCOUNT, 0, 0);
+
+    if (!GetClientRect(tabs->hwnd, &area)) {
+        return;
+    }
+    (void)SendMessageW(tabs->hwnd, TCM_ADJUSTRECT, FALSE, (LPARAM)&area);
+    for (int i = 0; i < count; i += 1) {
+        TCITEMW item;
+        hero_ui_native *page;
+
+        memset(&item, 0, sizeof item);
+        item.mask = TCIF_PARAM;
+        if (!SendMessageW(tabs->hwnd, TCM_GETITEMW, (WPARAM)i, (LPARAM)&item)) {
+            continue;
+        }
+        page = hero_ui_find((int64_t)item.lParam);
+        if (page == NULL || page->hwnd == NULL) {
+            continue;
+        }
+        (void)SetWindowPos(page->hwnd, NULL, area.left, area.top, area.right > area.left ? area.right - area.left : 0, area.bottom > area.top ? area.bottom - area.top : 0, SWP_NOZORDER | SWP_NOACTIVATE | (i == chosen && page->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
+    }
+}
+
+/* The divider's place in split `split`, its first pane's width or height in
+ * points, within what its place holds. */
+static int64_t hero_ui_win_divider_at(const hero_ui_native *split) {
+    hero_ui_native *window = hero_ui_win_window(split->window);
+    UINT dpi = window != NULL ? window->dpi : 96u;
+    int64_t across = split->kind == HERO_UI_SPLIT_ROW ? split->width : split->height;
+    int64_t room = across - hero_ui_win_divider(dpi);
+
+    if (!split->placed) {
+        return split->value < 0 ? 0 : split->value;
+    }
+    return hero_ui_between(split->value, 0, room > 0 ? room : 0);
+}
+
+/* The panes of split `split`, the first made first; NULL where it has none. */
+static void hero_ui_win_panes(const hero_ui_native *split, hero_ui_native **first, hero_ui_native **second) {
+    *first = NULL;
+    *second = NULL;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *pane = hero_ui_at(at);
+
+        if (pane == NULL || pane->kind != HERO_UI_PANE || pane->parent != split->id) {
+            continue;
+        }
+        if (*first == NULL || pane->id < (*first)->id) {
+            *second = *first;
+            *first = pane;
+        } else if (*second == NULL || pane->id < (*second)->id) {
+            *second = pane;
+        }
+    }
+}
+
+/* Lays split `split`'s panes out on either side of its divider. */
+static void hero_ui_win_lay_panes(hero_ui_native *split) {
+    hero_ui_native *window = hero_ui_win_window(split->window);
+    UINT dpi = window != NULL ? window->dpi : 96u;
+    hero_ui_native *first;
+    hero_ui_native *second;
+    int64_t at = hero_ui_win_divider_at(split);
+    int64_t thickness = hero_ui_win_divider(dpi);
+    bool row = split->kind == HERO_UI_SPLIT_ROW;
+
+    hero_ui_win_panes(split, &first, &second);
+    if (first != NULL && second == NULL) {
+        /* One pane fills the split. */
+        (void)SetWindowPos(first->hwnd, NULL, 0, 0, hero_ui_win_px(split->width, dpi), hero_ui_win_px(split->height, dpi), SWP_NOZORDER | SWP_NOACTIVATE | (first->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
+        return;
+    }
+    if (first != NULL) {
+        (void)SetWindowPos(first->hwnd, NULL, 0, 0, hero_ui_win_px(row ? at : split->width, dpi), hero_ui_win_px(row ? split->height : at, dpi), SWP_NOZORDER | SWP_NOACTIVATE | (first->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
+    }
+    if (second != NULL) {
+        int64_t from = at + thickness;
+        int64_t left = (row ? split->width : split->height) - from;
+
+        (void)SetWindowPos(second->hwnd, NULL, hero_ui_win_px(row ? from : 0, dpi), hero_ui_win_px(row ? 0 : from, dpi), hero_ui_win_px(row ? (left > 0 ? left : 0) : split->width, dpi), hero_ui_win_px(row ? split->height : (left > 0 ? left : 0), dpi), SWP_NOZORDER | SWP_NOACTIVATE | (second->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW));
+    }
+}
+
+/* Gives scrolled box `scroll`'s bar its range and its content its place. */
+static void hero_ui_win_lay_scroll(hero_ui_native *scroll) {
+    hero_ui_native *window = hero_ui_win_window(scroll->window);
+    UINT dpi = window != NULL ? window->dpi : 96u;
+    SCROLLINFO bar;
+    RECT shown;
+    int content = hero_ui_win_px(scroll->scroll_height, dpi);
+    int most;
+
+    if (!GetClientRect(scroll->hwnd, &shown)) {
+        return;
+    }
+    most = content - shown.bottom;
+    scroll->scrolled = most > 0 ? (scroll->scrolled > most ? most : scroll->scrolled) : 0;
+    memset(&bar, 0, sizeof bar);
+    bar.cbSize = (UINT)sizeof bar;
+    bar.fMask = SIF_RANGE | SIF_PAGE | SIF_POS | SIF_DISABLENOSCROLL;
+    bar.nMin = 0;
+    bar.nMax = content > 0 ? content - 1 : 0;
+    bar.nPage = (UINT)(shown.bottom > 0 ? shown.bottom : 0);
+    bar.nPos = scroll->scrolled;
+    (void)SetScrollInfo(scroll->hwnd, SB_VERT, &bar, TRUE);
+    /* A content whose size the program never set is the box's own. */
+    (void)SetWindowPos(scroll->inside, NULL, 0, -scroll->scrolled, scroll->scroll_width > 0 ? hero_ui_win_px(scroll->scroll_width, dpi) : shown.right, content > 0 ? content : shown.bottom, SWP_NOZORDER | SWP_NOACTIVATE);
+}
+
+/* Lays out what box `widget` holds, where it is one. */
+static void hero_ui_win_lay_box(hero_ui_native *widget) {
+    if (widget == NULL) {
+        return;
+    }
+    switch (widget->kind) {
+    case HERO_UI_TABS:
+        hero_ui_win_lay_pages(widget);
+        break;
+    case HERO_UI_SPLIT_ROW:
+    case HERO_UI_SPLIT_COLUMN:
+        hero_ui_win_lay_panes(widget);
+        break;
+    case HERO_UI_SCROLL:
+        hero_ui_win_lay_scroll(widget);
+        break;
+    default:
+        break;
+    }
+}
+
+/* Scrolls scrolled box `hwnd` as its bar's `request` asks (`WM_VSCROLL`),
+ * or by `lines` lines of the wheel where `request` is -1. */
+static bool hero_ui_win_scroll_by(HWND hwnd, int request, int lines) {
+    hero_ui_native *scroll = hero_ui_win_of(hwnd);
+    SCROLLINFO bar;
+    int line;
+    int to;
+
+    if (scroll == NULL || scroll->kind != HERO_UI_SCROLL) {
+        return false;
+    }
+    memset(&bar, 0, sizeof bar);
+    bar.cbSize = (UINT)sizeof bar;
+    bar.fMask = SIF_ALL;
+    if (!GetScrollInfo(hwnd, SB_VERT, &bar)) {
+        return true;
+    }
+    line = hero_ui_win_line(hwnd);
+    to = bar.nPos;
+    switch (request) {
+    case -1:
+        to -= lines * line;
+        break;
+    case SB_LINEUP:
+        to -= line;
+        break;
+    case SB_LINEDOWN:
+        to += line;
+        break;
+    case SB_PAGEUP:
+        to -= (int)bar.nPage;
+        break;
+    case SB_PAGEDOWN:
+        to += (int)bar.nPage;
+        break;
+    case SB_THUMBTRACK:
+    case SB_THUMBPOSITION:
+        to = bar.nTrackPos;
+        break;
+    case SB_TOP:
+        to = bar.nMin;
+        break;
+    case SB_BOTTOM:
+        to = bar.nMax;
+        break;
+    default:
+        return true;
+    }
+    {
+        int most = bar.nMax - (int)bar.nPage + 1;
+
+        to = to > most ? most : to;
+        to = to < 0 ? 0 : to;
+    }
+    if (to != scroll->scrolled) {
+        scroll->scrolled = to;
+        hero_ui_win_lay_scroll(scroll);
+    }
+    return true;
+}
+
+/* What the mouse does on split `hwnd`'s own strip, the divider: its cursor,
+ * and a drag within the range the program set, told as the person's
+ * `HERO_UI_EVENT_VALUE` at each new place. Answers whether it handled it. */
+static bool hero_ui_win_divider_mouse(HWND hwnd, UINT message, LPARAM lparam) {
+    hero_ui_native *split = hero_ui_win_of(hwnd);
+    hero_ui_native *window;
+    bool row;
+    int at;
+
+    if (split == NULL || (split->kind != HERO_UI_SPLIT_ROW && split->kind != HERO_UI_SPLIT_COLUMN)) {
+        return false;
+    }
+    window = hero_ui_win_window(split->window);
+    row = split->kind == HERO_UI_SPLIT_ROW;
+    at = row ? (short)LOWORD(lparam) : (short)HIWORD(lparam);
+    switch (message) {
+    case WM_SETCURSOR:
+        (void)SetCursor(LoadCursorW(NULL, (LPCWSTR)(row ? IDC_SIZEWE : IDC_SIZENS)));
+        return true;
+    case WM_LBUTTONDOWN:
+        if (!split->enabled || window == NULL) {
+            return true;
+        }
+        split->dragging = true;
+        split->drag_offset = at - hero_ui_win_px(hero_ui_win_divider_at(split), window->dpi);
+        (void)SetCapture(hwnd);
+        return true;
+    case WM_MOUSEMOVE:
+        if (split->dragging && window != NULL) {
+            int64_t place = hero_ui_win_pt(at - split->drag_offset, window->dpi);
+            int64_t across = (row ? split->width : split->height) - hero_ui_win_divider(window->dpi);
+
+            place = hero_ui_between(place, split->least, split->most);
+            place = hero_ui_between(place, 0, across > 0 ? across : 0);
+            if (place != split->value) {
+                split->value = place;
+                hero_ui_win_lay_panes(split);
+                hero_ui_tell(HERO_UI_EVENT_VALUE, split->id, place, 0);
+            }
+        }
+        return true;
+    case WM_LBUTTONUP:
+    case WM_CAPTURECHANGED:
+        if (split->dragging) {
+            split->dragging = false;
+            if (message == WM_LBUTTONUP) {
+                (void)ReleaseCapture();
+            }
+        }
+        return true;
+    default:
+        return false;
+    }
+}
+
+/* Tabs `tabs` shows the page the person or the program chose: laid out,
+ * and the person's choice told. */
+static void hero_ui_win_page_chosen(hero_ui_native *tabs) {
+    hero_ui_win_lay_pages(tabs);
+    hero_ui_tell(HERO_UI_EVENT_SELECT, tabs->id, (int64_t)SendMessageW(tabs->hwnd, TCM_GETCURSEL, 0, 0), 0);
+}
+
+int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+    UINT dpi;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = hero_ui_win_window(widget->window);
+    dpi = window != NULL ? window->dpi : 96u;
+    if (widget->kind == HERO_UI_TABS) {
+        /* Measured as the tab control's own display area in a place of 400
+         * by 300 points, the room its tabs and border take around it. */
+        int wide = hero_ui_win_px(400, dpi);
+        int high = hero_ui_win_px(300, dpi);
+        RECT area = {0, 0, wide, high};
+
+        (void)SendMessageW(widget->hwnd, TCM_ADJUSTRECT, FALSE, (LPARAM)&area);
+        *left = hero_ui_win_pt_up(area.left, dpi);
+        *top = hero_ui_win_pt_up(area.top, dpi);
+        *right = hero_ui_win_pt_up(wide - area.right, dpi);
+        *bottom = hero_ui_win_pt_up(high - area.bottom, dpi);
+        return HERO_UI_OK;
+    }
+    if (widget->kind == HERO_UI_SCROLL) {
+        *right = hero_ui_win_pt_up(hero_ui_win_metric(SM_CXVSCROLL, dpi), dpi);
+        return HERO_UI_OK;
+    }
+    return HERO_UI_INVALID;
+}
+
+/* -- A TABLE ----------------------------------------------------------------
+ *
+ * The list view in report mode, `WC_LISTVIEW`, with `LVS_OWNERDATA`: the
+ * arm keeps the cells as UTF-16 and the list view asks for each one it
+ * draws (`LVN_GETDISPINFOW`), so a table of many rows is given at once and
+ * drawn as it scrolls. A click changes the rows chosen by several
+ * notifications (the old let go, the new chosen), so the arm tells one
+ * `SELECT` once they have all come: the first posts `HERO_UI_WIN_SETTLE` to
+ * the table's parent, and its handling tells the rows chosen where they
+ * differ from the ones last told. A header clicked turns the column already
+ * sorted by over, or sorts another ascending, shows the arrow at once
+ * (`HDF_SORTUP`, `HDF_SORTDOWN`) and is told; the rows are never reordered
+ * here, the program giving them again. */
+
+/* The cell of table `table` at `row` and `column`, an empty one where none. */
+static wchar_t *hero_ui_win_cell(const hero_ui_native *table, int64_t row, int64_t column) {
+    static wchar_t none[1] = {0};
+    int64_t at = row * table->columns + column;
+
+    return table->columns > 0 && column < table->columns && at >= 0 && at < table->cell_count && table->cells[at] != NULL ? table->cells[at] : none;
+}
+
+/* Gives back table `table`'s cells. */
+static void hero_ui_win_drop_cells(hero_ui_native *table) {
+    for (int64_t i = 0; i < table->cell_count; i += 1) {
+        hero_layer_free(table->cells[i]);
+    }
+    hero_layer_free(table->cells);
+    table->cells = NULL;
+    table->cell_count = 0;
+    table->items = 0;
+}
+
+/* Shows table `table`'s sort in its header's arrows. */
+static void hero_ui_win_show_sort(const hero_ui_native *table) {
+    HWND header = (HWND)SendMessageW(table->hwnd, LVM_GETHEADER, 0, 0);
+
+    for (int64_t i = 0; header != NULL && i < table->columns; i += 1) {
+        HDITEMW item;
+
+        memset(&item, 0, sizeof item);
+        item.mask = HDI_FORMAT;
+        if (!SendMessageW(header, HDM_GETITEMW, (WPARAM)i, (LPARAM)&item)) {
+            continue;
+        }
+        item.fmt &= ~(HDF_SORTUP | HDF_SORTDOWN);
+        if (i == table->sort_column) {
+            item.fmt |= table->sort_ascending ? HDF_SORTUP : HDF_SORTDOWN;
+        }
+        (void)SendMessageW(header, HDM_SETITEMW, (WPARAM)i, (LPARAM)&item);
+    }
+}
+
+/* The rows table `table` has chosen, ascending, in a block of
+ * `hero_layer_alloc` (NULL for none), their count through `*count`; false
+ * where memory ran out. */
+static bool hero_ui_win_rows_chosen(const hero_ui_native *table, int64_t **rows, int64_t *count) {
+    LRESULT selected = SendMessageW(table->hwnd, LVM_GETSELECTEDCOUNT, 0, 0);
+    int at = -1;
+
+    *rows = NULL;
+    *count = 0;
+    if (selected <= 0) {
+        return true;
+    }
+    *rows = hero_layer_alloc((size_t)selected * sizeof **rows);
+    if (*rows == NULL) {
+        return false;
+    }
+    while (*count < (int64_t)selected && (at = (int)SendMessageW(table->hwnd, LVM_GETNEXTITEM, (WPARAM)at, LVNI_SELECTED)) >= 0) {
+        (*rows)[*count] = at;
+        *count += 1;
+    }
+    return true;
+}
+
+static int64_t hero_ui_win_first_chosen(const hero_ui_native *table) {
+    return (int64_t)SendMessageW(table->hwnd, LVM_GETNEXTITEM, (WPARAM)-1, LVNI_SELECTED);
+}
+
+/* Notes table `table`'s rows chosen now as the ones told. */
+static void hero_ui_win_note_rows(hero_ui_native *table) {
+    int64_t *rows = NULL;
+    int64_t count = 0;
+
+    if (hero_ui_win_rows_chosen(table, &rows, &count)) {
+        hero_layer_free(table->told);
+        table->told = rows;
+        table->told_count = count;
+    }
+    table->choice_waits = false;
+}
+
+/* Tells table `table`'s rows chosen where they differ from the ones last
+ * told: the person's choice, once its notifications have all come. */
+static void hero_ui_win_settle_rows(hero_ui_native *table) {
+    int64_t *rows = NULL;
+    int64_t count = 0;
+    bool same;
+
+    if (!table->choice_waits) {
+        return;
+    }
+    table->choice_waits = false;
+    if (!hero_ui_win_rows_chosen(table, &rows, &count)) {
+        return;
+    }
+    same = count == table->told_count && (count == 0 || memcmp(rows, table->told, (size_t)count * sizeof *rows) == 0);
+    hero_layer_free(table->told);
+    table->told = rows;
+    table->told_count = count;
+    if (!same) {
+        hero_ui_tell(HERO_UI_EVENT_SELECT, table->id, count > 0 ? rows[0] : -1, 0);
+    }
+}
+
+/* The rows of table `table` chosen anew by the person or by an act given
+ * as theirs: told once, after the notifications. */
+static void hero_ui_win_rows_changed(hero_ui_native *table) {
+    if (hero_ui_is_muted() || table->choice_waits) {
+        return;
+    }
+    table->choice_waits = true;
+    (void)PostMessageW(GetParent(table->hwnd), HERO_UI_WIN_SETTLE, 0, (LPARAM)table->id);
+}
+
+/* Chooses row `row` of table `table` and no other, the focus with it, or
+ * adds it to the rows chosen where `adding`; -1 lets every row go. */
+static void hero_ui_win_choose_row(hero_ui_native *table, int64_t row, bool adding) {
+    LVITEMW state;
+
+    memset(&state, 0, sizeof state);
+    state.stateMask = LVIS_SELECTED | LVIS_FOCUSED;
+    if (!adding || row < 0) {
+        (void)SendMessageW(table->hwnd, LVM_SETITEMSTATE, (WPARAM)-1, (LPARAM)&state);
+    }
+    if (row >= 0) {
+        state.state = LVIS_SELECTED | LVIS_FOCUSED;
+        (void)SendMessageW(table->hwnd, LVM_SETITEMSTATE, (WPARAM)row, (LPARAM)&state);
+        (void)SendMessageW(table->hwnd, LVM_ENSUREVISIBLE, (WPARAM)row, FALSE);
+    }
+}
 
 int64_t hero_ui_arm_set_columns(int64_t id, const uint8_t *titles, int64_t count) {
-    (void)id;
-    (void)titles;
-    (void)count;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *table = hero_ui_find(id);
+    hero_ui_native *window;
+    int64_t columns = hero_ui_texts_in(titles, count);
+
+    if (table == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = hero_ui_win_window(table->window);
+    if (table->kind != HERO_UI_TABLE || window == NULL || columns < 1 || columns > HERO_UI_COLUMNS_MOST) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_mute(1);
+    (void)SendMessageW(table->hwnd, LVM_SETITEMCOUNT, 0, 0);
+    hero_ui_win_drop_cells(table);
+    while (SendMessageW(table->hwnd, LVM_DELETECOLUMN, 0, 0)) {
+    }
+    table->columns = 0;
+    for (int64_t i = 0; i < columns; i += 1) {
+        int64_t length = 0;
+        const uint8_t *title = hero_ui_text_at(titles, count, i, &length);
+        wchar_t *wide = hero_ui_win_wide(title, length, 0);
+        LVCOLUMNW column;
+        SIZE size;
+
+        if (wide == NULL) {
+            hero_ui_mute(-1);
+            return HERO_UI_LIMIT;
+        }
+        size = hero_ui_win_text_size(table->hwnd, wide, DT_SINGLELINE);
+        memset(&column, 0, sizeof column);
+        column.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+        column.pszText = wide;
+        column.iSubItem = (int)i;
+        /* Its title's width with the room a header gives it, at least 80
+         * points; the person widens it. */
+        column.cx = size.cx + hero_ui_win_px(24, window->dpi);
+        column.cx = column.cx > hero_ui_win_px(80, window->dpi) ? column.cx : hero_ui_win_px(80, window->dpi);
+        if (SendMessageW(table->hwnd, LVM_INSERTCOLUMNW, (WPARAM)i, (LPARAM)&column) >= 0) {
+            table->columns += 1;
+        }
+        hero_layer_free(wide);
+    }
+    table->sort_column = -1;
+    table->sort_ascending = true;
+    hero_ui_win_note_rows(table);
+    hero_ui_mute(-1);
+    return table->columns == columns ? HERO_UI_OK : hero_ui_win_failed("giving a table its columns", GetLastError());
+}
+
+/* Gives table `table` its cells, row after row. */
+static int64_t hero_ui_win_set_cells(hero_ui_native *table, const uint8_t *items, int64_t count) {
+    int64_t texts = hero_ui_texts_in(items, count);
+    wchar_t **cells;
+
+    if (table->columns == 0 || texts % table->columns != 0) {
+        return HERO_UI_INVALID;
+    }
+    cells = texts > 0 ? hero_layer_alloc_zero((size_t)texts, sizeof *cells) : NULL;
+    if (texts > 0 && cells == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    for (int64_t i = 0; i < texts; i += 1) {
+        int64_t length = 0;
+        const uint8_t *text = hero_ui_text_at(items, count, i, &length);
+
+        /* A cell shows one line: a line feed or a tab drawn as a space. */
+        cells[i] = hero_ui_win_wide(text, length, HERO_UI_WIN_TABS);
+        if (cells[i] == NULL) {
+            for (int64_t j = 0; j < i; j += 1) {
+                hero_layer_free(cells[j]);
+            }
+            hero_layer_free(cells);
+            return HERO_UI_LIMIT;
+        }
+        for (wchar_t *at = cells[i]; *at != 0; at += 1) {
+            *at = *at == L'\n' || *at == L'\r' ? L' ' : *at;
+        }
+    }
+    hero_ui_mute(1);
+    hero_ui_win_choose_row(table, -1, false);
+    hero_ui_win_drop_cells(table);
+    table->cells = cells;
+    table->cell_count = texts;
+    table->items = texts / table->columns;
+    (void)SendMessageW(table->hwnd, LVM_SETITEMCOUNT, (WPARAM)table->items, LVSICF_NOINVALIDATEALL);
+    (void)InvalidateRect(table->hwnd, NULL, TRUE);
+    hero_ui_win_note_rows(table);
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_set_sort(int64_t id, int64_t column, int64_t ascending) {
-    (void)id;
-    (void)column;
-    (void)ascending;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *table = hero_ui_find(id);
+
+    if (table == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (table->kind != HERO_UI_TABLE || column >= table->columns) {
+        return HERO_UI_INVALID;
+    }
+    table->sort_column = column;
+    table->sort_ascending = ascending == 1;
+    hero_ui_win_show_sort(table);
+    return HERO_UI_OK;
 }
 
-/* -- A TREE ---------------------------------------------------------------- */
+/* Sorts table `table` by `column` as the person's click on its header asks,
+ * shown and told. */
+static void hero_ui_win_sort_asked(hero_ui_native *table, int64_t column, bool ascending) {
+    table->sort_column = column;
+    table->sort_ascending = ascending;
+    hero_ui_win_show_sort(table);
+    hero_ui_tell(HERO_UI_EVENT_SORT, table->id, column, ascending ? 1 : 0);
+}
+
+/* What table `table` notifies, `NMHDR` `head`; answers what its parent's
+ * procedure answers. */
+static LRESULT hero_ui_win_table_notified(hero_ui_native *table, NMHDR *head) {
+    switch (head->code) {
+    case LVN_GETDISPINFOW: {
+        LVITEMW *item = &((NMLVDISPINFOW *)(void *)head)->item;
+
+        if ((item->mask & LVIF_TEXT) != 0) {
+            item->pszText = hero_ui_win_cell(table, item->iItem, item->iSubItem);
+        }
+        return 0;
+    }
+    case LVN_ITEMCHANGED: {
+        const NMLISTVIEW *changed = (const NMLISTVIEW *)(void *)head;
+
+        if ((changed->uChanged & LVIF_STATE) != 0 && ((changed->uOldState ^ changed->uNewState) & LVIS_SELECTED) != 0) {
+            hero_ui_win_rows_changed(table);
+        }
+        return 0;
+    }
+    case LVN_ODSTATECHANGED: {
+        const NMLVODSTATECHANGE *changed = (const NMLVODSTATECHANGE *)(void *)head;
+
+        if (((changed->uOldState ^ changed->uNewState) & LVIS_SELECTED) != 0) {
+            hero_ui_win_rows_changed(table);
+        }
+        return 0;
+    }
+    case LVN_ITEMACTIVATE: {
+        const NMITEMACTIVATE *opened = (const NMITEMACTIVATE *)(void *)head;
+
+        hero_ui_win_settle_rows(table);
+        if (opened->iItem >= 0 && opened->iItem < table->items) {
+            hero_ui_tell(HERO_UI_EVENT_ACTIVATE, table->id, opened->iItem, 0);
+        }
+        return 0;
+    }
+    case LVN_COLUMNCLICK: {
+        int64_t column = ((const NMLISTVIEW *)(void *)head)->iSubItem;
+
+        hero_ui_win_sort_asked(table, column, column == table->sort_column ? !table->sort_ascending : true);
+        return 0;
+    }
+    default:
+        return 0;
+    }
+}
+
+/* What the person does to table `table`, given as theirs: `SELECT` a row
+ * chosen, or added where `second` is 1, -1 none; `ACTIVATE` a row opened,
+ * chosen first; `SORT` a column clicked to sort as `second` asks. */
+static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int64_t value, int64_t second) {
+    switch (kind) {
+    case HERO_UI_EVENT_SELECT:
+        if (value >= table->items) {
+            return HERO_UI_INVALID;
+        }
+        if (IsWindowEnabled(table->hwnd)) {
+            hero_ui_win_choose_row(table, value, second == 1);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_EVENT_ACTIVATE:
+        if (value >= table->items) {
+            return HERO_UI_INVALID;
+        }
+        if (IsWindowEnabled(table->hwnd)) {
+            if ((SendMessageW(table->hwnd, LVM_GETITEMSTATE, (WPARAM)value, LVIS_SELECTED) & LVIS_SELECTED) == 0) {
+                hero_ui_win_choose_row(table, value, false);
+            }
+            hero_ui_win_settle_rows(table);
+            hero_ui_tell(HERO_UI_EVENT_ACTIVATE, table->id, value, 0);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_EVENT_SORT:
+        if (value >= table->columns) {
+            return HERO_UI_INVALID;
+        }
+        if (IsWindowEnabled(table->hwnd)) {
+            hero_ui_win_sort_asked(table, value, second == 1);
+        }
+        return HERO_UI_OK;
+    default:
+        return HERO_UI_INVALID;
+    }
+}
+
+/* -- A TREE -----------------------------------------------------------------
+ *
+ * The tree view, `WC_TREEVIEW`, each item carrying the program's number in
+ * its `lParam`, and a foldable item its button while it holds none
+ * (`cChildren` 1). The arm keeps the items, their numbers and what each
+ * stands under, so it finds an item's handle and the items under it without
+ * asking the tree view. The person's choice is `TVN_SELCHANGEDW`, an item
+ * unfolded or folded `TVN_ITEMEXPANDEDW`; an item unfolded while it holds
+ * none is told at `TVN_ITEMEXPANDINGW`, since the tree view has nothing to
+ * show and may tell no more, and the items the program then adds under it
+ * are shown unfolded. Folding an item whose descendant is chosen lets the
+ * choice go before the fold, as the layer's other systems do, where the
+ * tree view would move it to the folded item; Rebel tells that choice gone
+ * after the fold it was told. A double click or Return opens the item
+ * chosen. */
+
+/* The item of tree `tree` numbered `item`, or NULL; 0, the top, is none. */
+static hero_ui_win_node *hero_ui_win_node_of(const hero_ui_native *tree, int64_t item) {
+    for (int64_t i = 0; i < tree->node_count; i += 1) {
+        if (tree->nodes[i].item == item) {
+            return &tree->nodes[i];
+        }
+    }
+    return NULL;
+}
+
+/* The item of tree `tree` whose handle is `handle`, or NULL. */
+static hero_ui_win_node *hero_ui_win_node_at(const hero_ui_native *tree, HTREEITEM handle) {
+    for (int64_t i = 0; handle != NULL && i < tree->node_count; i += 1) {
+        if (tree->nodes[i].handle == handle) {
+            return &tree->nodes[i];
+        }
+    }
+    return NULL;
+}
+
+/* Whether item `item` stands under item `above`, at any depth. */
+static bool hero_ui_win_under(const hero_ui_native *tree, int64_t item, int64_t above) {
+    const hero_ui_win_node *node = hero_ui_win_node_of(tree, item);
+
+    for (int64_t steps = 0; node != NULL && steps <= tree->node_count; steps += 1) {
+        if (node->under == above) {
+            return true;
+        }
+        node = hero_ui_win_node_of(tree, node->under);
+    }
+    return false;
+}
+
+/* Whether item `item` holds an item. */
+static bool hero_ui_win_holds(const hero_ui_native *tree, int64_t item) {
+    for (int64_t i = 0; i < tree->node_count; i += 1) {
+        if (tree->nodes[i].under == item) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Gives item `node` its button where it is foldable or holds items. */
+static void hero_ui_win_show_button(const hero_ui_native *tree, const hero_ui_win_node *node) {
+    TVITEMW change;
+
+    memset(&change, 0, sizeof change);
+    change.mask = TVIF_CHILDREN | TVIF_HANDLE;
+    change.hItem = node->handle;
+    change.cChildren = node->foldable || hero_ui_win_holds(tree, node->item) ? 1 : 0;
+    (void)SendMessageW(tree->hwnd, TVM_SETITEMW, 0, (LPARAM)&change);
+}
+
+/* Whether item `item` is unfolded in the tree view. */
+static bool hero_ui_win_unfolded(const hero_ui_native *tree, const hero_ui_win_node *node) {
+    return (SendMessageW(tree->hwnd, TVM_GETITEMSTATE, (WPARAM)node->handle, TVIS_EXPANDED) & TVIS_EXPANDED) != 0;
+}
+
+/* Whether the person sees item `item`: every item over it unfolded. */
+static bool hero_ui_win_seen(const hero_ui_native *tree, int64_t item) {
+    const hero_ui_win_node *node = hero_ui_win_node_of(tree, item);
+
+    if (node == NULL) {
+        return false;
+    }
+    for (const hero_ui_win_node *over = hero_ui_win_node_of(tree, node->under); over != NULL; over = hero_ui_win_node_of(tree, over->under)) {
+        if (!hero_ui_win_unfolded(tree, over)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static int64_t hero_ui_win_item_chosen(const hero_ui_native *tree) {
+    HTREEITEM chosen = (HTREEITEM)SendMessageW(tree->hwnd, TVM_GETNEXTITEM, TVGN_CARET, 0);
+    const hero_ui_win_node *node = hero_ui_win_node_at(tree, chosen);
+
+    return node != NULL ? node->item : 0;
+}
+
+/* Lets the choice of tree `tree` go where it stands under item `item`,
+ * telling nothing. */
+static void hero_ui_win_let_go_under(hero_ui_native *tree, int64_t item) {
+    int64_t chosen = hero_ui_win_item_chosen(tree);
+
+    if (chosen != 0 && hero_ui_win_under(tree, chosen, item)) {
+        hero_ui_mute(1);
+        (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, 0);
+        hero_ui_mute(-1);
+    }
+}
 
 int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
-    (void)id;
-    (void)item;
-    (void)under;
-    (void)text;
-    (void)count;
-    (void)foldable;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *tree = hero_ui_find(id);
+    hero_ui_win_node *over;
+    hero_ui_win_node *made;
+    TVINSERTSTRUCTW insert;
+    wchar_t *wide;
+    HTREEITEM handle;
+
+    if (tree == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (tree->kind != HERO_UI_TREE) {
+        return HERO_UI_INVALID;
+    }
+    over = under != 0 ? hero_ui_win_node_of(tree, under) : NULL;
+    if ((under != 0 && over == NULL) || hero_ui_win_node_of(tree, item) != NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (tree->node_count == tree->node_room) {
+        int64_t room = tree->node_room == 0 ? 16 : tree->node_room * 2;
+        hero_ui_win_node *grown = hero_layer_grow(tree->nodes, (size_t)room * sizeof *grown);
+
+        if (grown == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        tree->nodes = grown;
+        tree->node_room = room;
+        over = under != 0 ? hero_ui_win_node_of(tree, under) : NULL;
+    }
+    wide = hero_ui_win_wide(text, count, HERO_UI_WIN_TABS);
+    if (wide == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    memset(&insert, 0, sizeof insert);
+    insert.hParent = over != NULL ? over->handle : TVI_ROOT;
+    insert.hInsertAfter = TVI_LAST;
+    insert.item.mask = TVIF_TEXT | TVIF_PARAM | TVIF_CHILDREN;
+    insert.item.pszText = wide;
+    insert.item.lParam = (LPARAM)item;
+    insert.item.cChildren = foldable == 1 ? 1 : 0;
+    hero_ui_mute(1);
+    handle = (HTREEITEM)SendMessageW(tree->hwnd, TVM_INSERTITEMW, 0, (LPARAM)&insert);
+    hero_layer_free(wide);
+    if (handle == NULL) {
+        hero_ui_mute(-1);
+        return hero_ui_win_failed("adding a tree's item", GetLastError());
+    }
+    made = &tree->nodes[tree->node_count];
+    tree->node_count += 1;
+    made->item = item;
+    made->under = under;
+    made->handle = handle;
+    made->foldable = foldable == 1;
+    made->waiting = false;
+    if (over != NULL) {
+        hero_ui_win_show_button(tree, over);
+        if (over->waiting) {
+            /* The person unfolded it while it held none: what the program
+             * adds now is shown so. */
+            over->waiting = false;
+            (void)SendMessageW(tree->hwnd, TVM_EXPAND, TVE_EXPAND, (LPARAM)over->handle);
+        }
+    }
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
-    (void)id;
-    (void)item;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *tree = hero_ui_find(id);
+    hero_ui_win_node *node;
+    int64_t under;
+    int64_t kept = 0;
+
+    if (tree == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (tree->kind != HERO_UI_TREE) {
+        return HERO_UI_INVALID;
+    }
+    node = hero_ui_win_node_of(tree, item);
+    if (node == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    under = node->under;
+    hero_ui_mute(1);
+    (void)SendMessageW(tree->hwnd, TVM_DELETEITEM, 0, (LPARAM)node->handle);
+    /* The tree view took the items under it with it: so does the arm. */
+    for (int64_t i = 0; i < tree->node_count; i += 1) {
+        if (tree->nodes[i].item != item && !hero_ui_win_under(tree, tree->nodes[i].item, item)) {
+            tree->nodes[kept] = tree->nodes[i];
+            kept += 1;
+        }
+    }
+    tree->node_count = kept;
+    node = hero_ui_win_node_of(tree, under);
+    if (node != NULL) {
+        hero_ui_win_show_button(tree, node);
+    }
+    hero_ui_mute(-1);
+    return HERO_UI_OK;
+}
+
+/* Unfolds item `node`, `on`, or folds it, telling nothing; a fold lets go
+ * of a choice under it first. */
+static void hero_ui_win_fold(hero_ui_native *tree, hero_ui_win_node *node, bool on) {
+    hero_ui_mute(1);
+    if (!on) {
+        hero_ui_win_let_go_under(tree, node->item);
+    }
+    node->waiting = on && !hero_ui_win_holds(tree, node->item);
+    (void)SendMessageW(tree->hwnd, TVM_EXPAND, on ? TVE_EXPAND : TVE_COLLAPSE, (LPARAM)node->handle);
+    hero_ui_win_show_button(tree, node);
+    hero_ui_mute(-1);
 }
 
 int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
-    (void)id;
-    (void)item;
-    (void)on;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *tree = hero_ui_find(id);
+    hero_ui_win_node *node;
+
+    if (tree == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (tree->kind != HERO_UI_TREE) {
+        return HERO_UI_INVALID;
+    }
+    node = hero_ui_win_node_of(tree, item);
+    if (node == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (!node->foldable && !hero_ui_win_holds(tree, item)) {
+        return HERO_UI_INVALID;
+    }
+    hero_ui_win_fold(tree, node, on == 1);
+    return HERO_UI_OK;
+}
+
+/* Chooses item `item` of tree `tree`, 0 none, the items over it unfolded;
+ * told where the person's act, not where the program's. */
+static void hero_ui_win_choose_item(hero_ui_native *tree, int64_t item) {
+    hero_ui_win_node *node = hero_ui_win_node_of(tree, item);
+
+    if (node != NULL) {
+        hero_ui_mute(1);
+        (void)SendMessageW(tree->hwnd, TVM_ENSUREVISIBLE, 0, (LPARAM)node->handle);
+        hero_ui_mute(-1);
+    }
+    (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, (LPARAM)(node != NULL ? node->handle : NULL));
+}
+
+/* What tree `tree` notifies; answers what its parent's procedure answers. */
+static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head) {
+    switch (head->code) {
+    case TVN_SELCHANGEDW:
+        if (!hero_ui_is_muted()) {
+            hero_ui_tell(HERO_UI_EVENT_SELECT, tree->id, hero_ui_win_item_chosen(tree), 0);
+        }
+        return 0;
+    case TVN_ITEMEXPANDINGW: {
+        const NMTREEVIEWW *change = (const NMTREEVIEWW *)(void *)head;
+        hero_ui_win_node *node = hero_ui_win_node_at(tree, change->itemNew.hItem);
+
+        if (node == NULL || hero_ui_is_muted()) {
+            return FALSE;
+        }
+        if ((change->action & TVE_COLLAPSE) != 0) {
+            hero_ui_win_let_go_under(tree, node->item);
+        } else if ((change->action & TVE_EXPAND) != 0 && !hero_ui_win_holds(tree, node->item)) {
+            /* Nothing to show yet: told now, its items shown as they come. */
+            node->waiting = true;
+            hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, node->item, 1);
+        }
+        return FALSE;
+    }
+    case TVN_ITEMEXPANDEDW: {
+        const NMTREEVIEWW *change = (const NMTREEVIEWW *)(void *)head;
+        hero_ui_win_node *node = hero_ui_win_node_at(tree, change->itemNew.hItem);
+
+        if (node == NULL || hero_ui_is_muted() || !hero_ui_win_holds(tree, node->item)) {
+            return 0;
+        }
+        hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, node->item, (change->action & TVE_EXPAND) != 0 ? 1 : 0);
+        return 0;
+    }
+    case NM_DBLCLK: {
+        TVHITTESTINFO hit;
+        DWORD at = GetMessagePos();
+        hero_ui_win_node *node;
+
+        memset(&hit, 0, sizeof hit);
+        hit.pt.x = (short)LOWORD(at);
+        hit.pt.y = (short)HIWORD(at);
+        (void)ScreenToClient(tree->hwnd, &hit.pt);
+        node = hero_ui_win_node_at(tree, (HTREEITEM)SendMessageW(tree->hwnd, TVM_HITTEST, 0, (LPARAM)&hit));
+        if (node != NULL && (hit.flags & TVHT_ONITEM) != 0) {
+            hero_ui_tell(HERO_UI_EVENT_ACTIVATE, tree->id, node->item, 0);
+        }
+        return 0;
+    }
+    default:
+        return 0;
+    }
+}
+
+/* What the person does to tree `tree`, given as theirs, reaching only an
+ * item they see: `SELECT` an item chosen (-1 none), `ACTIVATE` one opened,
+ * chosen first, `UNFOLD` one unfolded or folded. */
+static int64_t hero_ui_win_tree_inject(hero_ui_native *tree, int64_t kind, int64_t value, int64_t second) {
+    hero_ui_win_node *node = value > 0 ? hero_ui_win_node_of(tree, value) : NULL;
+
+    if (!(kind == HERO_UI_EVENT_SELECT && value < 0) && (node == NULL || !hero_ui_win_seen(tree, value))) {
+        return HERO_UI_INVALID;
+    }
+    if (kind == HERO_UI_EVENT_UNFOLD && !node->foldable && !hero_ui_win_holds(tree, value)) {
+        return HERO_UI_INVALID;
+    }
+    if (kind != HERO_UI_EVENT_SELECT && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_UNFOLD) {
+        return HERO_UI_INVALID;
+    }
+    if (!IsWindowEnabled(tree->hwnd)) {
+        return HERO_UI_OK;
+    }
+    switch (kind) {
+    case HERO_UI_EVENT_SELECT:
+        if (value != hero_ui_win_item_chosen(tree)) {
+            hero_ui_win_choose_item(tree, value < 0 ? 0 : value);
+        }
+        return HERO_UI_OK;
+    case HERO_UI_EVENT_ACTIVATE:
+        if (value != hero_ui_win_item_chosen(tree)) {
+            hero_ui_win_choose_item(tree, value);
+        }
+        hero_ui_tell(HERO_UI_EVENT_ACTIVATE, tree->id, value, 0);
+        return HERO_UI_OK;
+    default: {
+        /* Unfolded where the person unfolded it while it held none, or
+         * where it holds items the tree view shows. */
+        bool now = node->waiting || (hero_ui_win_holds(tree, value) && hero_ui_win_unfolded(tree, node));
+
+        if (now == (second == 1)) {
+            return HERO_UI_OK;
+        }
+        hero_ui_win_fold(tree, node, second == 1);
+        hero_ui_tell(HERO_UI_EVENT_UNFOLD, tree->id, value, second == 1 ? 1 : 0);
+        return HERO_UI_OK;
+    }
+    }
+}
+
+/* -- WHAT THE PERSON DOES TO TABS AND A SPLIT ------------------------------ */
+
+/* Chooses page `index` of tabs `tabs` as the person's click does: the tab
+ * control's focus moved to it, which chooses it and notifies its parent
+ * (`TCM_SETCURFOCUS`), the page told by that notification; where Windows
+ * chose it and sent none, it is told here. */
+static int64_t hero_ui_win_choose_tab(hero_ui_native *tabs, int64_t index) {
+    int64_t before = (int64_t)SendMessageW(tabs->hwnd, TCM_GETCURSEL, 0, 0);
+    uint64_t told = hero_ui_pushed_count();
+
+    if (index < 0 || index >= (int64_t)SendMessageW(tabs->hwnd, TCM_GETITEMCOUNT, 0, 0)) {
+        return HERO_UI_INVALID;
+    }
+    if (!IsWindowEnabled(tabs->hwnd) || index == before) {
+        return HERO_UI_OK;
+    }
+    (void)SendMessageW(tabs->hwnd, TCM_SETCURFOCUS, (WPARAM)index, 0);
+    if (hero_ui_pushed_count() == told) {
+        if ((int64_t)SendMessageW(tabs->hwnd, TCM_GETCURSEL, 0, 0) != index) {
+            (void)SendMessageW(tabs->hwnd, TCM_SETCURSEL, (WPARAM)index, 0);
+        }
+        hero_ui_win_page_chosen(tabs);
+    }
+    return HERO_UI_OK;
+}
+
+/* Drags split `split`'s divider to `value` as the person's drag does: kept
+ * within the range the program set and what the split holds, laid out and
+ * told. */
+static int64_t hero_ui_win_drag_to(hero_ui_native *split, int64_t value) {
+    hero_ui_native *window = hero_ui_win_window(split->window);
+    int64_t across;
+    int64_t place;
+    hero_ui_native *first;
+    hero_ui_native *second;
+
+    hero_ui_win_panes(split, &first, &second);
+    if (window == NULL || second == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (!split->enabled) {
+        return HERO_UI_OK;
+    }
+    across = (split->kind == HERO_UI_SPLIT_ROW ? split->width : split->height) - hero_ui_win_divider(window->dpi);
+    place = hero_ui_between(value, split->least, split->most);
+    place = split->placed ? hero_ui_between(place, 0, across > 0 ? across : 0) : place;
+    split->value = place;
+    hero_ui_win_lay_panes(split);
+    hero_ui_tell(HERO_UI_EVENT_VALUE, split->id, place, 0);
+    return HERO_UI_OK;
+}
+
+/* -- THE PROGRAM'S CHOICE IN A BOX ----------------------------------------- */
+
+/* The program's choice of the page tabs `widget` shows, of a table's rows
+ * or of a tree's item, telling nothing: a page by its index, one; rows of
+ * the table, any number; an item of the tree by its number, at most one,
+ * the items over it unfolded. */
+static int64_t hero_ui_win_choose_in_box(hero_ui_native *widget, const int64_t *indices, int64_t count) {
+    switch (widget->kind) {
+    case HERO_UI_TABS:
+        if (count != 1 || indices[0] >= (int64_t)SendMessageW(widget->hwnd, TCM_GETITEMCOUNT, 0, 0)) {
+            return HERO_UI_INVALID;
+        }
+        hero_ui_mute(1);
+        (void)SendMessageW(widget->hwnd, TCM_SETCURSEL, (WPARAM)indices[0], 0);
+        hero_ui_mute(-1);
+        hero_ui_win_lay_pages(widget);
+        return HERO_UI_OK;
+    case HERO_UI_TABLE:
+        for (int64_t i = 0; i < count; i += 1) {
+            if (indices[i] >= widget->items) {
+                return HERO_UI_INVALID;
+            }
+        }
+        hero_ui_mute(1);
+        hero_ui_win_choose_row(widget, -1, false);
+        for (int64_t i = 0; i < count; i += 1) {
+            hero_ui_win_choose_row(widget, indices[i], i > 0);
+        }
+        hero_ui_win_note_rows(widget);
+        hero_ui_mute(-1);
+        return HERO_UI_OK;
+    case HERO_UI_TREE:
+        if (count > 1 || (count == 1 && hero_ui_win_node_of(widget, indices[0]) == NULL)) {
+            return HERO_UI_INVALID;
+        }
+        hero_ui_mute(1);
+        hero_ui_win_choose_item(widget, count == 1 ? indices[0] : 0);
+        hero_ui_mute(-1);
+        return HERO_UI_OK;
+    default:
+        return HERO_UI_INVALID;
+    }
 }
 
 #endif
