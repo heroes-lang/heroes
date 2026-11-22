@@ -395,11 +395,13 @@ test "program_named: an application by its main.expected, a twin by its original
     assert json.expected == "examples/json/main.expected"
     assert json.passed == ["examples/json/sample.json", "title"]
 
-    # `pipeline` is an application of Rebel's and also a program of the
-    # compiler's own: its main.expected decides, so it is never held to the
-    # other program's bytes.
-    assert program_named("pipeline").kind == "application"
-    assert program_named("pipeline").expected == "examples-rebel/pipeline/main.expected"
+    # An application is told by its own main.expected, read before any
+    # original of the same name, so one sharing a name with a program of the
+    # compiler's own would never be held to that program's bytes. No
+    # application shares one, since the site pairs the two groups' programs
+    # by name: `ingest` is read as the application it is.
+    assert program_named("ingest").kind == "application"
+    assert program_named("ingest").expected == "examples-rebel/ingest/main.expected"
     assert program_named("no-such-program").kind == "unknown"
 
 test "verdict_of: a folder that is neither, one with no main.hero, and a twin declaring anything, fail by name before any build"
