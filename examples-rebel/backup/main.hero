@@ -19,7 +19,7 @@
 #     ./backup init                                 # asks the password twice
 #     ./backup run ~/Documents                      # the AWS_* variables for a bucket
 #     ./backup snapshots
-#     ./backup restore latest --target /tmp/restored [--path docs/a.txt]
+#     ./backup restore latest --target /tmp/restored [--path reports/a.txt]
 #     ./backup forget --keep-daily 7 --keep-weekly 4 --prune
 #     ./backup prune
 #     ./backup check

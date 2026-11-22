@@ -105,14 +105,14 @@ You have unmerged paths.
 Unmerged paths:
     both modified:   src/greet.txt
 $ cat src/greet.txt
-<<<<<<< HEAD
-Hello, friends!
-=======
-Hello, everyone!
->>>>>>> polish
-How are you today?
-Have a good day.
-See you tomorrow.
+  | <<<<<<< HEAD
+  | Hello, friends!
+  | =======
+  | Hello, everyone!
+  | >>>>>>> polish
+  | How are you today?
+  | Have a good day.
+  | See you tomorrow.
 $ vcs commit
 vcs commit: invalid: unmerged paths must be added first: src/greet.txt
   (wrote src/greet.txt)

@@ -194,7 +194,8 @@ function backup_once(store: storage.Storage, n: i64, taken: time.Instant) -> str
 #
 # - `store`: the repository's storage.
 # - `names`: the snapshots' names, oldest first.
-# - `first_digest`: docs/guide.md's digest before the first run.
+# - `first_digest`: the digest of the demo folder's guide, `guide.md` under
+#   its `docs` folder, before the first run.
 function with_snapshots(store: storage.Storage, names: [str], first_digest: str) -> i64
     r @= match repository.open(store, password: PASSWORD)
         .ok opened => opened
@@ -218,7 +219,8 @@ function with_snapshots(store: storage.Storage, names: [str], first_digest: str)
 #
 # - `r`: the local repository.
 # - `names`: the snapshots' names, oldest first.
-# - `first_digest`: docs/guide.md's digest before the first run.
+# - `first_digest`: the digest of the demo folder's guide, `guide.md` under
+#   its `docs` folder, before the first run.
 function local_steps(@r: repository.Repository, names: [str], first_digest: str) -> i64
     print("== the snapshots")
 

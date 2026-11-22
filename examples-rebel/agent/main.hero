@@ -11,7 +11,7 @@
 # Run for real, with a key in the environment (`ANTHROPIC_API_KEY`,
 # `OPENAI_API_KEY`), or typed at the prompt where none is set:
 #
-#     heroes build examples-rebel/agent.hero -o agent
+#     heroes build examples-rebel/agent/main.hero -o agent
 #     ./agent index ./docs --store .agent
 #     ./agent search --store .agent "install on macOS"
 #     ./agent ask --store .agent --provider anthropic --fallback openai "How do I install it?"
