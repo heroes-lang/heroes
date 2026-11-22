@@ -1,0 +1,206 @@
+# The server's side of SCRAM (RFC 5802 sections 3, 5 and 7) read from the
+# other end of the client's arithmetic: the client's first message taken
+# apart (its GS2 header, its user, its nonce), the client's final message's
+# channel binding and nonce held to the first's, and its proof checked as
+# `H(ClientKey) == StoredKey`, `ClientKey` being the proof combined with
+# `HMAC(StoredKey, AuthMessage)` by exclusive or. No channel binding is
+# offered, as the client's side offers none: a client that requires one
+# (`p=`) is refused, and one that supports one but believes the server does
+# not (`y`) is read, the server offering no `-PLUS` mechanism.
+
+use crypto
+use scram
+use scram/internal/messages
+use strings
+
+# A SASL name unescaped: `=2C` read as `,` and `=3D` as `=`. An empty name
+# is read as empty: PostgreSQL's clients send `n=,` and name the user in the
+# protocol's own startup message, which RFC 5802's grammar does not allow
+# and every PostgreSQL server reads.
+#
+# - `name`: the name as the message writes it.
+# - `what`: what the name is, for a message: "user" or "authorization
+#   identity".
+#
+# Fails `invalid` where a `=` is followed by neither.
+function unescaped(name: str, what: str) -> str?
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < name.len()
+        if name[at] != '='
+            out @ out.push(name[at])
+            at @ at + 1
+            continue
+
+        code = if at + 3 <= name.len()
+            name.slice(from: at, to: at + 3)
+        else
+            ""
+
+        if code == "=2C"
+            out @ out.push(',')
+        else if code == "=3D"
+            out @ out.push('=')
+        else
+            return fail(
+                code: scram.INVALID,
+                msg: f"the client's SCRAM first message writes its {what} with an `=` that is neither `=2C` nor `=3D`"
+            )
+        at @ at + 3
+
+    # A slice of UTF-8 cut at ASCII bytes, and ASCII put back, is UTF-8.
+    return ok(out.validated_bytes().must())
+
+# Whether `nonce` is a nonce RFC 5802 allows: printable ASCII other than
+# `,`, at least one character.
+#
+# - `nonce`: the text.
+function is_nonce(nonce: str) -> bool
+    if nonce == ""
+        return false
+
+    for at in range(from: 0, to: nonce.len())
+        c = nonce[at]
+
+        if c < 0x21 || c > 0x7e || c == ','
+            return false
+
+    return true
+
+# The client's first message taken apart.
+#
+# - `message`: `n,,n=user,r=nonce` and its kin.
+#
+# Fails `invalid` where the GS2 header is not `n`, `y` or `p=...` then an
+# optional `a=` identity, the client requires channel binding (`p=`), the
+# message names an extension (`m=`), holds no user or nonce, or a name's
+# escape is neither `=2C` nor `=3D`.
+function first_of(message: str) -> scram.ClientFirst?
+    flag_end = match strings.index_of(s: message, substr: ",")
+        .ok at => at
+        .err _ => return fail(code: scram.INVALID, msg: "the client's SCRAM first message has no GS2 header")
+
+    flag = message.slice(from: 0, to: flag_end)
+
+    if flag.len() > 1 && flag.slice(from: 0, to: 2) == "p="
+        return fail(
+            code: scram.INVALID,
+            msg: "the client requires SCRAM channel binding, which this server does not offer (channel-binding-not-supported)"
+        )
+
+    if flag != "n" && flag != "y"
+        return fail(
+            code: scram.INVALID,
+            msg: "the client's SCRAM first message opens with no channel-binding flag n, y or p"
+        )
+    rest = message.slice(from: flag_end + 1, to: message.len())
+
+    identity_end = match strings.index_of(s: rest, substr: ",")
+        .ok at => at
+        .err _ => return fail(
+            code: scram.INVALID,
+            msg: "the client's SCRAM first message's GS2 header is not ended by a comma"
+        )
+
+    written = rest.slice(from: 0, to: identity_end)
+    identity: str @= ""
+
+    if written != ""
+        if written.len() < 2 || written.slice(from: 0, to: 2) != "a="
+            return fail(code: scram.INVALID, msg: "the client's SCRAM GS2 header holds a part that is no `a=` identity")
+        identity @ unescaped(name: written.slice(from: 2, to: written.len()), what: "authorization identity")?
+    bare = rest.slice(from: identity_end + 1, to: rest.len())
+    header = message.slice(from: 0, to: message.len() - bare.len())
+    found = client_attributes(bare)?
+
+    if !found["m"].is_err()
+        return fail(
+            code: scram.INVALID,
+            msg: "the client asks for a SCRAM extension this server does not know (extensions-not-supported)"
+        )
+    user = unescaped(name: client_attribute(found: found, key: "n")?, what: "user")?
+    nonce = client_attribute(found: found, key: "r")?
+
+    if !is_nonce(nonce)
+        return fail(
+            code: scram.INVALID,
+            msg: "the client's SCRAM nonce holds a character that is not printable ASCII, or a comma"
+        )
+    return ok(scram.ClientFirst(header: header, identity: identity, user: user, nonce: nonce, bare: bare))
+
+# The attributes of a client's message, as `messages.attributes` reads a
+# server's, the messages naming the client.
+#
+# - `message`: the message.
+function client_attributes(message: str) -> {str: str}?
+    return match messages.attributes(message)
+        .ok found => ok(found)
+        .err _ => fail(
+            code: scram.INVALID,
+            msg: "the client's SCRAM message holds a part that is no attribute, or names one twice"
+        )
+
+# The attribute `key` of a client's message.
+#
+# - `found`: the message's attributes.
+# - `key`: one letter.
+function client_attribute(found: {str: str}, key: str) -> str?
+    return match found[key]
+        .ok value => ok(value)
+        .err _    => fail(code: scram.INVALID, msg: f"the client's SCRAM message holds no \"{key}\"")
+
+# Where the proof's `,p=` begins in a client's final message, the end of the
+# message the client signed (`client-final-message-without-proof`).
+#
+# - `message`: the client's final message.
+#
+# Fails `invalid` where it holds no proof.
+function proof_at(message: str) -> i64?
+    return match strings.index_of_last(s: message, substr: ",p=")
+        .ok at => ok(at)
+        .err _ => fail(code: scram.INVALID, msg: "the client's SCRAM final message holds no proof")
+
+# Whether `proof` is the client's proof of `auth_message` for `stored_key`:
+# the digest of the client key the proof and the signature give is the
+# stored key, compared in constant time.
+#
+# - `hash`: the exchange's hash.
+# - `stored_key`: the verifier's `StoredKey`.
+# - `auth_message`: the message both sides sign.
+# - `proof`: the proof the client sent, as long as a digest.
+function proof_holds(hash: scram.Hash, stored_key: [u8], auth_message: str, proof: [u8]) -> bool
+    algorithm = messages.algorithm_of(hash)
+    signature = crypto.hmac_text(algorithm, key: stored_key, s: auth_message)
+
+    if proof.len() != signature.len()
+        return false
+    client_key = messages.xor(a: proof, b: signature)
+    return crypto.equals_constant_time(a: messages.digest_of(hash, data: client_key), b: stored_key)
+
+## Tests
+
+test "first_of: RFC 7677's message, a y flag, an identity, escapes in the user, and the empty user PostgreSQL's client sends"
+    f = first_of("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must()
+    assert f == scram.ClientFirst(header: "n,,", identity: "", user: "user", nonce: "rOprNGfwEbeRWgbNEkqO", bare: "n=user,r=rOprNGfwEbeRWgbNEkqO")
+    assert first_of("y,,n=user,r=abc").must().header == "y,,"
+    named = first_of("n,a=ad=3Dmin=2C,n=us=2Cer,r=abc").must()
+    assert named.identity == "ad=min," && named.user == "us,er" && named.header == "n,a=ad=3Dmin=2C," && named.bare == "n=us=2Cer,r=abc"
+    assert first_of("n,,n=,r=abc").must().user == ""
+
+test "first_of: channel binding required, no flag, no header end, an extension, no nonce, a nonce with a space, and an escape neither =2C nor =3D"
+    for bad in ["p=tls-server-end-point,,n=user,r=abc", "x,,n=user,r=abc", "n,a=x", "n,,m=ext,n=user,r=abc", "n,,n=user", "n,,n=user,r=a b", "n,,n=us=41er,r=abc", "n,b=x,n=user,r=abc", "", "n"]
+        match first_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == scram.INVALID
+
+    match first_of("p=tls-unique,,n=user,r=abc")
+        .ok _  => assert false
+        .err e => assert e.msg == "the client requires SCRAM channel binding, which this server does not offer (channel-binding-not-supported)"
+
+test "is_nonce, unescaped and proof_at: the edges"
+    assert is_nonce("!~") && !is_nonce("") && !is_nonce("a,b") && !is_nonce("a b") && !is_nonce("é")
+    assert unescaped(name: "a=3D=2Cb", what: "user").must() == "a=,b"
+    assert unescaped(name: "a=3", what: "user").is_err() && unescaped(name: "", what: "user").must() == ""
+    assert proof_at("c=biws,r=x,p=abc").must() == 10
+    assert proof_at("c=biws,r=x").is_err()

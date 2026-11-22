@@ -108,7 +108,7 @@ package moves its row in the same change. There is no cycle.
 | 3 | `i18n/locales` | what CLDR knows of a language tag: its likely script and region, and the tags old names are replaced by | `i18n`, `strings` |  |
 | 3 | `crypto/seal` | authenticated encryption by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
 | 3 | `crypto/keypairs` | key pairs, signatures and key agreement by the system's own cryptography | `bytes`, `crypto` | `hero_crypto.h` |
-| 3 | `scram` | the client's side of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
+| 3 | `scram` | both sides of SCRAM (RFC 5802, RFC 7677) by SHA-1, SHA-256 and SHA-512, a server's verifiers in PostgreSQL's form, and SASLprep (RFC 4013), so every login of Rebel prepares a password one way; RFC 3454's tables apart | `bytes`, `crypto`, `os`, `strings`, `unicode`, `unicode/normalize` |  |
 | 3 | `tokenizer/tables` | the encodings of OpenAI's models carried as data, by name, and which encoding a model reads; each table a module of its own, `tokenizer/tables/o200k_base`, `cl100k_base` and `o200k_harmony`, so a program carries the one it names | `tokenizer` |  |
 | 4 | `fs` | files and directories by path: whole reads and writes, metadata, links, trees, temporaries | `bytes`, `io`, `os`, `path`, `time` | `hero_disk.h`, `hero_os.h` |
 | 4 | `msgpack` | MessagePack read into a value of its own, which keeps bytes and extensions, and crossed to and from a `json.Value` | `bytes`, `json`, `lists`, `math`, `time` |  |
