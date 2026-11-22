@@ -1,0 +1,56 @@
+# `iothub watch`: a dashboard in the terminal. It opens the hub's feed, a
+# WebSocket, and prints a line for every reading and every event as it
+# comes, until Ctrl-C or the hub's going away; then the board, every
+# device's latest values. Lines are printed as they come rather than drawn
+# on a screen of their own, so the output can be kept in a file or a pipe.
+
+use <rebel>/bytes
+use <rebel>/os
+use <rebel>/websocket
+
+use feed/messages
+use feed/view
+
+# Watches the feed at `target` until the stop is asked or the hub ends the
+# connection, printing as it goes.
+#
+# - `target`: the feed's URL, `ws://127.0.0.1:8088/feed`.
+#
+# Fails as `websocket.connect` fails, and as a read fails for any reason
+# but the stop or the hub's close.
+function run(target: str) -> ()?
+    os.catch_stop()?
+    conn @= websocket.connect(target, client: websocket.default_client())?
+    board @= view.new_board()
+    print(f"watching {target}; Ctrl-C ends it")
+
+    while true
+        got = match websocket.read_message(@conn)
+            .ok m => m
+            .err e =>
+                if e.code == websocket.STOPPED || e.code == websocket.CLOSED
+                    break
+                _ = websocket.drop(@conn).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+        text = match bytes.to_text(websocket.data_of(got))
+            .ok t => t
+            .err _ =>
+                print("! a message that is no text")
+                continue
+
+        match messages.message_of(text)
+            .ok m =>
+                view.take(@board, m: m)
+                print(view.line_of(m))
+            .err e => print(f"! a message that is no feed's: {e.msg}")
+
+    print("")
+
+    for row in view.rows(board)
+        print(row)
+
+    if websocket.is_open(conn)
+        _ = websocket.close(@conn, code: websocket.CLOSE_NORMAL, reason: "").is_err()
+
+    return ok()

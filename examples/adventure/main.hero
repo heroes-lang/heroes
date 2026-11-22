@@ -23,8 +23,23 @@ use game
 use strings
 use world
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends with 2,
+# where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"adventure: argument {given.len() + 1} is not UTF-8")
+                exit(2)
+
+    return given
+
 function main()
-    given = args()
+    given = text_arguments()
 
     if len(given) == 0
         print("usage: adventure <walkthrough.txt>")

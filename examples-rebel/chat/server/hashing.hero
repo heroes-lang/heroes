@@ -1,6 +1,7 @@
 # Passwords hashed off the server's loop. PBKDF2 at the count a password
 # deserves takes seconds: `crypto.pbkdf2` took 11.4 s for 600,000
-# iterations in a program built with `-O2` on an Apple M3, and
+# iterations in a program built with `-O2` on a `Mac15,13` (its `hw.model`;
+# four performance and four efficiency cores), and
 # 51 s at the default `-O0` by the same measure scaled (1.7 s for 20,000),
 # on 2026-11-21. The server serves everyone on one thread, so a sign-in
 # must not hash there: each `/register` and `/login` is parked as a job, its

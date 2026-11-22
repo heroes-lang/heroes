@@ -1,0 +1,146 @@
+# The commands that move translations between the catalogues and the files
+# translators work in: `import` applies a translator's file, in any format
+# and any encoding, to one locale's catalogue; `export` writes locales'
+# catalogues as a spreadsheet, a CSV file, or a JSON or YAML document.
+#
+# An import says how the file's bytes were read, so a wrong guess of their
+# encoding is seen before it is trusted, and it changes only what the file
+# translates: an empty cell erases nothing. `--dry-run` reports and writes
+# nothing.
+
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+use <rebel>/sets
+
+use catalog/messages
+use catalog/store
+use commands/catalog_commands
+use formats/exchange
+use formats/rows
+use formats/workbook
+use plural/gettext_forms
+use project/locale_tags
+use project/session
+use review/coverage
+
+## import
+
+# `import`: applies a file's translations to a locale's catalogue.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where the locale has no catalogue yet, and as the file's reading
+# fails.
+function import_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    locale = locale_tags.read_tag(flags.value_of(f, "locale")?)?
+    tag = locale_tags.tag_of(locale)
+    forms = gettext_forms.forms_of(locale)?
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+    file = flags.value_of(f, "FILE")?
+    format = exchange.format_of(file: file, named: flags.value_of(f, "from").default(""))?
+    target = store.catalog_path(p, tag: tag)
+
+    if !fs.exists(target).default(false)
+        return fail(
+            code: "file_not_found",
+            msg: f"{tag} has no catalogue {path.to_slash(target)} to import into: `l10n merge --locale {tag}` makes it"
+        )
+
+    read = exchange.read_rows(file: file, format: format, forms: forms, rules: rules, encoding: flags.value_of(f, "encoding").default(""), sheet: flags.value_of(f, "sheet").default(tag))?
+
+    how = if read.encoding == ""
+        ""
+    else
+        f" as {read.encoding} ({read.how})"
+
+    applied = rows.apply_rows(store.read_po(target)?.catalog, rows: read.rows, forms: forms)?
+    lines: [str] @= [
+        f"read {file}{how}: {session.counted(s, n: read.rows.len(), noun: "row", nouns: "rows")}"
+        f"{tag}: {session.counted(s, n: applied.updated.len(), noun: "message", nouns: "messages")} updated, {applied.unchanged} unchanged, {session.counted(s, n: applied.composed, noun: "text", nouns: "texts")} composed to NFC"
+    ]
+
+    for label in applied.unknown
+        lines @ lines.push(f"    not in the catalogue: \"{label}\"")
+
+    for label in applied.guessed
+        lines @ lines.push(f"    a guess to confirm: \"{label}\", a form the file does not tell apart from another")
+
+    for wrong in applied.wrong_forms
+        lines @ lines.push(f"    no such form in {tag}: {wrong}")
+
+    if flags.is_on(f, "dry-run")
+        lines @ lines.push("nothing written: --dry-run")
+    else
+        fields = messages.with_field(
+            messages.header_fields(applied.catalog),
+            name: "PO-Revision-Date",
+            value: messages.gettext_date(s.now)
+        )
+        store.write_po(target, catalog: store.with_header(applied.catalog, fields: fields)?)?
+        lines @ lines.push(f"wrote {path.to_slash(target)}")
+
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+## export
+
+# `export`: writes the chosen locales' catalogues in the format `--to` or
+# the output's extension names.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where a catalogue is missing, where a format holding one language is
+# asked for several, and as the writing fails.
+function export_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    out = flags.value_of(f, "output")?
+    format = exchange.format_of(file: out, named: flags.value_of(f, "to").default(""))?
+    tags = catalog_commands.chosen_locales(p, f: f)?
+    template_keys = sets.from_list(messages.live_keys(catalog_commands.read_template(p)?))
+    sheets: [workbook.LocaleRows] @= []
+    summary: [workbook.Coverage] @= []
+    count @= 0
+
+    for tag in tags
+        file = store.catalog_path(p, tag: tag)
+
+        if !fs.exists(file).default(false)
+            return fail(code: "file_not_found", msg: f"no catalogue {path.to_slash(file)}: `l10n merge` makes it")
+
+        catalog = store.read_po(file)?.catalog
+        locale = locale_tags.read_tag(tag)?
+        list = rows.rows_of(
+            catalog,
+            forms: gettext_forms.forms_of(locale)?,
+            rules: i18n.plural_rules(locale, kind: .cardinal)
+        )
+        count @ count + list.len()
+        sheets @ sheets.push(workbook.LocaleRows(tag: tag, rows: list))
+        c = coverage.coverage_of(tag, template_keys: template_keys, catalog: catalog)
+        summary @ summary.push(workbook.Coverage(tag: tag, translated: coverage.count_of(c.translated), total: c.total))
+
+    if format == "xlsx"
+        exchange.write_workbook(out, wb: workbook.workbook_of(sheets, summary: summary)?)?
+        session.say_lines(s, lines: [f"wrote {out}: a sheet for each of {tags.join(", ")}, {session.counted(s, n: count, noun: "row", nouns: "rows")}, and a {workbook.COVERAGE_SHEET} sheet"])?
+        return ok(0)
+
+    if tags.len() != 1
+        return fail(
+            code: "invalid",
+            msg: f"a {format} file holds one language, and {tags.len()} are chosen: name one with --locale"
+        )
+
+    tag = tags[0]
+
+    if format == "po"
+        store.write_po(out, catalog: store.read_po(store.catalog_path(p, tag: tag))?.catalog)?
+    else
+        exchange.write_text_rows(file: out, format: format, list: sheets[0].rows, tag: tag, forms: gettext_forms.forms_of(locale_tags.read_tag(tag)?)?)?
+
+    session.say_lines(s, lines: [f"wrote {out}: {tag}, {session.counted(s, n: count, noun: "row", nouns: "rows")}"])?
+    return ok(0)

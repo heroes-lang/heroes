@@ -1,0 +1,176 @@
+# A pseudo-translation, the catalogue of a locale nobody speaks, `en-XA` by
+# CLDR's and Android's convention, made so a program can be run in it before
+# any translator has worked: every letter carries an accent, so text the
+# program never sends through a catalogue stands out unaccented; every text
+# is a third longer, the room German and Finnish need, padded inside
+# brackets, so a label cut off by a narrow button shows its missing bracket.
+#
+# The accent is a combining mark put after each ASCII letter and composed
+# with it by Unicode's canonical composition (NFC, UAX #15), which turns
+# "a" and U+0301 into "á" where Unicode has such a character and leaves the
+# pair where it has none, as for "q". What the program fills in or reads,
+# placeholders `{count}`, printf's `%s`, HTML tags and links, is kept as it
+# is, since changing it would break the program, not test it.
+
+use <rebel>/i18n
+use <rebel>/regex
+use <rebel>/unicode
+use <rebel>/unicode/normalize
+
+use catalog/messages
+use plural/gettext_forms
+
+## The patterns
+
+# What a pseudo-translation keeps: a brace placeholder, a printf
+# specification, an HTML tag, or a link.
+constant KEPT: str
+    "\\{[^{}]*\\}|%(?:[0-9]+\\$|\\([A-Za-z_][A-Za-z0-9_]*\\))?[-+ #0]*[0-9]*(?:\\.[0-9]+)?[sdiufFeEgGxXoc]|<[^<>]*>|https?://[^\\s\"'<>]+"
+
+# The pattern of `KEPT`, compiled; this module's constant, which its tests
+# compile.
+function kept_pattern() -> regex.Regex
+    return regex.compile(KEPT).must()
+
+## Accents
+
+# The combining mark each small ASCII letter takes, `a` to `z`, as code
+# points: acute, dot above, cedilla, dot above, diaeresis, dot above,
+# breve, circumflex, acute, circumflex, cedilla, acute, dot above, tilde,
+# diaeresis, dot above, none for `q`, acute, caron, cedilla, ring above,
+# tilde, diaeresis, dot above, acute, caron.
+function marks() -> [i64]
+    return [
+        0x301
+        0x307
+        0x327
+        0x307
+        0x308
+        0x307
+        0x306
+        0x302
+        0x301
+        0x302
+        0x327
+        0x301
+        0x307
+        0x303
+        0x308
+        0x307
+        0
+        0x301
+        0x30c
+        0x327
+        0x30a
+        0x303
+        0x308
+        0x307
+        0x301
+        0x30c
+    ]
+
+# `c` with its letter's mark after it, or `c` itself where it is no ASCII
+# letter or its letter takes none.
+#
+# - `c`: one character.
+# - `table`: `marks()`.
+function accented(c: str, table: [i64]) -> str
+    if c.len() != 1
+        return c
+
+    b = c[0]
+
+    at = if b >= 'a' && b <= 'z'
+        to_i64(b - 'a').must()
+    else if b >= 'A' && b <= 'Z'
+        to_i64(b - 'A').must()
+    else
+        -1
+
+    if at < 0 || table[at] == 0
+        return c
+
+    return c + unicode.from_code_point(table[at]).must()
+
+## Pseudo-translating
+
+# `text` pseudo-translated: its letters accented and composed, a third
+# longer, inside brackets, with what `KEPT` names kept as written.
+#
+# - `text`: a source text.
+# - `kept`: `kept_pattern()`.
+function pseudo(text: str, kept: regex.Regex) -> str
+    if text == ""
+        return ""
+
+    table = marks()
+    pieces: [str] @= []
+    letters @= 0
+    at @= 0
+
+    for m in regex.search_all(text, re: kept)
+        for c in text.slice(from: at, to: m.start).chars()
+            pieces @ pieces.push(accented(c, table: table))
+
+            if unicode.is_letter(c)
+                letters @ letters + 1
+
+        pieces @ pieces.push(m.text)
+        at @ m.end
+
+    for c in text.slice(from: at, to: text.len()).chars()
+        pieces @ pieces.push(accented(c, table: table))
+
+        if unicode.is_letter(c)
+            letters @ letters + 1
+
+    padding = (letters + 2) / 3
+    return "[" + normalize.to_nfc(pieces.join("")) + " " + repeat("·", to_u64(padding).must()) + "]"
+
+# The pseudo-translated catalogue of `template` for the locale `tag`, whose
+# plural forms are its language's: each form the pseudo-translation of the
+# id for `one` and of the plural text for the others.
+#
+# - `template`: the template.
+# - `tag`: the pseudo-locale's tag, `en-XA`.
+# - `forms`: its forms, English's for `en-XA`.
+# - `header`: its header's fields.
+#
+# Fails as `i18n.new_catalog` fails on the header given.
+function pseudo_catalog(template: i18n.Catalog, tag: str, forms: gettext_forms.Forms, header: [messages.Field]) -> i18n.Catalog?
+    kept = kept_pattern()
+    made: [i18n.Message] @= [
+        messages.header_message(header, comments: [f"A pseudo-translation into {tag}, made by l10n to test a program before it is translated."])
+    ]
+
+    for m in messages.live_messages(template)
+        texts: [str] @= []
+
+        if messages.is_plural(m)
+            for category in forms.categories
+                source = if category == .one
+                    m.id
+                else
+                    m.plural_id.must()
+
+                texts @ texts.push(pseudo(source, kept: kept))
+        else
+            texts @ texts.push(pseudo(m.id, kept: kept))
+
+        made @ made.push(messages.with_translations(m, translations: texts))
+
+    return i18n.new_catalog(made)
+
+## Tests
+
+test "pseudo: accents composed, a third longer, what the program fills kept"
+    kept = kept_pattern()
+    assert pseudo("Save", kept: kept) == "[Šáṽë ··]"
+    assert pseudo("{count} items in <b>your cart</b>", kept: kept) == "[{count} íţëṁš íñ <b>ýöůŕ çáŕţ</b> ·····]"
+    assert pseudo("Visit https://shop.example now", kept: kept) == "[Ṽíšíţ https://shop.example ñöẅ ···]"
+    assert pseudo("", kept: kept) == ""
+
+test "accented: a letter with no precomposed form keeps its mark apart, and q none"
+    assert accented("q", table: marks()) == "q"
+    assert normalize.is_nfc(accented("a", table: marks())) == false
+    assert normalize.to_nfc(accented("a", table: marks())) == "á"

@@ -274,9 +274,24 @@ static int64_t hero_serial_read(void *payload, void *buffer, uint64_t count);
 static int64_t hero_serial_write(void *payload, const void *data, uint64_t count);
 static int64_t hero_serial_close(void *payload);
 
+/* The descriptor a wait on a port, or on a pseudo-terminal's controlling
+ * side, uses (`hero_stream_hold_waitable`): on POSIX the block's own, which
+ * a read and a write reach directly, non-blocking and with no bytes kept
+ * between calls, so its readiness is the stream's. Windows waits on a
+ * socket alone (`hero_poll.h`), so there it is none. */
+static int64_t hero_serial_waitable(void *payload) {
+#if defined(_WIN32)
+    (void)payload;
+    hero_stream_set_error(HERO_STREAM_UNSUPPORTED, 0);
+    return -1;
+#else
+    return (int64_t)((hero_serial_port *)payload)->fd;
+#endif
+}
+
 /* The table every port's stream is made with: it stays where it is for as
  * long as any of them is open, and nothing writes it. */
-static const hero_stream_ops hero_serial_ops = { hero_serial_read, hero_serial_write, hero_serial_close };
+static const hero_stream_ops hero_serial_ops = { hero_serial_read, hero_serial_write, hero_serial_close, hero_serial_waitable };
 
 /* The block under `s`, held until `hero_stream_release(s)`; NULL with this
  * member's failure named and nothing held where `s` is no open stream

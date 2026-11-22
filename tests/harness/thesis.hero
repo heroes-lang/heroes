@@ -88,8 +88,23 @@ use thesis_wire
 extern "hero_os.h"
     function hero_write_err(text: str)
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                hero_write_err(text: f"thesis: argument {given.len() + 1} is not UTF-8\n")
+                exit(code: 2)
+
+    return given
+
 function main()
-    given = args()
+    given = text_arguments()
 
     if given.len() == 0 || !thesis_args.among(word: given[0], words: thesis_args.WORDS)
         hero_write_err(text: "thesis: " + thesis_args.refusal(given: given) + "\n")

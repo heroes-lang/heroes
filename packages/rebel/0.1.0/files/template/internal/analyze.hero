@@ -102,6 +102,18 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
                 .ok choice =>
                     targets @ targets.push(i + 1)
                     reached @ reached.push(choice.after)
+        else if s.kind == program.CLEAN
+            if c.len() > 1
+                return fail(
+                    code: "invalid",
+                    msg: at_step(source: part.source, step: s, msg: f"`clean` would stand where the ways through the template before it are in different places of the page: {ways.apart(a: c[0], b: c[1])}")
+                )
+
+            match context.clean_place(c[0])
+                .err e => return fail(code: e.code, msg: at_step(source: part.source, step: s, msg: e.msg))
+                .ok _ =>
+                    targets @ targets.push(i + 1)
+                    reached @ reached.push(c)
         else if s.kind == program.JUMP || s.kind == program.BREAK
             targets @ targets.push(s.target)
             reached @ reached.push(c)
@@ -172,6 +184,8 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
                 choice = ways.chosen(c)?
                 s.escaper @ choice.escaper
                 s.delim @ choice.delim
+            else if s.kind == program.CLEAN
+                s.text @ context.clean_place(c[0])?
             else if s.kind == program.INCLUDE
                 s.callee @ key_for(s.callee, start: c[0])
         written @ written.push(s)

@@ -1,0 +1,32 @@
+# The desk: the window, its web view and the store behind them, the one value
+# every call of the page is answered with. It holds the `ui` app, a handle
+# of the platform layer, so the program keeps one desk in one place and hands
+# it on with `@`; `close` ends the app and the database together.
+
+use <rebel>/sql/sqlite
+use <rebel>/template
+use <rebel>/ui
+
+use store/store
+
+# The program's window and what stands behind it.
+record Desk
+    # The user interface: the system's own on the desktop, the headless side
+    # in the demo.
+    app: ui.App
+    # The window.
+    window: ui.Widget
+    # The web view the page is shown in.
+    view: ui.Widget
+    # The boards.
+    store: store.Store
+    # The report's page, a template of HTML (`web/report.html`).
+    report: template.Template
+
+# Ends the desk: the database closed, then the app with its window.
+#
+# - `d`: the desk; every later call through it fails `closed`.
+function close(@d: Desk) -> ()?
+    closed_db = sqlite.close(@d.store.db)
+    ui.close(@d.app)?
+    return closed_db

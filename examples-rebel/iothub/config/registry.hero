@@ -1,0 +1,401 @@
+# The device registry: every device the hub knows, by a UUID of its own, a
+# name people read, the protocol it speaks, the address it publishes on
+# there, the encoding of its payloads and the schema that reads them. The hub
+# reads it from a JSON file when it starts, `iothub register` adds to it, and
+# a message whose address no device holds is told as unregistered rather
+# than guessed at.
+#
+# A device's `fields` say what each key of its payload measures and in which
+# unit, so payloads that name their values tersely (`t`, `bat`, field 2) come
+# out of the hub with names a dashboard can show. An identity is minted as a
+# version 4 UUID: from the system's generator for a real registration, from
+# a seeded generator where a run must be reproducible.
+
+use <rebel>/json
+use <rebel>/random
+use <rebel>/uuid
+
+# The code of a registry text, or a device in it, that is not what this
+# module reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a device asked for by a name or an address no device holds.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a registration whose name or address another device holds.
+constant EXISTS: str
+    "exists"
+
+# The protocol a device speaks to reach the hub.
+variant Protocol
+    # MQTT: the address is the topic it publishes on.
+    mqtt
+    # AMQP 0-9-1: the address is `<exchange>/<routing key>`.
+    amqp
+    # NATS: the address is the subject it publishes on.
+    nats
+    # A serial line: the address is the name the hub's settings give the
+    # port.
+    serial
+
+# How a device's payloads are encoded.
+variant Encoding
+    # CBOR (RFC 8949); the schema `senml` reads SenML packs (RFC 8428).
+    cbor
+    # MessagePack: a map whose keys `fields` names.
+    msgpack
+    # Protocol Buffers: the schema names the message type, read from the
+    # hub's `.proto` files.
+    protobuf
+    # NMEA 0183 sentences, of which the hub reads XDR's transducer
+    # measurements.
+    nmea
+
+# What one key of a payload measures.
+record FieldMap
+    # The key as the payload writes it: a map key, a protobuf field's name,
+    # a SenML record's name, an XDR transducer's name.
+    key: str
+    # The quantity it measures, as the hub names it: `temperature`.
+    quantity: str
+    # Its unit, as SenML writes units (`Cel`, `%RH`); "" for none.
+    unit: str
+
+# One device of the registry.
+record Device
+    # Its identity, minted once when it is registered.
+    id: uuid.Uuid
+    # The name people read, unique in the registry.
+    name: str
+    # The protocol it speaks.
+    protocol: Protocol
+    # Where it publishes, as its protocol writes an address; unique with
+    # the protocol.
+    address: str
+    # How its payloads are encoded.
+    encoding: Encoding
+    # What reads them: `senml` for CBOR, a message type for protobuf, `xdr`
+    # for NMEA, "" for MessagePack.
+    schema: str
+    # The key of the payload that holds the moment it was measured, "" where
+    # the encoding says it itself or the payload holds none.
+    time_key: str
+    # What each key measures; a key no entry names keeps its own name and no
+    # unit.
+    fields: [FieldMap]
+
+# The registry: every device, in the order registered.
+record Registry
+    # The devices.
+    devices: [Device]
+
+# Where a new identity's bits come from.
+variant Minting
+    # The system's generator for keys: every run mints other identities.
+    system
+    # A seeded generator, so a run mints the same identities every time.
+    seeded
+        # The generator, advanced by each identity minted.
+        generator: random.Generator
+
+# The name a protocol is written with in the registry and in addresses.
+#
+# - `p`: the protocol.
+function protocol_name(p: Protocol) -> str
+    return match p
+        .mqtt   => "mqtt"
+        .amqp   => "amqp"
+        .nats   => "nats"
+        .serial => "serial"
+
+# The protocol `name` writes.
+#
+# - `name`: `mqtt`, `amqp`, `nats` or `serial`.
+#
+# Fails `invalid` for any other name.
+function parse_protocol(name: str) -> Protocol?
+    return match name
+        "mqtt"   => ok(.mqtt)
+        "amqp"   => ok(.amqp)
+        "nats"   => ok(.nats)
+        "serial" => ok(.serial)
+        _        => fail(code: INVALID, msg: f"\"{name}\" is no protocol: mqtt, amqp, nats or serial")
+
+# The name an encoding is written with.
+#
+# - `e`: the encoding.
+function encoding_name(e: Encoding) -> str
+    return match e
+        .cbor     => "cbor"
+        .msgpack  => "msgpack"
+        .protobuf => "protobuf"
+        .nmea     => "nmea"
+
+# The encoding `name` writes.
+#
+# - `name`: `cbor`, `msgpack`, `protobuf` or `nmea`.
+#
+# Fails `invalid` for any other name.
+function parse_encoding(name: str) -> Encoding?
+    return match name
+        "cbor"     => ok(.cbor)
+        "msgpack"  => ok(.msgpack)
+        "protobuf" => ok(.protobuf)
+        "nmea"     => ok(.nmea)
+        _          => fail(code: INVALID, msg: f"\"{name}\" is no encoding: cbor, msgpack, protobuf or nmea")
+
+# A new identity, of version 4: 122 bits from `minting`'s source with the
+# version and the variant set, as RFC 9562 § 5.4 asks.
+#
+# - `minting`: where the bits come from; a seeded generator advances.
+#
+# Fails with the code of `uuid.new_v4` where the system's generator refuses.
+function mint(@minting: Minting) -> uuid.Uuid?
+    return match minting
+        .system => uuid.new_v4()
+        .seeded s =>
+            g @= s.generator
+            drawn @= random.next_bytes(@g, count: 16)
+            minting @ .seeded(generator: g)
+
+            # The version, 4, in the high nibble of byte 6, and the variant
+            # of RFC 9562, the bits 10, at the top of byte 8.
+            drawn[6] @ drawn[6] % 16 + 64
+            drawn[8] @ drawn[8] % 64 + 128
+            uuid.from_bytes(drawn)
+
+# The device named `name`.
+#
+# - `r`: the registry.
+# - `name`: the name, compared byte for byte.
+#
+# Fails `not_found` where no device has it.
+function device_named(r: Registry lent, name: str) -> Device?
+    for d in r.devices
+        if d.name == name
+            return ok(d)
+
+    return fail(code: NOT_FOUND, msg: f"no device is named \"{name}\"")
+
+# The device that publishes at `address` over `protocol`.
+#
+# - `r`: the registry.
+# - `protocol`: the protocol the message came by.
+# - `address`: the topic, `exchange/key`, subject or port name it came at.
+#
+# Fails `not_found` where no device does.
+function device_at(r: Registry lent, protocol: Protocol, address: str) -> Device?
+    for d in r.devices
+        if d.protocol == protocol && d.address == address
+            return ok(d)
+
+    return fail(code: NOT_FOUND, msg: f"no device is registered at {protocol_name(protocol)} {address}")
+
+# The registry with `d` added at its end.
+#
+# - `r`: the registry.
+# - `d`: the device; its name and its address must be its own.
+#
+# Fails `exists` where another device has its name, or its protocol and
+# address, or its identity.
+function with_device(r: Registry, d: Device) -> Registry?
+    for other in r.devices
+        if other.name == d.name
+            return fail(code: EXISTS, msg: f"a device is named \"{d.name}\" already")
+
+        if other.protocol == d.protocol && other.address == d.address
+            return fail(
+                code: EXISTS,
+                msg: f"\"{other.name}\" is registered at {protocol_name(d.protocol)} {d.address} already"
+            )
+
+        if other.id == d.id
+            return fail(code: EXISTS, msg: f"\"{other.name}\" has the identity {uuid.format(d.id)} already")
+
+    devices @= r.devices
+    devices @ devices.push(d)
+    return ok(Registry(devices: devices))
+
+# What `key` measures for `d`: its entry of `fields`, or the key itself with
+# no unit where none names it.
+#
+# - `d`: the device.
+# - `key`: the payload's key.
+function field_of(d: Device lent, key: str) -> FieldMap
+    for f in d.fields
+        if f.key == key
+            return f
+
+    return FieldMap(key: key, quantity: key, unit: "")
+
+## The registry as JSON
+
+# The JSON a device is written as.
+#
+# - `d`: the device.
+function device_json(d: Device) -> json.Value
+    fields: {str: json.Value} @= {}
+
+    for f in d.fields
+        fields[f.key] @ .object(members: {"quantity": .text(v: f.quantity), "unit": .text(v: f.unit)})
+
+    return .object(
+        members: {"id": .text(v: uuid.format(d.id)), "name": .text(v: d.name), "protocol": .text(v: protocol_name(d.protocol)), "address": .text(v: d.address), "encoding": .text(v: encoding_name(d.encoding)), "schema": .text(v: d.schema), "time": .text(v: d.time_key), "fields": .object(members: fields)}
+    )
+
+# The registry's text, as `parse` reads it back: one device a line, so a
+# change to one device is one line of a diff.
+#
+# - `r`: the registry.
+function format(r: Registry) -> str
+    lines: [str] @= ["{\"devices\": ["]
+
+    for i in range(from: 0, to: r.devices.len())
+        line = json.format(device_json(r.devices[i])).default("{}")
+
+        if i + 1 < r.devices.len()
+            lines @ lines.push("  " + line + ",")
+        else
+            lines @ lines.push("  " + line)
+
+    lines @ lines.push("]}")
+    return lines.join("\n") + "\n"
+
+# The text member `key` of the object `v`, `otherwise` where it is absent.
+#
+# - `v`: the object.
+# - `key`: the member.
+# - `otherwise`: the text where it is absent.
+#
+# Fails `invalid` where it stands and is no text.
+function text_member(v: json.Value, key: str, otherwise: str) -> str?
+    return match json.member(v, key: key)
+        .err _ => ok(otherwise)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => ok(t)
+                .err _ => fail(code: INVALID, msg: f"\"{key}\" is no text")
+
+# The device the JSON object `v` writes.
+#
+# - `v`: one element of the registry's `devices`.
+#
+# Fails `invalid` where a member is missing, of the wrong kind, or names no
+# protocol, encoding or UUID.
+function device_of(v: json.Value) -> Device?
+    name = text_member(v, key: "name", otherwise: "")?
+
+    if name == ""
+        return fail(code: INVALID, msg: "a device has no name")
+
+    id = match uuid.parse(text_member(v, key: "id", otherwise: "")?)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"\"{name}\" has no identity: {e.msg}")
+
+    protocol = parse_protocol(text_member(v, key: "protocol", otherwise: "")?)?
+    address = text_member(v, key: "address", otherwise: "")?
+
+    if address == ""
+        return fail(code: INVALID, msg: f"\"{name}\" has no address")
+
+    fields: [FieldMap] @= []
+
+    match json.member(v, key: "fields")
+        .err _ => _ = 0
+        .ok f =>
+            members = match json.members_of(f)
+                .ok m  => m
+                .err _ => return fail(code: INVALID, msg: f"the fields of \"{name}\" are no object")
+
+            for key in keys(members)
+                entry = members[key]?
+                fields @ fields.push(
+                    FieldMap(key: key, quantity: text_member(entry, key: "quantity", otherwise: key)?, unit: text_member(entry, key: "unit", otherwise: "")?)
+                )
+
+    return ok(
+        Device(id: id, name: name, protocol: protocol, address: address, encoding: parse_encoding(text_member(v, key: "encoding", otherwise: "")?)?, schema: text_member(v, key: "schema", otherwise: "")?, time_key: text_member(v, key: "time", otherwise: "")?, fields: fields)
+    )
+
+# The registry `text` holds, as `format` writes one.
+#
+# - `text`: a JSON object whose `devices` lists the devices.
+#
+# Fails `invalid` where it is no JSON, holds no `devices` list, a device is
+# not what `device_of` reads, or two devices share a name, an address or an
+# identity, the message naming which.
+function parse(text: str) -> Registry?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the registry is no JSON: {e.msg}")
+
+    listed = match json.member(v, key: "devices")
+        .ok l  => json.items_of(l)
+        .err _ => return fail(code: INVALID, msg: "the registry holds no \"devices\"")
+
+    items = match listed
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: "the registry's \"devices\" is no list")
+
+    r @= Registry(devices: [])
+
+    for item in items
+        r @ match with_device(r, d: device_of(item)?)
+            .ok got => got
+            .err e  => return fail(code: INVALID, msg: e.msg)
+
+    return ok(r)
+
+test "parse_protocol, parse_encoding: every name, and one of neither"
+    assert parse_protocol("amqp").must() == .amqp && parse_protocol("serial").must() == .serial
+    assert parse_protocol("http").is_err()
+    assert parse_encoding("protobuf").must() == .protobuf && parse_encoding("json").is_err()
+
+test "mint: seeded identities repeat, are of version 4 and differ from each other"
+    first: Minting @= .seeded(generator: random.Generator(high: 7, low: 11))
+    again: Minting @= .seeded(generator: random.Generator(high: 7, low: 11))
+    a = mint(@first).must()
+    b = mint(@first).must()
+    assert mint(@again).must() == a
+    assert a != b
+    assert uuid.version_of(a) == 4 && uuid.variant_of(a) == .rfc
+
+test "with_device, device_at, field_of: a name taken, an address taken, and a key nobody named"
+    one = Device(
+        id: uuid.parse("6f1c2c8e-0b4a-4f7e-9a51-3f0d2b7c9e10").must(),
+        name: "fridge-07",
+        protocol: .mqtt,
+        address: "devices/fridge-07/up",
+        encoding: .cbor,
+        schema: "senml",
+        time_key: "",
+        fields: [FieldMap(key: "temp", quantity: "temperature", unit: "Cel")]
+    )
+    r = with_device(Registry(devices: []), d: one).must()
+    renamed @= one
+    renamed.name @ "fridge-08"
+    assert with_device(r, d: one).is_err()
+    assert with_device(r, d: renamed).is_err()
+    assert device_at(r, protocol: .mqtt, address: "devices/fridge-07/up").must().name == "fridge-07"
+    assert device_at(r, protocol: .nats, address: "devices/fridge-07/up").is_err()
+    assert field_of(one, key: "temp").quantity == "temperature"
+    assert field_of(one, key: "hum") == FieldMap(key: "hum", quantity: "hum", unit: "")
+
+test "format, parse: a registry written and read back, and texts refused"
+    one = Device(
+        id: uuid.parse("6f1c2c8e-0b4a-4f7e-9a51-3f0d2b7c9e10").must(),
+        name: "tracker-3",
+        protocol: .nats,
+        address: "fleet.tracker-3.position",
+        encoding: .msgpack,
+        schema: "",
+        time_key: "ts",
+        fields: [FieldMap(key: "bat", quantity: "battery", unit: "%")]
+    )
+    r = Registry(devices: [one])
+    assert parse(format(r)).must() == r
+    assert parse("{}").is_err()
+    assert parse("[1").is_err()
+    assert parse("{\"devices\": [{\"name\": \"x\"}]}").is_err()

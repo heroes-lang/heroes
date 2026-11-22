@@ -1,0 +1,241 @@
+# Which of the platform layer's members written in Swift a program reaches,
+# so a build compiles those and no other (design.md §4.19, §1.11; panel 253's
+# R3; defect 2625). A Swift member is compiled with `swiftc`, which costs a
+# fresh folder's first build about as much again as the rest of it
+# (`cli/layer_swift.hero`), and the linker takes its object only into a
+# program that takes the C member calling it, so a program that reaches no
+# such C member pays for an object it never links.
+#
+# **The reach is read from the runtime's own text, never assumed of it.** A
+# Swift member is called through its C header, `platform/<member>.h`, which
+# its callers include. A program reaches the layer through the headers its
+# groups name (`extern "hero_crypto.h"`), and a header reaches every file it
+# includes; a C member of the layer, `platform/<name>.c`, is reached where
+# its own header `<name>.h` is, and reaches every file it includes. So the
+# headers reached are closed over those includes, each file of the runtime
+# read once, and a Swift member is compiled where its C header is among
+# them. Every include counts, under whatever condition it stands, so the
+# reach errs only toward compiling a member no link takes.
+#
+# **What it cannot see**: a program binding a function of the layer through a
+# header of its own that declares it and includes none of the layer's. That
+# link leaves the Swift member's names undefined and does not link, so no
+# program is ever built with a member left out.
+
+use ast
+use cli/io
+use cli/layer
+use cli/layer_swift
+use cli/runtime_key
+use cli/toolchain
+use emit/externs as emit_externs
+use source
+use token
+
+# The platform layer's archive for a build of the program whose declarations
+# are `decls`, holding the Swift members its groups reach; its failure told as
+# the runtime object's is (`cli/produce.hero`, defect 134): a member clang
+# refused is the compiler's, *internal error* with clang's words; any other
+# failure is the machine's, said as itself by the caller.
+function for_build(t: toolchain.Toolchain, level: str, sanitize: bool, s: source.Source, decls: [ast.Decl]) -> [str]?
+    swift = reached(t, named: headers_of(s, decls))?
+    made = layer.archive(t, level: level, sanitize: sanitize, swift: swift)
+
+    match made
+        .ok words => return ok(words)
+        .err e =>
+            if e.code == "clang"
+                io.eprint(text: "internal error: the platform layer did not compile\n" + e.msg)
+                return fail(code: "failed", msg: "no platform layer")
+            return fail(code: "failed", msg: e.msg)
+
+# The Swift members a program reaching none of them compiles.
+function no_members() -> [str]
+    nothing: [str] = []
+    return nothing
+
+# The headers the groups of `decls` name, each once, as written between the
+# quotes.
+function headers_of(s: source.Source, decls: [ast.Decl]) -> [str]
+    out: [str] @= []
+
+    for d in decls
+        header = header_of(d)
+
+        if !header.is_err()
+            out @ once(out, name: emit_externs.unquoted(s, span: header.must()))
+
+    return out
+
+# The header of the group `d` is a member of; none outside a group.
+function header_of(d: ast.Decl) -> token.Span?
+    none: token.Span? = fail(code: "none", msg: "no group")
+
+    match d.kind
+        .function_decl fd          => return fd.value.header
+        .constant_decl k           => return k.header
+        .record_decl rec           => return rec.header
+        .variant_decl | .test_decl => return none
+
+    return none
+
+# The Swift members of `t`'s layer the headers `named` reach, in the layer's
+# order; none off an Apple target, where no member is Swift.
+function reached(t: toolchain.Toolchain, named: [str]) -> [str]?
+    members = layer_swift.members(t)?
+    none: [str] = []
+
+    if members.len() == 0
+        return ok(none)
+    files = runtime_key.made_of(t.runtime)?
+    reach: [str] @= []
+
+    for name in named
+        reach @ once(reach, name: base_of(name))
+
+    read: [bool] @= []
+
+    for _ in files
+        read @ read.push(false)
+
+    grew: bool @= true
+
+    while grew
+        grew @ false
+        at: i64 @= 0
+
+        for file in files
+            if !read[at] && opens_into(file: file, reach: reach)
+                read[at] @ true
+                grew @ true
+
+                for name in includes(read_file(file)?)
+                    reach @ once(reach, name: base_of(name))
+            at @ at + 1
+
+    out: [str] @= []
+
+    for member in members
+        if has(reach, name: layer_swift.name_of(member) + ".h")
+            out @ out.push(member)
+
+    return ok(out)
+
+# Whether the runtime's `file` is reached: a header that is, or a C member of
+# the layer whose own header is.
+function opens_into(file: str, reach: [str]) -> bool
+    base = base_of(file)
+
+    if ends_with(text: base, suffix: ".h")
+        return has(reach, name: base)
+
+    if ends_with(text: base, suffix: ".c") && has_part(text: file, part: "/platform/")
+        return has(reach, name: base.slice(from: 0, to: base.len() - 2) + ".h")
+    return false
+
+# Every include of a C text, quoted or angled, `# include "x.h"` and an
+# indented one among them, in the order written: the runtime's members write
+# their own headers quoted, and a program's unit writes a group's header
+# angled (`emit/c_text.hero`).
+function includes(text: str) -> [str]
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        stop: i64 @= at
+
+        while stop < text.len() && text[stop] != '\n'
+            stop @ stop + 1
+
+        i: i64 @= blanks(text, from: at, to: stop)
+
+        if i < stop && text[i] == '#'
+            i @ blanks(text, from: i + 1, to: stop)
+            word = "include"
+
+            if i + word.len() <= stop && text.slice(from: i, to: i + word.len()) == word
+                i @ blanks(text, from: i + word.len(), to: stop)
+
+                if i < stop && (text[i] == '"' || text[i] == '<')
+                    close: u8 @= '"'
+
+                    if text[i] == '<'
+                        close @ '>'
+                    shut: i64 @= i + 1
+
+                    while shut < stop && text[shut] != close
+                        shut @ shut + 1
+
+                    if shut < stop
+                        out @ out.push(text.slice(from: i + 1, to: shut))
+        at @ stop + 1
+
+    return out
+
+# The first offset from `from` before `to` that is no space or tab.
+function blanks(text: str, from: i64, to: i64) -> i64
+    i: i64 @= from
+
+    while i < to && (text[i] == ' ' || text[i] == '\t')
+        i @ i + 1
+
+    return i
+
+# A path's last part.
+function base_of(path: str) -> str
+    cut: i64 @= path.len()
+
+    while cut > 0 && path[cut - 1] != '/'
+        cut @ cut - 1
+
+    return path.slice(from: cut, to: path.len())
+
+function once(names: [str], name: str) -> [str]
+    if has(names, name: name)
+        return names
+    return names.push(name)
+
+function has(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
+
+function ends_with(text: str, suffix: str) -> bool
+    return text.len() >= suffix.len() && text.slice(from: text.len() - suffix.len(), to: text.len()) == suffix
+
+function has_part(text: str, part: str) -> bool
+    at: i64 @= 0
+
+    while at + part.len() <= text.len()
+        if text.slice(from: at, to: at + part.len()) == part
+            return true
+        at @ at + 1
+
+    return false
+
+## Tests
+
+test "a program reaches a member written in Swift only through the C member that includes its header (defect 2625)"
+    t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
+    t.target @ "aarch64-unknown-linux-gnu"
+    assert reached(t, named: ["hero_crypto.h", "hero_ui.h"]).must().len() == 0
+    t.target @ "arm64-apple-darwin27.2.0"
+    none: [str] = []
+    assert reached(t, named: none).must().len() == 0
+    assert reached(t, named: ["hero_net.h", "hero_time.h", "stdio.h"]).must().len() == 0
+    assert reached(t, named: ["hero_crypto.h"]).must() == [t.runtime + "/platform/hero_crypto_cryptokit.swift"]
+    assert reached(t, named: ["hero_ui.h"]).must() == [t.runtime + "/platform/hero_ui_appkit.swift"]
+    assert reached(t, named: ["hero_ui.h", "hero_crypto.h"]).must() == layer_swift.members(t).must()
+
+    # Read from a unit's text, a group's header angled as the emitter writes it.
+    assert reached(t, named: includes("#include <stdint.h>\n#include <hero_crypto.h>\n")).must().len() == 1
+
+test "an include is read quoted or angled, indented or spaced, and nothing else is one"
+    text = "#include \"a.h\"\n  #  include <b.h>\n#include\t\"c/d.h\"\n// #include \"no.h\"\n#define include \"no.h\"\n#include \"open\n"
+    assert includes(text) == ["a.h", "b.h", "c/d.h"]
+    assert base_of("c/d.h") == "d.h"
+    assert opens_into(file: "runtime/platform/hero_net.c", reach: ["hero_net.h"])
+    assert !opens_into(file: "runtime/vendor/x/hero_net.c", reach: ["hero_net.h"])
+    assert opens_into(file: "runtime/hero_net.h", reach: ["hero_net.h"])

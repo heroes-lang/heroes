@@ -1,0 +1,152 @@
+# A certificate's files, laid out as certbot lays them out, so a web
+# server's configuration names one path that stays right across renewals:
+#
+#     <folder>/live/<name>/cert.pem        the certificate alone
+#     <folder>/live/<name>/chain.pem       the authorities after it
+#     <folder>/live/<name>/fullchain.pem   both, what a TLS server presents
+#     <folder>/archive/<name>/cert<N>.pem  and chain<N>.pem, fullchain<N>.pem:
+#                                          every version issued, from 1
+#
+# The private key is not here: `store/vault` keeps it. A version is
+# archived first, its key kept next, and only then made current, each file
+# written in one step (`fs.write_atomic_text`), so a server reading `live/`
+# while a renewal writes it sees the old chain or the new one, never half of
+# one, and never a chain beside a key that is not its own.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/pem
+use <rebel>/strings
+use <rebel>/x509
+
+## Codes
+
+# The code of a chain that holds no certificate.
+constant INVALID: str
+    "invalid"
+
+# The code of a certificate never issued.
+constant NOT_FOUND: str
+    "not_found"
+
+## Paths
+
+# The folder of `name`'s current files.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+function live_dir(folder: str, name: str) -> str
+    return path.join_all([folder, "live", name])
+
+# The file a TLS server presents: the certificate and its authorities.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+function fullchain_path(folder: str, name: str) -> str
+    return path.join_all([live_dir(folder: folder, name: name), "fullchain.pem"])
+
+# The folder of every version of `name`.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+function archive_dir(folder: str, name: str) -> str
+    return path.join_all([folder, "archive", name])
+
+## Writing
+
+# Keeps `chain` as `name`'s next version in the archive, the current files
+# left as they were: `make_current` makes it current once its key is kept.
+#
+# - `folder`: the store's folder, made where it is not there.
+# - `name`: the certificate's name.
+# - `chain`: PEM, the certificate first and its authorities after, as an ACME
+#   server's download answers.
+#
+# The version written, 1 for the first. Fails `invalid` where `chain` holds
+# no certificate, and as `fs.make_dir_all` and `fs.write_atomic_text` fail.
+function archived(folder: str, name: str, chain: str) -> i64?
+    blocks = pem.parse_all(chain)?
+    certificates: [pem.Block] @= []
+
+    for b in blocks
+        if b.label == "CERTIFICATE"
+            certificates @ certificates.push(b)
+
+    if certificates.len() == 0
+        return fail(code: INVALID, msg: "the chain downloaded holds no certificate")
+    leaf = pem.format(certificates[0])?
+    rest = pem.format_all(certificates.slice(from: 1, to: certificates.len()))?
+    version = versions(folder: folder, name: name) + 1
+    archive = archive_dir(folder: folder, name: name)
+    fs.make_dir_all(archive)?
+    fs.write_atomic_text(path: path.join_all([archive, f"cert{version}.pem"]), text: leaf)?
+    fs.write_atomic_text(path: path.join_all([archive, f"chain{version}.pem"]), text: rest)?
+    fs.write_atomic_text(path: path.join_all([archive, f"fullchain{version}.pem"]), text: leaf + rest)?
+    return ok(version)
+
+# Makes the archive's `version` of `name` its current files, each written
+# in one step.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+# - `version`: a version `archived` wrote.
+#
+# Fails as `read_file`, `fs.make_dir_all` and `fs.write_atomic_text` fail.
+function make_current(folder: str, name: str, version: i64) -> ()?
+    archive = archive_dir(folder: folder, name: name)
+    live = live_dir(folder: folder, name: name)
+    fs.make_dir_all(live)?
+
+    for kind in ["cert", "chain", "fullchain"]
+        text = read_file(path.join_all([archive, f"{kind}{version}.pem"]))?
+        fs.write_atomic_text(path: path.join_all([live, kind + ".pem"]), text: text)?
+
+    return ok()
+
+## Reading
+
+# How many versions of `name` the archive holds: its `cert<N>.pem` files.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+#
+# 0 where none was issued or the folder cannot be read.
+function versions(folder: str, name: str) -> i64
+    entries = fs.read_dir(archive_dir(folder: folder, name: name)).default([])
+    count @= 0
+
+    for e in entries
+        if strings.has_prefix(s: e.name, prefix: "cert") && strings.has_suffix(s: e.name, suffix: ".pem")
+            count @ count + 1
+
+    return count
+
+# The current version of a certificate: its chain read back.
+record Kept
+    # How many versions were issued, the current one the last.
+    version: i64
+    # The PEM a TLS server presents.
+    fullchain: str
+    # The certificates, the certificate itself first.
+    chain: [x509.Certificate]
+
+# `name`'s current files, read.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+#
+# Fails `not_found` where it was never issued, and as
+# `x509.parse_certificates` fails on what is there.
+function current(folder: str, name: str) -> Kept?
+    text = match read_file(fullchain_path(folder: folder, name: name))
+        .ok t => t
+        .err e =>
+            if e.code == "file_not_found"
+                return fail(code: NOT_FOUND, msg: f"the certificate \"{name}\" was never issued here")
+            return fail(code: e.code, msg: e.msg)
+
+    chain = x509.parse_certificates(text)?
+
+    if chain.len() == 0
+        return fail(code: INVALID, msg: f"the current chain of \"{name}\" holds no certificate")
+    return ok(Kept(version: versions(folder: folder, name: name), fullchain: text, chain: chain))

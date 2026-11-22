@@ -1,0 +1,163 @@
+# The languages a project is translated into, as people write them and as
+# the catalogues name them.
+#
+# A person writes `de_CH`, `pt_BR.UTF-8`, `iw` or `de-ch`; a catalogue is
+# named once, by the canonical BCP 47 tag CLDR's aliases give (`de-CH`,
+# `pt-BR`, `he`), so two spellings of one language never make two
+# catalogues. A reader's `Accept-Language` is matched against the
+# catalogues first by RFC 4647's lookup, then by the script each language is
+# most likely written in, which is how `zh-TW` finds a `zh-Hant` catalogue.
+
+use <rebel>/i18n
+use <rebel>/i18n/locales
+use <rebel>/i18n/numbers
+
+## Codes
+
+# The code of a tag that names no language.
+constant INVALID: str
+    "invalid"
+
+# The code of a request no catalogue answers.
+constant NOT_FOUND: str
+    "not_found"
+
+## Reading a tag
+
+# The locale `text` names, in CLDR's canonical form: a BCP 47 tag or a POSIX
+# name, its old codes replaced by their aliases.
+#
+# - `text`: what a person wrote: `de-CH`, `de_CH`, `pt_BR.UTF-8`, `iw`.
+#
+# Fails `invalid` where it is neither a tag nor a POSIX name, the message
+# quoting it.
+function read_tag(text: str) -> i18n.Locale?
+    read = match i18n.parse_locale(text)
+        .ok locale => locale
+        .err _ =>
+            match i18n.parse_posix(text)
+                .ok locale => locale
+                .err _ =>
+                    return fail(
+                        code: INVALID,
+                        msg: f"\"{text}\" names no language: write a BCP 47 tag such as de-CH, or a POSIX name such as de_CH"
+                    )
+
+    if read.language == "und" || read.language == ""
+        return fail(code: INVALID, msg: f"\"{text}\" names no language, only a script or a region")
+
+    return ok(locales.canonicalize(read))
+
+# The tag a catalogue of `locale` is named by: `de-CH`, `sr-Latn`.
+#
+# - `locale`: the locale, as `read_tag` answers it.
+function tag_of(locale: i18n.Locale) -> str
+    return i18n.format_locale(locale)
+
+# The tag `text` names in canonical form, for a catalogue's file name.
+#
+# - `text`: what a person wrote.
+#
+# Fails as `read_tag` fails.
+function canonical_tag(text: str) -> str?
+    return ok(tag_of(read_tag(text)?))
+
+## What the data says of a language
+
+# The currency a reader of `locale` pays in, by the region it is most likely
+# spoken in: `EUR` for `de`, `JPY` for `ja`, `EGP` for `ar`, whose likely
+# region is Egypt.
+#
+# - `locale`: the locale.
+#
+# Fails `not_found` where CLDR names no currency for the region.
+function currency_for(locale: i18n.Locale) -> str?
+    match numbers.currency_of(locales.add_likely_subtags(locale))
+        .ok code => return ok(code)
+        .err _ =>
+            return fail(code: NOT_FOUND, msg: f"CLDR names no currency for {tag_of(locale)}")
+
+# The script `locale` is written in, as CLDR's likely subtags say where the
+# tag names none: `Latn` for `de`, `Hant` for `zh-TW`.
+#
+# - `locale`: the locale.
+function script_of(locale: i18n.Locale) -> str
+    return locales.add_likely_subtags(locale).script
+
+## Negotiation
+
+# The catalogue that answers a reader's `Accept-Language`: RFC 4647's lookup
+# over the ranges in order of weight, then the first catalogue in the same
+# language and likely script as a range, so `zh-TW` is answered by `zh-Hant`
+# and `sr-Latn-RS` by `sr-Latn`.
+#
+# - `header`: the header's value, `de-CH, de;q=0.9, en;q=0.5`.
+# - `tags`: the catalogues' tags, in the project's order.
+#
+# Fails `invalid` where the header does not parse, and `not_found` where no
+# range reaches a catalogue; a range of weight 0 is refused by the reader and
+# reaches none.
+function negotiate(header: str, tags: [str]) -> str?
+    ranges = match i18n.parse_accept_language(header)
+        .ok read => read
+        .err e   => return fail(code: INVALID, msg: f"the Accept-Language \"{header}\" does not parse: {e.msg}")
+
+    wanted: [str] @= []
+
+    for r in ranges
+        if r.weight > 0.0
+            wanted @ wanted.push(r.range)
+
+    match i18n.lookup_tag(ranges: wanted, tags: tags)
+        .ok tag => return ok(tag)
+        .err _  => _ = 0
+
+    for asked_range in wanted
+        match by_script(asked_range, tags: tags)
+            .ok tag => return ok(tag)
+            .err _  => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no catalogue answers \"{header}\"; there are {tags.join(", ")}")
+
+# The first of `tags` whose language and likely script are `language_range`'s.
+#
+# - `language_range`: one language range; `*` reaches none.
+# - `tags`: the catalogues' tags.
+#
+# Fails `not_found` where none is.
+function by_script(language_range: str, tags: [str]) -> str?
+    asked = match i18n.parse_locale(language_range)
+        .ok locale => locales.add_likely_subtags(locales.canonicalize(locale))
+        .err _     => return fail(code: NOT_FOUND, msg: f"\"{language_range}\" is no language")
+
+    for tag in tags
+        match i18n.parse_locale(tag)
+            .ok locale =>
+                full = locales.add_likely_subtags(locale)
+
+                if full.language == asked.language && full.script == asked.script
+                    return ok(tag)
+            .err _ => _ = 0
+
+    return fail(code: NOT_FOUND, msg: f"no catalogue in the language and script of {language_range}")
+
+## Tests
+
+test "read_tag: a tag, a POSIX name, an old code, and refusals"
+    assert tag_of(read_tag("de-ch").must()) == "de-CH"
+    assert tag_of(read_tag("pt_BR.UTF-8").must()) == "pt-BR"
+    assert tag_of(read_tag("iw").must()) == "he"
+    assert read_tag("x!").is_err()
+    assert read_tag("und-CH").is_err()
+
+test "negotiate: lookup first, then the likely script, and weights of zero"
+    tags = ["de", "fr", "zh-Hant", "ja"]
+    assert negotiate("de-CH, de;q=0.9, en;q=0.5", tags: tags).must() == "de"
+    assert negotiate("zh-TW", tags: tags).must() == "zh-Hant"
+    assert negotiate("en, ja;q=0.1", tags: tags).must() == "ja"
+    assert negotiate("fr;q=0, es", tags: tags).is_err()
+
+test "currency_for: by the likely region"
+    assert currency_for(read_tag("de").must()).must() == "EUR"
+    assert currency_for(read_tag("ja").must()).must() == "JPY"
+    assert currency_for(read_tag("de-CH").must()).must() == "CHF"

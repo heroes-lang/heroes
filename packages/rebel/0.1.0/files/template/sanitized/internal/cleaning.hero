@@ -1,0 +1,24 @@
+# The cleaning `template/sanitized` hands the runner of a template: a `clean`
+# action's text cleaned by the program's policy inside the element the HTML
+# mode found it lands in.
+
+use html/sanitize
+use template/internal/program
+
+# `piece.text` cleaned by `policy`, read inside the element `piece.element`
+# names, or inside the policy's own context element where it names none.
+# The HTML mode names only a table's cell, `td`, `th` or `caption`, so
+# `sanitize.set_context` never meets an element whose text a browser reads
+# as it is.
+function cleaned(policy: sanitize.Policy, piece: program.Fragment) -> str
+    if piece.element == ""
+        return sanitize.clean(policy, piece.text)
+    inside @= policy
+    sanitize.set_context(@inside, element: piece.element)
+    return sanitize.clean(inside, piece.text)
+
+test "cleaned: the policy's own element, a cell, a script taken out of both"
+    policy = sanitize.ugc_policy()
+    text = "<b>bold</b><script>steal()</script><tr><td>x</td></tr>"
+    assert cleaned(policy, piece: program.Fragment(element: "", text: text)) == "<b>bold</b>x"
+    assert cleaned(policy, piece: program.Fragment(element: "td", text: "<i>x</i><script>steal()</script>")) == "<i>x</i>"

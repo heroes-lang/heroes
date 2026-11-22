@@ -1,0 +1,97 @@
+# HTTP-01's answer as a file: the key authorization written where a web
+# server serves `http://<domain>/.well-known/acme-challenge/<token>` from
+# (RFC 8555 § 8.3), and removed once the CA has seen it, as certbot's
+# `webroot` plugin does. The web server is the person's own, or this
+# program's responder (`challenges/responder`), which serves the same
+# folder.
+
+use <rebel>/fs
+use <rebel>/path
+
+## Codes
+
+# The code of a token holding a character base 64 for URLs does not, which
+# could name a file outside the folder.
+constant INVALID: str
+    "invalid"
+
+## The folder
+
+# The path an answer is served at, under a domain.
+constant WELL_KNOWN: str
+    "/.well-known/acme-challenge/"
+
+# The file the answer of `token` is written to.
+#
+# - `webroot`: the folder a web server serves.
+# - `token`: the challenge's token.
+#
+# Fails `invalid` where `token` is empty or holds a character other than a
+# letter, a digit, `-` and `_`, the alphabet of base 64 for URLs.
+function file_of(webroot: str, token: str) -> str?
+    if !is_token(token)
+        return fail(code: INVALID, msg: "a token holds the letters, digits, - and _ of base 64 for URLs alone")
+    return ok(path.join_all([webroot, ".well-known", "acme-challenge", token]))
+
+# Whether `token` is a token: 1 to 256 characters of base 64 for URLs.
+#
+# - `token`: the text.
+function is_token(token: str) -> bool
+    if token.len() == 0 || token.len() > 256
+        return false
+
+    for at in range(from: 0, to: token.len())
+        b = token[at]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !letter && b != '-' && b != '_'
+            return false
+
+    return true
+
+## Answers
+
+# Writes `body` as the answer of `token`.
+#
+# - `webroot`: the folder a web server serves; its `.well-known/acme-challenge`
+#   is made where it is not there.
+# - `token`: the challenge's token.
+# - `body`: the key authorization.
+#
+# Fails `invalid` for a token of no form, and as `fs.make_dir_all` and
+# `fs.write_atomic_text` fail.
+function put(webroot: str, token: str, body: str) -> ()?
+    file = file_of(webroot: webroot, token: token)?
+    fs.make_dir_all(path.parent(file))?
+    return fs.write_atomic_text(path: file, text: body)
+
+# Removes the answer of `token`; done also where none stands.
+#
+# - `webroot`: the folder.
+# - `token`: the challenge's token.
+#
+# Fails `invalid` for a token of no form, and as `fs.remove` fails for a
+# reason other than the file's absence.
+function take_back(webroot: str, token: str) -> ()?
+    match fs.remove(file_of(webroot: webroot, token: token)?)
+        .ok _ => return ok()
+        .err e =>
+            if e.code == "file_not_found"
+                return ok()
+            return fail(code: e.code, msg: e.msg)
+
+# The answer written for `token`.
+#
+# - `webroot`: the folder.
+# - `token`: the token asked, from a request's path.
+#
+# Fails `invalid` for a token of no form, and as `read_file` fails,
+# `file_not_found` where none is written.
+function answer_of(webroot: str, token: str) -> str?
+    return read_file(file_of(webroot: webroot, token: token)?)
+
+test "file_of: a token under the folder, and one that would leave it refused"
+    assert file_of(webroot: "w", token: "abc-_XYZ09").must() == path.join_all(["w", ".well-known", "acme-challenge", "abc-_XYZ09"])
+    assert file_of(webroot: "w", token: "../x").is_err()
+    assert file_of(webroot: "w", token: "").is_err()
+    assert file_of(webroot: "w", token: "a.b").is_err()

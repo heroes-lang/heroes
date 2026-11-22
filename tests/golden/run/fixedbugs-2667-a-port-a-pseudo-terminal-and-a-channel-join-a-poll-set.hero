@@ -1,0 +1,17 @@
+# A serial port, a pseudo-terminal's controlling side and a local channel
+# each join a set of `hero_poll.h` and are told readable once their other
+# side writes, and not before (defect 2667). Each is a stream another member
+# of the layer makes over a table of its own, which a wait reached only
+# through a descriptor the stream itself held, so `hero_poll_add_stream`
+# refused all three `HERO_POLL_UNSUPPORTED` though the same device opened as
+# a file joined a set; the table now says which descriptor its readiness is.
+# The C is in the header beside this file. Each line prints 1 where every
+# step held, or where the platform has no such stream or waits on none
+# (Windows), else the step that did not.
+extern "fixedbugs-2667-ready.h"
+    function pseudo_sides_join_a_set() -> i64
+    function channel_ends_join_a_set() -> i64
+
+function main()
+    print(f"a pseudo-terminal's two sides each join a set and are told readable: {pseudo_sides_join_a_set()}")
+    print(f"a local channel's two ends each join a set and are told readable: {channel_ends_join_a_set()}")

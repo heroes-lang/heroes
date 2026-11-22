@@ -1,0 +1,341 @@
+# The messages a Heroes source asks `i18n` to translate: every call of its
+# four lookups, `translate`, `translate_in`, `translate_plural` and
+# `translate_plural_in`, read from `extract/scanner`'s tokens.
+#
+# A call names its texts by label or by place, `i18n.translate(cat, id:
+# "Open")`, `cat.translate("Open")` or `i18n.translate_in(cat, context:
+# "menu", id: "Open")`; a labelled argument fills its own role, and the
+# string literals left fill the function's other roles in its signature's
+# order, which is what a call written either way means, since the catalogue
+# and the count are never string literals. A role given by an expression is
+# a problem told with its place: its text is not known before the program
+# runs, and an `f"..."` id is worse, formatted before it is looked up, so no
+# catalogue can hold it.
+#
+# A comment standing alone on the lines just above a call and opening with
+# `l10n:` is its note to the translator, xgettext's `--add-comments`.
+
+use <rebel>/lists
+
+use extract/found
+use extract/scanner
+
+## The lookups
+
+# The roles of a lookup's texts, in its signature's order, for each of the
+# four functions; empty for any other name.
+#
+# - `name`: a function's name.
+function roles_of(name: str) -> [str]
+    if name == "translate"
+        return ["id"]
+
+    if name == "translate_in"
+        return ["context", "id"]
+
+    if name == "translate_plural"
+        return ["id", "plural_id"]
+
+    if name == "translate_plural_in"
+        return ["context", "id", "plural_id"]
+
+    return []
+
+# The tag a comment opens with to be a note to the translator.
+constant NOTE_TAG: str
+    "l10n:"
+
+## Reading a file
+
+# The messages `source` looks up, and the calls it passed over.
+#
+# - `source`: the module's text.
+# - `file`: its path from the project's root, for the references.
+function scan_source(source: str, file: str) -> found.Scan
+    scanned = scanner.scan(source)
+    tokens = scanned.tokens
+    messages: [found.Found] @= []
+    problems: [found.Problem] @= []
+
+    for flaw in scanned.problems
+        problems @ problems.push(found.Problem(file: file, line: flaw.line, message: flaw.message))
+
+    at @= 0
+
+    while at < tokens.len()
+        t = tokens[at]
+        roles = roles_of(t.text)
+
+        if t.kind == .ident && roles.len() > 0 && at + 1 < tokens.len() && tokens[at + 1].text == "(" && !after_function_word(tokens, at: at)
+            read = call_at(tokens, open: at + 1)
+            outcome = message_of(read.arguments, name: t.text, roles: roles)
+
+            match outcome
+                .ok texts =>
+                    messages @ messages.push(
+                        found.Found(context: texts.context, id: texts.id, plural_id: texts.plural_id, file: file, line: t.line, note: note_above(tokens, at: at))
+                    )
+                .err e => problems @ problems.push(found.Problem(file: file, line: t.line, message: e.msg))
+
+            at @ read.next
+        else
+            at @ at + 1
+
+    return found.Scan(found: messages, problems: problems)
+
+# Whether the name at `at` is being declared, `function translate(`, rather
+# than called.
+#
+# - `tokens`: the tokens.
+# - `at`: the name's index.
+function after_function_word(tokens: [scanner.Token], at: i64) -> bool
+    return at > 0 && tokens[at - 1].kind == .ident && tokens[at - 1].text == "function"
+
+## A call's arguments
+
+# One argument of a call: its label, and its value where the value is one
+# literal.
+record Argument
+    # The label, `id` in `id: "Open"`; empty for an argument given by place.
+    label: str
+    # The value's kind where it is one token: a string literal, an `f"..."`,
+    # or anything else.
+    shape: Shape
+    # The literal's text, empty for any other shape.
+    text: str
+
+# What an argument's value is.
+variant Shape
+    # One plain string literal.
+    literal
+    # One `f"..."` literal.
+    formatted
+    # Anything else: a name, a call, a concatenation.
+    expression
+
+# A call's arguments and the index after its closing parenthesis.
+record Call
+    # The arguments, in order.
+    arguments: [Argument]
+    # The index of the token after the `)`, or the end.
+    next: i64
+
+# The arguments of the call whose `(` is at `open`, split at the commas that
+# stand at its own depth.
+#
+# - `tokens`: the tokens.
+# - `open`: the index of the `(`.
+function call_at(tokens: [scanner.Token], open: i64) -> Call
+    arguments: [Argument] @= []
+    current: [scanner.Token] @= []
+    depth @= 0
+    at @= open + 1
+
+    while at < tokens.len()
+        t = tokens[at]
+
+        if t.kind == .comment
+            at @ at + 1
+        else if t.kind == .punct && (t.text == "(" || t.text == "[" || t.text == "{")
+            depth @ depth + 1
+            current @ current.push(t)
+            at @ at + 1
+        else if t.kind == .punct && (t.text == ")" || t.text == "]" || t.text == "}") && depth > 0
+            depth @ depth - 1
+            current @ current.push(t)
+            at @ at + 1
+        else if t.kind == .punct && t.text == ")"
+            if current.len() > 0
+                arguments @ arguments.push(argument_of(current))
+
+            return Call(arguments: arguments, next: at + 1)
+        else if t.kind == .punct && t.text == "," && depth == 0
+            arguments @ arguments.push(argument_of(current))
+            current @ []
+            at @ at + 1
+        else
+            current @ current.push(t)
+            at @ at + 1
+
+    if current.len() > 0
+        arguments @ arguments.push(argument_of(current))
+
+    return Call(arguments: arguments, next: at)
+
+# The argument the tokens between two commas make.
+#
+# - `parts`: its tokens.
+function argument_of(parts: [scanner.Token]) -> Argument
+    labelled = parts.len() >= 2 && parts[0].kind == .ident && parts[1].text == ":"
+
+    label = if labelled
+        parts[0].text
+    else
+        ""
+
+    value = if labelled
+        parts.slice(from: 2, to: parts.len())
+    else
+        parts
+
+    if value.len() == 1 && value[0].kind == .text
+        return Argument(label: label, shape: .literal, text: value[0].text)
+
+    if value.len() == 1 && value[0].kind == .formatted
+        return Argument(label: label, shape: .formatted, text: "")
+
+    return Argument(label: label, shape: .expression, text: "")
+
+## The message a call names
+
+# The texts a call gives its message.
+record Texts
+    # The context, absent for none.
+    context: str?
+    # The id.
+    id: str
+    # The plural, absent for none.
+    plural_id: str?
+
+# The message a call of `name` names.
+#
+# - `arguments`: the call's arguments.
+# - `name`: the function.
+# - `roles`: its roles, as `roles_of` gives them.
+#
+# Fails `invalid` where a role is given no literal: an expression, an
+# `f"..."`, or nothing.
+function message_of(arguments: [Argument], name: str, roles: [str]) -> Texts?
+    given: {str: Argument} @= {}
+    unlabelled: [Argument] @= []
+
+    for a in arguments
+        if a.label != ""
+            given[a.label] @ a
+        else if a.shape != .expression
+            unlabelled @ unlabelled.push(a)
+
+    next_free @= 0
+
+    for role in roles
+        if given[role].is_err() && next_free < unlabelled.len()
+            given[role] @ unlabelled[next_free]
+            next_free @ next_free + 1
+
+    texts: {str: str} @= {}
+
+    for role in roles
+        a = match given[role]
+            .ok argument => argument
+            .err _       => return fail(code: "invalid", msg: found.not_literal(function_name: name, role: role))
+
+        match a.shape
+            .literal => texts[role] @ a.text
+            .formatted =>
+                return fail(
+                    code: "invalid",
+                    msg: f"the {role} of `{name}` is an f-string, formatted before it is looked up, so no catalogue can hold it: write the placeholders in the message, {{name}}, and fill them after the lookup"
+                )
+            .expression => return fail(code: "invalid", msg: found.not_literal(function_name: name, role: role))
+
+    id = texts["id"].must()
+
+    if id == ""
+        return fail(code: "invalid", msg: f"`{name}` looks up the empty id, which is the catalogue's header")
+
+    return ok(
+        Texts(context: optional(texts, key: "context"), id: id, plural_id: optional(texts, key: "plural_id"))
+    )
+
+# The text under `key`, absent where there is none.
+#
+# - `texts`: the texts by role.
+# - `key`: the role.
+function optional(texts: {str: str}, key: str) -> str?
+    return match texts[key]
+        .ok t  => ok(t)
+        .err _ => found.none(key)
+
+## Notes
+
+# The note to the translator above the call at `at`: the comments standing
+# alone on the lines just above its line, joined, where the first opens with
+# `NOTE_TAG`; empty where there is none.
+#
+# - `tokens`: the tokens.
+# - `at`: the index of the call's name.
+function note_above(tokens: [scanner.Token], at: i64) -> str
+    line = tokens[at].line
+    first @= at
+
+    while first > 0 && tokens[first - 1].line == line
+        first @ first - 1
+
+    lines: [str] @= []
+    k @= first - 1
+    expected @= line - 1
+
+    while k >= 0 && tokens[k].kind == .comment && tokens[k].first_on_line && tokens[k].line == expected
+        lines @ lists.concat(xs: [tokens[k].text], then: lines)
+        expected @ expected - 1
+        k @ k - 1
+
+    if lines.len() == 0 || !lines[0].starts_with_tag()
+        return ""
+
+    first_line = lines[0].slice(from: NOTE_TAG.len(), to: lines[0].len())
+    rest = lines.slice(from: 1, to: lines.len())
+    return lists.concat(xs: [first_line], then: rest).map(trimmed).join(" ")
+
+# Whether `line` opens with `NOTE_TAG`.
+#
+# - `line`: a comment's text.
+function starts_with_tag(line: str) -> bool
+    return line.len() >= NOTE_TAG.len() && line.slice(from: 0, to: NOTE_TAG.len()) == NOTE_TAG
+
+# `s` without the spaces at either end.
+#
+# - `s`: the text.
+function trimmed(s: str) -> str
+    start @= 0
+    end @= s.len()
+
+    while start < end && s[start] == ' '
+        start @ start + 1
+
+    while end > start && s[end - 1] == ' '
+        end @ end - 1
+
+    return s.slice(from: start, to: end)
+
+## Tests
+
+test "scan_source: a call by labels, one by place, a context and a plural"
+    source = "use <rebel>/i18n\n\n# The cart.\nfunction lines(cat: i18n.Catalog, n: i64) -> [str]\n    # l10n: the title of the cart page\n    title = i18n.translate(cat, id: \"Your cart\")\n    open = cat.translate_in(\"menu\", \"Open\")\n    badge = i18n.translate_plural(cat, id: \"{count} item\", plural_id: \"{count} items\", n: n)\n    return [title, open, badge]\n"
+    s = scan_source(source: source, file: "src/cart.hero")
+    assert s.problems.len() == 0
+    assert s.found.len() == 3
+    assert s.found[0].id == "Your cart"
+    assert s.found[0].note == "the title of the cart page"
+    assert s.found[0].line == 6
+    assert s.found[1].context.must() == "menu"
+    assert s.found[1].id == "Open"
+    assert s.found[1].note == ""
+    assert s.found[2].plural_id.must() == "{count} items"
+
+test "scan_source: an f-string, an expression, a declaration and a comment are no messages"
+    source = "# i18n.translate(cat, id: \"in a comment\")\nfunction translate(c: i64) -> i64\n    return c\n\nfunction f(cat: i18n.Catalog, name: str) -> str\n    a = i18n.translate(cat, id: f\"Hello {name}\")\n    b = i18n.translate(cat, id: \"Hi \" + name)\n    return a + b\n"
+    s = scan_source(source: source, file: "src/x.hero")
+    assert s.found.len() == 0
+    assert s.problems.len() == 2
+    assert s.problems[0].line == 6
+    assert s.problems[1].line == 7
+
+test "note_above: only comments standing alone on the lines just above, opening with the tag"
+    s = scan_source(
+        source: "x = 1 # l10n: not alone\ny = i18n.translate(cat, id: \"A\")\n# l10n: first\n# and second\n\nz = i18n.translate(cat, id: \"B\")\n# l10n: two lines\n# of note\nw = i18n.translate(cat, id: \"C\")\n",
+        file: "f"
+    )
+    assert s.found[0].note == ""
+    assert s.found[1].note == ""
+    assert s.found[2].note == "two lines of note"

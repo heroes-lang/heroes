@@ -1,0 +1,486 @@
+# The AMQP stand-in's connections and what flows through them: each
+# connection's stage in the handshake, its channels with their prefetch,
+# their unacknowledged deliveries and the publish being assembled, the
+# consumers of every queue, and the delivery of ready messages to them, a
+# queue's consumers taking turns and none past its channel's prefetch. A
+# connection that ends, however it ends, gives its unacknowledged
+# deliveries back to their queues marked redelivered, as AMQP 0-9-1 § 3.1.4
+# asks, and takes its exclusive queues with it.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/poll
+
+use standins/amqp_methods
+use standins/amqp_store
+use standins/amqp_wire
+
+# The largest frame this broker agrees, in bytes.
+constant FRAME_MAX: i64
+    131_072
+
+# Where a connection stands in the handshake of § 2.2.4.
+variant Stage
+    # Waiting for the protocol header.
+    greeting
+    # connection.start sent, waiting for start-ok.
+    starting
+    # connection.tune sent, waiting for tune-ok.
+    tuning
+    # Waiting for connection.open.
+    opening
+    # Open: channels may be used.
+    open
+    # connection.close sent, waiting for close-ok.
+    closing
+
+# A publish whose content is coming: its method came, its header and body
+# frames follow.
+record Content
+    # The exchange.
+    exchange: str
+    # The routing key.
+    key: str
+    # Whether a message no queue takes is handed back.
+    mandatory: bool
+    # The body's size the header said, -1 before the header.
+    size: i64
+    # The header's flags and properties.
+    properties: [u8]
+    # The body's bytes so far.
+    body: [u8]
+
+# A delivery not yet acknowledged.
+record Unacked
+    # Its delivery tag on its channel.
+    tag: i64
+    # The queue it came from.
+    queue: str
+    # The message.
+    message: amqp_store.Stored
+
+# A channel of a connection.
+record Chan
+    # Its number, 1 or more.
+    id: i64
+    # Whether it is open; a channel the broker closed waits for close-ok.
+    open: bool
+    # Whether its publishes are confirmed.
+    confirming: bool
+    # The publishes made in confirm mode, whose count is each one's tag.
+    published: i64
+    # The last delivery tag it gave.
+    delivered: i64
+    # The most deliveries unacknowledged, 0 for no limit.
+    prefetch: i64
+    # Its deliveries not yet acknowledged, by tag.
+    unacked: [Unacked]
+    # The publishes whose content is coming: one at most.
+    assembling: [Content]
+
+# A consumer of a queue.
+record Consumer
+    # The index of its connection.
+    peer: i64
+    # Its channel's number.
+    channel: i64
+    # Its tag, unique on its channel.
+    tag: str
+    # The queue it reads.
+    queue: str
+    # Whether its deliveries need no acknowledgement.
+    no_ack: bool
+
+# One connection.
+record Peer
+    # Its key in the poll set.
+    key: i64
+    # Its stream, the broker's to close.
+    stream: io.Stream
+    # Bytes read and not yet framed.
+    held: [u8]
+    # Where it stands.
+    stage: Stage
+    # The name its client properties gave it, "" for none.
+    name: str
+    # The largest frame agreed.
+    frame_max: i64
+    # The heartbeat agreed, in seconds; 0 for none.
+    heartbeat_s: i64
+    # Its channels.
+    channels: [Chan]
+    # Whether it is connected.
+    open: bool
+
+# A failure the demo asks of the broker: a restart at a chosen publish.
+record Fault
+    # The exchange whose publishes are counted, "" for no fault.
+    exchange: str
+    # The publish to it, counted from 1, at which the broker restarts before
+    # routing or confirming it.
+    after: i64
+    # The connection.open refused after the restart.
+    refusals: i64
+    # The publishes to it counted so far.
+    seen: i64
+    # The refusals still to make.
+    left: i64
+
+# The broker.
+record Broker
+    # Every connection, in the order accepted; a closed one stays.
+    peers: [Peer]
+    # The virtual host `/`.
+    host: amqp_store.Host
+    # The consumers, in the order they began.
+    consumers: [Consumer]
+    # The failure asked of it.
+    fault: Fault
+    # Messages published and routed.
+    published: i64
+    # Deliveries written.
+    delivered: i64
+    # Deliveries acknowledged.
+    acked: i64
+    # Restarts made.
+    restarts: i64
+    # connection.open refused while the host was down.
+    refused: i64
+    # Consumer tags given.
+    tags: i64
+
+# Writes a frame of `kind` on `channel` to peer `i`; a write that fails is
+# left to the read that will find the connection gone.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `kind`: the frame's type.
+# - `channel`: the channel.
+# - `payload`: the payload.
+function send(b: Broker lent, i: i64, kind: i64, channel: i64, payload: [u8])
+    _ = io.write(b.peers[i].stream, data: amqp_wire.frame(kind: kind, channel: channel, payload: payload)).is_err()
+
+# Writes a method on `channel` to peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `channel`: the channel, 0 for the connection.
+# - `payload`: the method's payload.
+function send_method(b: Broker lent, i: i64, channel: i64, payload: [u8])
+    send(b, i: i, kind: amqp_wire.METHOD, channel: channel, payload: payload)
+
+# The index of channel `id` of peer `i`, -1 where it has none.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `id`: the channel's number.
+function chan_index(b: Broker lent, i: i64, id: i64) -> i64
+    for j in range(from: 0, to: b.peers[i].channels.len())
+        if b.peers[i].channels[j].id == id
+            return j
+
+    return -1
+
+# Puts `gone` back at the front of their queues, in their order, marked
+# redelivered.
+#
+# - `b`: the broker.
+# - `gone`: the deliveries given back.
+function requeue(@b: Broker, gone: [Unacked])
+    i @= gone.len() - 1
+
+    while i >= 0
+        q = amqp_store.queue_index(b.host, name: gone[i].queue)
+
+        if q >= 0
+            back @= gone[i].message
+            back.redelivered @ true
+            messages: [amqp_store.Stored] @= [back]
+
+            for m in b.host.queues[q].messages
+                messages @ messages.push(m)
+
+            b.host.queues[q].messages @ messages
+        i @ i - 1
+
+# Ends the consumers of `peer` on `channel`, or on all its channels,
+# deleting an auto-delete queue they leave with none.
+#
+# - `b`: the broker.
+# - `peer`: the peer whose consumers are looked at.
+# - `channel`: their channel, or -1 for every channel of the peer.
+function end_consumers(@b: Broker, peer: i64, channel: i64)
+    kept: [Consumer] @= []
+    ended: [str] @= []
+
+    for c in b.consumers
+        if c.peer == peer && (channel < 0 || c.channel == channel)
+            ended @ ended.push(c.queue)
+        else
+            kept @ kept.push(c)
+
+    b.consumers @ kept
+
+    for queue in ended
+        q = amqp_store.queue_index(b.host, name: queue)
+
+        if q >= 0 && b.host.queues[q].auto_delete && consumers_of(b, queue: queue) == 0
+            amqp_store.delete_queue(@b.host, i: q)
+
+# The consumers of `queue`.
+#
+# - `b`: the broker.
+# - `queue`: the queue's name.
+function consumers_of(b: Broker lent, queue: str) -> i64
+    n @= 0
+
+    for c in b.consumers
+        if c.queue == queue
+            n @ n + 1
+
+    return n
+
+# Closes channel `j` of peer `i` on the broker's side: its unacknowledged
+# deliveries given back and its consumers ended.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+function end_channel(@b: Broker, i: i64, j: i64)
+    gone = b.peers[i].channels[j].unacked
+    b.peers[i].channels[j].unacked @ []
+    b.peers[i].channels[j].assembling @ []
+    b.peers[i].channels[j].open @ false
+    requeue(@b, gone: gone)
+    end_consumers(@b, peer: i, channel: b.peers[i].channels[j].id)
+
+# Releases what the connection of peer `i` holds of the broker: its
+# channels ended, their deliveries given back, its consumers ended and its
+# exclusive queues deleted. Its stream stays open, for a close-ok to come.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+function release(@b: Broker, i: i64)
+    for j in range(from: 0, to: b.peers[i].channels.len())
+        end_channel(@b, i: i, j: j)
+
+    end_consumers(@b, peer: i, channel: -1)
+    amqp_store.drop_exclusive(@b.host, owner: i)
+
+# Ends the connection of peer `i`: what it holds released, its stream
+# closed. One ended already is left as it is.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function drop_peer(@b: Broker, set: poll.Set, i: i64)
+    if !b.peers[i].open
+        return
+
+    release(@b, i: i)
+
+    # A connection ends here whatever its socket answers.
+    _ = poll.remove(set, key: b.peers[i].key).is_err()
+    _ = io.close(@b.peers[i].stream).is_err()
+    b.peers[i].open @ false
+    dispatch(@b)
+
+# Answers a connection error: connection.close written with `code` and
+# `text`, the connection waiting for close-ok.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `code`: the reply code.
+# - `text`: the reply text.
+# - `cause`: the method that caused it, as class * 1000 + method, 0 for none.
+function connection_error(@b: Broker, i: i64, code: i64, text: str, cause: i64)
+    send_method(b, i: i, channel: 0, payload: amqp_methods.close(class_id: 10, code: code, text: text, cause: cause))
+    b.peers[i].stage @ .closing
+
+# Answers a channel error: channel.close written on channel `j` of peer
+# `i`, the channel ended on the broker's side.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `code`: the reply code.
+# - `text`: the reply text.
+# - `cause`: the method that caused it, as class * 1000 + method.
+function channel_error(@b: Broker, i: i64, j: i64, code: i64, text: str, cause: i64)
+    send_method(
+        b,
+        i: i,
+        channel: b.peers[i].channels[j].id,
+        payload: amqp_methods.close(class_id: 20, code: code, text: text, cause: cause)
+    )
+    end_channel(@b, i: i, j: j)
+    dispatch(@b)
+
+# Whether consumer `c` may take one more delivery: its connection and
+# channel open, and its channel under its prefetch.
+#
+# - `b`: the broker.
+# - `c`: the consumer's index.
+function has_room(b: Broker lent, c: i64) -> bool
+    consumer = b.consumers[c]
+
+    if !b.peers[consumer.peer].open
+        return false
+
+    j = chan_index(b, i: consumer.peer, id: consumer.channel)
+
+    if j < 0 || !b.peers[consumer.peer].channels[j].open
+        return false
+
+    ch = b.peers[consumer.peer].channels[j]
+    return consumer.no_ack || ch.prefetch == 0 || ch.unacked.len() < ch.prefetch
+
+# The consumer of queue `q` whose turn it is and that has room, its turn
+# then passed on; -1 where none has room.
+#
+# - `b`: the broker.
+# - `q`: the queue's index.
+function next_consumer(@b: Broker, q: i64) -> i64
+    readers: [i64] @= []
+
+    for c in range(from: 0, to: b.consumers.len())
+        if b.consumers[c].queue == b.host.queues[q].name
+            readers @ readers.push(c)
+
+    if readers.len() == 0
+        return -1
+
+    turn = b.host.queues[q].turn % readers.len()
+
+    for k in range(from: 0, to: readers.len())
+        c = readers[(turn + k) % readers.len()]
+
+        if has_room(b, c: c)
+            b.host.queues[q].turn @ (turn + k + 1) % readers.len()
+            return c
+
+    return -1
+
+# Writes the first message of queue `q` to consumer `c`: basic.deliver, the
+# content header, and the body in frames the connection agreed.
+#
+# - `b`: the broker.
+# - `q`: the queue's index.
+# - `c`: the consumer's index.
+function deliver(@b: Broker, q: i64, c: i64)
+    consumer = b.consumers[c]
+    i = consumer.peer
+    j = chan_index(b, i: i, id: consumer.channel)
+    m = b.host.queues[q].messages[0]
+    rest = b.host.queues[q].messages
+    b.host.queues[q].messages @ rest.slice(from: 1, to: rest.len())
+    tag = b.peers[i].channels[j].delivered + 1
+    b.peers[i].channels[j].delivered @ tag
+    send_method(
+        b,
+        i: i,
+        channel: consumer.channel,
+        payload: amqp_methods.deliver(consumer_tag: consumer.tag, delivery_tag: tag, redelivered: m.redelivered, exchange: m.exchange, key: m.key)
+    )
+    send_content(b, i: i, channel: consumer.channel, m: m)
+
+    if !consumer.no_ack
+        unacked @= b.peers[i].channels[j].unacked
+        unacked @ unacked.push(Unacked(tag: tag, queue: b.host.queues[q].name, message: m))
+        b.peers[i].channels[j].unacked @ unacked
+
+    b.delivered @ b.delivered + 1
+
+# Writes `m`'s content header and body to peer `i` on `channel`, the body
+# cut to the frames the connection agreed.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `channel`: the channel.
+# - `m`: the message.
+function send_content(b: Broker lent, i: i64, channel: i64, m: amqp_store.Stored)
+    send(
+        b,
+        i: i,
+        kind: amqp_wire.HEADER,
+        channel: channel,
+        payload: amqp_methods.content_header(size: m.body.len(), properties: m.properties)
+    )
+
+    # A frame's payload is the agreed size less its 7 bytes of header and
+    # its end octet.
+    room = b.peers[i].frame_max - 8
+    at @= 0
+
+    while at < m.body.len()
+        end = if at + room < m.body.len()
+            at + room
+        else
+            m.body.len()
+
+        send(b, i: i, kind: amqp_wire.BODY, channel: channel, payload: m.body.slice(from: at, to: end))
+        at @ end
+
+# Delivers every ready message that has a consumer with room.
+#
+# - `b`: the broker.
+function dispatch(@b: Broker)
+    for q in range(from: 0, to: b.host.queues.len())
+        while q < b.host.queues.len() && b.host.queues[q].messages.len() > 0
+            c = next_consumer(@b, q: q)
+
+            if c < 0
+                break
+
+            deliver(@b, q: q, c: c)
+
+# A channel of the tests, open, with a prefetch of `prefetch`.
+#
+# - `prefetch`: its prefetch.
+function test_chan(prefetch: i64) -> Chan
+    return Chan(
+        id: 1,
+        open: true,
+        confirming: false,
+        published: 0,
+        delivered: 0,
+        prefetch: prefetch,
+        unacked: [],
+        assembling: []
+    )
+
+test "requeue: deliveries given back at the front of their queue, in order, marked redelivered"
+    b @= Broker(
+        peers: [],
+        host: amqp_store.alerts_host(),
+        consumers: [],
+        fault: Fault(exchange: "", after: 0, refusals: 0, seen: 0, left: 0),
+        published: 0,
+        delivered: 0,
+        acked: 0,
+        restarts: 0,
+        refused: 0,
+        tags: 0
+    )
+    one = amqp_store.Stored(
+        exchange: "alerts",
+        key: "a",
+        properties: [],
+        body: bytes.from_text("1"),
+        persistent: true,
+        redelivered: false
+    )
+    two @= one
+    two.body @ bytes.from_text("2")
+    waiting @= one
+    waiting.body @ bytes.from_text("3")
+    b.host.queues[0].messages @ [waiting]
+    requeue(@b, gone: [Unacked(tag: 1, queue: "pager", message: one), Unacked(tag: 2, queue: "pager", message: two)])
+    bodies: [[u8]] @= []
+
+    for m in b.host.queues[0].messages
+        bodies @ bodies.push(m.body)
+
+    assert bodies == [bytes.from_text("1"), bytes.from_text("2"), bytes.from_text("3")]
+    assert b.host.queues[0].messages[0].redelivered && !b.host.queues[0].messages[2].redelivered
+    assert test_chan(2).prefetch == 2

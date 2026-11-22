@@ -1,0 +1,4 @@
+# The transcript's one line a machine decides: where the weather station's serial line stands.
+line: wx-1 speaks on a pseudo-terminal at 4800 baud, its other side the hub's port bench
+or: wx-1 speaks through a serial device server on the loopback, the hub's port bench: no pseudo-terminal on this system (unsupported)
+why: the station stands on a pseudo-terminal pair, which `serial.open_pseudo` makes on Darwin and Linux and refuses `unsupported` on Windows; there its sentences reach the hub's gateway through a raw TCP socket on the loopback, as a serial device server's do, and every other line is the same

@@ -1,0 +1,138 @@
+# A page of `template`'s HTML mode that places HTML from outside where its
+# template says: each `clean` action writes the text its value names as
+# markup, cleaned by an `html/sanitize` policy inside the element it lands
+# in, so a note written in Markdown and made HTML, or a visitor's comment,
+# stands in its layout as one template, inside a loop as anywhere, and runs
+# nothing.
+#
+# **No value is trusted.** There is no way to write markup here that a policy
+# did not clean as it was written: a `clean` action cleans its text at the
+# moment it writes it, and `template.render` refuses a set that holds one, so
+# no text reaches a page unescaped by any other road. The HTML mode places a
+# `clean` action only in the text of an element, where a fragment cleaned
+# inside that element is read by a browser as the cleaner read it: never in
+# an attribute, a URL, a script, a style sheet, a title or a textarea, nor
+# inside a `select`, an `svg`, a `math`, an element whose text a browser
+# reads as it is, or a table outside its cells; in a cell the text is
+# cleaned as the cell holds it.
+#
+# **What it does not do.** A template is read and checked by `template`
+# (`template.parse_html`, or `template.parse_all` with
+# `template.html_options()`), whose module comment says what a `clean` action
+# is; a policy is made and changed by `html/sanitize`; a template that holds
+# no `clean` action is rendered by `template.render` as well as here.
+#
+# It fails as `template.render` fails, `invalid` and `not_found`, and
+# `invalid` where a `clean` action's value is not a text.
+
+use html/sanitize
+use json
+use template
+use template/internal/assemble
+use template/internal/run
+use template/sanitized/internal/cleaning
+
+## Codes
+
+# The code of a value of a kind its place does not take, a `clean` action's
+# that is not a text among them: `render` and `render_named` fail with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a value, a key or a template named that is not there: `render`
+# and `render_named` fail with it.
+constant NOT_FOUND: str
+    "not_found"
+
+## Rendering
+
+# The text the main template of `t` makes of `value`, each `clean` action's
+# text cleaned by `policy` inside the element it lands in.
+#
+# - `t`: the templates, read in the HTML mode or not; the text mode holds no
+#   `clean` action.
+# - `value`: what `.` names in the main template.
+# - `policy`: what every `clean` action's text is cleaned by, inside the
+#   policy's own context element, or as a table's cell holds it where the
+#   action stands in one (`sanitize.set_context` with `td`, `th` or
+#   `caption`).
+#
+# Fails as `template.render` does, and `invalid` where a `clean` action's
+# value is not a text. Each `clean` action costs one `sanitize.clean` of its
+# text. See also `render_named`.
+function render(t: template.Template, value: json.Value, policy: sanitize.Policy) -> str?
+    return render_named(t, name: t.main, value: value, policy: policy)
+
+# The text the template of `t` named `name` makes of `value`, each `clean`
+# action's text cleaned by `policy` inside the element it lands in.
+#
+# - `t`: the templates.
+# - `name`: the template to run, one of `t.names`.
+# - `value`: what `.` names in it.
+# - `policy`: what every `clean` action's text is cleaned by, as `render`
+#   reads it.
+#
+# Fails `not_found` where `t` holds no template `name`, and as `render` does.
+function render_named(t: template.Template, name: str, value: json.Value, policy: sanitize.Policy) -> str?
+    match t.compiled.index[name]
+        .err _ => return fail(code: NOT_FOUND, msg: assemble.missing_template(t.names, name: name))
+        .ok entry => return run.render_with(
+            t.compiled,
+            entry: entry,
+            value: value,
+            state: policy,
+            clean: cleaning.cleaned
+        )
+
+## Tests
+
+test "render: no clean action, one of a missing value, one of a value not a text, one inside a loop, one in a cell"
+    plain = template.parse_html("<p>{{ .a }}</p>").must()
+    assert render(plain, value: json.parse("{\"a\":\"<b>\"}").must(), policy: sanitize.strict_policy()).must() == "<p>&lt;b&gt;</p>"
+    t = template.parse_html("<div>{{ clean .body }}</div>").must()
+
+    match render(t, value: json.parse("{}").must(), policy: sanitize.ugc_policy())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    match render(t, value: json.parse("{\"body\":3}").must(), policy: sanitize.ugc_policy())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert render(t, value: json.parse("{\"body\":\"\"}").must(), policy: sanitize.ugc_policy()).must() == "<div></div>"
+    looped = template.parse_html(
+        "<ol>{{ for $c in .comments }}<li>{{ $c.author }}: {{ clean $c.html }}</li>{{ end }}</ol>"
+    ).must()
+    comments = json.parse(
+        "{\"comments\":[{\"author\":\"<ann>\",\"html\":\"<em>hi</em><script>x()</script>\"},{\"author\":\"bo\",\"html\":\"<a href=\\\"javascript:x()\\\">y</a>\"}]}"
+    ).must()
+    assert render(looped, value: comments, policy: sanitize.ugc_policy()).must() == "<ol><li>&lt;ann&gt;: <em>hi</em></li><li>bo: <a>y</a></li></ol>"
+    cell = template.parse_html("<table><tr><td>{{ clean .x }}</td></tr></table>").must()
+    assert render(cell, value: json.parse("{\"x\":\"<b>1</b><img src=x onerror=y()>\"}").must(), policy: sanitize.strict_policy()).must() == "<table><tr><td>1</td></tr></table>"
+
+test "render_named: a template of the set, and one the set does not hold"
+    t = template.parse_all(
+        {"page": "<main>{{ include \"note\" . }}</main>", "note": "<article>{{ clean .html }}</article>"},
+        options: template.html_options()
+    ).must()
+    assert render_named(t, name: "note", value: json.parse("{\"html\":\"<p>x</p>\"}").must(), policy: sanitize.ugc_policy()).must() == "<article><p>x</p></article>"
+
+    match render_named(t, name: "other", value: json.parse("{}").must(), policy: sanitize.ugc_policy())
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+## Examples
+
+# A note's page whole in one template: its Markdown made HTML, cleaned where
+# it lands, and its title escaped as any value is.
+test "render: a note's body inside its article"
+    t = template.parse_html(
+        "<article><h1>{{ .title }}</h1><div class=\"body\">{{ clean .body }}</div></article>"
+    ).must()
+    v = json.parse("{\"title\":\"A & B\",\"body\":\"<p>Hi <b>there</b></p><script>steal()</script>\"}").must()
+    assert render(t, value: v, policy: sanitize.ugc_policy()).must() == "<article><h1>A &amp; B</h1><div class=\"body\"><p>Hi <b>there</b></p></div></article>"
+
+# A page of a set, its comments each cleaned where it lands.
+test "render_named: a comment of a set of templates"
+    t = template.parse_all({"comment": "<li>{{ clean .html }}</li>"}, options: template.html_options()).must()
+    assert render_named(t, name: "comment", value: json.parse("{\"html\":\"<i>ok</i>\"}").must(), policy: sanitize.ugc_policy()).must() == "<li><i>ok</i></li>"

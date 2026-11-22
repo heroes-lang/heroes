@@ -115,14 +115,29 @@ function asked_of(words: [str]) -> Asked
 
 # Runs the program the binary was run as: one of `tools/kit`'s by its name,
 # else the shell; ends the process with the status.
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                _ = io.write_line(io.stderr(), line: f"shell: argument {given.len() + 1} is not UTF-8").is_err()
+                exit(code: 2)
+
+    return given
+
 function main()
     exe = os.executable_path().default("shell")
     called = path.stem(exe).default("shell")
 
     if kit.is_tool(called)
-        exit(code: kit.run(called, arguments: args()) & 255)
+        exit(code: kit.run(called, arguments: text_arguments()) & 255)
 
-    asked = asked_of(args())
+    asked = asked_of(text_arguments())
 
     if asked.help
         _ = io.write_text(io.stdout(), text: usage()).is_err()

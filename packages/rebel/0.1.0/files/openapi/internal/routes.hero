@@ -1,7 +1,8 @@
 # Paths as OpenAPI writes them: the eight methods, a path's template read
 # into its segments and their pieces, matched against a request's raw path,
 # ranked so that the most literal template is tried first, turned into a
-# pattern `web` reads, and the path of a server's URL.
+# pattern `web` reads, the path of a server's URL, and what a whole pattern
+# adds after a `web` group's prefix.
 
 use strings
 
@@ -263,6 +264,27 @@ function base_path(url: str) -> str
         rest @ rest.slice(from: 0, to: rest.len() - 1)
     return rest
 
+# What `whole`, a route's whole pattern, adds after `prefix`, the prefix of
+# the `web` router it is added to: `whole` itself under the prefix "" of a
+# router that is no group, "" where the two are one, else the rest from the
+# `/` that ends the prefix's last segment. A route's path is where a client
+# asks for it, written once by the document, so a group places it and never
+# moves it. Fails `invalid` where `whole` does not stand under `prefix`
+# segment for segment: `/apiv2/x` stands under `/apiv2` and not under `/api`.
+function rest_under(whole: str, prefix: str) -> str?
+    if prefix == ""
+        return ok(whole)
+
+    if whole == prefix
+        return ok("")
+
+    if strings.has_prefix(s: whole, prefix: prefix + "/")
+        return ok(whole.slice(from: prefix.len(), to: whole.len()))
+    return fail(
+        code: "invalid",
+        msg: f"the path \"{whole}\" does not stand under the group's prefix \"{prefix}\": a group places a route where the document says a client asks for it, and never moves it"
+    )
+
 test "routes: the eight methods and the versions of 3.1"
     assert methods().len() == 8
     assert is_method("trace")
@@ -326,3 +348,18 @@ test "base_path: of an absolute URL, a relative one, and the root"
     assert base_path("/") == ""
     assert base_path("") == ""
     assert base_path("v2") == "/v2"
+
+test "rest_under: no group, the prefix itself, a path under it, a parameter's segment, a longer segment, another path"
+    assert rest_under(whole: "/v1/pets", prefix: "").must() == "/v1/pets"
+    assert rest_under(whole: "/api", prefix: "/api").must() == ""
+    assert rest_under(whole: "/api/notes/:slug", prefix: "/api").must() == "/notes/:slug"
+    assert rest_under(whole: "/api/", prefix: "/api").must() == "/"
+    assert rest_under(whole: "/users/:id/pets", prefix: "/users/:id").must() == "/pets"
+    assert rest_under(whole: "/users/:user_id/pets", prefix: "/users/:id").is_err()
+
+    match rest_under(whole: "/apiv2/x", prefix: "/api")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
+
+    assert rest_under(whole: "/", prefix: "/api").is_err()
+    assert rest_under(whole: "/v1/pets", prefix: "/v1/pets/x").is_err()

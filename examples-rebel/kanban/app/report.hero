@@ -1,0 +1,65 @@
+# A page of a board to read and to print: its columns and cards with their
+# moments, written by the template `web/report.html` in `template`'s HTML
+# mode, which escapes every title by the place it stands, and put into the
+# web view as the asset `/report.html`, which the page then goes to. Every
+# report replaces the one before; the page links back to the board.
+
+use <rebel>/json
+use <rebel>/template
+use <rebel>/ui/webview
+
+use api/views
+use app/desk
+use store/boards
+use store/cards
+use store/store
+
+# Where the report is served.
+constant PATH: str
+    "/report.html"
+
+# Writes the report of board `board` and answers `{"path": PATH}`. Fails
+# `not_found` for no such board, and as the template and the web view fail.
+#
+# - `d`: the desk; its web view's table gains the page.
+# - `board`: the board's name.
+function shown(@d: desk.Desk, board: str) -> json.Value?
+    page = template.render(d.report, value: values(@d.store, board: board)?)?
+    webview.put_asset(@d.app, view: d.view, file: webview.Asset(path: PATH, content_type: webview.content_type_of(PATH), body: bytes_of(page)))?
+    return ok(views.object([views.pair("path", views.text(PATH))]))
+
+# What the template reads: the board's name and title, its cards' count,
+# the moment now, and its columns with their cards.
+#
+# - `s`: the store; its clock moves on.
+# - `board`: the board's name.
+function values(@s: store.Store, board: str) -> json.Value?
+    b = boards.board_named(@s, id: board)?
+    columns: [json.Value] @= []
+    total @= 0
+
+    for c in boards.columns(@s, board: board)?
+        in_it: [json.Value] @= []
+
+        for card in cards.in_column(@s, column: c.id)?
+            in_it @ in_it.push(
+                views.object([views.pair("title", views.text(card.title)), views.pair("created", views.text(card.created)), views.pair("updated", views.text(card.updated))])
+            )
+            total @ total + 1
+
+        columns @ columns.push(
+            views.object([views.pair("title", views.text(c.title)), views.pair("cards", .list(items: in_it))])
+        )
+
+    return ok(
+        views.object([views.pair("id", views.text(b.id)), views.pair("title", views.text(b.title)), views.pair("cards", views.count_json(total)), views.pair("now", views.text(store.stamp(@s)?)), views.pair("columns", .list(items: columns))])
+    )
+
+# The bytes of `text`.
+function bytes_of(text: str) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        out @ out.push(text[i])
+
+    return out

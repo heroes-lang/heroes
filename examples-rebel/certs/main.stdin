@@ -1,0 +1,45 @@
+# certs.toml: the certificates of the site certs.test, as its operator
+# writes them. The demo reads this file from its standard input and points
+# the CA's directory, its roots, the DNS server, the webroot and the folder
+# at its own stand-ins on 127.0.0.1, every other line kept.
+
+[account]
+email = "ops@certs.test"
+agree_terms = true
+
+[acme]
+# A test CA's directory; a real one is Let's Encrypt's.
+directory = "https://ca.certs.test/directory"
+
+[store]
+folder = "/var/lib/certs"
+keyring_service = "certs"
+
+[renewal]
+days_before_expiry = 30
+renewal_info = true
+
+[http01]
+webroot = "/var/www/acme"
+
+[dns01]
+# The zone's primary, which takes updates signed with the key below.
+server = "192.0.2.53:53"
+zone = "certs.test"
+tsig_key = "certs-update"
+
+[serve]
+listen = "127.0.0.1:8443"
+certificate = "site"
+
+# The site itself, its www name and its address, proved by files served.
+[[certificate]]
+name = "site"
+domains = ["certs.test", "www.certs.test", "127.0.0.1"]
+challenge = "http-01"
+
+# Every name under the zone, which only a TXT record proves.
+[[certificate]]
+name = "wild"
+domains = ["*.certs.test"]
+challenge = "dns-01"

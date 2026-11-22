@@ -1,0 +1,193 @@
+# The demo: the board's whole back end driven through the page's own
+# messages, on `ui`'s headless side, with no screen. The window, the web view
+# and the page's files are made as on the desktop (`app/opening`); each step
+# of `demo/script` is sent as the page's script would send it, by
+# `ui.inject`'s `.send`, read back by `ui.wait` as a message, answered by the
+# one handler the bridge feeds on the desktop (`api/handler`), and printed
+# with what the program posted back. A dialog is answered by `ui.inject`
+# too. The database is SQLite in a folder of `build/` the demo makes and
+# removes, the clock fixed and the names counted, so the transcript is the
+# same on every run; it prints no path and no moment of the machine's.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/path
+use <rebel>/time
+use <rebel>/ui
+use <rebel>/ui/webview
+
+use api/handler
+use app/cli
+use app/desk
+use app/opening
+use demo/script
+use store/schema
+use support/clock
+use support/ids
+
+# The demo's folder, made at its start and removed at its end.
+constant FOLDER: str
+    "build/kanban-demo"
+
+# The moment the demo's clock starts at: 2026-01-05T09:00:00Z.
+constant START: i64
+    1767603600
+
+# Runs the demo. Fails as the database, the page's files, the app or a
+# post fail; the folder is removed whatever happens.
+#
+# - `command`: the command line read.
+function run(command: cli.Command) -> ()?
+    if fs.exists(FOLDER)?
+        fs.remove_all(FOLDER)?
+    fs.make_dir_all(FOLDER)?
+    ran = session(command)
+    removed = fs.remove_all(FOLDER)
+    ran?
+    return removed
+
+function session(command: cli.Command) -> ()?
+    web = cli.web_folder(command.web)?
+    db = schema.open(path.join_all([FOLDER, "kanban.sqlite"]))?
+    start = time.from_unix(whole_seconds: START, extra_nanoseconds: 0)?
+    app = ui.open(.headless)?
+    d @= opening.made(app, db: db, web: web, dates: clock.fixed(start: start, step: time.minutes(1)?), names: ids.counted(start))?
+    told = steps(@d)
+    closed = desk.close(@d)
+    told?
+    return closed
+
+# Prints the window, what the page's requests are answered, and every step.
+function steps(@d: desk.Desk) -> ()?
+    print("== the window, drawn as text")
+
+    for line in ui.render(@d.app)?
+        print(line)
+
+    print("== what the page's requests are answered")
+
+    for asked in ["GET /", "GET /app.js", "GET /app.css", "GET /report.css", "HEAD /index.html", "GET /index.html?board=1", "GET /missing.png", "GET /%2e%2e/app.js", "POST /"]
+        print(asked, " -> ", answered(d, asked: asked)?)
+
+    for url in ["https://example.com/", "file:///etc/passwd", "app://localhost/report.html"]
+        print("may the page go to ", url, ": ", webview.allows(d.app, view: d.view, url: url)?)
+
+    print("== the session")
+    names: {str: str} @= {}
+    number @= 0
+
+    for s in script.steps()
+        number @ number + 1
+        text = "{\"heroes\":1,\"id\":" + number.to_str() + ",\"call\":\"" + s.call + "\",\"args\":" + filled(s.args, names: names) + "}"
+
+        if s.pick.len() > 0
+            ui.inject(@d.app, input: .pick_files(paths: [path.join_all([FOLDER, s.pick])]))?
+        ui.inject(@d.app, input: .send(widget: d.view, text: text))?
+
+        match ui.wait(@d.app, within: time.nanoseconds(0))?
+            .message m =>
+                print("page    ", m.text)
+                posted = handler.handle(@d, text: m.text)?
+
+                for p in posted
+                    print("program ", p)
+
+                if posted.len() > 0
+                    keep(posted[0], keeps: s.keep, @names)
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ =>
+                return fail(code: "failed", msg: "the page's message did not come")
+
+    print("== the report, as the page is answered for it")
+    print("GET /report.html -> ", answered(d, asked: "GET /report.html")?)
+    print("== the window at the end")
+
+    for line in ui.render(@d.app)?
+        print(line)
+
+    return ok()
+
+# What `asked`, a method and a path, is answered, as `webview.response_of`
+# says.
+function answered(d: desk.Desk, asked: str) -> str?
+    cut @= 0
+
+    while asked[cut] != ' '
+        cut @ cut + 1
+
+    r = webview.response_of(d.app, view: d.view, method: asked.slice(from: 0, to: cut), url: webview.ORIGIN + asked.slice(from: cut + 1, to: asked.len()))?
+    return ok(f"{r.status} {r.content_type}")
+
+# `text` with each `$name` the session kept written as its value, in
+# quotes already, as the steps write them.
+function filled(text: str, names: {str: str}) -> str
+    out @= text
+
+    # The longest names first, so `$copy_todo` is not read as `$copy`.
+    for name in sorted_longest(keys(names))
+        out @ replaced(text: out, old: "$" + name, new: names[name].must())
+
+    return out
+
+# `names`, the longest first.
+function sorted_longest(names: [str]) -> [str]
+    out: [str] @= []
+    left @= names
+
+    while left.len() > 0
+        best @= 0
+
+        for i in range(from: 1, to: left.len())
+            if left[i].len() > left[best].len()
+                best @ i
+
+        out @ out.push(left[best])
+        rest: [str] @= []
+
+        for i in range(from: 0, to: left.len())
+            if i != best
+                rest @ rest.push(left[i])
+
+        left @ rest
+
+    return out
+
+# `text` with every `old` written as `new`.
+function replaced(text: str, old: str, new: str) -> str
+    parts: [str] @= []
+    start @= 0
+    at @= 0
+
+    while at + old.len() <= text.len()
+        if text.slice(from: at, to: at + old.len()) == old
+            parts @ parts.push(text.slice(from: start, to: at)).push(new)
+            at @ at + old.len()
+            start @ at
+        else
+            at @ at + 1
+
+    parts @ parts.push(text.slice(from: start, to: text.len()))
+    return parts.join("")
+
+# Keeps in `names` what `keeps` names of the answer `posted`; an answer that
+# is a refusal keeps nothing.
+function keep(posted: str, keeps: [script.Keep], @names: {str: str})
+    match json.parse(posted)
+        .ok v =>
+            match json.member(v, key: "ok")
+                .ok value =>
+                    for k in keeps
+                        match json.value_at(value, pointer: k.pointer)
+                            .ok found => names[k.name] @ json.text_of(found).default("")
+                            .err _    => _ = 0
+                .err _ => _ = 0
+        .err _ => _ = 0
+
+## Tests
+
+test "filled: the longest name first, every place it stands"
+    names: {str: str} @= {}
+    names["copy"] @ "A"
+    names["copy_todo"] @ "B"
+    assert filled("{\"c\":\"$copy_todo\",\"b\":\"$copy\",\"d\":\"$copy\"}", names: names) == "{\"c\":\"B\",\"b\":\"A\",\"d\":\"A\"}"
+    assert replaced(text: "aXbXc", old: "X", new: "--") == "a--b--c"
+    assert replaced(text: "", old: "X", new: "y") == ""

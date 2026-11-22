@@ -1,0 +1,332 @@
+# What the AMQP stand-in keeps of one virtual host, `/`: its exchanges,
+# queues and bindings, the messages waiting in each queue, and the routing
+# of a published message by its exchange's kind (direct by equal keys,
+# fanout to every binding, topic by `routes/patterns`'s matching, the one
+# the hub's rules use). A restart keeps what RabbitMQ keeps across one: the
+# durable exchanges and queues, their bindings, and in a durable queue its
+# persistent messages; everything else is gone.
+
+use <rebel>/strings
+
+use routes/patterns
+
+# A message in a queue.
+record Stored
+    # The exchange it was published to.
+    exchange: str
+    # Its routing key.
+    key: str
+    # Its content header's flags and properties, as published.
+    properties: [u8]
+    # Its body.
+    body: [u8]
+    # Whether it was published with delivery mode 2, which a restart keeps.
+    persistent: bool
+    # Whether it was delivered before and went back to its queue.
+    redelivered: bool
+
+# An exchange.
+record Exchange
+    # Its name.
+    name: str
+    # Its kind: `direct`, `fanout` or `topic`.
+    kind: str
+    # Whether it outlives a restart.
+    durable: bool
+
+# A queue.
+record Queue
+    # Its name.
+    name: str
+    # Whether it outlives a restart.
+    durable: bool
+    # Whether only the connection that declared it uses it.
+    exclusive: bool
+    # Whether it is deleted with its last consumer.
+    auto_delete: bool
+    # The connection an exclusive queue belongs to, its index; -1 for none.
+    owner: i64
+    # The messages ready, the oldest first.
+    messages: [Stored]
+    # Its consumers' turn: the next delivery goes to the consumer this many
+    # places along.
+    turn: i64
+
+# A binding of a queue to an exchange.
+record Binding
+    # The exchange.
+    exchange: str
+    # The queue.
+    queue: str
+    # The binding key.
+    key: str
+
+# One virtual host.
+record Host
+    # Its exchanges, the default one "" among them.
+    exchanges: [Exchange]
+    # Its queues.
+    queues: [Queue]
+    # Its bindings.
+    bindings: [Binding]
+    # The names given to queues declared with none.
+    named: i64
+
+# A host with the default exchange alone, which routes to the queue its key
+# names.
+function new_host() -> Host
+    return Host(exchanges: [Exchange(name: "", kind: "direct", durable: true)], queues: [], bindings: [], named: 0)
+
+# Whether `kind` is one this stand-in routes.
+#
+# - `kind`: an exchange's kind.
+function is_routed_kind(kind: str) -> bool
+    return kind == "direct" || kind == "fanout" || kind == "topic"
+
+# The index of the exchange `name`, -1 where none is.
+#
+# - `h`: the host.
+# - `name`: the exchange.
+function exchange_index(h: Host lent, name: str) -> i64
+    for i in range(from: 0, to: h.exchanges.len())
+        if h.exchanges[i].name == name
+            return i
+
+    return -1
+
+# The index of the queue `name`, -1 where none is.
+#
+# - `h`: the host.
+# - `name`: the queue.
+function queue_index(h: Host lent, name: str) -> i64
+    for i in range(from: 0, to: h.queues.len())
+        if h.queues[i].name == name
+            return i
+
+    return -1
+
+# A name for a queue declared with none, as RabbitMQ gives one.
+#
+# - `h`: the host, which counts the names given.
+function generated_name(@h: Host) -> str
+    h.named @ h.named + 1
+    return f"amq.gen-standin-{h.named}"
+
+# Whether a binding of `kind` with `pattern` takes a message published with
+# `key`.
+#
+# - `kind`: the exchange's kind.
+# - `pattern`: the binding's key.
+# - `key`: the message's routing key.
+function binding_takes(kind: str, pattern: str, key: str) -> bool
+    return match kind
+        "fanout" => true
+        "topic"  => patterns.topic_matches(pattern: pattern, key: key)
+        _        => pattern == key
+
+# The queues a message published to `exchange` with `key` goes to, each
+# once, in the order they were declared.
+#
+# - `h`: the host.
+# - `exchange`: an exchange that exists.
+# - `key`: the routing key.
+function route(h: Host lent, exchange: str, key: str) -> [i64]
+    if exchange == ""
+        found = queue_index(h, name: key)
+
+        if found < 0
+            return []
+        return [found]
+
+    kind = h.exchanges[exchange_index(h, name: exchange)].kind
+    taken: [i64] @= []
+
+    for i in range(from: 0, to: h.queues.len())
+        for b in h.bindings
+            if b.exchange == exchange && b.queue == h.queues[i].name && binding_takes(kind: kind, pattern: b.key, key: key)
+                taken @ taken.push(i)
+                break
+
+    return taken
+
+# Adds the binding, once.
+#
+# - `h`: the host.
+# - `b`: the binding.
+function bind(@h: Host, b: Binding)
+    for other in h.bindings
+        if other == b
+            return
+
+    bindings @= h.bindings
+    bindings @ bindings.push(b)
+    h.bindings @ bindings
+
+# Deletes the queue at `i` and its bindings.
+#
+# - `h`: the host.
+# - `i`: the queue's index.
+function delete_queue(@h: Host, i: i64)
+    name = h.queues[i].name
+    queues: [Queue] @= []
+
+    for j in range(from: 0, to: h.queues.len())
+        if j != i
+            queues @ queues.push(h.queues[j])
+
+    kept: [Binding] @= []
+
+    for b in h.bindings
+        if b.queue != name
+            kept @ kept.push(b)
+
+    h.queues @ queues
+    h.bindings @ kept
+
+# Deletes the exclusive queues of the connection `owner`, as a broker does
+# when the connection ends.
+#
+# - `h`: the host.
+# - `owner`: the connection's index.
+function drop_exclusive(@h: Host, owner: i64)
+    i @= 0
+
+    while i < h.queues.len()
+        if h.queues[i].exclusive && h.queues[i].owner == owner
+            delete_queue(@h, i: i)
+        else
+            i @ i + 1
+
+# The host after a restart: its durable exchanges and queues, the bindings
+# between them, and the persistent messages of its durable queues.
+#
+# - `h`: the host before.
+function restarted(h: Host) -> Host
+    exchanges: [Exchange] @= []
+
+    for e in h.exchanges
+        if e.durable
+            exchanges @ exchanges.push(e)
+
+    queues: [Queue] @= []
+
+    for q in h.queues
+        if q.durable && !q.exclusive
+            kept: [Stored] @= []
+
+            for m in q.messages
+                if m.persistent
+                    kept @ kept.push(m)
+
+            survivor @= q
+            survivor.messages @ kept
+            survivor.turn @ 0
+            queues @ queues.push(survivor)
+
+    after @= Host(exchanges: exchanges, queues: queues, bindings: [], named: h.named)
+
+    for b in h.bindings
+        if exchange_index(after, name: b.exchange) >= 0 && queue_index(after, name: b.queue) >= 0
+            bind(@after, b: b)
+
+    return after
+
+# Whether a content header's properties say delivery mode 2: the flags'
+# bits 15, 14 and 13 name a content type, an encoding and headers before it,
+# which are stepped over, and bit 12 names the mode itself.
+#
+# - `properties`: the flags and the property list.
+function is_persistent(properties: [u8]) -> bool
+    if properties.len() < 2
+        return false
+
+    flags = to_i64(properties[0]).must() * 256 + to_i64(properties[1]).must()
+    at @= 2
+
+    for bit in [15, 14]
+        if flags >> bit & 1 == 1
+            if at >= properties.len()
+                return false
+            at @ at + 1 + to_i64(properties[at]).must()
+
+    if flags >> 13 & 1 == 1
+        if at + 4 > properties.len()
+            return false
+
+        size @= 0
+
+        for k in range(from: 0, to: 4)
+            size @ size * 256 + to_i64(properties[at + k]).must()
+
+        at @ at + 4 + size
+
+    if flags >> 12 & 1 == 0 || at >= properties.len()
+        return false
+
+    return properties[at] == 2
+
+# The name `queue` is declared under, or a reason it is refused: a name
+# beginning `amq.` is the broker's own.
+#
+# - `queue`: the name asked.
+#
+# Fails `invalid` for a name the broker keeps for itself.
+function check_name(queue: str) -> str?
+    if strings.has_prefix(s: queue, prefix: "amq.")
+        return fail(code: "invalid", msg: f"ACCESS_REFUSED - queue name '{queue}' contains reserved prefix 'amq.*'")
+
+    return ok(queue)
+
+# A host of the tests: a topic exchange `alerts` bound to two queues.
+function alerts_host() -> Host
+    h @= new_host()
+    h.exchanges @ h.exchanges.push(Exchange(name: "alerts", kind: "topic", durable: true))
+    h.queues @ [
+        Queue(name: "pager", durable: true, exclusive: false, auto_delete: false, owner: -1, messages: [], turn: 0)
+        Queue(name: "audit", durable: false, exclusive: false, auto_delete: false, owner: -1, messages: [], turn: 0)
+    ]
+    bind(@h, b: Binding(exchange: "alerts", queue: "pager", key: "coldchain.#"))
+    bind(@h, b: Binding(exchange: "alerts", queue: "audit", key: "#"))
+    bind(@h, b: Binding(exchange: "alerts", queue: "audit", key: "#"))
+    return h
+
+test "route: a topic exchange's bindings, the default exchange, and a key nobody bound"
+    h = alerts_host()
+    assert h.bindings.len() == 2
+    assert route(h, exchange: "alerts", key: "coldchain.fridge-07") == [0, 1]
+    assert route(h, exchange: "alerts", key: "battery.tracker-3") == [1]
+    assert route(h, exchange: "", key: "audit") == [1]
+    assert route(h, exchange: "", key: "nobody") == []
+
+test "restarted: the durable queue and its persistent message kept, the rest gone"
+    h @= alerts_host()
+    message = Stored(
+        exchange: "alerts",
+        key: "coldchain.a",
+        properties: [],
+        body: [],
+        persistent: true,
+        redelivered: false
+    )
+    passing @= message
+    passing.persistent @ false
+    h.queues[0].messages @ [message, passing]
+    after = restarted(h)
+    assert after.queues.len() == 1 && after.queues[0].messages == [message]
+    assert after.bindings == [Binding(exchange: "alerts", queue: "pager", key: "coldchain.#")]
+    assert exchange_index(after, name: "alerts") >= 0
+
+test "is_persistent: delivery mode 2 after a content type, mode 1, and properties cut short"
+    assert is_persistent([144, 0, 16, 97, 112, 112, 108, 105, 99, 97, 116, 105, 111, 110, 47, 106, 115, 111, 110, 2])
+    assert !is_persistent([16, 0, 1])
+    assert !is_persistent([16, 0])
+    assert !is_persistent([])
+
+test "drop_exclusive, check_name: a connection's own queue gone, and a reserved name"
+    h @= alerts_host()
+    h.queues @ h.queues.push(
+        Queue(name: "mine", durable: false, exclusive: true, auto_delete: false, owner: 3, messages: [], turn: 0)
+    )
+    drop_exclusive(@h, owner: 3)
+    assert queue_index(h, name: "mine") == -1 && h.queues.len() == 2
+    assert check_name("amq.mine").is_err() && check_name("pager").must() == "pager"

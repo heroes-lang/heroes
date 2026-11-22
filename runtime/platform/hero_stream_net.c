@@ -100,7 +100,10 @@ static int64_t hero_stream_net_close(void *payload) {
 
 /* The table every stream over a socket is made with: it stays where it is
  * for as long as any of them is open, and nothing writes it. */
-static const hero_stream_ops hero_stream_net_ops = { hero_stream_net_read, hero_stream_net_write, hero_stream_net_close };
+/* No `waitable`: a wait reaches a socket's stream through the socket's own
+ * hold (`hero_stream_net_socket`, then `hero_net_hold`), which keeps its
+ * descriptor open for the wait whatever closes the stream. */
+static const hero_stream_ops hero_stream_net_ops = { hero_stream_net_read, hero_stream_net_write, hero_stream_net_close, NULL };
 
 hero_stream *hero_stream_net_of(hero_net_socket *s) {
     char peer[HERO_NET_ADDRESS_MOST];

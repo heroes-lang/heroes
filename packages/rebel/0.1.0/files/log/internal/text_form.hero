@@ -11,18 +11,27 @@ use log/internal/quote
 # holds a space, a quote, an `=` or an escaped character.
 function line(time_text: str, level_name: str, message: str, pieces: [piece.Piece]) -> str
     parts: [str] @= [time_text, " ", level_name, " ", quote.written(s: message, space_counts: false)]
+
+    # The keys of the groups open, the first `depth` of `path`: a close
+    # lowers it and an open writes over what stands past it, so no close
+    # copies the path, and a key costs what it prints.
     path: [str] @= []
+    depth: i64 @= 0
 
     for p in pieces
         if p.kind == piece.OPEN
-            path @ path.push(p.key)
+            if depth == path.len()
+                path @ path.push(p.key)
+            else
+                path[depth] @ p.key
+            depth @ depth + 1
         else if p.kind == piece.CLOSE
-            path @ path.slice(from: 0, to: path.len() - 1)
+            depth @ depth - 1
         else
-            key = if path.len() == 0
+            key = if depth == 0
                 p.key
             else
-                path.join(".") + "." + p.key
+                path.slice(from: 0, to: depth).join(".") + "." + p.key
             parts @ parts.push(" ")
             parts @ parts.push(quote.written(s: key, space_counts: true))
             parts @ parts.push("=")

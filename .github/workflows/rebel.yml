@@ -71,6 +71,7 @@ on:
     paths:
       - 'packages/rebel/**'
       - 'examples-rebel/**'
+      - 'generators/**'
       - 'runtime/platform/**'
       - '.github/workflows/rebel.yml'
   # A pull request touching the same paths, so a change to Rebel is judged
@@ -79,6 +80,7 @@ on:
     paths:
       - 'packages/rebel/**'
       - 'examples-rebel/**'
+      - 'generators/**'
       - 'runtime/platform/**'
       - '.github/workflows/rebel.yml'
   # By hand, the door for a compiler change suspected of breaking Rebel.
@@ -163,6 +165,42 @@ jobs:
       - name: The rebel suite
         shell: bash
         run: ./heroes-from-seed${{ matrix.leg.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.leg.exe }} rebel
+
+  # ─────────────── Every generated table still its generator's ───────────────
+  #
+  # Each program under `generators/` writes one of Rebel's generated tables
+  # from pinned public data and has a `check` that reads the table in the tree
+  # and exits 0 where it is byte for byte what the generator writes, 1 where
+  # it is not (naming the first line that differs), and 2 where its input's
+  # digest is not the pinned one. The input is fetched here by the URL the
+  # generator records, so no generator can rot unseen. One leg: the tables
+  # are text, the same on every platform.
+  generators:
+    name: Linux x86-64, every generated table checked against its generator
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      - name: Install clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang
+
+      - name: Build the compiler from the seed, then stage 2
+        run: |
+          clang -I runtime seed/heroes.c runtime/runtime.c -o heroes-from-seed
+          ./heroes-from-seed build selfhost/main.hero -o heroes
+          ./heroes --version
+
+      # `generators/i18n_units/cldr.hero`'s `SOURCE_URL`; the generator holds
+      # the zip to its `SOURCE_SHA256` itself.
+      - name: generators/i18n_units, CLDR 49's unit table of i18n/dates
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/cldr-49.0.0-json-full.zip \
+            https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
+          ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #

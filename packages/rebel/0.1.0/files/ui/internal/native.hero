@@ -365,6 +365,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: r.height,
                 text: ""
             )
+        .send s =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_MESSAGE,
+                id: s.widget.id,
+                value: 0,
+                second: 0,
+                text: s.text
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # One act injected through the floor.

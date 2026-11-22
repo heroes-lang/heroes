@@ -212,8 +212,9 @@ function add_udp(set: Set, u: net.UdpSocket, interest: Interest) -> i64?
 
 # Adds the stream `s` to the set, waiting for what `interest` says, and
 # answers the entry's key: a connection's stream is waited on as its socket,
-# a pipe or a terminal as what it stands on, and a regular file is ready at
-# every wait.
+# a pipe, a terminal, a serial port, a pseudo-terminal's controlling side and
+# a local channel of `ipc` as what they stand on, and a regular file is ready
+# at every wait.
 #
 # - `set`: the set.
 # - `s`: the stream; it stays the program's, which closes it with `io.close`.
@@ -221,8 +222,10 @@ function add_udp(set: Set, u: net.UdpSocket, interest: Interest) -> i64?
 #
 # Fails `closed` where the set or `s` is closed, `limit` where the set holds
 # the most it was made for, `unsupported` where the system cannot wait on what
-# `s` stands on: a pipe or a console on Windows, which waits on sockets alone,
-# and a device it refuses everywhere (`/dev/null`). See also `add_conn`.
+# `s` stands on: a pipe, a console, a port or a channel on Windows, which
+# waits on sockets alone, a device it refuses everywhere (`/dev/null`), and a
+# stream of `tls`, which holds bytes it has opened that no socket shows. See
+# also `add_conn`.
 function add_stream(set: Set, s: io.Stream, interest: Interest) -> i64?
     bits = match interest
         .read       => hero_poll.HERO_POLL_READ

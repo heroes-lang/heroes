@@ -417,21 +417,24 @@ function format_line(logger: Logger, level: Level, at: time.Instant, msg: str, f
 
     # The fields still to walk, one list for each group open, the line's own
     # at the bottom; where each list stands; and whether each closes a group
-    # the pieces opened, which a group with an empty key does not.
+    # the pieces opened, which a group with an empty key does not. `depth`
+    # of each are in use: a group closed lowers it, and one opened after
+    # writes over what stands past it, so the walk never copies a stack and
+    # its cost is linear in the fields, however deep the groups (a stack cut
+    # by a copy at each close cost the square of the depth).
     lists: [[Field]] @= [with_fields(logger, fields).fields]
     places: [i64] @= [0]
     closes: [bool] @= [false]
+    depth: i64 @= 1
 
-    while lists.len() > 0
-        top = lists.len() - 1
+    while depth > 0
+        top = depth - 1
         walked = lists[top]
 
         if places[top] == walked.len()
             if closes[top]
                 pieces @ pieces.push(piece.close())
-            lists @ lists.slice(from: 0, to: top)
-            places @ places.slice(from: 0, to: top)
-            closes @ closes.slice(from: 0, to: top)
+            depth @ top
             continue
         f = walked[places[top]]
         places[top] @ places[top] + 1
@@ -450,9 +453,16 @@ function format_line(logger: Logger, level: Level, at: time.Instant, msg: str, f
             .group g =>
                 if f.key != ""
                     pieces @ pieces.push(piece.open(f.key))
-                lists @ lists.push(g.fields)
-                places @ places.push(0)
-                closes @ closes.push(f.key != "")
+
+                if depth == lists.len()
+                    lists @ lists.push(g.fields)
+                    places @ places.push(0)
+                    closes @ closes.push(f.key != "")
+                else
+                    lists[depth] @ g.fields
+                    places[depth] @ 0
+                    closes[depth] @ f.key != ""
+                depth @ depth + 1
 
     time_text = time.format(at, .rfc3339_milliseconds)
     message = logger.prefix + msg
@@ -534,6 +544,22 @@ test "format_line: a group nested ten thousand deep is walked without running ou
 
     line = format_line(to(io.stderr()), .info, fixture.clock().must(), "m", [deep])
     assert line.len() == 2 * 10000 + "2006-01-02T15:04:05.123Z INFO m v=1".len()
+
+test "format_line: a group nested ten thousand deep, in the JSON form, is walked without running out of stack"
+    deep @= group(key: "k", fields: [integer(key: "v", value: 1)])
+
+    for _ in range(from: 0, to: 9999)
+        deep @ group(key: "k", fields: [deep])
+
+    line = format_line(with_form(to(io.stderr()), form: .json), .info, fixture.clock().must(), "m", [deep])
+    flat = "{\"time\":\"2006-01-02T15:04:05.123Z\",\"level\":\"INFO\",\"msg\":\"m\",\"v\":1}"
+    assert line.len() == 6 * 10000 + flat.len()
+    assert strings.has_prefix(
+        s: line,
+        prefix: "{\"time\":\"2006-01-02T15:04:05.123Z\",\"level\":\"INFO\",\"msg\":\"m\",\"k\":{\"k\":{"
+    )
+    assert strings.contains(s: line, substr: "\"k\":{\"v\":1}}}")
+    assert strings.has_suffix(s: line, suffix: "}}}}")
 
 test "format_line: a prefix, the logger's fields before the line's, and the time cut to the millisecond"
     logger = with_fields(with_prefix(to(io.stderr()), prefix: "db: "), fields: [text(key: "a", value: "1")])

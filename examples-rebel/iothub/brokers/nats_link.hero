@@ -1,0 +1,134 @@
+# The hub's link to its NATS server: one client subscribed to the subjects
+# devices publish on, and publishing readings, flushed once per turn of the
+# hub's loop rather than after each publish, so a burst of readings costs
+# one round trip. The client's own reconnection is turned off and the hub
+# supervises it as it does every broker. The client is held in a list of at
+# most one, empty while the server is down, because `nats`'s calls work on
+# its place through `@`.
+
+use <rebel>/nats
+use <rebel>/time
+
+use config/settings
+
+# The link.
+record Link
+    # The client, one at most; empty while the server is down.
+    clients: [nats.Client]
+    # The client's stream's key in the hub's poll set, -1 while down.
+    key: i64
+    # Whether something was published since the last flush.
+    unflushed: bool
+
+# A link that is down.
+function down() -> Link
+    return Link(clients: [], key: -1, unflushed: false)
+
+# A client of the server `s` names, subscribed to its subjects, the
+# subscriptions flushed so the server holds them.
+#
+# - `s`: the NATS settings.
+# - `name`: the connection's name, which the server shows.
+#
+# The caller owes the client a `nats.close`. Fails as `nats.parse_url`,
+# `nats.connect`, `nats.subscribe` and `nats.flush` fail.
+function connect(s: settings.NatsSettings, name: str) -> nats.Client?
+    opts @= nats.parse_url(s.url)?
+    opts.name @ name
+    opts.reconnect.attempts @ 0
+    c @= nats.connect(opts)?
+
+    for subject in s.subjects
+        match nats.subscribe(@c, subject: subject)
+            .ok _ => _ = 0
+            .err e =>
+                _ = nats.close(@c).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+    match nats.flush(@c, wait: time.seconds(5)?)
+        .ok _ => return ok(c)
+        .err e =>
+            _ = nats.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Whether the link is up.
+#
+# - `l`: the link.
+function is_up(l: Link lent) -> bool
+    return l.clients.len() > 0 && !nats.is_closed(l.clients[0])
+
+# Whether the client holds messages a read of its stream would not tell.
+#
+# - `l`: the link.
+function holds(l: Link lent) -> bool
+    return l.clients.len() > 0 && nats.held_of(l.clients[0]) > 0
+
+# The messages the client holds and one read of its stream completes.
+#
+# - `l`: the link, up.
+#
+# Fails as `nats.read_ready` fails: `closed` where the server is lost.
+function take(@l: Link) -> [nats.Message]?
+    return nats.read_ready(@l.clients[0])
+
+# The messages the client has read and not given out, parsed or still in
+# its buffer, taken without reading the stream: a flush that waited for its
+# `PONG` may have read a message behind it, which `held_of` does not count
+# and `poll` will never report, and a zero wait parses
+# it.
+#
+# - `l`: the link, up.
+#
+# Fails as `nats.next_message` fails for another reason than nothing being
+# there.
+function take_buffered(@l: Link) -> [nats.Message]?
+    got: [nats.Message] @= []
+
+    while true
+        match nats.next_message(@l.clients[0], wait: time.nanoseconds(0))
+            .ok m => got @ got.push(m)
+            .err e =>
+                if e.code == nats.TIMEOUT
+                    return ok(got)
+                return fail(code: e.code, msg: e.msg)
+
+# Publishes `body` on `subject`, flushed at the end of the hub's turn.
+#
+# - `l`: the link, up.
+# - `subject`: the subject.
+# - `body`: the data.
+#
+# Fails as `nats.publish` fails.
+function send(@l: Link, subject: str, body: [u8]) -> ()?
+    nats.publish(@l.clients[0], subject: subject, data: body)?
+    l.unflushed @ true
+    return ok()
+
+# Flushes what was published since the last flush: the server has read it
+# all when this answers.
+#
+# - `l`: the link.
+#
+# Fails as `nats.flush` fails.
+function flush(@l: Link) -> ()?
+    if !l.unflushed || l.clients.len() == 0
+        return ok()
+
+    l.unflushed @ false
+    return nats.flush(@l.clients[0], wait: time.seconds(5)?)
+
+# Ends the client and leaves the link down.
+#
+# - `l`: the link.
+function close(@l: Link)
+    if l.clients.len() > 0 && !nats.is_closed(l.clients[0])
+        _ = nats.close(@l.clients[0]).is_err()
+
+    l.clients @ []
+    l.key @ -1
+    l.unflushed @ false
+
+test "down, is_up, flush: a link with no client flushes nothing"
+    l @= down()
+    assert !is_up(l) && !holds(l)
+    assert !flush(@l).is_err()

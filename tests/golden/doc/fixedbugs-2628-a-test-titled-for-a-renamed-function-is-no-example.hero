@@ -1,0 +1,14 @@
+# A documented test whose title opens with a name and a colon, where the
+# module has no function of that name, is no example: the reference prints it
+# under no function, and `heroes doc` tells it on stderr, a note at exit 0
+# (defect 2628, spec § 1).
+
+# Closes the private half.
+#
+# - `key`: the half to close
+function close_private(key: i64) -> i64
+    return key - key
+
+# Closing answers zero.
+test "close: titled for the function before it was renamed"
+    assert close_private(key: 7) == 0

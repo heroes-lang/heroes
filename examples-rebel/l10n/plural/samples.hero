@@ -1,0 +1,281 @@
+# The whole numbers CLDR gives as samples of each plural category, and the
+# categories a whole number can fall in at all.
+#
+# A gettext catalogue chooses a plural form for an unsigned integer `n`, so
+# its forms are the categories some whole number reaches: Polish has `one`,
+# `few` and `many` for whole numbers and `other` only for fractions, so a
+# Polish catalogue holds three forms, not four. CLDR marks exactly those
+# categories by giving them `@integer` samples, and this module reads them
+# from there: `@integer 2~4, 22~24, 1c6, …` is 2, 3, 4, 22, 23, 24 and
+# 1,000,000.
+
+use <rebel>/i18n
+
+## Bounds
+
+# The most numbers one `a~b` range of the samples is expanded to: CLDR's
+# ranges are short, and a sample is a witness, not an enumeration.
+constant MAX_RANGE: i64
+    32
+
+## Samples
+
+# The whole numbers `samples` lists after `@integer`, in the order written,
+# each range expanded to at most `MAX_RANGE` numbers; empty where it lists
+# none.
+#
+# - `samples`: a rule's samples as CLDR writes them, `@integer 1, 21~23, …
+#   @decimal 0.1~0.9`.
+#
+# A number written with a compact exponent, `1c6`, is that power of ten
+# times its digits; one too large for an `i64` is left out, and so is the
+# ellipsis that says the list goes on.
+function integer_samples(samples: str) -> [i64]
+    found: [i64] @= []
+    at_integers: bool @= false
+
+    for word in samples.split_words()
+        if word == "@integer"
+            at_integers @ true
+        else if word == "@decimal"
+            at_integers @ false
+        else if at_integers
+            for n in expanded(word)
+                found @ found.push(n)
+
+    return found
+
+# The numbers one sample word stands for: `7`, `2~4`, `1c6`, or none for
+# `…`, a decimal or a word that is no number.
+#
+# - `word`: the word, its trailing comma already dropped.
+function expanded(word: str) -> [i64]
+    tilde = index_of_byte(word, byte: '~')
+
+    if tilde < 0
+        return match number_of(word)
+            .ok n  => [n]
+            .err _ => []
+
+    first = number_of(word.slice(from: 0, to: tilde))
+    last = number_of(word.slice(from: tilde + 1, to: word.len()))
+
+    if first.is_err() || last.is_err()
+        return []
+
+    numbers: [i64] @= []
+    n @= first.must()
+
+    while n <= last.must() && numbers.len() < MAX_RANGE
+        numbers @ numbers.push(n)
+        n @ n + 1
+
+    return numbers
+
+# The whole number one sample writes: digits, with `c` and a power of ten
+# after them where CLDR writes a compact exponent.
+#
+# - `word`: the sample.
+#
+# Fails `invalid` where it is no whole number or does not fit an `i64`.
+function number_of(word: str) -> i64?
+    c = index_of_byte(word, byte: 'c')
+
+    digits = if c < 0
+        word
+    else
+        word.slice(from: 0, to: c)
+
+    if digits == "" || !all_digits(digits) || digits.len() > 18
+        return fail(code: "invalid", msg: f"\"{word}\" is no whole number")
+
+    n @= to_i64_of_digits(digits)
+
+    if c >= 0
+        power = word.slice(from: c + 1, to: word.len())
+
+        if power == "" || !all_digits(power) || power.len() > 2
+            return fail(code: "invalid", msg: f"\"{word}\" has no power of ten after its c")
+
+        times @= to_i64_of_digits(power)
+
+        while times > 0
+            if n > 922337203685477580
+                return fail(code: "does_not_fit", msg: f"{word} does not fit an i64")
+            n @ n * 10
+            times @ times - 1
+
+    return ok(n)
+
+## Categories
+
+# The categories some whole number takes in `rules`, in CLDR's order,
+# `zero` to `other`: the forms of a gettext catalogue.
+#
+# - `rules`: a language's cardinal rules.
+function integer_categories(rules: i18n.PluralRules) -> [i18n.Plural]
+    found: [i18n.Plural] @= []
+
+    for category in i18n.plural_categories(rules)
+        if integer_samples(samples_of(rules, category: category)).len() > 0
+            found @ found.push(category)
+
+    return found
+
+# The samples `rules` give `category`, empty where it has none.
+#
+# - `rules`: a language's rules.
+# - `category`: the category.
+function samples_of(rules: i18n.PluralRules, category: i18n.Plural) -> str
+    for r in rules.rules
+        if r.category == category
+            return r.samples
+
+    return ""
+
+# The first whole number CLDR gives as a sample of `category`.
+#
+# - `rules`: a language's rules.
+# - `category`: the category.
+#
+# Fails `not_found` where no whole number takes it.
+function first_sample(rules: i18n.PluralRules, category: i18n.Plural) -> i64?
+    found = integer_samples(samples_of(rules, category: category))
+
+    if found.len() == 0
+        return fail(code: "not_found", msg: f"no whole number takes the category {i18n.plural_name(category)}")
+
+    return ok(found[0])
+
+# The number a preview shows a form of `category` at: its first sample above
+# 0, so English `other` is shown at 2 and Polish `many` at 5, or 0 where that
+# is the only number that takes it, as Arabic `zero`.
+#
+# - `rules`: a language's rules.
+# - `category`: the category.
+#
+# Fails `not_found` where no whole number takes it.
+function shown_sample(rules: i18n.PluralRules, category: i18n.Plural) -> i64?
+    found = integer_samples(samples_of(rules, category: category))
+
+    for n in found
+        if n > 0
+            return ok(n)
+
+    if found.len() > 0
+        return ok(found[0])
+
+    return fail(code: "not_found", msg: f"no whole number takes the category {i18n.plural_name(category)}")
+
+# The numbers a plural form is tested at: 0 to 200, every sample of every
+# category, and the powers of ten with their neighbours up to a thousand
+# million, where French and Portuguese change category.
+#
+# - `rules`: a language's rules.
+function probe_numbers(rules: i18n.PluralRules) -> [i64]
+    numbers: [i64] @= range(from: 0, to: 201)
+
+    for r in rules.rules
+        for n in integer_samples(r.samples)
+            numbers @ numbers.push(n)
+
+    power @= 1000
+
+    while power <= 1000000000
+        numbers @ numbers.push(power - 1)
+        numbers @ numbers.push(power)
+        numbers @ numbers.push(power + 1)
+        numbers @ numbers.push(power * 2)
+        power @ power * 10
+
+    return numbers
+
+## Small helpers
+
+# The words of `s` between spaces, a trailing comma dropped from each.
+#
+# - `s`: the text.
+function split_words(s: str) -> [str]
+    words: [str] @= []
+    current: [str] @= []
+
+    for c in s.chars()
+        if c == " "
+            if current.len() > 0
+                words @ words.push(without_comma(current.join("")))
+                current @ []
+        else
+            current @ current.push(c)
+
+    if current.len() > 0
+        words @ words.push(without_comma(current.join("")))
+
+    return words
+
+# `word` without the comma it may end with.
+#
+# - `word`: the word.
+function without_comma(word: str) -> str
+    if word.len() > 0 && word[word.len() - 1] == ','
+        return word.slice(from: 0, to: word.len() - 1)
+
+    return word
+
+# The index of the first `byte` in `s`, or -1 where there is none.
+#
+# - `s`: the text.
+# - `byte`: an ASCII byte.
+function index_of_byte(s: str, byte: u8) -> i64
+    for i in range(from: 0, to: s.len())
+        if s[i] == byte
+            return i
+
+    return -1
+
+# Whether `s` is ASCII digits alone.
+#
+# - `s`: the text.
+function all_digits(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] < '0' || s[i] > '9'
+            return false
+
+    return true
+
+# The number ASCII digits write; at most 18 of them, so it fits, and a
+# digit's `u8` always fits an `i64`.
+#
+# - `digits`: the digits.
+function to_i64_of_digits(digits: str) -> i64
+    n @= 0
+
+    for i in range(from: 0, to: digits.len())
+        n @ n * 10 + to_i64(digits[i] - '0').must()
+
+    return n
+
+## Tests
+
+test "integer_samples: ranges, compact exponents, the ellipsis and decimals left out"
+    assert integer_samples("@integer 2~4, 22~24, 102, 1c6, … @decimal 0.1~0.9") == [2, 3, 4, 22, 23, 24, 102, 1000000]
+    assert integer_samples("@decimal 0.0~1.5, 10.0") == []
+    assert integer_samples("") == []
+    assert integer_samples("@integer 0~1000").len() == MAX_RANGE
+
+test "number_of: a sample too large, a power missing, no digits"
+    assert number_of("9c18").must() == 9000000000000000000
+    assert number_of("9c19").is_err()
+    assert number_of("1c").is_err()
+    assert number_of("x").is_err()
+
+test "integer_categories: Polish has three forms for whole numbers, Japanese one, Arabic six"
+    pl = i18n.plural_rules(i18n.parse_locale("pl").must(), kind: .cardinal)
+    assert integer_categories(pl).map(i18n.plural_name) == ["one", "few", "many"]
+    ja = i18n.plural_rules(i18n.parse_locale("ja").must(), kind: .cardinal)
+    assert integer_categories(ja).map(i18n.plural_name) == ["other"]
+    ar = i18n.plural_rules(i18n.parse_locale("ar").must(), kind: .cardinal)
+    assert integer_categories(ar).len() == 6
+    assert first_sample(pl, category: .few).must() == 2
+    assert first_sample(pl, category: .other).is_err()
+    assert shown_sample(pl, category: .many).must() == 5
+    assert shown_sample(ar, category: .zero).must() == 0

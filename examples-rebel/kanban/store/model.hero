@@ -1,0 +1,64 @@
+# The board's three kinds of thing as the store reads them back: a board, its
+# columns in order, and their cards in order. A name (`id`) is a UUID the
+# program made; a card also has a number, SQLite's rowid, which the search
+# index names it by. Moments are RFC 3339 texts in UTC, to the second.
+
+# A board.
+record Board
+    # Its name, a UUID.
+    id: str
+    # Its title, one line, 1 to `TITLE_MOST` bytes.
+    title: str
+    # Its place among the boards, from 0.
+    position: i64
+    # When it was made.
+    created: str
+    # When it, or anything on it, last changed.
+    updated: str
+
+# A column of a board.
+record Column
+    # Its name, a UUID.
+    id: str
+    # The board it stands on.
+    board: str
+    # Its title, one line.
+    title: str
+    # Its place on the board, from 0, left to right.
+    position: i64
+
+# A card in a column.
+record Card
+    # SQLite's rowid, which the search index names it by.
+    number: i64
+    # Its name, a UUID.
+    id: str
+    # The column it stands in.
+    column: str
+    # Its title, one line.
+    title: str
+    # Its notes, Markdown as the person wrote them.
+    body: str
+    # Its place in its column, from 0, top to bottom.
+    position: i64
+    # When it was made.
+    created: str
+    # When it last changed.
+    updated: str
+
+# The most bytes a title takes.
+constant TITLE_MOST: i64
+    200
+
+# The most bytes a card's notes take: 100 KiB, past every card a person
+# writes by hand.
+constant BODY_MOST: i64
+    102400
+
+# The most columns a board holds.
+constant COLUMNS_MOST: i64
+    64
+
+# The most cards a board holds.
+constant CARDS_MOST: i64
+    10000

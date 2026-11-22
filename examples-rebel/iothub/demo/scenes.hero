@@ -1,0 +1,170 @@
+# The demo's scenes: each device speaks, and what the hub made of it is
+# printed as its observers saw it, the dashboard first, then the brokers'
+# subscribers in a fixed order. Each scene knows how many lines the feed
+# owes it, so it reads exactly those, and a line that does not come ends
+# the demo with a failure rather than a transcript out of step.
+
+use <rebel>/time
+
+use demo/devices
+use demo/observers
+use demo/world
+
+# A device's moment, on the morning of the demo, as text read back as an
+# instant. Each device measures two seconds before the hub receives, and
+# the hub's clock steps one second a reading from 09:00:00, so the moments
+# a device writes and those the hub stamps tell one story.
+#
+# - `clock`: `08:59:58`.
+#
+# Fails `invalid` where it is no time of day.
+function morning(clock: str) -> time.Instant?
+    return time.parse(f"2026-11-22T{clock}Z", layout: .rfc3339)
+
+# Prints the next `n` lines the dashboard shows.
+#
+# - `o`: the observers.
+# - `n`: how many.
+#
+# Fails as `observers.dashboard_sees` fails.
+function dashboard(@o: observers.Observers, n: i64) -> ()?
+    for _ in range(from: 0, to: n)
+        print(f"dashboard: {observers.dashboard_sees(@o)?}")
+
+    return ok()
+
+# Prints what the historian keeps next.
+#
+# - `o`: the observers.
+#
+# Fails as `observers.historian_hears` fails.
+function historian(@o: observers.Observers) -> ()?
+    print(f"historian: {observers.historian_hears(@o)?}")
+    return ok()
+
+# The fridge: two packs, the second warm enough for the cold-chain rule.
+#
+# - `f`: the devices.
+# - `o`: the observers.
+function fridge(@f: devices.Fleet, @o: observers.Observers) -> ()?
+    print("")
+    print("== fridge-07: SenML in CBOR over MQTT ==")
+    first = devices.senml_pack(seconds: time.unix_seconds(morning("08:59:58")?), temperature: 4.5, humidity: 61.0)?
+    print(f"fridge-07 sends a pack of {first.len()} bytes: temp 4.5 Cel, hum 61 %RH")
+    devices.fridge_says(@f, payload: first)?
+    dashboard(@o, n: 1)?
+    print(f"historian keeps the reading as the hub re-publishes it, on {observers.historian_raw(@o)?}")
+    second = devices.senml_pack(seconds: time.unix_seconds(morning("08:59:59")?), temperature: 9.2, humidity: 63.0)?
+    print(f"fridge-07 sends a pack of {second.len()} bytes: temp 9.2 Cel, hum 63 %RH, above the cold chain's 8")
+    devices.fridge_says(@f, payload: second)?
+    dashboard(@o, n: 2)?
+    historian(@o)?
+    print(f"pager: {observers.pager_hears(@o)?}")
+    return ok()
+
+# The press: two vibrations, the second past the rule's limit.
+#
+# - `f`: the devices.
+# - `o`: the observers.
+function press(@f: devices.Fleet, @o: observers.Observers) -> ()?
+    print("")
+    print("== press-2: Protocol Buffers over AMQP ==")
+    calm = devices.vibration(f.schema, rms: 2.1, peak: 0.4, at: morning("09:00:00")?)?
+    print(f"press-2 publishes a plant.Vibration of {calm.len()} bytes, confirmed by the broker: rms 2.1 mm/s")
+    devices.press_says(@f, payload: calm)?
+    dashboard(@o, n: 1)?
+    historian(@o)?
+    shaking = devices.vibration(f.schema, rms: 6.8, peak: 1.9, at: morning("09:00:01")?)?
+    print(f"press-2 publishes a plant.Vibration of {shaking.len()} bytes: rms 6.8 mm/s, past the limit of 4.5")
+    devices.press_says(@f, payload: shaking)?
+    dashboard(@o, n: 2)?
+    historian(@o)?
+    print(f"panel: {observers.panel_hears(@o)?}")
+    return ok()
+
+# The tracker: two fixes, the second on a battery low enough to page.
+#
+# - `f`: the devices.
+# - `o`: the observers.
+function tracker(@f: devices.Fleet, @o: observers.Observers) -> ()?
+    print("")
+    print("== tracker-3: MessagePack over NATS ==")
+    moving = devices.tracker_fix(lat: 45.0703, lon: 7.6869, speed: 42.5, battery: 64, at: morning("09:00:02")?)?
+    print(f"tracker-3 sends a fix of {moving.len()} bytes: 45.0703, 7.6869 at 42.5 km/h, battery 64 %")
+    devices.tracker_says(@f, payload: moving)?
+    dashboard(@o, n: 1)?
+    historian(@o)?
+    parked = devices.tracker_fix(lat: 45.0712, lon: 7.6901, speed: 0.0, battery: 15, at: morning("09:00:03")?)?
+    print(f"tracker-3 sends a fix of {parked.len()} bytes: parked, battery 15 %")
+    devices.tracker_says(@f, payload: parked)?
+    dashboard(@o, n: 2)?
+    historian(@o)?
+    print(f"pager: {observers.pager_hears(@o)?}")
+    return ok()
+
+# The weather station: a sentence read and routed, then one a line noise
+# changed, which its checksum gives away.
+#
+# - `w`: the world, whose station speaks.
+# - `o`: the observers.
+function station(w: world.World lent, @o: observers.Observers) -> ()?
+    print("")
+    print("== wx-1: NMEA 0183 on a serial line ==")
+    sentence = devices.xdr(air: "21.5", humidity: "48.2", pressure: "1.0132")
+    print(f"wx-1 sends {sentence}")
+    world.station_says(w.station, line: sentence)?
+    dashboard(@o, n: 2)?
+    historian(@o)?
+    print(f"panel: {observers.panel_hears(@o)?}")
+
+    # One digit changed on the line, its checksum the sentence's own.
+    noisy = sentence.slice(from: 0, to: 12) + "6" + sentence.slice(from: 13, to: sentence.len())
+    print(f"wx-1 sends {noisy}, a digit changed on the line")
+    world.station_says(w.station, line: noisy)?
+    dashboard(@o, n: 1)?
+    return ok()
+
+# What the hub refuses: a pack cut short, and a device nobody registered.
+#
+# - `f`: the devices.
+# - `o`: the observers.
+function mistakes(@f: devices.Fleet, @o: observers.Observers) -> ()?
+    print("")
+    print("== what the hub refuses ==")
+    whole = devices.senml_pack(seconds: time.unix_seconds(morning("09:00:06")?), temperature: 4.9, humidity: 60.0)?
+    cut = whole.slice(from: 0, to: whole.len() - 7)
+    print(f"fridge-07 sends a pack cut to {cut.len()} of its {whole.len()} bytes")
+    devices.fridge_says(@f, payload: cut)?
+    dashboard(@o, n: 1)?
+    print("ghost-1, which nobody registered, sends a pack on its own uplink")
+    devices.stranger_says(@f, payload: whole)?
+    dashboard(@o, n: 1)?
+    return ok()
+
+# The AMQP broker restarts at the cold-chain alert the hub publishes: the
+# alert is held, the hub tries again with its backoff, is refused while the
+# broker's virtual host comes up, and sends the held alert once it is back.
+#
+# - `w`: the world, whose AMQP port the clients reconnect to.
+# - `f`: the devices.
+# - `o`: the observers.
+function restart(w: world.World lent, @f: devices.Fleet, @o: observers.Observers) -> ()?
+    print("")
+    print("== the AMQP broker restarts ==")
+    warm = devices.senml_pack(seconds: time.unix_seconds(morning("09:00:07")?), temperature: 10.4, humidity: 64.0)?
+    print(
+        "fridge-07 sends temp 10.4 Cel; the alert it raises is the broker's third publish to alerts, where it restarts"
+    )
+    devices.fridge_says(@f, payload: warm)?
+    dashboard(@o, n: 6)?
+    historian(@o)?
+    print("the pager and the press connect again, as every client of a restarted broker does")
+    observers.reconnect_pager(@o, port: w.amqp_port)?
+    devices.reconnect_press(@f, port: w.amqp_port)?
+    print(f"pager: {observers.pager_hears(@o)?}")
+    calm = devices.vibration(f.schema, rms: 3.0, peak: 0.6, at: morning("09:00:08")?)?
+    print("press-2 publishes rms 3.0 mm/s; the hub reads it from its durable queue again")
+    devices.press_says(@f, payload: calm)?
+    dashboard(@o, n: 1)?
+    historian(@o)?
+    return ok()

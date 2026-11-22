@@ -3201,7 +3201,10 @@ static int64_t hero_tls_stream_close(void *payload) {
 }
 
 /* The table every TLS stream of this arm is made with. */
-static const hero_stream_ops hero_tls_ops = { hero_tls_stream_read, hero_tls_stream_write, hero_tls_stream_close };
+/* No `waitable`: the engine keeps records it opened and the program has not
+ * read, which the socket under them no longer shows, so a wait on the
+ * socket could sleep while the stream holds bytes. */
+static const hero_stream_ops hero_tls_ops = { hero_tls_stream_read, hero_tls_stream_write, hero_tls_stream_close, NULL };
 
 /* The engine's handshake run over `inner` and, done, the TLS stream; NULL
  * said where it failed. `inner` is closed on a failure where `owned` (the
@@ -4541,7 +4544,9 @@ static int64_t hero_tls_apple_read(void *payload, void *buffer, uint64_t count);
 static int64_t hero_tls_apple_write(void *payload, const void *data, uint64_t count);
 static int64_t hero_tls_apple_close(void *payload);
 
-static const hero_stream_ops hero_tls_apple_ops = { hero_tls_apple_read, hero_tls_apple_write, hero_tls_apple_close };
+/* No `waitable`, for the reason the driver's table has none: a read keeps
+ * the bytes it took past what was asked, which no descriptor shows. */
+static const hero_stream_ops hero_tls_apple_ops = { hero_tls_apple_read, hero_tls_apple_write, hero_tls_apple_close, NULL };
 
 /* The connection, `settled` as `hero_tls_apple_settle` answered, as a
  * stream; NULL said where it is not ready. */

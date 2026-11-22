@@ -62,6 +62,13 @@ function line_of(n: model.Node, visible: bool) -> str
         parts @ parts.push(f"value {n.value} in {n.least}..{n.most}")
     else if k == hero_ui.HERO_UI_GRID
         parts @ parts.push(f"{n.columns} columns")
+    else if k == hero_ui.HERO_UI_WEBVIEW
+        page = if n.web.page.len() > 0
+            "page " + quoted(n.web.page)
+        else
+            "no page"
+
+        parts @ parts.push(page).push(f"{n.web.assets.len()} assets {n.web.bytes} bytes {n.web.posted} posted")
 
     if k == hero_ui.HERO_UI_MENU_ITEM && n.key.len() > 0
         parts @ parts.push(shortcut_of(n))

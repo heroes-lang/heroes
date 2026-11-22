@@ -1,0 +1,426 @@
+# The methods of AMQP 0-9-1 the stand-in broker reads, decoded from a
+# method frame's payload into one variant, and the methods it writes, each
+# as a method frame's payload. Class and method numbers, and the order and
+# types of the arguments, are those of the 0-9-1 specification's classes
+# (connection 10, channel 20, exchange 40, queue 50, basic 60, confirm 85).
+# A method the stand-in does not serve is read as `unserved`, which the
+# broker answers with 540, NOT_IMPLEMENTED, rather than with a guess.
+
+use <rebel>/amqp
+use <rebel>/bytes
+
+use standins/amqp_wire
+
+# A method a client sends.
+variant Method
+    # connection.start-ok: the client's properties and its login.
+    start_ok
+        # The client's properties: `connection_name` among them.
+        properties: [amqp.Field]
+        # The login's mechanism: `PLAIN` or `AMQPLAIN`.
+        mechanism: str
+        # The login's response, by the mechanism's rules.
+        response: [u8]
+    # connection.tune-ok: what the client agreed.
+    tune_ok
+        # The highest channel number.
+        channel_max: i64
+        # The largest frame, in bytes; 0 for no limit.
+        frame_max: i64
+        # The heartbeat, in seconds; 0 for none.
+        heartbeat_s: i64
+    # connection.open: the virtual host asked.
+    open
+        # The virtual host.
+        vhost: str
+    # connection.close: the client ends the connection.
+    close
+        # Its reply code.
+        code: i64
+    # connection.close-ok: the answer to the broker's close.
+    close_ok
+    # channel.open.
+    channel_open
+    # channel.close: the client ends a channel.
+    channel_close
+    # channel.close-ok: the answer to the broker's close of a channel.
+    channel_close_ok
+    # exchange.declare.
+    exchange_declare
+        # The exchange's name.
+        name: str
+        # Its kind: `direct`, `fanout`, `topic`.
+        kind: str
+        # Whether it only asks that the exchange exists.
+        passive: bool
+        # Whether it outlives a restart.
+        durable: bool
+        # Whether no answer is wanted.
+        no_wait: bool
+    # queue.declare.
+    queue_declare
+        # The queue's name, "" for one the broker names.
+        name: str
+        # Whether it only asks that the queue exists.
+        passive: bool
+        # Whether it outlives a restart.
+        durable: bool
+        # Whether only this connection uses it.
+        exclusive: bool
+        # Whether it is deleted with its last consumer.
+        auto_delete: bool
+        # Whether no answer is wanted.
+        no_wait: bool
+    # queue.bind.
+    queue_bind
+        # The queue.
+        queue: str
+        # The exchange.
+        exchange: str
+        # The binding key.
+        key: str
+        # Whether no answer is wanted.
+        no_wait: bool
+    # basic.qos: the prefetch of the channel's consumers.
+    qos
+        # The most deliveries unacknowledged, 0 for no limit.
+        prefetch_count: i64
+    # basic.consume.
+    consume
+        # The queue read.
+        queue: str
+        # The consumer's tag, "" for one the broker names.
+        tag: str
+        # Whether the broker counts each delivery acknowledged as it sends it.
+        no_ack: bool
+        # Whether no answer is wanted.
+        no_wait: bool
+    # basic.cancel.
+    cancel
+        # The consumer's tag.
+        tag: str
+        # Whether no answer is wanted.
+        no_wait: bool
+    # basic.publish: a content header and body frames follow.
+    publish
+        # The exchange, "" for the default one.
+        exchange: str
+        # The routing key.
+        key: str
+        # Whether a message no queue takes is handed back.
+        mandatory: bool
+    # basic.ack.
+    ack
+        # The delivery tag.
+        tag: i64
+        # Whether every delivery up to the tag is acknowledged.
+        multiple: bool
+    # basic.nack, and basic.reject with `multiple` false.
+    nack
+        # The delivery tag.
+        tag: i64
+        # Whether every delivery up to the tag is refused.
+        multiple: bool
+        # Whether the deliveries go back to their queue.
+        requeue: bool
+    # confirm.select: the channel's publishes are confirmed.
+    confirm_select
+        # Whether no answer is wanted.
+        no_wait: bool
+    # A method the stand-in does not serve.
+    unserved
+        # Its class.
+        class_id: i64
+        # Its method.
+        method_id: i64
+
+# The method a method frame's payload holds.
+#
+# - `payload`: the frame's payload.
+#
+# Fails `invalid` where it is cut short or a string is no UTF-8.
+function decode(payload: [u8]) -> Method?
+    c @= amqp_wire.cursor(payload)
+    class_id = amqp_wire.take_u16(@c)?
+    method_id = amqp_wire.take_u16(@c)?
+    unserved: Method = .unserved(class_id: class_id, method_id: method_id)
+
+    return match class_id * 1000 + method_id
+        10_011 => decode_start_ok(@c)
+        10_031 =>
+            channel_max = amqp_wire.take_u16(@c)?
+            frame_max = amqp_wire.take_u32(@c)?
+            ok(.tune_ok(channel_max: channel_max, frame_max: frame_max, heartbeat_s: amqp_wire.take_u16(@c)?))
+        10_040 => ok(.open(vhost: amqp_wire.take_short_text(@c)?))
+        10_050 => ok(.close(code: amqp_wire.take_u16(@c)?))
+        10_051 => ok(.close_ok)
+        20_010 => ok(.channel_open)
+        20_040 => ok(.channel_close)
+        20_041 => ok(.channel_close_ok)
+        40_010 => decode_exchange_declare(@c)
+        50_010 => decode_queue_declare(@c)
+        50_020 => decode_queue_bind(@c)
+        60_010 =>
+            _ = amqp_wire.take_u32(@c)?
+            ok(.qos(prefetch_count: amqp_wire.take_u16(@c)?))
+        60_020 => decode_consume(@c)
+        60_030 =>
+            tag = amqp_wire.take_short_text(@c)?
+            ok(.cancel(tag: tag, no_wait: amqp_wire.bit(packed: amqp_wire.take_u8(@c)?, index: 0)))
+        60_040 => decode_publish(@c)
+        60_080 =>
+            tag = amqp_wire.take_u64(@c)?
+            ok(.ack(tag: tag, multiple: amqp_wire.bit(packed: amqp_wire.take_u8(@c)?, index: 0)))
+        60_090 =>
+            tag = amqp_wire.take_u64(@c)?
+            ok(.nack(tag: tag, multiple: false, requeue: amqp_wire.bit(packed: amqp_wire.take_u8(@c)?, index: 0)))
+        60_120 =>
+            tag = amqp_wire.take_u64(@c)?
+            flags = amqp_wire.take_u8(@c)?
+            ok(
+                .nack(tag: tag, multiple: amqp_wire.bit(packed: flags, index: 0), requeue: amqp_wire.bit(packed: flags, index: 1))
+            )
+        85_010 => ok(.confirm_select(no_wait: amqp_wire.bit(packed: amqp_wire.take_u8(@c)?, index: 0)))
+        _      => ok(unserved)
+
+# connection.start-ok's arguments.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_start_ok(@c: amqp_wire.Cursor) -> Method?
+    properties = amqp_wire.take_table(@c)?
+    mechanism = amqp_wire.take_short_text(@c)?
+    return ok(.start_ok(properties: properties, mechanism: mechanism, response: amqp_wire.take_long_bytes(@c)?))
+
+# exchange.declare's arguments: a reserved short, the name, the kind, five
+# bits and the arguments' table.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_exchange_declare(@c: amqp_wire.Cursor) -> Method?
+    _ = amqp_wire.take_u16(@c)?
+    name = amqp_wire.take_short_text(@c)?
+    kind = amqp_wire.take_short_text(@c)?
+    flags = amqp_wire.take_u8(@c)?
+    return ok(
+        .exchange_declare(name: name, kind: kind, passive: amqp_wire.bit(packed: flags, index: 0), durable: amqp_wire.bit(packed: flags, index: 1), no_wait: amqp_wire.bit(packed: flags, index: 4))
+    )
+
+# queue.declare's arguments: a reserved short, the name, five bits and the
+# arguments' table.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_queue_declare(@c: amqp_wire.Cursor) -> Method?
+    _ = amqp_wire.take_u16(@c)?
+    name = amqp_wire.take_short_text(@c)?
+    flags = amqp_wire.take_u8(@c)?
+    return ok(
+        .queue_declare(name: name, passive: amqp_wire.bit(packed: flags, index: 0), durable: amqp_wire.bit(packed: flags, index: 1), exclusive: amqp_wire.bit(packed: flags, index: 2), auto_delete: amqp_wire.bit(packed: flags, index: 3), no_wait: amqp_wire.bit(packed: flags, index: 4))
+    )
+
+# queue.bind's arguments: a reserved short, the queue, the exchange, the
+# key, a bit and the arguments' table.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_queue_bind(@c: amqp_wire.Cursor) -> Method?
+    _ = amqp_wire.take_u16(@c)?
+    queue = amqp_wire.take_short_text(@c)?
+    exchange = amqp_wire.take_short_text(@c)?
+    key = amqp_wire.take_short_text(@c)?
+    flags = amqp_wire.take_u8(@c)?
+    return ok(.queue_bind(queue: queue, exchange: exchange, key: key, no_wait: amqp_wire.bit(packed: flags, index: 0)))
+
+# basic.consume's arguments: a reserved short, the queue, the tag, four
+# bits and the arguments' table.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_consume(@c: amqp_wire.Cursor) -> Method?
+    _ = amqp_wire.take_u16(@c)?
+    queue = amqp_wire.take_short_text(@c)?
+    tag = amqp_wire.take_short_text(@c)?
+    flags = amqp_wire.take_u8(@c)?
+    return ok(
+        .consume(queue: queue, tag: tag, no_ack: amqp_wire.bit(packed: flags, index: 1), no_wait: amqp_wire.bit(packed: flags, index: 3))
+    )
+
+# basic.publish's arguments: a reserved short, the exchange, the key and two
+# bits.
+#
+# - `c`: the cursor after the method's numbers.
+function decode_publish(@c: amqp_wire.Cursor) -> Method?
+    _ = amqp_wire.take_u16(@c)?
+    exchange = amqp_wire.take_short_text(@c)?
+    key = amqp_wire.take_short_text(@c)?
+    return ok(
+        .publish(exchange: exchange, key: key, mandatory: amqp_wire.bit(packed: amqp_wire.take_u8(@c)?, index: 0))
+    )
+
+## What the broker writes
+
+# connection.start: version 0-9, the broker's properties, its mechanisms and
+# its locales.
+function start() -> [u8]
+    capabilities: [amqp.Field] = [
+        amqp.Field(name: "publisher_confirms", value: .boolean(v: true))
+        amqp.Field(name: "basic.nack", value: .boolean(v: true))
+        amqp.Field(name: "consumer_cancel_notify", value: .boolean(v: true))
+        amqp.Field(name: "authentication_failure_close", value: .boolean(v: true))
+        amqp.Field(name: "per_consumer_qos", value: .boolean(v: true))
+    ]
+    properties: [amqp.Field] = [
+        amqp.Field(name: "product", value: .text(v: "iothub's AMQP stand-in"))
+        amqp.Field(name: "version", value: .text(v: "0.1.0"))
+        amqp.Field(name: "capabilities", value: .table(fields: capabilities))
+    ]
+    out: [u8] @= [0, 9]
+    amqp_wire.put_table(@out, fields: properties)
+    amqp_wire.put_long_bytes(out: @out, data: bytes.from_text("PLAIN AMQPLAIN"))
+    amqp_wire.put_long_bytes(out: @out, data: bytes.from_text("en_US"))
+    return amqp_wire.method_payload(class_id: 10, method_id: 10, arguments: out)
+
+# connection.tune: the broker's limits.
+#
+# - `channel_max`: the highest channel number.
+# - `frame_max`: the largest frame, in bytes.
+# - `heartbeat_s`: the heartbeat, in seconds.
+function tune(channel_max: i64, frame_max: i64, heartbeat_s: i64) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_u16(@out, v: channel_max)
+    amqp_wire.put_u32(@out, v: frame_max)
+    amqp_wire.put_u16(@out, v: heartbeat_s)
+    return amqp_wire.method_payload(class_id: 10, method_id: 30, arguments: out)
+
+# connection.open-ok.
+function open_ok() -> [u8]
+    return amqp_wire.method_payload(class_id: 10, method_id: 41, arguments: [0])
+
+# A close of the connection (class 10) or of a channel (class 20): the
+# reply code and text, and the method that caused it.
+#
+# - `class_id`: 10 for the connection, 20 for a channel.
+# - `code`: the reply code.
+# - `text`: the reply text, `NOT_FOUND - no queue 'q' in vhost '/'`.
+# - `cause`: the class and method that caused it, as class * 1000 + method,
+#   0 for none.
+function close(class_id: i64, code: i64, text: str, cause: i64) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_u16(@out, v: code)
+    amqp_wire.put_short_text(@out, text: text)
+    amqp_wire.put_u16(@out, v: cause / 1000)
+    amqp_wire.put_u16(@out, v: cause % 1000)
+
+    # connection.close is method 50 of its class, channel.close 40 of its.
+    method_id = if class_id == 10
+        50
+    else
+        40
+
+    return amqp_wire.method_payload(class_id: class_id, method_id: method_id, arguments: out)
+
+# A method that answers with no arguments: close-ok, declare-ok and the
+# like.
+#
+# - `class_id`: its class.
+# - `method_id`: its method.
+function bare(class_id: i64, method_id: i64) -> [u8]
+    return amqp_wire.method_payload(class_id: class_id, method_id: method_id, arguments: [])
+
+# channel.open-ok.
+function channel_open_ok() -> [u8]
+    return amqp_wire.method_payload(class_id: 20, method_id: 11, arguments: [0, 0, 0, 0])
+
+# queue.declare-ok: the queue's name and counts.
+#
+# - `name`: the queue's name.
+# - `messages`: the messages ready in it.
+# - `consumers`: its consumers.
+function queue_declare_ok(name: str, messages: i64, consumers: i64) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_short_text(@out, text: name)
+    amqp_wire.put_u32(@out, v: messages)
+    amqp_wire.put_u32(@out, v: consumers)
+    return amqp_wire.method_payload(class_id: 50, method_id: 11, arguments: out)
+
+# A basic method that answers with a consumer's tag: consume-ok (21) or
+# cancel-ok (31).
+#
+# - `method_id`: 21 or 31.
+# - `tag`: the consumer's tag.
+function tagged(method_id: i64, tag: str) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_short_text(@out, text: tag)
+    return amqp_wire.method_payload(class_id: 60, method_id: method_id, arguments: out)
+
+# basic.deliver.
+#
+# - `consumer_tag`: the consumer's tag.
+# - `delivery_tag`: the tag of this delivery on its channel.
+# - `redelivered`: whether it was delivered before.
+# - `exchange`: the exchange it was published to.
+# - `key`: its routing key.
+function deliver(consumer_tag: str, delivery_tag: i64, redelivered: bool, exchange: str, key: str) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_short_text(@out, text: consumer_tag)
+    amqp_wire.put_u64(@out, v: delivery_tag)
+
+    flag: u8 = if redelivered
+        1
+    else
+        0
+
+    out @ out.push(flag)
+
+    amqp_wire.put_short_text(@out, text: exchange)
+    amqp_wire.put_short_text(@out, text: key)
+    return amqp_wire.method_payload(class_id: 60, method_id: 60, arguments: out)
+
+# basic.return of a mandatory message no queue took: 312, NO_ROUTE.
+#
+# - `exchange`: the exchange it was published to.
+# - `key`: its routing key.
+function returned(exchange: str, key: str) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_u16(@out, v: 312)
+    amqp_wire.put_short_text(@out, text: "NO_ROUTE")
+    amqp_wire.put_short_text(@out, text: exchange)
+    amqp_wire.put_short_text(@out, text: key)
+    return amqp_wire.method_payload(class_id: 60, method_id: 50, arguments: out)
+
+# basic.ack, as a broker confirms a publish.
+#
+# - `tag`: the publish's sequence number on its channel.
+function confirmed(tag: i64) -> [u8]
+    out: [u8] @= []
+    amqp_wire.put_u64(@out, v: tag)
+    return amqp_wire.method_payload(class_id: 60, method_id: 80, arguments: out.push(0))
+
+# A content header: class 60, the body's size, then the properties' flags
+# and list as the publisher wrote them, which a broker forwards unchanged.
+#
+# - `size`: the body's size in bytes.
+# - `properties`: the flags and properties' bytes.
+function content_header(size: i64, properties: [u8]) -> [u8]
+    out: [u8] @= [0, 60, 0, 0]
+    amqp_wire.put_u64(@out, v: size)
+    bytes.push_all(to: @out, from: properties)
+    return out
+
+test "decode: a queue.bind as the specification lays it out, and a method cut short"
+    fields: [u8] @= [0, 0]
+    amqp_wire.put_short_text(@fields, text: "oncall.alerts")
+    amqp_wire.put_short_text(@fields, text: "alerts")
+    amqp_wire.put_short_text(@fields, text: "coldchain.#")
+    fields @ fields.push(0)
+    amqp_wire.put_table(@fields, fields: [])
+    got = decode(amqp_wire.method_payload(class_id: 50, method_id: 20, arguments: fields)).must()
+    assert got == .queue_bind(queue: "oncall.alerts", exchange: "alerts", key: "coldchain.#", no_wait: false)
+    assert decode([0, 50, 0, 20, 0]).is_err()
+    assert decode([0, 10]).is_err()
+
+test "decode: basic.nack's two bits, basic.reject's one, and a method not served"
+    nack_args: [u8] @= []
+    amqp_wire.put_u64(@nack_args, v: 7)
+    assert decode(amqp_wire.method_payload(class_id: 60, method_id: 120, arguments: nack_args.push(3))).must() == .nack(tag: 7, multiple: true, requeue: true)
+    assert decode(amqp_wire.method_payload(class_id: 60, method_id: 90, arguments: nack_args.push(0))).must() == .nack(tag: 7, multiple: false, requeue: false)
+    assert decode(amqp_wire.method_payload(class_id: 90, method_id: 10, arguments: [])).must() == .unserved(class_id: 90, method_id: 10)
+
+test "close: a channel's close names the method that caused it"
+    assert close(class_id: 20, code: 404, text: "NOT_FOUND", cause: 50_020) == [0, 20, 0, 40, 1, 148, 9, 78, 79, 84, 95, 70, 79, 85, 78, 68, 0, 50, 0, 20]

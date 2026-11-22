@@ -1,0 +1,279 @@
+# Routing rules: where a reading goes besides the hub's own re-publication,
+# from one protocol to another. A rule names where readings come from, in
+# its protocol's own pattern syntax (`mqtt:devices/+/up`), an optional
+# condition on one of their values (`temperature > 8`), and where they go,
+# an address with `{device}` and `{id}` filled from the reading
+# (`amqp:alerts/coldchain.{device}`). Every rule that matches a reading
+# sends it, in the order the rules are written, so a reading may go to
+# several places.
+#
+# Rules are read from the hub's settings as JSON objects with `name`, `from`,
+# `when` and `to`; a rule that could never send anything, a destination with
+# a wildcard or a serial line, is refused when the settings are read rather
+# than at the first reading.
+
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+
+use codecs/reading
+use config/registry
+use routes/patterns
+
+# The code of a rule that is not what this module reads.
+constant INVALID: str
+    "invalid"
+
+# How a condition compares a value with its threshold.
+variant Comparison
+    # `>`: strictly above.
+    above
+    # `<`: strictly below.
+    below
+    # `>=`: at or above.
+    at_least
+    # `<=`: at or below.
+    at_most
+
+# A condition on one value of a reading.
+record Condition
+    # The quantity compared, as the registry names it.
+    quantity: str
+    # How it is compared.
+    comparison: Comparison
+    # The number it is compared with.
+    threshold: f64
+
+# A place a protocol reaches: a protocol and an address in it.
+record Place
+    # The protocol.
+    protocol: registry.Protocol
+    # The address, or a pattern, or a template, as the place is used.
+    address: str
+
+# One rule.
+record Rule
+    # The name events and metrics give it.
+    name: str
+    # Where the readings it takes come from: a protocol and a pattern of it.
+    source: Place
+    # What a reading's value must satisfy; fails `not_found` for a rule that
+    # takes every reading of its source.
+    condition: Condition?
+    # Where they go: a protocol and an address that may hold `{device}` and
+    # `{id}`.
+    destination: Place
+
+# The place `text`, `<protocol>:<address>`, names.
+#
+# - `text`: `mqtt:devices/+/up`, `amqp:alerts/coldchain.{device}`.
+#
+# Fails `invalid` where it has no `:`, the protocol is unknown, or the
+# address is empty.
+function parse_place(text: str) -> Place?
+    at = match strings.index_of(s: text, substr: ":")
+        .ok i  => i
+        .err _ => return fail(code: INVALID, msg: f"\"{text}\" is no place: it is <protocol>:<address>")
+
+    protocol = match registry.parse_protocol(text.slice(from: 0, to: at))
+        .ok p  => p
+        .err e => return fail(code: INVALID, msg: f"\"{text}\": {e.msg}")
+
+    address = text.slice(from: at + 1, to: text.len())
+
+    if address == ""
+        return fail(code: INVALID, msg: f"\"{text}\" names no address")
+
+    return ok(Place(protocol: protocol, address: address))
+
+# The place's text, as `parse_place` reads it.
+#
+# - `p`: the place.
+function place_text(p: Place) -> str
+    return registry.protocol_name(p.protocol) + ":" + p.address
+
+# The condition `text` writes: a quantity, `>`, `<`, `>=` or `<=`, and a
+# number, separated by spaces.
+#
+# - `text`: `temperature > 8`.
+#
+# Fails `invalid` where it is not three words, the operator is another, or
+# the threshold is no number.
+function parse_condition(text: str) -> Condition?
+    words = strings.words(text)
+
+    if words.len() != 3
+        return fail(code: INVALID, msg: f"\"{text}\" is no condition: it is <quantity> <operator> <number>")
+
+    comparison: Comparison = match words[1]
+        ">"  => .above
+        "<"  => .below
+        ">=" => .at_least
+        "<=" => .at_most
+        _    => return fail(code: INVALID, msg: f"\"{words[1]}\" is no operator: >, <, >= or <=")
+
+    threshold = match numbers.parse_float(words[2])
+        .ok x  => x
+        .err _ => return fail(code: INVALID, msg: f"\"{words[2]}\" is no number")
+
+    return ok(Condition(quantity: words[0], comparison: comparison, threshold: threshold))
+
+# The operator a comparison is written with.
+#
+# - `c`: the comparison.
+function operator_of(c: Comparison) -> str
+    return match c
+        .above    => ">"
+        .below    => "<"
+        .at_least => ">="
+        .at_most  => "<="
+
+# A rule from its four texts, checked whole.
+#
+# - `name`: its name, not empty.
+# - `from`: its source, `<protocol>:<pattern>`.
+# - `when`: its condition, "" for none.
+# - `to`: its destination, `<protocol>:<address template>`; a serial line
+#   is no destination.
+#
+# Fails `invalid` where a part is not what `parse_place` or
+# `parse_condition` reads, or the destination, filled with a device's name,
+# could not be published at.
+function new_rule(name: str, from: str, when: str, to: str) -> Rule?
+    if name == ""
+        return fail(code: INVALID, msg: "a rule has no name")
+
+    source = parse_place(from)?
+    destination = parse_place(to)?
+
+    condition: Condition? = if when == ""
+        fail(code: "not_found", msg: f"the rule {name} has no condition")
+    else
+        ok(parse_condition(when)?)
+
+    sample = fill(template: destination.address, device: "device", id: "00000000-0000-0000-0000-000000000000")
+
+    if !patterns.is_publishable(destination.protocol, address: sample)
+        return fail(code: INVALID, msg: f"the rule {name} sends to \"{to}\", where nothing can be published")
+
+    return ok(Rule(name: name, source: source, condition: condition, destination: destination))
+
+# `template` with `{device}` and `{id}` replaced.
+#
+# - `template`: the destination's address.
+# - `device`: the device's name.
+# - `id`: its identity, as text.
+function fill(template: str, device: str, id: str) -> str
+    named = strings.replace_all(s: template, old: f"{{device}}", new: device)
+    return strings.replace_all(s: named, old: f"{{id}}", new: id)
+
+# Whether `c` holds for `r`: false where `r` holds no such value.
+#
+# - `c`: the condition.
+# - `r`: the reading.
+function holds(c: Condition, r: reading.Reading lent) -> bool
+    x = match reading.value_of(r, quantity: c.quantity)
+        .ok got => got
+        .err _  => return false
+
+    return match c.comparison
+        .above    => x > c.threshold
+        .below    => x < c.threshold
+        .at_least => x >= c.threshold
+        .at_most  => x <= c.threshold
+
+# Whether `rule` takes `r`, which came at `address` over `protocol`.
+#
+# - `rule`: the rule.
+# - `protocol`: the protocol the reading came by.
+# - `address`: where it came.
+# - `r`: the reading.
+function takes(rule: Rule lent, protocol: registry.Protocol, address: str, r: reading.Reading lent) -> bool
+    if rule.source.protocol != protocol || !patterns.matches(protocol, pattern: rule.source.address, address: address)
+        return false
+
+    return match rule.condition
+        .ok c  => holds(c, r: r)
+        .err _ => true
+
+# Where `rule` sends `r`: its destination, filled.
+#
+# - `rule`: the rule.
+# - `r`: the reading.
+function destination_of(rule: Rule lent, r: reading.Reading lent) -> Place
+    return Place(
+        protocol: rule.destination.protocol,
+        address: fill(template: rule.destination.address, device: r.device, id: r.id)
+    )
+
+# The rule the JSON object `v` writes: `name`, `from`, `to`, and `when` if
+# it has a condition.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where a member is missing or no text, or as `new_rule` fails.
+function rule_of(v: json.Value) -> Rule?
+    texts: [str] @= []
+
+    for key in ["name", "from", "when", "to"]
+        text = match json.member(v, key: key)
+            .err _ =>
+                if key != "when"
+                    return fail(code: INVALID, msg: f"a rule has no \"{key}\"")
+                ""
+            .ok m =>
+                match json.text_of(m)
+                    .ok t  => t
+                    .err _ => return fail(code: INVALID, msg: f"a rule's \"{key}\" is no text")
+
+        texts @ texts.push(text)
+
+    return new_rule(name: texts[0], from: texts[1], when: texts[2], to: texts[3])
+
+# A reading of the tests: a fridge at `temperature`.
+#
+# - `temperature`: its temperature, in degrees Celsius.
+function fridge_at(temperature: f64) -> reading.Reading
+    return reading.Reading(
+        device: "fridge-07",
+        id: "6f1c2c8e-0b4a-4f7e-9a51-3f0d2b7c9e10",
+        source: "mqtt",
+        encoding: "cbor",
+        taken: time.epoch(),
+        received: time.epoch(),
+        values: [reading.Measurement(quantity: "temperature", value: temperature, unit: "Cel")],
+        size: 20
+    )
+
+test "rule: a condition, a destination filled, and texts refused"
+    r = new_rule(
+        name: "cold-chain",
+        from: "mqtt:devices/+/up",
+        when: "temperature > 8",
+        to: "amqp:alerts/coldchain.{device}"
+    ).must()
+    assert takes(r, protocol: .mqtt, address: "devices/fridge-07/up", r: fridge_at(9.5))
+    assert !takes(r, protocol: .mqtt, address: "devices/fridge-07/up", r: fridge_at(8.0))
+    assert !takes(r, protocol: .nats, address: "devices/fridge-07/up", r: fridge_at(9.5))
+    assert place_text(destination_of(r, r: fridge_at(9.5))) == "amqp:alerts/coldchain.fridge-07"
+    assert new_rule(name: "", from: "mqtt:a", when: "", to: "nats:b").is_err()
+    assert new_rule(name: "x", from: "mqtt:a", when: "t => 3", to: "nats:b").is_err()
+    assert new_rule(name: "x", from: "mqtt:a", when: "t > three", to: "nats:b").is_err()
+    assert new_rule(name: "x", from: "http:a", when: "", to: "nats:b").is_err()
+    assert new_rule(name: "x", from: "mqtt:a", when: "", to: "nats:b.>").is_err()
+    assert new_rule(name: "x", from: "mqtt:a", when: "", to: "serial:bench").is_err()
+
+test "holds: each comparison at its edge, and a quantity the reading lacks"
+    at_eight = fridge_at(8.0)
+    assert holds(parse_condition("temperature >= 8").must(), r: at_eight)
+    assert !holds(parse_condition("temperature > 8").must(), r: at_eight)
+    assert holds(parse_condition("temperature <= 8").must(), r: at_eight)
+    assert !holds(parse_condition("temperature < 8").must(), r: at_eight)
+    assert !holds(parse_condition("humidity < 100").must(), r: at_eight)
+
+test "rule_of: an object with no condition, and one with a member missing"
+    v = json.parse("{\"name\": \"all\", \"from\": \"nats:fleet.>\", \"to\": \"mqtt:fleet/{device}\"}").must()
+    r = rule_of(v).must()
+    assert r.condition.is_err() && r.destination.protocol == .mqtt
+    assert rule_of(json.parse("{\"name\": \"x\", \"from\": \"nats:a\"}").must()).is_err()

@@ -1,0 +1,362 @@
+# The messages an HTML template asks to translate, in the forms Jinja's i18n
+# extension and Django's templates give gettext, read by regular expressions:
+#
+#     {{ _("Sign in") }}  {{ gettext("Sign in") }}
+#     {{ ngettext("{count} parcel", "{count} parcels", n) }}
+#     {{ pgettext("order", "Confirmed") }}  {{ npgettext("order", "...", "...", n) }}
+#     {% trans count=n %}{{ count }} parcel{% pluralize %}{{ count }} parcels{% endtrans %}
+#     {# l10n: a note to the translator, above or beside what it notes #}
+#
+# A template is not a program the scanner of Heroes sources can read, and
+# these forms are regular: a call is a name, `(` and string literals; a block
+# runs from `{% trans %}` to the first `{% endtrans %}`, which a block cannot
+# hold again. A block's text is read as Jinja's `trimmed` option reads it,
+# every run of white space one space and none at either end, and its
+# `{{ name }}` is written `{name}`, the placeholder every message here uses.
+# `{% trans context="order" %}` gives a block a context.
+
+use <rebel>/lists
+use <rebel>/regex
+
+use extract/found
+
+## The patterns
+
+# A call of one of the five gettext functions and its string literals.
+constant CALL: str
+    "\\b(npgettext|pgettext|ngettext|gettext|_)\\(\\s*(\"(?:[^\"\\\\]|\\\\.)*\"(?:\\s*,\\s*\"(?:[^\"\\\\]|\\\\.)*\")*)"
+
+# One string literal inside a call or a tag, its text in group 1.
+constant LITERAL: str
+    "\"((?:[^\"\\\\]|\\\\.)*)\""
+
+# A `trans` block: its tag's words, its singular, and its plural after
+# `pluralize`.
+constant BLOCK: str
+    "(?s)\\{%\\s*trans\\b([^%]*)%\\}(.*?)(?:\\{%\\s*pluralize\\b[^%]*%\\}(.*?))?\\{%\\s*endtrans\\s*%\\}"
+
+# A `context="..."` in a `trans` tag.
+constant CONTEXT: str
+    "\\bcontext\\s*=\\s*\"((?:[^\"\\\\]|\\\\.)*)\""
+
+# A variable inside a block, `{{ name }}`.
+constant VARIABLE: str
+    "\\{\\{\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*\\}\\}"
+
+# A note to the translator, `{# l10n: ... #}`.
+constant NOTE: str
+    "(?s)\\{#\\s*l10n:\\s*(.*?)\\s*#\\}"
+
+## The patterns compiled
+
+# The patterns, compiled once for a whole tree.
+record Patterns
+    # `CALL`.
+    call: regex.Regex
+    # `LITERAL`.
+    literal: regex.Regex
+    # `BLOCK`.
+    block: regex.Regex
+    # `CONTEXT`.
+    context: regex.Regex
+    # `VARIABLE`.
+    variable: regex.Regex
+    # `NOTE`.
+    note: regex.Regex
+
+# The patterns compiled. They are this module's own constants, which its
+# tests compile, so a failure here is a defect of this module and aborts.
+function patterns() -> Patterns
+    return Patterns(
+        call: regex.compile(CALL).must(),
+        literal: regex.compile(LITERAL).must(),
+        block: regex.compile(BLOCK).must(),
+        context: regex.compile(CONTEXT).must(),
+        variable: regex.compile(VARIABLE).must(),
+        note: regex.compile(NOTE).must()
+    )
+
+## Reading a template
+
+# A note found in a template: its text and where it ends.
+record Note
+    # The note's words.
+    text: str
+    # The byte after its `#}`.
+    end: i64
+    # The line its `#}` stands on.
+    line: i64
+
+# The messages `source` asks to translate, in the order they stand.
+#
+# - `source`: the template's text.
+# - `file`: its path from the project's root, for the references.
+# - `p`: the patterns.
+function scan_template(source: str, file: str, p: Patterns) -> found.Scan
+    notes: [Note] @= []
+
+    for m in regex.search_all(source, re: p.note)
+        notes @ notes.push(
+            Note(text: collapsed(regex.group(m, n: 1).default("")), end: m.end, line: line_at(source, at: m.end))
+        )
+
+    located: [Located] @= []
+    problems: [found.Problem] @= []
+
+    for m in regex.search_all(source, re: p.call)
+        name = regex.group(m, n: 1).must()
+        texts = regex.search_all(regex.group(m, n: 2).must(), re: p.literal).map(literal_text)
+        line = line_at(source, at: m.start)
+
+        match from_call(name, texts: texts)
+            .ok parts => located @ located.push(Located(at: m.start, line: line, parts: parts))
+            .err e    => problems @ problems.push(found.Problem(file: file, line: line, message: e.msg))
+
+    for m in regex.search_all(source, re: p.block)
+        tag = regex.group(m, n: 1).default("")
+        singular = block_text(regex.group(m, n: 2).default(""), variable: p.variable)
+        plural = regex.group(m, n: 3)
+
+        context: str? = match regex.search(tag, re: p.context)
+            .ok c  => ok(unescaped(regex.group(c, n: 1).default("")))
+            .err _ => found.none("context")
+
+        plural_text: str? = match plural
+            .ok text => ok(block_text(text, variable: p.variable))
+            .err _   => found.none("plural")
+
+        line = line_at(source, at: m.start)
+
+        if singular == ""
+            problems @ problems.push(found.Problem(file: file, line: line, message: "a trans block with no text"))
+        else
+            located @ located.push(
+                Located(at: m.start, line: line, parts: Parts(context: context, id: singular, plural_id: plural_text))
+            )
+
+    ordered = lists.sort_by(located, less: located_before)
+    messages: [found.Found] @= []
+
+    for l in ordered
+        messages @ messages.push(
+            found.Found(context: l.parts.context, id: l.parts.id, plural_id: l.parts.plural_id, file: file, line: l.line, note: note_for(notes, at: l.at, line: l.line))
+        )
+
+    return found.Scan(found: messages, problems: problems)
+
+# A message and where it begins, before the two kinds are put in order.
+record Located
+    # The byte it begins at.
+    at: i64
+    # Its line.
+    line: i64
+    # Its texts.
+    parts: Parts
+
+# A message's texts.
+record Parts
+    # Its context, absent for none.
+    context: str?
+    # Its id.
+    id: str
+    # Its plural, absent for none.
+    plural_id: str?
+
+# The texts a call of `name` gives, from its string literals in order.
+#
+# - `name`: `_`, `gettext`, `ngettext`, `pgettext` or `npgettext`.
+# - `texts`: its literals' texts.
+#
+# Fails `invalid` where it gives fewer literals than the function reads, or
+# looks up the empty id.
+function from_call(name: str, texts: [str]) -> Parts?
+    wanted = if name == "ngettext"
+        2
+    else if name == "pgettext"
+        2
+    else if name == "npgettext"
+        3
+    else
+        1
+
+    if texts.len() < wanted
+        return fail(
+            code: "invalid",
+            msg: f"`{name}` is given {texts.len()} string literals where it reads {wanted}; a text that is not a literal is not extracted"
+        )
+
+    with_context = name == "pgettext" || name == "npgettext"
+
+    first = if with_context
+        1
+    else
+        0
+
+    context: str? = if with_context
+        ok(texts[0])
+    else
+        found.none("context")
+
+    plural: str? = if name == "ngettext" || name == "npgettext"
+        ok(texts[first + 1])
+    else
+        found.none("plural")
+
+    if texts[first] == ""
+        return fail(code: "invalid", msg: f"`{name}` looks up the empty id, which is the catalogue's header")
+
+    return ok(Parts(context: context, id: texts[first], plural_id: plural))
+
+# The note to the translator of the message at `at`: the last note that ends
+# before it, on its line or the line above.
+#
+# - `notes`: the template's notes, in order.
+# - `at`: the message's first byte.
+# - `line`: its line.
+function note_for(notes: [Note], at: i64, line: i64) -> str
+    chosen @= ""
+
+    for n in notes
+        if n.end <= at && n.line >= line - 1
+            chosen @ n.text
+
+    return chosen
+
+## Texts
+
+# A string literal's text, its escapes read as Python reads them in a
+# template: `\"`, `\\`, `\n` and `\t`.
+#
+# - `m`: a match of `LITERAL`.
+function literal_text(m: regex.Match) -> str
+    return unescaped(regex.group(m, n: 1).default(""))
+
+# `s` with its backslash escapes read.
+#
+# - `s`: a literal's text between its quotes.
+function unescaped(s: str) -> str
+    pieces: [str] @= []
+    at @= 0
+
+    while at < s.len()
+        if s[at] == '\\' && at + 1 < s.len()
+            c = s[at + 1]
+
+            if c == 'n'
+                pieces @ pieces.push("\n")
+            else if c == 't'
+                pieces @ pieces.push("\t")
+            else
+                pieces @ pieces.push(s.slice(from: at + 1, to: at + 2))
+
+            at @ at + 2
+        else
+            end = next_char(s, at: at)
+            pieces @ pieces.push(s.slice(from: at, to: end))
+            at @ end
+
+    return pieces.join("")
+
+# A block's text as a message: `{{ name }}` written `{name}`, white space
+# collapsed and trimmed.
+#
+# - `text`: the text between the block's tags.
+# - `variable`: `VARIABLE` compiled.
+function block_text(text: str, variable: regex.Regex) -> str
+    return collapsed(regex.substitute_all(s: text, re: variable, template: "{$1}").default(text))
+
+# `s` with every run of white space one space, and none at either end.
+#
+# - `s`: the text.
+function collapsed(s: str) -> str
+    pieces: [str] @= []
+    pending @= false
+    at @= 0
+
+    while at < s.len()
+        b = s[at]
+
+        if b == ' ' || b == '\n' || b == '\t' || b == '\r'
+            pending @ pieces.len() > 0
+            at @ at + 1
+        else
+            if pending
+                pieces @ pieces.push(" ")
+                pending @ false
+            end = next_char(s, at: at)
+            pieces @ pieces.push(s.slice(from: at, to: end))
+            at @ end
+
+    return pieces.join("")
+
+# The line, from 1, that the byte `at` of `source` stands on.
+#
+# - `source`: the text.
+# - `at`: a byte index in it.
+function line_at(source: str, at: i64) -> i64
+    line @= 1
+
+    for i in range(from: 0, to: at)
+        if source[i] == '\n'
+            line @ line + 1
+
+    return line
+
+# The index after the character that begins at `at`.
+#
+# - `s`: the text.
+# - `at`: a character's first byte.
+function next_char(s: str, at: i64) -> i64
+    b = s[at]
+
+    size = if b < 0x80
+        1
+    else if b >= 0xf0
+        4
+    else if b >= 0xe0
+        3
+    else
+        2
+
+    if at + size > s.len()
+        return s.len()
+
+    return at + size
+
+# Whether `a` stands before `b` in the template.
+#
+# - `a`: a message found.
+# - `b`: another.
+function located_before(a: Located, b: Located) -> bool
+    return a.at < b.at
+
+## Tests
+
+test "scan_template: the five calls, a block with a plural and a context, and notes"
+    source = "<h1>{{ _(\"Your order\") }}</h1>\n{# l10n: shown after payment #}\n<p>{{ pgettext(\"order\", \"Confirmed\") }}</p>\n<p>{{ ngettext(\"{count} parcel\", \"{count} parcels\", n) }}</p>\n{% trans context=\"order\" count=n %}\n  {{ count }} box\n{% pluralize %}{{ count }}   boxes{% endtrans %}\n"
+    s = scan_template(source: source, file: "templates/order.html", p: patterns())
+    assert s.problems.len() == 0
+    assert s.found.len() == 4
+    assert s.found[0].id == "Your order"
+    assert s.found[1].context.must() == "order"
+    assert s.found[1].note == "shown after payment"
+    assert s.found[1].line == 3
+    assert s.found[2].plural_id.must() == "{count} parcels"
+    assert s.found[3].id == "{count} box"
+    assert s.found[3].plural_id.must() == "{count} boxes"
+    assert s.found[3].context.must() == "order"
+    assert s.found[3].line == 5
+
+test "scan_template: escapes read, a call given too few literals, and nothing at all"
+    p = patterns()
+    s = scan_template(source: "{{ _(\"Say \\\"hi\\\"\") }} {{ ngettext(\"one\", plural, n) }}", file: "t.html", p: p)
+    assert s.found.len() == 1
+    assert s.found[0].id == "Say \"hi\""
+    assert s.problems.len() == 1
+    assert scan_template(source: "", file: "t.html", p: p).found.len() == 0
+    assert scan_template(source: "<p>gettext is a word</p>", file: "t.html", p: p).found.len() == 0
+
+test "collapsed: runs of white space, both ends, and characters of several bytes"
+    assert collapsed("  a\n\t b  ") == "a b"
+    assert collapsed("") == ""
+    assert collapsed(" Zürich  Łódź ") == "Zürich Łódź"

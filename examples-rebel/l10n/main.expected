@@ -1,0 +1,313 @@
+# the session works in a folder of its own, holding src/cart.hero, src/checkout.hero, templates/order.html, inbox/de.csv, inbox/fr.po, inbox/pl.xlsx, inbox/ar.csv, inbox/ja.yaml, inbox/de-fix.csv
+
+$ l10n init --domain shop --locales de,fr,pl,ar,ja
+wrote l10n.yaml: shop, from en into de, fr, pl, ar, ja
+
+# the team gives the placeholders their kinds, each language a time zone, and the previews their samples (l10n.yaml)
+
+$ l10n extract
+extracted 14 messages, 2 with a plural and 3 with a context, from 3 files:
+  file                  uses
+  --------------------  ----
+  src/cart.hero            5
+  src/checkout.hero        4
+  templates/order.html     7
+src/checkout.hero:12: the id of `translate` is an f-string, formatted before it is looked up, so no catalogue can hold it: write the placeholders in the message, {name}, and fill them after the lookup
+wrote locales/shop.pot
+
+$ l10n merge
+de: 0 kept, 14 new, 0 guessed, 0 made obsolete, 0 brought back
+fr: 0 kept, 14 new, 0 guessed, 0 made obsolete, 0 brought back
+pl: 0 kept, 14 new, 0 guessed, 0 made obsolete, 0 brought back
+ar: 0 kept, 14 new, 0 guessed, 0 made obsolete, 0 brought back
+ja: 0 kept, 14 new, 0 guessed, 0 made obsolete, 0 brought back
+
+$ l10n status
+14 messages in the template, 5 languages
+
+locale  translated  guessed  untranslated  stale  share
+------  ----------  -------  ------------  -----  -----
+de               0        0            14      0   0.0%
+fr               0        0            14      0   0.0%
+pl               0        0            14      0   0.0%
+ar               0        0            14      0   0.0%
+ja               0        0            14      0   0.0%
+
+translated in every language: 0
+translated in some languages only: 0
+translated in none: 14
+    "Your cart"
+    "[cart] {count} item"
+    "Your cart is empty."
+    "Total: {total}"
+    "[button] Check out"
+    "Your order of {total} ships on {day}."
+    "{count} parcel is on its way."
+    "<b>Free</b> delivery on orders over {total}."
+    "Last seen {when}."
+    "Your order"
+    and 4 more
+
+$ l10n import inbox/de.csv --locale de
+read inbox/de.csv as windows-1252 (guessed, 16% sure): 16 rows
+de: 13 messages updated, 0 unchanged, 0 texts composed to NFC
+    not in the catalogue: "Sale ends soon!"
+wrote locales/de.po
+
+$ l10n import inbox/fr.po --locale fr
+read inbox/fr.po as ISO-8859-15 (declared): 16 rows
+fr: 12 messages updated, 0 unchanged, 0 texts composed to NFC
+    a guess to confirm: "[cart] {count} item", a form the file does not tell apart from another
+    a guess to confirm: "{count} parcel is on its way.", a form the file does not tell apart from another
+wrote locales/fr.po
+
+$ l10n import inbox/pl.xlsx --locale pl
+read inbox/pl.xlsx: 17 rows
+pl: 14 messages updated, 0 unchanged, 0 texts composed to NFC
+wrote locales/pl.po
+
+$ l10n import inbox/ar.csv --locale ar
+read inbox/ar.csv as UTF-16LE (a byte order mark): 7 rows
+ar: 6 messages updated, 0 unchanged, 0 texts composed to NFC
+wrote locales/ar.po
+
+$ l10n import inbox/ja.yaml --locale ja
+read inbox/ja.yaml as UTF-8 (every byte reads as UTF-8): 12 rows
+ja: 12 messages updated, 0 unchanged, 8 texts composed to NFC
+wrote locales/ja.po
+
+$ l10n status
+14 messages in the template, 5 languages
+
+locale  translated  guessed  untranslated  stale  share
+------  ----------  -------  ------------  -----  -----
+de              13        0             1      0  92.9%
+fr              10        2             2      0  71.4%
+pl              13        0             1      0  92.9%
+ar               5        0             9      0  35.7%
+ja              12        0             2      0  85.7%
+
+translated in every language: 5
+translated in some languages only: 9
+translated in none: 0
+
+$ l10n check
+error[placeholders] de: "Your order of {total} ships on {day}."
+    {total} is missing, so the program's value is never shown
+warning[fuzzy] fr: "[cart] {count} item"
+    marked fuzzy, a guess gettext does not show until a translator confirms it
+warning[fuzzy] fr: "{count} parcel is on its way."
+    marked fuzzy, a guess gettext does not show until a translator confirms it
+error[plural-forms] pl: "{count} parcel is on its way."
+    the form many is empty, so a count that takes it shows the source text
+error[markup] pl: "<b>Free</b> delivery on orders over {total}."
+    the markup differs: <b> </b> missing
+error[plural-forms] ar: "[cart] {count} item"
+    the forms zero, two, few, many are empty, so a count that takes them shows the source text
+error[links] ja: "Questions? Visit <a href="https://{site}/help">our help pages</a>."
+    the link's host "ショップ-.example" is no name DNS can hold: label 1 "ショップ-" of "ショップ-.example" begins or ends with "-" (V3)
+5 errors and 2 warnings in 5 catalogues
+[exit 1]
+
+$ l10n preview --locale pl --match 'item|parcel'
+pl: dates in Europe/Warsaw, amounts in PLN, latn digits, lists in pl's order
+
+[cart] {count} item
+    one      1  1 produkt
+    few      2  2 produkty
+    many     5  5 produktów
+{count} parcel is on its way.
+    one      1  1 paczka jest w drodze.
+    few      2  2 paczki są w drodze.
+    many     5  5 parcels are on their way.  (untranslated: the source shows)
+2 messages shown
+
+$ l10n preview --locale de
+de: dates in Europe/Berlin, amounts in EUR, latn digits, lists in de's order
+
+Your cart
+    Ihr Warenkorb
+[cart] {count} item
+    one      1  1 Artikel
+    other    2  2 Artikel
+Your cart is empty.
+    Ihr Warenkorb ist leer.
+Total: {total}
+    Gesamtsumme: 1.234,50 €
+[button] Check out
+    Zur Kasse
+Your order of {total} ships on {day}.
+    Ihre Bestellung wird am 5. März 2026 verschickt.
+{count} parcel is on its way.
+    one      1  Ein Paket ist unterwegs.
+    other    2  2 Pakete sind unterwegs.
+<b>Free</b> delivery on orders over {total}.
+    <b>Kostenlose</b> Lieferung für Bestellungen über 1.234,50 €.
+Last seen {when}.
+    Last seen gestern.  (untranslated: the source shows)
+Your order
+    Ihre Bestellung
+[order] Order confirmed
+    Bestellung bestätigt
+We deliver to {cities}.
+    Wir liefern nach Ängelholm, Århus, Chicago, Łódź, Oslo, Zürich.
+Questions? Visit <a href="https://{site}/help">our help pages</a>.
+    Fragen? Besuchen Sie <a href="https://bücher.example/hilfe">unsere Hilfeseiten</a>.
+Your account
+    Ihr Kundenkonto
+14 messages shown
+
+$ l10n preview --locale ar --match 'order|deliver'
+ar: dates in Africa/Cairo, amounts in EGP, latn digits, lists in ar's order
+
+Your order of {total} ships on {day}.
+    سيتم شحن طلبك بقيمة <U+200F>1,234.50 ج.م.<U+200F> في 5 مارس 2026.
+<b>Free</b> delivery on orders over {total}.
+    <b>Free</b> delivery on orders over <U+200F>1,234.50 ج.م.<U+200F>.  (untranslated: the source shows)
+Your order
+    طلبك
+[order] Order confirmed
+    تم تأكيد الطلب
+We deliver to {cities}.
+    نوصل إلى Ängelholm, Århus, Chicago, Łódź, Oslo, Zürich.
+5 messages shown
+
+$ l10n render templates/order.html --accept 'de-CH, de;q=0.9, en;q=0.5' --count 3
+<!doctype html>
+<html lang="de">
+<head><title>Ihre Bestellung</title></head>
+<body>
+
+<h1>Bestellung bestätigt</h1>
+<p>Ihre Bestellung wird am 5. März 2026 verschickt.</p>
+<p>3 Pakete sind unterwegs.</p>
+<p>Wir liefern nach Ängelholm, Århus, Chicago, Łódź, Oslo, Zürich.</p>
+<p>Fragen? Besuchen Sie <a href="https://xn--bcher-kva.example/hilfe">unsere Hilfeseiten</a>.</p>
+<p><a href="https://xn--bcher-kva.example/account">Ihr Kundenkonto</a></p>
+</body>
+</html>
+<!-- l10n: de, chosen for Accept-Language "de-CH, de;q=0.9, en;q=0.5"; plural messages for 3; 2 link hosts in ASCII; every message translated -->
+
+$ l10n render templates/order.html --locale ar --count 11
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><title>طلبك</title></head>
+<body>
+
+<h1>تم تأكيد الطلب</h1>
+<p>سيتم شحن طلبك بقيمة &#x200F;1,234.50 ج.م.&#x200F; في 5 مارس 2026.</p>
+<p>11 parcels are on their way.</p>
+<p>نوصل إلى Ängelholm, Århus, Chicago, Łódź, Oslo, Zürich.</p>
+<p>Questions? Visit <a href="https://xn--bcher-kva.example/help">our help pages</a>.</p>
+<p><a href="https://xn--bcher-kva.example/account">Your account</a></p>
+</body>
+</html>
+<!-- l10n: ar, as asked; plural messages for 11; 2 link hosts in ASCII; in the source language: {count} parcel is on its way.; Questions? Visit <a href="https://{site}/help">our help pages</a>.; Your account -->
+
+$ l10n export --locale de -o review/de-1.json
+wrote review/de-1.json: de, 16 rows
+
+$ l10n import inbox/de-fix.csv --locale de
+read inbox/de-fix.csv as UTF-8 (every byte reads as UTF-8): 1 row
+de: 1 message updated, 0 unchanged, 0 texts composed to NFC
+wrote locales/de.po
+
+# a developer rewords the empty cart's sentence and drops the checkout button (src/cart.hero)
+
+$ l10n extract
+extracted 13 messages, 2 with a plural and 2 with a context, from 3 files:
+  file                  uses
+  --------------------  ----
+  src/cart.hero            4
+  src/checkout.hero        4
+  templates/order.html     7
+src/checkout.hero:12: the id of `translate` is an f-string, formatted before it is looked up, so no catalogue can hold it: write the placeholders in the message, {name}, and fill them after the lookup
+wrote locales/shop.pot
+
+$ l10n merge --locale de
+de: 12 kept, 0 new, 1 guessed, 2 made obsolete, 0 brought back
+    guessed "Your shopping cart is empty." from "Your cart is empty.", 80% alike: fuzzy until confirmed
+    obsolete "Your cart is empty.": no source uses it
+    obsolete "[button] Check out": no source uses it
+
+$ l10n diff review/de-1.json locales/de.po --locale de
++ Your shopping cart is empty.  (a guess to confirm)
+    Ihr Warenkorb ist leer.
+~ Your order of {total} ships on {day}.
+    Ihre Bestellung {+über {total} +}wird am {day} verschickt.
+- Your cart is empty.
+- [button] Check out
+1 added, 2 removed, 1 changed, 0 guesses confirmed
+
+$ l10n diff review/de-1.json locales/de.po --locale de --unified
+--- review/de-1.json
++++ locales/de.po
+@@ -1,10 +1,9 @@
+ Your cart = Ihr Warenkorb
+ [cart] {count} item [one] = {count} Artikel
+ [cart] {count} item [other] = {count} Artikel
+-Your cart is empty. = Ihr Warenkorb ist leer.
++Your shopping cart is empty. = Ihr Warenkorb ist leer.
+ Total: {total} = Gesamtsumme: {total}
+-[button] Check out = Zur Kasse
+-Your order of {total} ships on {day}. = Ihre Bestellung wird am {day} verschickt.
++Your order of {total} ships on {day}. = Ihre Bestellung über {total} wird am {day} verschickt.
+ {count} parcel is on its way. [one] = Ein Paket ist unterwegs.
+ {count} parcel is on its way. [other] = {count} Pakete sind unterwegs.
+ <b>Free</b> delivery on orders over {total}. = <b>Kostenlose</b> Lieferung für Bestellungen über {total}.
+
+$ l10n check --locale de
+warning[fuzzy] de: "Your shopping cart is empty."
+    marked fuzzy, a guess gettext does not show until a translator confirms it
+0 errors and 1 warning in 1 catalogue
+
+$ l10n export -o review/all.xlsx
+wrote review/all.xlsx: a sheet for each of de, fr, pl, ar, ja, 89 rows, and a coverage sheet
+
+$ l10n diff locales/pl.po review/all.xlsx --locale pl
+0 added, 0 removed, 0 changed, 0 guesses confirmed
+
+$ l10n pseudo
+wrote locales/en-XA.po: 13 messages pseudo-translated into en-XA
+
+$ l10n preview --locale en-XA --match cart
+en-XA: dates in UTC, amounts in no currency, latn digits, lists in en-XA's order
+
+Your cart
+    [Ýöůŕ çáŕţ ···]
+[cart] {count} item
+    one      1  [1 íţëṁ ··]
+    other    2  [2 íţëṁš ··]
+Your shopping cart is empty.
+    [Ýöůŕ šĥöṗṗíñğ çáŕţ íš ëṁṗţý. ········]
+3 messages shown
+
+$ l10n compile
+de: 11 messages, 1 left out, 1,310 bytes in locales/de/LC_MESSAGES/shop.mo
+fr: 10 messages, 2 left out, 1,052 bytes in locales/fr/LC_MESSAGES/shop.mo
+pl: 13 messages, 1 left out, 1,380 bytes in locales/pl/LC_MESSAGES/shop.mo
+ar: 5 messages, 1 left out, 774 bytes in locales/ar/LC_MESSAGES/shop.mo
+ja: 12 messages, 0 left out, 1,325 bytes in locales/ja/LC_MESSAGES/shop.mo
+
+$ l10n lookup '{count} item' --plural '{count} items' --context cart -n 22 --lang pl
+"{count} produkty"
+    form 1 of locales/pl/LC_MESSAGES/shop.mo
+
+$ l10n lookup '{count} item' --plural '{count} items' --context cart -n 22 --lang pt_BR:de
+"{count} Artikel"
+    form 1 of locales/de/LC_MESSAGES/shop.mo
+
+$ l10n import inbox/de.csv --locale 'de_Latn_!!'
+l10n: "de_Latn_!!" names no language: write a BCP 47 tag such as de-CH, or a POSIX name such as de_CH
+[exit 1]
+
+$ l10n export --locale de -o review/de.parquet
+l10n: review/de.parquet has no extension this program reads; name its format, one of po, csv, xlsx, json, yaml
+[exit 1]
+
+$ l10n merge --locael de
+l10n: unknown option "--locael"; did you mean "--locale"?
+usage: l10n merge [-h] [-l TAGS]
+[exit 2]
+
+# the folder and everything the session wrote in it are removed

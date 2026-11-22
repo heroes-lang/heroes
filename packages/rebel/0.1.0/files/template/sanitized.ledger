@@ -1,0 +1,15 @@
+# The ledger of `template/sanitized`: HTML from outside placed by a template
+# of the HTML mode, cleaned where it lands. Go's `html/template` (1.27) is
+# the one of the three standard libraries with a template that escapes by
+# context, and it offers no cleaning: its way to put markup in a page is a
+# value of the type `HTML`, which any text converts to, the trap `template`'s
+# own ledger refuses (`html/trusted`). Rust's and Python's standard
+# libraries hold no template. The lists are this machine's, 2026-11-22:
+# `go doc html/template`, run that day.
+
+capability html/cleaned  a text of HTML from outside written into a page as markup, cleaned by a policy inside the element it lands in
+  heroes  template/sanitized.render, template/sanitized.render_named
+  go      -
+  rust    -
+  python  -
+  note    the `clean` action of `template`'s HTML mode, run only here, where a policy is handed in; no value is trusted, so no text is written as markup without its cleaning at the moment it is written. The HTML mode places the action in an element's text alone, never inside a `select`, an `svg`, a `math`, an element whose text a browser reads as it is, or a table outside its cells, by the elements the template's own text left open; in a cell the text is cleaned with the cell as the policy's context element (`html/sanitize.set_context`), so the cleaner reads it as the browser will

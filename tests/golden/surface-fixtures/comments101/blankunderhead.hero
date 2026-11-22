@@ -25,6 +25,7 @@ extern "x.h"
 extern "x.h"
 
     # a remark under a fourth head, a blank line between them
+
     function ob_put(o: Ob consumes)
 
 function main()

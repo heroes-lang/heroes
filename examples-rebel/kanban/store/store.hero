@@ -1,0 +1,42 @@
+# The store: the database, the clock that dates its changes, where its names
+# come from, and the search index over its cards. One value the program
+# holds in one place and hands on with `@`, so a change and its date and its
+# names are one act.
+
+use <rebel>/search
+use <rebel>/sql/sqlite
+
+use support/clock
+use support/ids
+
+# Everything the store reads and writes.
+record Store
+    # The connection.
+    db: sqlite.Db
+    # The moments its changes are dated with.
+    clock: clock.Clock
+    # Where the names of new boards, columns and cards come from.
+    ids: ids.Ids
+    # The cards' titles and notes, searched by BM25, each under its card's
+    # number; rebuilt from the database after every change.
+    index: search.Index
+
+# A store over `db`, its index empty until `store/finder` fills it.
+#
+# - `db`: the connection, its tables made.
+# - `dates`: the clock its changes are dated with.
+# - `names`: where its names come from.
+function over(db: sqlite.Db, dates: clock.Clock, names: ids.Ids) -> Store?
+    return ok(Store(db: db, clock: dates, ids: names, index: search.new_index(search.default_options())?))
+
+# The moment now, as the store writes it.
+#
+# - `s`: the store; its clock moves on.
+function stamp(@s: Store) -> str?
+    return clock.stamp(@s.clock)
+
+# A new name.
+#
+# - `s`: the store; its names move on.
+function name(@s: Store) -> str?
+    return ids.next(@s.ids)

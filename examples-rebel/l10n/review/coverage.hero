@@ -1,0 +1,187 @@
+# How far each locale is translated, and what the locales have in common,
+# by set arithmetic over message keys.
+#
+# The template's keys are the set S. For each locale, its translated keys T
+# and its guessed keys F are taken within S, so a message a catalogue holds
+# that the template has dropped counts for nothing; what is left of S is
+# untranslated, S − T − F; and what the catalogue holds outside S, or as
+# obsolete, is stale, waiting for `merge` to put it away. Across the locales,
+# the intersection of every T is what a reader gets in every language, and
+# S less the union of every T is what nobody has translated yet, which is
+# where a translator's hour goes furthest.
+
+use <rebel>/i18n
+use <rebel>/sets
+
+use catalog/messages
+
+## Coverage
+
+# One locale's coverage.
+record LocaleCoverage
+    # The locale's tag.
+    tag: str
+    # The template's messages, |S|.
+    total: i64
+    # Its translated keys within S.
+    translated: {str: bool}
+    # Its guessed keys within S.
+    fuzzy: {str: bool}
+    # Its untranslated keys: S − T − F.
+    untranslated: {str: bool}
+    # Its messages outside S or obsolete: what a merge would put away.
+    stale: i64
+    # Whether the locale has a catalogue at all.
+    present: bool
+
+# The coverage of `catalog` against the template's keys.
+#
+# - `tag`: the locale's tag.
+# - `template_keys`: S, the template's live keys.
+# - `catalog`: the locale's catalogue.
+function coverage_of(tag: str, template_keys: {str: bool}, catalog: i18n.Catalog) -> LocaleCoverage
+    translated: {str: bool} @= {}
+    fuzzy: {str: bool} @= {}
+    stale @= 0
+
+    for m in catalog.messages
+        if !messages.is_header(m)
+            key = messages.key_of(m)
+
+            if m.obsolete || !sets.contains(template_keys, element: key)
+                stale @ stale + 1
+            else if messages.is_translated(m)
+                translated @ sets.add(translated, element: key)
+            else if messages.is_fuzzy(m)
+                fuzzy @ sets.add(fuzzy, element: key)
+
+    untranslated = sets.difference_all(template_keys, others: [translated, fuzzy])
+    return LocaleCoverage(
+        tag: tag,
+        total: keys(template_keys).len(),
+        translated: translated,
+        fuzzy: fuzzy,
+        untranslated: untranslated,
+        stale: stale,
+        present: true
+    )
+
+# The coverage of a locale with no catalogue: every message untranslated.
+#
+# - `tag`: the locale's tag.
+# - `template_keys`: S.
+function absent_coverage(tag: str, template_keys: {str: bool}) -> LocaleCoverage
+    return LocaleCoverage(
+        tag: tag,
+        total: keys(template_keys).len(),
+        translated: {},
+        fuzzy: {},
+        untranslated: template_keys,
+        stale: 0,
+        present: false
+    )
+
+# The share of `c`'s messages translated, from 0 to 1, as decimal text for
+# `i18n/numbers`; 1 where the template is empty.
+#
+# - `c`: the coverage.
+function share_text(c: LocaleCoverage) -> str
+    if c.total == 0
+        return "1"
+
+    return (to_f64(count_of(c.translated)) / to_f64(c.total)).to_str()
+
+# How many elements a set holds.
+#
+# - `s`: the set.
+function count_of(s: {str: bool}) -> i64
+    return keys(s).len()
+
+## Across locales
+
+# What the locales share.
+record Across
+    # The keys translated in every locale: the intersection of every T.
+    everywhere: [str]
+    # The keys translated in some locales and not all: the union of every T
+    # less their intersection.
+    somewhere: [str]
+    # The keys translated in none: S less the union of every T.
+    nowhere: [str]
+
+# What `locales` share, each list in the template's order.
+#
+# - `template_order`: the template's keys, in order.
+# - `locales`: every locale's coverage; empty, every key is translated
+#   nowhere.
+function across(template_order: [str], locales: [LocaleCoverage]) -> Across
+    s = sets.from_list(template_order)
+
+    if locales.len() == 0
+        return Across(everywhere: [], somewhere: [], nowhere: template_order)
+
+    sets_translated: [{str: bool}] @= []
+
+    for c in locales
+        sets_translated @ sets_translated.push(c.translated)
+
+    rest = sets_translated.slice(from: 1, to: sets_translated.len())
+    every = sets.intersection_all(sets_translated[0], others: rest)
+    some = sets.union_all(sets_translated[0], others: rest)
+    partly = sets.difference(s: some, other: every)
+    none = sets.difference(s: s, other: some)
+    return Across(
+        everywhere: in_order(template_order, chosen: every),
+        somewhere: in_order(template_order, chosen: partly),
+        nowhere: in_order(template_order, chosen: none)
+    )
+
+# The keys of `order` that `chosen` holds, in `order`'s order.
+#
+# - `order`: the template's keys.
+# - `chosen`: a set of keys.
+function in_order(order: [str], chosen: {str: bool}) -> [str]
+    kept: [str] @= []
+
+    for key in order
+        if sets.contains(chosen, element: key)
+            kept @ kept.push(key)
+
+    return kept
+
+## Tests
+
+# A catalogue holding `body`'s messages, for the tests.
+#
+# - `body`: messages as a `.po` file writes them.
+function sample(body: str) -> i18n.Catalog
+    return i18n.parse_po(body).must()
+
+test "coverage_of: translated, guessed, untranslated and stale, within the template"
+    s = sets.from_list(["a", "b", "c", "d"])
+    c = coverage_of(
+        "de",
+        template_keys: s,
+        catalog: sample("msgid \"a\"\nmsgstr \"A\"\n\n#, fuzzy\nmsgid \"b\"\nmsgstr \"B\"\n\nmsgid \"x\"\nmsgstr \"X\"\n\n#~ msgid \"y\"\n#~ msgstr \"Y\"\n")
+    )
+    assert sets.to_list(c.translated) == ["a"]
+    assert sets.to_list(c.fuzzy) == ["b"]
+    assert sets.to_list(c.untranslated) == ["c", "d"]
+    assert c.stale == 2
+    assert share_text(c) == "0.25"
+
+test "across: everywhere, somewhere and nowhere, in the template's order"
+    order = ["a", "b", "c"]
+    s = sets.from_list(order)
+    de = coverage_of(
+        "de",
+        template_keys: s,
+        catalog: sample("msgid \"a\"\nmsgstr \"A\"\n\nmsgid \"b\"\nmsgstr \"B\"\n")
+    )
+    fr = coverage_of("fr", template_keys: s, catalog: sample("msgid \"b\"\nmsgstr \"B\"\n"))
+    a = across(order, locales: [de, fr])
+    assert a.everywhere == ["b"]
+    assert a.somewhere == ["a"]
+    assert a.nowhere == ["c"]
+    assert across(order, locales: []).nowhere == order
+    assert across(order, locales: [absent_coverage("ja", template_keys: s)]).nowhere == order

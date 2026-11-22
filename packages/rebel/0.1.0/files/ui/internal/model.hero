@@ -109,6 +109,34 @@ record Node
     dirty: bool
     # Whether a window has been shown once, after its first layout.
     shown: bool
+    # A web view's table, policy, origins and page, as the program set them.
+    web: Web
+
+# What a web view keeps on both sides, so each answers alike: the assets as
+# the program put them, without their bodies, which the platform layer
+# keeps on the native side and nothing reads on the headless one.
+record Web
+    # The assets, in the order first put, each path once.
+    assets: [WebAsset]
+    # The bytes their bodies take in all.
+    bytes: i64
+    # The content security policy, "" for the layer's own.
+    policy: str
+    # The origins its page may go to, in the order allowed.
+    origins: [str]
+    # The path it was asked to show last, "" before the first.
+    page: str
+    # How many texts the program posted to its page.
+    posted: i64
+
+# One asset of a web view's table.
+record WebAsset
+    # Its path, `/` and segments.
+    path: str
+    # Its content type.
+    content_type: str
+    # Its body's bytes.
+    size: i64
 
 # The table of one app.
 record Model
@@ -181,7 +209,8 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         w: 0,
         h: 0,
         dirty: true,
-        shown: false
+        shown: false,
+        web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0)
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was

@@ -1,0 +1,298 @@
+# The demo's world: a folder under `build/` holding what a real hub's folder
+# holds (its settings, its registry, its `.proto` file), the three brokers'
+# stand-ins on threads of their own, the weather station's serial line, and
+# the hub itself on a thread, served as `iothub serve` serves it, quiet
+# because the demo prints what the hub's dashboard and the brokers' other
+# clients see. Every identity is minted from a seeded generator and the
+# hub's clock steps from a fixed moment, so the transcript is the same on
+# every run; no port or path of this machine is printed.
+#
+# The station speaks on a pseudo-terminal where the system makes one, the
+# hub opening its other side as it opens a serial port; where it does not
+# (Windows), it speaks through a raw TCP socket on the loopback, as a serial
+# device server would put it on a network, and the hub reads it as such.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/json
+use <rebel>/net
+use <rebel>/path
+use <rebel>/protobuf
+use <rebel>/random
+use <rebel>/serial
+use <rebel>/strings
+use <rebel>/threads
+use <rebel>/uuid
+
+use codecs/proto
+use config/registry
+use hub/loop
+use standins/amqp_broker
+use standins/mqtt_broker
+use standins/nats_server
+use standins/told
+
+# The moment the hub's clock starts from.
+constant CLOCK_START: str
+    "2026-11-22T09:00:00Z"
+
+# The seed of the hub's jitter.
+constant RETRY_SEED: i64
+    7
+
+# The station's speed, in bits a second, NMEA 0183's.
+constant STATION_BAUD: i64
+    4_800
+
+# The AMQP stand-in's fault: it restarts at the third publish to `alerts`,
+# and refuses the next two connections while its virtual host comes up.
+constant AMQP_FAULT: str
+    "restart:alerts:3:2"
+
+# The demo's weather station: the device's end of its serial line.
+record Station
+    # The device's end, one at most: the pseudo-terminal's controlling side,
+    # or the TCP connection the hub made.
+    ends: [io.Stream]
+    # The port the hub's settings name: the pseudo-terminal's path, or
+    # `tcp://127.0.0.1:<port>`.
+    port: str
+    # Whether the line is a pseudo-terminal.
+    on_pty: bool
+    # Why there is no pseudo-terminal, a failure's code; "" where there is.
+    why_not: str
+    # The listener the hub connects to where there is no pseudo-terminal,
+    # one at most, until the hub has connected.
+    listeners: [net.Listener]
+
+# The threads and where they listen.
+record World
+    # The demo's folder.
+    folder: str
+    # The threads, in the order started: MQTT, AMQP, NATS, then the hub.
+    started: [threads.TextThread]
+    # The MQTT stand-in's port.
+    mqtt_port: i64
+    # The AMQP stand-in's port.
+    amqp_port: i64
+    # The NATS stand-in's port.
+    nats_port: i64
+    # The hub's HTTP port.
+    hub_port: i64
+    # The weather station.
+    station: Station
+
+# A new folder under `build/` for the demo's files.
+#
+# Fails as `fs.make_dir_all` and `fs.make_temp_dir` fail.
+function make_folder() -> str?
+    fs.make_dir_all("build")?
+    return fs.make_temp_dir(dir: "build", pattern: "iothub-demo-*")
+
+# The station's serial line: a pseudo-terminal, or a listener on the
+# loopback where the system makes none.
+#
+# Fails as `serial.open_pseudo` fails for another reason than
+# `unsupported`, and as `net.listen` fails.
+function open_station() -> Station?
+    match serial.open_pseudo()
+        .ok pair =>
+            serial.set_timeouts(pair.controller, timeouts: serial.Timeouts(read_ms: 0, write_ms: 1_000, gap_ms: 0))?
+            return ok(Station(ends: [pair.controller], port: pair.path, on_pty: true, why_not: "", listeners: []))
+        .err e =>
+            if e.code != serial.UNSUPPORTED
+                return fail(code: e.code, msg: e.msg)
+
+            l = net.listen(host: "127.0.0.1", port: 0)?
+            return ok(
+                Station(ends: [], port: f"tcp://127.0.0.1:{l.address.port}", on_pty: false, why_not: e.code, listeners: [l])
+            )
+
+# Takes the hub's connection to a station on the loopback, once the hub has
+# begun; a station on a pseudo-terminal has nothing to take.
+#
+# - `s`: the station.
+#
+# Fails as `net.accept` fails.
+function take_hub(@s: Station) -> ()?
+    if s.on_pty || s.listeners.len() == 0
+        return ok()
+
+    conn = net.accept(s.listeners[0], deadline_ms: 30_000)?
+    s.ends @ [conn.stream]
+    net.close_listener(@s.listeners[0])?
+    s.listeners @ []
+    return ok()
+
+# Sends one line from the station, with NMEA's line end.
+#
+# - `s`: the station.
+# - `line`: the sentence.
+#
+# Fails as `io.write_text` fails.
+function station_says(s: Station lent, line: str) -> ()?
+    return io.write_text(s.ends[0], text: line + "\r\n")
+
+# Closes the station's end.
+#
+# - `s`: the station.
+function close_station(@s: Station)
+    if s.ends.len() > 0
+        _ = io.close(@s.ends[0]).is_err()
+
+    if s.listeners.len() > 0
+        _ = net.close_listener(@s.listeners[0]).is_err()
+
+    s.ends @ []
+    s.listeners @ []
+
+# The `.proto` file the press's payloads are read by.
+function vibration_proto() -> str
+    return ["// A machine's vibration, as the line's sensors send it.", "syntax = \"proto3\";", "package plant;", "import \"google/protobuf/timestamp.proto\";", "message Vibration {", "  string sensor = 1;", "  double rms_mm_s = 2;", "  double peak_g = 3;", "  google.protobuf.Timestamp taken = 4;", "}", ""].join(
+        "\n"
+    )
+
+# What one payload key measures, for the registry.
+#
+# - `key`: the key.
+# - `quantity`: the quantity.
+# - `unit`: the unit.
+function field(key: str, quantity: str, unit: str) -> registry.FieldMap
+    return registry.FieldMap(key: key, quantity: quantity, unit: unit)
+
+# The demo's registry: four devices, one a protocol and an encoding, their
+# identities minted from a seeded generator.
+#
+# Fails as `registry.mint` and `registry.with_device` fail, which a seeded
+# generator and four distinct devices never make them.
+function demo_registry() -> registry.Registry?
+    minting: registry.Minting @= .seeded(generator: random.Generator(high: 2026, low: 1122))
+    r @= registry.Registry(devices: [])
+    r @ registry.with_device(r, d: registry.Device(id: registry.mint(@minting)?, name: "fridge-07", protocol: .mqtt, address: "devices/fridge-07/up", encoding: .cbor, schema: "senml", time_key: "", fields: [field(key: "temp", quantity: "temperature", unit: ""), field(key: "hum", quantity: "humidity", unit: "")]))?
+    r @ registry.with_device(r, d: registry.Device(id: registry.mint(@minting)?, name: "press-2", protocol: .amqp, address: "plant/line1.press-2.vibration", encoding: .protobuf, schema: "plant.Vibration", time_key: "taken", fields: [field(key: "rms_mm_s", quantity: "vibration_rms", unit: "mm/s"), field(key: "peak_g", quantity: "vibration_peak", unit: "g")]))?
+    r @ registry.with_device(r, d: registry.Device(id: registry.mint(@minting)?, name: "tracker-3", protocol: .nats, address: "fleet.tracker-3.position", encoding: .msgpack, schema: "", time_key: "ts", fields: [field(key: "lat", quantity: "latitude", unit: "deg"), field(key: "lon", quantity: "longitude", unit: "deg"), field(key: "spd", quantity: "speed", unit: "km/h"), field(key: "bat", quantity: "battery", unit: "%")]))?
+    r @ registry.with_device(r, d: registry.Device(id: registry.mint(@minting)?, name: "wx-1", protocol: .serial, address: "bench", encoding: .nmea, schema: "xdr", time_key: "", fields: [field(key: "AIR", quantity: "air_temperature", unit: ""), field(key: "RH", quantity: "humidity", unit: ""), field(key: "BARO", quantity: "pressure", unit: "")]))?
+    return ok(r)
+
+# A rule's JSON.
+#
+# - `name`: its name.
+# - `from`: its source.
+# - `when`: its condition, "" for none.
+# - `to`: its destination.
+function rule_json(name: str, from: str, when: str, to: str) -> json.Value
+    members: {str: json.Value} @= {"name": .text(v: name), "from": .text(v: from)}
+
+    if when != ""
+        members["when"] @ .text(v: when)
+
+    members["to"] @ .text(v: to)
+    return .object(members: members)
+
+# A list of texts as JSON.
+#
+# - `texts`: the texts.
+function texts_json(texts: [str]) -> json.Value
+    items: [json.Value] @= []
+
+    for t in texts
+        items @ items.push(.text(v: t))
+
+    return .list(items: items)
+
+# The hub's settings for the demo: the stand-ins' ports, the station's port,
+# the four rules, the stepped clock and the seeded jitter.
+#
+# - `w`: the world, the brokers started.
+function settings_json(w: World lent) -> json.Value
+    rules: [json.Value] = [
+        rule_json(name: "cold-chain", from: "mqtt:devices/+/up", when: "temperature > 8", to: "amqp:alerts/coldchain.{device}")
+        rule_json(name: "vibration-high", from: "amqp:plant/line1.#", when: "vibration_rms > 4.5", to: "mqtt:plant/alarms/{device}")
+        rule_json(name: "battery-low", from: "nats:fleet.>", when: "battery < 20", to: "amqp:alerts/battery.{device}")
+        rule_json(name: "weather", from: "serial:*", when: "", to: "mqtt:weather/{device}")
+    ]
+    retry: json.Value = .object(
+        members: {"first_ms": .number(v: 100.0), "multiplier": .number(v: 2.0), "longest_ms": .number(v: 2_000.0), "seed": .number(v: to_f64(RETRY_SEED))}
+    )
+    return .object(
+        members: {"name": .text(v: "iothub"), "listen": .text(v: "127.0.0.1:0"), "registry": .text(v: "devices.json"), "schemas": texts_json(["plant.proto"]), "mqtt": .object(members: {"url": .text(v: f"mqtt://127.0.0.1:{w.mqtt_port}"), "client_id": .text(v: "iothub"), "filters": texts_json(["devices/+/up"])}), "amqp": .object(members: {"url": .text(v: f"amqp://guest:guest@127.0.0.1:{w.amqp_port}/"), "exchange": .text(v: "plant"), "queue": .text(v: "iothub.plant"), "bindings": texts_json(["line1.#"]), "prefetch": .number(v: 16.0)}), "nats": .object(members: {"url": .text(v: f"nats://127.0.0.1:{w.nats_port}"), "subjects": texts_json(["fleet.>"])}), "serial": .list(items: [.object(members: {"name": .text(v: "bench"), "port": .text(v: w.station.port), "baud": .number(v: to_f64(STATION_BAUD))})]), "republish": .text(v: "nats:iothub.readings.{device}"), "rules": .list(items: rules), "retry": retry, "clock": .text(v: CLOCK_START)}
+    )
+
+# Writes the hub's folder: its settings, its registry and its `.proto`.
+#
+# - `w`: the world, the brokers started and the station opened.
+# - `devices`: the registry.
+#
+# Answers the settings file's path. Fails as `write_file` fails.
+function write_hub_folder(w: World lent, devices: registry.Registry) -> str?
+    config = path.join_all([w.folder, "hub.json"])
+    write_file(path: config, text: json.format_indented(settings_json(w), width: 2)? + "\n")?
+    write_file(path: path.join_all([w.folder, "devices.json"]), text: registry.format(devices))?
+    write_file(path: path.join_all([w.folder, "plant.proto"]), text: vibration_proto())?
+    return ok(config)
+
+# Starts `body` on a thread of its own with `arg`, and waits for it to tell
+# its port.
+#
+# - `w`: the world, which gains the thread.
+# - `ear`: the socket the thread tells its port to.
+# - `body`: the thread's function.
+# - `arg`: what it is given.
+#
+# Fails as `threads.spawn_text` and `told.heard` fail.
+function start_thread(@w: World, ear: net.UdpSocket lent, body: (function(str) -> str), arg: str) -> i64?
+    t = threads.spawn_text(body: body, arg: arg)?
+    started @= w.started
+    started @ started.push(t)
+    w.started @ started
+    return told.heard(ear)
+
+# Starts the three brokers' stand-ins.
+#
+# - `w`: the world, which gains them.
+# - `ear`: the socket they tell their ports to.
+#
+# Fails as `start_thread` fails.
+function start_brokers(@w: World, ear: net.UdpSocket lent) -> ()?
+    told_port = to_str(ear.address.port)
+    w.mqtt_port @ start_thread(@w, ear: ear, body: mqtt_broker.run, arg: told_port)?
+    w.amqp_port @ start_thread(@w, ear: ear, body: amqp_broker.run, arg: told_port + " " + AMQP_FAULT)?
+    w.nats_port @ start_thread(@w, ear: ear, body: nats_server.run, arg: told_port)?
+    return ok()
+
+# Starts the hub on the settings at `config`, and takes its connection to
+# the station where the station is on the loopback.
+#
+# - `w`: the world, which gains the hub.
+# - `ear`: the socket the hub tells its port to.
+# - `config`: the settings file's path.
+#
+# Fails as `start_thread` and `take_hub` fail.
+function start_hub(@w: World, ear: net.UdpSocket lent, config: str) -> ()?
+    w.hub_port @ start_thread(@w, ear: ear, body: loop.run, arg: f"{ear.address.port} {config}")?
+    take_hub(@w.station)?
+    return ok()
+
+# The line an identity is shown with in the registry's table, the name
+# padded to the demo's longest, `tracker-3`.
+#
+# - `d`: the device.
+function device_line(d: registry.Device lent) -> str
+    schema = if d.schema == ""
+        ""
+    else
+        " " + d.schema
+
+    return f"{strings.pad_end(s: d.name, width: 9, pad: " ")}  {uuid.format(d.id)}  {registry.protocol_name(d.protocol)} {d.address}  {registry.encoding_name(d.encoding)}{schema}"
+
+test "demo_registry: four devices whose identities repeat from one run to the next"
+    a = demo_registry().must()
+    b = demo_registry().must()
+    assert a == b && a.devices.len() == 4
+    assert uuid.version_of(a.devices[0].id) == 4
+    assert device_line(a.devices[2]).slice(from: 0, to: 11) == "tracker-3  "
+
+test "vibration_proto: the press's message type, read as the hub reads it"
+    schema = proto.schema_of({"plant.proto": vibration_proto()}).must()
+    t = protobuf.message_named(schema, name: "plant.Vibration").must()
+    assert t.fields.len() == 4 && t.fields[3].type_name == "google.protobuf.Timestamp"

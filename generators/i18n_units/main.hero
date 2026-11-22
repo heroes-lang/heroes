@@ -1,0 +1,90 @@
+# The generator of `i18n/dates`' unit table, `table.TABLE_PATH`: it reads
+# CLDR 49's unit, list and number patterns from the release's JSON zip,
+# pinned by its URL and SHA-256 (`cldr.SOURCE_URL`, `cldr.SOURCE_SHA256`),
+# and writes the table byte for byte, or says whether the table in the tree
+# is still what it writes. It stands in `generators/`, outside Rebel's tree,
+# so a program that takes Rebel never carries it and nothing that reads
+# Rebel's packages, the site's index among them, reads it as one.
+#
+# Run from the repository's root, the zip fetched from `cldr.SOURCE_URL` into
+# any folder:
+#
+#     heroes run generators/i18n_units/main.hero -- write <zip>
+#     heroes run generators/i18n_units/main.hero -- check <zip>
+#
+# `write` writes the table. `check` reads it and exits 0 where it holds
+# exactly what `write` would write, and 1 where it does not, naming the first
+# line that differs. Either exits 2 where its words are not these, where the
+# zip's digest is not the pinned one, or where its data is not what the
+# generator reads.
+
+use cldr
+use table
+
+# What `check` and `write` exit with where they did what they were asked.
+constant DONE: i64
+    0
+
+# What `check` exits with where the table is not what `write` writes.
+constant DIFFERS: i64
+    1
+
+# What either exits with where its words, the zip or its data are wrong.
+constant REFUSED: i64
+    2
+
+# Does what `command` asks with the zip at `zip`, and answers the code the
+# program exits with.
+#
+# - `command`: `write` or `check`.
+# - `zip`: the path of CLDR 49's JSON zip.
+#
+# Fails as `cldr.read_locales` and `table.module_text` fail, and where the
+# table cannot be read or written.
+function run(command: str, zip: str) -> i64?
+    text = table.module_text(cldr.read_locales(zip)?)?
+
+    if command == "write"
+        write_file(path: table.TABLE_PATH, text: text)?
+        print("wrote ", table.TABLE_PATH)
+        return ok(DONE)
+    present = read_file(table.TABLE_PATH)?
+    first = table.first_difference(present: present, wanted: text)
+
+    if first == 0
+        print(table.TABLE_PATH, " is what the generator writes from ", cldr.SOURCE_URL)
+        return ok(DONE)
+    print(table.TABLE_PATH, " is not what the generator writes: the first line that differs is ", first)
+    return ok(DIFFERS)
+
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"i18n_units: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
+function main()
+    words = text_arguments()
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/i18n_units/main.hero -- write|check <zip of ",
+            cldr.SOURCE_URL,
+            ">"
+        )
+        exit(code: REFUSED)
+
+    match run(command: words[0], zip: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: REFUSED)

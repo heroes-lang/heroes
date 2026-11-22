@@ -1,0 +1,168 @@
+# What every command is handed: where it writes, the moment it takes for
+# "now", and the language its own reports are written in.
+#
+# The clock and the language are given to a command, never read by it, so
+# that the demo runs every command at one fixed instant in English and prints
+# the same transcript on every machine, while a run from the terminal reads
+# the wall clock and the environment's language once, at the start.
+#
+# Everything the program prints goes through `io`'s streams and nothing
+# through `print`, so results and failures keep their order in the demo,
+# where both go to the standard output.
+
+use <rebel>/i18n
+use <rebel>/i18n/numbers
+use <rebel>/io
+use <rebel>/time
+use <rebel>/unicode
+
+## The program
+
+# The program's version, which `--version` prints and the headers it writes
+# name.
+constant VERSION: str
+    "0.1.0"
+
+## The session
+
+# The surroundings of one command.
+record Session
+    # The stream results are written to: the standard output.
+    results: io.Stream
+    # The stream failures are written to: the standard error, or the
+    # standard output in the demo so the transcript shows them in place.
+    failures: io.Stream
+    # The moment the command takes as now: the revision dates it writes into
+    # a catalogue's header, and the date its previews show.
+    now: time.Instant
+    # The language the program's own reports are written in: the digits,
+    # percentages and dates of `status` and `check`.
+    ui: i18n.Locale
+
+# The session of a command run from the terminal: the standard streams, the
+# wall clock, and the first language the environment asks for that parses,
+# English where none does.
+#
+# Fails as `time.now` fails, where the system cannot read its clock.
+function terminal() -> Session?
+    now = time.now()?
+    return ok(
+        Session(results: io.stdout(), failures: io.stderr(), now: now, ui: ui_language(i18n.environment_languages()))
+    )
+
+# The session of the demo: one stream for results and failures, the clock
+# stopped at `now`, and English.
+#
+# - `now`: the instant every command of the demo takes as now.
+function transcript(now: time.Instant) -> Session
+    return Session(results: io.stdout(), failures: io.stdout(), now: now, ui: english())
+
+# The first of `names` that reads as a locale, a POSIX name such as
+# `de_DE.UTF-8` or a BCP 47 tag, or English where none does.
+#
+# - `names`: the languages asked for, the most wanted first; `C` and
+#   `POSIX` name no language and are passed over.
+function ui_language(names: [str]) -> i18n.Locale
+    for name in names
+        if name != "C" && name != "POSIX"
+            match i18n.parse_posix(name)
+                .ok locale => return locale
+                .err _ =>
+                    match i18n.parse_locale(name)
+                        .ok locale => return locale
+                        .err _     => _ = 0
+
+    return english()
+
+# English, the language the program falls back to.
+function english() -> i18n.Locale
+    return i18n.parse_locale("en").must()
+
+## Writing
+
+# Writes `text` to the results' stream.
+#
+# - `s`: the session.
+# - `text`: the text, its line ends included.
+#
+# Fails as `io.write_text` fails, `closed` where the reader of a pipe has
+# gone.
+function say(s: Session, text: str) -> ()?
+    return io.write_text(s.results, text)
+
+# Writes each of `lines` with a line feed after it.
+#
+# - `s`: the session.
+# - `lines`: the lines.
+#
+# Fails as `say` fails.
+function say_lines(s: Session, lines: [str]) -> ()?
+    for line in lines
+        say(s, text: line + "\n")?
+
+    return ok()
+
+# Writes a failure's message with `l10n: ` before it. A failure to write it
+# is dropped: there is nowhere left to tell it.
+#
+# - `s`: the session.
+# - `message`: the message, any number of lines.
+function complain(s: Session, message: str)
+    match io.write_text(s.failures, "l10n: " + message + "\n")
+        .ok _  => _ = 0
+        .err _ => _ = 0
+
+## The reports' numbers
+
+# `n` as the session's language writes a count: `1,234` in English,
+# `1.234` in German.
+#
+# - `s`: the session.
+# - `n`: the count.
+function count_text(s: Session, n: i64) -> str
+    return numbers.format_int(s.ui, n: n)
+
+# `n` as `count_text` writes it, then `noun` where it is one and `nouns`
+# otherwise: the program's own words are English, its numbers the session's.
+#
+# - `s`: the session.
+# - `n`: the count.
+# - `noun`: the word for one, `message`.
+# - `nouns`: the word for any other count, `messages`.
+function counted(s: Session, n: i64, noun: str, nouns: str) -> str
+    word = if n == 1
+        noun
+    else
+        nouns
+
+    return count_text(s, n: n) + " " + word
+
+# `share`, a fraction from 0 to 1 in decimal text, as the session's language
+# writes a percentage with one digit after its mark: `85.7%`, `85,7 %`.
+#
+# - `s`: the session.
+# - `share`: the fraction.
+function percent_text(s: Session, share: str) -> str
+    options @= numbers.number_options(.percent)
+    options.min_fraction_digits @ 1
+    options.max_fraction_digits @ 1
+    return numbers.format_number(s.ui, number: share, options: options).default(share)
+
+## Tests
+
+test "ui_language: a POSIX name, a tag, C passed over, and English last"
+    assert i18n.format_locale(ui_language(["C", "de_CH.UTF-8"])) == "de-CH"
+    assert i18n.format_locale(ui_language(["pt-BR"])) == "pt-BR"
+    assert i18n.format_locale(ui_language(["POSIX"])) == "en"
+    assert i18n.format_locale(ui_language([])) == "en"
+
+test "count_text and percent_text: in the session's language"
+    now = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    en = transcript(now)
+    assert count_text(en, n: 1234) == "1,234"
+    assert counted(en, n: 1, noun: "message", nouns: "messages") == "1 message"
+    assert counted(en, n: 0, noun: "message", nouns: "messages") == "0 messages"
+    assert percent_text(en, share: "0.857142") == "85.7%"
+    de = Session(results: en.results, failures: en.failures, now: now, ui: i18n.parse_locale("de").must())
+    no_break_space = unicode.from_code_point(0xa0).must()
+    assert percent_text(de, share: "0.857142") == "85,7" + no_break_space + "%"

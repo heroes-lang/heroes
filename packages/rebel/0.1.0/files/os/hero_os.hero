@@ -24,7 +24,7 @@ extern "hero_os.h"
     function hero_exe_path_shown(@status: i64, @marks: i64) -> str
     function hero_run_exe_suffix() -> str
     function hero_os_pid() -> i64
-    # Round 3 (2026-11-16): the four doors the compiler's cases build their
+    # The four doors the compiler's cases build their
     # files with, done or failed with no kind, `fs_why` then the system's own
     # number. Their Windows arms hand a path to the ANSI calls, which read
     # its bytes in the machine's code page: a path of ASCII alone means the

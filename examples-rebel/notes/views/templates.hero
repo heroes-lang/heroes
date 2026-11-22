@@ -154,7 +154,7 @@ function note_top() -> str
 function note_bottom() -> str
     lines = [
         "</div>"
-        "{{ if .may_delete }}<form action=\"/notes/{{ .slug }}/delete\" method=\"post\"><input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\"><button>{{ .t.delete }}</button></form>{{ end }}"
+        "{{ if .may_delete }}<form action=\"/notes/{{ .slug }}\" method=\"post\"><input type=\"hidden\" name=\"_method\" value=\"DELETE\"><input type=\"hidden\" name=\"csrf_token\" value=\"{{ .csrf }}\"><button>{{ .t.delete }}</button></form>{{ end }}"
         "</article>"
         "<section class=\"comments\">"
         "<h2>{{ .comments }}</h2>"

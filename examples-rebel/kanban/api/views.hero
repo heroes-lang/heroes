@@ -1,0 +1,107 @@
+# What the page is answered: the store's records as JSON, in the shapes the
+# page's script reads (`web/app.js`). A card's notes go as their Markdown, for
+# the editor, and as their HTML rendered and cleaned (`text/notes`), for the
+# board, so the page never renders Markdown nor sees HTML the program did
+# not clean.
+
+use <rebel>/json
+
+use store/boards
+use store/cards
+use store/finder
+use store/history
+use store/model
+use store/store
+use text/notes
+
+# A member of an object.
+record Pair
+    # The key.
+    key: str
+    # The value.
+    value: json.Value
+
+function pair(key: str, value: json.Value) -> Pair
+    return Pair(key: key, value: value)
+
+# The object of `pairs`, in their order.
+function object(pairs: [Pair]) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for p in pairs
+        members[p.key] @ p.value
+
+    return .object(members: members)
+
+# `t` as a JSON text.
+function text(t: str) -> json.Value
+    return .text(v: t)
+
+# `n` as a JSON number; every number here is a place or a count.
+function count_json(n: i64) -> json.Value
+    return .number(v: n.to_f64())
+
+# `t` as a JSON text, or `null` where it is "".
+function text_or_null(t: str) -> json.Value
+    if t.len() == 0
+        return .null_value
+    return .text(v: t)
+
+# Every board's name and title, in their places.
+#
+# - `s`: the store.
+function boards_json(@s: store.Store) -> json.Value?
+    out: [json.Value] @= []
+
+    for b in boards.boards(@s)?
+        out @ out.push(object([pair("id", text(b.id)), pair("title", text(b.title))]))
+
+    return ok(.list(items: out))
+
+# Board `board` whole as the page draws it: its columns, each with its cards
+# and their HTML, and what undo and redo would do. Fails `not_found`.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+function board_json(@s: store.Store, board: str) -> json.Value?
+    b = boards.board_named(@s, id: board)?
+    columns: [json.Value] @= []
+
+    for c in boards.columns(@s, board: board)?
+        in_it: [json.Value] @= []
+
+        for card in cards.in_column(@s, column: c.id)?
+            in_it @ in_it.push(
+                object([pair("id", text(card.id)), pair("title", text(card.title)), pair("html", text(notes.html_of(card.body)))])
+            )
+
+        columns @ columns.push(
+            object([pair("id", text(c.id)), pair("title", text(c.title)), pair("cards", .list(items: in_it))])
+        )
+
+    return ok(
+        object([pair("id", text(b.id)), pair("title", text(b.title)), pair("updated", text(b.updated)), pair("columns", .list(items: columns)), pair("undo", text_or_null(history.undo_label(@s)?)), pair("redo", text_or_null(history.redo_label(@s)?))])
+    )
+
+# Card `c` whole, for the editor.
+function card_json(c: model.Card) -> json.Value
+    return object(
+        [pair("id", text(c.id)), pair("column", text(c.column)), pair("title", text(c.title)), pair("body", text(c.body)), pair("html", text(notes.html_of(c.body))), pair("created", text(c.created)), pair("updated", text(c.updated))]
+    )
+
+# Column `c`.
+function column_json(c: model.Column) -> json.Value
+    return object(
+        [pair("id", text(c.id)), pair("board", text(c.board)), pair("title", text(c.title)), pair("position", count_json(c.position))]
+    )
+
+# The cards a search found, the best first.
+function found_json(hits: [finder.Found]) -> json.Value
+    out: [json.Value] @= []
+
+    for h in hits
+        out @ out.push(
+            object([pair("card", text(h.card.id)), pair("title", text(h.card.title)), pair("column", text(h.column))])
+        )
+
+    return .list(items: out)

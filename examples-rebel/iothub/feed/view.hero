@@ -1,0 +1,107 @@
+# A dashboard's view of the hub's feed: one line for each message as it
+# comes, and a board of every device's latest values, one row a device in
+# the order the devices first spoke. `iothub watch` prints both, and the
+# demo's dashboard is drawn by the same functions, so what the demo prints
+# is what a person watching the hub sees.
+#
+# Times are shown in UTC, cut to the second: a dashboard of devices spread
+# over time zones reads one clock.
+
+use <rebel>/strings
+use <rebel>/time
+
+use codecs/reading
+use feed/messages
+
+# The board: every device's latest reading.
+record Board
+    # The devices, in the order they first sent a reading.
+    devices: [str]
+    # The latest reading of each.
+    latest: {str: reading.Reading}
+    # The events seen.
+    events: i64
+
+# An empty board.
+function new_board() -> Board
+    return Board(devices: [], latest: {}, events: 0)
+
+# The time of day of `t`, in UTC: `09:00:03`.
+#
+# - `t`: the moment.
+function clock_of(t: time.Instant) -> str
+    return time.format(t, layout: .time_only)
+
+# The line a dashboard shows for `m`.
+#
+# - `m`: the message.
+function line_of(m: messages.Message) -> str
+    return match m
+        .reading got => f"{got.r.device} ({got.r.source}, {got.r.encoding}) at {clock_of(got.r.taken)}: {reading.values_line(got.r)}"
+        .event e => f"! {e.topic}: {e.text}"
+
+# Takes `m` into the board.
+#
+# - `b`: the board.
+# - `m`: the message.
+function take(@b: Board, m: messages.Message)
+    match m
+        .reading got =>
+            if b.latest[got.r.device].is_err()
+                devices @= b.devices
+                devices @ devices.push(got.r.device)
+                b.devices @ devices
+
+            b.latest[got.r.device] @ got.r
+        .event _ => b.events @ b.events + 1
+
+# The board's rows: each device's name padded to the longest, the time of
+# its latest reading and its values.
+#
+# - `b`: the board.
+function rows(b: Board lent) -> [str]
+    width @= 0
+
+    for d in b.devices
+        if d.len() > width
+            width @ d.len()
+
+    lines: [str] @= []
+
+    for d in b.devices
+        r = b.latest[d].must()
+        lines @ lines.push(
+            f"{strings.pad_end(s: d, width: width, pad: " ")}  {clock_of(r.taken)}  {reading.values_line(r)}"
+        )
+
+    return lines
+
+# A reading of the tests from `device`.
+#
+# - `device`: the device's name.
+# - `value`: its temperature.
+function sample(device: str, value: f64) -> reading.Reading
+    at = time.parse("2026-11-22T08:59:58Z", layout: .rfc3339).must()
+    return reading.Reading(
+        device: device,
+        id: "x",
+        source: "mqtt",
+        encoding: "cbor",
+        taken: at,
+        received: at,
+        values: [reading.Measurement(quantity: "temperature", value: value, unit: "Cel")],
+        size: 20
+    )
+
+test "line_of: a reading and an event"
+    assert line_of(.reading(r: sample("fridge-07", value: 4.5))) == "fridge-07 (mqtt, cbor) at 08:59:58: temperature 4.5 Cel"
+    assert line_of(.event(topic: "cold-chain", text: "sent")) == "! cold-chain: sent"
+
+test "take, rows: the latest reading kept, devices in the order they first spoke, names padded"
+    b @= new_board()
+    take(@b, m: .reading(r: sample("fridge-07", value: 4.5)))
+    take(@b, m: .reading(r: sample("wx-1", value: 21.5)))
+    take(@b, m: .reading(r: sample("fridge-07", value: 9.25)))
+    take(@b, m: .event(topic: "x", text: "y"))
+    assert rows(b) == ["fridge-07  08:59:58  temperature 9.25 Cel", "wx-1       08:59:58  temperature 21.5 Cel"]
+    assert b.events == 1

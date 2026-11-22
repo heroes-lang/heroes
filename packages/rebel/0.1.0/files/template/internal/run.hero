@@ -93,10 +93,33 @@ function placed(step: program.Step lent, source: str, msg: str) -> str
         return where
     return json.quote(source) + ", " + where
 
-# The text the part `entry` of `compiled` makes of `value`. Fails `not_found`
-# where a value is not there, `invalid` where one is of the wrong kind or
-# `include` runs deeper than `MAX_DEPTH`.
+# The text the part `entry` of `compiled` makes of `value`, for a set that
+# holds no `CLEAN` step, which the face refuses to render here (`cleans`).
+# Fails as `render_with` does.
 function render(compiled: program.Program lent, entry: i64, value: json.Value) -> str?
+    return render_with(compiled, entry: entry, value: value, state: 0, clean: as_text)
+
+# A `CLEAN` step's text escaped as text, never markup: what `render` hands
+# `render_with` for a step the face never lets it reach.
+function as_text(_: i64, piece: program.Fragment) -> str
+    return escape_text.html_text(piece.text)
+
+# Whether a part of `compiled` holds a `CLEAN` step, which only a render
+# handed a policy runs.
+function cleans(compiled: program.Program lent) -> bool
+    for part in compiled.parts
+        for s in part.steps
+            if s.kind == program.CLEAN
+                return true
+
+    return false
+
+# The text the part `entry` of `compiled` makes of `value`, each `CLEAN`
+# step's text written as `clean` answers it, called with `state` and the
+# text and the element it lands in. Fails `not_found` where a value is not
+# there, `invalid` where one is of the wrong kind, a `CLEAN` step's not a
+# text among them, or `include` runs deeper than `MAX_DEPTH`.
+function render_with<S>(compiled: program.Program lent, entry: i64, value: json.Value, state: S, clean: (function(S, program.Fragment) -> str)) -> str?
     out: [str] @= []
 
     # The frames of the parts that ran an `include`, the newest last: where
@@ -141,6 +164,19 @@ function render(compiled: program.Program lent, entry: i64, value: json.Value) -
                     match written(v, s)
                         .err e   => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
                         .ok text => out @ out.push(text)
+
+            pc @ pc + 1
+        else if kind == program.CLEAN
+            match values.evaluate(s.cond.left, dot, slots, base)
+                .err e => return fail(code: e.code, msg: placed(s, source: source, msg: e.msg))
+                .ok v =>
+                    match v
+                        .text t => out @ out.push(clean(state, program.Fragment(element: s.text, text: t.v)))
+                        .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                            return fail(
+                                code: "invalid",
+                                msg: placed(s, source: source, msg: f"`clean` writes a text of HTML, and {s.cond.left.operand.written} is {values.kind_named(v)}")
+                            )
 
             pc @ pc + 1
         else if kind == program.JUMP

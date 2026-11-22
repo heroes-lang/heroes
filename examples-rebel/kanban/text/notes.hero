@@ -1,0 +1,44 @@
+# A card's notes as the page shows them: Markdown (CommonMark and GFM's
+# tables) written as HTML by `markdown`, which writes a tag typed in the
+# notes as text, then cleaned by `html/sanitize`'s policy for user-generated
+# content, so no script, no handler, no style and no URL of another scheme
+# than `http`, `https` and `mailto` reaches the page. The page's own content security policy runs no script written in
+# HTML either; the two are kept apart on purpose, so either alone holds.
+
+use <rebel>/html/sanitize
+use <rebel>/markdown
+
+# The HTML of `body`, cleaned: what the page puts into a card.
+#
+# - `body`: the notes, Markdown.
+function html_of(body: str) -> str
+    return sanitize.clean(sanitize.ugc_policy(), markdown.to_html(body))
+
+## Tests
+
+test "html_of: emphasis, a list and a table become HTML"
+    assert html_of("Draft **two** paragraphs") == "<p>Draft <strong>two</strong> paragraphs</p>\n"
+    assert html_of("- a\n- b") == "<ul>\n<li>a</li>\n<li>b</li>\n</ul>\n"
+    assert html_of("| a |\n|---|\n| 1 |").len() > 0
+
+test "html_of: a script and an image typed are text, not tags; a javascript URL is no link; a link is nofollow"
+    cleaned = html_of("<script>alert(1)</script><img src=x onerror=alert(1)> [x](javascript:alert(1))")
+    assert !holds(text: cleaned, part: "<script")
+    assert !holds(text: cleaned, part: "<img")
+    assert !holds(text: cleaned, part: "href=")
+    assert holds(text: cleaned, part: "&lt;script&gt;")
+    assert html_of("[The hall](https://example.com)") == "<p><a href=\"https://example.com\" rel=\"nofollow\">The hall</a></p>\n"
+
+test "html_of: nothing for no notes"
+    assert html_of("") == ""
+
+# Whether `text` holds `part`.
+function holds(text: str, part: str) -> bool
+    if part.len() > text.len()
+        return false
+
+    for at in range(from: 0, to: text.len() - part.len() + 1)
+        if text.slice(from: at, to: at + part.len()) == part
+            return true
+
+    return false

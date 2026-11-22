@@ -1,0 +1,125 @@
+== the brokers ==
+the MQTT, AMQP and NATS stand-ins listen on the loopback
+the AMQP stand-in will restart at the third publish to the exchange alerts
+
+== the registry, identities minted by a seeded generator ==
+fridge-07  fed9112b-eb30-4e0b-8155-d54d094f631f  mqtt devices/fridge-07/up  cbor senml
+press-2    8740328e-a21e-4f12-a13d-b240a50a8ca8  amqp plant/line1.press-2.vibration  protobuf plant.Vibration
+tracker-3  35a7b02b-ba94-47dc-833c-22e88e0e956e  nats fleet.tracker-3.position  msgpack
+wx-1       18897650-a764-4346-b6c4-2dd6ee7916b4  serial bench  nmea xdr
+wx-1 speaks on a pseudo-terminal at 4800 baud, its other side the hub's port bench
+
+== the hub ==
+the hub serves its feed and metrics on the loopback, linked to MQTT, AMQP and NATS, its gateway reading bench
+rule cold-chain: mqtt:devices/+/up when temperature > 8 to amqp:alerts/coldchain.{device}
+rule vibration-high: amqp:plant/line1.# when vibration_rms > 4.5 to mqtt:plant/alarms/{device}
+rule battery-low: nats:fleet.> when battery < 20 to amqp:alerts/battery.{device}
+rule weather: serial:* to mqtt:weather/{device}
+every reading is re-published as JSON to nats:iothub.readings.{device}
+the historian subscribes to iothub.readings.> on NATS
+the pager reads its durable queue oncall.alerts on AMQP, bound to alerts by coldchain.# and battery.#
+the panel subscribes to plant/alarms/# and weather/# on MQTT
+the dashboard opens the hub's feed, a WebSocket
+
+== fridge-07: SenML in CBOR over MQTT ==
+fridge-07 sends a pack of 70 bytes: temp 4.5 Cel, hum 61 %RH
+dashboard: fridge-07 (mqtt, cbor) at 08:59:58: temperature 4.5 Cel, humidity 61 %RH
+historian keeps the reading as the hub re-publishes it, on iothub.readings.fridge-07 {"device":"fridge-07","id":"fed9112b-eb30-4e0b-8155-d54d094f631f","source":"mqtt","encoding":"cbor","taken":"2026-11-22T08:59:58Z","received":"2026-11-22T09:00:00Z","size":70,"values":[{"quantity":"temperature","value":4.5,"unit":"Cel"},{"quantity":"humidity","value":61,"unit":"%RH"}]}
+fridge-07 sends a pack of 76 bytes: temp 9.2 Cel, hum 63 %RH, above the cold chain's 8
+dashboard: fridge-07 (mqtt, cbor) at 08:59:59: temperature 9.2 Cel, humidity 63 %RH
+dashboard: ! cold-chain: fridge-07 to amqp:alerts/coldchain.fridge-07
+historian: iothub.readings.fridge-07: fridge-07 temperature 9.2 Cel, humidity 63 %RH
+pager: alerts/coldchain.fridge-07: fridge-07 temperature 9.2 Cel, humidity 63 %RH
+
+== press-2: Protocol Buffers over AMQP ==
+press-2 publishes a plant.Vibration of 35 bytes, confirmed by the broker: rms 2.1 mm/s
+dashboard: press-2 (amqp, protobuf) at 09:00:00: vibration_rms 2.1 mm/s, vibration_peak 0.4 g
+historian: iothub.readings.press-2: press-2 vibration_rms 2.1 mm/s, vibration_peak 0.4 g
+press-2 publishes a plant.Vibration of 35 bytes: rms 6.8 mm/s, past the limit of 4.5
+dashboard: press-2 (amqp, protobuf) at 09:00:01: vibration_rms 6.8 mm/s, vibration_peak 1.9 g
+dashboard: ! vibration-high: press-2 to mqtt:plant/alarms/press-2
+historian: iothub.readings.press-2: press-2 vibration_rms 6.8 mm/s, vibration_peak 1.9 g
+panel: plant/alarms/press-2: press-2 vibration_rms 6.8 mm/s, vibration_peak 1.9 g
+
+== tracker-3: MessagePack over NATS ==
+tracker-3 sends a fix of 50 bytes: 45.0703, 7.6869 at 42.5 km/h, battery 64 %
+dashboard: tracker-3 (nats, msgpack) at 09:00:02: latitude 45.0703 deg, longitude 7.6869 deg, speed 42.5 km/h, battery 64 %
+historian: iothub.readings.tracker-3: tracker-3 latitude 45.0703 deg, longitude 7.6869 deg, speed 42.5 km/h, battery 64 %
+tracker-3 sends a fix of 50 bytes: parked, battery 15 %
+dashboard: tracker-3 (nats, msgpack) at 09:00:03: latitude 45.0712 deg, longitude 7.6901 deg, speed 0 km/h, battery 15 %
+dashboard: ! battery-low: tracker-3 to amqp:alerts/battery.tracker-3
+historian: iothub.readings.tracker-3: tracker-3 latitude 45.0712 deg, longitude 7.6901 deg, speed 0 km/h, battery 15 %
+pager: alerts/battery.tracker-3: tracker-3 latitude 45.0712 deg, longitude 7.6901 deg, speed 0 km/h, battery 15 %
+
+== wx-1: NMEA 0183 on a serial line ==
+wx-1 sends $WIXDR,C,21.5,C,AIR,H,48.2,P,RH,P,1.0132,B,BARO*13
+dashboard: wx-1 (serial, nmea) at 09:00:06: air_temperature 21.5 Cel, humidity 48.2 %RH, pressure 1.0132 bar
+dashboard: ! weather: wx-1 to mqtt:weather/wx-1
+historian: iothub.readings.wx-1: wx-1 air_temperature 21.5 Cel, humidity 48.2 %RH, pressure 1.0132 bar
+panel: weather/wx-1: wx-1 air_temperature 21.5 Cel, humidity 48.2 %RH, pressure 1.0132 bar
+wx-1 sends $WIXDR,C,21.6,C,AIR,H,48.2,P,RH,P,1.0132,B,BARO*13, a digit changed on the line
+dashboard: ! refused: wx-1: the sentence sums to *10, not its checksum *13
+
+== what the hub refuses ==
+fridge-07 sends a pack cut to 69 of its 76 bytes
+dashboard: ! refused: fridge-07: no CBOR: byte 68: 3 items of 1 bytes or more where 0 bytes remain
+ghost-1, which nobody registered, sends a pack on its own uplink
+dashboard: ! unregistered: no device is registered at mqtt devices/ghost-1/up
+
+== the AMQP broker restarts ==
+fridge-07 sends temp 10.4 Cel; the alert it raises is the broker's third publish to alerts, where it restarts
+dashboard: fridge-07 (mqtt, cbor) at 09:00:07: temperature 10.4 Cel, humidity 64 %RH
+dashboard: ! amqp: lost: 320 CONNECTION_FORCED - broker forced connection closure with reason 'shutdown'; next attempt in 54 ms
+dashboard: ! cold-chain: fridge-07 held for amqp, 1 waiting
+dashboard: ! amqp: attempt 1 refused (permission); next attempt in 118 ms
+dashboard: ! amqp: attempt 2 refused (permission); next attempt in 151 ms
+dashboard: ! amqp: up again after 3 attempts; held publishes sent: 1
+historian: iothub.readings.fridge-07: fridge-07 temperature 10.4 Cel, humidity 64 %RH
+the pager and the press connect again, as every client of a restarted broker does
+pager: alerts/coldchain.fridge-07: fridge-07 temperature 10.4 Cel, humidity 64 %RH
+press-2 publishes rms 3.0 mm/s; the hub reads it from its durable queue again
+dashboard: press-2 (amqp, protobuf) at 09:00:08: vibration_rms 3 mm/s, vibration_peak 0.6 g
+historian: iothub.readings.press-2: press-2 vibration_rms 3 mm/s, vibration_peak 0.6 g
+
+== the dashboard's board ==
+fridge-07  09:00:07  temperature 10.4 Cel, humidity 64 %RH
+press-2    09:00:08  vibration_rms 3 mm/s, vibration_peak 0.6 g
+tracker-3  09:00:03  latitude 45.0712 deg, longitude 7.6901 deg, speed 0 km/h, battery 15 %
+wx-1       09:00:06  air_temperature 21.5 Cel, humidity 48.2 %RH, pressure 1.0132 bar
+events seen: 12
+
+== the hub's metrics, scraped from /metrics ==
+iothub_broker_reconnections_total{broker="amqp"} 1
+iothub_broker_up{broker="amqp"} 1
+iothub_broker_up{broker="mqtt"} 1
+iothub_broker_up{broker="nats"} 1
+iothub_feed_clients 1
+iothub_held_publishes{broker="amqp"} 0
+iothub_payload_bytes_sum{encoding="cbor"} 222
+iothub_payload_bytes_count{encoding="cbor"} 3
+iothub_payload_bytes_sum{encoding="msgpack"} 100
+iothub_payload_bytes_count{encoding="msgpack"} 2
+iothub_payload_bytes_sum{encoding="nmea"} 50
+iothub_payload_bytes_count{encoding="nmea"} 1
+iothub_payload_bytes_sum{encoding="protobuf"} 105
+iothub_payload_bytes_count{encoding="protobuf"} 3
+iothub_published_total{protocol="amqp",rule="battery-low"} 1
+iothub_published_total{protocol="amqp",rule="cold-chain"} 2
+iothub_published_total{protocol="mqtt",rule="vibration-high"} 1
+iothub_published_total{protocol="mqtt",rule="weather"} 1
+iothub_published_total{protocol="nats",rule="republish"} 9
+iothub_readings_total{device="fridge-07",source="mqtt"} 3
+iothub_readings_total{device="press-2",source="amqp"} 3
+iothub_readings_total{device="tracker-3",source="nats"} 2
+iothub_readings_total{device="wx-1",source="serial"} 1
+iothub_refused_payloads_total{code="invalid",device="fridge-07"} 1
+iothub_refused_payloads_total{code="invalid",device="wx-1"} 1
+iothub_unregistered_messages_total{source="mqtt"} 1
+/devices serves the registry of 4 devices
+
+== the stop ==
+the hub: 9 readings, 2 refused, 1 unregistered, 14 published, 1 held; links made again after a loss: 1; requests served: 3
+the NATS stand-in: 3 connections, 11 published, 11 delivered
+the AMQP stand-in: 8 connections, 6 published, 6 delivered, 6 acknowledged, 1 restart, 2 refused
+the MQTT stand-in: 4 connections, 7 published, 7 delivered, 0 taken over
+the demo's folder removed: true

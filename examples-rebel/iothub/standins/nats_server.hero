@@ -1,0 +1,502 @@
+# A loopback stand-in for a NATS server, so the demo's tracker, the hub and
+# the historian speak NATS's text protocol to something on this machine. It
+# runs on a thread of its own and serves every connection on one poll loop:
+# `INFO` sent first (headers not offered, so no client sends `HPUB`),
+# `CONNECT` read for its `verbose` and `echo`, `PING` answered `PONG`, `SUB`
+# and `UNSUB` kept with their queue groups and limits, and `PUB` routed as
+# `MSG` to every subscription whose subject matches: to one member of each
+# queue group in turn, and never back to a publisher whose `CONNECT` turned
+# echo off. Lines are acted on in the order they came, so a `PONG` answers a
+# client only once every `PUB` before its `PING` has been routed, which is
+# what a client's flush waits for. A line past 4,096 bytes, an operation it
+# does not know or anything but `CONNECT` and `PING` before `CONNECT` is
+# answered `-ERR` and the connection closed, as the NATS server does.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/json
+use <rebel>/nats
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/strings
+use <rebel>/time
+
+use standins/told
+
+# The longest control line read, its line end included.
+constant MOST_LINE_BYTES: i64
+    4_096
+
+# The largest payload published, which `INFO` says.
+constant MOST_PAYLOAD: i64
+    1_048_576
+
+# One subscription of a connection.
+record Sub
+    # The identifier the client gave it.
+    sid: str
+    # Its subject, wildcards allowed.
+    subject: str
+    # Its queue group, "" for none.
+    queue: str
+    # The messages after which it ends, 0 for no limit.
+    most: i64
+    # The messages delivered to it.
+    delivered: i64
+
+# One connection.
+record Peer
+    # Its key in the poll set.
+    key: i64
+    # Its stream, the stand-in's to close.
+    stream: io.Stream
+    # Bytes read and not yet acted on.
+    held: [u8]
+    # Whether its `CONNECT` came.
+    connected: bool
+    # Whether it asked for `+OK` after each operation.
+    verbose: bool
+    # Whether it receives its own messages.
+    echo: bool
+    # Its subscriptions.
+    subs: [Sub]
+    # Whether it is connected.
+    open: bool
+
+# The stand-in's connections and what it carried.
+record Server
+    # Every connection, in the order accepted; a closed one stays with `open`
+    # false.
+    peers: [Peer]
+    # `PUB` operations received.
+    published: i64
+    # `MSG` deliveries written.
+    delivered: i64
+    # The port it listens on, which `INFO` says.
+    port: i64
+    # For each queue group, the deliveries it has had, which choose its next
+    # member.
+    turns: {str: i64}
+
+# The `INFO` line a connection is greeted with.
+#
+# - `port`: the port the stand-in listens on.
+# - `client_id`: the number it gives the connection.
+function info_line(port: i64, client_id: i64) -> str
+    v: json.Value = .object(
+        members: {"server_id": .text(v: "NIOTHUBSTANDIN"), "server_name": .text(v: "iothub-standin"), "version": .text(v: "2.10.0"), "proto": .number(v: 1.0), "host": .text(v: "127.0.0.1"), "port": .number(v: to_f64(port)), "headers": .boolean(v: false), "max_payload": .number(v: to_f64(MOST_PAYLOAD)), "client_id": .number(v: to_f64(client_id))}
+    )
+    return f"INFO {json.format(v).default("{}")}\r\n"
+
+# Writes `text` to peer `i`, and answers whether it was written.
+#
+# - `s`: the stand-in.
+# - `i`: the peer's index.
+# - `text`: the protocol's text.
+function send(s: Server lent, i: i64, text: str) -> bool
+    return !io.write_text(s.peers[i].stream, text: text).is_err()
+
+# Closes the connection of peer `i`; one closed already is left as it is.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function drop_peer(@s: Server, set: poll.Set, i: i64)
+    if !s.peers[i].open
+        return
+
+    # A connection ends here whatever its socket answers.
+    _ = poll.remove(set, key: s.peers[i].key).is_err()
+    _ = io.close(@s.peers[i].stream).is_err()
+    s.peers[i].open @ false
+
+# Answers peer `i` with `-ERR` and closes it, as the server does for a
+# protocol error.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `why`: the error's words.
+function refuse(@s: Server, set: poll.Set, i: i64, why: str)
+    _ = send(s, i: i, text: f"-ERR '{why}'\r\n")
+    drop_peer(@s, set: set, i: i)
+
+# The flag `key` of the `CONNECT` options `v`, `otherwise` where absent.
+#
+# - `v`: the options.
+# - `key`: the member.
+# - `otherwise`: the flag where it is absent.
+function flag_of(v: json.Value, key: str, otherwise: bool) -> bool
+    return match json.member(v, key: key)
+        .ok m  => json.bool_of(m).default(otherwise)
+        .err _ => otherwise
+
+# Delivers a message on `subject` to every subscription that takes it, one
+# member of each queue group in turn.
+#
+# - `s`: the stand-in.
+# - `from`: the publisher's index.
+# - `subject`: the subject published to.
+# - `reply`: the subject an answer goes to, "" for none.
+# - `payload`: the data.
+function route(@s: Server, from: i64, subject: str, reply: str, payload: [u8])
+    s.published @ s.published + 1
+
+    # The subscriptions that take it, by peer and index, and the members of
+    # each queue group among them.
+    plain: [i64] @= []
+    groups: {str: [i64]} @= {}
+
+    for i in range(from: 0, to: s.peers.len())
+        if !s.peers[i].open || !s.peers[i].connected || i == from && !s.peers[i].echo
+            continue
+
+        for j in range(from: 0, to: s.peers[i].subs.len())
+            sub = s.peers[i].subs[j]
+
+            if nats.matches(pattern: sub.subject, subject: subject)
+                # A peer and a subscription in one number, so one list holds
+                # both: a peer holds fewer than a million subscriptions.
+                both = i * 1_000_000 + j
+
+                if sub.queue == ""
+                    plain @ plain.push(both)
+                else
+                    members @= groups[sub.queue].default([])
+                    members @ members.push(both)
+                    groups[sub.queue] @ members
+
+    for group in keys(groups)
+        members = groups[group].must()
+        turn = s.turns[group].default(0)
+        s.turns[group] @ turn + 1
+        plain @ plain.push(members[turn % members.len()])
+
+    for both in plain
+        deliver(@s, i: both / 1_000_000, j: both % 1_000_000, subject: subject, reply: reply, payload: payload)
+
+# Writes one `MSG` to subscription `j` of peer `i`, ending the subscription
+# once it reached its limit.
+#
+# - `s`: the stand-in.
+# - `i`: the peer's index.
+# - `j`: the subscription's index.
+# - `subject`: the subject published to.
+# - `reply`: the reply subject, "" for none.
+# - `payload`: the data.
+function deliver(@s: Server, i: i64, j: i64, subject: str, reply: str, payload: [u8])
+    sub = s.peers[i].subs[j]
+
+    head = if reply == ""
+        f"MSG {subject} {sub.sid} {payload.len()}\r\n"
+    else
+        f"MSG {subject} {sub.sid} {reply} {payload.len()}\r\n"
+
+    frame = bytes.concat([bytes.from_text(head), payload, [13, 10]])
+
+    if !io.write(s.peers[i].stream, data: frame).is_err()
+        s.delivered @ s.delivered + 1
+
+    s.peers[i].subs[j].delivered @ sub.delivered + 1
+
+    if sub.most > 0 && sub.delivered + 1 >= sub.most
+        kept: [Sub] @= []
+
+        for k in range(from: 0, to: s.peers[i].subs.len())
+            if k != j
+                kept @ kept.push(s.peers[i].subs[k])
+
+        s.peers[i].subs @ kept
+
+# Acts on the operation `parts` of peer `i`, and answers how many bytes of
+# what it holds the operation took, its payload included: 0 where a
+# payload has not all come.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `parts`: the control line's words.
+# - `after`: the index of the byte after the line's end in what it holds.
+function on_operation(@s: Server, set: poll.Set, i: i64, parts: [str], after: i64) -> i64
+    op = strings.to_upper(parts[0])
+
+    if op == "PUB"
+        if parts.len() != 3 && parts.len() != 4
+            refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+            return after
+
+        size = match numbers.parse_int(parts[parts.len() - 1])
+            .ok n => n
+            .err _ =>
+                refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+                return after
+
+        if size < 0 || size > MOST_PAYLOAD
+            refuse(@s, set: set, i: i, why: "Maximum Payload Violation")
+            return after
+
+        held = s.peers[i].held
+
+        if held.len() < after + size + 2
+            return 0
+
+        if held[after + size] != 13 || held[after + size + 1] != 10
+            refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+            return after
+
+        reply = if parts.len() == 4
+            parts[2]
+        else
+            ""
+
+        if nats.is_valid_subject(parts[1])
+            route(@s, from: i, subject: parts[1], reply: reply, payload: held.slice(from: after, to: after + size))
+            ok_if_verbose(s, i: i)
+        else
+            _ = send(s, i: i, text: "-ERR 'Invalid Publish Subject'\r\n")
+
+        return after + size + 2
+
+    if op == "SUB" && (parts.len() == 3 || parts.len() == 4)
+        queue = if parts.len() == 4
+            parts[2]
+        else
+            ""
+
+        if !nats.is_valid_filter(parts[1])
+            _ = send(s, i: i, text: "-ERR 'Invalid Subject'\r\n")
+            return after
+
+        subs @= s.peers[i].subs
+        subs @ subs.push(Sub(sid: parts[parts.len() - 1], subject: parts[1], queue: queue, most: 0, delivered: 0))
+        s.peers[i].subs @ subs
+        ok_if_verbose(s, i: i)
+        return after
+
+    if op == "UNSUB" && (parts.len() == 2 || parts.len() == 3)
+        most = if parts.len() == 3
+            numbers.parse_int(parts[2]).default(0)
+        else
+            0
+
+        kept: [Sub] @= []
+
+        for sub in s.peers[i].subs
+            if sub.sid != parts[1]
+                kept @ kept.push(sub)
+            else if most > sub.delivered
+                limited @= sub
+                limited.most @ most
+                kept @ kept.push(limited)
+
+        s.peers[i].subs @ kept
+        ok_if_verbose(s, i: i)
+        return after
+
+    refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+    return after
+
+# Answers `+OK` to peer `i` where its `CONNECT` asked for it.
+#
+# - `s`: the stand-in.
+# - `i`: the peer's index.
+function ok_if_verbose(s: Server lent, i: i64)
+    if s.peers[i].verbose
+        _ = send(s, i: i, text: "+OK\r\n")
+
+# Acts on every whole control line and payload peer `i` holds.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_held(@s: Server, set: poll.Set, i: i64)
+    while s.peers[i].open
+        held = s.peers[i].held
+
+        end = match bytes.index_of(s: held, substr: [13, 10])
+            .ok at => at
+            .err _ =>
+                if held.len() > MOST_LINE_BYTES
+                    refuse(@s, set: set, i: i, why: "Maximum Control Line Exceeded")
+                return
+
+        if end > MOST_LINE_BYTES
+            refuse(@s, set: set, i: i, why: "Maximum Control Line Exceeded")
+            return
+
+        line = match bytes.to_text(held.slice(from: 0, to: end))
+            .ok t => t
+            .err _ =>
+                refuse(@s, set: set, i: i, why: "Unknown Protocol Operation")
+                return
+
+        used = on_line(@s, set: set, i: i, line: line, after: end + 2)
+
+        if used == 0
+            return
+
+        if s.peers[i].open
+            rest = s.peers[i].held
+            s.peers[i].held @ rest.slice(from: used, to: rest.len())
+
+# Acts on the control line `line` of peer `i`; answers the bytes it took,
+# 0 where its payload has not all come.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `line`: the line, without its end.
+# - `after`: the index of the byte after the line's end.
+function on_line(@s: Server, set: poll.Set, i: i64, line: str, after: i64) -> i64
+    parts = strings.words(line)
+
+    if parts.len() == 0
+        return after
+
+    op = strings.to_upper(parts[0])
+
+    if op == "PING"
+        _ = send(s, i: i, text: "PONG\r\n")
+        return after
+
+    if op == "PONG"
+        return after
+
+    if op == "CONNECT"
+        options = match json.parse(strings.trim(line.slice(from: 7, to: line.len())))
+            .ok v => v
+            .err _ =>
+                refuse(@s, set: set, i: i, why: "Invalid Protocol")
+                return after
+
+        s.peers[i].verbose @ flag_of(options, key: "verbose", otherwise: false)
+        s.peers[i].echo @ flag_of(options, key: "echo", otherwise: true)
+        s.peers[i].connected @ true
+        ok_if_verbose(s, i: i)
+        return after
+
+    if !s.peers[i].connected
+        refuse(@s, set: set, i: i, why: "Authorization Violation")
+        return after
+
+    return on_operation(@s, set: set, i: i, parts: parts, after: after)
+
+# Reads what peer `i` sent and acts on it.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_readable(@s: Server, set: poll.Set, i: i64)
+    data = match io.read(s.peers[i].stream, n: 65_536)
+        .ok d => d
+        .err _ =>
+            drop_peer(@s, set: set, i: i)
+            return
+
+    if data.len() == 0
+        drop_peer(@s, set: set, i: i)
+        return
+
+    bytes.push_all(to: @s.peers[i].held, from: data)
+    on_held(@s, set: set, i: i)
+
+# Accepts the connection `l` holds, greets it with `INFO` and adds it to the
+# set.
+#
+# - `s`: the stand-in.
+# - `set`: the poll set.
+# - `l`: the listener.
+function accept(@s: Server, set: poll.Set, l: net.Listener lent)
+    conn @= match net.accept(l, deadline_ms: net.FOREVER)
+        .ok c  => c
+        .err _ => return
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            _ = io.close(@conn.stream).is_err()
+            return
+
+    peers @= s.peers
+    peers @ peers.push(
+        Peer(key: key, stream: conn.stream, held: [], connected: false, verbose: false, echo: true, subs: [], open: true)
+    )
+    s.peers @ peers
+    _ = send(s, i: s.peers.len() - 1, text: info_line(port: s.port, client_id: s.peers.len()))
+
+# Listens on the loopback, tells the starter at `told_port` where, serves
+# until the program's stop, and answers what it carried.
+#
+# - `told_port`: the port of the starter's socket.
+#
+# Fails as `net.listen` and `poll.make` fail, the starter told first.
+function serve_on(told_port: i64) -> str?
+    l @= match net.listen(host: "127.0.0.1", port: 0)
+        .ok got => got
+        .err e =>
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    set @= match poll.make(256)
+        .ok got => got
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    listening = match poll.add_listener(set, l: l)
+        .ok key => key
+        .err e =>
+            _ = poll.close(@set).is_err()
+            _ = net.close_listener(@l).is_err()
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    told.ready(port: told_port, listening: l.address.port)?
+    s @= Server(peers: [], published: 0, delivered: 0, port: l.address.port, turns: {})
+
+    while true
+        events = match poll.wait(set, limit: time.hours(1).must())
+            .ok got => got
+            .err _  => break
+
+        for e in events
+            if e.key == listening
+                accept(@s, set: set, l: l)
+            else
+                for i in range(from: 0, to: s.peers.len())
+                    if s.peers[i].open && s.peers[i].key == e.key
+                        on_readable(@s, set: set, i: i)
+
+    for i in range(from: 0, to: s.peers.len())
+        drop_peer(@s, set: set, i: i)
+
+    poll.close(@set)?
+    net.close_listener(@l)?
+    return ok(f"the NATS stand-in: {s.peers.len()} connections, {s.published} published, {s.delivered} delivered")
+
+# The body of the stand-in's thread: serves until the program's stop.
+#
+# - `arg`: the port of the starter's socket, in decimal.
+function run(arg: str) -> str
+    told_port = match numbers.parse_int(arg)
+        .ok p  => p
+        .err _ => return f"the NATS stand-in: \"{arg}\" is no port"
+
+    return match serve_on(told_port)
+        .ok said => said
+        .err e   => f"the NATS stand-in failed: {e.msg}"
+
+test "info_line: one line of JSON after INFO, headers not offered"
+    line = info_line(port: 4222, client_id: 3)
+    assert strings.has_prefix(s: line, prefix: "INFO {") && strings.has_suffix(s: line, suffix: "}\r\n")
+    v = json.parse(line.slice(from: 5, to: line.len() - 2)).must()
+    assert json.member(v, key: "headers").must() == .boolean(v: false)
+    assert json.int_of(json.member(v, key: "client_id").must()).must() == 3
+
+test "flag_of: present, absent, and of another kind"
+    v = json.parse("{\"echo\": false, \"verbose\": 1}").must()
+    assert !flag_of(v, key: "echo", otherwise: true)
+    assert flag_of(v, key: "pedantic", otherwise: true)
+    assert !flag_of(v, key: "verbose", otherwise: false)

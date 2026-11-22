@@ -9,7 +9,8 @@
 # What it does NOT do: draw a widget of its own, or anything into a window
 # (a drawing area is pending); a full-screen program in a terminal (`tui`);
 # decode an image file (`image`'s subpackages, whose `image.Image` a
-# `picture` shows); show a web page (`ui/webview`, pending).
+# `picture` shows); show a web page, its assets and its bridge
+# (`ui/webview`, whose web view is a widget of this package's app).
 #
 # **No callbacks: the program asks.** The language has no closures, so no
 # widget calls the program back. `wait` runs the system's loop for a bounded
@@ -70,19 +71,19 @@
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: the system's web view
-# as a widget, with a bridge to its scripts; a thread's message to the user
-# interface, through feature 2647's mailbox; a box drawn with a title and a
-# frame around it; a text field whose text is masked; a combo box the person
-# may type into; a progress bar that moves with no value; a number typed, or
-# stepped up and down; a line between the widgets of a box; a menu inside a
-# menu; the system's dialog to choose a folder; pages chosen by tabs; rows of
-# cells in columns; a tree of items folded and unfolded; a box whose content
-# scrolls; two panes whose border the person drags; an area the program draws
-# into, with its keys and its mouse; the widget that has the keys, set and
-# asked; a tip shown over a widget; the system's clipboard; a date, a colour
-# or a font chosen in the system's own picker; an icon in the system's tray or
-# menu bar, and its notifications; a file dragged onto a window.
+# Not written yet, each a `pending` block of its ledger: a thread's message to
+# the user interface, through feature 2647's mailbox; a box drawn with a title
+# and a frame around it; a text field whose text is masked; a combo box the
+# person may type into; a progress bar that moves with no value; a number
+# typed, or stepped up and down; a line between the widgets of a box; a menu
+# inside a menu; the system's dialog to choose a folder; pages chosen by tabs;
+# rows of cells in columns; a tree of items folded and unfolded; a box whose
+# content scrolls; two panes whose border the person drags; an area the
+# program draws into, with its keys and its mouse; the widget that has the
+# keys, set and asked; a tip shown over a widget; the system's clipboard; a
+# date, a colour or a font chosen in the system's own picker; an icon in the
+# system's tray or menu bar, and its notifications; a file dragged onto a
+# window.
 
 use bytes
 use image
@@ -267,7 +268,7 @@ variant Kind
     menu_separator
     # A clock that fires at a period.
     timer
-    # The system's web view. No maker makes one yet: `ui/webview` will.
+    # The system's web view, made by `ui/webview`'s `webview`.
     webview
 
 # What `widget` is.
@@ -860,8 +861,8 @@ variant Event
         width: i64
         # Its content's height now, in points.
         height: i64
-    # A web view's page sent a text. No side sends it yet: `ui/webview`
-    # will.
+    # A web view's page sent a text by its bridge, `heroes.send` (the
+    # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
         # The web view.
         widget: Widget
@@ -944,6 +945,15 @@ variant Input
         paths: [str]
     # Cancels the next file dialog.
     cancel_files
+    # Has a web view's page send a text by its bridge, as its own script's
+    # `heroes.send` would: given once the web view shows a page of the
+    # app's own origin, which on the headless side is once `ui/webview`'s
+    # `navigate` named one.
+    send
+        # The web view.
+        widget: Widget
+        # The text, without a zero byte.
+        text: str
 
 # Queues `input`, what a person does: the next `wait` that has no event
 # ready gives it, through the system's own path on the native side, so its

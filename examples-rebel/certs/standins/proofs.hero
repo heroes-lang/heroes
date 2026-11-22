@@ -1,0 +1,146 @@
+# The stand-in CA's authorizations and challenges (RFC 8555 § 7.5): an
+# authorization read by its account, and a challenge answered, its answer
+# checked by `standins/validation` at once (HTTP-01 fetched, DNS-01 asked,
+# then CAA) before the challenge, its authorization and every order holding
+# it are made valid or invalid.
+
+use <rebel>/http
+
+use standins/jws
+use standins/objects
+use standins/replies
+use standins/validation
+
+## Authorizations and challenges
+
+# An authorization's URL posted to as a GET.
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the authorization's id.
+function authz(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if id < 1 || id > s.authzs.len() || s.authzs[id - 1].account != auth.account
+        return objects.missing(detail: "no authorization of this account is there")
+    return replies.located(objects.authz_json(s, a: s.authzs[id - 1]), status: 200, location: "")
+
+# A challenge's URL posted to with `{}`: the answer checked now, the
+# challenge, its authorization and their orders made valid or invalid; a
+# challenge already settled answered as it stands. A POST-as-GET reads it.
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the challenge's id.
+function challenge(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    place = match challenge_place(s, id: id)
+        .ok p  => p
+        .err _ => return objects.missing(detail: "no challenge is there")
+
+    held = s.authzs[place.authz]
+
+    if held.account != auth.account
+        return objects.problem_response(kind: "unauthorized", detail: "a challenge is answered by its own account")
+    c = held.challenges[place.at]
+
+    if auth.payload.len() == 0 || c.status != "pending" || held.status != "pending"
+        return replies.located(objects.challenge_json(s, c: c), status: 200, location: "")
+    key_authorization = c.token + "." + s.accounts[auth.account - 1].thumbprint
+    checked = checked_answer(s, a: held, c: c, key_authorization: key_authorization)
+
+    match checked
+        .ok _ =>
+            s.authzs[place.authz].challenges[place.at].status @ "valid"
+            s.authzs[place.authz].status @ "valid"
+            s.counts.proved @ s.counts.proved + 1
+        .err e =>
+            problem = objects.problem_text(kind: e.code, detail: e.msg)
+            s.authzs[place.authz].challenges[place.at].status @ "invalid"
+            s.authzs[place.authz].challenges[place.at].error @ problem
+            s.authzs[place.authz].status @ "invalid"
+            s.counts.failed @ s.counts.failed + 1
+
+    settle_orders(@s, changed: held.id)
+    return replies.located(
+        objects.challenge_json(s, c: s.authzs[place.authz].challenges[place.at]),
+        status: 200,
+        location: ""
+    )
+
+# The answer of `c` checked as the CA checks it, then CAA for a name.
+#
+# - `s`: the state.
+# - `a`: the authorization.
+# - `c`: the challenge answered.
+# - `key_authorization`: the token and the account key's thumbprint.
+#
+# Fails with the problem type `standins/validation` names.
+function checked_answer(s: objects.State, a: objects.Authz, c: objects.Challenge, key_authorization: str) -> ()?
+    if c.kind == "http-01"
+        validation.http01(dns_port: s.dns_port, port: s.http01_port, kind: a.identifier.kind, value: a.identifier.value, token: c.token, expected: key_authorization)?
+    else
+        validation.dns01(dns_port: s.dns_port, domain: a.identifier.value, expected_key: key_authorization)?
+
+    if a.identifier.kind == "dns"
+        validation.caa(dns_port: s.dns_port, domain: a.identifier.value, wildcard: a.wildcard, identity: s.identity, origin: s.origin)?
+    return ok()
+
+# Every order holding the authorization `changed` brought up to date: invalid
+# where one of its authorizations is, its problem the order's; ready once
+# all are valid.
+#
+# - `s`: the state.
+# - `changed`: the authorization's id.
+function settle_orders(@s: objects.State, changed: i64)
+    for k in range(from: 0, to: s.orders.len())
+        o = s.orders[k]
+
+        if o.status == "pending" && replies.holds_id(o.authzs, id: changed)
+            all_valid @= true
+            failed_with @= ""
+
+            for id in o.authzs
+                a = s.authzs[id - 1]
+
+                if a.status == "invalid" && failed_with == ""
+                    for c in a.challenges
+                        if c.error != ""
+                            failed_with @ c.error
+
+                if a.status != "valid"
+                    all_valid @ false
+
+            if failed_with != ""
+                s.orders[k].status @ "invalid"
+                s.orders[k].error @ failed_with
+            else if all_valid
+                s.orders[k].status @ "ready"
+
+# Where a challenge stands: its authorization's index and its own.
+record Place
+    # The authorization's index in the state's list.
+    authz: i64
+    # The challenge's index in it.
+    at: i64
+
+# The place of the challenge `id`.
+#
+# - `s`: the state.
+# - `id`: the challenge's id.
+#
+# Fails `not_found` where none has it.
+function challenge_place(s: objects.State, id: i64) -> Place?
+    for k in range(from: 0, to: s.authzs.len())
+        challenges = s.authzs[k].challenges
+
+        for j in range(from: 0, to: challenges.len())
+            if challenges[j].id == id
+                return ok(Place(authz: k, at: j))
+
+    return fail(code: "not_found", msg: f"no challenge {id}")

@@ -1,0 +1,340 @@
+# Every check of one locale's catalogue: its header's plural forms held to
+# CLDR's, and each translated message held to its source by
+# `check/placeholders` and `check/text_checks`.
+#
+# A plural message's forms are checked one by one against the source text
+# their category stands for. A form whose category only one whole number
+# reaches, English and German `one` for 1, Arabic `zero` and `two`, may
+# leave out the count placeholder, as "Ein Artikel" does; any other form must
+# keep every placeholder of its source, since Russian `one` is also 21 and
+# 101 and "один товар" would be wrong for them. Untranslated messages are not
+# findings: coverage reports them.
+
+use <rebel>/i18n
+use <rebel>/unicode/normalize
+
+use catalog/messages
+use check/findings
+use check/placeholders
+use check/text_checks
+use plural/gettext_forms
+use plural/samples
+
+## The checks
+
+# The patterns both kinds of check compile, once for a run.
+record Patterns
+    # The placeholders' patterns.
+    placeholders: placeholders.Patterns
+    # The text checks' patterns.
+    text: text_checks.Patterns
+
+# Every pattern compiled.
+function patterns() -> Patterns
+    return Patterns(placeholders: placeholders.patterns(), text: text_checks.patterns())
+
+# Every finding in `catalog`, the catalogue of `locale`, in the order of its
+# messages, the header's first.
+#
+# - `catalog`: the catalogue.
+# - `locale`: its locale.
+# - `p`: the patterns.
+function check_catalog(catalog: i18n.Catalog, locale: i18n.Locale, p: Patterns) -> [findings.Finding]
+    tag = i18n.format_locale(locale)
+    found: [findings.Finding] @= []
+
+    match messages.field_value(messages.header_fields(catalog), name: "Plural-Forms")
+        .err _ =>
+            found @ found.push(
+                findings.error(locale: tag, message: "", check: "plural-forms", detail: "the header names no Plural-Forms, so gettext takes English's two forms; `merge` writes CLDR's")
+            )
+        .ok header =>
+            match gettext_forms.disagreement(header: header, locale: locale)
+                .ok why => found @ found.push(
+                    findings.error(locale: tag, message: "", check: "plural-forms", detail: f"{why}; `merge` writes CLDR's and moves the forms")
+                )
+                .err _  => _ = 0
+
+    forms = match gettext_forms.forms_of(locale)
+        .ok f => f
+        .err e =>
+            found @ found.push(findings.error(locale: tag, message: "", check: "plural-forms", detail: e.msg))
+            return found
+
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+
+    for m in messages.live_messages(catalog)
+        for f in message_findings(m, tag: tag, forms: forms, rules: rules, p: p)
+            found @ found.push(f)
+
+    return found
+
+# The findings of one message.
+#
+# - `m`: the message.
+# - `tag`: its catalogue's locale.
+# - `forms`: the locale's plural forms.
+# - `rules`: the locale's plural rules.
+# - `p`: the patterns.
+function message_findings(m: i18n.Message, tag: str, forms: gettext_forms.Forms, rules: i18n.PluralRules, p: Patterns) -> [findings.Finding]
+    label = messages.label_of(m)
+    found: [findings.Finding] @= []
+
+    if messages.is_empty(m)
+        return found
+
+    if messages.is_fuzzy(m)
+        found @ found.push(
+            findings.warning(locale: tag, message: label, check: "fuzzy", detail: "marked fuzzy, a guess gettext does not show until a translator confirms it")
+        )
+
+    if messages.is_plural(m)
+        if m.translations.len() != forms.categories.len()
+            found @ found.push(
+                findings.error(locale: tag, message: label, check: "plural-forms", detail: f"{m.translations.len()} forms where {tag} has {forms.categories.len()}: {gettext_forms.category_names(forms).join(", ")}")
+            )
+        else
+            empty: [str] @= []
+
+            for k in range(from: 0, to: m.translations.len())
+                if m.translations[k] == ""
+                    empty @ empty.push(i18n.plural_name(forms.categories[k]))
+
+            if empty.len() > 0
+                found @ found.push(
+                    findings.error(locale: tag, message: label, check: "plural-forms", detail: empty_forms(empty))
+                )
+
+    for k in range(from: 0, to: m.translations.len())
+        text = m.translations[k]
+
+        if text != ""
+            source = source_of_form(m, k: k, forms: forms)
+            required = required_names(m, k: k, forms: forms, rules: rules, p: p.placeholders)
+            allowed = allowed_names(m, p: p.placeholders)
+            which = form_word(m, k: k, forms: forms)
+
+            for name in placeholders.missing_names(required, text: text, p: p.placeholders)
+                found @ found.push(
+                    findings.error(locale: tag, message: label, check: "placeholders", detail: f"{which}{{{name}}} is missing, so the program's value is never shown")
+                )
+
+            for name in placeholders.unknown_names(allowed, text: text, p: p.placeholders)
+                found @ found.push(
+                    findings.error(locale: tag, message: label, check: "placeholders", detail: f"{which}{{{name}}} is no placeholder of the source, so it is shown as written")
+                )
+
+            printf = placeholders.printf_difference(source: source, text: text, p: p.placeholders)
+
+            if printf != ""
+                found @ found.push(
+                    findings.error(locale: tag, message: label, check: "placeholders", detail: which + printf)
+                )
+
+            markup = text_checks.markup_problem(source: source, text: text, p: p.text)
+
+            if markup != ""
+                found @ found.push(findings.error(locale: tag, message: label, check: "markup", detail: which + markup))
+
+            for link in text_checks.link_problems(text, p: p.text)
+                found @ found.push(findings.error(locale: tag, message: label, check: "links", detail: which + link))
+
+            nfc = text_checks.nfc_problem(text)
+
+            if nfc != ""
+                found @ found.push(findings.warning(locale: tag, message: label, check: "nfc", detail: which + nfc))
+
+            space = text_checks.whitespace_problem(source: source, text: text)
+
+            if space != ""
+                found @ found.push(
+                    findings.warning(locale: tag, message: label, check: "whitespace", detail: which + space)
+                )
+
+            mark = text_checks.punctuation_problem(source: source, text: text)
+
+            if mark != ""
+                found @ found.push(
+                    findings.warning(locale: tag, message: label, check: "punctuation", detail: which + mark)
+                )
+
+    return found
+
+# The detail of a plural message whose forms `empty` are empty.
+#
+# - `empty`: the empty forms' categories, one or more.
+function empty_forms(empty: [str]) -> str
+    if empty.len() == 1
+        return f"the form {empty[0]} is empty, so a count that takes it shows the source text"
+
+    return f"the forms {empty.join(", ")} are empty, so a count that takes them shows the source text"
+
+## What a form is held to
+
+# The source text form `k` of `m` translates: the id for a message with no
+# plural and for the `one` form, the plural text for the others.
+#
+# - `m`: the message.
+# - `k`: the form.
+# - `forms`: the locale's forms.
+function source_of_form(m: i18n.Message, k: i64, forms: gettext_forms.Forms) -> str
+    if !messages.is_plural(m)
+        return m.id
+
+    if k < forms.categories.len() && forms.categories[k] == .one
+        return m.id
+
+    return m.plural_id.must()
+
+# The names a count placeholder takes by convention; one written
+# `{x, number}` is a count too.
+function count_names() -> [str]
+    return ["count", "n", "num", "number"]
+
+# The placeholders form `k` must keep: those of its source text, less the
+# count where only one whole number reaches the form's category, since the
+# word for that number may stand in its place.
+#
+# - `m`: the message.
+# - `k`: the form.
+# - `forms`: the locale's forms.
+# - `rules`: the locale's rules.
+# - `p`: the placeholders' patterns.
+function required_names(m: i18n.Message, k: i64, forms: gettext_forms.Forms, rules: i18n.PluralRules, p: placeholders.Patterns) -> [str]
+    names = placeholders.names_in(source_of_form(m, k: k, forms: forms), p: p)
+
+    if !messages.is_plural(m) || k >= forms.categories.len()
+        return names
+
+    reached = samples.integer_samples(samples.samples_of(rules, category: forms.categories[k]))
+
+    if reached.len() != 1
+        return names
+
+    kinds = placeholders.kinds_in(m.id + " " + m.plural_id.must(), p: p)
+    kept: [str] @= []
+
+    for name in names
+        if !count_names().holds(name) && kinds[name].default("") != "number"
+            kept @ kept.push(name)
+
+    return kept
+
+# The placeholders any form may hold: those of the id and of the plural text.
+#
+# - `m`: the message.
+# - `p`: the placeholders' patterns.
+function allowed_names(m: i18n.Message, p: placeholders.Patterns) -> [str]
+    names @= placeholders.names_in(m.id, p: p)
+
+    match m.plural_id
+        .ok plural =>
+            for name in placeholders.names_in(plural, p: p)
+                names @ names.push(name)
+        .err _ => _ = 0
+
+    return names
+
+# The words a detail begins with for form `k` of a plural message, `the
+# form few: `, and nothing for a message with no plural.
+#
+# - `m`: the message.
+# - `k`: the form.
+# - `forms`: the locale's forms.
+function form_word(m: i18n.Message, k: i64, forms: gettext_forms.Forms) -> str
+    if !messages.is_plural(m) || k >= forms.categories.len()
+        return ""
+
+    return f"the form {i18n.plural_name(forms.categories[k])}: "
+
+# Whether `xs` holds `x`.
+#
+# - `xs`: the names.
+# - `x`: the name.
+function holds(xs: [str], x: str) -> bool
+    for each in xs
+        if each == x
+            return true
+
+    return false
+
+## Fixing
+
+# `catalog` with every translation put in NFC, and how many changed.
+record Fixed
+    # The catalogue.
+    catalog: i18n.Catalog
+    # How many texts were composed.
+    changed: i64
+
+# `catalog` with every translation in NFC.
+#
+# - `catalog`: the catalogue.
+#
+# Fails as `i18n.new_catalog` fails on a header it read before, which it
+# does not.
+function fix_nfc(catalog: i18n.Catalog) -> Fixed?
+    changed @= 0
+    fixed: [i18n.Message] @= []
+
+    for m in catalog.messages
+        texts: [str] @= []
+
+        for t in m.translations
+            composed = if messages.is_header(m)
+                t
+            else
+                normalize.to_nfc(t)
+
+            if composed != t
+                changed @ changed + 1
+            texts @ texts.push(composed)
+
+        fixed @ fixed.push(messages.with_translations(m, translations: texts))
+
+    return ok(Fixed(catalog: i18n.new_catalog(fixed)?, changed: changed))
+
+## Tests
+
+# A catalogue of `locale` with CLDR's header and `body`'s messages.
+#
+# - `tag`: the locale's tag.
+# - `body`: the messages, as a `.po` file writes them.
+function sample_catalog(tag: str, body: str) -> i18n.Catalog
+    header = gettext_forms.forms_of(i18n.parse_locale(tag).must()).must().header
+    return i18n.parse_po(f"msgid \"\"\nmsgstr \"Language: {tag}\\nPlural-Forms: {header}\\n\"\n\n{body}").must()
+
+test "check_catalog: a placeholder lost, one misspelt, markup broken and a link refused"
+    body = "msgid \"Total: {total}\"\nmsgstr \"Summe:\"\n\nmsgid \"Hi {name}\"\nmsgstr \"Hallo {nmae}\"\n\nmsgid \"<b>Free</b> delivery\"\nmsgstr \"Kostenlose Lieferung\"\n\nmsgid \"See https://shop.example\"\nmsgstr \"Siehe https://laden-.example\"\n"
+    found = check_catalog(sample_catalog(tag: "de", body: body), locale: i18n.parse_locale("de").must(), p: patterns())
+    checks = found.map(check_name)
+    assert checks == ["placeholders", "placeholders", "placeholders", "markup", "links"]
+    assert findings.errors_in(found) == 5
+
+test "check_catalog: the one form may drop the count in German, never in Russian"
+    de_body = "msgid \"{count} item\"\nmsgid_plural \"{count} items\"\nmsgstr[0] \"Ein Artikel\"\nmsgstr[1] \"{count} Artikel\"\n"
+    assert check_catalog(sample_catalog(tag: "de", body: de_body), locale: i18n.parse_locale("de").must(), p: patterns()) == []
+    ru_body = "msgid \"{count} item\"\nmsgid_plural \"{count} items\"\nmsgstr[0] \"Один товар\"\nmsgstr[1] \"{count} товара\"\nmsgstr[2] \"{count} товаров\"\n"
+    ru = check_catalog(sample_catalog(tag: "ru", body: ru_body), locale: i18n.parse_locale("ru").must(), p: patterns())
+    assert ru.len() == 1
+    assert ru[0].detail == "the form one: {count} is missing, so the program's value is never shown"
+
+test "check_catalog: forms missing, an old header, and nothing for an untranslated message"
+    body = "msgid \"{count} file\"\nmsgid_plural \"{count} files\"\nmsgstr[0] \"{count} plik\"\nmsgstr[1] \"\"\nmsgstr[2] \"\"\n\nmsgid \"Untranslated\"\nmsgstr \"\"\n"
+    found = check_catalog(sample_catalog(tag: "pl", body: body), locale: i18n.parse_locale("pl").must(), p: patterns())
+    assert found.len() == 1
+    assert found[0].detail == "the forms few, many are empty, so a count that takes them shows the source text"
+    old = i18n.parse_po("msgid \"\"\nmsgstr \"Plural-Forms: nplurals=2; plural=(n > 1);\\n\"\n").must()
+    assert check_catalog(old, locale: i18n.parse_locale("fr").must(), p: patterns())[0].check == "plural-forms"
+
+test "fix_nfc: decomposed texts composed and counted, the header untouched"
+    body = f"msgid \"Cafe\"\nmsgstr \"{normalize.to_nfd("Café")}\"\n"
+    fixed = fix_nfc(sample_catalog(tag: "fr", body: body)).must()
+    assert fixed.changed == 1
+    assert fixed.catalog.messages[1].translations == ["Café"]
+
+# A finding's check, for the tests' lists.
+#
+# - `f`: the finding.
+function check_name(f: findings.Finding) -> str
+    return f.check

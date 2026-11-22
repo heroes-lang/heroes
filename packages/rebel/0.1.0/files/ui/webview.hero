@@ -1,0 +1,728 @@
+# A web page as a program's interface, in the manner of Tauri: the system's
+# own web view, shown as a widget of a `ui` app, whose page is the HTML, CSS
+# and scripts the program carries, and the program its logic, the two
+# speaking through a bridge of texts and through nothing else. The web view
+# is WebKit's on macOS, Microsoft Edge's WebView2 on Windows and WebKitGTK on
+# Linux, never an engine the program carries; where the system has none,
+# `webview` fails `unsupported` and says what is missing.
+#
+# What it does NOT do: lay out or draw the widgets around the web view, or
+# give its events (`ui`, whose `wait` answers a page's text as
+# `ui.Event.message`); serve a page from a port (no socket and no loopback
+# server stand anywhere: every file the page loads is an asset of the web
+# view's own table); run a script the program writes (no `eval`: the page
+# hands the bridge a function and the program posts it a text, so no value
+# of the program's is read as code); turn markdown into HTML or clean HTML
+# from outside (`markdown`, `html/sanitize`); keep the page's storage (its
+# cookies and storage live in memory and end with it; the program keeps its
+# own state).
+#
+# **The app's own origin.** A page is served at `ORIGIN`, `app://localhost`,
+# from the assets the program put (`put_asset`, `load_html`), each with its
+# content type (`content_type_of` gives it from the extension) and every
+# response with the web view's content security policy (`DEFAULT_POLICY`
+# where the program set none, `set_policy`), `nosniff` and no caching. A
+# path the table does not hold is 404, a method but `GET` and `HEAD` 405
+# (`response_of` answers what the page gets). The page may go to its own
+# origin and to the origins the program allows (`allow_origin`), and to
+# nothing else: no `file:`, no new window, no download, no camera, no
+# microphone, no file chooser (`allows` answers where it may go). A page of
+# an allowed origin is shown and never heard.
+#
+# **The bridge.** Before any script of a page of the app's own origin runs,
+# its main frame holds `window.heroes`, which cannot be replaced:
+# `heroes.send(text)` sends a text to the program, which `ui.wait` answers
+# as `ui.Event.message`; `heroes.receive(fn)` names the function each text
+# the program posts (`post`) is handed to, in order, the texts posted
+# before it waiting in the page; `heroes.invoke(name, args)` answers a
+# promise over the framing below, and `heroes.on(name, fn)` hears the
+# program's events. A text crosses as UTF-8, at most `MESSAGE_MOST` bytes,
+# holding no zero byte; a message of another frame, another origin or no
+# string is dropped and counted.
+#
+# **The framing** of `invoke` and `on`, JSON: the page's call
+# `{"heroes":1,"id":N,"call":NAME,"args":ARGS}` (`parse_call`), the
+# program's answer `{"heroes":1,"id":N,"ok":VALUE}` (`format_answer`) or
+# refusal `{"heroes":1,"id":N,"error":{"code":C,"msg":M}}`
+# (`format_refusal`), which rejects the promise with an `Error` whose
+# `code` is C, and an event `{"heroes":1,"event":NAME,"data":DATA}`
+# (`format_event`). Any other text goes to `receive`'s function, so a
+# program may speak a protocol of its own.
+#
+# **Two sides, one program.** On `ui`'s headless side a web view is its
+# table alone: every call checks and keeps what the native side does,
+# `response_of` and `allows` answer as the native side's page would be
+# answered, a text posted is counted, and the page's messages are the ones
+# `ui.inject`'s `.send` gives, so a program's back end is driven through
+# the very handler the bridge feeds, with no screen.
+#
+# It fails with `closed`, `invalid`, `not_found`, `limit`, `unsupported`
+# and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: the engine's
+# developer tools; the page's zoom.
+
+use bytes
+use json
+use time
+use ui
+use ui/hero_ui
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/makers
+use ui/webview/internal/framing
+use ui/webview/internal/rules
+use ui/webview/internal/table
+use ui/webview/internal/types
+
+## Codes
+
+# The app is closed, or the web view's life has ended. Every function on a
+# web view fails with it.
+constant CLOSED: str
+    failure.CLOSED
+
+# An argument the call cannot take: a path, a content type, a policy, an
+# origin or a text the web view refuses, a widget of another kind or of
+# another app, a text that is no framed call. Every function that takes
+# one fails with it.
+constant INVALID: str
+    failure.INVALID
+
+# The table holds no asset at the path given. `remove_asset` fails with it.
+constant NOT_FOUND: str
+    "not_found"
+
+# The table holds as many assets or as many bytes as it takes, the web view
+# allows as many origins as it takes, or as many texts wait for a page that
+# loads as it keeps. The functions that add one fail with it.
+constant LIMIT: str
+    failure.LIMIT
+
+# The system has no web view this program reaches, or a value the framing
+# has no form for (a `nan` in an answer). `webview`, `format_answer` and
+# `format_event` fail with it.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
+
+# The system refused for a reason none of the above names; the message
+# carries its words. Every call that reaches the native side fails with it.
+constant FAILED: str
+    failure.FAILED
+
+## The web view
+
+# The app's own origin, which every web view serves its assets at.
+constant ORIGIN: str
+    "app://localhost"
+
+# The content security policy every response carries where the program set
+# none: everything from the app's own origin and nothing else, an image
+# also from a `data:` URL, no plug-in, no `<base>`, no form sent anywhere,
+# and the page framed by nobody. So a script written inside the HTML does
+# not run: a page's scripts are assets of their own.
+constant DEFAULT_POLICY: str
+    "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+
+# The most bytes one text takes, either way across the bridge: 16 MiB.
+constant MESSAGE_MOST: i64
+    16777216
+
+# The most bytes one asset's body holds: 64 MiB.
+constant ASSET_MOST: i64
+    67108864
+
+# The most assets one web view's table holds.
+constant ASSETS_MOST: i64
+    4096
+
+# The most bytes the bodies of one web view's table hold in all: 256 MiB.
+constant BYTES_MOST: i64
+    268435456
+
+# A new web view in `into`, showing no page until `navigate` or
+# `load_html`, at the size the layout gives it: 320 by 240 points, or the
+# room `ui.set_fit` lets it take.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+#
+# Fails `unsupported` where the system has no web view (WebView2's runtime,
+# or WebKitGTK, missing), `closed`, `invalid`, `limit` and `failed`.
+function webview(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_WEBVIEW, text: "", items: [])
+
+## Assets
+
+# A file the web view serves at its path, with its content type and its
+# bytes. Made by `asset`, which gives the type from the extension, or
+# directly where the program names another type.
+record Asset
+    # Its path: `/` and segments of `A`-`Z`, `a`-`z`, `0`-`9`, `-`, `.`, `_`
+    # and `~` joined by `/`, never `.` or `..`, at most 1024 bytes.
+    path: str
+    # Its content type, `type/subtype` then parameters, printable ASCII.
+    content_type: str
+    # Its bytes, at most `ASSET_MOST`.
+    body: [u8]
+
+# The asset at `path` holding `body`, its content type the one its
+# extension takes (`content_type_of`).
+#
+# - `path`: the path the page asks it by, `/` first.
+# - `body`: its bytes.
+#
+# Fails `invalid` where `path` is no asset's path or `body` is longer than
+# `ASSET_MOST`.
+function asset(path: str, body: [u8]) -> Asset?
+    if !rules.path_ok(path, folder: false)
+        return fail(
+            code: INVALID,
+            msg: f"\"{path}\" is no asset's path: `/` and segments of A-Z, a-z, 0-9, `-`, `.`, `_` and `~` joined by `/`, never `.` or `..`"
+        )
+
+    if body.len() > ASSET_MOST
+        return fail(code: INVALID, msg: f"a body of {body.len()} bytes, past the {ASSET_MOST} an asset holds")
+    return ok(Asset(path: path, content_type: types.type_of(path), body: body))
+
+# The content type a file at `path` is served with, by its extension: HTML,
+# CSS, JavaScript and every text with `charset=utf-8`, JSON, the image,
+# font, audio and video formats a page loads, and
+# `application/octet-stream`, which no page runs or shows, for an extension
+# none of them is.
+#
+# - `path`: a path; only its last segment's extension is read, in any case.
+function content_type_of(path: str) -> str
+    return types.type_of(path)
+
+# Puts `asset` into `view`'s table, replacing the one at its path; the page
+# reads it at its next request.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `file`: the asset; its path, type and body are checked as `Asset`
+#   says.
+#
+# Fails `invalid` for a path, a type or a body the table refuses, `limit`
+# where it holds `ASSETS_MOST` assets or `BYTES_MOST` bytes already,
+# `closed`, `failed`. It copies the body once, into the platform layer.
+# See also `remove_asset`, `load_html`.
+function put_asset(@app: ui.App, view: ui.Widget, file: Asset) -> ()?
+    return table.put(@app, view: view, path: file.path, content_type: file.content_type, body: file.body)
+
+# Takes the asset at `path` out of `view`'s table: the page's next request
+# for it is 404.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `path`: the asset's path.
+#
+# Fails `not_found` where the table holds none there, `invalid` for no
+# asset's path, `closed`, `failed`.
+function remove_asset(@app: ui.App, view: ui.Widget, path: str) -> ()?
+    return table.remove(@app, view: view, path: path)
+
+# The paths of the assets `view`'s table holds, in the order first put.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+#
+# Fails `closed`, `invalid` for no web view.
+function assets_of(app: ui.App, view: ui.Widget) -> [str]?
+    n = table.node_of(app, view: view)?
+    out: [str] @= []
+
+    for each in n.web.assets
+        out @ out.push(each.path)
+
+    return ok(out)
+
+# Puts `html` into `view`'s table as `/index.html` and shows it, at
+# `ORIGIN` + `/`: a page written whole by the program, its scripts and
+# styles assets of their own or none.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `html`: the page, UTF-8.
+#
+# Fails as `put_asset` and `navigate` do.
+function load_html(@app: ui.App, view: ui.Widget, html: str) -> ()?
+    put_asset(@app, view: view, file: Asset(path: "/index.html", content_type: types.type_of("/index.html"), body: bytes.from_text(html)))?
+    return navigate(@app, view: view, path: "/")
+
+## The policy and the origins
+
+# Sets the content security policy every response of `view` carries from
+# its next request; "" puts `DEFAULT_POLICY` back.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `policy`: the policy, printable ASCII, at most 4096 bytes.
+#
+# Fails `invalid`, `closed`, `failed`. See also `policy_of`.
+function set_policy(@app: ui.App, view: ui.Widget, policy: str) -> ()?
+    return table.set_policy(@app, view: view, policy: policy)
+
+# The content security policy `view`'s responses carry now.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+#
+# Fails `closed`, `invalid` for no web view.
+function policy_of(app: ui.App, view: ui.Widget) -> str?
+    n = table.node_of(app, view: view)?
+
+    if n.web.policy.len() == 0
+        return ok(DEFAULT_POLICY)
+    return ok(n.web.policy)
+
+# Lets `view`'s page go to `origin`: shown in the web view, never heard by
+# the bridge.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `origin`: `https://` or `http://`, a host of letters, digits, `-` and
+#   `.`, and a port where it is not the scheme's own; no path.
+#
+# Fails `invalid` where it is no such origin, `limit` past 64 origins,
+# `closed`, `failed`. See also `allows`.
+function allow_origin(@app: ui.App, view: ui.Widget, origin: str) -> ()?
+    return table.allow(@app, view: view, origin: origin)
+
+# Whether a frame of `view`'s page may go to `url`: the app's own origin,
+# `about:blank` and `about:srcdoc`, and an origin the program allowed, as
+# the native side's web view decides it.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `url`: a whole URL.
+#
+# Fails `closed`, `invalid` for no web view.
+function allows(app: ui.App, view: ui.Widget, url: str) -> bool?
+    n = table.node_of(app, view: view)?
+    return ok(rules.may_go(url, origins: n.web.origins))
+
+## Pages
+
+# Has `view` show the page at `path` of `ORIGIN`; it loads at the next
+# `ui.wait`, and the texts posted from now wait for it.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `path`: an asset's path, or a folder's ending in `/` whose
+#   `index.html` it shows, then perhaps a query and a fragment.
+#
+# Fails `invalid` where it is no page's path, `closed`, `failed`. See also
+# `page_of`.
+function navigate(@app: ui.App, view: ui.Widget, path: str) -> ()?
+    return table.navigate(@app, view: view, path: path)
+
+# The path `view` was last asked to show, "" before the first.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+#
+# Fails `closed`, `invalid` for no web view.
+function page_of(app: ui.App, view: ui.Widget) -> str?
+    return ok(table.node_of(app, view: view)?.web.page)
+
+# What the page of `view` is answered for a request of `method` to `url`.
+record Response
+    # The status: 200, 404 or 405.
+    status: i64
+    # The `Content-Type` the response carries.
+    content_type: str
+    # Its `Content-Length`, in bytes.
+    length: i64
+    # The `Content-Security-Policy` it carries.
+    policy: str
+
+# What `view` answers its page's request of `method` to `url`, as the
+# native side's web view answers it: 200 with the asset's type and length
+# for `GET` or `HEAD` of a path its table holds, a folder's `index.html`
+# for a path ending in `/`, the query ignored; 404 for another origin or a
+# path it does not hold; 405 for another method.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `method`: the request's method, `GET`, `HEAD` or another.
+# - `url`: the whole URL, `ORIGIN` and a path.
+#
+# Fails `closed`, `invalid` for no web view.
+function response_of(app: ui.App, view: ui.Widget, method: str, url: str) -> Response?
+    n = table.node_of(app, view: view)?
+    policy = policy_of(app, view: view)?
+    plain = "text/plain; charset=utf-8"
+
+    if method != "GET" && method != "HEAD"
+        return ok(Response(status: 405, content_type: plain, length: 19, policy: policy))
+
+    match rules.asked_path(url)
+        .ok path =>
+            at = table.index_of(n.web, path: path)
+
+            if at >= 0
+                found = n.web.assets[at]
+                return ok(Response(status: 200, content_type: found.content_type, length: found.size, policy: policy))
+        .err _ =>
+            _ = 0
+
+    return ok(Response(status: 404, content_type: plain, length: 10, policy: policy))
+
+## The bridge
+
+# Posts `text` to `view`'s page: handed to the function the page gave
+# `heroes.receive`, in the order posted, once a page of `ORIGIN` has
+# loaded; never to a page of another origin.
+#
+# - `app`: the app holding the web view.
+# - `view`: the web view.
+# - `text`: UTF-8 without a zero byte, at most `MESSAGE_MOST` bytes; a
+#   framed text (`format_answer`, `format_refusal`, `format_event`) goes to
+#   the promise or the listeners it names instead.
+#
+# Fails `invalid`, `limit` where the page is loading and 4096 texts wait
+# for it already, `closed`, `failed`.
+function post(@app: ui.App, view: ui.Widget, text: str) -> ()?
+    return table.post(@app, view: view, text: text)
+
+# A call the page made by `heroes.invoke`.
+record Call
+    # The page's number for it, which the answer names.
+    id: i64
+    # The name called.
+    name: str
+    # The arguments the page gave, `null` where none.
+    args: json.Value
+
+# The call `text` holds, a text the page sent by `heroes.invoke`.
+#
+# - `text`: a message's text.
+#
+# Fails `invalid` where it is no framed call: no JSON object, or one
+# without `"heroes": 1`, an integer `id` of 1 or more or a `call` naming
+# something; the message says which, so a program speaking its own protocol
+# beside the framing reads its own texts after this refusal.
+function parse_call(text: str) -> Call?
+    c = framing.parse(text)?
+    return ok(Call(id: c.id, name: c.name, args: c.args))
+
+# The text that resolves `call`'s promise with `value`, for `post`.
+#
+# - `call`: the call answered.
+# - `value`: the value the promise resolves with.
+#
+# Fails `unsupported` where `value` holds a `nan` or an infinity.
+function format_answer(call: Call, value: json.Value) -> str?
+    return framing.answer(framing.Call(id: call.id, name: call.name, args: call.args), value: value)
+
+# The text that rejects `call`'s promise with an `Error` whose `code` is
+# `code` and whose message is `msg`, for `post`.
+#
+# - `call`: the call refused.
+# - `code`: the code the page reads, a code of README § A4 or the
+#   program's own.
+# - `msg`: what was asked and what was found.
+function format_refusal(call: Call, code: str, msg: str) -> str
+    return framing.refusal(framing.Call(id: call.id, name: call.name, args: call.args), code: code, msg: msg)
+
+# The text of the event `name` with `data`, which calls every function the
+# page gave `heroes.on` for `name`, for `post`.
+#
+# - `name`: the event's name, not empty.
+# - `data`: what the listeners are handed.
+#
+# Fails `invalid` where `name` is empty, `unsupported` where `data` holds
+# a `nan` or an infinity.
+function format_event(name: str, data: json.Value) -> str?
+    return framing.event(name, data: data)
+
+## Tests
+
+test "webview: drawn as text with its page, its table and its posts, and gone with its window"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Board", width: 400, height: 300).must()
+    v = webview(@app, into: w).must()
+    assert ui.render(@app).must() == ["window #1 \"Board\" 400x300", "  webview #2 no page 0 assets 0 bytes 0 posted at 12,12 320x240"]
+    put_asset(@app, view: v, file: asset("/app.js", body: [59]).must()).must()
+    load_html(@app, view: v, html: "<p>hi</p>").must()
+    post(@app, view: v, text: "x").must()
+    assert ui.render(@app).must()[1] == "  webview #2 page \"/\" 2 assets 10 bytes 1 posted at 12,12 320x240"
+    ui.destroy(@app, widget: w).must()
+    assert ui.render(@app).must().len() == 0
+    assert fixture.code_of(post(@app, view: v, text: "late")) == CLOSED
+    assert fixture.code_of(put_asset(@app, view: v, file: asset("/a", body: []).must())) == CLOSED
+    ui.close(@app).must()
+
+test "webview: every call on a widget of another kind, or of another app, is invalid"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "T", width: 100, height: 100).must()
+    b = ui.button(@app, into: w, text: "OK").must()
+    other @= ui.open(.headless).must()
+    v = webview(@other, into: ui.window(@other, title: "U", width: 100, height: 100).must()).must()
+    assert fixture.code_of(post(@app, view: b, text: "x")) == INVALID
+    assert fixture.code_of(navigate(@app, view: b, path: "/")) == INVALID
+    assert fixture.code_of(assets_of(app, view: v)) == INVALID
+    ui.close(@app).must()
+    ui.close(@other).must()
+
+test "put_asset: a replaced asset keeps its place and its bytes count once; paths, types and bodies refused"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    put_asset(@app, view: v, file: asset("/a.css", body: [1, 2, 3]).must()).must()
+    put_asset(@app, view: v, file: asset("/b.js", body: [1]).must()).must()
+    put_asset(@app, view: v, file: asset("/a.css", body: [1]).must()).must()
+    assert assets_of(app, view: v).must() == ["/a.css", "/b.js"]
+    assert ui.render(@app).must()[1] == "  webview #2 no page 2 assets 2 bytes 0 posted at 12,12 320x240"
+    assert fixture.code_of(put_asset(@app, view: v, file: Asset(path: "a.css", content_type: "text/css", body: []))) == INVALID
+    assert fixture.code_of(put_asset(@app, view: v, file: Asset(path: "/../a", content_type: "text/css", body: []))) == INVALID
+    assert fixture.code_of(put_asset(@app, view: v, file: Asset(path: "/a", content_type: "text", body: []))) == INVALID
+    assert fixture.code_of(put_asset(@app, view: v, file: Asset(path: "/a", content_type: "text/css\nX: y", body: []))) == INVALID
+    assert fixture.code_of(asset("/a b", body: [])) == INVALID
+    assert assets_of(app, view: v).must().len() == 2
+    ui.close(@app).must()
+
+test "put_asset: the table's most assets, and one more refused as a limit"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+
+    for i in range(from: 0, to: ASSETS_MOST)
+        put_asset(@app, view: v, file: asset(f"/{i}", body: []).must()).must()
+
+    assert fixture.code_of(put_asset(@app, view: v, file: asset("/one-more", body: []).must())) == LIMIT
+    put_asset(@app, view: v, file: asset("/0", body: [7]).must()).must()
+    ui.close(@app).must()
+
+test "remove_asset: one held, one not held, a bad path"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    put_asset(@app, view: v, file: asset("/a.js", body: [1, 2]).must()).must()
+    remove_asset(@app, view: v, path: "/a.js").must()
+    assert assets_of(app, view: v).must().len() == 0
+    assert fixture.code_of(remove_asset(@app, view: v, path: "/a.js")) == NOT_FOUND
+    assert fixture.code_of(remove_asset(@app, view: v, path: "a.js")) == INVALID
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/a.js").must().status == 404
+    ui.close(@app).must()
+
+test "set_policy: a policy of its own, a line feed refused, and the layer's own put back"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    set_policy(@app, view: v, policy: "default-src 'self'").must()
+    assert policy_of(app, view: v).must() == "default-src 'self'"
+    assert fixture.code_of(set_policy(@app, view: v, policy: "a\nb")) == INVALID
+    assert fixture.code_of(set_policy(@app, view: v, policy: repeat("a", 4097))) == INVALID
+    set_policy(@app, view: v, policy: "").must()
+    assert policy_of(app, view: v).must() == DEFAULT_POLICY
+    ui.close(@app).must()
+
+test "allow_origin: twice is once, a path, its own port and the app's scheme refused, sixty-four at most"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    allow_origin(@app, view: v, origin: "https://example.com").must()
+    allow_origin(@app, view: v, origin: "https://example.com").must()
+    assert allows(app, view: v, url: "https://example.com/x").must()
+    assert fixture.code_of(allow_origin(@app, view: v, origin: "https://example.com/")) == INVALID
+    assert fixture.code_of(allow_origin(@app, view: v, origin: "https://example.com:443")) == INVALID
+    assert fixture.code_of(allow_origin(@app, view: v, origin: "app://localhost")) == INVALID
+
+    for i in range(from: 1, to: 64)
+        allow_origin(@app, view: v, origin: f"https://h{i}.example").must()
+
+    assert fixture.code_of(allow_origin(@app, view: v, origin: "https://one-more.example")) == LIMIT
+    ui.close(@app).must()
+
+test "allows: the app's own origin, an empty frame, and every other place refused"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+
+    for url in ["app://localhost/", "app://LOCALHOST/a.html?x#y", "about:blank", "about:srcdoc"]
+        assert allows(app, view: v, url: url).must()
+
+    for url in ["https://example.com/", "file:///etc/hosts", "data:text/html,x", "javascript:alert(1)", "app://localhost:8080/", "app://other/", "blob:app://localhost/x", ""]
+        assert !allows(app, view: v, url: url).must()
+
+    ui.close(@app).must()
+
+test "navigate: a page with a query and a fragment, a folder, and paths refused"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    navigate(@app, view: v, path: "/board.html?id=1#top").must()
+    assert page_of(app, view: v).must() == "/board.html?id=1#top"
+    navigate(@app, view: v, path: "/boards/").must()
+
+    for bad in ["", "board.html", "/../x", "/a b", "?x", "/" + repeat("a", 1024)]
+        assert fixture.code_of(navigate(@app, view: v, path: bad)) == INVALID
+
+    assert page_of(app, view: v).must() == "/boards/"
+    ui.close(@app).must()
+
+test "response_of: a hit, a folder's index, a query, a head, a miss, another host, dots resolved as the URL standard does, another method"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    load_html(@app, view: v, html: "<!doctype html>").must()
+    put_asset(@app, view: v, file: asset("/data.json", body: [123, 125]).must()).must()
+    hit = response_of(app, view: v, method: "GET", url: "app://localhost/data.json?x=1").must()
+    assert hit == Response(status: 200, content_type: "application/json", length: 2, policy: DEFAULT_POLICY)
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/").must().content_type == "text/html; charset=utf-8"
+    assert response_of(app, view: v, method: "HEAD", url: "app://localhost/index.html").must().length == 15
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/missing.css").must().status == 404
+    assert response_of(app, view: v, method: "GET", url: "app://elsewhere/data.json").must().status == 404
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/%2e%2e/data.json").must().status == 200
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/%252e%252e/data.json").must().status == 404
+    refused = response_of(app, view: v, method: "POST", url: "app://localhost/data.json").must()
+    assert refused.status == 405
+    assert refused.length == 19
+    ui.close(@app).must()
+
+test "post: a zero byte refused, and a text of every kind of character taken"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    assert fixture.code_of(post(@app, view: v, text: bytes.to_text([97, 0]).must())) == INVALID
+    post(@app, view: v, text: "line\nnext é 漢 🙂").must()
+    ui.close(@app).must()
+
+test "send: none from a web view showing no page when wait gives it, then a message once a page is named"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 100, height: 100).must()).must()
+    ui.inject(@app, input: .send(widget: v, text: "before")).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == CLOSED
+    navigate(@app, view: v, path: "/").must()
+    ui.inject(@app, input: .send(widget: v, text: "after")).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .message(widget: v, text: "after")
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == CLOSED
+    assert fixture.code_of(ui.inject(@app, input: .send(widget: v, text: bytes.to_text([0]).must()))) == INVALID
+    ui.close(@app).must()
+
+## Examples
+
+# A web view made in a window, showing no page yet.
+test "webview: in a window"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Notes", width: 640, height: 480).must()
+    v = webview(@app, into: w).must()
+    assert ui.kind_of(app, widget: v).must() == .webview
+    ui.close(@app).must()
+
+# A stylesheet made into an asset, its type from its extension.
+test "asset: a stylesheet"
+    a = asset("/css/app.css", body: [98, 111, 100, 121, 123, 125]).must()
+    assert a.content_type == "text/css; charset=utf-8"
+
+# The content type of a script and of a file of no known extension.
+test "content_type_of: a script and a blob"
+    assert content_type_of("/app.js") == "text/javascript; charset=utf-8"
+    assert content_type_of("/data.bin") == "application/octet-stream"
+
+# A script put into the table, and asked for by the page.
+test "put_asset: a script"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    put_asset(@app, view: v, file: asset("/app.js", body: [59]).must()).must()
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/app.js").must().status == 200
+    ui.close(@app).must()
+
+# An asset taken out of the table.
+test "remove_asset: an old stylesheet"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    put_asset(@app, view: v, file: asset("/old.css", body: []).must()).must()
+    remove_asset(@app, view: v, path: "/old.css").must()
+    assert assets_of(app, view: v).must().len() == 0
+    ui.close(@app).must()
+
+# The paths of a table, in the order put.
+test "assets_of: two files"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    put_asset(@app, view: v, file: asset("/index.html", body: []).must()).must()
+    put_asset(@app, view: v, file: asset("/app.js", body: []).must()).must()
+    assert assets_of(app, view: v).must() == ["/index.html", "/app.js"]
+    ui.close(@app).must()
+
+# A page written whole, put at `/index.html` and shown.
+test "load_html: a greeting"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    load_html(@app, view: v, html: "<!doctype html><p>Hello</p>").must()
+    assert page_of(app, view: v).must() == "/"
+    ui.close(@app).must()
+
+# A policy that also lets the page's styles be written inline.
+test "set_policy: inline styles"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    set_policy(@app, view: v, policy: "default-src 'self'; style-src 'self' 'unsafe-inline'").must()
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/").must().policy == "default-src 'self'; style-src 'self' 'unsafe-inline'"
+    ui.close(@app).must()
+
+# The policy a new web view's responses carry.
+test "policy_of: the layer's own"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    assert policy_of(app, view: v).must() == DEFAULT_POLICY
+    ui.close(@app).must()
+
+# A documentation site the page may link to.
+test "allow_origin: a documentation site"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    allow_origin(@app, view: v, origin: "https://docs.example.org").must()
+    assert allows(app, view: v, url: "https://docs.example.org/guide").must()
+    ui.close(@app).must()
+
+# Where a new web view's page may go, and where it may not.
+test "allows: its own origin, not a file"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    assert allows(app, view: v, url: "app://localhost/settings.html").must()
+    assert !allows(app, view: v, url: "file:///Users").must()
+    ui.close(@app).must()
+
+# A page of the table shown, with a fragment.
+test "navigate: the settings page"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    navigate(@app, view: v, path: "/settings.html#theme").must()
+    assert page_of(app, view: v).must() == "/settings.html#theme"
+    ui.close(@app).must()
+
+# The page a new web view shows: none.
+test "page_of: none yet"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    assert page_of(app, view: v).must() == ""
+    ui.close(@app).must()
+
+# What a page is answered for a file the table does not hold.
+test "response_of: a missing file"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    assert response_of(app, view: v, method: "GET", url: "app://localhost/missing.png").must().status == 404
+    ui.close(@app).must()
+
+# A text posted to the page.
+test "post: a greeting"
+    app @= ui.open(.headless).must()
+    v = webview(@app, into: ui.window(@app, title: "T", width: 300, height: 200).must()).must()
+    post(@app, view: v, text: "hello, page").must()
+    ui.close(@app).must()
+
+# A call the page made with `heroes.invoke("card.move", {...})`.
+test "parse_call: a card moved"
+    c = parse_call("{\"heroes\":1,\"id\":4,\"call\":\"card.move\",\"args\":{\"to\":\"done\"}}").must()
+    assert c.id == 4
+    assert c.name == "card.move"
+
+# The answer that resolves a call's promise.
+test "format_answer: true"
+    c = parse_call("{\"heroes\":1,\"id\":4,\"call\":\"card.move\"}").must()
+    assert format_answer(c, value: .boolean(v: true)).must() == "{\"heroes\":1,\"id\":4,\"ok\":true}"
+
+# The refusal that rejects a call's promise.
+test "format_refusal: no such card"
+    c = parse_call("{\"heroes\":1,\"id\":5,\"call\":\"card.move\"}").must()
+    assert format_refusal(c, code: "not_found", msg: "no card c9") == "{\"heroes\":1,\"id\":5,\"error\":{\"code\":\"not_found\",\"msg\":\"no card c9\"}}"
+
+# An event the program sends unasked.
+test "format_event: a board changed"
+    assert format_event("board.changed", data: .text(v: "b1")).must() == "{\"heroes\":1,\"event\":\"board.changed\",\"data\":\"b1\"}"

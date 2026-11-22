@@ -142,10 +142,11 @@ capability ipc/authentication  a listener and a client proving a shared key to e
   python  multiprocessing.connection.answer_challenge, multiprocessing.connection.deliver_challenge, multiprocessing.connection.AuthenticationError, multiprocessing.connection.Listener (authkey), multiprocessing.connection.Client (authkey)
 
 capability ipc/readiness  a wait on channels for the first with bytes to read
-  heroes  pending: `poll` waits on a stream by its descriptor, and a channel is a stream made over a table of this member's, which has none (`hero_stream_descriptor` answers `UNSUPPORTED`); a door from `hero_ipc.h` that `hero_poll.h` can wait on is owed, and `poll` is another package's
+  heroes  poll.add_stream, poll.wait
   go      - (goroutines over the runtime's poller)
   rust    -
   python  multiprocessing.connection.Connection.poll, multiprocessing.connection.wait, multiprocessing.connection.Connection.readable, multiprocessing.connection.Connection.writable
+  note    a channel joins a `poll` set as the socket it reads, its table's `waitable` in `hero_ipc.c` (defect 2667); Windows waits on `hero_net.h`'s sockets alone, so there `poll.add_stream` answers `unsupported`, as for a pipe
 
 capability ipc/pair  two connected ends made within one process
   heroes  net.pair

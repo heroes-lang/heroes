@@ -29,8 +29,23 @@ use shell
 constant USAGE: str
     "usage: heroes run tests/harness/package_cards.hero -- write\n       heroes run tests/harness/package_cards.hero -- check"
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"package_cards: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    asked = word_of(args())
+    asked = word_of(text_arguments())
 
     if asked.is_err()
         print("package_cards: " + said(asked))

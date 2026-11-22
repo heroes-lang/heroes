@@ -1,0 +1,131 @@
+# Certificates signed: a TBSCertificate assembled from `pki/parts`' pieces,
+# signed with ECDSA over SHA-256 by the issuer's key in `crypto/keypairs`,
+# and wrapped with its algorithm and signature in the Certificate SEQUENCE
+# (RFC 5280 § 4.1); and the two facts about a key every certificate names:
+# its SubjectPublicKeyInfo and its identifier. The issuing authority of the
+# stand-in CA signs with these, and so does the TLS identity the demo makes
+# for the stand-in's own HTTPS.
+
+use <rebel>/asn1
+use <rebel>/big
+use <rebel>/crypto
+use <rebel>/crypto/keypairs
+
+use pki/parts
+
+## Codes
+
+# The code of a key or a SubjectPublicKeyInfo that is not of the form a
+# certificate needs.
+constant INVALID: str
+    "invalid"
+
+## Keys
+
+# The SubjectPublicKeyInfo DER of `key`'s public half.
+#
+# - `key`: the private key, which stays open; its public half is made and
+#   closed here.
+#
+# Fails as `keypairs.public_of` and `keypairs.encode_public_der` fail.
+function public_der(key: keypairs.PrivateKey) -> [u8]?
+    public @= keypairs.public_of(key)?
+    spki = keypairs.encode_public_der(public)
+    _ = keypairs.close_public(@public).is_err()
+    return spki
+
+# A key's identifier by RFC 5280 § 4.2.1.2's first method: the SHA-1 of the
+# subjectPublicKey BIT STRING's bytes, its tag, length and count of unused
+# bits left out.
+#
+# - `spki`: the SubjectPublicKeyInfo DER.
+#
+# Fails `invalid` where `spki` is not a SEQUENCE of an algorithm and a BIT
+# STRING.
+function key_id(spki: [u8]) -> [u8]?
+    items = asn1.items_of(asn1.decode_der(spki)?)?
+
+    if items.len() != 2
+        return fail(
+            code: INVALID,
+            msg: f"a SubjectPublicKeyInfo holds an algorithm and a key, and this one {items.len()} parts"
+        )
+    return ok(crypto.sha1(asn1.bits_of(items[1])?.bytes))
+
+## Certificates
+
+# What a certificate says before it is signed: RFC 5280's TBSCertificate,
+# its version 3 and its signature algorithm (ECDSA over SHA-256) implied.
+record Tbs
+    # The serial number's bytes, big-endian, read as a positive integer:
+    # RFC 5280 § 4.1.2.2 asks 20 bytes at most.
+    serial: [u8]
+    # The issuer's name, `parts.name`'s.
+    issuer: asn1.Value
+    # The subject's name; the issuer's own for a certificate an authority
+    # gives itself.
+    subject: asn1.Value
+    # The subject's key as SubjectPublicKeyInfo DER.
+    spki: [u8]
+    # The validity, `parts.validity`'s.
+    validity: asn1.Value
+    # The extensions, each `parts.extension`'s.
+    extensions: [asn1.Value]
+
+# `tbs` signed by `signer`: the certificate's DER.
+#
+# - `signer`: the issuer's private key, P-256, which stays open.
+# - `tbs`: what is signed.
+#
+# Fails `invalid` where the serial is empty or past 20 bytes or `tbs.spki`
+# is no DER, and as `keypairs.sign` and `asn1.encode_der` fail.
+function certificate(signer: keypairs.PrivateKey, tbs: Tbs) -> [u8]?
+    if tbs.serial.len() == 0 || tbs.serial.len() > 20
+        return fail(code: INVALID, msg: f"a serial number of {tbs.serial.len()} bytes, where RFC 5280 takes 1 to 20")
+    serial: asn1.Value = .big_integer(v: big.from_bytes(tbs.serial, order: .big_endian))
+    body: asn1.Value = .sequence(
+        items: [parts.version_3(), serial, parts.ecdsa_sha256(), tbs.issuer, tbs.validity, tbs.subject, asn1.decode_der(tbs.spki)?, parts.extensions(tbs.extensions)]
+    )
+    return signed(signer, body: body)
+
+# `body` signed by `signer` with ECDSA over SHA-256 and written as the
+# SEQUENCE of the body, the algorithm and the signature's BIT STRING, the
+# shape a certificate and a PKCS #10 request share.
+#
+# - `signer`: the private key, P-256, which stays open.
+# - `body`: the TBSCertificate or the CertificationRequestInfo.
+#
+# Fails as `asn1.encode_der` and `keypairs.sign` fail.
+function signed(signer: keypairs.PrivateKey, body: asn1.Value) -> [u8]?
+    message = asn1.encode_der(body)?
+    signature = keypairs.sign(signer, scheme: .ecdsa_sha256, message: message)?
+    whole: asn1.Value = .sequence(
+        items: [body, parts.ecdsa_sha256(), .bit_string(v: asn1.BitString(bytes: signature, bit_len: signature.len() * 8))]
+    )
+    return asn1.encode_der(whole)
+
+# A serial number's bytes made positive and never zero: the first byte's
+# top bit cleared, as RFC 5280 asks a positive INTEGER, and a first byte of
+# zero made 1, so DER writes every byte given.
+#
+# - `drawn`: bytes drawn for the serial, 1 to 20 of them.
+function positive_serial(drawn: [u8]) -> [u8]
+    if drawn.len() == 0
+        return [1]
+    out @= drawn
+    first = to_i64(drawn[0]).must() & 0x7f
+
+    if first == 0
+        out[0] @ 1
+    else
+        out[0] @ to_u8(first).must()
+    return out
+
+test "positive_serial: the top bit cleared, a zero first byte made one, nothing made one"
+    assert positive_serial([0xff, 0x00]) == [0x7f, 0x00]
+    assert positive_serial([0x80, 0x01]) == [0x01, 0x01]
+    assert positive_serial([0x00]) == [0x01]
+    assert positive_serial([]) == [1]
+
+test "key_id: a value that is no SubjectPublicKeyInfo is refused"
+    assert key_id([0x30, 0x00]).is_err()

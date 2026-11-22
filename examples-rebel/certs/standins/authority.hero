@@ -1,0 +1,273 @@
+# The stand-in CA's authorities, as a public CA arranges its own: a root,
+# self-signed, whose certificate a client trusts, and an intermediate the
+# root signed, which signs every certificate issued, so the root's key is
+# used twice and then only kept. Both keys are P-256, made at start by
+# `crypto/keypairs` and never written anywhere; both certificates are
+# written from `pki`'s pieces and read back by `x509` before they are used.
+#
+# A certificate issued carries what a TLS server's certificate of the web
+# carries: the names of the order in its subjectAltName, the first name as
+# its common name, `digitalSignature`, `serverAuth` and `clientAuth`, its
+# key's identifier and its issuer's, and where the issuer's certificate is
+# served (`caIssuers`).
+
+use <rebel>/asn1
+use <rebel>/crypto/keypairs
+use <rebel>/pem
+use <rebel>/time
+use <rebel>/x509
+
+use pki/parts
+use pki/request
+use pki/signing
+
+## Names
+
+# The organization every authority of the stand-in names.
+constant ORGANIZATION: str
+    "Certs Stand-in CA"
+
+# The root's common name.
+constant ROOT_NAME: str
+    "Certs Stand-in Root X1"
+
+# The intermediate's common name.
+constant ISSUER_NAME: str
+    "Certs Stand-in Issuer R1"
+
+## The authorities
+
+# The two authorities, their keys held open until `close`.
+record Authority
+    # The root's key, which signed the intermediate.
+    root_key: keypairs.PrivateKey
+    # The intermediate's key, which signs every certificate issued.
+    issuer_key: keypairs.PrivateKey
+    # The root's certificate, PEM: what a client trusts.
+    root_pem: str
+    # The intermediate's certificate, PEM: what follows a certificate issued
+    # in its chain.
+    issuer_pem: str
+    # The intermediate's DER, served at its `caIssuers` URL.
+    issuer_der: [u8]
+    # The intermediate's name, every certificate's issuer.
+    issuer_name: asn1.Value
+    # The intermediate's key identifier.
+    issuer_key_id: [u8]
+
+# The two authorities made: a root valid twenty years from a day before
+# `at`, and an intermediate valid five, both serials of `serials`.
+#
+# - `at`: the stand-in's first moment.
+# - `serials`: two serial numbers' bytes, the root's then the
+#   intermediate's, `signing.positive_serial`'s.
+#
+# Fails as `keypairs.generate`, `signing.certificate` and `x509` fail; both
+# keys are closed on every failure.
+function make(at: time.Instant, serials: [[u8]]) -> Authority?
+    root_key @= keypairs.generate(.p256)?
+
+    match keypairs.generate(.p256)
+        .err e =>
+            _ = keypairs.close_private(@root_key).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok made =>
+            issuer_key @= made
+
+            match certified(root_key: root_key, issuer_key: issuer_key, at: at, serials: serials)
+                .ok a => return ok(a)
+                .err e =>
+                    _ = keypairs.close_private(@root_key).is_err()
+                    _ = keypairs.close_private(@issuer_key).is_err()
+                    return fail(code: e.code, msg: e.msg)
+
+# `make`'s work once both keys are made.
+#
+# - `root_key`: the root's key.
+# - `issuer_key`: the intermediate's key.
+# - `at`: the stand-in's first moment.
+# - `serials`: the two serials.
+#
+# Fails as `make` fails.
+function certified(root_key: keypairs.PrivateKey, issuer_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Authority?
+    start = time.add(at, d: time.days(-1)?)?
+    root_spki = signing.public_der(root_key)?
+    root_id = signing.key_id(root_spki)?
+    root_name = parts.name(common_name: ROOT_NAME, organization: ORGANIZATION)
+    root_tbs = signing.Tbs(
+        serial: serials[0],
+        issuer: root_name,
+        subject: root_name,
+        spki: root_spki,
+        validity: parts.validity(not_before: start, not_after: time.add(start, d: time.days(7305)?)?)?,
+        extensions: [parts.basic_constraints(is_ca: true, path_len: -1)?, parts.key_usage(true)?, parts.subject_key_id(root_id)?]
+    )
+    root_der = signing.certificate(root_key, tbs: root_tbs)?
+    issuer_spki = signing.public_der(issuer_key)?
+    issuer_id = signing.key_id(issuer_spki)?
+    issuer_name = parts.name(common_name: ISSUER_NAME, organization: ORGANIZATION)
+    issuer_tbs = signing.Tbs(
+        serial: serials[1],
+        issuer: root_name,
+        subject: issuer_name,
+        spki: issuer_spki,
+        validity: parts.validity(not_before: start, not_after: time.add(start, d: time.days(1826)?)?)?,
+        extensions: [parts.basic_constraints(is_ca: true, path_len: 0)?, parts.key_usage(true)?, parts.server_usage()?, parts.subject_key_id(issuer_id)?, parts.authority_key_id(root_id)?]
+    )
+    issuer_der = signing.certificate(root_key, tbs: issuer_tbs)?
+    root = x509.decode_certificate(root_der)?
+    issuer = x509.decode_certificate(issuer_der)?
+
+    if !x509.is_signed_by(certificate: issuer, issuer: root)?
+        return fail(code: x509.INVALID, msg: "the intermediate made does not verify under the root")
+    return ok(
+        Authority(root_key: root_key, issuer_key: issuer_key, root_pem: x509.format_certificate(root), issuer_pem: x509.format_certificate(issuer), issuer_der: issuer_der, issuer_name: issuer_name, issuer_key_id: issuer_id)
+    )
+
+# Closes both keys of `a`.
+#
+# - `a`: the authorities, their keys closed and their places emptied.
+function close(@a: Authority)
+    _ = keypairs.close_private(@a.root_key).is_err()
+    _ = keypairs.close_private(@a.issuer_key).is_err()
+
+## Issuing
+
+# What a certificate is issued for.
+record Asked
+    # The request, read and checked.
+    request: x509.Request
+    # The order's identifiers' values, in its order, a wildcard's `*.` kept.
+    domains: [str]
+    # The serial's bytes.
+    serial: [u8]
+    # The first valid moment.
+    not_before: time.Instant
+    # The last valid moment.
+    not_after: time.Instant
+    # Where the intermediate's certificate is served.
+    issuer_url: str
+
+# The certificate `asked` describes, signed by the intermediate: its DER.
+#
+# - `a`: the authorities.
+# - `asked`: the request, the names, the serial, the dates and the issuer's
+#   URL.
+#
+# Fails as `signing.certificate` and the `parts` it is made of fail.
+function issue(a: Authority, asked: Asked) -> [u8]?
+    spki = asked.request.public_key.der
+    common = request.subject_name(asked.domains)
+    tbs = signing.Tbs(
+        serial: asked.serial,
+        issuer: a.issuer_name,
+        subject: parts.name(common_name: common, organization: ""),
+        spki: spki,
+        validity: parts.validity(not_before: asked.not_before, not_after: asked.not_after)?,
+        extensions: [parts.basic_constraints(is_ca: false, path_len: -1)?, parts.key_usage(false)?, parts.server_usage()?, parts.subject_key_id(signing.key_id(spki)?)?, parts.authority_key_id(a.issuer_key_id)?, parts.issuer_access(asked.issuer_url)?, parts.alt_names(domains: asked.domains, subject_empty: common == "")?]
+    )
+    return signing.certificate(a.issuer_key, tbs: tbs)
+
+# The chain served for a certificate: it, then the intermediate, PEM.
+#
+# - `a`: the authorities.
+# - `der`: the certificate's DER.
+#
+# Fails as `pem.format` fails.
+function chain_of(a: Authority, der: [u8]) -> str?
+    return ok(pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: der))? + a.issuer_pem)
+
+## The CA's own HTTPS
+
+# What the stand-in's own HTTPS presents: a certificate for 127.0.0.1 and
+# `localhost` under a root of its own, apart from the issuing one, as a test
+# CA ships one for its API; the client trusts that root for the API alone.
+record Https
+    # The server's certificate then its root, PEM, as `tls.Server.chain`
+    # takes them.
+    chain: str
+    # The server's key, PKCS #8 PEM.
+    key: str
+    # The root, PEM, which a client of the API trusts.
+    root: str
+
+# A root and a server certificate for 127.0.0.1 and `localhost`, both valid
+# from a day before `at` for two years, so a client checking them by the
+# system's clock finds them valid whatever moment the stand-in's own clock
+# says.
+#
+# - `at`: the stand-in's first moment.
+# - `serials`: two serials' bytes, the root's then the server's.
+#
+# Both keys are made, used and closed here; only PEM leaves. Fails as
+# `keypairs.generate` and `signing.certificate` fail.
+function https_identity(at: time.Instant, serials: [[u8]]) -> Https?
+    root_key @= keypairs.generate(.p256)?
+    made = https_signed(root_key, at: at, serials: serials)
+    _ = keypairs.close_private(@root_key).is_err()
+    return made
+
+# `https_identity`'s work once the root's key is made.
+#
+# - `root_key`: the root's key, which stays open.
+# - `at`: the stand-in's first moment.
+# - `serials`: the two serials.
+#
+# Fails as `https_identity` fails.
+function https_signed(root_key: keypairs.PrivateKey, at: time.Instant, serials: [[u8]]) -> Https?
+    start = time.add(at, d: time.days(-1)?)?
+    validity = parts.validity(not_before: start, not_after: time.add(start, d: time.days(730)?)?)?
+    root_spki = signing.public_der(root_key)?
+    root_id = signing.key_id(root_spki)?
+    root_name = parts.name(common_name: "Certs Stand-in HTTPS Root", organization: ORGANIZATION)
+    root_der = signing.certificate(root_key, tbs: signing.Tbs(serial: serials[0], issuer: root_name, subject: root_name, spki: root_spki, validity: validity, extensions: [parts.basic_constraints(is_ca: true, path_len: 0)?, parts.key_usage(true)?, parts.subject_key_id(root_id)?]))?
+    server_key @= keypairs.generate(.p256)?
+    server_spki = signing.public_der(server_key)
+    key_pem = keypairs.format_private_pem(server_key)
+    _ = keypairs.close_private(@server_key).is_err()
+    spki = server_spki?
+    domains = ["localhost", "127.0.0.1"]
+    server_der = signing.certificate(root_key, tbs: signing.Tbs(serial: serials[1], issuer: root_name, subject: parts.name(common_name: "localhost", organization: ORGANIZATION), spki: spki, validity: validity, extensions: [parts.basic_constraints(is_ca: false, path_len: -1)?, parts.key_usage(false)?, parts.server_usage()?, parts.subject_key_id(signing.key_id(spki)?)?, parts.authority_key_id(root_id)?, parts.alt_names(domains: domains, subject_empty: false)?]))?
+    root_pem = pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: root_der))?
+    server_pem = pem.format(pem.Block(label: "CERTIFICATE", headers: [], data: server_der))?
+    return ok(Https(chain: server_pem + root_pem, key: key_pem?, root: root_pem))
+
+test "make: an intermediate the root signed, both read back as authorities"
+    at = time.now().must()
+    made @= make(at, serials: [[1], [2]]).must()
+    root = x509.parse_certificate(made.root_pem).must()
+    issuer = x509.parse_certificate(made.issuer_pem).must()
+    assert x509.is_self_issued(root) && x509.is_signed_by(certificate: issuer, issuer: root).must()
+    assert issuer.extensions.basic_constraints.must().is_ca
+    close(@made)
+
+test "issue: a certificate for a request, verified up to the root for its names"
+    at = time.now().must()
+    made @= make(at, serials: [[1], [2]]).must()
+    key @= keypairs.generate(.p256).must()
+    der = request.make(["www.certs.test", "127.0.0.1"], key: key).must()
+    _ = keypairs.close_private(@key).is_err()
+    asked = Asked(
+        request: x509.decode_request(der).must(),
+        domains: ["www.certs.test", "127.0.0.1"],
+        serial: [0x11, 0x22],
+        not_before: time.add(at, d: time.hours(-1).must()).must(),
+        not_after: time.add(at, d: time.days(90).must()).must(),
+        issuer_url: "https://ca.test/issuer"
+    )
+    leaf = x509.decode_certificate(issue(made, asked: asked).must()).must()
+    chain = [leaf, x509.parse_certificate(made.issuer_pem).must()]
+    roots = [x509.parse_certificate(made.root_pem).must()]
+    x509.verify_chain(
+        chain,
+        options: x509.Verification(roots: roots, at: at, purpose: x509.SERVER_AUTH, host: "www.certs.test")
+    ).must()
+    x509.verify_chain(
+        chain,
+        options: x509.Verification(roots: roots, at: at, purpose: x509.SERVER_AUTH, host: "127.0.0.1")
+    ).must()
+    assert x509.verify_chain(
+        chain,
+        options: x509.Verification(roots: roots, at: at, purpose: x509.SERVER_AUTH, host: "other.test")
+    ).is_err()
+    close(@made)

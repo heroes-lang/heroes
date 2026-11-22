@@ -85,7 +85,7 @@ function command_line() -> flags.Command
     return root
 
 function main()
-    found = match flags.parse(command_line(), arguments: args())
+    found = match flags.parse_args(command_line())
         .ok f => f
         .err e =>
             print(e.msg)

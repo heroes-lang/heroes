@@ -1,0 +1,219 @@
+# The MQTT stand-in's state: its connections and what their CONNECT and
+# SUBSCRIBE packets said, the framing of a packet by its Remaining Length,
+# and the delivery of a PUBLISH to every subscription that matches it, at the
+# lower of the two qualities of service. `mqtt_broker` reads the packets and
+# answers them with what this module holds.
+
+use <rebel>/io
+use <rebel>/math
+use <rebel>/mqtt
+use <rebel>/poll
+
+# The most bytes one packet may hold here: far past any reading, and a bound
+# on what one connection makes the stand-in hold.
+constant MOST_PACKET_BYTES: i64
+    1_048_576
+
+# One connection, and what its CONNECT and SUBSCRIBE packets said.
+record Peer
+    # Its key in the poll set.
+    key: i64
+    # Its stream, the stand-in's to close.
+    stream: io.Stream
+    # Bytes read and not yet a whole packet.
+    held: [u8]
+    # The protocol level its CONNECT asked, 4 or 5; 0 before its CONNECT.
+    version: i64
+    # Its client identifier.
+    client_id: str
+    # Its subscriptions, each filter once.
+    subscriptions: [mqtt.Subscription]
+    # The packet identifier its next QoS 1 delivery takes, 1 to 65,535.
+    next_id: i64
+    # Whether it is connected.
+    open: bool
+
+# The stand-in's connections and what it carried.
+record Broker
+    # Every connection, in the order accepted; a closed one stays with
+    # `open` false, so an index names one connection for the stand-in's
+    # whole life.
+    peers: [Peer]
+    # PUBLISH packets received.
+    published: i64
+    # Deliveries written to subscribers.
+    delivered: i64
+    # Connections ended because a new one took their client identifier.
+    taken_over: i64
+
+# The bytes the whole packet at the start of `held` takes: its first byte,
+# its Remaining Length (one to four bytes of seven bits, the least
+# significant first, MQTT 5 § 1.5.5), and the rest. 0 where more bytes are
+# needed; -1 where the length is malformed or past `MOST_PACKET_BYTES`.
+#
+# - `held`: the bytes read from a connection and not yet framed.
+function packet_length(held: [u8]) -> i64
+    length @= 0
+    scale @= 1
+    at @= 1
+
+    while at < held.len()
+        b = to_i64(held[at]).must()
+        length @ length + (b & 127) * scale
+
+        if b & 128 == 0
+            total = at + 1 + length
+
+            if total > MOST_PACKET_BYTES
+                return -1
+
+            if held.len() < total
+                return 0
+
+            return total
+
+        if at == 4
+            return -1
+
+        scale @ scale * 128
+        at @ at + 1
+
+    return 0
+
+# Writes `p` to `peer` at its level, and answers whether it was written.
+#
+# - `peer`: the connection.
+# - `p`: the packet.
+function send(peer: Peer lent, p: mqtt.Packet) -> bool
+    data = match mqtt.encode(p, version: peer.version)
+        .ok d  => d
+        .err _ => return false
+
+    return !io.write(peer.stream, data: data).is_err()
+
+# Closes the connection of peer `i` and takes it out of the poll set; one
+# closed already is left as it is.
+#
+# - `b`: the stand-in.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function drop_peer(@b: Broker, set: poll.Set, i: i64)
+    if !b.peers[i].open
+        return
+
+    # A connection ends here whatever its socket answers: a failure to take
+    # it out of the set or to close it leaves nothing better to do.
+    _ = poll.remove(set, key: b.peers[i].key).is_err()
+    _ = io.close(@b.peers[i].stream).is_err()
+    b.peers[i].open @ false
+
+# The highest QoS a subscription of `peer` matching `topic` grants, -1
+# where none matches; a No Local subscription does not take the peer's own
+# messages (MQTT 5 § 3.8.3.1).
+#
+# - `peer`: the subscriber.
+# - `topic`: the message's topic.
+# - `own`: whether the message is the peer's own.
+function granted_for(peer: Peer lent, topic: str, own: bool) -> i64
+    best @= -1
+
+    for s in peer.subscriptions
+        if mqtt.matches(pattern: s.filter, topic: topic) && !(own && s.no_local) && s.qos > best
+            best @ s.qos
+
+    return best
+
+# The properties a message keeps when it is delivered at `version`: none in
+# 3.1.1; in 5 its own, but a Topic Alias and Subscription Identifiers, which
+# belong to one connection.
+#
+# - `properties`: the message's properties as published.
+# - `version`: the subscriber's level.
+function delivered_properties(properties: [mqtt.Property], version: i64) -> [mqtt.Property]
+    kept: [mqtt.Property] @= []
+
+    if version != 5
+        return kept
+
+    for p in properties
+        if p.id != mqtt.TOPIC_ALIAS && p.id != mqtt.SUBSCRIPTION_IDENTIFIER
+            kept @ kept.push(p)
+
+    return kept
+
+# Delivers `m`, published by peer `from`, to every connected peer one of
+# whose subscriptions matches it, once each, at the lower of its QoS and the
+# subscription's.
+#
+# - `b`: the stand-in.
+# - `from`: the publisher's index.
+# - `m`: the message as published.
+function route(@b: Broker, from: i64, m: mqtt.Message)
+    b.published @ b.published + 1
+    j @= 0
+
+    while j < b.peers.len()
+        granted = granted_for(b.peers[j], topic: m.topic, own: j == from)
+
+        if b.peers[j].open && b.peers[j].version != 0 && granted >= 0
+            out @= m
+            out.qos @ math.min_i64(a: m.qos, b: granted)
+            out.retain @ false
+            out.dup @ false
+            out.packet_id @ 0
+            out.properties @ delivered_properties(m.properties, version: b.peers[j].version)
+
+            if out.qos > 0
+                out.packet_id @ b.peers[j].next_id
+                b.peers[j].next_id @ b.peers[j].next_id % 65_535 + 1
+
+            if send(b.peers[j], p: .publish(message: out))
+                b.delivered @ b.delivered + 1
+
+        j @ j + 1
+
+# A peer of the tests, connected at level 5 with `subscriptions`.
+#
+# - `subscriptions`: what it subscribed to.
+function test_peer(subscriptions: [mqtt.Subscription]) -> Peer
+    return Peer(
+        key: 1,
+        stream: io.stdout(),
+        held: [],
+        version: 5,
+        client_id: "x",
+        subscriptions: subscriptions,
+        next_id: 1,
+        open: true
+    )
+
+test "packet_length: a PINGREQ, two bytes of length, a packet cut short, and five bytes of length"
+    assert packet_length([192, 0]) == 2
+    held: [u8] @= [48, 130, 1]
+
+    for _ in range(from: 0, to: 130)
+        held @ held.push(0)
+
+    assert packet_length(held) == 133
+    assert packet_length([48, 130]) == 0
+    assert packet_length([48, 5, 0]) == 0
+    assert packet_length([48, 128, 128, 128, 128, 1]) == -1
+    assert packet_length([48]) == 0
+    assert packet_length([]) == 0
+
+test "granted_for: a wildcard, No Local on one's own message, the higher of two, and no match"
+    peer = test_peer([mqtt.subscription("plant/alarms/#", qos: 0), mqtt.subscription("plant/alarms/+", qos: 1)])
+    assert granted_for(peer, topic: "plant/alarms/press-2", own: false) == 1
+    quiet @= peer
+    quiet.subscriptions[0].no_local @ true
+    quiet.subscriptions[1].no_local @ true
+    assert granted_for(quiet, topic: "plant/alarms/press-2", own: true) == -1
+    assert granted_for(peer, topic: "weather/wx-1", own: false) == -1
+
+test "delivered_properties: none in 3.1.1, a topic alias dropped in 5"
+    props = [
+        mqtt.Property(id: mqtt.TOPIC_ALIAS, value: .number(v: 3))
+        mqtt.Property(id: mqtt.CONTENT_TYPE, value: .text(v: "application/json"))
+    ]
+    assert delivered_properties(props, version: 4).len() == 0
+    assert delivered_properties(props, version: 5) == [mqtt.Property(id: mqtt.CONTENT_TYPE, value: .text(v: "application/json"))]
