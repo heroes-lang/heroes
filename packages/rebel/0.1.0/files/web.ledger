@@ -347,11 +347,11 @@ capability static/sniff  a body's type guessed from its first bytes
   note    the WHATWG's MIME Sniffing standard, as Go answers it on every signature tested (observed)
 
 capability middleware/chain  steps run before and after a handler, in the program's order
-  heroes  web.before, web.after, web.Step
+  heroes  web.before, web.after, web.before_with, web.after_with, web.Step
   go      echo.Echo.Use, echo.Echo.Pre, echo.MiddlewareFunc, echo.HandlerFunc, gin.Engine.Use, gin.HandlersChain, gin.Context.Next, Abort, IsAborted, chi.Router.Use, chi.Chain, chi.Middlewares
   rust    -
   python  flask.Flask.before_request, flask.Flask.after_request, flask.Flask.teardown_request, flask.Blueprint.before_request, after_request
-  note    a step before is a function from a request to the request or an answer, a step after one from a request and a response to a response; the program calls them, so a step may take what it needs as arguments
+  note    a step before is a function from a request to the request or an answer, a step after one from a request and a response to a response; `before_with` and `after_with` hand each step the program's own value first, as `http.serve_with` hands a handler one, since the language has no closure for a step to carry the server's keys, settings or store in; the value is read and never changed, so a step that changes state (`limit_rate`'s limiter) is called by the program with its `@` state
 
 capability middleware/log  one line a request
   heroes  web.log_request
@@ -389,14 +389,14 @@ capability middleware/body-limit  a body past a size refused 413
   note    the server's own limit is `http.Server.limits`; this is a route's
 
 capability middleware/basic-auth  a request refused 401 without credentials the program accepts
-  heroes  web.require_basic, web.challenge_basic, http.basic_auth_of
+  heroes  web.require_basic, web.require_basic_with, web.challenge_basic, http.basic_auth_of
   go      echo/middleware.BasicAuth, gin.BasicAuth, gin.BasicAuthForRealm, gin.Accounts, chi/middleware.BasicAuth
   rust    -
   python  flask.Request.authorization
   note    `WWW-Authenticate: Basic realm="…", charset="UTF-8"`, RFC 7617, where Echo writes `basic realm=Restricted`
 
 capability middleware/key-auth  a request refused 401 without a token the program accepts
-  heroes  web.require_bearer, web.challenge_bearer, http.bearer_token_of
+  heroes  web.require_bearer, web.require_bearer_with, web.challenge_bearer, http.bearer_token_of
   go      echo/middleware.KeyAuth, KeyAuthWithConfig
   rust    -
   python  -

@@ -21,6 +21,26 @@ function is_alice(c: http.Credentials) -> bool
 function is_good_token(token: str) -> bool
     return token == "good-token"
 
+# Whether `c` names an account of `accounts`, a map of each user to its
+# password, with that password: the state `require_basic_with` hands.
+function is_account(accounts: {str: str}, c: http.Credentials) -> bool
+    match accounts[c.user]
+        .ok password => return password == c.password
+        .err _       => return false
+
+# Whether `token` is the one `key` signs in the tests, `signed-by-` and the
+# key: the state `require_bearer_with` hands, as a program hands its signing
+# key.
+function is_signed_by(key: str, token: str) -> bool
+    return token == "signed-by-" + key
+
+# `response` with its `Server` field set to `name`: a step after a handler
+# that reads the program's value, as `after_with` hands it.
+function with_server(name: str, _: http.Request, response: http.Response) -> http.Response
+    out @= response
+    out.headers @ http.with_header(response.headers, name: "Server", value: name)
+    return out
+
 # A program's own function with its own state: counts a visit in `hits` and
 # answers the route's `name`, the `id` and the count.
 function visit(@hits: i64, name: str, id: str) -> http.Response
@@ -101,6 +121,15 @@ test "is_alice: the right pair and a wrong password"
 
 test "is_good_token: the token and another"
     assert is_good_token("good-token") && !is_good_token("bad")
+
+test "is_account, is_signed_by and with_server: the states the tests hand"
+    accounts = {"alice": "secret"}
+    assert is_account(accounts, c: http.Credentials(user: "alice", password: "secret"))
+    assert !is_account(accounts, c: http.Credentials(user: "alice", password: "x"))
+    assert !is_account(accounts, c: http.Credentials(user: "bob", password: "secret"))
+    assert is_signed_by(key: "k", token: "signed-by-k") && !is_signed_by(key: "k", token: "signed-by-j")
+    got = with_server("one", http.request(method: "GET", target: "/").must(), response: http.respond_status(204))
+    assert http.value_of(got.headers, name: "Server").must() == "one"
 
 test "visit: the count grows in the caller's place"
     hits: i64 @= 0

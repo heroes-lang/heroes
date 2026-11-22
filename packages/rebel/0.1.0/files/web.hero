@@ -4,8 +4,9 @@
 # under a prefix. `route` answers which route takes a request and what its
 # parameters hold; the program calls its own function for that name, with its
 # own state. Steps before and after a handler are plain functions the program
-# calls in its order: a log line, CORS, a failure answered 500, a request id,
-# a body's limit, Basic and Bearer checks, gzip, a rate limit per client.
+# calls in its order, each handed the program's own value where it reads one:
+# a log line, CORS, a failure answered 500, a request id, a body's limit,
+# Basic and Bearer checks, gzip, a rate limit per client.
 # Responses of a template, of a file and of a folder's files, served safely,
 # errors as text or JSON, and server-sent events written as they are made.
 # Cookies signed or sealed with their end inside, sessions kept in them, and
@@ -581,7 +582,9 @@ variant Step
 #   goes on with `r`.
 #
 # The first `answer`, or `go_on` with what the last step went on with. A step
-# that needs more than the request is called by the program itself.
+# that reads the program's own value is `before_with`'s; one that changes it,
+# as `limit_rate` changes its limiter, is called by the program itself, since
+# a function value takes no `@` parameter (spec § 9).
 function before(r: http.Request, steps: [(function(http.Request) -> Step)]) -> Step
     current @= r
 
@@ -603,6 +606,51 @@ function after(r: http.Request, response: http.Response, steps: [(function(http.
 
     for step in steps
         current @ step(r, current)
+
+    return current
+
+# `before` with `state` handed to each step beside the request: how a step
+# reads the server's keys, settings or data, since a function value holds
+# none of its own (spec § 9).
+#
+# - `r`: the request the first step reads.
+# - `state`: the value handed to every step, read and never changed: each
+#   step receives its own copy, as every value is (spec § 3), so a step that
+#   changes its copy changes nothing the next one sees.
+# - `steps`: the steps, each called with `state` and what the one before
+#   went on with; none goes on with `r`.
+#
+# The first `answer`, or `go_on` with what the last step went on with. A step
+# of the request alone joins the list through a step of the program's that
+# calls it, since one list holds steps of one type. Handing `state` costs no
+# copy of its bytes where the steps only read it (README § B1). See also
+# `after_with`, `require_bearer_with`.
+function before_with<S>(r: http.Request, state: S, steps: [(function(S, http.Request) -> Step)]) -> Step
+    current @= r
+
+    for step in steps
+        match step(state, current)
+            .go_on g  => current @ g.request
+            .answer a => return .answer(response: a.response)
+
+    return .go_on(request: current)
+
+# `after` with `state` handed to each step beside the request and the
+# response, as `before_with` hands it.
+#
+# - `r`: the request answered.
+# - `response`: the handler's response.
+# - `state`: the value handed to every step, read and never changed, as
+#   `before_with` hands it.
+# - `steps`: the steps, each called with `state`, `r` and what the one before
+#   answered; none answers `response`.
+#
+# See also `before_with`.
+function after_with<S>(r: http.Request, response: http.Response, state: S, steps: [(function(S, http.Request, http.Response) -> http.Response)]) -> http.Response
+    current @= response
+
+    for step in steps
+        current @ step(state, r, current)
 
     return current
 
@@ -630,13 +678,25 @@ function limit_body(r: http.Request, most_bytes: i64) -> Step
 #   true lets `r` go on.
 #
 # The challenge is `challenge_basic`'s. A program that checks credentials
-# against its own state reads them with `http.basic_auth_of` and answers
-# `challenge_basic` itself.
+# against its own accounts hands them to `require_basic_with`.
 function require_basic(r: http.Request, realm: str, accepts: (function(http.Credentials) -> bool)) -> Step
+    return require_basic_with(r, realm: realm, state: accepts, accepts: reading.apply)
+
+# `require_basic` with `state` handed to `accepts` beside the credentials:
+# how a program checks them against its own accounts.
+#
+# - `r`: the request.
+# - `realm`: the realm the challenge names, as `require_basic` reads it.
+# - `state`: the value handed to `accepts`, read and never changed.
+# - `accepts`: called once with `state` and the credentials where `r`
+#   carries them; true lets `r` go on.
+#
+# Answers as `require_basic` does. See also `before_with`.
+function require_basic_with<S>(r: http.Request, realm: str, state: S, accepts: (function(S, http.Credentials) -> bool)) -> Step
     match http.basic_auth_of(r)
         .err _ => return .answer(response: challenge_basic(realm))
         .ok c =>
-            if accepts(c)
+            if accepts(state, c)
                 return .go_on(request: r)
             return .answer(response: challenge_basic(realm))
 
@@ -663,15 +723,30 @@ function challenge_basic(realm: str) -> http.Response
 # - `accepts`: called once with the token where `r` carries one; true lets
 #   `r` go on.
 #
-# See also `http.bearer_token_of`, `challenge_bearer`.
+# A program that checks the token against its own key or store hands them to
+# `require_bearer_with`. See also `http.bearer_token_of`, `challenge_bearer`.
 function require_bearer(r: http.Request, realm: str, accepts: (function(str) -> bool)) -> Step
+    return require_bearer_with(r, realm: realm, state: accepts, accepts: reading.apply)
+
+# `require_bearer` with `state` handed to `accepts` beside the token: how a
+# program checks a token against its own signing key or its own store.
+#
+# - `r`: the request.
+# - `realm`: the realm the challenge names.
+# - `state`: the value handed to `accepts`, read and never changed.
+# - `accepts`: called once with `state` and the token where `r` carries one;
+#   true lets `r` go on.
+#
+# Answers as `require_bearer` does, RFC 6750's 401 and 400. See also
+# `before_with`, `challenge_bearer`.
+function require_bearer_with<S>(r: http.Request, realm: str, state: S, accepts: (function(S, str) -> bool)) -> Step
     match http.bearer_token_of(r)
         .err e =>
             if e.code == http.INVALID
                 return .answer(response: challenge_bearer(realm: realm, error: "invalid_request"))
             return .answer(response: challenge_bearer(realm: realm, error: ""))
         .ok token =>
-            if accepts(token)
+            if accepts(state, token)
                 return .go_on(request: r)
             return .answer(response: challenge_bearer(realm: realm, error: "invalid_token"))
 
@@ -2490,6 +2565,38 @@ test "after: none answers the response as it is"
     response = http.respond_status(204)
     assert after(fixture.request_of(method: "GET", target: "/", headers: []), response: response, steps: []) == response
 
+test "before_with: none goes on with the request, each step given the state, the first answer stops the rest"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "put")]
+    )
+
+    match before_with(r, state: override_method, steps: [])
+        .go_on g  => assert g.request == r
+        .answer _ => assert false
+
+    match before_with(r, state: override_method, steps: [reading.apply, reading.apply])
+        .go_on g  => assert g.request.method == "PUT"
+        .answer _ => assert false
+
+    refused = fixture.request_of(
+        method: "POST",
+        target: "/",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "GET")]
+    )
+
+    match before_with(refused, state: override_method, steps: [reading.apply, reading.apply])
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 400
+
+test "after_with: none answers the response as it is, each step given the state and what the one before answered"
+    r = fixture.request_of(method: "GET", target: "/", headers: [])
+    response = http.respond_status(204)
+    assert after_with(r, response: response, state: "one", steps: []) == response
+    got = after_with(r, response: response, state: "two", steps: [fixture.with_server, fixture.with_server])
+    assert got.headers == [http.Header(name: "Server", value: "two")]
+
 test "limit_body: at the limit, past it, an empty body and a limit of 0"
     r = http.with_text(fixture.request_of(method: "POST", target: "/", headers: []), text: "four")
 
@@ -2548,6 +2655,62 @@ test "require_bearer: none, another scheme, a malformed token, a refused one, th
     match require_bearer(http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "good-token"), realm: "api", accepts: fixture.is_good_token)
         .go_on _  => _ = 0
         .answer _ => assert false
+
+test "require_basic_with: none, a user the state does not hold, a wrong password, a field that does not read, the right ones"
+    accounts = {"alice": "secret", "bob": ""}
+    refused: [[http.Header]] = [
+        []
+        [http.Header(name: "Authorization", value: "Basic " + bytes.format_base64(bytes.from_text("carol:secret")))]
+        [http.Header(name: "Authorization", value: "Basic " + bytes.format_base64(bytes.from_text("alice:x")))]
+        [http.Header(name: "Authorization", value: "Basic !!!")]
+    ]
+
+    for header in refused
+        match require_basic_with(fixture.request_of(method: "GET", target: "/", headers: header), realm: "admin", state: accounts, accepts: fixture.is_account)
+            .go_on _  => assert false
+            .answer a => assert a.response.status == 401 && http.value_of(a.response.headers, name: "WWW-Authenticate").must() == "Basic realm=\"admin\", charset=\"UTF-8\""
+
+    for user in ["alice", "bob"]
+        right = http.with_basic_auth(
+            fixture.request_of(method: "GET", target: "/", headers: []),
+            user: user,
+            password: accounts[user].must()
+        )
+
+        match require_basic_with(right, realm: "admin", state: accounts, accepts: fixture.is_account)
+            .go_on g  => assert g.request == right
+            .answer _ => assert false
+
+test "require_bearer_with: none, another scheme, a malformed token, one another key signed, the key's own"
+    cases = [
+        ["", "401", "Bearer realm=\"api\""]
+        ["Basic YTpi", "401", "Bearer realm=\"api\""]
+        ["Bearer a b", "400", "Bearer realm=\"api\", error=\"invalid_request\""]
+        ["Bearer signed-by-other", "401", "Bearer realm=\"api\", error=\"invalid_token\""]
+    ]
+
+    for c in cases
+        headers: [http.Header] @= []
+
+        if c[0] != ""
+            headers @ [http.Header(name: "Authorization", value: c[0])]
+
+        match require_bearer_with(fixture.request_of(method: "GET", target: "/", headers: headers), realm: "api", state: "key-1", accepts: fixture.is_signed_by)
+            .go_on _  => assert false
+            .answer a => assert to_str(a.response.status) == c[1] && http.value_of(a.response.headers, name: "WWW-Authenticate").must() == c[2]
+
+    signed = http.with_bearer_auth(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        token: "signed-by-key-1"
+    )
+
+    match require_bearer_with(signed, realm: "api", state: "key-1", accepts: fixture.is_signed_by)
+        .go_on g  => assert g.request == signed
+        .answer _ => assert false
+
+    match require_bearer_with(signed, realm: "api", state: "key-2", accepts: fixture.is_signed_by)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 401
 
 test "challenge_bearer: insufficient scope is 403, a realm's quote escaped"
     got = challenge_bearer(realm: "a\"b", error: "insufficient_scope")
@@ -3327,6 +3490,26 @@ test "after: the request's id copied to the response"
     got = after(r, response: http.respond_status(204), steps: [copy_request_id])
     assert http.value_of(got.headers, name: "X-Request-Id").must() == "r-1"
 
+# Steps that read the program's own value, the state handed to each beside
+# the request: here the value is a step of the request alone, which
+# `reading.apply` runs, as a program's own step would read its settings.
+test "before_with: a POST standing for DELETE, the step handed as the value"
+    r = fixture.request_of(
+        method: "POST",
+        target: "/items/3",
+        headers: [http.Header(name: "X-HTTP-Method-Override", value: "DELETE")]
+    )
+
+    match before_with(r, state: override_method, steps: [reading.apply])
+        .go_on g  => assert g.request.method == "DELETE"
+        .answer _ => assert false
+
+# Steps after a handler that read the program's own value: the server's name.
+test "after_with: the server's name written into the response"
+    r = fixture.request_of(method: "GET", target: "/", headers: [])
+    got = after_with(r, response: http.respond_status(204), state: "notes", steps: [fixture.with_server])
+    assert http.value_of(got.headers, name: "Server").must() == "notes"
+
 # A body past a route's limit refused.
 test "limit_body: a body of 5 bytes past a limit of 4"
     match limit_body(http.with_text(fixture.request_of(method: "POST", target: "/", headers: []), text: "hello"), most_bytes: 4)
@@ -3345,6 +3528,18 @@ test "require_basic: alice let in"
         .go_on _  => _ = 0
         .answer _ => assert false
 
+# Basic credentials checked against the program's own accounts.
+test "require_basic_with: alice found in the accounts"
+    r = http.with_basic_auth(
+        fixture.request_of(method: "GET", target: "/", headers: []),
+        user: "alice",
+        password: "secret"
+    )
+
+    match require_basic_with(r, realm: "admin", state: {"alice": "secret"}, accepts: fixture.is_account)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
 # The answer that asks for Basic credentials.
 test "challenge_basic: 401 and its challenge"
     got = challenge_basic("admin")
@@ -3355,6 +3550,14 @@ test "require_bearer: a good token let in"
     r = http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "good-token")
 
     match require_bearer(r, realm: "api", accepts: fixture.is_good_token)
+        .go_on _  => _ = 0
+        .answer _ => assert false
+
+# A Bearer token checked against the program's own signing key.
+test "require_bearer_with: a token the server's key signed"
+    r = http.with_bearer_auth(fixture.request_of(method: "GET", target: "/", headers: []), token: "signed-by-key-1")
+
+    match require_bearer_with(r, realm: "api", state: "key-1", accepts: fixture.is_signed_by)
         .go_on _  => _ = 0
         .answer _ => assert false
 

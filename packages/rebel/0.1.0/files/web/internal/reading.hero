@@ -1,7 +1,8 @@
 # The small readings the steps before and after a handler share: a field's
 # media type, an `Accept-Encoding`'s answer for gzip, a `Vary` field grown, a
 # quoted string, a Bearer token's syntax, an origin's host, an address
-# without its port, and a file name for `Content-Disposition`.
+# without its port, a file name for `Content-Disposition`, and a function of
+# one value handed where a function of a state and a value is asked.
 
 use http
 use strings
@@ -109,6 +110,12 @@ function is_printable_ascii(s: str) -> bool
             return false
 
     return true
+
+# `f` called with `x`: how a step of the request alone, or a check of a
+# token alone, is handed where `before_with` or `require_bearer_with` asks a
+# function of a state and a value, the state being `f` itself.
+function apply<A, B>(f: (function(A) -> B), x: A) -> B
+    return f(x)
 
 # Whether `item` is one of `list`, compared as written.
 function is_listed(item: str, list: [str]) -> bool
