@@ -172,13 +172,13 @@ constant CEILING: i64
 # passes no secret to a fork's pull request, so such a check is structurally
 # red on every fork PR forever.
 constant REAL_TOKENS: i64
-    11788
+    12809
 
 constant REAL_MODEL: str
     "claude-opus-5"
 
 constant REAL_TAKEN: str
-    "2026-11-20"
+    "2026-11-22"
 
 # The contract's own record, pinned here the way the spec's is, and cross-checked
 # against `selfhost/measure/pinned.hero` by `recorded` below. **It carries a
@@ -223,7 +223,7 @@ constant DELTA_GATE: i64
 # **Until 2026-10-29 no check read this copy** (defect 2252): it stood at a
 # digest of 2026-10-26 through two changes of the spec, every suite green.
 constant SPEC_DIGEST: str
-    "4dced6767460e590"
+    "5fedce6b1ec9b013"
 
 # The compiler's record of the judged documents, which `measure` is compiled
 # from and holds the spec to: the four constants of the spec's `real` row live

@@ -307,3 +307,11 @@ R7's sentence stand and the two rows together leave the specification 4 real tok
 10,904.
 
 **Row 8386's two `run/` cases, corrected 2026-11-11.** The row names `run/catalogue-a-path-entry-alone-builds.case` and `run/catalogue-a-path-packages-float-and-enumerator-constants-build.case`. Before the push they moved to the `fetch` form, `fetch/catalogue-a-path-entry-alone-builds.case` and `fetch/catalogue-a-path-packages-float-and-enumerator-constants-build.case`. The `run` form wants nothing on stderr, and a `path` entry's build writes its *unverified* note there, so both cases read 0 passed and 2 failed in it. The `fetch` form holds the whole transcript, the note included, and read 2 passed and 0 failed. P2's pairs are otherwise the row's.
+
+**Row 9761, completed 2026-11-22.** Panel 254 was ratified by the author's reading that day (issue
+2674, closed at `77b11dffb`), its blind seat's scoring reopening no row of R2, and lane-mailbox merged into
+the branch `rebel-round` at `90a79bfb6`. The real count the row left unrun, `heroes measure
+spec/heroes-spec.md --refresh` on the merged tree the same day: **12,809 on `claude-opus-5`**, against
+row 9022's 11,788, **+1,021 real**, inside 16,384 with no raise; the sitting had inferred about 12,700. The
+digest moves to `5fedce6b1ec9b013`, pinned with the count in `tests/harness/suite_spec.hero` and
+`selfhost/measure/pinned.hero`.
