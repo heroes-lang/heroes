@@ -3,12 +3,22 @@
 # rule read of a code point: its combining class, its script, its joining
 # type and its bidirectional class.
 #
-# The tables are data, made and not typed: a one-off program applied RFC
-# 5892's derivation (its section 3) to Python 3.15's `unicodedata`, whose
-# `unidata_version` is 17.0.0, and to the Unicode Character Database 17.0.0's
-# PropList, DerivedCoreProperties, HangulSyllableType, Scripts and
-# DerivedJoiningType, on 2026-11-17, and wrote this module whole. Nothing here
-# is edited by hand.
+# Generated, never edited by hand: the Heroes program `generators/json_idna/`
+# applied RFC 5892's derivation (its section 3) to the Unicode Character
+# Database 17.0.0, each file held to its SHA-256, with Rebel's
+# `unicode/normalize` and `strings` for the NFKC and the case folding its
+# Unstable rule reads, and wrote this module whole; its `check` command says
+# whether this module is still what it writes. What it read:
+#
+# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c
+# - `PropList.txt`, SHA-256 130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd
+# - `DerivedCoreProperties.txt`, SHA-256 24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08
+# - `Blocks.txt`, SHA-256 c0edefaf1a19771e830a82735472716af6bf3c3975f6c2a23ffbe2580fbbcb15
+# - `HangulSyllableType.txt`, SHA-256 5a57450afde0d082bc5026f7458649eac3b615490cc7e3d916b0367f1593c0e3
+# - `Scripts.txt`, SHA-256 9f5e50d3abaee7d6ce09480f325c706f485ae3240912527e651954d2d6b035bf
+# - `DerivedJoiningType.txt`, SHA-256 f39ebe974825d6736aee15582250307aa532b2cfab3caf3f86bd23fddc9c5c4d
+# - `DerivedBidiClass.txt`, SHA-256 4867b4b7f0731ed1bfcd34cc6251211ff1542541fce0734b6fbda139ee80b3a4
+# - `PropertyValueAliases.txt`, SHA-256 64e9a5f76f7a1e8b5a47d6a1f9a26522a251208f5276bdfa1559dac7cf2e827a
 
 # The code points IDNA2008 (RFC 5892) makes PVALID, its exceptions included: pairs of first and last code point, in order.
 constant PVALID: [i64]

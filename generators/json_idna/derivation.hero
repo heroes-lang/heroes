@@ -1,0 +1,239 @@
+# RFC 5892's derivation (its section 3) of every code point's IDNA2008
+# status, over the Unicode Character Database 17.0.0: the exceptions of its
+# section 2.6 first, then the unassigned code points, LDH, the joining
+# controls, the unstable ones, the ignorable properties and blocks, the old
+# Hangul jamo, and the letters and digits, the first rule that holds
+# deciding. A code point is unstable where NFKC of the case folding of its
+# NFKC is not itself, Rebel's `unicode/normalize` and `strings` answering
+# the two.
+
+use <rebel>/strings
+use <rebel>/unicode
+use <rebel>/unicode/normalize
+use <ucdkit>/ucdkit
+
+# The statuses the derivation gives, by their number.
+constant DISALLOWED: i64
+    0
+
+constant PVALID: i64
+    1
+
+constant CONTEXTJ: i64
+    2
+
+constant CONTEXTO: i64
+    3
+
+constant UNASSIGNED: i64
+    4
+
+# The exceptions of RFC 5892's section 2.6 that are PVALID, CONTEXTO and
+# DISALLOWED, as pairs of first and last code point.
+constant EXCEPTIONS_PVALID: [i64]
+    [0xdf, 0xdf, 0x3c2, 0x3c2, 0x6fd, 0x6fe, 0xf0b, 0xf0b, 0x3007, 0x3007]
+
+constant EXCEPTIONS_CONTEXTO: [i64]
+    [0xb7, 0xb7, 0x375, 0x375, 0x5f3, 0x5f4, 0x660, 0x669, 0x6f0, 0x6f9, 0x30fb, 0x30fb]
+
+constant EXCEPTIONS_DISALLOWED: [i64]
+    [0x640, 0x640, 0x7fa, 0x7fa, 0x302e, 0x302f, 0x3031, 0x3035, 0x303b, 0x303b]
+
+# The blocks RFC 5892's IgnorableBlocks names.
+constant IGNORABLE_BLOCKS: [str]
+    ["Combining Diacritical Marks for Symbols", "Musical Symbols", "Ancient Greek Musical Notation"]
+
+# The general categories of LetterDigits.
+constant LETTER_DIGITS: [str]
+    ["Ll", "Lu", "Lo", "Nd", "Lm", "Mn", "Mc"]
+
+# What the derivation reads of the database, one entry for each code point.
+record Facts
+    # The general category, `Cn` where `UnicodeData.txt` names none.
+    category: [str]
+    # Noncharacter_Code_Point, Join_Control and White_Space of
+    # `PropList.txt`, Default_Ignorable_Code_Point of
+    # `DerivedCoreProperties.txt`.
+    noncharacter: [bool]
+    joining_control: [bool]
+    white_space: [bool]
+    default_ignorable: [bool]
+    # In a block IgnorableBlocks names.
+    ignorable_block: [bool]
+    # Hangul_Syllable_Type L, V or T.
+    old_jamo: [bool]
+
+# Each code point's general category, read from `UnicodeData.txt`, `text`,
+# its ranges `<..., First>` to `<..., Last>` filled.
+#
+# Fails `invalid` where a line does not read, or a range's last line is
+# missing.
+function categories(text: str) -> [str]?
+    out: [str] @= []
+
+    while out.len() < ucdkit.POINTS
+        out @ out.push("Cn")
+
+    open @= -1
+
+    for line in ucdkit.data_lines(text)?
+        if strings.has_suffix(s: line.fields[0], suffix: ", First>")
+            open @ line.first
+        else
+            from = if open >= 0 && strings.has_suffix(s: line.fields[0], suffix: ", Last>")
+                open
+            else
+                line.first
+            point @= from
+
+            while point <= line.first
+                out[point] @ line.fields[1]
+                point @ point + 1
+
+            open @ -1
+
+    if open >= 0
+        return fail(code: "invalid", msg: f"the range opened at {open} has no last line")
+    return ok(out)
+
+# Whether each code point is in a block `names` names, from `Blocks.txt`,
+# `text`.
+#
+# Fails `invalid` where a line does not read, or a name is no block's.
+function in_blocks(text: str, names: [str]) -> [bool]?
+    out @= nothing()
+    found @= 0
+
+    for line in ucdkit.data_lines(text)?
+        for name in names
+            if line.fields[0] == name
+                found @ found + 1
+                point @= line.first
+
+                while point <= line.last
+                    out[point] @ true
+                    point @ point + 1
+
+    if found != names.len()
+        return fail(code: "invalid", msg: "a block RFC 5892 names is not in the file")
+    return ok(out)
+
+# Whether each code point's Hangul_Syllable_Type is L, V or T, from
+# `HangulSyllableType.txt`, `text`.
+#
+# Fails `invalid` where a line does not read.
+function old_jamo(text: str) -> [bool]?
+    out @= nothing()
+
+    for line in ucdkit.data_lines(text)?
+        if line.fields[0] == "L" || line.fields[0] == "V" || line.fields[0] == "T"
+            point @= line.first
+
+            while point <= line.last
+                out[point] @ true
+                point @ point + 1
+
+    return ok(out)
+
+# For each code point, false.
+function nothing() -> [bool]
+    out: [bool] @= []
+
+    while out.len() < ucdkit.POINTS
+        out @ out.push(false)
+
+    return out
+
+# Whether `point` is in one of `pairs`, pairs of first and last.
+function in_pairs(pairs: [i64], point: i64) -> bool
+    at @= 0
+
+    while at < pairs.len()
+        if pairs[at] <= point && point <= pairs[at + 1]
+            return true
+        at @ at + 2
+
+    return false
+
+# Whether `point` is unstable: NFKC of the case folding of its NFKC is not
+# itself. A surrogate, which no text holds, is not asked.
+function unstable(point: i64) -> bool
+    c = match unicode.from_code_point(point)
+        .ok made => made
+        .err _   => return false
+
+    return normalize.to_nfkc(strings.to_casefold(normalize.to_nfkc(c))) != c
+
+# The status of `point`, by RFC 5892's rules in their order.
+function status_of(facts: Facts lent, point: i64) -> i64
+    category = facts.category[point]
+
+    if in_pairs(EXCEPTIONS_PVALID, point: point)
+        return PVALID
+
+    if in_pairs(EXCEPTIONS_CONTEXTO, point: point)
+        return CONTEXTO
+
+    if in_pairs(EXCEPTIONS_DISALLOWED, point: point)
+        return DISALLOWED
+
+    if category == "Cn" && !facts.noncharacter[point]
+        return UNASSIGNED
+
+    if point == 0x2d || point >= 0x30 && point <= 0x39 || point >= 0x61 && point <= 0x7a
+        return PVALID
+
+    if facts.joining_control[point]
+        return CONTEXTJ
+
+    if category != "Cs" && unstable(point)
+        return DISALLOWED
+
+    if facts.default_ignorable[point] || facts.white_space[point] || facts.noncharacter[point]
+        return DISALLOWED
+
+    if facts.ignorable_block[point] || facts.old_jamo[point]
+        return DISALLOWED
+
+    for letter in LETTER_DIGITS
+        if category == letter
+            return PVALID
+
+    return DISALLOWED
+
+# Every code point's status, from 0 to `ucdkit.LAST_POINT`.
+function statuses(facts: Facts lent) -> [i64]
+    out: [i64] @= []
+
+    while out.len() < ucdkit.POINTS
+        out @ out.push(status_of(facts, point: out.len()))
+
+    return out
+
+## Tests
+
+test "categories: a listed point, a range filled, and a point not listed"
+    text = "0041;LATIN CAPITAL LETTER A;Lu;0;L;;;;;N;;;;0061;\n4E00;<CJK Ideograph, First>;Lo;0;L;;;;;N;;;;;\n9FFF;<CJK Ideograph, Last>;Lo;0;L;;;;;N;;;;;\n"
+    got = categories(text).must()
+    assert got[0x41] == "Lu" && got[0x5000] == "Lo" && got[0x378] == "Cn"
+
+test "status_of: an exception, LDH, a joining control, an unstable letter and a letter"
+    category = categories(
+        "002D;HYPHEN-MINUS;Pd;0;ES;;;;;N;;;;;\n0041;A;Lu;0;L;;;;;N;;;;0061;\n0061;a;Ll;0;L;;;;;N;;;0041;;0041\n00DF;S;Ll;0;L;;;;;N;;;;;\n200D;ZWJ;Cf;0;BN;;;;;N;;;;;\n0062;b;Ll;0;L;;;;;N;;;;;\n"
+    ).must()
+    none = nothing()
+    joining @= none
+    joining[0x200d] @ true
+    facts = Facts(
+        category: category,
+        noncharacter: none,
+        joining_control: joining,
+        white_space: none,
+        default_ignorable: none,
+        ignorable_block: none,
+        old_jamo: none
+    )
+    assert status_of(facts, point: 0xdf) == PVALID && status_of(facts, point: 0x2d) == PVALID
+    assert status_of(facts, point: 0x200d) == CONTEXTJ
+    assert status_of(facts, point: 0x41) == DISALLOWED && status_of(facts, point: 0x62) == PVALID
+    assert status_of(facts, point: 0x378) == UNASSIGNED

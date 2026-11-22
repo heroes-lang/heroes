@@ -368,6 +368,18 @@ jobs:
           done
           ./heroes run generators/unicode_names/main.hero -- check build/generators/ucd-17.0.0
 
+      # The nine files of `generators/json_idna/main.hero`'s `UCD_URL`, each
+      # under its folder there; the generator holds each to its SHA-256.
+      - name: generators/json_idna, RFC 5892's derivation over Unicode 17.0.0 for json/schema's idn formats
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in UnicodeData.txt PropList.txt DerivedCoreProperties.txt Blocks.txt HangulSyllableType.txt \
+            Scripts.txt extracted/DerivedJoiningType.txt extracted/DerivedBidiClass.txt PropertyValueAliases.txt; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
+              "https://www.unicode.org/Public/17.0.0/ucd/$f"
+          done
+          ./heroes run generators/json_idna/main.hero -- check build/generators/ucd-17.0.0
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the

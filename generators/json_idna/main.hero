@@ -1,0 +1,280 @@
+# The generator of `json/schema`'s tables of IDNA2008,
+# `json/schema/internal/idna_tables.hero`: which code points RFC 5892's
+# derivation makes PVALID, and the combining class, script, joining type and
+# bidirectional class its contextual rules and RFC 5893's Bidi rule read,
+# written byte for byte, or checked against the module in the tree.
+#
+# Its inputs are nine files of the Unicode Character Database 17.0.0, which
+# never changes, fetched from `UCD_URL` (the two `Derived` files of joining
+# and bidirectional classes from its folder `extracted/`) into one folder
+# under the names they are served by, and each held to its SHA-256 in
+# `INPUTS`. Run from the repository's root:
+#
+#     heroes run generators/json_idna/main.hero -- write <folder>
+#     heroes run generators/json_idna/main.hero -- check <folder>
+#
+# `write` writes the module. `check` reads it and exits 0 where it is
+# exactly what `write` would write, and 1 where it is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where a
+# file's digest is not the pinned one, or where a line of a file is not what
+# the database writes.
+
+use <rebel>/strings
+use <tablekit>/tablekit
+use <ucdkit>/ucdkit
+
+use derivation
+
+# Where the database's files are served, each under its folder there.
+constant UCD_URL: str
+    "https://www.unicode.org/Public/17.0.0/ucd/"
+
+# Each input's name in the folder and its SHA-256, in lowercase hexadecimal.
+constant INPUTS: [str]
+    [
+        "UnicodeData.txt 2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c"
+        "PropList.txt 130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd"
+        "DerivedCoreProperties.txt 24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08"
+        "Blocks.txt c0edefaf1a19771e830a82735472716af6bf3c3975f6c2a23ffbe2580fbbcb15"
+        "HangulSyllableType.txt 5a57450afde0d082bc5026f7458649eac3b615490cc7e3d916b0367f1593c0e3"
+        "Scripts.txt 9f5e50d3abaee7d6ce09480f325c706f485ae3240912527e651954d2d6b035bf"
+        "DerivedJoiningType.txt f39ebe974825d6736aee15582250307aa532b2cfab3caf3f86bd23fddc9c5c4d"
+        "DerivedBidiClass.txt 4867b4b7f0731ed1bfcd34cc6251211ff1542541fce0734b6fbda139ee80b3a4"
+        "PropertyValueAliases.txt 64e9a5f76f7a1e8b5a47d6a1f9a26522a251208f5276bdfa1559dac7cf2e827a"
+    ]
+
+# The module, from the repository's root.
+constant TABLE: str
+    "packages/rebel/0.1.0/files/json/schema/internal/idna_tables.hero"
+
+# The text of the input `name` of the folder, held to its digest.
+#
+# Fails `invalid` where no input is so named, and as `tablekit.pinned_text`
+# fails.
+function input(folder: str, name: str) -> str?
+    for one in INPUTS
+        if one.slice(from: 0, to: name.len() + 1) == name + " "
+            return tablekit.pinned_text(
+                path: folder + "/" + name,
+                sha256: one.slice(from: name.len() + 1, to: one.len())
+            )
+
+    return fail(code: "invalid", msg: f"no input is named {name}")
+
+# `n`, 0 or more, as `0x` and its lowercase hexadecimal digits.
+function hex(n: i64) -> str
+    digits = "0123456789abcdef"
+    out @= ""
+    rest @= n
+
+    while rest > 0 || out == ""
+        at = rest % 16
+        out @ digits.slice(from: at, to: at + 1) + out
+        rest @ rest / 16
+
+    return "0x" + out
+
+# The code points `member` holds, as pairs of first and last code point, in
+# order.
+function pairs_of(member: [bool]) -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < member.len()
+        if member[at]
+            if out.len() > 0 && out[out.len() - 1] == at - 1
+                out[out.len() - 1] @ at
+            else
+                out @ out.push(at)
+                out @ out.push(at)
+        at @ at + 1
+
+    return out
+
+# A constant of `[i64]` written as `pairs` in hexadecimal, `[]` where there
+# are none.
+function pairs_constant(comment: str, name: str, pairs: [i64]) -> str
+    if pairs.len() == 0
+        return [comment, "constant " + name + ": [i64]", "    []"].join("\n")
+    lines: [str] @= []
+
+    for one in pairs
+        lines @ lines.push(hex(one))
+
+    return tablekit.list_constant(comment: [comment], head: "constant " + name + ": [i64]", lines: lines)
+
+# Which code points the lines of `text` whose first field is `value` name.
+#
+# Fails as `ucdkit.data_lines` fails.
+function where_field(text: str, value: str) -> [bool]?
+    out @= derivation.nothing()
+
+    for line in ucdkit.data_lines(text)?
+        if line.fields[0] == value
+            point @= line.first
+
+            while point <= line.last
+                out[point] @ true
+                point @ point + 1
+
+    return ok(out)
+
+# Each code point's Bidi_Class, its short name, from `DerivedBidiClass.txt`,
+# `classes`, and `PropertyValueAliases.txt`, `aliases`: a `# @missing:`
+# line's long name written as its short one, a later line over an earlier.
+#
+# Fails as `ucdkit.data_lines` fails.
+function bidi_classes(classes: str, aliases: str) -> [str]?
+    short_of: {str: str} @= {}
+
+    for line in strings.split(s: aliases, sep: "\n")
+        fields = strings.split(s: strings.split(s: line, sep: "#")[0], sep: ";")
+
+        if fields.len() >= 3 && strings.trim(fields[0]) == "bc"
+            for name in fields.slice(from: 1, to: fields.len())
+                short_of[strings.trim(name)] @ strings.trim(fields[1])
+
+    out: [str] @= []
+
+    while out.len() < ucdkit.POINTS
+        out @ out.push("")
+
+    lines: [ucdkit.Line] @= []
+
+    for line in ucdkit.missing_lines(classes)?
+        lines @ lines.push(line)
+
+    for line in ucdkit.data_lines(classes)?
+        lines @ lines.push(line)
+
+    for line in lines
+        value = short_of[line.fields[0]].default(line.fields[0])
+        point @= line.first
+
+        while point <= line.last
+            out[point] @ value
+            point @ point + 1
+
+    return ok(out)
+
+# The module's whole text, from the files of `folder`.
+#
+# Fails as reading a file or a line of it fails.
+function module_text(folder: str) -> str?
+    head: [str] @= [
+        "# The tables of IDNA2008 for Unicode 17.0.0: which code points RFC 5892's"
+        "# derivation makes PVALID, and what its contextual rules and RFC 5893's Bidi"
+        "# rule read of a code point: its combining class, its script, its joining"
+        "# type and its bidirectional class."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/json_idna/`"
+        "# applied RFC 5892's derivation (its section 3) to the Unicode Character"
+        "# Database 17.0.0, each file held to its SHA-256, with Rebel's"
+        "# `unicode/normalize` and `strings` for the NFKC and the case folding its"
+        "# Unstable rule reads, and wrote this module whole; its `check` command says"
+        "# whether this module is still what it writes. What it read:"
+        "#"
+    ]
+
+    for one in INPUTS
+        halves = strings.split_once(s: one, sep: " ")?
+        head @ head.push(f"# - `{halves.before}`, SHA-256 {halves.after}")
+
+    unicode_data = input(folder: folder, name: "UnicodeData.txt")?
+    props = input(folder: folder, name: "PropList.txt")?
+    facts = derivation.Facts(
+        category: derivation.categories(unicode_data)?,
+        noncharacter: ucdkit.property_set(text: props, name: "Noncharacter_Code_Point")?,
+        joining_control: ucdkit.property_set(text: props, name: "Join_Control")?,
+        white_space: ucdkit.property_set(text: props, name: "White_Space")?,
+        default_ignorable: ucdkit.property_set(text: input(folder: folder, name: "DerivedCoreProperties.txt")?, name: "Default_Ignorable_Code_Point")?,
+        ignorable_block: derivation.in_blocks(input(folder: folder, name: "Blocks.txt")?, names: derivation.IGNORABLE_BLOCKS)?,
+        old_jamo: derivation.old_jamo(input(folder: folder, name: "HangulSyllableType.txt")?)?
+    )
+    statuses = derivation.statuses(facts)
+    pvalid @= derivation.nothing()
+    allowed @= derivation.nothing()
+    virama @= derivation.nothing()
+    at @= 0
+
+    while at < ucdkit.POINTS
+        pvalid[at] @ statuses[at] == derivation.PVALID
+        allowed[at] @ statuses[at] == derivation.PVALID || statuses[at] == derivation.CONTEXTJ || statuses[at] == derivation.CONTEXTO
+        at @ at + 1
+
+    for line in ucdkit.data_lines(unicode_data)?
+        if line.fields[2] == "9"
+            virama[line.first] @ true
+
+    blocks: [str] @= [
+        head.join("\n")
+        pairs_constant(comment: "# The code points IDNA2008 (RFC 5892) makes PVALID, its exceptions included: pairs of first and last code point, in order.", name: "PVALID", pairs: pairs_of(pvalid))
+        pairs_constant(comment: "# The code points whose canonical combining class is 9, Virama: pairs of first and last code point, in order.", name: "VIRAMAS", pairs: pairs_of(virama))
+    ]
+    scripts = input(folder: folder, name: "Scripts.txt")?
+
+    for script in ["Greek", "Hebrew", "Hiragana", "Katakana", "Han"]
+        blocks @ blocks.push(
+            pairs_constant(comment: f"# The code points of the script {script}: pairs of first and last code point, in order.", name: "SCRIPT_" + strings.to_upper(script), pairs: pairs_of(where_field(text: scripts, value: script)?))
+        )
+
+    joining = input(folder: folder, name: "DerivedJoiningType.txt")?
+
+    for kind in [["D", "DUAL"], ["L", "LEFT"], ["R", "RIGHT"], ["T", "TRANSPARENT"]]
+        blocks @ blocks.push(
+            pairs_constant(comment: f"# The code points whose Joining_Type is {kind[0]}: pairs of first and last code point, in order.", name: "JOINING_" + kind[1], pairs: pairs_of(where_field(text: joining, value: kind[0])?))
+        )
+
+    bidi = bidi_classes(classes: input(folder: folder, name: "DerivedBidiClass.txt")?, aliases: input(folder: folder, name: "PropertyValueAliases.txt")?)?
+
+    for bidi_class in ["R", "AL", "AN", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"]
+        member @= derivation.nothing()
+        at @ 0
+
+        while at < ucdkit.POINTS
+            member[at] @ allowed[at] && bidi[at] == bidi_class
+            at @ at + 1
+
+        blocks @ blocks.push(
+            pairs_constant(comment: f"# The code points IDNA2008 allows whose Bidi_Class is {bidi_class}: pairs of first and last code point, in order.", name: "BIDI_" + bidi_class, pairs: pairs_of(member))
+        )
+
+    return ok(blocks.join("\n\n") + "\n")
+
+# Does what `command` asks with the module, and answers the code it reached.
+#
+# Fails as `module_text` fails and as writing or reading the module fails.
+function run(command: str, folder: str) -> i64?
+    return tablekit.settle(command: command, path: TABLE, text: module_text(folder)?)
+
+function main()
+    words = tablekit.command_words("json_idna")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/json_idna/main.hero -- write|check <folder of the files of ",
+            UCD_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], folder: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
+
+## Tests
+
+test "hex: zero, a digit, and a code point past the first plane"
+    assert hex(0) == "0x0" && hex(0x2d) == "0x2d" && hex(0x33479) == "0x33479"
+
+test "pairs_of: touching code points joined, apart ones apart"
+    member @= derivation.nothing()
+    member[3] @ true
+    member[4] @ true
+    member[7] @ true
+    assert pairs_of(member) == [3, 4, 7, 7]
+
+test "pairs_constant: an empty list written on one line"
+    assert pairs_constant(comment: "# None.", name: "NONE", pairs: []) == "# None.\nconstant NONE: [i64]\n    []"
