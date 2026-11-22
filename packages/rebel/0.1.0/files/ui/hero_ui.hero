@@ -155,9 +155,17 @@ extern "hero_ui.h"
     constant HERO_UI_CHECK_BOX: i64
     constant HERO_UI_CHECK_RADIO: i64
     function hero_ui_set_check(app: App, id: i64, mode: i64) -> i64
-    # A masked field, and a progress bar with no value.
     function hero_ui_set_masked(app: App, id: i64, on: i64) -> i64
     function hero_ui_set_moving(app: App, id: i64, on: i64) -> i64
+    # The system's clipboard.
+    constant HERO_UI_CLIP_NOTHING: i64
+    constant HERO_UI_CLIP_TEXT: i64
+    constant HERO_UI_CLIP_FILES: i64
+    constant HERO_UI_CLIP_IMAGE: i64
+    constant HERO_UI_CLIP_MOST: i64
+    function hero_ui_clipboard_write(app: App, kind: i64, @bytes: [u8] counted_by count lent, count: u64, width: i64, height: i64) -> i64
+    function hero_ui_clipboard_read(app: App, kind: i64, @width: i64, @height: i64) -> i64
+    function hero_ui_clipboard_bytes(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
@@ -822,6 +830,39 @@ function set_masked(app: App, id: i64, on: i64) -> i64
 function set_moving(app: App, id: i64, on: i64) -> i64
     return hero_ui_set_moving(app, id: id, on: on)
 
+# 0 once the system's clipboard holds `bytes` as `kind` in place of what it
+# held, or -1.
+#
+# - `app`: the app.
+# - `kind`: one of `HERO_UI_CLIP_NOTHING` to `HERO_UI_CLIP_IMAGE`.
+# - `bytes`: UTF-8 text, absolute paths each followed by one zero byte, or
+#   8-bit RGBA pixels row after row from the top; left as it was handed.
+# - `count`: how many of its first bytes, 0 for nothing.
+# - `width`: an image's columns, 0 for the other kinds.
+# - `height`: an image's rows, 0 for the other kinds.
+function clipboard_write(app: App, kind: i64, @bytes: [u8], count: u64, width: i64, height: i64) -> i64
+    return hero_ui_clipboard_write(app, kind: kind, @bytes, count: count, width: width, height: height)
+
+# The bytes of what the system's clipboard holds as `kind`, which
+# `clipboard_bytes` then writes; or -1, `HERO_UI_NOT_FOUND` where it holds
+# nothing of that kind.
+#
+# - `app`: the app.
+# - `kind`: one of `HERO_UI_CLIP_TEXT` to `HERO_UI_CLIP_IMAGE`.
+# - `width`: where an image's columns are written, 0 for the other kinds.
+# - `height`: where an image's rows are written, 0 for the other kinds.
+function clipboard_read(app: App, kind: i64, @width: i64, @height: i64) -> i64
+    return hero_ui_clipboard_read(app, kind: kind, width: @width, height: @height)
+
+# The bytes of what the last `clipboard_read` found, written into `buffer`
+# where `count` holds them; or -1.
+#
+# - `app`: the app.
+# - `buffer`: where they are written, `count` bytes long once it answers.
+# - `count`: the bytes `buffer` takes.
+function clipboard_bytes(app: App, @buffer: [u8], count: u64) -> i64
+    return hero_ui_clipboard_bytes(app, @buffer, count: count)
+
 # The bytes of the folders the person chose, each path followed by one zero
 # byte, which `dialog_paths` writes; 0 where they cancelled; or -1.
 #
@@ -960,4 +1001,45 @@ test "web_asset: a headless app holds no web view, and says so"
     assert last_error() == HERO_UI_UNSUPPORTED
     assert web_post(app, id: 1, text: @body, count: 1) == -1
     assert last_error() == HERO_UI_UNSUPPORTED
+    assert close(@app) == 0
+
+test "clipboard_write, clipboard_read: on the native side a kind the layer does not name, bytes not as the kind takes them, a path not absolute and a size where none is taken are refused before the system's clipboard is reached"
+    if native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= open(HERO_UI_NATIVE)
+    assert app != nullptr
+    text: [u8] @= [104, 105]
+    not_utf8: [u8] @= [255]
+    relative: [u8] @= [97, 0]
+    unended: [u8] @= [47, 97]
+    drive: [u8] @= [67, 58, 97, 0]
+    pixels: [u8] @= [1, 2, 3, 4]
+    assert clipboard_write(app, kind: 9, @text, count: 2, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_TEXT, @text, count: 2, width: 1, height: 1) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_TEXT, @not_utf8, count: 1, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_FILES, @relative, count: 2, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_FILES, @unended, count: 2, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_FILES, @drive, count: 4, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_FILES, @text, count: 0, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_IMAGE, @pixels, count: 4, width: 2, height: 1) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_IMAGE, @pixels, count: 4, width: -1, height: -1) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_write(app, kind: HERO_UI_CLIP_NOTHING, @text, count: 2, width: 0, height: 0) == -1
+    assert last_error() == HERO_UI_INVALID
+    width @= 0
+    height @= 0
+    assert clipboard_read(app, kind: HERO_UI_CLIP_NOTHING, width: @width, height: @height) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert clipboard_read(app, kind: 4, width: @width, height: @height) == -1
+    assert last_error() == HERO_UI_INVALID
     assert close(@app) == 0

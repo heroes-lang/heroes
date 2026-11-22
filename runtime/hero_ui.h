@@ -828,4 +828,49 @@ int64_t hero_ui_set_masked(hero_ui_app *app, int64_t id, int64_t on);
  * `NOT_FOUND`. */
 int64_t hero_ui_set_moving(hero_ui_app *app, int64_t id, int64_t on);
 
+
+/* -- THE CLIPBOARD -----------------------------------------------------------
+ *
+ * The system's clipboard, the one every program copies to and pastes from,
+ * as wxWidgets' `wxClipboard` with `wxTextDataObject`, `wxFileDataObject`
+ * and `wxBitmapDataObject`, or Electron's `clipboard`: the program's own
+ * copying and pasting, a list's path copied, a file manager's files, a
+ * picture. A text field's Cut, Copy and Paste reach it through the Edit
+ * menu without these. A write puts one kind in place of everything the
+ * clipboard held, or empties it; a read asks for one kind and finds it where
+ * the program that copied offered it, a program offering several at once.
+ * What a write puts is found as its own kind alone. */
+#define HERO_UI_CLIP_NOTHING 0
+#define HERO_UI_CLIP_TEXT 1
+#define HERO_UI_CLIP_FILES 2
+#define HERO_UI_CLIP_IMAGE 3
+
+/* The most bytes a write puts on the clipboard or a read takes from it: an
+ * image of 8192 by 8192 pixels. */
+#define HERO_UI_CLIP_MOST 268435456
+
+/* Puts `count` bytes at `bytes` on the system's clipboard as `kind`, in
+ * place of what it held: nothing, which empties it, with no bytes; UTF-8
+ * text; absolute paths of UTF-8, each followed by one zero byte, at least
+ * one; or `width` by `height` pixels of 8-bit RGBA, alpha straight, 4 bytes
+ * a pixel, rows from the top. `width` and `height` are 0 for all but an
+ * image. 0, or -1: `INVALID` (a kind these do not name, bytes not as the
+ * kind takes them), `LIMIT` (past `HERO_UI_CLIP_MOST`), `OTHER` (the
+ * system's refusal). */
+int64_t hero_ui_clipboard_write(hero_ui_app *app, int64_t kind, const void *bytes, uint64_t count, int64_t width, int64_t height);
+
+/* Reads the system's clipboard for `kind` and answers the bytes what it
+ * holds of that kind takes, in the form `hero_ui_clipboard_write` takes,
+ * an image's size written to `width` and `height` (0 for text and paths);
+ * `hero_ui_clipboard_bytes` then writes them. -1: `NOT_FOUND` (the
+ * clipboard holds nothing of that kind), `INVALID`, `LIMIT` (what it holds
+ * takes past `HERO_UI_CLIP_MOST`). `HERO_UI_CLIP_NOTHING` is no kind a read
+ * asks for. */
+int64_t hero_ui_clipboard_read(hero_ui_app *app, int64_t kind, int64_t *width, int64_t *height);
+
+/* Writes what the last `hero_ui_clipboard_read` found into `buffer` where
+ * its `count` bytes hold it, and answers the bytes it takes all the same;
+ * -1 where no read has found anything. */
+int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count);
+
 #endif

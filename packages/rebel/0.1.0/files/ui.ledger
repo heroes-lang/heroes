@@ -414,11 +414,13 @@ capability ui/tooltip  a tip shown over a widget
   rust    -
   python  -
 
-capability ui/clipboard  the system's clipboard
-  heroes  pending
+capability ui/clipboard  the system's clipboard: text, files and an image copied and pasted by the program
+  heroes  ui.set_clipboard, ui.clipboard, ui.Clip, ui.ClipKind, ui.CLIPBOARD_MOST
   go      -
   rust    -
   python  tkinter.Misc.clipboard_get, tkinter.Misc.clipboard_append, tkinter.Misc.clipboard_clear
+  wx      wxClipboard (SetData, GetData, IsSupported, Clear), wxTextDataObject, wxFileDataObject, wxBitmapDataObject
+  note    catalogue CB01, CB02, CB03; macOS by `NSPasteboard.general`, measured on this Mac to find what the program put as its own kind alone; Windows pending (`OpenClipboard`, `SetClipboardData` with `CF_UNICODETEXT`, `CF_HDROP`, `CF_DIBV5`), Linux pending (`GdkClipboard`, whose read answers later and which the arm waits for); rich text and a web page's HTML (CB04), a format of the program's own (CB05) and an event when another program copies (CB06) are not offered
 
 capability ui/pickers  a date, a colour or a font chosen in the system's own picker
   heroes  pending

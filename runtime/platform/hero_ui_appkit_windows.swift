@@ -861,3 +861,196 @@ public func hero_ui_appkit_modal_pump(_ ms: Int64, _ held: (@convention(c) () ->
     }
     return answerOk
 }
+
+// MARK: the clipboard
+
+// The kinds of content, `hero_ui.h`'s `HERO_UI_CLIP_*`.
+private let clipNothing: Int64 = 0
+private let clipText: Int64 = 1
+private let clipFiles: Int64 = 2
+private let clipImage: Int64 = 3
+
+// The most bytes the clipboard's content takes, `HERO_UI_CLIP_MOST`.
+private let clipMost = 268_435_456
+
+// What the last read of the clipboard found, kept for `clipboard_bytes`,
+// nil where no read has found anything.
+@MainActor
+private var clipped: [UInt8]? = nil
+
+// What a read of the clipboard found: its bytes and an image's size in
+// pixels, nothing of the kind asked, or more than `clipMost` bytes.
+private enum Clip {
+    case found([UInt8], Int64, Int64)
+    case none
+    case past(Int)
+}
+
+// Puts on the system's clipboard, in place of what it held, `count` bytes
+// at `bytes` of `kind`: nothing, emptying it; UTF-8 text; paths each followed by one zero byte;
+// or `width` by `height` pixels of 8-bit RGBA, alpha straight.
+@c
+public func hero_ui_appkit_clipboard_set(_ kind: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64, _ width: Int64, _ height: Int64) -> Int64 {
+    let given: [UInt8] = bytes.map { Array(UnsafeBufferPointer(start: $0, count: Int(count))) } ?? []
+    return MainActor.assumeIsolated { () -> Int64 in
+        let board = NSPasteboard.general
+        switch kind {
+        case clipNothing:
+            board.clearContents()
+        case clipText:
+            board.clearContents()
+            if !board.setString(String(decoding: given, as: UTF8.self), forType: .string) {
+                said = "the system's clipboard took no text"
+                return answerOther
+            }
+        case clipFiles:
+            let urls = given.split(separator: 0).map { NSURL(fileURLWithPath: String(decoding: $0, as: UTF8.self)) }
+            board.clearContents()
+            if !board.writeObjects(urls) {
+                said = "the system's clipboard took no paths"
+                return answerOther
+            }
+        case clipImage:
+            guard let image = imageOf(given, width, height) else {
+                said = "the system made no image of \(width) by \(height) pixels"
+                return answerOther
+            }
+            board.clearContents()
+            if !board.writeObjects([image]) {
+                said = "the system's clipboard took no image"
+                return answerOther
+            }
+        default:
+            return answerInvalid
+        }
+        return answerOk
+    }
+}
+
+// Reads the system's clipboard for `kind` and keeps what it holds for
+// `clipboard_bytes`: answers its bytes through `bytes`, with an image's
+// size through `width` and `height`; `HERO_UI_NOT_FOUND` where the
+// clipboard holds nothing of that kind, `HERO_UI_LIMIT` where it holds
+// more than `clipMost` bytes.
+@c
+public func hero_ui_appkit_clipboard_get(_ kind: Int64, _ bytes: UnsafeMutablePointer<Int64>?, _ width: UnsafeMutablePointer<Int64>?, _ height: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let bytes = bytes, let width = width, let height = height, kind >= clipText, kind <= clipImage else {
+        return answerInvalid
+    }
+    let read = MainActor.assumeIsolated { () -> Clip in
+        let board = NSPasteboard.general
+        switch kind {
+        case clipText:
+            guard let text = board.string(forType: .string) else {
+                return .none
+            }
+            let utf8 = text.utf8.count
+            return utf8 > clipMost ? .past(utf8) : .found(Array(text.utf8), 0, 0)
+        case clipFiles:
+            guard let urls = board.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] else {
+                return .none
+            }
+            var joined: [UInt8] = []
+            for url in urls where !url.path.isEmpty && !url.path.utf8.contains(0) {
+                joined.append(contentsOf: Array(url.path.utf8))
+                joined.append(0)
+            }
+            if joined.isEmpty {
+                return .none
+            }
+            return joined.count > clipMost ? .past(joined.count) : .found(joined, 0, 0)
+        default:
+            guard let image = NSImage(pasteboard: board) else {
+                return .none
+            }
+            return pixelsOf(image)
+        }
+    }
+    switch read {
+    case .none:
+        return answerNotFound
+    case .past(let size):
+        MainActor.assumeIsolated {
+            said = "the clipboard holds \(size) bytes, past the \(clipMost) a read takes"
+        }
+        return answerLimit
+    case .found(let found, let wide, let high):
+        MainActor.assumeIsolated {
+            clipped = found
+        }
+        bytes.pointee = Int64(found.count)
+        width.pointee = wide
+        height.pointee = high
+        return answerOk
+    }
+}
+
+// Writes what the last read of the clipboard kept into `buffer` where its
+// `count` bytes hold it, and answers its bytes all the same; -1 where no
+// read has found anything.
+@c
+public func hero_ui_appkit_clipboard_bytes(_ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let kept = MainActor.assumeIsolated { () -> [UInt8]? in
+        return clipped
+    }
+    guard let kept = kept else {
+        return -1
+    }
+    if let buffer = buffer, kept.count <= Int(count) {
+        for at in 0..<kept.count {
+            buffer[at] = kept[at]
+        }
+    }
+    return Int64(kept.count)
+}
+
+// An image of `width` by `height` pixels of 8-bit RGBA, alpha straight.
+private func imageOf(_ rgba: [UInt8], _ width: Int64, _ height: Int64) -> NSImage? {
+    guard width > 0, height > 0, rgba.count == Int(width) * Int(height) * 4, let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(width), pixelsHigh: Int(height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bitmapFormat: [.alphaNonpremultiplied], bytesPerRow: Int(width) * 4, bitsPerPixel: 32), let into = rep.bitmapData else {
+        return nil
+    }
+    for at in 0..<rgba.count {
+        into[at] = rgba[at]
+    }
+    let image = NSImage(size: NSSize(width: CGFloat(width), height: CGFloat(height)))
+    image.addRepresentation(rep)
+    return image
+}
+
+// `image`'s pixels as 8-bit RGBA, alpha straight, at its largest
+// representation's size in pixels: drawn into a premultiplied bitmap, as
+// AppKit draws, and the alpha then taken out of each pixel.
+private func pixelsOf(_ image: NSImage) -> Clip {
+    var wide = 0
+    var high = 0
+    for rep in image.representations where rep.pixelsWide * rep.pixelsHigh > wide * high {
+        wide = rep.pixelsWide
+        high = rep.pixelsHigh
+    }
+    if wide <= 0 || high <= 0 {
+        wide = Int(image.size.width.rounded())
+        high = Int(image.size.height.rounded())
+    }
+    if wide <= 0 || high <= 0 {
+        return .none
+    }
+    if wide > clipMost / 4 / high {
+        return .past(wide * high * 4)
+    }
+    guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: wide, pixelsHigh: high, bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: wide * 4, bitsPerPixel: 32), let context = NSGraphicsContext(bitmapImageRep: rep), let data = rep.bitmapData else {
+        return .none
+    }
+    NSGraphicsContext.saveGraphicsState()
+    NSGraphicsContext.current = context
+    image.draw(in: NSRect(x: 0, y: 0, width: wide, height: high), from: .zero, operation: .copy, fraction: 1)
+    NSGraphicsContext.restoreGraphicsState()
+    var out = [UInt8](repeating: 0, count: wide * high * 4)
+    for at in stride(from: 0, to: out.count, by: 4) {
+        let alpha = Int(data[at + 3])
+        for c in 0..<3 {
+            out[at + c] = alpha == 0 ? 0 : UInt8(min(255, (Int(data[at + c]) * 255 + alpha / 2) / alpha))
+        }
+        out[at + 3] = UInt8(alpha)
+    }
+    return .found(out, Int64(wide), Int64(high))
+}

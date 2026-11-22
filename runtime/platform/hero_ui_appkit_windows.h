@@ -56,4 +56,10 @@ int64_t hero_ui_appkit_modal_here(void);
 
 int64_t hero_ui_appkit_modal_pump(int64_t ms, int64_t (*held)(void));
 
+int64_t hero_ui_appkit_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height);
+
+int64_t hero_ui_appkit_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height);
+
+int64_t hero_ui_appkit_clipboard_bytes(uint8_t *buffer, int64_t count);
+
 #endif

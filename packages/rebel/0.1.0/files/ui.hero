@@ -78,7 +78,7 @@
 # pages chosen by tabs; rows of cells in columns; a tree of items folded and
 # unfolded; a box whose content scrolls; two panes whose border the person
 # drags; an area the program draws into, with its keys and its mouse; a tip
-# shown over a widget; the system's clipboard; a date, a colour or a font
+# shown over a widget; a date, a colour or a font
 # chosen in the system's own picker; an icon in the system's tray or menu
 # bar, and its notifications; a file dragged onto a window.
 
@@ -86,6 +86,7 @@ use bytes
 use image
 use time
 use ui/hero_ui
+use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
@@ -175,6 +176,9 @@ record App
     table: model.Model
     # The icon the program gave the app, kept on both sides.
     icon: desk.Icon
+    # What the program last put on the clipboard, kept on both sides: the
+    # headless side's clipboard, which a read answers from.
+    clipboard: Clip
     # The inputs `inject` queued and `wait` has not given yet, in order.
     inputs: [Input]
     # The events made and not yet answered by `wait`, in order.
@@ -1125,6 +1129,75 @@ variant MenuRole
 # `menu_item`, `set_shortcut`.
 function set_role(@app: App, item: Widget, role: MenuRole) -> ()?
     return state.set_role(@app, item: item, role: role)
+
+## The clipboard
+
+# What the system's clipboard holds of one kind, or takes in place of all
+# it held, as wxWidgets' `wxTextDataObject`, `wxFileDataObject` and
+# `wxBitmapDataObject`.
+variant Clip
+    # Nothing: a read found nothing of the kind it asked for, and a write
+    # empties the clipboard.
+    nothing
+    # Text.
+    text
+        # The text, holding no zero byte.
+        text: str
+    # Files and folders, as a file manager copies them.
+    files
+        # Their absolute paths, at least one.
+        paths: [str]
+    # An image, as a screenshot is copied.
+    picture
+        # The image; a read answers 8-bit RGBA.
+        img: image.Image
+
+# The kind a read of the clipboard asks for.
+variant ClipKind
+    # Text.
+    text
+    # Files and folders.
+    files
+    # An image.
+    picture
+
+# The most bytes the clipboard takes or answers: an image of 8192 by 8192
+# pixels, at 4 bytes a pixel.
+constant CLIPBOARD_MOST: i64
+    hero_ui.HERO_UI_CLIP_MOST
+
+# Puts `clip` on the clipboard in place of all it held, as a program's Copy
+# does: a list's paths copied as text, a file manager's files, a picture.
+# `.nothing` empties it, as a password manager does once the password is
+# pasted. On the native side it is the system's clipboard, which every
+# program pastes from; on the headless side the app's own, which only the
+# program writes. A text field's Cut, Copy and Paste need none of this:
+# the Edit menu reaches the clipboard for them.
+#
+# - `app`: the app.
+# - `clip`: what it holds next: text holding no zero byte; paths each
+#   absolute, none empty or holding a zero byte; or a valid image of at
+#   least one pixel, at most `CLIPBOARD_MOST` bytes in 8-bit RGBA.
+#
+# Fails `closed`, `invalid`, `limit` past `CLIPBOARD_MOST` bytes, `failed`.
+# See also `clipboard`.
+function set_clipboard(@app: App, clip: Clip) -> ()?
+    return clips.put(@app, clip: clip)
+
+# What the clipboard holds as `kind`, as a program's Paste reads it, or
+# `.nothing` where it holds nothing of that kind. On the native side another
+# program may have written it, offering several kinds at once, and a read
+# finds the kind asked where that program offered it; on the headless side
+# a read answers only what `set_clipboard` put. On both, what the program
+# puts is found as its own kind alone.
+#
+# - `app`: the app.
+# - `kind`: the kind asked for.
+#
+# Fails `closed`, `limit` where it holds past `CLIPBOARD_MOST` bytes,
+# `failed`. See also `set_clipboard`.
+function clipboard(app: App, kind: ClipKind) -> Clip?
+    return clips.read(app, kind: kind)
 
 ## Timers
 
@@ -2504,6 +2577,20 @@ test "set_backdrop: translucent"
     w = window(@app, title: "Sidebar", width: 100, height: 60).must()
     set_backdrop(@app, widget: w, backdrop: .translucent).must()
     assert render(@app).must()[0] == "window #1 \"Sidebar\" 100x60 translucent"
+    close(@app).must()
+
+# Paths copied as a file manager copies them, and read back by a Paste.
+test "set_clipboard: two files copied"
+    app @= open(.headless).must()
+    set_clipboard(@app, clip: .files(paths: ["/Users/ada/notes.txt", "/Users/ada/plan.md"])).must()
+    assert clipboard(app, kind: .files).must() == .files(paths: ["/Users/ada/notes.txt", "/Users/ada/plan.md"])
+    close(@app).must()
+
+# A Paste of text where the clipboard holds an image finds nothing.
+test "clipboard: text asked, an image held"
+    app @= open(.headless).must()
+    set_clipboard(@app, clip: .picture(img: image.blank(width: 2, height: 2, format: .rgba).must())).must()
+    assert clipboard(app, kind: .text).must() == .nothing
     close(@app).must()
 
 # The app's icon, a blank square.

@@ -3045,3 +3045,186 @@ int64_t hero_ui_set_moving(hero_ui_app *app, int64_t id, int64_t on) {
     }
     return hero_ui_windows_answered(hero_ui_arm_set_moving(id, on), "letting a progress bar move", id);
 }
+
+/* -- THE CLIPBOARD --------------------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height) {
+    return hero_ui_appkit_clipboard_set(kind, bytes, count, width, height);
+}
+
+static int64_t hero_ui_arm_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height) {
+    return hero_ui_appkit_clipboard_get(kind, bytes, width, height);
+}
+
+static int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
+    return hero_ui_appkit_clipboard_bytes(buffer, count);
+}
+
+#else
+
+static int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height) {
+    (void)kind;
+    (void)bytes;
+    (void)count;
+    (void)width;
+    (void)height;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height) {
+    (void)kind;
+    (void)bytes;
+    (void)width;
+    (void)height;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
+    (void)buffer;
+    (void)count;
+    return -1;
+}
+
+#endif
+
+/* The name of clipboard kind `kind`, for the words of a refusal. */
+static const char *hero_ui_clip_name(int64_t kind) {
+    if (kind == HERO_UI_CLIP_NOTHING) {
+        return "emptying";
+    }
+    if (kind == HERO_UI_CLIP_TEXT) {
+        return "text";
+    }
+    if (kind == HERO_UI_CLIP_FILES) {
+        return "paths";
+    }
+    return "an image";
+}
+
+/* Whether `count` bytes at `bytes` are absolute paths of UTF-8, each
+ * followed by one zero byte, at least one; false with the words said
+ * otherwise. Absolute as POSIX writes it, `/` first, or as Windows does, a
+ * drive's letter and colon and slash or two slashes first: the clipboard is
+ * read by other programs, whose working folder is not this one's. */
+static bool hero_ui_paths_given(const uint8_t *bytes, uint64_t count) {
+    char words[HERO_UI_WORDS_MOST];
+    uint64_t start = 0;
+
+    if (count == 0 || bytes[count - 1] != 0) {
+        (void)hero_ui_said(HERO_UI_INVALID, count == 0 ? "the clipboard's paths: none was given" : "the clipboard's paths: the last is not followed by a zero byte");
+        return false;
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] != 0) {
+            continue;
+        }
+        uint64_t length = at - start;
+        const uint8_t *path = bytes + start;
+        bool posix = length >= 1 && path[0] == '/';
+        bool drive = length >= 3 && ((path[0] >= 'A' && path[0] <= 'Z') || (path[0] >= 'a' && path[0] <= 'z')) && path[1] == ':' && (path[2] == '\\' || path[2] == '/');
+        bool share = length >= 2 && path[0] == '\\' && path[1] == '\\';
+
+        if (length == 0 || !hero_ui_is_utf8(path, length) || !(posix || drive || share)) {
+            (void)snprintf(words, sizeof words, "the clipboard's paths: the path at byte %llu is %s", (unsigned long long)start, length == 0 ? "empty" : !hero_ui_is_utf8(path, length) ? "no UTF-8" : "not absolute, and the programs that read the clipboard work in folders of their own");
+            (void)hero_ui_said(HERO_UI_INVALID, words);
+            return false;
+        }
+        start = at + 1;
+    }
+    return true;
+}
+
+int64_t hero_ui_clipboard_write(hero_ui_app *app, int64_t kind, const void *bytes, uint64_t count, int64_t width, int64_t height) {
+    char words[HERO_UI_WORDS_MOST];
+    uint64_t pixels;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (kind < HERO_UI_CLIP_NOTHING || kind > HERO_UI_CLIP_IMAGE) {
+        (void)snprintf(words, sizeof words, "the kind %lld is none of HERO_UI_CLIP_NOTHING to HERO_UI_CLIP_IMAGE", (long long)kind);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (count > 0 && bytes == NULL) {
+        (void)snprintf(words, sizeof words, "the clipboard's %s: %llu bytes were named and none given", hero_ui_clip_name(kind), (unsigned long long)count);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (count > (uint64_t)HERO_UI_CLIP_MOST) {
+        (void)snprintf(words, sizeof words, "the clipboard's %s takes %llu bytes, past the %d a write puts there", hero_ui_clip_name(kind), (unsigned long long)count, HERO_UI_CLIP_MOST);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (kind == HERO_UI_CLIP_IMAGE) {
+        if (width <= 0 || height <= 0 || __builtin_mul_overflow((uint64_t)width, (uint64_t)height, &pixels) || __builtin_mul_overflow(pixels, (uint64_t)4, &pixels) || pixels != count) {
+            (void)snprintf(words, sizeof words, "%llu bytes of pixels for an image of %lld by %lld, which takes 4 a pixel and at least one pixel", (unsigned long long)count, (long long)width, (long long)height);
+            return hero_ui_said(HERO_UI_INVALID, words);
+        }
+    } else if (width != 0 || height != 0) {
+        return hero_ui_said(HERO_UI_INVALID, "the clipboard's emptying, text and paths take no size: width and height are 0");
+    } else if (kind == HERO_UI_CLIP_NOTHING && count != 0) {
+        return hero_ui_said(HERO_UI_INVALID, "emptying the clipboard takes no bytes");
+    } else if (kind == HERO_UI_CLIP_TEXT && !hero_ui_is_utf8(bytes, count)) {
+        return hero_ui_said(HERO_UI_INVALID, "the clipboard's text is no UTF-8");
+    } else if (kind == HERO_UI_CLIP_FILES && !hero_ui_paths_given(bytes, count)) {
+        return -1;
+    }
+    return hero_ui_windows_answered(hero_ui_arm_clipboard_set(kind, bytes, (int64_t)count, width, height), "writing the clipboard", 0);
+}
+
+int64_t hero_ui_clipboard_read(hero_ui_app *app, int64_t kind, int64_t *width, int64_t *height) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+    int64_t bytes = 0;
+    int64_t answer;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (kind < HERO_UI_CLIP_TEXT || kind > HERO_UI_CLIP_IMAGE) {
+        (void)snprintf(words, sizeof words, "the kind %lld is none of HERO_UI_CLIP_TEXT to HERO_UI_CLIP_IMAGE", (long long)kind);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (width == NULL || height == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "reading the clipboard: no room was given for the image's size");
+    }
+    *width = 0;
+    *height = 0;
+    answer = hero_ui_arm_clipboard_get(kind, &bytes, width, height);
+    if (answer == HERO_UI_NOT_FOUND) {
+        (void)snprintf(words, sizeof words, "reading the clipboard: it holds no %s", hero_ui_clip_name(kind));
+        return hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    if (answer == HERO_UI_LIMIT) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_windows_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "what it holds is past the %d bytes a read takes", HERO_UI_CLIP_MOST);
+        }
+        (void)snprintf(words, sizeof words, "reading the clipboard: %s", theirs);
+        return hero_ui_said(HERO_UI_LIMIT, words);
+    }
+    if (hero_ui_windows_answered(answer, "reading the clipboard", 0) < 0) {
+        return -1;
+    }
+    return bytes;
+}
+
+int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count) {
+    int64_t bytes;
+
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (count > 0 && buffer == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the clipboard's bytes and none given");
+    }
+    if (count > (uint64_t)HERO_UI_CLIP_MOST) {
+        count = (uint64_t)HERO_UI_CLIP_MOST;
+    }
+    bytes = hero_ui_arm_clipboard_bytes(buffer, (int64_t)count);
+    if (bytes < 0) {
+        return hero_ui_said(HERO_UI_OTHER, "no read of the clipboard has found anything");
+    }
+    hero_ui_fine();
+    return bytes;
+}

@@ -50,7 +50,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).
