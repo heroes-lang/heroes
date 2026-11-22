@@ -1,0 +1,11 @@
+use kinds
+
+function fresh<T>(x: T) -> (mailbox T)
+    m: (mailbox T) = mailbox()
+    _ = x
+    return m
+
+function main()
+    m = fresh(kinds.pointed())
+    print(m.send(kinds.pointed()).is_err())
+    print(m.receive(within_ms: 0).is_err())

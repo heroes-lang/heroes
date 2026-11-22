@@ -1,0 +1,11 @@
+use kinds
+
+function run<T>(f: (function(i64) -> T)) -> T
+    t = spawn(f, 1).must()
+    return t.wait()
+
+function make(_: i64) -> kinds.Pointed
+    return kinds.pointed()
+
+function main()
+    print(run(make).p == nullptr)

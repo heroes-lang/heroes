@@ -1,0 +1,8 @@
+# A stub of the package page's `time`.
+record Duration
+    nanoseconds: i64
+
+function seconds(n: i64) -> Duration?
+    if n < 0
+        return fail(code: "invalid", msg: "below 0")
+    return ok(Duration(nanoseconds: n * 1000000000))

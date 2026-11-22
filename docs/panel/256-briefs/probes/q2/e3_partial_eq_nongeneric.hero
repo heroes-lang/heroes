@@ -1,0 +1,4 @@
+use stats
+
+function main()
+    print(stats.zero() == stats.zero())

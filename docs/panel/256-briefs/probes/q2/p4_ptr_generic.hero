@@ -1,0 +1,8 @@
+use kinds
+
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function main()
+    m: (mailbox kinds.Pointed) = mailbox()
+    print(relay(m, kinds.pointed()))

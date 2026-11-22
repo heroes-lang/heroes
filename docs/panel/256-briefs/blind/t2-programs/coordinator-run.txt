@@ -1,0 +1,37 @@
+== prog1
+check 0, build 0, run (timeout -s KILL 20):
+false
+7
+== prog2
+prog2.hero:4:20: error[marker_mismatch]: `send` does not change this argument — the `@` says it does
+check exit 1
+== prog3
+check 0, build 0, run (timeout -s KILL 20):
+false
+true
+panic: a C handle reached the argument `db` of `sqlite3_close` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since: a copy made before the ending call, which C would read or free after the program gave it back. The handle is at 0x100cfc210
+  at db.hero:13:12, in db.shut
+  called from 0x100028223, in prog3.main
+== prog4
+prog4.hero:2:20: error[marker_mismatch]: `send` does not change this argument — the `@` says it does
+check exit 1
+== prog5
+check 0, build 0, run (timeout -s KILL 20):
+true
+panic: a C handle reached the argument `db` of `sqlite3_close` at an address a call marked `consumes` or `transfers` ended, and nothing has handed that address out since: a copy made before the ending call, which C would read or free after the program gave it back. The handle is at 0x102da0040
+  at db.hero:13:12, in db.shut
+  called from 0x100028013, in prog5.main
+== prog6
+check 0, build 0, run (timeout -s KILL 20):
+42
+prog1 run exit 0
+prog3 run exit 134
+prog5 run exit 134
+prog6 run exit 0
+# built and run by heroes-next, sources 031aaabb358218fd, the frozen commit's stage 2, 2026-11-22
+== prog7
+check 0, build 0, run (timeout -s KILL 20):
+false
+true
+prog7 run exit 0
+# prog7 built and run by heroes-next, sources 031aaabb358218fd, 2026-11-22, before 23:00
