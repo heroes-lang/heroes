@@ -306,6 +306,21 @@ int64_t hero_stream_descriptor(hero_stream *s);
  * descriptor or `HANDLE` is held as the process received it. */
 int64_t hero_stream_hold(hero_stream *s);
 
+/* What a member that starts a process calls in place of `hero_stream_hold`
+ * for each stream it hands to the child: the same hold and the same answer,
+ * and the stream from then on shared with a process this one does not
+ * control. Where the platform keeps a write to a pipe nobody reads from
+ * raising SIGPIPE by a mark on the open file (Darwin's `F_SETNOSIGPIPE`),
+ * which the child's copy would carry, the mark comes off and from then on
+ * stands only while a write of this process is in flight on the stream, as
+ * on one of the process's own three: so a child writing into a reader that
+ * has gone is ended by the signal, as a shell's child is, and this
+ * process's own write still answers `HERO_STREAM_CLOSED_PEER` (defect
+ * 2671). Elsewhere, and on a stream that carries no such mark (a file, one
+ * of the process's own three), it is `hero_stream_hold`. Released by
+ * `hero_stream_release`, once. */
+int64_t hero_stream_hold_shared(hero_stream *s);
+
 /* Ends one `hero_stream_hold` of `s`, which may have been closed meanwhile:
  * where it was and this was its last user, what it stands on is released
  * here. Answers 0, or -1 with `HERO_STREAM_NOT_OPEN` where `s` is no stream
