@@ -108,6 +108,10 @@ constant ACCOUNT_GROUP: str
 constant ADMIN_GROUP: str
     "admin"
 
+# The group of the API's routes, each an operation of its document.
+constant API_GROUP: str
+    "api"
+
 ## The router
 
 # The router of every route: the pages, the two groups, the API from `doc`
@@ -146,7 +150,9 @@ function router_of(doc: openapi.Document, site: openapi.Site) -> web.Router?
     add(@admin, method: http.METHOD_GET, pattern: "/users", name: USERS)?
     add(@admin, method: http.METHOD_POST, pattern: "/users/:name/role", name: ROLE)?
     web.mount(router: @r, group: admin)?
-    openapi.add_routes(@r, doc: doc)?
+    api @= web.new_group(r, name: API_GROUP, prefix: "/api")?
+    openapi.add_routes(@api, doc: doc)?
+    web.mount(router: @r, group: api)?
     openapi.add_site_routes(@r, site: site)?
     return ok(r)
 
@@ -159,20 +165,13 @@ function router_of(doc: openapi.Document, site: openapi.Site) -> web.Router?
 function add(@r: web.Router, method: str, pattern: str, name: str) -> ()?
     return web.add(@r, method: method, pattern: pattern, name: name)
 
-# Whether the route `name` is an operation of the API.
-#
-# - `doc`: the API's document.
-# - `name`: a route's name.
-function is_api(doc: openapi.Document, name: str) -> bool
-    return !openapi.endpoint_of(doc, operation_id: name).is_err()
-
 # Whether `found` answers as the API answers: JSON, a bearer token, no
-# cookie read.
+# cookie read; its group says so, since `openapi.add_routes` put every
+# operation of the document in it.
 #
-# - `doc`: the API's document.
 # - `found`: the route found.
-function is_api_route(doc: openapi.Document, found: web.Found) -> bool
-    return is_api(doc, name: found.name)
+function is_api_route(found: web.Found) -> bool
+    return web.is_in_group(found, name: API_GROUP)
 
 # The rows of `notes routes`: each route's method, pattern and name, in the
 # order they were added.
@@ -194,6 +193,6 @@ test "router_of: the pages, the groups and the API found by their names"
     assert found.name == NOTE && web.param_of(found, name: "slug").must() == "hello"
     assert web.route(r, r: http.request(method: "POST", target: "/admin/users/bob/role").must()).must().groups == [ADMIN_GROUP]
     api = web.route(r, r: http.request(method: "GET", target: "/api/notes/hello").must()).must()
-    assert api.name == api_doc.READ_NOTE && is_api_route(doc, found: api)
-    assert !is_api_route(doc, found: found)
+    assert api.name == api_doc.READ_NOTE && api.groups == [API_GROUP] && is_api_route(api)
+    assert !is_api_route(found)
     assert web.route(r, r: http.request(method: "GET", target: "/openapi.json").must()).must().name == openapi.ROUTE_DOCUMENT_JSON

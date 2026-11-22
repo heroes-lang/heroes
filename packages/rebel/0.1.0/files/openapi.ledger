@@ -221,12 +221,12 @@ capability route/match  the operation a request names: its path among the templa
   python  openapi_core.templating.paths.exceptions.PathNotFound, PathsNotFound, OperationNotFound, ServerNotFound, PathError
   note    A variable's value takes the longest text that lets the rest of its segment match, as gorilla/mux does, and never splits a character
 
-capability route/web  every operation added to a `web` router, named by its operationId, under its first server's path
+capability route/web  every operation added to a `web` router or group, named by its operationId, under its first server's path
   heroes  openapi.add_routes, openapi.pattern_of, openapi.route_name_of
   go      -
   rust    aide axum::ApiRouter, ApiMethodRouter, ApiMethodDocs, RouterExt, routing::get, get_with, post, post_with, put, put_with, patch, patch_with, delete, delete_with, head, head_with, options, options_with, trace, trace_with, TypedPath, typed_path
   python  fastapi.openapi.utils.generate_operation_id, generate_operation_id_for_path, get_fields_from_routes
-  note    The reverse of aide's: the routes come from the document. A template with a variable beside text in one segment, `/files/{name}.json`, is refused, which a `web` pattern does not say
+  note    The reverse of aide's: the routes come from the document. A template with a variable beside text in one segment, `/files/{name}.json`, is refused, which a `web` pattern does not say. In a `web` group a route keeps the path the document says a client asks, which stands under the group's prefix segment for segment, and joins the group; a path the group's prefix does not lead is refused `invalid` rather than moved, since the validator reads a request by the document's paths, and every route or none is added
 
 capability validate/parameters  a request's path, query, header and cookie parameters read by their style and explode rules, typed by their schemas, validated, a default given where one is missing
   heroes  openapi.new_validator, openapi.Validator, openapi.read_request, openapi.request_errors_of, openapi.Values, openapi.Issue

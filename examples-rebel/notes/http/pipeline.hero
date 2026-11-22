@@ -142,7 +142,7 @@ function answer(@app: state.App, r: http.Request, now: time.Instant) -> Outcome?
         .ok f  => f
         .err _ => return ok(.respond(response: web.not_routed(app.router, r: request)))
 
-    if routes.is_api_route(app.api, found: found)
+    if routes.is_api_route(found)
         return api(@app, r: request, found: found, now: now)
 
     return page(@app, r: request, found: found, now: now)
