@@ -226,7 +226,9 @@ function begun(program: str, arguments: [u8], environment_kind: i64, environment
         out_kind: kinds[1],
         out_stream: nullptr,
         err_kind: kinds[2],
-        err_stream: nullptr
+        err_stream: nullptr,
+        group_kind: hero_proc.HERO_PROC_GROUP_PARENT,
+        leader: nullptr
     )
 
 # A child of `program` with `words`, this process's environment, and `folder`.

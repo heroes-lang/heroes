@@ -20,9 +20,13 @@
 # What it does NOT do: this process's own number, environment, folders and
 # exit (`os`); a channel or memory shared with another running program
 # (`ipc`); a command line written for Windows (`strings.quote_windows_args`).
-# A signal other than the end and the end at once, and a process found by its
-# number rather than by the handle that started it, are refused
-# (`process.ledger`).
+# A process found by its number rather than by the handle that started it is
+# refused (`process.ledger`).
+#
+# **A shell's job control** (POSIX): a child started in a process group of its
+# own, or in another child's, any signal sent to it or to its group, a stop
+# and a going on told, and the terminal handed to its group and taken back.
+# Windows has no such group for a console program, and says `unsupported`.
 
 use bytes
 use io
@@ -141,8 +145,26 @@ variant Limit
         # How long it may run, above zero.
         limit: time.Duration
 
+# Which process group a child starts in (POSIX): the group is what Ctrl-C and
+# Ctrl-Z at the terminal reach, what `send_group_signal` sends to and what
+# `give_terminal` puts in front, so a shell starts each job in a group of its
+# own and hands it the terminal.
+variant Group
+    # This process's own group: a Ctrl-C at the terminal reaches the child and
+    # this process both.
+    parent
+    # A group of its own, the child its leader: a job's first program.
+    own
+    # The group a child the program started stands in: a job's later programs
+    # join its first.
+    joined
+        # That child's handle, as its `Child.handle`; `with_group_of` copies
+        # it, and the child must not have ended when this one starts.
+        leader: hero_proc.Proc
+
 # A program to run, with its arguments, its environment, its working folder,
-# what each of its three standard streams is and how long it may run.
+# what each of its three standard streams is, how long it may run and the
+# process group it starts in.
 # `command` builds one, and each `with_` function answers a copy with one
 # thing changed.
 record Command
@@ -171,6 +193,8 @@ record Command
     error_to_output: bool
     # How long the child may run.
     time_limit: Limit
+    # The process group the child starts in.
+    group: Group
 
 ## How a child ended
 
@@ -213,10 +237,16 @@ record Finished
 
 ## A started child
 
-# Where a started child stands: running, or seen to have ended.
+# Where a started child stands: running, stopped by a signal, or seen to have
+# ended.
 variant State
-    # It runs, or it ended and neither `wait` nor `has_ended` has seen it.
+    # It runs, or it ended or stopped and no call has seen it.
     running
+    # A signal stopped it, Ctrl-Z's or another, and it was not seen to go on
+    # since: `wait_or_stop` or `state_of` saw it (POSIX).
+    stopped
+        # The signal's number, as `os.signal_of` names it.
+        signal: i64
     # `wait` or `has_ended` saw it end.
     ended
         # How it ended.
@@ -255,7 +285,8 @@ record Child
 ## Building a command
 
 # A command that runs `program` with `arguments`, with this process's
-# variables, working folder and three standard streams, and no time limit.
+# variables, working folder, three standard streams and process group, and no
+# time limit.
 #
 # - `program`: a path where it holds a separator (`/`, or `\` on Windows),
 #   read from this process's working folder where it is relative; else a name
@@ -277,7 +308,8 @@ function command(program: str, arguments: [str]) -> Command
         output: .parent,
         error: .parent,
         error_to_output: false,
-        time_limit: .none
+        time_limit: .none,
+        group: .parent
     )
 
 # A command that runs `script` through the system's shell: `/bin/sh -c
@@ -463,6 +495,35 @@ function with_time_limit(c: Command, limit: time.Duration) -> Command
     changed.time_limit @ .after(limit: limit)
     return changed
 
+# `c` whose child starts as the leader of a process group of its own (POSIX):
+# Ctrl-C at the terminal no longer reaches it with this process, and
+# `send_group_signal` and `give_terminal` name its group.
+#
+# - `c`: the command to copy.
+#
+# Starting it fails `unsupported` on Windows, which has no such group for a
+# console program. See also `with_group_of`.
+function with_own_group(c: Command) -> Command
+    changed @= c
+    changed.group @ .own
+    return changed
+
+# `c` whose child starts in the process group `leader` stands in (POSIX), as a
+# shell starts a pipeline's later programs in its first one's group.
+#
+# - `c`: the command to copy.
+# - `leader`: a child the program started, which stands in a group of its
+#   own and must not have ended, been waited for or given up when the command
+#   starts.
+#
+# Starting it fails `invalid` where `leader` has ended, was waited for or
+# given up, or stands in this process's own group, and `unsupported` on
+# Windows. See also `with_own_group`.
+function with_group_of(c: Command, leader: Child) -> Command
+    changed @= c
+    changed.group @ .joined(leader: leader.handle)
+    return changed
+
 ## Running a command to its end
 
 # How `c`'s child ended and what it wrote, once it has ended: started,
@@ -610,8 +671,20 @@ function start(c: Command) -> Child?
         .pipe        => launch.plain(hero_proc.HERO_PROC_STDIO_PIPE)
         .stream held => launch.End(kind: hero_proc.HERO_PROC_STDIO_STREAM, stream: held.stream.handle)
 
+    group = match c.group
+        .parent => launch.ungrouped()
+        .own    => launch.Grouping(kind: hero_proc.HERO_PROC_GROUP_NEW, leader: nullptr)
+        .joined j =>
+            if j.leader == nullptr
+                return codes.of(
+                    code: codes.INVALID,
+                    asked: asked,
+                    why: "the group's leader was waited for or given up, so it names no group"
+                )
+            launch.Grouping(kind: hero_proc.HERO_PROC_GROUP_JOIN, leader: j.leader)
+
     began = clock.now()?
-    begun = launch.started(program: c.program, arguments: c.arguments, env: env, dir: c.dir, input: input, output: output, error: error, fed: fed, feeding: feeding, merged: c.error_to_output)?
+    begun = launch.started(program: c.program, arguments: c.arguments, env: env, dir: c.dir, input: input, output: output, error: error, fed: fed, feeding: feeding, merged: c.error_to_output, group: group)?
     return ok(
         Child(handle: begun.proc, command: c, id: hero_proc.id(begun.proc), input: begun.input, output: begun.output, error: begun.error, started: began, state: .running)
     )
@@ -629,11 +702,17 @@ function start(c: Command) -> Child?
 # Read the child's pipes to their end before waiting: they are closed here,
 # so a read after `wait` fails `closed`, and a child that fills a pipe nobody
 # reads never ends. Past its command's time limit the child is ended at once
-# and its status is `.timed_out`.
+# and its status is `.timed_out`. A stopped child is waited for until it
+# ends, so it is sent `.resume` first (`send_signal`), or waited for with
+# `wait_or_stop`.
 function wait(@child: Child) -> Status?
     asked = f"waiting for \"{child.command.program}\""
 
-    if child.state == .running
+    unended = match child.state
+        .ended _              => false
+        .running | .stopped _ => true
+
+    if unended
         if child.handle == nullptr
             return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
         launch.dropped(@child.input)
@@ -664,7 +743,11 @@ function wait(@child: Child) -> Status?
 
     match child.state
         .ended seen => return ok(seen.status)
-        .running    => return codes.of(code: codes.INVALID, asked: asked, why: "the child was not seen to end")
+        .running | .stopped _ => return codes.of(
+            code: codes.INVALID,
+            asked: asked,
+            why: "the child was not seen to end"
+        )
 
 # Whether `child` has ended, never waiting for it: `true` once it has, its
 # status kept for `wait`.
@@ -676,8 +759,9 @@ function wait(@child: Child) -> Status?
 function has_ended(@child: Child) -> bool?
     asked = f"asking whether \"{child.command.program}\" has ended"
 
-    if child.state != .running
-        return ok(true)
+    match child.state
+        .ended _              => return ok(true)
+        .running | .stopped _ => _ = 0
 
     if child.handle == nullptr
         return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
@@ -714,8 +798,9 @@ function has_ended(@child: Child) -> bool?
 function terminate(child: Child) -> ()?
     asked = f"asking \"{child.command.program}\" to end"
 
-    if child.state != .running
-        return ok()
+    match child.state
+        .ended _              => return ok()
+        .running | .stopped _ => _ = 0
 
     if child.handle == nullptr
         return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
@@ -736,8 +821,9 @@ function terminate(child: Child) -> ()?
 function kill(child: Child) -> ()?
     asked = f"ending \"{child.command.program}\" at once"
 
-    if child.state != .running
-        return ok()
+    match child.state
+        .ended _              => return ok()
+        .running | .stopped _ => _ = 0
 
     if child.handle == nullptr
         return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
@@ -773,7 +859,7 @@ function release(@child: Child) -> ()?
 function cpu_of(child: Child) -> CpuTime?
     match child.state
         .ended seen => return ok(seen.cpu)
-        .running =>
+        .running | .stopped _ =>
             return codes.of(
                 code: codes.INVALID,
                 asked: f"reading the CPU time of \"{child.command.program}\"",
@@ -808,7 +894,222 @@ function usage_of(child: Child) -> os.ProcessUsage?
                 asked: f"reading the usage of \"{child.command.program}\"",
                 why: "it has been seen to end; `cpu_of` answers the time it used"
             )
-        .running => return os.process_usage(child.id)
+        .running | .stopped _ => return os.process_usage(child.id)
+
+## Job control
+
+# Where `child` stands now, never waiting: running, stopped by a signal, or
+# ended, a stop and a going on seen as well as an end, as a shell asks of each
+# job before its prompt.
+#
+# - `child`: the child to ask; what is seen is kept in its `state`, and once
+#   it has ended `wait` answers at once. Past its command's time limit it is
+#   ended at once, a stopped child too.
+#
+# Fails as `wait` does. A child stays `.stopped` until a call sees it go on or
+# end. On Windows no child stops, so it is `.running` or `.ended`. See also
+# `wait_or_stop`, `has_ended`.
+function state_of(@child: Child) -> State?
+    asked = f"asking where \"{child.command.program}\" stands"
+
+    match child.state
+        .ended _              => return ok(child.state)
+        .running | .stopped _ => _ = 0
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    limit = match child.command.time_limit
+        .none        => 0
+        .after given => given.limit.nanoseconds
+
+    seen = ending.looked_state(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
+
+    if seen.ended
+        status: Status = if seen.timed_out
+            .timed_out
+        else if seen.signal != 0
+            .signaled(signal: seen.signal)
+        else
+            .exited(code: seen.code)
+        child.state @ .ended(
+            status: status,
+            cpu: CpuTime(user: time.nanoseconds(seen.user_ns), system: time.nanoseconds(seen.system_ns))
+        )
+    else if seen.stop_signal != 0
+        child.state @ .stopped(signal: seen.stop_signal)
+    else
+        child.state @ .running
+    return ok(child.state)
+
+# How `child` ended, or the signal that stopped it, waiting for the first of
+# the two: what a shell waits for of the job it runs in front, which Ctrl-Z
+# stops.
+#
+# - `child`: the child to wait for. A stop it was seen in before this call is
+#   waited past until it goes on, so a stopped child is sent `.resume` first
+#   (`send_group_signal`); one that has ended answers at once.
+#
+# Answers `.ended` or `.stopped`, never `.running`. On an end it does what
+# `wait` does, every end of its pipes closed and its process given back; on a
+# stop its pipes stay as they are. Past its command's time limit the child is
+# ended at once and its status is `.timed_out`.
+#
+# Fails as `wait` does. On Windows no child stops, and it waits for the end.
+# See also `state_of`, `wait`.
+function wait_or_stop(@child: Child) -> State?
+    asked = f"waiting for \"{child.command.program}\" to end or stop"
+
+    was_stopped = match child.state
+        .ended _   => return ok(child.state)
+        .running   => false
+        .stopped _ => true
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    limit = match child.command.time_limit
+        .none        => 0
+        .after given => given.limit.nanoseconds
+
+    seen = ending.waited_state(child.handle, started: child.started, limit: limit, was_stopped: was_stopped, asked: asked, program: child.command.program)?
+
+    if !seen.ended
+        child.state @ .stopped(signal: seen.stop_signal)
+        return ok(child.state)
+
+    status: Status = if seen.timed_out
+        .timed_out
+    else if seen.signal != 0
+        .signaled(signal: seen.signal)
+    else
+        .exited(code: seen.code)
+    child.state @ .ended(
+        status: status,
+        cpu: CpuTime(user: time.nanoseconds(seen.user_ns), system: time.nanoseconds(seen.system_ns))
+    )
+    _ = wait(@child)?
+    return ok(child.state)
+
+# Sends `signal` to `child` alone: a stop, a going on, Ctrl-C's, or any other
+# signal `os.Signal` names (POSIX).
+#
+# - `child`: the child; one that has ended is sent nothing.
+# - `signal`: the signal sent.
+#
+# Fails `invalid` where `child` was given up by `release`, `unsupported` on
+# Windows, where a console's signals reach its whole group and never one
+# process, and with the system's code where it refuses. See also
+# `send_group_signal`, `terminate`, `kill`.
+function send_signal(child: Child, signal: os.Signal) -> ()?
+    asked = f"sending {os.signal_name(signal)} to \"{child.command.program}\""
+
+    match child.state
+        .ended _              => return ok()
+        .running | .stopped _ => _ = 0
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+    number = os.signal_number(signal)?
+
+    if hero_proc.signal(child.handle, sig: number, group: 0) < 0
+        return codes.last(asked: asked, program: child.command.program, dir: "")
+    return ok()
+
+# Sends `signal` to every process of the group `child` stands in, its own
+# children included: what a shell sends a job to stop it, continue it or end
+# it (POSIX).
+#
+# - `child`: a child of the group that has not ended, started by a command
+#   `with_own_group` or `with_group_of` made.
+# - `signal`: the signal sent.
+#
+# Fails `invalid` where `child` has ended, since a group is named by a child of
+# it that runs or is stopped, where it was given up by `release`, and where it
+# stands in this process's own group, which the signal would reach too;
+# `unsupported` on Windows; and with the system's code where it refuses.
+#
+# The group is read and sent to while nothing has taken `child`'s status, so
+# its number names that group and no other. See also `send_signal`.
+function send_group_signal(child: Child, signal: os.Signal) -> ()?
+    asked = f"sending {os.signal_name(signal)} to the group of \"{child.command.program}\""
+
+    match child.state
+        .ended _ =>
+            return codes.of(
+                code: codes.INVALID,
+                asked: asked,
+                why: "the child has ended, so it names no group: name it by a child of it that runs or is stopped"
+            )
+        .running | .stopped _ => _ = 0
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+    number = os.signal_number(signal)?
+
+    if hero_proc.signal(child.handle, sig: number, group: 1) < 0
+        return codes.last(asked: asked, program: child.command.program, dir: "")
+    return ok()
+
+# Puts the group `child` stands in in front at the terminal `terminal`, so
+# Ctrl-C, Ctrl-Z and the terminal's reads reach that group and not this
+# process: what a shell does for the job it runs in front (POSIX).
+#
+# - `child`: a child of the group, as `send_group_signal` takes it.
+# - `terminal`: a stream on this process's controlling terminal, a shell's
+#   input; it stays the program's.
+#
+# Fails `unsupported` where `terminal` is no terminal, or not this process's
+# controlling one, and on Windows; `invalid` as `send_group_signal` fails it. This
+# process may be outside the terminal's front when it calls: the signal the
+# system would stop it with is held for the call. See also `take_terminal`,
+# `holds_terminal`.
+function give_terminal(child: Child, terminal: io.Stream) -> ()?
+    asked = f"giving the terminal to the group of \"{child.command.program}\""
+
+    match child.state
+        .ended _ =>
+            return codes.of(
+                code: codes.INVALID,
+                asked: asked,
+                why: "the child has ended, so it names no group: name it by a child of it that runs or is stopped"
+            )
+        .running | .stopped _ => _ = 0
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    if hero_proc.give_terminal(terminal.handle, p: child.handle) < 0
+        return codes.last(asked: asked, program: child.command.program, dir: "")
+    return ok()
+
+# Puts this process's own group in front at `terminal` again: what a shell
+# does once the job it ran in front ended or stopped (POSIX).
+#
+# - `terminal`: a stream on this process's controlling terminal; it stays
+#   the program's.
+#
+# Fails `unsupported` where `terminal` is no terminal, or not this process's
+# controlling one, and on Windows. See also `give_terminal`.
+function take_terminal(terminal: io.Stream) -> ()?
+    if hero_proc.take_terminal(terminal.handle) < 0
+        return codes.last(asked: "taking the terminal back", program: "", dir: "")
+    return ok()
+
+# Whether this process's own group is in front at `terminal`: a shell takes
+# job control only where it holds its terminal (POSIX).
+#
+# - `terminal`: a stream on this process's controlling terminal; it stays
+#   the program's.
+#
+# Fails `unsupported` where `terminal` is no terminal, or not this process's
+# controlling one, and on Windows. See also `give_terminal`.
+function holds_terminal(terminal: io.Stream) -> bool?
+    held = hero_proc.holds_terminal(terminal.handle)
+
+    if held < 0
+        return codes.last(asked: "asking who holds the terminal", program: "", dir: "")
+    return ok(held == 1)
 
 ## Asking how a child ended
 
@@ -1377,6 +1678,175 @@ test "usage_of: a running child read twice, then refused once waited for, and re
         .ok _  => assert false
         .err e => assert e.code == INVALID
 
+# A sleeper of thirty seconds, which every test below ends and waits for.
+test "with_own_group and with_group_of: this process's group by default, one of its own, and another child's"
+    c = command(fixture.sleeper(), fixture.sleeper_arguments(30))
+    assert c.group == .parent
+    assert with_own_group(c).group == .own
+    leader @= start(c).must()
+    assert with_group_of(c, leader: leader).group == .joined(leader: leader.handle)
+    kill(leader).must()
+    _ = wait(@leader).must()
+
+test "send_signal and send_group_signal: a child of this process's group signalled alone, its group refused, and an ended child sent nothing"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+
+    if fixture.on_windows()
+        match send_signal(child, signal: .interrupt)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+        kill(child).must()
+        _ = wait(@child).must()
+    else
+        match send_group_signal(child, signal: .terminate)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        send_signal(child, signal: .terminate).must()
+        assert wait(@child).must() == .signaled(signal: 15)
+        send_signal(child, signal: .terminate).must()
+
+        match send_group_signal(child, signal: .terminate)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "with_own_group and with_group_of: a job of two children in one group of its own, ended by one signal to the group"
+    leading = with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30)))
+
+    if fixture.on_windows()
+        match start(leading)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+    else
+        leader @= start(leading).must()
+        member @= start(with_group_of(command(fixture.sleeper(), fixture.sleeper_arguments(30)), leader: leader)).must()
+        send_group_signal(member, signal: .terminate).must()
+        assert wait(@leader).must() == .signaled(signal: 15)
+        assert wait(@member).must() == .signaled(signal: 15)
+
+test "with_group_of: a leader in this process's group, one waited for and one seen to end are refused, and nothing is started"
+    if !fixture.on_windows()
+        sleeping = command(fixture.sleeper(), fixture.sleeper_arguments(30))
+        plain @= start(sleeping).must()
+
+        match start(with_group_of(sleeping, leader: plain))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        kill(plain).must()
+        _ = wait(@plain).must()
+
+        match start(with_group_of(sleeping, leader: plain))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        quick @= start(with_own_group(shell(fixture.exit_script(0)).must())).must()
+
+        while !has_ended(@quick).must()
+            clock.rest(clock.SHORTEST)
+
+        match start(with_group_of(sleeping, leader: quick))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        _ = wait(@quick).must()
+
+test "wait_or_stop and state_of: a child stopped, seen stopped, sent on, seen running, stopped by Ctrl-Z's signal, then ended at once while stopped"
+    if !fixture.on_windows()
+        child @= start(with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30)))).must()
+        assert state_of(@child).must() == .running
+        stop = os.signal_number(.stop).must()
+        send_signal(child, signal: .stop).must()
+        assert wait_or_stop(@child).must() == .stopped(signal: stop)
+        assert state_of(@child).must() == .stopped(signal: stop)
+        assert !has_ended(@child).must()
+        send_group_signal(child, signal: .resume).must()
+        tries @= 0
+
+        while state_of(@child).must() != .running && tries < 5000
+            clock.rest(clock.SHORTEST)
+            tries @ tries + 1
+
+        assert child.state == .running
+        send_signal(child, signal: .terminal_stop).must()
+        assert wait_or_stop(@child).must() == .stopped(signal: os.signal_number(.terminal_stop).must())
+        kill(child).must()
+
+        match wait_or_stop(@child).must()
+            .ended e              => assert e.status == .signaled(signal: 9)
+            .running | .stopped _ => assert false
+
+        assert child.handle == nullptr
+        assert wait(@child).must() == .signaled(signal: 9)
+
+test "wait_or_stop: a stopped child past its time limit is ended at once, and its status says so"
+    if !fixture.on_windows()
+        limited = with_time_limit(
+            with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30))),
+            limit: time.milliseconds(300).must()
+        )
+        child @= start(limited).must()
+        send_signal(child, signal: .stop).must()
+        seen @= wait_or_stop(@child).must()
+
+        if seen != .stopped(signal: os.signal_number(.stop).must())
+            assert seen == child.state
+        else
+            seen @ wait_or_stop(@child).must()
+
+        match seen
+            .ended e              => assert e.status == .timed_out
+            .running | .stopped _ => assert false
+
+test "give_terminal, take_terminal and holds_terminal: a stream that is no terminal is unsupported, and a child that ended names no group"
+    pair = io.pipe().must()
+    reader @= pair.reader
+    writer @= pair.writer
+
+    match holds_terminal(reader)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    match take_terminal(reader)
+        .ok _  => assert false
+        .err e => assert e.code == UNSUPPORTED
+
+    if !fixture.on_windows()
+        child @= start(with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30)))).must()
+
+        match give_terminal(child, terminal: reader)
+            .ok _  => assert false
+            .err e => assert e.code == UNSUPPORTED
+
+        kill(child).must()
+        _ = wait(@child).must()
+
+        match give_terminal(child, terminal: reader)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+    io.close(@reader).must()
+    io.close(@writer).must()
+
+# This process counts the request to end, which the platform layer hands over
+# as it hands Ctrl-C, and a signal of the runtime's own door, and a child it
+# started sends it three of each: each is counted and none ends the test
+# (feature 2669). Ctrl-C itself is the `run` cases', which set its
+# disposition first: a test a shell started in the background inherits it
+# ignored, and it stays so.
+test "os.count_signal: three requests to end and three SIGUSR1 a child sends this process are counted one by one, and the process goes on"
+    if !fixture.on_windows()
+        os.count_signal(.terminate).must()
+        os.count_signal(.user1).must()
+
+        for _ in range(from: 0, to: 3)
+            asked @= start(shell(f"kill -TERM {os.pid()}").must()).must()
+            assert wait(@asked).must() == .exited(code: 0)
+            assert os.take_signals(.terminate) == 1
+            own @= start(shell(f"kill -USR1 {os.pid()}").must()).must()
+            assert wait(@own).must() == .exited(code: 0)
+            assert os.take_signals(.user1) == 1
+
 ## Examples
 
 # A command built from a program and its arguments, each reaching the child
@@ -1543,3 +2013,73 @@ test "usage_of: the memory a running child holds"
     assert held > 0
     io.close(@child.input).must()
     assert wait(@child).must() == .exited(code: 0)
+
+# A job's first program started in a group of its own, which Ctrl-C at the
+# terminal then reaches without this process.
+test "with_own_group: a job's first program"
+    c = with_own_group(command("make", []))
+    assert c.group == .own
+
+# A pipeline's second program started in its first one's group.
+test "with_group_of: a pipeline's second program"
+    first @= start(command(fixture.sleeper(), fixture.sleeper_arguments(0))).must()
+    second = with_group_of(command("sort", []), leader: first)
+    assert second.group == .joined(leader: first.handle)
+    _ = wait(@first).must()
+
+# A shell asks each job where it stands before its prompt.
+test "state_of: a job asked until it ended"
+    child @= start(shell(fixture.exit_script(3)).must()).must()
+
+    while state_of(@child).must() == .running
+        clock.rest(clock.SHORTEST)
+
+    _ = wait(@child).must()
+
+# A shell waits for the job it runs in front, which ends here and might have
+# been stopped by Ctrl-Z.
+test "wait_or_stop: the job in front waited for"
+    child @= start(shell(fixture.exit_script(3)).must()).must()
+
+    match wait_or_stop(@child).must()
+        .ended e   => assert e.status == .exited(code: 3)
+        .stopped s => print(f"stopped by signal {s.signal}")
+        .running   => assert false
+
+# A child asked to end with SIGTERM, which Windows has no such request for.
+test "send_signal: a child asked to end"
+    child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+
+    match send_signal(child, signal: .terminate)
+        .ok _ => _ = wait(@child).must()
+        .err e =>
+            assert e.code == UNSUPPORTED
+            kill(child).must()
+            _ = wait(@child).must()
+
+# A whole job ended by one signal to its group.
+test "send_group_signal: a job ended"
+    if !fixture.on_windows()
+        job @= start(with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30)))).must()
+        send_group_signal(job, signal: .terminate).must()
+        assert wait(@job).must() == .signaled(signal: 15)
+
+# A shell hands its terminal to the job it runs in front, where it holds the
+# terminal at all.
+test "give_terminal: the terminal to the job in front"
+    if holds_terminal(io.stdin()).default(false)
+        job @= start(with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(0)))).must()
+        give_terminal(job, terminal: io.stdin()).must()
+        _ = wait_or_stop(@job).must()
+        take_terminal(io.stdin()).must()
+
+# The terminal taken back once the job in front ended or stopped.
+test "take_terminal: the terminal back after a job"
+    if holds_terminal(io.stdin()).default(false)
+        take_terminal(io.stdin()).must()
+
+# Whether this shell holds its terminal, which job control needs.
+test "holds_terminal: job control only in front"
+    match holds_terminal(io.stdin())
+        .ok held => print(f"in front: {held}")
+        .err e   => assert e.code == UNSUPPORTED

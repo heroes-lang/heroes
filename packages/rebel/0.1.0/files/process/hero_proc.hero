@@ -16,6 +16,7 @@
 # one zero byte. Nothing is quoted and no shell reads it.
 
 use io/hero_stream
+use os/hero_os
 use process/internal/fixture
 
 extern "hero_proc.h"
@@ -37,6 +38,7 @@ extern "hero_proc.h"
     constant HERO_PROC_OTHER: i64
     constant HERO_PROC_RUNNING: i64
     constant HERO_PROC_NOT_A_PROGRAM: i64
+    constant HERO_PROC_ENDED: i64
     # What each of the child's input, output and error is: the parent's own,
     # the null device, a new pipe, or a stream the program holds.
     constant HERO_PROC_STDIO_PARENT: i64
@@ -46,16 +48,26 @@ extern "hero_proc.h"
     # What the child's environment is: this process's, or exactly a list.
     constant HERO_PROC_ENV_PARENT: i64
     constant HERO_PROC_ENV_GIVEN: i64
+    # Which process group the child starts in: this process's, a group of its
+    # own, or the group another child stands in.
+    constant HERO_PROC_GROUP_PARENT: i64
+    constant HERO_PROC_GROUP_NEW: i64
+    constant HERO_PROC_GROUP_JOIN: i64
     # Which of the child's three streams, for `pipe`.
     constant HERO_PROC_INPUT: i64
     constant HERO_PROC_OUTPUT: i64
     constant HERO_PROC_ERROR: i64
-    function hero_proc_start(program: cstr lent, @arguments: [u8] counted_by arguments_count lent, arguments_count: u64, environment_kind: i64, @environment: [u8] counted_by environment_count lent, environment_count: u64, folder: cstr lent, input_kind: i64, input: hero_stream.Stream, output_kind: i64, output: hero_stream.Stream, error_kind: i64, error: hero_stream.Stream) -> Proc acquires hero_proc_release
+    function hero_proc_start(program: cstr lent, @arguments: [u8] counted_by arguments_count lent, arguments_count: u64, environment_kind: i64, @environment: [u8] counted_by environment_count lent, environment_count: u64, folder: cstr lent, input_kind: i64, input: hero_stream.Stream, output_kind: i64, output: hero_stream.Stream, error_kind: i64, error: hero_stream.Stream, group_kind: i64, leader: Proc) -> Proc acquires hero_proc_release
     function hero_proc_pipe(p: Proc, which: i64) -> hero_stream.Stream acquires hero_stream_close
     function hero_proc_wait(p: Proc, @code: i64, @by_signal: i64) -> i64
     function hero_proc_ended(p: Proc) -> i64
+    function hero_proc_state(p: Proc, waits: i64, @stop_signal: i64) -> i64
     function hero_proc_terminate(p: Proc) -> i64
     function hero_proc_kill(p: Proc) -> i64
+    function hero_proc_signal(p: Proc, sig: i64, group: i64) -> i64
+    function hero_proc_give_terminal(terminal: hero_stream.Stream, p: Proc) -> i64
+    function hero_proc_take_terminal(terminal: hero_stream.Stream) -> i64
+    function hero_proc_holds_terminal(terminal: hero_stream.Stream) -> i64
     function hero_proc_id(p: Proc) -> i64
     function hero_proc_cpu(p: Proc, @user_ns: i64, @system_ns: i64) -> i64
     function hero_proc_release(p: Proc consumes) -> i64
@@ -113,7 +125,16 @@ extern "hero_proc.h"
 #   `HERO_PROC_STDIO_*`.
 # - `err_stream`: the stream the child writes its errors to, for
 #   `HERO_PROC_STDIO_STREAM` alone; it stays the program's.
-function start(program: str, @arguments: [u8], arguments_count: u64, environment_kind: i64, @environment: [u8], environment_count: u64, folder: str, in_kind: i64, in_stream: hero_stream.Stream, out_kind: i64, out_stream: hero_stream.Stream, err_kind: i64, err_stream: hero_stream.Stream) -> Proc
+# - `group_kind`: the process group the child starts in (POSIX):
+#   `HERO_PROC_GROUP_PARENT`, this process's; `HERO_PROC_GROUP_NEW`, a group
+#   of its own that it leads; or `HERO_PROC_GROUP_JOIN`, the group `leader`
+#   stands in. On Windows every kind but the parent's is
+#   `HERO_PROC_UNSUPPORTED`.
+# - `leader`: for `HERO_PROC_GROUP_JOIN` alone, a process of this floor that
+#   has not ended (else `HERO_PROC_ENDED`) and stands in a group of its own,
+#   not this process's (else `HERO_PROC_INVALID`); `nullptr` for the other
+#   kinds, else `HERO_PROC_INVALID`. It stays the program's.
+function start(program: str, @arguments: [u8], arguments_count: u64, environment_kind: i64, @environment: [u8], environment_count: u64, folder: str, in_kind: i64, in_stream: hero_stream.Stream, out_kind: i64, out_stream: hero_stream.Stream, err_kind: i64, err_stream: hero_stream.Stream, group_kind: i64, leader: Proc) -> Proc
     return hero_proc_start(
         program: program.cstr(),
         arguments: @arguments,
@@ -127,7 +148,9 @@ function start(program: str, @arguments: [u8], arguments_count: u64, environment
         output_kind: out_kind,
         output: out_stream,
         error_kind: err_kind,
-        error: err_stream
+        error: err_stream,
+        group_kind: group_kind,
+        leader: leader
     )
 
 # The program's end of the pipe that is the child's `which`, or `nullptr`.
@@ -161,6 +184,21 @@ function wait(p: Proc, @code: i64, @by_signal: i64) -> i64
 function ended(p: Proc) -> i64
     return hero_proc_ended(p)
 
+# Where `p` stands: 0 it runs, 1 it has ended, 2 a signal stopped it, its
+# number in `stop_signal`; or -1. With `waits` 0 it never waits, and a process
+# seen stopped answers 2 until it is seen to go on or to end; with `waits` 1 it
+# waits until `p` ends or stops, past a stop seen before the call, and never
+# answers 0. Windows answers no stop.
+#
+# - `p`: the process asked about; it stays the program's. Once 1 is
+#   answered, `wait` answers at once.
+# - `waits`: 0 never waits, 1 waits for the end or a stop; any other number is
+#   `HERO_PROC_INVALID`.
+# - `stop_signal`: set to the number of the signal that stopped it where 2 is
+#   answered, else 0.
+function state(p: Proc, waits: i64, @stop_signal: i64) -> i64
+    return hero_proc_state(p, waits: waits, stop_signal: @stop_signal)
+
 # 0 once `p` is asked to end, or -1. It sends SIGTERM, and nothing to a
 # process that has ended already; on Windows it answers -1 with
 # `HERO_PROC_UNSUPPORTED` and touches nothing, since Windows has no such
@@ -179,6 +217,48 @@ function terminate(p: Proc) -> i64
 #   ended.
 function kill(p: Proc) -> i64
     return hero_proc_kill(p)
+
+# 0 once the system took the signal `sig` for `p` alone, or for every process
+# of the group `p` stands in, or -1: a process that has ended is sent nothing,
+# 0 for itself and `HERO_PROC_ENDED` for its group. `HERO_PROC_INVALID` for a
+# number no signal has, a `group` that is neither 0 nor 1, and a group that is
+# this process's own; on Windows `HERO_PROC_UNSUPPORTED`.
+#
+# - `p`: the process the signal goes to, or whose group it goes to; it stays
+#   the program's.
+# - `sig`: the platform's number for the signal, `os/hero_os`'s
+#   `signal_number` answer; 1 and above, below the platform's count.
+# - `group`: 0 for `p` alone, 1 for its group, read at the call.
+function signal(p: Proc, sig: i64, group: i64) -> i64
+    return hero_proc_signal(p, sig: sig, group: group)
+
+# 0 once the group `p` stands in is in front at the terminal `terminal`, so
+# Ctrl-C, Ctrl-Z and the terminal's reads reach it alone; or -1:
+# `HERO_PROC_UNSUPPORTED` where `terminal` is no terminal or not this
+# process's controlling one, and on Windows; `HERO_PROC_ENDED` and
+# `HERO_PROC_INVALID` as `signal` answers them.
+#
+# - `terminal`: a stream on this process's controlling terminal, its input
+#   for a shell; it stays the program's.
+# - `p`: the process whose group goes in front; it stays the program's.
+function give_terminal(terminal: hero_stream.Stream, p: Proc) -> i64
+    return hero_proc_give_terminal(terminal, p: p)
+
+# 0 once this process's own group is in front at `terminal` again, or -1,
+# `HERO_PROC_UNSUPPORTED` as `give_terminal` answers it.
+#
+# - `terminal`: a stream on this process's controlling terminal; it stays
+#   the program's.
+function take_terminal(terminal: hero_stream.Stream) -> i64
+    return hero_proc_take_terminal(terminal)
+
+# 1 where this process's own group is in front at `terminal`, 0 where another
+# group is, or -1, `HERO_PROC_UNSUPPORTED` as `give_terminal` answers it.
+#
+# - `terminal`: a stream on this process's controlling terminal; it stays
+#   the program's.
+function holds_terminal(terminal: hero_stream.Stream) -> i64
+    return hero_proc_holds_terminal(terminal)
 
 # The system's own number for `p`, or -1. It is a number to show: the handle
 # names the process, never the number.
@@ -350,7 +430,9 @@ test "a stream that is none, handed as the child's input: nullptr with HERO_PROC
         out_kind: HERO_PROC_STDIO_NOTHING,
         out_stream: nullptr,
         err_kind: HERO_PROC_STDIO_NOTHING,
-        err_stream: nullptr
+        err_stream: nullptr,
+        group_kind: HERO_PROC_GROUP_PARENT,
+        leader: nullptr
     )
     assert refused == nullptr
     assert last_error() == HERO_PROC_NOT_OPEN
@@ -596,7 +678,9 @@ test "a stream the program holds is the child's output and its error: a pipe of 
         out_kind: HERO_PROC_STDIO_STREAM,
         out_stream: writer,
         err_kind: HERO_PROC_STDIO_STREAM,
-        err_stream: writer
+        err_stream: writer,
+        group_kind: HERO_PROC_GROUP_PARENT,
+        leader: nullptr
     )
     assert p != nullptr
     assert hero_stream.close(@writer) == 0
@@ -631,3 +715,127 @@ test "a socket handed to a stream's door is one the streams never issued, not op
     assert hero_stream_kind(socket) == -1
     assert hero_stream_last_error() == HERO_STREAM_NOT_OPEN
     assert hero_net_close(socket) == 0
+
+test "the job-control doors on no process: state, signal and give_terminal answer -1 with HERO_PROC_NOT_OPEN"
+    none: Proc = nullptr
+    stop: i64 @= 7
+    assert state(none, waits: 0, stop_signal: @stop) == -1 && stop == 0
+    assert last_error() == HERO_PROC_NOT_OPEN
+    assert signal(none, sig: 15, group: 0) == -1 && last_error() == HERO_PROC_NOT_OPEN
+    assert give_terminal(hero_stream.std(0), p: none) == -1 && last_error() == HERO_PROC_NOT_OPEN
+
+test "what the job-control doors refuse: a wait that is neither 0 nor 1, a signal no number names, a group that is neither, a group joined with no leader or a leader with none"
+    words: [u8] @= fixture.packed(fixture.sleeper_arguments(30))
+    variables: [u8] @= []
+    p @= start(
+        program: fixture.sleeper(),
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr,
+        group_kind: HERO_PROC_GROUP_PARENT,
+        leader: nullptr
+    )
+    assert p != nullptr
+    stop: i64 @= 7
+    assert state(p, waits: 2, stop_signal: @stop) == -1 && last_error() == HERO_PROC_INVALID
+    assert state(p, waits: 0, stop_signal: @stop) == 0 && stop == 0
+
+    if fixture.on_windows()
+        assert signal(p, sig: 15, group: 0) == -1 && last_error() == HERO_PROC_UNSUPPORTED
+    else
+        assert signal(p, sig: 0, group: 0) == -1 && last_error() == HERO_PROC_INVALID
+        assert signal(p, sig: 15, group: 2) == -1 && last_error() == HERO_PROC_INVALID
+        assert signal(p, sig: 15, group: 1) == -1 && last_error() == HERO_PROC_INVALID
+    joined = start(
+        program: fixture.sleeper(),
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr,
+        group_kind: HERO_PROC_GROUP_JOIN,
+        leader: nullptr
+    )
+    assert joined == nullptr && last_error() == HERO_PROC_INVALID
+    led = start(
+        program: fixture.sleeper(),
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr,
+        group_kind: HERO_PROC_GROUP_NEW,
+        leader: p
+    )
+    assert led == nullptr && last_error() == HERO_PROC_INVALID
+    assert kill(p) == 0
+    code: i64 @= 0
+    by: i64 @= 0
+    assert wait(p, code: @code, by_signal: @by) == 0
+    assert state(p, waits: 1, stop_signal: @stop) == 1 && stop == 0
+    assert signal(p, sig: 15, group: 0) == 0 || fixture.on_windows()
+    assert release(@p) == 0
+
+test "a group of its own, signalled as a group, stopped and told, a stop waited past once sent on, then the end; Windows refuses the group"
+    words: [u8] @= fixture.packed(fixture.sleeper_arguments(30))
+    variables: [u8] @= []
+    p @= start(
+        program: fixture.sleeper(),
+        arguments: @words,
+        arguments_count: words.len().to_u64().must(),
+        environment_kind: HERO_PROC_ENV_PARENT,
+        environment: @variables,
+        environment_count: 0,
+        folder: "",
+        in_kind: HERO_PROC_STDIO_NOTHING,
+        in_stream: nullptr,
+        out_kind: HERO_PROC_STDIO_NOTHING,
+        out_stream: nullptr,
+        err_kind: HERO_PROC_STDIO_NOTHING,
+        err_stream: nullptr,
+        group_kind: HERO_PROC_GROUP_NEW,
+        leader: nullptr
+    )
+
+    if fixture.on_windows()
+        assert p == nullptr && last_error() == HERO_PROC_UNSUPPORTED
+    else
+        assert p != nullptr
+        stopping = hero_os.signal_number(hero_os.HERO_SIGNAL_STOP).to_i64().must()
+        going_on = hero_os.signal_number(hero_os.HERO_SIGNAL_CONTINUE).to_i64().must()
+        stop: i64 @= 0
+        assert signal(p, sig: stopping, group: 1) == 0
+        assert state(p, waits: 1, stop_signal: @stop) == 2 && stop == stopping
+        assert state(p, waits: 0, stop_signal: @stop) == 2 && stop == stopping
+        assert ended(p) == 0
+        assert signal(p, sig: going_on, group: 1) == 0
+        assert signal(p, sig: 9, group: 1) == 0
+        assert state(p, waits: 1, stop_signal: @stop) == 1 && stop == 0
+        code: i64 @= 0
+        by: i64 @= 0
+        assert wait(p, code: @code, by_signal: @by) == 0 && by == 9
+        assert signal(p, sig: 15, group: 1) == -1 && last_error() == HERO_PROC_ENDED
+        assert release(@p) == 0

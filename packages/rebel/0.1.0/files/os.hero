@@ -816,7 +816,8 @@ function is_stop_asked() -> bool
 ## Signals
 
 # A signal, named the same on every platform, where each system numbers it its
-# own way (`signal_number`). `count_signal` counts one the program receives.
+# own way (`signal_number`). `count_signal` counts one the program receives,
+# and `process.send_signal` sends one to a child.
 variant Signal
     # SIGHUP: the terminal the program ran in has gone.
     hangup

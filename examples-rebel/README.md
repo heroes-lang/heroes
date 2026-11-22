@@ -136,7 +136,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `compress/zstd` | Zstandard (RFC 8878) read, and written at a basic level | `bytes`, `compress`, `hash` |  |
 | 4 | `compress/brotli` | Brotli (RFC 7932) read, and written at a basic level | `bytes`, `compress` |  |
 | 4 | `compress/bzip2` | bzip2 read and written | `bytes`, `compress` |  |
-| 4 | `process` | another program run, fed, read and waited for | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
+| 4 | `process` | another program run, fed, read and waited for, and a shell's job control: groups, signals, stops, the terminal's front | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
 | 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |

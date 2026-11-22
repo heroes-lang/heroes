@@ -97,6 +97,14 @@
  * thread starts with every inheritable handle and no list; this file's
  * children take their list alone.
  *
+ * A SHELL'S JOB CONTROL STANDS ON THE SAME LOCK (POSIX; feature 2670). A
+ * child may start in a group of its own or join another child's, set before
+ * it becomes its program; its group is read with `getpgid` and signalled, or
+ * handed the terminal, under the table's lock while nothing has taken its
+ * status, so the group's number is the one its member stands in, as `kill`
+ * is guarded for a pid. A stop is seen by `wait4` with `WUNTRACED`, and taken
+ * there: a stop's report is no end, so the pid stays the child's.
+ *
  * WINDOWS: `CreateProcessW` with `STARTUPINFOEXW` and
  * `PROC_THREAD_ATTRIBUTE_HANDLE_LIST`; the line by the rule the C runtime
  * and `CommandLineToArgvW` undo (Microsoft's "Parsing C command-line
@@ -236,6 +244,7 @@ _Static_assert(HERO_PROC_INPUT == HERO_STREAM_STD_IN && HERO_PROC_OUTPUT == HERO
 #define HERO_PROC_STAGE_STREAMS 1
 #define HERO_PROC_STAGE_FOLDER 2
 #define HERO_PROC_STAGE_PROGRAM 3
+#define HERO_PROC_STAGE_GROUP 4
 /* The stack of the thread that waits for a released process: address space,
  * a multiple of every page size, and room for a sanitizer's frames. */
 #define HERO_PROC_WATCH_STACK 262144
@@ -265,6 +274,9 @@ typedef struct {
     int64_t system_ns;
     /* The platform's number for why it is `HERO_PROC_STATE_LOST`. */
     int64_t lost;
+    /* POSIX: the signal it was last seen stopped by, 0 where it was not, or
+     * was seen to go on since (`hero_proc_state`). */
+    int64_t stopped;
     uint8_t state;
     /* A handle the program has not released names it. */
     bool held;
@@ -565,11 +577,20 @@ static int64_t hero_proc_time_ns(struct timeval span) {
     return total;
 }
 
+/* What a look saw: nothing new, the end, a stop, or a going on. */
+#define HERO_PROC_SAW_NOTHING 0
+#define HERO_PROC_SAW_END 1
+#define HERO_PROC_SAW_STOP 2
+#define HERO_PROC_SAW_GOING_ON 3
+
 /* Takes the child's status where it has ended, without waiting, and keeps
  * how it ended; nothing where it still runs. The one place a child's status
  * is taken while a handle names it, so from here its pid is no longer its
- * own, and the slot says so in the same step. Under the lock. */
-static void hero_proc_look(hero_proc_slot *slot) {
+ * own, and the slot says so in the same step. `also` adds `WUNTRACED` and
+ * `WCONTINUED` where the caller asks for a stop and a going on, whose reports
+ * are taken here too and leave the pid the child's: a stop keeps its signal
+ * in the slot, and a going on clears it. Under the lock. */
+static int hero_proc_look_as(hero_proc_slot *slot, int also) {
     int status = 0;
     struct rusage used;
     pid_t got = 0;
@@ -577,23 +598,38 @@ static void hero_proc_look(hero_proc_slot *slot) {
 
     memset(&used, 0, sizeof used);
     do {
-        got = wait4(slot->pid, &status, WNOHANG, &used);
+        got = wait4(slot->pid, &status, WNOHANG | also, &used);
         why = errno;
     } while (got < 0 && why == EINTR);
 
     if (got == 0) {
-        return;
+        return HERO_PROC_SAW_NOTHING;
     }
+    if (got > 0 && WIFSTOPPED(status)) {
+        slot->stopped = (int64_t)WSTOPSIG(status);
+        return HERO_PROC_SAW_STOP;
+    }
+    if (got > 0 && WIFCONTINUED(status)) {
+        slot->stopped = 0;
+        return HERO_PROC_SAW_GOING_ON;
+    }
+    slot->stopped = 0;
     if (got < 0 || !(WIFEXITED(status) || WIFSIGNALED(status))) {
         slot->lost = got < 0 ? (int64_t)why : 0;
         slot->state = HERO_PROC_STATE_LOST;
-        return;
+        return HERO_PROC_SAW_END;
     }
     slot->code = WIFEXITED(status) ? (int64_t)WEXITSTATUS(status) : -1;
     slot->by_signal = WIFSIGNALED(status) ? (int64_t)WTERMSIG(status) : 0;
     slot->user_ns = hero_proc_time_ns(used.ru_utime);
     slot->system_ns = hero_proc_time_ns(used.ru_stime);
     slot->state = HERO_PROC_STATE_ENDED;
+    return HERO_PROC_SAW_END;
+}
+
+/* The look every end-only caller makes: no stop, no going on. */
+static void hero_proc_look(hero_proc_slot *slot) {
+    (void)hero_proc_look_as(slot, 0);
 }
 
 /* Waits for the process to end and keeps how. The wait is outside the lock
@@ -636,6 +672,55 @@ static void hero_proc_await(hero_proc_slot *slot) {
 
             (void)nanosleep(&moment, NULL);
         }
+    }
+}
+
+/* Waits for the process to end or to stop, whichever comes first, and keeps
+ * what came, as `hero_proc_await` keeps an end: the wait outside the lock
+ * taking nothing (`WNOWAIT`), what it saw taken under it. A stop the child
+ * went on from before it was taken is waited past, and so is a stop taken
+ * before this call, which `waitid` reports no more. */
+static void hero_proc_await_change(hero_proc_slot *slot) {
+    for (;;) {
+        siginfo_t told;
+
+        hero_proc_enter();
+        bool runs = slot->state == HERO_PROC_STATE_RUNNING;
+        pid_t pid = slot->pid;
+        hero_proc_leave();
+
+        if (!runs) {
+            return;
+        }
+        memset(&told, 0, sizeof told);
+        int waited = waitid(P_PID, (id_t)pid, &told, WEXITED | WSTOPPED | WNOWAIT);
+        int why = errno;
+
+        if (waited != 0 && why == EINTR) {
+            continue;
+        }
+        int saw = HERO_PROC_SAW_NOTHING;
+
+        hero_proc_enter();
+        if (slot->state == HERO_PROC_STATE_RUNNING) {
+            if (waited == 0) {
+                saw = hero_proc_look_as(slot, WUNTRACED);
+            } else {
+                slot->lost = (int64_t)why;
+                slot->state = HERO_PROC_STATE_LOST;
+            }
+        }
+        runs = slot->state == HERO_PROC_STATE_RUNNING;
+        hero_proc_leave();
+
+        if (!runs || saw == HERO_PROC_SAW_STOP) {
+            return;
+        }
+        /* Seen and not yet handed, or gone on before it was taken: asked
+         * again after a moment, never in a tight loop. */
+        struct timespec moment = {0, 1000000};
+
+        (void)nanosleep(&moment, NULL);
     }
 }
 
@@ -787,6 +872,7 @@ static hero_proc_slot *hero_proc_reserve(void) {
         slot->user_ns = -1;
         slot->system_ns = -1;
         slot->lost = 0;
+        slot->stopped = 0;
         slot->state = HERO_PROC_STATE_NONE;
         slot->held = false;
         slot->closing = false;
@@ -1166,7 +1252,9 @@ static bool hero_proc_block(const unsigned char *environment, uint64_t count, wc
 static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const unsigned char *arguments,
                              uint64_t words, bool given_environment, const unsigned char *environment,
                              uint64_t environment_count, uint64_t variables, const char *folder,
-                             const int64_t kinds[3], hero_stream *const given[3]) {
+                             const int64_t kinds[3], hero_stream *const given[3], int64_t group) {
+    /* Always the parent's: the start refused every other kind before. */
+    (void)group;
     char line_bytes[HERO_PROC_LINE_BYTES];
     wchar_t line[HERO_PROC_LINE_UNITS];
     wchar_t folder_units[HERO_PROC_FOLDER_UNITS];
@@ -1495,9 +1583,11 @@ static int hero_proc_spawn_without(posix_spawn_file_actions_t *actions, int whic
 #endif
 }
 
-/* The child by `posix_spawn`: 0 and its pid, or the system's number. */
+/* The child by `posix_spawn`: 0 and its pid, or the system's number. `group`
+ * -1 leaves it in this process's group, 0 makes it a group's leader, and any
+ * other number is the group it joins. */
 static int hero_proc_spawn(pid_t *pid, const char *path, char *const words[], char *const variables[],
-                           const char *folder, const int sources[3]) {
+                           const char *folder, const int sources[3], pid_t group) {
     posix_spawn_file_actions_t actions;
     posix_spawnattr_t how;
     sigset_t plain;
@@ -1538,6 +1628,12 @@ static int hero_proc_spawn(pid_t *pid, const char *path, char *const words[], ch
 #if defined(__APPLE__)
     flags |= POSIX_SPAWN_CLOEXEC_DEFAULT;
 #endif
+    if (group >= 0) {
+        flags |= POSIX_SPAWN_SETPGROUP;
+        if (failed == 0) {
+            failed = posix_spawnattr_setpgroup(&how, group);
+        }
+    }
     if (failed == 0) {
         failed = posix_spawnattr_setflags(&how, flags);
     }
@@ -1608,7 +1704,7 @@ static int hero_proc_report_pipe(int ends[2]) {
  * default before the mask the fork held is given back, so no handler of the
  * parent's runs here; one it ignores stays ignored, but SIGPIPE. */
 static void hero_proc_child(int report, const char *path, char *const words[], char *const variables[],
-                            const char *folder, const int sources[3], const sigset_t *before) {
+                            const char *folder, const int sources[3], const sigset_t *before, pid_t group) {
     int said[2] = {HERO_PROC_STAGE_STREAMS, 0};
     struct sigaction plain;
     bool ready = true;
@@ -1623,6 +1719,10 @@ static void hero_proc_child(int report, const char *path, char *const words[], c
     if (ready && folder != NULL) {
         said[0] = HERO_PROC_STAGE_FOLDER;
         ready = chdir(folder) == 0;
+    }
+    if (ready && group >= 0) {
+        said[0] = HERO_PROC_STAGE_GROUP;
+        ready = setpgid(0, group) == 0;
     }
     if (ready) {
         said[0] = HERO_PROC_STAGE_PROGRAM;
@@ -1659,9 +1759,11 @@ static void hero_proc_child(int report, const char *path, char *const words[], c
 }
 
 /* The child by `fork` and `execve`, for a folder no spawn here can say: 0
- * and its pid, or the system's number with the stage it stopped at. */
+ * and its pid, or the system's number with the stage it stopped at. `group`
+ * as `hero_proc_spawn` reads it, set by the child before its `execve`, which
+ * this call waits for. */
 static int hero_proc_fork(pid_t *pid, const char *path, char *const words[], char *const variables[],
-                          const char *folder, const int sources[3], int *stage) {
+                          const char *folder, const int sources[3], int *stage, pid_t group) {
     int report[2] = {-1, -1};
     int said[2] = {0, 0};
     sigset_t every;
@@ -1678,7 +1780,7 @@ static int hero_proc_fork(pid_t *pid, const char *path, char *const words[], cha
     pid_t child = fork();
 
     if (child == 0) {
-        hero_proc_child(report[1], path, words, variables, folder, sources, &before);
+        hero_proc_child(report[1], path, words, variables, folder, sources, &before, group);
     }
     int why = errno;
 
@@ -1720,7 +1822,7 @@ static int hero_proc_fork(pid_t *pid, const char *path, char *const words[], cha
 static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const unsigned char *arguments,
                              uint64_t words, bool given_environment, const unsigned char *environment,
                              uint64_t environment_count, uint64_t variables, const char *folder,
-                             const int64_t kinds[3], hero_stream *const given[3]) {
+                             const int64_t kinds[3], hero_stream *const given[3], int64_t group) {
     char *word_list[HERO_PROC_WORDS_MOST + 2];
     char *variable_list[HERO_PROC_VARIABLES_MOST + 1];
     char *none[1] = {NULL};
@@ -1767,8 +1869,8 @@ static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const un
     }
     if (failed == 0) {
         failed = where == NULL || hero_proc_spawn_enters()
-                     ? hero_proc_spawn(&pid, path, word_list, child_variables, where, sources)
-                     : hero_proc_fork(&pid, path, word_list, child_variables, where, sources, &stage);
+                     ? hero_proc_spawn(&pid, path, word_list, child_variables, where, sources, (pid_t)group)
+                     : hero_proc_fork(&pid, path, word_list, child_variables, where, sources, &stage, (pid_t)group);
     }
     for (int which = 0; which < 3; which += 1) {
         if (copies[which] >= 0) {
@@ -1779,6 +1881,8 @@ static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const un
     if (failed != 0) {
         if (stage == HERO_PROC_STAGE_FOLDER) {
             hero_proc_fail(HERO_PROC_NOT_A_DIRECTORY, (int64_t)failed);
+        } else if (stage == HERO_PROC_STAGE_GROUP) {
+            hero_proc_fail(HERO_PROC_DENIED, (int64_t)failed);
         } else {
             hero_proc_failed_with((int64_t)failed);
         }
@@ -1794,6 +1898,54 @@ static bool hero_proc_launch(hero_proc_slot *slot, const char *program, const un
 
 #endif
 
+/* -- a process's group (feature 2670) -------------------------------------- */
+
+#if defined(_WIN32)
+/* A console program has no such group to name. */
+static int64_t hero_proc_group_of(hero_proc_slot *slot) {
+    (void)slot;
+    hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+    return -1;
+}
+#else
+/* The group the slot's process stands in, read under the lock once a look
+ * found it has not ended, so its pid, and with it the group it is a member
+ * of, are still its own: the number, or -1 with `HERO_PROC_ENDED` where it
+ * has ended (Darwin reads no group of a process that has ended and is not
+ * yet waited for, `ESRCH`), `HERO_PROC_INVALID` where it is this process's
+ * own group, or the system's number. The caller holds the slot busy. */
+static int64_t hero_proc_group_of(hero_proc_slot *slot) {
+    int64_t answer = -1;
+    int64_t kind = HERO_PROC_OK;
+    int64_t os = 0;
+
+    hero_proc_enter();
+    if (slot->state == HERO_PROC_STATE_RUNNING) {
+        hero_proc_look(slot);
+    }
+    if (slot->state != HERO_PROC_STATE_RUNNING) {
+        kind = HERO_PROC_ENDED;
+    } else {
+        pid_t group = getpgid(slot->pid);
+
+        if (group < 0) {
+            os = (int64_t)errno;
+            kind = os == ESRCH ? HERO_PROC_ENDED : hero_proc_kind_of(os);
+        } else if (group == getpgrp()) {
+            kind = HERO_PROC_INVALID;
+        } else {
+            answer = (int64_t)group;
+        }
+    }
+    hero_proc_leave();
+
+    if (answer < 0) {
+        hero_proc_fail(kind, os);
+    }
+    return answer;
+}
+#endif
+
 /* -- the doors ------------------------------------------------------------ */
 
 hero_proc *hero_proc_start(const char *program,
@@ -1803,7 +1955,8 @@ hero_proc *hero_proc_start(const char *program,
                            const char *folder,
                            int64_t input_kind, hero_stream *input,
                            int64_t output_kind, hero_stream *output,
-                           int64_t error_kind, hero_stream *error) {
+                           int64_t error_kind, hero_stream *error,
+                           int64_t group_kind, hero_proc *leader) {
     const int64_t kinds[3] = {input_kind, output_kind, error_kind};
     hero_stream *const given[3] = {input, output, error};
     uint64_t words = 0;
@@ -1813,14 +1966,60 @@ hero_proc *hero_proc_start(const char *program,
                          kinds, &words, &variables)) {
         return NULL;
     }
+    if (group_kind < HERO_PROC_GROUP_PARENT || group_kind > HERO_PROC_GROUP_JOIN ||
+        (group_kind == HERO_PROC_GROUP_JOIN) != (leader != NULL)) {
+        hero_proc_fail(HERO_PROC_INVALID, 0);
+        return NULL;
+    }
+#if defined(_WIN32)
+    /* A console program has no process group of POSIX's kind to start a
+     * child in, and none is pretended. */
+    if (group_kind != HERO_PROC_GROUP_PARENT) {
+        hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+        return NULL;
+    }
+#endif
+    int64_t group = -1;
+    hero_proc_slot *joined = NULL;
+
+    if (group_kind == HERO_PROC_GROUP_NEW) {
+        group = 0;
+    } else if (group_kind == HERO_PROC_GROUP_JOIN) {
+        joined = hero_proc_take(leader);
+        if (joined == NULL) {
+            return NULL;
+        }
+        group = hero_proc_group_of(joined);
+        if (group < 0) {
+            int64_t kind = hero_proc_kind;
+            int64_t os = hero_proc_os;
+
+            (void)hero_proc_done(joined);
+            hero_proc_fail(kind, os);
+            return NULL;
+        }
+    }
     hero_proc_slot *slot = hero_proc_reserve();
 
     if (slot == NULL) {
+        if (joined != NULL) {
+            (void)hero_proc_done(joined);
+        }
         hero_proc_fail(HERO_PROC_LIMIT, 0);
         return NULL;
     }
     bool started = hero_proc_launch(slot, program, arguments, words, environment_kind == HERO_PROC_ENV_GIVEN,
-                                    environment, environment_count, variables, folder, kinds, given);
+                                    environment, environment_count, variables, folder, kinds, given, group);
+
+    /* The leader was kept busy so no release gave its slot back while its
+     * group was joined; the new child does not depend on it from here. */
+    if (joined != NULL) {
+        int64_t kind = hero_proc_kind;
+        int64_t os = hero_proc_os;
+
+        (void)hero_proc_done(joined);
+        hero_proc_fail(kind, os);
+    }
 
     hero_proc_enter();
     hero_proc *handle = NULL;
@@ -1924,6 +2123,63 @@ int64_t hero_proc_ended(hero_proc *p) {
     return state == HERO_PROC_STATE_RUNNING ? 0 : 1;
 }
 
+int64_t hero_proc_state(hero_proc *p, int64_t waits, int64_t *stop_signal) {
+    if (stop_signal != NULL) {
+        *stop_signal = 0;
+    }
+    if (waits != 0 && waits != 1) {
+        hero_proc_fail(HERO_PROC_INVALID, 0);
+        return -1;
+    }
+    hero_proc_slot *slot = hero_proc_take(p);
+
+    if (slot == NULL) {
+        return -1;
+    }
+#if defined(_WIN32)
+    if (waits == 1) {
+        hero_proc_await(slot);
+    }
+    hero_proc_enter();
+    if (slot->state == HERO_PROC_STATE_RUNNING) {
+        hero_proc_look(slot);
+    }
+#else
+    if (waits == 1) {
+        hero_proc_await_change(slot);
+    }
+    hero_proc_enter();
+    if (waits == 0 && slot->state == HERO_PROC_STATE_RUNNING) {
+        (void)hero_proc_look_as(slot, WUNTRACED | WCONTINUED);
+    }
+#endif
+    uint8_t state = slot->state;
+    int64_t stopped = slot->stopped;
+    int64_t lost = slot->lost;
+    hero_proc_leave();
+
+    if (hero_proc_done(slot)) {
+        hero_proc_fail(HERO_PROC_NOT_OPEN, 0);
+        return -1;
+    }
+    if (state == HERO_PROC_STATE_ENDED) {
+        hero_proc_clear();
+        return 1;
+    }
+    if (state != HERO_PROC_STATE_RUNNING) {
+        hero_proc_fail(HERO_PROC_OTHER, lost);
+        return -1;
+    }
+    hero_proc_clear();
+    if (stopped != 0) {
+        if (stop_signal != NULL) {
+            *stop_signal = stopped;
+        }
+        return 2;
+    }
+    return 0;
+}
+
 /* Both doors that stop a process: nothing is sent to one that has ended. */
 static int64_t hero_proc_stop(hero_proc *p, bool at_once) {
     int64_t kind = HERO_PROC_OK;
@@ -1960,6 +2216,205 @@ int64_t hero_proc_terminate(hero_proc *p) {
 
 int64_t hero_proc_kill(hero_proc *p) {
     return hero_proc_stop(p, true);
+}
+
+int64_t hero_proc_signal(hero_proc *p, int64_t sig, int64_t group) {
+    hero_proc_slot *slot = hero_proc_take(p);
+
+    if (slot == NULL) {
+        return -1;
+    }
+#if defined(_WIN32)
+    (void)sig;
+    (void)group;
+    (void)hero_proc_done(slot);
+    hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+    return -1;
+#else
+    int64_t kind = HERO_PROC_OK;
+    int64_t os = 0;
+
+    if (sig < 1 || sig >= NSIG || (group != 0 && group != 1)) {
+        kind = HERO_PROC_INVALID;
+    } else if (group == 0) {
+        hero_proc_enter();
+        if (slot->state == HERO_PROC_STATE_RUNNING) {
+            hero_proc_look(slot);
+        }
+        if (slot->state == HERO_PROC_STATE_RUNNING && kill(slot->pid, (int)sig) != 0 && errno != ESRCH) {
+            os = (int64_t)errno;
+            kind = hero_proc_kind_of(os);
+        }
+        hero_proc_leave();
+    } else {
+        /* The group read and signalled under one hold of the lock, so no wait
+         * of this layer takes the member's status in between. */
+        hero_proc_enter();
+        if (slot->state == HERO_PROC_STATE_RUNNING) {
+            hero_proc_look(slot);
+        }
+        if (slot->state != HERO_PROC_STATE_RUNNING) {
+            kind = HERO_PROC_ENDED;
+        } else {
+            pid_t named = getpgid(slot->pid);
+
+            if (named < 0) {
+                os = (int64_t)errno;
+                kind = os == ESRCH ? HERO_PROC_ENDED : hero_proc_kind_of(os);
+            } else if (named == getpgrp()) {
+                kind = HERO_PROC_INVALID;
+            } else if (kill(-named, (int)sig) != 0) {
+                os = (int64_t)errno;
+                kind = os == ESRCH ? HERO_PROC_ENDED : hero_proc_kind_of(os);
+            }
+        }
+        hero_proc_leave();
+    }
+    if (hero_proc_done(slot)) {
+        hero_proc_fail(HERO_PROC_NOT_OPEN, 0);
+        return -1;
+    }
+    if (kind != HERO_PROC_OK) {
+        hero_proc_fail(kind, os);
+        return -1;
+    }
+    hero_proc_clear();
+    return 0;
+#endif
+}
+
+#if !defined(_WIN32)
+/* The terminal's foreground set to `group`, SIGTTOU held on this thread
+ * across the call so a process not in front sets it rather than being
+ * stopped: 0, or the system's number. */
+static int hero_proc_put_in_front(int fd, pid_t group) {
+    sigset_t ttou;
+    sigset_t before;
+
+    (void)sigemptyset(&ttou);
+    (void)sigaddset(&ttou, SIGTTOU);
+    (void)pthread_sigmask(SIG_BLOCK, &ttou, &before);
+    int set = tcsetpgrp(fd, group);
+    int why = errno;
+
+    (void)pthread_sigmask(SIG_SETMASK, &before, NULL);
+    return set == 0 ? 0 : why;
+}
+
+/* The kind of a terminal's refusal: no terminal, or not this process's
+ * controlling one, is one this platform does not have for the stream. */
+static int64_t hero_proc_terminal_kind(int why) {
+    return why == ENOTTY || why == ENXIO ? HERO_PROC_UNSUPPORTED : hero_proc_kind_of((int64_t)why);
+}
+#endif
+
+int64_t hero_proc_give_terminal(hero_stream *terminal, hero_proc *p) {
+    hero_proc_slot *slot = hero_proc_take(p);
+
+    if (slot == NULL) {
+        return -1;
+    }
+#if defined(_WIN32)
+    (void)terminal;
+    (void)hero_proc_done(slot);
+    hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+    return -1;
+#else
+    int64_t kind = HERO_PROC_OK;
+    int64_t os = 0;
+    int64_t fd = hero_stream_hold(terminal);
+
+    if (fd < 0) {
+        (void)hero_proc_done(slot);
+        hero_proc_fail_as_stream();
+        return -1;
+    }
+    hero_proc_enter();
+    if (slot->state == HERO_PROC_STATE_RUNNING) {
+        hero_proc_look(slot);
+    }
+    if (slot->state != HERO_PROC_STATE_RUNNING) {
+        kind = HERO_PROC_ENDED;
+    } else {
+        pid_t named = getpgid(slot->pid);
+
+        if (named < 0) {
+            os = (int64_t)errno;
+            kind = os == ESRCH ? HERO_PROC_ENDED : hero_proc_kind_of(os);
+        } else if (named == getpgrp()) {
+            kind = HERO_PROC_INVALID;
+        } else {
+            int why = hero_proc_put_in_front((int)fd, named);
+
+            if (why != 0) {
+                os = (int64_t)why;
+                kind = hero_proc_terminal_kind(why);
+            }
+        }
+    }
+    hero_proc_leave();
+    (void)hero_stream_release(terminal);
+
+    if (hero_proc_done(slot)) {
+        hero_proc_fail(HERO_PROC_NOT_OPEN, 0);
+        return -1;
+    }
+    if (kind != HERO_PROC_OK) {
+        hero_proc_fail(kind, os);
+        return -1;
+    }
+    hero_proc_clear();
+    return 0;
+#endif
+}
+
+int64_t hero_proc_take_terminal(hero_stream *terminal) {
+#if defined(_WIN32)
+    (void)terminal;
+    hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+    return -1;
+#else
+    int64_t fd = hero_stream_hold(terminal);
+
+    if (fd < 0) {
+        hero_proc_fail_as_stream();
+        return -1;
+    }
+    int why = hero_proc_put_in_front((int)fd, getpgrp());
+
+    (void)hero_stream_release(terminal);
+    if (why != 0) {
+        hero_proc_fail(hero_proc_terminal_kind(why), (int64_t)why);
+        return -1;
+    }
+    hero_proc_clear();
+    return 0;
+#endif
+}
+
+int64_t hero_proc_holds_terminal(hero_stream *terminal) {
+#if defined(_WIN32)
+    (void)terminal;
+    hero_proc_fail(HERO_PROC_UNSUPPORTED, 0);
+    return -1;
+#else
+    int64_t fd = hero_stream_hold(terminal);
+
+    if (fd < 0) {
+        hero_proc_fail_as_stream();
+        return -1;
+    }
+    pid_t front = tcgetpgrp((int)fd);
+    int why = errno;
+
+    (void)hero_stream_release(terminal);
+    if (front < 0) {
+        hero_proc_fail(hero_proc_terminal_kind(why), (int64_t)why);
+        return -1;
+    }
+    hero_proc_clear();
+    return front == getpgrp() ? 1 : 0;
+#endif
 }
 
 int64_t hero_proc_id(hero_proc *p) {
