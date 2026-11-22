@@ -425,24 +425,24 @@ function accept(@s: Server, set: poll.Set, l: net.Listener lent)
     s.peers @ peers
     _ = send(s, i: s.peers.len() - 1, text: info_line(port: s.port, client_id: s.peers.len()))
 
-# Listens on the loopback, tells the starter at `told_port` where, serves
-# until the program's stop, and answers what it carried.
+# Listens on the loopback, tells the starter on `to` where, serves until
+# the program's stop, and answers what it carried.
 #
-# - `told_port`: the port of the starter's socket.
+# - `to`: the mailbox the starter waits on.
 #
 # Fails as `net.listen` and `poll.make` fail, the starter told first.
-function serve_on(told_port: i64) -> str?
+function serve_on(to: (mailbox told.Told)) -> str?
     l @= match net.listen(host: "127.0.0.1", port: 0)
         .ok got => got
         .err e =>
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(to, why: e.msg).is_err()
             return fail(code: e.code, msg: e.msg)
 
     set @= match poll.make(256)
         .ok got => got
         .err e =>
             _ = net.close_listener(@l).is_err()
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(to, why: e.msg).is_err()
             return fail(code: e.code, msg: e.msg)
 
     listening = match poll.add_listener(set, l: l)
@@ -450,10 +450,10 @@ function serve_on(told_port: i64) -> str?
         .err e =>
             _ = poll.close(@set).is_err()
             _ = net.close_listener(@l).is_err()
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(to, why: e.msg).is_err()
             return fail(code: e.code, msg: e.msg)
 
-    told.ready(port: told_port, listening: l.address.port)?
+    told.ready(to, listening: l.address.port)?
     s @= Server(peers: [], published: 0, delivered: 0, port: l.address.port, turns: {})
 
     while true
@@ -476,15 +476,16 @@ function serve_on(told_port: i64) -> str?
     net.close_listener(@l)?
     return ok(f"the NATS stand-in: {s.peers.len()} connections, {s.published} published, {s.delivered} delivered")
 
-# The body of the stand-in's thread: serves until the program's stop.
+# The body of the stand-in's thread: serves until the program's stop. The
+# mailbox is closed as the thread ends, so a stand-in that ends before
+# telling is told to the starter at once.
 #
-# - `arg`: the port of the starter's socket, in decimal.
-function run(arg: str) -> str
-    told_port = match numbers.parse_int(arg)
-        .ok p  => p
-        .err _ => return f"the NATS stand-in: \"{arg}\" is no port"
+# - `to`: the mailbox the starter waits on.
+function run(to: (mailbox told.Told)) -> str
+    outcome = serve_on(to)
+    to.close()
 
-    return match serve_on(told_port)
+    return match outcome
         .ok said => said
         .err e   => f"the NATS stand-in failed: {e.msg}"
 

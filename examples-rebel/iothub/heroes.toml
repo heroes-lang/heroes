@@ -24,7 +24,6 @@ packages = [
     "retries",
     "serial",
     "strings",
-    "threads",
     "time",
     "uuid",
     "websocket",
