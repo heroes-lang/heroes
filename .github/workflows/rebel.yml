@@ -217,6 +217,11 @@ jobs:
             https://www.rfc-editor.org/rfc/rfc7932.txt
           ./heroes run generators/brotli/main.hero -- check build/generators/rfc7932.txt
 
+      # The HTML Standard's `entities.json` is kept in
+      # `generators/html_entities/whatwg/`.
+      - name: generators/html_entities, the HTML Standard's named character references of html
+        run: ./heroes run generators/html_entities/main.hero -- check
+
       # The tests of `generators/tablekit/`, the package every generator
       # writes its tables with. A generator's own tests are left to whoever
       # changes it: `heroes test` runs every test its program reaches, Rebel's

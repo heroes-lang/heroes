@@ -1,11 +1,12 @@
 # The named character references of the HTML Living Standard, 2,231 names,
 # each to the one or two code points it stands for. `refs.hero` reads them.
 #
-# The table is data, made and not typed: a one-off program read Python
-# 3.15.2's `html.entities.html5`, which holds the standard's table, on
-# 2026-11-16, sorted its names by their bytes and wrote this module whole; the
-# standard's `entities.json` was not on this machine. Nothing here is edited by
-# hand.
+# Generated, never edited by hand: the Heroes program
+# `generators/html_entities/` read the standard's `entities.json`, kept
+# in its folder `whatwg/` as html.spec.whatwg.org served it on 2026-11-22
+# (SHA-256 d741d877ac77c4194c4ad526b5b4a19aef8dfe411ab840a466891cdbb9f362e6),
+# sorted its names by their bytes and wrote this module whole; its `check`
+# command says whether this module is still what it writes.
 #
 # `NAMES[i]` is written as the table writes it, `&` left off: `amp;`, and the
 # old `amp` that the standard reads without its `;`. `POINTS[i]` holds its
