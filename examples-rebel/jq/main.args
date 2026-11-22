@@ -1,0 +1,2 @@
+-r
+.albums[] | .title

@@ -1,0 +1,4 @@
+# The transcript's one line a machine decides: the ODBC store's.
+line: odbc: skipped: no ODBC driver
+or: odbc: 16 requests: 12 moved stock, 3 refused, 1 confirmed; account e117f0007a0a, 58 lines
+why: the ODBC store runs where unixODBC's driver manager knows SQLite's ODBC driver as `SQLite3`, as the CI's Linux and macOS legs install it, and is skipped where either is missing; where it runs it prints the line the MySQL and MongoDB stores print, under its own name

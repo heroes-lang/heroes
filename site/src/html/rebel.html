@@ -23,7 +23,7 @@
   <p>
     A program names each package of Rebel it uses with the entry&rsquo;s name in angle brackets, the way any package is named. These are the first lines of a small jq, a tool that filters JSON, written with Rebel:
   </p>
-  <figure class="example" data-src="examples-rebel/jq.hero" data-lines="17-23">
+  <figure class="example" data-src="examples-rebel/jq/main.hero" data-lines="17-23">
 <pre><code>use &lt;rebel&gt;/io
 use &lt;rebel&gt;/json
 use &lt;rebel&gt;/json/jq
@@ -31,7 +31,7 @@ use &lt;rebel&gt;/os
 use &lt;rebel&gt;/time
 use &lt;rebel&gt;/toml
 use &lt;rebel&gt;/yaml</code></pre>
-    <figcaption>examples-rebel/jq.hero, lines 17&ndash;23</figcaption>
+    <figcaption>examples-rebel/jq/main.hero, lines 17&ndash;23</figcaption>
   </figure>
   <p>
     Its catalogue, the file <code>heroes.toml</code> beside the program, holds one entry for Rebel and a line listing the packages the program uses. <code>heroes add rebel</code> writes the entry and <code>heroes add rebel/csv</code> adds a package to the line. The program then carries the packages it lists and the modules those use, and nothing else of Rebel: a program that reads CSV this way carries a few dozen files and under a megabyte of it, where the whole of Rebel is more than sixteen hundred files and thirty megabytes. A <code>use</code> of a package the line leaves out is refused, with the command that adds it.

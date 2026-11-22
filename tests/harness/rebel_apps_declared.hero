@@ -1,0 +1,326 @@
+# What an application of `examples-rebel/` declares beside its
+# `main.expected` about the machines its demo runs on
+# (`examples-rebel/README.md` § A10), read by the check of Rebel's programs
+# (`rebel_apps.hero`), and the one comparison that reads it:
+#
+#   main.varies   a line of the transcript a machine prints in another form,
+#                 each form written out whole, with the machine fact that
+#                 decides which
+#   main.skips    a platform where the demo cannot run, with the reason
+#
+# Both files share one grammar, a line `<word>: <text>` where the text is
+# everything after the colon's one space, and both are read strictly: a line
+# of another shape, a word neither file knows, a form named twice or a
+# declaration missing its reason refuses the file, so a mistyped declaration
+# fails its program by name rather than standing as no declaration at all.
+# Nothing is matched by likeness: a declared line is held to its forms byte
+# for byte, and every other line to `main.expected`.
+
+use expectation
+use strings
+
+# The file that names a transcript's lines a machine decides.
+constant VARIES: str
+    "main.varies"
+
+# The file that names the platforms where a demo cannot run.
+constant SKIPS: str
+    "main.skips"
+
+# The platforms a skip may name, the words `rebel_apps.platform` answers.
+constant PLATFORMS: [str]
+    [
+        "linux"
+        "darwin"
+        "windows"
+    ]
+
+# One line of `main.expected` that another machine prints in another form.
+record Varying
+    # The line as `main.expected` holds it, without its line feed.
+    line: str
+    # The other forms the line may take, each a whole line.
+    forms: [str]
+    # The machine fact that decides which form a run prints.
+    why: str
+
+# One platform where the demo cannot run, and why.
+record Skip
+    # A word of `PLATFORMS`.
+    platform: str
+    # Why the demo cannot run there.
+    why: str
+
+# The varying lines `text`, a `main.varies`, declares against `stdout`, the
+# transcript `main.expected` promises.
+#
+# - `text`: the file's text.
+# - `stdout`: what `main.expected` says the demo prints, its ending taken off
+#   (`expectation.split`).
+#
+# A declaration opens with `line: `, naming a line `stdout` holds exactly once,
+# and holds at least one `or: `, another form of it, and exactly one `why: `.
+# Fails `malformed`, naming the file's line, for any other shape: a word it
+# does not know, an `or:` or a `why:` before any `line:`, a line declared
+# twice, the empty line, a form that repeats the line or another form, an
+# empty reason, or a line `stdout` holds never or more than once, since a
+# form could then be taken for another line's.
+function varies_read(text: str, stdout: str) -> [Varying]?
+    out: [Varying] @= []
+    number: i64 @= 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+
+        if row.len() == 0 || strings.has_prefix(s: row, prefix: "#")
+            continue
+        at = "line " + number.to_str() + " of " + VARIES + ", `" + row + "`, "
+
+        if strings.has_prefix(s: row, prefix: "line: ")
+            line = strings.without_prefix(text: row, prefix: "line: ")
+
+            # The empty line is refused: it is also the piece after a
+            # transcript's last line feed, which `judged` must hold to its
+            # bytes.
+            if line.len() == 0
+                return fail(code: "malformed", msg: at + "names the empty line, which no declaration may vary")
+
+            for one in out
+                if one.line == line
+                    return fail(code: "malformed", msg: at + "declares a line declared above it")
+
+            times = held(stdout: stdout, line: line)
+
+            if times != 1
+                return fail(
+                    code: "malformed",
+                    msg: at + "names a line main.expected holds " + times.to_str() + " times, where a declared line stands there once"
+                )
+            out @ out.push(Varying(line: line, forms: [], why: ""))
+            continue
+
+        if out.len() == 0
+            return fail(code: "malformed", msg: at + "stands before any `line: `, so it declares nothing")
+        last = out.len() - 1
+
+        if strings.has_prefix(s: row, prefix: "or: ")
+            form = strings.without_prefix(text: row, prefix: "or: ")
+
+            if form == out[last].line || among(word: form, words: out[last].forms)
+                return fail(code: "malformed", msg: at + "repeats a form its line already has")
+            out[last].forms @ out[last].forms.push(form)
+        else if strings.has_prefix(s: row, prefix: "why: ")
+            why = strings.trimmed(strings.without_prefix(text: row, prefix: "why: "))
+
+            if why.len() == 0 || out[last].why.len() > 0
+                return fail(code: "malformed", msg: at + "is a second or an empty reason, where a line has one")
+            out[last].why @ why
+        else
+            return fail(code: "malformed", msg: at + "is none of `line: `, `or: `, `why: `, a comment or a blank line")
+
+    for one in out
+        if one.forms.len() == 0 || one.why.len() == 0
+            return fail(
+                code: "malformed",
+                msg: VARIES + " declares `" + one.line + "` with no `or: ` or no `why: `, where a varying line names its other forms and why"
+            )
+
+    return ok(out)
+
+# How many lines of `stdout` are `line`.
+function held(stdout: str, line: str) -> i64
+    count: i64 @= 0
+
+    for row in strings.lines(stdout)
+        if row == line
+            count @ count + 1
+
+    return count
+
+function among(word: str, words: [str]) -> bool
+    for one in words
+        if one == word
+            return true
+
+    return false
+
+# The platforms `text`, a `main.skips`, names, each with its reason.
+#
+# - `text`: the file's text, one `<platform>: <reason>` a line.
+#
+# Fails `malformed`, naming the file's line, where a line names no platform
+# of `PLATFORMS`, names one twice, or gives no reason.
+function skips_read(text: str) -> [Skip]?
+    out: [Skip] @= []
+    number: i64 @= 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+
+        if row.len() == 0 || strings.has_prefix(s: row, prefix: "#")
+            continue
+        at = "line " + number.to_str() + " of " + SKIPS + ", `" + row + "`, "
+        cut = strings.index_of(text: row, needle: ": ")
+
+        if cut.is_err() || !among(word: row.slice(from: 0, to: cut.must()), words: PLATFORMS)
+            return fail(
+                code: "malformed",
+                msg: at + "is not `<platform>: <reason>`, the platform one of " + PLATFORMS.join(", ")
+            )
+        platform = row.slice(from: 0, to: cut.must())
+        why = strings.trimmed(row.slice(from: cut.must() + 2, to: row.len()))
+
+        for one in out
+            if one.platform == platform
+                return fail(code: "malformed", msg: at + "names a platform named above it")
+
+        if why.len() == 0
+            return fail(code: "malformed", msg: at + "gives no reason, and a skip is told with its reason")
+        out @ out.push(Skip(platform: platform, why: why))
+
+    return ok(out)
+
+# Why the demo does not run on `platform`, or `judged` where `skips` does not
+# name it.
+function skipped_on(skips: [Skip], platform: str) -> str?
+    for one in skips
+        if one.platform == platform
+            return ok(one.why)
+
+    return fail(code: "judged", msg: "the demo runs on " + platform)
+
+# A run judged against its expectation, each varying line allowed its forms.
+record Judged
+    # What the run did against `main.expected`, "" where it met it.
+    wrong: str
+    # Each declared line and the form this run printed, `<line>` where it
+    # printed the line as `main.expected` holds it.
+    taken: [str]
+
+# How a run with `out`, `err` and `code` stands against `want`, each line
+# `varies` declares allowed its other forms at its own place and nowhere else.
+#
+# - `want`: `main.expected`, split.
+# - `varies`: the lines a machine decides.
+# - `out`: what the run printed.
+# - `err`: what it wrote on stderr.
+# - `code`: how it exited.
+#
+# Where `out` holds as many lines as `want` and differs from it only at
+# declared lines, each in one of its forms, the run is judged as if it had
+# printed `want`'s own lines there (`expectation.unmet`, its ending and its
+# stderr included); otherwise as printed, so a failure shows what the run
+# really wrote.
+function judged(want: expectation.Expectation, varies: [Varying], out: str, err: str, code: i64) -> Judged
+    printed = strings.split_on(text: out, byte: 10)
+    wanted = strings.split_on(text: want.stdout, byte: 10)
+    read: [str] @= printed
+    taken: [str] @= []
+    fits: bool @= printed.len() == wanted.len()
+
+    if fits
+        for at in range(from: 0, to: wanted.len())
+            declared = declared_at(varies: varies, line: wanted[at])
+
+            if declared.is_err()
+                fits @ fits && printed[at] == wanted[at]
+            else if printed[at] == wanted[at] || among(word: printed[at], words: declared.must().forms)
+                taken @ taken.push(printed[at])
+                read[at] @ wanted[at]
+            else
+                fits @ false
+
+    shown: str @= out
+
+    if fits
+        shown @ read.join("\n")
+    wrong = expectation.unmet(want, out: shown, err: err, code: code)
+
+    if wrong.is_err()
+        return Judged(wrong: "", taken: taken)
+    return Judged(wrong: wrong.must(), taken: [])
+
+# The declaration of `line`, or `none` where `varies` declares no such line.
+function declared_at(varies: [Varying], line: str) -> Varying?
+    for one in varies
+        if one.line == line
+            return ok(one)
+
+    return fail(code: "none", msg: "`" + line + "` is held to its bytes")
+
+# What a refusal says, "" where there is none.
+function refused<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+test "varies_read: a line with its forms and reason, comments and blank lines, and every shape it refuses"
+    stdout = "== the day\nodbc: skipped\nmysql: 16\n"
+    read = varies_read(
+        text: "# the ODBC store\n\nline: odbc: skipped\nor: odbc: 16\nwhy: the driver\n",
+        stdout: stdout
+    ).must()
+    assert read == [Varying(line: "odbc: skipped", forms: ["odbc: 16"], why: "the driver")]
+
+    # A text of more than one byte, and a form whose spaces lead it, are read whole.
+    wide = varies_read(text: "line: mysql: 16\nor:   café 16\nor: x\nwhy: y\n", stdout: stdout).must()
+    assert wide[0].forms == ["  café 16", "x"]
+    assert varies_read(text: "", stdout: stdout).must().len() == 0
+    assert varies_read(text: "or: x\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nwhy: y\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nor: x\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nor: x\nwhy: \n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nor: x\nwhy: y\nwhy: z\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nor: odbc: skipped\nwhy: y\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: odbc: skipped\nor: x\nor: x\nwhy: y\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: absent\nor: x\nwhy: y\n", stdout: stdout).is_err()
+    assert varies_read(
+        text: "line: odbc: skipped\nor: x\nwhy: y\nline: odbc: skipped\nor: z\nwhy: y\n",
+        stdout: stdout
+    ).is_err()
+    assert varies_read(text: "Line: odbc: skipped\n", stdout: stdout).is_err()
+    assert varies_read(text: "line: \nor: x\nwhy: y\n", stdout: "a\n\nb\n").is_err()
+
+    # A line the transcript holds twice cannot be declared: which one varies
+    # would be a guess.
+    twice = varies_read(text: "line: a\nor: b\nwhy: c\n", stdout: "a\na\n")
+    assert twice.is_err()
+    assert strings.contains(s: refused(twice), substr: "holds 2 times")
+
+test "skips_read: one platform a line with its reason, and every shape it refuses"
+    read = skips_read("# Ed25519\nwindows: CNG has no Ed25519\n").must()
+    assert read == [Skip(platform: "windows", why: "CNG has no Ed25519")]
+    assert skipped_on(skips: read, platform: "windows").must() == "CNG has no Ed25519"
+    assert skipped_on(skips: read, platform: "linux").is_err()
+    assert skips_read("").must().len() == 0
+    assert skips_read("freebsd: no port\n").is_err()
+    assert skips_read("Windows: CNG\n").is_err()
+    assert skips_read("windows CNG\n").is_err()
+    assert skips_read("windows: \n").is_err()
+    assert skips_read("windows: a\nwindows: b\n").is_err()
+    assert skips_read("linux: a\ndarwin: b\nwindows: c\n").must().len() == 3
+
+test "judged: a declared line in either form, every other line to its bytes, and the ending as expectation reads it"
+    want = expectation.split("== the day\nodbc: skipped\nmysql: 16\n").must()
+    varies = [Varying(line: "odbc: skipped", forms: ["odbc: 16 requests"], why: "the driver")]
+    same = judged(want: want, varies: varies, out: "== the day\nodbc: skipped\nmysql: 16\n", err: "", code: 0)
+    assert same.wrong == ""
+    assert same.taken == ["odbc: skipped"]
+    other = judged(want: want, varies: varies, out: "== the day\nodbc: 16 requests\nmysql: 16\n", err: "", code: 0)
+    assert other.wrong == ""
+    assert other.taken == ["odbc: 16 requests"]
+
+    # A form at another place, an undeclared line changed, a line more, the
+    # last line feed lost, and an exit 1, each fail and show what was printed.
+    moved = judged(want: want, varies: varies, out: "odbc: 16 requests\n== the day\nmysql: 16\n", err: "", code: 0)
+    assert strings.contains(s: moved.wrong, substr: "--- actual ---\nodbc: 16 requests\n== the day\n")
+    assert judged(want: want, varies: varies, out: "== the day\nodbc: skipped\nmysql: 17\n", err: "", code: 0).wrong != ""
+    assert judged(want: want, varies: varies, out: "== the day\nodbc: 16 requests\nmysql: 16\nmore\n", err: "", code: 0).wrong != ""
+    assert judged(want: want, varies: varies, out: "== the day\nodbc: 16 requests\nmysql: 16", err: "", code: 0).wrong != ""
+    ended = judged(want: want, varies: varies, out: "== the day\nodbc: 16 requests\nmysql: 16\n", err: "", code: 1)
+    assert strings.contains(s: ended.wrong, substr: "must exit 0, and exited 1")
+    assert ended.taken.len() == 0
+
+    # With nothing declared it is `expectation.unmet` itself.
+    assert judged(want: want, varies: [], out: "== the day\nodbc: 16 requests\nmysql: 16\n", err: "", code: 0).wrong != ""
+    assert judged(want: want, varies: [], out: want.stdout, err: "", code: 0).wrong == ""

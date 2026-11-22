@@ -1,0 +1,486 @@
+# One program of `examples-rebel/` found, built, run and judged, for the
+# check of Rebel's programs (`rebel_apps.hero`; `examples-rebel/README.md`
+# § A10):
+#
+# - **an application**, a folder holding `main.expected`: built, run with its
+#   own `main.args` and `main.stdin`, and its transcript held to its own
+#   `main.expected`, each line its `main.varies` declares allowed its other
+#   forms; built and not run on a platform its `main.skips` names;
+# - **a twin**, a folder holding none, whose original `examples/<name>/`
+#   holds a `main.hero`: built, run with the original's `main.args` and
+#   `main.stdin` as the `corpus` suite runs the original
+#   (`suite_corpus.hero`), and held to the original's `main.expected`, a
+#   twin declaring nothing of its own;
+# - **any other folder** is a failure by name, since a program judged by
+#   nothing would stand green in silence.
+#
+# Every program runs from the repository's root, where the check runs, as
+# the corpus runs `examples/`: a demo's folders, `build/<app>-demo`, and a
+# twin's arguments, `examples/<name>/sample.txt`, are read from there. A
+# build is held to `BUILD_SECONDS` and a run to `RUN_SECONDS` and, where
+# the platform can hold a child to one, `RUN_BYTES` a file.
+
+use expectation
+use rebel_apps_declared
+use shell
+use strings
+
+# The clock a build's and a run's seconds are read on, which no setting of
+# the system's time moves (`runtime/hero_time.h`).
+extern "hero_time.h"
+    function hero_time_monotonic_ns() -> i64
+
+# The group of programs this check judges.
+constant REBEL: str
+    "examples-rebel"
+
+# The compiler's own programs, whose namesakes in `REBEL` are their twins.
+constant ORIGINALS: str
+    "examples"
+
+# The most seconds one build may take: an hour, the harness's longest bound
+# (`shell.SELF_BOUNDED_MOST`), there to stop a build that hangs and never
+# one that is slow. **The watchdog's ten minutes cut two cold builds that
+# were working**: `notes` and `registry`, four builds at once on this Mac
+# beside other lanes at a load of 44 to 75, both stopped at 600 s exit 124
+# (2026-11-22), the other ten applications and sixteen twins built inside
+# it. The next run built `notes` in 406 s and `registry` in 247 s, the
+# longest of the 28, at a load of 13 to 70.
+constant BUILD_SECONDS: i64
+    3600
+
+# The most seconds one demo may run, a hang's bound: a demo is scripted, on
+# loopback, with its clock fixed, and stops itself. The longest of the 28
+# ran 17 s on this Mac at a load of 13 to 70 (`worker`, 2026-11-22).
+constant RUN_SECONDS: i64
+    300
+
+# The most bytes one file a demo writes may hold, its stdout and stderr
+# among them, where the platform can hold a child to it
+# (`shell.can_limit_writes`): a demo writing without end is stopped as a
+# full disk stops it, long before the disk is full.
+constant RUN_BYTES: i64
+    100000000
+
+# One program of `REBEL` as the check judges it.
+record Program
+    # The folder's name, `notes`.
+    name: str
+    # `application`, `twin`, or `unknown` for a folder that is neither.
+    kind: str
+    # The folder, `examples-rebel/notes`.
+    folder: str
+    # The `main.expected` it is held to, its own or its original's.
+    expected: str
+    # The words it is handed, one per non-empty line of `main.args`.
+    passed: [str]
+    # The `main.stdin` it is fed, "" for none.
+    stdin: str
+
+# What the check says of one program.
+record Verdict
+    # The program's name.
+    name: str
+    # `ok`, `FAIL` or `SKIP`.
+    outcome: str
+    # The rest of its one line.
+    said: str
+    # What a failure shows beneath the lines, "" otherwise.
+    detail: str
+    # The whole seconds its build took, -1 where none ran or the clock could
+    # not be read.
+    built: i64
+    # The whole seconds its run took, -1 where none ran or the clock could
+    # not be read.
+    ran: i64
+
+# The program in `REBEL`'s folder `name`, told by what the folder holds.
+function program_named(name: str) -> Program
+    folder = REBEL + "/" + name
+    original = ORIGINALS + "/" + name
+    own = folder + "/main.expected"
+
+    if shell.exists(own)
+        return Program(
+            name: name,
+            kind: "application",
+            folder: folder,
+            expected: own,
+            passed: arguments(folder),
+            stdin: fed(folder)
+        )
+
+    if shell.exists(original + "/main.hero")
+        return Program(
+            name: name,
+            kind: "twin",
+            folder: folder,
+            expected: original + "/main.expected",
+            passed: arguments(original),
+            stdin: fed(original)
+        )
+    return Program(name: name, kind: "unknown", folder: folder, expected: "", passed: [], stdin: "")
+
+# The words of `folder`'s `main.args`, one per non-empty line, none where
+# there is no such file: the corpus suite's rule (`suite_corpus.hero`,
+# `program_arguments`).
+function arguments(folder: str) -> [str]
+    text = read_file(folder + "/main.args")
+    out: [str] @= []
+
+    if text.is_err()
+        return out
+
+    for row in strings.lines(text.must())
+        if row.len() > 0
+            out @ out.push(row)
+
+    return out
+
+# `folder`'s `main.stdin`, "" where there is none.
+function fed(folder: str) -> str
+    path = folder + "/main.stdin"
+
+    if shell.exists(path)
+        return path
+    return ""
+
+# Everything the build and the run of one program need beside the program.
+record Setting
+    # The compiler that builds it.
+    compiler: str
+    # The folder the binaries and the captures go in.
+    scratch: str
+    # This machine's platform, a word of `rebel_apps_declared.PLATFORMS`.
+    platform: str
+    # Words added to every build, `--library <folder>` for each folder given.
+    building: [str]
+
+# The verdict on `p`: found, declared, built, run and judged.
+function verdict_of(p: Program, s: Setting) -> Verdict
+    if p.kind == "unknown"
+        return failed(
+            name: p.name,
+            said: "neither an application nor a twin",
+            detail: p.folder + " holds no main.expected, and " + ORIGINALS + "/" + p.name + " holds no main.hero: an application carries its demo's transcript, a twin is held to its original's (" + REBEL + "/README.md § A10)"
+        )
+
+    if !shell.exists(p.folder + "/main.hero")
+        return failed(
+            name: p.name,
+            said: "no main.hero",
+            detail: p.folder + " holds no main.hero, so there is no program to build"
+        )
+    expected = read_file(p.expected)
+
+    if expected.is_err()
+        return failed(
+            name: p.name,
+            said: p.kind + ": no expectation",
+            detail: "cannot read " + p.expected + ": " + refusal_of(expected)
+        )
+    want = expectation.split(expected.must())
+
+    if want.is_err()
+        return failed(
+            name: p.name,
+            said: p.kind + ": no expectation",
+            detail: p.expected + " is not a readable expectation: " + refusal_of(want)
+        )
+    declared = declarations(p: p, stdout: want.must().stdout)
+
+    if declared.is_err()
+        return failed(name: p.name, said: p.kind + ": a declaration is refused", detail: refusal_of(declared))
+    held = declared.must()
+
+    # `heroes build -o` writes into a folder that stands, and makes none.
+    made = shell.mkdir_all(s.scratch + "/bin")
+
+    if made.is_err()
+        return failed(name: p.name, said: p.kind + ": no folder for its binary", detail: refusal_of(made))
+    binary = s.scratch + "/bin/" + p.name + shell.exe_suffix()
+    build_start = hero_time_monotonic_ns()
+
+    # Past the watchdog's ten minutes, so through the call that takes a
+    # bound up to an hour: the compiler sets itself no deadline, and
+    # `BUILD_SECONDS` stands in for one.
+    built = shell.run_self_bounded(
+        scratch: s.scratch,
+        program: s.compiler,
+        words: shell.both(first: [s.compiler, "build", p.folder + "/main.hero", "-o", binary], second: s.building),
+        seconds: BUILD_SECONDS,
+        bytes: 0,
+        stdin_path: ""
+    )
+    build_took = seconds_since(build_start)
+
+    # The compiler exits 0, 1 or 2 (`.claude/rules/cli-surface.md`), so 124
+    # is the bound's, which ends a child that way (`shell.run_bounded`).
+    if !built.is_err() && built.must().code == 124
+        return timed(
+            v: failed(name: p.name, said: p.kind + ": the build was stopped after " + BUILD_SECONDS.to_str() + " s", detail: "building " + p.folder + "/main.hero had not ended after " + BUILD_SECONDS.to_str() + " s: " + shell.ending(built)),
+            built: build_took,
+            ran: -1
+        )
+
+    if built.is_err() || built.must().code != 0
+        return timed(
+            v: failed(name: p.name, said: p.kind + ": the build failed", detail: "building " + p.folder + "/main.hero: " + shell.ending(built)),
+            built: build_took,
+            ran: -1
+        )
+    skip = rebel_apps_declared.skipped_on(skips: held.skips, platform: s.platform)
+
+    if !skip.is_err()
+        return Verdict(
+            name: p.name,
+            outcome: "SKIP",
+            said: "on " + s.platform + ": " + skip.must(),
+            detail: "",
+            built: build_took,
+            ran: -1
+        )
+    bytes: i64 @= 0
+
+    if shell.can_limit_writes()
+        bytes @ RUN_BYTES
+    run_start = hero_time_monotonic_ns()
+    ran = shell.run_bounded(
+        scratch: s.scratch,
+        program: binary,
+        words: shell.both(first: [binary], second: p.passed),
+        seconds: RUN_SECONDS,
+        bytes: bytes,
+        stdin_path: p.stdin
+    )
+    run_took = seconds_since(run_start)
+
+    if ran.is_err()
+        return timed(
+            v: failed(name: p.name, said: p.kind + ": it did not run", detail: shell.refusal(ran)),
+            built: build_took,
+            ran: run_took
+        )
+
+    if ran.must().code == 124
+        return timed(
+            v: failed(name: p.name, said: p.kind + ": stopped after " + RUN_SECONDS.to_str() + " s", detail: "the run had not ended after " + RUN_SECONDS.to_str() + " s, and was stopped; what it printed:\n" + ran.must().out + "--- its stderr ---\n" + ran.must().err),
+            built: build_took,
+            ran: run_took
+        )
+    got = rebel_apps_declared.judged(
+        want: want.must(),
+        varies: held.varies,
+        out: ran.must().out,
+        err: ran.must().err,
+        code: ran.must().code
+    )
+
+    if got.wrong.len() > 0
+        return timed(
+            v: failed(name: p.name, said: p.kind + ": " + first_line(got.wrong), detail: "run against " + p.expected + ": " + got.wrong),
+            built: build_took,
+            ran: run_took
+        )
+    return Verdict(
+        name: p.name,
+        outcome: "ok",
+        said: p.kind + taken_said(got.taken),
+        detail: "",
+        built: build_took,
+        ran: run_took
+    )
+
+# The whole seconds since `start`, a reading of the monotonic clock; -1
+# where either reading failed, which the clock answers as -1.
+function seconds_since(start: i64) -> i64
+    now = hero_time_monotonic_ns()
+
+    if start < 0 || now < start
+        return -1
+    return (now - start) / 1000000000
+
+# `v` with the seconds its build and its run took.
+function timed(v: Verdict, built: i64, ran: i64) -> Verdict
+    return Verdict(name: v.name, outcome: v.outcome, said: v.said, detail: v.detail, built: built, ran: ran)
+
+# What an application's folder declares about the machines its demo runs on.
+record Declared
+    # The lines of its transcript a machine decides.
+    varies: [rebel_apps_declared.Varying]
+    # The platforms where its demo cannot run.
+    skips: [rebel_apps_declared.Skip]
+
+# The two declarations of `p`'s folder, its `main.varies` read against
+# `stdout`, the transcript its `main.expected` promises: none for a twin,
+# which is held to its original's bytes and may declare nothing, and a
+# failure where one stands in a twin's folder all the same.
+function declarations(p: Program, stdout: str) -> Declared?
+    varies_path = p.folder + "/" + rebel_apps_declared.VARIES
+    skips_path = p.folder + "/" + rebel_apps_declared.SKIPS
+
+    if p.kind == "twin"
+        for path in [varies_path, skips_path]
+            if shell.exists(path)
+                return fail(
+                    code: "malformed",
+                    msg: path + " stands in a twin's folder, and a twin is held to its original's bytes on every platform"
+                )
+
+        return ok(Declared(varies: [], skips: []))
+    varies: [rebel_apps_declared.Varying] @= []
+    skips: [rebel_apps_declared.Skip] @= []
+
+    if shell.exists(varies_path)
+        varies @ rebel_apps_declared.varies_read(text: read_file(varies_path)?, stdout: stdout)?
+
+    if shell.exists(skips_path)
+        skips @ rebel_apps_declared.skips_read(read_file(skips_path)?)?
+    return ok(Declared(varies: varies, skips: skips))
+
+# What an `ok` line adds for the varying lines a run printed: each line as
+# it came, so a log says which machine fact held.
+function taken_said(taken: [str]) -> str
+    if taken.len() == 0
+        return ""
+    return ", its varying lines as printed: " + taken.join(" | ")
+
+function failed(name: str, said: str, detail: str) -> Verdict
+    return Verdict(name: name, outcome: "FAIL", said: said, detail: detail, built: -1, ran: -1)
+
+function first_line(text: str) -> str
+    rows = strings.lines(text)
+
+    if rows.len() == 0
+        return text
+    return rows[0]
+
+function refusal_of<A>(got: A?) -> str
+    return match got
+        .ok _  => ""
+        .err e => e.msg
+
+# The line the check prints for `v`: `ok   notes (application; built in
+# 61 s, ran in 4 s)`, `FAIL gateway (application: the build failed; built in
+# 9 s)`, or `SKIP registry on windows: <reason>`, a skip saying nothing else.
+function line_of(v: Verdict) -> str
+    if v.outcome == "SKIP"
+        return "SKIP " + v.name + " " + v.said
+    took: [str] @= []
+
+    if v.built >= 0
+        took @ took.push("built in " + v.built.to_str() + " s")
+
+    if v.ran >= 0
+        took @ took.push("ran in " + v.ran.to_str() + " s")
+    tail: str @= ""
+
+    if took.len() > 0
+        tail @ "; " + took.join(", ")
+
+    if v.outcome == "ok"
+        return "ok   " + v.name + " (" + v.said + tail + ")"
+    return "FAIL " + v.name + " (" + v.said + tail + ")"
+
+test "program_named: an application by its main.expected, a twin by its original, anything else unknown"
+    notes = program_named("notes")
+    assert notes.kind == "application"
+    assert notes.expected == "examples-rebel/notes/main.expected"
+    assert notes.passed == ["demo"]
+    assert notes.stdin == ""
+    gateway = program_named("gateway")
+    assert gateway.stdin == "examples-rebel/gateway/main.stdin"
+    json = program_named("json")
+    assert json.kind == "twin"
+    assert json.expected == "examples/json/main.expected"
+    assert json.passed == ["examples/json/sample.json", "title"]
+
+    # `pipeline` is an application of Rebel's and also a program of the
+    # compiler's own: its main.expected decides, so it is never held to the
+    # other program's bytes.
+    assert program_named("pipeline").kind == "application"
+    assert program_named("pipeline").expected == "examples-rebel/pipeline/main.expected"
+    assert program_named("no-such-program").kind == "unknown"
+
+test "verdict_of: a folder that is neither, one with no main.hero, and a twin declaring anything, fail by name before any build"
+    s = Setting(compiler: "no-such-compiler", scratch: shell.own_scratch(), platform: "linux", building: [])
+    unknown = verdict_of(p: program_named("no-such-program"), s: s)
+    assert unknown.outcome == "FAIL"
+    assert line_of(unknown) == "FAIL no-such-program (neither an application nor a twin)"
+    folder = s.scratch + "/twin"
+    assert !shell.mkdir_all(folder).is_err()
+    assert !write_file(path: folder + "/main.hero", text: "function main()\n    print(1)\n").is_err()
+    assert !write_file(path: folder + "/main.skips", text: "windows: x\n").is_err()
+    twin = Program(
+        name: "twin",
+        kind: "twin",
+        folder: folder,
+        expected: "examples/json/main.expected",
+        passed: [],
+        stdin: ""
+    )
+    refused = verdict_of(p: twin, s: s)
+    assert refused.outcome == "FAIL"
+    assert strings.contains(s: refused.detail, substr: "stands in a twin's folder")
+    hollow = Program(
+        name: "hollow",
+        kind: "application",
+        folder: s.scratch + "/hollow",
+        expected: "",
+        passed: [],
+        stdin: ""
+    )
+    assert verdict_of(p: hollow, s: s).said == "no main.hero"
+    assert !shell.remove_tree(s.scratch).is_err()
+
+test "verdict_of: an application built, run and held to its transcript, a declared line in its other form, and a skip told after its build"
+    if !shell.can_run_scripts()
+        return
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    folder = scratch + "/varying"
+    assert !shell.mkdir_all(folder).is_err()
+    assert !write_file(path: folder + "/main.hero", text: "function main()\n    print(\"head\")\n    print(\"odbc: \" + args()[0])\n").is_err()
+    assert !write_file(path: folder + "/main.args", text: "with a driver\n").is_err()
+    assert !write_file(path: folder + "/main.expected", text: "head\nodbc: skipped\n").is_err()
+    s = Setting(compiler: compiler, scratch: scratch, platform: "linux", building: [])
+    p = Program(
+        name: "varying",
+        kind: "application",
+        folder: folder,
+        expected: folder + "/main.expected",
+        passed: ["with a driver"],
+        stdin: ""
+    )
+
+    # Undeclared, the other form is a failure, its line the first of the diff.
+    plain = verdict_of(p: p, s: s)
+    assert plain.outcome == "FAIL" && plain.said == "application: printed something else"
+    assert plain.built >= 0 && plain.ran >= 0
+    assert !write_file(path: folder + "/main.varies", text: "line: odbc: skipped\nor: odbc: with a driver\nwhy: the driver\n").is_err()
+    held = verdict_of(p: p, s: s)
+    assert held.outcome == "ok" && held.said == "application, its varying lines as printed: odbc: with a driver"
+    assert !write_file(path: folder + "/main.skips", text: "linux: no driver here\n").is_err()
+    skipped = verdict_of(p: p, s: s)
+    assert line_of(skipped) == "SKIP varying on linux: no driver here"
+    assert skipped.built >= 0 && skipped.ran == -1
+
+    # A declaration naming a line the transcript does not hold refuses the
+    # program, and so does a build that fails, before any skip is read.
+    assert !write_file(path: folder + "/main.varies", text: "line: gone\nor: x\nwhy: y\n").is_err()
+    assert verdict_of(p: p, s: s).said == "application: a declaration is refused"
+    assert !shell.remove_tree(folder + "/main.varies").is_err()
+    assert !write_file(path: folder + "/main.hero", text: "function main()\n    v @= 1\n    print(v)\n").is_err()
+    refused = verdict_of(p: p, s: s)
+    assert refused.said == "application: the build failed"
+    assert refused.ran == -1
+    assert !shell.remove_tree(scratch).is_err()
+
+test "line_of: a program's seconds where it was built or run, and a skip's line its reason alone"
+    v = Verdict(name: "notes", outcome: "ok", said: "application", detail: "", built: 61, ran: 4)
+    assert line_of(v) == "ok   notes (application; built in 61 s, ran in 4 s)"
+    assert line_of(timed(v: failed(name: "g", said: "twin: the build failed", detail: "x"), built: 9, ran: -1)) == "FAIL g (twin: the build failed; built in 9 s)"
+    assert line_of(failed(name: "u", said: "no main.hero", detail: "")) == "FAIL u (no main.hero)"
+    assert line_of(Verdict(name: "r", outcome: "SKIP", said: "on windows: no Ed25519", detail: "", built: 30, ran: -1)) == "SKIP r on windows: no Ed25519"
+    assert seconds_since(-1) == -1
+    assert seconds_since(hero_time_monotonic_ns()) == 0
