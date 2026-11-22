@@ -17,7 +17,7 @@
  * counts the delivery in one process-wide counter per signal and writes one
  * byte down a pipe, both async-signal-safe; the program asks between its steps
  * (`hero_signal_take`) or waits on the descriptor with `poll`
- * (`hero_signal_fd`). Built and run by panel 247's ffi-pragmatist: a program
+ * (`hero_signal_fd`, `hero_signal_door`). Built and run by panel 247's ffi-pragmatist: a program
  * counting SIGUSR1 under a storm, and another whose second module takes the
  * count, both exit 0 on Darwin and Linux arm64.
  *
@@ -53,6 +53,18 @@
  * back and sends it again, so a Ctrl-C meant for a child that has not yet
  * become its program ends it, or stops it, as it would have, and no byte of
  * the child's reaches this process's pipe.
+ *
+ * THE DESCRIPTOR IS READABLE WHILE A DELIVERY IS COUNTED AND NOT TAKEN
+ * (feature 2690), so a wait on it ends once for each signal a program takes,
+ * and every waiter sees it: nobody drains it but the count's reading. Each
+ * `hero_signal_take` drains the pipe and then writes one byte back where a
+ * count of any signal is still above 0. The handler counts before it writes,
+ * so a byte the drain takes belongs to a count the check after it sees, and a
+ * byte written after the drain stays; what can be left is a byte with no
+ * count behind it, which `hero_signal_any` drains when it finds none. A wait
+ * that would end on one signal and not another reads the counts it wants, as
+ * `hero_signal_any` reads them all. On Windows the descriptor is a manual-reset
+ * event the console's handler sets, settled the same way.
  *
  * WHAT A NAME IS: `hero_signal_number` gives the number this platform gives a
  * signal `hero_os.h` names the same on every platform (SIGTSTP is 18 on
@@ -93,7 +105,7 @@ static void hero_sigdoor_on(int sig) {
         errno = saved;
         return;
     }
-    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
+    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_release);
     int fd = atomic_load_explicit(&hero_sigdoor_fds[1], memory_order_acquire);
     if (fd >= 0) {
         unsigned char b = (unsigned char)sig;
@@ -160,18 +172,67 @@ int64_t hero_signal_take_over(int32_t sig) {
 /* One delivery counted from outside a handler; POSIX counts in the handler,
  * so the platform layer never calls this here. */
 void hero_signal_count_one(int32_t sig) {
-    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
+    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_release);
 }
 
-/* The deliveries counted since the last take, and the count set back to 0. */
+/* Whether a delivery of any signal is counted and not taken. */
+static bool hero_sigdoor_untaken(void) {
+    for (int sig = 1; sig < HERO_SIGDOOR_MAX; sig++) {
+        if (atomic_load_explicit(&hero_sigdoor_count[sig], memory_order_acquire) > 0) return true;
+    }
+    return false;
+}
+
+/* The pipe drained, then one byte written back where a count is still above
+ * 0: readable from here exactly while a delivery is untaken. Nothing before
+ * the pipe is made. */
+static void hero_sigdoor_settle(void) {
+    int in = atomic_load_explicit(&hero_sigdoor_fds[0], memory_order_acquire);
+    int out = atomic_load_explicit(&hero_sigdoor_fds[1], memory_order_acquire);
+    if (in < 0 || out < 0) return;
+    unsigned char sink[64];
+    for (;;) {
+        ssize_t got = read(in, sink, sizeof sink);
+        if (got > 0 || (got < 0 && errno == EINTR)) continue;
+        break;
+    }
+    if (hero_sigdoor_untaken()) {
+        unsigned char b = 0;
+        (void)!write(out, &b, 1);
+    }
+}
+
+/* The deliveries counted since the last take, the count set back to 0 and the
+ * descriptor settled. */
 int64_t hero_signal_take(int32_t sig) {
     if (sig <= 0 || sig >= HERO_SIGDOOR_MAX) return 0;
-    return atomic_exchange_explicit(&hero_sigdoor_count[sig], 0, memory_order_relaxed);
+    int64_t taken = atomic_exchange_explicit(&hero_sigdoor_count[sig], 0, memory_order_acq_rel);
+    hero_sigdoor_settle();
+    return taken;
 }
 
-/* Readable once a watched signal has come, for a program that waits with
+/* 1 where a delivery of any signal is counted and not taken; 0 where none
+ * is, a byte left with no count behind it drained first. */
+int64_t hero_signal_any(void) {
+    if (hero_sigdoor_untaken()) return 1;
+    hero_sigdoor_settle();
+    return hero_sigdoor_untaken() ? 1 : 0;
+}
+
+/* Readable while a counted delivery is untaken, for a program that waits with
  * `poll`; -1 before the first watch. */
 int32_t hero_signal_fd(void) { return atomic_load_explicit(&hero_sigdoor_fds[0], memory_order_acquire); }
+
+/* The same descriptor, the pipe made first where no watch made it yet, so a
+ * wait may hold it before the program counts anything: -1 where the system
+ * gave no pipe. */
+int32_t hero_signal_door(void) {
+    if (hero_sigdoor_pipe() != 0) return -1;
+    return atomic_load_explicit(&hero_sigdoor_fds[0], memory_order_acquire);
+}
+
+/* POSIX waits on the descriptor: no event. */
+void *hero_signal_door_event(void) { return NULL; }
 
 #else
 
@@ -183,13 +244,34 @@ int32_t hero_signal_fd(void) { return atomic_load_explicit(&hero_sigdoor_fds[0],
  * signal is one the watch does not take, and there is no descriptor; the one
  * count is SIGINT's, which the console's handler adds to on the thread the
  * system makes for it (`hero_net.c`). Compiled for both of Windows' targets by
- * zig, never run on the box. */
+ * zig, never run on the box. A wait that ends on a counted Ctrl-C waits on
+ * a manual-reset event, set by each count and settled by each take as the
+ * POSIX pipe is (`hero_signal_door_event`). */
 #include <signal.h>
+#include <windows.h>
 
 /* UCRT's numbers stop at SIGABRT_COMPAT, 6, and SIGBREAK, 21. */
 #define HERO_SIGDOOR_MAX 23
 
 static _Atomic int64_t hero_sigdoor_count[HERO_SIGDOOR_MAX];
+
+/* The event, made by the first wait that asks for it; NULL until then. */
+static _Atomic(void *) hero_sigdoor_event = NULL;
+
+static bool hero_sigdoor_untaken(void) {
+    for (int sig = 1; sig < HERO_SIGDOOR_MAX; sig++) {
+        if (atomic_load_explicit(&hero_sigdoor_count[sig], memory_order_acquire) > 0) return true;
+    }
+    return false;
+}
+
+/* The event reset, then set again where a count is still above 0. */
+static void hero_sigdoor_settle(void) {
+    void *event = atomic_load_explicit(&hero_sigdoor_event, memory_order_acquire);
+    if (event == NULL) return;
+    (void)ResetEvent(event);
+    if (hero_sigdoor_untaken()) (void)SetEvent(event);
+}
 
 int64_t hero_signal_watch(int32_t sig) {
     (void)sig;
@@ -203,16 +285,48 @@ int64_t hero_signal_take_over(int32_t sig) {
     return -1;
 }
 
+/* Counted, then the event set, on the thread the system makes for the
+ * console's event. */
 void hero_signal_count_one(int32_t sig) {
-    if (sig > 0 && sig < HERO_SIGDOOR_MAX) atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_relaxed);
+    if (sig <= 0 || sig >= HERO_SIGDOOR_MAX) return;
+    atomic_fetch_add_explicit(&hero_sigdoor_count[sig], 1, memory_order_release);
+    void *event = atomic_load_explicit(&hero_sigdoor_event, memory_order_acquire);
+    if (event != NULL) (void)SetEvent(event);
 }
 
 int64_t hero_signal_take(int32_t sig) {
     if (sig <= 0 || sig >= HERO_SIGDOOR_MAX) return 0;
-    return atomic_exchange_explicit(&hero_sigdoor_count[sig], 0, memory_order_relaxed);
+    int64_t taken = atomic_exchange_explicit(&hero_sigdoor_count[sig], 0, memory_order_acq_rel);
+    hero_sigdoor_settle();
+    return taken;
+}
+
+int64_t hero_signal_any(void) {
+    if (hero_sigdoor_untaken()) return 1;
+    hero_sigdoor_settle();
+    return hero_sigdoor_untaken() ? 1 : 0;
 }
 
 int32_t hero_signal_fd(void) { return -1; }
+
+int32_t hero_signal_door(void) { return -1; }
+
+/* The event, made once: a second thread making it at the same moment closes
+ * its own. Set at once where a count is already above 0, so a count that came
+ * before the event is not missed. NULL where the system gave none. */
+void *hero_signal_door_event(void) {
+    void *event = atomic_load_explicit(&hero_sigdoor_event, memory_order_acquire);
+    if (event != NULL) return event;
+    void *made = CreateEventW(NULL, TRUE, FALSE, NULL);
+    if (made == NULL) return NULL;
+    void *none = NULL;
+    if (!atomic_compare_exchange_strong(&hero_sigdoor_event, &none, made)) {
+        (void)CloseHandle(made);
+        return none;
+    }
+    if (hero_sigdoor_untaken()) (void)SetEvent(made);
+    return made;
+}
 
 #endif
 

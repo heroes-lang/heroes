@@ -991,6 +991,64 @@ function wait_or_stop(@child: Child) -> State?
     _ = wait(@child)?
     return ok(child.state)
 
+# How `child` ended, the signal that stopped it, or `.running` where a signal
+# the program counts came first: the first of the three, as a shell's `fg` and
+# `wait` end on Ctrl-C as well as on Ctrl-Z, with nothing asked at intervals.
+#
+# - `child`: the child to wait for, as `wait_or_stop` takes it: a stop it was
+#   seen in before this call is waited past until it goes on, and one that has
+#   ended answers at once.
+#
+# Answers `.ended` and `.stopped` as `wait_or_stop` does, a stop and an end put
+# before a signal that came with them; `.running` where a signal
+# `os.count_signal` counts came and `os.take_signals` has not taken it, and at
+# once while one stays untaken, so the caller takes every count it keeps
+# before it waits again. With `.running` the child's own `state` keeps where it
+# was last seen, `.stopped` where nobody sent it on. Past its command's time
+# limit the child is ended at once and its status is `.timed_out`.
+#
+# Fails as `wait` does. On Windows no child stops, and the one signal counted
+# is Ctrl-C (Ctrl-Break with it), which ends the wait there too. See also
+# `wait_or_stop`, `poll.add_signals`.
+function wait_or_signal(@child: Child) -> State?
+    asked = f"waiting for \"{child.command.program}\" to end or stop, or for a signal"
+
+    match child.state
+        .ended _              => return ok(child.state)
+        .running | .stopped _ => _ = 0
+
+    if child.handle == nullptr
+        return codes.of(code: codes.INVALID, asked: asked, why: "the child was given up by `release`")
+
+    limit = match child.command.time_limit
+        .none        => 0
+        .after given => given.limit.nanoseconds
+
+    seen = ending.heeded(child.handle, started: child.started, limit: limit, asked: asked, program: child.command.program)?
+
+    if !seen.ended
+        child.state @ if seen.stop_signal != 0
+            .stopped(signal: seen.stop_signal)
+        else
+            .running
+
+        if seen.heard
+            return ok(.running)
+        return ok(child.state)
+
+    status: Status = if seen.timed_out
+        .timed_out
+    else if seen.signal != 0
+        .signaled(signal: seen.signal)
+    else
+        .exited(code: seen.code)
+    child.state @ .ended(
+        status: status,
+        cpu: CpuTime(user: time.nanoseconds(seen.user_ns), system: time.nanoseconds(seen.system_ns))
+    )
+    _ = wait(@child)?
+    return ok(child.state)
+
 # Sends `signal` to `child` alone: a stop, a going on, Ctrl-C's, or any other
 # signal `os.Signal` names (POSIX).
 #
@@ -1780,6 +1838,63 @@ test "wait_or_stop and state_of: a child stopped, seen stopped, sent on, seen ru
         assert child.handle == nullptr
         assert wait(@child).must() == .signaled(signal: 9)
 
+test "wait_or_signal: a signal the program counts ends the wait, at once again while it is untaken, then the child waited for to its end"
+    if !fixture.on_windows()
+        os.count_signal(.user1).must()
+        _ = os.take_signals(.user1)
+        child @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+        sender @= start(shell(f"sleep 0.2; kill -USR1 {os.pid()}").must()).must()
+        assert wait_or_signal(@child).must() == .running
+        assert wait_or_signal(@child).must() == .running
+        assert os.take_signals(.user1) == 1
+        _ = wait(@sender).must()
+        kill(child).must()
+
+        match wait_or_signal(@child).must()
+            .ended e              => assert e.status == .signaled(signal: 9)
+            .running | .stopped _ => assert false
+
+        assert child.handle == nullptr
+        assert os.take_signals(.user1) == 0
+
+test "wait_or_signal: a child stopped, sent on and waited past that stop until Ctrl-Z's signal stops it again, then ended while stopped"
+    if !fixture.on_windows()
+        child @= start(with_own_group(command(fixture.sleeper(), fixture.sleeper_arguments(30)))).must()
+        stop = os.signal_number(.stop).must()
+        send_signal(child, signal: .stop).must()
+        assert wait_or_signal(@child).must() == .stopped(signal: stop)
+        send_group_signal(child, signal: .resume).must()
+        stopper @= start(shell(f"sleep 0.2; kill -TSTP {child.id}").must()).must()
+        assert wait_or_signal(@child).must() == .stopped(signal: os.signal_number(.terminal_stop).must())
+        _ = wait(@stopper).must()
+        kill(child).must()
+
+        match wait_or_signal(@child).must()
+            .ended e              => assert e.status == .signaled(signal: 9)
+            .running | .stopped _ => assert false
+
+        assert wait(@child).must() == .signaled(signal: 9)
+
+test "wait_or_signal: a child past its time limit is ended at once, an ended child answered at once, and a released one refused"
+    limited = with_time_limit(
+        command(fixture.sleeper(), fixture.sleeper_arguments(30)),
+        limit: time.milliseconds(300).must()
+    )
+    child @= start(limited).must()
+
+    match wait_or_signal(@child).must()
+        .ended e              => assert e.status == .timed_out
+        .running | .stopped _ => assert false
+
+    assert wait_or_signal(@child).must() == child.state
+    other @= start(command(fixture.sleeper(), fixture.sleeper_arguments(30))).must()
+    kill(other).must()
+    release(@other).must()
+
+    match wait_or_signal(@other)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
 test "wait_or_stop: a stopped child past its time limit is ended at once, and its status says so"
     if !fixture.on_windows()
         limited = with_time_limit(
@@ -2045,6 +2160,19 @@ test "wait_or_stop: the job in front waited for"
         .ended e   => assert e.status == .exited(code: 3)
         .stopped s => print(f"stopped by signal {s.signal}")
         .running   => assert false
+
+# A shell waits for the job it runs in front, and leaves it running where
+# Ctrl-C, which the shell counts, comes first.
+test "wait_or_signal: the job in front waited for, or left to run on Ctrl-C"
+    child @= start(shell(fixture.exit_script(3)).must()).must()
+
+    match wait_or_signal(@child).must()
+        .ended e   => assert e.status == .exited(code: 3)
+        .stopped s => print(f"stopped by signal {s.signal}")
+        .running =>
+            _ = os.take_signals(.interrupt)
+            kill(child).must()
+            _ = wait(@child).must()
 
 # A child asked to end with SIGTERM, which Windows has no such request for.
 test "send_signal: a child asked to end"

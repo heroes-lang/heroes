@@ -155,6 +155,18 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
  * told once and not every is due no more until `hero_poll_set_timer`. */
 int64_t hero_poll_add_timer(hero_poll_set *set, int64_t first_ns, int64_t every_ns);
 
+/* THE SIGNALS THE PROGRAM COUNTS added to the set (feature 2690): one entry,
+ * told `HERO_POLL_READ` while a delivery of any signal `hero_os.h`'s door
+ * counts is not taken by `hero_signal_take`, whichever signal it is and
+ * whether the program counted it before this call or after. Never told for a
+ * byte with no count behind it. Each entry waits on its own copy of the
+ * door's descriptor, so the signals stand in a set twice as a socket does.
+ * Its interest is fixed: `hero_poll_change` answers `HERO_POLL_INVALID`.
+ * Answers its key, or -1: `HERO_POLL_NOT_OPEN`, `HERO_POLL_LIMIT`,
+ * `HERO_POLL_OTHER` where the system gave no pipe or no copy of it, and
+ * `HERO_POLL_UNSUPPORTED` on Windows, whose wait takes sockets alone. */
+int64_t hero_poll_add_signals(hero_poll_set *set);
+
 /* The timer `key` set again, as `hero_poll_add_timer` sets one, from now.
  * Answers 0, or -1: `HERO_POLL_INVALID` for a time below 0 or a key that is no
  * timer, `HERO_POLL_NOT_FOUND`, `HERO_POLL_NOT_OPEN`. */

@@ -21,11 +21,15 @@
 # It fails with `invalid`, `closed`, `not_found`, `limit`, `unsupported`,
 # `stopped` and `failed` (README § A4).
 #
+# A signal the program counts (`os.count_signal`) is waited on beside the rest
+# with `add_signals`.
+#
 # Not written yet, each a `pending` block of its ledger: a wait woken by another
 # thread of the program, for a reason of its own.
 
 use io
 use net
+use os
 use poll/hero_poll
 use poll/internal/failure
 use poll/internal/ready
@@ -55,7 +59,8 @@ constant LIMIT: str
     "limit"
 
 # This system cannot wait on what the stream stands on: a pipe or a console on
-# Windows, a device such as `/dev/null`. `add_stream` fails with it.
+# Windows, a device such as `/dev/null`. `add_stream` fails with it, and
+# `add_signals` on Windows.
 constant UNSUPPORTED: str
     "unsupported"
 
@@ -265,6 +270,35 @@ function add_timer(set: Set, first: time.Duration, every: time.Duration) -> i64?
         asked: "adding a timer to a set"
     )
 
+# Adds the signals the program counts to the set, and answers the entry's
+# key: told readable while a signal `os.count_signal` counts has come and
+# `os.take_signals` has not taken it, so a loop that takes every count it
+# keeps at each event waits again quietly, and one that leaves a count is
+# told it again at every wait, as everything still ready is.
+#
+# - `set`: the set.
+#
+# One entry stands for every signal counted, before this call or after it:
+# the event says one came, and `os.take_signals` says which, asked of each.
+# Added twice, the two keys are told together.
+#
+# Fails `closed` where the set is closed, `limit` where it holds the most it
+# was made for, `unsupported` on Windows, whose wait takes sockets alone (a
+# counted Ctrl-C ends `process.wait_or_signal` there), and `failed` where the
+# system gave no pipe. `change` refuses the entry `invalid`: it waits to read
+# alone. See also `remove`.
+function add_signals(set: Set) -> i64?
+    asked = "adding the counted signals to a set"
+    answer = hero_poll.add_signals(set.handle)
+
+    if answer < 0 && hero_poll.last_error() == hero_poll.HERO_POLL_UNSUPPORTED
+        return failure.of(
+            code: UNSUPPORTED,
+            asked: asked,
+            why: "this system's wait takes sockets alone, and a counted Ctrl-C ends `process.wait_or_signal` there"
+        )
+    return failure.key(answer: answer, asked: asked)
+
 # Sets the timer `key` again from now, as `add_timer` sets one.
 #
 # - `set`: the set.
@@ -293,7 +327,7 @@ function reset_timer(set: Set, key: i64, first: time.Duration, every: time.Durat
 # - `key`: the entry's key.
 # - `interest`: what to wait for now.
 #
-# Fails `invalid` where `key` is a timer's, `not_found` where it names no
+# Fails `invalid` where `key` is a timer's or the signals', `not_found` where it names no
 # entry of the set, `closed` where the set is closed. See also `remove`.
 function change(set: Set, key: i64, interest: Interest) -> ()?
     bits = match interest
@@ -461,6 +495,33 @@ test "add_timer: a timer falls once and ends the wait"
     events = wait_forever(s).must()
     assert events[0].key == key
     assert events[0].due == 1
+    close(@s).must()
+
+# The signals a program counts waited on beside the rest: quiet while none
+# came, told with the entry's key once one comes, which the loop takes; its
+# interest is reading alone, and a second entry is its own. Windows waits on
+# sockets alone, and says so.
+test "add_signals: quiet while no counted signal came, its interest fixed, and a second entry its own"
+    s @= make(3).must()
+
+    match add_signals(s)
+        .err e => assert e.code == UNSUPPORTED
+        .ok key =>
+            for e in wait(s, limit: time.nanoseconds(0)).must()
+                if e.key == key
+                    print(f"Ctrl-C came {os.take_signals(.interrupt)} times")
+
+            assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+
+            match change(s, key: key, interest: .write)
+                .ok _  => assert false
+                .err e => assert e.code == INVALID
+
+            second = add_signals(s).must()
+            assert second != key
+            remove(s, key: second).must()
+            assert count(s).must() == 1
+
     close(@s).must()
 
 # A timer that fell once set again to fall now.

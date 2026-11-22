@@ -1,0 +1,20 @@
+# A signal the program counts ends a wait (feature 2690): the runtime's
+# signal door is readable while a counted signal is not taken, so a set of
+# `hero_poll.h` holding the counted signals is told once the interrupt comes
+# and told no more once the program takes it, and `hero_proc_heed`, the wait
+# for a child that ends or stops, ends on it too, answering at once while it
+# stays untaken. A shell's `fg` and `wait` wait so, with nothing asked at
+# intervals. The C is in the header beside this file; each line prints 1
+# where every step held, or where the platform waits on none (Windows'
+# readiness sets take sockets alone), else the step that did not. On Windows
+# the interrupt is the console's Ctrl-C, counted on the thread the system
+# makes for it, which sets the door's event (unrun there).
+extern "the-signal-door.h"
+    function door_begin() -> i64
+    function door_set() -> i64
+    function door_child() -> i64
+
+function main()
+    print(f"the interrupt at its default, then counted: {door_begin()}")
+    print(f"a set holding the counted signals is told once one comes, until it is taken: {door_set()}")
+    print(f"a wait for a child ends once one comes, and at once while it is untaken: {door_child()}")
