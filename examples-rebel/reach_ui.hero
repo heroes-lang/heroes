@@ -279,7 +279,7 @@ function opened_elsewhere(_: i64) -> i64
             return 2
 
 test "the driver: an app opened on another thread is refused as a value, and main's thread opens one after it"
-    worker @= threads.spawn(opened_elsewhere, arg: 0).must()
+    worker @= threads.start(body: opened_elsewhere, arg: 0).must()
     assert threads.wait(@worker) == 1
     app @= ui.open(.headless).must()
     ui.close(@app).must()
