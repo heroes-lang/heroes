@@ -1,0 +1,12 @@
+# A stub of the package page's `net`: the language half of t1 only.
+record Listener
+    port: i64
+
+function listen(host: str, port: i64) -> Listener?
+    if host == ""
+        return fail(code: "invalid", msg: "no host")
+    return ok(Listener(port: port))
+
+function close_listener(@l: Listener) -> ()?
+    l.port @ 0
+    return ok()

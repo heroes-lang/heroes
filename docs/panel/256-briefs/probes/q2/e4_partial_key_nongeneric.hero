@@ -1,0 +1,6 @@
+use stats
+
+function main()
+    m: {stats.FileStat: i64} @= {}
+    m[stats.zero()] @ 1
+    print(m.len())

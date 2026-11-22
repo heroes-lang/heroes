@@ -1,0 +1,20 @@
+use db
+
+function count(m: (mailbox i64)) -> i64
+    return m.receive(within_ms: 5000).must() + 1
+
+function close_it(m: (mailbox db.Db)) -> bool
+    d @= m.receive(within_ms: 5000).must()
+    return db.shut(@d)
+
+function main()
+    to_count: (mailbox i64) = mailbox()
+    to_close: (mailbox db.Db) = mailbox()
+    counter = spawn(count, to_count).must()
+    closer = spawn(close_it, to_close).must()
+    d @= db.open_memory()
+    _ = to_count.send(41).is_err()
+    _ = to_close.send(@d).is_err()
+
+    print(f"counter: {counter.wait()}")
+    print(f"closer: {closer.wait()}")

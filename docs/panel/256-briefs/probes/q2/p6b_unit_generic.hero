@@ -1,0 +1,11 @@
+function fresh<T>(f: (function() -> T)) -> (mailbox T)
+    m: (mailbox T) = mailbox()
+    m.send(f()).must()
+    return m
+
+function nothing()
+    _ = 0
+
+function main()
+    m = fresh(nothing)
+    m.close()

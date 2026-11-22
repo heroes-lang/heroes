@@ -1,0 +1,14 @@
+use db
+
+function start<S>(body: (function(S) -> bool), setup: S) -> bool
+    t = spawn(body, setup).must()
+    return t.wait()
+
+function close_it(d: db.Db) -> bool
+    mine @= d
+    return db.shut(@mine)
+
+function main()
+    d @= db.open_memory()
+    print(start(close_it, setup: d))
+    print(db.shut(@d))

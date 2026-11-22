@@ -1,0 +1,13 @@
+use kinds
+
+function relay<T>(m: (mailbox T), v: T) -> bool
+    return m.send(v).is_err()
+
+function hand<T>(m: (mailbox T), @v: T) -> bool
+    return m.send(@v).is_err()
+
+function main()
+    m: (mailbox kinds.Boxed) = mailbox()
+    print(relay(m, kinds.boxed()))
+    b: kinds.Boxed @= kinds.boxed()
+    print(hand(m, @b))
