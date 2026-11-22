@@ -612,6 +612,19 @@ test "currency_symbol: the dollar"
     assert currency_symbol(i18n.parse_locale("en").must(), currency: "USD", display: .symbol) == "$"
     assert currency_symbol(i18n.parse_locale("en-CA").must(), currency: "USD", display: .symbol) == "US$"
 
+# A locale whose symbol is the code itself where the root's is another: CLDR
+# 49 gives Asturian `XXX` for the unknown currency, whose root symbol is `¤`,
+# and `DKK` for the narrow Danish krone, whose root narrow symbol is `kr`;
+# ICU 79.1 writes `1,50 XXX` and `1,50 DKK` for them.
+test "currency_symbol: Asturian's code where the root has a symbol"
+    asturian = i18n.parse_locale("ast").must()
+    assert currency_symbol(asturian, currency: "XXX", display: .symbol) == "XXX"
+    assert currency_symbol(asturian, currency: "DKK", display: .narrow_symbol) == "DKK"
+    assert currency_symbol(asturian, currency: "DKK", display: .symbol) == "DKK"
+    english = i18n.parse_locale("en").must()
+    assert currency_symbol(english, currency: "XXX", display: .symbol) == "¤"
+    assert currency_symbol(english, currency: "DKK", display: .narrow_symbol) == "kr"
+
 # The yen has no digits after the point.
 test "currency_digits: yen and euro"
     assert currency_digits("JPY") == 0 && currency_digits("EUR") == 2

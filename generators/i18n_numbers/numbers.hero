@@ -155,7 +155,12 @@ function currency_symbols(currencies: json.Value) -> {str: str}?
 
 # The currency block of a locale whose symbols are `mine`, the root's being
 # `root`, or of the root itself where `is_root`: each entry `code symbol
-# narrow`, in the order of the codes' bytes, apart by `ENTRY`.
+# narrow`, in the order of the codes' bytes, apart by `ENTRY`. The root's
+# block leaves out a currency whose pair is its code twice, which a reader
+# writes where it finds no entry; another locale's holds every currency
+# whose pair is not the root's, the code twice included where the root's
+# pair is another (CLDR 49 gives `ast` the symbol `XXX` for `XXX`, whose
+# root symbol is `¤`, and ICU 79.1 writes `XXX`).
 function currency_block(mine: {str: str} lent, root: {str: str} lent, is_root: bool) -> str
     out: [str] @= []
 
@@ -164,7 +169,7 @@ function currency_block(mine: {str: str} lent, root: {str: str} lent, is_root: b
         bare = code + FIELD + code
         roots = root[code].default(bare)
 
-        if pair != bare && (is_root || pair != roots)
+        if is_root && pair != bare || !is_root && pair != roots
             out @ out.push(code + FIELD + pair)
 
     return out.join(ENTRY)
@@ -196,11 +201,18 @@ function read_locale(release: cldrkit.Release lent, tag: str, root: {str: str} l
 
 ## Tests
 
-test "currency_block: the root's every one but the code twice, another's only where it is not the root's nor the code twice"
-    root = {"AUD": "A$\u{1}$", "AFN": "AFN\u{1}؋", "AED": "AED\u{1}AED"}
-    assert currency_block(mine: root, root: root, is_root: true) == "AFN\u{1}AFN\u{1}؋\u{2}AUD\u{1}A$\u{1}$"
-    mine = {"AUD": "A$\u{1}$", "XXX": "XXX\u{1}XXX", "CAD": "CAD\u{1}$"}
-    assert currency_block(mine: mine, root: root, is_root: false) == "CAD\u{1}CAD\u{1}$"
+test "currency_block: the root's every one but the code twice, another's every one that is not the root's, the code twice included"
+    root = {"AUD": "A$\u{1}$", "AFN": "AFN\u{1}؋", "AED": "AED\u{1}AED", "XXX": "¤\u{1}¤", "DKK": "DKK\u{1}kr"}
+    assert currency_block(mine: root, root: root, is_root: true) == "AFN\u{1}AFN\u{1}؋\u{2}AUD\u{1}A$\u{1}$\u{2}DKK\u{1}DKK\u{1}kr\u{2}XXX\u{1}¤\u{1}¤"
+    mine = {
+        "AUD": "A$\u{1}$"
+        "XXX": "XXX\u{1}XXX"
+        "CAD": "CAD\u{1}$"
+        "AED": "AED\u{1}AED"
+        "DKK": "DKK\u{1}DKK"
+        "BRL": "BRL\u{1}BRL"
+    }
+    assert currency_block(mine: mine, root: root, is_root: false) == "CAD\u{1}CAD\u{1}$\u{2}DKK\u{1}DKK\u{1}DKK\u{2}XXX\u{1}XXX\u{1}XXX"
 
 test "compact: entries in CLDR's order, a width it does not give, and a key that is no power and count"
     formats = json.parse(
