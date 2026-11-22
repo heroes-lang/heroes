@@ -65,12 +65,12 @@ function renderer(c: state.Checked, names: ctype.Names, s: source.Source, decls:
             match fk.kind
                 .f32 => return "hero_show_f32"
                 .f64 => return "hero_show_f64"
-        .bool                       => return "hero_show_bool"
-        .str                        => return "hero_show_str"
-        .thread_ty | .mailbox_ty    => return "hero_show_i64"
-        .ptr | .cstr | .function_ty => return "hero_show_pointer"
-        .unit                       => return "hero_show_unit"
-        .failure                    => return "hero_show_failure"
+        .bool                                     => return "hero_show_bool"
+        .str                                      => return "hero_show_str"
+        .thread_ty                                => return "hero_show_i64"
+        .ptr | .cstr | .function_ty | .mailbox_ty => return "hero_show_pointer"
+        .unit                                     => return "hero_show_unit"
+        .failure                                  => return "hero_show_failure"
         .named n =>
             if !names.handle_decls[n.decl].is_err()
                 return "hero_show_pointer"

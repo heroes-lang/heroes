@@ -585,7 +585,7 @@ test "strings are escaped and listed once, and the linkage is spelled"
 
 test "the dump spells a thread's and a mailbox's types and calls their operations by name"
     got = dumped(
-        "function main()\n    m: (mailbox str) = mailbox()\n    m.send(\"a\")\n    print(m.receive(within_ms: 0).must())\n    m.close()\n"
+        "function main()\n    m: (mailbox str) = mailbox()\n    m.send(\"a\").must()\n    print(m.receive(within_ms: 0).must())\n    m.close()\n"
     )
     assert strings.holds(text: got, needle: "$t1: (mailbox str) = call builtin mailbox()")
     assert strings.holds(text: got, needle: "call builtin send(")

@@ -131,6 +131,17 @@ constant WORD_REST: str
 constant WORD_ZERO: str
     "zero"
 
+# The words of a thread's and a mailbox's types, `(thread T)` and `(mailbox T)`
+# (spec § 3's `Prefix`; feature 2647; panel 254's R1), read by
+# `parse/handle_type` only right after the `(` a type opens, where no name can
+# stand; anywhere else each is a name, a program's `thread` and `mailbox`
+# among them.
+constant WORD_THREAD: str
+    "thread"
+
+constant WORD_MAILBOX: str
+    "mailbox"
+
 # In declaration order, which is the order the command prints and the suite
 # compares as a sequence.
 function contextual() -> [str]
@@ -151,6 +162,8 @@ function contextual() -> [str]
         WORD_WHEN
         WORD_REST
         WORD_ZERO
+        WORD_THREAD
+        WORD_MAILBOX
     ]
 
 # The closed list. A miss means the word is an ordinary identifier.
@@ -200,7 +213,7 @@ test "every keyword resolves and an identifier does not"
 
 test "a contextual word is never a keyword, and each is listed once"
     words = contextual()
-    assert words.len() == 16
+    assert words.len() == 18
 
     for word in words
         assert keyword(word).is_err()

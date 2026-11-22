@@ -70,9 +70,13 @@ use source
 #
 # `kinds` is `phases.type_kinds`, found once per build (defect 229): this
 # walked every type id as deep as it goes, in every translation unit.
-function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64]) -> [i64]
+function generated(c: state.Checked, decls: [ast.Decl], reachable: {i64: bool}, constructed: {i64: bool}, want: synth.Wanted, kinds: [i64], crossed: [i64]) -> [i64]
     wanted: {i64: bool} @= {}
-    queue: [i64] @= []
+
+    # A FOURTH SOURCE since feature 2647: the types whose descriptor a take
+    # of `emit/crossing_bodies.hero` or a `mailbox()` names, an array's
+    # element, a map's key and value, a mailbox's element.
+    queue: [i64] @= crossed
     id: i64 @= 0
 
     while id < kinds.len()
@@ -239,7 +243,8 @@ test "the worklist reaches an element, a payload, and expands as it drains"
         reachable: reachable,
         constructed: constructed,
         want: synth.everything(),
-        kinds: phases.type_kinds(c)
+        kinds: phases.type_kinds(c),
+        crossed: []
     )
     saw_point: bool @= false
     saw_option: bool @= false
@@ -292,7 +297,7 @@ test "an array a signature interned and nobody builds gets no descriptor"
 
     # Nothing constructed: the empty map is the whole point of the case.
     nothing: {i64: bool} = {}
-    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c)).len() == 0
+    assert generated(c, p.decls, reachable: reachable, constructed: nothing, want: synth.everything(), kinds: phases.type_kinds(c), crossed: []).len() == 0
 
     # And the same program WITH the array built asks for Row's
     # descriptor, which is what keeps this from passing for the wrong
@@ -306,7 +311,8 @@ test "an array a signature interned and nobody builds gets no descriptor"
         reachable: reachable,
         constructed: built,
         want: synth.everything(),
-        kinds: phases.type_kinds(c)
+        kinds: phases.type_kinds(c),
+        crossed: []
     )
     assert got.len() == 1
     assert got[0] == row

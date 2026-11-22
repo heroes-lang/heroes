@@ -175,7 +175,8 @@ function unit(plan: unit_plan.Plan, p: containers.Program, c: state.Checked, s: 
         reachable: declared,
         constructed: plan.constructed,
         want: want,
-        kinds: whole.kinds
+        kinds: whole.kinds,
+        crossed: crossed.described
     )
 
     # What this TU defines and what it calls, in one ascending walk:

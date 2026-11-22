@@ -250,11 +250,11 @@ test "the dump prints a thread's and a mailbox's types and their dotted operatio
     # The formatter's self-check compares two dumps, so a form this printer
     # dropped would be one the guard could not see the formatter drop
     # (feature 2647).
-    text = "function f(m: (mailbox str)) -> (thread i64)\n    m.send(\"a\")\n    return spawn(g, 1).must()\n\nfunction g(n: i64) -> i64\n    return n\n"
+    text = "function f(m: (mailbox str)) -> (thread i64)\n    m.send(\"a\").must()\n    return spawn(g, 1).must()\n\nfunction g(n: i64) -> i64\n    return n\n"
     parsed = parse.parse(text)
     s = source.new_source(name: "t.hero", text: text)
     got = dump_ast(parsed.tree, s, parsed.uses, parsed.decls)
-    assert got == "file t.hero\n  function f(m: (mailbox str)) -> (thread i64)\n    expr m.send(\"a\")\n    return spawn(g, 1).must()\n  function g(n: i64) -> i64\n    return n\n"
+    assert got == "file t.hero\n  function f(m: (mailbox str)) -> (thread i64)\n    expr m.send(\"a\").must()\n    return spawn(g, 1).must()\n  function g(n: i64) -> i64\n    return n\n"
 
 # Defect 290: an ESC in each place the dump prints the file's own text, a doc
 # comment, a string literal and a test's title, reaches the terminal by its

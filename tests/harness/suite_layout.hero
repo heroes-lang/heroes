@@ -537,17 +537,11 @@ constant CEILING: i64
 # mailbox's element, and the `use` of the module that rebuilds one.
 # `selfhost/check/walk.hero` 1871 -> **1877**: the two hooks that hand a call
 # of `spawn`, `spawn_sized` or `mailbox`, and a thread's or a mailbox's dotted
-# operation, to `check/thread_ops.hero`, which types them, and its `use`. And
-# one new row, `selfhost/check/moved_walk.hero` at **308** (293 before): the
-# walk is one knot, a statement holding expressions, an `if` blocks and a block
-# statements, which its module doc maps, and what a thread's and a mailbox's
-# operations end is decided in `check/moved_calls.hero` beside it; what stays
-# here is the state the walk carries for them, what a send or a spawn hands
-# over and whether a mailbox is read to send to it or close it, the
-# construction that holds that state, which the formatter lays one field to a
-# line, one call after each call and each dotted call, and the one function
-# that reads a dotted call as a thread's or a mailbox's operation wherever its
-# receiver is one, a function of the program's own of that name included.
+# operation, to `check/thread_ops.hero`, which types them, and its `use`.
+# `selfhost/check/moved_walk.hero` needed a row of its own, 308, while a send
+# and a close ended lives at compile time; since panel 254 only a wait does
+# (its S3 and S6), and the walk is back under the ceiling at 295, so the row
+# is gone.
 constant DECIDED: [str]
     [
         "selfhost/check/walk.hero 1877"
@@ -571,7 +565,6 @@ constant DECIDED: [str]
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
         "selfhost/print/brackets.hero 315"
-        "selfhost/check/moved_walk.hero 308"
         "selfhost/library_source.hero 310"
     ]
 
@@ -647,9 +640,13 @@ constant DECIDED: [str]
 # at the one `(` that opens a type (+3, held at §11's 300 by the call alone).
 # Every pass that walks a written type walks the element outside this
 # directory, in the checker, the resolver and the printer.
+# **And 8797 -> 8798 the same day, for panel 254's R1** (provisional): the two
+# words are contextual, `keywords.WORD_THREAD` and `keywords.WORD_MAILBOX`, as
+# every word the parser reads in one position is (the `grammar` suite's rule),
+# and `handle_type.hero` names the module that holds them, one `use` line.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8797"
+        "selfhost/parse/ 8798"
     ]
 
 # The floor is the Rust's own idea —

@@ -15,7 +15,7 @@ use token
 # What a read of `path` is told where a place it reaches has ended on every
 # path here: the value read again, or handed to C whole with a dead part
 # inside (`crossing`). Nothing where no path reaches the read.
-function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], crossing: bool, sending: bool) -> diag.Diagnostic?
+function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], crossing: bool) -> diag.Diagnostic?
     if !f.live
         return fail(code: "none", msg: "unreachable")
 
@@ -27,21 +27,14 @@ function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], 
     if found.is_err()
         return fail(code: "none", msg: "alive")
 
-    # A closed mailbox is still received from, and copied, and handed on: only
-    # a send to it and a second close are refused (spec § 11).
-    if found.must().callee == ".close()" && !sending
-        return fail(code: "none", msg: "a closed mailbox still read")
     whole = found.must().path.len() > path.len()
     return ok(used_after_end(s, read: read, shown: source.span_text(s, read), ended: found.must(), whole: whole))
 
 function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow_groups.Dead, whole: bool) -> diag.Diagnostic
     where = where_it_ended(s, read: read, ended: ended)
 
-    if ended.callee.len() > 0 && ended.callee.slice(from: 0, to: 1) == "."
-        return operation_after_end(read: read, ended: ended, where: where)
-
-    if ended.callee.len() > 0 && ended.callee.slice(from: 0, to: 1) == ">"
-        return handed_after(read: read, ended: ended, where: where)
+    if ended.callee == ".wait()"
+        return waited_after(read: read, ended: ended, where: where)
 
     message = if whole
         "`" + shown + "` is handed to C whole here, and its `" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life"
@@ -56,19 +49,9 @@ function used_after_end(s: source.Source, read: token.Span, shown: str, ended: f
     )
     return d
 
-# A thread waited for, or a mailbox closed and then sent to or closed again
-# (feature 2647).
-function operation_after_end(read: token.Span, ended: flow_groups.Dead, where: str) -> diag.Diagnostic
-    if ended.callee == ".close()"
-        closed: diag.Diagnostic @= diag.new_diagnostic(
-            code: "handle_used_after_end",
-            message: "`" + ended.shown + "` was closed by `" + ended.shown + ".close()` " + where + ", and a closed mailbox takes no send and no second close",
-            span: read
-        )
-        closed.notes @ closed.notes.push(
-            "a close says no more values come, for every copy of the mailbox: what it holds is still received, and a receive past the last fails `closed`. Send before the line that closes it, or close it where nothing sends after"
-        )
-        return closed
+# A thread waited for, and used again (feature 2647; panel 254's S3): `wait`
+# ends its life as a `consumes` call ends a handle's.
+function waited_after(read: token.Span, ended: flow_groups.Dead, where: str) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "handle_used_after_end",
         message: "`" + ended.shown + "`'s life ended at `" + ended.shown + ".wait()` " + where + ", for every copy of it, and this uses it again",
@@ -76,19 +59,6 @@ function operation_after_end(read: token.Span, ended: flow_groups.Dead, where: s
     )
     d.notes @ d.notes.push(
         "a thread's `wait` ends its life once: on every path that reaches this line it has ended, so there is no thread to wait for or hand on. Use it before the line that ends it, or start another with `spawn`"
-    )
-    return d
-
-# A value handed to another thread by a send or a spawn, used again.
-function handed_after(read: token.Span, ended: flow_groups.Dead, where: str) -> diag.Diagnostic
-    by = ended.callee.slice(from: 1, to: ended.callee.len())
-    d: diag.Diagnostic @= diag.new_diagnostic(
-        code: "handle_used_after_end",
-        message: "`" + ended.shown + "` was handed to another thread by `" + by + "` " + where + ", which ended its life here, and this uses it again",
-        span: read
-    )
-    d.notes @ d.notes.push(
-        "a value that holds a C handle or a thread crosses by hand-over: the thread it is handed to holds it from then on, and two threads holding one would each end, or reach, what the other still uses. Use it before the line that hands it over, or have the other thread send back what this one needs"
     )
     return d
 

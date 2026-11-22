@@ -51,8 +51,9 @@ use source
 # The rule, over every body. A program in which no `extern` ends a life pays
 # nothing here, the early exit `check/lending.hero` takes for the same reason.
 function not_read_after_its_end(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
-    # What a send or a spawn hands over to another thread (feature 2647).
-    handed = crossing.handed_over(c, a, r, s, decls)
+    # A thread's and a mailbox's operations, whose `wait` ends a life (feature
+    # 2647).
+    handed = crossing.operations(c, a, s)
 
     if !calls.ends_a_life(decls) && handed.len() == 0
         return

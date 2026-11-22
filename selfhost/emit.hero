@@ -241,7 +241,8 @@ function emit_told(target: emit_decls.BuildTarget, p: containers.Program, c: sta
         reachable: reached,
         constructed: constructed,
         want: synth.everything(),
-        kinds: kinds
+        kinds: kinds,
+        crossed: crossed.described
     )
 
     # Which functions C may call back, computed ONCE for the whole unit

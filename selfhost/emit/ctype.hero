@@ -368,11 +368,13 @@ function c_type(names: Names, c: state.Checked, ty: i64) -> str?
 
         .str => return ok("HeroStr")
         .ptr => return ok("void *")
-        # The runtime's number for a thread or a mailbox, its slot and its
-        # life's generation in one word (`parts/mailbox.c`): never an address,
-        # so a copy kept past the end is told, not followed.
-        .thread_ty | .mailbox_ty => return ok("int64_t")
-        .cstr                    => return ok("const char *")
+        # The runtime's number for a thread, its slot and its start's
+        # generation in one word (`parts/mail.c`): never an address, so a copy
+        # kept past the wait is told, not followed. A mailbox is the queue's
+        # address, counted (panel 254's S5).
+        .thread_ty  => return ok("int64_t")
+        .mailbox_ty => return ok("HeroMail *")
+        .cstr       => return ok("const char *")
         # A record is a C struct BY VALUE and a variant a tagged union
         # by value. A case is not a type of its own at runtime — it is
         # the whole variant with a known tag — but its PAYLOAD is,

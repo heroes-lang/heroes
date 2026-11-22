@@ -1,26 +1,29 @@
-# The calls of threads and mailboxes as C (spec § 11; feature 2647): each a
-# block of its own, the site's place record first (`emit/stop_place.hero`),
-# then the runtime's call (`runtime/parts/mailbox.c`) and, for the two that
-# answer a `T?`, the union built from its answer, as `emit/bytes_text.hero`
-# builds `validated_bytes`'s.
+# The calls of threads and mailboxes as C (spec § 11; feature 2647; panel
+# 254): each a block of its own, the site's place record first
+# (`emit/stop_place.hero`), then the runtime's call (`runtime/parts/mail.c`)
+# and, for the three that answer a `T?`, the union built from its answer, as
+# `emit/bytes_text.hero` builds `validated_bytes`'s.
 #
-#   mailbox()            hero_mailbox_begin(sizeof T, place)
-#   m.send(v)            hero_mailbox_send(m, &v, sizeof T, copier, place)
-#   m.receive(within_ms) hero_mailbox_receive(m, &got, sizeof T, ms, place)
-#   m.close()            hero_mailbox_close(m, sizeof T, place)
-#   spawn(f, x)          a box filled, x copied into it, hero_thread_begin
-#   t.wait()             hero_thread_end, the answer moved out of the box
+#   mailbox()            hero_mail_new(take, &desc, place)
+#   m.send(v), (@v)      hero_mail_send(m, put, sent, &v, place), 0 or closed or stopped
+#   m.receive(within_ms) hero_mail_receive(m, &got, ms, place)
+#   m.close()            hero_mail_close(m, place)
+#   spawn(f, x)          a box filled, x written into it, hero_thread_begin
+#   t.wait()             hero_thread_end, the answer rebuilt from the box
 
 use ast
 use check/state
 use check/thread_types
+use emit/counted
 use emit/crossing
 use emit/ctype
+use emit/descriptors
 use emit/nodebug
 use emit/stop_place
 use emit/writer
 use ir
 use ir/containers
+use ir/layout
 use source
 
 # Whether a built-in's call is written here.
@@ -30,54 +33,75 @@ function writes(name: str) -> bool
 function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, site: i64, name: str, run: ir.Run, arguments: [str], result: i64, target: str?)
     given = containers.args_of(f, run)
     types: [i64] @= []
+    places: [bool] @= []
 
     for one in given
         match one
-            .value_arg v => types @ types.push(containers.value_type(f, v.value))
-            .inout_arg   => types @ types.push(0 - 1)
+            .value_arg v =>
+                types @ types.push(containers.value_type(f, v.value))
+                places @ places.push(false)
+            .inout_arg =>
+                types @ types.push(0 - 1)
+                places @ places.push(true)
 
     statements: [str] @= []
 
     if name == "mailbox"
         element = thread_types.mailbox_element(c.types, result).must()
-        begun = "hero_mailbox_begin((int64_t)sizeof(" + c_of(c, names, element) + "), &" + stop_place.HERE + ")"
-        statements @ statements.push(assigned(target, made: begun))
+        made = "hero_mail_new(" + crossing.take_of(c, s, decls, ty: element) + ", " + descriptors.pointer(c, names, ty: element).must() + ", &" + stop_place.HERE + ")"
+        statements @ statements.push(assigned(target, made: made))
     else if name == "send"
         element = thread_types.mailbox_element(c.types, types[0]).must()
+
+        # A place, `m.send(@v)`, arrives as its address already; a value is
+        # handed by its own.
+        value: str @= "&" + arguments[1]
+
+        if places[1]
+            value @ arguments[1]
+
+        # Only a place is handed over and emptied: a value is a copy the
+        # caller's cell does not see, and the receive takes its handles over
+        # all the same (`runtime/parts/mail.c`, R3).
+        sent: str @= "NULL"
+
+        if places[1]
+            sent @ crossing.sent_of(c, s, decls, ty: element)
         statements @ statements.push(
-            "hero_mailbox_send(" + arguments[0] + ", &" + arguments[1] + ", (int64_t)sizeof(" + c_of(c, names, element) + "), " + crossing.copier(c, s, decls, ty: element) + ", &" + stop_place.HERE + ");"
+            nodebug.MARK + "int64_t hero_answer = hero_mail_send(" + arguments[0] + ", " + crossing.put_of(c, s, decls, ty: element) + ", " + sent + ", (void *)" + value + ", &" + stop_place.HERE + ");"
         )
+
+        if !target.is_err()
+            option_c = ctype.option_of(names, ty: result)
+            statements @ statements.push(
+                target.must() + " = hero_answer == 0 ? (" + option_c + "){.tag = INT64_C(0)} : (" + option_c + "){.tag = INT64_C(1), .as.err = hero_answer == 2 ? hero_failure_send_closed() : hero_failure_send_stopped()};"
+            )
     else if name == "close"
-        element = thread_types.mailbox_element(c.types, types[0]).must()
-        statements @ statements.push(
-            "hero_mailbox_close(" + arguments[0] + ", (int64_t)sizeof(" + c_of(c, names, element) + "), &" + stop_place.HERE + ");"
-        )
+        statements @ statements.push("hero_mail_close(" + arguments[0] + ", &" + stop_place.HERE + ");")
     else if name == "receive"
-        # Into the answer's own storage, so a value of any size is moved once
+        # Into the answer's own storage, so a value of any size is rebuilt once
         # and never stands on the frame.
-        element = thread_types.mailbox_element(c.types, types[0]).must()
         into = target.must()
         statements @ statements.push(
-            nodebug.MARK + "int64_t hero_answer = hero_mailbox_receive(" + arguments[0] + ", &" + into + ".as.ok, (int64_t)sizeof(" + c_of(c, names, element) + "), " + arguments[1] + ", &" + stop_place.HERE + ");"
+            nodebug.MARK + "int64_t hero_answer = hero_mail_receive(" + arguments[0] + ", &" + into + ".as.ok, " + arguments[1] + ", &" + stop_place.HERE + ");"
         )
         statements @ statements.push("if (hero_answer == 0) " + into + ".tag = INT64_C(0);")
         statements @ statements.push(
-            "else { " + into + ".tag = INT64_C(1); " + into + ".as.err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_stopped() : hero_failure_closed(); }"
+            "else { " + into + ".tag = INT64_C(1); " + into + ".as.err = hero_answer == 1 ? hero_failure_timeout() : hero_answer == 2 ? hero_failure_closed() : hero_failure_stopped(); }"
         )
     else if name == "wait"
-        answer = crossing.answer_of(c, s, decls, ty: result)
         statements @ statements.push(
-            nodebug.MARK + answer + " *hero_box = (" + answer + " *)(void *)hero_thread_end(" + arguments[0] + ", &" + stop_place.HERE + ");"
+            nodebug.MARK + "HeroThreadBox *hero_box = hero_thread_end(" + arguments[0] + ", &" + stop_place.HERE + ");"
         )
 
         if crossing.answers(c, names, ty: result) && !target.is_err()
-            statements @ statements.push(target.must() + " = hero_box->answer;")
+            statements @ statements.push(
+                crossing.take_of(c, s, decls, ty: result) + "(&hero_box->answer, &" + target.must() + ");"
+            )
         else if crossing.answers(c, names, ty: result)
-            dropped = crossing.released(c, names, ty: result, place: "hero_box->answer", keep: false)
-
-            if !dropped.is_err()
-                statements @ statements.push(dropped.must())
-        statements @ statements.push("hero_thread_box_free(&hero_box->head);")
+            for line in dropped(c, names, s, decls, ty: result, from: "hero_box->answer")
+                statements @ statements.push(line)
+        statements @ statements.push("hero_thread_box_free(hero_box);")
     else
         statements @ started(c, names, s, decls, arguments: arguments, types: types, result: result, target: target)
 
@@ -89,8 +113,8 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
     writer.line(@w, text: "    }")
 
 # `spawn(f, x)` and `spawn_sized(f, x, bytes: n)`: the box filled, the
-# argument copied into it whole, and the thread started; a refusal gives the
-# copy and the box back and answers `refused`.
+# argument written into it, and the thread started; a refusal gives the
+# argument and the box back and answers `limit`, saying why.
 function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], arguments: [str], types: [i64], result: i64, target: str?) -> [str]
     fn_ty = types[0]
     param = crossing.parameter_of(c, fn_ty)
@@ -104,17 +128,13 @@ function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     out @ out.push(
         nodebug.MARK + box + " *hero_box = (" + box + " *)hero_thread_box_new((int64_t)sizeof(" + box + "));"
     )
-    out @ out.push("hero_box->top.head.run = " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + ";")
-    out @ out.push("hero_box->top.head.body = (void (*)(void))" + arguments[0] + ";")
+    out @ out.push("hero_box->head.run = " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + ";")
+    out @ out.push("hero_box->head.body = (void (*)(void))" + arguments[0] + ";")
     out @ out.push("hero_box->f = " + arguments[0] + ";")
-    copier = crossing.copier(c, s, decls, ty: param)
-
-    if copier == "NULL"
-        out @ out.push("hero_box->arg = " + arguments[1] + ";")
-    else
-        out @ out.push(copier + "(&hero_box->arg, &" + arguments[1] + ");")
+    out @ out.push(crossing.put_of(c, s, decls, ty: param) + "(&hero_box->head.arg, &" + arguments[1] + ");")
+    out @ out.push(nodebug.MARK + "int64_t hero_why = 0;")
     out @ out.push(
-        nodebug.MARK + "int64_t hero_thread = hero_thread_begin(&hero_box->top.head, " + bytes + ", &" + stop_place.HERE + ");"
+        nodebug.MARK + "int64_t hero_thread = hero_thread_begin(&hero_box->head, " + bytes + ", &hero_why, &" + stop_place.HERE + ");"
     )
     into: str @= "(void)0"
 
@@ -123,12 +143,31 @@ function started(c: state.Checked, names: ctype.Names, s: source.Source, decls: 
     out @ out.push(
         "if (hero_thread >= 0) { " + into + " = (" + option_c + "){.tag = INT64_C(0), .as.ok = hero_thread}; } else {"
     )
-    dropped = crossing.released(c, names, ty: param, place: "hero_box->arg", keep: false)
 
-    if !dropped.is_err()
-        out @ out.push(dropped.must())
-    out @ out.push("hero_thread_box_free(&hero_box->top.head);")
-    out @ out.push(into + " = (" + option_c + "){.tag = INT64_C(1), .as.err = hero_failure_refused()}; }")
+    for line in dropped(c, names, s, decls, ty: param, from: "hero_box->head.arg")
+        out @ out.push(line)
+
+    out @ out.push("hero_thread_box_free(&hero_box->head);")
+    out @ out.push(into + " = (" + option_c + "){.tag = INT64_C(1), .as.err = hero_failure_limit(hero_why)}; }")
+    return out
+
+# A crossing nobody receives, given back: rebuilt into a value of its own and
+# released, so a mailbox's count it carried is given back too. Nothing where
+# the value is its bytes alone.
+function dropped(c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, from: str) -> [str]
+    if crossing.plain(c, decls, ty: ty)
+        return []
+    out: [str] @= ["{ " + nodebug.MARK + ctype.c_type(names, c: c, ty: ty).must() + " hero_left;"]
+    out @ out.push(crossing.take_of(c, s, decls, ty: ty) + "(&" + from + ", &hero_left);")
+
+    if layout.is_refcounted(c, ty)
+        given_back = counted.reference_line(c, names, ty: ty, place: "hero_left", keep: false)
+
+        if !given_back.is_err()
+            # The line comes indented for a body of its own; here it stands in a block.
+            out @ out.push(given_back.must().slice(from: 4, to: given_back.must().len()) + " }")
+            return out
+    out @ out.push("(void)hero_left; }")
     return out
 
 # `into = call;`, or the call alone where nothing is kept.
@@ -136,6 +175,3 @@ function assigned(target: str?, made: str) -> str
     if target.is_err()
         return made + ";"
     return target.must() + " = " + made + ";"
-
-function c_of(c: state.Checked, names: ctype.Names, ty: i64) -> str
-    return ctype.c_type(names, c: c, ty: ty).must()

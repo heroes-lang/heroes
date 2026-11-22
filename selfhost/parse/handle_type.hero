@@ -8,6 +8,7 @@
 
 use ast
 use cursor
+use keywords
 use parse/type
 use parse/unclosed
 use token
@@ -17,7 +18,7 @@ function at_word(c: cursor.Cursor, text: str) -> bool
     if !cursor.at(c, .ident)
         return false
     word = cursor.slice_of(text, cursor.current_span(c))
-    return word == "thread" || word == "mailbox"
+    return word == keywords.WORD_THREAD || word == keywords.WORD_MAILBOX
 
 # The type, read from its word to the `)` that closes the `(` at token `open`.
 function read(@c: cursor.Cursor, @a: ast.Ast, text: str, open: i64) -> i64
@@ -27,6 +28,6 @@ function read(@c: cursor.Cursor, @a: ast.Ast, text: str, open: i64) -> i64
     close = unclosed.type_closer(@c, text: text, open: open)
     span = token.Span(start: start.start, end: close.end)
 
-    if word == "thread"
+    if word == keywords.WORD_THREAD
         return ast.push_type(@a.types, ast.TypeNode(kind: .thread_of(element: element), span: span))
     return ast.push_type(@a.types, ast.TypeNode(kind: .mailbox_of(element: element), span: span))

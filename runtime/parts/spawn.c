@@ -239,6 +239,11 @@ typedef struct {
     uint64_t generation;
     /* Where the language's `spawn` stood, for the end of `main` to name. */
     const HeroPlace *place;
+    /* The thread that holds a language thread's value, by the runtime's own
+     * number (`parts/alloc.c`, `hero_this_thread`): its starter, or the last to
+     * receive it, HERO_HELD_IN_TRANSIT while a mailbox carries it, 0 once its
+     * wait claimed it. Only the holder waits for it (panel 254's R3). */
+    uint64_t holder;
 #if !defined(_WIN32)
     /* The signal mask of the thread that started this one, as it was before
      * the start held the signals off (defect 2496): what POSIX says a new
@@ -552,6 +557,7 @@ static int64_t hero_spawn_start(HeroThreadBody body, int64_t arg, size_t bytes, 
     hero_spawn_slots[at].from = from;
     hero_spawn_slots[at].generation += 1;
     hero_spawn_slots[at].place = NULL;
+    hero_spawn_slots[at].holder = 0;
     hero_spawn_slots[at].want = bytes > hero_spawn_floor ? bytes : hero_spawn_floor;
     int refused = 0;
 #if defined(_WIN32)

@@ -12,7 +12,7 @@ function work(n: i64) -> i64
 
 function main()
     m: (mailbox {str: i64}) = mailbox()
-    m.send({"a": 1})
+    m.send({"a": 1}).must()
     print(m.receive(within_ms: 10).must()["a"].must())
     m.close()
     t: (thread i64) = spawn_sized(work, 3, bytes: 8388608).must()

@@ -37,7 +37,7 @@ function owner_of(name: str) -> str
 function not_its_operation(name: str, got: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "operation_of_another",
-        message: "`" + name + "` is " + owner_of(name) + "'s operation, and this is a `" + got + "`",
+        message: "`" + name + "` is " + owner_of(name) + "'s operation, and the value before the dot has type `" + got + "`",
         span: span
     )
     d.notes @ d.notes.push(
@@ -83,11 +83,59 @@ function mailbox_needs_type(span: token.Span) -> diag.Diagnostic
 function not_a_thread_body(got: str, span: token.Span) -> diag.Diagnostic
     d: diag.Diagnostic @= diag.new_diagnostic(
         code: "thread_body",
-        message: "a thread runs a function of one parameter, `spawn(f, x)` calling `f(x)`, and this is a `" + got + "`",
+        message: "a thread runs a function of one parameter, `spawn(f, x)` calling `f(x)`, and the `f` given has type `" + got + "`",
         span: span
     )
     d.notes @ d.notes.push("a thread that needs more than one value is handed a record of them")
     return d
+
+# `spawn(f, conn)`: a value holding a C handle or a thread handed to a new
+# thread (panel 254's W-j): only a mailbox carries one, and the thread that
+# receives it holds it from then on.
+function handle_into_spawn(shown: str, holds: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "thread_crossing",
+        message: "`" + shown + "` holds " + holds + ", which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a handle belongs to the thread that holds it, and `spawn` hands the new thread a copy, which would leave two threads holding one handle. Start the thread with a mailbox, `spawn(serve, inbox)`, and send it the handle, `inbox.send(@conn)`: the send empties `conn`, and the thread that receives it holds it (spec § 11)"
+    )
+    return d
+
+# A `(mailbox T)` whose values may hold that very mailbox (panel 254's R5,
+# W-f): its queue would hold a copy of itself and never be given back.
+function holds_itself(shown: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "mailbox_holds_itself",
+        message: "`" + shown + "` carries values that may hold `" + shown + "` itself, so its queue could hold a copy of itself and never be given back",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a mailbox is given back with its last copy, and a copy inside its own queue is never the last. Split the message: a request type that carries the mailbox its answers go to, and an answer type that carries none, `Command` holding `(mailbox Event)` and `Event` holding no `(mailbox Command)` (spec § 11)"
+    )
+    return d
+
+# `function send(m: (mailbox Job), j: Job)` (panel 254's W-h): `m.send(j)`
+# is the mailbox's own, so `send(m, j)` would be another call on the same
+# arguments. `taken` is what the first parameter is: a thread, a mailbox, or a
+# type parameter, which either may fill.
+function operation_name_taken(name: str, taken: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "operation_name_taken",
+        message: "a function named `" + name + "` may not take " + taken + " first: `" + example(name) + "` is " + owner_of(name) + "'s own operation, so `" + name + "(x, ...)` would be another call on the same arguments",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "the names of a thread's and a mailbox's operations stay free for the program, for a function whose first parameter is anything else; name this one for what it does, `send_job`, or take the thread or mailbox later in the list (spec § 9)"
+    )
+    return d
+
+# A send's `@` (panel 254's S11, by `marker_mismatch`): the words that say why.
+function send_marker_note(holds: bool, shown: str) -> str
+    if holds
+        return "`" + shown + "` holds a C handle or a thread, which a send hands over rather than copies: `m.send(@v)` empties `v`, and the thread that receives it holds what it held (spec § 11)"
+    return "`" + shown + "` holds no C handle and no thread, so a send copies it and leaves it as it was: `m.send(v)`"
 
 # `m.receive(100)`, `spawn_sized(f, x, 4096)`: a bound whose unit is in its name.
 function bound_unnamed(holder: str, label: str, span: token.Span, at: i64) -> diag.Diagnostic
@@ -102,6 +150,16 @@ function bound_unnamed(holder: str, label: str, span: token.Span, at: i64) -> di
     return d
 
 ## Tests
+
+test "a mailbox that may hold itself names the type and the split that answers"
+    d = holds_itself(shown: "(mailbox Sub)", span: token.Span(start: 0, end: 13))
+    assert d.code == "mailbox_holds_itself"
+    assert d.message == "`(mailbox Sub)` carries values that may hold `(mailbox Sub)` itself, so its queue could hold a copy of itself and never be given back"
+
+test "a function named for an operation, taking its owner first, is told with both calls"
+    d = operation_name_taken(name: "send", taken: "a mailbox", span: token.Span(start: 0, end: 4))
+    assert d.code == "operation_name_taken"
+    assert d.message == "a function named `send` may not take a mailbox first: `m.send(v)` is a mailbox's own operation, so `send(x, ...)` would be another call on the same arguments"
 
 test "an operation called by its name says how it is written"
     d = written_after_a_dot(name: "send", owner: "a mailbox", token.Span(start: 0, end: 4))

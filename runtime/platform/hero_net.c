@@ -881,6 +881,9 @@ static void hero_net_nudge_all(void) {
         hero_net_nudge(&hero_net_slots[i]);
     }
     hero_net_tell_hearers();
+    /* The language's mailboxes (panel 254's R6): a receive that finds its
+     * mailbox empty answers `stopped`. Their locks come after this one. */
+    hero_mail_hear_stop();
 }
 
 /* -- the poller (panel 248's R2) ---------------------------------------- */
@@ -4473,10 +4476,6 @@ int64_t hero_net_ping(const char *address, int64_t sequence, const void *data, u
 static void (*hero_net_hearers[HERO_NET_HEARERS])(void);
 
 static void hero_net_tell_hearers(void) {
-    /* The language's mailboxes first, which every program links (feature
-     * 2647): a receive waiting on one answers `stopped`, as a call of this
-     * layer does. It takes no lock a caller of this layer holds. */
-    hero_layer_stop_heard();
     for (int i = 0; i < HERO_NET_HEARERS; i += 1) {
         if (hero_net_hearers[i] != NULL) {
             hero_net_hearers[i]();

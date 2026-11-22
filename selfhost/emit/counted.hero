@@ -104,9 +104,13 @@ function reference_line(c: state.Checked, names: ctype.Names, ty: i64, place: st
             "    " + ctype.case_of(names, decl: vc.decl, at: vc.at) + "_" + verb + "(&" + place + ");"
         )
         .fallible => return ok("    " + ctype.option_of(names, ty: ty) + "_" + verb + "(&" + place + ");")
+        .mailbox_ty =>
+            if keep
+                return ok("    hero_mail_incref(" + place + ");")
+            return ok("    hero_mail_decref(" + place + ");")
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a counted type")
-        .thread_ty | .mailbox_ty => return fail(code: "none", msg: "not a counted type")
-        .fixed | .function_ty | .generic | .error => return fail(code: "none", msg: "not a counted type")
+        .thread_ty                                         => return fail(code: "none", msg: "not a counted type")
+        .fixed | .function_ty | .generic | .error          => return fail(code: "none", msg: "not a counted type")
 
     return fail(code: "none", msg: "unreached")
 

@@ -206,12 +206,30 @@ static uint64_t hero_hash_func(const void *elem) {
 const HeroDesc hero_desc_func = {sizeof(HeroFn), hero_copy_func, hero_drop_nothing,
                                  hero_eq_func, hero_hash_func};
 
-/* -- a thread's and a mailbox's number (feature 2647) -----------------------
+/* -- a thread's number and a mailbox's queue (feature 2647; panel 254) -----
  *
- * One word each, the runtime's slot and generation (`parts/mailbox.c`):
- * copied as a number, owning nothing, equal where it names the same life, and
- * hashed as its bytes. Their own objects and never `hero_desc_int`, because
- * `sort.c` picks a comparison by a descriptor's identity and the checker
- * refuses ordering either. */
+ * A thread is one word, the runtime's slot and generation (`parts/mail.c`):
+ * copied as a number, owning nothing, equal where it names the same start,
+ * hashed as its bytes. A mailbox is a counted `HeroMail *`: a copy increfs,
+ * a drop decrefs, equal where two copies reach one queue, hashed by its
+ * address. Their own objects and never `hero_desc_int`, because `sort.c`
+ * picks a comparison by a descriptor's identity and the checker refuses
+ * ordering either. */
 const HeroDesc hero_desc_thread = {sizeof(int64_t), hero_copy_int, hero_drop_nothing, hero_eq_int, hero_hash_int};
-const HeroDesc hero_desc_mailbox = {sizeof(int64_t), hero_copy_int, hero_drop_nothing, hero_eq_int, hero_hash_int};
+
+static void hero_copy_mail(void *dst, const void *src) {
+    HeroMail *m = *(HeroMail *const *)src;
+    hero_mail_incref(m);
+    *(HeroMail **)dst = m;
+}
+
+static void hero_drop_mail(void *elem) { hero_mail_decref(*(HeroMail **)elem); }
+
+static bool hero_eq_mail(const void *a, const void *b) { return *(HeroMail *const *)a == *(HeroMail *const *)b; }
+
+static uint64_t hero_hash_mail(const void *elem) {
+    uintptr_t at = (uintptr_t)*(HeroMail *const *)elem;
+    return (uint64_t)at * UINT64_C(0x9E3779B97F4A7C15);
+}
+
+const HeroDesc hero_desc_mailbox = {sizeof(HeroMail *), hero_copy_mail, hero_drop_mail, hero_eq_mail, hero_hash_mail};
