@@ -215,7 +215,14 @@ test "menus inside menus, check and radio items: on the native side made, chosen
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Menus", width: 200, height: 100).must()
     view = ui.menu(@app, into: w, title: "View").must()
-    order = ui.menu(@app, into: view, title: "Sort By").must()
+    offered = ui.menu(@app, into: view, title: "Sort By")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    order = offered.must()
     by_name = ui.radio_item(@app, into: order, text: "Name", checked: true).must()
     by_date = ui.radio_item(@app, into: order, text: "Date", checked: false).must()
     bar = ui.check_item(@app, into: view, text: "Show Bar", checked: true).must()
@@ -277,7 +284,14 @@ test "context_menu: on the native side made on a list, a text area and a window,
     w = ui.window(@app, title: "Files", width: 240, height: 200).must()
     files = ui.list(@app, into: w, items: ["notes.txt"], multiple: false).must()
     notes = ui.text_area(@app, into: w, text: "").must()
-    actions = ui.context_menu(@app, widget: files).must()
+    offered = ui.context_menu(@app, widget: files)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    actions = offered.must()
     open_file = ui.menu_item(@app, into: actions, text: "Open").must()
     more = ui.menu(@app, into: actions, title: "Open With").must()
     editor = ui.menu_item(@app, into: more, text: "Editor").must()

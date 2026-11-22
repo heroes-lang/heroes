@@ -303,14 +303,22 @@ function reachable(app: ui.App, id: i64) -> bool
 
 ## Tests
 
-# Every event `app` gives within `within`, each come within it of the last.
+# Every event `app` gives within `within`, each come within it of the last,
+# until a wait runs out or, on the headless side, finds the inputs spent and
+# no timer running (`closed`). A wait that fails otherwise aborts with its
+# own words, so a refusal, `unsupported` among them, is never read as no
+# event.
 function events_of(@app: ui.App, within: time.Duration) -> [ui.Event]
     out: [ui.Event] @= []
 
     while true
-        match ui.wait(@app, within: within)
-            .ok event => out @ out.push(event)
-            .err _    => break
+        next = ui.wait(@app, within: within)
+        code = fixture.code_of(next)
+
+        if code == ui.TIMEOUT || code == ui.CLOSED
+            break
+
+        out @ out.push(next.must())
 
     return out
 
@@ -363,9 +371,17 @@ test "activate: on the native side a row opened through the system's own path, a
     w = ui.window(@app, title: "Files", width: 240, height: 160).must()
     files = ui.list(@app, into: w, items: ["a.txt", "b.txt", "c.txt"], multiple: false).must()
     ui.inject(@app, input: .activate(widget: files, index: 2)).must()
+    offered = ui.wait(@app, within: time.milliseconds(300).must())
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    assert offered.must() == .selection_changed(widget: files, indices: [2])
     ui.inject(@app, input: .activate(widget: files, index: 2)).must()
     told = events_of(@app, within: time.milliseconds(300).must())
-    assert told == [.selection_changed(widget: files, indices: [2]), .activated(widget: files, index: 2), .activated(widget: files, index: 2)]
+    assert told == [.activated(widget: files, index: 2), .activated(widget: files, index: 2)]
     assert ui.selection_of(app, widget: files).must() == [2]
     assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 3))) == ui.INVALID
     ui.close(@app).must()
@@ -401,7 +417,15 @@ test "submit: on the native side Return in a text field submitted, and its windo
     ok_button = ui.button(@app, into: w, text: "OK").must()
     cancel = ui.button(@app, into: w, text: "Cancel").must()
     ui.inject(@app, input: .submit(widget: field)).must()
-    assert events_of(@app, within: time.milliseconds(300).must()) == [.submitted(widget: field)]
+    offered = ui.wait(@app, within: time.milliseconds(300).must())
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    assert offered.must() == .submitted(widget: field)
+    assert events_of(@app, within: time.milliseconds(300).must()) == []
     ui.set_button_key(@app, widget: ok_button, key: .enter).must()
     ui.set_button_key(@app, widget: cancel, key: .escape).must()
     ui.inject(@app, input: .submit(widget: field)).must()

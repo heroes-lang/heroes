@@ -575,7 +575,14 @@ test "set_role: on the native side the About, Settings and Quit items take their
     file = ui.menu(@app, into: w, title: "File").must()
     settings = ui.menu_item(@app, into: file, text: "Settings...").must()
     quit = ui.menu_item(@app, into: file, text: "Quit Roles").must()
-    ui.set_role(@app, item: about, role: .about).must()
+    offered = ui.set_role(@app, item: about, role: .about)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    offered.must()
     ui.set_role(@app, item: settings, role: .settings).must()
     ui.set_role(@app, item: quit, role: .quit).must()
     ui.set_enabled(@app, widget: settings, on: false).must()
@@ -637,7 +644,14 @@ test "password_field and set_moving: on the native side a masked field set, type
         )
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Sign in", width: 240, height: 120).must()
-    secret = ui.password_field(@app, into: w, text: "first").must()
+    offered = ui.password_field(@app, into: w, text: "first")
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    secret = offered.must()
     bar = ui.progress(@app, into: w, most: 10).must()
     assert ui.text_of(app, widget: secret).must() == "first"
     ui.inject(@app, input: .type_text(widget: secret, text: "second")).must()

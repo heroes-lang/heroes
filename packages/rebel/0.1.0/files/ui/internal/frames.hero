@@ -388,7 +388,14 @@ test "tabs, a scrolled box and a split: on the native side made with their widge
         )
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Boxes", width: 520, height: 360).must()
-    t = ui.tabs(@app, into: w).must()
+    offered = ui.tabs(@app, into: w)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    t = offered.must()
     general = ui.page(@app, into: t, title: "General").must()
     name = ui.text_field(@app, into: general, text: "Ada").must()
     more = ui.page(@app, into: t, title: "More").must()

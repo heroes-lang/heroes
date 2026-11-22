@@ -656,7 +656,14 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     if hero_ui.native_here() == 0
         skip_test(reason: NO_NATIVE)
     app @= ui.open(.native).must()
-    seen = ui.screens(app).must()
+    offered = ui.screens(app)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    seen = offered.must()
     assert seen.len() >= 1
     main = seen[0]
     assert main.area.x == 0 && main.area.y == 0

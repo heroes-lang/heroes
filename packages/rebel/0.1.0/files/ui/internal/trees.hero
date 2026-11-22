@@ -317,7 +317,14 @@ test "tree: on the native side items added under items, one unfolded by the pers
         )
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Folders", width: 240, height: 200).must()
-    folders = ui.tree(@app, into: w).must()
+    offered = ui.tree(@app, into: w)
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    folders = offered.must()
     home = ui.add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
     work = ui.add_item(@app, widget: folders, under: 0, text: "Work", foldable: false).must()
     _ = ui.rect_of(@app, widget: folders).must()

@@ -194,7 +194,14 @@ test "table: on the native side its columns and rows given, rows chosen and one 
         )
     app @= ui.open(.native).must()
     w = ui.window(@app, title: "Files", width: 400, height: 240).must()
-    files = ui.table(@app, into: w, columns: ["Name", "Size"]).must()
+    offered = ui.table(@app, into: w, columns: ["Name", "Size"])
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    files = offered.must()
     rows = [["notes.txt", "12"], ["plan.md", "3"], ["photo.png", "900"]]
     ui.set_rows(@app, widget: files, rows: rows).must()
     _ = ui.rect_of(@app, widget: files).must()

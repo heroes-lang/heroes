@@ -238,7 +238,14 @@ test "set_clipboard and clipboard: on the native side text, paths and an image p
         )
     app @= ui.open(.native).must()
     held = held_now(app)
-    ui.set_clipboard(@app, clip: .text(text: "héllo\nworld")).must()
+    offered = ui.set_clipboard(@app, clip: .text(text: "héllo\nworld"))
+    refusal = fixture.unsupported_words(offered)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    offered.must()
     text = ui.clipboard(app, kind: .text).must()
     text_as_files = ui.clipboard(app, kind: .files).must()
     text_as_picture = ui.clipboard(app, kind: .picture).must()

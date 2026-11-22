@@ -299,7 +299,7 @@ test "press: on the native side the system's Edit menu takes Command+Z, Shift+Co
     match ui.press_key(@app, widget: field, shortcut: keyed("a", primary: false, shift: false))
         .ok _ => _ = 0
         .err e =>
-            assert e.code == ui.FAILED
+            assert e.code == ui.FAILED || e.code == ui.UNSUPPORTED
             ui.close(@app).must()
             skip_test(reason: e.msg)
 
@@ -391,6 +391,11 @@ test "set_focus and focus_of: on the native side a text field, a text area and a
     area = ui.text_area(@app, into: w, text: "").must()
     files = ui.list(@app, into: w, items: ["a", "b"], multiple: false).must()
     label = ui.label(@app, into: w, text: "Name").must()
+    refusal = fixture.unsupported_words(ui.set_focus(@app, widget: field))
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
 
     for widget in [field, area, files, field]
         ui.set_focus(@app, widget: widget).must()

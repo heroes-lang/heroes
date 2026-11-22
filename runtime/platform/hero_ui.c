@@ -7477,6 +7477,12 @@ int64_t hero_ui_number(hero_ui_app *app) {
     return slot == NULL ? -1 : slot->number;
 }
 
+static bool hero_ui_arm_makes(int64_t kind, int64_t parent);
+static bool hero_ui_arm_acts(int64_t act);
+static int64_t hero_ui_elsewhere(const char *what);
+static const char *hero_ui_making(int64_t kind);
+static const char *hero_ui_acting(int64_t act);
+
 int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t parent) {
     char words[HERO_UI_WORDS_MOST];
 
@@ -7490,6 +7496,9 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if ((kind == HERO_UI_WINDOW) != (parent == 0) || parent < 0) {
         (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window has none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (!hero_ui_arm_makes(kind, parent)) {
+        return hero_ui_elsewhere(hero_ui_making(kind));
     }
     if (kind == HERO_UI_WEBVIEW) {
         return hero_ui_web_create(id, parent);
@@ -7813,6 +7822,9 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
         (void)snprintf(words, sizeof words, "a sort by column %lld, %lld; a column is 0 or more and the order 0 or 1", (long long)value, (long long)second);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
+    if (!hero_ui_arm_acts(kind)) {
+        return hero_ui_elsewhere(hero_ui_acting(kind));
+    }
     return hero_ui_answered(hero_ui_arm_inject(kind, id, value, second, text, (int64_t)count), "acting as the person", id);
 }
 
@@ -8115,7 +8127,41 @@ static int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t cou
     return hero_ui_appkit_press_key(window, hero_ui_appkit_object(id, HERO_UI_APPKIT_OBJECT_TYPED), key, count, modifiers);
 }
 
+static bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
+    (void)kind;
+    (void)parent;
+    return true;
+}
+
+static bool hero_ui_arm_acts(int64_t act) {
+    (void)act;
+    return true;
+}
+
 #else
+
+/* This part's kinds from `HERO_UI_TABS` on, a menu inside a menu, and the
+ * acts `ACTIVATE`, `SUBMIT`, `SORT` and `UNFOLD` are drawn on macOS alone:
+ * every other arm answers false here, so the entry point tells
+ * `HERO_UI_UNSUPPORTED` in `hero_ui_elsewhere`'s words before that arm's
+ * `create` or `inject`, which knows none of them, could call the kind or
+ * the act `HERO_UI_INVALID`. An arm that draws one answers true for it. */
+static bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
+    const hero_ui_native *owner;
+
+    if (kind >= HERO_UI_TABS) {
+        return false;
+    }
+    if (kind != HERO_UI_MENU) {
+        return true;
+    }
+    owner = hero_ui_find(parent);
+    return owner == NULL || owner->kind != HERO_UI_MENU;
+}
+
+static bool hero_ui_arm_acts(int64_t act) {
+    return act != HERO_UI_EVENT_ACTIVATE && act != HERO_UI_EVENT_SUBMIT && act != HERO_UI_EVENT_SORT && act != HERO_UI_EVENT_UNFOLD;
+}
 
 static int64_t hero_ui_arm_windows_words(char *words, int64_t count) {
     (void)words;
@@ -8141,6 +8187,53 @@ static int64_t hero_ui_elsewhere(const char *what) {
 
     (void)snprintf(words, sizeof words, "%s: the layer offers it on macOS alone, and this system's arm answers no such call", what);
     return hero_ui_said(HERO_UI_UNSUPPORTED, words);
+}
+
+/* What making a widget of `kind` is called where `hero_ui_arm_makes`
+ * refuses it: one of this part's kinds, or a menu, which only a menu as its
+ * parent brings here. */
+static const char *hero_ui_making(int64_t kind) {
+    switch (kind) {
+    case HERO_UI_TABS:
+        return "making tabs";
+    case HERO_UI_PAGE:
+        return "making a page of tabs";
+    case HERO_UI_SCROLL:
+        return "making a scrolled box";
+    case HERO_UI_SPLIT_ROW:
+        return "making two panes side by side";
+    case HERO_UI_SPLIT_COLUMN:
+        return "making two panes one above the other";
+    case HERO_UI_PANE:
+        return "making a pane";
+    case HERO_UI_TABLE:
+        return "making a table";
+    case HERO_UI_TREE:
+        return "making a tree";
+    case HERO_UI_CONTEXT_MENU:
+        return "making a context menu";
+    case HERO_UI_MENU:
+        return "making a menu inside a menu";
+    default:
+        return "making a widget";
+    }
+}
+
+/* What acting as the person with `act` is called where `hero_ui_arm_acts`
+ * refuses it. */
+static const char *hero_ui_acting(int64_t act) {
+    switch (act) {
+    case HERO_UI_EVENT_ACTIVATE:
+        return "opening a row as the person";
+    case HERO_UI_EVENT_SUBMIT:
+        return "pressing Return in a text field as the person";
+    case HERO_UI_EVENT_SORT:
+        return "clicking a table's header as the person";
+    case HERO_UI_EVENT_UNFOLD:
+        return "unfolding an item of a tree as the person";
+    default:
+        return "acting as the person";
+    }
 }
 
 /* The answer `kind` of an arm of this part for the call `what` names on
