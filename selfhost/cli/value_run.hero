@@ -23,6 +23,7 @@
 
 use cli/flags
 use cli/layer
+use cli/layer_reach
 use cli/link_flags
 use cli/process
 use cli/publish
@@ -175,18 +176,22 @@ function compiled(dir: str, one: Unit, text: str, level: str) -> str?
     return ok(object)
 
 # The driver linked with the probe's object, the runtime and the platform
-# layer's archive (`cli/layer.hero`) alone, then run
+# layer's archive (`cli/layer.hero`) alone, the members written in Swift
+# the headers of `unit`, the probed unit's text, reach among it, then run
 # until it finishes, `total` calls, each run starting after the call the last
 # trapped at: `trap <index>`, `disagree <index>` where a call says its value
 # is not the one clang folded, `death <words>` where a run ends otherwise, and
 # `unlinked <name>` where the link leaves a symbol undefined. Any other link
 # that fails, or a canary that does not answer as it must, is the compiler's
 # failure, `broken`.
-function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i64, level: str) -> str?
+function linked_and_run(t: toolchain.Toolchain, dir: str, object: str, total: i64, level: str, unit: str) -> str?
     driver_c = dir + "/driver.c"
     publish.write_whole(path: driver_c, text: value_probe.driver(total), keyed: false)?
     runtime = toolchain.runtime_object(t, level: level, sanitize: false)?
-    layer_words = layer.archive(t, level: level, sanitize: false)?
+
+    # The members written in Swift the probed unit's headers reach, as a
+    # build's link holds them (`cli/layer_reach.hero`, defect 2625).
+    layer_words = layer.archive(t, level: level, sanitize: false, swift: layer_reach.reached(t, named: layer_reach.includes(unit))?)?
     binary = publish.private_name(dir + "/probe") + process.exe_suffix()
     line: [str] @= strings.with_all(list: ["clang"], more: flags.level_words(level: level, sanitize: false))
     line @ strings.with_all(list: line, more: link_flags.target_words(t.target))

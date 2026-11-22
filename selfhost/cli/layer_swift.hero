@@ -9,6 +9,10 @@
 # file compiles them into objects the layer archives with the C members, on an
 # Apple target and on no other; the linker takes such an object only into a
 # program that takes the C member calling it, as it takes every member.
+# **Only the members the program reaches are compiled** (defect 2625,
+# `cli/layer_reach.hero`): the CryptoKit member alone costs a fresh folder's
+# first build about 14.5 G instructions at `-Onone -g`, against about 16 G for
+# the rest of a build of `print(1)`, which never links it.
 #
 # **HOW ONE IS COMPILED.** `xcrun swiftc`, since a bare `swiftc` under the
 # Command Line Tools alone cannot load its standard library (panel 253's
@@ -36,9 +40,10 @@
 # standing concern of panel 253, measured then only in Objective-C because
 # `@_cdecl` printed inside that guard; `@c` prints outside it).
 #
-# **WHAT THE KEY HOLDS.** The member's words (`key_text`); the SDK, through
-# clang's answer; and every file the compile read, its dependency listing's
-# rows, which the record vouches for at every warm build (`cli/deps.hero`).
+# **WHAT THE KEY HOLDS.** The members compiled and their words
+# (`key_text`); the SDK, through clang's answer; and every file the compile
+# read, its dependency listing's rows, which the record vouches for at every
+# warm build (`cli/deps.hero`).
 # Not `swiftc --version`'s answer: asked at every build it would cost 0.2 s
 # (measured), and a toolchain upgraded in place replaces the prebuilt modules
 # its rows name.
@@ -70,15 +75,13 @@ function members(t: toolchain.Toolchain) -> [str]?
         return ok(none)
     return runtime_key.swift_members(t.runtime)
 
-# What the Swift members add to the layer's key: their words, "" where none
-# is compiled, so no other target's key moves.
-function key_text(t: toolchain.Toolchain, level: str, sanitize: bool) -> str
-    match members(t)
-        .ok named =>
-            if named.len() == 0
-                return ""
-            return "|swift:" + words(level: level, sanitize: sanitize).join(" ")
-        .err _ => return "|swift:unread"
+# What the Swift members `named` add to the layer's key: their names and
+# words, "" where none is compiled, so an archive of the C members alone keys
+# alike on every target.
+function key_text(named: [str], level: str, sanitize: bool) -> str
+    if named.len() == 0
+        return ""
+    return "|swift:" + named.join(",") + "|" + words(level: level, sanitize: sanitize).join(" ")
 
 # The words a member compiles with at `level`: unoptimised with its
 # variables' debug information at `-O0`, as `flags.debug_words` gives the C
@@ -153,14 +156,13 @@ record Built
     rows: [str]
     needs: [str]
 
-# Every Swift member compiled at `level`, each object at `<stem>-<name>.o`
-# and archived by its second name `<folder>/<name>.o`,
-# its listing, its header and its check in `folder`, the layer's private one;
-# nothing where this target compiles none. A member `swiftc` refuses, or
-# whose header disagrees with its Swift, is code `clang`, the compiler's own;
-# no `swiftc` on this Mac is the machine's.
-function compiled(t: toolchain.Toolchain, stem: str, folder: str, level: str, sanitize: bool, @memo: {str: str}) -> Built?
-    named = members(t)?
+# Every Swift member of `named` compiled at `level`, each object at
+# `<stem>-<name>.o` and archived by its second name `<folder>/<name>.o`, its
+# listing, its header and its check in `folder`, the layer's private one;
+# nothing where `named` holds none. A member `swiftc` refuses, or whose
+# header disagrees with its Swift, is code `clang`, the compiler's own; no
+# `swiftc` on this Mac is the machine's.
+function compiled(t: toolchain.Toolchain, named: [str], stem: str, folder: str, level: str, sanitize: bool, @memo: {str: str}) -> Built?
     built: Built @= Built(objects: [], rows: [], needs: [])
 
     if named.len() == 0
@@ -225,7 +227,7 @@ function located() -> ()?
         return ok()
     return fail(
         code: "failed",
-        msg: "this Mac has no swiftc, which the platform layer needs on macOS for CryptoKit's ciphers (`xcrun --find swiftc` found none); the Command Line Tools carry it: `xcode-select --install`, and `heroes doctor` says what this machine has"
+        msg: "this Mac has no swiftc, which the platform layer needs on macOS for a program that reaches CryptoKit's ciphers or AppKit's windows (`xcrun --find swiftc` found none); the Command Line Tools carry it: `xcode-select --install`, and `heroes doctor` says what this machine has"
     )
 
 # One `swiftc` line run, `TMPDIR` its private folder's; its words on failure.
@@ -280,10 +282,11 @@ test "a Swift member's name, its words at each level, and the key of a target th
     t: toolchain.Toolchain @= toolchain.locate_toolchain(hint: "", fingerprint: "port-test").must()
     t.target @ "aarch64-unknown-linux-gnu"
     assert members(t).must().len() == 0
-    assert key_text(t, level: "-O0", sanitize: false) == ""
+    none: [str] = []
+    assert key_text(none, level: "-O0", sanitize: false) == ""
     t.target @ "arm64-apple-darwin27.2.0"
     assert members(t).must().len() >= 1
-    assert key_text(t, level: "-O0", sanitize: false) == "|swift:-parse-as-library -Onone -g"
+    assert key_text(["runtime/platform/a.swift"], level: "-O0", sanitize: false) == "|swift:runtime/platform/a.swift|-parse-as-library -Onone -g"
 
 test "the SDK is read from clang's answer, its escapes undone, and none where it names none (panel 253's R3)"
     assert sysroot("\"-cc1\" \"-isysroot\" \"/Applications/X.app/MacOSX.sdk\" \"-v\"") == "/Applications/X.app/MacOSX.sdk"

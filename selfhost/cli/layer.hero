@@ -47,7 +47,7 @@ use cli/deps
 use cli/digest
 use cli/files
 use cli/flags
-use cli/io
+use cli/layer_reach
 use cli/layer_swift
 use cli/link
 use cli/link_flags
@@ -62,24 +62,11 @@ use cli/supplied
 use cli/supplied_kept
 use cli/toolchain
 
-# The archive's words for a build, its failure told as the runtime object's is
-# (`cli/produce.hero`, defect 134): a member clang refused is the compiler's,
-# *internal error* with clang's words; any other failure is the machine's,
-# said as itself by the caller.
-function for_build(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
-    made = archive(t, level: level, sanitize: sanitize)
-
-    match made
-        .ok words => return ok(words)
-        .err e =>
-            if e.code == "clang"
-                io.eprint(text: "internal error: the platform layer did not compile\n" + e.msg)
-                return fail(code: "failed", msg: "no platform layer")
-            return fail(code: "failed", msg: e.msg)
-
-# The words the link line carries for the layer at `level`: the archive, or
-# none where the runtime has no layer. Compiled once per key, then served.
-function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
+# The words the link line carries for the layer at `level`: the archive of its
+# C members and of the members written in Swift `swift` names, or none where
+# the runtime has no layer. Compiled once per key, which names those Swift
+# members, then served. A build asks it through `layer_reach.for_build`.
+function archive(t: toolchain.Toolchain, level: str, sanitize: bool, swift: [str]) -> [str]?
     members = runtime_key.layer_members(t.runtime)?
     none: [str] = []
 
@@ -95,7 +82,7 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
     process.mkdir_all(t.build)?
     reach = reaches(t, members: members, words: words, @memo)
     key = digest.digest(
-        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach) + layer_swift.key_text(t, level: level, sanitize: sanitize)
+        t.fingerprint + "|" + t.compiler_key + "|" + toolchain.build_words(level: level, sanitize: sanitize) + "|" + t.runtime_key + "|layer|reaches:" + opening.key_text(reach) + layer_swift.key_text(swift, level: level, sanitize: sanitize)
     )
     stem = t.build + "/layer-" + key
     listed = stem + ".deps.txt"
@@ -108,6 +95,7 @@ function archive(t: toolchain.Toolchain, level: str, sanitize: bool) -> [str]?
     made = compiled(
         t,
         members: members,
+        swift: swift,
         words: words,
         stem: stem,
         folder: folder,
@@ -134,7 +122,7 @@ record Archived
 # Every member compiled into `folder` under its own name, the archive written
 # there, sealed and published beside `stem`; the folder is the caller's to
 # remove.
-function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: str, folder: str, suffix: str, level: str, sanitize: bool, @memo: {str: str}) -> Archived?
+function compiled(t: toolchain.Toolchain, members: [str], swift: [str], words: [str], stem: str, folder: str, suffix: str, level: str, sanitize: bool, @memo: {str: str}) -> Archived?
     process.mkdir_all(folder)?
     objects: [str] @= []
     rows: [str] @= []
@@ -164,13 +152,14 @@ function compiled(t: toolchain.Toolchain, members: [str], words: [str], stem: st
         for name_needed in supplied_kept.alone_needs(t, object: object, what: "asking which names the platform layer's " + name + " needs")
             needs @ needs.push(name + "\t" + name_needed)
 
-    # The members in Swift, on an Apple target: archived, asked, vouched for
-    # by the record as a C member is, and kept out of what the reach covers.
+    # The members in Swift the program reaches, on an Apple target: archived,
+    # asked, vouched for by the record as a C member is, and kept out of what
+    # the reach covers.
     covered = rows.join("\n")
-    swift = layer_swift.compiled(t, stem: stem, folder: folder, level: level, sanitize: sanitize, @memo)?
-    objects @ strings.with_all(list: objects, more: swift.objects)
-    rows @ strings.with_all(list: rows, more: swift.rows)
-    needs @ strings.with_all(list: needs, more: swift.needs)
+    in_swift = layer_swift.compiled(t, named: swift, stem: stem, folder: folder, level: level, sanitize: sanitize, @memo)?
+    objects @ strings.with_all(list: objects, more: in_swift.objects)
+    rows @ strings.with_all(list: rows, more: in_swift.rows)
+    needs @ strings.with_all(list: needs, more: in_swift.needs)
 
     staged = folder + "/layer" + suffix
     archiver.archived(t, staged: staged, objects: objects, err_path: folder + "/archiver.err.txt")?
@@ -237,7 +226,12 @@ function linked_program(t: toolchain.Toolchain, dir: str, name: str, body: str) 
     )
     assert !toolchain.run_clang(line: line, what: "a test's unit", err_path: dir + "/" + name + ".err.txt").is_err()
     runtime = toolchain.runtime_object(t, level: "-O0", sanitize: false).must()
-    words = archive(t, level: "-O0", sanitize: false).must()
+    words = archive(
+        t,
+        level: "-O0",
+        sanitize: false,
+        swift: layer_reach.reached(t, named: layer_reach.includes(body)).must()
+    ).must()
     assert words.len() == 1
     none: [str] = []
     no_output: str? = fail(code: "none", msg: "no -o")
@@ -313,19 +307,12 @@ function taken(members: [Defined], by: [Defined]) -> [str]
     out: [str] @= []
 
     for one in members
-        if one.member != "" && !has_name(out, one.member)
+        if one.member != "" && !layer_reach.has(out, name: one.member)
             for own in by
-                if own.name == one.name && !has_name(out, one.member)
+                if own.name == one.name && !layer_reach.has(out, name: one.member)
                     out @ out.push(one.member)
 
     return out
-
-function has_name(names: [str], name: str) -> bool
-    for one in names
-        if one == name
-            return true
-
-    return false
 
 # A toolchain over this tree's runtime whose `build/` is `build`, emptied.
 function fresh_toolchain(build: str) -> toolchain.Toolchain
@@ -373,26 +360,28 @@ test "every link carries the layer, and a program takes only the members it call
     )
 
     if !link_flags.msvc(t.target)
-        archived = archive(t, level: "-O0", sanitize: false).must()[0]
+        archived = archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0]
         members = defined_by(t, path: archived)
 
         # Every member of the layer defines a function, so a member no
-        # binary below takes is still read here, the Swift ones on an Apple
-        # target among them.
-        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len() + layer_swift.members(t).must().len()
+        # binary below takes is still read here; none of the programs below
+        # reaches a member written in Swift, so the archive holds the C
+        # members alone (defect 2625).
+        assert taken(members: members, by: defined_by(t, path: archived)).len() == runtime_key.layer_members(t.runtime).must().len()
         assert taken(members: members, by: defined_by(t, path: none)).len() == 0
         assert taken(members: members, by: defined_by(t, path: clock)) == ["hero_time"]
         assert taken(members: members, by: defined_by(t, path: named)).len() == 0
         net_took = taken(members: members, by: defined_by(t, path: net))
-        assert has_name(net_took, "hero_net")
-        assert !has_name(net_took, "hero_time")
+        assert layer_reach.has(net_took, name: "hero_net")
+        assert !layer_reach.has(net_took, name: "hero_time")
         both_took = taken(members: members, by: defined_by(t, path: both))
-        assert has_name(both_took, "hero_net")
-        assert has_name(both_took, "hero_time")
+        assert layer_reach.has(both_took, name: "hero_net")
+        assert layer_reach.has(both_took, name: "hero_time")
     assert !process.remove_tree(dir).is_err()
 
-# **On an Apple target the archive holds the member written in Swift** (panel
-# 253's R3, M-rebel-library's steps 69): a program sealing Wycheproof's
+# **On an Apple target the archive of a program reaching `hero_crypto.h`
+# holds the member written in Swift** (panel 253's R3, M-rebel-library's
+# steps 69; defect 2625 for the reach): a program sealing Wycheproof's
 # AES-256-GCM case 92 through the layer gets its tag, opens it and has a
 # forged tag refused, and takes `hero_crypto` and the CryptoKit member; on
 # any other target the layer compiles no Swift.
@@ -411,10 +400,10 @@ test "an Apple target's layer seals by its CryptoKit member, which only a progra
         name: "sealing",
         body: "#include \"hero_crypto.h\"\n#include <string.h>\nint main(void) {\n    static const unsigned char key[32] = { 0x29, 0xd3, 0xa4, 0x4f, 0x87, 0x23, 0xdc, 0x64, 0x02, 0x39, 0x10, 0x0c, 0x36, 0x54, 0x23, 0xa3, 0x12, 0x93, 0x4a, 0xc8, 0x02, 0x39, 0x21, 0x2a, 0xc3, 0xdf, 0x34, 0x21, 0xa2, 0x09, 0x81, 0x23 };\n    static const unsigned char nonce[12] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb };\n    static const unsigned char ad[6] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };\n    static const unsigned char tag[16] = { 0x2a, 0x7d, 0x77, 0xfa, 0x52, 0x6b, 0x82, 0x50, 0xcb, 0x29, 0x60, 0x78, 0x92, 0x6b, 0x50, 0x20 };\n    unsigned char sealed[28];\n    unsigned char none[1];\n    hero_crypto_key *k = hero_crypto_from_secret(HERO_CRYPTO_AES_256_GCM, key, 32);\n    if (k == NULL || hero_crypto_seal_nonce_for_tests(k, nonce, 12, NULL, 0, ad, 6, sealed, 28) != 28 || memcmp(sealed + 12, tag, 16) != 0 || hero_crypto_open(k, sealed, 28, ad, 6, none, 0) != 0) {\n        return 1;\n    }\n    sealed[27] ^= 1;\n    return hero_crypto_open(k, sealed, 28, ad, 6, none, 0) == -1 && hero_crypto_last_error() == HERO_CRYPTO_FORGED && hero_crypto_close(k) == 0 ? 0 : 1;\n}\n"
     )
-    archived = archive(t, level: "-O0", sanitize: false).must()[0]
+    archived = archive(t, level: "-O0", sanitize: false, swift: layer_reach.reached(t, named: ["hero_crypto.h"]).must()).must()[0]
     took = taken(members: defined_by(t, path: archived), by: defined_by(t, path: sealing))
-    assert has_name(took, "hero_crypto")
-    assert has_name(took, "hero_crypto_cryptokit")
+    assert layer_reach.has(took, name: "hero_crypto")
+    assert layer_reach.has(took, name: "hero_crypto_cryptokit")
 
     # Its needs recorded under the name the archive gives it, the one a
     # link's map names (defect 2489's record).
@@ -442,11 +431,11 @@ test "an Apple target's layer seals by its CryptoKit member, which only a progra
 test "an archive is one archive byte for byte, and a cache wiped mid-way archives it again (feature 2295)"
     t = fresh_toolchain("build/selftest-layer-twice-a")
     u = fresh_toolchain("build/selftest-layer-twice-b")
-    a = archive(t, level: "-O0", sanitize: false).must()[0]
-    b = archive(u, level: "-O0", sanitize: false).must()[0]
+    a = archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0]
+    b = archive(u, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0]
     assert a.slice(from: t.build.len(), to: a.len()) == b.slice(from: u.build.len(), to: b.len())
     assert !process.remove_tree(u.build).is_err()
-    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
 
     # The first archive's bytes under a second name, which every archive this
     # folder holds later is held to.
@@ -462,7 +451,7 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
 
     gone: toolchain.Toolchain @= t
     gone.runtime @ copy
-    assert archive(gone, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(gone, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert !process.remove_tree(copy).is_err()
 
     # Only the archive, its seal, its record and the second name stand:
@@ -471,10 +460,10 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
         assert !strings.holds(text: path, needle: ".tmp")
 
     assert !process.remove_file(a).is_err()
-    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert publish.same_bytes(one: a, other: first)
     assert !write_file(path: a, text: "not an archive\n").is_err()
-    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert publish.same_bytes(one: a, other: first)
 
     for path in process.files_under(t.build).must()
@@ -487,7 +476,7 @@ test "an archive is one archive byte for byte, and a cache wiped mid-way archive
     left = stem + ".4242-1.tmp"
     assert !process.mkdir_all(left).is_err()
     assert !write_file(path: left + "/hero_net.o", text: "a killed build's half\n").is_err()
-    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert publish.same_bytes(one: a, other: first)
     assert !process.remove_tree(t.build).is_err()
 
@@ -514,13 +503,13 @@ test "a runtime with no layer adds nothing to the link, and a member clang refus
     assert !write_file(path: copy + "/runtime.c", text: unnamed.join("\n") + "\n").is_err()
     bare: toolchain.Toolchain @= t
     bare.runtime @ copy
-    assert archive(bare, level: "-O0", sanitize: false).must().len() == 0
+    assert archive(bare, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must().len() == 0
 
     # Named again, with a member whose arm disagrees with its header.
     assert !write_file(path: copy + "/runtime.c", text: read_file(t.runtime + "/runtime.c").must()).is_err()
     assert !write_file(path: copy + "/platform/hero_time.c", text: "#include \"hero_time.h\"\nint hero_time_monotonic_ns(void) { return 0; }\n").is_err()
 
-    match archive(bare, level: "-O0", sanitize: false)
+    match archive(bare, level: "-O0", sanitize: false, swift: layer_reach.no_members())
         .ok => assert false
         .err e =>
             assert e.code == "clang"
@@ -544,13 +533,13 @@ test "a member is named by its file, and a record's rows follow its digest (feat
 # supplied `socket` to its lone link on link.exe and lld-link alike.
 test "an archive stands with the record of what its members need, and is archived again without it (defect 2489)"
     t = fresh_toolchain("build/selftest-layer-needs-2489")
-    a = archive(t, level: "-O0", sanitize: false).must()[0]
+    a = archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0]
     listed_needs = read_file(supplied_kept.layer_needs_path(a)).must()
     assert strings.holds(text: listed_needs, needle: "hero_net\tsocket\n")
     first = t.build + "/the-first-archive"
     assert !files.second_name(existing: a, name: first).is_err()
     assert !process.remove_file(supplied_kept.layer_needs_path(a)).is_err()
-    assert archive(t, level: "-O0", sanitize: false).must()[0] == a
+    assert archive(t, level: "-O0", sanitize: false, swift: layer_reach.no_members()).must()[0] == a
     assert publish.same_bytes(one: a, other: first)
     assert read_file(supplied_kept.layer_needs_path(a)).must() == listed_needs
     assert !process.remove_tree(t.build).is_err()
