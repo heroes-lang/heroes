@@ -19,7 +19,6 @@
 use <rebel>/io
 use <rebel>/net
 use <rebel>/sql/sqlite
-use <rebel>/strings
 
 use standins/mysql/answers
 use standins/mysql/login
@@ -43,32 +42,46 @@ record Account
     # The one database the server holds.
     database: str
 
+# What the stand-in's thread is handed, whole.
+record Start
+    # The one user who may log in.
+    user: str
+    # That user's password; empty for none.
+    password: str
+    # The one database the server holds.
+    database: str
+    # Where the demo waits to hear the stand-in is ready.
+    ready: (mailbox ready.Ready)
+
 # The stand-in's thread: listens on 127.0.0.1 at a port the system
 # chooses, tells the demo, and serves until the program is asked to stop.
+# The readiness mailbox is closed on every path, so a stand-in that could
+# not listen is told to the demo at once.
 #
-# - `arg`: four lines: the demo's control port, the user, the password and
-#   the database.
-function run(arg: str) -> str
-    lines = strings.split(s: arg, sep: "\n")
+# - `start`: who may log in, the database, and the readiness mailbox.
+function run(start: Start) -> str
+    account = Account(
+        user: start.user,
+        kept: login.kept_of(start.password),
+        empty_password: start.password == "",
+        database: start.database
+    )
+    outcome = served(start.ready, account: account)
+    start.ready.close()
 
-    if lines.len() != 4
-        return "mysql stand-in: four lines asked, the control port, the user, the password and the database"
-
-    match served(lines[0], account: Account(user: lines[1], kept: login.kept_of(lines[2]), empty_password: lines[2] == "", database: lines[3]))
+    match outcome
         .ok said => return said
         .err e   => return "mysql stand-in: " + e.msg
 
 # Every connection served, then what was served.
 #
-# - `control`: the demo's control port, in decimal.
+# - `told`: where the demo waits to hear the stand-in is ready.
 # - `account`: who may log in.
-function served(control: str, account: Account) -> str?
-    port = strings.trim(control)
+function served(told: (mailbox ready.Ready), account: Account) -> str?
     db @= sqlite.open_memory()?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
-    control_port = net.parse_port(port)?
 
-    match ready.tell(control_port: control_port, service: "mysql", port: listener.address.port)
+    match ready.tell(told, service: "mysql", port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             _ = sqlite.close(@db).is_err()

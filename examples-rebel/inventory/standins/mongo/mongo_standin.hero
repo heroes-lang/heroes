@@ -19,7 +19,6 @@
 use <rebel>/bson
 use <rebel>/io
 use <rebel>/net
-use <rebel>/strings
 
 use standins/mongo/collections
 use standins/mongo/pipeline
@@ -28,23 +27,31 @@ use standins/ready
 
 ## The server
 
-# The stand-in's thread.
+# What the stand-in's thread is handed, whole.
+record Start
+    # Where the demo waits to hear the stand-in is ready.
+    ready: (mailbox ready.Ready)
+
+# The stand-in's thread. The readiness mailbox is closed on every path, so
+# a stand-in that could not listen is told to the demo at once.
 #
-# - `arg`: the demo's control port, in decimal.
-function run(arg: str) -> str
-    match served(arg)
+# - `start`: the readiness mailbox.
+function run(start: Start) -> str
+    outcome = served(start.ready)
+    start.ready.close()
+
+    match outcome
         .ok said => return said
         .err e   => return "mongodb stand-in: " + e.msg
 
 # Every connection served, then what was served.
 #
-# - `control`: the demo's control port, in decimal.
-function served(control: str) -> str?
+# - `told`: where the demo waits to hear the stand-in is ready.
+function served(told: (mailbox ready.Ready)) -> str?
     data @= collections.empty()?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
-    control_port = net.parse_port(strings.trim(control))?
 
-    match ready.tell(control_port: control_port, service: "mongodb", port: listener.address.port)
+    match ready.tell(told, service: "mongodb", port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)

@@ -64,7 +64,8 @@
 #   with the line that first named it;
 # - `crypto`, `random`, `bytes`: the MySQL stand-in's login, the digests of
 #   the accounts;
-# - `net`, `threads`, `os`: the stand-ins' sockets and threads, the stop;
+# - `net`, `os`: the stand-ins' sockets and the stop, the stand-ins on
+#   threads of the language's own (`spawn`, mailboxes);
 # - `time`, `strings`, `numbers`, `lists`, `maps`: throughout.
 
 use cli/commands
