@@ -102,6 +102,21 @@ function strings_of(value: str) -> [str]
 
     return out
 
+# Fails `limit` where `framing` says a length past `bounds.body_bytes`: a
+# body refused before a byte of it is read, and before `100 Continue` asks
+# the client for it.
+function within(framing: Framing, bounds: wire.Bounds) -> ()?
+    match framing
+        .length l =>
+            if l.n > bounds.body_bytes
+                return fail(
+                    code: syntax.LIMIT,
+                    msg: f"reading a body: its {l.n} bytes are past the limit of {bounds.body_bytes}"
+                )
+        .none | .chunked | .to_end => _ = 0
+
+    return ok()
+
 # The body `framing` says follows in `r`, at most `bounds.body_bytes` bytes,
 # a chunked body's trailer read, checked and dropped. Fails `limit` past the
 # bounds or a chunk's line past `CHUNK_LINE_BYTES`, `invalid` where the
@@ -110,11 +125,7 @@ function read(@r: io.Reader, framing: Framing, bounds: wire.Bounds) -> [u8]?
     match framing
         .none => return ok([])
         .length l =>
-            if l.n > bounds.body_bytes
-                return fail(
-                    code: syntax.LIMIT,
-                    msg: f"reading a body: its {l.n} bytes are past the limit of {bounds.body_bytes}"
-                )
+            within(framing, bounds: bounds)?
             got = io.read_n(@r, n: l.n)?
 
             if got.len() < l.n

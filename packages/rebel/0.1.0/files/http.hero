@@ -52,7 +52,9 @@
 # `Accept-Encoding`, answers 304 by `If-None-Match` and `If-Modified-Since`,
 # reads and writes `Cache-Control`, tries a handler with no network
 # (`exchange`, as Go's `httptest`), and ends gracefully at the stop
-# (`serve_until_stopped`).
+# (`serve_until_stopped`). A server that waits on many connections with
+# `poll` on one thread reads each request as its bytes come
+# (`read_ready`), so no client holds the others back.
 #
 # The client is `requests`' beside Go's: a `Session` keeps the fields, the
 # base URL and the cookies of many requests; a request's body is made from
@@ -92,6 +94,7 @@ use http/internal/params
 use http/internal/policy
 use http/internal/proxying
 use http/internal/read
+use http/internal/ready
 use http/internal/status as texts
 use http/internal/streaming
 use http/internal/syntax
@@ -2302,6 +2305,210 @@ function write_answer(s: io.Stream, r: Request, response: Response) -> ()?
     )
     return io.write(s, data: data)
 
+## Many connections on one thread
+
+# What `read_ready` answers: a request whole, or none yet.
+variant Ready
+    # A request is whole: the program answers it, then calls `read_ready`
+    # again before it waits on the stream.
+    request
+        # The request, as `next_request` reads it.
+        request: Request
+    # No request is whole yet: the program waits until `poll` tells the
+    # stream is readable.
+    waiting
+
+# A connection's requests read as their bytes come, for a server that waits
+# on many connections at once with `poll` and never waits on one: what
+# `read_ready` reads from and keeps between its calls. Made by
+# `request_reader`; the program reads `reader` and changes nothing.
+record RequestReader
+    # The connection's reader: its stream is the one the program waits on
+    # and writes its answers to, and the stream's owner closes it.
+    reader: io.Reader
+    # The head of the request whose body is being read; between two
+    # requests it fails `not_found`.
+    pending: RequestHead?
+    # What is read of the next request, and what the next call may do.
+    progress: ready.Progress
+
+# A reader of the requests `reader` brings, nothing of them read yet.
+#
+# - `reader`: the connection's reader, as `io.reader` makes it of the stream
+#   `net.accept` answered; what it holds already is read first.
+#
+# See also `read_ready`.
+function request_reader(reader: io.Reader) -> RequestReader
+    return RequestReader(
+        reader: reader,
+        pending: fail(code: NOT_FOUND, msg: "no request is begun"),
+        progress: ready.start()
+    )
+
+# The next request `requests` holds whole, read with at most one read of its
+# stream: what a server waiting on many connections with `poll` calls when
+# `poll` tells a connection is readable, so a client that sends a request
+# slowly, or half of one, holds no other client back.
+#
+# - `requests`: the connection's reader; it keeps what is read of a request
+#   until the request is whole, and answers refusals and `100 Continue` on
+#   its stream as `next_request` does.
+# - `limits`: what a request may hold.
+#
+# `.request` with a request whole, read as `next_request` reads it: the
+# program answers it with `write_answer`, then calls again, since what was
+# read may hold the next request already and `poll` would not tell it so,
+# until the answer is `.waiting`, where it waits until `poll` tells the
+# stream is readable. A call reads the stream once, and only where the call
+# before it answered `.waiting` or it is the first: so the call after a
+# request reads nothing, and the call made when `poll` told the stream is
+# readable finds a byte or the stream's end and waits for neither. `100
+# Continue` is written once the head that asks for it is whole and a body is
+# to come, the requests before it having been handed out and answered. This
+# reader keeps no clock: a connection whose request stays partial past the
+# program's own deadline is the program's to close.
+#
+# Fails as `next_request` does, its refusal written on the stream first, and
+# every call after a failure, or after a request that closes the connection,
+# fails `closed`: `closed` where the stream ends before a request begins;
+# `invalid`, `limit` and `unsupported` as `read_request_head`,
+# `read_request_body` and `refusal_of` refuse; and as `io.read` fails. The
+# caller ends the connection after any failure. See also `next_request`,
+# `poll.wait`, `websocket.read_ready`.
+function read_ready(@requests: RequestReader, limits: Limits) -> Ready?
+    if requests.progress.closed
+        return fail(
+            code: CLOSED,
+            msg: "reading a request: the connection takes no more, after a request that closed it or a failure"
+        )
+    bounds = wire.Bounds(head_bytes: limits.head_bytes, field_count: limits.field_count, body_bytes: limits.body_bytes)
+    may_read: bool @= requests.progress.may_read
+
+    while true
+        match requests.pending
+            .err _ =>
+                whole = match ready.gather_head(@requests.reader, @requests.progress.head, most: limits.head_bytes, ended: requests.progress.ended)
+                    .ok got => got
+                    .err e => return ready.refused(
+                        @requests.progress,
+                        s: requests.reader.stream,
+                        code: e.code,
+                        msg: e.msg,
+                        in_head: true
+                    )
+
+                if whole
+                    h = match read.head_of(requests.progress.head.bytes, bounds: bounds)
+                        .ok got => got
+                        .err e => return ready.refused(
+                            @requests.progress,
+                            s: requests.reader.stream,
+                            code: e.code,
+                            msg: e.msg,
+                            in_head: true
+                        )
+
+                    requests.progress.head @ ready.no_head()
+
+                    parsed = if h.method == METHOD_CONNECT
+                        url.parse("//" + h.target)
+                    else
+                        parse_target(method: h.method, target: h.target)
+
+                    target = match parsed
+                        .ok got => got
+                        .err e => return ready.refused(
+                            @requests.progress,
+                            s: requests.reader.stream,
+                            code: e.code,
+                            msg: e.msg,
+                            in_head: true
+                        )
+
+                    headers: [Header] @= []
+
+                    for f in h.fields
+                        headers @ headers.push(Header(name: f.name, value: f.value))
+
+                    begun = RequestHead(
+                        request: Request(method: h.method, url: target, headers: headers, body: [], closing: read.closes(h), remote: ""),
+                        minor: h.minor
+                    )
+
+                    match refusal_of(begun)
+                        .ok status => return ready.refused_head(
+                            @requests.progress,
+                            s: requests.reader.stream,
+                            status: status,
+                            why: f"{h.method} {url.request_target(target)}: {status_text(status).default("refused")}"
+                        )
+                        .err _ => _ = 0
+
+                    started = match ready.start_body(h, bounds: bounds)
+                        .ok got => got
+                        .err e => return ready.refused(
+                            @requests.progress,
+                            s: requests.reader.stream,
+                            code: e.code,
+                            msg: e.msg,
+                            in_head: false
+                        )
+
+                    requests.progress.body @ started
+                    expect = values_of(headers, name: "Expect")
+                    continuing = h.minor >= 1 && expect.len() == 1 && syntax.same_name(a: expect[0], b: "100-continue")
+
+                    if continuing && !ready.is_whole(requests.progress.body)
+                        match policy.write_continue(requests.reader.stream)
+                            .ok _ => _ = 0
+                            .err e => return ready.refused(
+                                @requests.progress,
+                                s: requests.reader.stream,
+                                code: e.code,
+                                msg: e.msg,
+                                in_head: false
+                            )
+
+                    requests.pending @ ok(begun)
+                    continue
+            .ok begun =>
+                whole = match ready.gather_body(@requests.reader, @requests.progress.body, bounds: bounds, ended: requests.progress.ended)
+                    .ok got => got
+                    .err e => return ready.refused(
+                        @requests.progress,
+                        s: requests.reader.stream,
+                        code: e.code,
+                        msg: e.msg,
+                        in_head: false
+                    )
+
+                if whole
+                    out @= begun.request
+                    out.body @ requests.progress.body.content
+                    requests.pending @ fail(code: NOT_FOUND, msg: "no request is begun")
+                    requests.progress.body @ ready.no_body()
+                    requests.progress.may_read @ false
+                    requests.progress.closed @ out.closing
+                    return ok(.request(request: out))
+
+        if !may_read
+            requests.progress.may_read @ true
+            return ok(.waiting)
+        may_read @ false
+        before = io.buffered(requests.reader).len()
+
+        match io.peek(@requests.reader, n: before + 1)
+            .ok got =>
+                if got.len() == before
+                    requests.progress.ended @ true
+            .err e => return ready.refused(
+                @requests.progress,
+                s: requests.reader.stream,
+                code: e.code,
+                msg: e.msg,
+                in_head: false
+            )
+
 ## HTTP/2
 
 # `r` as `http2` sends it: its method, its URL's scheme, authority and path
@@ -3539,6 +3746,240 @@ test "serve_conn: HTTP/1.0 kept alive where it asks, closed where it does not"
     io.close(@two.second.stream).must()
     io.close(@reader.stream).must()
 
+test "serve_conn: Expect 100-continue with a body past the limit answered 413, no 100 written first"
+    small @= default_server()
+    small.limits.body_bytes @ 2
+    two @= net.pair(deadline_ms: 5_000).must()
+    io.write_text(
+        two.first.stream,
+        text: "POST / HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 5\r\n\r\n"
+    ).must()
+    assert serve_conn(small, c: two.second, handler: respond_trace) == 0
+    reader @= io.reader(two.first.stream)
+    got = read_response(@reader, method: METHOD_POST, limits: default_limits()).must()
+    assert got.status == 413 && got.closing
+    io.close(@two.second.stream).must()
+    io.close(@reader.stream).must()
+
+test "read_ready: one request whole, then waiting with no read; pipelined requests one a call; none after one that closes"
+    one @= net.pair(deadline_ms: 5_000).must()
+    alone @= request_reader(io.reader(one.second.stream))
+    io.write_text(one.first.stream, text: "GET /a HTTP/1.1\r\nHost: h\r\n\r\n").must()
+
+    match read_ready(@alone, limits: default_limits()).must()
+        .request q => assert q.request.url.path == "/a" && q.request.body.len() == 0 && !q.request.closing && q.request.remote == ""
+        .waiting   => assert false
+
+    match read_ready(@alone, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    io.close(@one.first.stream).must()
+    io.close(@alone.reader.stream).must()
+
+    two @= net.pair(deadline_ms: 5_000).must()
+    requests @= request_reader(io.reader(two.second.stream))
+    io.write_text(
+        two.first.stream,
+        text: "GET /a HTTP/1.1\r\nHost: h\r\n\r\nPOST /b HTTP/1.1\r\nContent-Length: 2\r\n\r\nhiGET /c HTTP/1.1\r\nConnection: close\r\n\r\nGET /d HTTP/1.1\r\n\r\n"
+    ).must()
+    seen: [str] @= []
+
+    while true
+        match read_ready(@requests, limits: default_limits())
+            .err e =>
+                assert e.code == CLOSED
+                break
+            .ok r =>
+                match r
+                    .request q => seen @ seen.push(q.request.url.path + ":" + bytes.to_text(q.request.body).must())
+                    .waiting   => seen @ seen.push("waiting")
+
+    assert seen == ["/a:", "/b:hi", "/c:"]
+    io.close(@two.first.stream).must()
+    io.close(@requests.reader.stream).must()
+
+test "read_ready: half a head on one connection holds back no request on another"
+    slow = net.pair(deadline_ms: 5_000).must()
+    fast = net.pair(deadline_ms: 5_000).must()
+    slow_requests @= request_reader(io.reader(slow.second.stream))
+    fast_requests @= request_reader(io.reader(fast.second.stream))
+    io.write_text(slow.first.stream, text: "GET /slow HTTP/1.1\r\nHost: h\r\n").must()
+    io.write_text(fast.first.stream, text: "GET /fast HTTP/1.1\r\nHost: h\r\n\r\n").must()
+
+    match read_ready(@slow_requests, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    match read_ready(@fast_requests, limits: default_limits()).must()
+        .request q => assert q.request.url.path == "/fast"
+        .waiting   => assert false
+
+    io.write_text(slow.first.stream, text: "\r\n").must()
+
+    match read_ready(@slow_requests, limits: default_limits()).must()
+        .request q => assert q.request.url.path == "/slow"
+        .waiting   => assert false
+
+    for p in [slow, fast]
+        closing @= p
+        io.close(@closing.first.stream).must()
+        io.close(@closing.second.stream).must()
+
+test "read_ready: each refusal answered as next_request answers it, then every call fails closed"
+    small @= default_limits()
+    small.head_bytes @ 60
+    small.body_bytes @ 2
+
+    for given in [["GET / HTTP/1.1\r\nHost: h\r\nX-Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n", "431", "limit"], ["POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello", "413", "limit"], ["POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\n", "413", "limit"], ["GET / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n", "501", "unsupported"], ["GET / HTTP/3.0\r\n\r\n", "505", "unsupported"], ["CONNECT h:443 HTTP/1.1\r\n\r\n", "501", "unsupported"], ["GET / HTTP/1.1\r\nExpect: magic\r\n\r\n", "417", "unsupported"], ["nonsense\r\n\r\n", "400", "invalid"]]
+        two = net.pair(deadline_ms: 5_000).must()
+        requests @= request_reader(io.reader(two.second.stream))
+        io.write_text(two.first.stream, text: given[0]).must()
+
+        match read_ready(@requests, limits: small)
+            .ok _  => assert false
+            .err e => assert e.code == given[2]
+
+        match read_ready(@requests, limits: small)
+            .ok _  => assert false
+            .err e => assert e.code == CLOSED
+
+        reader @= io.reader(two.first.stream)
+        got = read_response(@reader, method: METHOD_GET, limits: default_limits()).must()
+        assert f"{got.status}" == given[1] && got.closing
+        io.close(@reader.stream).must()
+        io.close(@requests.reader.stream).must()
+
+test "read_ready: 100 Continue once the head is whole and before the body comes, none where no body comes or it is past the limit"
+    two = net.pair(deadline_ms: 5_000).must()
+    requests @= request_reader(io.reader(two.second.stream))
+    io.write_text(
+        two.first.stream,
+        text: "PUT /f HTTP/1.1\r\nHost: h\r\nExpect: 100-continue\r\nContent-Length: 2\r\n\r\n"
+    ).must()
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    client @= io.reader(two.first.stream)
+    assert bytes.to_text(io.read_n(@client, n: 25).must()).must() == "HTTP/1.1 100 Continue\r\n\r\n"
+    io.write_text(two.first.stream, text: "hi").must()
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request q => assert q.request.method == "PUT" && bytes.to_text(q.request.body).must() == "hi"
+        .waiting   => assert false
+
+    io.write_text(two.first.stream, text: "GET / HTTP/1.1\r\nExpect: 100-continue\r\n\r\n").must()
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request q => assert q.request.method == "GET"
+        .waiting   => assert false
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    small @= default_limits()
+    small.body_bytes @ 1
+    io.write_text(two.first.stream, text: "PUT /g HTTP/1.1\r\nExpect: 100-continue\r\nContent-Length: 2\r\n\r\n").must()
+
+    match read_ready(@requests, limits: small)
+        .ok _  => assert false
+        .err e => assert e.code == LIMIT
+
+    assert bytes.to_text(io.read_n(@client, n: 12).must()).must() == "HTTP/1.1 413"
+    io.close(@client.stream).must()
+    io.close(@requests.reader.stream).must()
+
+test "read_ready: a byte at a time, the same request or the same failure as next_request reading the whole, the stream's end included"
+    small @= default_limits()
+    small.head_bytes @ 80
+    small.field_count @ 3
+    small.body_bytes @ 8
+
+    cases = [
+        "GET /a?b=1 HTTP/1.1\r\nHost: h\r\n\r\n"
+        "\r\n\r\nGET / HTTP/1.1\nHost: h\n\n"
+        "POST /p HTTP/1.1\r\nContent-Length: 5\r\n\r\nhello"
+        "POST /p HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3;x=y\r\nabc\r\n2\r\nde\r\n0\r\nT: 1\r\n\r\n"
+        "POST /p HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n3\nabc\n0\n\n"
+        "GET / HTTP/1.0\r\n\r\n"
+        "OPTIONS * HTTP/1.1\r\nHost: h\r\n\r\n"
+        "CONNECT h:443 HTTP/1.1\r\n\r\n"
+        "GET / HTTP/1.1\r\nExpect: magic\r\n\r\n"
+        "GET / HTTP/3.0\r\n\r\n"
+        "nonsense\r\n\r\n"
+        "GET / HTTP/1.1\r\nX-Long: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n"
+        "GET / HTTP/1.1\r\nA: 1\r\nB: 2\r\nC: 3\r\nD: 4\r\n\r\n"
+        "POST / HTTP/1.1\r\nContent-Length: 9\r\n\r\n"
+        "POST / HTTP/1.1\r\nContent-Length: 1\r\nTransfer-Encoding: chunked\r\n\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: gzip\r\n\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n9\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nabX"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nab\r\n0\r\nT: 1\r\nU: 2\r\nV: 3\r\nW: 4\r\n\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nab\r\n0\r\nno colon\r\n\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n2\r\nab\r\n"
+        "POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n2\r\na"
+        "POST / HTTP/1.1\r\nContent-Length: 5\r\n\r\nhel"
+        "GET / HTTP/1.1\r\nHost"
+        "\r\n"
+        ""
+    ]
+
+    for given in cases
+        whole @= net.pair(deadline_ms: 5_000).must()
+        io.write_text(whole.first.stream, text: given).must()
+        net.close_write(whole.first).must()
+        reader @= io.reader(whole.second.stream)
+        expected = next_request(@reader, limits: small)
+        io.close(@whole.first.stream).must()
+        io.close(@reader.stream).must()
+
+        slow @= net.pair(deadline_ms: 5_000).must()
+        requests @= request_reader(io.reader(slow.second.stream))
+        got: Request? @= fail(code: "none", msg: "no answer yet")
+        done: bool @= false
+        ended: bool @= false
+        at: i64 @= 0
+
+        while !done
+            if at < given.len()
+                io.write_text(slow.first.stream, text: given.slice(from: at, to: at + 1)).must()
+                at @ at + 1
+            else if !ended
+                net.close_write(slow.first).must()
+                ended @ true
+
+            match read_ready(@requests, limits: small)
+                .err e =>
+                    got @ fail(code: e.code, msg: e.msg)
+                    done @ true
+                .ok r =>
+                    match r
+                        .request q =>
+                            got @ ok(q.request)
+                            done @ true
+                        .waiting => assert !ended
+
+        match expected
+            .ok want =>
+                match got
+                    .ok q  => assert q == want
+                    .err e => assert e.msg == f"{given}: no request"
+            .err want =>
+                match got
+                    .ok _  => assert want.msg == f"{given}: a request"
+                    .err e => assert e.code == want.code && e.msg == want.msg
+
+        io.close(@slow.first.stream).must()
+        io.close(@requests.reader.stream).must()
+
 test "serve: a connection of nonsense answered 400, and serving goes on to the listener's deadline"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     bad = net.connect("127.0.0.1", port: l.address.port, deadline_ms: 5_000).must()
@@ -4568,6 +5009,34 @@ test "next_request: a request read, then a head past the limits answered 431"
     assert read_response(@client, method: METHOD_GET, limits: default_limits()).must().status == 431
     io.close(@reader.stream).must()
     io.close(@client.stream).must()
+
+# A connection's reader, before its first request.
+test "request_reader: nothing read yet"
+    two @= net.pair(deadline_ms: 5_000).must()
+    requests = request_reader(io.reader(two.second.stream))
+    assert requests.pending.is_err() && io.buffered(requests.reader).len() == 0
+    io.close(@two.first.stream).must()
+    io.close(@two.second.stream).must()
+
+# A request read on one thread as its bytes come: half a head is no request
+# yet and waits for nothing, and the rest makes it whole.
+test "read_ready: a request sent in two pieces"
+    two @= net.pair(deadline_ms: 5_000).must()
+    requests @= request_reader(io.reader(two.second.stream))
+    io.write_text(two.first.stream, text: "GET /slow HTTP/1.1\r\nHost: h\r\n").must()
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request _ => assert false
+        .waiting   => _ = 0
+
+    io.write_text(two.first.stream, text: "\r\n").must()
+
+    match read_ready(@requests, limits: default_limits()).must()
+        .request q => assert q.request.url.path == "/slow"
+        .waiting   => assert false
+
+    io.close(@two.first.stream).must()
+    io.close(@requests.reader.stream).must()
 
 # An answer written as a server writes it: an HTTP/1.0 client told its
 # connection is kept.
