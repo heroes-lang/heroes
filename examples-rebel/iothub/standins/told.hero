@@ -1,100 +1,83 @@
 # How a server started on a thread of its own tells its starter where it
-# listens. A thread is given one text and answers one text when it ends, and
-# nothing else crosses (spec § 13), so a server listening on a port the
-# system chose says it in one UDP datagram on the loopback, to a socket the
-# starter opened first: `ready <port>`, or `failed <why>`. The starter waits
-# a bounded time, so a server that dies before it tells cannot hang it.
+# listens: the starter makes a mailbox (spec § 11) and hands it to the
+# thread with what the server starts from, and the server sends on it one
+# `Told`, where it listens or why it could not start, then closes it. The
+# server's thread closes it again as it ends, which does nothing to a
+# closed one, so a server that ends before telling is told to its starter
+# at once; the starter's wait is bounded besides, so nothing can hang it.
 
-use <rebel>/bytes
-use <rebel>/net
-use <rebel>/numbers
-use <rebel>/strings
+## Codes
 
 # The code of a server that told a failure, or told nothing in time.
 constant FAILED: str
     "failed"
 
+## Bounds
+
 # How long a starter waits to be told, in milliseconds.
 constant WAIT_MS: i64
     30_000
 
-# A socket on the loopback that hears what servers tell. The starter owes
-# it a `net.close_udp`.
-#
-# Fails as `net.open_udp` and `net.set_udp_deadline` fail.
-function open_ear() -> net.UdpSocket?
-    ear = net.open_udp(host: "127.0.0.1", port: 0)?
-    net.set_udp_deadline(ear, deadline_ms: WAIT_MS)?
-    return ok(ear)
+## Telling
 
-# Sends `text` to the starter's socket at `port`.
+# What a server tells its starter.
+variant Told
+    # It listens.
+    listening
+        # The port it listens on.
+        port: i64
+    # It could not start.
+    failed
+        # Why.
+        why: str
+
+# Tells the starter, through `to`, that the server listens on `listening`,
+# and closes `to`.
 #
-# - `port`: the port of the starter's socket, on the loopback.
-# - `text`: what is told.
+# - `to`: the mailbox handed to the server.
+# - `listening`: the port the server listens on.
 #
-# Fails as `net.open_udp` and `net.send_to` fail.
-function say(port: i64, text: str) -> ()?
-    mouth @= net.open_udp(host: "127.0.0.1", port: 0)?
-    to = net.with_port(net.loopback_v4(), port: port)?
-    sent = net.send_to(mouth, data: bytes.from_text(text), to: to)
-    net.close_udp(@mouth)?
+# Fails `closed` or `stopped` where the starter no longer waits.
+function ready(to: (mailbox Told), listening: i64) -> ()?
+    sent = to.send(.listening(port: listening))
+    to.close()
     return sent
 
-# Tells the starter at `port` that the server listens on `listening`.
+# Tells the starter, through `to`, that the server could not start, and
+# why, and closes `to`.
 #
-# - `port`: the port of the starter's socket.
-# - `listening`: the port the server listens on.
-function ready(port: i64, listening: i64) -> ()?
-    return say(port, text: f"ready {listening}")
-
-# Tells the starter at `port` that the server could not start, and why.
-#
-# - `port`: the port of the starter's socket.
+# - `to`: the mailbox handed to the server.
 # - `why`: the failure's message.
-function failed(port: i64, why: str) -> ()?
-    return say(port, text: f"failed {why}")
-
-# The port `text`, what a server told, names.
 #
-# - `text`: `ready <port>` or `failed <why>`.
-#
-# Fails `failed` where it tells a failure or names no port.
-function port_told(text: str) -> i64?
-    if strings.has_prefix(s: text, prefix: "failed ")
-        return fail(code: FAILED, msg: text.slice(from: 7, to: text.len()))
+# Fails `closed` or `stopped` where the starter no longer waits.
+function failed(to: (mailbox Told), why: str) -> ()?
+    sent = to.send(.failed(why: why))
+    to.close()
+    return sent
 
-    if !strings.has_prefix(s: text, prefix: "ready ")
-        return fail(code: FAILED, msg: f"the server told \"{text}\"")
+## Hearing
 
-    return match numbers.parse_int(text.slice(from: 6, to: text.len()))
-        .ok port => ok(port)
-        .err _   => fail(code: FAILED, msg: f"the server told \"{text}\", which names no port")
-
-# The port a server told `ear`, waiting at most `WAIT_MS`.
+# The port the server handed `from` told, waiting at most `WAIT_MS`.
 #
-# - `ear`: the starter's socket.
+# - `from`: the mailbox handed to the server.
 #
-# Fails `failed` where the server told a failure, told what is no port, or
+# Fails `failed` where the server told a failure, ended without telling, or
 # told nothing in time.
-function heard(ear: net.UdpSocket) -> i64?
-    got = match net.receive(ear)
-        .ok d  => d
-        .err e => return fail(code: FAILED, msg: f"the server told nothing: {e.msg}")
+function heard(from: (mailbox Told)) -> i64?
+    match from.receive(within_ms: WAIT_MS)
+        .err e => return fail(code: FAILED, msg: f"the server told nothing: {e.code}")
+        .ok said =>
+            match said
+                .listening l => return ok(l.port)
+                .failed f    => return fail(code: FAILED, msg: f.why)
 
-    text = match bytes.to_text(got.data)
-        .ok t  => t
-        .err _ => return fail(code: FAILED, msg: "the server told bytes that are no text")
-
-    return port_told(text)
-
-test "port_told: a port, a failure, and a text that is neither"
-    assert port_told("ready 4040").must() == 4040
-    assert port_told("failed no room").is_err()
-    assert port_told("ready four").is_err()
-    assert port_told("hello").is_err()
-
-test "heard: a port told over the loopback"
-    ear @= open_ear().must()
-    ready(port: ear.address.port, listening: 8123).must()
-    assert heard(ear).must() == 8123
-    net.close_udp(@ear).must()
+test "heard: a port told, a failure told, and a server that ended without telling"
+    up: (mailbox Told) = mailbox()
+    ready(up, listening: 8123).must()
+    assert heard(up).must() == 8123
+    down: (mailbox Told) = mailbox()
+    failed(down, why: "no room").must()
+    assert heard(down).is_err()
+    silent: (mailbox Told) = mailbox()
+    silent.close()
+    assert heard(silent).is_err()

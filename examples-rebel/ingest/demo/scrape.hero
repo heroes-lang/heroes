@@ -10,16 +10,12 @@ use <rebel>/strings
 
 ## Scraping
 
-# The thread's body: the counters `/metrics` on the port `arg` names
-# answered, one `name{labels} value` a line in the order the text format
-# writes them, or `scrape: ` and why it failed.
+# The thread's body: the counters `/metrics` on `port` answered, one
+# `name{labels} value` a line in the order the text format writes them, or
+# `scrape: ` and why it failed.
 #
-# - `arg`: the exporter's port on 127.0.0.1, in decimal.
-function run(arg: str) -> str
-    port = match numbers.parse_int(arg)
-        .ok n  => n
-        .err e => return "scrape: " + e.msg
-
+# - `port`: the exporter's port on 127.0.0.1.
+function run(port: i64) -> str
     match http.get(http.default_client(), target: f"http://127.0.0.1:{port}/metrics")
         .err e => return "scrape: " + e.msg
         .ok response =>

@@ -16,16 +16,9 @@ use <rebel>/bytes
 use <rebel>/crypto
 use <rebel>/hash
 use <rebel>/http
-use <rebel>/numbers
 use <rebel>/strings
 use <rebel>/time
 use <rebel>/url
-
-## Codes
-
-# The code of a setup that is not one.
-constant INVALID: str
-    "invalid"
 
 ## Bounds
 
@@ -35,10 +28,8 @@ constant PAGE_KEYS: i64
 
 ## Setup
 
-# What the stand-in is told when it starts.
+# What the stand-in is told when it starts, handed to its thread whole.
 record Setup
-    # The demo's control port, where readiness is told.
-    control_port: i64
     # The bucket's name.
     bucket: str
     # The region it answers for.
@@ -51,63 +42,6 @@ record Setup
     refuse_puts: [i64]
     # The gets answered `500 InternalError`, by their number from 1.
     refuse_gets: [i64]
-
-# `s` as the text a thread is handed: one `name=value` line per field,
-# lists joined by commas.
-#
-# - `s`: the setup.
-function format_setup(s: Setup) -> str
-    return [f"control_port={s.control_port}", f"bucket={s.bucket}", f"region={s.region}", f"key_id={s.key_id}", f"secret={s.secret}", "refuse_puts=" + joined(s.refuse_puts), "refuse_gets=" + joined(s.refuse_gets)].join(
-        "\n"
-    )
-
-# `ns` joined by commas.
-#
-# - `ns`: the numbers.
-function joined(ns: [i64]) -> str
-    texts: [str] @= []
-
-    for n in ns
-        texts @ texts.push(to_str(n))
-
-    return texts.join(",")
-
-# The setup `text` holds.
-#
-# - `text`: as `format_setup` writes it.
-#
-# Fails `invalid` where a field is missing or a number is not one.
-function parse_setup(text: str) -> Setup?
-    fields: {str: str} @= {}
-
-    for line in strings.lines(text)
-        match strings.split_once(s: line, sep: "=")
-            .ok h  => fields[h.before] @ h.after
-            .err _ => _ = 0
-
-    port = match numbers.parse_int(fields["control_port"].default(""))
-        .ok n  => n
-        .err _ => return fail(code: INVALID, msg: "a setup names its control port")
-
-    return ok(
-        Setup(control_port: port, bucket: fields["bucket"].default(""), region: fields["region"].default(""), key_id: fields["key_id"].default(""), secret: fields["secret"].default(""), refuse_puts: numbers_of(fields["refuse_puts"].default(""))?, refuse_gets: numbers_of(fields["refuse_gets"].default(""))?)
-    )
-
-# The numbers `text` lists, joined by commas; none for "".
-#
-# - `text`: the list.
-#
-# Fails `invalid` where one is not a number.
-function numbers_of(text: str) -> [i64]?
-    out: [i64] @= []
-
-    for part in strings.split(s: text, sep: ",")
-        if part != ""
-            match numbers.parse_int(part)
-                .ok n  => out @ out.push(n)
-                .err _ => return fail(code: INVALID, msg: f"\"{part}\" is not a request's number")
-
-    return ok(out)
 
 ## The bucket
 
@@ -329,23 +263,9 @@ function account(b: Bucket lent) -> str
 
     return f"s3: {b.objects.len()} objects, {total} bytes in {b.setup.bucket}; {b.puts} puts, {b.gets} gets, {b.listings} listings, {b.deletes} deletes; {b.injected} refused on purpose, {b.refused} refused for their signature"
 
-test "parse_setup: what format_setup writes reads back; a port that is not a number is refused"
-    s = Setup(
-        control_port: 5,
-        bucket: "repo",
-        region: "us-east-1",
-        key_id: "K",
-        secret: "S",
-        refuse_puts: [2, 9],
-        refuse_gets: []
-    )
-    assert parse_setup(format_setup(s)).must() == s
-    assert parse_setup("control_port=x").is_err()
-    assert parse_setup("control_port=1\nrefuse_puts=a").is_err()
-
 test "put: the second put refused on purpose, a wrong checksum refused, a put then read back"
     b @= bucket_of(
-        Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [2], refuse_gets: [])
+        Setup(bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [2], refuse_gets: [])
     )
     r = http.with_body(http.request(method: "PUT", target: "/repo/a").must(), content_type: "", body: [1])
     now = time.epoch()
@@ -360,7 +280,7 @@ test "put: the second put refused on purpose, a wrong checksum refused, a put th
 
 test "listing: the keys under a prefix, sorted"
     b @= bucket_of(
-        Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
+        Setup(bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
     )
     b.objects["p/b"] @ Object(data: [1], etag: "\"x\"", modified: time.epoch())
     b.objects["p/a"] @ Object(data: [1, 2], etag: "\"y\"", modified: time.epoch())

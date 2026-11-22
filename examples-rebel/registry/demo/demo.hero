@@ -14,13 +14,10 @@
 use <rebel>/fs
 use <rebel>/net
 use <rebel>/sql/sqlite
-use <rebel>/threads
 use <rebel>/time
 
 use demo/session
-use server/api
 use server/loop
-use server/serving
 use server/settings
 use server/tokens
 use store/database
@@ -87,38 +84,23 @@ record Report
     answered: i64
 
 # Serves on `l` while the session runs on its own thread, until it asks the
-# stop; then waits for it and closes the server's state.
+# stop; then waits for it. The server's state is opened, used and closed on
+# the server's own owner thread (`server/owner`).
 #
 # - `s`: the settings.
 # - `l`: the listener, which the caller closes.
 # - `dir`: the demo's folder.
 # - `given_tokens`: the publishers' tokens.
 #
-# Fails where the state does not open, the thread does not start or the
-# server fails; the state is closed on every path that opened it.
+# Fails where the session's thread does not start, or where the server
+# fails; the session is waited for whatever the server did.
 function serve_session(s: settings.Settings, l: net.Listener, dir: str, given_tokens: Tokens) -> Report?
     base = loop.base_url_of(s, address: l.address)
-    state @= serving.open(s, base_url: base, router: api.router()?)?
     given = session.Given(base: base, ana_token: given_tokens.ana, bruno_token: given_tokens.bruno, work: dir + "/work")
-
-    arg = match session.format_given(given)
-        .ok text => text
-        .err e =>
-            _ = serving.close(@state).is_err()
-            return fail(code: e.code, msg: e.msg)
-
-    client_thread @= match threads.start_text(body: session.run, arg: arg)
-        .ok t => t
-        .err e =>
-            _ = serving.close(@state).is_err()
-            return fail(code: e.code, msg: e.msg)
-
-    served = loop.serve(@state, l: l)
-    transcript = threads.wait_text(@client_thread)
-    closed = serving.close(@state)
-    served?
-    closed?
-    return ok(Report(transcript: transcript, answered: state.answered))
+    client_thread = spawn(session.run, given)?
+    served = loop.serve(s, base_url: base, l: l)
+    transcript = client_thread.wait()
+    return ok(Report(transcript: transcript, answered: served?.answered))
 
 # The two publishers' tokens.
 record Tokens

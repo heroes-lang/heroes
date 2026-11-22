@@ -24,7 +24,6 @@ use <rebel>/strings
 use <rebel>/time
 use <rebel>/tls
 
-use core/fields
 use core/ready
 use standins/accounts
 use standins/authority
@@ -46,41 +45,49 @@ constant MOST_FAILURES: i64
 
 ## The thread
 
-# The stand-in's thread. Its named values: `CONTROL`, the starter's control
-# port; `DNS_PORT`, the DNS stand-in's; `HTTP01_PORT`, the port HTTP-01
-# answers are fetched from; `START`, its clock's first moment in seconds
-# since 1970; `SEED`, 32 bytes in hexadecimal; `IDENTITY`, its CAA
-# identity; `ORIGIN`, the zone it issues under. Answers its last line, what
-# it did, or why it could not serve.
+# What the stand-in's thread is handed, whole.
+record Setup
+    # The DNS stand-in's port, where DNS-01 proofs are looked up.
+    dns_port: i64
+    # The port HTTP-01 answers are fetched from.
+    http01_port: i64
+    # Its clock's first moment.
+    start: time.Instant
+    # The seed of everything it draws, 32 bytes.
+    seed: [u8]
+    # Its CAA identity.
+    identity: str
+    # The zone it issues under, without its last dot.
+    origin: str
+    # Where the starter waits to hear the stand-in listens.
+    told: (mailbox ready.Ready)
+
+# The stand-in's thread. Answers its last line, what it did, or why it
+# could not serve. The readiness mailbox is closed on every path, so a
+# stand-in that could not listen is told to its starter at once.
 #
-# - `arg`: the named values, `core/fields`' text.
-function run(arg: str) -> str
-    match configured(arg)
-        .err e => return "acme: " + e.msg
+# - `setup`: what it starts from and the readiness mailbox.
+function run(setup: Setup) -> str
+    outcome = match configured(setup)
+        .err e => "acme: " + e.msg
         .ok made =>
             s @= made
 
-            match fields.parse_fields(arg)
-                .err e => return "acme: " + e.msg
-                .ok named =>
-                    control = fields.int_of(named, name: "CONTROL").default(0)
+            match started(@s, told: setup.told)
+                .ok _ =>
+                    c = s.counts
+                    f"acme: accounts made {c.accounts}, orders {c.orders}, authorizations proved {c.proved} and failed {c.failed}, certificates issued {c.issued} and revoked {c.revoked}; refused {c.bad_nonces} used nonce, {c.bad_signatures} signature that did not hold, {c.refused} other"
+                .err e => "acme: " + e.msg
 
-                    match started(@s, control: control)
-                        .ok _ =>
-                            c = s.counts
-                            return f"acme: accounts made {c.accounts}, orders {c.orders}, authorizations proved {c.proved} and failed {c.failed}, certificates issued {c.issued} and revoked {c.revoked}; refused {c.bad_nonces} used nonce, {c.bad_signatures} signature that did not hold, {c.refused} other"
-                        .err e => return "acme: " + e.msg
+    setup.told.close()
+    return outcome
 
-# The state `arg`'s named values describe, its lists empty.
+# The state `setup` describes, its lists empty.
 #
-# - `arg`: the thread's named values.
+# - `setup`: what the stand-in starts from.
 #
-# Fails as `fields` fails on a value missing or of no form, and as
-# `random.from_seed_chacha8` fails on a seed that is not 32 bytes.
-function configured(arg: str) -> objects.State?
-    named = fields.parse_fields(arg)?
-    seed = bytes.parse_hex(fields.text_of(named, name: "SEED")?)?
-    start = time.from_unix(whole_seconds: fields.int_of(named, name: "START")?, extra_nanoseconds: 0)?
+# Fails as `random.from_seed_chacha8` fails on a seed that is not 32 bytes.
+function configured(setup: Setup) -> objects.State?
     counts = objects.Counts(
         accounts: 0,
         orders: 0,
@@ -93,18 +100,18 @@ function configured(arg: str) -> objects.State?
         refused: 0
     )
     return ok(
-        objects.State(base: "", identity: fields.text_of(named, name: "IDENTITY")?, origin: fields.text_of(named, name: "ORIGIN")? + ".", dns_port: fields.int_of(named, name: "DNS_PORT")?, http01_port: fields.int_of(named, name: "HTTP01_PORT")?, now: start, draws: random.from_seed_chacha8(seed)?, nonces: {}, accounts: [], orders: [], authzs: [], issued: [], counts: counts)
+        objects.State(base: "", identity: setup.identity, origin: setup.origin + ".", dns_port: setup.dns_port, http01_port: setup.http01_port, now: setup.start, draws: random.from_seed_chacha8(setup.seed)?, nonces: {}, accounts: [], orders: [], authzs: [], issued: [], counts: counts)
     )
 
 # The authorities and the HTTPS identity made, the listener opened, the
 # starter told, and requests served until the stop.
 #
 # - `s`: the state; its base is set once the port is known.
-# - `control`: the starter's control port.
+# - `told`: where the starter waits to hear the stand-in listens.
 #
 # Fails as `authority.make`, `authority.https_identity`, `tls.listen` and
 # `ready.tell` fail; everything opened is closed on every path.
-function started(@s: objects.State, control: i64) -> ()?
+function started(@s: objects.State, told: (mailbox ready.Ready)) -> ()?
     serials = [objects.serial_drawn(@s), objects.serial_drawn(@s)]
     https = authority.https_identity(s.now, serials: [objects.serial_drawn(@s), objects.serial_drawn(@s)])?
     a @= authority.make(s.now, serials: serials)?
@@ -116,16 +123,13 @@ function started(@s: objects.State, control: i64) -> ()?
         .ok opened =>
             listener @= opened
             s.base @ f"https://127.0.0.1:{listener.port}"
-            told = ready.tell(
-                control,
-                facts: {"SERVICE": "acme", "PORT": to_str(listener.port), "HTTPS_ROOT": fields.encoded(https.root)}
-            )
+            said = ready.tell(told, said: ready.Ready(service: "acme", port: listener.port, https_root: https.root))
 
-            if !told.is_err()
+            if !said.is_err()
                 serve(@s, a: a, listener: listener)
             _ = tls.close_listener(@listener).is_err()
             authority.close(@a)
-            return told
+            return said
 
 # Connections accepted and served, one at a time, until the stop.
 #

@@ -15,7 +15,6 @@ use <rebel>/net
 use <rebel>/sql
 use <rebel>/sql/sqlite
 use <rebel>/strings
-use <rebel>/threads
 
 use app/state
 use config/settings
@@ -82,9 +81,9 @@ function demo() -> i64?
     print(f"notes demo: a fresh database, its migrations applied: {app.migrated.join(", ")}")
     print(f"the server: {app.router.routes.len()} routes, listening on loopback")
     l @= net.listen(host: s.host, port: s.port)?
-    driver @= threads.start_text(body: client.run, arg: to_str(l.address.port))?
+    driver = spawn(client.run, l.address.port)?
     served = server.run(@app, l: l)
-    answer = threads.wait_text(@driver)
+    went = driver.wait()
     net.close_listener(@l)?
     state.close(@app)?
 
@@ -99,7 +98,7 @@ function demo() -> i64?
     fs.remove_all(FOLDER)?
     print("the demo's folder removed")
 
-    if answer == "ok" && !served.is_err()
+    if went && !served.is_err()
         return ok(0)
 
     return ok(1)

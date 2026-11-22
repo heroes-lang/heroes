@@ -27,7 +27,6 @@ packages = [
     "sql/sqlite",
     "strings",
     "template",
-    "threads",
     "time",
     "xlsx",
 ]

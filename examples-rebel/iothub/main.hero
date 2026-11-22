@@ -41,10 +41,11 @@
 #   port; `random`: its seeded chance, and the seeded identities.
 # - `uuid`: every device's identity; `json`: the settings, the registry,
 #   the readings re-published and the feed.
-# - `net`, `poll` and `threads`: one loop for every socket, and the demo's
-#   servers; `time`: the clocks and moments; `flags`: this command line;
-#   `fs` and `path`: the hub's folder; `bytes`, `strings`, `numbers`, `io`,
-#   `math` and `os`: the bytes, text and streams under it all.
+# - `net` and `poll`: one loop for every socket, and the demo's servers,
+#   on threads of the language's own (`spawn`, mailboxes); `time`: the
+#   clocks and moments; `flags`: this command line; `fs` and `path`: the
+#   hub's folder; `bytes`, `strings`, `numbers`, `io`, `math` and `os`:
+#   the bytes, text and streams under it all.
 
 use <rebel>/flags
 use <rebel>/fs

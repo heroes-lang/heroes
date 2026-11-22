@@ -30,7 +30,6 @@ packages = [
     "sql/migrate",
     "sql/sqlite",
     "strings",
-    "threads",
     "time",
     "toml",
     "url",

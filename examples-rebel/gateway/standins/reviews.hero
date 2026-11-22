@@ -2,15 +2,15 @@
 # reviews(sku) }`, executed by `graphql` with the service resolving each
 # field from the reviews it holds, served as GraphQL over HTTP (`POST
 # /graphql` with a JSON body) on HTTP/1.1 in plain text. It runs on a
-# thread of its own, told its supervisor's control port, and serves one
-# connection after another until the program is asked to stop.
+# thread of its own, tells its port on a mailbox its supervisor waits on,
+# and serves one connection after another until the program is asked to
+# stop.
 
 use <rebel>/graphql
 use <rebel>/http
 use <rebel>/io
 use <rebel>/json
 use <rebel>/net
-use <rebel>/numbers
 
 use demo/notify
 
@@ -52,28 +52,30 @@ function resolve(reviews: json.Value, field: graphql.Field) -> json.Value?
 ## Serving
 
 # The service's thread: listens on a port the system chooses, tells the
-# supervisor at the control port `arg` holds, and serves until stopped.
+# supervisor on the mailbox it is handed, and serves until stopped.
 # Answers how many requests it answered, as a line.
 #
-# - `arg`: the supervisor's control port, in decimal.
-function run(arg: str) -> str
-    match numbers.parse_int(arg)
-        .err e => return "reviews: no control port: " + e.msg
-        .ok control =>
-            match served(control)
-                .ok n  => return f"reviews: requests answered {n}"
-                .err e => return "reviews: " + e.msg
+# - `told`: where the supervisor waits to hear the service listens; closed
+#   as the thread ends, so a service that ends before telling is told at
+#   once.
+function run(told: (mailbox notify.Ready)) -> str
+    outcome = served(told)
+    told.close()
+
+    match outcome
+        .ok n  => return f"reviews: requests answered {n}"
+        .err e => return "reviews: " + e.msg
 
 # Every connection accepted served until the program is asked to stop.
 #
-# - `control`: the supervisor's control port.
+# - `told`: where the supervisor waits to hear the service listens.
 #
 # Fails as `graphql.parse_schema`, `net.listen` and `notify.ready` fail.
-function served(control: i64) -> i64?
+function served(told: (mailbox notify.Ready)) -> i64?
     schema = graphql.parse_schema(SCHEMA, limits: graphql.default_limits())?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
-    match notify.ready(control_port: control, service: NAME, port: listener.address.port)
+    match notify.ready(told, service: NAME, port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)

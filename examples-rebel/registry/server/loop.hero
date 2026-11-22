@@ -1,24 +1,31 @@
-# The server's loop: connections accepted one at a time on the thread that
-# holds the state, each request read, answered by `api.handle` and written
-# back, until the client closes, the connection's time runs out, or the stop
-# is asked.
+# The server's loop: the thread that owns the server's state started
+# (`server/owner`), `WORKERS` workers started, then connections accepted one
+# after another on this thread, each handed whole to the next free worker
+# with `m.send(@conn)` (spec § 11), which reads its requests, asks the owner
+# for each answer and writes it back, until the client closes or the
+# connection's time runs out. A slow client holds its worker alone.
 #
-# One connection at a time is how `http.serve` serves too: the state, a
-# SQLite connection and an index in memory, lives on one thread, and the
-# language lets no handler carry it to another. A connection's whole life is
-# bounded by `server.connection_seconds`, so one slow client keeps the others
-# waiting that long at most. The stop (`os.catch_stop`, or `os.ask_stop` from
-# another thread) makes the waiting accept fail `stopped`, and the loop ends
-# with nothing half written.
+# A connection's whole life is bounded by `server.connection_seconds`. The
+# stop (`os.catch_stop`, or `os.ask_stop` from another thread) makes the
+# waiting accept fail `stopped`; the workers' mailbox is then closed, every
+# worker waited for, and the owner told to stop, close the state and end,
+# so no thread outlives the serving and nothing is left half written
+# (panel 254's R4: a stop drains what was queued, then holds).
 
 use <rebel>/http
 use <rebel>/io
 use <rebel>/net
 use <rebel>/time
 
-use server/api
-use server/serving
+use server/owner
 use server/settings
+
+## Bounds
+
+# How many workers serve connections at once: each holds one connection
+# for its whole life, at most `server.connection_seconds`.
+constant WORKERS: i64
+    8
 
 ## Serving
 
@@ -31,40 +38,128 @@ function limits_of(s: settings.Settings) -> http.Limits
     limits.body_bytes @ s.upload_bytes + 65_536
     return limits
 
+# What the server served, once stopped.
+record Served
+    # How many requests the state answered.
+    answered: i64
+
 # Serves every connection `l` accepts until the stop is asked.
 #
-# - `state`: the server's state, lent to every handler.
+# - `s`: the settings; the owner opens the state from them.
+# - `base_url`: the absolute URL clients reach the server at.
 # - `l`: the listener; its owner closes it.
 #
-# Answers once the stop is asked. Fails as `net.accept` does for any other
-# reason, a listener closed among them.
-function serve(@state: serving.State, l: net.Listener) -> ()?
-    deadline = time.to_units(state.settings.connection, unit: .millisecond)
+# Answers once the stop is asked and every thread has ended. Fails where
+# the state does not open or no thread can start, as `net.accept` does for
+# a reason other than the stop, a listener closed among them, and where
+# the state does not close cleanly; every thread started is waited for
+# first.
+function serve(s: settings.Settings, base_url: str, l: net.Listener) -> Served?
+    asks: (mailbox owner.Ask) = mailbox()
+    begun: (mailbox owner.Begun) = mailbox()
+    holder = spawn(owner.own, owner.Start(settings: s, base_url: base_url, asks: asks, begun: begun))?
 
+    went: ()? @= match begun.receive(within_ms: -1)
+        .err e => fail(code: e.code, msg: e.msg)
+        .ok said =>
+            match said
+                .ready    => ok()
+                .failed f => fail(code: "failed", msg: f.msg)
+
+    conns: (mailbox net.Conn) = mailbox()
+    pool: [(thread i64)] @= []
+
+    while !went.is_err() && pool.len() < WORKERS
+        match spawn(work, Worker(conns: conns, asks: asks, limits: limits_of(s)))
+            .ok t  => pool @ pool.push(t)
+            .err e => went @ fail(code: e.code, msg: e.msg)
+
+    if !went.is_err()
+        went @ accepted(l, conns: conns, deadline_ms: time.to_units(s.connection, unit: .millisecond))
+
+    conns.close()
+
+    for t in pool
+        _ = t.wait()
+
+    owner.stop(asks)
+    ended = holder.wait()
+    asks.close()
+    went?
+
+    if ended.problem != ""
+        return fail(code: "failed", msg: ended.problem)
+    return ok(Served(answered: ended.answered))
+
+# Every connection `l` accepts handed to a worker through `conns`, until the
+# stop is asked.
+#
+# - `l`: the listener.
+# - `conns`: the workers' mailbox of connections.
+# - `deadline_ms`: a connection's whole life, in milliseconds.
+#
+# Answers once the stop is asked. Fails as `net.accept` does for any other
+# reason.
+function accepted(l: net.Listener, conns: (mailbox net.Conn), deadline_ms: i64) -> ()?
     while true
-        conn = match net.accept(l, deadline_ms: deadline)
-            .ok c => c
+        match net.accept(l, deadline_ms: deadline_ms)
             .err e =>
                 if e.code == net.STOPPED
                     return ok()
                 return fail(code: e.code, msg: e.msg)
+            .ok taken =>
+                conn @= taken
 
-        serve_connection(@state, conn: conn)
+                match conns.send(@conn)
+                    .ok _ => _ = 0
+                    .err _ =>
+                        # Not sent, the workers' mailbox having answered the
+                        # stop: the connection is still this thread's.
+                        _ = io.close(@conn.stream).is_err()
+
+# What a worker's thread is handed, whole.
+record Worker
+    # The connections the listener accepted, each taken by one worker.
+    conns: (mailbox net.Conn)
+    # The owner's mailbox of requests.
+    asks: (mailbox owner.Ask)
+    # What a request may hold.
+    limits: http.Limits
+
+# A worker's thread: connections taken and served until the mailbox is
+# closed and empty, or the stop finds it empty; a connection still queued
+# then is served first, its reads answering the stop at once. Answers how
+# many connections it served.
+#
+# - `w`: the connections' mailbox, the owner's and the limits.
+function work(w: Worker) -> i64
+    served @= 0
+
+    while true
+        match w.conns.receive(within_ms: -1)
+            .err _ => break
+            .ok conn =>
+                serve_connection(w.asks, conn: conn, limits: w.limits)
+                served @ served + 1
+
+    return served
 
 # Serves the requests of one connection until it closes, and closes it.
 #
-# - `state`: the server's state.
+# - `asks`: the owner's mailbox of requests.
 # - `conn`: the connection, closed by this call.
-function serve_connection(@state: serving.State, conn: net.Conn)
+# - `limits`: what a request may hold.
+function serve_connection(asks: (mailbox owner.Ask), conn: net.Conn, limits: http.Limits)
     reader @= io.reader(conn.stream)
-    limits = limits_of(state.settings)
 
     while true
         r = match http.next_request(@reader, limits: limits)
             .ok got => got
             .err _  => break
 
-        response = api.handle(@state, r: r)
+        response = match owner.answer(asks, r: r)
+            .ok answered => answered
+            .err _       => break
 
         match http.write_answer(reader.stream, r: r, response: response)
             .ok _  => _ = 0

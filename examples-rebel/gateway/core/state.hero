@@ -1,14 +1,13 @@
 # Everything the gateway keeps between two requests, in one record the
-# serving thread holds and lends with `@` to each step of the pipeline:
-# its routes, its response cache, its rate limiters, its directory of
-# upstream instances and their breakers, its metrics, its clock, and the
+# thread that owns it (`core/owner`) lends with `@` to each step of the
+# pipeline: its routes, its response cache, its rate limiters, its directory
+# of upstream instances and their breakers, its metrics, its clock, and the
 # `.proto` and GraphQL schemas read from the routing file at start.
 #
-# One thread owns it. The language shares no value between threads (spec
-# § 13: a thread is handed one `i64` or one `str`), so a cache, a limiter
-# and a registry that every request must see live where the requests are
-# answered, and the gateway answers its clients' connections one at a time
-# on that thread; HTTP/2's streams are what let one client's calls overlap.
+# One thread owns it, and it never crosses to another: the workers serving
+# the clients' connections ask that thread by message (spec § 11), so a
+# cache, a limiter and a registry that every request must see are seen by
+# the requests one at a time, and nothing is locked.
 
 use <rebel>/graphql
 use <rebel>/metrics

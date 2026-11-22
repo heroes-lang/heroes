@@ -26,7 +26,6 @@ packages = [
     "protobuf",
     "retries",
     "strings",
-    "threads",
     "time",
     "tls",
     "toml",

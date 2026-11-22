@@ -12,7 +12,6 @@
 # so the server's loop ends.
 
 use <rebel>/fs
-use <rebel>/json
 use <rebel>/os
 use <rebel>/path
 
@@ -26,8 +25,8 @@ use signing/signers
 
 ## The session
 
-# What the main thread hands the session, as JSON text: the registry's URL,
-# the two publishers' tokens and the folder to work in.
+# What the main thread hands the session's thread, whole: the registry's
+# URL, the two publishers' tokens and the folder to work in.
 record Given
     # The registry's URL, ending in `/`.
     base: str
@@ -38,40 +37,16 @@ record Given
     # The folder the session writes its packages and its trust file in.
     work: str
 
-# `g` as the text a thread is handed.
-#
-# - `g`: what the session is given.
-#
-# Fails as `json.format` does.
-function format_given(g: Given) -> str?
-    return json.format(
-        .object(members: {"base": .text(v: g.base), "ana_token": .text(v: g.ana_token), "bruno_token": .text(v: g.bruno_token), "work": .text(v: g.work)})
-    )
-
-# What `format_given` wrote, read back.
-#
-# - `text`: the thread's argument.
-#
-# Fails `invalid` where a member is missing.
-function parse_given(text: str) -> Given?
-    v = json.parse(text)?
-    return ok(
-        Given(base: json.text_of(json.member(v, key: "base")?)?, ana_token: json.text_of(json.member(v, key: "ana_token")?)?, bruno_token: json.text_of(json.member(v, key: "bruno_token")?)?, work: json.text_of(json.member(v, key: "work")?)?)
-    )
-
 # The session's body, as a thread runs it: the script run, its failure told
 # as its last line, the program's stop asked, the transcript answered.
 #
-# - `arg`: what `format_given` wrote.
-function run(arg: str) -> str
+# - `g`: what the session is given.
+function run(g: Given) -> str
     out: [str] @= []
 
-    match parse_given(arg)
-        .ok g =>
-            match script(@out, g: g)
-                .ok _  => _ = 0
-                .err e => out @ out.push(f"the session stopped: {e.code}: {e.msg}")
-        .err e => out @ out.push(f"the session was given nothing it reads: {e.msg}")
+    match script(@out, g: g)
+        .ok _  => _ = 0
+        .err e => out @ out.push(f"the session stopped: {e.code}: {e.msg}")
 
     os.ask_stop()
     return out.join("\n")

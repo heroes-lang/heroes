@@ -9,7 +9,6 @@
 use <rebel>/amqp
 use <rebel>/mqtt
 use <rebel>/nats
-use <rebel>/numbers
 use <rebel>/path
 use <rebel>/poll
 use <rebel>/time
@@ -392,52 +391,35 @@ function serve(@h: state.Hub)
 function settings_at(config: str) -> settings.Settings?
     return settings.parse(text: read_file(config)?, folder: path.parent(config))
 
+# What the hub's thread in the demo is handed, whole.
+record Start
+    # The mailbox the starter waits on.
+    to: (mailbox told.Told)
+    # The settings file's path.
+    config: str
+
 # The body of the hub's thread in the demo: the hub begun quiet, its links
 # made, its HTTP port told to the starter, then served until the program's
 # stop; answers what it did. A hub that cannot begin tells the starter why,
-# so the starter never waits for a port that will not come.
+# and the mailbox is closed as the thread ends, so the starter never waits
+# for a port that will not come.
 #
-# - `arg`: the port of the starter's socket, a space, and the settings
-#   file's path.
-function run(arg: str) -> str
-    at = space_at(arg)
-
-    told_port = match numbers.parse_int(arg.slice(from: 0, to: at))
-        .ok p  => p
-        .err _ => return f"the hub: \"{arg}\" does not begin with a port"
-
-    config = if at < arg.len()
-        arg.slice(from: at + 1, to: arg.len())
-    else
-        ""
-
-    begun: state.Hub? = match settings_at(config)
+# - `start`: the mailbox and the settings file's path.
+function run(start: Start) -> str
+    begun: state.Hub? = match settings_at(start.config)
         .ok s  => state.begin(s, quiet: true)
         .err e => fail(code: e.code, msg: e.msg)
 
     h @= match begun
         .ok got => got
         .err e =>
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(start.to, why: e.msg).is_err()
             return f"the hub could not begin: {e.msg}"
 
     start_links(@h)
-    _ = told.ready(port: told_port, listening: server.port_of(h.feed)).is_err()
+    _ = told.ready(start.to, listening: server.port_of(h.feed)).is_err()
     serve(@h)
     return state.end(@h)
 
-# The index of the first space of `text`, or its length where it has none.
-#
-# - `text`: the text.
-function space_at(text: str) -> i64
-    for i in range(from: 0, to: text.len())
-        if text[i] == ' '
-            return i
-
-    return text.len()
-
 test "has_key: a key there, one not, and none"
     assert has_key([3, 5], key: 5) && !has_key([3, 5], key: 4) && !has_key([-1], key: -1)
-
-test "space_at: the first space, and none"
-    assert space_at("4040 hub/hub.json") == 4 && space_at("4040") == 4

@@ -25,17 +25,18 @@ use client/client
 constant SHOWN: i64
     3
 
-# The session against the server at `base`; its answer is `ok`, or `failed`
-# after a line saying where. A thread's body, so it takes and gives one
-# text; whatever happened, it asks the stop last.
+# The session against the server at `base`, run as a thread's body;
+# answers whether every step went as written, after a line saying where
+# one did not. Whatever happened, it asks the stop last, which ends the
+# server's serving on the other thread.
 #
 # - `base`: the server's root URL.
-function run(base: str) -> str
+function run(base: str) -> bool
     outcome = match session(client.new(base))
-        .ok _ => "ok"
+        .ok _ => true
         .err e =>
             print(f"client: failed: {e.code}: {e.msg}")
-            "failed"
+            false
 
     os.ask_stop()
     return outcome

@@ -34,31 +34,43 @@ constant BODY_BYTES: i64
 
 ## Serving
 
+# What the service's thread is handed, whole: its bucket's setup and the
+# mailbox it says it listens on.
+record Start
+    # The bucket's setup.
+    setup: s3_bucket.Setup
+    # Where the demo waits to hear the service listens.
+    ready: (mailbox ready.Ready)
+
 # The service's thread: it listens, tells the demo its port, and serves
-# until stopped. Answers its account as one line.
+# until stopped. Answers its account as one line. The readiness mailbox is
+# closed on every path, so a service that could not listen is told to the
+# demo at once.
 #
-# - `arg`: the setup, as `s3_bucket.format_setup` writes it.
-function run(arg: str) -> str
-    return match served(arg)
+# - `start`: the setup and the readiness mailbox.
+function run(start: Start) -> str
+    outcome = served(start)
+    start.ready.close()
+
+    return match outcome
         .ok b  => s3_bucket.account(b)
         .err e => "s3: " + e.msg
 
 # Every connection served until the program is asked to stop.
 #
-# - `arg`: the setup.
+# - `start`: the setup and the readiness mailbox.
 #
-# Fails as the setup, `net.listen` and `ready.tell` fail.
-function served(arg: str) -> s3_bucket.Bucket?
-    setup = s3_bucket.parse_setup(arg)?
+# Fails as `net.listen` and `ready.tell` fail.
+function served(start: Start) -> s3_bucket.Bucket?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
-    match ready.tell(control_port: setup.control_port, service: "s3", port: listener.address.port)
+    match ready.tell(start.ready, service: "s3", port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)
         .ok _ => _ = 0
 
-    b @= s3_bucket.bucket_of(setup)
+    b @= s3_bucket.bucket_of(start.setup)
 
     while true
         match net.accept(listener, deadline_ms: CONNECTION_MS)
@@ -149,7 +161,7 @@ function handled(@b: s3_bucket.Bucket, r: http.Request) -> http.Response
 
 test "handled: an unsigned request is refused 403"
     b @= s3_bucket.bucket_of(
-        s3_bucket.Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
+        s3_bucket.Setup(bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
     )
     r = http.request(method: "GET", target: "/repo/config").must()
     assert handled(@b, r: r).status == 403
