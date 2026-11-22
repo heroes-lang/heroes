@@ -1,0 +1,62 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing: values holding a C handle
+# whose types other modules declare cross threads through a mailbox, written
+# `m.send(@v)`, and the thread that receives each holds its handle, adds to
+# it and gives it back (spec § 11; panel 254's S11 and R3). `jobs.Ask`'s
+# case `.count` holds `jobs.Job`, which holds `counters.Counter`, and the
+# program's own `State` holds a `jobs.Job`, as `examples-rebel/registry`'s
+# state holds its `sqlite.Db`. Every `@` here was refused, "`send` does not
+# change this argument", while the root was walked before the modules
+# declaring the types. Ten counters from 0 to 9 each add one, 55, and the
+# state's counter from 100 adds one, 101; every life ends.
+use counters
+use jobs
+
+function main()
+    inbox: (mailbox jobs.Ask) = mailbox()
+    t = spawn(worker, inbox).must()
+    k: i64 @= 0
+
+    while k < 10
+        ask: jobs.Ask @= jobs.asked(k)
+        inbox.send(@ask).must()
+        k @ k + 1
+
+    last: jobs.Ask @= .stop
+    inbox.send(@last).must()
+    print(t.wait())
+    states: (mailbox State) = mailbox()
+    u = spawn(keeper, states).must()
+    state: State @= State(name: "state", job: jobs.job(100))
+    states.send(@state).must()
+    print(u.wait())
+
+record State
+    name: str
+    job: jobs.Job
+
+function worker(inbox: (mailbox jobs.Ask)) -> i64
+    total: i64 @= 0
+
+    while true
+        got = inbox.receive(within_ms: 0 - 1)
+
+        if got.is_err()
+            return total
+        ask = got.must()
+
+        match ask
+            .stop => return total
+            .count c =>
+                held: counters.Counter @= c.job.counter
+                total @ total + counters.finish(@held, by: 1)
+
+    return total
+
+function keeper(states: (mailbox State)) -> i64
+    got = states.receive(within_ms: 0 - 1)
+
+    if got.is_err()
+        return 0
+    state = got.must()
+    held: counters.Counter @= state.job.counter
+    return counters.finish(@held, by: 1)

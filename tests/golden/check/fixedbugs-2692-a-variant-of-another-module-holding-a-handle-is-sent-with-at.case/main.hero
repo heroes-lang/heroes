@@ -1,0 +1,17 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing: `kinds.Ask`, one of whose
+# cases holds a C handle, is sent with `@` from a module other than its own.
+# Symptom: `m.send(a)` was accepted, a `FILE *` crossing with no hand-over,
+# and `m.send(@last)` refused, "`send` does not change this argument", the
+# checker reading `kinds.Ask` as holding nothing. Cause: a body asked what a
+# type holds by walking its fields' lowered types, and a record's or a
+# variant's fields were lowered only once the declarations' walk reached it,
+# so a body walked earlier, here the root's, read none (spec § 11; panel
+# 254's S11). The fields are lowered before any body now.
+use kinds
+
+function main()
+    m: (mailbox kinds.Ask) = mailbox()
+    a = kinds.holding()
+    _ = m.send(a).is_err()  #~ marker_mismatch
+    last: kinds.Ask @= kinds.holding()
+    _ = m.send(@last).is_err()

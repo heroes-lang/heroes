@@ -1,0 +1,5 @@
+# The catalogue of defect 2692's case beside it: one package of the author's
+# own, read from a folder, whose record holds a C handle as Rebel's
+# `sqlite.Db` holds its connection.
+[dependencies.vault]
+path = "vendor/vault"

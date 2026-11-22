@@ -1,0 +1,13 @@
+# The module of the case beside it: a group's record marked `partial`, and
+# a record holding it.
+
+extern "sys/stat.h"
+    record FileStat tag stat partial
+        st_size: i64
+
+record Sized
+    name: str
+    st: FileStat
+
+function made() -> Sized
+    return Sized(name: "empty", st: FileStat(st_size: 0, rest: zero))

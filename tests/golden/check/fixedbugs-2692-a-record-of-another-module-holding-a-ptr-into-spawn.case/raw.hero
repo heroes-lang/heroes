@@ -1,0 +1,12 @@
+# The module of the case beside it: a record holding a `ptr`, an address C
+# owns.
+
+extern "stdlib.h"
+    function malloc(size: u64) -> ptr
+
+record Raw
+    n: i64
+    at: ptr
+
+function made() -> Raw
+    return Raw(n: 1, at: malloc(size: 8))

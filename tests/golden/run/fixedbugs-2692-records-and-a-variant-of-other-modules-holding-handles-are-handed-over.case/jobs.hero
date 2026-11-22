@@ -1,0 +1,18 @@
+# A module of the case beside it: a record holding another module's handle,
+# and a variant one of whose cases holds the record.
+use counters
+
+record Job
+    name: str
+    counter: counters.Counter
+
+variant Ask
+    stop
+    count
+        job: Job
+
+function asked(k: i64) -> Ask
+    return .count(job: Job(name: f"job {k}", counter: counters.made(n: k)))
+
+function job(k: i64) -> Job
+    return Job(name: f"job {k}", counter: counters.made(n: k))

@@ -1,0 +1,23 @@
+# The package's one module: a counter C makes and frees, a C handle, held by
+# a record beside the words that describe it, as Rebel's `sqlite.Db` holds
+# its connection.
+
+extern "counters.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+record Store
+    path: str
+    counter: Counter
+
+function open(n: i64) -> Store
+    return Store(path: ":counter:", counter: counter_new(n: n))
+
+# Adds `by` to the store's counter and gives it back to C, answering its last
+# count.
+function close(@s: Store, by: i64) -> i64
+    n = counter_add(c: s.counter, by: by)
+    counter_free(c: s.counter)
+    return n

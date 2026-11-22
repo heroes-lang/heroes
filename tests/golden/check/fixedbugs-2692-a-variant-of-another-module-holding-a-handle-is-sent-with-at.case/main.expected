@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-variant-of-another-module-holding-a-handle-is-sent-with-at.case/main.hero:15:16: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too

@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-handle-in-a-record-nested-in-another-modules-record.case/main.hero:11:16: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too

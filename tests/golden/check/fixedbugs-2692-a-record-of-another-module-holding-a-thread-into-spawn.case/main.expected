@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-record-of-another-module-holding-a-thread-into-spawn.case/main.hero:12:21: error[thread_crossing]: `crew.Crew` holds a thread, which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives

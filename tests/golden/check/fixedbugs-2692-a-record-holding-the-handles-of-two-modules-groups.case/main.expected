@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2692-a-record-holding-the-handles-of-two-modules-groups.case/main.hero:16:16: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-2692-a-record-holding-the-handles-of-two-modules-groups.case/main.hero:17:21: error[thread_crossing]: `pair.Pair` holds a C handle, which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives

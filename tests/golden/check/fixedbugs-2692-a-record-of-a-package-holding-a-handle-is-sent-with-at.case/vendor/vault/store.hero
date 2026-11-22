@@ -1,0 +1,14 @@
+# The package's one module: a C handle, and a record holding it beside the
+# words that describe it, as Rebel's `sqlite.Db` holds its connection.
+
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32
+
+record Store
+    path: str
+    file: File
+
+function open() -> Store
+    return Store(path: ":temporary:", file: tmpfile())

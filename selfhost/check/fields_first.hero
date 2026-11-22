@@ -1,0 +1,67 @@
+# Every record's and every variant's field types, lowered before any body is
+# walked (design.md §4.2: declaration order does not matter; §4.3; spec § 4).
+#
+# A body asks what a type HOLDS by walking the lowered types of its fields:
+# a C handle or a thread for a send's `@` and a `spawn`'s argument
+# (`check/handed.hero`), a `ptr` or a `cstr` for what crosses a thread
+# (`emit/key_pointer.hero`), a `partial` record for `==` (`check/partial.hero`).
+# Each walk reads `written_types` and leaves out a field that has no answer
+# there. Until defect 2692 the declarations' walk lowered a record's fields
+# only on reaching the record, so a body walked before it, earlier in the
+# file, or in a module whose declarations come first in the program's one
+# list, read the record as holding nothing: a `FILE *` crossed into a thread
+# unhanded, a correct `m.send(@v)` was refused, and the verdict on one text
+# moved with the root it was compiled from. Lowered here, before the first
+# body, the answer is a fact of the type alone.
+#
+# Lowering reports nothing (`check/lower.hero`) and records the same answer
+# however often it is asked, so the declarations' walk lowering these fields
+# again, where it judges what a group's record may hold, changes no answer.
+
+use ast
+use check/lower
+use check/state
+use parse
+use resolve
+use resolved
+use source
+
+function lowered(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, decls: [ast.Decl])
+    for decl in decls
+        match decl.kind
+            .record_decl rec =>
+                for field in rec.fields
+                    _ = lower.lower_ty(@c, a, r, field.ty)
+            .variant_decl v =>
+                for one_case in v.cases
+                    for field in one_case.fields
+                        _ = lower.lower_ty(@c, a, r, field.ty)
+            .constant_decl | .function_decl | .test_decl => continue
+
+## Tests
+
+# A record and a variant declared after the function that reads them: each
+# field's written type has its answer before any body is walked.
+test "lowered: a field declared after every body has its type before them"
+    text = "function main()\n    print(1)\n\nrecord Later\n    n: i64\n    xs: [str]\n\nvariant Shape\n    dot\n    box\n        side: f64\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checker @= state.new_checker(out_of: out, expr_count: p.tree.exprs.len())
+    lowered(@c, p.tree, out, p.decls)
+    asked: i64 @= 0
+
+    for decl in p.decls
+        match decl.kind
+            .record_decl rec =>
+                for field in rec.fields
+                    assert !state.written_type(c.out, field.ty).is_err()
+                    asked @ asked + 1
+            .variant_decl v =>
+                for one_case in v.cases
+                    for field in one_case.fields
+                        assert !state.written_type(c.out, field.ty).is_err()
+                        asked @ asked + 1
+            .constant_decl | .function_decl | .test_decl => continue
+
+    assert asked == 3

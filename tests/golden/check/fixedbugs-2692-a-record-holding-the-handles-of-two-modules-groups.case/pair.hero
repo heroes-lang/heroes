@@ -1,0 +1,11 @@
+# A module of the case beside it: a record holding the handles of the two
+# modules' groups.
+use blocks
+use files
+
+record Pair
+    f: files.File
+    b: blocks.Block
+
+function made() -> Pair
+    return Pair(f: files.opened(), b: blocks.block())

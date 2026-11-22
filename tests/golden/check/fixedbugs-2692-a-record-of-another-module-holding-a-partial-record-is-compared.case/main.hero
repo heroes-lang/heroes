@@ -1,0 +1,14 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: `==` on
+# another module's record holding a `partial` record, whose fields this
+# program cannot all see. Symptom: accepted, where the same records declared
+# in the one module, before the comparison, were refused. Cause: the walk
+# asking whether a type reaches a `partial` record read the fields' lowered
+# types, and the record's fields were lowered only once the declarations'
+# walk reached its module, after the root's `same` (spec § 13).
+use stats
+
+function same(a: stats.Sized, b: stats.Sized) -> bool
+    return a == b  #~ ffi_partial_operation
+
+function main()
+    print(same(a: stats.made(), b: stats.made()))

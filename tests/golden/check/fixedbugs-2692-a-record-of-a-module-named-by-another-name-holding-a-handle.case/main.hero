@@ -1,0 +1,12 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: the
+# module holding the record is bound by another name, `use kinds as k`, and
+# the record written `k.Boxed`. Symptom: `m.send(b)` was accepted with no
+# `@`. Cause: the record's fields were lowered only once the declarations'
+# walk reached its module, after the root's `main`; the name a file binds
+# the module by takes no part (spec § 1, § 11).
+use kinds as k
+
+function main()
+    m: (mailbox k.Boxed) = mailbox()
+    b = k.boxed()
+    _ = m.send(b).is_err()  #~ marker_mismatch
