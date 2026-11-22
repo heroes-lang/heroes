@@ -1,0 +1,116 @@
+# How long a cell takes, measured with `bench`: its statements run again and
+# again on a copy of the state the cell started from, a warm-up first, then
+# rounds, the time a run took told by the rounds kept (their median, their
+# best, their spread). The copy writes no plot, so a timed cell's files are
+# written once, by its real run.
+#
+# A transcript that must read the same on every machine tells the rounds
+# kept and never a time: with `quick` settings every round is kept (none is
+# discarded as waiting), so the count is the rounds asked; the REPL's
+# `:bench` and `lab run --times` tell the times.
+
+use <rebel>/bench
+use <rebel>/math
+use <rebel>/time
+
+use eval/evaluate
+use eval/machine
+use lang/ast
+use numbers/scalar
+
+# The rounds a quick measurement keeps.
+constant QUICK_ROUNDS: i64
+    5
+
+# What a timing re-runs: the state before the cell, and the cell's
+# statements.
+record Job
+    # The evaluation as the cell found it, writing no plot.
+    machine: machine.Machine
+    # The cell's statements.
+    statements: [ast.Statement]
+    # The cell's name, for its generator.
+    cell: str
+
+# What a timing found.
+record Timing
+    # The rounds kept.
+    kept: i64
+    # The measurement in one line, `bench`'s: the median, the best, the
+    # spread, the rounds kept and discarded.
+    text: str
+
+# The job of timing `statements` from the state `m`, its plots not written.
+#
+# - `m`: the evaluation before the cell.
+# - `statements`: the cell's statements.
+# - `cell`: the cell's name.
+function job_of(m: machine.Machine, statements: [ast.Statement], cell: str) -> Job
+    copy @= m
+    copy.plots @ ""
+    return Job(machine: copy, statements: statements, cell: cell)
+
+# Runs the job's statements once on a copy of its state and answers how many
+# ran: the work `bench.measure` calls over and over.
+#
+# - `job`: the job.
+function run_once(job: Job) -> i64
+    m @= job.machine
+    machine.enter_cell(@m, cell: job.cell)
+    done @= 0
+
+    for s in job.statements
+        if evaluate.run(@m, s: s).is_err()
+            return done
+        done @ done + 1
+
+    return done
+
+# The settings of a measurement: `bench`'s own where `quick` is false; five
+# rounds of a millisecond at least, every one kept, within a minute, where
+# it is true, so a slow machine still keeps the five a transcript counts.
+#
+# - `quick`: whether the measurement is the demo's.
+function settings(quick: bool) -> bench.Settings
+    if !quick
+        return bench.default_settings()
+    s = bench.with_rounds(
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1).default(time.nanoseconds(1_000_000))),
+        rounds: QUICK_ROUNDS
+    )
+    within = bench.with_time(s, most: time.seconds(60).default(time.nanoseconds(60_000_000_000)))
+    return bench.with_waiting(within, share: math.INF)
+
+# How long the job takes.
+#
+# - `job`: the job.
+# - `quick`: whether the settings are the quick ones.
+#
+# Fails as `bench.measure` fails: a clock that cannot be read, or no round
+# kept in the time allowed.
+function measure(job: Job, quick: bool) -> Timing?
+    report = bench.measure(work: run_once, input: job, settings: settings(quick))?
+    return ok(Timing(kept: report.summary.count, text: report.text))
+
+# The timing as a transcript's line: with its times where `times`, with the
+# rounds kept alone where not.
+#
+# - `t`: the timing.
+# - `times`: whether the times are told.
+function line_of(t: Timing, times: bool) -> str
+    if times
+        return "bench: " + t.text
+    return f"bench: {t.kept} rounds kept"
+
+test "measure: a cell's statements timed, every quick round kept"
+    m = machine.new(plots: "", seed: 1)
+    two: ast.Statement = .show(expr: ast.node(.number(value: scalar.of_int(2)), line: 1, column: 1))
+    t = measure(job_of(m, statements: [two], cell: "c"), quick: true).must()
+    assert t.kept == QUICK_ROUNDS
+    assert line_of(t, times: false) == "bench: 5 rounds kept"
+
+test "run_once: the statements that ran, the first failure stopping it"
+    m = machine.new(plots: "", seed: 1)
+    two: ast.Statement = .show(expr: ast.node(.number(value: scalar.of_int(2)), line: 1, column: 1))
+    bad: ast.Statement = .show(expr: ast.node(.name(id: "nowhere"), line: 2, column: 1))
+    assert run_once(job_of(m, statements: [two, bad, two], cell: "c")) == 1

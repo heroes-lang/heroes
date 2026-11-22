@@ -1,0 +1,424 @@
+# A matrix of any size whose entries are the lab's numbers (`numbers/scalar`),
+# so a matrix of whole numbers and fractions is computed with exactly and
+# its inverse comes out in fractions, while one holding a float is computed
+# in floats. Held row after row, the first row first; every function takes
+# and answers positions from 0, the lab's notation adding the 1 a person
+# counts from.
+#
+# This module holds the shape and the arithmetic of matrices; elimination
+# (`linalg/eliminate`), the float decompositions (`linalg/decompose`) and
+# the small matrices of geometry (`linalg/small`) are built on it.
+
+use <rebel>/math
+
+use numbers/arith
+use numbers/scalar
+
+# The code of matrices whose shapes the operation cannot take.
+constant INVALID: str
+    "invalid"
+
+# The most entries a matrix may hold, a guard on what a notebook asks for:
+# a thousand by a thousand.
+constant MOST_CELLS: i64
+    1_000_000
+
+# A matrix of `rows` by `cols` numbers. Made by `make`, `filled` and the
+# functions here, which keep `cells` exactly `rows` times `cols` long.
+record Matrix
+    # The rows, 1 or more.
+    rows: i64
+    # The columns, 1 or more.
+    cols: i64
+    # The entries, row after row.
+    cells: [scalar.Number]
+
+# The matrix of `rows` by `cols` holding `cells`, row after row.
+#
+# - `rows`: the rows, 1 or more.
+# - `cols`: the columns, 1 or more.
+# - `cells`: exactly `rows` times `cols` numbers.
+#
+# Fails `invalid` where a side is below 1, the count of `cells` is another,
+# or the matrix would pass `MOST_CELLS`.
+function make(rows: i64, cols: i64, cells: [scalar.Number]) -> Matrix?
+    if rows < 1 || cols < 1
+        return fail(code: INVALID, msg: f"a matrix of {rows} by {cols} has no entries")
+
+    if rows > MOST_CELLS / cols
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {rows} by {cols} is past the {MOST_CELLS} entries a matrix may hold"
+        )
+
+    if cells.len() != rows * cols
+        return fail(code: INVALID, msg: f"{cells.len()} entries for a matrix of {rows} by {cols}")
+    return ok(Matrix(rows: rows, cols: cols, cells: cells))
+
+# The matrix of `rows` by `cols` whose every entry is `value`.
+#
+# - `rows`: the rows, 1 or more.
+# - `cols`: the columns, 1 or more.
+# - `value`: the entry.
+#
+# Fails as `make` does.
+function filled(rows: i64, cols: i64, value: scalar.Number) -> Matrix?
+    if rows < 1 || cols < 1 || rows > MOST_CELLS / cols
+        return make(rows: rows, cols: cols, cells: [])
+    cells: [scalar.Number] @= []
+
+    for _ in range(from: 0, to: rows * cols)
+        cells @ cells.push(value)
+
+    return make(rows: rows, cols: cols, cells: cells)
+
+# The identity matrix of `n` rows: exact ones on the diagonal, exact zeros
+# elsewhere.
+#
+# - `n`: the rows and columns, 1 or more.
+#
+# Fails as `make` does.
+function identity(n: i64) -> Matrix?
+    m @= filled(rows: n, cols: n, value: scalar.of_int(0))?
+
+    for k in range(from: 0, to: n)
+        put(@m, row: k, col: k, value: scalar.of_int(1))
+
+    return ok(m)
+
+# The matrix whose rows are `rows`.
+#
+# - `rows`: the rows, each of one length.
+#
+# Fails `invalid` where `rows` is empty or two rows differ in length.
+function of_rows(rows: [[scalar.Number]]) -> Matrix?
+    if rows.len() == 0
+        return fail(code: INVALID, msg: "a matrix of no rows")
+    cells: [scalar.Number] @= []
+    width = rows[0].len()
+
+    for row in rows
+        if row.len() != width
+            return fail(code: INVALID, msg: f"rows of {width} and {row.len()} entries in one matrix")
+
+        for x in row
+            cells @ cells.push(x)
+
+    return make(rows: rows.len(), cols: width, cells: cells)
+
+# The matrix of `rows` by `cols` floats `xs`, row after row.
+#
+# - `rows`: the rows.
+# - `cols`: the columns.
+# - `xs`: exactly `rows` times `cols` floats.
+#
+# Aborts where the count is wrong, which the callers in this program keep.
+function of_floats(rows: i64, cols: i64, xs: [f64]) -> Matrix
+    cells: [scalar.Number] @= []
+
+    for x in xs
+        cells @ cells.push(scalar.of_real(x))
+
+    return make(rows: rows, cols: cols, cells: cells).must()
+
+# The entry of `m` at `row` and `col`, from 0.
+#
+# - `m`: the matrix.
+# - `row`: the row, 0 to `m.rows - 1`.
+# - `col`: the column, 0 to `m.cols - 1`.
+#
+# Aborts outside the matrix, a position the program holds.
+function at(m: Matrix lent, row: i64, col: i64) -> scalar.Number
+    assert row >= 0 && row < m.rows && col >= 0 && col < m.cols
+    return m.cells[row * m.cols + col]
+
+# Writes `value` into `m` at `row` and `col`, from 0.
+#
+# - `m`: the matrix changed.
+# - `row`: the row.
+# - `col`: the column.
+# - `value`: the entry.
+#
+# Aborts outside the matrix.
+function put(@m: Matrix, row: i64, col: i64, value: scalar.Number)
+    assert row >= 0 && row < m.rows && col >= 0 && col < m.cols
+    m.cells[row * m.cols + col] @ value
+
+# The entries of the row `row`, from 0.
+#
+# - `m`: the matrix.
+# - `row`: the row.
+function row_of(m: Matrix lent, row: i64) -> [scalar.Number]
+    return m.cells.slice(from: row * m.cols, to: row * m.cols + m.cols)
+
+# The entries of the column `col`, from 0.
+#
+# - `m`: the matrix.
+# - `col`: the column.
+function column_of(m: Matrix lent, col: i64) -> [scalar.Number]
+    out: [scalar.Number] @= []
+
+    for r in range(from: 0, to: m.rows)
+        out @ out.push(at(m, row: r, col: col))
+
+    return out
+
+# The transpose of `m`: its rows become columns.
+#
+# - `m`: the matrix.
+function transpose(m: Matrix) -> Matrix
+    cells: [scalar.Number] @= []
+
+    for c in range(from: 0, to: m.cols)
+        for r in range(from: 0, to: m.rows)
+            cells @ cells.push(at(m, row: r, col: c))
+
+    return Matrix(rows: m.cols, cols: m.rows, cells: cells)
+
+# `a + b`, entry by entry.
+#
+# - `a`: one matrix.
+# - `b`: the other, of the same shape.
+#
+# Fails `invalid` where the shapes differ.
+function add(a: Matrix, b: Matrix) -> Matrix?
+    same_shape(a: a, b: b, what: "added")?
+    cells: [scalar.Number] @= []
+
+    for k in range(from: 0, to: a.cells.len())
+        cells @ cells.push(arith.add(a: a.cells[k], b: b.cells[k]))
+
+    return ok(Matrix(rows: a.rows, cols: a.cols, cells: cells))
+
+# `a - b`, entry by entry.
+#
+# - `a`: the matrix subtracted from.
+# - `b`: the matrix subtracted, of the same shape.
+#
+# Fails `invalid` where the shapes differ.
+function subtract(a: Matrix, b: Matrix) -> Matrix?
+    return add(a: a, b: scale(b, by: scalar.of_int(-1)))
+
+# `m` times the number `by`, entry by entry.
+#
+# - `m`: the matrix.
+# - `by`: the factor.
+function scale(m: Matrix, by: scalar.Number) -> Matrix
+    cells: [scalar.Number] @= []
+
+    for x in m.cells
+        cells @ cells.push(arith.multiply(a: x, b: by))
+
+    return Matrix(rows: m.rows, cols: m.cols, cells: cells)
+
+# The matrix product `a b`: entry (r, c) is the sum of row r of `a` times
+# column c of `b`.
+#
+# - `a`: the left matrix.
+# - `b`: the right matrix, with as many rows as `a` has columns.
+#
+# Fails `invalid` where `a.cols` is not `b.rows`. It costs `a.rows` times
+# `a.cols` times `b.cols` products.
+function multiply(a: Matrix, b: Matrix) -> Matrix?
+    if a.cols != b.rows
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} by {a.cols} times one of {b.rows} by {b.cols}: the columns of the first must be the rows of the second"
+        )
+    cells: [scalar.Number] @= []
+
+    for r in range(from: 0, to: a.rows)
+        for c in range(from: 0, to: b.cols)
+            total @= scalar.of_int(0)
+
+            for k in range(from: 0, to: a.cols)
+                total @ arith.add(a: total, b: arith.multiply(a: at(a, row: r, col: k), b: at(b, row: k, col: c)))
+
+            cells @ cells.push(total)
+
+    return ok(Matrix(rows: a.rows, cols: b.cols, cells: cells))
+
+# `m` raised to the whole power `k` by repeated squaring.
+#
+# - `m`: a square matrix.
+# - `k`: the power, 0 or more; 0 answers the identity.
+#
+# Fails `invalid` where `m` is not square or `k` is negative (`inv` first).
+function power(m: Matrix, k: i64) -> Matrix?
+    if m.rows != m.cols
+        return fail(code: INVALID, msg: "only a square matrix has powers")
+
+    if k < 0
+        return fail(code: INVALID, msg: "a negative power of a matrix: take `inv` of it first")
+    result @= identity(m.rows)?
+    square @= m
+    left @= k
+
+    while left > 0
+        if left % 2 == 1
+            result @ multiply(a: result, b: square)?
+        left @ left / 2
+
+        if left > 0
+            square @ multiply(a: square, b: square)?
+
+    return ok(result)
+
+# The sum of the diagonal of `m`.
+#
+# - `m`: a square matrix.
+#
+# Fails `invalid` where `m` is not square.
+function trace(m: Matrix) -> scalar.Number?
+    if m.rows != m.cols
+        return fail(code: INVALID, msg: "only a square matrix has a trace")
+    total @= scalar.of_int(0)
+
+    for k in range(from: 0, to: m.rows)
+        total @ arith.add(a: total, b: at(m, row: k, col: k))
+
+    return ok(total)
+
+# `a` and `b` side by side: `b`'s columns after `a`'s.
+#
+# - `a`: the left matrix.
+# - `b`: the right matrix, with as many rows.
+#
+# Fails `invalid` where the rows differ.
+function beside(a: Matrix, b: Matrix) -> Matrix?
+    if a.rows != b.rows
+        return fail(code: INVALID, msg: f"a matrix of {a.rows} rows beside one of {b.rows}")
+    cells: [scalar.Number] @= []
+
+    for r in range(from: 0, to: a.rows)
+        for x in row_of(a, row: r)
+            cells @ cells.push(x)
+
+        for x in row_of(b, row: r)
+            cells @ cells.push(x)
+
+    return ok(Matrix(rows: a.rows, cols: a.cols + b.cols, cells: cells))
+
+# The columns `from` to `to` of `m`, `to` left out.
+#
+# - `m`: the matrix.
+# - `from`: the first column kept.
+# - `to`: one past the last, above `from`.
+#
+# Aborts outside the matrix.
+function columns(m: Matrix, from: i64, to: i64) -> Matrix
+    assert from >= 0 && to <= m.cols && from < to
+    cells: [scalar.Number] @= []
+
+    for r in range(from: 0, to: m.rows)
+        for c in range(from: from, to: to)
+            cells @ cells.push(at(m, row: r, col: c))
+
+    return Matrix(rows: m.rows, cols: to - from, cells: cells)
+
+# The widest kind of `m`'s entries: 0 whole numbers, 1 fractions, 2 reals, 3
+# complex numbers.
+#
+# - `m`: the matrix.
+function kind_of(m: Matrix lent) -> i64
+    widest @= 0
+
+    for x in m.cells
+        widest @ math.max_i64(a: widest, b: scalar.rank(x))
+
+    return widest
+
+# `m`'s entries as floats, row after row.
+#
+# - `m`: the matrix.
+#
+# Fails `invalid` where an entry is complex.
+function floats_of(m: Matrix lent) -> [f64]?
+    out: [f64] @= []
+
+    for x in m.cells
+        out @ out.push(scalar.float_of(x)?)
+
+    return ok(out)
+
+# Whether `m` equals its transpose, exactly or, for floats, to within a
+# millionth of a millionth of its largest entry.
+#
+# - `m`: the matrix.
+function is_symmetric(m: Matrix lent) -> bool
+    if m.rows != m.cols
+        return false
+    largest @= 0.0
+
+    for x in m.cells
+        largest @ math.max(a: largest, b: math.abs(scalar.float_of(x).default(math.INF)))
+
+    for r in range(from: 0, to: m.rows)
+        for c in range(from: r + 1, to: m.cols)
+            x = at(m, row: r, col: c)
+            y = at(m, row: c, col: r)
+
+            if !arith.equals(a: x, b: y)
+                gap = arith.subtract(a: x, b: y)
+                size = math.abs(scalar.float_of(gap).default(math.INF))
+
+                if size > largest * 0.000_000_000_001
+                    return false
+
+    return true
+
+# Fails `invalid` where `a` and `b` differ in shape, saying they cannot be
+# `what`.
+#
+# - `a`: one matrix.
+# - `b`: the other.
+# - `what`: the operation, `added`.
+function same_shape(a: Matrix lent, b: Matrix lent, what: str) -> ()?
+    if a.rows != b.rows || a.cols != b.cols
+        return fail(
+            code: INVALID,
+            msg: f"a matrix of {a.rows} by {a.cols} and one of {b.rows} by {b.cols} cannot be {what}"
+        )
+    return ok()
+
+test "make: the shape held, a wrong count and an empty side refused"
+    m = make(rows: 2, cols: 2, cells: [scalar.of_int(1), scalar.of_int(2), scalar.of_int(3), scalar.of_int(4)]).must()
+    assert at(m, row: 1, col: 0) == scalar.of_int(3)
+    assert make(rows: 2, cols: 2, cells: [scalar.of_int(1)]).is_err()
+    assert make(rows: 0, cols: 3, cells: []).is_err()
+    assert filled(rows: 2_000, cols: 2_000, value: scalar.of_int(0)).is_err()
+
+test "multiply: a product, a shape refused, the identity"
+    a = make(
+        rows: 2,
+        cols: 3,
+        cells: [scalar.of_int(1), scalar.of_int(2), scalar.of_int(3), scalar.of_int(4), scalar.of_int(5), scalar.of_int(6)]
+    ).must()
+    b = transpose(a)
+    p = multiply(a: a, b: b).must()
+    assert p.rows == 2 && p.cols == 2
+    assert at(p, row: 0, col: 0) == scalar.of_int(14)
+    assert at(p, row: 1, col: 1) == scalar.of_int(77)
+    assert multiply(a: a, b: a).is_err()
+    assert multiply(a: identity(2).must(), b: a).must() == a
+
+test "power and trace: the Fibonacci matrix, a negative power refused"
+    f = make(rows: 2, cols: 2, cells: [scalar.of_int(1), scalar.of_int(1), scalar.of_int(1), scalar.of_int(0)]).must()
+    assert at(power(f, k: 10).must(), row: 0, col: 1) == scalar.of_int(55)
+    assert power(f, k: 0).must() == identity(2).must()
+    assert power(f, k: -1).is_err()
+    assert trace(f).must() == scalar.of_int(1)
+
+test "beside and columns: an augmented matrix taken apart"
+    a = identity(2).must()
+    b = make(rows: 2, cols: 1, cells: [scalar.of_int(7), scalar.of_int(8)]).must()
+    both = beside(a: a, b: b).must()
+    assert both.cols == 3
+    assert columns(both, from: 2, to: 3) == b
+
+test "is_symmetric: exact, a float within the tolerance, a non-square"
+    s = make(rows: 2, cols: 2, cells: [scalar.of_int(2), scalar.of_int(1), scalar.of_int(1), scalar.of_int(3)]).must()
+    assert is_symmetric(s)
+    t = of_floats(rows: 2, cols: 2, xs: [1.0, 0.1 + 0.2, 0.3, 1.0])
+    assert is_symmetric(t)
+    assert !is_symmetric(make(rows: 1, cols: 2, cells: [scalar.of_int(1), scalar.of_int(2)]).must())

@@ -1,0 +1,115 @@
+# A chart written as a PNG file (`image/png`), with its title and the
+# program that drew it in text chunks, and what a transcript says of it: its
+# name, its size in pixels and in bytes, and the CRC-32 of its bytes
+# (`hash`), which tells two runs' plots apart without showing a path.
+#
+# A chart is drawn in the seven colours of `canvas.palette` and written as an
+# indexed PNG of their indices: a third of the bytes to filter and compress
+# of the same image in RGB, and about a quarter of the time (measured on
+# 2026-11-22 on a histogram of 640 by 400: 1,688 ms and 2,654 bytes in RGB,
+# 447 ms and 1,680 bytes indexed, the indexing included).
+#
+# `png.encode` answers the same bytes for the same image every time, so the
+# size and the CRC of a plot are a fact of the notebook, not of the run.
+
+use <rebel>/fs
+use <rebel>/hash
+use <rebel>/image
+use <rebel>/image/png
+use <rebel>/path
+
+use plot/canvas
+
+# What a plot written comes to.
+record Written
+    # The file's name, without its folder.
+    file: str
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+    # Its size in bytes.
+    size: i64
+    # The CRC-32 of its bytes.
+    crc: u32
+
+# `img` as the bytes of an indexed PNG file over `canvas.palette`, its
+# title and the program named in `tEXt` chunks.
+#
+# - `img`: the chart, drawn in the palette's colours; another colour is
+#   written as the palette's nearest.
+# - `title`: its title.
+#
+# Fails `invalid` where the title cannot stand in a text chunk.
+function encoded(img: image.Image, title: str) -> [u8]?
+    chunks: [png.Chunk] @= [png.text_chunk(keyword: "Software", text: "lab")?]
+
+    if title != ""
+        chunks @ chunks.push(png.text_chunk(keyword: "Title", text: title)?)
+    indexed = image.to_indexed(img, palette: canvas.palette(), dither: false)?
+    return png.encode_indexed(indexed, options: png.EncodeOptions(level: 6, filter: .none, chunks: chunks))
+
+# Writes `img` as the PNG file `file` in the folder `dir`, made where it is
+# not there, and answers what was written; with `dir` empty, writes nothing
+# and answers the same, so a timing or a test computes a plot without
+# touching the disk.
+#
+# - `img`: the chart.
+# - `title`: its title.
+# - `dir`: the folder, or "" for none.
+# - `file`: the file's name, `spread.png`.
+#
+# Fails where the bytes cannot be made, the folder made or the file written,
+# with their codes.
+function write(img: image.Image, title: str, dir: str, file: str) -> Written?
+    data = encoded(img, title: title)?
+
+    if dir != ""
+        fs.make_dir_all(dir)?
+        fs.write_bytes(path.join_all([dir, file]), data: data)?
+    return ok(Written(file: file, width: img.width, height: img.height, size: data.len(), crc: hash.crc32(data)))
+
+# What a plot's file holds, read back: the size of its image and its title.
+record Checked
+    # The image's width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+    # The text of its `Title` chunk, "" where it has none.
+    title: str
+
+# The plot `file` in the folder `dir` decoded whole, its pixels inflated and
+# every chunk's CRC checked, and its title read from its text chunks.
+#
+# - `dir`: the folder.
+# - `file`: the file's name.
+#
+# Fails where the file cannot be read, or `invalid` and `limit` where it is
+# no PNG `image/png` reads.
+function read_back(dir: str, file: str) -> Checked?
+    data = fs.read_bytes(path.join_all([dir, file]))?
+    keep = png.DecodeOptions(limits: image.default_limits(), keep: .only(kinds: ["tEXt", "iTXt"]))
+    decoded = png.decode_with(data, options: keep)?
+    title: str @= ""
+
+    for t in png.texts_of(decoded.chunks, limit: 4096)?
+        if t.keyword == "Title"
+            title @ t.text
+
+    return ok(Checked(width: decoded.image.width, height: decoded.image.height, title: title))
+
+test "write: the same image twice is the same bytes, and the file reads back as a PNG"
+    img @= image.blank(width: 4, height: 3, format: .rgb).must()
+    image.fill_rect(@img, x: 0, y: 0, width: 2, height: 2, color: image.Color(r: 200, g: 10, b: 10, a: 255))
+    first = write(img, title: "t", dir: "", file: "t.png").must()
+    second = write(img, title: "t", dir: "", file: "t.png").must()
+    assert first == second
+    dir = "build/lab-test-plot"
+    written = write(img, title: "t", dir: dir, file: "t.png").must()
+    data = fs.read_bytes(dir + "/t.png").must()
+    assert data.len() == written.size
+    info = png.info_of(data).must()
+    assert info.width == 4 && info.height == 3
+    back = read_back(dir: dir, file: "t.png").must()
+    assert back == Checked(width: 4, height: 3, title: "t")
+    _ = fs.remove_all(dir).is_err()

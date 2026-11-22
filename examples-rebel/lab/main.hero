@@ -1,0 +1,139 @@
+# lab: a scientific calculator and notebook, in the family of a computer
+# algebra system's REPL and of Pluto's reactive notebooks in small. Its
+# language computes with exact whole numbers and fractions of any size
+# (`2^128 + 1`, `1/3 + 1/6` is `1/2`, `30!`), floats and complex numbers
+# (`sqrt(-16)` is `4i`), vectors and matrices (an exact `solve` and `inv`,
+# `det`, `rank`, `rref`, the LU, QR and Cholesky decompositions,
+# eigenvalues, least squares, rotations), statistics over data series,
+# random samples drawn from a seed, the integral and the root of a function,
+# and plots written as PNG images (a function's graph, a histogram, a
+# scatter with its fitted line). A notebook is a file of named cells; a cell
+# runs after the cells whose names it reads, and after an edit only the
+# cells the edit reaches run again.
+#
+# Run it for real:
+#
+#     lab                                 the REPL; :help lists what it knows
+#     lab run notes.lab                   a notebook run, each cell reported
+#     lab run notes.lab --plots out --times
+#     echo "factor(2^64 + 1)" | lab       one line, from a pipe
+#
+# `lab demo` runs the scripted demo on the notebook read from the input
+# (`main.stdin`): its report, its plots read back, two edits and what each
+# re-ran, and a REPL session, all reading the same on every run; the plots
+# go to `build/lab/`.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `scanner`, `regex`: the language's tokens, its imaginary numbers as a
+#   class of the program's own; a notebook's cell headers and seed;
+# - `big`: exact whole numbers and fractions, their powers, roots,
+#   factorials, primes and decimal expansions;
+# - `math`, `math/complex`: the functions of a float and of a complex number;
+# - `math/linear`: the determinant and inverse of the small float matrices,
+#   rotations of the plane and of space, the cross product;
+# - `numbers`: numbers written as text and read from it;
+# - `graphs`: the cells' dependencies, their order, their circles, and the
+#   cells an edit reaches;
+# - `random`: every cell's own seeded generator, the uniform, normal and
+#   whole-number samples, shuffling and sampling;
+# - `stats`: the means, variances, quantiles, correlations and fitted lines;
+# - `bench`: a cell or a line timed;
+# - `image`, `image/png`, `hash`: the plots drawn, written as PNG files, read
+#   back, and told by their CRC-32;
+# - `term`: the REPL's line editor, its completion and colours, the tables
+#   and columns of its answers;
+# - `lists`, `maps`, `strings`, `errors`, `flags`, `fs`, `io`, `path`, `time`:
+#   sorting, the names of a session, text, failures, the command line, the
+#   files, the input, the plots' paths, the timings' spans.
+
+use <rebel>/errors
+use <rebel>/io
+
+use cli/command_line
+use demo/run as demo
+use notebook/cells
+use notebook/report
+use notebook/run as runs
+use repl/terminal
+
+# The exit code of a command line the program does not read.
+constant USAGE: i64
+    2
+
+# Writes `message` on the standard error, a line that cannot be written
+# dropped, there being nowhere else to say it.
+#
+# - `message`: the line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+# The text of the notebook at `path`, or of the input where it is `-`.
+#
+# - `path`: the notebook's file, or `-`.
+#
+# Fails where it cannot be read, with its code.
+function notebook_text(path: str) -> str?
+    if path == "-"
+        return io.read_all_text(io.stdin())
+    return read_file(path)
+
+# Runs the notebook `inv` names and prints its report; answers 0 where every
+# cell ran, 1 where one did not or the notebook could not be read.
+#
+# - `inv`: the command line.
+function run_notebook(inv: command_line.Invocation) -> i64
+    read = notebook_text(inv.notebook)
+
+    if read.is_err()
+        complain("lab run: " + errors.format_line(read))
+        return 1
+    nb = cells.parse(read.must())
+
+    if nb.is_err()
+        complain(f"lab run: {inv.notebook}: " + errors.format_line(nb))
+        return 1
+    r = runs.run_all(nb.must(), plots: inv.plots, times: inv.times)
+
+    for line in report.full(r)
+        print(line)
+
+    for name in keys(r.outcomes)
+        if r.outcomes[name].must().status != .ran
+            return 1
+
+    return 0
+
+# The exit code of `done`: 0 where it did what it was asked, else 1, its
+# failure told on the standard error.
+#
+# - `done`: what the command came to.
+function finished(done: ()?) -> i64
+    match done
+        .ok _ => return 0
+        .err _ =>
+            complain("lab: " + errors.format_line(done))
+            return 1
+
+function main()
+    given = command_line.texts_of(args_checked())
+
+    if given.is_err()
+        complain(errors.format_line(given))
+        exit(code: USAGE)
+    read = command_line.read(given.must())
+
+    if read.is_err()
+        complain(errors.format_line(read))
+        exit(code: USAGE)
+    inv = read.must()
+
+    code = match inv.action
+        "help" =>
+            print(inv.help)
+            0
+        "run"  => run_notebook(inv)
+        "demo" => finished(errors.context(demo.run(inv.plots), what: "the demo"))
+        _      => terminal.run(plots: inv.plots, seed: inv.seed)
+
+    exit(code: code)

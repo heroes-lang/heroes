@@ -1,0 +1,328 @@
+# A notebook run: every cell evaluated in the order its dependencies give
+# (`notebook/graph`), each statement echoed with its value, and what each
+# cell defined kept, so that after an edit only the cells it reaches are
+# evaluated again, the others keeping what they had.
+#
+# A cell starts from the names every cell that ran has defined, and its
+# random generator from the notebook's seed and its own name
+# (`eval/machine`), so a cell re-run alone answers what it answered in a
+# whole run. A cell that cannot run (its text does not parse, it defines a
+# name another cell defines, it stands on a circle) says why; a cell that
+# reads from one that did not run is skipped, naming it; a statement that
+# fails ends its cell there.
+
+use <rebel>/strings
+
+use bench/timing
+use eval/evaluate
+use eval/machine
+use eval/show
+use eval/value
+use lang/ast
+use notebook/cells
+use notebook/graph
+
+# What became of a cell.
+variant Status
+    # Every statement ran.
+    ran
+    # A statement failed; the ones before it ran.
+    failed
+    # The cell cannot run as it is written.
+    blocked
+    # A cell it reads from did not run.
+    skipped
+
+# A cell's outcome: its transcript, its plots, and the names it defined.
+record Outcome
+    # The cell's name.
+    name: str
+    # What became of it.
+    status: Status
+    # Its transcript: each statement echoed, `in:`, its value, `out:`, or its
+    # failure, `error:`.
+    lines: [str]
+    # The plots it wrote.
+    plots: [value.Plot]
+    # The names it gave values, with them.
+    values: {str: value.Value}
+    # The functions it defined.
+    functions: {str: machine.Function}
+    # Its timing's line, "" where it is not timed.
+    timing: str
+
+# A notebook as it was last run.
+record Run
+    # The notebook.
+    notebook: cells.Notebook
+    # Its cells and their graph.
+    analysis: graph.Analysis
+    # Each cell's outcome.
+    outcomes: {str: Outcome}
+    # The folder plots are written to, "" for none.
+    plots: str
+    # Whether a timing tells its times, or only its rounds.
+    times: bool
+
+# What a re-run did.
+record Rerun
+    # The notebook as it now stands.
+    run: Run
+    # The cells evaluated again, in the order they ran.
+    ran: [str]
+    # The cells that kept their outcome.
+    kept: [str]
+
+# Runs every cell of `nb`.
+#
+# - `nb`: the notebook.
+# - `plots`: the folder its plots are written to, "" for none.
+# - `times`: whether timings tell their times.
+function run_all(nb: cells.Notebook, plots: str, times: bool) -> Run
+    a = graph.analyse(nb)
+    first = Run(notebook: nb, analysis: a, outcomes: {}, plots: plots, times: times)
+    return evaluated(first, names: graph.order(a))
+
+# Runs `nb`, an edit of what `previous` ran, evaluating only the cells the
+# edit reaches: the cells whose text or flags changed, the cells new or gone,
+# and every cell that depends on one of them before the edit or after it.
+#
+# - `previous`: the run before the edit.
+# - `nb`: the notebook after it.
+function rerun(previous: Run, nb: cells.Notebook) -> Rerun
+    a = graph.analyse(nb)
+    changed: [str] @= []
+
+    for c in nb.cells
+        match cells.cell_named(previous.notebook, name: c.name)
+            .ok old =>
+                if old.source != c.source || old.flags != c.flags
+                    changed @ changed.push(c.name)
+            .err _ => changed @ changed.push(c.name)
+
+    for old in previous.notebook.cells
+        if cells.cell_named(nb, name: old.name).is_err()
+            changed @ changed.push(old.name)
+
+    dirty: {str: bool} @= {}
+
+    for c in graph.affected(a, changed: changed)
+        dirty[c] @ true
+
+    for c in graph.affected(previous.analysis, changed: changed)
+        dirty[c] @ true
+
+    ran: [str] @= []
+    kept: [str] @= []
+    outcomes: {str: Outcome} @= {}
+
+    for c in graph.order(a)
+        if dirty[c].default(false)
+            ran @ ran.push(c)
+        else
+            kept @ kept.push(c)
+
+            match previous.outcomes[c]
+                .ok o  => outcomes[c] @ o
+                .err _ => _ = 0
+
+    start = Run(notebook: nb, analysis: a, outcomes: outcomes, plots: previous.plots, times: previous.times)
+    return Rerun(run: evaluated(start, names: ran), ran: ran, kept: kept)
+
+# `r` with the cells `names` evaluated in that order, each from the outcomes
+# before it.
+#
+# - `r`: the run so far.
+# - `names`: the cells to evaluate, in the order they run.
+function evaluated(r: Run, names: [str]) -> Run
+    outcomes @= r.outcomes
+
+    for name in names
+        cell = cells.cell_named(r.notebook, name: name).must()
+        p = graph.parsed_named(r.analysis, name: name).must()
+        outcomes[name] @ outcome_of(r, cell: cell, p: p, outcomes: outcomes)
+
+    return Run(notebook: r.notebook, analysis: r.analysis, outcomes: outcomes, plots: r.plots, times: r.times)
+
+# The outcome of no evaluation: a cell blocked or skipped, saying why.
+#
+# - `name`: the cell.
+# - `status`: `blocked` or `skipped`.
+# - `why`: the line saying why.
+function not_run(name: str, status: Status, why: str) -> Outcome
+    return Outcome(name: name, status: status, lines: [why], plots: [], values: {}, functions: {}, timing: "")
+
+# The outcome of the cell `cell`, read as `p`, evaluated from `outcomes`.
+#
+# - `r`: the run: the analysis, the folder, the seed.
+# - `cell`: the cell.
+# - `p`: the cell read.
+# - `outcomes`: the outcomes of the cells before it.
+function outcome_of(r: Run, cell: cells.Cell, p: graph.Parsed, outcomes: {str: Outcome}) -> Outcome
+    if p.problem != ""
+        return not_run(name: cell.name, status: .blocked, why: "cannot run: " + p.problem)
+
+    for d in r.analysis.depends[cell.name].default([])
+        match outcomes[d]
+            .ok o =>
+                if o.status != .ran
+                    return not_run(
+                        name: cell.name,
+                        status: .skipped,
+                        why: f"skipped: it reads from the cell `{d}`, which did not run"
+                    )
+            .err _ => return not_run(
+                name: cell.name,
+                status: .skipped,
+                why: f"skipped: it reads from the cell `{d}`, which did not run"
+            )
+
+    m @= machine.new(plots: r.plots, seed: r.notebook.seed)
+
+    for name in keys(outcomes)
+        o = outcomes[name].must()
+
+        if o.status == .ran && name != cell.name
+            for k in keys(o.values)
+                m.values[k] @ o.values[k].must()
+
+            for k in keys(o.functions)
+                m.functions[k] @ o.functions[k].must()
+
+    machine.enter_cell(@m, cell: cell.name)
+    before = m
+    lines: [str] @= []
+    status: Status @= .ran
+    source = strings.lines(cell.source)
+
+    for k in range(from: 0, to: p.statements.len())
+        if status == .ran
+            s = p.statements[k]
+            echo(lines: @lines, source: source, s: s, next: following_line(p.statements, at: k, cell: cell), cell: cell)
+
+            match evaluate.run(@m, s: s)
+                .ok v =>
+                    if !(cells.has_flag(cell, flag: "quiet") && is_assignment(s))
+                        shown(@lines, v: v)
+                .err e =>
+                    lines @ lines.push("error: " + e.msg)
+                    status @ .failed
+
+    values: {str: value.Value} @= {}
+    functions: {str: machine.Function} @= {}
+
+    for d in p.defines
+        match m.values[d]
+            .ok v  => values[d] @ v
+            .err _ => _ = 0
+
+        match m.functions[d]
+            .ok f  => functions[d] @ f
+            .err _ => _ = 0
+
+    timing_line: str @= ""
+
+    if status == .ran && cells.has_flag(cell, flag: "bench")
+        match timing.measure(timing.job_of(before, statements: p.statements, cell: cell.name), quick: !r.times)
+            .ok t  => timing_line @ timing.line_of(t, times: r.times)
+            .err e => timing_line @ f"bench: {e.code}: {e.msg}"
+    return Outcome(
+        name: cell.name,
+        status: status,
+        lines: lines,
+        plots: m.written,
+        values: values,
+        functions: functions,
+        timing: timing_line
+    )
+
+# Whether `s` gives a name a value.
+#
+# - `s`: the statement.
+function is_assignment(s: ast.Statement) -> bool
+    return match s
+        .assign _           => true
+        .show _ | .define _ => false
+
+# The notebook line where the statement after the `at`th begins, or the
+# line past the cell's text where it is the last.
+#
+# - `statements`: the cell's statements.
+# - `at`: the statement's index.
+# - `cell`: the cell.
+function following_line(statements: [ast.Statement], at: i64, cell: cells.Cell) -> i64
+    if at + 1 < statements.len()
+        return ast.expression_of(statements[at + 1]).line
+    return cell.first_line + strings.lines(cell.source).len()
+
+# Adds to `lines` the text of the statement `s` as it is written: its first
+# line after `in:`, the lines it goes on over after five spaces, the blank
+# and comment lines that close it left out.
+#
+# - `lines`: the transcript, which grows.
+# - `source`: the cell's lines.
+# - `s`: the statement.
+# - `next`: the notebook line where the next statement begins.
+# - `cell`: the cell.
+function echo(@lines: [str], source: [str], s: ast.Statement, next: i64, cell: cells.Cell)
+    first = ast.expression_of(s).line - cell.first_line
+    last @= next - cell.first_line
+
+    while last > first + 1 && cells.is_blank(source[last - 1])
+        last @ last - 1
+
+    for k in range(from: first, to: last)
+        text = strings.trim_end(source[k])
+
+        if k == first
+            lines @ lines.push("in:  " + strings.trim(text))
+        else
+            lines @ lines.push("     " + text)
+
+# Adds to `lines` the value `v` as `eval/show` writes it: its first line
+# after `out:`, the others after five spaces; nothing for no value.
+#
+# - `lines`: the transcript, which grows.
+# - `v`: the value.
+function shown(@lines: [str], v: value.Value)
+    written = show.lines_of(v)
+
+    for k in range(from: 0, to: written.len())
+        if k == 0
+            lines @ lines.push("out: " + written[k])
+        else
+            lines @ lines.push("     " + written[k])
+
+# The run of the notebook `text`, for a test.
+#
+# - `text`: the notebook.
+function of_text(text: str) -> Run
+    return run_all(cells.parse(text).must(), plots: "", times: false)
+
+test "run_all: values echoed, a cell after the cell it reads, a failure ending its cell"
+    r = of_text("%% b\ny = x + 1\ny * 2\n%% a\nx = 1/2\n%% c\nz = nowhere\nw = 1\n")
+    b = r.outcomes["b"].must()
+    assert b.status == .ran
+    assert b.lines == ["in:  y = x + 1", "out: 3/2", "in:  y * 2", "out: 3"]
+    c = r.outcomes["c"].must()
+    assert c.status == .failed
+    assert c.lines == ["in:  z = nowhere", "error: 7:5: `nowhere` is not defined"]
+
+test "run_all: a blocked cell says why, a cell reading a name nobody defines fails"
+    r = of_text("%% a\nx = (1\n%% b\ny = x\n%% c\nv = 1\nv = 2\n%% d\nv = 3\n")
+    assert r.outcomes["a"].must().status == .blocked
+    assert r.outcomes["d"].must().status == .blocked
+    assert r.outcomes["c"].must().status == .ran
+    assert r.outcomes["b"].must().lines == ["in:  y = x", "error: 4:5: `x` is not defined"]
+
+test "rerun: only the edited cell and the cells depending on it run again"
+    first = of_text("%% p\nn = 2\n%% q\nm = n * 10\n%% s\nk = 7\n")
+    edited = cells.with_source(first.notebook, name: "p", source: "n = 3").must()
+    again = rerun(first, nb: edited)
+    assert again.ran == ["p", "q"]
+    assert again.kept == ["s"]
+    assert again.run.outcomes["q"].must().lines == ["in:  m = n * 10", "out: 30"]
+
+test "run_all: a matrix over two lines echoed whole, a quiet cell's assignment not shown"
+    r = of_text("%% m [quiet]\nA = [1, 2;\n     3, 4]\ndet(A)\n")
+    assert r.outcomes["m"].must().lines == ["in:  A = [1, 2;", "          3, 4]", "in:  det(A)", "out: -2"]

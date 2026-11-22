@@ -1,0 +1,264 @@
+== notebook: 11 cells, seed 2026
+order: exact, complex, params, sample, summary, ratio, scaled, linear, fit, curves, recursion
+
+== cell exact
+in:  third = 1/3
+out: 1/3
+in:  third + 1/6
+out: 1/2
+in:  2^128 + 1
+out: 340282366920938463463374607431768211457
+in:  factor(2^32 + 1)
+out: [641, 6700417]
+in:  factor(2^64 + 1)
+out: [274177, 67280421310721]
+in:  30!
+out: 265252859812191058636308480000000
+in:  binomial(60, 30)
+out: 118264581564861424
+in:  digits(1/7, 40)
+out: "0.1428571428571428571428571428571428571429"
+in:  rat(pi, 1000)
+out: 355/113
+in:  exact(0.1)
+out: 3602879701896397/36028797018963968
+in:  sqrt(9/4)
+out: 3/2
+in:  8^(2/3)
+out: 4
+in:  2^(1/2)
+out: 1.41421356237
+
+== cell complex
+in:  z = 3 + 4i
+out: 3 + 4i
+in:  abs(z)
+out: 5.0
+in:  z^2
+out: -7 + 24i
+in:  conj(z) / z
+out: -0.28 - 0.96i
+in:  sqrt(-16)
+out: 4i
+in:  exp(i * pi)
+out: -1 + 1.22464679915e-16i
+in:  ln(-1)
+out: 3.14159265359i
+in:  asin(2)
+out: 1.57079632679 + 1.31695789692i
+
+== cell params
+in:  n = 400
+out: 400
+in:  mu = 10
+out: 10
+in:  sigma = 2
+out: 2
+
+== cell sample [quiet]
+in:  xs = rnorm(n, mu, sigma)
+in:  len(xs)
+out: 400
+in:  [min(xs), max(xs)]
+out: [3.22062539191, 15.6724786678]
+in:  hist(xs, 20, "a normal sample")
+out: plot sample.png: 640x400, 2,149 bytes, crc32 d1c9516f
+
+== cell summary [quiet]
+in:  m = mean(xs)
+in:  s = sd(xs)
+in:  q = quantiles(xs)
+in:  [m, s]
+out: [9.92694215685, 2.04238742199]
+in:  q
+out: [8.52071865906, 9.99425633564, 11.3719707581]
+
+== cell ratio
+in:  r = n / (mu - 10)
+error: 50:7: division by zero
+
+== cell scaled
+skipped: it reads from the cell `ratio`, which did not run
+
+== cell linear [bench]
+in:  A = [4, -2, 1;
+          -2, 4, -2;
+          1, -2, 4]
+out: [  4  -2   1 ]
+     [ -2   4  -2 ]
+     [  1  -2   4 ]
+in:  det(A)
+out: 36
+in:  inv(A)
+out: [ 1/3   1/6    0 ]
+     [ 1/6  5/12  1/6 ]
+     [   0   1/6  1/3 ]
+in:  b = [11, -16, 17]
+out: [11, -16, 17]
+in:  solve(A, b)
+out: [1, -2, 3]
+in:  A * solve(A, b) == b
+out: true
+in:  rank([1, 2; 2, 4])
+out: 1
+in:  rref([1, 2, 3; 2, 4, 7])
+out: [ 1  2  0 ]
+     [ 0  0  1 ]
+in:  eig([2, 1; 1, 2])
+out: [1, 3]
+in:  eig([0, -1; 1, 0])
+out: [-i, i]
+in:  eig(A)
+out: [1.62771867673, 3.0, 7.37228132327]
+in:  chol(A)
+out: [  2.0              0.0            0.0 ]
+     [ -1.0    1.73205080757            0.0 ]
+     [  0.5  -0.866025403784  1.73205080757 ]
+in:  lu(A)[3]
+out: [ 4.0  -2.0   1.0 ]
+     [ 0.0   3.0  -1.5 ]
+     [ 0.0   0.0   3.0 ]
+in:  cross([1, 0, 0], [0, 1, 0])
+out: [0.0, 0.0, 1.0]
+in:  det(rot2(pi / 3))
+out: 1.0
+in:  lstsq([1, 0; 1, 1; 1, 2], [1, 3, 5])
+out: [1.0, 2.0]
+bench: 5 rounds kept
+
+== cell fit [quiet]
+in:  x = 1:30
+in:  noise = rnorm(30, 0, 1)
+in:  y = 3 * x + 2 + noise
+in:  linreg(x, y)
+out: [2.9712022728, 2.41720341407]
+in:  corr(x, y)
+out: 0.999154849708
+in:  scatter(x, y, "y against x")
+out: plot fit.png: 640x400, 3,499 bytes, crc32 0abb7521
+
+== cell curves
+in:  f(t) = sin(t) * exp(-t / 4)
+in:  integrate(f, 0, pi)
+out: 1.37029470849
+in:  findroot(f, 2, 4)
+out: 3.14159265359
+in:  plot(f, 0, 4 * pi, "a damped sine")
+out: plot curves.png: 640x400, 3,929 bytes, crc32 cb2e8ea0
+
+== cell recursion
+in:  fib(k) = if k < 2 then k else fib(k - 1) + fib(k - 2)
+in:  map(fib, 1:15)
+out: [1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
+in:  fib(18)
+out: 2584
+in:  sum(map(fib, 1:15)) == fib(17) - 1
+out: true
+
+== 11 cells: 9 ran, 1 failed, 0 cannot run, 1 skipped; 3 plots written
+
+== the plots, read back from their files
+sample.png: a PNG of 640 by 400, titled "a normal sample"
+fit.png: a PNG of 640 by 400, titled "y against x"
+curves.png: a PNG of 640 by 400, titled "a damped sine"
+
+== after editing the cell params: 5 of 11 cells run again
+ran again: params, sample, summary, ratio, scaled
+kept: exact, complex, linear, fit, curves, recursion
+
+== cell params
+in:  n = 1000
+out: 1000
+in:  mu = 12
+out: 12
+in:  sigma = 3
+out: 3
+
+== cell sample [quiet]
+in:  xs = rnorm(n, mu, sigma)
+in:  len(xs)
+out: 1000
+in:  [min(xs), max(xs)]
+out: [0.265888824857, 20.8993059659]
+in:  hist(xs, 20, "a normal sample")
+out: plot sample.png: 640x400, 2,043 bytes, crc32 df9a29e9
+
+== cell summary [quiet]
+in:  m = mean(xs)
+in:  s = sd(xs)
+in:  q = quantiles(xs)
+in:  [m, s]
+out: [11.8612462883, 3.09073985276]
+in:  q
+out: [9.76509780423, 11.9060316318, 13.954929647]
+
+== cell ratio
+in:  r = n / (mu - 10)
+out: 500
+
+== cell scaled
+in:  r * 2
+out: 1000
+
+== 11 cells: 11 ran, 0 failed, 0 cannot run, 0 skipped; 3 plots written
+
+== after editing the cell params: 5 of 11 cells run again
+ran again: summary, sample, params, ratio, scaled
+kept: exact, complex, linear, fit, curves, recursion
+
+== cell summary [quiet]
+cannot run: the cells summary -> params -> sample -> summary read each other's names
+
+== cell sample [quiet]
+cannot run: the cells summary -> params -> sample -> summary read each other's names
+
+== cell params
+cannot run: the cells summary -> params -> sample -> summary read each other's names
+
+== cell ratio
+skipped: it reads from the cell `params`, which did not run
+
+== cell scaled
+skipped: it reads from the cell `ratio`, which did not run
+
+== 11 cells: 6 ran, 0 failed, 3 cannot run, 2 skipped; 2 plots written
+
+== the REPL
+lab> 1/3 + 1/4
+7/12
+lab> x = 2^64
+18446744073709551616
+lab> x - 1
+18446744073709551615
+lab> B = [1, 2; 3, 4]
+[ 1  2 ]
+[ 3  4 ]
+lab> B^3
+[ 37   54 ]
+[ 81  118 ]
+lab> inv(B)
+[  -2     1 ]
+[ 3/2  -1/2 ]
+lab> eig(B)
+[-0.372281323269, 5.37228132327]
+lab> :funcs
+no functions yet
+lab> sq(t) = t^2
+lab> map(sq, [1/2, 2, 3i])
+[1/4, 4, -9.0]
+lab> :vars
+name  kind     value
+----  -------  --------------------
+B     matrix   [a matrix of 2 by 2]
+x     integer  18446744073709551616
+lab> :funcs
+sq(t)
+lab> 1 + * 2
+error: 10:5: expected an expression, found `*`
+lab> nowhere(2)
+error: 11:1: no function `nowhere`
+lab> sq(1, 2)
+error: 12:1: `sq` takes 1 argument, not 2
+lab> :bench sum(1:1000)
+bench: 5 rounds kept
+lab> :quit
