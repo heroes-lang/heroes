@@ -104,7 +104,10 @@ written down rather than left to the reader.
 
 Ranks 3 and 4 read together: robustness decides THAT a measured class of wrong
 programs closes, Principle 0 HOW, so a refusal lands at once and a new form
-still needs § 2's ticket (panel 215; the author, 2026-10-16).
+still needs § 2's ticket (panel 215; the author, 2026-10-16). **Amended by the author
+2026-11-22: the most robust solution now always wins**, a new form included and
+at the cost of the spec's size: Principle 0, the spec's budget (design.md §1.6)
+and the spec-warden's vetoes yield to it, and the ceiling is raised to fit.
 
 Three consequences. *Never slow the
 compiler down* sits at rank 5, so a guard that closes a corruption class lands,

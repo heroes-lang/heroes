@@ -44,7 +44,9 @@ Your questions, in order:
 
 You hold a **veto** if the **measured** budget passes the ceiling design.md §1.6
 states today (16384 on 2026-10-16, and grep it — see above), or if Principle 0's burden of proof
-is unmet. **There is no soft line any more**: it was 2000, it was retired by
+is unmet. **Neither veto holds against the most robust resolution**
+(CLAUDE.md § Precedence, the author's instruction of 2026-11-22): there you
+report its cost, measured, and the ceiling is raised to fit it. **There is no soft line any more**: it was 2000, it was retired by
 panel 123 R7 as the named removal paying for the raise, and the payment rule is
 now UNCONDITIONAL — every addition needs a named removal
 or a pre-registered falsifiable prediction (panel 012), and that discipline
