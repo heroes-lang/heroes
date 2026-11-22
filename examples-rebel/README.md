@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and fifty packages, in layers. **A package may use any package of a layer below
+A hundred and fifty-one packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -136,6 +136,7 @@ package moves its row in the same change. There is no cycle.
 | 4 | `process` | another program run, fed, read and waited for | `bytes`, `io`, `os`, `path`, `strings`, `time`, `unicode` | `hero_proc.h` |
 | 4 | `compress/lz4` | LZ4 frames and blocks, compressed and decompressed | `bytes`, `compress`, `hash`, `io` |  |
 | 4 | `compress/xz` | xz and LZMA2 read, and written at a basic level | `bytes`, `compress`, `crypto`, `hash` |  |
+| 4 | `template/sanitized` | HTML from outside placed by a template's `clean` action, cleaned by an `html/sanitize` policy inside the element it lands in | `html/sanitize`, `json`, `template` |  |
 | 5 | `jobs` | background jobs and their workers, retried and scheduled, over a store in a subpackage: the values both stores share | `json`, `numbers`, `os`, `retries`, `time` |  |
 | 5 | `jose` | JSON Web Tokens, signatures (JWS), keys (JWK) and encryption (JWE) where the system's cryptography allows | `asn1`, `big`, `bytes`, `crypto`, `crypto/keypairs`, `crypto/seal`, `json`, `os`, `pem`, `time` |  |
 | 5 | `archive` | tar and zip, written and read | `bytes`, `compress`, `fs`, `hash`, `io`, `path`, `time` |  |

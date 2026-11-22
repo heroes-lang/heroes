@@ -157,6 +157,17 @@ record Context
     in_class: bool
     # A name or a value being gathered.
     word: str
+    # The elements the template's own text opened and did not close, among
+    # those inside which a browser reads markup otherwise than inside a
+    # `div` (`is_tracked`), the innermost last; `UNKNOWN_OPENED` alone where
+    # ways that left different ones open met.
+    opened: [str]
+    # In a tag, its name in lower case, `/` first for an end tag.
+    tag: str
+    # In a tag, whether its last character was a `/` that the `>` after it
+    # follows at once: a start tag that closes itself, for SVG's and
+    # MathML's elements.
+    self_closing: bool
 
 # What escapes a value in a context, and the context after it.
 record Choice
@@ -175,7 +186,10 @@ function initial() -> Context
         element: names.ELEMENT_NONE,
         braces: [],
         in_class: false,
-        word: ""
+        word: "",
+        opened: [],
+        tag: "",
+        self_closing: false
     )
 
 # The context of `start` with another state, every other field as it was.
@@ -191,7 +205,7 @@ function key_of(c: Context lent) -> str
     for b in c.braces
         braces @ braces.push(to_str(b))
 
-    return f"{c.state}.{c.delim}.{c.url_part}.{c.slash}.{c.attr}.{c.element}.{braces.join(",")}.{c.in_class}.{c.word}"
+    return f"{c.state}.{c.delim}.{c.url_part}.{c.slash}.{c.attr}.{c.element}.{braces.join(",")}.{c.in_class}.{c.word}.{c.opened.join("/")}.{c.tag}.{c.self_closing}"
 
 # What a scanner answers: the text it wrote and the context it ends in, or a
 # fault, which is "" where there is none, and the byte it stands at.
@@ -219,6 +233,8 @@ function value_start(around: Context, delim: i64) -> Context
     next.delim @ delim
     next.attr @ around.attr
     next.element @ around.element
+    next.tag @ around.tag
+    next.opened @ around.opened
 
     next.state @ match around.attr
         1 => JS
@@ -281,8 +297,9 @@ function describe(c: Context lent) -> str
     return place
 
 # The context two ways through a template meet in, `a` and `b`: either, where
-# they are one; the one with what differs unknown, where only a URL's part or
-# a script's next `/` differs. Fails `invalid` where they differ otherwise.
+# they are one; the one with what differs unknown, where only a URL's part, a
+# script's next `/` or the elements left open differ. Fails `invalid` where
+# they differ otherwise.
 function meet(a: Context, b: Context) -> Context?
     if a == b
         return ok(a)
@@ -297,12 +314,157 @@ function meet(a: Context, b: Context) -> Context?
         x.slash @ SLASH_UNKNOWN
         y.slash @ SLASH_UNKNOWN
 
+    if x.opened != y.opened
+        x.opened @ joined_opened(a: x.opened, b: y.opened)
+        y.opened @ x.opened
+
     if x == y
         return ok(x)
     return fail(
         code: "invalid",
         msg: f"two ways through the template meet here in different places of the page: {describe(a)}, and {describe(b)}"
     )
+
+## The elements left open
+
+# What `Context.opened` holds alone where ways that left different elements
+# open met: no element's name, since a tag's name holds no `?`.
+constant UNKNOWN_OPENED: str
+    "?"
+
+# Whether `name`, an element's in lower case, is one inside which a browser
+# reads markup otherwise than inside a `div`, by the WHATWG HTML standard's
+# tree construction: a table and its parts, which move what is not in a cell
+# out of the table; a `select`, which drops most tags; `svg` and `math`,
+# whose content is another namespace's; and the elements whose text it reads
+# as it is, `noscript`, `xmp`, `iframe`, `noembed`, `noframes` and
+# `plaintext`. A script, a style sheet, a title and a textarea are states of
+# their own.
+function is_tracked(name: str) -> bool
+    return name == "table" || name == "caption" || name == "colgroup" || name == "tbody" || name == "thead" || name == "tfoot" || name == "tr" || name == "td" || name == "th" || name == "select" || name == "svg" || name == "math" || name == "noscript" || name == "xmp" || name == "iframe" || name == "noembed" || name == "noframes" || name == "plaintext"
+
+# Whether `name` is a part of a table that a start tag of a part above it
+# closes.
+function is_table_part(name: str) -> bool
+    return name == "caption" || name == "colgroup" || name == "tbody" || name == "thead" || name == "tfoot" || name == "tr" || name == "td" || name == "th"
+
+# `opened` without its innermost elements while `closes` takes them.
+function popped(opened: [str], closes: (function(str) -> bool)) -> [str]
+    end: i64 @= opened.len()
+
+    while end > 0 && closes(opened[end - 1])
+        end @ end - 1
+
+    return opened.slice(from: 0, to: end)
+
+# Whether `name` is a cell or a row, which a row's start tag closes.
+function is_row_or_cell(name: str) -> bool
+    return name == "tr" || name == "td" || name == "th"
+
+# Whether `name` is a cell, which a cell's start tag closes.
+function is_cell(name: str) -> bool
+    return name == "td" || name == "th"
+
+# `opened` once the tag `tag` ends, `self_closing` where it ended in `/>`: a
+# start tag of a tracked element opens it, after closing the parts of a
+# table its own start closes (a cell the cells, a row the rows and cells, a
+# section or a caption every part); an end tag closes the innermost element
+# of its name and every one inside it; `svg` and `math` closed at once by
+# `/>` open nothing; every other tag leaves `opened` as it was, and so does
+# every tag once it is unknown.
+function opened_after(opened: [str], tag: str, self_closing: bool) -> [str]
+    if opened == [UNKNOWN_OPENED]
+        return opened
+
+    if tag != "" && tag[0] == '/'
+        name = tag.slice(from: 1, to: tag.len())
+
+        if !is_tracked(name)
+            return opened
+        at: i64 @= opened.len()
+
+        while at > 0
+            at @ at - 1
+
+            if opened[at] == name
+                return opened.slice(from: 0, to: at)
+
+        return opened
+
+    if !is_tracked(tag) || self_closing && (tag == "svg" || tag == "math")
+        return opened
+    kept: [str] @= opened
+
+    if tag == "td" || tag == "th"
+        kept @ popped(kept, closes: is_cell)
+    else if tag == "tr"
+        kept @ popped(kept, closes: is_row_or_cell)
+    else if is_table_part(tag)
+        kept @ popped(kept, closes: is_table_part)
+    return kept.push(tag)
+
+# The elements left open where two ways that left `a` and `b` open meet:
+# the elements both begin with, where what follows them in each is a
+# table's parts alone, which the start tag of the next part closes in
+# either way (a loop of rows whose cells are never closed meets so at its
+# head); else `UNKNOWN_OPENED` alone.
+function joined_opened(a: [str], b: [str]) -> [str]
+    common: i64 @= 0
+
+    while common < a.len() && common < b.len() && a[common] == b[common]
+        common @ common + 1
+
+    for k in range(from: common, to: a.len())
+        if !is_table_part(a[k])
+            return [UNKNOWN_OPENED]
+
+    for k in range(from: common, to: b.len())
+        if !is_table_part(b[k])
+            return [UNKNOWN_OPENED]
+
+    return a.slice(from: 0, to: common)
+
+# Where in `c` a `clean` action's text may land, as the element it is
+# cleaned inside: "" for the cleaning policy's own, else the innermost cell
+# of a table it stands in, `td`, `th` or `caption`. Fails `invalid` where it
+# stands anywhere but the text of an element, or inside an element a
+# browser reads its markup otherwise in.
+function clean_place(c: Context lent) -> str?
+    if c.state != TEXT
+        return fail(
+            code: "invalid",
+            msg: f"`clean` writes markup, which stands in the text of an element, and here is {describe(c)}"
+        )
+
+    if c.opened == [UNKNOWN_OPENED]
+        return fail(
+            code: "invalid",
+            msg: "`clean` would stand where the ways through the template before it leave different elements open"
+        )
+
+    for name in c.opened
+        if !is_table_part(name) && name != "table"
+            return fail(
+                code: "invalid",
+                msg: f"`clean` would stand inside `<{name}>`, which a browser reads its markup otherwise in"
+            )
+
+    at: i64 @= c.opened.len()
+
+    while at > 0
+        at @ at - 1
+        name = c.opened[at]
+
+        if name == "td" || name == "th" || name == "caption"
+            return ok(name)
+
+        if name == "table" || is_table_part(name)
+            return fail(
+                code: "invalid",
+                msg: f"`clean` would stand inside `<{name}>` outside a cell, whose text a browser moves out of the table: write it in a `td`, a `th` or a `caption`"
+            )
+
+    return ok("")
 
 # `c`, where it waits for an attribute's value, as the value begun with no
 # quotes, which is what any character but white space or a quote there begins.
@@ -413,6 +575,47 @@ test "meet: one context, a URL's part and a script's slash made unknown, a value
     match meet(a: text, b: with_state(initial(), TAG))
         .ok _  => assert false
         .err e => assert e.msg == "two ways through the template meet here in different places of the page: text, and a tag, between its attributes"
+
+test "opened_after: none tracked, a table's parts closing each other, an end tag closing what is inside it, self-closing svg, and unknown kept"
+    assert opened_after([], tag: "div", self_closing: false) == []
+    assert opened_after([], tag: "table", self_closing: false) == ["table"]
+    assert opened_after(["table", "tr", "td"], tag: "td", self_closing: false) == ["table", "tr", "td"]
+    assert opened_after(["table", "tr", "td"], tag: "tr", self_closing: false) == ["table", "tr"]
+    assert opened_after(["table", "tbody", "tr", "th"], tag: "tbody", self_closing: false) == ["table", "tbody"]
+    assert opened_after(["table", "tr", "td", "table", "tr", "td"], tag: "/table", self_closing: false) == ["table", "tr", "td"]
+    assert opened_after(["noscript"], tag: "/svg", self_closing: false) == ["noscript"]
+    assert opened_after([], tag: "svg", self_closing: true) == []
+    assert opened_after([], tag: "noscript", self_closing: true) == ["noscript"]
+    assert opened_after([], tag: "/div", self_closing: false) == []
+    assert opened_after([UNKNOWN_OPENED], tag: "table", self_closing: false) == [UNKNOWN_OPENED]
+
+test "clean_place: text, a cell, a caption, outside a cell, inside a select, unknown, and in a tag"
+    text: Context @= initial()
+    assert clean_place(text).must() == ""
+    text.opened @ ["table", "tr", "td"]
+    assert clean_place(text).must() == "td"
+    text.opened @ ["table", "caption"]
+    assert clean_place(text).must() == "caption"
+    text.opened @ ["table", "tr"]
+    assert clean_place(text).is_err()
+    text.opened @ ["select"]
+    assert clean_place(text).is_err()
+    text.opened @ ["table", "tr", "td", "svg"]
+    assert clean_place(text).is_err()
+    text.opened @ [UNKNOWN_OPENED]
+    assert clean_place(text).is_err()
+    assert clean_place(with_state(initial(), TAG)).is_err()
+    assert clean_place(with_state(initial(), RCDATA)).is_err()
+
+test "meet and joined_opened: a table's parts after a common start dropped, any other difference made unknown"
+    a: Context @= initial()
+    a.opened @ ["svg"]
+    assert meet(a: a, b: initial()).must().opened == [UNKNOWN_OPENED]
+    assert joined_opened(a: ["table"], b: ["table", "tr", "td"]) == ["table"]
+    assert joined_opened(a: ["table", "tr", "td"], b: ["table", "tbody"]) == ["table"]
+    assert joined_opened(a: ["table", "tr", "td", "select"], b: ["table"]) == [UNKNOWN_OPENED]
+    assert joined_opened(a: [UNKNOWN_OPENED], b: []) == [UNKNOWN_OPENED]
+    assert joined_opened(a: [], b: ["td"]) == []
 
 test "escaper_for: each place's escaper, the context after it, and each place no value stands"
     assert escaper_for(initial()).must().escaper == program.HTML_TEXT

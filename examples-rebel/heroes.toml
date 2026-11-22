@@ -138,6 +138,7 @@ packages = [
     "stats",
     "strings",
     "template",
+    "template/sanitized",
     "term",
     "term/hero_term",
     "threads",
