@@ -23,7 +23,6 @@ packages = [
     "os",
     "search",
     "strings",
-    "threads",
     "time",
     "tokenizer",
     "tokenizer/tables/cl100k_base",
