@@ -91,6 +91,8 @@ record Node
     role: i64
     # The key that presses a button, one of `HERO_UI_BUTTON_KEY_*`.
     button_key: i64
+    # The widget of a window that has the keys, 0 for none.
+    focus: i64
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -269,6 +271,7 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         modifiers: 0,
         role: hero_ui.HERO_UI_ROLE_NONE,
         button_key: hero_ui.HERO_UI_BUTTON_KEY_NONE,
+        focus: 0,
         every: 0,
         due: 0,
         preferred_width: 0,

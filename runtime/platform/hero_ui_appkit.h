@@ -63,6 +63,10 @@ int64_t hero_ui_appkit_set_role(int64_t id, int64_t role);
 
 int64_t hero_ui_appkit_set_button_key(int64_t id, int64_t key);
 
+int64_t hero_ui_appkit_set_focus(int64_t id);
+
+int64_t hero_ui_appkit_focus(int64_t id, int64_t *focus);
+
 int64_t hero_ui_appkit_create(int64_t id, int64_t kind, int64_t parent);
 
 int64_t hero_ui_appkit_destroy(int64_t id);

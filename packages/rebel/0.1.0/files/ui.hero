@@ -79,8 +79,7 @@
 # menu; the system's dialog to choose a folder; pages chosen by tabs; rows of
 # cells in columns; a tree of items folded and unfolded; a box whose content
 # scrolls; two panes whose border the person drags; an area the program draws
-# into, with its keys and its mouse; the widget that has the keys, set and
-# asked; a tip shown over a widget; the system's clipboard; a date, a colour
+# into, with its keys and its mouse; a tip shown over a widget; the system's clipboard; a date, a colour
 # or a font chosen in the system's own picker; an icon in the system's tray or
 # menu bar, and its notifications; a file dragged onto a window.
 
@@ -1342,6 +1341,32 @@ function inject(@app: App, input: Input) -> ()?
 function press_key(@app: App, widget: Widget, shortcut: Shortcut) -> ()?
     return keyboard.press(@app, widget: widget, shortcut: shortcut)
 
+# Gives `widget` the keys in its window, as wxWidgets' `wxWindow::SetFocus`:
+# what the person types goes to it once its window is in front. Tab and
+# Shift+Tab move the keys through the widgets in the order they stand, left
+# to right and top to bottom, as the layout reads them.
+#
+# - `app`: the app holding it.
+# - `widget`: a text field, a text area or a list of a window, shown and not
+#   greyed out.
+#
+# Fails `closed`, `invalid` for a widget of another kind, hidden or greyed
+# out, `failed`. See also `focus_of`, `press_key`.
+function set_focus(@app: App, widget: Widget) -> ()?
+    return keyboard.set_focus(@app, widget: widget)
+
+# The widget of window `widget` that has the keys: what the person types
+# goes to it while the window is in front; the window itself where none of
+# its widgets has them.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+#
+# Fails `closed`, `invalid` for a widget no window, `failed`. See also
+# `set_focus`.
+function focus_of(app: App, widget: Widget) -> Widget?
+    return keyboard.focus_of(app, window: widget)
+
 ## Dialogs
 
 # The tone of a message box, which its icon shows.
@@ -2343,6 +2368,23 @@ test "set_modal: a dialog"
     inject(@app, input: .ask_close(window: document)).must()
     inject(@app, input: .ask_close(window: dialog)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: dialog)
+    close(@app).must()
+
+# The caret put in a search field.
+test "set_focus: the search field"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 200, height: 80).must()
+    field = text_field(@app, into: w, text: "").must()
+    set_focus(@app, widget: field).must()
+    assert focus_of(app, widget: w).must() == field
+    close(@app).must()
+
+# A new window's widgets hold no keys until one is given them.
+test "focus_of: a new window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Find", width: 200, height: 80).must()
+    _ = text_field(@app, into: w, text: "").must()
+    assert focus_of(app, widget: w).must() == w
     close(@app).must()
 
 # A dialog's OK pressed by Return wherever its window has the keys.

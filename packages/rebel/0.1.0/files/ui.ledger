@@ -377,11 +377,13 @@ capability ui/drawing  an area the program draws into, with its keys and its mou
   rust    -
   python  tkinter.Canvas
 
-capability ui/focus  the widget that has the keys, set and asked
-  heroes  pending
+capability ui/focus  the widget that has the keys, set and asked, and Tab and Shift+Tab through the widgets in reading order
+  heroes  ui.set_focus, ui.focus_of
   go      -
   rust    -
-  python  tkinter.Misc.focus_set
+  python  tkinter.Misc.focus_set, tkinter.Misc.focus_get, tkinter.Misc.tk_focusNext, tkinter.Misc.tk_focusPrev
+  wx      wxWindow (SetFocus, FindFocus, MoveAfterInTabOrder, Navigate)
+  note    text fields, text areas and lists, the widgets every system gives the keys; a window shown the first time gives its first one the keys; macOS by `makeFirstResponder` and the window's key-view loop recalculated in the order the widgets stand, Windows pending (`SetFocus`, `WS_TABSTOP` and `IsDialogMessageW`), Linux pending (`gtk_widget_grab_focus`, the focus chain GTK reads from the widgets' order)
 
 capability ui/tooltip  a tip shown over a widget
   heroes  pending

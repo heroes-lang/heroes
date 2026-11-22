@@ -287,6 +287,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if kind == kindWindow {
             let window = KeyedWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
+            // Tab and Shift+Tab go through the widgets in the order they
+            // stand, left to right and top to bottom, which is the order the
+            // layout reads them in, so a keyboard reaches each in turn.
+            window.autorecalculatesKeyViewLoop = true
             window.contentView = FlippedView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
             window.delegate = self
             made.window = window
@@ -1780,6 +1784,68 @@ public func hero_ui_appkit_set_button_key(_ id: Int64, _ key: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.setButtonKey(id, key) ?? answerNotFound
     }
+}
+
+extension Backend {
+    // Gives widget `id` the keys in its window: the view the person types
+    // into or chooses in. AppKit gives it the keys when its window is key.
+    func setFocus(_ id: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        let typed: NSView? = widget.textView ?? widget.table ?? widget.view
+        guard [kindTextField, kindTextArea, kindList, kindListMultiple].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
+            return answerInvalid
+        }
+        return window.makeFirstResponder(view) ? answerOk : answerInvalid
+    }
+
+    // The widget of window `id` that has the keys, `id` itself where none
+    // of its widgets has them: a text field's keys are its window's field
+    // editor's, whose delegate is the field.
+    func focus(_ id: Int64) -> Int64? {
+        guard let widget = widgets[id], let window = widget.window else {
+            return nil
+        }
+        guard let responder = window.firstResponder else {
+            return id
+        }
+        let field = (responder as? NSTextView)?.delegate as? NSTextField
+        for other in widgets.values where other.parent == id {
+            if other.view === responder || other.textView === responder || other.table === responder || (field != nil && other.view === field) {
+                return other.id
+            }
+        }
+        return id
+    }
+}
+
+@c
+public func hero_ui_appkit_set_focus(_ id: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setFocus(id) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_focus(_ id: Int64, _ focus: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let focus = focus else {
+        return answerInvalid
+    }
+    let (held, found) = MainActor.assumeIsolated { () -> (Bool, Int64?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.focus(id))
+    }
+    guard held else {
+        return answerNotFound
+    }
+    guard let answer = found else {
+        return answerInvalid
+    }
+    focus.pointee = answer
+    return answerOk
 }
 
 // A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.

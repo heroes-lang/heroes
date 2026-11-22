@@ -2832,3 +2832,53 @@ int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key) {
     }
     return hero_ui_windows_answered(hero_ui_arm_set_button_key(id, key), "giving a button its key", id);
 }
+
+/* -- THE WIDGET WITH THE KEYS ---------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_focus(int64_t id) {
+    return hero_ui_appkit_set_focus(id);
+}
+
+static int64_t hero_ui_arm_focus(int64_t id, int64_t *focus) {
+    return hero_ui_appkit_focus(id, focus);
+}
+
+#else
+
+static int64_t hero_ui_arm_set_focus(int64_t id) {
+    (void)id;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_focus(int64_t id, int64_t *focus) {
+    (void)id;
+    (void)focus;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_focus(hero_ui_app *app, int64_t id) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_focus(id), "giving a widget the keys", id);
+}
+
+int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
+    int64_t found = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (focus == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the widget with the keys");
+    }
+    if (hero_ui_windows_answered(hero_ui_arm_focus(id, &found), "asking which widget has the keys", id) != 0) {
+        return -1;
+    }
+    *focus = found;
+    return 0;
+}

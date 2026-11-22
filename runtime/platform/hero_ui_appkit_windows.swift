@@ -191,11 +191,23 @@ public func hero_ui_appkit_press_key(_ window: UnsafeMutableRawPointer?, _ typed
             }
             return answerOther
         }
+        // What the system has ready runs first, so a responder AppKit gives
+        // the window as it comes to the front is in place before the call
+        // looks at it.
+        while let event = NSApp.nextEvent(matching: .any, until: Date.distantPast, inMode: .default, dequeue: true) {
+            NSApp.sendEvent(event)
+        }
         if let typed = typed {
             let responder = Unmanaged<NSResponder>.fromOpaque(typed).takeUnretainedValue()
             if shown.firstResponder !== responder && !(shown.firstResponder is NSTextView && (shown.firstResponder as? NSTextView)?.delegate === responder) {
                 guard responder.acceptsFirstResponder, shown.makeFirstResponder(responder) else {
                     return answerInvalid
+                }
+                // AppKit chooses a field's whole text when it is given the
+                // keys; a click past the text puts the caret at its end, and
+                // so does this call, so the key adds to the text.
+                if let editor = shown.firstResponder as? NSTextView {
+                    editor.setSelectedRange(NSRange(location: (editor.string as NSString).length, length: 0))
                 }
             }
         }

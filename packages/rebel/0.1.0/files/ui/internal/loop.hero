@@ -29,6 +29,7 @@ use ui/internal/clock
 use ui/internal/desk
 use ui/internal/failure
 use ui/internal/give
+use ui/internal/keyboard
 use ui/internal/layout
 use ui/internal/model
 use ui/internal/native
@@ -219,6 +220,12 @@ function settle(@app: ui.App) -> ()?
             if app.native && hero_ui.set_visible(app.handle, id: window, on: 1) < 0
                 return failure.last(f"showing window {window}")
             laid.shown @ true
+
+            # A window shown the first time gives its first widget that
+            # takes the keys them, as every system does; the native side's
+            # system does it itself.
+            if !app.native && laid.focus == 0
+                laid.focus @ keyboard.first_taking(app, window: window)
             model.put(@app.table, n: laid)
 
     return ok()

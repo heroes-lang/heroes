@@ -747,4 +747,23 @@ int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role);
  * these do not name, a widget no button), `NOT_FOUND`. */
 int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key);
 
+/* -- THE WIDGET WITH THE KEYS ---------------------------------------------
+ *
+ * Which widget of a window takes what the person types, set and asked, as
+ * wxWidgets' `wxWindow::SetFocus` and `FindFocus`; Tab and Shift+Tab move
+ * it through the widgets in the order they stand, left to right and top to
+ * bottom, the order the layout reads them in. The widgets that take the
+ * keys on every system are text fields, text areas and lists. */
+
+/* Gives widget `id`, a text field, a text area or a list, the keys in its
+ * window; the person types into it once the window is in front. 0, or -1:
+ * `INVALID` (a widget of another kind, or one the system will not give the
+ * keys, as a hidden one), `NOT_FOUND`. */
+int64_t hero_ui_set_focus(hero_ui_app *app, int64_t id);
+
+/* Writes through `focus` the widget of window `id` that has the keys, `id`
+ * itself where none of its widgets has them. 0, or -1: `INVALID` (a widget
+ * no window), `NOT_FOUND`. */
+int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus);
+
 #endif
