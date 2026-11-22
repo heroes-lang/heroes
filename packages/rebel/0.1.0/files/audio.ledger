@@ -1,0 +1,135 @@
+# The ledger of `audio`: what a program can do with sound, one block per
+# capability, and what Rebel answers. Go's and Rust's standard libraries have no
+# audio, and Python's has `wave` and, on Windows alone, `winsound`; so the
+# yardsticks are the ones the author named on 2026-11-22, read on this machine
+# that day: Python 3.15.2's `wave` (its names by `dir()` of `wave`,
+# `wave.Wave_read` and `wave.Wave_write`, and what it writes and reads asked
+# of it); Go's `github.com/go-audio/wav` v1.1.0 and `github.com/go-audio/audio`
+# v1.0.0 for WAV, `github.com/ebitengine/oto/v3` v3.5.1 for playing and
+# `github.com/gen2brain/malgo` v0.11.28 (miniaudio's) for devices and
+# recording, fetched into the scratch folder and read by `go doc -all`; and
+# Rust's `hound` 3.5.1, its items as docs.rs lists them, with no source opened.
+
+capability audio/sound  a sound held in memory: its encoding, rate and channels, its frames and how long it plays
+  heroes  audio.Sound, audio.Format, audio.Encoding, audio.frames_of, audio.duration_of, audio.width_of, audio.MAX_RATE, audio.MAX_CHANNELS
+  go      audio.Format, audio.PCMBuffer, audio.IntBuffer, audio.FloatBuffer, audio.Float32Buffer, audio.Buffer, audio.PCMDataFormat, audio.DataTypeUnknown, audio.FormatMono22500, audio.IntMaxSignedValue, audio.ErrInvalidBuffer
+  rust    WavSpec, WavSpecEx, SampleFormat, Sample, WavReader::duration, WavReader::len, WavWriter::duration, WavWriter::len
+  python  Wave_read.getnchannels, Wave_read.getsampwidth, Wave_read.getframerate, Wave_read.getnframes, Wave_read.getparams, Wave_read.getformat, Wave_write.getnchannels, Wave_write.getsampwidth, Wave_write.getframerate, Wave_write.getnframes, Wave_write.getparams, Wave_write.getformat, Wave_write.setnchannels, Wave_write.setsampwidth, Wave_write.setframerate, Wave_write.setnframes, Wave_write.setparams, Wave_write.setformat
+  note    A sound keeps its samples' bytes as they stand, as Python's `readframes` answers them, so a WAV file read and written back keeps every bit; Go's buffers and Rust's iterators hand out numbers instead, which `to_samples` gives. The channel mask is kept, which none of the three keeps
+
+capability audio/samples  a sound's samples as numbers from -1 to 1, and a sound made from them
+  heroes  audio.to_samples, audio.from_samples
+  go      audio.IntBuffer.AsFloatBuffer, audio.IntBuffer.AsFloat32Buffer, audio.FloatBuffer.AsIntBuffer, audio.Float32Buffer.AsIntBuffer, audio.Int24LETo32, audio.Int24BETo32, audio.Int32toInt24LEBytes, audio.Int32toInt24BEBytes, audio.Uint24to32, audio.Uint32toUint24Bytes
+  rust    WavReader::samples, WavReader::into_samples, WavSamples, WavIntoSamples, WavWriter::write_sample, WavWriter::get_i16_writer, SampleWriter16
+  python  Wave_read.readframes, Wave_write.writeframes, Wave_write.writeframesraw
+  note    An integer sample is divided by 2 to the power of its bits less one, so the most negative is exactly -1 and the most positive one step short of 1, the scale libsndfile and NumPy's conversions use; written back, a value takes the nearest step, ties to the even one, held at the ends, a NaN silent. Python hands bytes alone, Go integers or floats by its own scale, Rust integers or floats as the file holds them
+
+capability audio/encoding  samples written in another encoding
+  heroes  audio.to_encoding
+  go      audio.PCMBuffer.SwitchPrimaryType, audio.PCMBuffer.AsInt, audio.PCMBuffer.AsF32, audio.PCMBuffer.AsF64, audio.PCMBuffer.AsI8, audio.PCMBuffer.AsI16, audio.PCMBuffer.AsI32
+  rust    -
+  python  -
+  note    Python's `audioop`, which did this, left the standard library in 3.13
+
+capability audio/channels  frames remixed to another channel count
+  heroes  audio.to_channels
+  go      -
+  rust    -
+  python  -
+  note    The mean for one channel, a copy from one, ITU-R BS.775's fold from more than two to two, each channel taken by where its speaker stands, and else each kept in its place; none of the three remixes, `audioop.tomono` and `tostereo` having left Python in 3.13
+
+capability audio/rate  frames converted to another rate, or to a whole format at once
+  heroes  audio.to_rate, audio.to_format
+  go      -
+  rust    -
+  python  -
+  note    A sinc under a Kaiser window (16 zero crossings each side, beta 9), its cutoff at 95% of the lower rate's Nyquist frequency, read from a table by a straight line; frame `n` at time `n * from / to` exactly. None of the three converts a rate, `audioop.ratecv`, a linear one, having left Python in 3.13
+
+capability audio/generate  silence and a sine tone made
+  heroes  audio.silence, audio.tone
+  go      -
+  rust    -
+  python  -
+
+capability audio/wav-read  a WAV file read: integer PCM of 1 to 32 bits, floats of 32 and 64, any channel count, WAVE_FORMAT_EXTENSIBLE, RF64
+  heroes  audio.decode_wav, audio.read_wav
+  go      wav.NewDecoder, wav.Decoder, wav.Decoder.IsValidFile, wav.Decoder.ReadInfo, wav.Decoder.FullPCMBuffer, wav.Decoder.PCMBuffer, wav.Decoder.Format, wav.Decoder.Duration, wav.Decoder.Err, wav.Decoder.EOF, wav.Decoder.WasPCMAccessed, wav.Decoder.FwdToPCM, wav.Decoder.NextChunk, wav.Decoder.Rewind, wav.Decoder.SampleBitDepth, wav.Decoder.PCMLen, wav.ErrPCMChunkNotFound
+  rust    WavReader::new, WavReader::open, WavReader::spec, read_wave_header, Error, Result
+  python  open, Wave_read, Wave_read.close, Wave_read.getcomptype, Wave_read.getcompname, Wave_read.getfp, Wave_read.initfp, Error, WAVE_FORMAT_PCM, WAVE_FORMAT_IEEE_FLOAT, WAVE_FORMAT_EXTENSIBLE, KSDATAFORMAT_SUBTYPE_PCM
+  note    Python 3.15 reads PCM under both forms and floats under the plain one, and refuses floats under WAVE_FORMAT_EXTENSIBLE (*unknown extended format*) and 64-bit floats (*bad sample width*), which are read here, as Rust reads them. A `data` chunk saying more than the file holds is read to the end as Python reads it, but a frame cut short is left out where Python hands its bytes; a rate of 0 is refused where Python takes it. RIFX and compressed tags (A-law, mu-law, ADPCM) fail `unsupported`, as all three refuse them
+
+capability audio/wav-write  a WAV file written, the form of its `fmt ` chunk chosen as Microsoft asks
+  heroes  audio.encode_wav, audio.write_wav
+  go      wav.NewEncoder, wav.Encoder, wav.Encoder.Write, wav.Encoder.WriteFrame, wav.Encoder.AddLE, wav.Encoder.AddBE, wav.Encoder.Close
+  rust    WavWriter::new, WavWriter::new_with_spec_ex, WavWriter::create, WavWriter::spec, WavWriter::flush, WavWriter::finalize
+  python  Wave_write, Wave_write.close, Wave_write.initfp, Wave_write.setcomptype, Wave_write.getcomptype, Wave_write.getcompname, Wave_write.tell
+  note    8 and 16-bit integers and floats of one or two channels with no channel mask under the plain form, the rest under WAVE_FORMAT_EXTENSIBLE, as Microsoft's `WAVEFORMATEXTENSIBLE` page asks and Rust writes; Python writes the plain form for every width (measured: its 24-bit file has tag 1) and a 16-byte `fmt ` for floats, both of which `decode_wav` reads. RF64 where 32 bits cannot hold the sizes, which neither Python nor Rust writes
+
+capability audio/devices  the devices listed with their formats
+  heroes  pending
+  go      malgo.Context.Devices, malgo.DeviceInfo
+  rust    -
+  python  -
+
+capability audio/default-device  the default output and input device
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability audio/play  a sound played on a device, converted to what it takes
+  heroes  pending
+  go      oto.NewContext, oto.Context.NewPlayer
+  rust    -
+  python  -
+
+capability audio/stream-out  frames played as the program makes them
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability audio/control  a playback's volume, pause, resume and stop, and its end told
+  heroes  pending
+  go      oto.Player.Play, oto.Player.Pause, oto.Player.IsPlaying, oto.Player.SetVolume, oto.Player.Volume
+  rust    -
+  python  -
+
+capability audio/record  frames recorded from a device, the microphone's permission asked
+  heroes  pending
+  go      malgo.Capture
+  rust    -
+  python  -
+
+capability audio/poll  a playback's or a recording's readiness waited on in a set
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability audio/null-device  a device of the package's own that plays and records without hardware
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability audio/beep  the system's beep
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+
+capability audio/wav-pieces  a WAV file read or written a piece at a time
+  heroes  pending
+  go      wav.Decoder.PCMChunk, wav.Decoder.Seek
+  rust    WavReader::seek, WavReader::into_inner, WavWriter::append, WavWriter::new_append
+  python  Wave_read.setpos, Wave_read.tell, Wave_read.rewind
+
+capability audio/compressed  a compressed sound decoded: MP3, AAC, FLAC, Vorbis, Opus
+  heroes  refused: each is a codec's work, a package of its own below this one as `image/png` stands beside `image`, which hands `audio` the samples it decodes; none of the three yardsticks above decodes one
+  go      -
+  rust    -
+  python  -
+
+dropped
+  go      wav.Decoder.Metadata, wav.Metadata, wav.CuePoint, wav.SampleLoop, wav.SamplerInfo, wav.DecodeCueChunk, wav.DecodeListChunk, wav.DecodeSamplerChunk, wav.CIDList, wav.Encoder.Metadata (the metadata chunks of a broadcast or a sampler, which a WAV file carries beside its sound and `decode_wav` passes over); audio.IEEEFloatToInt, audio.IntToIEEEFloat (AIFF's 80-bit float, no WAV's)

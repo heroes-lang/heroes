@@ -1,0 +1,144 @@
+# WAV written: the file `audio.encode_wav` makes, its `fmt ` chunk chosen as
+# Microsoft asks, a `fact` chunk where a reader needs the frame count, and
+# RF64 where a 32-bit size cannot hold the file.
+
+use audio
+use audio/internal/samples
+use audio/internal/wav
+use math
+
+# - `out`: the bytes written to, which the caller owns.
+# - `id`: four ASCII characters.
+function put_id(@out: [u8], id: str)
+    for i in range(from: 0, to: 4)
+        out @ out.push(id[i])
+
+# The bytes of the WAV file of `s`, as `audio.encode_wav` writes them, in
+# RF64 where `wide` or where a 32-bit size cannot hold the file.
+#
+# - `s`: a sound whose format and data `audio` has checked.
+# - `wide`: whether RF64 is written whatever the size.
+function encoded(s: audio.Sound lent, wide: bool) -> [u8]
+    width = samples.width(s.format.encoding)
+    align = width * s.format.channels
+    frames = s.data.len() / align
+    float = s.format.encoding == .float32 || s.format.encoding == .float64
+    extensible = s.format.channels > 2 || s.format.speakers != 0 || width > 2 && !float
+
+    tag = if float
+        wav.FLOAT
+    else
+        wav.PCM
+
+    fmt_size = if extensible
+        40
+    else if float
+        18
+    else
+        16
+    fact = float || extensible
+    pad = s.data.len() % 2
+    head = 12 + 8 + fmt_size + 8
+
+    head_fact = if fact
+        head + 12
+    else
+        head
+    riff = head_fact + s.data.len() + pad - 8
+    rf64 = wide || riff > wav.UNKNOWN_SIZE - 36
+
+    total = if rf64
+        riff + 36
+    else
+        riff
+    out: [u8] @= []
+
+    if rf64
+        put_id(@out, id: "RF64")
+        samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
+    else
+        put_id(@out, id: "RIFF")
+        samples.put(@out, value: total, count: 4)
+    put_id(@out, id: "WAVE")
+
+    if rf64
+        put_id(@out, id: "ds64")
+        samples.put(@out, value: 28, count: 4)
+        samples.put(@out, value: total, count: 8)
+        samples.put(@out, value: s.data.len(), count: 8)
+        samples.put(@out, value: frames, count: 8)
+        samples.put(@out, value: 0, count: 4)
+    put_id(@out, id: "fmt ")
+    samples.put(@out, value: fmt_size, count: 4)
+
+    if extensible
+        samples.put(@out, value: wav.EXTENSIBLE, count: 2)
+    else
+        samples.put(@out, value: tag, count: 2)
+    samples.put(@out, value: s.format.channels, count: 2)
+    samples.put(@out, value: s.format.rate, count: 4)
+    samples.put(@out, value: s.format.rate * align, count: 4)
+    samples.put(@out, value: align, count: 2)
+    samples.put(@out, value: width * 8, count: 2)
+
+    if fmt_size > 16
+        samples.put(@out, value: fmt_size - 18, count: 2)
+
+    if extensible
+        samples.put(@out, value: width * 8, count: 2)
+        samples.put(@out, value: s.format.speakers, count: 4)
+        samples.put(@out, value: tag, count: 2)
+
+        for b in wav.guid_tail()
+            out @ out.push(b)
+
+    if fact
+        put_id(@out, id: "fact")
+        samples.put(@out, value: 4, count: 4)
+        samples.put(@out, value: math.min_i64(a: frames, b: wav.UNKNOWN_SIZE), count: 4)
+    put_id(@out, id: "data")
+
+    if rf64
+        samples.put(@out, value: wav.UNKNOWN_SIZE, count: 4)
+    else
+        samples.put(@out, value: s.data.len(), count: 4)
+
+    for b in s.data
+        out @ out.push(b)
+
+    if pad == 1
+        out @ out.push(0)
+    return out
+
+test "encoded: RF64 asked, its ds64 sizes read back, every encoding and three channels"
+    every: [audio.Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for e in every
+        for channels in [1, 2, 3]
+            values: [f64] @= []
+
+            for i in range(from: 0, to: 5 * channels)
+                values @ values.push(to_f64(i % 7) / 8.0 - 0.375)
+
+            format = audio.Format(encoding: e, rate: 22050, channels: channels, speakers: 0)
+            s = audio.from_samples(format, values: values).must()
+            assert wav.decoded(encoded(s, wide: false)).must() == s
+            wide = encoded(s, wide: true)
+            assert wav.is_id(wide, at: 0, id: "RF64") && wav.is_id(wide, at: 12, id: "ds64")
+            assert wav.decoded(wide).must() == s
+
+test "encoded: the plain fmt for 16-bit stereo, the extensible one for 24 bits and a mask, a fact chunk for floats"
+    plain = audio.Sound(format: audio.Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0), data: [])
+    assert samples.unsigned_at(encoded(plain, wide: false), at: 16, count: 4) == 16
+    deep = audio.Sound(format: audio.Format(encoding: .pcm24, rate: 8000, channels: 1, speakers: 0), data: [])
+    deep_file = encoded(deep, wide: false)
+    assert samples.unsigned_at(deep_file, at: 20, count: 2) == wav.EXTENSIBLE
+    masked = audio.Sound(format: audio.Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 3), data: [])
+    assert samples.unsigned_at(encoded(masked, wide: false), at: 40, count: 4) == 3
+    float = audio.Sound(
+        format: audio.Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0),
+        data: [0, 0, 0, 0]
+    )
+    float_file = encoded(float, wide: false)
+    assert samples.unsigned_at(float_file, at: 20, count: 2) == wav.FLOAT
+    assert wav.is_id(float_file, at: 38, id: "fact") && samples.unsigned_at(float_file, at: 46, count: 4) == 1

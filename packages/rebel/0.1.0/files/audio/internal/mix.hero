@@ -1,0 +1,230 @@
+# Frames of one channel count made frames of another: the rules `audio.to_channels`
+# documents, and the speaker positions they read, which are WAVE_FORMAT_EXTENSIBLE's
+# channel mask (Microsoft's `KSAUDIO_CHANNEL_CONFIG`): the channels of a frame
+# stand at the mask's set bits, lowest first.
+
+use math
+
+# The front left speaker's bit, the lowest of the mask.
+constant FRONT_LEFT: i64
+    1
+
+# The front right speaker's bit.
+constant FRONT_RIGHT: i64
+    2
+
+# The low-frequency speaker's bit, which a fold to two channels leaves out.
+constant LOW_FREQUENCY: i64
+    8
+
+# The bits of the speakers on the left of a listener: front left, front left
+# of centre, back left, side left, top front left and top back left.
+constant LEFT_SIDE: i64
+    37457
+
+# The bits of the speakers on the right: front right, front right of centre,
+# back right, side right, top front right and top back right.
+constant RIGHT_SIDE: i64
+    149666
+
+# How much of a speaker other than the front pair a fold to two channels
+# takes, the square root of a half: 3 dB down, as ITU-R BS.775 folds a centre
+# and its surrounds.
+constant SIDE_WEIGHT: f64
+    0.7071067811865476
+
+# The mask a frame of `channels` stands for where its sound says none: the
+# layouts Windows gives those counts (mono a front centre, then stereo,
+# 2.1's three, quad, 5.0, 5.1, 6.1 and 7.1), and past eight the lowest bits in
+# order, every one of the eighteen past eighteen channels.
+#
+# - `channels`: 1 or more.
+function default_mask(channels: i64) -> i64
+    if channels == 1
+        return 4
+
+    if channels == 2
+        return 3
+
+    if channels == 3
+        return 7
+
+    if channels == 4
+        return 51
+
+    if channels == 5
+        return 55
+
+    if channels == 6
+        return 63
+
+    if channels == 7
+        return 1807
+
+    if channels == 8
+        return 1599
+
+    if channels >= 18
+        return 262143
+    return (1 << channels) - 1
+
+# The speaker bit each channel of a frame stands at, in order: the mask's set
+# bits, lowest first, and 0 for a channel past them.
+#
+# - `mask`: the channel mask, or 0 for `default_mask`'s.
+# - `channels`: 1 or more.
+function speakers_of(mask: i64, channels: i64) -> [i64]
+    bits = if mask == 0
+        default_mask(channels)
+    else
+        mask
+    out: [i64] @= []
+    bit @= 0
+
+    while out.len() < channels
+        if bit < 18
+            if bits >> bit & 1 == 1
+                out @ out.push(1 << bit)
+            bit @ bit + 1
+        else
+            out @ out.push(0)
+
+    return out
+
+# The weights of a fold to two channels, left then right for each channel in
+# order, divided by the larger of the two sums, so a frame loud in every
+# channel stays inside -1 to 1.
+#
+# - `mask`: the channel mask of the frames folded, or 0.
+# - `channels`: more than 2.
+function fold_weights(mask: i64, channels: i64) -> [f64]
+    weights: [f64] @= []
+    left_sum @= 0.0
+    right_sum @= 0.0
+
+    for speaker in speakers_of(mask: mask, channels: channels)
+        weight = if speaker == FRONT_LEFT || speaker == FRONT_RIGHT
+            1.0
+        else if speaker == LOW_FREQUENCY || speaker == 0
+            0.0
+        else
+            SIDE_WEIGHT
+
+        left = if speaker & RIGHT_SIDE != 0
+            0.0
+        else
+            weight
+
+        right = if speaker & LEFT_SIDE != 0
+            0.0
+        else
+            weight
+        weights @ weights.push(left)
+        weights @ weights.push(right)
+        left_sum @ left_sum + left
+        right_sum @ right_sum + right
+
+    most = math.max(a: left_sum, b: right_sum)
+
+    if most == 0.0
+        return weights
+    out: [f64] @= []
+
+    for w in weights
+        out @ out.push(w / most)
+
+    return out
+
+# `samples`, interleaved frames of `from` channels, as frames of `to`: the
+# same where the counts are, the mean of every channel for one, the one
+# channel in every channel for frames of one, a fold by `fold_weights` from
+# more than two to two, and else each channel kept by its place, a channel
+# added silent and one past the new count left out.
+#
+# - `samples`: whole frames.
+# - `from`: their channels, 1 or more.
+# - `to`: the channels wanted, 1 or more.
+# - `mask`: the channel mask of the frames read, or 0.
+function remixed(samples: [f64] lent, from: i64, to: i64, mask: i64) -> [f64]
+    if from == to
+        return samples
+    frames = samples.len() / from
+    out: [f64] @= []
+
+    weights: [f64] = if to == 2 && from > 2
+        fold_weights(mask: mask, channels: from)
+    else
+        []
+    frame @= 0
+
+    while frame < frames
+        at = frame * from
+
+        if to == 1
+            sum @= 0.0
+            c @= 0
+
+            while c < from
+                sum @ sum + samples[at + c]
+                c @ c + 1
+
+            out @ out.push(sum / to_f64(from))
+        else if from == 1
+            c @= 0
+
+            while c < to
+                out @ out.push(samples[at])
+                c @ c + 1
+        else if weights.len() > 0
+            left @= 0.0
+            right @= 0.0
+            c @= 0
+
+            while c < from
+                left @ left + samples[at + c] * weights[2 * c]
+                right @ right + samples[at + c] * weights[2 * c + 1]
+                c @ c + 1
+
+            out @ out.push(left)
+            out @ out.push(right)
+        else
+            c @= 0
+
+            while c < to
+                kept = if c < from
+                    samples[at + c]
+                else
+                    0.0
+                out @ out.push(kept)
+                c @ c + 1
+
+        frame @ frame + 1
+
+    return out
+
+test "remixed: the same count kept, mono to stereo copied, stereo to mono the mean"
+    assert remixed([0.5, -0.5], from: 2, to: 2, mask: 0) == [0.5, -0.5]
+    assert remixed([0.25, -1.0], from: 1, to: 2, mask: 0) == [0.25, 0.25, -1.0, -1.0]
+    assert remixed([0.5, -0.25, 1.0, 1.0], from: 2, to: 1, mask: 0) == [0.125, 1.0]
+    assert remixed([], from: 2, to: 1, mask: 0).len() == 0
+
+test "remixed: stereo into four channels by place, four into three the fourth left out"
+    assert remixed([0.5, -0.5], from: 2, to: 4, mask: 0) == [0.5, -0.5, 0.0, 0.0]
+    assert remixed([0.1, 0.2, 0.3, 0.4], from: 4, to: 3, mask: 0) == [0.1, 0.2, 0.3]
+
+test "remixed: 5.1 folded to stereo, the centre in both sides, the low frequency left out, full scale kept"
+    full = remixed([1.0, 1.0, 1.0, 1.0, 1.0, 1.0], from: 6, to: 2, mask: 0)
+    assert math.abs(full[0] - 1.0) < 0.000000001 && math.abs(full[1] - 1.0) < 0.000000001
+    centre = remixed([0.0, 0.0, 1.0, 0.0, 0.0, 0.0], from: 6, to: 2, mask: 0)
+    assert centre[0] == centre[1] && centre[0] > 0.29 && centre[0] < 0.3
+    low = remixed([0.0, 0.0, 0.0, 1.0, 0.0, 0.0], from: 6, to: 2, mask: 0)
+    assert low == [0.0, 0.0]
+    back_left = remixed([0.0, 0.0, 0.0, 0.0, 1.0, 0.0], from: 6, to: 2, mask: 0)
+    assert back_left[1] == 0.0 && back_left[0] > 0.0
+
+test "speakers_of: a mask's bits in order, the default layouts, and channels past the mask"
+    assert speakers_of(mask: 0, channels: 1) == [4]
+    assert speakers_of(mask: 0, channels: 6) == [1, 2, 4, 8, 16, 32]
+    assert speakers_of(mask: 0, channels: 8) == [1, 2, 4, 8, 16, 32, 512, 1024]
+    assert speakers_of(mask: 3, channels: 3) == [1, 2, 0]
+    assert speakers_of(mask: 0, channels: 20)[17] == 131072 && speakers_of(mask: 0, channels: 20)[19] == 0

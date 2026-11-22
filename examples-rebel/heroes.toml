@@ -5,6 +5,7 @@ packages = [
     "amqp",
     "archive",
     "asn1",
+    "audio",
     "bench",
     "big",
     "bson",

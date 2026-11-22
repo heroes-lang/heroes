@@ -1,0 +1,578 @@
+# Sound for a program: frames of samples held in memory, converted between
+# encodings, channel counts and rates, read from WAV files and written to them.
+# A `Sound` is its `Format` and its bytes, interleaved frames of little-endian
+# samples, so a WAV file read and written back keeps every sample's bits.
+#
+# What it does NOT do: decode a compressed format (MP3, AAC, FLAC, Vorbis),
+# each a codec's work; mix several sounds into one, which is `to_samples`, a
+# sum and `from_samples`; edit a sound by its frames, which is the built-in
+# `slice` over `Sound.data` at a frame's bytes, `width_of` times the channels.
+#
+# It fails with `invalid` and `unsupported` (README § A4), and `read_wav` and
+# `write_wav` as `fs` does.
+#
+# Not written yet, each a `pending` block of its ledger: the devices listed with
+# their formats; the default output and input device; a sound played on a
+# device, converted to what it takes; frames played as the program makes them;
+# a playback's volume, pause, resume and stop, and its end told; frames
+# recorded from a device, the microphone's permission asked; a playback's or a
+# recording's readiness waited on in a set; a device of the package's own that
+# plays and records without hardware; the system's beep; a WAV file read or
+# written a piece at a time.
+
+use audio/internal/check
+use audio/internal/mix
+use audio/internal/resample
+use audio/internal/samples
+use audio/internal/wav
+use audio/internal/wav_write
+use fs
+use math
+use time
+
+## Codes
+
+# The code of an argument the call refuses: a format whose rate, channels or
+# channel mask is out of its range, a sound whose bytes are no whole number of
+# frames, bytes that are no WAV file, a length below zero. Every function
+# that takes a `Format` or a `Sound` fails with it.
+constant INVALID: str
+    "invalid"
+
+# The code of a WAV file of a kind this package does not read: a compressed
+# encoding, RIFX, a float of another width. `decode_wav` and `read_wav` fail
+# with it.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Sounds
+
+# The most frames a second a format may have, the largest `i32`: past every
+# rate a device runs at and every rate a radio's recording is kept at.
+constant MAX_RATE: i64
+    2147483647
+
+# The most channels a frame may have, the most a WAV file can say.
+constant MAX_CHANNELS: i64
+    65535
+
+# How one sample is written as bytes, little-endian.
+variant Encoding
+    # Unsigned 8-bit integers, silence at 128, as WAV keeps 8-bit samples.
+    pcm8
+    # Signed 16-bit integers.
+    pcm16
+    # Signed 24-bit integers in 3 bytes.
+    pcm24
+    # Signed 32-bit integers.
+    pcm32
+    # IEEE 754 32-bit floats, silence at 0, full scale at -1 and 1.
+    float32
+    # IEEE 754 64-bit floats.
+    float64
+
+# What the frames of a sound are: the encoding of a sample, the rate and the
+# channels of a frame, and where each channel's speaker stands.
+record Format
+    # How each sample is written.
+    encoding: Encoding
+    # Frames a second, 1 to `MAX_RATE`.
+    rate: i64
+    # Channels of a frame, 1 to `MAX_CHANNELS`, each a sample.
+    channels: i64
+    # The speakers the channels feed, as WAVE_FORMAT_EXTENSIBLE's channel
+    # mask writes them (front left 1, front right 2, front centre 4, low
+    # frequency 8, back left 16, back right 32, and on to bit 17): the
+    # channels in order stand at its set bits, lowest first. 0 says nothing,
+    # and is read as the layout Windows gives that many channels; 0 to
+    # 2^32 - 1.
+    speakers: i64
+
+# A sound held whole in memory: its format, and its frames one after another,
+# each its channels' samples in order. Built directly, or by `from_samples`,
+# `silence`, `tone`, `decode_wav` and the conversions; every function that
+# reads one checks it first.
+record Sound
+    # What the frames are.
+    format: Format
+    # The frames' bytes: a whole number of frames, each `width_of` the
+    # encoding times the channels.
+    data: [u8]
+
+# The bytes one sample of `encoding` takes.
+#
+# - `encoding`: the encoding.
+#
+# 1 for `pcm8`, 2, 3 and 4 for the other integers, 4 and 8 for the floats.
+# See also `frames_of`.
+function width_of(encoding: Encoding) -> i64
+    return samples.width(encoding)
+
+# The frames of `s`: its bytes divided by a frame's.
+#
+# - `s`: the sound; a format of no channels holds no frame.
+#
+# Bytes past the last whole frame are not counted. See also `duration_of`.
+function frames_of(s: Sound) -> i64
+    if s.format.channels < 1
+        return 0
+    return s.data.len() / (width_of(s.format.encoding) * s.format.channels)
+
+# How long `s` plays at its rate: its frames over its rate, cut to the
+# nanosecond below.
+#
+# - `s`: the sound; a rate below 1 plays for no time.
+#
+# Past about 292 years the duration is `time.max_duration`. See also
+# `frames_of`.
+function duration_of(s: Sound) -> time.Duration
+    rate = s.format.rate
+
+    if rate < 1
+        return time.nanoseconds(0)
+    frames = frames_of(s)
+    seconds = math.multiply_clamped(a: frames / rate, b: 1000000000)
+    rest = frames % rate * 1000000000 / rate
+    return time.nanoseconds(math.add_clamped(a: seconds, b: rest))
+
+# The samples of `s`, interleaved as its frames hold them, each a number from
+# -1 to 1: an integer sample divided by 2 to the power of its bits less one,
+# around its zero, so the most negative is exactly -1 and the most positive one
+# step short of 1; a float as it stands, past 1, a NaN or an infinity included.
+#
+# - `s`: the sound.
+#
+# Fails `invalid` where `s`'s format or bytes are, as `Sound` says. See also
+# `from_samples`.
+function to_samples(s: Sound) -> [f64]?
+    check.valid_sound(s, asked: "reading a sound's samples")?
+    return ok(samples.all_of(s.data, encoding: s.format.encoding))
+
+# A sound of `format` whose samples are `values`, interleaved, written as
+# `format.encoding` writes them: an integer encoding takes the nearest step,
+# ties to the even one, a value past -1 or 1 held there and a NaN silent; a
+# float takes the value as it stands, `float32` rounded to the nearest.
+#
+# - `format`: the sound's format.
+# - `values`: the samples, a whole number of frames of `format.channels`;
+#   none is a sound of no frames.
+#
+# Fails `invalid` where `format` is, or where `values` is no whole number of
+# frames. See also `to_samples`.
+function from_samples(format: Format, values: [f64]) -> Sound?
+    asked = "making a sound from samples"
+    check.valid_format(format, asked: asked)?
+
+    if values.len() % format.channels != 0
+        return fail(
+            code: INVALID,
+            msg: f"{asked}: {values.len()} samples are no whole number of frames of {format.channels} channels"
+        )
+    return ok(Sound(format: format, data: samples.bytes_of(values, encoding: format.encoding)))
+
+# `s` with its samples written in `encoding`, each as `from_samples` writes it.
+#
+# - `s`: the sound.
+# - `encoding`: the encoding wanted; `s`'s own answers `s` itself.
+#
+# Fails `invalid` where `s` is, as `Sound` says. See also `to_format`.
+function to_encoding(s: Sound, encoding: Encoding) -> Sound?
+    check.valid_sound(s, asked: "converting a sound's encoding")?
+
+    if s.format.encoding == encoding
+        return ok(s)
+    format = Format(
+        encoding: encoding,
+        rate: s.format.rate,
+        channels: s.format.channels,
+        speakers: s.format.speakers
+    )
+    return from_samples(format, values: samples.all_of(s.data, encoding: s.format.encoding))
+
+# `s` with frames of `channels` channels, frame for frame: the mean of every
+# channel where one is asked; the one channel in each where `s` has one; a
+# fold where two are asked of more, each channel taken by where its speaker
+# stands (`Format.speakers`), the front pair whole, a centre and the surrounds
+# 3 dB down into the side they stand on, both sides for one in the middle,
+# the low-frequency channel left out, and the whole scaled so a frame full in
+# every channel stays full; and else each channel kept in its place, a channel
+# added silent and one past the count left out.
+#
+# - `s`: the sound.
+# - `channels`: the channels wanted, 1 to `MAX_CHANNELS`; `s`'s own answers
+#   `s` itself.
+#
+# The channel mask is kept where the count is, and 0 otherwise. Fails
+# `invalid` where `s` or `channels` is. See also `to_format`.
+function to_channels(s: Sound, channels: i64) -> Sound?
+    asked = "converting a sound's channels"
+    check.valid_sound(s, asked: asked)?
+
+    if s.format.channels == channels
+        return ok(s)
+    format = Format(encoding: s.format.encoding, rate: s.format.rate, channels: channels, speakers: 0)
+    check.valid_format(format, asked: asked)?
+    values = mix.remixed(
+        samples.all_of(s.data, encoding: s.format.encoding),
+        from: s.format.channels,
+        to: channels,
+        mask: s.format.speakers
+    )
+    return from_samples(format, values: values)
+
+# `s` at `rate` frames a second, by band-limited interpolation: a sinc under a
+# Kaiser window, its cutoff at 95% of the lower rate's Nyquist frequency, so
+# what the new rate cannot hold is let go, never folded back. Frame `n` stands
+# at the time `n` frames of the new rate begin, and there are as many as begin
+# before `s` ends.
+#
+# - `s`: the sound.
+# - `rate`: the rate wanted, 1 to `MAX_RATE`; `s`'s own answers `s` itself.
+#
+# The edges are read as silence before and after, so the first and last
+# frames of a constant sound taper. Its cost is about 34 multiplications a
+# sample where the rate rises, and that times the ratio where it falls.
+# Fails `invalid` where `s` or `rate` is. See also `to_format`.
+function to_rate(s: Sound, rate: i64) -> Sound?
+    asked = "converting a sound's rate"
+    check.valid_sound(s, asked: asked)?
+
+    if s.format.rate == rate
+        return ok(s)
+    format = Format(
+        encoding: s.format.encoding,
+        rate: rate,
+        channels: s.format.channels,
+        speakers: s.format.speakers
+    )
+    check.valid_format(format, asked: asked)?
+    values = resample.whole_of(
+        samples.all_of(s.data, encoding: s.format.encoding),
+        from: s.format.rate,
+        to: rate,
+        channels: s.format.channels
+    )
+    return from_samples(format, values: values)
+
+# `s` in `format`: its channels as `to_channels` makes them, then its rate as
+# `to_rate` does, then its encoding, every step on the samples as numbers, so
+# no step rounds to an integer between two others; and `format`'s channel mask.
+#
+# - `s`: the sound.
+# - `format`: the format wanted.
+#
+# Fails `invalid` where `s` or `format` is. See also `to_encoding`,
+# `to_channels`, `to_rate`.
+function to_format(s: Sound, format: Format) -> Sound?
+    asked = "converting a sound's format"
+    check.valid_sound(s, asked: asked)?
+    check.valid_format(format, asked: asked)?
+    values @= samples.all_of(s.data, encoding: s.format.encoding)
+
+    if s.format.channels != format.channels
+        values @ mix.remixed(values, from: s.format.channels, to: format.channels, mask: s.format.speakers)
+
+    if s.format.rate != format.rate
+        values @ resample.whole_of(values, from: s.format.rate, to: format.rate, channels: format.channels)
+    return from_samples(format, values: values)
+
+# A sound of `format` that is silent for `length`: every sample zero, 128
+# for `pcm8`.
+#
+# - `format`: its format.
+# - `length`: how long, rounded to the nearest frame; zero is no frame.
+#
+# Fails `invalid` where `format` or `length` is, or where the frames pass
+# what an `i64` counts. Aborts where the memory cannot hold the sound, as a
+# list grown past it does. See also `tone`.
+function silence(format: Format, length: time.Duration) -> Sound?
+    asked = "making silence"
+    check.valid_format(format, asked: asked)?
+    frames = check.frames_in(length, rate: format.rate, asked: asked)?
+    zero: [f64] @= []
+
+    for _ in range(from: 0, to: frames * format.channels)
+        zero @ zero.push(0.0)
+
+    return from_samples(format, values: zero)
+
+# A sound of `format` that is a sine of `hz` for `length`, the same in every
+# channel, starting at zero and rising: frame `k` is `amplitude` times the
+# sine of 2 pi `hz` `k` over the rate.
+#
+# - `format`: its format.
+# - `hz`: the frequency, zero or more and finite; past half the rate it
+#   folds back, as a sine sampled does.
+# - `amplitude`: the peak, 0 to 1.
+# - `length`: how long, rounded to the nearest frame.
+#
+# Fails `invalid` where `format`, `hz`, `amplitude` or `length` is, or where
+# the frames pass what an `i64` counts. Aborts where the memory cannot hold
+# the sound, as a list grown past it does. See also `silence`.
+function tone(format: Format, hz: f64, amplitude: f64, length: time.Duration) -> Sound?
+    asked = "making a tone"
+    check.valid_format(format, asked: asked)?
+
+    if math.is_nan(hz) || hz < 0.0 || math.is_inf(hz)
+        return fail(code: INVALID, msg: f"{asked}: {hz} Hz, where a finite frequency of zero or more is taken")
+
+    if math.is_nan(amplitude) || amplitude < 0.0 || amplitude > 1.0
+        return fail(code: INVALID, msg: f"{asked}: an amplitude of {amplitude}, where 0 to 1 is taken")
+    frames = check.frames_in(length, rate: format.rate, asked: asked)?
+    values: [f64] @= []
+    step = math.TAU * hz / to_f64(format.rate)
+
+    for k in range(from: 0, to: frames)
+        x = amplitude * math.sin(step * to_f64(k))
+
+        for _ in range(from: 0, to: format.channels)
+            values @ values.push(x)
+
+    return from_samples(format, values: values)
+
+## WAV
+
+# The sound the WAV file `data` holds: integer PCM of 1 to 32 bits a sample,
+# in the fewest whole bytes that hold them, and IEEE floats of 32 and 64 bits,
+# any number of channels, under a plain `fmt ` chunk or WAVE_FORMAT_EXTENSIBLE,
+# in a RIFF or an RF64 file. The chunks may stand in any order, and every one
+# but `fmt ` and `data` is passed over.
+#
+# - `data`: the file's bytes.
+#
+# The sound keeps the file's bytes as they stand. A `data` chunk that says
+# more than the file holds is read to the file's end, as one whose size a
+# writer never went back to fill (2^32 - 1); a frame cut short at its end is
+# left out. Samples of fewer bits than their bytes keep their bytes, the bits
+# below the valid ones zero as WAV writes them.
+#
+# Fails `invalid` where `data` is no WAV file or says a rate, channel count or
+# block size no format takes; `unsupported` where it is RIFX or a compressed
+# or float encoding this package does not read, its tag named. See also
+# `encode_wav`, `read_wav`.
+function decode_wav(data: [u8]) -> Sound?
+    return wav.decoded(data)
+
+# The bytes of a WAV file holding `s`: a plain `fmt ` chunk for 8 and 16-bit
+# integers and for floats in one or two channels with no channel mask,
+# WAVE_FORMAT_EXTENSIBLE for the rest, as Microsoft asks; a `fact` chunk with
+# the frame count for floats and the extensible form; RF64 where the file
+# would pass what a 32-bit size holds.
+#
+# - `s`: the sound.
+#
+# Fails `invalid` where `s` is, as `Sound` says. See also `decode_wav`,
+# `write_wav`.
+function encode_wav(s: Sound) -> [u8]?
+    check.valid_sound(s, asked: "writing a WAV file")?
+    return ok(wav_write.encoded(s, wide: false))
+
+# The sound the WAV file at `path` holds, as `decode_wav` reads it.
+#
+# - `path`: the file.
+#
+# Fails as `fs.read_bytes` does where the file cannot be read, and as
+# `decode_wav` does on what it holds. See also `write_wav`.
+function read_wav(path: str) -> Sound?
+    return decode_wav(fs.read_bytes(path)?)
+
+# Writes `s` as a WAV file at `path`, as `encode_wav` makes it, replacing the
+# file that stood there.
+#
+# - `path`: the file.
+# - `s`: the sound.
+#
+# Fails as `encode_wav` does on `s`, and as `fs.write_bytes` does where the
+# file cannot be written. See also `read_wav`.
+function write_wav(path: str, s: Sound) -> ()?
+    return fs.write_bytes(path, data: encode_wav(s)?)
+
+## Tests
+
+test "width_of, frames_of and duration_of: every encoding, no frame, a cut frame, a rate of none"
+    widths: [i64] = [1, 2, 3, 4, 4, 8]
+    every: [Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for i in range(from: 0, to: 6)
+        assert width_of(every[i]) == widths[i]
+
+    stereo = Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0)
+    assert frames_of(Sound(format: stereo, data: [])) == 0
+    assert frames_of(Sound(format: stereo, data: [0, 0, 0, 0, 0, 0])) == 1
+    none = Format(encoding: .pcm16, rate: 0, channels: 0, speakers: 0)
+    assert frames_of(Sound(format: none, data: [0, 0])) == 0
+    assert duration_of(Sound(format: none, data: [0, 0])).nanoseconds == 0
+    third = Sound(format: Format(encoding: .pcm8, rate: 3, channels: 1, speakers: 0), data: [128])
+    assert duration_of(third).nanoseconds == 333333333
+
+test "to_samples and from_samples: a sound refused for its rate, channels, mask or bytes"
+    bad: [Format] = [
+        Format(encoding: .pcm16, rate: 0, channels: 1, speakers: 0)
+        Format(encoding: .pcm16, rate: MAX_RATE + 1, channels: 1, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: 0, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: MAX_CHANNELS + 1, speakers: 0)
+        Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: -1)
+        Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 4294967296)
+    ]
+
+    for f in bad
+        match to_samples(Sound(format: f, data: []))
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+        assert from_samples(f, values: []).is_err()
+
+    mono = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    assert to_samples(Sound(format: mono, data: [0, 0, 0])).is_err()
+    assert from_samples(Format(encoding: .pcm16, rate: 8000, channels: 2, speakers: 0), values: [0.0]).is_err()
+    assert to_samples(Sound(format: mono, data: [])).must().len() == 0
+
+test "to_encoding: every pair of encodings over minus one, zero and a half, and its own kept"
+    every: [Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for from in every
+        s = from_samples(Format(encoding: from, rate: 8000, channels: 1, speakers: 0), values: [-1.0, 0.0, 0.5]).must()
+
+        for to in every
+            assert to_samples(to_encoding(s, encoding: to).must()).must() == [-1.0, 0.0, 0.5]
+
+test "to_channels and to_rate: a count or a rate out of range refused, the same one answering the sound"
+    s = from_samples(Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0), values: [0.5]).must()
+    assert to_channels(s, channels: 0).is_err() && to_channels(s, channels: MAX_CHANNELS + 1).is_err()
+    assert to_rate(s, rate: 0).is_err() && to_rate(s, rate: MAX_RATE + 1).is_err()
+    assert to_channels(s, channels: 1).must() == s && to_rate(s, rate: 8000).must() == s
+
+test "silence and tone: a length below zero, a frequency or an amplitude out of range refused"
+    f = Format(encoding: .float32, rate: 8000, channels: 2, speakers: 0)
+    assert silence(f, length: time.nanoseconds(-1)).is_err()
+    assert silence(f, length: time.nanoseconds(0)).must().data.len() == 0
+    widest = Format(encoding: .float32, rate: MAX_RATE, channels: 2, speakers: 0)
+    assert silence(widest, length: time.max_duration()).is_err()
+    long = time.seconds(1).must()
+    assert tone(f, hz: -1.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 1.0 / 0.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 0.0 / 0.0, amplitude: 0.5, length: long).is_err()
+    assert tone(f, hz: 440.0, amplitude: 1.5, length: long).is_err()
+    assert tone(f, hz: 440.0, amplitude: 0.0 / 0.0, length: long).is_err()
+    half = tone(
+        Format(encoding: .pcm8, rate: 4, channels: 1, speakers: 0),
+        hz: 1.0,
+        amplitude: 1.0,
+        length: long
+    ).must()
+    assert half.data == [128, 255, 128, 0]
+
+test "to_format: channels, rate and encoding at once, the mask taken from the format"
+    s = from_samples(Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0), values: [0.5, 0.5, 0.5]).must()
+    wanted = Format(encoding: .float32, rate: 16000, channels: 2, speakers: 3)
+    out = to_format(s, format: wanted).must()
+    assert out.format == wanted && frames_of(out) == 6
+    assert to_format(s, format: Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)).must() == s
+
+## Examples
+
+# How many bytes a sample takes in each encoding.
+test "width_of: a 16-bit sample and a 64-bit float"
+    assert width_of(.pcm16) == 2
+    assert width_of(.float64) == 8
+
+# How many frames a sound holds.
+test "frames_of: two frames of stereo 16-bit samples"
+    stereo = Format(encoding: .pcm16, rate: 44100, channels: 2, speakers: 0)
+    assert frames_of(Sound(format: stereo, data: [0, 0, 0, 0, 0, 0, 0, 0])) == 2
+
+# How long a sound plays.
+test "duration_of: 4000 frames at 8000 a second are half a second"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(500).must()).must()
+    assert frames_of(s) == 4000
+    assert duration_of(s).nanoseconds == 500000000
+
+# A sound's samples as numbers from -1 to 1.
+test "to_samples: 16-bit samples at their ends and their middle"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = Sound(format: f, data: [0, 128, 0, 0, 0, 64])
+    assert to_samples(s).must() == [-1.0, 0.0, 0.5]
+
+# A sound made from samples a program computed.
+test "from_samples: three samples written as 16-bit integers"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    assert from_samples(f, values: [-1.0, 0.0, 0.5]).must().data == [0, 128, 0, 0, 0, 64]
+
+# A sound's samples in another encoding.
+test "to_encoding: 16-bit samples made 8-bit"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [-1.0, 0.0, 0.5]).must()
+    assert to_encoding(s, encoding: .pcm8).must().data == [0, 128, 192]
+
+# A mono sound made stereo, and back.
+test "to_channels: one channel copied into two, and two averaged into one"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [0.5, -0.25]).must()
+    stereo = to_channels(s, channels: 2).must()
+    assert to_samples(stereo).must() == [0.5, 0.5, -0.25, -0.25]
+    assert to_channels(stereo, channels: 1).must() == s
+
+# A sound at another rate.
+test "to_rate: a tenth of a second at 8000 frames a second made 44100"
+    f = Format(encoding: .float32, rate: 8000, channels: 1, speakers: 0)
+    s = tone(f, hz: 440.0, amplitude: 0.5, length: time.milliseconds(100).must()).must()
+    faster = to_rate(s, rate: 44100).must()
+    assert faster.format.rate == 44100
+    assert frames_of(faster) == 4410
+
+# A sound converted to what a device takes.
+test "to_format: mono 16-bit at 8000 made stereo floats at 48000"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(10).must()).must()
+    device = Format(encoding: .float32, rate: 48000, channels: 2, speakers: 3)
+    out = to_format(s, format: device).must()
+    assert out.format == device
+    assert frames_of(out) == 480
+
+# Silence of a given length.
+test "silence: a hundredth of a second of 8-bit silence"
+    f = Format(encoding: .pcm8, rate: 8000, channels: 1, speakers: 0)
+    s = silence(f, length: time.milliseconds(10).must()).must()
+    assert s.data.len() == 80
+    assert s.data[0] == 128
+
+# A test tone.
+test "tone: a sine of 2 Hz sampled 8 times a second"
+    f = Format(encoding: .float64, rate: 8, channels: 1, speakers: 0)
+    s = tone(f, hz: 2.0, amplitude: 0.5, length: time.milliseconds(500).must()).must()
+    values = to_samples(s).must()
+    assert values.len() == 4
+    assert values[0] == 0.0 && math.abs(values[1] - 0.5) < 0.000000000001
+
+# A WAV file read from its bytes.
+test "decode_wav: the WAV of two 16-bit samples written and read back"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    s = from_samples(f, values: [0.25, -0.25]).must()
+    assert decode_wav(encode_wav(s).must()).must() == s
+
+# A sound written as a WAV file's bytes.
+test "encode_wav: a 16-bit mono file is 44 bytes of header and its samples"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    file = encode_wav(from_samples(f, values: [0.5]).must()).must()
+    assert file.len() == 46
+    assert file.slice(from: 0, to: 4) == [82, 73, 70, 70]
+
+# A WAV file read from a path.
+test "read_wav: a tone written to a file and read back"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/tone.wav"
+    f = Format(encoding: .pcm24, rate: 48000, channels: 2, speakers: 0)
+    s = tone(f, hz: 1000.0, amplitude: 0.25, length: time.milliseconds(5).must()).must()
+    write_wav(path, s: s).must()
+    assert read_wav(path).must() == s
+    fs.remove_all(dir).must()
+
+# A sound written to a WAV file at a path.
+test "write_wav: a second of silence written, its size the header's 44 bytes and its frames'"
+    dir = fs.make_temp_dir(dir: "build", pattern: "rebel-audio-*").must()
+    path = dir + "/quiet.wav"
+    f = Format(encoding: .pcm16, rate: 8000, channels: 1, speakers: 0)
+    write_wav(path, s: silence(f, length: time.seconds(1).must()).must()).must()
+    assert fs.read_bytes(path).must().len() == 16044
+    fs.remove_all(dir).must()

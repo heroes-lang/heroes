@@ -1,0 +1,219 @@
+# One sample of each encoding read from bytes and written to them as a number
+# from -1 to 1: the one place an encoding's width, its zero and its scale are
+# known, on which `audio`'s conversions and its WAV both stand. Samples are
+# little-endian, as WAV and every device this package opens keep them.
+
+use audio
+use math
+
+# The bytes one sample of `encoding` takes.
+#
+# - `encoding`: the encoding.
+function width(encoding: audio.Encoding) -> i64
+    return match encoding
+        .pcm8    => 1
+        .pcm16   => 2
+        .pcm24   => 3
+        .pcm32   => 4
+        .float32 => 4
+        .float64 => 8
+
+# The unsigned little-endian integer of `count` bytes of `data` from `at`, at
+# most 4 bytes, so it never passes 2^32 - 1.
+#
+# - `data`: the bytes, holding `count` of them from `at`.
+# - `at`: where the integer begins.
+# - `count`: its bytes, 1 to 4.
+function unsigned_at(data: [u8] lent, at: i64, count: i64) -> i64
+    value @= 0
+    i @= count - 1
+
+    while i >= 0
+        value @ value << 8 | to_i64(data[at + i]).must()
+        i @ i - 1
+
+    return value
+
+# The sample of `encoding` at byte `at` of `data`, from -1 to 1 for an integer
+# encoding: `pcm8` read around its zero of 128, the others in two's complement,
+# each divided by 2 to the power of its bits less one, so the most negative is
+# exactly -1 and the most positive one step short of 1. A float is read as it
+# stands, any value, a NaN or an infinity included.
+#
+# - `data`: the bytes, holding a whole sample from `at`.
+# - `at`: where the sample begins.
+# - `encoding`: its encoding.
+function read(data: [u8] lent, at: i64, encoding: audio.Encoding) -> f64
+    return match encoding
+        .pcm8 => to_f64(to_i64(data[at]).must() - 128) / 128.0
+        .pcm16 =>
+            v = unsigned_at(data, at: at, count: 2)
+
+            signed = if v >= 32768
+                v - 65536
+            else
+                v
+            to_f64(signed) / 32768.0
+        .pcm24 =>
+            v = unsigned_at(data, at: at, count: 3)
+
+            signed = if v >= 8388608
+                v - 16777216
+            else
+                v
+            to_f64(signed) / 8388608.0
+        .pcm32 =>
+            v = unsigned_at(data, at: at, count: 4)
+
+            signed = if v >= 2147483648
+                v - 4294967296
+            else
+                v
+            to_f64(signed) / 2147483648.0
+        .float32 => to_f64(math.bits_to_f32(to_u32(unsigned_at(data, at: at, count: 4)).must()))
+        .float64 =>
+            low = to_u64(unsigned_at(data, at: at, count: 4)).must()
+            high = to_u64(unsigned_at(data, at: at + 4, count: 4)).must()
+            math.bits_to_f64(high * 4294967296 + low)
+
+# The integer nearest `x` scaled by `scale`, ties to the even one, held
+# between `low` and `high`; a NaN is 0.
+#
+# - `x`: the sample.
+# - `scale`: what 1.0 is in the integer encoding.
+# - `low`: the least integer the encoding holds.
+# - `high`: the greatest.
+function quantized(x: f64, scale: f64, low: i64, high: i64) -> i64
+    if math.is_nan(x)
+        return 0
+    q = math.round_even(x * scale)
+
+    if q <= to_f64(low)
+        return low
+
+    if q >= to_f64(high)
+        return high
+    return to_i64(q).must()
+
+# Writes `count` bytes of `value` little-endian onto `out`, the lowest first;
+# a negative value is written in two's complement.
+#
+# - `out`: the bytes written to, which the caller owns; the bytes are pushed
+#   at its end.
+# - `value`: the integer.
+# - `count`: its bytes, 1 to 8.
+function put(@out: [u8], value: i64, count: i64)
+    v @= value
+    i @= 0
+
+    while i < count
+        out @ out.push(to_u8(v & 255).must())
+        v @ v >> 8
+        i @ i + 1
+
+# Writes the sample `x` onto `out` in `encoding`: an integer encoding takes
+# the nearest step of `read`'s scale, ties to the even one, a value past either
+# end held at that end and a NaN written as silence; a float encoding takes
+# `x` as it stands, `float32` rounded to the nearest `f32`.
+#
+# - `out`: the bytes written to, which the caller owns; the sample's bytes are
+#   pushed at its end.
+# - `x`: the sample.
+# - `encoding`: the encoding written.
+function write(@out: [u8], x: f64, encoding: audio.Encoding)
+    match encoding
+        .pcm8    => put(@out, value: quantized(x: x, scale: 128.0, low: -128, high: 127) + 128, count: 1)
+        .pcm16   => put(@out, value: quantized(x: x, scale: 32768.0, low: -32768, high: 32767), count: 2)
+        .pcm24   => put(@out, value: quantized(x: x, scale: 8388608.0, low: -8388608, high: 8388607), count: 3)
+        .pcm32   => put(@out, value: quantized(x: x, scale: 2147483648.0, low: -2147483648, high: 2147483647), count: 4)
+        .float32 => put(@out, value: to_i64(math.f32_to_bits(to_f32(x))).must(), count: 4)
+        .float64 =>
+            bits = math.f64_to_bits(x)
+            put(@out, value: to_i64(bits % 4294967296).must(), count: 4)
+            put(@out, value: to_i64(bits / 4294967296).must(), count: 4)
+
+# Every sample of `data` read as `read` reads them, in order.
+#
+# - `data`: whole samples of `encoding`, one after another.
+# - `encoding`: their encoding.
+function all_of(data: [u8] lent, encoding: audio.Encoding) -> [f64]
+    step = width(encoding)
+    out: [f64] @= []
+    at @= 0
+
+    while at + step <= data.len()
+        out @ out.push(read(data, at: at, encoding: encoding))
+        at @ at + step
+
+    return out
+
+# The bytes of every sample of `samples` written as `write` writes them, in
+# order.
+#
+# - `samples`: the samples.
+# - `encoding`: the encoding written.
+function bytes_of(samples: [f64] lent, encoding: audio.Encoding) -> [u8]
+    out: [u8] @= []
+
+    for x in samples
+        write(@out, x: x, encoding: encoding)
+
+    return out
+
+test "read: every encoding at its zero, its ends and one step"
+    assert read([128], at: 0, encoding: .pcm8) == 0.0
+    assert read([0], at: 0, encoding: .pcm8) == -1.0
+    assert read([255], at: 0, encoding: .pcm8) == 127.0 / 128.0
+    assert read([0, 128], at: 0, encoding: .pcm16) == -1.0
+    assert read([255, 127], at: 0, encoding: .pcm16) == 32767.0 / 32768.0
+    assert read([1, 0], at: 0, encoding: .pcm16) == 1.0 / 32768.0
+    assert read([255, 255], at: 0, encoding: .pcm16) == -1.0 / 32768.0
+    assert read([0, 0, 128], at: 0, encoding: .pcm24) == -1.0
+    assert read([255, 255, 127], at: 0, encoding: .pcm24) == 8388607.0 / 8388608.0
+    assert read([0, 0, 0, 128], at: 0, encoding: .pcm32) == -1.0
+    assert read([255, 255, 255, 127], at: 0, encoding: .pcm32) == 2147483647.0 / 2147483648.0
+    assert read([0, 0, 128, 63], at: 0, encoding: .float32) == 1.0
+    assert read([0, 0, 0, 0, 0, 0, 240, 191], at: 0, encoding: .float64) == -1.0
+
+test "read: a sample in the middle of its bytes, and a float that is no number"
+    assert read([9, 9, 0, 64, 9], at: 2, encoding: .pcm16) == 0.5
+    nan = read([0, 0, 192, 127], at: 0, encoding: .float32)
+    assert nan != nan
+    assert read([0, 0, 128, 255], at: 0, encoding: .float32) == -1.0 / 0.0
+
+test "write: rounding to the even step, ends held, a NaN written as silence"
+    out: [u8] @= []
+    write(@out, x: 1.5 / 32768.0, encoding: .pcm16)
+    write(@out, x: 2.5 / 32768.0, encoding: .pcm16)
+    write(@out, x: 2.0, encoding: .pcm16)
+    write(@out, x: -2.0, encoding: .pcm16)
+    write(@out, x: 0.0 / 0.0, encoding: .pcm16)
+    assert out == [2, 0, 2, 0, 255, 127, 0, 128, 0, 0]
+
+test "write: every encoding's bytes for minus one, zero and a half"
+    every: [audio.Encoding] = [.pcm8, .pcm16, .pcm24, .pcm32, .float32, .float64]
+
+    for e in every
+        out: [u8] @= []
+        write(@out, x: -1.0, encoding: e)
+        write(@out, x: 0.0, encoding: e)
+        write(@out, x: 0.5, encoding: e)
+        assert out.len() == 3 * width(e)
+        assert all_of(out, encoding: e) == [-1.0, 0.0, 0.5]
+
+test "write: pcm8 around 128, and pcm24 and pcm32 in two's complement"
+    out: [u8] @= []
+    write(@out, x: -1.0, encoding: .pcm8)
+    write(@out, x: 0.0, encoding: .pcm8)
+    write(@out, x: 1.0, encoding: .pcm8)
+    write(@out, x: -1.0 / 8388608.0, encoding: .pcm24)
+    write(@out, x: -1.0 / 2147483648.0, encoding: .pcm32)
+    assert out == [0, 128, 255, 255, 255, 255, 255, 255, 255, 255]
+
+test "all_of: empty bytes, and a sample cut short left out"
+    assert all_of([], encoding: .pcm24).len() == 0
+    assert all_of([0, 64, 7], encoding: .pcm16) == [0.5]
+
+test "bytes_of: what all_of reads back, every float64 kept exactly"
+    xs = [0.1, -0.30000000000000004, 0.000000000000000000000000000001, -1.0 / 0.0]
+    assert all_of(bytes_of(xs, encoding: .float64), encoding: .float64) == xs

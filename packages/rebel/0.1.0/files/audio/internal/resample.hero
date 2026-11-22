@@ -1,0 +1,317 @@
+# Frames at one rate made frames at another by band-limited interpolation: a
+# sinc under a Kaiser window, read from a table, whose cutoff stands a little
+# below the lower rate's Nyquist frequency, so a rate lowered drops what the
+# new rate cannot hold instead of folding it back. The conversion keeps what
+# it has not used between calls, so frames given in pieces come out as the
+# same samples as the frames given whole, and a stream is converted as it is
+# played or recorded. Output frame `n` stands at input time `n * from / to`,
+# kept exactly as whole frames and a remainder.
+
+use math
+
+# The zero crossings of the sinc on each side of its centre that the filter
+# keeps: more is a steeper cutoff and more work for each sample.
+constant CROSSINGS: i64
+    16
+
+# The table's entries between two zero crossings, between which the filter
+# is read by a straight line; its error stays under -80 dB.
+constant STEPS: i64
+    128
+
+# The Kaiser window's beta, for sidelobes about 90 dB down.
+constant BETA: f64
+    9.0
+
+# Where the cutoff stands, as a fraction of the lower rate's Nyquist
+# frequency: the band from it to the Nyquist frequency is the filter's
+# transition.
+constant ROLLOFF: f64
+    0.95
+
+# A conversion of one rate to another, and what it holds between calls.
+# Made by `new` alone.
+record Resampler
+    # The input's rate divided by the greatest common divisor of the two.
+    from: i64
+    # The output's rate, divided the same way.
+    to: i64
+    # The channels of a frame.
+    channels: i64
+    # The cutoff as a fraction of the input's Nyquist frequency: `ROLLOFF`,
+    # times the ratio of the rates where the output's is lower.
+    cutoff: f64
+    # The input frames on each side of an output's time the filter reaches.
+    reach: i64
+    # The filter from its centre to its last zero crossing, `STEPS` entries
+    # a crossing, two zeros after it.
+    table: [f64]
+    # The input frames still needed, interleaved, the first being frame
+    # `base` of the whole input.
+    held: [f64]
+    # The input frame `held` begins with.
+    base: i64
+    # The whole input frames of the next output's time.
+    whole: i64
+    # The rest of that time, in units of 1 / `to` of a frame.
+    part: i64
+
+# The modified Bessel function of the first kind and order zero at `x`, by
+# its series, to the precision of an `f64`.
+#
+# - `x`: zero or more.
+function bessel_i0(x: f64) -> f64
+    sum @= 1.0
+    term @= 1.0
+    k @= 1.0
+    half = x / 2.0
+
+    while term > sum * 0.0000000000000001
+        term @ term * (half / k) * (half / k)
+        sum @ sum + term
+        k @ k + 1.0
+
+    return sum
+
+# The filter's table: the windowed sinc at every step from its centre to its
+# last zero crossing, and two zeros after.
+function filter_table() -> [f64]
+    out: [f64] @= []
+    last = CROSSINGS * STEPS
+    scale = bessel_i0(BETA)
+    i @= 0
+
+    while i <= last
+        x = to_f64(i) / to_f64(STEPS)
+
+        sinc = if i == 0
+            1.0
+        else
+            math.sin(math.PI * x) / (math.PI * x)
+        edge = x / to_f64(CROSSINGS)
+        window = bessel_i0(BETA * math.sqrt(math.max(a: 0.0, b: 1.0 - edge * edge))) / scale
+        out @ out.push(sinc * window)
+        i @ i + 1
+
+    out @ out.push(0.0)
+    out @ out.push(0.0)
+    return out
+
+# The greatest common divisor of two positive integers.
+#
+# - `a`: 1 or more.
+# - `b`: 1 or more.
+function divisor(a: i64, b: i64) -> i64
+    x @= a
+    y @= b
+
+    while y != 0
+        r = x % y
+        x @ y
+        y @ r
+
+    return x
+
+# A conversion from `from` frames a second to `to`, with nothing held.
+#
+# - `from`: the input's rate, 1 or more.
+# - `to`: the output's rate, 1 or more.
+# - `channels`: the channels of a frame, 1 or more.
+function new(from: i64, to: i64, channels: i64) -> Resampler
+    d = divisor(a: from, b: to)
+
+    ratio = if to < from
+        to_f64(to) / to_f64(from)
+    else
+        1.0
+    cutoff = ROLLOFF * ratio
+    reach = to_i64(math.ceil(to_f64(CROSSINGS) / cutoff)).must() + 1
+    return Resampler(
+        from: from / d,
+        to: to / d,
+        channels: channels,
+        cutoff: cutoff,
+        reach: reach,
+        table: filter_table(),
+        held: [],
+        base: 0,
+        whole: 0,
+        part: 0
+    )
+
+# The filter at `distance` input frames from an output's time, scaled to the
+# cutoff.
+#
+# - `r`: the conversion.
+# - `distance`: zero or more.
+function weight(r: Resampler lent, distance: f64) -> f64
+    u = distance * r.cutoff * to_f64(STEPS)
+    i = to_i64(u).must()
+
+    if i >= CROSSINGS * STEPS
+        return 0.0
+    low = r.table[i]
+    return r.cutoff * (low + (u - to_f64(i)) * (r.table[i + 1] - low))
+
+# The next output frame pushed onto `out`, input frames past `end` or before
+# the first read as silence, and the time moved on to the frame after it.
+#
+# - `r`: the conversion, whose time moves on.
+# - `out`: the samples written to, which the caller owns; the frame's samples
+#   are pushed at its end.
+# - `end`: the first input frame not given yet.
+function produce(@r: Resampler, @out: [f64], end: i64)
+    t = to_f64(r.part) / to_f64(r.to)
+    first = r.whole - r.reach + 1
+    last = r.whole + r.reach
+    c @= 0
+
+    while c < r.channels
+        sum @= 0.0
+        k @= first
+
+        while k <= last
+            if k >= 0 && k >= r.base && k < end
+                distance = math.abs(to_f64(r.whole - k) + t)
+                sum @ sum + r.held[(k - r.base) * r.channels + c] * weight(r, distance: distance)
+            k @ k + 1
+
+        out @ out.push(sum)
+        c @ c + 1
+
+    r.part @ r.part + r.from % r.to
+    r.whole @ r.whole + r.from / r.to
+
+    if r.part >= r.to
+        r.part @ r.part - r.to
+        r.whole @ r.whole + 1
+
+# The output frames `samples` completes, interleaved: each whose filter
+# reaches no frame not given yet. The frames no later output needs are let go.
+#
+# - `r`: the conversion, which keeps what it has not used.
+# - `samples`: the next input frames, whole and interleaved.
+function feed(@r: Resampler, samples: [f64] lent) -> [f64]
+    for x in samples
+        r.held @ r.held.push(x)
+
+    end = r.base + r.held.len() / r.channels
+    out: [f64] @= []
+
+    while r.whole + r.reach < end
+        produce(@r, @out, end: end)
+
+    keep = r.whole - r.reach + 1
+
+    if keep > r.base
+        dropped = math.min_i64(a: keep, b: end) - r.base
+        r.held @ r.held.slice(from: dropped * r.channels, to: r.held.len())
+        r.base @ r.base + dropped
+    return out
+
+# The output frames left once the input has ended, the input after its end
+# read as silence: every frame whose time is before the input's end.
+#
+# - `r`: the conversion, which holds nothing after.
+function finish(@r: Resampler) -> [f64]
+    end = r.base + r.held.len() / r.channels
+    out: [f64] @= []
+
+    while r.whole < end
+        produce(@r, @out, end: end)
+
+    r.held @ []
+    r.base @ end
+    return out
+
+# The frames of `samples` converted whole.
+#
+# - `samples`: interleaved frames.
+# - `from`: their rate.
+# - `to`: the rate wanted.
+# - `channels`: the channels of a frame.
+function whole_of(samples: [f64] lent, from: i64, to: i64, channels: i64) -> [f64]
+    r @= new(from: from, to: to, channels: channels)
+    out @= feed(@r, samples: samples)
+
+    for x in finish(@r)
+        out @ out.push(x)
+
+    return out
+
+test "whole_of: nothing in, nothing out, and the frame count the times give"
+    assert whole_of([], from: 8000, to: 44100, channels: 1).len() == 0
+    assert whole_of([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], from: 3, to: 2, channels: 1).len() == 7
+    assert whole_of([0.0, 0.0, 0.0], from: 1, to: 3, channels: 1).len() == 9
+    assert whole_of([0.0, 0.0, 0.0, 0.0], from: 48000, to: 44100, channels: 2).len() == 4
+
+test "whole_of: a constant stays that constant away from the edges, up and down"
+    ones: [f64] @= []
+
+    for _ in range(from: 0, to: 400)
+        ones @ ones.push(0.5)
+
+    up = whole_of(ones, from: 8000, to: 12000, channels: 1)
+    assert up.len() == 600
+
+    for i in range(from: 60, to: 540)
+        assert math.abs(up[i] - 0.5) < 0.001
+
+    down = whole_of(ones, from: 48000, to: 8000, channels: 1)
+    assert down.len() == 67
+
+    for i in range(from: 20, to: 47)
+        assert math.abs(down[i] - 0.5) < 0.001
+
+test "whole_of: a sine below both Nyquist frequencies keeps its shape"
+    tone: [f64] @= []
+
+    for i in range(from: 0, to: 800)
+        tone @ tone.push(math.sin(math.TAU * 440.0 * to_f64(i) / 8000.0))
+
+    out = whole_of(tone, from: 8000, to: 44100, channels: 1)
+
+    for n in range(from: 400, to: 4000)
+        exact = math.sin(math.TAU * 440.0 * to_f64(n) / 44100.0)
+        assert math.abs(out[n] - exact) < 0.002
+
+test "whole_of: a tone above the new Nyquist frequency is let go, not folded back"
+    high: [f64] @= []
+
+    for i in range(from: 0, to: 4800)
+        high @ high.push(math.sin(math.TAU * 7000.0 * to_f64(i) / 48000.0))
+
+    out = whole_of(high, from: 48000, to: 8000, channels: 1)
+
+    for n in range(from: 50, to: 750)
+        assert math.abs(out[n]) < 0.001
+
+test "push: frames given in pieces give the samples given whole, two channels apart"
+    frames: [f64] @= []
+
+    for i in range(from: 0, to: 300)
+        frames @ frames.push(math.sin(to_f64(i) * 0.1))
+        frames @ frames.push(math.cos(to_f64(i) * 0.03))
+
+    whole = whole_of(frames, from: 44100, to: 48000, channels: 2)
+    r @= new(from: 44100, to: 48000, channels: 2)
+    pieces: [f64] @= []
+    at @= 0
+
+    while at < frames.len()
+        next = math.min_i64(a: at + 14, b: frames.len())
+
+        for x in feed(@r, samples: frames.slice(from: at, to: next))
+            pieces @ pieces.push(x)
+
+        at @ next
+
+    for x in finish(@r)
+        pieces @ pieces.push(x)
+
+    assert pieces == whole
+
+test "divisor: the rates reduced"
+    assert divisor(a: 44100, b: 48000) == 300
+    assert divisor(a: 7, b: 7) == 7
+    assert divisor(a: 1, b: 192000) == 1
