@@ -6,7 +6,8 @@
  *
  * platform/hero_ui_appkit_system.h: the functions
  * `hero_ui_appkit_system.swift` exports to C, which `hero_ui.c`'s macOS arm
- * calls on the system around the program: a notification, the appearance.
+ * calls on the system around the program: a notification, the appearance,
+ * the system's ask to end the app.
  * A header of the member's own, as `hero_ui_appkit.h` is, held to the
  * header `swiftc` writes at every compile of the layer
  * (`selfhost/cli/layer_swift.hero`).
@@ -30,5 +31,11 @@ int64_t hero_ui_appkit_appearance(int64_t *appearance);
 void hero_ui_appkit_appearance_watch(void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
 
 int64_t hero_ui_appkit_appearance_set(int64_t appearance);
+
+void hero_ui_appkit_session_watch(void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+
+int64_t hero_ui_appkit_answer_quit(int64_t go);
+
+int64_t hero_ui_appkit_ask_quit(int64_t session_end);
 
 #endif

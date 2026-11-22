@@ -95,6 +95,7 @@ private let eventResize: Int64 = 8
 private let eventMessage: Int64 = 9
 private let eventActivate: Int64 = 13
 private let eventSubmit: Int64 = 14
+private let eventDrop: Int64 = 20
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -183,6 +184,48 @@ private final class ActivatingTable: NSTableView {
 }
 
 // A window's content: its y axis down, as `hero_ui.h` places widgets.
+// A text area's text view, which hands a drag of files to its window where
+// the window takes them (`hero_ui_set_drop`), so a drop anywhere in an
+// editor's window opens its files rather than typing their paths; any
+// other drag is the text view's own.
+@MainActor
+private final class AreaText: NSTextView {
+    override func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if let shared = Backend.shared, shared.takesDrop(sender) {
+            return .copy
+        }
+        return super.draggingEntered(sender)
+    }
+
+    override func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        if let shared = Backend.shared, shared.takesDrop(sender) {
+            return .copy
+        }
+        return super.draggingUpdated(sender)
+    }
+
+    override func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        if let shared = Backend.shared, shared.takesDrop(sender) {
+            return true
+        }
+        return super.prepareForDragOperation(sender)
+    }
+
+    override func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        if let shared = Backend.shared, shared.takesDrop(sender) {
+            return shared.dropped(sender)
+        }
+        return super.performDragOperation(sender)
+    }
+
+    override func concludeDragOperation(_ sender: NSDraggingInfo?) {
+        if let sender = sender, let shared = Backend.shared, shared.takesDrop(sender) {
+            return
+        }
+        super.concludeDragOperation(sender)
+    }
+}
+
 private final class FlippedView: NSView {
     override var isFlipped: Bool {
         return true
@@ -217,6 +260,8 @@ private final class Native {
     var page: WebPage?
     // A tray icon's status item in the menu bar.
     var status: NSStatusItem?
+    // Whether a window takes files dropped on it (`hero_ui_set_drop`).
+    var dropping = false
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -405,7 +450,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
             scroll.hasVerticalScroller = true
             scroll.borderType = .bezelBorder
-            let text = NSTextView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
+            let text = AreaText(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
             text.isRichText = false
             // An `NSTextView` made in code keeps no undo of its own until
             // asked, where a text field's field editor keeps one: the Edit
@@ -3327,5 +3372,198 @@ extension Backend {
             return nil
         }
         return owner.table ?? owner.textView ?? owner.view
+    }
+}
+
+// MARK: files dropped on a window
+
+// A drag the layer makes for `hero_ui_inject`: files dropped at a point of
+// a window, read by the same destination methods as the person's drag.
+@MainActor
+private final class InjectedDrag: NSObject, NSDraggingInfo {
+    let draggingDestinationWindow: NSWindow?
+    let draggingLocation: NSPoint
+    let draggingPasteboard: NSPasteboard
+    var draggingFormation: NSDraggingFormation = .default
+    var animatesToDestination = false
+    var numberOfValidItemsForDrop = 0
+
+    init(window: NSWindow, location: NSPoint, pasteboard: NSPasteboard, count: Int) {
+        draggingDestinationWindow = window
+        draggingLocation = location
+        draggingPasteboard = pasteboard
+        numberOfValidItemsForDrop = count
+    }
+
+    var draggingSourceOperationMask: NSDragOperation {
+        return .copy
+    }
+    var draggedImageLocation: NSPoint {
+        return draggingLocation
+    }
+    var draggedImage: NSImage? {
+        return nil
+    }
+    var draggingSource: Any? {
+        return nil
+    }
+    var draggingSequenceNumber: Int {
+        return 0
+    }
+    var springLoadingHighlight: NSSpringLoadingHighlight {
+        return .none
+    }
+
+    func slideDraggedImage(to screenPoint: NSPoint) {
+    }
+
+    func enumerateDraggingItems(options enumOpts: NSDraggingItemEnumerationOptions = [], for view: NSView?, classes classArray: [AnyClass], searchOptions: [NSPasteboard.ReadingOptionKey: Any] = [:], using block: (NSDraggingItem, Int, UnsafeMutablePointer<ObjCBool>) -> Void) {
+    }
+
+    func resetSpringLoading() {
+    }
+}
+
+extension Backend {
+    // The window widget whose window `window` is, where it takes dropped
+    // files.
+    func dropTarget(_ window: NSWindow?) -> Native? {
+        guard let window = window else {
+            return nil
+        }
+        return widgets.values.first { $0.kind == kindWindow && $0.window === window && $0.dropping }
+    }
+
+    // The paths of the files a drag holds, in its order.
+    func droppedPaths(_ pasteboard: NSPasteboard) -> [String] {
+        let read = pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) ?? []
+        return read.compactMap { ($0 as? URL)?.path }.filter { !$0.isEmpty }
+    }
+
+    // Whether the drag `sender` holds files and stands over a window that
+    // takes them.
+    func takesDrop(_ sender: NSDraggingInfo) -> Bool {
+        return dropTarget(sender.draggingDestinationWindow) != nil && !droppedPaths(sender.draggingPasteboard).isEmpty
+    }
+
+    // Queues the drop `sender` for its window: the point in its content,
+    // the paths each followed by one zero byte.
+    func dropped(_ sender: NSDraggingInfo) -> Bool {
+        guard let widget = dropTarget(sender.draggingDestinationWindow), let content = widget.window?.contentView, !muted else {
+            return false
+        }
+        let paths = droppedPaths(sender.draggingPasteboard)
+        if paths.isEmpty {
+            return false
+        }
+        let at = content.convert(sender.draggingLocation, from: nil)
+        var joined: [UInt8] = []
+        for path in paths {
+            joined.append(contentsOf: Array(path.utf8))
+            joined.append(0)
+        }
+        pushed += 1
+        joined.withUnsafeBufferPointer { bytes in
+            push(eventDrop, widget.id, Int64(max(0, at.x.rounded())), Int64(max(0, at.y.rounded())), bytes.baseAddress, Int64(bytes.count))
+        }
+        return true
+    }
+
+    @objc func draggingEntered(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return takesDrop(sender) ? .copy : []
+    }
+
+    @objc func draggingUpdated(_ sender: NSDraggingInfo) -> NSDragOperation {
+        return takesDrop(sender) ? .copy : []
+    }
+
+    @objc func prepareForDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return takesDrop(sender)
+    }
+
+    @objc func performDragOperation(_ sender: NSDraggingInfo) -> Bool {
+        return dropped(sender)
+    }
+
+    func setDrop(_ id: Int64, _ on: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindWindow, let window = widget.window else {
+            return answerInvalid
+        }
+        widget.dropping = on
+        if on {
+            window.registerForDraggedTypes([.fileURL])
+        } else {
+            window.unregisterDraggedTypes()
+        }
+        return answerOk
+    }
+
+    // Drops `paths` on window `id` at `x`, `y` of its content as the
+    // person's drag would end: through the text area under the point where
+    // one stands there, else through the window, each reading the drag as
+    // it reads the person's.
+    func drop(_ id: Int64, _ x: Int64, _ y: Int64, _ paths: [String]) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindWindow, let window = widget.window, let content = window.contentView, widget.dropping else {
+            return answerInvalid
+        }
+        let point = NSPoint(x: CGFloat(x), y: CGFloat(y))
+        if !content.bounds.contains(point) {
+            return answerInvalid
+        }
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("org.heroes-lang.ui.drop"))
+        defer {
+            pasteboard.releaseGlobally()
+        }
+        pasteboard.clearContents()
+        if !pasteboard.writeObjects(paths.map { URL(fileURLWithPath: $0) as NSURL }) {
+            return answerOther
+        }
+        let drag = InjectedDrag(window: window, location: content.convert(point, to: nil), pasteboard: pasteboard, count: paths.count)
+        if let area = content.hitTest(point) as? AreaText ?? (content.hitTest(point)?.enclosingScrollView?.documentView as? AreaText) {
+            return area.prepareForDragOperation(drag) && area.performDragOperation(drag) ? answerOk : answerOther
+        }
+        return windowTakes(window, drag) ? answerOk : answerOther
+    }
+
+    // Hands the drag `drag` to `window` as AppKit hands the person's to a
+    // window registered for it: the window's own destination methods, which
+    // send each on to its delegate (measured 2026-11-22: `NSWindow` answers
+    // `draggingEntered:`, `prepareForDragOperation:` and
+    // `performDragOperation:` and calls its delegate's).
+    func windowTakes(_ window: NSWindow, _ drag: NSDraggingInfo) -> Bool {
+        typealias Operation = @convention(c) (AnyObject, Selector, AnyObject) -> UInt
+        typealias Answer = @convention(c) (AnyObject, Selector, AnyObject) -> Bool
+        let entered = NSSelectorFromString("draggingEntered:")
+        let prepare = NSSelectorFromString("prepareForDragOperation:")
+        let perform = NSSelectorFromString("performDragOperation:")
+        guard window.responds(to: entered), window.responds(to: prepare), window.responds(to: perform) else {
+            return false
+        }
+        if unsafeBitCast(window.method(for: entered), to: Operation.self)(window, entered, drag) == 0 {
+            return false
+        }
+        return unsafeBitCast(window.method(for: prepare), to: Answer.self)(window, prepare, drag) && unsafeBitCast(window.method(for: perform), to: Answer.self)(window, perform, drag)
+    }
+}
+
+@c
+public func hero_ui_appkit_set_drop(_ id: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setDrop(id, on == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_drop(_ id: Int64, _ x: Int64, _ y: Int64, _ paths: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let joined = text(paths, count)
+    let list = joined.split(separator: "\u{0}", omittingEmptySubsequences: true).map(String.init)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.drop(id, x, y, list) ?? answerNotFound
     }
 }

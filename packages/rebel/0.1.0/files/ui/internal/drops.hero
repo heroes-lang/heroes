@@ -1,0 +1,138 @@
+# Files dropped on a window (`ui.set_drop`): a window takes them once the
+# program asks, and a drop is told as `.files_dropped` with its point and
+# its paths. Both sides keep whether a window takes them in its node, so a
+# drop injected on a window that takes none is refused alike; the native
+# side asks the system to take them, and the system's drop comes through
+# the floor.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/desk
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/model
+use ui/internal/native
+
+# Has a window take files dropped on it, or none (`ui.set_drop`).
+function set_drop(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+
+    if app.native && hero_ui.set_drop(app.handle, id: widget.id, on: native.number_of(on)) < 0
+        return failure.last(f"having window {widget.id} take dropped files")
+    n.dropping @ on
+    model.put(@app.table, n: n)
+    return ok()
+
+# Fails `invalid` where a drop of `paths` at `x`, `y` cannot reach `window`
+# as the person's: a window that takes no files, a point outside its
+# content, no path, or a path empty or not one a file may have.
+function drop_ok(app: ui.App, window: ui.Widget, x: i64, y: i64, paths: [str]) -> ()?
+    n = check.node_kind(app, widget: window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+
+    if !n.dropping
+        return fail(code: failure.INVALID, msg: f"window {n.id} takes no dropped files; `set_drop` has it take them")
+
+    # The content is the size the program asked, or the larger its last
+    # layout gave it, since a window is never smaller than its content.
+    wide = if n.w > n.width
+        n.w
+    else
+        n.width
+
+    high = if n.h > n.height
+        n.h
+    else
+        n.height
+
+    if x < 0 || y < 0 || x >= wide || y >= high
+        return fail(
+            code: failure.INVALID,
+            msg: f"a drop at {x},{y} is outside window {n.id}'s content of {wide} by {high} points"
+        )
+
+    if paths.len() == 0
+        return fail(code: failure.INVALID, msg: "a drop holds one path or more")
+
+    for i in range(from: 0, to: paths.len())
+        if paths[i] == ""
+            return fail(code: failure.INVALID, msg: f"path {i} of the drop is empty")
+        check.text_ok(text: paths[i], one_line: false, what: f"path {i} of the drop")?
+
+    return ok()
+
+# Drops `paths` on native window `window` at `x`, `y`, through the floor.
+function injected(app: ui.App, window: ui.Widget, x: i64, y: i64, paths: [str]) -> ()?
+    joined @= native.texts_of(paths)
+
+    if hero_ui.inject(app.handle, kind: hero_ui.HERO_UI_EVENT_DROP, id: window.id, value: x, second: y, @joined, count: to_u64(joined.len()).must()) < 0
+        return failure.last(f"dropping files on window {window.id}")
+    return ok()
+
+# The drops a native app's wait gives within half a second, its other
+# events passed over.
+function drops_of(@app: ui.App) -> [ui.Event]
+    out: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 5)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .files_dropped _ => out @ out.push(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ =>
+                        _ = 0
+            .err _ => _ = 0
+
+    return out
+
+## Tests
+
+test "set_drop: on the headless side a drop told with its point and paths once the window takes files, and refused where it takes none, outside its content, empty or of another kind (catalogue DD01)"
+    app @= fixture.test_app()
+    window = fixture.window_of(app)
+    field = ui.text_field(@app, into: window, text: "").must()
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: 10, y: 10, paths: ["/a"]))) == ui.INVALID
+    ui.set_drop(@app, widget: window, on: true).must()
+    assert fixture.code_of(ui.set_drop(@app, widget: field, on: true)) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: 10, y: 10, paths: []))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: 10, y: 10, paths: ["/a", ""]))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: 10, y: 9999, paths: ["/a"]))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: -1, y: 10, paths: ["/a"]))) == ui.INVALID
+    ui.inject(@app, input: .drop_files(window: window, x: 10, y: 20, paths: ["/a b/c.txt", "/d"])).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .files_dropped(window: window, x: 10, y: 20, paths: ["/a b/c.txt", "/d"])
+    ui.set_drop(@app, widget: window, on: false).must()
+    assert fixture.code_of(ui.inject(@app, input: .drop_files(window: window, x: 10, y: 20, paths: ["/a"]))) == ui.INVALID
+    ui.close(@app).must()
+
+test "set_drop: on the native side a drop through AppKit's drag destination, on a text area the window holds and on a button through the window, told with its point and paths, the text area's text kept (catalogue DD01)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    window = ui.window(@app, title: "Drop", width: 300, height: 200).must()
+    area = ui.text_area(@app, into: window, text: "kept").must()
+    button = ui.button(@app, into: window, text: "Open").must()
+    taken = ui.set_drop(@app, widget: window, on: true)
+    refusal = fixture.unsupported_words(taken)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    taken.must()
+    spot = ui.rect_of(@app, widget: area).must()
+    ui.inject(
+        @app,
+        input: .drop_files(window: window, x: spot.x + 4, y: spot.y + 4, paths: ["/tmp/a b.txt", "/tmp/c"])
+    ).must()
+    on_area = drops_of(@app)
+    place = ui.rect_of(@app, widget: button).must()
+    ui.inject(@app, input: .drop_files(window: window, x: place.x + 2, y: place.y + 2, paths: ["/tmp/d"])).must()
+    on_button = drops_of(@app)
+    kept = ui.text_of(app, widget: area).must()
+    ui.set_drop(@app, widget: window, on: false).must()
+    refused = ui.inject(@app, input: .drop_files(window: window, x: 1, y: 1, paths: ["/tmp/a"]))
+    ui.close(@app).must()
+    assert on_area == [.files_dropped(window: window, x: spot.x + 4, y: spot.y + 4, paths: ["/tmp/a b.txt", "/tmp/c"])]
+    assert on_button == [.files_dropped(window: window, x: place.x + 2, y: place.y + 2, paths: ["/tmp/d"])]
+    assert kept == "kept"
+    assert fixture.code_of(refused) == ui.INVALID

@@ -155,7 +155,9 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 }
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+#if defined(__APPLE__) || defined(_WIN32)
 static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+#endif
 static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts);
 static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count);
 static void hero_ui_web_gone(int64_t id);
@@ -180,11 +182,13 @@ int64_t hero_ui_arm_open(void) {
 
     if (kind == HERO_UI_OK) {
         hero_ui_appkit_appearance_watch(hero_ui_dialog_told);
+        hero_ui_appkit_session_watch(hero_ui_dialog_told);
     }
     return kind;
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_appkit_session_watch(NULL);
     hero_ui_appkit_appearance_watch(NULL);
     hero_ui_appkit_close();
 }
@@ -316,6 +320,15 @@ void hero_ui_tell(int64_t kind, int64_t id, int64_t value, int64_t second) {
     }
     hero_ui_pushed += 1;
     hero_ui_push(kind, id, value, second, NULL, 0);
+}
+
+/* What the Win32 and GTK 4 arms queue an event that carries a text by (a
+ * dialog's paths, a drop's): `hero_ui_push`, counted as the arm's own
+ * events are, so `pump` returns at it; never muted, since no widget the
+ * program sets carries one. */
+void hero_ui_tell_text(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
+    hero_ui_pushed += 1;
+    hero_ui_push(kind, id, value, second, text, count);
 }
 
 /* What a web view's member queues a page's message by: `hero_ui_push`,
@@ -1843,6 +1856,8 @@ int64_t hero_ui_number(hero_ui_app *app) {
 static int64_t hero_ui_elsewhere(const char *what);
 static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count);
 static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id);
+static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const void *paths, uint64_t count);
+static int64_t hero_ui_session_answered(int64_t kind, const char *what);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -2173,6 +2188,15 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
             return hero_ui_said(HERO_UI_INVALID, "an appearance turned names no widget, 0, and is HERO_UI_APPEARANCE_* or 0 for the system's");
         }
         return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would", 0);
+    }
+    if (kind == HERO_UI_EVENT_DROP) {
+        return hero_ui_drop_as_person(id, value, second, text, count);
+    }
+    if (kind == HERO_UI_EVENT_QUIT) {
+        if (id != 0 || (value != 0 && value != 1) || second != 0 || count != 0) {
+            return hero_ui_said(HERO_UI_INVALID, "an ask to end the app names no widget, 0, and is 1 for the session's end or 0 for another quit");
+        }
+        return hero_ui_session_answered(hero_ui_arm_ask_quit(value), "asking the app to end as the system would");
     }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
@@ -2946,13 +2970,16 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
 
 /* What a dialog's answer is queued by: the queue itself, and on macOS the
  * wake of the loop `pump` runs, since AppKit hands a sheet's answer to its
- * completion handler outside any event that loop reads. */
+ * completion handler outside any event that loop reads. The GTK 4 arm
+ * queues its own by `hero_ui_tell_text`. */
+#if defined(__APPLE__) || defined(_WIN32)
 static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
     hero_ui_push(kind, id, value, second, text, count);
 #if defined(__APPLE__)
     hero_ui_appkit_wake();
 #endif
 }
+#endif
 
 #if defined(__APPLE__)
 
@@ -3006,16 +3033,16 @@ int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
     return hero_ui_appkit_dialogs_words(words, count);
 }
 
-#else
+#elif defined(_WIN32)
 
-/* The Win32 and GTK 4 arms show a dialog by their waiting form,
- * `hero_ui_arm_message` and the rest (THE ARM), which returns once the
- * person has answered. Until an arm shows one that answers later, each of
- * its dialogs is shown here by that form and the answer queued at once, so
- * the program reads it from the queue as on macOS, though the call waited.
- * No dialog then stays shown, so none is answered as the person, nor ended.
- * An arm that answers later defines the calls below in its own member, and
- * its system leaves this block's condition. */
+/* The Win32 arm shows a dialog by its waiting form, `hero_ui_arm_message`
+ * and the rest (THE ARM), which returns once the person has answered.
+ * Until it shows one that answers later, each of its dialogs is shown here
+ * by that form and the answer queued at once, so the program reads it from
+ * the queue as on macOS, though the call waited. No dialog then stays
+ * shown, so none is answered as the person, nor ended. Once the arm
+ * answers later it defines the calls below in its own member, as the GTK 4
+ * arm does, and this block goes. */
 
 int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
     int64_t answer = HERO_UI_ANSWER_CANCEL;
@@ -3613,66 +3640,66 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
     return hero_ui_appkit_set_label_for(id, label);
 }
 
-#else
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    return hero_ui_appkit_answer_quit(go);
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    return hero_ui_appkit_ask_quit(session_end);
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    return hero_ui_appkit_set_drop(id, on);
+}
+
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
+    return hero_ui_appkit_drop(id, x, y, paths, count);
+}
+
+#elif defined(_WIN32)
+
+/* The words of the last refusal of a call on the system around the
+ * program, for the Win32 arm: the words its own member's refusals leave
+ * (`hero_ui_refused`). The tray, a notification, the appearance and
+ * accessible names are the Win32 member's own; the GTK 4 arm defines all of
+ * them and these words in its member. */
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
+#endif
+
+#if !defined(__APPLE__)
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
  * shared words are (`hero_ui_refused`), so no word another call left is told
  * with it. An arm that draws one defines it in its own member, and its system
  * leaves this block's condition. */
 
-int64_t hero_ui_arm_set_docked(int64_t on) {
+int64_t hero_ui_arm_answer_quit(int64_t go) {
+    (void)go;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer holds the session's end for the program's answer on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_ask_quit(int64_t session_end) {
+    (void)session_end;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the app to end as the system would on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_drop(int64_t id, int64_t on) {
+    (void)id;
     (void)on;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer keeps an app out of the Dock on macOS alone, and this system's arm has no such call");
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer takes files dropped on a window on macOS alone, and this system's arm has no such call");
 }
 
-int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
-    (void)title;
-    (void)title_count;
-    (void)text;
-    (void)text_count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows a notification on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_system_words(char *words, int64_t count) {
-    return hero_ui_arm_words(words, count);
-}
-
-/* The Win32 arm draws the appearance and accessible names in its own member
- * (`hero_ui_win32.c`), so these five refuse for the GTK 4 arm alone. */
-#if !defined(_WIN32)
-
-int64_t hero_ui_arm_appearance(int64_t *appearance) {
-    (void)appearance;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the appearance on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_appearance_set(int64_t appearance) {
-    (void)appearance;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer turns the appearance on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count) {
     (void)id;
-    (void)name;
+    (void)x;
+    (void)y;
+    (void)paths;
     (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer names a widget for a screen reader on macOS alone, and this system's arm has no such call");
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer drops files on a window as the person would on macOS alone, and this system's arm has no such call");
 }
-
-int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
-    (void)id;
-    (void)buffer;
-    (void)count;
-    (void)length;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's accessible name on macOS alone, and this system's arm has no such call");
-}
-
-int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
-    (void)id;
-    (void)label;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer ties a label to its field on macOS alone, and this system's arm has no such call");
-}
-
-#endif /* !_WIN32 */
 
 #endif
 
@@ -3766,4 +3793,62 @@ int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label) {
         return hero_ui_said(HERO_UI_INVALID, "the label tied to a widget is another widget, 1 or more, or 0 for none");
     }
     return hero_ui_system_answered(hero_ui_arm_set_label_for(id, label), "tying a label to its widget", id);
+}
+
+/* -- THE SESSION'S END ASKING THE PROGRAM ----------------------------------- */
+
+/* The answer `kind` of a call on the system around the program that no C
+ * arm draws yet, as `what`: on macOS in the system member's words, which
+ * answered it; elsewhere in the words its refusal left (`hero_ui_refused`),
+ * whatever words an arm's own `system_words` keeps. */
+static int64_t hero_ui_session_answered(int64_t kind, const char *what) {
+#if defined(__APPLE__)
+    return hero_ui_system_answered(kind, what, 0);
+#else
+    return hero_ui_answered(kind, what, 0);
+#endif
+}
+
+int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (go != 0 && go != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether the app ends is 0 or 1");
+    }
+    return hero_ui_session_answered(hero_ui_arm_answer_quit(go), "answering the system's ask to end the app");
+}
+
+/* -- FILES DROPPED ON A WINDOW ---------------------------------------------- */
+
+int64_t hero_ui_set_drop(hero_ui_app *app, int64_t id, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether a window takes dropped files is 0 or 1");
+    }
+    return hero_ui_answered(hero_ui_arm_set_drop(id, on), "having a window take dropped files", id);
+}
+
+/* `hero_ui_inject`'s `HERO_UI_EVENT_DROP`: drops the paths `paths` holds,
+ * each followed by one zero byte, on window `id` at `x`, `y`. */
+static int64_t hero_ui_drop_as_person(int64_t id, int64_t x, int64_t y, const void *paths, uint64_t count) {
+    const uint8_t *bytes = paths;
+
+    if (!hero_ui_id_given(id) || !hero_ui_text_given(paths, count, "the paths dropped", true)) {
+        return -1;
+    }
+    if (count == 0) {
+        return hero_ui_said(HERO_UI_INVALID, "a drop holds one path or more");
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == 0 && (at == 0 || bytes[at - 1] == 0)) {
+            return hero_ui_said(HERO_UI_INVALID, "a path dropped is empty");
+        }
+    }
+    if (x < 0 || y < 0 || x > HERO_UI_POSITION_MOST || y > HERO_UI_POSITION_MOST) {
+        return hero_ui_said(HERO_UI_INVALID, "a drop's point is 0 or more in the window's content");
+    }
+    return hero_ui_answered(hero_ui_arm_drop(id, x, y, bytes, (int64_t)count), "dropping files on a window as the person", id);
 }

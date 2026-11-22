@@ -11,6 +11,7 @@ use ui
 use ui/hero_ui
 use ui/internal/check
 use ui/internal/desk
+use ui/internal/drops
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/frames
@@ -74,6 +75,8 @@ function checked(app: ui.App, input: ui.Input) -> ()?
                 check.text_ok(text: p.paths[i], one_line: false, what: f"path {i}")?
         .cancel_files        => _ = 0
         .change_appearance _ => _ = 0
+        .ask_quit _          => _ = 0
+        .drop_files d        => drops.drop_ok(app, window: d.window, x: d.x, y: d.y, paths: d.paths)?
         .send s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
             check.text_ok(text: s.text, one_line: false, what: "the text sent")?
@@ -130,6 +133,8 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .unfold u                                 => u.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
         .change_appearance _                      => 0
+        .ask_quit _                               => 0
+        .drop_files d                             => d.window.id
 
     if id == 0
         return true
@@ -251,6 +256,11 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             if c.appearance != app.appearance
                 app.appearance @ c.appearance
                 return [.appearance_changed(appearance: c.appearance)]
+        .ask_quit q =>
+            app.quits_held @ app.quits_held + 1
+            return [.quit_asked(session_end: q.session_end)]
+        .drop_files d =>
+            return [.files_dropped(window: d.window, x: d.x, y: d.y, paths: d.paths)]
         .answer _ | .pick_files _ | .cancel_files =>
             _ = 0
 

@@ -199,6 +199,12 @@ extern "hero_ui.h"
     constant HERO_UI_APPEARANCE_DARK: i64
     constant HERO_UI_EVENT_APPEARANCE: i64
     function hero_ui_appearance(app: App, @appearance: i64) -> i64
+    # The system's ask to end the app, and the program's answer.
+    constant HERO_UI_EVENT_QUIT: i64
+    function hero_ui_answer_quit(app: App, go: i64) -> i64
+    # Files dropped on a window.
+    constant HERO_UI_EVENT_DROP: i64
+    function hero_ui_set_drop(app: App, id: i64, on: i64) -> i64
     # Accessible names, and a label tied to its field.
     function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
@@ -1026,6 +1032,22 @@ function set_docked(app: App, on: i64) -> i64
 # - `drawn`: where it is written.
 function appearance_now(app: App, @drawn: i64) -> i64
     return hero_ui_appearance(app, @drawn)
+
+# 0 once every ask to end the app held is answered, the app ending where
+# `go` is 1 and staying where it is 0; or -1.
+#
+# - `app`: the app.
+# - `go`: 1 or 0.
+function answer_quit(app: App, go: i64) -> i64
+    return hero_ui_answer_quit(app, go: go)
+
+# 0 once window `id` takes files dropped on it, `on` 1, or none, 0; or -1.
+#
+# - `app`: the app.
+# - `id`: the window.
+# - `on`: 1 or 0.
+function set_drop(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_drop(app, id: id, on: on)
 
 # 0 once widget `id` holds the accessible name `name`, none taking it back;
 # or -1.

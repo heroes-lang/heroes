@@ -9,6 +9,7 @@ use bytes
 use ui
 use ui/hero_ui
 use ui/internal/desk
+use ui/internal/drops
 use ui/internal/failure
 use ui/internal/model
 
@@ -495,6 +496,16 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: 0,
                 text: ""
             )
+        .ask_quit q =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_QUIT,
+                id: 0,
+                value: number_of(q.session_end),
+                second: 0,
+                text: ""
+            )
+        .drop_files d => return drops.injected(app, window: d.window, x: d.x, y: d.y, paths: d.paths)
         .answer _ | .pick_files _ | .cancel_files => return ok()
 
 # The layer's number for `appearance`.

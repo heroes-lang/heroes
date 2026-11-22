@@ -570,7 +570,7 @@ function names_of(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                         "another"
 
                 out @ out.push(name)
@@ -737,44 +737,86 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     assert main.work.width > 0 && main.work.width <= main.area.width
     assert main.work.height > 0 && main.work.height <= main.area.height
     w = ui.window(@app, title: "Desk", width: 320, height: 200).must()
+
+    # The words of each block this system refused, passed over: the case
+    # runs every other block, then skips by them, so nothing a system lacks
+    # passes in silence.
+    passed: [str] @= []
+
+    # Placed and centred, where the system lets a program place a window
+    # (Wayland does not). Only a window manager draws a frame around the
+    # content on X11, so the frame is at least the content.
     at_x = main.work.x + 60
     at_y = main.work.y + 40
-    ui.set_position(@app, widget: w, screen: 0, x: at_x, y: at_y).must()
-    placed = ui.frame_of(@app, widget: w).must()
-    assert placed.screen == 0 && placed.x == at_x && placed.y == at_y
-    assert placed.width >= 320 && placed.height > 200
-    ui.center(@app, widget: w).must()
-    centred = ui.frame_of(@app, widget: w).must()
-    middle = main.work.x + (main.work.width - centred.width) / 2
-    assert centred.x >= middle - 1 && centred.x <= middle + 1
+    placing = ui.set_position(@app, widget: w, screen: 0, x: at_x, y: at_y)
+    placed_words = fixture.unsupported_words(placing)
+
+    if placed_words != ""
+        passed @ passed.push(placed_words)
+    else
+        placing.must()
+        placed = ui.frame_of(@app, widget: w).must()
+        assert placed.screen == 0 && placed.x == at_x && placed.y == at_y
+        assert placed.width >= 320 && placed.height >= 200
+        ui.center(@app, widget: w).must()
+        centred = ui.frame_of(@app, widget: w).must()
+        middle = main.work.x + (main.work.width - centred.width) / 2
+        assert centred.x >= middle - 1 && centred.x <= middle + 1
     assert names_of(@app).len() == 0
 
-    # Each state reached, read back, and its size told as a resize.
-    ui.set_state(@app, widget: w, to: .maximized).must()
-    assert ui.state_of(app, widget: w).must() == .maximized
-    ui.set_state(@app, widget: w, to: .normal).must()
-    assert ui.state_of(app, widget: w).must() == .normal
-    ui.set_state(@app, widget: w, to: .minimized).must()
-    assert ui.state_of(app, widget: w).must() == .minimized
-    ui.set_state(@app, widget: w, to: .full_screen).must()
-    assert ui.state_of(app, widget: w).must() == .full_screen
-    ui.set_state(@app, widget: w, to: .normal).must()
-    assert ui.state_of(app, widget: w).must() == .normal
+    # Each state reached, read back, and its size told as a resize, where
+    # the system lets a program set one (X11 leaves it to a window manager).
+    maximizing = ui.set_state(@app, widget: w, to: .maximized)
+    state_words = fixture.unsupported_words(maximizing)
 
-    for name in names_of(@app)
-        assert name.len() > 8 && name.slice(from: 0, to: 8) == "resized "
+    if state_words != ""
+        passed @ passed.push(state_words)
+    else
+        maximizing.must()
+        assert ui.state_of(app, widget: w).must() == .maximized
+        ui.set_state(@app, widget: w, to: .normal).must()
+        assert ui.state_of(app, widget: w).must() == .normal
+        ui.set_state(@app, widget: w, to: .minimized).must()
+        assert ui.state_of(app, widget: w).must() == .minimized
+        ui.set_state(@app, widget: w, to: .full_screen).must()
+        assert ui.state_of(app, widget: w).must() == .full_screen
+        ui.set_state(@app, widget: w, to: .normal).must()
+        assert ui.state_of(app, widget: w).must() == .normal
+
+        for name in names_of(@app)
+            assert name.len() > 8 && name.slice(from: 0, to: 8) == "resized "
 
     # Drawn otherwise: on top, with no frame, see-through, on the system's
-    # material, then as made again.
-    ui.set_on_top(@app, widget: w, on: true).must()
+    # material, then as made again; each call a system may refuse passed
+    # over by its words.
+    topping = ui.set_on_top(@app, widget: w, on: true)
+    top_words = fixture.unsupported_words(topping)
+
+    if top_words != ""
+        passed @ passed.push(top_words)
+    else
+        topping.must()
     ui.set_framed(@app, widget: w, on: false).must()
-    bare = ui.frame_of(@app, widget: w).must()
-    assert bare.height == 200
+    bare = ui.frame_of(@app, widget: w)
+    bare_words = fixture.unsupported_words(bare)
+
+    if bare_words != ""
+        passed @ passed.push(bare_words)
+    else
+        assert bare.must().height == 200
     ui.set_opacity(@app, widget: w, opacity: 200).must()
-    ui.set_backdrop(@app, widget: w, backdrop: .translucent).must()
+    material = ui.set_backdrop(@app, widget: w, backdrop: .translucent)
+    material_words = fixture.unsupported_words(material)
+
+    if material_words != ""
+        passed @ passed.push(material_words)
+    else
+        material.must()
     ui.set_backdrop(@app, widget: w, backdrop: .plain).must()
     ui.set_framed(@app, widget: w, on: true).must()
-    ui.set_on_top(@app, widget: w, on: false).must()
+
+    if top_words == ""
+        ui.set_on_top(@app, widget: w, on: false).must()
     ui.set_opacity(@app, widget: w, opacity: 255).must()
     ui.set_icon(@app, img: image.blank(width: 32, height: 32, format: .rgba).must()).must()
 
@@ -786,15 +828,26 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     ui.set_modal(@app, widget: dialog, on: false).must()
     ui.destroy(@app, widget: dialog).must()
 
-    # What the person does, through the system's own path.
-    ui.inject(@app, input: .drag_window(window: w, screen: 0, x: at_x + 20, y: at_y + 10)).must()
-    ui.inject(@app, input: .change_state(window: w, state: .minimized)).must()
-    ui.inject(@app, input: .change_state(window: w, state: .normal)).must()
+    # What the person does, through the system's own path: a move where the
+    # system places windows, a state where it sets them.
+    if placed_words == ""
+        ui.inject(@app, input: .drag_window(window: w, screen: 0, x: at_x + 20, y: at_y + 10)).must()
+
+    if state_words == ""
+        ui.inject(@app, input: .change_state(window: w, state: .minimized)).must()
+        ui.inject(@app, input: .change_state(window: w, state: .normal)).must()
     told = names_of_waiting(@app)
-    assert has(told, item: f"moved {w.id} 0:{at_x + 20},{at_y + 10}")
-    assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_MINIMIZED}")
-    assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_NORMAL}")
+
+    if placed_words == ""
+        assert has(told, item: f"moved {w.id} 0:{at_x + 20},{at_y + 10}")
+
+    if state_words == ""
+        assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_MINIMIZED}")
+        assert has(told, item: f"state_changed {w.id} {hero_ui.HERO_UI_STATE_NORMAL}")
     ui.close(@app).must()
+
+    if passed.len() > 0
+        skip_test(reason: passed.join("; "))
 
 # Every event `app` gives within 300 milliseconds of the last, as their
 # names: the system's own come as its loop runs.
@@ -809,7 +862,7 @@ function names_of_waiting(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .quit_asked _ | .files_dropped _ =>
                         "another"
 
                 out @ out.push(name)
@@ -905,7 +958,7 @@ function events_of(@app: ui.App) -> [ui.Event]
             .ok event =>
                 match event
                     .appearance_changed _ => out @ out.push(event)
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .quit_asked _ | .files_dropped _ =>
                         _ = 0
             .err _ => _ = 0
 

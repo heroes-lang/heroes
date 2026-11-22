@@ -1,0 +1,89 @@
+# The app's life among the system's: its ask to end the app at the
+# session's end or at another program's request, which the program answers
+# (`ui.answer_quit`). The native side holds each ask in the floor until the
+# program answers it, or until `ui.close` answers that the app ends; the
+# headless side counts the asks its inputs made and not yet answered.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/desk
+use ui/internal/failure
+use ui/internal/fixture
+
+# Answers every ask to end the app held (`ui.answer_quit`).
+function answer_quit(@app: ui.App, go: bool) -> ()?
+    check.opened(app)?
+
+    if !app.native
+        app.quits_held @ 0
+        return ok()
+
+    code = if go
+        1
+    else
+        0
+
+    if hero_ui.answer_quit(app.handle, go: code) < 0
+        return failure.last("answering the system's ask to end the app")
+    return ok()
+
+# The asks to end the app a native app's wait gives within half a second,
+# its other events passed over.
+function quits_of(@app: ui.App) -> [ui.Event]
+    out: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 5)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .quit_asked _ => out @ out.push(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ | .files_dropped _ =>
+                        _ = 0
+            .err _ => _ = 0
+
+    return out
+
+## Tests
+
+test "answer_quit: on the headless side each ask told in order, the session's end named, answered with none held or several, and closed after the app is (catalogue AP04)"
+    app @= fixture.test_app()
+    ui.answer_quit(@app, go: true).must()
+    ui.inject(@app, input: .ask_quit(session_end: true)).must()
+    ui.inject(@app, input: .ask_quit(session_end: false)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .quit_asked(session_end: true)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .quit_asked(session_end: false)
+    assert app.quits_held == 2
+    ui.answer_quit(@app, go: false).must()
+    assert app.quits_held == 0
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+    assert fixture.code_of(ui.answer_quit(@app, go: true)) == ui.CLOSED
+
+test "answer_quit: on the native side the system's quit Apple event, a session's end and another quit, each told and held, the app kept by an answer and still waiting after (catalogue AP04)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: desk.NO_NATIVE)
+    app @= ui.open(.native).must()
+    _ = ui.window(@app, title: "Quit", width: 200, height: 100).must()
+    asked = ui.inject(@app, input: .ask_quit(session_end: true))
+    refusal = fixture.unsupported_words(asked)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    asked.must()
+    ending = quits_of(@app)
+    ui.answer_quit(@app, go: false).must()
+    ui.inject(@app, input: .ask_quit(session_end: false)).must()
+    other = quits_of(@app)
+    ui.answer_quit(@app, go: false).must()
+    ui.answer_quit(@app, go: true).must()
+    still = ui.wait(@app, within: time.nanoseconds(0))
+    ui.inject(@app, input: .ask_quit(session_end: false)).must()
+    held = quits_of(@app)
+    ui.close(@app).must()
+    assert ending == [.quit_asked(session_end: true)]
+    assert other == [.quit_asked(session_end: false)]
+    assert held == [.quit_asked(session_end: false)]
+    assert fixture.code_of(still) == ui.TIMEOUT
