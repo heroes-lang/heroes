@@ -437,11 +437,11 @@ capability middleware/content-type  a body of a type the route does not read ref
   python  -
 
 capability middleware/method-override  the method a form names in place of POST
-  heroes  web.override_method
+  heroes  web.override_method, web.METHOD_FIELD
   go      echo/middleware.MethodOverride
   rust    -
   python  -
-  note    `PUT`, `PATCH` and `DELETE` alone, another answered 400, where Echo takes any
+  note    `PUT`, `PATCH` and `DELETE` alone, another answered 400, where Echo takes any; named by `X-HTTP-Method-Override` or by the form's field `_method`, since an HTML form sends `GET` and `POST` alone and sets no field of the header (the WHATWG HTML standard's `method` keywords are `get`, `post` and `dialog`), a field and a form naming two methods answered 400; the form read as `csrf_token_of` reads it, urlencoded or multipart, and never the query, which a link could set
 
 capability middleware/redirects  HTTP sent to HTTPS, or a host to its `www.` form and back
   heroes  pending

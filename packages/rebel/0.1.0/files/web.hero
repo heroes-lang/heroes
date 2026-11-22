@@ -1103,32 +1103,59 @@ function require_type(r: http.Request, types: [str]) -> Step
         response: error_response(.text, status: http.STATUS_UNSUPPORTED_MEDIA_TYPE, message: f"the body is typed \"{kind}\", which this route does not read")
     )
 
-# Lets a `POST` go on as the method its `X-HTTP-Method-Override` field
-# names, for a client that can send only `GET` and `POST`, as Echo's
-# `MethodOverride` does.
+# The form field in which a `POST` names the method it stands for:
+# `_method`, which `override_method` reads where no
+# `X-HTTP-Method-Override` field is sent.
+constant METHOD_FIELD: str
+    "_method"
+
+# Lets a `POST` go on as the method it stands for, for a client that can
+# send only `GET` and `POST`: the method its `X-HTTP-Method-Override` field
+# names, as Echo's `MethodOverride` reads it, or its form's `METHOD_FIELD`,
+# which is how an HTML form names one, since a form sends `GET` and `POST`
+# alone and sets no field of the header.
 #
-# - `r`: the request; another method, or a `POST` with no such field, goes on
-#   as it is.
+# - `r`: the request; another method, or a `POST` that names no method, goes
+#   on as it is.
 #
-# The field may name `PUT`, `PATCH` or `DELETE`, in any case; another is
-# answered 400. The copy holds no such field.
+# The form is read as `csrf_token_of` reads one, sent as
+# `application/x-www-form-urlencoded` or `multipart/form-data`; a body that
+# does not read as a form, or a field whose bytes are not UTF-8, names no
+# method. The method named, in any case and between white space, is `PUT`,
+# `PATCH` or `DELETE`; another is answered 400, and so is a request whose
+# field and form name two methods. The copy holds no
+# `X-HTTP-Method-Override` field, and its body is the form as sent, which
+# `check_csrf` reads after it.
 function override_method(r: http.Request) -> Step
     if r.method != http.METHOD_POST
         return .go_on(request: r)
+    said: [str] @= []
 
     match http.value_of(r.headers, name: "X-HTTP-Method-Override")
-        .err _ => return .go_on(request: r)
-        .ok said =>
-            wanted = strings.to_upper_ascii(strings.trim(said))
+        .ok v  => said @ said.push(v)
+        .err _ => _ = 0
 
-            if wanted != http.METHOD_PUT && wanted != http.METHOD_PATCH && wanted != http.METHOD_DELETE
-                return .answer(
-                    response: error_response(.text, status: http.STATUS_BAD_REQUEST, message: f"a POST may stand for PUT, PATCH or DELETE, not \"{said}\"")
-                )
-            out @= r
-            out.method @ wanted
-            out.headers @ http.without_header(r.headers, name: "X-HTTP-Method-Override")
-            return .go_on(request: out)
+    match reading.form_field_of(r, name: METHOD_FIELD)
+        .ok v  => said @ said.push(v)
+        .err _ => _ = 0
+
+    if said.len() == 0
+        return .go_on(request: r)
+    wanted = strings.to_upper_ascii(strings.trim(said[0]))
+
+    if said.len() == 2 && strings.to_upper_ascii(strings.trim(said[1])) != wanted
+        return .answer(
+            response: error_response(.text, status: http.STATUS_BAD_REQUEST, message: f"a POST names two methods, \"{said[0]}\" in X-HTTP-Method-Override and \"{said[1]}\" in its form's {METHOD_FIELD}")
+        )
+
+    if wanted != http.METHOD_PUT && wanted != http.METHOD_PATCH && wanted != http.METHOD_DELETE
+        return .answer(
+            response: error_response(.text, status: http.STATUS_BAD_REQUEST, message: f"a POST may stand for PUT, PATCH or DELETE, not \"{said[0]}\"")
+        )
+    out @= r
+    out.method @ wanted
+    out.headers @ http.without_header(r.headers, name: "X-HTTP-Method-Override")
+    return .go_on(request: out)
 
 ## Server-sent events
 
@@ -1736,21 +1763,12 @@ function csrf_token_of(r: http.Request) -> str?
         .ok t  => return ok(t)
         .err _ => _ = 0
 
-    match http.form_of(r)
-        .ok pairs =>
-            for p in pairs
-                if p.key == CSRF_FIELD
-                    return ok(p.value)
-        .err _ => _ = 0
-
-    match http.parts_of(r, limits: http.default_part_limits())
-        .ok parts =>
-            match http.part_of(parts, name: CSRF_FIELD)
-                .ok part => return bytes.to_text(part.data)
-                .err _   => _ = 0
-        .err _ => _ = 0
-
-    return fail(code: NOT_FOUND, msg: f"the request sends no CSRF token, by {CSRF_HEADER} or the field {CSRF_FIELD}")
+    match reading.form_field_of(r, name: CSRF_FIELD)
+        .ok t => return ok(t)
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"the request sends no CSRF token, by {CSRF_HEADER} or the field {CSRF_FIELD}"
+        )
 
 # Refuses `r` 403 where it changes something and its CSRF token does not
 # unmask to `secret`; a safe method goes on.
@@ -2941,6 +2959,77 @@ test "override_method: another method, no field, a method refused"
         .go_on _  => assert false
         .answer a => assert a.response.status == 400
 
+test "override_method: a form's field, in a urlencoded body and a multipart one, its case and spaces, the field and the form agreeing and not, a form that does not read, another method"
+    form = http.with_form(
+        fixture.request_of(method: "POST", target: "/notes/a", headers: []),
+        pairs: [url.Pair(key: "csrf_token", value: "t"), url.Pair(key: METHOD_FIELD, value: " delete ")]
+    )
+
+    match override_method(form)
+        .go_on g  => assert g.request.method == "DELETE" && g.request.body == form.body && csrf_token_of(g.request).must() == "t"
+        .answer _ => assert false
+
+    parts = http.with_multipart(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        parts: [http.Part(name: METHOD_FIELD, filename: "", content_type: "", data: bytes.from_text("PATCH"))]
+    )
+
+    match override_method(parts)
+        .go_on g  => assert g.request.method == "PATCH"
+        .answer _ => assert false
+
+    agreeing = http.with_form(
+        fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "X-HTTP-Method-Override", value: "PUT")]),
+        pairs: [url.Pair(key: METHOD_FIELD, value: "put")]
+    )
+
+    match override_method(agreeing)
+        .go_on g  => assert g.request.method == "PUT" && !http.has_header(g.request.headers, name: "X-HTTP-Method-Override")
+        .answer _ => assert false
+
+    two = http.with_form(
+        fixture.request_of(method: "POST", target: "/", headers: [http.Header(name: "X-HTTP-Method-Override", value: "PUT")]),
+        pairs: [url.Pair(key: METHOD_FIELD, value: "DELETE")]
+    )
+
+    match override_method(two)
+        .go_on _  => assert false
+        .answer a => assert a.response.status == 400 && http.text_of(a.response).must() == "a POST names two methods, \"PUT\" in X-HTTP-Method-Override and \"DELETE\" in its form's _method\n"
+
+    for refused in ["GET", "", "POST"]
+        match override_method(http.with_form(fixture.request_of(method: "POST", target: "/", headers: []), pairs: [url.Pair(key: METHOD_FIELD, value: refused)]))
+            .go_on _  => assert false
+            .answer a => assert a.response.status == 400
+
+    unreadable @= http.with_text(fixture.request_of(method: "POST", target: "/", headers: []), text: "_method=%zz")
+    unreadable.headers @ http.with_header(
+        unreadable.headers,
+        name: "Content-Type",
+        value: "application/x-www-form-urlencoded"
+    )
+
+    match override_method(unreadable)
+        .go_on g  => assert g.request.method == "POST"
+        .answer _ => assert false
+
+    no_field = http.with_form(
+        fixture.request_of(method: "POST", target: "/", headers: []),
+        pairs: [url.Pair(key: "a", value: "DELETE")]
+    )
+
+    match override_method(no_field)
+        .go_on g  => assert g.request.method == "POST"
+        .answer _ => assert false
+
+    put = http.with_form(
+        fixture.request_of(method: "PUT", target: "/", headers: []),
+        pairs: [url.Pair(key: METHOD_FIELD, value: "DELETE")]
+    )
+
+    match override_method(put)
+        .go_on g  => assert g.request.method == "PUT"
+        .answer _ => assert false
+
 test "serve_stream: what is no request answered 400, then the stream ends"
     two @= net.pair(deadline_ms: 5_000).must()
     io.write_text(two.first.stream, text: "nonsense\r\n\r\n").must()
@@ -3664,6 +3753,17 @@ test "require_type: JSON let in"
 
     match require_type(r, types: ["application/json"])
         .go_on _  => _ = 0
+        .answer _ => assert false
+
+# An HTML form's POST standing for a DELETE, by its hidden field.
+test "override_method: a form's DELETE"
+    r = http.with_form(
+        fixture.request_of(method: "POST", target: "/notes/a", headers: []),
+        pairs: [url.Pair(key: METHOD_FIELD, value: "DELETE")]
+    )
+
+    match override_method(r)
+        .go_on g  => assert g.request.method == "DELETE"
         .answer _ => assert false
 
 # A form's POST standing for a PATCH.

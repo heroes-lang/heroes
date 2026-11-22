@@ -32,7 +32,8 @@ constant NOTE: str
 constant COMMENT_CREATE: str
     "comment_create"
 
-# `POST /notes/:slug/delete`: a note removed from its page.
+# `DELETE /notes/:slug`: a note removed from its page, whose form posts with
+# `web.METHOD_FIELD` naming `DELETE`.
 constant NOTE_DELETE: str
     "note_delete"
 
@@ -129,7 +130,7 @@ function router_of(doc: openapi.Document, site: openapi.Site) -> web.Router?
     add(@r, method: http.METHOD_POST, pattern: "/notes", name: NOTE_CREATE)?
     add(@r, method: http.METHOD_GET, pattern: "/notes/:slug", name: NOTE)?
     add(@r, method: http.METHOD_POST, pattern: "/notes/:slug/comments", name: COMMENT_CREATE)?
-    add(@r, method: http.METHOD_POST, pattern: "/notes/:slug/delete", name: NOTE_DELETE)?
+    add(@r, method: http.METHOD_DELETE, pattern: "/notes/:slug", name: NOTE_DELETE)?
     add(@r, method: http.METHOD_GET, pattern: "/new", name: NOTE_NEW)?
     add(@r, method: http.METHOD_GET, pattern: "/tags/:tag", name: TAG)?
     add(@r, method: http.METHOD_GET, pattern: "/search", name: SEARCH)?
