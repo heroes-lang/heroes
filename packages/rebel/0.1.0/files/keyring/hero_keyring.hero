@@ -142,9 +142,11 @@ function test_service(what: str) -> str
     return f"heroes-keyring-test-{what}-{bytes.format_hex(os.random_bytes(8).must())}"
 
 ## The tests: the edges first. Each test that stores asks whether this machine
-## has a keyring, and holds both ways: where it has none, every call answers
-## the same kind `system` answered. A test removes what it stored before it
-## asserts anything, so a failing assert leaves nothing in the keyring.
+## has a keyring; where it has none, the test holds that its calls are refused
+## and then ends skipped, naming the refusal, so a machine with no keyring
+## never reads as one whose keyring was tested. A test removes what it stored
+## before it asserts anything, so a failing assert leaves nothing in the
+## keyring.
 
 # Whether the store answers here: its kind where it does not, 0 where it does.
 function refusal() -> i64
@@ -185,7 +187,9 @@ test "system: no room answers the length alone, a buffer gets one of the three n
         assert name == "macOS Keychain" || name == "Windows Credential Manager" || name == "Secret Service"
         assert last_error() == HERO_KEYRING_OK
     else
-        assert last_error() == HERO_KEYRING_UNSUPPORTED || last_error() == HERO_KEYRING_DENIED
+        kind = last_error()
+        assert kind == HERO_KEYRING_UNSUPPORTED || kind == HERO_KEYRING_DENIED
+        skip_test(reason: f"no keyring this program may use: `system` was refused, kind {kind}")
 
 test "store, read, remove, accounts: an empty service, a name past HERO_KEYRING_NAME_MOST and a secret past HERO_KEYRING_SECRET_MOST are refused before the store is asked"
     secret: [u8] @= [1]
@@ -263,6 +267,7 @@ test "store, read, remove: a secret of every byte value, read whole, read short,
     else
         assert stored == -1
         assert read_whole == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
 
 # The byte `n` holds, for a list of every byte value.
 #
@@ -307,6 +312,7 @@ test "store, read: an empty secret, an empty account, names of more than one byt
     else
         assert stored_empty == -1
         assert cleared == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
 
 test "accounts, remove_all: none is 0, two accounts listed each with its zero, a short buffer gets nothing, then all removed and none again"
     refused = refusal()
@@ -343,4 +349,5 @@ test "accounts, remove_all: none is 0, two accounts listed each with its zero, a
         assert cleared_again == 0
     else
         assert before == -1
+        skip_test(reason: f"no keyring this program may use: every call was refused as `system` was, kind {refused}")
         assert last_error() == refused

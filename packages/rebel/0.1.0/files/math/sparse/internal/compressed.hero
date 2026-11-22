@@ -1,0 +1,173 @@
+# A matrix's compressed rows built from triplets and walked: the triplets
+# sorted by row and then by column, stably, so that two of one place are
+# summed in the order given, as SciPy's `coo_matrix.tocsr` sums them; and
+# the power iteration both of the face's steady states run, one product
+# with the transpose a round, computed from the rows without building the
+# transpose. The ranks are divided by their sum each round, so rounding
+# never lets them drift from summing to 1.
+
+use lists
+use math
+use math/sparse
+
+# Whether `a` stands before `b`: by row, then by column.
+#
+# - `a`: one triplet.
+# - `b`: another.
+function before(a: sparse.Triplet, b: sparse.Triplet) -> bool
+    return a.row < b.row || a.row == b.row && a.column < b.column
+
+# The matrix of `rows` rows and `columns` columns `triplets` write, each
+# place once, two triplets of one place summed; the shape and every place
+# taken as checked.
+#
+# - `rows`: the rows, 0 or more.
+# - `columns`: the columns, 0 or more.
+# - `triplets`: the entries, every place inside the shape.
+function built(rows: i64, columns: i64, triplets: [sparse.Triplet]) -> sparse.Matrix
+    ordered = lists.sort_by(triplets, less: before)
+    starts: [i64] @= [0]
+    indices: [i64] @= []
+    values: [f64] @= []
+    row: i64 @= 0
+
+    for t in ordered
+        while row < t.row
+            starts @ starts.push(indices.len())
+            row @ row + 1
+
+        last = indices.len() - 1
+
+        if last >= starts[starts.len() - 1] && indices[last] == t.column
+            values[last] @ values[last] + t.value
+        else
+            indices @ indices.push(t.column)
+            values @ values.push(t.value)
+
+    while row < rows
+        starts @ starts.push(indices.len())
+        row @ row + 1
+
+    return sparse.Matrix(rows: rows, columns: columns, starts: starts, indices: indices, values: values)
+
+# The product of `m`'s transpose and `v`, a vector of `m.rows` values,
+# computed from `m`'s rows: each row's entries spread its value of `v` over
+# the columns they stand in.
+#
+# - `m`: the matrix.
+# - `v`: as many values as `m` has rows.
+function transposed_times(m: sparse.Matrix, v: [f64]) -> [f64]
+    out: [f64] @= []
+
+    for _ in range(from: 0, to: m.columns)
+        out @ out.push(0.0)
+
+    for r in range(from: 0, to: m.rows)
+        x = v[r]
+
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            out[m.indices[k]] @ out[m.indices[k]] + m.values[k] * x
+
+    return out
+
+# The sum of the absolute differences of `a` and `b`, two vectors of one
+# length: how far one round of an iteration moved.
+#
+# - `a`: one vector.
+# - `b`: another, as long.
+function moved(a: [f64], b: [f64]) -> f64
+    sum: f64 @= 0.0
+
+    for k in range(from: 0, to: a.len())
+        sum @ sum + math.abs(a[k] - b[k])
+
+    return sum
+
+# The power iteration of `steady_state` and `pagerank`: from the uniform
+# vector, each round `x` made `damping` times (`p`'s transpose times `x`,
+# plus the weight of the rows that sum to 0 spread evenly) plus the rest
+# spread evenly, until a round moves it less than `tolerance` or
+# `most_iterations` rounds have run.
+#
+# - `p`: a square matrix of chances, rows summing to 1 or to 0.
+# - `damping`: the chance of following `p`, 0 to 1.
+# - `tolerance`: the change below which it stops, above 0.
+# - `most_iterations`: the most rounds, 1 or more.
+function iterate(p: sparse.Matrix, damping: f64, tolerance: f64, most_iterations: i64) -> sparse.Settled
+    n = p.rows
+    even = 1.0 / to_f64(n)
+    sums = sparse.row_sums(p)
+    x: [f64] @= []
+
+    for _ in range(from: 0, to: n)
+        x @ x.push(even)
+
+    rounds: i64 @= 0
+    change: f64 @= 0.0
+
+    while rounds < most_iterations
+        followed = transposed_times(p, v: x)
+        dangling: f64 @= 0.0
+
+        for r in range(from: 0, to: n)
+            if sums[r] == 0.0
+                dangling @ dangling + x[r]
+
+        spread = (damping * dangling + (1.0 - damping)) * even
+        next: [f64] @= []
+        total: f64 @= 0.0
+
+        for k in range(from: 0, to: n)
+            value = damping * followed[k] + spread
+            next @ next.push(value)
+            total @ total + value
+
+        for k in range(from: 0, to: n)
+            next[k] @ next[k] / total
+
+        change @ moved(a: next, b: x)
+        x @ next
+        rounds @ rounds + 1
+
+        if change < tolerance
+            break
+
+    return sparse.Settled(vector: x, iterations: rounds, change: change)
+
+# Whether `a` and `b` are within `within` of each other, value by value.
+#
+# - `a`: one vector.
+# - `b`: another, as long.
+# - `within`: the largest difference allowed.
+function close_to(a: [f64], b: [f64], within: f64) -> bool
+    if a.len() != b.len()
+        return false
+
+    for k in range(from: 0, to: a.len())
+        if math.abs(a[k] - b[k]) > within
+            return false
+
+    return true
+
+## Tests
+
+test "built: a place given twice summed in order, rows left empty at either end and inside, columns sorted within a row"
+    m = built(
+        rows: 4,
+        columns: 3,
+        triplets: [sparse.Triplet(row: 2, column: 2, value: 1.0), sparse.Triplet(row: 1, column: 1, value: 0.5), sparse.Triplet(row: 2, column: 0, value: 3.0), sparse.Triplet(row: 1, column: 1, value: 0.25)]
+    )
+    assert m.starts == [0, 0, 1, 3, 3]
+    assert m.indices == [1, 0, 2]
+    assert m.values == [0.75, 3.0, 1.0]
+    empty = built(rows: 0, columns: 0, triplets: [])
+    assert empty.starts == [0] && empty.indices.len() == 0
+
+test "transposed_times and moved: a product spread over columns, and a distance of zero and of two"
+    m = built(
+        rows: 2,
+        columns: 3,
+        triplets: [sparse.Triplet(row: 0, column: 2, value: 2.0), sparse.Triplet(row: 1, column: 0, value: 1.0), sparse.Triplet(row: 1, column: 2, value: 1.0)]
+    )
+    assert transposed_times(m, v: [1.0, 10.0]) == [10.0, 0.0, 12.0]
+    assert moved(a: [1.0, 2.0], b: [1.0, 2.0]) == 0.0 && moved(a: [1.0, -1.0], b: [0.0, 0.0]) == 2.0

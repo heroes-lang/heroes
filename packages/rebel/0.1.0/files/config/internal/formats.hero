@@ -1,7 +1,9 @@
 # A settings text of a format read into an object of `json.Value`, and an
-# object written back in a format: JSON, TOML, YAML and INI, each by its own
-# package, the messages opening with the layer's name.
+# object written back in a format: JSON, TOML, YAML, INI and Java's
+# properties, each by its own package, the messages opening with the layer's
+# name.
 
+use config/internal/dotted
 use config/internal/keyed
 use ini
 use json
@@ -50,8 +52,8 @@ function ini_value(name: str, text: str) -> json.Value?
 
     return ok(.object(members: members))
 
-# The settings `text` holds in the format `word`, `json`, `toml`, `yaml` or
-# `ini`, as an object; `null` is the empty object. Fails with the format's own
+# The settings `text` holds in the format `word`, `json`, `toml`, `yaml`,
+# `ini` or `properties`, as an object; `null` is the empty object. Fails with the format's own
 # code, the message opening with `name`, and `invalid` where the document is
 # not a table.
 function parse_value(name: str, text: str, word: str) -> json.Value?
@@ -72,6 +74,8 @@ function parse_value(name: str, text: str, word: str) -> json.Value?
         match yaml.parse(text)
             .ok v  => got @ v
             .err e => return named_failure(name: name, code: e.code, msg: e.msg)
+    else if word == "properties"
+        got @ dotted.properties_value(name: name, text: text)?
     else
         got @ ini_value(name: name, text: text)?
 
@@ -146,6 +150,9 @@ function write_value(v: json.Value, word: str) -> str?
 
     if word == "yaml"
         return yaml.format(v)
+
+    if word == "properties"
+        return dotted.properties_document(v)
     return ini_document(v)
 
 ## Tests

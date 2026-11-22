@@ -61,12 +61,12 @@ capability jobs/worker  how a worker claims: its name, its queues, its lease, it
   note    one name, the host and the process id by default, kept with each job it claims; a poll of a second as river's and asynq's
 
 capability jobs/retry-waits  the wait before a failed job runs again, growing with each failure, spread by chance
-  heroes  jobs.default_backoff, jobs.retry_wait, jobs.Worker (backoff)
+  heroes  jobs.default_backoff, jobs.retry_wait, jobs.retry_wait_with, jobs.Worker (backoff)
   go      river.ClientRetryPolicy, river.DefaultClientRetryPolicy, river.DefaultClientRetryPolicy.NextRetry, river.Config.RetryPolicy, river.WorkerDefaults.NextRetry, asynq.RetryDelayFunc, asynq.DefaultRetryDelayFunc, asynq.Config.RetryDelayFunc
   rust    apalis::layers::retry::RetryLayer, apalis::layers::retry::Retry, apalis::layers::retry::RetryPolicy, apalis::layers::retry::Policy, apalis::layers::retry::BackoffRetryPolicy, apalis::layers::retry::RetryIfPolicy, apalis::layers::retry::FromTaskConfigPolicy, apalis::layers::retry::RetryConfig, apalis::layers::retry::RetryConfigError, apalis::layers::retry::RetryMetadataExt, apalis::layers::retry::HasherRng, apalis::layers::retry::backoff::Backoff, apalis::layers::retry::backoff::ExponentialBackoff, apalis::layers::retry::backoff::ExponentialBackoffMaker, apalis::layers::retry::backoff::MakeBackoff, apalis::layers::retry::backoff::InvalidBackoff, apalis::layers::retry::budget::Budget, apalis::layers::retry::budget::TpsBudget, apalis::layers::retry::future::ResponseFuture
   python  celery.Task.default_retry_delay, celery.Task.retry (countdown), rq.Retry, rq.Retry.get_interval, rq.job.Job.get_retry_interval, rq.worker.Worker.exponential_backoff_factor
   ruby    Sidekiq::Job.sidekiq_options (retry)
-  note    15 seconds, doubling, at most a day, spread a fifth either way, about two weeks over 25 attempts as Sidekiq's `(count ** 4) + 15 + rand(10) * (count + 1)` seconds are; any `retries.Backoff` serves (`time.Backoff` until 2026-11-20, the coherence review's D14), its jitter drawn by `retries.drawn_wait` from the system's random bytes
+  note    15 seconds, doubling, at most a day, spread a fifth either way, about two weeks over 25 attempts as Sidekiq's `(count ** 4) + 15 + rand(10) * (count + 1)` seconds are; any `retries.Backoff` serves (`time.Backoff` until 2026-11-20, the coherence review's D14), its jitter drawn by `retries.drawn_wait` from the system's random bytes, or spread by a fraction the program gives (`retry_wait_with`, as `retries.wait_after` takes one), so a program that seeds its own generator gets the same waits on every run and every worker
 
 capability jobs/periodic  a job enqueued at every run of a cron schedule, once whatever the number of programs
   heroes  jobs.Periodic, jobs.new_periodic, jobs.next_due, postgres_store.enqueue_due, redis_store.enqueue_due
@@ -117,12 +117,12 @@ capability jobs/complete  a job marked done, what it answered kept
   note    the output is any JSON value; a program that waits for it reads the job with `get`
 
 capability jobs/fail-attempt  an attempt failed: the job waits and runs again, or fails for good with every error
-  heroes  postgres_store.fail_attempt, redis_store.fail_attempt
+  heroes  postgres_store.fail_attempt, redis_store.fail_attempt, postgres_store.fail_attempt_with, redis_store.fail_attempt_with
   go      river.WorkerDefaults (an error returned from `Work`), asynq.Config.IsFailure
   rust    apalis_core::error::WorkerError, apalis_core::error::BoxDynError, apalis_core::error::ErrorHandlingLayer, apalis_core::error::ErrorHandlingService
   python  celery.Task.retry, celery.exceptions.Retry, celery.exceptions.RetryTaskError, celery.exceptions.MaxRetriesExceededError, celery.Task.MaxRetriesExceededError, rq.job.Job.retry, rq.job.Job.should_retry, rq.worker.Worker.handle_job_retry, rq.worker.Worker.handle_job_failure, rq.registry.FailedJobRegistry, rq.registry.record_job_failure
   ruby    -
-  note    the wait is the worker's backoff's; an attempt that fails after its cancellation was asked cancels the job
+  note    the wait is the worker's backoff's, or the program's own given to `fail_attempt_with` (river's `NextRetry` answers one per job, asynq's `RetryDelayFunc` one per task); an attempt that fails after its cancellation was asked cancels the job
 
 capability jobs/discard  a job failed for good at once, whatever attempts it had left
   heroes  postgres_store.discard, redis_store.discard

@@ -1,0 +1,310 @@
+# Base 32 read back into bytes, strictly but for case: a letter reads alike
+# in upper and lower case, since RFC 4648 § 6 makes base 32 for places that
+# do not keep case (a name read aloud, a DNS label), and nothing else is
+# skipped, a line end included. The padding must be the one the bytes need,
+# a last group must be of 2, 4, 5 or 7 characters, and its last character
+# may set no bit that no byte holds (§ 3.5), so a text has one reading.
+# Every failure is `invalid` and names the byte where the text stops being
+# base 32.
+
+use bytes/internal/base32
+use bytes/internal/codes
+use bytes/internal/raw
+
+# The alphabet `hex` names, for a message.
+function alphabet_name(hex: bool) -> str
+    if hex
+        return "the extended hex alphabet"
+    return "the base 32 alphabet"
+
+# The value from 0 to 31 that `c` writes in the alphabet `hex` names, a
+# letter in either case.
+function quintet(c: u8, hex: bool) -> i64?
+    upper: u8 @= c
+
+    if c >= 'a' && c <= 'z'
+        upper @ c - 'a' + 'A'
+
+    if hex
+        if upper >= '0' && upper <= '9'
+            return ok(raw.widened(upper - '0'))
+
+        if upper >= 'A' && upper <= 'V'
+            return ok(raw.widened(upper - 'A') + 10)
+    else
+        if upper >= 'A' && upper <= 'Z'
+            return ok(raw.widened(upper - 'A'))
+
+        if upper >= '2' && upper <= '7'
+            return ok(raw.widened(upper - '2') + 26)
+    return fail(code: codes.INVALID, msg: f"{raw.byte_shown(c)}, which is not of {alphabet_name(hex)}")
+
+# The failure at byte `at` of the base 32, saying `what`.
+function refused(at: i64, what: str) -> [u8]?
+    return fail(code: codes.INVALID, msg: f"byte {at} of the base 32 {what}")
+
+# How many bits a last group of `held` characters leaves that no byte holds:
+# 2, 4, 1 and 3 for 2, 4, 5 and 7 characters; -1 for 1, 3 and 6, which end
+# no group a writer makes.
+function spare_of(held: i64) -> i64
+    return match held
+        0 => 0
+        2 => 2
+        4 => 4
+        5 => 1
+        7 => 3
+        _ => -1
+
+# The bytes the base 32 `s` writes in the alphabet `hex` names, padded where
+# `padded`, failing `invalid` at the first byte that breaks the form.
+function parsed(s: str, hex: bool, padded: bool) -> [u8]?
+    out: [u8] @= []
+    group: i64 @= 0
+    held: i64 @= 0
+    at: i64 @= 0
+
+    while at < s.len() && s[at] != '='
+        match quintet(s[at], hex)
+            .ok v =>
+                group @ group << 5 | v
+                held @ held + 1
+            .err e => return refused(at: at, what: f"is {e.msg}")
+
+        if held == 8
+            push_bytes(out: @out, group: group, count: 5)
+            group @ 0
+            held @ 0
+        at @ at + 1
+
+    data = at
+    spare = spare_of(held)
+
+    if spare < 0
+        return refused(
+            at: data - held,
+            what: f"begins a last group of {held} characters, where a last group holds 2, 4, 5 or 7"
+        )
+
+    if at < s.len()
+        _ = padding_checked(s: s, at: at, padded: padded)?
+    else if padded && held > 0
+        return refused(
+            at: data - held,
+            what: f"begins a last group of {held} characters, where padded base 32 holds groups of eight"
+        )
+
+    if group & (1 << spare) - 1 != 0
+        last = s[data - 1]
+        written = base32.alphabet(hex)[(group & 31) >> spare << spare]
+        return refused(
+            at: data - 1,
+            what: f"is {raw.byte_shown(last)}, which sets bits that no byte holds: the same bytes end in {raw.byte_shown(written)}"
+        )
+
+    if held > 0
+        count = held * 5 / 8
+        push_bytes(out: @out, group: group >> spare << 40 - 8 * count, count: count)
+    return ok(out)
+
+# Adds the first `count` bytes of the 40 bits of `group`, from the highest, at
+# the end of `out`.
+function push_bytes(@out: [u8], group: i64, count: i64)
+    shift: i64 @= 32
+    k: i64 @= 0
+
+    while k < count
+        # Eight bits make a value from 0 to 255.
+        out @ out.push(to_u8(group >> shift & 255).must())
+        shift @ shift - 8
+        k @ k + 1
+
+# Whether the padding of `s`, its first "=" at `at`, is the one its last
+# group needs and ends the text, failing at the first byte where it is not.
+# The group before it is one of 2, 4, 5 or 7 characters, `parsed` having
+# refused the others.
+function padding_checked(s: str, at: i64, padded: bool) -> bool?
+    if !padded
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at} of the base 32 is \"=\", padding, which unpadded base 32 does not have"
+        )
+    place = at % 8
+
+    if place == 0
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at} of the base 32 is \"=\", padding, where a group of eight holds 0 characters and padding follows 2, 4, 5 or 7"
+        )
+    need = 8 - place
+    k: i64 @= 1
+
+    while k < need
+        if at + k == s.len()
+            return fail(
+                code: codes.INVALID,
+                msg: f"the base 32 ends at byte {s.len()}, inside its padding: a last group of {place} characters is padded with {need} \"=\""
+            )
+
+        if s[at + k] != '='
+            return fail(
+                code: codes.INVALID,
+                msg: f"byte {at + k} of the base 32 is {raw.byte_shown(s[at + k])}, inside the padding, where only \"=\" may stand"
+            )
+        k @ k + 1
+
+    if at + need < s.len()
+        return fail(
+            code: codes.INVALID,
+            msg: f"byte {at + need} of the base 32 is {raw.byte_shown(s[at + need])}, after the padding, which ends the text"
+        )
+    return ok(true)
+
+## Tests
+
+test "parsed reads back what formatted writes, every byte value, every length to 11, in the four forms"
+    every: [u8] @= []
+    k: i64 @= 0
+
+    while k < 256
+        every @ every.push(to_u8(255 - k).must())
+        k @ k + 1
+
+    length: i64 @= 0
+
+    while length <= 11
+        part = every.slice(from: 0, to: length)
+
+        for hex in [false, true]
+            for padded in [false, true]
+                assert parsed(base32.formatted(part, hex: hex, padded: padded), hex: hex, padded: padded).must() == part
+
+        length @ length + 1
+
+    assert parsed(base32.formatted(every, hex: false, padded: true), hex: false, padded: true).must() == every
+    assert parsed(base32.formatted(every, hex: true, padded: false), hex: true, padded: false).must() == every
+
+# Python's `b32decode(casefold=True, canonical=True)` and
+# `b32hexdecode(casefold=True, canonical=True)` answered these on
+# 2026-11-22: RFC 4648 § 10's vectors, lower case, and the bits no byte holds
+# refused ("Non-zero padding bits").
+test "parsed, padded: RFC 4648's vectors in both alphabets, lower case, and the bits no byte holds refused"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert parsed("", hex: false, padded: true).must() == nothing
+    assert parsed("MY======", hex: false, padded: true).must() == t("f")
+    assert parsed("MZXQ====", hex: false, padded: true).must() == t("fo")
+    assert parsed("MZXW6===", hex: false, padded: true).must() == t("foo")
+    assert parsed("MZXW6YQ=", hex: false, padded: true).must() == t("foob")
+    assert parsed("MZXW6YTB", hex: false, padded: true).must() == t("fooba")
+    assert parsed("MZXW6YTBOI======", hex: false, padded: true).must() == t("foobar")
+    assert parsed("CPNMUOJ1E8======", hex: true, padded: true).must() == t("foobar")
+    assert parsed("mzxw6ytboi======", hex: false, padded: true).must() == t("foobar")
+    assert parsed("MzXw6yTbOi======", hex: false, padded: true).must() == t("foobar")
+    assert parsed("cpnmuoj1e8======", hex: true, padded: true).must() == t("foobar")
+    assert parsed("00======", hex: true, padded: true).must() == [0x00]
+
+    match parsed("MZ======", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 1 of the base 32 is \"Z\", which sets bits that no byte holds: the same bytes end in \"Y\""
+
+    match parsed("MZXR====", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 3 of the base 32 is \"R\", which sets bits that no byte holds: the same bytes end in \"Q\""
+
+    assert parsed("MZXW7===", hex: false, padded: true).is_err()
+    assert parsed("MZXW6YR=", hex: false, padded: true).is_err()
+    assert parsed("mz======", hex: false, padded: true).is_err()
+
+# Python refused each of these on 2026-11-22: "Only base32 data is allowed"
+# for a byte outside the alphabet, "Incorrect padding" for a short one,
+# "number of data characters (3) cannot be 1, 3, or 6 more than a multiple of
+# 8", "Excess data after padding" and "Discontinuous padding not allowed".
+test "parsed, padded, fails invalid at the byte: outside the alphabet, a line end, a group of 1, 3 or 6, padding short, broken or followed"
+    match parsed("A1======", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 1 of the base 32 is \"1\", which is not of the base 32 alphabet"
+
+    match parsed("CW======", hex: true, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 1 of the base 32 is \"W\", which is not of the extended hex alphabet"
+
+    match parsed("MZXW6YTB\n", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 8 of the base 32 is 0x0a, which is not of the base 32 alphabet"
+
+    match parsed("MYA=====", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 32 begins a last group of 3 characters, where a last group holds 2, 4, 5 or 7"
+
+    match parsed("M=======", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 32 begins a last group of 1 characters, where a last group holds 2, 4, 5 or 7"
+
+    match parsed("MY=====", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "the base 32 ends at byte 7, inside its padding: a last group of 2 characters is padded with 6 \"=\""
+
+    match parsed("MY==A===", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 4 of the base 32 is \"A\", inside the padding, where only \"=\" may stand"
+
+    match parsed("MY======MY======", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 8 of the base 32 is \"M\", after the padding, which ends the text"
+
+    match parsed("MY", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 32 begins a last group of 2 characters, where padded base 32 holds groups of eight"
+
+    match parsed("========", hex: false, padded: true)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 0 of the base 32 is \"=\", padding, where a group of eight holds 0 characters and padding follows 2, 4, 5 or 7"
+
+    assert parsed("MZXW6YTBOIZ=====", hex: false, padded: true).is_err()
+    assert parsed("MZXW6Y==", hex: false, padded: true).is_err()
+    assert parsed("é=======", hex: false, padded: true).is_err()
+
+# Python's `b32decode(padded=False)` answered the first four and refused the
+# last three on 2026-11-22; Go's `WithPadding(NoPadding)` reads "M" and
+# "MYA" as fewer bytes, both refused here.
+test "parsed, unpadded: each length of a last group, padding refused, groups of 1, 3 and 6 refused"
+    t = raw.of_text
+    assert parsed("MY", hex: false, padded: false).must() == t("f")
+    assert parsed("MZXQ", hex: false, padded: false).must() == t("fo")
+    assert parsed("MZXW6", hex: false, padded: false).must() == t("foo")
+    assert parsed("MZXW6YQ", hex: false, padded: false).must() == t("foob")
+    assert parsed("CPNMUOJ1E8", hex: true, padded: false).must() == t("foobar")
+
+    match parsed("MY======", hex: false, padded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 2 of the base 32 is \"=\", padding, which unpadded base 32 does not have"
+
+    match parsed("MZXW6YTBM", hex: false, padded: false)
+        .ok _  => assert false
+        .err e => assert e.msg == "byte 8 of the base 32 begins a last group of 1 characters, where a last group holds 2, 4, 5 or 7"
+
+    assert parsed("MYA", hex: false, padded: false).is_err()
+    assert parsed("MZXW6Y", hex: false, padded: false).is_err()
+    assert parsed("MZ", hex: false, padded: false).is_err()
+
+test "quintet and spare_of: the edges of each range in both alphabets and cases, a stranger, and every length of a last group"
+    assert quintet('A', hex: false).must() == 0 && quintet('Z', hex: false).must() == 25
+    assert quintet('a', hex: false).must() == 0 && quintet('z', hex: false).must() == 25
+    assert quintet('2', hex: false).must() == 26 && quintet('7', hex: false).must() == 31
+    assert quintet('0', hex: false).is_err() && quintet('1', hex: false).is_err() && quintet('8', hex: false).is_err()
+    assert quintet('0', hex: true).must() == 0 && quintet('9', hex: true).must() == 9
+    assert quintet('A', hex: true).must() == 10 && quintet('V', hex: true).must() == 31
+    assert quintet('v', hex: true).must() == 31
+    assert quintet('W', hex: true).is_err() && quintet('w', hex: true).is_err() && quintet('=', hex: true).is_err()
+    assert spare_of(0) == 0 && spare_of(2) == 2 && spare_of(4) == 4 && spare_of(5) == 1 && spare_of(7) == 3
+    assert spare_of(1) == -1 && spare_of(3) == -1 && spare_of(6) == -1
+
+test "push_bytes and refused: the five bytes of a group, the first one, and a failure that names its byte"
+    out: [u8] @= []
+    push_bytes(out: @out, group: 0x00ff7f8001, count: 5)
+    push_bytes(out: @out, group: 0xab00000000, count: 1)
+    assert out == [0x00, 0xff, 0x7f, 0x80, 0x01, 0xab]
+
+    match refused(at: 7, what: "is wrong")
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "byte 7 of the base 32 is wrong"

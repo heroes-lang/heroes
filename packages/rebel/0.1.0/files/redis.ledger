@@ -98,7 +98,7 @@ capability redis/decode  the bytes of a reply read without a connection, and a c
   go      -
   rust    -
   python  -
-  note    its own stack, a reply nested past 128 aggregates refused; an attribute (`|`) read and dropped
+  note    its own stack, a reply nested past 128 aggregates refused; an attribute (`|`) read and dropped. `decode_next` answers `partial` where the bytes so far end inside a reply and are RESP, and fails `invalid` at the first byte no more bytes could make RESP, a line not yet ended included, so a reader holding what a connection sent so far knows whether to read more or to refuse
 
 capability redis/attributes  RESP3's attributes kept beside the reply they describe
   heroes  pending

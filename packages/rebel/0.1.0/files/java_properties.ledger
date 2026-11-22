@@ -1,0 +1,76 @@
+capability java-properties/read-text  the keys and values a properties file's text writes, as `Properties.load(Reader)` reads it
+  heroes  java_properties.parse, java_properties.Entry
+  go      -
+  rust    -
+  python  -
+  note    none of the three standard libraries reads the format, so Java's `java.util.Properties` is the reference, its answers observed of OpenJDK 27.0.1.1 on 2026-11-22 for every text the tests hold: line ends LF, CR LF and CR alone; white space a space, a tab or a form feed; `#` and `!` comments, never continued; an odd count of trailing backslashes continuing a line, the next line's leading white space dropped and a `#` there read as content; the key ending at `=`, `:` or white space; the escapes `\t \n \r \f`, `\uXXXX` and a backslash before any other character. A key read twice keeps its first place and its last value, as Java's table keeps the last. Java answers "Malformed \uxxxx encoding." for a `\u` without four hexadecimal digits, refused here `invalid` with its line; Java keeps a lone half of a surrogate pair in its UTF-16 string, which no text of UTF-8 holds, so it is refused `invalid` too, and two `\u` escapes of a pair join into one character. A byte order mark stays a character of the first key, as Java keeps it
+
+capability java-properties/read-bytes  a properties file's bytes read as Java 9 and later read a resource bundle: UTF-8, else ISO 8859-1
+  heroes  java_properties.decode
+  go      -
+  rust    -
+  python  -
+  note    `PropertyResourceBundle` read UTF-8, and read a file holding one byte that is not UTF-8 again whole as ISO 8859-1 ("k=é" in ISO 8859-1 beside "j=é" in UTF-8 gave "é" and "Ã©"), observed on 2026-11-22; the JDK's system property `java.util.PropertyResourceBundle.encoding`, which forces one, is a choice of `decode` or `decode_latin1`
+
+capability java-properties/read-latin1  a properties file's bytes read as ISO 8859-1, as `Properties.load(InputStream)` reads them
+  heroes  java_properties.decode_latin1
+  go      -
+  rust    -
+  python  -
+  note    every byte the character of its number, UTF-8's two bytes of "é" read as "Ã©" as Java read them; a character past ISO 8859-1 stands in such a file as `\uXXXX`
+
+capability java-properties/look-up  the value of a key, and whether a file has it
+  heroes  java_properties.value_of, java_properties.has_key
+  go      -
+  rust    -
+  python  -
+  note    Java's `getProperty(key)` answers null where `value_of` fails `not_found`; `getProperty(key, default)` is `value_of(...).default(...)`
+
+capability java-properties/defaults  a second list of entries looked up where the first lacks a key
+  heroes  refused: two calls of `value_of`, the second where the first fails, do it with no list chained inside another
+  go      -
+  rust    -
+  python  -
+  note    Java's `Properties(Properties defaults)` and `stringPropertyNames`, which walks both
+
+capability java-properties/change  a key's value set, an entry added, a key removed
+  heroes  java_properties.set_value, java_properties.remove_key
+  go      -
+  rust    -
+  python  -
+  note    `set_value` keeps an entry's place and adds a new one at the end; Java's `setProperty` and `remove`, its table having no order
+
+capability java-properties/write  entries written as a properties file that reads back, as `Properties.store(Writer)` writes them
+  heroes  java_properties.format, java_properties.format_with, java_properties.WriteOptions, java_properties.default_write_options
+  go      -
+  rust    -
+  python  -
+  note    Java's lines observed byte for byte on 2026-11-22: every space of a key and the first of a value behind a backslash; tab, line feed, carriage return and form feed as `\t \n \r \f`; `=`, `:`, `#`, `!` and `\` behind a backslash; other controls written as they are. The entries are written in their own order, where Java 18 and later sort the keys: sort the entries first for Java's file. A key twice is refused `invalid`, since the file would read back as one. Lines end in a line feed on every platform, where Java writes the platform's own
+
+capability java-properties/write-ascii  entries written as ASCII alone, as `Properties.store(OutputStream)` writes them
+  heroes  java_properties.ascii_write_options
+  go      -
+  rust    -
+  python  -
+  note    every character outside space to `~` as `\uXXXX` with upper-case digits, a character past U+FFFF as the two halves of its surrogate pair, as Java wrote "é€😀" for "é€😀"; the file reads alike as UTF-8 and as ISO 8859-1, so `decode` and `decode_latin1` both read it back
+
+capability java-properties/comments  comment lines written before the entries
+  heroes  java_properties.WriteOptions (comments)
+  go      -
+  rust    -
+  python  -
+  note    Java's `store(writer, comments)`: each line end of the comments begins a line behind a `#`, unless the line opens with `#` or `!` already, as Java wrote "first line\nsecond\r\n#third\n!fourth" on 2026-11-22; to a stream Java writes a comment's characters up to U+00FF as bytes of ISO 8859-1, written here as `\uXXXX` like every other, so the file stays ASCII; a reader drops a comment either way. An empty comment, which Java writes as a `#` alone, writes no line here
+
+capability java-properties/date-comment  the line of the date and time `store` writes after the comments
+  heroes  refused: a reader drops it, and a line of the clock would make two writes of one list differ; Java 18 and later let the system property `java.properties.date` fix it or leave it out for the same reason
+  go      -
+  rust    -
+  python  -
+  note    Java writes `Date.toString()` in the machine's own zone
+
+capability java-properties/xml  properties read and written as XML of Java's own DTD
+  heroes  refused: another format, a document of `xml` with the DTD `http://java.sun.com/dtd/properties.dtd`, which a program reads and writes with `xml`
+  go      -
+  rust    -
+  python  -
+  note    Java's `loadFromXML` and `storeToXML`

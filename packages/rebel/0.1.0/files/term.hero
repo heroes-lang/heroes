@@ -1591,26 +1591,34 @@ test "write_control: nothing reaches a pipe"
     io.close(@p.reader).must()
 
 # The raw mode entered and left on a terminal; a program with none is told.
-test "enter_raw: entered and left, or unsupported with no terminal"
+test "enter_raw: entered and left, the test skipped where the program has no terminal"
     match enter_raw()
-        .ok _  => leave_raw().must()
-        .err e => assert e.code == UNSUPPORTED
+        .ok _ => leave_raw().must()
+        .err e =>
+            assert e.code == UNSUPPORTED
+            skip_test(reason: f"no terminal to enter: {e.msg}")
 
 # Leaving where no mode stands changes nothing.
 test "leave_raw: with no mode standing"
     leave_raw().must()
 
 # A key read; a program with no terminal is told.
-test "read_key: a key, or unsupported with no terminal"
+test "read_key: a key or a timeout, the test skipped where the program has no terminal"
     match read_key_within(0)
-        .ok _  => _ = 0
-        .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED
+        .ok _ => _ = 0
+        .err e =>
+            if e.code == UNSUPPORTED
+                skip_test(reason: f"no terminal to read a key from: {e.msg}")
+            assert e.code == TIMEOUT
 
 # A key waited for a tenth of a second.
-test "read_key_within: a tenth of a second, then timeout or unsupported"
+test "read_key_within: a tenth of a second, then a timeout, the test skipped where the program has no terminal"
     match read_key_within(100)
-        .ok _  => _ = 0
-        .err e => assert e.code == TIMEOUT || e.code == UNSUPPORTED
+        .ok _ => _ = 0
+        .err e =>
+            if e.code == UNSUPPORTED
+                skip_test(reason: f"no terminal to read a key from: {e.msg}")
+            assert e.code == TIMEOUT
 
 # A secret asked for where the program has no terminal, which is told; on a
 # terminal the example asks nothing, a person being needed to answer.

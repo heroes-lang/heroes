@@ -1,0 +1,124 @@
+# Bytes written as base 32, RFC 4648's: in its base 32 alphabet (§ 6) or its
+# extended hex alphabet (§ 7), padded with "=" or not, always in upper case
+# as the RFC's tables write them. Five bytes make eight characters of five
+# bits each, the first bit the highest; a last group of 1 to 4 bytes makes 2,
+# 4, 5 or 7 characters, its spare bits zero, and padding fills it to eight.
+# `base32_read` reads it back.
+
+use bytes/internal/raw
+
+# The base 32 alphabet (RFC 4648 Table 3), a value from 0 to 31 indexing its
+# character.
+constant STANDARD: str
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+
+# The extended hex alphabet (RFC 4648 Table 4), which keeps the bytes' order
+# when the texts are compared byte by byte.
+constant EXTENDED_HEX: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUV"
+
+# The alphabet `hex` names.
+function alphabet(hex: bool) -> str
+    if hex
+        return EXTENDED_HEX
+    return STANDARD
+
+# How many characters a last group of `count` bytes, 0 to 4, writes: 0, 2,
+# 4, 5 or 7, the bits the bytes hold rounded up to a whole character.
+function characters_of(count: i64) -> i64
+    return (count * 8 + 4) / 5
+
+# `s` as base 32 in the alphabet `hex` names, padded to a multiple of eight
+# characters where `padded`.
+function formatted(s: [u8], hex: bool, padded: bool) -> str
+    letters = alphabet(hex)
+    out: [u8] @= []
+    at: i64 @= 0
+
+    while at < s.len()
+        count: i64 @= s.len() - at
+
+        if count > 5
+            count @ 5
+        group: i64 @= 0
+        k: i64 @= 0
+
+        while k < 5
+            group @ group << 8
+
+            if k < count
+                group @ group | raw.widened(s[at + k])
+            k @ k + 1
+
+        written = characters_of(count)
+        push_quintets(out: @out, letters: letters, group: group, count: written)
+
+        if padded
+            for _ in range(from: written, to: 8)
+                out @ out.push('=')
+        at @ at + count
+
+    # Every byte pushed is a character of the alphabet or "=", which is ASCII.
+    return out.validated_bytes().must()
+
+# Adds the first `count` characters that the 40 bits of `group` write, five
+# bits each from the highest, at the end of `out`.
+function push_quintets(@out: [u8], letters: str, group: i64, count: i64)
+    shift: i64 @= 35
+    k: i64 @= 0
+
+    while k < count
+        out @ out.push(letters[group >> shift & 31])
+        shift @ shift - 5
+        k @ k + 1
+
+## Tests
+
+# Python's `b32encode` and `b32hexencode` answered every text here on
+# 2026-11-22; the first seven of each are RFC 4648 § 10's own vectors.
+test "formatted, padded: RFC 4648's vectors in both alphabets, 0x00, 0xff, five 0xff and seven bytes"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert formatted(nothing, hex: false, padded: true) == ""
+    assert formatted(t("f"), hex: false, padded: true) == "MY======"
+    assert formatted(t("fo"), hex: false, padded: true) == "MZXQ===="
+    assert formatted(t("foo"), hex: false, padded: true) == "MZXW6==="
+    assert formatted(t("foob"), hex: false, padded: true) == "MZXW6YQ="
+    assert formatted(t("fooba"), hex: false, padded: true) == "MZXW6YTB"
+    assert formatted(t("foobar"), hex: false, padded: true) == "MZXW6YTBOI======"
+    assert formatted(nothing, hex: true, padded: true) == ""
+    assert formatted(t("f"), hex: true, padded: true) == "CO======"
+    assert formatted(t("fo"), hex: true, padded: true) == "CPNG===="
+    assert formatted(t("foo"), hex: true, padded: true) == "CPNMU==="
+    assert formatted(t("foob"), hex: true, padded: true) == "CPNMUOG="
+    assert formatted(t("fooba"), hex: true, padded: true) == "CPNMUOJ1"
+    assert formatted(t("foobar"), hex: true, padded: true) == "CPNMUOJ1E8======"
+    assert formatted([0x00], hex: false, padded: true) == "AA======"
+    assert formatted([0xff], hex: false, padded: true) == "74======"
+    assert formatted([0xff], hex: true, padded: true) == "VS======"
+    assert formatted([0xff, 0xff, 0xff, 0xff, 0xff], hex: false, padded: true) == "77777777"
+    assert formatted([0xff, 0xff, 0xff, 0xff, 0xff], hex: true, padded: true) == "VVVVVVVV"
+    assert formatted([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], hex: false, padded: true) == "AAAQEAYEAUDA===="
+    assert formatted([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06], hex: true, padded: true) == "000G40O40K30===="
+
+# Python's `b32encode(padded=False)` answered these on 2026-11-22.
+test "formatted, unpadded: the empty list, each length of a last group, and a whole group"
+    t = raw.of_text
+    nothing: [u8] = []
+    assert formatted(nothing, hex: false, padded: false) == ""
+    assert formatted(t("f"), hex: false, padded: false) == "MY"
+    assert formatted(t("fo"), hex: false, padded: false) == "MZXQ"
+    assert formatted(t("foo"), hex: false, padded: false) == "MZXW6"
+    assert formatted(t("foob"), hex: false, padded: false) == "MZXW6YQ"
+    assert formatted(t("fooba"), hex: false, padded: false) == "MZXW6YTB"
+    assert formatted(t("foobar"), hex: true, padded: false) == "CPNMUOJ1E8"
+
+test "characters_of and push_quintets: every length of a last group, and the first two characters of one"
+    assert characters_of(0) == 0 && characters_of(1) == 2 && characters_of(2) == 4
+    assert characters_of(3) == 5 && characters_of(4) == 7 && characters_of(5) == 8
+    out: [u8] @= []
+    push_quintets(out: @out, letters: STANDARD, group: 0x666f6f6261, count: 8)
+    push_quintets(out: @out, letters: STANDARD, group: 0x6600000000, count: 2)
+    assert out == raw.of_text("MZXW6YTBMY")
+    assert alphabet(false).slice(from: 26, to: 32) == "234567"
+    assert alphabet(true).slice(from: 0, to: 10) == "0123456789"

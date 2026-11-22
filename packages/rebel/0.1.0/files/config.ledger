@@ -55,9 +55,16 @@ capability config/formats  a settings text in TOML, YAML, JSON or INI read into 
   python  TomlConfigSettingsSource, YamlConfigSettingsSource, JsonConfigSettingsSource, PyprojectTomlConfigSettingsSource, dynaconf loaders
   note    TOML's dates become their RFC 3339 text through `toml.to_json`, read back with `instant_of`; INI's sections are objects of texts, keys before the first section at the top, `DEFAULT`'s keys filled into each section as Python's configparser reads them, viper 1.20.1 having no INI decoder compiled in (observed: `decoder not found for this format`). A program that reads TOML carries `time`, which `toml` uses: 1.66 MB more in a program of `json`, `yaml`, `ini`, `flags` and `os` (2,261,088 against 3,923,776 bytes, built 2026-11-17)
 
-capability config/formats-other  JSON5, RON, HCL and Java properties
-  heroes  refused: JSON5, RON, HCL and Java's properties have no package in Rebel; a program that reads one into a `json.Value` makes a layer of it with `from_value`
-  go      SupportedExts' hcl, tfvars, properties, props, prop
+capability config/formats-properties  a settings file of Java's properties read into a layer and written from settings
+  heroes  config.Format (properties), config.parse_layer, config.format_settings
+  go      SupportedExts' properties, props, prop
+  rust    -
+  python  -
+  note    read by `java_properties.parse`, each key cut at its dots into objects as Spring Boot binds `server.port`, every value a text; a key that is a value where another makes it an object, and a key holding an empty part between its dots, refused `invalid`, since no table holds them; written as a dotted key for every setting that is not an object, a list, an empty object and a name holding a dot refused, since none reads back. viper reads `.properties` through magiconair's package, its keys dotted alike
+
+capability config/formats-other  JSON5, RON and HCL
+  heroes  refused: JSON5, RON and HCL have no package in Rebel; a program that reads one into a `json.Value` makes a layer of it with `from_value`
+  go      SupportedExts' hcl, tfvars
   rust    config::FileFormat::Json5, FileFormat::Ron
   python  -
   note    -

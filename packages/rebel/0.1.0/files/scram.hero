@@ -1,19 +1,24 @@
-# The client's side of SCRAM (RFC 5802, RFC 7677), the login that proves a
-# password to a server without sending it, by SHA-1, SHA-256 or SHA-512; and
-# SASLprep (RFC 4013), the preparation of a password SCRAM asks.
+# Both sides of SCRAM (RFC 5802, RFC 7677), the login that proves a password
+# to a server without sending it, by SHA-1, SHA-256 or SHA-512: the client's
+# messages and its check of the server, and the server's verifier made from a
+# password, its messages and its check of the client's proof; and SASLprep
+# (RFC 4013), the preparation of a password SCRAM asks.
 # `sql/postgres`, `mongodb` and `kafka` log in through it, so a password above
 # ASCII is prepared one way for all three: by SASLprep where SASLprep accepts
 # it, as its own UTF-8 bytes where SASLprep refuses it, PostgreSQL's
 # documented rule (`prepared_password`).
 #
 # It does not carry the messages, which each protocol wraps its own way, nor
-# open a connection (`net`, `tls`). No channel binding is offered: the first
-# message's header is `n,,`, and SCRAM-SHA-256-PLUS waits for `tls` to give a
+# open a connection (`net`, `tls`). No channel binding is offered on either
+# side: the client's first message's header is `n,,`, the server refuses a
+# client that requires one, and SCRAM-SHA-256-PLUS waits for `tls` to give a
 # connection's channel binding.
 #
-# It fails with `invalid`, a server's message that is not SCRAM's or asks
-# what this client refuses, and `permission`, a server that refuses the login
-# or does not know the password.
+# It fails with `invalid`, a message that is not SCRAM's or asks what this
+# side refuses, a verifier's form or a nonce that is not SCRAM's, and
+# `permission`, a server that refuses the login or does not know the
+# password. The server's check of a proof fails nothing: it answers a
+# `Verdict`, whose message the server sends either way.
 #
 # Not written yet, each a `pending` block of its ledger: SCRAM-SHA-256-PLUS: the
 # login bound to its TLS connection.
@@ -23,14 +28,19 @@ use crypto
 use os
 use scram/internal/messages
 use scram/internal/preparation
+use scram/internal/server
+use scram/internal/verifier_names
 use strings
 
 ## Codes
 
 # The code of a server's message that is not SCRAM's, a nonce that does not
 # extend the client's, a salt that is not base 64, an iteration count outside
-# the bounds (`client_final`, `verify`), and a password SASLprep refuses
-# (`saslprep`).
+# the bounds (`client_final`, `verify`); of a client's first message that is
+# not SCRAM's or requires channel binding (`read_client_first`), a server's
+# nonce that is not printable (`server_start`), a verifier's form, salt or
+# count refused (`new_verifier`, `parse_verifier`); and of a password
+# SASLprep refuses (`saslprep`).
 constant INVALID: str
     "invalid"
 
@@ -185,6 +195,218 @@ function verify(e: Exchange, server_final: str) -> ()?
         )
     return ok()
 
+## The server's side
+
+# A user's SCRAM credentials as a server keeps them (RFC 5802 section 3):
+# the password cannot be read back from them, and a server that holds them
+# checks a login without ever seeing the password. Made by `new_verifier`
+# from a password or by `parse_verifier` from its stored form.
+record Verifier
+    # The hash the credentials are made by.
+    hash: Hash
+    # The count of PBKDF2's iterations, 1 to `MOST_ITERATIONS`.
+    iterations: i64
+    # The salt PBKDF2 was given, not empty.
+    salt: [u8]
+    # `StoredKey`, the digest of `HMAC(SaltedPassword, "Client Key")`.
+    stored_key: [u8]
+    # `ServerKey`, `HMAC(SaltedPassword, "Server Key")`.
+    server_key: [u8]
+
+# The credentials `password` makes with `salt` and `iterations`: what a
+# server stores when a user sets a password.
+#
+# - `hash`: the hash the logins will be made by.
+# - `password`: the password, prepared by `prepared_password` as the client
+#   prepares it.
+# - `salt`: random bytes unique to the user, 16 of `os.random_bytes` as
+#   PostgreSQL draws them; not empty.
+# - `iterations`: PBKDF2's count, 1 to `MOST_ITERATIONS`; RFC 7677 asks
+#   4096 at least, and the more the dearer each guess.
+#
+# Fails `invalid` where `salt` is empty or `iterations` outside its bounds.
+# It costs PBKDF2 at `iterations`. See also `format_verifier`,
+# `server_start`.
+function new_verifier(hash: Hash, password: str, salt: [u8], iterations: i64) -> Verifier?
+    if salt.len() == 0
+        return fail(code: INVALID, msg: "a SCRAM verifier needs a salt, and the one given is empty")
+
+    if iterations < 1 || iterations > MOST_ITERATIONS
+        return fail(
+            code: INVALID,
+            msg: f"an iteration count of {iterations}, where a SCRAM verifier takes 1 to {MOST_ITERATIONS}"
+        )
+    algorithm = messages.algorithm_of(hash)
+    salted = crypto.pbkdf2(algorithm, password: prepared_password(password), salt: salt, iterations: iterations, length: crypto.digest_size(algorithm))?
+    client_key = crypto.hmac_text(algorithm, key: salted, s: "Client Key")
+    return ok(
+        Verifier(hash: hash, iterations: iterations, salt: salt, stored_key: messages.digest_of(hash, data: client_key), server_key: crypto.hmac_text(algorithm, key: salted, s: "Server Key"))
+    )
+
+# `v` in PostgreSQL's stored form, `SCRAM-SHA-256$<iterations>:<salt>$<StoredKey>:<ServerKey>`,
+# each of the three in base 64; SCRAM-SHA-1 and SCRAM-SHA-512 are written
+# alike under their own names.
+#
+# - `v`: the credentials.
+#
+# See also `parse_verifier`.
+function format_verifier(v: Verifier) -> str
+    return f"{verifier_names.name_of(v.hash)}${v.iterations}:{bytes.format_base64(v.salt)}${bytes.format_base64(v.stored_key)}:{bytes.format_base64(v.server_key)}"
+
+# The credentials `text` writes in PostgreSQL's stored form, as
+# `format_verifier` writes it.
+#
+# - `text`: the stored form, `SCRAM-SHA-256$4096:...$...:...`.
+#
+# Fails `invalid` where the mechanism is not one of the three, a part is
+# missing or not base 64, the count outside 1 to `MOST_ITERATIONS`, the salt
+# empty, or a key not as long as its hash's digest; the message never quotes
+# a key. See also `format_verifier`.
+function parse_verifier(text: str) -> Verifier?
+    return verifier_names.parsed(text)
+
+# What a client's first message says: who logs in, as whom, with which
+# nonce, and the header its final message must carry back.
+record ClientFirst
+    # The GS2 header as sent, `n,,`, `y,,` or with an `a=` identity.
+    header: str
+    # The authorization identity the header's `a=` names, unescaped; "" where
+    # it names none, the user acting as itself.
+    identity: str
+    # The user of `n=`, unescaped; "" where the protocol names the user
+    # elsewhere, as PostgreSQL's clients send it.
+    user: str
+    # The client's nonce.
+    nonce: str
+    # The message after its header, which both sides sign.
+    bare: str
+
+# A client's first message taken apart, for the server to find the user's
+# verifier.
+#
+# - `message`: the client's first message, `n,,n=user,r=nonce`.
+#
+# Fails `invalid` where it is not SCRAM's: no channel-binding flag `n` or
+# `y`, a GS2 header not ended or naming more than an `a=` identity, no user
+# or nonce, an escape in a name other than `=2C` and `=3D`, a nonce holding a
+# character that is not printable ASCII or a comma; where the client requires
+# channel binding (`p=`), which this server does not offer; and where it
+# names an extension (`m=`). A `y` flag, a client that binds where the
+# server offers it, is read: this server offers no `-PLUS` mechanism. See
+# also `server_start`.
+function read_client_first(message: str) -> ClientFirst?
+    return server.first_of(message)
+
+# A SCRAM exchange in progress, the server's side: the client's first
+# message, the user's credentials, and the nonce both halves make. Made by
+# `server_start`, read by `server_first_message` and `server_verdict`; it
+# holds no handle.
+record ServerExchange
+    # The client's first message, taken apart.
+    first: ClientFirst
+    # The user's credentials.
+    verifier: Verifier
+    # The client's nonce and the server's after it.
+    nonce: str
+
+# The server's exchange for the login `first` opens, against `verifier`,
+# with the server's own `nonce`.
+#
+# - `first`: the client's first message, from `read_client_first`.
+# - `verifier`: the credentials of `first.user`, as the server stores them.
+#   A server that will not tell which users exist answers an unknown one with
+#   credentials made from a random password, so the login fails at its proof.
+# - `nonce`: the server's part of the nonce, fresh for each login
+#   (`new_nonce`); printable ASCII other than `,`.
+#
+# Fails `invalid` where `nonce` is empty or holds another character. See also
+# `server_first_message`, `server_verdict`.
+function server_start(first: ClientFirst, verifier: Verifier, nonce: str) -> ServerExchange?
+    if !server.is_nonce(nonce)
+        return fail(
+            code: INVALID,
+            msg: "the server's SCRAM nonce is empty, or holds a character that is not printable ASCII, or a comma"
+        )
+    return ok(ServerExchange(first: first, verifier: verifier, nonce: first.nonce + nonce))
+
+# The server's first message: the whole nonce, the salt in base 64 and the
+# iteration count, `r=...,s=...,i=...`.
+#
+# - `s`: the exchange, from `server_start`.
+function server_first_message(s: ServerExchange) -> str
+    return f"r={s.nonce},s={bytes.format_base64(s.verifier.salt)},i={s.verifier.iterations}"
+
+# What `server_verdict` decided of a client's proof: in both cases the message
+# the server sends the client last.
+variant Verdict
+    # The proof holds: the client knows the password.
+    accepted
+        # The server's final message, `v=` and its signature, which proves to
+        # the client that the server knew the credentials.
+        message: str
+    # The login is refused.
+    refused
+        # The server's final message, `e=` and RFC 5802's word for why:
+        # `invalid-encoding`, `channel-bindings-dont-match`, `other-error`
+        # (a nonce not the exchange's) or `invalid-proof`.
+        message: str
+        # Why, in words for the server's own log; it never holds the proof.
+        why: str
+
+# The server's check of the client's final message: its channel binding the
+# first message's header, its nonce the exchange's, and its proof made by
+# the password the verifier was made from, compared in constant time.
+#
+# - `s`: the exchange, from `server_start`, after `server_first_message`
+#   was sent.
+# - `message`: the client's final message, `c=...,r=...,p=...`.
+#
+# `accepted` with the server's signature where all three hold, else
+# `refused` with RFC 5802's word for why. An attribute the client adds
+# before its proof is signed and passed over, as section 7 allows. It costs
+# two HMACs and a digest. See also `verify`, the client's check of what it
+# answers.
+function server_verdict(s: ServerExchange, message: str) -> Verdict
+    end = match server.proof_at(message)
+        .ok at => at
+        .err e => return .refused(message: "e=invalid-encoding", why: e.msg)
+
+    without_proof = message.slice(from: 0, to: end)
+
+    found = match messages.attributes(without_proof)
+        .ok got => got
+        .err _ => return .refused(
+            message: "e=invalid-encoding",
+            why: "the client's SCRAM final message holds a part that is no attribute, or names one twice"
+        )
+
+    binding = found["c"].default("")
+    sent_nonce = found["r"].default("")
+
+    proof = match bytes.parse_base64(message.slice(from: end + 3, to: message.len()))
+        .ok got => got
+        .err _  => return .refused(message: "e=invalid-encoding", why: "the client's SCRAM proof is not base 64")
+
+    if binding != bytes.format_base64(bytes.from_text(s.first.header))
+        return .refused(
+            message: "e=channel-bindings-dont-match",
+            why: "the client's SCRAM final message carries another channel binding than its first message's header"
+        )
+
+    if sent_nonce != s.nonce
+        return .refused(
+            message: "e=other-error",
+            why: "the client's SCRAM final message carries another nonce than the exchange's"
+        )
+    auth_message = s.first.bare + "," + server_first_message(s) + "," + without_proof
+
+    if !server.proof_holds(s.verifier.hash, stored_key: s.verifier.stored_key, auth_message: auth_message, proof: proof)
+        return .refused(message: "e=invalid-proof", why: "the client's SCRAM proof is not the one the password makes")
+    algorithm = messages.algorithm_of(s.verifier.hash)
+    return .accepted(
+        message: "v=" + bytes.format_base64(crypto.hmac_text(algorithm, key: s.verifier.server_key, s: auth_message))
+    )
+
 ## SASLprep
 
 # `s` prepared by SASLprep (RFC 4013), as a stored string: RFC 3454's table
@@ -308,6 +530,141 @@ test "prepared_password: SASLprep's answer, and a password SASLprep refuses kept
     assert prepared_password("pencil") == bytes.from_text("pencil")
     assert prepared_password("a" + bytes.to_text([7]).must()) == [0x61, 7]
 
+# RFC 7677's exchange from the server's side: the verifier Python's `hashlib`
+# and `hmac` made from "pencil" on 2026-11-22, the server's first message RFC
+# 7677 prints, the client's proof accepted, the server's signature RFC 7677
+# prints answered.
+test "server_start, server_first_message and server_verdict: RFC 7677's exchange, and RFC 5802's by SHA-1"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    assert format_verifier(v) == "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+    s = server_start(
+        read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+    assert server_first_message(s) == "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+    verdict = server_verdict(
+        s,
+        message: "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    )
+    assert verdict == .accepted(message: "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4=")
+    old = new_verifier(
+        .sha1,
+        password: "pencil",
+        salt: bytes.parse_base64("QSXCR+Q6sek8bf92").must(),
+        iterations: 4096
+    ).must()
+    assert format_verifier(old) == "SCRAM-SHA-1$4096:QSXCR+Q6sek8bf92$6dlGYMOdZcOPutkcNY8U2g7vK9Y=:D+CSWLOshSulAsxiupA+qs2/fTE="
+    s1 = server_start(
+        read_client_first("n,,n=user,r=fyko+d2lbbFgONRv9qkxdawL").must(),
+        verifier: old,
+        nonce: "3rfcNHYJY1ZVvWVs7j"
+    ).must()
+    assert server_first_message(s1) == "r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,s=QSXCR+Q6sek8bf92,i=4096"
+    assert server_verdict(s1, message: "c=biws,r=fyko+d2lbbFgONRv9qkxdawL3rfcNHYJY1ZVvWVs7j,p=v0X8v3Bz2T0CJGbJQyF0X+HI4Ts=") == .accepted(message: "v=rmF9pqV8S7suAoZWja4dJRkFsKQ=")
+
+# Rebel's own client logs in against Rebel's own server for each hash, the
+# user's name holding the two characters a name escapes, a password SASLprep
+# changes proving the prepared one, and a wrong password refused on both
+# sides.
+test "server_verdict: the client's side against the server's, each hash, an escaped user, a password SASLprep changes, and a wrong one"
+    hashes: [Hash] = [.sha1, .sha256, .sha512]
+    hyphened = "pen" + bytes.to_text([0xc2, 0xad]).must() + "cil"
+
+    for h in hashes
+        v = new_verifier(h, password: "pencil", salt: [1, 2, 3, 4, 5, 6, 7, 8], iterations: 64).must()
+
+        for attempt in ["pencil", hyphened, "pencils"]
+            e @= start(h, user: "a=b,c", nonce: new_nonce().must(), least_iterations: 64)
+            first = read_client_first(client_first(e)).must()
+            assert first.user == "a=b,c" && first.identity == ""
+            s = server_start(first, verifier: v, nonce: new_nonce().must()).must()
+            final = client_final(@e, password: attempt, server_first: server_first_message(s)).must()
+
+            match server_verdict(s, message: final)
+                .accepted a =>
+                    assert attempt != "pencils"
+                    verify(e, server_final: a.message).must()
+                .refused r =>
+                    assert attempt == "pencils" && r.message == "e=invalid-proof"
+
+                    match verify(e, server_final: r.message)
+                        .ok _  => assert false
+                        .err f => assert f.code == PERMISSION
+
+# The headers `y,,` and `n,a=admin,`, as Python's `hmac` computed the proof
+# and the signature for each on 2026-11-22: the client's `c=` carries back
+# the header it sent.
+test "server_verdict: a client that would bind, and one acting as another identity, each carrying its header back"
+    v = parse_verifier(
+        "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+    ).must()
+    binds = server_start(
+        read_client_first("y,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+    assert server_verdict(binds, message: "c=eSws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=FoqiHTtQEDE8lz1CdaEe3tK4mS+iMDTl77SPyDS53DY=") == .accepted(message: "v=dI4KpiQJwBr1+V+K6U1dA6l6I4I9DUNXWND4pcpRU3U=")
+    first = read_client_first("n,a=admin,n=user,r=rOprNGfwEbeRWgbNEkqO").must()
+    assert first.identity == "admin" && first.user == "user"
+    acting = server_start(first, verifier: v, nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0").must()
+    assert server_verdict(acting, message: "c=bixhPWFkbWluLA==,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=KNU0YOZwpwt3F/emaI+1QKVCyfsJX79YBqgLZUK9Hq0=") == .accepted(message: "v=NEPBm/5YEAzt04BBCRprbOkjjY8sig4Y6opKd8b+CWQ=")
+
+test "server_verdict: another channel binding, another nonce, no proof, a proof not base 64 or of the wrong length, a part that is no attribute, and an extension before the proof signed"
+    v = parse_verifier(
+        "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+    ).must()
+    s = server_start(
+        read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+    nonce = "rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    proof = "p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ="
+    cases = [
+        ["c=eSws,r=" + nonce + "," + proof, "e=channel-bindings-dont-match"]
+        ["r=" + nonce + "," + proof, "e=channel-bindings-dont-match"]
+        ["c=biws,r=" + nonce + "x," + proof, "e=other-error"]
+        ["c=biws,r=" + nonce, "e=invalid-encoding"]
+        ["c=biws,r=" + nonce + ",p=!!", "e=invalid-encoding"]
+        ["c=biws,r=" + nonce + ",p=QQ==", "e=invalid-proof"]
+        ["c=biws,r=" + nonce + ",garbage," + proof, "e=invalid-encoding"]
+        ["c=biws,r=" + nonce + ",x=ext," + proof, "e=invalid-proof"]
+    ]
+
+    for c in cases
+        match server_verdict(s, message: c[0])
+            .accepted _ => assert false
+            .refused r  => assert r.message == c[1] && r.why.len() > 0
+
+test "new_verifier, format_verifier and parse_verifier: an empty salt, counts at and past the bounds, and each hash read back"
+    assert new_verifier(.sha256, password: "p", salt: [], iterations: 4096).is_err()
+    assert new_verifier(.sha256, password: "p", salt: [1], iterations: 0).is_err()
+    assert new_verifier(.sha256, password: "p", salt: [1], iterations: MOST_ITERATIONS + 1).is_err()
+    hashes: [Hash] = [.sha1, .sha256, .sha512]
+
+    for h in hashes
+        v = new_verifier(h, password: "pencil", salt: [9], iterations: 1).must()
+        assert parse_verifier(format_verifier(v)).must() == v
+
+    match parse_verifier("SCRAM-SHA-256$4096:QQ==$QQ==:QQ==")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a SCRAM verifier's keys are not of 32 bytes, the length SCRAM-SHA-256's digest writes"
+
+test "server_start: a nonce empty, with a comma, a space or a character past ASCII"
+    v = new_verifier(.sha256, password: "p", salt: [1], iterations: 1).must()
+    first = read_client_first("n,,n=user,r=abc").must()
+
+    for bad in ["", "a,b", "a b", "é"]
+        match server_start(first, verifier: v, nonce: bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
 ## Examples
 
 # A nonce for one login.
@@ -360,3 +717,85 @@ test "saslprep: RFC 4013's examples"
 test "prepared_password: a soft hyphen left out, a control character kept"
     assert prepared_password("pen" + bytes.to_text([0xc2, 0xad]).must() + "cil") == bytes.from_text("pencil")
     assert prepared_password(bytes.to_text([7]).must()) == [7]
+
+# The credentials a server stores when a user sets the password "pencil",
+# in PostgreSQL's form.
+test "new_verifier: RFC 7677's user"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    assert v.iterations == 4096 && v.stored_key.len() == 32
+
+# Credentials written in the form PostgreSQL's `pg_authid` holds.
+test "format_verifier: PostgreSQL's form"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    assert format_verifier(v) == "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+
+# Credentials read back from a stored line.
+test "parse_verifier: PostgreSQL's form"
+    v = parse_verifier(
+        "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+    ).must()
+    assert v.hash == .sha256 && v.iterations == 4096
+
+# The user a client's first message names, read before its credentials are
+# looked up.
+test "read_client_first: RFC 7677's client"
+    assert read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must().user == "user"
+
+# A server's exchange opened with a nonce of its own.
+test "server_start: RFC 7677's server"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    s = server_start(
+        read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+    assert s.nonce == "rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+
+# The server's first message RFC 7677 prints.
+test "server_first_message: RFC 7677's"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    s = server_start(
+        read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+    assert server_first_message(s) == "r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,s=W22ZaJ0SNY7soEsUEjb6gQ==,i=4096"
+
+# The client's proof RFC 7677 prints accepted, and the server's signature
+# answered.
+test "server_verdict: RFC 7677's proof accepted"
+    v = new_verifier(
+        .sha256,
+        password: "pencil",
+        salt: bytes.parse_base64("W22ZaJ0SNY7soEsUEjb6gQ==").must(),
+        iterations: 4096
+    ).must()
+    s = server_start(
+        read_client_first("n,,n=user,r=rOprNGfwEbeRWgbNEkqO").must(),
+        verifier: v,
+        nonce: "%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0"
+    ).must()
+
+    match server_verdict(s, message: "c=biws,r=rOprNGfwEbeRWgbNEkqO%hvYDpWUa2RaTCAfuxFIlj)hNlF$k0,p=dHzbZapWIk4jUhN+Ute9ytag9zjfMHgsqmmiz7AndVQ=")
+        .accepted a => assert a.message == "v=6rriTRBi23WpRR/wtup+mMhUZUn/dB5nLTJRsjl95G4="
+        .refused _  => assert false

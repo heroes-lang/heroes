@@ -22,7 +22,7 @@ capability jobs-redis/keys  where the store keeps its jobs in a server
   note    one fixed prefix, as asynq's `asynq:` and RQ's `rq:`; a program keeping two stores in one server gives each its own database; the connection is the program's `redis.Client`
 
 capability jobs-redis/scripts  every change a Lua script the server runs whole, its clock the server's
-  heroes  redis_store.claim, redis_store.complete, redis_store.fail_attempt, redis_store.rescue
+  heroes  redis_store.claim, redis_store.complete, redis_store.fail_attempt, redis_store.fail_attempt_with, redis_store.rescue
   go      -
   rust    apalis_redis::queries::fetch_next, apalis_redis::queries::push_tasks, apalis_redis::queries::CompactTask, apalis_redis::queries::deserialize_with_meta, apalis_redis::RedisPersistence
   python  rq.scripts

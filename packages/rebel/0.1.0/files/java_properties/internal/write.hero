@@ -1,0 +1,188 @@
+# A properties file written as `java.util.Properties.store` writes one, its
+# behaviour observed of OpenJDK 27.0.1.1 on 2026-11-22: `key=value` and a
+# line feed for each entry; in a key every space behind a backslash, in a
+# value only a first one; tab, line feed, carriage return and form feed as
+# `\t`, `\n`, `\r` and `\f`; `=`, `:`, `#`, `!` and `\` behind a backslash;
+# and where the file must be ASCII, as `store(OutputStream)` writes it,
+# every other character outside space to `~` as `\uXXXX` of its UTF-16
+# units, upper-case digits. Comments go first, each line behind a `#`.
+# Every syntax byte is ASCII, so a text is written byte by byte, a
+# character of more than one byte copied whole unless it is escaped.
+
+use unicode
+
+# The hexadecimal digits Java's `store` writes, upper case.
+constant DIGITS: str
+    "0123456789ABCDEF"
+
+# Adds `\u` and the four hexadecimal digits of the UTF-16 unit `unit` to
+# `out`.
+#
+# - `out`: the bytes being written.
+# - `unit`: 0 to 0xFFFF.
+function push_unit(@out: [u8], unit: i64)
+    out @ out.push('\\')
+    out @ out.push('u')
+    shift: i64 @= 12
+
+    while shift >= 0
+        out @ out.push(DIGITS[unit >> shift & 15])
+        shift @ shift - 4
+
+# Adds the code point `point` to `out` as `\uXXXX` escapes: one, or the two
+# halves of a surrogate pair above U+FFFF.
+#
+# - `out`: the bytes being written.
+# - `point`: a scalar value.
+function push_escaped(@out: [u8], point: i64)
+    if point < 0x10000
+        push_unit(@out, unit: point)
+    else
+        above = point - 0x10000
+        push_unit(@out, unit: 0xd800 + (above >> 10))
+        push_unit(@out, unit: 0xdc00 + (above & 0x3ff))
+
+# `s` escaped for a key, where `key`, or for a value, as `store` escapes
+# each, every character outside space to `~` as `\uXXXX` where `ascii`.
+#
+# - `out`: the bytes being written; `s` is added at their end.
+# - `s`: the key or the value.
+# - `key`: whether every space is escaped, a key's rule, or a first one
+#   alone, a value's.
+# - `ascii`: whether to write ASCII alone.
+function push_text(@out: [u8], s: str, key: bool, ascii: bool)
+    at: i64 @= 0
+
+    while at < s.len()
+        c = s[at]
+
+        if c >= 0x80
+            width = unicode.len_at(s, index: at)
+
+            if ascii
+                push_escaped(@out, point: unicode.code_point_at(s, index: at))
+            else
+                for k in range(from: at, to: at + width)
+                    out @ out.push(s[k])
+
+            at @ at + width
+            continue
+
+        if c == ' '
+            if at == 0 || key
+                out @ out.push('\\')
+            out @ out.push(' ')
+        else if c == '\t'
+            out @ out.push('\\')
+            out @ out.push('t')
+        else if c == '\n'
+            out @ out.push('\\')
+            out @ out.push('n')
+        else if c == '\r'
+            out @ out.push('\\')
+            out @ out.push('r')
+        else if c == 0x0c
+            out @ out.push('\\')
+            out @ out.push('f')
+        else if c == '=' || c == ':' || c == '#' || c == '!' || c == '\\'
+            out @ out.push('\\')
+            out @ out.push(c)
+        else if ascii && (c < 0x20 || c == 0x7f)
+            push_unit(@out, unit: to_i64(c).must())
+        else
+            out @ out.push(c)
+        at @ at + 1
+
+# `comments` as the comment lines `store` writes before the entries: a `#`
+# first, and after each line end (`\r\n`, `\r` or `\n`) a line feed and a
+# `#`, unless the next line begins with `#` or `!` already; a line feed at
+# the end. Where `ascii`, every character above `~` as `\uXXXX`, where Java
+# writes the ones up to U+00FF as their byte of ISO 8859-1: a reader drops
+# a comment, and the file stays ASCII, which UTF-8 and ISO 8859-1 read alike.
+#
+# - `out`: the bytes being written.
+# - `comments`: the comments, not empty.
+# - `ascii`: whether to write ASCII alone.
+function push_comments(@out: [u8], comments: str, ascii: bool)
+    out @ out.push('#')
+    at: i64 @= 0
+
+    while at < comments.len()
+        c = comments[at]
+
+        if c == '\r' || c == '\n'
+            out @ out.push('\n')
+
+            if c == '\r' && at + 1 < comments.len() && comments[at + 1] == '\n'
+                at @ at + 1
+            at @ at + 1
+
+            if at >= comments.len() || comments[at] != '#' && comments[at] != '!'
+                out @ out.push('#')
+            continue
+
+        if c >= 0x80
+            width = unicode.len_at(comments, index: at)
+
+            if ascii
+                push_escaped(@out, point: unicode.code_point_at(comments, index: at))
+            else
+                for k in range(from: at, to: at + width)
+                    out @ out.push(comments[k])
+
+            at @ at + width
+            continue
+        out @ out.push(c)
+        at @ at + 1
+
+    out @ out.push('\n')
+
+## Tests
+
+# The text `push_text` writes, for the tests.
+function written(s: str, key: bool, ascii: bool) -> str
+    out: [u8] @= []
+    push_text(@out, s: s, key: key, ascii: ascii)
+    return out.validated_bytes().must()
+
+# Java's `store` wrote these on 2026-11-22: `b\ key=\ lead and trail `,
+# `a\=\:\#\!=x\=\:\#\!\\y`, `\#start=\!start`, `ctl=\t\n\r\f` and the two
+# controls raw to a `Writer`, `\u0001\u007F` to a stream, and `é€😀` raw to
+# a `Writer`, `é€😀` to a stream.
+test "push_text: spaces in a key and in a value, the four signs and the backslash, the controls, and characters past ASCII both ways"
+    assert written("b key", key: true, ascii: false) == "b\\ key"
+    assert written(" lead and trail ", key: false, ascii: false) == "\\ lead and trail "
+    assert written("a=:#!", key: true, ascii: false) == "a\\=\\:\\#\\!"
+    assert written("x=:#!\\y", key: false, ascii: false) == "x\\=\\:\\#\\!\\\\y"
+    assert written("#start", key: true, ascii: false) == "\\#start"
+    assert written("\t\n\r\u{c}\u{1}\u{7f}", key: false, ascii: false) == "\\t\\n\\r\\f\u{1}\u{7f}"
+    assert written("\t\n\r\u{c}\u{1}\u{7f}", key: false, ascii: true) == "\\t\\n\\r\\f\\u0001\\u007F"
+    assert written("é€😀", key: false, ascii: false) == "é€😀"
+    assert written("é€😀", key: false, ascii: true) == "\\u00E9\\u20AC\\uD83D\\uDE00"
+    assert written("", key: true, ascii: true) == ""
+    assert written("~ ", key: false, ascii: true) == "~ "
+
+# Java's `store` wrote the comments "first line\nsecond\r\n#third\n!fourth\ré"
+# as these five lines to a stream, and "a\r\nb\n\nc" as `#a`, `#b`, `#`,
+# `#c`, on 2026-11-22.
+test "push_comments: each line end, a line opening with # or ! left as it is, an empty line, and a character past ASCII both ways"
+    out: [u8] @= []
+    push_comments(@out, comments: "first line\nsecond\r\n#third\n!fourth\ré", ascii: false)
+    assert out.validated_bytes().must() == "#first line\n#second\n#third\n!fourth\n#é\n"
+    ascii: [u8] @= []
+    push_comments(@ascii, comments: "first line\nsecond\r\n#third\n!fourth\ré", ascii: true)
+    assert ascii.validated_bytes().must() == "#first line\n#second\n#third\n!fourth\n#\\u00E9\n"
+    blank: [u8] @= []
+    push_comments(@blank, comments: "a\r\nb\n\nc", ascii: false)
+    assert blank.validated_bytes().must() == "#a\n#b\n#\n#c\n"
+    ending: [u8] @= []
+    push_comments(@ending, comments: "a\n", ascii: false)
+    assert ending.validated_bytes().must() == "#a\n#\n"
+
+test "push_escaped: a unit of the first plane, the last below the surrogates, and the first and last above it"
+    out: [u8] @= []
+    push_escaped(@out, point: 0x41)
+    push_escaped(@out, point: 0xffff)
+    push_escaped(@out, point: 0x10000)
+    push_escaped(@out, point: 0x10ffff)
+    assert out.validated_bytes().must() == "\\u0041\\uFFFF\\uD800\\uDC00\\uDBFF\\uDFFF"
