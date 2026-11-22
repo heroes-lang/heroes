@@ -62,11 +62,11 @@ capability thread/sleep  the current thread made to wait a while
   note    the package `time`; Python's Timer runs a function after a delay, which is a thread whose body sleeps first
 
 capability thread/is-finished  whether a thread has ended, asked without waiting for it, or a wait bounded in time
-  heroes  pending
+  heroes  built-in mailbox, m.receive(within_ms:)
   go      -
   rust    JoinHandle::is_finished, ScopedJoinHandle::is_finished
   python  Thread.is_alive, Thread.join, Future.done, Future.running, concurrent.futures.as_completed, concurrent.futures.FIRST_COMPLETED, concurrent.futures.FIRST_EXCEPTION, threading.TIMEOUT_MAX
-  note    the runtime's doors answer nothing about a thread but its wait, which blocks without a limit; it needs a door of the runtime that asks a thread's state, which this package cannot write. Answers in the order threads end, Python's `as_completed`, wait for the same door
+  note    a thread says it has ended by sending its own number on a mailbox the program gives every worker as it starts them, the last thing its body does (feature 2668): the first number received is the first thread to end, as Python's `as_completed` and `FIRST_COMPLETED` answer, and waiting for that thread no longer blocks; `receive(within_ms: 0)` asks without waiting, as `is_finished` and `done` do, and a bound asks with a limit, as `join(timeout)` does (spec § 11; `tests/golden/run/threads-a-pool-refills-the-slot-of-whichever-worker-ended-first`). A thread's state is never read from outside it: what one says of itself is a value it sends
 
 capability thread/cancel  a running thread asked to stop
   heroes  refused: a thread is never stopped from outside, whatever it is doing, so nothing it holds is left half written; a running thread is asked to stop by a value on a mailbox it receives from, or by the program's stop, which ends its waits `stopped` (spec § 11, § 13)

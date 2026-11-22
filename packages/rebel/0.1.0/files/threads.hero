@@ -22,8 +22,10 @@
 # It does not sleep, which is `time`'s, nor count processors, which is
 # `os.processor_count`.
 #
-# Not written yet, each a `pending` block of its ledger: whether a thread has
-# ended, asked without waiting for it, or a wait bounded in time.
+# Which of several threads has ended, asked without waiting or with a bound,
+# is the language's own: each worker sends its number on a mailbox as it ends
+# and the program receives from it (the ledger's `thread/is-finished`;
+# feature 2668), so this face has nothing to add.
 
 use threads/hero_os
 use threads/internal/pool
