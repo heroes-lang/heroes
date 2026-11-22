@@ -1,0 +1,355 @@
+# The demo, run by `pipeline demo`: a Kafka broker, an S3 service and a
+# PostgreSQL server started on loopback on threads of their own, each
+# telling its port once it listens (`notify`); the scripted events written
+# by a producer logged in by SCRAM-SHA-256; the pipeline's settings written
+# as the TOML file a real run reads, with the stand-ins' ports in it; the
+# schema migrated, the pipeline run until it has caught up with its group,
+# the cold export asked before and after the replay of the one write the
+# S3 service refuses on purpose, the account of what is left, a scrape of
+# the pipeline's metrics; then every thread stopped and waited for, each
+# telling what it saw. Nothing printed holds a port, a time of the run, a
+# key or a nonce, so the transcript is the same on every run.
+
+use <rebel>/kafka
+use <rebel>/net
+use <rebel>/os
+use <rebel>/threads
+
+use config/loader
+use core/consume
+use core/pipeline
+use demo/account
+use demo/notify
+use demo/produce
+use demo/scrape
+use ops/exporter
+use replay/export
+use replay/replayer
+use standins/kafka_broker
+use standins/kafka_state
+use standins/pg_server
+use standins/s3_service
+use standins/s3_store
+use store/migrator
+
+## The demo's world
+
+# The consumer group the pipeline reads as.
+constant GROUP: str
+    "events-archiver"
+
+# The bucket.
+constant BUCKET: str
+    "events-archive"
+
+# The region the S3 service answers for.
+constant REGION: str
+    "us-east-1"
+
+# The access key's id the S3 service knows; a made-up one.
+constant ACCESS_KEY_ID: str
+    "AKIAPIPELINEDEMO0001"
+
+# Its secret; made up, and never printed.
+constant SECRET_KEY: str
+    "pipeline/demo/secret-key/0001"
+
+# The Kafka user and the PostgreSQL role.
+constant USER: str
+    "pipeline"
+
+# The Kafka user's password; made up, and never printed.
+constant KAFKA_PASSWORD: str
+    "kafka-demo-password"
+
+# The PostgreSQL role's password; made up, and never printed.
+constant PG_PASSWORD: str
+    "postgres-demo-password"
+
+# The database.
+constant DATABASE: str
+    "events"
+
+# The day the script happens on.
+constant DAY: str
+    "2026-03-14"
+
+# The part of the key whose puts the S3 service refuses on purpose: the
+# archive copy of the orders' window at 09:01.
+constant REFUSED_KEY: str
+    "archive/orders/year=2026/month=03/day=14/orders-20260314T090100Z"
+
+# How many times it refuses them: as many as the pipeline's attempts, so
+# the write is kept as a job, and the replay's put is taken.
+constant REFUSALS: i64
+    3
+
+## Running
+
+# A stand-in started on its thread, and the port it said it listens on.
+record Started
+    # The thread, owed its wait.
+    thread: threads.TextThread
+    # The port its notification said, 0 where none came.
+    port: i64
+
+# Runs the demo and answers the program's exit code: 0 where every step
+# ran.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    match net.listen(host: "127.0.0.1", port: 0)
+        .err e =>
+            print("demo: the control port: " + e.msg)
+            return 1
+        .ok opened =>
+            control @= opened
+            code = with_control(control)
+            _ = net.close_listener(@control).is_err()
+            return code
+
+# The stand-ins started, the demo run, the stand-ins stopped and told.
+#
+# - `control`: the supervisor's control listener.
+function with_control(control: net.Listener) -> i64
+    print("== services, started on loopback and told ready")
+    started: [Started] @= []
+    failed @= false
+
+    for service in ["kafka", "s3", "postgres"]
+        match started_service(service, control: control)
+            .err e =>
+                print(f"demo: {service}: {e.msg}")
+                failed @ true
+                break
+            .ok one =>
+                started @ started.push(one)
+
+                if one.port == 0
+                    print(f"demo: {service} never said it was ready")
+                    failed @ true
+                    break
+                print(f"{service}: ready")
+
+    code @= 1
+
+    if !failed
+        code @ with_services(kafka_port: started[0].port, s3_port: started[1].port, pg_port: started[2].port)
+    os.ask_stop()
+    print("== what each service saw")
+
+    for one in started
+        thread @= one.thread
+        print(threads.wait_text(@thread))
+
+    return code
+
+# One stand-in started on its thread and its notification awaited.
+#
+# - `service`: `kafka`, `s3` or `postgres`.
+# - `control`: the control listener.
+#
+# Fails where the thread cannot start.
+function started_service(service: str, control: net.Listener) -> Started?
+    port = control.address.port
+
+    arg = match service
+        "kafka" => kafka_broker.format_setup(
+            kafka_broker.Setup(control_port: port, user: USER, password: KAFKA_PASSWORD, topics: [kafka_state.Topic(name: "clicks", partitions: 1), kafka_state.Topic(name: consume.DEAD_LETTER_TOPIC, partitions: 1), kafka_state.Topic(name: "orders", partitions: 2)])
+        )
+        "s3" => s3_store.format_setup(
+            s3_store.Setup(control_port: port, bucket: BUCKET, region: REGION, access_key_id: ACCESS_KEY_ID, secret: SECRET_KEY, fail_part: REFUSED_KEY, fail_count: REFUSALS)
+        )
+        _ => pg_server.format_setup(
+            pg_server.Setup(control_port: port, user: USER, password: PG_PASSWORD, database: DATABASE)
+        )
+
+    body = match service
+        "kafka" => kafka_broker.run
+        "s3"    => s3_service.run
+        _       => pg_server.run
+
+    thread = threads.spawn_text(body: body, arg: arg)?
+
+    match notify.await_ready(control)
+        .err _ => return ok(Started(thread: thread, port: 0))
+        .ok r =>
+            if r.service != service
+                return ok(Started(thread: thread, port: 0))
+            return ok(Started(thread: thread, port: r.port))
+
+# The settings a real run would read, written as its TOML file with the
+# stand-ins' ports.
+#
+# - `kafka_port`: the broker's port.
+# - `s3_port`: the S3 service's port.
+# - `pg_port`: the PostgreSQL server's port.
+function settings_text(kafka_port: i64, s3_port: i64, pg_port: i64) -> str
+    return ["[kafka]", f"brokers = [\"127.0.0.1:{kafka_port}\"]", f"group = \"{GROUP}\"", "topics = [\"clicks\", \"orders\"]", "client_id = \"pipeline\"", f"username = \"{USER}\"", f"password = \"{KAFKA_PASSWORD}\"", "", "[s3]", f"endpoint = \"http://127.0.0.1:{s3_port}\"", f"region = \"{REGION}\"", f"bucket = \"{BUCKET}\"", f"access_key_id = \"{ACCESS_KEY_ID}\"", f"secret_access_key = \"{SECRET_KEY}\"", "", "[postgres]", f"url = \"postgres://{USER}@127.0.0.1:{pg_port}/{DATABASE}?sslmode=disable\"", f"password = \"{PG_PASSWORD}\"", "", "[windows]", "seconds = 60", "grace_seconds = 30", "", "[retries]", "attempts = 3", "first_ms = 20", "longest_ms = 80", "fraction = 0.5", ""].join(
+        "\n"
+    )
+
+# The events produced, then the pipeline's whole day.
+#
+# - `kafka_port`: the broker's port.
+# - `s3_port`: the S3 service's port.
+# - `pg_port`: the PostgreSQL server's port.
+function with_services(kafka_port: i64, s3_port: i64, pg_port: i64) -> i64
+    s = match loader.parse(settings_text(kafka_port: kafka_port, s3_port: s3_port, pg_port: pg_port))
+        .ok v => v
+        .err e =>
+            print("demo: the settings: " + e.msg)
+            return 1
+
+    print("== events produced by a client logged in by SCRAM-SHA-256")
+
+    match produce.produce(consume.options_of(s.kafka))
+        .err e =>
+            print("demo: producing: " + e.msg)
+            return 1
+        .ok written =>
+            for w in written
+                print(f"{w.topic}: {w.json_count} JSON, {w.msgpack_count} MessagePack, {w.other} of neither")
+
+    match pipeline.open(s)
+        .err e =>
+            print("demo: opening the pipeline: " + e.msg)
+            return 1
+        .ok made =>
+            p @= made
+            code = with_pipeline(@p)
+            pipeline.close(@p)
+            return code
+
+# The pipeline's day: migrated, run until caught up, exported, replayed,
+# exported, told and scraped.
+#
+# - `p`: the pipeline.
+function with_pipeline(@p: pipeline.Pipeline) -> i64
+    print("== the schema migrated, logged in by SCRAM-SHA-256")
+
+    match migrator.migrate_up(@p.db)
+        .err e =>
+            print("demo: migrating: " + e.msg)
+            return 1
+        .ok names =>
+            for n in names
+                print("applied " + n)
+
+    print(f"== the pipeline, caught up with the group {GROUP}")
+    no_scrapes: [exporter.Exporter] @= []
+
+    match consume.run(@p, catch_up: true, scrapes: @no_scrapes)
+        .err e =>
+            print("demo: running: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    c = p.counts
+    print(
+        f"read {c.json_events} JSON events, {c.msgpack_events} MessagePack, {c.rejected} message of neither sent to {consume.DEAD_LETTER_TOPIC}"
+    )
+    print(f"late events dropped: {p.windows.late}")
+    print(f"windows written: {c.windows}, copies stored: {c.copies}, put attempts: {c.attempts}")
+
+    for k in c.kept
+        print("kept for a replay: " + k)
+
+    print("== the cold export, asked before the replay")
+
+    match export.export_day(@p, day: DAY)
+        .ok _  => print("exported, which it should not have been")
+        .err e => print(f"refused ({e.code}): {e.msg}")
+
+    print("== the replay of the writes kept")
+
+    match replayer.replay(@p)
+        .err e =>
+            print("demo: replaying: " + e.msg)
+            return 1
+        .ok replayed =>
+            for r in replayed
+                match r.etag
+                    .ok etag => print(f"job {r.id}: {r.key} stored at its attempt {r.attempt}, ETag {etag}; {r.state}")
+                    .err e   => print(f"job {r.id}: {r.key} failed at its attempt {r.attempt}: {e.msg}; {r.state}")
+
+    print(f"== the cold export of {DAY}")
+
+    match export.export_day(@p, day: DAY)
+        .err e =>
+            print("demo: exporting: " + e.msg)
+            return 1
+        .ok exported =>
+            for x in exported
+                print(
+                    f"{x.key}: {x.events} events from {x.sources} archived windows, {x.raw_bytes} bytes raw, {x.stored_bytes} stored"
+                )
+
+    return told(@p)
+
+# The account of what is left, and a scrape of the metrics.
+#
+# - `p`: the pipeline.
+function told(@p: pipeline.Pipeline) -> i64
+    print(f"== objects in s3://{BUCKET}, as the ledger holds them")
+
+    match account.objects(@p)
+        .err e =>
+            print("demo: the objects: " + e.msg)
+            return 1
+        .ok lines => print(lines.join("\n"))
+
+    print("== aggregates in PostgreSQL")
+
+    match account.aggregate_lines(@p)
+        .err e =>
+            print("demo: the aggregates: " + e.msg)
+            return 1
+        .ok lines => print(lines.join("\n"))
+
+    print("== jobs in PostgreSQL")
+
+    match account.job_lines(@p)
+        .err e =>
+            print("demo: the jobs: " + e.msg)
+            return 1
+        .ok lines => print(lines.join("\n"))
+
+    print("== metrics, as a scraper reads /metrics")
+    return scraped(p)
+
+# One scrape of the pipeline's metrics: a thread scrapes, this one
+# answers.
+#
+# - `p`: the pipeline.
+function scraped(p: pipeline.Pipeline lent) -> i64
+    match exporter.open("127.0.0.1:0")
+        .err e =>
+            print("demo: the metrics' listener: " + e.msg)
+            return 1
+        .ok made =>
+            e @= made
+
+            match threads.spawn_text(body: scrape.run, arg: to_str(exporter.port_of(e)))
+                .err x =>
+                    exporter.close(@e)
+                    print("demo: the scraper: " + x.msg)
+                    return 1
+                .ok spawned =>
+                    scraper @= spawned
+                    answered = exporter.answer_one(@e, registry: p.registry, wait_ms: 10_000)
+                    exporter.close(@e)
+                    print(threads.wait_text(@scraper))
+
+                    if answered.is_err()
+                        return 1
+                    return 0
+
+test "settings_text: the file a real run reads, read by the loader"
+    s = loader.parse(settings_text(kafka_port: 9092, s3_port: 9000, pg_port: 5432)).must()
+    assert s.kafka.brokers == ["127.0.0.1:9092"] && s.storage.endpoint == "http://127.0.0.1:9000" && s.retrying.attempts == REFUSALS
+    assert kafka.options(["x:1"]).client_id == "rebel"

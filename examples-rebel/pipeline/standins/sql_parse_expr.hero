@@ -1,0 +1,548 @@
+# Expressions and `SELECT` read from tokens, by PostgreSQL's precedence
+# from the loosest: `OR`, `AND`, `NOT`, the comparisons with `IS NULL`,
+# `IN` and `BETWEEN`, `||`, `+ -`, `* /`, a unary minus, and the cast
+# `::` tightest of all. A name not followed by `(` is a column, `q.name` a
+# qualified one; `CURRENT_TIMESTAMP` is `now()`; `extract(epoch FROM x)`,
+# `interval '<n> <unit>'`, `CASE`, `EXISTS` and a subquery in parentheses
+# are read as PostgreSQL reads them. What the engine does not run is
+# refused here with `0A000` or `42601`, before anything runs.
+#
+# **This module is one knot and is kept whole**: a subquery is an
+# expression and a `SELECT` holds expressions, and Heroes refuses a cycle
+# of modules. Its map: `expression` is the entry for a value and `select`
+# for a query; `expression` descends `conjunction`, `negation`,
+# `comparison` (which calls `membership` for `IN` and `BETWEEN`),
+# `concatenation`, `sum`, `product`, `unary` (which reads casts with
+# `type_name`) and `primary`, which opens `word_primary`, `reference` or
+# `case_of`; `primary`, `word_primary` and `membership` call `select` for
+# a subquery, and `select` calls `items_list` and `expression` back.
+
+use <rebel>/numbers
+use <rebel>/sql
+
+use standins/sql_cursor
+use standins/sql_lex
+use standins/sql_tree
+
+## Expressions
+
+# An expression, the loosest operator first.
+#
+# - `p`: the parser, moved past it.
+#
+# Fails `invalid` with `42601` where no expression is next.
+function expression(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= conjunction(@p)?
+
+    while sql_cursor.take_word(@p, word: "or")
+        right = conjunction(@p)?
+        left @ .operator(op: "or", operands: [left, right])
+
+    return ok(left)
+
+# A run of `AND`.
+#
+# - `p`: the parser.
+function conjunction(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= negation(@p)?
+
+    while sql_cursor.take_word(@p, word: "and")
+        right = negation(@p)?
+        left @ .operator(op: "and", operands: [left, right])
+
+    return ok(left)
+
+# `NOT` before a comparison.
+#
+# - `p`: the parser.
+function negation(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    if sql_cursor.take_word(@p, word: "not")
+        inner = negation(@p)?
+        return ok(.operator(op: "not", operands: [inner]))
+    return comparison(@p)
+
+# A comparison, `IS [NOT] NULL`, `[NOT] IN`, `[NOT] BETWEEN`, or the value
+# alone.
+#
+# - `p`: the parser.
+function comparison(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= concatenation(@p)?
+
+    while true
+        if sql_cursor.take_word(@p, word: "is")
+            negated = sql_cursor.take_word(@p, word: "not")
+            sql_cursor.expect_word(@p, word: "null")?
+            left @ .is_null(negated: negated, operand: [left])
+        else if sql_cursor.at_word(p, word: "not") && (sql_cursor.peek_second(p).text == "in" || sql_cursor.peek_second(p).text == "between")
+            _ = sql_cursor.advance(@p)
+            left @ membership(@p, operand: left, negated: true)?
+        else if sql_cursor.at_word(p, word: "in") || sql_cursor.at_word(p, word: "between")
+            left @ membership(@p, operand: left, negated: false)?
+        else
+            t = sql_cursor.peek(p)
+
+            if t.kind == "op" && (t.text == "=" || t.text == "<>" || t.text == "<" || t.text == "<=" || t.text == ">" || t.text == ">=")
+                _ = sql_cursor.advance(@p)
+                right = concatenation(@p)?
+                left @ .operator(op: t.text, operands: [left, right])
+            else
+                break
+
+    return ok(left)
+
+# `IN (...)` or `BETWEEN a AND b` after `operand`.
+#
+# - `p`: the parser, at `IN` or `BETWEEN`.
+# - `operand`: the value tested.
+# - `negated`: whether `NOT` came before.
+function membership(@p: sql_cursor.Parser, operand: sql_tree.Expr, negated: bool) -> sql_tree.Expr?
+    if sql_cursor.take_word(@p, word: "between")
+        low = concatenation(@p)?
+        sql_cursor.expect_word(@p, word: "and")?
+        high = concatenation(@p)?
+        inside: sql_tree.Expr = .operator(
+            op: "and",
+            operands: [.operator(op: ">=", operands: [operand, low]), .operator(op: "<=", operands: [operand, high])]
+        )
+
+        if negated
+            return ok(.operator(op: "not", operands: [inside]))
+        return ok(inside)
+    sql_cursor.expect_word(@p, word: "in")?
+    sql_cursor.expect_op(@p, op: "(")?
+
+    if sql_cursor.at_word(p, word: "select")
+        q = select(@p)?
+        sql_cursor.expect_op(@p, op: ")")?
+        return ok(.in_query(negated: negated, operand: [operand], query: [q]))
+    items: [sql_tree.Expr] @= []
+
+    while true
+        items @ items.push(expression(@p)?)
+
+        if !sql_cursor.take_op(@p, op: ",")
+            break
+
+    sql_cursor.expect_op(@p, op: ")")?
+    return ok(.in_list(negated: negated, operand: [operand], items: items))
+
+# A run of `||`.
+#
+# - `p`: the parser.
+function concatenation(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= sum(@p)?
+
+    while sql_cursor.take_op(@p, op: "||")
+        right = sum(@p)?
+        left @ .operator(op: "||", operands: [left, right])
+
+    return ok(left)
+
+# A run of `+` and `-`.
+#
+# - `p`: the parser.
+function sum(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= product(@p)?
+
+    while sql_cursor.at_op(p, op: "+") || sql_cursor.at_op(p, op: "-")
+        op = sql_cursor.advance(@p).text
+        right = product(@p)?
+        left @ .operator(op: op, operands: [left, right])
+
+    return ok(left)
+
+# A run of `*` and `/`.
+#
+# - `p`: the parser.
+function product(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    left @= unary(@p)?
+
+    while sql_cursor.at_op(p, op: "*") || sql_cursor.at_op(p, op: "/")
+        op = sql_cursor.advance(@p).text
+        right = unary(@p)?
+        left @ .operator(op: op, operands: [left, right])
+
+    return ok(left)
+
+# A unary minus or plus, then a cast chain.
+#
+# - `p`: the parser.
+function unary(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    if sql_cursor.take_op(@p, op: "-")
+        inner = unary(@p)?
+        return ok(.operator(op: "neg", operands: [inner]))
+
+    if sql_cursor.take_op(@p, op: "+")
+        return unary(@p)
+    value @= primary(@p)?
+
+    while sql_cursor.take_op(@p, op: "::")
+        to = type_name(@p)?
+        value @ .cast(to: to, operand: [value])
+
+    return ok(value)
+
+# A type's name, as PostgreSQL spells its aliases, made one of the names
+# the engine keeps: `int2`, `int4`, `int8`, `float8`, `numeric`, `text`,
+# `bool`, `timestamptz`, `interval`, `jsonb`; a serial is its integer.
+#
+# - `p`: the parser, moved past the name and any `(n)` after it.
+#
+# Fails `unsupported` with `0A000` for a type the engine does not keep.
+function type_name(@p: sql_cursor.Parser) -> str?
+    first = sql_cursor.take_name(@p)?
+    name: str @= first
+
+    if first == "double" && sql_cursor.take_word(@p, word: "precision")
+        name @ "double precision"
+    else if first == "character" && sql_cursor.take_word(@p, word: "varying")
+        name @ "varchar"
+    else if first == "timestamp" && sql_cursor.take_word(@p, word: "with")
+        sql_cursor.expect_word(@p, word: "time")?
+        sql_cursor.expect_word(@p, word: "zone")?
+        name @ "timestamptz"
+
+    if sql_cursor.take_op(@p, op: "(")
+        while !sql_cursor.take_op(@p, op: ")")
+            if sql_cursor.peek(p).kind == "end"
+                return sql_cursor.syntax_error(p)
+            _ = sql_cursor.advance(@p)
+
+    return match name
+        "smallint" | "int2" | "smallserial"               => ok("int2")
+        "integer" | "int" | "int4" | "serial"             => ok("int4")
+        "bigint" | "int8" | "bigserial"                   => ok("int8")
+        "double precision" | "float8" | "real" | "float4" => ok("float8")
+        "numeric" | "decimal"                             => ok("numeric")
+        "text" | "varchar" | "char" | "name"              => ok("text")
+        "boolean" | "bool"                                => ok("bool")
+        "timestamptz"                                     => ok("timestamptz")
+        "interval"                                        => ok("interval")
+        "jsonb" | "json"                                  => ok("jsonb")
+        _                                                 => sql_cursor.unsupported(f"the type {name}")
+
+# The value at the bottom of an expression.
+#
+# - `p`: the parser.
+function primary(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    t = sql_cursor.peek(p)
+
+    if t.kind == "number"
+        _ = sql_cursor.advance(@p)
+        return sql_cursor.number_literal(t.text)
+
+    if t.kind == "string"
+        _ = sql_cursor.advance(@p)
+        return ok(.literal(value: .unknown(v: t.text)))
+
+    if t.kind == "param"
+        _ = sql_cursor.advance(@p)
+        n = numbers.parse_int(t.text).default(0)
+
+        if n < 1
+            return fail(
+                code: sql_cursor.INVALID,
+                msg: sql.failure_message(database_code: "42P02", message: f"there is no parameter ${t.text}")
+            )
+        return ok(.param(number: n))
+
+    if sql_cursor.take_op(@p, op: "(")
+        if sql_cursor.at_word(p, word: "select")
+            q = select(@p)?
+            sql_cursor.expect_op(@p, op: ")")?
+            return ok(.scalar(query: [q]))
+        inner = expression(@p)?
+        sql_cursor.expect_op(@p, op: ")")?
+        return ok(inner)
+
+    if t.kind == "word"
+        return word_primary(@p)
+
+    if t.kind == "name"
+        return reference(@p)
+    return sql_cursor.syntax_error(p)
+
+# A value that opens with a word: a constant, a keyword's form, a call or a
+# column.
+#
+# - `p`: the parser, at the word.
+function word_primary(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    word = sql_cursor.peek(p).text
+
+    if word == "null"
+        _ = sql_cursor.advance(@p)
+        return ok(.literal(value: .null_value))
+
+    if word == "true" || word == "false"
+        _ = sql_cursor.advance(@p)
+        return ok(.literal(value: .boolean(v: word == "true")))
+
+    if word == "current_timestamp"
+        _ = sql_cursor.advance(@p)
+        return ok(.call(name: "now", args: [], star: false))
+
+    if word == "case"
+        _ = sql_cursor.advance(@p)
+        return case_of(@p)
+
+    if word == "exists"
+        _ = sql_cursor.advance(@p)
+        sql_cursor.expect_op(@p, op: "(")?
+        q = select(@p)?
+        sql_cursor.expect_op(@p, op: ")")?
+        return ok(.exists(negated: false, query: [q]))
+
+    if word == "interval" && sql_cursor.peek_second(p).kind == "string"
+        _ = sql_cursor.advance(@p)
+        text = sql_cursor.advance(@p).text
+        return sql_cursor.interval_literal(text)
+
+    if word == "extract" && sql_cursor.peek_second(p).kind == "op" && sql_cursor.peek_second(p).text == "("
+        _ = sql_cursor.advance(@p)
+        _ = sql_cursor.advance(@p)
+        field = sql_cursor.take_name(@p)?
+        sql_cursor.expect_word(@p, word: "from")?
+        source = expression(@p)?
+        sql_cursor.expect_op(@p, op: ")")?
+        return ok(.call(name: "extract", args: [.literal(value: .text(v: field)), source], star: false))
+    return reference(@p)
+
+# A column, `q.name`, or a function's call.
+#
+# - `p`: the parser, at a name.
+function reference(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    first = sql_cursor.take_name(@p)?
+
+    if sql_cursor.take_op(@p, op: "(")
+        if sql_cursor.take_op(@p, op: "*")
+            sql_cursor.expect_op(@p, op: ")")?
+            return ok(.call(name: first, args: [], star: true))
+        arguments: [sql_tree.Expr] @= []
+
+        if !sql_cursor.take_op(@p, op: ")")
+            while true
+                arguments @ arguments.push(expression(@p)?)
+
+                if !sql_cursor.take_op(@p, op: ",")
+                    break
+
+            sql_cursor.expect_op(@p, op: ")")?
+        return ok(.call(name: first, args: arguments, star: false))
+
+    if sql_cursor.take_op(@p, op: ".")
+        second = sql_cursor.take_name(@p)?
+        return ok(.column(qualifier: first, name: second))
+    return ok(.column(qualifier: "", name: first))
+
+# `CASE WHEN c THEN v ... [ELSE e] END`, after `CASE`.
+#
+# - `p`: the parser.
+function case_of(@p: sql_cursor.Parser) -> sql_tree.Expr?
+    conditions: [sql_tree.Expr] @= []
+    results: [sql_tree.Expr] @= []
+
+    while sql_cursor.take_word(@p, word: "when")
+        conditions @ conditions.push(expression(@p)?)
+        sql_cursor.expect_word(@p, word: "then")?
+        results @ results.push(expression(@p)?)
+
+    if conditions.len() == 0
+        return sql_cursor.syntax_error(p)
+    otherwise: [sql_tree.Expr] @= []
+
+    if sql_cursor.take_word(@p, word: "else")
+        otherwise @ [expression(@p)?]
+    sql_cursor.expect_word(@p, word: "end")?
+    return ok(.case_of(conditions: conditions, results: results, otherwise: otherwise))
+
+## SELECT
+
+# The words that end an item or a table and so are never an alias written
+# without `AS`.
+function reserved() -> [str]
+    return [
+        "from"
+        "where"
+        "group"
+        "order"
+        "limit"
+        "offset"
+        "for"
+        "returning"
+        "on"
+        "and"
+        "or"
+        "union"
+        "having"
+        "set"
+        "values"
+        "do"
+        "as"
+        "inner"
+        "join"
+        "left"
+        "using"
+    ]
+
+# Whether `word` is reserved.
+#
+# - `word`: the word.
+function is_reserved(word: str) -> bool
+    for r in reserved()
+        if r == word
+            return true
+
+    return false
+
+# A `SELECT`, from its first word to before what follows it.
+#
+# - `p`: the parser, at `SELECT`.
+#
+# Fails `unsupported` for a join, `UNION`, `HAVING` or `DISTINCT`, and
+# `invalid` for what is no `SELECT`.
+function select(@p: sql_cursor.Parser) -> sql_tree.Select?
+    sql_cursor.expect_word(@p, word: "select")?
+
+    if sql_cursor.at_word(p, word: "distinct")
+        return sql_cursor.unsupported("SELECT DISTINCT")
+    items = items_list(@p)?
+    s @= sql_tree.bare_select(items)
+
+    if sql_cursor.take_word(@p, word: "from")
+        s.table @ sql_cursor.take_name(@p)?
+        s.alias @ s.table
+
+        if sql_cursor.take_word(@p, word: "as")
+            s.alias @ sql_cursor.take_name(@p)?
+        else if sql_cursor.peek(p).kind == "word" && !is_reserved(sql_cursor.peek(p).text) || sql_cursor.peek(p).kind == "name"
+            s.alias @ sql_cursor.take_name(@p)?
+
+        if sql_cursor.at_op(p, op: ",") || sql_cursor.at_word(p, word: "join") || sql_cursor.at_word(p, word: "inner") || sql_cursor.at_word(p, word: "left")
+            return sql_cursor.unsupported("a query of several tables")
+
+    if sql_cursor.take_word(@p, word: "where")
+        s.condition @ ok(expression(@p)?)
+
+    if sql_cursor.take_word(@p, word: "group")
+        sql_cursor.expect_word(@p, word: "by")?
+        group_keys: [sql_tree.Expr] @= []
+
+        while true
+            group_keys @ group_keys.push(expression(@p)?)
+
+            if !sql_cursor.take_op(@p, op: ",")
+                break
+
+        s.group_by @ group_keys
+
+    if sql_cursor.at_word(p, word: "having") || sql_cursor.at_word(p, word: "union")
+        return sql_cursor.unsupported(sql_cursor.peek(p).text)
+
+    if sql_cursor.take_word(@p, word: "order")
+        sql_cursor.expect_word(@p, word: "by")?
+        orders: [sql_tree.Order] @= []
+
+        while true
+            e = expression(@p)?
+            descending = sql_cursor.take_word(@p, word: "desc")
+
+            if !descending
+                _ = sql_cursor.take_word(@p, word: "asc")
+            orders @ orders.push(sql_tree.Order(expr: e, descending: descending))
+
+            if !sql_cursor.take_op(@p, op: ",")
+                break
+
+        s.order_by @ orders
+
+    if sql_cursor.take_word(@p, word: "limit")
+        s.limit @ ok(expression(@p)?)
+
+    if sql_cursor.take_word(@p, word: "offset")
+        s.offset @ ok(expression(@p)?)
+
+    if sql_cursor.take_word(@p, word: "for")
+        sql_cursor.expect_word(@p, word: "update")?
+
+        if sql_cursor.take_word(@p, word: "skip")
+            sql_cursor.expect_word(@p, word: "locked")?
+        else
+            _ = sql_cursor.take_word(@p, word: "nowait")
+    return ok(s)
+
+# The items of a `SELECT` or a `RETURNING`, each with its column's name.
+#
+# - `p`: the parser.
+function items_list(@p: sql_cursor.Parser) -> [sql_tree.Item]?
+    items: [sql_tree.Item] @= []
+
+    while true
+        if sql_cursor.take_op(@p, op: "*")
+            items @ items.push(sql_tree.Item(expr: .literal(value: .null_value), name: "*", star: true))
+        else
+            e = expression(@p)?
+            name: str @= name_of(e)
+
+            if sql_cursor.take_word(@p, word: "as")
+                name @ sql_cursor.take_name(@p)?
+            else if sql_cursor.peek(p).kind == "word" && !is_reserved(sql_cursor.peek(p).text) || sql_cursor.peek(p).kind == "name"
+                name @ sql_cursor.take_name(@p)?
+            items @ items.push(sql_tree.Item(expr: e, name: name, star: false))
+
+        if !sql_cursor.take_op(@p, op: ",")
+            break
+
+    return ok(items)
+
+# The column's name PostgreSQL gives an item written with no `AS`: a
+# column's own, a function's, the cast's operand's, else `?column?`.
+#
+# - `e`: the item.
+function name_of(e: sql_tree.Expr) -> str
+    return match e
+        .column c                                                                               => c.name
+        .call c                                                                                 => c.name
+        .cast c                                                                                 => name_of(c.operand[0])
+        .case_of _                                                                              => "case"
+        .exists _                                                                               => "exists"
+        .literal _ | .param _ | .operator _ | .in_list _ | .in_query _ | .scalar _ | .is_null _ => "?column?"
+
+test "expression: precedence of OR, AND, comparisons, || and arithmetic"
+    p @= sql_cursor.parser(sql_lex.tokens("a = 1 OR b < 2 AND c || 'x' = d + 3 * 4").must())
+    e = expression(@p).must()
+
+    match e
+        .operator o => assert o.op == "or"
+        .literal _ | .param _ | .column _ | .call _ | .cast _ | .case_of _ | .in_list _ | .in_query _ | .exists _ | .scalar _ | .is_null _ => assert false
+
+test "expression: a cast chain, extract, an interval, IS NOT NULL, NOT IN a subquery"
+    p @= sql_cursor.parser(sql_lex.tokens("(extract(epoch FROM t) * 1000000)::bigint::text").must())
+    e = expression(@p).must()
+    assert name_of(e) == "?column?"
+    q @= sql_cursor.parser(sql_lex.tokens("now() + $1::bigint * interval '1 microsecond'").must())
+    _ = expression(@q).must()
+    r @= sql_cursor.parser(sql_lex.tokens("x IS NOT NULL AND y NOT IN (SELECT name FROM q WHERE paused)").must())
+    _ = expression(@r).must()
+    assert sql_cursor.interval_literal("2 fortnights").is_err()
+
+test "select: every clause, an alias with and without AS, FOR UPDATE SKIP LOCKED"
+    p @= sql_cursor.parser(
+        sql_lex.tokens("SELECT id::text AS id, count(*) jobs FROM rebel_jobs j WHERE state = 'available' GROUP BY queue ORDER BY priority DESC, id LIMIT 1 OFFSET 2 FOR UPDATE SKIP LOCKED").must()
+    )
+    s = select(@p).must()
+    assert s.items.len() == 2 && s.items[0].name == "id" && s.items[1].name == "jobs" && s.alias == "j"
+    assert s.condition.is_err() == false && s.order_by[0].descending && !s.order_by[1].descending
+
+test "select: a join and DISTINCT are refused"
+    p @= sql_cursor.parser(sql_lex.tokens("SELECT a FROM t, u").must())
+    assert select(@p).is_err()
+    q @= sql_cursor.parser(sql_lex.tokens("SELECT DISTINCT a FROM t").must())
+    assert select(@q).is_err()
+
+test "type_name: aliases read as the engine's names, an unknown type refused"
+    p @= sql_cursor.parser(sql_lex.tokens("double precision").must())
+    assert type_name(@p).must() == "float8"
+    q @= sql_cursor.parser(sql_lex.tokens("varchar(255)").must())
+    assert type_name(@q).must() == "text"
+    r @= sql_cursor.parser(sql_lex.tokens("tsvector").must())
+    assert type_name(@r).is_err()

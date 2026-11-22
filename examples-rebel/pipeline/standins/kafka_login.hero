@@ -1,0 +1,129 @@
+# How the Kafka broker stand-in logs a client in, connection by
+# connection: `SaslHandshake` 1 naming SCRAM-SHA-256, the one mechanism it
+# offers, then `SaslAuthenticate` 1 twice, carrying the client's first and
+# final SCRAM messages and answering the server's (`scram_server`), each in
+# the layout the protocol guide gives that version
+# (kafka.apache.org/protocol, read 2026-11-21). A login that fails is
+# answered `SASL_AUTHENTICATION_FAILED` and its connection closed, as a
+# broker closes it; a request other than these before the login is done
+# closes the connection too (`kafka_broker`).
+
+use <rebel>/bytes
+use <rebel>/scram
+
+use standins/kafka_codec
+use standins/kafka_state
+use standins/scram_server
+
+## Error codes
+
+# `UNSUPPORTED_SASL_MECHANISM`.
+constant UNSUPPORTED_SASL_MECHANISM: i64
+    33
+
+# `ILLEGAL_SASL_STATE`: a login message out of its turn.
+constant ILLEGAL_SASL_STATE: i64
+    34
+
+# `SASL_AUTHENTICATION_FAILED`.
+constant SASL_AUTHENTICATION_FAILED: i64
+    58
+
+# The one mechanism the broker offers.
+constant MECHANISM: str
+    "SCRAM-SHA-256"
+
+## Logging in
+
+# The answer to `SaslHandshake` 1: the mechanism taken where it is
+# SCRAM-SHA-256, else refused with the one offered.
+#
+# - `b`: the broker; the connection's login moves.
+# - `peer`: the connection.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function handshake(@b: kafka_state.Broker, peer: i64, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    mechanism = kafka_codec.take_string(@r, what: "SaslHandshake's mechanism")?
+    at = kafka_state.login_at(@b, peer: peer)
+    error: i64 @= 0
+
+    if mechanism != MECHANISM
+        error @ UNSUPPORTED_SASL_MECHANISM
+    else if b.logins[at].stage != 0
+        error @ ILLEGAL_SASL_STATE
+    else
+        b.logins[at].stage @ 1
+    out: [u8] @= []
+    kafka_codec.put_i16(@out, v: error)
+    kafka_codec.put_i32(@out, v: 1)
+    kafka_codec.put_string(@out, s: MECHANISM)
+    return ok(out)
+
+# What `SaslAuthenticate` 1 comes to: the server's first message after the
+# client's, then its final message once the proof is the password's; a
+# failed login answered and its connection closed.
+#
+# - `b`: the broker; the connection's login moves.
+# - `peer`: the connection.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function authenticate(@b: kafka_state.Broker, peer: i64, body: [u8]) -> kafka_state.Outcome?
+    r @= kafka_codec.reader(body)
+    raw = kafka_codec.take_bytes(@r, what: "SaslAuthenticate's bytes")?
+
+    message = match bytes.to_text(raw)
+        .ok t => t
+        .err _ => return ok(
+            .last_reply(body: authenticated(SASL_AUTHENTICATION_FAILED, message: "the message is not UTF-8", data: []))
+        )
+
+    at = kafka_state.login_at(@b, peer: peer)
+    stage = b.logins[at].stage
+
+    if stage == 1
+        nonce = match scram.new_nonce()
+            .ok n  => n
+            .err e => return ok(.last_reply(body: authenticated(SASL_AUTHENTICATION_FAILED, message: e.msg, data: [])))
+
+        match scram_server.first(client_first: message, v: b.verifier, server_nonce: nonce)
+            .err e => return ok(.last_reply(body: authenticated(SASL_AUTHENTICATION_FAILED, message: e.msg, data: [])))
+            .ok e =>
+                if e.user != b.user
+                    return ok(
+                        .last_reply(body: authenticated(SASL_AUTHENTICATION_FAILED, message: "Authentication failed during authentication due to invalid credentials with SASL mechanism SCRAM-SHA-256", data: []))
+                    )
+                b.logins[at].exchange @ e
+                b.logins[at].stage @ 2
+                return ok(.reply(body: authenticated(0, message: "", data: bytes.from_text(e.server_first))))
+
+    if stage == 2
+        match scram_server.final(b.logins[at].exchange, client_final: message, v: b.verifier)
+            .err _ => return ok(
+                .last_reply(body: authenticated(SASL_AUTHENTICATION_FAILED, message: "Authentication failed during authentication due to invalid credentials with SASL mechanism SCRAM-SHA-256", data: []))
+            )
+            .ok server_final =>
+                b.logins[at].stage @ 3
+                return ok(.reply(body: authenticated(0, message: "", data: bytes.from_text(server_final))))
+    return ok(
+        .last_reply(body: authenticated(ILLEGAL_SASL_STATE, message: "SaslAuthenticate came out of its turn", data: []))
+    )
+
+# The body of a `SaslAuthenticate` 1 answer.
+#
+# - `error`: the error, 0 for none.
+# - `message`: the error's words, "" for none.
+# - `data`: the server's SCRAM message.
+function authenticated(error: i64, message: str, data: [u8]) -> [u8]
+    out: [u8] @= []
+    kafka_codec.put_i16(@out, v: error)
+
+    if message == ""
+        kafka_codec.put_null_string(@out)
+    else
+        kafka_codec.put_string(@out, s: message)
+    kafka_codec.put_bytes(out: @out, data: data)
+    kafka_codec.put_i64(@out, v: 0)
+    return out

@@ -1,0 +1,154 @@
+# The PostgreSQL stand-in's `INSERT`: each row made whole from the columns
+# given, the columns' defaults and the table's sequence, held to its
+# types, `NOT NULL`, the `CHECK` constraints and every unique index
+# (`sql_rows`); a row that meets a key already held answered as its
+# `ON CONFLICT` says, where the conflict's target names that unique index
+# (the same columns, and a predicate where the index is partial), and
+# refused `23505` otherwise; `RETURNING` read over each row written. Every
+# expression reads the database as the statement found it.
+
+use standins/sql_datum
+use standins/sql_eval
+use standins/sql_ops
+use standins/sql_rows
+use standins/sql_tree
+
+## INSERT
+
+# Runs an `INSERT`.
+#
+# - `db`: the database.
+# - `stmt`: the statement.
+# - `scope`: the parameters and the moment.
+function insert(@db: sql_tree.Database, stmt: sql_tree.Insert, scope: sql_eval.Scope) -> sql_rows.Written?
+    at = sql_tree.table_at(db, name: stmt.table)
+
+    if at < 0
+        return sql_datum.refused(state: "42P01", message: f"relation \"{stmt.table}\" does not exist")
+    before = db
+    table @= db.tables[at]
+    columns: [str] @= stmt.columns
+
+    if columns.len() == 0
+        for c in table.columns
+            columns @ columns.push(c.name)
+
+    for name in columns
+        if sql_tree.column_at(table, name: name) < 0
+            return sql_datum.refused(
+                state: "42703",
+                message: f"column \"{name}\" of relation \"{stmt.table}\" does not exist"
+            )
+
+    proposed: [[sql_tree.Datum]] @= []
+
+    if stmt.query.len() == 1
+        for row in sql_eval.run_select(stmt.query[0], outer: scope, db: before)?.rows
+            proposed @ proposed.push(row)
+    else
+        for exprs in stmt.rows
+            if exprs.len() != columns.len()
+                return sql_datum.refused(
+                    state: "42601",
+                    message: "INSERT has more expressions than target columns, or fewer"
+                )
+            proposed @ proposed.push(sql_eval.eval_all(exprs, scope: scope, db: before)?)
+
+    count: i64 @= 0
+    returned: [[sql_tree.Datum]] @= []
+
+    for values in proposed
+        row = whole_row(@table, columns: columns, values: values, scope: scope, db: before)?
+        sql_rows.checked(table, row: row, db: before)?
+        clash = sql_rows.first_clash(table, row: row, except: -1, db: before)?
+
+        if clash.at < 0
+            table.rows @ table.rows.push(row)
+            count @ count + 1
+
+            if stmt.returning.len() > 0
+                returned @ returned.push(
+                    sql_rows.returning(stmt.returning, table: table, alias: table.name, row: row, scope: scope, db: before)?
+                )
+        else
+            match stmt.conflict
+                .refuse => return sql_rows.duplicate(table.indexes[clash.index].name)
+                .do_nothing d =>
+                    if !arbitrates(table.indexes[clash.index], target: d.target, predicate: d.predicate)
+                        return sql_rows.duplicate(table.indexes[clash.index].name)
+                .do_update u =>
+                    if !arbitrates(table.indexes[clash.index], target: u.target, predicate: u.predicate)
+                        return sql_rows.duplicate(table.indexes[clash.index].name)
+                    names = sql_rows.names_of(table)
+                    held = sql_eval.Bound(qualifier: table.name, names: names, values: table.rows[clash.at])
+                    excluded = sql_eval.Bound(qualifier: "excluded", names: names, values: row)
+                    inner = sql_eval.inside(sql_eval.inside(scope, row: excluded), row: held)
+
+                    proceed = if u.condition.len() == 0
+                        true
+                    else
+                        sql_ops.truth(sql_eval.eval(u.condition[0], scope: inner, db: before)?)?
+
+                    if proceed
+                        changed = sql_rows.assigned(table, row: table.rows[clash.at], changes: u.assignments, scope: inner, db: before)?
+                        sql_rows.checked(table, row: changed, db: before)?
+                        again = sql_rows.first_clash(table, row: changed, except: clash.at, db: before)?
+
+                        if again.at >= 0
+                            return sql_rows.duplicate(table.indexes[again.index].name)
+                        table.rows[clash.at] @ changed
+                        count @ count + 1
+
+                        if stmt.returning.len() > 0
+                            returned @ returned.push(
+                                sql_rows.returning(stmt.returning, table: table, alias: table.name, row: changed, scope: scope, db: before)?
+                            )
+
+    db.tables[at] @ table
+    return ok(sql_rows.Written(count: count, returned: returned))
+
+# A row of every column: the given values coerced to their columns' types,
+# a serial column given none taking the sequence's next number, every other
+# its default or NULL.
+#
+# - `table`: the table; its sequence moves where a serial is taken.
+# - `columns`: the columns given.
+# - `values`: their values.
+# - `scope`: the parameters and the moment, for a default.
+# - `db`: the database.
+function whole_row(@table: sql_tree.Table, columns: [str], values: [sql_tree.Datum], scope: sql_eval.Scope lent, db: sql_tree.Database lent) -> [sql_tree.Datum]?
+    row: [sql_tree.Datum] @= []
+
+    for c in table.columns
+        given: i64 @= -1
+
+        for i in range(from: 0, to: columns.len())
+            if columns[i] == c.name
+                given @ i
+
+        if given >= 0
+            row @ row.push(sql_rows.typed(values[given], column: c)?)
+        else if c.serial
+            row @ row.push(.integer(v: table.next_serial))
+            table.next_serial @ table.next_serial + 1
+        else if c.default_value.len() == 1
+            row @ row.push(sql_rows.typed(sql_eval.eval(c.default_value[0], scope: scope, db: db)?, column: c)?)
+        else
+            row @ row.push(.null_value)
+
+    return ok(row)
+
+# Whether `ON CONFLICT (target) [WHERE predicate]` names `index`: a unique
+# index on exactly those columns, partial where a predicate is written and
+# full where none is.
+#
+# - `index`: the index the row met.
+# - `target`: the conflict's columns; none takes any unique index.
+# - `predicate`: the conflict's predicate, where written.
+function arbitrates(index: sql_tree.Index, target: [str], predicate: [sql_tree.Expr]) -> bool
+    if target.len() == 0
+        return true
+
+    if sort(target) != sort(index.columns)
+        return false
+    return predicate.len() > 0 == (index.predicate.len() > 0)

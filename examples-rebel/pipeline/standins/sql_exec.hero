@@ -1,0 +1,234 @@
+# How the PostgreSQL stand-in runs one statement against a database: a
+# `SELECT`'s rows, an `INSERT` (`sql_insert`), an `UPDATE` and a `DELETE`
+# of the rows `WHERE` keeps, `RETURNING` read over each row written, every
+# written row held to the checks of `sql_rows`, and the tables and indexes
+# of `CREATE` made by `sql_ddl`; and the columns' names and types a
+# statement answers, known before it runs. Every expression of a statement
+# reads the database as it stood when the statement began, so a claim's
+# subquery sees no row the same claim changed.
+
+use standins/sql_datum
+use standins/sql_ddl
+use standins/sql_eval
+use standins/sql_insert
+use standins/sql_ops
+use standins/sql_rows
+use standins/sql_tree
+use standins/sql_types
+
+## Outcomes
+
+# What a statement answered.
+record Outcome
+    # The columns' names, none for a statement that answers no rows.
+    names: [str]
+    # Their types, as `sql_types` names them.
+    types: [str]
+    # The rows.
+    rows: [[sql_tree.Datum]]
+    # The command's tag: `SELECT 3`, `INSERT 0 1`, `UPDATE 2`.
+    tag: str
+    # The notices it raised.
+    notices: [str]
+
+# The columns' types a statement answers, known before it runs.
+#
+# - `stmt`: the statement.
+# - `params`: the parameters' types.
+# - `db`: the database.
+function result_types(stmt: sql_tree.Statement, params: [str], db: sql_tree.Database lent) -> [str]
+    return match stmt
+        .query q => sql_types.select_types(q.select, outer: [], params: params, db: db)
+        .insert i => sql_types.items_types(
+            i.stmt.returning,
+            table: i.stmt.table,
+            alias: i.stmt.table,
+            outer: [],
+            params: params,
+            db: db
+        )
+        .update u => sql_types.items_types(
+            u.stmt.returning,
+            table: u.stmt.table,
+            alias: u.stmt.alias,
+            outer: [],
+            params: params,
+            db: db
+        )
+        .delete d => sql_types.items_types(
+            d.stmt.returning,
+            table: d.stmt.table,
+            alias: d.stmt.table,
+            outer: [],
+            params: params,
+            db: db
+        )
+        .create_table _ | .create_index _ | .transaction _ | .setting _ | .empty => []
+
+# The columns' names a statement answers.
+#
+# - `stmt`: the statement.
+# - `db`: the database.
+function result_names(stmt: sql_tree.Statement, db: sql_tree.Database lent) -> [str]
+    return match stmt
+        .query q => item_names(q.select.items, table: q.select.table, db: db)
+        .insert i => item_names(i.stmt.returning, table: i.stmt.table, db: db)
+        .update u => item_names(u.stmt.returning, table: u.stmt.table, db: db)
+        .delete d => item_names(d.stmt.returning, table: d.stmt.table, db: db)
+        .create_table _ | .create_index _ | .transaction _ | .setting _ | .empty => []
+
+# The names of `items`, `*` as `table`'s columns.
+#
+# - `items`: the items.
+# - `table`: their table.
+# - `db`: the database.
+function item_names(items: [sql_tree.Item], table: str, db: sql_tree.Database lent) -> [str]
+    out: [str] @= []
+    at = sql_tree.table_at(db, name: table)
+
+    for item in items
+        if item.star && at >= 0
+            for c in db.tables[at].columns
+                out @ out.push(c.name)
+        else
+            out @ out.push(item.name)
+
+    return out
+
+## Running
+
+# Runs `stmt` against `db` with `params`.
+#
+# - `db`: the database; changed where the statement changes it.
+# - `stmt`: a `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `CREATE TABLE` or
+#   `CREATE INDEX`; the words of a transaction are the session's.
+# - `params`: the parameters' values, `$1` first.
+# - `now_micros`: the moment `now()` answers.
+#
+# Fails `invalid` with the SQLSTATE PostgreSQL gives the refusal; the
+# database is left as it was where it fails.
+function run(@db: sql_tree.Database, stmt: sql_tree.Statement, params: [sql_tree.Datum], now_micros: i64) -> Outcome?
+    types = result_types(stmt, params: params_types(params), db: db)
+    names = result_names(stmt, db: db)
+    scope = sql_eval.Scope(bound: [], params: params, now_micros: now_micros)
+
+    match stmt
+        .query q =>
+            a = sql_eval.run_select(q.select, outer: scope, db: db)?
+            return ok(Outcome(names: names, types: types, rows: a.rows, tag: f"SELECT {a.rows.len()}", notices: []))
+        .insert i =>
+            rows = sql_insert.insert(@db, stmt: i.stmt, scope: scope)?
+            return ok(
+                Outcome(names: names, types: types, rows: rows.returned, tag: f"INSERT 0 {rows.count}", notices: [])
+            )
+        .update u =>
+            rows = update(@db, stmt: u.stmt, scope: scope)?
+            return ok(
+                Outcome(names: names, types: types, rows: rows.returned, tag: f"UPDATE {rows.count}", notices: [])
+            )
+        .delete d =>
+            rows = delete(@db, stmt: d.stmt, scope: scope)?
+            return ok(
+                Outcome(names: names, types: types, rows: rows.returned, tag: f"DELETE {rows.count}", notices: [])
+            )
+        .create_table c =>
+            made = sql_ddl.create_table(@db, stmt: c.stmt)?
+            return ok(Outcome(names: [], types: [], rows: [], tag: made.tag, notices: made.notices))
+        .create_index c =>
+            made = sql_ddl.create_index(@db, stmt: c.stmt)?
+            return ok(Outcome(names: [], types: [], rows: [], tag: made.tag, notices: made.notices))
+        .transaction _ | .setting _ | .empty =>
+            return sql_datum.refused(state: "0A000", message: "the session runs the words of a transaction")
+
+# The types of the parameters' values, as the typing reads them.
+#
+# - `params`: the values.
+function params_types(params: [sql_tree.Datum]) -> [str]
+    out: [str] @= []
+
+    for p in params
+        out @ out.push(sql_datum.type_of(p))
+
+    return out
+
+## UPDATE and DELETE
+
+# Runs an `UPDATE`.
+#
+# - `db`: the database.
+# - `stmt`: the statement.
+# - `scope`: the parameters and the moment.
+function update(@db: sql_tree.Database, stmt: sql_tree.Update, scope: sql_eval.Scope) -> sql_rows.Written?
+    at = sql_tree.table_at(db, name: stmt.table)
+
+    if at < 0
+        return sql_datum.refused(state: "42P01", message: f"relation \"{stmt.table}\" does not exist")
+    before = db
+    table @= db.tables[at]
+    names = sql_rows.names_of(table)
+    count: i64 @= 0
+    returned: [[sql_tree.Datum]] @= []
+
+    for i in range(from: 0, to: before.tables[at].rows.len())
+        old = before.tables[at].rows[i]
+        inner = sql_eval.inside(scope, row: sql_eval.Bound(qualifier: stmt.alias, names: names, values: old))
+
+        keep = match stmt.condition
+            .err _ => true
+            .ok c  => sql_ops.truth(sql_eval.eval(c, scope: inner, db: before)?)?
+
+        if keep
+            changed = sql_rows.assigned(table, row: old, changes: stmt.assignments, scope: inner, db: before)?
+            sql_rows.checked(table, row: changed, db: before)?
+            table.rows[i] @ changed
+            clash = sql_rows.first_clash(table, row: changed, except: i, db: before)?
+
+            if clash.at >= 0
+                return sql_rows.duplicate(table.indexes[clash.index].name)
+            count @ count + 1
+
+            if stmt.returning.len() > 0
+                returned @ returned.push(
+                    sql_rows.returning(stmt.returning, table: table, alias: stmt.alias, row: changed, scope: scope, db: before)?
+                )
+
+    db.tables[at] @ table
+    return ok(sql_rows.Written(count: count, returned: returned))
+
+# Runs a `DELETE`.
+#
+# - `db`: the database.
+# - `stmt`: the statement.
+# - `scope`: the parameters and the moment.
+function delete(@db: sql_tree.Database, stmt: sql_tree.Delete, scope: sql_eval.Scope) -> sql_rows.Written?
+    at = sql_tree.table_at(db, name: stmt.table)
+
+    if at < 0
+        return sql_datum.refused(state: "42P01", message: f"relation \"{stmt.table}\" does not exist")
+    before = db
+    table @= db.tables[at]
+    names = sql_rows.names_of(table)
+    kept: [[sql_tree.Datum]] @= []
+    returned: [[sql_tree.Datum]] @= []
+    count: i64 @= 0
+
+    for row in before.tables[at].rows
+        inner = sql_eval.inside(scope, row: sql_eval.Bound(qualifier: stmt.table, names: names, values: row))
+
+        gone = match stmt.condition
+            .err _ => true
+            .ok c  => sql_ops.truth(sql_eval.eval(c, scope: inner, db: before)?)?
+
+        if gone
+            count @ count + 1
+
+            if stmt.returning.len() > 0
+                returned @ returned.push(
+                    sql_rows.returning(stmt.returning, table: table, alias: stmt.table, row: row, scope: scope, db: before)?
+                )
+        else
+            kept @ kept.push(row)
+
+    table.rows @ kept
+    db.tables[at] @ table
+    return ok(sql_rows.Written(count: count, returned: returned))

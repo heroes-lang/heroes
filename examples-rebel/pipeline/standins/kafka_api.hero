@@ -1,0 +1,285 @@
+# What every request of the Kafka broker stand-in shares, and the
+# requests that describe the cluster: the keys of the requests it reads and
+# the versions it advertises, the error codes it answers, `ApiVersions` 0
+# to 2, `Metadata` 8 and `FindCoordinator` 2, each read and answered in the
+# layout the protocol guide gives that version (kafka.apache.org/protocol,
+# read 2026-11-21). The broker advertises exactly these versions, and those
+# of `kafka_records`, `kafka_group_api` and `kafka_login`, so a client that
+# speaks others is told so by `ApiVersions` before it sends one. Each
+# function reads the request's body after its header and answers the body
+# of the answer, or fails `invalid` where the body is no such request,
+# which closes the connection.
+
+use <rebel>/time
+
+use standins/kafka_codec
+use standins/kafka_state
+use standins/scram_server
+
+## Keys
+
+# `Produce`.
+constant PRODUCE: i64
+    0
+
+# `Fetch`.
+constant FETCH: i64
+    1
+
+# `ListOffsets`.
+constant LIST_OFFSETS: i64
+    2
+
+# `Metadata`.
+constant METADATA: i64
+    3
+
+# `OffsetCommit`.
+constant OFFSET_COMMIT: i64
+    8
+
+# `OffsetFetch`.
+constant OFFSET_FETCH: i64
+    9
+
+# `FindCoordinator`.
+constant FIND_COORDINATOR: i64
+    10
+
+# `JoinGroup`.
+constant JOIN_GROUP: i64
+    11
+
+# `Heartbeat`.
+constant HEARTBEAT: i64
+    12
+
+# `LeaveGroup`.
+constant LEAVE_GROUP: i64
+    13
+
+# `SyncGroup`.
+constant SYNC_GROUP: i64
+    14
+
+# `SaslHandshake`.
+constant SASL_HANDSHAKE: i64
+    17
+
+# `ApiVersions`.
+constant API_VERSIONS: i64
+    18
+
+# `SaslAuthenticate`.
+constant SASL_AUTHENTICATE: i64
+    36
+
+## Error codes
+
+# `OFFSET_OUT_OF_RANGE`.
+constant OFFSET_OUT_OF_RANGE: i64
+    1
+
+# `CORRUPT_MESSAGE`: a batch whose CRC or layout is wrong.
+constant CORRUPT_MESSAGE: i64
+    2
+
+# `UNKNOWN_TOPIC_OR_PARTITION`.
+constant UNKNOWN_TOPIC_OR_PARTITION: i64
+    3
+
+# `INVALID_REQUIRED_ACKS`.
+constant INVALID_REQUIRED_ACKS: i64
+    21
+
+# `UNSUPPORTED_VERSION`.
+constant UNSUPPORTED_VERSION: i64
+    35
+
+# The `INT32` a broker writes for authorized operations it was not asked.
+constant NO_OPERATIONS: i64
+    -2147483648
+
+## Versions
+
+# One request the broker reads, and its versions.
+record Supported
+    # Its key.
+    key: i64
+    # The oldest version read.
+    min: i64
+    # The newest version read.
+    max: i64
+
+# Every request the broker reads, in the order of their keys.
+function supported() -> [Supported]
+    return [
+        Supported(key: PRODUCE, min: 8, max: 8)
+        Supported(key: FETCH, min: 11, max: 11)
+        Supported(key: LIST_OFFSETS, min: 5, max: 5)
+        Supported(key: METADATA, min: 8, max: 8)
+        Supported(key: OFFSET_COMMIT, min: 7, max: 7)
+        Supported(key: OFFSET_FETCH, min: 5, max: 5)
+        Supported(key: FIND_COORDINATOR, min: 2, max: 2)
+        Supported(key: JOIN_GROUP, min: 5, max: 5)
+        Supported(key: HEARTBEAT, min: 3, max: 3)
+        Supported(key: LEAVE_GROUP, min: 3, max: 3)
+        Supported(key: SYNC_GROUP, min: 3, max: 3)
+        Supported(key: SASL_HANDSHAKE, min: 1, max: 1)
+        Supported(key: API_VERSIONS, min: 0, max: 2)
+        Supported(key: SASL_AUTHENTICATE, min: 1, max: 1)
+    ]
+
+# Whether the broker reads `version` of the request `key`.
+#
+# - `key`: the request's key.
+# - `version`: its version.
+function is_supported(key: i64, version: i64) -> bool
+    for s in supported()
+        if s.key == key
+            return version >= s.min && version <= s.max
+
+    return false
+
+# The answer to `ApiVersions`: every request read and its versions. A
+# version past 2 is answered in version 0's layout with
+# `UNSUPPORTED_VERSION`, as KIP-511 has a broker do, so the client can
+# pick a version both read.
+#
+# - `version`: the version asked.
+function api_versions(version: i64) -> [u8]
+    out: [u8] @= []
+
+    error = if version > 2
+        UNSUPPORTED_VERSION
+    else
+        0
+    kafka_codec.put_i16(@out, v: error)
+    every = supported()
+    kafka_codec.put_i32(@out, v: every.len())
+
+    for s in every
+        kafka_codec.put_i16(@out, v: s.key)
+        kafka_codec.put_i16(@out, v: s.min)
+        kafka_codec.put_i16(@out, v: s.max)
+
+    if version >= 1 && version <= 2
+        kafka_codec.put_i32(@out, v: 0)
+    return out
+
+## The cluster
+
+# The answer to `Metadata` 8: the broker, the cluster, and the topics
+# asked, every topic where the list is null.
+#
+# - `b`: the broker.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function metadata(b: kafka_state.Broker lent, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    count = kafka_codec.take_i32(@r, what: "Metadata's topics")?
+    asked: [str] @= []
+
+    if count == -1
+        for t in b.topics
+            asked @ asked.push(t.name)
+    else
+        if count < 0 || count > body.len()
+            return fail(code: kafka_codec.INVALID, msg: f"Metadata asks {count} topics")
+
+        for _ in range(from: 0, to: count)
+            asked @ asked.push(kafka_codec.take_string(@r, what: "a topic's name")?)
+
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i32(@out, v: 1)
+    kafka_codec.put_i32(@out, v: kafka_state.NODE_ID)
+    kafka_codec.put_string(@out, s: kafka_state.HOST)
+    kafka_codec.put_i32(@out, v: b.port)
+    kafka_codec.put_null_string(@out)
+    kafka_codec.put_string(@out, s: b.cluster_id)
+    kafka_codec.put_i32(@out, v: kafka_state.NODE_ID)
+    kafka_codec.put_i32(@out, v: asked.len())
+
+    for name in asked
+        partitions = kafka_state.partitions_of(b, topic: name)
+
+        error = if partitions < 0
+            UNKNOWN_TOPIC_OR_PARTITION
+        else
+            0
+        kafka_codec.put_i16(@out, v: error)
+        kafka_codec.put_string(@out, s: name)
+        kafka_codec.put_i8(@out, v: 0)
+
+        listed = if partitions < 0
+            0
+        else
+            partitions
+        kafka_codec.put_i32(@out, v: listed)
+
+        for p in range(from: 0, to: partitions)
+            kafka_codec.put_i16(@out, v: 0)
+            kafka_codec.put_i32(@out, v: p)
+            kafka_codec.put_i32(@out, v: kafka_state.NODE_ID)
+            kafka_codec.put_i32(@out, v: 0)
+
+            for _ in range(from: 0, to: 2)
+                kafka_codec.put_i32(@out, v: 1)
+                kafka_codec.put_i32(@out, v: kafka_state.NODE_ID)
+
+            kafka_codec.put_i32(@out, v: 0)
+
+        kafka_codec.put_i32(@out, v: NO_OPERATIONS)
+
+    kafka_codec.put_i32(@out, v: NO_OPERATIONS)
+    return ok(out)
+
+# The answer to `FindCoordinator` 2: this broker, for every group.
+#
+# - `b`: the broker.
+# - `body`: the request's body: the key and its type.
+#
+# Fails `invalid` where the body is no such request.
+function find_coordinator(b: kafka_state.Broker lent, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    _ = kafka_codec.take_string(@r, what: "FindCoordinator's key")?
+    _ = kafka_codec.take_i8(@r, what: "FindCoordinator's key type")?
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: 0)
+    kafka_codec.put_null_string(@out)
+    kafka_codec.put_i32(@out, v: kafka_state.NODE_ID)
+    kafka_codec.put_string(@out, s: kafka_state.HOST)
+    kafka_codec.put_i32(@out, v: b.port)
+    return ok(out)
+
+# The time now, milliseconds since 1970; the epoch where the clock cannot
+# be read.
+function now_ms() -> i64
+    return time.unix_milliseconds(time.now().default(time.epoch()))
+
+test "api_versions: version 2 lists every request with its versions; version 9 is told unsupported"
+    two = api_versions(2)
+    assert two[0] == 0 && two[1] == 0
+    nine = api_versions(9)
+    assert to_i64(nine[1]).must() == UNSUPPORTED_VERSION
+    assert is_supported(key: FETCH, version: 11) && !is_supported(key: FETCH, version: 12) && !is_supported(key: 99, version: 0)
+
+test "metadata: the null list asks every topic, an unknown topic is told"
+    v = standins_verifier()
+    b = kafka_state.new(9092, topics: [kafka_state.Topic(name: "a", partitions: 2)], user: "", verifier: v)
+    every = metadata(b, body: [255, 255, 255, 255, 0, 0, 0]).must()
+    assert every.len() > 40
+    req: [u8] @= []
+    kafka_codec.put_i32(@req, v: 1)
+    kafka_codec.put_string(@req, s: "zz")
+    kafka_codec.put_all(out: @req, data: [0, 0, 0])
+    one @= kafka_codec.reader(metadata(b, body: req).must())
+    _ = kafka_codec.take_i32(@one, what: "throttle").must()
+    assert kafka_codec.take_i32(@one, what: "brokers").must() == 1
+
+# A verifier for the tests, of a password nobody uses.
+function standins_verifier() -> scram_server.Verifier
+    return scram_server.verifier_of("unused", salt: [1, 2, 3, 4], iterations: 1).must()

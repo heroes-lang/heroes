@@ -1,0 +1,456 @@
+# The Kafka broker stand-in of the demo: one broker on loopback that holds
+# the demo's topics, logs a client in by SCRAM-SHA-256, takes produced
+# batches, answers fetches, and coordinates the consumer group, on a thread
+# of its own until the program is asked to stop. Every request travels as
+# a frame, an `INT32` length then the bytes, and opens with the request
+# header version 1 (key, version, correlation, client); every answer opens
+# with the correlation alone, and a connection's answers keep the order of
+# its requests, so a request that must wait holds the ones after it.
+#
+# What a real broker checks, this one checks where the demo depends on it:
+# the versions it advertises, the login before any request past it, each
+# batch's format, length and CRC-32C, the group's generation and members.
+
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+
+use standins/kafka_api
+use standins/kafka_codec
+use standins/kafka_group_api
+use standins/kafka_groups
+use standins/kafka_login
+use standins/kafka_records
+use standins/kafka_state
+use standins/scram_server
+use standins/serve
+
+## Codes
+
+# The code of a thread argument that does not say how to start the broker.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest request read, in bytes; a longer one closes its connection,
+# as `socket.request.max.bytes` does.
+constant MOST_REQUEST_BYTES: i64
+    104_857_600
+
+# The longest the loop waits when no request is held.
+constant IDLE_MS: i64
+    1_000
+
+## Starting
+
+# How the supervisor starts the broker.
+record Setup
+    # The supervisor's control port.
+    control_port: i64
+    # The user it logs in, "" for none.
+    user: str
+    # The user's password.
+    password: str
+    # The topics it holds.
+    topics: [kafka_state.Topic]
+
+# The thread argument that starts a broker of `setup`: its fields one a
+# line, the topics as `name:partitions` joined by commas.
+#
+# - `setup`: what the broker holds.
+function format_setup(setup: Setup) -> str
+    parts: [str] @= []
+
+    for t in setup.topics
+        parts @ parts.push(f"{t.name}:{t.partitions}")
+
+    return f"{setup.control_port}\n{setup.user}\n{setup.password}\n{parts.join(",")}"
+
+# The setup `text` writes, as `format_setup` writes it.
+#
+# - `text`: the thread argument.
+#
+# Fails `invalid` where it is not four lines, or a port or a count is no
+# number.
+function parse_setup(text: str) -> Setup?
+    lines = strings.split(s: text, sep: "\n")
+
+    if lines.len() != 4
+        return fail(code: INVALID, msg: f"the broker's setup is four lines, and {lines.len()} came")
+    control = numbers.parse_int(lines[0])?
+    topics: [kafka_state.Topic] @= []
+
+    for item in strings.split(s: lines[3], sep: ",")
+        if item != ""
+            h = strings.split_once(s: item, sep: ":")?
+            topics @ topics.push(kafka_state.Topic(name: h.before, partitions: numbers.parse_int(h.after)?))
+
+    return ok(Setup(control_port: control, user: lines[1], password: lines[2], topics: topics))
+
+# The broker's thread: listens, tells the supervisor its port, and serves
+# until the program is asked to stop. Answers its account as one line.
+#
+# - `arg`: the setup, as `format_setup` writes it.
+function run(arg: str) -> str
+    match served(arg)
+        .ok b  => return account(b)
+        .err e => return "kafka: " + e.msg
+
+# The broker's account: what it appended and what each group kept, none
+# of it depending on how a client's polls and commits fell in time.
+#
+# - `b`: the broker as the stop left it.
+function account(b: kafka_state.Broker) -> str
+    lines: [str] @= [f"kafka: {b.records} records in {b.batches} batches appended, {b.refused} refused"]
+
+    for g in b.groups
+        kept: [str] @= []
+
+        for c in g.offsets
+            kept @ kept.push(f"{c.topic}/{c.partition}={c.offset}")
+
+        lines @ lines.push(
+            f"kafka: group {g.group_id} at generation {g.generation}, {kafka_groups.phase_name(g)}, offsets {sort(kept).join(" ")}"
+        )
+
+    return lines.join("\n")
+
+## Serving
+
+# A request that waits to be answered.
+record Held
+    # The connection it came on.
+    peer: i64
+    # Its key.
+    key: i64
+    # Its version.
+    version: i64
+    # Its correlation, which the answer opens with.
+    correlation: i64
+    # The client's identifier.
+    client_id: str
+    # Its body.
+    body: [u8]
+    # When its wait ends, milliseconds since 1970.
+    deadline_ms: i64
+
+# The broker served until the stop, and the state it ended in.
+#
+# - `arg`: the setup.
+#
+# Fails `invalid` where the setup is not one, and as `serve.open` fails.
+function served(arg: str) -> kafka_state.Broker?
+    setup = parse_setup(arg)?
+    salt = os.random_bytes(16)?
+    verifier = scram_server.verifier_of(setup.password, salt: salt, iterations: 4096)?
+    loop @= serve.open("kafka", control_port: setup.control_port)?
+    b @= kafka_state.new(serve.port_of(loop), topics: setup.topics, user: setup.user, verifier: verifier)
+    held: [Held] @= []
+
+    while true
+        limit = time.milliseconds(wait_limit(held)).default(time.nanoseconds(0))
+
+        match serve.wait(@loop, limit: limit)
+            .err _ => break
+            .ok moved =>
+                for peer in moved
+                    take_requests(@loop, b: @b, held: @held, peer: peer)
+
+                tick(@b)
+                answer_held(@loop, b: @b, held: @held)
+
+    serve.close(@loop)
+    return ok(b)
+
+# How long the loop may wait: until the first held request's time runs
+# out, and at most `IDLE_MS`.
+#
+# - `held`: the requests held.
+function wait_limit(held: [Held]) -> i64
+    now = kafka_api.now_ms()
+    limit: i64 @= IDLE_MS
+
+    for h in held
+        left = h.deadline_ms - now
+
+        if left < limit
+            limit @ left
+
+    if limit < 0
+        return 0
+    return limit
+
+# Reads and answers every whole request `peer` has sent, unless one of its
+# requests is held, which the ones after it wait behind; a connection whose
+# side ended is let go once nothing it sent is left.
+#
+# - `loop`: the stand-in's loop.
+# - `b`: the broker.
+# - `held`: the requests held.
+# - `peer`: the connection.
+function take_requests(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: i64)
+    while !is_holding(held, peer: peer)
+        pending = serve.pending_of(loop, id: peer)
+
+        if pending.len() < 4
+            break
+        r @= kafka_codec.reader(pending)
+        size = kafka_codec.take_i32(@r, what: "a request's length").default(-1)
+
+        if size < 0 || size > MOST_REQUEST_BYTES
+            let_go(@loop, b: @b, held: @held, peer: peer)
+            return
+
+        if pending.len() < 4 + size
+            break
+        frame = pending.slice(from: 4, to: 4 + size)
+        serve.consume(@loop, id: peer, n: 4 + size)
+
+        if !answer_frame(@loop, b: @b, held: @held, peer: peer, frame: frame)
+            return
+
+    if serve.is_ended(loop, id: peer) && serve.pending_of(loop, id: peer).len() < 4 && !is_holding(held, peer: peer)
+        let_go(@loop, b: @b, held: @held, peer: peer)
+
+# Whether a request of `peer` is held.
+#
+# - `held`: the requests held.
+# - `peer`: the connection.
+function is_holding(held: [Held], peer: i64) -> bool
+    for h in held
+        if h.peer == peer
+            return true
+
+    return false
+
+# Answers one request, and whether its connection is still open.
+#
+# - `loop`: the stand-in's loop.
+# - `b`: the broker.
+# - `held`: the requests held; the request joins them where it must wait.
+# - `peer`: the connection.
+# - `frame`: the request, its length taken off.
+function answer_frame(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: i64, frame: [u8]) -> bool
+    r @= kafka_codec.reader(frame)
+    key = kafka_codec.take_i16(@r, what: "a request's key").default(-1)
+    version = kafka_codec.take_i16(@r, what: "a request's version").default(-1)
+    correlation = kafka_codec.take_i32(@r, what: "a request's correlation").default(-1)
+    client_id = kafka_codec.take_string(@r, what: "a request's client").default("")
+    body = frame.slice(from: r.at, to: frame.len())
+
+    if key == kafka_api.API_VERSIONS
+        return act(
+            @loop,
+            b: @b,
+            held: @held,
+            peer: peer,
+            correlation: correlation,
+            outcome: .reply(body: kafka_api.api_versions(version))
+        )
+
+    if !kafka_api.is_supported(key: key, version: version)
+        let_go(@loop, b: @b, held: @held, peer: peer)
+        return false
+
+    if !kafka_state.is_logged_in(b, peer: peer) && key != kafka_api.SASL_HANDSHAKE && key != kafka_api.SASL_AUTHENTICATE
+        let_go(@loop, b: @b, held: @held, peer: peer)
+        return false
+    now = kafka_api.now_ms()
+    outcome = dispatch(
+        @b,
+        peer: peer,
+        key: key,
+        version: version,
+        client_id: client_id,
+        body: body,
+        first: true,
+        expired: false,
+        now_ms: now
+    )
+
+    match outcome
+        .park p =>
+            held @ held.push(
+                Held(peer: peer, key: key, version: version, correlation: correlation, client_id: client_id, body: body, deadline_ms: p.deadline_ms)
+            )
+            return true
+        .reply _ | .last_reply _ | .silent | .hang_up _ =>
+            return act(@loop, b: @b, held: @held, peer: peer, correlation: correlation, outcome: outcome)
+
+# Does what `outcome` says to `peer`, and answers whether its connection is
+# still open.
+#
+# - `loop`: the stand-in's loop.
+# - `b`: the broker.
+# - `held`: the requests held.
+# - `peer`: the connection.
+# - `correlation`: the request's correlation.
+# - `outcome`: what the request came to; a wait is not one of them here.
+function act(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: i64, correlation: i64, outcome: kafka_state.Outcome) -> bool
+    match outcome
+        .reply r =>
+            if serve.send(loop, id: peer, data: answer(correlation, body: r.body)).is_err()
+                let_go(@loop, b: @b, held: @held, peer: peer)
+                return false
+            return true
+        .last_reply r =>
+            _ = serve.send(loop, id: peer, data: answer(correlation, body: r.body)).is_err()
+            let_go(@loop, b: @b, held: @held, peer: peer)
+            return false
+        .silent => return true
+        .park _ => return true
+        .hang_up _ =>
+            let_go(@loop, b: @b, held: @held, peer: peer)
+            return false
+
+# An answer's frame: its correlation, then its body.
+#
+# - `correlation`: the request's correlation.
+# - `body`: the answer's body.
+function answer(correlation: i64, body: [u8]) -> [u8]
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: correlation)
+    kafka_codec.put_all(out: @out, data: body)
+    return kafka_codec.framed(out)
+
+# What one request comes to, read the first time or asked again while it
+# waits.
+#
+# - `b`: the broker.
+# - `peer`: the connection.
+# - `key`: the request's key.
+# - `version`: its version.
+# - `client_id`: the client's identifier.
+# - `body`: its body.
+# - `first`: whether it is read for the first time.
+# - `expired`: whether its wait has run out, so it is answered whatever it
+#   holds.
+# - `now_ms`: the time now.
+function dispatch(@b: kafka_state.Broker, peer: i64, key: i64, version: i64, client_id: str, body: [u8], first: bool, expired: bool, now_ms: i64) -> kafka_state.Outcome
+    outcome: kafka_state.Outcome? = match key
+        0  => kafka_records.produce(@b, body: body)
+        1  => kafka_records.fetch(b, body: body, expired: expired)
+        2  => replied(kafka_records.list_offsets(b, body: body))
+        3  => replied(kafka_api.metadata(b, body: body))
+        8  => replied(kafka_group_api.commit(@b, body: body))
+        9  => replied(kafka_group_api.fetch_offsets(@b, body: body))
+        10 => replied(kafka_api.find_coordinator(b, body: body))
+        11 => kafka_group_api.join_group(@b, body: body, client_id: client_id, first: first, now_ms: now_ms)
+        12 => replied(kafka_group_api.heartbeat(@b, body: body, now_ms: now_ms))
+        13 => replied(kafka_group_api.leave(@b, body: body, now_ms: now_ms))
+        14 => kafka_group_api.sync_group(@b, body: body, first: first, expired: expired, now_ms: now_ms)
+        17 => replied(kafka_login.handshake(@b, peer: peer, body: body))
+        36 => kafka_login.authenticate(@b, peer: peer, body: body)
+        _  => ok(.hang_up(reason: f"no request of key {key} version {version}"))
+
+    return outcome.default(.hang_up(reason: "a request that is not one"))
+
+# A body answered, as an outcome.
+#
+# - `body`: the answer's body, or the failure to read the request.
+function replied(body: [u8]?) -> kafka_state.Outcome?
+    return ok(.reply(body: body?))
+
+# The groups' clocks moved: members silent past their session removed, and
+# rebalances whose time has passed ended.
+#
+# - `b`: the broker.
+function tick(@b: kafka_state.Broker)
+    now = kafka_api.now_ms()
+
+    for i in range(from: 0, to: b.groups.len())
+        g @= b.groups[i]
+        _ = kafka_groups.expire(@g, now_ms: now)
+        _ = kafka_groups.settle_join(@g, now_ms: now)
+        b.groups[i] @ g
+
+# Asks every held request again: one that can be answered now, or whose
+# time ran out, is answered, and the requests its connection sent after it
+# are read.
+#
+# - `loop`: the stand-in's loop.
+# - `b`: the broker.
+# - `held`: the requests held.
+function answer_held(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held])
+    moved @= true
+
+    while moved
+        moved @ false
+        i: i64 @= 0
+
+        while i < held.len()
+            h = held[i]
+            now = kafka_api.now_ms()
+            expired = now >= h.deadline_ms
+            outcome = dispatch(
+                @b,
+                peer: h.peer,
+                key: h.key,
+                version: h.version,
+                client_id: h.client_id,
+                body: h.body,
+                first: false,
+                expired: expired,
+                now_ms: now
+            )
+
+            waits = match outcome
+                .park _                                         => !expired
+                .reply _ | .last_reply _ | .silent | .hang_up _ => false
+
+            if waits
+                i @ i + 1
+            else
+                rest: [Held] @= []
+
+                for j in range(from: 0, to: held.len())
+                    if j != i
+                        rest @ rest.push(held[j])
+
+                held @ rest
+
+                final: kafka_state.Outcome = match outcome
+                    .park _                                         => .hang_up(reason: "its wait ran out")
+                    .reply _ | .last_reply _ | .silent | .hang_up _ => outcome
+
+                if act(@loop, b: @b, held: @held, peer: h.peer, correlation: h.correlation, outcome: final)
+                    take_requests(@loop, b: @b, held: @held, peer: h.peer)
+                moved @ true
+
+# Closes `peer`, forgets its login and drops the requests it left held.
+#
+# - `loop`: the stand-in's loop.
+# - `b`: the broker.
+# - `held`: the requests held.
+# - `peer`: the connection.
+function let_go(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: i64)
+    serve.drop(@loop, id: peer)
+    kafka_state.forget(@b, peer: peer)
+    kept: [Held] @= []
+
+    for h in held
+        if h.peer != peer
+            kept @ kept.push(h)
+
+    held @ kept
+
+test "format_setup, parse_setup: what one writes the other reads"
+    s = Setup(
+        control_port: 7,
+        user: "u",
+        password: "p w",
+        topics: [kafka_state.Topic(name: "a", partitions: 2), kafka_state.Topic(name: "b", partitions: 1)]
+    )
+    back = parse_setup(format_setup(s)).must()
+    assert back.control_port == 7 && back.password == "p w" && back.topics.len() == 2 && back.topics[0].partitions == 2
+
+test "parse_setup: three lines and a port that is no number are refused"
+    assert parse_setup("1\nu\np").is_err()
+    assert parse_setup("x\nu\np\na:1").is_err()
+
+test "wait_limit: the idle wait with nothing held, none once a held time has passed"
+    assert wait_limit([]) == IDLE_MS
+    past = Held(peer: 1, key: 1, version: 11, correlation: 1, client_id: "", body: [], deadline_ms: 0)
+    assert wait_limit([past]) == 0

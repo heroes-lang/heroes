@@ -1,0 +1,156 @@
+# The S3 stand-in of the demo: one bucket served over HTTP/1.1 on loopback
+# by path (`/<bucket>/<key>`), every request's Signature Version 4 checked
+# (`s3_auth`), objects put, read, asked about, deleted and listed by
+# ListObjectsV2, each operation and its answer `s3_store`'s.
+#
+# The demo asks it to refuse the puts of one key a number of times with
+# `503 SlowDown`, as S3 does under load, so the pipeline's retries and its
+# kept jobs meet a real failure. The S3 client closes its connection after
+# each request, so connections are served one after another; the stand-in
+# runs on a thread of its own until the program is asked to stop.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+
+use demo/notify
+use standins/s3_auth
+use standins/s3_store
+
+## Serving
+
+# The service's thread: listens, tells the supervisor its port, and serves
+# until stopped. Answers its account as one line.
+#
+# - `arg`: the setup, as `format_setup` writes it.
+function run(arg: str) -> str
+    match served(arg)
+        .err e => return "s3: " + e.msg
+        .ok s =>
+            total: i64 @= 0
+
+            for o in s.objects
+                total @ total + o.data.len()
+
+            return f"s3: {s.objects.len()} objects, {total} bytes in {s.setup.bucket}; {s.puts} puts taken, {s.injected} refused on purpose, {s.refused} refused for their signature; {s.gets} objects read, {s.listings} listings"
+
+# Every connection served until the program is asked to stop.
+#
+# - `arg`: the setup.
+#
+# Fails `invalid` where the setup is not one, and as `net.listen` and
+# `notify.ready` fail.
+function served(arg: str) -> s3_store.Store?
+    setup = s3_store.parse_setup(arg)?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match notify.ready(control_port: setup.control_port, service: "s3", port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    store @= s3_store.Store(
+        setup: setup,
+        objects: [],
+        fail_left: setup.fail_count,
+        puts: 0,
+        injected: 0,
+        refused: 0,
+        gets: 0,
+        listings: 0
+    )
+
+    while true
+        match net.accept(listener, deadline_ms: s3_store.CONNECTION_MS)
+            .err _ => break
+            .ok made =>
+                conn @= made
+                conversation(@store, conn: conn)
+                _ = io.close(@conn.stream).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    return ok(store)
+
+# The requests of one connection answered until the client closes it.
+#
+# - `store`: the service's state.
+# - `conn`: the connection; its owner closes it.
+function conversation(@store: s3_store.Store, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+
+    while true
+        match http.next_request(@reader, limits: http.Limits(head_bytes: 65_536, field_count: 200, body_bytes: 104_857_600))
+            .err _ => break
+            .ok r =>
+                response = handled(@store, r: r)
+
+                if http.write_answer(conn.stream, r: r, response: response).is_err() || r.closing || response.closing
+                    break
+
+# The answer to `r`: its signature checked, then the operation its method
+# and path name.
+#
+# - `store`: the service's state.
+# - `r`: the request.
+function handled(@store: s3_store.Store, r: http.Request) -> http.Response
+    now = time.now().default(time.epoch())
+
+    match s3_auth.check(r, access_key_id: store.setup.access_key_id, secret: store.setup.secret, region: store.setup.region, now: now)
+        .err e =>
+            store.refused @ store.refused + 1
+
+            status = if e.code == s3_auth.INVALID
+                400
+            else
+                403
+            return refusal(status, said: e.msg, resource: r.url.path)
+        .ok _ => _ = 0
+
+    parts = strings.split_n(s: r.url.path.slice(from: 1, to: r.url.path.len()), sep: "/", n: 2)
+
+    if parts[0] != store.setup.bucket
+        return s3_store.error_answer(
+            404,
+            code: "NoSuchBucket",
+            message: "The specified bucket does not exist",
+            resource: r.url.path
+        )
+
+    if parts.len() == 1 || parts[1] == ""
+        return s3_store.bucket_answer(@store, r: r)
+
+    key = match url.unescape(parts[1])
+        .ok k => k
+        .err _ => return s3_store.error_answer(
+            400,
+            code: "InvalidURI",
+            message: "Couldn't parse the specified URI.",
+            resource: r.url.path
+        )
+
+    return match r.method
+        "PUT"    => s3_store.put(@store, r: r, key: key, now: now)
+        "GET"    => s3_store.get(@store, key: key, head: false)
+        "HEAD"   => s3_store.get(@store, key: key, head: true)
+        "DELETE" => s3_store.delete(@store, key: key)
+        _ => s3_store.error_answer(
+            405,
+            code: "MethodNotAllowed",
+            message: "The specified method is not allowed against this resource.",
+            resource: r.url.path
+        )
+
+# A failure of `s3_auth.check` as S3 answers it: its code is the words
+# before the first colon.
+#
+# - `status`: 400 or 403.
+# - `said`: the failure's message.
+# - `resource`: the path asked.
+function refusal(status: i64, said: str, resource: str) -> http.Response
+    return match strings.split_once(s: said, sep: ": ")
+        .ok h  => s3_store.error_answer(status, code: h.before, message: h.after, resource: resource)
+        .err _ => s3_store.error_answer(status, code: "AccessDenied", message: said, resource: resource)

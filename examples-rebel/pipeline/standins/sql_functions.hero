@@ -1,0 +1,194 @@
+# The functions the PostgreSQL stand-in's engine calls, each given its
+# arguments already evaluated: `now()`, `coalesce`, `least`, `greatest`,
+# `extract(epoch FROM ...)`, `jsonb_build_array`, `jsonb_build_object`,
+# `hashtext`, and the answers of the advisory locks, whose holding the
+# server keeps (`pg_server`); and the aggregates `count`, `sum`, `min` and
+# `max` over a group's values. A function PostgreSQL has and this engine
+# does not is refused `42883`, as an unknown function is.
+
+use <rebel>/hash
+use <rebel>/json
+
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_ops
+use standins/sql_order
+use standins/sql_tree
+
+## Calls
+
+# Whether `name` is an aggregate the engine computes over a group.
+#
+# - `name`: the function's name, in lower case.
+function is_aggregate(name: str) -> bool
+    return name == "count" || name == "sum" || name == "min" || name == "max"
+
+# The value of `name` called with `given`.
+#
+# - `name`: the function's name, in lower case.
+# - `given`: its arguments, evaluated.
+# - `now_micros`: the statement's moment, which `now()` answers all through
+#   it, as PostgreSQL's answers the transaction's start.
+#
+# Fails `invalid` with `42883` for a function the engine has not, or with
+# the wrong number of arguments; `22004` for a NULL key of
+# `jsonb_build_object`; `0A000` for a field of `extract` other than `epoch`.
+function call(name: str, given: [sql_tree.Datum], now_micros: i64) -> sql_tree.Datum?
+    if name == "now" && given.len() == 0
+        return ok(.instant(micros: now_micros))
+
+    if name == "coalesce"
+        for a in given
+            if a != .null_value
+                return ok(a)
+
+        return ok(.null_value)
+
+    if (name == "least" || name == "greatest") && given.len() > 0
+        return extreme(given, greatest: name == "greatest")
+
+    if name == "extract" && given.len() == 2
+        return extract(field: sql_cast.text_value(given[0]), d: given[1])
+
+    if name == "jsonb_build_array"
+        items: [json.Value] @= []
+
+        for a in given
+            items @ items.push(sql_datum.to_json(a))
+
+        return ok(.jsonb(v: .list(items: items)))
+
+    if name == "jsonb_build_object"
+        return build_object(given)
+
+    if name == "hashtext" && given.len() == 1
+        if given[0] == .null_value
+            return ok(.null_value)
+        h = to_i64(hash.fnv1a_32_text(sql_cast.text_value(given[0]))).default(0)
+
+        signed = if h > 2147483647
+            h - 4294967296
+        else
+            h
+        return ok(.integer(v: signed))
+
+    if (name == "pg_advisory_lock" || name == "pg_advisory_xact_lock") && given.len() == 1
+        return ok(.text(v: ""))
+
+    if name == "pg_advisory_unlock" && given.len() == 1
+        return ok(.boolean(v: true))
+    return sql_datum.refused(state: "42883", message: f"function {name} with {given.len()} arguments does not exist")
+
+# The smallest or largest of `given`, NULLs left out, as `least` and
+# `greatest` answer.
+#
+# - `given`: the values.
+# - `greatest`: whether the largest.
+function extreme(given: [sql_tree.Datum], greatest: bool) -> sql_tree.Datum?
+    best: sql_tree.Datum @= .null_value
+
+    for a in given
+        if a != .null_value
+            if best == .null_value
+                best @ a
+            else
+                order = sql_order.compare(a: a, b: best)?
+
+                if greatest && order > 0 || !greatest && order < 0
+                    best @ a
+
+    return ok(best)
+
+# `extract(field FROM d)` for the field `epoch`: the seconds since 1970 of
+# a timestamp, or of an interval, as an exact numeric to the microsecond,
+# as PostgreSQL 14 and after answer it.
+#
+# - `field`: the field.
+# - `d`: the value.
+function extract(field: str, d: sql_tree.Datum) -> sql_tree.Datum?
+    if field != "epoch"
+        return sql_datum.refused(state: "0A000", message: f"the stand-in extracts the epoch alone, not {field}")
+
+    return match d
+        .null_value => ok(.null_value)
+        .instant t  => ok(.numeric(unscaled: t.micros, scale: 6))
+        .interval i => ok(.numeric(unscaled: i.micros, scale: 6))
+        .unknown _  => extract(field: field, d: sql_cast.cast(d, to: "timestamptz")?)
+        .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .jsonb _ => sql_datum.refused(
+            state: "42883",
+            message: f"function extract(unknown, {sql_datum.type_of(d)}) does not exist"
+        )
+
+# `jsonb_build_object(k1, v1, ...)`: an object of the pairs, a later key
+# replacing an earlier one.
+#
+# - `given`: keys and values, alternately.
+function build_object(given: [sql_tree.Datum]) -> sql_tree.Datum?
+    if given.len() % 2 != 0
+        return sql_datum.refused(state: "22023", message: "argument list must have even number of elements")
+    members: {str: json.Value} @= {}
+    i: i64 @= 0
+
+    while i < given.len()
+        if given[i] == .null_value
+            return sql_datum.refused(state: "22004", message: "argument 1: key must not be null")
+        members[sql_cast.text_value(given[i])] @ sql_datum.to_json(given[i + 1])
+        i @ i + 2
+
+    return ok(.jsonb(v: .object(members: members)))
+
+## Aggregates
+
+# The aggregate `name` of `values`, one per row of the group; `count(*)`
+# counts rows, every other aggregate leaves NULLs out.
+#
+# - `name`: `count`, `sum`, `min` or `max`.
+# - `values`: the argument's value on each row; for `count(*)`, any value
+#   per row.
+# - `star`: whether it was called with `*`.
+#
+# Fails as `sql_ops.arithmetic` and `sql_datum.compare` fail.
+function aggregate(name: str, values: [sql_tree.Datum], star: bool) -> sql_tree.Datum?
+    if name == "count"
+        n: i64 @= 0
+
+        for v in values
+            if star || v != .null_value
+                n @ n + 1
+
+        return ok(.integer(v: n))
+
+    if name == "sum"
+        total: sql_tree.Datum @= .null_value
+
+        for v in values
+            if v != .null_value
+                if total == .null_value
+                    total @ v
+                else
+                    total @ sql_ops.arithmetic("+", a: total, b: v)?
+
+        return ok(total)
+    return extreme(values, greatest: name == "max")
+
+test "call: now, coalesce, greatest and least, extract of an epoch, a JSON array and object"
+    assert call("now", given: [], now_micros: 7).must() == .instant(micros: 7)
+    assert call("coalesce", given: [.null_value, .text(v: "")], now_micros: 0).must() == .text(v: "")
+    assert call("greatest", given: [.integer(v: 2), .null_value, .integer(v: 5)], now_micros: 0).must() == .integer(v: 5)
+    assert call("least", given: [.instant(micros: 9), .instant(micros: 3)], now_micros: 0).must() == .instant(micros: 3)
+    assert call("extract", given: [.text(v: "epoch"), .instant(micros: 1_500_000)], now_micros: 0).must() == .numeric(unscaled: 1_500_000, scale: 6)
+    o = call(
+        "jsonb_build_object",
+        given: [.unknown(v: "attempt"), .integer(v: 1), .unknown(v: "error"), .text(v: "x")],
+        now_micros: 0
+    ).must()
+    assert sql_datum.text_of(o) == "{\"attempt\":1,\"error\":\"x\"}"
+    assert call("jsonb_build_object", given: [.null_value, .integer(v: 1)], now_micros: 0).is_err()
+    assert call("no_such_function", given: [], now_micros: 0).is_err()
+
+test "aggregate: count of rows and of values, a sum, a maximum, none at all"
+    assert aggregate("count", values: [.null_value, .integer(v: 1)], star: true).must() == .integer(v: 2)
+    assert aggregate("count", values: [.null_value, .integer(v: 1)], star: false).must() == .integer(v: 1)
+    assert aggregate("sum", values: [.integer(v: 2), .integer(v: 3)], star: false).must() == .integer(v: 5)
+    assert aggregate("max", values: [.integer(v: 2), .integer(v: 3)], star: false).must() == .integer(v: 3)
+    assert aggregate("sum", values: [], star: false).must() == .null_value

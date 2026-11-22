@@ -1,0 +1,416 @@
+# How the PostgreSQL stand-in runs a statement inside a session's
+# transaction, as PostgreSQL does: outside a block a statement, or a
+# simple query of several, runs in an implicit transaction that commits at
+# its end and rolls back whole at a failure; `BEGIN` opens a block whose
+# statements commit together, a failure leaving it failed (`25P02` for
+# every statement but its end) until `ROLLBACK` or `ROLLBACK TO` a
+# savepoint; a block's copy of the database is put in the shared one's
+# place at `COMMIT`, refused `40001` where another commit came between.
+# The advisory locks a statement takes are held here: a lock held by
+# another session is refused `55P03` at once, where PostgreSQL would wait,
+# since the stand-in runs one statement at a time and a wait would never
+# end.
+
+use <rebel>/sql
+use <rebel>/time
+
+use standins/pg_state
+use standins/pg_wire
+use standins/scram_server
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_eval
+use standins/sql_exec
+use standins/sql_parse
+use standins/sql_tree
+
+## Failures as the client reads them
+
+# The `ErrorResponse` of a failure, its SQLSTATE read from its message, an
+# internal error's `XX000` where it carries none.
+#
+# - `msg`: the failure's message, as `sql.failure_message` writes it.
+function error_of(msg: str) -> [u8]
+    state = sql.database_code_of(msg).default("XX000")
+
+    words = if msg.len() > state.len() + 3 && msg[0] == '['
+        msg.slice(from: state.len() + 3, to: msg.len())
+    else
+        msg
+    return pg_wire.report('E', severity: "ERROR", state: state, text: words)
+
+# The moment now, microseconds since 1970.
+function now_micros() -> i64
+    return time.unix_microseconds(time.now().default(time.epoch()))
+
+## Blocks
+
+# Opens a block on `s`: its copy of the database, its moment.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `kind`: `implicit` or `explicit`.
+function open_block(shared: pg_state.Shared lent, @s: pg_state.Session, kind: pg_state.Block)
+    s.block @ kind
+    s.failed @ false
+    s.private @ shared.db
+    s.base_version @ shared.db.version
+    s.wrote @ false
+    s.block_now @ now_micros()
+    s.savepoints @ []
+
+# Ends `s`'s block, committing its copy where `commit` asks and it is not
+# failed; its transaction's advisory locks let go either way.
+#
+# - `shared`: the shared state; its database replaced at a commit.
+# - `s`: the session; no block after.
+# - `commit`: whether to commit.
+#
+# Fails `invalid` with `40001` where another commit came after the block
+# began and the block changed its copy: it is rolled back.
+function close_block(@shared: pg_state.Shared, @s: pg_state.Session, commit: bool) -> ()?
+    kept: [pg_state.Lock] @= []
+
+    for l in shared.locks
+        if !(l.holder == s.peer && l.xact)
+            kept @ kept.push(l)
+
+    shared.locks @ kept
+    wrote = s.wrote
+    failed = s.failed
+    base = s.base_version
+    private = s.private
+    s.block @ .none
+    s.failed @ false
+    s.wrote @ false
+    s.savepoints @ []
+
+    if !commit || failed || !wrote
+        return ok()
+
+    if shared.db.version != base
+        return sql_datum.refused(state: "40001", message: "could not serialize access due to concurrent update")
+    shared.db @ private
+    shared.db.version @ base + 1
+    return ok()
+
+## Running one statement
+
+# What one statement answered: its outcome, and the notices to send
+# before it.
+record Ran
+    # The outcome.
+    outcome: sql_exec.Outcome
+    # The notices' messages, written whole.
+    notices: [[u8]]
+
+# Runs `stmt` with `params` in `s`'s block, which the caller has opened.
+#
+# - `shared`: the shared state.
+# - `s`: the session; its block's copy changed where the statement writes.
+# - `stmt`: the statement.
+# - `params`: its parameters' values.
+#
+# Fails as the statement fails; the block is then failed where it is
+# explicit.
+function run_in_block(@shared: pg_state.Shared, @s: pg_state.Session, stmt: sql_tree.Statement, params: [sql_tree.Datum]) -> Ran?
+    match stmt
+        .transaction t => return transaction(@shared, s: @s, word: t.word, name: t.name)
+        .setting _ => return ok(Ran(outcome: tagged("SET"), notices: []))
+        .empty => return ok(Ran(outcome: tagged(""), notices: []))
+        .query _ | .insert _ | .update _ | .delete _ | .create_table _ | .create_index _ => _ = 0
+
+    if s.failed
+        return sql_datum.refused(
+            state: "25P02",
+            message: "current transaction is aborted, commands ignored until end of transaction block"
+        )
+    take_locks(@shared, peer: s.peer, stmt: stmt, params: params)?
+    work @= s.private
+
+    match sql_exec.run(@work, stmt: stmt, params: params, now_micros: s.block_now)
+        .err e =>
+            if s.block == .explicit
+                s.failed @ true
+            return fail(code: e.code, msg: e.msg)
+        .ok outcome =>
+            s.private @ work
+
+            match stmt
+                .query _ => _ = 0
+                .insert _ | .update _ | .delete _ | .create_table _ | .create_index _ | .transaction _ | .setting _ | .empty => s.wrote @ true
+
+            notices: [[u8]] @= []
+
+            for n in outcome.notices
+                notices @ notices.push(pg_wire.report('N', severity: "NOTICE", state: "42P07", text: n))
+
+            return ok(Ran(outcome: outcome, notices: notices))
+
+# An outcome of no rows with the tag `tag`.
+#
+# - `tag`: the command's tag.
+function tagged(tag: str) -> sql_exec.Outcome
+    return sql_exec.Outcome(names: [], types: [], rows: [], tag: tag, notices: [])
+
+# A warning PostgreSQL sends where a transaction's word has nothing to do.
+#
+# - `state`: the SQLSTATE.
+# - `text`: the words.
+function warning(state: str, text: str) -> [u8]
+    return pg_wire.report('N', severity: "WARNING", state: state, text: text)
+
+# A word of a transaction.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `word`: `begin`, `commit`, `rollback`, `savepoint`, `release` or
+#   `rollback_to`.
+# - `name`: the savepoint's name, "" for none.
+function transaction(@shared: pg_state.Shared, @s: pg_state.Session, word: str, name: str) -> Ran?
+    explicit = s.block == .explicit
+
+    if word == "begin"
+        if explicit
+            return ok(
+                Ran(outcome: tagged("BEGIN"), notices: [warning(state: "25001", text: "there is already a transaction in progress")])
+            )
+
+        if s.block == .implicit
+            s.block @ .explicit
+        else
+            open_block(shared, s: @s, kind: .explicit)
+        return ok(Ran(outcome: tagged("BEGIN"), notices: []))
+
+    if word == "commit"
+        if !explicit
+            return ok(
+                Ran(outcome: tagged("COMMIT"), notices: [warning(state: "25P01", text: "there is no transaction in progress")])
+            )
+
+        tag = if s.failed
+            "ROLLBACK"
+        else
+            "COMMIT"
+        close_block(@shared, s: @s, commit: true)?
+        open_block(shared, s: @s, kind: .implicit)
+        return ok(Ran(outcome: tagged(tag), notices: []))
+
+    if word == "rollback"
+        if !explicit
+            return ok(
+                Ran(outcome: tagged("ROLLBACK"), notices: [warning(state: "25P01", text: "there is no transaction in progress")])
+            )
+        close_block(@shared, s: @s, commit: false)?
+        open_block(shared, s: @s, kind: .implicit)
+        return ok(Ran(outcome: tagged("ROLLBACK"), notices: []))
+
+    if !explicit
+        return sql_datum.refused(state: "25P01", message: f"{word} can only be used in transaction blocks")
+
+    if word == "savepoint"
+        if s.failed
+            return sql_datum.refused(
+                state: "25P02",
+                message: "current transaction is aborted, commands ignored until end of transaction block"
+            )
+        s.savepoints @ s.savepoints.push(pg_state.Savepoint(name: name, db: s.private))
+        return ok(Ran(outcome: tagged("SAVEPOINT"), notices: []))
+    at: i64 @= -1
+
+    for i in range(from: 0, to: s.savepoints.len())
+        if s.savepoints[i].name == name
+            at @ i
+
+    if at < 0
+        return sql_datum.refused(state: "3B001", message: f"savepoint \"{name}\" does not exist")
+
+    if word == "rollback_to"
+        s.private @ s.savepoints[at].db
+        s.savepoints @ s.savepoints.slice(from: 0, to: at + 1)
+        s.failed @ false
+        return ok(Ran(outcome: tagged("ROLLBACK"), notices: []))
+
+    if s.failed
+        return sql_datum.refused(
+            state: "25P02",
+            message: "current transaction is aborted, commands ignored until end of transaction block"
+        )
+    s.savepoints @ s.savepoints.slice(from: 0, to: at)
+    return ok(Ran(outcome: tagged("RELEASE"), notices: []))
+
+## Advisory locks
+
+# Takes or lets go the advisory locks `stmt`'s items call, before it runs:
+# a `SELECT` of no table calling `pg_advisory_lock`, `pg_advisory_xact_lock`
+# or `pg_advisory_unlock` with one key.
+#
+# - `shared`: the shared state; its locks change.
+# - `peer`: the session.
+# - `stmt`: the statement.
+# - `params`: its parameters' values, which a key may be.
+#
+# Fails `invalid` with `55P03` where another session holds the key.
+function take_locks(@shared: pg_state.Shared, peer: i64, stmt: sql_tree.Statement, params: [sql_tree.Datum]) -> ()?
+    match stmt
+        .query q =>
+            if q.select.table == ""
+                for item in q.select.items
+                    match item.expr
+                        .call c =>
+                            if c.args.len() == 1 && (c.name == "pg_advisory_lock" || c.name == "pg_advisory_xact_lock" || c.name == "pg_advisory_unlock")
+                                scope = sql_eval.Scope(bound: [], params: params, now_micros: 0)
+                                key = sql_cast.integer_of(sql_eval.eval(c.args[0], scope: scope, db: shared.db)?)?
+                                lock(@shared, peer: peer, key: key, function_name: c.name)?
+                        .literal _ | .param _ | .column _ | .operator _ | .cast _ | .case_of _ | .in_list _ | .in_query _ | .exists _ | .scalar _ | .is_null _ => _ = 0
+        .insert _ | .update _ | .delete _ | .create_table _ | .create_index _ | .transaction _ | .setting _ | .empty => _ = 0
+
+    return ok()
+
+# One advisory lock taken or let go.
+#
+# - `shared`: the shared state.
+# - `peer`: the session.
+# - `key`: the lock's key.
+# - `function_name`: the function called.
+function lock(@shared: pg_state.Shared, peer: i64, key: i64, function_name: str) -> ()?
+    if function_name == "pg_advisory_unlock"
+        kept: [pg_state.Lock] @= []
+        released @= false
+
+        for l in shared.locks
+            if !released && l.key == key && l.holder == peer && !l.xact
+                released @ true
+            else
+                kept @ kept.push(l)
+
+        shared.locks @ kept
+        return ok()
+
+    for l in shared.locks
+        if l.key == key && l.holder != peer
+            return sql_datum.refused(
+                state: "55P03",
+                message: f"could not obtain lock on advisory key {key}: another session holds it"
+            )
+
+    shared.locks @ shared.locks.push(
+        pg_state.Lock(key: key, holder: peer, xact: function_name == "pg_advisory_xact_lock")
+    )
+    return ok()
+
+## The simple query flow
+
+# The answers to a `Query` message: each statement's rows and tag, the
+# first failure ending the rest and rolling an implicit block back, then
+# `ReadyForQuery`.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `text`: the statements.
+function simple(@shared: pg_state.Shared, @s: pg_state.Session, text: str) -> [u8]
+    out: [u8] @= []
+
+    match sql_parse.statements(text)
+        .err e =>
+            if s.block == .explicit
+                s.failed @ true
+            append(out: @out, data: error_of(e.msg))
+        .ok statements =>
+            if statements.len() == 0
+                append(out: @out, data: pg_wire.message('I', body: []))
+            else
+                if s.block == .none
+                    open_block(shared, s: @s, kind: .implicit)
+                failed @= false
+
+                for stmt in statements
+                    if !failed
+                        match run_in_block(@shared, s: @s, stmt: stmt, params: [])
+                            .err e =>
+                                append(out: @out, data: error_of(e.msg))
+                                failed @ true
+                            .ok ran =>
+                                for n in ran.notices
+                                    append(out: @out, data: n)
+
+                                if ran.outcome.names.len() > 0
+                                    append(
+                                        out: @out,
+                                        data: pg_wire.row_description(names: ran.outcome.names, types: ran.outcome.types)
+                                    )
+
+                                for row in ran.outcome.rows
+                                    append(out: @out, data: pg_wire.data_row(row))
+
+                                append(out: @out, data: pg_wire.command_complete(ran.outcome.tag))
+
+                if s.block == .implicit
+                    match close_block(@shared, s: @s, commit: !failed)
+                        .err e => append(out: @out, data: error_of(e.msg))
+                        .ok _  => _ = 0
+
+    append(out: @out, data: pg_wire.ready_for_query(pg_state.status_of(s)))
+    return out
+
+# `out` with `data` after it.
+#
+# - `out`: the answers being written.
+# - `data`: one more.
+function append(@out: [u8], data: [u8])
+    for x in data
+        out @ out.push(x)
+
+test "simple: a table made, rows written and read in one implicit transaction"
+    shared @= standin_shared()
+    s @= pg_state.new_session(peer: 1, pid: 1)
+    s.phase @ "ready"
+    _ = simple(
+        @shared,
+        s: @s,
+        text: "CREATE TABLE t (k text PRIMARY KEY, n bigint NOT NULL DEFAULT 0); INSERT INTO t (k) VALUES ('a'), ('b')"
+    )
+    assert shared.db.tables[0].rows.len() == 2 && shared.db.version == 1
+    answer = simple(@shared, s: @s, text: "SELECT k, n FROM t ORDER BY k DESC")
+    assert answer[0] == 'T'
+
+test "simple: a failure rolls the whole implicit transaction back"
+    shared @= standin_shared()
+    s @= pg_state.new_session(peer: 1, pid: 1)
+    _ = simple(@shared, s: @s, text: "CREATE TABLE t (k text PRIMARY KEY)")
+    answer = simple(@shared, s: @s, text: "INSERT INTO t VALUES ('a'); INSERT INTO t VALUES ('a')")
+    assert answer[0] == 'C' && shared.db.tables[0].rows.len() == 0
+
+test "transaction: a failed block ignores statements until ROLLBACK TO a savepoint"
+    shared @= standin_shared()
+    s @= pg_state.new_session(peer: 1, pid: 1)
+    _ = simple(@shared, s: @s, text: "CREATE TABLE t (k text PRIMARY KEY)")
+    _ = simple(@shared, s: @s, text: "BEGIN")
+    _ = simple(@shared, s: @s, text: "INSERT INTO t VALUES ('a'); SAVEPOINT p")
+    _ = simple(@shared, s: @s, text: "INSERT INTO t VALUES ('a')")
+    assert s.failed && pg_state.status_of(s) == 'E'
+    _ = simple(@shared, s: @s, text: "ROLLBACK TO SAVEPOINT p")
+    _ = simple(@shared, s: @s, text: "COMMIT")
+    assert shared.db.tables[0].rows.len() == 1 && s.block == .none
+
+test "lock: a key another session holds is refused, its own taken again"
+    shared @= standin_shared()
+    lock(@shared, peer: 1, key: 5, function_name: "pg_advisory_lock").must()
+    assert lock(@shared, peer: 2, key: 5, function_name: "pg_advisory_lock").is_err()
+    lock(@shared, peer: 1, key: 5, function_name: "pg_advisory_unlock").must()
+    lock(@shared, peer: 2, key: 5, function_name: "pg_advisory_lock").must()
+
+# A shared state of an empty database for the tests, its role's password
+# one nobody uses.
+function standin_shared() -> pg_state.Shared
+    verifier = scram_server.verifier_of("unused", salt: [1, 2, 3, 4], iterations: 1).must()
+    return pg_state.Shared(
+        db: sql_tree.empty_database(),
+        user: "u",
+        database: "d",
+        verifier: verifier,
+        locks: [],
+        logins: 0,
+        refused_logins: 0,
+        next_pid: 1
+    )

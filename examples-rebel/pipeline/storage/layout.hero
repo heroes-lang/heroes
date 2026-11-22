@@ -1,0 +1,66 @@
+# The keys of the bucket, partitioned by date the way Hive and the
+# warehouses that read its layout (Athena, Spark, BigQuery's external
+# tables) find a day's data by its prefix: the hot path by day and hour,
+# the archive by year, month and day, the cold export one object a topic
+# and a day. Every key is the window's start in UTC; a key never depends
+# on when the pipeline ran, so writing a batch again replaces it.
+
+use <rebel>/time
+
+use codecs/tiers
+
+## Keys
+
+# The key of a batch of `topic` for the window starting at
+# `window_start_ms`, in `tier`:
+# `hot/<topic>/dt=<date>/hour=<HH>/<topic>-<stamp>.ndjson.lz4`,
+# `archive/<topic>/year=<YYYY>/month=<MM>/day=<DD>/<topic>-<stamp>.ndjson.zst`,
+# or for the cold tier the day's export, `cold/<topic>/<date>.ndjson.bz2`.
+#
+# - `tier`: where the copy is kept.
+# - `topic`: the topic.
+# - `window_start_ms`: the window's start, milliseconds since 1970.
+function key_of(tier: tiers.Tier, topic: str, window_start_ms: i64) -> str
+    at = time.to_date_time(time.from_unix_milliseconds(window_start_ms).default(time.epoch()))
+    date = f"{at.year}-{two(at.month)}-{two(at.day)}"
+    stamp = f"{at.year}{two(at.month)}{two(at.day)}T{two(at.hour)}{two(at.minute)}{two(at.second)}Z"
+    ending = ".ndjson" + tiers.extension_of(tier)
+
+    return match tier
+        .hot     => f"hot/{topic}/dt={date}/hour={two(at.hour)}/{topic}-{stamp}{ending}"
+        .archive => f"archive/{topic}/year={at.year}/month={two(at.month)}/day={two(at.day)}/{topic}-{stamp}{ending}"
+        .cold    => f"cold/{topic}/{date}{ending}"
+
+# The prefix every archive key of `topic` on `day` begins with.
+#
+# - `topic`: the topic.
+# - `day`: the day, `YYYY-MM-DD`.
+function archive_prefix(topic: str, day: str) -> str
+    return f"archive/{topic}/year={day.slice(from: 0, to: 4)}/month={day.slice(from: 5, to: 7)}/day={day.slice(from: 8, to: 10)}/"
+
+# The day, `YYYY-MM-DD`, of `at_ms`.
+#
+# - `at_ms`: milliseconds since 1970.
+function day_of(at_ms: i64) -> str
+    at = time.to_date_time(time.from_unix_milliseconds(at_ms).default(time.epoch()))
+    return f"{at.year}-{two(at.month)}-{two(at.day)}"
+
+# `n` in two digits at least.
+#
+# - `n`: 0 or more.
+function two(n: i64) -> str
+    if n < 10
+        return f"0{n}"
+    return to_str(n)
+
+test "key_of: each tier's key of one window"
+    start = 1_773_478_860_000
+    assert key_of(.hot, topic: "orders", window_start_ms: start) == "hot/orders/dt=2026-03-14/hour=09/orders-20260314T090100Z.ndjson.lz4"
+    assert key_of(.archive, topic: "orders", window_start_ms: start) == "archive/orders/year=2026/month=03/day=14/orders-20260314T090100Z.ndjson.zst"
+    assert key_of(.cold, topic: "orders", window_start_ms: start) == "cold/orders/2026-03-14.ndjson.bz2"
+
+test "archive_prefix, day_of: a day's prefix holds its windows' keys"
+    start = 1_773_478_860_000
+    prefix = archive_prefix(topic: "orders", day: day_of(start))
+    assert prefix == "archive/orders/year=2026/month=03/day=14/"
+    assert key_of(.archive, topic: "orders", window_start_ms: start).slice(from: 0, to: prefix.len()) == prefix

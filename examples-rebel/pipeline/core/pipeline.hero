@@ -1,0 +1,98 @@
+# What the pipeline holds while it runs: its settings, its connection to
+# PostgreSQL, its bucket, its metrics, the windows open, and the counts of
+# its run, which the `run` and `demo` commands report. It is one value on
+# one thread, passed with `@` to each step of the loop.
+
+use <rebel>/metrics
+use <rebel>/os
+use <rebel>/sql/postgres
+
+use batching/windows
+use config/settings
+use ops/telemetry
+use storage/writer
+use store/database
+
+## The run's counts
+
+# What one run did, counted as it went.
+record Counts
+    # Events decoded from JSON.
+    json_events: i64
+    # Events decoded from MessagePack.
+    msgpack_events: i64
+    # Messages that held no event, sent to the dead-letter topic.
+    rejected: i64
+    # Windows closed and written.
+    windows: i64
+    # Copies written, every tier.
+    copies: i64
+    # Put attempts made, every one.
+    attempts: i64
+    # Writes given up and kept as jobs, by key.
+    kept: [str]
+    # Offsets committed to the group.
+    commits: i64
+
+# A run's counts before anything is read.
+function no_counts() -> Counts
+    return Counts(
+        json_events: 0,
+        msgpack_events: 0,
+        rejected: 0,
+        windows: 0,
+        copies: 0,
+        attempts: 0,
+        kept: [],
+        commits: 0
+    )
+
+## The pipeline
+
+# A running pipeline.
+record Pipeline
+    # Its settings.
+    settings: settings.Settings
+    # Its connection to the database.
+    db: postgres.Db
+    # Its bucket.
+    bucket: writer.Bucket
+    # Its metrics.
+    registry: metrics.Registry
+    # The windows open.
+    windows: windows.Windower
+    # How many threads compress a window's copies at once.
+    workers: i64
+    # The run's counts.
+    counts: Counts
+
+# A pipeline of `s`: its database opened and logged in, its bucket's
+# client made, its metrics described, no window open.
+#
+# - `s`: the settings.
+#
+# The program owes the pipeline a `close`. Fails as `database.open`,
+# `writer.bucket_of` and `telemetry.new` fail.
+function open(s: settings.Settings) -> Pipeline?
+    bucket = writer.bucket_of(s.storage, retrying: s.retrying)?
+    registry = telemetry.new()?
+    db = database.open(s.database)?
+    processors = os.processor_count().default(1)
+
+    workers = if processors < 1
+        1
+    else
+        processors
+    tally = windows.new(
+        length_ms: s.windows.length.nanoseconds / 1_000_000,
+        grace_ms: s.windows.grace.nanoseconds / 1_000_000
+    )
+    return ok(
+        Pipeline(settings: s, db: db, bucket: bucket, registry: registry, windows: tally, workers: workers, counts: no_counts())
+    )
+
+# Closes the pipeline's connection to the database.
+#
+# - `p`: the pipeline.
+function close(@p: Pipeline)
+    _ = postgres.close(@p.db).is_err()

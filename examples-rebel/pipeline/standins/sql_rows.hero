@@ -1,0 +1,163 @@
+# What every statement of the PostgreSQL stand-in that writes rows holds
+# a row to before it is written: each value coerced to its column's type,
+# `NOT NULL` and the table's `CHECK` constraints (a NULL check holding, as
+# in PostgreSQL), and every unique index, a clash refused `23505` in
+# PostgreSQL's words; and how a written row is read back by `RETURNING`
+# and changed by `SET`, every value read over the row as it was.
+
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_ddl
+use standins/sql_eval
+use standins/sql_ops
+use standins/sql_tree
+
+## Rows written
+
+# What a statement that writes rows came to.
+record Written
+    # How many rows it wrote.
+    count: i64
+    # `RETURNING`'s rows.
+    returned: [[sql_tree.Datum]]
+
+## Checks
+
+# `d` coerced to the type of `column`, as an assignment coerces it.
+#
+# - `d`: the value.
+# - `column`: the column.
+#
+# Fails `invalid` with `42804` where no implicit coercion reaches the
+# column's type, the message naming the column.
+function typed(d: sql_tree.Datum, column: sql_tree.Column) -> sql_tree.Datum?
+    match sql_cast.coerce(d, to: column.type_name)
+        .ok v => return ok(v)
+        .err e =>
+            if sql_datum.type_of(d) == "unknown"
+                return fail(code: e.code, msg: e.msg)
+            return sql_datum.refused(
+                state: "42804",
+                message: f"column \"{column.name}\" is of type {column.type_name} but expression is of type {sql_datum.type_of(d)}"
+            )
+
+# Checks `row` against `NOT NULL` and the table's `CHECK` constraints.
+#
+# - `table`: the table.
+# - `row`: the row to write.
+# - `db`: the database.
+#
+# Fails `invalid` with `23502` for a NULL where one is refused, `23514` for
+# a check that does not hold (NULL holds, as in PostgreSQL).
+function checked(table: sql_tree.Table lent, row: [sql_tree.Datum], db: sql_tree.Database lent) -> ()?
+    for i in range(from: 0, to: table.columns.len())
+        if table.columns[i].not_null && row[i] == .null_value
+            return sql_datum.refused(
+                state: "23502",
+                message: f"null value in column \"{table.columns[i].name}\" of relation \"{table.name}\" violates not-null constraint"
+            )
+
+    scope = sql_eval.Scope(
+        bound: [sql_eval.Bound(qualifier: table.name, names: names_of(table), values: row)],
+        params: [],
+        now_micros: 0
+    )
+
+    for c in table.checks
+        v = sql_eval.eval(c, scope: scope, db: db)?
+
+        if v != .null_value && !sql_ops.truth(v)?
+            return sql_datum.refused(
+                state: "23514",
+                message: f"new row for relation \"{table.name}\" violates a check constraint"
+            )
+
+    return ok()
+
+# Where a row meets a unique key already held.
+record Clash
+    # The place of the row that holds the key, -1 for none.
+    at: i64
+    # The place of the index whose key it is.
+    index: i64
+
+# The first unique index of `table` under which `row` meets another row.
+#
+# - `table`: the table.
+# - `row`: the row.
+# - `except`: the place of `row` itself in the table, -1 for a new row.
+# - `db`: the database.
+function first_clash(table: sql_tree.Table lent, row: [sql_tree.Datum], except: i64, db: sql_tree.Database lent) -> Clash?
+    for i in range(from: 0, to: table.indexes.len())
+        at = sql_ddl.clash_at(db, table: table, index: table.indexes[i], row: row, except: except)?
+
+        if at >= 0
+            return ok(Clash(at: at, index: i))
+
+    return ok(Clash(at: -1, index: -1))
+
+# The failure of a row that meets a key already held, as PostgreSQL words
+# it.
+#
+# - `index`: the name of the index whose key it is.
+function duplicate<T>(index: str) -> T?
+    return sql_datum.refused(state: "23505", message: f"duplicate key value violates unique constraint \"{index}\"")
+
+## Reading and changing a row
+
+# `RETURNING`'s row over `row`.
+#
+# - `items`: the items.
+# - `table`: the table.
+# - `alias`: the name its row goes by.
+# - `row`: the row written.
+# - `scope`: the parameters and the moment.
+# - `db`: the database.
+function returning(items: [sql_tree.Item], table: sql_tree.Table lent, alias: str, row: [sql_tree.Datum], scope: sql_eval.Scope lent, db: sql_tree.Database lent) -> [sql_tree.Datum]?
+    inner = sql_eval.inside(scope, row: sql_eval.Bound(qualifier: alias, names: names_of(table), values: row))
+    out: [sql_tree.Datum] @= []
+
+    for item in items
+        if item.star
+            for v in row
+                out @ out.push(v)
+        else
+            out @ out.push(sql_eval.eval(item.expr, scope: inner, db: db)?)
+
+    return ok(out)
+
+# The names of `table`'s columns.
+#
+# - `table`: the table.
+function names_of(table: sql_tree.Table lent) -> [str]
+    out: [str] @= []
+
+    for c in table.columns
+        out @ out.push(c.name)
+
+    return out
+
+# `row` with each assignment's value, every value read over the row as it
+# was.
+#
+# - `table`: the table.
+# - `row`: the row as it was.
+# - `changes`: the assignments.
+# - `scope`: the scope the values are read in, the row in it.
+# - `db`: the database.
+#
+# Fails `invalid` with `42703` for a column the table has not.
+function assigned(table: sql_tree.Table lent, row: [sql_tree.Datum], changes: [sql_tree.Assignment], scope: sql_eval.Scope lent, db: sql_tree.Database lent) -> [sql_tree.Datum]?
+    out: [sql_tree.Datum] @= row
+
+    for a in changes
+        place = sql_tree.column_at(table, name: a.column)
+
+        if place < 0
+            return sql_datum.refused(
+                state: "42703",
+                message: f"column \"{a.column}\" of relation \"{table.name}\" does not exist"
+            )
+        out[place] @ typed(sql_eval.eval(a.expr, scope: scope, db: db)?, column: table.columns[place])?
+
+    return ok(out)

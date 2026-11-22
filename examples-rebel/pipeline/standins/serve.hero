@@ -1,0 +1,274 @@
+# The loop a stand-in serves many connections with on one thread: a
+# listener on 127.0.0.1 at a port the system chooses, every connection it
+# accepts, and the bytes each has sent that its protocol has not yet taken.
+# A real Kafka client holds several connections to one broker at once (the
+# first it asked, the broker by its node, the group's coordinator) and a
+# PostgreSQL client may too, so a loop that served one connection until it
+# closed would wait on itself. Every stand-in's state is one value on its
+# thread: nothing is shared, so nothing is locked.
+#
+# The protocol reads a peer's pending bytes, takes what makes whole
+# messages with `consume`, and answers with `send`. A wait ends at the
+# program's stop (`os.ask_stop`), which is how the demo ends its stand-ins.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/time
+
+use demo/notify
+
+## Codes
+
+# The code of a peer the loop does not hold: closed already, or never
+# accepted.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# The most connections and listeners one stand-in waits on at once.
+constant MOST_ENTRIES: i64
+    256
+
+# The most bytes read from one connection at one readiness.
+constant READ_BYTES: i64
+    65_536
+
+## The loop
+
+# One connection the loop holds.
+record Peer
+    # The loop's number for it, from 1, never reused: what the protocol
+    # keeps its own state under.
+    id: i64
+    # Its key in the poll set.
+    key: i64
+    # The connection.
+    conn: net.Conn
+    # The bytes it sent that the protocol has not taken yet.
+    pending: [u8]
+    # Whether its peer closed its side: what is pending is all that will
+    # come.
+    ended: bool
+
+# A stand-in's listener and its connections.
+record Loop
+    # The poll set the listener and every connection wait in.
+    set: poll.Set
+    # The listener, on 127.0.0.1.
+    listener: net.Listener
+    # The listener's key in the set.
+    listener_key: i64
+    # The connections, in the order they were accepted.
+    peers: [Peer]
+    # The number the next connection takes.
+    next_id: i64
+    # How many connections were accepted in all.
+    accepted: i64
+
+# A loop listening on a port of 127.0.0.1 the system chooses, its port told
+# to the supervisor at `control_port` as `service`.
+#
+# - `service`: the stand-in's name, as the supervisor waits for it.
+# - `control_port`: the supervisor's control port; 0 tells nobody, for a
+#   stand-in a program runs on its own.
+#
+# The program owes the loop a `close`. Fails as `net.listen`, `poll.make`
+# and `notify.ready` fail.
+function open(service: str, control_port: i64) -> Loop?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match poll.make(MOST_ENTRIES)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok made =>
+            set @= made
+
+            match poll.add_listener(set, l: listener)
+                .err e =>
+                    _ = poll.close(@set).is_err()
+                    _ = net.close_listener(@listener).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok key =>
+                    if control_port > 0
+                        match notify.ready(control_port: control_port, service: service, port: listener.address.port)
+                            .err e =>
+                                _ = poll.close(@set).is_err()
+                                _ = net.close_listener(@listener).is_err()
+                                return fail(code: e.code, msg: e.msg)
+                            .ok _ => _ = 0
+                    return ok(Loop(set: set, listener: listener, listener_key: key, peers: [], next_id: 1, accepted: 0))
+
+# The port the loop listens on.
+#
+# - `l`: the loop.
+function port_of(l: Loop lent) -> i64
+    return l.listener.address.port
+
+# Waits up to `limit` for something to happen, accepts every connection
+# waiting, reads what every ready connection sent, and answers the ids of
+# the peers that sent bytes or closed their side, in the order the system
+# told them.
+#
+# - `l`: the loop; new peers are added, their bytes appended to `pending`.
+# - `limit`: the longest to wait; zero asks without waiting.
+#
+# Fails `stopped` once the program's stop is asked, and as `poll.wait`
+# fails.
+function wait(@l: Loop, limit: time.Duration) -> [i64]?
+    events = poll.wait(l.set, limit: limit)?
+    moved: [i64] @= []
+
+    for e in events
+        if e.key == l.listener_key
+            accept_waiting(@l)
+        else
+            at = index_of_key(l, key: e.key)
+
+            if at >= 0 && (e.readable || e.hangup)
+                read_ready(@l, at: at)
+                moved @ moved.push(l.peers[at].id)
+
+    return ok(moved)
+
+# Accepts the connections the listener holds, one per readiness told.
+#
+# - `l`: the loop, a peer added per connection.
+function accept_waiting(@l: Loop)
+    match net.accept(l.listener, deadline_ms: net.FOREVER)
+        .err _ => _ = 0
+        .ok made =>
+            conn @= made
+
+            match poll.add_conn(l.set, c: conn, interest: .read)
+                .err _ => _ = io.close(@conn.stream).is_err()
+                .ok key =>
+                    l.peers @ l.peers.push(Peer(id: l.next_id, key: key, conn: conn, pending: [], ended: false))
+                    l.next_id @ l.next_id + 1
+                    l.accepted @ l.accepted + 1
+
+# The bytes the peer at `at` sent, appended to its pending bytes; an empty
+# read, or a failed one, marks its side ended.
+#
+# - `l`: the loop.
+# - `at`: the peer's place in `l.peers`.
+function read_ready(@l: Loop, at: i64)
+    match io.read(l.peers[at].conn.stream, n: READ_BYTES)
+        .err _ => l.peers[at].ended @ true
+        .ok data =>
+            if data.len() == 0
+                l.peers[at].ended @ true
+            else
+                pending @= l.peers[at].pending
+
+                for b in data
+                    pending @ pending.push(b)
+
+                l.peers[at].pending @ pending
+
+# The place of the peer whose set key is `key`, -1 where none is.
+#
+# - `l`: the loop.
+# - `key`: the key.
+function index_of_key(l: Loop lent, key: i64) -> i64
+    for i in range(from: 0, to: l.peers.len())
+        if l.peers[i].key == key
+            return i
+
+    return -1
+
+# The place of the peer `id`, -1 where the loop holds none.
+#
+# - `l`: the loop.
+# - `id`: the peer's id.
+function index_of_id(l: Loop lent, id: i64) -> i64
+    for i in range(from: 0, to: l.peers.len())
+        if l.peers[i].id == id
+            return i
+
+    return -1
+
+## What the protocol does with a peer
+
+# The bytes peer `id` sent that the protocol has not taken; none for a
+# peer the loop does not hold.
+#
+# - `l`: the loop.
+# - `id`: the peer.
+function pending_of(l: Loop lent, id: i64) -> [u8]
+    at = index_of_id(l, id: id)
+
+    if at < 0
+        return []
+    return l.peers[at].pending
+
+# Whether peer `id` closed its side, or is gone.
+#
+# - `l`: the loop.
+# - `id`: the peer.
+function is_ended(l: Loop lent, id: i64) -> bool
+    at = index_of_id(l, id: id)
+    return at < 0 || l.peers[at].ended
+
+# Takes the first `n` pending bytes of peer `id`, which the protocol has
+# read as whole messages.
+#
+# - `l`: the loop.
+# - `id`: the peer.
+# - `n`: how many, 0 to the pending count.
+#
+# Aborts where `n` is past what is pending: the protocol counted the bytes
+# it read.
+function consume(@l: Loop, id: i64, n: i64)
+    at = index_of_id(l, id: id)
+
+    if at >= 0
+        rest = l.peers[at].pending.slice(from: n, to: l.peers[at].pending.len())
+        l.peers[at].pending @ rest
+
+# Writes `data` to peer `id`.
+#
+# - `l`: the loop.
+# - `id`: the peer.
+# - `data`: whole messages of the protocol.
+#
+# Fails `not_found` where the loop holds no such peer, and as `io.write`
+# fails.
+function send(l: Loop lent, id: i64, data: [u8]) -> ()?
+    at = index_of_id(l, id: id)
+
+    if at < 0
+        return fail(code: NOT_FOUND, msg: f"the stand-in holds no connection {id}")
+    return io.write(l.peers[at].conn.stream, data: data)
+
+# Closes peer `id` and lets it go; nothing for a peer the loop does not
+# hold.
+#
+# - `l`: the loop, the peer taken out.
+# - `id`: the peer.
+function drop(@l: Loop, id: i64)
+    at = index_of_id(l, id: id)
+
+    if at >= 0
+        _ = poll.remove(l.set, key: l.peers[at].key).is_err()
+        conn @= l.peers[at].conn
+        _ = io.close(@conn.stream).is_err()
+        kept: [Peer] @= []
+
+        for i in range(from: 0, to: l.peers.len())
+            if i != at
+                kept @ kept.push(l.peers[i])
+
+        l.peers @ kept
+
+# Closes every connection, the set and the listener.
+#
+# - `l`: the loop, emptied.
+function close(@l: Loop)
+    while l.peers.len() > 0
+        drop(@l, id: l.peers[0].id)
+
+    _ = poll.close(@l.set).is_err()
+    _ = net.close_listener(@l.listener).is_err()

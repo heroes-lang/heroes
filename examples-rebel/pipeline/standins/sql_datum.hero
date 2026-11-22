@@ -1,0 +1,279 @@
+# The values of the PostgreSQL stand-in's engine: each type's name and its
+# number in `pg_type`, the text PostgreSQL writes for a value (the text
+# format a client reads, `2026-01-01 00:00:00.5+00` for a `timestamptz`
+# under `TimeZone=UTC`), a timestamp read from text, and a value as JSON.
+# The casts are `sql_cast`'s, the order of two values `sql_order`'s, the
+# operators `sql_ops`'.
+#
+# Every failure of the engine is made by `refused`: its message opens with
+# the SQLSTATE in brackets (`sql.failure_message`), which the server reads
+# back with `sql.database_code_of` to tell the client.
+
+use <rebel>/json
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/sql
+use <rebel>/strings
+use <rebel>/time
+
+use standins/sql_tree
+
+## Codes
+
+# The code of a value of the wrong type, out of range, or not of its
+# type's form.
+constant INVALID: str
+    "invalid"
+
+## Types
+
+# The type of `d`, as the engine names types: `bool`, `int8`, `float8`,
+# `numeric`, `text`, `unknown`, `timestamptz`, `interval`, `jsonb`, and
+# `null` for NULL.
+#
+# - `d`: the value.
+function type_of(d: sql_tree.Datum) -> str
+    return match d
+        .null_value => "null"
+        .boolean _  => "bool"
+        .integer _  => "int8"
+        .float _    => "float8"
+        .numeric _  => "numeric"
+        .text _     => "text"
+        .unknown _  => "unknown"
+        .instant _  => "timestamptz"
+        .interval _ => "interval"
+        .jsonb _    => "jsonb"
+
+# The number of `type_name` in PostgreSQL's `pg_type`, which a
+# RowDescription names; `text`'s for a type the engine gives none.
+#
+# - `type_name`: a type, as the engine names it.
+function oid_of(type_name: str) -> i64
+    return match type_name
+        "bool"        => 16
+        "int8"        => 20
+        "int2"        => 21
+        "int4"        => 23
+        "float8"      => 701
+        "numeric"     => 1700
+        "timestamptz" => 1184
+        "interval"    => 1186
+        "jsonb"       => 3802
+        "void"        => 2278
+        _             => 25
+
+# The type a parameter of the `pg_type` number `oid` is read as.
+#
+# - `oid`: the number the Parse message named, 0 for none.
+function type_of_oid(oid: i64) -> str
+    return match oid
+        16   => "bool"
+        20   => "int8"
+        21   => "int2"
+        23   => "int4"
+        700  => "float8"
+        701  => "float8"
+        1700 => "numeric"
+        1184 => "timestamptz"
+        1114 => "timestamptz"
+        1186 => "interval"
+        3802 => "jsonb"
+        114  => "jsonb"
+        25   => "text"
+        1043 => "text"
+        _    => "unknown"
+
+# The failure of a statement, its SQLSTATE first.
+#
+# - `state`: the SQLSTATE, five characters.
+# - `message`: PostgreSQL's words for it.
+function refused<T>(state: str, message: str) -> T?
+    return fail(code: INVALID, msg: sql.failure_message(database_code: state, message: message))
+
+## Text
+
+# The text PostgreSQL writes for `d` in the text format; NULL is the
+# caller's to write as no value.
+#
+# - `d`: the value, not NULL.
+function text_of(d: sql_tree.Datum) -> str
+    return match d
+        .null_value => ""
+        .boolean b  => bool_text(b.v)
+        .integer n  => to_str(n.v)
+        .float x    => numbers.format_float_general(x.v, digits: 17)
+        .numeric n  => numeric_text(unscaled: n.unscaled, scale: n.scale)
+        .text t     => t.v
+        .unknown u  => u.v
+        .instant t  => instant_text(t.micros)
+        .interval i => interval_text(i.micros)
+        .jsonb j    => json.format(j.v).default("null")
+
+# `t` or `f`, as PostgreSQL writes a `boolean`.
+#
+# - `b`: the truth value.
+function bool_text(b: bool) -> str
+    if b
+        return "t"
+    return "f"
+
+# An exact numeric's digits with its point.
+#
+# - `unscaled`: the digits as one integer.
+# - `scale`: how many stand after the point.
+function numeric_text(unscaled: i64, scale: i64) -> str
+    if scale <= 0
+        return to_str(unscaled)
+    negative = unscaled < 0
+    digits_text = to_str(math.abs_i64(unscaled).default(0))
+    padded = repeat("0", to_u64(math.max_i64(a: 0, b: scale + 1 - digits_text.len())).default(0)) + digits_text
+    whole = padded.slice(from: 0, to: padded.len() - scale)
+    fraction = padded.slice(from: padded.len() - scale, to: padded.len())
+
+    minus = if negative
+        "-"
+    else
+        ""
+    return minus + whole + "." + fraction
+
+# A `timestamptz` as PostgreSQL writes it under `TimeZone=UTC`: the date,
+# the time, the microseconds where there are any with their trailing zeros
+# left out, and `+00`.
+#
+# - `micros`: microseconds since 1970.
+function instant_text(micros: i64) -> str
+    at = time.from_unix_microseconds(micros).default(time.epoch())
+    base = time.format(at, .date_time)
+    fraction = micros % 1_000_000
+
+    positive = if fraction < 0
+        fraction + 1_000_000
+    else
+        fraction
+
+    if positive == 0
+        return base + "+00"
+    digits_text: str @= to_str(positive)
+
+    while digits_text.len() < 6
+        digits_text @ "0" + digits_text
+
+    while digits_text.len() > 0 && digits_text[digits_text.len() - 1] == '0'
+        digits_text @ digits_text.slice(from: 0, to: digits_text.len() - 1)
+
+    return base + "." + digits_text + "+00"
+
+# An `interval` as PostgreSQL writes it for a span under a day:
+# `HH:MM:SS` and its microseconds; days are counted as `N days`.
+#
+# - `micros`: the span's microseconds.
+function interval_text(micros: i64) -> str
+    minus = if micros < 0
+        "-"
+    else
+        ""
+    left = math.abs_i64(micros).default(0)
+    days = left / 86_400_000_000
+    rest = left % 86_400_000_000
+    hours = rest / 3_600_000_000
+    minutes = rest % 3_600_000_000 / 60_000_000
+    seconds = rest % 60_000_000 / 1_000_000
+    fraction = rest % 1_000_000
+    clock = f"{two(hours)}:{two(minutes)}:{two(seconds)}"
+
+    tail = if fraction > 0
+        "." + strings.pad_zeros(to_str(fraction), width: 6)
+    else
+        ""
+
+    if days > 0
+        return f"{minus}{days} days {clock}{tail}"
+    return minus + clock + tail
+
+# `n` in two digits at least.
+#
+# - `n`: 0 or more.
+function two(n: i64) -> str
+    if n < 10
+        return f"0{n}"
+    return to_str(n)
+
+# The `timestamptz` a text names: RFC 3339, as a client of the `sql`
+# package sends one, or PostgreSQL's own form with a `+00` or no zone.
+#
+# - `s`: the text.
+#
+# Fails `invalid` with `22007` where it is neither.
+function parse_instant(s: str) -> i64?
+    match time.parse(s, .rfc3339)
+        .ok t  => return ok(time.unix_microseconds(t))
+        .err _ => _ = 0
+
+    plain: str @= s
+
+    for zone in ["+00:00", "+00", "Z"]
+        if strings.has_suffix(s: plain, suffix: zone)
+            plain @ plain.slice(from: 0, to: plain.len() - zone.len())
+
+    whole: str @= plain
+    micros: i64 @= 0
+
+    match strings.split_once(s: plain, sep: ".")
+        .err _ => _ = 0
+        .ok h =>
+            whole @ h.before
+            digits_text = strings.pad_end(s: h.after, width: 6, pad: "0")
+
+            if digits_text.len() != 6
+                return refused(
+                    state: "22007",
+                    message: f"invalid input syntax for type timestamp with time zone: \"{s}\""
+                )
+            micros @ numbers.parse_int(digits_text).default(-1)
+
+    match time.parse(whole, .date_time)
+        .ok t =>
+            if micros < 0
+                return refused(
+                    state: "22007",
+                    message: f"invalid input syntax for type timestamp with time zone: \"{s}\""
+                )
+            return ok(time.unix_microseconds(t) + micros)
+        .err _ => return refused(
+            state: "22007",
+            message: f"invalid input syntax for type timestamp with time zone: \"{s}\""
+        )
+
+## JSON
+
+# `d` as a JSON value, as `jsonb_build_array` and `jsonb_build_object` take
+# their arguments.
+#
+# - `d`: the value.
+function to_json(d: sql_tree.Datum) -> json.Value
+    return match d
+        .null_value => .null_value
+        .boolean b  => .boolean(v: b.v)
+        .integer n  => .number(v: to_f64(n.v))
+        .float x    => .number(v: x.v)
+        .numeric _  => .number(v: numbers.parse_float(text_of(d)).default(0.0))
+        .text t     => .text(v: t.v)
+        .unknown u  => .text(v: u.v)
+        .instant _  => .text(v: text_of(d))
+        .interval _ => .text(v: text_of(d))
+        .jsonb j    => j.v
+
+test "text_of: each type as PostgreSQL writes it"
+    assert text_of(.boolean(v: true)) == "t" && text_of(.integer(v: -5)) == "-5"
+    assert text_of(.numeric(unscaled: 1767225600123456, scale: 6)) == "1767225600.123456"
+    assert text_of(.numeric(unscaled: -5, scale: 2)) == "-0.05"
+    assert text_of(.instant(micros: 1_767_225_600_500_000)) == "2026-01-01 00:00:00.5+00"
+    assert text_of(.instant(micros: 1_767_225_600_000_000)) == "2026-01-01 00:00:00+00"
+    assert text_of(.interval(micros: 1)) == "00:00:00.000001"
+
+test "parse_instant: RFC 3339 and PostgreSQL's own form read alike"
+    assert parse_instant("2026-01-01T00:00:00.123Z").must() == 1_767_225_600_123_000
+    assert parse_instant("2026-01-01 00:00:00.123+00").must() == 1_767_225_600_123_000
+    assert parse_instant("2026-01-01 00:00:00").must() == 1_767_225_600_000_000
+    assert parse_instant("yesterday").is_err()

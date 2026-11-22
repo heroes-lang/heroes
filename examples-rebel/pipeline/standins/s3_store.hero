@@ -1,0 +1,375 @@
+# What the S3 stand-in holds and does to it: how the supervisor starts it,
+# its one bucket's objects in the order of their keys' bytes, and each
+# operation's answer as the S3 API reference gives it (read 2026-11-21):
+# a put held to its checksum and its conditions and refused on purpose
+# where the demo asks, a read whole or of its head, a delete, a listing of
+# ListObjectsV2, and errors as an XML `<Error>` with S3's own code.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/http
+use <rebel>/numbers
+use <rebel>/s3
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+
+## Codes
+
+# The code of a thread argument that does not say how to start the
+# service.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long, in milliseconds, one connection may last.
+constant CONNECTION_MS: i64
+    30_000
+
+# The most keys a listing answers at once, S3's own.
+constant MOST_KEYS: i64
+    1_000
+
+## Starting
+
+# How the supervisor starts the service.
+record Setup
+    # The supervisor's control port.
+    control_port: i64
+    # The one bucket.
+    bucket: str
+    # The region it answers for.
+    region: str
+    # The one access key's id.
+    access_key_id: str
+    # Its secret.
+    secret: str
+    # A part of the keys whose puts are refused on purpose, "" for none.
+    fail_part: str
+    # How many such puts are refused before they are taken.
+    fail_count: i64
+
+# The thread argument that starts a service of `setup`, its fields one a
+# line.
+#
+# - `setup`: what the service holds.
+function format_setup(setup: Setup) -> str
+    return [to_str(setup.control_port), setup.bucket, setup.region, setup.access_key_id, setup.secret, setup.fail_part, to_str(setup.fail_count)].join(
+        "\n"
+    )
+
+# The setup `text` writes.
+#
+# - `text`: the thread argument.
+#
+# Fails `invalid` where it is not seven lines, or a number is not one.
+function parse_setup(text: str) -> Setup?
+    lines = strings.split(s: text, sep: "\n")
+
+    if lines.len() != 7
+        return fail(code: INVALID, msg: f"the S3 service's setup is seven lines, and {lines.len()} came")
+    return ok(
+        Setup(control_port: numbers.parse_int(lines[0])?, bucket: lines[1], region: lines[2], access_key_id: lines[3], secret: lines[4], fail_part: lines[5], fail_count: numbers.parse_int(lines[6])?)
+    )
+
+## The store
+
+# One object.
+record Object
+    # Its key.
+    key: str
+    # Its bytes.
+    data: [u8]
+    # Its ETag, the MD5 of its bytes in hexadecimal, in quotes.
+    etag: str
+    # Its `Content-Type`.
+    content_type: str
+    # When it was last put, by the service's clock.
+    modified: time.Instant
+
+# What the service holds between requests.
+record Store
+    # How it was started.
+    setup: Setup
+    # The objects, in the order of their keys' bytes.
+    objects: [Object]
+    # Puts still to refuse on purpose.
+    fail_left: i64
+    # Puts taken.
+    puts: i64
+    # Puts refused on purpose.
+    injected: i64
+    # Requests refused for their signature or their payload's hash.
+    refused: i64
+    # Objects read whole.
+    gets: i64
+    # Listings answered.
+    listings: i64
+
+## Objects
+
+# A put: refused on purpose where the demo asked it, refused where a
+# checksum or a condition is not met, else kept.
+#
+# - `store`: the service's state.
+# - `r`: the request.
+# - `key`: the object's key.
+# - `now`: the service's clock.
+function put(@store: Store, r: http.Request, key: str, now: time.Instant) -> http.Response
+    if store.fail_left > 0 && store.setup.fail_part != "" && strings.contains(s: key, substr: store.setup.fail_part)
+        store.fail_left @ store.fail_left - 1
+        store.injected @ store.injected + 1
+        return error_answer(
+            503,
+            code: "SlowDown",
+            message: "Please reduce your request rate.",
+            resource: "/" + store.setup.bucket + "/" + key
+        )
+    crc = http.value_of(r.headers, name: "x-amz-checksum-crc32").default("")
+
+    if crc != "" && crc != s3.checksum_of(r.body, algorithm: .crc32)
+        store.refused @ store.refused + 1
+        return error_answer(
+            400,
+            code: "BadDigest",
+            message: "The CRC32 you specified did not match the calculated checksum.",
+            resource: key
+        )
+    md5 = http.value_of(r.headers, name: "Content-MD5").default("")
+
+    if md5 != "" && md5 != bytes.format_base64(crypto.md5(r.body))
+        store.refused @ store.refused + 1
+        return error_answer(
+            400,
+            code: "BadDigest",
+            message: "The Content-MD5 you specified did not match what we received.",
+            resource: key
+        )
+    at = index_of(store, key: key)
+
+    if at >= 0 && http.value_of(r.headers, name: "If-None-Match").default("") == "*"
+        return error_answer(
+            412,
+            code: "PreconditionFailed",
+            message: "At least one of the pre-conditions you specified did not hold",
+            resource: key
+        )
+    etag = "\"" + bytes.format_hex(crypto.md5(r.body)) + "\""
+    kind = http.value_of(r.headers, name: "Content-Type").default("binary/octet-stream")
+    object = Object(key: key, data: r.body, etag: etag, content_type: kind, modified: now)
+    kept: [Object] @= []
+    placed @= false
+
+    for o in store.objects
+        if !placed && o.key == key
+            kept @ kept.push(object)
+            placed @ true
+        else
+            if !placed && is_before(a: key, b: o.key)
+                kept @ kept.push(object)
+                placed @ true
+            kept @ kept.push(o)
+
+    if !placed
+        kept @ kept.push(object)
+    store.objects @ kept
+    store.puts @ store.puts + 1
+    headers: [http.Header] @= [http.Header(name: "ETag", value: etag)]
+
+    if crc != ""
+        headers @ headers.push(http.Header(name: "x-amz-checksum-crc32", value: crc))
+    return http.Response(status: 200, reason: "", headers: headers, body: [], closing: false)
+
+# A read of `key`, whole, or its head alone.
+#
+# - `store`: the service's state; a read counted.
+# - `key`: the object's key.
+# - `head`: whether the request is a `HEAD`.
+function get(@store: Store, key: str, head: bool) -> http.Response
+    at = index_of(store, key: key)
+
+    if at < 0
+        if head
+            return http.respond_status(404)
+        return error_answer(404, code: "NoSuchKey", message: "The specified key does not exist.", resource: key)
+    o = store.objects[at]
+
+    if !head
+        store.gets @ store.gets + 1
+    headers = [
+        http.Header(name: "Content-Type", value: o.content_type)
+        http.Header(name: "ETag", value: o.etag)
+        http.Header(name: "Last-Modified", value: http.format_date(o.modified))
+    ]
+    return http.Response(status: 200, reason: "", headers: headers, body: o.data, closing: false)
+
+# A delete of `key`, answered 204 whether it was there or not, as S3 does.
+#
+# - `store`: the service's state.
+# - `key`: the object's key.
+function delete(@store: Store, key: str) -> http.Response
+    kept: [Object] @= []
+
+    for o in store.objects
+        if o.key != key
+            kept @ kept.push(o)
+
+    store.objects @ kept
+    return http.respond_status(204)
+
+## The bucket
+
+# An operation on the bucket itself: `HEAD` asks it is there, `GET` with
+# `list-type=2` lists it.
+#
+# - `store`: the service's state.
+# - `r`: the request.
+function bucket_answer(@store: Store, r: http.Request) -> http.Response
+    if r.method == "HEAD"
+        return http.respond_status(200)
+    pairs = url.parse_query(r.url.query).default([])
+    asked: {str: str} @= {}
+
+    for p in pairs
+        asked[p.key] @ p.value
+
+    if r.method != "GET" || asked["list-type"].default("") != "2"
+        return error_answer(
+            501,
+            code: "NotImplemented",
+            message: "A header or query you provided implies functionality that is not implemented.",
+            resource: r.url.path
+        )
+    store.listings @ store.listings + 1
+    return listing(
+        store,
+        prefix: asked["prefix"].default(""),
+        after: asked["continuation-token"].default(asked["start-after"].default(""))
+    )
+
+# The `ListBucketResult` of the keys under `prefix` after `after`, at most
+# `MOST_KEYS`, a continuation token where more remain.
+#
+# - `store`: the service's state.
+# - `prefix`: the keys' beginning, "" for every key.
+# - `after`: the last key a previous page answered, "" for the first page.
+function listing(store: Store lent, prefix: str, after: str) -> http.Response
+    contents: [str] @= []
+    count: i64 @= 0
+    truncated @= false
+    last: str @= ""
+
+    for o in store.objects
+        if strings.has_prefix(s: o.key, prefix: prefix) && (after == "" || is_before(a: after, b: o.key))
+            if count == MOST_KEYS
+                truncated @ true
+                break
+            contents @ contents.push(
+                f"<Contents><Key>{escaped(o.key)}</Key><LastModified>{time.format(o.modified, .rfc3339_milliseconds)}</LastModified><ETag>{escaped(o.etag)}</ETag><Size>{o.data.len()}</Size><StorageClass>STANDARD</StorageClass></Contents>"
+            )
+            count @ count + 1
+            last @ o.key
+
+    token = if truncated
+        f"<NextContinuationToken>{escaped(last)}</NextContinuationToken>"
+    else
+        ""
+    body = f"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>{escaped(store.setup.bucket)}</Name><Prefix>{escaped(prefix)}</Prefix><KeyCount>{count}</KeyCount><MaxKeys>{MOST_KEYS}</MaxKeys><IsTruncated>{truncated}</IsTruncated>{token}{contents.join("")}</ListBucketResult>"
+    return http.respond(200, content_type: "application/xml", body: bytes.from_text(body))
+
+## Answers
+
+# An S3 error document.
+#
+# - `status`: the HTTP status.
+# - `code`: S3's code, `NoSuchKey`.
+# - `message`: S3's words.
+# - `resource`: the key or path asked.
+function error_answer(status: i64, code: str, message: str, resource: str) -> http.Response
+    body = f"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>{escaped(code)}</Code><Message>{escaped(message)}</Message><Resource>{escaped(resource)}</Resource><RequestId>standin</RequestId></Error>"
+    return http.respond(status, content_type: "application/xml", body: bytes.from_text(body))
+
+# `s` with XML's five special characters written as references.
+#
+# - `s`: the text.
+function escaped(s: str) -> str
+    out: [str] @= []
+
+    for c in s.chars()
+        written = match c
+            "&"  => "&amp;"
+            "<"  => "&lt;"
+            ">"  => "&gt;"
+            "\"" => "&quot;"
+            "'"  => "&apos;"
+            _    => c
+
+        out @ out.push(written)
+
+    return out.join("")
+
+# The place of `key` among the store's objects, -1 where none has it.
+#
+# - `store`: the service's state.
+# - `key`: the key.
+function index_of(store: Store lent, key: str) -> i64
+    for i in range(from: 0, to: store.objects.len())
+        if store.objects[i].key == key
+            return i
+
+    return -1
+
+# Whether `a` comes before `b` in the order of their bytes, S3's order of
+# keys.
+#
+# - `a`: a key.
+# - `b`: another.
+function is_before(a: str, b: str) -> bool
+    i: i64 @= 0
+
+    while i < a.len() && i < b.len()
+        if a[i] != b[i]
+            return a[i] < b[i]
+        i @ i + 1
+
+    return a.len() < b.len()
+
+test "format_setup, parse_setup: what one writes the other reads"
+    s = Setup(
+        control_port: 9,
+        bucket: "b",
+        region: "us-east-1",
+        access_key_id: "AK",
+        secret: "S/x",
+        fail_part: "",
+        fail_count: 0
+    )
+    back = parse_setup(format_setup(s)).must()
+    assert back.bucket == "b" && back.secret == "S/x" && back.fail_part == "" && back.fail_count == 0
+    assert parse_setup("1\nb").is_err()
+
+test "escaped, is_before: XML's characters, the order of bytes"
+    assert escaped("a&b<\"c\">'") == "a&amp;b&lt;&quot;c&quot;&gt;&apos;"
+    assert is_before(a: "a", b: "b") && is_before(a: "a", b: "ab") && !is_before(a: "b", b: "a") && !is_before(a: "a", b: "a")
+
+test "put, get, listing: an object kept in the order of keys, read back, listed by prefix; a failure on purpose first"
+    setup = Setup(
+        control_port: 0,
+        bucket: "b",
+        region: "us-east-1",
+        access_key_id: "AK",
+        secret: "S",
+        fail_part: "x",
+        fail_count: 1
+    )
+    store @= Store(setup: setup, objects: [], fail_left: 1, puts: 0, injected: 0, refused: 0, gets: 0, listings: 0)
+    r = http.with_body(http.request(method: "PUT", target: "/b/x").must(), content_type: "text/plain", body: [1])
+    assert put(@store, r: r, key: "x", now: time.epoch()).status == 503
+    assert put(@store, r: r, key: "x", now: time.epoch()).status == 200
+    assert put(@store, r: r, key: "a/1", now: time.epoch()).status == 200
+    assert store.objects[0].key == "a/1" && store.objects.len() == 2 && store.injected == 1
+    assert get(@store, key: "x", head: false).body == [1]
+    assert get(@store, key: "nope", head: false).status == 404
+    listed = http.text_of(listing(store, prefix: "a/", after: "")).must()
+    assert strings.contains(s: listed, substr: "<KeyCount>1</KeyCount>") && strings.contains(s: listed, substr: "<Key>a/1</Key>")

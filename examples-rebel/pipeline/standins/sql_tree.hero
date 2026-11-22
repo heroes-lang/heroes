@@ -1,0 +1,435 @@
+# What the PostgreSQL stand-in's SQL engine reads a statement into and keeps
+# its tables as: the values a column holds, the expressions a statement
+# computes, the statements it runs, and the catalog of tables, columns,
+# constraints and indexes. The engine runs the subset of PostgreSQL's SQL
+# that the pipeline, `sql/migrate` and `jobs/postgres_store` send, with
+# PostgreSQL's meanings: three-valued logic, unique indexes partial or not,
+# `ON CONFLICT`, `RETURNING`, `CHECK` and `NOT NULL` enforced, `jsonb`.
+# A statement outside the subset is refused `0A000`, never guessed at.
+
+use <rebel>/json
+
+## Values
+
+# A value a column holds or an expression answers, by PostgreSQL's types.
+variant Datum
+    # SQL's NULL.
+    null_value
+    # `boolean`.
+    boolean
+        # The truth value.
+        v: bool
+    # `smallint`, `integer`, `bigint` and the serials.
+    integer
+        # The number.
+        v: i64
+    # `double precision` and `real`.
+    float
+        # The number.
+        v: f64
+    # `numeric`, exact: `unscaled` divided by ten to the `scale`.
+    numeric
+        # The digits, as one integer.
+        unscaled: i64
+        # How many of them stand after the point, 0 or more.
+        scale: i64
+    # `text` and `varchar`.
+    text
+        # The characters.
+        v: str
+    # A literal or a parameter whose type its place has not yet given, as
+    # PostgreSQL's `unknown`: read as whatever type it meets.
+    unknown
+        # The text it was written as.
+        v: str
+    # `timestamptz`, to the microsecond.
+    instant
+        # Microseconds since 1970 in UTC.
+        micros: i64
+    # `interval`, as a span of microseconds.
+    interval
+        # The microseconds.
+        micros: i64
+    # `jsonb`.
+    jsonb
+        # The value.
+        v: json.Value
+
+## Expressions
+
+# An expression a statement computes.
+variant Expr
+    # A constant.
+    literal
+        # Its value.
+        value: Datum
+    # A placeholder, `$1` and on.
+    param
+        # Its number, from 1.
+        number: i64
+    # A column, qualified by its table's name or alias where written.
+    column
+        # The qualifier, "" where none is written.
+        qualifier: str
+        # The column's name.
+        name: str
+    # An operator: `-` and `NOT` of one operand; `+ - * / || = <> < <= > >=
+    # AND OR` of two.
+    operator
+        # The operator, keywords in lower case.
+        op: str
+        # Its operands, one or two.
+        operands: [Expr]
+    # A function's call; `count(*)` has `star`.
+    call
+        # The function's name, in lower case.
+        name: str
+        # Its arguments.
+        args: [Expr]
+        # Whether it was called with `*`.
+        star: bool
+    # A cast, `x::bigint`.
+    cast
+        # The type cast to, as `type_name` writes it.
+        to: str
+        # The value cast, one.
+        operand: [Expr]
+    # `CASE WHEN c THEN v ... ELSE e END`.
+    case_of
+        # The conditions, in order.
+        conditions: [Expr]
+        # The value of each, in the same order.
+        results: [Expr]
+        # The value where none holds, NULL where not written; one.
+        otherwise: [Expr]
+    # `x [NOT] IN (a, b)`.
+    in_list
+        # Whether `NOT IN`.
+        negated: bool
+        # The value sought, one.
+        operand: [Expr]
+        # The list.
+        items: [Expr]
+    # `x [NOT] IN (SELECT ...)`.
+    in_query
+        # Whether `NOT IN`.
+        negated: bool
+        # The value sought, one.
+        operand: [Expr]
+        # The query, one, of one column.
+        query: [Select]
+    # `[NOT] EXISTS (SELECT ...)`.
+    exists
+        # Whether `NOT EXISTS`.
+        negated: bool
+        # The query, one.
+        query: [Select]
+    # `(SELECT ...)` as a value: its first row's one column, NULL for none.
+    scalar
+        # The query, one.
+        query: [Select]
+    # `x IS [NOT] NULL`.
+    is_null
+        # Whether `IS NOT NULL`.
+        negated: bool
+        # The value, one.
+        operand: [Expr]
+
+## Statements
+
+# One expression a `SELECT` or a `RETURNING` answers.
+record Item
+    # The expression.
+    expr: Expr
+    # Its column's name: the `AS` given, else the column's or the
+    # function's own, else `?column?`.
+    name: str
+    # Whether it is `*`, every column of the table.
+    star: bool
+
+# One key of an `ORDER BY`.
+record Order
+    # The expression.
+    expr: Expr
+    # Whether `DESC`.
+    descending: bool
+
+# A `SELECT`.
+record Select
+    # What it answers.
+    items: [Item]
+    # The table read, "" for none.
+    table: str
+    # Its alias, the table's own name where none is written.
+    alias: str
+    # `WHERE`, a failure (`not_found`) where none is written.
+    condition: Expr?
+    # `GROUP BY`'s keys.
+    group_by: [Expr]
+    # `ORDER BY`'s keys.
+    order_by: [Order]
+    # `LIMIT`, a failure where none is written.
+    limit: Expr?
+    # `OFFSET`, a failure where none is written.
+    offset: Expr?
+
+# One `SET col = expr`.
+record Assignment
+    # The column.
+    column: str
+    # Its new value.
+    expr: Expr
+
+# What an `INSERT` does where a row meets a unique key already held.
+variant Conflict
+    # It fails, `23505`.
+    refuse
+    # The row is not inserted.
+    do_nothing
+        # The key's columns.
+        target: [str]
+        # The partial index's predicate the target names, where written.
+        predicate: [Expr]
+    # The row held is updated instead.
+    do_update
+        # The key's columns.
+        target: [str]
+        # The partial index's predicate the target names, where written.
+        predicate: [Expr]
+        # The changes, read over the row held and `excluded`, the row
+        # proposed.
+        assignments: [Assignment]
+        # The condition the row held must meet to be changed, where written.
+        condition: [Expr]
+
+# An `INSERT`.
+record Insert
+    # The table.
+    table: str
+    # The columns given, in order; every column where none is written.
+    columns: [str]
+    # The rows of `VALUES`, each as many expressions as `columns`.
+    rows: [[Expr]]
+    # The query whose rows are inserted, one, where it is `INSERT ...
+    # SELECT`.
+    query: [Select]
+    # What a conflict does.
+    conflict: Conflict
+    # `RETURNING`'s expressions, none where not written.
+    returning: [Item]
+
+# An `UPDATE`.
+record Update
+    # The table.
+    table: str
+    # Its alias, the table's own name where none is written.
+    alias: str
+    # The changes.
+    assignments: [Assignment]
+    # `WHERE`, a failure where none is written.
+    condition: Expr?
+    # `RETURNING`'s expressions.
+    returning: [Item]
+
+# A `DELETE`.
+record Delete
+    # The table.
+    table: str
+    # `WHERE`, a failure where none is written.
+    condition: Expr?
+    # `RETURNING`'s expressions.
+    returning: [Item]
+
+# A column of `CREATE TABLE`.
+record ColumnDef
+    # Its name.
+    name: str
+    # Its type, as `type_name` writes it.
+    type_name: str
+    # Whether `NOT NULL` or a key.
+    not_null: bool
+    # Whether its default is the next number of a sequence: `serial`,
+    # `bigserial`.
+    serial: bool
+    # `DEFAULT`'s expression, none where not written.
+    default_value: [Expr]
+
+# A `CREATE TABLE`.
+record CreateTable
+    # The table's name.
+    name: str
+    # Whether `IF NOT EXISTS`.
+    if_not_exists: bool
+    # Its columns.
+    columns: [ColumnDef]
+    # Its primary key's columns, none where it has none.
+    primary_key: [str]
+    # Its `UNIQUE` constraints' columns.
+    uniques: [[str]]
+    # Its `CHECK` constraints.
+    checks: [Expr]
+
+# A `CREATE INDEX`.
+record CreateIndex
+    # The index's name.
+    name: str
+    # Whether `IF NOT EXISTS`.
+    if_not_exists: bool
+    # Whether `UNIQUE`.
+    unique: bool
+    # The table.
+    table: str
+    # The columns.
+    columns: [str]
+    # The partial index's predicate, where written.
+    predicate: [Expr]
+
+# A statement the engine runs.
+variant Statement
+    # `SELECT`.
+    query
+        # The query.
+        select: Select
+    # `INSERT`.
+    insert
+        # The statement.
+        stmt: Insert
+    # `UPDATE`.
+    update
+        # The statement.
+        stmt: Update
+    # `DELETE`.
+    delete
+        # The statement.
+        stmt: Delete
+    # `CREATE TABLE`.
+    create_table
+        # The statement.
+        stmt: CreateTable
+    # `CREATE INDEX`.
+    create_index
+        # The statement.
+        stmt: CreateIndex
+    # `BEGIN`, `COMMIT`, `ROLLBACK`, `SAVEPOINT`, `RELEASE`, `ROLLBACK TO`.
+    transaction
+        # The word: `begin`, `commit`, `rollback`, `savepoint`, `release`,
+        # `rollback_to`.
+        word: str
+        # The savepoint's name, "" for none.
+        name: str
+    # `SET name TO value`, kept as a session's setting.
+    setting
+        # The setting's name.
+        name: str
+        # Its value.
+        value: str
+    # A statement with nothing in it.
+    empty
+
+## The catalog
+
+# A column of a table.
+record Column
+    # Its name.
+    name: str
+    # Its type.
+    type_name: str
+    # Whether NULL is refused.
+    not_null: bool
+    # Whether it takes the next number of the table's sequence by default.
+    serial: bool
+    # Its default, none where it has none.
+    default_value: [Expr]
+
+# A unique constraint or an index.
+record Index
+    # Its name.
+    name: str
+    # Its columns.
+    columns: [str]
+    # Whether two rows may not share its columns' values.
+    unique: bool
+    # The rows it covers where it is partial, none for every row.
+    predicate: [Expr]
+
+# A table.
+record Table
+    # Its name.
+    name: str
+    # Its columns, in order.
+    columns: [Column]
+    # Its rows, each a value per column.
+    rows: [[Datum]]
+    # Its indexes, its primary key's first where it has one.
+    indexes: [Index]
+    # Its `CHECK` constraints.
+    checks: [Expr]
+    # The number its sequence answers next.
+    next_serial: i64
+
+# Every table, and a count of the changes committed.
+record Database
+    # The tables, in the order they were made.
+    tables: [Table]
+    # How many transactions have committed a change: a transaction that
+    # began at another count meets a change it did not see.
+    version: i64
+
+# A database of no table.
+function empty_database() -> Database
+    return Database(tables: [], version: 0)
+
+# The place of the table `name`, -1 where there is none.
+#
+# - `db`: the database.
+# - `name`: the table's name.
+function table_at(db: Database lent, name: str) -> i64
+    for i in range(from: 0, to: db.tables.len())
+        if db.tables[i].name == name
+            return i
+
+    return -1
+
+# The place of the column `name` in `t`, -1 where there is none.
+#
+# - `t`: the table.
+# - `name`: the column's name.
+function column_at(t: Table lent, name: str) -> i64
+    for i in range(from: 0, to: t.columns.len())
+        if t.columns[i].name == name
+            return i
+
+    return -1
+
+# A `SELECT` of `items` from no table, with no clause: what the parser
+# fills in.
+#
+# - `items`: what it answers.
+function bare_select(items: [Item]) -> Select
+    return Select(
+        items: items,
+        table: "",
+        alias: "",
+        condition: fail(code: "not_found", msg: "no WHERE"),
+        group_by: [],
+        order_by: [],
+        limit: fail(code: "not_found", msg: "no LIMIT"),
+        offset: fail(code: "not_found", msg: "no OFFSET")
+    )
+
+test "table_at, column_at: found and not"
+    t = Table(
+        name: "t",
+        columns: [Column(name: "a", type_name: "int8", not_null: false, serial: false, default_value: [])],
+        rows: [],
+        indexes: [],
+        checks: [],
+        next_serial: 1
+    )
+    db = Database(tables: [t], version: 0)
+    assert table_at(db, name: "t") == 0 && table_at(db, name: "u") == -1
+    assert column_at(t, name: "a") == 0 && column_at(t, name: "b") == -1
+
+test "bare_select: no table, no clause"
+    s = bare_select([])
+    assert s.table == "" && s.condition.is_err() && s.limit.is_err() && s.order_by.len() == 0

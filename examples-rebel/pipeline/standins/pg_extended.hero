@@ -1,0 +1,330 @@
+# The extended query flow of the PostgreSQL stand-in, message by message,
+# as protocol 3.0 has a server answer it: `Parse` reads one statement and
+# keeps it under its name, `Bind` makes a portal of it with its values,
+# `Describe` tells a statement's parameters and a portal's columns,
+# `Execute` runs a portal inside the session's block or an implicit one,
+# `Sync` ends that implicit block and answers `ReadyForQuery`, `Close`
+# lets a statement or a portal go. A `Bind` is held to its statement: as
+# many values as placeholders, each read by the type the `Parse` named,
+# every result in the text format. An error passes over every message
+# until `Sync`, as PostgreSQL's does.
+
+use <rebel>/bytes
+use <rebel>/numbers
+
+use standins/pg_query
+use standins/pg_state
+use standins/pg_wire
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_exec
+use standins/sql_lex
+use standins/sql_parse
+use standins/sql_tree
+
+## Errors
+
+# The answers of one message of the extended flow, or its error, after
+# which the session passes over every message until `Sync`.
+#
+# - `s`: the session.
+# - `answered`: what the message came to.
+function extended(@s: pg_state.Session, answered: [u8]?) -> [u8]
+    match answered
+        .ok out => return out
+        .err e =>
+            s.skipping @ true
+
+            if s.block == .explicit
+                s.failed @ true
+            return pg_query.error_of(e.msg)
+
+## Messages
+
+# `Parse`: the statement read and kept under its name.
+#
+# - `s`: the session.
+# - `body`: the message's body.
+#
+# Fails `invalid` with `42601` for a text of more than one statement,
+# `42P05` for a name taken, and as `sql_parse.statements` fails.
+function parse(@s: pg_state.Session, body: [u8]) -> [u8]?
+    b @= pg_wire.body_of(body)
+    name = pg_wire.take_cstring(@b)?
+    text = pg_wire.take_cstring(@b)?
+    count = pg_wire.take_i16(@b)?
+    types: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        types @ types.push(sql_datum.type_of_oid(pg_wire.take_i32(@b)?))
+
+    statements = sql_parse.statements(text)?
+
+    if statements.len() > 1
+        return sql_datum.refused(state: "42601", message: "cannot insert multiple commands into a prepared statement")
+
+    stmt: sql_tree.Statement = if statements.len() == 0
+        .empty
+    else
+        statements[0]
+    needed = placeholder_count(text)
+
+    while types.len() < needed
+        types @ types.push("unknown")
+
+    at = pg_state.prepared_at(s, name: name)
+
+    if at >= 0 && name != ""
+        return sql_datum.refused(state: "42P05", message: f"prepared statement \"{name}\" already exists")
+    prepared = pg_state.Prepared(name: name, statement: stmt, param_types: types)
+
+    if at >= 0
+        s.prepared[at] @ prepared
+    else
+        s.prepared @ s.prepared.push(prepared)
+    return ok(pg_wire.message('1', body: []))
+
+# The largest placeholder's number `text` names, 0 for none.
+#
+# - `text`: the statement.
+function placeholder_count(text: str) -> i64
+    most: i64 @= 0
+
+    for t in sql_lex.tokens(text).default([])
+        if t.kind == "param"
+            n = numbers.parse_int(t.text).default(0)
+
+            if n > most
+                most @ n
+
+    return most
+
+# `Bind`: a portal of a prepared statement and its values, each read by
+# the type its `Parse` named.
+#
+# - `s`: the session.
+# - `body`: the message's body.
+#
+# Fails `invalid` with `26000` for a statement not prepared, `08P01` for
+# another count of values than of placeholders, `0A000` for a value or a
+# result in the binary format, and as `sql_datum.cast` fails for a value
+# not of its type's form.
+function bind(@s: pg_state.Session, body: [u8]) -> [u8]?
+    b @= pg_wire.body_of(body)
+    portal = pg_wire.take_cstring(@b)?
+    name = pg_wire.take_cstring(@b)?
+    at = pg_state.prepared_at(s, name: name)
+
+    if at < 0
+        return sql_datum.refused(state: "26000", message: f"prepared statement \"{name}\" does not exist")
+    prepared = s.prepared[at]
+    format_count = pg_wire.take_i16(@b)?
+    formats: [i64] @= []
+
+    for _ in range(from: 0, to: format_count)
+        formats @ formats.push(pg_wire.take_i16(@b)?)
+
+    count = pg_wire.take_i16(@b)?
+
+    if count != prepared.param_types.len()
+        return sql_datum.refused(
+            state: "08P01",
+            message: f"bind message supplies {count} parameters, but prepared statement \"{name}\" requires {prepared.param_types.len()}"
+        )
+    params: [sql_tree.Datum] @= []
+
+    for i in range(from: 0, to: count)
+        format = if formats.len() == 1
+            formats[0]
+        else if i < formats.len()
+            formats[i]
+        else
+            0
+        length = pg_wire.take_i32(@b)?
+
+        if length == -1
+            params @ params.push(.null_value)
+        else
+            raw = pg_wire.take_raw(@b, n: length)?
+
+            if format != 0
+                return sql_datum.refused(
+                    state: "0A000",
+                    message: f"the stand-in reads parameters in the text format alone, and ${i + 1} came in binary"
+                )
+
+            text = match bytes.to_text(raw)
+                .ok t => t
+                .err _ => return sql_datum.refused(
+                    state: "22021",
+                    message: "invalid byte sequence for encoding \"UTF8\""
+                )
+
+            untyped: sql_tree.Datum = .unknown(v: text)
+
+            value = if prepared.param_types[i] == "unknown"
+                untyped
+            else
+                sql_cast.cast(untyped, to: prepared.param_types[i])?
+            params @ params.push(value)
+
+    result_count = pg_wire.take_i16(@b)?
+
+    for _ in range(from: 0, to: result_count)
+        if pg_wire.take_i16(@b)? != 0
+            return sql_datum.refused(state: "0A000", message: "the stand-in answers columns in the text format alone")
+
+    made = pg_state.Portal(
+        name: portal,
+        statement: prepared.statement,
+        params: params,
+        param_types: prepared.param_types
+    )
+    place = pg_state.portal_at(s, name: portal)
+
+    if place >= 0
+        s.portals[place] @ made
+    else
+        s.portals @ s.portals.push(made)
+    return ok(pg_wire.message('2', body: []))
+
+# `Describe`: a statement's parameters' types and its columns, or a
+# portal's columns.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `body`: the message's body.
+#
+# Fails `invalid` with `26000` or `34000` for a statement or a portal that
+# does not exist.
+function describe(shared: pg_state.Shared lent, s: pg_state.Session lent, body: [u8]) -> [u8]?
+    b @= pg_wire.body_of(body)
+    raw_kind = pg_wire.take_raw(@b, n: 1)?
+    name = pg_wire.take_cstring(@b)?
+
+    db = if s.block == .none
+        shared.db
+    else
+        s.private
+
+    if raw_kind[0] == 'S'
+        at = pg_state.prepared_at(s, name: name)
+
+        if at < 0
+            return sql_datum.refused(state: "26000", message: f"prepared statement \"{name}\" does not exist")
+        p = s.prepared[at]
+        shown: [str] @= []
+
+        for t in p.param_types
+            kind = if t == "unknown"
+                "text"
+            else
+                t
+            shown @ shown.push(kind)
+
+        out: [u8] @= pg_wire.parameter_description(shown)
+        pg_query.append(out: @out, data: columns_of(p.statement, params: p.param_types, db: db))
+        return ok(out)
+    at = pg_state.portal_at(s, name: name)
+
+    if at < 0
+        return sql_datum.refused(state: "34000", message: f"portal \"{name}\" does not exist")
+    return ok(columns_of(s.portals[at].statement, params: sql_exec.params_types(s.portals[at].params), db: db))
+
+# A statement's `RowDescription`, or `NoData` for one that answers no rows.
+#
+# - `stmt`: the statement.
+# - `params`: its parameters' types.
+# - `db`: the database it runs against.
+function columns_of(stmt: sql_tree.Statement, params: [str], db: sql_tree.Database lent) -> [u8]
+    names = sql_exec.result_names(stmt, db: db)
+
+    if names.len() == 0
+        return pg_wire.message('n', body: [])
+    return pg_wire.row_description(names: names, types: sql_exec.result_types(stmt, params: params, db: db))
+
+# `Execute`: a portal run, its rows and its tag, inside the session's block
+# or an implicit one `Sync` ends.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+# - `body`: the message's body.
+function execute(@shared: pg_state.Shared, @s: pg_state.Session, body: [u8]) -> [u8]
+    b @= pg_wire.body_of(body)
+    name = pg_wire.take_cstring(@b).default("")
+    at = pg_state.portal_at(s, name: name)
+
+    if at < 0
+        return extended(@s, answered: sql_datum.refused(state: "34000", message: f"portal \"{name}\" does not exist"))
+    portal = s.portals[at]
+
+    if portal.statement == .empty
+        return pg_wire.message('I', body: [])
+
+    if s.block == .none
+        pg_query.open_block(shared, s: @s, kind: .implicit)
+
+    match pg_query.run_in_block(@shared, s: @s, stmt: portal.statement, params: portal.params)
+        .err e =>
+            if s.block == .implicit
+                _ = pg_query.close_block(@shared, s: @s, commit: false).is_err()
+            return extended(@s, answered: fail(code: e.code, msg: e.msg))
+        .ok ran =>
+            out: [u8] @= []
+
+            for n in ran.notices
+                pg_query.append(out: @out, data: n)
+
+            for row in ran.outcome.rows
+                pg_query.append(out: @out, data: pg_wire.data_row(row))
+
+            pg_query.append(out: @out, data: pg_wire.command_complete(ran.outcome.tag))
+            return out
+
+# `Sync`: the implicit block committed, the errors' passing over ended, and
+# `ReadyForQuery`.
+#
+# - `shared`: the shared state.
+# - `s`: the session.
+function sync(@shared: pg_state.Shared, @s: pg_state.Session) -> [u8]
+    out: [u8] @= []
+    s.skipping @ false
+
+    if s.block == .implicit
+        match pg_query.close_block(@shared, s: @s, commit: true)
+            .err e => pg_query.append(out: @out, data: pg_query.error_of(e.msg))
+            .ok _  => _ = 0
+    pg_query.append(out: @out, data: pg_wire.ready_for_query(pg_state.status_of(s)))
+    return out
+
+# `Close`: a prepared statement or a portal let go.
+#
+# - `s`: the session.
+# - `body`: the message's body.
+function close(@s: pg_state.Session, body: [u8]) -> [u8]?
+    b @= pg_wire.body_of(body)
+    raw_kind = pg_wire.take_raw(@b, n: 1)?
+    name = pg_wire.take_cstring(@b)?
+
+    if raw_kind[0] == 'S'
+        kept: [pg_state.Prepared] @= []
+
+        for p in s.prepared
+            if p.name != name
+                kept @ kept.push(p)
+
+        s.prepared @ kept
+    else
+        kept: [pg_state.Portal] @= []
+
+        for p in s.portals
+            if p.name != name
+                kept @ kept.push(p)
+
+        s.portals @ kept
+    return ok(pg_wire.message('3', body: []))
+
+test "placeholder_count: the largest number named, none, a number in a string not counted"
+    assert placeholder_count("SELECT $2, $1") == 2
+    assert placeholder_count("SELECT 1") == 0
+    assert placeholder_count("SELECT '$3'") == 0

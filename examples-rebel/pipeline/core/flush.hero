@@ -1,0 +1,182 @@
+# Closed windows written out. Each window's batches, one per topic, are
+# copied for the hot path (LZ4) and the archive (Zstandard) on threads,
+# each copy checked against its batch; every copy is put by the bucket's
+# retries; then one transaction writes the window's aggregates, a ledger
+# row per copy, and a job in the jobs store for every copy whose put was
+# given up. Only once that transaction commits may the consumer's offsets
+# move past the window's events, so a crash between the two reads them
+# again and writes the same keys again: at least once, never lost.
+
+use <rebel>/errors
+use <rebel>/s3
+use <rebel>/sql/postgres
+use <rebel>/time
+
+use batching/batch
+use batching/windows
+use codecs/tiers
+use core/pipeline
+use ops/telemetry
+use replay/deadletter
+use storage/layout
+use storage/writer
+use store/aggregates
+use store/ledger
+
+## Flushing
+
+# One copy of a batch and what its put came to.
+record Copy
+    # The batch.
+    batch: batch.Batch
+    # The tier.
+    tier: tiers.Tier
+    # The object's key.
+    key: str
+    # The compressed bytes.
+    data: [u8]
+    # What the put came to.
+    put: writer.Put
+
+# Writes every window of `closed`, oldest first.
+#
+# - `p`: the pipeline; its counts and metrics move.
+# - `closed`: the windows, by their starts.
+#
+# Fails as the compression and the database's transaction fail; a window
+# that fails is not counted written, and the ones after it are not tried.
+function flush(@p: pipeline.Pipeline, closed: [windows.Window]) -> ()?
+    for w in closed
+        flush_window(@p, w: w)?
+
+    return ok()
+
+# Writes one window.
+#
+# - `p`: the pipeline.
+# - `w`: the window.
+function flush_window(@p: pipeline.Pipeline, w: windows.Window) -> ()?
+    batches = batch.batches_of(w)
+
+    if batches.len() == 0
+        return ok()
+    jobs: [tiers.Job] @= []
+    hot_and_archive: [tiers.Tier] = [.hot, .archive]
+
+    for b in batches
+        for t in hot_and_archive
+            jobs @ jobs.push(tiers.Job(codec: tiers.codec_of(t), sha256: b.sha256, raw: b.raw))
+
+    data = tiers.compress_all(jobs, workers: p.workers)?
+    copies: [Copy] @= []
+    i: i64 @= 0
+
+    for b in batches
+        for t in hot_and_archive
+            key = layout.key_of(t, topic: b.topic, window_start_ms: b.window_start_ms)
+            put = writer.put(p.bucket, key: key, data: data[i], meta: meta_of(b, tier: t))
+            counted(@p, put: put)
+            copies @ copies.push(Copy(batch: b, tier: t, key: key, data: data[i], put: put))
+            i @ i + 1
+
+    postgres.begin(@p.db)?
+
+    stamp = time.format(time.from_unix_milliseconds(w.start_ms)?, .rfc3339)
+
+    match errors.context(recorded(@p, batches: batches, copies: copies), what: f"recording the window of {stamp}")
+        .ok _ => postgres.commit(@p.db)?
+        .err e =>
+            _ = postgres.rollback(@p.db).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    for c in copies
+        if !c.put.etag.is_err()
+            telemetry.batch_written(
+                @p.registry,
+                tier: tiers.tier_name(c.tier),
+                raw_bytes: c.batch.raw.len(),
+                stored_bytes: c.data.len()
+            )
+            p.counts.copies @ p.counts.copies + 1
+        else
+            p.counts.kept @ p.counts.kept.push(c.key)
+            telemetry.count(@p.registry, name: telemetry.KEPT, labels: [])
+
+    telemetry.count(@p.registry, name: telemetry.WINDOWS, labels: [])
+    p.counts.windows @ p.counts.windows + 1
+    return ok()
+
+# The metadata a copy is put with: its events, its codec, and its raw
+# batch's SHA-256, so an object read on its own tells what it holds.
+#
+# - `b`: the batch.
+# - `t`: the tier.
+function meta_of(b: batch.Batch, tier: tiers.Tier) -> [s3.Meta]
+    return [
+        s3.Meta(name: "events", value: to_str(b.events.len()))
+        s3.Meta(name: "codec", value: tiers.codec_of(tier))
+        s3.Meta(name: "raw-sha256", value: b.sha256)
+    ]
+
+# A put's attempts counted, in the run's counts and the metrics: every
+# attempt but the last was `retried`, and the last either `stored` or
+# `given_up`.
+#
+# - `p`: the pipeline.
+# - `put`: what the put came to.
+function counted(@p: pipeline.Pipeline, put: writer.Put)
+    p.counts.attempts @ p.counts.attempts + put.attempts
+    telemetry.add(@p.registry, name: telemetry.PUTS, labels: ["retried"], amount: put.attempts - 1)
+
+    if put.etag.is_err()
+        telemetry.count(@p.registry, name: telemetry.PUTS, labels: ["given_up"])
+    else
+        telemetry.count(@p.registry, name: telemetry.PUTS, labels: ["stored"])
+
+# The window's aggregates, its ledger rows and its kept writes, in the
+# caller's transaction.
+#
+# - `p`: the pipeline.
+# - `batches`: the window's batches.
+# - `copies`: their copies and what each put came to.
+function recorded(@p: pipeline.Pipeline, batches: [batch.Batch], copies: [Copy]) -> ()?
+    for b in batches
+        for a in aggregates.of_batch(b)?
+            aggregates.upsert(@p.db, a: a)?
+
+    for c in copies
+        state = if c.put.etag.is_err()
+            "pending_replay"
+        else
+            "stored"
+        entry = ledger.Entry(
+            key: c.key,
+            topic: c.batch.topic,
+            tier: tiers.tier_name(c.tier),
+            codec: tiers.codec_of(c.tier),
+            window_start: time.from_unix_milliseconds(c.batch.window_start_ms)?,
+            events: c.batch.events.len(),
+            raw_bytes: c.batch.raw.len(),
+            stored_bytes: c.data.len(),
+            sha256: c.batch.sha256,
+            state: state
+        )
+        ledger.record_entry(@p.db, e: entry)?
+
+        match c.put.etag
+            .ok _ => _ = 0
+            .err e =>
+                kept = deadletter.Kept(
+                    bucket: p.bucket.name,
+                    key: c.key,
+                    tier: tiers.tier_name(c.tier),
+                    codec: tiers.codec_of(c.tier),
+                    events: c.batch.events.len(),
+                    raw_bytes: c.batch.raw.len(),
+                    sha256: c.batch.sha256,
+                    data: c.data,
+                    error: e.msg
+                )
+                _ = deadletter.keep(@p.db, k: kept)?
+
+    return ok()

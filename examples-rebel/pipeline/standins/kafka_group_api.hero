@@ -1,0 +1,394 @@
+# The requests of the Kafka broker stand-in that keep consumer groups:
+# `JoinGroup` 5, `SyncGroup` 3, `Heartbeat` 3, `LeaveGroup` 3,
+# `OffsetCommit` 7 and `OffsetFetch` 5, each read and answered in the layout the protocol
+# guide gives that version (kafka.apache.org/protocol, read 2026-11-21).
+# The group's rules are `kafka_groups`'; a request that must wait (a join
+# until every member has joined, a follower's sync until the leader's) is
+# answered `park` the first time and asked again, with `first` false,
+# whenever the broker's state moves or its time runs out.
+
+use standins/kafka_codec
+use standins/kafka_groups
+use standins/kafka_state
+use standins/scram_server
+
+## Joining and synchronizing
+
+# What `JoinGroup` 5 comes to: an error at once, or a wait until the
+# rebalance ends, then the generation, its leader, and for the leader every
+# member's subscription.
+#
+# - `b`: the broker; the group's state moves.
+# - `body`: the request's body.
+# - `client_id`: the client's identifier, which a new member's identifier
+#   begins with.
+# - `first`: whether the request is read for the first time, else asked
+#   again while it waits.
+# - `now_ms`: the time now, milliseconds since 1970.
+#
+# Fails `invalid` where the body is no such request.
+function join_group(@b: kafka_state.Broker, body: [u8], client_id: str, first: bool, now_ms: i64) -> kafka_state.Outcome?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "JoinGroup's group")?
+    session_ms = kafka_codec.take_i32(@r, what: "JoinGroup's session")?
+    rebalance_ms = kafka_codec.take_i32(@r, what: "JoinGroup's rebalance time")?
+    member_id = kafka_codec.take_string(@r, what: "JoinGroup's member")?
+    _ = kafka_codec.take_string(@r, what: "JoinGroup's instance")?
+    protocol_type = kafka_codec.take_string(@r, what: "JoinGroup's protocol type")?
+    count = kafka_codec.take_count(@r, what: "JoinGroup's protocols")?
+    names: [str] @= []
+    metadata: [u8] @= []
+
+    for i in range(from: 0, to: count)
+        names @ names.push(kafka_codec.take_string(@r, what: "a protocol's name")?)
+        one = kafka_codec.take_bytes(@r, what: "a protocol's metadata")?
+
+        if i == 0
+            metadata @ one
+
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g @= b.groups[at]
+
+    if first
+        step = kafka_groups.join_member(
+            @g,
+            member_id: member_id,
+            client_id: client_id,
+            protocol_type: protocol_type,
+            protocols: names,
+            metadata: metadata,
+            session_ms: session_ms,
+            rebalance_ms: rebalance_ms,
+            now_ms: now_ms
+        )
+
+        if step.error != kafka_groups.NONE
+            b.groups[at] @ g
+            return ok(.reply(body: joined(g, error: step.error, member_id: step.member_id)))
+    _ = kafka_groups.settle_join(@g, now_ms: now_ms)
+    b.groups[at] @ g
+
+    if kafka_groups.member_at(g, member_id: member_id) < 0
+        return ok(.reply(body: joined(g, error: kafka_groups.UNKNOWN_MEMBER_ID, member_id: member_id)))
+
+    if g.phase == .preparing
+        return ok(.park(deadline_ms: g.rebalance_began_ms + rebalance_ms))
+    return ok(.reply(body: joined(g, error: kafka_groups.NONE, member_id: member_id)))
+
+# The body of a `JoinGroup` 5 answer to `member_id`: the members listed for
+# the leader alone.
+#
+# - `g`: the group.
+# - `error`: the error, `NONE` once the rebalance ended.
+# - `member_id`: the member answered.
+function joined(g: kafka_groups.Group lent, error: i64, member_id: str) -> [u8]
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: error)
+
+    if error != kafka_groups.NONE
+        kafka_codec.put_i32(@out, v: -1)
+        kafka_codec.put_string(@out, s: "")
+        kafka_codec.put_string(@out, s: "")
+        kafka_codec.put_string(@out, s: member_id)
+        kafka_codec.put_i32(@out, v: 0)
+        return out
+    kafka_codec.put_i32(@out, v: g.generation)
+    kafka_codec.put_string(@out, s: g.protocol)
+    kafka_codec.put_string(@out, s: g.leader)
+    kafka_codec.put_string(@out, s: member_id)
+
+    if member_id == g.leader
+        kafka_codec.put_i32(@out, v: g.members.len())
+
+        for m in g.members
+            kafka_codec.put_string(@out, s: m.member_id)
+            kafka_codec.put_null_string(@out)
+            kafka_codec.put_bytes(out: @out, data: m.metadata)
+    else
+        kafka_codec.put_i32(@out, v: 0)
+    return out
+
+# What `SyncGroup` 3 comes to: the member's assignment, at once for the
+# leader and for a follower once the leader has synced, or an error.
+#
+# - `b`: the broker; the leader's assignments kept.
+# - `body`: the request's body.
+# - `first`: whether the request is read for the first time.
+# - `expired`: whether a follower's wait for the leader has run out, which
+#   is answered `REBALANCE_IN_PROGRESS` so it joins again.
+# - `now_ms`: the time now, milliseconds since 1970.
+#
+# Fails `invalid` where the body is no such request.
+function sync_group(@b: kafka_state.Broker, body: [u8], first: bool, expired: bool, now_ms: i64) -> kafka_state.Outcome?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "SyncGroup's group")?
+    generation = kafka_codec.take_i32(@r, what: "SyncGroup's generation")?
+    member_id = kafka_codec.take_string(@r, what: "SyncGroup's member")?
+    _ = kafka_codec.take_string(@r, what: "SyncGroup's instance")?
+    count = kafka_codec.take_count(@r, what: "SyncGroup's assignments")?
+    members: [str] @= []
+    assignments: [[u8]] @= []
+
+    for _ in range(from: 0, to: count)
+        members @ members.push(kafka_codec.take_string(@r, what: "an assignment's member")?)
+        assignments @ assignments.push(kafka_codec.take_bytes(@r, what: "an assignment")?)
+
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g @= b.groups[at]
+
+    if first
+        error = kafka_groups.sync(
+            @g,
+            member_id: member_id,
+            generation: generation,
+            members: members,
+            assignments: assignments,
+            now_ms: now_ms
+        )
+        b.groups[at] @ g
+
+        if error != kafka_groups.NONE
+            return ok(.reply(body: synced(error, assignment: [])))
+    who = kafka_groups.member_at(g, member_id: member_id)
+
+    if who < 0
+        return ok(.reply(body: synced(kafka_groups.UNKNOWN_MEMBER_ID, assignment: [])))
+
+    if g.phase == .preparing || g.generation != generation
+        return ok(.reply(body: synced(kafka_groups.REBALANCE_IN_PROGRESS, assignment: [])))
+
+    if kafka_groups.assignments_ready(g)
+        return ok(.reply(body: synced(kafka_groups.NONE, assignment: g.members[who].assignment)))
+
+    if expired
+        return ok(.reply(body: synced(kafka_groups.REBALANCE_IN_PROGRESS, assignment: [])))
+    return ok(.park(deadline_ms: now_ms + g.members[who].session_ms))
+
+# The body of a `SyncGroup` 3 answer.
+#
+# - `error`: the error.
+# - `assignment`: the member's assignment, none with an error.
+function synced(error: i64, assignment: [u8]) -> [u8]
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: error)
+    kafka_codec.put_bytes(out: @out, data: assignment)
+    return out
+
+# The answer to `Heartbeat` 3.
+#
+# - `b`: the broker; the member counted heard.
+# - `body`: the request's body.
+# - `now_ms`: the time now.
+#
+# Fails `invalid` where the body is no such request.
+function heartbeat(@b: kafka_state.Broker, body: [u8], now_ms: i64) -> [u8]?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "Heartbeat's group")?
+    generation = kafka_codec.take_i32(@r, what: "Heartbeat's generation")?
+    member_id = kafka_codec.take_string(@r, what: "Heartbeat's member")?
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g @= b.groups[at]
+    error = kafka_groups.heartbeat(@g, member_id: member_id, generation: generation, now_ms: now_ms)
+    b.groups[at] @ g
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: error)
+    return ok(out)
+
+# The answer to `LeaveGroup` 3: each member named removed.
+#
+# - `b`: the broker; the members removed and the group rebalanced.
+# - `body`: the request's body.
+# - `now_ms`: the time now.
+#
+# Fails `invalid` where the body is no such request.
+function leave(@b: kafka_state.Broker, body: [u8], now_ms: i64) -> [u8]?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "LeaveGroup's group")?
+    count = kafka_codec.take_count(@r, what: "LeaveGroup's members")?
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g @= b.groups[at]
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i16(@out, v: 0)
+    kafka_codec.put_i32(@out, v: count)
+
+    for _ in range(from: 0, to: count)
+        member_id = kafka_codec.take_string(@r, what: "a leaving member")?
+        _ = kafka_codec.take_string(@r, what: "a leaving member's instance")?
+        error = kafka_groups.leave(@g, member_id: member_id, now_ms: now_ms)
+        kafka_codec.put_string(@out, s: member_id)
+        kafka_codec.put_null_string(@out)
+        kafka_codec.put_i16(@out, v: error)
+
+    b.groups[at] @ g
+    return ok(out)
+
+## Offsets
+
+# The answer to `OffsetCommit` 7: each partition's offset kept, or every
+# one refused with the membership's error.
+#
+# - `b`: the broker; the offsets kept.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function commit(@b: kafka_state.Broker, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "OffsetCommit's group")?
+    generation = kafka_codec.take_i32(@r, what: "OffsetCommit's generation")?
+    member_id = kafka_codec.take_string(@r, what: "OffsetCommit's member")?
+    _ = kafka_codec.take_string(@r, what: "OffsetCommit's instance")?
+    topics = kafka_codec.take_count(@r, what: "OffsetCommit's topics")?
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g @= b.groups[at]
+    error = kafka_groups.commit_error(g, member_id: member_id, generation: generation)
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i32(@out, v: topics)
+
+    for _ in range(from: 0, to: topics)
+        name = kafka_codec.take_string(@r, what: "a topic's name")?
+        kafka_codec.put_string(@out, s: name)
+        partitions = kafka_codec.take_count(@r, what: "a topic's partitions")?
+        kafka_codec.put_i32(@out, v: partitions)
+
+        for _ in range(from: 0, to: partitions)
+            index = kafka_codec.take_i32(@r, what: "a partition")?
+            offset = kafka_codec.take_i64(@r, what: "a partition's offset")?
+            _ = kafka_codec.take_i32(@r, what: "a partition's leader epoch")?
+            metadata = kafka_codec.take_string(@r, what: "a partition's metadata")?
+            one: i64 @= error
+
+            if one == kafka_groups.NONE && kafka_state.log_at(b, topic: name, partition: index) < 0
+                one @ 3
+
+            if one == kafka_groups.NONE
+                kafka_groups.keep_offset(@g, topic: name, partition: index, offset: offset, metadata: metadata)
+            kafka_codec.put_i32(@out, v: index)
+            kafka_codec.put_i16(@out, v: one)
+
+    b.groups[at] @ g
+    return ok(out)
+
+# The answer to `OffsetFetch` 5: the offsets the group keeps for the
+# partitions asked, or for every partition it keeps where the list is null.
+#
+# - `b`: the broker.
+# - `body`: the request's body.
+#
+# Fails `invalid` where the body is no such request.
+function fetch_offsets(@b: kafka_state.Broker, body: [u8]) -> [u8]?
+    r @= kafka_codec.reader(body)
+    group_id = kafka_codec.take_string(@r, what: "OffsetFetch's group")?
+    count = kafka_codec.take_i32(@r, what: "OffsetFetch's topics")?
+    at = kafka_state.group_at(@b, group_id: group_id)
+    g = b.groups[at]
+    names: [str] @= []
+    asked: [[i64]] @= []
+
+    if count == -1
+        for c in g.offsets
+            if !has_name(names, name: c.topic)
+                names @ names.push(c.topic)
+                kept: [i64] @= []
+
+                for d in g.offsets
+                    if d.topic == c.topic
+                        kept @ kept.push(d.partition)
+
+                asked @ asked.push(kept)
+    else
+        if count < 0 || count > body.len()
+            return fail(code: kafka_codec.INVALID, msg: f"OffsetFetch asks {count} topics")
+
+        for _ in range(from: 0, to: count)
+            names @ names.push(kafka_codec.take_string(@r, what: "a topic's name")?)
+            partitions = kafka_codec.take_count(@r, what: "a topic's partitions")?
+            these: [i64] @= []
+
+            for _ in range(from: 0, to: partitions)
+                these @ these.push(kafka_codec.take_i32(@r, what: "a partition")?)
+
+            asked @ asked.push(these)
+
+    out: [u8] @= []
+    kafka_codec.put_i32(@out, v: 0)
+    kafka_codec.put_i32(@out, v: names.len())
+
+    for i in range(from: 0, to: names.len())
+        kafka_codec.put_string(@out, s: names[i])
+        kafka_codec.put_i32(@out, v: asked[i].len())
+
+        for p in asked[i]
+            kafka_codec.put_i32(@out, v: p)
+            kafka_codec.put_i64(@out, v: kafka_groups.offset_of(g, topic: names[i], partition: p))
+            kafka_codec.put_i32(@out, v: -1)
+            kafka_codec.put_string(@out, s: "")
+            kafka_codec.put_i16(@out, v: 0)
+
+    kafka_codec.put_i16(@out, v: 0)
+    return ok(out)
+
+# Whether `names` holds `name`.
+#
+# - `names`: the names.
+# - `name`: the one asked about.
+function has_name(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+test "join, sync: a consumer's two joins and its sync, as the Kafka client sends them"
+    b @= kafka_state.new(
+        9092,
+        topics: [kafka_state.Topic(name: "t", partitions: 1)],
+        user: "",
+        verifier: scram_server.verifier_of("x", salt: [1], iterations: 1).must()
+    )
+    req: [u8] @= []
+    kafka_codec.put_string(@req, s: "g")
+    kafka_codec.put_i32(@req, v: 45_000)
+    kafka_codec.put_i32(@req, v: 300_000)
+    kafka_codec.put_string(@req, s: "")
+    kafka_codec.put_null_string(@req)
+    kafka_codec.put_string(@req, s: "consumer")
+    kafka_codec.put_i32(@req, v: 1)
+    kafka_codec.put_string(@req, s: "range")
+    kafka_codec.put_bytes(out: @req, data: [0, 0])
+
+    match join_group(@b, body: req, client_id: "c", first: true, now_ms: 0).must()
+        .reply body                                    => assert body.body[5] == 79
+        .last_reply _ | .silent | .park _ | .hang_up _ => assert false
+
+    again: [u8] @= []
+    kafka_codec.put_string(@again, s: "g")
+    kafka_codec.put_i32(@again, v: 45_000)
+    kafka_codec.put_i32(@again, v: 300_000)
+    kafka_codec.put_string(@again, s: "c-1")
+    kafka_codec.put_null_string(@again)
+    kafka_codec.put_string(@again, s: "consumer")
+    kafka_codec.put_i32(@again, v: 1)
+    kafka_codec.put_string(@again, s: "range")
+    kafka_codec.put_bytes(out: @again, data: [0, 0])
+
+    match join_group(@b, body: again, client_id: "c", first: true, now_ms: 1).must()
+        .reply body                                    => assert body.body[5] == 0 && b.groups[0].generation == 1
+        .last_reply _ | .silent | .park _ | .hang_up _ => assert false
+
+    s: [u8] @= []
+    kafka_codec.put_string(@s, s: "g")
+    kafka_codec.put_i32(@s, v: 1)
+    kafka_codec.put_string(@s, s: "c-1")
+    kafka_codec.put_null_string(@s)
+    kafka_codec.put_i32(@s, v: 1)
+    kafka_codec.put_string(@s, s: "c-1")
+    kafka_codec.put_bytes(out: @s, data: [4, 2])
+
+    match sync_group(@b, body: s, first: true, expired: false, now_ms: 2).must()
+        .reply body                                    => assert body.body.slice(from: 6, to: 12) == [0, 0, 0, 2, 4, 2]
+        .last_reply _ | .silent | .park _ | .hang_up _ => assert false

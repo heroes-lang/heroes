@@ -1,0 +1,200 @@
+# Events cut into tumbling windows by their event time, as Kafka Streams
+# cuts them: each partition has a stream time, the newest event time read
+# from it so far; an event is late, and dropped, where its window's end
+# plus the grace period has been reached by its own partition's stream
+# time. A window closes once every partition the pipeline reads has
+# passed its end plus the grace, so an event taken is never one of a
+# window already written. Because both rules read a partition's own
+# events in their offsets' order, which events are late and what each
+# window holds do not depend on how the polls interleave the partitions.
+
+use events/event
+
+## Windows
+
+# A window and the events taken into it.
+record Window
+    # Its start, milliseconds since 1970, a multiple of the length.
+    start_ms: i64
+    # Its events, in the order they were read.
+    events: [event.Event]
+
+# A partition's stream time.
+record Stream
+    # The partition, as `topic/partition`.
+    name: str
+    # The newest event time read from it, milliseconds since 1970.
+    time_ms: i64
+
+# The windows open and what is known of each partition.
+record Windower
+    # A window's length, in milliseconds.
+    length_ms: i64
+    # The grace period, in milliseconds.
+    grace_ms: i64
+    # The windows open, by their start.
+    open: [Window]
+    # Each partition's stream time, in the order first read.
+    streams: [Stream]
+    # The events taken.
+    taken: i64
+    # The late events dropped.
+    late: i64
+
+# A windower of windows `length_ms` long with a grace of `grace_ms`.
+#
+# - `length_ms`: a window's length, above 0.
+# - `grace_ms`: the grace, 0 or more.
+function new(length_ms: i64, grace_ms: i64) -> Windower
+    return Windower(length_ms: length_ms, grace_ms: grace_ms, open: [], streams: [], taken: 0, late: 0)
+
+# The start of the window holding `at_ms`.
+#
+# - `at_ms`: an event time, 0 or more.
+# - `length_ms`: a window's length, above 0.
+function start_of(at_ms: i64, length_ms: i64) -> i64
+    return at_ms - at_ms % length_ms
+
+# The stream time of `name`, -1 before any event of it.
+#
+# - `w`: the windower.
+# - `name`: the partition, `topic/partition`.
+function stream_time(w: Windower lent, name: str) -> i64
+    for s in w.streams
+        if s.name == name
+            return s.time_ms
+
+    return -1
+
+# Takes `e` into its window, or drops it as late; answers whether it was
+# taken.
+#
+# - `w`: the windower; the event's partition's stream time moves.
+# - `e`: the event.
+function add(@w: Windower, e: event.Event) -> bool
+    name = f"{e.topic}/{e.partition}"
+    stream = stream_time(w, name: name)
+    start = start_of(at_ms: e.at_ms, length_ms: w.length_ms)
+
+    if stream >= 0 && start + w.length_ms + w.grace_ms <= stream
+        w.late @ w.late + 1
+        return false
+    placed @= false
+
+    for i in range(from: 0, to: w.open.len())
+        if !placed && w.open[i].start_ms == start
+            events @= w.open[i].events
+            events @ events.push(e)
+            w.open[i].events @ events
+            placed @ true
+
+    if !placed
+        kept: [Window] @= []
+        inserted @= false
+
+        for one in w.open
+            if !inserted && one.start_ms > start
+                kept @ kept.push(Window(start_ms: start, events: [e]))
+                inserted @ true
+            kept @ kept.push(one)
+
+        if !inserted
+            kept @ kept.push(Window(start_ms: start, events: [e]))
+        w.open @ kept
+    moved @= false
+
+    for i in range(from: 0, to: w.streams.len())
+        if w.streams[i].name == name
+            moved @ true
+
+            if e.at_ms > w.streams[i].time_ms
+                w.streams[i].time_ms @ e.at_ms
+
+    if !moved
+        w.streams @ w.streams.push(Stream(name: name, time_ms: e.at_ms))
+    w.taken @ w.taken + 1
+    return true
+
+# The windows every partition of `partitions` has passed, by their end and
+# the grace, taken out of the open ones in the order of their starts; none
+# while a partition has no event yet.
+#
+# - `w`: the windower.
+# - `partitions`: the partitions the pipeline reads, `topic/partition`.
+function closed(@w: Windower, partitions: [str]) -> [Window]
+    if partitions.len() == 0
+        return []
+    least: i64 @= -1
+
+    for p in partitions
+        t = stream_time(w, name: p)
+
+        if t < 0
+            return []
+
+        if least < 0 || t < least
+            least @ t
+
+    out: [Window] @= []
+    kept: [Window] @= []
+
+    for one in w.open
+        if one.start_ms + w.length_ms + w.grace_ms <= least
+            out @ out.push(one)
+        else
+            kept @ kept.push(one)
+
+    w.open @ kept
+    return out
+
+# Every open window, taken out in the order of their starts: what a
+# pipeline that stops, or that has read everything, writes.
+#
+# - `w`: the windower; no window open after.
+function drain(@w: Windower) -> [Window]
+    out = w.open
+    w.open @ []
+    return out
+
+# An event of `topic` and `partition` at `at_ms`, for the tests.
+#
+# - `topic`: the topic.
+# - `partition`: the partition.
+# - `offset`: its offset.
+# - `at_ms`: its time.
+function sample(topic: str, partition: i64, offset: i64, at_ms: i64) -> event.Event
+    return event.Event(
+        topic: topic,
+        partition: partition,
+        offset: offset,
+        id: f"{topic}-{offset}",
+        kind: "k",
+        at_ms: at_ms,
+        user: "",
+        value: 1.0,
+        format: "json"
+    )
+
+test "add: events taken into their windows in the order of their starts, an older one within the grace"
+    w @= new(length_ms: 60_000, grace_ms: 10_000)
+    assert add(@w, e: sample("t", partition: 0, offset: 0, at_ms: 125_000))
+    assert add(@w, e: sample("t", partition: 0, offset: 1, at_ms: 61_000))
+    assert w.late == 0
+    assert w.open.len() == 2 && w.open[0].start_ms == 60_000 && w.open[1].start_ms == 120_000
+
+test "add: an event late by its own partition's stream time is dropped, another partition's is not"
+    w @= new(length_ms: 60_000, grace_ms: 10_000)
+    assert add(@w, e: sample("t", partition: 0, offset: 0, at_ms: 200_000))
+    assert !add(@w, e: sample("t", partition: 0, offset: 1, at_ms: 100_000))
+    assert add(@w, e: sample("t", partition: 1, offset: 0, at_ms: 100_000))
+    assert w.late == 1 && w.taken == 2
+
+test "closed, drain: a window closes once every partition has passed it; the rest drain"
+    w @= new(length_ms: 60_000, grace_ms: 0)
+    _ = add(@w, e: sample("t", partition: 0, offset: 0, at_ms: 10_000))
+    _ = add(@w, e: sample("t", partition: 0, offset: 1, at_ms: 70_000))
+    assert closed(@w, partitions: ["t/0", "t/1"]).len() == 0
+    _ = add(@w, e: sample("t", partition: 1, offset: 0, at_ms: 65_000))
+    shut = closed(@w, partitions: ["t/0", "t/1"])
+    assert shut.len() == 1 && shut[0].start_ms == 0
+    assert drain(@w).len() == 1 && w.open.len() == 0

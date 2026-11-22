@@ -1,0 +1,333 @@
+# The operators of the PostgreSQL stand-in's engine over two values:
+# `+ - * /` on integers, exact numerics, floats, timestamps and intervals
+# as PostgreSQL defines them for those types; `||` joining texts, or
+# `jsonb` values as PostgreSQL's `jsonb || jsonb` does (two arrays joined,
+# a value appended to an array, two objects merged); and the truth of a
+# value where a condition is asked. NULL on either side answers NULL. An
+# untyped side takes the other's type. Integer arithmetic is checked: an
+# overflow is `22003` and a division by zero `22012`, never an abort.
+
+use <rebel>/json
+use <rebel>/math
+
+use standins/sql_cast
+use standins/sql_datum
+use standins/sql_order
+use standins/sql_tree
+
+## Arithmetic
+
+# `a op b` for `op` one of `+ - * /`.
+#
+# - `op`: the operator.
+# - `a`: the left value.
+# - `b`: the right value.
+#
+# Fails `invalid` with `22003`, `22012`, or `42883` where PostgreSQL has no
+# such operator for the two types.
+function arithmetic(op: str, a: sql_tree.Datum, b: sql_tree.Datum) -> sql_tree.Datum?
+    if a == .null_value || b == .null_value
+        return ok(.null_value)
+    left: sql_tree.Datum @= a
+    right: sql_tree.Datum @= b
+    ta = sql_datum.type_of(a)
+    tb = sql_datum.type_of(b)
+
+    if ta == "unknown" && tb != "unknown"
+        left @ sql_cast.cast(a, to: tb)?
+
+    if tb == "unknown" && ta != "unknown"
+        right @ sql_cast.cast(b, to: ta)?
+
+    match left
+        .integer x =>
+            match right
+                .integer y => return integer_op(op, a: x.v, b: y.v)
+                .numeric y => return numeric_op(
+                    op,
+                    a_unscaled: x.v,
+                    a_scale: 0,
+                    b_unscaled: y.unscaled,
+                    b_scale: y.scale
+                )
+                .float y => return float_op(op, a: to_f64(x.v), b: y.v)
+                .interval y =>
+                    if op == "*"
+                        return ok(.interval(micros: checked(math.multiply_i64(a: x.v, b: y.micros))?))
+                .null_value | .boolean _ | .text _ | .unknown _ | .instant _ | .jsonb _ => _ = 0
+        .numeric x =>
+            match right
+                .numeric y => return numeric_op(
+                    op,
+                    a_unscaled: x.unscaled,
+                    a_scale: x.scale,
+                    b_unscaled: y.unscaled,
+                    b_scale: y.scale
+                )
+                .integer y => return numeric_op(
+                    op,
+                    a_unscaled: x.unscaled,
+                    a_scale: x.scale,
+                    b_unscaled: y.v,
+                    b_scale: 0
+                )
+                .null_value | .boolean _ | .float _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .float x =>
+            match right
+                .float y => return float_op(op, a: x.v, b: y.v)
+                .integer y => return float_op(op, a: x.v, b: to_f64(y.v))
+                .null_value | .boolean _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => _ = 0
+        .instant x =>
+            match right
+                .interval y =>
+                    if op == "+"
+                        return ok(.instant(micros: checked(math.add_i64(a: x.micros, b: y.micros))?))
+
+                    if op == "-"
+                        return ok(.instant(micros: checked(math.subtract_i64(a: x.micros, b: y.micros))?))
+                .instant y =>
+                    if op == "-"
+                        return ok(.interval(micros: checked(math.subtract_i64(a: x.micros, b: y.micros))?))
+                .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .jsonb _ => _ = 0
+        .interval x =>
+            match right
+                .interval y =>
+                    if op == "+"
+                        return ok(.interval(micros: checked(math.add_i64(a: x.micros, b: y.micros))?))
+
+                    if op == "-"
+                        return ok(.interval(micros: checked(math.subtract_i64(a: x.micros, b: y.micros))?))
+                .instant y =>
+                    if op == "+"
+                        return ok(.instant(micros: checked(math.add_i64(a: x.micros, b: y.micros))?))
+                .integer y =>
+                    if op == "*"
+                        return ok(.interval(micros: checked(math.multiply_i64(a: x.micros, b: y.v))?))
+
+                    if op == "/"
+                        if y.v == 0
+                            return sql_datum.refused(state: "22012", message: "division by zero")
+                        return ok(.interval(micros: x.micros / y.v))
+                .null_value | .boolean _ | .float _ | .numeric _ | .text _ | .unknown _ | .jsonb _ => _ = 0
+        .null_value | .boolean _ | .text _ | .unknown _ | .jsonb _ => _ = 0
+
+    return sql_datum.refused(state: "42883", message: f"operator does not exist: {ta} {op} {tb}")
+
+# The value of a checked integer operation, or `22003`.
+#
+# - `r`: what `math`'s checked operation answered.
+function checked(r: i64?) -> i64?
+    match r
+        .ok n  => return ok(n)
+        .err _ => return sql_datum.refused(state: "22003", message: "bigint out of range")
+
+# `a op b` on two integers.
+#
+# - `op`: the operator.
+# - `a`: the left number.
+# - `b`: the right number.
+function integer_op(op: str, a: i64, b: i64) -> sql_tree.Datum?
+    if op == "/"
+        if b == 0
+            return sql_datum.refused(state: "22012", message: "division by zero")
+
+        if a == -9_223_372_036_854_775_807 - 1 && b == -1
+            return sql_datum.refused(state: "22003", message: "bigint out of range")
+        return ok(.integer(v: a / b))
+
+    n = match op
+        "+" => checked(math.add_i64(a: a, b: b))?
+        "-" => checked(math.subtract_i64(a: a, b: b))?
+        _   => checked(math.multiply_i64(a: a, b: b))?
+
+    return ok(.integer(v: n))
+
+# `a op b` on two exact numerics; a product by a power of ten takes the
+# scale off rather than growing the digits, so `extract(epoch FROM t) *
+# 1000000` stays within an `i64`.
+#
+# - `op`: the operator.
+# - `a_unscaled`: the left's digits.
+# - `a_scale`: its scale.
+# - `b_unscaled`: the right's digits.
+# - `b_scale`: its scale.
+function numeric_op(op: str, a_unscaled: i64, a_scale: i64, b_unscaled: i64, b_scale: i64) -> sql_tree.Datum?
+    if op == "+" || op == "-"
+        scale = math.max_i64(a: a_scale, b: b_scale)
+        a = sql_order.rescaled(unscaled: a_unscaled, from: a_scale, to: scale)?
+        b = sql_order.rescaled(unscaled: b_unscaled, from: b_scale, to: scale)?
+
+        n = if op == "+"
+            checked(math.add_i64(a: a, b: b))?
+        else
+            checked(math.subtract_i64(a: a, b: b))?
+        return ok(.numeric(unscaled: n, scale: scale))
+
+    if op == "*"
+        left_digits: i64 @= a_unscaled
+        left_scale: i64 @= a_scale
+        right_digits: i64 @= b_unscaled
+        right_scale: i64 @= b_scale
+
+        while left_scale > 0 && right_digits != 0 && right_digits % 10 == 0
+            right_digits @ right_digits / 10
+            left_scale @ left_scale - 1
+
+        while right_scale > 0 && left_digits != 0 && left_digits % 10 == 0
+            left_digits @ left_digits / 10
+            right_scale @ right_scale - 1
+
+        n = checked(math.multiply_i64(a: left_digits, b: right_digits))?
+        return ok(.numeric(unscaled: n, scale: left_scale + right_scale))
+    left = to_f64(a_unscaled) / math.pow(base: 10.0, exponent: to_f64(a_scale))
+    right = to_f64(b_unscaled) / math.pow(base: 10.0, exponent: to_f64(b_scale))
+    return float_op(op, a: left, b: right)
+
+# `a op b` on two floats.
+#
+# - `op`: the operator.
+# - `a`: the left number.
+# - `b`: the right number.
+function float_op(op: str, a: f64, b: f64) -> sql_tree.Datum?
+    return match op
+        "+" => ok(.float(v: a + b))
+        "-" => ok(.float(v: a - b))
+        "*" => ok(.float(v: a * b))
+        _ =>
+            if b == 0.0
+                sql_datum.refused(state: "22012", message: "division by zero")
+            else
+                ok(.float(v: a / b))
+
+# `-a`.
+#
+# - `a`: the value.
+#
+# Fails `invalid` with `22003` for the smallest `bigint`, `42883` for a
+# value no minus applies to.
+function negate(a: sql_tree.Datum) -> sql_tree.Datum?
+    return match a
+        .null_value => ok(.null_value)
+        .integer n  => ok(.integer(v: checked(math.subtract_i64(a: 0, b: n.v))?))
+        .float x    => ok(.float(v: 0.0 - x.v))
+        .numeric n  => ok(.numeric(unscaled: checked(math.subtract_i64(a: 0, b: n.unscaled))?, scale: n.scale))
+        .interval i => ok(.interval(micros: checked(math.subtract_i64(a: 0, b: i.micros))?))
+        .unknown _  => negate(sql_cast.cast(a, to: "numeric").default(.integer(v: sql_cast.integer_of(a)?)))
+        .boolean _ | .text _ | .instant _ | .jsonb _ => sql_datum.refused(
+            state: "42883",
+            message: f"operator does not exist: - {sql_datum.type_of(a)}"
+        )
+
+## Joining
+
+# `a || b`: two `jsonb` values joined where either side is `jsonb`, else
+# the two texts joined.
+#
+# - `a`: the left value.
+# - `b`: the right value.
+function concat(a: sql_tree.Datum, b: sql_tree.Datum) -> sql_tree.Datum?
+    if a == .null_value || b == .null_value
+        return ok(.null_value)
+    ta = sql_datum.type_of(a)
+    tb = sql_datum.type_of(b)
+
+    if ta == "jsonb" || tb == "jsonb"
+        left = sql_cast.cast(a, to: "jsonb")?
+        right = sql_cast.cast(b, to: "jsonb")?
+
+        match left
+            .jsonb x =>
+                match right
+                    .jsonb y => return ok(.jsonb(v: json_concat(a: x.v, b: y.v)))
+                    .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ => _ = 0
+            .null_value | .boolean _ | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ => _ = 0
+    return ok(.text(v: sql_cast.text_value(a) + sql_cast.text_value(b)))
+
+# PostgreSQL's `jsonb || jsonb`: two arrays joined, a scalar or an object
+# put beside an array as one element, two objects merged with the right's
+# keys winning, and two scalars made an array of both.
+#
+# - `a`: the left value.
+# - `b`: the right value.
+function json_concat(a: json.Value, b: json.Value) -> json.Value
+    match a
+        .list x =>
+            items: [json.Value] @= x.items
+
+            match b
+                .list y =>
+                    for item in y.items
+                        items @ items.push(item)
+                .null_value | .boolean _ | .number _ | .text _ | .object _ => items @ items.push(b)
+
+            return .list(items: items)
+        .object x =>
+            match b
+                .object y =>
+                    merged: {str: json.Value} @= x.members
+
+                    for k in keys(y.members)
+                        merged[k] @ y.members[k].default(.null_value)
+
+                    return .object(members: merged)
+                .list y =>
+                    items: [json.Value] @= [a]
+
+                    for item in y.items
+                        items @ items.push(item)
+
+                    return .list(items: items)
+                .null_value | .boolean _ | .number _ | .text _ => return .list(items: [a, b])
+        .null_value | .boolean _ | .number _ | .text _ =>
+            match b
+                .list y =>
+                    items: [json.Value] @= [a]
+
+                    for item in y.items
+                        items @ items.push(item)
+
+                    return .list(items: items)
+                .null_value | .boolean _ | .number _ | .text _ | .object _ => return .list(items: [a, b])
+
+## Truth
+
+# Whether `d` holds where a condition is asked: true for `true`, false for
+# `false` and NULL.
+#
+# - `d`: the condition's value.
+#
+# Fails `invalid` with `42804` where it is no boolean.
+function truth(d: sql_tree.Datum) -> bool?
+    return match d
+        .boolean b  => ok(b.v)
+        .null_value => ok(false)
+        .unknown _ =>
+            match sql_cast.cast(d, to: "bool")?
+                .boolean b => ok(b.v)
+                .null_value | .integer _ | .float _ | .numeric _ | .text _ | .unknown _ | .instant _ | .interval _ | .jsonb _ => ok(
+                    false
+                )
+        .integer _ | .float _ | .numeric _ | .text _ | .instant _ | .interval _ | .jsonb _ => sql_datum.refused(
+            state: "42804",
+            message: f"argument of WHERE must be type boolean, not type {sql_datum.type_of(d)}"
+        )
+
+test "arithmetic: integers checked, a numeric times a power of ten, a timestamp moved by an interval"
+    assert arithmetic("+", a: .integer(v: 2), b: .unknown(v: "3")).must() == .integer(v: 5)
+    assert arithmetic("+", a: .integer(v: 9_223_372_036_854_775_807), b: .integer(v: 1)).is_err()
+    assert arithmetic("/", a: .integer(v: 1), b: .integer(v: 0)).is_err()
+    assert arithmetic("*", a: .numeric(unscaled: 1767225600123456, scale: 6), b: .integer(v: 1000000)).must() == .numeric(unscaled: 1767225600123456, scale: 0)
+    assert arithmetic("*", a: .integer(v: 5), b: .interval(micros: 1)).must() == .interval(micros: 5)
+    assert arithmetic("+", a: .instant(micros: 10), b: .interval(micros: 5)).must() == .instant(micros: 15)
+    assert arithmetic("-", a: .instant(micros: 10), b: .instant(micros: 4)).must() == .interval(micros: 6)
+    assert arithmetic("+", a: .text(v: "a"), b: .integer(v: 1)).is_err()
+
+test "concat: texts, an array and an array, an object merged"
+    assert concat(a: .unknown(v: "a "), b: .text(v: "b")).must() == .text(v: "a b")
+    joined = concat(a: .jsonb(v: .list(items: [.number(v: 1.0)])), b: .jsonb(v: .list(items: [.number(v: 2.0)]))).must()
+    assert joined == .jsonb(v: .list(items: [.number(v: 1.0), .number(v: 2.0)]))
+    assert concat(a: .null_value, b: .text(v: "x")).must() == .null_value
+
+test "truth: NULL is false, a text that is no boolean refused"
+    assert !truth(.null_value).must() && truth(.boolean(v: true)).must()
+    assert truth(.integer(v: 1)).is_err()

@@ -1,0 +1,81 @@
+# One event as the pipeline carries it from a Kafka message to a batch:
+# what happened (its identifier, its type, its user and its value), when it
+# happened by its producer's clock (the event time every window is cut
+# by), and where it was read (topic, partition, offset), which a batch
+# keeps so any line of an archive leads back to its record in Kafka. A
+# batch holds one event a line, as NDJSON, every line's keys in one order.
+
+use <rebel>/json
+use <rebel>/time
+
+## The event
+
+# An event decoded from a Kafka message.
+record Event
+    # The topic it was read from.
+    topic: str
+    # The partition.
+    partition: i64
+    # Its offset in the partition.
+    offset: i64
+    # The producer's identifier for it.
+    id: str
+    # What happened: `order.placed`, `page.viewed`.
+    kind: str
+    # When it happened, milliseconds since 1970 by the producer's clock.
+    at_ms: i64
+    # Who it happened to, "" for nobody.
+    user: str
+    # The number it carries: an amount in cents, a duration in
+    # milliseconds; 0 where it carries none.
+    value: f64
+    # How its payload was written: `json` or `msgpack`.
+    format: str
+
+# The event as one line of NDJSON, its keys in one order whatever order
+# its payload wrote them in, so two runs over the same records write the
+# same bytes.
+#
+# - `e`: the event.
+function line_of(e: Event) -> str
+    at = time.format(time.from_unix_milliseconds(e.at_ms).default(time.epoch()), .rfc3339_milliseconds)
+    members: {str: json.Value} @= {}
+    members["id"] @ .text(v: e.id)
+    members["type"] @ .text(v: e.kind)
+    members["at"] @ .text(v: at)
+    members["user"] @ .text(v: e.user)
+    members["value"] @ .number(v: e.value)
+    members["topic"] @ .text(v: e.topic)
+    members["partition"] @ .number(v: to_f64(e.partition))
+    members["offset"] @ .number(v: to_f64(e.offset))
+    return json.format(.object(members: members)).default("{}")
+
+# Whether `a` comes before `b` in a batch: by partition, then by offset,
+# the order Kafka kept them in.
+#
+# - `a`: an event.
+# - `b`: another.
+function comes_before(a: Event, b: Event) -> bool
+    if a.partition != b.partition
+        return a.partition < b.partition
+    return a.offset < b.offset
+
+test "line_of: the keys in one order, the time in milliseconds"
+    e = Event(
+        topic: "orders",
+        partition: 1,
+        offset: 7,
+        id: "o-1",
+        kind: "order.placed",
+        at_ms: 1_773_478_812_000,
+        user: "u-3",
+        value: 1250.0,
+        format: "json"
+    )
+    assert line_of(e) == "{\"id\":\"o-1\",\"type\":\"order.placed\",\"at\":\"2026-03-14T09:00:12.000Z\",\"user\":\"u-3\",\"value\":1250,\"topic\":\"orders\",\"partition\":1,\"offset\":7}"
+
+test "comes_before: by partition, then by offset"
+    a = Event(topic: "t", partition: 0, offset: 9, id: "", kind: "", at_ms: 0, user: "", value: 0.0, format: "json")
+    b = Event(topic: "t", partition: 1, offset: 0, id: "", kind: "", at_ms: 0, user: "", value: 0.0, format: "json")
+    c = Event(topic: "t", partition: 1, offset: 3, id: "", kind: "", at_ms: 0, user: "", value: 0.0, format: "json")
+    assert comes_before(a: a, b: b) && comes_before(a: b, b: c) && !comes_before(a: c, b: b)

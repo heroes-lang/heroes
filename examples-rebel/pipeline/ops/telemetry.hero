@@ -1,0 +1,137 @@
+# The pipeline's own metrics, kept in one registry the program holds and
+# passes with `@` (there is no default registry, since there is no
+# global): the events read by topic and payload format, those dropped as
+# late and those sent to the dead-letter topic, the windows closed, the
+# batches written by tier and the bytes before and after compression, each
+# put's attempts by its outcome, the writes kept as jobs and replayed, and
+# the Kafka commits. Their names follow Prometheus's conventions: a unit in
+# the name, `_total` on a counter. `exporter` serves them.
+
+use <rebel>/metrics
+
+## Names
+
+# Events decoded, by topic and payload format.
+constant EVENTS: str
+    "pipeline_events_total"
+
+# Events dropped as late, by topic.
+constant LATE: str
+    "pipeline_events_late_total"
+
+# Messages that held no event, sent to the dead-letter topic, by topic.
+constant REJECTED: str
+    "pipeline_messages_rejected_total"
+
+# Windows closed and written.
+constant WINDOWS: str
+    "pipeline_windows_closed_total"
+
+# Batches written, by tier.
+constant BATCHES: str
+    "pipeline_batches_written_total"
+
+# Bytes before compression, by tier.
+constant RAW_BYTES: str
+    "pipeline_raw_bytes_total"
+
+# Bytes stored, by tier.
+constant STORED_BYTES: str
+    "pipeline_stored_bytes_total"
+
+# Put attempts, by outcome: `retried` for each failed attempt tried again,
+# then `stored` or `given_up` for each put's last.
+constant PUTS: str
+    "pipeline_s3_put_attempts_total"
+
+# Writes kept as jobs for a replay.
+constant KEPT: str
+    "pipeline_writes_kept_total"
+
+# Kept writes a replay stored.
+constant REPLAYED: str
+    "pipeline_writes_replayed_total"
+
+# Offsets committed to the consumer group.
+constant COMMITS: str
+    "pipeline_kafka_commits_total"
+
+# The ratio of stored to raw bytes of each batch, by tier.
+constant RATIO: str
+    "pipeline_batch_compression_ratio"
+
+## The registry
+
+# A registry with every family of the pipeline described.
+#
+# Fails as `register_all` fails, which only a fault of this module's fixed
+# descriptions could cause.
+function new() -> metrics.Registry?
+    r @= metrics.new_registry()
+    register_all(@r)?
+    return ok(r)
+
+# Describes every family into `r`.
+#
+# - `r`: the registry.
+#
+# Fails `exists` where a family is registered already.
+function register_all(@r: metrics.Registry) -> ()?
+    metrics.register(@r, metrics.counter(name: EVENTS, help: "Events decoded, by topic and payload format.", labels: ["topic", "format"]))?
+    metrics.register(@r, metrics.counter(name: LATE, help: "Events dropped as late, past their window's grace.", labels: ["topic"]))?
+    metrics.register(@r, metrics.counter(name: REJECTED, help: "Messages that held no event, sent to the dead-letter topic.", labels: ["topic"]))?
+    metrics.register(@r, metrics.counter(name: WINDOWS, help: "Windows closed and written.", labels: []))?
+    metrics.register(@r, metrics.counter(name: BATCHES, help: "Batches written, by tier.", labels: ["tier"]))?
+    metrics.register(@r, metrics.counter(name: RAW_BYTES, help: "Bytes before compression, by tier.", labels: ["tier"]))?
+    metrics.register(@r, metrics.counter(name: STORED_BYTES, help: "Bytes stored after compression, by tier.", labels: ["tier"]))?
+    metrics.register(@r, metrics.counter(name: PUTS, help: "Put attempts to S3, by outcome.", labels: ["outcome"]))?
+    metrics.register(@r, metrics.counter(name: KEPT, help: "Writes given up and kept as jobs for a replay.", labels: []))?
+    metrics.register(@r, metrics.counter(name: REPLAYED, help: "Kept writes a replay stored.", labels: []))?
+    metrics.register(@r, metrics.counter(name: COMMITS, help: "Offsets committed to the consumer group.", labels: []))?
+    buckets = metrics.linear_buckets(start: 0.1, width: 0.1, count: 9)?
+    metrics.register(@r, metrics.histogram(name: RATIO, help: "Stored bytes over raw bytes of each batch, by tier.", labels: ["tier"], buckets: buckets))?
+    return ok()
+
+## Recording
+
+# Counts one more of `name` under `labels`; a failure, which only a fault of
+# this module could cause, is dropped so that counting never stops the
+# pipeline's work.
+#
+# - `r`: the registry.
+# - `name`: the family.
+# - `labels`: the labels' values, in the family's order.
+function count(@r: metrics.Registry, name: str, labels: [str])
+    _ = metrics.inc(@r, name: name, labels: labels).is_err()
+
+# Adds `amount` to `name` under `labels`.
+#
+# - `r`: the registry.
+# - `name`: the family.
+# - `labels`: the labels' values.
+# - `amount`: 0 or more.
+function add(@r: metrics.Registry, name: str, labels: [str], amount: i64)
+    _ = metrics.add(@r, name: name, labels: labels, amount: to_f64(amount)).is_err()
+
+# Records a batch written to `tier`: one batch, its bytes, its ratio.
+#
+# - `r`: the registry.
+# - `tier`: the tier's name.
+# - `raw_bytes`: its raw size.
+# - `stored_bytes`: its stored size.
+function batch_written(@r: metrics.Registry, tier: str, raw_bytes: i64, stored_bytes: i64)
+    count(@r, name: BATCHES, labels: [tier])
+    add(@r, name: RAW_BYTES, labels: [tier], amount: raw_bytes)
+    add(@r, name: STORED_BYTES, labels: [tier], amount: stored_bytes)
+
+    if raw_bytes > 0
+        _ = metrics.observe(@r, name: RATIO, labels: [tier], value: to_f64(stored_bytes) / to_f64(raw_bytes)).is_err()
+
+test "new, count, batch_written: families described and counted"
+    r @= new().must()
+    count(@r, name: EVENTS, labels: ["orders", "json"])
+    count(@r, name: EVENTS, labels: ["orders", "json"])
+    batch_written(@r, tier: "hot", raw_bytes: 100, stored_bytes: 40)
+    assert metrics.value_of(r, name: EVENTS, labels: ["orders", "json"]).must() == 2.0
+    assert metrics.value_of(r, name: STORED_BYTES, labels: ["hot"]).must() == 40.0
+    assert metrics.count_of(r, name: RATIO, labels: ["hot"]).must() == 1

@@ -1,0 +1,162 @@
+# What the pipeline is told to do: where the brokers are and which topics
+# it reads as which consumer group, where the bucket is and how its objects
+# are named, where the database is, how events are cut into windows, how a
+# failed write is tried again, and where its metrics are served. The TOML
+# file `loader` reads fills it; every secret comes from the environment by
+# the variable's name the file gives, or from the file where a program
+# writes it there itself, as the demo does for its stand-ins.
+
+use <rebel>/time
+
+## Codes
+
+# The code of settings outside their bounds.
+constant INVALID: str
+    "invalid"
+
+## The settings
+
+# Where the events come from.
+record Kafka
+    # The brokers asked first, `host:port`.
+    brokers: [str]
+    # The consumer group the pipeline reads as.
+    group: str
+    # The topics it reads.
+    topics: [str]
+    # The client's identifier, which the brokers log.
+    client_id: str
+    # The user it logs in as by SCRAM-SHA-256, "" for no login.
+    username: str
+    # The user's password, "" where there is none.
+    password: str
+    # Whether TLS carries every connection, the brokers' certificates
+    # checked by the system's store.
+    tls: bool
+
+# Where the batches go.
+record Storage
+    # The endpoint, `http://127.0.0.1:9000`, or "" for Amazon's own.
+    endpoint: str
+    # The region signed for.
+    region: str
+    # The bucket.
+    bucket: str
+    # The access key's id.
+    access_key_id: str
+    # Its secret.
+    secret_access_key: str
+
+# Where the aggregates and the kept jobs go.
+record Database
+    # The database's URL, as `sql/postgres.parse_url` reads it.
+    url: str
+    # The role's password, "" where the URL holds it or none is asked.
+    password: str
+
+# How events are cut into windows.
+record Windows
+    # A window's length.
+    length: time.Duration
+    # How long after a window's end, by its partition's newest event, an
+    # event of it is still taken: Kafka Streams' grace period.
+    grace: time.Duration
+
+# How a failed write is tried again.
+record Retrying
+    # The attempts in all, the first included, 1 or more.
+    attempts: i64
+    # The wait after the first failure.
+    first: time.Duration
+    # The longest wait.
+    longest: time.Duration
+    # The fraction every wait's spread is drawn at, from 0 to 1; a negative
+    # value draws it from the system's generator at each wait.
+    fraction: f64
+
+# Where the metrics are served.
+record Metrics
+    # The address, `127.0.0.1:9464`; "" serves none.
+    listen: str
+
+# Everything the pipeline is told.
+record Settings
+    # The brokers and the group.
+    kafka: Kafka
+    # The bucket.
+    storage: Storage
+    # The database.
+    database: Database
+    # The windows.
+    windows: Windows
+    # The retries.
+    retrying: Retrying
+    # The metrics.
+    metrics: Metrics
+
+# Checks `s` before anything is opened.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where no broker, no topic, no group, no bucket or no
+# database URL is named, a window is not above zero, the grace is below
+# zero, the attempts are below 1 or a wait is not above zero, the message
+# naming the setting.
+function check(s: Settings) -> ()?
+    if s.kafka.brokers.len() == 0
+        return fail(code: INVALID, msg: "[kafka] names no broker")
+
+    if s.kafka.topics.len() == 0
+        return fail(code: INVALID, msg: "[kafka] names no topic")
+
+    if s.kafka.group == ""
+        return fail(code: INVALID, msg: "[kafka] names no group")
+
+    if s.storage.bucket == ""
+        return fail(code: INVALID, msg: "[s3] names no bucket")
+
+    if s.database.url == ""
+        return fail(code: INVALID, msg: "[postgres] names no url")
+
+    if s.windows.length.nanoseconds <= 0
+        return fail(
+            code: INVALID,
+            msg: f"[windows] seconds is {time.format_duration(s.windows.length)}, and a window is longer than nothing"
+        )
+
+    if s.windows.grace.nanoseconds < 0
+        return fail(code: INVALID, msg: "[windows] grace_seconds is below zero")
+
+    if s.retrying.attempts < 1
+        return fail(
+            code: INVALID,
+            msg: f"[retries] attempts is {s.retrying.attempts}, and one attempt at least is made"
+        )
+
+    if s.retrying.first.nanoseconds <= 0 || s.retrying.longest.nanoseconds < s.retrying.first.nanoseconds
+        return fail(code: INVALID, msg: "[retries] first_ms is above zero and longest_ms at least as long")
+    return ok()
+
+test "check: the demo's shape passes, and each missing piece is named"
+    good = Settings(
+        kafka: Kafka(brokers: ["k:9092"], group: "g", topics: ["t"], client_id: "c", username: "", password: "", tls: false),
+        storage: Storage(endpoint: "", region: "us-east-1", bucket: "b", access_key_id: "a", secret_access_key: "s"),
+        database: Database(url: "postgres://u@h/d", password: ""),
+        windows: Windows(length: time.seconds(60).must(), grace: time.seconds(30).must()),
+        retrying: Retrying(attempts: 3, first: time.milliseconds(10).must(), longest: time.milliseconds(100).must(), fraction: 0.5),
+        metrics: Metrics(listen: "")
+    )
+    check(good).must()
+    no_topic @= good
+    no_topic.kafka.topics @ []
+
+    match check(no_topic)
+        .ok _  => assert false
+        .err e => assert e.msg == "[kafka] names no topic"
+
+    no_window @= good
+    no_window.windows.length @ time.nanoseconds(0)
+    assert check(no_window).is_err()
+    no_attempt @= good
+    no_attempt.retrying.attempts @ 0
+    assert check(no_attempt).is_err()

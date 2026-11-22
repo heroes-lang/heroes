@@ -1,0 +1,409 @@
+# Statements read from text: `SELECT`, `INSERT` with `ON CONFLICT` and
+# `RETURNING`, `UPDATE`, `DELETE`, `CREATE TABLE` and `CREATE INDEX`, the
+# words of a transaction, and `SET`, separated by semicolons as a simple
+# query sends them. A `WITH`, a `DROP`, an `ALTER` and every other
+# statement the engine does not run are refused `0A000` before anything of
+# the script runs.
+
+use standins/sql_cursor
+use standins/sql_lex
+use standins/sql_parse_expr
+use standins/sql_tree
+
+## Reading
+
+# The statements of `source`, an empty one where two semicolons stand
+# together or the text holds none.
+#
+# - `source`: one statement or several, separated by semicolons.
+#
+# Fails `invalid` with `42601` where a statement is not SQL the engine
+# reads, `unsupported` with `0A000` where it reads it and does not run it.
+function statements(source: str) -> [sql_tree.Statement]?
+    p @= sql_cursor.parser(sql_lex.tokens(source)?)
+    out: [sql_tree.Statement] @= []
+
+    while sql_cursor.peek(p).kind != "end"
+        if sql_cursor.take_op(@p, op: ";")
+            continue
+        out @ out.push(statement(@p)?)
+
+        if !sql_cursor.take_op(@p, op: ";") && sql_cursor.peek(p).kind != "end"
+            return sql_cursor.syntax_error(p)
+
+    return ok(out)
+
+# One statement.
+#
+# - `p`: the parser, at the statement's first word.
+function statement(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    word = sql_cursor.peek(p).text
+
+    if sql_cursor.peek(p).kind != "word"
+        return sql_cursor.syntax_error(p)
+
+    return match word
+        "select" => select_statement(@p)
+        "insert" => insert(@p)
+        "update" => update(@p)
+        "delete" => delete(@p)
+        "create" => create(@p)
+        "set" => setting(@p)
+        "begin" | "start" | "commit" | "end" | "rollback" | "abort" | "savepoint" | "release" => transaction(@p)
+        _ => sql_cursor.unsupported(f"{word} statements")
+
+# A `SELECT` as a statement.
+#
+# - `p`: the parser.
+function select_statement(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    s = sql_parse_expr.select(@p)?
+    return ok(.query(select: s))
+
+# A list of names in parentheses.
+#
+# - `p`: the parser, at `(`.
+function names_in_parentheses(@p: sql_cursor.Parser) -> [str]?
+    sql_cursor.expect_op(@p, op: "(")?
+    names: [str] @= []
+
+    while true
+        names @ names.push(sql_cursor.take_name(@p)?)
+
+        if !sql_cursor.take_op(@p, op: ",")
+            break
+
+    sql_cursor.expect_op(@p, op: ")")?
+    return ok(names)
+
+# `col = expr, ...` after `SET`.
+#
+# - `p`: the parser.
+function assignments(@p: sql_cursor.Parser) -> [sql_tree.Assignment]?
+    out: [sql_tree.Assignment] @= []
+
+    while true
+        column = sql_cursor.take_name(@p)?
+        sql_cursor.expect_op(@p, op: "=")?
+        out @ out.push(sql_tree.Assignment(column: column, expr: sql_parse_expr.expression(@p)?))
+
+        if !sql_cursor.take_op(@p, op: ",")
+            break
+
+    return ok(out)
+
+# `RETURNING` and its items, where written.
+#
+# - `p`: the parser.
+function returning(@p: sql_cursor.Parser) -> [sql_tree.Item]?
+    if sql_cursor.take_word(@p, word: "returning")
+        return sql_parse_expr.items_list(@p)
+    return ok([])
+
+## Changing rows
+
+# An `INSERT`.
+#
+# - `p`: the parser, at `INSERT`.
+function insert(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    sql_cursor.expect_word(@p, word: "insert")?
+    sql_cursor.expect_word(@p, word: "into")?
+    table = sql_cursor.take_name(@p)?
+    columns: [str] @= []
+
+    if sql_cursor.at_op(p, op: "(")
+        columns @ names_in_parentheses(@p)?
+    rows: [[sql_tree.Expr]] @= []
+    query: [sql_tree.Select] @= []
+
+    if sql_cursor.take_word(@p, word: "values")
+        while true
+            sql_cursor.expect_op(@p, op: "(")?
+            row: [sql_tree.Expr] @= []
+
+            while true
+                row @ row.push(sql_parse_expr.expression(@p)?)
+
+                if !sql_cursor.take_op(@p, op: ",")
+                    break
+
+            sql_cursor.expect_op(@p, op: ")")?
+            rows @ rows.push(row)
+
+            if !sql_cursor.take_op(@p, op: ",")
+                break
+    else if sql_cursor.at_word(p, word: "select")
+        query @ [sql_parse_expr.select(@p)?]
+    else
+        return sql_cursor.syntax_error(p)
+    conflict: sql_tree.Conflict @= .refuse
+
+    if sql_cursor.take_word(@p, word: "on")
+        sql_cursor.expect_word(@p, word: "conflict")?
+        target: [str] @= []
+        predicate: [sql_tree.Expr] @= []
+
+        if sql_cursor.at_op(p, op: "(")
+            target @ names_in_parentheses(@p)?
+
+            if sql_cursor.take_word(@p, word: "where")
+                predicate @ [sql_parse_expr.expression(@p)?]
+        sql_cursor.expect_word(@p, word: "do")?
+
+        if sql_cursor.take_word(@p, word: "nothing")
+            conflict @ .do_nothing(target: target, predicate: predicate)
+        else
+            sql_cursor.expect_word(@p, word: "update")?
+            sql_cursor.expect_word(@p, word: "set")?
+            changes = assignments(@p)?
+            condition: [sql_tree.Expr] @= []
+
+            if sql_cursor.take_word(@p, word: "where")
+                condition @ [sql_parse_expr.expression(@p)?]
+            conflict @ .do_update(target: target, predicate: predicate, assignments: changes, condition: condition)
+    items = returning(@p)?
+    return ok(
+        .insert(stmt: sql_tree.Insert(table: table, columns: columns, rows: rows, query: query, conflict: conflict, returning: items))
+    )
+
+# An `UPDATE`.
+#
+# - `p`: the parser, at `UPDATE`.
+function update(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    sql_cursor.expect_word(@p, word: "update")?
+    table = sql_cursor.take_name(@p)?
+    alias: str @= table
+
+    if sql_cursor.take_word(@p, word: "as")
+        alias @ sql_cursor.take_name(@p)?
+    else if !sql_cursor.at_word(p, word: "set")
+        alias @ sql_cursor.take_name(@p)?
+    sql_cursor.expect_word(@p, word: "set")?
+    changes = assignments(@p)?
+    condition: sql_tree.Expr? @= fail(code: "not_found", msg: "no WHERE")
+
+    if sql_cursor.take_word(@p, word: "where")
+        condition @ ok(sql_parse_expr.expression(@p)?)
+
+    if sql_cursor.at_word(p, word: "from")
+        return sql_cursor.unsupported("UPDATE ... FROM")
+    items = returning(@p)?
+    return ok(
+        .update(stmt: sql_tree.Update(table: table, alias: alias, assignments: changes, condition: condition, returning: items))
+    )
+
+# A `DELETE`.
+#
+# - `p`: the parser, at `DELETE`.
+function delete(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    sql_cursor.expect_word(@p, word: "delete")?
+    sql_cursor.expect_word(@p, word: "from")?
+    table = sql_cursor.take_name(@p)?
+    condition: sql_tree.Expr? @= fail(code: "not_found", msg: "no WHERE")
+
+    if sql_cursor.take_word(@p, word: "where")
+        condition @ ok(sql_parse_expr.expression(@p)?)
+    items = returning(@p)?
+    return ok(.delete(stmt: sql_tree.Delete(table: table, condition: condition, returning: items)))
+
+## Making tables and indexes
+
+# A `CREATE TABLE` or a `CREATE [UNIQUE] INDEX`.
+#
+# - `p`: the parser, at `CREATE`.
+function create(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    sql_cursor.expect_word(@p, word: "create")?
+
+    if sql_cursor.take_word(@p, word: "table")
+        return create_table(@p)
+    unique = sql_cursor.take_word(@p, word: "unique")
+
+    if sql_cursor.take_word(@p, word: "index")
+        return create_index(@p, unique: unique)
+    return sql_cursor.unsupported("CREATE " + sql_cursor.peek(p).text)
+
+# Whether the next words are `IF NOT EXISTS`, taken where they are.
+#
+# - `p`: the parser.
+function if_not_exists(@p: sql_cursor.Parser) -> bool?
+    if sql_cursor.take_word(@p, word: "if")
+        sql_cursor.expect_word(@p, word: "not")?
+        sql_cursor.expect_word(@p, word: "exists")?
+        return ok(true)
+    return ok(false)
+
+# A `CREATE TABLE`, after `TABLE`.
+#
+# - `p`: the parser.
+function create_table(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    quiet = if_not_exists(@p)?
+    name = sql_cursor.take_name(@p)?
+    sql_cursor.expect_op(@p, op: "(")?
+    stmt @= sql_tree.CreateTable(
+        name: name,
+        if_not_exists: quiet,
+        columns: [],
+        primary_key: [],
+        uniques: [],
+        checks: []
+    )
+
+    while true
+        if sql_cursor.take_word(@p, word: "constraint")
+            _ = sql_cursor.take_name(@p)?
+
+        if sql_cursor.take_word(@p, word: "primary")
+            sql_cursor.expect_word(@p, word: "key")?
+            stmt.primary_key @ names_in_parentheses(@p)?
+        else if sql_cursor.take_word(@p, word: "unique")
+            stmt.uniques @ stmt.uniques.push(names_in_parentheses(@p)?)
+        else if sql_cursor.take_word(@p, word: "check")
+            sql_cursor.expect_op(@p, op: "(")?
+            stmt.checks @ stmt.checks.push(sql_parse_expr.expression(@p)?)
+            sql_cursor.expect_op(@p, op: ")")?
+        else
+            column_def(@p, stmt: @stmt)?
+
+        if !sql_cursor.take_op(@p, op: ",")
+            break
+
+    sql_cursor.expect_op(@p, op: ")")?
+    return ok(.create_table(stmt: stmt))
+
+# One column of a `CREATE TABLE` and its constraints, added to `stmt`.
+#
+# - `p`: the parser, at the column's name.
+# - `stmt`: the statement; its key, unique keys and checks grow where the
+#   column names them.
+function column_def(@p: sql_cursor.Parser, @stmt: sql_tree.CreateTable) -> ()?
+    name = sql_cursor.take_name(@p)?
+    written = sql_cursor.peek(p).text
+    type_name = sql_parse_expr.type_name(@p)?
+    column @= sql_tree.ColumnDef(
+        name: name,
+        type_name: type_name,
+        not_null: false,
+        serial: written == "serial" || written == "bigserial" || written == "smallserial",
+        default_value: []
+    )
+
+    while true
+        if sql_cursor.take_word(@p, word: "not")
+            sql_cursor.expect_word(@p, word: "null")?
+            column.not_null @ true
+        else if sql_cursor.take_word(@p, word: "null")
+            column.not_null @ false
+        else if sql_cursor.take_word(@p, word: "primary")
+            sql_cursor.expect_word(@p, word: "key")?
+            column.not_null @ true
+            stmt.primary_key @ [name]
+        else if sql_cursor.take_word(@p, word: "unique")
+            stmt.uniques @ stmt.uniques.push([name])
+        else if sql_cursor.take_word(@p, word: "default")
+            column.default_value @ [sql_parse_expr.expression(@p)?]
+        else if sql_cursor.take_word(@p, word: "check")
+            sql_cursor.expect_op(@p, op: "(")?
+            stmt.checks @ stmt.checks.push(sql_parse_expr.expression(@p)?)
+            sql_cursor.expect_op(@p, op: ")")?
+        else if sql_cursor.at_word(p, word: "references")
+            return sql_cursor.unsupported("foreign keys")
+        else
+            break
+
+    stmt.columns @ stmt.columns.push(column)
+    return ok()
+
+# A `CREATE INDEX`, after `INDEX`.
+#
+# - `p`: the parser.
+# - `unique`: whether `UNIQUE` came before.
+function create_index(@p: sql_cursor.Parser, unique: bool) -> sql_tree.Statement?
+    _ = sql_cursor.take_word(@p, word: "concurrently")
+    quiet = if_not_exists(@p)?
+    name = sql_cursor.take_name(@p)?
+    sql_cursor.expect_word(@p, word: "on")?
+    table = sql_cursor.take_name(@p)?
+
+    if sql_cursor.take_word(@p, word: "using")
+        _ = sql_cursor.take_name(@p)?
+    columns = names_in_parentheses(@p)?
+    predicate: [sql_tree.Expr] @= []
+
+    if sql_cursor.take_word(@p, word: "where")
+        predicate @ [sql_parse_expr.expression(@p)?]
+    return ok(
+        .create_index(stmt: sql_tree.CreateIndex(name: name, if_not_exists: quiet, unique: unique, table: table, columns: columns, predicate: predicate))
+    )
+
+## Transactions and settings
+
+# A word of a transaction.
+#
+# - `p`: the parser, at the word.
+function transaction(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    word = sql_cursor.advance(@p).text
+
+    if word == "begin" || word == "start"
+        if word == "start"
+            sql_cursor.expect_word(@p, word: "transaction")?
+        else
+            _ = sql_cursor.take_word(@p, word: "transaction") || sql_cursor.take_word(@p, word: "work")
+        return ok(.transaction(word: "begin", name: ""))
+
+    if word == "commit" || word == "end"
+        _ = sql_cursor.take_word(@p, word: "transaction") || sql_cursor.take_word(@p, word: "work")
+        return ok(.transaction(word: "commit", name: ""))
+
+    if word == "rollback" || word == "abort"
+        _ = sql_cursor.take_word(@p, word: "transaction") || sql_cursor.take_word(@p, word: "work")
+
+        if word == "rollback" && sql_cursor.take_word(@p, word: "to")
+            _ = sql_cursor.take_word(@p, word: "savepoint")
+            return ok(.transaction(word: "rollback_to", name: sql_cursor.take_name(@p)?))
+        return ok(.transaction(word: "rollback", name: ""))
+
+    if word == "savepoint"
+        return ok(.transaction(word: "savepoint", name: sql_cursor.take_name(@p)?))
+    _ = sql_cursor.take_word(@p, word: "savepoint")
+    return ok(.transaction(word: "release", name: sql_cursor.take_name(@p)?))
+
+# A `SET name TO value`, or `= value`.
+#
+# - `p`: the parser, at `SET`.
+function setting(@p: sql_cursor.Parser) -> sql_tree.Statement?
+    sql_cursor.expect_word(@p, word: "set")?
+    _ = sql_cursor.take_word(@p, word: "session") || sql_cursor.take_word(@p, word: "local")
+    name = sql_cursor.take_name(@p)?
+
+    if !sql_cursor.take_word(@p, word: "to")
+        sql_cursor.expect_op(@p, op: "=")?
+    value = sql_cursor.advance(@p).text
+    return ok(.setting(name: name, value: value))
+
+test "statements: a script of the jobs store's shape, an empty statement between two semicolons"
+    s = statements(
+        "SELECT pg_advisory_xact_lock(hashtext('rebel_jobs'));\nCREATE TABLE IF NOT EXISTS t (id bigserial PRIMARY KEY, kind text NOT NULL CHECK (kind <> ''), payload jsonb NOT NULL DEFAULT '[]', run_at timestamptz NOT NULL DEFAULT now());;CREATE UNIQUE INDEX IF NOT EXISTS u ON t (kind) WHERE kind <> '';"
+    ).must()
+    assert s.len() == 3
+
+    match s[1]
+        .create_table c                                                                                       => assert c.stmt.columns.len() == 4 && c.stmt.columns[0].serial && c.stmt.primary_key == ["id"] && c.stmt.checks.len() == 1
+        .query _ | .insert _ | .update _ | .delete _ | .create_index _ | .transaction _ | .setting _ | .empty => assert false
+
+test "statements: INSERT with ON CONFLICT DO UPDATE and RETURNING, UPDATE with an alias, DELETE"
+    s = statements(
+        "INSERT INTO a (k, v) VALUES ($1, $2) ON CONFLICT (k) DO UPDATE SET v = excluded.v RETURNING k; UPDATE rebel_jobs AS j SET state = 'x' WHERE j.id = $1 RETURNING id; DELETE FROM a WHERE k = 1"
+    ).must()
+    assert s.len() == 3
+
+    match s[0]
+        .insert i =>
+            match i.stmt.conflict
+                .do_update u            => assert u.target == ["k"] && u.assignments.len() == 1 && i.stmt.returning.len() == 1
+                .refuse | .do_nothing _ => assert false
+        .query _ | .update _ | .delete _ | .create_table _ | .create_index _ | .transaction _ | .setting _ | .empty => assert false
+
+test "statements: WITH, DROP and a foreign key are refused; the transaction words read"
+    assert statements("WITH a AS (SELECT 1) SELECT 1").is_err()
+    assert statements("DROP TABLE t").is_err()
+    assert statements("CREATE TABLE t (a int REFERENCES u)").is_err()
+    assert statements("BEGIN; SAVEPOINT s; ROLLBACK TO SAVEPOINT s; RELEASE s; COMMIT").must().len() == 5

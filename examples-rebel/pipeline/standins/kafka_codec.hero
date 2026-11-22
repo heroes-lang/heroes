@@ -1,0 +1,267 @@
+# The primitive types of Kafka's wire protocol as the broker stand-in reads
+# a request and writes an answer: big-endian integers, a `STRING` (an
+# `INT16` length then UTF-8), a `NULLABLE_STRING` (-1 for null), `BYTES`
+# and `NULLABLE_BYTES` (an `INT32` length, -1 for null), and an array (an
+# `INT32` count, -1 for null), as the protocol guide at
+# kafka.apache.org/protocol names them for the request versions before the
+# flexible ones, which this stand-in alone speaks. A request from outside
+# never aborts it: every read is bounded by the bytes there and fails
+# `invalid` past them.
+
+use <rebel>/bytes
+
+## Codes
+
+# The code of bytes that are no Kafka request: a length past the end, a
+# negative length where none may be, text that is not UTF-8.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# A request's body being read, from its first byte to its last.
+record Reader
+    # The bytes.
+    data: [u8]
+    # Where the next read begins.
+    at: i64
+
+# A reader at the start of `data`.
+#
+# - `data`: the bytes read.
+function reader(data: [u8]) -> Reader
+    return Reader(data: data, at: 0)
+
+# Whether every byte of `r` has been read.
+#
+# - `r`: the reader.
+function is_done(r: Reader lent) -> bool
+    return r.at >= r.data.len()
+
+# The next `n` bytes, the reader moved past them.
+#
+# - `r`: the reader.
+# - `n`: how many, 0 or more.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` where fewer than `n` remain or `n` is below 0.
+function take_raw(@r: Reader, n: i64, what: str) -> [u8]?
+    if n < 0 || n > r.data.len() - r.at
+        return fail(code: INVALID, msg: f"{what}: {n} bytes asked where {r.data.len() - r.at} remain")
+    out = r.data.slice(from: r.at, to: r.at + n)
+    r.at @ r.at + n
+    return ok(out)
+
+# The next `INT8`.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end.
+function take_i8(@r: Reader, what: str) -> i64?
+    raw = take_raw(@r, n: 1, what: what)?
+    return ok(to_i64(bytes.decode_i8(raw, at: 0)?).must())
+
+# The next `INT16`.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end.
+function take_i16(@r: Reader, what: str) -> i64?
+    raw = take_raw(@r, n: 2, what: what)?
+    return ok(to_i64(bytes.decode_i16_be(raw, at: 0)?).must())
+
+# The next `INT32`.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end.
+function take_i32(@r: Reader, what: str) -> i64?
+    raw = take_raw(@r, n: 4, what: what)?
+    return ok(to_i64(bytes.decode_i32_be(raw, at: 0)?).must())
+
+# The next `INT64`.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end.
+function take_i64(@r: Reader, what: str) -> i64?
+    raw = take_raw(@r, n: 8, what: what)?
+    return bytes.decode_i64_be(raw, at: 0)
+
+# The next `STRING` or `NULLABLE_STRING`, a null read as "".
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end, for a length below -1, and for bytes that
+# are not UTF-8.
+function take_string(@r: Reader, what: str) -> str?
+    n = take_i16(@r, what: what)?
+
+    if n == -1
+        return ok("")
+
+    if n < -1
+        return fail(code: INVALID, msg: f"{what} has the length {n}")
+    raw = take_raw(@r, n: n, what: what)?
+
+    match bytes.to_text(raw)
+        .ok s  => return ok(s)
+        .err _ => return fail(code: INVALID, msg: f"{what} is not UTF-8")
+
+# The next `BYTES` or `NULLABLE_BYTES`, a null read as none.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` past the end and for a length below -1.
+function take_bytes(@r: Reader, what: str) -> [u8]?
+    n = take_i32(@r, what: what)?
+
+    if n == -1
+        return ok([])
+
+    if n < -1
+        return fail(code: INVALID, msg: f"{what} has the length {n}")
+    return take_raw(@r, n: n, what: what)
+
+# The count of the next array, a null array read as 0.
+#
+# - `r`: the reader.
+# - `what`: what is read, for the message.
+#
+# Fails `invalid` for a count below -1, or larger than the bytes left could
+# hold, so a forged count cannot make the stand-in loop for long.
+function take_count(@r: Reader, what: str) -> i64?
+    n = take_i32(@r, what: what)?
+
+    if n == -1
+        return ok(0)
+
+    if n < -1 || n > r.data.len() - r.at
+        return fail(code: INVALID, msg: f"{what} counts {n} elements")
+    return ok(n)
+
+## Writing
+
+# `out` with the `INT8` `v` after it.
+#
+# - `out`: the answer being written.
+# - `v`: the value, -128 to 127.
+function put_i8(@out: [u8], v: i64)
+    out @ out.push(to_u8(v & 0xff).must())
+
+# `out` with the `INT16` `v` after it.
+#
+# - `out`: the answer being written.
+# - `v`: the value, -32768 to 32767.
+function put_i16(@out: [u8], v: i64)
+    put_be(@out, v: v, width: 2)
+
+# `out` with the `INT32` `v` after it.
+#
+# - `out`: the answer being written.
+# - `v`: the value.
+function put_i32(@out: [u8], v: i64)
+    put_be(@out, v: v, width: 4)
+
+# `out` with the `INT64` `v` after it.
+#
+# - `out`: the answer being written.
+# - `v`: the value.
+function put_i64(@out: [u8], v: i64)
+    put_be(@out, v: v, width: 8)
+
+# `out` with the low `width` bytes of `v` after it, the most significant
+# first, as two's complement writes a negative value.
+#
+# - `out`: the answer being written.
+# - `v`: the value.
+# - `width`: 1 to 8 bytes.
+function put_be(@out: [u8], v: i64, width: i64)
+    shift: i64 @= (width - 1) * 8
+
+    while shift >= 0
+        out @ out.push(to_u8(v >> shift & 0xff).must())
+        shift @ shift - 8
+
+# `out` with the `STRING` `s` after it.
+#
+# - `out`: the answer being written.
+# - `s`: the text, at most 32,767 bytes.
+function put_string(@out: [u8], s: str)
+    raw = bytes.from_text(s)
+    put_i16(@out, v: raw.len())
+    put_all(out: @out, data: raw)
+
+# `out` with the `NULLABLE_STRING` null after it.
+#
+# - `out`: the answer being written.
+function put_null_string(@out: [u8])
+    put_i16(@out, v: -1)
+
+# `out` with the `BYTES` `data` after it.
+#
+# - `out`: the answer being written.
+# - `data`: the bytes.
+function put_bytes(@out: [u8], data: [u8])
+    put_i32(@out, v: data.len())
+    put_all(out: @out, data: data)
+
+# `out` with every byte of `data` after it.
+#
+# - `out`: the answer being written.
+# - `data`: the bytes.
+function put_all(@out: [u8], data: [u8])
+    for b in data
+        out @ out.push(b)
+
+# A whole frame: `body` after its `INT32` length, as every request and
+# answer travels.
+#
+# - `body`: the frame's bytes.
+function framed(body: [u8]) -> [u8]
+    out: [u8] @= []
+    put_i32(@out, v: body.len())
+    put_all(out: @out, data: body)
+    return out
+
+test "take_i16, take_i32, take_i64: what put_ writes reads back, negative values included"
+    out: [u8] @= []
+    put_i16(@out, v: -2)
+    put_i32(@out, v: 2147483647)
+    put_i64(@out, v: -1)
+    put_i8(@out, v: -128)
+    r @= reader(out)
+    assert take_i16(@r, what: "a").must() == -2
+    assert take_i32(@r, what: "b").must() == 2147483647
+    assert take_i64(@r, what: "c").must() == -1
+    assert take_i8(@r, what: "d").must() == -128
+    assert is_done(r)
+
+test "take_string, take_bytes: a null, an empty one, one above ASCII, and one cut short"
+    out: [u8] @= []
+    put_null_string(@out)
+    put_string(@out, s: "")
+    put_string(@out, s: "café")
+    put_i32(@out, v: -1)
+    r @= reader(out)
+    assert take_string(@r, what: "a").must() == ""
+    assert take_string(@r, what: "b").must() == ""
+    assert take_string(@r, what: "c").must() == "café"
+    assert take_bytes(@r, what: "d").must() == []
+    cut @= reader([0, 5, 'a'])
+    assert take_string(@cut, what: "e").is_err()
+
+test "take_count: a null array is empty, a count past the bytes left is refused"
+    r @= reader([255, 255, 255, 255])
+    assert take_count(@r, what: "a").must() == 0
+    big @= reader([0, 0, 1, 0])
+    assert take_count(@big, what: "b").is_err()
+
+test "framed: the length first"
+    assert framed([7, 8]) == [0, 0, 0, 2, 7, 8]

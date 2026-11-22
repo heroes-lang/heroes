@@ -1,0 +1,268 @@
+# The pipeline's loop: a member of its consumer group polls its
+# partitions, decodes each message into an event (a message that holds
+# none goes to the dead-letter topic with its reason, so nothing read is
+# lost and nothing stops the loop), takes events into their windows, and
+# writes every window its partitions have all passed. The offsets it
+# commits are, for each partition, the offset of the oldest event still
+# held in an open window, or its position where it holds none: the
+# consumer is moved back to that offset for the commit and forward again
+# after it, so a restart reads again exactly the events not yet written.
+# Offsets are committed by the program alone, never by a timer.
+#
+# It ends when the program is asked to stop, or, run to catch up, once
+# every partition has reached the end it had when the run began; either
+# way the windows still open are written and their offsets committed.
+
+use <rebel>/bytes
+use <rebel>/errors
+use <rebel>/kafka
+use <rebel>/time
+
+use batching/windows
+use config/settings
+use core/flush
+use core/pipeline
+use events/decode
+use ops/exporter
+use ops/telemetry
+
+## Codes
+
+# The code of a stop asked while the loop waited: the loop ends there.
+constant STOPPED: str
+    "stopped"
+
+## Connecting
+
+# The topic a message that holds no event is sent to.
+constant DEAD_LETTER_TOPIC: str
+    "events.rejected"
+
+# How long one poll waits for records.
+constant POLL_MS: i64
+    500
+
+# The client's options the settings make: SCRAM-SHA-256 where a user is
+# named, TLS checked by the system's store where asked.
+#
+# - `k`: the brokers and the login.
+function options_of(k: settings.Kafka) -> kafka.Options
+    opts @= kafka.options(k.brokers)
+    opts.client_id @ k.client_id
+
+    if k.username != ""
+        opts.sasl @ .scram_sha256(username: k.username, password: k.password)
+
+    if k.tls
+        opts.security @ .checked(roots: "")
+    opts.acks @ .all
+    return opts
+
+## The loop
+
+# What one run read: the consumer's ends, for a run that catches up.
+record End
+    # The topic.
+    topic: str
+    # The partition.
+    partition: i64
+    # The offset the next record takes, when the run began.
+    offset: i64
+
+# Runs the loop until the stop, or until caught up where `catch_up` asks.
+#
+# - `p`: the pipeline.
+# - `catch_up`: whether to end once every partition reaches the end it had
+#   when the run began.
+# - `scrapes`: where to answer scrapes between polls; none serves none.
+#
+# Fails as `kafka.subscribe`, `kafka.poll` and `flush.flush` fail; the
+# windows written before a failure stay written and their offsets
+# committed.
+function run(@p: pipeline.Pipeline, catch_up: bool, @scrapes: [exporter.Exporter]) -> ()?
+    opts = options_of(p.settings.kafka)
+    group @= kafka.group_options(p.settings.kafka.group, topics: p.settings.kafka.topics)
+    group.auto_commit_interval @ time.max_duration()
+    group.start @ .earliest
+    consumer @= errors.context(kafka.subscribe(opts, group: group), what: f"joining the group {group.group_id}")?
+    producer @= errors.context(kafka.connect(opts), what: "connecting the dead-letter topic's producer")?
+    outcome = looped(@p, consumer: @consumer, producer: @producer, catch_up: catch_up, scrapes: @scrapes)
+    _ = kafka.close(@producer).is_err()
+    _ = kafka.close_consumer(@consumer).is_err()
+    return outcome
+
+# The loop itself, between the consumer's start and its close.
+#
+# - `p`: the pipeline.
+# - `consumer`: the group's member.
+# - `producer`: the client the dead-letter topic is written through.
+# - `catch_up`: whether to end once caught up.
+# - `scrapes`: where to answer scrapes.
+function looped(@p: pipeline.Pipeline, @consumer: kafka.Consumer, @producer: kafka.Client, catch_up: bool, @scrapes: [exporter.Exporter]) -> ()?
+    ends = ends_of(@producer, assigned: kafka.assignment_of(consumer))?
+    wait = time.milliseconds(POLL_MS)?
+
+    while true
+        if catch_up && caught_up(consumer, ends: ends)
+            break
+
+        match kafka.poll(@consumer, wait: wait)
+            .err e =>
+                if e.code == kafka.STOPPED
+                    break
+                return fail(code: e.code, msg: e.msg)
+            .ok messages =>
+                for m in messages
+                    taken(@p, producer: @producer, m: m)?
+
+        names = partition_names(kafka.assignment_of(consumer))
+        closed = windows.closed(@p.windows, partitions: names)
+
+        if closed.len() > 0
+            flush.flush(@p, closed: closed)?
+            commit_safe(@p, k: @consumer)?
+
+        if scrapes.len() == 1
+            exporter.answer_waiting(@scrapes[0], registry: p.registry)
+
+    flush.flush(@p, closed: windows.drain(@p.windows))?
+    commit_safe(@p, k: @consumer)?
+    return ok()
+
+# One message taken: decoded into its window, or sent to the dead-letter
+# topic with the reason it holds no event.
+#
+# - `p`: the pipeline.
+# - `producer`: the client the dead-letter topic is written through.
+# - `m`: the message.
+#
+# Fails as `kafka.send` fails for the dead-letter topic: a message neither
+# taken nor kept stops the loop before its offset is committed.
+function taken(@p: pipeline.Pipeline, @producer: kafka.Client, m: kafka.Message) -> ()?
+    match decode.event_of(m)
+        .ok e =>
+            if e.format == "msgpack"
+                p.counts.msgpack_events @ p.counts.msgpack_events + 1
+            else
+                p.counts.json_events @ p.counts.json_events + 1
+            telemetry.count(@p.registry, name: telemetry.EVENTS, labels: [e.topic, e.format])
+
+            if !windows.add(@p.windows, e: e)
+                telemetry.count(@p.registry, name: telemetry.LATE, labels: [e.topic])
+        .err e =>
+            letter @= kafka.message(m.value.default([]))
+            letter.topic @ DEAD_LETTER_TOPIC
+            letter @ kafka.with_header(
+                letter,
+                key: "source",
+                value: bytes.from_text(f"{m.topic}/{m.partition}/{m.offset}")
+            )
+            letter @ kafka.with_header(letter, key: "error", value: bytes.from_text(e.msg))
+            _ = kafka.send(@producer, messages: [letter])?
+            p.counts.rejected @ p.counts.rejected + 1
+            telemetry.count(@p.registry, name: telemetry.REJECTED, labels: [m.topic])
+
+    return ok()
+
+# Each assigned partition's end when the run begins.
+#
+# - `client`: a client of the cluster.
+# - `assigned`: the consumer's partitions.
+function ends_of(@client: kafka.Client, assigned: [kafka.TopicPartition]) -> [End]?
+    out: [End] @= []
+
+    for tp in assigned
+        out @ out.push(
+            End(topic: tp.topic, partition: tp.partition, offset: kafka.list_offset(@client, topic: tp.topic, partition: tp.partition, at: kafka.LATEST)?)
+        )
+
+    return ok(out)
+
+# Whether the consumer has read every partition to its end.
+#
+# - `k`: the consumer.
+# - `ends`: each partition's end.
+function caught_up(k: kafka.Consumer, ends: [End]) -> bool
+    for e in ends
+        if kafka.position_of(k, topic: e.topic, partition: e.partition).default(-1) < e.offset
+            return false
+
+    return true
+
+# The partitions as the windows name them, `topic/partition`.
+#
+# - `assigned`: the partitions.
+function partition_names(assigned: [kafka.TopicPartition]) -> [str]
+    out: [str] @= []
+
+    for tp in assigned
+        out @ out.push(f"{tp.topic}/{tp.partition}")
+
+    return out
+
+## Committing
+
+# Commits, for each partition, the offset of its oldest event still held
+# in an open window, or its position where it holds none.
+#
+# - `p`: the pipeline; its count of commits moves.
+# - `k`: the consumer; its positions are where they were after.
+#
+# Fails as `kafka.seek` and `kafka.commit` fail.
+function commit_safe(@p: pipeline.Pipeline, @k: kafka.Consumer) -> ()?
+    assigned = kafka.assignment_of(k)
+    positions: [i64] @= []
+
+    for tp in assigned
+        here = kafka.position_of(k, topic: tp.topic, partition: tp.partition)?
+        positions @ positions.push(here)
+        held = oldest_held(p.windows, topic: tp.topic, partition: tp.partition)
+
+        if held >= 0 && held < here
+            kafka.seek(@k, topic: tp.topic, partition: tp.partition, offset: held)?
+
+    committed = kafka.commit(@k)
+
+    for i in range(from: 0, to: assigned.len())
+        kafka.seek(@k, topic: assigned[i].topic, partition: assigned[i].partition, offset: positions[i])?
+
+    committed?
+    p.counts.commits @ p.counts.commits + 1
+    telemetry.count(@p.registry, name: telemetry.COMMITS, labels: [])
+    return ok()
+
+# The offset of the oldest event of `partition` of `topic` still held in
+# an open window, -1 where none is.
+#
+# - `w`: the windows.
+# - `topic`: the topic.
+# - `partition`: the partition.
+function oldest_held(w: windows.Windower lent, topic: str, partition: i64) -> i64
+    least: i64 @= -1
+
+    for one in w.open
+        for e in one.events
+            if e.topic == topic && e.partition == partition && (least < 0 || e.offset < least)
+                least @ e.offset
+
+    return least
+
+test "oldest_held: the least offset still held, none for a partition with nothing open"
+    w @= windows.new(length_ms: 60_000, grace_ms: 0)
+    _ = windows.add(@w, e: windows.sample("t", partition: 0, offset: 7, at_ms: 1_000))
+    _ = windows.add(@w, e: windows.sample("t", partition: 0, offset: 5, at_ms: 2_000))
+    assert oldest_held(w, topic: "t", partition: 0) == 5
+    assert oldest_held(w, topic: "t", partition: 1) == -1
+
+test "options_of: a user logs in by SCRAM-SHA-256, TLS where asked"
+    k = settings.Kafka(
+        brokers: ["k:9092"],
+        group: "g",
+        topics: ["t"],
+        client_id: "c",
+        username: "u",
+        password: "p",
+        tls: true
+    )
+    opts = options_of(k)
+    assert opts.sasl == .scram_sha256(username: "u", password: "p") && opts.security == .checked(roots: "") && opts.client_id == "c"

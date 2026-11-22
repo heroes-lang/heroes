@@ -1,0 +1,126 @@
+# The replay of writes the pipeline kept: a worker of the jobs store claims
+# each job of the replay queue that is ready (`FOR UPDATE SKIP LOCKED`, so
+# several replays at once each take a job once), checks the kept copy
+# against its own SHA-256, and puts it by the bucket's retries. A put that
+# succeeds marks the object stored in the ledger and completes the job in
+# one transaction, so the ledger and the job never disagree; one that fails
+# again fails the attempt, and the job waits its backoff before a later
+# replay; a payload that is no kept write is discarded, since no retry
+# mends it. Each job is claimed once a replay: one that failed waits, and
+# the replay ends when no job is ready.
+
+use <rebel>/jobs
+use <rebel>/jobs/postgres_store
+use <rebel>/json
+use <rebel>/s3
+use <rebel>/sql/postgres
+use <rebel>/time
+
+use core/pipeline
+use ops/telemetry
+use replay/deadletter
+use storage/writer
+use store/ledger
+
+## Replaying
+
+# What one job's replay came to.
+record Replayed
+    # The job's id.
+    id: i64
+    # The object's key.
+    key: str
+    # The job's attempt this replay made.
+    attempt: i64
+    # The ETag S3 answered where the put succeeded; the failure otherwise.
+    etag: str?
+    # The job's state after: `completed`, `available` to wait again, or
+    # `failed` where its attempts are spent.
+    state: str
+
+# The worker the replay claims as.
+function worker_of() -> jobs.Worker
+    w @= jobs.new_worker([deadletter.QUEUE])
+    w.name @ "pipeline-replay"
+    w.lease @ time.minutes(5).default(w.lease)
+    return w
+
+# Replays every job ready, and answers each one's outcome, in the order
+# they were claimed.
+#
+# - `p`: the pipeline.
+#
+# Fails with the database's failure.
+function replay(@p: pipeline.Pipeline) -> [Replayed]?
+    worker = worker_of()
+    out: [Replayed] @= []
+
+    while true
+        match postgres_store.claim(@p.db, worker: worker)
+            .err e =>
+                if e.code == jobs.NOT_FOUND
+                    break
+                return fail(code: e.code, msg: e.msg)
+            .ok claimed => out @ out.push(replay_one(@p, worker: worker, claimed: claimed)?)
+
+    return ok(out)
+
+# One job's replay.
+#
+# - `p`: the pipeline.
+# - `worker`: the worker.
+# - `claimed`: the job as claimed.
+function replay_one(@p: pipeline.Pipeline, worker: jobs.Worker, claimed: jobs.Info) -> Replayed?
+    k = match deadletter.kept_of(claimed.payload)
+        .ok v => v
+        .err e =>
+            postgres_store.discard(@p.db, claimed: claimed, error: e.msg)?
+            return ok(
+                Replayed(id: claimed.id, key: "", attempt: claimed.attempt, etag: fail(code: e.code, msg: e.msg), state: "failed")
+            )
+
+    meta = [
+        s3.Meta(name: "events", value: to_str(k.events))
+        s3.Meta(name: "codec", value: k.codec)
+        s3.Meta(name: "raw-sha256", value: k.sha256)
+    ]
+    put = writer.put(p.bucket, key: k.key, data: k.data, meta: meta)
+
+    match put.etag
+        .err e =>
+            after = postgres_store.fail_attempt(@p.db, worker: worker, claimed: claimed, error: e.msg)?
+            return ok(
+                Replayed(id: claimed.id, key: k.key, attempt: claimed.attempt, etag: fail(code: e.code, msg: e.msg), state: jobs.state_name(after.state))
+            )
+        .ok etag =>
+            postgres.begin(@p.db)?
+
+            match finished(@p, key: k.key, claimed: claimed, etag: etag)
+                .ok _ => postgres.commit(@p.db)?
+                .err e =>
+                    _ = postgres.rollback(@p.db).is_err()
+                    return fail(code: e.code, msg: e.msg)
+
+            telemetry.count(@p.registry, name: telemetry.REPLAYED, labels: [])
+            telemetry.batch_written(@p.registry, tier: k.tier, raw_bytes: k.raw_bytes, stored_bytes: k.data.len())
+            return ok(
+                Replayed(id: claimed.id, key: k.key, attempt: claimed.attempt, etag: ok(etag), state: "completed")
+            )
+
+# The object marked stored and its job completed, in the caller's
+# transaction.
+#
+# - `p`: the pipeline.
+# - `key`: the object's key.
+# - `claimed`: the job.
+# - `etag`: the ETag the put answered, kept as the job's output.
+function finished(@p: pipeline.Pipeline, key: str, claimed: jobs.Info, etag: str) -> ()?
+    ledger.mark_stored(@p.db, key: key)?
+    output: {str: json.Value} @= {}
+    output["etag"] @ .text(v: etag)
+    postgres_store.complete(@p.db, claimed: claimed, output: .object(members: output))?
+    return ok()
+
+test "worker_of: claims from the replay queue under its own name"
+    w = worker_of()
+    assert w.queues == [deadletter.QUEUE] && w.name == "pipeline-replay" && w.lease == time.minutes(5).must()
