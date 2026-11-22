@@ -252,9 +252,9 @@ function group_record(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> 
             match decls[n.decl].kind
                 .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .map | .fallible | .function_ty         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -268,10 +268,10 @@ function group_handle(c: state.Checker, decls: [ast.Decl], param: ast.Param) -> 
         return false
 
     match table.get(c.out.types, written.must())
-        .named n                                                  => return handles.is_handle(decls[n.decl])
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .map | .fallible | .function_ty         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .named n                                                           => return handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -285,10 +285,10 @@ function integer_count(c: state.Checker, param: ast.Param) -> bool
         return false
 
     match table.get(c.out.types, written.must())
-        .int_ty                                                    => return true
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
+        .int_ty                                                            => return true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named         => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 

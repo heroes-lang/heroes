@@ -66,9 +66,9 @@ function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i6
                     written @ written.push(p)
 
                 written @ written.push(fn_ty.result)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written @ written
-            .array | .fixed | .map | .named                           => written @ written
-            .case_ty | .failure | .generic | .error                   => written @ written
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => written @ written
+            .array | .fixed | .map | .named | .thread_ty | .mailbox_ty => written @ written
+            .case_ty | .failure | .generic | .error                    => written @ written
     out: [i64] @= []
 
     for ty in written
@@ -80,6 +80,7 @@ function needs(c: state.Checked, names: ctype.Names, decls: [ast.Decl], item: i6
                 if !names.funcs[ty].is_err()
                     out @ out.push(ty * 2 + 1)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .thread_ty | .mailbox_ty                                  => continue
             .array | .fixed | .map | .failure | .generic | .error     => continue
 
     return out

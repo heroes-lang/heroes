@@ -63,10 +63,10 @@ function build_array(c: state.Checked, names: ctype.Names, result: i64, argument
     element: i64 @= 0 - 1
 
     match table.get(c.types, result)
-        .array arr                                                => element @ arr.element
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ element
-        .fixed | .map | .fallible | .function_ty | .named         => element @ element
-        .case_ty | .failure | .generic | .error                   => element @ element
+        .array arr                                                         => element @ arr.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => element @ element
+        .fixed | .map | .fallible | .function_ty | .named                  => element @ element
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => element @ element
 
     if element < 0
         return fail(code: "none", msg: "not an array")
@@ -100,10 +100,10 @@ function read_element(c: state.Checked, s: source.Source, decls: [ast.Decl], nam
     element: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
-        .array arr                                                => element @ arr.element
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ element
-        .fixed | .map | .fallible | .function_ty | .named         => element @ element
-        .case_ty | .failure | .generic | .error                   => element @ element
+        .array arr                                                         => element @ arr.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => element @ element
+        .fixed | .map | .fallible | .function_ty | .named                  => element @ element
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => element @ element
 
     if element < 0
         return fail(code: "none", msg: "not an array")
@@ -127,9 +127,9 @@ function build_map(c: state.Checked, names: ctype.Names, s: source.Source, f: co
         .map m =>
             key @ m.key
             value_ty @ m.value
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => key @ key
-        .array | .fixed | .fallible | .function_ty | .named       => key @ key
-        .case_ty | .failure | .generic | .error                   => key @ key
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => key @ key
+        .array | .fixed | .fallible | .function_ty | .named                => key @ key
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => key @ key
 
     if key < 0
         return fail(code: "none", msg: "not a map")
@@ -177,10 +177,10 @@ function map_get(c: state.Checked, names: ctype.Names, s: source.Source, f: cont
     value_ty: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, map_value))
-        .map m                                                    => value_ty @ m.value
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => value_ty @ value_ty
-        .array | .fixed | .fallible | .function_ty | .named       => value_ty @ value_ty
-        .case_ty | .failure | .generic | .error                   => value_ty @ value_ty
+        .map m                                                             => value_ty @ m.value
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => value_ty @ value_ty
+        .array | .fixed | .fallible | .function_ty | .named                => value_ty @ value_ty
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => value_ty @ value_ty
 
     if value_ty < 0
         return fail(code: "none", msg: "not a map")

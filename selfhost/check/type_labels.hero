@@ -42,6 +42,7 @@ function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
         match a.types[node].kind
             .function_type f => judge(@c, a, s, decls, params: f.params, labels: f.labels, at: node)
             .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => node @ node
+            .thread_of | .mailbox_of => node @ node
 
         node @ node + 1
 

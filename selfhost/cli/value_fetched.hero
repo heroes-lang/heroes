@@ -106,7 +106,7 @@ function kind_of(accessor: value_probe.Accessor, p: containers.Program, c: state
         .float_ty                                              => return "a float"
         .str | .ptr | .cstr | .unit | .named | .array | .fixed => return "not a number"
         .map | .fallible | .function_ty | .case_ty | .failure  => return "not a number"
-        .generic | .error                                      => return "not a number"
+        .generic | .error | .thread_ty | .mailbox_ty           => return "not a number"
 
     return "not a number"
 

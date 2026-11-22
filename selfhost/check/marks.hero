@@ -198,10 +198,10 @@ function success_says(@c: state.Checker, s: source.Source, decls: [ast.Decl], fd
         .int_ty ik =>
             kind @ "int"
             width @ ok(ik.kind)
-        .bool                                                                       => kind @ "bool"
-        .unit                                                                       => kind @ "unit"
-        .float_ty | .str | .ptr | .cstr | .array | .fixed | .map                    => kind @ "other"
-        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => kind @ "other"
+        .bool                                                                               => kind @ "bool"
+        .unit                                                                               => kind @ "unit"
+        .float_ty | .str | .ptr | .cstr | .array | .fixed | .map | .thread_ty | .mailbox_ty => kind @ "other"
+        .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error         => kind @ "other"
 
     if kind == "unit"
         state.push_diagnostic(

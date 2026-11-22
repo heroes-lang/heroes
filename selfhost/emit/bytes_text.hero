@@ -81,7 +81,7 @@ function emit(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast
         .array                                                    => is_array @ true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_array @ is_array
         .map | .fallible | .function_ty | .named | .case_ty       => is_array @ is_array
-        .failure | .generic | .error                              => is_array @ is_array
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => is_array @ is_array
 
     if fixed_length < 0 && !is_array
         writer.line(@w, text: "    hero_unreachable(); /* validated_bytes over neither a fixed run nor an array */")

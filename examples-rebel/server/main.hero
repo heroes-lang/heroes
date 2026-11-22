@@ -28,7 +28,7 @@
 #   `os.catch_stop` and `os.ask_stop`, over the platform layer, in place of
 #   its `net.hero` (the sockets, the number a connection crosses to a thread
 #   as, the deadline and the stop);
-# - `threads.spawn` and `threads.wait` start and join a thread, every one
+# - `threads.start` and `threads.wait` start and join a thread, every one
 #   started owed its wait, in place of its own `extern "hero_os.h"` group;
 # - `net.parse_port` reads the port, in place of its `numbers.hero` (`atoi`);
 #   `strings.trim` trims an answer's body, in place of its `strings.hero`.
@@ -90,7 +90,7 @@ function loopback()
         .ok opened =>
             listener: net.Listener @= opened
 
-            match threads.spawn(body: client, arg: listener.address.port)
+            match threads.start(body: client, arg: listener.address.port)
                 .err e => print(e.msg)
                 .ok started =>
                     asking: threads.Thread @= started
@@ -165,7 +165,7 @@ function served(listener: net.Listener, room: i64) -> Served
 
         match net.accept_number(listener)
             .ok n =>
-                match threads.spawn(body: connection, arg: n)
+                match threads.start(body: connection, arg: n)
                     .ok started =>
                         running @ running.push(started)
                         done.connections @ done.connections + 1

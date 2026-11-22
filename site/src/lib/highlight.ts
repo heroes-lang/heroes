@@ -411,6 +411,22 @@ export function tokenize(source: string): Token[] {
 
   /** A word is a member when the token before it is exactly the dot. */
   const afterDot = () => previous !== null && previous.kind === 'other' && previous.text === '.';
+  /**
+   * `(thread T)` and `(mailbox T)`, spec § 3 (feature 2647): the two words are
+   * names everywhere else, so each is a type's word only right after the `(`
+   * a type opens and before the type it carries, as the parser reads it and
+   * as the editor's grammar paints it (`thread-type`).
+   */
+  const handleType = (word: string, start: number, end: number): boolean => {
+    if (word !== 'thread' && word !== 'mailbox') return false;
+    let back = start - 1;
+    while (back >= 0 && source[back] === ' ') back -= 1;
+    if (back < 0 || source[back] !== '(') return false;
+    let ahead = end;
+    if (ahead >= source.length || source[ahead] !== ' ') return false;
+    while (ahead < source.length && source[ahead] === ' ') ahead += 1;
+    return ahead < source.length && /[A-Za-z_\[{(]/.test(source[ahead]);
+  };
 
   /**
    * ...and also when it follows `::`, the field-name operator (`Point::x`,
@@ -464,6 +480,8 @@ export function tokenize(source: string): Token[] {
   };
   const markAt = (word: string, start: number, end: number): boolean => {
     if (!marks.has(word)) return false;
+    // `(thread T)` and `(mailbox T)`'s words, contextual since panel 254.
+    if (word === 'thread' || word === 'mailbox') return handleType(word, start, end);
     if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
     if (word === 'link' || word === 'pkgconfig') return lineHead === 'extern' && previous !== null && previous.kind === 's';
     if (word === 'rest') return '(,\n'.includes(charBefore(start)) && /^ *: *zero\b *(?:[,)#]|$)/.test(restOfLine(end));

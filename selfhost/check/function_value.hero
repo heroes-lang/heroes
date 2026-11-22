@@ -244,9 +244,9 @@ function instance_type(@c: state.Checker, s: source.Source, decls: [ast.Decl], d
                     result: result
                 )
                 .constant_decl | .record_decl | .variant_decl | .test_decl => return state.error_ty_of(c)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return state.error_ty_of(c)
-        .array | .fixed | .map | .fallible | .named               => return state.error_ty_of(c)
-        .case_ty | .failure | .generic | .error                   => return state.error_ty_of(c)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return state.error_ty_of(c)
+        .array | .fixed | .map | .fallible | .named                        => return state.error_ty_of(c)
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return state.error_ty_of(c)
 
     return state.error_ty_of(c)
 

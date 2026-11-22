@@ -75,7 +75,7 @@ function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resol
             case_at @ vc.at
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => holder @ -1
         .array | .fixed | .map | .fallible | .function_ty         => holder @ -1
-        .failure | .generic | .error                              => holder @ -1
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => holder @ -1
 
     if holder < 0
         return fail(code: "absent", msg: "the receiver is not a record or a case")
@@ -104,7 +104,7 @@ function field_of_function_type(@c: state.Checker, a: ast.Ast, r: resolved.Resol
 
     match table.get(c.out.types, lowered)
         .function_ty => return ok(lowered)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
             code: "absent",
             msg: "the field does not hold a function"
         )

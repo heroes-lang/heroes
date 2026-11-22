@@ -554,6 +554,107 @@ Re-read 2026-11-22 by this session, each page's own words checked against the hi
   0 at the frozen commit). And the coordinator's first S5 and S11 texts admitted a silent leak and a
   two-thread handle, both found by the critic before any seat ran.
 
+## The blind seat's run, 2026-11-22
+
+Added 2026-11-22 by the session that scored the blind seat, started by the coordinator of M-rebel-library;
+every number below is a command's, each named in `254-reports/llm-ergonomist-blind.md`, the seat's report of
+the run. **Corrected here, underneath, the lines above that this run falsifies**: the head's *"prepared and
+**not run**"*, the status's *"whose registered run has not been made"*, the verdicts table's *"**not run**"*
+and *"0.000000 USD spent"*, R9's *"is owed"*, § What this sitting files and owes on *"The blind run and its
+fourth arm (R9)"* and on two items *"unfiled"*, and § How the sitting went on the paid run *"left to the
+session holding the author's word"*: it was run, as follows.
+
+**The registered run.** 26 sessions (arms `now`, `m`, `m0`, drawn `q`, `y`, `p`), 09:27:34 to 10:03:16, from
+the session holding the author's word, by the registered `run.sh`: 26 of 26 a success by the three fields,
+`claude-opus-5-5` alone, **6.445551 USD**; `scan.py` over 27 transcripts, prompt-alone=NO 0, git-status=LEAK
+0, claude-md-or-memory=YES 0; `reads.py`, run after, 0 sessions with a path outside their folder; **0
+voided**. The seats had no compiler, so a session's *accepted* is its own reading; t1 `now` was also built
+and run by a stage 3 at the frozen commit's `sources 6e891e681c14bca0`, five runs and four substitutions
+each (a `|`, a newline, every escape, a name holding a newline).
+
+**R9's fourth arm had not run** (`order.txt` and `key.txt` name three arms) **and ran** 10:45:51 to 11:04:36
+from the scoring session, within the 5.00 USD its brief allowed: the resolution's text, `spec-r.md` (sha256
+`c21c162d2612592f...`, made by `patch` from `resolution/spec-r.diff` and by `make_resolution.py` to the same
+bytes), t1, t2 and t3 five times each; **its predictions registered at 10:45:21, before any folder of it
+existed** (`254-briefs/blind/arm-r-registration.md`, sha256 `dda5c922fe4d85aa...`), t2's program 3 row
+re-registered as `got queued`. 15 of 15 a success, **3.370710 USD**, `scan.py` over 16 transcripts 0, 0, 0,
+`reads.py` 0, **0 voided**. **In all 9.816261 USD** of the author's 20 for this seat.
+
+**The counts, right of 5.** t1 `now` 5 by the reader's rows and 5 mechanically; t1 `m` 5; t2 `m` 5 on each of
+the five programs; t2 `m0` p1 0, p2 0, p3 5, p4 0, p5 4; t3 `m` 5. Arm `r`: t1 5, t2 5 on each program
+(program 3 `got queued`, 5 of 5), t3 5. **D1 does not hold** (E1 = 5 - 5 = 0: every reader of `now` framed
+the text by its length both ways, and every one ran right under the four substitutions); **D2 holds** (d of
+5 on p1, p2 and p4) and `m`'s text suffices for all five programs; **D3 holds**. On `r` the same: D1 does not
+hold, D2 and D3 hold.
+
+**The predictions this run settles.**
+
+| prediction | registered | counted | score | deciding sessions |
+|---|---|---|---|---|
+| spec-warden W1, t1 `now`, reader's rows | 2 (1 to 3) | 5 | miss | `t1-q-1` to `t1-q-5` |
+| W2, t1 `now`, mechanical | 2 (1 to 3) | 5 | miss | `t1-q-1` to `t1-q-5` |
+| W3, t1 `m` | 4 (4 to 5) | 5 | miss on the point, inside its range | `t1-y-1` to `t1-y-5` |
+| W4, D1 does not hold, E1 = 2 | | does not hold, E1 = 0 | hit on the rule, its E1 missed | `t1-q-*`, `t1-y-*` |
+| W5, t2 `m` | 5, 5, 4, 4, 2 | 5, 5, 5, 5, 5 | miss (p5 outside 1 to 3) | `t2-y-1` to `t2-y-5` |
+| W6, t2 `m0` | 0, 0, 2, 0, 0 | 0, 0, 5, 0, 4 | miss (p3 and p5 outside their ranges) | `t2-p-1` to `t2-p-5` |
+| W7, D2 holds on p1, p2, p4; the text not enough for p5 | | holds on p1, p2, p4; enough for all five | hit on the rule; miss on p5 | `t2-y-*`, `t2-p-*` |
+| W8, t3 `m` | 4 (3 to 5) | 5 | miss on the point, inside its range | `t3-y-1` to `t3-y-5` |
+| W9, D3 holds | | holds | hit | `t3-y-*` |
+| W10, 0 voided | | 0 | hit | all 26 |
+| W11, the verdict approves | | approve | hit | `verdict` |
+| historian P2, on `m` an abort after the close more often than `closed` | | `closed` 5, abort 0 | **miss** | `t2-y-1` to `t2-y-5` |
+| the seat's own, under the resolution program 3 prints `got queued` | | 5 of 5 | **hit** | `t2-w-1` to `t2-w-5` |
+| fourth arm R-1 to R-9 | 9 predictions | | 6 hit (R-1, R-3, R-4, R-5, R-7, R-9); 3 miss on a point inside its range (R-2's p3 and p5 at 5, not 4; R-6 at 0, not 1; R-8 at 3.370710, not 3.40) | the 15 |
+
+Of the warden's eleven: three hits (W9, W10, W11), two hits on a rule with its number missed (W4, W7), two
+misses inside their ranges (W3, W8), four outside (W1, W2, W5, W6); every count of right sessions it missed,
+it missed low.
+
+**R9's condition, per R2 row: no row of R2 is reopened.** No row was read wrong by two of five readers, nor
+by one, on arm `r` (R2's own text) or on arm `m` where its text is R2's: S1, S3, S4, S5, S6, S7, S8, S9, S11,
+S12, S13 and R5 were each read right by every session that read them. S7 with S12, the row most at risk,
+read 5 of 5 on `r` as R4's drain (`got queued`, each session naming *"on an empty mailbox"* or *"finds it
+empty"*); S11's program 5 ended at `free(b)` for the emptied handle in 5 of 5, three citing R3's *"a thread
+that does not hold it"* beside it and none alone. Read by no task: S2, S10, the boundary row, and parts of
+S4 (a `mailbox()` typed by a constructor's field), S5 (the count, the leak), S6 (*"`v` then left as it
+was"*), S7 (the value after a `timeout`), S12 (a send after `stopped`) and S13 (W-h); R9's condition says
+nothing of those.
+
+**The verdict's findings that bear on the resolution.** The A/B verdict approves (W11). **It judged the
+proposal, not the resolution**: its `changes.diff` equals `254-briefs/arms/spec-m.diff` below the two header
+lines and differs from `resolution/spec-r.diff` (`diff`, run by the scoring session); no A/B verdict was run
+on `spec-r`, R9 asking an arm. Its choice point under spec-B, in its words: *"The spec doesn't say what
+copying a `(thread T)` means; the diff adds `mailbox` to the "copied ADDRESS" list but not `thread`."* **So
+what copying a `(thread T)` means, a `for` loop variable or a thread held in an array, is unsaid**, and the
+resolution leaves it so: `spec-r.md`'s copied-ADDRESS sentence names `ptr`, `cstr` and `(mailbox T)` (its
+line 117), and R2's thread row says *"a handle (section 13) with no null, which its `wait` ends"*. The
+verdict's own spec-B program holds its threads in a `[(thread Tally)]` and waits through `for t in threads`;
+every graded t1 and t3 session, 10 of 10 on `m` and 10 of 10 on `r`, kept its threads in named bindings
+and named the question as the reason, so no graded program depends on an answer, and R9's condition, which
+counts readings, does not reach it. Its conditions name what would move it: *"Toward object: if a build
+showed that spec-B refuses `t.wait()` on a `for` loop variable, or a `(thread T)` inside an array, without
+spec-B saying so"*, and *"if waiting on a copy of an array entry stopped with an error at run time"*; the
+implementation lane meets that question first, when its checker decides what a `[(thread T)]` and a `for`
+over one are. A search of this sitting, its briefs and its reports for an array, a list or a copy of a
+`(thread T)` found only C handles copied across a send (R3); a search with those words, a question for the
+author and the lane rather than a premise. Its veto condition (*"if a task using `mailbox` showed that the
+rule for when `receive` gives `stopped` can't be followed from its line"*) is not met: `m`'s stop was read
+as written 5 of 5 (`receive: stopped`), R4's drain 5 of 5 (`got queued`).
+
+**The two items unfiled above** were filed the same day by the coordinator of M-rebel-library, read on
+GitHub by the scoring session: `hero_ipc`'s lock holder as **defect 2673** (open, `class:adjacent`), and
+the decision as **issue 2674**, *"Panel 254: ... R1 to R9, provisional"* (open, `kind:decision`).
+
 ## Author's verdict
 
 Pending.
+
+**Ratified by the author's reading, 2026-11-22, late morning**, in conversation (the answer *1a* to the
+coordinator's recommendation, meant as: *ratify R1 to R9 now; the implementation lane merges only once the
+blind seat's scoring shows no row of R2 read wrong by two of five readers, and a row it reopens comes back
+alone*). The scoring above (§ The blind seat's run) reopened no row, so `lane-mailbox` merges under R1 to
+R8. Beside it, the same day: the lane's sentence in spec § 11 on what a copy of a `(thread T)` is, written
+after the verdict named that silence and held by one check case and two run cases (`threads-a-copy-of-a-thread-is-that-one-thread`,
+`threads-a-thread-in-a-list-waited-for-again-aborts`), which no arm of the run read; and the register of
+the decisions M-rebel-library invalidates (issue 2610) gains decision 2498 and panel 251's R3, a thread
+exchanging one `i64` or one `str` at its start and end, invalidated by R1.

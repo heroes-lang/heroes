@@ -116,10 +116,10 @@ function judged(c: state.Checked, s: source.Source, decls: [ast.Decl], f: contai
         return true
 
     return match table.get(c.types, f.result)
-        .float_ty                                              => true
-        .int_ty | .bool | .str | .ptr | .cstr | .unit          => false
-        .named | .array | .fixed | .map | .fallible            => false
-        .function_ty | .case_ty | .failure | .generic | .error => false
+        .float_ty                                                              => true
+        .int_ty | .bool | .str | .ptr | .cstr | .unit                          => false
+        .named | .array | .fixed | .map | .fallible | .thread_ty | .mailbox_ty => false
+        .function_ty | .case_ty | .failure | .generic | .error                 => false
 
 # The accessors a unit defines that the probe calls, in the order of `defined`.
 function asked(p: containers.Program, c: state.Checked, s: source.Source, decls: [ast.Decl], defined: [i64]) -> [Accessor]

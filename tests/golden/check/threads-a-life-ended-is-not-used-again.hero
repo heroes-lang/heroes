@@ -1,0 +1,56 @@
+# A thread's `wait` ends its life as a call marked `consumes` ends a handle's
+# (spec § 11; panel 254's S3): on every path after, a second wait is refused.
+# A mailbox's close ends nothing, a send after it failing `closed` at run
+# time and a second close doing nothing; a send of a place, `m.send(@t)`,
+# ends nothing either, since it may fail and leave its value as it was, the
+# runtime emptying the cell once it succeeded. The operations are chosen by
+# the receiver's type alone, so a program's own `send`, `wait` and `close`
+# end nothing for a record and hide nothing for a thread or a mailbox.
+#
+# Bulk regression case.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function waits(t: (thread i64)) -> i64
+    return t.wait()
+
+function main()
+    m: (mailbox str) = mailbox()
+    m.send("kept").must()
+    m.close()
+    print(m.send("late").is_err())
+    m.close()
+    print(m.receive(within_ms: 0).must())
+    t = spawn(twice, 4).must()
+    print(t.wait())
+    print(t.wait())  #~ handle_used_after_end
+    u = spawn(twice, 5).must()
+    print(waits(u))
+    own()
+
+record Box
+    count: i64
+
+function close(b: Box) -> i64
+    return b.count
+
+function send(b: Box, n: i64) -> i64
+    return b.count + n
+
+function wait(b: Box) -> i64
+    return b.count
+
+function own()
+    box = Box(count: 1)
+    print(box.close())
+    print(box.close())
+    print(box.send(2))
+    print(box.wait())
+    print(box.wait())
+    handles: (mailbox (thread i64)) = mailbox()
+    t: (thread i64) @= spawn(twice, 6).must()
+    handles.send(@t).must()
+    handles.close()
+    handles.close()
+    print(handles.receive(within_ms: 0).must().wait())

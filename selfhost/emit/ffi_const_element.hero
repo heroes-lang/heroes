@@ -64,7 +64,7 @@ function built_record(c: state.Checked, decls: [ast.Decl], inst: ir.Inst) -> i64
 
                             match table.get(c.types, written.must())
                                 .named n => return group_record(decls, decl: n.decl)
-                                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
                                     code: "none",
                                     msg: "not a record"
                                 )

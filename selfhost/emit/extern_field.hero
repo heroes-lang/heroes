@@ -76,6 +76,7 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     match table.get(c.types, ty)
         .ptr                                                       => is_ptr @ true
         .int_ty | .float_ty | .bool | .str | .cstr | .unit         => is_ptr @ is_ptr
+        .thread_ty | .mailbox_ty                                   => is_ptr @ is_ptr
         .array | .fixed | .map | .fallible | .function_ty | .named => is_ptr @ is_ptr
         .case_ty | .failure | .generic | .error                    => is_ptr @ is_ptr
 
@@ -105,9 +106,9 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
             is_fixed @ true
             fixed_elem @ x.element
             fixed_len @ x.length
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named                  => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fixed @ is_fixed
 
     if is_fixed
         elem = c_spelling(c, names, ty: fixed_elem)
@@ -118,10 +119,10 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
         elem_is_int: bool @= false
 
         match table.get(c.types, fixed_elem)
-            .int_ty                                                    => elem_is_int @ true
-            .float_ty | .bool | .str | .ptr | .cstr | .unit            => elem_is_int @ elem_is_int
-            .array | .fixed | .map | .fallible | .function_ty | .named => elem_is_int @ elem_is_int
-            .case_ty | .failure | .generic | .error                    => elem_is_int @ elem_is_int
+            .int_ty                                                            => elem_is_int @ true
+            .float_ty | .bool | .str | .ptr | .cstr | .unit                    => elem_is_int @ elem_is_int
+            .array | .fixed | .map | .fallible | .function_ty | .named         => elem_is_int @ elem_is_int
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => elem_is_int @ elem_is_int
 
         if elem_is_int
             # The length stays exact, asked of the field's OWN element
@@ -202,10 +203,10 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
     is_cstr: bool @= false
 
     match table.get(c.types, ty)
-        .cstr                                                      => is_cstr @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-        .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+        .cstr                                                              => is_cstr @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => is_cstr @ is_cstr
+        .array | .fixed | .map | .fallible | .function_ty | .named         => is_cstr @ is_cstr
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_cstr @ is_cstr
 
     # **The marker carries the HEROES record's name, like every other branch**
     # (defect 062, 2026-09-18). This one wrote `c_type` until then, which for a
@@ -228,9 +229,9 @@ function assertions(c: state.Checked, names: ctype.Names, s: source.Source, c_ty
         .int_ty ik =>
             is_int @ true
             int_kind @ ik.kind
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
-        .case_ty | .failure | .generic | .error                    => is_int @ is_int
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => is_int @ is_int
+        .array | .fixed | .map | .fallible | .function_ty | .named         => is_int @ is_int
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_int @ is_int
 
     # The sign test goes through HERO_C_UNSIGNED and not through a cast,
     # and the difference is a whole exit code (panel 085 R7). The cast
@@ -300,6 +301,7 @@ function c_spelling(c: state.Checked, names: ctype.Names, ty: i64) -> str?
         # means the frontend let one through.
 
         .str | .unit | .array | .fixed | .map => return fail(code: "none", msg: "no header layout")
+        .thread_ty | .mailbox_ty              => return fail(code: "none", msg: "no header layout")
         .fallible | .function_ty | .case_ty | .failure | .generic | .error => return fail(
             code: "none",
             msg: "no header layout"

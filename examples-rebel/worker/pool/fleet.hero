@@ -27,7 +27,7 @@ function start(@c: redis.Client, s: settings.Settings) -> Fleet?
     fleet @= Fleet(threads: [])
 
     for i in range(from: 1, to: s.workers + 1)
-        match threads.spawn_text(worker_loop.work, arg: worker_loop.shift_text(s, name: f"worker-{i}"))
+        match threads.start_text(worker_loop.work, arg: worker_loop.shift_text(s, name: f"worker-{i}"))
             .ok t => fleet.threads @ fleet.threads.push(t)
             .err e =>
                 _ = ask_stop(@c).is_err()

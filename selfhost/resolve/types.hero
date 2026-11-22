@@ -46,6 +46,8 @@ function resolve_type(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [
         .map_of entry =>
             resolve_type(@r, a, s, decls, entry.key)
             resolve_type(@r, a, s, decls, entry.value)
+        .thread_of t  => resolve_type(@r, a, s, decls, t.element)
+        .mailbox_of m => resolve_type(@r, a, s, decls, m.element)
         .function_type f =>
             for param in f.params
                 resolve_type(@r, a, s, decls, param)

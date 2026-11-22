@@ -1,0 +1,13 @@
+# `m.send(@t)` empties `t`: the thread is the receiver's to wait for, and a
+# wait through the emptied cell aborts, naming it (spec § 11; panel 254's
+# R3).
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    inbox: (mailbox (thread i64)) = mailbox()
+    t: (thread i64) @= spawn(twice, 4).must()
+    inbox.send(@t).must()
+    print("sent")
+    print(t.wait())

@@ -208,7 +208,7 @@ function is_one_of(a: agreed_layout.Asking, ty: i64, wanted: [i64]) -> bool
                     return true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => return false
         .array | .fixed | .map | .fallible | .function_ty | .case_ty => return false
-        .failure | .generic | .error                                 => return false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty      => return false
 
     return false
 

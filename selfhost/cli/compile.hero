@@ -26,6 +26,7 @@ use diag
 use diag_render
 use emit
 use emit/decls as emit_decls
+use emit/program_entry
 use ir/containers
 use ir/lower
 use ir/mono
@@ -320,14 +321,14 @@ function to_unit(s: source.Source, options: Options, version: str, sources: str)
     if options.emit_c
         needs_main @ false
 
-    if needs_main && emit.entry_point(p).is_err()
+    if needs_main && program_entry.entry_point(p).is_err()
         one: [diag.Diagnostic] = [no_entry.told(s)]
         stop_n = stage(one, s, permissive: options.permissive)
 
         if !stop_n.is_err()
             return leave(stop_n.must(), stage_name: "the C emission")
     return ok(
-        Artifact(c: emitted.c, tests: emit.tests_of(p), link: emitted.link, pkgconfigs: emitted.pkgconfigs, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
+        Artifact(c: emitted.c, tests: program_entry.tests_of(p), link: emitted.link, pkgconfigs: emitted.pkgconfigs, stopped: false, emit_c: options.emit_c, tree: parsed.tree, decls: parsed.decls, checked: c, program: p, resolved: out)
     )
 
 # **A stage that stops names itself.** This used to answer "a stage

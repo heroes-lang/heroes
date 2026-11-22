@@ -42,8 +42,11 @@ constant LEAST_KEYWORDS: i64
 constant LEAST_OPERATORS: i64
     18
 
+# 14 -> 18 on 2026-11-22 (feature 2647; panel 254's R1): `thread` and
+# `mailbox` joined the sixteen, and the floor told outgrown was raised in the
+# commit that grew the list.
 constant LEAST_CONTEXTUAL: i64
-    14
+    18
 
 # The parser's files, which read the contextual words. A file added here and
 # not reading one is harmless; a file reading one and missing here is a word

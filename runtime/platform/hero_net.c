@@ -133,6 +133,8 @@
  * its reply (round 4, 2026-11-17): up to 65,507 bytes of data each way, too
  * many for a thread's stack. */
 #include "hero_layer_alloc.h"
+/* The runtime's word for the stop, so a mailbox's receive answers it too. */
+#include "hero_layer_stop.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -879,6 +881,9 @@ static void hero_net_nudge_all(void) {
         hero_net_nudge(&hero_net_slots[i]);
     }
     hero_net_tell_hearers();
+    /* The language's mailboxes (panel 254's R6): a receive that finds its
+     * mailbox empty answers `stopped`. Their locks come after this one. */
+    hero_mail_hear_stop();
 }
 
 /* -- the poller (panel 248's R2) ---------------------------------------- */

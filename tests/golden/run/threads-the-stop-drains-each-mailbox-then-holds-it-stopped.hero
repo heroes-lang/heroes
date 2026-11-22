@@ -1,0 +1,43 @@
+# Once the program's stop is asked, a receive still takes what is queued; one
+# that finds its mailbox empty answers `stopped`, and that mailbox answers
+# `stopped` from then on, a send to it failing `stopped` with its value left
+# as it was (spec § 11, § 13; panel 254's R4, the drain then the hold). A
+# receive waiting with no limit on another thread wakes and answers
+# `stopped`; `closed` comes before `stopped`.
+
+extern "hero_net.h"
+    function hero_net_ask_stop()
+
+function listen(inbox: (mailbox i64)) -> str
+    return match inbox.receive(within_ms: 0 - 1)
+        .ok n  => f"got {n}"
+        .err e => e.code
+
+function told(r: i64?) -> str
+    return match r
+        .ok n  => n.to_str()
+        .err e => e.code
+
+function main()
+    queued: (mailbox i64) = mailbox()
+    queued.send(1).must()
+    queued.send(2).must()
+    idle: (mailbox i64) = mailbox()
+    waiting = spawn(listen, idle).must()
+    hero_net_ask_stop()
+    print(waiting.wait())
+    print(told(queued.receive(within_ms: 0)))
+    print(told(queued.receive(within_ms: 0)))
+    print(told(queued.receive(within_ms: 1000)))
+
+    match queued.send(3)
+        .ok    => print("sent")
+        .err e => print(e.code)
+
+    print(told(queued.receive(within_ms: 0)))
+    queued.close()
+    print(told(queued.receive(within_ms: 0)))
+    fresh: (mailbox i64) = mailbox()
+    fresh.send(4).must()
+    print(told(fresh.receive(within_ms: 0)))
+    print(told(fresh.receive(within_ms: 0)))

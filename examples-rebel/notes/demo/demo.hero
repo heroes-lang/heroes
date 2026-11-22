@@ -82,7 +82,7 @@ function demo() -> i64?
     print(f"notes demo: a fresh database, its migrations applied: {app.migrated.join(", ")}")
     print(f"the server: {app.router.routes.len()} routes, listening on loopback")
     l @= net.listen(host: s.host, port: s.port)?
-    driver @= threads.spawn_text(body: client.run, arg: to_str(l.address.port))?
+    driver @= threads.start_text(body: client.run, arg: to_str(l.address.port))?
     served = server.run(@app, l: l)
     answer = threads.wait_text(@driver)
     net.close_listener(@l)?

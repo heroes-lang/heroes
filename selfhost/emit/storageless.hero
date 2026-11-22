@@ -40,10 +40,10 @@ function fixed_text(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
     is_fixed: bool @= false
 
     match table.get(c.types, containers.value_type(f, value))
-        .fixed                                                    => is_fixed @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+        .fixed                                                             => is_fixed @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named                  => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fixed @ is_fixed
 
     if !is_fixed
         return fail(code: "none", msg: "has storage")
@@ -120,10 +120,10 @@ function element(c: state.Checked, s: source.Source, decls: [ast.Decl], f: conta
     length: i64 @= 0 - 1
 
     match table.get(c.types, containers.value_type(f, base))
-        .fixed x                                                  => length @ x.length
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => length @ length
-        .array | .map | .fallible | .function_ty | .named         => length @ length
-        .case_ty | .failure | .generic | .error                   => length @ length
+        .fixed x                                                           => length @ x.length
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => length @ length
+        .array | .map | .fallible | .function_ty | .named                  => length @ length
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => length @ length
 
     if length < 0
         return fail(code: "none", msg: "not a fixed array")
@@ -149,6 +149,7 @@ function element_stores(c: state.Checked, s: source.Source, decls: [ast.Decl], f
     match table.get(c.types, containers.value_type(f, value))
         .fixed                                                    => _ = 0
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed value")
+        .thread_ty | .mailbox_ty                                  => return fail(code: "none", msg: "not a fixed value")
         .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed value")
         .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed value")
 

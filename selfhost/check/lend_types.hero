@@ -107,16 +107,16 @@ function byte_run(c: state.Checker, ty: i64) -> bool
         .array a                                                  => element @ a.element
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ -1
         .map | .fallible | .function_ty | .named | .case_ty       => element @ -1
-        .failure | .generic | .error                              => element @ -1
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => element @ -1
 
     if element < 0
         return false
 
     match table.get(c.out.types, element)
-        .int_ty k                                                  => return widths.int_bits(k.kind) == 8
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
+        .int_ty k                                                          => return widths.int_bits(k.kind) == 8
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named         => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
 # The same question asked of a FIXED run alone, which is what `ptr` takes.
 #
@@ -127,10 +127,10 @@ function byte_run(c: state.Checker, ty: i64) -> bool
 # is Principle 0 read the way § 2 writes it.
 function fixed_byte_run(c: state.Checker, ty: i64) -> bool
     match table.get(c.out.types, ty)
-        .fixed                                                     => return byte_run(c, ty)
-        .array | .int_ty | .float_ty | .bool | .str | .ptr | .cstr => return false
-        .unit | .map | .fallible | .function_ty | .named           => return false
-        .case_ty | .failure | .generic | .error                    => return false
+        .fixed                                                             => return byte_run(c, ty)
+        .array | .int_ty | .float_ty | .bool | .str | .ptr | .cstr         => return false
+        .unit | .map | .fallible | .function_ty | .named                   => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
 function refused_operand(@c: state.Checker, s: source.Source, decls: [ast.Decl], name: str, allowed: str, got: i64, span: token.Span) -> i64
     shown = state.show(c, s, decls, got)

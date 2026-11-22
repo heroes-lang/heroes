@@ -1,0 +1,11 @@
+# A receive waits at most `within_ms` milliseconds, `-1` for no limit, and a
+# bound below that is no time at all: the program aborts at the receive,
+# naming it (spec § 11; panel 254's S7). `-1` on a closed, empty mailbox
+# answers at once.
+
+function main()
+    m: (mailbox str) = mailbox()
+    m.close()
+    print(m.receive(within_ms: 0 - 1).default("closed, at once"))
+    wait = 0 - 5
+    print(m.receive(within_ms: wait).default("none"))

@@ -48,10 +48,10 @@ function is_array_out(c: state.Checker, param: ast.Param) -> bool
         return false
 
     match table.get(c.out.types, written.must())
-        .array                                                    => return true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .fixed | .map | .fallible | .function_ty | .named         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .array                                                             => return true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .fixed | .map | .fallible | .function_ty | .named                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -64,19 +64,19 @@ function element_fits(c: state.Checker, decls: [ast.Decl], element: i64) -> bool
             match decls[n.decl].kind
                 .record_decl r => return !r.header.is_err() && !handles.is_handle(decls[n.decl])
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return false
-        .bool | .str | .ptr | .cstr | .unit               => return false
-        .array | .fixed | .map | .fallible | .function_ty => return false
-        .case_ty | .failure | .generic | .error           => return false
+        .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return false
+        .array | .fixed | .map | .fallible | .function_ty              => return false
+        .case_ty | .failure | .generic | .error                        => return false
 
     return false
 
 # Whether a type is a group's handle, a record with a tag and no fields.
 function is_handle(decls: [ast.Decl], element: table.Ty) -> bool
     match element
-        .named n                                                  => return handles.is_handle(decls[n.decl])
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .map | .fallible | .function_ty         => return false
-        .case_ty | .failure | .generic | .error                   => return false
+        .named n                                                           => return handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .map | .fallible | .function_ty                  => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -88,10 +88,10 @@ function judged(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Dec
     element: i64 @= written
 
     match table.get(c.out.types, written)
-        .array x                                                  => element @ x.element
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => element @ written
-        .fixed | .map | .fallible | .function_ty | .named         => element @ written
-        .case_ty | .failure | .generic | .error                   => element @ written
+        .array x                                                           => element @ x.element
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => element @ written
+        .fixed | .map | .fallible | .function_ty | .named                  => element @ written
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => element @ written
 
     name = source.span_text(s, param.name)
     why: str @= ""

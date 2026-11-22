@@ -317,9 +317,9 @@ function innermost(c: state.Checked, ty: i64) -> i64
             .fixed x =>
                 at @ x.element
                 going @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .map | .fallible | .function_ty | .named         => continue
-            .case_ty | .failure | .generic | .error                   => continue
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .array | .map | .fallible | .function_ty | .named                  => continue
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
     return at
 
@@ -332,9 +332,9 @@ function record_of(c: state.Checked, decls: [ast.Decl], ty: i64) -> i64
                     if !rec.header.is_err() && rec.fields.len() > 0 && !handles.is_handle(decls[n.decl])
                         return n.decl
                 .constant_decl | .function_decl | .variant_decl | .test_decl => return 0 - 1
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return 0 - 1
-        .array | .map | .fallible | .function_ty | .fixed         => return 0 - 1
-        .case_ty | .failure | .generic | .error                   => return 0 - 1
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return 0 - 1
+        .array | .map | .fallible | .function_ty | .fixed                  => return 0 - 1
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return 0 - 1
 
     return 0 - 1
 
