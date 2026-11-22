@@ -5,17 +5,14 @@
 # warehouse. Every copy is decompressed again and its SHA-256 compared with
 # the raw batch's before it is written, so a codec's fault can never put a
 # wrong object in the bucket. A window's batches are compressed on threads,
-# each thread handed its codec and its bytes as text and answering the
-# compressed bytes as text, since a thread is handed one value and answers
-# one (spec § 13).
+# each job crossing to its thread whole and its copy coming back whole
+# (spec § 11).
 
 use <rebel>/bytes
 use <rebel>/compress/bzip2
 use <rebel>/compress/lz4
 use <rebel>/compress/zstd
 use <rebel>/crypto
-use <rebel>/strings
-use <rebel>/threads
 
 ## Codes
 
@@ -141,7 +138,8 @@ function checked_copy(codec: str, raw: [u8], sha256: str) -> [u8]?
 
 ## On threads
 
-# What one thread is asked: a codec, the batch's hash, and its bytes.
+# What one thread is handed, whole: a codec, the batch's hash, and its
+# bytes.
 record Job
     # The codec.
     codec: str
@@ -150,53 +148,53 @@ record Job
     # The bytes.
     raw: [u8]
 
-# A job as the text a thread is handed: the codec, the hash and the bytes
-# in base 64, a line each.
+# A thread's body: `job` compressed and checked.
 #
 # - `job`: the job.
-function format_job(job: Job) -> str
-    return f"{job.codec}\n{job.sha256}\n{bytes.format_base64(job.raw)}"
-
-# A thread's body: the job its text holds, compressed and checked, and
-# answered as `ok ` and the copy in base 64, or `error ` and why.
 #
-# - `arg`: a job, as `format_job` writes it.
-function compress_job(arg: str) -> str
-    parts = strings.split_n(s: arg, sep: "\n", n: 3)
+# Fails as `checked_copy` fails.
+function compress_job(job: Job) -> [u8]?
+    return checked_copy(codec: job.codec, raw: job.raw, sha256: job.sha256)
 
-    if parts.len() != 3
-        return "error the job is not three lines"
-
-    raw = match bytes.parse_base64(parts[2])
-        .ok b  => b
-        .err e => return "error " + e.msg
-
-    match checked_copy(codec: parts[0], raw: raw, sha256: parts[1])
-        .ok copy => return "ok " + bytes.format_base64(copy)
-        .err e   => return "error " + e.msg
-
-# Every job's copy, compressed on as many threads as `workers` allows, in
-# the jobs' order.
+# Every job's copy, compressed on as many threads as `workers` allows at
+# once, in the jobs' order. A thread is started for a job only once fewer
+# than `workers` run, and every thread started is waited for before this
+# answers, a failed job's included, so nothing is left running.
 #
 # - `jobs`: the jobs.
-# - `workers`: at most how many threads at once, 1 or more.
+# - `workers`: at most how many threads run at once; below one is taken as
+#   one.
 #
-# Fails `invalid` with the first job's failure, and as `threads.run_all_text`
-# fails where the system refuses a thread.
+# Fails with the first failed job's failure, in the jobs' order, and `limit`
+# where the system refuses a thread, once those started have ended.
 function compress_all(jobs: [Job], workers: i64) -> [[u8]]?
-    texts: [str] @= []
+    width = if workers < 1
+        1
+    else
+        workers
 
-    for j in jobs
-        texts @ texts.push(format_job(j))
+    running: [(thread [u8]?)] @= []
+    answers: [[u8]?] @= []
+    refused: ()? @= ok()
+    waited @= 0
 
-    answers = threads.run_all_text(body: compress_job, values: texts, workers: workers)?
+    while waited < jobs.len()
+        while running.len() < jobs.len() && running.len() - waited < width && !refused.is_err()
+            match spawn(compress_job, jobs[running.len()])
+                .ok t  => running @ running.push(t)
+                .err e => refused @ fail(code: e.code, msg: e.msg)
+
+        if waited == running.len()
+            break
+
+        answers @ answers.push(running[waited].wait())
+        waited @ waited + 1
+
+    refused?
     out: [[u8]] @= []
 
     for a in answers
-        if strings.has_prefix(s: a, prefix: "ok ")
-            out @ out.push(bytes.parse_base64(a.slice(from: 3, to: a.len()))?)
-        else
-            return fail(code: INVALID, msg: a.slice(from: 6, to: a.len()))
+        out @ out.push(a?)
 
     return ok(out)
 
@@ -222,6 +220,17 @@ test "compress_all: copies made on threads come back in the jobs' order"
     ]
     copies = compress_all(jobs, workers: 2).must()
     assert decompress("zstd", data: copies[0]).must() == a && decompress("lz4", data: copies[1]).must() == b
+
+test "compress_all: one thread at a time, three jobs, the failed one told and every thread waited for"
+    a = bytes.from_text("one batch")
+    jobs = [
+        Job(codec: "lz4", sha256: bytes.format_hex(crypto.sha256(a)), raw: a)
+        Job(codec: "brotli", sha256: "", raw: a)
+        Job(codec: "bzip2", sha256: bytes.format_hex(crypto.sha256(a)), raw: a)
+    ]
+    assert compress_all(jobs, workers: 1).is_err()
+    assert compress_all([], workers: 4).must() == []
+    assert compress_all([jobs[0], jobs[2]], workers: 0).must().len() == 2
 
 test "tier_name, parse_tier, codec_of, extension_of: each tier's names"
     assert parse_tier(tier_name(.archive)).must() == .archive && codec_of(.cold) == "bzip2" && extension_of(.hot) == ".lz4"

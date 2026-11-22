@@ -1,27 +1,16 @@
 # How a stand-in started on a thread tells the demo's supervisor that it
-# listens, and on which port. A thread is handed one value and gives one
-# back only when it ends (spec § 13), so a service started on its own
-# thread connects to the supervisor's control port once it listens and
-# writes three `KEY=value` lines, as systemd's `sd_notify` writes its own:
-# `READY=1`, `SERVICE=<name>` and `PORT=<port>`. The supervisor starts
-# nothing that needs the service before that line has come.
-
-use <rebel>/io
-use <rebel>/net
-use <rebel>/numbers
-use <rebel>/strings
-
-## Codes
-
-# The code of a notification that is not one: a `READY`, a `SERVICE` or a
-# `PORT` missing or wrong.
-constant INVALID: str
-    "invalid"
+# listens, and on which port: the supervisor makes a mailbox (spec § 11)
+# and hands it to the thread in the stand-in's setup; the service, once it
+# listens, sends one `Ready` on it, as systemd's `sd_notify` tells a
+# service's state, and the mailbox is closed on every path, so a stand-in
+# that could not listen is told at once as one that ended without saying
+# so. The supervisor starts nothing that needs the service before its
+# notification has come.
 
 ## Bounds
 
-# How long, in milliseconds, a notification may take to be written or to
-# come: a stand-in that has not listened by then is counted as failed.
+# How long, in milliseconds, the supervisor waits for a notification: a
+# stand-in that has not listened by then is counted as failed.
 constant NOTIFY_MS: i64
     10_000
 
@@ -34,74 +23,39 @@ record Ready
     # The port it listens on, 1 to 65535.
     port: i64
 
-# Tells the supervisor listening on `control_port` of 127.0.0.1 that
-# `service` listens on `port`.
+# Tells the supervisor, through `to`, that `service` listens on `port`,
+# and closes `to`: a service says it once.
 #
-# - `control_port`: the supervisor's control port.
+# - `to`: the mailbox the supervisor waits on.
 # - `service`: the service's name, one word.
 # - `port`: the port the service listens on.
 #
-# Fails as `net.connect` and `io.write_text` fail.
-function ready(control_port: i64, service: str, port: i64) -> ()?
-    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: NOTIFY_MS)?
-    conn @= made
-    written = io.write_text(conn.stream, text: format_ready(Ready(service: service, port: port)))
-    _ = io.close(@conn.stream).is_err()
-    return written
+# Fails `closed` or `stopped` where the supervisor no longer waits.
+function ready(to: (mailbox Ready), service: str, port: i64) -> ()?
+    sent = to.send(Ready(service: service, port: port))
+    to.close()
+    return sent
 
-# The next service's notification on `control`.
+# The notification `from` receives, awaited `NOTIFY_MS` at most.
 #
-# - `control`: the supervisor's control listener.
+# - `from`: the mailbox handed to the service.
 #
-# Fails `invalid` where what came is no notification, and as `net.accept`
-# and `io.read_all_text` fail, `timeout` where nothing came in
-# `NOTIFY_MS`.
-function await_ready(control: net.Listener) -> Ready?
-    made = net.accept(control, deadline_ms: NOTIFY_MS)?
-    conn @= made
-    text = io.read_all_text(conn.stream)
-    _ = io.close(@conn.stream).is_err()
-    return parse_ready(text?)
+# Fails `closed` where the service ended without saying it listens,
+# `timeout` where nothing came in `NOTIFY_MS`, and `stopped` where the
+# program was asked to stop first.
+function await_ready(from: (mailbox Ready)) -> Ready?
+    match from.receive(within_ms: NOTIFY_MS)
+        .ok r => return ok(r)
+        .err e =>
+            if e.code == "closed"
+                return fail(code: e.code, msg: "it ended without saying it listens")
+            return fail(code: e.code, msg: e.msg)
 
-# A notification as it is written: three lines, each ended by a line feed.
-#
-# - `r`: what is said.
-function format_ready(r: Ready) -> str
-    return f"READY=1\nSERVICE={r.service}\nPORT={r.port}\n"
-
-# The notification `text` holds.
-#
-# - `text`: `KEY=value` lines; a line with no `=` is passed over.
-#
-# Fails `invalid` where `READY=1` is missing, `SERVICE` is missing or
-# empty, or `PORT` is not a number from 1 to 65535.
-function parse_ready(text: str) -> Ready?
-    values: {str: str} @= {}
-
-    for line in strings.lines(text)
-        match strings.split_once(s: line, sep: "=")
-            .ok h  => values[h.before] @ h.after
-            .err _ => _ = 0
-
-    if values["READY"].default("") != "1"
-        return fail(code: INVALID, msg: f"a notification opens with READY=1, and this one is \"{strings.trim(text)}\"")
-    service = values["SERVICE"].default("")
-
-    if service == ""
-        return fail(code: INVALID, msg: "a notification names its SERVICE")
-    port = numbers.parse_int(values["PORT"].default("")).default(0)
-
-    if port < 1 || port > 65535
-        return fail(code: INVALID, msg: f"{service}'s notification holds no PORT from 1 to 65535")
-    return ok(Ready(service: service, port: port))
-
-test "parse_ready: what format_ready writes reads back"
-    r = parse_ready(format_ready(Ready(service: "kafka", port: 9092))).must()
-    assert r.service == "kafka" && r.port == 9092
-
-test "parse_ready: an empty text, no READY, no SERVICE, a port of zero and one past 65535 are refused"
-    assert parse_ready("").is_err()
-    assert parse_ready("SERVICE=kafka\nPORT=1\n").is_err()
-    assert parse_ready("READY=1\nPORT=1\n").is_err()
-    assert parse_ready("READY=1\nSERVICE=kafka\nPORT=0\n").is_err()
-    assert parse_ready("READY=1\nSERVICE=kafka\nPORT=65536\n").is_err()
+test "ready and await_ready: the notification crosses whole, and a closed mailbox is told at once"
+    m: (mailbox Ready) = mailbox()
+    ready(m, service: "kafka", port: 9092).must()
+    assert await_ready(m).must() == Ready(service: "kafka", port: 9092)
+    assert await_ready(m).is_err()
+    silent: (mailbox Ready) = mailbox()
+    silent.close()
+    assert await_ready(silent).is_err()

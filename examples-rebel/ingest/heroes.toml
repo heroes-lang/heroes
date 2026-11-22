@@ -30,7 +30,6 @@ packages = [
     "sql/postgres",
     "stats",
     "strings",
-    "threads",
     "time",
     "toml",
     "url",

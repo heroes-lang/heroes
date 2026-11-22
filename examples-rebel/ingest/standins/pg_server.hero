@@ -6,23 +6,16 @@
 # table and how many rows it holds, and how many logins it took and
 # refused.
 
-use <rebel>/numbers
 use <rebel>/os
-use <rebel>/strings
 use <rebel>/time
 
+use demo/notify
 use standins/pg_session
 use standins/pg_state
 use standins/pg_wire
 use standins/scram_server
 use standins/serve
 use standins/sql_tree
-
-## Codes
-
-# The code of a thread argument that does not say how to start the server.
-constant INVALID: str
-    "invalid"
 
 ## Bounds
 
@@ -37,10 +30,11 @@ constant ITERATIONS: i64
 
 ## Starting
 
-# How the supervisor starts the server.
+# How the supervisor starts the server, handed to its thread whole.
 record Setup
-    # The supervisor's control port.
-    control_port: i64
+    # Where the supervisor waits to hear the server listens; closed once it
+    # has been told, or as the thread ends.
+    told: (mailbox notify.Ready)
     # The role.
     user: str
     # Its password.
@@ -48,31 +42,17 @@ record Setup
     # The database.
     database: str
 
-# The thread argument that starts a server of `setup`, its fields one a
-# line.
-#
-# - `setup`: what the server holds.
-function format_setup(setup: Setup) -> str
-    return [to_str(setup.control_port), setup.user, setup.password, setup.database].join("\n")
-
-# The setup `text` writes.
-#
-# - `text`: the thread argument.
-#
-# Fails `invalid` where it is not four lines or the port is no number.
-function parse_setup(text: str) -> Setup?
-    lines = strings.split(s: text, sep: "\n")
-
-    if lines.len() != 4
-        return fail(code: INVALID, msg: f"the PostgreSQL server's setup is four lines, and {lines.len()} came")
-    return ok(Setup(control_port: numbers.parse_int(lines[0])?, user: lines[1], password: lines[2], database: lines[3]))
-
 # The server's thread: listens, tells the supervisor its port, and serves
-# until stopped. Answers its account.
+# until stopped. Answers its account. The readiness mailbox is closed on
+# every path, so a server that could not listen is told to the supervisor
+# at once.
 #
-# - `arg`: the setup, as `format_setup` writes it.
-function run(arg: str) -> str
-    match served(arg)
+# - `setup`: what the server holds and where it tells it listens.
+function run(setup: Setup) -> str
+    outcome = served(setup)
+    setup.told.close()
+
+    match outcome
         .err e     => return "postgres: " + e.msg
         .ok shared => return account(shared)
 
@@ -92,15 +72,13 @@ function account(shared: pg_state.Shared) -> str
 # Every connection served until the program is asked to stop, and the
 # state the stop left.
 #
-# - `arg`: the setup.
+# - `setup`: what the server holds and where it tells it listens.
 #
-# Fails `invalid` where the setup is not one, and as `serve.open` and
-# `scram_server.verifier_of` fail.
-function served(arg: str) -> pg_state.Shared?
-    setup = parse_setup(arg)?
+# Fails as `serve.open` and `scram_server.verifier_of` fail.
+function served(setup: Setup) -> pg_state.Shared?
     salt = os.random_bytes(16)?
     verifier = scram_server.verifier_of(setup.password, salt: salt, iterations: ITERATIONS)?
-    loop @= serve.open("postgres", control_port: setup.control_port)?
+    loop @= serve.open("postgres", told: setup.told)?
     shared @= pg_state.Shared(
         db: sql_tree.empty_database(),
         user: setup.user,
@@ -185,12 +163,6 @@ function let_go(@shared: pg_state.Shared, s: pg_state.Session)
             kept @ kept.push(l)
 
     shared.locks @ kept
-
-test "format_setup, parse_setup: what one writes the other reads; three lines refused"
-    s = Setup(control_port: 5, user: "pipeline", password: "pass word", database: "events")
-    back = parse_setup(format_setup(s)).must()
-    assert back.user == "pipeline" && back.password == "pass word" && back.database == "events"
-    assert parse_setup("1\nu\np").is_err()
 
 test "account: tables by name and their rows"
     v = scram_server.verifier_of("p", salt: [1], iterations: 1).must()
