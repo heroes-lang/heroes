@@ -22,6 +22,7 @@ capability ui/app  a user interface opened on the system's own widgets or with n
   go      ui.Main, ui.Quit, ui.OnShouldQuit
   rust    -
   python  tkinter.Tk, tkinter.NoDefaultRoot
+  wx      wxApp (OnInit, OnExit, ExitMainLoop), wxAppConsole
   note    an app is a handle the program closes, told when `main` returns where it did not (spec § 13); `ui.Main` runs the program inside the system's loop and `tkinter.mainloop` never returns, where here the program asks for each event
 
 capability ui/events  what the person did, asked for and waited on for a bounded time
@@ -29,6 +30,7 @@ capability ui/events  what the person did, asked for and waited on for a bounded
   go      Button.OnClicked, Checkbox.OnToggled, Combobox.OnSelected, Entry.OnChanged, MultilineEntry.OnChanged, RadioButtons.OnSelected, Slider.OnChanged, Window.OnClosing
   rust    -
   python  tkinter.mainloop, tkinter.Event, tkinter.EventType, tkinter.Misc.bind
+  wx      wxEvtHandler (Bind), wxEventLoopBase (Run, Pending, Dispatch, DispatchTimeout)
   note    the three libraries call the program back from the system's loop; the language has no closures, so `wait` answers a variant naming the widget by the handle the program holds, and the program matches it (README § B3)
 
 capability ui/inject  what a person does, given by the program, to drive a test or a headless demo
@@ -36,6 +38,7 @@ capability ui/inject  what a person does, given by the program, to drive a test 
   go      -
   rust    -
   python  tkinter.Misc.event_generate
+  wx      wxUIActionSimulator (MouseClick, Char, Text, Select)
   note    on the native side each input goes through the system's own path (`performClick` on macOS), so its event comes as the person's would
 
 capability ui/keys-pressed  a key pressed by the program as the person's keyboard presses it, through the system's own path
@@ -59,6 +62,7 @@ capability ui/headless  the widgets kept and laid out with no screen, and drawn 
   go      -
   rust    -
   python  -
+  wx      - (every port of wxWidgets draws on a display; none keeps its widgets as data with no screen)
   note    every machine draws the same lines, so a demo's transcript is a test
 
 capability ui/native-windows  the native side on Windows, by Win32
@@ -66,18 +70,21 @@ capability ui/native-windows  the native side on Windows, by Win32
   go      -
   rust    -
   python  -
+  wx      wxWidgets' wxMSW port
 
 capability ui/native-linux  the native side on Linux, by GTK
   heroes  pending
   go      -
   rust    -
   python  -
+  wx      wxWidgets' wxGTK port
 
 capability ui/webview  the system's web view as a widget, with a bridge to its scripts
   heroes  ui/webview.webview, ui/webview.post, ui.Kind, ui.Event, ui.Input
   go      -
   rust    tauri::WebviewWindow, tauri::Webview
   python  -
+  wx      wxWebView (RunScriptAsync, AddScriptMessageHandler, RegisterHandler), wxWebViewHandler
   note    the web view, its assets, its policy and its bridge are `ui/webview`'s, a subpackage so only the programs that show a page carry its rules, and `ui/webview.ledger` holds each capability; this package's `ui.Kind.webview`, `ui.Event.message` and `ui.Input.send` are what its app reads and gives of them
 
 capability ui/mailbox  a thread's message to the user interface, through feature 2647's mailbox
@@ -85,6 +92,7 @@ capability ui/mailbox  a thread's message to the user interface, through feature
   go      ui.QueueMain
   rust    -
   python  -
+  wx      wxThreadEvent, wxEvtHandler (QueueEvent, CallAfter)
   note    until it lands, a thread's work is read by the program when a `timer` fires
 
 capability ui/window  a window: its title, its size, whether the person may resize it, and its close button asked
@@ -92,6 +100,7 @@ capability ui/window  a window: its title, its size, whether the person may resi
   go      ui.NewWindow, Window.SetTitle, Window.Title, Window.SetChild, Window.OnClosing
   rust    -
   python  tkinter.Toplevel, tkinter.Wm
+  wx      wxFrame, wxTopLevelWindow (SetTitle), wxWindow (SetClientSize, SetMinClientSize, GetClientRect), wxCloseEvent
   note    a window lays its children out in a column, so it needs no child of its own, `Window.SetChild`'s
 
 capability ui/screens  the screens of the system: each one's whole area, its work area and its scale, the main one first
@@ -147,6 +156,7 @@ capability ui/boxes  widgets side by side and one under another, with spacing, p
   go      ui.NewHorizontalBox, ui.NewVerticalBox, Box.Append, Box.Delete, Box.Padded, Box.SetPadded, ui.Align
   rust    -
   python  tkinter.Pack, tkinter.Place, tkinter.Frame, ttk.Frame
+  wx      wxBoxSizer, wxSizer (Add, AddSpacer), wxSizerFlags (Proportion, Expand, Border, Align)
   note    the layout is computed by Rebel the same on every system, in wxWidgets' sizers' manner; a widget's place given by hand, `tkinter.Place`'s, is refused: it is what a layout is for
 
 capability ui/grid  widgets in cells of columns and rows, the room left shared by the columns' and rows' weights
@@ -154,6 +164,7 @@ capability ui/grid  widgets in cells of columns and rows, the room left shared b
   go      ui.NewGrid, Grid.Append, Grid.InsertAt, Grid.Padded, Grid.SetPadded, ui.At
   rust    -
   python  tkinter.Grid
+  wx      wxFlexGridSizer (AddGrowableCol, AddGrowableRow), wxGridSizer
   note    a cell spanning several columns is not offered; a box inside a cell holds what would span
 
 capability ui/form  labelled fields, a label and its field on each line
@@ -161,6 +172,7 @@ capability ui/form  labelled fields, a label and its field on each line
   go      ui.NewForm, Form.Append, Form.Delete, Form.Padded, Form.SetPadded
   rust    -
   python  -
+  wx      wxFlexGridSizer
   note    a form is a grid of two columns, labels in the first
 
 capability ui/group  a box drawn with a title and a frame around it
@@ -168,18 +180,21 @@ capability ui/group  a box drawn with a title and a frame around it
   go      ui.NewGroup, Group.SetChild, Group.SetTitle, Group.Title, Group.Margined, Group.SetMargined
   rust    -
   python  tkinter.LabelFrame, ttk.Labelframe
+  wx      wxStaticBox, wxStaticBoxSizer
 
 capability ui/label  a text the person reads
   heroes  ui.label
   go      ui.NewLabel, Label.SetText, Label.Text
   rust    -
   python  tkinter.Label, ttk.Label, tkinter.Message
+  wx      wxStaticText
 
 capability ui/button  a button the person presses
   heroes  ui.button, ui.Event.clicked
   go      ui.NewButton, Button.SetText, Button.Text, Button.OnClicked
   rust    -
   python  tkinter.Button, ttk.Button
+  wx      wxButton (wxEVT_BUTTON)
 
 capability ui/button-keys  the buttons Return and Escape press wherever their window has the keys: a dialog's OK, drawn as the default, and its Cancel
   heroes  ui.set_button_key, ui.ButtonKey
@@ -202,6 +217,7 @@ capability ui/text-area  lines of text the person types
   go      ui.NewMultilineEntry, ui.NewNonWrappingMultilineEntry, MultilineEntry.Append, MultilineEntry.SetText, MultilineEntry.Text, MultilineEntry.OnChanged, MultilineEntry.ReadOnly, MultilineEntry.SetReadOnly
   rust    -
   python  tkinter.Text, scrolledtext.ScrolledText
+  wx      wxTextCtrl (wxTE_MULTILINE)
   note    text is added by setting the whole text, `Append`'s
 
 capability ui/password  a text field whose text is masked
@@ -217,12 +233,14 @@ capability ui/checkbox  a box the person checks and unchecks
   go      ui.NewCheckbox, Checkbox.Checked, Checkbox.SetChecked, Checkbox.SetText, Checkbox.Text, Checkbox.OnToggled
   rust    -
   python  tkinter.Checkbutton, ttk.Checkbutton
+  wx      wxCheckBox (wxEVT_CHECKBOX)
 
 capability ui/radio  items of which the person chooses one, each with its round button
   heroes  ui.radio_group, ui.set_selection, ui.selection_of
   go      ui.NewRadioButtons, RadioButtons.Append, RadioButtons.Selected, RadioButtons.SetSelected, RadioButtons.OnSelected
   rust    -
   python  tkinter.Radiobutton, ttk.Radiobutton
+  wx      wxRadioBox, wxRadioButton
 
 capability ui/list  items in a box, of which the person chooses one or several
   heroes  ui.list, ui.set_items, ui.set_selection, ui.selection_of, ui.Event.selection_changed, ui.Event.activated, ui.Input.activate
@@ -237,18 +255,21 @@ capability ui/combo  items in a button that opens them, of which the person choo
   go      ui.NewCombobox, Combobox.Append, Combobox.Selected, Combobox.SetSelected, Combobox.OnSelected
   rust    -
   python  ttk.Combobox, tkinter.OptionMenu, ttk.OptionMenu
+  wx      wxChoice
 
 capability ui/editable-combo  a combo box the person may type into
   heroes  pending
   go      ui.NewEditableCombobox, EditableCombobox.Append, EditableCombobox.SetText, EditableCombobox.Text, EditableCombobox.OnChanged
   rust    -
   python  ttk.Combobox
+  wx      wxComboBox
 
 capability ui/progress  a bar filled as far as a value goes
   heroes  ui.progress, ui.set_value, ui.value_of, ui.set_range
   go      ui.NewProgressBar, ProgressBar.SetValue, ProgressBar.Value
   rust    -
   python  ttk.Progressbar
+  wx      wxGauge (SetValue, SetRange)
 
 capability ui/progress-moving  a progress bar that moves with no value
   heroes  ui.set_moving
@@ -263,18 +284,21 @@ capability ui/slider  a knob the person drags between two values
   go      ui.NewSlider, Slider.SetValue, Slider.Value, Slider.OnChanged
   rust    -
   python  tkinter.Scale, ttk.Scale, ttk.LabeledScale
+  wx      wxSlider (wxEVT_SLIDER)
 
 capability ui/spin  a number typed, or stepped up and down
   heroes  pending
   go      ui.NewSpinbox, Spinbox.SetValue, Spinbox.Value, Spinbox.OnChanged
   rust    -
   python  tkinter.Spinbox, ttk.Spinbox
+  wx      wxSpinCtrl, wxSpinCtrlDouble
 
 capability ui/picture  an image shown, from `image`'s pixels
   heroes  ui.picture, ui.set_picture
   go      ui.NewImage, Image.Append
   rust    -
   python  tkinter.PhotoImage, tkinter.BitmapImage, tkinter.Image, tkinter.image_names, tkinter.image_types
+  wx      wxStaticBitmap
   note    `image` decodes the file; an image of several resolutions, `Image.Append`'s, is one picture per resolution here
 
 capability ui/separator  a line between the widgets of a box
@@ -282,12 +306,14 @@ capability ui/separator  a line between the widgets of a box
   go      ui.NewHorizontalSeparator, ui.NewVerticalSeparator
   rust    -
   python  ttk.Separator
+  wx      wxStaticLine
 
 capability ui/menus  a window's menu bar, its menus, their items and separators, each item's shortcut
   heroes  ui.menu, ui.menu_item, ui.menu_separator, ui.set_shortcut, ui.Shortcut, ui.Event.menu_chosen
   go      -
   rust    -
   python  tkinter.Menu, tkinter.Menubutton, ttk.Menubutton
+  wx      wxMenuBar, wxMenu, wxMenuItem (SetAccel), wxAcceleratorEntry
   note    a shortcut's `primary` key is Command on macOS and Control elsewhere, as each system's own programs take it
 
 capability ui/app-menu  the application's menu of macOS: About, Settings, Services, Hide, Hide Others, Show All, Quit, and the program's items that stand there
@@ -319,6 +345,7 @@ capability ui/timer  a clock that fires at a period, among the person's events
   go      -
   rust    -
   python  tkinter.Misc.after
+  wx      wxTimer (wxEVT_TIMER)
   note    a headless app's clock moves only as far as `wait` lets time pass, so its timers fire on the same waits on every machine
 
 capability ui/state  a widget greyed out or used, shown or hidden, destroyed, and asked what it is
@@ -326,6 +353,7 @@ capability ui/state  a widget greyed out or used, shown or hidden, destroyed, an
   go      ControlBase.Enable, ControlBase.Disable, ControlBase.Enabled, ControlBase.Show, ControlBase.Hide, ControlBase.Visible, ControlBase.Destroy, Window.Destroy, Box.Destroy, Form.Destroy, Group.Destroy, Tab.Destroy, Area.Destroy
   rust    -
   python  tkinter.Misc.destroy
+  wx      wxWindow (Enable, Show, Destroy, IsEnabled, IsShown)
   note    a widget whose life has ended is told `closed` by every call, never another widget's state
 
 capability ui/message-box  a message box: a tone, buttons, and the button pressed
@@ -333,6 +361,7 @@ capability ui/message-box  a message box: a tone, buttons, and the button presse
   go      ui.MsgBox, ui.MsgBoxError
   rust    -
   python  messagebox.showinfo, messagebox.showwarning, messagebox.showerror, messagebox.askquestion, messagebox.askokcancel, messagebox.askyesno, messagebox.askyesnocancel, messagebox.askretrycancel, messagebox.Message, dialog.Dialog, simpledialog.SimpleDialog
+  wx      wxMessageDialog, wxMessageBox
   note    a box of Retry and Cancel is one of OK and Cancel; an answer the program injected is taken before any box is shown
 
 capability ui/file-dialogs  the system's dialogs to open files and to save one, by their extensions
@@ -340,6 +369,7 @@ capability ui/file-dialogs  the system's dialogs to open files and to save one, 
   go      ui.OpenFile, ui.SaveFile
   rust    -
   python  filedialog.askopenfilename, filedialog.askopenfilenames, filedialog.asksaveasfilename, filedialog.askopenfile, filedialog.askopenfiles, filedialog.asksaveasfile, filedialog.Open, filedialog.SaveAs, filedialog.FileDialog, filedialog.LoadFileDialog, filedialog.SaveFileDialog, commondialog.Dialog
+  wx      wxFileDialog (wxFD_OPEN, wxFD_SAVE, wxFD_MULTIPLE, wxFD_OVERWRITE_PROMPT)
   note    a dialog answers paths; a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
 
 capability ui/folder-dialog  the system's dialog to choose a folder, or several
@@ -363,6 +393,7 @@ capability ui/ask-value  a dialog asking one value, a text or a number
   go      -
   rust    -
   python  simpledialog.askinteger, simpledialog.askfloat, simpledialog.askstring, simpledialog.Dialog
+  wx      wxTextEntryDialog, wxNumberEntryDialog
 
 capability ui/tabs  pages chosen by tabs
   heroes  ui.tabs, ui.page, ui.set_selection, ui.selection_of, ui.Event.selection_changed, ui.Input.choose, ui.Kind.tabs, ui.Kind.page
@@ -377,19 +408,21 @@ capability ui/table  rows of cells in columns
   go      ui.NewTable, Table.AppendTextColumn, Table.AppendImageColumn, Table.AppendImageTextColumn, Table.AppendCheckboxColumn, Table.AppendCheckboxTextColumn, Table.AppendProgressBarColumn, Table.AppendButtonColumn, ui.NewTableModel, TableModel.RowInserted, TableModel.RowChanged, TableModel.RowDeleted, TableModel.Free, ui.TableModelHandler, ui.TableParams, ui.TableValue, ui.TableString, ui.TableInt, ui.TableImage, ui.TableColor, ui.TableTextColumnOptionalParams
   rust    -
   python  ttk.Treeview
+  wx      wxDataViewListCtrl, wxListCtrl (wxLC_REPORT), wxDataViewCtrl
 
 capability ui/tree  a tree of items folded and unfolded
   heroes  pending
   go      -
   rust    -
   python  ttk.Treeview
+  wx      wxTreeCtrl, wxDataViewTreeCtrl
 
 capability ui/scrolled  a box whose content scrolls
   heroes  ui.scrolled, ui.Kind.scrolled
   go      ui.NewScrollingArea, Area.ScrollTo, Area.SetSize
   rust    -
   python  tkinter.Scrollbar, ttk.Scrollbar, tkinter.XView, tkinter.YView
-  wx      wxScrolledWindow (SetScrollRate, SetVirtualSize)
+  wx      wxScrolled (SetScrollRate, SetVirtualSize), whose wxScrolledWindow is wxScrolled<wxPanel>
   note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows pending (`WS_VSCROLL` and the arm moving a child window), Linux pending (`GtkScrolledWindow`); the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
 
 capability ui/split  two panes whose border the person drags
@@ -405,6 +438,7 @@ capability ui/drawing  an area the program draws into, with its keys and its mou
   go      ui.NewArea, Area.QueueRedrawAll, ui.AreaHandler, ui.AreaDrawParams, ui.AreaKeyEvent, ui.AreaMouseEvent, ui.ExtKey, ui.Modifiers, DrawContext.Fill, DrawContext.Stroke, DrawContext.Clip, DrawContext.Save, DrawContext.Restore, DrawContext.Transform, DrawContext.Text, ui.DrawNewPath, DrawPath.NewFigure, DrawPath.NewFigureWithArc, DrawPath.LineTo, DrawPath.ArcTo, DrawPath.BezierTo, DrawPath.AddRectangle, DrawPath.CloseFigure, DrawPath.End, DrawPath.Free, ui.DrawNewMatrix, DrawMatrix.SetIdentity, DrawMatrix.Translate, DrawMatrix.Scale, DrawMatrix.Rotate, DrawMatrix.Skew, DrawMatrix.Multiply, DrawMatrix.Invertible, DrawMatrix.Invert, DrawMatrix.TransformPoint, DrawMatrix.TransformSize, ui.DrawBrush, ui.DrawBrushType, ui.DrawGradientStop, ui.DrawStrokeParams, ui.DrawLineCap, ui.DrawLineJoin, ui.DrawFillMode, ui.DrawDefaultMiterLimit, ui.DrawNewTextLayout, DrawTextLayout.Free, ui.DrawTextLayoutParams, ui.DrawTextAlign, ui.NewAttributedString, AttributedString.String, AttributedString.AppendUnattributed, AttributedString.InsertAtUnattributed, AttributedString.Delete, AttributedString.Set, AttributedString.Free, ui.Attribute, ui.TextFamily, ui.TextSize, ui.TextWeight, ui.TextItalic, ui.TextStretch, ui.TextColor, ui.TextBackground, ui.Underline, ui.UnderlineColor, ui.UnderlineColorCustom, ui.OpenTypeFeatures, ui.OpenTypeTag, ui.ToOpenTypeTag, ui.FontDescriptor
   rust    -
   python  tkinter.Canvas
+  wx      wxPanel with wxPaintDC, wxGraphicsContext, wxMouseEvent, wxKeyEvent
 
 capability ui/focus  the widget that has the keys, set and asked, and Tab and Shift+Tab through the widgets in reading order
   heroes  ui.set_focus, ui.focus_of
@@ -419,6 +453,7 @@ capability ui/tooltip  a tip shown over a widget
   go      -
   rust    -
   python  -
+  wx      wxToolTip, wxWindow (SetToolTip), wxRichToolTip
 
 capability ui/clipboard  the system's clipboard: text, files and an image copied and pasted by the program
   heroes  ui.set_clipboard, ui.clipboard, ui.Clip, ui.ClipKind, ui.CLIPBOARD_MOST
@@ -433,31 +468,84 @@ capability ui/pickers  a date, a colour or a font chosen in the system's own pic
   go      ui.NewDatePicker, ui.NewTimePicker, ui.NewDateTimePicker, DateTimePicker.Time, DateTimePicker.SetTime, DateTimePicker.OnChanged, ui.NewColorButton, ColorButton.Color, ColorButton.SetColor, ColorButton.OnChanged, ui.NewFontButton, FontButton.Font, FontButton.OnChanged
   rust    -
   python  colorchooser.askcolor, colorchooser.Chooser, font.Font, font.families, font.names, font.nametofont
+  wx      wxDatePickerCtrl, wxTimePickerCtrl, wxColourPickerCtrl, wxFontPickerCtrl, wxColourDialog, wxFontDialog
 
 capability ui/tray  an icon in the system's tray or menu bar, and its notifications
   heroes  pending
   go      -
   rust    tauri::tray::TrayIcon
   python  -
+  wx      wxTaskBarIcon (SetIcon, PopupMenu), wxNotificationMessage
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  pending
   go      -
   rust    -
   python  dnd.dnd_start, dnd.DndHandler, dnd.Icon
+  wx      wxFileDropTarget (OnDropFiles), wxDropTarget, wxDropSource
 
 capability ui/bound-values  a value a widget and the program share, which calls back when it changes
   heroes  refused: the program holds its own state and sets the widget, and a value that calls back is a closure the language does not have
   go      -
   rust    -
   python  tkinter.Variable, tkinter.StringVar, tkinter.IntVar, tkinter.DoubleVar, tkinter.BooleanVar
+  wx      wxValidator, wxGenericValidator (TransferToWindow, TransferFromWindow)
 
 capability ui/styles  widgets drawn in a style the program chooses
   heroes  refused: the system draws its own widgets in its own style, which is what a native widget is; a style of the program's is drawing of its own
   go      -
   rust    -
   python  ttk.Style
+  wx      - (wxWidgets draws each system's own widgets in the system's style; colours and fonts set per widget, wxWindow::SetBackgroundColour and SetFont, are not offered)
 
 dropped
   go      ui.Control, ui.ControlBase, ui.NewControlBase, ui.ControlFromLibui, ControlBase.Handle, ControlBase.LibuiControl (the interface every widget shares and the system's handle beneath it, which a program never holds here: a widget is a number); ui.LibuiFreeText, Image.Free (memory freed by hand, which the language does itself); Window.Margined, Window.SetMargined (a window's padding, `set_spacing`'s); ui.NewSearchEntry (a text field the system draws as a search field, which behaves as a text field)
   python  tkinter.Tcl, tkinter.CallWrapper, tkinter.getboolean, tkinter.Misc, tkinter.BaseWidget, tkinter.Widget, ttk.Widget, ttk.tclobjs_to_py, ttk.setup_master (Tcl's interpreter and the classes every widget inherits, which a program never names here); ttk.Sizegrip (the corner a window is resized by, which the system draws); scrolledtext.example, filedialog.test, dnd.Tester, dnd.test (the modules' own demonstrations)
+
+capability ui/context-menu  a menu shown where the person right-clicks a widget
+  heroes  pending
+  go      -
+  rust    -
+  python  tkinter.Menu.tk_popup, tkinter.Menu.post
+  wx      wxContextMenuEvent, wxWindow (PopupMenu)
+  note    catalogue MN07 (must); macOS `NSView.menu` or `NSMenu.popUp`, Windows `TrackPopupMenuEx` on `WM_CONTEXTMENU`, Linux `GtkPopoverMenu`
+
+capability ui/text-selection  a text widget's selection and caret set and read, and its undo
+  heroes  pending
+  go      -
+  rust    -
+  python  tkinter.Text.tag_add, tkinter.Text.mark_set, tkinter.Text.edit_undo, tkinter.Text.edit_redo, tkinter.Entry.selection_range, tkinter.Entry.icursor
+  wx      wxTextEntry (SetSelection, GetSelection, SetInsertionPoint, GetInsertionPoint, Undo, Redo, CanUndo, CanRedo)
+  note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the system's own undo already (ui/edit-menu); macOS `NSTextView.selectedRange` and its `undoManager`, Windows `EM_SETSEL` and the Rich Edit's undo levels, Linux `GtkEditable` and `GtkTextBuffer`'s undo
+
+capability ui/session-end  the person logging out or shutting down, asked of the program first
+  heroes  pending
+  go      -
+  rust    -
+  python  tkinter.Wm.protocol
+  wx      wxCloseEvent (wxEVT_QUERY_END_SESSION, wxEVT_END_SESSION, CanVeto, Veto)
+  note    catalogue AP04 (must); macOS `applicationShouldTerminate`, Windows `WM_QUERYENDSESSION` with `ShutdownBlockReasonCreate`, Linux GTK's `query-end` (unread)
+
+capability ui/appearance  the system's dark or light appearance, and its change
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  wx      wxSystemSettings (GetAppearance), wxSystemAppearance (IsDark), wxSysColourChangedEvent
+  note    catalogue SY13 (must); macOS `NSApp.effectiveAppearance` observed, Windows the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`, Linux `GtkSettings:gtk-application-prefer-dark-theme` or the portal's `color-scheme`
+
+capability ui/accessibility  each widget's name and its label read by the system's screen reader
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  wx      wxAccessible, wxWindow (SetName, SetLabel)
+  note    catalogue AX02 (must); macOS `setAccessibilityLabel`, Windows UI Automation's name from the label, Linux `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL`
+
+capability ui/single-instance  one copy of the program running, a second handing its documents to the first
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  wx      wxSingleInstanceChecker, wxApp (MacOpenFiles)
+  note    catalogue AP23, AP05 and AP06 (must); macOS one instance by the system with `application(_:open:)`, Windows a named mutex and a message to the first window, Linux `GApplication` over D-Bus
