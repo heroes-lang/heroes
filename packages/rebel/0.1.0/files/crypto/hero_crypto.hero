@@ -8,10 +8,11 @@
 #
 # The layer is C of the language's own beside the runtime, so this group
 # names its header and no `link`: on Windows the member links CNG's
-# `bcrypt` itself; on macOS the Security framework, CryptoKit through a
+# `bcrypt` itself, which computes PBKDF2 too; on macOS the Security framework, CryptoKit through a
 # member of the layer written in Swift for the two ciphers, and Monocypher,
 # a C library the runtime vendors, compiled inside it for Ed25519 and
-# X25519 (panel 253's R3, 2026-11-20); and on Linux it opens
+# X25519 (panel 253's R3, 2026-11-20), and CommonCrypto of `libSystem` for
+# PBKDF2; and on Linux it opens
 # `libcrypto.so.3` at the first call that needs it, so the same lines bind
 # it everywhere. What each platform offers is `offers`'s answer, measured in
 # the member's opening comment: Linux, where `libcrypto.so.3` opens, and
@@ -67,6 +68,13 @@ extern "hero_crypto.h"
     constant HERO_CRYPTO_TEXT_MOST: u64
     constant HERO_CRYPTO_RSA_BITS_LEAST: i64
     constant HERO_CRYPTO_RSA_BITS_MOST: i64
+    # The four HMACs PBKDF2 is computed with, and the most bytes of a
+    # password, a salt and a key, and the most iterations, it takes.
+    constant HERO_CRYPTO_PBKDF2_SHA1: i64
+    constant HERO_CRYPTO_PBKDF2_SHA256: i64
+    constant HERO_CRYPTO_PBKDF2_SHA384: i64
+    constant HERO_CRYPTO_PBKDF2_SHA512: i64
+    constant HERO_CRYPTO_PBKDF2_MOST: u64
     # The call that ends a key's life, which every mark below names.
     #
     # - `k`: the key ended, its secret overwritten with zeros.
@@ -90,15 +98,16 @@ extern "hero_crypto.h"
     function hero_crypto_agree(mine: Key, theirs: Key, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_crypto_encrypt(k: Key, scheme: i64, @text: [u8] counted_by count lent, count: u64, @buffer: [u8] counted_by buffer_count lent, buffer_count: u64) -> i64
     function hero_crypto_decrypt(k: Key, scheme: i64, @data: [u8] counted_by count lent, count: u64, @buffer: [u8] counted_by buffer_count lent, buffer_count: u64) -> i64
+    function hero_crypto_pbkdf2(digest: i64, @password: [u8] counted_by password_count lent, password_count: u64, @salt: [u8] counted_by salt_count lent, salt_count: u64, iterations: u64, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_crypto_last_error() -> i64
     function hero_crypto_last_os_error() -> i64
     function hero_crypto_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
 
-# 1 where this machine computes `what`, a kind or a scheme, 0 where it does
-# not, -1 for a number that names neither.
+# 1 where this machine computes `what`, a kind, a scheme or a PBKDF2, 0
+# where it does not, -1 for a number that names none.
 #
-# - `what`: one of the `HERO_CRYPTO_` kinds or schemes; a number that names
-#   neither answers -1 with `HERO_CRYPTO_INVALID`.
+# - `what`: one of the `HERO_CRYPTO_` kinds, schemes or `HERO_CRYPTO_PBKDF2_`
+#   HMACs; a number that names none answers -1 with `HERO_CRYPTO_INVALID`.
 function offers(what: i64) -> i64
     return hero_crypto_offers(what)
 
@@ -394,6 +403,35 @@ function decrypt(k: Key, scheme: i64, @data: [u8], count: u64, @buffer: [u8], bu
         buffer_count: buffer_count
     )
 
+# `count`, PBKDF2's key of `count` bytes written into `buffer`'s first
+# `count` bytes, or -1.
+#
+# - `digest`: one of the four `HERO_CRYPTO_PBKDF2_` HMACs; another number is
+#   `HERO_CRYPTO_INVALID`.
+# - `password`: the password's bytes, left as they were handed.
+# - `password_count`: how many of `password`'s first bytes are the password,
+#   0 to `HERO_CRYPTO_PBKDF2_MOST`.
+# - `salt`: the salt's bytes, left as they were handed.
+# - `salt_count`: how many of `salt`'s first bytes are the salt, 0 to
+#   `HERO_CRYPTO_PBKDF2_MOST`.
+# - `iterations`: the HMACs each block costs, 1 to `HERO_CRYPTO_PBKDF2_MOST`;
+#   0 is `HERO_CRYPTO_INVALID`.
+# - `buffer`: where the key is written, from its first byte; left `count`
+#   long, and nothing in it to be read after -1.
+# - `count`: the key's bytes, 1 to `HERO_CRYPTO_PBKDF2_MOST`, at most
+#   `buffer`'s length.
+function pbkdf2(digest: i64, @password: [u8], password_count: u64, @salt: [u8], salt_count: u64, iterations: u64, @buffer: [u8], count: u64) -> i64
+    return hero_crypto_pbkdf2(
+        digest: digest,
+        password: @password,
+        password_count: password_count,
+        salt: @salt,
+        salt_count: salt_count,
+        iterations: iterations,
+        buffer: @buffer,
+        count: count
+    )
+
 # The kind of the last call's failure on this thread, `HERO_CRYPTO_OK` after
 # a call that did not fail.
 function last_error() -> i64
@@ -416,9 +454,11 @@ function last_message(@buffer: [u8], count: u64) -> i64
 
 ## Tests
 
-test "offers: every kind and scheme answers 1 or 0, and a number naming neither -1 invalid"
-    for what in [1, 2, 3, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30]
+test "offers: every kind, scheme and PBKDF2 answers 1 or 0, and a number naming none -1 invalid"
+    for what in [1, 2, 3, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 25, 26, 27, 28, 30, 50, 51, 52, 53]
         assert offers(what) == 1 || offers(what) == 0
+
+    assert offers(49) == -1 && offers(54) == -1
 
     assert offers(0) == -1
     assert last_error() == HERO_CRYPTO_INVALID
@@ -634,6 +674,70 @@ test "encrypt and decrypt: RSA-OAEP of 2048 bits, the measures, a text past 190 
     assert decrypt(k, scheme: HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256, data: @data, count: 256, buffer: @back, buffer_count: 190) == -1
     assert last_error() == HERO_CRYPTO_FORGED
     assert close(@k) == 0
+
+# Where the system computes `digest`, the key of `length` bytes PBKDF2 makes
+# of `password`, `salt` and `iterations`, as hexadecimal; else "unsupported".
+#
+# - `digest`: one of the four `HERO_CRYPTO_PBKDF2_` HMACs.
+# - `password`: the password's bytes.
+# - `salt`: the salt's bytes.
+# - `iterations`: 1 or more.
+# - `length`: the key's bytes, 1 or more.
+function derived_hex(digest: i64, password: [u8], salt: [u8], iterations: u64, length: u64) -> str
+    if offers(digest) != 1
+        return "unsupported"
+    secret @= password
+    given @= salt
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: to_i64(length).must())
+        out @ out.push(0)
+
+    got = pbkdf2(
+        digest,
+        password: @secret,
+        password_count: to_u64(secret.len()).must(),
+        salt: @given,
+        salt_count: to_u64(given.len()).must(),
+        iterations: iterations,
+        buffer: @out,
+        count: length
+    )
+    assert got == to_i64(length).must()
+    return bytes.format_hex(out)
+
+# RFC 6070's vectors (PBKDF2-HMAC-SHA1) but its 16,777,216 iterations, and
+# RFC 7914 § 11's two PBKDF2-HMAC-SHA256 ones, as the RFCs print them; Python's
+# `hashlib.pbkdf2_hmac` answered the SHA-384 and SHA-512 ones and the empty
+# password and salt on 2026-11-22.
+test "pbkdf2: RFC 6070's vectors, RFC 7914's, SHA-384 and SHA-512, an empty password and salt, a zero inside each, by the system where it has PBKDF2"
+    if offers(HERO_CRYPTO_PBKDF2_SHA256) != 1
+        skip_test(reason: "this platform's own cryptography has no PBKDF2: no libcrypto.so.3")
+    salt = bytes.from_text("salt")
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: bytes.from_text("password"), salt: salt, iterations: 1, length: 20) == "0c60c80f961f0e71f3a9b524af6012062fe037a6"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: bytes.from_text("password"), salt: salt, iterations: 2, length: 20) == "ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: bytes.from_text("password"), salt: salt, iterations: 4096, length: 20) == "4b007901b765489abead49d926f721d065a429c1"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: bytes.from_text("passwordPASSWORDpassword"), salt: bytes.from_text("saltSALTsaltSALTsaltSALTsaltSALTsalt"), iterations: 4096, length: 25) == "3d2eec4fe41c849b80c8d83662c0e44a8b291a964cf2f07038"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: [0x70, 0x61, 0x73, 0x73, 0x00, 0x77, 0x6f, 0x72, 0x64], salt: bytes.concat([bytes.from_text("sa"), [0], bytes.from_text("lt")]), iterations: 4096, length: 16) == "56fa6aa75548099dcc37d7f03425e0c3"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA256, password: bytes.from_text("passwd"), salt: salt, iterations: 1, length: 64) == "55ac046e56e3089fec1691c22544b605f94185216dde0465e68b9d57c20dacbc49ca9cccf179b645991664b39d77ef317c71b845b1e30bd509112041d3a19783"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA256, password: bytes.from_text("Password"), salt: bytes.from_text("NaCl"), iterations: 80000, length: 64) == "4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414aeff08876b34ab56a1d425a1225833549adb841b51c9b3176a272bdebba1d078478f62b397f33c8d"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA384, password: bytes.from_text("password"), salt: salt, iterations: 2, length: 48) == "54f775c6d790f21930459162fc535dbf04a939185127016a04176a0730c6f1f4fb48832ad1261baadd2cedd50814b1c8"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA512, password: bytes.from_text("pw"), salt: [], iterations: 3, length: 130) == "b05483454c45ae1d6a2a420c5da462b8e57c54e732acf96ea4699a5c5f25ac2899a584b03ff7f27d974b625eeca782d124d342a8db0ef3ce9dd0e33de6d084bdf710816029a86b5c6db43f84f0c5cf43d074760195566732a8b91225aeac39aedb9b160ea7a4adcaccea5ad9e89208b09f801265cb360f8fe5d77de4a7131ba68a9b"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA256, password: bytes.from_text(""), salt: salt, iterations: 1, length: 32) == "f135c27993baf98773c5cdb40a5706ce6a345cde61b000a67858650cd6a324d7"
+    assert derived_hex(HERO_CRYPTO_PBKDF2_SHA1, password: bytes.from_text(""), salt: [], iterations: 2, length: 20) == "620c000a06fed9c10bca11516b3ac0228d671700"
+
+test "pbkdf2: a digest none of the four, no iterations, no key, and iterations past the bound, all invalid before the system is asked"
+    secret: [u8] @= [1]
+    salt: [u8] @= [2]
+    out: [u8] @= [0, 0, 0, 0]
+    assert pbkdf2(49, password: @secret, password_count: 1, salt: @salt, salt_count: 1, iterations: 1, buffer: @out, count: 4) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert pbkdf2(HERO_CRYPTO_PBKDF2_SHA256, password: @secret, password_count: 1, salt: @salt, salt_count: 1, iterations: 0, buffer: @out, count: 4) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert pbkdf2(HERO_CRYPTO_PBKDF2_SHA256, password: @secret, password_count: 1, salt: @salt, salt_count: 1, iterations: 1, buffer: @out, count: 0) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
+    assert pbkdf2(HERO_CRYPTO_PBKDF2_SHA256, password: @secret, password_count: 1, salt: @salt, salt_count: 1, iterations: HERO_CRYPTO_PBKDF2_MOST + 1, buffer: @out, count: 4) == -1
+    assert last_error() == HERO_CRYPTO_INVALID
 
 test "last_message refuses a buffer of no bytes"
     words: [u8] @= []

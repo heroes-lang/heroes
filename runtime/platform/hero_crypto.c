@@ -32,6 +32,7 @@
  *   PKCS #8 private, DER        no (5)               i2d/d2i PKCS8           no (5)
  *   SPKI public, DER            SecItemExport (5)    i2d/d2i_PUBKEY          no (5)
  *   PEM                         SecItemExport, not PKCS #8 (5)  PEM_*         CryptStringToBinary (5)
+ *   PBKDF2 by HMAC-SHA-1/2      CCKeyDerivationPBKDF (6)  PKCS5_PBKDF2_HMAC  BCryptDeriveKeyPBKDF2 (6)
  *
  *   (1) CommonCrypto's public modes are ECB, CBC, CFB, CTR, OFB, RC4 and
  *       CFB8 (`CommonCryptor.h`); its GCM is in a private header the SDK
@@ -58,6 +59,13 @@
  *       this member reads and writes PKCS #8 and SPKI itself (THE FORMS
  *       below) on every platform, the same bytes everywhere; PEM's base64
  *       is the face's.
+ *   (6) PBKDF2 (feature 2655): `crypto`'s own, written in Heroes, took
+ *       4.85 s for the 600,000 iterations of HMAC-SHA-256 OWASP asks of a
+ *       login, built at `-O2` on an Apple M3 (2026-11-22), most of it in
+ *       the lists each HMAC allocates. The four HMACs every platform's
+ *       library offers are the system's here; CNG has no SHA-224, so the
+ *       face computes it, MD5, SHA-512/224, SHA-512/256 and SHA-3 itself.
+ *       CommonCrypto lives in `libSystem`, which every macOS program links.
  *
  * WHAT THE ARMS ANSWERED, 2026-11-17, through a C probe of this member, not
  * kept, over Wycheproof's files (3,173 applicable cases) and NIST CAVP's
@@ -132,6 +140,8 @@
 #endif
 #elif defined(__APPLE__)
 #include "hero_crypto_cryptokit.h"
+#include <CommonCrypto/CommonCryptor.h>
+#include <CommonCrypto/CommonKeyDerivation.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 #include <pthread.h>
@@ -290,6 +300,10 @@ static bool hero_crypto_is_pair(int64_t kind) {
 
 static bool hero_crypto_is_scheme(int64_t what) {
     return (what >= HERO_CRYPTO_SIGN_ED25519 && what <= HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512) || what == HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256;
+}
+
+static bool hero_crypto_is_pbkdf2(int64_t what) {
+    return what >= HERO_CRYPTO_PBKDF2_SHA1 && what <= HERO_CRYPTO_PBKDF2_SHA512;
 }
 
 /* The key kind a scheme works with. */
@@ -1213,6 +1227,10 @@ static int64_t hero_crypto_arm_agree(const hero_crypto_held *mine, const hero_cr
  * that do not decrypt. */
 static int64_t hero_crypto_arm_encrypt(const hero_crypto_held *held, const unsigned char *text, size_t count, unsigned char *out, size_t most);
 static int64_t hero_crypto_arm_decrypt(const hero_crypto_held *held, const unsigned char *data, size_t count, unsigned char *out, size_t most);
+/* PBKDF2 by the HMAC `digest` names into `out`, `count` bytes; every count
+ * is at most `HERO_CRYPTO_PBKDF2_MOST` and every pointer real, the common
+ * part having checked both. */
+static bool hero_crypto_arm_pbkdf2(int64_t digest, const unsigned char *password, size_t password_count, const unsigned char *salt, size_t salt_count, uint64_t iterations, unsigned char *out, size_t count);
 
 /* -- THE COMMON CALLS ------------------------------------------------------- */
 
@@ -1377,12 +1395,43 @@ static bool hero_crypto_offered(int64_t what) {
 }
 
 int64_t hero_crypto_offers(int64_t what) {
-    if (!hero_crypto_is_aead(what) && !hero_crypto_is_pair(what) && !hero_crypto_is_scheme(what)) {
-        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "the number names no kind and no scheme");
+    if (!hero_crypto_is_aead(what) && !hero_crypto_is_pair(what) && !hero_crypto_is_scheme(what) && !hero_crypto_is_pbkdf2(what)) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "the number names no kind, no scheme and no PBKDF2");
         return -1;
     }
     hero_crypto_fine();
-    return hero_crypto_arm_ready() && hero_crypto_arm_offers(what) ? 1 : 0;
+    return hero_crypto_arm_ready() && (hero_crypto_is_pbkdf2(what) || hero_crypto_arm_offers(what)) ? 1 : 0;
+}
+
+/* The bytes a pointer and a count name, a NULL pointer read as no bytes
+ * where the count is 0: every arm's call is handed a real pointer. */
+static const unsigned char hero_crypto_nothing[1] = { 0 };
+
+static const unsigned char *hero_crypto_bytes_or_nothing(const void *bytes) {
+    return bytes == NULL ? hero_crypto_nothing : (const unsigned char *)bytes;
+}
+
+int64_t hero_crypto_pbkdf2(int64_t digest, const void *password, uint64_t password_count, const void *salt, uint64_t salt_count, uint64_t iterations, void *buffer, uint64_t count) {
+    if (!hero_crypto_is_pbkdf2(digest)) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "the number names no PBKDF2 of SHA-1, SHA-256, SHA-384 or SHA-512");
+        return -1;
+    }
+    if (iterations == 0 || iterations > HERO_CRYPTO_PBKDF2_MOST || count == 0 || count > HERO_CRYPTO_PBKDF2_MOST) {
+        hero_crypto_said(HERO_CRYPTO_INVALID, 0, "PBKDF2 takes 1 to 2147483647 iterations and makes 1 to 2147483647 bytes");
+        return -1;
+    }
+    if (!hero_crypto_bytes_given(password, password_count, HERO_CRYPTO_PBKDF2_MOST, "the password") || !hero_crypto_bytes_given(salt, salt_count, HERO_CRYPTO_PBKDF2_MOST, "the salt") || !hero_crypto_bytes_given(buffer, count, HERO_CRYPTO_PBKDF2_MOST, "the key's room")) {
+        return -1;
+    }
+    if (!hero_crypto_ready()) {
+        return -1;
+    }
+    if (!hero_crypto_arm_pbkdf2(digest, hero_crypto_bytes_or_nothing(password), (size_t)password_count, hero_crypto_bytes_or_nothing(salt), (size_t)salt_count, iterations, (unsigned char *)buffer, (size_t)count)) {
+        hero_crypto_wipe(buffer, (size_t)count);
+        return -1;
+    }
+    hero_crypto_fine();
+    return (int64_t)count;
 }
 
 hero_crypto_key *hero_crypto_generate(int64_t kind, int64_t bits) {
@@ -2147,6 +2196,30 @@ static bool hero_crypto_arm_offers(int64_t what) {
     return hero_crypto_is_aead(what) || hero_crypto_is_curve(what) || what == HERO_CRYPTO_P256 || what == HERO_CRYPTO_P384 || what == HERO_CRYPTO_RSA || (what >= HERO_CRYPTO_SIGN_ED25519 && what <= HERO_CRYPTO_SIGN_RSA_PKCS1_SHA512) || what == HERO_CRYPTO_ENCRYPT_RSA_OAEP_SHA256;
 }
 
+/* PBKDF2 by CommonCrypto, whose rounds are an `unsigned` and whose
+ * password is `char`s: both hold what the common part admits. */
+static bool hero_crypto_arm_pbkdf2(int64_t digest, const unsigned char *password, size_t password_count, const unsigned char *salt, size_t salt_count, uint64_t iterations, unsigned char *out, size_t count) {
+    CCPseudoRandomAlgorithm prf = kCCPRFHmacAlgSHA256;
+    int status;
+
+    if (digest == HERO_CRYPTO_PBKDF2_SHA1) {
+        prf = kCCPRFHmacAlgSHA1;
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA384) {
+        prf = kCCPRFHmacAlgSHA384;
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA512) {
+        prf = kCCPRFHmacAlgSHA512;
+    }
+    status = CCKeyDerivationPBKDF(kCCPBKDF2, (const char *)password, password_count, salt, salt_count, prf, (unsigned)iterations, out, count);
+    if (status != kCCSuccess) {
+        char words[96];
+
+        (void)snprintf(words, sizeof words, "CCKeyDerivationPBKDF answered %d", status);
+        hero_crypto_said(HERO_CRYPTO_OTHER, (int64_t)status, words);
+        return false;
+    }
+    return true;
+}
+
 static bool hero_crypto_arm_random(unsigned char *into, size_t count) {
     int status = SecRandomCopyBytes(kSecRandomDefault, count, into);
 
@@ -2761,6 +2834,11 @@ typedef struct hero_crypto_openssl {
     unsigned long (*ERR_get_error)(void);
     void (*ERR_error_string_n)(unsigned long error, char *buffer, size_t count);
     void (*ERR_clear_error)(void);
+    const void *(*EVP_sha1)(void);
+    const void *(*EVP_sha256)(void);
+    const void *(*EVP_sha384)(void);
+    const void *(*EVP_sha512)(void);
+    int (*PKCS5_PBKDF2_HMAC)(const char *password, int password_count, const unsigned char *salt, int salt_count, int iterations, const void *digest, int count, unsigned char *out);
 } hero_crypto_openssl;
 
 /* The functions, found once by `hero_crypto_load` under `hero_crypto_once`,
@@ -2845,6 +2923,11 @@ static void hero_crypto_load(void) {
     HERO_CRYPTO_FIND(ERR_get_error);
     HERO_CRYPTO_FIND(ERR_error_string_n);
     HERO_CRYPTO_FIND(ERR_clear_error);
+    HERO_CRYPTO_FIND(EVP_sha1);
+    HERO_CRYPTO_FIND(EVP_sha256);
+    HERO_CRYPTO_FIND(EVP_sha384);
+    HERO_CRYPTO_FIND(EVP_sha512);
+    HERO_CRYPTO_FIND(PKCS5_PBKDF2_HMAC);
     hero_crypto_ssl_found = ok;
 }
 
@@ -2876,6 +2959,26 @@ static void hero_crypto_ssl_said(int64_t kind, const char *what) {
 
 static bool hero_crypto_arm_offers(int64_t what) {
     (void)what;
+    return true;
+}
+
+/* PBKDF2 by OpenSSL, every count an `int`, which the common part's bound
+ * keeps them within. A password's length of -1 would be read as a C
+ * string's; none below 0 reaches it. */
+static bool hero_crypto_arm_pbkdf2(int64_t digest, const unsigned char *password, size_t password_count, const unsigned char *salt, size_t salt_count, uint64_t iterations, unsigned char *out, size_t count) {
+    const void *md = hero_crypto_ssl.EVP_sha256();
+
+    if (digest == HERO_CRYPTO_PBKDF2_SHA1) {
+        md = hero_crypto_ssl.EVP_sha1();
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA384) {
+        md = hero_crypto_ssl.EVP_sha384();
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA512) {
+        md = hero_crypto_ssl.EVP_sha512();
+    }
+    if (hero_crypto_ssl.PKCS5_PBKDF2_HMAC((const char *)password, (int)password_count, salt, (int)salt_count, (int)iterations, md, (int)count, out) != 1) {
+        hero_crypto_ssl_said(HERO_CRYPTO_OTHER, "PKCS5_PBKDF2_HMAC failed");
+        return false;
+    }
     return true;
 }
 
@@ -3299,6 +3402,35 @@ static bool hero_crypto_arm_ready(void) {
 
 static bool hero_crypto_arm_offers(int64_t what) {
     return what != HERO_CRYPTO_ED25519 && what != HERO_CRYPTO_SIGN_ED25519 && what != HERO_CRYPTO_X25519;
+}
+
+/* PBKDF2 by CNG: the digest's provider opened for HMAC, its handle the
+ * pseudo-random function `BCryptDeriveKeyPBKDF2` runs, closed after. CNG's
+ * counts are `ULONG`s, which the common part's bound keeps them within. */
+static bool hero_crypto_arm_pbkdf2(int64_t digest, const unsigned char *password, size_t password_count, const unsigned char *salt, size_t salt_count, uint64_t iterations, unsigned char *out, size_t count) {
+    LPCWSTR algorithm = BCRYPT_SHA256_ALGORITHM;
+    BCRYPT_ALG_HANDLE prf = NULL;
+    NTSTATUS status;
+
+    if (digest == HERO_CRYPTO_PBKDF2_SHA1) {
+        algorithm = BCRYPT_SHA1_ALGORITHM;
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA384) {
+        algorithm = BCRYPT_SHA384_ALGORITHM;
+    } else if (digest == HERO_CRYPTO_PBKDF2_SHA512) {
+        algorithm = BCRYPT_SHA512_ALGORITHM;
+    }
+    status = BCryptOpenAlgorithmProvider(&prf, algorithm, NULL, BCRYPT_ALG_HANDLE_HMAC_FLAG);
+    if (!hero_crypto_win_good(status)) {
+        hero_crypto_win_said(HERO_CRYPTO_UNSUPPORTED, "BCryptOpenAlgorithmProvider", status);
+        return false;
+    }
+    status = BCryptDeriveKeyPBKDF2(prf, (PUCHAR)password, (ULONG)password_count, (PUCHAR)salt, (ULONG)salt_count, (ULONGLONG)iterations, out, (ULONG)count, 0);
+    (void)BCryptCloseAlgorithmProvider(prf, 0);
+    if (!hero_crypto_win_good(status)) {
+        hero_crypto_win_said(HERO_CRYPTO_OTHER, "BCryptDeriveKeyPBKDF2", status);
+        return false;
+    }
+    return true;
 }
 
 static bool hero_crypto_arm_random(unsigned char *into, size_t count) {

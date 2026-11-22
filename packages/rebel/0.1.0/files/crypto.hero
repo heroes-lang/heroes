@@ -21,7 +21,11 @@
 # `crypto/keypairs`. Checksums that are not cryptographic are the package
 # `hash`'s, and random bytes, a key's or a salt's, are the system's,
 # `os.random_bytes` (`random` holds the generators a program seeds): no
-# function here makes a salt, so that `crypto` stands on no C.
+# function here makes a salt. The one computation `crypto` hands the
+# system is PBKDF2 of the four HMACs every platform's library offers, for
+# its speed alone: a login's 600,000 iterations take a fraction of a second
+# there and seconds in this package's own code, which gives the same bytes
+# where the system has none.
 #
 # MD5 and SHA-1 are broken for security: two inputs that answer alike can be
 # made. They are kept for the formats and protocols that name them, never to
@@ -982,7 +986,12 @@ function hkdf(algorithm: Algorithm, secret: [u8], salt: [u8], info: [u8], length
 # above `digest_size` times 2^32 - 1. Go's answers a key for no iterations
 # and Python refuses it; it is refused here, the RFC asking a positive count.
 # It costs `iterations` times two compressions for each `digest_size` bytes
-# of key. See also `hkdf`.
+# of key. By SHA-1, SHA-256, SHA-384 and SHA-512 it is computed by the
+# system's own cryptography (CommonCrypto on macOS, OpenSSL's `libcrypto.so.3`
+# on Linux, CNG on Windows), 600,000 iterations of SHA-256 in a fraction of a
+# second; by the other digests, and on a Linux machine with no
+# `libcrypto.so.3`, by this package's own code, which takes seconds for as
+# many; the bytes are the same either way. See also `hkdf`.
 function pbkdf2(algorithm: Algorithm, password: [u8], salt: [u8], iterations: i64, length: i64) -> [u8]?
     if iterations < 1
         return fail(code: INVALID, msg: f"an iteration count of {iterations}, where PBKDF2 takes 1 or more")
@@ -994,7 +1003,10 @@ function pbkdf2(algorithm: Algorithm, password: [u8], salt: [u8], iterations: i6
             msg: f"a length of {length} bytes, where PBKDF2 by {format_algorithm(algorithm)} makes 1 to {most}"
         )
     keyed = start_hmac(algorithm: algorithm, key: password)
-    return ok(derive.pbkdf2(keyed: keyed.run, salt: salt, iterations: iterations, length: length))
+
+    match derive.by_system(keyed.run.kind, password: password, salt: salt, iterations: iterations, length: length)
+        .ok key => return ok(key)
+        .err _  => return ok(derive.pbkdf2(keyed: keyed.run, salt: salt, iterations: iterations, length: length))
 
 # scrypt (RFC 7914): `length` bytes of key made from a password, each guess
 # costing 128 × `r` × `n` bytes of memory and as many steps, so that a

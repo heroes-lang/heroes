@@ -66,7 +66,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `xml` | an XML document parsed, walked, built and written; names with their namespaces; escaping | `numbers`, `strings`, `unicode` |  |
 | 2 | `html` | HTML read as a browser reads it (WHATWG), never failing; searched by tag, attribute, class and CSS selectors; changed and written; every named character reference | `strings`, `unicode` |  |
 | 2 | `url` | a URL parsed, built, escaped | `numbers`, `strings` |  |
-| 2 | `crypto` | SHA-1, SHA-2, HMAC, HKDF, PBKDF2, comparison in constant time | `bytes` |  |
+| 2 | `crypto` | SHA-1, SHA-2, HMAC, HKDF, PBKDF2, comparison in constant time | `bytes` | `hero_crypto.h` |
 | 2 | `big` | integers and decimals of any size, exact | `numbers`, `random` |  |
 | 2 | `flags` | the arguments of a program: options, values, positionals, a generated help | `numbers`, `strings` |  |
 | 2 | `ini` | INI files read and written | `strings` |  |
