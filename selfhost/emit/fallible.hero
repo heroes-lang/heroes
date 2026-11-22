@@ -13,13 +13,16 @@
 # assignment and not a rebuild.
 
 use check/state
+use check/table
 use checker
 use emit/ctype
 use emit/mangle
 use ir
+use ir/containers
 use parse
 use resolve
 use source
+use token
 
 # ok(x), fail(code, msg) and the err that ? produces — one compound
 # literal each.
@@ -47,6 +50,25 @@ function construct_option(names: ctype.Names, result: i64, shape: ir.Shape, argu
         .record_shape | .case_shape | .array_shape | .map_shape => return fail(code: "none", msg: "not an option shape")
 
     return fail(code: "none", msg: "unreached")
+
+# The arguments of an option's construction that carry a value, as C names. A
+# unit-typed value has no temporary (the unit rule, `emit/ctype.hero`), so an
+# `ok` handed one is built as `ok()` is, the tag alone: a generic instance at
+# `()` hands one over, since `ok(v)` with `v: T` is checked once for every `T`
+# (defect 2682). Only an option leaves an argument out: an array's or a map's
+# would lose an element, and `()` as either is refused before emission
+# (`unit_element`).
+function carried_arguments(c: state.Checked, f: containers.Function, run: ir.Run) -> [str]
+    out: [str] @= []
+
+    for arg in containers.args_of(f, run)
+        match arg
+            .value_arg v =>
+                if !ctype.is_unit(c, ty: containers.value_type(f, v.value))
+                    out @ out.push(mangle.value(v.value))
+            .inout_arg => continue
+
+    return out
 
 # t16 = t15.tag; for a T?, the same member a variant uses.
 function option_tag(base: i64) -> str
@@ -85,3 +107,38 @@ test "the tag is written even where C would zero it, and err is one assignment"
     assert option_tag(base: 15) == "t15.tag"
     assert option_payload(base: 15, at: 0) == "t15.as.ok"
     assert option_payload(base: 15, at: 1) == "t15.as.err"
+
+test "carried_arguments: a unit-typed argument has no temporary, so ok of one is the tag alone"
+    text = "function main()\n    x: ()? = ok()\n    print(x.is_err())\n"
+    p = parse.parse(text)
+    s = source.new_source(name: "t.hero", text: text)
+    out = resolve.resolve(p.tree, s, p.decls, p.uses)
+    c: state.Checked = checker.check(p.tree, out, s, p.decls)
+    assert c.diagnostics.len() == 0
+    names = ctype.with_options(ctype.new_names(s, p.decls), c: c, s: s, decls: p.decls)
+    unit_id = table.unit_ty(c.types)
+    int_id = table.int_ty_id(c.types)
+    f = containers.Function(
+        name: "t",
+        decl: 1,
+        kind: .function_kind,
+        generics: [],
+        params: [],
+        result: 0,
+        slots: [],
+        blocks: [],
+        values: [unit_id, int_id, unit_id],
+        arguments: [.value_arg(value: 2), .value_arg(value: 1)],
+        steps: [],
+        instance: [],
+        call_instances: {},
+        instantiated_at: token.Span(start: 0, end: 0),
+        span: token.Span(start: 0, end: 1)
+    )
+    unit_only = carried_arguments(c, f, run: ir.Run(start: 0, length: 1))
+    assert unit_only.len() == 0
+    assert carried_arguments(c, f, run: ir.Run(start: 1, length: 1)) == ["t1"]
+    assert carried_arguments(c, f, run: ir.Run(start: 0, length: 2)) == ["t1"]
+    unit_opt = table.lookup(c.types, .fallible(payload: unit_id)).must()
+    built = construct_option(names, result: unit_opt, shape: .ok_shape, arguments: unit_only)
+    assert built.must() == "(" + ctype.option_of(names, ty: unit_opt) + "){.tag = INT64_C(0)}"

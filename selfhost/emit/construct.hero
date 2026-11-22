@@ -70,6 +70,7 @@ function emit(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
         )
         .ok_shape | .fail_shape | .err_shape => option(
             @w,
+            c,
             names,
             f,
             ty: inst.ty,
@@ -285,9 +286,10 @@ function map_literal(@w: writer.Writer, c: state.Checked, names: ctype.Names, s:
 
 # ok(x), fail(c, m), and the err that ? produces — §4.6's three ways
 # into a T?, all one compound literal with a tag.
-function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, ty: i64, shape: ir.Shape, run: ir.Run, target: str?)
+function option(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: containers.Function, ty: i64, shape: ir.Shape, run: ir.Run, target: str?)
     if target.is_err()
         return
+    carried = fallible.carried_arguments(c, f, run: run)
 
     # A large option is built in place too: it is large only when its payload
     # is, so the literal it would otherwise take was that payload's size on the
@@ -297,7 +299,7 @@ function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, t
             names,
             result: ty,
             shape: shape,
-            arguments: argument_names(f, run: run),
+            arguments: carried,
             target: target.must()
         )
 
@@ -306,7 +308,7 @@ function option(@w: writer.Writer, names: ctype.Names, f: containers.Function, t
                 writer.line(@w, text: "    " + line)
 
             return
-    text = fallible.construct_option(names, result: ty, shape: shape, arguments: argument_names(f, run: run))
+    text = fallible.construct_option(names, result: ty, shape: shape, arguments: carried)
 
     if text.is_err()
         writer.line(@w, text: "    hero_unreachable(); /* not a T? */")
