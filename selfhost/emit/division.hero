@@ -30,10 +30,10 @@ function guard(c: state.Checked, ty: i64, l: str, r: str, op: ir.BinaryOp, where
     kind: widths.IntKind @= .i64
 
     match table.get(c.types, ty)
-        .int_ty it                                                 => kind @ it.kind
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return ""
-        .array | .fixed | .map | .fallible | .function_ty | .named => return ""
-        .case_ty | .failure | .generic | .error                    => return ""
+        .int_ty it                                                         => kind @ it.kind
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => return ""
+        .array | .fixed | .map | .fallible | .function_ty | .named         => return ""
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return ""
 
     smallest: str @= "INT64_MIN"
     minus_one: str @= "INT64_C(-1)"

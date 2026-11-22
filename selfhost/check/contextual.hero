@@ -95,17 +95,17 @@ function float_literal(a: ast.Ast, id: i64) -> bool
 function adopts(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, offered: i64) -> bool
     if number_literal(a, id)
         return match table.get(c.out.types, offered)
-            .int_ty                                                  => true
-            .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named        => false
-            .case_ty | .failure | .generic | .error                  => false
+            .int_ty                                                            => true
+            .float_ty | .bool | .str | .ptr | .cstr | .unit | .array           => false
+            .fixed | .map | .fallible | .function_ty | .named                  => false
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
     if float_literal(a, id)
         return match table.get(c.out.types, offered)
-            .float_ty                                              => true
-            .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-            .fixed | .map | .fallible | .function_ty | .named      => false
-            .case_ty | .failure | .generic | .error                => false
+            .float_ty                                                          => true
+            .int_ty | .bool | .str | .ptr | .cstr | .unit | .array             => false
+            .fixed | .map | .fallible | .function_ty | .named                  => false
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
     is_null = match a.exprs[id].kind
         .null_ptr                                                                   => true
@@ -122,6 +122,7 @@ function adopts(c: state.Checker, a: ast.Ast, decls: [ast.Decl], id: i64, offere
 
             .named n                                            => handles.is_handle(decls[n.decl])
             .int_ty | .float_ty | .bool | .str | .unit | .array => false
+            .thread_ty | .mailbox_ty                            => false
             .fixed | .map | .fallible | .function_ty            => false
             .case_ty | .failure | .generic | .error             => false
     return true

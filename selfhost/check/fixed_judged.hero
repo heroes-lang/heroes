@@ -57,6 +57,8 @@ function grown(@a: ast.Ast, id: i64)
                 grown(@a, p)
 
             grown(@a, f.result)
+        .thread_of t            => grown(@a, t.element)
+        .mailbox_of m           => grown(@a, m.element)
         .named | .unit | .error => return
 
 # What `told` keeps: the refusal, and every message `again`, the repaired
@@ -99,6 +101,7 @@ test "the repaired program writes each refused fixed array as its [T]"
             .array_of                                                      => arrays @ arrays + 1
             .fixed                                                         => fixed @ fixed + 1
             .named | .unit | .map_of | .fallible | .function_type | .error => arrays @ arrays
+            .thread_of | .mailbox_of                                       => arrays @ arrays
 
     # `i64[2][3]` is two arrays now; `u8[4]` was not refused and stays fixed.
     assert arrays == 2

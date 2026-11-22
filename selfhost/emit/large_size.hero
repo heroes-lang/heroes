@@ -71,6 +71,7 @@ function bytes_of(c: state.Checked, sizes: Sizes, ty: i64) -> i64
         .str => 16
         .failure => 32
         .ptr | .cstr | .array | .map | .function_ty => 8
+        .thread_ty | .mailbox_ty => 8
         .unit | .generic | .error => 0
         .named n => sizes.decls[n.decl].default(0)
         .case_ty vc => sizes.cases[ctype.case_key(decl: vc.decl, at: vc.at)].default(0)
@@ -88,6 +89,7 @@ function holds_partial(c: state.Checked, sizes: Sizes, ty: i64) -> bool
         .fixed fx => holds_partial(c, sizes, ty: fx.element)
         .fallible o => holds_partial(c, sizes, ty: o.payload)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .thread_ty | .mailbox_ty => false
         .array | .map | .function_ty | .failure | .generic | .error => false
 
 function fields_partial(c: state.Checked, sizes: Sizes, fields: [ast.Field]) -> bool
@@ -178,10 +180,10 @@ function group_large(c: state.Checked, sizes: Sizes, ty: i64) -> bool
 
 function group_named(c: state.Checked, ty: i64) -> bool
     return match table.get(c.types, ty)
-        .named                                                    => !table.poisoned(c.types, ty)
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .named                                                             => !table.poisoned(c.types, ty)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 ## Tests
 

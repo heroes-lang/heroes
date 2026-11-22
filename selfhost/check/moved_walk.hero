@@ -36,12 +36,23 @@ record Walk
     loud: bool
     by_start: {i64: i64}
     found: [diag.Diagnostic]
+    handed: {i64: bool}
+    # Reading a mailbox to send to it, or to close it: a close refuses only these.
+    send: bool
 
 # One body, from an empty state, aloud: what it refuses.
-function run(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, by_start: {i64: i64}) -> [diag.Diagnostic]
+function run(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], body: ast.Block, by_start: {i64: i64}, handed: {i64: bool}) -> [diag.Diagnostic]
     frames: [Frame] = []
     found: [diag.Diagnostic] = []
-    w: Walk @= Walk(flow: flow.start(), frames: frames, loud: true, by_start: by_start, found: found)
+    w @= Walk(
+        flow: flow.start(),
+        frames: frames,
+        loud: true,
+        by_start: by_start,
+        found: found,
+        handed: handed,
+        send: false
+    )
     block(@w, a, r, s, decls, body: body)
     return w.found
 
@@ -213,7 +224,7 @@ function indices(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, d
 function refuse_if_dead(@w: Walk, a: ast.Ast, s: source.Source, id: i64, path: [str], crossing: bool)
     if !w.loud
         return
-    told = errors.refusal(w.flow, s, read: a.exprs[id].span, path: path, crossing: crossing)
+    told = errors.refusal(w.flow, s, read: a.exprs[id].span, path: path, crossing: crossing, sending: w.send)
 
     if !told.is_err()
         state.append_diagnostic(@w.found, told.must())
@@ -235,8 +246,11 @@ function call(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decl
         .local | .builtin | .module | .unresolved =>
             expr(@w, a, r, s, decls, id: callee)
             arguments(@w, a, r, s, decls, given: given)
+            calls.after_spawn(@w.flow, a, r, s, w.handed, callee: r.uses[callee], given: given, span: a.exprs[id].span)
 
-# UFCS: the receiver is the first argument (§4.11), unless it is a module.
+# UFCS: the receiver is the first argument (§4.11), unless it is a module; a
+# thread's or a mailbox's operation is the language's, chosen by the receiver's
+# type, even where the program declares a function of its name.
 function method(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, given: [ast.Arg])
     qualified = match r.uses[receiver]
         .module                                => true
@@ -244,24 +258,27 @@ function method(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, de
 
     match r.uses[id]
         .top t =>
-            if qualified
-                named(
-                    @w,
-                    a,
-                    r,
-                    s,
-                    decls,
-                    at: t.at,
-                    receiver: fail(code: "none", msg: "no receiver"),
-                    given: given,
-                    span: a.exprs[id].span
-                )
+            first = calls.first_argument(receiver, qualified: qualified)
+
+            if calls.is_operation(w.handed, at: id)
+                dotted(@w, a, r, s, decls, id: id, receiver: receiver, given: given)
             else
-                named(@w, a, r, s, decls, at: t.at, receiver: ok(receiver), given: given, span: a.exprs[id].span)
+                named(@w, a, r, s, decls, at: t.at, receiver: first, given: given, span: a.exprs[id].span)
         .local | .builtin | .module | .unresolved =>
-            if !qualified
-                expr(@w, a, r, s, decls, id: receiver)
-            arguments(@w, a, r, s, decls, given: given)
+            if qualified
+                arguments(@w, a, r, s, decls, given: given)
+            else
+                dotted(@w, a, r, s, decls, id: id, receiver: receiver, given: given)
+
+# A dotted call on a value: the receiver read (a send or a close refused on a
+# mailbox already closed), the arguments, then what a thread's or a mailbox's
+# operation ends (`calls.after_operation`, chosen by the receiver's type).
+function dotted(@w: Walk, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, given: [ast.Arg])
+    w.send @ calls.sends_or_closes(a, s, w.handed, at: id)
+    expr(@w, a, r, s, decls, id: receiver)
+    w.send @ false
+    arguments(@w, a, r, s, decls, given: given)
+    calls.after_operation(@w.flow, a, r, s, w.handed, at: id, receiver: receiver, given: given)
 
 # A call to a declaration. Reads first, against the state before the call;
 # then what the call ends and keeps; then the `@` arguments, which hold

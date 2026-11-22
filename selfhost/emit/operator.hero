@@ -42,10 +42,10 @@ function unary(@w: writer.Writer, s: source.Source, f: containers.Function, c: s
             is_int: bool @= false
 
             match table.get(c.types, containers.value_type(f, operand))
-                .int_ty                                                    => is_int @ true
-                .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
-                .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
-                .case_ty | .failure | .generic | .error                    => is_int @ is_int
+                .int_ty                                                            => is_int @ true
+                .float_ty | .bool | .str | .ptr | .cstr | .unit                    => is_int @ is_int
+                .array | .fixed | .map | .fallible | .function_ty | .named         => is_int @ is_int
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_int @ is_int
 
             if is_int
                 # -INT64_MIN is overflow, and it is the one negation
@@ -83,9 +83,9 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
         .str =>
             str_binary(@w, name: name, l: l, r: r, op: op)
             return
-        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit       => fall @ fall
-        .fixed | .function_ty | .generic | .error                => fall @ fall
-        .array | .map | .fallible | .failure | .named | .case_ty => fall @ fall
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                   => fall @ fall
+        .fixed | .function_ty | .generic | .error | .thread_ty | .mailbox_ty => fall @ fall
+        .array | .map | .fallible | .failure | .named | .case_ty             => fall @ fall
 
     # This test is why the width lives inside the variant (panel 042):
     # as `operands == int` it decided whether to emit the overflow
@@ -96,11 +96,11 @@ function binary(@w: writer.Writer, s: source.Source, c: state.Checked, names: ct
     is_float: bool @= false
 
     match table.get(c.types, left_ty)
-        .int_ty                                                    => integral @ true
-        .float_ty                                                  => is_float @ true
-        .bool | .str | .ptr | .cstr | .unit                        => integral @ integral
-        .array | .fixed | .map | .fallible | .function_ty | .named => integral @ integral
-        .case_ty | .failure | .generic | .error                    => integral @ integral
+        .int_ty                                                        => integral @ true
+        .float_ty                                                      => is_float @ true
+        .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => integral @ integral
+        .array | .fixed | .map | .fallible | .function_ty | .named     => integral @ integral
+        .case_ty | .failure | .generic | .error                        => integral @ integral
 
     match op
         .add | .sub | .mul =>
@@ -250,6 +250,7 @@ function aggregate_eq(c: state.Checked, names: ctype.Names, ty: i64, l: str, r: 
                 return ok("(hero_unreachable(), false)")
             return ok(found.must() + "_eq(&" + l + ", &" + r + ")")
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "no aggregate")
+        .thread_ty | .mailbox_ty                                  => return fail(code: "none", msg: "no aggregate")
         .fixed | .function_ty | .generic | .error                 => return fail(code: "none", msg: "no aggregate")
 
     return fail(code: "none", msg: "no aggregate")

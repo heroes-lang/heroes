@@ -95,7 +95,7 @@ function buffer_element(c: state.Checked, decls: [ast.Decl], decl: i64, index: i
 
             match table.get(c.types, written)
                 .array x => return ok(x.element)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
                     code: "none",
                     msg: "not an array"
                 )
@@ -163,7 +163,7 @@ function place_type(c: state.Checked, s: source.Source, decls: [ast.Decl], f: co
                     .fixed x                                                  => ty @ x.element
                     .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ty
                     .map | .fallible | .function_ty | .named | .case_ty       => return ty
-                    .failure | .generic | .error                              => return ty
+                    .failure | .generic | .error | .thread_ty | .mailbox_ty   => return ty
 
     return ty
 
@@ -257,6 +257,7 @@ function int_kind(c: state.Checked, f: containers.Function, value: i64) -> width
     match table.get(c.types, containers.value_type(f, value))
         .int_ty ik                                                 => return ok(ik.kind)
         .float_ty | .bool | .str | .ptr | .cstr | .unit            => return fail(code: "none", msg: "not an integer")
+        .thread_ty | .mailbox_ty                                   => return fail(code: "none", msg: "not an integer")
         .array | .fixed | .map | .fallible | .function_ty | .named => return fail(code: "none", msg: "not an integer")
         .case_ty | .failure | .generic | .error                    => return fail(code: "none", msg: "not an integer")
 
@@ -268,9 +269,9 @@ function signed_int(c: state.Checked, ty: i64) -> bool
             return match ik.kind
                 .i8 | .i16 | .i32 | .i64 => true
                 .u8 | .u16 | .u32 | .u64 => false
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => return false
-        .array | .fixed | .map | .fallible | .function_ty | .named => return false
-        .case_ty | .failure | .generic | .error                    => return false
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => return false
+        .array | .fixed | .map | .fallible | .function_ty | .named         => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 
@@ -280,6 +281,7 @@ function fixed_length(c: state.Checked, f: containers.Function, value: i64) -> i
     match table.get(c.types, containers.value_type(f, value))
         .fixed x                                                  => return ok(x.length)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a fixed array")
+        .thread_ty | .mailbox_ty                                  => return fail(code: "none", msg: "not a fixed array")
         .array | .map | .fallible | .function_ty | .named         => return fail(code: "none", msg: "not a fixed array")
         .case_ty | .failure | .generic | .error                   => return fail(code: "none", msg: "not a fixed array")
 

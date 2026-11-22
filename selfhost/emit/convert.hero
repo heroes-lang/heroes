@@ -92,7 +92,7 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
             match fk.kind
                 .f32 => float_value @ "hero_f32_to_f64(" + arguments[0] + ")"
                 .f64 => float_value @ float_value
-        .int_ty                                                    => is_float @ is_float
+        .int_ty | .thread_ty | .mailbox_ty                         => is_float @ is_float
         .bool | .str | .ptr | .cstr | .unit                        => is_float @ is_float
         .array | .fixed | .map | .fallible | .function_ty | .named => is_float @ is_float
         .case_ty | .failure | .generic | .error                    => is_float @ is_float
@@ -117,9 +117,9 @@ function width(@w: writer.Writer, c: state.Checked, names: ctype.Names, f: conta
         .int_ty ik =>
             from @ ik.kind
             is_int @ true
-        .float_ty | .bool | .str | .ptr | .cstr | .unit            => is_int @ is_int
-        .array | .fixed | .map | .fallible | .function_ty | .named => is_int @ is_int
-        .case_ty | .failure | .generic | .error                    => is_int @ is_int
+        .float_ty | .bool | .str | .ptr | .cstr | .unit                    => is_int @ is_int
+        .array | .fixed | .map | .fallible | .function_ty | .named         => is_int @ is_int
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_int @ is_int
 
     if !is_int
         writer.line(@w, text: "    hero_unreachable(); /* a conversion's source is an integer or a float */")

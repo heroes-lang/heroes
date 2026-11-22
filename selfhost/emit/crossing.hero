@@ -1,0 +1,220 @@
+# What a unit writes for the values that cross between its threads (spec § 3,
+# § 11; feature 2647; design.md Part 7.13): the copier of every type a
+# `m.send(v)` or a `spawn(f, x)` hands across, the box a thread's start fills
+# and its wait reads, and the function that runs on the new thread.
+#
+# **Every value crosses whole, as a copy** (`runtime/parts/mailbox.c`). A
+# copier, `(void *dst, const void *src)`, writes a value equal to `*src` whose
+# every block is new: a type that owns no counted reference is its bytes, and
+# the runtime copies those itself (`NULL`); a `str`'s and a failure's copiers
+# are the runtime's; every other is this unit's, `h_0deep_<hash>`, the hash of
+# the type's content as a renderer's name is (`emit/sides.hero`), so one type
+# has one name in every unit and none an author can write.
+#
+# **A thread's box** is `h_0box_<hash of its function's type>`: first a
+# `h_0ans_<hash of its answer>`, the runtime's `HeroThreadBox` and room for the
+# answer, then the function and its argument. A wait reads the answer's struct
+# alone, which is the box's first member, so a wait knows nothing of the
+# argument (C11 6.7.2.1p15). `h_0run_<hash>` runs the function on the new
+# thread, drops the argument and copies the answer into the box.
+#
+# **Only what a unit's functions cross**, closed over what a copier hands on
+# to, each type inside the unit's declared reach: `table.contained` names a
+# thread's and a mailbox's element, so their C is declared wherever one is.
+#
+# `emit/crossing_bodies.hero` writes them, and `emit/threads.hero` the calls.
+
+use ast
+use check/state
+use check/table
+use emit/counted
+use emit/ctype
+use emit/decls as emit_decls
+use emit/mangle
+use emit/synth
+use emit/types
+use emit/worklist
+use inventory
+use ir
+use ir/containers
+use ir/layout
+use source
+
+# The copier of a value of type `ty`, as C names it: `NULL` where its bytes are
+# the whole of it, the runtime's for a `str` and a failure, else this unit's.
+function copier(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    if !layout.is_refcounted(c, ty)
+        return "NULL"
+
+    match table.get(c.types, ty)
+        .str     => return "hero_deep_str"
+        .failure => return "hero_deep_failure"
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return name_of(
+            c,
+            s,
+            decls,
+            ty: ty
+        )
+        .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty => return name_of(c, s, decls, ty: ty)
+        .generic | .error                                                     => return name_of(c, s, decls, ty: ty)
+
+    return name_of(c, s, decls, ty: ty)
+
+function name_of(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    return "h_" + ctype.SYNTHETIC + "deep_" + mangle.instance(synth.content_key(c, s, decls, ty: ty))
+
+# The answer's struct of a thread answering `ty`, and the box of a thread
+# running a function of type `fn_ty`, and the function that runs it.
+function answer_of(c: state.Checked, s: source.Source, decls: [ast.Decl], ty: i64) -> str
+    return "h_" + ctype.SYNTHETIC + "ans_" + mangle.instance(synth.content_key(c, s, decls, ty: ty))
+
+function box_of(c: state.Checked, s: source.Source, decls: [ast.Decl], fn_ty: i64) -> str
+    return "h_" + ctype.SYNTHETIC + "box_" + mangle.instance(synth.content_key(c, s, decls, ty: fn_ty))
+
+function runner_of(c: state.Checked, s: source.Source, decls: [ast.Decl], fn_ty: i64) -> str
+    return "h_" + ctype.SYNTHETIC + "run_" + mangle.instance(synth.content_key(c, s, decls, ty: fn_ty))
+
+# Whether this unit writes the copier of `ty`: one that owns a counted
+# reference, and is not the runtime's.
+function generated(c: state.Checked, ty: i64) -> bool
+    if !layout.is_refcounted(c, ty)
+        return false
+
+    return match table.get(c.types, ty)
+        .str | .failure                                    => false
+        .array | .map | .fallible | .named | .case_ty      => true
+        .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => false
+        .thread_ty | .mailbox_ty | .fixed | .function_ty   => false
+        .generic | .error                                  => false
+
+# The types a copier of `ty` hands on to: what a value of it holds.
+function held(c: state.Checked, decls: [ast.Decl], ty: i64) -> [i64]
+    match table.get(c.types, ty)
+        .named n                                                    => return synth.field_types(c, decls, decl: n.decl)
+        .case_ty vc                                                 => return synth.field_types(c, decls, decl: vc.decl)
+        .array a                                                    => return [a.element]
+        .map m                                                      => return [m.key, m.value]
+        .fallible o                                                 => return [o.payload]
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit   => return []
+        .thread_ty | .mailbox_ty | .fixed | .function_ty | .failure => return []
+        .generic | .error                                           => return []
+
+    return []
+
+# What a unit's functions cross, read from their calls of the built-ins.
+record Crossed
+    # Every type a copier of this unit copies, ascending by id.
+    copied: [i64]
+    # The function types of every `spawn`, ascending by id.
+    started: [i64]
+    # The answer types of every `spawn` and every `t.wait()`, ascending.
+    answered: [i64]
+
+function wanted(c: state.Checked, decls: [ast.Decl], p: containers.Program, at: [i64], target: emit_decls.BuildTarget) -> Crossed
+    # ORDER: none — worklists whose output is a SET, read below ascending, so
+    # the drain order reaches no byte of the C.
+    frontier: [i64] @= []
+    size: i64 @= 0
+    started: {i64: bool} @= {}
+    answered: {i64: bool} @= {}
+
+    for k in at
+        f = p.functions[k]
+
+        if emit_decls.emitted(f, target: target)
+            for blk in f.blocks
+                for inst in blk.insts
+                    match inst.op
+                        .call cl =>
+                            name = called(cl.callee)
+                            given = containers.args_of(f, cl.arguments)
+
+                            if name == "send" && given.len() == 2 || (name == "spawn" || name == "spawn_sized") && given.len() >= 2
+                                match given[1]
+                                    .value_arg v => worklist.put(
+                                        @frontier,
+                                        size: @size,
+                                        value: containers.value_type(f, v.value)
+                                    )
+                                    .inout_arg => continue
+
+                            if (name == "spawn" || name == "spawn_sized") && given.len() >= 2
+                                match given[0]
+                                    .value_arg v =>
+                                        fn_ty = containers.value_type(f, v.value)
+                                        started[fn_ty] @ true
+                                        result = result_of(c, fn_ty)
+
+                                        if result >= 0
+                                            answered[result] @ true
+                                            worklist.put(@frontier, size: @size, value: result)
+                                    .inout_arg => continue
+
+                            if name == "wait"
+                                answered[inst.ty] @ true
+                        .lit | .load | .store | .push_owned | .unary | .binary | .cast => continue
+                        .construct | .field | .index | .map_get | .len_of | .tag_of    => continue
+                        .payload | .func_ref | .copy_out | .abort_op | .incref         => continue
+                        .decref | .decref_slot | .hole | .missing                      => continue
+
+    seen: {i64: bool} @= {}
+
+    while size > 0
+        ty = worklist.take(frontier, size: @size)
+
+        if seen[ty].is_err()
+            seen[ty] @ true
+
+            for inner in held(c, decls, ty: ty)
+                worklist.put(@frontier, size: @size, value: inner)
+
+    copied: [i64] @= []
+
+    for ty in sort(keys(seen))
+        if generated(c, ty: ty)
+            copied @ copied.push(ty)
+
+    return Crossed(copied: copied, started: sort(keys(started)), answered: sort(keys(answered)))
+
+# The built-in a callee names, or "" for any other callee.
+function called(callee: ir.Callee) -> str
+    return match callee
+        .builtin_fn bt                      => inventory.name_of(bt.at)
+        .heroes_fn | .extern_fn | .indirect => ""
+
+# The line that releases the value at `place`, absent for a type that owns no
+# counted reference, which has no release to call.
+function released(c: state.Checked, names: ctype.Names, ty: i64, place: str, keep: bool) -> str?
+    if !layout.is_refcounted(c, ty)
+        return fail(code: "none", msg: "owns no counted reference")
+    return counted.reference_line(c, names, ty: ty, place: place, keep: keep)
+
+# A function type's result, or -1 for any other type.
+function result_of(c: state.Checked, fn_ty: i64) -> i64
+    return match table.get(c.types, fn_ty)
+        .function_ty f                                                => f.result
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit     => 0 - 1
+        .thread_ty | .mailbox_ty | .array | .fixed | .map | .fallible => 0 - 1
+        .named | .case_ty | .failure | .generic | .error              => 0 - 1
+
+# A function type's one parameter, or -1.
+function parameter_of(c: state.Checked, fn_ty: i64) -> i64
+    match table.get(c.types, fn_ty)
+        .function_ty f =>
+            params = table.params_of(c.types, f.params)
+
+            if params.len() == 1
+                return params[0]
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit     => return 0 - 1
+        .thread_ty | .mailbox_ty | .array | .fixed | .map | .fallible => return 0 - 1
+        .named | .case_ty | .failure | .generic | .error              => return 0 - 1
+
+    return 0 - 1
+
+# Whether a thread's answer of type `ty` takes room: `()` takes none.
+function answers(c: state.Checked, names: ctype.Names, ty: i64) -> bool
+    return !ctype.c_type(names, c: c, ty: ty).is_err()
+
+# Whether the type's C declaration stands in `types`'s order.
+function is_variant(decls: [ast.Decl], decl: i64) -> bool
+    return types.is_variant(decls, decl: decl)

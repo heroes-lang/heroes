@@ -56,6 +56,7 @@ function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: sour
                     record_body(@w, c, names, s, decls, decl: n.decl)
             .case_ty vc => case_body(@w, c, names, s, decls, decl: vc.decl, at: vc.at)
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => unread(@w)
+            .thread_ty | .mailbox_ty => unread(@w)
             .fixed | .function_ty | .failure | .generic | .error => unread(@w)
 
         writer.line(@w, text: "}")
@@ -172,7 +173,7 @@ function member(c: state.Checked, names: ctype.Names, s: source.Source, decls: [
     match table.get(c.types, ty)
         .fixed fx =>
             return "hero_show_fixed(o, " + place + ", INT64_C(" + fx.length.to_str() + "), sizeof " + place + "[0], " + sides.renderer(c, names, s, decls, ty: fx.element) + ");"
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return value_member(
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return value_member(
             c,
             names,
             s,

@@ -1,0 +1,19 @@
+# A thread's and a mailbox's types and their dotted operations on every shape
+# they take (feature 2647): a field, a parameter, a result, nested in a list, a
+# map and a `T?`, and the calls of each operation. The probe's variants put a
+# comment and a broken bracket at every place on these lines, and `fmt` prints
+# the file back byte for byte.
+record Job
+    reply: (mailbox (thread [str]?))  # where the answer goes
+    boxes: {str: (mailbox i64)}
+
+function work(n: i64) -> i64
+    return n
+
+function main()
+    m: (mailbox {str: i64}) = mailbox()
+    m.send({"a": 1})
+    print(m.receive(within_ms: 10).must()["a"].must())
+    m.close()
+    t: (thread i64) = spawn_sized(work, 3, bytes: 8388608).must()
+    print(t.wait())

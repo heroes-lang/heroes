@@ -1,0 +1,61 @@
+# What a `(thread T)` and a `(mailbox T)` carry, asked of the type table
+# (spec § 3, § 11; feature 2647): one home for the question the generics'
+# walks and the operations both ask, so neither spells the match again.
+
+use check/table
+
+# The answer's type of a `(thread T)`, or absent for any other type.
+function thread_element(t: table.Types, id: i64) -> i64?
+    return match table.get(t, id)
+        .thread_ty th                                             => ok(th.element)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => fail(code: "none", msg: "not a thread")
+        .mailbox_ty | .array | .fixed | .map | .fallible | .named => fail(code: "none", msg: "not a thread")
+        .function_ty | .case_ty | .failure | .generic | .error    => fail(code: "none", msg: "not a thread")
+
+# The messages' type of a `(mailbox T)`, or absent for any other type.
+function mailbox_element(t: table.Types, id: i64) -> i64?
+    return match table.get(t, id)
+        .mailbox_ty mb                                            => ok(mb.element)
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => fail(code: "none", msg: "not a mailbox")
+        .thread_ty | .array | .fixed | .map | .fallible | .named  => fail(code: "none", msg: "not a mailbox")
+        .function_ty | .case_ty | .failure | .generic | .error    => fail(code: "none", msg: "not a mailbox")
+
+# The element of either, for a walk that treats the two alike; absent for
+# every other type, so a walk that asks it of one is told, not answered.
+function element_of(t: table.Types, id: i64) -> i64?
+    inner = thread_element(t, id)
+
+    if !inner.is_err()
+        return inner
+    return mailbox_element(t, id)
+
+# The same kind of handle as `id`, carrying `element` instead.
+function with_element(@t: table.Types, id: i64, element: i64) -> i64
+    if !thread_element(t, id).is_err()
+        return table.intern(@t, .thread_ty(element: element))
+    return table.intern(@t, .mailbox_ty(element: element))
+
+# Two handles' elements, where `got` is a handle of the kind `wanted` is.
+record Elements
+    wanted: i64
+    got: i64
+
+function same_kind(t: table.Types, wanted: i64, got: i64) -> Elements?
+    if !thread_element(t, wanted).is_err() && !thread_element(t, got).is_err()
+        return ok(Elements(wanted: thread_element(t, wanted).must(), got: thread_element(t, got).must()))
+
+    if !mailbox_element(t, wanted).is_err() && !mailbox_element(t, got).is_err()
+        return ok(Elements(wanted: mailbox_element(t, wanted).must(), got: mailbox_element(t, got).must()))
+    return fail(code: "apart", msg: "not two handles of one kind")
+
+## Tests
+
+test "a thread answers its element, a mailbox its own, and any other type nothing"
+    t: table.Types @= table.new_types()
+    words = table.intern(@t, .thread_ty(element: table.str_ty(t)))
+    numbers = table.intern(@t, .mailbox_ty(element: table.int_ty_id(t)))
+    assert thread_element(t, words).must() == table.str_ty(t)
+    assert mailbox_element(t, numbers).must() == table.int_ty_id(t)
+    assert thread_element(t, numbers).is_err()
+    assert mailbox_element(t, words).is_err()
+    assert thread_element(t, table.int_ty_id(t)).is_err()

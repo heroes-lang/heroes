@@ -524,17 +524,41 @@ constant CEILING: i64
 # after-the-call rules (the sitting's compiler-engineer priced it at +2 by
 # `wc -l` before it was built; `test_only.after_name` is called from
 # `check/name_types.hero`, a file with room).
+# **Three rows raised 2026-11-22, for feature 2647 at M-rebel-library step
+# 104b** (lane lane-mailbox), each measured by this suite's counter: a new
+# type is two cases of `Ty`, and every walk into a type's parts owes them an
+# arm, which the 289 matches the checker named were given, each beside the
+# arm its meaning shares, so the 289 cost lines only where a type walks its
+# parts. `selfhost/check/table.hero` 353 -> **368**: the two cases and their
+# note, and the four walks the table holds itself, the key, `contained`, the
+# poison and its oracle, each two arms; what the operations ask of a thread or
+# a mailbox lives in `check/thread_types.hero` beside it. `selfhost/ir/mono.hero`
+# 380 -> **384**: an instance's types substituted inside a thread's and a
+# mailbox's element, and the `use` of the module that rebuilds one.
+# `selfhost/check/walk.hero` 1871 -> **1877**: the two hooks that hand a call
+# of `spawn`, `spawn_sized` or `mailbox`, and a thread's or a mailbox's dotted
+# operation, to `check/thread_ops.hero`, which types them, and its `use`. And
+# one new row, `selfhost/check/moved_walk.hero` at **308** (293 before): the
+# walk is one knot, a statement holding expressions, an `if` blocks and a block
+# statements, which its module doc maps, and what a thread's and a mailbox's
+# operations end is decided in `check/moved_calls.hero` beside it; what stays
+# here is the state the walk carries for them, what a send or a spawn hands
+# over and whether a mailbox is read to send to it or close it, the
+# construction that holds that state, which the formatter lays one field to a
+# line, one call after each call and each dotted call, and the one function
+# that reads a dotted call as a thread's or a mailbox's operation wherever its
+# receiver is one, a function of the program's own of that name included.
 constant DECIDED: [str]
     [
-        "selfhost/check/walk.hero 1871"
+        "selfhost/check/walk.hero 1877"
         "selfhost/print/fmt.hero 1175"
         "selfhost/ir/flatten.hero 1250"
         "selfhost/grammar_expr.hero 1085"
         "selfhost/ir/print.hero 470"
         "selfhost/ast.hero 550"
-        "selfhost/check/table.hero 353"
+        "selfhost/check/table.hero 368"
         "selfhost/check/builtins.hero 378"
-        "selfhost/ir/mono.hero 380"
+        "selfhost/ir/mono.hero 384"
         "selfhost/emit/ctype.hero 404"
         "selfhost/emit/structural.hero 335"
         "selfhost/emit/gate.hero 365"
@@ -547,6 +571,7 @@ constant DECIDED: [str]
         "selfhost/modules.hero 320"
         "selfhost/parse/use_line.hero 310"
         "selfhost/print/brackets.hero 315"
+        "selfhost/check/moved_walk.hero 308"
         "selfhost/library_source.hero 310"
     ]
 
@@ -613,9 +638,18 @@ constant DECIDED: [str]
 # here. The compiler-engineer predicted 95 to 165 lines in this directory,
 # its prototype's reader of the mark being written inside it (103 lines with
 # the cursor's moves); the prediction is scored at the milestone's tag.
+#
+# **Raised 2026-11-22, 8782 -> 8797, for feature 2647 at M-rebel-library step
+# 104b** (lane lane-mailbox, panel 254 sitting on it): `(thread T)` and
+# `(mailbox T)` are two written types, and a type is the parser's to read.
+# `parse/handle_type.hero` reads the word after a type's `(` and the element
+# (28 in this row's unit, its module doc counted); `parse/type.hero` calls it
+# at the one `(` that opens a type (+3, held at §11's 300 by the call alone).
+# Every pass that walks a written type walks the element outside this
+# directory, in the checker, the resolver and the printer.
 constant BUDGETS: [str]
     [
-        "selfhost/parse/ 8782"
+        "selfhost/parse/ 8797"
     ]
 
 # The floor is the Rust's own idea —

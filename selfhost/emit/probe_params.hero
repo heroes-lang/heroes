@@ -82,10 +82,10 @@ function parameter_list(names: ctype.Names, c: state.Checked, decls: [ast.Decl],
 # lend to C may take (`check/lend_extent.hero`).
 function is_record_type(c: state.Checked, ty: i64) -> bool
     return match table.get(c.types, ty)
-        .named                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .named                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # A declared FFI parameter type as C. The set is the boundary rule's
 # own — anything else is refused in the checker, so failing here means
@@ -113,6 +113,7 @@ function c_type_of(names: ctype.Names, c: state.Checked, ty: i64) -> str?
         .function_ty                                        => return ok(ctype.func_of(names, ty: ty))
         .array x                                            => return c_type_of(names, c, ty: x.element)
         .unit | .fixed | .map                               => return fail(code: "none", msg: "no C spelling")
+        .thread_ty | .mailbox_ty                            => return fail(code: "none", msg: "no C spelling")
         .fallible | .case_ty | .failure | .generic | .error => return fail(code: "none", msg: "no C spelling")
 
     return fail(code: "none", msg: "unreached")

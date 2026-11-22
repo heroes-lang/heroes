@@ -51,10 +51,10 @@ function read(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c: st
                 .top | .builtin | .module | .unresolved => return false
         .field f =>
             match table.get(c.types, c.expr_types[id])
-                .fixed                                                    => return false
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => _ = 0
-                .array | .map | .fallible | .function_ty | .named         => _ = 0
-                .case_ty | .failure | .generic | .error                   => _ = 0
+                .fixed                                                             => return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => _ = 0
+                .array | .map | .fallible | .function_ty | .named                  => _ = 0
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => _ = 0
 
             match r.uses[f.base]
                 .module                                => return false
@@ -78,10 +78,10 @@ function element(@names: {i64: {str: i64}}, a: ast.Ast, r: resolved.Resolved, c:
     match a.exprs[id].kind
         .index ix =>
             match table.get(c.types, c.expr_types[ix.base])
-                .fixed                                                    => _ = 0
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-                .array | .map | .fallible | .function_ty | .named         => return false
-                .case_ty | .failure | .generic | .error                   => return false
+                .fixed                                                             => _ = 0
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+                .array | .map | .fallible | .function_ty | .named                  => return false
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
             if !pure(a, id: ix.index)
                 return false

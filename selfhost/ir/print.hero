@@ -346,10 +346,10 @@ function written(f: containers.Function, place: ir.Place, c: state.Checked, s: s
                 parts @ parts.push("[" + value_name(ix.value) + "]")
 
                 match table.get(c.types, ty)
-                    .array arr                                                => ty @ arr.element
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => ty @ table.error_ty(c.types)
-                    .fixed | .map | .fallible | .function_ty | .named         => ty @ table.error_ty(c.types)
-                    .case_ty | .failure | .generic | .error                   => ty @ table.error_ty(c.types)
+                    .array arr                                                         => ty @ arr.element
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => ty @ table.error_ty(c.types)
+                    .fixed | .map | .fallible | .function_ty | .named                  => ty @ table.error_ty(c.types)
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => ty @ table.error_ty(c.types)
 
     return parts.join("")
 
@@ -475,7 +475,7 @@ function name_of_field(c: state.Checked, s: source.Source, decls: [ast.Decl], ow
             return at.to_str()
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return at.to_str()
         .array | .fixed | .map | .fallible | .function_ty         => return at.to_str()
-        .generic | .error                                         => return at.to_str()
+        .generic | .error | .thread_ty | .mailbox_ty              => return at.to_str()
 
     return at.to_str()
 
@@ -502,7 +502,7 @@ function field_ty_of(c: state.Checked, decls: [ast.Decl], owner: i64, at: i64) -
         .failure                                                  => return table.str_ty(c.types)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => written_id @ written_id
         .array | .fixed | .map | .fallible | .function_ty         => written_id @ written_id
-        .generic | .error                                         => written_id @ written_id
+        .generic | .error | .thread_ty | .mailbox_ty              => written_id @ written_id
 
     if written_id.is_err()
         return table.error_ty(c.types)
@@ -527,7 +527,7 @@ function case_name(c: state.Checked, s: source.Source, decls: [ast.Decl], owner:
             return ".err"
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "case " + at.to_str()
         .array | .fixed | .map | .function_ty | .case_ty          => return "case " + at.to_str()
-        .failure | .generic | .error                              => return "case " + at.to_str()
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return "case " + at.to_str()
 
     return "case " + at.to_str()
 
@@ -582,6 +582,15 @@ test "strings are escaped and listed once, and the linkage is spelled"
     assert strings.holds(text: got, needle: "strings")
     assert strings.holds(text: got, needle: "\"line one\\nline two\"")
     assert strings.holds(text: got, needle: "call builtin print($t1) variadic")
+
+test "the dump spells a thread's and a mailbox's types and calls their operations by name"
+    got = dumped(
+        "function main()\n    m: (mailbox str) = mailbox()\n    m.send(\"a\")\n    print(m.receive(within_ms: 0).must())\n    m.close()\n"
+    )
+    assert strings.holds(text: got, needle: "$t1: (mailbox str) = call builtin mailbox()")
+    assert strings.holds(text: got, needle: "call builtin send(")
+    assert strings.holds(text: got, needle: ": str? = call builtin receive(")
+    assert strings.holds(text: got, needle: "call builtin close(")
 
 # Defect 290: a string literal and a test's title may hold an ESC raw, and the
 # string table and the header wrote it to the terminal that showed the dump.

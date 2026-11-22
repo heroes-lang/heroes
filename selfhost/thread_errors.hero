@@ -1,0 +1,114 @@
+# The words of every refusal about threads and mailboxes (spec § 3, § 11;
+# feature 2647; design.md §4.17): what each one names, the repair and, where
+# the repair is the program's own text, a `Fix`.
+
+use diag
+use token
+
+# `send(m, v)`: an operation of a thread or a mailbox called by its name.
+function written_after_a_dot(name: str, owner: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "dot_only",
+        message: "`" + name + "` is " + owner + "'s operation, written after a dot: `" + example(name) + "`",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a thread's and a mailbox's operations are chosen by the value before the dot, so their names stay free for the program's own functions; no function named `" + name + "` is declared here"
+    )
+    return d
+
+# The call a dotted operation is written as, for the message.
+function example(name: str) -> str
+    return match name
+        "wait"    => "t.wait()"
+        "send"    => "m.send(v)"
+        "receive" => "m.receive(within_ms: 100)"
+        "close"   => "m.close()"
+        _         => "x." + name + "()"
+
+# Whose operation the name is, in words.
+function owner_of(name: str) -> str
+    if name == "wait"
+        return "a thread"
+    return "a mailbox"
+
+# `x.wait()` on a mailbox, `m.send(v)` on a number: the operation exists, and
+# the value before the dot is not of the type it belongs to.
+function not_its_operation(name: str, got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "operation_of_another",
+        message: "`" + name + "` is " + owner_of(name) + "'s operation, and this is a `" + got + "`",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a thread's one operation is `wait`; a mailbox's are `send`, `receive` and `close`; a function of the program's own named `" + name + "` is called with its receiver first, `" + name + "(x, ...)`, where no thread or mailbox stands before the dot"
+    )
+    return d
+
+# A type that crosses between threads holding what never may.
+function never_crosses(shown: str, reached: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "thread_crossing",
+        message: "`" + shown + "` crosses between threads and reaches " + reached + ", which never crosses",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "a value crosses between threads whole, as a copy, so no two threads ever hold one block; a `ptr` or a `cstr` is an address C owns, and a copy of it would hand a second thread what the first may free. Hand the thread the number or the handle C gives for it instead (spec § 11)"
+    )
+    return d
+
+# `(mailbox ())`: a queue of nothing.
+function empty_mailbox(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "empty_mailbox",
+        message: "a mailbox of `()` carries nothing: no value of `()` can be written to send",
+        span: span
+    )
+    d.notes @ d.notes.push("a mailbox that only signals carries a `bool` or a variant whose cases say what happened")
+    return d
+
+# `mailbox()` where nothing says what it carries.
+function mailbox_needs_type(span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "mailbox_needs_type",
+        message: "`mailbox()` takes what it carries from the type the context asks for, and nothing here asks for a `(mailbox T)`",
+        span: span
+    )
+    d.notes @ d.notes.push(
+        "bind it with its type, `m: (mailbox str) = mailbox()`, or hand it where a `(mailbox T)` is declared"
+    )
+    return d
+
+# `spawn(f, x)` where `f` is no function of one parameter.
+function not_a_thread_body(got: str, span: token.Span) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "thread_body",
+        message: "a thread runs a function of one parameter, `spawn(f, x)` calling `f(x)`, and this is a `" + got + "`",
+        span: span
+    )
+    d.notes @ d.notes.push("a thread that needs more than one value is handed a record of them")
+    return d
+
+# `m.receive(100)`, `spawn_sized(f, x, 4096)`: a bound whose unit is in its name.
+function bound_unnamed(holder: str, label: str, span: token.Span, at: i64) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "bound_unnamed",
+        message: "`" + holder + "` names its bound, `" + label + ":`, so the unit it counts is read where it is written",
+        span: span
+    )
+    d.fixes @ d.fixes.push(
+        diag.Fix(title: "name it `" + label + "`", replacement: label + ": ", span: token.Span(start: at, end: at), certainty: .certain)
+    )
+    return d
+
+## Tests
+
+test "an operation called by its name says how it is written"
+    d = written_after_a_dot(name: "send", owner: "a mailbox", token.Span(start: 0, end: 4))
+    assert d.code == "dot_only"
+    assert d.message == "`send` is a mailbox's operation, written after a dot: `m.send(v)`"
+
+test "a bound without its name is given it, certain"
+    d = bound_unnamed(holder: "receive", label: "within_ms", token.Span(start: 10, end: 13), at: 10)
+    assert d.fixes[0].replacement == "within_ms: "
+    assert d.fixes[0].certainty == .certain

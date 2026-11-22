@@ -1,0 +1,181 @@
+# What `emit/crossing.hero` says a unit writes, written (feature 2647): the
+# answers' and the boxes' structs and every prototype before any body, then
+# each copier and each thread's runner.
+#
+# A copier starts from the value's bytes, `*out = *v`, which shares every
+# block, and then gives each counted part a block of its own, its own copier
+# writing over the shared one: nothing is released, since the shared blocks
+# are still the sender's. A record's fields, a variant's case by its tag, a
+# `T?`'s side by its tag, an array's elements and a map's entries through the
+# runtime's walks.
+
+use ast
+use check/state
+use check/table
+use emit/crossing
+use emit/ctype
+use emit/large_value
+use emit/mangle
+use emit/types
+use emit/writer
+use ir/layout
+use source
+
+# Every struct and prototype, before any body: a copier calls its parts'.
+function prototypes(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], crossed: crossing.Crossed)
+    for ty in crossed.answered
+        writer.at_generated(@w)
+        answer = crossing.answer_of(c, s, decls, ty: ty)
+
+        if crossing.answers(c, names, ty: ty)
+            writer.line(
+                @w,
+                text: "typedef struct { HeroThreadBox head; " + ctype.c_type(names, c: c, ty: ty).must() + " answer; } " + answer + ";"
+            )
+        else
+            writer.line(@w, text: "typedef struct { HeroThreadBox head; } " + answer + ";")
+
+    for fn_ty in crossed.started
+        writer.at_generated(@w)
+        param = crossing.parameter_of(c, fn_ty)
+        answer = crossing.answer_of(c, s, decls, ty: crossing.result_of(c, fn_ty))
+        writer.line(
+            @w,
+            text: "typedef struct { " + answer + " top; " + ctype.func_of(names, ty: fn_ty) + " f; " + ctype.c_type(names, c: c, ty: param).must() + " arg; } " + crossing.box_of(c, s, decls, fn_ty: fn_ty) + ";"
+        )
+        writer.line(
+            @w,
+            text: "HERO_TU_LOCAL void " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + "(HeroThreadBox *hero_head);"
+        )
+
+    for ty in crossed.copied
+        writer.at_generated(@w)
+        writer.line(
+            @w,
+            text: "HERO_TU_LOCAL void " + crossing.name_of(c, s, decls, ty: ty) + "(void *dst, const void *src);"
+        )
+
+    if crossed.answered.len() + crossed.started.len() + crossed.copied.len() > 0
+        writer.blank(@w)
+
+function bodies(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], crossed: crossing.Crossed)
+    for ty in crossed.copied
+        writer.at_generated(@w)
+        writer.line(
+            @w,
+            text: "HERO_TU_LOCAL void " + crossing.name_of(c, s, decls, ty: ty) + "(void *dst, const void *src) {"
+        )
+
+        match table.get(c.types, ty)
+            .array a => writer.line(
+                @w,
+                text: "    hero_deep_array(dst, src, " + crossing.copier(c, s, decls, ty: a.element) + ");"
+            )
+            .map m => writer.line(
+                @w,
+                text: "    hero_deep_map(dst, src, " + crossing.copier(c, s, decls, ty: m.key) + ", " + crossing.copier(c, s, decls, ty: m.value) + ");"
+            )
+            .fallible o => option_body(@w, c, names, s, decls, ty: ty, payload: o.payload)
+            .named n =>
+                if types.is_variant(decls, decl: n.decl)
+                    variant_body(@w, c, names, s, decls, decl: n.decl)
+                else
+                    at = ctype.aggregate(names, decl: n.decl)
+                    start(@w, c_type: at.c_type)
+                    fields(@w, c, s, decls, types.fields_of(decls, decl: n.decl), foreign: at.foreign, base: "")
+            .case_ty vc =>
+                start(@w, c_type: ctype.case_of(names, decl: vc.decl, at: vc.at))
+                fields(@w, c, s, decls, types.cases_of(decls, decl: vc.decl)[vc.at].fields, foreign: false, base: "")
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => unread(@w)
+            .thread_ty | .mailbox_ty | .fixed | .function_ty          => unread(@w)
+            .failure | .generic | .error                              => unread(@w)
+
+        writer.line(@w, text: "}")
+        writer.blank(@w)
+
+    for fn_ty in crossed.started
+        runner(@w, c, names, s, decls, fn_ty: fn_ty)
+
+# The new thread's function: the program's function on the box's argument,
+# its answer written into the box, and the argument dropped. The answer is
+# MOVED, never copied: every block it holds is this thread's alone, the
+# argument having been copied in for it, every value it received copied for
+# it, and the constants it shares being static and never written. A large
+# argument or answer takes a function value's own convention, in place
+# (`emit/large_value.hero`).
+function runner(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], fn_ty: i64)
+    param = crossing.parameter_of(c, fn_ty)
+    result = crossing.result_of(c, fn_ty)
+    box = crossing.box_of(c, s, decls, fn_ty: fn_ty)
+    writer.at_generated(@w)
+    writer.line(
+        @w,
+        text: "HERO_TU_LOCAL void " + crossing.runner_of(c, s, decls, fn_ty: fn_ty) + "(HeroThreadBox *hero_head) {"
+    )
+    writer.line(@w, text: "    " + box + " *hero_box = (" + box + " *)(void *)hero_head;")
+    handed: str @= "hero_box->arg"
+
+    if large_value.value_large(names, ty: param)
+        handed @ "&hero_box->arg"
+
+    if !crossing.answers(c, names, ty: result)
+        writer.line(@w, text: "    hero_box->f(" + handed + ");")
+    else if large_value.value_large(names, ty: result)
+        writer.line(@w, text: "    hero_box->f(&hero_box->top.answer, " + handed + ");")
+    else
+        writer.line(@w, text: "    hero_box->top.answer = hero_box->f(" + handed + ");")
+    dropped = crossing.released(c, names, ty: param, place: "hero_box->arg", keep: false)
+
+    if !dropped.is_err()
+        writer.line(@w, text: dropped.must())
+    writer.line(@w, text: "}")
+    writer.blank(@w)
+
+# The value's bytes first, which share every block until a part's own copier
+# writes over them.
+function start(@w: writer.Writer, c_type: str)
+    writer.line(@w, text: "    const " + c_type + " *v = src;")
+    writer.line(@w, text: "    " + c_type + " *out = dst;")
+    writer.line(@w, text: "    *out = *v;")
+
+# Each counted field given a block of its own.
+function fields(@w: writer.Writer, c: state.Checked, s: source.Source, decls: [ast.Decl], held: [ast.Field], foreign: bool, base: str)
+    for field in held
+        written = state.written_type(c, field.ty)
+
+        if !written.is_err() && layout.is_refcounted(c, written.must())
+            member = base + mangle.field_of(foreign: foreign, name: source.span_text(s, field.name))
+            writer.line(
+                @w,
+                text: "    " + crossing.copier(c, s, decls, ty: written.must()) + "(&out->" + member + ", &v->" + member + ");"
+            )
+
+# A variant by its tag: the case's counted fields.
+function variant_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], decl: i64)
+    at = ctype.aggregate(names, decl: decl)
+    start(@w, c_type: at.c_type)
+    writer.line(@w, text: "    switch (v->tag) {")
+
+    for one_case in types.cases_of(decls, decl: decl)
+        case_name = source.span_text(s, one_case.name)
+        writer.line(@w, text: "    case " + mangle.tag_of(ty: at.prefix, case_name: case_name) + ":")
+        fields(@w, c, s, decls, one_case.fields, foreign: false, base: "as." + mangle.case_member(case_name) + ".")
+        writer.line(@w, text: "        break;")
+
+    writer.line(@w, text: "    }")
+
+# A `T?` by its tag: the value, or the failure's two texts.
+function option_body(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], ty: i64, payload: i64)
+    start(@w, c_type: ctype.option_of(names, ty: ty))
+    writer.line(@w, text: "    if (v->tag == INT64_C(0)) {")
+
+    if !ctype.c_type(names, c: c, ty: payload).is_err() && layout.is_refcounted(c, payload)
+        writer.line(@w, text: "        " + crossing.copier(c, s, decls, ty: payload) + "(&out->as.ok, &v->as.ok);")
+    writer.line(@w, text: "    } else {")
+    writer.line(@w, text: "        hero_deep_failure(&out->as.err, &v->as.err);")
+    writer.line(@w, text: "    }")
+
+# A body for a type no list here holds, which `crossing.generated` keeps out.
+function unread(@w: writer.Writer)
+    writer.line(@w, text: "    (void)dst;")
+    writer.line(@w, text: "    (void)src;")

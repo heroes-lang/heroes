@@ -80,7 +80,7 @@ function named(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64,
                 line @ "    hero_failure_release(&" + name + ");"
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
         .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
-        .generic | .error                                     => line @ line
+        .generic | .error | .thread_ty | .mailbox_ty          => line @ line
 
     if line == ""
         found = aggregate.retain_named(c, names, ty: ty, name: name, keep: keep)
@@ -106,7 +106,7 @@ function slot(@w: writer.Writer, c: state.Checked, names: ctype.Names, ty: i64, 
         .failure                                              => line @ "    hero_failure_release(&" + name + ");"
         .int_ty | .float_ty | .bool | .ptr | .cstr | .unit    => line @ line
         .fixed | .function_ty | .named | .case_ty | .fallible => line @ line
-        .generic | .error                                     => line @ line
+        .generic | .error | .thread_ty | .mailbox_ty          => line @ line
 
     if line == ""
         # C converts the `void *` to the release's own pointer type with no

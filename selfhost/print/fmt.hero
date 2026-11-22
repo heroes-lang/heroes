@@ -1402,6 +1402,18 @@ test "fmt keeps a package's mark, alone, deep and renamed"
         s = source.new_source(name: "t.hero", text: text)
         assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
 
+test "fmt keeps a thread's and a mailbox's types, nested, and the dotted operations"
+    # A new surface form lands in every tool that re-prints a program
+    # (`.claude/rules/diagnostics-and-goldens.md`; feature 2647): `(thread T)`
+    # and `(mailbox T)` are printed from their own case of the written type, so
+    # a printer that knew neither would drop the word and print the element
+    # alone, a program meaning another thing.
+    for text in ["record Job\n    reply: (mailbox (thread [str]?))\n\nfunction work(n: i64) -> i64\n    return n\n\nfunction main()\n    m: (mailbox {str: i64}) = mailbox()\n    m.send({\"a\": 1})\n    print(m.receive(within_ms: 10).must()[\"a\"].must())\n    m.close()\n    t = spawn_sized(work, 3, bytes: 8388608).must()\n    print(t.wait())\n", "function f(boxes: [(mailbox i64)], t: (thread ())) -> {str: (thread i64)}\n    _ = boxes\n    t.wait()\n    return {}\n"]
+        parsed = parse.parse(text)
+        assert parsed.diagnostics.len() == 0
+        s = source.new_source(name: "t.hero", text: text)
+        assert format_file(parsed.tree, s, parsed.comments, parsed.uses, parsed.decls) == text
+
 test "fmt keeps the words rest: zero where they end a list, on one line and broken"
     # A new surface form lands in every tool that re-prints a program, the
     # formatter first (`.claude/rules/diagnostics-and-goldens.md`): panel 194's

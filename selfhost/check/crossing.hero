@@ -1,0 +1,142 @@
+# What a written `(thread T)` or `(mailbox T)` may carry (spec § 3, § 11;
+# feature 2647): a value crosses between threads whole, as a copy, so its type
+# may reach no `ptr` and no `cstr`, which are addresses C owns; and a mailbox
+# carries a value, so not `()`, which no expression is.
+#
+# A sweep of the written types, `check/map_keys.hero`'s shape and for its
+# reason: the hazard lives in a TYPE written once, in an annotation or a
+# signature, and never in an operation. The type a `spawn` gives a thread is
+# its function's, and `check/thread_ops.hero` asks it there.
+
+use ast
+use check/state
+use check/table
+use check/thread_types
+use emit/key_pointer
+use emit/synth
+use handles
+use inventory
+use resolved
+use source
+use thread_errors
+
+# Every written thread and mailbox, refused where its element may not cross.
+function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl])
+    node: i64 @= 0
+
+    while node < a.types.len()
+        element: i64 @= 0 - 1
+        is_mailbox: bool @= false
+
+        match a.types[node].kind
+            .thread_of t => element @ t.element
+            .mailbox_of m =>
+                element @ m.element
+                is_mailbox @ true
+            .named | .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error => element @ element
+
+        if element >= 0
+            judge(@c, a, s, decls, element: element, node: node, is_mailbox: is_mailbox)
+        node @ node + 1
+
+# One written element, told once at the type that carries it.
+function judge(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl], element: i64, node: i64, is_mailbox: bool)
+    written = state.written_type(c.out, element)
+
+    if written.is_err() || table.poisoned(c.out.types, written.must())
+        return
+
+    if is_mailbox && written.must() == table.unit_ty(c.out.types)
+        state.push_diagnostic(@c, thread_errors.empty_mailbox(a.types[node].span))
+        return
+    reached = key_pointer.reaches_pointer(c.out, decls, ty: written.must())
+
+    if !reached.is_err()
+        whole = state.written_type(c.out, node)
+
+        if !whole.is_err()
+            shown = state.show_at(c, s, decls, id: whole.must(), at: a.types[node].span.start)
+            state.push_diagnostic(
+                @c,
+                thread_errors.never_crosses(shown: shown, reached: reached.must(), span: a.types[node].span)
+            )
+
+## The hand-over
+
+# Whether a value of `ty` is HANDED OVER when it crosses rather than copied
+# (spec § 11): it holds a C handle, or a thread, whose life a second holder
+# could end under the first, so it ends in the sender as the receiver's begins.
+# A mailbox is copied, its copies reaching one queue by design. Total by the
+# set of type ids walked, as `emit/key_pointer.hero`'s walk is.
+function hands_over(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
+    seen: {i64: bool} @= {}
+    stack: [i64] @= [ty]
+
+    while stack.len() > 0
+        at = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+
+        match table.get(c.out.types, at)
+            .thread_ty  => return true
+            .array arr  => stack @ stack.push(arr.element)
+            .fallible o => stack @ stack.push(o.payload)
+            .map m      => stack @ stack.push(m.key).push(m.value)
+            .named n =>
+                if handles.is_handle(decls[n.decl])
+                    return true
+
+                for inner in synth.field_types(c.out, decls, decl: n.decl)
+                    stack @ stack.push(inner)
+            .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr   => continue
+            .mailbox_ty | .function_ty | .case_ty | .failure | .generic | .error => continue
+
+    return false
+
+# What ends a life of the language's own, read once for the whole program for
+# `check/moved.hero`'s walk, each by the receiver's type as the checker typed
+# it, so a program's own `send`, `wait` or `close` hides none and ends nothing.
+# `true` marks a dotted call that is a thread's `wait` or a mailbox's `send`,
+# `receive` or `close`; `false` an argument whose value a `m.send(v)` or a
+# `spawn(f, x)` hands over, and nothing more (an operation's own answer handed
+# over stays `true`, being both, and is handed over all the same).
+function handed_over(c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl]) -> {i64: bool}
+    out: {i64: bool} @= {}
+    id: i64 @= 0
+
+    while id < a.exprs.len()
+        match a.exprs[id].kind
+            .method m =>
+                name = source.span_text(s, m.name)
+
+                if m.receiver < c.out.expr_types.len()
+                    receiver = c.out.expr_types[m.receiver]
+                    of_thread = !thread_types.thread_element(c.out.types, receiver).is_err()
+                    of_mailbox = !thread_types.mailbox_element(c.out.types, receiver).is_err()
+
+                    if name == "wait" && of_thread || !inventory.operation_of(name).is_err() && name != "wait" && of_mailbox
+                        out[id] @ true
+
+                    if name == "send" && of_mailbox && m.args.len() == 1
+                        mark(c, decls, @out, value: m.args[0].value)
+            .call cl =>
+                if cl.args.len() >= 2
+                    match r.uses[cl.callee]
+                        .builtin b =>
+                            if inventory.name_of(b.at) == "spawn" || inventory.name_of(b.at) == "spawn_sized"
+                                mark(c, decls, @out, value: cl.args[1].value)
+                        .local | .top | .module | .unresolved => _ = 0
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => _ = 0
+            .name | .hole | .unary | .binary | .field | .field_name | .index               => _ = 0
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => _ = 0
+
+        id @ id + 1
+
+    return out
+
+function mark(c: state.Checker, decls: [ast.Decl], @out: {i64: bool}, value: i64)
+    if value < c.out.expr_types.len() && hands_over(c, decls, ty: c.out.expr_types[value]) && out[value].is_err()
+        out[value] @ false

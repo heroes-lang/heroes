@@ -92,6 +92,12 @@ variant Ty
     # A type parameter of the enclosing function, by position (§4.12).
     generic
         at: i64
+    # `(thread T)` and `(mailbox T)`, handles in spec § 13's sense whose
+    # value is the runtime's number for one (spec § 3, § 11; feature 2647).
+    thread_ty
+        element: i64
+    mailbox_ty
+        element: i64
     # A type the checker could not work out. Its diagnostic has already
     # been reported, and every rule involving it stays silent — one
     # mistake, one message.
@@ -135,17 +141,19 @@ record Types
 # prefix, every argument its own slot, and ids render in decimal.
 function ty_key(t: Ty) -> str
     return match t
-        .int_ty k   => "i:" + widths.int_name(k.kind)
-        .float_ty k => "f:" + widths.float_name(k.kind)
-        .bool       => "b"
-        .str        => "s"
-        .ptr        => "p"
-        .cstr       => "c"
-        .unit       => "u"
-        .array a    => "a:" + a.element.to_str()
-        .fixed x    => "x:" + x.element.to_str() + ":" + x.length.to_str()
-        .map m      => "m:" + m.key.to_str() + ":" + m.value.to_str()
-        .fallible o => "?:" + o.payload.to_str()
+        .int_ty k      => "i:" + widths.int_name(k.kind)
+        .float_ty k    => "f:" + widths.float_name(k.kind)
+        .bool          => "b"
+        .str           => "s"
+        .ptr           => "p"
+        .thread_ty th  => "th:" + th.element.to_str()
+        .mailbox_ty mb => "mb:" + mb.element.to_str()
+        .cstr          => "c"
+        .unit          => "u"
+        .array a       => "a:" + a.element.to_str()
+        .fixed x       => "x:" + x.element.to_str() + ":" + x.length.to_str()
+        .map m         => "m:" + m.key.to_str() + ":" + m.value.to_str()
+        .fallible o    => "?:" + o.payload.to_str()
         .function_ty f => "fn:" + f.params.start.to_str() + ":" + f.params.len.to_str() + label_key(f.labels) + ":" + f.result.to_str()
         .named n    => "n:" + n.decl.to_str()
         .case_ty vc => "vc:" + vc.decl.to_str() + ":" + vc.at.to_str()
@@ -308,6 +316,9 @@ function contained(t: Types, id: i64) -> [i64]
         .array a    => [a.element]
         .fallible o => [o.payload]
         .map m      => [m.key, m.value]
+        # Not held by the handle: named so its users have their C declared.
+        .thread_ty th  => [th.element]
+        .mailbox_ty mb => [mb.element]
         .function_ty f =>
             out: [i64] @= params_of(t, f.params)
             out @ out.push(f.result)
@@ -324,10 +335,10 @@ function contained(t: Types, id: i64) -> [i64]
 # in silence.
 function is_function_ty(t: Types, id: i64) -> bool
     return match get(t, id)
-        .function_ty                                              => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .named               => false
-        .case_ty | .failure | .generic | .error                   => false
+        .function_ty                                                       => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .named                        => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # True where a type is, or contains, `error`. The checker uses it to stay
 # quiet: a mismatch between `error` and anything is a mistake already
@@ -358,10 +369,12 @@ function poisoned(t: Types, id: i64) -> bool
 # nothing it looked into.
 function holds_error(t: Types, ty: Ty) -> bool
     return match ty
-        .error      => true
-        .array a    => t.poison[a.element]
-        .fallible o => t.poison[o.payload]
-        .map m      => t.poison[m.key] || t.poison[m.value]
+        .error         => true
+        .array a       => t.poison[a.element]
+        .fallible o    => t.poison[o.payload]
+        .map m         => t.poison[m.key] || t.poison[m.value]
+        .thread_ty th  => t.poison[th.element]
+        .mailbox_ty mb => t.poison[mb.element]
         .function_ty f =>
             bad: bool @= t.poison[f.result]
 
@@ -430,7 +443,7 @@ test "a function type canonicalises its parameter run"
             assert labels_of(t, f.labels).len() == 0
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
         .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
-        .failure | .generic | .error                              => assert false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => assert false
 
 # Defect 026: the names are IDENTITY, not decoration. Two orders of one
 # name set are two types, which is what stops a relay assignment from
@@ -453,7 +466,7 @@ test "the parameter names are part of a function type's identity"
             assert labels_of(t, f.labels) == forward
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => assert false
         .array | .fixed | .map | .fallible | .named | .case_ty    => assert false
-        .failure | .generic | .error                              => assert false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => assert false
 
 test "contained walks one level down, and poison climbs back up"
     t: Types @= new_types()
@@ -473,10 +486,12 @@ test "contained walks one level down, and poison climbs back up"
 # entry written wrong, or a node rewritten after its entry, disagrees with it.
 function walked_poison(t: Types, id: i64) -> bool
     return match get(t, id)
-        .error      => true
-        .array a    => walked_poison(t, a.element)
-        .fallible o => walked_poison(t, o.payload)
-        .map m      => walked_poison(t, m.key) || walked_poison(t, m.value)
+        .error         => true
+        .array a       => walked_poison(t, a.element)
+        .fallible o    => walked_poison(t, o.payload)
+        .map m         => walked_poison(t, m.key) || walked_poison(t, m.value)
+        .thread_ty th  => walked_poison(t, th.element)
+        .mailbox_ty mb => walked_poison(t, mb.element)
         .function_ty f =>
             bad: bool @= walked_poison(t, f.result)
 

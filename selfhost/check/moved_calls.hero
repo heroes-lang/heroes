@@ -27,6 +27,79 @@ function ends_a_life(decls: [ast.Decl]) -> bool
 
     return false
 
+# What a dotted call of the language's own ends (feature 2647): `t.wait()`
+# and `m.close()` their receiver, and `m.send(v)` a `v` it hands over, each
+# where `handed` (`check/crossing.hero`'s, by the receiver's type) says so.
+function after_operation(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, handed: {i64: bool}, at: i64, receiver: i64, given: [ast.Arg])
+    if !is_operation(handed, at: at)
+        return
+    operation = called(a, s, at: at)
+
+    if operation == "wait" || operation == "close"
+        operation_ended(@f, a, r, s, receiver: receiver, name: operation, span: a.exprs[at].span)
+
+    if operation == "send" && given.len() == 1 && !handed[given[0].value].is_err()
+        handed_to_a_thread(@f, a, r, s, value: given[0].value, by: "send", span: a.exprs[at].span)
+
+# Whether the dotted call at `at` is a mailbox's send or close: the two that a
+# close refuses after it, a receive still taking what the close kept.
+function sends_or_closes(a: ast.Ast, s: source.Source, handed: {i64: bool}, at: i64) -> bool
+    return is_operation(handed, at: at) && (called(a, s, at: at) == "send" || called(a, s, at: at) == "close")
+
+# Whether the dotted call at `at` is a thread's or a mailbox's operation, as
+# the checker typed its receiver (`check/crossing.hero`'s `handed`): a
+# program's own function of the same name is called for any other receiver.
+function is_operation(handed: {i64: bool}, at: i64) -> bool
+    return !handed[at].is_err() && handed[at].must()
+
+# The name after the dot of the call at `at`, or "" for any other expression.
+function called(a: ast.Ast, s: source.Source, at: i64) -> str
+    return match a.exprs[at].kind
+        .method m                                                                      => source.span_text(s, m.name)
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => ""
+        .name | .hole | .unary | .binary | .field | .field_name | .index | .call       => ""
+        .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => ""
+
+# What a `spawn` hands over: its argument, where `handed` holds it.
+function after_spawn(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, handed: {i64: bool}, callee: resolved.Ref, given: [ast.Arg], span: token.Span)
+    match callee
+        .builtin =>
+            if given.len() >= 2 && !handed[given[1].value].is_err()
+                handed_to_a_thread(@f, a, r, s, value: given[1].value, by: "spawn", span: span)
+        .local | .top | .module | .unresolved => return
+
+# `t.wait()` and `m.close()` end the receiver's life, for every copy: a read
+# of it after, on every path, is refused as an extern's end is. The callee is
+# written `.wait()` or `.close()`, which tells `check/moved_errors.hero` the
+# end is the language's and not C's.
+function operation_ended(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, receiver: i64, name: str, span: token.Span)
+    path = place_of(a, r, s, id: receiver)
+
+    if !path.is_err()
+        flow.ended(
+            @f,
+            path: path.must(),
+            shown: source.span_text(s, a.exprs[receiver].span),
+            callee: "." + name + "()",
+            at: span
+        )
+
+# A value a send or a spawn hands to another thread: it holds a C handle or a
+# thread, so its life ends here as the receiver's begins (spec § 11). The
+# callee is written `>send` or `>spawn` for `check/moved_errors.hero`.
+function handed_to_a_thread(@f: flow.Flow, a: ast.Ast, r: resolved.Resolved, s: source.Source, value: i64, by: str, span: token.Span)
+    path = place_of(a, r, s, id: value)
+
+    if !path.is_err()
+        flow.ended(@f, path: path.must(), shown: source.span_text(s, a.exprs[value].span), callee: ">" + by, at: span)
+
+# The first argument a dotted call to a declaration is handed: its receiver,
+# but where that is a module, `m.f(x)` being `f(x)`.
+function first_argument(receiver: i64, qualified: bool) -> i64?
+    if qualified
+        return fail(code: "none", msg: "no receiver")
+    return ok(receiver)
+
 # The receiver of a UFCS call is its first argument (§4.11), and never `@`:
 # `ufcs_on_mutable` refuses that spelling before this rule runs.
 function all_arguments(receiver: i64?, given: [ast.Arg]) -> [ast.Arg]

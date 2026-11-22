@@ -38,12 +38,12 @@ function agree(t: table.Types, value: i64, lands: i64) -> bool
                         i @ i + 1
 
                     return true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-                .array | .fixed | .map | .fallible | .named               => return false
-                .case_ty | .failure | .generic | .error                   => return false
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
-        .array | .fixed | .map | .fallible | .named               => return false
-        .case_ty | .failure | .generic | .error                   => return false
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+                .array | .fixed | .map | .fallible | .named                        => return false
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return false
+        .array | .fixed | .map | .fallible | .named                        => return false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return false
 
     return false
 

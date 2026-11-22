@@ -1,0 +1,32 @@
+# `(thread T)` and `(mailbox T)`, the two written types of a thread and a
+# mailbox (spec § 3's `Prefix`; feature 2647).
+#
+# The words are names everywhere else, a program's `thread` and `mailbox`
+# among them, so each is read as a type's word only right after the `(` a
+# type opens, where no name can stand: `(` in a type opens `()`, a function
+# type or one of these two, and the token after it decides which.
+
+use ast
+use cursor
+use parse/type
+use parse/unclosed
+use token
+
+# Whether the cursor, just past a type's `(`, stands on `thread` or `mailbox`.
+function at_word(c: cursor.Cursor, text: str) -> bool
+    if !cursor.at(c, .ident)
+        return false
+    word = cursor.slice_of(text, cursor.current_span(c))
+    return word == "thread" || word == "mailbox"
+
+# The type, read from its word to the `)` that closes the `(` at token `open`.
+function read(@c: cursor.Cursor, @a: ast.Ast, text: str, open: i64) -> i64
+    start = c.tokens[open].span
+    word = cursor.slice_of(text, cursor.bump(@c).span)
+    element = type.parse_type(@c, @a, text)
+    close = unclosed.type_closer(@c, text: text, open: open)
+    span = token.Span(start: start.start, end: close.end)
+
+    if word == "thread"
+        return ast.push_type(@a.types, ast.TypeNode(kind: .thread_of(element: element), span: span))
+    return ast.push_type(@a.types, ast.TypeNode(kind: .mailbox_of(element: element), span: span))

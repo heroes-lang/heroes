@@ -82,6 +82,7 @@ function counts(t: table.Types, decls: [ast.Decl], written: {i64: i64}, answer: 
 
         .fallible | .failure                               => return true
         .int_ty | .float_ty | .bool | .unit | .ptr | .cstr => return false
+        .thread_ty | .mailbox_ty                           => return false
         # A fixed array owns exactly what its element owns: inline bytes,
         # no reference of its own — written as the honest rule rather
         # than as false, because the day a fixed array is permitted

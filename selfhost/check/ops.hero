@@ -35,7 +35,7 @@ function is_type_parameter(c: state.Checker, ty: i64) -> bool
         .generic                                                   => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .error                               => false
+        .case_ty | .failure | .error | .thread_ty | .mailbox_ty    => false
 
 # The walk's entry for the binary operator at `id`: `binary`, then the
 # `.must()` its refusal of a fallible operand owes (`check/operand_must.hero`,
@@ -156,10 +156,10 @@ function binary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.
             return int_id
         .lt | .le | .gt | .ge =>
             ordered = match table.get(c.out.types, left)
-                .int_ty | .float_ty                                   => true
-                .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
-                .map | .fallible | .function_ty | .named | .case_ty   => false
-                .failure | .generic | .error                          => false
+                .int_ty | .float_ty                                     => true
+                .bool | .str | .ptr | .cstr | .unit | .array | .fixed   => false
+                .map | .fallible | .function_ty | .named | .case_ty     => false
+                .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
             if !ordered
                 got = state.show(c, s, decls, left)
@@ -267,10 +267,10 @@ function unary(@c: state.Checker, s: source.Source, decls: [ast.Decl], op: ast.U
 
 function is_numeric(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty | .float_ty                                   => true
-        .bool | .str | .ptr | .cstr | .unit | .array | .fixed => false
-        .map | .fallible | .function_ty | .named | .case_ty   => false
-        .failure | .generic | .error                          => false
+        .int_ty | .float_ty                                     => true
+        .bool | .str | .ptr | .cstr | .unit | .array | .fixed   => false
+        .map | .fallible | .function_ty | .named | .case_ty     => false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 function acceptable(c: state.Checker, ty: i64, op: ast.BinaryOp) -> bool
     if is_numeric(c, ty)

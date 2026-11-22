@@ -120,12 +120,14 @@ function walked(c: state.Checked, ty: i64, @memo: [i64]) -> i64
     flags: i64 @= 1
 
     match table.get(c.types, ty)
-        .generic    => flags @ 3
-        .error      => flags @ 5
-        .array arr  => flags @ walked(c, ty: arr.element, memo: @memo)
-        .fallible o => flags @ walked(c, ty: o.payload, memo: @memo)
-        .fixed x    => flags @ walked(c, ty: x.element, memo: @memo)
-        .map m      => flags @ walked(c, ty: m.key, memo: @memo) | walked(c, ty: m.value, memo: @memo)
+        .generic       => flags @ 3
+        .error         => flags @ 5
+        .array arr     => flags @ walked(c, ty: arr.element, memo: @memo)
+        .fallible o    => flags @ walked(c, ty: o.payload, memo: @memo)
+        .fixed x       => flags @ walked(c, ty: x.element, memo: @memo)
+        .map m         => flags @ walked(c, ty: m.key, memo: @memo) | walked(c, ty: m.value, memo: @memo)
+        .thread_ty th  => flags @ walked(c, ty: th.element, memo: @memo)
+        .mailbox_ty mb => flags @ walked(c, ty: mb.element, memo: @memo)
         .function_ty fn_ty =>
             for one in table.params_of(c.types, fn_ty.params)
                 flags @ flags | walked(c, ty: one, memo: @memo)
@@ -225,11 +227,13 @@ function no_error_survives(f: containers.Function, blk: containers.Block, c: sta
 # Does this type mention the checker's error id anywhere inside it?
 function mentions_error(c: state.Checked, ty: i64) -> bool
     match table.get(c.types, ty)
-        .error      => return true
-        .array arr  => return mentions_error(c, ty: arr.element)
-        .fallible o => return mentions_error(c, ty: o.payload)
-        .fixed x    => return mentions_error(c, ty: x.element)
-        .map m      => return mentions_error(c, ty: m.key) || mentions_error(c, ty: m.value)
+        .error         => return true
+        .array arr     => return mentions_error(c, ty: arr.element)
+        .fallible o    => return mentions_error(c, ty: o.payload)
+        .fixed x       => return mentions_error(c, ty: x.element)
+        .map m         => return mentions_error(c, ty: m.key) || mentions_error(c, ty: m.value)
+        .thread_ty th  => return mentions_error(c, ty: th.element)
+        .mailbox_ty mb => return mentions_error(c, ty: mb.element)
         .function_ty fn_ty =>
             for p in table.params_of(c.types, fn_ty.params)
                 if mentions_error(c, ty: p)
@@ -244,11 +248,13 @@ function mentions_error(c: state.Checked, ty: i64) -> bool
 # Does this type mention a type parameter anywhere inside it?
 function mentions_generic(c: state.Checked, ty: i64) -> bool
     match table.get(c.types, ty)
-        .generic    => return true
-        .array arr  => return mentions_generic(c, ty: arr.element)
-        .fallible o => return mentions_generic(c, ty: o.payload)
-        .fixed x    => return mentions_generic(c, ty: x.element)
-        .map m      => return mentions_generic(c, ty: m.key) || mentions_generic(c, ty: m.value)
+        .generic       => return true
+        .array arr     => return mentions_generic(c, ty: arr.element)
+        .fallible o    => return mentions_generic(c, ty: o.payload)
+        .fixed x       => return mentions_generic(c, ty: x.element)
+        .map m         => return mentions_generic(c, ty: m.key) || mentions_generic(c, ty: m.value)
+        .thread_ty th  => return mentions_generic(c, ty: th.element)
+        .mailbox_ty mb => return mentions_generic(c, ty: mb.element)
         .function_ty fn_ty =>
             for p in table.params_of(c.types, fn_ty.params)
                 if mentions_generic(c, ty: p)

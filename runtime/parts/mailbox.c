@@ -583,10 +583,21 @@ static void hero_mailbox_check_closed(void) {
     }
     if (open == 0 && unreceived == 0) return;
     hero_report_begin();
-    hero_report_printf("panic: %lld mailbox(es) never closed and %lld value(s) sent and never received when `main` "
-                       "returned — every mailbox a program begins is closed, and every value sent to one is "
-                       "received, before `main` returns\n",
-                       (long long)open, (long long)unreceived);
+    if (open > 0 && unreceived > 0) {
+        hero_report_printf("panic: %lld mailbox(es) never closed and %lld value(s) sent and never received when "
+                           "`main` returned — every mailbox a program begins is closed, and every value sent to "
+                           "one is received, before `main` returns\n",
+                           (long long)open, (long long)unreceived);
+    } else if (open > 0) {
+        hero_report_printf("panic: %lld mailbox(es) never closed when `main` returned — every mailbox a program "
+                           "begins is closed before `main` returns\n",
+                           (long long)open);
+    } else {
+        hero_report_printf("panic: %lld value(s) sent to a mailbox and never received when `main` returned — "
+                           "every value sent to one is received before `main` returns, the close keeping it for "
+                           "a receive\n",
+                           (long long)unreceived);
+    }
     for (int64_t k = 0; k < named; k += 1) {
         const HeroBox *box = told[k];
         hero_report_printf("  a mailbox %s, %lld value(s) in it", box->open ? "never closed" : "closed",

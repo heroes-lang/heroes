@@ -24,6 +24,7 @@ use cursor
 use data_errors
 use diag
 use parse/fixed_length
+use parse/handle_type
 use parse/line_end
 use parse/swap_reading
 use parse/unclosed
@@ -198,7 +199,10 @@ function unit_or_function(@c: cursor.Cursor, @a: ast.Ast, text: str) -> i64
         close = cursor.bump(@c).span
         return ast.push_type(@a.types, ast.TypeNode(kind: .unit, span: token.Span(start: open.start, end: close.end)))
 
-    if !swap_reading.eat_as(@c, text, .kw_function) && !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens either `()` or a function type, `(function(A) -> B)`")
+    if handle_type.at_word(c, text)
+        return handle_type.read(@c, @a, text, open: at)
+
+    if !swap_reading.eat_as(@c, text, .kw_function) && !cursor.expect(@c, text: text, kind: .kw_function, code: "expected_function_type", what: "`function` — in a type, `(` opens `()`, a function type, `(function(A) -> B)`, a thread, `(thread T)`, or a mailbox, `(mailbox T)`")
         # This `(` was consumed here, so its `)` is this function's to find:
         # leaving it for the caller made a signature containing one bad type
         # report the mistake three times. One that never closes has none, and
@@ -333,7 +337,7 @@ function named_parameter(@c: cursor.Cursor, a: ast.Ast, name: i64) -> token.Span
 
     match a.types[name].kind
         .named => return span
-        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error =>
+        .unit | .array_of | .fixed | .map_of | .fallible | .function_type | .error | .thread_of | .mailbox_of =>
             cursor.say(@c, data_errors.parameter_name_not_a_name(span))
             return span
 
@@ -368,6 +372,7 @@ test "the six shapes are told apart by their first token"
     match a1.types[at1].kind
         .array_of e                                                             => assert a1.types[e.element].kind == .named
         .named | .unit | .fixed | .map_of | .fallible | .function_type | .error => assert false
+        .thread_of | .mailbox_of                                                => assert false
 
     assert c1.diagnostics.len() == 0
 
@@ -387,6 +392,7 @@ test "the six shapes are told apart by their first token"
     match a2.types[at2].kind
         .map_of _                                                                 => assert true
         .named | .unit | .array_of | .fixed | .fallible | .function_type | .error => assert false
+        .thread_of | .mailbox_of                                                  => assert false
 
     assert c2.diagnostics.len() == 0
 
@@ -414,6 +420,7 @@ test "T? is applied once, and T?? is refused where it is written"
     match a.types[at].kind
         .fallible f                                                             => assert a.types[f.inner].kind == .named
         .named | .unit | .array_of | .fixed | .map_of | .function_type | .error => assert false
+        .thread_of | .mailbox_of                                                => assert false
 
     assert c.diagnostics.len() == 0
     twice: [token.Token] = [
@@ -443,6 +450,7 @@ test "a fixed array reads its length, and zero is refused"
     match a.types[at].kind
         .fixed f                                                                   => assert f.length == 4
         .named | .unit | .array_of | .map_of | .fallible | .function_type | .error => assert false
+        .thread_of | .mailbox_of                                                   => assert false
 
     assert c.diagnostics.len() == 0
     zero: [token.Token] = [
@@ -479,7 +487,7 @@ test "a function type states what it returns"
         .function_type f =>
             assert f.params.len() == 1
             assert a.types[f.result].kind == .named
-        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error | .thread_of | .mailbox_of => assert false
 
     assert c.diagnostics.len() == 0
 
@@ -512,7 +520,7 @@ test "a parameter name is kept, with its position, and nothing is reported"
             assert f.labels.len() == 1
             assert f.labels[0].start == 10
             assert f.labels[0].end == 11
-        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error | .thread_of | .mailbox_of => assert false
 
 test "a run may name some positions and not others, and the parser judges none of it"
     # (function(a: i64, i64) -> i64) — legal since panel 129: a function type
@@ -547,7 +555,7 @@ test "a run may name some positions and not others, and the parser judges none o
             assert f.labels.len() == 2
             assert f.labels[0].start == 10
             assert f.labels[1].start == f.labels[1].end
-        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .named | .unit | .array_of | .fixed | .map_of | .fallible | .error | .thread_of | .mailbox_of => assert false
 
 test "a type that cannot be read is a node, so the errors after it are found"
     stream: [token.Token] = [token.made(.plus, start: 0, end: 1), token.made(.eof, start: 1, end: 1)]
@@ -584,6 +592,7 @@ test "a foreign word in a type reads as its certain swap and is consumed"
     match a.types[at].kind
         .function_type f                                                   => assert f.params.len() == 1
         .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .thread_of | .mailbox_of                                           => assert false
 
     assert c.diagnostics.len() == 0
     assert cursor.at(c, .eof)
@@ -632,6 +641,7 @@ test "a bare function type is read, and refused once with its parentheses as the
     match wa.types[wat].kind
         .function_type f                                                   => assert f.params.len() == 1
         .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .thread_of | .mailbox_of                                           => assert false
 
     assert w.diagnostics.len() == 1
     assert w.diagnostics[0].code == "expected_type"
@@ -655,6 +665,7 @@ test "a bare function type is read, and refused once with its parentheses as the
     match sa.types[sat].kind
         .function_type f                                                   => assert f.params.len() == 1
         .named | .unit | .array_of | .fixed | .map_of | .fallible | .error => assert false
+        .thread_of | .mailbox_of                                           => assert false
 
     assert s.diagnostics.len() == 0
     assert cursor.at(s, .eof)

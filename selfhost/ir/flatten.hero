@@ -45,6 +45,7 @@ use check/contextual
 use check/leasing
 use check/state
 use check/table
+use check/thread_types
 use escape
 use inventory
 use ir
@@ -624,7 +625,7 @@ function case_construct(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c:
                 ty: ty,
                 span: span
             )
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return build.emit(
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return build.emit(
             @b,
             op: .missing,
             ty: ty,
@@ -797,13 +798,20 @@ function method(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.C
         is_function: bool @= false
 
         match table.get(c.types, field_ty.must())
-            .function_ty                                              => is_function @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_function @ is_function
-            .array | .fixed | .map | .fallible | .named               => is_function @ is_function
-            .case_ty | .failure | .generic | .error                   => is_function @ is_function
+            .function_ty                                                       => is_function @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_function @ is_function
+            .array | .fixed | .map | .fallible | .named                        => is_function @ is_function
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_function @ is_function
 
         if is_function
             return field_call(@b, a, r, c, s, decls, receiver: receiver, name: name, given: given, ty: ty, span: span)
+
+    # A thread's or a mailbox's operation, chosen by the receiver's type alone.
+    operation = inventory.operation_of(source.span_text(s, name))
+
+    if !operation.is_err() && !thread_types.element_of(c.types, c.expr_types[receiver]).is_err()
+        handed = ast.receiver_first(receiver, given)
+        return builtin_call(@b, a, r, c, s, decls, at: operation.must(), given: handed, ty: ty, span: span)
 
     match r.uses[at]
         # `s.cstr()`, `x.must()` and every other built-in written with a dot
@@ -1357,10 +1365,10 @@ function expr(@b: build.Lowering, a: ast.Ast, r: resolved.Resolved, c: state.Che
             is_map: bool @= false
 
             match table.get(c.types, owner)
-                .map                                                      => is_map @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
-                .array | .fixed | .fallible | .function_ty | .named       => is_map @ is_map
-                .case_ty | .failure | .generic | .error                   => is_map @ is_map
+                .map                                                               => is_map @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_map @ is_map
+                .array | .fixed | .fallible | .function_ty | .named                => is_map @ is_map
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_map @ is_map
 
             if is_map
                 return build.emit(@b, op: .map_get(map: base, key: key), ty: ty, span: span)

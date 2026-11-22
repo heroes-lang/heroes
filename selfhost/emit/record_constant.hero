@@ -98,10 +98,10 @@ function is_record_value(c: state.Checked, decls: [ast.Decl], f: containers.Func
         return false
 
     return match table.get(c.types, f.result)
-        .named n                                                  => !handles.is_handle(decls[n.decl])
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .fallible | .function_ty         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .named n                                                           => !handles.is_handle(decls[n.decl])
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .fallible | .function_ty                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # The accessor: the signature at the declaration, as `emit/body.hero` points
 # every signature; the diagnostics the value is held to; the declaration at
