@@ -405,21 +405,21 @@ test "agreed: RFC 7518 Appendix C's two P-256 keys agree on its Z, either way ro
     assert bytes.format_hex(z) == "9e56d91d817135d372834283bf84269cfb316ea3da806a48f6daa7798cfe90c4"
     assert agreed(mine: alice, theirs: jwk.public_of(bob).must()).must() == z
 
-test "encrypt and decrypt: dir with A128GCM both ways, or unsupported where the platform has no AES-GCM"
+test "encrypt and decrypt: dir with A128GCM both ways, where the platform has AES-128-GCM"
+    if !seal.is_available(.aes_128_gcm)
+        skip_test(reason: "this platform's own cryptography does not seal with AES-128-GCM")
     key = json.parse("{\"kty\":\"oct\",\"kid\":\"k\",\"k\":\"XctOhJAkA-pD9Lh7ZgW_2A\"}").must()
     none: {str: json.Value} = {}
 
-    match encrypt(bytes.from_text("ground control"), key: key, alg: "dir", enc: "A128GCM", header: none)
-        .err e => assert e.code == UNSUPPORTED
-        .ok token =>
-            got = decrypt(token, trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"]).must()
-            assert got.plaintext == bytes.from_text("ground control")
-            assert decrypt(
-                token,
-                trusted: [key],
-                accepted_algorithms: ["dir"],
-                accepted_encryptions: ["A256GCM"]
-            ).is_err()
+    token = encrypt(bytes.from_text("ground control"), key: key, alg: "dir", enc: "A128GCM", header: none).must()
+    got = decrypt(token, trusted: [key], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"]).must()
+    assert got.plaintext == bytes.from_text("ground control")
+    assert decrypt(
+        token,
+        trusted: [key],
+        accepted_algorithms: ["dir"],
+        accepted_encryptions: ["A256GCM"]
+    ).is_err()
 
 test "encrypt: refused, a header holding alg, a key of the wrong length for dir, zip"
     key = json.parse("{\"kty\":\"oct\",\"k\":\"AQID\"}").must()

@@ -900,18 +900,20 @@ test "listen: a socket file, then closed"
 test "listen_abstract: an abstract name on Linux, unsupported elsewhere"
     match listen_abstract(f"example-{os.pid()}")
         .ok made =>
+            assert os.system() == .linux
             l @= made
             assert close_listener(@l) == ok()
-        .err e => assert e.code == UNSUPPORTED
+        .err e => assert e.code == UNSUPPORTED && os.system() != .linux
 
 # A listener on a Windows named pipe; every other platform answers
 # `unsupported`.
 test "listen_pipe: a named pipe on Windows, unsupported elsewhere"
     match listen_pipe(f"example-{os.pid()}")
         .ok made =>
+            assert os.system() == .windows
             l @= made
             assert close_listener(@l) == ok()
-        .err e => assert e.code == UNSUPPORTED
+        .err e => assert e.code == UNSUPPORTED && os.system() != .windows
 
 # A connection accepted, and an accept with nobody connecting that gives up
 # at its bound.
@@ -950,14 +952,14 @@ test "connect: bytes through a channel, and nothing at the path"
 test "connect_abstract: on Linux, unsupported elsewhere"
     match connect_abstract(f"example-none-{os.pid()}", within: time.nanoseconds(0))
         .ok _  => assert false
-        .err e => assert e.code == CLOSED || e.code == UNSUPPORTED
+        .err e => assert e.code == CLOSED && os.system() == .linux || e.code == UNSUPPORTED && os.system() != .linux
 
 # A connection to a Windows named pipe; every other platform answers
 # `unsupported`.
 test "connect_pipe: on Windows, unsupported elsewhere"
     match connect_pipe(f"example-none-{os.pid()}", within: time.nanoseconds(0))
         .ok _  => assert false
-        .err e => assert e.code == NOT_FOUND || e.code == UNSUPPORTED
+        .err e => assert e.code == NOT_FOUND && os.system() == .windows || e.code == UNSUPPORTED && os.system() != .windows
 
 # A listener closed: its place is emptied, and a second close is told.
 test "close_listener: once, then closed already"
