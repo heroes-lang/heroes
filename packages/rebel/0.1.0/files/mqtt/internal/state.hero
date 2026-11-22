@@ -65,6 +65,10 @@ record Session
     stats: model.Stats
     # Why the server last ended the connection, "" where it did not say.
     last_reason: str
+    # The failure that ended the session while a call whose answer had come
+    # acted on what the server wrote after it: the next call that finds the
+    # session closed answers it, once; `ok` where there is none.
+    kept: ()?
 
 # A session of `options`, not connected.
 #
@@ -96,7 +100,8 @@ function fresh(options: model.Options) -> Session
         max_packet: 0,
         subs: [],
         stats: model.Stats(messages_in: 0, messages_out: 0, bytes_in: 0, bytes_out: 0, reconnects: 0, dropped: 0),
-        last_reason: ""
+        last_reason: "",
+        kept: ok()
     )
 
 # The next packet identifier, from 1 to 65,535 and round again.

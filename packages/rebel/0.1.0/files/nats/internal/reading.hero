@@ -219,6 +219,25 @@ function message(@s: state.Session, m: scanning.Op) -> Event?
         state.forget_sub(@s, sid: after.sid)
     return ok(.held)
 
+# Acts on every operation whole in the buffer, reading nothing. A call that
+# waits for one answer ends with it, since one read may bring the answer
+# and what the server wrote after it: a message left as bytes here is one
+# `held_count` does not count, and the stream, drained, never makes `poll`
+# tell a program of it (defect 2675).
+#
+# - `s`: the session; the connection lost where the bytes are no NATS or an
+#   operation cannot be acted on.
+function apply_whole(@s: state.Session) -> ()?
+    while true
+        got = buffered(@s)?
+
+        if !got.complete
+            return ok()
+
+        match apply(@s, op: got.op)
+            .ok _  => _ = 0
+            .err e => return lost(@s, code: e.code, msg: e.msg)
+
 test "apply: a PING answered with a PONG, a PONG counted, a soft -ERR kept, a hard one remembered"
     r @= fixture.rig("")
     assert apply(@r.session, op: .ping).must() == .other

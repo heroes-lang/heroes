@@ -91,6 +91,24 @@ function delivery(channel: i64, tag: i64, body: [u8]) -> [u8]
         bytes.push_all(to: @out, from: frames.frame(kind: frames.BODY, channel: channel, payload: body))
     return out
 
+# A `basic.return` on `channel` of a message the exchange `x` could not
+# route by the key `k` (312 `NO_ROUTE`), its header and its body in one
+# frame.
+#
+# - `channel`: the channel.
+# - `body`: the body, under 4,088 bytes.
+function returned(channel: i64, body: [u8]) -> [u8]
+    fields: [u8] = [1, 56, 8, 'N', 'O', '_', 'R', 'O', 'U', 'T', 'E', 1, 'x', 1, 'k']
+    header: [u8] @= [0, 60, 0, 0]
+    wire.put_i64(out: @header, v: body.len())
+    bytes.push_all(to: @header, from: [0, 0])
+    out @= method(channel: channel, class_id: 60, method_id: 50, fields: fields)
+    bytes.push_all(to: @out, from: frames.frame(kind: frames.HEADER, channel: channel, payload: header))
+
+    if body.len() > 0
+        bytes.push_all(to: @out, from: frames.frame(kind: frames.BODY, channel: channel, payload: body))
+    return out
+
 # The bytes the client wrote, as many as one read brings.
 #
 # - `peer`: the server's end.

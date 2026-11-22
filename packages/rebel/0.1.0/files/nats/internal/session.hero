@@ -13,11 +13,17 @@ use nats/internal/state
 use nats/internal/subjects
 use random
 
-# The failure of a closed session.
+# The failure of a closed session: the failure that ended it while a call
+# that had its answer acted on what followed, answered once by the call
+# after (`waiting.settle`); else that the client is closed.
 #
-# - `s`: the session.
-function closed_failure<T>(s: state.Session) -> T?
-    return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+# - `s`: the session; what it kept is answered once.
+function closed_failure<T>(@s: state.Session) -> T?
+    match s.kept
+        .ok _ => return fail(code: model.CLOSED, msg: f"the client of {s.target} is closed")
+        .err e =>
+            s.kept @ ok()
+            return fail(code: e.code, msg: e.msg)
 
 # Whether `opts` stand within their ranges; the message names the first that
 # does not.
@@ -107,7 +113,7 @@ function lose(@s: state.Session, code: str, msg: str) -> ()?
 # - `data`: whole operations.
 function send(@s: state.Session, data: [u8]) -> ()?
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
 
     if !s.open
         dialing.recover(@s, code: model.CLOSED, msg: "the connection was lost")?
@@ -140,7 +146,7 @@ function publish(@s: state.Session, m: model.Message) -> ()?
         return fail(code: model.INVALID, msg: f"\"{m.reply}\" is no reply subject")
 
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
     block: [u8] @= []
 
     if m.headers.len() > 0
@@ -177,7 +183,7 @@ function subscribe(@s: state.Session, subject: str, queue: str, internal: bool) 
         return fail(code: model.INVALID, msg: f"\"{queue}\" is no queue group's name")
 
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
     sid = s.next_sid
     send(@s, data: protocol.sub(subject: subject, queue: queue, sid: sid))?
     s.next_sid @ sid + 1
@@ -209,7 +215,7 @@ function unsubscribe(@s: state.Session, sid: i64) -> ()?
     _ = sub_of(s, sid: sid)?
 
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
     send(@s, data: protocol.unsub(sid: sid, most: 0))?
     state.remove_sub(@s, sid: sid)
     return ok()
@@ -229,7 +235,7 @@ function unsubscribe_after(@s: state.Session, sid: i64, most: i64) -> ()?
         return unsubscribe(@s, sid: sid)
 
     if s.closed
-        return closed_failure(s)
+        return closed_failure(@s)
     send(@s, data: protocol.unsub(sid: sid, most: most))?
     sub.most @ most
     state.put_sub(@s.subs, sub: sub)
@@ -240,7 +246,7 @@ function unsubscribe_after(@s: state.Session, sid: i64, most: i64) -> ()?
 # - `s`: the session.
 function close(@s: state.Session) -> ()?
     if s.closed && s.held_count == 0 && link.is_gone(s.link)
-        return closed_failure(s)
+        return closed_failure(@s)
     dialing.close_for_good(@s)
     _ = state.take_all(@s)
     return ok()

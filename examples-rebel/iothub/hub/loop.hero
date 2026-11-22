@@ -241,16 +241,12 @@ function has_key(ready: [i64], key: i64) -> bool
     return false
 
 # Reads the link of `protocol` and handles every message it gives: what its
-# client holds, what its buffer holds whole, and, where `read` says the
-# stream is ready, what one read brings. An AMQP delivery is acknowledged
-# once handled; one the link was lost before acknowledging is the broker's
-# to deliver again. Answers how many messages were handled.
-#
-# A call that waits for a reply (a flush, an acknowledgement, a
-# confirmation) may read a message behind the reply and keep it in the
-# client's buffer, where `held_of` does not count it and `poll` will never
-# report it; so every client is also asked with a zero wait, which parses
-# what its buffer holds.
+# client holds and, where `read` says the stream is ready, what one read
+# brings. A call that waits for a reply (a flush, an acknowledgement, a
+# confirmation) holds what was read with the reply, which `held_of` counts.
+# An AMQP delivery is acknowledged once handled; one the link was lost
+# before acknowledging is the broker's to deliver again. Answers how many
+# messages were handled.
 #
 # - `h`: the hub.
 # - `protocol`: the broker.
@@ -271,14 +267,6 @@ function read_link(@h: state.Hub, protocol: registry.Protocol, read: bool) -> i6
                     .err e =>
                         handling.lose(@h, protocol: .mqtt, why: e.code)
                         return 0
-
-            match mqtt_link.take_buffered(@h.mqtt)
-                .ok more =>
-                    for m in more
-                        got @ got.push(m)
-                .err e =>
-                    handling.lose(@h, protocol: .mqtt, why: e.code)
-                    return 0
 
             for m in got
                 handling.handle(@h, protocol: .mqtt, address: m.topic, payload: m.payload)
@@ -312,14 +300,6 @@ function read_link(@h: state.Hub, protocol: registry.Protocol, read: bool) -> i6
                         handling.lose(@h, protocol: .nats, why: e.code)
                         return 0
 
-            match nats_link.take_buffered(@h.nats)
-                .ok more =>
-                    for m in more
-                        got @ got.push(m)
-                .err e =>
-                    handling.lose(@h, protocol: .nats, why: e.code)
-                    return 0
-
             for m in got
                 handling.handle(@h, protocol: .nats, address: m.subject, payload: m.data)
                 handled @ handled + 1
@@ -337,8 +317,9 @@ function read_brokers(@h: state.Hub, ready: [i64])
     _ = read_link(@h, protocol: .nats, read: has_key(ready, key: h.nats.key))
 
 # Flushes what the turn published to NATS, then handles what any client
-# read behind a reply it waited for, again until nothing more is held: the
-# handling publishes, and a publish waits for its reply too.
+# holds, again until nothing more is held: a call that waits for a reply
+# holds what came with it, and handling a message publishes, which waits
+# for a reply too.
 #
 # - `h`: the hub.
 function settle(@h: state.Hub)

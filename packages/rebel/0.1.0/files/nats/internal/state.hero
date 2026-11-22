@@ -87,6 +87,10 @@ record Session
     requests: i64
     # The last `-ERR` that came before the server closed the connection.
     last_error: str
+    # The failure that ended the session while a call whose answer had come
+    # acted on what the server wrote after it: the next call that finds the
+    # session closed answers it, once; `ok` where there is none.
+    kept: ()?
 
 # A session of `options` over `pool`, not connected.
 #
@@ -121,7 +125,8 @@ function fresh(options: model.Options, pool: [servers.Server]) -> Session
         mux_sid: 0,
         mux_prefix: "",
         requests: 0,
-        last_error: ""
+        last_error: "",
+        kept: ok()
     )
 
 # Adds `m` to `list`.

@@ -3,6 +3,7 @@
 # acknowledgements, acknowledging a message the program read, and ending the
 # connection with or without `DISCONNECT`.
 
+use io
 use maps
 use mqtt/internal/dialing
 use mqtt/internal/fixture
@@ -68,7 +69,7 @@ function publish(@s: state.Session, m: model.Message) -> ()?
         return fail(code: model.INVALID, msg: f"the quality of service {m.qos} is none of 0, 1 and 2")
 
     if s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
 
     if m.qos > s.max_qos
         return fail(code: model.UNSUPPORTED, msg: f"{s.target} takes messages of QoS {s.max_qos} at most")
@@ -99,6 +100,7 @@ function publish(@s: state.Session, m: model.Message) -> ()?
                 .ack a =>
                     if a.reason >= 128
                         said = reading.text_in(a.properties, id: 31)
+                        waiting.settle(@s)
                         return fail(
                             code: reading.code_of(a.reason),
                             msg: f"{s.target} refused the message on \"{m.topic}\" with the code {a.reason} {said}"
@@ -119,6 +121,9 @@ function publish(@s: state.Session, m: model.Message) -> ()?
 
     s.stats.messages_out @ s.stats.messages_out + 1
     s.stats.bytes_out @ s.stats.bytes_out + m.payload.len()
+
+    if m.qos > 0
+        waiting.settle(@s)
     return ok()
 
 # Adds `sub` to `list`, replacing one of the same filter.
@@ -150,7 +155,7 @@ function subscribe(@s: state.Session, subs: [model.Subscription], list: [model.P
             return fail(code: model.INVALID, msg: f"\"{one.filter}\" is no topic filter")
 
     if s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
     id = state.take_id(@s)
     p: model.Packet = .subscribe(packet_id: id, subscriptions: subs, properties: list)
     dialing.send(@s, p: p)?
@@ -159,6 +164,8 @@ function subscribe(@s: state.Session, subs: [model.Subscription], list: [model.P
     while true
         match waiting.await_ack(@s, kind: 9, packet_id: id, until: until)?
             .acks a =>
+                waiting.settle(@s)
+
                 if a.reasons.len() != subs.len()
                     return fail(
                         code: model.INVALID,
@@ -186,7 +193,7 @@ function unsubscribe(@s: state.Session, filters: [str], list: [model.Property]) 
             return fail(code: model.INVALID, msg: f"\"{f}\" is no topic filter")
 
     if s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
     id = state.take_id(@s)
     p: model.Packet = .unsubscribe(packet_id: id, filters: filters, properties: list)
     dialing.send(@s, p: p)?
@@ -195,6 +202,7 @@ function unsubscribe(@s: state.Session, filters: [str], list: [model.Property]) 
     while true
         match waiting.await_ack(@s, kind: 11, packet_id: id, until: until)?
             .acks a =>
+                waiting.settle(@s)
                 kept: [model.Subscription] @= []
 
                 for one in s.subs
@@ -255,7 +263,7 @@ function ack(@s: state.Session, m: model.Message) -> ()?
 # - `list`: the properties, none in 3.1.1.
 function disconnect(@s: state.Session, reason: i64, list: [model.Property]) -> ()?
     if s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
 
     sent: ()? = if s.open
         reading.write(@s, p: .disconnect(reason: reason, properties: list))
@@ -270,22 +278,36 @@ function disconnect(@s: state.Session, reason: i64, list: [model.Property]) -> (
 # - `s`: the session.
 function drop(@s: state.Session) -> ()?
     if s.closed
-        return dialing.closed_failure(s)
+        return dialing.closed_failure(@s)
     dialing.close_for_good(@s)
     return ok()
 
 test "publish: QoS 0 written whole, QoS 1 with its PUBACK, QoS 2 with PUBREC, PUBREL and PUBCOMP"
-    r @= fixture.rig_bytes([64, 2, 0, 1, 80, 2, 0, 2, 112, 2, 0, 2])
+    r @= fixture.rig_bytes([64, 2, 0, 1])
     publish(@r.session, m: model.message("a", payload: [1])).must()
     one @= model.message("b", payload: [2])
     one.qos @ 1
     publish(@r.session, m: one).must()
+    io.write(r.peer.stream, data: [80, 2, 0, 2, 112, 2, 0, 2]).must()
     two @= model.message("c", payload: [3])
     two.qos @ 2
     two.retain @ true
     publish(@r.session, m: two).must()
     assert fixture.heard(r.peer) == [48, 5, 0, 1, 97, 0, 1, 50, 7, 0, 1, 98, 0, 1, 0, 2, 53, 7, 0, 1, 99, 0, 2, 0, 3, 98, 2, 0, 2]
     assert r.session.stats.messages_out == 3
+    fixture.close_rig(@r)
+
+test "publish and subscribe: a message read behind the PUBACK and a retained one behind the SUBACK are held, and a loop on poll takes them"
+    r @= fixture.rig_bytes([64, 2, 0, 1, 48, 5, 0, 1, 97, 0, 7])
+    one @= model.message("b", payload: [2])
+    one.qos @ 1
+    publish(@r.session, m: one).must()
+    assert state.held_count(r.session) == 1 && r.session.at == r.session.buf.len()
+    assert waiting.polled(@r.session, turns: 3) == [[7]]
+    io.write(r.peer.stream, data: [144, 4, 0, 2, 0, 1, 49, 5, 0, 1, 97, 0, 8]).must()
+    subs = [model.Subscription(filter: "a", qos: 1, no_local: false, retain_as_published: false, retain_handling: 0)]
+    assert subscribe(@r.session, subs: subs, list: []).must() == [1]
+    assert state.held_count(r.session) == 1 && waiting.polled(@r.session, turns: 3) == [[8]]
     fixture.close_rig(@r)
 
 test "publish: a topic with a wildcard, a QoS of 3, a QoS past the server's, retained where the server keeps none, a PUBACK refusing"
@@ -314,13 +336,14 @@ test "publish: a topic with a wildcard, a QoS of 3, a QoS past the server's, ret
     fixture.close_rig(@r)
 
 test "subscribe and unsubscribe: SUBSCRIBE with its options, the SUBACK's codes, a filter refused, UNSUBSCRIBE and its codes"
-    r @= fixture.rig_bytes([144, 5, 0, 1, 0, 1, 135, 176, 4, 0, 2, 0, 0])
+    r @= fixture.rig_bytes([144, 5, 0, 1, 0, 1, 135])
     subs = [
         model.Subscription(filter: "a/#", qos: 1, no_local: true, retain_as_published: false, retain_handling: 2)
         model.Subscription(filter: "b", qos: 0, no_local: false, retain_as_published: false, retain_handling: 0)
     ]
     assert subscribe(@r.session, subs: subs, list: []).must() == [1, 135]
     assert r.session.subs.len() == 1 && r.session.subs[0].filter == "a/#"
+    io.write(r.peer.stream, data: [176, 4, 0, 2, 0, 0]).must()
     assert unsubscribe(@r.session, filters: ["a/#"], list: []).must() == [0]
     assert r.session.subs.len() == 0
     assert subscribe(

@@ -823,10 +823,11 @@ function connack_of(c: Client) -> Connack
 function client_id_of(c: Client) -> str
     return c.session.client_id
 
-# The messages the client holds, read from its connection while a call
-# waited for something else and not given out yet: a program waiting with
-# `poll` reads these first with `read_ready`, since its stream does not tell
-# of bytes read already.
+# The messages the client holds, read from its connection and not given out
+# yet: every whole message a call read, while it waited for something else
+# or in the read that brought its own answer, is counted once the call
+# returns. A program waiting with `poll` reads these first with
+# `read_ready`, since its stream does not tell of bytes read already.
 #
 # - `c`: the client asked about.
 #
