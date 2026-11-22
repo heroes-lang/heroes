@@ -151,15 +151,6 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 #define HERO_UI_WIN_STEPS 1000000
 /* The room a file dialog's answer has, in UTF-16 units. */
 #define HERO_UI_WIN_PATHS_ROOM (1u << 20)
-/* Which of a window's settings `window_set` makes: `hero_ui.c`'s numbers,
- * defined here where `hero_ui_arm.h` does not yet name them. */
-#ifndef HERO_UI_WINDOW_SET_ON_TOP
-#define HERO_UI_WINDOW_SET_ON_TOP 1
-#define HERO_UI_WINDOW_SET_FRAMED 2
-#define HERO_UI_WINDOW_SET_OPACITY 3
-#define HERO_UI_WINDOW_SET_BACKDROP 4
-#define HERO_UI_WINDOW_SET_MODAL 5
-#endif
 /* DWM's system backdrop, Windows 11 22H2's (`dwmapi.h` of an older SDK
  * names neither): the attribute and its Mica. */
 #define HERO_UI_WIN_BACKDROP_TYPE 38
@@ -3704,12 +3695,17 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 
 /* -- THE KINDS AND ACTS THIS ARM DRAWS -------------------------------------
  *
- * Every kind and act of `hero_ui.h` but one: a context menu belongs to a
- * widget the person right-clicks, and a web view's menu is WebView2's own,
+ * The kinds of `hero_ui.h` up to the context menu, the last this arm draws,
+ * so a kind the header gains later is told `hero_ui_elsewhere`'s words
+ * until this arm draws it, never `INVALID` by a `create` that knows none of
+ * it; and no context menu on a web view, whose menu is WebView2's own,
  * which this arm does not replace. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
+    if (kind > HERO_UI_CONTEXT_MENU) {
+        return false;
+    }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
 }
 
