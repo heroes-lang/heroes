@@ -149,12 +149,19 @@ function parse(text: str) -> Template?
 #
 # - `text`: the template, read as HTML.
 #
+# Branches of `if` and a loop's body that end in different places of one
+# tag, between its attributes, are read on apart until the text after them
+# brings them to one place, so an attribute is written only where a value is
+# true: `<option{{ if .chosen }} selected{{ end }}>`.
+#
 # Fails `invalid` as `parse` does, and where the HTML around an action leaves
 # its place unknown: branches of `if` or a loop's body ending in different
-# places, a value in an ambiguous part of a URL, a `/` in a script that may
-# begin a division or a regular expression, the text ending elsewhere than in
-# text, a quote or `=` in an unquoted attribute value. Every template of the
-# set begins and ends in text when run by its name. See also `parse`.
+# places other than those, or reaching a value, an `include` or the
+# template's end before they meet; a value in an ambiguous part of a URL, a
+# `/` in a script that may begin a division or a regular expression, the
+# text ending elsewhere than in text, a quote or `=` in an unquoted attribute
+# value. Every template of the set begins and ends in text when run by its
+# name. See also `parse`.
 function parse_html(text: str) -> Template?
     return parse_with(text, html_options())
 

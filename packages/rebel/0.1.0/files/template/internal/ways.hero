@@ -1,0 +1,193 @@
+# Where the ways through a template stand when they reach one of its steps:
+# in one context, as they must wherever a value lands, an `include` runs or
+# the template ends; or in several, each inside one tag between its
+# attributes, as a boolean attribute written only where a value is true
+# leaves them (`<option{{ if . }} selected{{ end }}>`, defect 2657). Ways
+# that stand apart are each read on through the text after them, as a
+# browser reads that way, until they stand in one place again; a value, an
+# `include` or the template's end reached while they stand apart is refused,
+# since each way would want the value escaped as its own place escapes it.
+
+use template/internal/context
+use template/internal/lex
+use template/internal/scan_html
+
+# The most ways that stand apart at one step. A tag with `n` attributes each
+# written in an `if` of its own needs `n + 1`; past it a template is refused,
+# which is also how a loop's body that ends inside an attribute's name, and
+# so names a longer attribute at each turn, is refused.
+constant MOST: i64
+    64
+
+# What a text read from every way writes, and where it leaves the ways.
+record Read
+    # The text rewritten, the same from every way.
+    text: str
+    # The places the ways stand in after it, each once.
+    after: [context.Context]
+
+# How a value is escaped where the ways stand, and where they stand after it.
+record Chosen
+    # The escaper, one of `program`'s, the same for every way.
+    escaper: i64
+    # The delimiter of the value it lands in, one of `program`'s.
+    delim: i64
+    # The places the ways stand in after the value, each once.
+    after: [context.Context]
+
+# The two places `a` and `b` named for a message.
+function apart(a: context.Context lent, b: context.Context lent) -> str
+    return f"{context.describe(a)}, and {context.describe(b)}"
+
+# `ways` with the way `c` joined to them: unchanged where `c` is one of
+# them; one of them moved to the place it and `c` meet in, where
+# `context.meet` joins them; `c` beside them where it and every one of them
+# stand inside a tag between its attributes. Fails `invalid` where none of
+# these holds, the message `saying` followed by the two places that stand
+# apart, and where more than `MOST` ways would stand apart.
+function joined(ways: [context.Context], c: context.Context, saying: str) -> [context.Context]?
+    for w in ways
+        if w == c
+            return ok(ways)
+
+    for i in range(from: 0, to: ways.len())
+        match context.meet(a: ways[i], b: c)
+            .err _ => _ = 0
+            .ok met =>
+                out: [context.Context] @= []
+
+                for k in range(from: 0, to: ways.len())
+                    if k == i
+                        out @ out.push(met)
+                    else if ways[k] != met
+                        out @ out.push(ways[k])
+
+                return ok(out)
+
+    for w in ways
+        if !context.in_tag(w.state) || !context.in_tag(c.state)
+            return fail(code: "invalid", msg: f"{saying}: {apart(a: w, b: c)}")
+
+    if ways.len() >= MOST
+        return fail(
+            code: "invalid",
+            msg: f"more than {MOST} ways through the template stand apart here, each in another place of one tag"
+        )
+    return ok(ways.push(c))
+
+# `text`, which begins at `place`, read from every way in `ways`: what it
+# writes and where it leaves them. Fails as `scan_html.scan` fails, and
+# `invalid` where two ways write the text differently or leave it in places
+# that do not join.
+function read(ways: [context.Context], text: str, place: lex.Place) -> Read?
+    first = scan_html.scan(text, start: ways[0], place: place)?
+    after: [context.Context] @= [first.ctx]
+
+    for i in range(from: 1, to: ways.len())
+        got = scan_html.scan(text, start: ways[i], place: place)?
+
+        if got.text != first.text
+            return fail(
+                code: "invalid",
+                msg: lex.located(place, f"the ways through the template that reach this text read it differently: {apart(a: ways[0], b: ways[i])}")
+            )
+
+        match joined(after, c: got.ctx, saying: "the ways through the template that reach this text leave it in different places of the page")
+            .err e   => return fail(code: e.code, msg: lex.located(place, e.msg))
+            .ok both => after @ both
+
+    return ok(Read(text: first.text, after: after))
+
+# How a value is escaped where `ways` stand, and where they stand after it.
+# Fails as `context.escaper_for` fails where one way stands there, or every
+# way refuses the value in the same words; and `invalid` where two ways would
+# escape it differently, or one would take it and another refuse it.
+function chosen(ways: [context.Context]) -> Chosen?
+    if ways.len() == 1
+        one = context.escaper_for(ways[0])?
+        return ok(Chosen(escaper: one.escaper, delim: one.delim, after: [one.after]))
+    saying = "a value would stand where the ways through the template before it are in different places of the page"
+    taken: bool @= false
+    escaper: i64 @= 0
+    delim: i64 @= 0
+    refused: str @= ""
+    after: [context.Context] @= []
+
+    for i in range(from: 0, to: ways.len())
+        match context.escaper_for(ways[i])
+            .err e =>
+                if i > 0 && (taken || refused != e.msg)
+                    return fail(code: "invalid", msg: f"{saying}: {apart(a: ways[0], b: ways[i])}")
+                refused @ e.msg
+            .ok choice =>
+                if i > 0 && (!taken || choice.escaper != escaper || choice.delim != delim)
+                    return fail(code: "invalid", msg: f"{saying}: {apart(a: ways[0], b: ways[i])}")
+                taken @ true
+                escaper @ choice.escaper
+                delim @ choice.delim
+                after @ joined(after, c: choice.after, saying: saying)?
+
+    if !taken
+        return fail(code: "invalid", msg: refused)
+    return ok(Chosen(escaper: escaper, delim: delim, after: after))
+
+## Tests
+
+# The place of `text` read as HTML from text.
+function at(text: str) -> context.Context
+    return scan_html.scan(text, start: context.initial(), place: lex.Place(line: 1, column: 1)).must().ctx
+
+test "joined: one way already there, two that meet, two in one tag beside each other, and a tag beside text refused"
+    tag = at("<p ")
+    named = at("<p title")
+    assert joined([tag], c: tag, saying: "s").must() == [tag]
+    assert joined([tag], c: named, saying: "s").must() == [tag, named]
+    assert joined([tag, named], c: named, saying: "s").must() == [tag, named]
+    url = at("<a href=\"")
+    path = at("<a href=\"/x")
+    assert joined([url], c: path, saying: "s").must()[0].url_part == context.URL_UNKNOWN
+
+    match joined([tag], c: context.initial(), saying: "s")
+        .ok _  => assert false
+        .err e => assert e.msg == "s: a tag, between its attributes, and text"
+
+    match joined([tag, named], c: at("<p title=\""), saying: "s")
+        .ok _  => assert false
+        .err e => assert e.msg == "s: a tag, between its attributes, and an attribute's value"
+
+test "joined: past the most ways that stand apart, refused"
+    ways: [context.Context] @= []
+
+    for i in range(from: 0, to: MOST)
+        ways @ joined(ways, c: at(f"<p a{i}"), saying: "s").must()
+
+    assert ways.len() == MOST
+
+    match joined(ways, c: at("<p b"), saying: "s")
+        .ok _  => assert false
+        .err e => assert e.msg == "more than 64 ways through the template stand apart here, each in another place of one tag"
+
+test "read: two ways of one tag brought to one place by `>`, by a new attribute's name, and kept apart by white space"
+    ways = [at("<option"), at("<option selected")]
+    shut = read(ways, text: ">a", place: lex.Place(line: 1, column: 1)).must()
+    assert shut.text == ">a" && shut.after == [at("<option>a")]
+    next = read([at("<input "), at("<input checked ")], text: "type", place: lex.Place(line: 1, column: 1)).must()
+    assert next.after == [at("<input type")]
+    assert read([at("<input"), at("<input checked")], text: " ", place: lex.Place(line: 1, column: 1)).must().after.len() == 2
+
+test "read: two ways that leave a text in different elements, refused"
+    match read([at("<script"), at("<scr")], text: ">", place: lex.Place(line: 2, column: 5))
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2, column 5: the ways through the template that reach this text leave it in different places of the page: a script, and text"
+
+test "chosen: a value as an attribute's name from two ways, and refused where one way would name it and another value it"
+    both = chosen([at("<input "), at("<input checked ")]).must()
+    assert both.escaper == context.escaper_for(at("<input ")).must().escaper && both.after.len() == 1
+
+    match chosen([at("<input "), at("<input checked")])
+        .ok _  => assert false
+        .err e => assert e.msg == "a value would stand where the ways through the template before it are in different places of the page: a tag, between its attributes, and an attribute's name"
+
+    match chosen([at("<a title=\""), at("<a href=\"")])
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"

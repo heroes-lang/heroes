@@ -1,11 +1,12 @@
 # The HTML mode's reading of a compiled set: each template read from the
 # context its run begins in, step by step on a list of the steps left to read,
-# the contexts joined where two ways through it meet, until no context moves;
-# then each text step rewritten as HTML reads it and each value given the
-# escaper of the place it lands in. A template an `include` runs in another
-# context is read again in that context, as a part of its own, so that its
-# values are escaped where they land there. Every template run by its name
-# begins and ends in text.
+# the ways through it joined where they meet, into one context or into several
+# that stand apart inside one tag (`template/internal/ways`), until no step's
+# places move; then each text step rewritten as HTML reads it and each value
+# given the escaper of the place it lands in. A template an `include` runs in
+# another context is read again in that context, as a part of its own, so
+# that its values are escaped where they land there. Every template run by
+# its name begins and ends in text.
 
 use json
 use template/internal/assemble
@@ -13,7 +14,7 @@ use template/internal/context
 use template/internal/lex
 use template/internal/program
 use template/internal/run
-use template/internal/scan_html
+use template/internal/ways
 
 # The deepest the reading follows `include` into a template not read yet in
 # its context.
@@ -65,17 +66,21 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
         )
     pass.reading[key] @ true
     steps = part.steps
-    contexts: [context.Context] @= []
+
+    # The places the ways that reach each step stand in, each once: one
+    # place, or several inside one tag (`template/internal/ways`).
+    contexts: [[context.Context]] @= []
     known: [bool] @= []
 
     for _ in steps
-        contexts @ contexts.push(start)
+        contexts @ contexts.push([start])
         known @ known.push(false)
 
     known[0] @ true
     work: [i64] @= [0]
     end: context.Context @= start
     ended: bool @= false
+    meeting = "two ways through the template meet here in different places of the page"
 
     while work.len() > 0
         i = work[work.len() - 1]
@@ -83,16 +88,16 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
         c = contexts[i]
         s = steps[i]
         targets: [i64] @= []
-        reached: [context.Context] @= []
+        reached: [[context.Context]] @= []
 
         if s.kind == program.TEXT
-            match scan_html.scan(s.text, start: c, place: lex.Place(line: s.line, column: s.column))
+            match ways.read(c, text: s.text, place: lex.Place(line: s.line, column: s.column))
                 .err e => return fail(code: e.code, msg: lex.of_text(source: part.source, msg: e.msg))
                 .ok got =>
                     targets @ targets.push(i + 1)
-                    reached @ reached.push(got.ctx)
+                    reached @ reached.push(got.after)
         else if s.kind == program.OUTPUT
-            match context.escaper_for(c)
+            match ways.chosen(c)
                 .err e => return fail(code: e.code, msg: at_step(source: part.source, step: s, msg: e.msg))
                 .ok choice =>
                     targets @ targets.push(i + 1)
@@ -105,19 +110,29 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
             reached @ reached.push(c)
             targets @ targets.push(s.target)
             reached @ reached.push(c)
+        else if c.len() > 1 && s.kind == program.INCLUDE
+            return fail(
+                code: "invalid",
+                msg: at_step(source: part.source, step: s, msg: f"an `include` would run where the ways through the template before it are in different places of the page: {ways.apart(a: c[0], b: c[1])}")
+            )
+        else if c.len() > 1
+            return fail(
+                code: "invalid",
+                msg: lex.of_text(source: part.source, msg: f"at the end of the template {json.quote(name)}, {meeting}: {ways.apart(a: c[0], b: c[1])}")
+            )
         else if s.kind == program.INCLUDE
-            after = read_part(@pass, s.callee, start: c, depth: depth + 1)?
+            after = read_part(@pass, s.callee, start: c[0], depth: depth + 1)?
             targets @ targets.push(i + 1)
-            reached @ reached.push(after)
+            reached @ reached.push([after])
         else if ended
-            match context.meet(a: end, b: c)
+            match context.meet(a: end, b: c[0])
                 .err e => return fail(
                     code: e.code,
                     msg: lex.of_text(source: part.source, msg: f"at the end of the template {json.quote(name)}, {e.msg}")
                 )
                 .ok joined => end @ joined
         else
-            end @ c
+            end @ c[0]
             ended @ true
 
         for k in range(from: 0, to: targets.len())
@@ -128,12 +143,19 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
                 known[j] @ true
                 work @ work.push(j)
             else
-                match context.meet(a: contexts[j], b: reached[k])
-                    .err e => return fail(code: e.code, msg: at_step(source: part.source, step: steps[j], msg: e.msg))
-                    .ok joined =>
-                        if joined != contexts[j]
-                            contexts[j] @ joined
-                            work @ work.push(j)
+                merged: [context.Context] @= contexts[j]
+
+                for way in reached[k]
+                    match ways.joined(merged, c: way, saying: meeting)
+                        .err e => return fail(
+                            code: e.code,
+                            msg: at_step(source: part.source, step: steps[j], msg: e.msg)
+                        )
+                        .ok joined => merged @ joined
+
+                if merged != contexts[j]
+                    contexts[j] @ merged
+                    work @ work.push(j)
 
     written: [program.Step] @= []
 
@@ -144,14 +166,14 @@ function read_part(@pass: Pass, name: str, start: context.Context, depth: i64) -
             c = contexts[i]
 
             if s.kind == program.TEXT
-                got = scan_html.scan(s.text, start: c, place: lex.Place(line: s.line, column: s.column))?
+                got = ways.read(c, text: s.text, place: lex.Place(line: s.line, column: s.column))?
                 s.text @ got.text
             else if s.kind == program.OUTPUT
-                choice = context.escaper_for(c)?
+                choice = ways.chosen(c)?
                 s.escaper @ choice.escaper
                 s.delim @ choice.delim
             else if s.kind == program.INCLUDE
-                s.callee @ key_for(s.callee, start: c)
+                s.callee @ key_for(s.callee, start: c[0])
         written @ written.push(s)
 
     pass.index[key] @ pass.parts.len()
@@ -685,6 +707,97 @@ test "html: branches that meet in one place, and a loop's body in an attribute, 
 
     for written in keys(cases)
         assert rendered(written, value) == cases[written].must()
+
+# Go 1.27.4's html/template, each template executed with `true` and with
+# `false`, observed 2026-11-22; the first five are defect 2657's.
+test "html: an attribute written only where a value is true, the five shapes and those beside, else, a value, a comment and two in a row, as Go's html/template writes it"
+    cases: {str: [str]} = {
+        "<select><option{{ if . }} selected{{ end }}>a</option></select>": ["<select><option selected>a</option></select>", "<select><option>a</option></select>"]
+        "<select><option {{ if . }}selected{{ end }}>a</option></select>": ["<select><option selected>a</option></select>", "<select><option >a</option></select>"]
+        "<input type=\"checkbox\"{{ if . }} checked{{ end }}>": ["<input type=\"checkbox\" checked>", "<input type=\"checkbox\">"]
+        "<input type=\"checkbox\" {{ if . }}checked{{ end }}>": ["<input type=\"checkbox\" checked>", "<input type=\"checkbox\" >"]
+        "<input {{ if . }}checked {{ end }}type=\"checkbox\">": ["<input checked type=\"checkbox\">", "<input type=\"checkbox\">"]
+        "<option {{ if . }}selected{{ else }}data-x{{ end }}>": ["<option selected>", "<option data-x>"]
+        "<option {{ if . }}selected{{ else }}class=\"b\"{{ end }}>": ["<option selected>", "<option class=\"b\">"]
+        "<option{{ if . }} selected{{ else }} class=\"b\"{{ end }}>": ["<option selected>", "<option class=\"b\">"]
+        "<option{{ if . }} value=\"{{ . }}\"{{ end }}>": ["<option value=\"true\">", "<option>"]
+        "<a{{ if . }} href=\"{{ . }}\"{{ end }}>x</a>": ["<a href=\"true\">x</a>", "<a>x</a>"]
+        "<input{{ if . }} checked{{ end }}{{ if . }} disabled{{ end }}>": ["<input checked disabled>", "<input>"]
+        "<input {{ if . }}checked{{ end }} {{ if . }}disabled{{ end }}>": ["<input checked disabled>", "<input  >"]
+        "<input{{ if . }} checked{{ end }}/>": ["<input checked/>", "<input/>"]
+        "<input {{ if . }}checked{{ end }} type=\"checkbox\">": ["<input checked type=\"checkbox\">", "<input  type=\"checkbox\">"]
+        "<input {{/* a note */}}{{ if . }}checked{{ end }}>": ["<input checked>", "<input >"]
+        "<input {{ if . }}checked{{/* a note */}}{{ end }}>": ["<input checked>", "<input >"]
+        "<input{{ if . }} checked{{ end }}{{/* a note */}}>": ["<input checked>", "<input>"]
+        "{{ if . }}<!-- c -->{{ end }}<b>x</b>": ["<b>x</b>", "<b>x</b>"]
+        "<option {{ if . }}selected{{ end }}=x>": ["<option selected=x>", "<option =x>"]
+        "<option{{ if . }} selected{{ end }}x>": ["<option selectedx>", "<optionx>"]
+        "<option{{ if . }} selected{{ end }} {{ . }}>": ["<option selected true>", "<option false>"]
+        "<input {{ if . }}checked {{ end }}{{ . }}>": ["<input checked true>", "<input false>"]
+        "<input {{ if . }}checked{{ end }}>{{ . }}": ["<input checked>true", "<input >false"]
+        "<script{{ if . }} async{{ end }}>var x = {{ . }};</script>": ["<script async>var x =  true ;</script>", "<script>var x =  false ;</script>"]
+        "<input {{ if . }}checked{{ else }}{{ end }}>": ["<input checked>", "<input >"]
+        "<input {{ if . }}{{ else }}checked{{ end }}>": ["<input >", "<input checked>"]
+        "<input {{ if . }}checked=\"checked\"{{ end }}>": ["<input checked=\"checked\">", "<input >"]
+        "<input {{ if . }}a{{ end }}{{ if . }}b{{ end }}>": ["<input ab>", "<input >"]
+        "<input {{ if . }}a{{ end }} b{{ if . }}c{{ end }}>": ["<input a bc>", "<input  b>"]
+        "<option{{ if . }}  selected  {{ end }}>": ["<option  selected  >", "<option>"]
+        "<input type=\"checkbox\"{{ if . }}\tchecked{{ end }}>": ["<input type=\"checkbox\"\tchecked>", "<input type=\"checkbox\">"]
+        "<opt{{ if . }}ion{{ end }}>": ["<option>", "<opt>"]
+    }
+
+    for written in keys(cases)
+        assert rendered(written, .boolean(v: true)) == cases[written].must()[0]
+        assert rendered(written, .boolean(v: false)) == cases[written].must()[1]
+
+# Go 1.27.4's html/template, each template executed with `[true, false]` and
+# with `[]`, observed 2026-11-22, its `range` written `for` here.
+test "html: an attribute written in a loop's body inside a tag, its else, and an option marked in a loop, as Go's html/template writes it"
+    cases: {str: [str]} = {
+        "<input {{ for $x in . }}checked {{ end }}>": ["<input checked checked >", "<input >"]
+        "<input{{ for $x in . }} checked{{ end }}>": ["<input checked checked>", "<input>"]
+        "<select>{{ for $x in . }}<option{{ if $x }} selected{{ end }}>x</option>{{ end }}</select>": ["<select><option selected>x</option><option>x</option></select>", "<select></select>"]
+        "<input {{ for $x in . }} checked{{ else }} disabled{{ end }}>": ["<input  checked checked>", "<input  disabled>"]
+        "<input{{ for $x in . }} c{{ end }}x>": ["<input c cx>", "<inputx>"]
+    }
+
+    for written in keys(cases)
+        assert rendered(written, json.parse("[true, false]").must()) == cases[written].must()[0]
+        assert rendered(written, json.parse("[]").must()) == cases[written].must()[1]
+
+# Each refused for every value. Go 1.27.4's html/template, observed
+# 2026-11-22, refuses the last seven; it renders the first nine, writing a
+# value into a tag's name (`<option="false">`, `<optionfalse>`), into an
+# attribute's name (`<option ="false">`, `<input checkedtrue>`,
+# `<input data-true data-false>`, `<a / ="…">`), a name longer at each turn
+# (`<input checkedchecked>`), a value escaped as text inside a script
+# (`<script>true`), and one escaped for a script where a way stands in none
+# (`<scriptx>[]</script>`). The `include` was not asked of Go, whose
+# `template` action is another.
+test "html: ways apart inside a tag refused where a value, an `include` or the end meets them, and a value after a `=` that begins a name"
+    refused = [
+        "<option{{ if . }} selected{{ end }}=\"{{ . }}\">"
+        "<option {{ if . }}selected{{ end }}=\"{{ . }}\">"
+        "<input {{ if . }}checked{{ end }}{{ . }}>"
+        "<option{{ if . }} selected{{ end }}{{ . }}>"
+        "<input {{ for $x in . }}checked{{ end }}>"
+        "<input{{ for $x in . }} data-{{ $x }}{{ end }}>"
+        "<scr{{ if . }}ipt{{ end }}>{{ . }}"
+        "<a / =\"{{ . }}\">"
+        "<script{{ if . }} async{{ end }}x>{{ . }}</script>"
+        "<input{{ if . }} checked{{ end }}{{ include \"x\" . }}>{{ define \"x\" }}{{ end }}"
+        "<a {{ if . }}title{{ else }}href{{ end }}=\"{{ . }}\">"
+        "<a {{ if . }}on{{ end }}click=\"{{ . }}\">"
+        "<input {{ if . }}style{{ end }}=\"{{ . }}\">"
+        "{{ if . }}<b{{ end }}>"
+        "<input {{ if . }}checked{{ end }}"
+        "<input {{ if . }}checked=checked{{ end }}>"
+        "<a =\"{{ . }}\">"
+    ]
+
+    for written in refused
+        assert rendered(written, .boolean(v: true)) == "ERR invalid"
+        assert rendered(written, json.parse("[true]").must()) == "ERR invalid"
 
 test "html: templates refused: branches in different places, a URL part unknown, a template ending inside a tag, and unquoted values holding a quote or =, as Go's html/template writes it"
     value: json.Value = .text(v: "x")

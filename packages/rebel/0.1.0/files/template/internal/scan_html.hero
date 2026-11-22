@@ -307,6 +307,15 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
                 c.state @ context.ATTR_NAME
                 c.attr @ names.ATTR_PLAIN
                 c.word @ ""
+
+                # A `=` where a name begins is the name's first character,
+                # as the HTML standard's before-attribute-name state reads
+                # it, so `<a ="x">` names an attribute `="x"` and gives no
+                # value.
+                if b == '='
+                    out @ out.push("=")
+                    c.word @ "="
+                    at @ at + 1
         else
             # The content of a script or a style sheet, to its closing tag.
             script = context.is_js(state)
@@ -361,6 +370,16 @@ test "scan: an unquoted value holding a quote or an equals sign, and a declarati
     assert read("<a title=x\"y>") == "ERR line 1, column 11: `\"` in an attribute value with no quotes around it: write the value between quotes"
     assert read("<a\nhref=/x?q=1>") == "ERR line 2, column 10: `=` in an attribute value with no quotes around it: write the value between quotes"
     assert read("<!DOCTYPE html") == "ERR line 1, column 1: a declaration `<!...>` is written whole in the template, its `>` included"
+
+# The HTML standard's before-attribute-name state takes a `=` as a name's
+# first character, and its attribute-name state ends a name at a `=`.
+test "scan: a `=` where an attribute's name begins, after white space, after a quoted value and twice"
+    start = lex.Place(line: 1, column: 1)
+    named = scan("<a =\"", start: context.initial(), place: start).must().ctx
+    assert named.state == context.ATTR_NAME && named.word == "=\""
+    assert scan("<a title=\"x\"=", start: context.initial(), place: start).must().ctx.word == "="
+    assert scan("<a ==", start: context.initial(), place: start).must().ctx.state == context.BEFORE_VALUE
+    assert read("<a =\"x\" title=\"y\">") == "<a =\"x\" title=\"y\">"
 
 test "scan: the context a tag, an attribute and a value leave the page in"
     tag = scan("<a href=\"/x?", start: context.initial(), place: lex.Place(line: 1, column: 1)).must().ctx
