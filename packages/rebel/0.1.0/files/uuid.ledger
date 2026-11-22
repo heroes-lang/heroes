@@ -6,11 +6,11 @@ capability uuid/value  a UUID as a value: its 128 bits, compared and ordered
   note    two halves of 64 bits, every pair a UUID; `==` is the built-in's, and `compare` orders by bytes as Python's `<` does. Python's `is_safe` reports how `uuid1` was made, which is not made here
 
 capability uuid/v4  a new random UUID, version 4
-  heroes  uuid.new_v4
+  heroes  uuid.new_v4, uuid.with_version
   go      -
   rust    -
   python  uuid.uuid4
-  note    its 122 bits come from `random.secure_below`, the system's generator for keys, as RFC 9562 asks; Python's `uuid4` reads `os.urandom` alike
+  note    its 122 bits come from `random.secure_below`, the system's generator for keys, as RFC 9562 asks; Python's `uuid4` reads `os.urandom` alike. Bits of the caller's, a seeded generator's for identifiers that repeat from one run to the next, are marked version 4 by `with_version`, as Python's `UUID(bytes=..., version=4)` marks them
 
 capability uuid/v7  a new UUID ordered by time, version 7
   heroes  uuid.new_v7, uuid.new_v7_at
@@ -94,10 +94,11 @@ capability uuid/time-based  UUIDs of versions 1 and 6, made from a time, a clock
   python  uuid.uuid1, uuid.uuid6, uuid.getnode
 
 capability uuid/v8  a UUID of version 8, its bits the caller's
-  heroes  pending
+  heroes  uuid.with_version
   go      -
   rust    -
   python  uuid.uuid8
+  note    Python's `uuid8(a, b, c)` takes the three blocks RFC 9562 5.8 leaves to the program as numbers of 48, 12 and 62 bits, keeping each one's low bits, and draws the blocks not given; here the program writes its 122 bits as 16 bytes, `from_bytes` reads them and `with_version` sets the version and the variant over them, as Python's `UUID(bytes=..., version=8)` does, which `uuid8` answers alike for the same bits
 
 dropped modules  names Python's module holds because it imports them, which are not its interface
   go      -
