@@ -1,0 +1,126 @@
+# Gauss-Jordan elimination over `big`'s fractions, with no rounding at all:
+# each column's first entry that is not zero, from the current row down,
+# taken as its pivot, its row divided by it, and the column cleared above
+# and below, so the result is the reduced row echelon form, its rank the
+# pivots found and the determinant the pivots' product with the swaps'
+# sign. A matrix is held row by row in one list; the face checks the shapes
+# before it calls.
+
+use big
+
+# What an elimination leaves: the reduced matrix, its pivots' columns, and
+# the determinant of its square part where one is asked.
+record Reduced
+    # The reduced row echelon form, row by row.
+    values: [big.Fraction]
+    # The column of each pivot, increasing; their count is the rank.
+    pivots: [i64]
+    # The product of the pivots, its sign changed at every swap of two rows:
+    # the determinant where the matrix is square and every column held one.
+    product: big.Fraction
+
+# Zero, as a fraction.
+function zero() -> big.Fraction
+    return big.fraction(numerator: big.from_int(0), denominator: big.from_int(1))
+
+# One, as a fraction.
+function one() -> big.Fraction
+    return big.fraction(numerator: big.from_int(1), denominator: big.from_int(1))
+
+# Whether `f` is zero.
+#
+# - `f`: the fraction.
+function is_zero(f: big.Fraction) -> bool
+    return big.compare_fraction(a: f, b: zero()) == 0
+
+# `a`, `rows` by `columns`, reduced by Gauss-Jordan elimination over its
+# first `limit` columns, the others carried along: an augmented matrix's
+# right-hand side.
+#
+# - `a`: the matrix, row by row.
+# - `rows`: its rows.
+# - `columns`: its columns.
+# - `limit`: how many columns, from the first, a pivot may be taken in.
+function reduced(a: [big.Fraction], rows: i64, columns: i64, limit: i64) -> Reduced
+    m: [big.Fraction] @= a
+    pivots: [i64] @= []
+    product: big.Fraction @= one()
+    row: i64 @= 0
+
+    for c in range(from: 0, to: limit)
+        if row >= rows
+            break
+        found: i64 @= -1
+
+        for r in range(from: row, to: rows)
+            if found < 0 && !is_zero(m[r * columns + c])
+                found @ r
+
+        if found < 0
+            product @ zero()
+            continue
+
+        if found != row
+            for k in range(from: 0, to: columns)
+                kept = m[row * columns + k]
+                m[row * columns + k] @ m[found * columns + k]
+                m[found * columns + k] @ kept
+
+            product @ big.subtract_fraction(a: zero(), b: product)
+        pivot = m[row * columns + c]
+        product @ big.multiply_fraction(a: product, b: pivot)
+
+        for k in range(from: 0, to: columns)
+            m[row * columns + k] @ big.divide_fraction(n: m[row * columns + k], by: pivot)
+
+        for r in range(from: 0, to: rows)
+            factor = m[r * columns + c]
+
+            if r != row && !is_zero(factor)
+                for k in range(from: 0, to: columns)
+                    m[r * columns + k] @ big.subtract_fraction(
+                        a: m[r * columns + k],
+                        b: big.multiply_fraction(a: factor, b: m[row * columns + k])
+                    )
+
+        pivots @ pivots.push(c)
+        row @ row + 1
+
+    if pivots.len() < limit
+        product @ zero()
+    return Reduced(values: m, pivots: pivots, product: product)
+
+## Tests
+
+# The integers `xs` as fractions.
+#
+# - `xs`: the integers.
+function whole(xs: [i64]) -> [big.Fraction]
+    out: [big.Fraction] @= []
+
+    for x in xs
+        out @ out.push(big.fraction(numerator: big.from_int(x), denominator: big.from_int(1)))
+
+    return out
+
+# The fractions `values` as text, for a test to compare.
+#
+# - `values`: the fractions.
+function texts_of(values: [big.Fraction]) -> [str]
+    out: [str] @= []
+
+    for f in values
+        out @ out.push(big.format_fraction(f))
+
+    return out
+
+# Python's `fractions` answered these on 2026-11-22.
+test "reduced: a determinant of -3, a rank of 2 with a zero row, a pivot found below a zero, and a column that holds none"
+    full = reduced(whole([1, 2, 3, 4, 5, 6, 7, 8, 10]), rows: 3, columns: 3, limit: 3)
+    assert big.format_fraction(full.product) == "-3" && full.pivots == [0, 1, 2]
+    two = reduced(whole([1, 2, 3, 2, 4, 6, 1, 1, 1]), rows: 3, columns: 3, limit: 3)
+    assert two.pivots == [0, 1] && is_zero(two.product)
+    assert texts_of(two.values) == ["1", "0", "-1", "0", "1", "2", "0", "0", "0"]
+    swapped = reduced(whole([0, 1, 1, 0]), rows: 2, columns: 2, limit: 2)
+    assert big.format_fraction(swapped.product) == "-1"
+    assert reduced(whole([0, 1, 0, 1]), rows: 2, columns: 2, limit: 2).pivots == [1]

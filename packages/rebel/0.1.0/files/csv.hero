@@ -427,7 +427,7 @@ test "at_end: an empty stream"
     io.close(@p.reader).must()
 
 # The line a row began on, for a message of the program's own.
-test "line_of: the second row began on line 3"
+test "line_of: the second row began on line 2, across two lines"
     p @= io.pipe().must()
     io.write_text(p.writer, "a\n\"b\nc\"\nd\n").must()
     io.close(@p.writer).must()

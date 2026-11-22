@@ -1,0 +1,14 @@
+# Reaches Rebel's `java_properties`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It reads a small settings file,
+# changes one value and writes the file back.
+
+use <rebel>/java_properties
+
+function main()
+    match java_properties.parse("# the album\ntitle = Low\nyear: 1977\n")
+        .err e => print(e.msg)
+        .ok found =>
+            entries @= found
+            java_properties.set_value(@entries, key: "title", value: "Heroes")
+            print(java_properties.value_of(entries, key: "year").default("?"))
+            print(java_properties.format(entries).default("?"))

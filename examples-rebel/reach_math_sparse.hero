@@ -1,0 +1,16 @@
+# Reaches Rebel's `math/sparse`, so that `heroes test` on this file runs the
+# tests of the package's modules (spec § 12). It prints the PageRank of three
+# pages, two of which link to the third.
+
+use <rebel>/math/sparse
+
+function main()
+    links = sparse.from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [sparse.Triplet(row: 0, column: 2, value: 1.0), sparse.Triplet(row: 1, column: 2, value: 1.0)]
+    ).must()
+    ranks = sparse.pagerank(links, damping: 0.85, tolerance: 0.000001, most_iterations: 100).must()
+
+    for rank in ranks.vector
+        print(rank)

@@ -353,6 +353,7 @@ function dial_for_test(url: str) -> str
 
 test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then a server that refuses the login"
     l @= net.listen("127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.start_text(body: dial_for_test, arg: f"nats://bob:pw@127.0.0.1:{l.address.port}").must()
     c @= net.accept(l, deadline_ms: 5000).must()
     io.write_text(c.stream, text: "INFO {\"server_name\":\"fake\",\"max_payload\":2048,\"headers\":true}\r\n").must()
@@ -376,6 +377,7 @@ test "dial: INFO, CONNECT with the URL's user and password, PING and PONG; then 
 
 test "dial: a server that begins with something other than INFO"
     l @= net.listen("127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.start_text(body: dial_for_test, arg: f"nats://127.0.0.1:{l.address.port}").must()
     c @= net.accept(l, deadline_ms: 5000).must()
     io.write_text(c.stream, text: "PONG\r\n").must()

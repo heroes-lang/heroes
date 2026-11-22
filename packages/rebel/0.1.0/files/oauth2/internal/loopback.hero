@@ -344,6 +344,8 @@ function serve(arg: str) -> str
     serving: bool @= true
 
     while serving
+        net.set_accept_deadline(l, deadline_ms: 20_000).must()
+
         match net.accept(l, deadline_ms: 20_000)
             .err _ => serving @ false
             .ok c =>

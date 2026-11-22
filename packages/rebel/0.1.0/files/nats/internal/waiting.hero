@@ -368,6 +368,7 @@ test "a connection the server ends, with no reconnection allowed, closes the cli
 
 test "a lost connection made again: a fake server closes the first, the client connects again, subscribes anew and reads"
     l @= net.listen("127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.start_text(body: reconnecting_client, arg: f"nats://127.0.0.1:{l.address.port}").must()
     info = "INFO {\"server_id\":\"F\",\"max_payload\":1024,\"headers\":true}\r\n"
     first @= net.accept(l, deadline_ms: 5000).must()

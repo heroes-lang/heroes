@@ -1,0 +1,216 @@
+# Java's properties as a layer of settings: each key cut at its dots into a
+# path of tables, as Spring Boot binds `server.port` to the setting `port`
+# of the table `server`, every value a text; and a table of settings written
+# back as dotted keys, so that `config` reads `.properties` files beside
+# JSON, TOML, YAML and INI. A key that is both a value and a table, and a
+# key a dot cannot cut into names, are refused, since no table holds them.
+
+use config/internal/keyed
+use java_properties
+use json
+
+# The code of a text whose keys hold no table, and of a table that has no
+# form as properties.
+constant INVALID: str
+    "invalid"
+
+# The parts of `key` between its dots.
+#
+# - `key`: a properties key.
+function parts_of(key: str) -> [str]
+    out: [str] @= []
+    from: i64 @= 0
+
+    for at in range(from: 0, to: key.len())
+        if key[at] == '.'
+            out @ out.push(key.slice(from: from, to: at))
+            from @ at + 1
+
+    return out.push(key.slice(from: from, to: key.len()))
+
+# `table` with the text `value` placed at `parts`, from the part at `depth`
+# on, as a table of tables.
+#
+# - `table`: the table the part at `depth` names a member of.
+# - `parts`: the key's parts.
+# - `depth`: the part placed now, from 0.
+# - `value`: the text.
+# - `name`: the layer's name, for a message.
+# - `key`: the key as the file wrote it, for a message.
+#
+# Fails `invalid` where a member on the way is a text another key set, or
+# the last part names a table other keys made.
+function placed(table: {str: json.Value}, parts: [str], depth: i64, value: str, name: str, key: str) -> {str: json.Value}?
+    out: {str: json.Value} @= table
+    part = parts[depth]
+    held = out[part]
+
+    if depth == parts.len() - 1
+        if !held.is_err()
+            return fail(
+                code: INVALID,
+                msg: f"{name}: the key \"{key}\" sets {keyed.named(parts)}, which other keys hold as a table"
+            )
+        out[part] @ .text(v: value)
+        return ok(out)
+    inner: {str: json.Value} @= {}
+
+    match held
+        .err _ => inner @ {}
+        .ok v =>
+            match v
+                .object o => inner @ o.members
+                .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+                    return fail(
+                        code: INVALID,
+                        msg: f"{name}: the key \"{key}\" makes {keyed.named(parts.slice(from: 0, to: depth + 1))} a table, which another key sets as a text"
+                    )
+
+    out[part] @ .object(members: placed(inner, parts: parts, depth: depth + 1, value: value, name: name, key: key)?)
+    return ok(out)
+
+# The properties text `text` as a table of settings: each key's parts a path
+# of tables, its value a text.
+#
+# - `name`: the layer's name, which a message opens with.
+# - `text`: the properties file's text.
+#
+# Fails as `java_properties.parse` fails, the message opening with `name`;
+# `invalid` where a key holds an empty part (`a..b`, `.a`, `a.`, the empty
+# key), or a key is a value where another makes it a table.
+function properties_value(name: str, text: str) -> json.Value?
+    entries = match java_properties.parse(text)
+        .ok found => found
+        .err e    => return fail(code: e.code, msg: f"{name}: {e.msg}")
+
+    root: {str: json.Value} @= {}
+
+    for e in entries
+        parts = parts_of(e.key)
+
+        for p in parts
+            if p == ""
+                return fail(
+                    code: INVALID,
+                    msg: f"{name}: the key \"{e.key}\" holds an empty part between its dots, which names no setting"
+                )
+
+        root @ placed(root, parts: parts, depth: 0, value: e.value, name: name, key: e.key)?
+
+    return ok(.object(members: root))
+
+# The text a setting that is not a table is written as: a text as it is, a
+# boolean `true` or `false`, a number and a null as JSON writes them.
+function text_of(v: json.Value) -> str?
+    return match v
+        .text t                                       => ok(t.v)
+        .boolean b                                    => ok(to_str(b.v))
+        .number _ | .null_value | .list _ | .object _ => json.format(v)
+
+# Adds the settings of `table`, below the path `above`, to `out` as dotted
+# keys, the names of each table in their order by bytes, so a file's bytes
+# are the same whatever order the settings were set in, as Java 18 and later
+# sort a file's keys.
+#
+# - `out`: the entries written so far.
+# - `table`: the members of a table.
+# - `above`: the path of the table, empty for the whole.
+#
+# Fails `invalid` where a member is a list, an empty table, or named by a
+# text holding a dot or by the empty text, none of which reads back.
+function push_entries(@out: [java_properties.Entry], table: {str: json.Value}, above: [str]) -> ()?
+    for k in sort(keys(table))
+        path = above.push(k)
+        value = table[k].must()
+
+        if k == "" || has_dot(k)
+            return fail(
+                code: INVALID,
+                msg: f"Java properties have no form for {keyed.named(path)}: a name holding a dot, or empty, reads back as other names"
+            )
+
+        match value
+            .object o =>
+                if o.members.len() == 0
+                    return fail(
+                        code: INVALID,
+                        msg: f"Java properties have no form for {keyed.named(path)}, an empty table"
+                    )
+                push_entries(@out, table: o.members, above: path)?
+            .list _ =>
+                return fail(
+                    code: INVALID,
+                    msg: f"Java properties have no form for {keyed.named(path)}, {keyed.described(value)}"
+                )
+            .null_value | .boolean _ | .number _ | .text _ =>
+                out @ out.push(java_properties.Entry(key: keyed.dotted(path), value: text_of(value)?))
+
+    return ok()
+
+# Whether `s` holds a dot.
+#
+# - `s`: a name.
+function has_dot(s: str) -> bool
+    for at in range(from: 0, to: s.len())
+        if s[at] == '.'
+            return true
+
+    return false
+
+# `v`, a table, as the text of a properties file: a dotted key for each
+# setting that is not a table, as `java_properties.format` writes them.
+#
+# - `v`: the table.
+#
+# Fails as `push_entries` fails.
+function properties_document(v: json.Value) -> str?
+    entries: [java_properties.Entry] @= []
+    push_entries(@entries, table: json.members_of(v)?, above: [])?
+    return java_properties.format(entries)
+
+## Tests
+
+test "properties_value: keys nested by their dots, a value kept as text, escapes read, and the empty file"
+    got = properties_value(
+        name: "a.properties",
+        text: "server.port = 8080\nserver.ssl.enabled=true\nname: shop\\u00e9\n"
+    ).must()
+    assert got == json.parse("{\"server\": {\"port\": \"8080\", \"ssl\": {\"enabled\": \"true\"}}, \"name\": \"shopé\"}").must()
+    assert properties_value(name: "a.properties", text: "").must() == .object(members: {})
+
+test "properties_value: a key both a value and a table either way round, an empty part, and the format's own failure, each named"
+    match properties_value(name: "a.properties", text: "a=1\na.b=2\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a.properties: the key \"a.b\" makes \"a\" a table, which another key sets as a text"
+
+    match properties_value(name: "a.properties", text: "a.b=2\na=1\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "a.properties: the key \"a\" sets \"a\", which other keys hold as a table"
+
+    for bad in ["a..b=1\n", ".a=1\n", "a.=1\n", "=1\n"]
+        match properties_value(name: "a.properties", text: bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match properties_value(name: "a.properties", text: "k=\\u12\n")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a.properties: line 1: \\u is followed by fewer than four hexadecimal digits"
+
+test "properties_document: a table written as dotted keys in the order of their names, read back, numbers and booleans as text, and what has no form refused"
+    v = json.parse(
+        "{\"name\": \"x\", \"port\": 8080, \"on\": true, \"db\": {\"host\": \"h\", \"pool\": {\"size\": 4}}}"
+    ).must()
+    text = properties_document(v).must()
+    assert text == "db.host=h\ndb.pool.size=4\nname=x\non=true\nport=8080\n"
+    back = properties_value(name: "back", text: text).must()
+    assert back == json.parse("{\"name\": \"x\", \"port\": \"8080\", \"on\": \"true\", \"db\": {\"host\": \"h\", \"pool\": {\"size\": \"4\"}}}").must()
+
+    for bad in ["{\"l\": [1]}", "{\"a\": {}}", "{\"a.b\": 1}", "{\"\": 1}", "{\"a\": {\"b.c\": 1}}"]
+        match properties_document(json.parse(bad).must())
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+test "parts_of and has_dot: none, one, two, at either end"
+    assert parts_of("a") == ["a"] && parts_of("a.b.c") == ["a", "b", "c"]
+    assert parts_of(".a") == ["", "a"] && parts_of("a.") == ["a", ""] && parts_of("") == [""]
+    assert has_dot("a.b") && !has_dot("ab") && !has_dot("")

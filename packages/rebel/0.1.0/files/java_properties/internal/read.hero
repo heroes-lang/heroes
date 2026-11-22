@@ -1,0 +1,426 @@
+# A properties file read as `java.util.Properties.load(Reader)` reads one,
+# its behaviour observed of OpenJDK 27.0.1.1 on 2026-11-22: natural lines
+# ended by `\n`, `\r` or `\r\n`; white space (space, tab, form feed) before
+# a line's first character dropped; a line of white space alone, and a line
+# whose first character is `#` or `!`, skipped; a line ending in an odd
+# count of backslashes continued by the next, the last backslash and the
+# next line's leading white space dropped, and the next line read as
+# content even where it begins with `#`. In each logical line the key ends
+# at the first `=`, `:` or white space no backslash escapes; white space
+# after it, then one `=` or `:` where none ended the key, then white space
+# again, are dropped, and the rest is the value, its trailing white space
+# kept. Key and value are then unescaped: `\t`, `\n`, `\r`, `\f`, `\uXXXX`
+# of exactly four hexadecimal digits, and a backslash before any other
+# character standing for that character. Every syntax byte is ASCII, so the
+# text is read byte by byte and a character of more than one byte passes
+# through whole.
+
+use bytes
+use unicode
+
+# The code of a text that is not a properties file.
+constant INVALID: str
+    "invalid"
+
+# A logical line: its natural lines joined, escapes still in it, and where
+# each natural line's bytes begin in it with that line's number, so a
+# failure names the line a reader sees.
+record Logical
+    # The bytes, the continuations' backslashes and leading white space
+    # dropped.
+    text: [u8]
+    # The index in `text` where each joined natural line begins, increasing.
+    starts: [i64]
+    # The number, from 1, of each joined natural line, beside `starts`.
+    numbers: [i64]
+
+# A key and its value as read, before the face's entries keep the last of
+# a key read twice.
+record Pair
+    # The key, unescaped.
+    key: str
+    # The value, unescaped.
+    value: str
+
+# Whether `c` is white space where the format reads it: space, tab or form
+# feed, never a line end.
+function is_space(c: u8) -> bool
+    return c == ' ' || c == '\t' || c == 0x0c
+
+# Whether `c` ends a natural line.
+function is_line_end(c: u8) -> bool
+    return c == '\n' || c == '\r'
+
+# The index after the line end that begins at `at`, `\r\n` read as one.
+#
+# - `data`: the bytes.
+# - `at`: where a `\n` or a `\r` stands.
+function after_line_end(data: [u8], at: i64) -> i64
+    if data[at] == '\r' && at + 1 < data.len() && data[at + 1] == '\n'
+        return at + 2
+    return at + 1
+
+# The logical lines of `data`, blank lines and comments left out, in order.
+#
+# - `data`: the bytes of the text.
+function logical_lines(data: [u8]) -> [Logical]
+    out: [Logical] @= []
+    at: i64 @= 0
+    number: i64 @= 1
+
+    while at < data.len()
+        while at < data.len() && is_space(data[at])
+            at @ at + 1
+
+        if at >= data.len()
+            break
+
+        if is_line_end(data[at])
+            at @ after_line_end(data, at: at)
+            number @ number + 1
+            continue
+
+        if data[at] == '#' || data[at] == '!'
+            while at < data.len() && !is_line_end(data[at])
+                at @ at + 1
+
+            if at < data.len()
+                at @ after_line_end(data, at: at)
+            number @ number + 1
+            continue
+        text: [u8] @= []
+        starts: [i64] @= []
+        numbers: [i64] @= []
+        going: bool @= true
+
+        while going
+            starts @ starts.push(text.len())
+            numbers @ numbers.push(number)
+            began = text.len()
+
+            while at < data.len() && !is_line_end(data[at])
+                text @ text.push(data[at])
+                at @ at + 1
+
+            trailing: i64 @= 0
+
+            while text.len() - trailing > began && text[text.len() - 1 - trailing] == '\\'
+                trailing @ trailing + 1
+
+            ended = at < data.len()
+
+            if ended
+                at @ after_line_end(data, at: at)
+                number @ number + 1
+            going @ false
+
+            if trailing % 2 == 1
+                text @ text.slice(from: 0, to: text.len() - 1)
+
+                while at < data.len() && is_space(data[at])
+                    at @ at + 1
+
+                going @ ended && at < data.len() && !is_line_end(data[at])
+
+        out @ out.push(Logical(text: text, starts: starts, numbers: numbers))
+
+    return out
+
+# The number of the natural line that holds byte `at` of `line`.
+#
+# - `line`: the logical line.
+# - `at`: an index into its text.
+function line_at(line: Logical, at: i64) -> i64
+    found: i64 @= line.numbers[0]
+
+    for k in range(from: 0, to: line.starts.len())
+        if line.starts[k] <= at
+            found @ line.numbers[k]
+
+    return found
+
+# The value from 0 to 15 of the hexadecimal digit `c`, either case.
+#
+# - `c`: the byte.
+function hex_value(c: u8) -> i64?
+    if c >= '0' && c <= '9'
+        return ok(to_i64(c - '0').must())
+
+    if c >= 'a' && c <= 'f'
+        return ok(to_i64(c - 'a').must() + 10)
+
+    if c >= 'A' && c <= 'F'
+        return ok(to_i64(c - 'A').must() + 10)
+    return fail(code: INVALID, msg: "not a hexadecimal digit")
+
+# The UTF-16 unit the four hexadecimal digits after the `\u` at `at` of
+# `line` write.
+#
+# - `line`: the logical line.
+# - `at`: where the backslash stands.
+# - `to`: one past the last byte of the key or the value it stands in.
+function unit_at(line: Logical, at: i64, to: i64) -> i64?
+    if at + 6 > to
+        return fail(
+            code: INVALID,
+            msg: f"line {line_at(line, at: at)}: \\u is followed by fewer than four hexadecimal digits"
+        )
+    unit: i64 @= 0
+
+    for k in range(from: at + 2, to: at + 6)
+        match hex_value(line.text[k])
+            .ok v => unit @ unit * 16 + v
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"line {line_at(line, at: at)}: \\u is followed by \"{bytes.format_escaped(line.text.slice(from: at + 2, to: at + 6))}\", where four hexadecimal digits stand"
+            )
+
+    return ok(unit)
+
+# The text the bytes `from` to `to` of `line` write once unescaped.
+#
+# - `line`: the logical line.
+# - `from`: the first byte of the key or the value.
+# - `to`: one past its last.
+#
+# Fails `invalid` where a `\u` is not followed by four hexadecimal digits,
+# and where it writes half of a surrogate pair that no other half completes:
+# Java keeps such a half in its UTF-16 string, and no text of UTF-8 holds one.
+function unescaped(line: Logical, from: i64, to: i64) -> str?
+    out: [u8] @= []
+    at: i64 @= from
+
+    while at < to
+        c = line.text[at]
+
+        if c != '\\'
+            out @ out.push(c)
+            at @ at + 1
+            continue
+
+        if at + 1 >= to
+            at @ at + 1
+            continue
+        next = line.text[at + 1]
+
+        if next == 'u'
+            unit = unit_at(line, at: at, to: to)?
+            point: i64 @= unit
+            width: i64 @= 6
+
+            if unit >= 0xdc00 && unit <= 0xdfff
+                return fail(
+                    code: INVALID,
+                    msg: f"line {line_at(line, at: at)}: \\u{bytes.format_escaped(line.text.slice(from: at + 2, to: at + 6))} is the second half of a surrogate pair with no first half"
+                )
+
+            if unit >= 0xd800 && unit <= 0xdbff
+                low: i64 @= -1
+
+                if at + 7 < to && line.text[at + 6] == '\\' && line.text[at + 7] == 'u'
+                    low @ unit_at(line, at: at + 6, to: to)?
+
+                if low < 0xdc00 || low > 0xdfff
+                    return fail(
+                        code: INVALID,
+                        msg: f"line {line_at(line, at: at)}: \\u{bytes.format_escaped(line.text.slice(from: at + 2, to: at + 6))} is the first half of a surrogate pair with no second half"
+                    )
+                point @ 0x10000 + (unit - 0xd800) * 0x400 + (low - 0xdc00)
+                width @ 12
+
+            for b in unicode.to_utf8(point).must()
+                out @ out.push(b)
+
+            at @ at + width
+            continue
+
+        if next == 't'
+            out @ out.push('\t')
+        else if next == 'n'
+            out @ out.push('\n')
+        else if next == 'r'
+            out @ out.push('\r')
+        else if next == 'f'
+            out @ out.push(0x0c)
+        else
+            out @ out.push(next)
+        at @ at + 2
+
+    # The bytes are the text's own, whole characters, and characters made of
+    # scalar values, so they are UTF-8.
+    return ok(out.validated_bytes().must())
+
+# The key and the value of `line`.
+#
+# - `line`: the logical line.
+#
+# Fails as `unescaped` does.
+function pair_of(line: Logical) -> Pair?
+    text = line.text
+    key_end: i64 @= 0
+    value_from: i64 @= text.len()
+    separated: bool @= false
+    escaped: bool @= false
+
+    while key_end < text.len()
+        c = text[key_end]
+
+        if !escaped && (c == '=' || c == ':')
+            value_from @ key_end + 1
+            separated @ true
+            break
+
+        if !escaped && is_space(c)
+            value_from @ key_end + 1
+            break
+
+        if c == '\\'
+            escaped @ !escaped
+        else
+            escaped @ false
+        key_end @ key_end + 1
+
+    while value_from < text.len()
+        c = text[value_from]
+
+        if !is_space(c)
+            if !separated && (c == '=' || c == ':')
+                separated @ true
+            else
+                break
+        value_from @ value_from + 1
+
+    key = unescaped(line, from: 0, to: key_end)?
+    value = unescaped(line, from: value_from, to: text.len())?
+    return ok(Pair(key: key, value: value))
+
+# The pairs `text` holds, in the order its lines write them, a key read
+# twice kept twice.
+#
+# - `text`: the properties file as text.
+#
+# Fails as `unescaped` does.
+function pairs_of(text: str) -> [Pair]?
+    out: [Pair] @= []
+
+    for line in logical_lines(bytes.from_text(text))
+        out @ out.push(pair_of(line)?)
+
+    return ok(out)
+
+# `data` read as ISO 8859-1, each byte the character of its own number, as
+# `Properties.load(InputStream)` reads a file.
+#
+# - `data`: the bytes.
+function latin1_text(data: [u8]) -> str
+    out: [u8] @= []
+
+    for b in data
+        if b < 0x80
+            out @ out.push(b)
+        else
+            n = to_i64(b).must()
+
+            # Both are below 256: a byte from 0x80 has two bits above its six.
+            out @ out.push(to_u8(0xc0 | n >> 6).must())
+            out @ out.push(to_u8(0x80 | n & 0x3f).must())
+
+    # Every byte below 0x80 is itself and every other two bytes of UTF-8.
+    return out.validated_bytes().must()
+
+## Tests
+
+# Pairs as Java's `Properties.load(Reader)` answered for the same texts on
+# 2026-11-22, OpenJDK 27.0.1.1.
+function read(text: str) -> [Pair]
+    return pairs_of(text).must()
+
+test "pairs_of: the three separators, white space around them, and a separator after another"
+    assert read("a=1\nb:2\nc 3\nd\t4\ne\u{c}5\n") == [Pair(key: "a", value: "1"), Pair(key: "b", value: "2"), Pair(key: "c", value: "3"), Pair(key: "d", value: "4"), Pair(key: "e", value: "5")]
+    assert read("  key   =   value with trailing   \n") == [Pair(key: "key", value: "value with trailing   ")]
+    assert read("a==b\nc=:d\ne :=f\ng = = h\n") == [Pair(key: "a", value: "=b"), Pair(key: "c", value: ":d"), Pair(key: "e", value: "=f"), Pair(key: "g", value: "= h")]
+    assert read("a\t:\tb\n") == [Pair(key: "a", value: "b")]
+    assert read(":v\n=w\n") == [Pair(key: "", value: "v"), Pair(key: "", value: "w")]
+
+test "pairs_of: empty values, a key alone, an empty text, white space alone, and no line end at the end"
+    assert read("a=\nb\nc:\n  d  \n") == [Pair(key: "a", value: ""), Pair(key: "b", value: ""), Pair(key: "c", value: ""), Pair(key: "d", value: "")]
+    assert read("").len() == 0
+    assert read("   \n\t\u{c}\n").len() == 0
+    assert read("a=1") == [Pair(key: "a", value: "1")]
+    assert read("abc") == [Pair(key: "abc", value: "")]
+
+test "pairs_of: comments by # and !, indented, a # inside a value, and a comment never continued"
+    assert read("# c\n! c\n  # indented\na=1 # not a comment\n") == [Pair(key: "a", value: "1 # not a comment")]
+    assert read("# comment \\\na=1\n") == [Pair(key: "a", value: "1")]
+    assert read("  ! c\\\nb=1\n") == [Pair(key: "b", value: "1")]
+    assert read("# x\\\\\na=1\n") == [Pair(key: "a", value: "1")]
+
+test "pairs_of: continued lines by an odd count of backslashes, an even count not, into a blank line, a # read as content, at the end, after a CR"
+    assert read("a=one\\\n   two\\\n\tthree\n") == [Pair(key: "a", value: "onetwothree")]
+    assert read("a=one\\\\\nb=two\n") == [Pair(key: "a", value: "one\\"), Pair(key: "b", value: "two")]
+    assert read("a=x\\\\\\\n  y\n") == [Pair(key: "a", value: "x\\y")]
+    assert read("a=1\\\n\nb=2\n") == [Pair(key: "a", value: "1"), Pair(key: "b", value: "2")]
+    assert read("a=1\\\n   \nb=2\n") == [Pair(key: "a", value: "1"), Pair(key: "b", value: "2")]
+    assert read("a=1\\\n# not a comment\n") == [Pair(key: "a", value: "1# not a comment")]
+    assert read("a=1\\") == [Pair(key: "a", value: "1")]
+    assert read("a=1\\\r\n  2\n") == [Pair(key: "a", value: "12")]
+    assert read("a=1\\\r  2\r") == [Pair(key: "a", value: "12")]
+    assert read("ke\\\n  y=v\n") == [Pair(key: "key", value: "v")]
+    assert read("a=1\\\n  \\\n  2\n") == [Pair(key: "a", value: "12")]
+
+test "pairs_of: line ends LF, CR LF and CR alone"
+    assert read("a=1\r\nb=2\rc=3\n") == [Pair(key: "a", value: "1"), Pair(key: "b", value: "2"), Pair(key: "c", value: "3")]
+
+test "pairs_of: escapes in a value and a key, a backslash before any other character, an escaped separator, and \\u never a separator"
+    assert read("a=\\t\\n\\r\\f\\b\\x\\=\\:\\#\\!\\ \\\\\n") == [Pair(key: "a", value: "\t\n\r\u{c}bx=:#! \\")]
+    assert read("a\\ b\\=c\\:d = v\n") == [Pair(key: "a b=c:d", value: "v")]
+    assert read("a\\\tb=1\n") == [Pair(key: "a\tb", value: "1")]
+    assert read("a\\u003db=c\n") == [Pair(key: "a=b", value: "c")]
+    assert read("a=1\\u005c\nb=2\n") == [Pair(key: "a", value: "1\\"), Pair(key: "b", value: "2")]
+    assert read("a=line1\\nline2\n") == [Pair(key: "a", value: "line1\nline2")]
+
+test "pairs_of: \\u of one, two and three bytes of UTF-8, either case, a surrogate pair joined, a zero, and characters of more than one byte written as they are"
+    assert read("a=\\u0041\\u00e9\\u20AC\n") == [Pair(key: "a", value: "Aé€")]
+    assert read("a=\\ud83d\\ude00\n") == [Pair(key: "a", value: "😀")]
+    assert read("a=\\u0000\n")[0].value.len() == 1
+    assert read("clé=valeur é€\n") == [Pair(key: "clé", value: "valeur é€")]
+    assert read("a\\éb=1\n") == [Pair(key: "aéb", value: "1")]
+    assert read("a b=1\n") == [Pair(key: "a b", value: "1")]
+    assert read("a=\\U0041\n") == [Pair(key: "a", value: "U0041")]
+
+# Java answered "Malformed \uxxxx encoding." for the first four, and kept a
+# lone half of a surrogate pair in its string, which no text holds.
+test "pairs_of: a \\u short, cut by the end, with a stranger among its digits, and a lone half of a surrogate pair, each with its line"
+    for bad in ["a=\\u12g4\n", "a=\\u12\n", "a=\\u1", "a=\\u 041\n", "a=\\ud83d\n", "a=\\ude00x\n", "a=\\ud83d\\u0041\n"]
+        match pairs_of(bad)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    match pairs_of("x=1\n\na=\\u12g4\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 3: \\u is followed by \"12g4\", where four hexadecimal digits stand"
+
+    match pairs_of("a=one\\\n  two\\u12\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2: \\u is followed by fewer than four hexadecimal digits"
+
+    match pairs_of("a=\\ud83d\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1: \\ud83d is the first half of a surrogate pair with no second half"
+
+    match pairs_of("a=\\ude00\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1: \\ude00 is the second half of a surrogate pair with no first half"
+
+test "logical_lines and line_at: the natural lines a logical line joins, and the line of each byte"
+    lines = logical_lines(bytes.from_text("# c\na=1\\\n  2\\\n  3\nb\n"))
+    assert lines.len() == 2
+    assert lines[0].text == bytes.from_text("a=123") && lines[0].starts == [0, 3, 4] && lines[0].numbers == [2, 3, 4]
+    assert line_at(lines[0], at: 2) == 2 && line_at(lines[0], at: 3) == 3 && line_at(lines[0], at: 4) == 4
+    assert lines[1].numbers == [5]
+
+test "latin1_text and hex_value: every byte its own character, and the digits"
+    assert latin1_text([0x6b, 0x3d, 0xe9, 0xff, 0x80]) == "k=éÿ\u{80}"
+    assert latin1_text([]) == ""
+    assert hex_value('0').must() == 0 && hex_value('f').must() == 15 && hex_value('F').must() == 15
+    assert hex_value('g').is_err() && hex_value('G').is_err()

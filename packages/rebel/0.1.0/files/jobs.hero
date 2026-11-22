@@ -461,11 +461,30 @@ function default_backoff() -> retries.Backoff
 # Fails `invalid` where `attempt` is below 1 or `policy` is one
 # `retries.backoff` refuses, and as `retries.drawn_wait` fails where the
 # system gives no random bytes. See also `default_backoff`,
-# `retries.drawn_wait`.
+# `retry_wait_with`, `retries.drawn_wait`.
 function retry_wait(policy: retries.Backoff, attempt: i64) -> time.Duration?
     if attempt < 1
         return fail(code: INVALID, msg: f"the attempt {attempt} is below 1")
     return retries.drawn_wait(policy, failures: attempt, previous: time.Duration(nanoseconds: 0))
+
+# The wait before a job runs again after its attempt number `attempt`
+# failed, by `policy`, its jitter spread by the caller's `fraction`: the
+# same fraction gives the same wait, so a program whose waits must repeat (a
+# generator it seeds, a test, a demonstration on a fixed clock) computes the
+# wait itself and hands it to its store's `fail_attempt_with`.
+#
+# - `policy`: the waits; its limits on attempts and time are not read.
+# - `attempt`: the attempt that failed, from 1.
+# - `fraction`: a number from 0 to 1, as `random.next_f64` draws one; read by
+#   every jitter but `none`, 0.5 leaving the wait where no jitter would.
+#
+# Fails `invalid` where `attempt` is below 1, `fraction` is outside 0 to 1,
+# or `policy` is one `retries.backoff` refuses. See also `retry_wait`,
+# `retries.wait_after`.
+function retry_wait_with(policy: retries.Backoff, attempt: i64, fraction: f64) -> time.Duration?
+    if attempt < 1
+        return fail(code: INVALID, msg: f"the attempt {attempt} is below 1")
+    return retries.wait_after(policy, failures: attempt, previous: time.Duration(nanoseconds: 0), fraction: fraction)
 
 ## Periodic jobs
 
@@ -593,6 +612,23 @@ test "retry_wait: the first wait within a fifth of 15 s, the tenth capped near a
     plain = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
     assert retry_wait(plain, attempt: 3).must() == time.seconds(18).must()
 
+test "retry_wait_with: a wait spread a fifth either way at the low end, the middle and the high end, the same twice, the cap, and the refusals"
+    policy = retries.with_jitter(
+        retries.backoff(first: time.seconds(10).must(), multiplier: 2.0, longest: time.hours(1).must()).must(),
+        .spread(factor: 0.2)
+    ).must()
+    assert retry_wait_with(policy, attempt: 1, fraction: 0.5).must() == time.seconds(10).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.5).must() == time.seconds(40).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.0).must() == time.seconds(32).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 1.0).must() == time.seconds(48).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.3).must() == retry_wait_with(policy, attempt: 3, fraction: 0.3).must()
+    assert retry_wait_with(policy, attempt: 40, fraction: 0.5).must() == time.hours(1).must()
+    plain = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
+    assert retry_wait_with(plain, attempt: 3, fraction: 0.9).must() == time.seconds(18).must()
+    assert retry_wait_with(policy, attempt: 0, fraction: 0.5).is_err()
+    assert retry_wait_with(policy, attempt: 1, fraction: -0.1).is_err()
+    assert retry_wait_with(policy, attempt: 1, fraction: 1.5).is_err()
+
 test "new_periodic and next_due: a nightly schedule, a zone's clocks, and the refusals"
     p @= new_periodic(name: "nightly", cron: "0 3 * * *", job: new_job("report", .null_value)).must()
     after = time.parse("2026-11-18T10:00:00Z", .rfc3339).must()
@@ -713,6 +749,15 @@ test "default_backoff: 15 s first, at most a day"
 test "retry_wait: 2 s tripled twice"
     policy = retries.backoff(first: time.seconds(2).must(), multiplier: 3.0, longest: time.hours(1).must()).must()
     assert retry_wait(policy, attempt: 3).must() == time.seconds(18).must()
+
+# The wait after a third failure spread by a fraction the program drew from
+# a generator it seeded, so the same seed gives the same wait.
+test "retry_wait_with: a fraction of the program's own"
+    policy = retries.with_jitter(
+        retries.backoff(first: time.seconds(10).must(), multiplier: 2.0, longest: time.hours(1).must()).must(),
+        .spread(factor: 0.2)
+    ).must()
+    assert retry_wait_with(policy, attempt: 3, fraction: 0.75).must() == time.seconds(44).must()
 
 # A report enqueued every night at three.
 test "new_periodic: a nightly report"

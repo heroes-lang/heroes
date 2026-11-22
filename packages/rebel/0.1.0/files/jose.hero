@@ -49,6 +49,7 @@
 use bytes
 use crypto
 use crypto/keypairs
+use crypto/seal
 use jose/internal/algorithms as names
 use jose/internal/claims as claims_check
 use jose/internal/compact
@@ -998,7 +999,12 @@ test "parse_key_set: RFC 7517 Appendix A.1's set, a key of an unknown type passe
     assert parse_key_set("{\"key\":[]}").is_err()
     assert parse_key_set(format_key_set(set).must()).must() == set
 
-test "decrypt_compact and encrypt_compact: RSA-OAEP-256 with A256GCM, ECDH-ES on P-256, A128GCMKW, or unsupported where the platform has no AES-GCM"
+test "decrypt_compact and encrypt_compact: RSA-OAEP-256 with A256GCM, ECDH-ES on P-256, A128GCMKW, where the platform has AES-GCM, P-256 and RSA"
+    if !seal.is_available(.aes_128_gcm) || !seal.is_available(.aes_256_gcm)
+        skip_test(reason: "this platform's own cryptography does not seal with AES-GCM")
+
+    if !keypairs.is_available(.p256) || !keypairs.is_available(.rsa(bits: 2048))
+        skip_test(reason: "this platform's own cryptography has no P-256 or no RSA")
     rsa = parse_key(vectors.rsa_private()).must()
     rsa_use @= rsa
     rsa_use.usage @ ""
@@ -1015,22 +1021,21 @@ test "decrypt_compact and encrypt_compact: RSA-OAEP-256 with A256GCM, ECDH-ES on
         if recipient.key_type != "oct"
             sending @ public_of(recipient).must()
 
-        match encrypt_compact(bytes.from_text("ground control"), key: sending, algorithm: algorithms[at], encryption: .a256gcm, header: none)
-            .err e => assert e.code == UNSUPPORTED
-            .ok token =>
-                got = decrypt_compact(
-                    token,
-                    trusted: [recipient],
-                    algorithms: [algorithms[at]],
-                    encryptions: [.a256gcm]
-                ).must()
-                assert got.plaintext == bytes.from_text("ground control")
-                assert decrypt_compact(
-                    token,
-                    trusted: [recipient],
-                    algorithms: [algorithms[at]],
-                    encryptions: [.a128gcm]
-                ).is_err()
+        token = encrypt_compact(
+            bytes.from_text("ground control"),
+            key: sending,
+            algorithm: algorithms[at],
+            encryption: .a256gcm,
+            header: none
+        ).must()
+        got = decrypt_compact(token, trusted: [recipient], algorithms: [algorithms[at]], encryptions: [.a256gcm]).must()
+        assert got.plaintext == bytes.from_text("ground control")
+        assert decrypt_compact(
+            token,
+            trusted: [recipient],
+            algorithms: [algorithms[at]],
+            encryptions: [.a128gcm]
+        ).is_err()
 
 ## Examples
 
@@ -1300,9 +1305,16 @@ test "encrypt_compact: dir with A128GCM"
     key = parse_key(vectors.dir_key()).must()
     none: {str: json.Value} = {}
 
-    match encrypt_compact(bytes.from_text("hello"), key: key, algorithm: .direct, encryption: .a128gcm, header: none)
-        .err e    => assert e.code == UNSUPPORTED
-        .ok token => assert decrypt_compact(token, trusted: [key], algorithms: [.direct], encryptions: [.a128gcm]).must().plaintext == bytes.from_text("hello")
+    if !seal.is_available(.aes_128_gcm)
+        skip_test(reason: "this platform's own cryptography does not seal with AES-128-GCM")
+    token = encrypt_compact(
+        bytes.from_text("hello"),
+        key: key,
+        algorithm: .direct,
+        encryption: .a128gcm,
+        header: none
+    ).must()
+    assert decrypt_compact(token, trusted: [key], algorithms: [.direct], encryptions: [.a128gcm]).must().plaintext == bytes.from_text("hello")
 
 # A JWE decrypted: RFC 7520 § 5.6, where the platform has AES-GCM.
 test "decrypt_compact: RFC 7520 § 5.6"
@@ -1311,6 +1323,12 @@ test "decrypt_compact: RFC 7520 § 5.6"
         "."
     )
 
-    match decrypt_compact(token, trusted: [parse_key(vectors.dir_key()).must()], algorithms: [.direct], encryptions: [.a128gcm])
-        .err e  => assert e.code == UNSUPPORTED
-        .ok got => assert got.plaintext.len() == 273
+    if !seal.is_available(.aes_128_gcm)
+        skip_test(reason: "this platform's own cryptography does not seal with AES-128-GCM")
+    got = decrypt_compact(
+        token,
+        trusted: [parse_key(vectors.dir_key()).must()],
+        algorithms: [.direct],
+        encryptions: [.a128gcm]
+    ).must()
+    assert got.plaintext.len() == 273

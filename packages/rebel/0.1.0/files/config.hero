@@ -1,5 +1,5 @@
-# Settings read in layers: defaults, files in TOML, YAML, JSON or INI, `.env`
-# files, the environment and the command line, each a `Layer` holding an
+# Settings read in layers: defaults, files in TOML, YAML, JSON, INI or Java's
+# properties, `.env` files, the environment and the command line, each a `Layer` holding an
 # object of `json.Value`, merged by `merge` in the order the program lists
 # them, each over the ones before it, into `Settings` read by dotted path with
 # typed getters. A getter that fails names the path, the value it found, the
@@ -151,9 +151,13 @@ variant Format
     # INI, as `ini.parse` reads it, keys before the first section allowed:
     # each section an object of texts, those keys at the top.
     ini
+    # Java's properties, as `java_properties.parse` reads them: each key cut
+    # at its dots into a path of objects, as Spring Boot binds `server.port`,
+    # each value a text.
+    properties
 
 # The format the extension of `path` names: `.json`, `.toml`, `.yaml` or
-# `.yml`, and `.ini`, in any case.
+# `.yml`, `.ini`, and `.properties`, in any case.
 #
 # - `path`: a file's path.
 #
@@ -169,6 +173,9 @@ function format_of(path: str) -> Format?
 
     if word == "yaml"
         return ok(.yaml)
+
+    if word == "properties"
+        return ok(.properties)
     return ok(.ini)
 
 # The settings `text` holds in `format`, as a layer named `name`.
@@ -182,19 +189,23 @@ function format_of(path: str) -> Format?
 # INI text's sections are
 # objects, each holding its keys and then those of the section `DEFAULT` it
 # does not hold, as `ini.section_of` answers; `DEFAULT` is not an object of
-# its own, and keys before the first section stand at the top.
+# its own, and keys before the first section stand at the top. A properties
+# text's keys are cut at their dots into objects, each value a text.
 #
 # Fails where the format's parser fails, with its code, the message opening
-# with `name`: `invalid` where `text` is not of the format, `does_not_fit`
+# with `name`: `invalid` where `text` is not of the format, or a properties
+# key is a value where another makes it an object or holds an empty part
+# between its dots, `does_not_fit`
 # where a number is past its type, `unsupported` where a TOML float is a `nan`
 # or an infinity or a YAML tag is not a core one, `limit` where YAML's aliases
 # copy too much. Fails `invalid` where the document is not a table.
 function parse_layer(name: str, text: str, format: Format) -> Layer?
     word = match format
-        .json => "json"
-        .toml => "toml"
-        .yaml => "yaml"
-        .ini  => "ini"
+        .json       => "json"
+        .toml       => "toml"
+        .yaml       => "yaml"
+        .ini        => "ini"
+        .properties => "properties"
 
     value = formats.parse_value(name: name, text: text, word: word)?
     return ok(Layer(name: name, value: value, origins: {}, file: ""))
@@ -235,8 +246,8 @@ function read_layer_if_present(path: str) -> Layer?
 # - `base`: the file's name without its extension, `config`; not empty.
 # - `dirs`: the folders to look in, in order; "" is the working folder.
 #
-# In each folder it looks for `base` with `.json`, `.toml`, `.yaml`, `.yml`
-# and `.ini` after it, in that order, and answers the first one `read_file`
+# In each folder it looks for `base` with `.json`, `.toml`, `.yaml`, `.yml`,
+# `.ini` and `.properties` after it, in that order, and answers the first one `read_file`
 # reads, joined to its folder.
 #
 # Fails `not_found` where no folder holds one, the message naming every path
@@ -756,18 +767,22 @@ function check_known(s: Settings, paths: [str]) -> ()?
 #
 # JSON is indented two spaces a level. INI writes a setting at the top before
 # any section, and each object at the top as a section holding texts, a
-# number written as JSON writes it and a boolean `true` or `false`.
+# number written as JSON writes it and a boolean `true` or `false`. Java's
+# properties write a dotted key for every setting that is not an object,
+# its value as INI writes one.
 #
 # Fails `invalid` where `format` has no form for a value: INI for an object
-# below a section or a list, JSON and YAML for a `nan` or an infinity, which
+# below a section or a list, Java's properties for a list, an empty object
+# or a name holding a dot, JSON and YAML for a `nan` or an infinity, which
 # only a flag of `Kind.float` or a text read by `float_of` gives. Fails
 # `unsupported` where TOML has no form for a `null` in a list.
 function format_settings(s: Settings, format: Format) -> str?
     word = match format
-        .json => "json"
-        .toml => "toml"
-        .yaml => "yaml"
-        .ini  => "ini"
+        .json       => "json"
+        .toml       => "toml"
+        .yaml       => "yaml"
+        .ini        => "ini"
+        .properties => "properties"
 
     return formats.write_value(settings_json(s), word: word)
 
@@ -950,7 +965,7 @@ test "format_of: each extension in any case, none, another"
     assert format_of("a.json").must() == .json
     assert format_of("dir.d/a.TOML").must() == .toml
     assert format_of("a.yml").must() == .yaml && format_of("a.yaml").must() == .yaml
-    assert format_of("a.ini").must() == .ini
+    assert format_of("a.ini").must() == .ini && format_of("application.properties").must() == .properties
 
     match format_of("a.env")
         .ok _  => assert false
@@ -1008,7 +1023,7 @@ test "find_file: folders and extensions in order, a folder absent, nothing found
         .ok _ => assert false
         .err e =>
             assert e.code == NOT_FOUND
-            assert e.msg == f"no settings file \"rebel-config-zz\": looked at \"build{sep}rebel-config-zz.json\", \"build{sep}rebel-config-zz.toml\", \"build{sep}rebel-config-zz.yaml\", \"build{sep}rebel-config-zz.yml\", \"build{sep}rebel-config-zz.ini\""
+            assert e.msg == f"no settings file \"rebel-config-zz\": looked at \"build{sep}rebel-config-zz.json\", \"build{sep}rebel-config-zz.toml\", \"build{sep}rebel-config-zz.yaml\", \"build{sep}rebel-config-zz.yml\", \"build{sep}rebel-config-zz.ini\", \"build{sep}rebel-config-zz.properties\""
 
 test "find_upward: the folder itself, a folder above folders that are not there, none"
     write_file(path: "build/rebel-config-up.env", text: "A=1\n").must()
@@ -1191,6 +1206,24 @@ test "format_settings: each format, INI refusing a list"
     assert format_settings(s, .ini).must() == "name = x\n\n[db]\nport = 5432\n\n"
     listed = merge([from_value("d", json.parse("{\"l\": [1]}").must()).must()])
     assert format_settings(listed, .ini).is_err()
+    assert format_settings(s, .properties).must() == "db.port=5432\nname=x\n"
+    assert format_settings(listed, .properties).is_err()
+
+test "parse_layer: Java's properties cut at their dots into objects of texts, read back from what format_settings wrote, and a key both a value and an object refused"
+    layer = parse_layer(
+        name: "app.properties",
+        text: "server.port = 8080\nserver.ssl.enabled: true\nname=shop\n",
+        format: .properties
+    ).must()
+    assert layer.value == json.parse("{\"server\": {\"port\": \"8080\", \"ssl\": {\"enabled\": \"true\"}}, \"name\": \"shop\"}").must()
+    s = merge([layer])
+    assert text_of(s, "server.port").must() == "8080"
+    back = parse_layer(name: "back", text: format_settings(s, .properties).must(), format: .properties).must()
+    assert back.value == layer.value
+
+    match parse_layer(name: "app.properties", text: "a=1\na.b=2\n", format: .properties)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "app.properties: the key \"a.b\" makes \"a\" a table, which another key sets as a text"
 
 test "path_of: relative to the folder of a file's layer, absolute kept, from the environment as written"
     file = Layer(

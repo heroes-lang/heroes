@@ -1,0 +1,127 @@
+# A verifier's stored form, PostgreSQL's (its documentation's `pg_authid`,
+# `rolpassword`): the mechanism's name, `$`, the iteration count, `:`, the
+# salt, `$`, then `StoredKey` and `ServerKey` beside a `:`, each of the
+# three in base 64. PostgreSQL writes only SCRAM-SHA-256; the other two
+# hashes are written alike under their own names, so one form holds every
+# verifier `scram` makes.
+
+use bytes
+use scram
+use scram/internal/messages
+use strings
+
+# The mechanism's name `hash` makes: `SCRAM-SHA-1`, `SCRAM-SHA-256` or
+# `SCRAM-SHA-512`.
+#
+# - `hash`: the hash.
+function name_of(hash: scram.Hash) -> str
+    return match hash
+        .sha1   => "SCRAM-SHA-1"
+        .sha256 => "SCRAM-SHA-256"
+        .sha512 => "SCRAM-SHA-512"
+
+# The hash the mechanism's name `name` makes.
+#
+# - `name`: the name, as `name_of` writes it.
+function hash_named(name: str) -> scram.Hash?
+    if name == "SCRAM-SHA-1"
+        return ok(.sha1)
+
+    if name == "SCRAM-SHA-256"
+        return ok(.sha256)
+
+    if name == "SCRAM-SHA-512"
+        return ok(.sha512)
+    return fail(
+        code: scram.INVALID,
+        msg: "a SCRAM verifier opens with no mechanism of SCRAM-SHA-1, SCRAM-SHA-256 or SCRAM-SHA-512"
+    )
+
+# The bytes of the base 64 `text`, a part of a verifier named `what`.
+#
+# - `text`: the part.
+# - `what`: its name, for a message that never quotes it.
+function part_of(text: str, what: str) -> [u8]?
+    return match bytes.parse_base64(text)
+        .ok got => ok(got)
+        .err _  => fail(code: scram.INVALID, msg: f"a SCRAM verifier's {what} is not base 64")
+
+# The iteration count `text` writes, 1 to `scram.MOST_ITERATIONS`.
+#
+# - `text`: decimal digits.
+function count_of(text: str) -> i64?
+    n: i64 @= 0
+
+    if text.len() == 0 || text.len() > 9
+        return fail(code: scram.INVALID, msg: "a SCRAM verifier's iteration count is no number of 1 to 9 digits")
+
+    for at in range(from: 0, to: text.len())
+        if text[at] < '0' || text[at] > '9'
+            return fail(code: scram.INVALID, msg: "a SCRAM verifier's iteration count is no number of 1 to 9 digits")
+        n @ n * 10 + to_i64(text[at] - '0').must()
+
+    if n < 1 || n > scram.MOST_ITERATIONS
+        return fail(
+            code: scram.INVALID,
+            msg: f"a SCRAM verifier's iteration count is {n}, outside 1 to {scram.MOST_ITERATIONS}"
+        )
+    return ok(n)
+
+# The verifier `text` writes.
+#
+# - `text`: the stored form.
+#
+# Fails `invalid` as `scram.parse_verifier` says.
+function parsed(text: str) -> scram.Verifier?
+    halves = strings.split(s: text, sep: "$")
+
+    if halves.len() != 3
+        return fail(
+            code: scram.INVALID,
+            msg: "a SCRAM verifier holds three parts between `$`, a mechanism, a count and salt, and two keys"
+        )
+    hash = hash_named(halves[0])?
+    counted = strings.split(s: halves[1], sep: ":")
+    keys_written = strings.split(s: halves[2], sep: ":")
+
+    if counted.len() != 2 || keys_written.len() != 2
+        return fail(
+            code: scram.INVALID,
+            msg: "a SCRAM verifier's count and salt, and its two keys, each stand beside one `:`"
+        )
+    iterations = count_of(counted[0])?
+    salt = part_of(text: counted[1], what: "salt")?
+
+    if salt.len() == 0
+        return fail(code: scram.INVALID, msg: "a SCRAM verifier's salt is empty")
+    stored_key = part_of(text: keys_written[0], what: "StoredKey")?
+    server_key = part_of(text: keys_written[1], what: "ServerKey")?
+    size = messages.digest_of(hash, data: []).len()
+
+    if stored_key.len() != size || server_key.len() != size
+        return fail(
+            code: scram.INVALID,
+            msg: f"a SCRAM verifier's keys are not of {size} bytes, the length {name_of(hash)}'s digest writes"
+        )
+    return ok(
+        scram.Verifier(hash: hash, iterations: iterations, salt: salt, stored_key: stored_key, server_key: server_key)
+    )
+
+## Tests
+
+test "name_of and hash_named: each hash both ways, and a name of none"
+    hashes: [scram.Hash] = [.sha1, .sha256, .sha512]
+
+    for h in hashes
+        assert hash_named(name_of(h)).must() == h
+
+    assert hash_named("SCRAM-SHA-384").is_err() && hash_named("scram-sha-256").is_err() && hash_named("").is_err()
+
+test "parsed: a part missing, a mechanism unknown, a count no number or past the bound, a salt empty or not base 64, keys of the wrong length"
+    good = "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU="
+    assert parsed(good).must().iterations == 4096
+
+    for bad in ["", "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==", "MD5$4096:QQ==$QQ==:QQ==", "SCRAM-SHA-256$x:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-256$0:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-256$4096:$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-256$4096:!!$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$QQ==:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-1$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=:wfPLwcE6nTWhTAmQ7tl2KeoiWGPlZqQxSrmfPwDl2dU=", "SCRAM-SHA-256$4096:W22ZaJ0SNY7soEsUEjb6gQ==$WG5d8oPm3OtcPnkdi4Uo7BkeZkBFzpcXkuLmtbsT4qY=$x"]
+        match parsed(bad)
+            .ok _  => assert false
+            .err e => assert e.code == scram.INVALID

@@ -82,7 +82,8 @@ function told(control: net.Listener) -> str
 # The body of `start`'s thread: it tells its port, answers the first request
 # a connection sends, and gives back what it read. A connection that sends
 # none, as one another program makes to a port it did not choose, is closed
-# and passed over, five connections at most.
+# and passed over, five connections at most. Each accept waits 30 s at most,
+# so a test whose client failed fails rather than waits for ever.
 function serve_once(arg: str) -> str
     parts = strings.split(s: arg, sep: SEPARATOR)
     l @= net.listen(host: "127.0.0.1", port: 0).must()
@@ -91,6 +92,7 @@ function serve_once(arg: str) -> str
 
     while tries < 5
         tries @ tries + 1
+        net.set_accept_deadline(l, deadline_ms: 30_000).must()
         conn = net.accept(l, deadline_ms: 10_000).must()
         reader @= io.reader(conn.stream)
 

@@ -78,7 +78,7 @@ capability crypto/pbkdf2  a key derived from a password by PBKDF2
   go      pbkdf2.Key
   rust    -
   python  hashlib.pbkdf2_hmac
-  note    RFC 6070's and RFC 7914's first cases answered as Python did; no iterations fail `invalid` as Python refuses them, where Go answered a key, since RFC 8018 asks a positive count; a length of 0 fails as both refuse it
+  note    RFC 6070's and RFC 7914's first cases answered as Python did; no iterations fail `invalid` as Python refuses them, where Go answered a key, since RFC 8018 asks a positive count; a length of 0 fails as both refuse it. By SHA-1, SHA-256, SHA-384 and SHA-512 the key is the system's own (CommonCrypto's `CCKeyDerivationPBKDF`, OpenSSL's `PKCS5_PBKDF2_HMAC`, CNG's `BCryptDeriveKeyPBKDF2`, through `hero_crypto.h`): this package's own code took 4.85 s for 600,000 iterations of SHA-256 at `-O2` on an Apple silicon Mac, where CPython's `pbkdf2_hmac` took about 0.1 s (feature 2655); its code serves the other digests, a machine whose system has none, and sizes past what the system's call takes, giving the same bytes
 
 capability crypto/sha3  the SHA-3 digests, at once or in steps
   heroes  crypto.sha3_224, crypto.sha3_224_text, crypto.sha3_256, crypto.sha3_256_text, crypto.sha3_384, crypto.sha3_384_text, crypto.sha3_512, crypto.sha3_512_text, crypto.start
@@ -175,7 +175,7 @@ capability crypto/otp-uri  the otpauth URI that hands a one-time password's key 
   go      -
   rust    -
   python  -
-  note    Google Authenticator's Key Uri Format: the label `issuer:account`, the key in base 32 with no padding (RFC 4648), then `issuer`, `algorithm`, `digits`, and `counter` or `period`, all always written as that format's own example writes them, where pyotp's `provisioning_uri` leaves out a default; the label and the issuer escaped but for RFC 3986's unreserved characters, as Python's `urllib.parse.quote(s, safe="")` answered on 2026-11-17, and a colon in either refused `invalid`. The base 32 and the escape are written in `crypto/internal/otp`, since `bytes` holds base 32 `pending` and `url` stands on this package's own layer; they move to `bytes` once it has base 32. The URI is written, never read
+  note    Google Authenticator's Key Uri Format: the label `issuer:account`, the key in base 32 with no padding (RFC 4648), then `issuer`, `algorithm`, `digits`, and `counter` or `period`, all always written as that format's own example writes them, where pyotp's `provisioning_uri` leaves out a default; the label and the issuer escaped but for RFC 3986's unreserved characters, as Python's `urllib.parse.quote(s, safe="")` answered on 2026-11-17, and a colon in either refused `invalid`. The key is written by `bytes.format_base32_unpadded` and reads back by `bytes.parse_base32_unpadded`; the escape is written in `crypto/internal/otp`, since `url` stands on this package's own layer. The URI is written, never read
 
 dropped registry  Go's table of hash constructors filled at start-up: there are no mutable globals, and `Algorithm` is closed
   go      crypto.RegisterHash

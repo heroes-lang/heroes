@@ -1,0 +1,73 @@
+# The ledger of `math/matrix`: dense matrices of any size, of floats and of
+# `big`'s fractions, one block per capability. Go 1.27, Rust 1.100 and Python
+# 3.15 hold no matrix of any size in their standard libraries, so their lines
+# read `-`; the yardstick is what their numerical libraries offer outside
+# them (Go's `gonum/mat`, Rust's `nalgebra`, Python's `numpy.linalg`), named
+# in each note by their documentation, none of the three installed on this
+# machine. Expected values: exact ones by Python's `fractions` on 2026-11-22,
+# the decompositions by published worked examples (Wikipedia's QR and
+# Cholesky pages, read 2026-11-22) and by hand, and every decomposition held
+# to its own definition.
+
+capability matrix/make  a matrix made from rows, of zeros, the identity, read back by entry or by rows
+  heroes  math/matrix.Matrix, math/matrix.from_rows, math/matrix.zeros, math/matrix.identity, math/matrix.value_at, math/matrix.rows_of
+  go      -
+  rust    -
+  python  -
+  note    gonum's `NewDense`, nalgebra's `DMatrix::from_row_slice`, numpy's `array`, `zeros`, `eye`; rows of different lengths refused `invalid`, where numpy makes an array of objects
+
+capability matrix/arithmetic  sums, differences, a scale, products by a matrix and by a vector, the transpose, the trace, the Frobenius norm
+  heroes  math/matrix.add, math/matrix.subtract, math/matrix.scale, math/matrix.multiply, math/matrix.multiply_vector, math/matrix.transpose, math/matrix.trace, math/matrix.norm_frobenius
+  go      -
+  rust    -
+  python  -
+  note    shapes that do not fit refused `invalid` with both shapes named, where numpy broadcasts; the norm over the entries divided by the largest, as `math.hypot` computes it
+
+capability matrix/solve  a square system solved, a matrix inverted, its determinant, by LU with partial pivoting
+  heroes  math/matrix.solve, math/matrix.inverse, math/matrix.determinant
+  go      -
+  rust    -
+  python  -
+  note    numpy's `solve`, `inv`, `det` (LAPACK's `dgesv`, `dgetri`, `dgetrf`): refused as singular only where a column holds no pivot but zeros, as LAPACK refuses; the matrix divided by its largest entry's size first, so entries near an `f64`'s range factor without overflow; a nan or an infinity refused, where numpy answers nans
+
+capability matrix/exact  a system solved, an inverse, a determinant, a rank and a reduced row echelon form, exactly over fractions
+  heroes  math/matrix.Exact, math/matrix.exact_from_rows, math/matrix.exact_of, math/matrix.float_of_exact, math/matrix.solve_exact, math/matrix.inverse_exact, math/matrix.determinant_exact, math/matrix.rank_exact, math/matrix.reduced_echelon_exact
+  go      -
+  rust    -
+  python  -
+  note    Gauss-Jordan over `big.Fraction`, SymPy's `Matrix.rref` and `inv` the yardstick of an exact elimination; a float made the fraction it is (0.1 as 3602879701896397/36028797018963968), a nan and an infinity refused
+
+capability matrix/decompose  LU, QR, Cholesky, and the eigenvalues and eigenvectors of a symmetric matrix
+  heroes  math/matrix.lu, math/matrix.Lu, math/matrix.qr, math/matrix.Qr, math/matrix.cholesky, math/matrix.eigen_symmetric, math/matrix.Eigen
+  go      -
+  rust    -
+  python  -
+  note    Golub and Van Loan's algorithms: LU with partial pivoting (3.4.1), Householder QR reduced (5.2.1, numpy's `qr` mode `reduced`, R's diagonal signed as LAPACK's `dgeqrf` signs it), Cholesky's lower factor (numpy's `cholesky`), cyclic Jacobi (8.5.3) with the values ascending as numpy's `eigh` orders them and each vector's entry of largest size positive; symmetry held within 1e-12 of the largest entry, where numpy's `eigh` reads one triangle and never asks
+
+capability matrix/least-squares  the least-squares solution of an overdetermined system
+  heroes  math/matrix.least_squares
+  go      -
+  rust    -
+  python  -
+  note    by QR, as numpy's `lstsq` answers for a matrix of independent columns and at least as many rows; a matrix whose columns are not independent is refused `invalid`, its solution of least length being the block below
+
+capability matrix/least-squares-minimum-norm  the least-squares solution of least length where the columns are not independent or are more than the rows
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  note    numpy's `lstsq` and `pinv` answer it through the singular value decomposition, which needs the vectors as well as the values; not written in this round
+
+capability matrix/singular  singular values, the numerical rank and the condition number
+  heroes  math/matrix.singular_values, math/matrix.rank, math/matrix.condition_number
+  go      -
+  rust    -
+  python  -
+  note    Hestenes' one-sided Jacobi rotations, values descending as numpy's `svd(compute_uv=False)`; the rank numpy's `matrix_rank` with its tolerance (the largest value times the larger dimension times the machine epsilon); the condition number numpy's `cond` in the euclidean norm, an infinity where the smallest value is zero
+
+capability matrix/general-eigen  the eigenvalues of a matrix that is not symmetric, complex in general
+  heroes  refused: their values and vectors are complex and need the QR algorithm on a Hessenberg form, a numerical library of its own; a symmetric matrix's are `eigen_symmetric`'s
+  go      -
+  rust    -
+  python  -
+  note    numpy's `eig`, gonum's `Eigen`

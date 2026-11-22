@@ -5,9 +5,9 @@
  * `heroes_runtime.h`.
  *
  * hero_crypto.h — the platform layer's cryptography: texts sealed and
- * opened under a secret key, signatures made and checked, keys agreed, and
- * the keys themselves, by the SYSTEM's own library (M-rebel-library; spec
- * § 13).
+ * opened under a secret key, signatures made and checked, keys agreed, the
+ * keys themselves, and keys derived from a password by PBKDF2, by the
+ * SYSTEM's own library (M-rebel-library; spec § 13).
  *
  * A HEADER OF THE PLATFORM LAYER, AND NOT OF THE RUNTIME, as `hero_tls.h`
  * is: its functions are defined in `platform/hero_crypto.c`, a member of the
@@ -23,6 +23,8 @@
  *
  *   - Windows: CNG, `bcrypt.dll` (BCrypt), which only a program that takes
  *     this member links.
+ *   - PBKDF2 on macOS: CommonCrypto's `CCKeyDerivationPBKDF`, which
+ *     `libSystem` holds and every program links already.
  *   - macOS: the Security framework's `SecKey`, and for sealing CryptoKit,
  *     reached by a member of the layer written in Swift, since CommonCrypto's
  *     public modes hold no authenticated one and CryptoKit is Swift's alone;
@@ -148,10 +150,21 @@ typedef struct hero_crypto_key hero_crypto_key;
 #define HERO_CRYPTO_RSA_BITS_LEAST 1024
 #define HERO_CRYPTO_RSA_BITS_MOST 8192
 
-/* 1 where this machine computes `what`, a kind or a scheme above, 0 where
- * it does not (the kinds Windows lacks, every one on a Linux machine with
- * no `libcrypto.so.3`); -1 with `HERO_CRYPTO_INVALID` for a number that
- * names neither. */
+/* The HMACs PBKDF2 is computed with: by SHA-1, SHA-256, SHA-384 or SHA-512,
+ * the four every platform's library offers (CNG has no SHA-224). */
+#define HERO_CRYPTO_PBKDF2_SHA1 50
+#define HERO_CRYPTO_PBKDF2_SHA256 51
+#define HERO_CRYPTO_PBKDF2_SHA384 52
+#define HERO_CRYPTO_PBKDF2_SHA512 53
+/* The most bytes of a password, of a salt and of a key derived, and the most
+ * iterations, that `hero_crypto_pbkdf2` takes: what every platform's call
+ * takes at once, OpenSSL's `int` the narrowest. */
+#define HERO_CRYPTO_PBKDF2_MOST UINT64_C(2147483647)
+
+/* 1 where this machine computes `what`, a kind, a scheme or a PBKDF2 above,
+ * 0 where it does not (the kinds Windows lacks, every one on a Linux machine
+ * with no `libcrypto.so.3`); -1 with `HERO_CRYPTO_INVALID` for a number that
+ * names none. */
 int64_t hero_crypto_offers(int64_t what);
 
 /* A new key of `kind`, drawn by the system: `bits` is an RSA key's size,
@@ -254,6 +267,18 @@ int64_t hero_crypto_encrypt(hero_crypto_key *k, int64_t scheme, const void *text
  * `buffer` by the fill form, whose measure is the most a text can be. Fails
  * `HERO_CRYPTO_FORGED` for bytes that do not decrypt, saying no more. */
 int64_t hero_crypto_decrypt(hero_crypto_key *k, int64_t scheme, const void *data, uint64_t count, void *buffer, uint64_t buffer_count);
+
+/* PBKDF2 (RFC 8018 § 5.2) with the HMAC `digest` names, one of the four
+ * `HERO_CRYPTO_PBKDF2_*`: `count` bytes of key made from `password_count`
+ * bytes of `password` and `salt_count` bytes of `salt` by `iterations`
+ * HMACs a block, written into `buffer`, which holds `count` bytes. Either
+ * count of bytes given may be 0, its pointer then NULL. Answers `count`, or
+ * -1: `HERO_CRYPTO_INVALID` for a digest none of the four, `iterations` or
+ * `count` of 0 or past `HERO_CRYPTO_PBKDF2_MOST`, a password or a salt past
+ * it, bytes with no pointer; `HERO_CRYPTO_UNSUPPORTED` where this machine
+ * computes none (no `libcrypto.so.3`); `HERO_CRYPTO_OTHER` where the system
+ * fails. Nothing in `buffer` is to be read after a failure. */
+int64_t hero_crypto_pbkdf2(int64_t digest, const void *password, uint64_t password_count, const void *salt, uint64_t salt_count, uint64_t iterations, void *buffer, uint64_t count);
 
 /* The kind of the last call's failure on this thread, `HERO_CRYPTO_OK`
  * after a call that did not fail, and the platform's own number for it (0

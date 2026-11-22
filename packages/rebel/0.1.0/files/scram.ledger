@@ -2,7 +2,7 @@
 # the three SCRAM clients `sql/postgres`, `mongodb` and `kafka` each wrote, and
 # `mongodb`'s RFC 3454 tables. The vectors are RFC 5802's (SCRAM-SHA-1) and RFC
 # 7677's (SCRAM-SHA-256), each computed again by Python 3.15.2's `hashlib` and
-# `hmac` on 2026-11-20, a SHA-512 exchange and PostgreSQL's (the user "")
+# `hmac` on 2026-11-20 (the server's side and its verifiers on 2026-11-22), a SHA-512 exchange and PostgreSQL's (the user "")
 # computed by them, RFC 4013's seven examples, and the SASLprep cases pymongo
 # 4.20 answered when `mongodb` was written.
 
@@ -12,6 +12,20 @@ capability scram/exchange  the client's side of a SCRAM login: its first message
   rust    -
   python  -
   note    RFC 5802 and RFC 7677 by SHA-1, SHA-256 and SHA-512; none of the three standard libraries speaks SCRAM. The server's signature is compared in constant time; an extension (`m=`) and an attribute named twice are refused; the iteration count is held between the caller's least (4096 for `mongodb`, as MongoDB's drivers' authentication specification asks; 1 for `sql/postgres` and `kafka`, as before 2026-11-20) and `scram.MOST_ITERATIONS`, ten million, so a server cannot make the client spend without end. Until 2026-11-20 the three packages each wrote the exchange: `kafka` answered a wrong server signature `invalid` where the others answered `permission`, `permission` for all three now; `sql/postgres` and `mongodb` held no upper bound on the count
+
+capability scram/server  the server's side of a SCRAM login: its first message, the client's proof checked, its signature
+  heroes  scram.ClientFirst, scram.read_client_first, scram.ServerExchange, scram.server_start, scram.server_first_message, scram.Verdict, scram.server_verdict
+  go      -
+  rust    -
+  python  -
+  note    RFC 5802 sections 3, 5 and 7 and RFC 7677, read from the other end of the client's arithmetic: the proof holds where the digest of the proof combined with `HMAC(StoredKey, AuthMessage)` is `StoredKey`, compared in constant time; RFC 7677's and RFC 5802's exchanges answered byte for byte, and Rebel's client logged in against it by each hash. The check of the final message answers a `Verdict` and fails nothing, since the server sends a final message either way, `v=` or RFC 5802's `e=` word: `invalid-encoding`, `channel-bindings-dont-match`, `other-error` for a nonce not the exchange's, `invalid-proof`. No channel binding is offered, as the client's side offers none: a client requiring one (`p=`) is refused, one that would bind (`y`) read. PostgreSQL's clients send the user `n=,`, which RFC 5802's grammar forbids and PostgreSQL reads, and so is it read here. None of the three standard libraries speaks SCRAM; Python's `scramp` (`ScramMechanism.make_server`) and Go's `xdg-go/scram` (`Server`) offer the server's side, their source not read
+
+capability scram/verifier  a user's credentials made from a password, and kept in PostgreSQL's stored form
+  heroes  scram.Verifier, scram.new_verifier, scram.format_verifier, scram.parse_verifier
+  go      -
+  rust    -
+  python  -
+  note    `StoredKey` and `ServerKey` from PBKDF2 of the prepared password, as Python's `hashlib.pbkdf2_hmac` and `hmac` computed them for RFC 7677's and RFC 5802's salts on 2026-11-22; PostgreSQL's `SCRAM-SHA-256$<iterations>:<salt>$<StoredKey>:<ServerKey>`, written alike for SHA-1 and SHA-512 under their own names, which PostgreSQL does not write; an empty salt refused, which no server should draw, and a key read back held to its hash's digest length
 
 capability scram/nonce  a fresh nonce for one login
   heroes  scram.new_nonce

@@ -1,0 +1,552 @@
+# The factorizations of a matrix of floats, each by its published algorithm
+# (Golub and Van Loan, *Matrix Computations*, 4th edition): LU with partial
+# pivoting (algorithm 3.4.1), Householder QR (5.2.1) with LAPACK's sign, so
+# that a reflection never subtracts two near numbers, the Cholesky factor
+# row by row, the cyclic Jacobi method for the eigenvalues of a symmetric
+# matrix (8.5.3), and Hestenes' one-sided Jacobi rotations for the singular
+# values. A matrix is held row by row in one list, `a[r * n + c]`; the face
+# checks the shapes before it calls, so here they are taken as given.
+
+use math
+
+# The machine epsilon of an `f64`, 2^-52.
+constant EPSILON: f64
+    0.0000000000000002220446049250313
+
+# The most sweeps of a Jacobi method: each sweep is a rotation for every
+# pair, and the off-diagonal sum falls quadratically once it is small, so a
+# matrix of floats settles in well under this; one that does not is answered
+# as it stands after the last.
+constant MOST_SWEEPS: i64
+    100
+
+# An LU factorization: `lower` with ones on its diagonal and `upper`, both
+# n by n row by row, and `order`, where row `k` of the product stands in the
+# matrix; `sign` is 1.0 or -1.0, the permutation's parity; `singular` where a
+# column held no pivot but zeros.
+record Factored
+    # The unit lower triangle.
+    lower: [f64]
+    # The upper triangle.
+    upper: [f64]
+    # The row of the matrix each row of `lower * upper` is.
+    order: [i64]
+    # The permutation's parity.
+    sign: f64
+    # Whether a column had no pivot but zeros.
+    singular: bool
+
+# The LU factorization of `a`, n by n, with partial pivoting: at each column
+# the entry of largest size below the diagonal is brought up, so no
+# multiplier passes 1 in size.
+#
+# - `a`: the matrix, row by row.
+# - `n`: its size.
+function lu(a: [f64], n: i64) -> Factored
+    u: [f64] @= a
+    l: [f64] @= []
+    order: [i64] @= []
+    sign: f64 @= 1.0
+    singular: bool @= false
+
+    for _ in range(from: 0, to: n * n)
+        l @ l.push(0.0)
+
+    for i in range(from: 0, to: n)
+        order @ order.push(i)
+        l[i * n + i] @ 1.0
+
+    for k in range(from: 0, to: n)
+        pivot: i64 @= k
+        largest: f64 @= math.abs(u[k * n + k])
+
+        for r in range(from: k + 1, to: n)
+            if math.abs(u[r * n + k]) > largest
+                largest @ math.abs(u[r * n + k])
+                pivot @ r
+
+        if pivot != k
+            for c in range(from: 0, to: n)
+                kept = u[k * n + c]
+                u[k * n + c] @ u[pivot * n + c]
+                u[pivot * n + c] @ kept
+
+            for c in range(from: 0, to: k)
+                kept = l[k * n + c]
+                l[k * n + c] @ l[pivot * n + c]
+                l[pivot * n + c] @ kept
+
+            kept_row = order[k]
+            order[k] @ order[pivot]
+            order[pivot] @ kept_row
+            sign @ -sign
+
+        if u[k * n + k] == 0.0
+            singular @ true
+            continue
+
+        for r in range(from: k + 1, to: n)
+            factor = u[r * n + k] / u[k * n + k]
+            l[r * n + k] @ factor
+
+            for c in range(from: k, to: n)
+                u[r * n + c] @ u[r * n + c] - factor * u[k * n + c]
+
+    return Factored(lower: l, upper: u, order: order, sign: sign, singular: singular)
+
+# The solution of `lower * upper * x = b` taken in `f.order`: forward
+# substitution through the unit lower triangle, then back substitution
+# through the upper one, whose diagonal holds no zero.
+#
+# - `f`: the factorization of a matrix that is not singular.
+# - `n`: its size.
+# - `b`: the right-hand side, n values, in the matrix's own row order.
+function substituted(f: Factored, n: i64, b: [f64]) -> [f64]
+    y: [f64] @= []
+
+    for i in range(from: 0, to: n)
+        sum: f64 @= b[f.order[i]]
+
+        for k in range(from: 0, to: i)
+            sum @ sum - f.lower[i * n + k] * y[k]
+
+        y @ y.push(sum)
+
+    x: [f64] @= y
+    i: i64 @= n - 1
+
+    while i >= 0
+        sum: f64 @= y[i]
+
+        for k in range(from: i + 1, to: n)
+            sum @ sum - f.upper[i * n + k] * x[k]
+
+        x[i] @ sum / f.upper[i * n + i]
+        i @ i - 1
+
+    return x
+
+# A Householder QR factorization: `q`, m by k with orthonormal columns, and
+# `r`, k by n upper triangular, k the smaller of m and n.
+record Reflected
+    # Q, row by row.
+    q: [f64]
+    # R, row by row.
+    r: [f64]
+
+# The reduced QR factorization of `a`, m by n, by Householder reflections:
+# each column's part on and below the diagonal is sent to a multiple of the
+# first axis, its diagonal entry taking the sign opposite to that column's
+# first entry (LAPACK's `dgeqrf`), and Q gathered by applying the
+# reflections to the first k columns of the identity.
+#
+# - `a`: the matrix, row by row.
+# - `m`: its rows.
+# - `n`: its columns.
+function qr(a: [f64], m: i64, n: i64) -> Reflected
+    k = if m < n
+        m
+    else
+        n
+    r: [f64] @= a
+    vectors: [[f64]] @= []
+
+    for j in range(from: 0, to: k)
+        column: [f64] @= []
+
+        for i in range(from: j, to: m)
+            column @ column.push(r[i * n + j])
+
+        size = norm2(column)
+        v: [f64] @= column
+
+        if size != 0.0
+            alpha = if column[0] >= 0.0
+                -size
+            else
+                size
+            v[0] @ column[0] - alpha
+            vv = norm2(v)
+
+            if vv != 0.0
+                for t in range(from: 0, to: v.len())
+                    v[t] @ v[t] / vv
+
+                for c in range(from: j, to: n)
+                    dot: f64 @= 0.0
+
+                    for t in range(from: 0, to: v.len())
+                        dot @ dot + v[t] * r[(j + t) * n + c]
+
+                    for t in range(from: 0, to: v.len())
+                        r[(j + t) * n + c] @ r[(j + t) * n + c] - 2.0 * v[t] * dot
+            else
+                for t in range(from: 0, to: v.len())
+                    v[t] @ 0.0
+        else
+            for t in range(from: 0, to: v.len())
+                v[t] @ 0.0
+
+        for i in range(from: j + 1, to: m)
+            r[i * n + j] @ 0.0
+
+        vectors @ vectors.push(v)
+
+    q: [f64] @= []
+
+    for i in range(from: 0, to: m)
+        for c in range(from: 0, to: k)
+            one = if i == c
+                1.0
+            else
+                0.0
+            q @ q.push(one)
+
+    j: i64 @= k - 1
+
+    while j >= 0
+        v = vectors[j]
+
+        for c in range(from: 0, to: k)
+            dot: f64 @= 0.0
+
+            for t in range(from: 0, to: v.len())
+                dot @ dot + v[t] * q[(j + t) * k + c]
+
+            for t in range(from: 0, to: v.len())
+                q[(j + t) * k + c] @ q[(j + t) * k + c] - 2.0 * v[t] * dot
+
+        j @ j - 1
+
+    top: [f64] @= []
+
+    for i in range(from: 0, to: k)
+        for c in range(from: 0, to: n)
+            top @ top.push(r[i * n + c])
+
+    return Reflected(q: q, r: top)
+
+# The euclidean length of `v`, over its values divided by the largest, so no
+# square passes an `f64`'s range where the length does not.
+#
+# - `v`: the values.
+function norm2(v: [f64]) -> f64
+    largest: f64 @= 0.0
+
+    for x in v
+        largest @ math.max(a: largest, b: math.abs(x))
+
+    if largest == 0.0
+        return 0.0
+    sum: f64 @= 0.0
+
+    for x in v
+        s = x / largest
+        sum @ sum + s * s
+
+    return largest * math.sqrt(sum)
+
+# The lower triangle L with `L * Lᵀ = a`, row by row, or an empty list where
+# `a` is not positive definite (a diagonal step not above zero).
+#
+# - `a`: a symmetric matrix, row by row.
+# - `n`: its size.
+function cholesky(a: [f64], n: i64) -> [f64]
+    l: [f64] @= []
+
+    for _ in range(from: 0, to: n * n)
+        l @ l.push(0.0)
+
+    for i in range(from: 0, to: n)
+        for j in range(from: 0, to: i + 1)
+            sum: f64 @= a[i * n + j]
+
+            for k in range(from: 0, to: j)
+                sum @ sum - l[i * n + k] * l[j * n + k]
+
+            if i == j
+                if math.is_nan(sum) || sum <= 0.0
+                    return []
+                l[i * n + i] @ math.sqrt(sum)
+            else
+                l[i * n + j] @ sum / l[j * n + j]
+
+    return l
+
+# The eigenvalues of a symmetric matrix and its eigenvectors as the columns
+# of a matrix, beside each other in the values' order.
+record Spectrum
+    # The eigenvalues, ascending.
+    values: [f64]
+    # The eigenvectors as columns, n by n row by row, each of length 1 and
+    # its first entry of largest size positive.
+    vectors: [f64]
+
+# The eigenvalues and eigenvectors of `a`, symmetric, by cyclic Jacobi
+# rotations: each sweep zeroes every off-diagonal pair in turn, until the
+# off-diagonal entries are below the diagonal's size times the machine
+# epsilon or `MOST_SWEEPS` have run.
+#
+# - `a`: the matrix, row by row.
+# - `n`: its size.
+function jacobi(a: [f64], n: i64) -> Spectrum
+    w: [f64] @= a
+    v: [f64] @= []
+
+    for i in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            one = if i == c
+                1.0
+            else
+                0.0
+            v @ v.push(one)
+
+    sweep: i64 @= 0
+
+    while sweep < MOST_SWEEPS
+        off: f64 @= 0.0
+        diagonal: f64 @= 0.0
+
+        for i in range(from: 0, to: n)
+            diagonal @ diagonal + w[i * n + i] * w[i * n + i]
+
+            for c in range(from: i + 1, to: n)
+                off @ off + w[i * n + c] * w[i * n + c]
+
+        if off <= EPSILON * EPSILON * diagonal || off == 0.0
+            break
+
+        for p in range(from: 0, to: n)
+            for q in range(from: p + 1, to: n)
+                apq = w[p * n + q]
+
+                if apq != 0.0
+                    theta = (w[q * n + q] - w[p * n + p]) / (2.0 * apq)
+
+                    t = if theta >= 0.0
+                        1.0 / (theta + math.sqrt(theta * theta + 1.0))
+                    else
+                        -1.0 / (-theta + math.sqrt(theta * theta + 1.0))
+                    c = 1.0 / math.sqrt(t * t + 1.0)
+                    s = t * c
+
+                    for k in range(from: 0, to: n)
+                        wkp = w[k * n + p]
+                        wkq = w[k * n + q]
+                        w[k * n + p] @ c * wkp - s * wkq
+                        w[k * n + q] @ s * wkp + c * wkq
+
+                    for k in range(from: 0, to: n)
+                        wpk = w[p * n + k]
+                        wqk = w[q * n + k]
+                        w[p * n + k] @ c * wpk - s * wqk
+                        w[q * n + k] @ s * wpk + c * wqk
+
+                    for k in range(from: 0, to: n)
+                        vkp = v[k * n + p]
+                        vkq = v[k * n + q]
+                        v[k * n + p] @ c * vkp - s * vkq
+                        v[k * n + q] @ s * vkp + c * vkq
+
+        sweep @ sweep + 1
+
+    order: [i64] @= []
+
+    for i in range(from: 0, to: n)
+        order @ order.push(i)
+        at: i64 @= order.len() - 1
+
+        while at > 0 && w[order[at - 1] * n + order[at - 1]] > w[i * n + i]
+            order[at] @ order[at - 1]
+            order[at - 1] @ i
+            at @ at - 1
+
+    values: [f64] @= []
+    vectors: [f64] @= []
+
+    for _ in range(from: 0, to: n * n)
+        vectors @ vectors.push(0.0)
+
+    for j in range(from: 0, to: n)
+        source = order[j]
+        values @ values.push(w[source * n + source])
+        biggest: i64 @= 0
+
+        for i in range(from: 0, to: n)
+            if math.abs(v[i * n + source]) > math.abs(v[biggest * n + source])
+                biggest @ i
+
+        flip = if v[biggest * n + source] < 0.0
+            -1.0
+        else
+            1.0
+
+        for i in range(from: 0, to: n)
+            vectors[i * n + j] @ flip * v[i * n + source]
+
+    return Spectrum(values: values, vectors: vectors)
+
+# The singular values of `a`, m by n with m at least n, descending, by
+# one-sided Jacobi rotations of its columns until every pair is orthogonal to
+# the machine epsilon: each value is then a column's length.
+#
+# - `a`: the matrix, row by row.
+# - `m`: its rows, at least `n`.
+# - `n`: its columns.
+function singular_values(a: [f64], m: i64, n: i64) -> [f64]
+    u: [f64] @= a
+    sweep: i64 @= 0
+
+    while sweep < MOST_SWEEPS
+        rotated: bool @= false
+
+        for p in range(from: 0, to: n)
+            for q in range(from: p + 1, to: n)
+                alpha: f64 @= 0.0
+                beta: f64 @= 0.0
+                gamma: f64 @= 0.0
+
+                for i in range(from: 0, to: m)
+                    alpha @ alpha + u[i * n + p] * u[i * n + p]
+                    beta @ beta + u[i * n + q] * u[i * n + q]
+                    gamma @ gamma + u[i * n + p] * u[i * n + q]
+
+                if gamma != 0.0 && math.abs(gamma) > EPSILON * math.sqrt(alpha * beta)
+                    rotated @ true
+                    zeta = (beta - alpha) / (2.0 * gamma)
+
+                    t = if zeta >= 0.0
+                        1.0 / (zeta + math.sqrt(1.0 + zeta * zeta))
+                    else
+                        -1.0 / (-zeta + math.sqrt(1.0 + zeta * zeta))
+                    c = 1.0 / math.sqrt(1.0 + t * t)
+                    s = c * t
+
+                    for i in range(from: 0, to: m)
+                        up = u[i * n + p]
+                        uq = u[i * n + q]
+                        u[i * n + p] @ c * up - s * uq
+                        u[i * n + q] @ s * up + c * uq
+
+        sweep @ sweep + 1
+
+        if !rotated
+            break
+
+    values: [f64] @= []
+
+    for j in range(from: 0, to: n)
+        column: [f64] @= []
+
+        for i in range(from: 0, to: m)
+            column @ column.push(u[i * n + j])
+
+        values @ values.push(norm2(column))
+
+    return descending(values)
+
+# `values` sorted from the largest.
+#
+# - `values`: the values, none a nan.
+function descending(values: [f64]) -> [f64]
+    out: [f64] @= []
+
+    for x in values
+        out @ out.push(x)
+        at: i64 @= out.len() - 1
+
+        while at > 0 && out[at - 1] < x
+            out[at] @ out[at - 1]
+            out[at - 1] @ x
+            at @ at - 1
+
+    return out
+
+# Whether `a` and `b` are within `within` of each other, value by value.
+#
+# - `a`: one list.
+# - `b`: another, as long.
+# - `within`: the largest difference allowed.
+function close_to(a: [f64], b: [f64], within: f64) -> bool
+    if a.len() != b.len()
+        return false
+
+    for k in range(from: 0, to: a.len())
+        if math.abs(a[k] - b[k]) > within
+            return false
+
+    return true
+
+# Whether each row of `a`, n columns wide, is the same row of `b` or its
+# negation, within `within`: R of a QR factorization is fixed up to the sign
+# of each row, which Q's columns take back.
+#
+# - `a`: one matrix, row by row.
+# - `b`: another of the same shape.
+# - `n`: the columns.
+# - `within`: the largest difference allowed.
+function rows_up_to_sign(a: [f64], b: [f64], n: i64, within: f64) -> bool
+    if a.len() != b.len()
+        return false
+
+    for r in range(from: 0, to: a.len() / n)
+        same: bool @= true
+        opposite: bool @= true
+
+        for c in range(from: 0, to: n)
+            same @ same && math.abs(a[r * n + c] - b[r * n + c]) <= within
+            opposite @ opposite && math.abs(a[r * n + c] + b[r * n + c]) <= within
+
+        if !same && !opposite
+            return false
+
+    return true
+
+# 2 to the power `n`, by doubling: exact for every `n` from 0 to 1023.
+#
+# - `n`: 0 or more.
+function power_of_two(n: i64) -> f64
+    x: f64 @= 1.0
+
+    for _ in range(from: 0, to: n)
+        x @ x * 2.0
+
+    return x
+
+## Tests
+
+test "lu: a pivot brought up, the factors' product the permuted matrix, the parity, and a singular column told"
+    f = lu([0.0, 1.0, 2.0, 3.0], n: 2)
+    assert f.order == [1, 0] && f.sign == -1.0 && !f.singular
+    assert f.lower == [1.0, 0.0, 0.0, 1.0] && f.upper == [2.0, 3.0, 0.0, 1.0]
+    assert lu([1.0, 2.0, 2.0, 4.0], n: 2).singular
+    assert substituted(lu([2.0, 1.0, 1.0, 3.0], n: 2), n: 2, b: [3.0, 5.0]) == [0.8, 1.4]
+
+test "qr: Householder's R, each row the worked example's up to its sign and the first diagonal entry opposite to the column's first, and a zero column"
+    got = qr([12.0, -51.0, 4.0, 6.0, 167.0, -68.0, -4.0, 24.0, -41.0], m: 3, n: 3)
+    assert rows_up_to_sign(
+        a: got.r,
+        b: [14.0, 21.0, -14.0, 0.0, 175.0, -70.0, 0.0, 0.0, 35.0],
+        n: 3,
+        within: 0.000000001
+    )
+    assert got.r[0] < 0.0
+    zero = qr([0.0, 1.0, 0.0, 1.0], m: 2, n: 2)
+    assert zero.r[0] == 0.0 && zero.r[2] == 0.0
+
+test "cholesky and jacobi: Wikipedia's factor, a matrix not positive definite, and two spectra"
+    assert cholesky([4.0, 12.0, -16.0, 12.0, 37.0, -43.0, -16.0, -43.0, 98.0], n: 3) == [2.0, 0.0, 0.0, 6.0, 1.0, 0.0, -8.0, 5.0, 3.0]
+    assert cholesky([1.0, 2.0, 2.0, 1.0], n: 2).len() == 0
+    s = jacobi([2.0, 1.0, 1.0, 2.0], n: 2)
+    assert close_to(a: s.values, b: [1.0, 3.0], within: 0.000000000001)
+    third = jacobi([2.0, 0.0, 0.0, 0.0, 3.0, 4.0, 0.0, 4.0, 9.0], n: 3)
+    assert close_to(a: third.values, b: [1.0, 2.0, 11.0], within: 0.000000000001)
+
+test "singular_values, descending and norm2: a matrix of known values, a sort, and lengths past an f64's square"
+    assert close_to(
+        a: singular_values([3.0, 0.0, 4.0, 5.0], m: 2, n: 2),
+        b: [math.sqrt(45.0), math.sqrt(5.0)],
+        within: 0.000000000001
+    )
+    assert descending([1.0, 3.0, 2.0]) == [3.0, 2.0, 1.0] && descending([]).len() == 0
+    assert norm2([3.0, 4.0]) == 5.0 && norm2([]) == 0.0

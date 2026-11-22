@@ -2316,8 +2316,8 @@ test "key_tag_of: a key of RSA/MD5, its tag read from its last bytes"
 # The resolver this machine is configured with.
 test "system: this machine's name servers"
     match system()
-        .ok r  => assert r.servers.len() >= 1 && r.attempts >= 1
-        .err e => assert e.code == UNSUPPORTED
+        .ok r  => assert r.servers.len() >= 1 && r.attempts >= 1 && os.system() != .windows
+        .err e => assert e.code == UNSUPPORTED && os.system() == .windows
 
 # A resolver read from a file's text.
 test "parse_resolv_conf: two servers and a search list"

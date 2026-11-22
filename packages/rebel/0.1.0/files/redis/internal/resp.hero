@@ -2,7 +2,11 @@
 # Redis's "Protocol specification" lays them out: a command written as an
 # array of bulk strings, and one token of a reply read at a time, a scalar
 # whole or an aggregate's header, each failing `invalid` where the bytes are
-# no RESP and telling where the bytes end before the token does.
+# no RESP and telling where the bytes end before the token does. Bytes cut
+# short are told apart from bytes no more bytes could make RESP: a token
+# whose line has not ended is refused at once where its type's byte, or the
+# number its line begins, already cannot be RESP, so a reader waiting for
+# more bytes never waits on bytes that are wrong.
 
 use bytes
 use numbers
@@ -164,11 +168,18 @@ function number(data: [u8], from: i64, to: i64) -> i64?
 function scan(data: [u8], at: i64) -> Scanned?
     if at >= data.len()
         return ok(incomplete())
+    kind = data[at]
+
+    if !is_type(kind)
+        return fail(
+            code: INVALID,
+            msg: f"the reply holds '{bytes.format_escaped([kind])}' at byte {at}, which begins no RESP type"
+        )
     end = line_end(data, at: at + 1)?
 
     if end < 0
+        begun_checked(data, at: at)?
         return ok(incomplete())
-    kind = data[at]
     after = end + 2
 
     if kind == '+' || kind == '-' || kind == ':' || kind == ',' || kind == '(' || kind == '_' || kind == '#'
@@ -202,6 +213,12 @@ function scan(data: [u8], at: i64) -> Scanned?
         if n > MOST_BULK
             return fail(code: LIMIT, msg: f"the reply's string at byte {at} is {n} bytes, past {MOST_BULK}")
 
+        if data.len() > after + n && data[after + n] != '\r' || data.len() > after + n + 1 && data[after + n + 1] != '\n'
+            return fail(
+                code: INVALID,
+                msg: f"the reply's string at byte {at} is not ended by a carriage return and a line feed"
+            )
+
         if data.len() - after < n + 2
             return ok(incomplete())
 
@@ -230,6 +247,55 @@ function scan(data: [u8], at: i64) -> Scanned?
         code: INVALID,
         msg: f"the reply holds '{bytes.format_escaped([kind])}' at byte {at}, which begins no RESP type"
     )
+
+# Whether `kind` is the byte one of RESP's types begins with.
+#
+# - `kind`: the byte.
+function is_type(kind: u8) -> bool
+    return kind == '+' || kind == '-' || kind == ':' || kind == '$' || kind == '*' || kind == '_' || kind == ',' || kind == '#' || kind == '!' || kind == '=' || kind == '(' || kind == '%' || kind == '~' || kind == '|' || kind == '>'
+
+# Whether the bytes of a token whose line has not ended, from `at` to the end
+# of `data` (a last `\r` left out, its `\n` not yet come), can still begin
+# the token their type's byte opens: a sign and digits so far for a number,
+# a length or a count, as `number` reads them, `?` alone after `$` or `*` (a streamed string or
+# aggregate, which `scan` refuses once the line ends), `t` or `f` alone for a
+# boolean, nothing for a null.
+#
+# - `data`: the bytes read so far.
+# - `at`: where the token begins; `data[at]` is a type's byte.
+#
+# Fails `invalid` where they cannot, naming the byte.
+function begun_checked(data: [u8], at: i64) -> ()?
+    kind = data[at]
+    to: i64 @= data.len()
+
+    if to > at + 1 && data[to - 1] == '\r'
+        to @ to - 1
+    line = data.slice(from: at + 1, to: to)
+
+    if kind == '_' && line.len() > 0
+        return fail(code: INVALID, msg: f"the reply's null at byte {at} carries bytes")
+
+    if kind == '#' && (line.len() > 1 || line.len() == 1 && line[0] != 't' && line[0] != 'f')
+        return fail(code: INVALID, msg: f"the reply's boolean at byte {at} is neither t nor f")
+    numeric = kind == ':' || kind == '$' || kind == '!' || kind == '=' || kind == '*' || kind == '%' || kind == '~' || kind == '|' || kind == '>'
+
+    if !numeric || line.len() == 0
+        return ok()
+
+    if (kind == '$' || kind == '*') && line == ['?']
+        return ok()
+    i: i64 @= 0
+
+    if line[0] == '-' || line[0] == '+'
+        i @ 1
+
+    while i < line.len()
+        if line[i] < '0' || line[i] > '9'
+            return fail(code: INVALID, msg: f"the reply holds no number at byte {at + 1}")
+        i @ i + 1
+
+    return ok()
 
 # Whether `data` writes an integer of any size: decimal digits, a `-` before
 # them allowed.
@@ -338,7 +404,33 @@ test "scan: headers of aggregates, and bytes that end before a token"
     assert !scan(bytes.from_text("+OK"), at: 0).must().complete
     assert !scan(bytes.from_text("+OK\r"), at: 0).must().complete
     assert !scan(bytes.from_text("$5\r\nhel"), at: 0).must().complete
+    assert !scan(bytes.from_text("$5\r\nhello"), at: 0).must().complete
+    assert !scan(bytes.from_text("$5\r\nhello\r"), at: 0).must().complete
     assert !scan([], at: 0).must().complete
+
+test "scan: a line not ended yet whose bytes cannot begin their token is refused at once, and one that can waits"
+    for begun in ["+", "+anything", ":", ":-", ":+1", ":12", ":12\r", "$", "$1", "$-", "$+1", "$?", "*", "*3", "*-", "*?", "%2", "~", "|1", ">4", "!2", "=1", "_", "_\r", "#", "#t", "#f\r", ",1.", "(12"]
+        assert !scan(bytes.from_text(begun), at: 0).must().complete
+
+    for wrong in ["x", "G", "GET / HTTP/1.1", ":1a", ":--", "$1x", "$??", "*a", "%?", "_x", "#x", "#tt", "!x", "$3\r\nabcd", "$3\r\nabc\rx"]
+        match scan(bytes.from_text(wrong), at: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match scan(bytes.from_text("GET / HTTP/1.1"), at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the reply holds 'G' at byte 0, which begins no RESP type"
+
+    match scan(bytes.from_text("*1a"), at: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the reply holds no number at byte 1"
+
+test "is_type: every type's byte, and bytes that begin none"
+    for t in bytes.from_text("+-:$*_,#!=(%~|>")
+        assert is_type(t)
+
+    for b in bytes.from_text("?xG \r\n0")
+        assert !is_type(b)
 
 test "scan: a type unknown, a bare line feed, a bad length, a bulk not ended, a bad boolean, a streamed string and a bulk too long"
     for bad in ["?x\r\n", "+OK\n", "$x\r\n", "$-2\r\n", "$2\r\nabc\r\n", "#x\r\n", ":12a\r\n", ":99999999999999999999\r\n", "*-2\r\n", "=3\r\nabc\r\n"]

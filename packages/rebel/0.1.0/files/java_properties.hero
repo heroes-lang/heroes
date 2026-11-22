@@ -1,0 +1,373 @@
+# Java's properties files read and written as `java.util.Properties` reads
+# and writes them: Spring Boot's `application.properties`, a resource
+# bundle, Gradle's and Maven's settings. A file is a list of keys and their
+# text values, each key once, in the order the file first names them; a
+# line ends by `\n`, `\r` or `\r\n`; `#` and `!` open a comment line; a key
+# ends at `=`, `:` or white space; a line ending in an odd count of
+# backslashes goes on in the next; and `\t`, `\n`, `\r`, `\f`, `\uXXXX`
+# and a backslash before any other character are escapes, in a key as in a
+# value. The behaviour of every function was observed of OpenJDK 27.0.1.1
+# on 2026-11-22.
+#
+# Bytes are read as Java 9 and later read a resource bundle: as UTF-8, and
+# where they are not UTF-8, the whole file as ISO 8859-1 (`decode`), or as
+# ISO 8859-1 always, as `Properties.load(InputStream)` reads them
+# (`decode_latin1`). A file written for either reader is ASCII, every other
+# character a `\u` escape (`ascii_write_options`).
+#
+# What it does not do: give a value a meaning (a number is read from it with
+# `numbers`, a list split from it with `strings`), nest the keys by their
+# dots, as Spring Boot binds them, or look a key up in a second list of
+# defaults where the first lacks it, which two calls of `value_of` do. Nor
+# does it read or write the XML form of `Properties.loadFromXML`, another
+# format, or write `store`'s line of the date and time, which a reader drops
+# and which would make two writes of one list differ.
+#
+# Fails with `invalid` where a text is not a properties file, its message
+# opening `line L:`, and where entries would not read back as written;
+# `not_found` where a key looked up is not there.
+
+use bytes
+use java_properties/internal/read
+use java_properties/internal/write
+
+## Codes
+
+# The code of a text that is not a properties file, `parse` and `decode`
+# failing with it at a `\u` not followed by four hexadecimal digits or
+# writing half of a surrogate pair no other half completes, and of entries
+# `format` would not write so that they read back: a key twice.
+constant INVALID: str
+    "invalid"
+
+# The code of a key looked up that is not there: `value_of`, `remove_key`.
+constant NOT_FOUND: str
+    "not_found"
+
+## The entries
+
+# A key and its value. A list of entries is a file's content, each key once
+# where `parse` made it or `set_value` changed it.
+record Entry
+    # The key, unescaped; it may be empty, as `=v` writes it.
+    key: str
+    # The value, unescaped; white space at its start dropped by the reader,
+    # at its end kept.
+    value: str
+
+## Reading
+
+# The entries `text` writes, as `Properties.load(Reader)` reads it: each key
+# once, in the order the text first names it, with the last value the text
+# gives it.
+#
+# - `text`: the file's text; the empty text holds no entry.
+#
+# Fails `invalid` where a `\u` is not followed by four hexadecimal digits,
+# and where it writes half of a surrogate pair that no other `\u` completes,
+# which Java keeps in its string and no text of UTF-8 holds; the message
+# opens with the line. A byte order mark is read as a character of the
+# first key, as Java reads it. See also `decode`, `format`.
+function parse(text: str) -> [Entry]?
+    pairs = read.pairs_of(text)?
+    out: [Entry] @= []
+    at: {str: i64} @= {}
+
+    for p in pairs
+        match at[p.key]
+            .ok k => out[k] @ Entry(key: p.key, value: p.value)
+            .err _ =>
+                at[p.key] @ out.len()
+                out @ out.push(Entry(key: p.key, value: p.value))
+
+    return ok(out)
+
+# The entries the bytes `data` write, read as Java 9 and later read a
+# resource bundle (`PropertyResourceBundle`): as UTF-8, and where any byte
+# is not, the whole file again as ISO 8859-1, each byte the character of
+# its number.
+#
+# - `data`: the file's bytes; empty bytes hold no entry.
+#
+# Fails as `parse` does. See also `decode_latin1`.
+function decode(data: [u8]) -> [Entry]?
+    match bytes.to_text(data)
+        .ok text => return parse(text)
+        .err _   => return parse(read.latin1_text(data))
+
+# The entries the bytes `data` write, read as ISO 8859-1, each byte the
+# character of its number, as `Properties.load(InputStream)` reads them:
+# a character outside ISO 8859-1 stands in such a file as `\uXXXX`.
+#
+# - `data`: the file's bytes; empty bytes hold no entry.
+#
+# Fails as `parse` does. See also `decode`.
+function decode_latin1(data: [u8]) -> [Entry]?
+    return parse(read.latin1_text(data))
+
+## Looking up
+
+# The value of `key` in `entries`.
+#
+# - `entries`: the entries, as `parse` answers them.
+# - `key`: the key, unescaped; it may be empty.
+#
+# Fails `not_found` where no entry has the key. See also `has_key`.
+function value_of(entries: [Entry], key: str) -> str?
+    for e in entries
+        if e.key == key
+            return ok(e.value)
+
+    return fail(code: NOT_FOUND, msg: f"no key \"{key}\" among {entries.len()} entries")
+
+# Whether an entry of `entries` has `key`.
+#
+# - `entries`: the entries.
+# - `key`: the key, unescaped; it may be empty.
+function has_key(entries: [Entry], key: str) -> bool
+    for e in entries
+        if e.key == key
+            return true
+
+    return false
+
+## Changing
+
+# Sets the value of `key`: the first entry that has it takes `value`, or an
+# entry is added at the end where none has it.
+#
+# - `entries`: the entries, changed in the caller's place.
+# - `key`: the key; it may be empty.
+# - `value`: its value; it may be empty.
+#
+# See also `remove_key`.
+function set_value(@entries: [Entry], key: str, value: str)
+    for k in range(from: 0, to: entries.len())
+        if entries[k].key == key
+            entries[k] @ Entry(key: key, value: value)
+            return
+
+    entries @ entries.push(Entry(key: key, value: value))
+
+# Removes every entry that has `key`.
+#
+# - `entries`: the entries, changed in the caller's place.
+# - `key`: the key.
+#
+# Fails `not_found` where none has it, `entries` unchanged. See also
+# `set_value`.
+function remove_key(@entries: [Entry], key: str) -> ()?
+    kept: [Entry] @= []
+
+    for e in entries
+        if e.key != key
+            kept @ kept.push(e)
+
+    if kept.len() == entries.len()
+        return fail(code: NOT_FOUND, msg: f"no key \"{key}\" among {entries.len()} entries")
+    entries @ kept
+    return ok()
+
+## Writing
+
+# How `format_with` writes a file.
+record WriteOptions
+    # Comment lines written first, each line end of the text beginning a
+    # new line, each behind a `#` unless it opens with `#` or `!`; "" for
+    # none.
+    comments: str
+    # Whether every character outside space to `~` is written as `\uXXXX`,
+    # a character above U+FFFF as the two halves of its surrogate pair, as
+    # `Properties.store(OutputStream)` writes it, so that the file is ASCII
+    # and reads alike as UTF-8 and as ISO 8859-1; false writes them as they
+    # are, as `store(Writer)` does.
+    ascii: bool
+
+# The options `format` writes with: no comment, every character as it is.
+function default_write_options() -> WriteOptions
+    return WriteOptions(comments: "", ascii: false)
+
+# The options of a file that ASCII alone writes, for a reader of ISO 8859-1
+# as well as of UTF-8: no comment, every character outside space to `~` as
+# `\uXXXX`.
+function ascii_write_options() -> WriteOptions
+    return WriteOptions(comments: "", ascii: true)
+
+# `entries` as the text of a properties file, as `Properties.store(Writer)`
+# writes them but for its line of the date: `key=value` and a line feed for
+# each, in the order of `entries`, escaped so that `parse` reads them back.
+#
+# - `entries`: the entries; none writes the empty text.
+#
+# Fails `invalid` where two entries have one key, which would read back as
+# one. Java 18 and later write the keys in their order instead; sort the
+# entries first for that file. See also `format_with`, `parse`.
+function format(entries: [Entry]) -> str?
+    return format_with(entries, options: default_write_options())
+
+# `entries` as the text of a properties file, written as `options` say.
+#
+# - `entries`: the entries; none writes the comments alone.
+# - `options`: the comments and whether ASCII alone is written.
+#
+# Fails as `format` does. See also `default_write_options`,
+# `ascii_write_options`.
+function format_with(entries: [Entry], options: WriteOptions) -> str?
+    seen: {str: bool} @= {}
+    out: [u8] @= []
+
+    if options.comments != ""
+        write.push_comments(@out, comments: options.comments, ascii: options.ascii)
+
+    for e in entries
+        if !seen[e.key].is_err()
+            return fail(
+                code: INVALID,
+                msg: f"the key \"{e.key}\" stands twice, and a file holding both reads back as one"
+            )
+        seen[e.key] @ true
+        write.push_text(@out, s: e.key, key: true, ascii: options.ascii)
+        out @ out.push('=')
+        write.push_text(@out, s: e.value, key: false, ascii: options.ascii)
+        out @ out.push('\n')
+
+    # Only whole characters of the entries' own UTF-8 and ASCII are written.
+    return ok(out.validated_bytes().must())
+
+## Tests
+
+test "parse: a key read twice kept once, at its first place, with its last value, and an empty key"
+    entries = parse("a=1\nb=2\na=3\n=e\n").must()
+    assert entries == [Entry(key: "a", value: "3"), Entry(key: "b", value: "2"), Entry(key: "", value: "e")]
+    assert parse("").must().len() == 0
+
+test "parse: a byte order mark kept in the first key, as Java keeps it"
+    mark: [u8] = [0xef, 0xbb, 0xbf]
+    bom = mark.validated_bytes().must()
+    entries = parse(bom + "k=1\n").must()
+    assert entries[0].key == bom + "k" && !has_key(entries, key: "k")
+
+# Java's `PropertyResourceBundle` read "k=é" written in UTF-8 as "é", and
+# "k=é" in ISO 8859-1 beside "j=é" in UTF-8 as "é" and "Ã©", the whole file
+# read again; `Properties.load(InputStream)` read the UTF-8 as "Ã©"; on
+# 2026-11-22.
+test "decode and decode_latin1: UTF-8, a byte that is not UTF-8 reading the whole file as ISO 8859-1, and ISO 8859-1 always"
+    utf8 = bytes.from_text("k=é\n")
+    assert decode(utf8).must() == [Entry(key: "k", value: "é")]
+    assert decode_latin1(utf8).must() == [Entry(key: "k", value: "Ã©")]
+    mixed: [u8] = ['k', '=', 0xe9, '\n', 'j', '=', 0xc3, 0xa9, '\n']
+    assert decode(mixed).must() == [Entry(key: "k", value: "é"), Entry(key: "j", value: "Ã©")]
+    cut: [u8] = ['k', '=', 0xe2, 0x82, '\n']
+    assert decode(cut).must() == [Entry(key: "k", value: "â\u{82}")]
+    assert decode([]).must().len() == 0
+    assert decode(bytes.from_text("k=\\u00e9")).must() == [Entry(key: "k", value: "é")]
+
+test "decode: a malformed \\u fails with its line, after bytes read as ISO 8859-1"
+    match decode(['a', '=', 0xe9, '\n', 'b', '=', '\\', 'u', '1', '\n'])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 2: \\u is followed by fewer than four hexadecimal digits"
+
+test "value_of, has_key, set_value and remove_key: found, absent, replaced in place, added at the end, removed, and removed again"
+    entries @= parse("a=1\nb=2\n").must()
+    assert value_of(entries, key: "b").must() == "2"
+    assert has_key(entries, key: "a") && !has_key(entries, key: "c")
+
+    match value_of(entries, key: "c")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "no key \"c\" among 2 entries"
+
+    set_value(@entries, key: "a", value: "9")
+    set_value(@entries, key: "c", value: "")
+    assert entries == [Entry(key: "a", value: "9"), Entry(key: "b", value: "2"), Entry(key: "c", value: "")]
+    remove_key(@entries, key: "b").must()
+    assert entries == [Entry(key: "a", value: "9"), Entry(key: "c", value: "")]
+    assert remove_key(@entries, key: "b").is_err() && entries.len() == 2
+
+# Java's `store(Writer)` wrote these entries as these lines, sorted, on
+# 2026-11-22: `=empty key`, `\#start=\!start`, `a\=\:\#\!=x\=\:\#\!\\y`,
+# `b\ key=\ lead and trail `, `ctl=\t\n\r\f` and the two controls, and
+# `uni=é€😀`; `store(OutputStream)` the same but `\u0001\u007F` and
+# `\u00E9\u20AC\uD83D\uDE00`.
+test "format and format_with: Java's lines, each read back by parse, in both forms, with comments, and a key twice refused"
+    entries = [
+        Entry(key: "", value: "empty key")
+        Entry(key: "#start", value: "!start")
+        Entry(key: "a=:#!", value: "x=:#!\\y")
+        Entry(key: "b key", value: " lead and trail ")
+        Entry(key: "ctl", value: "\t\n\r\u{c}\u{1}\u{7f}")
+        Entry(key: "uni", value: "é€😀")
+    ]
+    text = format(entries).must()
+    assert text == "=empty key\n\\#start=\\!start\na\\=\\:\\#\\!=x\\=\\:\\#\\!\\\\y\nb\\ key=\\ lead and trail \nctl=\\t\\n\\r\\f\u{1}\u{7f}\nuni=é€😀\n"
+    assert parse(text).must() == entries
+    ascii = format_with(entries, options: ascii_write_options()).must()
+    assert ascii == "=empty key\n\\#start=\\!start\na\\=\\:\\#\\!=x\\=\\:\\#\\!\\\\y\nb\\ key=\\ lead and trail \nctl=\\t\\n\\r\\f\\u0001\\u007F\nuni=\\u00E9\\u20AC\\uD83D\\uDE00\n"
+    assert decode_latin1(bytes.from_text(ascii)).must() == entries
+    assert decode(bytes.from_text(ascii)).must() == entries
+    commented = format_with(
+        [Entry(key: "k", value: "v")],
+        options: WriteOptions(comments: "built\nby hand", ascii: false)
+    ).must()
+    assert commented == "#built\n#by hand\nk=v\n"
+    assert format([]).must() == ""
+
+    match format([Entry(key: "k", value: "1"), Entry(key: "k", value: "2")])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the key \"k\" stands twice, and a file holding both reads back as one"
+
+## Examples
+
+# The settings of a Spring Boot application read, a value looked up.
+test "parse: an application's settings"
+    entries = parse("# the server\nserver.port = 8080\nspring.application.name: shop\n").must()
+    assert value_of(entries, key: "server.port").must() == "8080"
+
+# A resource bundle written in UTF-8 read, and one in ISO 8859-1 read alike.
+test "decode: a resource bundle in UTF-8 or in ISO 8859-1"
+    assert decode(bytes.from_text("greeting=Grüß dich\n")).must()[0].value == "Grüß dich"
+    assert decode(['g', '=', 'G', 'r', 0xfc, 0xdf, '\n']).must()[0].value == "Grüß"
+
+# A file Java's `Properties.load(InputStream)` wrote, its characters past
+# ISO 8859-1 as `\u` escapes.
+test "decode_latin1: an escape and a byte of ISO 8859-1"
+    assert decode_latin1(['k', '=', 0xe9, '\\', 'u', '2', '0', 'a', 'c']).must()[0].value == "é€"
+
+# A setting looked up, and one the file lacks told apart.
+test "value_of: a port, and a key the file lacks"
+    entries = parse("port=8080\n").must()
+    assert value_of(entries, key: "port").must() == "8080"
+    assert value_of(entries, key: "host").is_err()
+
+# Whether a file sets a key at all.
+test "has_key: a debug flag"
+    assert has_key(parse("debug\n").must(), key: "debug")
+
+# A setting changed, and another added at the end.
+test "set_value: a port changed and a host added"
+    entries @= parse("port=8080\n").must()
+    set_value(@entries, key: "port", value: "9090")
+    set_value(@entries, key: "host", value: "example.com")
+    assert format(entries).must() == "port=9090\nhost=example.com\n"
+
+# A setting taken out of a file.
+test "remove_key: a password removed before the file is shared"
+    entries @= parse("user=ana\npassword=secret\n").must()
+    remove_key(@entries, key: "password").must()
+    assert format(entries).must() == "user=ana\n"
+
+# The options `format` writes with.
+test "default_write_options: no comment, characters as they are"
+    assert default_write_options() == WriteOptions(comments: "", ascii: false)
+
+# A file ASCII alone writes, for a reader of ISO 8859-1.
+test "ascii_write_options: an accent as an escape"
+    assert format_with([Entry(key: "city", value: "Zürich")], options: ascii_write_options()).must() == "city=Z\\u00FCrich\n"
+
+# Entries written back as a file, a space and a sign escaped.
+test "format: a key with a space and a value with an equals sign"
+    assert format([Entry(key: "full name", value: "a=b")]).must() == "full\\ name=a\\=b\n"
+
+# A file written with a comment above its entries.
+test "format_with: a comment line first"
+    options = WriteOptions(comments: "generated", ascii: false)
+    assert format_with([Entry(key: "k", value: "v")], options: options).must() == "#generated\nk=v\n"
