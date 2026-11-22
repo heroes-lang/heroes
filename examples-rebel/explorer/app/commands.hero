@@ -146,12 +146,15 @@ function open_chosen(@c: controller.Controller)
         .ok _  => c.ex.status @ f"Opened {c.ex.chosen[0]} in its application"
         .err x => c.ex.status @ f"{c.ex.chosen[0]} could not be opened: {x.msg}"
 
-# Empties the trash once the person said yes to the question; a headless
-# app with no answer given says no.
+# Asks the person whether to empty the trash, as a message box over the
+# window whose answer `answered` reads; one where none is asked already.
 #
 # - `c`: the controller.
 function empty_trash(@c: controller.Controller)
-    answer = ui.message(
+    if c.trash_asked.len() > 0
+        return
+
+    asked = ui.message(
         @c.app,
         over: c.w.window,
         title: "Empty Trash",
@@ -160,13 +163,25 @@ function empty_trash(@c: controller.Controller)
         buttons: .yes_no
     )
 
-    match answer
-        .ok a =>
-            if a == .yes
-                told(@c, done: actions.empty_trash(@c.ex))
-            else
-                c.ex.status @ "The trash was left as it was"
+    match asked
+        .ok d  => c.trash_asked @ [d]
         .err _ => c.ex.status @ "The trash was left as it was"
+
+# Empties the trash where the person said yes to the question `dialog`.
+#
+# - `c`: the controller.
+# - `dialog`: the message box answered.
+# - `answer`: its button pressed.
+function answered(@c: controller.Controller, dialog: ui.Dialog, answer: ui.Answer)
+    if c.trash_asked != [dialog]
+        return
+
+    c.trash_asked @ []
+
+    if answer == .yes
+        told(@c, done: actions.empty_trash(@c.ex))
+    else
+        c.ex.status @ "The trash was left as it was"
 
 # Opens the question window asking for `asking`, its field holding `text`.
 #

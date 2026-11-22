@@ -8,6 +8,7 @@
 # headless side does it here, the native side's system does it, and the table
 # follows its event.
 
+use image
 use time
 use ui
 use ui/hero_ui
@@ -99,15 +100,15 @@ function told(@app: ui.App, id: i64, value: i64)
         model.put(@app.table, n: n)
 
 # Whether the person can choose item `id`: it, and every menu up to its
-# window, enabled.
+# window or its tray icon, enabled.
 function open_item(m: model.Model, id: i64) -> bool
     at @= id
 
     while true
         n = m.nodes[at].must()
 
-        if n.kind == hero_ui.HERO_UI_WINDOW
-            return true
+        if n.kind == hero_ui.HERO_UI_WINDOW || n.kind == hero_ui.HERO_UI_TRAY
+            return n.kind == hero_ui.HERO_UI_WINDOW || n.enabled
 
         if !n.enabled
             return false
@@ -309,4 +310,65 @@ test "context_menu: on the native side made on a list, a text area and a window,
     ui.destroy(@app, widget: actions).must()
     again = ui.context_menu(@app, widget: files).must()
     _ = ui.menu_item(@app, into: again, text: "Open").must()
+    ui.close(@app).must()
+
+test "tray: made with its words and an image, its menu a context menu whose item is chosen, drawn after the windows, out of every window's layout; refused into a window, an empty item's menu, and gone with its menu once destroyed; the Dock kept or left (catalogue SY01, AP21)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    icon = ui.tray(@app, text: "Sync").must()
+    assert ui.kind_of(app, widget: icon).must() == .tray
+    assert fixture.code_of(ui.menu_item(@app, into: icon, text: "Quit")) == ui.INVALID
+    assert fixture.code_of(ui.tray(@app, text: "two\nlines")) == ui.INVALID
+    actions = ui.context_menu(@app, widget: icon).must()
+    now = ui.menu_item(@app, into: actions, text: "Sync Now").must()
+    _ = ui.menu_separator(@app, into: actions).must()
+    quit = ui.menu_item(@app, into: actions, text: "Quit").must()
+    ui.set_picture(@app, widget: icon, img: image.blank(width: 2, height: 2, format: .rgba).must()).must()
+    ui.set_text(@app, widget: icon, text: "Synced").must()
+    ui.inject(@app, input: .choose_menu(item: now)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: now)
+    lines = ui.render(@app).must()
+    assert lines[lines.len() - 5] == "tray #2 \"Synced\""
+    assert lines[lines.len() - 1] == "    menu_item #6 \"Quit\""
+    assert ui.rect_of(@app, widget: w).must() == ui.Rect(x: 0, y: 0, width: 300, height: 200)
+    ui.set_docked(@app, on: false).must()
+    assert !app.docked
+    ui.set_docked(@app, on: true).must()
+    ui.destroy(@app, widget: icon).must()
+    assert fixture.code_of(ui.set_text(@app, widget: quit, text: "Leave")) == ui.CLOSED
+    assert app.table.trays.len() == 0
+    ui.close(@app).must()
+
+test "tray: on the native side a status item of the menu bar with its words, an image and a menu whose items are chosen through the system's own path; the app out of the Dock and back (catalogue SY01, AP21)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    made = ui.tray(@app, text: "Sync")
+    refusal = fixture.unsupported_words(made)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+
+    icon = made.must()
+    actions = ui.context_menu(@app, widget: icon).must()
+    now = ui.menu_item(@app, into: actions, text: "Sync Now").must()
+    more = ui.menu(@app, into: actions, title: "Every").must()
+    hourly = ui.radio_item(@app, into: more, text: "Hour", checked: true).must()
+    _ = ui.radio_item(@app, into: more, text: "Day", checked: false).must()
+    ui.set_picture(@app, widget: icon, img: image.blank(width: 36, height: 36, format: .rgba).must()).must()
+    ui.set_text(@app, widget: icon, text: "Synced").must()
+    ui.inject(@app, input: .choose_menu(item: now)).must()
+    ui.inject(@app, input: .choose_menu(item: hourly)).must()
+    came = give.events_of(@app, within: time.milliseconds(300).must())
+    assert came == [.menu_chosen(item: now), .menu_chosen(item: hourly)]
+    docked = ui.set_docked(@app, on: false)
+
+    if fixture.unsupported_words(docked) == ""
+        docked.must()
+        ui.set_docked(@app, on: true).must()
+    ui.set_picture(@app, widget: icon, img: image.blank(width: 0, height: 0, format: .rgba).must()).must()
+    ui.destroy(@app, widget: icon).must()
     ui.close(@app).must()

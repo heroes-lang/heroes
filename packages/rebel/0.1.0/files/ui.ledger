@@ -359,20 +359,20 @@ capability ui/state  a widget greyed out or used, shown or hidden, destroyed, an
   note    a widget whose life has ended is told `closed` by every call, never another widget's state
 
 capability ui/message-box  a message box: a tone, buttons, and the button pressed
-  heroes  ui.message, ui.Tone, ui.Buttons, ui.Answer
+  heroes  ui.message, ui.Tone, ui.Buttons, ui.Answer, ui.Event.dialog_answered
   go      ui.MsgBox, ui.MsgBoxError
   rust    -
   python  messagebox.showinfo, messagebox.showwarning, messagebox.showerror, messagebox.askquestion, messagebox.askokcancel, messagebox.askyesno, messagebox.askyesnocancel, messagebox.askretrycancel, messagebox.Message, dialog.Dialog, simpledialog.SimpleDialog
   wx      wxMessageDialog, wxMessageBox
-  note    a box of Retry and Cancel is one of OK and Cancel; an answer the program injected is taken before any box is shown
+  note    a box of Retry and Cancel is one of OK and Cancel; it answers through the queue (ui/dialogs-answered-later), and an answer the program injected before it answers it at once, no box shown
 
 capability ui/file-dialogs  the system's dialogs to open files and to save one, by their extensions
-  heroes  ui.open_files, ui.save_file, ui.Filter, ui.Choice
+  heroes  ui.open_files, ui.save_file, ui.Filter, ui.Choice, ui.Event.files_chosen
   go      ui.OpenFile, ui.SaveFile
   rust    -
   python  filedialog.askopenfilename, filedialog.askopenfilenames, filedialog.asksaveasfilename, filedialog.askopenfile, filedialog.askopenfiles, filedialog.asksaveasfile, filedialog.Open, filedialog.SaveAs, filedialog.FileDialog, filedialog.LoadFileDialog, filedialog.SaveFileDialog, commondialog.Dialog
   wx      wxFileDialog (wxFD_OPEN, wxFD_SAVE, wxFD_MULTIPLE, wxFD_OVERWRITE_PROMPT)
-  note    a dialog answers paths; a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
+  note    a dialog answers paths, through the queue (ui/dialogs-answered-later); a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
 
 capability ui/folder-dialog  the system's dialog to choose a folder, or several
   heroes  ui.open_folders
@@ -380,7 +380,7 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
-  note    it waits for the person, as the file dialogs do, an injected choice taken first; macOS by `NSOpenPanel` choosing folders, Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
+  note    it answers through the queue, as the file dialogs do (ui/dialogs-answered-later); macOS by `NSOpenPanel` choosing folders, a sheet of the window; Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
 
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
@@ -388,7 +388,15 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   rust    -
   python  -
   wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
-  note    the first button is pressed by Return and the one the program names by Escape; it answers the button's index and waits for the person, as `message` does; macOS by `NSAlert`'s buttons, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+  note    the first button is pressed by Return and the one the program names by Escape; its answer is the button's index, `ui.Answer.button`, through the queue as `message`'s; macOS by `NSAlert`'s buttons on a sheet, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+
+capability ui/dialogs-answered-later  a dialog that answers its call at once and the person later, through the queue, the program's timers and windows going on meanwhile
+  heroes  ui.Dialog, ui.Event.dialog_answered, ui.Event.files_chosen, ui.Input.answer, ui.Input.pick_files, ui.Input.cancel_files
+  go      -
+  rust    -
+  python  -
+  wx      wxDialog (ShowWindowModal, unread)
+  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Windows and Linux pending: the layer wraps their waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner; `GtkAlertDialog.choose`, `GtkFileDialog`)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system
@@ -474,12 +482,29 @@ capability ui/pickers  a date, a colour or a font chosen in the system's own pic
   python  colorchooser.askcolor, colorchooser.Chooser, font.Font, font.families, font.names, font.nametofont
   wx      wxDatePickerCtrl, wxTimePickerCtrl, wxColourPickerCtrl, wxFontPickerCtrl, wxColourDialog, wxFontDialog
 
-capability ui/tray  an icon in the system's tray or menu bar, and its notifications
-  heroes  pending
+capability ui/tray  an icon in the system's tray or menu bar, with the menu its click opens
+  heroes  ui.tray, ui.Kind.tray, ui.context_menu, ui.set_picture, ui.set_text
   go      -
   rust    tauri::tray::TrayIcon
   python  -
-  wx      wxTaskBarIcon (SetIcon, PopupMenu), wxNotificationMessage
+  wx      wxTaskBarIcon (SetIcon, PopupMenu)
+  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows pending (`Shell_NotifyIconW` and a hidden window for its messages), Linux pending (GTK 4 has no tray: a StatusNotifierItem over D-Bus)
+
+capability ui/docked  an app out of the Dock and the menu bar, living in the tray alone
+  heroes  ui.set_docked
+  go      -
+  rust    -
+  python  -
+  wx      -
+  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows pending (no task bar button: `WS_EX_TOOLWINDOW` on its windows, unread), Linux pending (GTK 4 removed skip-taskbar, so `unsupported` there)
+
+capability ui/notification  a notification of the system's: a title and its words
+  heroes  ui.notify
+  go      -
+  rust    -
+  python  -
+  wx      wxNotificationMessage
+  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows pending (a toast of the AppUserModelID's), Linux pending (`GNotification` through the portal)
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  pending
@@ -512,7 +537,7 @@ capability ui/context-menu  a menu shown where the person right-clicks a widget
   rust    -
   python  tkinter.Menu.tk_popup, tkinter.Menu.post
   wx      wxContextMenuEvent, wxWindow (PopupMenu)
-  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
+  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`; a web view's refused `unsupported`, WebView2 showing a menu of its own, lane-ui-win32's W2), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
 
 capability ui/text-selection  a text widget's selection and caret set and read, and its undo
   heroes  pending
@@ -531,20 +556,20 @@ capability ui/session-end  the person logging out or shutting down, asked of the
   note    catalogue AP04 (must); macOS `applicationShouldTerminate`, Windows `WM_QUERYENDSESSION` with `ShutdownBlockReasonCreate`, Linux GTK's `query-end` (unread)
 
 capability ui/appearance  the system's dark or light appearance, and its change
-  heroes  pending
+  heroes  ui.appearance_of, ui.Appearance, ui.Event.appearance_changed, ui.Input.change_appearance
   go      -
   rust    -
   python  -
   wx      wxSystemSettings (GetAppearance), wxSystemAppearance (IsDark), wxSysColourChangedEvent
-  note    catalogue SY13 (must); macOS `NSApp.effectiveAppearance` observed, Windows the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`, Linux `GtkSettings:gtk-application-prefer-dark-theme` or the portal's `color-scheme`
+  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows pending (the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`), Linux pending (`GtkSettings`'s `gtk-interface-color-scheme`, 4.20, or the portal's `color-scheme`)
 
 capability ui/accessibility  each widget's name and its label read by the system's screen reader
-  heroes  pending
+  heroes  ui.set_accessible_name, ui.set_label_for
   go      -
   rust    -
   python  -
   wx      wxAccessible, wxWindow (SetName, SetLabel)
-  note    catalogue AX02 (must); macOS `setAccessibilityLabel`, Windows UI Automation's name from the label, Linux `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL`
+  note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows pending (UI Automation's name, the label the `STATIC` made just before its field), Linux pending (`gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL`, `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`)
 
 capability ui/single-instance  one copy of the program running, a second handing its documents to the first
   heroes  pending

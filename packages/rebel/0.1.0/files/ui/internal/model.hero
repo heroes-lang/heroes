@@ -142,6 +142,10 @@ record Node
     shown: bool
     # A web view's table, policy, origins and page, as the program set them.
     web: Web
+    # The name a screen reader says for it, "" for its own words.
+    accessible: str
+    # The label tied to it, which a screen reader names it by; 0 for none.
+    label: i64
 
 # What a web view keeps on both sides, so each answers alike: the assets as
 # the program put them, without their bodies, which the platform layer
@@ -240,6 +244,8 @@ record Model
     windows: [i64]
     # The timers, in the order they were made.
     timers: [i64]
+    # The tray icons, in the order they were made.
+    trays: [i64]
 
 # The room between two children, and inside a box's edges, that a new box
 # takes; a window's padding is `WINDOW_PADDING`.
@@ -252,7 +258,7 @@ constant WINDOW_PADDING: i64
 
 # An empty table, its first number 1.
 function empty() -> Model
-    return Model(nodes: {}, next_id: 1, windows: [], timers: [])
+    return Model(nodes: {}, next_id: 1, windows: [], timers: [], trays: [])
 
 # One item of a tree: its number, the item it stands under (0 for the
 # top), its text, whether the person may unfold it before it holds an item,
@@ -331,7 +337,9 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         h: 0,
         dirty: true,
         shown: false,
-        web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0)
+        web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0),
+        accessible: "",
+        label: 0
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was
@@ -361,6 +369,8 @@ function add(@m: Model, n: Node)
         m.windows @ m.windows.push(n.id)
     else if n.kind == hero_ui.HERO_UI_TIMER
         m.timers @ m.timers.push(n.id)
+    else if n.kind == hero_ui.HERO_UI_TRAY
+        m.trays @ m.trays.push(n.id)
     else
         parent @= node_of(m, id: n.parent).must()
 
@@ -434,6 +444,7 @@ function remove(@m: Model, id: i64) -> [i64]
 
     m.windows @ without(m.windows, id: id)
     m.timers @ without(m.timers, id: id)
+    m.trays @ without(m.trays, id: id)
     kept: {i64: Node} @= {}
     dropped: {i64: bool} @= {}
 
@@ -482,7 +493,7 @@ function is_split(kind: i64) -> bool
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE || kind == hero_ui.HERO_UI_CONTEXT_MENU || kind == hero_ui.HERO_UI_TRAY
 
 # The rows list or table `n` holds: a list's items, a table's cells over
 # its columns.
@@ -492,9 +503,10 @@ function rows_of(n: Node) -> i64
     return n.items.len()
 
 # Whether a node of `kind` is placed in its window's content by the layout:
-# every widget but a window, a menu, a menu's items and a timer.
+# every widget but a window, a menu, a menu's items, a timer and a tray
+# icon.
 function is_placed(kind: i64) -> bool
-    return kind != hero_ui.HERO_UI_WINDOW && kind != hero_ui.HERO_UI_CONTEXT_MENU && kind != hero_ui.HERO_UI_MENU && kind != hero_ui.HERO_UI_MENU_ITEM && kind != hero_ui.HERO_UI_MENU_SEPARATOR && kind != hero_ui.HERO_UI_TIMER
+    return kind != hero_ui.HERO_UI_WINDOW && kind != hero_ui.HERO_UI_TRAY && kind != hero_ui.HERO_UI_CONTEXT_MENU && kind != hero_ui.HERO_UI_MENU && kind != hero_ui.HERO_UI_MENU_ITEM && kind != hero_ui.HERO_UI_MENU_SEPARATOR && kind != hero_ui.HERO_UI_TIMER
 
 # Whether a node of `kind` holds items: a list, a combo box or a radio group.
 function has_items(kind: i64) -> bool
@@ -502,7 +514,7 @@ function has_items(kind: i64) -> bool
 
 # Whether a node of `kind` shows a text the program sets.
 function has_text(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_TEXT_AREA || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_MENU || kind == hero_ui.HERO_UI_MENU_ITEM || kind == hero_ui.HERO_UI_PAGE
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_TEXT_AREA || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_MENU || kind == hero_ui.HERO_UI_MENU_ITEM || kind == hero_ui.HERO_UI_PAGE || kind == hero_ui.HERO_UI_TRAY
 
 # Whether a node of `kind` runs between a lowest and a highest value.
 function has_range(kind: i64) -> bool
@@ -542,6 +554,7 @@ function kind_name(kind: i64) -> str
         "table"
         "tree"
         "context_menu"
+        "tray"
     ]
 
     if kind < 0 || kind >= names.len()

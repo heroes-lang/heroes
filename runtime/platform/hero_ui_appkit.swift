@@ -54,7 +54,6 @@
  */
 
 import AppKit
-import UniformTypeIdentifiers
 import WebKit
 
 // The kinds of failure, `hero_ui.h`'s numbers.
@@ -108,17 +107,6 @@ private let flagVisible: Int64 = 2
 private let flagResizable: Int64 = 3
 private let sizeContent: Int64 = 1
 private let sizeLeast: Int64 = 2
-
-// A message box's tone and buttons, and the answers, `hero_ui.h`'s numbers.
-private let toneWarning: Int64 = 2
-private let toneError: Int64 = 3
-private let buttonsOkCancel: Int64 = 2
-private let buttonsYesNo: Int64 = 3
-private let buttonsYesNoCancel: Int64 = 4
-private let pressedOk: Int64 = 1
-private let pressedCancel: Int64 = 2
-private let pressedYes: Int64 = 3
-private let pressedNo: Int64 = 4
 
 // The sizes a widget takes where AppKit's has no width of its own to give,
 // the headless side's own (`ui/internal/sizes.hero`), so a window looks
@@ -227,6 +215,8 @@ private final class Native {
     var check: Int64 = 0
     // A web view's page and what it keeps.
     var page: WebPage?
+    // A tray icon's status item in the menu bar.
+    var status: NSStatusItem?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -250,7 +240,6 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     var widgets: [Int64: Native] = [:]
     var tables: [ObjectIdentifier: Int64] = [:]
     var words = ""
-    var paths: [UInt8] = []
     var pushed = 0
     // Set while the program sets what would otherwise queue an event.
     var muted = false
@@ -286,6 +275,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerNotFound
         }
         let made = Native(id: id, kind: kind, parent: parent)
+        if kind == kindTray {
+            return makeTray(made)
+        }
         if kind == kindWindow {
             let window = KeyedWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -511,6 +503,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         if widget.kind == kindContextMenu, let owner = widgets[widget.parent], let target = contextTarget(owner), target.menu === widget.menu {
             target.menu = nil
+        }
+        if widget.kind == kindContextMenu, let status = widgets[widget.parent]?.status, status.menu === widget.menu {
+            status.menu = nil
+        }
+        if let status = widget.status {
+            NSStatusBar.system.removeStatusItem(status)
+            widget.status = nil
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -825,6 +824,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerNotFound
         }
         switch widget.kind {
+        case kindTray:
+            setTrayText(widget, text)
         case kindWindow:
             widget.window?.title = text
         case kindPage:
@@ -1103,6 +1104,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     }
 
     func setImage(_ id: Int64, _ rgba: UnsafePointer<UInt8>?, _ width: Int64, _ height: Int64) -> Int64 {
+        if let tray = widgets[id], tray.kind == kindTray {
+            return setTrayImage(tray, rgba, width, height)
+        }
         guard let widget = widgets[id], let picture = widget.view as? NSImageView else {
             return widgets[id] == nil ? answerNotFound : answerInvalid
         }
@@ -1434,91 +1438,6 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerInvalid
         }
         return page.post(text) ? answerOk : answerLimit
-    }
-
-    // MARK: dialogs
-
-    func message(_ tone: Int64, _ buttons: Int64, _ title: String, _ text: String) -> Int64 {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = text
-        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
-        var answers: [Int64]
-        switch buttons {
-        case buttonsOkCancel:
-            answers = [pressedOk, pressedCancel]
-        case buttonsYesNo:
-            answers = [pressedYes, pressedNo]
-        case buttonsYesNoCancel:
-            answers = [pressedYes, pressedNo, pressedCancel]
-        default:
-            answers = [pressedOk]
-        }
-        for answer in answers {
-            switch answer {
-            case pressedYes:
-                alert.addButton(withTitle: "Yes")
-            case pressedNo:
-                alert.addButton(withTitle: "No")
-            case pressedCancel:
-                alert.addButton(withTitle: "Cancel")
-            default:
-                alert.addButton(withTitle: "OK")
-            }
-        }
-        let response = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
-        if response >= 0 && response < answers.count {
-            return answers[response]
-        }
-        return pressedCancel
-    }
-
-    func fileDialog(_ save: Bool, _ multiple: Bool, _ title: String, _ name: String, _ extensions: [String]) -> Int64 {
-        var types: [UTType] = []
-        for ext in extensions {
-            if let type = UTType(filenameExtension: ext) {
-                types.append(type)
-            }
-        }
-        let urls: [URL]
-        if save {
-            let panel = NSSavePanel()
-            panel.title = title
-            panel.nameFieldStringValue = name
-            if !types.isEmpty {
-                panel.allowedContentTypes = types
-            }
-            guard panel.runModal() == .OK, let url = panel.url else {
-                paths = []
-                return 0
-            }
-            urls = [url]
-        } else {
-            let panel = NSOpenPanel()
-            panel.title = title
-            panel.allowsMultipleSelection = multiple
-            panel.canChooseFiles = true
-            panel.canChooseDirectories = false
-            if !types.isEmpty {
-                panel.allowedContentTypes = types
-            }
-            guard panel.runModal() == .OK else {
-                paths = []
-                return 0
-            }
-            urls = panel.urls
-        }
-        var joined: [UInt8] = []
-        for url in urls {
-            let path = Array(url.path.utf8)
-            if path.contains(0) {
-                continue
-            }
-            joined.append(contentsOf: path)
-            joined.append(0)
-        }
-        paths = joined
-        return Int64(joined.count)
     }
 }
 
@@ -1966,93 +1885,6 @@ public func hero_ui_appkit_focus(_ id: Int64, _ focus: UnsafeMutablePointer<Int6
 }
 
 extension Backend {
-    // Shows the system's dialog to choose folders, one or, where
-    // `multiple`, several, and keeps the paths chosen, each followed by one
-    // zero byte, for `dialog_paths`; answers their bytes, 0 where the person
-    // cancelled. It waits for the person, as the file dialogs do.
-    func folderDialog(_ multiple: Bool, _ title: String) -> Int64 {
-        let panel = NSOpenPanel()
-        panel.title = title
-        panel.message = title
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = multiple
-        guard panel.runModal() == .OK else {
-            paths = []
-            return 0
-        }
-        var joined: [UInt8] = []
-        for url in panel.urls {
-            let path = Array(url.path.utf8)
-            if path.contains(0) {
-                continue
-            }
-            joined.append(contentsOf: path)
-            joined.append(0)
-        }
-        paths = joined
-        return Int64(joined.count)
-    }
-
-    // Shows a message box of `tone` whose buttons are `buttons`, in order,
-    // the first its default (Return) and the one at `cancel` pressed by
-    // Escape where it is 0 or more, and waits for the person: answers the
-    // index of the button pressed.
-    func ask(_ tone: Int64, _ title: String, _ text: String, _ buttons: [String], _ cancel: Int64) -> Int64 {
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = text
-        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
-        for label in buttons {
-            alert.addButton(withTitle: label)
-        }
-        if cancel >= 0 && cancel < Int64(alert.buttons.count) && cancel != 0 {
-            alert.buttons[Int(cancel)].keyEquivalent = "\u{1b}"
-        }
-        let pressed = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
-        if pressed >= 0 && pressed < buttons.count {
-            return Int64(pressed)
-        }
-        return cancel >= 0 ? cancel : 0
-    }
-}
-
-@c
-public func hero_ui_appkit_folder_dialog(_ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let bytes = bytes else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.folderDialog(multiple == 1, heading)
-    }
-    guard let length = got else {
-        return answerNotFound
-    }
-    bytes.pointee = length
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ said: UnsafePointer<UInt8>?, _ saidCount: Int64, _ buttons: UnsafePointer<UInt8>?, _ buttonsCount: Int64, _ cancel: Int64, _ pressed: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let pressed = pressed else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let words = text(said, saidCount)
-    let labels = texts(buttons, buttonsCount)
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.ask(tone, heading, words, labels, cancel)
-    }
-    guard let index = got else {
-        return answerNotFound
-    }
-    pressed.pointee = index
-    return answerOk
-}
-
-extension Backend {
     // Masks text field `id`'s text, `on`, or shows it: AppKit masks a field
     // of its own class, `NSSecureTextField`, so the field's view is
     // replaced by one of the other class in its place, with its text, its
@@ -2450,68 +2282,71 @@ public func hero_ui_appkit_pump(_ ms: Int64) -> Int64 {
 }
 
 @c
+public func hero_ui_appkit_set_docked(_ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setDocked(on == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_set_accessible_name(_ id: Int64, _ name: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let said = text(name, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setAccessibleName(id, said) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_accessible_name(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ length: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let length = length else {
+        return answerInvalid
+    }
+    let got = MainActor.assumeIsolated { () -> String? in
+        return backend()?.accessibleName(id)
+    }
+    guard let name = got else {
+        return answerNotFound
+    }
+    let bytes = Array(name.utf8)
+    if let buffer = buffer, bytes.count <= Int(count) {
+        for at in 0..<bytes.count {
+            buffer[at] = bytes[at]
+        }
+    }
+    length.pointee = Int64(bytes.count)
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_set_label_for(_ id: Int64, _ label: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setLabelFor(id, label) ?? answerNotFound
+    }
+}
+
+// Ends the wait of the loop `pump` runs, once another member queued an
+// event (a sheet's answer, which AppKit hands its completion handler outside
+// any event): the event is counted as this member's, and an event of the
+// application's own is posted so `nextEvent` returns to see it.
+@c
+public func hero_ui_appkit_wake() {
+    MainActor.assumeIsolated {
+        guard let shared = backend() else {
+            return
+        }
+        shared.pushed += 1
+        if let nudge = NSEvent.otherEvent(with: .applicationDefined, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: 0, context: nil, subtype: 0, data1: 0, data2: 0) {
+            NSApp.postEvent(nudge, atStart: false)
+        }
+    }
+}
+
+@c
 public func hero_ui_appkit_inject(_ kind: Int64, _ id: Int64, _ value: Int64, _ second: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
     let typed = text(bytes, count)
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.inject(kind, id, value, second, typed) ?? answerNotFound
     }
-}
-
-@c
-public func hero_ui_appkit_message(_ window: Int64, _ tone: Int64, _ buttons: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64, _ answer: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let answer = answer else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let said = text(bytes, count)
-    let pressed = MainActor.assumeIsolated { () -> Int64? in
-        _ = window
-        return backend()?.message(tone, buttons, heading, said)
-    }
-    guard let found = pressed else {
-        return answerNotFound
-    }
-    answer.pointee = found
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_file_dialog(_ window: Int64, _ save: Int64, _ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ name: UnsafePointer<UInt8>?, _ nameCount: Int64, _ filters: UnsafePointer<UInt8>?, _ filtersCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
-    guard let bytes = bytes else {
-        return answerInvalid
-    }
-    let heading = text(title, titleCount)
-    let proposed = text(name, nameCount)
-    let spelled = texts(filters, filtersCount)
-    var extensions: [String] = []
-    var at = 1
-    while at < spelled.count {
-        extensions.append(contentsOf: spelled[at].split(separator: ";").map { String($0) })
-        at += 2
-    }
-    let found = extensions
-    let got = MainActor.assumeIsolated { () -> Int64? in
-        _ = window
-        return backend()?.fileDialog(save == 1, multiple == 1, heading, proposed, found)
-    }
-    guard let length = got else {
-        return answerNotFound
-    }
-    bytes.pointee = length
-    return answerOk
-}
-
-@c
-public func hero_ui_appkit_dialog_paths(_ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64) -> Int64 {
-    let kept = MainActor.assumeIsolated { () -> [UInt8] in
-        return backend()?.paths ?? []
-    }
-    if let buffer = buffer, kept.count <= Int(count) {
-        for at in 0..<kept.count {
-            buffer[at] = kept[at]
-        }
-    }
-    return Int64(kept.count)
 }
 
 @c
@@ -2608,12 +2443,19 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             split.addArrangedSubview(pane)
             made.view = pane
         case kindContextMenu:
-            guard let target = contextTarget(owner), !widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) else {
+            if widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) {
                 return answerInvalid
             }
             let menu = NSMenu(title: "")
             menu.autoenablesItems = false
-            target.menu = menu
+            // A tray icon's menu opens at its click, the status item's own.
+            if let status = owner.status {
+                status.menu = menu
+            } else if let target = contextTarget(owner) {
+                target.menu = menu
+            } else {
+                return answerInvalid
+            }
             made.menu = menu
         case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable, kindTree:
             guard let content = contentOf(owner) else {
@@ -3340,8 +3182,137 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 
 // `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
 private let kindContextMenu: Int64 = 30
+private let kindTray: Int64 = 31
+
+// The height of a tray icon's image in the menu bar, in points: the bar's
+// own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a
+// 22-point bar, unread here; 18 keeps an image of the program's whole).
+private let trayHeight: CGFloat = 18
 
 extension Backend {
+    // The object a screen reader reads for widget `widget`: the view the
+    // person types into or chooses in, a window's own window, a menu
+    // item's item; none for a menu, a timer's or a tray icon's, whose
+    // words are their own.
+    func accessibleOf(_ widget: Native) -> NSAccessibilityProtocol? {
+        if widget.kind == kindWindow {
+            return widget.window
+        }
+        if widget.kind == kindMenuItem {
+            return widget.item
+        }
+        if let status = widget.status {
+            return status.button
+        }
+        return widget.table ?? widget.textView ?? widget.view
+    }
+
+    // Gives widget `id` the accessible name `name`, or takes it back where
+    // `name` is empty.
+    func setAccessibleName(_ id: Int64, _ name: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let element = accessibleOf(widget) else {
+            return answerInvalid
+        }
+        element.setAccessibilityLabel(name.isEmpty ? nil : name)
+        return answerOk
+    }
+
+    // The accessible name widget `id` holds, "" for none.
+    func accessibleName(_ id: Int64) -> String? {
+        guard let widget = widgets[id], let element = accessibleOf(widget) else {
+            return nil
+        }
+        return element.accessibilityLabel() ?? ""
+    }
+
+    // Ties label `label` to widget `id`, which is then read by the label's
+    // words (`NSAccessibility`'s title element), or unties it where `label`
+    // is 0.
+    func setLabelFor(_ id: Int64, _ label: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let element = accessibleOf(widget) as? NSView else {
+            return answerInvalid
+        }
+        if label == 0 {
+            element.setAccessibilityTitleUIElement(nil)
+            return answerOk
+        }
+        guard let tied = widgets[label] else {
+            return answerNotFound
+        }
+        guard tied.kind == kindLabel, let words = tied.view else {
+            return answerInvalid
+        }
+        element.setAccessibilityTitleUIElement(words)
+        return answerOk
+    }
+}
+
+extension Backend {
+    // Makes tray icon `made`, a status item of the menu bar's, its parent 0,
+    // showing nothing until the program gives it words or an image.
+    func makeTray(_ made: Native) -> Int64 {
+        if made.parent != 0 {
+            return answerInvalid
+        }
+        let status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        status.isVisible = true
+        made.status = status
+        widgets[made.id] = made
+        return answerOk
+    }
+
+    // Gives tray icon `tray` the words `text`: its tip, and its face where
+    // it shows no image.
+    func setTrayText(_ tray: Native, _ text: String) {
+        guard let button = tray.status?.button else {
+            return
+        }
+        button.toolTip = text.isEmpty ? nil : text
+        button.title = button.image == nil ? text : ""
+        tray.items = [text]
+    }
+
+    // Gives tray icon `tray` the image of `width` by `height` pixels at
+    // `rgba`, drawn `trayHeight` points high in the menu bar, its words then
+    // its tip alone; an image of no pixels shows its words again.
+    func setTrayImage(_ tray: Native, _ rgba: UnsafePointer<UInt8>?, _ width: Int64, _ height: Int64) -> Int64 {
+        guard let button = tray.status?.button else {
+            return answerInvalid
+        }
+        let words = tray.items.first ?? ""
+        if width == 0 || height == 0 {
+            button.image = nil
+            button.title = words
+            return answerOk
+        }
+        guard let rgba = rgba, let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(width), pixelsHigh: Int(height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bitmapFormat: [.alphaNonpremultiplied], bytesPerRow: Int(width) * 4, bitsPerPixel: 32), let into = rep.bitmapData else {
+            return answerLimit
+        }
+        into.update(from: rgba, count: Int(width) * Int(height) * 4)
+        let image = NSImage(size: NSSize(width: trayHeight * CGFloat(width) / CGFloat(height), height: trayHeight))
+        image.addRepresentation(rep)
+        button.image = image
+        button.title = ""
+        return answerOk
+    }
+
+    // Shows the app in the Dock and with a menu bar of its own, `on`, or
+    // keeps it out of both, its tray icons and windows staying, as a menu-bar
+    // utility does (`NSApplication.ActivationPolicy.accessory`).
+    func setDocked(_ on: Bool) -> Int64 {
+        guard NSApp.setActivationPolicy(on ? .regular : .accessory) else {
+            words = "the system refused to change whether the app stands in the Dock"
+            return answerOther
+        }
+        return answerOk
+    }
+
     // The view whose menu a context menu of `owner` is: the one the
     // person's right click lands on, a list's or a table's rows, a tree's
     // outline, a text area's text, a window's content.

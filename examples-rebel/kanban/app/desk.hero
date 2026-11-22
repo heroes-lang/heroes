@@ -6,6 +6,7 @@
 use <rebel>/sql/sqlite
 use <rebel>/template
 use <rebel>/ui
+use <rebel>/ui/webview
 
 use store/store
 
@@ -22,6 +23,18 @@ record Desk
     store: store.Store
     # The report's page, a template of HTML (`web/report.html`).
     report: template.Template
+    # The page's calls waiting on a dialog the person has not answered yet,
+    # oldest first.
+    waiting: [Waiting]
+
+# A call of the page that showed a dialog and is answered once the person
+# answers it (`api/handler.chosen`).
+record Waiting
+    # The dialog.
+    dialog: ui.Dialog
+    # The call, whose promise the answer resolves; its name and arguments
+    # say what the answer finishes.
+    call: webview.Call
 
 # Ends the desk: the database closed, then the app with its window.
 #

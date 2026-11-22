@@ -463,11 +463,11 @@ function scene_empty_trash(@c: controller.Controller, @t: transcript.Transcript)
     hands.menu(@c, item: c.menus.trash_item)?
     _ = hands.run_job(@c)?
     shown(@c, @t, title: "File, Move to Trash on the two archives")
-    hands.will_answer(@c, answer: .no)?
     hands.menu(@c, item: c.menus.empty_trash)?
+    hands.press_answer(@c, answer: .no)?
     shown(@c, @t, title: "File, Empty Trash, answered No")
-    hands.will_answer(@c, answer: .yes)?
     hands.menu(@c, item: c.menus.empty_trash)?
+    hands.press_answer(@c, answer: .yes)?
     shown(@c, @t, title: "File, Empty Trash, answered Yes: removed for good, and Undo forgets")
     return ok()
 

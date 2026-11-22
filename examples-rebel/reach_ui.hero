@@ -90,23 +90,41 @@ function session(ws: Widgets) -> [ui.Input]
 # What an event says, as a line, the widget named by `ws`.
 function told(ws: Widgets, event: ui.Event) -> str
     return match event
-        .clicked c           => "clicked " + named(ws, widget: c.widget)
-        .text_changed t      => "text_changed " + named(ws, widget: t.widget) + " " + t.text.len().to_str() + " bytes"
-        .selection_changed s => "selection_changed " + named(ws, widget: s.widget) + " " + numbers(s.indices)
-        .toggled t           => "toggled " + named(ws, widget: t.widget) + " " + t.checked.to_str()
-        .value_changed v     => "value_changed " + named(ws, widget: v.widget) + " " + v.value.to_str()
-        .menu_chosen m       => "menu_chosen " + named(ws, widget: m.item)
-        .close_asked c       => "close_asked " + named(ws, widget: c.window)
-        .timer_fired _       => "timer_fired"
-        .resized r           => "resized " + named(ws, widget: r.window)
-        .message m           => "message " + named(ws, widget: m.widget)
-        .moved m             => "moved " + named(ws, widget: m.window)
-        .state_changed c     => "state_changed " + named(ws, widget: c.window)
-        .screen_changed c    => "screen_changed " + named(ws, widget: c.window)
-        .activated a         => "activated " + named(ws, widget: a.widget) + " " + a.index.to_str()
-        .sort_asked s        => "sort asked " + named(ws, widget: s.widget) + " " + s.column.to_str()
-        .unfolded u          => "unfolded " + named(ws, widget: u.widget) + " " + u.item.to_str()
-        .submitted s         => "submitted " + named(ws, widget: s.widget)
+        .clicked c            => "clicked " + named(ws, widget: c.widget)
+        .text_changed t       => "text_changed " + named(ws, widget: t.widget) + " " + t.text.len().to_str() + " bytes"
+        .selection_changed s  => "selection_changed " + named(ws, widget: s.widget) + " " + numbers(s.indices)
+        .toggled t            => "toggled " + named(ws, widget: t.widget) + " " + t.checked.to_str()
+        .value_changed v      => "value_changed " + named(ws, widget: v.widget) + " " + v.value.to_str()
+        .menu_chosen m        => "menu_chosen " + named(ws, widget: m.item)
+        .close_asked c        => "close_asked " + named(ws, widget: c.window)
+        .timer_fired _        => "timer_fired"
+        .resized r            => "resized " + named(ws, widget: r.window)
+        .message m            => "message " + named(ws, widget: m.widget)
+        .moved m              => "moved " + named(ws, widget: m.window)
+        .state_changed c      => "state_changed " + named(ws, widget: c.window)
+        .screen_changed c     => "screen_changed " + named(ws, widget: c.window)
+        .activated a          => "activated " + named(ws, widget: a.widget) + " " + a.index.to_str()
+        .sort_asked s         => "sort asked " + named(ws, widget: s.widget) + " " + s.column.to_str()
+        .unfolded u           => "unfolded " + named(ws, widget: u.widget) + " " + u.item.to_str()
+        .submitted s          => "submitted " + named(ws, widget: s.widget)
+        .dialog_answered d    => "dialog_answered " + d.dialog.id.to_str() + " " + answer_word(d.answer)
+        .files_chosen f       => "files_chosen " + f.dialog.id.to_str()
+        .appearance_changed a => "appearance_changed " + appearance_word(a.appearance)
+
+# The word of `appearance`.
+function appearance_word(appearance: ui.Appearance) -> str
+    return match appearance
+        .light => "light"
+        .dark  => "dark"
+
+# The word of the button `answer` names.
+function answer_word(answer: ui.Answer) -> str
+    return match answer
+        .ok       => "ok"
+        .cancel   => "cancel"
+        .yes      => "yes"
+        .no       => "no"
+        .button b => "button " + b.index.to_str()
 
 # The name the program gives `widget`.
 function named(ws: Widgets, widget: ui.Widget) -> str
@@ -173,7 +191,7 @@ function run(@app: ui.App) -> ()?
                 counted @ counted + 1
                 ui.set_value(@app, widget: ws.done, value: counted)?
             .close_asked _ => closing @ true
-            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                 _ = 0
 
     print("name: " + ui.text_of(app, widget: ws.name)?)
@@ -185,8 +203,10 @@ function run(@app: ui.App) -> ()?
     print("volume: " + ui.value_of(app, widget: ws.volume)?.to_str())
     print("done: " + ui.value_of(app, widget: ws.done)?.to_str())
     ui.inject(@app, input: .answer(answer: .yes))?
-    answer = ui.message(@app, over: ws.window, title: "Quit?", text: "Close the window?", tone: .info, buttons: .yes_no)?
-    print("answered: " + (answer == .yes).to_str())
+    asked = ui.message(@app, over: ws.window, title: "Quit?", text: "Close the window?", tone: .info, buttons: .yes_no)?
+    answered = ui.wait(@app, within: time.seconds(5)?)?
+    print(told(ws, event: answered))
+    print("answered: " + (answered == .dialog_answered(dialog: asked, answer: .yes)).to_str())
     ui.destroy(@app, widget: ws.window)?
     return ok()
 
@@ -272,7 +292,7 @@ test "the driver: the session on the system's own widgets, the same events and t
 
         match event
             .close_asked _ => closing @ true
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                 _ = 0
 
     assert lines == ["clicked button", "text_changed name 3 bytes", "text_changed note 12 bytes", "toggled wrap true", "selection_changed size [1]", "selection_changed fruits [0, 2]", "selection_changed day [2]", "value_changed volume 80", "menu_chosen open", "clicked button", "close_asked window"]

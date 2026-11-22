@@ -27,6 +27,7 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/clock
 use ui/internal/desk
+use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/give
 use ui/internal/keyboard
@@ -107,10 +108,10 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
     give.checked(app, input: input)?
 
     match input
-        .answer a     => app.answers @ app.answers.push(a.answer)
-        .pick_files p => app.choices @ app.choices.push(.chosen(paths: p.paths))
-        .cancel_files => app.choices @ app.choices.push(.cancelled)
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ =>
+        .answer a     => dialogs.answered_by(@app, answer: a.answer)?
+        .pick_files p => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
+        .cancel_files => dialogs.chosen_by(@app, choice: .cancelled)?
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -137,6 +138,24 @@ function given(@app: ui.App, input: ui.Input) -> ()?
 function read(@app: ui.App, taken: [i64]) -> ()?
     kind = taken[0]
     id = taken[1]
+
+    # A dialog's number is no widget's.
+    if kind == hero_ui.HERO_UI_EVENT_DIALOG
+        for event in dialogs.read(@app, id: id, value: taken[2])?
+            app.events @ app.events.push(event)
+
+        return ok()
+
+    # The appearance is the app's, of no widget.
+    if kind == hero_ui.HERO_UI_EVENT_APPEARANCE
+        turned: ui.Appearance = if taken[2] == hero_ui.HERO_UI_APPEARANCE_DARK
+            .dark
+        else
+            .light
+
+        app.appearance @ turned
+        app.events @ app.events.push(.appearance_changed(appearance: turned))
+        return ok()
     found = model.node_of(app.table, id: id)
 
     if found.is_err()
@@ -276,28 +295,32 @@ function fired(@app: ui.App, id: i64, now: i64) -> ui.Event
     model.put(@app.table, n: t)
     return .timer_fired(timer: check.widget_of(app, id: id))
 
-# Whether the widget `event` names still lives.
+# Whether the widget `event` names still lives; a dialog's answer names
+# none, and the dialog it names ended with its window's life.
 function alive(app: ui.App, event: ui.Event) -> bool
     id = match event
-        .clicked c           => c.widget.id
-        .text_changed t      => t.widget.id
-        .selection_changed s => s.widget.id
-        .toggled t           => t.widget.id
-        .value_changed v     => v.widget.id
-        .menu_chosen m       => m.item.id
-        .close_asked c       => c.window.id
-        .timer_fired t       => t.timer.id
-        .resized r           => r.window.id
-        .moved m             => m.window.id
-        .state_changed s     => s.window.id
-        .screen_changed s    => s.window.id
-        .activated a         => a.widget.id
-        .sort_asked s        => s.widget.id
-        .unfolded u          => u.widget.id
-        .submitted s         => s.widget.id
-        .message m           => m.widget.id
+        .clicked c            => c.widget.id
+        .text_changed t       => t.widget.id
+        .selection_changed s  => s.widget.id
+        .toggled t            => t.widget.id
+        .value_changed v      => v.widget.id
+        .menu_chosen m        => m.item.id
+        .close_asked c        => c.window.id
+        .timer_fired t        => t.timer.id
+        .resized r            => r.window.id
+        .moved m              => m.window.id
+        .state_changed s      => s.window.id
+        .screen_changed s     => s.window.id
+        .activated a          => a.widget.id
+        .sort_asked s         => s.widget.id
+        .unfolded u           => u.widget.id
+        .submitted s          => s.widget.id
+        .message m            => m.widget.id
+        .dialog_answered _    => 0
+        .files_chosen _       => 0
+        .appearance_changed _ => 0
 
-    return !model.node_of(app.table, id: id).is_err()
+    return id == 0 || !model.node_of(app.table, id: id).is_err()
 
 # `nanoseconds` as whole milliseconds, rounded up so a wait never wakes
 # before its time, and at most `TURN_MOST`.

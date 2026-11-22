@@ -11,6 +11,7 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/clock
 use ui/internal/desk
+use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/model
 use ui/internal/native
@@ -50,7 +51,7 @@ function open(backend: ui.Backend) -> ui.App?
         return failure.last("opening an app")
     number = hero_ui.number(handle)
     return ok(
-        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), icon: desk.no_icon(), clipboard: .nothing, inputs: [], events: [], answers: [], choices: [], shown: [], dialogs_made: 0, docked: true, notices: [], appearance: .light, clock: 0, opened: opened)
     )
 
 # Closes `app` (`ui.close`).
@@ -63,6 +64,7 @@ function close(@app: ui.App) -> ()?
     app.events @ []
     app.answers @ []
     app.choices @ []
+    app.shown @ []
 
     if answer != 0
         return failure.last("closing the app")
@@ -204,7 +206,7 @@ function context_menu(@app: ui.App, widget: ui.Widget) -> ui.Widget?
     if n.kind == hero_ui.HERO_UI_MENU || n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_CONTEXT_MENU || n.kind == hero_ui.HERO_UI_TIMER || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE || !model.is_native(n.kind)
         return fail(
             code: failure.INVALID,
-            msg: f"a {model.kind_name(n.kind)} takes no context menu: a widget the person clicks or a window does"
+            msg: f"a {model.kind_name(n.kind)} takes no context menu: a widget the person clicks, a window or a tray icon does"
         )
 
     for each in n.menus
@@ -218,6 +220,15 @@ function context_menu(@app: ui.App, widget: ui.Widget) -> ui.Widget?
         window: n.window
     )
     return added(@app, n: made)
+
+# A new tray icon showing `text` (`ui.tray`): a node of no window, its
+# parent 0.
+function tray(@app: ui.App, text: str) -> ui.Widget?
+    check.opened(app)?
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(id: model.take_id(@app.table), kind: hero_ui.HERO_UI_TRAY, parent: 0, window: 0)
+    n.text @ text
+    return added(@app, n: n)
 
 # A new timer of `every` (`ui.timer`).
 function timer(@app: ui.App, every: time.Duration) -> ui.Widget?
@@ -239,11 +250,14 @@ function destroy(@app: ui.App, widget: ui.Widget) -> ()?
     n = check.node_of(app, widget: widget)?
     natives: [i64] @= []
 
-    for id in model.subtree(app.table, id: n.id)
+    going = model.subtree(app.table, id: n.id)
+
+    for id in going
         if model.is_native(app.table.nodes[id].must().kind)
             natives @ natives.push(id)
 
     _ = model.remove(@app.table, id: n.id)
+    dialogs.closed_with(@app, ids: going)
 
     if app.native
         for id in natives

@@ -78,6 +78,7 @@
 #elif defined(__APPLE__)
 #include <pthread.h>
 #include "hero_ui_appkit.h"
+#include "hero_ui_appkit_system.h"
 #else
 #include <dlfcn.h>
 #include <pthread.h>
@@ -154,6 +155,7 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 }
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
 static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts);
 static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count);
 static void hero_ui_web_gone(int64_t id);
@@ -174,10 +176,16 @@ int64_t hero_ui_arm_open(void) {
     int64_t count = 0;
     const char *bridge = hero_ui_web_bridge(&count);
 
-    return hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
+    int64_t kind = hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
+
+    if (kind == HERO_UI_OK) {
+        hero_ui_appkit_appearance_watch(hero_ui_dialog_told);
+    }
+    return kind;
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_appkit_appearance_watch(NULL);
     hero_ui_appkit_close();
 }
 
@@ -255,18 +263,6 @@ int64_t hero_ui_arm_pump(int64_t ms) {
 
 int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
     return hero_ui_appkit_inject(kind, id, value, second, text, count);
-}
-
-int64_t hero_ui_arm_message(int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, int64_t *answer) {
-    return hero_ui_appkit_message(window, tone, buttons, title, title_count, text, text_count, answer);
-}
-
-int64_t hero_ui_arm_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes) {
-    return hero_ui_appkit_file_dialog(window, save, multiple, title, title_count, name, name_count, filters, filters_count, bytes);
-}
-
-int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
-    return hero_ui_appkit_dialog_paths(buffer, count);
 }
 
 int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
@@ -817,7 +813,7 @@ static hero_ui_slot *hero_ui_enter_native(hero_ui_app *app) {
 /* Whether two events of `kind` for one widget with nothing between are
  * queued once, the later's values kept. */
 static bool hero_ui_coalesced(int64_t kind) {
-    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE || kind == HERO_UI_EVENT_MOVE;
+    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE || kind == HERO_UI_EVENT_MOVE || kind == HERO_UI_EVENT_APPEARANCE;
 }
 
 /* Queues an event on the native app's queue: what an arm calls, on the UI
@@ -1828,6 +1824,7 @@ int64_t hero_ui_close(hero_ui_app *app) {
         return -1;
     }
     if (slot->backend == HERO_UI_NATIVE) {
+        hero_ui_arm_dialogs_end(0);
         hero_ui_arm_close();
         hero_ui_web_give_back_all();
         hero_ui_native_slot = 0;
@@ -1844,6 +1841,8 @@ int64_t hero_ui_number(hero_ui_app *app) {
 }
 
 static int64_t hero_ui_elsewhere(const char *what);
+static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count);
+static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -1853,12 +1852,12 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_CONTEXT_MENU) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TRAY) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
-    if ((kind == HERO_UI_WINDOW) != (parent == 0) || parent < 0) {
-        (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window has none, every other kind one", (long long)kind, (long long)parent);
+    if ((kind == HERO_UI_WINDOW || kind == HERO_UI_TRAY) != (parent == 0) || parent < 0) {
+        (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     if (!hero_ui_arm_makes(kind, parent)) {
@@ -1874,6 +1873,9 @@ int64_t hero_ui_destroy(hero_ui_app *app, int64_t id) {
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
+    /* A dialog over a window goes with it, unanswered (DIALOGS ANSWERED
+     * THROUGH THE QUEUE). */
+    hero_ui_arm_dialogs_end(id);
     return hero_ui_answered(hero_ui_arm_destroy(id), "destroying a widget", id);
 }
 
@@ -2160,7 +2162,19 @@ int64_t hero_ui_lost(hero_ui_app *app) {
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count) {
     char words[HERO_UI_WORDS_MOST];
 
-    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (kind == HERO_UI_EVENT_DIALOG) {
+        return hero_ui_answer_as_person(id, value, text, count);
+    }
+    if (kind == HERO_UI_EVENT_APPEARANCE) {
+        if (id != 0 || value < 0 || value > HERO_UI_APPEARANCE_DARK || count != 0) {
+            return hero_ui_said(HERO_UI_INVALID, "an appearance turned names no widget, 0, and is HERO_UI_APPEARANCE_* or 0 for the system's");
+        }
+        return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would", 0);
+    }
+    if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
     if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT && kind != HERO_UI_EVENT_SORT && kind != HERO_UI_EVENT_UNFOLD) {
@@ -2186,55 +2200,6 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
         return hero_ui_elsewhere(hero_ui_acting(kind));
     }
     return hero_ui_answered(hero_ui_arm_inject(kind, id, value, second, text, (int64_t)count), "acting as the person", id);
-}
-
-int64_t hero_ui_message(hero_ui_app *app, int64_t window, int64_t tone, int64_t buttons, const void *title, uint64_t title_count, const void *text, uint64_t text_count) {
-    int64_t answer = HERO_UI_ANSWER_CANCEL;
-
-    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false)) {
-        return -1;
-    }
-    if (window < 0 || tone < HERO_UI_TONE_INFO || tone > HERO_UI_TONE_ERROR || buttons < HERO_UI_BUTTONS_OK || buttons > HERO_UI_BUTTONS_YES_NO_CANCEL) {
-        return hero_ui_said(HERO_UI_INVALID, "a message box's window is 0 or more, its tone and its buttons hero_ui.h's");
-    }
-    if (hero_ui_answered(hero_ui_arm_message(window, tone, buttons, title, (int64_t)title_count, text, (int64_t)text_count, &answer), "showing a message box", window) != 0) {
-        return -1;
-    }
-    return answer;
-}
-
-int64_t hero_ui_file_dialog(hero_ui_app *app, int64_t window, int64_t save, int64_t multiple, const void *title, uint64_t title_count, const void *name, uint64_t name_count, const void *filters, uint64_t filters_count) {
-    int64_t bytes = 0;
-
-    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(name, name_count, "the name", false) || !hero_ui_text_given(filters, filters_count, "the filters", true)) {
-        return -1;
-    }
-    if (window < 0 || (save != 0 && save != 1) || (multiple != 0 && multiple != 1)) {
-        return hero_ui_said(HERO_UI_INVALID, "a file dialog's window is 0 or more, `save` and `multiple` 0 or 1");
-    }
-    if (hero_ui_answered(hero_ui_arm_file_dialog(window, save, multiple, title, (int64_t)title_count, name, (int64_t)name_count, filters, (int64_t)filters_count, &bytes), "showing a file dialog", window) != 0) {
-        return -1;
-    }
-    return bytes;
-}
-
-int64_t hero_ui_dialog_paths(hero_ui_app *app, void *buffer, uint64_t count) {
-    int64_t bytes;
-
-    if (hero_ui_enter_native(app) == NULL) {
-        return -1;
-    }
-    if (count > 0 && buffer == NULL) {
-        return hero_ui_said(HERO_UI_INVALID, "room was named for the paths and none given");
-    }
-    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
-        count = (uint64_t)HERO_UI_TEXT_MOST;
-    }
-    bytes = hero_ui_arm_dialog_paths(buffer, (int64_t)count);
-    if (bytes < 0) {
-        return hero_ui_said(HERO_UI_OTHER, "no file dialog has answered paths");
-    }
-    return bytes;
 }
 
 /* -- THE WEB VIEW'S ENTRY POINTS ------------------------------------------- */
@@ -2534,6 +2499,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a tree";
     case HERO_UI_CONTEXT_MENU:
         return "making a context menu";
+    case HERO_UI_TRAY:
+        return "making a tray icon";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
@@ -2575,8 +2542,15 @@ static int64_t hero_ui_windows_answered(int64_t kind, const char *what, int64_t 
         (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
         return hero_ui_said(HERO_UI_OTHER, words);
     }
+    /* An arm that draws the call says what this system lacks where it has
+     * words; one that draws none answers in the layer's words. */
     if (kind == HERO_UI_UNSUPPORTED) {
-        return hero_ui_elsewhere(what);
+        theirs[0] = '\0';
+        if (hero_ui_arm_windows_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            return hero_ui_elsewhere(what);
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(HERO_UI_UNSUPPORTED, words);
     }
     return hero_ui_answered(kind, what, id);
 }
@@ -2596,13 +2570,6 @@ int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_
 
 /* -- WINDOWS ON THE SCREEN ------------------------------------------------- */
 
-/* Which of a window's settings an arm's `window_set` makes, `value`
- * checked by the entry point. */
-#define HERO_UI_WINDOW_SET_ON_TOP 1
-#define HERO_UI_WINDOW_SET_FRAMED 2
-#define HERO_UI_WINDOW_SET_OPACITY 3
-#define HERO_UI_WINDOW_SET_BACKDROP 4
-#define HERO_UI_WINDOW_SET_MODAL 5
 
 #if defined(__APPLE__)
 
@@ -2975,42 +2942,252 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
     return 0;
 }
 
-/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS -------------- */
+/* -- DIALOGS ANSWERED THROUGH THE QUEUE ------------------------------------ */
+
+/* What a dialog's answer is queued by: the queue itself, and on macOS the
+ * wake of the loop `pump` runs, since AppKit hands a sheet's answer to its
+ * completion handler outside any event that loop reads. */
+static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
+    hero_ui_push(kind, id, value, second, text, count);
+#if defined(__APPLE__)
+    hero_ui_appkit_wake();
+#endif
+}
 
 #if defined(__APPLE__)
 
-int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
-    return hero_ui_appkit_folder_dialog(multiple, title, title_count, bytes);
+#include "hero_ui_appkit_dialogs.h"
+
+int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    void *owner = hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    if (owner == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return hero_ui_appkit_show_message(owner, window, dialog, tone, buttons, title, title_count, text, text_count, hero_ui_dialog_told);
 }
 
-int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
-    return hero_ui_appkit_ask(tone, title, title_count, text, text_count, buttons, buttons_count, cancel, pressed);
+int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel) {
+    void *owner = hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    if (owner == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return hero_ui_appkit_show_ask(owner, window, dialog, tone, title, title_count, text, text_count, buttons, buttons_count, cancel, hero_ui_dialog_told);
+}
+
+int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count) {
+    void *owner = hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    if (owner == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return hero_ui_appkit_show_files(owner, window, dialog, save, multiple, title, title_count, name, name_count, filters, filters_count, hero_ui_dialog_told);
+}
+
+int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count) {
+    void *owner = hero_ui_appkit_object(window, HERO_UI_APPKIT_OBJECT_OWN_WINDOW);
+
+    if (owner == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return hero_ui_appkit_show_folders(owner, window, dialog, multiple, title, title_count, hero_ui_dialog_told);
+}
+
+int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count) {
+    return hero_ui_appkit_answer_dialog(dialog, value, paths, count);
+}
+
+void hero_ui_arm_dialogs_end(int64_t window) {
+    hero_ui_appkit_dialogs_end(window);
+}
+
+int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
+    return hero_ui_appkit_dialogs_words(words, count);
+}
+
+#else
+
+/* The Win32 and GTK 4 arms show a dialog by their waiting form,
+ * `hero_ui_arm_message` and the rest (THE ARM), which returns once the
+ * person has answered. Until an arm shows one that answers later, each of
+ * its dialogs is shown here by that form and the answer queued at once, so
+ * the program reads it from the queue as on macOS, though the call waited.
+ * No dialog then stays shown, so none is answered as the person, nor ended.
+ * An arm that answers later defines the calls below in its own member, and
+ * its system leaves this block's condition. */
+
+int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    int64_t answer = HERO_UI_ANSWER_CANCEL;
+    int64_t kind = hero_ui_arm_message(window, tone, buttons, title, title_count, text, text_count, &answer);
+
+    if (kind == HERO_UI_OK) {
+        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, answer, 0, NULL, 0);
+    }
+    return kind;
+}
+
+int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel) {
+    int64_t pressed = 0;
+    int64_t kind;
+
+    (void)window;
+    kind = hero_ui_arm_ask(tone, title, title_count, text, text_count, buttons, buttons_count, cancel, &pressed);
+    if (kind == HERO_UI_OK) {
+        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, pressed, 0, NULL, 0);
+    }
+    return kind;
+}
+
+/* Queues dialog `dialog`'s choice once its waiting form has answered
+ * `bytes` bytes of paths, each followed by one zero byte, 0 where the
+ * person cancelled. */
+static int64_t hero_ui_dialog_chose(int64_t dialog, int64_t bytes) {
+    uint8_t *paths;
+    int64_t count = 0;
+
+    if (bytes <= 0) {
+        hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, 0, 0, NULL, 0);
+        return HERO_UI_OK;
+    }
+    if (bytes > HERO_UI_TEXT_MOST) {
+        return hero_ui_refused(HERO_UI_LIMIT, "the paths chosen are more than a text of hero_ui.h holds");
+    }
+    paths = hero_layer_alloc((size_t)bytes);
+    if (paths == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    if (hero_ui_arm_dialog_paths(paths, bytes) != bytes || paths[bytes - 1] != 0) {
+        hero_layer_free(paths);
+        return hero_ui_refused(HERO_UI_OTHER, "the dialog's paths were not the bytes it said it chose");
+    }
+    for (int64_t at = 0; at < bytes; at += 1) {
+        if (paths[at] == 0) {
+            count += 1;
+        }
+    }
+    hero_ui_dialog_told(HERO_UI_EVENT_DIALOG, dialog, count, 0, paths, bytes);
+    hero_layer_free(paths);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count) {
+    int64_t bytes = 0;
+    int64_t kind = hero_ui_arm_file_dialog(window, save, multiple, title, title_count, name, name_count, filters, filters_count, &bytes);
+
+    return kind == HERO_UI_OK ? hero_ui_dialog_chose(dialog, bytes) : kind;
+}
+
+int64_t hero_ui_arm_show_folders(int64_t dialog, int64_t window, int64_t multiple, const uint8_t *title, int64_t title_count) {
+    int64_t bytes = 0;
+    int64_t kind;
+
+    (void)window;
+    kind = hero_ui_arm_folder_dialog(multiple, title, title_count, &bytes);
+    return kind == HERO_UI_OK ? hero_ui_dialog_chose(dialog, bytes) : kind;
+}
+
+int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *paths, int64_t count) {
+    (void)dialog;
+    (void)value;
+    (void)paths;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "this system's arm shows a dialog that waits for the person and answers before its call returns, so no dialog stays shown to be answered as the person");
+}
+
+void hero_ui_arm_dialogs_end(int64_t window) {
+    (void)window;
+}
+
+int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
 }
 
 #endif
 
-int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple, const void *title, uint64_t title_count) {
-    int64_t bytes = 0;
-
-    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false)) {
-        return -1;
-    }
-    if (window < 0 || (multiple != 0 && multiple != 1)) {
-        return hero_ui_said(HERO_UI_INVALID, "a folder dialog's window is 0 or more, `multiple` 0 or 1");
-    }
-    if (hero_ui_windows_answered(hero_ui_arm_folder_dialog(multiple, title, (int64_t)title_count, &bytes), "showing a folder dialog", window) != 0) {
-        return -1;
-    }
-    return bytes;
-}
-
-int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel) {
-    const uint8_t *labels = buttons;
-    int64_t count = 0;
-    int64_t pressed = 0;
+/* Whether `dialog` and the `window` it stands over are numbers a dialog
+ * takes, else the failure said. */
+static bool hero_ui_dialog_given(int64_t dialog, int64_t window) {
     char words[HERO_UI_WORDS_MOST];
 
-    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false) || !hero_ui_text_given(buttons, buttons_count, "the buttons", true)) {
+    if (dialog >= 1 && window >= 1) {
+        return true;
+    }
+    (void)snprintf(words, sizeof words, "dialog %lld over window %lld; a dialog's number is 1 or more, and so is the number of the window it stands over", (long long)dialog, (long long)window);
+    (void)hero_ui_said(HERO_UI_INVALID, words);
+    return false;
+}
+
+/* 0 where the arm answered `kind` `HERO_UI_OK`, else -1 with the failure
+ * said as `what`, naming dialog `dialog` and, where 1 or more, the window
+ * it was to stand over. */
+static int64_t hero_ui_dialog_answered(int64_t kind, const char *what, int64_t dialog, int64_t window) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+
+    if (kind == HERO_UI_OK) {
+        hero_ui_fine();
+        return 0;
+    }
+    if (kind == HERO_UI_NOT_FOUND && window > 0) {
+        (void)snprintf(words, sizeof words, "%s: the native side holds no window %lld, or shows a dialog %lld already", what, (long long)window, (long long)dialog);
+        return hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    if (kind == HERO_UI_NOT_FOUND) {
+        (void)snprintf(words, sizeof words, "%s: the native side shows no dialog %lld, or it was answered already", what, (long long)dialog);
+        return hero_ui_said(HERO_UI_NOT_FOUND, words);
+    }
+    if (kind == HERO_UI_INVALID && window == 0) {
+        (void)snprintf(words, sizeof words, "%s: dialog %lld has no button of that answer, or takes no such choice", what, (long long)dialog);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (kind == HERO_UI_OTHER || kind == HERO_UI_UNSUPPORTED) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_dialogs_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "the system refused, giving no words");
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(kind, words);
+    }
+    return hero_ui_answered(kind, what, window);
+}
+
+int64_t hero_ui_message(hero_ui_app *app, int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const void *title, uint64_t title_count, const void *text, uint64_t text_count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_dialog_given(dialog, window) || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false)) {
+        return -1;
+    }
+    if (tone < HERO_UI_TONE_INFO || tone > HERO_UI_TONE_ERROR || buttons < HERO_UI_BUTTONS_OK || buttons > HERO_UI_BUTTONS_YES_NO_CANCEL) {
+        return hero_ui_said(HERO_UI_INVALID, "a message box's tone and its buttons are hero_ui.h's");
+    }
+    return hero_ui_dialog_answered(hero_ui_arm_show_message(dialog, window, tone, buttons, title, (int64_t)title_count, text, (int64_t)text_count), "showing a message box", dialog, window);
+}
+
+int64_t hero_ui_file_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t save, int64_t multiple, const void *title, uint64_t title_count, const void *name, uint64_t name_count, const void *filters, uint64_t filters_count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_dialog_given(dialog, window) || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(name, name_count, "the name", false) || !hero_ui_text_given(filters, filters_count, "the filters", true)) {
+        return -1;
+    }
+    if ((save != 0 && save != 1) || (multiple != 0 && multiple != 1) || (save == 1 && multiple == 1)) {
+        return hero_ui_said(HERO_UI_INVALID, "a file dialog's `save` and `multiple` are 0 or 1, and a save chooses one file");
+    }
+    return hero_ui_dialog_answered(hero_ui_arm_show_files(dialog, window, save, multiple, title, (int64_t)title_count, name, (int64_t)name_count, filters, (int64_t)filters_count), "showing a file dialog", dialog, window);
+}
+
+int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t dialog, int64_t window, int64_t multiple, const void *title, uint64_t title_count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_dialog_given(dialog, window) || !hero_ui_text_given(title, title_count, "the title", false)) {
+        return -1;
+    }
+    if (multiple != 0 && multiple != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "a folder dialog's `multiple` is 0 or 1");
+    }
+    return hero_ui_dialog_answered(hero_ui_arm_show_folders(dialog, window, multiple, title, (int64_t)title_count), "showing a folder dialog", dialog, window);
+}
+
+int64_t hero_ui_ask(hero_ui_app *app, int64_t dialog, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel) {
+    const uint8_t *labels = buttons;
+    int64_t count = 0;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_dialog_given(dialog, window) || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false) || !hero_ui_text_given(buttons, buttons_count, "the buttons", true)) {
         return -1;
     }
     for (uint64_t at = 0; at < buttons_count; at += 1) {
@@ -3027,13 +3204,36 @@ int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *
         (void)snprintf(words, sizeof words, "a message box of %lld buttons; it holds 1 to %d", (long long)count, HERO_UI_ASK_BUTTONS_MOST);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
-    if (window < 0 || tone < HERO_UI_TONE_INFO || tone > HERO_UI_TONE_ERROR || cancel < -1 || cancel >= count) {
-        return hero_ui_said(HERO_UI_INVALID, "a message box's window is 0 or more, its tone hero_ui.h's, and its cancel button -1 or one of its buttons");
+    if (tone < HERO_UI_TONE_INFO || tone > HERO_UI_TONE_ERROR || cancel < -1 || cancel >= count) {
+        return hero_ui_said(HERO_UI_INVALID, "a message box's tone is hero_ui.h's, and its cancel button -1 or one of its buttons");
     }
-    if (hero_ui_windows_answered(hero_ui_arm_ask(tone, title, (int64_t)title_count, text, (int64_t)text_count, labels, (int64_t)buttons_count, cancel, &pressed), "showing a message box", window) != 0) {
+    return hero_ui_dialog_answered(hero_ui_arm_show_ask(dialog, window, tone, title, (int64_t)title_count, text, (int64_t)text_count, labels, (int64_t)buttons_count, cancel), "showing a message box", dialog, window);
+}
+
+/* `hero_ui_inject`'s `HERO_UI_EVENT_DIALOG`: answers dialog `dialog` as its
+ * person would, `value` the answer and `paths` the paths chosen. */
+static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count) {
+    const uint8_t *bytes = paths;
+    int64_t texts = 0;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (dialog < 1 || value < 0) {
+        (void)snprintf(words, sizeof words, "answering dialog %lld with %lld; a dialog's number is 1 or more and its answer 0 or more", (long long)dialog, (long long)value);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (!hero_ui_text_given(paths, count, "the paths chosen", true)) {
         return -1;
     }
-    return pressed;
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == 0) {
+            texts += 1;
+        }
+    }
+    if (count > 0 && texts != value) {
+        (void)snprintf(words, sizeof words, "%lld paths given for a choice of %lld", (long long)texts, (long long)value);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_dialog_answered(hero_ui_arm_answer_dialog(dialog, value, bytes, (int64_t)count), "answering a dialog as the person", dialog, 0);
 }
 
 /* -- CHECK AND RADIO MENU ITEMS -------------------------------------------- */
@@ -3375,4 +3575,189 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
         return hero_ui_said(HERO_UI_INVALID, "a tree's item is 1 or more and the state 0 or 1");
     }
     return hero_ui_windows_answered(hero_ui_arm_tree_unfold(id, item, on), "unfolding a tree's item", id);
+}
+
+/* -- AN ICON IN THE TRAY, AND AN APP OUT OF THE DOCK ------------------------ */
+
+#if defined(__APPLE__)
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    return hero_ui_appkit_set_docked(on);
+}
+
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    return hero_ui_appkit_notify(title, title_count, text, text_count);
+}
+
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_appkit_system_words(words, count);
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    return hero_ui_appkit_appearance(appearance);
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    return hero_ui_appkit_appearance_set(appearance);
+}
+
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    return hero_ui_appkit_set_accessible_name(id, name, count);
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    return hero_ui_appkit_accessible_name(id, buffer, count, length);
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    return hero_ui_appkit_set_label_for(id, label);
+}
+
+#else
+
+/* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
+ * shared words are (`hero_ui_refused`), so no word another call left is told
+ * with it. An arm that draws one defines it in its own member, and its system
+ * leaves this block's condition. */
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    (void)on;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer keeps an app out of the Dock on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    (void)title;
+    (void)title_count;
+    (void)text;
+    (void)text_count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer shows a notification on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_system_words(char *words, int64_t count) {
+    return hero_ui_arm_words(words, count);
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    (void)appearance;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the appearance on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    (void)appearance;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer turns the appearance on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    (void)id;
+    (void)name;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer names a widget for a screen reader on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    (void)id;
+    (void)buffer;
+    (void)count;
+    (void)length;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's accessible name on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    (void)id;
+    (void)label;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer ties a label to its field on macOS alone, and this system's arm has no such call");
+}
+
+#endif
+
+int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether the app stands in the Dock is 0 or 1");
+    }
+    return hero_ui_answered(hero_ui_arm_set_docked(on), "keeping the app in the Dock or out of it", 0);
+}
+
+/* 0 where the arm answered `kind` `HERO_UI_OK`, else -1 with the failure
+ * said as `what`, in the words of the member that answered it, naming
+ * widget `id` where it is 1 or more. */
+static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id) {
+    char words[HERO_UI_WORDS_MOST];
+    char theirs[HERO_UI_WORDS_MOST];
+
+    if (kind == HERO_UI_UNSUPPORTED || kind == HERO_UI_OTHER) {
+        theirs[0] = '\0';
+        if (hero_ui_arm_system_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            (void)snprintf(theirs, sizeof theirs, "the system refused, giving no words");
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(kind, words);
+    }
+    return hero_ui_answered(kind, what, id);
+}
+
+int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count) {
+    const uint8_t *heading = title;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false)) {
+        return -1;
+    }
+    if (title_count == 0 || memchr(heading, '\n', (size_t)title_count) != NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "a notification's title is one line, not empty");
+    }
+    return hero_ui_system_answered(hero_ui_arm_notify(title, (int64_t)title_count, text, (int64_t)text_count), "showing a notification", 0);
+}
+
+int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (appearance == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the appearance");
+    }
+    return hero_ui_system_answered(hero_ui_arm_appearance(appearance), "asking the appearance", 0);
+}
+
+/* -- ACCESSIBLE NAMES -------------------------------------------------------- */
+
+int64_t hero_ui_set_accessible_name(hero_ui_app *app, int64_t id, const void *name, uint64_t count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(name, count, "the accessible name", false)) {
+        return -1;
+    }
+    if (count > 0 && memchr(name, '\n', (size_t)count) != NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "an accessible name is one line");
+    }
+    return hero_ui_system_answered(hero_ui_arm_set_accessible_name(id, name, (int64_t)count), "naming a widget for a screen reader", id);
+}
+
+int64_t hero_ui_accessible_name(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) {
+    int64_t length = 0;
+    int64_t kind;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && buffer == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the name and none given");
+    }
+    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
+        count = (uint64_t)HERO_UI_TEXT_MOST;
+    }
+    kind = hero_ui_arm_accessible_name(id, buffer, (int64_t)count, &length);
+    if (hero_ui_system_answered(kind, "reading a widget's accessible name", id) != 0) {
+        return -1;
+    }
+    return length;
+}
+
+int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (label < 0 || label == id) {
+        return hero_ui_said(HERO_UI_INVALID, "the label tied to a widget is another widget, 1 or more, or 0 for none");
+    }
+    return hero_ui_system_answered(hero_ui_arm_set_label_for(id, label), "tying a label to its widget", id);
 }

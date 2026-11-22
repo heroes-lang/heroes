@@ -116,9 +116,8 @@ extern "hero_ui.h"
     function hero_ui_event_text(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_lost(app: App) -> i64
     function hero_ui_inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u8] counted_by count lent, count: u64) -> i64
-    function hero_ui_message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
-    function hero_ui_file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64, @name: [u8] counted_by name_count lent, name_count: u64, @filters: [u8] counted_by filters_count lent, filters_count: u64) -> i64
-    function hero_ui_dialog_paths(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_message(app: App, dialog: i64, window: i64, tone: i64, buttons: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
+    function hero_ui_file_dialog(app: App, dialog: i64, window: i64, save: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64, @name: [u8] counted_by name_count lent, name_count: u64, @filters: [u8] counted_by filters_count lent, filters_count: u64) -> i64
     function hero_ui_press_key(app: App, id: i64, @key: [u8] counted_by count lent, count: u64, modifiers: i64) -> i64
     # Windows on the screen: the numbers a screen takes, a window's states
     # and backdrops, the events of the person's acts on a window, and the
@@ -190,10 +189,26 @@ extern "hero_ui.h"
     function hero_ui_tree_unfold(app: App, id: i64, item: i64, on: i64) -> i64
     # A menu shown where the person right-clicks a widget.
     constant HERO_UI_CONTEXT_MENU: i64
+    # A dialog's answer, queued once the person gives it.
+    constant HERO_UI_EVENT_DIALOG: i64
+    # An icon in the tray, and an app out of the Dock.
+    constant HERO_UI_TRAY: i64
+    function hero_ui_set_docked(app: App, on: i64) -> i64
+    # The dark or light appearance, and its turn.
+    constant HERO_UI_APPEARANCE_LIGHT: i64
+    constant HERO_UI_APPEARANCE_DARK: i64
+    constant HERO_UI_EVENT_APPEARANCE: i64
+    function hero_ui_appearance(app: App, @appearance: i64) -> i64
+    # Accessible names, and a label tied to its field.
+    function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_set_label_for(app: App, id: i64, label: i64) -> i64
+    # A notification of the system's.
+    function hero_ui_notify(app: App, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
-    function hero_ui_folder_dialog(app: App, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
-    function hero_ui_ask(app: App, window: i64, tone: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64, @buttons: [u8] counted_by buttons_count lent, buttons_count: u64, cancel: i64) -> i64
+    function hero_ui_folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
+    function hero_ui_ask(app: App, dialog: i64, window: i64, tone: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64, @buttons: [u8] counted_by buttons_count lent, buttons_count: u64, cancel: i64) -> i64
     function hero_ui_screens(app: App, @values: [i64] counted_by count lent, count: u64) -> i64
     function hero_ui_frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
     function hero_ui_set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
@@ -496,21 +511,24 @@ function lost(app: App) -> i64
 # person's would be; or -1.
 #
 # - `app`: the app acted on.
-# - `kind`: the event the act gives, one of `HERO_UI_EVENT_CLICK` to
-#   `HERO_UI_EVENT_MESSAGE`, the last having a web view's page send `text`.
-# - `id`: the widget acted on.
-# - `value`: the item chosen, the slider's value, the width; else 0.
+# - `kind`: the event the act gives, one of `HERO_UI_EVENT_*`:
+#   `HERO_UI_EVENT_MESSAGE` has a web view's page send `text`, and
+#   `HERO_UI_EVENT_DIALOG` answers a dialog shown.
+# - `id`: the widget acted on, or the dialog answered.
+# - `value`: the item chosen, the slider's value, the width, a dialog's
+#   answer or how many paths `text` holds; else 0.
 # - `second`: 1 to add the item to a list's choice, or the height; else 0.
-# - `text`: the text typed, or the text a page sends; left as it was
-#   handed.
+# - `text`: the text typed, the text a page sends, or the paths chosen,
+#   each followed by one zero byte; left as it was handed.
 # - `count`: how many of its first bytes; 0 for none.
 function inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u8], count: u64) -> i64
     return hero_ui_inject(app, kind: kind, id: id, value: value, second: second, @text, count: count)
 
-# The button the person pressed in a message box, one of
-# `HERO_UI_ANSWER_*`, or -1.
+# 0 once message box `dialog` is shown, the button the person presses, one
+# of `HERO_UI_ANSWER_*`, queued later as `HERO_UI_EVENT_DIALOG`; or -1.
 #
 # - `app`: the app showing it.
+# - `dialog`: the program's number for it, 1 or more, not one shown.
 # - `window`: the window it stands over.
 # - `tone`: one of `HERO_UI_TONE_*`.
 # - `buttons`: one of `HERO_UI_BUTTONS_*`.
@@ -518,9 +536,10 @@ function inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u
 # - `title_count`: how many of the title's first bytes.
 # - `text`: what it says, UTF-8; left as it was handed.
 # - `text_count`: how many of the text's first bytes.
-function message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64) -> i64
+function message(app: App, dialog: i64, window: i64, tone: i64, buttons: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64) -> i64
     return hero_ui_message(
         app,
+        dialog: dialog,
         window: window,
         tone: tone,
         buttons: buttons,
@@ -530,10 +549,12 @@ function message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8], t
         text_count: text_count
     )
 
-# The bytes of the paths the person chose in a file dialog, 0 where they
-# cancelled, or -1.
+# 0 once file dialog `dialog` is shown, the paths the person chooses queued
+# later as `HERO_UI_EVENT_DIALOG`, its value how many, 0 where they
+# cancelled, its text the paths each followed by one zero byte; or -1.
 #
 # - `app`: the app showing it.
+# - `dialog`: the program's number for it, 1 or more, not one shown.
 # - `window`: the window it stands over.
 # - `save`: 1 to save one file, 0 to open.
 # - `multiple`: 1 to let the person open several.
@@ -544,9 +565,10 @@ function message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8], t
 # - `filters`: each filter's name and its extensions joined by `;`, each
 #   followed by one zero byte; left as it was handed.
 # - `filters_count`: how many of its first bytes; 0 for every file.
-function file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8], title_count: u64, @name: [u8], name_count: u64, @filters: [u8], filters_count: u64) -> i64
+function file_dialog(app: App, dialog: i64, window: i64, save: i64, multiple: i64, @title: [u8], title_count: u64, @name: [u8], name_count: u64, @filters: [u8], filters_count: u64) -> i64
     return hero_ui_file_dialog(
         app,
+        dialog: dialog,
         window: window,
         save: save,
         multiple: multiple,
@@ -557,15 +579,6 @@ function file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u
         filters: @filters,
         filters_count: filters_count
     )
-
-# The bytes of the paths the last file dialog answered, written into
-# `buffer` where they fit; or -1.
-#
-# - `app`: the app that showed it.
-# - `buffer`: where the paths are written; left `count` long.
-# - `count`: the bytes `buffer` holds.
-function dialog_paths(app: App, @buffer: [u8], count: u64) -> i64
-    return hero_ui_dialog_paths(app, @buffer, count: count)
 
 # 0 once web view `id`'s table holds the asset at `path`, replacing the one
 # there, or -1.
@@ -949,22 +962,31 @@ function tree_remove(app: App, id: i64, item: i64) -> i64
 function tree_unfold(app: App, id: i64, item: i64, on: i64) -> i64
     return hero_ui_tree_unfold(app, id: id, item: item, on: on)
 
-# The bytes of the folders the person chose, each path followed by one zero
-# byte, which `dialog_paths` writes; 0 where they cancelled; or -1.
+# 0 once folder dialog `dialog` is shown, the folders the person chooses
+# queued later as a file dialog's paths are; or -1.
 #
 # - `app`: the app showing it.
-# - `window`: the window it stands over, 0 for none.
+# - `dialog`: the program's number for it, 1 or more, not one shown.
+# - `window`: the window it stands over.
 # - `multiple`: 1 to let the person choose several, 0 for one.
 # - `title`: UTF-8 with no zero byte; left as it was handed.
 # - `title_count`: how many of its first bytes.
-function folder_dialog(app: App, window: i64, multiple: i64, @title: [u8], title_count: u64) -> i64
-    return hero_ui_folder_dialog(app, window: window, multiple: multiple, @title, title_count: title_count)
+function folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title: [u8], title_count: u64) -> i64
+    return hero_ui_folder_dialog(
+        app,
+        dialog: dialog,
+        window: window,
+        multiple: multiple,
+        @title,
+        title_count: title_count
+    )
 
-# The index of the button the person pressed in a message box of the
-# program's words, or -1.
+# 0 once box `dialog` of the program's words is shown, the index of the
+# button the person presses queued later as `HERO_UI_EVENT_DIALOG`; or -1.
 #
 # - `app`: the app showing it.
-# - `window`: the window it stands over, 0 for none.
+# - `dialog`: the program's number for it, 1 or more, not one shown.
+# - `window`: the window it stands over.
 # - `tone`: one of `HERO_UI_TONE_INFO` to `HERO_UI_TONE_ERROR`.
 # - `title`: UTF-8 with no zero byte; left as it was handed.
 # - `title_count`: how many of its first bytes.
@@ -974,9 +996,10 @@ function folder_dialog(app: App, window: i64, multiple: i64, @title: [u8], title
 #   `HERO_UI_ASK_BUTTONS_MOST` of them; left as it was handed.
 # - `buttons_count`: how many of its first bytes.
 # - `cancel`: the index of the button Escape presses, or -1.
-function ask(app: App, window: i64, tone: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64, @buttons: [u8], buttons_count: u64, cancel: i64) -> i64
+function ask(app: App, dialog: i64, window: i64, tone: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64, @buttons: [u8], buttons_count: u64, cancel: i64) -> i64
     return hero_ui_ask(
         app,
+        dialog: dialog,
         window: window,
         tone: tone,
         title: @title,
@@ -987,6 +1010,60 @@ function ask(app: App, window: i64, tone: i64, @title: [u8], title_count: u64, @
         buttons_count: buttons_count,
         cancel: cancel
     )
+
+# 0 once the app stands in the Dock and with a menu bar of its own, `on`
+# 1, or out of both, 0; or -1.
+#
+# - `app`: the app.
+# - `on`: 1 or 0.
+function set_docked(app: App, on: i64) -> i64
+    return hero_ui_set_docked(app, on: on)
+
+# 0 once the appearance the app's windows are drawn in now is written,
+# `HERO_UI_APPEARANCE_LIGHT` or `_DARK`; or -1.
+#
+# - `app`: the app.
+# - `drawn`: where it is written.
+function appearance_now(app: App, @drawn: i64) -> i64
+    return hero_ui_appearance(app, @drawn)
+
+# 0 once widget `id` holds the accessible name `name`, none taking it back;
+# or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `name`: one line of UTF-8; left as it was handed.
+# - `count`: how many of its first bytes; 0 for none.
+function set_accessible_name(app: App, id: i64, @name: [u8], count: u64) -> i64
+    return hero_ui_set_accessible_name(app, id: id, @name, count: count)
+
+# The length of the accessible name widget `id` holds, written into
+# `buffer` where it fits; 0 for none; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `buffer`: where the name is written; left `count` long.
+# - `count`: the bytes `buffer` holds.
+function accessible_name(app: App, id: i64, @buffer: [u8], count: u64) -> i64
+    return hero_ui_accessible_name(app, id: id, @buffer, count: count)
+
+# 0 once label `label` is tied to widget `id`, 0 untying it; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget named.
+# - `label`: the label, or 0.
+function set_label_for(app: App, id: i64, label: i64) -> i64
+    return hero_ui_set_label_for(app, id: id, label: label)
+
+# 0 once the system shows a notification of `title` and `text`; or -1.
+#
+# - `app`: the app.
+# - `title`: one line, not empty, UTF-8; left as it was handed.
+# - `title_count`: how many of its first bytes.
+# - `text`: UTF-8 with no zero byte; left as it was handed.
+# - `text_count`: how many of its first bytes.
+function notify(app: App, @title: [u8], title_count: u64, @text: [u8], text_count: u64) -> i64
+    return hero_ui_notify(app, title: @title, title_count: title_count, text: @text, text_count: text_count)
 
 ## Tests
 
