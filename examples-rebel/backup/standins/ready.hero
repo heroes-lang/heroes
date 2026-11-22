@@ -1,89 +1,61 @@
 # How a stand-in started on a thread tells the demo it listens, and on
-# which port. A thread is handed one text and gives one back only when it
-# ends (spec § 13), so the demo listens on a control port of its own
-# first, hands that port to the thread, and the thread, once its own
-# listener is open on a port the system chose, connects there and writes
-# one line, `READY <service> <port>`. Nothing that needs the service runs
-# before that line has come, so no request races the listener.
-
-use <rebel>/io
-use <rebel>/net
-use <rebel>/numbers
-use <rebel>/strings
-
-## Codes
-
-# The code of a line that is not a readiness line.
-constant INVALID: str
-    "invalid"
+# which port: the demo makes a mailbox (spec § 11) and hands it to the
+# thread with the stand-in's setup; the stand-in, once its own listener is
+# open on a port the system chose, sends one `Ready` on it, and closes it
+# on every path, so a stand-in that could not listen is told at once as one
+# that ended without saying so, never awaited for the whole wait. Nothing
+# that needs the service runs before that value has come, so no request
+# races the listener.
 
 ## Bounds
 
-# How long, in milliseconds, the line may take to be written or to come.
+# How long, in milliseconds, the demo waits for a stand-in to say it
+# listens.
 constant WAIT_MS: i64
     10_000
 
-## The line
+## The notice
 
-# What a stand-in said once it listened.
+# What a stand-in says once it listens.
 record Ready
     # The service, one word.
     service: str
     # Its port, 1 to 65535.
     port: i64
 
-# Tells the demo listening on `control_port` that `service` listens on
-# `port`.
+# Tells the demo, through `to`, that `service` listens on `port`, and
+# closes `to`: a stand-in says it once.
 #
-# - `control_port`: the demo's control port on 127.0.0.1.
+# - `to`: the mailbox the demo waits on.
 # - `service`: the service, one word.
 # - `port`: the service's port.
 #
-# Fails as `net.connect` and `io.write_text` fail.
-function tell(control_port: i64, service: str, port: i64) -> ()?
-    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: WAIT_MS)?
-    conn @= made
-    written = io.write_text(conn.stream, text: f"READY {service} {port}\n")
-    _ = io.close(@conn.stream).is_err()
-    return written
+# Fails `closed` or `stopped` where the demo no longer waits.
+function tell(to: (mailbox Ready), service: str, port: i64) -> ()?
+    sent = to.send(Ready(service: service, port: port))
+    to.close()
+    return sent
 
-# The next readiness line `control` receives.
+# The notice `from` receives, waited for `WAIT_MS` at most.
 #
-# - `control`: the demo's control listener.
+# - `from`: the mailbox handed to the stand-in.
 #
-# Fails `invalid` where what came is not such a line, and as `net.accept`
-# and `io.read_all_text` fail, `timeout` where nothing came in `WAIT_MS`.
-function await_ready(control: net.Listener) -> Ready?
-    made = net.accept(control, deadline_ms: WAIT_MS)?
-    conn @= made
-    text = io.read_all_text(conn.stream)
-    _ = io.close(@conn.stream).is_err()
-    return parse_ready(text?)
+# Fails `closed` where the stand-in ended without saying it listens,
+# `timeout` where nothing came in `WAIT_MS`, and `stopped` where the
+# program was asked to stop first.
+function await_ready(from: (mailbox Ready)) -> Ready?
+    match from.receive(within_ms: WAIT_MS)
+        .ok r => return ok(r)
+        .err e =>
+            if e.code == "closed"
+                return fail(code: e.code, msg: "it ended without saying it listens")
+            return fail(code: e.code, msg: e.msg)
 
-# The readiness line `text` holds.
-#
-# - `text`: `READY <service> <port>` and a line feed.
-#
-# Fails `invalid` where it is not of that form or the port is outside 1 to
-# 65535.
-function parse_ready(text: str) -> Ready?
-    words = strings.words(strings.trim(text))
-
-    if words.len() != 3 || words[0] != "READY"
-        return fail(
-            code: INVALID,
-            msg: f"a stand-in says READY <service> <port>, and this one said \"{strings.trim(text)}\""
-        )
-    port = numbers.parse_int(words[2]).default(0)
-
-    if port < 1 || port > 65535
-        return fail(code: INVALID, msg: f"{words[1]} said no port from 1 to 65535")
-    return ok(Ready(service: words[1], port: port))
-
-test "parse_ready: a line read back, and a line of another form or port refused"
-    assert parse_ready("READY s3 9000\n").must() == Ready(service: "s3", port: 9000)
-    assert parse_ready("").is_err()
-    assert parse_ready("READY s3").is_err()
-    assert parse_ready("HELLO s3 9000").is_err()
-    assert parse_ready("READY s3 0").is_err()
-    assert parse_ready("READY s3 65536").is_err()
+test "tell and await_ready: the notice crosses whole, and a closed mailbox is told at once"
+    m: (mailbox Ready) = mailbox()
+    tell(m, service: "s3", port: 9000).must()
+    assert await_ready(m).must() == Ready(service: "s3", port: 9000)
+    assert await_ready(m).is_err()
+    silent: (mailbox Ready) = mailbox()
+    silent.close()
+    assert await_ready(silent).is_err()
