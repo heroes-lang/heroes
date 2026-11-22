@@ -1,0 +1,115 @@
+# What the person searches for, compiled once into a regular expression:
+# plain words found anywhere in a name or a line, whatever their case; a
+# name pattern with `*` and `?` the way a shell reads one, `*.png`, matching
+# the whole name; or a regular expression as typed, where the person ticked
+# the box. Every search is linear in the text searched (`regex`), so no
+# pattern typed into the search field can hang the window.
+
+use <rebel>/regex
+use <rebel>/strings
+
+# Where a search looks.
+variant Scope
+    # The entries' names.
+    names
+    # The text the files hold, in their encodings.
+    contents
+
+# A search, compiled.
+record Query
+    # What the person typed.
+    text: str
+    # Where it looks.
+    scope: Scope
+    # Whether the text is a regular expression.
+    is_regex: bool
+    # The text as an expression.
+    pattern: regex.Regex
+
+# The query `text` makes.
+#
+# - `text`: what the person typed.
+# - `scope`: where it looks.
+# - `is_regex`: whether `text` is a regular expression; otherwise its `*`
+#   and `?` are wildcards in a name search, and every other character
+#   stands for itself, case ignored.
+#
+# Fails `invalid` where `text` is empty or not an expression `regex` reads,
+# the message saying where.
+function compile_query(text: str, scope: Scope, is_regex: bool) -> Query?
+    if strings.trim(text) == ""
+        return fail(code: "invalid", msg: "type what to search for")
+
+    source = if is_regex
+        text
+    else if scope == .names && strings.contains_any(s: text, set: "*?")
+        "(?i)^" + wildcards(text) + "$"
+    else
+        "(?i)" + regex.escape(text)
+
+    pattern = match regex.compile(source)
+        .ok p  => p
+        .err x => return fail(code: "invalid", msg: f"\"{text}\" is not a pattern: {x.msg}")
+
+    return ok(Query(text: text, scope: scope, is_regex: is_regex, pattern: pattern))
+
+# A shell's name pattern as a regular expression's body: `*` any run of
+# characters, `?` one character, every other character itself.
+#
+# - `text`: the name pattern.
+function wildcards(text: str) -> str
+    out: [str] @= []
+
+    for c in text.chars()
+        if c == "*"
+            out @ out.push(".*")
+        else if c == "?"
+            out @ out.push(".")
+        else
+            out @ out.push(regex.escape(c))
+
+    return out.join("")
+
+# Whether the query finds `s`.
+#
+# - `q`: the query.
+# - `s`: a name or a line.
+function finds(q: Query, s: str) -> bool
+    return regex.contains(s, re: q.pattern)
+
+# Where the query first finds `s`, as a byte range.
+#
+# - `q`: the query.
+# - `s`: a line.
+#
+# Fails `not_found` where it does not.
+function span_in(q: Query, s: str) -> regex.Span?
+    m = regex.search(s, re: q.pattern)?
+    return ok(regex.Span(start: m.start, end: m.end))
+
+# The scope's name as the search's combo box shows it.
+#
+# - `scope`: the scope.
+function scope_name(scope: Scope) -> str
+    return match scope
+        .names    => "Names"
+        .contents => "Contents"
+
+test "compile_query: plain words ignore case and stand for themselves, empty refused"
+    q = compile_query("crème (2)", scope: .contents, is_regex: false).must()
+    assert finds(q, s: "CRÈME (2) brûlée")
+    assert !finds(q, s: "crème 2")
+    assert compile_query("  ", scope: .names, is_regex: false).is_err()
+
+test "compile_query: wildcards match the whole name, a regular expression as typed, a bad one refused"
+    star = compile_query("*.png", scope: .names, is_regex: false).must()
+    assert finds(star, s: "Photo.PNG")
+    assert !finds(star, s: "photo.png.txt")
+    q = compile_query("^file[0-9]+$", scope: .names, is_regex: true).must()
+    assert finds(q, s: "file10") && !finds(q, s: "afile1")
+    assert compile_query("(unclosed", scope: .names, is_regex: true).is_err()
+
+test "span_in: the bytes of the first match, and not_found"
+    q = compile_query("b", scope: .contents, is_regex: false).must()
+    assert span_in(q, s: "éab").must() == regex.Span(start: 3, end: 4)
+    assert span_in(q, s: "xyz").is_err()

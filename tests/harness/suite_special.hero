@@ -36,6 +36,7 @@ function run_all(scratch: str, compiler: str) -> report.Report?
     special_environment.the_environment_lets_through_what_it_must(@r, scratch: scratch, compiler: compiler)
     special_groups.a_groups_own_headers_build(@r, scratch: scratch, compiler: compiler)
     one_bad_argument_does_not_kill_the_other_two(@r, scratch: scratch, compiler: compiler)
+    an_example_tells_an_argument_that_is_not_text_as_a_usage_error(@r, scratch: scratch, compiler: compiler)
     return ok(r)
 
 # **`build` says where it put the binary, and the binary is there and
@@ -905,6 +906,54 @@ constant CHECKED_PROGRAM: str
 
 constant PLAIN_PROGRAM: str
     "function main()\n    print(len(args()))\n"
+
+# **A program of the tree that reads a command line a person types tells an
+# argument that is not text as a usage error, never an abort** (the author's
+# answer of 2026-11-22: every such program reads `args_checked()`). Two of
+# the compiler's examples, built and handed `one`, the bytes 0xff 0xfe and
+# `three` by `/bin/sh` for the reason the case above gives: `argv`, which
+# keeps its demonstration of both built-ins and asks `args_checked()` first,
+# and `assembler`, whose usage check runs on the text the helper answers.
+# Each must print its own name, the argument's place counted from 1 and the
+# words `is not UTF-8`, and end with 2, as its other usage errors do; with
+# `args()` read first each ended 134 with the runtime's panic.
+function an_example_tells_an_argument_that_is_not_text_as_a_usage_error(@r: report.Report, scratch: str, compiler: str)
+    label = "special/an example tells an argument that is not text as a usage error"
+    dir = scratch + "/argv-usage"
+
+    if shell.remove_tree(dir).is_err() || shell.mkdir_all(dir).is_err()
+        report.keep_failure(@r, label: label, detail: "  cannot make " + dir)
+        return
+    wrong: [str] @= []
+
+    for name in ["argv", "assembler"]
+        if built(scratch: scratch, compiler: compiler, source: "examples/" + name + "/main.hero", binary: dir + "/" + name).is_err()
+            wrong @ wrong.push("    examples/" + name + " did not build")
+            continue
+        ran = shell.attempted(
+            scratch: scratch,
+            program: "/bin/sh",
+            words: ["/bin/sh", "-c", dir + "/" + name + " one $(printf '\\377\\376') three"]
+        )
+
+        if ran.is_err()
+            wrong @ wrong.push("    examples/" + name + ": " + shell.refusal(ran))
+            continue
+
+        # No `/bin/sh` (Windows): the bytes cannot be handed, as above.
+        if !ran.must().started
+            continue
+        said = name + ": argument 2 is not UTF-8\n"
+
+        if ran.must().code != 2 || ran.must().out != said
+            wrong @ wrong.push(
+                "    examples/" + name + " ended " + ran.must().code.to_str() + " and printed " + strings.trimmed(ran.must().out) + strings.trimmed(ran.must().err) + ", where it should print `" + strings.trimmed(said) + "` and end with 2"
+            )
+
+    if wrong.len() > 0
+        report.keep_failure(@r, label: label, detail: wrong.join("\n"))
+    else
+        report.keep_pass(@r)
 
 # One program built to a named path, so the harness can run the binary
 # with a command line of its own choosing.

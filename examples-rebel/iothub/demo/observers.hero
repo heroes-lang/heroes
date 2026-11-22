@@ -1,0 +1,195 @@
+# The demo's observers: the services downstream of the hub, each a plain
+# client of its broker, which see only what the hub publishes. A historian
+# keeps every re-published reading from NATS; a pager reads the alerts the
+# rules send to AMQP from a durable queue of its own, acknowledging each; a
+# panel on the shop floor subscribes to MQTT's alarms and weather; and a
+# dashboard watches the hub's feed over a WebSocket. Each waits a bounded
+# time for what it expects, so a demo that went wrong ends rather than
+# hangs.
+
+use <rebel>/amqp
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/time
+use <rebel>/websocket
+
+use codecs/reading
+use demo/devices
+use demo/world
+use feed/messages
+use feed/view
+
+# How long an observer waits for what it expects, in seconds.
+constant WAIT_SECONDS: i64
+    20
+
+# The pager's durable queue.
+constant PAGER_QUEUE: str
+    "oncall.alerts"
+
+# The observers' clients, each one at most.
+record Observers
+    # The historian, on NATS.
+    historian: [nats.Client]
+    # The pager, on AMQP.
+    pager: [amqp.Connection]
+    # The panel, on MQTT.
+    panel: [mqtt.Client]
+    # The dashboard, on the hub's feed.
+    dashboard: [websocket.Conn]
+    # What the dashboard shows.
+    board: view.Board
+
+# The pager's connection to the AMQP stand-in at `port`: its durable queue
+# declared and bound to the alerts it pages for, one delivery at a time,
+# acknowledged by hand.
+#
+# - `port`: the broker's port on the loopback.
+#
+# The caller owes it an `amqp.close`. Fails as the connection and its
+# declarations fail.
+function pager_connection(port: i64) -> amqp.Connection?
+    opts @= amqp.options("127.0.0.1")
+    opts.port @ port
+    opts.connection_name @ "pager"
+    c @= amqp.connect(opts)?
+    channel = amqp.open_channel(@c)?
+    q @= amqp.queue(PAGER_QUEUE)
+    q.durable @ true
+    _ = amqp.declare_queue(@c, channel: channel, q: q)?
+
+    for key in ["coldchain.#", "battery.#"]
+        amqp.bind_queue(@c, channel: channel, queue_name: PAGER_QUEUE, exchange_name: "alerts", routing_key: key, arguments: [])?
+
+    amqp.qos(@c, channel: channel, prefetch_count: 1, prefetch_size: 0, global: false)?
+    consumer @= amqp.consumer(PAGER_QUEUE)
+    consumer.tag @ "pager"
+    _ = amqp.consume(@c, channel: channel, k: consumer)?
+    return ok(c)
+
+# The observers, connected to the stand-ins and the hub of `w`.
+#
+# - `w`: the world, its brokers and hub started.
+#
+# Fails as a client's connection or subscription fails.
+function connect_observers(w: world.World lent) -> Observers?
+    opts @= nats.options([f"nats://127.0.0.1:{w.nats_port}"])
+    opts.name @ "historian"
+    opts.reconnect.attempts @ 0
+    historian @= nats.connect(opts)?
+    _ = nats.subscribe(@historian, subject: "iothub.readings.>")?
+    nats.flush(@historian, wait: time.seconds(WAIT_SECONDS)?)?
+    panel @= devices.mqtt_client(w.mqtt_port, name: "panel")?
+    _ = mqtt.subscribe_many(@panel, subscriptions: [mqtt.subscription("plant/alarms/#", qos: 1), mqtt.subscription("weather/#", qos: 1)], properties: [])?
+    dashboard = websocket.connect(f"ws://127.0.0.1:{w.hub_port}/feed", client: websocket.default_client())?
+    return ok(
+        Observers(historian: [historian], pager: [pager_connection(w.amqp_port)?], panel: [panel], dashboard: [dashboard], board: view.new_board())
+    )
+
+# A reading the hub published, as `device values` and its moments.
+#
+# - `data`: the reading's JSON.
+#
+# Fails `invalid` where it is not the hub's JSON.
+function reading_line(data: [u8]) -> str?
+    r = reading.reading_of(json.parse(bytes.to_text(data)?)?)?
+    return ok(f"{r.device} {reading.values_line(r)}")
+
+# The next reading the historian keeps, its subject and its JSON as it came.
+#
+# - `o`: the observers.
+#
+# Fails `timeout` where none comes in time.
+function historian_raw(@o: Observers) -> str?
+    m = nats.next_message(@o.historian[0], wait: time.seconds(WAIT_SECONDS)?)?
+    return ok(f"{m.subject} {bytes.to_text(m.data)?}")
+
+# The next reading the historian keeps, shortly.
+#
+# - `o`: the observers.
+#
+# Fails `timeout` where none comes in time, `invalid` where it is not the
+# hub's JSON.
+function historian_hears(@o: Observers) -> str?
+    m = nats.next_message(@o.historian[0], wait: time.seconds(WAIT_SECONDS)?)?
+    return ok(f"{m.subject}: {reading_line(m.data)?}")
+
+# The next alert the pager is given, acknowledged once read.
+#
+# - `o`: the observers.
+#
+# Fails `timeout` where none comes in time.
+function pager_hears(@o: Observers) -> str?
+    d = amqp.next_delivery(@o.pager[0], wait: time.seconds(WAIT_SECONDS)?)?
+    line = reading_line(d.message.body)?
+    amqp.ack(@o.pager[0], d: d, multiple: false)?
+
+    redelivered = if d.redelivered
+        ", redelivered"
+    else
+        ""
+
+    return ok(f"{d.exchange}/{d.routing_key}{redelivered}: {line}")
+
+# The next message the panel shows.
+#
+# - `o`: the observers.
+#
+# Fails `timeout` where none comes in time.
+function panel_hears(@o: Observers) -> str?
+    m = mqtt.next_message(@o.panel[0], wait: time.seconds(WAIT_SECONDS)?)?
+    return ok(f"{m.topic}: {reading_line(m.payload)?}")
+
+# The next line the dashboard shows, the board taking its message.
+#
+# - `o`: the observers.
+#
+# Fails `timeout` where nothing comes in time, `invalid` where the feed
+# sent what is no feed message.
+function dashboard_sees(@o: Observers) -> str?
+    websocket.set_deadline(o.dashboard[0], deadline: time.seconds(WAIT_SECONDS)?)?
+    got = websocket.read_message(@o.dashboard[0])?
+    m = messages.message_of(bytes.to_text(websocket.data_of(got))?)?
+    view.take(@o.board, m: m)
+    return ok(view.line_of(m))
+
+# The pager connects again after its broker restarted.
+#
+# - `o`: the observers.
+# - `port`: the broker's port.
+#
+# Fails as `pager_connection` fails.
+function reconnect_pager(@o: Observers, port: i64) -> ()?
+    # The broker closed the old one; its own close answers that.
+    _ = amqp.close(@o.pager[0]).is_err()
+    o.pager @ [pager_connection(port)?]
+    return ok()
+
+# Closes every observer's client, the dashboard by WebSocket's closing
+# handshake.
+#
+# - `o`: the observers.
+function close_observers(@o: Observers)
+    for i in range(from: 0, to: o.dashboard.len())
+        _ = websocket.close(@o.dashboard[i], code: websocket.CLOSE_NORMAL, reason: "").is_err()
+
+    for i in range(from: 0, to: o.historian.len())
+        _ = nats.close(@o.historian[i]).is_err()
+
+    for i in range(from: 0, to: o.pager.len())
+        _ = amqp.close(@o.pager[i]).is_err()
+
+    for i in range(from: 0, to: o.panel.len())
+        _ = mqtt.close(@o.panel[i]).is_err()
+
+    o.dashboard @ []
+    o.historian @ []
+    o.pager @ []
+    o.panel @ []
+
+test "reading_line: the hub's JSON shortly, and bytes that are none"
+    text = "{\"device\":\"wx-1\",\"id\":\"x\",\"source\":\"serial\",\"encoding\":\"nmea\",\"taken\":\"2026-11-22T09:00:00Z\",\"received\":\"2026-11-22T09:00:00Z\",\"size\":40,\"values\":[{\"quantity\":\"humidity\",\"value\":48.2,\"unit\":\"%RH\"}]}"
+    assert reading_line(bytes.from_text(text)).must() == "wx-1 humidity 48.2 %RH"
+    assert reading_line([255]).is_err()

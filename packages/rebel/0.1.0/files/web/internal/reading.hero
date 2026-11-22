@@ -1,8 +1,11 @@
 # The small readings the steps before and after a handler share: a field's
 # media type, an `Accept-Encoding`'s answer for gzip, a `Vary` field grown, a
 # quoted string, a Bearer token's syntax, an origin's host, an address
-# without its port, and a file name for `Content-Disposition`.
+# without its port, a file name for `Content-Disposition`, a field of a
+# request's form, and a function of one value handed where a function of a
+# state and a value is asked.
 
+use bytes
 use http
 use strings
 use url
@@ -109,6 +112,35 @@ function is_printable_ascii(s: str) -> bool
             return false
 
     return true
+
+# The value of the field `name` of `r`'s form, sent as
+# `application/x-www-form-urlencoded` or `multipart/form-data`: the first
+# such field, as a browser sends one field of a name. Fails `not_found`
+# where the body is no such form or holds no such field, and as
+# `http.form_of`, `http.parts_of` and `bytes.to_text` fail where it does not
+# read; a caller that reads a failure as no field reads it as `check_csrf`
+# and `override_method` do.
+function form_field_of(r: http.Request, name: str) -> str?
+    match http.form_of(r)
+        .ok pairs =>
+            for p in pairs
+                if p.key == name
+                    return ok(p.value)
+
+            return fail(code: "not_found", msg: f"the form holds no field \"{name}\"")
+        .err e =>
+            if e.code != "not_found"
+                return fail(code: e.code, msg: e.msg)
+            _ = 0
+
+    parts = http.parts_of(r, limits: http.default_part_limits())?
+    return bytes.to_text(http.part_of(parts, name: name)?.data)
+
+# `f` called with `x`: how a step of the request alone, or a check of a
+# token alone, is handed where `before_with` or `require_bearer_with` asks a
+# function of a state and a value, the state being `f` itself.
+function apply<A, B>(f: (function(A) -> B), x: A) -> B
+    return f(x)
 
 # Whether `item` is one of `list`, compared as written.
 function is_listed(item: str, list: [str]) -> bool

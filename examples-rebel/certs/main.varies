@@ -1,0 +1,4 @@
+# The transcript's one line a machine decides: where the private keys are kept.
+line: keys: kept in the system's keyring
+or: keys: kept in files only this user may read, the system's keyring not answering here
+why: `keyring.system()` answers where the machine has a keyring the program may reach (a macOS login session's keychain, Windows' Credential Manager under a user's logon, a Secret Service on a Linux desktop), and the demo keeps its keys there under a service of its own run, removed at the end; in a container, a server with no desktop session or a logon that keeps no credentials it answers no keyring, and the keys go to files of the demo's folder, made for this user alone

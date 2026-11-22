@@ -1,0 +1,152 @@
+# What the program remembers between runs, in TOML a person may read and
+# annotate: one renewal record a certificate, `renewal/<name>.toml`, as
+# certbot keeps its renewal configuration, and the account each directory
+# gave, `accounts.toml`. Both are edited in place by `toml.Document`, so a
+# comment a person adds to one survives every later write.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/time
+use <rebel>/toml
+
+use config/settings
+
+## Codes
+
+# The code of a record or an account not written yet.
+constant NOT_FOUND: str
+    "not_found"
+
+## Renewal records
+
+# What a renewal record says.
+record Renewal
+    # The version current.
+    version: i64
+    # Its serial number, hexadecimal.
+    serial: str
+    # How many times it was issued, the first time included.
+    issued: i64
+
+# The renewal record of `name`.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+function renewal_path(folder: str, name: str) -> str
+    return path.join_all([folder, "renewal", name + ".toml"])
+
+# Writes what was just issued of `lineage` into its renewal record, every
+# other line of the record kept.
+#
+# - `folder`: the store's folder.
+# - `lineage`: the certificate as configured.
+# - `version`: the version issued.
+# - `serial`: its serial number, hexadecimal.
+# - `not_after`: its last valid moment.
+#
+# Fails as `toml.set_value`, `fs.make_dir_all` and `fs.write_atomic_text`
+# fail.
+function remember_issue(folder: str, lineage: settings.Lineage, version: i64, serial: str, not_after: time.Instant) -> ()?
+    file = renewal_path(folder: folder, name: lineage.name)
+    header = f"# What certs keeps of the certificate \"{lineage.name}\"; it is rewritten at each\n# issue, and a comment added here is kept.\n"
+    d @= toml.parse_document(read_file(file).default(header))?
+    issued = read_issued(d) + 1
+    domains: [toml.Value] @= []
+
+    for name in lineage.domains
+        domains @ domains.push(.text(v: name))
+
+    toml.set_value(@d, path: ["name"], value: .text(v: lineage.name))?
+    toml.set_value(@d, path: ["domains"], value: .array(items: domains))?
+    toml.set_value(@d, path: ["challenge"], value: .text(v: lineage.challenge))?
+    toml.set_value(@d, path: ["version"], value: .integer(v: version))?
+    toml.set_value(@d, path: ["serial"], value: .text(v: serial))?
+    toml.set_value(@d, path: ["not_after"], value: .date_time(at: time.to_date_time(not_after), offset_minutes: 0))?
+    toml.set_value(@d, path: ["issued"], value: .integer(v: issued))?
+    fs.make_dir_all(path.parent(file))?
+    return fs.write_atomic_text(path: file, text: toml.format_document(d))
+
+# The renewal record of `name`.
+#
+# - `folder`: the store's folder.
+# - `name`: the certificate's name.
+#
+# Fails `not_found` where none was written, and as `toml.parse_document`
+# fails on what is there.
+function renewal_of(folder: str, name: str) -> Renewal?
+    text = match read_file(renewal_path(folder: folder, name: name))
+        .ok t  => t
+        .err _ => return fail(code: NOT_FOUND, msg: f"no renewal record of \"{name}\"")
+
+    d = toml.parse_document(text)?
+
+    version = match toml.value_of(d, path: ["version"])
+        .ok v =>
+            match v
+                .integer n => n.v
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    0
+        .err _ => 0
+
+    serial = match toml.value_of(d, path: ["serial"])
+        .ok v =>
+            match v
+                .text t => t.v
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    ""
+        .err _ => ""
+
+    return ok(Renewal(version: version, serial: serial, issued: read_issued(d)))
+
+# The `issued` count of a record, 0 where it holds none.
+#
+# - `d`: the record.
+function read_issued(d: toml.Document) -> i64
+    match toml.value_of(d, path: ["issued"])
+        .ok v =>
+            match v
+                .integer n => return n.v
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return 0
+        .err _ => return 0
+
+## Accounts
+
+# The file of the accounts each directory gave.
+#
+# - `folder`: the store's folder.
+function accounts_path(folder: str) -> str
+    return path.join_all([folder, "accounts.toml"])
+
+# Writes `url` as the account the directory at `directory` gave.
+#
+# - `folder`: the store's folder.
+# - `directory`: the directory's URL, the table's key.
+# - `url`: the account's URL.
+#
+# Fails as `toml.set_value` and `fs.write_atomic_text` fail.
+function remember_account(folder: str, directory: str, url: str) -> ()?
+    file = accounts_path(folder)
+    d @= toml.parse_document(read_file(file).default("# The ACME account each directory gave, written by certs.\n"))?
+    toml.set_value(@d, path: ["accounts", directory, "url"], value: .text(v: url))?
+    fs.make_dir_all(folder)?
+    return fs.write_atomic_text(path: file, text: toml.format_document(d))
+
+# The account the directory at `directory` gave, as written.
+#
+# - `folder`: the store's folder.
+# - `directory`: the directory's URL.
+#
+# Fails `not_found` where none was written.
+function account_of(folder: str, directory: str) -> str?
+    d = match read_file(accounts_path(folder))
+        .ok text => toml.parse_document(text)?
+        .err _   => return fail(code: NOT_FOUND, msg: "no account was written yet")
+
+    match toml.value_of(d, path: ["accounts", directory, "url"])
+        .err _ => return fail(code: NOT_FOUND, msg: f"no account of {directory} was written")
+        .ok v =>
+            match v
+                .text t => return ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: NOT_FOUND, msg: "the account written is not a URL")

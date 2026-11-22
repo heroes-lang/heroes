@@ -65,7 +65,8 @@ function missing_template(names: [str] lent, name: str) -> str
     return f"no template {json.quote(name)} in the set, which holds {held.join(", ")}"
 
 # The paths `part` reads from its own `.`, as written, each once, in the order
-# they first stand.
+# they first stand: a value's, a condition's, a loop's, an `include`'s and a
+# `clean` action's alike.
 function paths_in(part: program.Part lent) -> [str]
     paths: [str] @= []
     seen: {str: bool} @= {}

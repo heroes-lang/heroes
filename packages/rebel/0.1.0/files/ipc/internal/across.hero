@@ -26,16 +26,27 @@ constant ROLE: str
 constant CHILD_LIMIT_NS: i64
     60000000000
 
+# The program's arguments as text, one that is not UTF-8 read as the empty
+# text: no word of a child's role is empty, so such a run is no child, and
+# nothing here aborts on an argument a person typed.
+function given() -> [str]
+    out: [str] @= []
+
+    for one in args_checked()
+        out @ out.push(one.default(""))
+
+    return out
+
 # Whether this run of the program is a child a test started.
 function is_child() -> bool
-    a = args()
+    a = given()
     return a.len() >= 3 && a[1] == ROLE
 
 # This test's own program started as a child playing `role` with `words`,
 # which the caller waits for.
 function start(role: str, words: [str]) -> process.Child?
     program = os.executable_path()?
-    arguments @= [args()[0], ROLE, role]
+    arguments @= [given()[0], ROLE, role]
 
     for w in words
         arguments @ arguments.push(w)
@@ -46,7 +57,7 @@ function start(role: str, words: [str]) -> process.Child?
 # The child's part, by its role: 0 where it went as the test expects, 1
 # where a step failed, the failure printed.
 function child() -> i64
-    a = args()
+    a = given()
     done: ()? @= ok()
 
     if a[2] == "echo"

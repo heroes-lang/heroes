@@ -1,0 +1,205 @@
+# A search of the folder shown and every folder under it, a step at a time
+# so the window stays alive and the person can cancel it: by name, each
+# entry's name asked of the query; by content, each file read whole up to
+# `MOST_BYTES`, read as text in its own encoding (`preview/decoding`), and
+# each line asked, so `crème` is found in a UTF-8 note and in a windows-1252
+# price list alike. Data files and files past the bound are passed over and
+# counted, never searched as text.
+#
+# The tree is walked once at the start (`fs.walk`), hidden entries left out
+# where the person hides them; links are listed and never entered, so a
+# link that loops cannot make the search loop.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/strings
+
+use model/entry
+use preview/decoding
+use search/query
+
+# The most bytes of one file a search by content reads.
+constant MOST_BYTES: i64
+    8388608
+
+# The most files one step looks at.
+constant FILES_A_STEP: i64
+    32
+
+# The most hits a search keeps; past it the search ends and says so.
+constant MOST_HITS: i64
+    1000
+
+# The characters of a line kept around a hit, before and after it.
+constant AROUND: i64
+    30
+
+# One thing the search found.
+record Hit
+    # The entry's path below the folder searched, parts joined by `/`.
+    below: str
+    # The line it was found on, from 1; 0 for a name.
+    line: i64
+    # The line around the hit, cut to fit; empty for a name.
+    excerpt: str
+    # The encoding the file was read in; empty for a name.
+    encoding: str
+
+# A search under way.
+record Search
+    # The folder searched.
+    root: str
+    # What it looks for.
+    query: query.Query
+    # Every entry under the folder, in the walk's order.
+    entries: [fs.Entry]
+    # The index of the next entry to look at.
+    at: i64
+    # What it found, in the walk's order.
+    hits: [Hit]
+    # The files passed over: data, or past `MOST_BYTES`.
+    passed_over: i64
+    # Whether every entry was looked at, or the hits reached their most.
+    ended: bool
+
+# The search of `root` for `q` begun, its tree walked.
+#
+# - `root`: the folder searched.
+# - `q`: the query.
+# - `show_hidden`: whether entries under a name beginning with a dot are
+#   looked at.
+#
+# Fails as `fs.walk` fails.
+function start(root: str, q: query.Query, show_hidden: bool) -> Search?
+    kept: [fs.Entry] @= []
+
+    for e in fs.walk(root)?
+        if show_hidden || !is_under_hidden(e.name)
+            kept @ kept.push(e)
+
+    no_hits: [Hit] = []
+    return ok(Search(root: root, query: q, entries: kept, at: 0, hits: no_hits, passed_over: 0, ended: kept.len() == 0))
+
+# Whether a part of `below`, a path under the folder searched, is hidden.
+#
+# - `below`: the path.
+function is_under_hidden(below: str) -> bool
+    for part in paths.parts(below)
+        if entry.is_hidden(part)
+            return true
+
+    return false
+
+# Looks at the next `FILES_A_STEP` entries.
+#
+# - `s`: the search; it moves on, and ends once every entry was looked at.
+function step(@s: Search)
+    looked @= 0
+
+    while looked < FILES_A_STEP && !s.ended
+        if s.at >= s.entries.len() || s.hits.len() >= MOST_HITS
+            s.ended @ true
+            return
+
+        e = s.entries[s.at]
+        s.at @ s.at + 1
+        looked @ looked + 1
+        below = paths.to_slash(e.name)
+
+        match s.query.scope
+            .names =>
+                name = paths.name(e.name).default(e.name)
+
+                if query.finds(s.query, s: name)
+                    s.hits @ s.hits.push(Hit(below: below, line: 0, excerpt: "", encoding: ""))
+            .contents =>
+                if e.kind == .file
+                    look_inside(@s, below: below)
+
+    if s.at >= s.entries.len()
+        s.ended @ true
+
+# Searches the text of the file `below`, keeping a hit for each line found.
+#
+# - `s`: the search; it gains hits, or counts the file passed over.
+# - `below`: the file's path under the folder searched.
+function look_inside(@s: Search, below: str)
+    file = paths.join_all([s.root, paths.from_slash(below)])
+
+    size = match fs.info(file)
+        .ok facts => facts.size
+        .err _    => return
+
+    if size > MOST_BYTES
+        s.passed_over @ s.passed_over + 1
+        return
+
+    data = match fs.read_bytes(file)
+        .ok d  => d
+        .err _ => return
+
+    if decoding.is_binary(data)
+        s.passed_over @ s.passed_over + 1
+        return
+
+    text = decoding.decode(data)
+    number @= 0
+
+    for line in decoding.lines_of(text.text)
+        number @ number + 1
+
+        match query.span_in(s.query, s: line)
+            .ok span =>
+                s.hits @ s.hits.push(
+                    Hit(below: below, line: number, excerpt: excerpt_of(line, first: span.start, past: span.end), encoding: text.encoding)
+                )
+
+                if s.hits.len() >= MOST_HITS
+                    return
+            .err _ => _ = 0
+
+# The part of `line` around the bytes `first` to `past`, `AROUND` characters
+# each side at most, `…` where it was cut, and spaces at the ends trimmed.
+#
+# - `line`: the line.
+# - `first`: the hit's first byte.
+# - `past`: the byte after the hit.
+function excerpt_of(line: str, first: i64, past: i64) -> str
+    before = line.slice(from: 0, to: first).chars()
+    after = line.slice(from: past, to: line.len()).chars()
+
+    head = if before.len() > AROUND
+        "…" + before.slice(from: before.len() - AROUND, to: before.len()).join("")
+    else
+        before.join("")
+
+    tail = if after.len() > AROUND
+        after.slice(from: 0, to: AROUND).join("") + "…"
+    else
+        after.join("")
+
+    return strings.trim(head + line.slice(from: first, to: past) + tail)
+
+# A hit as one line of the results: `docs/notes.txt:3: crème brûlée` for a
+# line, the path alone for a name.
+#
+# - `h`: the hit.
+function hit_text(h: Hit) -> str
+    if h.line == 0
+        return h.below
+
+    return f"{h.below}:{h.line}: {h.excerpt}"
+
+test "excerpt_of: a short line whole, a long one cut on both sides by characters"
+    assert excerpt_of("  a crème b ", first: 4, past: 10) == "a crème b"
+    long = repeat("é", 40) + "X" + repeat("ü", 40)
+    cut = excerpt_of(long, first: 80, past: 81)
+    assert cut == "…" + repeat("é", 30) + "X" + repeat("ü", 30) + "…"
+
+test "hit_text: a line's hit and a name's"
+    assert hit_text(Hit(below: "a/b.txt", line: 3, excerpt: "x", encoding: "UTF-8")) == "a/b.txt:3: x"
+    assert hit_text(Hit(below: "a/b.txt", line: 0, excerpt: "", encoding: "")) == "a/b.txt"
+
+test "is_under_hidden: a hidden folder on the way, and none"
+    assert is_under_hidden(".git/config")
+    assert !is_under_hidden("docs/notes.txt")

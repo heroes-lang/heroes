@@ -159,7 +159,8 @@ function asked(t: toolchain.Toolchain, one: value_run.Unit, accessors: [value_pr
         dir: dir,
         object: object,
         total: value_probe.called(accessors).len(),
-        level: level
+        level: level,
+        unit: one.text
     )
     publish.discard(object)
     kept_answers.write(path: dir + "/verdict.txt", text: said?)?

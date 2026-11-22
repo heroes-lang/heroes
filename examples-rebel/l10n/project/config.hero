@@ -1,0 +1,351 @@
+# A project's settings, the file `l10n.yaml` at its root: which language the
+# sources are written in, which languages they are translated into, where the
+# sources and the catalogues are, and what the placeholders of its messages
+# hold, so that a preview can fill each with a value of its kind.
+#
+#     domain: shop
+#     source: en
+#     locales: [de, fr, pl, ar, ja]
+#     sources: [src, templates]
+#     catalogs: locales
+#     placeholders: {count: number, total: currency, day: date}
+#     zones: {de: Europe/Berlin, ja: Asia/Tokyo}
+#     samples: {host: xn--bcher-kva.example, list: [Zürich, Århus, Łódź]}
+#
+# Every key but `domain`, `source` and `locales` may be left out. A key the
+# file does not know is refused by name, so a misspelt `locale:` is told and
+# not silently ignored; so is a placeholder kind the previews do not know.
+
+use <rebel>/json
+use <rebel>/yaml
+
+use project/locale_tags
+
+## Codes
+
+# The code of a settings file that is not what this module reads.
+constant INVALID: str
+    "invalid"
+
+## Names
+
+# The settings file's name, at the project's root.
+constant FILE_NAME: str
+    "l10n.yaml"
+
+# The kinds a placeholder may hold, which `preview/samples` fills.
+function placeholder_kinds() -> [str]
+    return ["text", "number", "percent", "currency", "date", "time", "datetime", "relative", "host", "list"]
+
+## The settings
+
+# A project's settings, read and checked.
+record Project
+    # The gettext domain: the name of the template and of each compiled
+    # `.mo` file, `shop` for `shop.mo`.
+    domain: str
+    # The tag of the language the sources are written in.
+    source: str
+    # The tags of the languages translated into, canonical and each once, in
+    # the file's order.
+    locales: [str]
+    # The folders whose files are scanned for messages, relative to the root.
+    sources: [str]
+    # The folder the catalogues are kept in, relative to the root.
+    catalogs: str
+    # The kind of each named placeholder, one of `placeholder_kinds`; a name
+    # not here is `text` unless the message writes `{name, kind}`.
+    placeholders: {str: str}
+    # The time zone each locale's previews write dates in, an IANA name;
+    # UTC where a locale has none.
+    zones: {str: str}
+    # The host a `host` placeholder is shown with, in ASCII as DNS holds it.
+    sample_host: str
+    # The texts a `list` placeholder is shown with, sorted for each language.
+    sample_list: [str]
+
+# The project `text` describes, as `l10n.yaml` holds it.
+#
+# - `text`: the file's text.
+#
+# Fails `invalid` where it is not YAML, is not a mapping, misses `domain`,
+# `source` or `locales`, holds a key this program does not read, a tag that
+# names no language, a locale named twice or the source language among the
+# locales, or a placeholder kind `placeholder_kinds` does not hold.
+function parse_project(text: str) -> Project?
+    doc = match yaml.parse(text)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"{FILE_NAME} is not YAML: {e.msg}")
+
+    members = match json.members_of(doc)
+        .ok m  => m
+        .err _ => return fail(code: INVALID, msg: f"{FILE_NAME} holds a {json.kind_of(doc)}, not a mapping of settings")
+
+    known = ["domain", "source", "locales", "sources", "catalogs", "placeholders", "zones", "samples"]
+
+    for key in keys(members)
+        if !known.any_equal(key)
+            return fail(
+                code: INVALID,
+                msg: f"{FILE_NAME} has a key \"{key}\" this program does not read; it reads {known.join(", ")}"
+            )
+
+    domain = text_member(members, key: "domain")?
+
+    if domain == "" || domain.contains_slash()
+        return fail(code: INVALID, msg: f"the domain \"{domain}\" is not a file name")
+
+    source = locale_tags.canonical_tag(text_member(members, key: "source")?)?
+    locale_list: [str] @= []
+
+    for written in text_list(members, key: "locales")?
+        tag = locale_tags.canonical_tag(written)?
+
+        if tag == source
+            return fail(code: INVALID, msg: f"{tag} is the source language and is not translated into")
+
+        if locale_list.any_equal(tag)
+            return fail(code: INVALID, msg: f"{FILE_NAME} names the locale {tag} twice")
+        locale_list @ locale_list.push(tag)
+
+    if locale_list.len() == 0
+        return fail(code: INVALID, msg: f"{FILE_NAME} names no locale to translate into")
+
+    sources = if keys(members).any_equal("sources")
+        text_list(members, key: "sources")?
+    else
+        ["."]
+
+    catalogs = if keys(members).any_equal("catalogs")
+        text_member(members, key: "catalogs")?
+    else
+        "locales"
+
+    placeholders = text_map(members, key: "placeholders")?
+
+    for name in keys(placeholders)
+        kind = placeholders[name].must()
+
+        if !placeholder_kinds().any_equal(kind)
+            return fail(
+                code: INVALID,
+                msg: f"the placeholder {{{name}}} is said to hold \"{kind}\"; the kinds are {placeholder_kinds().join(", ")}"
+            )
+
+    zones_written = text_map(members, key: "zones")?
+    zones: {str: str} @= {}
+
+    for written in keys(zones_written)
+        zones[locale_tags.canonical_tag(written)?] @ zones_written[written].must()
+
+    samples = text_samples(members)?
+    return ok(
+        Project(domain: domain, source: source, locales: locale_list, sources: sources, catalogs: catalogs, placeholders: placeholders, zones: zones, sample_host: samples.host, sample_list: samples.items)
+    )
+
+# The text `init` writes for a new project: the settings asked for, the
+# others at their defaults, each with a comment saying what it is.
+#
+# - `domain`: the gettext domain.
+# - `source`: the source language's tag.
+# - `locale_list`: the tags translated into.
+function initial_text(domain: str, source: str, locale_list: [str]) -> str
+    lines = [
+        f"# The settings of l10n, the translation tool, for {domain}."
+        f"domain: {domain}"
+        f"source: {source}"
+        f"locales: [{locale_list.join(", ")}]"
+        "# The folders scanned for messages, and where the catalogues are kept."
+        "sources: [src, templates]"
+        "catalogs: locales"
+        "# What each placeholder holds, so previews fill it with a value of its kind:"
+        f"# {placeholder_kinds().join(", ")}."
+        "placeholders: {count: number}"
+    ]
+    return lines.join("\n") + "\n"
+
+## Reading members
+
+# The samples a settings file gives: a host and a list.
+record Samples
+    # The host, in ASCII.
+    host: str
+    # The list's texts.
+    items: [str]
+
+# The samples of `members`' `samples` key, or the defaults where it is
+# absent.
+#
+# - `members`: the settings.
+#
+# Fails `invalid` where `samples` is no mapping of `host` and `list`.
+function text_samples(members: {str: json.Value}) -> Samples?
+    defaults = Samples(
+        host: "xn--bcher-kva.example",
+        items: ["Zürich", "Århus", "Łódź", "Ångermanland", "Oslo", "Ostrava"]
+    )
+
+    match members["samples"]
+        .err _ => return ok(defaults)
+        .ok v =>
+            inner = match json.members_of(v)
+                .ok m => m
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"{FILE_NAME}'s samples are a {json.kind_of(v)}, not a mapping"
+                )
+
+            for key in keys(inner)
+                if key != "host" && key != "list"
+                    return fail(
+                        code: INVALID,
+                        msg: f"{FILE_NAME}'s samples have a key \"{key}\"; they take host and list"
+                    )
+
+            host = if keys(inner).any_equal("host")
+                text_member(inner, key: "host")?
+            else
+                defaults.host
+
+            items = if keys(inner).any_equal("list")
+                text_list(inner, key: "list")?
+            else
+                defaults.items
+
+            return ok(Samples(host: host, items: items))
+
+# The text under `key`.
+#
+# - `members`: a mapping.
+# - `key`: the key.
+#
+# Fails `invalid` where the key is absent or holds no text.
+function text_member(members: {str: json.Value}, key: str) -> str?
+    v = match members[key]
+        .ok found => found
+        .err _    => return fail(code: INVALID, msg: f"{FILE_NAME} has no \"{key}\"")
+
+    return match json.text_of(v)
+        .ok t  => ok(t)
+        .err _ => scalar_text(v, key: key)
+
+# A number or a truth value written as text, as YAML writes `no` or `1.0`
+# where a text was meant.
+#
+# - `v`: the value.
+# - `key`: its key, for the message.
+#
+# Fails `invalid` for a list, a mapping or a null.
+function scalar_text(v: json.Value, key: str) -> str?
+    return match v
+        .number n  => ok(json.format(v).default(to_str(n.v)))
+        .boolean b => ok(to_str(b.v))
+        .null_value | .text _ | .list _ | .object _ =>
+            fail(code: INVALID, msg: f"\"{key}\" holds a {json.kind_of(v)} where a text is read")
+
+# The texts of the list under `key`.
+#
+# - `members`: a mapping.
+# - `key`: the key.
+#
+# Fails `invalid` where the key is absent, holds no list, or the list holds
+# something other than texts.
+function text_list(members: {str: json.Value}, key: str) -> [str]?
+    v = match members[key]
+        .ok found => found
+        .err _    => return fail(code: INVALID, msg: f"{FILE_NAME} has no \"{key}\"")
+
+    items = match json.items_of(v)
+        .ok found => found
+        .err _    => return fail(code: INVALID, msg: f"\"{key}\" holds a {json.kind_of(v)} where a list is read")
+
+    texts: [str] @= []
+
+    for item in items
+        texts @ texts.push(scalar_text_or_text(item, key: key)?)
+
+    return ok(texts)
+
+# A text, or a number or truth value written as text.
+#
+# - `v`: the value.
+# - `key`: the key it stands under, for the message.
+#
+# Fails as `scalar_text` fails.
+function scalar_text_or_text(v: json.Value, key: str) -> str?
+    return match json.text_of(v)
+        .ok t  => ok(t)
+        .err _ => scalar_text(v, key: key)
+
+# The mapping of texts under `key`, empty where the key is absent.
+#
+# - `members`: a mapping.
+# - `key`: the key.
+#
+# Fails `invalid` where it holds no mapping, or a value that is no text.
+function text_map(members: {str: json.Value}, key: str) -> {str: str}?
+    found: {str: str} @= {}
+
+    match members[key]
+        .err _ => return ok(found)
+        .ok v =>
+            inner = match json.members_of(v)
+                .ok m => m
+                .err _ => return fail(
+                    code: INVALID,
+                    msg: f"\"{key}\" holds a {json.kind_of(v)} where a mapping is read"
+                )
+
+            for name in keys(inner)
+                found[name] @ scalar_text_or_text(inner[name].must(), key: f"{key}.{name}")?
+
+            return ok(found)
+
+## Small helpers
+
+# Whether `xs` holds `x`.
+#
+# - `xs`: the texts.
+# - `x`: the text looked for.
+function any_equal(xs: [str], x: str) -> bool
+    for each in xs
+        if each == x
+            return true
+
+    return false
+
+# Whether `s` holds a `/` or a `\`, which a file name may not.
+#
+# - `s`: the name.
+function contains_slash(s: str) -> bool
+    for c in s.chars()
+        if c == "/" || c == "\\"
+            return true
+
+    return false
+
+## Tests
+
+test "parse_project: every key, canonical tags and defaults"
+    text = "domain: shop\nsource: en\nlocales: [de_DE, iw, ja]\nplaceholders: {count: number}\nzones: {de-DE: Europe/Berlin}\n"
+    p = parse_project(text).must()
+    assert p.domain == "shop"
+    assert p.locales == ["de-DE", "he", "ja"]
+    assert p.sources == ["."]
+    assert p.catalogs == "locales"
+    assert p.placeholders["count"].must() == "number"
+    assert p.zones["de-DE"].must() == "Europe/Berlin"
+    assert p.sample_host == "xn--bcher-kva.example"
+
+test "parse_project: a misspelt key, a locale twice, the source among the locales, a kind unknown"
+    assert parse_project("domain: a\nsource: en\nlocale: [de]\n").is_err()
+    assert parse_project("domain: a\nsource: en\nlocales: [de, de_DE, de]\n").is_err()
+    assert parse_project("domain: a\nsource: en\nlocales: [en_US, en]\n").is_err()
+    assert parse_project("domain: a\nsource: en\nlocales: [de]\nplaceholders: {n: money}\n").is_err()
+    assert parse_project("- a\n- b\n").is_err()
+    assert parse_project("domain: a/b\nsource: en\nlocales: [de]\n").is_err()
+
+test "initial_text: read back as the project it describes"
+    p = parse_project(initial_text(domain: "shop", source: "en", locale_list: ["de", "fr"])).must()
+    assert p.locales == ["de", "fr"]
+    assert p.sources == ["src", "templates"]

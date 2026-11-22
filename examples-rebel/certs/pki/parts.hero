@@ -1,0 +1,272 @@
+# The pieces an X.509 certificate and a PKCS #10 request are made of,
+# written as `asn1` values ready for `asn1.encode_der`: a distinguished
+# name, the alternative names of a list of domains and addresses, a
+# validity, the algorithm identifier of ECDSA over SHA-256, and the
+# extensions a TLS server's certificate and its authorities carry (RFC 5280
+# § 4.1 and § 4.2). `x509` reads all of these and writes none, so this
+# program writes the few it needs; `x509` names their identifiers, and its
+# reading of what is written here is the test of every piece.
+
+use <rebel>/asn1
+use <rebel>/bytes
+use <rebel>/net
+use <rebel>/time
+use <rebel>/x509
+
+## Codes
+
+# The code of a piece that has no form: no name to put in an alternative
+# names extension, a validity that ends before it begins.
+constant INVALID: str
+    "invalid"
+
+## Identifiers not in `x509`
+
+# ecdsa-with-SHA256 (RFC 5758 § 3.2): how every signature made here is
+# made, ECDSA on P-256 over SHA-256.
+constant ECDSA_WITH_SHA256: str
+    "1.2.840.10045.4.3.2"
+
+# id-ad-caIssuers (RFC 5280 § 4.2.2.1): where the issuer's certificate is
+# served.
+constant CA_ISSUERS: str
+    "1.3.6.1.5.5.7.48.2"
+
+## Algorithms and names
+
+# The AlgorithmIdentifier of ecdsa-with-SHA256, whose parameters RFC 5758
+# § 3.2 asks to be absent, not NULL.
+function ecdsa_sha256() -> asn1.Value
+    return .sequence(items: [.oid(v: asn1.Oid(dotted: ECDSA_WITH_SHA256))])
+
+# A distinguished name of an organization and a common name, each its own
+# relative name, the organization first; either left out where it is "".
+#
+# - `common_name`: the subject's common name, UTF-8; "" for none.
+# - `organization`: the organization's name; "" for none.
+#
+# An empty SEQUENCE where both are "", the name of a certificate whose
+# subject is in its alternative names alone (RFC 5280 § 4.1.2.6).
+function name(common_name: str, organization: str) -> asn1.Value
+    rdns: [asn1.Value] @= []
+
+    if organization != ""
+        rdns @ rdns.push(attribute(oid: x509.ORGANIZATION_NAME, value: organization))
+
+    if common_name != ""
+        rdns @ rdns.push(attribute(oid: x509.COMMON_NAME, value: common_name))
+    return .sequence(items: rdns)
+
+# One relative distinguished name holding one attribute, its value a
+# UTF8String as RFC 5280 § 4.1.2.4 asks of a certificate made today.
+#
+# - `oid`: the attribute's dotted identifier.
+# - `value`: its text.
+function attribute(oid: str, value: str) -> asn1.Value
+    pair: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: oid)), .text(kind: .utf8, v: value)])
+    return .set(items: [pair])
+
+# The GeneralNames of `domains`: a name as a `dNSName` (`[2] IA5String`), an
+# address as an `iPAddress` (`[7] OCTET STRING` of 4 or 16 bytes), in their
+# order.
+#
+# - `domains`: host names, ASCII, a wildcard's `*.` kept, and addresses.
+function general_names(domains: [str]) -> [asn1.Value]
+    out: [asn1.Value] @= []
+
+    for d in domains
+        match net.parse_host(d)
+            .ok address => out @ out.push(.primitive(tag: context(7), content: address.bytes))
+            .err _      => out @ out.push(.primitive(tag: context(2), content: bytes.from_text(d)))
+
+    return out
+
+# The validity from `not_before` to `not_after`, each a UTCTime before 2050
+# and a GeneralizedTime from it (RFC 5280 § 4.1.2.5), a fraction of a
+# second dropped.
+#
+# - `not_before`: the first moment the certificate is valid.
+# - `not_after`: the last moment it is valid.
+#
+# Fails `invalid` where `not_after` is before `not_before`.
+function validity(not_before: time.Instant, not_after: time.Instant) -> asn1.Value?
+    if time.is_before(a: not_after, b: not_before)
+        return fail(code: INVALID, msg: "a validity that ends before it begins")
+    return ok(.sequence(items: [moment(not_before), moment(not_after)]))
+
+# One end of a validity, by RFC 5280's rule of the year 2050.
+#
+# - `at`: the moment; its fraction of a second is dropped.
+function moment(at: time.Instant) -> asn1.Value
+    whole @= time.to_date_time(at)
+    whole.nanosecond @ 0
+
+    if whole.year < 2050
+        return .utc_time(v: whole)
+    return .generalized_time(v: whole)
+
+# A TBSCertificate's version field, `[0] EXPLICIT INTEGER 2`: version 3, the
+# one that carries extensions.
+function version_3() -> asn1.Value
+    return asn1.tagged(.integer(v: 2), number: 0)
+
+## Extensions
+
+# One Extension: its identifier, `critical` TRUE where it is (DER leaves the
+# BOOLEAN out at its DEFAULT FALSE), and its value's DER in an OCTET STRING.
+#
+# - `oid`: the extension's dotted identifier.
+# - `critical`: whether a reader that does not know it must refuse the
+#   certificate.
+# - `value`: the extension's value, encoded here.
+#
+# Fails as `asn1.encode_der` fails on `value`.
+function extension(oid: str, critical: bool, value: asn1.Value) -> asn1.Value?
+    items: [asn1.Value] @= [.oid(v: asn1.Oid(dotted: oid))]
+
+    if critical
+        items @ items.push(.boolean(v: true))
+    items @ items.push(.octet_string(v: asn1.encode_der(value)?))
+    return ok(.sequence(items: items))
+
+# The subjectAltName naming `domains`, critical where the subject's name is
+# empty, as RFC 5280 § 4.2.1.6 asks.
+#
+# - `domains`: the names and addresses.
+# - `subject_empty`: whether the certificate's subject name is empty.
+#
+# Fails `invalid` where `domains` is empty.
+function alt_names(domains: [str], subject_empty: bool) -> asn1.Value?
+    if domains.len() == 0
+        return fail(code: INVALID, msg: "an alternative names extension names one domain or address at least")
+    return extension(
+        oid: x509.SUBJECT_ALT_NAME,
+        critical: subject_empty,
+        value: .sequence(items: general_names(domains))
+    )
+
+# The basicConstraints, critical: an authority's `cA` TRUE with its path
+# length where `path_len` is 0 or more, or an end entity's empty SEQUENCE.
+#
+# - `is_ca`: whether the certificate may sign others.
+# - `path_len`: the most authorities below it, or -1 for no bound; read
+#   only for an authority.
+#
+# Fails as `extension` fails.
+function basic_constraints(is_ca: bool, path_len: i64) -> asn1.Value?
+    items: [asn1.Value] @= []
+
+    if is_ca
+        items @ items.push(.boolean(v: true))
+
+        if path_len >= 0
+            items @ items.push(.integer(v: path_len))
+    return extension(oid: x509.BASIC_CONSTRAINTS, critical: true, value: .sequence(items: items))
+
+# The keyUsage, critical: digitalSignature alone (bit 0) for a TLS server's
+# key, keyCertSign and cRLSign (bits 5 and 6) for an authority's; the BIT
+# STRING without trailing zero bits, as DER asks of a named bit list
+# (X.690 § 11.2.2).
+#
+# - `is_ca`: whether the key signs certificates.
+#
+# Fails as `extension` fails.
+function key_usage(is_ca: bool) -> asn1.Value?
+    bits = if is_ca
+        asn1.BitString(bytes: [0x06], bit_len: 7)
+    else
+        asn1.BitString(bytes: [0x80], bit_len: 1)
+
+    return extension(oid: x509.KEY_USAGE, critical: true, value: .bit_string(v: bits))
+
+# The extendedKeyUsage of a TLS server's certificate: serverAuth and
+# clientAuth, as the CAs of the web write it, not critical.
+#
+# Fails as `extension` fails.
+function server_usage() -> asn1.Value?
+    purposes: [asn1.Value] = [.oid(v: asn1.Oid(dotted: x509.SERVER_AUTH)), .oid(v: asn1.Oid(dotted: x509.CLIENT_AUTH))]
+    return extension(oid: x509.EXTENDED_KEY_USAGE, critical: false, value: .sequence(items: purposes))
+
+# The subjectKeyIdentifier `id`, not critical.
+#
+# - `id`: the key's identifier, `signing.key_id`'s.
+#
+# Fails as `extension` fails.
+function subject_key_id(id: [u8]) -> asn1.Value?
+    return extension(oid: x509.SUBJECT_KEY_ID, critical: false, value: .octet_string(v: id))
+
+# The authorityKeyIdentifier naming the issuer's key by `id`, its
+# `[0] keyIdentifier` alone, not critical.
+#
+# - `id`: the issuer's subjectKeyIdentifier.
+#
+# Fails as `extension` fails.
+function authority_key_id(id: [u8]) -> asn1.Value?
+    return extension(
+        oid: x509.AUTHORITY_KEY_ID,
+        critical: false,
+        value: .sequence(items: [.primitive(tag: context(0), content: id)])
+    )
+
+# The authorityInfoAccess naming where the issuer's certificate is served
+# (`caIssuers`), not critical.
+#
+# - `issuer_url`: the URL, ASCII.
+#
+# Fails as `extension` fails.
+function issuer_access(issuer_url: str) -> asn1.Value?
+    location: asn1.Value = .primitive(tag: context(6), content: bytes.from_text(issuer_url))
+    access: asn1.Value = .sequence(items: [.oid(v: asn1.Oid(dotted: CA_ISSUERS)), location])
+    return extension(oid: x509.AUTHORITY_INFO_ACCESS, critical: false, value: .sequence(items: [access]))
+
+# A TBSCertificate's extensions inside their `[3] EXPLICIT` tag.
+#
+# - `list`: the extensions, each made by `extension`.
+function extensions(list: [asn1.Value]) -> asn1.Value
+    return asn1.tagged(.sequence(items: list), number: 3)
+
+## Helpers
+
+# The context-specific primitive tag `[number]`, as IMPLICIT tagging writes
+# a GeneralName's alternatives.
+#
+# - `number`: the tag's number.
+function context(number: i64) -> asn1.Tag
+    return asn1.Tag(kind: .context_specific, number: number, constructed: false)
+
+test "general_names: a name as dNSName, an IPv4 and an IPv6 address as iPAddress"
+    names = general_names(["example.org", "127.0.0.1", "::1"])
+    assert names.len() == 3
+    assert asn1.tag_of(names[0]).number == 2
+    assert asn1.encode_der(names[1]).must() == [0x87, 0x04, 127, 0, 0, 1]
+    assert asn1.encode_der(names[2]).must().len() == 18
+
+test "key_usage: a server's digitalSignature, an authority's keyCertSign and cRLSign"
+    server = asn1.encode_der(key_usage(false).must()).must()
+    authority = asn1.encode_der(key_usage(true).must()).must()
+    assert server.slice(from: server.len() - 3, to: server.len()) == [0x02, 0x07, 0x80]
+    assert authority.slice(from: authority.len() - 3, to: authority.len()) == [0x02, 0x01, 0x06]
+
+test "basic_constraints: an end entity's empty sequence, an authority's path length"
+    leaf = asn1.encode_der(basic_constraints(is_ca: false, path_len: -1).must()).must()
+    assert leaf.slice(from: leaf.len() - 4, to: leaf.len()) == [0x04, 0x02, 0x30, 0x00]
+    ca = asn1.encode_der(basic_constraints(is_ca: true, path_len: 0).must()).must()
+    assert ca.slice(from: ca.len() - 8, to: ca.len()) == [0x30, 0x06, 0x01, 0x01, 0xff, 0x02, 0x01, 0x00]
+
+test "alt_names: none is refused, and an empty subject makes it critical"
+    assert alt_names(domains: [], subject_empty: false).is_err()
+    critical = asn1.encode_der(alt_names(domains: ["a.test"], subject_empty: true).must()).must()
+    assert critical[7] == 0x01 && critical[9] == 0xff
+
+test "validity: backwards refused; a year before 2050 a UTCTime, from 2050 a GeneralizedTime"
+    a = time.date(year: 2049, month: 12, day: 31).must()
+    b = time.date(year: 2050, month: 1, day: 1).must()
+    assert validity(not_before: b, not_after: a).is_err()
+    assert asn1.tag_of(moment(a)).number == asn1.UTC_TIME
+    assert asn1.tag_of(moment(b)).number == asn1.GENERALIZED_TIME
+
+test "name: organization then common name, either left out, both an empty sequence"
+    both = asn1.items_of(name(common_name: "a.test", organization: "Org")).must()
+    assert both.len() == 2
+    assert asn1.items_of(name(common_name: "a.test", organization: "")).must().len() == 1
+    assert asn1.encode_der(name(common_name: "", organization: "")).must() == [0x30, 0x00]

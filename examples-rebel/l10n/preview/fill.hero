@@ -1,0 +1,216 @@
+# A message as a reader of one locale sees it: its translation with every
+# placeholder filled by a sample of its kind, and for a plural message each
+# form at a whole number CLDR gives as a sample of its category, so a Polish
+# translator sees "1 produkt", "2 produkty" and "5 produktów" side by side.
+#
+# A placeholder's kind is the one written in the message, `{when, date}`;
+# else the one the project's settings give its name; else `number` for the
+# count of a plural message and for the names a count goes by; else `text`.
+# A form not translated shows the source text, marked, as gettext would show
+# it; a guess not confirmed is shown, marked, since gettext would not. A
+# character drawn as nothing is written as its code point
+# (`preview/invisible`), so a translator sees every bidirectional mark.
+
+use <rebel>/i18n
+use <rebel>/i18n/numbers
+use <rebel>/time
+
+use catalog/messages
+use check/catalog_checks
+use check/placeholders
+use plural/gettext_forms
+use plural/samples as plural_samples
+use preview/invisible
+use preview/samples
+
+## Kinds
+
+# The kind of each placeholder `m` holds.
+#
+# - `m`: the message.
+# - `declared`: the project's kinds by name.
+# - `p`: the placeholders' patterns.
+function kinds_of(m: i18n.Message, declared: {str: str}, p: placeholders.Patterns) -> {str: str}
+    texts @= [m.id]
+
+    match m.plural_id
+        .ok plural => texts @ texts.push(plural)
+        .err _     => _ = 0
+
+    for t in m.translations
+        texts @ texts.push(t)
+
+    kinds: {str: str} @= {}
+
+    for t in texts
+        written = placeholders.kinds_in(t, p: p)
+
+        for ph in placeholders.placeholders_in(t, p: p)
+            if kinds[ph.name].is_err()
+                kind = match written[ph.name]
+                    .ok k => k
+                    .err _ =>
+                        match declared[ph.name]
+                            .ok k => k
+                            .err _ =>
+                                if messages.is_plural(m) && catalog_checks.count_names().contains_name(ph.name)
+                                    "number"
+                                else
+                                    "text"
+
+                kinds[ph.name] @ kind
+
+    return kinds
+
+# Whether `names` holds `name`.
+#
+# - `names`: the names.
+# - `name`: the name.
+function contains_name(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+## Filling
+
+# `text` with each placeholder replaced by its sample.
+#
+# - `text`: a translation or a source text.
+# - `kinds`: the kind of each placeholder.
+# - `s`: the locale's setting.
+# - `count`: the number a count shows.
+# - `p`: the placeholders' patterns.
+function filled(text: str, kinds: {str: str}, s: samples.Setting, count: i64, p: placeholders.Patterns) -> str
+    pieces: [str] @= []
+    at @= 0
+
+    for ph in placeholders.placeholders_in(text, p: p)
+        pieces @ pieces.push(text.slice(from: at, to: ph.start))
+        pieces @ pieces.push(samples.value_of(s, kind: kinds[ph.name].default("text"), name: ph.name, count: count))
+        at @ ph.end
+
+    pieces @ pieces.push(text.slice(from: at, to: text.len()))
+    return pieces.join("")
+
+## Previewing a message
+
+# The lines a preview shows for `m`: its label, then one line for a message
+# with no plural, or one for each form with its category and sample number.
+#
+# - `m`: the message.
+# - `s`: the locale's setting.
+# - `forms`: the locale's forms.
+# - `declared`: the project's kinds of placeholders.
+# - `p`: the placeholders' patterns.
+function preview_lines(m: i18n.Message, s: samples.Setting, forms: gettext_forms.Forms, declared: {str: str}, p: placeholders.Patterns) -> [str]
+    kinds = kinds_of(m, declared: declared, p: p)
+
+    mark = if messages.is_fuzzy(m)
+        "  (a guess, not confirmed)"
+    else
+        ""
+
+    lines: [str] @= [messages.label_of(m) + mark]
+
+    if !messages.is_plural(m)
+        text = if m.translations.len() > 0 && m.translations[0] != ""
+            filled(m.translations[0], kinds: kinds, s: s, count: 1, p: p)
+        else
+            filled(m.id, kinds: kinds, s: s, count: 1, p: p) + "  (untranslated: the source shows)"
+
+        lines @ lines.push("    " + invisible.shown(text))
+        return lines
+
+    rules = i18n.plural_rules(s.locale, kind: .cardinal)
+
+    for k in range(from: 0, to: forms.categories.len())
+        category = forms.categories[k]
+        n = plural_samples.shown_sample(rules, category: category).default(0)
+        word = i18n.plural_name(category)
+        number = numbers.format_int(s.locale, n: n)
+
+        text = if k < m.translations.len() && m.translations[k] != ""
+            filled(m.translations[k], kinds: kinds, s: s, count: n, p: p)
+        else
+            source = if n == 1
+                m.id
+            else
+                m.plural_id.must()
+
+            filled(source, kinds: kinds, s: s, count: n, p: p) + "  (untranslated: the source shows)"
+
+        lines @ lines.push(f"    {padded(word, width: 5)} {padded_left(number, width: 4)}  {invisible.shown(text)}")
+
+    return lines
+
+# `s` with spaces after it to `width` bytes, for ASCII words.
+#
+# - `s`: the text.
+# - `width`: the width.
+function padded(s: str, width: i64) -> str
+    if s.len() >= width
+        return s
+
+    return s + repeat(" ", to_u64(width - s.len()).must())
+
+# `s` with spaces before it to `width` characters.
+#
+# - `s`: the text, digits of any script.
+# - `width`: the width.
+function padded_left(s: str, width: i64) -> str
+    count = s.chars().len()
+
+    if count >= width
+        return s
+
+    return repeat(" ", to_u64(width - count).must()) + s
+
+## Tests
+
+test "preview_lines: Polish forms at their samples, a source shown where a form is empty"
+    p = placeholders.patterns()
+    s = samples.setting_of("pl", project: samples.sample_project(), now: samples_now()).must()
+    forms = gettext_forms.forms_of(s.locale).must()
+    m = i18n.Message(
+        context: ok("cart"),
+        id: "{count} item",
+        plural_id: ok("{count} items"),
+        translations: ["{count} produkt", "{count} produkty", ""],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    lines = preview_lines(m, s: s, forms: forms, declared: {}, p: p)
+    assert lines[0] == "[cart] {count} item"
+    assert lines[1] == "    one      1  1 produkt"
+    assert lines[2] == "    few      2  2 produkty"
+    assert lines[3] == "    many     5  5 items  (untranslated: the source shows)"
+
+test "kinds_of: written, declared, a count, and text"
+    p = placeholders.patterns()
+    m = i18n.Message(
+        context: messages.absent("context"),
+        id: "{n} of {total} on {day, date} by {who}",
+        plural_id: ok("{n} of {total}"),
+        translations: [""],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    kinds = kinds_of(m, declared: {"total": "currency"}, p: p)
+    assert kinds["day"].must() == "date"
+    assert kinds["total"].must() == "currency"
+    assert kinds["n"].must() == "number"
+    assert kinds["who"].must() == "text"
+
+# The moment the tests take as now, 2026-03-05 at 09:30 UTC.
+function samples_now() -> time.Instant
+    return time.from_unix(whole_seconds: 1772703000, extra_nanoseconds: 0).must()

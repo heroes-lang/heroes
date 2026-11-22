@@ -1,0 +1,232 @@
+# What the hub does with one message from a device: finds the device by
+# the protocol and address it came at, stamps it with the hub's clock,
+# decodes it by the device's encoding and schema, sends the reading to every
+# dashboard, re-publishes it as JSON, and sends it where every matching rule
+# says. A message nobody registered, or a payload its codec refuses, is
+# counted and told, never passed on half read.
+#
+# A publish whose broker is down, or that fails because the broker was just
+# lost, is held in the outbox for the broker's return, so a reading is late
+# rather than lost; and the failure is what tells the hub the broker is gone.
+
+use <rebel>/bytes
+use <rebel>/poll
+use <rebel>/time
+
+use brokers/amqp_link
+use brokers/mqtt_link
+use brokers/nats_link
+use brokers/outbox
+use brokers/recovery
+use codecs/decode
+use codecs/reading
+use config/registry
+use feed/messages
+use feed/server
+use hub/clock
+use hub/state
+use hub/telemetry
+use routes/patterns
+use routes/rules
+
+# Publishes `body` at `place` over a link that is up.
+#
+# - `h`: the hub.
+# - `place`: the protocol and address.
+# - `body`: the reading's JSON.
+#
+# Fails as the link's `send` fails, and `unsupported` for a serial line.
+function send_to(@h: state.Hub, place: rules.Place, body: [u8]) -> ()?
+    return match place.protocol
+        .mqtt => mqtt_link.send(@h.mqtt, topic: place.address, body: body)
+        .amqp =>
+            parts = patterns.amqp_parts(place.address)?
+            amqp_link.send(@h.amqp, exchange: parts.exchange, key: parts.key, body: body)
+        .nats   => nats_link.send(@h.nats, subject: place.address, body: body)
+        .serial => fail(code: "unsupported", msg: "a serial line is no destination")
+
+# Whether the link of `protocol` is up.
+#
+# - `h`: the hub.
+# - `protocol`: the broker's protocol.
+function is_up(h: state.Hub lent, protocol: registry.Protocol) -> bool
+    return match protocol
+        .mqtt   => mqtt_link.is_up(h.mqtt) && h.mqtt_state.up
+        .amqp   => amqp_link.is_up(h.amqp) && h.amqp_state.up
+        .nats   => nats_link.is_up(h.nats) && h.nats_state.up
+        .serial => false
+
+# Marks the link of `protocol` lost: its stream out of the poll set, its
+# client closed, its first wait drawn, and the loss told.
+#
+# - `h`: the hub.
+# - `protocol`: the broker's protocol.
+# - `why`: what the loss was: the broker's reply, or a failure's code.
+function lose(@h: state.Hub, protocol: registry.Protocol, why: str)
+    now = time.mark().default(time.Mark(nanoseconds: 0))
+    name = registry.protocol_name(protocol)
+
+    wait: time.Duration? = match protocol
+        .mqtt =>
+            _ = poll.remove(h.set, key: h.mqtt.key).is_err()
+            mqtt_link.close(@h.mqtt)
+            recovery.lose(@h.mqtt_state, chance: @h.chance, now: now)
+        .amqp =>
+            _ = poll.remove(h.set, key: h.amqp.key).is_err()
+            amqp_link.close(@h.amqp)
+            recovery.lose(@h.amqp_state, chance: @h.chance, now: now)
+        .nats =>
+            _ = poll.remove(h.set, key: h.nats.key).is_err()
+            nats_link.close(@h.nats)
+            recovery.lose(@h.nats_state, chance: @h.chance, now: now)
+        .serial => ok(time.nanoseconds(0))
+
+    telemetry.record_up(@h.telemetry, broker: name, up: false)
+
+    shown = match wait
+        .ok w  => recovery.shown_wait(w)
+        .err _ => "a moment"
+
+    state.emit(@h, topic: name, text: f"lost: {why}; next attempt in {shown}")
+
+# Why the link of `protocol` failed: the broker's own reply where AMQP's
+# connection holds one, else the failure's code.
+#
+# - `h`: the hub.
+# - `protocol`: the broker's protocol.
+# - `code`: the code the failing call answered.
+function why_lost(h: state.Hub lent, protocol: registry.Protocol, code: str) -> str
+    if protocol == .amqp
+        said = amqp_link.closing_text(h.amqp)
+
+        if said != ""
+            return said
+
+    return code
+
+# Holds a publish for its broker, which is down, and tells it.
+#
+# - `h`: the hub.
+# - `device`: the reading's device.
+# - `held`: the publish.
+function hold(@h: state.Hub, device: str, held: outbox.Held)
+    outbox.hold(@h.held, h: held)
+    h.counts.held @ h.counts.held + 1
+    name = registry.protocol_name(held.protocol)
+    waiting = outbox.count_for(h.held, protocol: held.protocol)
+    telemetry.record_held(@h.telemetry, broker: name, count: waiting)
+    state.emit(@h, topic: held.rule, text: f"{device} held for {name}, {waiting} waiting")
+
+# Publishes a reading's JSON at `place`, holding it where its broker is
+# down or is lost by this very publish.
+#
+# - `h`: the hub.
+# - `device`: the reading's device.
+# - `place`: where it goes.
+# - `body`: its JSON.
+# - `rule`: the rule that sends it, `republish` for the hub's own.
+function publish(@h: state.Hub, device: str, place: rules.Place, body: [u8], rule: str)
+    held = outbox.Held(protocol: place.protocol, address: place.address, body: body, rule: rule)
+
+    if !is_up(h, protocol: place.protocol)
+        hold(@h, device: device, held: held)
+        return
+
+    match send_to(@h, place: place, body: body)
+        .ok _ =>
+            h.counts.published @ h.counts.published + 1
+            telemetry.record_published(@h.telemetry, rule: rule, protocol: registry.protocol_name(place.protocol))
+
+            if rule != "republish"
+                state.emit(@h, topic: rule, text: f"{device} to {rules.place_text(place)}")
+        .err e =>
+            lose(@h, protocol: place.protocol, why: why_lost(h, protocol: place.protocol, code: e.code))
+            hold(@h, device: device, held: held)
+
+# Handles one message that came at `address` over `protocol`.
+#
+# - `h`: the hub.
+# - `protocol`: the protocol it came by.
+# - `address`: where it came: a topic, `<exchange>/<key>`, a subject, a
+#   port's name.
+# - `payload`: its bytes.
+function handle(@h: state.Hub, protocol: registry.Protocol, address: str, payload: [u8])
+    source = registry.protocol_name(protocol)
+
+    d = match registry.device_at(h.devices, protocol: protocol, address: address)
+        .ok got => got
+        .err e =>
+            h.counts.unregistered @ h.counts.unregistered + 1
+            telemetry.record_unknown(@h.telemetry, source: source)
+            state.emit(@h, topic: "unregistered", text: e.msg)
+            return
+
+    received = match clock.tick(@h.clock)
+        .ok t => t
+        .err e =>
+            state.emit(@h, topic: "clock", text: f"{d.name}'s reading has no moment: {e.msg}")
+            return
+
+    r = match decode.decode(h.schema, d: d, payload: payload, received: received)
+        .ok got => got
+        .err e =>
+            h.counts.refused @ h.counts.refused + 1
+            telemetry.record_refused(@h.telemetry, device: d.name, code: e.code)
+            state.emit(@h, topic: "refused", text: f"{d.name}: {e.msg}")
+            return
+
+    h.counts.readings @ h.counts.readings + 1
+    telemetry.record_reading(@h.telemetry, got: r)
+    shown: messages.Message = .reading(r: r)
+    server.broadcast(@h.feed, set: h.set, text: messages.message_text(shown))
+    body = bytes.from_text(reading.reading_text(r))
+
+    match h.s.republish
+        .ok p => publish(
+            @h,
+            device: d.name,
+            place: rules.Place(protocol: p.protocol, address: rules.fill(template: p.address, device: r.device, id: r.id)),
+            body: body,
+            rule: "republish"
+        )
+        .err _ => _ = 0
+
+    for rule in h.s.routes
+        if rules.takes(rule, protocol: protocol, address: address, r: r)
+            publish(@h, device: d.name, place: rules.destination_of(rule, r: r), body: body, rule: rule.name)
+
+# Sends what the outbox holds for `protocol`, whose link is back, in the
+# order it was held; one that fails is held again, and with it the rest.
+#
+# - `h`: the hub.
+# - `protocol`: the broker that is back.
+#
+# Answers how many were sent.
+function flush_held(@h: state.Hub, protocol: registry.Protocol) -> i64
+    taken = outbox.take_for(@h.held, protocol: protocol)
+    sent @= 0
+
+    for i in range(from: 0, to: taken.len())
+        if !is_up(h, protocol: protocol)
+            outbox.hold(@h.held, h: taken[i])
+            continue
+
+        match send_to(@h, place: rules.Place(protocol: protocol, address: taken[i].address), body: taken[i].body)
+            .ok _ =>
+                sent @ sent + 1
+                h.counts.published @ h.counts.published + 1
+                telemetry.record_published(
+                    @h.telemetry,
+                    rule: taken[i].rule,
+                    protocol: registry.protocol_name(protocol)
+                )
+            .err e =>
+                lose(@h, protocol: protocol, why: why_lost(h, protocol: protocol, code: e.code))
+                outbox.hold(@h.held, h: taken[i])
+
+    telemetry.record_held(
+        @h.telemetry,
+        broker: registry.protocol_name(protocol),
+        count: outbox.count_for(h.held, protocol: protocol)
+    )
+    return sent

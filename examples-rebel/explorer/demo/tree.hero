@@ -1,0 +1,248 @@
+# The folder tree the demo works on, written fresh under `build/explorer/`
+# and removed when the demo ends: texts in four encodings, two pictures
+# drawn here and encoded as PNG and JPEG, a ZIP file, a gzip-compressed tar,
+# a lone gzip file, a ZIP file whose member tries to climb out of the folder
+# it is extracted into, a large file of data, names a collation orders
+# differently from their bytes, and a hidden file; beside the tree, the
+# explorer's settings and bookmarks files and its trash.
+#
+# Every file and folder is given a fixed time once written, the deepest
+# first, so the dates the window shows are the same on every run. The
+# archives are encoded here by `archive` and `compress`, whose same members
+# always give the same bytes.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/fs
+use <rebel>/image
+use <rebel>/image/jpeg
+use <rebel>/image/png
+use <rebel>/time
+use <rebel>/unicode/encodings
+
+# The folder the demo writes everything under.
+constant BASE: str
+    "build/explorer"
+
+# The folder the explorer opens on.
+constant ROOT: str
+    "build/explorer/root"
+
+# The folder of the explorer's settings, bookmarks and trash.
+constant STATE: str
+    "build/explorer/state"
+
+# The size of the large file of data, in bytes: enough for a copy and a
+# hash to take several steps.
+constant LARGE: i64
+    1500000
+
+# A file of the tree: its path under the root, and its bytes.
+record File
+    # Its path below `ROOT`, parts joined by `/`.
+    below: str
+    # Its bytes.
+    data: [u8]
+
+# The path of `below` under the root.
+#
+# - `below`: a path below the root, parts joined by `/`.
+function at_root(below: str) -> str
+    return ROOT + "/" + below
+
+# The path of `name` in the state folder.
+#
+# - `name`: a name.
+function at_state(name: str) -> str
+    return STATE + "/" + name
+
+# The instant the demo's tree was last written: 1 March 2026, 08:00 UTC,
+# `hours` hours later.
+#
+# - `hours`: hours after the first instant, 0 or more.
+function written_at(hours: i64) -> time.Instant
+    first = time.from_date_time(
+        time.DateTime(year: 2026, month: 3, day: 1, hour: 8, minute: 0, second: 0, nanosecond: 0)
+    ).must()
+    return time.add(first, d: time.hours(hours).must()).must()
+
+# The instant the demo's clock stands at when the explorer opens: 14 March
+# 2026, 09:30 UTC.
+function opening_time() -> time.Instant
+    return time.from_date_time(
+        time.DateTime(year: 2026, month: 3, day: 14, hour: 9, minute: 30, second: 0, nanosecond: 0)
+    ).must()
+
+# Writes the tree, the settings and the bookmarks afresh, removing what an
+# earlier run left, and gives every entry its time.
+#
+# Fails as the disk fails, and as the encoders fail.
+function write_all() -> ()?
+    if fs.exists(BASE).default(false)
+        fs.remove_all(BASE)?
+
+    for folder in ["docs", "photos"]
+        fs.make_dir_all(at_root(folder))?
+
+    fs.make_dir_all(STATE)?
+    hours @= 0
+
+    for f in files()?
+        fs.write_bytes(at_root(f.below), data: f.data)?
+        stamp(at_root(f.below), hours: hours)?
+        hours @ hours + 7
+
+    fs.write_bytes(at_state("explorer.toml"), data: bytes.from_text(settings_text()))?
+    fs.write_bytes(at_state("bookmarks.toml"), data: bytes.from_text(bookmarks_text()))?
+    stamp(at_root("docs"), hours: hours)?
+    stamp(at_root("photos"), hours: hours + 1)?
+    stamp(ROOT, hours: hours + 2)?
+    return ok()
+
+# Gives `at` the time `hours` after the demo's first instant.
+#
+# - `at`: the path.
+# - `hours`: hours after the first instant.
+#
+# Fails as `fs.set_times` fails.
+function stamp(at: str, hours: i64) -> ()?
+    t = written_at(hours)
+    return fs.set_times(at, written: t, read: t)
+
+# Removes everything the demo wrote.
+#
+# Fails as `fs.remove_all` fails.
+function remove_all() -> ()?
+    if fs.exists(BASE).default(false)
+        fs.remove_all(BASE)?
+
+    return ok()
+
+# The files of the tree, in the order they are written.
+#
+# Fails as the encoders fail.
+function files() -> [File]?
+    notes = "Shopping list\ncrème brûlée for four\nÄpfel, 2 kg\nfile9 comes before file10\n"
+    prices = encodings.encode(s: "Prix du jour\r\nCrème brûlée: 12 €\r\nTarte aux pommes: 9 €\r\n", encoding: encodings.WINDOWS_1252)?
+    japanese = encodings.encode(s: "日本語のメモです。\n東京で会いましょう。\n", encoding: encodings.SHIFT_JIS)?
+    greeting = bytes.concat(
+        [encodings.bom_of(encodings.UTF_16LE)?, encodings.encode(s: "Hello\r\nWorld\r\n", encoding: encodings.UTF_16LE)?]
+    )
+    return ok(
+        [File(below: "docs/notes.txt", data: bytes.from_text(notes)), File(below: "docs/prices.txt", data: prices), File(below: "docs/japanese.txt", data: japanese), File(below: "docs/greeting.txt", data: greeting), File(below: "photos/sunset.png", data: sunset()?), File(below: "photos/portrait.jpg", data: portrait()?), File(below: "photos/IMG_9.png", data: tile(r: 40, g: 90, b: 200)?), File(below: "photos/IMG_10.png", data: tile(r: 200, g: 90, b: 40)?), File(below: "Äpfel.txt", data: bytes.from_text("Äpfel und Birnen\n")), File(below: "apricot.txt", data: bytes.from_text("apricots\n")), File(below: "Zebra.md", data: bytes.from_text("# Zebra\n\nStripes.\n")), File(below: "zoo.md", data: bytes.from_text("# Zoo\n\nAnimals.\n")), File(below: "video.bin", data: large_data()), File(below: "site.zip", data: site_zip()?), File(below: "backup.tar.gz", data: backup_tar()?), File(below: "readme.txt.gz", data: compress.compress(bytes.from_text("Read me first.\nThen the rest.\n"), options: compress.default_options(.gzip))?), File(below: "evil.zip", data: evil_zip()?), File(below: ".hidden", data: bytes.from_text("not shown until asked\n"))]
+    )
+
+# A sunset of 320 by 180 pixels: an orange sky over a dark sea, as a PNG.
+#
+# Fails as `png.encode` fails.
+function sunset() -> [u8]?
+    img @= image.blank(width: 320, height: 180, format: .rgb)?
+
+    for y in range(from: 0, to: 120)
+        shade = to_u8(200 - y).must()
+        image.fill_rect(@img, x: 0, y: y, width: 320, height: 1, color: image.Color(r: 250, g: shade, b: 60, a: 255))
+
+    image.fill_rect(@img, x: 0, y: 120, width: 320, height: 60, color: image.Color(r: 20, g: 40, b: 90, a: 255))
+    image.fill_circle(
+        @img,
+        center_x: 160,
+        center_y: 120,
+        radius: 30,
+        color: image.Color(r: 255, g: 230, b: 120, a: 255)
+    )
+    return png.encode(img, options: png.default_encode_options())
+
+# A portrait of 90 by 120 pixels, a face drawn in circles, as a JPEG.
+#
+# Fails as `jpeg.encode` fails.
+function portrait() -> [u8]?
+    img @= image.blank(width: 90, height: 120, format: .rgb)?
+    image.fill_rect(@img, x: 0, y: 0, width: 90, height: 120, color: image.Color(r: 180, g: 200, b: 220, a: 255))
+    image.fill_circle(@img, center_x: 45, center_y: 50, radius: 28, color: image.Color(r: 230, g: 190, b: 160, a: 255))
+    image.fill_rect(@img, x: 20, y: 85, width: 50, height: 35, color: image.Color(r: 60, g: 80, b: 130, a: 255))
+    return jpeg.encode(img, options: jpeg.default_encode_options())
+
+# A tile of 16 by 16 pixels of one colour, as a PNG.
+#
+# - `r`: red.
+# - `g`: green.
+# - `b`: blue.
+#
+# Fails as `png.encode` fails.
+function tile(r: u8, g: u8, b: u8) -> [u8]?
+    img @= image.blank(width: 16, height: 16, format: .rgb)?
+    image.fill_rect(@img, x: 0, y: 0, width: 16, height: 16, color: image.Color(r: r, g: g, b: b, a: 255))
+    return png.encode(img, options: png.default_encode_options())
+
+# `LARGE` bytes of data, a repeating pattern with zero bytes in it, so the
+# preview tells it is not text.
+function large_data() -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: LARGE)
+        out @ out.push(to_u8(i % 251).must())
+
+    return out
+
+# A small site as a ZIP file: a folder, a page and a style sheet.
+#
+# Fails as `archive.encode_zip` fails.
+function site_zip() -> [u8]?
+    page = "<!doctype html>\n<title>Hello</title>\n<p>Hello, world.</p>\n"
+    style = "body { font-family: serif; }\n"
+    return archive.encode_zip(
+        [zip_member("site/", kind: .directory, data: [], hours: 3), zip_member("site/index.html", kind: .file, data: bytes.from_text(page), hours: 4), zip_member("site/style.css", kind: .file, data: bytes.from_text(style), hours: 5)],
+        comment: ""
+    )
+
+# A ZIP member of the demo's, its time `hours` after the demo's first
+# instant.
+#
+# - `name`: its name.
+# - `kind`: what it is.
+# - `data`: its bytes.
+# - `hours`: hours after the first instant.
+function zip_member(name: str, kind: archive.Kind, data: [u8], hours: i64) -> archive.ZipMember
+    e @= archive.zip_entry(name, kind: kind)
+    e.modified @ written_at(hours)
+    return archive.ZipMember(entry: e, data: data)
+
+# A ZIP file one of whose members is named to climb out of the folder it is
+# extracted into, as the archives of the "zip slip" advisory were.
+#
+# Fails as `archive.encode_zip` fails.
+function evil_zip() -> [u8]?
+    return archive.encode_zip(
+        [zip_member("ok.txt", kind: .file, data: bytes.from_text("harmless\n"), hours: 6), zip_member("../escaped.txt", kind: .file, data: bytes.from_text("should never land outside\n"), hours: 6)],
+        comment: ""
+    )
+
+# Notes kept as a gzip-compressed tar: a folder and two files.
+#
+# Fails as `archive.encode_tar` fails.
+function backup_tar() -> [u8]?
+    folder @= archive.tar_entry("backup", kind: .directory)
+    folder.modified @ written_at(10)
+    one @= archive.tar_entry("backup/monday.txt", kind: .file)
+    one.modified @ written_at(11)
+    two @= archive.tar_entry("backup/tuesday.txt", kind: .file)
+    two.modified @ written_at(12)
+    return archive.encode_tar(
+        [archive.TarMember(entry: folder, data: []), archive.TarMember(entry: one, data: bytes.from_text("Monday: wrote the plan.\n")), archive.TarMember(entry: two, data: bytes.from_text("Tuesday: kept to it.\n"))],
+        compression: .gzip
+    )
+
+# The demo's settings file: German, the order by name, and the places of its
+# trash and bookmarks under the state folder.
+function settings_text() -> str
+    return ["# The explorer's settings for the demo.", "[view]", "locale = \"de-DE\"", "sort = \"name\"", "show_hidden = false", "", "[places]", f"trash = \"{STATE}/trash\"", f"bookmarks = \"{STATE}/bookmarks.toml\"", ""].join(
+        "\n"
+    )
+
+# The demo's bookmarks file, with a comment the explorer keeps and one
+# bookmark.
+function bookmarks_text() -> str
+    return ["# My bookmarks; the explorer keeps this comment.", "[[bookmark]]", "name = \"Documents\"", f"path = \"{ROOT}/docs\"", ""].join(
+        "\n"
+    )

@@ -1,5 +1,5 @@
-# A program that reads its own command line two ways, and the only one in this
-# repository that calls `args_checked`.
+# A program that reads its own command line two ways, `args_checked` first,
+# so it tells an argument that is not UTF-8 as a usage error and never aborts.
 #
 # Corpus and regression material (CLAUDE.md §9), and it closes a stated debt
 # rather than a gap somebody noticed. `docs/measurements/010-spec-budget-ledger.md`
@@ -25,18 +25,26 @@
 # typed, or a shell expanded, that holds bytes no `str` can carry. A file name
 # on a filesystem that never promised UTF-8 is the ordinary case.
 #
-# **WHAT THIS PROGRAM CANNOT DO, said rather than implied**: it cannot pass a
-# non-UTF-8 argument, because `main.args` is read as a `str` and a `str` is
-# UTF-8 by definition (`spec:56`). So every argument here comes back `ok`, and
-# what the program pins is the SHAPE — the arity, the order, the `T?` wrapper,
-# and that the two built-ins agree when nothing is malformed. The abort path
-# belongs to a harness that can write raw bytes into an `execve`, which is not
-# this one, and naming that limit is what keeps the next reader from thinking
-# this case covers it.
+# **WHAT ITS CORPUS ENTRY CANNOT DO, said rather than implied**: it cannot pass
+# a non-UTF-8 argument, because `main.args` is read as a `str` and a `str` is
+# UTF-8 by definition (`spec:56`). So every argument there comes back `ok`, and
+# what the entry pins is the SHAPE — the arity, the order, the `T?` wrapper,
+# and that the two built-ins agree when nothing is malformed. The usage error
+# for an argument that is not UTF-8 is pinned by the `special` suite, which
+# hands the built program raw bytes through `/bin/sh`
+# (`an_example_tells_an_argument_that_is_not_text_as_a_usage_error`).
 
 function main()
-    given = args()
     checked = args_checked()
+
+    # An argument that is not text is a usage error, told by its place, before
+    # `args()` is asked: `args()` would abort on it.
+    for at in range(from: 0, to: checked.len())
+        if checked[at].is_err()
+            print(f"argv: argument {at + 1} is not UTF-8")
+            exit(2)
+
+    given = args()
 
     # The two agree on how many, always: `args_checked` does not drop the
     # argument it cannot decode, it reports it.

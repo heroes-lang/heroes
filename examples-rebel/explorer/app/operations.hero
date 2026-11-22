@@ -1,0 +1,179 @@
+# The explorer's long commands: each answers the `Job` the window's timer
+# runs a step a tick (move to the trash, paste, compress, extract, hash,
+# search), refused at once where an operation runs already or nothing is
+# chosen that the command needs; and `finish`, which reads what an ended
+# job did into the explorer's state: its action kept for Undo, the folder
+# read again with what it made chosen, a search's results shown.
+
+use <rebel>/path as paths
+
+use app/actions
+use model/explorer
+use model/listing
+use ops/hashing
+use ops/jobs
+use ops/packing
+use ops/transfer
+use ops/unpacking
+use search/finder
+use search/query
+
+# The job of moving the entries chosen to the trash; the entry shown after
+# the last of them is chosen once they go.
+#
+# - `ex`: the explorer.
+#
+# Fails `invalid` where nothing is chosen, and `busy` where an operation is
+# running.
+function trash_chosen(ex: explorer.Explorer lent) -> jobs.Job?
+    ready(ex, needs_chosen: true)?
+    items = explorer.chosen_paths(ex)
+    title = f"Moving {jobs.items_text(ex.formats, n: items.len())} to the trash"
+    return ok(jobs.new_job(title, work: jobs.trashing_of(ex.settings.trash, items: items)))
+
+# The job of pasting what Cut or Copy took into the folder shown: a move
+# for a cut, which empties the clipboard, a copy otherwise.
+#
+# - `ex`: the explorer.
+#
+# Fails `invalid` where the clipboard is empty or a folder would go inside
+# itself, `busy` where an operation runs, and as the plan's reading fails.
+function paste(@ex: explorer.Explorer) -> jobs.Job?
+    ready(ex, needs_chosen: false)?
+
+    if ex.clipboard.paths.len() == 0
+        return fail(code: "invalid", msg: "nothing to paste: cut or copy entries first")
+
+    count = jobs.items_text(ex.formats, n: ex.clipboard.paths.len())
+
+    if ex.clipboard.cut
+        plan = transfer.plan_move(ex.clipboard.paths, into: ex.folder)?
+        ex.clipboard @ explorer.Clipboard(paths: [], cut: false)
+        return ok(jobs.new_job(f"Moving {count}", work: .moving(t: transfer.start(plan))))
+
+    plan = transfer.plan_copy(ex.clipboard.paths, into: ex.folder)?
+    return ok(jobs.new_job(f"Copying {count}", work: .copying(t: transfer.start(plan))))
+
+# The job of compressing the entries chosen into one archive beside them.
+#
+# - `ex`: the explorer.
+# - `kind`: a ZIP file or a gzip-compressed tar.
+#
+# Fails `invalid` where nothing is chosen, `busy` where an operation runs,
+# and as `packing.start` fails.
+function compress_chosen(ex: explorer.Explorer lent, kind: packing.Kind) -> jobs.Job?
+    ready(ex, needs_chosen: true)?
+    p = packing.start(explorer.chosen_paths(ex), folder: ex.folder, kind: kind)?
+    return ok(jobs.new_job(f"Compressing {jobs.items_text(ex.formats, n: ex.chosen.len())}", work: .packing(p: p)))
+
+# The job of extracting the one archive chosen into a folder beside it.
+#
+# - `ex`: the explorer.
+#
+# Fails `invalid` where not one entry is chosen or it is no archive, `busy`
+# where an operation runs, and as `unpacking.start` fails.
+function extract_chosen(ex: explorer.Explorer lent) -> jobs.Job?
+    ready(ex, needs_chosen: true)?
+
+    if ex.chosen.len() != 1
+        return fail(code: "invalid", msg: "choose one archive to extract")
+
+    u = unpacking.start(explorer.chosen_paths(ex)[0])?
+    return ok(jobs.new_job(f"Extracting {ex.chosen[0]}", work: .unpacking(u: u)))
+
+# The job of hashing the one file chosen.
+#
+# - `ex`: the explorer.
+#
+# Fails `invalid` where not one file is chosen, `busy` where an operation
+# runs, and as `hashing.start` fails.
+function hash_chosen(ex: explorer.Explorer lent) -> jobs.Job?
+    ready(ex, needs_chosen: true)?
+
+    if ex.chosen.len() != 1
+        return fail(code: "invalid", msg: "choose one file to hash")
+
+    h = hashing.start(explorer.chosen_paths(ex)[0])?
+    return ok(jobs.new_job(f"Hashing {ex.chosen[0]}", work: .hashing(h: h)))
+
+# The job of searching the folder shown and those under it.
+#
+# - `ex`: the explorer.
+# - `text`: what the person typed.
+# - `scope`: names or contents.
+# - `is_regex`: whether `text` is a regular expression.
+#
+# Fails as `query.compile_query` fails, `busy` where an operation runs, and
+# as `finder.start` fails.
+function search(ex: explorer.Explorer lent, text: str, scope: query.Scope, is_regex: bool) -> jobs.Job?
+    ready(ex, needs_chosen: false)?
+    q = query.compile_query(text, scope: scope, is_regex: is_regex)?
+    s = finder.start(ex.folder, q: q, show_hidden: ex.settings.show_hidden)?
+    return ok(jobs.new_job(f"Searching for \"{text}\"", work: .searching(s: s)))
+
+# Refuses a long command where one is running, or where it needs entries
+# chosen and none is.
+#
+# - `ex`: the explorer.
+# - `needs_chosen`: whether the command works on what is chosen.
+#
+# Fails `busy` or `invalid`.
+function ready(ex: explorer.Explorer, needs_chosen: bool) -> ()?
+    if explorer.is_busy(ex)
+        return fail(code: "busy", msg: "an operation is running; wait for it or cancel it")
+
+    if needs_chosen && ex.chosen.len() == 0
+        return fail(code: "invalid", msg: "choose the entries first")
+
+    return ok()
+
+# Reads what the ended job `j` did into the explorer: its action kept for
+# Undo, the folder read again, a search's results shown, and the status
+# line's summary. Answers the checksums where the job hashed a file.
+#
+# - `ex`: the explorer.
+# - `j`: the job, ended.
+function finish(@ex: explorer.Explorer, j: jobs.Job) -> [hashing.Digest]
+    match jobs.action_of(j)
+        .ok a  => actions.keep(@ex, a: a)
+        .err _ => _ = 0
+
+    no_digests: [hashing.Digest] = []
+    digests @= no_digests
+    after: [str] @= []
+
+    match j.work
+        .searching se =>
+            if j.failure == "" && !j.cancelled
+                explorer.show_results(@ex, root: se.s.root, hits: se.s.hits)
+        .hashing hs =>
+            if j.failure == "" && !j.cancelled
+                digests @ hashing.digests(hs.h)
+        .trashing tr =>
+            if tr.t.done.len() > 0
+                last = paths.name(tr.t.done[tr.t.done.len() - 1].original).default("")
+                after @ [listing.neighbour_of(ex.listing, name: last).default("")]
+        .packing pk =>
+            if j.failure == "" && !j.cancelled
+                after @ [paths.name(pk.p.archive).default("")]
+        .unpacking up =>
+            if j.failure == "" && !j.cancelled
+                after @ [paths.name(up.u.into).default("")]
+        .copying c =>
+            for p in transfer.whole_tops(c.t)
+                after @ after.push(paths.name(p.to).default(""))
+        .moving m =>
+            for p in transfer.moved_so_far(m.t)
+                after @ after.push(paths.name(p.to).default(""))
+
+    match j.work
+        .searching _ => _ = 0
+        .hashing _ | .trashing _ | .packing _ | .unpacking _ | .copying _ | .moving _ =>
+            _ = explorer.refresh(@ex).is_err()
+
+            if after.len() > 0
+                explorer.choose_names(@ex, names: after)
+
+    ex.running @ []
+    ex.status @ jobs.summary_of(ex.formats, j: j)
+    return digests

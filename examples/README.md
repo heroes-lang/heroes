@@ -7,7 +7,7 @@ cannot be forgotten. Beside the source, a program directory may carry
 
 - `main.expected` — what it prints, in the `tests/golden/run/` convention: the
   stdout, optionally closed by `!exit: <code>` or `!panic: <message>`;
-- `main.args` — one argument per line, handed to `args()`;
+- `main.args` — one argument per line, handed to the program's command line;
 - data the program reads, named in `main.args` (`sample.json`, `sample.maze`, …).
 - no `heroes.toml`: no program here uses a package (§ The index, below).
 
@@ -46,7 +46,7 @@ close a measured gap, its own header comment carries the measurement.
 | directory | what it is |
 |---|---|
 | `adventure/` | a text adventure played from a script — the world is data written in code, a turn is a **value** (a state in, a state and some lines out), and it is the program that never calls `exit`, so the corpus keeps a path across the leak gate |
-| `argv/` | its own command line read two ways, `args()` and `args_checked()`: the only caller of the second, which the spec-budget ledger's row 3541 owed a use |
+| `argv/` | its own command line read two ways, `args()` and `args_checked()`, the second first so an argument that is not text is a usage error, never an abort; the spec-budget ledger's row 3541 owed the second a use |
 | `assembler/` | a register machine, assembled and run: two passes because a jump may name a label further down, an encoding and its decoder written from one set of `constant`s, and a run bounded by fuel |
 | `binarytrees/` | 135,854 nodes of a recursive `variant` built, walked and dropped, against the benchmarks game's published output at N = 10 — the first program here written to allocate at volume, and its `main.expected` **is** the downloaded file, byte for byte. The two halves live in a `[Tree]` because a record holding itself is `error[no_size]`, so the program is also where the language's one rule about recursive types is visible in a working program rather than in a diagnostic |
 | `board/` | a grid of cells that grow and die, and a scoreboard keyed twice: `[[i64]]`, nested maps, `if` as an expression and `_` as a catch-all arm, all measured at zero uses before it |

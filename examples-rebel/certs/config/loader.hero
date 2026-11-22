@@ -1,0 +1,328 @@
+# The configuration file read: TOML parsed by `toml`, each key looked up by
+# its path and checked, every refusal naming the key it is about, so a
+# person fixes the file without reading this program. `config/settings`
+# documents the file; a key it does not name is refused, since a misspelt
+# key read as absent would quietly leave its default in force.
+
+use <rebel>/net
+use <rebel>/toml
+
+use config/settings
+
+## Codes
+
+# The code of a file that is not TOML, or holds a key or a value this
+# program does not take.
+constant INVALID: str
+    "invalid"
+
+## Reading
+
+# The settings `text` writes.
+#
+# - `text`: the TOML file's text.
+#
+# Fails `invalid` where `text` is not TOML, a key is unknown, a value is of
+# the wrong kind or out of its range, a required key is missing, or two
+# certificates share a name; the message names the key.
+function parse(text: str) -> settings.Settings?
+    root = match toml.parse(text)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: "the file is not TOML: " + e.msg)
+
+    known(root, path: [], allowed: ["account", "acme", "store", "renewal", "http01", "dns01", "serve", "certificate"])?
+    account = settings.Account(
+        email: text_at(root, path: ["account", "email"], fallback: "")?,
+        agree_terms: bool_at(root, path: ["account", "agree_terms"], fallback: false)?
+    )
+    known(root, path: ["account"], allowed: ["email", "agree_terms"])?
+    acme = settings.Acme(
+        directory: required_text(root, path: ["acme", "directory"])?,
+        roots: text_at(root, path: ["acme", "roots"], fallback: "")?,
+        trust: text_at(root, path: ["acme", "trust"], fallback: "")?
+    )
+    known(root, path: ["acme"], allowed: ["directory", "roots", "trust"])?
+    store = settings.Store(
+        folder: required_text(root, path: ["store", "folder"])?,
+        keyring_service: text_at(root, path: ["store", "keyring_service"], fallback: "certs")?
+    )
+    known(root, path: ["store"], allowed: ["folder", "keyring_service"])?
+    renewal = settings.Renewal(
+        days_before_expiry: int_in(root, path: ["renewal", "days_before_expiry"], fallback: 30, low: 1, high: 365)?,
+        renewal_info: bool_at(root, path: ["renewal", "renewal_info"], fallback: true)?
+    )
+    known(root, path: ["renewal"], allowed: ["days_before_expiry", "renewal_info"])?
+    http01 = settings.Http01(
+        webroot: text_at(root, path: ["http01", "webroot"], fallback: "")?,
+        listen: int_in(root, path: ["http01", "listen"], fallback: 80, low: 1, high: 65535)?
+    )
+    known(root, path: ["http01"], allowed: ["webroot", "listen"])?
+    dns01 = settings.Dns01(
+        server: text_at(root, path: ["dns01", "server"], fallback: "")?,
+        zone: text_at(root, path: ["dns01", "zone"], fallback: "")?,
+        tsig_key: text_at(root, path: ["dns01", "tsig_key"], fallback: "")?
+    )
+    known(root, path: ["dns01"], allowed: ["server", "zone", "tsig_key"])?
+    serve = settings.Serving(
+        listen: text_at(root, path: ["serve", "listen"], fallback: "127.0.0.1:8443")?,
+        certificate: text_at(root, path: ["serve", "certificate"], fallback: "")?
+    )
+    known(root, path: ["serve"], allowed: ["listen", "certificate"])?
+    lineages = certificates(root)?
+    read = settings.Settings(
+        account: account,
+        acme: acme,
+        store: store,
+        renewal: renewal,
+        http01: http01,
+        dns01: dns01,
+        serve: serve,
+        certificates: lineages
+    )
+    consistent(read)?
+    return ok(read)
+
+# The certificates of `[[certificate]]`, each checked.
+#
+# - `root`: the document.
+#
+# Fails `invalid` where `certificate` is not an array of tables, an entry
+# misses its name or domains, names an unknown challenge, or two share a
+# name.
+function certificates(root: toml.Value) -> [settings.Lineage]?
+    items = match toml.value_at(root, path: ["certificate"])
+        .err _ => return ok([])
+        .ok v =>
+            match v
+                .array a => a.items
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+                    return fail(code: INVALID, msg: "`certificate` is written [[certificate]], one table for each")
+
+    out: [settings.Lineage] @= []
+    seen: {str: bool} @= {}
+
+    for at in range(from: 0, to: items.len())
+        step = to_str(at)
+        name = required_text(root, path: ["certificate", step, "name"])?
+        where = f"certificate \"{name}\""
+
+        if !is_lineage_name(name)
+            return fail(
+                code: INVALID,
+                msg: f"{where}: a name holds letters, digits and -, and begins with a letter or a digit"
+            )
+
+        if seen[name].default(false)
+            return fail(code: INVALID, msg: f"{where} is named twice")
+        seen[name] @ true
+        domains = texts_at(root, path: ["certificate", step, "domains"])?
+
+        if domains.len() == 0
+            return fail(code: INVALID, msg: f"{where}: `domains` names one domain or address at least")
+        challenge = text_at(root, path: ["certificate", step, "challenge"], fallback: settings.HTTP_01)?
+
+        if challenge != settings.HTTP_01 && challenge != settings.DNS_01
+            return fail(code: INVALID, msg: f"{where}: `challenge` is \"http-01\" or \"dns-01\", not \"{challenge}\"")
+
+        for d in domains
+            if settings.is_wildcard(d) && challenge != settings.DNS_01
+                return fail(
+                    code: INVALID,
+                    msg: f"{where}: the wildcard {d} is proved by dns-01 alone (RFC 8555 § 7.1.3)"
+                )
+
+            if is_address(d) && challenge != settings.HTTP_01
+                return fail(code: INVALID, msg: f"{where}: the address {d} is proved by http-01 alone (RFC 8738 § 7)")
+
+        known(root, path: ["certificate", step], allowed: ["name", "domains", "challenge"])?
+        out @ out.push(settings.Lineage(name: name, domains: domains, challenge: challenge))
+
+    return ok(out)
+
+# What holds between the sections: a DNS-01 certificate needs a server and a
+# zone, and the served certificate is one of the file's.
+#
+# - `s`: the settings read.
+#
+# Fails `invalid`, naming what is missing.
+function consistent(s: settings.Settings) -> ()?
+    for l in s.certificates
+        if l.challenge == settings.DNS_01 && (s.dns01.server == "" || s.dns01.zone == "")
+            return fail(
+                code: INVALID,
+                msg: f"certificate \"{l.name}\" asks dns-01, and [dns01] names no server or no zone"
+            )
+
+    if s.dns01.server != ""
+        match net.parse_address_port(s.dns01.server)
+            .ok _ => _ = 0
+            .err _ => return fail(
+                code: INVALID,
+                msg: f"dns01.server is \"{s.dns01.server}\", where an address and a port were expected"
+            )
+
+    if s.serve.certificate != ""
+        _ = settings.lineage_named(s, name: s.serve.certificate)?
+    return ok()
+
+## Values by path
+
+# Whether `d` is an IPv4 or IPv6 address rather than a name.
+#
+# - `d`: a domain of a certificate.
+function is_address(d: str) -> bool
+    return !net.parse_host(d).is_err()
+
+# Whether `name` may name a certificate's folder: letters, digits and `-`,
+# not beginning with `-`.
+#
+# - `name`: the name.
+function is_lineage_name(name: str) -> bool
+    if name.len() == 0 || name.len() > 64 || name[0] == '-'
+        return false
+
+    for at in range(from: 0, to: name.len())
+        b = name[at]
+        letter = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9'
+
+        if !letter && b != '-'
+            return false
+
+    return true
+
+# Refuses a key of the table at `path` that `allowed` does not name.
+#
+# - `root`: the document.
+# - `path`: the table's path; empty for the document.
+# - `allowed`: the keys it may hold.
+#
+# Fails `invalid` naming the first key not allowed; a table that is absent
+# holds none.
+function known(root: toml.Value, path: [str], allowed: [str]) -> ()?
+    match toml.value_at(root, path: path)
+        .err _ => return ok()
+        .ok v =>
+            match v
+                .table t =>
+                    for k in keys(t.members)
+                        if !holds(allowed, word: k)
+                            return fail(
+                                code: INVALID,
+                                msg: f"no key `{dotted(path, last: k)}` is read; this table takes {allowed.join(", ")}"
+                            )
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+                    return fail(code: INVALID, msg: f"`{path.join(".")}` is a table")
+
+    return ok()
+
+# Whether `words` holds `word`.
+#
+# - `words`: the words searched.
+# - `word`: the word looked for.
+function holds(words: [str], word: str) -> bool
+    for w in words
+        if w == word
+            return true
+
+    return false
+
+# The key `path` then `last` as TOML writes a dotted key.
+#
+# - `path`: the table's path.
+# - `last`: the key.
+function dotted(path: [str], last: str) -> str
+    if path.len() == 0
+        return last
+    return path.join(".") + "." + last
+
+# The text at `path`, or `fallback` where it is absent.
+#
+# - `root`: the document.
+# - `path`: the key's path.
+# - `fallback`: what an absent key means.
+#
+# Fails `invalid` where the value is not a string.
+function text_at(root: toml.Value, path: [str], fallback: str) -> str?
+    match toml.value_at(root, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            match v
+                .text t => return ok(t.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: INVALID, msg: f"`{path.join(".")}` is a string")
+
+# The text at `path`, which must be there and not empty.
+#
+# - `root`: the document.
+# - `path`: the key's path.
+#
+# Fails `invalid` where it is absent, empty or not a string.
+function required_text(root: toml.Value, path: [str]) -> str?
+    got = text_at(root, path: path, fallback: "")?
+
+    if got == ""
+        return fail(code: INVALID, msg: f"`{path.join(".")}` is required")
+    return ok(got)
+
+# The boolean at `path`, or `fallback` where it is absent.
+#
+# - `root`: the document.
+# - `path`: the key's path.
+# - `fallback`: what an absent key means.
+#
+# Fails `invalid` where the value is not a boolean.
+function bool_at(root: toml.Value, path: [str], fallback: bool) -> bool?
+    match toml.value_at(root, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            match v
+                .boolean b => return ok(b.v)
+                .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: INVALID, msg: f"`{path.join(".")}` is true or false")
+
+# The integer at `path` from `low` to `high`, or `fallback` where it is
+# absent.
+#
+# - `root`: the document.
+# - `path`: the key's path.
+# - `fallback`: what an absent key means.
+# - `low`: the smallest value taken.
+# - `high`: the largest value taken.
+#
+# Fails `invalid` where the value is no integer or out of the range.
+function int_in(root: toml.Value, path: [str], fallback: i64, low: i64, high: i64) -> i64?
+    match toml.value_at(root, path: path)
+        .err _ => return ok(fallback)
+        .ok v =>
+            match v
+                .integer n =>
+                    if n.v < low || n.v > high
+                        return fail(code: INVALID, msg: f"`{path.join(".")}` is {n.v}, outside {low} to {high}")
+                    return ok(n.v)
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: INVALID, msg: f"`{path.join(".")}` is an integer")
+
+# The strings of the array at `path`; none where it is absent.
+#
+# - `root`: the document.
+# - `path`: the key's path.
+#
+# Fails `invalid` where it is not an array of strings.
+function texts_at(root: toml.Value, path: [str]) -> [str]?
+    items = match toml.value_at(root, path: path)
+        .err _ => return ok([])
+        .ok v =>
+            match v
+                .array a => a.items
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+                    return fail(code: INVALID, msg: f"`{path.join(".")}` is an array of strings")
+
+    out: [str] @= []
+
+    for item in items
+        match item
+            .text t => out @ out.push(t.v)
+            .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                return fail(code: INVALID, msg: f"`{path.join(".")}` holds a value that is not a string")
+
+    return ok(out)

@@ -1,0 +1,431 @@
+# Arithmetic on the lab's numbers (`numbers/scalar`): each operation answers
+# in the wider kind of its two operands, exactly where both are exact. Exact
+# division never rounds (`7/2` is the fraction `7/2`), a power with a whole
+# exponent stays exact, and a root that comes out whole stays exact too, so
+# `8^(2/3)` is `4` and `2^(1/2)` is the float `1.41421356237`.
+#
+# Exact arithmetic can be asked for an answer no memory holds, `10^(10^9)`,
+# so a power whose answer would pass `MAX_BITS` bits fails `limit` before
+# anything is computed. Division by an exact zero fails `invalid`; a float
+# divided by zero answers an infinity, as IEEE 754 says.
+
+use <rebel>/big
+use <rebel>/math
+use <rebel>/math/complex
+
+use numbers/scalar
+
+# The code of an answer too large to compute.
+constant LIMIT: str
+    "limit"
+
+# The most bits an exact power may answer: four million bits is about 1.2
+# million decimal digits, a number that takes a fraction of a second.
+constant MAX_BITS: i64
+    4_000_000
+
+# The largest root an exact power looks for: `x^(1/k)` for `k` up to this is
+# tried exactly before a float is answered.
+constant MAX_ROOT: i64
+    64
+
+# The whole number `n` holds, where its kind is `integer`.
+#
+# - `n`: a number whose rank is 0.
+#
+# Aborts where `n` is of another kind, which the callers ask first.
+function whole(n: scalar.Number) -> big.Integer
+    match n
+        .integer i                         => return i.value
+        .rational _ | .real _ | .complex _ => assert false
+
+# The rank both `a` and `b` fit in.
+#
+# - `a`: one operand.
+# - `b`: the other.
+function joint_rank(a: scalar.Number, b: scalar.Number) -> i64
+    return math.max_i64(a: scalar.rank(a), b: scalar.rank(b))
+
+# `a + b`.
+#
+# - `a`: one addend.
+# - `b`: the other.
+function add(a: scalar.Number, b: scalar.Number) -> scalar.Number
+    r = joint_rank(a: a, b: b)
+
+    if r == 0
+        return scalar.of_integer(big.add(a: whole(a), b: whole(b)))
+
+    if r == 1
+        return scalar.of_fraction(
+            big.add_fraction(a: scalar.fraction_of(a).must(), b: scalar.fraction_of(b).must())
+        )
+
+    if r == 2
+        return scalar.of_real(scalar.float_of(a).must() + scalar.float_of(b).must())
+    return scalar.of_complex(complex.add(a: scalar.complex_of(a), b: scalar.complex_of(b)))
+
+# `a - b`.
+#
+# - `a`: the number subtracted from.
+# - `b`: the number subtracted.
+function subtract(a: scalar.Number, b: scalar.Number) -> scalar.Number
+    return add(a: a, b: negate(b))
+
+# `-n`.
+#
+# - `n`: the number.
+function negate(n: scalar.Number) -> scalar.Number
+    return match n
+        .integer i => scalar.of_integer(big.negate(i.value))
+        .rational q =>
+            scalar.of_fraction(big.fraction(numerator: big.negate(q.value.numerator), denominator: q.value.denominator))
+        .real x    => scalar.of_real(-x.value)
+        .complex z => scalar.of_complex(complex.negate(z.value))
+
+# `a * b`.
+#
+# - `a`: one factor.
+# - `b`: the other.
+function multiply(a: scalar.Number, b: scalar.Number) -> scalar.Number
+    r = joint_rank(a: a, b: b)
+
+    if r == 0
+        return scalar.of_integer(big.multiply(a: whole(a), b: whole(b)))
+
+    if r == 1
+        return scalar.of_fraction(
+            big.multiply_fraction(a: scalar.fraction_of(a).must(), b: scalar.fraction_of(b).must())
+        )
+
+    if r == 2
+        return scalar.of_real(scalar.float_of(a).must() * scalar.float_of(b).must())
+    return scalar.of_complex(complex.multiply(a: scalar.complex_of(a), b: scalar.complex_of(b)))
+
+# `a / b`: exact where both are exact, so `1/3` is the fraction one third.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+#
+# Fails `invalid` where both are exact and `b` is zero; a float divided by
+# zero answers an infinity or a nan, as IEEE 754 says.
+function divide(a: scalar.Number, b: scalar.Number) -> scalar.Number?
+    r = joint_rank(a: a, b: b)
+
+    if r <= 1
+        if scalar.is_zero(b)
+            return fail(code: scalar.INVALID, msg: "division by zero")
+        return ok(
+            scalar.of_fraction(big.divide_fraction(n: scalar.fraction_of(a).must(), by: scalar.fraction_of(b).must()))
+        )
+
+    if r == 2
+        return ok(scalar.of_real(scalar.float_of(a).must() / scalar.float_of(b).must()))
+    return ok(scalar.of_complex(complex.divide(a: scalar.complex_of(a), b: scalar.complex_of(b))))
+
+# The remainder of `a` by `b` whose sign is `b`'s, as Python's `%` and
+# mathematics' `mod` answer: `-7 % 3` is `2`.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+#
+# Fails `invalid` where `b` is an exact zero or either is complex.
+function remainder(a: scalar.Number, b: scalar.Number) -> scalar.Number?
+    r = joint_rank(a: a, b: b)
+
+    if r == 3
+        return fail(code: scalar.INVALID, msg: "a complex number has no remainder")
+
+    if r == 2
+        return ok(scalar.of_real(math.rem_floor(x: scalar.float_of(a).must(), by: scalar.float_of(b).must())))
+
+    if scalar.is_zero(b)
+        return fail(code: scalar.INVALID, msg: "remainder by zero")
+
+    if r == 0
+        return ok(scalar.of_integer(big.divide(n: whole(a), by: whole(b), rounding: .floor).remainder))
+    fa = scalar.fraction_of(a).must()
+    fb = scalar.fraction_of(b).must()
+    times = big.round_fraction(big.divide_fraction(n: fa, by: fb), rounding: .floor)
+    taken = big.multiply_fraction(a: fb, b: big.fraction(numerator: times, denominator: big.from_int(1)))
+    return ok(scalar.of_fraction(big.subtract_fraction(a: fa, b: taken)))
+
+# `base` raised to `exponent`: exact for an exact base and a whole exponent,
+# and for a root that comes out exact; a float or a complex number otherwise,
+# a negative base under a fractional exponent giving the principal complex
+# value.
+#
+# - `base`: the base.
+# - `exponent`: the exponent.
+#
+# Fails `invalid` where an exact zero is raised to a negative power, and
+# `limit` where an exact answer would pass `MAX_BITS` bits.
+function power(base: scalar.Number, exponent: scalar.Number) -> scalar.Number?
+    return match exponent
+        .integer e  => whole_power(base, exponent: e.value)
+        .rational q => fraction_power(base, exponent: q.value)
+        .real x     => real_power(base, exponent: x.value)
+        .complex z  => ok(scalar.of_complex(complex.pow(base: scalar.complex_of(base), exponent: z.value)))
+
+# `base` to the whole power `exponent`.
+#
+# - `base`: any number.
+# - `exponent`: any whole number.
+#
+# Fails as `power` does.
+function whole_power(base: scalar.Number, exponent: big.Integer) -> scalar.Number?
+    match base
+        .real x                  => return ok(scalar.of_real(math.pow(base: x.value, exponent: big.float_of(exponent))))
+        .complex z               => return complex_whole_power(z.value, exponent: exponent)
+        .integer _ | .rational _ => _ = 0
+
+    f = scalar.fraction_of(base).must()
+    one = big.from_int(1)
+
+    k = match big.int_of(exponent)
+        .ok n  => n
+        .err _ => return trivial_power(f, exponent: exponent)
+
+    if big.sign(f.numerator) == 0
+        if k < 0
+            return fail(code: scalar.INVALID, msg: "zero raised to a negative power")
+
+        if k == 0
+            return ok(scalar.of_int(1))
+        return ok(scalar.of_int(0))
+
+    if big.compare_abs(a: f.numerator, b: one) == 0 && f.denominator == one
+        return trivial_power(f, exponent: exponent)
+    size = big.bit_len(f.numerator) + big.bit_len(f.denominator)
+    magnitude = math.abs_i64(k).default(math.MAX_I64)
+    bits = math.multiply_i64(a: size, b: magnitude).default(math.MAX_I64)
+
+    if bits > MAX_BITS
+        return fail(
+            code: LIMIT,
+            msg: f"the answer would hold about {bits} bits, past the {MAX_BITS} an exact power may"
+        )
+    top = big.power(base: f.numerator, exponent: magnitude)
+    bottom = big.power(base: f.denominator, exponent: magnitude)
+
+    if k < 0
+        return ok(scalar.of_fraction(big.fraction(numerator: bottom, denominator: top)))
+    return ok(scalar.of_fraction(big.fraction(numerator: top, denominator: bottom)))
+
+# A power whose base is 1, -1 or 0, or whose exponent is past `i64`: what
+# can be answered without computing, else `limit`.
+#
+# - `f`: the exact base.
+# - `exponent`: the whole exponent.
+function trivial_power(f: big.Fraction, exponent: big.Integer) -> scalar.Number?
+    one = big.from_int(1)
+
+    if f.denominator == one && f.numerator == one
+        return ok(scalar.of_int(1))
+
+    if f.denominator == one && f.numerator == big.negate(one)
+        if big.bit(exponent, index: 0)
+            return ok(scalar.of_int(-1))
+        return ok(scalar.of_int(1))
+
+    if big.sign(f.numerator) == 0 && big.sign(exponent) > 0
+        return ok(scalar.of_int(0))
+    return fail(code: LIMIT, msg: "the exponent is past what an exact power may take")
+
+# The complex number `z` to the whole power `exponent`: by repeated squaring
+# where the exponent is small, so `(3 + 4i)^2` is exactly `-7 + 24i`, and by
+# the exponential form otherwise.
+#
+# - `z`: the base.
+# - `exponent`: the whole exponent.
+function complex_whole_power(z: complex.Complex, exponent: big.Integer) -> scalar.Number?
+    k = big.int_of(exponent).default(math.MAX_I64)
+
+    if math.abs_i64(k).default(math.MAX_I64) > 1024
+        e = complex.Complex(re: big.float_of(exponent), im: 0.0)
+        return ok(scalar.of_complex(complex.pow(base: z, exponent: e)))
+    result @= complex.Complex(re: 1.0, im: 0.0)
+    square @= z
+    left @= math.abs_i64(k).must()
+
+    while left > 0
+        if left % 2 == 1
+            result @ complex.multiply(a: result, b: square)
+        square @ complex.multiply(a: square, b: square)
+        left @ left / 2
+
+    if k < 0
+        return ok(scalar.of_complex(complex.divide(a: complex.Complex(re: 1.0, im: 0.0), b: result)))
+    return ok(scalar.of_complex(result))
+
+# `base` to the fractional power `exponent`, `p/q`: exactly where `base` is
+# exact and its `q`th root is exact, else as a float or a complex number.
+#
+# - `base`: any number.
+# - `exponent`: the fraction `p/q`, `q` above 1.
+function fraction_power(base: scalar.Number, exponent: big.Fraction) -> scalar.Number?
+    q = big.int_of(exponent.denominator).default(MAX_ROOT + 1)
+
+    if scalar.is_exact(base) && q <= MAX_ROOT
+        f = scalar.fraction_of(base).must()
+        odd = q % 2 == 1
+
+        if big.sign(f.numerator) >= 0 || odd
+            top = exact_root(big.abs(f.numerator), k: q)
+            bottom = exact_root(f.denominator, k: q)
+
+            if !top.is_err() && !bottom.is_err()
+                root: big.Integer @= top.must()
+
+                if big.sign(f.numerator) < 0
+                    root @ big.negate(root)
+                exact = scalar.of_fraction(big.fraction(numerator: root, denominator: bottom.must()))
+                return whole_power(exact, exponent: exponent.numerator)
+    return real_power(base, exponent: big.float_of_fraction(exponent))
+
+# `base` to the float power `exponent`: a float, or the principal complex
+# value where `base` is negative and `exponent` is not whole.
+#
+# - `base`: any number.
+# - `exponent`: the exponent.
+function real_power(base: scalar.Number, exponent: f64) -> scalar.Number?
+    match base
+        .complex z =>
+            return ok(scalar.of_complex(complex.pow(base: z.value, exponent: complex.Complex(re: exponent, im: 0.0))))
+        .integer _ | .rational _ | .real _ => _ = 0
+
+    b = scalar.float_of(base).must()
+
+    if b < 0.0 && math.trunc(exponent) != exponent
+        w = complex.pow(base: complex.Complex(re: b, im: 0.0), exponent: complex.Complex(re: exponent, im: 0.0))
+        return ok(scalar.of_complex(w))
+    return ok(scalar.of_real(math.pow(base: b, exponent: exponent)))
+
+# The whole `k`th root of `x`, where `x` is a `k`th power.
+#
+# - `x`: a whole number, zero or more.
+# - `k`: the root, 1 or more.
+#
+# Fails `invalid` where `x` is no `k`th power, and `limit` where `x` holds
+# more than 65,536 bits. Newton's method from above, on whole numbers, so
+# every step lands on a whole number no smaller than the root.
+function exact_root(x: big.Integer, k: i64) -> big.Integer?
+    if big.sign(x) == 0 || k == 1
+        return ok(x)
+
+    if big.bit_len(x) > 65_536
+        return fail(code: LIMIT, msg: "too large a number to take a root of exactly")
+
+    if k == 2
+        s = big.sqrt(x)
+
+        if big.multiply(a: s, b: s) == x
+            return ok(s)
+        return fail(code: scalar.INVALID, msg: "no exact square root")
+    guess @= big.shift_left(big.from_int(1), count: big.bit_len(x) / k + 1)
+    going @= true
+
+    while going
+        below = big.power(base: guess, exponent: k - 1)
+        share = big.divide(n: x, by: below, rounding: .floor).quotient
+        sum = big.add(a: big.multiply(a: big.from_int(k - 1), b: guess), b: share)
+        next = big.divide(n: sum, by: big.from_int(k), rounding: .floor).quotient
+
+        if big.compare(a: next, b: guess) >= 0
+            going @ false
+        else
+            guess @ next
+
+    if big.power(base: guess, exponent: k) == x
+        return ok(guess)
+    return fail(code: scalar.INVALID, msg: f"no exact root of order {k}")
+
+# Where `a` stands against `b`: -1 below, 0 equal, 1 above; exactly where
+# both are exact.
+#
+# - `a`: one number.
+# - `b`: the other.
+#
+# Fails `invalid` where either is complex or a nan, which have no order.
+function compare(a: scalar.Number, b: scalar.Number) -> i64?
+    r = joint_rank(a: a, b: b)
+
+    if r == 3
+        return fail(code: scalar.INVALID, msg: "complex numbers have no order")
+
+    if r == 0
+        return ok(big.compare(a: whole(a), b: whole(b)))
+
+    if r == 1
+        return ok(big.compare_fraction(a: scalar.fraction_of(a).must(), b: scalar.fraction_of(b).must()))
+    x = scalar.float_of(a).must()
+    y = scalar.float_of(b).must()
+
+    if math.is_nan(x) || math.is_nan(y)
+        return fail(code: scalar.INVALID, msg: "nan has no order")
+
+    if x < y
+        return ok(-1)
+
+    if x > y
+        return ok(1)
+    return ok(0)
+
+# Whether `a` and `b` are the same number: exactly where both are exact, by
+# value otherwise, so `1/2` equals `0.5` and a nan equals nothing.
+#
+# - `a`: one number.
+# - `b`: the other.
+function equals(a: scalar.Number, b: scalar.Number) -> bool
+    if joint_rank(a: a, b: b) == 3
+        return scalar.complex_of(a) == scalar.complex_of(b)
+    return compare(a: a, b: b).default(1) == 0
+
+test "add and multiply: exact fractions, floats, complex numbers"
+    third = divide(a: scalar.of_int(1), b: scalar.of_int(3)).must()
+    sixth = divide(a: scalar.of_int(1), b: scalar.of_int(6)).must()
+    half = add(a: third, b: sixth)
+    assert half == divide(a: scalar.of_int(1), b: scalar.of_int(2)).must()
+    assert multiply(a: half, b: scalar.of_int(2)) == scalar.of_int(1)
+    assert add(a: half, b: scalar.of_real(0.25)) == scalar.of_real(0.75)
+    i = scalar.of_parts(re: 0.0, im: 1.0)
+    assert multiply(a: i, b: i) == scalar.of_real(-1.0)
+
+test "divide and remainder: an exact zero refused, Python's sign of the remainder"
+    assert divide(a: scalar.of_int(1), b: scalar.of_int(0)).is_err()
+    assert divide(a: scalar.of_real(1.0), b: scalar.of_real(0.0)).must() == scalar.of_real(math.INF)
+    assert remainder(a: scalar.of_int(-7), b: scalar.of_int(3)).must() == scalar.of_int(2)
+    assert remainder(a: scalar.of_int(7), b: scalar.of_int(-3)).must() == scalar.of_int(-2)
+    seven_halves = divide(a: scalar.of_int(7), b: scalar.of_int(2)).must()
+    assert remainder(a: seven_halves, b: scalar.of_int(1)).must() == divide(a: scalar.of_int(1), b: scalar.of_int(2)).must()
+    assert remainder(a: scalar.of_int(1), b: scalar.of_int(0)).is_err()
+
+test "power: exact powers and roots, a negative exponent, the limit"
+    assert power(base: scalar.of_int(2), exponent: scalar.of_int(10)).must() == scalar.of_int(1024)
+    quarter = divide(a: scalar.of_int(1), b: scalar.of_int(4)).must()
+    assert power(base: scalar.of_int(2), exponent: scalar.of_int(-2)).must() == quarter
+    two_thirds = divide(a: scalar.of_int(2), b: scalar.of_int(3)).must()
+    assert power(base: scalar.of_int(8), exponent: two_thirds).must() == scalar.of_int(4)
+    assert power(base: scalar.of_int(-27), exponent: divide(a: scalar.of_int(1), b: scalar.of_int(3)).must()).must() == scalar.of_int(-3)
+    assert scalar.rank(power(base: scalar.of_int(2), exponent: divide(a: scalar.of_int(1), b: scalar.of_int(2)).must()).must()) == 2
+    assert power(base: scalar.of_int(0), exponent: scalar.of_int(-1)).is_err()
+    assert power(base: scalar.of_int(10), exponent: scalar.of_int(10_000_000)).is_err()
+    assert power(base: scalar.of_int(-1), exponent: scalar.of_integer(big.power(base: big.from_int(10), exponent: 30))).must() == scalar.of_int(1)
+
+test "power: a negative base under a fractional float exponent is complex"
+    w = power(base: scalar.of_int(-4), exponent: scalar.of_real(0.5)).must()
+    assert scalar.rank(w) == 3
+    sq = power(base: scalar.of_parts(re: 3.0, im: 4.0), exponent: scalar.of_int(2)).must()
+    assert sq == scalar.of_parts(re: -7.0, im: 24.0)
+
+test "exact_root: perfect powers found, others refused"
+    assert exact_root(big.from_int(1_000_000), k: 3).must() == big.from_int(100)
+    assert exact_root(big.from_int(1_000_001), k: 3).is_err()
+    assert exact_root(big.power(base: big.from_int(7), exponent: 40), k: 8).must() == big.power(base: big.from_int(7), exponent: 5)
+
+test "compare and equals: across kinds, complex and nan refused"
+    assert compare(a: scalar.of_int(1), b: scalar.of_real(1.5)).must() == -1
+    assert equals(a: divide(a: scalar.of_int(1), b: scalar.of_int(2)).must(), b: scalar.of_real(0.5))
+    assert compare(a: scalar.of_parts(re: 1.0, im: 1.0), b: scalar.of_int(1)).is_err()
+    assert compare(a: scalar.of_real(math.NAN), b: scalar.of_int(1)).is_err()
+    assert !equals(a: scalar.of_real(math.NAN), b: scalar.of_real(math.NAN))

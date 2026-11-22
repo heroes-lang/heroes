@@ -1,0 +1,241 @@
+# What the demo tries that must fail, each tried from the client's side as
+# a replaying attacker, a tampering one or a careless operator would try
+# it, so the transcript shows the stand-ins refusing it as a real CA and a
+# real authority refuse it: a signed request sent twice, a payload changed
+# after it was signed, a DNS update signed with another secret and one not
+# signed at all, an order for a name whose CAA names another CA, an HTTP-01
+# answer holding a key authorization that is not the account's, and an
+# order for a name outside what the CA issues for. Each answers one line;
+# a refusal that does not come answers a line saying so, which the demo
+# counts as a failure.
+
+use <rebel>/acme
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+
+use challenges/rfc2136
+use challenges/tsig
+use challenges/webroot
+use config/settings
+use core/clock
+use issue/order
+use store/vault
+
+## Results
+
+# A probe's line, and whether the refusal came.
+record Probed
+    # What a person reads.
+    line: str
+    # Whether what must be refused was.
+    held: bool
+
+## JWS
+
+# A request signed and sent twice: the first answered, the second refused
+# `badNonce`, its nonce used up.
+#
+# - `transport`: how requests reach the CA.
+# - `directory`: the CA's directory.
+# - `key`: the account's key.
+# - `account_url`: the account's URL, the request's target and `kid`.
+function replayed(transport: http.Client, directory: acme.Directory, key: jose.Key, account_url: str) -> Probed
+    match signed_request(transport, directory: directory, key: key, account_url: account_url, payload: [])
+        .err e => return Probed(line: "a request sent twice: not tried, " + e.msg, held: false)
+        .ok body =>
+            first = posted(transport, url: account_url, body: body)
+            second = posted(transport, url: account_url, body: body)
+            held = first.status == 200 && second.kind == "badNonce"
+            return Probed(
+                line: f"the same signed request sent twice: answered {first.status}, then refused {second.status} {second.kind}",
+                held: held
+            )
+
+# A request whose payload is changed after it was signed: refused
+# `malformed`, its signature not holding.
+#
+# - `transport`: how requests reach the CA.
+# - `directory`: the CA's directory.
+# - `key`: the account's key.
+# - `account_url`: the account's URL.
+function tampered(transport: http.Client, directory: acme.Directory, key: jose.Key, account_url: str) -> Probed
+    meant = bytes.from_text("{\"contact\":[\"mailto:ops@certs.test\"]}")
+    changed = bytes.from_text("{\"contact\":[\"mailto:attacker@certs.test\"]}")
+
+    match signed_request(transport, directory: directory, key: key, account_url: account_url, payload: meant)
+        .err e => return Probed(line: "a payload changed after signing: not tried, " + e.msg, held: false)
+        .ok body =>
+            members = json.members_of(json.parse(body).default(.null_value)).default({})
+            swapped @= members
+            swapped["payload"] @ .text(v: bytes.format_base64_url_unpadded(changed))
+            sent = json.format(.object(members: swapped)).default(body)
+            answer = posted(transport, url: account_url, body: sent)
+            return Probed(
+                line: f"a request whose payload was changed after signing: refused {answer.status} {answer.kind}",
+                held: answer.kind == "malformed"
+            )
+
+# A POST-as-GET or a POST of `payload` to `account_url`, signed by `key`
+# with a nonce fetched for it, as the flattened JWS RFC 8555 § 6.2 asks.
+#
+# - `transport`: how requests reach the CA.
+# - `directory`: the CA's directory.
+# - `key`: the account's key.
+# - `account_url`: the target and `kid`.
+# - `payload`: the payload; none for a POST-as-GET.
+#
+# Fails as `http.send` fails on the nonce, and as `jose.sign_flattened`
+# fails.
+function signed_request(transport: http.Client, directory: acme.Directory, key: jose.Key, account_url: str, payload: [u8]) -> str?
+    head = http.send(c: transport, r: http.request(method: http.METHOD_HEAD, target: directory.new_nonce)?)?
+    nonce = http.value_of(head.headers, name: "Replay-Nonce")?
+    protected: {str: json.Value} = {
+        "nonce": .text(v: nonce)
+        "url": .text(v: account_url)
+        "kid": .text(v: account_url)
+    }
+    return jose.sign_flattened(
+        payload: payload,
+        signer: jose.Signer(key: key, algorithm: .es256, protected: protected, unprotected: {})
+    )
+
+# What the CA answered a raw request.
+record Answered
+    # The status, 0 where nothing was answered.
+    status: i64
+    # The problem's short type, "" where none.
+    kind: str
+
+# `body` posted to `url` as `application/jose+json`.
+#
+# - `transport`: how requests reach the CA.
+# - `url`: the target.
+# - `body`: the JWS.
+function posted(transport: http.Client, url: str, body: str) -> Answered
+    match http.request(method: http.METHOD_POST, target: url)
+        .err _ => return Answered(status: 0, kind: "")
+        .ok r =>
+            match http.send(c: transport, r: http.with_body(r, content_type: "application/jose+json", body: bytes.from_text(body)))
+                .err _       => return Answered(status: 0, kind: "")
+                .ok response => return Answered(status: response.status, kind: problem_kind(response))
+
+# The short type of the problem `response` holds, "" for none.
+#
+# - `response`: the CA's answer.
+function problem_kind(response: http.Response) -> str
+    match http.json_of(response)
+        .err _ => return ""
+        .ok v =>
+            full = json.text_of(json.member(v, key: "type").default(.null_value)).default("")
+            return strings.trim_prefix(s: full, prefix: "urn:ietf:params:acme:error:")
+
+## DNS
+
+# An update signed with a secret the authority does not hold, and one not
+# signed at all: refused NOTAUTH and REFUSED.
+#
+# - `s`: the settings, `[dns01]` naming the zone and the key's name.
+# - `server`: the authority's address and port.
+function forged_updates(s: settings.Settings, server: net.Address) -> [Probed]
+    out: [Probed] @= []
+    owner = "_acme-challenge." + s.dns01.zone + "."
+    stranger = tsig.Key(name: s.dns01.tsig_key + ".", secret: os.random_bytes(32).default([1]))
+    forged = rfc2136.Target(server: server, zone: s.dns01.zone, key: ok(stranger))
+
+    match rfc2136.publish(forged, name: owner, value: "forged", ttl: 60)
+        .ok _  => out @ out.push(Probed(line: "an update signed with another secret: APPLIED", held: false))
+        .err e => out @ out.push(
+            Probed(line: "an update signed with a secret the authority does not hold: refused, " + e.msg, held: strings.contains(s: e.msg, substr: "NOTAUTH"))
+        )
+
+    unsigned = rfc2136.Target(server: server, zone: s.dns01.zone, key: fail(code: "not_found", msg: "unsigned"))
+
+    match rfc2136.publish(unsigned, name: owner, value: "forged", ttl: 60)
+        .ok _  => out @ out.push(Probed(line: "an update with no signature: APPLIED", held: false))
+        .err e => out @ out.push(
+            Probed(line: "an update with no signature: refused, " + e.msg, held: strings.contains(s: e.msg, substr: "REFUSED"))
+        )
+
+    return out
+
+## Orders the CA must refuse
+
+# An order for `name`, whose CAA records name another CA: its HTTP-01
+# answer is right, and the CA refuses it all the same.
+#
+# - `client`: the client with an account.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `c`: the clock.
+# - `name`: the name.
+function forbidden_by_caa(@client: acme.Client, s: settings.Settings, store: vault.Store, c: clock.Clock, name: str) -> Probed
+    l = settings.Lineage(name: "probe-caa", domains: [name], challenge: settings.HTTP_01)
+
+    match order.obtain(@client, s: s, store: store, lineage: l, c: c)
+        .ok _ => return Probed(line: f"{name}, whose CAA names another CA: ISSUED", held: false)
+        .err e => return Probed(
+            line: f"{name}, whose CAA names another CA: refused, {e.msg}",
+            held: strings.contains(s: e.msg, substr: "the CAA records of")
+        )
+
+# An HTTP-01 answer holding a key authorization that is not this account's:
+# the CA fetches it and refuses the authorization.
+#
+# - `client`: the client with an account.
+# - `s`: the settings.
+# - `name`: a name the CA issues for.
+function wrong_answer(@client: acme.Client, s: settings.Settings, name: str) -> Probed
+    match wrong_answer_tried(@client, s: s, name: name)
+        .ok _ => return Probed(line: f"{name}, answered with another account's key authorization: PROVED", held: false)
+        .err e => return Probed(
+            line: f"{name}, answered with another account's key authorization: refused, {e.msg}",
+            held: strings.contains(s: e.msg, substr: "is not this account's key authorization")
+        )
+
+# `wrong_answer`'s attempt: an order, its HTTP-01 answer written with a
+# thumbprint not the account's, the CA asked to check it, the answer taken
+# back.
+#
+# - `client`: the client.
+# - `s`: the settings.
+# - `name`: the name.
+#
+# Fails as `acme.wait_authorization` fails, which is what the probe wants.
+function wrong_answer_tried(@client: acme.Client, s: settings.Settings, name: str) -> ()?
+    placed = acme.new_order(@client, request: order.order_request([name]))?
+    a = acme.fetch_authorization(@client, url: placed.authorizations[0])?
+    c = acme.challenge_of(a, kind: settings.HTTP_01)?
+    webroot.put(webroot: s.http01.webroot, token: c.token, body: c.token + "." + bytes.format_base64_url_unpadded(bytes.from_text("another account's key")))?
+    _ = acme.accept_challenge(@client, challenge: c)?
+    waited = acme.wait_authorization(@client, url: a.url, timeout: time.seconds(30)?)
+    webroot.take_back(webroot: s.http01.webroot, token: c.token)?
+    _ = waited?
+    return ok()
+
+# An order for a name the CA does not issue for: refused at once,
+# `rejectedIdentifier`.
+#
+# - `client`: the client with an account.
+# - `name`: the name.
+function outside(@client: acme.Client, name: str) -> Probed
+    match acme.new_order(@client, request: order.order_request([name]))
+        .ok _ => return Probed(line: f"an order for {name}: PLACED", held: false)
+        .err e => return Probed(
+            line: f"an order for {name}: refused, {e.msg}",
+            held: strings.contains(s: e.msg, substr: "rejectedIdentifier")
+        )
+
+test "problem_kind: the type's last part, and nothing for a body that is no problem"
+    with_problem = http.respond(
+        400,
+        content_type: "application/problem+json",
+        body: bytes.from_text("{\"type\":\"urn:ietf:params:acme:error:badNonce\"}")
+    )
+    assert problem_kind(with_problem) == "badNonce"
+    assert problem_kind(http.respond_text(200, text: "ok")) == ""

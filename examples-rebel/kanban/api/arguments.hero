@@ -1,0 +1,46 @@
+# What a call of the page names, read from its JSON arguments: a text or a
+# whole number under a key, each refused as `invalid` with the key named
+# where it is missing or of another kind, so a page that sends a wrong call
+# is told which part was wrong and the store never sees it.
+
+use <rebel>/json
+
+# The text under `key` in `given`. Fails `invalid` where it is missing or
+# no text.
+#
+# - `given`: the call's arguments, an object.
+# - `key`: the member read.
+function text(given: json.Value, key: str) -> str?
+    match json.member(given, key: key)
+        .ok v =>
+            match json.text_of(v)
+                .ok t => return ok(t)
+                .err _ => return fail(
+                    code: "invalid",
+                    msg: f"the call's `{key}` is a {json.kind_of(v)}, where a text is asked"
+                )
+        .err _ => return fail(code: "invalid", msg: f"the call names no `{key}`")
+
+# The whole number under `key` in `given`. Fails `invalid` where it is
+# missing or no whole number.
+#
+# - `given`: the call's arguments, an object.
+# - `key`: the member read.
+function whole(given: json.Value, key: str) -> i64?
+    match json.member(given, key: key)
+        .ok v =>
+            match json.int_of(v)
+                .ok n  => return ok(n)
+                .err _ => return fail(code: "invalid", msg: f"the call's `{key}` is no whole number")
+        .err _ => return fail(code: "invalid", msg: f"the call names no `{key}`")
+
+## Tests
+
+test "text and whole: present, missing, and of another kind"
+    given = json.parse("{\"title\":\"x\",\"position\":2,\"n\":1.5}").must()
+    assert text(given, key: "title").must() == "x"
+    assert whole(given, key: "position").must() == 2
+    assert text(given, key: "body").is_err()
+    assert text(given, key: "position").is_err()
+    assert whole(given, key: "n").is_err()
+    assert text(.null_value, key: "title").is_err()

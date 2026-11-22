@@ -1,0 +1,250 @@
+# A notebook file: cells of the lab's language, each opening with a header
+# line, `%% name` or `%% name [flags]`, and running to the next header.
+# Before the first cell only comments, blank lines and the notebook's seed,
+# `%seed 42`, may stand. A cell's flags are `bench`, which times the cell
+# after it runs, and `quiet`, which shows the values of its expressions but
+# not of its assignments:
+#
+#     # Each cell names itself; the order of the file does not matter.
+#     %seed 7
+#
+#     %% params
+#     n = 200
+#
+#     %% sample [bench]
+#     xs = rnorm(n, 10, 2)
+#
+# The headers and the seed are read with regular expressions (`regex`), the
+# cells' text by `lang/parser`. A notebook that breaks these rules is refused
+# whole, naming the line, since a cell taken for another would run what its
+# author did not write.
+
+use <rebel>/regex
+use <rebel>/strings
+
+# The code of a notebook that is not of this form.
+constant INVALID: str
+    "invalid"
+
+# A cell's header: `%%`, the name, and the flags in brackets.
+constant HEADER: str
+    "^%%[ \\t]+(?P<name>[A-Za-z_][A-Za-z0-9_]*)[ \\t]*(\\[(?P<flags>[a-z, ]*)\\])?[ \\t]*$"
+
+# The notebook's seed: `%seed` and a whole number.
+constant SEED: str
+    "^%seed[ \\t]+(?P<seed>[0-9]{1,19})[ \\t]*$"
+
+# The seed of a notebook that names none.
+constant DEFAULT_SEED: u64
+    1
+
+# One cell.
+record Cell
+    # Its name, unique in the notebook: its plots' files and its random
+    # generator are named after it.
+    name: str
+    # Its flags, `bench` or `quiet`.
+    flags: [str]
+    # Its text, the lines after the header up to the next.
+    source: str
+    # The line of the file its text begins on, from 1.
+    first_line: i64
+
+# A notebook: its seed and its cells, in the file's order.
+record Notebook
+    # The seed of every cell's generator.
+    seed: u64
+    # The cells.
+    cells: [Cell]
+
+# Whether `c` has the flag `flag`.
+#
+# - `c`: the cell.
+# - `flag`: `bench` or `quiet`.
+function has_flag(c: Cell, flag: str) -> bool
+    for f in c.flags
+        if f == flag
+            return true
+
+    return false
+
+# The flags a header's brackets list.
+#
+# - `listed`: the text between the brackets.
+# - `line`: the header's line, for the message.
+#
+# Fails `invalid` naming a flag that is neither `bench` nor `quiet`.
+function flags_of(listed: str, line: i64) -> [str]?
+    out: [str] @= []
+
+    for word in strings.split(s: listed, sep: ",")
+        flag = strings.trim(word)
+
+        if flag != ""
+            if flag != "bench" && flag != "quiet"
+                return fail(
+                    code: INVALID,
+                    msg: f"line {line}: `{flag}` is no flag of a cell; the flags are `bench` and `quiet`"
+                )
+            out @ out.push(flag)
+
+    return ok(out)
+
+# Whether `line` holds nothing but a comment or white space.
+#
+# - `line`: the line.
+function is_blank(line: str) -> bool
+    t = strings.trim(line)
+    return t == "" || strings.has_prefix(s: t, prefix: "#")
+
+# The notebook `text` holds.
+#
+# - `text`: the file's text.
+#
+# Fails `invalid`, naming the line, where a line before the first cell is
+# not a comment or the seed, a line opening `%%` is no header, a flag is
+# unknown, or two cells share a name.
+function parse(text: str) -> Notebook?
+    header = regex.compile(HEADER).must()
+    seed_line = regex.compile(SEED).must()
+    seed: u64 @= DEFAULT_SEED
+    found: [Cell] @= []
+    open: Cell @= Cell(name: "", flags: [], source: "", first_line: 0)
+    body: [str] @= []
+    number @= 0
+
+    for line in strings.lines(text)
+        number @ number + 1
+
+        match regex.full_match(line, re: header)
+            .ok m =>
+                if open.name != ""
+                    found @ found.push(closed(open, body: body))
+                name = regex.group_named(m, name: "name").must()
+
+                for c in found
+                    if c.name == name
+                        return fail(
+                            code: INVALID,
+                            msg: f"line {number}: a second cell named `{name}`; each cell's name is its own"
+                        )
+
+                flags = flags_of(regex.group_named(m, name: "flags").default(""), line: number)?
+                open @ Cell(name: name, flags: flags, source: "", first_line: number + 1)
+                body @ []
+            .err _ =>
+                if strings.has_prefix(s: line, prefix: "%%")
+                    return fail(
+                        code: INVALID,
+                        msg: f"line {number}: a cell's header is `%% name` or `%% name [flags]`, a name of letters, digits and `_`"
+                    )
+
+                if open.name != ""
+                    body @ body.push(line)
+                else
+                    match regex.full_match(line, re: seed_line)
+                        .ok m => seed @ numbers_seed(regex.group_named(m, name: "seed").must(), line: number)?
+                        .err _ =>
+                            if !is_blank(line)
+                                return fail(
+                                    code: INVALID,
+                                    msg: f"line {number}: only comments and `%seed` stand before the first cell's `%% name`"
+                                )
+
+    if open.name != ""
+        found @ found.push(closed(open, body: body))
+    return ok(Notebook(seed: seed, cells: found))
+
+# The seed `digits` spell.
+#
+# - `digits`: one to nineteen decimal digits.
+# - `line`: the line, for the message.
+#
+# Fails `invalid` where they pass a `u64`.
+function numbers_seed(digits: str, line: i64) -> u64?
+    total: u64 @= 0
+
+    for c in digits.chars()
+        d = to_u64(c[0] - '0').must()
+
+        if total > (18_446_744_073_709_551_615 - d) / 10
+            return fail(code: INVALID, msg: f"line {line}: the seed is past 18446744073709551615")
+        total @ total * 10 + d
+
+    return ok(total)
+
+# The cell `open` with the lines `body` as its text, the blank lines at its
+# end left out.
+#
+# - `open`: the cell read so far.
+# - `body`: its lines.
+function closed(open: Cell, body: [str]) -> Cell
+    last @= body.len()
+
+    while last > 0 && strings.trim(body[last - 1]) == ""
+        last @ last - 1
+
+    return Cell(
+        name: open.name,
+        flags: open.flags,
+        source: body.slice(from: 0, to: last).join("\n"),
+        first_line: open.first_line
+    )
+
+# The cell named `name`.
+#
+# - `nb`: the notebook.
+# - `name`: the cell's name.
+#
+# Fails `not_found` where no cell has it.
+function cell_named(nb: Notebook, name: str) -> Cell?
+    for c in nb.cells
+        if c.name == name
+            return ok(c)
+
+    return fail(code: "not_found", msg: f"no cell named `{name}`")
+
+# `nb` with the text of the cell `name` changed to `source`: an edit, as a
+# person makes one in an editor and saves.
+#
+# - `nb`: the notebook.
+# - `name`: the cell edited.
+# - `source`: its new text.
+#
+# Fails `not_found` where no cell has the name.
+function with_source(nb: Notebook, name: str, source: str) -> Notebook?
+    _ = cell_named(nb, name: name)?
+    out: [Cell] @= []
+
+    for c in nb.cells
+        if c.name == name
+            out @ out.push(Cell(name: c.name, flags: c.flags, source: source, first_line: c.first_line))
+        else
+            out @ out.push(c)
+
+    return ok(Notebook(seed: nb.seed, cells: out))
+
+test "parse: the seed, two cells, their flags, text and first lines"
+    nb = parse("# a notebook\n%seed 42\n\n%% params\nn = 3\n\n%% draw [bench, quiet]\nx = n\n").must()
+    assert nb.seed == 42
+    assert nb.cells.len() == 2
+    assert nb.cells[0].name == "params" && nb.cells[0].source == "n = 3" && nb.cells[0].first_line == 5
+    assert has_flag(nb.cells[1], flag: "bench") && has_flag(nb.cells[1], flag: "quiet")
+
+test "parse: the refusals, each naming its line"
+    match parse("x = 1\n%% a\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 1: only comments and `%seed` stand before the first cell's `%% name`"
+
+    assert parse("%% a\n%% a\n").is_err()
+    assert parse("%% a [fast]\n").is_err()
+    assert parse("%%a b c\n").is_err()
+    assert parse("%seed 99999999999999999999\n").is_err()
+    assert parse("").must().cells.len() == 0
+
+test "with_source: one cell's text changed, an unknown cell refused"
+    nb = parse("%% a\nx = 1\n%% b\ny = 2\n").must()
+    changed = with_source(nb, name: "a", source: "x = 5").must()
+    assert changed.cells[0].source == "x = 5"
+    assert changed.cells[1] == nb.cells[1]
+    assert with_source(nb, name: "c", source: "").is_err()

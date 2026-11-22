@@ -1,0 +1,201 @@
+# The demo, `iothub demo`: a whole session of the hub on this machine,
+# printed as a transcript that is the same on every run. It starts the
+# three brokers' stand-ins, writes a hub's folder (settings, a registry of
+# four devices whose identities a seeded generator minted, a `.proto` file)
+# under `build/`, starts the hub on a thread as `iothub serve` runs it, and
+# connects the devices and the services downstream. Each device then speaks
+# in its protocol and encoding; the AMQP broker restarts in the middle; the
+# hub's metrics are scraped; and everything is stopped and the folder
+# removed. Nothing printed is a port, a path, a random value or a time of
+# the machine's clock.
+
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/net
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/threads
+
+use config/registry
+use demo/devices
+use demo/observers
+use demo/scenes
+use demo/world
+use feed/view
+use hub/loop
+use routes/rules
+use standins/told
+
+# Runs the demo and prints its transcript; ends the program with 1 where a
+# step fails, after stopping what it started.
+function run()
+    folder = match world.make_folder()
+        .ok f => f
+        .err e =>
+            print(f"demo failed: {e.msg}")
+            exit(code: 1)
+            return
+
+    ear @= match told.open_ear()
+        .ok got => got
+        .err e =>
+            print(f"demo failed: {e.msg}")
+            exit(code: 1)
+            return
+
+    w @= world.World(
+        folder: folder,
+        started: [],
+        mqtt_port: 0,
+        amqp_port: 0,
+        nats_port: 0,
+        hub_port: 0,
+        station: world.Station(ends: [], port: "", on_pty: false, why_not: "", listeners: [])
+    )
+    outcome = play(@w, ear: ear)
+
+    match outcome
+        .ok _  => _ = 0
+        .err e => print(f"demo failed: {e.msg}")
+
+    print("")
+    print("== the stop ==")
+
+    # The program's stop ends every wait of every thread: the hub tells its
+    # dashboards it is going away and closes its links, and each stand-in
+    # closes what it holds; each answers what it carried.
+    os.ask_stop()
+    i @= w.started.len() - 1
+
+    while i >= 0
+        print(threads.wait_text(@w.started[i]))
+        i @ i - 1
+
+    world.close_station(@w.station)
+    _ = net.close_udp(@ear).is_err()
+    removed = !fs.remove_all(folder).is_err()
+    print(f"the demo's folder removed: {removed}")
+
+    if outcome.is_err()
+        exit(code: 1)
+
+# The session, from the brokers' start to the clients' leaving.
+#
+# - `w`: the world, which gains every thread started.
+# - `ear`: the socket the threads tell their ports to.
+function play(@w: world.World, ear: net.UdpSocket lent) -> ()?
+    print("== the brokers ==")
+    world.start_brokers(@w, ear: ear)?
+    print("the MQTT, AMQP and NATS stand-ins listen on the loopback")
+    print(f"the AMQP stand-in will restart at the third publish to the exchange alerts")
+    w.station @ world.open_station()?
+    devices_registered = world.demo_registry()?
+    print("")
+    print("== the registry, identities minted by a seeded generator ==")
+
+    for d in devices_registered.devices
+        print(world.device_line(d))
+
+    if w.station.on_pty
+        print(f"wx-1 speaks on a pseudo-terminal at {world.STATION_BAUD} baud, its other side the hub's port bench")
+    else
+        print(
+            f"wx-1 speaks through a serial device server on the loopback, the hub's port bench: no pseudo-terminal on this system ({w.station.why_not})"
+        )
+
+    config = world.write_hub_folder(w, devices: devices_registered)?
+    world.start_hub(@w, ear: ear, config: config)?
+    print("")
+    print("== the hub ==")
+    print(
+        "the hub serves its feed and metrics on the loopback, linked to MQTT, AMQP and NATS, its gateway reading bench"
+    )
+    describe_rules(config)?
+    o @= observers.connect_observers(w)?
+    print("the historian subscribes to iothub.readings.> on NATS")
+    print("the pager reads its durable queue oncall.alerts on AMQP, bound to alerts by coldchain.# and battery.#")
+    print("the panel subscribes to plant/alarms/# and weather/# on MQTT")
+    print("the dashboard opens the hub's feed, a WebSocket")
+    f @= devices.connect_fleet(w)?
+    outcome = scenes_of(w, f: @f, o: @o)
+    print("")
+    print("== the dashboard's board ==")
+
+    for row in view.rows(o.board)
+        print(row)
+
+    print(f"events seen: {o.board.events}")
+
+    scraped = if outcome.is_err()
+        outcome
+    else
+        scrape(w)
+
+    devices.close_fleet(@f)
+    observers.close_observers(@o)
+    return scraped
+
+# The scenes, in order.
+#
+# - `w`: the world.
+# - `f`: the devices.
+# - `o`: the observers.
+function scenes_of(w: world.World lent, @f: devices.Fleet, @o: observers.Observers) -> ()?
+    scenes.fridge(@f, o: @o)?
+    scenes.press(@f, o: @o)?
+    scenes.tracker(@f, o: @o)?
+    scenes.station(w, o: @o)?
+    scenes.mistakes(@f, o: @o)?
+    scenes.restart(w, f: @f, o: @o)?
+    return ok()
+
+# Prints the rules the hub was given, as its settings read them.
+#
+# - `config`: the settings file's path.
+#
+# Fails as `loop.settings_at` fails.
+function describe_rules(config: str) -> ()?
+    s = loop.settings_at(config)?
+
+    for r in s.routes
+        condition = match r.condition
+            .ok c  => f" when {c.quantity} {rules.operator_of(c.comparison)} {reading_number(c.threshold)}"
+            .err _ => ""
+
+        print(f"rule {r.name}: {rules.place_text(r.source)}{condition} to {rules.place_text(r.destination)}")
+
+    match s.republish
+        .ok p  => print(f"every reading is re-published as JSON to {rules.place_text(p)}")
+        .err _ => _ = 0
+
+    return ok()
+
+# A threshold as a rule writes it.
+#
+# - `x`: the threshold.
+function reading_number(x: f64) -> str
+    whole = to_i64(x).default(0)
+
+    if to_f64(whole) == x
+        return to_str(whole)
+    return to_str(x)
+
+# Scrapes the hub's metrics and its registry, and prints what they say.
+#
+# - `w`: the world.
+#
+# Fails as `http.get` fails, or where the hub answers other than 200.
+function scrape(w: world.World lent) -> ()?
+    print("")
+    print("== the hub's metrics, scraped from /metrics ==")
+    client = http.default_client()
+    answer = http.require_success(http.get(client, target: f"http://127.0.0.1:{w.hub_port}/metrics")?)?
+
+    for line in strings.lines(http.text_of(answer)?)
+        if strings.has_prefix(s: line, prefix: "iothub_") && !strings.contains(s: line, substr: "_bucket{")
+            print(line)
+
+    listed = http.require_success(http.get(client, target: f"http://127.0.0.1:{w.hub_port}/devices")?)?
+    served = registry.parse(http.text_of(listed)?)?
+    print(f"/devices serves the registry of {served.devices.len()} devices")
+    return ok()

@@ -1,0 +1,8 @@
+:root { color-scheme: light dark; font: 14px/1.5 -apple-system, "Segoe UI", system-ui, "Cantarell", sans-serif; }
+body { max-width: 760px; margin: 24px auto; padding: 0 16px; }
+h1 { margin-bottom: 0; }
+.when, .meta, .count, .none { color: #6b6f78; }
+section { border-top: 1px solid #d9d5cc; margin-top: 16px; }
+article { margin: 8px 0 8px 12px; }
+article h3 { margin: 0; font-size: 15px; }
+@media print { .back { display: none; } }

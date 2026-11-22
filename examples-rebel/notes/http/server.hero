@@ -1,10 +1,10 @@
 # The server's loop: one thread waits with `poll` on the listener, every
 # HTTP connection, every WebSocket and a timer, and serves whichever is
 # ready, so a WebSocket held open never keeps a page from being answered.
-# A request is read whole once its connection is readable (`http` reads a
-# request whole, so a client that sends half a request holds the thread
-# until the connection's deadline ends it), handled by the pipeline, and its
-# answer written; a connection kept alive goes back to waiting.
+# A request is read as its bytes come, by `http.read_ready`, so a client
+# that sends half a request holds no other client back; once whole it is
+# handled by the pipeline and its answer written, and a connection kept
+# alive goes back to waiting.
 #
 # The loop ends at the stop: a signal after `os.catch_stop` (SIGTERM, Ctrl-C)
 # fails the wait `stopped`, and the API's `stop_server` sets the state's
@@ -39,8 +39,9 @@ constant MOST_ENTRIES: i64
 
 # One HTTP connection waiting for its next request.
 record Plain
-    # The buffered reader over the connection's stream.
-    reader: io.Reader
+    # What is read of its requests so far, the reader over the connection's
+    # stream within.
+    requests: http.RequestReader
     # The peer's address, `host:port`, which a request's `remote` takes.
     remote: str
 
@@ -106,7 +107,7 @@ function run(@app: state.App, l: net.Listener) -> Served?
     idle: i64 @= 0
 
     for key in keys(links)
-        reader @= links[key].must().reader
+        reader @= links[key].must().requests.reader
         _ = poll.remove(set, key: key).is_err()
         _ = io.close(@reader.stream).is_err()
         idle @ idle + 1
@@ -144,16 +145,19 @@ function accept_one(app: state.App lent, set: poll.Set, @links: {i64: Plain}, l:
 
     match poll.add_conn(set, c: conn, interest: .read)
         .ok key =>
-            links[key] @ Plain(reader: io.reader(conn.stream), remote: net.format_address(conn.remote))
+            links[key] @ Plain(
+                requests: http.request_reader(io.reader(conn.stream)),
+                remote: net.format_address(conn.remote)
+            )
             return true
         .err _ =>
             stream @= conn.stream
             _ = io.close(@stream).is_err()
             return false
 
-# Serves the requests the connection `key` holds now: each read, handled and
-# answered, until its reader holds no more bytes, the connection closes, or
-# it becomes a WebSocket.
+# Serves the requests the connection `key` holds now: each read as its bytes
+# come, handled and answered, until no request is whole, the connection
+# closes, or it becomes a WebSocket.
 #
 # - `app`: the state.
 # - `set`: the poll set.
@@ -167,31 +171,31 @@ function serve_ready(@app: state.App, set: poll.Set, @links: {i64: Plain}, key: 
             _ = poll.remove(set, key: key).is_err()
             return
 
-    reader @= link.reader
+    requests @= link.requests
 
     while true
-        read = match http.next_request(@reader, limits: app_limits(app))
+        read = match http.read_ready(@requests, limits: app_limits(app))
             .ok got => got
             .err _ =>
-                close_link(set, @links, key: key, @reader)
+                close_link(set, @links, key: key, @requests.reader)
                 return
 
-        r: http.Request @= read
+        r: http.Request @= match read
+            .request got => got.request
+            .waiting     => break
+
         r.remote @ link.remote
 
         match pipeline.handle(@app, r: r)
             .upgrade u =>
-                upgrade(@app, set: set, @links, key: key, @reader, r: r, user_id: u.user_id, user: u.user)
+                upgrade(@app, set: set, @links, key: key, @requests.reader, r: r, user_id: u.user_id, user: u.user)
                 return
             .respond rs =>
-                if http.write_answer(reader.stream, r: r, response: rs.response).is_err() || r.closing || rs.response.closing
-                    close_link(set, @links, key: key, @reader)
+                if http.write_answer(requests.reader.stream, r: r, response: rs.response).is_err() || r.closing || rs.response.closing
+                    close_link(set, @links, key: key, @requests.reader)
                     return
 
-        if io.buffered(reader).len() == 0
-            break
-
-    links[key] @ Plain(reader: reader, remote: link.remote)
+    links[key] @ Plain(requests: requests, remote: link.remote)
 
 # The limits a request is read with: the usual ones, its body bounded by the
 # settings.

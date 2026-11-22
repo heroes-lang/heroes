@@ -1,0 +1,509 @@
+# The rules of a web view that the platform layer holds too (`hero_ui.h`,
+# THE WEB VIEW): which texts are an asset's path, a content type, a policy,
+# an origin and a page's path, which URL is of the app's own origin, which a
+# frame may go to, and which asset a request of the app's scheme asks. The
+# face checks every argument by them before the layer sees it, so a refusal
+# is told with its reason on both sides alike, and `response_of` and
+# `allows` answer on the headless side as the layer answers on the native
+# one. Each rule here is the layer's rule of the same name in
+# `runtime/platform/hero_ui.c`, and the tests below ask the same cases.
+
+use ui/hero_ui
+
+# The scheme of the app's own origin.
+constant SCHEME: str
+    "app"
+
+# The host of the app's own origin.
+constant HOST: str
+    "localhost"
+
+# Whether `c` may stand in a segment of an asset's path.
+function path_byte(c: u8) -> bool
+    return c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '.' || c == '_' || c == '~'
+
+# Whether `path` is an asset's path, `/` and segments joined by `/`, each
+# one or more of `path_byte`'s and never `.` or `..`; where `folder`, a
+# folder's path ending in `/` is one too.
+function path_ok(path: str, folder: bool) -> bool
+    count = path.len()
+
+    if count < 1 || count > hero_ui.HERO_UI_WEB_PATH_MOST || path[0] != '/'
+        return false
+
+    if count == 1
+        return folder
+    start @= 1
+
+    for at in range(from: 1, to: count + 1)
+        if at == count || path[at] == '/'
+            length = at - start
+
+            if length == 0
+                return folder && at == count
+            segment = path.slice(from: start, to: at)
+
+            if segment == "." || segment == ".."
+                return false
+            start @ at + 1
+            continue
+
+        if !path_byte(path[at])
+            return false
+
+    return true
+
+# Whether `c` belongs to a token of a content type (RFC 9110 § 5.6.2).
+function token_byte(c: u8) -> bool
+    if c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9'
+        return true
+    marks = "!#$%&'*+-.^_`|~"
+
+    for i in range(from: 0, to: marks.len())
+        if marks[i] == c
+            return true
+
+    return false
+
+# Whether `type` is a content type: a token, `/`, a token, then parameters
+# of printable ASCII, at most `HERO_UI_WEB_TYPE_MOST` bytes.
+function type_ok(type: str) -> bool
+    count = type.len()
+
+    if count < 3 || count > hero_ui.HERO_UI_WEB_TYPE_MOST
+        return false
+    at @= 0
+
+    while at < count && token_byte(type[at])
+        at @ at + 1
+
+    if at == 0 || at == count || type[at] != '/'
+        return false
+    slash = at
+    at @ at + 1
+
+    while at < count && token_byte(type[at])
+        at @ at + 1
+
+    if at == slash + 1
+        return false
+    return printable(type.slice(from: at, to: count))
+
+# Whether `text` is printable ASCII, a header's value no line feed can end.
+function printable(text: str) -> bool
+    for i in range(from: 0, to: text.len())
+        if text[i] < 0x20 || text[i] > 0x7e
+            return false
+
+    return true
+
+# Whether `policy` is a content security policy the layer sends: printable
+# ASCII, at most `HERO_UI_WEB_POLICY_MOST` bytes.
+function policy_ok(policy: str) -> bool
+    return policy.len() <= hero_ui.HERO_UI_WEB_POLICY_MOST && printable(policy)
+
+# `c` in lower case, for the ASCII letters.
+function lower(c: u8) -> u8
+    if c >= 'A' && c <= 'Z'
+        return c - 'A' + 'a'
+    return c
+
+# `text` in lower case, for the ASCII letters.
+function lowered(text: str) -> str
+    out: [u8] @= []
+
+    for i in range(from: 0, to: text.len())
+        out @ out.push(lower(text[i]))
+
+    return out.validated_bytes().must()
+
+# Whether `text` begins with `head`, its letters in any case; `head` is
+# lower case.
+function begins(text: str, head: str) -> bool
+    if text.len() < head.len()
+        return false
+    return lowered(text.slice(from: 0, to: head.len())) == head
+
+# An origin read from a URL: `scheme://host` and `:port` where it is not
+# the scheme's own, lower case; and whether the URL wrote the scheme's own
+# port out.
+record Origin
+    # The origin, as the layer compares it.
+    text: str
+    # Whether the URL named the scheme's own port.
+    port_written: bool
+
+# The origin of `url`, where it is an `http`, an `https` or the app's own
+# scheme's URL with a host of lower-case letters, digits, `-` and `.` and a
+# port from 1 to 65535, then its end, `/`, `?` or `#`. Fails `invalid`
+# otherwise.
+function origin_of(url: str) -> Origin?
+    scheme @= ""
+    own @= 0
+
+    if begins(text: url, head: "https://")
+        scheme @ "https"
+        own @ 443
+    else if begins(text: url, head: "http://")
+        scheme @ "http"
+        own @ 80
+    else if begins(text: url, head: SCHEME + "://")
+        scheme @ SCHEME
+    else
+        return fail(code: "invalid", msg: "no URL of http, https or the app's own scheme")
+    at @= scheme.len() + 3
+    host_start = at
+
+    while at < url.len() && url[at] != ':' && url[at] != '/' && url[at] != '?' && url[at] != '#'
+        c = lower(url[at])
+
+        if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '.')
+            return fail(code: "invalid", msg: f"the byte {c} stands in the host")
+        at @ at + 1
+
+    host_end = at
+
+    if host_end == host_start || url[host_start] == '.' || url[host_end - 1] == '.' || host_end - host_start > 253
+        return fail(code: "invalid", msg: "the host is empty, too long, or begins or ends with `.`")
+    port @= 0
+    written @= false
+
+    if at < url.len() && url[at] == ':'
+        at @ at + 1
+        digits_start = at
+
+        while at < url.len() && url[at] >= '0' && url[at] <= '9'
+            if at - digits_start == 5
+                return fail(code: "invalid", msg: "the port has more than five digits")
+            port @ port * 10 + to_i64(url[at] - '0').must()
+            at @ at + 1
+
+        digits = at - digits_start
+
+        if digits == 0 || port == 0 || port > 65535 || digits > 1 && url[digits_start] == '0'
+            return fail(code: "invalid", msg: "the port is no number from 1 to 65535 without a leading zero")
+
+        if port == own
+            written @ true
+            port @ 0
+
+    if at < url.len() && url[at] != '/' && url[at] != '?' && url[at] != '#'
+        return fail(code: "invalid", msg: "the host and the port are followed by something else than `/`, `?` or `#`")
+    text @= scheme + "://" + lowered(url.slice(from: host_start, to: host_end))
+
+    if port != 0
+        text @ text + ":" + port.to_str()
+    return ok(Origin(text: text, port_written: written))
+
+# Whether `url` is of the app's own origin, `app://localhost`.
+function is_ours(url: str) -> bool
+    match origin_of(url)
+        .ok o  => return !o.port_written && o.text == SCHEME + "://" + HOST
+        .err _ => return false
+
+# Whether `url` is `about:blank` or `about:srcdoc`, perhaps with a query or
+# a fragment: a frame's empty page, which takes the origin of the page that
+# made it.
+function is_empty_page(url: str) -> bool
+    for page in ["about:blank", "about:srcdoc"]
+        if begins(text: url, head: page) && (url.len() == page.len() || url[page.len()] == '?' || url[page.len()] == '#')
+            return true
+
+    return false
+
+# Whether a frame may go to `url` where `origins` are the origins the
+# program allowed: the app's own origin, an empty page, or an allowed one.
+function may_go(url: str, origins: [str]) -> bool
+    if is_ours(url) || is_empty_page(url)
+        return true
+
+    match origin_of(url)
+        .ok o =>
+            for allowed in origins
+                if allowed == o.text
+                    return true
+
+            return false
+        .err _ => return false
+
+# The normal form of `origin`, which `allow_origin` takes: an `http` or an
+# `https` origin with no path, written as `origin_of` writes it, and with no
+# port of the scheme's own. Fails `invalid` with the reason.
+function origin_ok(origin: str) -> str?
+    if origin.len() == 0 || origin.len() > hero_ui.HERO_UI_WEB_ORIGIN_MOST
+        return fail(
+            code: "invalid",
+            msg: f"an origin of {origin.len()} bytes; it takes 1 to {hero_ui.HERO_UI_WEB_ORIGIN_MOST}"
+        )
+
+    match origin_of(origin)
+        .ok o =>
+            if o.port_written
+                return fail(
+                    code: "invalid",
+                    msg: f"the origin \"{origin}\" names its scheme's own port; it is written without it"
+                )
+
+            if !begins(text: o.text, head: "http") || o.text.len() != origin.len()
+                return fail(
+                    code: "invalid",
+                    msg: f"\"{origin}\" is no origin: `https://` or `http://`, a host of a-z, 0-9, `-` and `.`, and a port where it is not the scheme's own, with no path"
+                )
+            return ok(o.text)
+        .err e => return fail(code: "invalid", msg: f"\"{origin}\" is no origin: {e.msg}")
+
+# The value of the hexadecimal digit `c`, or -1.
+function hex(c: u8) -> i64
+    if c >= '0' && c <= '9'
+        return to_i64(c - '0').must()
+    l = lower(c)
+
+    if l >= 'a' && l <= 'f'
+        return to_i64(l - 'a').must() + 10
+    return -1
+
+# Whether `segment` of a URL's path is `.`, written as the WHATWG URL
+# standard's single-dot segment is: `.` or `%2e` in any case.
+function single_dot(segment: str) -> bool
+    l = lowered(segment)
+    return l == "." || l == "%2e"
+
+# Whether `segment` is `..`, as the standard's double-dot segment is: `..`,
+# `.%2e`, `%2e.` or `%2e%2e` in any case.
+function double_dot(segment: str) -> bool
+    l = lowered(segment)
+    return l == ".." || l == ".%2e" || l == "%2e." || l == "%2e%2e"
+
+# The path `path` of a URL, `/` first, with its dot segments resolved as the
+# WHATWG URL standard's path state resolves them, so as every web view's own
+# parser has resolved them before a request is asked: a `.` dropped, a `..`
+# dropping the segment before it and none above the root, and a path that
+# ends in either ending in `/`. Read 2026-11-22 from the standard's "path
+# state", and measured the same day on WebKit, whose request for
+# `/%2e%2e/data.json` reached the scheme's handler as `/data.json`.
+function dots_resolved(path: str) -> str
+    kept: [str] @= []
+    start @= 1
+    ends_open @= false
+
+    for at in range(from: 1, to: path.len() + 1)
+        if at == path.len() || path[at] == '/'
+            segment = path.slice(from: start, to: at)
+            last = at == path.len()
+
+            if double_dot(segment)
+                if kept.len() > 0
+                    kept @ kept.slice(from: 0, to: kept.len() - 1)
+                ends_open @ last
+            else if single_dot(segment)
+                ends_open @ last
+            else
+                kept @ kept.push(segment)
+                ends_open @ false
+            start @ at + 1
+
+    joined = "/" + kept.join("/")
+
+    if ends_open && kept.len() > 0
+        return joined + "/"
+    return joined
+
+# The asset path a request of the app's scheme for `url` asks: its dot
+# segments resolved (`dots_resolved`), its escapes undone and a folder's
+# `index.html` added. Fails `not_found` where the URL is not of the app's
+# own origin, or its path is none an asset could have.
+function asked_path(url: str) -> str?
+    if !is_ours(url)
+        return fail(code: "not_found", msg: f"\"{url}\" is not of the app's own origin")
+    from = SCHEME.len() + 3 + HOST.len()
+    end @= from
+
+    while end < url.len() && url[end] != '?' && url[end] != '#'
+        end @ end + 1
+
+    raw = if end > from && url[from] == '/'
+        url.slice(from: from, to: end)
+    else
+        "/" + url.slice(from: from, to: end)
+
+    resolved = dots_resolved(raw)
+    at @= 0
+    out: [u8] @= []
+
+    while at < resolved.len()
+        c @= resolved[at]
+
+        if c == '%'
+            high = if at + 2 < resolved.len()
+                hex(resolved[at + 1])
+            else
+                -1
+
+            low = if at + 2 < resolved.len()
+                hex(resolved[at + 2])
+            else
+                -1
+
+            if high < 0 || low < 0
+                return fail(code: "not_found", msg: "a `%` is not followed by two hexadecimal digits")
+            c @ to_u8(high * 16 + low).must()
+            at @ at + 2
+
+        if out.len() == hero_ui.HERO_UI_WEB_PATH_MOST || c == 0
+            return fail(code: "not_found", msg: "the path is too long, or holds a zero byte")
+        out @ out.push(c)
+        at @ at + 1
+
+    if out[out.len() - 1] == '/'
+        index = "index.html"
+
+        for i in range(from: 0, to: index.len())
+            out @ out.push(index[i])
+
+    path = match out.validated_bytes()
+        .ok p  => p
+        .err _ => return fail(code: "not_found", msg: "the path is no UTF-8")
+
+    if !path_ok(path, folder: false)
+        return fail(code: "not_found", msg: f"\"{path}\" is no asset's path")
+    return ok(path)
+
+# Whether `path` is a page's path `navigate` takes: an asset's path or a
+# folder's ending in `/`, then perhaps a query `?...` and a fragment `#...`
+# of `path_byte`'s and `!$&'()*+,;=:@/?%#`, at most `HERO_UI_WEB_PATH_MOST`
+# bytes in all.
+function page_ok(path: str) -> bool
+    if path.len() > hero_ui.HERO_UI_WEB_PATH_MOST
+        return false
+    end @= 0
+
+    while end < path.len() && path[end] != '?' && path[end] != '#'
+        end @ end + 1
+
+    marks = "!$&'()*+,;=:@/?%#"
+
+    for at in range(from: end, to: path.len())
+        c = path[at]
+        found @= path_byte(c)
+
+        for i in range(from: 0, to: marks.len())
+            if marks[i] == c
+                found @ true
+
+        if !found
+            return false
+
+    return end > 0 && path_ok(path.slice(from: 0, to: end), folder: true)
+
+## Tests
+
+test "path_ok: a file, a folder, the root, empty and dotted segments, and bytes no path holds"
+    assert path_ok("/index.html", folder: false)
+    assert path_ok("/a/b-c_d~e.f", folder: false)
+    assert !path_ok("/", folder: false)
+    assert path_ok("/", folder: true)
+    assert path_ok("/a/", folder: true)
+    assert !path_ok("/a/", folder: false)
+    assert !path_ok("/a//b", folder: true)
+    assert !path_ok("/../x", folder: false)
+    assert !path_ok("/./x", folder: false)
+    assert path_ok("/.../x", folder: false)
+    assert !path_ok("a", folder: false)
+    assert !path_ok("/a b", folder: false)
+    assert !path_ok("/a%20b", folder: false)
+    assert !path_ok("/é", folder: false)
+    assert !path_ok("", folder: true)
+    assert !path_ok("/" + repeat("a", 1024), folder: false)
+    assert path_ok("/" + repeat("a", 1023), folder: false)
+
+test "type_ok: a type with parameters, a suffix, and the shapes refused"
+    assert type_ok("text/html; charset=utf-8")
+    assert type_ok("image/svg+xml")
+    assert !type_ok("text")
+    assert !type_ok("/html")
+    assert !type_ok("text/")
+    assert !type_ok("text/html\r\nX: y")
+    assert !type_ok("te xt/html")
+    assert !type_ok("a/" + repeat("b", 254))
+    assert type_ok("a/" + repeat("b", 253))
+
+test "origin_of: case, the scheme's own port, another port, and every shape refused"
+    o = origin_of("https://Example.COM/x?y").must()
+    assert o.text == "https://example.com"
+    assert !o.port_written
+    assert origin_of("https://example.com:443").must().port_written
+    assert origin_of("http://a.b:8080#f").must().text == "http://a.b:8080"
+
+    for bad in ["https://a.b:0", "https://a.b:65536", "https://a.b:080", "https://a.b:999999", "https://", "https://.a", "https://user@a", "file:///etc/hosts", "javascript:alert(1)", "https://a.b:1x"]
+        assert origin_of(bad).is_err()
+
+test "is_ours: the app's origin in any case, and a longer host, a port, another host, nothing"
+    assert is_ours("app://localhost")
+    assert is_ours("APP://LocalHost/x")
+    assert !is_ours("app://localhost.evil/x")
+    assert !is_ours("app://localhost:1/x")
+    assert !is_ours("app://other/x")
+    assert !is_ours("")
+
+test "may_go: the app's origin, the empty pages, an allowed origin, and the rest"
+    allowed = ["https://example.com"]
+    assert may_go("app://localhost/a", origins: allowed)
+    assert may_go("about:blank", origins: allowed)
+    assert may_go("about:srcdoc#x", origins: allowed)
+    assert !may_go("about:blankx", origins: allowed)
+    assert may_go("https://EXAMPLE.com/path", origins: allowed)
+    assert !may_go("https://example.com:8443/", origins: allowed)
+    assert !may_go("http://example.com/", origins: allowed)
+    assert !may_go("file:///etc/hosts", origins: allowed)
+    assert !may_go("data:text/html,x", origins: allowed)
+
+test "origin_ok: an origin, its own port, a path, a trailing slash, the app's scheme, too long"
+    assert origin_ok("https://example.com").must() == "https://example.com"
+    assert origin_ok("HTTP://Example.com:8080").must() == "http://example.com:8080"
+    assert origin_ok("https://example.com:443").is_err()
+    assert origin_ok("https://example.com/").is_err()
+    assert origin_ok("https://example.com/x").is_err()
+    assert origin_ok("app://localhost").is_err()
+    assert origin_ok("").is_err()
+    assert origin_ok("https://" + repeat("a", 248)).is_err()
+
+test "asked_path: the root, a query, an escape, dots escaped, a cut escape, a zero byte, another host, too long"
+    assert asked_path("app://localhost/").must() == "/index.html"
+    assert asked_path("app://localhost").must() == "/index.html"
+    assert asked_path("app://localhost?x=1").must() == "/index.html"
+    assert asked_path("app://localhost/a%2Ejs?q#f").must() == "/a.js"
+    assert asked_path("app://localhost/a%2Fb").must() == "/a/b"
+    assert asked_path("app://localhost/sub/").must() == "/sub/index.html"
+
+    for bad in ["app://localhost/a%2", "app://localhost/a%00", "app://elsewhere/a", "app://localhost/a b", "app://localhost/" + repeat("a", 2100), "app://localhost/%252e%252e/x"]
+        assert asked_path(bad).is_err()
+
+test "asked_path: dot segments resolved as the URL standard does, never above the root"
+    assert asked_path("app://localhost/%2e%2e/x").must() == "/x"
+    assert asked_path("app://localhost/a/../b").must() == "/b"
+    assert asked_path("app://localhost/a/%2E/b").must() == "/a/b"
+    assert asked_path("app://localhost/a/..").must() == "/index.html"
+    assert asked_path("app://localhost/a/.%2e/").must() == "/index.html"
+    assert asked_path("app://localhost/../../a.js").must() == "/a.js"
+    assert asked_path("app://localhost/a/.?q").must() == "/a/index.html"
+
+test "dots_resolved: the standard's single and double dots, in every spelling, at the end and inside"
+    assert dots_resolved("/") == "/"
+    assert dots_resolved("/a/b") == "/a/b"
+    assert dots_resolved("/a/./b") == "/a/b"
+    assert dots_resolved("/a/%2E%2e/b") == "/b"
+    assert dots_resolved("/a/b/..") == "/a/"
+    assert dots_resolved("/a/b/.") == "/a/b/"
+    assert dots_resolved("/..") == "/"
+    assert dots_resolved("/a/...") == "/a/..."
+    assert dots_resolved("/a//b") == "/a//b"
+
+test "page_ok: a page, a folder, a query and a fragment, and the shapes refused"
+    assert page_ok("/")
+    assert page_ok("/index.html?board=1#card-2")
+    assert page_ok("/boards/")
+    assert !page_ok("?x")
+    assert !page_ok("/a b")
+    assert !page_ok("/a?b c")
+    assert !page_ok("/../x")
+    assert !page_ok("index.html")

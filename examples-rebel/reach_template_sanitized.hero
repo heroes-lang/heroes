@@ -1,0 +1,13 @@
+# Reaches Rebel's `template/sanitized`, so that `heroes test` on this file runs
+# the package's own tests (spec § 12). It renders a note whose body is HTML a
+# visitor wrote, cleaned where the template places it, and prints the page.
+
+use <rebel>/html/sanitize
+use <rebel>/json
+use <rebel>/template
+use <rebel>/template/sanitized
+
+function main()
+    t = template.parse_html("<article>{{ clean .body }}</article>").must()
+    v = json.parse("{\"body\":\"<p onclick=\\\"steal()\\\">Hi</p><script>steal()</script>\"}").must()
+    print(sanitized.render(t, value: v, policy: sanitize.ugc_policy()).must())

@@ -1,0 +1,356 @@
+# A light scanner of Heroes source: enough of the language's tokens to find
+# the calls of a function and read their string literals, and no more.
+#
+# It knows what can hide a call or fake one: a `#` comment runs to the end
+# of its line, so `translate(` in a comment is no call; a string literal is
+# one line and its escapes are read (`\n`, `\t`, `\r`, `\\`, `\"` and
+# `\u{1b}`, spec § 2), so the id extracted is the text the program holds; an
+# `f"..."` literal is told apart, since its text is formatted before any
+# lookup; and a character literal such as `'"'` is skipped whole, so its
+# quote opens no string. Everything else is an identifier, a number or one
+# punctuation character, which is all a call needs.
+
+use <rebel>/unicode
+
+## Tokens
+
+# What a token is.
+variant Kind
+    # A name: `translate`, `i18n`, `id`.
+    ident
+    # A string literal, its escapes read.
+    text
+    # An `f"..."` literal, as written between its quotes.
+    formatted
+    # A character literal, as written.
+    character
+    # A number, as written.
+    number
+    # One punctuation character: `(`, `,`, `:`, `.`.
+    punct
+    # A comment, the text after its `#` and one space.
+    comment
+
+# One token of a source.
+record Token
+    # What it is.
+    kind: Kind
+    # Its text: a string literal's characters with its escapes read, a
+    # comment's words, or the token as written.
+    text: str
+    # The line it begins on, from 1.
+    line: i64
+    # Whether it is the first token on its line, so a comment that is
+    # stands alone above what follows it.
+    first_on_line: bool
+
+# What the scanner read, and where it gave up on a literal.
+record Scanned
+    # The tokens, in order.
+    tokens: [Token]
+    # A line and a reason for each literal that did not close or held an
+    # escape the language does not have.
+    problems: [Flaw]
+
+# A literal the scanner could not read whole.
+record Flaw
+    # The line, from 1.
+    line: i64
+    # What is wrong.
+    message: str
+
+# The tokens of `source`.
+#
+# - `source`: a Heroes module's text.
+#
+# A string that does not close by the end of its line is taken to that end,
+# and a flaw says so; nothing here fails, since extraction reads files it
+# did not write and goes on past one it cannot read.
+function scan(source: str) -> Scanned
+    tokens: [Token] @= []
+    flaws: [Flaw] @= []
+    at @= 0
+    line @= 1
+    line_start @= true
+
+    while at < source.len()
+        b = source[at]
+
+        if b == '\n'
+            line @ line + 1
+            line_start @ true
+            at @ at + 1
+        else if b == ' ' || b == '\t' || b == '\r'
+            at @ at + 1
+        else if b == '#'
+            end = line_end(source, from: at)
+            body = source.slice(from: at + 1, to: end)
+            tokens @ tokens.push(
+                Token(kind: .comment, text: without_one_space(body), line: line, first_on_line: line_start)
+            )
+            line_start @ false
+            at @ end
+        else if b == '"' || b == 'f' && at + 1 < source.len() && source[at + 1] == '"'
+            formatted = b == 'f'
+
+            open = if formatted
+                at + 1
+            else
+                at
+
+            read = literal_at(source, open: open)
+
+            if read.flaw != ""
+                flaws @ flaws.push(Flaw(line: line, message: read.flaw))
+
+            kind: Kind = if formatted
+                .formatted
+            else
+                .text
+
+            text = if formatted
+                source.slice(from: open + 1, to: read.raw_end)
+            else
+                read.text
+
+            tokens @ tokens.push(Token(kind: kind, text: text, line: line, first_on_line: line_start))
+            line_start @ false
+            at @ read.next
+        else if b == '\''
+            end = char_literal_end(source, open: at)
+            tokens @ tokens.push(
+                Token(kind: .character, text: source.slice(from: at, to: end), line: line, first_on_line: line_start)
+            )
+            line_start @ false
+            at @ end
+        else if is_name_start(b)
+            end = run_end(source, from: at, numeric: false)
+            tokens @ tokens.push(
+                Token(kind: .ident, text: source.slice(from: at, to: end), line: line, first_on_line: line_start)
+            )
+            line_start @ false
+            at @ end
+        else if b >= '0' && b <= '9'
+            end = run_end(source, from: at, numeric: true)
+            tokens @ tokens.push(
+                Token(kind: .number, text: source.slice(from: at, to: end), line: line, first_on_line: line_start)
+            )
+            line_start @ false
+            at @ end
+        else
+            size = unicode.len_at(source, index: at)
+            tokens @ tokens.push(
+                Token(kind: .punct, text: source.slice(from: at, to: at + size), line: line, first_on_line: line_start)
+            )
+            line_start @ false
+            at @ at + size
+
+    return Scanned(tokens: tokens, problems: flaws)
+
+## Literals
+
+# A string literal read.
+record Literal
+    # Its characters, its escapes read.
+    text: str
+    # The index of its closing quote, or of the end of its line where it has
+    # none.
+    raw_end: i64
+    # The index after it.
+    next: i64
+    # What is wrong with it, empty where nothing is.
+    flaw: str
+
+# The string literal whose opening quote is at `open`.
+#
+# - `source`: the text.
+# - `open`: the index of the opening `"`.
+function literal_at(source: str, open: i64) -> Literal
+    pieces: [str] @= []
+    at @= open + 1
+    flaw @= ""
+
+    while at < source.len() && source[at] != '"' && source[at] != '\n'
+        if source[at] == '\\' && at + 1 < source.len()
+            read = escape_at(source, at: at)
+
+            if read.flaw != "" && flaw == ""
+                flaw @ read.flaw
+            pieces @ pieces.push(read.text)
+            at @ read.next
+        else
+            size = unicode.len_at(source, index: at)
+            pieces @ pieces.push(source.slice(from: at, to: at + size))
+            at @ at + size
+
+    if at < source.len() && source[at] == '"'
+        return Literal(text: pieces.join(""), raw_end: at, next: at + 1, flaw: flaw)
+
+    return Literal(text: pieces.join(""), raw_end: at, next: at, flaw: "a string literal does not close on its line")
+
+# One escape read: the characters it writes and the index after it.
+record Escape
+    # What it writes.
+    text: str
+    # The index after it.
+    next: i64
+    # What is wrong with it, empty where nothing is.
+    flaw: str
+
+# The escape whose `\` is at `at`.
+#
+# - `source`: the text.
+# - `at`: the index of the backslash, with a character after it.
+function escape_at(source: str, at: i64) -> Escape
+    c = source[at + 1]
+
+    if c == 'n'
+        return Escape(text: "\n", next: at + 2, flaw: "")
+
+    if c == 't'
+        return Escape(text: "\t", next: at + 2, flaw: "")
+
+    if c == 'r'
+        return Escape(text: "\r", next: at + 2, flaw: "")
+
+    if c == '\\' || c == '"'
+        return Escape(text: source.slice(from: at + 1, to: at + 2), next: at + 2, flaw: "")
+
+    if c == 'u' && at + 2 < source.len() && source[at + 2] == '{'
+        close @= at + 3
+
+        while close < source.len() && source[close] != '}' && close - at < 12
+            close @ close + 1
+
+        if close < source.len() && source[close] == '}'
+            match code_point_of(source.slice(from: at + 3, to: close))
+                .ok text => return Escape(text: text, next: close + 1, flaw: "")
+                .err _   => _ = 0
+
+        return Escape(text: "", next: at + 2, flaw: "a \\u escape that writes no character")
+
+    return Escape(text: source.slice(from: at, to: at + 2), next: at + 2, flaw: "an escape the language does not have")
+
+# The character the hexadecimal digits `digits` write.
+#
+# - `digits`: the digits between `\u{` and `}`.
+#
+# Fails `invalid` where they are not hexadecimal or write no character.
+function code_point_of(digits: str) -> str?
+    if digits == "" || digits.len() > 6
+        return fail(code: "invalid", msg: "no code point")
+
+    n @= 0
+
+    for c in digits.chars()
+        n @ n * 16 + unicode.to_digit(c, base: 16)?
+
+    return unicode.from_code_point(n)
+
+# The index after the character literal opening at `open`: its closing
+# quote, an escaped quote skipped, or the end of its line.
+#
+# - `source`: the text.
+# - `open`: the index of the opening `'`.
+function char_literal_end(source: str, open: i64) -> i64
+    at @= open + 1
+
+    while at < source.len() && source[at] != '\'' && source[at] != '\n'
+        if source[at] == '\\'
+            at @ at + 2
+        else
+            at @ at + 1
+
+    if at < source.len() && source[at] == '\''
+        return at + 1
+
+    return at
+
+## Small helpers
+
+# The index of the line feed that ends the line holding `from`, or the end
+# of the text.
+#
+# - `source`: the text.
+# - `from`: an index in it.
+function line_end(source: str, from: i64) -> i64
+    at @= from
+
+    while at < source.len() && source[at] != '\n'
+        at @ at + 1
+
+    return at
+
+# The index after a run of name characters, or of number characters:
+# letters, digits and `_`, and for a number `.` too.
+#
+# - `source`: the text.
+# - `from`: where the run begins.
+# - `numeric`: whether the run is a number.
+function run_end(source: str, from: i64, numeric: bool) -> i64
+    at @= from
+
+    while at < source.len() && (is_name_start(source[at]) || source[at] >= '0' && source[at] <= '9' || numeric && source[at] == '.')
+        at @ at + 1
+
+    return at
+
+# Whether `b` may begin a name: an ASCII letter or `_`.
+#
+# - `b`: the byte.
+function is_name_start(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+# `s` without the one space a comment's `#` is followed by.
+#
+# - `s`: the comment's text after its `#`.
+function without_one_space(s: str) -> str
+    if s.len() > 0 && s[0] == ' '
+        return s.slice(from: 1, to: s.len())
+
+    return s
+
+## Tests
+
+test "scan: a call, a comment, escapes, and a character literal holding a quote"
+    s = scan("# l10n: the title\nt = i18n.translate(cat, id: \"Say \\\"hi\\\"\\n\")\nq = '\"'\n")
+    kinds = s.tokens.map(kind_name)
+    assert kinds[0] == "comment"
+    assert s.tokens[0].text == "l10n: the title"
+    assert s.tokens[0].first_on_line
+    texts = s.tokens.filter(is_text)
+    assert texts.len() == 1
+    assert texts[0].text == "Say \"hi\"\n"
+    assert texts[0].line == 2
+    assert s.problems.len() == 0
+
+test "scan: an f-string told apart, a string left open, a unicode escape and a bad one"
+    s = scan("a = f\"Hi {name}\"\nb = \"open\nc = \"\\u{e9}t\\u{e9}\"\nd = \"\\q\"\n")
+    assert s.tokens[2].kind == .formatted
+    assert s.tokens[2].text == "Hi {name}"
+    assert s.problems.len() == 2
+    assert s.problems[0].line == 2
+    assert s.tokens.filter(is_text)[1].text == "été"
+
+test "scan: an empty source, and text that is not ASCII outside a literal"
+    assert scan("").tokens.len() == 0
+    assert scan("é").tokens[0].kind == .punct
+
+# The name of a token's kind, for the tests' lists.
+#
+# - `t`: the token.
+function kind_name(t: Token) -> str
+    return match t.kind
+        .ident     => "ident"
+        .text      => "text"
+        .formatted => "formatted"
+        .character => "character"
+        .number    => "number"
+        .punct     => "punct"
+        .comment   => "comment"
+
+# Whether `t` is a plain string literal.
+#
+# - `t`: the token.
+function is_text(t: Token) -> bool
+    return t.kind == .text

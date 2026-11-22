@@ -1,0 +1,190 @@
+# HTTPS served with a certificate this program keeps: the current chain of
+# `store/lineage` and its key from the key store, handed to `tls` (the
+# system's own TLS: the Security framework on macOS, OpenSSL on Linux,
+# SChannel on Windows) and answered by `http`, a page saying which
+# certificate serves it. It is `certs serve` for a person, and the demo's
+# last server, on a thread of its own, reading its certificate the way a
+# web server restarted after a renewal reads it.
+
+use <rebel>/http
+use <rebel>/net
+use <rebel>/time
+use <rebel>/tls
+use <rebel>/x509
+
+use config/loader
+use config/settings
+use core/fields
+use core/ready
+use issue/order
+use pki/facts
+use store/lineage as history
+use store/vault
+
+## What is served
+
+# What the page says, read once when the server starts.
+record Page
+    # The certificate's name.
+    name: str
+    # Its version.
+    version: i64
+    # Its serial number, hexadecimal.
+    serial: str
+
+# A certificate ready to be presented: its chain and key as PEM, and what
+# the page says of it.
+record Identity
+    # The chain, the certificate first.
+    chain: str
+    # The key, PKCS #8 PEM.
+    key: str
+    # The page's facts.
+    page: Page
+
+# The identity of the certificate `name`: its current chain, read back by
+# `x509`, and its key.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `name`: the certificate's name.
+#
+# Fails as `history.current` and `vault.get` fail.
+function identity_of(s: settings.Settings, store: vault.Store, name: str) -> Identity?
+    kept = history.current(folder: s.store.folder, name: name)?
+    key = vault.get(store, name: order.key_name(name))?
+    return ok(
+        Identity(chain: kept.fullchain, key: key, page: Page(name: name, version: kept.version, serial: facts.serial_of(kept.chain[0])))
+    )
+
+## Serving
+
+# `name` served over HTTPS on `host` at `port` until the program is asked
+# to stop, the starter at `control_port` told once it listens.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `name`: the certificate's name.
+# - `host`: the address listened on.
+# - `port`: the port, 0 for one the system chooses.
+# - `control_port`: the starter's control port, 0 for none.
+#
+# Fails as `identity_of`, `tls.listen`, `ready.tell` and `http.serve_tls_with`
+# fail.
+function serve(s: settings.Settings, store: vault.Store, name: str, host: str, port: i64, control_port: i64) -> ()?
+    identity = identity_of(s, store: store, name: name)?
+    listener @= tls.listen(host: host, port: port, server: tls.Server(chain: identity.chain, key: identity.key, protocols: ["http/1.1"]))?
+
+    match ready.tell(control_port, facts: {"SERVICE": "https", "PORT": to_str(listener.port)})
+        .err e =>
+            _ = tls.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    server @= http.default_server()
+    server.deadline @ time.seconds(10)?
+    served = http.serve_tls_with(server, l: listener, state: identity.page, handler: answer)
+    _ = tls.close_listener(@listener).is_err()
+    return served
+
+# The address and port of `[serve] listen`.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where it is no address and port.
+function listen_of(s: settings.Settings) -> net.Address?
+    return net.parse_address_port(s.serve.listen)
+
+# The server's thread. Its named values: `CONTROL`, the starter's control
+# port; `CONFIG`, the configuration file's path in base 64; `KEYS`, the key
+# store as `vault.format_store` writes it; `NAME`, the certificate. Answers
+# its last line.
+#
+# - `arg`: the named values, `core/fields`' text.
+function run(arg: str) -> str
+    match started(arg)
+        .ok _  => return "https: served until the stop"
+        .err e => return "https: " + e.msg
+
+# The thread's work: its values read, and `serve` on 127.0.0.1.
+#
+# - `arg`: the thread's named values.
+#
+# Fails as `fields`, `loader.parse`, `vault.parse_store` and `serve` fail.
+function started(arg: str) -> ()?
+    named = fields.parse_fields(arg)?
+    s = loader.parse(read_file(fields.decoded_of(named, name: "CONFIG")?)?)?
+    store = vault.parse_store(fields.text_of(named, name: "KEYS")?)?
+    return serve(
+        s,
+        store: store,
+        name: fields.text_of(named, name: "NAME")?,
+        host: "127.0.0.1",
+        port: 0,
+        control_port: fields.int_of(named, name: "CONTROL")?
+    )
+
+# The answer to `r`: the page at `/`, 404 elsewhere.
+#
+# - `p`: what the page says.
+# - `r`: the request.
+function answer(p: Page, r: http.Request) -> http.Response
+    if r.url.path != "/"
+        return http.respond_not_found(r)
+    return http.respond_text(
+        200,
+        text: f"served by certs with the certificate {p.name}, version {p.version}, serial {p.serial}\n"
+    )
+
+## Checking a site
+
+# What a client found at an HTTPS site.
+record Visit
+    # The status answered.
+    status: i64
+    # The body, as text.
+    body: str
+
+# `GET https://<host>:<port>/` with only `roots` trusted: what a client of
+# the site finds once the system's TLS has checked the certificate's chain,
+# its dates and its host.
+#
+# - `host`: the host dialled and checked, a name or an address.
+# - `port`: the port.
+# - `roots`: the PEM of the only authorities trusted; "" for the system's
+#   own store.
+#
+# Fails as `http.send` fails, `invalid` where the certificate is refused.
+function visit(host: str, port: i64, roots: str) -> Visit?
+    client @= http.default_client()
+    client.roots @ roots
+    client.deadline @ time.seconds(15)?
+    response = http.get(client, target: f"https://{host}:{port}/")?
+    return ok(Visit(status: response.status, body: http.text_of(response).default("")))
+
+# Whether `chain` verifies up to `roots` at `at` for `host`, as `x509` checks
+# it: the same judgement as the TLS client's, made by this program at the
+# injected clock's moment.
+#
+# - `chain`: the chain's PEM.
+# - `roots`: the roots' PEM.
+# - `at`: the moment.
+# - `host`: the host.
+#
+# Fails as `x509.parse_certificates` and `x509.verify_chain` fail.
+function verified(chain: str, roots: str, at: time.Instant, host: str) -> ()?
+    return x509.verify_chain(
+        x509.parse_certificates(chain)?,
+        options: x509.Verification(roots: x509.parse_certificates(roots)?, at: at, purpose: x509.SERVER_AUTH, host: host)
+    )
+
+test "answer: the page at the root, 404 elsewhere"
+    p = Page(name: "site", version: 2, serial: "0a")
+    root = http.exchange_with(
+        http.request(method: "GET", target: "https://a.test/").must(),
+        state: p,
+        handler: answer
+    ).must()
+    assert root.status == 200
+    assert http.text_of(root).must() == "served by certs with the certificate site, version 2, serial 0a\n"
+    assert http.exchange_with(http.request(method: "GET", target: "https://a.test/x").must(), state: p, handler: answer).must().status == 404

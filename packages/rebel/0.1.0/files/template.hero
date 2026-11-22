@@ -37,6 +37,11 @@
 #   `{{ include "name" .path }}`, which runs that template with that value as
 #   its `.`.
 # - `{{/* a comment */}}`, which writes nothing.
+# - `{{ clean .note.html }}`, in the HTML mode alone: a value that is a text
+#   of HTML from outside, written as markup once a policy has cleaned it
+#   inside the element it lands in. Only `template/sanitized` renders a set
+#   that holds one, handed an `html/sanitize` policy, and `render` refuses
+#   it, so no text is ever written as markup uncleaned.
 #
 # `{{- ` drops the white space before an action, and ` -}}` the white space
 # after it: spaces, tabs and line breaks.
@@ -57,6 +62,16 @@
 # attribute name that is not a plain one are written `UNSAFE` instead. The
 # comments of HTML, scripts and style sheets are dropped with every value in
 # them, and a `<` that opens no tag is written `&lt;`.
+#
+# A `clean` action stands only in the text of an element, where a fragment
+# cleaned inside that element is read by a browser as the cleaner read it:
+# never in an attribute, a URL, a script, a style sheet, a title, a textarea
+# or a comment; nor inside a `select`, an `svg` or a `math`, inside an
+# element whose text a browser reads as it is (`noscript`, `xmp`, `iframe`,
+# `noembed`, `noframes`, `plaintext`), or in a table outside a `td`, a `th`
+# or a `caption`, the elements the template's own text left open being
+# followed for it; nor where ways through the template before it leave
+# different such elements open.
 #
 # Fails `invalid` where a text is not a template, the message opening `line
 # L, column C:`, where branches of the HTML mode leave the page in different
@@ -220,8 +235,9 @@ function parse_all(texts: {str: str}, options: Options) -> Template?
 # which template and what the value held. Fails `invalid` where a value is of a
 # kind its place does not take: `null`, a list or an object written outside a
 # script, a loop over a text or a number, an object looped over with one
-# variable, a filter given the wrong kind; and where `include` runs deeper than
-# `MAX_DEPTH`.
+# variable, a filter given the wrong kind; where `include` runs deeper than
+# `MAX_DEPTH`; and where the set holds a `clean` action, which
+# `template/sanitized` renders with a policy.
 #
 # It runs on stacks it holds itself, so no template or value is too deep for
 # the machine's stack; its cost is the text it writes and the steps it runs.
@@ -237,6 +253,12 @@ function render(t: Template, value: json.Value) -> str?
 #
 # Fails `not_found` where `t` holds no template `name`, and as `render` does.
 function render_named(t: Template, name: str, value: json.Value) -> str?
+    if run.cleans(t.compiled)
+        return fail(
+            code: INVALID,
+            msg: "the set holds a `clean` action, whose HTML from outside only a render handed a policy writes: render it with `template/sanitized`"
+        )
+
     match t.compiled.index[name]
         .err _    => return fail(code: NOT_FOUND, msg: assemble.missing_template(t.names, name: name))
         .ok entry => return run.render(t.compiled, entry: entry, value: value)
@@ -377,6 +399,94 @@ test "render_named and paths_of: a template the set does not hold"
         .err e => assert e.code == "not_found" && e.msg == "no template \"y\" in the set, which holds \"\""
 
     assert paths_of(t, "y").is_err()
+
+test "parse and parse_html: clean refused in the text mode; placed in an element's text, render refusing the set"
+    match parse("{{ clean .x }}")
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "line 1, column 1: `clean` writes HTML from outside as markup, which only the HTML mode places: read the template with `parse_html`"
+
+    t = parse_html("<div>{{ clean .x | default \"\" }}</div>").must()
+    assert paths_of(t, name: "").must() == [".x"]
+
+    match render(t, json.parse("{\"x\":\"<b>\"}").must())
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "template/sanitized")
+
+test "parse_html: clean refused in an attribute, a URL, a script, a style sheet, a title, a textarea, a comment, and inside the elements a browser reads otherwise"
+    refused = [
+        "<a title=\"{{ clean .x }}\">"
+        "<a href=\"{{ clean .x }}\">"
+        "<a {{ clean .x }}>"
+        "<script>{{ clean .x }}</script>"
+        "<style>{{ clean .x }}</style>"
+        "<title>{{ clean .x }}</title>"
+        "<textarea>{{ clean .x }}</textarea>"
+        "<!-- {{ clean .x }} -->"
+        "<select>{{ clean .x }}</select>"
+        "<svg>{{ clean .x }}</svg>"
+        "<math><mi>{{ clean .x }}</mi></math>"
+        "<noscript><div>{{ clean .x }}</div></noscript>"
+        "<xmp>{{ clean .x }}</xmp>"
+        "<iframe>{{ clean .x }}</iframe>"
+        "<noembed>{{ clean .x }}</noembed>"
+        "<noframes>{{ clean .x }}</noframes>"
+        "<plaintext>{{ clean .x }}"
+        "<table>{{ clean .x }}</table>"
+        "<table><tr>{{ clean .x }}</tr></table>"
+        "<table><tbody>{{ clean .x }}</tbody></table>"
+        "<table><tr><td>a</td>{{ clean .x }}</tr></table>"
+        "<table><tr><td><table>{{ clean .x }}</table></td></tr></table>"
+        "<svg><foreignObject><p>{{ clean .x }}</p></foreignObject></svg>"
+        "<svg / >{{ clean .x }}</svg>"
+        "{{ if .a }}<svg>{{ end }}{{ clean .x }}"
+        "<table>{{ for $r in .rows }}<tr><td>{{ $r }}{{ end }}{{ clean .x }}</table>"
+    ]
+
+    for text in refused
+        match parse_html(text)
+            .ok _  => assert text == "accepted"
+            .err e => assert e.code == INVALID && strings.contains(s: e.msg, substr: "`clean`")
+
+test "parse_html: clean placed after the elements that change a reading close, in a cell, in a loop of rows, and by include"
+    placed = [
+        ["<p>{{ clean .x }}</p>", ""]
+        ["{{ clean .x }}", ""]
+        ["<svg></svg><div>{{ clean .x }}</div>", ""]
+        ["<svg/><div>{{ clean .x }}</div>", ""]
+        ["<math/>{{ clean .x }}", ""]
+        ["<table><tr><td>a</td></tr></table>{{ clean .x }}", ""]
+        ["<table><tr><td><div>{{ clean .x }}</div></td></tr></table>", "td"]
+        ["<table><thead><tr><th>{{ clean .x }}</th></tr></thead></table>", "th"]
+        ["<table><caption>{{ clean .x }}</caption></table>", "caption"]
+        ["<table>{{ for $r in .rows }}<tr><td>{{ clean $r }}{{ end }}</table>", "td"]
+        ["<table><tr><td><table><tr><td>a</table>{{ clean .x }}</td></tr></table>", "td"]
+        ["<noscript></noscript><select></select>{{ clean .x }}", ""]
+        ["{{ if .a }}<b>{{ else }}<i>{{ end }}{{ clean .x }}", ""]
+    ]
+
+    for given in placed
+        t = parse_html(given[0]).must()
+        elements: [str] @= []
+
+        for part in t.compiled.parts
+            for s in part.steps
+                if s.kind == program.CLEAN
+                    elements @ elements.push(s.text)
+
+        assert elements == [given[1]]
+
+    included = parse_all(
+        {"page": "<table><tr><td>{{ include \"note\" . }}</td></tr></table>{{ include \"note\" . }}", "note": "{{ clean .html }}"},
+        options: html_options()
+    ).must()
+    cells: [str] @= []
+
+    for part in included.compiled.parts
+        for s in part.steps
+            if s.kind == program.CLEAN
+                cells @ cells.push(s.text)
+
+    assert sort(cells) == ["", "td"]
 
 test "parse_html: a template included in an attribute's value, escaped where it lands there and in text"
     t = parse_html(

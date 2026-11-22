@@ -1,0 +1,164 @@
+# The demo's hands: what a person does to the window, given through `ui`'s
+# `inject` on the headless side, so each click, choice, word typed and menu
+# item reaches the explorer as the same event a person's would, through
+# `events.step`. An input on a widget greyed out gives no event, as a
+# person's click on one does nothing.
+#
+# The headless clock moves only when a step waits, so an operation runs one
+# tick at a time when `run_job` waits a tick; and the watch is waited on
+# with the system's own clock by `await_disk`, since another program's
+# change reaches the explorer when the system tells it, not on a tick.
+
+use <rebel>/time
+use <rebel>/ui
+
+use app/controller
+use app/events
+use model/explorer
+use model/listing
+use model/tree
+
+# The most ticks an operation of the demo may take before the demo stops,
+# far more than any of them needs.
+constant MOST_TICKS: i64
+    10000
+
+# The longest the demo waits for the watch to tell of a change, in tenths
+# of a second.
+constant WATCH_TENTHS: i64
+    150
+
+# Gives `input` and handles what it causes.
+#
+# - `c`: the controller.
+# - `input`: what the person does.
+#
+# Fails as `ui.inject` fails.
+function give(@c: controller.Controller, input: ui.Input) -> ()?
+    ui.inject(@c.app, input: input)?
+    _ = events.step(@c, within: time.nanoseconds(0))
+    return ok()
+
+# Presses the button `widget`.
+#
+# - `c`: the controller.
+# - `widget`: the button.
+#
+# Fails as `give` fails.
+function click(@c: controller.Controller, widget: ui.Widget) -> ()?
+    return give(@c, input: .click(widget: widget))
+
+# Chooses the rows `indices` of the list `widget`.
+#
+# - `c`: the controller.
+# - `widget`: the list or the combo box.
+# - `indices`: the rows, ascending.
+#
+# Fails as `give` fails.
+function choose(@c: controller.Controller, widget: ui.Widget, indices: [i64]) -> ()?
+    return give(@c, input: .choose(widget: widget, indices: indices))
+
+# Types `text` into the field `widget`, in place of what it held.
+#
+# - `c`: the controller.
+# - `widget`: the field.
+# - `text`: the whole text after the typing.
+#
+# Fails as `give` fails.
+function type_into(@c: controller.Controller, widget: ui.Widget, text: str) -> ()?
+    return give(@c, input: .type_text(widget: widget, text: text))
+
+# Chooses the menu item `item`.
+#
+# - `c`: the controller.
+# - `item`: the menu item.
+#
+# Fails as `give` fails.
+function menu(@c: controller.Controller, item: ui.Widget) -> ()?
+    return give(@c, input: .choose_menu(item: item))
+
+# Says which button the person will press in the next message box.
+#
+# - `c`: the controller.
+# - `answer`: the button.
+#
+# Fails as `ui.inject` fails.
+function will_answer(@c: controller.Controller, answer: ui.Answer) -> ()?
+    return ui.inject(@c.app, input: .answer(answer: answer))
+
+# Chooses the entries named `names` in the list of the folder shown.
+#
+# - `c`: the controller.
+# - `names`: the names.
+#
+# Fails `not_found` where the folder holds one of them not, and as `give`
+# fails.
+function choose_named(@c: controller.Controller, names: [str]) -> ()?
+    rows = listing.rows_of(c.ex.listing, names: names)
+
+    if rows.len() != names.len()
+        return fail(code: "not_found", msg: f"the folder shown holds not every one of {names.join(", ")}")
+
+    return choose(@c, widget: c.w.entries, indices: rows)
+
+# Chooses the tree's row of `folder`.
+#
+# - `c`: the controller.
+# - `folder`: the folder's path.
+#
+# Fails `not_found` where the tree shows no row of it, and as `give` fails.
+function choose_folder(@c: controller.Controller, folder: str) -> ()?
+    rows = tree.rows(c.ex.tree, f: c.ex.formats, show_hidden: c.ex.settings.show_hidden)
+    at = tree.index_of(rows, folder: folder)?
+    return choose(@c, widget: c.w.tree, indices: [at])
+
+# Lets the window's timer tick `n` times, each tick moving the operation
+# running by a step.
+#
+# - `c`: the controller.
+# - `n`: the ticks.
+function tick(@c: controller.Controller, n: i64)
+    period = time.milliseconds(controller.TICK_MS).must()
+
+    for _ in range(from: 0, to: n)
+        _ = events.step(@c, within: period)
+
+# Lets the timer tick until the operation running ends, and answers how many
+# ticks it took.
+#
+# - `c`: the controller.
+#
+# Fails `limit` past `MOST_TICKS`.
+function run_job(@c: controller.Controller) -> i64?
+    ticks @= 0
+    period = time.milliseconds(controller.TICK_MS).must()
+
+    while explorer.is_busy(c.ex)
+        if ticks >= MOST_TICKS
+            return fail(code: "limit", msg: f"the operation ran past {MOST_TICKS} ticks")
+
+        _ = events.step(@c, within: period)
+        ticks @ ticks + 1
+
+    return ok(ticks)
+
+# Waits on the watch until the folder shown holds `name`, or no longer
+# holds it where `present` is false, as another program's change is told.
+#
+# - `c`: the controller; the window is drawn again once it is told.
+# - `name`: the entry's name.
+# - `present`: whether the entry is to come or to go.
+#
+# Fails `timeout` where the watch told nothing of it in
+# `WATCH_TENTHS` tenths of a second.
+function await_disk(@c: controller.Controller, name: str, present: bool) -> ()?
+    tenth = time.milliseconds(100).must()
+
+    for _ in range(from: 0, to: WATCH_TENTHS)
+        _ = controller.poll_disk(@c, limit: tenth)
+
+        if listing.has(c.ex.listing, name: name) == present
+            controller.redraw(@c)
+            return ok()
+
+    return fail(code: "timeout", msg: f"the watch told nothing of \"{name}\" in {WATCH_TENTHS / 10} seconds")

@@ -1,0 +1,139 @@
+# The command line of `lab`, read with `flags`:
+#
+#     lab                                   the REPL
+#     lab repl [--plots DIR] [--seed N]     the REPL, its plots and its seed
+#     lab run NOTEBOOK [--plots DIR] [--times]
+#                                           a notebook run and reported;
+#                                           `-` reads it from the input
+#     lab demo [--plots DIR]                the scripted demo, its notebook
+#                                           read from the input
+#
+# The arguments are taken with `args_checked()`, so one that is not UTF-8
+# is a usage error naming its place rather than an abort (spec § 11).
+
+use <rebel>/flags
+use <rebel>/numbers
+
+# The folder plots go to where no `--plots` names one.
+constant DEFAULT_PLOTS: str
+    "build/lab"
+
+# What the command line asked for.
+record Invocation
+    # `repl`, `run`, `demo`, or `help` where the help is to be printed.
+    action: str
+    # The help, for `help`.
+    help: str
+    # For `run`: the notebook's path, `-` for the input.
+    notebook: str
+    # The folder plots are written to.
+    plots: str
+    # For `repl`: the seed of its generator.
+    seed: u64
+    # For `run`: whether a timed cell tells its times.
+    times: bool
+
+# The option naming the plots' folder.
+function plots_option() -> flags.Argument
+    return flags.with_default(
+        flags.option(long: "plots", short: "p", value_name: "DIR", help: "the folder the plots are written to"),
+        value: DEFAULT_PLOTS
+    )
+
+# The declaration of the command line.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "lab",
+        about: "A scientific calculator and notebook: exact numbers, complex numbers, matrices, statistics and plots."
+    )
+    repl @= flags.command(name: "repl", about: "Type statements and see their values; the default.")
+    flags.add(@repl, a: plots_option())
+    flags.add(
+        @repl,
+        a: flags.with_default(flags.option(long: "seed", short: "s", value_name: "N", help: "the seed of the random draws"), value: "1")
+    )
+    flags.add_command(c: @root, sub: repl)
+    run @= flags.command(name: "run", about: "Run a notebook's cells in the order their names give, and report each.")
+    flags.add(
+        @run,
+        a: flags.positional(name: "notebook", help: "the notebook's file, or - for the input")
+    )
+    flags.add(@run, a: plots_option())
+    flags.add(@run, a: flags.flag(long: "times", short: "t", help: "tell a timed cell's times, not only its rounds"))
+    flags.add_command(c: @root, sub: run)
+    demo @= flags.command(name: "demo", about: "Run the scripted demo on the notebook read from the input.")
+    flags.add(@demo, a: plots_option())
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# The arguments as text, or the usage error naming the first that is not.
+#
+# - `given`: what `args_checked()` answered.
+#
+# Fails `invalid` naming the argument's place, counted from 1.
+function texts_of(given: [str?]) -> [str]?
+    out: [str] @= []
+
+    for k in range(from: 0, to: given.len())
+        match given[k]
+            .ok s  => out @ out.push(s)
+            .err _ => return fail(code: "invalid", msg: f"lab: argument {k + 1} is not UTF-8 text")
+
+    return ok(out)
+
+# What `arguments` ask.
+#
+# - `arguments`: the program's arguments, its name left out.
+#
+# Fails `invalid`, the usage in its message, where they do not read; a
+# seed that is no whole number from 0 is refused so.
+function read(arguments: [str]) -> Invocation?
+    inv @= Invocation(action: "repl", help: "", notebook: "", plots: DEFAULT_PLOTS, seed: 1, times: false)
+
+    if arguments.len() == 0
+        return ok(inv)
+    found = flags.parse(declaration(), arguments: arguments)?
+
+    if flags.is_help(found)
+        inv.action @ "help"
+        inv.help @ flags.help_text(found)
+        return ok(inv)
+
+    sub = match flags.subcommand(found)
+        .ok s  => s
+        .err _ => return ok(inv)
+
+    inv.action @ flags.name_of(sub)
+    inv.plots @ flags.value_of(sub, name: "plots")?
+
+    match inv.action
+        "repl" =>
+            match numbers.parse_u64(flags.value_of(sub, name: "seed")?)
+                .ok n  => inv.seed @ n
+                .err _ => return fail(code: "invalid", msg: "lab repl: --seed takes a whole number from 0")
+        "run" =>
+            inv.notebook @ flags.value_of(sub, name: "notebook")?
+            inv.times @ flags.is_on(sub, name: "times")
+        _ => _ = 0
+
+    return ok(inv)
+
+test "read: the REPL by default, a run with its notebook, the demo's plots"
+    assert read([]).must().action == "repl"
+    r = read(["run", "notes.lab", "--times"]).must()
+    assert r.action == "run" && r.notebook == "notes.lab" && r.times && r.plots == DEFAULT_PLOTS
+    assert read(["demo", "--plots", "out"]).must().plots == "out"
+    assert read(["repl", "--seed", "9"]).must().seed == 9
+
+test "read: help, a run with no notebook, a seed that is no number"
+    assert read(["--help"]).must().action == "help"
+    assert read(["run"]).is_err()
+    assert read(["repl", "--seed", "x"]).is_err()
+
+test "texts_of: every argument text, or the place of the first that is not"
+    assert texts_of([ok("a"), ok("b")]).must() == ["a", "b"]
+    bad: [str?] = [ok("a"), fail(code: "not_text", msg: "not UTF-8")]
+
+    match texts_of(bad)
+        .ok _  => assert false
+        .err e => assert e.msg == "lab: argument 2 is not UTF-8 text"

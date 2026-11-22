@@ -92,7 +92,7 @@ function questioned(t: toolchain.Toolchain, dir: str, one: value_run.Unit, acces
 
     text = base + "\n" + functions.join("\n") + "\n" + value_probe.dispatcher(cases)
     object = value_run.compiled(dir: dir, one: one, text: text, level: "-O0")?
-    said = value_run.linked_and_run(t, dir: dir, object: object, total: 2 + qs.len(), level: "-O0")
+    said = value_run.linked_and_run(t, dir: dir, object: object, total: 2 + qs.len(), level: "-O0", unit: one.text)
     publish.discard(object)
     return lines_of(findings: said?, qs: qs, base: base)
 

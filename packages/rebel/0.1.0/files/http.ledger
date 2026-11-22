@@ -512,12 +512,19 @@ capability server/steps  a server's own loop: a request's head read apart from i
   python  http.server.BaseHTTPRequestHandler.parse_request, handle_expect_100, send_error
   note    400 for what is no request, 431 for a head past the limits and 413 for a body, 505 for a version and 501 for a transfer coding or CONNECT, 417 for an expectation not met, 100 Continue where asked; an HTTP/1.0 client asking keep-alive is told it is kept (RFC 9112 § 9.3)
 
+capability server/as-it-comes  a request read as its bytes come, so a server waiting on many connections on one thread never waits on one
+  heroes  http.read_ready, http.request_reader, http.RequestReader, http.Ready
+  go      -
+  rust    -
+  python  -
+  note    Go serves each connection on its own goroutine (net/http.Server) and Python's `http.server.ThreadingHTTPServer` on a thread of its own (its `ThreadingMixIn` over `HTTPServer`, read 2026-11-22), so neither has a reader that waits for nothing; this is `websocket.read_ready`'s shape for requests: at most one read of the stream a call, a request handed out once whole and one at a time, read and refused as `next_request` reads and refuses it byte for byte (a test feeds each case a byte at a time to one and whole to the other), `100 Continue` written once a head asking it is whole and its body is to come, the head and the body kept as they come and within the limits, so a peer sending a byte at a time costs a byte of work
+
 capability server/connection  one connection's requests served, keep-alive and pipelining included
   heroes  http.serve_conn, http.serve_stream
   go      net/http.Server.ConnState, net/http.ConnState
   rust    -
   python  http.server.BaseHTTPRequestHandler.handle, handle_one_request, close_connection
-  note    400, 431, 413, 417, 501 and 505 answered for what cannot be read, then the connection ends; 100 Continue written before a body; a `Date` field where the handler gives none
+  note    400, 431, 413, 417, 501 and 505 answered for what cannot be read, then the connection ends; 100 Continue written before a body, and never before a 413 for a length past the limits, since the client asked first so as not to send what is refused; a `Date` field where the handler gives none
 
 capability server/concurrent  connections served side by side
   heroes  net.accept_number, net.conn_of, threads.start, http.serve_conn

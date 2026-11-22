@@ -206,6 +206,11 @@
  * layer's members have a header of their own for it). */
 #include "platform/hero_layer_alloc.h"
 
+/* The runtime's own thread number as the platform layer reads it, which
+ * `parts/alloc.c` defines below beside the number itself
+ * (`platform/hero_layer_thread.h` says why the layer needs it). */
+#include "platform/hero_layer_thread.h"
+
 /* The single allocation point and the live-block counter (design.md §4.20).
  * First after `panic.c`, because everything that allocates needs both. */
 #include "parts/alloc.c"
@@ -360,7 +365,8 @@
  * the CryptoKit member and the AppKit member written in Swift and their C
  * headers, which the layer compiles on an Apple target alone
  * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
- * `.swift`); and Monocypher's, which
+ * `.swift`); the header every web view's arm and `hero_ui.c` share,
+ * `platform/hero_ui_web.h`; and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -411,6 +417,11 @@
 #include "platform/hero_ui_appkit.swift"
 #include "platform/hero_ui_appkit_windows.h"
 #include "platform/hero_ui_appkit_windows.swift"
+#include "platform/hero_ui_web.h"
+#include "hero_ui_web_gtk.h"
+#include "platform/hero_ui_web_gtk.c"
+#include "hero_ui_web_win32.h"
+#include "platform/hero_ui_web_win32.c"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #endif

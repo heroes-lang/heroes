@@ -1,0 +1,234 @@
+# The REPL's engine: a line typed is read and run against the session's
+# names, and answers the lines to show. A line holds statements of the lab's
+# language, or a command after a colon:
+#
+#     :help              the commands and the built-ins
+#     :vars              the names given values, with their kinds and values
+#     :funcs             the functions defined
+#     :bench <line>      how long the line takes, measured with `bench`
+#     :quit              the end of the session
+#
+# The engine reads no terminal, so the terminal's loop (`repl/terminal`), a
+# pipe, and the demo drive the same code. A failure is told as a line,
+# `error: 3:5: ...`, the line counted from the session's first, and the
+# session goes on.
+
+use <rebel>/strings
+use <rebel>/term
+
+use bench/timing
+use eval/builtins
+use eval/evaluate
+use eval/machine
+use eval/show
+use eval/value
+use lang/parser
+
+# The commands a line may open with.
+constant COMMANDS: [str]
+    [
+        ":help"
+        ":vars"
+        ":funcs"
+        ":bench"
+        ":quit"
+    ]
+
+# The width the help's columns are laid in.
+constant HELP_WIDTH: i64
+    72
+
+# A session: its evaluation, the lines entered, and whether it has ended.
+record Session
+    # The names and functions given so far, the plots written.
+    machine: machine.Machine
+    # The lines of statements entered, so a failure names its line.
+    entered: i64
+    # Whether `:bench` tells its times, or only its rounds.
+    times: bool
+    # Whether `:quit` was entered.
+    done: bool
+
+# A session with no name given, writing its plots into `plots`.
+#
+# - `plots`: the folder, "" for none.
+# - `seed`: the seed of its random generator.
+# - `times`: whether `:bench` tells its times.
+function new(plots: str, seed: u64, times: bool) -> Session
+    return Session(machine: machine.new(plots: plots, seed: seed), entered: 0, times: times, done: false)
+
+# The lines answering `line`.
+#
+# - `s`: the session; its names, its count of lines and its end change.
+# - `line`: what was typed.
+function enter(@s: Session, line: str) -> [str]
+    typed = strings.trim(line)
+
+    if typed == ""
+        return []
+
+    if strings.has_prefix(s: typed, prefix: ":")
+        return command(@s, typed: typed)
+    s.entered @ s.entered + 1
+
+    match parser.parse(typed, first_line: s.entered)
+        .err e => return ["error: " + e.msg]
+        .ok statements =>
+            out: [str] @= []
+
+            for st in statements
+                match evaluate.run(@s.machine, s: st)
+                    .ok v =>
+                        for shown in show.lines_of(v)
+                            out @ out.push(shown)
+                    .err e =>
+                        out @ out.push("error: " + e.msg)
+                        return out
+
+            return out
+
+# The lines answering the command `typed`.
+#
+# - `s`: the session.
+# - `typed`: the line, opening with `:`.
+function command(@s: Session, typed: str) -> [str]
+    parts = strings.split_n(s: typed, sep: " ", n: 2)
+    name = parts[0]
+
+    if name == ":quit"
+        s.done @ true
+        return []
+
+    if name == ":help"
+        return help_lines()
+
+    if name == ":vars"
+        return vars_lines(s)
+
+    if name == ":funcs"
+        return funcs_lines(s)
+
+    if name == ":bench"
+        if parts.len() < 2 || strings.trim(parts[1]) == ""
+            return ["error: :bench times a line: `:bench fib(15)`"]
+        return bench_lines(s, typed: strings.trim(parts[1]))
+    return [f"error: `{name}` is no command; :help lists them"]
+
+# What `:help` shows: the commands, then every built-in in columns.
+function help_lines() -> [str]
+    out: [str] @= ["commands: " + COMMANDS.join(" "), "built-ins and constants:"]
+
+    for line in strings.lines(term.format_columns(builtins.names(), width: HELP_WIDTH))
+        if line != ""
+            out @ out.push("  " + line)
+
+    return out
+
+# What `:vars` shows: a table of each name given a value, its kind and its
+# value on one line, the names ascending.
+#
+# - `s`: the session.
+function vars_lines(s: Session) -> [str]
+    names = sort(keys(s.machine.values))
+
+    if names.len() == 0
+        return ["no names yet"]
+    rows: [[str]] @= []
+
+    for n in names
+        v = s.machine.values[n].must()
+        rows @ rows.push([n, value.kind_name(v), show.inline(v)])
+
+    table = term.Table(header: ["name", "kind", "value"], rows: rows, align: [.left, .left, .left], border: .simple)
+    out: [str] @= []
+
+    for line in strings.lines(term.format_table(table))
+        if line != ""
+            out @ out.push(line)
+
+    return out
+
+# What `:funcs` shows: each function defined with its parameters.
+#
+# - `s`: the session.
+function funcs_lines(s: Session) -> [str]
+    names = sort(keys(s.machine.functions))
+
+    if names.len() == 0
+        return ["no functions yet"]
+    out: [str] @= []
+
+    for n in names
+        f = s.machine.functions[n].must()
+        out @ out.push(f"{n}({f.params.join(", ")})")
+
+    return out
+
+# What `:bench` shows: how long the line `typed` takes, run on a copy of
+# the session, which it does not change.
+#
+# - `s`: the session.
+# - `typed`: the statements timed.
+function bench_lines(s: Session lent, typed: str) -> [str]
+    match parser.parse(typed, first_line: s.entered + 1)
+        .err e => return ["error: " + e.msg]
+        .ok statements =>
+            match timing.measure(timing.job_of(s.machine, statements: statements, cell: "session"), quick: !s.times)
+                .ok t  => return [timing.line_of(t, times: s.times)]
+                .err e => return [f"error: {e.code}: {e.msg}"]
+
+# The words the line editor completes: the commands, the built-ins, and the
+# names and functions of the session.
+#
+# - `s`: the session.
+function words(s: Session) -> [str]
+    out: [str] @= []
+
+    for c in COMMANDS
+        out @ out.push(c)
+
+    for n in builtins.names()
+        out @ out.push(n)
+
+    for n in keys(s.machine.values)
+        out @ out.push(n)
+
+    for n in keys(s.machine.functions)
+        out @ out.push(n)
+
+    return out
+
+test "enter: values shown, a name kept, a failure told with its line"
+    s @= new(plots: "", seed: 1, times: false)
+    assert enter(@s, line: "x = 1/3") == ["1/3"]
+    assert enter(@s, line: "x + 1/6") == ["1/2"]
+    assert enter(@s, line: "y + 1") == ["error: 3:1: `y` is not defined"]
+    assert enter(@s, line: "   ") == []
+    assert enter(@s, line: "1 +") == ["error: 4:4: expected an expression, found the end of the input"]
+
+test "enter: a function defined, recursion, the depth bound"
+    s @= new(plots: "", seed: 1, times: false)
+    assert enter(@s, line: "fib(n) = if n < 2 then n else fib(n - 1) + fib(n - 2)") == []
+    assert enter(@s, line: "fib(20)") == ["6765"]
+    assert enter(@s, line: "down(n) = down(n + 1)") == []
+    assert enter(@s, line: "down(1)")[0] == "error: 3:11: `down` called 64 deep: a recursion that does not reach its end"
+    assert enter(@s, line: "1" + repeat("+1", 5000)) == ["5001"]
+
+test "command: :vars, :funcs, :bench, :quit, an unknown one"
+    s @= new(plots: "", seed: 1, times: false)
+    _ = enter(@s, line: "a = 2")
+    _ = enter(@s, line: "sq(x) = x^2")
+    assert vars_lines(s) == ["name  kind     value", "----  -------  -----", "a     integer  2"]
+    assert enter(@s, line: ":funcs") == ["sq(x)"]
+    assert enter(@s, line: ":bench sq(12)") == ["bench: 5 rounds kept"]
+    assert enter(@s, line: ":nope") == ["error: `:nope` is no command; :help lists them"]
+    assert enter(@s, line: ":quit") == []
+    assert s.done
+
+test "enter: built-ins that take a function, an exact sum, an exact solve"
+    s @= new(plots: "", seed: 1, times: false)
+    _ = enter(@s, line: "sq(x) = x * x")
+    assert enter(@s, line: "map(sq, [1, 2, 3])") == ["[1, 4, 9]"]
+    assert enter(@s, line: "sum(1:100)") == ["5050"]
+    assert enter(@s, line: "solve([2, 1; 1, 3], [3, 5])") == ["[4/5, 7/5]"]
+    assert enter(@s, line: "findroot(sq, 1, 2)")[0] == "error: 5:1: findroot needs a change of sign: the function is 1.0 at 1.0 and 4.0 at 2.0"

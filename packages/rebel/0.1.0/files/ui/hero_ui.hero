@@ -122,6 +122,23 @@ extern "hero_ui.h"
     function hero_ui_press_key(app: App, id: i64, @key: [u8] counted_by count lent, count: u64, modifiers: i64) -> i64
     function hero_ui_last_error() -> i64
     function hero_ui_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
+    # A web view's limits, and the policy its responses carry where the
+    # program set none.
+    constant HERO_UI_WEB_PATH_MOST: i64
+    constant HERO_UI_WEB_TYPE_MOST: i64
+    constant HERO_UI_WEB_ASSET_MOST: i64
+    constant HERO_UI_WEB_ASSETS_MOST: i64
+    constant HERO_UI_WEB_BYTES_MOST: i64
+    constant HERO_UI_WEB_POLICY_MOST: i64
+    constant HERO_UI_WEB_ORIGINS_MOST: i64
+    constant HERO_UI_WEB_ORIGIN_MOST: i64
+    constant HERO_UI_WEB_MESSAGE_MOST: i64
+    function hero_ui_web_asset(app: App, id: i64, @path: [u8] counted_by path_count lent, path_count: u64, @type: [u8] counted_by type_count lent, type_count: u64, @body: [u8] counted_by body_count lent, body_count: u64) -> i64
+    function hero_ui_web_remove(app: App, id: i64, @path: [u8] counted_by path_count lent, path_count: u64) -> i64
+    function hero_ui_web_policy(app: App, id: i64, @policy: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_web_allow(app: App, id: i64, @origin: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_web_navigate(app: App, id: i64, @path: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_web_post(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
 
 # 1 where the calling thread is the one an app may open on, the process's
 # main thread, 0 where it is not.
@@ -392,11 +409,12 @@ function lost(app: App) -> i64
 #
 # - `app`: the app acted on.
 # - `kind`: the event the act gives, one of `HERO_UI_EVENT_CLICK` to
-#   `HERO_UI_EVENT_RESIZE`.
+#   `HERO_UI_EVENT_MESSAGE`, the last having a web view's page send `text`.
 # - `id`: the widget acted on.
 # - `value`: the item chosen, the slider's value, the width; else 0.
 # - `second`: 1 to add the item to a list's choice, or the height; else 0.
-# - `text`: the text typed; left as it was handed.
+# - `text`: the text typed, or the text a page sends; left as it was
+#   handed.
 # - `count`: how many of its first bytes; 0 for none.
 function inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u8], count: u64) -> i64
     return hero_ui_inject(app, kind: kind, id: id, value: value, second: second, @text, count: count)
@@ -460,6 +478,87 @@ function file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u
 # - `count`: the bytes `buffer` holds.
 function dialog_paths(app: App, @buffer: [u8], count: u64) -> i64
     return hero_ui_dialog_paths(app, @buffer, count: count)
+
+# 0 once web view `id`'s table holds the asset at `path`, replacing the one
+# there, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `path`: the asset's path, `/` and segments of `A`-`Z`, `a`-`z`, `0`-`9`,
+#   `-`, `.`, `_` and `~`; left as it was handed.
+# - `path_count`: how many of its first bytes, at most
+#   `HERO_UI_WEB_PATH_MOST`.
+# - `type`: its content type, `type/subtype` then parameters, printable
+#   ASCII; left as it was handed.
+# - `type_count`: how many of its first bytes, at most
+#   `HERO_UI_WEB_TYPE_MOST`.
+# - `body`: its bytes; left as it was handed.
+# - `body_count`: how many of its first bytes, at most
+#   `HERO_UI_WEB_ASSET_MOST`.
+function web_asset(app: App, id: i64, @path: [u8], path_count: u64, @type: [u8], type_count: u64, @body: [u8], body_count: u64) -> i64
+    return hero_ui_web_asset(
+        app,
+        id: id,
+        path: @path,
+        path_count: path_count,
+        type: @type,
+        type_count: type_count,
+        body: @body,
+        body_count: body_count
+    )
+
+# 0 once web view `id`'s table no longer holds the asset at `path`, or -1,
+# `HERO_UI_NOT_FOUND` where it held none.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `path`: the asset's path; left as it was handed.
+# - `path_count`: how many of its first bytes.
+function web_remove(app: App, id: i64, @path: [u8], path_count: u64) -> i64
+    return hero_ui_web_remove(app, id: id, @path, path_count: path_count)
+
+# 0 once every response of web view `id` carries `policy` as its content
+# security policy, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `policy`: printable ASCII; left as it was handed.
+# - `count`: how many of its first bytes, at most `HERO_UI_WEB_POLICY_MOST`;
+#   0 puts the layer's own policy back.
+function web_policy(app: App, id: i64, @policy: [u8], count: u64) -> i64
+    return hero_ui_web_policy(app, id: id, @policy, count: count)
+
+# 0 once web view `id`'s page may go to `origin`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `origin`: `https://` or `http://` and a host, with a port where it is
+#   not the scheme's own; left as it was handed.
+# - `count`: how many of its first bytes, at most
+#   `HERO_UI_WEB_ORIGIN_MOST`.
+function web_allow(app: App, id: i64, @origin: [u8], count: u64) -> i64
+    return hero_ui_web_allow(app, id: id, @origin, count: count)
+
+# 0 once web view `id` loads `path` of the app's own origin, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `path`: an asset's path or a folder's ending in `/`, then perhaps a
+#   query and a fragment; left as it was handed.
+# - `count`: how many of its first bytes, at most `HERO_UI_WEB_PATH_MOST`.
+function web_navigate(app: App, id: i64, @path: [u8], count: u64) -> i64
+    return hero_ui_web_navigate(app, id: id, @path, count: count)
+
+# 0 once `text` is handed to web view `id`'s page, or kept for it while it
+# loads; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: the web view.
+# - `text`: UTF-8 with no zero byte; left as it was handed.
+# - `count`: how many of its first bytes, at most
+#   `HERO_UI_WEB_MESSAGE_MOST`.
+function web_post(app: App, id: i64, @text: [u8], count: u64) -> i64
+    return hero_ui_web_post(app, id: id, @text, count: count)
 
 # The kind of the last call's failure on this thread, `HERO_UI_OK` after a
 # call that did not fail.
@@ -525,4 +624,15 @@ test "next: a headless app's queue is empty, and its wait answers none"
     assert wait(app, ms: 0) == 0
     assert next(app, kind: @kind, id: @id, value: @value, second: @second) == 0
     assert lost(app) == 0
+    assert close(@app) == 0
+
+test "web_asset: a headless app holds no web view, and says so"
+    app @= open(HERO_UI_HEADLESS)
+    path: [u8] @= [47, 97]
+    type: [u8] @= [97, 47, 98]
+    body: [u8] @= [1]
+    assert web_asset(app, id: 1, path: @path, path_count: 2, type: @type, type_count: 3, body: @body, body_count: 1) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    assert web_post(app, id: 1, text: @body, count: 1) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
     assert close(@app) == 0

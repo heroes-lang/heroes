@@ -1,0 +1,243 @@
+# `l10n demo`: a scripted session over the sample project, the program's
+# test of itself. It makes a folder (`build/l10n/demo` by default), writes the
+# project of `demo/samples` into it, works inside it, runs each command of
+# the script as a person would type it, printing the command line and then
+# what the command writes, failures and exit codes included, and at the end
+# removes the folder and everything the session wrote there.
+#
+# The transcript is the same on every run and every machine: every command
+# runs at one fixed moment, 2026-03-05 at 09:30 UTC, in English, and no
+# absolute path, clock reading or random value is printed. Between commands
+# the script plays the team's part, a setting written or a source reworded,
+# each said in a comment line.
+#
+# A folder that is there already is removed only where a demo made it, as
+# the marker file it writes says; any other is refused, so `--dir` cannot be
+# turned into a way to delete a folder somebody keeps.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/path
+use <rebel>/time
+
+use demo/samples
+use project/config
+use project/session
+
+## Codes
+
+# The code of a folder the demo did not make.
+constant EXISTS: str
+    "exists"
+
+## Limits
+
+# The file that marks a folder as one a demo made.
+constant MARKER: str
+    ".l10n-demo"
+
+# The moment every command of the demo takes as now: 2026-03-05T09:30:00Z.
+constant NOW_SECONDS: i64
+    1772703000
+
+## The script
+
+# One step of the session.
+variant Step
+    # A command line, its arguments after `l10n`.
+    command
+        # The arguments.
+        arguments: [str]
+    # The team changes a file between two commands.
+    edit
+        # The file, inside the project.
+        file: str
+        # Its new text.
+        text: str
+        # What the team did, for the transcript.
+        note: str
+
+# The steps of the session, in order.
+function steps() -> [Step]
+    return [
+        run(["init", "--domain", "shop", "--locales", "de,fr,pl,ar,ja"])
+        .edit(file: config.FILE_NAME, text: samples.full_settings(), note: "the team gives the placeholders their kinds, each language a time zone, and the previews their samples")
+        run(["extract"])
+        run(["merge"])
+        run(["status"])
+        run(["import", "inbox/de.csv", "--locale", "de"])
+        run(["import", "inbox/fr.po", "--locale", "fr"])
+        run(["import", "inbox/pl.xlsx", "--locale", "pl"])
+        run(["import", "inbox/ar.csv", "--locale", "ar"])
+        run(["import", "inbox/ja.yaml", "--locale", "ja"])
+        run(["status"])
+        run(["check"])
+        run(["preview", "--locale", "pl", "--match", "item|parcel"])
+        run(["preview", "--locale", "de"])
+        run(["preview", "--locale", "ar", "--match", "order|deliver"])
+        run(["render", "templates/order.html", "--accept", "de-CH, de;q=0.9, en;q=0.5", "--count", "3"])
+        run(["render", "templates/order.html", "--locale", "ar", "--count", "11"])
+        run(["export", "--locale", "de", "-o", "review/de-1.json"])
+        run(["import", "inbox/de-fix.csv", "--locale", "de"])
+        .edit(file: "src/cart.hero", text: samples.cart_source(reworded: true), note: "a developer rewords the empty cart's sentence and drops the checkout button")
+        run(["extract"])
+        run(["merge", "--locale", "de"])
+        run(["diff", "review/de-1.json", "locales/de.po", "--locale", "de"])
+        run(["diff", "review/de-1.json", "locales/de.po", "--locale", "de", "--unified"])
+        run(["check", "--locale", "de"])
+        run(["export", "-o", "review/all.xlsx"])
+        run(["diff", "locales/pl.po", "review/all.xlsx", "--locale", "pl"])
+        run(["pseudo"])
+        run(["preview", "--locale", "en-XA", "--match", "cart"])
+        run(["compile"])
+        run(["lookup", "{count} item", "--plural", "{count} items", "--context", "cart", "-n", "22", "--lang", "pl"])
+        run(["lookup", "{count} item", "--plural", "{count} items", "--context", "cart", "-n", "22", "--lang", "pt_BR:de"])
+        run(["import", "inbox/de.csv", "--locale", "de_Latn_!!"])
+        run(["export", "--locale", "de", "-o", "review/de.parquet"])
+        run(["merge", "--locael", "de"])
+    ]
+
+# A command step.
+#
+# - `arguments`: its arguments after `l10n`.
+function run(arguments: [str]) -> Step
+    return .command(arguments: arguments)
+
+## Running
+
+# Runs the session in `dir`, each command through `execute`, and answers 0,
+# or 1 where the session could not be set up or cleaned away.
+#
+# - `dir`: the folder the session works in; made, and removed at the end.
+# - `execute`: runs one command line in a session and answers its exit
+#   code; the demo hands it the transcript's session, so a failure is
+#   printed in place.
+function run_demo(dir: str, execute: (function([str], session.Session) -> i64)) -> i64
+    s = session.transcript(time.from_unix(whole_seconds: NOW_SECONDS, extra_nanoseconds: 0).must())
+
+    match prepare(dir)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(s, message: f"demo: {e.msg}")
+            return 1
+
+    back = match os.working_dir()
+        .ok d => d
+        .err e =>
+            session.complain(s, message: f"demo: {e.msg}")
+            return 1
+
+    match os.change_dir(dir)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(s, message: f"demo: {e.msg}")
+            return 1
+
+    names = samples.every_sample().map(sample_name)
+    _ = said(s, text: f"# the session works in a folder of its own, holding {names.join(", ")}\n\n")
+
+    for step in steps()
+        match step
+            .command c =>
+                _ = said(s, text: "$ l10n " + c.arguments.map(quoted).join(" ") + "\n")
+                code = execute(c.arguments, s)
+
+                if code != 0
+                    _ = said(s, text: f"[exit {code}]\n")
+            .edit e =>
+                match write_file(path: e.file, text: e.text)
+                    .ok _  => _ = said(s, text: f"# {e.note} ({e.file})\n")
+                    .err x => session.complain(s, message: f"demo: {x.msg}")
+
+        _ = said(s, text: "\n")
+
+    match os.change_dir(back)
+        .ok _ => _ = 0
+        .err e =>
+            session.complain(s, message: f"demo: {e.msg}")
+            return 1
+
+    match fs.remove_all(dir)
+        .ok _ => _ = said(s, text: "# the folder and everything the session wrote in it are removed\n")
+        .err e =>
+            session.complain(s, message: f"demo: {e.msg}")
+            return 1
+
+    return 0
+
+# Writes `text`, answering whether it was written: the transcript goes on
+# past a write that failed, and the commands say their own failures.
+#
+# - `s`: the transcript's session.
+# - `text`: the text.
+function said(s: session.Session, text: str) -> bool
+    return match session.say(s, text: text)
+        .ok _  => true
+        .err _ => false
+
+# Makes `dir` afresh with its marker and the samples, removing it first where
+# a demo made it.
+#
+# - `dir`: the folder.
+#
+# Fails `exists` where `dir` is there and holds no marker, and as `fs` fails.
+function prepare(dir: str) -> ()?
+    if fs.exists(dir)?
+        if !fs.exists(path.join_all([dir, MARKER]))?
+            return fail(code: EXISTS, msg: f"{dir} is there and no demo made it; name another folder with --dir")
+        fs.remove_all(dir)?
+
+    fs.make_dir_all(dir)?
+    write_file(path: path.join_all([dir, MARKER]), text: "made by l10n demo\n")?
+
+    for sample in samples.every_sample()
+        file = path.join_all([dir, path.from_slash(sample.name)])
+        fs.make_dir_all(path.parent(file))?
+        fs.write_bytes(file, data: sample.data)?
+
+    return ok()
+
+# The name of a sample, for a `map`.
+#
+# - `sample`: the sample.
+function sample_name(sample: samples.Sample) -> str
+    return sample.name
+
+# `argument` as a shell reads it back: as it is where it holds only letters,
+# digits and `_ . / = , : + - @`, else between single quotes, a single quote
+# inside written `'\''`.
+#
+# - `argument`: the argument.
+function quoted(argument: str) -> str
+    if argument == ""
+        return "''"
+
+    plain @= true
+
+    for i in range(from: 0, to: argument.len())
+        b = argument[i]
+
+        if !(b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '_' || b == '.' || b == '/' || b == '=' || b == ',' || b == ':' || b == '+' || b == '-' || b == '@')
+            plain @ false
+
+    if plain
+        return argument
+
+    pieces: [str] @= []
+
+    for c in argument.chars()
+        if c == "'"
+            pieces @ pieces.push("'\\''")
+        else
+            pieces @ pieces.push(c)
+
+    return "'" + pieces.join("") + "'"
+
+## Tests
+
+test "quoted: plain words, spaces, braces, quotes and the empty word"
+    assert quoted("inbox/de.csv") == "inbox/de.csv"
+    assert quoted("{count} item") == "'{count} item'"
+    assert quoted("it's") == "'it'\\''s'"
+    assert quoted("") == "''"
+    assert quoted("de-CH,de") == "de-CH,de"

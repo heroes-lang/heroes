@@ -1,0 +1,57 @@
+# kanban: a desktop kanban board in Tauri's shape. Its interface is a page,
+# HTML, CSS and a script in `web/`, shown in the system's own web view (WebKit
+# on macOS, WebView2 on Windows, WebKitGTK on Linux) and served from the
+# program's own memory at `app://localhost`, never from a port; its logic is
+# this program, which keeps the boards, their columns and their cards in
+# SQLite. Every act of the person, a card added, moved by dragging, edited,
+# a search, an undo, is a call of the page's script over the bridge
+# (`heroes.invoke`), answered by the program, which then tells the page the
+# board changed.
+#
+#     heroes build examples-rebel/kanban/main.hero -o kanban
+#     ./kanban --web examples-rebel/kanban/web    # the board in a window
+#     ./kanban --data boards.sqlite               # another database
+#     ./kanban --demo --web examples-rebel/kanban/web
+#
+# The demo runs the back end on the headless side with no screen: the window
+# and the page's files made as on the desktop, a scripted session of the
+# page's calls sent through the same handler, a database under
+# `build/kanban-demo/` with a fixed clock and counted names, and a transcript
+# that is the same on every run (`main.args`, `main.expected`).
+#
+# Rebel's packages, and what for: `ui` the window, its menu bar and the
+# event loop, and `ui/webview` the web view, its assets, its policy and its
+# bridge; `json` every call and answer and the boards' files; `sql` and
+# `sql/sqlite` the boards, columns, cards and the history undo reads;
+# `markdown` a card's notes as HTML and `html/sanitize` that HTML cleaned;
+# `template` the page's index and the board's report in its HTML mode;
+# `uuid` the names of boards, columns and cards; `time` their moments;
+# `search` the cards ranked by BM25; `fs` the database's folder and the
+# files a board is exported to and imported from; `path` and `os` where
+# they stand.
+
+use app/cli
+use app/window
+use demo/session
+
+function main()
+    command = match cli.read(args_checked())
+        .ok c => c
+        .err e =>
+            print("kanban: ", e.msg)
+            print(cli.USAGE)
+            exit(code: 2)
+            return
+
+    ran: ()? = match command.mode
+        .help =>
+            print(cli.USAGE)
+            ok()
+        .demo   => session.run(command)
+        .window => window.run(command)
+
+    match ran
+        .ok _ => _ = 0
+        .err e =>
+            print("kanban: ", e.code, ": ", e.msg)
+            exit(code: 1)

@@ -29,3 +29,16 @@ doc calls (a declaration, a group member, a field, a case): it prints the
 item's doc directly above it, and a blank line under the last remark before
 it wherever the source has one or the re-parse would otherwise read it as
 the doc. A `##` heading is never read as one, so it gains none.
+
+**Amended 2026-11-22 by defect 2634.** The parser gives a group's first
+member the comment directly above it inside the block, as it gives every
+other member, and the group's comment above the head only where the member
+has none of its own (`selfhost/parse/group.hero`'s `member_doc`). So a
+comment directly under a head and directly above that head's first member
+is that member's doc, and each remark under a head in these two files has a
+blank line under it, which keeps it the remark the shape is about; the
+output of `members.hero` is the same bytes, and `kepthead.hero` is
+canonical with that blank line. A second head whose first member is
+documented under it and has a comment above it is kept too, since merged
+that comment would stand among the members above (`page.hero`'s
+`keeps_head`); `selfhost/print/fmt.hero`'s tests pin it.

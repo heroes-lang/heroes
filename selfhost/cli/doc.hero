@@ -14,13 +14,14 @@
 # parameter's own name, `@` where the parameter is, a label exactly where the
 # checker's label rule asks one: `check/type_fit.hero`'s `shared`, over the
 # types the checker interned for the written parameters) and its examples
-# (`cli/doc_text.hero`). The call is written `<binding>.<name>(...)`, the
-# binding being what a `use` of the module binds, its last part; where that
-# part is no name a `use` can spell (a file `two-words.hero`), no program
-# reaches the module by a `use`, and the call is written bare, as the module
-# itself writes it. **A reference is the same bytes on every run**: it
-# reads the source and the checker, never the clock, the machine or a path
-# but the module's own name.
+# (`cli/doc_text.hero`); a documented test titled with a name no function of
+# the module has is told on stderr, a note at exit 0 (defect 2628). The call
+# is written `<binding>.<name>(...)`, the binding being what a `use` of the
+# module binds, its last part; where that part is no name a `use` can spell
+# (a file `two-words.hero`), no program reaches the module by a `use`, and
+# the call is written bare, as the module itself writes it. **A reference is
+# the same bytes on every run**: it reads the source and the checker, never
+# the clock, the machine or a path but the module's own name.
 #
 # A package's module is read as a package's module, never as a root: the verb
 # reads a root of one line, `use <name>/<module>`, held in memory and written
@@ -30,7 +31,9 @@
 # root holds no expression, so what the name and type stages say of it can only
 # be of its `use`, never used, and is dropped; what its parse and its module
 # graph say is the operand's own fault, a name no catalogue reaches, and is
-# told.
+# told, with what that root is. A `.hero` file whose `use` lines start above
+# its own folder, a module nested in a tree, is refused as a root is, each
+# refusal naming the form that reads it (`cli/doc_operand.hero`, defect 2615).
 
 use ast
 use check/state
@@ -38,6 +41,7 @@ use check/type_fit
 use checker
 use cli/argv
 use cli/check
+use cli/doc_operand
 use cli/doc_shape
 use cli/doc_text
 use cli/input
@@ -93,14 +97,14 @@ function answered(inv: argv.Invocation, library: str, folder: str) -> Answered
         if root.is_err()
             io.eprint(text: "error: " + read_failure(root))
             return Answered(exit: .failed_exit, reference: "")
-        return reading(root.must(), inv: inv, target: path)
+        return reading(root.must(), inv: inv, target: path, folder: folder)
     read = input.read_compilation(path: path, library: library)
 
     if read.is_err()
         io.eprint(text: "error: " + read_failure(read))
         return Answered(exit: .failed_exit, reference: "")
     s = read.must()
-    return reading(s, inv: inv, target: source.module_at(s, s.files[0].start))
+    return reading(s, inv: inv, target: source.module_at(s, s.files[0].start), folder: folder)
 
 function holds_line_break(text: str) -> bool
     for c in text.chars()
@@ -127,15 +131,21 @@ function apart_from_root(said: [diag.Diagnostic], s: source.Source, target: str)
 
     return kept
 
-# The stages, each told and stopping where it speaks, then the reference.
-function reading(s: source.Source, inv: argv.Invocation, target: str) -> Answered
+# The stages, each told and stopping where it speaks, then the reference;
+# `folder` is the one whose catalogue a package's module is read through.
+function reading(s: source.Source, inv: argv.Invocation, target: str, folder: str) -> Answered
     unverified.say(s, inv)
     parsed = parse.parse_source(s)
-    stop = check.report(parsed.diagnostics, s, inv, stage: 1)
+    stop = check.report(doc_operand.noted(parsed.diagnostics, s, target: target, folder: folder), s, inv, stage: 1)
 
     if !stop.is_err()
         return Answered(exit: stop.must(), reference: "")
-    stop_g = check.report(modules.errors(s, parsed.uses), s, inv, stage: 2)
+    stop_g = check.report(
+        doc_operand.noted(modules.errors(s, parsed.uses), s, target: target, folder: folder),
+        s,
+        inv,
+        stage: 2
+    )
 
     if !stop_g.is_err()
         return Answered(exit: stop_g.must(), reference: "")
@@ -158,6 +168,12 @@ function reading(s: source.Source, inv: argv.Invocation, target: str) -> Answere
 
     if !stop_d.is_err()
         return Answered(exit: stop_d.must(), reference: "")
+
+    # A documented test titled with a name no function of the module has is
+    # told, the reference printed all the same (`cli/doc_text.hero`).
+    for note in doc_text.unattached(s, decls: parsed.decls, target: target)
+        io.eprint(text: "note: " + note)
+
     return Answered(
         exit: .ok_exit,
         reference: reference(parsed.tree, s, decls: parsed.decls, c: c, target: target, file: file)
@@ -246,7 +262,7 @@ function asked(operand: str) -> argv.Invocation
 # The run of the verb over a module held as text, named `name`.
 function of_text(name: str, text: str) -> Answered
     s = modules.load_text(path: name, root_text: text, library: library_source.text()).must()
-    return reading(s, inv: asked(name), target: source.module_at(s, s.files[0].start))
+    return reading(s, inv: asked(name), target: source.module_at(s, s.files[0].start), folder: "")
 
 # A module of two functions and an example, the second function's line
 # written as `line`.

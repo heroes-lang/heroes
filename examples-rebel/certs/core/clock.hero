@@ -1,0 +1,82 @@
+# The clock every renewal decision reads, injected rather than read from
+# the system wherever the program decides by it: a real run reads the
+# system's clock, and the demo hands a fixed moment it moves forward by
+# whole days, so that the days a certificate has left are the same at every
+# run and the program's choices can be shown without a wait of two months.
+#
+# TLS checks a certificate's dates against the system's own clock, which no
+# program sets, so the demo's fixed moments are placed in the past and end
+# at today (`demo/script` says how).
+
+use <rebel>/time
+
+## The clock
+
+# Where the program's "now" comes from.
+variant Clock
+    # The system's clock, read at each call.
+    system
+    # One moment, the same at every call until the holder replaces it.
+    fixed
+        # The moment answered.
+        at: time.Instant
+
+# The moment `c` says it is.
+#
+# - `c`: the clock.
+#
+# Fails as `time.now` fails, for the system's clock.
+function now(c: Clock) -> time.Instant?
+    return match c
+        .system  => time.now()
+        .fixed f => ok(f.at)
+
+# A fixed clock `days` whole days after `c`'s moment.
+#
+# - `c`: the clock moved from; the system's is read once.
+# - `days`: the days added, negative to move back.
+#
+# Fails as `time.days` and `time.add` fail, past the instants a
+# `time.Instant` holds.
+function after_days(c: Clock, days: i64) -> Clock?
+    at = now(c)?
+    return ok(.fixed(at: time.add(at, d: time.days(days)?)?))
+
+## Whole days
+
+# The whole days from `from` to `to`, a part of a day left out: what a
+# person is told of a certificate's time left. Negative where `to` is
+# before `from`, rounded toward zero as `time.to_units` rounds.
+#
+# - `from`: the first moment.
+# - `to`: the second moment.
+function days_between(from: time.Instant, to: time.Instant) -> i64
+    span = time.between(from: from, to: to).default(time.nanoseconds(0))
+    return time.to_units(span, unit: .day)
+
+# `n` with its unit, "1 day" or "29 days".
+#
+# - `n`: the count of days, any sign.
+function format_days(n: i64) -> str
+    if n == 1 || n == -1
+        return f"{n} day"
+    return f"{n} days"
+
+test "days_between: whole days, a part of one left out, and backwards"
+    start = time.date(year: 2026, month: 1, day: 1).must()
+    later = time.add(start, d: time.hours(24 * 29 + 23).must()).must()
+    assert days_between(from: start, to: later) == 29
+    assert days_between(from: start, to: start) == 0
+    assert days_between(from: later, to: start) == -29
+
+test "after_days: a fixed clock moved by whole days, either way"
+    start = time.date(year: 2026, month: 3, day: 1).must()
+    moved = after_days(.fixed(at: start), days: 30).must()
+    assert days_between(from: start, to: now(moved).must()) == 30
+    back = after_days(.fixed(at: start), days: -61).must()
+    assert days_between(from: now(back).must(), to: start) == 61
+
+test "format_days: one day, several, and none"
+    assert format_days(1) == "1 day"
+    assert format_days(29) == "29 days"
+    assert format_days(0) == "0 days"

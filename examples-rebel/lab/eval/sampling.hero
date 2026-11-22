@@ -1,0 +1,169 @@
+# Random samples drawn from the generator of the cell being evaluated
+# (`eval/machine`), so a notebook draws the same numbers on every run and a
+# cell re-evaluated alone draws what it drew before: uniform floats, normal
+# floats, whole numbers in a range, a sample without replacement, a vector
+# shuffled.
+#
+# `random` draws uniformly and leaves other distributions pending, so a
+# normal sample is made here by Box and Muller's transform: two uniform
+# draws `u` and `v` give `sqrt(-2 ln u) cos(2 pi v)` and its sine twin, two
+# independent standard normal numbers.
+
+use <rebel>/math
+use <rebel>/random
+
+use eval/machine
+use eval/value
+
+# The most numbers one call may draw.
+constant MOST_DRAWS: i64
+    1_000_000
+
+# The count `v` asks for, 0 to `MOST_DRAWS`.
+#
+# - `v`: the value.
+# - `what`: what it counts, for the message.
+#
+# Fails `invalid` where it is no whole number in that range.
+function count_of(v: value.Value, what: str) -> i64?
+    n = value.int_of(v, what: what)?
+
+    if n < 0 || n > MOST_DRAWS
+        return fail(code: value.INVALID, msg: f"{what} is 0 to {MOST_DRAWS}, not {n}")
+    return ok(n)
+
+# `count` floats drawn uniformly from `low` to `high`, `high` left out.
+#
+# - `m`: the evaluation, whose generator advances.
+# - `count`: how many.
+# - `low`: the least.
+# - `high`: the bound, above `low`.
+#
+# Fails `invalid` where an argument is not as said.
+function uniform(@m: machine.Machine, count: value.Value, low: value.Value, high: value.Value) -> value.Value?
+    n = count_of(count, what: "runif's count")?
+    a = value.float_of(low, what: "runif's low")?
+    b = value.float_of(high, what: "runif's high")?
+
+    if !(b > a)
+        return fail(code: value.INVALID, msg: "runif's high is above its low")
+    xs: [f64] @= []
+
+    for _ in range(from: 0, to: n)
+        xs @ xs.push(a + (b - a) * random.next_f64(@m.generator))
+
+    return ok(value.of_floats(xs))
+
+# `count` floats drawn from the normal distribution of mean `mean` and
+# standard deviation `spread`, by Box and Muller's transform.
+#
+# - `m`: the evaluation, whose generator advances two steps for each two
+#   numbers.
+# - `count`: how many.
+# - `mean`: the mean.
+# - `spread`: the standard deviation, 0 or more.
+#
+# Fails `invalid` where an argument is not as said.
+function normal(@m: machine.Machine, count: value.Value, mean: value.Value, spread: value.Value) -> value.Value?
+    n = count_of(count, what: "rnorm's count")?
+    mu = value.float_of(mean, what: "rnorm's mean")?
+    sigma = value.float_of(spread, what: "rnorm's deviation")?
+
+    if !(sigma >= 0.0)
+        return fail(code: value.INVALID, msg: "rnorm's deviation is 0 or more")
+    xs: [f64] @= []
+
+    while xs.len() < n
+        u = 1.0 - random.next_f64(@m.generator)
+        v = random.next_f64(@m.generator)
+        radius = math.sqrt(-2.0 * math.ln(u))
+        angle = math.TAU * v
+        xs @ xs.push(mu + sigma * radius * math.cos(angle))
+
+        if xs.len() < n
+            xs @ xs.push(mu + sigma * radius * math.sin(angle))
+
+    return ok(value.of_floats(xs))
+
+# `count` whole numbers drawn from `from` to `to`, both included.
+#
+# - `m`: the evaluation, whose generator advances.
+# - `from`: the least.
+# - `to`: the greatest, at least `from`.
+# - `count`: how many.
+#
+# Fails `invalid` where an argument is not as said.
+function integers(@m: machine.Machine, from: value.Value, to: value.Value, count: value.Value) -> value.Value?
+    a = value.int_of(from, what: "randint's least")?
+    b = value.int_of(to, what: "randint's greatest")?
+    n = count_of(count, what: "randint's count")?
+
+    if b < a || b == math.MAX_I64
+        return fail(code: value.INVALID, msg: f"randint draws from a range of whole numbers, not {a} to {b}")
+    out: [value.Value] @= []
+
+    for _ in range(from: 0, to: n)
+        out @ out.push(value.of_int(random.int_in(@m.generator, from: a, to: b + 1)))
+
+    return ok(.vector(items: out))
+
+# The elements of the vector `v` it draws, `count` of them without
+# replacement.
+#
+# - `v`: a vector.
+# - `what`: the built-in, for the message.
+function items_of(v: value.Value, what: str) -> [value.Value]?
+    match v
+        .vector items => return ok(items.items)
+        .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return value.refusal(what: f"{what}'s argument", wanted: "a vector", v: v)
+
+# `count` elements of the vector `v`, drawn without replacement.
+#
+# - `m`: the evaluation, whose generator advances.
+# - `v`: a vector.
+# - `count`: 0 to its length.
+#
+# Fails `invalid` where `v` is no vector or `count` is outside.
+function sample(@m: machine.Machine, v: value.Value, count: value.Value) -> value.Value?
+    xs = items_of(v, what: "sample")?
+    return ok(.vector(items: random.sample(@m.generator, xs: xs, count: value.int_of(count, what: "sample's count")?)?))
+
+# The elements of `v` in an order drawn at random.
+#
+# - `m`: the evaluation, whose generator advances.
+# - `v`: a vector.
+#
+# Fails `invalid` where `v` is no vector.
+function shuffled(@m: machine.Machine, v: value.Value) -> value.Value?
+    xs @= items_of(v, what: "shuffle")?
+    random.shuffle(@m.generator, @xs)
+    return ok(.vector(items: xs))
+
+test "normal: the count asked, the same numbers again from the same cell"
+    m @= machine.new(plots: "", seed: 42)
+    machine.enter_cell(@m, cell: "draw")
+    first = normal(@m, count: value.of_int(5), mean: value.of_int(10), spread: value.of_int(2)).must()
+    assert value.floats_of(first, what: "x").must().len() == 5
+    machine.enter_cell(@m, cell: "draw")
+    assert normal(@m, count: value.of_int(5), mean: value.of_int(10), spread: value.of_int(2)).must() == first
+    assert normal(@m, count: value.of_int(-1), mean: value.of_int(0), spread: value.of_int(1)).is_err()
+    assert normal(@m, count: value.of_int(3), mean: value.of_int(0), spread: value.of_int(-1)).is_err()
+
+test "uniform and integers: inside their bounds"
+    m @= machine.new(plots: "", seed: 1)
+
+    for x in value.floats_of(uniform(@m, count: value.of_int(100), low: value.of_int(2), high: value.of_int(3)).must(), what: "x").must()
+        assert x >= 2.0 && x < 3.0
+
+    for k in value.floats_of(integers(@m, from: value.of_int(1), to: value.of_int(6), count: value.of_int(100)).must(), what: "k").must()
+        assert k >= 1.0 && k <= 6.0
+
+    assert uniform(@m, count: value.of_int(1), low: value.of_int(3), high: value.of_int(3)).is_err()
+
+test "sample and shuffled: the elements kept, a count past the length refused"
+    m @= machine.new(plots: "", seed: 3)
+    v: value.Value = .vector(items: [value.of_int(1), value.of_int(2), value.of_int(3)])
+    assert value.floats_of(shuffled(@m, v: v).must(), what: "x").must().len() == 3
+    assert value.floats_of(sample(@m, v: v, count: value.of_int(2)).must(), what: "x").must().len() == 2
+    assert sample(@m, v: v, count: value.of_int(4)).is_err()

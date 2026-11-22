@@ -25,6 +25,7 @@ extern "x.h"
     record Pool tag pool
 extern "x.h"
     # a remark directly under a second head of the same group
+
     function pool_put(p: Pool consumes)
 
 function main()

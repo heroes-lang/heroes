@@ -30,7 +30,7 @@ use cli/declared_by
 use cli/input
 use cli/io
 use cli/kept
-use cli/layer
+use cli/layer_reach
 use cli/libraries
 use cli/pointee_ask
 use cli/process
@@ -152,8 +152,8 @@ function produce(path: str, s: source.Source, options: compile.Options, t: toolc
             return fail(code: "failed", msg: "no runtime object")
         return fail(code: "failed", msg: failure_note(object))
 
-    # The platform layer's archive, on every link after the objects (panel 234's R6, `cli/layer.hero`).
-    layer_words = layer.for_build(t, level: options.level, sanitize: options.sanitize)?
+    # The platform layer's archive, on every link after the objects, with the Swift members the program reaches (panel 234's R6, defect 2625).
+    layer_words = layer_reach.for_build(t, level: options.level, sanitize: options.sanitize, s: s, decls: art.must().decls)?
 
     # What the header said each `@` parameter points at (defect 010): filled
     # by the pointee check inside the round, empty for the package failure

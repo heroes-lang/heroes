@@ -111,7 +111,10 @@ function write(@t: Transcript, name: str, text: str) -> ()?
     t.lines @ t.lines.push("  (wrote " + name + ")")
     return ok()
 
-# Adds the content of the project's file `name`, as `cat` shows it.
+# Adds the content of the project's file `name`, each line after `  | `, so
+# that no line of the transcript begins as a line of the file does: a
+# conflict's `<<<<<<<` at a line's start is what a merge left half done
+# looks like, and the transcript is a tracked file (`main.expected`).
 #
 # - `t`: the transcript.
 # - `name`: the file's path below the project.
@@ -119,7 +122,11 @@ function write(@t: Transcript, name: str, text: str) -> ()?
 # Fails where it cannot be read.
 function show_file(@t: Transcript, name: str) -> ()?
     t.lines @ t.lines.push("$ cat " + name)
-    say(@t, text: strings.trim_end(read_file(layout.work_file(t.repo, name: name))?))
+    text = strings.trim_end(read_file(layout.work_file(t.repo, name: name))?)
+
+    for line in strings.split(s: text, sep: "\n")
+        t.lines @ t.lines.push("  | " + line)
+
     return ok()
 
 test "sign: one minute apart, an hour ahead of UTC"

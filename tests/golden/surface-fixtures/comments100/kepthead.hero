@@ -11,6 +11,7 @@ extern "x.h"
 # the doc of Pool, above its own head
 extern "x.h"
     # a remark under that head, which documents nothing
+
     record Pool tag pool
 
 function main()

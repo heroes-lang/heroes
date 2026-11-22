@@ -1,0 +1,213 @@
+# The trash the explorer keeps: a folder of its own where a deleted entry is
+# moved rather than removed, so a deletion can be taken back. Its layout is
+# the one the freedesktop.org Trash Specification 1.0 of 2014-01-02 gives
+# (specifications.freedesktop.org/trash/latest/, read 2026-11-22): the
+# entries under `files/`, and beside each, under `info/`, a note of where the
+# entry came from and when it was deleted. The specification's notes are
+# `.trashinfo` files in the desktop entry format; the explorer's are TOML,
+# `<name>.toml`, with a `path` and a `deleted` date-time in UTC.
+#
+# An entry keeps its name in the trash unless one of that name is there
+# already, and then it takes a free one (`names.free_name`), so two files
+# called `notes.txt` deleted from two folders are both kept. The time of a
+# deletion is the explorer's clock's, never read here.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/time
+use <rebel>/toml
+
+use ops/names
+
+# One entry the trash holds.
+record Trashed
+    # Where it stood before it was deleted.
+    original: str
+    # Where it stands in the trash.
+    stored: str
+    # When it was deleted.
+    deleted: time.Instant
+
+# The folder of the trash's entries.
+#
+# - `trash`: the trash folder.
+function files_dir(trash: str) -> str
+    return paths.join_all([trash, "files"])
+
+# The folder of the trash's notes of where each entry came from.
+#
+# - `trash`: the trash folder.
+function info_dir(trash: str) -> str
+    return paths.join_all([trash, "info"])
+
+# Moves `item` into the trash, with a note of where it came from.
+#
+# - `trash`: the trash folder; it and its two folders are made where they
+#   are not there.
+# - `item`: the entry's path.
+# - `at`: the time of the deletion, the explorer's clock's.
+#
+# The note is written first and taken back where the move fails, so the
+# trash never holds an entry without its note. Fails as `fs.move` fails,
+# `file_not_found` where `item` is not there, and as the note's writing
+# fails.
+function put_in(trash: str, item: str, at: time.Instant) -> Trashed?
+    fs.make_dir_all(files_dir(trash))?
+    fs.make_dir_all(info_dir(trash))?
+    _ = fs.link_info(item)?
+    name = paths.name(item)?
+    stored_name = free_stored_name(trash: trash, wanted: name)
+    note = note_path(trash: trash, stored_name: stored_name)
+    fs.write_atomic_text(path: note, text: note_text(original: item, deleted: at)?)?
+    stored = paths.join_all([files_dir(trash), stored_name])
+
+    match fs.move(from: item, to: stored)
+        .ok _ => return ok(Trashed(original: item, stored: stored, deleted: at))
+        .err x =>
+            _ = fs.remove(note).is_err()
+            return fail(code: x.code, msg: x.msg)
+
+# A name for `wanted` free among the trash's entries and its notes.
+#
+# - `trash`: the trash folder.
+# - `wanted`: the entry's own name.
+function free_stored_name(trash: str, wanted: str) -> str
+    name @= names.free_name(folder: files_dir(trash), wanted: wanted)
+
+    while names.is_taken(folder: info_dir(trash), name: name + ".toml")
+        name @ names.free_name(
+            folder: files_dir(trash),
+            wanted: names.numbered(names.parts_of(name), n: names.parts_of(name).number + 1)
+        )
+
+    return name
+
+# The path of the note of the entry stored as `stored_name`.
+#
+# - `trash`: the trash folder.
+# - `stored_name`: the entry's name in the trash.
+function note_path(trash: str, stored_name: str) -> str
+    return paths.join_all([info_dir(trash), stored_name + ".toml"])
+
+# The note of an entry deleted from `original` at `deleted`, as TOML.
+#
+# - `original`: where it stood.
+# - `deleted`: when it was deleted.
+#
+# Fails as `toml.format` fails, which a text and a date-time never do.
+function note_text(original: str, deleted: time.Instant) -> str?
+    members: {str: toml.Value} = {
+        "path": .text(v: original)
+        "deleted": .date_time(at: time.to_date_time(deleted), offset_minutes: 0)
+    }
+    body = toml.format(.table(members: members))?
+    return ok("# An entry the explorer moved to its trash.\n" + body)
+
+# Puts the trashed entry back where it came from; where something stands
+# there now, it comes back under a free name beside it. Answers the path it
+# came back to.
+#
+# - `t`: the trashed entry.
+#
+# The note is removed once the entry is back. Fails as `fs.move` fails,
+# `file_not_found` where the entry is no longer in the trash or the folder
+# it came from is gone.
+function restore(t: Trashed) -> str?
+    folder = paths.parent(t.original)
+    wanted = paths.name(t.original)?
+    to = paths.join_all([folder, names.free_name(folder: folder, wanted: wanted)])
+    fs.move(from: t.stored, to: to)?
+    stored_name = paths.name(t.stored)?
+    _ = fs.remove(note_path(trash: paths.parent(paths.parent(t.stored)), stored_name: stored_name)).is_err()
+    return ok(to)
+
+# Every entry the trash holds, by its note, in the order of the notes'
+# names; a note whose entry is gone, or that cannot be read, is passed over.
+#
+# - `trash`: the trash folder; none where it is not there.
+#
+# Fails as `fs.read_dir` fails on a trash that is there.
+function entries(trash: str) -> [Trashed]?
+    found: [Trashed] @= []
+
+    if !fs.is_dir(info_dir(trash)).default(false)
+        return ok(found)
+
+    for note in fs.read_dir(info_dir(trash))?
+        stored_name = match paths.stem(note.name)
+            .ok s  => s
+            .err _ => continue
+
+        stored = paths.join_all([files_dir(trash), stored_name])
+
+        match read_note(note: paths.join_all([info_dir(trash), note.name]), stored: stored)
+            .ok t =>
+                if !fs.link_info(stored).is_err()
+                    found @ found.push(t)
+            .err _ => _ = 0
+
+    return ok(found)
+
+# The trashed entry a note tells of.
+#
+# - `note`: the note's path.
+# - `stored`: where its entry stands in the trash.
+#
+# Fails `invalid` where the note lacks its `path` or its `deleted`, and as
+# `read_file` and `toml.parse` fail.
+function read_note(note: str, stored: str) -> Trashed?
+    doc = toml.parse(read_file(note)?)?
+
+    original = match toml.value_at(doc, path: ["path"])?
+        .text t => t.v
+        .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return fail(code: "invalid", msg: f"{note}: `path` is not a text")
+
+    deleted = toml.instant_of(toml.value_at(doc, path: ["deleted"])?)?
+    return ok(Trashed(original: original, stored: stored, deleted: deleted))
+
+# Removes everything the trash holds, for good, and answers how many entries
+# went.
+#
+# - `trash`: the trash folder; its two folders are left empty.
+#
+# Fails as `fs.remove_all` fails on an entry that cannot be removed.
+function empty_out(trash: str) -> i64?
+    gone @= 0
+
+    if fs.is_dir(files_dir(trash)).default(false)
+        for e in fs.read_dir(files_dir(trash))?
+            fs.remove_all(paths.join_all([files_dir(trash), e.name]))?
+            gone @ gone + 1
+
+    if fs.is_dir(info_dir(trash)).default(false)
+        for e in fs.read_dir(info_dir(trash))?
+            fs.remove_all(paths.join_all([info_dir(trash), e.name]))?
+
+    return ok(gone)
+
+test "note_text: the original path and the time in UTC, read back by read_note's parser"
+    at = time.from_unix(whole_seconds: 1773480000, extra_nanoseconds: 0).must()
+    text = note_text(original: "docs/old.txt", deleted: at).must()
+    doc = toml.parse(text).must()
+    assert toml.instant_of(toml.value_at(doc, path: ["deleted"]).must()).must() == at
+    assert toml.value_at(doc, path: ["path"]).must() == .text(v: "docs/old.txt")
+
+test "put_in and restore: two entries of one name both kept, each put back where it was, and a taken place answered with a free name"
+    base = "build/explorer-tests/trash"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base + "/a").must()
+    fs.make_dir_all(base + "/b").must()
+    write_file(path: base + "/a/notes.txt", text: "one").must()
+    write_file(path: base + "/b/notes.txt", text: "two").must()
+    at = time.from_unix(whole_seconds: 1773480000, extra_nanoseconds: 0).must()
+    first = put_in(trash: base + "/t", item: base + "/a/notes.txt", at: at).must()
+    second = put_in(trash: base + "/t", item: base + "/b/notes.txt", at: at).must()
+    assert paths.name(first.stored).must() == "notes.txt"
+    assert paths.name(second.stored).must() == "notes 2.txt"
+    assert entries(base + "/t").must().len() == 2
+    assert restore(second).must() == base + "/b/notes.txt"
+    write_file(path: base + "/a/notes.txt", text: "new").must()
+    assert restore(first).must() == base + "/a/notes 2.txt"
+    assert entries(base + "/t").must().len() == 0
+    fs.remove_all(base).must()

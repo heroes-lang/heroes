@@ -291,3 +291,9 @@ comma keeps its line now, as one after a comment does
 (`margins.commented_comma`).
 
 Every output is pinned in `tests/harness/suite_surface.hero`.
+
+**Amended 2026-11-22 by defect 2634.** A comment directly above a group's
+first member inside the block documents it (`selfhost/parse/group.hero`'s
+`member_doc`), so the remark under the fourth head of `blankunderhead.hero`
+has a blank line under it as well as above, which keeps it the remark the
+shape is about; its output is the same bytes.

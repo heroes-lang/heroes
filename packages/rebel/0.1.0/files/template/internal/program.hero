@@ -51,6 +51,12 @@ constant INCLUDE: i64
 constant RETURN: i64
     8
 
+# A step that writes the text of its `cond.left` as markup, cleaned by the
+# policy of the render that runs it inside the element its `text` names, ""
+# for the policy's own: the HTML mode's `clean` action.
+constant CLEAN: i64
+    9
+
 ## The operands and filters of a value
 
 # An operand read from the value the template is given, by its `segments`.
@@ -223,7 +229,8 @@ record Cond
 record Step
     # What it does: `TEXT` to `RETURN`.
     kind: i64
-    # The text a `TEXT` step writes.
+    # The text a `TEXT` step writes; the element a `CLEAN` step's text lands
+    # in, as `Fragment.element` names it.
     text: str
     # The value the step reads.
     cond: Cond
@@ -241,6 +248,15 @@ record Step
     # Where the step was written, counted from 1, the column in characters.
     line: i64
     column: i64
+
+# What a `CLEAN` step hands the cleaning of its render: the text to clean,
+# and the element it lands in.
+record Fragment
+    # The element the text is read inside: `td`, `th` or `caption` in a
+    # table's cell, "" for the policy's own context element.
+    element: str
+    # The text of HTML from outside, as the value holds it.
+    text: str
 
 # One template, compiled.
 record Part

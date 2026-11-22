@@ -1,0 +1,79 @@
+# What the hub's WebSocket feed carries, one JSON text a message: every
+# reading as the hub re-publishes it, and every event a person watching the
+# hub needs to see (a payload refused, a device nobody registered, a rule
+# that sent a reading, a broker lost and made again, a publish held for it).
+# A dashboard reads the feed with `message_of`; the hub writes it with
+# `message_text`.
+#
+#     {"kind": "reading", "reading": {"device": "fridge-07", ...}}
+#     {"kind": "event", "topic": "amqp", "text": "lost: 320 ..."}
+
+use <rebel>/json
+
+use codecs/reading
+
+# The code of a text that is no feed message.
+constant INVALID: str
+    "invalid"
+
+# One message of the feed.
+variant Message
+    # A reading.
+    reading
+        # The reading.
+        r: reading.Reading
+    # An event of the hub.
+    event
+        # What it is about: a rule's name, a broker's protocol, `refused`,
+        # `unregistered`, `held`.
+        topic: str
+        # What happened, in words.
+        text: str
+
+# The JSON `m` is written as.
+#
+# - `m`: the message.
+function message_json(m: Message) -> json.Value
+    return match m
+        .reading got => .object(members: {"kind": .text(v: "reading"), "reading": reading.reading_json(got.r)})
+        .event e => .object(members: {"kind": .text(v: "event"), "topic": .text(v: e.topic), "text": .text(v: e.text)})
+
+# The text `m` is sent as, on one line.
+#
+# - `m`: the message.
+function message_text(m: Message) -> str
+    # A reading's numbers are finite and an event holds texts, so the one
+    # failure of `json.format`, a NaN or an infinity, cannot come.
+    return json.format(message_json(m)).default("{}")
+
+# The message `text` holds.
+#
+# - `text`: a feed's text, as `message_text` writes it.
+#
+# Fails `invalid` where it is no JSON, its `kind` is neither, or its parts
+# are not what they should be.
+function message_of(text: str) -> Message?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"no JSON: {e.msg}")
+
+    kind = reading.text_at(v, key: "kind")?
+
+    if kind == "reading"
+        got = match json.member(v, key: "reading")
+            .ok r  => reading.reading_of(r)?
+            .err _ => return fail(code: INVALID, msg: "a reading message holds no \"reading\"")
+
+        return ok(.reading(r: got))
+
+    if kind == "event"
+        return ok(.event(topic: reading.text_at(v, key: "topic")?, text: reading.text_at(v, key: "text")?))
+
+    return fail(code: INVALID, msg: f"the kind \"{kind}\" is neither a reading nor an event")
+
+test "message_text, message_of: an event written and read back, and texts that are none"
+    m: Message = .event(topic: "amqp", text: "lost: 320 CONNECTION_FORCED")
+    assert message_of(message_text(m)).must() == m
+    assert message_of("{\"kind\": \"chat\"}").is_err()
+    assert message_of("nope").is_err()
+    assert message_of("{\"kind\": \"reading\"}").is_err()

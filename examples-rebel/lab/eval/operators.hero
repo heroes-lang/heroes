@@ -1,0 +1,319 @@
+# The operators of the lab's language on values. Between numbers they are
+# the tower's arithmetic (`numbers/arith`). A vector and a number, or two
+# vectors of one length, combine element by element, so `2 * xs + 1` scales
+# and shifts a data series. Between matrices `*` is the matrix product and
+# `^` a whole power; a matrix and a number combine entry by entry; a matrix
+# times a vector is the vector the matrix maps it to. `+` joins two texts.
+#
+# `==` and `!=` compare any two values, numbers by value (`1/2 == 0.5`);
+# the orderings compare two real numbers, or two texts by their bytes. `and`,
+# `or` and `not` take truths; `and` and `or` are evaluated lazily by
+# `eval/evaluate`, so they are not here.
+
+use <rebel>/strings
+
+use eval/value
+use linalg/matrix
+use numbers/arith
+use numbers/scalar
+
+# The arithmetic operator `op` on two numbers.
+#
+# - `op`: `+ - * / % ^`.
+# - `a`: the left operand.
+# - `b`: the right operand.
+#
+# Fails `invalid` where the operation has no answer (an exact division by
+# zero, a complex remainder), `limit` where an exact power is too large.
+function number_op(op: str, a: scalar.Number, b: scalar.Number) -> scalar.Number?
+    return match op
+        "+" => ok(arith.add(a: a, b: b))
+        "-" => ok(arith.subtract(a: a, b: b))
+        "*" => ok(arith.multiply(a: a, b: b))
+        "/" => arith.divide(a: a, b: b)
+        "%" => arith.remainder(a: a, b: b)
+        "^" => arith.power(base: a, exponent: b)
+        _   => fail(code: value.INVALID, msg: f"`{op}` is no operator of numbers")
+
+# Whether `op` compares.
+#
+# - `op`: the operator.
+function is_comparison(op: str) -> bool
+    return op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">="
+
+# `left op right`.
+#
+# - `op`: the operator, any of the language's but `and` and `or`.
+# - `left`: the left operand.
+# - `right`: the right operand.
+#
+# Fails `invalid` where the operator does not take these operands, saying
+# what it was given.
+function binary(op: str, left: value.Value, right: value.Value) -> value.Value?
+    if is_comparison(op)
+        return compared(op, left: left, right: right)
+
+    match left
+        .number a =>
+            match right
+                .number b => return ok(.number(value: number_op(op, a: a.value, b: b.value)?))
+                .vector ys => return each_right(op, left: left, items: ys.items)
+                .matrix m => return matrix_number(op, m: m.value, n: a.value, number_left: true)
+                .truth _ | .text _ | .callable _ | .plot _ | .nothing => return refused(op, left: left, right: right)
+        .vector xs =>
+            match right
+                .number _  => return each_left(op, items: xs.items, right: right)
+                .vector ys => return pairwise(op, left: xs.items, right: ys.items)
+                .matrix _ | .truth _ | .text _ | .callable _ | .plot _ | .nothing => return refused(
+                    op,
+                    left: left,
+                    right: right
+                )
+        .matrix m =>
+            match right
+                .number b => return matrix_number(op, m: m.value, n: b.value, number_left: false)
+                .matrix n => return matrix_matrix(op, a: m.value, b: n.value)
+                .vector _ =>
+                    if op != "*"
+                        return refused(op, left: left, right: right)
+                    column = value.matrix_of(right, what: "the vector")?
+                    return ok(value.of_matrix(matrix.multiply(a: m.value, b: column)?, as_vector: true))
+                .truth _ | .text _ | .callable _ | .plot _ | .nothing => return refused(op, left: left, right: right)
+        .text a =>
+            match right
+                .text b =>
+                    if op == "+"
+                        return ok(.text(value: a.value + b.value))
+                    return refused(op, left: left, right: right)
+                .number _ | .truth _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return refused(
+                    op,
+                    left: left,
+                    right: right
+                )
+        .truth _ | .callable _ | .plot _ | .nothing => return refused(op, left: left, right: right)
+
+# The failure of `op` on operands it does not take.
+#
+# - `op`: the operator.
+# - `left`: the left operand.
+# - `right`: the right operand.
+function refused(op: str, left: value.Value, right: value.Value) -> value.Value?
+    return fail(
+        code: value.INVALID,
+        msg: f"`{op}` does not take a {value.kind_name(left)} and a {value.kind_name(right)}"
+    )
+
+# `left op x` for each `x` of `items`.
+#
+# - `op`: the operator.
+# - `left`: the operand on the left of each.
+# - `items`: the vector's elements.
+function each_right(op: str, left: value.Value, items: [value.Value]) -> value.Value?
+    out: [value.Value] @= []
+
+    for x in items
+        out @ out.push(binary(op, left: left, right: x)?)
+
+    return ok(.vector(items: out))
+
+# `x op right` for each `x` of `items`.
+#
+# - `op`: the operator.
+# - `items`: the vector's elements.
+# - `right`: the operand on the right of each.
+function each_left(op: str, items: [value.Value], right: value.Value) -> value.Value?
+    out: [value.Value] @= []
+
+    for x in items
+        out @ out.push(binary(op, left: x, right: right)?)
+
+    return ok(.vector(items: out))
+
+# `left[k] op right[k]` for each `k`.
+#
+# - `op`: the operator.
+# - `left`: the left vector's elements.
+# - `right`: the right vector's elements, as many.
+#
+# Fails `invalid` where the lengths differ.
+function pairwise(op: str, left: [value.Value], right: [value.Value]) -> value.Value?
+    if left.len() != right.len()
+        return fail(
+            code: value.INVALID,
+            msg: f"`{op}` on vectors of {left.len()} and {right.len()} elements: element by element needs one length"
+        )
+    out: [value.Value] @= []
+
+    for k in range(from: 0, to: left.len())
+        out @ out.push(binary(op, left: left[k], right: right[k])?)
+
+    return ok(.vector(items: out))
+
+# A matrix and a number: `^` a whole power of the matrix, anything else
+# entry by entry.
+#
+# - `op`: the operator.
+# - `m`: the matrix.
+# - `n`: the number.
+# - `number_left`: whether the number stands on the left.
+function matrix_number(op: str, m: matrix.Matrix, n: scalar.Number, number_left: bool) -> value.Value?
+    if op == "^" && !number_left
+        k = scalar.int_of(n, what: "a matrix's power")?
+        return ok(.matrix(value: matrix.power(m, k: k)?))
+    cells: [scalar.Number] @= []
+
+    for x in m.cells
+        if number_left
+            cells @ cells.push(number_op(op, a: n, b: x)?)
+        else
+            cells @ cells.push(number_op(op, a: x, b: n)?)
+
+    return ok(.matrix(value: matrix.make(rows: m.rows, cols: m.cols, cells: cells)?))
+
+# Two matrices: their sum, difference or product.
+#
+# - `op`: `+`, `-` or `*`.
+# - `a`: the left matrix.
+# - `b`: the right matrix.
+#
+# Fails `invalid` for another operator or shapes that do not fit.
+function matrix_matrix(op: str, a: matrix.Matrix, b: matrix.Matrix) -> value.Value?
+    return match op
+        "+" => ok(.matrix(value: matrix.add(a: a, b: b)?))
+        "-" => ok(.matrix(value: matrix.subtract(a: a, b: b)?))
+        "*" => ok(.matrix(value: matrix.multiply(a: a, b: b)?))
+        "/" => fail(
+            code: value.INVALID,
+            msg: "a matrix is not divided by a matrix: multiply by `inv` of it, or `solve`"
+        )
+        _ => fail(code: value.INVALID, msg: f"`{op}` does not take two matrices")
+
+# Whether `a` and `b` are the same value: numbers by value, vectors and
+# matrices element by element, anything else by its kind and contents.
+#
+# - `a`: one value.
+# - `b`: the other.
+function same(a: value.Value, b: value.Value) -> bool
+    match a
+        .number x =>
+            match b
+                .number y => return arith.equals(a: x.value, b: y.value)
+                .truth _ | .text _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return false
+        .vector xs =>
+            match b
+                .vector ys =>
+                    if xs.items.len() != ys.items.len()
+                        return false
+
+                    for k in range(from: 0, to: xs.items.len())
+                        if !same(a: xs.items[k], b: ys.items[k])
+                            return false
+
+                    return true
+                .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing => return false
+        .matrix m =>
+            match b
+                .matrix n =>
+                    if m.value.rows != n.value.rows || m.value.cols != n.value.cols
+                        return false
+
+                    for k in range(from: 0, to: m.value.cells.len())
+                        if !arith.equals(a: m.value.cells[k], b: n.value.cells[k])
+                            return false
+
+                    return true
+                .number _ | .truth _ | .text _ | .vector _ | .callable _ | .plot _ | .nothing => return false
+        .truth _ | .text _ | .callable _ | .plot _ | .nothing => return a == b
+
+# A comparison: `==` and `!=` of any two values, the orderings of two real
+# numbers or two texts.
+#
+# - `op`: the comparing operator.
+# - `left`: the left operand.
+# - `right`: the right operand.
+#
+# Fails `invalid` where an ordering is asked of what has none.
+function compared(op: str, left: value.Value, right: value.Value) -> value.Value?
+    if op == "=="
+        return ok(.truth(value: same(a: left, b: right)))
+
+    if op == "!="
+        return ok(.truth(value: !same(a: left, b: right)))
+    order: i64 @= 0
+
+    match left
+        .number a =>
+            match right
+                .number b => order @ arith.compare(a: a.value, b: b.value)?
+                .truth _ | .text _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return refused(
+                    op,
+                    left: left,
+                    right: right
+                )
+        .text a =>
+            match right
+                .text b => order @ strings.compare(a: a.value, b: b.value)
+                .number _ | .truth _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return refused(
+                    op,
+                    left: left,
+                    right: right
+                )
+        .truth _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return refused(
+            op,
+            left: left,
+            right: right
+        )
+
+    holds = match op
+        "<"  => order < 0
+        "<=" => order <= 0
+        ">"  => order > 0
+        _    => order >= 0
+
+    return ok(.truth(value: holds))
+
+# `op v` for the unary operators: `-` of a number, a vector or a matrix,
+# `not` of a truth.
+#
+# - `op`: `-` or `not`.
+# - `v`: the operand.
+#
+# Fails `invalid` where the operator does not take it.
+function unary(op: str, v: value.Value) -> value.Value?
+    if op == "not"
+        return ok(.truth(value: !value.truth_of(v, what: "`not`'s operand")?))
+    return binary("*", left: value.of_int(-1), right: v)
+
+test "binary: exact numbers, a vector scaled and shifted, two vectors of different lengths"
+    assert binary("/", left: value.of_int(1), right: value.of_int(4)).must() == .number(value: arith.divide(a: scalar.of_int(1), b: scalar.of_int(4)).must())
+    xs: value.Value = .vector(items: [value.of_int(1), value.of_int(2)])
+    doubled = binary("*", left: value.of_int(2), right: xs).must()
+    assert binary("+", left: doubled, right: value.of_int(1)).must() == .vector(items: [value.of_int(3), value.of_int(5)])
+    assert binary("+", left: xs, right: .vector(items: [value.of_int(1)])).is_err()
+    assert binary("+", left: .text(value: "a"), right: .text(value: "b")).must() == .text(value: "ab")
+    assert binary("-", left: .text(value: "a"), right: value.of_int(1)).is_err()
+
+test "binary: matrices multiplied, a power, a matrix times a vector, a division refused"
+    m = matrix.make(
+        rows: 2,
+        cols: 2,
+        cells: [scalar.of_int(1), scalar.of_int(1), scalar.of_int(1), scalar.of_int(0)]
+    ).must()
+    square = binary("^", left: .matrix(value: m), right: value.of_int(2)).must()
+    assert square == binary("*", left: .matrix(value: m), right: .matrix(value: m)).must()
+    v: value.Value = .vector(items: [value.of_int(1), value.of_int(2)])
+    assert binary("*", left: .matrix(value: m), right: v).must() == .vector(items: [value.of_int(3), value.of_int(1)])
+    assert binary("/", left: .matrix(value: m), right: .matrix(value: m)).is_err()
+
+test "compared: numbers by value across kinds, texts by bytes, a complex ordering refused"
+    half: value.Value = .number(value: arith.divide(a: scalar.of_int(1), b: scalar.of_int(2)).must())
+    assert compared("==", left: half, right: value.of_real(0.5)).must() == .truth(value: true)
+    assert compared("<", left: .text(value: "a"), right: .text(value: "b")).must() == .truth(value: true)
+    z: value.Value = .number(value: scalar.of_parts(re: 1.0, im: 1.0))
+    assert compared("<", left: z, right: value.of_int(1)).is_err()
+    assert compared("!=", left: value.of_int(1), right: .text(value: "1")).must() == .truth(value: true)
+
+test "unary: a negated vector, not of a truth, not of a number refused"
+    assert unary("-", v: .vector(items: [value.of_int(1)])).must() == .vector(items: [value.of_int(-1)])
+    assert unary("not", v: .truth(value: false)).must() == .truth(value: true)
+    assert unary("not", v: value.of_int(1)).is_err()

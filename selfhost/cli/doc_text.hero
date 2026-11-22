@@ -8,7 +8,13 @@
 # **An example is a `test` of the module with a comment directly above it and
 # a title opening with a function's name and a colon, wherever it stands**
 # (R2: the prototype took those under `## Examples` alone, and printed none of
-# the five readers' examples the blind seat graded). **The module doc is the
+# the five readers' examples the blind seat graded). **A documented test whose
+# title opens with a name and a colon, and the module has no function of that
+# name, is told** (defect 2628): it is no example by the spec's rule, so the
+# reference prints it under no function, and the name is what a function was
+# called before it was renamed or what a reader mistyped. Told as a note at
+# exit 0, never refused: spec § 1 names the refusals of `heroes doc`, the
+# parameter lines alone, and panel 253's R2 left this one unbuilt. **The module doc is the
 # comment the file opens with, up to its first line that is not a comment or
 # is a `##` heading**, and none where that comment documents a declaration
 # directly below it (the prototype printed such a comment twice, as the
@@ -24,6 +30,7 @@
 use ast
 use cli/strings
 use parse
+use parse/swap_reading
 use source
 use token
 
@@ -129,6 +136,45 @@ function is_example_of(s: source.Source, example: ast.Decl, name: str, target: s
     return match example.kind
         .test_decl                                                     => titled(s, example: example) == name
         .function_decl | .record_decl | .variant_decl | .constant_decl => false
+
+# What is told of each documented test of `target` whose title opens with a
+# name and a colon where the module declares no function of that name, in
+# source order: the test's place, its title and the name.
+function unattached(s: source.Source, decls: [ast.Decl], target: str) -> [str]
+    functions: [str] @= []
+
+    for d in decls
+        if source.module_at(s, d.name.start) == target
+            match d.kind
+                .function_decl                                             => functions @ functions.push(
+                    source.span_text(s, d.name)
+                )
+                .record_decl | .variant_decl | .constant_decl | .test_decl => continue
+
+    out: [str] @= []
+
+    for d in decls
+        if source.module_at(s, d.name.start) != target || d.doc.len() == 0
+            continue
+        name = titled(s, example: d)
+
+        match d.kind
+            .test_decl =>
+                if swap_reading.is_identifier(name) && !named_in(functions, name: name)
+                    at = source.locate(s, d.name.start)
+                    out @ out.push(
+                        at.file + ":" + at.line.to_str() + ": the test " + source.span_text(s, d.name) + " is documented and its title opens with `" + name + ":`, and `" + target + "` declares no function `" + name + "`, so the reference prints it as no function's example: an example's title opens with the name of the function it shows, then a colon (spec § 1)"
+                    )
+            .function_decl | .record_decl | .variant_decl | .constant_decl => continue
+
+    return out
+
+function named_in(names: [str], name: str) -> bool
+    for one in names
+        if one == name
+            return true
+
+    return false
 
 # An example as the reference prints it: its comment and its test, as written.
 function example_text(s: source.Source, example: ast.Decl, file: i64) -> str
@@ -265,6 +311,12 @@ test "a declaration is its block, its last field's type and a case's fields with
     decls = decls_of(s)
     assert block(s, d: decls[0], file: 0) == "record P\n    # Across.\n    x: i64\n\n    y: i64"
     assert block(s, d: decls[1], file: 0) == "variant V\n    one\n    two\n        n: i64"
+
+test "a documented test titled with a name no function of the module has is told, and no other (defect 2628)"
+    text = "# f.\nfunction f() -> i64\n    return 1\n\n# Was `close`.\ntest \"close: f answers one\"\n    assert f() == 1\n\n# Shown.\ntest \"f: one\"\n    assert f() == 1\n\ntest \"gone: no comment, no example\"\n    assert f() == 1\n\n# Two names.\ntest \"f and g: a topic\"\n    assert f() == 1\n\n# No colon.\ntest \"f answers one\"\n    assert f() == 1\n"
+    s = source.new_source(name: "t.hero", text: text)
+    said = unattached(s, decls: decls_of(s), target: source.module_at(s, 0))
+    assert said == ["t.hero:6: the test \"close: f answers one\" is documented and its title opens with `close:`, and `t` declares no function `close`, so the reference prints it as no function's example: an example's title opens with the name of the function it shows, then a colon (spec § 1)"]
 
 test "a title with no colon names no function"
     s = source.new_source(name: "t.hero", text: "# x.\ntest \"f one\"\n    assert true\n")

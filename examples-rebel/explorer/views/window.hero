@@ -1,0 +1,288 @@
+# The explorer's main window, made of the system's own widgets through
+# `ui`: a toolbar with Back, Forward, Up, the path of the folder shown and
+# Go and Open; a search bar; three panes side by side, the tree of folders
+# and the bookmarks, the folder's entries under a header naming the
+# columns, and the preview; and the status line at the bottom. The window
+# keeps only the widgets' numbers here; what they show is set from the
+# explorer's state by `views/show`.
+#
+# The layout is `ui`'s, computed the same on every system: the path field,
+# the search field and the entries' pane take the room the window has left,
+# so a window made wider widens them and nothing else.
+
+use <rebel>/image
+use <rebel>/ui
+
+# The least width of the preview pane, in points: wide enough for the facts
+# of a file in most locales, so the window keeps its layout as the person
+# chooses one entry after another, rather than widening for one and
+# narrowing for the next.
+constant PREVIEW_WIDTH: i64
+    360
+
+# The widgets of the main window.
+record Widgets
+    # The window.
+    window: ui.Widget
+    # Goes back to the folder before.
+    back: ui.Widget
+    # Goes forward again.
+    forward: ui.Widget
+    # Goes to the folder above.
+    up: ui.Widget
+    # The path of the folder shown, which the person may type over.
+    location: ui.Widget
+    # Shows the folder typed in `location`.
+    go: ui.Widget
+    # Opens what is chosen: a folder is shown, a file opened.
+    open: ui.Widget
+    # What to search for.
+    query: ui.Widget
+    # Where to search: names or contents.
+    scope: ui.Widget
+    # Whether the query is a regular expression.
+    regex: ui.Widget
+    # Starts the search.
+    search: ui.Widget
+    # Puts the results away.
+    clear: ui.Widget
+    # The tree of folders, one row each.
+    tree: ui.Widget
+    # The bookmarks.
+    places: ui.Widget
+    # The header naming the entries' columns.
+    header: ui.Widget
+    # The entries of the folder shown, or a search's results.
+    entries: ui.Widget
+    # The name of what the preview shows.
+    title: ui.Widget
+    # The facts of what the preview shows.
+    facts: ui.Widget
+    # An image's picture.
+    picture: ui.Widget
+    # A text's first lines, an archive's members, a dump.
+    text: ui.Widget
+    # The status line.
+    status: ui.Widget
+
+# The menus of the main window, each item a widget the events name.
+record Menus
+    # File: Open, New Folder, Rename, Rename with Pattern, Compress to ZIP,
+    # Compress to tar.gz, Extract, Hash, Move to Trash, Put Back, Empty
+    # Trash, Close.
+    open_item: ui.Widget
+    # Makes a folder.
+    new_folder: ui.Widget
+    # Renames the entry chosen.
+    rename: ui.Widget
+    # Renames the entries chosen by a pattern.
+    rename_pattern: ui.Widget
+    # Compresses what is chosen into a ZIP file.
+    compress_zip: ui.Widget
+    # Compresses what is chosen into a gzip-compressed tar.
+    compress_tar: ui.Widget
+    # Extracts the archive chosen.
+    extract: ui.Widget
+    # Hashes the file chosen.
+    hash_item: ui.Widget
+    # Moves what is chosen to the trash.
+    trash_item: ui.Widget
+    # Puts back what is chosen in the trash.
+    put_back: ui.Widget
+    # Empties the trash.
+    empty_trash: ui.Widget
+    # Closes the window, which ends the explorer.
+    close_item: ui.Widget
+    # Edit: undoes the latest action.
+    undo_item: ui.Widget
+    # Does again what was undone.
+    redo_item: ui.Widget
+    # Takes what is chosen to move it.
+    cut: ui.Widget
+    # Takes what is chosen to copy it.
+    copy: ui.Widget
+    # Puts what was taken in the folder shown.
+    paste: ui.Widget
+    # Chooses every entry.
+    choose_all: ui.Widget
+    # Go: the folder before.
+    back_item: ui.Widget
+    # The folder after.
+    forward_item: ui.Widget
+    # The folder above.
+    up_item: ui.Widget
+    # The trash's folder.
+    trash_folder: ui.Widget
+    # Reads the folder again.
+    refresh: ui.Widget
+    # View: entries by name.
+    by_name: ui.Widget
+    # By size.
+    by_size: ui.Widget
+    # By the time of their last write.
+    by_modified: ui.Widget
+    # By type.
+    by_type: ui.Widget
+    # Shows or hides hidden entries.
+    hidden: ui.Widget
+    # Bookmarks: bookmarks the folder shown.
+    add_mark: ui.Widget
+    # Removes the bookmark of the folder shown.
+    remove_mark: ui.Widget
+    # The Bookmarks menu, which ends with one item a bookmark.
+    marks_menu: ui.Widget
+    # One item a bookmark, in the bookmarks' order.
+    mark_items: [ui.Widget]
+
+# The fit of a widget that takes the room its box has left along its line
+# and fills it across.
+function stretching() -> ui.Fit
+    f @= ui.default_fit()
+    f.stretch @ 1
+    f.fill @ true
+    return f
+
+# The fit of a box that fills the window's width.
+function filling() -> ui.Fit
+    f @= ui.default_fit()
+    f.fill @ true
+    return f
+
+# The fit of a widget at least `width` by `height` points, filling across.
+#
+# - `width`: points.
+# - `height`: points.
+function at_least(width: i64, height: i64) -> ui.Fit
+    f @= filling()
+    f.min_width @ width
+    f.min_height @ height
+    return f
+
+# Makes the main window and its widgets.
+#
+# - `app`: the app it is made in.
+#
+# Fails as `ui`'s makers fail.
+function make_window(@app: ui.App) -> Widgets?
+    w = ui.window(@app, title: "Explorer", width: 1080, height: 600)?
+    bar = ui.row(@app, into: w)?
+    ui.set_fit(@app, widget: bar, fit: filling())?
+    back = ui.button(@app, into: bar, text: "Back")?
+    forward = ui.button(@app, into: bar, text: "Forward")?
+    up = ui.button(@app, into: bar, text: "Up")?
+    location = ui.text_field(@app, into: bar, text: "")?
+    ui.set_fit(@app, widget: location, fit: stretching())?
+    go = ui.button(@app, into: bar, text: "Go")?
+    open = ui.button(@app, into: bar, text: "Open")?
+    finding = ui.row(@app, into: w)?
+    ui.set_fit(@app, widget: finding, fit: filling())?
+    query = ui.text_field(@app, into: finding, text: "")?
+    ui.set_fit(@app, widget: query, fit: stretching())?
+    scope = ui.combo(@app, into: finding, items: ["Names", "Contents"])?
+    regex = ui.checkbox(@app, into: finding, text: "Regex", checked: false)?
+    search = ui.button(@app, into: finding, text: "Search")?
+    clear = ui.button(@app, into: finding, text: "Clear")?
+    panes = ui.row(@app, into: w)?
+    ui.set_fit(@app, widget: panes, fit: stretching())?
+    left = ui.column(@app, into: panes)?
+    ui.set_fit(@app, widget: left, fit: filling())?
+    _ = ui.label(@app, into: left, text: "Folders")?
+    tree = ui.list(@app, into: left, items: [], multiple: false)?
+    ui.set_fit(@app, widget: tree, fit: at_least(width: 200, height: 200))?
+    _ = ui.label(@app, into: left, text: "Bookmarks")?
+    places = ui.list(@app, into: left, items: [], multiple: false)?
+    ui.set_fit(@app, widget: places, fit: at_least(width: 200, height: 96))?
+    middle = ui.column(@app, into: panes)?
+    ui.set_fit(@app, widget: middle, fit: stretching())?
+    header = ui.label(@app, into: middle, text: "")?
+    entries = ui.list(@app, into: middle, items: [], multiple: true)?
+    ui.set_fit(@app, widget: entries, fit: at_least(width: 420, height: 320))?
+    right = ui.column(@app, into: panes)?
+    ui.set_fit(@app, widget: right, fit: at_least(width: PREVIEW_WIDTH, height: 0))?
+    title = ui.label(@app, into: right, text: "")?
+    facts = ui.label(@app, into: right, text: "")?
+    picture = ui.picture(@app, into: right, img: image.blank(width: 1, height: 1, format: .rgba)?)?
+    ui.set_visible(@app, widget: picture, on: false)?
+    text = ui.text_area(@app, into: right, text: "")?
+    ui.set_fit(@app, widget: text, fit: at_least(width: PREVIEW_WIDTH, height: 160))?
+    ui.set_enabled(@app, widget: text, on: false)?
+    status = ui.label(@app, into: w, text: "")?
+    return ok(
+        Widgets(window: w, back: back, forward: forward, up: up, location: location, go: go, open: open, query: query, scope: scope, regex: regex, search: search, clear: clear, tree: tree, places: places, header: header, entries: entries, title: title, facts: facts, picture: picture, text: text, status: status)
+    )
+
+# A menu item of `menu` with the shortcut of `key`, the primary key held,
+# and Shift where `shift` says.
+#
+# - `app`: the app.
+# - `menu`: the menu.
+# - `text`: the item's text.
+# - `key`: the key, one `ui.Shortcut` names; empty for none.
+# - `shift`: whether Shift is held too.
+#
+# Fails as `ui.menu_item` and `ui.set_shortcut` fail.
+function item(@app: ui.App, menu: ui.Widget, text: str, key: str, shift: bool) -> ui.Widget?
+    made = ui.menu_item(@app, into: menu, text: text)?
+
+    if key != ""
+        ui.set_shortcut(@app, item: made, shortcut: ui.Shortcut(key: key, primary: true, shift: shift, alt: false))?
+
+    return ok(made)
+
+# Makes the menus of window `w`, each command that has one with its
+# shortcut: the primary key with a letter, a digit or an arrow, F2 for
+# Rename.
+#
+# - `app`: the app.
+# - `w`: the main window.
+#
+# Fails as `ui`'s makers fail.
+function make_menus(@app: ui.App, w: ui.Widget) -> Menus?
+    file = ui.menu(@app, into: w, title: "File")?
+    open_item = item(@app, menu: file, text: "Open", key: "Down", shift: false)?
+    new_folder = item(@app, menu: file, text: "New Folder", key: "n", shift: true)?
+    _ = ui.menu_separator(@app, into: file)?
+    rename = item(@app, menu: file, text: "Rename…", key: "", shift: false)?
+    ui.set_shortcut(@app, item: rename, shortcut: ui.Shortcut(key: "F2", primary: false, shift: false, alt: false))?
+    rename_pattern = item(@app, menu: file, text: "Rename with Pattern…", key: "", shift: false)?
+    _ = ui.menu_separator(@app, into: file)?
+    compress_zip = item(@app, menu: file, text: "Compress to ZIP", key: "", shift: false)?
+    compress_tar = item(@app, menu: file, text: "Compress to tar.gz", key: "", shift: false)?
+    extract = item(@app, menu: file, text: "Extract", key: "", shift: false)?
+    hash_item = item(@app, menu: file, text: "Checksums", key: "i", shift: true)?
+    _ = ui.menu_separator(@app, into: file)?
+    trash_item = item(@app, menu: file, text: "Move to Trash", key: "Backspace", shift: false)?
+    put_back = item(@app, menu: file, text: "Put Back", key: "", shift: false)?
+    empty_trash = item(@app, menu: file, text: "Empty Trash…", key: "Backspace", shift: true)?
+    _ = ui.menu_separator(@app, into: file)?
+    close_item = item(@app, menu: file, text: "Close Window", key: "w", shift: false)?
+    edit = ui.menu(@app, into: w, title: "Edit")?
+    undo_item = item(@app, menu: edit, text: "Undo", key: "z", shift: false)?
+    redo_item = item(@app, menu: edit, text: "Redo", key: "z", shift: true)?
+    _ = ui.menu_separator(@app, into: edit)?
+    cut = item(@app, menu: edit, text: "Cut", key: "x", shift: false)?
+    copy = item(@app, menu: edit, text: "Copy", key: "c", shift: false)?
+    paste = item(@app, menu: edit, text: "Paste", key: "v", shift: false)?
+    choose_all = item(@app, menu: edit, text: "Select All", key: "a", shift: false)?
+    go_menu = ui.menu(@app, into: w, title: "Go")?
+    back_item = item(@app, menu: go_menu, text: "Back", key: "Left", shift: false)?
+    forward_item = item(@app, menu: go_menu, text: "Forward", key: "Right", shift: false)?
+    up_item = item(@app, menu: go_menu, text: "Enclosing Folder", key: "Up", shift: false)?
+    trash_folder = item(@app, menu: go_menu, text: "Trash", key: "", shift: false)?
+    _ = ui.menu_separator(@app, into: go_menu)?
+    refresh = item(@app, menu: go_menu, text: "Refresh", key: "r", shift: false)?
+    view = ui.menu(@app, into: w, title: "View")?
+    by_name = item(@app, menu: view, text: "By Name", key: "1", shift: false)?
+    by_size = item(@app, menu: view, text: "By Size", key: "2", shift: false)?
+    by_modified = item(@app, menu: view, text: "By Date Modified", key: "3", shift: false)?
+    by_type = item(@app, menu: view, text: "By Type", key: "4", shift: false)?
+    _ = ui.menu_separator(@app, into: view)?
+    hidden = item(@app, menu: view, text: "Show Hidden Files", key: "h", shift: true)?
+    marks_menu = ui.menu(@app, into: w, title: "Bookmarks")?
+    add_mark = item(@app, menu: marks_menu, text: "Add Bookmark…", key: "d", shift: false)?
+    remove_mark = item(@app, menu: marks_menu, text: "Remove Bookmark", key: "", shift: false)?
+    _ = ui.menu_separator(@app, into: marks_menu)?
+    no_items: [ui.Widget] = []
+    return ok(
+        Menus(open_item: open_item, new_folder: new_folder, rename: rename, rename_pattern: rename_pattern, compress_zip: compress_zip, compress_tar: compress_tar, extract: extract, hash_item: hash_item, trash_item: trash_item, put_back: put_back, empty_trash: empty_trash, close_item: close_item, undo_item: undo_item, redo_item: redo_item, cut: cut, copy: copy, paste: paste, choose_all: choose_all, back_item: back_item, forward_item: forward_item, up_item: up_item, trash_folder: trash_folder, refresh: refresh, by_name: by_name, by_size: by_size, by_modified: by_modified, by_type: by_type, hidden: hidden, add_mark: add_mark, remove_mark: remove_mark, marks_menu: marks_menu, mark_items: no_items)
+    )

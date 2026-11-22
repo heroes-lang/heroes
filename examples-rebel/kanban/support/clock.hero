@@ -1,0 +1,58 @@
+# The moments the board writes on its boards and cards: the system's clock in
+# the real program, and in the demo a fixed instant that moves on by a step
+# at each reading, so the transcript names the same moments on every run and
+# every machine.
+
+use <rebel>/time
+
+# Where moments come from.
+record Clock
+    # Whether the clock is the demo's fixed one.
+    fixed: bool
+    # The moment a fixed clock answers next.
+    next: time.Instant
+    # How far a fixed clock moves on at each reading.
+    step: time.Duration
+
+# The system's clock.
+function system() -> Clock
+    return Clock(fixed: false, next: time.epoch(), step: time.Duration(nanoseconds: 0))
+
+# A clock that answers `start`, then `start` and one `step`, and so on.
+#
+# - `start`: the first moment answered.
+# - `step`: how far each reading moves it on.
+function fixed(start: time.Instant, step: time.Duration) -> Clock
+    return Clock(fixed: true, next: start, step: step)
+
+# The moment now. Fails as `time.now` does, and `does_not_fit` where a fixed
+# clock would step past the last instant.
+#
+# - `c`: the clock; a fixed one moves on by its step.
+function now(@c: Clock) -> time.Instant?
+    if !c.fixed
+        return time.now()
+    at = c.next
+    c.next @ time.add(at, d: c.step)?
+    return ok(at)
+
+# The moment now as RFC 3339 to the second, in UTC: what the board stores
+# and shows.
+#
+# - `c`: the clock; a fixed one moves on by its step.
+function stamp(@c: Clock) -> str?
+    return ok(time.format(now(@c)?, layout: .rfc3339_seconds))
+
+## Tests
+
+test "now: a fixed clock answers its start, then moves on by its step"
+    c @= fixed(
+        start: time.from_unix(whole_seconds: 1767225600, extra_nanoseconds: 0).must(),
+        step: time.minutes(1).must()
+    )
+    assert stamp(@c).must() == "2026-01-01T00:00:00Z"
+    assert stamp(@c).must() == "2026-01-01T00:01:00Z"
+
+test "now: the system's clock answers a moment after 2026"
+    c @= system()
+    assert time.unix_seconds(now(@c).must()) > 1767225600

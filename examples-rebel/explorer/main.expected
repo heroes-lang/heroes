@@ -1,0 +1,979 @@
+
+== The explorer opens on the demo's folder, in German, folders first ==
+window #1 "Explorer: root" 1080x600
+  menu #30 "File"
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #32 "New Folder" primary+shift+n
+    menu_separator #33
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_separator #36
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_separator #41
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #43 "Put Back" disabled
+    menu_item #44 "Empty Trash…" primary+shift+Backspace
+    menu_separator #45
+    menu_item #46 "Close Window" primary+w
+  menu #47 "Edit"
+    menu_item #48 "Undo" primary+z disabled
+    menu_item #49 "Redo" primary+shift+z disabled
+    menu_separator #50
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #53 "Paste" primary+v disabled
+    menu_item #54 "Select All" primary+a
+  menu #55 "Go"
+    menu_item #56 "Back" primary+Left disabled
+    menu_item #57 "Forward" primary+Right disabled
+    menu_item #58 "Enclosing Folder" primary+Up
+    menu_item #59 "Trash"
+    menu_separator #60
+    menu_item #61 "Refresh" primary+r
+  menu #62 "View"
+    menu_item #63 "By Name" primary+1
+    menu_item #64 "By Size" primary+2
+    menu_item #65 "By Date Modified" primary+3
+    menu_item #66 "By Type" primary+4
+    menu_separator #67
+    menu_item #68 "Show Hidden Files" primary+shift+h
+  menu #69 "Bookmarks"
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    menu_separator #72
+    menu_item #74 "Documents"
+  row #2 at 12,12 1056x24
+    button #3 "Back" disabled at 12,12 56x24
+    button #4 "Forward" disabled at 74,12 80x24
+    button #5 "Up" at 160,12 40x24
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #7 "Go" at 966,12 40x24
+    button #8 "Open" disabled at 1012,12 56x24
+  row #9 at 12,42 1056x24
+    text_field #10 "" at 12,42 728x24
+    combo #11 ["Names", "Contents"] chosen [0] at 746,42 104x24
+    checkbox #12 [ ] "Regex" at 856,42 64x20
+    button #13 "Search" at 926,42 72x24
+    button #14 "Clear" disabled at 1004,42 64x24
+  row #15 at 12,72 1056x494
+    column #16 at 12,72 200x494
+      label #17 "Folders" at 12,72 56x16
+      list #18 ["▾ root", "    docs", "    photos"] chosen [0] at 12,94 200x200
+      label #19 "Bookmarks" at 12,300 72x16
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+    column #21 at 218,72 484x494
+      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+    column #24 at 708,72 360x494
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      picture #27 hidden
+      text_area #28 "" disabled hidden
+  label #29 "11 items, 1,5 MB" at 12,572 128x16
+
+== Äpfel.txt chosen: its text, its encoding, its date in German and its age ==
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    button #8 "Open" at 1012,12 56x24
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [2] at 218,94 484x320
+      label #25 "Äpfel.txt" at 708,72 72x16
+      label #26 "Text\nUTF-8, detected, 35% sure\n1 line, line breaks LF\n18 bytes\nModified 03.03.2026, 17:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Äpfel und Birnen" disabled at 708,180 360x160
+  label #29 "11 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== View, By Size: the smallest file first, folders first still ==
+      label #22 "Name                          Size ▲  Type          Modified" at 218,72 480x16
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [4] at 218,94 484x320
+
+== View, By Size again: the order turned over, the largest first ==
+      label #22 "Name                          Size ▼  Type          Modified" at 218,72 480x16
+      list #23 multiple ["photos/                           --  Folder        06.03.2026, 16:00", "docs/                             --  Folder        06.03.2026, 15:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00"] chosen [8] at 218,94 484x320
+
+== View, By Name: the locale's collation, so Äpfel stands beside apricot ==
+      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [2] at 218,94 484x320
+
+== The tree's row docs chosen: the folder opens and unfolds ==
+window #1 "Explorer: docs" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #56 "Back" primary+Left
+    menu_item #70 "Add Bookmark…" primary+d disabled
+    menu_item #71 "Remove Bookmark"
+    button #3 "Back" at 12,12 56x24
+    text_field #6 "build/explorer/root/docs" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [1] at 12,94 200x200
+      list #20 ["Documents"] chosen [0] at 12,322 200x96
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "4 items, 205 bytes" at 12,572 144x16
+
+== prices.txt: windows-1252 detected, CRLF breaks, the euro sign read ==
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    button #8 "Open" at 1012,12 56x24
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [3] at 218,94 484x320
+      label #25 "prices.txt" at 708,72 80x16
+      label #26 "Text\nwindows-1252, detected, 30% sure\n3 lines, line breaks CRLF\n57 bytes\nModified 01.03.2026, 16:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Prix du jour\nCrème brûlée: 12 €\nTarte aux pommes: 9 €" disabled at 708,180 360x160
+  label #29 "4 items, 205 bytes; 1 chosen" at 12,572 224x16
+
+== greeting.txt: UTF-16LE by its byte order mark ==
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [0] at 218,94 484x320
+      label #25 "greeting.txt" at 708,72 96x16
+      label #26 "Text\nUTF-16LE, byte order mark\n2 lines, line breaks CRLF\n30 bytes\nModified 02.03.2026, 06:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Hello\nWorld" disabled at 708,180 360x160
+
+== japanese.txt: Shift_JIS detected ==
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [1] at 218,94 484x320
+      label #25 "japanese.txt" at 708,72 96x16
+      label #26 "Text\nShift_JIS, detected, 89% sure\n2 lines, line breaks LF\n40 bytes\nModified 01.03.2026, 23:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "日本語のメモです。\n東京で会いましょう。" disabled at 708,180 360x160
+
+== Back: the root again ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #56 "Back" primary+Left disabled
+    menu_item #57 "Forward" primary+Right
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    button #3 "Back" disabled at 12,12 56x24
+    button #4 "Forward" at 74,12 80x24
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [0] at 12,94 200x200
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "11 items, 1,5 MB" at 12,572 128x16
+
+== Forward: docs again ==
+window #1 "Explorer: docs" 1080x600
+    menu_item #56 "Back" primary+Left
+    menu_item #57 "Forward" primary+Right disabled
+    menu_item #70 "Add Bookmark…" primary+d disabled
+    menu_item #71 "Remove Bookmark"
+    button #3 "Back" at 12,12 56x24
+    button #4 "Forward" disabled at 74,12 80x24
+    text_field #6 "build/explorer/root/docs" at 206,12 754x24
+      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [1] at 12,94 200x200
+      list #20 ["Documents"] chosen [0] at 12,322 200x96
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+  label #29 "4 items, 205 bytes" at 12,572 144x16
+
+== Up: the root, with docs chosen ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "    photos"] chosen [0] at 12,94 200x200
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [0] at 218,94 484x320
+      label #25 "docs" at 708,72 32x16
+      label #26 "Folder\n4 items\nModified 06.03.2026, 15:00 (letzte Woche)" at 708,94 328x48
+  label #29 "11 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== photos: IMG_9 before IMG_10, as numbers ==
+window #1 "Explorer: photos" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    text_field #6 "build/explorer/root/photos" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [2] at 12,94 200x200
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+  label #29 "4 items, 2,5 kB" at 12,572 120x16
+
+== sunset.png decoded and fitted to the pane ==
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    button #8 "Open" at 1012,12 56x24
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [3] at 218,94 484x320
+      label #25 "sunset.png" at 708,72 80x16
+      label #26 "PNG image\n320 × 180 pixels\nRGB, 8 bits a sample\n1,1 kB\nModified 02.03.2026, 13:00 (letzte Woche)" at 708,94 328x80
+      picture #27 at 708,180 160x90
+  label #29 "4 items, 2,5 kB; 1 chosen" at 12,572 200x16
+
+== portrait.jpg decoded ==
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [2] at 218,94 484x320
+      label #25 "portrait.jpg" at 708,72 96x16
+      label #26 "JPEG image\n90 × 120 pixels\nRGB\n1,2 kB\nModified 02.03.2026, 20:00 (letzte Woche)" at 708,94 328x80
+      picture #27 at 708,180 90x120
+
+== Searching the contents for crème: the progress window ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #32 "New Folder" primary+shift+n disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #44 "Empty Trash…" primary+shift+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #56 "Back" primary+Left disabled
+    menu_item #58 "Enclosing Folder" primary+Up disabled
+    button #3 "Back" disabled at 12,12 56x24
+    button #5 "Up" disabled at 160,12 40x24
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+    text_field #10 "crème" at 12,42 728x24
+    combo #11 ["Names", "Contents"] chosen [1] at 746,42 104x24
+    button #13 "Search" disabled at 926,42 72x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [0] at 12,94 200x200
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      label #25 "photos" at 708,72 48x16
+      label #26 "Folder\n4 items\nModified 06.03.2026, 16:00 (letzte Woche)" at 708,94 328x48
+      picture #27 hidden
+  label #29 "Searching for \"crème\"…" at 12,572 176x16
+window #75 "Searching for \"crème\"" 360x100 fixed
+  progress #76 value 0 in 0..19 at 12,12 336x16
+  label #77 "Zebra.md" at 12,34 64x16
+  button #78 "Cancel" at 12,56 72x24
+
+== Found in UTF-8 and in windows-1252, whatever the case ==
+    menu_item #44 "Empty Trash…" primary+shift+Backspace
+    menu_item #56 "Back" primary+Left
+    menu_item #58 "Enclosing Folder" primary+Up
+    button #3 "Back" at 12,12 56x24
+    button #5 "Up" at 160,12 40x24
+    button #13 "Search" at 926,42 72x24
+    button #14 "Clear" at 1004,42 64x24
+      label #22 "Results under build/explorer/root" at 218,72 264x16
+      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+  label #29 "Found 2 matches for \"crème\", 9 files passed over" at 12,572 384x16
+gone: window #75 "Searching for \"crème\"" 360x100 fixed
+gone: progress #76 value 0 in 0..19 at 12,12 336x16
+gone: label #77 "Zebra.md" at 12,34 64x16
+gone: button #78 "Cancel" at 12,56 72x24
+
+== The second result chosen: its file previewed ==
+    menu_item #31 "Open" primary+Down
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    button #8 "Open" at 1012,12 56x24
+      list #23 multiple ["docs/notes.txt:2: crème brûlée for four", "docs/prices.txt:2: Crème brûlée: 12 €"] chosen [1] at 218,94 484x320
+      label #25 "prices.txt" at 708,72 80x16
+      label #26 "Text\nwindows-1252, detected, 30% sure\n3 lines, line breaks CRLF\n57 bytes\nModified 01.03.2026, 16:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Prix du jour\nCrème brûlée: 12 €\nTarte aux pommes: 9 €" disabled at 708,180 360x160
+  label #29 "2 results under build/explorer/root" at 12,572 280x16
+
+== Open on a result: its folder, the file chosen ==
+window #1 "Explorer: docs" 1080x600
+    menu_item #32 "New Folder" primary+shift+n
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #70 "Add Bookmark…" primary+d disabled
+    menu_item #71 "Remove Bookmark"
+    text_field #6 "build/explorer/root/docs" at 206,12 754x24
+    button #14 "Clear" disabled at 1004,42 64x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [1] at 12,94 200x200
+      list #20 ["Documents"] chosen [0] at 12,322 200x96
+      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [3] at 218,94 484x320
+  label #29 "4 items, 205 bytes; 1 chosen" at 12,572 224x16
+
+== Searching the names for *.png ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #32 "New Folder" primary+shift+n disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+    text_field #10 "*.png" at 12,42 728x24
+    combo #11 ["Names", "Contents"] chosen [0] at 746,42 104x24
+    button #14 "Clear" at 1004,42 64x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [0] at 12,94 200x200
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+      label #22 "Results under build/explorer/root" at 218,72 264x16
+      list #23 multiple ["photos/IMG_10.png", "photos/IMG_9.png", "photos/sunset.png"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "Found 3 matches for \"*.png\"" at 12,572 216x16
+
+== Clear: the folder's entries again ==
+    menu_item #32 "New Folder" primary+shift+n
+    button #14 "Clear" disabled at 1004,42 64x24
+      label #22 "Name ▲                          Size  Type          Modified" at 218,72 480x16
+      list #23 multiple ["docs/                             --  Folder        06.03.2026, 15:00", "photos/                           --  Folder        06.03.2026, 16:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+  label #29 "11 items, 1,5 MB" at 12,572 128x16
+
+== File, Rename: a window asks for the new name ==
+window #1 "Explorer: docs" 1080x600
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #70 "Add Bookmark…" primary+d disabled
+    menu_item #71 "Remove Bookmark"
+    text_field #6 "build/explorer/root/docs" at 206,12 754x24
+    button #8 "Open" at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [1] at 12,94 200x200
+      list #20 ["Documents"] chosen [0] at 12,322 200x96
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [2] at 218,94 484x320
+      label #25 "notes.txt" at 708,72 72x16
+      label #26 "Text\nUTF-8, detected, 28% sure\n4 lines, line breaks LF\n78 bytes\nModified 01.03.2026, 09:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Shopping list\ncrème brûlée for four\nÄpfel, 2 kg\nfile9 comes before file10" disabled at 708,180 360x160
+  label #29 "4 items, 205 bytes; 1 chosen" at 12,572 224x16
+window #83 "Rename" 360x120 fixed
+  grid #84 2 columns at 12,12 230x24
+    label #85 "New name" at 12,12 64x16
+    text_field #86 "notes.txt" at 82,12 160x24
+  row #87 at 12,42 118x24
+    button #88 "Cancel" at 12,42 72x24
+    button #89 "OK" at 90,42 40x24
+
+== OK on a name the folder holds: refused, the window stays ==
+  label #29 "\"prices.txt\" is in this folder already" at 12,572 304x16
+    text_field #86 "prices.txt" at 82,12 160x24
+
+== OK: renamed, and Undo names it ==
+    menu_item #48 "Undo Rename" primary+z
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes 2026.txt              78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [2] at 218,94 484x320
+      label #25 "notes 2026.txt" at 708,72 112x16
+  label #29 "Renamed \"notes.txt\" to \"notes 2026.txt\"" at 12,572 312x16
+gone: window #83 "Rename" 360x120 fixed
+gone: grid #84 2 columns at 12,12 230x24
+gone: label #85 "New name" at 12,12 64x16
+gone: text_field #86 "prices.txt" at 82,12 160x24
+gone: row #87 at 12,42 118x24
+gone: button #88 "Cancel" at 12,42 72x24
+gone: button #89 "OK" at 90,42 40x24
+
+== Edit, Undo Rename ==
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #48 "Undo" primary+z disabled
+    menu_item #49 "Redo Rename" primary+shift+z
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    button #8 "Open" disabled at 1012,12 56x24
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "Undid Rename" at 12,572 96x16
+
+== Edit, Redo Rename ==
+    menu_item #48 "Undo Rename" primary+z
+    menu_item #49 "Redo" primary+shift+z disabled
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes 2026.txt              78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+  label #29 "Redid Rename" at 12,572 96x16
+
+== Edit, Undo Rename again ==
+    menu_item #48 "Undo" primary+z disabled
+    menu_item #49 "Redo Rename" primary+shift+z
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+  label #29 "Undid Rename" at 12,572 96x16
+
+== File, Rename with Pattern: IMG_(digits) becomes photo-(digits) ==
+window #1 "Explorer: photos" 1080x600
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    text_field #6 "build/explorer/root/photos" at 206,12 754x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ photos"] chosen [2] at 12,94 200x200
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [0, 1] at 218,94 484x320
+      label #25 "2 items chosen" at 708,72 112x16
+      label #26 "164 bytes" at 708,94 72x16
+  label #29 "4 items, 2,5 kB; 2 chosen" at 12,572 200x16
+window #90 "Rename with Pattern" 360x120 fixed
+  grid #91 2 columns at 12,12 222x54
+    label #92 "Pattern" at 12,12 56x16
+    text_field #93 "^IMG_(\\d+)" at 74,12 160x24
+    label #94 "Becomes" at 12,42 56x16
+    text_field #95 "photo-$1" at 74,42 160x24
+  row #96 at 12,72 118x24
+    button #97 "Cancel" at 12,72 72x24
+    button #98 "OK" at 90,72 40x24
+
+== OK: both renamed at once ==
+    menu_item #48 "Undo Rename" primary+z
+    menu_item #49 "Redo" primary+shift+z disabled
+      list #23 multiple ["photo-9.png                 82 bytes  PNG image     03.03.2026, 03:00", "photo-10.png                82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [0, 1] at 218,94 484x320
+  label #29 "Renamed 2 items" at 12,572 120x16
+gone: window #90 "Rename with Pattern" 360x120 fixed
+gone: grid #91 2 columns at 12,12 222x54
+gone: label #92 "Pattern" at 12,12 56x16
+gone: text_field #93 "^IMG_(\\d+)" at 74,12 160x24
+gone: label #94 "Becomes" at 12,42 56x16
+gone: text_field #95 "photo-$1" at 74,42 160x24
+gone: row #96 at 12,72 118x24
+gone: button #97 "Cancel" at 12,72 72x24
+gone: button #98 "OK" at 90,72 40x24
+
+== Edit, Undo Rename: both names back ==
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #48 "Undo" primary+z disabled
+    menu_item #49 "Redo Rename" primary+shift+z
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+  label #29 "Undid Rename" at 12,572 96x16
+
+== File, New Folder: Drafts made and chosen ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #48 "Undo New Folder" primary+z
+    menu_item #49 "Redo" primary+shift+z disabled
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "    Drafts", "  ▾ photos"] chosen [0] at 12,94 200x200
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:38", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      label #25 "Drafts" at 708,72 48x16
+      label #26 "Folder\n0 items\nModified 14.03.2026, 10:38 (jetzt)" at 708,94 272x48
+  label #29 "Made the folder \"Drafts\"" at 12,572 192x16
+
+== Edit, Copy on video.bin, then Paste in Drafts: the progress after one tick ==
+window #1 "Explorer: Drafts" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #32 "New Folder" primary+shift+n disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #44 "Empty Trash…" primary+shift+Backspace disabled
+    menu_item #48 "Undo New Folder" primary+z disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #56 "Back" primary+Left disabled
+    menu_item #58 "Enclosing Folder" primary+Up disabled
+    button #3 "Back" disabled at 12,12 56x24
+    button #5 "Up" disabled at 160,12 40x24
+    text_field #6 "build/explorer/root/Drafts" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+    button #13 "Search" disabled at 926,42 72x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ Drafts", "  ▾ photos"] chosen [2] at 12,94 200x200
+      list #23 multiple [] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+  label #29 "Copying 1 item…" at 12,572 120x16
+window #106 "Copying 1 item" 360x100 fixed
+  progress #107 value 524288 in 0..1500000 at 12,12 336x16
+  label #108 "build/explorer/root/video.bin" at 12,34 232x16
+  button #109 "Cancel" at 12,56 72x24
+
+== The copy done, 3 ticks in all ==
+    menu_item #31 "Open" primary+Down
+    menu_item #32 "New Folder" primary+shift+n
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #44 "Empty Trash…" primary+shift+Backspace
+    menu_item #48 "Undo Copy" primary+z
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #53 "Paste" primary+v
+    menu_item #56 "Back" primary+Left
+    menu_item #58 "Enclosing Folder" primary+Up
+    button #3 "Back" at 12,12 56x24
+    button #5 "Up" at 160,12 40x24
+    button #8 "Open" at 1012,12 56x24
+    button #13 "Search" at 926,42 72x24
+      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [0] at 218,94 484x320
+      label #25 "video.bin" at 708,72 72x16
+      label #26 "BIN file\n1,5 MB\nModified 04.03.2026, 21:00 (letzte Woche)\ndata, not text" at 708,94 328x64
+      text_area #28 "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|\n00000010  10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|\n00000020  20 21 22 23 24 25 26 27  28 29 2a 2b 2c 2d 2e 2f  | !\"#$%&'()*+,-./|\n00000030  30 31 32 33 34 35 36 37  38 39 3a 3b 3c 3d 3e 3f  |0123456789:;<=>?|\n00000040  40 41 42 43 44 45 46 47  48 49 4a 4b 4c 4d 4e 4f  |@ABCDEFGHIJKLMNO|\n00000050  50 51 52 53 54 55 56 57  58 59 5a 5b 5c 5d 5e 5f  |PQRSTUVWXYZ[\\]^_|\n00000060  60 61 62 63 64 65 66 67  68 69 6a 6b 6c 6d 6e 6f  |`abcdefghijklmno|\n00000070  70 71 72 73 74 75 76 77  78 79 7a 7b 7c 7d 7e 7f  |pqrstuvwxyz{|}~.|" disabled at 708,164 360x160
+  label #29 "Copied 1 item, 1,5 MB" at 12,572 168x16
+gone: window #106 "Copying 1 item" 360x100 fixed
+gone: progress #107 value 524288 in 0..1500000 at 12,12 336x16
+gone: label #108 "build/explorer/root/video.bin" at 12,34 232x16
+gone: button #109 "Cancel" at 12,56 72x24
+
+== Paste again, then Cancel after one tick: the half copy removed ==
+  label #29 "Copying 1 item cancelled" at 12,572 192x16
+
+== Edit, Cut on zoo.md, then Paste in Drafts: moved ==
+    menu_item #48 "Undo Move" primary+z
+    menu_item #53 "Paste" primary+v disabled
+      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [1] at 218,94 484x320
+      label #25 "zoo.md" at 708,72 48x16
+      label #26 "Markdown\nUTF-8, detected, 100% sure\n3 lines, line breaks LF\n16 bytes\nModified 04.03.2026, 14:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "# Zoo\n\nAnimals." disabled at 708,180 360x160
+  label #29 "Moved 1 item" at 12,572 96x16
+
+== Edit, Undo Move: zoo.md back where it was ==
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #48 "Undo Copy" primary+z
+    menu_item #49 "Redo Move" primary+shift+z
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    button #8 "Open" disabled at 1012,12 56x24
+      list #23 multiple ["video.bin                     1,5 MB  BIN file      04.03.2026, 21:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "Undid Move" at 12,572 80x16
+
+== File, Move to Trash on Zebra.md: the next entry chosen ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #48 "Undo Move to Trash" primary+z
+    menu_item #49 "Redo" primary+shift+z disabled
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" at 1012,12 56x24
+      list #18 ["▾ root", "  ▾ docs", "  ▾ Drafts", "  ▾ photos"] chosen [0] at 12,94 200x200
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      label #25 "zoo.md" at 708,72 48x16
+      label #26 "Markdown\nUTF-8, detected, 100% sure\n3 lines, line breaks LF\n16 bytes\nModified 04.03.2026, 14:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "# Zoo\n\nAnimals." disabled at 708,180 360x160
+  label #29 "Moved 1 item to the trash" at 12,572 200x16
+
+== Go, Trash ==
+window #1 "Explorer: files" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    text_field #6 "build/explorer/state/trash/files" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+      list #18 ["▾ files"] chosen [0] at 12,94 200x200
+      list #23 multiple ["Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "1 item, 18 bytes" at 12,572 128x16
+
+== File, Put Back ==
+    menu_item #48 "Undo Put Back" primary+z
+      list #23 multiple [] chosen [] at 218,94 484x320
+  label #29 "Put back 1 item" at 12,572 120x16
+
+== Back: Zebra.md in the root again ==
+window #1 "Explorer: root" 1080x600
+    menu_item #57 "Forward" primary+Right
+    button #4 "Forward" at 74,12 80x24
+    text_field #6 "build/explorer/root" at 206,12 754x24
+      list #18 ["▾ root", "    docs", "    Drafts", "    photos"] chosen [0] at 12,94 200x200
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [] at 218,94 484x320
+  label #29 "12 items, 1,5 MB" at 12,572 128x16
+
+== File, Compress to ZIP on docs and photos: Archive.zip, its members listed ==
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #48 "Undo Compress" primary+z
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    button #8 "Open" at 1012,12 56x24
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [5] at 218,94 484x320
+      label #25 "Archive.zip" at 708,72 88x16
+      label #26 "ZIP archive\n10 members, 2,7 kB unpacked, 2,2 kB packed\n3,6 kB\nModified 14.03.2026, 10:41 (jetzt)" at 708,94 336x64
+      text_area #28 "docs  (folder)\ndocs/greeting.txt  (30 bytes)\ndocs/japanese.txt  (40 bytes)\ndocs/notes.txt  (78 bytes)\ndocs/prices.txt  (57 bytes)\nphotos  (folder)\nphotos/IMG_10.png  (82 bytes)\nphotos/IMG_9.png  (82 bytes)\nphotos/portrait.jpg  (1,2 kB)\nphotos/sunset.png  (1,1 kB)" disabled at 708,164 360x160
+  label #29 "Compressed 10 entries into Archive.zip" at 12,572 304x16
+
+== File, Compress to tar.gz on docs: docs.tar.gz ==
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [7] at 218,94 484x320
+      label #25 "docs.tar.gz" at 708,72 88x16
+      label #26 "Tar archive, gzip\n5 members, 205 bytes unpacked\n424 bytes\nModified 14.03.2026, 10:41 (jetzt)" at 708,94 272x64
+      text_area #28 "docs  (folder)\ndocs/greeting.txt  (30 bytes)\ndocs/japanese.txt  (40 bytes)\ndocs/notes.txt  (78 bytes)\ndocs/prices.txt  (57 bytes)" disabled at 708,164 360x160
+  label #29 "Compressed 5 entries into docs.tar.gz" at 12,572 296x16
+
+== site.zip chosen: what it holds ==
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      label #25 "site.zip" at 708,72 64x16
+      label #26 "ZIP archive\n3 members, 87 bytes unpacked, 84 bytes packed\n456 bytes\nModified 05.03.2026, 04:00 (letzte Woche)" at 708,94 360x64
+      text_area #28 "site  (folder)\nsite/index.html  (58 bytes)\nsite/style.css  (29 bytes)" disabled at 708,164 360x160
+  label #29 "14 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== File, Extract on site.zip ==
+    menu_item #48 "Undo Extract" primary+z
+      list #18 ["▾ root", "    docs", "    Drafts", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [3] at 218,94 484x320
+      label #25 "site" at 708,72 32x16
+      label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
+      text_area #28 "" disabled hidden
+  label #29 "Extracted 3 entries into site" at 12,572 232x16
+
+== backup.tar.gz chosen: what it holds ==
+      list #23 multiple ["docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [7] at 218,94 484x320
+      label #25 "backup.tar.gz" at 708,72 104x16
+      label #26 "Tar archive, gzip\n3 members, 45 bytes unpacked\n205 bytes\nModified 05.03.2026, 11:00 (letzte Woche)" at 708,94 328x64
+      text_area #28 "backup  (folder)\nbackup/monday.txt  (24 bytes)\nbackup/tuesday.txt  (21 bytes)" disabled at 708,164 360x160
+  label #29 "15 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== File, Extract on backup.tar.gz ==
+      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [0] at 218,94 484x320
+      label #25 "backup" at 708,72 48x16
+      label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
+      text_area #28 "" disabled hidden
+  label #29 "Extracted 3 entries into backup" at 12,572 248x16
+
+== readme.txt.gz chosen: what it holds ==
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [11] at 218,94 484x320
+      label #25 "readme.txt.gz" at 708,72 104x16
+      label #26 "Gzip file\nholds text, UTF-8\n47 bytes\nModified 05.03.2026, 18:00 (letzte Woche)" at 708,94 328x64
+      text_area #28 "Read me first.\nThen the rest." disabled at 708,164 360x160
+  label #29 "16 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== File, Extract on readme.txt.gz ==
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [11] at 218,94 484x320
+      label #25 "readme.txt" at 708,72 80x16
+      label #26 "Text\nUTF-8, detected, 100% sure\n2 lines, line breaks LF\n30 bytes\nModified 05.03.2026, 18:00 (letzte Woche)" at 708,94 328x80
+      text_area #28 "Read me first.\nThen the rest." disabled at 708,180 360x160
+  label #29 "Extracted 1 entry into readme.txt" at 12,572 264x16
+
+== evil.zip chosen: what it holds ==
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [10] at 218,94 484x320
+      label #25 "evil.zip" at 708,72 64x16
+      label #26 "ZIP archive\n2 members, 35 bytes unpacked, 39 bytes packed\n289 bytes\nModified 06.03.2026, 01:00 (letzte Woche)" at 708,94 360x64
+      text_area #28 "ok.txt  (9 bytes)\n../escaped.txt  (26 bytes)" disabled at 708,164 360x160
+  label #29 "17 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== File, Extract on evil.zip ==
+      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    evil", "    photos", "  ▸ site"] chosen [0] at 12,94 200x200
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [3] at 218,94 484x320
+      label #25 "evil" at 708,72 32x16
+      label #26 "Folder\n1 item\nModified 14.03.2026, 10:42 (jetzt)" at 708,94 272x48
+      text_area #28 "" disabled hidden
+  label #29 "Extracted 1 entry into evil; passed over ../escaped.txt: its name leads outside the folder" at 12,572 720x16
+a member named outside its folder landed there: false
+
+== File, Checksums on video.bin: a megabyte a tick ==
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #32 "New Folder" primary+shift+n disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #44 "Empty Trash…" primary+shift+Backspace disabled
+    menu_item #48 "Undo Extract" primary+z disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #56 "Back" primary+Left disabled
+    menu_item #57 "Forward" primary+Right disabled
+    menu_item #58 "Enclosing Folder" primary+Up disabled
+    button #3 "Back" disabled at 12,12 56x24
+    button #4 "Forward" disabled at 74,12 80x24
+    button #5 "Up" disabled at 160,12 40x24
+    button #8 "Open" disabled at 1012,12 56x24
+    button #13 "Search" disabled at 926,42 72x24
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [15] at 218,94 484x320
+      label #25 "video.bin" at 708,72 72x16
+      label #26 "BIN file\n1,5 MB\nModified 04.03.2026, 21:00 (letzte Woche)\ndata, not text" at 708,94 328x64
+      text_area #28 "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|\n00000010  10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|\n00000020  20 21 22 23 24 25 26 27  28 29 2a 2b 2c 2d 2e 2f  | !\"#$%&'()*+,-./|\n00000030  30 31 32 33 34 35 36 37  38 39 3a 3b 3c 3d 3e 3f  |0123456789:;<=>?|\n00000040  40 41 42 43 44 45 46 47  48 49 4a 4b 4c 4d 4e 4f  |@ABCDEFGHIJKLMNO|\n00000050  50 51 52 53 54 55 56 57  58 59 5a 5b 5c 5d 5e 5f  |PQRSTUVWXYZ[\\]^_|\n00000060  60 61 62 63 64 65 66 67  68 69 6a 6b 6c 6d 6e 6f  |`abcdefghijklmno|\n00000070  70 71 72 73 74 75 76 77  78 79 7a 7b 7c 7d 7e 7f  |pqrstuvwxyz{|}~.|" disabled at 708,164 360x160
+  label #29 "Hashing video.bin…" at 12,572 144x16
+window #146 "Hashing video.bin" 360x100 fixed
+  progress #147 value 1048576 in 0..1500000 at 12,12 336x16
+  label #148 "build/explorer/root/video.bin" at 12,34 232x16
+  button #149 "Cancel" at 12,56 72x24
+
+== The checksums, each in a field to copy ==
+    menu_item #31 "Open" primary+Down
+    menu_item #32 "New Folder" primary+shift+n
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #44 "Empty Trash…" primary+shift+Backspace
+    menu_item #48 "Undo Extract" primary+z
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #56 "Back" primary+Left
+    menu_item #57 "Forward" primary+Right
+    menu_item #58 "Enclosing Folder" primary+Up
+    button #3 "Back" at 12,12 56x24
+    button #4 "Forward" at 74,12 80x24
+    button #5 "Up" at 160,12 40x24
+    button #8 "Open" at 1012,12 56x24
+    button #13 "Search" at 926,42 72x24
+  label #29 "Hashed video.bin, 1,5 MB" at 12,572 192x16
+window #150 "Checksums of video.bin" 560x160
+  grid #151 2 columns at 12,12 254x84
+    label #152 "CRC-32" at 12,12 48x16
+    text_field #153 "3e792e21" at 106,12 160x24
+    label #154 "CRC-64/ECMA" at 12,42 88x16
+    text_field #155 "62d61e707a27d6ba" at 106,42 160x24
+    label #156 "xxHash64" at 12,72 64x16
+    text_field #157 "69b8bf8845d2b382" at 106,72 160x24
+  label #158 "Checksums tell a damaged copy; they are no proof against tampering." at 12,102 536x16
+  button #159 "Close" at 12,124 64x24
+gone: window #146 "Hashing video.bin" 360x100 fixed
+gone: progress #147 value 1048576 in 0..1500000 at 12,12 336x16
+gone: label #148 "build/explorer/root/video.bin" at 12,34 232x16
+gone: button #149 "Cancel" at 12,56 72x24
+
+== Close ==
+  label #29 "18 items, 1,5 MB; 1 chosen" at 12,572 208x16
+gone: window #150 "Checksums of video.bin" 560x160
+gone: grid #151 2 columns at 12,12 254x84
+gone: label #152 "CRC-32" at 12,12 48x16
+gone: text_field #153 "3e792e21" at 106,12 160x24
+gone: label #154 "CRC-64/ECMA" at 12,42 88x16
+gone: text_field #155 "62d61e707a27d6ba" at 106,42 160x24
+gone: label #156 "xxHash64" at 12,72 64x16
+gone: text_field #157 "69b8bf8845d2b382" at 106,72 160x24
+gone: label #158 "Checksums tell a damaged copy; they are no proof against tampering." at 12,102 536x16
+gone: button #159 "Close" at 12,124 64x24
+
+== Bookmarks, Add Bookmark on photos: in the list and the menu ==
+window #1 "Explorer: photos" 1080x600
+    menu_item #31 "Open" primary+Down disabled
+    menu_item #34 "Rename…" F2 disabled
+    menu_item #35 "Rename with Pattern…" disabled
+    menu_item #37 "Compress to ZIP" disabled
+    menu_item #38 "Compress to tar.gz" disabled
+    menu_item #39 "Extract" disabled
+    menu_item #40 "Checksums" primary+shift+i disabled
+    menu_item #42 "Move to Trash" primary+Backspace disabled
+    menu_item #51 "Cut" primary+x disabled
+    menu_item #52 "Copy" primary+c disabled
+    menu_item #57 "Forward" primary+Right disabled
+    menu_item #70 "Add Bookmark…" primary+d disabled
+    menu_item #71 "Remove Bookmark"
+    menu_item #167 "Holiday photos"
+    button #4 "Forward" disabled at 74,12 80x24
+    text_field #6 "build/explorer/root/photos" at 206,12 754x24
+    button #8 "Open" disabled at 1012,12 56x24
+      list #18 ["▾ root", "  ▸ backup", "    docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [5] at 12,94 200x200
+      list #20 ["Documents", "Holiday photos"] chosen [1] at 12,322 200x96
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+      label #25 "" at 708,72 0x16
+      label #26 "Nothing chosen" at 708,94 112x16
+      text_area #28 "" disabled hidden
+  label #29 "Bookmarked \"build/explorer/root/photos\" as \"Holiday photos\"" at 12,572 472x16
+
+== The bookmark chosen: photos again ==
+  label #29 "4 items, 2,5 kB" at 12,572 120x16
+
+== Bookmarks, Documents: docs ==
+window #1 "Explorer: docs" 1080x600
+    text_field #6 "build/explorer/root/docs" at 206,12 754x24
+      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [2] at 12,94 200x200
+      list #20 ["Documents", "Holiday photos"] chosen [0] at 12,322 200x96
+      list #23 multiple ["greeting.txt                30 bytes  Text          02.03.2026, 06:00", "japanese.txt                40 bytes  Text          01.03.2026, 23:00", "notes.txt                   78 bytes  Text          01.03.2026, 09:00", "prices.txt                  57 bytes  Text          01.03.2026, 16:00"] chosen [] at 218,94 484x320
+  label #29 "4 items, 205 bytes" at 12,572 144x16
+
+== Bookmarks, Remove Bookmark on photos ==
+window #1 "Explorer: photos" 1080x600
+    menu_item #70 "Add Bookmark…" primary+d
+    menu_item #71 "Remove Bookmark" disabled
+    text_field #6 "build/explorer/root/photos" at 206,12 754x24
+      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [5] at 12,94 200x200
+      list #20 ["Documents"] chosen [] at 12,322 200x96
+      list #23 multiple ["IMG_9.png                   82 bytes  PNG image     03.03.2026, 03:00", "IMG_10.png                  82 bytes  PNG image     03.03.2026, 10:00", "portrait.jpg                  1,2 kB  JPEG image    02.03.2026, 20:00", "sunset.png                    1,1 kB  PNG image     02.03.2026, 13:00"] chosen [] at 218,94 484x320
+  label #29 "Removed the bookmark \"Holiday photos\"" at 12,572 296x16
+gone: menu_item #167 "Holiday photos"
+the bookmarks file now:
+  # My bookmarks; the explorer keeps this comment.
+  [[bookmark]]
+  name = "Documents"
+  path = "build/explorer/root/docs"
+
+== View, Show Hidden Files: .hidden ==
+window #1 "Explorer: root" 1080x600
+    menu_item #31 "Open" primary+Down
+    menu_item #34 "Rename…" F2
+    menu_item #35 "Rename with Pattern…"
+    menu_item #37 "Compress to ZIP"
+    menu_item #38 "Compress to tar.gz"
+    menu_item #39 "Extract"
+    menu_item #40 "Checksums" primary+shift+i
+    menu_item #42 "Move to Trash" primary+Backspace
+    menu_item #51 "Cut" primary+x
+    menu_item #52 "Copy" primary+c
+    menu_item #68 "Hide Hidden Files" primary+shift+h
+    text_field #6 "build/explorer/root" at 206,12 754x24
+    button #8 "Open" at 1012,12 56x24
+      list #18 ["▾ root", "  ▸ backup", "  ▾ docs", "    Drafts", "    evil", "  ▾ photos", "  ▸ site"] chosen [0] at 12,94 200x200
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", ".hidden                     22 bytes  Document      06.03.2026, 08:00", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      label #25 "photos" at 708,72 48x16
+      label #26 "Folder\n4 items\nModified 14.03.2026, 10:37 (vor 8 Minuten)" at 708,94 336x48
+  label #29 "19 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== View, Hide Hidden Files ==
+    menu_item #68 "Show Hidden Files" primary+shift+h
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+  label #29 "18 items, 1,5 MB; 1 chosen" at 12,572 208x16
+
+== Another program writes from-outside.txt: the watch tells, the list follows ==
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "from-outside.txt             3 bytes  Text          13.03.2026, 21:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+      label #26 "Folder\n4 items\nModified 14.03.2026, 10:37 (vor 9 Minuten)" at 708,94 336x48
+  label #29 "The folder changed on disk: from-outside.txt came" at 12,572 392x16
+
+== It removes the file: gone from the list ==
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "Archive.zip                   3,6 kB  ZIP archive   14.03.2026, 10:41", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "docs.tar.gz                424 bytes  Tar archive   14.03.2026, 10:41", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [4] at 218,94 484x320
+  label #29 "The folder changed on disk: from-outside.txt went" at 12,572 392x16
+
+== File, Move to Trash on the two archives ==
+    menu_item #48 "Undo Move to Trash" primary+z
+      list #23 multiple ["backup/                           --  Folder        14.03.2026, 10:42", "docs/                             --  Folder        14.03.2026, 10:36", "Drafts/                           --  Folder        14.03.2026, 10:39", "evil/                             --  Folder        14.03.2026, 10:42", "photos/                           --  Folder        14.03.2026, 10:37", "site/                             --  Folder        14.03.2026, 10:42", "Äpfel.txt                   18 bytes  Text          03.03.2026, 17:00", "apricot.txt                  9 bytes  Text          04.03.2026, 00:00", "backup.tar.gz              205 bytes  Tar archive   05.03.2026, 11:00", "evil.zip                   289 bytes  ZIP archive   06.03.2026, 01:00", "readme.txt                  30 bytes  Text          05.03.2026, 18:00", "readme.txt.gz               47 bytes  Gzip file     05.03.2026, 18:00", "site.zip                   456 bytes  ZIP archive   05.03.2026, 04:00", "video.bin                     1,5 MB  BIN file      04.03.2026, 21:00", "Zebra.md                    18 bytes  Markdown      04.03.2026, 07:00", "zoo.md                      16 bytes  Markdown      04.03.2026, 14:00"] chosen [9] at 218,94 484x320
+      label #25 "evil.zip" at 708,72 64x16
+      label #26 "ZIP archive\n2 members, 35 bytes unpacked, 39 bytes packed\n289 bytes\nModified 06.03.2026, 01:00 (letzte Woche)" at 708,94 360x64
+      text_area #28 "ok.txt  (9 bytes)\n../escaped.txt  (26 bytes)" disabled at 708,164 360x160
+  label #29 "Moved 2 items to the trash" at 12,572 208x16
+
+== File, Empty Trash, answered No ==
+  label #29 "The trash was left as it was" at 12,572 224x16
+
+== File, Empty Trash, answered Yes: removed for good, and Undo forgets ==
+    menu_item #48 "Undo" primary+z disabled
+  label #29 "Emptied the trash: 2 items removed for good" at 12,572 344x16
+
+== File, Close Window ==
+the explorer is done: true
+
+the demo's folder was removed

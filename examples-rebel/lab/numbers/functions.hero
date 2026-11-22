@@ -1,0 +1,351 @@
+# The functions of one number the lab offers: roots, exponentials and
+# logarithms, the circular and hyperbolic functions and their inverses, the
+# parts of a complex number, rounding, and the conversions between exact and
+# float.
+#
+# A function answers in the reals where the reals hold the answer and in the
+# complex plane where they do not: `sqrt(-16)` is `4i`, `ln(-1)` is `pi i`,
+# `asin(2)` is complex, as Python's `cmath` and Julia's `Complex` answer them
+# (`math/complex`, C11's Annex G). A square root that comes out exact stays
+# exact, `sqrt(9/4)` is `3/2`, and rounding an exact number stays exact.
+
+use <rebel>/big
+use <rebel>/math
+use <rebel>/math/complex
+
+use numbers/arith
+use numbers/scalar
+
+# `n` through `on_reals` where it is real or exact, through `on_plane` where
+# it is complex.
+#
+# - `n`: the number.
+# - `on_reals`: the function of a float.
+# - `on_plane`: the same function of a complex number.
+function lifted(n: scalar.Number, on_reals: (function(f64) -> f64), on_plane: (function(complex.Complex) -> complex.Complex)) -> scalar.Number
+    match n
+        .complex z                         => return scalar.of_complex(on_plane(z.value))
+        .integer _ | .rational _ | .real _ => return scalar.of_real(on_reals(scalar.float_of(n).must()))
+
+# `n` through `on_plane` alone: for a real argument outside a real
+# function's domain.
+#
+# - `n`: the number.
+# - `on_plane`: the complex function.
+function planar(n: scalar.Number, on_plane: (function(complex.Complex) -> complex.Complex)) -> scalar.Number
+    return scalar.of_complex(on_plane(scalar.complex_of(n)))
+
+# The principal square root of `n`: exact where `n` is the square of an
+# exact number, imaginary where `n` is negative.
+#
+# - `n`: the number.
+function sqrt(n: scalar.Number) -> scalar.Number
+    if scalar.is_exact(n)
+        f = scalar.fraction_of(n).must()
+        top = arith.exact_root(big.abs(f.numerator), k: 2)
+        bottom = arith.exact_root(f.denominator, k: 2)
+
+        if !top.is_err() && !bottom.is_err()
+            root = scalar.of_fraction(big.fraction(numerator: top.must(), denominator: bottom.must()))
+
+            if big.sign(f.numerator) < 0
+                return scalar.of_complex(complex.Complex(re: 0.0, im: scalar.float_of(root).must()))
+            return root
+
+    if scalar.is_negative(n)
+        return planar(n, on_plane: complex.sqrt)
+    return lifted(n, on_reals: math.sqrt, on_plane: complex.sqrt)
+
+# The cube root of `n`, real for a real `n` of either sign.
+#
+# - `n`: the number.
+function cbrt(n: scalar.Number) -> scalar.Number
+    if scalar.is_exact(n)
+        f = scalar.fraction_of(n).must()
+        top = arith.exact_root(big.abs(f.numerator), k: 3)
+        bottom = arith.exact_root(f.denominator, k: 3)
+
+        if !top.is_err() && !bottom.is_err()
+            root: big.Integer @= top.must()
+
+            if big.sign(f.numerator) < 0
+                root @ big.negate(root)
+            return scalar.of_fraction(big.fraction(numerator: root, denominator: bottom.must()))
+    return lifted(n, on_reals: math.cbrt, on_plane: complex_cbrt)
+
+# The principal cube root of `z`, `z` to the power one third.
+#
+# - `z`: the complex number.
+function complex_cbrt(z: complex.Complex) -> complex.Complex
+    return complex.pow(base: z, exponent: complex.Complex(re: 1.0 / 3.0, im: 0.0))
+
+# `e` to the power `n`.
+#
+# - `n`: the exponent.
+function exp(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.exp, on_plane: complex.exp)
+
+# The natural logarithm of `n`, complex where `n` is negative, minus the
+# infinity at zero.
+#
+# - `n`: the number.
+function ln(n: scalar.Number) -> scalar.Number
+    if scalar.is_negative(n)
+        return planar(n, on_plane: complex.ln)
+    return lifted(n, on_reals: math.ln, on_plane: complex.ln)
+
+# The logarithm of `n` to base ten, complex where `n` is negative.
+#
+# - `n`: the number.
+function log10(n: scalar.Number) -> scalar.Number
+    if scalar.is_negative(n)
+        return planar(n, on_plane: complex.log10)
+    return lifted(n, on_reals: math.log10, on_plane: complex.log10)
+
+# The logarithm of `n` to base two, complex where `n` is negative.
+#
+# - `n`: the number.
+function log2(n: scalar.Number) -> scalar.Number
+    if scalar.is_negative(n) || scalar.rank(n) == 3
+        two = complex.Complex(re: 2.0, im: 0.0)
+        return scalar.of_complex(complex.log(z: scalar.complex_of(n), base: two))
+    return scalar.of_real(math.log2(scalar.float_of(n).must()))
+
+# The logarithm of `n` to the base `base`.
+#
+# - `n`: the number.
+# - `base`: the base.
+function log_base(n: scalar.Number, base: scalar.Number) -> scalar.Number
+    if scalar.is_negative(n) || scalar.is_negative(base) || scalar.rank(n) == 3 || scalar.rank(base) == 3
+        return scalar.of_complex(complex.log(z: scalar.complex_of(n), base: scalar.complex_of(base)))
+    return scalar.of_real(math.log(x: scalar.float_of(n).must(), base: scalar.float_of(base).must()))
+
+# The sine of `n`, in radians.
+#
+# - `n`: the angle.
+function sin(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.sin, on_plane: complex.sin)
+
+# The cosine of `n`, in radians.
+#
+# - `n`: the angle.
+function cos(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.cos, on_plane: complex.cos)
+
+# The tangent of `n`, in radians.
+#
+# - `n`: the angle.
+function tan(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.tan, on_plane: complex.tan)
+
+# Whether `n` is a real outside the interval from -1 to 1, where the real
+# arcsine and arccosine have no answer.
+#
+# - `n`: the number.
+function outside_unit(n: scalar.Number) -> bool
+    if scalar.rank(n) == 3
+        return false
+    return math.abs(scalar.float_of(n).must()) > 1.0
+
+# The arcsine of `n`, complex outside -1 to 1.
+#
+# - `n`: the number.
+function asin(n: scalar.Number) -> scalar.Number
+    if outside_unit(n)
+        return planar(n, on_plane: complex.asin)
+    return lifted(n, on_reals: math.asin, on_plane: complex.asin)
+
+# The arccosine of `n`, complex outside -1 to 1.
+#
+# - `n`: the number.
+function acos(n: scalar.Number) -> scalar.Number
+    if outside_unit(n)
+        return planar(n, on_plane: complex.acos)
+    return lifted(n, on_reals: math.acos, on_plane: complex.acos)
+
+# The arctangent of `n`.
+#
+# - `n`: the number.
+function atan(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.atan, on_plane: complex.atan)
+
+# The angle of the point (`x`, `y`) from the positive x axis, from -pi to pi.
+#
+# - `y`: the ordinate.
+# - `x`: the abscissa.
+#
+# Fails `invalid` where either is complex.
+function atan2(y: scalar.Number, x: scalar.Number) -> scalar.Number?
+    return ok(scalar.of_real(math.atan2(y: scalar.float_of(y)?, x: scalar.float_of(x)?)))
+
+# The hyperbolic sine of `n`.
+#
+# - `n`: the number.
+function sinh(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.sinh, on_plane: complex.sinh)
+
+# The hyperbolic cosine of `n`.
+#
+# - `n`: the number.
+function cosh(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.cosh, on_plane: complex.cosh)
+
+# The hyperbolic tangent of `n`.
+#
+# - `n`: the number.
+function tanh(n: scalar.Number) -> scalar.Number
+    return lifted(n, on_reals: math.tanh, on_plane: complex.tanh)
+
+# The size of `n`: exact for an exact `n`, the modulus of a complex one.
+#
+# - `n`: the number.
+function abs(n: scalar.Number) -> scalar.Number
+    return match n
+        .integer i => scalar.of_integer(big.abs(i.value))
+        .rational q => scalar.of_fraction(
+            big.fraction(numerator: big.abs(q.value.numerator), denominator: q.value.denominator)
+        )
+        .real x    => scalar.of_real(math.abs(x.value))
+        .complex z => scalar.of_real(complex.abs(z.value))
+
+# The sign of `n`: -1, 0 or 1 for an exact `n`, a float for a real one, and
+# `n` divided by its size for a complex one.
+#
+# - `n`: the number.
+function sign(n: scalar.Number) -> scalar.Number
+    return match n
+        .integer i  => scalar.of_int(big.sign(i.value))
+        .rational q => scalar.of_int(big.sign(q.value.numerator))
+        .real x     => scalar.of_real(math.sign(x.value))
+        .complex z =>
+            size = complex.abs(z.value)
+            scalar.of_parts(re: z.value.re / size, im: z.value.im / size)
+
+# The real part of `n`.
+#
+# - `n`: the number.
+function real_part(n: scalar.Number) -> scalar.Number
+    return match n
+        .complex z                         => scalar.of_real(z.value.re)
+        .integer _ | .rational _ | .real _ => n
+
+# The imaginary part of `n`, an exact zero for a number that is not complex.
+#
+# - `n`: the number.
+function imaginary_part(n: scalar.Number) -> scalar.Number
+    return match n
+        .complex z                         => scalar.of_real(z.value.im)
+        .integer _ | .rational _ | .real _ => scalar.of_int(0)
+
+# The complex conjugate of `n`, `n` itself where it is not complex.
+#
+# - `n`: the number.
+function conjugate(n: scalar.Number) -> scalar.Number
+    return match n
+        .complex z                         => scalar.of_complex(complex.conjugate(z.value))
+        .integer _ | .rational _ | .real _ => n
+
+# The angle of `n` from the positive real axis, from -pi to pi.
+#
+# - `n`: the number.
+function phase(n: scalar.Number) -> scalar.Number
+    return scalar.of_real(complex.phase(scalar.complex_of(n)))
+
+# `n` rounded by `rounding`: exact where `n` is exact, a whole number where
+# a real `n` is finite, the real itself where it is an infinity or a nan.
+#
+# - `n`: the number.
+# - `rounding`: the direction, `big`'s.
+#
+# Fails `invalid` where `n` is complex.
+function rounded(n: scalar.Number, rounding: big.Rounding) -> scalar.Number?
+    match n
+        .complex _  => return fail(code: scalar.INVALID, msg: "a complex number is not rounded; round `re` and `im`")
+        .integer _  => return ok(n)
+        .rational q => return ok(scalar.of_integer(big.round_fraction(q.value, rounding: rounding)))
+        .real x =>
+            if !math.is_finite(x.value)
+                return ok(n)
+            held = big.fraction_of_float(x.value)?
+            return ok(scalar.of_integer(big.round_fraction(held, rounding: rounding)))
+
+# The exact value of `n`: a real's every binary digit as a fraction, so
+# `exact(0.1)` is `3602879701896397/36028797018963968`.
+#
+# - `n`: the number.
+#
+# Fails `invalid` where `n` is complex or a nan, `does_not_fit` where it is
+# an infinity.
+function exact(n: scalar.Number) -> scalar.Number?
+    match n
+        .real x                  => return ok(scalar.of_fraction(big.fraction_of_float(x.value)?))
+        .complex _               => return fail(code: scalar.INVALID, msg: "a complex number has no exact value here")
+        .integer _ | .rational _ => return ok(n)
+
+# The fraction nearest `n` whose denominator is at most `most`, as Python's
+# `limit_denominator` finds it: `rat(pi, 1000)` is `355/113`.
+#
+# - `n`: the number.
+# - `most`: the largest denominator, 1 or more.
+#
+# Fails `invalid` where `n` is complex or a nan, or `most` is below 1.
+function approximate(n: scalar.Number, most: big.Integer) -> scalar.Number?
+    if big.sign(most) <= 0
+        return fail(code: scalar.INVALID, msg: "the largest denominator is 1 or more")
+    f = scalar.fraction_of(exact(n)?).must()
+    return ok(scalar.of_fraction(big.approximate(f, max_denominator: most)))
+
+# The gamma function of `n`, `(n - 1)!` for a whole `n` above zero.
+#
+# - `n`: a real.
+#
+# Fails `invalid` where `n` is complex.
+function gamma(n: scalar.Number) -> scalar.Number?
+    return ok(scalar.of_real(math.gamma(scalar.float_of(n)?)))
+
+# The error function of `n`.
+#
+# - `n`: a real.
+#
+# Fails `invalid` where `n` is complex.
+function erf(n: scalar.Number) -> scalar.Number?
+    return ok(scalar.of_real(math.erf(scalar.float_of(n)?)))
+
+test "sqrt: exact squares, an irrational, a negative and a complex argument"
+    assert sqrt(scalar.of_int(144)) == scalar.of_int(12)
+    nine_quarters = scalar.of_fraction(big.fraction(numerator: big.from_int(9), denominator: big.from_int(4)))
+    assert sqrt(nine_quarters) == scalar.of_fraction(big.fraction(numerator: big.from_int(3), denominator: big.from_int(2)))
+    assert sqrt(scalar.of_int(-16)) == scalar.of_parts(re: 0.0, im: 4.0)
+    assert scalar.rank(sqrt(scalar.of_int(2))) == 2
+    assert sqrt(scalar.of_real(-4.0)) == scalar.of_parts(re: 0.0, im: 2.0)
+
+test "cbrt: exact cubes of either sign, a real otherwise"
+    assert cbrt(scalar.of_int(-27)) == scalar.of_int(-3)
+    assert cbrt(scalar.of_real(8.0)) == scalar.of_real(2.0)
+
+test "ln and asin: the complex branch outside the real domain"
+    assert scalar.rank(ln(scalar.of_int(-1))) == 3
+    assert ln(scalar.of_int(1)) == scalar.of_real(0.0)
+    assert scalar.rank(asin(scalar.of_int(2))) == 3
+    assert asin(scalar.of_int(1)) == scalar.of_real(math.PI / 2.0)
+
+test "rounded: exact fractions, reals to whole numbers, a complex refused"
+    seven_halves = scalar.of_fraction(big.fraction(numerator: big.from_int(7), denominator: big.from_int(2)))
+    assert rounded(seven_halves, rounding: .floor).must() == scalar.of_int(3)
+    assert rounded(seven_halves, rounding: .half_even).must() == scalar.of_int(4)
+    assert rounded(scalar.of_real(-2.5), rounding: .ceiling).must() == scalar.of_int(-2)
+    assert rounded(scalar.of_parts(re: 1.0, im: 1.0), rounding: .floor).is_err()
+
+test "exact and approximate: the binary value of a float, pi near 355/113"
+    tenth = exact(scalar.of_real(0.1)).must()
+    assert scalar.rank(tenth) == 1
+    near_pi = approximate(scalar.of_real(math.PI), most: big.from_int(1000)).must()
+    assert near_pi == scalar.of_fraction(big.fraction(numerator: big.from_int(355), denominator: big.from_int(113)))
+
+test "abs, sign and the parts of a complex number"
+    z = scalar.of_parts(re: 3.0, im: 4.0)
+    assert abs(z) == scalar.of_real(5.0)
+    assert sign(scalar.of_int(-9)) == scalar.of_int(-1)
+    assert real_part(z) == scalar.of_real(3.0)
+    assert imaginary_part(scalar.of_int(2)) == scalar.of_int(0)
+    assert conjugate(z) == scalar.of_parts(re: 3.0, im: -4.0)

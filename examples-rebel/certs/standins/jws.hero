@@ -1,0 +1,231 @@
+# How the stand-in CA knows who sent a request (RFC 8555 § 6.2 to § 6.5):
+# the body is a JWS in the flattened JSON serialization, with no
+# unprotected header; its protected header names an algorithm the CA
+# takes, the URL the request was sent to, a nonce the CA handed out and
+# nobody used, and either the sender's key (`jwk`, for a new account
+# alone) or its account's URL (`kid`); and its signature holds by that key,
+# checked by `jose`. A request failing any of these is refused with the
+# problem type RFC 8555 names, the failure's code being that type.
+
+use <rebel>/bytes
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/strings
+
+use standins/objects
+
+## What a request proved
+
+# A request authenticated: who sent it and what it says.
+record Authenticated
+    # The account's id; 0 where the request carried its key instead.
+    account: i64
+    # The sender's public key.
+    key: jose.Key
+    # The payload's bytes; none for a POST-as-GET.
+    payload: [u8]
+
+# The algorithms the stand-in takes, as RFC 8555 § 6.2 asks a server to take
+# ES256 and as Let's Encrypt takes RS256 and ES384 besides.
+function accepted() -> [jose.Algorithm]
+    return [.es256, .es384, .rs256, .eddsa]
+
+## Checking
+
+# `body`, sent to `url`, authenticated against `s`, its nonce used up.
+#
+# - `s`: the state; the nonce is taken out of its unused ones, and the
+#   refusal counted.
+# - `body`: the request's body.
+# - `url`: the URL the request was sent to.
+# - `with_key`: true where the request must carry its key (`newAccount`),
+#   false where it must name its account.
+#
+# Fails with a problem's type as its code: `malformed` for a body that is no
+# flattened JWS, a header of no form or a signature that does not hold;
+# `badSignatureAlgorithm`; `badNonce` for a nonce used or never given;
+# `unauthorized` for a URL that is not the request's or an account
+# deactivated; `accountDoesNotExist` for a `kid` that names none.
+function authenticate(@s: objects.State, body: [u8], url: str, with_key: bool) -> Authenticated?
+    text = match bytes.to_text(body)
+        .ok t  => t
+        .err _ => return refused(@s, kind: "malformed", detail: "the body is not UTF-8")
+
+    members = match json.parse(text)
+        .ok v =>
+            match json.members_of(v)
+                .ok m  => m
+                .err _ => return refused(@s, kind: "malformed", detail: "the body is not a JSON object")
+        .err _ => return refused(@s, kind: "malformed", detail: "the body is not JSON")
+
+    if !members["header"].is_err() || !members["signatures"].is_err()
+        return refused(
+            @s,
+            kind: "malformed",
+            detail: "a request is a flattened JWS with no unprotected header (RFC 8555 § 6.2)"
+        )
+
+    header = match protected_of(members)
+        .ok h  => h
+        .err e => return refused(@s, kind: "malformed", detail: e.msg)
+
+    algorithm = match jose.parse_algorithm(json.text_of(header["alg"].default(.null_value)).default(""))
+        .ok a => a
+        .err _ => return refused(
+            @s,
+            kind: "badSignatureAlgorithm",
+            detail: "the JWS names no algorithm this CA takes: ES256, ES384, RS256 or EdDSA"
+        )
+
+    if !holds(accepted(), algorithm: algorithm)
+        return refused(
+            @s,
+            kind: "badSignatureAlgorithm",
+            detail: "the JWS names no algorithm this CA takes: ES256, ES384, RS256 or EdDSA"
+        )
+
+    if json.text_of(header["url"].default(.null_value)).default("") != url
+        return refused(@s, kind: "unauthorized", detail: "the JWS's url is not the URL the request was sent to")
+    has_jwk = !header["jwk"].is_err()
+    has_kid = !header["kid"].is_err()
+
+    if has_jwk == has_kid || has_jwk != with_key
+        return refused(@s, kind: "malformed", detail: expected_member(with_key))
+
+    sender = match signer_of(s, header: header, with_key: with_key)
+        .ok found => found
+        .err e    => return refused(@s, kind: e.code, detail: e.msg)
+
+    verified = match jose.verify_json(text, trusted: [sender.key], algorithms: [algorithm])
+        .ok m => m
+        .err e =>
+            s.counts.bad_signatures @ s.counts.bad_signatures + 1
+            return fail(code: "malformed", msg: "the JWS's signature does not hold: " + e.msg)
+
+    nonce = json.text_of(header["nonce"].default(.null_value)).default("")
+
+    if !s.nonces[nonce].default(false)
+        s.counts.bad_nonces @ s.counts.bad_nonces + 1
+        return fail(code: "badNonce", msg: "the nonce was used already, or never given by this CA")
+    s.nonces[nonce] @ false
+    return ok(Authenticated(account: sender.account, key: sender.key, payload: verified.payload))
+
+# The key and account that `header` names: its `jwk`, which must be a
+# public key, or the valid account its `kid` is the URL of.
+#
+# - `s`: the state.
+# - `header`: the protected header.
+# - `with_key`: whether the header carries a `jwk`.
+#
+# Fails `malformed` for a `jwk` of no form or holding a private member,
+# `accountDoesNotExist` for a `kid` naming no account, `unauthorized` for an
+# account deactivated.
+function signer_of(s: objects.State, header: {str: json.Value}, with_key: bool) -> Authenticated?
+    if with_key
+        key = match jose.key_of(header["jwk"].default(.null_value))
+            .ok k  => k
+            .err e => return fail(code: "malformed", msg: "the jwk is no key: " + e.msg)
+
+        if jose.is_private(key)
+            return fail(code: "malformed", msg: "the jwk holds a private key's members")
+        return ok(Authenticated(account: 0, key: key, payload: []))
+    kid = json.text_of(header["kid"].default(.null_value)).default("")
+    prefix = s.base + "/acme/account/"
+
+    if !strings.has_prefix(s: kid, prefix: prefix)
+        return fail(code: "accountDoesNotExist", msg: f"no account is at {kid}")
+
+    match id_of(kid.slice(from: prefix.len(), to: kid.len()))
+        .err _ => return fail(code: "accountDoesNotExist", msg: f"no account is at {kid}")
+        .ok id =>
+            if id < 1 || id > s.accounts.len()
+                return fail(code: "accountDoesNotExist", msg: f"no account is at {kid}")
+            account = s.accounts[id - 1]
+
+            if account.status != "valid"
+                return fail(code: "unauthorized", msg: f"the account at {kid} is {account.status}")
+
+            # `jose` tries only the keys whose id is the header's `kid`,
+            # so the account's key is named by its URL here.
+            named @= account.key
+            named.id @ kid
+            return ok(Authenticated(account: id, key: named, payload: []))
+
+# The protected header of the JWS whose members are `members`.
+#
+# - `members`: the flattened JWS's members.
+#
+# Fails `malformed` where `protected` is missing or not base 64 for URLs of
+# a JSON object.
+function protected_of(members: {str: json.Value}) -> {str: json.Value}?
+    encoded = match members["protected"]
+        .ok v  => json.text_of(v).default("")
+        .err _ => return fail(code: "malformed", msg: "the JWS has no protected header")
+
+    match bytes.parse_base64_url_unpadded(encoded)
+        .err _ => return fail(code: "malformed", msg: "the protected header is not base 64 for URLs")
+        .ok data =>
+            match bytes.to_text(data)
+                .err _ => return fail(code: "malformed", msg: "the protected header is not UTF-8")
+                .ok t =>
+                    match json.parse(t)
+                        .err _ => return fail(code: "malformed", msg: "the protected header is not JSON")
+                        .ok v =>
+                            match json.members_of(v)
+                                .ok m  => return ok(m)
+                                .err _ => return fail(code: "malformed", msg: "the protected header is not an object")
+
+## Helpers
+
+# The refusal `kind` with `detail`, counted.
+#
+# - `s`: the state.
+# - `kind`: the problem's type.
+# - `detail`: what a person reads.
+function refused(@s: objects.State, kind: str, detail: str) -> Authenticated?
+    s.counts.refused @ s.counts.refused + 1
+    return fail(code: kind, msg: detail)
+
+# What a request of the kind `with_key` names must carry.
+#
+# - `with_key`: whether it makes an account.
+function expected_member(with_key: bool) -> str
+    if with_key
+        return "a new account's request carries its key, jwk, and no kid"
+    return "a request names its account, kid, and carries no jwk"
+
+# Whether `list` holds `algorithm`.
+#
+# - `list`: the algorithms.
+# - `algorithm`: the one looked for.
+function holds(list: [jose.Algorithm], algorithm: jose.Algorithm) -> bool
+    for a in list
+        if a == algorithm
+            return true
+
+    return false
+
+# The id a URL's last part writes: digits alone, from 1.
+#
+# - `text`: the part.
+#
+# Fails `invalid` where it is not digits or is past 9 of them.
+function id_of(text: str) -> i64?
+    if text.len() == 0 || text.len() > 9
+        return fail(code: "invalid", msg: f"\"{text}\" is no id")
+    n @= 0
+
+    for at in range(from: 0, to: text.len())
+        b = text[at]
+
+        if b < '0' || b > '9'
+            return fail(code: "invalid", msg: f"\"{text}\" is no id")
+        n @ n * 10 + to_i64(b - '0').must()
+
+    return ok(n)
+
+test "id_of: digits, and anything else refused"
+    assert id_of("12").must() == 12
+    assert id_of("").is_err()
+    assert id_of("1a").is_err()
+    assert id_of("../1").is_err()

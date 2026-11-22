@@ -1,0 +1,95 @@
+== the window, drawn as text
+window #1 "Kanban" 1180x760
+  webview #2 page "/" 4 assets 22011 bytes 0 posted at 0,0 1180x760
+== what the page's requests are answered
+GET / -> 200 text/html; charset=utf-8
+GET /app.js -> 200 text/javascript; charset=utf-8
+GET /app.css -> 200 text/css; charset=utf-8
+GET /report.css -> 200 text/css; charset=utf-8
+HEAD /index.html -> 200 text/html; charset=utf-8
+GET /index.html?board=1 -> 200 text/html; charset=utf-8
+GET /missing.png -> 404 text/plain; charset=utf-8
+GET /%2e%2e/app.js -> 200 text/javascript; charset=utf-8
+POST / -> 405 text/plain; charset=utf-8
+may the page go to https://example.com/: false
+may the page go to file:///etc/passwd: false
+may the page go to app://localhost/report.html: true
+== the session
+page    {"heroes":1,"id":1,"call":"boards.list","args":null}
+program {"heroes":1,"id":1,"ok":[]}
+page    {"heroes":1,"id":2,"call":"board.create","args":{"title":"Launch"}}
+program {"heroes":1,"id":2,"ok":{"id":"019b8d62-7a80-7001-8000-000000000001","title":"Launch"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":3,"call":"board.get","args":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+program {"heroes":1,"id":3,"ok":{"id":"019b8d62-7a80-7001-8000-000000000001","title":"Launch","updated":"2026-01-05T09:03:00Z","columns":[{"id":"019b8d62-7a80-7002-8000-000000000002","title":"To do","cards":[]},{"id":"019b8d62-7a80-7003-8000-000000000003","title":"Doing","cards":[]},{"id":"019b8d62-7a80-7004-8000-000000000004","title":"Done","cards":[]}],"undo":"make the board \"Launch\"","redo":null}}
+page    {"heroes":1,"id":4,"call":"card.add","args":{"column":"019b8d62-7a80-7002-8000-000000000002","title":"Write the press release","body":"Draft **two** paragraphs:\n\n- the problem\n- the answer\n\n<script>alert(1)</script>"}}
+program {"heroes":1,"id":4,"ok":{"id":"019b8d62-7a80-7005-8000-000000000005","column":"019b8d62-7a80-7002-8000-000000000002","title":"Write the press release","body":"Draft **two** paragraphs:\n\n- the problem\n- the answer\n\n<script>alert(1)</script>","html":"<p>Draft <strong>two</strong> paragraphs:</p>\n<ul>\n<li>the problem</li>\n<li>the answer</li>\n</ul>\n<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n","created":"2026-01-05T09:04:00Z","updated":"2026-01-05T09:04:00Z"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":5,"call":"card.add","args":{"column":"019b8d62-7a80-7002-8000-000000000002","title":"Book the venue"}}
+program {"heroes":1,"id":5,"ok":{"id":"019b8d62-7a80-7006-8000-000000000006","column":"019b8d62-7a80-7002-8000-000000000002","title":"Book the venue","body":"","html":"","created":"2026-01-05T09:06:00Z","updated":"2026-01-05T09:06:00Z"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":6,"call":"card.add","args":{"column":"019b8d62-7a80-7003-8000-000000000003","title":"Fix the sign-in bug","body":"See `auth.hero`.\n\n| step | who |\n|---|---|\n| repro | Ada |"}}
+program {"heroes":1,"id":6,"ok":{"id":"019b8d62-7a80-7007-8000-000000000007","column":"019b8d62-7a80-7003-8000-000000000003","title":"Fix the sign-in bug","body":"See `auth.hero`.\n\n| step | who |\n|---|---|\n| repro | Ada |","html":"<p>See <code>auth.hero</code>.</p>\n<table>\n<thead>\n<tr>\n<th>step</th>\n<th>who</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>repro</td>\n<td>Ada</td>\n</tr>\n</tbody>\n</table>\n","created":"2026-01-05T09:08:00Z","updated":"2026-01-05T09:08:00Z"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":7,"call":"card.move","args":{"card":"019b8d62-7a80-7005-8000-000000000005","column":"019b8d62-7a80-7003-8000-000000000003","position":0}}
+program {"heroes":1,"id":7,"ok":{"id":"019b8d62-7a80-7005-8000-000000000005","column":"019b8d62-7a80-7003-8000-000000000003","title":"Write the press release","body":"Draft **two** paragraphs:\n\n- the problem\n- the answer\n\n<script>alert(1)</script>","html":"<p>Draft <strong>two</strong> paragraphs:</p>\n<ul>\n<li>the problem</li>\n<li>the answer</li>\n</ul>\n<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n","created":"2026-01-05T09:04:00Z","updated":"2026-01-05T09:10:00Z"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":8,"call":"card.edit","args":{"card":"019b8d62-7a80-7006-8000-000000000006","title":"Book the venue","body":"[The hall](https://example.com) <img src=x onerror=alert(1)>"}}
+program {"heroes":1,"id":8,"ok":{"id":"019b8d62-7a80-7006-8000-000000000006","column":"019b8d62-7a80-7002-8000-000000000002","title":"Book the venue","body":"[The hall](https://example.com) <img src=x onerror=alert(1)>","html":"<p><a href=\"https://example.com\" rel=\"nofollow\">The hall</a> &lt;img src=x onerror=alert(1)&gt;</p>\n","created":"2026-01-05T09:06:00Z","updated":"2026-01-05T09:12:00Z"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":9,"call":"search","args":{"board":"019b8d62-7a80-7001-8000-000000000001","query":"press"}}
+program {"heroes":1,"id":9,"ok":[{"card":"019b8d62-7a80-7005-8000-000000000005","title":"Write the press release","column":"Doing"}]}
+page    {"heroes":1,"id":10,"call":"search","args":{"board":"019b8d62-7a80-7001-8000-000000000001","query":"venue sign*"}}
+program {"heroes":1,"id":10,"ok":[{"card":"019b8d62-7a80-7007-8000-000000000007","title":"Fix the sign-in bug","column":"Doing"},{"card":"019b8d62-7a80-7006-8000-000000000006","title":"Book the venue","column":"To do"}]}
+page    {"heroes":1,"id":11,"call":"column.add","args":{"board":"019b8d62-7a80-7001-8000-000000000001","title":"Review"}}
+program {"heroes":1,"id":11,"ok":{"id":"019b8d62-7a80-7008-8000-000000000008","board":"019b8d62-7a80-7001-8000-000000000001","title":"Review","position":3}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":12,"call":"column.rename","args":{"column":"019b8d62-7a80-7008-8000-000000000008","title":"Checked"}}
+program {"heroes":1,"id":12,"ok":true}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":13,"call":"card.delete","args":{"card":"019b8d62-7a80-7007-8000-000000000007"}}
+program {"heroes":1,"id":13,"ok":true}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":14,"call":"undo","args":null}
+program {"heroes":1,"id":14,"ok":{"board":"019b8d62-7a80-7001-8000-000000000001","label":"delete the card \"Fix the sign-in bug\""}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":15,"call":"undo","args":null}
+program {"heroes":1,"id":15,"ok":{"board":"019b8d62-7a80-7001-8000-000000000001","label":"rename the column \"Review\""}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":16,"call":"redo","args":null}
+program {"heroes":1,"id":16,"ok":{"board":"019b8d62-7a80-7001-8000-000000000001","label":"rename the column \"Review\""}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":17,"call":"board.get","args":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+program {"heroes":1,"id":17,"ok":{"id":"019b8d62-7a80-7001-8000-000000000001","title":"Launch","updated":"2026-01-05T09:15:00Z","columns":[{"id":"019b8d62-7a80-7002-8000-000000000002","title":"To do","cards":[{"id":"019b8d62-7a80-7006-8000-000000000006","title":"Book the venue","html":"<p><a href=\"https://example.com\" rel=\"nofollow\">The hall</a> &lt;img src=x onerror=alert(1)&gt;</p>\n"}]},{"id":"019b8d62-7a80-7003-8000-000000000003","title":"Doing","cards":[{"id":"019b8d62-7a80-7005-8000-000000000005","title":"Write the press release","html":"<p>Draft <strong>two</strong> paragraphs:</p>\n<ul>\n<li>the problem</li>\n<li>the answer</li>\n</ul>\n<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n"},{"id":"019b8d62-7a80-7007-8000-000000000007","title":"Fix the sign-in bug","html":"<p>See <code>auth.hero</code>.</p>\n<table>\n<thead>\n<tr>\n<th>step</th>\n<th>who</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>repro</td>\n<td>Ada</td>\n</tr>\n</tbody>\n</table>\n"}]},{"id":"019b8d62-7a80-7004-8000-000000000004","title":"Done","cards":[]},{"id":"019b8d62-7a80-7008-8000-000000000008","title":"Checked","cards":[]}],"undo":"rename the column \"Review\"","redo":"delete the card \"Fix the sign-in bug\""}}
+page    {"heroes":1,"id":18,"call":"preview","args":{"body":"# Notes\n\n*soon*, see [docs](javascript:alert(1))"}}
+program {"heroes":1,"id":18,"ok":{"html":"<h1>Notes</h1>\n<p><em>soon</em>, see <a href=\"\" rel=\"nofollow\">docs</a></p>\n"}}
+page    {"heroes":1,"id":19,"call":"export.file","args":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+program {"heroes":1,"id":19,"ok":{"saved":true,"name":"launch.json"}}
+page    {"heroes":1,"id":20,"call":"board.delete","args":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+program {"heroes":1,"id":20,"ok":true}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7001-8000-000000000001"}}
+page    {"heroes":1,"id":21,"call":"import.file","args":null}
+program {"heroes":1,"id":21,"ok":{"board":"019b8d62-7a80-7009-8000-000000000009"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7009-8000-000000000009"}}
+page    {"heroes":1,"id":22,"call":"board.get","args":{"board":"019b8d62-7a80-7009-8000-000000000009"}}
+program {"heroes":1,"id":22,"ok":{"id":"019b8d62-7a80-7009-8000-000000000009","title":"Launch","updated":"2026-01-05T09:15:00Z","columns":[{"id":"019b8d62-7a80-700a-8000-00000000000a","title":"To do","cards":[{"id":"019b8d62-7a80-700b-8000-00000000000b","title":"Book the venue","html":"<p><a href=\"https://example.com\" rel=\"nofollow\">The hall</a> &lt;img src=x onerror=alert(1)&gt;</p>\n"}]},{"id":"019b8d62-7a80-700c-8000-00000000000c","title":"Doing","cards":[{"id":"019b8d62-7a80-700d-8000-00000000000d","title":"Write the press release","html":"<p>Draft <strong>two</strong> paragraphs:</p>\n<ul>\n<li>the problem</li>\n<li>the answer</li>\n</ul>\n<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>\n"},{"id":"019b8d62-7a80-700e-8000-00000000000e","title":"Fix the sign-in bug","html":"<p>See <code>auth.hero</code>.</p>\n<table>\n<thead>\n<tr>\n<th>step</th>\n<th>who</th>\n</tr>\n</thead>\n<tbody>\n<tr>\n<td>repro</td>\n<td>Ada</td>\n</tr>\n</tbody>\n</table>\n"}]},{"id":"019b8d62-7a80-700f-8000-00000000000f","title":"Done","cards":[]},{"id":"019b8d62-7a80-7010-8000-000000000010","title":"Checked","cards":[]}],"undo":"import a board","redo":null}}
+page    {"heroes":1,"id":23,"call":"report","args":{"board":"019b8d62-7a80-7009-8000-000000000009"}}
+program {"heroes":1,"id":23,"ok":{"path":"/report.html"}}
+page    {"heroes":1,"id":24,"call":"card.add","args":{"column":"019b8d62-7a80-700a-8000-00000000000a","title":"   "}}
+program {"heroes":1,"id":24,"error":{"code":"invalid","msg":"the card's title is empty"}}
+page    {"heroes":1,"id":25,"call":"card.move","args":{"card":"019b8d62-7a80-7005-8000-000000000005","column":"019b8d62-7a80-700a-8000-00000000000a","position":0}}
+program {"heroes":1,"id":25,"error":{"code":"not_found","msg":"no card is named 019b8d62-7a80-7005-8000-000000000005"}}
+page    {"heroes":1,"id":26,"call":"card.add","args":{"column":"019b8d62-7a80-700a-8000-00000000000a"}}
+program {"heroes":1,"id":26,"error":{"code":"invalid","msg":"the call names no `title`"}}
+page    {"heroes":1,"id":27,"call":"undo","args":null}
+program {"heroes":1,"id":27,"ok":{"board":"019b8d62-7a80-7009-8000-000000000009","label":"import a board"}}
+program {"heroes":1,"event":"board.changed","data":{"board":"019b8d62-7a80-7009-8000-000000000009"}}
+page    {"heroes":1,"id":28,"call":"boards.list","args":null}
+program {"heroes":1,"id":28,"ok":[]}
+page    {"heroes":1,"id":29,"call":"board.archive","args":{}}
+program {"heroes":1,"id":29,"error":{"code":"not_found","msg":"no call is named \"board.archive\""}}
+== the report, as the page is answered for it
+GET /report.html -> 200 text/html; charset=utf-8
+== the window at the end
+window #1 "Kanban" 1180x760
+  webview #2 page "/" 5 assets 23107 bytes 44 posted at 0,0 1180x760

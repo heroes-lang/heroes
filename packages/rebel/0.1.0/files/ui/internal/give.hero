@@ -55,6 +55,9 @@ function checked(app: ui.App, input: ui.Input) -> ()?
             for i in range(from: 0, to: p.paths.len())
                 check.text_ok(text: p.paths[i], one_line: false, what: f"path {i}")?
         .cancel_files => _ = 0
+        .send s =>
+            _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")?
+            check.text_ok(text: s.text, one_line: false, what: "the text sent")?
 
     return ok()
 
@@ -70,6 +73,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .choose_menu m                            => m.item.id
         .ask_close a                              => a.window.id
         .resize r                                 => r.window.id
+        .send s                                   => s.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
 
     if id == 0
@@ -137,6 +141,10 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
                 app.table.nodes @ nodes
                 laid = app.table.nodes[n.id].must()
                 return [.resized(window: r.window, width: laid.w, height: laid.h)]
+        .send s =>
+            # A web view showing no page runs no script that could send.
+            if app.table.nodes[s.widget.id].must().web.page.len() > 0
+                return [.message(widget: s.widget, text: s.text)]
         .answer _ | .pick_files _ | .cancel_files =>
             _ = 0
 

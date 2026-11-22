@@ -1,0 +1,83 @@
+# The board on the desktop: the system's own window and web view, the
+# database in the user's data folder, and the loop that answers the page's
+# calls until the person closes the window. The menu bar offers what the
+# page's buttons do, Undo and Redo with their usual shortcuts, so a person
+# who reaches for Command-Z finds it, and its choices go through the same
+# handler as the page's calls.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/time
+use <rebel>/ui
+
+use api/handler
+use app/cli
+use app/desk
+use app/opening
+use store/schema
+use support/clock
+use support/ids
+
+# The menu items the window holds.
+record Menus
+    # Edit's Undo.
+    undo: ui.Widget
+    # Edit's Redo.
+    redo: ui.Widget
+
+# Runs the board in a window until the person closes it. Fails
+# `unsupported` where this machine has no window or no web view for this
+# session, and as the database, the page's files or the system fail.
+#
+# - `command`: the command line read.
+function run(command: cli.Command) -> ()?
+    web = cli.web_folder(command.web)?
+    data = cli.data_file(command.data)?
+    fs.make_dir_all(path.parent(data))?
+    app = ui.open(.native)?
+
+    db = match schema.open(data)
+        .ok opened => opened
+        .err e =>
+            gone @= app
+            _ = ui.close(@gone).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    d @= opening.made(app, db: db, web: web, dates: clock.system(), names: ids.drawn())?
+    menus = menu_bar(@d)?
+    looped = loop(@d, menus: menus)
+    closed = desk.close(@d)
+    looped?
+    return closed
+
+# The Edit menu, Undo and Redo with the system's own shortcuts.
+function menu_bar(@d: desk.Desk) -> Menus?
+    edit = ui.menu(@d.app, into: d.window, title: "Edit")?
+    undo = ui.menu_item(@d.app, into: edit, text: "Undo")?
+    ui.set_shortcut(@d.app, item: undo, shortcut: ui.Shortcut(key: "z", primary: true, shift: false, alt: false))?
+    redo = ui.menu_item(@d.app, into: edit, text: "Redo")?
+    ui.set_shortcut(@d.app, item: redo, shortcut: ui.Shortcut(key: "z", primary: true, shift: true, alt: false))?
+    return ok(Menus(undo: undo, redo: redo))
+
+# Answers the page's calls and the menu's choices until the window is asked
+# to close.
+function loop(@d: desk.Desk, menus: Menus) -> ()?
+    while true
+        match ui.wait(@d.app, within: time.seconds(1)?)
+            .err e =>
+                if e.code != ui.TIMEOUT
+                    return fail(code: e.code, msg: e.msg)
+            .ok event =>
+                match event
+                    .message m => _ = handler.handle(@d, text: m.text)?
+                    .menu_chosen m =>
+                        call = if m.item == menus.undo
+                            "undo"
+                        else
+                            "redo"
+
+                        _ = handler.act(@d, name: call)?
+                    .close_asked _ => return ok()
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .timer_fired _ | .resized _ => _ = 0
+
+    return ok()

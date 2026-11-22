@@ -1,0 +1,287 @@
+# iothub: an IoT hub. Devices publish to an MQTT broker, an AMQP 0-9-1
+# broker and a NATS server, or speak NMEA 0183 on a serial line; the hub
+# reads them all, finds each device in its registry by the address it
+# publishes at, decodes its payload by the registry's encoding and schema
+# (SenML packs in CBOR, MessagePack maps, Protocol Buffers read by `.proto`
+# files at run time, XDR sentences), re-publishes every reading as JSON,
+# and routes readings from one protocol to another by rules with
+# conditions. A dashboard watches it all live over a WebSocket feed, and
+# Prometheus scrapes its metrics. A broker that drops is tried again with
+# exponential backoff, and what the hub owed it is held and sent when it is
+# back.
+#
+# Run for real, with a folder holding `hub.json`, `devices.json` and the
+# `.proto` files (`config/settings` shows a `hub.json`):
+#
+#     iothub register --registry hub/devices.json --name fridge-07 \
+#         --protocol mqtt --address devices/fridge-07/up --encoding cbor \
+#         --schema senml --field temp=temperature:Cel
+#     iothub serve --config hub/hub.json
+#     iothub watch ws://127.0.0.1:8088/feed
+#     curl http://127.0.0.1:8088/metrics
+#     iothub decode --registry hub/devices.json --proto hub/plant.proto \
+#         --device press-2 payload.bin
+#
+# `iothub demo` plays a whole session on this machine, the brokers replaced
+# by stand-ins the program carries, and prints its transcript.
+#
+# The Rebel packages it uses, and for what:
+# - `mqtt`, `amqp` and `nats`: the hub's links to its three brokers, and
+#   the demo's devices and observers; `mqtt` and `amqp`'s field tables also
+#   read and write the stand-ins' packets.
+# - `cbor`, `msgpack` and `protobuf`: the devices' payloads, decoded by the
+#   registry's schema, a `.proto` file read at run time for Protocol
+#   Buffers, and encoded by the demo's devices.
+# - `serial`: the gateway's ports, and the demo's pseudo-terminal.
+# - `websocket` and `http`: the dashboard's live feed, `/metrics` and
+#   `/devices`, served from the hub's own loop, and `iothub watch`.
+# - `metrics`: the hub's counters, gauges and a histogram, in Prometheus's
+#   text format.
+# - `retries`: the exponential backoff with jitter of every lost broker and
+#   port; `random`: its seeded chance, and the seeded identities.
+# - `uuid`: every device's identity; `json`: the settings, the registry,
+#   the readings re-published and the feed.
+# - `net`, `poll` and `threads`: one loop for every socket, and the demo's
+#   servers; `time`: the clocks and moments; `flags`: this command line;
+#   `fs` and `path`: the hub's folder; `bytes`, `strings`, `numbers`, `io`,
+#   `math` and `os`: the bytes, text and streams under it all.
+
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/protobuf
+use <rebel>/time
+use <rebel>/uuid
+
+use codecs/decode
+use codecs/reading
+use config/registry
+use demo/script
+use feed/server
+use feed/watch
+use hub/loop
+use hub/state
+
+# The declaration of the command line.
+function declaration() -> flags.Command
+    root @= flags.command(name: "iothub", about: "An IoT hub bridging MQTT, AMQP, NATS and serial devices.")
+
+    serving @= flags.command(name: "serve", about: "Serve the hub until Ctrl-C.")
+    flags.add(
+        @serving,
+        flags.with_required(flags.option(long: "config", short: "c", value_name: "FILE", help: "the hub's settings, hub.json"))
+    )
+    flags.add_command(c: @root, sub: serving)
+
+    watching @= flags.command(name: "watch", about: "Watch a hub's live feed in this terminal.")
+    flags.add(@watching, flags.positional(name: "url", help: "the feed, ws://host:port/feed"))
+    flags.add_command(c: @root, sub: watching)
+
+    registering @= flags.command(name: "register", about: "Register a device, minting its identity.")
+    flags.add(
+        @registering,
+        flags.with_required(flags.option(long: "registry", short: "r", value_name: "FILE", help: "the registry, devices.json"))
+    )
+    flags.add(
+        @registering,
+        flags.with_required(flags.option(long: "name", short: "n", value_name: "NAME", help: "the device's name"))
+    )
+    flags.add(
+        @registering,
+        flags.with_required(flags.option(long: "protocol", short: "p", value_name: "mqtt|amqp|nats|serial", help: "how it reaches the hub"))
+    )
+    flags.add(
+        @registering,
+        flags.with_required(flags.option(long: "address", short: "a", value_name: "ADDRESS", help: "the topic, exchange/key, subject or port it publishes at"))
+    )
+    flags.add(
+        @registering,
+        flags.with_required(flags.option(long: "encoding", short: "e", value_name: "cbor|msgpack|protobuf|nmea", help: "how its payloads are encoded"))
+    )
+    flags.add(
+        @registering,
+        flags.option(long: "schema", short: "s", value_name: "SCHEMA", help: "senml, a message type, or xdr")
+    )
+    flags.add(
+        @registering,
+        flags.option(long: "time", short: "t", value_name: "KEY", help: "the payload's key of the moment")
+    )
+    flags.add(
+        @registering,
+        flags.option(long: "field", short: "f", value_name: "KEY=QUANTITY:UNIT", help: "what a key measures; may repeat")
+    )
+    flags.add_command(c: @root, sub: registering)
+
+    decoding @= flags.command(name: "decode", about: "Decode one payload of a registered device and print its reading.")
+    flags.add(
+        @decoding,
+        flags.with_required(flags.option(long: "registry", short: "r", value_name: "FILE", help: "the registry, devices.json"))
+    )
+    flags.add(
+        @decoding,
+        flags.with_required(flags.option(long: "device", short: "d", value_name: "NAME", help: "the device that sent it"))
+    )
+    flags.add(@decoding, flags.option(long: "proto", short: "", value_name: "FILE", help: "a .proto file; may repeat"))
+    flags.add(@decoding, flags.positional(name: "payload", help: "the file holding the payload's bytes"))
+    flags.add_command(c: @root, sub: decoding)
+
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "demo", about: "Play a whole session on this machine and print it.")
+    )
+    return root
+
+# The program's arguments, every one text; one that is not ends the program
+# with a usage error naming it, exit 2, rather than the abort `args()` would
+# make of it.
+function arguments() -> [str]
+    texts: [str] @= []
+    given = args_checked()
+
+    for i in range(from: 0, to: given.len())
+        match given[i]
+            .ok a => texts @ texts.push(a)
+            .err _ =>
+                print(
+                    f"iothub: argument {i + 1} is not text (UTF-8); every argument is a name, a path or a URL written as text"
+                )
+                exit(code: 2)
+
+    return texts
+
+# Reads the command line and runs the command it names; a mistake in it
+# prints the usage and ends with 2, a failure of the command with 1.
+function main()
+    found = match flags.parse(declaration(), arguments: arguments())
+        .ok f => f
+        .err e =>
+            print(e.msg)
+            exit(code: 2)
+            return
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return
+
+    chosen = match flags.subcommand(found)
+        .ok f => f
+        .err _ =>
+            print(flags.help_text(found))
+            exit(code: 2)
+            return
+
+    outcome = match flags.name_of(chosen)
+        "serve"    => serve(chosen)
+        "watch"    => watch.run(flags.value_of(chosen, name: "url").default(""))
+        "register" => register(chosen)
+        "decode"   => decode_one(chosen)
+        _          => play_demo()
+
+    match outcome
+        .ok _ => _ = 0
+        .err e =>
+            print(f"iothub: {e.msg}")
+            exit(code: 1)
+
+# Plays the demo.
+function play_demo() -> ()?
+    script.run()
+    return ok()
+
+# `iothub serve`: the hub begun from its settings, its links made, served
+# until Ctrl-C, its summary printed.
+#
+# - `f`: what the parse found for `serve`.
+function serve(f: flags.Found) -> ()?
+    os.catch_stop()?
+    h @= state.begin(loop.settings_at(flags.value_of(f, name: "config")?)?, quiet: false)?
+    print(
+        f"iothub: serving the feed on ws://127.0.0.1:{server.port_of(h.feed)}/feed and the metrics on /metrics; Ctrl-C ends it"
+    )
+    loop.start_links(@h)
+    loop.serve(@h)
+    print(state.end(@h))
+    return ok()
+
+# What a `--field` names: `key=quantity:unit`, the unit optional.
+#
+# - `text`: the option's value.
+#
+# Fails `invalid` where it holds no `=`.
+function field_of(text: str) -> registry.FieldMap?
+    equals = index_of_byte(text, wanted: '=')
+
+    if equals < 0
+        return fail(code: "invalid", msg: f"\"{text}\" is no field: it is key=quantity:unit")
+
+    rest = text.slice(from: equals + 1, to: text.len())
+    colon = index_of_byte(rest, wanted: ':')
+
+    if colon < 0
+        return ok(registry.FieldMap(key: text.slice(from: 0, to: equals), quantity: rest, unit: ""))
+
+    return ok(
+        registry.FieldMap(key: text.slice(from: 0, to: equals), quantity: rest.slice(from: 0, to: colon), unit: rest.slice(from: colon + 1, to: rest.len()))
+    )
+
+# The index of the first byte `wanted` in `text`, -1 where it holds none.
+#
+# - `text`: the text.
+# - `wanted`: an ASCII byte.
+function index_of_byte(text: str, wanted: u8) -> i64
+    for i in range(from: 0, to: text.len())
+        if text[i] == wanted
+            return i
+
+    return -1
+
+# `iothub register`: the device the options describe added to the
+# registry with a new identity of version 4, the registry written back.
+#
+# - `f`: what the parse found for `register`.
+function register(f: flags.Found) -> ()?
+    file = flags.value_of(f, name: "registry")?
+
+    before = if fs.exists(file).default(false)
+        registry.parse(read_file(file)?)?
+    else
+        registry.Registry(devices: [])
+
+    fields: [registry.FieldMap] @= []
+
+    for text in flags.values_of(f, name: "field")
+        fields @ fields.push(field_of(text)?)
+
+    minting: registry.Minting @= .system
+    d = registry.Device(
+        id: registry.mint(@minting)?,
+        name: flags.value_of(f, name: "name")?,
+        protocol: registry.parse_protocol(flags.value_of(f, name: "protocol")?)?,
+        address: flags.value_of(f, name: "address")?,
+        encoding: registry.parse_encoding(flags.value_of(f, name: "encoding")?)?,
+        schema: flags.value_of(f, name: "schema").default(""),
+        time_key: flags.value_of(f, name: "time").default(""),
+        fields: fields
+    )
+    after = registry.with_device(before, d: d)?
+    write_file(path: file, text: registry.format(after))?
+    print(f"{d.name} registered as {uuid.format(d.id)}")
+    return ok()
+
+# `iothub decode`: one payload of a registered device read as the hub reads
+# it, its reading printed as the hub re-publishes it.
+#
+# - `f`: what the parse found for `decode`.
+function decode_one(f: flags.Found) -> ()?
+    devices = registry.parse(read_file(flags.value_of(f, name: "registry")?)?)?
+    d = registry.device_named(devices, name: flags.value_of(f, name: "device")?)?
+    schema: protobuf.Schema = state.schema_of(flags.values_of(f, name: "proto"))?
+    payload = fs.read_bytes(flags.value_of(f, name: "payload")?)?
+    r = decode.decode(schema, d: d, payload: payload, received: time.now()?)?
+    print(reading.reading_text(r))
+    return ok()
+
+test "field_of: a key, a quantity and a unit; no unit; and no equals sign"
+    assert field_of("temp=temperature:Cel").must() == registry.FieldMap(key: "temp", quantity: "temperature", unit: "Cel")
+    assert field_of("bat=battery").must() == registry.FieldMap(key: "bat", quantity: "battery", unit: "")
+    assert field_of("temperature").is_err()

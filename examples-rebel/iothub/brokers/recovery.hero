@@ -1,0 +1,158 @@
+# How the hub comes back to a broker or a port it lost: never giving up,
+# since a hub that stops trying is a hub somebody must restart, and never
+# hammering, since a broker coming back up is slowest under the load of
+# every client trying at once. The waits are `retries`' exponential backoff
+# with full jitter, the fraction drawn from the hub's own generator (seeded
+# for a run that must repeat itself), and the moments on the monotonic
+# clock, so a wall clock set back cannot make the hub try in a burst.
+
+use <rebel>/random
+use <rebel>/retries
+use <rebel>/time
+
+# Where one link stands.
+record Recovery
+    # Whether the link is up.
+    up: bool
+    # The retry loop since it was lost, its failures counted.
+    retry: retries.Retry
+    # When it was lost, on the monotonic clock.
+    lost_at: time.Mark
+    # When the next attempt is due, on the monotonic clock.
+    due_at: time.Mark
+    # The attempts made since it was lost.
+    attempts: i64
+    # The times it was lost and made again since the hub started.
+    reconnections: i64
+
+# The policy of the hub's waits: `first`, then multiplied by `multiplier`
+# up to `longest`, spread by full jitter, with no limit of attempts or time.
+#
+# - `first`: the wait after the first failure.
+# - `multiplier`: what each wait is multiplied by.
+# - `longest`: the longest wait.
+#
+# Fails `invalid` where `retries.backoff` refuses them.
+function policy(first: time.Duration, multiplier: f64, longest: time.Duration) -> retries.Backoff?
+    return retries.with_jitter(retries.backoff(first: first, multiplier: multiplier, longest: longest)?, jitter: .full)
+
+# A link that is up, under `p`.
+#
+# - `p`: the policy its waits will follow once it is lost.
+function up_under(p: retries.Backoff) -> Recovery
+    zero = time.Mark(nanoseconds: 0)
+    return Recovery(up: true, retry: retries.new_retry(p), lost_at: zero, due_at: zero, attempts: 0, reconnections: 0)
+
+# A link that is down from the start, due at once: a broker the hub could
+# not reach when it began.
+#
+# - `p`: the policy.
+# - `now`: the monotonic clock's reading.
+function down_under(p: retries.Backoff, now: time.Mark) -> Recovery
+    r @= up_under(p)
+    r.up @ false
+    r.lost_at @ now
+    r.due_at @ now
+    return r
+
+# The wait before the next attempt, after one more failure, and the moment
+# it is due.
+#
+# - `r`: the link, its failures counted and its next attempt set.
+# - `chance`: the generator the jitter's fraction is drawn from.
+# - `now`: the monotonic clock's reading.
+#
+# Fails `invalid` where the policy is refused by `retries.next_wait`, which
+# a policy made by `policy` never is.
+function wait_after_failure(@r: Recovery, @chance: random.Generator, now: time.Mark) -> time.Duration?
+    spent = time.nanoseconds(now.nanoseconds - r.lost_at.nanoseconds)
+    wait = retries.next_wait(@r.retry, spent: spent, fraction: random.next_f64(@chance))?
+    r.due_at @ time.Mark(nanoseconds: now.nanoseconds + wait.nanoseconds)
+    return ok(wait)
+
+# Marks the link lost at `now`, and answers the wait before its first
+# attempt.
+#
+# - `r`: the link.
+# - `chance`: the generator.
+# - `now`: the monotonic clock's reading.
+#
+# Fails as `wait_after_failure` does.
+function lose(@r: Recovery, @chance: random.Generator, now: time.Mark) -> time.Duration?
+    r.up @ false
+    r.retry @ retries.new_retry(r.retry.policy)
+    r.lost_at @ now
+    r.attempts @ 0
+    return wait_after_failure(@r, chance: @chance, now: now)
+
+# Counts an attempt that failed, and answers the wait before the next.
+#
+# - `r`: the link.
+# - `chance`: the generator.
+# - `now`: the monotonic clock's reading.
+#
+# Fails as `wait_after_failure` does.
+function fail_attempt(@r: Recovery, @chance: random.Generator, now: time.Mark) -> time.Duration?
+    r.attempts @ r.attempts + 1
+    return wait_after_failure(@r, chance: @chance, now: now)
+
+# Marks the link up again after an attempt that succeeded, the attempt
+# counted.
+#
+# - `r`: the link.
+function recover(@r: Recovery)
+    r.attempts @ r.attempts + 1
+    r.up @ true
+    r.reconnections @ r.reconnections + 1
+
+# Whether the link is down and its next attempt is due at `now`.
+#
+# - `r`: the link.
+# - `now`: the monotonic clock's reading.
+function is_due(r: Recovery lent, now: time.Mark) -> bool
+    return !r.up && now.nanoseconds >= r.due_at.nanoseconds
+
+# How long until the next attempt of a link that is down, zero where it is
+# due; `longest` for a link that is up.
+#
+# - `r`: the link.
+# - `now`: the monotonic clock's reading.
+# - `longest`: what is answered for a link that is up.
+function until_due(r: Recovery lent, now: time.Mark, longest: time.Duration) -> time.Duration
+    if r.up
+        return longest
+
+    left = r.due_at.nanoseconds - now.nanoseconds
+
+    if left <= 0
+        return time.nanoseconds(0)
+    return time.nanoseconds(left)
+
+# A wait as the hub tells it: whole milliseconds.
+#
+# - `d`: the wait.
+function shown_wait(d: time.Duration) -> str
+    return f"{d.nanoseconds / 1_000_000} ms"
+
+test "lose, fail_attempt, recover: waits that grow under a seeded chance, and the count of attempts"
+    p = policy(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(2).must()).must()
+    r @= up_under(p)
+    g @= random.Generator(high: 7, low: 7)
+    again @= g
+    at = time.Mark(nanoseconds: 1_000_000_000)
+    first = lose(@r, chance: @g, now: at).must()
+    assert !r.up && first.nanoseconds <= 100_000_000
+    second = fail_attempt(@r, chance: @g, now: at).must()
+    assert second.nanoseconds <= 200_000_000
+    assert r.attempts == 1 && is_due(r, now: time.Mark(nanoseconds: at.nanoseconds + second.nanoseconds))
+    recover(@r)
+    assert r.up && r.attempts == 2 && r.reconnections == 1
+    replay @= up_under(p)
+    assert lose(@replay, chance: @again, now: at).must() == first
+
+test "until_due: a link up waits the longest, one due waits nothing"
+    p = policy(first: time.milliseconds(100).must(), multiplier: 2.0, longest: time.seconds(2).must()).must()
+    now = time.Mark(nanoseconds: 5)
+    assert until_due(up_under(p), now: now, longest: time.seconds(1).must()) == time.seconds(1).must()
+    assert until_due(down_under(p, now: now), now: now, longest: time.seconds(1).must()).nanoseconds == 0
+    assert shown_wait(time.milliseconds(87).must()) == "87 ms"

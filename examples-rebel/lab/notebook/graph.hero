@@ -1,0 +1,254 @@
+# The dependencies between a notebook's cells, as a reactive notebook
+# (Pluto, Observable) draws them: a cell depends on the cell that defines a
+# name it reads, so the cells run in an order their dependencies give rather
+# than the file's, and a changed cell re-runs together with the cells that
+# depend on it, and no other.
+#
+# Each name has one cell: a second cell defining it is refused, since which
+# value the notebook meant would depend on an order nobody wrote. Cells that
+# read each other's names in a circle cannot run, and every cell of the
+# circle says so, naming it. The graph is a `{str: [str]}`, each cell and
+# the cells it depends on, which `graphs` orders (`strong_components`),
+# searches for circles (`cycle_of`) and walks backwards from a changed cell
+# (`reachable_from`).
+
+use <rebel>/graphs
+
+use lang/ast
+use lang/names
+use lang/parser
+use notebook/cells
+
+# One cell read: its statements, what it defines and reads, and what keeps
+# it from running, if anything does.
+record Parsed
+    # The cell's name.
+    name: str
+    # Its statements, none where its text does not parse.
+    statements: [ast.Statement]
+    # Why it cannot run, "" where it can.
+    problem: str
+    # The names it defines, each once.
+    defines: [str]
+    # The names it reads, each once.
+    reads: [str]
+
+# A notebook's cells and the graph between them.
+record Analysis
+    # The cells, in the file's order.
+    cells: [Parsed]
+    # Each name defined and the cell defining it.
+    owner: {str: str}
+    # Each cell and the cells it depends on.
+    depends: {str: [str]}
+
+# Adds `x` to `xs` where it is not there.
+#
+# - `xs`: the list.
+# - `x`: the element.
+function add_once(@xs: [str], x: str)
+    for y in xs
+        if y == x
+            return
+
+    xs @ xs.push(x)
+
+# The cell `c` read: parsed, its definitions and reads gathered.
+#
+# - `c`: the cell.
+function parsed(c: cells.Cell) -> Parsed
+    match parser.parse(c.source, first_line: c.first_line)
+        .err e => return Parsed(name: c.name, statements: [], problem: e.msg, defines: [], reads: [])
+        .ok statements =>
+            defines: [str] @= []
+            reads: [str] @= []
+
+            for s in statements
+                for r in names.used(s)
+                    add_once(@reads, x: r)
+
+                d = names.defined(s)
+
+                if d != ""
+                    add_once(@defines, x: d)
+
+            return Parsed(name: c.name, statements: statements, problem: "", defines: defines, reads: reads)
+
+# The analysis of `nb`: every cell read, each name's cell, the graph, and
+# the problems a second definition or a circle make.
+#
+# - `nb`: the notebook.
+function analyse(nb: cells.Notebook) -> Analysis
+    found: [Parsed] @= []
+    owner: {str: str} @= {}
+
+    for c in nb.cells
+        p @= parsed(c)
+
+        for d in p.defines
+            match owner[d]
+                .ok first =>
+                    if p.problem == ""
+                        p.problem @ f"`{d}` is defined in the cell `{first}` too; a name has one cell"
+                .err _ => owner[d] @ c.name
+
+        found @ found.push(p)
+
+    depends: {str: [str]} @= {}
+
+    for p in found
+        on: [str] @= []
+
+        for r in p.reads
+            match owner[r]
+                .ok cell =>
+                    if cell != p.name
+                        add_once(@on, x: cell)
+                .err _ => _ = 0
+
+        depends[p.name] @ on
+
+    marked = circles(depends)
+    out: [Parsed] @= []
+
+    for p in found
+        match marked[p.name]
+            .ok why =>
+                if p.problem == ""
+                    out @ out.push(
+                        Parsed(name: p.name, statements: p.statements, problem: why, defines: p.defines, reads: p.reads)
+                    )
+                else
+                    out @ out.push(p)
+            .err _ => out @ out.push(p)
+
+    return Analysis(cells: out, owner: owner, depends: depends)
+
+# The cells of `depends` that stand on a circle, each with the circle in
+# words: `the cells a -> b -> a read each other's names`.
+#
+# - `depends`: the graph.
+function circles(depends: {str: [str]}) -> {str: str}
+    out: {str: str} @= {}
+
+    for component in graphs.strong_components(depends)
+        if component.len() > 1
+            inside: {str: [str]} @= {}
+
+            for c in component
+                on: [str] @= []
+
+                for d in depends[c].default([])
+                    for other in component
+                        if other == d
+                            on @ on.push(d)
+
+                inside[c] @ on
+
+            path = graphs.cycle_of(inside).default(component)
+            why = f"the cells {path.join(" -> ")} read each other's names"
+
+            for c in component
+                out[c] @ why
+
+    return out
+
+# The cells in the order they run: each after every cell it depends on, and
+# otherwise in the file's order.
+#
+# - `a`: the analysis.
+function order(a: Analysis) -> [str]
+    out: [str] @= []
+
+    for component in graphs.strong_components(a.depends)
+        for c in component
+            out @ out.push(c)
+
+    return out
+
+# Each cell and the cells that depend on it: the graph turned around.
+#
+# - `depends`: the graph.
+function reversed(depends: {str: [str]}) -> {str: [str]}
+    out: {str: [str]} @= {}
+
+    for c in keys(depends)
+        out[c] @ []
+
+    for c in keys(depends)
+        for d in depends[c].default([])
+            list @= out[d].default([])
+            list @ list.push(c)
+            out[d] @ list
+
+    return out
+
+# The cells `changed` and every cell depending on one of them, directly or
+# through others, in the order they run.
+#
+# - `a`: the analysis.
+# - `changed`: the cells changed; a name that is no cell is passed over.
+function affected(a: Analysis, changed: [str]) -> [str]
+    back = reversed(a.depends)
+    reached: {str: bool} @= {}
+
+    for c in changed
+        match graphs.reachable_from(back, from: c)
+            .ok cs =>
+                for x in cs
+                    reached[x] @ true
+            .err _ => _ = 0
+
+    out: [str] @= []
+
+    for c in order(a)
+        if reached[c].default(false)
+            out @ out.push(c)
+
+    return out
+
+# The cell `name` of the analysis.
+#
+# - `a`: the analysis.
+# - `name`: the cell.
+#
+# Fails `not_found` where there is none.
+function parsed_named(a: Analysis, name: str) -> Parsed?
+    for p in a.cells
+        if p.name == name
+            return ok(p)
+
+    return fail(code: "not_found", msg: f"no cell named `{name}`")
+
+# The analysis of the notebook `text`, for a test.
+#
+# - `text`: the notebook.
+function of_text(text: str) -> Analysis
+    return analyse(cells.parse(text).must())
+
+test "analyse and order: a cell after the cell whose name it reads, whatever the file's order"
+    a = of_text("%% summary\nm = mean(xs)\n%% sample\nxs = rnorm(n)\n%% params\nn = 10\n")
+    assert a.depends["summary"].must() == ["sample"]
+    assert a.depends["params"].must() == []
+    assert order(a) == ["params", "sample", "summary"]
+
+test "affected: a change reaches the cells that depend on it, through others, and no more"
+    a = of_text("%% p\nn = 3\n%% q\nx = n + 1\n%% r\ny = x * 2\n%% s\nz = 5\n")
+    assert affected(a, changed: ["p"]) == ["p", "q", "r"]
+    assert affected(a, changed: ["q"]) == ["q", "r"]
+    assert affected(a, changed: ["s"]) == ["s"]
+
+test "analyse: a second definition, a circle and a parse error, each the cell's problem"
+    twice = of_text("%% a\nx = 1\n%% b\nx = 2\n")
+    assert parsed_named(twice, name: "b").must().problem == "`x` is defined in the cell `a` too; a name has one cell"
+    assert parsed_named(twice, name: "a").must().problem == ""
+    circle = of_text("%% a\nx = y\n%% b\ny = x\n%% c\nz = 1\n")
+    assert parsed_named(circle, name: "a").must().problem == "the cells a -> b -> a read each other's names"
+    assert parsed_named(circle, name: "c").must().problem == ""
+    broken = of_text("%% a\nx = (1\n")
+    assert parsed_named(broken, name: "a").must().problem != ""
+
+test "analyse: a function's body reads the names it uses, not its parameters"
+    a = of_text("%% k\nk = 2\n%% f\nf(x) = k * x\n%% use\ny = f(3)\n")
+    assert a.depends["f"].must() == ["k"]
+    assert a.depends["use"].must() == ["f"]

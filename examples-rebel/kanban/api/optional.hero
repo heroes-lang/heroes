@@ -1,0 +1,17 @@
+# The arguments a call may leave out: a card's notes, which a new card may
+# not have yet.
+
+use <rebel>/json
+
+use api/arguments
+
+# The text under `key` in `given`, or `otherwise` where the call names none.
+# Fails `invalid` where it is there and no text.
+#
+# - `given`: the call's arguments.
+# - `key`: the member read.
+# - `otherwise`: the text where it is missing.
+function text_or(given: json.Value, key: str, otherwise: str) -> str?
+    if json.member(given, key: key).is_err()
+        return ok(otherwise)
+    return arguments.text(given, key: key)

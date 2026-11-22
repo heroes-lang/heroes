@@ -101,7 +101,7 @@ function command_line() -> flags.Command
 # The program run with `arguments`, the arguments after its name; answers
 # the exit status.
 #
-# - `arguments`: as `args()` answers them.
+# - `arguments`: as `text_arguments` answers them.
 function run(arguments: [str]) -> i64
     found = match flags.parse(command_line(), arguments)
         .ok f => f
@@ -153,8 +153,23 @@ function watch_folder(dir: str) -> ()?
 
 ## The entry
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"sitegen: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    status = run(args())
+    status = run(text_arguments())
 
     if status != 0
         exit(code: status)

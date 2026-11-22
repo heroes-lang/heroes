@@ -1,0 +1,246 @@
+# What each command of the window does: a menu item, a button of the main
+# window, an answer to a question window. A command runs on the explorer's
+# state through `app/actions` and `model/explorer`, and what it cannot do
+# goes on the status line in the words of the failure, so a command refused
+# is told and never silent.
+#
+# Opening a file hands it to the system's own application for it where the
+# window is the system's; on the headless side there is no such
+# application, and the preview is what the person sees of it.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/path as paths
+use <rebel>/ui
+
+use app/actions
+use app/controller
+use app/operations
+use model/explorer
+use model/tree
+use ops/jobs
+use ops/trash
+use views/dialogs
+use views/show
+
+# Runs the command of the menu item `item`.
+#
+# - `c`: the controller.
+# - `item`: the menu item chosen.
+function menu(@c: controller.Controller, item: ui.Widget)
+    m = c.menus
+
+    if item == m.open_item
+        open_chosen(@c)
+    else if item == m.new_folder
+        ask(@c, asking: .new_folder, text: "untitled folder")
+    else if item == m.rename
+        if c.ex.chosen.len() == 1 && !c.ex.showing_results
+            ask(@c, asking: .rename, text: c.ex.chosen[0])
+        else
+            c.ex.status @ "choose one entry of the folder to rename it"
+    else if item == m.rename_pattern
+        ask(@c, asking: .pattern, text: "")
+    else if item == m.compress_zip
+        job_or_told(@c, made: operations.compress_chosen(c.ex, kind: .zip))
+    else if item == m.compress_tar
+        job_or_told(@c, made: operations.compress_chosen(c.ex, kind: .tar_gz))
+    else if item == m.extract
+        job_or_told(@c, made: operations.extract_chosen(c.ex))
+    else if item == m.hash_item
+        job_or_told(@c, made: operations.hash_chosen(c.ex))
+    else if item == m.trash_item
+        job_or_told(@c, made: operations.trash_chosen(c.ex))
+    else if item == m.put_back
+        told(@c, done: actions.put_back(@c.ex))
+    else if item == m.empty_trash
+        empty_trash(@c)
+    else if item == m.close_item
+        c.done @ true
+    else if item == m.undo_item
+        told(@c, done: actions.undo_last(@c.ex))
+    else if item == m.redo_item
+        told(@c, done: actions.redo_last(@c.ex))
+    else if item == m.cut
+        told(@c, done: actions.take_chosen(@c.ex, cut: true))
+    else if item == m.copy
+        told(@c, done: actions.take_chosen(@c.ex, cut: false))
+    else if item == m.paste
+        job_or_told(@c, made: operations.paste(@c.ex))
+    else if item == m.choose_all
+        explorer.choose_all(@c.ex)
+    else
+        go_menu(@c, item: item)
+
+# Runs the command of a menu item of Go, View or Bookmarks.
+#
+# - `c`: the controller.
+# - `item`: the menu item chosen.
+function go_menu(@c: controller.Controller, item: ui.Widget)
+    m = c.menus
+
+    if item == m.back_item
+        told(@c, done: explorer.go_back(@c.ex))
+    else if item == m.forward_item
+        told(@c, done: explorer.go_forward(@c.ex))
+    else if item == m.up_item
+        told(@c, done: explorer.go_up(@c.ex))
+    else if item == m.trash_folder
+        told(@c, done: go_to_trash(@c.ex))
+    else if item == m.refresh
+        told(@c, done: explorer.refresh(@c.ex))
+    else if item == m.by_name
+        explorer.order_by(@c.ex, column: .name)
+    else if item == m.by_size
+        explorer.order_by(@c.ex, column: .size)
+    else if item == m.by_modified
+        explorer.order_by(@c.ex, column: .modified)
+    else if item == m.by_type
+        explorer.order_by(@c.ex, column: .type)
+    else if item == m.hidden
+        told(@c, done: explorer.toggle_hidden(@c.ex))
+    else if item == m.add_mark
+        ask(@c, asking: .bookmark, text: paths.name(c.ex.folder).default(c.ex.folder))
+    else if item == m.remove_mark
+        told(@c, done: actions.remove_bookmark(@c.ex))
+    else
+        for i in range(from: 0, to: m.mark_items.len())
+            if m.mark_items[i] == item
+                told(@c, done: actions.go_to_bookmark(@c.ex, index: i))
+
+# Shows the trash's folder, made where it is not there yet.
+#
+# - `ex`: the explorer.
+#
+# Fails as `fs.make_dir_all` and `explorer.go_to` fail.
+function go_to_trash(@ex: explorer.Explorer) -> ()?
+    folder = trash.files_dir(ex.settings.trash)
+    fs.make_dir_all(folder)?
+    return explorer.go_to(@ex, folder: folder)
+
+# Opens what is chosen: a folder is shown, a search's result is shown in
+# its folder, and a file opened in the system's application for it, or
+# previewed where there is none.
+#
+# - `c`: the controller.
+function open_chosen(@c: controller.Controller)
+    if c.ex.chosen.len() != 1
+        c.ex.status @ "choose one entry to open it"
+        return
+
+    if c.ex.showing_results
+        told(@c, done: actions.reveal_result(@c.ex))
+        return
+
+    at = explorer.chosen_paths(c.ex)[0]
+
+    if show.is_folder(at)
+        told(@c, done: explorer.go_to(@c.ex, folder: at))
+        return
+
+    if !ui.is_native(c.app)
+        c.ex.status @ f"{c.ex.chosen[0]} is shown in the preview; the headless side opens no application"
+        return
+
+    match os.open_path(at)
+        .ok _  => c.ex.status @ f"Opened {c.ex.chosen[0]} in its application"
+        .err x => c.ex.status @ f"{c.ex.chosen[0]} could not be opened: {x.msg}"
+
+# Empties the trash once the person said yes to the question; a headless
+# app with no answer given says no.
+#
+# - `c`: the controller.
+function empty_trash(@c: controller.Controller)
+    answer = ui.message(
+        @c.app,
+        over: c.w.window,
+        title: "Empty Trash",
+        text: "Remove everything in the trash for good? This cannot be undone.",
+        tone: .warning,
+        buttons: .yes_no
+    )
+
+    match answer
+        .ok a =>
+            if a == .yes
+                told(@c, done: actions.empty_trash(@c.ex))
+            else
+                c.ex.status @ "The trash was left as it was"
+        .err _ => c.ex.status @ "The trash was left as it was"
+
+# Opens the question window asking for `asking`, its field holding `text`.
+#
+# - `c`: the controller.
+# - `asking`: what it asks for.
+# - `text`: what its field holds first.
+function ask(@c: controller.Controller, asking: dialogs.Asking, text: str)
+    controller.close_ask(@c)
+
+    match dialogs.open_ask(@c.app, asking: asking, title: dialogs.title_of(asking), prompt: dialogs.prompt_of(asking), text: text)
+        .ok a  => c.asks @ [a]
+        .err x => c.ex.status @ f"the window could not be opened: {x.msg}"
+
+# Answers the question window open with what its fields hold, and closes
+# it; where the answer is refused, it stays open and the status line says
+# why.
+#
+# - `c`: the controller.
+function answer_ask(@c: controller.Controller)
+    if c.asks.len() == 0
+        return
+
+    a = c.asks[0]
+    first = ui.text_of(c.app, widget: a.first).default("")
+
+    second = if a.second.len() > 0
+        ui.text_of(c.app, widget: a.second[0]).default("")
+    else
+        ""
+
+    done = match a.asking
+        .rename     => actions.rename(@c.ex, new_name: first)
+        .new_folder => actions.make_folder(@c.ex, name: first)
+        .bookmark   => actions.add_bookmark(@c.ex, name: first)
+        .pattern    => actions.rename_by_pattern(@c.ex, pattern: first, template: second)
+
+    match done
+        .ok _  => controller.close_ask(@c)
+        .err x => c.ex.status @ x.msg
+
+# Starts the job `made` where it was made; tells why where it was not.
+#
+# - `c`: the controller.
+# - `made`: the job, or why there is none.
+function job_or_told(@c: controller.Controller, made: jobs.Job?)
+    match made
+        .ok j  => controller.start_job(@c, j: j)
+        .err x => c.ex.status @ x.msg
+
+# Tells on the status line why a command failed; a command that did what it
+# was asked has set its own words already.
+#
+# - `c`: the controller.
+# - `done`: what the command answered.
+function told(@c: controller.Controller, done: ()?)
+    match done
+        .ok _  => _ = 0
+        .err x => c.ex.status @ x.msg
+
+# Shows the folder of the tree's row at `index`; the row of the folder shown
+# folds or unfolds instead.
+#
+# - `c`: the controller.
+# - `index`: the row.
+function chose_tree_row(@c: controller.Controller, index: i64)
+    rows = tree.rows(c.ex.tree, f: c.ex.formats, show_hidden: c.ex.settings.show_hidden)
+
+    if index < 0 || index >= rows.len()
+        return
+
+    folder = rows[index].folder
+
+    if folder == c.ex.folder
+        tree.toggle(@c.ex.tree, folder: folder)
+        return
+
+    told(@c, done: explorer.go_to(@c.ex, folder: folder))

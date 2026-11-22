@@ -132,8 +132,7 @@ typedef struct hero_ui_app hero_ui_app;
 #define HERO_UI_MENU 14
 #define HERO_UI_MENU_ITEM 15
 #define HERO_UI_MENU_SEPARATOR 16
-/* The system's web view as a widget: reserved for the arm that writes it;
- * until then `create` answers `HERO_UI_UNSUPPORTED` for it. */
+/* The system's own web view, its parent a window (THE WEB VIEW, below). */
 #define HERO_UI_WEBVIEW 17
 /* The program's own kinds, numbered here so that one list names every kind;
  * `create` refuses them, `HERO_UI_INVALID`. */
@@ -162,8 +161,8 @@ typedef struct hero_ui_app hero_ui_app;
 #define HERO_UI_EVENT_CLOSE 7
 /* A window's content took a new size, `value` wide and `second` high. */
 #define HERO_UI_EVENT_RESIZE 8
-/* A web view's page sent a text, read by `hero_ui_event_text`: reserved for
- * the arm that writes the web view. */
+/* A web view's page sent a text by its bridge, read by `hero_ui_event_text`
+ * (THE WEB VIEW, below). */
 #define HERO_UI_EVENT_MESSAGE 9
 
 /* The keys held with a menu item's shortcut, added together. `PRIMARY` is
@@ -342,8 +341,13 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * radio group (-1 for none); `TOGGLE` clicks a checkbox; `VALUE` moves a
  * slider to `value`; `MENU` chooses menu item `id`; `CLOSE` presses window
  * `id`'s close button; `RESIZE` gives window `id`'s content the size
- * `value` by `second`. Its event is queued as the person's would be. 0, or
- * -1, `UNSUPPORTED` where the system offers no such path. */
+ * `value` by `second`; `MESSAGE` has the page web view `id` shows send
+ * `text` by its bridge, as the page's own script would, at once or once a
+ * page of the app's own origin has loaded, so the message is checked and
+ * queued as the page's is (THE WEB VIEW, below; `LIMIT` where
+ * `HERO_UI_QUEUE_MOST` wait for the page already). Its event is
+ * queued as the person's would be. 0, or -1, `UNSUPPORTED` where the system
+ * offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
 
 /* Shows a message box over window `window` (0 for none), with `title` and
@@ -366,6 +370,149 @@ int64_t hero_ui_file_dialog(hero_ui_app *app, int64_t window, int64_t save, int6
  * nothing is written and the bytes are answered all the same. -1 on
  * failure. */
 int64_t hero_ui_dialog_paths(hero_ui_app *app, void *buffer, uint64_t count);
+
+/* -- THE WEB VIEW -------------------------------------------------------------
+ *
+ * A widget of kind `HERO_UI_WEBVIEW` is the system's own web engine shown in
+ * a window: WebKit's `WKWebView` on macOS, Microsoft Edge's WebView2 on
+ * Windows (its runtime found at run time through `WebView2Loader.dll`),
+ * WebKitGTK on Linux (opened with `dlopen`), never an engine the program
+ * carries. Where the system has none, `create` answers `UNSUPPORTED` and the
+ * message names what is missing. Its page is the interface and the program
+ * is its logic, the two speaking through a bridge of texts and through
+ * nothing else.
+ *
+ * EVERY PAGE COMES FROM THE PROGRAM, NEVER FROM A PORT. A web view serves
+ * its page, and every file the page loads, from its ASSET TABLE, which the
+ * program fills with `hero_ui_web_asset`, at the app's own origin
+ * `app://localhost`, through the system's own hook for a scheme (WebKit's
+ * `WKURLSchemeHandler`, WebView2's resource requests on a custom scheme it
+ * registers, WebKitGTK's URI scheme): no socket is opened, no loopback
+ * server stands anywhere, and a path the table does not hold is never looked
+ * for elsewhere. A request is answered:
+ *   - `GET` or `HEAD` of a path the table holds: 200, with the asset's
+ *     `Content-Type`, its `Content-Length`, the web view's
+ *     `Content-Security-Policy` (`hero_ui_web_policy`, else
+ *     `HERO_UI_WEB_POLICY_DEFAULT`), `X-Content-Type-Options: nosniff`,
+ *     `Cache-Control: no-store` and `Referrer-Policy: no-referrer`; a path
+ *     ending in `/` reads that folder's `index.html`; a query is ignored;
+ *   - a host other than `localhost`, a path the table does not hold, or one
+ *     no asset could have: 404;
+ *   - any other method: 405, with `Allow: GET, HEAD`.
+ * An asset's PATH is `/` and segments joined by `/`, each one or more of
+ * `A`-`Z`, `a`-`z`, `0`-`9`, `-`, `.`, `_`, `~`, never `.` or `..`, at most
+ * `HERO_UI_WEB_PATH_MOST` bytes; a request's path is read after its `%XX`
+ * escapes are undone. Its CONTENT TYPE is `type/subtype`, then any
+ * parameters, printable ASCII with no control character, at most
+ * `HERO_UI_WEB_TYPE_MOST` bytes. Its BODY is any bytes, at most
+ * `HERO_UI_WEB_ASSET_MOST`; one web view's table holds at most
+ * `HERO_UI_WEB_ASSETS_MOST` assets and `HERO_UI_WEB_BYTES_MOST` bytes of
+ * bodies. The layer keeps its own copy of each.
+ *
+ * WHERE A PAGE MAY GO. Every frame may show the app's own origin,
+ * `about:blank` and `about:srcdoc`, and an origin the program allowed
+ * (`hero_ui_web_allow`); every other navigation is cancelled before it
+ * starts: `file:`, `data:`, another scheme, another host. A new window (the
+ * page's `window.open`, a link with a target) is refused, a download is
+ * cancelled, a request for the camera, the microphone or the location is
+ * denied, a file chooser opens nothing, and the page's cookies and storage
+ * are kept in memory alone and forgotten with the web view, so no page
+ * reaches the person's files, devices or another program's data. The
+ * program's own state is the program's to keep.
+ *
+ * THE BRIDGE. Before any script of a page runs, the layer gives its main
+ * frame `window.heroes`, an object that cannot be replaced or changed:
+ *   - `heroes.send(text)` sends `text` to the program. It must be a string
+ *     holding no U+0000 whose UTF-8 is at most `HERO_UI_WEB_MESSAGE_MOST`
+ *     bytes, else it throws a `TypeError` or a `RangeError` and nothing
+ *     crosses. The text crosses as UTF-8 (a lone surrogate becomes U+FFFD,
+ *     the system's own conversion) and is queued as `HERO_UI_EVENT_MESSAGE`
+ *     naming the web view, its text read by `hero_ui_event_text`. Only the
+ *     main frame showing the app's own origin is heard: a message from
+ *     another frame or another origin, or one no string, is dropped and
+ *     counted by `hero_ui_lost`.
+ *   - `heroes.receive(fn)` names the one function each text the program
+ *     posts (`hero_ui_web_post`) is handed to, in the order posted; texts
+ *     posted before it names one wait in the page, at most
+ *     `HERO_UI_QUEUE_MOST`, the later dropped.
+ *   - `heroes.invoke(name, args)` answers a promise, and `heroes.on(name,
+ *     fn)` hears the program's events, over the same two directions in
+ *     JSON: a call `{"heroes":1,"id":N,"call":NAME,"args":ARGS}` is sent,
+ *     and a text the program posts whose JSON is `{"heroes":1,"id":N,"ok":V}`
+ *     resolves call N's promise with V, `{"heroes":1,"id":N,"error":{"code":
+ *     C,"msg":M}}` rejects it with an `Error` of message M and `code` C, and
+ *     `{"heroes":1,"event":NAME,"data":V}` calls every function `on` gave
+ *     for NAME with V; any other text goes to `receive`'s function.
+ * A posted text reaches only a page of the app's own origin, after it has
+ * loaded: one posted while a page loads waits for it (at most
+ * `HERO_UI_QUEUE_MOST`, else `LIMIT`), and one posted while the web view
+ * shows another origin is dropped. No text crosses as code: the layer
+ * offers no way to run a script the program writes, so no value of the
+ * program's can be read by the page as a script.
+ */
+
+/* The app's own origin, which every web view serves its assets at. */
+#define HERO_UI_WEB_ORIGIN "app://localhost"
+/* The most bytes an asset's path, or a path `navigate` shows, takes. */
+#define HERO_UI_WEB_PATH_MOST 1024
+/* The most bytes a content type takes. */
+#define HERO_UI_WEB_TYPE_MOST 255
+/* The most bytes one asset's body holds, 64 MiB. */
+#define HERO_UI_WEB_ASSET_MOST 67108864
+/* The most assets one web view's table holds. */
+#define HERO_UI_WEB_ASSETS_MOST 4096
+/* The most bytes the bodies of one web view's table hold in all, 256 MiB. */
+#define HERO_UI_WEB_BYTES_MOST 268435456
+/* The most bytes a content security policy takes. */
+#define HERO_UI_WEB_POLICY_MOST 4096
+/* The most origins one web view lets its page go to, and the most bytes one
+ * takes. */
+#define HERO_UI_WEB_ORIGINS_MOST 64
+#define HERO_UI_WEB_ORIGIN_MOST 255
+/* The most bytes one message takes, either way: `HERO_UI_TEXT_MOST`. */
+#define HERO_UI_WEB_MESSAGE_MOST 16777216
+/* The policy every response carries where the program set none: everything
+ * from the app's own origin and nothing else, an image also from a `data:`
+ * URL, no plug-in, no `<base>`, no form sent anywhere, and the page framed
+ * by nobody. */
+#define HERO_UI_WEB_POLICY_DEFAULT "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+
+/* Puts into web view `id`'s table the asset `path` of `path_count` bytes,
+ * its content type `type` of `type_count` bytes and its body `body` of
+ * `body_count` bytes, replacing the one at that path; the page sees it at
+ * its next request. 0, or -1: `INVALID` (a path, a type or a size the table
+ * refuses, or a widget no web view), `NOT_FOUND`, `LIMIT` (past the table's
+ * most, or no memory). */
+int64_t hero_ui_web_asset(hero_ui_app *app, int64_t id, const void *path, uint64_t path_count, const void *type, uint64_t type_count, const void *body, uint64_t body_count);
+
+/* Takes the asset `path` out of web view `id`'s table. 0, or -1:
+ * `INVALID`, `NOT_FOUND` (no such web view, or no such asset). */
+int64_t hero_ui_web_remove(hero_ui_app *app, int64_t id, const void *path, uint64_t path_count);
+
+/* Sets the content security policy every response of web view `id` carries
+ * from its next request, `count` bytes of printable ASCII; none puts
+ * `HERO_UI_WEB_POLICY_DEFAULT` back. 0, or -1: `INVALID`, `NOT_FOUND`. */
+int64_t hero_ui_web_policy(hero_ui_app *app, int64_t id, const void *policy, uint64_t count);
+
+/* Lets web view `id`'s page go to the origin `origin`, `count` bytes:
+ * `https://` or `http://`, a host of lower-case letters, digits, `-` and
+ * `.`, and a port from 1 to 65535 where it is not the scheme's own; no path.
+ * A page of that origin is shown and never heard: the bridge serves the
+ * app's own origin alone. 0, or -1: `INVALID`, `NOT_FOUND`, `LIMIT` (past
+ * `HERO_UI_WEB_ORIGINS_MOST`). */
+int64_t hero_ui_web_allow(hero_ui_app *app, int64_t id, const void *origin, uint64_t count);
+
+/* Has web view `id` show `path` of the app's own origin, `count` bytes: an
+ * asset's path, or a folder's ending in `/`, then perhaps a query `?...`
+ * and a fragment `#...` of `A`-`Z`, `a`-`z`, `0`-`9` and
+ * `-._~!$&'()*+,;=:@/?%`. The page loads at the next `wait`; texts posted
+ * from now wait for it. 0, or -1: `INVALID`, `NOT_FOUND`. */
+int64_t hero_ui_web_navigate(hero_ui_app *app, int64_t id, const void *path, uint64_t count);
+
+/* Posts the text `text`, `count` bytes of UTF-8 holding no zero byte, to
+ * web view `id`'s page (THE BRIDGE, above). 0, or -1: `INVALID`,
+ * `NOT_FOUND`, `LIMIT` (`HERO_UI_QUEUE_MOST` texts wait already). */
+int64_t hero_ui_web_post(hero_ui_app *app, int64_t id, const void *text, uint64_t count);
 
 /* The kind of the last call's failure on this thread, `HERO_UI_OK` after a
  * call that did not fail. */

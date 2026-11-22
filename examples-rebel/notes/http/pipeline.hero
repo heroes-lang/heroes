@@ -5,7 +5,8 @@
 # state, since a step `web.before` calls is a function of the request alone
 # and the language has no closure to hand it the state with.
 #
-# Before: a request id kept or made; `X-HTTP-Method-Override` read; the
+# Before: a request id kept or made; the method a form's `_method` or
+# `X-HTTP-Method-Override` names read; the
 # client's rate limit; the route; who is asking (the session or the bearer
 # token); the CSRF token of a page's form; the admin group's guard; the
 # media types a route can answer. After: the session's cookie written back,
@@ -142,7 +143,7 @@ function answer(@app: state.App, r: http.Request, now: time.Instant) -> Outcome?
         .ok f  => f
         .err _ => return ok(.respond(response: web.not_routed(app.router, r: request)))
 
-    if routes.is_api_route(app.api, found: found)
+    if routes.is_api_route(found)
         return api(@app, r: request, found: found, now: now)
 
     return page(@app, r: request, found: found, now: now)

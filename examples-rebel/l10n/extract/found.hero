@@ -1,0 +1,68 @@
+# What extraction finds in a source file: the messages, each where it was
+# written, and the places it had to pass over, each with the reason a person
+# can act on.
+#
+# Both scanners, `extract/heroes_calls` for Heroes sources and
+# `extract/templates` for HTML templates, answer these two records, and
+# `extract/extractor` merges what they find across a whole tree.
+
+## What is found
+
+# One use of a message in a source file.
+record Found
+    # The context it is used in, absent for none.
+    context: str?
+    # Its text, the message's id.
+    id: str
+    # Its plural text, absent where it has no plural.
+    plural_id: str?
+    # The file it is written in, from the project's root, `/` between its
+    # parts on every system.
+    file: str
+    # The line, from 1.
+    line: i64
+    # What the comment beside it tells the translator, empty for none.
+    note: str
+
+# A place extraction passed over.
+record Problem
+    # The file, as `Found.file` writes it.
+    file: str
+    # The line, from 1.
+    line: i64
+    # What is wrong, and what to write instead.
+    message: str
+
+# What one file gave.
+record Scan
+    # The messages, in the order they are written.
+    found: [Found]
+    # The places passed over, in the order they are written.
+    problems: [Problem]
+
+# `file:line`, the place a report and a catalogue's reference name.
+#
+# - `file`: the file.
+# - `line`: the line.
+function place(file: str, line: i64) -> str
+    return f"{file}:{line}"
+
+# The absent context or plural.
+#
+# - `what`: which is absent, for the message.
+function none(what: str) -> str?
+    return fail(code: "not_found", msg: f"no {what}")
+
+# The message every problem of one kind shares: a text that is not a
+# literal, so it cannot be known before the program runs.
+#
+# - `function_name`: the call's function.
+# - `role`: which argument, `id`, `plural_id` or `context`.
+function not_literal(function_name: str, role: str) -> str
+    return f"the {role} of `{function_name}` is not a string literal, so its text is not known before the program runs; it is not extracted"
+
+## Tests
+
+test "place: a file and its line"
+    assert place("src/cart.hero", line: 12) == "src/cart.hero:12"
+    assert none("context").is_err()

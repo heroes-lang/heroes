@@ -64,7 +64,7 @@ extern "hero_net.h"
     function hero_net_name_of(address: cstr lent, @buffer: [u8] counted_by n lent, n: u64) -> i64
     function hero_net_local(s: Socket, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
     function hero_net_remote(s: Socket, @address: [u8] counted_by m lent, m: u64, @port: i64) -> i64
-    # Round 3 (2026-11-16): which direction `shutdown` closes, the options,
+    # Which direction `shutdown` closes, the options,
     # and the flags of an interface.
     constant HERO_NET_SHUT_READ: i64
     constant HERO_NET_SHUT_WRITE: i64
@@ -88,7 +88,7 @@ extern "hero_net.h"
     function hero_net_join_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
     function hero_net_leave_group(s: Socket, group: cstr lent, interface_index: i64) -> i64
     function hero_net_interfaces(@buffer: [u8] counted_by n lent, n: u64) -> i64
-    # Round 4 (2026-11-17): the kind of a system with no such socket for a
+    # The kind of a system with no such socket for a
     # program, the most data bytes an echo carries, and the echo itself.
     constant HERO_NET_UNSUPPORTED: i64
     constant HERO_NET_PING_MOST: u64

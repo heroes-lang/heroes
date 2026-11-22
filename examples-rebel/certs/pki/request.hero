@@ -1,0 +1,121 @@
+# The certificate request an order is finalized with: PKCS #10 (RFC 2986),
+# its subject the first domain that is a name, its domains in a
+# subjectAltName asked for by an `extensionRequest` attribute, and the whole
+# signed by the certificate's own key, never the account's (RFC 8555
+# § 7.4). `acme` sends a request and does not make one, and `x509` reads one
+# and writes none, so it is written here from `asn1` and checked by
+# `x509.decode_request` before it leaves.
+
+use <rebel>/asn1
+use <rebel>/crypto/keypairs
+use <rebel>/net
+use <rebel>/x509
+
+use pki/parts
+use pki/signing
+
+## Codes
+
+# The code of a request that cannot be made or does not read back.
+constant INVALID: str
+    "invalid"
+
+## Making
+
+# The DER of a request for `domains`, signed by `key`.
+#
+# - `domains`: the names and addresses, in the order the order lists them;
+#   the first name that is no address is the subject's common name where it
+#   fits RFC 5280's 64 characters, and the subject is empty otherwise.
+# - `key`: the certificate's private key, P-256, which stays open.
+#
+# Fails `invalid` where `domains` is empty or the request does not read back
+# as one `x509` takes and whose signature holds; and as `keypairs.sign`
+# fails.
+function make(domains: [str], key: keypairs.PrivateKey) -> [u8]?
+    if domains.len() == 0
+        return fail(code: INVALID, msg: "a request names one domain or address at least")
+    common = subject_name(domains)
+    spki = signing.public_der(key)?
+    wanted = parts.alt_names(domains: domains, subject_empty: common == "")?
+    asked: asn1.Value = .sequence(
+        items: [.oid(v: asn1.Oid(dotted: x509.EXTENSION_REQUEST)), .set(items: [.sequence(items: [wanted])])]
+    )
+    attributes = asn1.with_tag(.set(items: [asked]), tag: asn1.Tag(kind: .context_specific, number: 0, constructed: true))?
+    info: asn1.Value = .sequence(
+        items: [.integer(v: 0), parts.name(common_name: common, organization: ""), asn1.decode_der(spki)?, attributes]
+    )
+    der = signing.signed(key, body: info)?
+    checked(der: der, domains: domains)?
+    return ok(der)
+
+# The common name a request for `domains` gives its subject: the first that
+# is a name and fits 64 characters, or "" for none.
+#
+# - `domains`: the names and addresses.
+function subject_name(domains: [str]) -> str
+    for d in domains
+        if net.parse_host(d).is_err() && d.len() <= 64
+            return d
+
+    return ""
+
+## Checking
+
+# Refuses a request `x509` does not read, whose signature does not hold, or
+# whose alternative names are not `domains`.
+#
+# - `der`: the request's DER.
+# - `domains`: the names and addresses it must ask for.
+#
+# Fails `invalid`, saying which.
+function checked(der: [u8], domains: [str]) -> ()?
+    request = x509.decode_request(der)?
+
+    if !x509.is_request_signed(request)?
+        return fail(code: INVALID, msg: "the request's own signature does not hold")
+    asked = names_asked(request)
+
+    if asked != domains
+        return fail(code: INVALID, msg: f"the request asks {asked.join(", ")}, where {domains.join(", ")} was meant")
+    return ok()
+
+# The names and addresses `request`'s subjectAltName asks, in its order, as
+# text.
+#
+# - `request`: a request read.
+function names_asked(request: x509.Request) -> [str]
+    out: [str] @= []
+
+    match request.extensions.alt_names
+        .err _ => _ = 0
+        .ok list =>
+            for general in list
+                match general
+                    .dns d => out @ out.push(d.name)
+                    .ip a  => out @ out.push(net.format_host(a.address))
+                    .other_name _ | .email _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip_network _ | .registered_id _ =>
+                        _ = 0
+
+    return out
+
+test "make: a request x509 reads back, signed, its names in order, its subject the first name"
+    key @= keypairs.generate(.p256).must()
+    der = make(["www.example.org", "127.0.0.1", "example.org"], key: key).must()
+    request = x509.decode_request(der).must()
+    _ = keypairs.close_private(@key).is_err()
+    assert x509.is_request_signed(request).must()
+    assert names_asked(request) == ["www.example.org", "127.0.0.1", "example.org"]
+    assert x509.text_of(request.subject, oid: x509.COMMON_NAME).must() == "www.example.org"
+
+test "make: no domain is refused"
+    key @= keypairs.generate(.p256).must()
+    refused = make([], key: key).is_err()
+    _ = keypairs.close_private(@key).is_err()
+    assert refused
+
+test "subject_name: an address passed over, a name too long for a common name, none"
+    assert subject_name(["127.0.0.1", "a.example.org"]) == "a.example.org"
+    assert subject_name(["127.0.0.1"]) == ""
+    long_name = "a" + repeat("b", to_u64(70).must()) + ".example.org"
+    assert subject_name([long_name]) == ""

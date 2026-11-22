@@ -1,0 +1,380 @@
+# What the stand-in CA keeps and how it writes it: the accounts, orders,
+# authorizations, challenges and certificates of RFC 8555 § 7.1, their JSON
+# as a client reads it, the nonces handed out and not yet used, the
+# stand-in's clock and its seeded generator, and the problem documents of
+# RFC 8555 § 6.7 with the status each type is answered with. Ids are
+# numbers from 1, an object's place in its list being its id less one.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/random
+use <rebel>/time
+
+use pki/signing
+
+## Objects
+
+# An identifier of an order or an authorization (RFC 8555 § 9.7.7).
+record Identifier
+    # "dns" or "ip" (RFC 8738).
+    kind: str
+    # The name or the address, lowercase; a wildcard's `*.` kept in an
+    # order's and left out of its authorization's.
+    value: str
+
+# An account (RFC 8555 § 7.1.2).
+record Account
+    # Its id.
+    id: i64
+    # Its public key, as the request that made it carried it.
+    key: jose.Key
+    # The key's RFC 7638 thumbprint in base 64 for URLs, the second half of
+    # every key authorization.
+    thumbprint: str
+    # Its contacts.
+    contacts: [str]
+    # "valid" or "deactivated".
+    status: str
+
+# A challenge of an authorization (RFC 8555 § 7.1.5).
+record Challenge
+    # Its id.
+    id: i64
+    # "http-01" or "dns-01".
+    kind: str
+    # Its token, 32 bytes of the generator in base 64 for URLs.
+    token: str
+    # "pending", "valid" or "invalid".
+    status: str
+    # The problem that made it invalid, as JSON; "" where none.
+    error: str
+
+# An authorization (RFC 8555 § 7.1.4).
+record Authz
+    # Its id.
+    id: i64
+    # The account it belongs to.
+    account: i64
+    # What it proves, a wildcard's `*.` left out.
+    identifier: Identifier
+    # Whether the order asked a wildcard of it.
+    wildcard: bool
+    # "pending", "valid" or "invalid".
+    status: str
+    # When it lapses.
+    expires: time.Instant
+    # Its challenges.
+    challenges: [Challenge]
+
+# An order (RFC 8555 § 7.1.3).
+record Order
+    # Its id.
+    id: i64
+    # The account it belongs to.
+    account: i64
+    # What it asks, in the order asked.
+    identifiers: [Identifier]
+    # Its authorizations' ids, one per identifier, in the same order.
+    authzs: [i64]
+    # "pending", "ready", "processing", "valid" or "invalid".
+    status: str
+    # When it lapses.
+    expires: time.Instant
+    # The certificate's id once issued; 0 before.
+    certificate: i64
+    # The problem that made it invalid, as JSON; "" where none.
+    error: str
+
+# A certificate issued.
+record Issued
+    # Its id.
+    id: i64
+    # The account that ordered it.
+    account: i64
+    # Its DER.
+    der: [u8]
+    # The chain served: it, then the issuer, PEM.
+    chain: str
+    # Its serial number's bytes, positive.
+    serial: [u8]
+    # Its authority key identifier, the issuer's key's.
+    authority_key_id: [u8]
+    # Its first valid moment.
+    not_before: time.Instant
+    # Its last valid moment.
+    not_after: time.Instant
+    # Whether it was revoked.
+    revoked: bool
+    # The CRL reason it was revoked for.
+    reason: i64
+
+# What the stand-in did, which it tells when it stops.
+record Counts
+    # Accounts made.
+    accounts: i64
+    # Orders placed.
+    orders: i64
+    # Authorizations proved.
+    proved: i64
+    # Authorizations that failed.
+    failed: i64
+    # Certificates issued.
+    issued: i64
+    # Certificates revoked.
+    revoked: i64
+    # Requests refused for a nonce used or unknown.
+    bad_nonces: i64
+    # Requests refused for a signature that does not hold.
+    bad_signatures: i64
+    # Requests refused for another reason.
+    refused: i64
+
+# Everything the stand-in keeps.
+record State
+    # Its URL, `https://127.0.0.1:<port>`.
+    base: str
+    # Its CAA identity (RFC 8659).
+    identity: str
+    # The zone it issues under and climbs CAA up to.
+    origin: str
+    # The DNS stand-in's port.
+    dns_port: i64
+    # The port HTTP-01 answers are fetched from, the responder's.
+    http01_port: i64
+    # The stand-in's clock, set by the demo's management call.
+    now: time.Instant
+    # Its generator, seeded, so its tokens, nonces and serials are the same
+    # at every run.
+    draws: random.ChaCha8
+    # Nonces handed out and not used yet.
+    nonces: {str: bool}
+    # The accounts.
+    accounts: [Account]
+    # The orders.
+    orders: [Order]
+    # The authorizations.
+    authzs: [Authz]
+    # The certificates.
+    issued: [Issued]
+    # What it did.
+    counts: Counts
+
+## Drawing
+
+# `count` bytes of the stand-in's generator in base 64 for URLs.
+#
+# - `s`: the state, its generator advanced.
+# - `count`: how many bytes are drawn.
+function drawn_text(@s: State, count: i64) -> str
+    return bytes.format_base64_url_unpadded(random.next_bytes_chacha8(@s.draws, count: count))
+
+# A serial number of 16 bytes drawn from the generator, positive, as RFC
+# 5280 § 4.1.2.2 asks and as the CA/Browser Forum asks 64 bits of a
+# generator at least.
+#
+# - `s`: the state, its generator advanced.
+function serial_drawn(@s: State) -> [u8]
+    return signing.positive_serial(random.next_bytes_chacha8(@s.draws, count: 16))
+
+# A fresh nonce, kept until a request uses it.
+#
+# - `s`: the state.
+function fresh_nonce(@s: State) -> str
+    nonce = drawn_text(@s, count: 16)
+    s.nonces[nonce] @ true
+    return nonce
+
+## URLs
+
+# The URL of an object of `kind` and `id`: `<base>/acme/<kind>/<id>`.
+#
+# - `s`: the state.
+# - `kind`: "account", "order", "authz", "challenge", "finalize" or
+#   "certificate".
+# - `id`: the object's id.
+function url_of(s: State, kind: str, id: i64) -> str
+    return f"{s.base}/acme/{kind}/{id}"
+
+## JSON
+
+# `t` as RFC 3339 to the second, as RFC 8555 writes every time.
+#
+# - `t`: the moment.
+function stamp(t: time.Instant) -> json.Value
+    return .text(v: time.format(t, layout: .rfc3339_seconds))
+
+# `list` as a JSON array of strings.
+#
+# - `list`: the strings.
+function texts(list: [str]) -> json.Value
+    out: [json.Value] @= []
+
+    for item in list
+        out @ out.push(.text(v: item))
+
+    return .list(items: out)
+
+# An identifier as RFC 8555 writes it.
+#
+# - `i`: the identifier.
+function identifier_json(i: Identifier) -> json.Value
+    return .object(members: {"type": .text(v: i.kind), "value": .text(v: i.value)})
+
+# An account's object.
+#
+# - `s`: the state.
+# - `a`: the account.
+function account_json(s: State, a: Account) -> json.Value
+    members: {str: json.Value} = {
+        "status": .text(v: a.status)
+        "contact": texts(a.contacts)
+        "termsOfServiceAgreed": .boolean(v: true)
+        "orders": .text(v: url_of(s, kind: "account", id: a.id) + "/orders")
+    }
+    return .object(members: members)
+
+# A challenge's object, its error where it failed.
+#
+# - `s`: the state.
+# - `c`: the challenge.
+function challenge_json(s: State, c: Challenge) -> json.Value
+    members: {str: json.Value} @= {
+        "type": .text(v: c.kind)
+        "url": .text(v: url_of(s, kind: "challenge", id: c.id))
+        "status": .text(v: c.status)
+        "token": .text(v: c.token)
+    }
+
+    if c.error != ""
+        members["error"] @ json.parse(c.error).default(.null_value)
+    return .object(members: members)
+
+# An authorization's object.
+#
+# - `s`: the state.
+# - `a`: the authorization.
+function authz_json(s: State, a: Authz) -> json.Value
+    challenges: [json.Value] @= []
+
+    for c in a.challenges
+        challenges @ challenges.push(challenge_json(s, c: c))
+
+    members: {str: json.Value} @= {
+        "status": .text(v: a.status)
+        "expires": stamp(a.expires)
+        "identifier": identifier_json(a.identifier)
+        "challenges": .list(items: challenges)
+    }
+
+    if a.wildcard
+        members["wildcard"] @ .boolean(v: true)
+    return .object(members: members)
+
+# An order's object: its certificate's URL once valid, its error once
+# invalid.
+#
+# - `s`: the state.
+# - `o`: the order.
+function order_json(s: State, o: Order) -> json.Value
+    identifiers: [json.Value] @= []
+
+    for i in o.identifiers
+        identifiers @ identifiers.push(identifier_json(i))
+
+    authorizations: [str] @= []
+
+    for id in o.authzs
+        authorizations @ authorizations.push(url_of(s, kind: "authz", id: id))
+
+    members: {str: json.Value} @= {
+        "status": .text(v: o.status)
+        "expires": stamp(o.expires)
+        "identifiers": .list(items: identifiers)
+        "authorizations": texts(authorizations)
+        "finalize": .text(v: url_of(s, kind: "finalize", id: o.id))
+    }
+
+    if o.certificate > 0
+        members["certificate"] @ .text(v: url_of(s, kind: "certificate", id: o.certificate))
+
+    if o.error != ""
+        members["error"] @ json.parse(o.error).default(.null_value)
+    return .object(members: members)
+
+## Problems
+
+# A problem document (RFC 8555 § 6.7, RFC 7807) as JSON text: its type
+# under `urn:ietf:params:acme:error:`, its detail and its status.
+#
+# - `kind`: the error's short type, `badNonce`, `malformed` and the others.
+# - `detail`: what a person reads.
+function problem_text(kind: str, detail: str) -> str
+    members: {str: json.Value} = {
+        "type": .text(v: "urn:ietf:params:acme:error:" + kind)
+        "detail": .text(v: detail)
+        "status": .number(v: to_f64(status_of(kind)))
+    }
+    return json.format(.object(members: members)).default("{}")
+
+# The status a problem of `kind` is answered with: 403 for what the account
+# may not do, 500 for the CA's own failure, 400 for every other request
+# refused.
+#
+# - `kind`: the error's short type.
+function status_of(kind: str) -> i64
+    return match kind
+        "unauthorized" | "orderNotReady" | "caa" | "userActionRequired" => 403
+        "serverInternal"                                                => 500
+        _                                                               => 400
+
+# The response of the problem `kind` with `detail`, its `Content-Type` the
+# problem's.
+#
+# - `kind`: the error's short type.
+# - `detail`: what a person reads.
+function problem_response(kind: str, detail: str) -> http.Response
+    return http.respond(
+        status_of(kind),
+        content_type: "application/problem+json",
+        body: bytes.from_text(problem_text(kind: kind, detail: detail))
+    )
+
+# The answer for a resource that is not there, or not the account's: RFC
+# 8555 names no type for it, so it is `malformed`, answered 404 as Let's
+# Encrypt's Boulder answers it.
+#
+# - `detail`: what a person reads.
+function missing(detail: str) -> http.Response
+    out @= problem_response(kind: "malformed", detail: detail)
+    out.status @ 404
+    return out
+
+test "problem_text: the type under ACME's namespace, its detail and status"
+    v = json.parse(problem_text(kind: "badNonce", detail: "used")).must()
+    assert json.text_of(json.member(v, key: "type").must()).must() == "urn:ietf:params:acme:error:badNonce"
+    assert json.int_of(json.member(v, key: "status").must()).must() == 400
+    assert status_of("caa") == 403 && status_of("badCSR") == 400
+    assert missing("none").status == 404
+
+test "fresh_nonce: kept until used, and two never the same"
+    s @= State(
+        base: "https://ca.test",
+        identity: "ca.test",
+        origin: "certs.test.",
+        dns_port: 0,
+        http01_port: 0,
+        now: time.epoch(),
+        draws: random.from_seed_chacha8(bytes.from_text(repeat("s", to_u64(32).must()))).must(),
+        nonces: {},
+        accounts: [],
+        orders: [],
+        authzs: [],
+        issued: [],
+        counts: Counts(accounts: 0, orders: 0, proved: 0, failed: 0, issued: 0, revoked: 0, bad_nonces: 0, bad_signatures: 0, refused: 0)
+    )
+    a = fresh_nonce(@s)
+    b = fresh_nonce(@s)
+    assert a != b && s.nonces[a].must() && s.nonces[b].must()
+    assert a.len() == 22

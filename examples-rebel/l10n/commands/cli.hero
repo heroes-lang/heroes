@@ -1,0 +1,332 @@
+# l10n's command line: its commands and their flags declared with `flags`,
+# the parse, the help, and each command run with its failure told and turned
+# into the exit code.
+#
+# The exit code is 0 for a command done, 1 for a command that failed on its
+# files or found errors (`check`), and 2 for arguments the declaration
+# refuses, as gettext's own tools and grep part them. `demo` is declared
+# here, so the help lists it, and run by the program's root, since it runs the
+# other commands through this module.
+
+use <rebel>/flags
+use <rebel>/time
+
+use commands/catalog_commands
+use commands/exchange_commands
+use commands/preview_commands
+use commands/review_commands
+use project/session
+
+## The declaration
+
+# The commands and their flags.
+function declaration() -> flags.Command
+    root @= flags.with_help_on_empty(
+        flags.with_version(flags.command(name: "l10n", about: "Keeps a program's translations: extracts its messages, merges them into a catalogue per language, checks, previews, reviews and exchanges them."), version: session.VERSION)
+    )
+    init @= flags.command(name: "init", about: "Writes l10n.yaml, the settings of a new project.")
+    flags.add(
+        @init,
+        flags.with_default(flags.option(long: "domain", short: "", value_name: "NAME", help: "the gettext domain, the catalogues' name"), "messages")
+    )
+    flags.add(
+        @init,
+        flags.with_default(flags.option(long: "source", short: "", value_name: "TAG", help: "the language the sources are written in"), "en")
+    )
+    flags.add(
+        @init,
+        flags.with_required(flags.with_delimiter(flags.option(long: "locales", short: "l", value_name: "TAGS", help: "the languages translated into"), ","))
+    )
+    flags.add_command(c: @root, sub: init)
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "extract", about: "Reads the sources' messages into the template, <domain>.pot.")
+    )
+    flags.add_command(
+        c: @root,
+        sub: with_locales(flags.command(name: "merge", about: "Brings each catalogue up to date with the template: carried, guessed, obsolete."))
+    )
+    flags.add_command(
+        c: @root,
+        sub: flags.command(name: "status", about: "Says how far each language is translated, and what they share.")
+    )
+    check @= with_locales(
+        flags.command(name: "check", about: "Finds what a reader would see wrong: placeholders, plural forms, markup, links, NFC.")
+    )
+    flags.add(
+        @check,
+        flags.flag(long: "fix", short: "", help: "compose every text to NFC and write the catalogues back")
+    )
+    flags.add_command(c: @root, sub: check)
+    flags.add_command(c: @root, sub: import_command())
+    flags.add_command(c: @root, sub: export_command())
+    flags.add_command(c: @root, sub: diff_command())
+    flags.add_command(c: @root, sub: preview_command())
+    flags.add_command(c: @root, sub: render_command())
+    pseudo @= flags.command(
+        name: "pseudo",
+        about: "Writes a pseudo-translation, accented and lengthened, to test a program before it is translated."
+    )
+    flags.add(
+        @pseudo,
+        flags.with_default(flags.option(long: "locale", short: "l", value_name: "TAG", help: "the pseudo-locale's tag"), "en-XA")
+    )
+    flags.add_command(c: @root, sub: pseudo)
+    flags.add_command(
+        c: @root,
+        sub: with_locales(flags.command(name: "compile", about: "Writes each catalogue as a gettext .mo file where gettext looks for it."))
+    )
+    flags.add_command(c: @root, sub: lookup_command())
+    demo @= flags.command(
+        name: "demo",
+        about: "Runs a scripted session over a sample project it writes, and removes it."
+    )
+    flags.add(
+        @demo,
+        flags.with_default(flags.option(long: "dir", short: "", value_name: "DIR", help: "the folder the session works in"), "build/l10n/demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    return root
+
+# `c` taking `--locale`, any number of times, to narrow it to those
+# locales; every locale of the project where none is given.
+#
+# - `c`: the command.
+function with_locales(c: flags.Command) -> flags.Command
+    narrowed @= c
+    flags.add(
+        @narrowed,
+        flags.with_delimiter(flags.option(long: "locale", short: "l", value_name: "TAGS", help: "only these languages, every one by default"), ",")
+    )
+    return narrowed
+
+# `import`'s declaration.
+function import_command() -> flags.Command
+    c @= flags.command(name: "import", about: "Applies a translator's file, in any format, to a language's catalogue.")
+    flags.add(@c, flags.positional(name: "FILE", help: "the file: .po, .csv, .xlsx, .json or .yaml"))
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "locale", short: "l", value_name: "TAG", help: "the language it translates into"))
+    )
+    flags.add(
+        @c,
+        flags.option(long: "from", short: "f", value_name: "FORMAT", help: "its format, where its extension does not say")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "encoding", short: "", value_name: "LABEL", help: "its encoding, where it is not found by itself")
+    )
+    flags.add(
+        @c,
+        flags.option(long: "sheet", short: "", value_name: "NAME", help: "the workbook's sheet, the locale's tag by default")
+    )
+    flags.add(@c, flags.flag(long: "dry-run", short: "n", help: "say what would change and write nothing"))
+    return c
+
+# `export`'s declaration.
+function export_command() -> flags.Command
+    c @= with_locales(
+        flags.command(name: "export", about: "Writes languages' catalogues for translators: CSV, XLSX, JSON or YAML.")
+    )
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "output", short: "o", value_name: "FILE", help: "the file written"))
+    )
+    flags.add(
+        @c,
+        flags.option(long: "to", short: "t", value_name: "FORMAT", help: "the format, where the file's extension does not say")
+    )
+    return c
+
+# `diff`'s declaration.
+function diff_command() -> flags.Command
+    c @= flags.command(
+        name: "diff",
+        about: "Reviews the changes between two versions of a language's translations, in any formats."
+    )
+    flags.add(@c, flags.positional(name: "OLD", help: "the version before"))
+    flags.add(@c, flags.positional(name: "NEW", help: "the version after"))
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "locale", short: "l", value_name: "TAG", help: "the language both translate into"))
+    )
+    flags.add(
+        @c,
+        flags.option(long: "sheet", short: "", value_name: "NAME", help: "a workbook's sheet, the locale's tag by default")
+    )
+    flags.add(@c, flags.flag(long: "unified", short: "u", help: "write the difference as diff -u does"))
+    return c
+
+# `preview`'s declaration.
+function preview_command() -> flags.Command
+    c @= flags.command(
+        name: "preview",
+        about: "Shows each message as a reader of a language sees it, every placeholder filled."
+    )
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "locale", short: "l", value_name: "TAG", help: "the language"))
+    )
+    flags.add(
+        @c,
+        flags.option(long: "match", short: "m", value_name: "REGEX", help: "only the messages whose text or context it matches")
+    )
+    return c
+
+# `render`'s declaration.
+function render_command() -> flags.Command
+    c @= flags.command(name: "render", about: "Writes an HTML template as a reader of a language gets it.")
+    flags.add(@c, flags.positional(name: "TEMPLATE", help: "the template's path"))
+    flags.add(@c, flags.option(long: "locale", short: "l", value_name: "TAG", help: "the language"))
+    flags.add(
+        @c,
+        flags.option(long: "accept", short: "", value_name: "HEADER", help: "a reader's Accept-Language, which chooses the language")
+    )
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "count", short: "n", value_name: "N", help: "the number plural messages are shown for"), .integer), "2")
+    )
+    flags.add_exclusive(@c, names: ["locale", "accept"], required: true)
+    return c
+
+# `lookup`'s declaration.
+function lookup_command() -> flags.Command
+    c @= flags.command(name: "lookup", about: "Looks a message up in the compiled catalogues, as the program will.")
+    flags.add(@c, flags.positional(name: "ID", help: "the message's text"))
+    flags.add(@c, flags.option(long: "plural", short: "p", value_name: "TEXT", help: "its plural text"))
+    flags.add(@c, flags.option(long: "context", short: "c", value_name: "TEXT", help: "its context"))
+    flags.add(
+        @c,
+        flags.with_default(flags.with_kind(flags.option(long: "count", short: "n", value_name: "N", help: "the count a plural message is shown for"), .integer), "1")
+    )
+    flags.add(
+        @c,
+        flags.with_required(flags.option(long: "lang", short: "", value_name: "LIST", help: "the reader's languages as gettext's LANGUAGE lists them, pt_BR:pt"))
+    )
+    return c
+
+## Parsing
+
+# What the command line asks: an answer already given, or a command to run.
+variant Parsed
+    # The parse answered by itself: the help, the version, or a refusal.
+    finished
+        # The exit code.
+        code: i64
+    # A command was chosen.
+    chosen
+        # Its name.
+        name: str
+        # What the parse found for it.
+        found: flags.Found
+
+# What `arguments` ask, the help or the version written, or the refusal told.
+#
+# - `arguments`: the arguments after the program's name.
+# - `s`: the session the answer is written to.
+function parse_command(arguments: [str], s: session.Session) -> Parsed
+    found = match flags.parse(declaration(), arguments)
+        .ok f => f
+        .err e =>
+            session.complain(s, message: e.msg)
+            return .finished(code: 2)
+
+    if flags.is_help(found)
+        return .finished(code: written(s, text: flags.help_text(found) + "\n"))
+
+    if flags.is_version(found)
+        return .finished(code: written(s, text: flags.version_text(found) + "\n"))
+
+    return match flags.subcommand(found)
+        .ok sub => .chosen(name: flags.name_of(sub), found: sub)
+        .err e =>
+            session.complain(s, message: e.msg)
+            .finished(code: 2)
+
+# Writes `text`, answering 0, or 1 where the write fails.
+#
+# - `s`: the session.
+# - `text`: the text.
+function written(s: session.Session, text: str) -> i64
+    return match session.say(s, text: text)
+        .ok _  => 0
+        .err _ => 1
+
+## Running
+
+# Runs the command `arguments` ask and answers its exit code; the demo is
+# refused here, the program's root running it.
+#
+# - `arguments`: the arguments after the program's name.
+# - `s`: the session.
+function run(arguments: [str], s: session.Session) -> i64
+    return match parse_command(arguments, s: s)
+        .finished d => d.code
+        .chosen c   => execute(c.name, found: c.found, s: s)
+
+# Runs the command `name` with what its parse found, telling a failure and
+# answering 1 for it.
+#
+# - `name`: the command's name.
+# - `found`: what the parse found for it.
+# - `s`: the session.
+function execute(name: str, found: flags.Found, s: session.Session) -> i64
+    outcome: i64? = if name == "init"
+        catalog_commands.init_command(s, f: found)
+    else if name == "extract"
+        catalog_commands.extract_command(s, found)
+    else if name == "merge"
+        catalog_commands.merge_command(s, f: found)
+    else if name == "compile"
+        catalog_commands.compile_command(s, f: found)
+    else if name == "lookup"
+        catalog_commands.lookup_command(s, f: found)
+    else if name == "pseudo"
+        catalog_commands.pseudo_command(s, f: found)
+    else if name == "status"
+        review_commands.status_command(s, found)
+    else if name == "check"
+        review_commands.check_command(s, f: found)
+    else if name == "diff"
+        review_commands.diff_command(s, f: found)
+    else if name == "import"
+        exchange_commands.import_command(s, f: found)
+    else if name == "export"
+        exchange_commands.export_command(s, f: found)
+    else if name == "preview"
+        preview_commands.preview_command(s, f: found)
+    else if name == "render"
+        preview_commands.render_command(s, f: found)
+    else
+        fail(code: "invalid", msg: f"{name} runs only as the program's own command")
+
+    return match outcome
+        .ok code => code
+        .err e =>
+            session.complain(s, message: e.msg)
+            1
+
+## Tests
+
+test "parse_command: a command chosen, a flag misspelt, a required one missing, and the help"
+    s = session.transcript(session_now())
+
+    match parse_command(["import", "a.csv", "--locale", "de"], s: s)
+        .chosen c   => assert c.name == "import"
+        .finished _ => assert false
+
+    match parse_command(["merge", "--locael", "de"], s: s)
+        .chosen _   => assert false
+        .finished d => assert d.code == 2
+
+    match parse_command(["import", "a.csv"], s: s)
+        .chosen _   => assert false
+        .finished d => assert d.code == 2
+
+    match parse_command(["render", "t.html"], s: s)
+        .chosen _   => assert false
+        .finished d => assert d.code == 2
+
+# A moment for the tests' sessions.
+function session_now() -> time.Instant
+    return time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()

@@ -1,0 +1,186 @@
+# What a run does to the certificates the configuration names: `issue`
+# obtains one now, `renew` (certbot's `renew`, run from a timer twice a
+# day) decides for each whether it is due (`renew/window`) and obtains the
+# due ones again, a certificate never issued and one whose configured
+# domains changed among them; and `show` (certbot's `certificates`) says
+# what is kept. Each says what it did in lines the caller prints, none
+# holding a path, a key or a time of day.
+
+use <rebel>/acme
+use <rebel>/time
+
+use config/settings
+use core/clock
+use issue/account
+use issue/order
+use pki/facts
+use renew/window
+use store/lineage as history
+use store/vault
+
+## Reports
+
+# What a run said and how it went.
+record Report
+    # The lines, in order.
+    lines: [str]
+    # How many certificates failed.
+    failures: i64
+
+## Issuing
+
+# `l` obtained now, whatever it has left: the lines of how.
+#
+# - `session`: the account's session.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `l`: the certificate.
+# - `c`: the clock.
+function issue_now(@session: account.Session, s: settings.Settings, store: vault.Store, l: settings.Lineage, c: clock.Clock) -> Report
+    match order.obtain(@session.client, s: s, store: store, lineage: l, c: c)
+        .err e => return Report(lines: [f"{l.name}: not issued: {e.msg}"], failures: 1)
+        .ok got =>
+            lines: [str] @= []
+
+            for proof in got.proofs
+                lines @ lines.push("  " + proof)
+
+            lines @ lines.push(f"{l.name}: {described(got, at: clock.now(c).default(got.facts.not_before))}")
+            return Report(lines: lines, failures: 0)
+
+# A certificate kept, as one line: its version, serial and life.
+#
+# - `got`: what an issue kept.
+# - `at`: the clock's moment.
+function described(got: order.Obtained, at: time.Instant) -> str
+    f = got.facts
+    return f"version {got.version} kept, serial {f.serial}, issued by {f.issuer}, valid {facts.lifetime_days(f)} days, {clock.format_days(facts.days_left(f, at: at))} left"
+
+## Renewing
+
+# Every certificate of `s` renewed where it is due.
+#
+# - `session`: the account's session.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `c`: the clock the decisions are made at.
+function renew_all(@session: account.Session, s: settings.Settings, store: vault.Store, c: clock.Clock) -> Report
+    lines: [str] @= []
+    failures @= 0
+
+    for l in s.certificates
+        one = renew_one(@session, s: s, store: store, l: l, c: c)
+
+        for line in one.lines
+            lines @ lines.push(line)
+
+        failures @ failures + one.failures
+
+    return Report(lines: lines, failures: failures)
+
+# `l` renewed where it is due, never issued, or its domains changed.
+#
+# - `session`: the account's session.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `l`: the certificate.
+# - `c`: the clock.
+function renew_one(@session: account.Session, s: settings.Settings, store: vault.Store, l: settings.Lineage, c: clock.Clock) -> Report
+    kept = match history.current(folder: s.store.folder, name: l.name)
+        .ok k => k
+        .err e =>
+            if e.code != history.NOT_FOUND
+                return Report(lines: [f"{l.name}: its files cannot be read: {e.msg}"], failures: 1)
+            return prefixed(
+                f"{l.name}: never issued, so issued now",
+                rest: issue_now(@session, s: s, store: store, l: l, c: c)
+            )
+
+    at = match clock.now(c)
+        .ok t  => t
+        .err e => return Report(lines: [f"{l.name}: the clock cannot be read: {e.msg}"], failures: 1)
+
+    f = match facts.facts_of(kept.chain[0])
+        .ok got => got
+        .err e  => return Report(lines: [f"{l.name}: its certificate cannot be read: {e.msg}"], failures: 1)
+
+    if sorted(f.names) != sorted(l.domains)
+        return prefixed(
+            f"{l.name}: its configured domains changed, so issued again",
+            rest: issue_now(@session, s: s, store: store, l: l, c: c)
+        )
+
+    asked: window.Window? = if s.renewal.renewal_info
+        windowed(session.client, der: kept.chain[0].der)
+    else
+        fail(code: "not_found", msg: "the configuration asks no renewal information")
+
+    decision = window.decide(f, at: at, days_before: s.renewal.days_before_expiry, window: asked)
+
+    if !decision.due
+        return Report(lines: [f"{l.name}: {decision.reason}: not due"], failures: 0)
+    return prefixed(f"{l.name}: {decision.reason}: renewing", rest: issue_now(@session, s: s, store: store, l: l, c: c))
+
+# The CA's window for the certificate `der`, where the CA offers renewal
+# information.
+#
+# - `client`: the client; no account is needed.
+# - `der`: the certificate's DER.
+#
+# Fails as `acme.fetch_renewal_info` and `window.window_of` fail.
+function windowed(client: acme.Client, der: [u8]) -> window.Window?
+    return window.window_of(acme.fetch_renewal_info(client, certificate: der)?)
+
+## Showing
+
+# What is kept of each certificate, certbot's `certificates`: its domains,
+# version, serial, the days it has left, and whether its key is kept.
+#
+# - `s`: the settings.
+# - `store`: the key store.
+# - `c`: the clock.
+function show(s: settings.Settings, store: vault.Store, c: clock.Clock) -> Report
+    lines: [str] @= []
+    failures @= 0
+
+    for l in s.certificates
+        match history.current(folder: s.store.folder, name: l.name)
+            .err _ => lines @ lines.push(f"{l.name}: {l.domains.join(", ")}; never issued")
+            .ok kept =>
+                match facts.facts_of(kept.chain[0])
+                    .err e =>
+                        lines @ lines.push(f"{l.name}: its certificate cannot be read: {e.msg}")
+                        failures @ failures + 1
+                    .ok f =>
+                        left = clock.format_days(facts.days_left(f, at: clock.now(c).default(f.not_before)))
+
+                        key = if vault.has(store, name: order.key_name(l.name))
+                            "its key kept"
+                        else
+                            "ITS KEY MISSING"
+
+                        lines @ lines.push(
+                            f"{l.name}: {f.names.join(", ")}; version {kept.version}, serial {f.serial}, {left} left, {key}"
+                        )
+
+    return Report(lines: lines, failures: failures)
+
+## Helpers
+
+# `rest` with `first` before its lines.
+#
+# - `first`: the line said first.
+# - `rest`: the report after it.
+function prefixed(first: str, rest: Report) -> Report
+    lines: [str] @= [first]
+
+    for line in rest.lines
+        lines @ lines.push(line)
+
+    return Report(lines: lines, failures: rest.failures)
+
+# `list` in the order of its bytes.
+#
+# - `list`: the texts.
+function sorted(list: [str]) -> [str]
+    return sort(list)
