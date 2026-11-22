@@ -59,7 +59,9 @@ function replaced(c: state.Checked, names: ctype.Names, lines: [str], lvalue: st
                 if sat.is_err()
                     return fail(code: "none", msg: "a counted field with no release")
                 release @ sat.must() + "_release(&(" + lvalue + "));"
+            .mailbox_ty                                        => release @ "hero_mail_decref(" + lvalue + ");"
             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit => release @ release
+            .thread_ty                                         => release @ release
             .fixed | .function_ty | .generic | .error          => release @ release
 
         out @ out.push(release)
@@ -121,9 +123,9 @@ function write(c: state.Checked, names: ctype.Names, s: source.Source, decls: [a
                     .fixed x =>
                         element @ x.element
                         fixed_len @ x.length
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_map @ is_map
-                    .fallible | .function_ty | .named                         => is_map @ is_map
-                    .case_ty | .failure | .generic | .error                   => is_map @ is_map
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit    => is_map @ is_map
+                    .fallible | .function_ty | .named | .thread_ty | .mailbox_ty => is_map @ is_map
+                    .case_ty | .failure | .generic | .error                      => is_map @ is_map
 
                 if is_map
                     if !last

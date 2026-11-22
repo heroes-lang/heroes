@@ -1,0 +1,42 @@
+# A value holding a C handle or a thread crosses into another thread only
+# through a mailbox, written `m.send(@v)`, or as the answer `wait` gives
+# (spec § 11; panel 254's S11 and W-j): `spawn` hands the new thread a copy,
+# which would leave two threads holding one handle, so a handle in its
+# argument is refused; a send of a value holding one is written with `@`,
+# by `marker_mismatch`, and a send of a value holding none is written without.
+#
+# Bulk regression case.
+
+extern "stdlib.h"
+    record Block tag void
+    function malloc(size: u64) -> Block acquires free
+    function free(b: Block consumes)
+
+record Held
+    name: str
+    block: Block
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function named(h: Held) -> i64
+    return h.name.len()
+
+function waits(t: (thread i64)) -> i64
+    return t.wait()
+
+function main()
+    h: Held @= Held(name: "h", block: malloc(size: 16))
+    t = spawn(named, h).must()  #~ thread_crossing
+    print(t.wait())
+    u = spawn(twice, 5).must()
+    w = spawn(waits, u).must()  #~ thread_crossing
+    print(w.wait())
+    held: (mailbox Held) = mailbox()
+    held.send(h).must()  #~ marker_mismatch
+    held.send(@h).must()
+    numbers: (mailbox i64) = mailbox()
+    n: i64 @= 4
+    numbers.send(@n).must()  #~ marker_mismatch
+    numbers.send(n).must()
+    print(held.receive(within_ms: 0).must().name)

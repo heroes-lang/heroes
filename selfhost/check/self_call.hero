@@ -37,6 +37,7 @@ use check/name_types
 use check/path_end
 use check/self_walk
 use check/state
+use check/thread_types
 use resolved
 use source
 use token
@@ -215,7 +216,10 @@ function call(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Res
 function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], id: i64, receiver: i64, name: token.Span, given: [ast.Arg])
     qualified = r.uses[receiver] == .module
     field = !qualified && !name_types.field_of_function_type(@c, a, r, s, decls, receiver: c.out.expr_types[receiver], name: source.span_text(s, name)).is_err()
-    own = !field && names_itself(r, w, at: id, ufcs: !qualified, decls: decls)
+
+    # A thread's or a mailbox's own operation calls no function of the program.
+    operation = !qualified && thread_types.operates(c.out.types, receiver: c.out.expr_types[receiver], name: source.span_text(s, name))
+    own = !field && !operation && names_itself(r, w, at: id, ufcs: !qualified, decls: decls)
 
     if !qualified && !(own && a.exprs[receiver].kind == .name)
         expr(@w, @c, a, r, s, decls, id: receiver)
@@ -225,7 +229,7 @@ function method(@w: self_walk.Walk, @c: state.Checker, a: ast.Ast, r: resolved.R
         self_walk.may_leave(@w)
     else if own
         self_walk.hit(@w, id: id, to: top_at(r, at: id))
-    else
+    else if !operation
         match r.uses[id]
             .top t                                    => self_walk.other_call(@w, decls, at: t.at)
             .local | .builtin | .module | .unresolved => return

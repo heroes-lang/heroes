@@ -1,0 +1,3 @@
+11
+!at: threads-a-handle-a-worker-received-is-not-the-senders.hero:32:11
+!panic: a C handle reached the argument `c` of `counter_add` on a thread that does not hold it: a handle belongs to the thread that acquired it or last received it, from a mailbox or as a thread's answer, and only that thread reaches C through it

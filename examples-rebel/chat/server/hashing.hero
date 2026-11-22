@@ -126,7 +126,7 @@ function start_waiting(@jobs: Jobs)
 
     while i < jobs.queue.len() && running_of(jobs) < MOST_RUNNING
         if jobs.queue[i].running.len() == 0
-            match threads.spawn_text(body: hash_in_thread, arg: arg_of(jobs.queue[i], port: jobs.port))
+            match threads.start_text(body: hash_in_thread, arg: arg_of(jobs.queue[i], port: jobs.port))
                 .ok t  => jobs.queue[i].running @ [t]
                 .err _ => return
         i @ i + 1

@@ -82,6 +82,10 @@ function counts(t: table.Types, decls: [ast.Decl], written: {i64: i64}, answer: 
 
         .fallible | .failure                               => return true
         .int_ty | .float_ty | .bool | .unit | .ptr | .cstr => return false
+        # A thread is a number; a mailbox a counted queue every copy reaches
+        # (`runtime/parts/mail.c`, panel 254's S5).
+        .thread_ty  => return false
+        .mailbox_ty => return true
         # A fixed array owns exactly what its element owns: inline bytes,
         # no reference of its own — written as the honest rule rather
         # than as false, because the day a fixed array is permitted

@@ -42,7 +42,7 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
         .failure                                                   => is_failure @ true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => is_failure @ is_failure
         .array | .fixed | .map | .fallible | .function_ty | .named => is_failure @ is_failure
-        .case_ty | .generic | .error                               => is_failure @ is_failure
+        .case_ty | .generic | .error | .thread_ty | .mailbox_ty    => is_failure @ is_failure
 
     if is_failure
         member: str @= "msg"
@@ -60,7 +60,7 @@ function field(c: state.Checked, s: source.Source, decls: [ast.Decl], owner: i64
             case_at @ vc.at
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => decl @ decl
         .array | .fixed | .map | .fallible | .function_ty         => decl @ decl
-        .failure | .generic | .error                              => decl @ decl
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => decl @ decl
 
     if decl < 0
         return fail(code: "none", msg: "not an aggregate")
@@ -215,7 +215,7 @@ function reached(c: state.Checked, names: ctype.Names?, s: source.Source, decls:
                     # after `@`; a string's byte is no place either, and the
                     # checker does not refuse it yet (found beside panel 196's
                     # landing and reported), so clang refuses the text below.
-                    .map | .str | .int_ty | .float_ty | .bool | .ptr | .cstr => return Reached(
+                    .map | .str | .int_ty | .float_ty | .bool | .ptr | .cstr | .thread_ty | .mailbox_ty => return Reached(
                         lvalue: so_far + NOT_AN_LVALUE,
                         unshares: unshares
                     )
@@ -240,7 +240,7 @@ function element_c_type(c: state.Checked, names: ctype.Names, ty: i64) -> str?
                 return fail(code: "none", msg: "a function type these names do not hold")
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => _ = 0
         .array | .fixed | .map | .named | .case_ty                => _ = 0
-        .failure | .generic | .error                              => _ = 0
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => _ = 0
 
     return ctype.c_type(names, c: c, ty: ty)
 

@@ -49,6 +49,7 @@ function reaches_pointer(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
             .map m                                                 => inner @ [m.key, m.value]
             .named n                                               => inner @ synth.field_types(c, decls, decl: n.decl)
             .int_ty | .float_ty | .bool | .str | .unit | .fixed    => continue
+            .thread_ty | .mailbox_ty                               => continue
             .function_ty | .case_ty | .failure | .generic | .error => continue
 
         back: i64 @= inner.len() - 1

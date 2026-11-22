@@ -33,10 +33,10 @@ use token
 # the caller asks `table.poisoned` first and this stays a pure shape question.
 function is_nested(c: state.Checker, payload: i64) -> bool
     return match table.get(c.out.types, payload)
-        .fallible                                                 => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .fixed | .map | .function_ty | .named            => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fallible                                                          => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .fixed | .map | .function_ty | .named                     => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # `.is_err()` where the payload is itself fallible. The answer would be about
 # the OUTER level only and the `bool` it returns would not say so, so it is

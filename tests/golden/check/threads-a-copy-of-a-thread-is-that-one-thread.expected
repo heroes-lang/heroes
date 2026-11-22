@@ -1,0 +1,2 @@
+tests/golden/check/threads-a-copy-of-a-thread-is-that-one-thread.hero:31:11: error[handle_used_after_end]: `kept[0]`'s life ended at `kept[0].wait()` at line 30, for every copy of it, and this uses it again
+tests/golden/check/threads-a-copy-of-a-thread-is-that-one-thread.hero:44:15: error[handle_used_after_end]: `t`'s life ended at `t.wait()` at line 43, for every copy of it, and this uses it again

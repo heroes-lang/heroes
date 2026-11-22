@@ -27,6 +27,7 @@ use resolve/state
 use resolve/type_argument
 use resolved
 use source
+use thread_errors
 use token
 
 # `called` says the name is a call's callee, `sqrt(2.0)`: one nothing binds
@@ -106,6 +107,14 @@ function bare_name(@r: state.Resolver, a: ast.Ast, s: source.Source, decls: [ast
 
     if !builtin.is_err()
         state.record_use(@r, at: id, to: .builtin(at: builtin.must()))
+        return
+
+    # `send(m, v)`: a thread's or a mailbox's operation, written after a dot.
+    if !inventory.operation_of(text).is_err()
+        state.push_diagnostic(
+            @r,
+            thread_errors.written_after_a_dot(name: text, owner: thread_errors.owner_of(text), span: span)
+        )
         return
 
     # A module name standing alone. It is not a value in any position — it
@@ -210,6 +219,14 @@ function method_name(@r: state.Resolver, s: source.Source, decls: [ast.Decl], at
 
     if !builtin.is_err()
         state.record_use(@r, at: at, to: .builtin(at: builtin.must()))
+        return
+
+    # A thread's or a mailbox's operation, chosen by the receiver's type,
+    # which the checker has and this walk does not (feature 2647).
+    operation = inventory.operation_of(text)
+
+    if !operation.is_err()
+        state.record_use(@r, at: at, to: .builtin(at: operation.must()))
         return
 
     if state.field_in_reach(r, text)

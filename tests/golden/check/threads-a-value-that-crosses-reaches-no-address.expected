@@ -1,0 +1,5 @@
+tests/golden/check/threads-a-value-that-crosses-reaches-no-address.hero:17:22: error[thread_crossing]: `(mailbox Holder)` crosses between threads and reaches `ptr`, which never crosses
+tests/golden/check/threads-a-value-that-crosses-reaches-no-address.hero:21:19: error[thread_crossing]: `(thread cstr)` crosses between threads and reaches `cstr`, which never crosses
+tests/golden/check/threads-a-value-that-crosses-reaches-no-address.hero:24:27: error[empty_mailbox]: a mailbox of `()` carries nothing: no value of `()` can be written to send
+tests/golden/check/threads-a-value-that-crosses-reaches-no-address.hero:27:21: error[thread_crossing]: `(mailbox [{str: Holder}])` crosses between threads and reaches `ptr`, which never crosses
+tests/golden/check/threads-a-value-that-crosses-reaches-no-address.hero:40:15: error[thread_crossing]: `(function(Holder) -> i64)` crosses between threads and reaches `ptr`, which never crosses

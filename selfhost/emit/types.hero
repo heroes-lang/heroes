@@ -86,9 +86,9 @@ function member(c: state.Checked, names: ctype.Names, s: source.Source, field: a
             is_fixed @ true
             fixed_elem @ x.element
             fixed_len @ x.length
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => is_fixed @ is_fixed
-        .array | .map | .fallible | .function_ty | .named         => is_fixed @ is_fixed
-        .case_ty | .failure | .generic | .error                   => is_fixed @ is_fixed
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => is_fixed @ is_fixed
+        .array | .map | .fallible | .function_ty | .named                  => is_fixed @ is_fixed
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_fixed @ is_fixed
 
     if is_fixed
         elem: str @= "void"

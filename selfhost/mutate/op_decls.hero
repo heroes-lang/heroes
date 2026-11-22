@@ -34,6 +34,22 @@ function type_positions(s: model.Statement) -> [i64]
                 continue
             out @ out.push(i + 1)
 
+    return inside_handles(toks, at: out)
+
+# A type position's element where it is `(thread T)` or `(mailbox T)`, so the
+# type operators reach the `T` a thread or a mailbox carries (feature 2647):
+# a form whose inside no operator reached is one the rate would flatter.
+function inside_handles(toks: [tokens.Tok], at: [i64]) -> [i64]
+    out: [i64] @= at
+    k: i64 @= 0
+
+    while k < out.len()
+        i = out[k]
+
+        if i + 2 < toks.len() && toks[i].kind == "lparen" && toks[i + 1].kind == "ident" && (toks[i + 1].text == "thread" || toks[i + 1].text == "mailbox")
+            out @ out.push(i + 2)
+        k @ k + 1
+
     return out
 
 # A span of tokens on one line written `put`, named by its first token.
@@ -287,3 +303,31 @@ test "the use family mutates a package's mark, and declines none of it"
     use_quoted(p, @quoted)
     assert quoted.len() == 1
     assert quoted[0].hunks[0].lines == ["use \"<json>/parse\""]
+
+# Feature 2647: the type operators reach the element of a thread's and a
+# mailbox's type, nested, as they reach a parameter's own type.
+test "a type operator reaches the type a mailbox carries"
+    text = "function f(m: (mailbox (thread str?)))\n"
+    toks = [
+        model.tok(kind: "kw_function", text: "function", row: 1, col: 1)
+        model.tok(kind: "ident", text: "f", row: 1, col: 10)
+        model.tok(kind: "lparen", text: "(", row: 1, col: 11)
+        model.tok(kind: "ident", text: "m", row: 1, col: 12)
+        model.tok(kind: "colon", text: ":", row: 1, col: 13)
+        model.tok(kind: "lparen", text: "(", row: 1, col: 15)
+        model.tok(kind: "ident", text: "mailbox", row: 1, col: 16)
+        model.tok(kind: "lparen", text: "(", row: 1, col: 24)
+        model.tok(kind: "ident", text: "thread", row: 1, col: 25)
+        model.tok(kind: "ident", text: "str", row: 1, col: 32)
+        model.tok(kind: "question", text: "?", row: 1, col: 35)
+        model.tok(kind: "rparen", text: ")", row: 1, col: 36)
+        model.tok(kind: "rparen", text: ")", row: 1, col: 37)
+        model.tok(kind: "rparen", text: ")", row: 1, col: 38)
+        model.tok(kind: "terminator", text: "", row: 1, col: 39)
+        model.tok(kind: "eof", text: "", row: 2, col: 1)
+    ]
+    p = model.modelled(text, toks: toks)
+    got: [mutant.Mutant] @= []
+    option_type(p, @got)
+    assert got.len() == 1
+    assert got[0].hunks[0].lines == ["function f(m: (mailbox (thread Option<str>)))"]

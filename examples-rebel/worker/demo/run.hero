@@ -240,7 +240,7 @@ function run(dir: str) -> ()?
     arg: json.Value = .object(
         members: {"redis": .text(v: redis_url), "otlp": .text(v: collector.base_url(h.collector)), "hooks": .text(v: receiver.base_url(h.hooks)), "dir": .text(v: dir)}
     )
-    t @= threads.spawn_text(drive, arg: json.format(arg)?)?
+    t @= threads.start_text(drive, arg: json.format(arg)?)?
     served = host.serve_until_shutdown(@h, most: time.minutes(5)?)
     problem = threads.wait_text(@t)
 

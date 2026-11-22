@@ -97,8 +97,26 @@ rule exists for, and the Windows leg of CI is what read it the first time.
 
 ## The Windows box
 
-Paid by the hour, usually off, and **only the author can start it**: ask, and do
-the machine-free work meanwhile (CL-049).
+Paid by the hour and usually off. **A session that needs it starts it itself**:
+`python3 -I docs/platforms/windows/power-on.py` (author instruction 2026-11-20,
+meant as: *the agents turn it on by themselves, with the script, when their
+work needs it*). Until that day only the author could start it, from the
+appOnFly web console, so a session asked and did the machine-free work
+meanwhile (CL-049); the program does what the console's buttons do, over the
+portal's own API, and `docs/platforms/windows/WINDOWS-MACHINE.md` § Turning it
+on says how and what it was measured doing. What binds a session that starts
+it:
+
+- **never another way**: the program arms the auto shutdown on every real run
+  (the account's default, 4 h, or `--hours H`, at most 24), only ever lengthens
+  a timer already set, and fails loudly where it cannot arm one, so a box it
+  started cannot bill with no timer;
+- **never a stop**: the program has none, and a session neither turns the box
+  off nor restarts it unless the author asks, since another session's lane may
+  be using it;
+- **tell the open sessions** that the box is up and when its timer ends
+  (`.claude/rules/records.md` § Two habits), and lengthen it with `--hours`
+  rather than let a lane's run be cut off.
 
 Committed work reaches it with `git push win main:main`. Uncommitted work goes
 by `COPYFILE_DISABLE=1 tar --no-xattrs`, because macOS's tar otherwise writes

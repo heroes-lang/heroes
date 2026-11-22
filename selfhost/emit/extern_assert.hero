@@ -134,11 +134,11 @@ function extern_assertions(@w: writer.Writer, p: containers.Program, c: state.Ch
 
     for f in externs
         match table.get(c.types, f.result)
-            .named                                            => any_record @ true
-            .cstr                                             => any_cstr @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .unit => continue
-            .array | .fixed | .map | .fallible | .function_ty => continue
-            .case_ty | .failure | .generic | .error           => continue
+            .named                                                             => any_record @ true
+            .cstr                                                              => any_cstr @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => continue
+            .array | .fixed | .map | .fallible | .function_ty                  => continue
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
     if any_record
         writer.line(@w, text: "#define HERO_RET_RECORD(c, T) __builtin_types_compatible_p(__typeof__(c), T)")

@@ -61,6 +61,13 @@ constant EMITTED: [str]
         "to_u64"
         "validated_bytes"
         "ptr"
+        "spawn"
+        "spawn_sized"
+        "mailbox"
+        "wait"
+        "send"
+        "receive"
+        "close"
     ]
 
 # Panel 162: on the list so the gate admits it, and NOT in `entry`
@@ -96,11 +103,11 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
     if name == "len"
         if !first.is_err()
             match first.must()
-                .map                                                      => return "hero_map_len"
-                .array                                                    => return "hero_array_len"
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_str_len"
-                .fixed | .fallible | .function_ty | .named                => return "hero_str_len"
-                .case_ty | .failure | .generic | .error                   => return "hero_str_len"
+                .map                                                               => return "hero_map_len"
+                .array                                                             => return "hero_array_len"
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return "hero_str_len"
+                .fixed | .fallible | .function_ty | .named                         => return "hero_str_len"
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return "hero_str_len"
         return "hero_str_len"
 
     # keys(m) hands back a fresh array whose keys are copied through
@@ -114,10 +121,10 @@ function entry(name: str, f: containers.Function, c: state.Checked, run: ir.Run)
     if name == "slice"
         if !first.is_err()
             match first.must()
-                .array                                                    => return "hero_array_slice"
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return "hero_str_slice"
-                .fixed | .map | .fallible | .function_ty | .named         => return "hero_str_slice"
-                .case_ty | .failure | .generic | .error                   => return "hero_str_slice"
+                .array                                                             => return "hero_array_slice"
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return "hero_str_slice"
+                .fixed | .map | .fallible | .function_ty | .named                  => return "hero_str_slice"
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return "hero_str_slice"
         return "hero_str_slice"
 
     # push hands back a NEW array, always: value semantics has no
@@ -299,11 +306,11 @@ function to_str_entry(ty: table.Ty) -> str?
             match fk.kind
                 .f32 => return ok("hero_f32_to_str")
                 .f64 => return ok("hero_f64_to_str")
-        .bool                                         => return ok("hero_bool_to_str")
-        .str                                          => return ok("hero_str_identity")
-        .ptr | .cstr | .unit | .array | .fixed | .map => return fail(code: "none", msg: "no rendering")
-        .fallible | .function_ty | .named | .case_ty  => return fail(code: "none", msg: "no rendering")
-        .failure | .generic | .error                  => return fail(code: "none", msg: "no rendering")
+        .bool                                                   => return ok("hero_bool_to_str")
+        .str                                                    => return ok("hero_str_identity")
+        .ptr | .cstr | .unit | .array | .fixed | .map           => return fail(code: "none", msg: "no rendering")
+        .fallible | .function_ty | .named | .case_ty            => return fail(code: "none", msg: "no rendering")
+        .failure | .generic | .error | .thread_ty | .mailbox_ty => return fail(code: "none", msg: "no rendering")
 
     return fail(code: "none", msg: "unreached")
 

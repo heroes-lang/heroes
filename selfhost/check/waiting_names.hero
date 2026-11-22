@@ -141,7 +141,7 @@ function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: 
                 return
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => fall()
             .fixed | .map | .array | .fallible | .function_ty | .named => fall()
-            .case_ty | .failure | .error                               => fall()
+            .case_ty | .failure | .error | .thread_ty | .mailbox_ty    => fall()
 
     match table.get(c.out.types, value)
         .generic g =>
@@ -151,6 +151,7 @@ function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: 
             match table.get(c.out.types, wanted)
                 .array w => meet(@c, own: @own, value: v.element, wanted: w.element, callee: callee, concrete: concrete)
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
+                .thread_ty | .mailbox_ty => return
                 .fixed | .map | .fallible | .function_ty | .named => return
                 .case_ty | .failure | .generic | .error => return
         .fallible v =>
@@ -163,17 +164,17 @@ function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: 
                     callee: callee,
                     concrete: concrete
                 )
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .map | .array | .function_ty | .named            => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .map | .array | .function_ty | .named                     => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .map v =>
             match table.get(c.out.types, wanted)
                 .map w =>
                     meet(@c, own: @own, value: v.key, wanted: w.key, callee: callee, concrete: concrete)
                     meet(@c, own: @own, value: v.value, wanted: w.value, callee: callee, concrete: concrete)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .array | .fallible | .function_ty | .named       => return
-                .case_ty | .failure | .generic | .error                   => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .array | .fallible | .function_ty | .named                => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
         .function_ty v =>
             match table.get(c.out.types, wanted)
                 .function_ty w =>
@@ -188,11 +189,11 @@ function meet(@c: state.Checker, @own: [i64?], value: i64, wanted: i64, callee: 
                             i @ i + 1
 
                         meet(@c, own: @own, value: v.result, wanted: w.result, callee: callee, concrete: concrete)
-                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-                .fixed | .map | .fallible | .array | .named               => return
-                .case_ty | .failure | .generic | .error                   => return
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return
-        .fixed | .named | .case_ty | .failure | .error            => return
+                .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => return
+                .fixed | .map | .fallible | .array | .named                        => return
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => return
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit                 => return
+        .fixed | .named | .case_ty | .failure | .error | .thread_ty | .mailbox_ty => return
 
 function fall()
     return

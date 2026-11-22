@@ -1,0 +1,26 @@
+# The names of a thread's and a mailbox's operations stay free for the
+# program, but no function so named may take a thread or a mailbox first
+# (spec § 9; panel 254's W-h): `m.send(j)` would be the mailbox's own and
+# `send(m, j)` the program's, two calls on the same arguments. A type
+# parameter first is refused too, either filling it; a record first is not.
+#
+# Bulk regression case.
+
+record Job
+    id: i64
+
+function send(m: (mailbox Job), j: Job)  #~ operation_name_taken
+    m.send(j).must()
+
+function wait(t: (thread i64), extra: i64) -> i64  #~ operation_name_taken
+    return t.wait() + extra
+
+function close<T>(x: T)  #~ operation_name_taken
+    _ = x
+
+function receive(j: Job) -> i64
+    return j.id
+
+function main()
+    j = Job(id: 3)
+    print(j.receive())

@@ -53,10 +53,10 @@ function guard_arguments(p: instances.Held, c: state.Checked, decls: [ast.Decl],
             cast @ extern_probe.is_cast_out(c, slot)
 
             match table.get(c.types, slot.ty)
-                .cstr                                                      => is_cstr @ true
-                .int_ty | .float_ty | .bool | .str | .ptr | .unit          => is_cstr @ is_cstr
-                .array | .fixed | .map | .fallible | .function_ty | .named => is_cstr @ is_cstr
-                .case_ty | .failure | .generic | .error                    => is_cstr @ is_cstr
+                .cstr                                                              => is_cstr @ true
+                .int_ty | .float_ty | .bool | .str | .ptr | .unit                  => is_cstr @ is_cstr
+                .array | .fixed | .map | .fallible | .function_ty | .named         => is_cstr @ is_cstr
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_cstr @ is_cstr
 
             match slot.kind
                 .param_slot ps =>

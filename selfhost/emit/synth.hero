@@ -108,6 +108,7 @@ function declared_in(c: state.Checked, s: source.Source, decls: [ast.Decl], root
         match table.get(c.types, id)
             .named n                                                  => named[source.component_at(s, decls[n.decl].name.start) + "." + source.span_text(s, decls[n.decl].name)] @ true
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
+            .thread_ty | .mailbox_ty                                  => named @ named
             .array | .fixed | .map | .fallible | .function_ty         => named @ named
             .case_ty | .failure | .generic | .error                   => named @ named
 
@@ -185,8 +186,8 @@ function collect(c: state.Checked, decls: [ast.Decl], ty: i64, @into: {i64: bool
 
                     for inner in field_types(c, decls, decl: n.decl)
                         queue @ queue.push(inner)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .fixed | .case_ty | .failure | .generic | .error          => continue
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit                   => continue
+            .fixed | .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
 # The written types of a record's fields, or of every case's fields of a
 # variant, in declaration order: what a walk over a record type descends
@@ -249,10 +250,10 @@ function wanted_of(c: state.Checked, reached: {i64: bool}) -> Wanted
     # a membership question.
     for id in keys(reached)
         match table.get(c.types, id)
-            .named n                                                  => named[n.decl] @ true
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => named @ named
-            .array | .fixed | .map | .fallible | .function_ty         => named @ named
-            .case_ty | .failure | .generic | .error                   => named @ named
+            .named n                                                           => named[n.decl] @ true
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => named @ named
+            .array | .fixed | .map | .fallible | .function_ty                  => named @ named
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => named @ named
 
     return Wanted(types: reached, named: named, every: false)
 

@@ -138,6 +138,11 @@ function receiver_meant(@r: state.Resolver, a: ast.Ast, s: source.Source, decls:
         .builtin b =>
             if inventory.name_of(b.at) == "end_lease"
                 meant.meant_write(@r, a, s, receiver)
+
+            # A thread's `wait` ends the receiver's life, as a `consumes` does
+            # (spec § 11; panel 254's S3).
+            if inventory.name_of(b.at) == "wait"
+                meant.ended_write(@r, a, s, receiver)
         .local | .unresolved | .module => return
 
 # The callee's parameters where it is an `extern`: only a group's signature

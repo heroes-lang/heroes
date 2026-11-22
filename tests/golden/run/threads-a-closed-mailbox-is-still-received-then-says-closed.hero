@@ -1,0 +1,20 @@
+# A receive waits at most its bound and fails `timeout`; a close says no more
+# values come, what was sent is still received, oldest first, and a receive
+# past the last fails `closed` (spec § 11; feature 2647).
+
+function main()
+    m: (mailbox str) = mailbox()
+
+    match m.receive(within_ms: 20)
+        .ok v  => print("got ", v)
+        .err e => print(e.code)
+
+    m.send("first").must()
+    m.send("second").must()
+    m.close()
+    print(m.receive(within_ms: 0).must())
+    print(m.receive(within_ms: 0).must())
+
+    match m.receive(within_ms: 1000)
+        .ok v  => print("got ", v)
+        .err e => print(e.code)

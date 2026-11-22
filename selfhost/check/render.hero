@@ -76,15 +76,17 @@ function render_ty(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64,
 # that module's file can write.
 function render_read(t: table.Types, s: source.Source, decls: [ast.Decl], id: i64, generics: [str], reader: Reader) -> str
     return match table.get(t, id)
-        .int_ty k   => widths.int_name(k.kind)
-        .float_ty k => widths.float_name(k.kind)
-        .bool       => "bool"
-        .str        => "str"
-        .ptr        => "ptr"
-        .cstr       => "cstr"
-        .unit       => "()"
-        .fixed x    => render_read(t, s, decls, x.element, generics, reader: reader) + "[" + x.length.to_str() + "]"
-        .array a    => "[" + render_read(t, s, decls, a.element, generics, reader: reader) + "]"
+        .int_ty k      => widths.int_name(k.kind)
+        .float_ty k    => widths.float_name(k.kind)
+        .bool          => "bool"
+        .str           => "str"
+        .ptr           => "ptr"
+        .thread_ty th  => "(thread " + render_read(t, s, decls, th.element, generics, reader: reader) + ")"
+        .mailbox_ty mb => "(mailbox " + render_read(t, s, decls, mb.element, generics, reader: reader) + ")"
+        .cstr          => "cstr"
+        .unit          => "()"
+        .fixed x       => render_read(t, s, decls, x.element, generics, reader: reader) + "[" + x.length.to_str() + "]"
+        .array a       => "[" + render_read(t, s, decls, a.element, generics, reader: reader) + "]"
         .map m => "{" + render_read(t, s, decls, m.key, generics, reader: reader) + ": " + render_read(t, s, decls, m.value, generics, reader: reader) + "}"
         .fallible o => render_read(t, s, decls, o.payload, generics, reader: reader) + "?"
         .function_ty f =>

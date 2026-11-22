@@ -1,0 +1,37 @@
+# A copy of a `(thread T)`, bound, kept in a list or a map, or a `for` loop's
+# variable, is that one thread, and a wait through any copy is its one wait
+# (spec § 11; panel 254's blind seat, its choice point 6): four threads
+# waited for through a loop's variable, one kept in a list waited for through
+# an element at an index the run knows, one through a copy bound beside the
+# name it was started into, and one through a map's entry.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    threads: [(thread i64)] @= []
+    k: i64 @= 0
+
+    while k < 4
+        threads @ threads.push(spawn(twice, k).must())
+        k @ k + 1
+
+    sum: i64 @= 0
+
+    for t in threads
+        sum @ sum + t.wait()
+
+    print(sum)
+    kept: [(thread i64)] = [spawn(twice, 10).must(), spawn(twice, 11).must()]
+    k @ 0
+
+    while k < kept.len()
+        print(kept[k].wait())
+        k @ k + 1
+
+    one = spawn(twice, 5).must()
+    copy = one
+    print(copy.wait())
+    by_name: {str: (thread i64)} @= {}
+    by_name["a"] @ spawn(twice, 7).must()
+    print(by_name["a"].must().wait())

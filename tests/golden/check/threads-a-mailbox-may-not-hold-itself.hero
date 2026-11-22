@@ -1,0 +1,39 @@
+# No queue holds itself (spec § 11; panel 254's R5, W-f): a `(mailbox T)`
+# whose `T` reaches that mailbox's own type, through a field, an element, a
+# payload, a thread's answer or another mailbox's element, could hold a copy
+# of itself in its own queue, never the last copy, and never be given back.
+# A message carrying a mailbox of ANOTHER type, the reply's, is the shape that
+# answers, and stays legal.
+#
+# Bulk regression case.
+
+record Sub
+    name: str
+    boxes: [(mailbox Sub)]  #~ mailbox_holds_itself
+
+record Ping
+    back: (mailbox Pong)  #~ mailbox_holds_itself
+
+record Pong
+    back: (mailbox Ping)  #~ mailbox_holds_itself
+
+variant Event
+    joined
+        inbox: (mailbox Event)  #~ mailbox_holds_itself
+    left
+
+record Answered
+    worker: (thread (mailbox Answered))  #~ mailbox_holds_itself
+
+record Command
+    name: str
+    reply: (mailbox Reply)
+
+record Reply
+    text: str
+
+function main()
+    commands: (mailbox Command) = mailbox()
+    replies: (mailbox Reply) = mailbox()
+    commands.send(Command(name: "go", reply: replies)).must()
+    print(commands.receive(within_ms: 0).must().name)

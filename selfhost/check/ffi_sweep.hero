@@ -73,6 +73,7 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
         match a.types[node].kind
             .fixed x                                                                   => claim(a, x.element, @inside)
             .named | .unit | .array_of | .map_of | .fallible | .function_type | .error => continue
+            .thread_of | .mailbox_of                                                   => continue
 
     built: {i64: ffi_errors.BuiltInto} @= {}
     scanned: bool @= false
@@ -118,10 +119,10 @@ function fixed_only_in_a_group(@c: state.Checker, a: ast.Ast, r: resolved.Resolv
 
 function is_fixed(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .fixed                                                    => true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
-        .array | .map | .fallible | .function_ty | .named         => false
-        .case_ty | .failure | .generic | .error                   => false
+        .fixed                                                             => true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => false
+        .array | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 # Every construction of a group's `record` whose labelled argument is a
 # value the program declared a type for, by the node that declared it: a
@@ -219,6 +220,7 @@ function held_in_a_group(c: state.Checker, decls: [ast.Decl], ty: i64) -> bool
     return match table.get(c.out.types, ty)
         .fixed x                                                  => ffi.fixed_element_fine(c, decls, x.element)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => false
+        .thread_ty | .mailbox_ty                                  => false
         .array | .map | .fallible | .function_ty | .named         => false
         .case_ty | .failure | .generic | .error                   => false
 
@@ -273,6 +275,8 @@ function claim(a: ast.Ast, id: i64, @owned: {i64: bool})
                 claim(a, p, @owned)
 
             claim(a, f.result, @owned)
+        .thread_of t            => claim(a, t.element, @owned)
+        .mailbox_of m           => claim(a, m.element, @owned)
         .named | .unit | .error => return
 
 ## Tests

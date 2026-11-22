@@ -231,7 +231,7 @@ record Started
 # words.
 function start(mode: str, name: str) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: serve, arg: f"{mode} {control.address.port} {name}").must()
+    t = threads.start_text(body: serve, arg: f"{mode} {control.address.port} {name}").must()
     said = told(control)
     net.close_listener(@control).must()
     return Started(port: port_told(said).must(), thread: t)

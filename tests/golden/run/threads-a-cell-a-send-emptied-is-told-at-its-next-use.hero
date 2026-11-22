@@ -1,0 +1,20 @@
+# `m.send(@v)` empties `v` once the send succeeded: the handle it held is
+# the receiving thread's, so the sender reaching C through the emptied cell
+# aborts there, told as the send's and never as a `consumes` call's (spec
+# § 11; panel 254's R3, the compiler-engineer's Q2.5).
+
+extern "threads-a-cell-a-send-emptied-is-told-at-its-next-use.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+record Job
+    counter: Counter
+
+function main()
+    inbox: (mailbox Job) = mailbox()
+    job: Job @= Job(counter: counter_new(n: 1))
+    inbox.send(@job).must()
+    print("sent")
+    print(counter_add(c: job.counter, by: 1))

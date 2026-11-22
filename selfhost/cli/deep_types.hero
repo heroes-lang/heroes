@@ -172,7 +172,7 @@ function held_decl(c: state.Checked, ty: i64) -> i64
             .fallible o                                               => at @ o.payload
             .fixed f                                                  => at @ f.element
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return -1
-            .array | .map | .function_ty                              => return -1
+            .array | .map | .function_ty | .thread_ty | .mailbox_ty   => return -1
             .failure | .generic | .error                              => return -1
 
 ## Tests
