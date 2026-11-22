@@ -1,0 +1,5 @@
+# The package of defect 2651's case, placed in `heroes.packages/`.
+
+[dependencies.geo]
+version = "1.0.0"
+sum = "sha256-7c7142bd9099cb2fed979086dd521129b92c5e128cb87e2e38d3796d812042dc"

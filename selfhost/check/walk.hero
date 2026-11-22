@@ -208,7 +208,7 @@ function synth(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.So
         .field_name f => return state.record_expr(
             @c,
             at: id,
-            ty: field_names.field_name_type(@c, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
+            ty: field_names.field_name_type(@c, a, s, r, decls, base: f.base, base_span: a.exprs[f.base].span, field: f.name)
         )
         .index i =>
             base_ty = synth(@c, a, r, s, decls, i.base)

@@ -30,12 +30,16 @@ use check/table
 use data_errors
 use diag
 use named_fields
+use parse
 use resolve/near_names
 use resolved
 use source
 use token
 
-function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> bool
+function names_a_record(r: resolved.Resolved, a: ast.Ast, decls: [ast.Decl], base: i64) -> bool
+    if !is_a_name(a, base: base)
+        return false
+
     match r.uses[base]
         .top t =>
             match decls[t.at].kind
@@ -45,13 +49,34 @@ function names_a_record(r: resolved.Resolved, decls: [ast.Decl], base: i64) -> b
 
     return false
 
+# Whether an expression is written as a name, `Pair` or `m.Pair` through its
+# module, and so may name a declaration rather than hold a value. Asked of the
+# expression's own form before the resolver's answer is read, because the
+# resolver records `Pair` on a construction through a module, `m.Pair(a: 1,
+# b: 2)`, as it does on the name (`resolve/qualified.hero`), and that
+# construction is a value whose fields are read with `.` (defect 2651).
+#
+# - `a`: the parsed program.
+# - `base`: the expression.
+function is_a_name(a: ast.Ast, base: i64) -> bool
+    return match a.exprs[base].kind
+        .name | .field                                                               => true
+        .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp           => false
+        .null_ptr | .hole | .unary | .binary | .field_name | .index | .call          => false
+        .method | .variant_case | .array | .map | .try_expr | .if_expr | .match_expr => false
+        .error                                                                       => false
+
 # The type of `Point::x`: `str` when `x` is a field of `Point`, and an error
 # otherwise. Two different mistakes get two different messages, because they
 # are two different mistakes: a base that names no record at all, and a
 # record that has no such field.
-function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, base_span: token.Span, field: token.Span) -> i64
+function field_name_type(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, base_span: token.Span, field: token.Span) -> i64
     name = source.span_text(s, field)
     at: i64 @= 0
+
+    if !is_a_name(a, base: base)
+        state.push_diagnostic(@c, not_a_record_name(what: source.span_text(s, base_span), span: base_span))
+        return state.error_ty_of(c)
 
     match r.uses[base]
         .top t => at @ t.at
@@ -99,7 +124,7 @@ function field_name_type(@c: state.Checker, s: source.Source, r: resolved.Resolv
 function dot_on_a_record_name(@c: state.Checker, a: ast.Ast, s: source.Source, r: resolved.Resolved, decls: [ast.Decl], base: i64, name: token.Span, expected: i64?) -> bool
     field = source.span_text(s, name)
 
-    if !names_a_record(r, decls, base: base) || !record_has_field(s, r, decls, base: base, field: field)
+    if !names_a_record(r, a, decls, base: base) || !record_has_field(s, r, decls, base: base, field: field)
         return false
     holder = source.span_text(s, a.exprs[base].span)
     span = token.Span(start: a.exprs[base].span.end, end: name.start)
@@ -192,3 +217,31 @@ function not_a_record_name(what: str, span: token.Span) -> diag.Diagnostic
         message: "`" + what + "` does not name a record, so `" + what + "::` has no field to name — `::` takes a record's own name on its left, and `x.field` reads a field from a value",
         span: span
     )
+
+## Tests
+
+# Read of a parsed program, every base a `.field` read stands on: a name and
+# a name through its module may name a record, and a construction, through
+# its module or not, is a value (defect 2651).
+test "is_a_name: a record's name, through its module or not, is a name, and a construction is a value (defect 2651)"
+    text = "function f()\n    print(m.Pair(a: 1, b: 2).a, m.Pair.a, Pair.a, Pair(a: 1, b: 2).a)\n"
+    p = parse.parse(text)
+    told: {str: bool} @= {}
+    at: i64 @= 0
+
+    while at < p.tree.exprs.len()
+        match p.tree.exprs[at].kind
+            .field f =>
+                span = p.tree.exprs[f.base].span
+                told[text.slice(from: span.start, to: span.end)] @ is_a_name(p.tree, base: f.base)
+            .int_lit | .float_lit | .str_lit | .char_lit | .bool_lit | .interp | .null_ptr => told @ told
+            .name | .hole | .unary | .binary | .field_name | .index | .call | .method      => told @ told
+            .variant_case | .array | .map | .try_expr | .if_expr | .match_expr | .error    => told @ told
+
+        at @ at + 1
+
+    assert !told["m.Pair(a: 1, b: 2)"].must()
+    assert !told["Pair(a: 1, b: 2)"].must()
+    assert told["m.Pair"].must()
+    assert told["Pair"].must()
+    assert told["m"].must()

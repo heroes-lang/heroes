@@ -1,0 +1,16 @@
+# fixedbugs, defect 2651, 2026-11-21: the field read on a record built inline,
+# `shapes.Point(x: 3, y: 4).y`, where the record is a package's, reached by
+# `use <geo>/shapes`: refused `dot_on_a_record_name` as the same read through
+# a module of the program was.
+#
+# The cause: for a construction through a module, `m.Pair(...)`, the
+# resolver records the record on the call as it records it on the record's
+# name, and the checker read that as the base naming a record. It now asks
+# the base expression's own form first: only a name, `Pair` or `m.Pair`,
+# names a record, and a construction is a value
+# (`selfhost/check/field_names.hero`).
+use <geo>/shapes
+
+function main()
+    print(shapes.Point(x: 3, y: 4).y)
+    print(shapes.Point(x: 3, y: 4).x + shapes.Point(x: 1, y: 0).x)
