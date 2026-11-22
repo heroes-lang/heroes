@@ -62,6 +62,13 @@
 #define HERO_UI_FLAG_RESIZABLE 3
 #define HERO_UI_SIZE_CONTENT 1
 #define HERO_UI_SIZE_LEAST 2
+/* Which of a window's settings `window_set` makes, `value` checked by the
+ * entry point. */
+#define HERO_UI_WINDOW_SET_ON_TOP 1
+#define HERO_UI_WINDOW_SET_FRAMED 2
+#define HERO_UI_WINDOW_SET_OPACITY 3
+#define HERO_UI_WINDOW_SET_BACKDROP 4
+#define HERO_UI_WINDOW_SET_MODAL 5
 
 /* The arm's functions, in the order `hero_ui.c` first defines them on macOS. */
 int64_t hero_ui_arm_here(void);

@@ -2525,8 +2525,15 @@ static int64_t hero_ui_windows_answered(int64_t kind, const char *what, int64_t 
         (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
         return hero_ui_said(HERO_UI_OTHER, words);
     }
+    /* An arm that draws the call says what this system lacks where it has
+     * words; one that draws none answers in the layer's words. */
     if (kind == HERO_UI_UNSUPPORTED) {
-        return hero_ui_elsewhere(what);
+        theirs[0] = '\0';
+        if (hero_ui_arm_windows_words(theirs, (int64_t)sizeof theirs) <= 0) {
+            return hero_ui_elsewhere(what);
+        }
+        (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
+        return hero_ui_said(HERO_UI_UNSUPPORTED, words);
     }
     return hero_ui_answered(kind, what, id);
 }
@@ -2546,13 +2553,6 @@ int64_t hero_ui_press_key(hero_ui_app *app, int64_t id, const void *key, uint64_
 
 /* -- WINDOWS ON THE SCREEN ------------------------------------------------- */
 
-/* Which of a window's settings an arm's `window_set` makes, `value`
- * checked by the entry point. */
-#define HERO_UI_WINDOW_SET_ON_TOP 1
-#define HERO_UI_WINDOW_SET_FRAMED 2
-#define HERO_UI_WINDOW_SET_OPACITY 3
-#define HERO_UI_WINDOW_SET_BACKDROP 4
-#define HERO_UI_WINDOW_SET_MODAL 5
 
 #if defined(__APPLE__)
 
