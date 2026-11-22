@@ -1,0 +1,192 @@
+# The generator of `i18n/dates`' table of CLDR 49's calendar data,
+# `i18n/dates/internal/date_tables.hero`, written byte for byte, or checked
+# against the table in the tree.
+#
+# Texts and blocks are numbered in the order they are first met: locale by
+# locale in the order of `LOCALES`, each locale's 24 relative blocks before
+# its months, days, quarters, day periods, eras, patterns and skeletons, and
+# each block's texts in their order (`calendar`, `numbering`).
+#
+# Its input is CLDR 49's JSON release, fetched from `cldrkit.SOURCE_URL` into
+# any folder; `cldrkit` holds it to its SHA-256. Run from the repository's
+# root:
+#
+#     heroes run generators/i18n_dates/main.hero -- write <zip>
+#     heroes run generators/i18n_dates/main.hero -- check <zip>
+#
+# `write` writes the table. `check` reads it and exits 0 where it is exactly
+# what `write` would write, and 1 where it is not, naming its first line
+# that differs. Either exits 2 where its words are not these, where the zip's
+# digest is not the pinned one, or where its data is not what the generator
+# reads.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use calendar
+use numbering
+use supplemental
+
+# The table, from the repository's root.
+constant TABLE: str
+    "packages/rebel/0.1.0/files/i18n/dates/internal/date_tables.hero"
+
+# How many texts a chunk of `STRINGS` holds.
+constant CHUNK: i64
+    100
+
+# The table's comment, above its constants.
+function head() -> [str]
+    return [
+        "# The calendar data of CLDR release 49 for every locale it holds, which"
+        "# `i18n/dates` reads: each locale's Gregorian month, day, quarter, day"
+        "# period and era names, its date, time and joining patterns, its"
+        "# skeletons, its relative times, its GMT formats and the names of UTC, and"
+        "# its numbering system; the digits of every numbering system; the first"
+        "# day and the minimal days of the week and the preferred hour of every"
+        "# region; the day period rules of every language."
+        "#"
+        "# Every text is held once, in `STRINGS`: a hundred texts a chunk, separated"
+        "# by U+0001, text 0 the empty one. A block is a list of texts, each named"
+        "# by three characters of `ALPHABET`, its number in base 64."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/i18n_dates/`"
+        "# read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of"
+        "# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/"
+        "# (SHA-256"
+        f"# {cldrkit.SOURCE_SHA256},"
+        "# fetched 2026-11-21), its files `cldr-dates-full/main/*/ca-gregorian.json`,"
+        "# `dateFields.json` and `timeZoneNames.json`,"
+        "# `cldr-numbers-full/main/*/numbers.json`, and `cldr-core`'s"
+        "# `availableLocales.json` and `supplemental/numberingSystems.json`,"
+        "# `weekData.json`, `timeData.json` and `dayPeriods.json`, and wrote this"
+        "# module whole; its `check` command says whether this module is still what"
+        "# it writes."
+    ]
+
+# Every locale of CLDR's full set, in the order of their bytes.
+#
+# Fails as reading `availableLocales.json` fails.
+function locale_tags(release: cldrkit.Release lent) -> [str]?
+    tags: [str] @= []
+
+    for item in json.items_of(cldrkit.member_at(release, name: "cldr-core/availableLocales.json", path: ["availableLocales", "full"])?)?
+        tags @ tags.push(json.text_of(item)?)
+
+    return ok(sort(tags))
+
+# `text`, decimal digits alone, as a number.
+#
+# Fails `invalid` where it is empty or holds anything else.
+function decimal(text: str) -> i64?
+    value @= 0
+
+    if text == ""
+        return fail(code: "invalid", msg: "a count of days is empty")
+
+    for c in text.chars()
+        if c[0] < '0' || c[0] > '9'
+            return fail(code: "invalid", msg: f"\"{text}\" is not a count of days")
+        value @ value * 10 + to_i64(c[0] - '0').must()
+
+    return ok(value)
+
+# The row of `LOCALE_DATA` of `one`: its blocks' numbers, months first and
+# the relative ones last, then each after U+0001 its numbering system, group
+# separator, minus sign and minimum grouping digits. Its blocks are numbered
+# the relative ones first.
+#
+# Fails as numbering a block fails, and `invalid` where a field holds U+0001.
+function locale_row(@texts: numbering.Numbering, one: calendar.Locale lent) -> str?
+    relative: [str] @= []
+
+    for block in one.relative
+        relative @ relative.push(numbering.code_of(numbering.block_number(@texts, items: block)?)?)
+
+    codes: [str] @= []
+
+    for block in one.calendar
+        codes @ codes.push(numbering.code_of(numbering.block_number(@texts, items: block)?)?)
+
+    fields = [codes.join("") + relative.join(""), one.system, one.group, one.minus, one.min_grouping]
+
+    for field in fields
+        if strings.contains(s: field, substr: numbering.SEPARATOR)
+            return fail(code: "invalid", msg: f"the field \"{field}\" holds U+0001, which separates a row's fields")
+
+    return ok(fields.join(numbering.SEPARATOR))
+
+# The whole text of `date_tables`.
+#
+# Fails as reading the data and writing a literal fail.
+function module_text(release: cldrkit.Release lent) -> str?
+    tags = locale_tags(release)?
+    texts @= numbering.empty()
+    rows: [str] @= []
+
+    for tag in tags
+        rows @ rows.push(locale_row(@texts, one: calendar.read_locale(release, tag: tag)?)?)
+
+    systems = supplemental.digit_systems(release)?
+    first_days = supplemental.week_data(release, name: "firstDay")?
+    min_days = supplemental.week_data(release, name: "minDays")?
+    hours = supplemental.hour_cycles(release)?
+    periods = supplemental.period_rules(release)?
+    min_counts: [i64] @= []
+
+    for count in min_days.values
+        min_counts @ min_counts.push(decimal(count)?)
+
+    regions = ["# The regions, in the order of their bytes, `001` the world."]
+    parts = [
+        head().join("\n")
+        tablekit.string_constant(comment: ["# The characters a text's number is written with."], name: "ALPHABET", value: numbering.ALPHABET)?
+        tablekit.strings_constant(comment: ["# Every text, a hundred to a chunk."], name: "STRINGS", items: numbering.chunks(texts, size: CHUNK))?
+        tablekit.strings_constant(comment: ["# The blocks, each the numbers of its texts."], name: "BLOCKS", items: texts.blocks)?
+        tablekit.strings_constant(comment: ["# The locales, `und` the root, in the order of their bytes."], name: "LOCALES", items: tags)?
+        tablekit.strings_constant(comment: ["# Each locale's blocks: months, days, quarters, day periods, eras, patterns,", "# skeletons, and the 24 relative blocks of eight units in three widths; then,", "# each after U+0001, its numbering system, its group separator, its minus sign", "# and its minimum grouping digits. In the order of `LOCALES`."], name: "LOCALE_DATA", items: rows)?
+        tablekit.strings_constant(comment: ["# The numbering systems with ten digits, in the order of their bytes."], name: "SYSTEM_NAMES", items: systems.keys_of)?
+        tablekit.strings_constant(comment: ["# The ten digits of each, in the order of `SYSTEM_NAMES`."], name: "SYSTEM_DIGITS", items: systems.values)?
+        tablekit.strings_constant(comment: regions, name: "FIRST_DAY_REGIONS", items: first_days.keys_of)?
+        tablekit.strings_constant(comment: ["# The day each region's week begins on, `mon`, in the order of", "# `FIRST_DAY_REGIONS`."], name: "FIRST_DAYS", items: first_days.values)?
+        tablekit.strings_constant(comment: regions, name: "MIN_DAYS_REGIONS", items: min_days.keys_of)?
+        tablekit.numbers_constant(comment: ["# The fewest days of the first week of a year in each region, in the order", "# of `MIN_DAYS_REGIONS`."], name: "MIN_DAYS", items: min_counts)
+        tablekit.strings_constant(comment: regions, name: "HOUR_REGIONS", items: hours.keys_of)?
+        tablekit.strings_constant(comment: ["# The hour each region prefers, `h` or `H`, in the order of `HOUR_REGIONS`."], name: "HOUR_CYCLES", items: hours.values)?
+        tablekit.strings_constant(comment: ["# The languages with day period rules, in the order of their bytes."], name: "PERIOD_LANGUAGES", items: periods.keys_of)?
+        tablekit.strings_constant(comment: ["# Each language's rules, `name at` or `name from before`, separated by `;`,", "# in the order of `PERIOD_LANGUAGES`."], name: "PERIOD_RULES", items: periods.values)?
+    ]
+    return ok(parts.join("\n\n") + "\n")
+
+# Does what `command` asks with the table, reading the zip at `path`.
+#
+# Fails as opening the zip, reading its data and writing or reading the table
+# fail.
+function run(command: str, path: str) -> i64?
+    release = cldrkit.open(path)?
+    return tablekit.settle(command: command, path: TABLE, text: module_text(release)?)
+
+function main()
+    words = tablekit.command_words("i18n_dates")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/i18n_dates/main.hero -- write|check <zip of ",
+            cldrkit.SOURCE_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], path: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)
+
+## Tests
+
+test "decimal: digits, the empty text, and a sign"
+    assert decimal("4").must() == 4 && decimal("12").must() == 12
+    assert decimal("").is_err() && decimal("-1").is_err()

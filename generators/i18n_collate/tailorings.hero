@@ -1,0 +1,159 @@
+# The tailorings CLDR gives in `common/collation/*.xml`, as `collate_tables`
+# holds them: each keyed `locale type`, `de phonebk`, and its rules.
+#
+# A file's locale is its name, `_` written `-` and `root` written `und`. Its
+# collations are every `<collation>` it holds but one marked `alt` (a
+# proposal), one whose type opens `private-` (CLDR's own, which no locale
+# names), and every one of Chinese, Japanese and Korean, whose tailorings
+# `i18n/collate` does not carry. A type is written by its BCP 47 name where
+# `common/bcp47/collation.xml` gives the type as an alias of one, `phonebook`
+# as `phonebk`. The rules are the lines of its `<cr>`, each trimmed, the empty
+# ones and the comments taking a whole line left out.
+
+use <cldrkit>/cldrkit
+use <rebel>/strings
+use <rebel>/xml
+
+# The folder of the tailorings in the zip.
+constant FOLDER: str
+    "common/collation/"
+
+# The tailorings: keys in the order of their bytes, and the rules of each.
+record Tailorings
+    keys_of: [str]
+    texts: [str]
+
+# The BCP 47 name of each collation type that is an alias of one, from the
+# text of `common/bcp47/collation.xml`: `phonebook` to `phonebk`.
+#
+# Fails as `xml.parse` fails, and `invalid` where the file holds no key `co`.
+function aliases(text: str) -> {str: str}?
+    doc = xml.parse(text)?
+    out: {str: str} @= {}
+    found @= false
+
+    for key in xml.elements_named(doc.root, "key")
+        if xml.attribute(key, "name") == ok("co")
+            found @ true
+
+            for one in xml.children_named(key, "type")
+                name = xml.attribute(one, "name")?
+
+                match xml.attribute(one, "alias")
+                    .ok written =>
+                        for alias in strings.words(written)
+                            out[alias] @ name
+                    .err _ => _ = 0
+
+    if !found
+        return fail(code: "invalid", msg: "common/bcp47/collation.xml holds no key `co`")
+    return ok(out)
+
+# The locale the file `name` of `FOLDER` is the tailorings of: `de-AT` of
+# `common/collation/de_AT.xml`, `und` of `root.xml`.
+function locale_of(name: str) -> str
+    file = strings.trim_suffix(s: strings.trim_prefix(s: name, prefix: FOLDER), suffix: ".xml")
+
+    if file == "root"
+        return "und"
+    return strings.replace_all(s: file, old: "_", new: "-")
+
+# Whether `locale`'s language is Chinese, Japanese or Korean.
+function left_out(locale: str) -> bool
+    language = strings.split(s: locale, sep: "-")[0]
+    return language == "zh" || language == "ja" || language == "ko"
+
+# The rules a `<cr>`'s text writes: each line trimmed, the empty ones and the
+# comments taking a whole line left out, joined by line feeds.
+function rule_text(text: str) -> str
+    out: [str] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        trimmed = strings.trim(line)
+
+        if trimmed != "" && !strings.has_prefix(s: trimmed, prefix: "#")
+            out @ out.push(trimmed)
+
+    return out.join("\n")
+
+# The rules of `collation`: its `<cr>`'s, "" where it has none.
+#
+# Fails `invalid` where it holds an element that is not a `<cr>`, which the
+# rules would not show.
+function rules_of(collation: xml.Element lent) -> str?
+    for inner in xml.child_elements(collation)
+        if xml.format_name(inner.name) != "cr"
+            return fail(
+                code: "invalid",
+                msg: f"a <collation> holds a <{xml.format_name(inner.name)}>, which its rules would leave out"
+            )
+
+    return match xml.child(collation, "cr")
+        .ok cr => ok(rule_text(xml.text_of(cr)))
+        .err _ => ok("")
+
+# Every tailoring of the zip `release`.
+#
+# Fails as reading and parsing the files fails, and `invalid` where a
+# collation has no type or two have one key.
+function read_tailorings(release: cldrkit.Release lent) -> Tailorings?
+    names = aliases(cldrkit.text_member(release, name: "common/bcp47/collation.xml")?)?
+    found: {str: str} @= {}
+
+    for file in cldrkit.names_in(release, folder: FOLDER, suffix: ".xml")
+        locale = locale_of(file)
+
+        if left_out(locale)
+            continue
+        doc = xml.parse(cldrkit.text_member(release, name: file)?)?
+
+        for collation in xml.elements_named(doc.root, "collation")
+            if xml.has_attribute(collation, "alt")
+                continue
+            written = xml.attribute(collation, "type")?
+
+            if strings.has_prefix(s: written, prefix: "private-")
+                continue
+
+            type = match names[written]
+                .ok name => name
+                .err _   => written
+
+            key = locale + " " + type
+
+            if !found[key].is_err()
+                return fail(code: "invalid", msg: f"{file} gives the tailoring {key} twice")
+            found[key] @ rules_of(collation)?
+
+    keys_of = sort(keys(found))
+    texts: [str] @= []
+
+    for key in keys_of
+        texts @ texts.push(found[key].must())
+
+    return ok(Tailorings(keys_of: keys_of, texts: texts))
+
+## Tests
+
+test "aliases: a type's aliases, its own name not among them"
+    text = "<supplementalData><keyword><key name=\"co\"><type name=\"phonebk\" alias=\"phonebook\"/><type name=\"search\"/><type name=\"x\" alias=\"y z\"/></key><key name=\"ka\"><type name=\"noignore\" alias=\"non-ignorable\"/></key></keyword></supplementalData>"
+    got = aliases(text).must()
+    assert got["phonebook"].must() == "phonebk" && got["y"].must() == "x" && got["z"].must() == "x"
+    assert got["search"].is_err() && got["non-ignorable"].is_err()
+    assert aliases("<a/>").is_err()
+
+test "locale_of and left_out: a region, the root, and the languages left out"
+    assert locale_of("common/collation/de_AT.xml") == "de-AT" && locale_of("common/collation/root.xml") == "und"
+    assert left_out("zh-Hant") && left_out("ja") && left_out("ko") && !left_out("kok")
+
+test "rule_text: lines trimmed, blank lines and whole-line comments left out, a trailing comment kept"
+    assert rule_text("\n\t\t&B<t\n\t\t# a comment\n\n\t\t[reorder others]  # kept\n\t") == "&B<t\n[reorder others]  # kept"
+    assert rule_text("") == ""
+
+test "rules_of: a <cr>, none, and another element"
+    doc = xml.parse(
+        "<c><collation type=\"a\"><cr><![CDATA[\n &a<b\n]]></cr></collation><collation type=\"b\"/><collation type=\"c\"><import source=\"x\"/></collation></c>"
+    ).must()
+    collations = xml.elements_named(doc.root, "collation")
+    assert rules_of(collations[0]).must() == "&a<b" && rules_of(collations[1]).must() == ""
+    assert rules_of(collations[2]).is_err()

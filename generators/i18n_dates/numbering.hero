@@ -1,0 +1,120 @@
+# Texts and blocks numbered in the order they are first met, which is how
+# `date_tables` holds them: every text once, text 0 the empty one, and every
+# block once, a block being the numbers of its texts, each in three characters
+# of `ALPHABET`.
+
+use <rebel>/strings
+
+# The characters a number is written with, its digits in base 64.
+constant ALPHABET: str
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/"
+
+# The separator of the texts of a chunk of `STRINGS`, which no text may hold.
+constant SEPARATOR: str
+    "\u{1}"
+
+# The texts and blocks met so far, and the number of each.
+record Numbering
+    texts: [str]
+    text_numbers: {str: i64}
+    blocks: [str]
+    block_numbers: {str: i64}
+
+# Nothing met yet but the empty text, text 0.
+function empty() -> Numbering
+    return Numbering(texts: [""], text_numbers: {"": 0}, blocks: [], block_numbers: {})
+
+# `n` in three characters of `ALPHABET`, the most significant first.
+#
+# - `n`: the number, from 0 to 64 * 64 * 64 - 1.
+#
+# Fails `invalid` where `n` does not fit three characters.
+function code_of(n: i64) -> str?
+    if n < 0 || n >= 64 * 64 * 64
+        return fail(code: "invalid", msg: f"{n} does not fit three characters of base 64")
+    return ok(digit(n / 4096) + digit(n / 64 % 64) + digit(n % 64))
+
+# The character of `ALPHABET` that writes `d`, from 0 to 63.
+function digit(d: i64) -> str
+    return ALPHABET.slice(from: d, to: d + 1)
+
+# The number of `text`, added at the end where it is new.
+#
+# - `numbering`: the texts met so far.
+# - `text`: the text met.
+#
+# Fails `invalid` where `text` holds `SEPARATOR`, which would cut its chunk.
+function text_number(@numbering: Numbering, text: str) -> i64?
+    match numbering.text_numbers[text]
+        .ok found => return ok(found)
+        .err _    => _ = 0
+
+    if strings.contains(s: text, substr: SEPARATOR)
+        return fail(code: "invalid", msg: f"the text \"{text}\" holds U+0001, which separates the texts of a chunk")
+    number = numbering.texts.len()
+    numbering.texts @ numbering.texts.push(text)
+    numbering.text_numbers[text] @ number
+    return ok(number)
+
+# The number of the block whose texts are `items`, in their order, each text
+# numbered first; the block is added at the end where it is new.
+#
+# - `numbering`: the texts and blocks met so far.
+# - `items`: the block's texts.
+#
+# Fails as `text_number` and `code_of` fail.
+function block_number(@numbering: Numbering, items: [str] lent) -> i64?
+    codes: [str] @= []
+
+    for item in items
+        codes @ codes.push(code_of(text_number(@numbering, text: item)?)?)
+
+    code = codes.join("")
+
+    match numbering.block_numbers[code]
+        .ok found => return ok(found)
+        .err _    => _ = 0
+
+    number = numbering.blocks.len()
+    numbering.blocks @ numbering.blocks.push(code)
+    numbering.block_numbers[code] @ number
+    return ok(number)
+
+# The texts of `numbering`, `size` to a chunk, each chunk's texts separated
+# by `SEPARATOR`.
+#
+# - `numbering`: the texts met.
+# - `size`: how many texts a chunk holds, above 0.
+function chunks(numbering: Numbering lent, size: i64) -> [str]
+    out: [str] @= []
+    at @= 0
+
+    while at < numbering.texts.len()
+        end @= at + size
+
+        if end > numbering.texts.len()
+            end @ numbering.texts.len()
+        out @ out.push(numbering.texts.slice(from: at, to: end).join(SEPARATOR))
+        at @ end
+
+    return out
+
+## Tests
+
+test "code_of: the first, a middle and the last number, and one past it"
+    assert code_of(0).must() == "000" && code_of(10).must() == "00A" && code_of(64).must() == "010"
+    assert code_of(262143).must() == "///"
+    assert code_of(262144).is_err() && code_of(-1).is_err()
+
+test "block_number: texts numbered as met, the empty one 0, a block met twice held once"
+    numbering @= empty()
+    assert block_number(@numbering, items: ["a", "", "b"]).must() == 0
+    assert block_number(@numbering, items: ["b", "c"]).must() == 1
+    assert block_number(@numbering, items: ["a", "", "b"]).must() == 0
+    assert numbering.texts == ["", "a", "b", "c"] && numbering.blocks == ["001000002", "002003"]
+    assert block_number(@numbering, items: ["x\u{1}y"]).is_err()
+
+test "chunks: full chunks, then the rest"
+    numbering @= empty()
+    _ = block_number(@numbering, items: ["a", "b", "c"]).must()
+    assert chunks(numbering, size: 2) == ["\u{1}a", "b\u{1}c"]

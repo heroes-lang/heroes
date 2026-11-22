@@ -1,0 +1,237 @@
+# What `date_tables` holds of each locale, read from its
+# `cldr-dates-full/main/<locale>/dateFields.json`, `ca-gregorian.json` and
+# `timeZoneNames.json` and its `cldr-numbers-full/main/<locale>/numbers.json`,
+# every one of them CLDR's data resolved, the root's included.
+#
+# A locale's blocks are lists of texts in a fixed order, a text CLDR does not
+# give being the empty one:
+#
+# - 24 relative blocks, of the units year, quarter, month, week, day, hour,
+#   minute and second, each in its long, short and narrow width: its display
+#   name; its texts for two before, one before, this, one after and two
+#   after; its future patterns, then its past ones, by the plural categories
+#   zero, one, two, few, many and other.
+# - months: in a date, then standing alone, each abbreviated, narrow and
+#   wide, January first.
+# - days: in a date, then standing alone, each abbreviated, narrow, short
+#   and wide, Sunday first.
+# - quarters: as months, the first quarter first.
+# - day periods: as months, each the twelve of `PERIODS`.
+# - eras: the wide names, the abbreviated ones and the narrow ones, before
+#   the common era first.
+# - patterns: the date formats full, long, medium and short; the time
+#   formats; the date-time formats; the date-time formats `atTime`; then the
+#   GMT format, the GMT zero format, the hour format, and the long and short
+#   names of UTC.
+# - skeletons: each available format's skeleton and its pattern, in the order
+#   CLDR writes them, but for a skeleton naming a plural count (`-count-`) or
+#   an alternative (`-alt-`).
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/lists
+use <rebel>/strings
+
+# One locale's blocks and the number fields `date_tables` writes beside them.
+record Locale
+    # The 24 relative blocks, unit by unit, each long, short, narrow.
+    relative: [[str]]
+    # Months, days, quarters, day periods, eras, patterns and skeletons.
+    calendar: [[str]]
+    # Its default numbering system.
+    system: str
+    # Its group separator and minus sign in that system.
+    group: str
+    minus: str
+    # Its minimum grouping digits, as CLDR writes them.
+    min_grouping: str
+
+# The units of the relative blocks, in their order.
+function units() -> [str]
+    return ["year", "quarter", "month", "week", "day", "hour", "minute", "second"]
+
+# The suffixes of a field's three widths, long first.
+function width_suffixes() -> [str]
+    return ["", "-short", "-narrow"]
+
+# The plural categories, in CLDR's order.
+function categories() -> [str]
+    return ["zero", "one", "two", "few", "many", "other"]
+
+# The day periods, in CLDR's order; `i18n/dates` reads a period by its place
+# here.
+function periods() -> [str]
+    return [
+        "am"
+        "pm"
+        "midnight"
+        "noon"
+        "morning1"
+        "morning2"
+        "afternoon1"
+        "afternoon2"
+        "evening1"
+        "evening2"
+        "night1"
+        "night2"
+    ]
+
+# The text at the keys `path` of `v`: "" where a key is absent, and an
+# object's `_value` where the value found is an object holding one, as `haw`'s
+# short date format `{"_value": "d/M/yy", "_numbers": "M=romanlow"}`.
+#
+# - `v`: the value walked from.
+# - `path`: the keys, outermost first.
+#
+# Fails `invalid` where a key on the way is in no object, or the value found is
+# neither a text nor an object holding `_value`.
+function text_at(v: json.Value lent, path: [str]) -> str?
+    here @= v
+
+    for key in path
+        found = match json.members_of(here)?[key]
+            .ok one => one
+            .err _  => return ok("")
+
+        here @ found
+
+    if json.kind_of(here) == "object"
+        return json.text_of(json.member(here, key: "_value")?)
+    return json.text_of(here)
+
+# The texts at each of the keys `items` under `path` of `v`, in their order.
+#
+# Fails as `text_at` fails.
+function texts_at(v: json.Value lent, path: [str], items: [str]) -> [str]?
+    out: [str] @= []
+
+    for key in items
+        out @ out.push(text_at(v, path: lists.concat(xs: path, then: [key]))?)
+
+    return ok(out)
+
+# The relative block of `field`, a member of `dateFields.json`'s `fields`.
+#
+# Fails as `text_at` fails.
+function relative_block(fields: json.Value lent, field: str) -> [str]?
+    out: [str] @= [text_at(fields, path: [field, "displayName"])?]
+
+    for offset in ["-2", "-1", "0", "1", "2"]
+        out @ out.push(text_at(fields, path: [field, "relative-type-" + offset])?)
+
+    for tense in ["future", "past"]
+        for category in categories()
+            out @ out.push(
+                text_at(fields, path: [field, "relativeTime-type-" + tense, "relativeTimePattern-count-" + category])?
+            )
+
+    return ok(out)
+
+# The block of `names`, a member of the Gregorian calendar holding `format`
+# and `stand-alone`, each at the widths `forms` and each width the keys
+# `items`.
+#
+# Fails as `text_at` fails.
+function name_block(calendar: json.Value lent, names: str, forms: [str], items: [str]) -> [str]?
+    out: [str] @= []
+
+    for context in ["format", "stand-alone"]
+        for width in forms
+            out @ lists.concat(xs: out, then: texts_at(calendar, path: [names, context, width], items: items)?)
+
+    return ok(out)
+
+# The patterns block of a locale's Gregorian calendar and time zone names.
+#
+# Fails as `text_at` fails.
+function pattern_block(calendar: json.Value lent, zones: json.Value lent) -> [str]?
+    lengths = ["full", "long", "medium", "short"]
+    out: [str] @= []
+    out @ lists.concat(xs: out, then: texts_at(calendar, path: ["dateFormats"], items: lengths)?)
+    out @ lists.concat(xs: out, then: texts_at(calendar, path: ["timeFormats"], items: lengths)?)
+    out @ lists.concat(xs: out, then: texts_at(calendar, path: ["dateTimeFormats"], items: lengths)?)
+    out @ lists.concat(xs: out, then: texts_at(calendar, path: ["dateTimeFormats-atTime", "standard"], items: lengths)?)
+    out @ lists.concat(xs: out, then: texts_at(zones, path: [], items: ["gmtFormat", "gmtZeroFormat", "hourFormat"])?)
+    out @ out.push(text_at(zones, path: ["zone", "Etc", "UTC", "long", "standard"])?)
+    out @ out.push(text_at(zones, path: ["zone", "Etc", "UTC", "short", "standard"])?)
+    return ok(out)
+
+# The skeletons block of a locale's Gregorian calendar.
+#
+# Fails as `text_at` fails, and `invalid` where `availableFormats` is not an
+# object.
+function skeleton_block(calendar: json.Value lent) -> [str]?
+    out: [str] @= []
+
+    for one in cldrkit.entries(json.member(json.member(calendar, key: "dateTimeFormats")?, key: "availableFormats")?)?
+        if !strings.contains(s: one.key, substr: "-count-") && !strings.contains(s: one.key, substr: "-alt-")
+            out @ out.push(one.key)
+            out @ out.push(text_at(one.value, path: [])?)
+
+    return ok(out)
+
+# The blocks and number fields of the locale `tag`.
+#
+# - `release`: the open zip.
+# - `tag`: the locale, as `availableLocales.json` names it.
+#
+# Fails as reading its files and `text_at` fail.
+function read_locale(release: cldrkit.Release lent, tag: str) -> Locale?
+    base = f"cldr-dates-full/main/{tag}/"
+    fields = cldrkit.member_at(release, name: base + "dateFields.json", path: ["main", tag, "dates", "fields"])?
+    calendar = cldrkit.member_at(release, name: base + "ca-gregorian.json", path: ["main", tag, "dates", "calendars", "gregorian"])?
+    zones = cldrkit.member_at(release, name: base + "timeZoneNames.json", path: ["main", tag, "dates", "timeZoneNames"])?
+    numbers = cldrkit.member_at(release, name: f"cldr-numbers-full/main/{tag}/numbers.json", path: ["main", tag, "numbers"])?
+    relative: [[str]] @= []
+
+    for unit in units()
+        for width in width_suffixes()
+            relative @ relative.push(relative_block(fields, field: unit + width)?)
+
+    months = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"]
+    days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]
+    three = ["abbreviated", "narrow", "wide"]
+    eras: [str] @= []
+
+    for names in ["eraNames", "eraAbbr", "eraNarrow"]
+        eras @ lists.concat(xs: eras, then: texts_at(calendar, path: ["eras", names], items: ["0", "1"])?)
+
+    calendar_blocks = [
+        name_block(calendar, names: "months", forms: three, items: months)?
+        name_block(calendar, names: "days", forms: ["abbreviated", "narrow", "short", "wide"], items: days)?
+        name_block(calendar, names: "quarters", forms: three, items: ["1", "2", "3", "4"])?
+        name_block(calendar, names: "dayPeriods", forms: three, items: periods())?
+        eras
+        pattern_block(calendar: calendar, zones: zones)?
+        skeleton_block(calendar)?
+    ]
+    system = json.text_of(json.member(numbers, key: "defaultNumberingSystem")?)?
+    return ok(
+        Locale(relative: relative, calendar: calendar_blocks, system: system, group: text_at(numbers, path: ["symbols-numberSystem-" + system, "group"])?, minus: text_at(numbers, path: ["symbols-numberSystem-" + system, "minusSign"])?, min_grouping: text_at(numbers, path: ["minimumGroupingDigits"])?)
+    )
+
+## Tests
+
+test "text_at: a text, an absent key, an object's `_value`, and a value of another kind"
+    v = json.parse(
+        "{\"a\": {\"b\": \"x\", \"c\": {\"_value\": \"y\", \"_numbers\": \"z\"}, \"d\": 1, \"e\": {}}}"
+    ).must()
+    assert text_at(v, path: ["a", "b"]).must() == "x"
+    assert text_at(v, path: ["a", "q"]).must() == "" && text_at(v, path: ["q", "b"]).must() == ""
+    assert text_at(v, path: ["a", "c"]).must() == "y"
+    assert text_at(v, path: ["a", "d"]).is_err() && text_at(v, path: ["a", "e"]).is_err()
+    assert text_at(v, path: ["a", "b", "c"]).is_err()
+
+test "relative_block: eighteen slots, the absent ones empty"
+    v = json.parse(
+        "{\"day\": {\"displayName\": \"day\", \"relative-type--1\": \"yesterday\", \"relativeTime-type-past\": {\"relativeTimePattern-count-other\": \"{0} days ago\"}}}"
+    ).must()
+    got = relative_block(v, field: "day").must()
+    assert got.len() == 18 && got[0] == "day" && got[2] == "yesterday" && got[17] == "{0} days ago" && got[11] == ""
+    assert relative_block(v, field: "week").must().len() == 18
+
+test "skeleton_block: skeletons and patterns in the file's order, the counted and alternative ones left out"
+    v = json.parse(
+        "{\"dateTimeFormats\": {\"availableFormats\": {\"d\": \"d\", \"yw-count-one\": \"w\", \"Eh-alt-ascii\": \"E h a\", \"E\": \"ccc\"}}}"
+    ).must()
+    assert skeleton_block(v).must() == ["d", "d", "E", "ccc"]

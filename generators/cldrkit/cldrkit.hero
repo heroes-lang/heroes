@@ -1,13 +1,15 @@
-# CLDR 49's JSON release, `cldr-49.0.0-json-full.zip`, as the generators of
-# Rebel's CLDR tables read it: the zip held to the SHA-256 it is pinned to,
-# then any member read as JSON and walked by its keys. Nothing is taken from
-# a zip whose digest is not the pinned one.
+# CLDR 49 as the generators of Rebel's CLDR tables read it: its JSON release,
+# `cldr-49.0.0-json-full.zip`, and its core data, `cldr-common-49.zip`, each
+# zip held to the SHA-256 it is pinned to, then any member read as text, or as
+# JSON and walked by its keys. Nothing is taken from a zip whose digest is not
+# the pinned one.
 
 use <rebel>/archive
 use <rebel>/bytes
 use <rebel>/crypto
 use <rebel>/fs
 use <rebel>/json
+use <rebel>/strings
 
 # The release the tables are made from: CLDR 49's JSON, every package in its
 # full coverage, as the Unicode Consortium publishes it.
@@ -19,8 +21,20 @@ constant SOURCE_URL: str
 constant SOURCE_SHA256: str
     "3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174"
 
-# The most bytes one member of the zip may hold once inflated: the largest
-# file a generator reads, a locale's `units.json`, holds about 300 KB.
+# CLDR 49's core data, the files the JSON release is made from and those it
+# leaves out, the root collation and the tailorings among them, as the
+# Unicode Consortium publishes it.
+constant COMMON_URL: str
+    "https://unicode.org/Public/cldr/49/cldr-common-49.zip"
+
+# The SHA-256 of the bytes `COMMON_URL` served when it was fetched on
+# 2026-11-22, in lowercase hexadecimal.
+constant COMMON_SHA256: str
+    "78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89"
+
+# The most bytes one member of a zip may hold once inflated: the largest
+# file a generator reads, the core data's `common/uca/FractionalUCA.txt`,
+# holds about 5.5 MB.
 constant MEMBER_LIMIT: i64
     16777216
 
@@ -29,20 +43,38 @@ record Release
     zip: archive.ZipReader
     members: {str: archive.ZipEntry}
 
-# The zip at `path`, read whole, held to `SOURCE_SHA256` and opened.
+# The JSON release at `path`, read whole, held to `SOURCE_SHA256` and opened.
 #
 # - `path`: the zip as fetched from `SOURCE_URL`.
 #
+# Fails as `open_pinned` fails.
+function open(path: str) -> Release?
+    return open_pinned(path: path, url: SOURCE_URL, sha256: SOURCE_SHA256)
+
+# The core data at `path`, read whole, held to `COMMON_SHA256` and opened.
+#
+# - `path`: the zip as fetched from `COMMON_URL`.
+#
+# Fails as `open_pinned` fails.
+function open_common(path: str) -> Release?
+    return open_pinned(path: path, url: COMMON_URL, sha256: COMMON_SHA256)
+
+# The zip at `path`, read whole, held to `sha256` and opened.
+#
+# - `path`: the zip as fetched from `url`.
+# - `url`: where the pinned zip is published, which a refusal names.
+# - `sha256`: its SHA-256, in lowercase hexadecimal.
+#
 # Fails where it cannot be read, `invalid` where its digest is another (the
 # message naming both), and as `archive.decode_zip` fails.
-function open(path: str) -> Release?
+function open_pinned(path: str, url: str, sha256: str) -> Release?
     data = fs.read_bytes(path)?
     digest = bytes.format_hex(crypto.sha256(data))
 
-    if digest != SOURCE_SHA256
+    if digest != sha256
         return fail(
             code: "invalid",
-            msg: f"the zip has SHA-256 {digest}, and the zip of {SOURCE_URL} the tables are pinned to has {SOURCE_SHA256}"
+            msg: f"the zip has SHA-256 {digest}, and the zip of {url} the tables are pinned to has {sha256}"
         )
     zip = archive.decode_zip(data)?
     members: {str: archive.ZipEntry} @= {}
@@ -57,15 +89,41 @@ function open(path: str) -> Release?
 # - `release`: the open zip.
 # - `name`: the member's path in the zip: `cldr-core/supplemental/plurals.json`.
 #
-# Fails `not_found` where the zip holds no such member, and as reading it,
-# its text and its JSON fail.
+# Fails as `text_member` and reading its JSON fail.
 function member(release: Release lent, name: str) -> json.Value?
+    return json.parse(text_member(release, name: name)?)
+
+# The member `name` of `release`, read as UTF-8 text.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip: `common/uca/allkeys_CLDR.txt`.
+#
+# Fails `not_found` where the zip holds no such member, and as reading it and
+# its text fail.
+function text_member(release: Release lent, name: str) -> str?
     entry = match release.members[name]
         .ok found => found
         .err _    => return fail(code: "not_found", msg: f"the zip holds no {name}")
 
     data = archive.read_zip_entry(release.zip, entry: entry, limit: MEMBER_LIMIT)?
-    return json.parse(bytes.to_text(data)?)
+    return bytes.to_text(data)
+
+# The names of the members of `release` in the folder `folder` and not deeper
+# whose names end with `suffix`, in the order of their bytes.
+#
+# - `release`: the open zip.
+# - `folder`: the folder's path in the zip, ending with `/`:
+#   `common/collation/`.
+# - `suffix`: the end every name kept has: `.xml`.
+function names_in(release: Release lent, folder: str, suffix: str) -> [str]
+    out: [str] @= []
+
+    for name in sort(keys(release.members))
+        if strings.has_prefix(s: name, prefix: folder) && strings.has_suffix(s: name, suffix: suffix)
+            if !strings.contains(s: strings.trim_prefix(s: name, prefix: folder), substr: "/")
+                out @ out.push(name)
+
+    return out
 
 # The value at the keys `path` of `v`, each an object's member.
 #
@@ -125,5 +183,7 @@ test "entries: the order the file writes, and a value that is no object"
     assert got.len() == 2 && got[0].key == "z" && got[1].key == "a"
     assert entries(json.parse("[1]").must()).is_err()
 
-test "open: a file that is not there, and bytes that are not the pinned zip"
+test "open and open_common: a file that is not there, and bytes that are not the pinned zip"
     assert open("generators/cldrkit/no such zip").is_err()
+    assert open_common("generators/cldrkit/no such zip").is_err()
+    assert open_pinned(path: "generators/cldrkit/heroes.toml", url: COMMON_URL, sha256: COMMON_SHA256).is_err()
