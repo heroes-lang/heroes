@@ -1,0 +1,53 @@
+# `monitor demo`: the scripted, self-contained session. Its folder is made
+# fresh and removed at the end; the stand-ins (the collector and the
+# thermometer) are served on the program's first thread; the monitor runs
+# on a second thread, through `demo/driver`, and tells the collector to
+# stop once it has sent its last export; then the first thread prints what
+# the collector received, and the serial part's one line.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/threads
+use <rebel>/time
+
+use demo/driver
+use demo/script
+use standins/collector
+use standins/outside
+
+# The longest the whole run may take, in real time, before the stand-ins
+# give it up.
+constant MOST_MINUTES: i64
+    10
+
+# Runs the demo in the folder `dir`, made and removed.
+#
+# - `dir`: the folder, relative or not; anything it holds is removed.
+#
+# Fails where the folder, the stand-ins or the thread cannot be made.
+function run(dir: str) -> ()?
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(dir)?
+    o @= outside.start(script.temperatures())?
+    exe = os.executable_path()?
+    handed = driver.Handed(dir: dir, exe: exe, port: o.device.path, otlp: collector.base_url(o.collector))
+    t @= threads.spawn_text(driver.drive, arg: driver.arg_of(handed))?
+    served = outside.serve(@o, most: time.minutes(MOST_MINUTES)?)
+    problem = threads.wait_text(@t)
+
+    if problem != ""
+        print("the run's problem: " + problem)
+
+    match served
+        .ok _  => _ = 0
+        .err e => print(f"the stand-ins stopped: {e.code}: {e.msg}")
+
+    print("== what the collector received")
+
+    for line in collector.account(o.collector)
+        print(line)
+
+    print(outside.serial_line(o))
+    outside.close(@o)
+    _ = fs.remove_all(dir).is_err()
+    return ok()

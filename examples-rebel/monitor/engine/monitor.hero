@@ -1,0 +1,425 @@
+# The monitor: every part held in one value, and what it does at each
+# collection. `collect` is the heart of it, called by the real loop at every
+# interval and by the demo at every scripted moment: the supervisor's step
+# (ended services reaped, waiting ones started), each collector's samples
+# into the store and the registry, the rules judged, each transition
+# journaled, counted and notified, and every export interval the
+# telemetry sent. Each collection is a span, each collector a child of it.
+#
+# Time comes from the caller: `at` is the monitor's clock, the time every
+# line, sample and alert carries; only the spans and the processor shares
+# read the system's clocks. So the same calls at the same moments make the
+# same journal, the same alerts and the same frames.
+
+use <rebel>/log
+use <rebel>/metrics
+use <rebel>/poll
+use <rebel>/time
+use <rebel>/tracing
+
+use alerts/engine
+use collect/files
+use collect/host
+use collect/procs
+use collect/sensor
+use conf/settings
+use control/server
+use engine/notify
+use journal/events
+use series/store
+use services/stopping
+use services/supervisor
+use telemetry/export
+use telemetry/registry
+
+# The most entries the loop's set holds: every service's pipe, every watch,
+# the terminal and the timers.
+constant SET_ROOM: i64
+    1_024
+
+# How many events the dashboard keeps.
+constant RECENT_EVENTS: i64
+    40
+
+# How far back every series reaches.
+constant KEEP_MINUTES: i64
+    60
+
+# Everything a running monitor holds.
+record Monitor
+    # The configuration.
+    config: settings.Config
+    # When it started, on its clock.
+    started: time.Instant
+    # The loop's set.
+    set: poll.Set
+    # The services.
+    sup: supervisor.Supervisor
+    # The watched paths.
+    files: files.Files
+    # The sensor.
+    sensor: sensor.Sensor
+    # The values handed in for a sensor that has no port, oldest first.
+    handed: [f64]
+    # The services' last readings.
+    procs: procs.Procs
+    # The machine's last readings.
+    host: host.Host
+    # The samples.
+    series: store.Store
+    # The alerts.
+    alerts: engine.Alerts
+    # The metrics.
+    registry: metrics.Registry
+    # The spans.
+    tracer: tracing.Tracer
+    # The export.
+    exporter: export.Exporter
+    # The journal.
+    journal: events.Journal
+    # The control socket.
+    control: server.Server
+    # When the telemetry was last sent, in nanoseconds since 1970.
+    last_export: i64
+    # Collections run.
+    collections: i64
+    # Notifications run, and those that failed.
+    notified: i64
+    # Notifications that failed.
+    notify_failures: i64
+    # Whether a control request asked the monitor to stop.
+    stop_asked: bool
+    # The events told since `take_told` was last asked, one line each.
+    told: [str]
+
+# A monitor of `c`, started at `at`: the journal opened, the watches opened,
+# the control socket listening, nothing started yet (the first `collect`
+# starts the services).
+#
+# - `c`: the configuration, read and checked.
+# - `at`: the moment, on the monitor's clock.
+# - `handed`: whether the sensor's values are handed in rather than read
+#   from its port.
+#
+# Fails as the journal, the control socket and the tracer fail to open.
+function start(c: settings.Config, at: time.Instant, handed: bool) -> Monitor?
+    set = poll.make(SET_ROOM)?
+    journal = events.open(c.logs, keep_recent: RECENT_EVENTS)?
+
+    control = if c.control == ""
+        server.none()
+    else
+        server.open(c.control)?
+    m @= Monitor(
+        config: c,
+        started: at,
+        set: set,
+        sup: supervisor.new_supervisor(c.services, logs: c.logs, set: set)?,
+        files: files.open_all(c.watches, set: set),
+        sensor: sensor.new_sensor(c.sensor, handed: handed),
+        handed: [],
+        procs: procs.new_procs(),
+        host: host.new_host(),
+        series: store.new_store(time.minutes(KEEP_MINUTES)?),
+        alerts: engine.new_alerts(c.rules)?,
+        registry: registry.new_registry(c.host)?,
+        tracer: export.new_tracer(c)?,
+        exporter: export.new_exporter(c),
+        journal: journal,
+        control: control,
+        last_export: at.unix_nanoseconds,
+        collections: 0,
+        notified: 0,
+        notify_failures: 0,
+        stop_asked: false,
+        told: []
+    )
+    note(
+        @m,
+        at: at,
+        level: .info,
+        source: "monitor",
+        text: f"started: {c.services.len()} services, {c.watches.len()} watched paths, {c.rules.len()} rules"
+    )
+
+    for w in m.files.watched
+        if w.trouble != ""
+            note(@m, at: at, level: .warn, source: f"watch {w.spec.name}", text: "not watched yet")
+
+    return ok(m)
+
+# Writes an event to the journal and keeps its line for `take_told`.
+#
+# - `m`: the monitor.
+# - `at`: when, on its clock.
+# - `level`: how much it matters.
+# - `source`: what it is about.
+# - `text`: what happened.
+function note(@m: Monitor, at: time.Instant, level: log.Level, source: str, text: str)
+    note_with(@m, at: at, level: level, source: source, text: text, fields: [])
+
+# Writes an event with fields a reader of the file may want.
+#
+# - `m`: the monitor.
+# - `at`: when.
+# - `level`: how much it matters.
+# - `source`: what it is about.
+# - `text`: what happened.
+# - `fields`: what the file's line carries besides.
+function note_with(@m: Monitor, at: time.Instant, level: log.Level, source: str, text: str, fields: [log.Field])
+    events.write(@m.journal, at: at, level: level, source: source, text: text, fields: fields)
+    m.told @ m.told.push(f"{source}: {text}")
+
+# The events told since the last call, taken out.
+#
+# - `m`: the monitor.
+function take_told(@m: Monitor) -> [str]
+    taken = m.told
+    m.told @ []
+    return taken
+
+# Notes what the supervisor did.
+#
+# - `m`: the monitor.
+# - `at`: when.
+# - `happened`: the supervisor's events.
+function note_services(@m: Monitor, at: time.Instant, happened: [supervisor.Event])
+    for e in happened
+        note(@m, at: at, level: e.level, source: "service " + e.service, text: e.text)
+
+        if e.restart
+            registry.count(@m.registry, name: registry.RESTARTS, labels: [e.service])
+
+# Takes the changes of the watched path at `i`, waiting at most `limit` for
+# the first event, and notes each.
+#
+# - `m`: the monitor.
+# - `i`: where the path stands in `m.files.watched`.
+# - `limit`: the longest to wait; zero waits not at all.
+# - `at`: when, on the monitor's clock.
+function take_changes(@m: Monitor, i: i64, limit: time.Duration, at: time.Instant) -> [files.Change]
+    changes = files.take(@m.files, i: i, limit: limit)
+    note_changes(@m, i: i, changes: changes, at: at)
+    return changes
+
+# Notes and counts the changes of the watched path at `i`.
+#
+# - `m`: the monitor.
+# - `i`: where the path stands.
+# - `changes`: the changes.
+# - `at`: when.
+function note_changes(@m: Monitor, i: i64, changes: [files.Change], at: time.Instant)
+    name = m.files.watched[i].spec.name
+
+    for c in changes
+        note(@m, at: at, level: .info, source: "watch " + name, text: files.format_change(c))
+        registry.count(@m.registry, name: registry.FILE_CHANGES, labels: [name, c.kind])
+
+# One collection at `at`: the services stepped, every collector read, the
+# rules judged, and the telemetry sent where its interval has passed.
+#
+# - `m`: the monitor.
+# - `at`: the moment, on the monitor's clock.
+function collect(@m: Monitor, at: time.Instant)
+    root = tracing.start(@m.tracer, name: "monitor.collect", kind: .internal)
+
+    parent = match root
+        .ok span => span.context
+        .err _   => tracing.SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false)
+
+    samples: [store.Sample] @= []
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+    note_services(@m, at: at, happened: supervisor.step(@m.sup, at: at))
+
+    for s in procs.collect(@m.procs, sup: m.sup)
+        samples @ samples.push(s)
+
+    child_span(@m, name: "collect.services", parent: parent, collector: "services", began: began)
+
+    if settings.has_sensor(m.config)
+        sensor_began = time.mark().default(began)
+
+        for s in read_sensor(@m, at: at)
+            samples @ samples.push(s)
+
+        child_span(@m, name: "collect.sensor", parent: parent, collector: "sensor", began: sensor_began)
+
+    files_began = time.mark().default(began)
+
+    for i in range(from: 0, to: m.files.watched.len())
+        if m.files.watched[i].trouble != ""
+            files.reopen(@m.files, i: i)
+
+            if m.files.watched[i].trouble == ""
+                note(@m, at: at, level: .info, source: "watch " + m.files.watched[i].spec.name, text: "watched again")
+        w = m.files.watched[i]
+        samples @ samples.push(store.Sample(key: f"watch.{w.spec.name}.bytes", value: to_f64(w.bytes)))
+        samples @ samples.push(store.Sample(key: f"watch.{w.spec.name}.changes", value: to_f64(w.changes)))
+
+    child_span(@m, name: "collect.files", parent: parent, collector: "files", began: files_began)
+
+    if m.config.host
+        host_began = time.mark().default(began)
+
+        for s in host.collect(@m.host)
+            samples @ samples.push(s)
+
+        child_span(@m, name: "collect.host", parent: parent, collector: "host", began: host_began)
+
+    store.add_all(@m.series, samples: samples, at: at)
+    registry.record_samples(@m.registry, samples: samples)
+    judge(@m, at: at, parent: parent)
+    registry.count(@m.registry, name: registry.TICKS, labels: [])
+    m.collections @ m.collections + 1
+
+    match root
+        .ok span => _ = tracing.end(@m.tracer, span: span).is_err()
+        .err _   => _ = 0
+
+    if at.unix_nanoseconds - m.last_export >= m.config.export.every.nanoseconds
+        _ = send_telemetry(@m, at: at)
+
+# Ends a child span of the collection, and records how long its collector
+# took.
+#
+# - `m`: the monitor.
+# - `name`: the span's name.
+# - `parent`: the collection's span.
+# - `collector`: the collector's name in the registry.
+# - `began`: when the collector began, on the monotonic clock.
+function child_span(@m: Monitor, name: str, parent: tracing.SpanContext, collector: str, began: time.Mark)
+    match tracing.start_child(@m.tracer, name: name, kind: .internal, parent: parent)
+        .ok span => _ = tracing.end(@m.tracer, span: span).is_err()
+        .err _   => _ = 0
+
+    match time.elapsed(began)
+        .ok took => registry.record_duration(@m.registry, collector: collector, took: took)
+        .err _   => _ = 0
+
+# The sensor's samples at this collection: its reading where it gave a
+# number; a change of its status is noted.
+#
+# - `m`: the monitor.
+# - `at`: when.
+function read_sensor(@m: Monitor, at: time.Instant) -> [store.Sample]
+    before = m.sensor.status
+
+    reading = if m.sensor.handed
+        if m.handed.len() > 0
+            value = m.handed[0]
+            m.handed @ m.handed.slice(from: 1, to: m.handed.len())
+            sensor.hand(@m.sensor, value: value)
+        else
+            # Values are handed in for a device that cannot be reached here:
+            # once they are spent it is a device that does not answer, its
+            # silence read as its port's would be.
+            sensor.hand_silence(@m.sensor, why: sensor.silence_of(m.sensor, code: "timeout"))
+    else
+        sensor.read_once(@m.sensor)
+    name = m.config.sensor.name
+    registry.count(@m.registry, name: registry.READINGS, labels: [name, sensor.status_name(reading.status)])
+
+    if reading.status != before
+        if reading.status == .ok
+            note(@m, at: at, level: .info, source: "sensor " + name, text: "answers")
+        else
+            note(
+                @m,
+                at: at,
+                level: .warn,
+                source: "sensor " + name,
+                text: f"{sensor.status_name(reading.status)}: {reading.why}"
+            )
+
+    if reading.status == .ok
+        return [store.Sample(key: "sensor." + name, value: reading.value)]
+    return []
+
+# Judges the rules, and notes, counts and notifies each transition.
+#
+# - `m`: the monitor.
+# - `at`: when.
+# - `parent`: the collection's span.
+function judge(@m: Monitor, at: time.Instant, parent: tracing.SpanContext)
+    span = tracing.start_child(@m.tracer, name: "rules.evaluate", kind: .internal, parent: parent)
+
+    for t in engine.evaluate(@m.alerts, s: m.series, now: at)
+        phase = engine.phase_name(t.after)
+
+        word = if t.before == .firing && t.after == .inactive
+            "resolved"
+        else if t.before == .pending && t.after == .inactive
+            "cleared before it fired"
+        else
+            phase
+
+        level: log.Level = if t.after == .firing
+            .warn
+        else
+            .info
+        fields: [log.Field] @= [log.text(key: "severity", value: t.severity)]
+
+        if m.config.exact_figures
+            fields @ fields.push(log.number(key: "value", value: t.value))
+        note_with(@m, at: at, level: level, source: "alert " + t.name, text: word, fields: fields)
+        registry.count(@m.registry, name: registry.TRANSITIONS, labels: [t.rule, phase])
+
+        if notify.is_notified(t) && m.config.notify.len() > 0
+            outcome = notify.run(m.config.notify, t: t, exact: m.config.exact_figures)
+            m.notified @ m.notified + 1
+
+            if outcome != ""
+                m.notify_failures @ m.notify_failures + 1
+                note(@m, at: at, level: .error, source: "notify", text: f"{t.name} {notify.state_word(t)}: {outcome}")
+
+    _ = metrics.set(
+        @m.registry,
+        name: registry.ALERTS,
+        labels: ["pending"],
+        value: to_f64(engine.count_in(m.alerts, phase: .pending))
+    ).is_err()
+    _ = metrics.set(
+        @m.registry,
+        name: registry.ALERTS,
+        labels: ["firing"],
+        value: to_f64(engine.count_in(m.alerts, phase: .firing))
+    ).is_err()
+
+    match span
+        .ok s  => _ = tracing.end(@m.tracer, span: s).is_err()
+        .err _ => _ = 0
+
+# Sends the telemetry now, notes what was sent, and answers it.
+#
+# - `m`: the monitor.
+# - `at`: when, on its clock: the points' time.
+function send_telemetry(@m: Monitor, at: time.Instant) -> export.Sent
+    records = events.take_records(@m.journal)
+    sent = export.export(@m.exporter, r: m.registry, @m.tracer, records: records, start: m.started, at: at)
+    m.last_export @ at.unix_nanoseconds
+
+    if m.exporter.base != ""
+        level: log.Level = if sent.failures.len() == 0
+            .info
+        else
+            .warn
+        note(@m, at: at, level: level, source: "export", text: "sent " + export.format_sent(sent))
+    return sent
+
+# Stops every service, sends the telemetry a last time, and closes every
+# part: what the monitor does on its way out. Answers what the last export
+# sent.
+#
+# - `m`: the monitor.
+# - `at`: when, on its clock.
+function stop(@m: Monitor, at: time.Instant) -> export.Sent
+    note_services(@m, at: at, happened: stopping.stop_all(@m.sup, at: at))
+    note(@m, at: at, level: .info, source: "monitor", text: "stopped")
+    sent = send_telemetry(@m, at: at)
+    supervisor.close(@m.sup, at: at)
+    files.close_all(@m.files)
+    sensor.close(@m.sensor)
+    server.close(@m.control)
+    _ = events.close(@m.journal).is_err()
+    _ = poll.close(@m.set).is_err()
+    return sent

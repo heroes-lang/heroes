@@ -1,0 +1,100 @@
+# What each service's process holds and spends, as htop shows it: its
+# resident memory and the share of one processor it has used since the
+# reading before, both read through `process.usage_of` on the child the
+# supervisor holds. With the supervisor's states they make each service's
+# series: `service.<name>.up`, 1 while it runs; `service.<name>.impaired`,
+# 1 while a service it needs, directly or through others, does not run;
+# `service.<name>.restarts`; and, while it runs, `service.<name>.memory` in
+# bytes and `service.<name>.cpu` in percent of one processor.
+#
+# A processor share is processor time over the time between two readings,
+# both read on the monotonic clock here, never on the monitor's clock: a
+# demo's clock moves by minutes between readings a few milliseconds apart.
+
+use <rebel>/poll
+use <rebel>/time
+
+use conf/settings
+use series/store
+use services/deps
+use services/supervisor
+
+# The last reading of one process.
+record Last
+    # The process's number, so a restarted service starts its share anew.
+    pid: i64
+    # Its processor time, user and system, in nanoseconds.
+    spent: i64
+    # When it was read, on the monotonic clock, in nanoseconds.
+    read_at: i64
+
+# The readings before, by service.
+record Procs
+    # Each running service's last reading.
+    last: {str: Last}
+
+# Readings with none before.
+function new_procs() -> Procs
+    return Procs(last: {})
+
+# The samples of every service at this collection.
+#
+# - `p`: the readings before, moved to these.
+# - `sup`: the supervisor.
+function collect(@p: Procs, sup: supervisor.Supervisor lent) -> [store.Sample]
+    samples: [store.Sample] @= []
+    impaired = deps.impaired_by(supervisor.service_specs(sup), down: supervisor.down_names(sup))
+    hurt: {str: bool} @= {}
+
+    for name in impaired
+        hurt[name] @ true
+
+    for s in sup.services
+        name = s.spec.name
+
+        up = if s.state == .running
+            1.0
+        else
+            0.0
+        samples @ samples.push(store.Sample(key: f"service.{name}.up", value: up))
+
+        impaired_value = if hurt[name].is_err()
+            0.0
+        else
+            1.0
+        samples @ samples.push(store.Sample(key: f"service.{name}.impaired", value: impaired_value))
+        samples @ samples.push(store.Sample(key: f"service.{name}.restarts", value: to_f64(s.restarts)))
+
+        if s.state == .running
+            match supervisor.usage_of(sup, name: name)
+                .ok usage =>
+                    samples @ samples.push(
+                        store.Sample(key: f"service.{name}.memory", value: to_f64(usage.resident_bytes))
+                    )
+                    spent = usage.user_ns + usage.system_ns
+                    now = time.mark().default(time.Mark(nanoseconds: 0)).nanoseconds
+
+                    match p.last[name]
+                        .ok before =>
+                            if before.pid == s.pid && now > before.read_at
+                                share = to_f64(spent - before.spent) * 100.0 / to_f64(now - before.read_at)
+                                samples @ samples.push(store.Sample(key: f"service.{name}.cpu", value: share))
+                        .err _ => _ = 0
+
+                    p.last[name] @ Last(pid: s.pid, spent: spent, read_at: now)
+                .err _ => _ = 0
+
+    return samples
+
+test "collect: services that do not run are down, and a service down is not counted impaired"
+    set @= poll.make(4).must()
+    specs = [deps.sample("db", needs: []), deps.sample("api", needs: ["db"])]
+    logs = settings.Logs(dir: "build/monitor-test-procs", max_bytes: 0, keep: 0, daily: false, compress: false)
+    sup = supervisor.new_supervisor(specs, logs: logs, set: set).must()
+    p @= new_procs()
+    samples = collect(@p, sup: sup)
+    assert samples[0] == store.Sample(key: "service.db.up", value: 0.0)
+    assert samples[1] == store.Sample(key: "service.db.impaired", value: 0.0)
+    assert samples[3] == store.Sample(key: "service.api.up", value: 0.0)
+    assert samples[4] == store.Sample(key: "service.api.impaired", value: 0.0)
+    poll.close(@set).must()

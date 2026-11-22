@@ -1,0 +1,169 @@
+# How a service is stopped and started again: its stop line written where
+# it reads a pipe, else the system's request to end (SIGTERM); once its grace
+# has passed, the request to end, then its end at once; the child reaped
+# whichever way it ended, its pipe read to its end first. Every stop and
+# restart, the operator's and the monitor's own on its way out, goes through
+# here; the supervisor's step never stops a service.
+
+use <rebel>/io
+use <rebel>/os
+use <rebel>/poll
+use <rebel>/process
+use <rebel>/time
+
+use conf/settings
+use services/deps
+use services/supervisor
+
+# How long a stop waits between two looks at whether the child has ended.
+constant LOOK_MS: i64
+    10
+
+# Stops the service `name` and keeps it stopped: its stop line, or the
+# system's request to end; once its grace has passed the request to end,
+# then its end at once. Answers what happened, nothing where it did not run.
+#
+# - `sup`: the supervisor.
+# - `name`: the service.
+# - `at`: the moment.
+#
+# Fails `not_found` where no service has the name.
+function stop(@sup: supervisor.Supervisor, name: str, at: time.Instant) -> [supervisor.Event]?
+    i = supervisor.index_of(sup, name: name)?
+    spec = sup.services[i].spec
+
+    if sup.services[i].state != .running
+        sup.services[i].state @ .stopped
+        sup.services[i].since @ at.unix_nanoseconds
+        return ok([])
+    child @= sup.children[name].must()
+    asked = spec.stop_line != "" && io.write_line(child.input, line: spec.stop_line) == ok()
+
+    if !asked
+        ask_end(child)
+    forced: bool @= false
+
+    if !ended_within(@child, grace: spec.stop_grace)
+        forced @ true
+
+        if asked
+            ask_end(child)
+
+        if !ended_within(@child, grace: spec.stop_grace)
+            _ = process.kill(child).is_err()
+
+    sup.children[name] @ child
+    _ = supervisor.finish_child(@sup, name: name, at: at).is_err()
+    sup.services[i].state @ .stopped
+    sup.services[i].since @ at.unix_nanoseconds
+    sup.services[i].pid @ 0
+    sup.services[i].in_row @ 0
+
+    if forced
+        return ok(
+            [supervisor.Event(service: name, level: .warn, text: "stopped by force: it did not end within its grace", restart: false)]
+        )
+    return ok([supervisor.Event(service: name, level: .info, text: "stopped", restart: false)])
+
+# Asks `child` to end, by the system's request to end where there is one and
+# at once where there is none (Windows).
+#
+# - `child`: the child.
+function ask_end(child: process.Child)
+    match process.terminate(child)
+        .ok _  => _ = 0
+        .err _ => _ = process.kill(child).is_err()
+
+# Whether `child` ends within `grace`, looked at every `LOOK_MS`.
+#
+# - `child`: the child; its end is kept in it for `wait`.
+# - `grace`: how long to wait, in real time.
+function ended_within(@child: process.Child, grace: time.Duration) -> bool
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while true
+        match process.has_ended(@child)
+            .ok ended =>
+                if ended
+                    return true
+            .err _ => return true
+
+        spent = time.elapsed(began).default(grace)
+
+        if spent.nanoseconds >= grace.nanoseconds
+            return false
+        time.sleep(time.milliseconds(LOOK_MS).default(time.nanoseconds(0)))
+
+# Stops the service `name` and starts it again at once, a restart.
+#
+# - `sup`: the supervisor.
+# - `name`: the service.
+# - `at`: the moment.
+#
+# Fails `not_found` where no service has the name.
+function restart(@sup: supervisor.Supervisor, name: str, at: time.Instant) -> [supervisor.Event]?
+    events @= stop(@sup, name: name, at: at)?
+    i = supervisor.index_of(sup, name: name)?
+    sup.services[i].in_row @ 0
+    events @ events.push(supervisor.start(@sup, i: i, at: at))
+    return ok(events)
+
+# Starts the stopped or failed service `name` again, a restart where it ran
+# before. Fails `not_found` where no service has the name, and `invalid`
+# where it runs already.
+#
+# - `sup`: the supervisor.
+# - `name`: the service.
+# - `at`: the moment.
+function start_again(@sup: supervisor.Supervisor, name: str, at: time.Instant) -> supervisor.Event?
+    i = supervisor.index_of(sup, name: name)?
+
+    if sup.services[i].state == .running
+        return fail(code: "invalid", msg: f"the service \"{name}\" runs already")
+    sup.services[i].in_row @ 0
+    return ok(supervisor.start(@sup, i: i, at: at))
+
+# Stops every service, each before what it needs.
+#
+# - `sup`: the supervisor.
+# - `at`: the moment.
+function stop_all(@sup: supervisor.Supervisor, at: time.Instant) -> [supervisor.Event]
+    events: [supervisor.Event] @= []
+    order = deps.stop_order(supervisor.service_specs(sup)).default(sup.order)
+
+    for name in order
+        for e in stop(@sup, name: name, at: at).default([])
+            events @ events.push(e)
+
+    return events
+
+test "step: a child that fails is reaped, waits its backoff, and starts again"
+    if os.system() == .windows
+        skip_test(reason: "the child is a POSIX shell's script")
+    set @= poll.make(16).must()
+    dir = "build/monitor-test-supervisor"
+    logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
+    spec @= deps.sample("quick", needs: [])
+    spec.command @ ["/bin/sh", "-c", "echo hello; exit 3"]
+    spec.backoff @ time.seconds(30).must()
+    spec.backoff_most @ time.minutes(5).must()
+    sup @= supervisor.new_supervisor([spec], logs: logs, set: set).must()
+    t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()
+    first = supervisor.step(@sup, at: t0)
+    assert first.len() == 1 && first[0].text == "started"
+    child @= sup.children["quick"].must()
+    assert ended_within(@child, grace: time.seconds(10).must())
+    sup.children["quick"] @ child
+    second = supervisor.step(@sup, at: time.add(t0, d: time.seconds(10).must()).must())
+    assert second.len() == 1 && second[0].text == "exited with code 3; started again in 30s"
+    assert sup.services[0].state == .backoff
+    assert supervisor.step(@sup, at: time.add(t0, d: time.seconds(20).must()).must()).len() == 0
+    third = supervisor.step(@sup, at: time.add(t0, d: time.seconds(40).must()).must())
+    assert third.len() == 1 && third[0].restart
+    again @= sup.children["quick"].must()
+    assert ended_within(@again, grace: time.seconds(10).must())
+    sup.children["quick"] @ again
+    assert stop_all(@sup, at: time.add(t0, d: time.seconds(50).must()).must()).len() == 1
+    supervisor.close(@sup, at: t0)
+    assert supervisor.lines_written(sup)["quick"].must() == 2
+    poll.close(@set).must()

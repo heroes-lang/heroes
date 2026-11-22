@@ -1,0 +1,155 @@
+# monitor: a system monitor with alerts and a terminal dashboard, in the
+# family of htop, Netdata and supervisord in small. It runs the services a
+# configuration names and keeps them running (restarted with a backoff
+# that doubles, in the order their dependencies give, a failure impairing
+# whatever depends on it), reads what their processes hold and spend,
+# watches files and folders for changes, reads a sensor on a serial port,
+# judges alert rules over every figure with thresholds and durations, runs
+# a notifier at each alert that fires or resolves, writes its journal and
+# its services' output to rotating log files, exports its metrics, spans
+# and journal over OTLP, answers other tools on a control socket, and draws
+# its dashboard on the terminal.
+#
+# Run it for real with a configuration file (`conf/reading` shows its
+# form):
+#
+#     monitor check --config /etc/monitor.toml
+#     monitor run --config /etc/monitor.toml --dashboard
+#     monitor ctl --config /etc/monitor.toml alerts
+#     monitor ctl --config /etc/monitor.toml ack temperature-high
+#     monitor ctl --config /etc/monitor.toml restart cache
+#     monitor bench --config /etc/monitor.toml
+#
+# `monitor demo` runs the scripted demo: four services (this program again,
+# as `monitor workload service`), two watched folders it edits, a
+# thermometer on a pseudo-terminal and an OpenTelemetry collector on
+# loopback, both stand-ins it serves on its first thread, through fourteen
+# minutes of a fixed clock; it prints the events, four dashboard frames, the
+# operator's tools run in other processes, and an account that reads the
+# same on every run. Where the system makes no pseudo-terminal (Windows),
+# the thermometer's readings are handed in, and the transcript's last line,
+# `serial: ...`, is its one line that differs.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `process`, `os`: the services run, fed, ended and reaped; their memory
+#   and processor time; the machine's processors, memory, load and network;
+#   the program's own path, its stop on Ctrl-C;
+# - `ipc`: the control socket and its messages, who is at its other end, and
+#   the lock that keeps a second monitor of one configuration out;
+# - `poll`: the one loop over the timer, the services' pipes, the watches
+#   and the terminal; the stand-ins' loop;
+# - `serial`: the sensor's port, and the demo's pseudo-terminal;
+# - `fs/watch`, `fs`, `path`: the watched paths, their snapshots, the log
+#   folder;
+# - `metrics`, `otlp`, `tracing`: the registry, its export, the collections'
+#   spans and the journal as log records;
+# - `log`, `log/files`: the journal's lines and every log file's rotation;
+# - `stats`: the figures of a rule's window: mean, 95th percentile, slope;
+# - `graphs`: the services' start stages, stop order, cycles refused, and
+#   the failures that propagate;
+# - `tui`, `term`: the dashboard, its frames and keys; the status table;
+# - `bench`: the self-benchmark;
+# - `time`: the monitor's clock, durations, the demo's fixed clock;
+# - `toml`, `flags`, `json`, `protobuf`, `http`, `net`, `compress`,
+#   `threads`, `numbers`, `strings`, `bytes`, `maps`, `math`, `errors`,
+#   `io`: the configuration, the command line, the control protocol, the
+#   collector stand-in, the demo's two threads.
+
+use <rebel>/errors
+use <rebel>/io
+use <rebel>/os
+
+use cli/command_line
+use cli/tools
+use conf/reading
+use demo/run as demo
+use engine/loop
+use workload/workload
+
+# The exit code of a command line the program does not read.
+constant USAGE: i64
+    2
+
+# Writes `message` on the standard error, a line that cannot be written
+# dropped, there being nowhere else to say it.
+#
+# - `message`: the line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+# The exit code of `done`: 0 where it did what it was asked, else 1, its
+# failure told on the standard error.
+#
+# - `done`: what the command came to.
+function finished(done: ()?) -> i64
+    match done
+        .ok _ => return 0
+        .err _ =>
+            complain("monitor: " + errors.format_line(done))
+            return 1
+
+# Prints `lines`, or the failure that came instead, and answers the exit
+# code.
+#
+# - `lines`: what the command answered.
+function printed(lines: [str]?) -> i64
+    match lines
+        .ok found =>
+            for line in found
+                print(line)
+
+            return 0
+        .err _ =>
+            complain("monitor: " + errors.format_line(lines))
+            return 1
+
+# Runs `monitor ctl` and answers its exit code: 0 where the monitor did what
+# it was asked, 1 where it refused, its words on the standard error.
+#
+# - `inv`: the command line.
+function ctl(inv: command_line.Invocation) -> i64
+    match tools.ctl(inv)
+        .err e =>
+            complain(f"monitor ctl: {e.code}: {e.msg}")
+            return 1
+        .ok a =>
+            if !a.done
+                complain(f"monitor ctl: {a.code}: {a.msg}")
+                return 1
+
+            for line in a.lines
+                print(line)
+
+            return 0
+
+# Runs `monitor run` with the configuration `inv` names.
+#
+# - `inv`: the command line.
+function run(inv: command_line.Invocation) -> ()?
+    c = reading.read(inv.config)?
+    return loop.run(c, dashboard: inv.dashboard)
+
+function main()
+    read = command_line.read(args(), env: os.env_all().default({}))
+
+    inv = match read
+        .ok i => i
+        .err _ =>
+            complain(errors.format_line(read))
+            exit(code: USAGE)
+
+    code = match inv.action
+        "help" =>
+            print(inv.help)
+            0
+        "run"     => finished(run(inv))
+        "check"   => printed(tools.check(inv.config))
+        "ctl"     => ctl(inv)
+        "bench"   => printed(tools.benchmark(inv))
+        "demo"    => finished(errors.context(demo.run(inv.dir), what: "the demo"))
+        "service" => workload.serve(inv.name)
+        "notify"  => workload.notify(inv.file)
+        _         => USAGE
+
+    exit(code: code)

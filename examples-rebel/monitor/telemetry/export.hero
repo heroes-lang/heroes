@@ -1,0 +1,181 @@
+# What the monitor sends to an OpenTelemetry collector, by OTLP over HTTP
+# with protobuf: its registry's values as `/v1/metrics`, the spans of its
+# collections as `/v1/traces`, and its journal's events as log records to
+# `/v1/logs`, all under one resource that says which monitor sent them
+# (`service.name` `monitor`, `service.instance.id` its configuration's name).
+#
+# An export that fails is counted and told, the spans and records kept for
+# the next one (the tracer keeps what a collector did not accept, up to its
+# limits' queue); a monitor never stops monitoring because its collector is
+# away.
+
+use <rebel>/metrics
+use <rebel>/otlp
+use <rebel>/time
+use <rebel>/tracing
+
+use conf/settings
+
+# The scope every request names: this program.
+constant SCOPE_NAME: str
+    "monitor"
+
+# Its version.
+constant SCOPE_VERSION: str
+    "1.0.0"
+
+# What one export sent.
+record Sent
+    # The metric families in the metrics request; 0 where none was sent.
+    families: i64
+    # The spans sent.
+    spans: i64
+    # The log records sent.
+    records: i64
+    # Why a request failed, one line each; empty where none did.
+    failures: [str]
+
+# Where and how the monitor exports.
+record Exporter
+    # The collector's base URL; "" sends nothing.
+    base: str
+    # Whether the bodies are gzipped.
+    gzip: bool
+    # The resource every request names.
+    resource: [otlp.Attribute]
+    # The exports made.
+    exports: i64
+    # Every request that failed.
+    failed: i64
+
+# The exporter of `c`.
+#
+# - `c`: the configuration.
+function new_exporter(c: settings.Config lent) -> Exporter
+    return Exporter(base: c.export.otlp, gzip: c.export.gzip, resource: resource_of(c), exports: 0, failed: 0)
+
+# The resource of the monitor `c` configures.
+#
+# - `c`: the configuration.
+function resource_of(c: settings.Config lent) -> [otlp.Attribute]
+    return [
+        otlp.Attribute(key: "service.name", value: .text(v: "monitor"))
+        otlp.Attribute(key: "service.instance.id", value: .text(v: c.name))
+    ]
+
+# The scope every request names.
+function scope() -> otlp.Scope
+    return otlp.Scope(name: SCOPE_NAME, version: SCOPE_VERSION)
+
+# A tracer for the monitor `c` configures, its spans under the monitor's
+# resource and scope.
+#
+# - `c`: the configuration.
+#
+# Fails as `tracing.new_tracer` fails, where the system gives no random
+# bytes for the ids.
+function new_tracer(c: settings.Config lent) -> tracing.Tracer?
+    t = tracing.new_tracer("monitor")?
+    return ok(tracing.with_scope(tracing.with_resource(t, resource: resource_of(c)), scope: scope()))
+
+# An OTLP exporter to `path` below the base, gzipped where asked.
+#
+# - `ex`: the exporter.
+# - `path`: `/v1/metrics`, `/v1/traces` or `/v1/logs`.
+function to(ex: Exporter lent, path: str) -> otlp.Exporter
+    e @= otlp.exporter_to(ex.base + path)
+    e.gzip @ ex.gzip
+    e.client.deadline @ time.seconds(10).default(e.client.deadline)
+    return e
+
+# Sends the registry's values, the tracer's ended spans and `records`, and
+# answers what was sent. With no collector named, nothing is sent and the
+# spans are let go, so they do not pile up.
+#
+# - `ex`: the exporter.
+# - `r`: the registry.
+# - `tracer`: the tracer, its ended spans sent.
+# - `records`: the journal's events since the export before.
+# - `start`: when the monitor started, every point's start.
+# - `at`: when the values were read.
+function export(@ex: Exporter, r: metrics.Registry lent, @tracer: tracing.Tracer, records: [tracing.LogRecord], start: time.Instant, at: time.Instant) -> Sent
+    if ex.base == ""
+        tracer.ended @ []
+        return Sent(families: 0, spans: 0, records: 0, failures: [])
+    ex.exports @ ex.exports + 1
+    failures: [str] @= []
+    families: i64 @= 0
+
+    for f in metrics.gather(r)
+        if f.samples.len() > 0
+            families @ families + 1
+
+    body = metrics.encode_otlp(r, resource: ex.resource, scope: scope(), start: start, at: at)
+
+    match otlp.export(to(ex, path: "/v1/metrics"), body: body)
+        .ok _  => _ = 0
+        .err e => failures @ failures.push(f"metrics: {e.code}: {e.msg}")
+
+    spans = tracer.ended.len()
+
+    match tracing.export_spans(@tracer, exporter: to(ex, path: "/v1/traces"))
+        .ok _  => _ = 0
+        .err e => failures @ failures.push(f"traces: {e.code}: {e.msg}")
+
+    if records.len() > 0
+        match tracing.export_logs(to(ex, path: "/v1/logs"), records: records, resource: ex.resource, scope: scope())
+            .ok _  => _ = 0
+            .err e => failures @ failures.push(f"logs: {e.code}: {e.msg}")
+
+    ex.failed @ ex.failed + failures.len()
+    return Sent(families: families, spans: spans - tracer.ended.len(), records: records.len(), failures: failures)
+
+# What an export sent, as one line: `14 families, 22 spans, 6 records`.
+#
+# - `s`: what was sent.
+function format_sent(s: Sent) -> str
+    line = f"{s.families} families, {s.spans} spans, {s.records} records"
+
+    if s.failures.len() > 0
+        return line + "; failed: " + s.failures.join("; ")
+    return line
+
+test "export: no collector named sends nothing and lets the spans go"
+    c = settings_of_test()
+    ex @= new_exporter(c)
+    tracer @= new_tracer(c).must()
+    span = tracing.start(@tracer, name: "x", kind: .internal).must()
+    tracing.end(@tracer, span: span).must()
+    r = metrics.new_registry()
+    sent = export(@ex, r: r, @tracer, records: [], start: time.epoch(), at: time.epoch())
+    assert sent == Sent(families: 0, spans: 0, records: 0, failures: [])
+    assert tracer.ended.len() == 0 && ex.exports == 0
+    assert format_sent(Sent(families: 2, spans: 3, records: 1, failures: ["logs: x"])) == "2 families, 3 spans, 1 records; failed: logs: x"
+
+test "export: a collector that is not there is a failure told, the spans kept"
+    c @= settings_of_test()
+    c.export.otlp @ "http://127.0.0.1:9"
+    ex @= new_exporter(c)
+    tracer @= new_tracer(c).must()
+    span = tracing.start(@tracer, name: "x", kind: .internal).must()
+    tracing.end(@tracer, span: span).must()
+    sent = export(@ex, r: metrics.new_registry(), @tracer, records: [], start: time.epoch(), at: time.epoch())
+    assert sent.failures.len() == 2 && sent.spans == 0 && tracer.ended.len() == 1
+
+# The configuration of the tests: no collector.
+function settings_of_test() -> settings.Config
+    return settings.Config(
+        name: "test",
+        interval: time.nanoseconds(1),
+        control: "",
+        host: false,
+        exact_figures: true,
+        logs: settings.Logs(dir: "", max_bytes: 0, keep: 0, daily: false, compress: false),
+        export: settings.Export(otlp: "", every: time.nanoseconds(1), gzip: false),
+        dashboard: settings.Dashboard(history: 1),
+        notify: [],
+        services: [],
+        watches: [],
+        sensor: settings.no_sensor(),
+        rules: []
+    )

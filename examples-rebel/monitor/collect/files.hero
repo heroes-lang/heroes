@@ -1,0 +1,352 @@
+# The files and folders the monitor watches: each a `fs/watch` watch, whose
+# events say WHEN something changed, and a snapshot of the path's files and
+# their sizes and times, read again at each event and compared with the one
+# before, which says WHAT changed. The events alone do not: a system joins
+# changes close together, and tells an editor's save as the creation of its
+# temporary file (macOS told an atomic write as `created "a.txt.tmp"` and
+# nothing of `a.txt`, read 2026-11-22), so the snapshot is the truth and the
+# watch its bell, as Python's `watchdog` does with its snapshots.
+#
+# From the snapshot come two series: `watch.<name>.bytes`, what the path's
+# files hold together, and `watch.<name>.changes`, the changes seen since
+# the monitor started. A watch that cannot be opened, or whose folder is
+# removed, is told and tried again at the next collection.
+
+use <rebel>/fs
+use <rebel>/fs/watch
+use <rebel>/maps
+use <rebel>/path
+use <rebel>/poll
+use <rebel>/time
+
+use conf/settings
+
+# What the snapshot keeps of one file.
+record Fact
+    # Its length in bytes.
+    size: i64
+    # When its content was last written, in nanoseconds since 1970.
+    written: i64
+
+# One change between two snapshots.
+record Change
+    # The file's path below the watched path, its parts joined by `/`; for a
+    # watched file, its name.
+    path: str
+    # `created`, `changed` or `removed`.
+    kind: str
+    # Its size after, 0 for a removed file.
+    size: i64
+
+# One watched path.
+record Watched
+    # Its settings.
+    spec: settings.WatchSpec
+    # The files it holds, by their path below it.
+    snapshot: {str: Fact}
+    # What they hold together, in bytes.
+    bytes: i64
+    # The changes seen since the start.
+    changes: i64
+    # Its watch's key in the loop's set, -1 where it is not in one.
+    key: i64
+    # Why its watch is not open, "" where it is.
+    trouble: str
+
+# Every watched path.
+record Files
+    # The paths, in the order the configuration writes them.
+    watched: [Watched]
+    # The open watches, by the name of their path.
+    watches: {str: watch.Watch}
+    # The loop's set, which every open watch joins.
+    set: poll.Set
+
+# The snapshot of the path `spec` names: the files of a folder, of its whole
+# tree where it asks, or the one file it names.
+#
+# - `spec`: what is watched.
+#
+# Fails as `fs.info`, `fs.read_dir` and `fs.walk` fail, `file_not_found`
+# where the path is not there.
+function scan(spec: settings.WatchSpec) -> {str: Fact}?
+    top = fs.info(spec.path)?
+    facts: {str: Fact} @= {}
+
+    if top.kind != .directory
+        facts[path.name(spec.path)?] @ Fact(size: top.size, written: top.written.unix_nanoseconds)
+        return ok(facts)
+    names: [str] @= []
+
+    if spec.tree
+        for e in fs.walk(spec.path)?
+            if e.kind == .file
+                names @ names.push(e.name)
+    else
+        for e in fs.read_dir(spec.path)?
+            if e.kind == .file
+                names @ names.push(e.name)
+
+    # A path below the watched one is kept with `/` between its parts on
+    # every system, so a change is told the same on each.
+    for name in names
+        match fs.info(path.join_all([spec.path, name]))
+            .ok info => facts[path.to_slash(name)] @ Fact(size: info.size, written: info.written.unix_nanoseconds)
+            .err _   => _ = 0
+
+    return ok(facts)
+
+# The changes from `before` to `after`, sorted by path: a file in `after`
+# alone was created, one in `before` alone removed, one in both whose size
+# or time moved changed.
+#
+# - `before`: the earlier snapshot.
+# - `after`: the later one.
+function diff(before: {str: Fact}, after: {str: Fact}) -> [Change]
+    found: [Change] @= []
+
+    for name in sort(keys(after))
+        now = after[name].must()
+
+        match before[name]
+            .err _ => found @ found.push(Change(path: name, kind: "created", size: now.size))
+            .ok was =>
+                if was != now
+                    found @ found.push(Change(path: name, kind: "changed", size: now.size))
+
+    for name in sort(keys(before))
+        if after[name].is_err()
+            found @ found.push(Change(path: name, kind: "removed", size: 0))
+
+    return sort_by_path(found)
+
+# `changes` in the order of their paths' bytes.
+#
+# - `changes`: the changes.
+function sort_by_path(changes: [Change]) -> [Change]
+    by_path: {str: Change} @= {}
+
+    for c in changes
+        by_path[c.path] @ c
+
+    sorted: [Change] @= []
+
+    for p in sort(keys(by_path))
+        sorted @ sorted.push(by_path[p].must())
+
+    return sorted
+
+# What the files of `snapshot` hold together, in bytes.
+#
+# - `snapshot`: the snapshot.
+function total_of(snapshot: {str: Fact}) -> i64
+    total: i64 @= 0
+
+    for f in maps.values(snapshot)
+        total @ total + f.size
+
+    return total
+
+# The watched paths of `specs`, each watch opened and its snapshot read; a
+# path that cannot be watched yet keeps its trouble, tried again by `reopen`.
+#
+# - `specs`: the paths.
+# - `set`: the loop's set, which each open watch joins.
+function open_all(specs: [settings.WatchSpec], set: poll.Set) -> Files
+    f @= Files(watched: [], watches: {}, set: set)
+
+    for spec in specs
+        f.watched @ f.watched.push(
+            Watched(spec: spec, snapshot: {}, bytes: 0, changes: 0, key: -1, trouble: "not opened yet")
+        )
+
+    for i in range(from: 0, to: f.watched.len())
+        reopen(@f, i: i)
+
+    return f
+
+# Opens the watch of the path at `i` where it is not open, and reads its
+# snapshot again without counting changes: what was there before the watch
+# began is the start, not a change.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands in `f.watched`.
+function reopen(@f: Files, i: i64)
+    spec = f.watched[i].spec
+
+    if !f.watches[spec.name].is_err()
+        return
+
+    opened = if spec.tree
+        watch.open_tree(spec.path)
+    else
+        watch.open(spec.path)
+
+    match opened
+        .err e => f.watched[i].trouble @ f"{e.code}: {e.msg}"
+        .ok w =>
+            match scan(spec)
+                .err e =>
+                    held @= w
+                    _ = watch.close(@held).is_err()
+                    f.watched[i].trouble @ f"{e.code}: {e.msg}"
+                .ok snapshot =>
+                    f.watches[spec.name] @ w
+                    f.watched[i].snapshot @ snapshot
+                    f.watched[i].bytes @ total_of(snapshot)
+                    f.watched[i].key @ watch.add_to(f.set, w: w).default(-1)
+                    f.watched[i].trouble @ ""
+
+# Closes the watch of the path at `i`, its key out of the set.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands.
+# - `trouble`: why, kept until it is opened again.
+function close_one(@f: Files, i: i64, trouble: str)
+    name = f.watched[i].spec.name
+
+    if f.watched[i].key >= 0
+        _ = poll.remove(f.set, key: f.watched[i].key).is_err()
+        f.watched[i].key @ -1
+
+    match f.watches[name]
+        .ok w =>
+            held @= w
+            _ = watch.close(@held).is_err()
+            f.watches @ maps.remove(f.watches, key: name)
+        .err _ => _ = 0
+
+    f.watched[i].trouble @ trouble
+
+# Takes the events of the path at `i`, waiting at most `limit` for the
+# first, and answers what changed: none where no event came; else the
+# snapshot read again and compared with the last. A watched folder that is
+# gone is closed, every file it held told removed.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands.
+# - `limit`: the longest to wait for the first event; zero waits not at all.
+function take(@f: Files, i: i64, limit: time.Duration) -> [Change]
+    name = f.watched[i].spec.name
+
+    w = match f.watches[name]
+        .ok open => open
+        .err _   => return []
+
+    told = match watch.wait(w, limit: limit)
+        .ok events => events
+        .err e =>
+            close_one(@f, i: i, trouble: f"{e.code}: {e.msg}")
+            return settle_gone(@f, i: i)
+
+    if told.len() == 0
+        return []
+    gone: bool @= false
+
+    for e in told
+        if e.change == .gone
+            gone @ true
+
+    if gone
+        close_one(@f, i: i, trouble: "the watched path is gone")
+        return settle_gone(@f, i: i)
+
+    match scan(f.watched[i].spec)
+        .err e =>
+            close_one(@f, i: i, trouble: f"{e.code}: {e.msg}")
+            return settle_gone(@f, i: i)
+        .ok after => return settle(@f, i: i, after: after)
+
+# Moves the path at `i` to the snapshot `after`, counting and answering what
+# changed.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands.
+# - `after`: its new snapshot.
+function settle(@f: Files, i: i64, after: {str: Fact}) -> [Change]
+    changes = diff(before: f.watched[i].snapshot, after: after)
+    f.watched[i].snapshot @ after
+    f.watched[i].bytes @ total_of(after)
+    f.watched[i].changes @ f.watched[i].changes + changes.len()
+    return changes
+
+# Moves the path at `i`, whose watch is gone, to an empty snapshot.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands.
+function settle_gone(@f: Files, i: i64) -> [Change]
+    return settle(@f, i: i, after: {})
+
+# The changes of the path at `i` once the system tells them: events taken
+# until a snapshot read after them differs from the last, or `within` passes
+# in real time. What a program that just changed the path itself waits with,
+# since a system may tell a change late, or tell it in several events.
+#
+# - `f`: the watched paths.
+# - `i`: where the path stands.
+# - `within`: the longest to wait.
+function take_settled(@f: Files, i: i64, within: time.Duration) -> [Change]
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while true
+        changes = take(@f, i: i, limit: time.milliseconds(100).default(within))
+
+        if changes.len() > 0
+            return changes
+        spent = time.elapsed(began).default(within)
+
+        if spent.nanoseconds >= within.nanoseconds
+            return []
+
+# Where the path whose watch has the key `key` in the set stands, -1 where
+# no watch has it.
+#
+# - `f`: the watched paths.
+# - `key`: a key a wait on the set told ready.
+function index_of_key(f: Files lent, key: i64) -> i64
+    for i in range(from: 0, to: f.watched.len())
+        if f.watched[i].key == key && key >= 0
+            return i
+
+    return -1
+
+# Closes every watch.
+#
+# - `f`: the watched paths.
+function close_all(@f: Files)
+    for i in range(from: 0, to: f.watched.len())
+        close_one(@f, i: i, trouble: "closed")
+
+# A change as one line: `created conf/app.toml, 120 bytes`.
+#
+# - `c`: the change.
+function format_change(c: Change) -> str
+    if c.kind == "removed"
+        return f"removed {c.path}"
+    return f"{c.kind} {c.path}, {c.size} bytes"
+
+test "diff: created, changed and removed, sorted by path"
+    before = {"a": Fact(size: 1, written: 10), "b": Fact(size: 2, written: 10), "c": Fact(size: 3, written: 10)}
+    after = {"d": Fact(size: 4, written: 20), "a": Fact(size: 5, written: 20), "b": Fact(size: 2, written: 10)}
+    changes = diff(before: before, after: after)
+    assert changes == [Change(path: "a", kind: "changed", size: 5), Change(path: "c", kind: "removed", size: 0), Change(path: "d", kind: "created", size: 4)]
+    assert format_change(changes[0]) == "changed a, 5 bytes" && format_change(changes[1]) == "removed c"
+    assert total_of(after) == 11
+
+test "take_settled: a file written in a watched folder is told, and a path not there is trouble"
+    dir = "build/monitor-test-files"
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(dir).must()
+    set @= poll.make(8).must()
+    specs = [
+        settings.WatchSpec(name: "w", path: dir, tree: false)
+        settings.WatchSpec(name: "none", path: dir + "/none", tree: false)
+    ]
+    f @= open_all(specs, set: set)
+    assert f.watched[0].trouble == "" && f.watched[1].trouble != ""
+    write_file(path: dir + "/a.txt", text: "hello").must()
+    changes = take_settled(@f, i: 0, within: time.seconds(10).must())
+    assert changes == [Change(path: "a.txt", kind: "created", size: 5)]
+    assert f.watched[0].bytes == 5 && f.watched[0].changes == 1
+    close_all(@f)
+    poll.close(@set).must()

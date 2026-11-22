@@ -1,0 +1,231 @@
+# What the dashboard shows, as values: the clock and the alerts' count, a
+# row for each service, the sensor's last reading with its history, the
+# alerts that are not inactive, and the last events. It is built from the
+# monitor's parts at one moment, and drawn by `dash/draw` the same way on a
+# terminal and in a transcript, so what a person sees and what a test reads
+# are one thing.
+#
+# A figure that depends on the machine is shown as a number only where the
+# configuration asks for exact figures; else a service's memory is shown
+# against its limit alone (`over 96 MiB`), which reads the same on every
+# machine.
+
+use <rebel>/numbers
+use <rebel>/time
+
+use alerts/engine
+use collect/sensor
+use conf/settings
+use journal/events
+use series/store
+use services/supervisor
+
+# One row of the services' table.
+record ServiceRow
+    # The service's name.
+    name: str
+    # Its state, `impaired` for a service that runs while one it needs does
+    # not.
+    state: str
+    # How long it has run, "" where it does not.
+    up: str
+    # Its restarts.
+    restarts: i64
+    # Its memory, as exact or as coarse as the configuration asks; "-" where
+    # nothing is known.
+    memory: str
+
+# One row of the alerts' list.
+record AlertRow
+    # `FIRING` or `pending`, and `ack` where acknowledged.
+    phase: str
+    # The alert's name.
+    name: str
+    # When it entered its phase, the time of day.
+    since: str
+
+# A frame's content.
+record View
+    # The configuration's name.
+    title: str
+    # The time of day on the monitor's clock.
+    clock: str
+    # `2 firing, 1 pending`, or `no alert`.
+    summary: str
+    # The services, in the order the configuration writes them.
+    services: [ServiceRow]
+    # The sensor's name, "" where there is none.
+    sensor: str
+    # Its last reading and status: `72.50 C, ok`.
+    reading: str
+    # Where the last reading stands between the gauge's ends, 0 to 1.
+    ratio: f64
+    # The last readings, in tenths of the unit above the gauge's low end.
+    history: [i64]
+    # The sparkline's top, in the same tenths.
+    history_top: i64
+    # The alerts that are not inactive, firing first.
+    alerts: [AlertRow]
+    # The last events, oldest first, each one line.
+    events: [str]
+
+# The time of day of `ns`, nanoseconds since 1970, as `15:04:05`.
+#
+# - `ns`: the moment.
+function clock_of(ns: i64) -> str
+    at = time.from_unix(whole_seconds: ns / 1_000_000_000, extra_nanoseconds: 0).default(time.epoch())
+    return time.format(at, layout: .time_only)
+
+# A span of `ns` nanoseconds in whole seconds, as `time` writes one:
+# `4m30s`.
+#
+# - `ns`: the span, 0 or more.
+function span_of(ns: i64) -> str
+    return time.format_duration(time.nanoseconds(ns / 1_000_000_000 * 1_000_000_000))
+
+# The memory cell of the service `name`.
+#
+# - `s`: the samples.
+# - `name`: the service.
+# - `limit`: its limit in bytes, 0 for none.
+# - `exact`: whether figures are shown as numbers.
+function memory_of(s: store.Store lent, name: str, limit: i64, exact: bool) -> str
+    resident = match store.last_of(s, key: f"service.{name}.memory")
+        .ok p  => to_i64(p.value).default(0)
+        .err _ => return "-"
+
+    if exact
+        held = numbers.format_size(size: resident, units: .binary, precision: 1)
+
+        if limit > 0
+            return held + " / " + numbers.format_size(size: limit, units: .binary, precision: 0)
+        return held
+
+    if limit == 0
+        return "-"
+
+    if resident > limit
+        return "over " + numbers.format_size(size: limit, units: .binary, precision: 0)
+    return "under " + numbers.format_size(size: limit, units: .binary, precision: 0)
+
+# The view at `now`.
+#
+# - `c`: the configuration.
+# - `sup`: the supervisor.
+# - `s`: the samples.
+# - `a`: the alerts.
+# - `j`: the journal.
+# - `status`: the sensor's last status.
+# - `now`: the moment, on the monitor's clock.
+function view_of(c: settings.Config lent, sup: supervisor.Supervisor lent, s: store.Store lent, a: engine.Alerts lent, j: events.Journal lent, status: sensor.Status, now: time.Instant) -> View
+    rows: [ServiceRow] @= []
+
+    for svc in sup.services
+        name = svc.spec.name
+        impaired = store.last_of(s, key: f"service.{name}.impaired").default(store.Point(at: 0, value: 0.0)).value > 0.0
+        running = svc.state == .running
+
+        state = if running && impaired
+            "impaired"
+        else
+            supervisor.state_name(svc.state)
+
+        up = if running
+            span_of(now.unix_nanoseconds - svc.since)
+        else
+            ""
+
+        memory = if running
+            memory_of(s, name: name, limit: svc.spec.memory_limit, exact: c.exact_figures)
+        else
+            "-"
+        rows @ rows.push(ServiceRow(name: name, state: state, up: up, restarts: svc.restarts, memory: memory))
+
+    alert_rows: [AlertRow] @= []
+
+    for alert in engine.active_of(a)
+        phase = if alert.phase == .firing
+            "FIRING"
+        else
+            "pending"
+
+        marked = if alert.acknowledged
+            phase + " ack"
+        else
+            phase
+        alert_rows @ alert_rows.push(
+            AlertRow(phase: marked, name: engine.alert_name(rule: alert.rule, label: alert.label), since: clock_of(alert.since))
+        )
+
+    lines: [str] @= []
+
+    for e in j.recent
+        lines @ lines.push(events.format_entry(e))
+
+    firing = engine.count_in(a, phase: .firing)
+    pending = engine.count_in(a, phase: .pending)
+
+    summary = if firing + pending == 0
+        "no alert"
+    else
+        f"{firing} firing, {pending} pending"
+    v @= View(
+        title: c.name,
+        clock: clock_of(now.unix_nanoseconds),
+        summary: summary,
+        services: rows,
+        sensor: c.sensor.name,
+        reading: "",
+        ratio: 0.0,
+        history: [],
+        history_top: 1,
+        alerts: alert_rows,
+        events: lines
+    )
+
+    if settings.has_sensor(c)
+        fill_sensor(@v, c: c, s: s, status: status)
+    return v
+
+# Fills the sensor's part of `v`.
+#
+# - `v`: the view.
+# - `c`: the configuration.
+# - `s`: the samples.
+# - `status`: the sensor's last status.
+function fill_sensor(@v: View, c: settings.Config lent, s: store.Store lent, status: sensor.Status)
+    key = "sensor." + c.sensor.name
+    span = c.sensor.high - c.sensor.low
+
+    match store.last_of(s, key: key)
+        .ok p =>
+            v.reading @ f"{numbers.format_float(p.value, precision: 2)} {c.sensor.unit}, {sensor.status_name(status)}"
+            v.ratio @ (p.value - c.sensor.low) / span
+        .err _ => v.reading @ f"no reading, {sensor.status_name(status)}"
+
+    history: [i64] @= []
+
+    for value in store.recent_values(s, key: key, count: c.dashboard.history)
+        tenths = to_i64((value - c.sensor.low) * 10.0).default(0)
+
+        if tenths < 0
+            history @ history.push(0)
+        else
+            history @ history.push(tenths)
+
+    v.history @ history
+    v.history_top @ to_i64(span * 10.0).default(1)
+
+test "memory_of: exact, against a limit, with none, and before a sample"
+    s @= store.new_store(time.hours(1).must())
+    store.add(@s, key: "service.db.memory", at: time.epoch(), value: 268_435_456.0)
+    assert memory_of(s, name: "db", limit: 100_663_296, exact: false) == "over 96 MiB"
+    assert memory_of(s, name: "db", limit: 536_870_912, exact: false) == "under 512 MiB"
+    assert memory_of(s, name: "db", limit: 0, exact: false) == "-"
+    assert memory_of(s, name: "db", limit: 0, exact: true) == "256.0 MiB"
+    assert memory_of(s, name: "web", limit: 0, exact: true) == "-"
+
+test "clock_of and span_of: a time of day and a span in whole seconds"
+    assert clock_of(1_764_000_000_000_000_000) == "16:00:00"
+    assert span_of(270_500_000_000) == "4m30s"
+    assert span_of(0) == "0s"

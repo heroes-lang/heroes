@@ -1,0 +1,494 @@
+# The configuration file read: TOML, its tables `[logs]`, `[export]`,
+# `[dashboard]` and `[sensor]` and its arrays of tables `[[service]]`,
+# `[[watch]]` and `[[rule]]`, into `settings.Config`. Everything is checked
+# here, once, so a monitor never starts on a file it would misread later: a
+# key the file does not know (a typo is refused, never ignored), a value of
+# the wrong kind, a duration or a size that does not read, a name used
+# twice, a dependency that names nothing or a cycle of them, a rule whose
+# condition does not read. Every refusal names the key and the table it
+# stands in.
+#
+#     name = "edge-01"
+#     interval = "15s"
+#     control = "/run/monitor/control.sock"
+#
+#     [[service]]
+#     name = "db"
+#     command = ["/usr/bin/postgres", "-D", "/var/lib/pg"]
+#     restart = "on-failure"
+#     memory_limit = "512MiB"
+#
+#     [[rule]]
+#     name = "db-down"
+#     when = "service.db.up < 1"
+#     for = "30s"
+#     severity = "critical"
+
+use <rebel>/numbers
+use <rebel>/time
+use <rebel>/toml
+
+use alerts/rules
+use conf/settings
+use control/lock
+use services/deps
+
+# The keys each table may hold.
+constant TOP_KEYS: [str]
+    [
+        "name"
+        "interval"
+        "control"
+        "host"
+        "exact_figures"
+        "notify"
+        "logs"
+        "export"
+        "dashboard"
+        "sensor"
+        "service"
+        "watch"
+        "rule"
+    ]
+
+# The keys of `[logs]`.
+constant LOGS_KEYS: [str]
+    ["dir", "max_bytes", "keep", "daily", "compress"]
+
+# The keys of `[export]`.
+constant EXPORT_KEYS: [str]
+    ["otlp", "every", "gzip"]
+
+# The keys of `[dashboard]`.
+constant DASHBOARD_KEYS: [str]
+    ["history"]
+
+# The keys of `[sensor]`.
+constant SENSOR_KEYS: [str]
+    ["name", "port", "baud", "query", "unit", "timeout", "low", "high"]
+
+# The keys of a `[[service]]`.
+constant SERVICE_KEYS: [str]
+    [
+        "name"
+        "command"
+        "depends_on"
+        "restart"
+        "backoff"
+        "backoff_most"
+        "max_failures"
+        "memory_limit"
+        "input"
+        "stop_line"
+        "stop_grace"
+    ]
+
+# The keys of a `[[watch]]`.
+constant WATCH_KEYS: [str]
+    ["name", "path", "tree"]
+
+# The keys of a `[[rule]]`.
+constant RULE_KEYS: [str]
+    ["name", "when", "for", "severity", "summary"]
+
+# One table of the file and where it stands, for the messages.
+record Table
+    # Its members.
+    members: {str: toml.Value}
+    # Where it stands: `the file`, `[export]`, `the service "db"`.
+    where: str
+
+# The configuration the file at `path` holds. Fails `file_not_found` where
+# there is none, and `invalid`, saying what and where, as `parse` does.
+#
+# - `path`: the file.
+function read(path: str) -> settings.Config?
+    return parse(read_file(path)?)
+
+# The configuration `text` holds. Fails `invalid` for a text that is no TOML,
+# a key no table knows, a value of the wrong kind, a name used twice, a
+# dependency that names no service, services that need each other in a
+# cycle, and a rule that does not read.
+#
+# - `text`: the TOML text.
+function parse(text: str) -> settings.Config?
+    top = table_of(toml.parse(text)?, where: "the file")?
+    known(top, allowed: TOP_KEYS)?
+    name = text_at(top, key: "name", absent: "")?
+
+    if name == "" || !rules.is_word(name) || name.len() > lock.LONGEST_NAME
+        return fail(
+            code: "invalid",
+            msg: f"the file: `name` is a word of letters, digits, - and _, at most {lock.LONGEST_NAME} of them"
+        )
+    interval = span_at(top, key: "interval", absent: "15s")?
+
+    if interval.nanoseconds <= 0
+        return fail(code: "invalid", msg: "the file: `interval` is longer than zero")
+    services = services_of(top)?
+    deps.check(services)?
+    watches = watches_of(top)?
+    rule_specs = rules_of(top)?
+
+    for spec in rule_specs
+        _ = rules.rule_of(spec)?
+
+    control = text_at(top, key: "control", absent: f"monitor-{name}.sock")?
+    host = bool_at(top, key: "host", absent: true)?
+    exact = bool_at(top, key: "exact_figures", absent: true)?
+    notify = texts_at(top, key: "notify")?
+    logs = logs_of(top)?
+    export = export_of(top)?
+    dashboard = dashboard_of(top)?
+    sensor = sensor_of(top)?
+    return ok(
+        settings.Config(name: name, interval: interval, control: control, host: host, exact_figures: exact, logs: logs, export: export, dashboard: dashboard, notify: notify, services: services, watches: watches, sensor: sensor, rules: rule_specs)
+    )
+
+# `v` as a table standing at `where`. Fails `invalid` where it is another
+# kind.
+#
+# - `v`: the value.
+# - `where`: where it stands.
+function table_of(v: toml.Value, where: str) -> Table?
+    match v
+        .table t => return ok(Table(members: t.members, where: where))
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            return fail(code: "invalid", msg: f"{where} is a table, `[...]`")
+
+# The table under `key` of `t`, empty where there is none.
+#
+# - `t`: the table.
+# - `key`: its key.
+function sub_table(t: Table, key: str) -> Table?
+    match t.members[key]
+        .ok v  => return table_of(v, where: f"[{key}]")
+        .err _ => return ok(Table(members: {}, where: f"[{key}]"))
+
+# Checks that every key of `t` is one of `allowed`. Fails `invalid` naming
+# the first that is not.
+#
+# - `t`: the table.
+# - `allowed`: its keys.
+function known(t: Table, allowed: [str]) -> ()?
+    for key in keys(t.members)
+        found: bool @= false
+
+        for a in allowed
+            if a == key
+                found @ true
+
+        if !found
+            return fail(code: "invalid", msg: f"{t.where}: no setting \"{key}\"; it takes {allowed.join(", ")}")
+
+    return ok()
+
+# The text under `key`, `absent` where there is none. Fails `invalid` for
+# another kind.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: what an absent key reads as.
+function text_at(t: Table, key: str, absent: str) -> str?
+    match t.members[key]
+        .err _ => return ok(absent)
+        .ok v =>
+            match v
+                .text s => return ok(s.v)
+                .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is a text in quotes")
+
+# The whole number under `key`, `absent` where there is none.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: what an absent key reads as.
+function int_at(t: Table, key: str, absent: i64) -> i64?
+    match t.members[key]
+        .err _ => return ok(absent)
+        .ok v =>
+            match v
+                .integer n => return ok(n.v)
+                .text _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is a whole number")
+
+# The number under `key`, whole or not, `absent` where there is none.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: what an absent key reads as.
+function float_at(t: Table, key: str, absent: f64) -> f64?
+    match t.members[key]
+        .err _ => return ok(absent)
+        .ok v =>
+            match v
+                .integer n => return ok(to_f64(n.v))
+                .float x   => return ok(x.v)
+                .text _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is a number")
+
+# The boolean under `key`, `absent` where there is none.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: what an absent key reads as.
+function bool_at(t: Table, key: str, absent: bool) -> bool?
+    match t.members[key]
+        .err _ => return ok(absent)
+        .ok v =>
+            match v
+                .boolean b => return ok(b.v)
+                .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is true or false")
+
+# The duration under `key`, written as `time` reads one (`15s`, `1m30s`),
+# `absent` read the same way where there is none.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: the duration an absent key reads as.
+function span_at(t: Table, key: str, absent: str) -> time.Duration?
+    written = text_at(t, key: key, absent: absent)?
+
+    match time.parse_duration(written)
+        .ok d  => return ok(d)
+        .err e => return fail(code: "invalid", msg: f"{t.where}: `{key}` is a duration, `15s` or `1m30s`: {e.msg}")
+
+# The size under `key` in bytes: a whole number, or a text with a unit
+# (`96MiB`, `1.5GB`); `absent` where there is none.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `absent`: the bytes an absent key reads as.
+function size_at(t: Table, key: str, absent: i64) -> i64?
+    match t.members[key]
+        .err _ => return ok(absent)
+        .ok v =>
+            match v
+                .integer n => return ok(n.v)
+                .text s =>
+                    units: numbers.SizeUnits = if s.v.len() > 1 && s.v.slice(from: s.v.len() - 2, to: s.v.len()) == "iB"
+                        .binary
+                    else
+                        .decimal
+
+                    match numbers.parse_size(s.v, units: units)
+                        .ok n  => return ok(n)
+                        .err e => return fail(code: "invalid", msg: f"{t.where}: `{key}` is a size, `512MiB`: {e.msg}")
+                .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is a size, `512MiB` or a number of bytes")
+
+# The texts of the array under `key`, none where there is no key.
+#
+# - `t`: the table.
+# - `key`: the key.
+function texts_at(t: Table, key: str) -> [str]?
+    match t.members[key]
+        .err _ => return ok([])
+        .ok v =>
+            items = match v
+                .array a => a.items
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{t.where}: `{key}` is a list of texts, `[\"a\", \"b\"]`")
+
+            texts: [str] @= []
+
+            for item in items
+                match item
+                    .text s => texts @ texts.push(s.v)
+                    .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                        return fail(code: "invalid", msg: f"{t.where}: every item of `{key}` is a text in quotes")
+
+            return ok(texts)
+
+# The tables of the array of tables `key`, `[[key]]`, each placed for the
+# messages by the name it gives; none where there is no key.
+#
+# - `t`: the table.
+# - `key`: the key.
+# - `what`: what each one is, `service`.
+function tables_at(t: Table, key: str, what: str) -> [Table]?
+    match t.members[key]
+        .err _ => return ok([])
+        .ok v =>
+            items = match v
+                .array a => a.items
+                .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+                    return fail(code: "invalid", msg: f"the file: `{key}` is an array of tables, `[[{key}]]`")
+
+            found: [Table] @= []
+
+            for i in range(from: 0, to: items.len())
+                first = table_of(items[i], where: f"the {what} number {i + 1}")?
+                name = text_at(first, key: "name", absent: "")?
+
+                if name == "" || !rules.is_word(name)
+                    return fail(
+                        code: "invalid",
+                        msg: f"{first.where}: its `name` is a word of letters, digits, - and _"
+                    )
+
+                for earlier in found
+                    if text_at(earlier, key: "name", absent: "")? == name
+                        return fail(code: "invalid", msg: f"two of the {what}s are named \"{name}\"")
+
+                found @ found.push(Table(members: first.members, where: f"the {what} \"{name}\""))
+
+            return ok(found)
+
+# The `[[service]]` tables.
+#
+# - `top`: the file's table.
+function services_of(top: Table) -> [settings.ServiceSpec]?
+    specs: [settings.ServiceSpec] @= []
+
+    for t in tables_at(top, key: "service", what: "service")?
+        known(t, allowed: SERVICE_KEYS)?
+        command = texts_at(t, key: "command")?
+
+        if command.len() == 0
+            return fail(code: "invalid", msg: f"{t.where}: `command` names the program, `[\"/usr/bin/redis-server\"]`")
+
+        restart: settings.Restart = match text_at(t, key: "restart", absent: "on-failure")?
+            "always"     => .always
+            "on-failure" => .on_failure
+            "never"      => .never
+            _            => return fail(code: "invalid", msg: f"{t.where}: `restart` is always, on-failure or never")
+
+        input: settings.Input = match text_at(t, key: "input", absent: "none")?
+            "none" => .none
+            "pipe" => .pipe
+            _      => return fail(code: "invalid", msg: f"{t.where}: `input` is none or pipe")
+
+        stop_line = text_at(t, key: "stop_line", absent: "")?
+
+        if stop_line != "" && input == .none
+            return fail(code: "invalid", msg: f"{t.where}: a `stop_line` is written to a pipe, so its `input` is pipe")
+        specs @ specs.push(
+            settings.ServiceSpec(name: text_at(t, key: "name", absent: "")?, command: command, depends_on: texts_at(t, key: "depends_on")?, restart: restart, backoff: span_at(t, key: "backoff", absent: "1s")?, backoff_most: span_at(t, key: "backoff_most", absent: "5m")?, max_failures: int_at(t, key: "max_failures", absent: 0)?, memory_limit: size_at(t, key: "memory_limit", absent: 0)?, input: input, stop_line: stop_line, stop_grace: span_at(t, key: "stop_grace", absent: "10s")?)
+        )
+
+    return ok(specs)
+
+# The `[[watch]]` tables.
+#
+# - `top`: the file's table.
+function watches_of(top: Table) -> [settings.WatchSpec]?
+    specs: [settings.WatchSpec] @= []
+
+    for t in tables_at(top, key: "watch", what: "watch")?
+        known(t, allowed: WATCH_KEYS)?
+        path = text_at(t, key: "path", absent: "")?
+
+        if path == ""
+            return fail(code: "invalid", msg: f"{t.where}: `path` names the file or the folder")
+        specs @ specs.push(
+            settings.WatchSpec(name: text_at(t, key: "name", absent: "")?, path: path, tree: bool_at(t, key: "tree", absent: false)?)
+        )
+
+    return ok(specs)
+
+# The `[[rule]]` tables.
+#
+# - `top`: the file's table.
+function rules_of(top: Table) -> [settings.RuleSpec]?
+    specs: [settings.RuleSpec] @= []
+
+    for t in tables_at(top, key: "rule", what: "rule")?
+        known(t, allowed: RULE_KEYS)?
+        specs @ specs.push(
+            settings.RuleSpec(name: text_at(t, key: "name", absent: "")?, when: text_at(t, key: "when", absent: "")?, hold: span_at(t, key: "for", absent: "0s")?, severity: text_at(t, key: "severity", absent: "warning")?, summary: text_at(t, key: "summary", absent: "")?)
+        )
+
+    return ok(specs)
+
+# The `[logs]` table.
+#
+# - `top`: the file's table.
+function logs_of(top: Table) -> settings.Logs?
+    t = sub_table(top, key: "logs")?
+    known(t, allowed: LOGS_KEYS)?
+    return ok(
+        settings.Logs(dir: text_at(t, key: "dir", absent: "logs")?, max_bytes: size_at(t, key: "max_bytes", absent: 1_048_576)?, keep: int_at(t, key: "keep", absent: 5)?, daily: bool_at(t, key: "daily", absent: true)?, compress: bool_at(t, key: "compress", absent: true)?)
+    )
+
+# The `[export]` table.
+#
+# - `top`: the file's table.
+function export_of(top: Table) -> settings.Export?
+    t = sub_table(top, key: "export")?
+    known(t, allowed: EXPORT_KEYS)?
+    every = span_at(t, key: "every", absent: "1m")?
+
+    if every.nanoseconds <= 0
+        return fail(code: "invalid", msg: "[export]: `every` is longer than zero")
+    return ok(
+        settings.Export(otlp: text_at(t, key: "otlp", absent: "")?, every: every, gzip: bool_at(t, key: "gzip", absent: false)?)
+    )
+
+# The `[dashboard]` table.
+#
+# - `top`: the file's table.
+function dashboard_of(top: Table) -> settings.Dashboard?
+    t = sub_table(top, key: "dashboard")?
+    known(t, allowed: DASHBOARD_KEYS)?
+    history = int_at(t, key: "history", absent: 40)?
+
+    if history < 1
+        return fail(code: "invalid", msg: "[dashboard]: `history` is 1 or more")
+    return ok(settings.Dashboard(history: history))
+
+# The `[sensor]` table; `settings.no_sensor()` where there is none.
+#
+# - `top`: the file's table.
+function sensor_of(top: Table) -> settings.SensorSpec?
+    t = sub_table(top, key: "sensor")?
+
+    if t.members.len() == 0
+        return ok(settings.no_sensor())
+    known(t, allowed: SENSOR_KEYS)?
+    name = text_at(t, key: "name", absent: "")?
+    port = text_at(t, key: "port", absent: "")?
+
+    if !rules.is_word(name) || port == ""
+        return fail(code: "invalid", msg: "[sensor]: it has a `name`, a word, and a `port`, the device's path")
+    low = float_at(t, key: "low", absent: 0.0)?
+    high = float_at(t, key: "high", absent: 100.0)?
+
+    if !(low < high)
+        return fail(code: "invalid", msg: "[sensor]: `low` is below `high`")
+    return ok(
+        settings.SensorSpec(name: name, port: port, baud: int_at(t, key: "baud", absent: 9600)?, query: text_at(t, key: "query", absent: "")?, unit: text_at(t, key: "unit", absent: "")?, timeout: span_at(t, key: "timeout", absent: "500ms")?, low: low, high: high)
+    )
+
+# A small file every test reads, changed by each to show one refusal.
+function sample_text() -> str
+    return ["name = \"edge\"", "interval = \"30s\"", "[[service]]", "name = \"db\"", "command = [\"/usr/bin/db\"]", "memory_limit = \"96MiB\"", "[[service]]", "name = \"api\"", "command = [\"/usr/bin/api\", \"--port\", \"8080\"]", "depends_on = [\"db\"]", "restart = \"always\"", "[[rule]]", "name = \"db-down\"", "when = \"service.db.up < 1\"", "for = \"30s\"", "severity = \"critical\""].join("\n") + "\n"
+
+test "parse: the services, their settings and defaults, and a rule"
+    c = parse(sample_text()).must()
+    assert c.name == "edge" && c.interval == time.seconds(30).must()
+    assert c.services.len() == 2 && c.services[0].memory_limit == 100663296
+    assert c.services[1].restart == .always && c.services[1].depends_on == ["db"]
+    assert c.services[0].restart == .on_failure && c.services[0].input == .none
+    assert c.rules[0].hold == time.seconds(30).must()
+    assert c.control == "monitor-edge.sock" && !settings.has_sensor(c)
+    assert c.exact_figures && !parse("name = \"a\"\nexact_figures = false\n").must().exact_figures
+
+test "parse: a key no table knows, a duration that does not read, a name used twice"
+    assert parse(sample_text() + "colour = \"red\"\n").is_err()
+    assert parse("name = \"a\"\ninterval = \"soon\"\n").is_err()
+    assert parse("name = \"a-name-longer-than-the-lock-takes\"\n").is_err()
+    assert parse(
+        "name = \"a\"\n[[watch]]\nname = \"w\"\npath = \"x\"\n[[watch]]\nname = \"w\"\npath = \"y\"\n"
+    ).is_err()
+
+test "parse: a dependency on nothing, a rule that does not read, a stop line with no pipe"
+    assert parse("name = \"a\"\n[[service]]\nname = \"x\"\ncommand = [\"x\"]\ndepends_on = [\"y\"]\n").is_err()
+    assert parse("name = \"a\"\n[[rule]]\nname = \"r\"\nwhen = \"avg(t) > 1\"\n").is_err()
+    assert parse("name = \"a\"\n[[service]]\nname = \"x\"\ncommand = [\"x\"]\nstop_line = \"stop\"\n").is_err()
+
+test "parse: a sensor, and one whose span of values is empty"
+    c = parse("name = \"a\"\n[sensor]\nname = \"t\"\nport = \"/dev/ttyUSB0\"\nquery = \"T?\"\nhigh = 60\n").must()
+    assert c.sensor.port == "/dev/ttyUSB0" && c.sensor.high == 60.0 && c.sensor.baud == 9600
+    assert parse("name = \"a\"\n[sensor]\nname = \"t\"\nport = \"p\"\nlow = 5\nhigh = 5\n").is_err()

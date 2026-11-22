@@ -1,0 +1,202 @@
+# A dashboard frame drawn with `tui`, in immediate mode: a view in, a
+# buffer of cells out, drawn the same into a terminal's frame and into a
+# blank buffer a transcript prints. From the top: the services' table under a
+# title holding the monitor's name, its clock and its alerts' count; the
+# sensor, its reading on a gauge between its ends and a sparkline of its
+# history, beside the alerts that are not inactive; the last events; and a
+# line of the keys.
+#
+#     ┌ edge-01 | 09:05:00 | 2 firing, 0 pending ─────────────────────┐
+#     │SERVICE    STATE      UP       RESTARTS MEMORY                 │
+#     │db         running    1m0s     1        under 96 MiB           │
+
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/tui
+
+use dash/view
+
+# The line of keys at the bottom.
+constant KEYS: str
+    "q quit  up/down select  r restart the service selected  a acknowledge the alerts firing"
+
+# The style of a state or a phase: red for what is wrong, yellow for what
+# may become so, green for what is well.
+#
+# - `word`: a service's state or an alert's phase.
+function style_of(word: str) -> term.Style
+    color: term.Color = match word
+        "running"                                      => .green
+        "failed" | "FIRING" | "FIRING ack"             => .red
+        "impaired" | "backoff" | "pending" | "waiting" => .yellow
+        _                                              => .default
+
+    return term.with_foreground(term.plain(), color: color)
+
+# Draws `v` into a buffer over `area`, `selected` the service row
+# highlighted, -1 for none.
+#
+# - `v`: the view.
+# - `area`: the screen's area.
+# - `selected`: the service selected, -1 for none.
+function draw(v: view.View, area: tui.Rect, selected: i64) -> tui.Buffer
+    frame @= tui.blank(area)
+    parts = tui.split(
+        area,
+        layout: tui.new_layout(.vertical, constraints: [.length(n: v.services.len() + 3), .length(n: 6), .min(n: 3), .length(n: 1)])
+    )
+    draw_services(@frame, area: parts[0], v: v, selected: selected)
+    middle = tui.split(
+        parts[1],
+        layout: tui.new_layout(.horizontal, constraints: [.percentage(n: 40), .fill(weight: 1)])
+    )
+    draw_sensor(@frame, area: middle[0], v: v)
+    draw_alerts(@frame, area: middle[1], v: v)
+    draw_events(@frame, area: parts[2], v: v)
+    _ = tui.draw_text(
+        @frame,
+        x: parts[3].x,
+        y: parts[3].y,
+        text: KEYS,
+        style: term.with_attribute(term.plain(), a: .dim),
+        width: parts[3].width
+    )
+    return frame
+
+# Draws the services' table under the title.
+#
+# - `frame`: the buffer.
+# - `area`: where.
+# - `v`: the view.
+# - `selected`: the row selected, -1 for none.
+function draw_services(@frame: tui.Buffer, area: tui.Rect, v: view.View, selected: i64)
+    box = tui.with_title(tui.bordered(), title: f" {v.title} | {v.clock} | {v.summary} ")
+    tui.draw_block(@frame, area: area, block: box)
+    cells: [[str]] @= []
+
+    for r in v.services
+        cells @ cells.push([r.name, r.state, r.up, to_str(r.restarts), r.memory])
+
+    t @= tui.new_table(cells, widths: [.length(n: 10), .length(n: 10), .length(n: 8), .length(n: 8), .fill(weight: 1)])
+    t.header @ [tui.new_row(["SERVICE", "STATE", "UP", "RESTARTS", "MEMORY"])]
+
+    for i in range(from: 0, to: v.services.len())
+        t.rows[i].style @ style_of(v.services[i].state)
+
+    state @= tui.selection()
+
+    if selected >= 0
+        tui.select(@state, index: selected)
+    tui.draw_table(@frame, area: tui.inner_of(box, area: area), table: t, @state)
+
+# Draws the sensor: its reading, a gauge between its ends, and its history.
+#
+# - `frame`: the buffer.
+# - `area`: where.
+# - `v`: the view.
+function draw_sensor(@frame: tui.Buffer, area: tui.Rect, v: view.View)
+    if v.sensor == ""
+        box = tui.with_title(tui.bordered(), title: " sensor ")
+        tui.draw_block(@frame, area: area, block: box)
+        tui.draw_paragraph(@frame, area: tui.inner_of(box, area: area), paragraph: tui.new_paragraph("no sensor"))
+        return
+    box = tui.with_title(tui.bordered(), title: f" sensor {v.sensor} ")
+    tui.draw_block(@frame, area: area, block: box)
+    inside = tui.inner_of(box, area: area)
+    rows = tui.split(inside, layout: tui.new_layout(.vertical, constraints: [.length(n: 1), .length(n: 1), .min(n: 0)]))
+    _ = tui.draw_text(@frame, x: rows[0].x, y: rows[0].y, text: v.reading, style: term.plain(), width: rows[0].width)
+    g @= tui.new_line_gauge(v.ratio)
+    g.filled_symbol @ "="
+    g.unfilled_symbol @ "."
+    tui.draw_line_gauge(@frame, area: rows[1], gauge: g)
+    spark @= tui.new_sparkline(v.history)
+    spark.max @ v.history_top
+    tui.draw_sparkline(@frame, area: rows[2], sparkline: spark)
+
+# Draws the alerts that are not inactive.
+#
+# - `frame`: the buffer.
+# - `area`: where.
+# - `v`: the view.
+function draw_alerts(@frame: tui.Buffer, area: tui.Rect, v: view.View)
+    box = tui.with_title(tui.bordered(), title: " alerts ")
+    tui.draw_block(@frame, area: area, block: box)
+    inside = tui.inner_of(box, area: area)
+
+    if v.alerts.len() == 0
+        tui.draw_paragraph(@frame, area: inside, paragraph: tui.new_paragraph("nothing pending or firing"))
+        return
+    row: i64 @= 0
+
+    for a in v.alerts
+        if row < inside.height
+            line = strings.pad_end(s: a.phase, width: 11, pad: " ") + strings.pad_end(s: a.name, width: 24, pad: " ") + a.since
+            _ = tui.draw_text(
+                @frame,
+                x: inside.x,
+                y: inside.y + row,
+                text: line,
+                style: style_of(a.phase),
+                width: inside.width
+            )
+        row @ row + 1
+
+# Draws the last events, as many of the newest as the area holds.
+#
+# - `frame`: the buffer.
+# - `area`: where.
+# - `v`: the view.
+function draw_events(@frame: tui.Buffer, area: tui.Rect, v: view.View)
+    box = tui.with_title(tui.bordered(), title: " events ")
+    tui.draw_block(@frame, area: area, block: box)
+    inside = tui.inner_of(box, area: area)
+    first: i64 @= v.events.len() - inside.height
+
+    if first < 0
+        first @ 0
+    tui.draw_paragraph(
+        @frame,
+        area: inside,
+        paragraph: tui.new_paragraph(v.events.slice(from: first, to: v.events.len()).join("\n"))
+    )
+
+# The frame of `v` as text, `width` by `height` cells, each row's trailing
+# spaces taken off: what a transcript prints.
+#
+# - `v`: the view.
+# - `width`: the columns.
+# - `height`: the rows.
+function frame_lines(v: view.View, width: i64, height: i64) -> [str]
+    lines: [str] @= []
+
+    for line in tui.to_lines(draw(v, area: tui.Rect(x: 0, y: 0, width: width, height: height), selected: -1))
+        lines @ lines.push(strings.trim_end(line))
+
+    return lines
+
+# A view of the tests: two services, a sensor, an alert and two events.
+function sample_view() -> view.View
+    return view.View(
+        title: "edge",
+        clock: "09:05:00",
+        summary: "1 firing, 0 pending",
+        services: [view.ServiceRow(name: "db", state: "running", up: "5m0s", restarts: 1, memory: "under 96 MiB"), view.ServiceRow(name: "api", state: "impaired", up: "5m0s", restarts: 0, memory: "-")],
+        sensor: "temperature",
+        reading: "72.50 C, ok",
+        ratio: 0.725,
+        history: [450, 600, 725],
+        history_top: 1000,
+        alerts: [view.AlertRow(phase: "FIRING", name: "temperature-high", since: "09:04:00")],
+        events: ["09:04:00 alert: temperature-high firing", "09:05:00 service db: started again, restart 1"]
+    )
+
+test "frame_lines: the title, the services, the sensor, the alerts and the events, each where it stands"
+    lines = frame_lines(sample_view(), width: 80, height: 20)
+    assert lines.len() == 20
+    assert strings.has_prefix(s: lines[0], prefix: "┌ edge | 09:05:00 | 1 firing, 0 pending ─")
+    assert lines[1] == "│SERVICE    STATE      UP       RESTARTS MEMORY                                │"
+    assert strings.has_prefix(s: lines[2], prefix: "│db         running    5m0s     1        under 96 MiB")
+    assert strings.contains(s: lines[6], substr: "72.50 C, ok")
+    assert strings.contains(s: lines[6], substr: "FIRING     temperature-high        09:04:00")
+    assert strings.contains(s: lines[13], substr: "09:05:00 service db: started again, restart 1")
+    assert strings.has_prefix(s: lines[19], prefix: "q quit")

@@ -1,0 +1,159 @@
+# The control socket: a local channel of `ipc` at the configured path, made
+# readable and writable by this user alone, where `monitor ctl` and any
+# other tool of the machine ask the monitor for its state and tell it what
+# to do. One request and one answer a connection, each bounded in time, so
+# a client that connects and says nothing holds the monitor up no longer
+# than `DEADLINE_MS`.
+#
+# Only a process of the user the monitor runs as is answered: the system
+# tells who is at the other end (`ipc.peer_of`), and any other user is
+# refused, whatever the socket file's permission says. A socket file left by
+# a monitor that died is found by connecting to it, nothing answering, and
+# removed; one where a monitor answers is another monitor's, and refused.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/ipc
+use <rebel>/os
+use <rebel>/time
+
+use control/protocol
+
+# How long a connection may take to send its request and take its answer.
+constant DEADLINE_MS: i64
+    2_000
+
+# The socket and what it served.
+record Server
+    # The listener, by its path; empty once closed.
+    listeners: {str: ipc.Listener}
+    # Its path.
+    path: str
+    # Requests answered.
+    served: i64
+    # Connections refused: another user, or no request that reads.
+    refused: i64
+
+# One request read, its connection waiting for the answer.
+record Incoming
+    # The connection; `answer` closes it.
+    stream: io.Stream
+    # The request.
+    request: protocol.Request
+
+# A server listening at `path`. A socket file left there by a monitor that
+# died is removed first.
+#
+# - `path`: the socket file's path, at most 103 bytes on macOS.
+#
+# Fails `exists` where a monitor answers at the path, and as `ipc.listen`
+# fails.
+function open(path: str) -> Server?
+    made = match ipc.listen(path, permission: 0o600)
+        .ok l => l
+        .err e =>
+            if e.code != "exists"
+                return fail(code: e.code, msg: e.msg)
+
+            match ipc.connect(path, within: time.nanoseconds(0))
+                .ok other =>
+                    held @= other
+                    _ = io.close(@held).is_err()
+                    return fail(code: "exists", msg: f"another monitor answers at \"{path}\"")
+                .err _ =>
+                    fs.remove(path)?
+                    ipc.listen(path, permission: 0o600)?
+
+    return ok(Server(listeners: {path: made}, path: path, served: 0, refused: 0))
+
+# A server that listens nowhere, for a monitor with no control socket: every
+# `next` fails `closed`.
+function none() -> Server
+    return Server(listeners: {}, path: "", served: 0, refused: 0)
+
+# The next request, waiting at most `within` for a connection. A connection
+# of another user, or one whose request does not read, is answered with the
+# failure and closed, and the next one is waited for.
+#
+# - `srv`: the server.
+# - `within`: the longest to wait for a connection; zero takes one waiting
+#   already.
+#
+# Fails `timeout` where none came, `closed` where the server is closed, and
+# as `ipc.accept` fails.
+function next(@srv: Server, within: time.Duration) -> Incoming?
+    l = match srv.listeners[srv.path]
+        .ok listening => listening
+        .err _        => return fail(code: "closed", msg: "the control socket is closed")
+
+    while true
+        s = ipc.accept(l, within: within)?
+        _ = ipc.set_deadline(s, deadline: time.milliseconds(DEADLINE_MS)?).is_err()
+
+        match peer_allowed(s)
+            .err e =>
+                refuse(@srv, s: s, a: protocol.answer_failure(code: "permission", msg: e.msg))
+                continue
+            .ok _ => _ = 0
+
+        read: protocol.Request? = match ipc.read_message(s, most: protocol.MOST_BYTES)
+            .ok data => protocol.decode_request(data)
+            .err e   => fail(code: e.code, msg: e.msg)
+
+        match read
+            .ok request => return ok(Incoming(stream: s, request: request))
+            .err e      => refuse(@srv, s: s, a: protocol.answer_failure(code: "invalid", msg: e.msg))
+
+# Whether the process at the other end of `s` runs as this process's user.
+# Fails `permission` where it does not; where the system numbers no users
+# (Windows), every peer is the user's.
+#
+# - `s`: the connection.
+function peer_allowed(s: io.Stream) -> ()?
+    peer = match ipc.peer_of(s)
+        .ok p => p
+        .err e =>
+            if e.code == "unsupported"
+                return ok()
+            return fail(code: "permission", msg: f"who connected cannot be told: {e.msg}")
+
+    me = os.user_id().default(-1)
+
+    if peer.uid == -1 || me == -1 || peer.uid == me
+        return ok()
+    return fail(code: "permission", msg: f"the control socket answers its own user alone, not user {peer.uid}")
+
+# Answers `a` on `s` and closes it, counting a refusal.
+#
+# - `srv`: the server.
+# - `s`: the connection.
+# - `a`: the answer.
+function refuse(@srv: Server, s: io.Stream, a: protocol.Answer)
+    srv.refused @ srv.refused + 1
+    held @= s
+    _ = ipc.write_message(held, data: protocol.encode_answer(a)).is_err()
+    _ = io.close(@held).is_err()
+
+# Answers `incoming` with `a` and closes its connection; a client that went
+# away is no failure of the monitor's.
+#
+# - `srv`: the server.
+# - `incoming`: the request read.
+# - `a`: the answer.
+function answer(@srv: Server, incoming: Incoming, a: protocol.Answer)
+    srv.served @ srv.served + 1
+    s @= incoming.stream
+    _ = ipc.write_message(s, data: protocol.encode_answer(a)).is_err()
+    _ = io.close(@s).is_err()
+
+# Closes the server, which removes its socket file.
+#
+# - `srv`: the server.
+function close(@srv: Server)
+    match srv.listeners[srv.path]
+        .ok listening =>
+            l @= listening
+            _ = ipc.close_listener(@l).is_err()
+        .err _ => _ = 0
+
+    srv.listeners @ {}

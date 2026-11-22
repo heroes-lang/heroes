@@ -1,0 +1,158 @@
+# `monitor run`: the monitor for real, on the system's clock, until Ctrl-C,
+# SIGTERM or `monitor ctl quit`. Its lock taken first, so a second monitor
+# of the same configuration is refused before it starts a service; then one
+# loop on one thread, waiting on one `poll` set for whatever comes first:
+# the collection's timer, a service's output, a watched path's event, a key
+# at the dashboard; the control socket asked at each turn, since `poll`
+# waits on no channel of `ipc` (`ipc.ledger`'s pending readiness), so a
+# request waits at most one turn, `TURN_MS`.
+#
+# Without the dashboard, every event the monitor tells is printed on the
+# standard output with its time, as a daemon's log; the journal's file
+# holds them all the same.
+
+use <rebel>/io
+use <rebel>/os
+use <rebel>/poll
+use <rebel>/time
+
+use alerts/engine
+use conf/settings
+use control/lock
+use dash/screen
+use dash/view
+use engine/commands
+use engine/monitor
+use services/stopping
+use services/supervisor
+
+# The longest one turn of the loop waits.
+constant TURN_MS: i64
+    200
+
+# Runs the monitor of `c` until it is asked to stop.
+#
+# - `c`: the configuration, read and checked.
+# - `dashboard`: whether the dashboard takes the terminal.
+#
+# Fails `exists` where another monitor runs the configuration, and as the
+# monitor's parts fail to start.
+function run(c: settings.Config, dashboard: bool) -> ()?
+    os.catch_stop()?
+    held @= lock.take(c.name)?
+    ran = run_locked(c, dashboard: dashboard)
+    lock.release(@held)
+    return ran
+
+# The loop, the lock held.
+#
+# - `c`: the configuration.
+# - `dashboard`: whether the dashboard takes the terminal.
+function run_locked(c: settings.Config, dashboard: bool) -> ()?
+    m @= monitor.start(c, at: time.now()?, handed: false)?
+    timer = poll.add_timer(m.set, first: time.nanoseconds(0), every: c.interval)?
+    screens: {str: screen.Screen} @= {}
+
+    if dashboard
+        screens["on"] @ screen.open(m.set)?
+
+    while !m.stop_asked
+        events = match poll.wait(m.set, limit: time.milliseconds(TURN_MS)?)
+            .ok ready => ready
+            .err _    => break
+
+        now = time.now()?
+        changed: bool @= false
+
+        for e in events
+            if e.key == timer
+                monitor.collect(@m, at: now)
+                changed @ true
+            else if !supervisor.read_ready(@m.sup, key: e.key, at: now)
+                changed @ answer_event(@m, screens: @screens, key: e.key, at: now) || changed
+
+        if commands.serve(@m, within: time.nanoseconds(0), most: 16, at: now) > 0
+            changed @ true
+
+        if os.is_stop_asked()
+            break
+
+        if changed
+            show(@m, screens: @screens, at: now)
+
+    for name in keys(screens)
+        s @= screens[name].must()
+        screen.close(@s, set: m.set)
+
+    screens @ {}
+    _ = monitor.stop(@m, at: time.now()?)
+    print_told(@m, at: time.now()?)
+    return ok()
+
+# Acts on the ready key `key` where it is a watch's or the terminal's, and
+# answers whether something changed.
+#
+# - `m`: the monitor.
+# - `screens`: the dashboard, where it is open.
+# - `key`: the key.
+# - `at`: the moment.
+function answer_event(@m: monitor.Monitor, @screens: {str: screen.Screen}, key: i64, at: time.Instant) -> bool
+    for i in range(from: 0, to: m.files.watched.len())
+        if m.files.watched[i].key == key
+            return monitor.take_changes(@m, i: i, limit: time.nanoseconds(0), at: at).len() > 0
+
+    for name in keys(screens)
+        s @= screens[name].must()
+
+        if s.key == key
+            for ask in screen.asks(@s, services: m.sup.services.len())
+                match ask
+                    .quit => m.stop_asked @ true
+                    .restart =>
+                        if s.selected < m.sup.services.len()
+                            target = m.sup.services[s.selected].spec.name
+                            monitor.note(@m, at: at, level: .info, source: "dashboard", text: "restart " + target)
+                            monitor.note_services(
+                                @m,
+                                at: at,
+                                happened: stopping.restart(@m.sup, name: target, at: at).default([])
+                            )
+                    .acknowledge =>
+                        for a in engine.active_of(m.alerts)
+                            if a.phase == .firing && !a.acknowledged
+                                _ = engine.acknowledge(
+                                    @m.alerts,
+                                    name: engine.alert_name(rule: a.rule, label: a.label)
+                                ).is_err()
+                    .redraw | .nothing => _ = 0
+
+            screens[name] @ s
+            return true
+
+    return false
+
+# Shows what changed: a new frame where the dashboard is open, else the
+# events told, printed.
+#
+# - `m`: the monitor.
+# - `screens`: the dashboard, where it is open.
+# - `at`: the moment.
+function show(@m: monitor.Monitor, @screens: {str: screen.Screen}, at: time.Instant)
+    if screens.len() == 0
+        print_told(@m, at: at)
+        return
+    _ = monitor.take_told(@m)
+    v = view.view_of(m.config, sup: m.sup, s: m.series, a: m.alerts, j: m.journal, status: m.sensor.status, now: at)
+
+    for name in keys(screens)
+        s @= screens[name].must()
+        screen.show(@s, v: v)
+        screens[name] @ s
+
+# Prints the events told since the last print, each with its time.
+#
+# - `m`: the monitor.
+# - `at`: the moment.
+function print_told(@m: monitor.Monitor, at: time.Instant)
+    for line in monitor.take_told(@m)
+        _ = io.write_line(io.stdout(), line: time.format(at, layout: .rfc3339_seconds) + " " + line).is_err()

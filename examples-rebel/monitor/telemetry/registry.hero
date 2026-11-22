@@ -1,0 +1,200 @@
+# The monitor's metrics in a `metrics` registry, as a Prometheus exporter
+# keeps them: every sample a collection takes set on its gauge, labelled by
+# what it is of; and the counters of what the monitor did, collections,
+# restarts, file changes, sensor readings, alert transitions and control
+# requests. The registry is what the OTLP export sends and what
+# `monitor ctl metrics` prints in Prometheus's text format.
+#
+# A sample's key names its family: `service.db.memory` is
+# `monitor_service_resident_bytes{service="db"}`, `sensor.temperature` is
+# `monitor_sensor_value{sensor="temperature"}`. A key no family takes is
+# kept in the store and not exported.
+
+use <rebel>/metrics
+use <rebel>/strings
+use <rebel>/time
+
+use series/store
+
+# Collections run.
+constant TICKS: str
+    "monitor_ticks_total"
+
+# Restarts of each service.
+constant RESTARTS: str
+    "monitor_service_restarts_total"
+
+# File changes seen under each watched path, by kind.
+constant FILE_CHANGES: str
+    "monitor_file_changes_total"
+
+# The sensor's readings, by how they went.
+constant READINGS: str
+    "monitor_sensor_readings_total"
+
+# Alert transitions, by rule and the phase entered.
+constant TRANSITIONS: str
+    "monitor_alert_transitions_total"
+
+# The alerts in each phase now.
+constant ALERTS: str
+    "monitor_alerts"
+
+# Control requests served, by command and outcome.
+constant REQUESTS: str
+    "monitor_control_requests_total"
+
+# How long each collector took, in seconds of real time.
+constant COLLECT_SECONDS: str
+    "monitor_collect_duration_seconds"
+
+# Where a sample's key lands: its family and its labels' values.
+record Landing
+    # The family.
+    family: str
+    # The labels' values, in the family's order.
+    labels: [str]
+
+# The gauges a sample lands on: the family, its help, its labels, and the
+# key's form: its first word, its last word where it has three, and `*` for
+# the word the label takes.
+record Gauge
+    # The family's name.
+    family: str
+    # Its help.
+    help: str
+    # Its label, "" for none.
+    label: str
+    # The key's first word.
+    first: str
+    # The key's last word, "" for a key of two words whose second is the
+    # label, or the whole rest for a key of no label.
+    last: str
+
+# Every gauge a sample may land on.
+function gauges() -> [Gauge]
+    return [
+        Gauge(family: "monitor_service_up", help: "1 while the service runs.", label: "service", first: "service", last: "up")
+        Gauge(family: "monitor_service_impaired", help: "1 while a service it needs does not run.", label: "service", first: "service", last: "impaired")
+        Gauge(family: "monitor_service_resident_bytes", help: "The service's resident memory.", label: "service", first: "service", last: "memory")
+        Gauge(family: "monitor_service_cpu_percent", help: "The share of one processor the service used.", label: "service", first: "service", last: "cpu")
+        Gauge(family: "monitor_sensor_value", help: "The sensor's last reading, in its unit.", label: "sensor", first: "sensor", last: "")
+        Gauge(family: "monitor_watch_bytes", help: "What the watched path's files hold.", label: "watch", first: "watch", last: "bytes")
+        Gauge(family: "monitor_host_cpu_busy_percent", help: "The share of the processors that was busy.", label: "", first: "host", last: "cpu.busy")
+        Gauge(family: "monitor_host_memory_used_percent", help: "The share of the memory in use.", label: "", first: "host", last: "memory.used")
+        Gauge(family: "monitor_host_load1", help: "The load over the last minute.", label: "", first: "host", last: "load1")
+        Gauge(family: "monitor_host_network_received_bytes_per_second", help: "Bytes received a second.", label: "", first: "host", last: "net.received")
+        Gauge(family: "monitor_host_network_sent_bytes_per_second", help: "Bytes sent a second.", label: "", first: "host", last: "net.sent")
+    ]
+
+# The family and labels the sample `key` lands on. Fails `not_found` where
+# no family takes it.
+#
+# - `key`: the sample's key.
+function landing_of(key: str) -> Landing?
+    words = strings.split(s: key, sep: ".")
+
+    for g in gauges()
+        if words[0] == g.first
+            if g.label == "" && key == g.first + "." + g.last
+                return ok(Landing(family: g.family, labels: []))
+
+            if g.label != "" && g.last == "" && words.len() == 2
+                return ok(Landing(family: g.family, labels: [words[1]]))
+
+            if g.label != "" && words.len() == 3 && words[2] == g.last
+                return ok(Landing(family: g.family, labels: [words[1]]))
+
+    return fail(code: "not_found", msg: f"no family takes \"{key}\"")
+
+# A registry with every family described and nothing recorded. A family of
+# no label holds its one series from the start, so the machine's gauges are
+# described only where the machine is collected, never exported at 0.
+#
+# - `host`: whether the machine's figures are collected.
+#
+# Fails as `metrics.register` fails, which it does not for these names.
+function new_registry(host: bool) -> metrics.Registry?
+    r @= metrics.new_registry()
+
+    for g in gauges()
+        if g.first == "host" && !host
+            continue
+
+        labels: [str] = if g.label == ""
+            []
+        else
+            [g.label]
+        metrics.register(@r, d: metrics.gauge(name: g.family, help: g.help, labels: labels))?
+
+    metrics.register(@r, d: metrics.counter(name: TICKS, help: "Collections run.", labels: []))?
+    metrics.register(@r, d: metrics.counter(name: RESTARTS, help: "Restarts of each service.", labels: ["service"]))?
+    metrics.register(@r, d: metrics.counter(name: FILE_CHANGES, help: "File changes seen, by kind.", labels: ["watch", "change"]))?
+    metrics.register(@r, d: metrics.counter(name: READINGS, help: "The sensor's readings, by how they went.", labels: ["sensor", "status"]))?
+    metrics.register(@r, d: metrics.counter(name: TRANSITIONS, help: "Alert transitions, by rule and the phase entered.", labels: ["rule", "phase"]))?
+    metrics.register(@r, d: metrics.gauge(name: ALERTS, help: "The alerts in each phase now.", labels: ["phase"]))?
+    metrics.register(@r, d: metrics.counter(name: REQUESTS, help: "Control requests served, by command and outcome.", labels: ["command", "outcome"]))?
+    buckets = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0]
+    metrics.register(@r, d: metrics.histogram(name: COLLECT_SECONDS, help: "Seconds each collector took.", labels: ["collector"], buckets: buckets))?
+    return ok(r)
+
+# Sets every sample of `samples` on its gauge; a key no family takes is
+# passed over.
+#
+# - `r`: the registry.
+# - `samples`: the samples of a collection.
+function record_samples(@r: metrics.Registry, samples: [store.Sample])
+    for s in samples
+        match landing_of(s.key)
+            .ok l  => _ = metrics.set(@r, name: l.family, labels: l.labels, value: s.value).is_err()
+            .err _ => _ = 0
+
+# Adds one to the counter `name` of `labels`.
+#
+# - `r`: the registry.
+# - `name`: the counter.
+# - `labels`: its labels' values.
+function count(@r: metrics.Registry, name: str, labels: [str])
+    _ = metrics.inc(@r, name: name, labels: labels).is_err()
+
+# Records how long the collector `collector` took.
+#
+# - `r`: the registry.
+# - `collector`: `services`, `sensor`, `files` or `host`.
+# - `took`: how long, in real time.
+function record_duration(@r: metrics.Registry, collector: str, took: time.Duration)
+    _ = metrics.observe_duration(@r, name: COLLECT_SECONDS, labels: [collector], d: took).is_err()
+
+# The registry in Prometheus's text format 0.0.4.
+#
+# - `r`: the registry.
+function prometheus_text(r: metrics.Registry lent) -> str
+    return metrics.format_text(metrics.gather(r))
+
+# How many families hold at least one series, and so are exported.
+#
+# - `r`: the registry.
+function families_held(r: metrics.Registry lent) -> i64
+    n: i64 @= 0
+
+    for f in metrics.gather(r)
+        if f.samples.len() > 0
+            n @ n + 1
+
+    return n
+
+test "landing_of: a service's figure, the sensor, a watched path, the host, and a key no family takes"
+    assert landing_of("service.db.memory").must() == Landing(family: "monitor_service_resident_bytes", labels: ["db"])
+    assert landing_of("sensor.temperature").must() == Landing(family: "monitor_sensor_value", labels: ["temperature"])
+    assert landing_of("watch.spool.bytes").must() == Landing(family: "monitor_watch_bytes", labels: ["spool"])
+    assert landing_of("host.load1").must() == Landing(family: "monitor_host_load1", labels: [])
+    assert landing_of("watch.spool.changes").is_err()
+    assert landing_of("service.db.restarts").is_err()
+
+test "record_samples: gauges set, and the text a scraper reads"
+    r @= new_registry(false).must()
+    record_samples(@r, samples: [store.Sample(key: "service.db.up", value: 1.0), store.Sample(key: "x.y", value: 2.0)])
+    count(@r, name: TICKS, labels: [])
+    assert metrics.value_of(r, name: "monitor_service_up", labels: ["db"]).must() == 1.0
+    assert strings.contains(s: prometheus_text(r), substr: "monitor_ticks_total 1")
+    assert families_held(r) == 2

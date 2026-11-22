@@ -1,0 +1,150 @@
+# The monitor's journal: every event it sees or causes (a service started or
+# ended, an alert's change, a file changed, a sensor gone silent, a control
+# request served) written as one line to `monitor.log` in the log folder,
+# which `log/files` sets aside by size and by day; kept in memory as the
+# last few for the dashboard; and kept as OTLP log records until the next
+# export sends them.
+#
+# A line's time is the monitor's clock, handed in by the caller, never read
+# here: so a demo on a fixed clock writes the same files every run. A line
+# that cannot be written is counted and told by `monitor ctl status`, never
+# a reason to stop monitoring.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/log
+use <rebel>/log/files
+use <rebel>/path
+use <rebel>/time
+use <rebel>/tracing
+
+use conf/settings
+
+# The name of the journal's file in the log folder.
+constant FILE_NAME: str
+    "monitor.log"
+
+# One event.
+record Entry
+    # When, on the monitor's clock, in nanoseconds since 1970.
+    at: i64
+    # How much it matters.
+    level: log.Level
+    # What it is about: `service db`, `alert`, `watch conf`, `sensor`.
+    source: str
+    # What happened, one line.
+    text: str
+
+# The journal.
+record Journal
+    # The file, rotated.
+    file: files.Rotating
+    # The form of a line; its stream and clock are never used.
+    logger: log.Logger
+    # The last events, oldest first.
+    recent: [Entry]
+    # How many `recent` holds at most.
+    keep_recent: i64
+    # The lines written.
+    written: i64
+    # The lines that could not be written.
+    lost: i64
+    # Why the last line was lost, "" where none was.
+    last_loss: str
+    # The events not yet exported.
+    records: [tracing.LogRecord]
+
+# The journal of the log folder `logs`, its file opened to append (made with
+# its folder where it is not there), keeping the last `keep_recent` events in
+# memory.
+#
+# - `logs`: the log settings.
+# - `keep_recent`: how many events the dashboard may show, 1 or more.
+#
+# Fails as `files.open` fails.
+function open(logs: settings.Logs, keep_recent: i64) -> Journal?
+    rotation = files.Rotation(
+        max_bytes: logs.max_bytes,
+        daily: logs.daily,
+        keep: logs.keep,
+        keep_days: 0,
+        compress: logs.compress
+    )
+    file = files.open(path.join_all([logs.dir, FILE_NAME]), rotation: rotation)?
+    return ok(
+        Journal(file: file, logger: log.to(io.stderr()), recent: [], keep_recent: keep_recent, written: 0, lost: 0, last_loss: "", records: [])
+    )
+
+# Writes the event `text` of `source` at `at`.
+#
+# - `j`: the journal.
+# - `at`: when, on the monitor's clock.
+# - `level`: how much it matters.
+# - `source`: what it is about.
+# - `text`: what happened.
+# - `fields`: what a reader of the file may want beside the line: a value, a
+#   status; they are written in the file and sent as the record's
+#   attributes, and never shown on the dashboard.
+function write(@j: Journal, at: time.Instant, level: log.Level, source: str, text: str, fields: [log.Field])
+    msg = f"{source}: {text}"
+    line = log.format_line(j.logger, level: level, at: at, msg: msg, fields: fields)
+
+    match files.write_line(@j.file, line: line, at: at)
+        .ok _ => j.written @ j.written + 1
+        .err e =>
+            j.lost @ j.lost + 1
+            j.last_loss @ f"{e.code}: {e.msg}"
+
+    j.recent @ j.recent.push(Entry(at: at.unix_nanoseconds, level: level, source: source, text: text))
+
+    if j.recent.len() > j.keep_recent
+        j.recent @ j.recent.slice(from: j.recent.len() - j.keep_recent, to: j.recent.len())
+    no_span = tracing.SpanContext(trace_id: [], span_id: [], flags: 0, state: [], remote: false)
+    j.records @ j.records.push(tracing.log_record(no_span, level: level, msg: msg, fields: fields, at: at))
+
+# The events not yet exported, taken out of the journal.
+#
+# - `j`: the journal, its records emptied.
+function take_records(@j: Journal) -> [tracing.LogRecord]
+    taken = j.records
+    j.records @ []
+    return taken
+
+# Closes the journal's file.
+#
+# - `j`: the journal.
+#
+# Fails as `files.close` fails.
+function close(@j: Journal) -> ()?
+    return files.close(@j.file)
+
+# The event as the dashboard shows it: its time of day and its words.
+#
+# - `e`: the event.
+function format_entry(e: Entry) -> str
+    at = time.from_unix(whole_seconds: e.at / 1_000_000_000, extra_nanoseconds: 0).default(time.epoch())
+    return f"{time.format(at, layout: .time_only)} {e.source}: {e.text}"
+
+test "write: lines in the file, the last few kept, every one a record to export"
+    dir = "build/monitor-test-journal"
+    _ = fs.remove_all(dir).is_err()
+    logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
+    j @= open(logs, keep_recent: 2).must()
+    t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()
+
+    for i in range(from: 0, to: 3)
+        write(
+            @j,
+            at: time.add(t0, d: time.seconds(i).must()).must(),
+            level: .info,
+            source: "test",
+            text: f"line {i}",
+            fields: []
+        )
+
+    assert j.written == 3 && j.recent.len() == 2 && j.recent[1].text == "line 2"
+    assert take_records(@j).len() == 3 && j.records.len() == 0
+    close(@j).must()
+    text = read_file(path.join_all([dir, FILE_NAME])).must()
+    assert text == "2025-11-24T16:00:00.000Z INFO test: line 0\n2025-11-24T16:00:01.000Z INFO test: line 1\n2025-11-24T16:00:02.000Z INFO test: line 2\n"
+    assert format_entry(j.recent[0]) == "16:00:01 test: line 1"

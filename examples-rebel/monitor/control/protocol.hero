@@ -1,0 +1,136 @@
+# What passes over the control socket: one request and one answer per
+# connection, each one message of `ipc` (its length, then its bytes) holding
+# a JSON object, so another tool, in any language, speaks it with a socket
+# and a JSON library:
+#
+#     {"command": "ack", "args": ["cache-memory"]}
+#     {"ok": true, "lines": ["acknowledged 1 alert"]}
+#     {"ok": false, "code": "not_found", "msg": "no alert named \"x\" is firing"}
+#
+# The commands: `status`, `alerts`, `ack <alert>`, `silence <rule>
+# <duration>`, `restart <service>`, `start <service>`, `stop <service>`,
+# `send <service> <line>`, `metrics`, and `quit`, which asks the monitor to
+# stop.
+
+use <rebel>/bytes
+use <rebel>/json
+
+# The longest message either side takes, in bytes.
+constant MOST_BYTES: i64
+    1_048_576
+
+# The commands a request may name.
+constant COMMANDS: [str]
+    ["status", "alerts", "ack", "silence", "restart", "start", "stop", "send", "metrics", "quit"]
+
+# A request.
+record Request
+    # The command.
+    command: str
+    # Its arguments.
+    args: [str]
+
+# An answer.
+record Answer
+    # Whether the command did what it was asked.
+    done: bool
+    # What it says, one line each, where it was done.
+    lines: [str]
+    # The failure's code, where it was not.
+    code: str
+    # The failure's words, where it was not.
+    msg: str
+
+# An answer that says `lines`.
+#
+# - `lines`: the lines.
+function answer_lines(lines: [str]) -> Answer
+    return Answer(done: true, lines: lines, code: "", msg: "")
+
+# An answer that tells a failure.
+#
+# - `code`: its code.
+# - `msg`: its words.
+function answer_failure(code: str, msg: str) -> Answer
+    return Answer(done: false, lines: [], code: code, msg: msg)
+
+# The bytes of `r`.
+#
+# - `r`: the request.
+function encode_request(r: Request) -> [u8]
+    words: [json.Value] @= []
+
+    for a in r.args
+        words @ words.push(.text(v: a))
+
+    v: json.Value = .object(members: {"command": .text(v: r.command), "args": .list(items: words)})
+    return bytes.from_text(json.format(v).default("{}"))
+
+# The request `data` holds. Fails `invalid` where it is no JSON object with
+# a known `command` and a list of texts as its `args`.
+#
+# - `data`: the message's bytes.
+function decode_request(data: [u8]) -> Request?
+    v = json.parse(bytes.to_text(data)?)?
+    command = json.text_of(json.member(v, key: "command")?)?
+    known: bool @= false
+
+    for c in COMMANDS
+        if c == command
+            known @ true
+
+    if !known
+        return fail(code: "invalid", msg: f"no command \"{command}\": {COMMANDS.join(", ")}")
+    words: [str] @= []
+
+    match json.member(v, key: "args")
+        .ok list =>
+            for item in json.items_of(list)?
+                words @ words.push(json.text_of(item)?)
+        .err _ => _ = 0
+
+    return ok(Request(command: command, args: words))
+
+# The bytes of `a`.
+#
+# - `a`: the answer.
+function encode_answer(a: Answer) -> [u8]
+    v: json.Value = if a.done
+        lines: [json.Value] @= []
+
+        for l in a.lines
+            lines @ lines.push(.text(v: l))
+
+        .object(members: {"ok": .boolean(v: true), "lines": .list(items: lines)})
+    else
+        .object(members: {"ok": .boolean(v: false), "code": .text(v: a.code), "msg": .text(v: a.msg)})
+    return bytes.from_text(json.format(v).default("{}"))
+
+# The answer `data` holds. Fails `invalid` where it is none.
+#
+# - `data`: the message's bytes.
+function decode_answer(data: [u8]) -> Answer?
+    v = json.parse(bytes.to_text(data)?)?
+
+    if !json.bool_of(json.member(v, key: "ok")?)?
+        code = json.text_of(json.member(v, key: "code")?)?
+        return ok(answer_failure(code: code, msg: json.text_of(json.member(v, key: "msg")?)?))
+    lines: [str] @= []
+
+    for item in json.items_of(json.member(v, key: "lines")?)?
+        lines @ lines.push(json.text_of(item)?)
+
+    return ok(answer_lines(lines))
+
+test "encode_request and decode_request: a request read back, an unknown command refused"
+    r = Request(command: "silence", args: ["temperature-high", "30m"])
+    assert decode_request(encode_request(r)).must() == r
+    assert decode_request(bytes.from_text("{\"command\": \"reboot\"}")).is_err()
+    assert decode_request(bytes.from_text("[1]")).is_err()
+    assert decode_request(bytes.from_text("{\"command\": \"status\"}")).must().args.len() == 0
+
+test "encode_answer and decode_answer: lines and a failure read back"
+    lines = answer_lines(["a", "b"])
+    assert decode_answer(encode_answer(lines)).must() == lines
+    failure = answer_failure(code: "not_found", msg: "no such alert")
+    assert decode_answer(encode_answer(failure)).must() == failure

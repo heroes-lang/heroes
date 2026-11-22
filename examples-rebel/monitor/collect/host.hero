@@ -1,0 +1,92 @@
+# The machine's own figures, as `top` and Netdata's system charts show them:
+# the share of its processors that was busy since the reading before
+# (`host.cpu.busy`, percent), the share of its memory in use
+# (`host.memory.used`, percent), its load over the last minute
+# (`host.load1`), and the bytes its network interfaces received and sent
+# each second since the reading before (`host.net.received`,
+# `host.net.sent`), every interface summed. A figure the system does not
+# keep (a load on Windows) is left out, never invented.
+#
+# Rates are counted over the monotonic clock between two readings, read
+# here, for the reason `collect/procs` gives.
+
+use <rebel>/os
+use <rebel>/time
+
+use series/store
+
+# The readings the next rates are counted from.
+record Host
+    # The processors' times at the last reading, where one was taken.
+    cpu: [os.CpuTimes]
+    # The bytes received and sent at the last reading, every interface.
+    received: i64
+    # Sent, the same.
+    sent: i64
+    # When the last reading was taken, on the monotonic clock; 0 for none.
+    read_at: i64
+
+# Readings with none before.
+function new_host() -> Host
+    return Host(cpu: [], received: 0, sent: 0, read_at: 0)
+
+# The machine's samples at this collection.
+#
+# - `h`: the readings before, moved to these.
+function collect(@h: Host) -> [store.Sample]
+    samples: [store.Sample] @= []
+    now = time.mark().default(time.Mark(nanoseconds: 0)).nanoseconds
+    seconds = to_f64(now - h.read_at) / 1_000_000_000.0
+
+    match os.cpu_times()
+        .ok times =>
+            if h.cpu.len() == 1
+                match os.cpu_usage(before: h.cpu[0], after: times)
+                    .ok busy => samples @ samples.push(store.Sample(key: "host.cpu.busy", value: busy))
+                    .err _   => _ = 0
+            h.cpu @ [times]
+        .err _ => _ = 0
+
+    match os.memory()
+        .ok m =>
+            used = to_f64(m.total_bytes - m.available_bytes) * 100.0 / to_f64(m.total_bytes)
+            samples @ samples.push(store.Sample(key: "host.memory.used", value: used))
+        .err _ => _ = 0
+
+    match os.load_average()
+        .ok load => samples @ samples.push(store.Sample(key: "host.load1", value: to_f64(load.one_minute) / 1000.0))
+        .err _   => _ = 0
+
+    match os.network_counters()
+        .ok interfaces =>
+            received: i64 @= 0
+            sent: i64 @= 0
+
+            for one in interfaces
+                received @ received + one.bytes_received
+                sent @ sent + one.bytes_sent
+
+            if h.read_at > 0 && seconds > 0.0 && received >= h.received && sent >= h.sent
+                samples @ samples.push(
+                    store.Sample(key: "host.net.received", value: to_f64(received - h.received) / seconds)
+                )
+                samples @ samples.push(store.Sample(key: "host.net.sent", value: to_f64(sent - h.sent) / seconds))
+            h.received @ received
+            h.sent @ sent
+        .err _ => _ = 0
+
+    h.read_at @ now
+    return samples
+
+test "collect: the memory in use at once, the rates from the second reading"
+    h @= new_host()
+    first = collect(@h)
+
+    for s in first
+        assert s.key != "host.net.received" && s.key != "host.cpu.busy"
+
+    second = collect(@h)
+
+    for s in second
+        if s.key == "host.memory.used" || s.key == "host.cpu.busy"
+            assert s.value >= 0.0 && s.value <= 100.0
