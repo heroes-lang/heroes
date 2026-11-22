@@ -33,8 +33,9 @@
 # - `web`: the router, the 404 and 405, the Bearer challenge, the publishers'
 #   rate limit, entity tags and the request log; `http`: the server's loop of
 #   requests and the client's session, multipart uploads, retries; `net`: the
-#   listener on loopback; `threads`: the demo's client beside its server;
-#   `os`: the stop, secure randomness, the environment.
+#   listener on loopback; `os`: the stop, secure randomness, the
+#   environment. The server's workers, the owner of its state and the demo's
+#   client run on threads of the language's own (`spawn`, mailboxes).
 # - `semver`: versions read and ordered, ranges resolved as Cargo reads them.
 # - `archive`: tar read and written; `compress`, `compress/zstd`,
 #   `compress/xz`: the three packings an upload may take.

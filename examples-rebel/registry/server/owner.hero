@@ -1,0 +1,122 @@
+# The thread that owns the server's state (`server/serving`): the
+# database's connection, the archives, the catalog, the publishers'
+# limiter and the request log. It opens the state itself, so the
+# connection is born, used and closed on this one thread, answers every
+# request the workers read and ask of it by message (spec § 11), each
+# carrying the mailbox its answer comes back on, and closes the state when
+# it ends. No value is held by two threads and nothing is locked
+# (panel 254; feature 2647).
+#
+# The owner answers one request after another, in the order they come, as
+# the one thread serving them all did: SQLite's connection is used by one
+# thread at a time either way. What runs side by side is each client's
+# reading and writing, which a slow client no longer makes the others
+# wait for.
+#
+# It ends when it is told to stop, which the listener does once every
+# worker has ended, or when the program's stop finds its mailbox empty: a
+# stop drains what was already asked, then holds (spec § 11).
+
+use <rebel>/http
+
+use server/api
+use server/serving
+use server/settings
+
+## Asking
+
+# What a worker asks of the owner.
+variant Ask
+    # A request read whole, answered on `back`.
+    request
+        # The request.
+        r: http.Request
+        # Where its answer goes.
+        back: (mailbox http.Response)
+    # Every worker has ended: the owner closes the state and ends.
+    stop
+
+# What the owner says once it has opened the state, or why it could not.
+variant Begun
+    # The state is open; requests are answered from now on.
+    ready
+    # The state could not be opened, and the owner has ended.
+    failed
+        # Why.
+        msg: str
+
+# What the owner's thread is handed, whole.
+record Start
+    # The settings the server starts with.
+    settings: settings.Settings
+    # The absolute URL clients reach the server at, ending in `/`.
+    base_url: str
+    # Where the workers' requests come.
+    asks: (mailbox Ask)
+    # Where the owner says it has begun.
+    begun: (mailbox Begun)
+
+# What the owner's thread answers as it ends.
+record Ended
+    # How many requests the state answered.
+    answered: i64
+    # Why the state did not close cleanly, "" where it did.
+    problem: str
+
+## The owner
+
+# The owner's thread: the state opened and `begun` told, every request
+# answered until it is told to stop or the program's stop finds none
+# waiting, then the state closed.
+#
+# - `start`: the settings, the URL and the two mailboxes.
+function own(start: Start) -> Ended
+    opened: serving.State? = match api.router()
+        .ok router => serving.open(start.settings, base_url: start.base_url, router: router)
+        .err e     => fail(code: e.code, msg: e.msg)
+
+    match opened
+        .err e =>
+            _ = start.begun.send(.failed(msg: e.msg)).is_err()
+            start.begun.close()
+            return Ended(answered: 0, problem: e.msg)
+        .ok first =>
+            state @= first
+            _ = start.begun.send(.ready).is_err()
+            start.begun.close()
+
+            while true
+                match start.asks.receive(within_ms: -1)
+                    .err _ => break
+                    .ok ask =>
+                        match ask
+                            .stop      => break
+                            .request q => _ = q.back.send(api.handle(@state, r: q.r)).is_err()
+
+            problem = match serving.close(@state)
+                .ok _  => ""
+                .err e => e.msg
+
+            return Ended(answered: state.answered, problem: problem)
+
+## What a worker calls
+
+# The answer to `r`, from the owner.
+#
+# - `owner`: the owner's mailbox of requests.
+# - `r`: the request, read whole.
+#
+# Fails `stopped` or `closed` where the owner no longer answers: the
+# program is stopping.
+function answer(owner: (mailbox Ask), r: http.Request) -> http.Response?
+    back: (mailbox http.Response) = mailbox()
+    owner.send(.request(r: r, back: back))?
+    return back.receive(within_ms: -1)
+
+# Tells the owner every worker has ended, so it closes the state and ends;
+# nothing where it has ended already, the program's stop having found its
+# mailbox empty.
+#
+# - `owner`: the owner's mailbox of requests.
+function stop(owner: (mailbox Ask))
+    _ = owner.send(.stop).is_err()
