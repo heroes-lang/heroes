@@ -93,11 +93,7 @@ function run(@app: state.App, l: net.Listener) -> Served?
             else if e.key == ticker
                 drop_keys(set, keys_gone: realtime.ping_all(@app.hub))
             else if realtime.holds(app.hub, key: e.key)
-                match realtime.on_readable(@app.hub, key: e.key)
-                    .open => _ = 0
-                    .closed _ =>
-                        _ = poll.remove(set, key: e.key).is_err()
-                        ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+                on_socket(@app, set: set, key: e.key)
             else
                 serve_ready(@app, set: set, @links, key: e.key)
 
@@ -261,3 +257,20 @@ function upgrade(@app: state.App, set: poll.Set, @links: {i64: Plain}, key: i64,
         return
 
     ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+
+    # What the client wrote with its request is held by the socket, and its
+    # stream, drained, does not tell of it (`websocket`'s head).
+    if realtime.held(app.hub, key: key) > 0
+        on_socket(@app, set: set, key: key)
+
+# Reads the socket `key`, and lets it go from `set` where it closed.
+#
+# - `app`: the state.
+# - `set`: the poll set.
+# - `key`: the socket's key.
+function on_socket(@app: state.App, set: poll.Set, key: i64)
+    match realtime.on_readable(@app.hub, key: key)
+        .open => _ = 0
+        .closed _ =>
+            _ = poll.remove(set, key: key).is_err()
+            ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))

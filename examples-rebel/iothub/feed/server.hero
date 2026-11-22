@@ -145,6 +145,12 @@ function answer(@f: Feed, set: poll.Set, w: i64, registry: metrics.Registry lent
                 watchers @ watchers.push(Watcher(key: key, conn: conn))
                 f.watchers @ watchers
                 forget(@f, set: set, w: w, keep: true)
+
+                # What the dashboard wrote with its request is held by the
+                # connection, and its stream, drained, does not tell of it
+                # (`websocket`'s head).
+                if websocket.held_of(f.watchers[f.watchers.len() - 1].conn) > 0
+                    on_watcher(@f, set: set, k: f.watchers.len() - 1)
             .err _ => forget(@f, set: set, w: w, keep: false)
 
         return

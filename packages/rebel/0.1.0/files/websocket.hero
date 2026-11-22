@@ -3,9 +3,18 @@
 # compressed by permessage-deflate (RFC 7692) where both ends agree, and ended
 # by its closing handshake. A client connects to a `ws://` or `wss://` URL
 # with `connect`; a server reads and routes a request itself, with `http` and
-# `web`, and turns it into a connection with `upgrade`; one thread serves many
-# connections by waiting on them with `poll` and reading each with
-# `read_ready`.
+# `web`, and turns it into a connection with `upgrade`.
+#
+# **One thread serves many connections** by waiting on their streams with
+# `poll` and calling `read_ready` on each connection whose stream `poll`
+# tells readable or whose `held_of` is above 0. A read takes every byte its
+# stream has, so the frames past what a call answers stay held in the
+# connection: the messages a peer sends with the opening handshake, read by
+# `connect`, `client_over` or `upgrade`, and those behind the message or part
+# `read_message` and `read_part` answer. The stream, drained, never tells of
+# them, and `held_of` counts them. `read_ready` takes every frame held and
+# reads the stream only where it took none, so it never waits where
+# `held_of` counted one, and none is held after it.
 #
 # **Every read from a peer is bounded** by the connection's `Settings`: a
 # frame past `frame_bytes`, or a message past `message_bytes` once joined and
@@ -725,7 +734,8 @@ function conn_of(@stream: io.Stream, role: Role, settings: Settings) -> Conn
 # stream with no close, or before; `invalid`, `not_text` and `limit` where
 # the peer breaks the RFC or the settings, after closing with 1002, 1007 or
 # 1009; and as `io.read` fails, `timeout` and `stopped` leaving the
-# connection as it was. See also `read_ready`, `read_part`.
+# connection as it was. What the read brought past the message stays held,
+# as `held_of` counts it. See also `read_ready`, `read_part`.
 function read_message(@c: Conn) -> Message?
     got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)), parts: false)?
 
@@ -733,17 +743,36 @@ function read_message(@c: Conn) -> Message?
         return ok(.text(text: bytes.to_text(got.data).must()))
     return ok(.binary(data: got.data))
 
-# The messages of data `c` completes with what it holds and one read of its
-# stream: what a program serving many connections on one thread calls when
-# `poll` tells the stream is readable, so it never waits there.
+# How many frames `c` holds whole, read from its stream and not taken yet:
+# what a program waiting with `poll` asks before it waits, as this
+# package's head says.
+#
+# - `c`: the connection asked about.
+#
+# A control frame and each fragment of a message count one; so does the
+# next frame where its head breaks the RFC or the settings, which
+# `read_ready` fails on before its payload comes. A frame whose payload has
+# not all come is not counted, since the rest makes the stream readable. 0
+# once `c` reads no more. See also `read_ready`, `poll.wait`.
+function held_of(c: Conn) -> i64
+    return reading.held(
+        c.state,
+        b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait))
+    )
+
+# The messages of data `c` completes with what it holds and at most one read
+# of its stream: what a program serving many connections on one thread calls
+# where `poll` tells the stream readable or `held_of` is above 0, as this
+# package's head says, so it never waits there.
 #
 # - `c`: the connection; it answers control frames as `read_message` does.
 #
-# Empty where no message is whole yet. The read is skipped where what `c`
-# holds completes a message already; it waits where nothing is ready, as
-# `io.read` does. Where the connection closes or fails after some messages,
-# they are answered, and the next call fails as `read_message` would have.
-# Fails as `read_message` does. See also `read_message`, `poll.wait`.
+# Empty where no message is whole yet. It takes every frame held, a control
+# frame and a fragment included, and reads the stream only where it took
+# none, waiting there as `io.read` does; after it `held_of` is 0. Where the
+# connection closes or fails after some messages, they are answered, and the
+# next read fails as `read_message` would have, once, then `closed`. Fails
+# as `read_message` does. See also `held_of`, `read_message`, `poll.wait`.
 function read_ready(@c: Conn) -> [Message]?
     out: [Message] @= []
 
@@ -764,7 +793,7 @@ function read_ready(@c: Conn) -> [Message]?
 # parts are checked as UTF-8 together, and a part may end inside a character
 # the next completes. A message begun by `read_part` is ended by it before
 # `read_message` is called. Fails as `read_message` does, and `invalid`
-# where `read_message` began the message. See also `write_part`.
+# where `read_message` began the message. See also `write_part`, `held_of`.
 function read_part(@c: Conn) -> Part?
     got = reading.next(@c.stream, @c.state, b: engine.Bounds(frame_bytes: c.settings.frame_bytes, message_bytes: c.settings.message_bytes, fragment_bytes: c.settings.fragment_bytes, close_wait_ms: engine.ms_of(c.settings.close_wait)), parts: true)?
 
@@ -1428,41 +1457,103 @@ test "read_message: a text and a message of bytes"
     drop(@client).must()
     drop(@server).must()
 
+# The second of two messages one read brought, held behind the one
+# `read_message` answers: `poll` does not tell of it, `held_of` does, and
+# `read_ready` takes it without reading. The server's end writes both frames
+# at once, as a peer's writes joined on their way arrive.
+test "held_of: a message held behind the one read_message answers, taken by read_ready"
+    two @= net.pair(deadline_ms: 5_000).must()
+    server @= conn_of(@two.second.stream, role: .server, settings: default_settings())
+    client @= conn_of(@two.first.stream, role: .client, settings: default_settings())
+    assert held_of(client) == 0
+    both = bytes.concat([prepare(.text(text: "first")).frame, prepare(.text(text: "second")).frame])
+    io.write(server.stream, data: both).must()
+    assert data_of(read_message(@client).must()) == bytes.from_text("first") && held_of(client) == 1
+    set @= poll.make(2).must()
+    _ = poll.add_stream(set, s: client.stream, interest: .read).must()
+    assert poll.wait(set, limit: time.milliseconds(200).must()).must().len() == 0
+    got = read_ready(@client).must()
+    assert got.len() == 1 && data_of(got[0]) == bytes.from_text("second") && held_of(client) == 0
+    poll.close(@set).must()
+    drop(@client).must()
+    drop(@server).must()
+
+test "held_of: a greeting the server wrote with its 101, held by client_over"
+    told @= net.open_udp(host: "127.0.0.1", port: 0).must()
+    server @= threads.start_text(body: fixture.echo_server, arg: f"{told.address.port} greet").must()
+    port = fixture.port_told(told)
+    tcp @= net.connect(host: "127.0.0.1", port: port, deadline_ms: 5_000).must()
+    c @= client_over(@tcp.stream, target: "ws://127.0.0.1/", client: default_client()).must()
+    assert held_of(c) == 1
+    got = read_ready(@c).must()
+    assert got.len() == 1 && data_of(got[0]) == bytes.from_text("hello") && held_of(c) == 0
+    close(@c, code: CLOSE_NORMAL, reason: "").must()
+    assert threads.wait_text(@server) == "echoed 0 /"
+    net.close_udp(@told).must()
+
+test "held_of: a message a client wrote with its request, held by upgrade"
+    two @= net.pair(deadline_ms: 5_000).must()
+    request = bytes.from_text(
+        "GET /chat HTTP/1.1\r\nHost: example.com\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n"
+    )
+    hi = frames.encode(opcode: frames.TEXT, fin: true, rsv1: false, payload: [104, 105], key: [1, 2, 3, 4])
+    io.write(two.first.stream, data: bytes.concat([request, hi])).must()
+    reader @= io.reader(two.second.stream)
+    r = http.next_request(@reader, limits: http.default_limits()).must()
+    server @= upgrade(@reader, r: r, server: default_server()).must()
+    assert held_of(server) == 1
+    got = read_ready(@server).must()
+    assert got.len() == 1 && data_of(got[0]) == [104, 105] && held_of(server) == 0
+    io.close(@two.first.stream).must()
+    drop(@server).must()
+
 # One thread serving three clients through `poll`: the listener and each
 # connection waited on together, each request read and upgraded as it
-# comes, each message echoed as `read_ready` completes it, and each
-# connection let go once it closes.
+# comes, each connection read with `read_ready` where its stream is told
+# readable or `held_of` counts frames it holds, each message echoed, and
+# each connection let go once it closes.
 test "read_ready: one thread serves three clients through poll"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
     clients @= threads.start_text(body: fixture.three_clients, arg: to_str(l.address.port)).must()
     set @= poll.make(8).must()
     listening = poll.add_listener(set, l: l).must()
     conns: [Conn] @= []
+    waited: [i64] @= []
     which: {i64: i64} @= {}
     ended: i64 @= 0
 
     while ended < 3
-        for e in poll.wait(set, limit: time.nanoseconds(10_000_000_000)).must()
-            if e.key == listening
-                tcp = net.accept(l, deadline_ms: 5_000).must()
-                reader @= io.reader(tcp.stream)
-                r = http.next_request(@reader, limits: http.default_limits()).must()
-                c = upgrade(@reader, r: r, server: default_server()).must()
-                net.set_deadline(tcp.stream, deadline_ms: net.FOREVER).must()
-                which[poll.add_stream(set, s: c.stream, interest: .read).must()] @ conns.len()
-                conns @ conns.push(c)
-            else
-                i = which[e.key].must()
+        due: [i64] @= []
 
-                match read_ready(@conns[i])
-                    .ok got =>
-                        for m in got
-                            write_message(@conns[i], m: m).must()
-                    .err _ => _ = 0
+        for i in range(from: 0, to: conns.len())
+            if held_of(conns[i]) > 0
+                due @ due.push(i)
 
-                if !is_open(conns[i])
-                    poll.remove(set, key: e.key).must()
-                    ended @ ended + 1
+        if due.len() == 0
+            for e in poll.wait(set, limit: time.nanoseconds(10_000_000_000)).must()
+                if e.key == listening
+                    tcp = net.accept(l, deadline_ms: 5_000).must()
+                    reader @= io.reader(tcp.stream)
+                    r = http.next_request(@reader, limits: http.default_limits()).must()
+                    c = upgrade(@reader, r: r, server: default_server()).must()
+                    net.set_deadline(tcp.stream, deadline_ms: net.FOREVER).must()
+                    key = poll.add_stream(set, s: c.stream, interest: .read).must()
+                    which[key] @ conns.len()
+                    waited @ waited.push(key)
+                    conns @ conns.push(c)
+                else
+                    due @ due.push(which[e.key].must())
+
+        for i in due
+            match read_ready(@conns[i])
+                .ok got =>
+                    for m in got
+                        write_message(@conns[i], m: m).must()
+                .err _ => _ = 0
+
+            if !is_open(conns[i])
+                poll.remove(set, key: waited[i]).must()
+                ended @ ended + 1
 
     assert threads.wait_text(@clients) == "hello 0, hello 1, hello 2"
     poll.close(@set).must()

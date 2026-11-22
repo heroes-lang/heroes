@@ -242,6 +242,12 @@ function open_socket(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: h
     srv.conns @ conns
     state.deliver(@srv, told: hub.open_session(@srv.routing, key: key, user: user, rooms: rooms))
 
+    # A request the client wrote with its opening handshake is held by the
+    # connection, and its stream, drained, does not tell of it
+    # (`websocket`'s head).
+    if websocket.held_of(srv.conns[srv.conns.len() - 1].socket) > 0
+        on_socket(@srv, i: srv.conns.len() - 1)
+
 # Reads what the connection `i` holds and acts on every whole request.
 #
 # - `srv`: the server.

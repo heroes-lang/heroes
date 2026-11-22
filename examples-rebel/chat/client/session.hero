@@ -185,8 +185,19 @@ function receive(@s: Session, now: time.Instant) -> notices.Notice?
     views.apply(@s.view, n: n, now: now)
     return ok(n)
 
-# Applies every notice a read completes, for a client that waits with `poll`
-# and reads only when its stream is ready.
+# How many frames the session's connection holds read and not yet applied:
+# the notices the server wrote with its welcome or behind the one `receive`
+# answered, which the stream, drained, no longer tells of. A client waiting
+# with `poll` calls `receive_ready` where this is above 0, as `websocket`'s
+# head says.
+#
+# - `s`: the session.
+function held_of(s: Session) -> i64
+    return websocket.held_of(s.socket)
+
+# Applies every notice the connection holds and those a read completes, for
+# a client that waits with `poll` and reads where its stream is ready or
+# `held_of` is above 0.
 #
 # - `s`: the session.
 # - `now`: the client's time.

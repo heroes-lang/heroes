@@ -31,6 +31,87 @@ variant Step
     # The bytes held end before the next frame does.
     more
 
+# Why the frame headed `h` may not be taken next from `s`, as RFC 6455,
+# RFC 7692 and the bounds say: what `step` fails on before the frame's
+# payload is read, and what `reading.held` asks of a frame whose payload has
+# not all come.
+variant Refusal
+    # None: the frame may be taken.
+    accepted
+    # The connection is failed, closing with `close`.
+    failed
+        # The close code sent: 1002 or 1009.
+        close: i64
+        # The failure's code.
+        code: str
+        # What was found.
+        msg: str
+    # A message read on by the other of `read_part` and `read_message`,
+    # refused with the connection left as it is.
+    mixed
+
+# The refusal of the frame headed `h`, taken next from `s`.
+#
+# - `s`: the connection's state.
+# - `h`: the frame's head.
+# - `b`: the connection's bounds.
+# - `parts`: whether data is handed out frame by frame.
+function refusal(s: engine.State lent, h: frames.Head, b: engine.Bounds, parts: bool) -> Refusal
+    op = h.opcode
+    control = op >= 8
+
+    if h.rsv & 3 != 0
+        return .failed(
+            close: 1002,
+            code: engine.INVALID,
+            msg: f"a frame with the reserved bits {h.rsv}, which no extension agreed"
+        )
+    compressed_bit = h.rsv & 4 != 0
+
+    if compressed_bit && (!s.deflating.agreed.on || op != frames.TEXT && op != frames.BINARY)
+        return .failed(
+            close: 1002,
+            code: engine.INVALID,
+            msg: f"a frame of opcode {op} with RSV1 set, which only the first frame of a compressed message may set"
+        )
+
+    if op > 2 && op < 8 || op > 10
+        return .failed(close: 1002, code: engine.INVALID, msg: f"a frame of opcode {op}, which RFC 6455 reserves")
+
+    if control && !h.fin
+        return .failed(close: 1002, code: engine.INVALID, msg: f"a control frame of opcode {op} fragmented")
+
+    if control && h.length > 125
+        return .failed(close: 1002, code: engine.INVALID, msg: f"a control frame of {h.length} bytes, past 125")
+
+    if s.client && h.masked
+        return .failed(close: 1002, code: engine.INVALID, msg: "a frame from the server masked")
+
+    if !s.client && !h.masked
+        return .failed(close: 1002, code: engine.INVALID, msg: "a frame from the client unmasked")
+
+    if !control && h.length > b.frame_bytes
+        return .failed(
+            close: 1009,
+            code: engine.LIMIT,
+            msg: f"a frame of {h.length} bytes, past the {b.frame_bytes} a frame may hold"
+        )
+
+    if op == frames.CONTINUATION && !s.reading
+        return .failed(close: 1002, code: engine.INVALID, msg: "a continuation frame with no message begun")
+
+    if (op == frames.TEXT || op == frames.BINARY) && s.reading
+        return .failed(close: 1002, code: engine.INVALID, msg: "a message begun before the one before it ended")
+
+    if op == frames.CONTINUATION && s.by_parts != parts
+        return .mixed
+    compressed = op == frames.CONTINUATION && s.reading_compressed || compressed_bit
+
+    if !control && !parts && !compressed && s.joined.len() + h.length > b.message_bytes
+        return .failed(close: 1009, code: engine.LIMIT, msg: f"a message past the {b.message_bytes} bytes it may hold")
+
+    return .accepted
+
 # Takes the next frame of `s`'s inbox.
 #
 # - `stream`, `s`: the connection.
@@ -50,103 +131,17 @@ function step(@stream: io.Stream, @s: engine.State, b: engine.Bounds, parts: boo
         .wrong w => return engine.failing(@stream, @s, close: 1002, code: engine.INVALID, msg: w.why)
         .head f  => f.h
 
-    op = h.opcode
-    control = op >= 8
-
-    if h.rsv & 3 != 0
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: f"a frame with the reserved bits {h.rsv}, which no extension agreed"
-        )
-    compressed_bit = h.rsv & 4 != 0
-
-    if compressed_bit && (!s.deflating.agreed.on || op != frames.TEXT && op != frames.BINARY)
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: f"a frame of opcode {op} with RSV1 set, which only the first frame of a compressed message may set"
-        )
-
-    if op > 2 && op < 8 || op > 10
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: f"a frame of opcode {op}, which RFC 6455 reserves"
-        )
-
-    if control && !h.fin
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: f"a control frame of opcode {op} fragmented"
-        )
-
-    if control && h.length > 125
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: f"a control frame of {h.length} bytes, past 125"
-        )
-
-    if s.client && h.masked
-        return engine.failing(@stream, @s, close: 1002, code: engine.INVALID, msg: "a frame from the server masked")
-
-    if !s.client && !h.masked
-        return engine.failing(@stream, @s, close: 1002, code: engine.INVALID, msg: "a frame from the client unmasked")
-
-    if !control && h.length > b.frame_bytes
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1009,
-            code: engine.LIMIT,
-            msg: f"a frame of {h.length} bytes, past the {b.frame_bytes} a frame may hold"
-        )
-
-    if op == frames.CONTINUATION && !s.reading
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: "a continuation frame with no message begun"
-        )
-
-    if (op == frames.TEXT || op == frames.BINARY) && s.reading
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1002,
-            code: engine.INVALID,
-            msg: "a message begun before the one before it ended"
-        )
-
-    if op == frames.CONTINUATION && s.by_parts != parts
-        return fail(
+    match refusal(s, h: h, b: b, parts: parts)
+        .failed f => return engine.failing(@stream, @s, close: f.close, code: f.code, msg: f.msg)
+        .mixed => return fail(
             code: engine.INVALID,
             msg: "a message begun by one of `read_part` and `read_message` read on by the other"
         )
-    compressed = op == frames.CONTINUATION && s.reading_compressed || compressed_bit
+        .accepted => _ = 0
 
-    if !control && !parts && !compressed && s.joined.len() + h.length > b.message_bytes
-        return engine.failing(
-            @stream,
-            @s,
-            close: 1009,
-            code: engine.LIMIT,
-            msg: f"a message past the {b.message_bytes} bytes it may hold"
-        )
+    op = h.opcode
+    compressed_bit = h.rsv & 4 != 0
+    compressed = op == frames.CONTINUATION && s.reading_compressed || compressed_bit
 
     if s.inbox.len() - s.at < h.size + h.length
         return ok(.more)
