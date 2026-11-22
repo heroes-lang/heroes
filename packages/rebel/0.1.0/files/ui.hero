@@ -73,8 +73,7 @@
 # Not written yet, each a `pending` block of its ledger: the native side on
 # Windows, by Win32; the native side on Linux, by GTK; a thread's message to
 # the user interface, through feature 2647's mailbox; a box drawn with a
-# title and a frame around it; a text field whose text is masked; a combo
-# box the person may type into; a progress bar that moves with no value; a
+# title and a frame around it; a combo box the person may type into; a
 # number typed, or stepped up and down; a line between the widgets of a box;
 # pages chosen by tabs; rows of cells in columns; a tree of items folded and
 # unfolded; a box whose content scrolls; two panes whose border the person
@@ -732,6 +731,19 @@ function set_button_key(@app: App, widget: Widget, key: ButtonKey) -> ()?
 function text_field(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_TEXT_FIELD, text: text, items: [])
 
+# A new text field in `into` whose text the system masks as it is typed, a
+# password's, as wxWidgets' `wxTE_PASSWORD`; it is a text field in every
+# other way, read by `text_of` and told by `.text_changed` and
+# `.submitted`. `render` draws one mark a character and never the text.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it holds first, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function password_field(@app: App, into: Widget, text: str) -> Widget?
+    return makers.password_field(@app, into: into, text: text)
+
 # A new text area in `into` holding `text`, lines the person types; each
 # change is `.text_changed`.
 #
@@ -807,6 +819,17 @@ function combo(@app: App, into: Widget, items: [str]) -> Widget?
 # Fails `closed`, `invalid`, `limit`, `failed`. See also `set_value`.
 function progress(@app: App, into: Widget, most: i64) -> Widget?
     return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_PROGRESS, least: 0, most: most, value: 0)
+
+# Lets progress bar `widget` move with no value while the work's end is
+# unknown, as wxWidgets' `wxGauge::Pulse`, or shows its value again.
+#
+# - `app`: the app holding it.
+# - `widget`: the progress bar.
+# - `on`: true to let it move; false, as a bar is made, to show its value.
+#
+# Fails `closed`, `invalid` for a widget no progress bar, `failed`.
+function set_moving(@app: App, widget: Widget, on: bool) -> ()?
+    return state.set_moving(@app, widget: widget, on: on)
 
 # A new slider in `into`, its knob at `value` between `least` and `most`;
 # each move by the person is `.value_changed`.
@@ -2324,6 +2347,25 @@ test "radio_item: as Icons, as List"
     inject(@app, input: .choose_menu(item: as_list)).must()
     _ = wait(@app, within: time.nanoseconds(0)).must()
     assert is_checked(app, widget: as_list).must() && !is_checked(app, widget: icons).must()
+    close(@app).must()
+
+# A password typed into a field that masks it.
+test "password_field: typed into"
+    app @= open(.headless).must()
+    w = window(@app, title: "Sign in", width: 200, height: 60).must()
+    secret = password_field(@app, into: w, text: "").must()
+    inject(@app, input: .type_text(widget: secret, text: "hunter2")).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert text_of(app, widget: secret).must() == "hunter2"
+    close(@app).must()
+
+# A copy whose end is unknown.
+test "set_moving: a copy of unknown length"
+    app @= open(.headless).must()
+    w = window(@app, title: "Copy", width: 200, height: 60).must()
+    bar = progress(@app, into: w, most: 100).must()
+    set_moving(@app, widget: bar, on: true).must()
+    assert render(@app).must()[1] == "  progress #2 value 0 in 0..100 moving at 12,12 160x16"
     close(@app).must()
 
 # A timer firing on a headless app's clock.

@@ -1976,6 +1976,68 @@ public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ 
     return answerOk
 }
 
+extension Backend {
+    // Masks text field `id`'s text, `on`, or shows it: AppKit masks a field
+    // of its own class, `NSSecureTextField`, so the field's view is
+    // replaced by one of the other class in its place, with its text, its
+    // frame, its state and the program's hooks kept.
+    func setMasked(_ id: Int64, _ on: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTextField, let old = widget.view as? NSTextField, let parent = old.superview else {
+            return answerInvalid
+        }
+        if (old is NSSecureTextField) == on {
+            return answerOk
+        }
+        let made: NSTextField = on ? NSSecureTextField(string: old.stringValue) : NSTextField(string: old.stringValue)
+        made.usesSingleLineMode = true
+        made.frame = old.frame
+        made.isEnabled = old.isEnabled
+        made.isHidden = old.isHidden
+        made.delegate = self
+        made.tag = old.tag
+        made.target = self
+        made.action = #selector(submitted(_:))
+        parent.replaceSubview(old, with: made)
+        widget.view = made
+        return answerOk
+    }
+
+    // Lets progress bar `id` move with no value, `on`, while the work's end
+    // is unknown, or shows its value again.
+    func setMoving(_ id: Int64, _ on: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindProgress, let bar = widget.view as? NSProgressIndicator else {
+            return answerInvalid
+        }
+        bar.isIndeterminate = on
+        if on {
+            bar.startAnimation(nil)
+        } else {
+            bar.stopAnimation(nil)
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_masked(_ id: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setMasked(id, on == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_set_moving(_ id: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setMoving(id, on == 1) ?? answerNotFound
+    }
+}
+
 // A menu item's checks, `hero_ui.h`'s `HERO_UI_CHECK_*`.
 private let checkNone: Int64 = 0
 private let checkBox: Int64 = 1

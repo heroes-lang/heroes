@@ -37,6 +37,9 @@ function made(app: ui.App, n: model.Node) -> ()?
     if n.kind == hero_ui.HERO_UI_IMAGE
         push_image(app, n: n)?
 
+    if n.masked && hero_ui.set_masked(app.handle, id: n.id, on: 1) < 0
+        return failure.last(f"masking text field {n.id}")
+
     if n.kind == hero_ui.HERO_UI_MENU_ITEM && n.check != hero_ui.HERO_UI_CHECK_NONE
         if hero_ui.set_check(app.handle, id: n.id, mode: n.check) < 0
             return failure.last(f"making menu item {n.id} checkable")

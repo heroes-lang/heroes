@@ -812,4 +812,20 @@ int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *
  * name, a widget no menu item), `NOT_FOUND`. */
 int64_t hero_ui_set_check(hero_ui_app *app, int64_t id, int64_t mode);
 
+/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE -------------------------
+ *
+ * A text field whose text the system masks as it is typed, a password's,
+ * as wxWidgets' `wxTE_PASSWORD`; and a progress bar that moves with no
+ * value while the work's end is unknown, as `wxGauge::Pulse`. */
+
+/* Masks text field `id`'s text, 1, or shows it, 0, as a field is made; its
+ * text, its place and its events are kept. 0, or -1: `INVALID` (a widget
+ * no text field), `NOT_FOUND`. */
+int64_t hero_ui_set_masked(hero_ui_app *app, int64_t id, int64_t on);
+
+/* Lets progress bar `id` move with no value, 1, or shows its value, 0, as
+ * a bar is made. 0, or -1: `INVALID` (a widget no progress bar),
+ * `NOT_FOUND`. */
+int64_t hero_ui_set_moving(hero_ui_app *app, int64_t id, int64_t on);
+
 #endif

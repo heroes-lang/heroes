@@ -205,10 +205,12 @@ capability ui/text-area  lines of text the person types
   note    text is added by setting the whole text, `Append`'s
 
 capability ui/password  a text field whose text is masked
-  heroes  pending
+  heroes  ui.password_field
   go      ui.NewPasswordEntry
   rust    -
   python  -
+  wx      wxTextCtrl (wxTE_PASSWORD)
+  note    a text field in every other way; `render` draws one mark a character and never the text; macOS by `NSSecureTextField` put in the field's place, Windows pending (`ES_PASSWORD`), Linux pending (`gtk_text_set_visibility` false, or a `GtkPasswordEntry`)
 
 capability ui/checkbox  a box the person checks and unchecks
   heroes  ui.checkbox, ui.set_checked, ui.is_checked, ui.Event.toggled
@@ -249,11 +251,12 @@ capability ui/progress  a bar filled as far as a value goes
   python  ttk.Progressbar
 
 capability ui/progress-moving  a progress bar that moves with no value
-  heroes  pending
+  heroes  ui.set_moving
   go      -
   rust    -
   python  -
-  note    `ProgressBar.SetValue(-1)` and `ttk.Progressbar`'s indeterminate mode, which their blocks above name
+  wx      wxGauge (Pulse)
+  note    `ProgressBar.SetValue(-1)` and `ttk.Progressbar`'s indeterminate mode, which their blocks above name; macOS by `NSProgressIndicator`'s indeterminate state, Windows pending (`PBS_MARQUEE`), Linux pending (`gtk_progress_bar_pulse`)
 
 capability ui/slider  a knob the person drags between two values
   heroes  ui.slider, ui.set_value, ui.value_of, ui.set_range, ui.Event.value_changed

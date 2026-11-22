@@ -66,6 +66,10 @@ function line_of(n: model.Node, visible: bool) -> str
             "[ ]"
 
         parts @ parts.push(mark).push(quoted(n.text))
+    else if k == hero_ui.HERO_UI_TEXT_FIELD && n.masked
+        # A masked field shows one mark a character, as the system shows
+        # it, and never its text.
+        parts @ parts.push("masked").push(quoted(repeat("*", to_u64(n.text.chars().len()).must())))
     else if model.has_text(k)
         parts @ parts.push(quoted(n.text))
 
@@ -79,6 +83,9 @@ function line_of(n: model.Node, visible: bool) -> str
         parts @ parts.push(quoted_all(n.items)).push("chosen " + numbers(n.chosen))
     else if model.has_range(k)
         parts @ parts.push(f"value {n.value} in {n.least}..{n.most}")
+
+        if n.moving
+            parts @ parts.push("moving")
     else if k == hero_ui.HERO_UI_GRID
         parts @ parts.push(f"{n.columns} columns")
     else if k == hero_ui.HERO_UI_WEBVIEW

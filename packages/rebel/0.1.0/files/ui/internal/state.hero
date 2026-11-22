@@ -423,6 +423,16 @@ function is_checked(app: ui.App, widget: ui.Widget) -> bool?
         return ok(native.read_value(app, id: n.id)? == 1)
     return ok(n.value == 1)
 
+# Lets a progress bar move with no value, or shows its value
+# (`ui.set_moving`).
+function set_moving(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_PROGRESS], what: "a progress bar")?
+
+    if app.native && hero_ui.set_moving(app.handle, id: n.id, on: check.number_of(on)) < 0
+        return failure.last(f"letting progress bar {n.id} move")
+    n.moving @ on
+    return stored(@app, n: n, measured: false)
+
 # Gives a menu item its role (`ui.set_role`).
 function set_role(@app: ui.App, item: ui.Widget, role: ui.MenuRole) -> ()?
     n @= check.node_kind(app, widget: item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
@@ -564,4 +574,43 @@ test "set_button_key: Return and Escape each press one button of a window, the o
     ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Escape", primary: false, shift: false, alt: false)).must()
     assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
     assert fixture.code_of(ui.set_button_key(@app, widget: label, key: .enter)) == ui.INVALID
+    ui.close(@app).must()
+
+test "password_field and set_moving: a masked field drawn as one mark a character, its text kept and read, a bar moving and stopped, other kinds refused (catalogue CT11, CT25)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    secret = ui.password_field(@app, into: w, text: "päss").must()
+    bar = ui.progress(@app, into: w, most: 10).must()
+    slider = ui.slider(@app, into: w, least: 0, most: 5, value: 0).must()
+    lines = ui.render(@app).must()
+    assert lines[1] == "  text_field #2 masked \"****\" at 12,12 160x24"
+    assert ui.text_of(app, widget: secret).must() == "päss"
+    ui.set_moving(@app, widget: bar, on: true).must()
+    assert ui.render(@app).must()[2] == "  progress #3 value 0 in 0..10 moving at 12,42 160x16"
+    ui.set_moving(@app, widget: bar, on: false).must()
+    assert ui.render(@app).must()[2] == "  progress #3 value 0 in 0..10 at 12,42 160x16"
+    assert fixture.code_of(ui.set_moving(@app, widget: slider, on: true)) == ui.INVALID
+    assert fixture.code_of(ui.password_field(@app, into: w, text: "a\nb")) == ui.INVALID
+    ui.close(@app).must()
+
+test "password_field and set_moving: on the native side a masked field set, typed into and read back, its events told, and a bar moving and stopped (catalogue CT11, CT25)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Sign in", width: 240, height: 120).must()
+    secret = ui.password_field(@app, into: w, text: "first").must()
+    bar = ui.progress(@app, into: w, most: 10).must()
+    assert ui.text_of(app, widget: secret).must() == "first"
+    ui.inject(@app, input: .type_text(widget: secret, text: "second")).must()
+    ui.inject(@app, input: .submit(widget: secret)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .text_changed(widget: secret, text: "second")
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .submitted(widget: secret)
+    assert ui.text_of(app, widget: secret).must() == "second"
+    ui.set_moving(@app, widget: bar, on: true).must()
+    _ = ui.wait(@app, within: time.milliseconds(100).must()).is_err()
+    ui.set_moving(@app, widget: bar, on: false).must()
+    ui.set_value(@app, widget: bar, value: 5).must()
+    assert ui.value_of(app, widget: bar).must() == 5
     ui.close(@app).must()

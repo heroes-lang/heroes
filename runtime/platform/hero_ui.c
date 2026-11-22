@@ -2997,3 +2997,51 @@ int64_t hero_ui_set_check(hero_ui_app *app, int64_t id, int64_t mode) {
     }
     return hero_ui_windows_answered(hero_ui_arm_set_check(id, mode), "making a menu item checkable", id);
 }
+
+/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE ----------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
+    return hero_ui_appkit_set_masked(id, on);
+}
+
+static int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
+    return hero_ui_appkit_set_moving(id, on);
+}
+
+#else
+
+static int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
+    (void)id;
+    (void)on;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
+    (void)id;
+    (void)on;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_masked(hero_ui_app *app, int64_t id, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "a flag is 0 or 1");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_masked(id, on), "masking a text field", id);
+}
+
+int64_t hero_ui_set_moving(hero_ui_app *app, int64_t id, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "a flag is 0 or 1");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_moving(id, on), "letting a progress bar move", id);
+}

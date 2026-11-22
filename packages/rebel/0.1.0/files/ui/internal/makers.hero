@@ -97,6 +97,20 @@ function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str])
         n.chosen @ [0]
     return added(@app, n: n)
 
+# A new text field whose text is masked (`ui.password_field`).
+function password_field(@app: ui.App, into: ui.Widget, text: str) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_TEXT_FIELD,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.text @ text
+    n.masked @ true
+    return added(@app, n: n)
+
 # A new grid of `columns` in `into` (`ui.grid`).
 function grid(@app: ui.App, into: ui.Widget, columns: i64) -> ui.Widget?
     parent = boxed(app, into: into)?

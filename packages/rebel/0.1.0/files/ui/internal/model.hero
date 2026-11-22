@@ -95,6 +95,10 @@ record Node
     focus: i64
     # A menu item's check, one of `HERO_UI_CHECK_*`; its state is `value`.
     check: i64
+    # Whether a text field's text is masked, a password's.
+    masked: bool
+    # Whether a progress bar moves with no value.
+    moving: bool
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -275,6 +279,8 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         button_key: hero_ui.HERO_UI_BUTTON_KEY_NONE,
         focus: 0,
         check: hero_ui.HERO_UI_CHECK_NONE,
+        masked: false,
+        moving: false,
         every: 0,
         due: 0,
         preferred_width: 0,
