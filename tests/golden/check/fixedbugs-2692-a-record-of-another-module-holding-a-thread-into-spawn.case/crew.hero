@@ -1,0 +1,11 @@
+# The module of the case beside it: a record holding a thread.
+
+record Crew
+    n: i64
+    worker: (thread i64)
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function made() -> Crew
+    return Crew(n: 1, worker: spawn(twice, 4).must())

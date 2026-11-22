@@ -1,0 +1,21 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a
+# package's record holding a C handle, as Rebel's `sqlite.Db` and
+# `net.Conn` hold theirs, and the program's own record holding it. Symptom:
+# `m.send(s)` was accepted with no `@`, and the correct `m.send(@h)` was
+# refused, "`send` does not change this argument", so a program could not
+# hand its own state holding a database to another thread at all. Cause: the
+# records' fields were lowered only once the declarations' walk reached
+# their modules (spec § 11).
+use <vault>/store
+
+record Held
+    name: str
+    store: store.Store
+
+function main()
+    stores: (mailbox store.Store) = mailbox()
+    s = store.open()
+    _ = stores.send(s).is_err()  #~ marker_mismatch
+    states: (mailbox Held) = mailbox()
+    h: Held @= Held(name: "state", store: store.open())
+    _ = states.send(@h).is_err()

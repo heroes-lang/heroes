@@ -1,0 +1,16 @@
+# A module of the case beside it: a counter C makes and frees, a C handle.
+
+extern "counters.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+function made(n: i64) -> Counter
+    return counter_new(n: n)
+
+# Adds `by` to the counter and gives it back to C, answering its last count.
+function finish(@c: Counter, by: i64) -> i64
+    n = counter_add(c: c, by: by)
+    counter_free(c: c)
+    return n

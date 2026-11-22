@@ -1,0 +1,18 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a record
+# of one module holding the handles two other modules' `extern` groups
+# declare, sent and handed to `spawn`. Symptom: both accepted. Cause: the
+# record's fields were lowered only once the declarations' walk reached its
+# module, after the root's `main` (spec § 11, § 13).
+use pair
+
+function body(p: pair.Pair) -> i64
+    if p == p
+        return 1
+    return 0
+
+function main()
+    m: (mailbox pair.Pair) = mailbox()
+    p = pair.made()
+    _ = m.send(p).is_err()  #~ marker_mismatch
+    t = spawn(body, pair.made()).must()  #~ thread_crossing
+    print(t.wait())

@@ -1,0 +1,10 @@
+# A module of the case beside it: a record holding, by value, another
+# module's record that holds a C handle.
+use inner
+
+record Outer
+    name: str
+    held: inner.Inner
+
+function made() -> Outer
+    return Outer(name: "outer", held: inner.made())

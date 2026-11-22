@@ -1,0 +1,30 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: the
+# program's own record holding a package's record that holds a C handle, as
+# `examples-rebel/registry`'s state holds its `sqlite.Db`, handed to the
+# thread that owns it with `m.send(@state)`. Symptom: refused, "`send` does
+# not change this argument — the `@` says it does", so a program could not
+# hand its own state holding a database to another thread at all; the
+# package's record read as holding nothing while the root was walked before
+# the package's module. The owner adds one to a counter from 41, 42, and
+# gives it back.
+use <vault>/store
+
+function main()
+    states: (mailbox State) = mailbox()
+    t = spawn(owner, states).must()
+    state: State @= State(name: "state", store: store.open(41))
+    states.send(@state).must()
+    print(t.wait())
+
+record State
+    name: str
+    store: store.Store
+
+function owner(states: (mailbox State)) -> i64
+    got = states.receive(within_ms: 0 - 1)
+
+    if got.is_err()
+        return 0
+    state = got.must()
+    held: store.Store @= state.store
+    return store.close(@held, by: 1)

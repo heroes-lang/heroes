@@ -1,0 +1,11 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a
+# fallible of another module's record holding a C handle, sent. Symptom:
+# `m.send(maybe)` was accepted with no `@`. Cause: the record's fields were
+# lowered only once the declarations' walk reached its module, after the
+# root's `main` (spec § 11).
+use kinds
+
+function main()
+    m: (mailbox kinds.Boxed?) = mailbox()
+    maybe: kinds.Boxed? = ok(kinds.boxed())
+    _ = m.send(maybe).is_err()  #~ marker_mismatch

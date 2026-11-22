@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-send-written-in-a-module-other-than-the-root.case/sender.hero:9:19: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too

@@ -1,0 +1,14 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a record
+# of another module holding a C handle, handed to `spawn`. Symptom: accepted,
+# so the new thread received a copy of a `FILE *` its starter still held.
+# Cause: the record's fields were lowered only once the declarations' walk
+# reached its module, after the root's `main` (spec § 11; panel 254's S11:
+# `spawn(f, x)` with a handle in `x` is a compile error).
+use kinds
+
+function body(b: kinds.Boxed) -> i64
+    return b.n
+
+function main()
+    t = spawn(body, kinds.boxed()).must()  #~ thread_crossing
+    print(t.wait())

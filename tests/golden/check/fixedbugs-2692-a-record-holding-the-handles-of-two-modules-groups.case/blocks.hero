@@ -1,0 +1,9 @@
+# A module of the case beside it: another `extern` group and its handle.
+
+extern "stdlib.h"
+    record Block tag void
+    function malloc(size: u64) -> Block acquires free
+    function free(b: Block consumes)
+
+function block() -> Block
+    return malloc(size: 16)

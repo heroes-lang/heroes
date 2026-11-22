@@ -1,0 +1,2 @@
+note: the package `vault` is read from the folder `tests/golden/check/fixedbugs-2692-a-record-of-a-package-holding-a-handle-is-sent-with-at.case/vendor/vault/`, a `path` entry of the catalogue: unverified, no fingerprint holds it
+tests/golden/check/fixedbugs-2692-a-record-of-a-package-holding-a-handle-is-sent-with-at.case/main.hero:18:21: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too

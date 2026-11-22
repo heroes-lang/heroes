@@ -1,0 +1,13 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a record
+# of another module holding a `(thread T)`, which belongs to the thread
+# holding it as a C handle does, handed to `spawn`. Symptom: accepted.
+# Cause: the record's fields were lowered only once the declarations' walk
+# reached its module, after the root's `main` (spec § 11).
+use crew
+
+function body(c: crew.Crew) -> i64
+    return c.n
+
+function main()
+    t = spawn(body, crew.made()).must()  #~ thread_crossing
+    print(t.wait())

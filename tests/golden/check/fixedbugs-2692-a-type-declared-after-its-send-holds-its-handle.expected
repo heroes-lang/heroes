@@ -1,0 +1,2 @@
+tests/golden/check/fixedbugs-2692-a-type-declared-after-its-send-holds-its-handle.hero:17:16: error[marker_mismatch]: `send` changes this argument, so the call site writes `@` too
+tests/golden/check/fixedbugs-2692-a-type-declared-after-its-send-holds-its-handle.hero:18:21: error[thread_crossing]: `Boxed` holds a C handle, which crosses into another thread only through a mailbox, `m.send(@v)`, or as the answer `wait` gives

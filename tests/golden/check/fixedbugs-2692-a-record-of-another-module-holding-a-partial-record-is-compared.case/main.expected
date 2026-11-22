@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-record-of-another-module-holding-a-partial-record-is-compared.case/main.hero:11:12: error[ffi_partial_operation]: `FileStat` is `partial`, so it cannot be compared with `==` — reached through `stats.Sized`: the fields it does not name are part of the answer, and this program cannot see them

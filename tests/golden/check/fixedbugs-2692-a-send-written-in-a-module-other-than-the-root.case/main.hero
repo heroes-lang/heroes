@@ -1,0 +1,11 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: the send
+# stands in a module that is neither the root nor the one declaring the type
+# it sends. Symptom: the verdict on `sender.hero`'s one line moved with the
+# module the send stood in and with the root the program was compiled from.
+# Cause: the record's fields were lowered only once the declarations' walk
+# reached its module, and the walk takes every module's declarations as one
+# list, in an order the root decides (spec § 11).
+use sender
+
+function main()
+    print(sender.go())

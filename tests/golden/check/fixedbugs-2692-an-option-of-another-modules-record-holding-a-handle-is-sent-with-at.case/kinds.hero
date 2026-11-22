@@ -1,0 +1,13 @@
+# The module of the case beside it: a C handle, and a record holding it.
+
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32
+
+record Boxed
+    n: i64
+    f: File
+
+function boxed() -> Boxed
+    return Boxed(n: 1, f: tmpfile())

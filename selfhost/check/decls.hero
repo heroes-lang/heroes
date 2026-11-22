@@ -14,12 +14,14 @@
 # not bookkeeping: "does this record own a counted reference" is
 # answered over its fields' ids, and lowering them lazily made the
 # answer depend on whether the program happened to read the field — a
-# leak whose cause was a field nobody touched.
+# leak whose cause was a field nobody touched. And before any body
+# (`check/fields_first.hero`, defect 2692).
 
 use ast
 use check/declared_once
 use check/discard
 use check/ffi
+use check/fields_first
 use check/freer as freer
 use check/generics
 use check/join as joins
@@ -42,6 +44,7 @@ use value_errors
 function file(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
     one_tag_one_type(@c, s, decls)
     declared_once.told(@c, s, decls)
+    fields_first.lowered(@c, a, r, decls)
     index: i64 @= 0
 
     for decl in decls

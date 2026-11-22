@@ -1,0 +1,9 @@
+# A module of the case beside it, neither the root nor the one declaring the
+# type it sends: its send of `kinds.Boxed`, which holds a C handle, is
+# written without `@`.
+use kinds
+
+function go() -> bool
+    m: (mailbox kinds.Boxed) = mailbox()
+    b = kinds.boxed()
+    return m.send(b).is_err()  #~ marker_mismatch

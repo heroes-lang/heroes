@@ -1,0 +1,39 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: one
+# module, the types holding a C handle declared after the function that sends
+# and spawns them, and the values made by functions declared after it too.
+# Symptom: both crossings were accepted, a `FILE *` reaching a second thread
+# with no hand-over, where the same types declared first were refused.
+# Cause: a record's and a variant's fields were lowered only once the
+# declarations' walk reached them, so `main`, walked first, read `Ask` and
+# `Boxed` as holding nothing (spec § 4: declaration order does not matter;
+# § 11).
+
+function body(b: Boxed) -> i64
+    return b.n
+
+function main()
+    m: (mailbox Ask) = mailbox()
+    a = holding()
+    _ = m.send(a).is_err()  #~ marker_mismatch
+    t = spawn(body, boxed()).must()  #~ thread_crossing
+    print(t.wait())
+
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32
+
+variant Ask
+    stop
+    hold
+        f: File
+
+record Boxed
+    n: i64
+    f: File
+
+function holding() -> Ask
+    return .hold(f: tmpfile())
+
+function boxed() -> Boxed
+    return Boxed(n: 1, f: tmpfile())

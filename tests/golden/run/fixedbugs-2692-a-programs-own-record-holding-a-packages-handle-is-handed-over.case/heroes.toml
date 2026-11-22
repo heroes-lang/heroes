@@ -1,0 +1,7 @@
+# The package of the case beside it, placed in `heroes.packages/` at its
+# fingerprint: one module whose record holds a C handle, as Rebel's
+# `sqlite.Db` holds its connection.
+
+[dependencies.vault]
+version = "1.0.0"
+sum = "sha256-366d53285f12297ca08948dcc25c948b295069ea675191c434e39dae19af3dc1"

@@ -1,0 +1,17 @@
+# The module of the case beside it: a C handle, and a variant one of whose
+# cases holds it.
+
+extern "stdio.h"
+    record File tag FILE
+    function tmpfile() -> File acquires fclose
+    function fclose(f: File consumes) -> i32
+
+variant Ask
+    stop
+    hello
+        n: i64
+    hold
+        f: File
+
+function holding() -> Ask
+    return .hold(f: tmpfile())

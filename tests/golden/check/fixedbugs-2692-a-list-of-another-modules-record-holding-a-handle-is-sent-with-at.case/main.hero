@@ -1,0 +1,11 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a list
+# of another module's record holding a C handle, sent. Symptom: `m.send(xs)`
+# was accepted with no `@`, each element's `FILE *` crossing unhanded.
+# Cause: the record's fields were lowered only once the declarations' walk
+# reached its module, after the root's `main` (spec § 11).
+use kinds
+
+function main()
+    m: (mailbox [kinds.Boxed]) = mailbox()
+    xs = [kinds.boxed(), kinds.boxed()]
+    _ = m.send(xs).is_err()  #~ marker_mismatch

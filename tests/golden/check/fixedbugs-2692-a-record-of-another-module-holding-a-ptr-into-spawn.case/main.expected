@@ -1,0 +1,1 @@
+tests/golden/check/fixedbugs-2692-a-record-of-another-module-holding-a-ptr-into-spawn.case/main.hero:13:15: error[thread_crossing]: `(function(raw.Raw) -> i64)` crosses between threads and reaches `ptr`, which never crosses

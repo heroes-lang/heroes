@@ -1,0 +1,11 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: a map
+# whose values are another module's record holding a C handle, sent.
+# Symptom: `m.send(held)` was accepted with no `@`. Cause: the record's
+# fields were lowered only once the declarations' walk reached its module,
+# after the root's `main` (spec § 11).
+use kinds
+
+function main()
+    m: (mailbox {str: kinds.Boxed}) = mailbox()
+    held = {"one": kinds.boxed()}
+    _ = m.send(held).is_err()  #~ marker_mismatch

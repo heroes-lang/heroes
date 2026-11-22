@@ -1,0 +1,11 @@
+# Fixed defect 2692, 2026-11-22, lane-crossing, a shape beside it: the
+# handle two records deep, `outer.Outer` holding `inner.Inner` holding a
+# `FILE *`, each record in a module of its own. Symptom: `m.send(o)` was
+# accepted with no `@`. Cause: neither record's fields were lowered before
+# the root's `main` was walked (spec § 11).
+use outer
+
+function main()
+    m: (mailbox outer.Outer) = mailbox()
+    o = outer.made()
+    _ = m.send(o).is_err()  #~ marker_mismatch
