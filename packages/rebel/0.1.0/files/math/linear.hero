@@ -2,9 +2,10 @@
 # columns, quaternions, and the transforms of graphics built from them: the
 # geometry of games and of the screen, in `f64`, every value a copy.
 #
-# It does not do linear algebra of any size (a matrix of n columns, a solver
-# of systems, a decomposition), which no package of Rebel offers yet; a vector
-# of any length, an embedding's, compared and searched, is `vectors`'; complex
+# It does not do linear algebra of any size: a matrix of n columns held
+# sparse is `math/sparse`'s, and a solver of systems or a decomposition no
+# package of Rebel offers yet; a vector of any length, an embedding's,
+# compared and searched, is `vectors`'; complex
 # numbers are `math/complex`'s, and the functions of one float are `math`'s,
 # `math.clamp`, `math.to_radians` and `math.lerp` among them.
 #

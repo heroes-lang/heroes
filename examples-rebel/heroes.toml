@@ -90,6 +90,7 @@ packages = [
     "math",
     "math/complex",
     "math/linear",
+    "math/sparse",
     "mcp",
     "metrics",
     "mongodb",

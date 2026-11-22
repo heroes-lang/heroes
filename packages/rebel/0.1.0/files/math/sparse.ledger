@@ -1,0 +1,70 @@
+# The ledger of `math/sparse`: matrices of any size held as compressed sparse
+# rows, one block per capability. Go 1.27, Rust 1.100 and Python 3.15 hold no
+# matrix in their standard libraries, so their lines read `-`; the yardstick
+# is SciPy's `scipy.sparse` (`csr_matrix`, `coo_matrix`) and NetworkX's
+# `pagerank`, by their documentation, neither installed on this machine, so
+# every expected value was computed exactly with Python's `fractions` on
+# 2026-11-22.
+
+capability sparse/build  a sparse matrix made from triplets of a row, a column and a value
+  heroes  math/sparse.from_triplets, math/sparse.Triplet, math/sparse.Matrix, math/sparse.identity
+  go      -
+  rust    -
+  python  -
+  note    two triplets of one place summed and an entry summing to 0 kept, as SciPy's `coo_matrix((data, (row, col))).tocsr()` does; the columns of a row sorted; a place outside the shape refused `invalid` where SciPy raises
+
+capability sparse/read  a matrix's entries read back, one place's value, how many entries it keeps
+  heroes  math/sparse.entries_of, math/sparse.value_at, math/sparse.count_of_entries
+  go      -
+  rust    -
+  python  -
+  note    SciPy's `tocoo`, `m[i, j]` and `nnz`; a place outside the shape aborts, a position the program holds (README § A4)
+
+capability sparse/transpose  a matrix transposed
+  heroes  math/sparse.transpose
+  go      -
+  rust    -
+  python  -
+  note    by counting the entries of each column, no sort, as SciPy's `transpose().tocsr()`
+
+capability sparse/multiply-vector  a sparse matrix times a dense vector
+  heroes  math/sparse.multiply_vector
+  go      -
+  rust    -
+  python  -
+  note    SciPy's `m @ v`; a vector of another length refused `invalid`, where SciPy raises
+
+capability sparse/rows  a matrix's rows and columns summed, its rows scaled, its rows made to sum to 1
+  heroes  math/sparse.row_sums, math/sparse.column_sums, math/sparse.scale_rows, math/sparse.normalize_rows
+  go      -
+  rust    -
+  python  -
+  note    SciPy's `sum(axis=1)` and `sum(axis=0)` and a diagonal matrix's product; a row summing to 0 left as it is by `normalize_rows`, where dividing would write nans
+
+capability sparse/norms  the norms of a dense vector: its manhattan, euclidean and maximum norms
+  heroes  math/sparse.norm_l1, math/sparse.norm_l2, math/sparse.norm_max
+  go      -
+  rust    -
+  python  math.dist, math.hypot
+  note    NumPy's `linalg.norm` with `ord` 1, 2 and `inf`; the euclidean computed over the values divided by the largest, so 3 and 4 times 2^660 give 5 times it where the squares would pass an `f64`, as Python's `math.hypot` answers
+
+capability sparse/steady-state  the steady state of a Markov chain by power iteration
+  heroes  math/sparse.steady_state, math/sparse.Settled
+  go      -
+  rust    -
+  python  -
+  note    from the uniform vector, `x` made `p`'s transpose times `x` until a round moves it less than the tolerance; a chain that never settles answers its last round with the change that says so, never a failure, where NetworkX raises `PowerIterationFailedConvergence`
+
+capability sparse/pagerank  the PageRank of the pages of a graph of links
+  heroes  math/sparse.pagerank
+  go      -
+  rust    -
+  python  -
+  note    NetworkX's definition: links weighted, a page with no link out jumping to any page, the jump spread evenly; the change measured as the sum of absolute differences, where NetworkX compares it with the count of pages times its tolerance; no personalization vector
+
+capability sparse/solve  a system of equations solved, a matrix decomposed, a matrix times a matrix
+  heroes  refused: power iteration is what the steady states need; a solver of sparse systems and the products of two sparse matrices are numerical libraries of their own, which no package of Rebel offers
+  go      -
+  rust    -
+  python  -
+  note    SciPy's `spsolve`, `splu` and `m @ n`

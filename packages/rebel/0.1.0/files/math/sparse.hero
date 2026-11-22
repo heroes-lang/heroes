@@ -1,0 +1,754 @@
+# Matrices of any size of `f64` whose entries are mostly zero, held as
+# compressed sparse rows (CSR): built from triplets, read, transposed,
+# multiplied by a vector, their rows summed and normalized, and the steady
+# states two power iterations find on them, a Markov chain's and PageRank's.
+# A site of n pages has an n-by-n matrix of links almost all zero, and its
+# PageRank multiplies it by a vector each round.
+#
+# It does not hold the fixed sizes of geometry, vectors and matrices of two,
+# three and four, which are `math/linear`'s, nor vectors of `f32` compared
+# and searched, which are `vectors`'; and it does not solve a system or
+# decompose a matrix, a capability no package of Rebel offers yet.
+#
+# Said once for every function: a vector is a `[f64]`; a matrix acts on it
+# from the left, `m * v`; every result is a new value.
+#
+# It fails with `invalid` where a shape or a place is outside what a
+# function reads, two lengths disagree, or a setting of an iteration is out
+# of its range; a matrix's own fields are read as `Matrix` says they hold,
+# and a function aborts at a place outside them, as an index past a list's
+# end aborts.
+
+use math
+use math/sparse/internal/compressed
+
+## Codes
+
+# The code of a shape below 0, a triplet outside its matrix, a vector of
+# the wrong length, a matrix that is not square or not a chain's, and a
+# setting of an iteration out of its range: `from_triplets`,
+# `multiply_vector`, `scale_rows`, `steady_state`, `pagerank`.
+constant INVALID: str
+    "invalid"
+
+## Matrices
+
+# A matrix of `rows` rows and `columns` columns, its entries that are not
+# zero kept row by row. Made by `from_triplets`, `identity` and the
+# functions here that answer one; built by hand, its fields must hold what
+# each says, or a function reading it aborts at the first place outside.
+record Matrix
+    # The count of rows, 0 or more.
+    rows: i64
+    # The count of columns, 0 or more.
+    columns: i64
+    # Where each row's entries begin in `indices` and `values`: `rows` + 1
+    # indices, the first 0 and the last the count of entries, none below the
+    # one before; row `r`'s entries are `starts[r]` up to `starts[r + 1]`.
+    starts: [i64]
+    # The column of each entry, 0 to `columns` - 1, increasing within its
+    # row.
+    indices: [i64]
+    # The value of each entry, beside its column in `indices`; one triplets
+    # summed to 0 is kept, as SciPy keeps it.
+    values: [f64]
+
+# One entry of a matrix, at a row and a column.
+record Triplet
+    # The row, from 0.
+    row: i64
+    # The column, from 0.
+    column: i64
+    # The value.
+    value: f64
+
+# The matrix of `rows` rows and `columns` columns that `triplets` write,
+# every other place zero; two triplets of one place summed, as SciPy's
+# `coo_matrix` sums them.
+#
+# - `rows`: the rows, 0 or more.
+# - `columns`: the columns, 0 or more.
+# - `triplets`: the entries, in any order, each place 0 to `rows` - 1 and 0
+#   to `columns` - 1; empty, the matrix of zeros.
+#
+# Fails `invalid` where `rows` or `columns` is below 0 or a triplet stands
+# outside the matrix, the message naming the first. It costs a sort of the
+# triplets, n log n for n of them, and `rows` + 1 indices. See also
+# `entries_of`.
+function from_triplets(rows: i64, columns: i64, triplets: [Triplet]) -> Matrix?
+    if rows < 0 || columns < 0
+        return fail(code: INVALID, msg: f"a matrix of {rows} rows and {columns} columns, where each is 0 or more")
+
+    for k in range(from: 0, to: triplets.len())
+        t = triplets[k]
+
+        if t.row < 0 || t.row >= rows || t.column < 0 || t.column >= columns
+            return fail(
+                code: INVALID,
+                msg: f"triplet {k} stands at row {t.row} and column {t.column}, outside a matrix of {rows} rows and {columns} columns"
+            )
+
+    return ok(compressed.built(rows: rows, columns: columns, triplets: triplets))
+
+# The identity matrix of `n` rows and columns: ones on its diagonal.
+#
+# - `n`: the size, 0 or more; below 0 is read as 0.
+function identity(n: i64) -> Matrix
+    starts: [i64] @= [0]
+    indices: [i64] @= []
+    values: [f64] @= []
+
+    for k in range(from: 0, to: n)
+        indices @ indices.push(k)
+        values @ values.push(1.0)
+        starts @ starts.push(k + 1)
+
+    size = if n < 0
+        0
+    else
+        n
+    return Matrix(rows: size, columns: size, starts: starts, indices: indices, values: values)
+
+# The entries `m` keeps, row by row and by column within a row.
+#
+# - `m`: the matrix.
+#
+# Empty where `m` keeps none. See also `from_triplets`.
+function entries_of(m: Matrix) -> [Triplet]
+    out: [Triplet] @= []
+
+    for r in range(from: 0, to: m.rows)
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            out @ out.push(Triplet(row: r, column: m.indices[k], value: m.values[k]))
+
+    return out
+
+# The value at `row` and `column` of `m`: an entry's, or 0 where `m` keeps
+# none there.
+#
+# - `m`: the matrix.
+# - `row`: the row, 0 to `m.rows` - 1.
+# - `column`: the column, 0 to `m.columns` - 1.
+#
+# Aborts where the place is outside `m`, a position the program holds. It
+# costs the logarithm of the row's entries.
+function value_at(m: Matrix, row: i64, column: i64) -> f64
+    assert row >= 0 && row < m.rows && column >= 0 && column < m.columns
+    low: i64 @= m.starts[row]
+    high: i64 @= m.starts[row + 1]
+
+    while low < high
+        middle = low + (high - low) / 2
+
+        if m.indices[middle] < column
+            low @ middle + 1
+        else
+            high @ middle
+
+    if low < m.starts[row + 1] && m.indices[low] == column
+        return m.values[low]
+    return 0.0
+
+# How many entries `m` keeps, a place's two triplets counted once.
+#
+# - `m`: the matrix.
+function count_of_entries(m: Matrix) -> i64
+    return m.indices.len()
+
+# `m` transposed: its rows made columns.
+#
+# - `m`: the matrix.
+#
+# It costs the entries and the rows and columns, no sort.
+function transpose(m: Matrix) -> Matrix
+    counts: [i64] @= []
+
+    for _ in range(from: 0, to: m.columns + 1)
+        counts @ counts.push(0)
+
+    for c in m.indices
+        counts[c + 1] @ counts[c + 1] + 1
+
+    for k in range(from: 0, to: m.columns)
+        counts[k + 1] @ counts[k + 1] + counts[k]
+
+    starts = counts
+    next: [i64] @= counts
+    indices: [i64] @= []
+    values: [f64] @= []
+
+    for _ in range(from: 0, to: m.indices.len())
+        indices @ indices.push(0)
+        values @ values.push(0.0)
+
+    for r in range(from: 0, to: m.rows)
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            c = m.indices[k]
+            indices[next[c]] @ r
+            values[next[c]] @ m.values[k]
+            next[c] @ next[c] + 1
+
+    return Matrix(rows: m.columns, columns: m.rows, starts: starts, indices: indices, values: values)
+
+# The product `m * v`, a vector of `m.rows` values.
+#
+# - `m`: the matrix.
+# - `v`: a vector of `m.columns` values.
+#
+# Fails `invalid` where `v` is not of `m.columns` values. It costs the
+# entries and the rows. See also `transpose`.
+function multiply_vector(m: Matrix, v: [f64]) -> [f64]?
+    if v.len() != m.columns
+        return fail(
+            code: INVALID,
+            msg: f"a vector of {v.len()} values, where a matrix of {m.columns} columns takes as many"
+        )
+    out: [f64] @= []
+
+    for r in range(from: 0, to: m.rows)
+        sum: f64 @= 0.0
+
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            sum @ sum + m.values[k] * v[m.indices[k]]
+
+        out @ out.push(sum)
+
+    return ok(out)
+
+# The sum of each row of `m`, `m.rows` values.
+#
+# - `m`: the matrix.
+#
+# A row with no entry sums to 0. See also `column_sums`.
+function row_sums(m: Matrix) -> [f64]
+    out: [f64] @= []
+
+    for r in range(from: 0, to: m.rows)
+        sum: f64 @= 0.0
+
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            sum @ sum + m.values[k]
+
+        out @ out.push(sum)
+
+    return out
+
+# The sum of each column of `m`, `m.columns` values.
+#
+# - `m`: the matrix.
+#
+# A column with no entry sums to 0. See also `row_sums`.
+function column_sums(m: Matrix) -> [f64]
+    out: [f64] @= []
+
+    for _ in range(from: 0, to: m.columns)
+        out @ out.push(0.0)
+
+    for k in range(from: 0, to: m.indices.len())
+        out[m.indices[k]] @ out[m.indices[k]] + m.values[k]
+
+    return out
+
+# `m` with each row multiplied by its factor.
+#
+# - `m`: the matrix.
+# - `factors`: one factor for each row, `m.rows` of them.
+#
+# Fails `invalid` where `factors` is not of `m.rows` values. See also
+# `normalize_rows`.
+function scale_rows(m: Matrix, factors: [f64]) -> Matrix?
+    if factors.len() != m.rows
+        return fail(code: INVALID, msg: f"{factors.len()} factors, where a matrix of {m.rows} rows takes one for each")
+    values: [f64] @= []
+
+    for r in range(from: 0, to: m.rows)
+        for k in range(from: m.starts[r], to: m.starts[r + 1])
+            values @ values.push(m.values[k] * factors[r])
+
+    return ok(Matrix(rows: m.rows, columns: m.columns, starts: m.starts, indices: m.indices, values: values))
+
+# `m` with each row divided by its sum, so that every row that sums to
+# anything but 0 sums to 1: the links of a graph made a chain's
+# probabilities of moving.
+#
+# - `m`: the matrix.
+#
+# A row summing to 0, one with no entry among them, is left as it is. See
+# also `row_sums`, `steady_state`.
+function normalize_rows(m: Matrix) -> Matrix
+    factors: [f64] @= []
+
+    for sum in row_sums(m)
+        if sum == 0.0
+            factors @ factors.push(1.0)
+        else
+            factors @ factors.push(1.0 / sum)
+
+    return scale_rows(m, factors: factors).must()
+
+## Vectors
+
+# The sum of the absolute values of `v`: its manhattan norm.
+#
+# - `v`: the vector; empty, 0.
+function norm_l1(v: [f64]) -> f64
+    sum: f64 @= 0.0
+
+    for x in v
+        sum @ sum + math.abs(x)
+
+    return sum
+
+# The square root of the sum of the squares of `v`: its euclidean norm,
+# computed over the values divided by the largest, so that no square passes
+# the range of an `f64` where the norm does not.
+#
+# - `v`: the vector; empty, 0.
+#
+# A nan in `v` answers a nan, an infinity an infinity.
+function norm_l2(v: [f64]) -> f64
+    largest = norm_max(v)
+
+    if largest == 0.0 || !math.is_finite(largest)
+        return largest
+    sum: f64 @= 0.0
+
+    for x in v
+        scaled = x / largest
+        sum @ sum + scaled * scaled
+
+    return largest * math.sqrt(sum)
+
+# The largest absolute value of `v`: its maximum norm.
+#
+# - `v`: the vector; empty, 0.
+#
+# A nan in `v` answers a nan.
+function norm_max(v: [f64]) -> f64
+    largest: f64 @= 0.0
+
+    for x in v
+        if math.is_nan(x)
+            return x
+        largest @ math.max(a: largest, b: math.abs(x))
+
+    return largest
+
+## Steady states
+
+# What a power iteration settled on: the vector, how many rounds it took,
+# and how far the last round moved it, so that a program reads whether it
+# settled.
+record Settled
+    # The vector of the last round, its values summing to 1.
+    vector: [f64]
+    # The rounds run, 1 to the most asked.
+    iterations: i64
+    # The sum of the absolute differences between the last two rounds: below
+    # the tolerance asked where the iteration settled, at or above it where
+    # it ran out of rounds, as a periodic chain does.
+    change: f64
+
+# The steady state of the Markov chain whose probabilities of moving are
+# `p`, row `i` holding the chances of moving from state `i` to each:
+# the vector `x` that `x = x p` keeps, found by power iteration from the
+# uniform vector.
+#
+# - `p`: a square matrix of chances, each finite and 0 or more, each row
+#   summing to 1 within a millionth; `normalize_rows` makes one from counts.
+# - `tolerance`: the change below which the iteration stops, above 0;
+#   1e-10 is close.
+# - `most_iterations`: the most rounds, 1 or more.
+#
+# Settled where `change` is below `tolerance`; a chain that never settles,
+# a periodic one, answers its last round and a `change` that says so. Fails
+# `invalid` where `p` is not square or has no state, a chance is below 0 or
+# a row does not sum to 1, or a setting is out of its range. Each round
+# costs the entries and the states. See also `pagerank`.
+function steady_state(p: Matrix, tolerance: f64, most_iterations: i64) -> Settled?
+    if p.rows != p.columns || p.rows == 0
+        return fail(
+            code: INVALID,
+            msg: f"a chain's matrix of {p.rows} rows and {p.columns} columns, where it is square and holds a state"
+        )
+
+    if math.is_nan(tolerance) || tolerance <= 0.0 || most_iterations < 1
+        return fail(
+            code: INVALID,
+            msg: f"a tolerance of {tolerance} and {most_iterations} rounds, where the tolerance is above 0 and the rounds 1 or more"
+        )
+
+    for v in p.values
+        if !math.is_finite(v) || v < 0.0
+            return fail(code: INVALID, msg: f"a chance of {v}, where a chain's are 0 to 1")
+
+    sums = row_sums(p)
+
+    for r in range(from: 0, to: p.rows)
+        if math.abs(sums[r] - 1.0) > 0.000001
+            return fail(code: INVALID, msg: f"row {r} of a chain's matrix sums to {sums[r]}, where every row sums to 1")
+
+    return ok(compressed.iterate(p, damping: 1.0, tolerance: tolerance, most_iterations: most_iterations))
+
+# The PageRank of every page of a graph whose links are `links`, row `i`
+# holding the weight of the link from page `i` to each page: the steady
+# state of a surfer who follows a link with the chance `damping`, chosen by
+# its weight, and jumps to any page with the rest; a page with no link out
+# jumps to any page. Found by power iteration from the uniform vector, as
+# NetworkX's `pagerank` defines it.
+#
+# - `links`: a square matrix of weights, each finite and 0 or more; a page's
+#   own link to itself counts as any other.
+# - `damping`: the chance of following a link, 0 to below 1; 0.85 is the
+#   usual.
+# - `tolerance`: the change below which the iteration stops, above 0.
+# - `most_iterations`: the most rounds, 1 or more.
+#
+# The ranks sum to 1. Fails `invalid` where `links` is not square or has no
+# page, a weight is below 0, a nan or an infinity, or a setting is out of
+# its range. Each round
+# costs the entries and the pages. See also `steady_state`.
+function pagerank(links: Matrix, damping: f64, tolerance: f64, most_iterations: i64) -> Settled?
+    if links.rows != links.columns || links.rows == 0
+        return fail(
+            code: INVALID,
+            msg: f"a graph's matrix of {links.rows} rows and {links.columns} columns, where it is square and holds a page"
+        )
+
+    if math.is_nan(damping) || damping < 0.0 || damping >= 1.0 || math.is_nan(tolerance) || tolerance <= 0.0 || most_iterations < 1
+        return fail(
+            code: INVALID,
+            msg: f"a damping of {damping}, a tolerance of {tolerance} and {most_iterations} rounds, where the damping is 0 to below 1, the tolerance above 0 and the rounds 1 or more"
+        )
+
+    for v in links.values
+        if !math.is_finite(v) || v < 0.0
+            return fail(code: INVALID, msg: f"a link's weight of {v}, where a weight is a finite number of 0 or more")
+
+    return ok(
+        compressed.iterate(normalize_rows(links), damping: damping, tolerance: tolerance, most_iterations: most_iterations)
+    )
+
+## Tests
+
+test "from_triplets: no triplet, a matrix of no rows or no columns, a place twice summed, a sum of zero kept, and every refusal"
+    zeros = from_triplets(rows: 2, columns: 3, triplets: []).must()
+    assert zeros.starts == [0, 0, 0] && count_of_entries(zeros) == 0
+    assert from_triplets(rows: 0, columns: 5, triplets: []).must().starts == [0]
+    assert from_triplets(rows: 3, columns: 0, triplets: []).must().starts == [0, 0, 0, 0]
+    cancel = from_triplets(
+        rows: 1,
+        columns: 1,
+        triplets: [Triplet(row: 0, column: 0, value: 2.0), Triplet(row: 0, column: 0, value: -2.0)]
+    ).must()
+    assert count_of_entries(cancel) == 1 && value_at(cancel, row: 0, column: 0) == 0.0
+
+    match from_triplets(rows: 2, columns: 2, triplets: [Triplet(row: 0, column: 0, value: 1.0), Triplet(row: 2, column: 0, value: 1.0)])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "triplet 1 stands at row 2 and column 0, outside a matrix of 2 rows and 2 columns"
+
+    assert from_triplets(rows: 2, columns: 2, triplets: [Triplet(row: 0, column: -1, value: 1.0)]).is_err()
+    assert from_triplets(rows: -1, columns: 2, triplets: []).is_err()
+    assert from_triplets(rows: 2, columns: -1, triplets: []).is_err()
+
+test "value_at, entries_of, identity: every place of a row of three entries, the edges of a row, and the empty identity"
+    m = from_triplets(
+        rows: 2,
+        columns: 5,
+        triplets: [Triplet(row: 1, column: 4, value: 4.0), Triplet(row: 1, column: 0, value: 1.0), Triplet(row: 1, column: 2, value: 2.0)]
+    ).must()
+    got: [f64] @= []
+
+    for c in range(from: 0, to: 5)
+        got @ got.push(value_at(m, row: 1, column: c))
+
+    assert got == [1.0, 0.0, 2.0, 0.0, 4.0] && value_at(m, row: 0, column: 4) == 0.0
+    assert entries_of(m) == [Triplet(row: 1, column: 0, value: 1.0), Triplet(row: 1, column: 2, value: 2.0), Triplet(row: 1, column: 4, value: 4.0)]
+    assert identity(0).rows == 0 && entries_of(identity(0)).len() == 0
+    assert entries_of(identity(2)) == [Triplet(row: 0, column: 0, value: 1.0), Triplet(row: 1, column: 1, value: 1.0)]
+
+test "transpose: a rectangle twice gives itself back, empty rows and columns, and the shape swapped"
+    m = from_triplets(
+        rows: 3,
+        columns: 4,
+        triplets: [Triplet(row: 0, column: 3, value: 1.0), Triplet(row: 2, column: 0, value: 2.0), Triplet(row: 2, column: 3, value: 3.0)]
+    ).must()
+    t = transpose(m)
+    assert t.rows == 4 && t.columns == 3
+    assert entries_of(t) == [Triplet(row: 0, column: 2, value: 2.0), Triplet(row: 3, column: 0, value: 1.0), Triplet(row: 3, column: 2, value: 3.0)]
+    assert transpose(t) == m
+    assert transpose(from_triplets(rows: 0, columns: 2, triplets: []).must()).starts == [0, 0, 0]
+
+# The product checked against the same matrix written dense, by hand.
+test "multiply_vector: a rectangle, zeros, an empty row, a vector of the wrong length refused, and the identity"
+    m = from_triplets(
+        rows: 3,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 0, value: 2.0), Triplet(row: 0, column: 1, value: -1.0), Triplet(row: 2, column: 1, value: 0.5)]
+    ).must()
+    assert multiply_vector(m, v: [3.0, 4.0]).must() == [2.0, 0.0, 2.0]
+
+    match multiply_vector(m, v: [1.0])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "a vector of 1 values, where a matrix of 2 columns takes as many"
+
+    assert multiply_vector(identity(3), v: [1.5, -2.0, 0.0]).must() == [1.5, -2.0, 0.0]
+    assert multiply_vector(from_triplets(rows: 0, columns: 0, triplets: []).must(), v: []).must().len() == 0
+
+test "row_sums, column_sums, scale_rows and normalize_rows: an empty row left, a row of zero sum left, a factor per row, and the wrong count refused"
+    m = from_triplets(
+        rows: 3,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 0, value: 1.0), Triplet(row: 0, column: 1, value: 3.0), Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 2, column: 1, value: -1.0)]
+    ).must()
+    assert row_sums(m) == [4.0, 0.0, 0.0] && column_sums(m) == [2.0, 2.0]
+    assert entries_of(normalize_rows(m)) == [Triplet(row: 0, column: 0, value: 0.25), Triplet(row: 0, column: 1, value: 0.75), Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 2, column: 1, value: -1.0)]
+    assert row_sums(scale_rows(m, factors: [2.0, 5.0, 3.0]).must()) == [8.0, 0.0, 0.0]
+    assert scale_rows(m, factors: [1.0]).is_err()
+
+test "norm_l1, norm_l2 and norm_max: empty, signs, a nan, an infinity, and squares past an f64's range (2^660 times 3 and 4)"
+    assert norm_l1([]) == 0.0 && norm_l2([]) == 0.0 && norm_max([]) == 0.0
+    assert norm_l1([3.0, -4.0]) == 7.0 && norm_l2([3.0, -4.0]) == 5.0 && norm_max([3.0, -4.0]) == 4.0
+    huge: f64 @= 1.0
+
+    for _ in range(from: 0, to: 660)
+        huge @ huge * 2.0
+
+    assert norm_l2([3.0 * huge, 4.0 * huge]) == 5.0 * huge
+    assert math.is_nan(norm_max([1.0, 0.0 / 0.0])) && math.is_nan(norm_l2([0.0 / 0.0]))
+    assert norm_l2([1.0, 1.0 / 0.0]) == 1.0 / 0.0
+
+# The steady states solved exactly with Python's `fractions` on 2026-11-22:
+# (5/6, 1/6) and (1/4, 3/8, 3/8).
+test "steady_state: two chains to their exact states, a periodic chain that never settles, one settled at once, and every refusal"
+    two = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 0, value: 0.9), Triplet(row: 0, column: 1, value: 0.1), Triplet(row: 1, column: 0, value: 0.5), Triplet(row: 1, column: 1, value: 0.5)]
+    ).must()
+    settled = steady_state(two, tolerance: 0.00000000000010, most_iterations: 1000).must()
+    assert settled.change < 0.00000000000010 && compressed.close_to(a: settled.vector, b: [5.0 / 6.0, 1.0 / 6.0], within: 0.0000000000010)
+    three = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 0, value: 0.5), Triplet(row: 0, column: 1, value: 0.25), Triplet(row: 0, column: 2, value: 0.25), Triplet(row: 1, column: 0, value: 1.0 / 3.0), Triplet(row: 1, column: 1, value: 1.0 / 3.0), Triplet(row: 1, column: 2, value: 1.0 / 3.0), Triplet(row: 2, column: 1, value: 0.5), Triplet(row: 2, column: 2, value: 0.5)]
+    ).must()
+    assert compressed.close_to(
+        a: steady_state(three, tolerance: 0.000000000000010, most_iterations: 1000).must().vector,
+        b: [0.25, 0.375, 0.375],
+        within: 0.0000000000010
+    )
+    swings = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 1, value: 1.0), Triplet(row: 1, column: 0, value: 0.5), Triplet(row: 1, column: 2, value: 0.5), Triplet(row: 2, column: 1, value: 1.0)]
+    ).must()
+    swung = steady_state(swings, tolerance: 0.0000000000010, most_iterations: 50).must()
+    assert swung.iterations == 50 && swung.change > 0.5
+    doubly = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 1, value: 1.0), Triplet(row: 1, column: 0, value: 1.0)]
+    ).must()
+    at_once = steady_state(doubly, tolerance: 0.0000000000010, most_iterations: 5).must()
+    assert at_once.iterations == 1 && at_once.change == 0.0 && at_once.vector == [0.5, 0.5]
+    assert steady_state(
+        from_triplets(rows: 2, columns: 3, triplets: []).must(),
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert steady_state(
+        from_triplets(rows: 0, columns: 0, triplets: []).must(),
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert steady_state(two, tolerance: 0.0, most_iterations: 10).is_err() && steady_state(two, tolerance: 0.0000000010, most_iterations: 0).is_err()
+    assert steady_state(two, tolerance: 0.0 / 0.0, most_iterations: 10).is_err()
+    assert steady_state(
+        from_triplets(rows: 1, columns: 1, triplets: [Triplet(row: 0, column: 0, value: 0.5)]).must(),
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert steady_state(from_triplets(rows: 1, columns: 1, triplets: [Triplet(row: 0, column: 0, value: -1.0), Triplet(row: 0, column: 0, value: 2.0)]).must(), tolerance: 0.0000000010, most_iterations: 10).must().vector == [1.0]
+
+# The ranks solved exactly with Python's `fractions` on 2026-11-22, as
+# NetworkX's `pagerank` defines them: a page with no link out jumps to any.
+test "pagerank: five pages with one that links nowhere and one nothing links to, three with weighted links, a single page, and every refusal"
+    five = from_triplets(
+        rows: 5,
+        columns: 5,
+        triplets: [Triplet(row: 0, column: 1, value: 1.0), Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 2, value: 1.0), Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 3, column: 2, value: 1.0), Triplet(row: 3, column: 4, value: 1.0)]
+    ).must()
+    ranks = pagerank(five, damping: 0.85, tolerance: 0.000000000000010, most_iterations: 1000).must()
+    assert ranks.change < 0.000000000000010
+    assert compressed.close_to(
+        a: ranks.vector,
+        b: [0.3501783623118859, 0.1884166980769098, 0.3653970214323854, 0.0395908940943583, 0.056417024084460574],
+        within: 0.0000000000010
+    )
+    weighted = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 1, value: 2.0), Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 0, value: 1.0), Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 2, column: 1, value: 1.0)]
+    ).must()
+    assert compressed.close_to(
+        a: pagerank(weighted, damping: 0.85, tolerance: 0.000000000000010, most_iterations: 1000).must().vector,
+        b: [0.44597166419961937, 0.37766969761048846, 0.17635863818989214],
+        within: 0.0000000000010
+    )
+    alone = pagerank(
+        from_triplets(rows: 1, columns: 1, triplets: []).must(),
+        damping: 0.85,
+        tolerance: 0.0000000000010,
+        most_iterations: 10
+    ).must()
+    assert alone.vector == [1.0] && alone.iterations == 1
+    assert pagerank(five, damping: 1.0, tolerance: 0.0000000010, most_iterations: 10).is_err()
+    assert pagerank(five, damping: -0.1, tolerance: 0.0000000010, most_iterations: 10).is_err()
+    assert pagerank(five, damping: 0.0 / 0.0, tolerance: 0.0000000010, most_iterations: 10).is_err()
+    assert pagerank(five, damping: 0.85, tolerance: 0.0 / 0.0, most_iterations: 10).is_err()
+    assert pagerank(
+        from_triplets(rows: 1, columns: 1, triplets: [Triplet(row: 0, column: 0, value: -1.0)]).must(),
+        damping: 0.85,
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert pagerank(
+        from_triplets(rows: 2, columns: 1, triplets: []).must(),
+        damping: 0.85,
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert pagerank(
+        from_triplets(rows: 1, columns: 1, triplets: [Triplet(row: 0, column: 0, value: 1.0 / 0.0)]).must(),
+        damping: 0.85,
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+    assert pagerank(
+        from_triplets(rows: 1, columns: 1, triplets: [Triplet(row: 0, column: 0, value: 0.0 / 0.0)]).must(),
+        damping: 0.85,
+        tolerance: 0.0000000010,
+        most_iterations: 10
+    ).is_err()
+
+## Examples
+
+# A matrix of a site's links, two pages linking to a third.
+test "from_triplets: the links of three pages"
+    links = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 2, value: 1.0)]
+    ).must()
+    assert count_of_entries(links) == 2
+
+# The identity, which leaves a vector as it is.
+test "identity: three by three"
+    assert multiply_vector(identity(3), v: [1.0, 2.0, 3.0]).must() == [1.0, 2.0, 3.0]
+
+# The entries a matrix keeps, back as triplets.
+test "entries_of: one entry"
+    m = from_triplets(rows: 2, columns: 2, triplets: [Triplet(row: 1, column: 0, value: 5.0)]).must()
+    assert entries_of(m) == [Triplet(row: 1, column: 0, value: 5.0)]
+
+# A value read at a place, an entry's or zero.
+test "value_at: an entry and a zero"
+    m = from_triplets(rows: 2, columns: 2, triplets: [Triplet(row: 1, column: 0, value: 5.0)]).must()
+    assert value_at(m, row: 1, column: 0) == 5.0 && value_at(m, row: 0, column: 0) == 0.0
+
+# How many entries a matrix keeps.
+test "count_of_entries: a place given twice counted once"
+    m = from_triplets(
+        rows: 1,
+        columns: 1,
+        triplets: [Triplet(row: 0, column: 0, value: 1.0), Triplet(row: 0, column: 0, value: 1.0)]
+    ).must()
+    assert count_of_entries(m) == 1
+
+# Who links to a page, read off the transpose's row.
+test "transpose: the links into a page"
+    links = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 2, value: 1.0)]
+    ).must()
+    assert entries_of(transpose(links)) == [Triplet(row: 2, column: 0, value: 1.0), Triplet(row: 2, column: 1, value: 1.0)]
+
+# A matrix times a vector.
+test "multiply_vector: two rows"
+    m = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 1, value: 2.0), Triplet(row: 1, column: 0, value: 3.0)]
+    ).must()
+    assert multiply_vector(m, v: [1.0, 10.0]).must() == [20.0, 3.0]
+
+# How many links leave each page.
+test "row_sums: links out of each page"
+    links = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 1, value: 1.0), Triplet(row: 0, column: 0, value: 1.0)]
+    ).must()
+    assert row_sums(links) == [2.0, 0.0]
+
+# How many links reach each page.
+test "column_sums: links into each page"
+    links = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 1, value: 1.0), Triplet(row: 1, column: 1, value: 1.0)]
+    ).must()
+    assert column_sums(links) == [0.0, 2.0]
+
+# Each row weighed by its own factor.
+test "scale_rows: one row doubled"
+    m = from_triplets(
+        rows: 2,
+        columns: 1,
+        triplets: [Triplet(row: 0, column: 0, value: 1.0), Triplet(row: 1, column: 0, value: 1.0)]
+    ).must()
+    assert row_sums(scale_rows(m, factors: [2.0, 1.0]).must()) == [2.0, 1.0]
+
+# Counts of moves made a chain's chances.
+test "normalize_rows: counts made chances"
+    counts = from_triplets(
+        rows: 1,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 0, value: 3.0), Triplet(row: 0, column: 1, value: 1.0)]
+    ).must()
+    assert row_sums(normalize_rows(counts)) == [1.0]
+
+# How far a round of an iteration moved, summed.
+test "norm_l1: a difference"
+    assert norm_l1([0.5, -0.25]) == 0.75
+
+# A vector's length.
+test "norm_l2: three, four, five"
+    assert norm_l2([3.0, 4.0]) == 5.0
+
+# The largest part of a vector.
+test "norm_max: the largest in size"
+    assert norm_max([1.0, -7.0, 3.0]) == 7.0
+
+# The weather tomorrow as a chain of sunny and rainy days, and how often each
+# comes in the long run.
+test "steady_state: sunny and rainy days"
+    weather = from_triplets(
+        rows: 2,
+        columns: 2,
+        triplets: [Triplet(row: 0, column: 0, value: 0.9), Triplet(row: 0, column: 1, value: 0.1), Triplet(row: 1, column: 0, value: 0.5), Triplet(row: 1, column: 1, value: 0.5)]
+    ).must()
+    days = steady_state(weather, tolerance: 0.0000000000010, most_iterations: 1000).must()
+    assert math.abs(days.vector[0] - 5.0 / 6.0) < 0.0000000010
+
+# The PageRank of three pages, the one both others link to ranked first.
+test "pagerank: three pages"
+    links = from_triplets(
+        rows: 3,
+        columns: 3,
+        triplets: [Triplet(row: 0, column: 2, value: 1.0), Triplet(row: 1, column: 2, value: 1.0), Triplet(row: 2, column: 0, value: 1.0)]
+    ).must()
+    ranks = pagerank(links, damping: 0.85, tolerance: 0.00000000010, most_iterations: 100).must().vector
+    assert ranks[2] > ranks[0] && ranks[0] > ranks[1]

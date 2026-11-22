@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and fifty-one packages, in layers. **A package may use any package of a layer below
+A hundred and fifty-two packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -60,6 +60,7 @@ package moves its row in the same change. There is no cycle.
 | 1 | `stats` | mean, median, mode, variance, deviation, quantiles, correlation | `lists`, `math` |  |
 | 1 | `math/complex` | complex numbers and their functions as C11's Annex G computes them: arithmetic, the polar form, exponentials, logarithms, powers, the circular and hyperbolic functions and their inverses | `math` |  |
 | 1 | `math/linear` | vectors of two, three and four, matrices, quaternions, transforms, cameras and Euler angles in all twelve orders | `math` |  |
+| 1 | `math/sparse` | matrices of any size held as compressed sparse rows: built from triplets, read, transposed, multiplied by a vector, rows summed and normalized; vector norms; a Markov chain's steady state and PageRank by power iteration | `lists`, `math` |  |
 | 1 | `image` | images in memory, gray to RGBA at 8 and 16 bits: crop, resize, rotate, flip, convert, paste with alpha, simple drawing, a histogram; each file format a subpackage; a broken file is `invalid`, never a memory fault | `math` |  |
 | 2 | `io` | the stream: read, write, close, seek; buffers; lines; copying | `bytes` | `hero_stream.h` |
 | 2 | `json` | a JSON value parsed and rendered | `numbers`, `strings`, `unicode` |  |
