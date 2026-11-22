@@ -37,6 +37,7 @@
 #include <shobjidl.h>
 #include <shlobj.h>
 #include <dwmapi.h>
+#include <shellapi.h>
 #include <oleacc.h>
 #include <wchar.h>
 #include "hero_ui_web_win32.h"
@@ -275,6 +276,10 @@ struct hero_ui_native {
      * the label tied to it, 0 for none (ACCESSIBLE NAMES). */
     wchar_t *access_name;
     int64_t label_for;
+    /* A tray's icon of its own (NULL for the app's) and whether Windows
+     * shows it (AN ICON IN THE TRAY). */
+    HICON tray_icon;
+    bool tray_shown;
     /* A menu item's check mode, `HERO_UI_CHECK_*`, and its state. */
     int64_t check;
     bool checked;
@@ -364,6 +369,9 @@ static _Thread_local int64_t hero_ui_win_quiet;
  * told. */
 static _Thread_local int64_t hero_ui_win_appearance_forced;
 static _Thread_local int64_t hero_ui_win_appearance_told;
+/* The message Explorer sends every top-level window when it starts again,
+ * its tray empty. */
+static _Thread_local UINT hero_ui_win_taskbar_created;
 /* The window made modal, 0 for none. */
 static _Thread_local int64_t hero_ui_win_modal;
 /* The app's icon, NULL for the system's own. */
@@ -573,6 +581,14 @@ static hero_ui_native *hero_ui_win_window(int64_t id) {
     hero_ui_native *window = hero_ui_find(id);
 
     return window != NULL && window->kind == HERO_UI_WINDOW ? window : NULL;
+}
+
+/* The window or the tray of number `id`, what a menu's items stand in, or
+ * NULL. */
+static hero_ui_native *hero_ui_win_top(int64_t id) {
+    hero_ui_native *top = hero_ui_find(id);
+
+    return top != NULL && (top->kind == HERO_UI_WINDOW || top->kind == HERO_UI_TRAY) ? top : NULL;
 }
 
 /* The scale `hwnd` is drawn at, the system's where Windows names no window's
@@ -1456,6 +1472,8 @@ static LRESULT hero_ui_win_edge(const hero_ui_native *window, LPARAM at) {
     return left ? HTLEFT : right ? HTRIGHT : HTCAPTION;
 }
 
+#define HERO_UI_WIN_TRAY_MESSAGE (WM_APP + 0x49)
+
 /* What the parts below the procedure handle, each defined in its part. */
 static void hero_ui_win_moved(HWND hwnd, bool moved);
 static void hero_ui_win_state_changed(HWND hwnd);
@@ -1471,6 +1489,8 @@ static void hero_ui_win_settle_rows(hero_ui_native *table);
 static void hero_ui_win_lay_box(hero_ui_native *widget);
 static hero_ui_native *hero_ui_win_widget_at(HWND hwnd);
 static void hero_ui_win_setting_changed(LPARAM name);
+static void hero_ui_win_tray_told(HWND hwnd, WPARAM at, LPARAM what);
+static void hero_ui_win_trays_again(void);
 
 /* A notification from a control to its parent (`WM_NOTIFY`): the person's
  * tab, a table's or a tree's. */
@@ -1498,7 +1518,16 @@ static LRESULT hero_ui_win_notified(NMHDR *head) {
 static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     hero_ui_native *widget;
 
+    if (message == hero_ui_win_taskbar_created && message != 0) {
+        widget = hero_ui_win_of(hwnd);
+        if (widget != NULL && widget->kind == HERO_UI_TRAY) {
+            hero_ui_win_trays_again();
+        }
+    }
     switch (message) {
+    case HERO_UI_WIN_TRAY_MESSAGE:
+        hero_ui_win_tray_told(hwnd, wparam, lparam);
+        return 0;
     case WM_COMMAND:
         /* Return or Escape the dialog manager gives the window, from no
          * control of this arm's (RETURN AND ESCAPE). */
@@ -1727,6 +1756,8 @@ static void hero_ui_win_take_styles(void) {
 
 static int64_t hero_ui_win_appearance_now(void);
 static void hero_ui_win_props_end(void);
+static void hero_ui_win_notifier_end(void);
+static _Thread_local bool hero_ui_win_undocked;
 
 int64_t hero_ui_arm_open(void) {
     INITCOMMONCONTROLSEX controls;
@@ -1768,6 +1799,7 @@ int64_t hero_ui_arm_open(void) {
     hero_ui_win_quiet = 0;
     hero_ui_win_modal = 0;
     hero_ui_win_appearance_forced = 0;
+    hero_ui_win_taskbar_created = RegisterWindowMessageW(L"TaskbarCreated");
     hero_ui_win_appearance_told = hero_ui_win_appearance_now();
     hero_ui_make_host();
     return HERO_UI_OK;
@@ -1775,6 +1807,7 @@ int64_t hero_ui_arm_open(void) {
 
 static void hero_ui_win_hold_others(int64_t except, bool hold);
 static void hero_ui_win_label_changed(int64_t label, bool gone);
+static void hero_ui_win_tray_hide(hero_ui_native *tray);
 static int hero_ui_win_page_index(const hero_ui_native *tabs, int64_t page);
 static void hero_ui_win_drop_cells(hero_ui_native *table);
 
@@ -1816,6 +1849,14 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
         if (widget->menu != NULL) {
             (void)DestroyMenu(widget->menu);
         }
+        break;
+    case HERO_UI_TRAY:
+        hero_ui_win_tray_hide(widget);
+        if (widget->tray_icon != NULL) {
+            (void)DestroyIcon(widget->tray_icon);
+        }
+        (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
+        (void)DestroyWindow(widget->hwnd);
         break;
     case HERO_UI_CONTEXT_MENU:
         /* Taken from its widget with it: a right click finds none now. */
@@ -1931,6 +1972,8 @@ void hero_ui_arm_close(void) {
     }
     hero_ui_free_map();
     hero_ui_win_props_end();
+    hero_ui_win_notifier_end();
+    hero_ui_win_undocked = false;
     hero_layer_free(hero_ui_win_paths);
     hero_ui_win_paths = NULL;
     hero_ui_win_paths_count = 0;
@@ -1999,6 +2042,8 @@ static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window, HWND ins
 
 static void hero_ui_win_give_icon(HWND hwnd);
 static void hero_ui_win_dress(HWND hwnd);
+static int64_t hero_ui_win_make_tray(hero_ui_native *made);
+static void hero_ui_win_tray_hide(hero_ui_native *tray);
 static bool hero_ui_win_subclass_edit(HWND hwnd);
 static void hero_ui_win_lay_pages(hero_ui_native *tabs);
 static void hero_ui_win_lay_panes(hero_ui_native *split);
@@ -2057,7 +2102,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     if (hero_ui_find(id) != NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (kind != HERO_UI_WINDOW) {
+    if (kind != HERO_UI_WINDOW && kind != HERO_UI_TRAY) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
             return HERO_UI_NOT_FOUND;
@@ -2065,7 +2110,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (!hero_ui_win_holds_kind(owner, kind)) {
             return HERO_UI_INVALID;
         }
-        window = hero_ui_win_window(owner->window);
+        window = hero_ui_win_top(owner->window);
         if (window == NULL) {
             return HERO_UI_NOT_FOUND;
         }
@@ -2178,6 +2223,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             (void)SendMessageW(made->hwnd, LVM_SETEXTENDEDLISTVIEWSTYLE, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER, LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
         }
         break;
+    case HERO_UI_TRAY:
+        answer = hero_ui_win_make_tray(made);
+        break;
     case HERO_UI_TREE:
         made->hwnd = hero_ui_win_control(window, inside, WC_TREEVIEWW, TVS_HASBUTTONS | TVS_HASLINES | TVS_LINESATROOT | TVS_SHOWSELALWAYS | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
@@ -2199,6 +2247,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         answer = HERO_UI_LIMIT;
     }
     if (answer != HERO_UI_OK) {
+        if (made->kind == HERO_UI_TRAY) {
+            hero_ui_win_tray_hide(made);
+        }
         if (made->hwnd != NULL) {
             (void)DestroyWindow(made->hwnd);
         }
@@ -2299,6 +2350,9 @@ static void hero_ui_win_lay_scroll(hero_ui_native *scroll);
 static int64_t hero_ui_win_divider(UINT dpi);
 
 static void hero_ui_win_label_changed(int64_t label, bool gone);
+static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how);
+static int64_t hero_ui_win_tray_image(hero_ui_native *tray, const uint8_t *rgba, int64_t width, int64_t height);
+static void hero_ui_win_shown_in_taskbar(const hero_ui_native *window);
 
 int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
@@ -2326,6 +2380,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_MENU:
     case HERO_UI_MENU_ITEM:
+    case HERO_UI_TRAY:
         break;
     default:
         return HERO_UI_INVALID;
@@ -2357,6 +2412,12 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
         hero_layer_free(widget->label);
         widget->label = wide;
         return hero_ui_win_refill_owner(widget);
+    }
+    if (widget->kind == HERO_UI_TRAY) {
+        /* Its tip, which Windows shows of its first 127 units. */
+        hero_layer_free(widget->label);
+        widget->label = wide;
+        return !widget->tray_shown || hero_ui_win_tray_show(widget, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its words", GetLastError());
     }
     hero_ui_mute(1);
     set = SetWindowTextW(widget->hwnd, wide);
@@ -2622,8 +2683,10 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         }
         style = GetWindowLongPtrW(widget->hwnd, GWL_STYLE);
         style = on == 1 ? (style | WS_THICKFRAME | WS_MAXIMIZEBOX) : (style & ~(LONG_PTR)(WS_THICKFRAME | WS_MAXIMIZEBOX));
-        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, style);
+        /* Muted from the style on, which Windows may answer by a resize at
+         * once (`hero_ui_win_set_framed`). */
         hero_ui_mute(1);
+        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, style);
         (void)SetWindowPos(widget->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         hero_ui_mute(-1);
         hero_ui_win_size_content(widget);
@@ -2638,6 +2701,7 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
 
                 (void)ShowWindow(widget->hwnd, first ? SW_SHOWNORMAL : SW_SHOW);
                 (void)SetForegroundWindow(widget->hwnd);
+                hero_ui_win_shown_in_taskbar(widget);
                 if (first) {
                     hero_ui_win_first_shown(widget);
                 }
@@ -2650,6 +2714,14 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
             hero_ui_win_lay_box(hero_ui_find(widget->parent));
             return HERO_UI_OK;
         case HERO_UI_CONTEXT_MENU:
+            return HERO_UI_OK;
+        case HERO_UI_TRAY:
+            if (on == 1 && !widget->tray_shown) {
+                return hero_ui_win_tray_show(widget, NIM_ADD) ? HERO_UI_OK : hero_ui_win_failed("adding an icon to the notification area", GetLastError());
+            }
+            if (on == 0) {
+                hero_ui_win_tray_hide(widget);
+            }
             return HERO_UI_OK;
         case HERO_UI_MENU:
         case HERO_UI_MENU_ITEM:
@@ -2760,6 +2832,9 @@ int64_t hero_ui_arm_set_image(int64_t id, const uint8_t *rgba, int64_t width, in
     if (picture == NULL) {
         return HERO_UI_NOT_FOUND;
     }
+    if (picture->kind == HERO_UI_TRAY) {
+        return hero_ui_win_tray_image(picture, rgba, width, height);
+    }
     if (picture->kind != HERO_UI_IMAGE) {
         return HERO_UI_INVALID;
     }
@@ -2853,7 +2928,7 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
         return HERO_UI_NOT_FOUND;
     }
     /* A page and a pane are placed by their box. */
-    if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE) {
+    if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_PAGE || widget->kind == HERO_UI_PANE || widget->kind == HERO_UI_TRAY) {
         return HERO_UI_INVALID;
     }
     if (index < 0 && (widget->x != x || widget->y != y)) {
@@ -3413,7 +3488,8 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
         if (widget->kind != HERO_UI_MENU_ITEM) {
             answer = HERO_UI_INVALID;
         } else if (hero_ui_win_usable(widget)) {
-            hero_ui_native *window = hero_ui_win_window(widget->window);
+            /* A window's or a tray's, where its menu sends its command. */
+            hero_ui_native *window = hero_ui_win_top(widget->window);
 
             if (window != NULL) {
                 (void)SendMessageW(window->hwnd, WM_COMMAND, MAKEWPARAM(widget->command, 0), 0);
@@ -3726,7 +3802,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 
 /* -- THE KINDS AND ACTS THIS ARM DRAWS -------------------------------------
  *
- * The kinds of `hero_ui.h` up to the context menu, the last this arm draws,
+ * The kinds of `hero_ui.h` up to the context menu, and the tray,
  * so a kind the header gains later is told `hero_ui_elsewhere`'s words
  * until this arm draws it, never `INVALID` by a `create` that knows none of
  * it; and no context menu on a web view, whose menu is WebView2's own,
@@ -3734,7 +3810,7 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
     const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind > HERO_UI_CONTEXT_MENU) {
+    if (kind > HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY) {
         return false;
     }
     return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
@@ -4327,8 +4403,12 @@ static int64_t hero_ui_win_set_framed(hero_ui_native *window, bool on) {
         style = (style & ~(LONG_PTR)(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME)) | WS_POPUP;
     }
     window->unframed = !on;
-    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
+    /* The style changed is the program's own change, and Windows may resize
+     * the window for it at once: measured on Windows Server 2025, a window
+     * that had left full screen took a `WM_SIZE` from `SetWindowLongPtrW`
+     * itself, which unmuted was told as the person's resize. */
     hero_ui_mute(1);
+    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
     (void)SetWindowPos(window->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     hero_ui_mute(-1);
     hero_ui_win_size_content(window);
@@ -4454,60 +4534,69 @@ static void hero_ui_win_give_icon(HWND hwnd) {
     (void)SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hero_ui_win_icon);
 }
 
+/* An icon of `width` by `height` pixels of straight RGBA at `rgba`, through
+ * `*made`. */
+static int64_t hero_ui_win_make_icon(const uint8_t *rgba, int64_t width, int64_t height, HICON *made) {
+    BITMAPV5HEADER format;
+    ICONINFO parts;
+    void *bits = NULL;
+    HBITMAP color;
+    HBITMAP mask;
+    uint8_t *into;
+
+    *made = NULL;
+    if (width > 4096 || height > 4096) {
+        return hero_ui_refused(HERO_UI_OTHER, "an icon of Windows is at most 4096 pixels a side");
+    }
+    memset(&format, 0, sizeof format);
+    format.bV5Size = (DWORD)sizeof format;
+    format.bV5Width = (LONG)width;
+    format.bV5Height = -(LONG)height;
+    format.bV5Planes = 1;
+    format.bV5BitCount = 32;
+    format.bV5Compression = BI_BITFIELDS;
+    format.bV5RedMask = 0x00FF0000u;
+    format.bV5GreenMask = 0x0000FF00u;
+    format.bV5BlueMask = 0x000000FFu;
+    format.bV5AlphaMask = 0xFF000000u;
+    color = CreateDIBSection(NULL, (BITMAPINFO *)&format, DIB_RGB_COLORS, &bits, NULL, 0);
+    mask = CreateBitmap((int)width, (int)height, 1, 1, NULL);
+    if (color == NULL || bits == NULL || mask == NULL) {
+        if (color != NULL) {
+            (void)DeleteObject(color);
+        }
+        if (mask != NULL) {
+            (void)DeleteObject(mask);
+        }
+        return HERO_UI_LIMIT;
+    }
+    /* An icon's colour bitmap holds its alpha straight, as given. */
+    into = bits;
+    for (int64_t i = 0; i < width * height; i += 1) {
+        into[i * 4 + 0] = rgba[i * 4 + 2];
+        into[i * 4 + 1] = rgba[i * 4 + 1];
+        into[i * 4 + 2] = rgba[i * 4 + 0];
+        into[i * 4 + 3] = rgba[i * 4 + 3];
+    }
+    memset(&parts, 0, sizeof parts);
+    parts.fIcon = TRUE;
+    parts.hbmColor = color;
+    parts.hbmMask = mask;
+    *made = CreateIconIndirect(&parts);
+    (void)DeleteObject(color);
+    (void)DeleteObject(mask);
+    return *made != NULL ? HERO_UI_OK : hero_ui_win_failed("making an icon", GetLastError());
+}
+
 int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height) {
     HICON made = NULL;
     HICON before = hero_ui_win_icon;
 
     if (width > 0 && height > 0) {
-        BITMAPV5HEADER format;
-        ICONINFO parts;
-        void *bits = NULL;
-        HBITMAP color;
-        HBITMAP mask;
-        uint8_t *into;
+        int64_t answer = hero_ui_win_make_icon(rgba, width, height, &made);
 
-        if (width > 4096 || height > 4096) {
-            return hero_ui_refused(HERO_UI_OTHER, "an icon of Windows is at most 4096 pixels a side");
-        }
-        memset(&format, 0, sizeof format);
-        format.bV5Size = (DWORD)sizeof format;
-        format.bV5Width = (LONG)width;
-        format.bV5Height = -(LONG)height;
-        format.bV5Planes = 1;
-        format.bV5BitCount = 32;
-        format.bV5Compression = BI_BITFIELDS;
-        format.bV5RedMask = 0x00FF0000u;
-        format.bV5GreenMask = 0x0000FF00u;
-        format.bV5BlueMask = 0x000000FFu;
-        format.bV5AlphaMask = 0xFF000000u;
-        color = CreateDIBSection(NULL, (BITMAPINFO *)&format, DIB_RGB_COLORS, &bits, NULL, 0);
-        mask = CreateBitmap((int)width, (int)height, 1, 1, NULL);
-        if (color == NULL || bits == NULL || mask == NULL) {
-            if (color != NULL) {
-                (void)DeleteObject(color);
-            }
-            if (mask != NULL) {
-                (void)DeleteObject(mask);
-            }
-            return HERO_UI_LIMIT;
-        }
-        /* An icon's colour bitmap holds its alpha straight, as given. */
-        into = bits;
-        for (int64_t i = 0; i < width * height; i += 1) {
-            into[i * 4 + 0] = rgba[i * 4 + 2];
-            into[i * 4 + 1] = rgba[i * 4 + 1];
-            into[i * 4 + 2] = rgba[i * 4 + 0];
-            into[i * 4 + 3] = rgba[i * 4 + 3];
-        }
-        memset(&parts, 0, sizeof parts);
-        parts.fIcon = TRUE;
-        parts.hbmColor = color;
-        parts.hbmMask = mask;
-        made = CreateIconIndirect(&parts);
-        (void)DeleteObject(color);
-        (void)DeleteObject(mask);
-        if (made == NULL) {
-            return hero_ui_win_failed("making the app's icon", GetLastError());
+        if (answer != HERO_UI_OK) {
+            return answer;
         }
     }
     hero_ui_win_icon = made;
@@ -4516,6 +4605,9 @@ int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height)
 
         if (window != NULL && window->kind == HERO_UI_WINDOW) {
             hero_ui_win_give_icon(window->hwnd);
+        }
+        if (window != NULL && window->kind == HERO_UI_TRAY && window->tray_icon == NULL && window->tray_shown) {
+            (void)hero_ui_win_tray_show(window, NIM_MODIFY);
         }
     }
     if (before != NULL) {
@@ -5059,7 +5151,7 @@ static bool hero_ui_win_show_context(HWND target, LPARAM at, bool inherit) {
             break;
         }
     }
-    window = menu != NULL ? hero_ui_win_window(menu->window) : NULL;
+    window = menu != NULL ? hero_ui_win_top(menu->window) : NULL;
     if (menu == NULL || window == NULL || menu->menu == NULL) {
         return false;
     }
@@ -5075,7 +5167,15 @@ static bool hero_ui_win_show_context(HWND target, LPARAM at, bool inherit) {
         point.y = area.top + (area.bottom - area.top) / 2;
     }
     (void)hero_ui_win_fill_menu(menu);
+    if (window->kind == HERO_UI_TRAY) {
+        /* A tray's hidden window in front, so the menu closes when the
+         * person clicks away; the message after it lets the menu end. */
+        (void)SetForegroundWindow(window->hwnd);
+    }
     (void)TrackPopupMenuEx(menu->menu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON, point.x, point.y, window->hwnd, NULL);
+    if (window->kind == HERO_UI_TRAY) {
+        (void)PostMessageW(window->hwnd, WM_NULL, 0, 0);
+    }
     return true;
 }
 
@@ -5280,6 +5380,7 @@ int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t co
         if (block == NULL) {
             return answer;
         }
+        answer = HERO_UI_OK;
     }
     if (!hero_ui_win_open_clipboard(&answer)) {
         if (block != NULL) {
@@ -6498,8 +6599,10 @@ static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int
  * are shown unfolded. Folding an item whose descendant is chosen lets the
  * choice go before the fold, as the layer's other systems do, where the
  * tree view would move it to the folded item; Rebel tells that choice gone
- * after the fold it was told. A double click or Return opens the item
- * chosen. */
+ * after the fold it was told; a choice the tree view would make of its own
+ * accord (its first item when it takes the keys with none chosen) is
+ * refused, and an item taken out takes the choice under it with it. A
+ * double click or Return opens the item chosen. */
 
 /* The item of tree `tree` numbered `item`, or NULL; 0, the top, is none. */
 static hero_ui_win_node *hero_ui_win_node_of(const hero_ui_native *tree, int64_t item) {
@@ -6679,6 +6782,11 @@ int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
     }
     under = node->under;
     hero_ui_mute(1);
+    /* The choice of the item or of one under it goes with it, where the
+     * tree view would move it to a neighbour. */
+    if (hero_ui_win_item_chosen(tree) == item || hero_ui_win_under(tree, hero_ui_win_item_chosen(tree), item)) {
+        (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, 0);
+    }
     (void)SendMessageW(tree->hwnd, TVM_DELETEITEM, 0, (LPARAM)node->handle);
     /* The tree view took the items under it with it: so does the arm. */
     for (int64_t i = 0; i < tree->node_count; i += 1) {
@@ -6746,6 +6854,18 @@ static void hero_ui_win_choose_item(hero_ui_native *tree, int64_t item) {
 /* What tree `tree` notifies; answers what its parent's procedure answers. */
 static LRESULT hero_ui_win_tree_notified(hero_ui_native *tree, NMHDR *head) {
     switch (head->code) {
+    case TVN_SELCHANGINGW:
+    {
+        /* An item chosen by no person's click or key, no call of the
+         * program's and no act given as the person's is the tree view's
+         * own: its first item when it takes the keys with none chosen,
+         * which Windows Server 2025 was measured to notify with an action
+         * of 0x1000, none of the documented `TVC_*`. Refused, so the choice
+         * is the person's and the program's alone. */
+        UINT action = ((const NMTREEVIEWW *)(void *)head)->action;
+
+        return action == TVC_BYMOUSE || action == TVC_BYKEYBOARD || hero_ui_is_muted() || hero_ui_win_injecting > 0 ? FALSE : TRUE;
+    }
     case TVN_SELCHANGEDW:
         if (!hero_ui_is_muted()) {
             hero_ui_tell(HERO_UI_EVENT_SELECT, tree->id, hero_ui_win_item_chosen(tree), 0);
@@ -7191,6 +7311,278 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
     }
     widget->label_for = label;
     return hero_ui_win_name_again(widget);
+}
+
+/* -- AN ICON IN THE TRAY, THE TASK BAR, AND A NOTIFICATION --------------------
+ *
+ * A TRAY is a hidden top-level window of the arm's owning one icon of the
+ * notification area (`Shell_NotifyIconW`, version 4), its tip its text and
+ * its icon its image or the app's. A click on it, the left button's
+ * (`NIN_SELECT`, `NIN_KEYSELECT`) or the menu's (`WM_CONTEXTMENU`), shows the
+ * tray's context menu at the point Windows gives, the hidden window brought
+ * to the foreground first so the menu closes when the person clicks away,
+ * Windows' rule for a tray's menu; an item chosen comes to that window as a
+ * menu's `WM_COMMAND`. Explorer restarted tells every top-level window
+ * "TaskbarCreated", and each tray adds its icon again.
+ *
+ * THE TASK BAR: an app out of it has no task bar button for any of its
+ * windows (`ITaskbarList`'s `DeleteTab`), each one taken out again whenever
+ * it is shown, since showing a window gives it its button back.
+ *
+ * A NOTIFICATION is a tray icon's balloon (`NIF_INFO`), which Windows 10 and
+ * later show as a toast under the program's name: the app's first tray's,
+ * else one of the arm's own, a tray icon added for it and kept until the app
+ * closes. A toast of the program's own (WinRT's `ToastNotificationManager`)
+ * needs an AppUserModelID the Start menu knows, which a program the
+ * compiler built does not carry. */
+
+#if defined(_MSC_VER)
+#pragma comment(lib, "shell32.lib")
+#endif
+
+/* `shobjidl.h`'s task bar list, written here so no import library of GUIDs
+ * is needed. */
+static const CLSID hero_ui_win_taskbar_class = {0x56fdf344, 0xfd6d, 0x11d0, {0x95, 0x8a, 0x00, 0x60, 0x97, 0xc9, 0xa0, 0x90}};
+static const IID hero_ui_win_taskbar_face = {0x56fdf342, 0xfd6d, 0x11d0, {0x95, 0x8a, 0x00, 0x60, 0x97, 0xc9, 0xa0, 0x90}};
+
+/* Copies the UTF-16 `from` into `into` of `room` units with its zero, cut
+ * where it does not fit, never inside a surrogate pair. */
+static void hero_ui_win_copy_units(wchar_t *into, size_t room, const wchar_t *from) {
+    size_t at = 0;
+
+    while (from != NULL && from[at] != 0 && at + 1 < room) {
+        into[at] = from[at];
+        at += 1;
+    }
+    if (at > 0 && into[at - 1] >= 0xD800 && into[at - 1] <= 0xDBFF && from[at] != 0) {
+        at -= 1;
+    }
+    into[at] = 0;
+}
+
+/* Tray `tray`'s icon in the notification area: added, `NIM_ADD`, or its
+ * tip and icon given again, `NIM_MODIFY`; false where Windows refused. */
+static bool hero_ui_win_tray_show(hero_ui_native *tray, DWORD how) {
+    NOTIFYICONDATAW icon;
+
+    memset(&icon, 0, sizeof icon);
+    icon.cbSize = (DWORD)sizeof icon;
+    icon.hWnd = tray->hwnd;
+    icon.uID = 1;
+    icon.uFlags = NIF_MESSAGE | NIF_ICON | NIF_TIP | NIF_SHOWTIP;
+    icon.uCallbackMessage = HERO_UI_WIN_TRAY_MESSAGE;
+    icon.hIcon = tray->tray_icon != NULL ? tray->tray_icon : hero_ui_win_icon != NULL ? hero_ui_win_icon : LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION);
+    hero_ui_win_copy_units(icon.szTip, sizeof icon.szTip / sizeof icon.szTip[0], tray->label);
+    if (!Shell_NotifyIconW(how, &icon)) {
+        return false;
+    }
+    if (how == NIM_ADD) {
+        icon.uVersion = NOTIFYICON_VERSION_4;
+        (void)Shell_NotifyIconW(NIM_SETVERSION, &icon);
+        tray->tray_shown = true;
+    }
+    return true;
+}
+
+/* Takes tray `tray`'s icon out of the notification area. */
+static void hero_ui_win_tray_hide(hero_ui_native *tray) {
+    NOTIFYICONDATAW icon;
+
+    if (!tray->tray_shown) {
+        return;
+    }
+    memset(&icon, 0, sizeof icon);
+    icon.cbSize = (DWORD)sizeof icon;
+    icon.hWnd = tray->hwnd;
+    icon.uID = 1;
+    (void)Shell_NotifyIconW(NIM_DELETE, &icon);
+    tray->tray_shown = false;
+}
+
+/* What tray window `hwnd`'s icon tells (`HERO_UI_WIN_TRAY_MESSAGE`): a click
+ * shows its context menu at the point `at` packs. */
+static void hero_ui_win_tray_told(HWND hwnd, WPARAM at, LPARAM what) {
+    UINT event = LOWORD(what);
+
+    if (event == WM_CONTEXTMENU || event == NIN_SELECT || event == NIN_KEYSELECT) {
+        (void)hero_ui_win_show_context(hwnd, (LPARAM)at, false);
+    }
+}
+
+/* Explorer restarted: every tray shown adds its icon again. */
+static void hero_ui_win_trays_again(void) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *tray = hero_ui_at(at);
+
+        if (tray != NULL && tray->kind == HERO_UI_TRAY && tray->tray_shown) {
+            tray->tray_shown = false;
+            (void)hero_ui_win_tray_show(tray, NIM_ADD);
+        }
+    }
+}
+
+/* Makes tray `made`'s hidden window and adds its icon. */
+static int64_t hero_ui_win_make_tray(hero_ui_native *made) {
+    made->hwnd = CreateWindowExW(WS_EX_TOOLWINDOW, hero_ui_win_panel_class, L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, GetModuleHandleW(NULL), NULL);
+    if (made->hwnd == NULL) {
+        return hero_ui_win_failed("making a tray icon's window", GetLastError());
+    }
+    (void)SetWindowLongPtrW(made->hwnd, GWLP_USERDATA, (LONG_PTR)made->id);
+    if (!hero_ui_win_tray_show(made, NIM_ADD)) {
+        DWORD code = GetLastError();
+
+        (void)DestroyWindow(made->hwnd);
+        made->hwnd = NULL;
+        return hero_ui_win_failed("adding an icon to the notification area", code);
+    }
+    return HERO_UI_OK;
+}
+
+/* Tray `tray`'s icon of `rgba` pixels, `width` by `height`, or the app's
+ * for none, 0 by 0. */
+static int64_t hero_ui_win_tray_image(hero_ui_native *tray, const uint8_t *rgba, int64_t width, int64_t height) {
+    HICON made = NULL;
+    int64_t answer = width > 0 && height > 0 ? hero_ui_win_make_icon(rgba, width, height, &made) : HERO_UI_OK;
+
+    if (answer != HERO_UI_OK) {
+        return answer;
+    }
+    if (tray->tray_icon != NULL) {
+        (void)DestroyIcon(tray->tray_icon);
+    }
+    tray->tray_icon = made;
+    return !tray->tray_shown || hero_ui_win_tray_show(tray, NIM_MODIFY) ? HERO_UI_OK : hero_ui_win_failed("giving a tray icon its image", GetLastError());
+}
+
+/* Takes window `hwnd`'s task bar button out where the app stands out of the
+ * task bar, or puts it back, `ITaskbarList` made for the call. */
+static int64_t hero_ui_win_taskbar_tab(HWND hwnd, bool shown) {
+    HRESULT joined = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    ITaskbarList *list = NULL;
+    HRESULT done;
+
+    if (FAILED(joined) && joined != RPC_E_CHANGED_MODE) {
+        return hero_ui_win_failed("joining COM for the task bar", (DWORD)joined);
+    }
+    done = CoCreateInstance(&hero_ui_win_taskbar_class, NULL, CLSCTX_INPROC_SERVER, &hero_ui_win_taskbar_face, (void **)&list);
+    if (SUCCEEDED(done) && list != NULL) {
+        done = list->lpVtbl->HrInit(list);
+        if (SUCCEEDED(done)) {
+            done = shown ? list->lpVtbl->AddTab(list, hwnd) : list->lpVtbl->DeleteTab(list, hwnd);
+        }
+        list->lpVtbl->Release(list);
+    }
+    if (SUCCEEDED(joined)) {
+        CoUninitialize();
+    }
+    return FAILED(done) ? hero_ui_win_failed("changing the task bar", (DWORD)done) : HERO_UI_OK;
+}
+
+/* Window `window` was shown: out of the task bar again where the app is. */
+static void hero_ui_win_shown_in_taskbar(const hero_ui_native *window) {
+    if (hero_ui_win_undocked) {
+        (void)hero_ui_win_taskbar_tab(window->hwnd, false);
+    }
+}
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    int64_t answer = HERO_UI_OK;
+
+    hero_ui_win_undocked = on == 0;
+    for (size_t at = 0; at < hero_ui_map_room() && answer == HERO_UI_OK; at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+
+        if (window != NULL && window->kind == HERO_UI_WINDOW && IsWindowVisible(window->hwnd)) {
+            answer = hero_ui_win_taskbar_tab(window->hwnd, on == 1);
+        }
+    }
+    return answer;
+}
+
+/* The tray icon a notification is shown by: the app's first tray, else one
+ * of the arm's own, added for it and kept until the app closes. */
+static _Thread_local HWND hero_ui_win_notifier;
+
+static int64_t hero_ui_win_notifier_of(HWND *hwnd) {
+    NOTIFYICONDATAW icon;
+
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *tray = hero_ui_at(at);
+
+        if (tray != NULL && tray->kind == HERO_UI_TRAY && tray->tray_shown) {
+            *hwnd = tray->hwnd;
+            return HERO_UI_OK;
+        }
+    }
+    if (hero_ui_win_notifier == NULL) {
+        hero_ui_win_notifier = CreateWindowExW(WS_EX_TOOLWINDOW, hero_ui_win_panel_class, L"", WS_POPUP, 0, 0, 0, 0, NULL, NULL, GetModuleHandleW(NULL), NULL);
+        if (hero_ui_win_notifier == NULL) {
+            return hero_ui_win_failed("making the window a notification is shown by", GetLastError());
+        }
+        memset(&icon, 0, sizeof icon);
+        icon.cbSize = (DWORD)sizeof icon;
+        icon.hWnd = hero_ui_win_notifier;
+        icon.uID = 1;
+        icon.uFlags = NIF_ICON;
+        icon.hIcon = hero_ui_win_icon != NULL ? hero_ui_win_icon : LoadIconW(NULL, (LPCWSTR)IDI_APPLICATION);
+        if (!Shell_NotifyIconW(NIM_ADD, &icon)) {
+            DWORD code = GetLastError();
+
+            (void)DestroyWindow(hero_ui_win_notifier);
+            hero_ui_win_notifier = NULL;
+            return hero_ui_refused(HERO_UI_UNSUPPORTED, code == 0 ? "Windows shows a program's notification by its icon in the notification area, which this session has none of (no Explorer runs)" : "Windows refused an icon in the notification area to show a notification by");
+        }
+    }
+    *hwnd = hero_ui_win_notifier;
+    return HERO_UI_OK;
+}
+
+/* Takes the arm's own notifying icon away at `close`. */
+static void hero_ui_win_notifier_end(void) {
+    NOTIFYICONDATAW icon;
+
+    if (hero_ui_win_notifier == NULL) {
+        return;
+    }
+    memset(&icon, 0, sizeof icon);
+    icon.cbSize = (DWORD)sizeof icon;
+    icon.hWnd = hero_ui_win_notifier;
+    icon.uID = 1;
+    (void)Shell_NotifyIconW(NIM_DELETE, &icon);
+    (void)DestroyWindow(hero_ui_win_notifier);
+    hero_ui_win_notifier = NULL;
+}
+
+int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count) {
+    wchar_t *heading = hero_ui_win_wide(title, title_count, HERO_UI_WIN_TABS);
+    wchar_t *said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
+    NOTIFYICONDATAW icon;
+    HWND by = NULL;
+    int64_t answer;
+
+    if (heading == NULL || said == NULL) {
+        hero_layer_free(heading);
+        hero_layer_free(said);
+        return HERO_UI_LIMIT;
+    }
+    answer = hero_ui_win_notifier_of(&by);
+    if (answer == HERO_UI_OK) {
+        memset(&icon, 0, sizeof icon);
+        icon.cbSize = (DWORD)sizeof icon;
+        icon.hWnd = by;
+        icon.uID = 1;
+        icon.uFlags = NIF_INFO;
+        icon.dwInfoFlags = NIIF_INFO | NIIF_RESPECT_QUIET_TIME;
+        /* Windows shows at most 63 units of a title and 255 of its words. */
+        hero_ui_win_copy_units(icon.szInfoTitle, sizeof icon.szInfoTitle / sizeof icon.szInfoTitle[0], heading);
+        hero_ui_win_copy_units(icon.szInfo, sizeof icon.szInfo / sizeof icon.szInfo[0], said[0] != 0 ? said : L" ");
+        if (!Shell_NotifyIconW(NIM_MODIFY, &icon)) {
+            answer = hero_ui_win_failed("showing a notification", GetLastError());
+        }
+    }
+    hero_layer_free(heading);
+    hero_layer_free(said);
+    return answer;
 }
 
 #endif
