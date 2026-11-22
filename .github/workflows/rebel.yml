@@ -311,6 +311,15 @@ jobs:
           done
           ./heroes run generators/pdf_tables/main.hero -- check build/generators/pdf
 
+      # `generators/time_zones/main.hero`'s `SOURCE_URL`; the generator holds
+      # the archive to its `SOURCE_SHA256` itself.
+      - name: generators/time_zones, the IANA time zone database's names of time
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/tzdata2026f.tar.gz \
+            https://data.iana.org/time-zones/releases/tzdata2026f.tar.gz
+          ./heroes run generators/time_zones/main.hero -- check build/generators/tzdata2026f.tar.gz
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
