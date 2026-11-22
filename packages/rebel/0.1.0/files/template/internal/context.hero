@@ -3,7 +3,8 @@
 # kind, in a script or a style sheet and where in them. A value is escaped by
 # the context it lands in; two ways through a template that meet must meet in
 # one context, or in one that differs only by what is unknown of a URL's part
-# or of a script's next `/`.
+# or of a script's next `/`, or else stand apart inside one tag until the text
+# after them brings them to one place (`template/internal/ways`).
 
 use template/internal/names
 use template/internal/program
@@ -227,6 +228,11 @@ function value_start(around: Context, delim: i64) -> Context
         _ => VALUE
 
     return next
+
+# Whether `s` is a state inside a tag and outside every value: its name,
+# between its attributes, an attribute's name, or after one.
+function in_tag(s: i64) -> bool
+    return s == TAG_NAME || s == TAG || s == ATTR_NAME || s == AFTER_NAME
 
 # Whether `s` is a state of a script.
 function is_js(s: i64) -> bool

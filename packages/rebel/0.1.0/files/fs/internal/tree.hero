@@ -20,7 +20,8 @@ record Pending
 
 # Makes the folder `dir` and every folder above it that is not there.
 #
-# - `dir`: the path; the empty path names nothing.
+# - `dir`: the path; the empty path names nothing, and a last part `.` names
+#   the folder before it.
 #
 # Fails `not_a_directory` where `dir`, or a part on its way, is no folder,
 # and `file_not_found` for the empty path. A folder another program makes
@@ -28,8 +29,22 @@ record Pending
 function made_all(dir: str) -> ()?
     asked = f"making the folder \"{dir}\" and those above it"
     codes.checked(path: dir, asked: asked)?
+
+    if dir == ""
+        return fail(code: codes.FILE_NOT_FOUND, msg: f"{asked}: the empty path names no folder")
     missing: [str] @= []
-    at: str @= dir
+
+    # The walk starts at the folder `dir` names, its parts joined, so every
+    # path it lists ends in a name or `..`: a last part `.` names the folder
+    # before it, which `path.parent` skips and the system's `mkdir` does not
+    # make through the `.` (defect 2648). A path of no part but `.` names
+    # this folder.
+    named = path.join_all(path.parts(dir))
+
+    at: str @= if named == ""
+        "."
+    else
+        named
 
     while true
         kind = facts.presence(at: at, through: true, asked: asked)?
@@ -141,7 +156,7 @@ test "made_all: one level, several, there already, a trailing separator, a file 
 
     match made_all("")
         .ok _  => assert false
-        .err e => assert e.code == codes.FILE_NOT_FOUND
+        .err e => assert e.code == codes.FILE_NOT_FOUND && e.msg == "making the folder \"\" and those above it: the empty path names no folder"
 
     assert fixture.cleared(dir)
 
@@ -154,6 +169,28 @@ test "made_all through a link to a folder, and a path with `..` in it"
         assert facts.presence(at: dir + "/real/x/y", through: true, asked: "a").must() == facts.DIRECTORY
     assert !made_all(dir + "/p/../q").is_err()
     assert facts.presence(at: dir + "/q", through: true, asked: "a").must() == facts.DIRECTORY
+    assert fixture.cleared(dir)
+
+# Python 3.15.2's `os.makedirs(p, exist_ok=True)` and Go 1.27.4's
+# `os.MkdirAll` made every folder below for each path here, observed
+# 2026-11-22, and both refused `file/.` and `file/x/.` with `ENOTDIR`.
+test "made_all: a last part `.`, `./`, `./.` and `.//`, a `.` inside, `..` last, `.` alone, and `.` after a file"
+    dir = fixture.folder("madedot")
+
+    for written in ["/a/b/.", "/c/d/./", "/g/h/./.", "/r/s/.//", "/e/./f", "/m/n/.."]
+        assert !made_all(dir + written).is_err()
+
+    for folder in ["/a/b", "/c/d", "/g/h", "/r/s", "/e/f", "/m/n"]
+        assert facts.presence(at: dir + folder, through: true, asked: "a").must() == facts.DIRECTORY
+
+    assert !made_all(".").is_err() && !made_all(dir + "/a/b/.").is_err()
+    assert !write_file(path: dir + "/file", text: "x").is_err()
+
+    for written in ["/file/.", "/file/x/."]
+        match made_all(dir + written)
+            .ok _  => assert false
+            .err e => assert e.code == codes.NOT_A_DIRECTORY && e.msg == f"making the folder \"{dir}{written}\" and those above it: \"{path.clean(dir + "/file")}\" is there and is no folder"
+
     assert fixture.cleared(dir)
 
 test "removed_all: a tree of files and folders, an empty folder, a file alone, and nothing there"

@@ -568,7 +568,8 @@ function make_dir_with(path: str, permission: i64) -> ()?
 # the permission 0o777 less the process's mask.
 #
 # - `path`: the folder's path; the folders on its way are made where they are
-#   not there.
+#   not there. A last part `.` names the folder before it, so `a/b/.` makes
+#   `a/b`.
 #
 # A folder there already is no failure. Fails `not_a_directory` where `path`, or
 # a part on its way, is something other than a folder, and `file_not_found` for

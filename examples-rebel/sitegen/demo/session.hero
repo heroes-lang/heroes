@@ -136,9 +136,9 @@ function put_text(root: str, name: str, text: str) -> ()?
     return put_bytes(root: root, name: name, data: bytes.from_text(text))
 
 # `data` written to the source `name` of the site at `root`, its folders made
-# first. The folder is the written path's `path.parent`, never `<root>/.`,
-# which `fs.make_dir_all` refuses while `<root>` is missing (defect draft
-# d-app-sitegen-1).
+# first: the folder `path.parent` names of the written path, so a source at
+# the site's top makes `<root>` itself, as `fs.make_dir_all` reads `<root>/.`
+# too (defect 2648).
 function put_bytes(root: str, name: str, data: [u8]) -> ()?
     target = sources.on_disk(root: root, name: name)
     fs.make_dir_all(path.parent(target))?

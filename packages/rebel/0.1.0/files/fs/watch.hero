@@ -18,7 +18,9 @@
 # over it is still watched after, and told `created`. **Changes close together
 # may be told as one**: a write told again before the program took the first
 # is told once, and on macOS the system joins one path's changes within about
-# a second. A change made just before the watch began may be told. A watch
+# a second. A change made just before the watch began may be told, once and
+# before the changes made after it, in a `wait`'s answer that may hold nothing
+# else, so a program waits on until the change it looks for is told. A watch
 # holds at most its room of events; past it they are lost, and one `overflow`
 # stands where they were, after which a program reads the folder again.
 #
@@ -414,27 +416,63 @@ test "close: a watch closed, then closed again"
     assert close(@w).is_err()
     fs.remove_all(root).must()
 
-# A file renamed in the watched folder is told with both its paths.
+# A file renamed in the watched folder is told with both its paths. The file
+# was made just before the watch began, so its creation may be told first, in
+# an answer of its own, and the waits go on until the rename is told.
 test "wait: a rename told with the path before"
     root = fs.make_temp_dir(dir: "", pattern: "watch-wait-*").must()
     fs.touch(root + "/draft.txt").must()
     w @= open(root).must()
     fs.rename(from: root + "/draft.txt", to: root + "/final.txt").must()
-    told = wait(w, limit: time.seconds(2).must()).must()
+    renamed = Event(
+        path: paths.join_all([root, "final.txt"]),
+        change: .renamed(from: paths.join_all([root, "draft.txt"])),
+        directory: false
+    )
+    told: [Event] @= []
+
+    for _ in range(from: 0, to: 3)
+        if told.len() == 0 || told[told.len() - 1] != renamed
+            for e in wait(w, limit: time.seconds(2).must()).must()
+                told @ told.push(e)
+
     assert told.len() >= 1
-    assert told[told.len() - 1] == Event(path: paths.join_all([root, "final.txt"]), change: .renamed(from: paths.join_all([root, "draft.txt"])), directory: false)
+    assert told[told.len() - 1] == renamed
+    made: i64 @= 0
+
+    for e in told
+        if e == Event(path: paths.join_all([root, "draft.txt"]), change: .created, directory: false)
+            made @ made + 1
+
+    assert made <= 1
     close(@w).must()
     fs.remove_all(root).must()
 
-# A wait with no limit, ended by the watched file's removal.
+# A wait with no limit, ended by the watched file's removal. The file was made
+# just before the watch began, so its creation may be told first, in an answer
+# of its own, and the waits go on until the removal is told.
 test "wait_forever: a watched file removed"
     root = fs.make_temp_dir(dir: "", pattern: "watch-forever-*").must()
     watched = paths.join_all([root, "watched.txt"])
     fs.touch(watched).must()
     w @= open(watched).must()
     fs.remove(watched).must()
-    told = wait_forever(w).must()
-    assert told[told.len() - 1] == Event(path: watched, change: .removed, directory: false)
+    removed = Event(path: watched, change: .removed, directory: false)
+    told: [Event] @= wait_forever(w).must()
+
+    for _ in range(from: 0, to: 2)
+        if told[told.len() - 1] != removed
+            for e in wait_forever(w).must()
+                told @ told.push(e)
+
+    assert told[told.len() - 1] == removed
+    made: i64 @= 0
+
+    for e in told
+        if e == Event(path: watched, change: .created, directory: false)
+            made @ made + 1
+
+    assert made <= 1
     close(@w).must()
     fs.remove_all(root).must()
 

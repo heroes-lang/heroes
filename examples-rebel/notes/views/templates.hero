@@ -227,8 +227,7 @@ function results() -> str
     return lines.join("\n")
 
 # The accounts, each with its role and a button for each role it may be
-# given. A `<select>` marking the role held would need `selected` written
-# only for one option, which `template`'s HTML mode refuses.
+# given, one click a change.
 function users() -> str
     lines = [
         "<h1>{{ .t.accounts }}</h1>"
