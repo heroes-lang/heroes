@@ -7452,6 +7452,17 @@ int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *
     }
 }
 
+/* Whether no dialog ended still waits for its callback. */
+static bool hero_ui_gtk_ends_taken(void *data) {
+    (void)data;
+    for (hero_ui_gtk_dialog *each = hero_ui_gtk_dialogs; each != NULL; each = each->next) {
+        if (each->ended) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void hero_ui_arm_dialogs_end(int64_t window) {
     hero_ui_gtk_dialog *shown = hero_ui_gtk_dialogs;
 
@@ -7475,6 +7486,11 @@ void hero_ui_arm_dialogs_end(int64_t window) {
         }
         shown = next;
     }
+    /* GTK's loop is given its turns until each callback came, a second at
+     * most: a window destroyed before its alert took the cancel in is
+     * destroyed twice by GTK 4.18.6 (its `gtk_window_destroy` assertion,
+     * measured under Xvfb), and the window goes once this returns. */
+    (void)hero_ui_gtk_spin(1000, hero_ui_gtk_ends_taken, NULL);
 }
 
 int64_t hero_ui_arm_dialogs_words(char *words, int64_t count) {
@@ -7828,12 +7844,8 @@ bool hero_ui_arm_acts(int64_t act) {
 
 /* What this part keeps for the app, given back as it closes. */
 static void hero_ui_gtk_close_more(void) {
-    /* Every dialog ended, and its callback given GTK's turns to come, a
-     * bounded number, so the records it holds go with it. */
+    /* Every dialog ended, its callback given GTK's turns to come. */
     hero_ui_arm_dialogs_end(0);
-    for (int turns = 0; turns < 1000 && hero_ui_gtk_dialogs != NULL; turns += 1) {
-        (void)hero_ui_gtk.main_context_iteration(NULL, 0);
-    }
     hero_ui_gtk_unwatch_appearance();
     hero_ui_gtk_undocked = false;
     hero_ui_gtk_modal = 0;
