@@ -66,6 +66,10 @@ function checks(build_dir: str, runtime_hint: str?, aside: str?) -> [Check]
             Check(name: "clang floor", ok: floor_ok, detail: found + " against a floor of " + clang_floor.FLOOR.to_str() + " — the oldest clang this compiler is measured on")
         )
     out @ out.push(linker_home(scratch: scratch))
+    swift = swift_row(scratch: scratch)
+
+    if !swift.is_err()
+        out @ out.push(swift.must())
     arch = doctor_asks.capture(program: "uname", words: ["uname", "-m"], scratch: scratch)
     out @ out.push(Check(name: "arch", ok: true, detail: doctor_asks.told(arch, otherwise: "unknown")))
     out @ out.push(runtime_row(runtime_hint))
@@ -166,6 +170,35 @@ function linker_home(scratch: str?) -> Check
         detail: doctor_asks.told(cc, otherwise: "not found — install a C toolchain (build-essential, base-devel, …)")
     )
 
+# `swiftc`, which the platform layer compiles its Swift members with on an
+# Apple target, CryptoKit's ciphers and AppKit's windows
+# (`cli/layer_swift.hero`), asked as a build finds it, `xcrun swiftc`; no row
+# off macOS, where no member is Swift. A build that cannot find it sends its
+# author here (defect 2626). Without the Command Line Tools, which the row
+# above tells, there is none, and `xcrun` is not asked.
+function swift_row(scratch: str?) -> Check?
+    none: Check? = fail(code: "none", msg: "no member of the platform layer is Swift off macOS")
+
+    if process.exe_suffix() == ".exe"
+        return none
+    system = doctor_asks.capture(program: "uname", words: ["uname", "-s"], scratch: scratch)
+
+    if system.default("") != "Darwin"
+        return none
+    clt = doctor_asks.capture(program: "xcode-select", words: ["xcode-select", "-p"], scratch: scratch)
+
+    if clt.is_err()
+        return ok(
+            Check(name: "swiftc", ok: false, detail: "not found, there being no Command Line Tools — " + SWIFT_ADVICE)
+        )
+    said = doctor_asks.capture(program: "xcrun", words: ["xcrun", "swiftc", "--version"], scratch: scratch)
+    return ok(
+        Check(name: "swiftc", ok: !said.is_err(), detail: doctor_asks.told(said, otherwise: "not found — " + SWIFT_ADVICE))
+    )
+
+constant SWIFT_ADVICE: str
+    "the platform layer compiles its Swift members with it, for a program that reaches CryptoKit's ciphers or AppKit's windows; the Command Line Tools carry it: `xcode-select --install`"
+
 # Windows' question. There is no `cc` there to ask, and the CI's leg read it
 # green only because its image carries MinGW's gcc under that name, a compiler
 # this one does not use there. clang targets `x86_64-pc-windows-msvc`, links
@@ -259,12 +292,21 @@ function run_this() -> cli_table.Exit
 
 ## Tests
 
-test "doctor finds this machine's toolchain, and the Zen is byte-exact"
+test "doctor finds this machine's toolchain, swiftc on macOS (defect 2626), and the Zen is byte-exact"
     got = checks(build_dir: "build", runtime_hint: ok(""), aside: ok("build"))
 
     # Six since panel 103: the clang floor row follows the clang row; seven
-    # since feature 2295, the archiver's row after the runtime's.
-    assert got.len() == 7
+    # since feature 2295, the archiver's row after the runtime's; and on
+    # macOS the swiftc row after the linker's (defect 2626), present and
+    # found on every Mac these tests build on, whose toolchain carries it.
+    swift: i64 @= 0
+
+    if process.exe_suffix() != ".exe" && doctor_asks.capture(program: "uname", words: ["uname", "-s"], scratch: ok("build")).default("") == "Darwin"
+        swift @ 1
+        assert got[3].name == "swiftc"
+        assert got[3].ok
+        assert has_text(text: got[3].detail, needle: "Swift")
+    assert got.len() == 7 + swift
     assert got[1].name == "clang floor"
     assert got[0].name == "clang"
     assert got[0].ok
@@ -275,13 +317,13 @@ test "doctor finds this machine's toolchain, and the Zen is byte-exact"
     assert got[2].ok
 
     # The runtime and the cache are both real here.
-    assert got[4].name == "runtime"
-    assert got[4].ok
-    assert got[4].detail == "runtime"
-    assert got[5].name == "archiver"
-    assert got[5].ok
-    assert got[6].ok
-    assert got[6].detail == "build/ writable"
+    assert got[4 + swift].name == "runtime"
+    assert got[4 + swift].ok
+    assert got[4 + swift].detail == "runtime"
+    assert got[5 + swift].name == "archiver"
+    assert got[5 + swift].ok
+    assert got[6 + swift].ok
+    assert got[6 + swift].detail == "build/ writable"
 
     # The Zen: twenty laws, pinned byte for byte.
     expected = "The Zen of Heroes\n\n 1. This language begins with a tribute to David Bowie.\n 2. It is made for language models; people can read it too.\n 3. A model may have read everything; each page must still explain itself.\n 4. What the eye can see is all there is: sound and vision.\n 5. There is one way to say each thing; every program sings in the same voice.\n 6. That way may not be obvious at first; the Starman already knows it.\n 7. The semantics are familiar; the syntax is new.\n 8. Turn and face the strange: every strange choice here is deliberate.\n 9. Nothing changes behind your back; every change signs its name.\n10. Every plausible mistake must become a compile error before the program runs.\n11. Unless you mark the gap with ???: an honest hole beats a confident guess.\n12. A compile-time error is an answer; a runtime error is an ambush.\n13. An error should tell you how to fix the program. Anything less is a complaint.\n14. Repeating a word is cheap; forgetting one can cost the whole program.\n15. The specification stays small under pressure; every word must earn its place.\n16. Crashes and leaks are bugs. Ashes to ashes: what Heroes takes, it returns.\n17. When pretty code and safe code disagree, safe code wins.\n18. There is no standard library to obey; there is a Rebel to call, or not.\n19. Never crashing in the same car: what C might keep, Heroes assumes it keeps.\n20. We can be heroes, just for one day.\n"
