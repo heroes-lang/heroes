@@ -1,10 +1,11 @@
 # The process's world: its environment, its working folder, the folders the
 # system keeps for a program's data, state, cache, settings and sockets, who it
-# runs as and on what machine, and a URL or a file handed to the application
-# the user's system keeps for it. Files and folders by path are the package
-# `fs`'s, and other programs the package `process`'s. The program's arguments
-# and its exit are the language's own, the built-ins `args()` and `exit`, and
-# its arguments read as flags and options are `flags`'.
+# runs as and on what machine, the signals it counts, and a URL or a file
+# handed to the application the user's system keeps for it. Files and folders
+# by path are the package `fs`'s, and other programs the package `process`'s.
+# The program's arguments and its exit are the language's own, the built-ins
+# `args()` and `exit`, and its arguments read as flags and options are
+# `flags`'.
 #
 # The environment is read and never written: in C a write of it beside another
 # thread's read is undefined, so no function here sets, removes or clears a
@@ -15,7 +16,8 @@
 # belongs to; the user or the groups the process runs as changed; a limit or a
 # setting of the system asked by its name; the time of each processor apart; the
 # prefix and suffix of a shared library's file; the process's scheduling
-# priority, read or changed; the mask of permissions a new file is made without.
+# priority, read or changed; the mask of permissions a new file is made without;
+# a wait that ends when a counted signal comes.
 
 use os/hero_disk
 use os/hero_os
@@ -780,10 +782,18 @@ function terminal_size() -> TerminalSize?
 # channel's) fails `stopped`, on every thread, so a program ends its loops and
 # closes what it holds.
 #
-# Fails `failed` where the system refuses. It changes the whole process, and a
-# second call changes nothing. See also `ask_stop`, `is_stop_asked`.
+# Fails `invalid` where `count_signal` counts `.interrupt` or `.terminate`
+# already, since a signal is the stop's or a count's for the process's life,
+# and `failed` where the system refuses. It changes the whole process, and a
+# second call changes nothing. See also `ask_stop`, `is_stop_asked`,
+# `count_signal`.
 function catch_stop() -> ()?
     if hero_stop.catch_stop() != 0
+        if hero_stop.last_error() == hero_stop.HERO_NET_INVALID
+            return fail(
+                code: codes.INVALID,
+                msg: "catching the stop: `count_signal` counts Ctrl-C or SIGTERM already, and a signal is the stop's or a count's, never both"
+            )
         return fail(
             code: codes.FAILED,
             msg: f"catching the stop: the system refused, its error {hero_stop.last_os_error()}"
@@ -802,6 +812,183 @@ function ask_stop()
 # of work.
 function is_stop_asked() -> bool
     return hero_stop.stop_asked() == 1
+
+## Signals
+
+# A signal, named the same on every platform, where each system numbers it its
+# own way (`signal_number`). `count_signal` counts one the program receives.
+variant Signal
+    # SIGHUP: the terminal the program ran in has gone.
+    hangup
+    # SIGINT: Ctrl-C at the terminal; on Windows Ctrl-C and Ctrl-Break.
+    interrupt
+    # SIGQUIT: Ctrl-\ at the terminal.
+    quit
+    # SIGKILL: the end at once, which no program can count or refuse.
+    kill
+    # SIGUSR1, which means what the program that receives it says it means.
+    user1
+    # SIGUSR2, which means what the program that receives it says it means.
+    user2
+    # SIGTERM: the request to end that `kill`, `timeout` and a service
+    # manager send.
+    terminate
+    # SIGCHLD: a child of the program ended, stopped or went on.
+    child
+    # SIGCONT: a stopped process goes on, whether or not it counts the signal.
+    resume
+    # SIGSTOP: a stop no program can count or refuse.
+    stop
+    # SIGTSTP: Ctrl-Z at the terminal, a stop a program may count instead.
+    terminal_stop
+    # SIGTTIN: a process outside the terminal's foreground read from it.
+    terminal_input
+    # SIGTTOU: a process outside the terminal's foreground wrote to it or
+    # changed it.
+    terminal_output
+    # SIGWINCH: the terminal's window changed its size.
+    window_changed
+
+# Makes each `signal` the program receives counted, for `take_signals` to
+# answer, instead of doing what it would: ending the program, stopping it, or
+# nothing. Ctrl-C counted so never ends the program, however many times it
+# comes, which a shell or a REPL that runs its children in front needs.
+#
+# - `signal`: the signal to count; `.kill` and `.stop` no program can.
+#
+# Fails `invalid` for `.kill` and `.stop`, and for `.interrupt` and
+# `.terminate` once `catch_stop` made them the program's stop, since a signal
+# is the stop's or a count's for the process's life; `unsupported` where no
+# such signal comes on this platform, on Windows every one but `.interrupt`,
+# which is Ctrl-C and Ctrl-Break there; and `failed` where the system
+# refuses.
+#
+# It changes the whole process, and a second call changes nothing. A signal
+# the program inherited ignored stays ignored, so a job a shell started with
+# `&` hears no Ctrl-C; a child the program starts begins with the signal at
+# its default. See also `take_signals`, `catch_stop`.
+function count_signal(signal: Signal) -> ()?
+    asked = f"counting {signal_name(signal)}"
+
+    if signal == .kill || signal == .stop
+        return fail(code: codes.INVALID, msg: f"{asked}: the system acts on it alone, and no program can count it")
+    number = signal_number(signal)?
+    sig = number.to_i32().must()
+
+    if signal == .interrupt || signal == .terminate
+        if hero_stop.count_signal(sig) != 0
+            kind = hero_stop.last_error()
+
+            if kind == hero_stop.HERO_NET_INVALID
+                return fail(
+                    code: codes.INVALID,
+                    msg: f"{asked}: `catch_stop` made it the program's stop already, and a signal is the stop's or a count's, never both"
+                )
+
+            if kind == hero_stop.HERO_NET_UNSUPPORTED
+                return fail(code: codes.UNSUPPORTED, msg: f"{asked}: nothing sends one to a program on this system")
+            return fail(code: codes.FAILED, msg: f"{asked}: the system refused, its error {hero_stop.last_os_error()}")
+        return ok()
+
+    if hero_os.signal_watch(sig) != 0
+        return fail(code: codes.FAILED, msg: f"{asked}: the system refused the handler or the pipe that counts it")
+    return ok()
+
+# How many times `signal` came since the last call, the count set back to 0;
+# 0 for a signal `count_signal` does not count.
+#
+# - `signal`: the signal counted.
+#
+# The system joins a signal sent while the same one waits to be delivered, so
+# a burst is counted short of what was sent.
+function take_signals(signal: Signal) -> i64
+    return match signal_number(signal)
+        .ok n  => hero_os.signal_take(n.to_i32().must())
+        .err _ => 0
+
+# The number this platform gives `signal`: the number `process.Status` holds
+# for a signal that ended a child. SIGTSTP is 18 on macOS and 20 on Linux.
+#
+# - `signal`: the signal.
+#
+# Fails `unsupported` where no such signal comes on this platform: on Windows
+# every one but `.interrupt`. See also `signal_of`.
+function signal_number(signal: Signal) -> i64?
+    name = match signal
+        .hangup          => hero_os.HERO_SIGNAL_HANGUP
+        .interrupt       => hero_os.HERO_SIGNAL_INTERRUPT
+        .quit            => hero_os.HERO_SIGNAL_QUIT
+        .kill            => hero_os.HERO_SIGNAL_KILL
+        .user1           => hero_os.HERO_SIGNAL_USER1
+        .user2           => hero_os.HERO_SIGNAL_USER2
+        .terminate       => hero_os.HERO_SIGNAL_TERMINATE
+        .child           => hero_os.HERO_SIGNAL_CHILD
+        .resume          => hero_os.HERO_SIGNAL_CONTINUE
+        .stop            => hero_os.HERO_SIGNAL_STOP
+        .terminal_stop   => hero_os.HERO_SIGNAL_TERMINAL_STOP
+        .terminal_input  => hero_os.HERO_SIGNAL_TERMINAL_INPUT
+        .terminal_output => hero_os.HERO_SIGNAL_TERMINAL_OUTPUT
+        .window_changed  => hero_os.HERO_SIGNAL_WINDOW
+
+    number = hero_os.signal_number(name)
+
+    if number < 0
+        return fail(code: codes.UNSUPPORTED, msg: f"{signal_name(signal)} comes to no program on this system")
+    return ok(number.to_i64().must())
+
+# The signal this platform numbers `number`.
+#
+# - `number`: a signal's number, as a `process.Status` holds it.
+#
+# Fails `not_found` where it is none of the signals `Signal` names on this
+# platform. See also `signal_number`.
+function signal_of(number: i64) -> Signal?
+    every: [Signal] = [
+        .hangup
+        .interrupt
+        .quit
+        .kill
+        .user1
+        .user2
+        .terminate
+        .child
+        .resume
+        .stop
+        .terminal_stop
+        .terminal_input
+        .terminal_output
+        .window_changed
+    ]
+
+    for one in every
+        match signal_number(one)
+            .ok n =>
+                if n == number
+                    return ok(one)
+            .err _ => _ = 0
+
+    return fail(code: codes.NOT_FOUND, msg: f"{number} is the number of no signal `Signal` names on this system")
+
+# The name POSIX gives `signal`, as a shell's `kill -l` writes it: `SIGINT`
+# for `.interrupt`.
+#
+# - `signal`: the signal.
+function signal_name(signal: Signal) -> str
+    return match signal
+        .hangup          => "SIGHUP"
+        .interrupt       => "SIGINT"
+        .quit            => "SIGQUIT"
+        .kill            => "SIGKILL"
+        .user1           => "SIGUSR1"
+        .user2           => "SIGUSR2"
+        .terminate       => "SIGTERM"
+        .child           => "SIGCHLD"
+        .resume          => "SIGCONT"
+        .stop            => "SIGSTOP"
+        .terminal_stop   => "SIGTSTP"
+        .terminal_input  => "SIGTTIN"
+        .terminal_output => "SIGTTOU"
+        .window_changed  => "SIGWINCH"
 
 ## Tests
 
@@ -1114,6 +1301,122 @@ test "open_path: empty and a zero byte invalid, a missing file file_not_found, n
         .ok _  => assert false
         .err e => assert e.code == FILE_NOT_FOUND
 
+test "count_signal: the end at once and the stop refused, Ctrl-C counted with none come, a second call, then the stop refused"
+    refused: [Signal] = [.kill, .stop]
+
+    for one in refused
+        match count_signal(one)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID
+
+    count_signal(.interrupt).must()
+    count_signal(.interrupt).must()
+    assert take_signals(.interrupt) == 0
+
+    match catch_stop()
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+test "count_signal: Ctrl-C and SIGTERM refused once the stop is caught, SIGTERM unsupported on Windows"
+    catch_stop().must()
+    stops: [Signal] = [.interrupt, .terminate]
+
+    for one in stops
+        match count_signal(one)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID || system() == .windows && one == .terminate && e.code == UNSUPPORTED
+
+test "count_signal: every signal a program may count, each unsupported on Windows but Ctrl-C"
+    countable: [Signal] = [
+        .hangup
+        .interrupt
+        .quit
+        .user1
+        .user2
+        .terminate
+        .child
+        .resume
+        .terminal_stop
+        .terminal_input
+        .terminal_output
+        .window_changed
+    ]
+
+    for one in countable
+        match count_signal(one)
+            .ok _  => assert system() != .windows || one == .interrupt
+            .err e => assert system() == .windows && e.code == UNSUPPORTED && one != .interrupt
+
+        assert take_signals(one) == 0
+
+test "take_signals: 0 for a signal never counted, and the same at a second call"
+    assert take_signals(.user2) == 0
+    assert take_signals(.user2) == 0
+    assert take_signals(.kill) == 0
+
+test "signal_number and signal_of: every signal there and back, each number apart, POSIX's fixed numbers, and numbers no signal has"
+    every: [Signal] = [
+        .hangup
+        .interrupt
+        .quit
+        .kill
+        .user1
+        .user2
+        .terminate
+        .child
+        .resume
+        .stop
+        .terminal_stop
+        .terminal_input
+        .terminal_output
+        .window_changed
+    ]
+    seen: {i64: bool} @= {}
+
+    for one in every
+        match signal_number(one)
+            .ok n =>
+                assert n > 0 && seen[n].is_err()
+                seen[n] @ true
+                assert signal_of(n).must() == one
+            .err e => assert e.code == UNSUPPORTED && system() == .windows && one != .interrupt
+
+    assert signal_number(.interrupt).must() == 2
+
+    if system() != .windows
+        assert signal_number(.hangup).must() == 1 && signal_number(.kill).must() == 9 && signal_number(.terminate).must() == 15
+
+    for n in [0, -1, 65, 9223372036854775807, -9223372036854775807 - 1]
+        match signal_of(n)
+            .ok _  => assert false
+            .err e => assert e.code == NOT_FOUND
+
+test "signal_name: each signal's POSIX name, every one apart"
+    every: [Signal] = [
+        .hangup
+        .interrupt
+        .quit
+        .kill
+        .user1
+        .user2
+        .terminate
+        .child
+        .resume
+        .stop
+        .terminal_stop
+        .terminal_input
+        .terminal_output
+        .window_changed
+    ]
+    seen: {str: bool} @= {}
+
+    for one in every
+        name = signal_name(one)
+        assert name.len() > 3 && name.slice(from: 0, to: 3) == "SIG" && seen[name].is_err()
+        seen[name] @ true
+
+    assert signal_name(.resume) == "SIGCONT" && signal_name(.window_changed) == "SIGWINCH"
+
 ## Examples
 
 # The folders the system searches for programs, and a variable never set.
@@ -1388,3 +1691,28 @@ test "is_stop_asked: not before the stop, yes after"
     assert !is_stop_asked()
     ask_stop()
     assert is_stop_asked()
+
+# A shell or a REPL that outlives every Ctrl-C: each is counted, and the loop
+# asks between two commands.
+test "count_signal: Ctrl-C counted instead of ending the program"
+    count_signal(.interrupt).must()
+    assert take_signals(.interrupt) == 0
+
+# What came since the program last asked: here nothing.
+test "take_signals: the Ctrl-Cs since the last call"
+    count_signal(.interrupt).must()
+
+    if take_signals(.interrupt) > 0
+        print("interrupted")
+
+# The number a child's status holds for Ctrl-C, the same on every system.
+test "signal_number: Ctrl-C's number"
+    assert signal_number(.interrupt).must() == 2
+
+# The signal a child's status names by its number.
+test "signal_of: the signal behind a status's number"
+    assert signal_of(2).must() == .interrupt
+
+# The name a shell writes for Ctrl-Z.
+test "signal_name: the name of Ctrl-Z's signal"
+    assert signal_name(.terminal_stop) == "SIGTSTP"

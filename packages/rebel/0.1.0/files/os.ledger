@@ -397,6 +397,45 @@ capability stop/ask  the program's own stop asked, and whether it was
   rust    -
   python  -
 
+capability signal/count  a signal the program receives counted each time it comes, Ctrl-C and the request to end among them, the program asking between its steps
+  heroes  os.count_signal, os.take_signals, os.Signal
+  go      os/signal.Notify, os/signal.Stop, os/signal.Reset, os.Signal, os.Interrupt
+  rust    -
+  python  signal.signal (a handler that sets a flag), signal.getsignal, signal.default_int_handler, signal.SIG_DFL, signal.Handlers
+  note    added 2026-11-22 (feature 2669). No function of the program is a signal handler (spec § 13): the runtime's own C counts each delivery and the program takes the count, as Go's channel is read and Python's handler sets a flag. Ctrl-C and SIGTERM are counted through the platform layer, which holds them apart from the stop (`stop/catch`): the first of `catch_stop` and `count_signal` for either wins for the process's life, so no Ctrl-C is a stop to one reader and a count to another. A signal inherited ignored stays ignored, where Go's `Notify` un-ignores SIGHUP and SIGINT (its documentation, Go 1.27.4): a job a shell started with `&` hears no Ctrl-C. Windows counts Ctrl-C and Ctrl-Break as `.interrupt` and has none of the others, `unsupported`, unrun there
+
+capability signal/name  a signal named the same on every platform, its number on this one, and its POSIX name
+  heroes  os.signal_number, os.signal_of, os.signal_name
+  go      os.Kill
+  rust    -
+  python  signal.Signals, signal.strsignal, signal.valid_signals, signal.NSIG, signal.SIGHUP, signal.SIGINT, signal.SIGQUIT, signal.SIGKILL, signal.SIGUSR1, signal.SIGUSR2, signal.SIGTERM, signal.SIGCHLD, signal.SIGCONT, signal.SIGSTOP, signal.SIGTSTP, signal.SIGTTIN, signal.SIGTTOU, signal.SIGWINCH
+  note    added 2026-11-22 (feature 2669). The numbers are this platform's, read from its `<signal.h>` where the runtime is compiled: SIGTSTP 18 and SIGCONT 19 on this Mac (`hero_signal_number`, run that day), 20 and 18 on Linux; `strsignal`'s words are the C library's and differ by system, so the name is POSIX's own, as a shell's `kill -l` writes it
+
+capability signal/others  the faults, the timers and the signals one system alone has
+  heroes  refused: a fault's signal is the runtime's (its stack guard and lease handler, panel 247's R7), SIGPIPE the platform layer's (a write to a closed peer is a value, `closed`), a timer's signal a second clock beside `time`'s and a wait's own bound, and the rest one system's alone
+  go      -
+  rust    -
+  python  signal.SIGABRT, signal.SIGIOT, signal.SIGBUS, signal.SIGFPE, signal.SIGILL, signal.SIGSEGV, signal.SIGSYS, signal.SIGTRAP, signal.SIGPIPE, signal.SIGALRM, signal.SIGVTALRM, signal.SIGPROF, signal.alarm, signal.setitimer, signal.getitimer, signal.ITIMER_REAL, signal.ITIMER_VIRTUAL, signal.ITIMER_PROF, signal.ItimerError, signal.SIGEMT, signal.SIGINFO, signal.SIGIO, signal.SIGURG, signal.SIGXCPU, signal.SIGXFSZ
+
+capability signal/ignore  a signal ignored, and asked whether it is
+  heroes  refused: an ignored signal is inherited through `exec` by every child the program starts, where a counted one is set back to its default, so a shell that ignored Ctrl-Z would start children deaf to it; `count_signal` is the one way a program keeps a signal from doing what it would
+  go      os/signal.Ignore, os/signal.Ignored
+  rust    -
+  python  signal.SIG_IGN
+
+capability signal/mask  signals held on a thread, waited for, sent to the program itself or to one of its threads
+  heroes  refused: a thread is the language's own (spec § 13) and holds no signal of the program's; a program waits on its counts between its steps, and sends a signal to a child (`process.signal`), never to itself
+  go      -
+  rust    -
+  python  signal.pthread_sigmask, signal.SIG_BLOCK, signal.SIG_UNBLOCK, signal.SIG_SETMASK, signal.Sigmasks, signal.sigpending, signal.sigwait, signal.pause, signal.raise_signal, signal.pthread_kill, signal.siginterrupt
+
+capability signal/wait  a wait that ends when a counted signal comes
+  heroes  pending
+  go      os/signal.NotifyContext
+  rust    -
+  python  signal.set_wakeup_fd
+  note    a descriptor a poller watches, or a context that ends. The runtime's door has the descriptor (`hero_signal_fd`, readable once a counted signal came); what is pending is `poll` watching it and the count's reading draining it, so a wait wakes once for each signal taken
+
 dropped plumbing  a type a value is carried in, where here it is a list, a map, a record or a code
   go      -
   rust    env::Args, env::ArgsOs, env::Vars, env::VarsOs, env::SplitPaths, env::JoinPathsError, env::VarError

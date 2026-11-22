@@ -180,7 +180,9 @@ hero_net_socket *hero_net_of(int64_t number);
  * HandlerRoutine page; unrun).
  *
  * Answers 0, also where the stop was already caught, or -1 where the system
- * gave no pipe or refused the handler. */
+ * gave no pipe or refused the handler, and with `HERO_NET_INVALID` where
+ * `hero_net_count_signal` counts SIGINT or SIGTERM: the two are the stop's or
+ * a count's for the process's life, never both. */
 int64_t hero_net_catch_stop(void);
 
 /* 1 once a stop has been asked, by a signal after `hero_net_catch_stop` or
@@ -206,6 +208,37 @@ int64_t hero_net_stop_asked(void);
  * stop it asked. On Windows it is the one way a program asks its own stop:
  * no signal it can raise reaches the console's handler. */
 void hero_net_ask_stop(void);
+
+/* CTRL-C OR SIGTERM COUNTED, AND NEVER THE STOP (feature 2669): what a shell
+ * or a REPL does with Ctrl-C, which reaches a child it runs in front and must
+ * leave the program running, the second time as the first. From this call
+ * `sig`, SIGINT or SIGTERM, neither ends the program nor asks the stop: each
+ * one that comes is counted by the runtime's signal door, `hero_os.h`'s
+ * `hero_signal_take` giving the count since its last call and
+ * `hero_signal_fd` readable once one came. What runs in the signal is the
+ * runtime's own C (panel 246's R4), and `hero_signal_watch` still refuses the
+ * two (panel 247's R7): they are this layer's to hand over, and this is
+ * where it hands them.
+ *
+ * THE STOP AND THE COUNT ARE ONE OR THE OTHER for the process's life, so no
+ * Ctrl-C is a stop to one reader and a count to another: -1 with
+ * `HERO_NET_INVALID` once `hero_net_catch_stop` has caught the two, and
+ * `hero_net_catch_stop` answers so once either is counted.
+ * `hero_net_ask_stop` stays the program's own, as ever. A signal the program
+ * inherited ignored stays ignored, as the stop leaves it: a job a shell
+ * started with `&` hears no Ctrl-C. A child the program starts begins with
+ * the signal at its default, as with any handler.
+ *
+ * On Windows SIGINT is Ctrl-C and Ctrl-Break, counted as SIGINT by a console
+ * handler on the thread the system makes for each event, and the console
+ * closing still ends the process; SIGTERM is `HERO_NET_UNSUPPORTED`, since
+ * nothing sends a console program one. Compiled for both of Windows' targets
+ * by zig, unrun on the box.
+ *
+ * Answers 0, also where `sig` is counted already; or -1: `HERO_NET_INVALID`
+ * for a `sig` that is neither of the two, or where the stop is caught; and
+ * the system's number where it gave no pipe or refused the handler. */
+int64_t hero_net_count_signal(int32_t sig);
 
 /* What a door taking a time in milliseconds takes for NO LIMIT:
  * `hero_net_set_deadline`, `hero_net_connect_within`, and

@@ -40,6 +40,25 @@ extern "hero_os.h"
     # - `path`: the file, the link or the empty folder removed; nothing there
     #   is `HERO_OS_OK` too.
     function hero_fs_remove(path: cstr lent) -> i64
+    # A signal counted (panel 247's G), and its number from a name the same on
+    # every platform (feature 2669).
+    constant HERO_SIGNAL_HANGUP: i32
+    constant HERO_SIGNAL_INTERRUPT: i32
+    constant HERO_SIGNAL_QUIT: i32
+    constant HERO_SIGNAL_KILL: i32
+    constant HERO_SIGNAL_USER1: i32
+    constant HERO_SIGNAL_USER2: i32
+    constant HERO_SIGNAL_TERMINATE: i32
+    constant HERO_SIGNAL_CHILD: i32
+    constant HERO_SIGNAL_CONTINUE: i32
+    constant HERO_SIGNAL_STOP: i32
+    constant HERO_SIGNAL_TERMINAL_STOP: i32
+    constant HERO_SIGNAL_TERMINAL_INPUT: i32
+    constant HERO_SIGNAL_TERMINAL_OUTPUT: i32
+    constant HERO_SIGNAL_WINDOW: i32
+    function hero_signal_watch(sig: i32) -> i64
+    function hero_signal_take(sig: i32) -> i64
+    function hero_signal_number(name: i32) -> i32
 
 # The value of the environment variable `name`, `status` set to
 # `HERO_OS_NOT_FOUND` and "" answered where it is unset, and to
@@ -133,6 +152,29 @@ function fs_link(existing: str, name: str) -> i64
 function fs_symlink(target: str, name: str) -> i64
     return hero_fs_symlink(target: target.cstr(), name: name.cstr())
 
+# 0 once each `sig` that comes is counted by the runtime's own handler and
+# does nothing else, or -1: for a fault's signal, SIGKILL, SIGSTOP, SIGINT and
+# SIGTERM (the platform layer's, `os/hero_stop`), a number no signal has, or
+# where the system refused. On Windows always -1.
+#
+# - `sig`: the platform's number for the signal, `signal_number`'s answer.
+function signal_watch(sig: i32) -> i64
+    return hero_signal_watch(sig)
+
+# How many times `sig` came since the last call, the count set back to 0: 0
+# for a signal nothing counts, and for a number no signal has.
+#
+# - `sig`: the platform's number for the signal.
+function signal_take(sig: i32) -> i64
+    return hero_signal_take(sig)
+
+# The number this platform gives the signal `name` names, or -1 where no such
+# signal comes here: on Windows every one but `HERO_SIGNAL_INTERRUPT`.
+#
+# - `name`: one of the `HERO_SIGNAL_` constants; any other number is -1.
+function signal_number(name: i32) -> i32
+    return hero_signal_number(name)
+
 ## Tests
 
 test "env_shown: a variable every process here has, and one never set"
@@ -197,3 +239,48 @@ test "fs_mode, fs_set_mode, fs_link and fs_symlink: bits set and read back, a se
 
     if linked == HERO_OS_OK
         assert hero_fs_remove(path: (dir + "-l").cstr()) == HERO_OS_OK
+
+test "signal_number: every name told apart, a number below 0 where the platform has none, and a name out of range"
+    names = [
+        HERO_SIGNAL_HANGUP
+        HERO_SIGNAL_INTERRUPT
+        HERO_SIGNAL_QUIT
+        HERO_SIGNAL_KILL
+        HERO_SIGNAL_USER1
+        HERO_SIGNAL_USER2
+        HERO_SIGNAL_TERMINATE
+        HERO_SIGNAL_CHILD
+        HERO_SIGNAL_CONTINUE
+        HERO_SIGNAL_STOP
+        HERO_SIGNAL_TERMINAL_STOP
+        HERO_SIGNAL_TERMINAL_INPUT
+        HERO_SIGNAL_TERMINAL_OUTPUT
+        HERO_SIGNAL_WINDOW
+    ]
+    seen: {i32: bool} @= {}
+    windows = run_exe_suffix() == ".exe"
+
+    for name in names
+        number = signal_number(name)
+
+        if windows && name != HERO_SIGNAL_INTERRUPT
+            assert number == -1
+        else
+            assert number > 0
+            assert seen[number].is_err()
+            seen[number] @ true
+
+    assert signal_number(0) == -1 && signal_number(-1) == -1 && signal_number(2147483647) == -1
+
+test "signal_watch and signal_take: the stop's two, the end at once and the stop refused, a signal counted with none come, a number no signal has"
+    for name in [HERO_SIGNAL_INTERRUPT, HERO_SIGNAL_TERMINATE, HERO_SIGNAL_KILL, HERO_SIGNAL_STOP]
+        assert signal_watch(signal_number(name)) == -1
+
+    assert signal_watch(0) == -1 && signal_watch(-1) == -1 && signal_watch(2147483647) == -1
+    assert signal_take(0) == 0 && signal_take(-1) == 0 && signal_take(2147483647) == 0
+
+    if run_exe_suffix() != ".exe"
+        user = signal_number(HERO_SIGNAL_USER2)
+        assert signal_watch(user) == 0
+        assert signal_watch(user) == 0
+        assert signal_take(user) == 0

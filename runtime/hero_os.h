@@ -516,8 +516,8 @@ int64_t hero_thread_limit(void);
  *
  * No Heroes function is a signal handler, nor one a handler calls (panel 246's
  * R4; a program that hands C one is stopped by name, `parts/sigguard.c`). To
- * stop on Ctrl-C or SIGTERM, `hero_net_catch_stop` in `hero_net.h`; for any
- * other signal, this door. `hero_signal_watch` installs the runtime's own C
+ * stop on Ctrl-C or SIGTERM, `hero_net_catch_stop` in `hero_net.h`; to count
+ * them, `hero_net_count_signal` there; for any other signal, this door. `hero_signal_watch` installs the runtime's own C
  * handler for the signal, which counts each delivery in one counter of the
  * process and writes one byte down a pipe: 0, or -1 for a fault's signal,
  * SIGKILL, SIGSTOP, SIGINT or SIGTERM, a number no signal has, or where the
@@ -526,10 +526,43 @@ int64_t hero_thread_limit(void);
  * while one is pending, so it counts deliveries, never sends. `hero_signal_fd`
  * is readable once a watched signal has come, for a program that waits with
  * `poll`; -1 before the first watch. Two modules read one count. On Windows
- * the door watches nothing: -1, 0 and -1 (`parts/sigdoor.c` says why). */
+ * the door watches nothing: -1, 0 and -1 (`parts/sigdoor.c` says why).
+ *
+ * SIGINT AND SIGTERM COUNTED THE SAME WAY, WHERE THE PLATFORM LAYER HANDS
+ * THEM OVER (feature 2669): the watch refuses the two, which are the stop's,
+ * and `hero_net.h`'s `hero_net_count_signal` gives them to this door
+ * instead of the stop, so a shell or a REPL survives every Ctrl-C; from then
+ * `hero_signal_take(SIGINT)` gives their count as it gives any other, and on
+ * Windows the count of Ctrl-C and Ctrl-Break. */
 int64_t hero_signal_watch(int32_t);
 int64_t hero_signal_take(int32_t);
 int32_t hero_signal_fd(void);
+
+/* -- a signal named the same on every platform (feature 2669) -------------
+ *
+ * A signal's number is the platform's own: SIGTSTP is 18 on Darwin and 20 on
+ * Linux, SIGUSR1 30 and 10. A program that names a signal by one of these
+ * and asks `hero_signal_number` gets this platform's number, read from its
+ * `<signal.h>` where the runtime was compiled, to watch, to take, or to send
+ * to a child (`hero_proc.h`'s `hero_proc_signal`); -1 for a name no signal
+ * of this platform has, which on Windows is every one but
+ * `HERO_SIGNAL_INTERRUPT`, the console's Ctrl-C and Ctrl-Break. A number
+ * that is none of these is -1 too. */
+#define HERO_SIGNAL_HANGUP 1
+#define HERO_SIGNAL_INTERRUPT 2
+#define HERO_SIGNAL_QUIT 3
+#define HERO_SIGNAL_KILL 4
+#define HERO_SIGNAL_USER1 5
+#define HERO_SIGNAL_USER2 6
+#define HERO_SIGNAL_TERMINATE 7
+#define HERO_SIGNAL_CHILD 8
+#define HERO_SIGNAL_CONTINUE 9
+#define HERO_SIGNAL_STOP 10
+#define HERO_SIGNAL_TERMINAL_STOP 11
+#define HERO_SIGNAL_TERMINAL_INPUT 12
+#define HERO_SIGNAL_TERMINAL_OUTPUT 13
+#define HERO_SIGNAL_WINDOW 14
+int32_t hero_signal_number(int32_t name);
 
 /* -- three the Heroes sources bind, here since defect 2256 (2026-10-29) ------
  *

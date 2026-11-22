@@ -1,0 +1,6 @@
+the program starts with the interrupt at its default: 1
+the stop is caught: 0
+counting the interrupt refused: -1, as invalid: true
+counting the request to end refused: -1, as invalid: true
+an interrupt comes: 1
+the program went on, its stop asked: true, nothing counted: true
