@@ -291,6 +291,15 @@ jobs:
           done
           ./heroes run generators/unicode_tables/main.hero -- check build/generators/ucd-17.0.0
 
+      # `generators/html_tables/main.hero`'s `SOURCE_URL`, the standard's
+      # source at a commit; the generator holds it to its `SOURCE_SHA256`.
+      - name: generators/html_tables, the HTML Standard's doctype lists and SVG name tables of html
+        run: |
+          mkdir -p build/generators/whatwg-html
+          curl --fail --location --silent --show-error -o build/generators/whatwg-html/source \
+            https://raw.githubusercontent.com/whatwg/html/efcc0bcdec596651e2cb316ab076c0bdc7c4d120/source
+          ./heroes run generators/html_tables/main.hero -- check build/generators/whatwg-html/source
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
