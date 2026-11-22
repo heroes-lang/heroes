@@ -1,0 +1,122 @@
+# The stand-in CA's accounts (RFC 8555 § 7.3): an account made for the key
+# a request carries, or found for it (`onlyReturnExisting`), with the
+# terms agreed and every contact a `mailto:` URL; an account read, its
+# contacts replaced, or deactivated, by its own key alone; and the list of
+# its orders.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/strings
+
+use standins/jws
+use standins/objects
+use standins/replies
+
+## Accounts
+
+# `newAccount` (RFC 8555 § 7.3): the account of the request's key, made
+# where none is; `onlyReturnExisting` finds one and makes none.
+#
+# - `s`: the state.
+# - `r`: the request.
+function new_account(@s: objects.State, r: http.Request) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: true)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    payload = replies.members_of(auth.payload)
+    thumbprint = bytes.format_base64_url_unpadded(jose.thumbprint(auth.key, algorithm: .sha256).default([]))
+
+    for a in s.accounts
+        if a.thumbprint == thumbprint
+            return replies.located(
+                objects.account_json(s, a: a),
+                status: 200,
+                location: objects.url_of(s, kind: "account", id: a.id)
+            )
+
+    if json.bool_of(payload["onlyReturnExisting"].default(.null_value)).default(false)
+        return objects.problem_response(kind: "accountDoesNotExist", detail: "no account has this key")
+
+    if !json.bool_of(payload["termsOfServiceAgreed"].default(.null_value)).default(false)
+        return objects.problem_response(kind: "userActionRequired", detail: "the terms of service must be agreed to")
+    contacts: [str] @= []
+
+    for c in json.items_of(payload["contact"].default(.list(items: []))).default([])
+        contact = json.text_of(c).default("")
+
+        if !strings.has_prefix(s: contact, prefix: "mailto:")
+            return objects.problem_response(
+                kind: "unsupportedContact",
+                detail: f"a contact is a mailto: URL, and \"{contact}\" is not"
+            )
+
+        if !strings.contains(s: contact, substr: "@") || strings.contains(s: contact, substr: ",")
+            return objects.problem_response(kind: "invalidContact", detail: f"\"{contact}\" names no single address")
+        contacts @ contacts.push(contact)
+
+    made = objects.Account(
+        id: s.accounts.len() + 1,
+        key: auth.key,
+        thumbprint: thumbprint,
+        contacts: contacts,
+        status: "valid"
+    )
+    s.accounts @ s.accounts.push(made)
+    s.counts.accounts @ s.counts.accounts + 1
+    return replies.located(
+        objects.account_json(s, a: made),
+        status: 201,
+        location: objects.url_of(s, kind: "account", id: made.id)
+    )
+
+# An account's URL posted to: read, its contacts replaced, or deactivated
+# (RFC 8555 § 7.3.2, § 7.3.6), by its own key alone.
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the account's id from the URL.
+function account(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if auth.account != id
+        return objects.problem_response(
+            kind: "unauthorized",
+            detail: "an account is read and changed by its own key alone"
+        )
+    payload = replies.members_of(auth.payload)
+
+    match payload["contact"]
+        .ok v  => s.accounts[id - 1].contacts @ json.items_of(v).default([]).map(replies.text_or_empty)
+        .err _ => _ = 0
+
+    if json.text_of(payload["status"].default(.null_value)).default("") == "deactivated"
+        s.accounts[id - 1].status @ "deactivated"
+    return replies.located(objects.account_json(s, a: s.accounts[id - 1]), status: 200, location: "")
+
+# The account's list of orders (RFC 8555 § 7.1.2.1).
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the account's id.
+function orders_of(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if auth.account != id
+        return objects.problem_response(
+            kind: "unauthorized",
+            detail: "an account's orders are read by its own key alone"
+        )
+    urls: [str] @= []
+
+    for o in s.orders
+        if o.account == id
+            urls @ urls.push(objects.url_of(s, kind: "order", id: o.id))
+
+    return replies.located(.object(members: {"orders": objects.texts(urls)}), status: 200, location: "")

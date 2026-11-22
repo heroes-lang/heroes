@@ -1,0 +1,71 @@
+# How a service started on a thread tells whoever started it that it
+# listens, in the manner of systemd's `sd_notify`: it connects to its
+# starter's control port on loopback, writes `READY=1` and its facts as
+# named values (`core/fields`), and closes. A thread gives its answer back
+# only when it ends (spec § 13), so a server's port, chosen by the system,
+# reaches its starter this way, and nothing that needs the server is begun
+# before it has come.
+
+use <rebel>/io
+use <rebel>/net
+
+use core/fields
+
+## Codes
+
+# The code of a notification that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long a notification may take to be written, or to come, in
+# milliseconds: a minute, since a service may make keys and certificates
+# before it listens, on a machine other work keeps busy.
+constant WAIT_MS: i64
+    60_000
+
+## Telling
+
+# Tells the starter at `control_port` that the service is ready, with
+# `facts`; nothing where `control_port` is 0, a service started by a person.
+#
+# - `control_port`: the starter's control port on 127.0.0.1, or 0.
+# - `facts`: the named values said, `PORT` among them.
+#
+# Fails as `net.connect` and `io.write_text` fail.
+function tell(control_port: i64, facts: {str: str}) -> ()?
+    if control_port == 0
+        return ok()
+    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: WAIT_MS)?
+    conn @= made
+    said @= facts
+    said["READY"] @ "1"
+    written = io.write_text(conn.stream, text: fields.format_fields(said))
+    _ = io.close(@conn.stream).is_err()
+    return written
+
+## Waiting
+
+# The next notification `control` receives: its named values.
+#
+# - `control`: the starter's control listener.
+#
+# Fails `invalid` where what came does not say `READY=1`, and as
+# `net.accept` and `io.read_all_text` fail, `timeout` among them where
+# nothing comes in `WAIT_MS`.
+function await_ready(control: net.Listener) -> {str: str}?
+    # `net.accept`'s deadline bounds the connection once accepted; the wait
+    # for one is bounded by the listener's own deadline, so a service that
+    # failed before telling anything is told as a timeout, not waited for
+    # for ever.
+    net.set_accept_deadline(control, deadline_ms: WAIT_MS)?
+    made = net.accept(control, deadline_ms: WAIT_MS)?
+    conn @= made
+    text = io.read_all_text(conn.stream)
+    _ = io.close(@conn.stream).is_err()
+    said = fields.parse_fields(text?)?
+
+    if said["READY"].default("") != "1"
+        return fail(code: INVALID, msg: "a notification came that does not say READY=1")
+    return ok(said)

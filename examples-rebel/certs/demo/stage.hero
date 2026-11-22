@@ -1,0 +1,187 @@
+# The demo's stage: a folder made under `build/` for everything the run
+# keeps, and removed at the end; the key store, the system's keyring under
+# a service of this run alone where the keyring answers, its entries
+# removed at the end, files in the folder otherwise; the configuration a
+# person wrote, read from the standard input and edited in place
+# (`toml.Document`) so that it points at the stand-ins rather than at the
+# world, then written into the folder and read back as `certs` reads any
+# file; and the services started on threads of their own, each telling its
+# port (`core/ready`), all stopped at once at the end by the program's one
+# stop (`os.ask_stop`), which cannot be taken back.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/net
+use <rebel>/os
+use <rebel>/path
+use <rebel>/threads
+use <rebel>/toml
+
+use config/loader
+use config/settings
+use core/fields
+use core/ready
+use store/vault
+
+## Names
+
+# The keyring service of a demo run: a run's own suffix after it, so a
+# run never touches what another left.
+constant SERVICE_PREFIX: str
+    "heroes-certs-demo-"
+
+## The folder and the store
+
+# Where the demo keeps what it makes.
+record Place
+    # The folder, under `build/`, removed at the end.
+    folder: str
+    # The key store.
+    store: vault.Store
+
+# The demo's folder made under `build/`, and its key store chosen.
+#
+# Fails as `fs.make_dir_all`, `fs.make_temp_dir` and `os.random_bytes` fail.
+function place() -> Place?
+    fs.make_dir_all("build")?
+    folder = fs.make_temp_dir(dir: "build", pattern: "certs-demo-*")?
+    run_id = bytes.format_hex(os.random_bytes(6)?)
+    store = vault.choose(service: SERVICE_PREFIX + run_id, folder: path.join_all([folder, "keys"]))
+    return ok(Place(folder: folder, store: store))
+
+# Everything the demo made removed: the keyring's entries of this run, then
+# the folder.
+#
+# - `p`: the place.
+#
+# Fails as `vault.remove_every` and `fs.remove_all` fail; both are tried.
+function cleared(p: Place) -> ()?
+    keys_gone = vault.remove_every(p.store)
+    folder_gone = fs.remove_all(p.folder)
+    keys_gone?
+    return folder_gone
+
+## The configuration
+
+# Where the stand-ins are, which the configuration is pointed at.
+record Pointers
+    # The stand-in CA's directory URL.
+    directory: str
+    # The file of the root the CA's own HTTPS is signed by.
+    roots: str
+    # The file of the CA's issuing root.
+    trust: str
+    # The DNS stand-in's address and port.
+    dns: str
+    # The demo's folder.
+    folder: str
+    # The keyring service, "" for files.
+    keyring_service: str
+
+# The configuration `text` edited to point at the stand-ins, every other
+# byte of it as the person wrote it.
+#
+# - `text`: the TOML read from the standard input.
+# - `p`: where the stand-ins are.
+#
+# Fails as `toml.parse_document` and `toml.set_value` fail.
+function pointed(text: str, p: Pointers) -> str?
+    d @= toml.parse_document(text)?
+    toml.set_value(@d, path: ["acme", "directory"], value: .text(v: p.directory))?
+    toml.set_value(@d, path: ["acme", "roots"], value: .text(v: p.roots))?
+    toml.set_value(@d, path: ["acme", "trust"], value: .text(v: p.trust))?
+    toml.set_value(@d, path: ["store", "folder"], value: .text(v: p.folder))?
+    toml.set_value(@d, path: ["store", "keyring_service"], value: .text(v: p.keyring_service))?
+    toml.set_value(@d, path: ["http01", "webroot"], value: .text(v: path.join_all([p.folder, "webroot"])))?
+    toml.set_value(@d, path: ["dns01", "server"], value: .text(v: p.dns))?
+    return ok(toml.format_document(d))
+
+# The configuration written into the demo's folder and read back as a
+# person's file is read.
+#
+# - `folder`: the demo's folder.
+# - `text`: the configuration's text.
+#
+# The file's path and what it says. Fails as `write_file` and `loader.parse`
+# fail.
+function written(folder: str, text: str) -> Loaded?
+    file = path.join_all([folder, "certs.toml"])
+    write_file(path: file, text: text)?
+    return ok(Loaded(file: file, s: loader.parse(text)?))
+
+# A configuration file written and read.
+record Loaded
+    # Its path.
+    file: str
+    # What it says.
+    s: settings.Settings
+
+## Services
+
+# A service started on its thread.
+record Service
+    # Its name, as it told it.
+    name: str
+    # The thread, owed its wait.
+    thread: threads.TextThread
+    # What it told when it was ready, `PORT` among it.
+    told: {str: str}
+
+# `body` started on a thread with `arg`, and its notification awaited on
+# `control`.
+#
+# - `body`: the service's thread.
+# - `arg`: its named values, `CONTROL` added here.
+# - `control`: the starter's control listener.
+# - `started`: the services started so far, this one added once its thread
+#   runs, so it is waited for whatever happens next.
+#
+# What it told. Fails as `threads.spawn_text` and `ready.await_ready` fail.
+function start(body: (function(str) -> str), arg: {str: str}, control: net.Listener, @started: [Service]) -> {str: str}?
+    named @= arg
+    named["CONTROL"] @ to_str(control.address.port)
+    thread = threads.spawn_text(body, arg: fields.format_fields(named))?
+    at = started.len()
+    started @ started.push(Service(name: "", thread: thread, told: {}))
+    told = ready.await_ready(control)?
+    started[at].told @ told
+    started[at].name @ told["SERVICE"].default("")
+    return ok(told)
+
+# Every service stopped and waited for: the program's stop asked, which
+# every waiting call answers from then on, and each thread's last line.
+#
+# - `started`: the services, each waited for once and its thread's place,
+#   emptied by the wait, written back.
+function stopped(@started: [Service]) -> [str]
+    os.ask_stop()
+    lines: [str] @= []
+
+    for at in range(from: 0, to: started.len())
+        thread @= started[at].thread
+        lines @ lines.push(threads.wait_text(@thread))
+        started[at].thread @ thread
+
+    return lines
+
+# The port a service told.
+#
+# - `told`: its notification.
+function port_of(told: {str: str}) -> i64
+    return fields.int_of(told, name: "PORT").default(0)
+
+test "pointed: the stand-ins' places set, the person's comments kept"
+    text = "# mine\n[acme]\ndirectory = \"https://ca.example/dir\"\n\n[store]\nfolder = \"/var/lib/certs\"\n"
+    p = Pointers(
+        directory: "https://127.0.0.1:1/directory",
+        roots: "r.pem",
+        trust: "t.pem",
+        dns: "127.0.0.1:2",
+        folder: "f",
+        keyring_service: ""
+    )
+    out = pointed(text, p: p).must()
+    assert out.slice(from: 0, to: 6) == "# mine"
+    read = toml.parse(out).must()
+    assert toml.value_at(read, path: ["acme", "directory"]).must() == .text(v: "https://127.0.0.1:1/directory")
+    assert toml.value_at(read, path: ["dns01", "server"]).must() == .text(v: "127.0.0.1:2")

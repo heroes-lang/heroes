@@ -1,0 +1,54 @@
+== the configuration, read from the standard input
+account: mailto:ops@certs.test, the CA's terms agreed to
+certificate site: certs.test, www.certs.test, 127.0.0.1, proved by http-01
+certificate wild: *.certs.test, proved by dns-01
+renewal: once 30 days or fewer are left, or once the CA's renewal window opens
+keys: kept in the system's keyring
+== the stand-ins, started on 127.0.0.1
+dns: ready, the authority of certs.test, taking updates signed with the TSIG key certs-update
+http-01 responder: ready, serving the webroot
+acme: ready, the root of its own HTTPS handed to the client
+acme: its issuing root fetched from /roots/0: CN=Certs Stand-in Root X1,O=Certs Stand-in CA
+the configuration pointed at the stand-ins and the demo's folder, edited in place, its other lines kept
+== day 0
+account: made, its key made and kept, valid, contact mailto:ops@certs.test
+account: the same key asked again finds the same account, none made: true
+  certs.test: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+  www.certs.test: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+  127.0.0.1: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+site: version 1 kept, serial 14b8e6bf55221250efc60762dd43bdc2, issued by Certs Stand-in Issuer R1, valid 90 days, 89 days left
+  *.certs.test: dns-01, TXT _acme-challenge.certs.test published by an update signed with TSIG, seen by the CA, then withdrawn: valid
+wild: version 1 kept, serial 2c24411fe71145eb4c6c18de17dc4daf, issued by Certs Stand-in Issuer R1, valid 90 days, 89 days left
+== what the stand-ins refuse, as a CA and an authority must
+the same signed request sent twice: answered 200, then refused 400 badNonce
+a request whose payload was changed after signing: refused 400 malformed
+an update signed with a secret the authority does not hold: refused, the authority answered NOTAUTH
+an update with no signature: refused, the authority answered REFUSED
+other.certs.test, whose CAA names another CA: refused, the authorization of other.certs.test turned invalid: http-01: the CAA records of other.certs.test let no CA named standin.certs.test issue
+www.certs.test, answered with another account's key authorization: refused, the authorization of www.certs.test turned invalid: http-01: the HTTP-01 answer of www.certs.test is not this account's key authorization for its token
+an order for example.org: refused, the server answered 400 rejectedIdentifier: this stand-in issues for names under certs.test alone, not example.org
+== day 30
+wild: revoked by its account, for its key's compromise (reason 1)
+site: 59 days left; the CA's renewal window opens in 29 days: not due
+wild: 59 days left; the CA's renewal window is open: renewing
+  *.certs.test: dns-01, TXT _acme-challenge.certs.test published by an update signed with TSIG, seen by the CA, then withdrawn: valid
+wild: version 2 kept, serial 58c2feb07621ee74e39d6f5b1b706dd3, issued by Certs Stand-in Issuer R1, valid 90 days, 89 days left
+== day 61, today
+site: 28 days left; the CA's renewal window is open: renewing
+  certs.test: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+  www.certs.test: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+  127.0.0.1: http-01, the answer served from the webroot at /.well-known/acme-challenge/<token>, fetched and found by the CA: valid
+site: version 2 kept, serial 3511a94f8592481e6e80246e114bd66e, issued by Certs Stand-in Issuer R1, valid 90 days, 89 days left
+wild: 58 days left; the CA's renewal window opens in 28 days: not due
+== HTTPS served with the certificate site, renewed today
+GET https://127.0.0.1/ trusting the stand-in CA's root alone: 200, served by certs with the certificate site, version 2, serial 3511a94f8592481e6e80246e114bd66e
+its chain verified by x509 at the demo's clock for certs.test and 127.0.0.1: true
+GET https://127.0.0.1/ trusting the system's own authorities alone: refused, the stand-in's root being no authority of the system
+== what is kept, as `certs show` lists it
+site: certs.test, www.certs.test, 127.0.0.1; version 2, serial 3511a94f8592481e6e80246e114bd66e, 89 days left, its key kept
+wild: *.certs.test; version 2, serial 58c2feb07621ee74e39d6f5b1b706dd3, 58 days left, its key kept
+== what each stand-in served
+dns: queries answered 23, updates applied 4, updates refused 3
+http-01 responder: requests answered 8
+acme: accounts made 1, orders 6, authorizations proved 8 and failed 2, certificates issued 4 and revoked 1; refused 1 used nonce, 1 signature that did not hold, 0 other
+https: served until the stop

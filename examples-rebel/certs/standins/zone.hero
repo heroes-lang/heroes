@@ -1,0 +1,297 @@
+# The zone the DNS stand-in is the authority for, and what it answers: a
+# query by the records of its name and type (NXDOMAIN where the name holds
+# none, the zone's SOA in the authority section where the name holds
+# others), a name outside the zone REFUSED, and an RFC 2136 update applied
+# only where its TSIG holds (`challenges/tsig`), as an authority configured
+# with `allow-update { key ... }` applies one: an unsigned update REFUSED, a
+# bad signature NOTAUTH with TSIG's error, a change outside the zone
+# NOTZONE. Every answer to a signed update is signed with the same key.
+
+use <rebel>/bytes
+use <rebel>/dns
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+
+use challenges/tsig
+
+## The zone
+
+# A zone and its keys, changed by the updates it takes.
+record Zone
+    # The zone's name, absolute and lowercase.
+    origin: str
+    # Its records, the SOA's apart.
+    records: [dns.Record]
+    # The SOA's serial, one more at each update applied.
+    serial: i64
+    # The keys an update may be signed with.
+    known: [tsig.Key]
+    # Queries answered.
+    queries: i64
+    # Updates applied.
+    applied: i64
+    # Updates refused.
+    refused: i64
+
+# A zone named `origin` holding `records`, its serial 1.
+#
+# - `origin`: the zone's name.
+# - `records`: its records, each owned by a name inside it.
+# - `known`: the keys an update may be signed with.
+#
+# Fails as `dns.canonical_name` fails on `origin`.
+function new(origin: str, records: [dns.Record], known: [tsig.Key]) -> Zone?
+    return ok(
+        Zone(origin: lowered(origin)?, records: records, serial: 1, known: known, queries: 0, applied: 0, refused: 0)
+    )
+
+# The demo's zone: `origin` and two names under it, `www` and `other`,
+# each an A record of `address`; CAA (RFC 8659) at `origin` naming the
+# stand-in CA's `identity` as the one CA that may issue, and at `other`
+# naming another CA, so an order for `other` is refused as a CA must refuse
+# it.
+#
+# - `origin`: the zone's name, as `certs.test`.
+# - `address`: the address every name answers, the loopback.
+# - `identity`: the CA's CAA identity, as `standin.certs.test`.
+function demo_records(origin: str, address: net.Host, identity: str) -> [dns.Record]
+    apex = absolute(origin)
+    return [
+        dns.Record(name: apex, class_code: dns.CLASS_IN, ttl: 300, data: .a(address: address))
+        dns.Record(name: "www." + apex, class_code: dns.CLASS_IN, ttl: 300, data: .a(address: address))
+        dns.Record(name: "other." + apex, class_code: dns.CLASS_IN, ttl: 300, data: .a(address: address))
+        dns.Record(name: apex, class_code: dns.CLASS_IN, ttl: 300, data: .caa(flags: 0, tag: "issue", value: bytes.from_text(identity)))
+        dns.Record(name: apex, class_code: dns.CLASS_IN, ttl: 300, data: .caa(flags: 0, tag: "issuewild", value: bytes.from_text(identity)))
+        dns.Record(name: "other." + apex, class_code: dns.CLASS_IN, ttl: 300, data: .caa(flags: 0, tag: "issue", value: bytes.from_text("ca.example.net")))
+    ]
+
+## Answering
+
+# The zone's answer to `m`, counted: a query's or an update's.
+#
+# - `z`: the zone; an update applied changes it.
+# - `m`: the message received.
+# - `at`: the wall clock, which a signature's time is held to.
+function answer(@z: Zone, m: dns.Message, at: time.Instant) -> dns.Message
+    if m.opcode == dns.OPCODE_UPDATE
+        return update(@z, m: m, at: at)
+    z.queries @ z.queries + 1
+    reply @= dns.reply_to(m)
+    reply.authoritative @ true
+
+    if m.opcode != dns.OPCODE_QUERY || m.questions.len() != 1
+        reply.rcode @ dns.RCODE_NOT_IMPLEMENTED
+        return reply
+    q = m.questions[0]
+    name = lowered(q.name).default("")
+
+    if !dns.is_subdomain(name: name, of: z.origin)
+        reply.authoritative @ false
+        reply.rcode @ dns.RCODE_REFUSED
+        return reply
+
+    if q.type_code == dns.TYPE_SOA && name == z.origin
+        reply.answers @ [soa(z)]
+        return reply
+    owned @= false
+
+    for r in z.records
+        if lowered(r.name).default("") == name
+            owned @ true
+
+            if dns.type_of(r) == q.type_code || q.type_code == dns.TYPE_ANY
+                reply.answers @ reply.answers.push(r)
+
+    if reply.answers.len() == 0
+        reply.authorities @ [soa(z)]
+
+        if !owned && name != z.origin
+            reply.rcode @ dns.RCODE_NAME_ERROR
+    return reply
+
+# The answer to the update `m`: applied where it is signed by a known key
+# and every change is inside the zone.
+#
+# - `z`: the zone, changed where the update is applied.
+# - `m`: the update.
+# - `at`: the wall clock.
+function update(@z: Zone, m: dns.Message, at: time.Instant) -> dns.Message
+    reply @= dns.reply_to(m)
+    reply.authoritative @ true
+
+    match tsig.signature_of(m)
+        .err _ =>
+            z.refused @ z.refused + 1
+            reply.rcode @ dns.RCODE_REFUSED
+            return reply
+        .ok said =>
+            match tsig.verify(m, known: z.known, at: at, request_mac: [])
+                .err e =>
+                    z.refused @ z.refused + 1
+                    reply.rcode @ dns.RCODE_NOT_AUTHORITATIVE
+                    return tsig.refusal(reply, key_name: said.key_name, error: error_of(e.code), at: at).default(reply)
+                .ok verified =>
+                    reply.rcode @ applied(@z, m: verified.message)
+
+                    if reply.rcode == dns.RCODE_NO_ERROR
+                        z.applied @ z.applied + 1
+                    else
+                        z.refused @ z.refused + 1
+
+                    match tsig.key_named(z.known, name: verified.key_name)
+                        .err _ => return reply
+                        .ok key =>
+                            match tsig.sign(reply, key: key, at: at, request_mac: verified.mac)
+                                .ok signed => return signed.message
+                                .err _     => return reply
+
+# The response code of the update `m` applied to `z`: its zone section names
+# the zone, every change is inside it; then each change is made in order,
+# a record added (class IN), one record deleted (class NONE), or every
+# record of a name and a type deleted (class ANY), as RFC 2136 § 3.4.2
+# reads them.
+#
+# - `z`: the zone, changed only where the code is NOERROR.
+# - `m`: the update, its signature checked and taken off.
+function applied(@z: Zone, m: dns.Message) -> i64
+    if m.questions.len() != 1 || lowered(m.questions[0].name).default("") != z.origin
+        return dns.RCODE_NOT_AUTHORITATIVE
+
+    for change in m.authorities
+        if !dns.is_subdomain(name: lowered(change.name).default(""), of: z.origin)
+            return dns.RCODE_NOT_IN_ZONE
+
+    kept @= z.records
+
+    for change in m.authorities
+        if change.class_code == dns.CLASS_IN
+            present @= false
+
+            for r in kept
+                if same_name(a: r.name, b: change.name) && r.data == change.data
+                    present @ true
+
+            if !present
+                kept @ kept.push(change)
+        else
+            left: [dns.Record] @= []
+
+            for r in kept
+                same_set = same_name(a: r.name, b: change.name) && dns.type_of(r) == dns.type_of(change)
+                gone = same_set && (change.class_code == dns.CLASS_ANY || r.data == change.data)
+
+                if !gone
+                    left @ left.push(r)
+
+            kept @ left
+
+    z.records @ kept
+    z.serial @ z.serial + 1
+    return dns.RCODE_NO_ERROR
+
+# The zone's SOA record, its serial the zone's.
+#
+# - `z`: the zone.
+function soa(z: Zone) -> dns.Record
+    return dns.Record(
+        name: z.origin,
+        class_code: dns.CLASS_IN,
+        ttl: 300,
+        data: .soa(primary: "ns." + z.origin, mailbox: "hostmaster." + z.origin, serial: z.serial, refresh: 3600, retry: 600, expire: 86400, minimum: 60)
+    )
+
+## Helpers
+
+# TSIG's error number for a failure of `tsig.verify`.
+#
+# - `code`: the failure's code.
+function error_of(code: str) -> i64
+    if code == tsig.BADKEY
+        return tsig.ERROR_BADKEY
+
+    if code == tsig.BADTIME
+        return tsig.ERROR_BADTIME
+    return tsig.ERROR_BADSIG
+
+# `name` absolute and lowercase.
+#
+# - `name`: a name.
+#
+# Fails as `dns.canonical_name` fails.
+function lowered(name: str) -> str?
+    return ok(strings.to_lower_ascii(dns.canonical_name(name)?))
+
+# `name` with its last dot.
+#
+# - `name`: a name, absolute or not.
+function absolute(name: str) -> str
+    if strings.has_suffix(s: name, suffix: ".")
+        return name
+    return name + "."
+
+# Whether two names are one, compared without case.
+#
+# - `a`: a name.
+# - `b`: another.
+function same_name(a: str, b: str) -> bool
+    return lowered(a).default(a) == lowered(b).default(b)
+
+test "answer: a name's A record, a name absent NXDOMAIN, a name outside REFUSED"
+    z @= new(
+        "certs.test",
+        records: demo_records(origin: "certs.test", address: net.loopback_v4(), identity: "standin.certs.test"),
+        known: []
+    ).must()
+    at = time.now().must()
+    found = answer(@z, m: dns.new_query("www.certs.test", type_code: dns.TYPE_A).must(), at: at)
+    assert found.rcode == dns.RCODE_NO_ERROR && found.answers.len() == 1
+    absent = answer(@z, m: dns.new_query("nope.certs.test", type_code: dns.TYPE_A).must(), at: at)
+    assert absent.rcode == dns.RCODE_NAME_ERROR && absent.authorities.len() == 1
+    outside = answer(@z, m: dns.new_query("example.org", type_code: dns.TYPE_A).must(), at: at)
+    assert outside.rcode == dns.RCODE_REFUSED
+    caa = answer(@z, m: dns.new_query("other.certs.test", type_code: dns.TYPE_CAA).must(), at: at)
+    assert caa.answers.len() == 1
+    assert z.queries == 4
+
+test "update: unsigned REFUSED, signed applied and its answer signed, the record deleted again"
+    key = tsig.Key(name: "certs-update.", secret: bytes.from_text("0123456789abcdef0123456789abcdef"))
+    z @= new("certs.test", records: [], known: [key]).must()
+    at = time.now().must()
+    change = dns.Record(
+        name: "_acme-challenge.certs.test.",
+        class_code: dns.CLASS_IN,
+        ttl: 60,
+        data: .txt(texts: [bytes.from_text("v1")])
+    )
+    m @= dns.new_query("certs.test", type_code: dns.TYPE_SOA).must()
+    m.opcode @ dns.OPCODE_UPDATE
+    m.edns @ fail(code: "not_found", msg: "none")
+    m.authorities @ [change]
+    assert answer(@z, m: m, at: at).rcode == dns.RCODE_REFUSED
+    signed = tsig.sign(m, key: key, at: at, request_mac: []).must()
+    reply = answer(@z, m: signed.message, at: at)
+    assert reply.rcode == dns.RCODE_NO_ERROR
+    assert !tsig.verify(reply, known: [key], at: at, request_mac: signed.mac).is_err()
+    assert z.records.len() == 1 && z.serial == 2
+    removal @= m
+    removal.authorities @ [dns.Record(name: change.name, class_code: dns.CLASS_NONE, ttl: 0, data: change.data)]
+    _ = answer(@z, m: tsig.sign(removal, key: key, at: at, request_mac: []).must().message, at: at)
+    assert z.records.len() == 0
+
+test "update: a wrong key's signature is NOTAUTH, a change outside the zone NOTZONE"
+    key = tsig.Key(name: "certs-update.", secret: bytes.from_text("0123456789abcdef0123456789abcdef"))
+    wrong = tsig.Key(name: "certs-update.", secret: bytes.from_text("fedcba9876543210fedcba9876543210"))
+    z @= new("certs.test", records: [], known: [key]).must()
+    at = time.now().must()
+    m @= dns.new_query("certs.test", type_code: dns.TYPE_SOA).must()
+    m.opcode @ dns.OPCODE_UPDATE
+    m.edns @ fail(code: "not_found", msg: "none")
+    m.authorities @ [
+        dns.Record(name: "x.example.org.", class_code: dns.CLASS_IN, ttl: 60, data: .txt(texts: [bytes.from_text("v")]))
+    ]
+    bad = answer(@z, m: tsig.sign(m, key: wrong, at: at, request_mac: []).must().message, at: at)
+    assert bad.rcode == dns.RCODE_NOT_AUTHORITATIVE
+    assert tsig.signature_of(bad).must().error == tsig.ERROR_BADSIG
+    outside = answer(@z, m: tsig.sign(m, key: key, at: at, request_mac: []).must().message, at: at)
+    assert outside.rcode == dns.RCODE_NOT_IN_ZONE
