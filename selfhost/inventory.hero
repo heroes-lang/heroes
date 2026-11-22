@@ -189,7 +189,8 @@ constant NAMES: [str]
         "mailbox"
     ]
 
-# A thread's and a mailbox's operations (spec § 11; feature 2647), written only
+# A thread's and a mailbox's operations (spec § 11; feature 2647; a mailbox's
+# `number`, panel 256's R6), written only
 # after a dot and chosen by the receiver's type alone, so their names stay free
 # for the program: a program's own `send` is called `send(x)`, and `x.send(v)`
 # is the mailbox's where `x` is one. They are no reserved name, so they stand
@@ -201,6 +202,7 @@ constant OPERATIONS: [str]
         "send"
         "receive"
         "close"
+        "number"
     ]
 
 # The name of the built-in a `Ref`'s builtin case points at: one read of the
@@ -299,7 +301,7 @@ function arity_of(name: str) -> i64?
         "spawn" | "send" | "receive" => ok(2)
         "spawn_sized" => ok(3)
         "mailbox" => ok(0)
-        "wait" | "close" => ok(1)
+        "wait" | "close" | "number" => ok(1)
         "to_f32" | "to_f64" | "to_str" | "to_i8" | "to_i16" => ok(1)
         "to_i32" | "to_i64" | "to_u8" | "to_u16" | "to_u32" | "to_u64" => ok(1)
         _ => fail(code: "uncounted", msg: "any number, a construction, or a declaration's count")

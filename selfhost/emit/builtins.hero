@@ -68,6 +68,7 @@ constant EMITTED: [str]
         "send"
         "receive"
         "close"
+        "number"
     ]
 
 # Panel 162: on the list so the gate admits it, and NOT in `entry`

@@ -28,7 +28,7 @@ use source
 
 # Whether a built-in's call is written here.
 function writes(name: str) -> bool
-    return name == "spawn" || name == "spawn_sized" || name == "mailbox" || name == "wait" || name == "send" || name == "receive" || name == "close"
+    return name == "spawn" || name == "spawn_sized" || name == "mailbox" || name == "wait" || name == "send" || name == "receive" || name == "close" || name == "number"
 
 function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source.Source, decls: [ast.Decl], f: containers.Function, site: i64, name: str, run: ir.Run, arguments: [str], result: i64, target: str?)
     given = containers.args_of(f, run)
@@ -78,6 +78,13 @@ function call(@w: writer.Writer, c: state.Checked, names: ctype.Names, s: source
             )
     else if name == "close"
         statements @ statements.push("hero_mail_close(" + arguments[0] + ", &" + stop_place.HERE + ");")
+    else if name == "number"
+        numbered = "hero_mail_number(" + arguments[0] + ", &" + stop_place.HERE + ")"
+
+        if target.is_err()
+            statements @ statements.push("(void)" + numbered + ";")
+        else
+            statements @ statements.push(target.must() + " = " + numbered + ";")
     else if name == "receive"
         # Into the answer's own storage, so a value of any size is rebuilt once
         # and never stands on the frame.

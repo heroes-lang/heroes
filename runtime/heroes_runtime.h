@@ -1056,6 +1056,10 @@ void hero_mail_release_at(HeroMail **slot);
 int64_t hero_mail_send(HeroMail *m, HeroPutFn put, HeroSentFn sent, void *value, const HeroPlace *where);
 int64_t hero_mail_receive(HeroMail *m, void *out, int64_t within_ms, const HeroPlace *where);
 void hero_mail_close(HeroMail *m, const HeroPlace *where);
+/* `m.number()`: an `int64_t` above 0, the same for every copy, naming the
+ * queue to the platform layer (`platform/hero_layer_mail.h`); it holds no
+ * copy, and once the last copy is dropped it names nothing, never another. */
+int64_t hero_mail_number(HeroMail *m, const HeroPlace *where);
 void hero_mail_hear_stop(void);
 HeroFailure hero_failure_timeout(void);
 HeroFailure hero_failure_stopped(void);

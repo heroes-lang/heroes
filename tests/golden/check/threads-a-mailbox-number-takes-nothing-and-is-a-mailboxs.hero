@@ -1,0 +1,19 @@
+# A mailbox's `number()` takes nothing and is a mailbox's alone (spec § 9,
+# § 11; panel 256's R6, provisional): an argument is a count told, and after a
+# dot on a thread or a string, with no function of the program's so named,
+# it is told whose operation it is.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    m: (mailbox str) = mailbox()
+    t = spawn(twice, 2).must()
+    n: i64 = m.number()
+    print(n > 0)
+    print(m.number(1))  #~ wrong_arity
+    print(t.number())  #~ operation_of_another
+    word = "w"
+    print(word.number())  #~ operation_of_another
+    print(t.wait())
+    m.close()

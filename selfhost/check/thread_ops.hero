@@ -140,6 +140,10 @@ function operation(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: sourc
     if name == "close"
         return table.unit_ty(c.out.types)
 
+    # The queue's number for C (panel 256's R6): an `i64`, reaching no value.
+    if name == "number"
+        return table.int_ty_id(c.out.types)
+
     if name == "send"
         unlabelled(@c, s, name: name, given: given)
         walk.check(@c, a, r, s, decls, id: given[0].value, expected: of_mailbox.must())
