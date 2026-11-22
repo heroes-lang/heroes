@@ -1,0 +1,102 @@
+# Object names as this program holds them: 40 lowercase hexadecimal digits,
+# the SHA-1 of an object's frame (`framing.id_of`). Text and not bytes,
+# because a name is a map key, a file name under `objects/` and a line of a
+# ref all at once; the binary stores (the index, a pack and its index) turn
+# it into its 20 raw bytes at their edges with `raw_of` and `hex_of`.
+
+use <rebel>/bytes
+
+## Names
+
+# How many bytes a raw SHA-1 name holds.
+constant RAW_LEN: i64
+    20
+
+# How many hexadecimal digits a name holds.
+constant HEX_LEN: i64
+    40
+
+# How many digits a name is cut to where a person reads it: seven, as git's
+# own short names begin.
+constant SHORT_LEN: i64
+    7
+
+# The name of no object: what a diff's header writes for a side that has no
+# file, and what a ref is never set to.
+constant ZERO: str
+    "0000000000000000000000000000000000000000"
+
+# Whether `s` is a whole object name: 40 digits of `0` to `9` and `a` to `f`.
+#
+# - `s`: any text.
+function is_id(s: str) -> bool
+    return s.len() == HEX_LEN && is_hex_prefix(s)
+
+# Whether `s` is made only of lowercase hexadecimal digits and could begin a
+# name: what a person may type for an object, `3f2a9c1` for a whole name.
+#
+# - `s`: any text; empty is no prefix.
+function is_hex_prefix(s: str) -> bool
+    if s.len() == 0 || s.len() > HEX_LEN
+        return false
+    at @= 0
+
+    while at < s.len()
+        c = s[at]
+
+        if !(c >= '0' && c <= '9' || c >= 'a' && c <= 'f')
+            return false
+        at @ at + 1
+
+    return true
+
+# The 20 raw bytes `id` writes.
+#
+# - `id`: a whole name.
+#
+# Fails `invalid` where `id` is not one.
+function raw_of(id: str) -> [u8]?
+    if !is_id(id)
+        return fail(code: "invalid", msg: f"\"{id}\" is no object name of 40 hexadecimal digits")
+    return bytes.parse_hex(id)
+
+# The name 20 raw bytes write, in lowercase hexadecimal.
+#
+# - `raw`: the bytes of a name, as a binary store holds them.
+#
+# Fails `invalid` where `raw` is not 20 bytes long.
+function hex_of(raw: [u8]) -> str?
+    if raw.len() != RAW_LEN
+        return fail(code: "invalid", msg: f"an object name of {raw.len()} bytes, where SHA-1 gives {RAW_LEN}")
+    return ok(bytes.format_hex(raw))
+
+# The first seven digits of `id`, the way a log line names a commit.
+#
+# - `id`: a whole name, or any text of at least seven characters.
+function short(id: str) -> str
+    if id.len() <= SHORT_LEN
+        return id
+    return id.slice(from: 0, to: SHORT_LEN)
+
+test "is_id: a whole name, a short one, capitals and a stray letter"
+    assert is_id("ce013625030ba8dba906f756967f9e9ca394464a")
+    assert !is_id("ce01362")
+    assert !is_id("CE013625030BA8DBA906F756967F9E9CA394464A")
+    assert !is_id("ge013625030ba8dba906f756967f9e9ca394464a")
+    assert !is_id("")
+
+test "is_hex_prefix: empty, one digit, too long"
+    assert !is_hex_prefix("")
+    assert is_hex_prefix("c")
+    assert !is_hex_prefix(ZERO + "0")
+
+test "raw_of and hex_of: a name there and back, and the wrong lengths"
+    raw = raw_of("ce013625030ba8dba906f756967f9e9ca394464a").must()
+    assert raw.len() == 20
+    assert hex_of(raw).must() == "ce013625030ba8dba906f756967f9e9ca394464a"
+    assert raw_of("ce01").is_err()
+    assert hex_of([1, 2]).is_err()
+
+test "short: seven digits, and a text already that short"
+    assert short("ce013625030ba8dba906f756967f9e9ca394464a") == "ce01362"
+    assert short("abc") == "abc"

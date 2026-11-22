@@ -1,0 +1,110 @@
+# Tab completion for the line editor of `term`: the first word of a command
+# completes to a builtin, a function or a program on `PATH`; any other word
+# to the paths of the working folder or of the folder it names, a folder
+# ending with `/` so the next Tab goes on inside it. A name beginning with a
+# dot is offered only to a word that begins with one, as the shell's globs
+# do.
+
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/term
+
+# What completion knows of the shell, gathered before each line is read.
+record Known
+    # Every command's name: builtins, functions and programs, sorted.
+    commands: [str]
+
+# What may stand before the cursor of `line`: commands for a command's first
+# word, paths for any other.
+#
+# - `state`: what the shell knows.
+# - `line`: the line being edited.
+# - `cursor`: the cursor's byte index in it.
+function complete(state: Known, line: str, cursor: i64) -> term.Completions
+    end = strings.floor_boundary(line, at: cursor)
+    before = line.slice(from: 0, to: end)
+    start @= end
+
+    while start > 0 && !breaks_word(before[start - 1])
+        start @ start - 1
+
+    word = before.slice(from: start, to: end)
+    lead = strings.trim_end(before.slice(from: 0, to: start))
+
+    if lead == "" || ends_command(lead)
+        found: [str] @= []
+
+        for c in state.commands
+            if strings.has_prefix(s: c, prefix: word)
+                found @ found.push(c)
+
+        return term.Completions(from: start, candidates: found)
+
+    return term.Completions(from: start, candidates: paths_for(word))
+
+# Whether `b` ends a word being completed: a blank or an operator's first
+# byte.
+#
+# - `b`: the byte.
+function breaks_word(b: u8) -> bool
+    return b == ' ' || b == '\t' || b == ';' || b == '|' || b == '&' || b == '(' || b == '<' || b == '>'
+
+# Whether `lead`, the line before a word with its blanks taken off, ends where
+# a command begins: after `;`, `|`, `&` or `(`.
+#
+# - `lead`: the text before the word.
+function ends_command(lead: str) -> bool
+    last = lead[lead.len() - 1]
+    return last == ';' || last == '|' || last == '&' || last == '('
+
+# The paths that begin with `word`: the entries of its folder whose names
+# begin with its last part, each a folder ending with `/`.
+#
+# - `word`: the word typed so far.
+function paths_for(word: str) -> [str]
+    cut = strings.index_of_last(s: word, substr: "/")
+
+    folder = match cut
+        .ok at => word.slice(from: 0, to: at + 1)
+        .err _ => ""
+
+    stem = word.slice(from: folder.len(), to: word.len())
+
+    listed = if folder == ""
+        "."
+    else
+        folder
+
+    found: [str] @= []
+
+    match fs.read_dir(listed)
+        .ok entries =>
+            for e in entries
+                hidden = e.name.len() > 0 && e.name[0] == '.'
+
+                if strings.has_prefix(s: e.name, prefix: stem) && (!hidden || strings.has_prefix(s: stem, prefix: "."))
+                    whole = folder + e.name
+
+                    if fs.is_dir(whole).default(false)
+                        found @ found.push(whole + "/")
+                    else
+                        found @ found.push(whole)
+        .err _ => _ = 0
+
+    return found
+
+test "complete: a command's first word, and one after a pipe"
+    known = Known(commands: ["echo", "exit", "export", "upper"])
+    c = complete(known, line: "ex", cursor: 2)
+    assert c.from == 0 && c.candidates == ["exit", "export"]
+    d = complete(known, line: "echo hi | up", cursor: 12)
+    assert d.from == 10 && d.candidates == ["upper"]
+
+test "complete: a path in a folder of the build"
+    dir = "build/shell-test-complete"
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(dir + "/notes").must()
+    write_file(path: dir + "/naming.txt", text: "").must()
+    c = complete(Known(commands: []), line: "cat " + dir + "/n", cursor: 4 + dir.len() + 2)
+    assert c.from == 4 && c.candidates == [dir + "/naming.txt", dir + "/notes/"]
+    fs.remove_all(dir).must()

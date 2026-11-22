@@ -1,0 +1,365 @@
+# Refs: the names a person gives commits. A branch is a file under
+# `refs/heads/`, a tag one under `refs/tags/`, each holding an object's name
+# and a line feed; `HEAD` holds `ref: refs/heads/<branch>` while a branch is
+# checked out, or a commit's name when none is (a detached `HEAD`), as
+# gitrepository-layout(5) describes. A name a person types is read as
+# gitrevisions(7) reads the common forms: `HEAD`, a branch, a tag, a whole
+# or abbreviated object name, followed by any number of `~n` (the n-th first
+# parent) and `^n` (the n-th parent).
+
+use <rebel>/fs
+use <rebel>/numbers
+use <rebel>/path
+use <rebel>/strings
+
+use objects/annotated
+use objects/commits
+use objects/framing
+use objects/ids
+use repo/layout
+use store/database
+
+## HEAD
+
+# What `HEAD` names.
+variant Head
+    # A branch is checked out; its commit is the branch's, and a commit
+    # moves the branch.
+    branch
+        # The branch's short name, `main`.
+        name: str
+    # A commit is checked out with no branch; a commit moves `HEAD` alone.
+    detached
+        # The commit's name.
+        id: str
+
+# What `HEAD` names in `repo`.
+#
+# - `repo`: the repository.
+#
+# Fails where `HEAD` cannot be read, and `invalid` where it holds neither a
+# branch nor an object name.
+function read_head(repo: layout.Repo) -> Head?
+    text = strings.trim_end(read_file(layout.file_in(repo, name: "HEAD"))?)
+
+    if strings.has_prefix(s: text, prefix: "ref: refs/heads/")
+        return ok(.branch(name: strings.trim_prefix(s: text, prefix: "ref: refs/heads/")))
+
+    if ids.is_id(text)
+        return ok(.detached(id: text))
+    return fail(code: "invalid", msg: f"HEAD holds \"{text}\", neither a branch nor an object name")
+
+# Points `HEAD` at the branch `name`, which need not exist yet.
+#
+# - `repo`: the repository.
+# - `name`: a branch's short name.
+#
+# Fails where `HEAD` cannot be written.
+function set_head_branch(repo: layout.Repo, name: str) -> ()?
+    return fs.write_atomic_text(path: layout.file_in(repo, name: "HEAD"), text: f"ref: refs/heads/{name}\n")
+
+# Points `HEAD` at the commit `id`, with no branch.
+#
+# - `repo`: the repository.
+# - `id`: a commit's whole name.
+#
+# Fails where `HEAD` cannot be written.
+function set_head_detached(repo: layout.Repo, id: str) -> ()?
+    return fs.write_atomic_text(path: layout.file_in(repo, name: "HEAD"), text: id + "\n")
+
+# The commit `HEAD` stands on.
+#
+# - `repo`: the repository.
+#
+# Fails `not_found` where `HEAD` names a branch with no commit yet, as in a
+# repository just made.
+function head_commit(repo: layout.Repo) -> str?
+    return match read_head(repo)?
+        .branch b   => read_ref(repo, full: "refs/heads/" + b.name)
+        .detached d => ok(d.id)
+
+# The ref `HEAD` moves when a commit is made: the branch's full name, or
+# `HEAD` itself when it is detached.
+#
+# - `repo`: the repository.
+#
+# Fails where `HEAD` does not read.
+function head_target(repo: layout.Repo) -> str?
+    return match read_head(repo)?
+        .branch b   => ok("refs/heads/" + b.name)
+        .detached _ => ok("HEAD")
+
+# Sets the ref `head_target` names to `id`: what a commit and a merge do.
+#
+# - `repo`: the repository.
+# - `id`: the new commit.
+#
+# Fails where the ref cannot be written.
+function advance_head(repo: layout.Repo, id: str) -> ()?
+    target = head_target(repo)?
+
+    if target == "HEAD"
+        return set_head_detached(repo, id: id)
+    return write_ref(repo, full: target, id: id)
+
+## Refs
+
+# A ref and the object it names.
+record Ref
+    # The ref's name below its folder: `main`, `feature/login`, `v1.0`.
+    name: str
+    # The object it names.
+    id: str
+
+# The object the ref `full` names.
+#
+# - `repo`: the repository.
+# - `full`: the ref's whole name, `refs/heads/main`.
+#
+# Fails `not_found` where there is no such ref, and `invalid` where its file
+# holds no object name.
+function read_ref(repo: layout.Repo, full: str) -> str?
+    file = layout.file_in(repo, name: full)
+
+    if !fs.is_file(file).default(false)
+        return fail(code: "not_found", msg: f"no ref {full}")
+    text = strings.trim_end(read_file(file)?)
+
+    if !ids.is_id(text)
+        return fail(code: "invalid", msg: f"the ref {full} holds \"{text}\", no object name")
+    return ok(text)
+
+# Sets the ref `full` to `id`, making it where it is not there.
+#
+# - `repo`: the repository.
+# - `full`: the ref's whole name.
+# - `id`: the object it names.
+#
+# Fails where its folder or its file cannot be written.
+function write_ref(repo: layout.Repo, full: str, id: str) -> ()?
+    file = layout.file_in(repo, name: full)
+    fs.make_dir_all(path.parent(file))?
+    return fs.write_atomic_text(path: file, text: id + "\n")
+
+# Removes the ref `full`.
+#
+# - `repo`: the repository.
+# - `full`: the ref's whole name.
+#
+# Fails `not_found` where it is not there.
+function delete_ref(repo: layout.Repo, full: str) -> ()?
+    file = layout.file_in(repo, name: full)
+
+    if !fs.is_file(file).default(false)
+        return fail(code: "not_found", msg: f"no ref {full}")
+    return fs.remove(file)
+
+# Every ref under the folder `folder`, sorted by name.
+#
+# - `repo`: the repository.
+# - `folder`: `refs/heads` for the branches, `refs/tags` for the tags.
+#
+# Fails where the folder cannot be walked or a ref does not read.
+function list_refs(repo: layout.Repo, folder: str) -> [Ref]?
+    top = layout.file_in(repo, name: folder)
+
+    if !fs.is_dir(top).default(false)
+        return ok([])
+    found: [Ref] @= []
+
+    for entry in fs.walk(top)?
+        if entry.kind != .file
+            continue
+        name = path.to_slash(entry.name)
+        found @ found.push(Ref(name: name, id: read_ref(repo, full: folder + "/" + name)?))
+
+    return ok(found)
+
+# Whether `name` may name a branch or a tag: parts joined by `/`, none empty
+# or beginning with `.`, none ending `.lock`, no `..`, no space or control
+# character, none of `~ ^ : ? * [ \`, not `HEAD`, and not beginning with `-`,
+# as git-check-ref-format(1) describes.
+#
+# - `name`: the short name a person gave.
+function is_ref_name(name: str) -> bool
+    if name == "" || name == "HEAD" || name[0] == '-' || strings.contains(s: name, substr: "..") || strings.contains(s: name, substr: "@{")
+        return false
+
+    if strings.contains_any(s: name, set: " ~^:?*[\\")
+        return false
+
+    for c in name.chars()
+        if c[0] < 0x20 || c[0] == 0x7f
+            return false
+
+    for part in strings.split(s: name, sep: "/")
+        if part == "" || part[0] == '.' || strings.has_suffix(s: part, suffix: ".lock")
+            return false
+
+    return true
+
+## Merge state
+
+# The commit a merge that stopped on conflicts was merging in, kept in
+# `MERGE_HEAD` until the merge is committed.
+#
+# - `repo`: the repository.
+#
+# Fails `not_found` where no merge is waiting.
+function merge_head(repo: layout.Repo) -> str?
+    file = layout.file_in(repo, name: "MERGE_HEAD")
+
+    if !fs.is_file(file).default(false)
+        return fail(code: "not_found", msg: "no merge is in progress")
+    return ok(strings.trim_end(read_file(file)?))
+
+# Records that a merge of `id` waits for its conflicts, with the message its
+# commit will take.
+#
+# - `repo`: the repository.
+# - `id`: the commit merged in.
+# - `message`: the merge commit's message.
+#
+# Fails where the files cannot be written.
+function start_merge(repo: layout.Repo, id: str, message: str) -> ()?
+    fs.write_atomic_text(path: layout.file_in(repo, name: "MERGE_HEAD"), text: id + "\n")?
+    return fs.write_atomic_text(path: layout.file_in(repo, name: "MERGE_MSG"), text: message)
+
+# The message a waiting merge's commit takes.
+#
+# - `repo`: the repository.
+#
+# Fails `not_found` where no merge is waiting.
+function merge_message(repo: layout.Repo) -> str?
+    return read_file(layout.file_in(repo, name: "MERGE_MSG"))
+
+# Forgets a waiting merge, once it is committed.
+#
+# - `repo`: the repository.
+#
+# Fails where a file is there and cannot be removed.
+function end_merge(repo: layout.Repo) -> ()?
+    for name in ["MERGE_HEAD", "MERGE_MSG"]
+        file = layout.file_in(repo, name: name)
+
+        if fs.is_file(file).default(false)
+            fs.remove(file)?
+
+    return ok()
+
+## Revisions
+
+# The commit `id` names, a tag's chain followed to it.
+#
+# - `db`: the database.
+# - `id`: a commit's or an annotated tag's name.
+#
+# Fails `invalid` where it ends at something other than a commit, and where
+# an object cannot be read.
+function peel_to_commit(db: database.Database lent, id: str) -> str?
+    at @= id
+    hops @= 0
+
+    while hops < 100
+        o = database.read_object(db, id: at)?
+
+        match o.kind
+            .commit => return ok(at)
+            .tag    => at @ annotated.decode_tag(o.data)?.target
+            .tree | .blob =>
+                return fail(code: "invalid", msg: f"{ids.short(id)} names a {framing.kind_name(o.kind)}, not a commit")
+
+        hops @ hops + 1
+
+    return fail(code: "invalid", msg: f"the tags from {ids.short(id)} do not end at a commit")
+
+# The object a name with no suffix names: `HEAD`, a branch, a tag, then a
+# whole or abbreviated object name, in that order, as gitrevisions(7)
+# looks.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `name`: the name.
+#
+# Fails `not_found` where nothing has that name.
+function resolve_name(repo: layout.Repo, db: database.Database lent, name: str) -> str?
+    if name == "HEAD"
+        return head_commit(repo)
+
+    if is_ref_name(name)
+        for folder in ["refs/heads/", "refs/tags/"]
+            match read_ref(repo, full: folder + name)
+                .ok id => return ok(id)
+                .err _ => _ = 0
+
+    if ids.is_id(name) && database.has_object(db, id: name)
+        return ok(name)
+
+    if ids.is_hex_prefix(name) && name.len() >= 4
+        return database.expand_prefix(db, prefix: name)
+    return fail(code: "not_found", msg: f"\"{name}\" names no branch, tag or object")
+
+# The commit `text` names: a name as `resolve_name` reads it, then each
+# `~n` or `^n` after it, a bare `~` or `^` counting one.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `text`: what a person typed: `HEAD~2`, `main^2`, `v1.0`, `3f2a9c1`.
+#
+# Fails `not_found` where the name names nothing or a commit has fewer
+# parents than a suffix asks, and `invalid` where a suffix does not read or
+# the object is no commit.
+function resolve_commit(repo: layout.Repo, db: database.Database lent, text: str) -> str?
+    cut @= 0
+
+    while cut < text.len() && text[cut] != '~' && text[cut] != '^'
+        cut @ cut + 1
+
+    at @= peel_to_commit(db, id: resolve_name(repo, db: db, name: text.slice(from: 0, to: cut))?)?
+    i @= cut
+
+    while i < text.len()
+        op = text[i]
+        j @= i + 1
+
+        while j < text.len() && text[j] >= '0' && text[j] <= '9'
+            j @ j + 1
+
+        n = if j == i + 1
+            1
+        else
+            numbers.parse_int(text.slice(from: i + 1, to: j))?
+        c = commits.decode_commit(database.read_kind(db, id: at, kind: .commit)?)?
+
+        if op == '~'
+            steps @= 0
+            here @= c
+
+            while steps < n
+                if here.parents.len() == 0
+                    return fail(code: "not_found", msg: f"{text} goes past a root commit")
+                at @ here.parents[0]
+                steps @ steps + 1
+
+                if steps < n
+                    here @ commits.decode_commit(database.read_kind(db, id: at, kind: .commit)?)?
+        else if n > 0
+            if n > c.parents.len()
+                return fail(code: "not_found", msg: f"{ids.short(at)} has no parent number {n}")
+            at @ c.parents[n - 1]
+        i @ j
+
+    return ok(at)
+
+test "is_ref_name: plain names, slashes, and what git refuses"
+    assert is_ref_name("main")
+    assert is_ref_name("feature/login")
+    assert !is_ref_name("")
+    assert !is_ref_name("HEAD")
+    assert !is_ref_name("-x")
+    assert !is_ref_name("a..b")
+    assert !is_ref_name("a b")
+    assert !is_ref_name("a/.b")
+    assert !is_ref_name("a.lock")
+    assert !is_ref_name("a//b")
+    assert !is_ref_name("a~1")

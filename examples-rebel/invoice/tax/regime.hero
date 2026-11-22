@@ -1,0 +1,219 @@
+# Which VAT regime a sale falls under, from where the company and the
+# customer are and whether the customer is a business with a VAT number,
+# and so which country's rates an invoice's lines are taxed at:
+#
+# - `domestic`: the customer is in the company's own country, and the
+#   company's rates apply;
+# - `destination`: a consumer in another member state of the European
+#   Union, from a company that charges the consumer's own rates and
+#   declares them through the Union's One-Stop Shop (`Company.oss`);
+#   without it, such a sale is `domestic`;
+# - `reverse_charge`: a business in another member state, which accounts
+#   for the VAT itself, so the invoice charges none and says so;
+# - `export`: a customer outside the Union, charged no VAT.
+#
+# Which goods and services the One-Stop Shop covers, and the threshold
+# below which a seller may keep its own rates, are the company's to know:
+# the program follows the configuration's `oss` and does not tell goods from
+# services.
+
+use model/parties
+
+## The regimes
+
+# The VAT regime of a sale.
+variant Regime
+    # The company's own country's rates.
+    domestic
+    # The rates of the consumer's country, under the One-Stop Shop.
+    destination
+    # No VAT charged: the business customer accounts for it.
+    reverse_charge
+    # No VAT charged: the customer is outside the European Union.
+    export
+
+# The member states of the European Union by their ISO 3166 codes, as
+# Your Europe's table of VAT rates lists them (last checked by its editors
+# 13 July 2026, read 2026-11-22): 27 states. The table writes Greece `EL`,
+# the prefix of its VAT numbers; its ISO code is `GR`, which this list
+# holds, and `is_member` reads both.
+constant MEMBERS: [str]
+    [
+        "AT"
+        "BE"
+        "BG"
+        "CY"
+        "CZ"
+        "DE"
+        "DK"
+        "EE"
+        "GR"
+        "ES"
+        "FI"
+        "FR"
+        "HR"
+        "HU"
+        "IE"
+        "IT"
+        "LT"
+        "LU"
+        "LV"
+        "MT"
+        "NL"
+        "PL"
+        "PT"
+        "RO"
+        "SE"
+        "SI"
+        "SK"
+    ]
+
+# Whether `country` is a member state of the European Union.
+#
+# - `country`: an ISO 3166 code of two capitals; `EL` is read as Greece.
+function is_member(country: str) -> bool
+    if country == "EL"
+        return true
+
+    for m in MEMBERS
+        if m == country
+            return true
+
+    return false
+
+# The regime of a sale by `company` to `customer`.
+#
+# - `company`: the company.
+# - `customer`: the customer.
+function regime_of(company: parties.Company, customer: parties.Customer) -> Regime
+    if customer.country == company.country
+        return .domestic
+
+    if !is_member(customer.country)
+        return .export
+
+    if customer.vat_id != ""
+        return .reverse_charge
+
+    if company.oss
+        return .destination
+    return .domestic
+
+# The country whose rates a sale under `r` is taxed at; "" where no VAT is
+# charged.
+#
+# - `r`: the regime.
+# - `company`: the company.
+# - `customer`: the customer.
+function taxing_country(r: Regime, company: parties.Company, customer: parties.Customer) -> str
+    match r
+        .domestic       => return company.country
+        .destination    => return customer.country
+        .reverse_charge => return ""
+        .export         => return ""
+
+# The name the books, the CSV export and the report write `r` with.
+#
+# - `r`: the regime.
+function name_of(r: Regime) -> str
+    match r
+        .domestic       => return "domestic"
+        .destination    => return "oss"
+        .reverse_charge => return "reverse-charge"
+        .export         => return "export"
+
+# The regime `name` names, as `name_of` writes it.
+#
+# - `name`: the name.
+#
+# Fails `invalid` where it names none.
+function parse_regime(name: str) -> Regime?
+    for r in all_regimes()
+        if name_of(r) == name
+            return ok(r)
+
+    return fail(code: parties.INVALID, msg: f"\"{name}\" is no VAT regime")
+
+# Every regime, in the order a report lists them.
+function all_regimes() -> [Regime]
+    return [.domestic, .destination, .reverse_charge, .export]
+
+# The English sentence a document prints under its totals for `r`, the
+# message's identifier in the catalogs (`l10n/catalogs`); "" for `domestic`,
+# which needs none.
+#
+# - `r`: the regime.
+function note_of(r: Regime) -> str
+    match r
+        .domestic       => return ""
+        .destination    => return "VAT of the customer's country, declared through the One-Stop Shop."
+        .reverse_charge => return "Reverse charge: the VAT is due from the customer."
+        .export         => return "Not subject to VAT: the customer is outside the European Union."
+
+## Tests
+
+# A party of the tests, the company in `IT` unless `country` says.
+#
+# - `country`: the customer's country.
+# - `vat_id`: the customer's VAT number, "" for a consumer.
+function customer_in(country: str, vat_id: str) -> parties.Customer
+    return parties.Customer(
+        key: "K",
+        name: "N",
+        street: "S",
+        postcode: "1",
+        city: "C",
+        country: country,
+        vat_id: vat_id,
+        email: "k@example.org",
+        locale: "en",
+        currency: "EUR",
+        payment_days: 30
+    )
+
+# The company of the tests, in Italy.
+#
+# - `oss`: whether it charges consumers elsewhere in the Union their own
+#   rates.
+function company_with(oss: bool) -> parties.Company
+    return parties.Company(
+        name: "Co",
+        street: "S",
+        postcode: "1",
+        city: "C",
+        country: "IT",
+        vat_id: "IT00000000000",
+        email: "co@example.org",
+        iban: "",
+        bic: "",
+        currency: "EUR",
+        locale: "it-IT",
+        oss: oss
+    )
+
+test "regime_of: the four regimes, and a consumer abroad without the One-Stop Shop"
+    co = company_with(oss: true)
+    assert regime_of(co, customer: customer_in(country: "IT", vat_id: "IT1")) == .domestic
+    assert regime_of(co, customer: customer_in(country: "FR", vat_id: "")) == .destination
+    assert regime_of(co, customer: customer_in(country: "DE", vat_id: "DE1")) == .reverse_charge
+    assert regime_of(co, customer: customer_in(country: "US", vat_id: "")) == .export
+    assert regime_of(co, customer: customer_in(country: "CH", vat_id: "CHE1")) == .export
+    assert regime_of(company_with(oss: false), customer: customer_in(country: "FR", vat_id: "")) == .domestic
+
+test "taxing_country: the company's, the consumer's, or none"
+    co = company_with(oss: true)
+    fr = customer_in(country: "FR", vat_id: "")
+    assert taxing_country(.domestic, company: co, customer: fr) == "IT"
+    assert taxing_country(.destination, company: co, customer: fr) == "FR"
+    assert taxing_country(.export, company: co, customer: fr) == ""
+
+test "is_member: Greece by both codes, a state that left, and one never in"
+    assert is_member("GR") && is_member("EL") && is_member("IT")
+    assert !is_member("GB") && !is_member("CH") && !is_member("")
+    assert MEMBERS.len() == 27
+
+test "parse_regime: every name read back"
+    for r in all_regimes()
+        assert parse_regime(name_of(r)).must() == r
+
+    assert parse_regime("vat").is_err()

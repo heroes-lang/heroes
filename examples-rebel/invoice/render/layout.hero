@@ -1,0 +1,97 @@
+# The layout the program carries: the page every document is drawn on
+# where the company gives no layout of its own, written in the layout
+# language `render/sheet` reads and over the values `render/view` offers.
+# A company that wants another look copies it into a file, changes it, and
+# names the file in its configuration (`layout`).
+#
+# The page is A4, 595.28 by 841.89 points, with margins of 56 points, a
+# little under 20 mm: the logo and the company at the top, the title, the
+# dates and the customer under them, the lines' table from 580 points down
+# to at most 380, the VAT by rate and the totals under it wherever it ends,
+# the regime's note, and at the foot, from 178 points down, an invoice's
+# transfer details beside its payment code, or a credit note's word that
+# nothing is to be paid.
+
+# The layout a document is drawn with where the company gives none: an A4
+# page with the logo and the company at the top, the document's title and
+# dates and the customer under them, the lines, the VAT by rate and the
+# totals under the lines, the regime's note, and at the foot, on an
+# invoice, the transfer's details beside the payment code.
+function default_layout() -> str
+    parts = [
+        "page\ta4"
+        "{{- if .has_logo }}"
+        "logo\t56\t770\t64"
+        "{{- end }}"
+        "font\tHelvetica-Bold\t12"
+        "text\t539\t800\tright\t{{ .company.name }}"
+        "font\tHelvetica\t8.5"
+        "para\t300\t792\t239\tright\t10.5\t{{ .company.block }}"
+        "color\t0.12\t0.23\t0.42"
+        "font\tHelvetica-Bold\t20"
+        "text\t56\t690\tleft\t{{ .title }}"
+        "color\t0\t0\t0"
+        "font\tHelvetica\t9.5"
+        "text\t56\t668\tleft\t{{ .labels.number }}: {{ .number }}"
+        "text\t56\t654\tleft\t{{ .labels.date }}: {{ .date }}"
+        "{{- if .is_invoice }}"
+        "text\t56\t640\tleft\t{{ .labels.due }}: {{ .due }}"
+        "{{- else }}"
+        "text\t56\t640\tleft\t{{ .labels.credits }} {{ .refers_to }}"
+        "{{- end }}"
+        "{{- if .exchange }}"
+        "text\t56\t626\tleft\t{{ .labels.exchange }}: {{ .exchange }}"
+        "{{- end }}"
+        "font\tHelvetica-Bold\t9.5"
+        "text\t330\t668\tleft\t{{ .labels.bill_to }}"
+        "font\tHelvetica\t9.5"
+        "para\t330\t662\t209\tleft\t12\t{{ .customer.block }}"
+        "table\t56\t580\t380\t189,54,36,86,40,78\tlrlrrr"
+        "row\t{{ .labels.description }}\t{{ .labels.quantity }}\t{{ .labels.unit }}\t{{ .labels.unit_price }}\t{{ .labels.vat }}\t{{ .labels.amount }}"
+        "{{- for $l in .lines }}"
+        "row\t{{ $l.description }}\t{{ $l.quantity }}\t{{ $l.unit }}\t{{ $l.unit_price }}\t{{ $l.rate }}\t{{ $l.net }}"
+        "{{- end }}"
+        "end"
+        "table\t299\t@-14\t200\t60,90,90\trrr"
+        "row\t{{ .labels.rate }}\t{{ .labels.taxable }}\t{{ .labels.tax }}"
+        "{{- for $t in .taxes }}"
+        "row\t{{ $t.rate }}\t{{ $t.net }}\t{{ $t.tax }}"
+        "{{- end }}"
+        "end"
+        "font\tHelvetica\t10"
+        "text\t440\t@-18\tright\t{{ .labels.total_net }}"
+        "text\t539\t@-18\tright\t{{ .net }}"
+        "text\t440\t@-32\tright\t{{ .labels.total_vat }}"
+        "text\t539\t@-32\tright\t{{ .tax }}"
+        "rule\t330\t@-39\t539\t0.6"
+        "font\tHelvetica-Bold\t11"
+        "{{- if .is_invoice }}"
+        "text\t440\t@-53\tright\t{{ .labels.total_due }}"
+        "{{- else }}"
+        "text\t440\t@-53\tright\t{{ .labels.total_credited }}"
+        "{{- end }}"
+        "text\t539\t@-53\tright\t{{ .gross }}"
+        "font\tHelvetica-Oblique\t9"
+        "{{- if .note }}"
+        "para\t56\t@-72\t483\tleft\t11\t{{ .note }}"
+        "{{- end }}"
+        "rule\t56\t178\t539\t0.5"
+        "{{- if .is_invoice }}"
+        "font\tHelvetica-Bold\t9.5"
+        "text\t56\t162\tleft\t{{ .labels.pay_to }}"
+        "font\tHelvetica\t9"
+        "para\t56\t152\t330\tleft\t12\t{{ .payment.block }}"
+        "{{- if .payment.qr }}"
+        "qr\t449\t68\t90"
+        "font\tHelvetica\t7.5"
+        "text\t494\t58\tcenter\t{{ .labels.scan }}"
+        "{{- end }}"
+        "{{- else }}"
+        "font\tHelvetica\t9"
+        "text\t56\t162\tleft\t{{ .labels.nothing_due }}"
+        "{{- end }}"
+        "font\tHelvetica\t7.5"
+        "color\t0.4\t0.4\t0.4"
+        "text\t297.6\t30\tcenter\t{{ .company.footer }}"
+    ]
+    return parts.join("\n")

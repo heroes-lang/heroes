@@ -1,0 +1,192 @@
+# Parameter expansion (XCU 2.6.2): the value of a variable, a positional
+# parameter or a special one, and the forms that test it, give a default,
+# assign one, end the command where it is missing, or cut a pattern off
+# either end. What a form gives is a list of pieces for `expand/fields`, so
+# `"$@"` can give one field for each argument.
+
+use <rebel>/io
+use <rebel>/os
+
+use exec/state
+use expand/fields
+use expand/patterns
+use expand/words
+use syntax/ast
+use syntax/words as names
+
+# The value of the parameter `name`; fails `not_found` where it is not set.
+#
+# - `sh`: the shell.
+# - `name`: a variable's name, a number, or one of `?#$!-@*`.
+function lookup(sh: state.Shell lent, name: str) -> str?
+    if name.len() > 0 && name[0] >= '0' && name[0] <= '9'
+        n = number(name)
+
+        if n == 0
+            return ok(sh.name)
+
+        if n - 1 < sh.positional.len()
+            return ok(sh.positional[n - 1])
+
+        return fail(code: "not_found", msg: f"no positional parameter {n}")
+
+    return match name
+        "?" => ok(f"{sh.status}")
+        "#" => ok(f"{sh.positional.len()}")
+        "$" => ok(f"{os.pid()}")
+        "!" =>
+            if sh.last_pid < 0
+                return fail(code: "not_found", msg: "no background job was started")
+            ok(f"{sh.last_pid}")
+        "-"       => ok(state.option_letters(sh))
+        "@" | "*" => ok(sh.positional.join(" "))
+        _         => state.get(sh, name: name)
+
+# The number `digits` writes, small enough to index the positional
+# parameters; one too long for that answers a number past them.
+#
+# - `digits`: ASCII digits.
+function number(digits: str) -> i64
+    if digits.len() > 9
+        return 1000000000
+
+    n @= 0
+
+    for c in digits.chars()
+        n @ n * 10 + (c[0] - '0').to_i64().must()
+
+    return n
+
+# The pieces of `$name` or `${name<op>word}`.
+#
+# - `sh`: the shell; `:=` and `=` assign in it.
+# - `name`: the parameter.
+# - `op`: the operator, "" for none.
+# - `arg`: the word after it.
+# - `in_quotes`: whether the expansion stands in double quotes.
+# - `at`: where it stands, for a message.
+#
+# Fails `words.EXPANSION` where `-u` finds a parameter unset, `:?` or `?`
+# finds one missing, or `:=` names no variable; the place is kept in
+# `sh.error_at`.
+function pieces_of(@sh: state.Shell, name: str, op: str, arg: [ast.Part], in_quotes: bool, at: ast.Place) -> [fields.Piece]?
+    if op == "" && (name == "@" || name == "*")
+        return ok(all_arguments(sh, name: name, in_quotes: in_quotes))
+
+    found = lookup(sh, name: name)
+    set = !found.is_err()
+    value = found.default("")
+    colon = op.len() == 2 && op[0] == ':'
+    missing = !set || colon && value == ""
+
+    match op
+        "" =>
+            if !set && sh.options.nounset && name != "@" && name != "*"
+                return words.mistake(@sh, at: at, message: f"{name}: the parameter is not set")
+            return ok([.value(text: value, quoted: in_quotes)])
+        ":-" | "-" =>
+            if missing
+                return words.pieces(@sh, parts: arg, in_quotes: in_quotes)
+            return ok([.value(text: value, quoted: in_quotes)])
+        ":=" | "=" =>
+            if !missing
+                return ok([.value(text: value, quoted: in_quotes)])
+
+            if !names.is_name(name)
+                return words.mistake(@sh, at: at, message: f"${name} cannot be assigned")
+
+            given = words.parts_text(@sh, parts: arg)?
+            state.set(@sh, name: name, value: given)
+            return ok([.value(text: given, quoted: in_quotes)])
+        ":?" | "?" =>
+            if !missing
+                return ok([.value(text: value, quoted: in_quotes)])
+
+            said = words.parts_text(@sh, parts: arg)?
+
+            message = if said != ""
+                said
+            else if colon
+                "the parameter is empty or not set"
+            else
+                "the parameter is not set"
+
+            return words.mistake(@sh, at: at, message: f"{name}: {message}")
+        ":+" | "+" =>
+            if missing
+                return ok([])
+            return words.pieces(@sh, parts: arg, in_quotes: in_quotes)
+        _ =>
+            pattern = words.pattern_of_parts(@sh, parts: arg)?
+            longest = op == "%%" || op == "##"
+
+            cut = if op[0] == '%'
+                patterns.without_suffix(text: value, pattern: pattern, longest: longest)
+            else
+                patterns.without_prefix(text: value, pattern: pattern, longest: longest)
+
+            return match cut
+                .ok text => ok([.value(text: text, quoted: in_quotes)])
+                .err e   => words.mistake(@sh, at: at, message: f"the pattern `{pattern}` cannot be read: {e.msg}")
+
+# The pieces of `$@` and `$*`: inside double quotes `"$@"` gives each
+# argument as a field of its own and `"$*"` all of them joined by the first
+# character of `IFS`; outside, both give the arguments to be split.
+#
+# - `sh`: the shell.
+# - `name`: `@` or `*`.
+# - `in_quotes`: whether the expansion stands in double quotes.
+function all_arguments(sh: state.Shell lent, name: str, in_quotes: bool) -> [fields.Piece]
+    if !in_quotes
+        return [.value(text: sh.positional.join(" "), quoted: false)]
+
+    if name == "*"
+        ifs = state.get(sh, name: "IFS").default(" ")
+
+        sep = if ifs == ""
+            ""
+        else
+            ifs.slice(from: 0, to: patterns.char_end(ifs, at: 0))
+
+        return [.value(text: sh.positional.join(sep), quoted: true)]
+
+    out: [fields.Piece] @= []
+
+    for i in range(from: 0, to: sh.positional.len())
+        if i > 0
+            out @ out.push(.cut)
+        out @ out.push(.text(text: sh.positional[i], quoted: true))
+
+    return out
+
+# `${#name}`: how many characters the parameter's value holds, or how many
+# positional parameters there are for `#`, `@` and `*`.
+#
+# - `sh`: the shell.
+# - `name`: the parameter.
+# - `at`: where it stands.
+function length_of(@sh: state.Shell, name: str, at: ast.Place) -> str?
+    if name == "@" || name == "*" || name == "#"
+        return ok(f"{sh.positional.len()}")
+
+    match lookup(sh, name: name)
+        .ok v => return ok(f"{v.chars().len()}")
+        .err _ =>
+            if sh.options.nounset
+                return words.mistake(@sh, at: at, message: f"{name}: the parameter is not set")
+            return ok("0")
+
+test "lookup: positional parameters, the status and their count"
+    sh @= state.new_shell(name: "demo", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    sh.positional @ ["a", "b"]
+    sh.status @ 3
+    assert lookup(sh, name: "0").must() == "demo"
+    assert lookup(sh, name: "2").must() == "b"
+    assert lookup(sh, name: "3").is_err()
+    assert lookup(sh, name: "?").must() == "3" && lookup(sh, name: "#").must() == "2"
+
+test "all_arguments: quoted at gives one piece each, quoted star one joined"
+    sh @= state.new_shell(name: "demo", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    sh.positional @ ["a b", "c"]
+    assert all_arguments(sh, name: "@", in_quotes: true).len() == 3
+    assert all_arguments(sh, name: "*", in_quotes: true) == [.value(text: "a b c", quoted: true)]

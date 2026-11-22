@@ -1,0 +1,231 @@
+# Where a command reads and writes: its input (a stream, a text, or nothing)
+# and its output and error (a stream, a capture of the shell, or nowhere).
+# A builtin writes through `write_to`, a child is handed the same places as
+# `process`'s inputs and outputs, so `echo hi > f`, `echo hi | upper` and
+# `$(echo hi)` reach the same three places whether the command runs in the
+# shell or as a child.
+#
+# The streams a redirection or a pipe opens are the command's to close: they
+# are listed in an `Opened` and closed once the command ends, a temporary
+# file removed with its stream.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/process
+
+use exec/state
+
+# Where a command writes.
+variant Sink
+    # A stream: the shell's own output or error, a file, a pipe.
+    stream
+        # The stream; whoever opened it closes it.
+        s: io.Stream
+    # A capture of the shell, kept as text for `$(...)` or the next stage.
+    capture
+        # The capture's level, from `state.open_capture`.
+        level: i64
+    # Nowhere: a descriptor closed with `>&-`.
+    discard
+    # A new pipe `process` makes for a child, whose reading end the next
+    # stage of a pipeline reads; only a child writes to one.
+    pipe
+
+# What a command reads.
+variant Feed
+    # A stream: the shell's own input, a file, a pipe.
+    stream
+        # The stream; whoever opened it closes it.
+        s: io.Stream
+    # A text given whole: a here-document, or what a stage before wrote.
+    text
+        # The text.
+        text: str
+    # Nothing: a closed input, whose end is read at once.
+    nothing
+
+# A command's three standard places.
+record Io
+    # Its input, descriptor 0.
+    input: Feed
+    # Its output, descriptor 1.
+    output: Sink
+    # Its error, descriptor 2.
+    error: Sink
+
+# The streams and temporary files a command's redirections opened, to close
+# and remove when it ends.
+record Opened
+    # The streams.
+    streams: [io.Stream]
+    # The temporary files' paths.
+    temps: [str]
+
+# Nothing opened yet.
+function nothing_opened() -> Opened
+    return Opened(streams: [], temps: [])
+
+# The shell's own three streams, as a command run at its top reads and
+# writes.
+#
+# - `sh`: the shell.
+function standard(sh: state.Shell lent) -> Io
+    return Io(input: .stream(s: sh.input), output: .stream(s: sh.out), error: .stream(s: sh.err))
+
+# Writes `text` to `sink`, answering whether it was taken: a stream closed at
+# its other end takes nothing, as a pipe whose reader ended.
+#
+# - `sh`: the shell, whose captures a capture sink writes to.
+# - `sink`: where to write.
+# - `text`: what to write.
+function write_to(@sh: state.Shell, sink: Sink, text: str) -> bool
+    match sink
+        .stream s => return !io.write_text(s.s, text: text).is_err()
+        .capture c =>
+            state.add_captured(@sh, level: c.level, text: text)
+            return true
+        .discard | .pipe => return true
+
+# Writes `text` to a command's output.
+#
+# - `sh`: the shell.
+# - `place`: the command's places.
+# - `text`: what to write.
+function write_out(@sh: state.Shell, place: Io, text: str) -> bool
+    return write_to(@sh, sink: place.output, text: text)
+
+# Writes `text` to a command's error.
+#
+# - `sh`: the shell.
+# - `place`: the command's places.
+# - `text`: what to write.
+function write_err(@sh: state.Shell, place: Io, text: str)
+    _ = write_to(@sh, sink: place.error, text: text)
+
+# Whether two sinks are one place, so a child's error joins its output.
+#
+# - `a`: a sink.
+# - `b`: another.
+function same_sink(a: Sink, b: Sink) -> bool
+    return match a
+        .stream x =>
+            match b
+                .stream y                     => x.s.handle == y.s.handle
+                .capture _ | .discard | .pipe => false
+        .capture x =>
+            match b
+                .capture y                   => x.level == y.level
+                .stream _ | .discard | .pipe => false
+        .discard => b == .discard
+        .pipe    => b == .pipe
+
+# What a child reads, as `process` takes it.
+#
+# - `feed`: the command's input.
+function child_input(feed: Feed) -> process.Input
+    return match feed
+        .stream s => .stream(stream: s.s)
+        .text t   => .text(text: t.text)
+        .nothing  => .nothing
+
+# Where a child writes, as `process` takes it; a capture is a pipe the shell
+# reads.
+#
+# - `sink`: the command's output or error.
+function child_output(sink: Sink) -> process.Output
+    return match sink
+        .stream s          => .stream(stream: s.s)
+        .capture _ | .pipe => .pipe
+        .discard           => .nothing
+
+# `feed` as a stream the shell can read a line at a time: a text is written
+# to a temporary file, opened again to be read, and listed in `opened` to be
+# closed and removed; a stream or nothing is answered as it is.
+#
+# - `feed`: the input.
+# - `opened`: what the command opened, which grows by the file.
+function readable(feed: Feed, @opened: Opened) -> Feed?
+    match feed
+        .text t =>
+            made @= fs.make_temp_file(dir: "", pattern: "shell-input-*.txt")?
+            temps @= opened.temps
+            temps @ temps.push(made.path)
+            opened.temps @ temps
+            written = io.write_text(made.stream, text: t.text)
+            io.close(@made.stream)?
+            written?
+            s = fs.open(made.path)?
+            streams @= opened.streams
+            streams @ streams.push(s)
+            opened.streams @ streams
+            return ok(.stream(s: s))
+        .stream _ | .nothing => return ok(feed)
+
+# Adds `s` to what a command opened.
+#
+# - `opened`: what the command opened.
+# - `s`: the stream.
+function keep_stream(@opened: Opened, s: io.Stream)
+    streams @= opened.streams
+    streams @ streams.push(s)
+    opened.streams @ streams
+
+# Closes every stream a command opened and removes its temporary files.
+#
+# - `opened`: what it opened, emptied.
+function close_all(@opened: Opened)
+    streams @= opened.streams
+
+    for i in range(from: 0, to: streams.len())
+        _ = io.close(@streams[i]).is_err()
+
+    for t in opened.temps
+        _ = fs.remove(t).is_err()
+
+    opened.streams @ []
+    opened.temps @ []
+
+# The next line of `feed`, without its line end, read a byte at a time so
+# nothing after it is taken from a stream another command reads next. Fails
+# `closed` at the end, where no byte was read.
+#
+# - `feed`: the input, a stream or nothing; a text is made readable first.
+function read_line(feed: Feed) -> str?
+    match feed
+        .stream s =>
+            bytes: [u8] @= []
+
+            while true
+                got = io.read(s.s, n: 1)?
+
+                if got.len() == 0
+                    if bytes.len() == 0
+                        return fail(code: "closed", msg: "the input ended")
+                    return ok(bytes.validated_bytes()?)
+
+                if got[0] == '\n'
+                    return ok(bytes.validated_bytes()?)
+
+                bytes @ bytes.push(got[0])
+
+            return fail(code: "closed", msg: "the input ended")
+        .text t =>
+            if t.text == ""
+                return fail(code: "closed", msg: "the input ended")
+            return ok(t.text)
+        .nothing => return fail(code: "closed", msg: "the input is closed")
+
+test "same_sink: a capture is itself, and nowhere is nowhere"
+    assert same_sink(a: .capture(level: 1), b: .capture(level: 1))
+    assert !same_sink(a: .capture(level: 1), b: .capture(level: 2))
+    assert same_sink(a: .discard, b: .discard)
+    assert same_sink(a: .stream(s: io.stdout()), b: .stream(s: io.stdout()))
+
+test "readable: a text becomes a stream read line by line, then nothing"
+    opened @= nothing_opened()
+    feed = readable(.text(text: "one\ntwo\n"), @opened).must()
+    assert read_line(feed).must() == "one"
+    assert read_line(feed).must() == "two"
+    assert read_line(feed).is_err()
+    close_all(@opened)
+    assert opened.streams.len() == 0

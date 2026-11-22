@@ -1,0 +1,267 @@
+# What the monitor answers on its control socket: each command of
+# `control/protocol` carried out on the monitor and answered in lines a
+# person reads, as `supervisorctl` and `systemctl` answer theirs. A command
+# that changes something (an acknowledgement, a silence, a restart, a line
+# sent) is journaled, so the record says who asked what and when; every
+# request is counted by its command and outcome.
+
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/time
+use <rebel>/tracing
+
+use alerts/engine
+use alerts/rules
+use collect/sensor
+use conf/reading
+use control/protocol
+use control/server
+use dash/view
+use engine/monitor
+use services/stopping
+use services/supervisor
+use telemetry/registry
+
+# Serves the requests waiting on the control socket, each waited for at
+# most `within`, and answers how many were served: the loop calls it with
+# no wait at each pass, the demo with a wait for the request it expects.
+#
+# - `m`: the monitor.
+# - `within`: the longest to wait for each connection.
+# - `most`: the most requests served in this call.
+# - `at`: when, on the monitor's clock.
+function serve(@m: monitor.Monitor, within: time.Duration, most: i64, at: time.Instant) -> i64
+    served: i64 @= 0
+
+    while served < most
+        match server.next(@m.control, within: within)
+            .err _ => return served
+            .ok incoming =>
+                span = tracing.start(@m.tracer, name: "control." + incoming.request.command, kind: .server)
+                answer = carry_out(@m, request: incoming.request, at: at)
+
+                outcome = if answer.done
+                    "done"
+                else
+                    answer.code
+                registry.count(@m.registry, name: registry.REQUESTS, labels: [incoming.request.command, outcome])
+                server.answer(@m.control, incoming: incoming, a: answer)
+
+                match span
+                    .ok s  => _ = tracing.end(@m.tracer, span: s).is_err()
+                    .err _ => _ = 0
+
+                served @ served + 1
+
+    return served
+
+# The answer to `request`, carried out at `at`.
+#
+# - `m`: the monitor.
+# - `request`: the request.
+# - `at`: when, on the monitor's clock.
+function carry_out(@m: monitor.Monitor, request: protocol.Request, at: time.Instant) -> protocol.Answer
+    a = request.args
+
+    match request.command
+        "status"  => return protocol.answer_lines(status_lines(m, at: at))
+        "alerts"  => return protocol.answer_lines(alert_lines(m))
+        "metrics" => return protocol.answer_lines(strings.lines(registry.prometheus_text(m.registry)))
+        "quit" =>
+            m.stop_asked @ true
+            monitor.note(@m, at: at, level: .info, source: "control", text: "asked to stop")
+            return protocol.answer_lines(["stopping"])
+        "ack" =>
+            if a.len() != 1
+                return usage("ack <alert or rule>")
+
+            match engine.acknowledge(@m.alerts, name: a[0])
+                .ok n =>
+                    monitor.note(@m, at: at, level: .info, source: "control", text: f"acknowledged {a[0]}")
+                    return protocol.answer_lines([f"acknowledged {n} alert" + plural(n)])
+                .err e => return protocol.answer_failure(code: e.code, msg: e.msg)
+        "silence" =>
+            if a.len() != 2
+                return usage("silence <rule> <duration>")
+
+            span = match time.parse_duration(a[1])
+                .ok d  => d
+                .err e => return protocol.answer_failure(code: "invalid", msg: e.msg)
+
+            until = time.add(at, d: span).default(at)
+
+            match engine.silence(@m.alerts, name: a[0], until: until)
+                .ok _ =>
+                    monitor.note(
+                        @m,
+                        at: at,
+                        level: .info,
+                        source: "control",
+                        text: f"silenced {a[0]} for {time.format_duration(span)}"
+                    )
+                    return protocol.answer_lines([f"silenced {a[0]} until {view.clock_of(until.unix_nanoseconds)}"])
+                .err e => return protocol.answer_failure(code: e.code, msg: e.msg)
+        "restart" | "stop" | "start" =>
+            if a.len() != 1
+                return usage(request.command + " <service>")
+            monitor.note(@m, at: at, level: .info, source: "control", text: f"{request.command} {a[0]}")
+            done = acted(@m, command: request.command, name: a[0], at: at)
+
+            match done
+                .ok happened =>
+                    monitor.note_services(@m, at: at, happened: happened)
+                    lines: [str] @= []
+
+                    for e in happened
+                        lines @ lines.push(f"{e.service}: {e.text}")
+
+                    if lines.len() == 0
+                        lines @ lines.push(f"{a[0]}: nothing to do, it does not run")
+                    return protocol.answer_lines(lines)
+                .err e => return protocol.answer_failure(code: e.code, msg: e.msg)
+        "send" =>
+            if a.len() < 2
+                return usage("send <service> <line>")
+            line = a.slice(from: 1, to: a.len()).join(" ")
+
+            match supervisor.send(m.sup, name: a[0], line: line)
+                .ok _ =>
+                    monitor.note(@m, at: at, level: .info, source: "control", text: f"sent a line to {a[0]}")
+                    return protocol.answer_lines([f"sent to {a[0]}"])
+                .err e => return protocol.answer_failure(code: e.code, msg: e.msg)
+        _ => return protocol.answer_failure(code: "invalid", msg: f"no command \"{request.command}\"")
+
+# What the supervisor did for `restart`, `stop` or `start` of `name`.
+#
+# - `m`: the monitor.
+# - `command`: `restart`, `stop` or `start`.
+# - `name`: the service.
+# - `at`: when.
+function acted(@m: monitor.Monitor, command: str, name: str, at: time.Instant) -> [supervisor.Event]?
+    if command == "restart"
+        return stopping.restart(@m.sup, name: name, at: at)
+
+    if command == "stop"
+        return stopping.stop(@m.sup, name: name, at: at)
+    return ok([stopping.start_again(@m.sup, name: name, at: at)?])
+
+# The failure of a command given the wrong arguments.
+#
+# - `form`: how it is written.
+function usage(form: str) -> protocol.Answer
+    return protocol.answer_failure(code: "invalid", msg: f"write it {form}")
+
+# "s" where `n` is not 1.
+#
+# - `n`: the count.
+function plural(n: i64) -> str
+    if n == 1
+        return ""
+    return "s"
+
+# What `monitor ctl status` prints: the monitor's clock and alerts, then a
+# table of the services, then the sensor and the watched paths.
+#
+# - `m`: the monitor.
+# - `at`: when.
+function status_lines(m: monitor.Monitor lent, at: time.Instant) -> [str]
+    firing = engine.count_in(m.alerts, phase: .firing)
+    pending = engine.count_in(m.alerts, phase: .pending)
+    lines: [str] @= [
+        f"monitor {m.config.name} at {view.clock_of(at.unix_nanoseconds)}: {m.sup.services.len()} services, {firing} alerts firing, {pending} pending"
+    ]
+    rows: [[str]] @= []
+
+    for s in m.sup.services
+        up = if s.state == .running
+            view.span_of(at.unix_nanoseconds - s.since)
+        else
+            "-"
+
+        last = if s.last_end == ""
+            "-"
+        else
+            s.last_end
+        rows @ rows.push([s.spec.name, supervisor.state_name(s.state), up, to_str(s.restarts), last])
+
+    table = term.format_table(
+        term.Table(header: ["service", "state", "up", "restarts", "last end"], rows: rows, align: [], border: .simple)
+    )
+
+    for line in strings.lines(table)
+        lines @ lines.push(line)
+
+    if m.config.sensor.name != ""
+        lines @ lines.push(
+            f"sensor {m.config.sensor.name}: {sensor.status_name(m.sensor.status)}, {m.sensor.readings} readings, {m.sensor.misses} missed"
+        )
+
+    for w in m.files.watched
+        state = if w.trouble == ""
+            f"{w.bytes} bytes, {w.changes} changes"
+        else
+            w.trouble
+        lines @ lines.push(f"watch {w.spec.name}: {state}")
+
+    return lines
+
+# What `monitor ctl alerts` prints: one line for each alert that is not
+# inactive, with its condition, or one line saying there is none.
+#
+# - `m`: the monitor.
+function alert_lines(m: monitor.Monitor lent) -> [str]
+    lines: [str] @= []
+
+    for a in engine.active_of(m.alerts)
+        for r in m.alerts.rules
+            if r.name == a.rule
+                ack = if a.acknowledged
+                    ", acknowledged"
+                else
+                    ""
+                lines @ lines.push(
+                    f"{engine.phase_name(a.phase)} {engine.alert_name(rule: a.rule, label: a.label)} since {view.clock_of(a.since)}: {rules.format_condition(r.condition)} ({r.severity}{ack})"
+                )
+
+    if lines.len() == 0
+        return ["no alert is pending or firing"]
+    return lines
+
+# A monitor of the tests: no service, one watched folder holding 10 bytes,
+# and one rule on it, its journal in `dir`.
+#
+# - `dir`: the test's folder, made fresh.
+function test_monitor(dir: str) -> monitor.Monitor
+    _ = fs.remove_all(dir).is_err()
+    fs.make_dir_all(dir + "/spool").must()
+    write_file(path: dir + "/spool/a.dat", text: "0123456789").must()
+    text = ["name = \"test\"", "control = \"\"", "host = false", f"[logs]\ndir = \"{dir}/logs\"", f"[[watch]]\nname = \"spool\"\npath = \"{dir}/spool\"", "[[rule]]\nname = \"spool-full\"\nwhen = \"watch.spool.bytes > 5\"\nseverity = \"warning\""].join("\n") + "\n"
+    c = reading.parse(text).must()
+    t0 = time.parse("2026-11-22T09:00:00Z", layout: .rfc3339).must()
+    return monitor.start(c, at: t0, handed: false).must()
+
+test "carry_out: a rule fired by a collection, listed, acknowledged, silenced, and the stop asked"
+    m @= test_monitor("build/monitor-test-commands")
+    t0 = m.started
+    monitor.collect(@m, at: t0)
+    told = monitor.take_told(@m)
+    assert told[0] == "monitor: started: 0 services, 1 watched paths, 1 rules"
+    assert told[1] == "alert spool-full: firing"
+    alerts = carry_out(@m, request: protocol.Request(command: "alerts", args: []), at: t0)
+    assert alerts.lines == ["firing spool-full since 09:00:00: watch.spool.bytes > 5 (warning)"]
+    assert carry_out(@m, request: protocol.Request(command: "ack", args: ["spool-full"]), at: t0).lines == ["acknowledged 1 alert"]
+    assert carry_out(@m, request: protocol.Request(command: "ack", args: ["none"]), at: t0).code == "not_found"
+    assert carry_out(@m, request: protocol.Request(command: "silence", args: ["spool-full"]), at: t0).code == "invalid"
+    assert carry_out(@m, request: protocol.Request(command: "silence", args: ["spool-full", "30m"]), at: t0).lines == ["silenced spool-full until 09:30:00"]
+    assert carry_out(@m, request: protocol.Request(command: "restart", args: ["db"]), at: t0).code == "not_found"
+    status = carry_out(@m, request: protocol.Request(command: "status", args: []), at: t0).lines
+    assert status[0] == "monitor test at 09:00:00: 0 services, 1 alerts firing, 0 pending"
+    assert status[status.len() - 1] == "watch spool: 10 bytes, 0 changes"
+    assert carry_out(@m, request: protocol.Request(command: "quit", args: []), at: t0).lines == ["stopping"] && m.stop_asked
+    _ = monitor.stop(@m, at: t0)
+
+test "alert_lines: none pending or firing"
+    m @= test_monitor("build/monitor-test-commands-quiet")
+    assert alert_lines(m) == ["no alert is pending or firing"]
+    _ = monitor.stop(@m, at: m.started)

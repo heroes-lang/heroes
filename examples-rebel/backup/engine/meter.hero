@@ -1,0 +1,54 @@
+# The progress a long command draws: a bar of `term` on the standard
+# error, counting bytes read or written. `term` draws only where the
+# stream is a terminal that takes its sequences, so a run whose output
+# goes to a file or a pipe, as a scheduled backup's does, stays clean; and
+# a command asked to be quiet draws nothing at all.
+
+use <rebel>/io
+use <rebel>/term
+
+## The meter
+
+# A bar, or nothing where none is drawn.
+record Meter
+    # The bar.
+    bar: term.Progress
+    # Whether it draws.
+    live: bool
+
+# A meter of `total` steps labelled `label`.
+#
+# - `label`: what the bar shows first.
+# - `total`: the steps at which it is full, 0 or more.
+# - `shown`: whether to draw at all.
+function meter(label: str, total: i64, shown: bool) -> Meter
+    quiet = term.Progress(stream: io.stderr(), label: label, total: total, done: 0, shown: false)
+
+    if !shown || total < 0
+        return Meter(bar: quiet, live: false)
+
+    return match term.progress(io.stderr(), total: total, label: label)
+        .ok bar => Meter(bar: bar, live: true)
+        .err _  => Meter(bar: quiet, live: false)
+
+# Counts `n` more steps done.
+#
+# - `m`: the meter; a bar that cannot draw stops drawing.
+# - `n`: the steps, 0 or more.
+function tick(@m: Meter, n: i64)
+    if m.live && n >= 0 && term.advance(@m.bar, n: n).is_err()
+        m.live @ false
+
+# Draws the meter full and ends its line.
+#
+# - `m`: the meter.
+function done(@m: Meter)
+    if m.live
+        _ = term.finish(@m.bar).is_err()
+        m.live @ false
+
+test "meter: a meter not shown counts nothing and draws nothing"
+    m @= meter("backup", total: 10, shown: false)
+    tick(@m, n: 3)
+    done(@m)
+    assert !m.live && m.bar.done == 0

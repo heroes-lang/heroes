@@ -1,0 +1,137 @@
+# One open file: its text, where the cursor stands, what part is on the
+# screen, its history of changes, and what its file held when it was last
+# read or written. How it changes is `buffers/editing`'s; this module says
+# what a buffer is and whether it differs from its file.
+#
+# A buffer is modified when the history's last group done is not the one
+# the last save or load saw: undo back to that point and it is clean again,
+# as it is in most editors.
+
+use files/disk
+use history/undo
+use text/document
+
+# The `saved` serial of a buffer that differs from its file whatever its
+# history says: no group has it, since serials begin at 1.
+constant DIFFERS: i64
+    -1
+
+# One open file.
+record Buffer
+    # The file's path, as the buffer list keys it.
+    path: str
+    # The text.
+    doc: document.Document
+    # How the text is written back: encoding, byte order mark, line break.
+    format: disk.Format
+    # Where the cursor stands, at a grapheme boundary.
+    cursor: document.Pos
+    # The screen column moves up and down aim at, kept across lines shorter
+    # than it.
+    goal: i64
+    # The first line shown.
+    top: i64
+    # The first screen column shown.
+    left: i64
+    # The changes, undone and redone a group at a time.
+    history: undo.History
+    # The history's serial at the last save or load.
+    saved: i64
+    # The bytes the file held when it was last read or written, which a change
+    # on disk is compared with.
+    known: [u8]
+    # Whether the file is on disk; a new file is not until its first save.
+    on_disk: bool
+    # The byte index of the first sequence the encoding could not read;
+    # fails `not_found` where every byte was read.
+    unreadable: i64?
+    # Each read again of the file, by the serial of the history's group that
+    # put its text in, so undo and redo put back the format and the saved
+    # state with the text.
+    rereads: [Reread]
+
+# A read again of the file, a reload or a read in another encoding, as the
+# history's group that put its text in, and what undoing it puts back.
+record Reread
+    # The group's serial.
+    serial: i64
+    # The format before the read.
+    before: disk.Format
+    # The format the read brought.
+    after: disk.Format
+    # The buffer's `saved` before the read.
+    saved_before: i64
+    # Whether the read found the bytes the buffer knew, so the text before it
+    # was the file's too, read another way: undo then leaves the buffer as
+    # clean as it was. A file another program changed is not, and undo leaves
+    # the buffer modified.
+    same_bytes: bool
+
+# The buffer of the file at `path`, or of a new file where nothing is there.
+#
+# - `path`: the file's path.
+# - `named`: the encoding the person named, or "" to let the file say.
+# - `most`: the most groups its history keeps, from 1.
+#
+# Fails as `disk.load` fails.
+function open(path: str, named: str, most: i64) -> Buffer?
+    loaded = disk.load(path: path, named: named)?
+    start = document.Pos(line: 0, col: 0)
+    return ok(
+        Buffer(path: path, doc: document.from_text(loaded.text), format: loaded.format, cursor: start, goal: 0, top: 0, left: 0, history: undo.new_history(most), saved: 0, known: loaded.bytes, on_disk: loaded.exists, unreadable: loaded.unreadable, rereads: [])
+    )
+
+# A buffer of a new file at `path` holding `text`, in UTF-8 with line
+# feeds, its cursor at `at`: what a test starts from.
+#
+# - `path`: the file's path.
+# - `text`: the text, lines ending with line feeds.
+# - `at`: the cursor, at a grapheme boundary of `text`.
+function of_text(path: str, text: str, at: document.Pos) -> Buffer
+    format = disk.Format(encoding: "UTF-8", bom: false, ending: "\n", chosen: "new file", confidence: 1.0)
+    return Buffer(
+        path: path,
+        doc: document.from_text(text),
+        format: format,
+        cursor: at,
+        goal: at.col,
+        top: 0,
+        left: 0,
+        history: undo.new_history(10),
+        saved: 0,
+        known: [],
+        on_disk: false,
+        unreadable: fail(code: "not_found", msg: "a new file"),
+        rereads: []
+    )
+
+# Whether `b` differs from what its file held at the last save or load.
+#
+# - `b`: the buffer.
+function is_modified(b: Buffer lent) -> bool
+    return undo.serial_of(b.history) != b.saved
+
+# The text of `b`, each line ending with a line feed.
+#
+# - `b`: the buffer.
+function text_of(b: Buffer lent) -> str
+    return document.text_of(b.doc)
+
+# Records that `b` differs from its file whatever its history says: its
+# save encoding changed, or a change on disk was refused, so its file's
+# bytes are not what a save would write.
+#
+# - `b`: the buffer.
+function mark_differs(@b: Buffer)
+    b.saved @ DIFFERS
+
+# Records that `b`'s text is now what its file holds: after a save, which
+# wrote `written`, or a reload, which read it.
+#
+# - `b`: the buffer.
+# - `written`: the file's bytes now.
+function mark_saved(@b: Buffer, written: [u8])
+    undo.seal(@b.history)
+    b.saved @ undo.serial_of(b.history)
+    b.known @ written
+    b.on_disk @ true

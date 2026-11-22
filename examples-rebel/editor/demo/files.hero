@@ -1,0 +1,106 @@
+# The files the demo edits, written fresh under `build/editor-demo/` in the
+# encodings a person meets: notes in UTF-8 with a letter written with a
+# combining accent, a flag, a family of joined emoji and Japanese; a price
+# list from an old Windows machine in windows-1252 with CRLF breaks; a
+# Japanese note in Shift_JIS; a greeting in UTF-16LE with its byte order
+# mark; and the editor's settings file. The demo removes the folder when it
+# ends.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/unicode
+use <rebel>/unicode/encodings
+
+# The folder the demo works in, under the working folder.
+constant FOLDER: str
+    "build/editor-demo"
+
+# The path of the demo's file `name`.
+#
+# - `name`: the file's name.
+function path_of(name: str) -> str
+    return FOLDER + "/" + name
+
+# The text of the notes: `café` with its accent written as a combining mark,
+# a flag, a family joined by zero-width joiners, Japanese, two mail
+# addresses, and a line indented by a tab.
+function notes_text() -> str
+    accent = unicode.from_code_points([0x65, 0x301]).default("e")
+    family = unicode.from_code_points([0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467]).default("")
+    lines = [
+        "Shopping and contacts"
+        f"caf{accent} crème: 2"
+        f"🇮🇹 pasta, {family} for three"
+        "日本語のメモ"
+        "ann@example.org, bob@test.org"
+        "\tthe end"
+        ""
+    ]
+    return lines.join("\n")
+
+# Writes the demo's folder afresh: the four files and the settings, and
+# answers their paths in the order they are opened.
+#
+# Fails as `fs` fails where the folder cannot be made or a file written.
+function write_all() -> [str]?
+    if fs.exists(FOLDER).default(false)
+        fs.remove_all(FOLDER)?
+
+    fs.make_dir_all(FOLDER)?
+    notes = path_of("notes.txt")
+    fs.write_bytes(notes, data: bytes.from_text(notes_text()))?
+    prices = path_of("prices.txt")
+    fs.write_bytes(prices, data: encodings.encode(s: "Prix: 12 €\r\nCrème brûlée\r\n", encoding: encodings.WINDOWS_1252)?)?
+    japanese = path_of("japanese.txt")
+    fs.write_bytes(japanese, data: encodings.encode(s: "日本語のテキストです。\n東京\n", encoding: encodings.SHIFT_JIS)?)?
+    greeting = path_of("greeting.txt")
+    utf16 = encodings.encode(s: "Hello\r\nWorld\r\n", encoding: encodings.UTF_16LE)?
+    fs.write_bytes(greeting, data: bytes.concat([encodings.bom_of(encodings.UTF_16LE)?, utf16]))?
+    fs.write_bytes(path_of("editor.toml"), data: bytes.from_text(settings_text()))?
+    return ok([prices, japanese, greeting, notes])
+
+# The settings file the demo reads: a tab width the environment will
+# overrule, two keys bound and one taken away, two colours.
+function settings_text() -> str
+    lines = [
+        "# The demo's editor settings."
+        "[text]"
+        "tab_width = 4"
+        ""
+        "[keys]"
+        "\"f2\" = \"save\""
+        "\"f3\" = \"find_next\""
+        "\"ctrl-l\" = \"none\""
+        ""
+        "[colors]"
+        "status = \"black on cyan\""
+        "found = \"black on bright_yellow\""
+        ""
+    ]
+    return lines.join("\n")
+
+# The bytes of the demo's file at `path` as `hexdump -C` shows them, each
+# line indented, or why they cannot be read.
+#
+# - `path`: the file's path.
+function dump_of(path: str) -> str
+    match fs.read_bytes(path)
+        .ok data =>
+            shown: [str] @= []
+
+            for line in bytes.lines(bytes.from_text(bytes.format_hex_dump(data)))
+                shown @ shown.push("    " + bytes.to_text_lossy(line))
+
+            return shown.join("\n")
+        .err x => return f"    {path} cannot be read: {x.msg}"
+
+# Removes the demo's folder.
+#
+# Fails as `fs.remove_all` fails.
+function remove_all() -> ()?
+    return fs.remove_all(FOLDER)
+
+test "notes_text: the accent is a mark of its own, and the text ends a line"
+    text = notes_text()
+    assert unicode.code_points(text.slice(from: 25, to: 28)) == [0x65, 0x301]
+    assert text[text.len() - 1] == '\n'

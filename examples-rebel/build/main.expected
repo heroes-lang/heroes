@@ -1,0 +1,268 @@
+== the project: a version file, a header and two sources of mill, and its build file
+--- build.toml
+    # A program in mill, a toy language, generated, compiled and linked by
+    # helpers that are the build program itself (`build --helper ...`).
+    default = ["all"]
+
+    [vars]
+    # The helpers' program: `build` where it is on PATH; the demo names
+    # itself on its command line, as `mill=<its path>`.
+    mill = "build"
+    strip = "--strip-comments"
+
+    [rules.generate]
+    command = "$mill --helper generate $in $out"
+    description = "generate $out"
+
+    [rules.compile]
+    command = "$mill --helper compile $in $out --depfile $out.d $strip"
+    description = "compile $out"
+    depfile = "$out.d"
+
+    [rules.link]
+    command = "$mill --helper link $out $in"
+    description = "link $out"
+
+    [targets."gen/version.h"]
+    rule = "generate"
+    inputs = ["src/version.txt"]
+
+    [targets."out/main.obj"]
+    rule = "compile"
+    inputs = ["src/main.src"]
+    # Made first, since the compile reads it; its depfile names it after.
+    after = ["gen/version.h"]
+
+    [targets."out/util.obj"]
+    rule = "compile"
+    inputs = ["src/util.src"]
+
+    [targets."out/app"]
+    rule = "link"
+    inputs = ["out/main.obj", "out/util.obj"]
+
+    [phony]
+    all = ["out/app"]
+--- src/main.src
+    #include "src/util.h"
+    #include "gen/version.h"
+    // the program's entry
+    print greeting
+    print version
+    #warning greeting is not localized yet
+
+== a first build, four steps at a time
+$ build -j 4
+[1/4] generate gen/version.h
+[2/4] compile out/util.obj
+[3/4] compile out/main.obj
+src/main.src:6: warning: greeting is not localized yet
+[4/4] link out/app
+build: 4 steps run, 0 targets up to date
+exit 0
+
+== again: every digest is the one the log holds
+$ build
+build: nothing to do, 4 targets up to date
+exit 0
+
+== src/util.h touched: its time moves, its bytes do not
+$ build --explain
+build: nothing to do, 4 targets up to date
+exit 0
+
+== src/util.src edited: only what is made from it runs
+$ build -j 4 --explain
+explain: out/util.obj: "src/util.src" changed
+[1/2] compile out/util.obj
+explain: out/app: "out/util.obj" changed
+[2/2] link out/app
+build: 2 steps run, 2 targets up to date
+exit 0
+
+== src/util.h edited: no build file names it, both depfiles do
+$ build -j 4 --explain
+explain: out/util.obj: "src/util.h", which its depfile named, changed
+[1/3] compile out/util.obj
+explain: out/main.obj: "src/util.h", which its depfile named, changed
+[2/3] compile out/main.obj
+src/main.src:6: warning: greeting is not localized yet
+explain: out/app: "out/main.obj" changed
+[3/3] link out/app
+build: 3 steps run, 1 target up to date
+exit 0
+
+== a comment of src/main.src changed: its object comes out the same bytes, so no link
+$ build --explain
+explain: out/main.obj: "src/main.src" changed
+[1/2] compile out/main.obj
+src/main.src:6: warning: greeting is not localized yet
+explain: out/app: up to date: what it is made from came out the same bytes
+build: 1 step run, 3 targets up to date
+exit 0
+
+== the version moved: the generated header, then what its depfile ties to it
+$ build --explain
+explain: gen/version.h: "src/version.txt" changed
+[1/3] generate gen/version.h
+explain: out/main.obj: "gen/version.h", which its depfile named, changed
+[2/3] compile out/main.obj
+src/main.src:6: warning: greeting is not localized yet
+explain: out/app: "out/main.obj" changed
+[3/3] link out/app
+build: 3 steps run, 1 target up to date
+exit 0
+
+== a dry run after an edit runs nothing; the build after it runs what it said
+$ build -n --explain
+explain: out/util.obj: "src/util.src" changed
+[1/2] compile out/util.obj
+explain: out/app: "out/util.obj" will be rebuilt first
+[2/2] link out/app
+build: 2 steps would run, 2 targets up to date (dry run)
+exit 0
+$ build
+[1/2] compile out/util.obj
+[2/2] link out/app
+build: 2 steps run, 2 targets up to date
+exit 0
+
+== the build file keeps comments now: the compile command changed
+$ build -j 4 --explain
+explain: out/util.obj: its command changed
+[1/3] compile out/util.obj
+explain: out/main.obj: its command changed
+[2/3] compile out/main.obj
+src/main.src:6: warning: greeting is not localized yet
+explain: out/app: "out/main.obj" changed
+[3/3] link out/app
+build: 3 steps run, 1 target up to date
+exit 0
+
+== out/app changed by hand: its bytes are no longer those its step left
+$ build --explain
+explain: out/app: it was changed since its step made it
+[1/1] link out/app
+build: 1 step run, 3 targets up to date
+exit 0
+
+== what the log learned from the depfiles
+$ build -t deps
+out/main.obj: 2 named by its depfile
+    src/util.h
+    gen/version.h
+out/util.obj: 1 named by its depfile
+    src/util.h
+exit 0
+
+== a second program whose source does not compile stops the build; the steps already started are told
+$ build -j 2
+[1/4] compile out/util.obj
+[2/4] compile out/tool.obj
+FAILED: out/tool.obj: exited with code 1
+src/tool.src:3: error: the tool's parser is not written yet
+[3/4] link out/app
+build: stopped, the step of out/tool.obj failed; 2 steps ran
+exit 1
+
+== the source fixed: only what did not finish runs
+$ build -j 2
+[1/2] compile out/tool.obj
+[2/2] link out/tool
+build: 2 steps run, 4 targets up to date
+exit 0
+
+== a step past its rule's time limit is ended
+$ build -f slow.toml
+[1/1] wait for out/never
+FAILED: out/never: ran past its time limit of 200ms and was ended
+build: stopped, the step of out/never failed; 0 steps ran
+exit 1
+
+== a cycle is refused before anything runs, told by its path
+--- cycle.toml
+    default = ["out/c.obj"]
+
+    [rules.link]
+    command = "build --helper link $out $in"
+
+    [targets."out/a.obj"]
+    rule = "link"
+    inputs = ["out/c.obj"]
+
+    [targets."out/b.obj"]
+    rule = "link"
+    inputs = ["out/a.obj"]
+
+    [targets."out/c.obj"]
+    rule = "link"
+    inputs = ["out/b.obj"]
+$ build -f cycle.toml
+build: cycle.toml: a cycle of dependencies: "out/a.obj" needs "out/c.obj" needs "out/b.obj" needs "out/a.obj"
+exit 1
+
+== a missing input is refused, with every target that needs it
+$ build -f missing.toml
+build: missing.toml: missing input "src/extra.src", needed by "out/extra.obj" and "out/more.obj", and no target makes it
+exit 1
+
+== while another build holds the folder, a second is refused
+$ build
+build: another build of this folder is running: it holds .build_lock
+exit 1
+
+== the commands, as a POSIX shell reads them back
+$ build -t commands
+build --helper generate src/version.txt gen/version.h
+build --helper compile src/util.src out/util.obj --depfile out/util.obj.d
+build --helper compile src/tool.src out/tool.obj --depfile out/tool.obj.d
+build --helper compile src/main.src out/main.obj --depfile out/main.obj.d
+build --helper link out/tool out/tool.obj out/util.obj
+build --helper link out/app out/main.obj out/util.obj
+exit 0
+
+== clean; then a dry run finds everything to do
+$ build --clean -v
+removed gen/version.h
+removed out/main.obj
+removed out/main.obj.d
+removed out/util.obj
+removed out/util.obj.d
+removed out/app
+removed out/tool.obj
+removed out/tool.obj.d
+removed out/tool
+build: 9 files removed
+exit 0
+$ build -n
+[1/6] generate gen/version.h
+[2/6] compile out/util.obj
+[3/6] compile out/tool.obj
+[4/6] compile out/main.obj
+[5/6] link out/tool
+[6/6] link out/app
+build: 6 steps would run, 0 targets up to date (dry run)
+exit 0
+
+== the account
+ 1  build -j 4                                4 ran, 0 up to date, exit 0
+ 2  build                                     0 ran, 4 up to date, exit 0
+ 3  build --explain                           0 ran, 4 up to date, exit 0
+ 4  build -j 4 --explain                      2 ran, 2 up to date, exit 0
+ 5  build -j 4 --explain                      3 ran, 1 up to date, exit 0
+ 6  build --explain                           1 ran, 3 up to date, exit 0
+ 7  build --explain                           3 ran, 1 up to date, exit 0
+ 8  build -n --explain                        2 would run, 2 up to date, exit 0
+ 9  build                                     2 ran, 2 up to date, exit 0
+10  build -j 4 --explain                      3 ran, 1 up to date, exit 0
+11  build --explain                           1 ran, 3 up to date, exit 0
+12  build -t deps                             ran nothing, exit 0
+13  build -j 2                                2 ran, 1 failed, exit 1
+14  build -j 2                                2 ran, 4 up to date, exit 0
+15  build -f slow.toml                        0 ran, 1 failed, exit 1
+16  build -f cycle.toml                       refused before any step, exit 1
+17  build -f missing.toml                     refused before any step, exit 1
+18  build                                     refused before any step, exit 1
+19  build -t commands                         ran nothing, exit 0
+20  build --clean -v                          9 removed, exit 0
+21  build -n                                  6 would run, 0 up to date, exit 0

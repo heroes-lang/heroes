@@ -1,0 +1,266 @@
+# How a document's amounts are computed: the rate of each line, from the
+# country its regime taxes in and the item's tax class; each line's net
+# amount; the VAT summed by rate; and the totals.
+#
+# The rates are the configuration's, never the program's, since a law
+# changes a rate on its own day: `[taxes.IT]` gives `books = "4"` and
+# `services = "22"`, each country the company sells in under its own
+# heading (`conf/settings`).
+#
+# The rounding follows the order a person checks an invoice in: a unit
+# price converted to the document's currency is rounded to its digits
+# first, each line's net is the quantity times that unit price rounded
+# again, and the VAT is taken once per rate on the sum of the lines at that
+# rate, never line by line, so that no total drifts by the cents of many
+# small roundings.
+
+use <rebel>/big
+
+use model/documents
+use model/parties
+use money/amount
+use tax/regime
+
+## Codes
+
+# The code of a rate the configuration does not give.
+constant NOT_FOUND: str
+    "not_found"
+
+## Rates
+
+# The rates of every country the company sells in: for each country, by
+# its ISO 3166 code, the rate in percent of each tax class.
+record RateTable
+    # The rates by country, then by tax class.
+    countries: {str: {str: big.Decimal}}
+
+# The rate of `tax_class` in `country`.
+#
+# - `table`: the rates.
+# - `country`: the country whose rates apply.
+# - `tax_class`: the item's tax class.
+#
+# Fails `not_found` where the table gives no rate for the class in that
+# country, naming both, so that the configuration can be completed.
+function rate_in(table: RateTable, country: str, tax_class: str) -> big.Decimal?
+    match table.countries[country]
+        .err _ => return fail(
+            code: NOT_FOUND,
+            msg: f"the configuration gives no rates for {country}: add [taxes.{country}]"
+        )
+        .ok classes =>
+            match classes[tax_class]
+                .ok r => return ok(r)
+                .err _ => return fail(
+                    code: NOT_FOUND,
+                    msg: f"the configuration gives no rate for {tax_class} in {country}: add {tax_class} under [taxes.{country}]"
+                )
+
+# The rate a line of `tax_class` is taxed at under `r`: the taxing
+# country's, or 0 where the regime charges no VAT.
+#
+# - `table`: the rates.
+# - `r`: the document's regime.
+# - `company`: the company.
+# - `customer`: the customer.
+# - `tax_class`: the item's tax class.
+#
+# Fails as `rate_in` fails.
+function rate_for(table: RateTable, r: regime.Regime, company: parties.Company, customer: parties.Customer, tax_class: str) -> big.Decimal?
+    country = regime.taxing_country(r, company: company, customer: customer)
+
+    if country == ""
+        return ok(amount.zero())
+    return rate_in(table, country: country, tax_class: tax_class)
+
+## Lines
+
+# The price of one unit of `item` in a document's currency, rounded to its
+# digits.
+#
+# - `price`: the price in the company's currency.
+# - `exchange_rate`: the units of the document's currency one unit of the
+#   company's buys.
+# - `digits`: the document's currency's digits.
+function converted(price: big.Decimal, exchange_rate: big.Decimal, digits: i64) -> big.Decimal
+    return amount.times(a: price, b: exchange_rate, digits: digits)
+
+# A line of a document, its net computed.
+#
+# - `position`: its place, from 1.
+# - `item`: the item, whose description, unit and class it takes.
+# - `quantity`: how many units.
+# - `unit_price`: one unit's price in the document's currency.
+# - `rate`: the rate it is taxed at.
+# - `digits`: the document's currency's digits.
+function line_of(position: i64, item: documents.Item, quantity: big.Decimal, unit_price: big.Decimal, rate: big.Decimal, digits: i64) -> documents.Line
+    return documents.Line(
+        position: position,
+        sku: item.sku,
+        description: item.description,
+        unit: item.unit,
+        quantity: quantity,
+        unit_price: unit_price,
+        net: amount.times(a: quantity, b: unit_price, digits: digits),
+        tax_class: item.tax_class,
+        rate: rate
+    )
+
+## Taxes and totals
+
+# The VAT of `lines` by rate, from the lowest rate: each rate's net amounts
+# summed and its tax taken once on the sum.
+#
+# - `lines`: the document's lines.
+# - `digits`: the currency's digits.
+function taxes_of(lines: [documents.Line], digits: i64) -> [documents.TaxRow]
+    rates: [big.Decimal] @= []
+
+    for l in lines
+        if !holds_rate(rates, rate: l.rate)
+            rates @ rates.push(l.rate)
+
+    rows: [documents.TaxRow] @= []
+
+    for r in lowest_first(rates)
+        nets: [big.Decimal] @= []
+
+        for l in lines
+            if amount.compare(a: l.rate, b: r) == 0
+                nets @ nets.push(l.net)
+
+        net = amount.rounded(amount.total_of(nets), digits: digits)
+        rows @ rows.push(
+            documents.TaxRow(rate: r, net: net, tax: amount.percent_of(base: net, rate: r, digits: digits))
+        )
+
+    return rows
+
+# Whether `rates` holds a rate equal to `rate` in value.
+#
+# - `rates`: the rates seen.
+# - `rate`: the rate asked about.
+function holds_rate(rates: [big.Decimal], rate: big.Decimal) -> bool
+    for r in rates
+        if amount.compare(a: r, b: rate) == 0
+            return true
+
+    return false
+
+# `rates` in increasing order, by an insertion sort: a document holds a
+# handful of rates.
+#
+# - `rates`: the rates, each once.
+function lowest_first(rates: [big.Decimal]) -> [big.Decimal]
+    sorted: [big.Decimal] @= []
+
+    for r in rates
+        placed: [big.Decimal] @= []
+        put @= false
+
+        for s in sorted
+            if !put && amount.compare(a: r, b: s) < 0
+                placed @ placed.push(r)
+                put @ true
+            placed @ placed.push(s)
+
+        if !put
+            placed @ placed.push(r)
+        sorted @ placed
+
+    return sorted
+
+# The totals of a document: its net, its tax and its gross amount.
+record Totals
+    # The sum of the net amounts.
+    net: big.Decimal
+    # The sum of the taxes.
+    tax: big.Decimal
+    # The two together.
+    gross: big.Decimal
+
+# The totals of the rows of `taxes`, rounded to `digits`.
+#
+# - `taxes`: a document's taxes by rate, which cover every line.
+# - `digits`: the currency's digits.
+function totals_of(taxes: [documents.TaxRow], digits: i64) -> Totals
+    nets: [big.Decimal] @= []
+    tax_amounts: [big.Decimal] @= []
+
+    for t in taxes
+        nets @ nets.push(t.net)
+        tax_amounts @ tax_amounts.push(t.tax)
+
+    net = amount.rounded(amount.total_of(nets), digits: digits)
+    tax = amount.rounded(amount.total_of(tax_amounts), digits: digits)
+    return Totals(net: net, tax: tax, gross: amount.plus(a: net, b: tax))
+
+## Tests
+
+# An item of the tests.
+#
+# - `sku`: its key.
+# - `price`: its price as text.
+# - `tax_class`: its class.
+function item_of(sku: str, price: str, tax_class: str) -> documents.Item
+    return documents.Item(
+        sku: sku,
+        description: sku,
+        unit: "pc",
+        price: big.parse_decimal(price).must(),
+        tax_class: tax_class
+    )
+
+# The rates of the tests: Italy's and France's, from Your Europe's table
+# (last checked by its editors 13 July 2026, read 2026-11-22).
+function test_rates() -> RateTable
+    return RateTable(
+        countries: {"IT": {"books": big.parse_decimal("4").must(), "services": big.parse_decimal("22").must()}, "FR": {"books": big.parse_decimal("5.5").must(), "services": big.parse_decimal("20").must()}}
+    )
+
+test "rate_in: a class in a country, and the two ways it is missing"
+    t = test_rates()
+    assert amount.short(rate_in(t, country: "FR", tax_class: "books").must()) == "5.5"
+
+    match rate_in(t, country: "DE", tax_class: "books")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND && e.msg == "the configuration gives no rates for DE: add [taxes.DE]"
+
+    assert rate_in(t, country: "IT", tax_class: "food").is_err()
+
+test "taxes_of: two rates, the tax taken once on each sum"
+    lines = [
+        line_of(position: 1, item: item_of(sku: "A", price: "0.10", tax_class: "services"), quantity: amount.of_int(1), unit_price: big.parse_decimal("0.10").must(), rate: amount.of_int(22), digits: 2)
+        line_of(position: 2, item: item_of(sku: "B", price: "0.10", tax_class: "services"), quantity: amount.of_int(1), unit_price: big.parse_decimal("0.10").must(), rate: amount.of_int(22), digits: 2)
+        line_of(position: 3, item: item_of(sku: "C", price: "19.90", tax_class: "books"), quantity: amount.of_int(3), unit_price: big.parse_decimal("19.90").must(), rate: amount.of_int(4), digits: 2)
+    ]
+    rows = taxes_of(lines, digits: 2)
+    assert rows.len() == 2
+    assert amount.short(rows[0].rate) == "4" && amount.plain(rows[0].net, digits: 2) == "59.70" && amount.plain(rows[0].tax, digits: 2) == "2.39"
+    assert amount.plain(rows[1].net, digits: 2) == "0.20" && amount.plain(rows[1].tax, digits: 2) == "0.04"
+    t = totals_of(rows, digits: 2)
+    assert amount.plain(t.net, digits: 2) == "59.90" && amount.plain(t.tax, digits: 2) == "2.43" && amount.plain(t.gross, digits: 2) == "62.33"
+
+test "taxes_of: no line, no row; one rate of zero"
+    assert taxes_of([], digits: 2).len() == 0
+    l = line_of(
+        position: 1,
+        item: item_of(sku: "A", price: "5", tax_class: "books"),
+        quantity: big.parse_decimal("2.5").must(),
+        unit_price: big.parse_decimal("5.00").must(),
+        rate: amount.zero(),
+        digits: 2
+    )
+    rows = taxes_of([l], digits: 2)
+    assert rows.len() == 1 && amount.plain(rows[0].net, digits: 2) == "12.50" && amount.is_zero(rows[0].tax)
+
+test "lowest_first: rates sorted by value whatever their scales"
+    sorted = lowest_first(
+        [amount.of_int(22), big.parse_decimal("5.5").must(), amount.zero(), big.parse_decimal("10.00").must()]
+    )
+    assert sorted.map(amount.short) == ["0", "5.5", "10", "22"]
+
+test "converted: a price in euro in dollars, rounded to the cent"
+    assert amount.plain(converted(price: big.parse_decimal("39.90").must(), exchange_rate: big.parse_decimal("1.0850").must(), digits: 2), digits: 2) == "43.29"
+    assert amount.plain(converted(price: big.parse_decimal("39.90").must(), exchange_rate: amount.of_int(1), digits: 2), digits: 2) == "39.90"

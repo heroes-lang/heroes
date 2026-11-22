@@ -1,0 +1,305 @@
+# The demo's helper programs, which a demo build runs as its steps: a
+# compiler, a linker and a generator for `mill`, a toy language of lines.
+# They are this program itself, run as `build --helper <name> ...`, so the
+# demo's steps are the same programs on every system and the demo needs no
+# compiler of the system's.
+#
+# A mill source is lines. `#include "path"` puts the lines of another
+# source in its place, the path read from the working folder, as a C
+# compiler's `-I.` reads it; `#warning text` is told on the error stream and
+# the compile goes on; `#error text` is told and the compile fails; a line
+# opening with `//` is a comment, dropped where `--strip-comments` asks.
+# Every other line is the program's.
+#
+#     build --helper compile SRC OBJ [--depfile FILE] [--strip-comments]
+#     build --helper link OUT OBJ...
+#     build --helper generate VERSION_FILE HEADER
+#     build --helper wait MILLISECONDS
+#
+# `compile` writes its depfile as a C compiler's `-MD -MF` does: the object,
+# then the source and every file it included. An object and a program are
+# text that open with a line naming their kind, so `link` refuses what no
+# `compile` made.
+
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/regex
+use <rebel>/strings
+use <rebel>/time
+
+use state/depfile
+
+# The first line of an object.
+constant OBJECT: str
+    "mill object 1"
+
+# The first line of a linked program.
+constant PROGRAM: str
+    "mill program 1"
+
+# The deepest one source may include another.
+constant MOST_DEPTH: i64
+    32
+
+# A directive's line: its word, then its text.
+constant DIRECTIVE: str
+    "^#(include|warning|error)(?:\\s+(.*))?$"
+
+# A line of a source, with where it stands.
+record Line
+    # The source it is in.
+    file: str
+    # Its number there, from 1.
+    number: i64
+    # Its text.
+    text: str
+
+# What a compile collects as it reads.
+record Reading
+    # The program's lines, comments dropped where asked.
+    kept: [str]
+    # Every file read, the source first, each once.
+    files: [str]
+    # The sources being read, the outer first, so an include of one of them
+    # is told.
+    open: [str]
+    # Whether comments are dropped.
+    strip: bool
+    # The directive pattern, compiled.
+    re: regex.Regex
+
+# Writes `line` on the error stream, where a step's caught output takes it.
+#
+# - `line`: the line.
+function tell(line: str)
+    _ = io.write_line(io.stderr(), line: line).is_err()
+
+# The helper `arguments[0]` run on the rest, and its exit code.
+#
+# - `arguments`: the words after `--helper`.
+function run(arguments: [str]) -> i64
+    if arguments.len() == 0
+        tell("mill: name a helper: compile, link or generate")
+        return 2
+
+    rest = arguments.slice(from: 1, to: arguments.len())
+
+    match arguments[0]
+        "compile"  => return compile(rest)
+        "link"     => return link(rest)
+        "generate" => return generate(rest)
+        "wait"     => return wait(rest)
+        _ =>
+            tell(f"mill: no helper \"{arguments[0]}\": compile, link, generate or wait")
+            return 2
+
+# Reads `file` into `r`, its includes in their places.
+#
+# - `r`: what the compile collects, which this adds to.
+# - `file`: the source, read from the working folder.
+# - `from`: where it was included, for the message; "" for the source
+#   itself.
+#
+# Fails `invalid` with a line ready to tell, `file:N: error: ...`, where a
+# source is not there, includes itself, goes too deep, or says `#error`.
+function read_source(@r: Reading, file: str, from: str) -> ()?
+    for name in r.open
+        if name == file
+            return fail(code: "invalid", msg: f"{from}: error: \"{file}\" includes itself")
+
+    if r.open.len() >= MOST_DEPTH
+        return fail(code: "invalid", msg: f"{from}: error: includes nested deeper than {MOST_DEPTH}")
+
+    text = match read_file(file)
+        .ok t => t
+        .err e =>
+            where = if from == ""
+                file
+            else
+                from
+
+            return fail(code: "invalid", msg: f"{where}: error: cannot read \"{file}\": {e.msg}")
+
+    add_file(@r, file: file)
+
+    r.open @ r.open.push(file)
+    lines = strings.lines(text)
+
+    for i in range(from: 0, to: lines.len())
+        here = f"{file}:{i + 1}"
+        line = strings.trim_end(lines[i])
+
+        match regex.full_match(line, r.re)
+            .ok m =>
+                word = regex.group(m, 1).default("")
+                said = strings.trim(regex.group(m, 2).default(""))
+
+                match word
+                    "warning" => tell(f"{here}: warning: {said}")
+                    "error"   => return fail(code: "invalid", msg: f"{here}: error: {said}")
+                    _ =>
+                        name = strings.trim_suffix(s: strings.trim_prefix(s: said, prefix: "\""), suffix: "\"")
+
+                        if name == "" || name == said
+                            return fail(code: "invalid", msg: f"{here}: error: #include takes a path in quotes")
+
+                        read_source(@r, file: name, from: here)?
+            .err _ =>
+                if !(r.strip && strings.has_prefix(s: strings.trim_start(line), prefix: "//"))
+                    r.kept @ r.kept.push(line)
+
+    r.open @ r.open.slice(from: 0, to: r.open.len() - 1)
+    return ok()
+
+# Adds `file` to the files read, once.
+#
+# - `r`: what the compile collects.
+# - `file`: a file read.
+function add_file(@r: Reading, file: str)
+    for name in r.files
+        if name == file
+            return
+
+    r.files @ r.files.push(file)
+
+# The helper `compile`, and its exit code.
+#
+# - `arguments`: `SRC OBJ [--depfile FILE] [--strip-comments]`.
+function compile(arguments: [str]) -> i64
+    positional: [str] @= []
+    depfile_path @= ""
+    strip @= false
+    i @= 0
+
+    while i < arguments.len()
+        word = arguments[i]
+
+        if word == "--strip-comments"
+            strip @ true
+        else if word == "--depfile" && i + 1 < arguments.len()
+            depfile_path @ arguments[i + 1]
+            i @ i + 1
+        else
+            positional @ positional.push(word)
+
+        i @ i + 1
+
+    if positional.len() != 2
+        tell("mill compile: give SRC OBJ [--depfile FILE] [--strip-comments]")
+        return 2
+
+    source = positional[0]
+    object = positional[1]
+
+    # `DIRECTIVE` is a constant this module's tests compile, so `must` holds.
+    r @= Reading(kept: [], files: [], open: [], strip: strip, re: regex.compile(DIRECTIVE).must())
+
+    match read_source(@r, file: source, from: "")
+        .ok _ => _ = 0
+        .err e =>
+            tell(e.msg)
+            return 1
+
+    body = [OBJECT, f"source {source}"]
+    written = body.join("\n") + "\n" + r.kept.join("\n") + "\n"
+
+    if write_file(path: object, text: written).is_err()
+        tell(f"mill compile: cannot write \"{object}\"")
+        return 1
+
+    if depfile_path != ""
+        if write_file(path: depfile_path, text: depfile.format(target: object, inputs: r.files)).is_err()
+            tell(f"mill compile: cannot write \"{depfile_path}\"")
+            return 1
+
+    return 0
+
+# The helper `link`, and its exit code.
+#
+# - `arguments`: `OUT OBJ...`.
+function link(arguments: [str]) -> i64
+    if arguments.len() < 2
+        tell("mill link: give OUT and one OBJ or more")
+        return 2
+
+    out = arguments[0]
+    parts: [str] @= [PROGRAM]
+
+    for object in arguments.slice(from: 1, to: arguments.len())
+        text = match read_file(object)
+            .ok t => t
+            .err e =>
+                tell(f"mill link: cannot read \"{object}\": {e.msg}")
+                return 1
+
+        lines = strings.lines(text)
+
+        if lines.len() == 0 || lines[0] != OBJECT
+            tell(f"mill link: \"{object}\" is no mill object")
+            return 1
+
+        parts @ parts.push(f"== {object}")
+
+        for line in lines.slice(from: 1, to: lines.len())
+            parts @ parts.push(line)
+
+    if write_file(path: out, text: parts.join("\n") + "\n").is_err()
+        tell(f"mill link: cannot write \"{out}\"")
+        return 1
+
+    return 0
+
+# The helper `generate`, and its exit code: a header holding the version a
+# file names.
+#
+# - `arguments`: `VERSION_FILE HEADER`.
+function generate(arguments: [str]) -> i64
+    if arguments.len() != 2
+        tell("mill generate: give VERSION_FILE HEADER")
+        return 2
+
+    version = match read_file(arguments[0])
+        .ok t => strings.trim(t)
+        .err e =>
+            tell(f"mill generate: cannot read \"{arguments[0]}\": {e.msg}")
+            return 1
+
+    if version == ""
+        tell(f"{arguments[0]}:1: error: no version")
+        return 1
+
+    if write_file(path: arguments[1], text: f"// made by mill generate from {arguments[0]}\nversion {version}\n").is_err()
+        tell(f"mill generate: cannot write \"{arguments[1]}\"")
+        return 1
+
+    return 0
+
+# The helper `wait`, and its exit code: it sleeps, then ends, as a step that
+# takes its time does; the demo gives it a time limit it will not meet.
+#
+# - `arguments`: `MILLISECONDS`, from 0.
+function wait(arguments: [str]) -> i64
+    if arguments.len() != 1
+        tell("mill wait: give MILLISECONDS")
+        return 2
+
+    n = numbers.parse_int(arguments[0]).default(-1)
+
+    match time.milliseconds(n)
+        .ok d =>
+            if n >= 0
+                time.sleep(d)
+                return 0
+        .err _ => _ = 0
+
+    tell(f"mill wait: \"{arguments[0]}\" is no count of milliseconds")
+    return 2
+
+test "DIRECTIVE: an include, a warning with its text, an error alone, and a plain line"
+    re = regex.compile(DIRECTIVE).must()
+    m = regex.full_match("#include \"src/a.h\"", re).must()
+    assert regex.group(m, 1).must() == "include" && regex.group(m, 2).must() == "\"src/a.h\""
+    assert regex.group(regex.full_match("#warning slow path", re).must(), 2).must() == "slow path"
+    assert regex.group(regex.full_match("#error", re).must(), 2).is_err()
+    assert regex.full_match("print 1", re).is_err()
+    assert regex.full_match("#define x", re).is_err()

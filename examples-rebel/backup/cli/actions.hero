@@ -1,0 +1,239 @@
+# What the commands that make and fill a repository do with what their
+# arguments found (`init`, `run`, `snapshots`, `restore`; the rest are
+# `cli/upkeep`'s): the storage named, the password found, the repository
+# opened, the engine asked, the report printed, the repository closed
+# whatever happened. A command answers `()?`; `cli/commands` turns a
+# failure into its message on the standard error and exit code 1.
+#
+# A new repository's master key, salt, name and chunker seed are drawn
+# here from the system's generator (`os.random_bytes`), and its password's
+# cost calibrated on this machine; nothing else in the program draws a
+# secret.
+
+use <rebel>/bytes
+use <rebel>/flags
+use <rebel>/numbers
+use <rebel>/os
+use <rebel>/s3
+use <rebel>/time
+
+use chunking/gear
+use cli/report
+use cli/secrets
+use engine/archiver
+use engine/restorer
+use repo/making
+use repo/records
+use repo/repository
+use repo/settings
+use store/location
+use store/storage
+use vault/kdf
+use vault/keyfile
+use vault/master
+
+## Codes
+
+# The code of an argument the command cannot use.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long the password's derivation is calibrated to take.
+constant DERIVE_MS: i64
+    500
+
+# The most attempts of one S3 request.
+constant ATTEMPTS: i64
+    5
+
+## Opening
+
+# The storage `text` names: a folder, or a bucket signed with the keys
+# the environment or the shared AWS files hold.
+#
+# - `text`: a location, as `location.parse_location` reads it.
+#
+# Fails as the location, the credentials and the storage fail.
+function storage_for(text: str) -> storage.Storage?
+    l = location.parse_location(text)?
+    none = s3.Credentials(access_key_id: "", secret_access_key: "", session_token: "")
+
+    return match l
+        .folder _ => storage.storage_of(l, credentials: none, region: "", attempts: ATTEMPTS)
+        .bucket _ =>
+            region = os.env("AWS_REGION").default(os.env("AWS_DEFAULT_REGION").default(""))
+            storage.storage_of(l, credentials: s3.default_credentials()?, region: region, attempts: ATTEMPTS)
+
+# The repository the arguments name, opened with the password found.
+#
+# - `f`: the command's arguments.
+#
+# The repository is the caller's to close. Fails as the storage, the
+# password and `repository.open` fail.
+function opened(f: flags.Found) -> repository.Repository?
+    store = storage_for(repo_of(f)?)?
+    pw = secrets.password(flags.value_of(f, "password-file").default(""), confirm: false)?
+    return repository.open(store, password: pw)
+
+# The repository's location the arguments give.
+#
+# - `f`: the command's arguments.
+#
+# Fails `invalid` where neither `--repo` nor `BACKUP_REPOSITORY` gives one.
+function repo_of(f: flags.Found) -> str?
+    return match flags.value_of(f, "repo")
+        .ok v  => ok(v)
+        .err _ => fail(code: INVALID, msg: "no repository named: give --repo, or set BACKUP_REPOSITORY")
+
+# Prints `lines`, one each.
+#
+# - `lines`: the lines.
+function say(lines: [str])
+    for line in lines
+        print(line)
+
+## Commands
+
+# `init`: a new repository, its first password asked twice.
+#
+# - `f`: the arguments.
+#
+# Fails as the storage, the password and `making.init` fail, `invalid`
+# for a size that is not one.
+function init(f: flags.Found) -> ()?
+    store = storage_for(repo_of(f)?)?
+    pw = secrets.password(flags.value_of(f, "password-file").default(""), confirm: true)?
+    average = parse_size(flags.value_of(f, "chunk-size").default("1 MiB"))?
+    pack_bytes = parse_size(flags.value_of(f, "pack-size").default("16 MiB"))?
+    bits = log2_of(average)
+    drawn = os.random_bytes(master.MASTER_BYTES + keyfile.SALT_BYTES + 24)?
+    config = settings.Settings(
+        version: settings.VERSION,
+        id: bytes.format_hex(drawn.slice(from: 80, to: 96)),
+        seed: bytes.decode_u64_le(drawn, at: 96)?,
+        cutting: gear.Params(min: (1 << bits) / 2, bits: bits, max: (1 << bits) * 8),
+        pack_bytes: pack_bytes,
+        level: flags.int_of(f, "level").default(3)
+    )
+    setup = making.Setup(
+        material: drawn.slice(from: 0, to: 64),
+        salt: drawn.slice(from: 64, to: 80),
+        params: kdf.calibrated(time.milliseconds(DERIVE_MS)?),
+        config: config
+    )
+    r @= making.init(store, password: pw, setup: setup)?
+    say(
+        [f"made a repository in {storage.describe(r.store)}", f"  chunks of 2^{bits} bytes on average, packs of {report.size(pack_bytes)}"]
+    )
+    repository.close(@r)
+    return ok()
+
+# The bytes `text` writes, `16 MiB` or `1048576`, counted in powers of
+# 1024.
+#
+# - `text`: a size.
+#
+# Fails `invalid` where it is not one, or not above zero.
+function parse_size(text: str) -> i64?
+    return match numbers.parse_size(text, units: .binary)
+        .ok n =>
+            if n > 0
+                ok(n)
+            else
+                fail(code: INVALID, msg: f"a size is above zero, and \"{text}\" is not")
+        .err _ => fail(code: INVALID, msg: f"\"{text}\" is not a size: write 16 MiB, or a number of bytes")
+
+# The largest power of two at or below `n`, as its exponent, held to 6 to
+# 30, the bounds `gear.checked` keeps.
+#
+# - `n`: a size in bytes.
+function log2_of(n: i64) -> i64
+    bits @= 6
+
+    while bits < 30 && 1 << bits + 1 <= n
+        bits @ bits + 1
+
+    return bits
+
+# `run`: the folder backed up into a new snapshot.
+#
+# - `f`: the arguments.
+#
+# Fails as `opened` and `archiver.run` fail.
+function backup(f: flags.Found) -> ()?
+    r @= opened(f)?
+    done = backup_with(@r, f: f)
+    repository.close(@r)
+    return done
+
+# The body of `run`, the repository opened.
+#
+# - `r`: the repository.
+# - `f`: the arguments.
+function backup_with(@r: repository.Repository, f: flags.Found) -> ()?
+    host = match flags.value_of(f, "host")
+        .ok h  => h
+        .err _ => os.host_name().default("localhost")
+
+    o = archiver.Options(
+        source: flags.value_of(f, "FOLDER")?,
+        host: host,
+        tags: flags.values_of(f, "tag"),
+        taken: time.now()?,
+        shown: !flags.is_on(f, "quiet")
+    )
+    done = archiver.run(@r, o: o)?
+    say(report.run_lines(done.saved, c: r.counts, parent: short_of(done.saved.parent)))
+
+    for p in done.skipped
+        print(f"  left out, neither a file, a folder nor a link: {p}")
+
+    return ok()
+
+# The first eight digits of a snapshot's name, "" for none.
+#
+# - `id`: the name.
+function short_of(id: str) -> str
+    if id.len() <= 8
+        return id
+    return id.slice(from: 0, to: 8)
+
+# `snapshots`: the repository's snapshots, newest first.
+#
+# - `f`: the arguments.
+function snapshots(f: flags.Found) -> ()?
+    r @= opened(f)?
+    found = records.list_snapshots(@r)
+    repository.close(@r)
+    print(report.snapshot_table(found?))
+    return ok()
+
+# `restore`: a snapshot, or one of its paths, written into a folder.
+#
+# - `f`: the arguments.
+function restore(f: flags.Found) -> ()?
+    r @= opened(f)?
+    done = restore_with(@r, f: f)
+    repository.close(@r)
+    return done
+
+# The body of `restore`, the repository opened.
+#
+# - `r`: the repository.
+# - `f`: the arguments.
+function restore_with(@r: repository.Repository, f: flags.Found) -> ()?
+    s = records.find_snapshot(@r, wanted: flags.value_of(f, "SNAPSHOT")?)?
+    done = restorer.restore(@r, s: s, target: flags.value_of(f, "target")?, only: flags.value_of(f, "path").default(""), shown: !flags.is_on(f, "quiet"))?
+    say(report.restore_lines(done, c: r.counts))
+    return ok()
+
+test "log2_of: a power of two, one between, and the bounds"
+    assert log2_of(1_048_576) == 20
+    assert log2_of(1_500_000) == 20
+    assert log2_of(10) == 6
+    assert log2_of(1 << 40) == 30
+
+test "short_of: eight digits of a long name, none of none"
+    assert short_of("0123456789") == "01234567" && short_of("") == ""

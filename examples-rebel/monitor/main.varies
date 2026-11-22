@@ -1,0 +1,4 @@
+# The transcript's one line a machine decides: the thermometer's, on its serial port.
+line: serial: the thermometer on a pseudo-terminal at 9600 baud answered 22 queries and left 7 unanswered, 0 refused
+or: serial: skipped: no pseudo-terminal on this system (unsupported); the thermometer's 22 readings handed in
+why: the thermometer stands on a pseudo-terminal pair, which `serial.open_pseudo` makes on Darwin and Linux and refuses `unsupported` on Windows; there the demo hands the monitor the readings the thermometer would have answered, and its silence once they are spent, so every other line is the same

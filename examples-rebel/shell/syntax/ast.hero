@@ -1,0 +1,310 @@
+# The shell's syntax tree: what the parser makes of a script and the executor
+# walks. A script is a list of `Item`s, each an and-or list of pipelines run in
+# the foreground or with `&` in the background; a pipeline is a list of
+# commands joined by `|`; a command is a simple command or one of the compound
+# forms of POSIX's grammar (XCU 2.9). A word stays a list of parts until it is
+# expanded, because quoting decides, part by part, what field splitting and
+# pathname expansion may touch.
+#
+# Every node keeps the `Place` it began at, so a message about it, at parse
+# time or when it runs, names the line and the column of its own source.
+
+# Where a node begins: which source text and the byte offset in it.
+record Place
+    # The source's number in the shell's list of sources (`exec/state`).
+    source: i64
+    # The byte offset of the node's first character in that source.
+    offset: i64
+
+# One piece of a word as it was written.
+variant Part
+    # Text written bare: its glob characters are live and it is never split.
+    literal
+        # The text, with every backslash escape already taken out.
+        text: str
+    # Text that was quoted, by `'...'`, by a backslash, or inside `"..."`.
+    quoted
+        # The text, exactly as it stands for itself.
+        text: str
+    # `$name`, `${name}` or `${name<op>word}`: a parameter's value.
+    param
+        # The parameter's name: a variable, a digit, or one of `?#$!@*-0`.
+        name: str
+        # The operator after the name inside braces: "" for none, else one of
+        # `:-` `-` `:=` `=` `:?` `?` `:+` `+` `%` `%%` `#` `##`.
+        op: str
+        # The word after the operator, unexpanded; empty for none.
+        arg: [Part]
+        # Whether it stood inside double quotes, so its value is never split
+        # or globbed.
+        in_quotes: bool
+        # Where the `$` stood.
+        at: Place
+    # `${#name}`: the length of a parameter's value in characters.
+    length
+        # The parameter's name.
+        name: str
+        # Whether it stood inside double quotes.
+        in_quotes: bool
+        # Where the `$` stood.
+        at: Place
+    # `$(...)` or a backquoted command: what the commands write, its final
+    # line feeds removed.
+    command
+        # The commands' source text, between the brackets.
+        text: str
+        # The commands, parsed from `text` when the word was.
+        body: [Item]
+        # Whether it stood inside double quotes.
+        in_quotes: bool
+        # Where the `$` or the backquote stood.
+        at: Place
+    # `$((...))`: an arithmetic expression, expanded and then computed.
+    arith
+        # The expression's parts, expanded before it is read.
+        parts: [Part]
+        # Whether it stood inside double quotes.
+        in_quotes: bool
+        # Where the `$` stood.
+        at: Place
+    # `~` or `~user` at the start of a word: a home folder.
+    tilde
+        # The user named, "" for the shell's own `HOME`.
+        user: str
+
+# A word as written: its parts in order.
+record Word
+    # The parts; an empty word written `""` holds one empty quoted part.
+    parts: [Part]
+    # Where the word begins.
+    at: Place
+
+# `name=value` before a command's name, or alone.
+record Assignment
+    # The variable's name.
+    name: str
+    # The value, a word expanded without splitting or globbing.
+    value: Word
+    # Where the name begins.
+    at: Place
+
+# What a redirection does with its descriptor.
+variant RedirectOp
+    # `<`: reads a file.
+    input
+    # `>` or `>|`: writes a file from its start, made or emptied.
+    output
+    # `>>`: writes at a file's end, made where it is not there.
+    append
+    # `<>`: reads and writes a file that is there.
+    read_write
+    # `>&`: writes where another descriptor writes, or closes with `-`.
+    dup_output
+    # `<&`: reads where another descriptor reads, or closes with `-`.
+    dup_input
+    # `<<` or `<<-`: reads a here-document's body.
+    here_doc
+
+# One redirection of a command.
+record Redirect
+    # The descriptor redirected: 0 for input, 1 for output, 2 for errors.
+    fd: i64
+    # What is done to it.
+    op: RedirectOp
+    # The file's name or the other descriptor; unused for a here-document.
+    target: Word
+    # The here-document's number in the shell's list of bodies, -1 for none.
+    heredoc: i64
+    # Where the operator stood.
+    at: Place
+
+# A here-document's body, as its delimiter says to read it.
+record HereDoc
+    # The body's parts: expanded where the delimiter was bare, one quoted
+    # part where it was quoted.
+    parts: [Part]
+
+# An `if` or `elif` and the commands it guards.
+record Arm
+    # The condition, whose last status decides.
+    condition: [Item]
+    # What runs where the condition's status is 0.
+    body: [Item]
+
+# One arm of a `case`: its patterns and its commands.
+record CaseArm
+    # The patterns, any of which selects the arm.
+    patterns: [Word]
+    # What runs where one matches.
+    body: [Item]
+
+# One command of a pipeline.
+variant Command
+    # Assignments, words and redirections: a builtin, a function or a program.
+    simple
+        # The assignments before the first word.
+        assignments: [Assignment]
+        # The command's name and its arguments.
+        words: [Word]
+        # Its redirections, in the order written.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `{ list; }`: commands run in this shell.
+    group
+        # The commands.
+        body: [Item]
+        # Redirections after the closing brace.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `( list )`: commands run in a copy of this shell, whose changes end
+    # with it.
+    subshell
+        # The commands.
+        body: [Item]
+        # Redirections after the closing parenthesis.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `if ...; then ...; elif ...; else ...; fi`.
+    if_then
+        # The `if` and each `elif`, in order.
+        arms: [Arm]
+        # The `else` part, empty for none.
+        otherwise: [Item]
+        # Redirections after `fi`.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `while` or `until`, its condition and its body.
+    repeat
+        # The condition, run before each pass.
+        condition: [Item]
+        # The body.
+        body: [Item]
+        # Whether it is `until`, which goes on while the condition fails.
+        until: bool
+        # Redirections after `done`.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `for name in words; do ...; done`.
+    for_each
+        # The variable each word is put in.
+        name: str
+        # The words, expanded once before the first pass.
+        words: [Word]
+        # Whether `in` was left out, so the positional parameters are walked.
+        over_args: bool
+        # The body.
+        body: [Item]
+        # Redirections after `done`.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `case word in pattern) ...;; esac`.
+    case_of
+        # The word matched.
+        subject: Word
+        # The arms, tried in order.
+        arms: [CaseArm]
+        # Redirections after `esac`.
+        redirects: [Redirect]
+        # Where it begins.
+        at: Place
+    # `name() compound-command`: a function defined.
+    define
+        # The function's name.
+        name: str
+        # Its body, one compound command.
+        body: [Command]
+        # The definition's source text, so a background shell can define it
+        # again.
+        text: str
+        # Where it begins.
+        at: Place
+
+# Commands joined by `|`, the output of each the input of the next.
+record Pipeline
+    # The commands, at least one.
+    stages: [Command]
+    # Whether it began with `!`, which inverts its status.
+    negated: bool
+    # Where it begins.
+    at: Place
+
+# A pipeline after `&&` or `||`.
+record Link
+    # Whether it is `&&`, run after a success; else `||`, after a failure.
+    after_success: bool
+    # The pipeline.
+    pipeline: Pipeline
+
+# Pipelines joined by `&&` and `||`, left to right.
+record AndOr
+    # The first pipeline.
+    first: Pipeline
+    # The ones after it, each with its operator.
+    rest: [Link]
+
+# One element of a list: an and-or list ended by `;`, `&` or a line end.
+record Item
+    # The and-or list.
+    chain: AndOr
+    # Whether it ended with `&`, so it runs as a background job.
+    background: bool
+    # Its source text without the `;` or `&` after it, for `jobs` and for a
+    # background shell.
+    text: str
+    # Where it begins.
+    at: Place
+
+# A word of one literal part, as the executor builds one for a name it knows.
+#
+# - `text`: the word's text.
+# - `at`: where it stands.
+function plain_word(text: str, at: Place) -> Word
+    return Word(parts: [.literal(text: text)], at: at)
+
+# The text of `w` where every part is literal or quoted, which is what the
+# parser asks of a reserved word, a function's name or a here-document's
+# delimiter; fails `not_found` where a part is an expansion.
+#
+# - `w`: the word.
+function static_text(w: Word) -> str?
+    pieces: [str] @= []
+
+    for p in w.parts
+        match p
+            .literal l => pieces @ pieces.push(l.text)
+            .quoted q  => pieces @ pieces.push(q.text)
+            .param _ | .length _ | .command _ | .arith _ | .tilde _ =>
+                return fail(code: "not_found", msg: "the word holds an expansion")
+
+    return ok(pieces.join(""))
+
+# Whether `w` is one bare literal part, written with no quote, so it may be a
+# reserved word.
+#
+# - `w`: the word.
+function is_bare(w: Word) -> bool
+    if w.parts.len() != 1
+        return false
+
+    return match w.parts[0]
+        .literal _                                                          => true
+        .quoted _ | .param _ | .length _ | .command _ | .arith _ | .tilde _ => false
+
+test "static_text: literal and quoted parts join, an expansion does not"
+    at = Place(source: 0, offset: 0)
+    w = Word(parts: [.literal(text: "a"), .quoted(text: " b")], at: at)
+    assert static_text(w).must() == "a b"
+    v = Word(parts: [.param(name: "x", op: "", arg: [], in_quotes: false, at: at)], at: at)
+    assert static_text(v).is_err()
+
+test "is_bare: one literal part only"
+    at = Place(source: 0, offset: 0)
+    assert is_bare(plain_word("if", at: at))
+    assert !is_bare(Word(parts: [.quoted(text: "if")], at: at))
+    assert !is_bare(Word(parts: [], at: at))

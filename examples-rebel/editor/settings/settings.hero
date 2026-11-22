@@ -1,0 +1,242 @@
+# The editor's settings, read in layers by `config`: the defaults this module
+# writes, then the settings file (TOML, YAML, JSON or INI), then the
+# variables of the environment that begin with `HEROES_EDITOR_`, then the
+# command line, each over the ones before it. The file holds four tables
+# and two tables of names:
+#
+#     [text]
+#     tab_width = 4          # columns between tab stops, 1 to 16
+#     line_numbers = true
+#     [undo]
+#     most = 1000            # groups of changes kept, 1 to 100000
+#     [diff]
+#     context = 3            # lines around each change, 0 to 100
+#     [search]
+#     ignore_case = false
+#     [keys]
+#     "f3" = "find_next"     # a key's name to a command, or "none"
+#     [colors]
+#     found = "black on yellow"
+#
+# A variable names its setting by its table and key joined by `__`:
+# `HEROES_EDITOR_TEXT__TAB_WIDTH=8`. A setting no table names, a key bound to
+# no command, a colour no style, or a number outside its range is refused
+# with the layer and the file or variable that gave it, so a misspelt line
+# is told, never ignored.
+
+use <rebel>/config
+use <rebel>/json
+
+use input/bindings
+use settings/theme
+
+# The prefix of the environment's variables the editor reads.
+constant ENV_PREFIX: str
+    "HEROES_EDITOR_"
+
+# The settings a buffer and the screen read.
+record Options
+    # The columns between two tab stops, 1 to 16.
+    tab_width: i64
+    # Whether the line numbers are drawn.
+    line_numbers: bool
+    # The most groups of changes a buffer's history keeps, 1 to 100000.
+    history: i64
+    # The lines of context around each change in the diff view, 0 to 100.
+    diff_context: i64
+    # Whether a search ignores the case of letters.
+    ignore_case: bool
+
+# Everything the settings give.
+record Setup
+    # The plain settings.
+    options: Options
+    # Each key's name to its command's: the defaults, with the settings'
+    # `[keys]` over them.
+    bound: {str: str}
+    # The colours.
+    colors: theme.Theme
+    # The merged layers, which say where each setting came from.
+    merged: config.Settings
+
+# The layer of the defaults: every setting, every default key and every
+# default colour.
+function defaults_layer() -> config.Layer?
+    key_values: {str: json.Value} @= {}
+    defaults = bindings.default_keys()
+
+    for k in keys(defaults)
+        key_values[k] @ .text(v: defaults[k].must())
+
+    color_values: {str: json.Value} @= {}
+    colors = theme.default_colors()
+
+    for name in keys(colors)
+        color_values[name] @ .text(v: colors[name].must())
+
+    return config.from_value(
+        "defaults",
+        .object(members: {"text": .object(members: {"tab_width": .number(v: 4.0), "line_numbers": .boolean(v: true)}), "undo": .object(members: {"most": .number(v: 1000.0)}), "diff": .object(members: {"context": .number(v: 3.0)}), "search": .object(members: {"ignore_case": .boolean(v: false)}), "keys": .object(members: key_values), "colors": .object(members: color_values)})
+    )
+
+# The paths the settings may hold, for `config.check_known`.
+function known_paths() -> [str]
+    return ["text.tab_width", "text.line_numbers", "undo.most", "diff.context", "search.ignore_case", "keys", "colors"]
+
+# The settings of the layers `file`, `env` and `extra` over the defaults.
+#
+# - `file`: the settings file's path; "" for none, and a path that names
+#   nothing is read as a file holding nothing.
+# - `env`: the environment's variables; those beginning with `ENV_PREFIX`
+#   are read.
+# - `extra`: the layers above the environment, the command line's first.
+#
+# Fails `invalid` naming the setting, its layer and its origin where a
+# setting is unknown, of the wrong kind, out of its range, or a key, a
+# command or a colour that is none; as `config.read_layer` fails where the
+# file is not of its format.
+function read_setup(file: str, env: {str: str}, extra: [config.Layer]) -> Setup?
+    layers: [config.Layer] @= [defaults_layer()?]
+
+    if file != ""
+        layers @ layers.push(config.read_layer_if_present(file)?)
+
+    layers @ layers.push(config.from_env(name: "environment", env: env, options: config.env_options(ENV_PREFIX))?)
+
+    for layer in extra
+        layers @ layers.push(layer)
+
+    merged = config.merge(layers)
+    config.check_known(merged, paths: known_paths())?
+    options = Options(
+        tab_width: ranged(merged, path: "text.tab_width", lowest: 1, highest: 16)?,
+        line_numbers: config.bool_of(merged, "text.line_numbers")?,
+        history: ranged(merged, path: "undo.most", lowest: 1, highest: 100000)?,
+        diff_context: ranged(merged, path: "diff.context", lowest: 0, highest: 100)?,
+        ignore_case: config.bool_of(merged, "search.ignore_case")?
+    )
+    bound = texts_under(merged, path: "keys")?
+    bindings.check(bound)?
+    colors = texts_under(merged, path: "colors")?
+
+    for name in keys(colors)
+        if !is_part(name)
+            return fail(
+                code: "invalid",
+                msg: f"colors: \"{name}\" ({origin_of(merged, path: "colors." + name)}) is no part of the screen; the parts are {theme.element_names().join(", ")}"
+            )
+
+    return ok(Setup(options: options, bound: bound, colors: theme.theme_of(colors)?, merged: merged))
+
+# The integer at `path`, refused outside `lowest` to `highest`.
+#
+# - `merged`: the settings.
+# - `path`: the setting's path.
+# - `lowest`: the smallest value taken.
+# - `highest`: the largest value taken.
+#
+# Fails as `config.int_of` fails, and `invalid` naming the setting and where
+# it came from where it is out of range.
+function ranged(merged: config.Settings, path: str, lowest: i64, highest: i64) -> i64?
+    n = config.int_of(merged, path)?
+
+    if n < lowest || n > highest
+        return fail(
+            code: "invalid",
+            msg: f"{path} is {n} ({origin_of(merged, path: path)}): it is {lowest} to {highest}"
+        )
+
+    return ok(n)
+
+# The texts of the table at `path`, each key to its text, in the order the
+# layers gave them; read from the table's own value, since a key's name may
+# hold a `.`, which a dotted path would cut.
+#
+# - `merged`: the settings.
+# - `path`: the table's path.
+#
+# Fails `invalid` where the value is no table, or one of its values is no
+# text, naming where it came from.
+function texts_under(merged: config.Settings, path: str) -> {str: str}?
+    table = config.value_of(merged, path)?
+    texts: {str: str} @= {}
+
+    match table
+        .object o =>
+            for k in keys(o.members)
+                match o.members[k].must()
+                    .text t => texts[k] @ t.v
+                    .null_value | .boolean _ | .number _ | .list _ | .object _ =>
+                        return fail(
+                            code: "invalid",
+                            msg: f"{path}: \"{k}\" ({origin_of(merged, path: path)}) is not a text"
+                        )
+        .null_value | .boolean _ | .number _ | .text _ | .list _ =>
+            return fail(code: "invalid", msg: f"{path} ({origin_of(merged, path: path)}) is not a table")
+
+    return ok(texts)
+
+# Whether `name` is a part of the screen a colour may be given to.
+#
+# - `name`: the name.
+function is_part(name: str) -> bool
+    for part in theme.element_names()
+        if part == name
+            return true
+
+    return false
+
+# Where the setting at `path` came from, in words: `editor.toml`, `the
+# environment's HEROES_EDITOR_TEXT__TAB_WIDTH`, `the defaults`.
+#
+# - `merged`: the settings.
+# - `path`: the setting's path.
+function origin_of(merged: config.Settings, path: str) -> str
+    match config.source_of(merged, path)
+        .ok s =>
+            if s.file != ""
+                return s.file
+
+            if s.layer == "environment"
+                return f"the environment's {s.origin}"
+
+            if s.origin != ""
+                return f"the command line's --{s.origin}"
+
+            return f"the {s.layer}"
+        .err _ => return "the settings"
+
+# The layer a settings file holding `text` in TOML gives, for the tests.
+#
+# - `text`: the file's text.
+function toml_layer(text: str) -> config.Layer
+    return config.parse_layer(name: "editor.toml", text: text, format: .toml).must()
+
+test "read_setup: the defaults alone"
+    s = read_setup(file: "", env: {}, extra: []).must()
+    assert s.options == Options(tab_width: 4, line_numbers: true, history: 1000, diff_context: 3, ignore_case: false)
+    assert s.bound["ctrl-s"].must() == "save"
+    assert theme.describe(s.colors.found) == "black on yellow"
+
+test "read_setup: a file's keys and colours, and the environment over the file"
+    file = toml_layer(
+        "[text]\ntab_width = 4\n[keys]\n\"f3\" = \"find_next\"\n\"ctrl-s\" = \"none\"\n[colors]\nstatus = \"black on cyan\"\n"
+    )
+    s = read_setup(file: "", env: {"HEROES_EDITOR_TEXT__TAB_WIDTH": "8", "EDITOR": "vi"}, extra: [file]).must()
+    assert s.options.tab_width == 4
+    over = read_setup(
+        file: "",
+        env: {},
+        extra: [file, config.from_env(name: "environment", env: {"HEROES_EDITOR_TEXT__TAB_WIDTH": "8"}, options: config.env_options(ENV_PREFIX)).must()]
+    ).must()
+    assert over.options.tab_width == 8
+    assert origin_of(over.merged, path: "text.tab_width") == "the environment's HEROES_EDITOR_TEXT__TAB_WIDTH"
+    assert s.bound["f3"].must() == "find_next" && s.bound["ctrl-s"].must() == "none"
+    assert theme.describe(s.colors.status) == "black on cyan"
+
+test "read_setup: a misspelt table, a number out of range, a command and a part that are none"
+    assert read_setup(file: "", env: {}, extra: [toml_layer("[txt]\ntab_width = 4\n")]).is_err()
+    assert read_setup(file: "", env: {}, extra: [toml_layer("[text]\ntab_width = 40\n")]).is_err()
+    assert read_setup(file: "", env: {}, extra: [toml_layer("[keys]\n\"f3\" = \"fly\"\n")]).is_err()
+    assert read_setup(file: "", env: {}, extra: [toml_layer("[colors]\nsky = \"blue\"\n")]).is_err()
+    assert read_setup(file: "", env: {"HEROES_EDITOR_UNDO__MOST": "zero"}, extra: []).is_err()

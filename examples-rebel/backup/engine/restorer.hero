@@ -1,0 +1,266 @@
+# A snapshot, or one path of it, written back into a folder.
+#
+# Every chunk is checked as it is read (`chunk_store.load_chunk`: opened
+# under the master key, decompressed, named again), and every file once
+# more whole: the SHA-256 of what was written must be the one the backup
+# computed. A file is written under a temporary name beside its place and
+# renamed there only once it is whole and checked, so a restore that
+# fails leaves no file that looks restored and is not.
+#
+# The permission bits and times of a file are set when it is written, a
+# link's own times when it is made (its bits are left as the system makes
+# them, Linux having no call that sets them); a folder's are set after
+# everything inside it, deepest first, since writing into a folder
+# changes its time. The folder restored into keeps
+# its own: a snapshot records what a folder held, not the folder.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+
+use engine/meter
+use engine/scan
+use model/snapshot
+use model/tree
+use repo/chunk_store
+use repo/records
+use repo/repository
+
+## Codes
+
+# The code of a file whose content is not the one backed up, and of a
+# node whose name could reach outside the folder.
+constant INVALID: str
+    "invalid"
+
+# The code of a path the snapshot does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## A restore
+
+# What a restore wrote.
+record Restored
+    # The files written.
+    files: i64
+    # The folders made or set.
+    dirs: i64
+    # The links made.
+    links: i64
+    # The bytes of the files.
+    bytes: i64
+
+# One path to write, and what the snapshot says of it.
+record Step
+    # Its path below the folder restored into, parts joined by `/`; "" for
+    # the folder itself.
+    rel: str
+    # What it was.
+    node: tree.Node
+
+# Writes the snapshot `s`, or its path `only`, into `target`.
+#
+# - `r`: the repository; its index is read, and its counts grow.
+# - `s`: the snapshot.
+# - `target`: the folder written into, made where it is not there; a path
+#   the restore writes replaces what is there.
+# - `only`: a path of the snapshot, parts joined by `/`, written at the
+#   same path below `target`; "" for the whole snapshot.
+# - `shown`: whether a progress bar is drawn.
+#
+# Fails `not_found` where the snapshot holds no `only`, `invalid` where a
+# chunk or a file is not what was backed up, and as the repository and
+# `fs` fail.
+function restore(@r: repository.Repository, s: snapshot.Snapshot, target: str, only: str, shown: bool) -> Restored?
+    start = start_of(@r, s: s, only: only)?
+    steps = plan(@r, start: start)?
+    owed @= 0
+
+    for st in steps
+        owed @ owed + st.node.size
+
+    m @= meter.meter("restore", total: owed, shown: shown)
+    done @= Restored(files: 0, dirs: 0, links: 0, bytes: 0)
+    folders: [Step] @= []
+    fs.make_dir_all(target)?
+
+    if only != ""
+        fs.make_dir_all(path.parent(place_of(target: target, rel: only)))?
+
+    for st in steps
+        dest = place_of(target: target, rel: st.rel)
+
+        match st.node.kind
+            .directory =>
+                fs.make_dir_all(dest)?
+                folders @ folders.push(st)
+            .symlink =>
+                if !fs.link_info(dest).is_err()
+                    fs.remove(dest)?
+                fs.symlink(target: st.node.target, name: dest)?
+                when = time.Instant(unix_nanoseconds: st.node.modified)
+                fs.set_link_times(dest, written: when, read: when)?
+                done.links @ done.links + 1
+            .file =>
+                write_file_node(@r, @m, dest: dest, node: st.node)?
+                done.files @ done.files + 1
+                done.bytes @ done.bytes + st.node.size
+
+    meter.done(@m)
+    at @= folders.len() - 1
+
+    while at >= 0
+        st = folders[at]
+
+        if st.rel != ""
+            dest = place_of(target: target, rel: st.rel)
+            fs.set_permission(dest, permission: st.node.mode)?
+            when = time.Instant(unix_nanoseconds: st.node.modified)
+            fs.set_times(dest, written: when, read: when)?
+        done.dirs @ done.dirs + 1
+        at @ at - 1
+
+    return ok(done)
+
+# The path `rel` below `target` on this system.
+#
+# - `target`: the folder restored into.
+# - `rel`: a path below it, parts joined by `/`; "" for the folder.
+function place_of(target: str, rel: str) -> str
+    if rel == ""
+        return target
+    return path.join_all([target, path.from_slash(rel)])
+
+# The step a restore begins at: the snapshot's root folder, or the node
+# `only` names.
+#
+# - `r`: the repository.
+# - `s`: the snapshot.
+# - `only`: the path, "" for the root.
+#
+# Fails `not_found` where a part of `only` is not there or a part before
+# the last is not a folder.
+function start_of(@r: repository.Repository, s: snapshot.Snapshot, only: str) -> Step?
+    root = tree.Node(
+        name: "",
+        kind: .directory,
+        mode: 0o755,
+        modified: s.taken.unix_nanoseconds,
+        size: 0,
+        chunks: [],
+        digest: "",
+        subtree: s.tree,
+        target: ""
+    )
+
+    if only == ""
+        return ok(Step(rel: "", node: root))
+    current @= root
+
+    for part in strings.split(s: strings.trim(only), sep: "/")
+        if part != ""
+            if current.kind != .directory
+                return fail(code: NOT_FOUND, msg: f"the snapshot holds no {only}: {current.name} is not a folder")
+
+            current @ match tree.node_named(records.load_tree(@r, id: current.subtree)?, name: part)
+                .ok n  => n
+                .err _ => return fail(code: NOT_FOUND, msg: f"the snapshot holds no {only}")
+
+    if current.name == ""
+        return ok(Step(rel: "", node: root))
+    return ok(
+        Step(rel: strings.trim_suffix_all(s: strings.trim_prefix_all(s: only, prefix: "/"), suffix: "/"), node: current)
+    )
+
+# Every step below `start`, `start` first and each folder before what it
+# holds, the trees read from a list rather than by recursion.
+#
+# - `r`: the repository.
+# - `start`: where the restore begins.
+#
+# Fails `invalid` where a node's name could reach outside its folder, and
+# as `records.load_tree` fails.
+function plan(@r: repository.Repository, start: Step) -> [Step]?
+    steps: [Step] @= [start]
+    next @= 0
+
+    while next < steps.len()
+        st = steps[next]
+        next @ next + 1
+
+        if st.node.kind == .directory
+            for n in records.load_tree(@r, id: st.node.subtree)?.nodes
+                if !scan.is_name(n.name)
+                    return fail(code: INVALID, msg: f"a tree names \"{n.name}\", which could reach outside its folder")
+
+                rel = if st.rel == ""
+                    n.name
+                else
+                    st.rel + "/" + n.name
+
+                steps @ steps.push(Step(rel: rel, node: n))
+
+    return ok(steps)
+
+# Writes the file `node` at `dest`, checked chunk by chunk and whole, under
+# a temporary name it is renamed from once checked.
+#
+# - `r`: the repository.
+# - `m`: the meter; it counts the bytes written.
+# - `dest`: where the file goes.
+# - `node`: the file as the snapshot holds it.
+#
+# Fails `invalid` where the content's SHA-256 or length is not the one
+# backed up, and as the chunks and `fs` fail.
+function write_file_node(@r: repository.Repository, @m: meter.Meter, dest: str, node: tree.Node) -> ()?
+    temp = dest + ".restoring"
+    s @= fs.create(temp)?
+    written = write_chunks(@r, @m, s: s, node: node)
+    closed = io.close(@s)
+
+    match written
+        .err e =>
+            _ = fs.remove(temp).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok digest =>
+            if closed.is_err() || digest != node.digest
+                _ = fs.remove(temp).is_err()
+                return fail(code: INVALID, msg: f"{dest} restored does not hold the content backed up")
+
+    fs.rename(from: temp, to: dest)?
+    fs.set_permission(dest, permission: node.mode)?
+    when = time.Instant(unix_nanoseconds: node.modified)
+    return fs.set_times(dest, written: when, read: when)
+
+# Writes `node`'s chunks to `s` and answers the SHA-256 of what was
+# written, hexadecimal.
+#
+# - `r`: the repository.
+# - `m`: the meter.
+# - `s`: the stream; the caller closes it.
+# - `node`: the file.
+#
+# Fails `invalid` where the bytes written are not the node's size, and as
+# the chunks and `io.write` fail.
+function write_chunks(@r: repository.Repository, @m: meter.Meter, s: io.Stream, node: tree.Node) -> str?
+    state @= crypto.start(.sha256)
+    size @= 0
+
+    for id in node.chunks
+        data = chunk_store.load_chunk(@r, id: id)?
+        io.write(s, data: data)?
+        crypto.update(@state, data: data)
+        size @ size + data.len()
+        meter.tick(@m, n: data.len())
+
+    if size != node.size
+        return fail(code: INVALID, msg: f"{node.name} holds {size} bytes, and {node.size} were backed up")
+    return ok(bytes.format_hex(crypto.digest(state)))
+
+test "place_of: the folder itself, and a path below it"
+    assert place_of(target: "out", rel: "") == "out"
+    assert place_of(target: "out", rel: "a/b") == path.join_all(["out", "a", "b"])

@@ -1,0 +1,377 @@
+# `log`: the commits a start reaches, newest first, each before its
+# parents, in git's long form (`commit`, `Merge:`, `Author:`, `Date:`, the
+# message indented) or one line each, with the refs that name a commit
+# beside it, `(HEAD -> main, tag: v1.0, docs)`.
+#
+# With `graph`, each line is drawn beside the commit graph, as `git log
+# --graph --oneline` draws it: a column per line of history still to be
+# shown, `*` where the commit stands, `|` where another line passes, `\`
+# where a merge opens a new column to its right, and `/` where a column
+# ends because its commit is already waited for to its left. The columns
+# are a list of the commit each one waits for; a commit's row is drawn,
+# then its parents take its column (the first) and new columns (the
+# others), and one connector line is drawn for each step a column moves.
+
+use <rebel>/strings
+
+use history/ancestry
+use objects/commits
+use objects/ids
+use objects/signatures
+use repo/layout
+use repo/refs
+use store/database
+
+## Names beside commits
+
+# The names to write beside each commit: `HEAD -> main` for the branch
+# checked out (or `HEAD` alone when it is detached), then its tags as
+# `tag: v1.0`, then the other branches, each group in name order.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+#
+# Fails where a ref cannot be read or a tag does not lead to a commit.
+function decorations(repo: layout.Repo, db: database.Database lent) -> {str: [str]}?
+    out: {str: [str]} @= {}
+    head = refs.read_head(repo)?
+
+    current = match head
+        .branch b   => b.name
+        .detached _ => ""
+
+    match head
+        .detached d => add_name(@out, id: d.id, name: "HEAD")
+        .branch b =>
+            match refs.read_ref(repo, full: "refs/heads/" + b.name)
+                .ok id => add_name(@out, id: id, name: "HEAD -> " + b.name)
+                .err _ => _ = 0
+
+    for t in refs.list_refs(repo, folder: "refs/tags")?
+        add_name(@out, id: refs.peel_to_commit(db, id: t.id)?, name: "tag: " + t.name)
+
+    for b in refs.list_refs(repo, folder: "refs/heads")?
+        if b.name != current
+            add_name(@out, id: b.id, name: b.name)
+
+    return ok(out)
+
+# Adds `name` to the names of the commit `id` in `names`.
+#
+# - `names`: the names by commit, which the caller owns.
+# - `id`: a commit.
+# - `name`: the name to add, after those it has.
+function add_name(@names: {str: [str]}, id: str, name: str)
+    listed @= names[id].default([])
+    listed @ listed.push(name)
+    names[id] @ listed
+
+# ` (a, b)` for the names of `id`, or nothing where it has none.
+#
+# - `names`: the names by commit.
+# - `id`: a commit.
+function decoration_of(names: {str: [str]}, id: str) -> str
+    found = names[id].default([])
+
+    if found.len() == 0
+        return ""
+    return " (" + found.join(", ") + ")"
+
+## The long form
+
+# The commit `id` as git's long log writes it: the header lines, a blank
+# line, the message indented by four spaces.
+#
+# - `id`: the commit's name.
+# - `c`: the commit.
+# - `names`: the names beside commits.
+function format_long(id: str, c: commits.Commit, names: {str: [str]}) -> str
+    lines: [str] @= ["commit " + id + decoration_of(names, id: id)]
+
+    if c.parents.len() > 1
+        shorts: [str] @= []
+
+        for p in c.parents
+            shorts @ shorts.push(ids.short(p))
+
+        lines @ lines.push("Merge: " + shorts.join(" "))
+    lines @ lines.push(f"Author: {c.author.name} <{c.author.email}>")
+    lines @ lines.push("Date:   " + signatures.format_date(c.author))
+    lines @ lines.push("")
+
+    for line in strings.lines(strings.trim_end(c.message))
+        lines @ lines.push(strings.trim_end("    " + line))
+
+    return lines.join("\n")
+
+# The commit `id` on one line: its short name, its names, its subject.
+#
+# - `id`: the commit's name.
+# - `c`: the commit.
+# - `names`: the names beside commits.
+function format_oneline(id: str, c: commits.Commit, names: {str: [str]}) -> str
+    return ids.short(id) + decoration_of(names, id: id) + " " + commits.subject_of(c.message)
+
+## The graph
+
+# Where one edge of the graph stands between two rows: the column it leaves
+# and the column it reaches.
+record Edge
+    # The column in the row above.
+    from: i64
+    # The column in the row below.
+    to: i64
+
+# The connector lines that take each edge of `edges` from its column to its
+# target, one column a line; none where every edge goes straight down.
+#
+# - `edges`: the edges between two rows.
+function connectors(edges: [Edge]) -> [str]
+    out: [str] @= []
+    at: [i64] @= []
+    width @= 0
+
+    for e in edges
+        at @ at.push(e.from)
+
+        if e.from + 1 > width
+            width @ e.from + 1
+
+        if e.to + 1 > width
+            width @ e.to + 1
+
+    while true
+        moving @= false
+        i @= 0
+
+        while i < edges.len()
+            if at[i] != edges[i].to
+                moving @ true
+            i @ i + 1
+
+        if !moving
+            return out
+        cells: [str] @= []
+
+        for _ in range(from: 0, to: 2 * width)
+            cells @ cells.push(" ")
+
+        i @ 0
+
+        while i < edges.len()
+            c = at[i]
+            t = edges[i].to
+
+            if c < t
+                cells[2 * c + 1] @ "\\"
+                at[i] @ c + 1
+            else if c > t
+                cells[2 * c - 1] @ "/"
+                at[i] @ c - 1
+            else
+                cells[2 * c] @ "|"
+            i @ i + 1
+
+        out @ out.push(strings.trim_end(cells.join("")))
+
+# The row of a commit standing in column `column` of `lanes` columns.
+#
+# - `column`: the commit's column.
+# - `lanes`: how many columns there are.
+function row_cells(column: i64, lanes: i64) -> str
+    cells: [str] @= []
+
+    for i in range(from: 0, to: lanes)
+        cell = if i == column
+            "*"
+        else
+            "|"
+        cells @ cells.push(cell)
+
+    return cells.join(" ")
+
+# The index of the first column of `lanes` waiting for `id`.
+#
+# - `lanes`: the columns.
+# - `id`: a commit.
+#
+# Fails `not_found` where none waits for it.
+function lane_of(lanes: [str], id: str) -> i64?
+    i @= 0
+
+    while i < lanes.len()
+        if lanes[i] == id
+            return ok(i)
+        i @ i + 1
+
+    return fail(code: "not_found", msg: f"no column waits for {id}")
+
+# The log of the commits `order` lists, drawn beside their graph, one line
+# each.
+#
+# - `order`: the commits, each before its parents.
+# - `parents_of`: every listed commit's parents.
+# - `lines_of`: each commit's text, as `format_oneline` writes it.
+function draw_graph(order: [str], parents_of: {str: [str]}, lines_of: {str: str}) -> str
+    lanes: [str] @= []
+    out: [str] @= []
+
+    for id in order
+        column = match lane_of(lanes, id: id)
+            .ok c => c
+            .err _ =>
+                lanes @ lanes.push(id)
+                lanes.len() - 1
+
+        parents = parents_of[id].default([])
+        next @= lanes
+        edges: [Edge] @= []
+
+        if parents.len() == 0
+            next @ remove_at(next, at: column)
+        else
+            match lane_of(next, id: parents[0])
+                .ok k =>
+                    if k != column
+                        next @ remove_at(next, at: column)
+                    else
+                        _ = 0
+                .err _ => next[column] @ parents[0]
+
+            insert_at @= column + 1
+
+            for p in parents.slice(from: 1, to: parents.len())
+                if lane_of(next, id: p).is_err()
+                    next @ insert(next, at: insert_at, id: p)
+                    insert_at @ insert_at + 1
+        i @= 0
+
+        while i < lanes.len()
+            if i == column
+                for p in parents
+                    edges @ edges.push(Edge(from: i, to: lane_of(next, id: p).must()))
+            else
+                edges @ edges.push(Edge(from: i, to: lane_of(next, id: lanes[i]).must()))
+            i @ i + 1
+
+        widest = if next.len() > lanes.len()
+            next.len()
+        else
+            lanes.len()
+        row = strings.pad_end(s: row_cells(column: column, lanes: lanes.len()), width: 2 * widest, pad: " ")
+        out @ out.push(strings.trim_end(row + lines_of[id].default(id)))
+
+        for line in connectors(edges)
+            out @ out.push(line)
+
+        lanes @ next
+
+    return out.join("\n")
+
+# `lanes` without the column `at`.
+#
+# - `lanes`: the columns.
+# - `at`: a column of them.
+function remove_at(lanes: [str], at: i64) -> [str]
+    out: [str] @= []
+    i @= 0
+
+    while i < lanes.len()
+        if i != at
+            out @ out.push(lanes[i])
+        i @ i + 1
+
+    return out
+
+# `lanes` with a column waiting for `id` put at `at`.
+#
+# - `lanes`: the columns.
+# - `at`: where the new column goes, from 0 to their count.
+# - `id`: the commit it waits for.
+function insert(lanes: [str], at: i64, id: str) -> [str]
+    out: [str] @= []
+    i @= 0
+
+    while i <= lanes.len()
+        if i == at
+            out @ out.push(id)
+
+        if i < lanes.len()
+            out @ out.push(lanes[i])
+        i @ i + 1
+
+    return out
+
+## The log
+
+# How `log` writes.
+record Options
+    # One line a commit instead of the long form.
+    oneline: bool
+    # The graph drawn beside the commits, one line a commit.
+    graph: bool
+    # At most this many commits, or every one where 0 or less.
+    limit: i64
+
+# The log of the commits `tips` reach, as `options` asks.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `tips`: the commits to start from.
+# - `options`: the form.
+#
+# Fails where a commit or a ref cannot be read.
+function render(repo: layout.Repo, db: database.Database lent, tips: [str], options: Options) -> str?
+    names = decorations(repo, db: db)?
+    every = ancestry.log_order(db, tips: tips)?
+
+    order = if options.limit > 0 && every.len() > options.limit
+        every.slice(from: 0, to: options.limit)
+    else
+        every
+    parents_of: {str: [str]} @= {}
+    lines_of: {str: str} @= {}
+    blocks: [str] @= []
+
+    for id in order
+        c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+        parents_of[id] @ c.parents
+
+        if options.oneline || options.graph
+            lines_of[id] @ format_oneline(id, c: c, names: names)
+        else
+            blocks @ blocks.push(format_long(id, c: c, names: names))
+
+    if options.graph
+        return ok(draw_graph(order, parents_of: parents_of, lines_of: lines_of))
+
+    if options.oneline
+        shown: [str] @= []
+
+        for id in order
+            shown @ shown.push(lines_of[id].must())
+
+        return ok(shown.join("\n"))
+    return ok(blocks.join("\n\n"))
+
+test "connectors: straight down draws nothing, a merge opens, a column closes"
+    assert connectors([Edge(from: 0, to: 0), Edge(from: 1, to: 1)]) == []
+    assert connectors([Edge(from: 0, to: 0), Edge(from: 0, to: 1)]) == ["|\\"]
+    assert connectors([Edge(from: 0, to: 0), Edge(from: 1, to: 0)]) == ["|/"]
+    assert connectors([Edge(from: 0, to: 2)]) == [" \\", "   \\"]
+
+test "draw_graph: two branches merged, each line beside its commit"
+    order = ["m", "c", "t", "a"]
+    parents_of = {"m": ["c", "t"], "c": ["a"], "t": ["a"], "a": []}
+    lines_of = {"m": "M", "c": "C", "t": "T", "a": "A"}
+    drawn = draw_graph(order, parents_of: parents_of, lines_of: lines_of)
+    assert drawn == "*   M\n|\\\n* | C\n| * T\n|/\n* A"
+
+test "draw_graph: a straight line of commits"
+    drawn = draw_graph(["b", "a"], parents_of: {"b": ["a"], "a": []}, lines_of: {"b": "B", "a": "A"})
+    assert drawn == "* B\n* A"
+
+test "remove_at and insert: a column taken out and one put in"
+    assert remove_at(["a", "b", "c"], at: 1) == ["a", "c"]
+    assert insert(["a", "c"], at: 1, id: "b") == ["a", "b", "c"]
+    assert insert(["a"], at: 1, id: "b") == ["a", "b"]

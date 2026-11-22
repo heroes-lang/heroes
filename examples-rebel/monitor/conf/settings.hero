@@ -1,0 +1,242 @@
+# The configuration of a monitor, as records: what `conf/reading` builds from
+# the TOML file a person writes, and what every other part of the program
+# reads. Nothing here touches a file or the clock; every span is a
+# `time.Duration` and every size a count of bytes, already read from their
+# text, so the rest of the program never parses a setting twice.
+
+use <rebel>/time
+
+# How a service is started again after it ends by itself.
+variant Restart
+    # Whatever its status, as a long-running daemon wants.
+    always
+    # Only where it ended in failure: a code other than 0, a signal.
+    on_failure
+    # Never: it stays ended, and its end is an alert.
+    never
+
+# What a service reads as its standard input.
+variant Input
+    # Nothing: its input ends at once, as a daemon's does.
+    none
+    # A pipe the monitor holds, so `monitor ctl send` can write lines to it
+    # and a stop can be asked with a line.
+    pipe
+
+# One program the monitor supervises.
+record ServiceSpec
+    # Its name, unique among the services: a word of letters, digits, `-`
+    # and `_`, which names its metrics, its log file and its alerts.
+    name: str
+    # The program and its arguments, each reaching it whole; no shell reads
+    # them.
+    command: [str]
+    # The services it needs running before it starts, and whose failure
+    # impairs it.
+    depends_on: [str]
+    # When it is started again after it ends by itself.
+    restart: Restart
+    # The wait before the first restart after a failure; each failure in a
+    # row doubles it, up to `backoff_most`.
+    backoff: time.Duration
+    # The longest wait between two restarts.
+    backoff_most: time.Duration
+    # Failures in a row after which the monitor stops restarting it; 0 for no
+    # bound.
+    max_failures: i64
+    # The resident memory, in bytes, past which the dashboard marks it; 0 for
+    # none. An alert on it is a rule over `service.<name>.memory`.
+    memory_limit: i64
+    # What it reads as its input.
+    input: Input
+    # The line written to its input to ask it to stop, where its input is a
+    # pipe; "" asks the stop by the system's request to end (SIGTERM).
+    stop_line: str
+    # How long a stop waits for it to end before the next, harder, request.
+    stop_grace: time.Duration
+
+# One file or folder watched for changes.
+record WatchSpec
+    # Its name, which names its metrics: `watch.<name>.bytes` and
+    # `watch.<name>.changes`.
+    name: str
+    # The file or the folder.
+    path: str
+    # Whether every folder below a folder is watched too.
+    tree: bool
+
+# A sensor read from a serial port: a device that answers a query with a line
+# holding a number, or sends such lines by itself.
+record SensorSpec
+    # Its name, which names its metric `sensor.<name>`; "" where the monitor
+    # has no sensor.
+    name: str
+    # The port's path, `/dev/ttyUSB0` or `COM3`.
+    port: str
+    # The speed in bits a second.
+    baud: i64
+    # The text written to ask for a reading, a line feed after it; "" where
+    # the device sends its lines by itself.
+    query: str
+    # The unit its numbers are in, shown beside them: `C`, `%RH`.
+    unit: str
+    # How long a query waits for its answer.
+    timeout: time.Duration
+    # The lowest and the highest value the dashboard's gauge spans.
+    low: f64
+    # The highest value the gauge spans.
+    high: f64
+
+# One alert rule, as written: its condition is read by `alerts/rules`.
+record RuleSpec
+    # Its name, unique among the rules.
+    name: str
+    # The condition, `avg(sensor.temperature, 2m) > 70`.
+    when: str
+    # How long the condition must hold before the alert fires; zero fires at
+    # once.
+    hold: time.Duration
+    # `critical`, `warning` or `info`.
+    severity: str
+    # One line a person reads when it fires.
+    summary: str
+
+# Where and how the monitor writes its own journal and its services' output.
+record Logs
+    # The folder of the log files, made where it is not there.
+    dir: str
+    # The most bytes a file holds before it is set aside; 0 for no bound.
+    max_bytes: i64
+    # The old files kept of each log; 0 keeps every one.
+    keep: i64
+    # Whether a file is set aside at each new day too.
+    daily: bool
+    # Whether an old file is gzipped.
+    compress: bool
+
+# Where the metrics, the spans and the alerts' log records are sent.
+record Export
+    # The collector's base URL, `http://collector:4318`; "" sends nothing.
+    otlp: str
+    # How often they are sent.
+    every: time.Duration
+    # Whether the requests are gzipped.
+    gzip: bool
+
+# How the dashboard shows what it shows.
+record Dashboard
+    # How many past readings a sparkline holds.
+    history: i64
+
+# The whole configuration of one monitor.
+record Config
+    # Its name: the lock that keeps a second monitor of this configuration
+    # from running, and its `service.instance.id` in what it exports.
+    name: str
+    # How often the collectors run and the rules are evaluated.
+    interval: time.Duration
+    # The control socket's path, which `monitor ctl` connects to.
+    control: str
+    # Whether the machine's own processors, memory, load and network are
+    # collected.
+    host: bool
+    # Whether figures that depend on the machine (a service's memory and
+    # processor time, an alert's value) are written as numbers, on the
+    # dashboard and in the journal; false shows a service's memory only
+    # against its limit, as a transcript that must read the same on every
+    # machine needs.
+    exact_figures: bool
+    # The logs.
+    logs: Logs
+    # The export.
+    export: Export
+    # The dashboard.
+    dashboard: Dashboard
+    # The program run, its alert as JSON on its input, at each alert that
+    # fires or resolves; empty for none.
+    notify: [str]
+    # The services, in the order written.
+    services: [ServiceSpec]
+    # The watched paths.
+    watches: [WatchSpec]
+    # The sensor; its `name` is "" where there is none.
+    sensor: SensorSpec
+    # The rules.
+    rules: [RuleSpec]
+
+# The sensor of a configuration that has none.
+function no_sensor() -> SensorSpec
+    return SensorSpec(
+        name: "",
+        port: "",
+        baud: 9600,
+        query: "",
+        unit: "",
+        timeout: time.nanoseconds(500_000_000),
+        low: 0.0,
+        high: 100.0
+    )
+
+# Whether `c` reads a sensor.
+#
+# - `c`: the configuration.
+function has_sensor(c: Config lent) -> bool
+    return c.sensor.name != ""
+
+# The service of `c` named `name`. Fails `not_found` where none is.
+#
+# - `c`: the configuration.
+# - `name`: the service's name.
+function service_named(c: Config lent, name: str) -> ServiceSpec?
+    for s in c.services
+        if s.name == name
+            return ok(s)
+
+    return fail(code: "not_found", msg: f"no service named \"{name}\"")
+
+# The name a restart policy is written with in the file.
+#
+# - `r`: the policy.
+function restart_name(r: Restart) -> str
+    return match r
+        .always     => "always"
+        .on_failure => "on-failure"
+        .never      => "never"
+
+test "service_named: a service there and one absent"
+    spec = ServiceSpec(
+        name: "db",
+        command: ["db"],
+        depends_on: [],
+        restart: .always,
+        backoff: time.nanoseconds(0),
+        backoff_most: time.nanoseconds(0),
+        max_failures: 0,
+        memory_limit: 0,
+        input: .none,
+        stop_line: "",
+        stop_grace: time.nanoseconds(0)
+    )
+    c = Config(
+        name: "t",
+        interval: time.nanoseconds(1),
+        control: "",
+        host: false,
+        exact_figures: true,
+        logs: Logs(dir: "", max_bytes: 0, keep: 0, daily: false, compress: false),
+        export: Export(otlp: "", every: time.nanoseconds(1), gzip: false),
+        dashboard: Dashboard(history: 1),
+        notify: [],
+        services: [spec],
+        watches: [],
+        sensor: no_sensor(),
+        rules: []
+    )
+    assert service_named(c, name: "db").must().name == "db"
+    assert service_named(c, name: "web").is_err()
+    assert !has_sensor(c)
+
+test "restart_name: every policy as the file writes it"
+    assert restart_name(.always) == "always"
+    assert restart_name(.on_failure) == "on-failure"
+    assert restart_name(.never) == "never"

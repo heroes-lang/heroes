@@ -1,0 +1,253 @@
+# The S3 stand-in's check of a request's Signature Version 4, by the steps
+# of AWS's "Create a signed AWS API request" (the IAM user guide, read
+# 2026-11-22): the canonical request rebuilt from what arrived, the
+# string to sign over its SHA-256, the signing key derived by an
+# HMAC-SHA256 chain from `AWS4` and the secret through the day, the
+# region, the service and `aws4_request`, and the signature compared in
+# constant time. As S3 does, it also refuses a request whose time stands
+# more than 15 minutes from its own clock and a body that is not the one
+# whose SHA-256 was signed.
+#
+# The canonical request is rebuilt here from the request received, never
+# taken from the client, so a client that signed something other than
+# what it sent is refused. One rule alone is shared with the client,
+# `s3.uri_encode`, the encoding both ends must write alike.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/http
+use <rebel>/s3
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+
+## Codes
+
+# The code of a request refused for its signature; the message opens
+# with S3's own error code.
+constant PERMISSION: str
+    "permission"
+
+# The code of a request S3 answers 400: a body that is not the one
+# signed.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The algorithm a signature names.
+constant ALGORITHM: str
+    "AWS4-HMAC-SHA256"
+
+# The most seconds a request's time may stand from the server's clock.
+constant SKEW_SECONDS: i64
+    900
+
+## The header
+
+# What a SigV4 `Authorization` header says.
+record Claim
+    # The access key's id.
+    key_id: str
+    # The scope's day, `20260301`.
+    day: str
+    # The scope's region.
+    region: str
+    # The scope's service.
+    service: str
+    # The headers signed, in lower case, as listed.
+    signed: [str]
+    # The signature, 64 hexadecimal digits.
+    signature: str
+
+# The claim the `Authorization` header `value` makes.
+#
+# - `value`: `AWS4-HMAC-SHA256 Credential=<id>/<day>/<region>/<service>/aws4_request, SignedHeaders=<a;b>, Signature=<hex>`.
+#
+# Fails `permission` with `AuthorizationHeaderMalformed` where it is not of
+# that form.
+function parse_claim(value: str) -> Claim?
+    rest = match strings.after_prefix(s: value, prefix: ALGORITHM + " ")
+        .ok r => r
+        .err _ => return fail(
+            code: PERMISSION,
+            msg: "AuthorizationHeaderMalformed: the header names no AWS4-HMAC-SHA256"
+        )
+
+    fields: {str: str} @= {}
+
+    for part in strings.split(s: rest, sep: ",")
+        match strings.split_once(s: strings.trim(part), sep: "=")
+            .ok h  => fields[h.before] @ h.after
+            .err _ => _ = 0
+
+    scope = strings.split(s: fields["Credential"].default(""), sep: "/")
+    signed = fields["SignedHeaders"].default("")
+    signature = fields["Signature"].default("")
+
+    if scope.len() != 5 || scope[4] != "aws4_request" || signed == "" || signature.len() != 64
+        return fail(
+            code: PERMISSION,
+            msg: "AuthorizationHeaderMalformed: the credential, the signed headers or the signature is not SigV4's"
+        )
+    return ok(
+        Claim(key_id: scope[0], day: scope[1], region: scope[2], service: scope[3], signed: strings.split(s: signed, sep: ";"), signature: signature)
+    )
+
+## The check
+
+# Nothing, where `r` is signed by `key_id`'s `secret` for `region` within
+# `SKEW_SECONDS` of `now`, its body the one signed.
+#
+# - `r`: the request as the server read it.
+# - `key_id`: the one access key the server knows.
+# - `secret`: its secret.
+# - `region`: the server's region.
+# - `now`: the server's clock.
+#
+# Fails `permission` with S3's code first in the message: `AccessDenied`
+# for no signature, `InvalidAccessKeyId`, `AuthorizationHeaderMalformed`,
+# `RequestTimeTooSkewed`, `SignatureDoesNotMatch`; fails `invalid` with
+# `XAmzContentSHA256Mismatch` for a body that is not the one signed.
+function check(r: http.Request, key_id: str, secret: str, region: str, now: time.Instant) -> ()?
+    claim = match http.value_of(r.headers, name: "Authorization")
+        .ok v  => parse_claim(v)?
+        .err _ => return fail(code: PERMISSION, msg: "AccessDenied: the request is not signed")
+
+    if claim.key_id != key_id
+        return fail(code: PERMISSION, msg: "InvalidAccessKeyId: the access key's id is not in this server's records")
+
+    if claim.region != region || claim.service != "s3"
+        return fail(
+            code: PERMISSION,
+            msg: f"AuthorizationHeaderMalformed: the scope is {claim.region}/{claim.service}, and this server is {region}/s3"
+        )
+    stamp = http.value_of(r.headers, name: "X-Amz-Date").default("")
+
+    at = match s3.parse_amz_date(stamp)
+        .ok t  => t
+        .err _ => return fail(code: PERMISSION, msg: "AccessDenied: X-Amz-Date is missing or not SigV4's form")
+
+    if !strings.has_prefix(s: stamp, prefix: claim.day)
+        return fail(code: PERMISSION, msg: "SignatureDoesNotMatch: the scope's day is not X-Amz-Date's")
+    skew = time.unix_seconds(now) - time.unix_seconds(at)
+
+    if skew > SKEW_SECONDS || skew < -SKEW_SECONDS
+        return fail(
+            code: PERMISSION,
+            msg: "RequestTimeTooSkewed: the request's time stands more than 15 minutes from the server's"
+        )
+    payload = http.value_of(r.headers, name: "X-Amz-Content-Sha256").default("")
+
+    if payload == ""
+        return fail(code: INVALID, msg: "InvalidRequest: X-Amz-Content-Sha256 is missing")
+
+    if payload != s3.UNSIGNED_PAYLOAD && payload != bytes.format_hex(crypto.sha256(r.body))
+        return fail(code: INVALID, msg: "XAmzContentSHA256Mismatch: the body's SHA-256 is not the one signed")
+    canonical = canonical_request(r, signed: claim.signed, payload: payload)?
+    scope = f"{claim.day}/{region}/s3/aws4_request"
+    to_sign = [ALGORITHM, stamp, scope, bytes.format_hex(crypto.sha256_text(canonical))].join("\n")
+    expected = bytes.format_hex(
+        crypto.hmac_text(.sha256, key: signing_key(secret: secret, day: claim.day, region: region), s: to_sign)
+    )
+
+    if !crypto.equals_constant_time(a: bytes.from_text(expected), b: bytes.from_text(claim.signature))
+        return fail(
+            code: PERMISSION,
+            msg: "SignatureDoesNotMatch: the request signature we calculated does not match the signature you provided"
+        )
+    return ok()
+
+# The canonical request of `r`: its method; its path decoded and encoded
+# once, `/` kept; its query's pairs encoded and sorted; each signed header
+# in lower case with its values trimmed, inner runs of spaces made one and
+# joined by commas; the list of signed headers; and the payload's hash,
+# one per line.
+#
+# - `r`: the request as the server read it.
+# - `signed`: the headers signed, in lower case.
+# - `payload`: the payload's hash as sent.
+#
+# Fails `permission` with `SignatureDoesNotMatch` where `host` is not
+# signed, a signed header was not sent, or the path or the query holds a
+# bad escape.
+function canonical_request(r: http.Request, signed: [str], payload: str) -> str?
+    if !signed.any(is_host)
+        return fail(code: PERMISSION, msg: "SignatureDoesNotMatch: the host is not among the signed headers")
+
+    decoded = match url.unescape(r.url.path)
+        .ok p  => p
+        .err _ => return fail(code: PERMISSION, msg: "SignatureDoesNotMatch: the path holds a bad escape")
+
+    pairs = match url.parse_query(r.url.query)
+        .ok q  => q
+        .err _ => return fail(code: PERMISSION, msg: "SignatureDoesNotMatch: the query holds a bad escape")
+
+    encoded: [str] @= []
+
+    for p in pairs
+        encoded @ encoded.push(
+            s3.uri_encode(p.key, keep_slash: false) + "=" + s3.uri_encode(p.value, keep_slash: false)
+        )
+
+    lines: [str] @= [r.method, s3.uri_encode(decoded, keep_slash: true), sort(encoded).join("&")]
+    names = sort(signed)
+
+    for name in names
+        values = http.values_of(r.headers, name: name)
+
+        if values.len() == 0
+            return fail(code: PERMISSION, msg: f"SignatureDoesNotMatch: the signed header {name} was not sent")
+        tidy: [str] @= []
+
+        for v in values
+            tidy @ tidy.push(strings.words(v).join(" "))
+
+        lines @ lines.push(name + ":" + tidy.join(","))
+
+    lines @ lines.push("")
+    lines @ lines.push(names.join(";"))
+    lines @ lines.push(payload)
+    return ok(lines.join("\n"))
+
+# Whether `name` is `host`.
+#
+# - `name`: a signed header's name.
+function is_host(name: str) -> bool
+    return name == "host"
+
+# The key one day's signatures are made with: HMAC-SHA256 of the day
+# under `AWS4` and the secret, then of the region, of `s3` and of
+# `aws4_request`, each under the one before.
+#
+# - `secret`: the secret access key.
+# - `day`: the day, `20260301`.
+# - `region`: the region.
+function signing_key(secret: str, day: str, region: str) -> [u8]
+    by_day = crypto.hmac_text(.sha256, key: bytes.from_text("AWS4" + secret), s: day)
+    by_region = crypto.hmac_text(.sha256, key: by_day, s: region)
+    by_service = crypto.hmac_text(.sha256, key: by_region, s: "s3")
+    return crypto.hmac_text(.sha256, key: by_service, s: "aws4_request")
+
+test "check: a request the s3 client signs is taken; another secret, another body, an old time and another key are refused"
+    creds = s3.Credentials(access_key_id: "AKIDBACKUPDEMO", secret_access_key: "demo/secret", session_token: "")
+    now = time.from_unix(whole_seconds: 1_772_355_600, extra_nanoseconds: 0).must()
+    asked = http.with_body(
+        http.request(method: "PUT", target: "http://127.0.0.1:9000/repo/data/ab/a%20b?x-id=PutObject").must(),
+        content_type: "application/octet-stream",
+        body: [1, 2, 3]
+    )
+    signed = s3.sign_request(asked, credentials: creds, region: "us-east-1", service: "s3", at: now).must().request
+    check(signed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "us-east-1", now: now).must()
+    assert check(signed, key_id: "AKIDBACKUPDEMO", secret: "other", region: "us-east-1", now: now).is_err()
+    assert check(signed, key_id: "OTHER", secret: "demo/secret", region: "us-east-1", now: now).is_err()
+    assert check(signed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "eu-west-1", now: now).is_err()
+    changed @= signed
+    changed.body @ [1, 2, 4]
+    assert check(changed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "us-east-1", now: now).is_err()
+    later = time.add(now, d: time.minutes(16).must()).must()
+    assert check(signed, key_id: "AKIDBACKUPDEMO", secret: "demo/secret", region: "us-east-1", now: later).is_err()
+
+test "parse_claim: another algorithm and a credential cut short are refused"
+    assert parse_claim("AWS AKID:sig").is_err()
+    assert parse_claim("AWS4-HMAC-SHA256 Credential=a/b/c, SignedHeaders=host, Signature=00").is_err()

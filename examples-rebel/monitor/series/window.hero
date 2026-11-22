@@ -1,0 +1,157 @@
+# What a rule reads of a series: one figure of the points in a window, the
+# mean, the extremes, the 95th percentile, the slope of the line through
+# them, or how long ago the last one was taken. The statistics are `stats`',
+# which answers what Python's `statistics` does for the same floats, so a
+# rule's figure can be checked by hand against another tool.
+
+use <rebel>/stats
+
+use series/store
+
+# The figure a rule takes of a window.
+variant Figure
+    # The last point's value; the window does not matter.
+    last
+    # The arithmetic mean.
+    avg
+    # The least value.
+    min
+    # The greatest value.
+    max
+    # The 95th percentile, read inclusively: within the window's least and
+    # greatest values, as a percentile of samples a monitor holds must be.
+    p95
+    # How fast the values change, in units a minute: the slope of the line
+    # of least squares through the points.
+    slope
+    # The seconds since the last point was taken; infinite where the series
+    # has none.
+    age
+
+# The name a figure is written with in a rule.
+#
+# - `f`: the figure.
+function figure_name(f: Figure) -> str
+    return match f
+        .last  => "last"
+        .avg   => "avg"
+        .min   => "min"
+        .max   => "max"
+        .p95   => "p95"
+        .slope => "slope"
+        .age   => "age"
+
+# The figure a rule's word names. Fails `invalid` for a word that names
+# none.
+#
+# - `word`: `last`, `avg`, `min`, `max`, `p95`, `slope` or `age`.
+function figure_named(word: str) -> Figure?
+    return match word
+        "last"  => ok(.last)
+        "avg"   => ok(.avg)
+        "min"   => ok(.min)
+        "max"   => ok(.max)
+        "p95"   => ok(.p95)
+        "slope" => ok(.slope)
+        "age"   => ok(.age)
+        _       => fail(code: "invalid", msg: f"no figure named \"{word}\": last, avg, min, max, p95, slope or age")
+
+# The nanoseconds in a minute, the unit a slope is counted over.
+constant MINUTE_NS: i64
+    60_000_000_000
+
+# The figure `f` of `points` at the moment `now`.
+#
+# - `f`: the figure.
+# - `points`: the window's points, oldest first.
+# - `now`: the moment it is read at, in nanoseconds since 1970: what `age`
+#   counts from.
+#
+# Fails `not_found` where the window holds no point (`age` excepted, which
+# answers infinity), and `invalid` where a slope has fewer than two moments
+# to read.
+function figure_of(f: Figure, points: [store.Point], now: i64) -> f64?
+    if points.len() == 0
+        return match f
+            .age                                       => ok(1.0 / 0.0)
+            .last | .avg | .min | .max | .p95 | .slope => fail(code: "not_found", msg: "no sample in the window")
+
+    values = store.values_of(points)
+    last = points[points.len() - 1]
+
+    match f
+        .last => return ok(last.value)
+        .avg  => return stats.mean(values)
+        .min  => return ok(least(values))
+        .max  => return ok(greatest(values))
+        .p95 =>
+            if values.len() == 1
+                return ok(values[0])
+            return ok(stats.quantiles_inclusive(data: values, parts: 100)?[94])
+        .slope =>
+            minutes: [f64] @= []
+
+            for p in points
+                minutes @ minutes.push(to_f64(p.at - points[0].at) / to_f64(MINUTE_NS))
+
+            return ok(stats.linear_regression(x: minutes, y: values)?.slope)
+        .age => return ok(to_f64(now - last.at) / 1_000_000_000.0)
+
+# The least of `values`, which holds one at least.
+#
+# - `values`: the values.
+function least(values: [f64]) -> f64
+    found @= values[0]
+
+    for v in values
+        if v < found
+            found @ v
+
+    return found
+
+# The greatest of `values`, which holds one at least.
+#
+# - `values`: the values.
+function greatest(values: [f64]) -> f64
+    found @= values[0]
+
+    for v in values
+        if v > found
+            found @ v
+
+    return found
+
+# The points of a test: `values` taken every 30 seconds from 0.
+#
+# - `values`: the values.
+function every_half_minute(values: [f64]) -> [store.Point]
+    points: [store.Point] @= []
+
+    for i in range(from: 0, to: values.len())
+        points @ points.push(store.Point(at: i * 30_000_000_000, value: values[i]))
+
+    return points
+
+test "figure_of: the mean, the extremes and the last of a window"
+    points = every_half_minute([60.0, 70.0, 80.0, 70.0])
+    assert figure_of(.avg, points: points, now: 90_000_000_000).must() == 70.0
+    assert figure_of(.min, points: points, now: 90_000_000_000).must() == 60.0
+    assert figure_of(.max, points: points, now: 90_000_000_000).must() == 80.0
+    assert figure_of(.last, points: points, now: 90_000_000_000).must() == 70.0
+
+test "figure_of: a slope in units a minute, and the 95th percentile as Python's inclusive method reads it"
+    rising = every_half_minute([10.0, 12.0, 14.0, 16.0])
+    assert figure_of(.slope, points: rising, now: 90_000_000_000).must() == 4.0
+    assert figure_of(.p95, points: every_half_minute([1.0, 2.0, 3.0, 4.0, 5.0]), now: 0).must() == 4.8
+    assert figure_of(.slope, points: every_half_minute([1.0]), now: 0).is_err()
+
+test "figure_of: an empty window, and the age of the last point"
+    assert figure_of(.avg, points: [], now: 0).is_err()
+    assert figure_of(.age, points: [], now: 0).must() == 1.0 / 0.0
+    assert figure_of(.age, points: every_half_minute([1.0, 2.0]), now: 90_000_000_000).must() == 60.0
+
+test "figure_named: every word, and one that names none"
+    for word in ["last", "avg", "min", "max", "p95", "slope", "age"]
+        assert figure_name(figure_named(word).must()) == word
+
+    assert figure_named("mean").is_err()

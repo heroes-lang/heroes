@@ -1,0 +1,189 @@
+# How a line of text stands on the screen, grapheme by grapheme: where each
+# begins in the line's bytes, which column it starts in, how many columns it
+# takes and what is drawn for it. The cursor's column, the moves up and down
+# that keep a column, the horizontal scroll and the drawing all read this one
+# layout, so what the cursor counts and what the screen shows cannot differ.
+#
+# A grapheme is drawn as itself, one or two columns as `unicode/segment`
+# measures it: a letter with its combining marks is one column, a CJK
+# character or an emoji two. Three kinds are drawn otherwise, so nothing in a
+# file is invisible: a tab is spaces to the next tab stop; a control
+# character is `^X` (`^M` for a carriage return, `^?` for DEL) or `<85>` for
+# one above ASCII; and a grapheme that would take no column at all, a
+# zero-width space or a mark with nothing before it, is its code point in
+# angle brackets, `<U+200B>`.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/unicode
+use <rebel>/unicode/segment
+
+# One grapheme of a line as the screen shows it.
+record Glyph
+    # The byte index in the line where the grapheme begins.
+    at: i64
+    # The byte index after it.
+    end: i64
+    # The column it starts in, from 0.
+    column: i64
+    # How many columns it takes, 1 or more.
+    width: i64
+    # What is drawn for it: the grapheme, spaces for a tab, a stand-in for a
+    # control or an invisible character.
+    shown: str
+    # Whether `shown` is a stand-in, drawn in the theme's style for controls.
+    stand_in: bool
+
+# The glyphs of `line`, left to right.
+#
+# - `line`: one line, without its line break.
+# - `tab_width`: the columns between two tab stops, 1 or more.
+#
+# Empty for the empty line. Each glyph begins where the one before ends.
+function glyphs_of(line: str, tab_width: i64) -> [Glyph]
+    found: [Glyph] @= []
+    at @= 0
+    column @= 0
+
+    for g in segment.graphemes(line)
+        glyph = glyph_of(g, at: at, column: column, tab_width: tab_width)
+        found @ found.push(glyph)
+        at @ at + g.len()
+        column @ column + glyph.width
+
+    return found
+
+# The glyph of one grapheme `g` standing at byte `at` and column `column`.
+#
+# - `g`: the grapheme.
+# - `at`: its byte index in the line.
+# - `column`: the column it starts in.
+# - `tab_width`: the columns between two tab stops, 1 or more.
+function glyph_of(g: str, at: i64, column: i64, tab_width: i64) -> Glyph
+    if g == "\t"
+        stop = tab_width - column % tab_width
+        return Glyph(
+            at: at,
+            end: at + 1,
+            column: column,
+            width: stop,
+            shown: repeat(" ", to_u64(stop).default(1)),
+            stand_in: false
+        )
+
+    first = unicode.code_point_at(g, index: 0)
+
+    if unicode.is_control(unicode.from_code_point(first).default(""))
+        shown = control_name(first)
+        return Glyph(at: at, end: at + g.len(), column: column, width: shown.len(), shown: shown, stand_in: true)
+
+    width = segment.width_of(g)
+
+    if width == 0
+        shown = "<" + code_name(first) + ">"
+        return Glyph(at: at, end: at + g.len(), column: column, width: shown.len(), shown: shown, stand_in: true)
+
+    return Glyph(at: at, end: at + g.len(), column: column, width: width, shown: g, stand_in: false)
+
+# What is drawn for the control character `point`: `^@` to `^_` for the
+# C0 controls, `^?` for DEL, its two hexadecimal digits in angle brackets
+# above ASCII.
+#
+# - `point`: the control's code point.
+function control_name(point: i64) -> str
+    if point < 32
+        return "^" + unicode.from_code_point(point + 64).default("?")
+
+    if point == 127
+        return "^?"
+
+    return "<" + numbers.format_int(n: point, base: 16) + ">"
+
+# `U+` and the code point `point` in at least four upper-case hexadecimal
+# digits, as Unicode writes one.
+#
+# - `point`: a code point, 0 or more.
+function code_name(point: i64) -> str
+    return "U+" + strings.pad_zeros(strings.to_upper(numbers.format_int(n: point, base: 16)), width: 4)
+
+# The column the byte `at` of the line stands in: the column of the glyph
+# that begins there, or the column after the last glyph where `at` is the
+# line's end.
+#
+# - `glyphs`: the line's glyphs, as `glyphs_of` answers them.
+# - `at`: a byte index at a glyph's start, or the line's length.
+function column_at(glyphs: [Glyph] lent, at: i64) -> i64
+    for g in glyphs
+        if g.at >= at
+            return g.column
+
+    return width_of_glyphs(glyphs)
+
+# How many columns the glyphs take in all.
+#
+# - `glyphs`: a line's glyphs.
+function width_of_glyphs(glyphs: [Glyph] lent) -> i64
+    if glyphs.len() == 0
+        return 0
+
+    last = glyphs[glyphs.len() - 1]
+    return last.column + last.width
+
+# The byte index a cursor aiming at column `goal` stands at: the start of the
+# glyph that covers that column, or the line's end where the line is shorter.
+#
+# - `glyphs`: the line's glyphs.
+# - `goal`: the column aimed at, 0 or more.
+# - `line_len`: the line's length in bytes.
+#
+# A wide glyph whose second column is aimed at is stood before, so the
+# cursor never lands inside a character.
+function index_at_column(glyphs: [Glyph] lent, goal: i64, line_len: i64) -> i64
+    for g in glyphs
+        if goal < g.column + g.width
+            return g.at
+
+    return line_len
+
+test "glyphs_of: a letter with a combining accent, a CJK character and an emoji"
+    accent = unicode.from_code_points([0x65, 0x301]).must()
+    got = glyphs_of("a" + accent + "日👍", tab_width: 4)
+    assert got.len() == 4
+    assert got[1] == Glyph(at: 1, end: 4, column: 1, width: 1, shown: accent, stand_in: false)
+    assert got[2].column == 2 && got[2].width == 2
+    assert got[3].column == 4 && got[3].width == 2 && got[3].at == 7
+
+test "glyphs_of: tabs to the next stop, from a column inside a stop"
+    got = glyphs_of("a\tb\t", tab_width: 4)
+    assert got[1].width == 3 && got[1].shown == "   "
+    assert got[2].column == 4
+    assert got[3].width == 3
+
+test "glyphs_of: a carriage return, DEL, a C1 control and a zero-width space"
+    zwsp = unicode.from_code_point(0x200b).must()
+    nel = unicode.from_code_point(0x85).must()
+    got = glyphs_of("x\r\u{7f}" + nel + zwsp, tab_width: 8)
+    assert got[1].shown == "^M" && got[1].stand_in
+    assert got[2].shown == "^?"
+    assert got[3].shown == "<85>"
+    assert got[4].shown == "<U+200B>" && got[4].width == 8
+
+test "glyphs_of: the empty line"
+    assert glyphs_of("", tab_width: 4).len() == 0
+
+test "column_at: the start, a byte after a wide character, and the end"
+    got = glyphs_of("日本x", tab_width: 4)
+    assert column_at(got, at: 0) == 0
+    assert column_at(got, at: 3) == 2
+    assert column_at(got, at: 7) == 5
+
+test "index_at_column: a column inside a wide character, and one past the end"
+    got = glyphs_of("a日b", tab_width: 4)
+    assert index_at_column(got, goal: 2, line_len: 5) == 1
+    assert index_at_column(got, goal: 3, line_len: 5) == 4
+    assert index_at_column(got, goal: 40, line_len: 5) == 5
+
+test "code_name: four digits at least, and five for an emoji"
+    assert code_name(0x200b) == "U+200B"
+    assert code_name(0x41) == "U+0041"
+    assert code_name(0x1f44d) == "U+1F44D"

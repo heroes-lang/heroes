@@ -1,0 +1,224 @@
+# A tree object: one folder's entries, each a mode, a name and the name of
+# the object it holds, as the Git Book's "Git Objects" lays them out:
+# `<mode> <name>`, a zero byte, then the object's 20 raw bytes, entry after
+# entry with nothing between. Git orders the entries by their names' bytes,
+# a folder's name read as if a `/` followed it, so `a.txt` stands before the
+# folder `a` and `a-b` after it is `a` (which reads `a/`); a tree written in
+# any other order has another name, and `git fsck` calls it unsorted.
+
+use <rebel>/bytes
+use <rebel>/lists
+use <rebel>/numbers
+use <rebel>/strings
+
+use objects/ids
+
+## Modes
+
+# What an entry of a tree is, by the mode git writes for it.
+variant Mode
+    # A file, `100644`.
+    file
+    # A file its owner may run, `100755`.
+    executable
+    # A folder: the entry names another tree, `40000`.
+    directory
+    # A symbolic link: the entry names a blob holding its target, `120000`.
+    link
+    # Another repository's commit, `160000`, a submodule's place: read and
+    # kept, never made by this program.
+    gitlink
+
+# The mode `mode` writes in a tree: octal digits with no leading zero.
+#
+# - `mode`: the mode.
+function mode_text(mode: Mode) -> str
+    return match mode
+        .file       => "100644"
+        .executable => "100755"
+        .directory  => "40000"
+        .link       => "120000"
+        .gitlink    => "160000"
+
+# The mode `text` writes, as a tree writes one.
+#
+# - `text`: the octal digits of a tree's entry.
+#
+# Fails `invalid` for any mode git does not write.
+function parse_mode(text: str) -> Mode?
+    return match text
+        "100644" => ok(.file)
+        "100755" => ok(.executable)
+        "40000"  => ok(.directory)
+        "120000" => ok(.link)
+        "160000" => ok(.gitlink)
+        _        => fail(code: "invalid", msg: f"\"{text}\" is no mode a tree's entry may have")
+
+# The mode as the number the staging index stores, the same octal digits
+# read as one number: `0o100644` for a file.
+#
+# - `mode`: the mode.
+function mode_bits(mode: Mode) -> i64
+    return numbers.parse_int_base(mode_text(mode), base: 8).must()
+
+# The mode the staging index's number `bits` stores.
+#
+# - `bits`: the number, `0o100644` for a file.
+#
+# Fails `invalid` for a number that is no mode of a tree's entry.
+function mode_of_bits(bits: i64) -> Mode?
+    return parse_mode(numbers.format_int(n: bits, base: 8))
+
+## Entries
+
+# One entry of a tree.
+record Entry
+    # What the entry is.
+    mode: Mode
+    # Its name in the folder: no `/`, no zero byte, never empty, `.` or `..`.
+    name: str
+    # The name of the object it holds: a blob, or a tree for a folder.
+    id: str
+
+# The text by which git orders `entry` in its tree: its name, followed by
+# `/` where it is a folder.
+#
+# - `entry`: the entry.
+function order_key(entry: Entry) -> str
+    if entry.mode == .directory
+        return entry.name + "/"
+    return entry.name
+
+# Whether `a` stands before `b` in a tree, by git's order.
+#
+# - `a`: an entry.
+# - `b`: another entry.
+function entry_before(a: Entry, b: Entry) -> bool
+    return strings.compare(a: order_key(a), b: order_key(b)) < 0
+
+# Whether `name` may name an entry of a tree: not empty, not `.`, `..` or
+# `.vcs`, and holding no `/` and no zero byte.
+#
+# - `name`: a name read from a tree or from the work tree.
+function is_entry_name(name: str) -> bool
+    if name == "" || name == "." || name == ".." || name == ".vcs"
+        return false
+    return !strings.contains(s: name, substr: "/") && is_text_without_zero(name)
+
+# Whether `s` holds no zero byte.
+#
+# - `s`: any text.
+function is_text_without_zero(s: str) -> bool
+    at @= 0
+
+    while at < s.len()
+        if s[at] == 0
+            return false
+        at @ at + 1
+
+    return true
+
+## The object
+
+# The content of the tree holding `entries`, sorted into git's order.
+#
+# - `entries`: the folder's entries in any order, their names distinct.
+#
+# Fails `invalid` where a name may not stand in a tree, two entries share a
+# name, or an entry's id is not a whole object name.
+function encode_tree(entries: [Entry]) -> [u8]?
+    sorted = lists.sort_by(entries, less: entry_before)
+    out: [u8] @= []
+    previous @= ""
+
+    for entry in sorted
+        if !is_entry_name(entry.name)
+            return fail(code: "invalid", msg: f"\"{entry.name}\" may not name an entry of a tree")
+
+        if entry.name == previous
+            return fail(code: "invalid", msg: f"two entries of one tree are named \"{entry.name}\"")
+        previous @ entry.name
+        bytes.push_text(to: @out, s: f"{mode_text(entry.mode)} {entry.name}")
+        out @ out.push(0)
+        bytes.push_all(to: @out, from: ids.raw_of(entry.id)?)
+
+    return ok(out)
+
+# The entries of the tree whose content is `data`, in the order it holds
+# them.
+#
+# - `data`: a tree object's content; empty is the empty tree.
+#
+# Fails `invalid` where an entry has no zero byte after its name, its mode is
+# none git writes, or fewer than 20 bytes of name follow.
+function decode_tree(data: [u8]) -> [Entry]?
+    out: [Entry] @= []
+    at @= 0
+
+    while at < data.len()
+        space = match bytes.index_of_from(s: data, substr: [' '], from: at)
+            .ok i  => i
+            .err _ => return fail(code: "invalid", msg: f"a tree's entry at byte {at} has no space after its mode")
+
+        zero = match bytes.index_of_from(s: data, substr: [0], from: space)
+            .ok i  => i
+            .err _ => return fail(code: "invalid", msg: f"a tree's entry at byte {at} has no zero byte after its name")
+
+        if zero + 1 + ids.RAW_LEN > data.len()
+            return fail(code: "invalid", msg: f"a tree's entry at byte {at} is cut short")
+        mode = parse_mode(bytes.to_text(data.slice(from: at, to: space))?)?
+        name = bytes.to_text(data.slice(from: space + 1, to: zero))?
+        id = ids.hex_of(data.slice(from: zero + 1, to: zero + 1 + ids.RAW_LEN))?
+        out @ out.push(Entry(mode: mode, name: name, id: id))
+        at @ zero + 1 + ids.RAW_LEN
+
+    return ok(out)
+
+test "mode_text and parse_mode: every mode there and back, and a stray one"
+    every: [Mode] = [.file, .executable, .directory, .link, .gitlink]
+
+    for mode in every
+        assert parse_mode(mode_text(mode)).must() == mode
+
+    assert parse_mode("100664").is_err()
+
+test "mode_bits and mode_of_bits: a file, a folder, a link"
+    assert mode_bits(.file) == 0o100644
+    assert mode_bits(.directory) == 0o40000
+    assert mode_of_bits(0o120000).must() == .link
+    assert mode_of_bits(0o100600).is_err()
+
+test "entry_before: a folder ordered as if a slash followed its name"
+    folder = Entry(mode: .directory, name: "a", id: ids.ZERO)
+    dotted = Entry(mode: .file, name: "a.txt", id: ids.ZERO)
+    dashed = Entry(mode: .file, name: "a-b", id: ids.ZERO)
+    assert entry_before(a: dashed, b: dotted)
+    assert entry_before(a: dotted, b: folder)
+    assert !entry_before(a: folder, b: dotted)
+
+test "is_entry_name: plain names, and the ones a tree refuses"
+    assert is_entry_name("README.md")
+    assert !is_entry_name("")
+    assert !is_entry_name("..")
+    assert !is_entry_name("a/b")
+    assert !is_entry_name(".vcs")
+
+test "encode_tree: the empty tree, and one file as git names its tree"
+    assert encode_tree([]).must() == []
+    one = [Entry(mode: .file, name: "a.txt", id: "45b983be36b73c0788dc9cbcb76cbb80fc7bb057")]
+    tree = encode_tree(one).must()
+    assert bytes.format_hex(tree).len() == 2 * (13 + 20)
+
+test "encode_tree: sorted into git's order, and two entries of one name refused"
+    a = Entry(mode: .directory, name: "src", id: ids.ZERO)
+    b = Entry(mode: .file, name: "README.md", id: ids.ZERO)
+    back = decode_tree(encode_tree([a, b]).must()).must()
+    assert back[0].name == "README.md"
+    assert back[1].name == "src"
+    assert encode_tree([b, b]).is_err()
+    assert encode_tree([Entry(mode: .file, name: "a/b", id: ids.ZERO)]).is_err()
+
+test "decode_tree: entries cut short, and a mode git never writes"
+    tree = encode_tree([Entry(mode: .file, name: "x", id: ids.ZERO)]).must()
+    assert decode_tree(tree.slice(from: 0, to: tree.len() - 1)).is_err()
+    assert decode_tree(bytes.from_text("777 x")).is_err()

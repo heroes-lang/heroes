@@ -1,0 +1,257 @@
+# A document as a spreadsheet, the XLSX file an accountant opens beside the
+# PDF: one sheet named by the document's number, with its header (dates,
+# customer, currency, exchange rate), its lines, its VAT by rate and its
+# totals, in the customer's language. Amounts, quantities and rates are
+# numbers the sheet can sum, each shown with its currency's digits; days
+# are dates. Every number is the float nearest the books' exact decimal,
+# which is the decimal itself for every amount the books hold
+# (`money/amount`'s bounds).
+#
+# The workbook's properties carry the document's number, the company and
+# the document's day, never the clock, so the same document makes the
+# same bytes.
+
+use <rebel>/big
+use <rebel>/i18n
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/xlsx
+
+use l10n/catalogs
+use model/documents
+use model/parties
+use money/amount
+use store/ledger
+use tax/regime
+
+## The workbook
+
+# The styles of a document's sheet, by what they show.
+record Styles
+    # The title: bold and larger.
+    title: i64
+    # A heading of the lines' and the taxes' tables: bold on gray.
+    heading: i64
+    # A label beside a value: bold.
+    label: i64
+    # An amount, with the currency's digits.
+    money: i64
+    # A quantity, with up to four digits after the point.
+    quantity: i64
+    # A rate in percent, with up to two digits after the point.
+    rate: i64
+    # A day.
+    day: i64
+    # A total: bold, with the currency's digits.
+    total: i64
+
+# The XLSX file of `doc`.
+#
+# - `doc`: the document.
+# - `company`: the company.
+# - `catalog`: the customer's language's catalog.
+#
+# Fails as `xlsx` fails, which it does only on a value past its bounds.
+function workbook_of(doc: documents.Document, company: parties.Company, catalog: i18n.Catalog) -> [u8]?
+    labels = catalogs.labels_in(catalog)
+    wb @= xlsx.new_workbook()
+    day = documents.day_text(doc.issued) + "T00:00:00Z"
+    wb.properties.title @ doc.number
+    wb.properties.creator @ company.name
+    wb.properties.created @ day
+    wb.properties.modified @ day
+    styles = styles_of(@wb, digits: amount.digits_of(doc.currency))
+    s @= xlsx.new_sheet(doc.number)
+    is_invoice = doc.kind == .invoice
+
+    title = if is_invoice
+        label(labels, key: "invoice")
+    else
+        label(labels, key: "credit_note")
+    put(@s, row: 0, column: 0, value: .text(v: title), style: styles.title)?
+    put(@s, row: 0, column: 1, value: .text(v: doc.number), style: styles.title)?
+    put(@s, row: 1, column: 0, value: .text(v: label(labels, key: "date")), style: styles.label)?
+    put(@s, row: 1, column: 1, value: .date(v: time.to_date_time(doc.issued)), style: styles.day)?
+
+    if is_invoice
+        put(@s, row: 2, column: 0, value: .text(v: label(labels, key: "due")), style: styles.label)?
+        put(@s, row: 2, column: 1, value: .date(v: time.to_date_time(doc.due)), style: styles.day)?
+    else
+        put(@s, row: 2, column: 0, value: .text(v: label(labels, key: "credits")), style: styles.label)?
+        put(@s, row: 2, column: 1, value: .text(v: doc.refers_to), style: 0)?
+    put(@s, row: 3, column: 0, value: .text(v: label(labels, key: "bill_to")), style: styles.label)?
+    put(@s, row: 3, column: 1, value: .text(v: doc.customer.name), style: 0)?
+    put(@s, row: 4, column: 0, value: .text(v: label(labels, key: "vat_id")), style: styles.label)?
+    put(@s, row: 4, column: 1, value: .text(v: doc.customer.vat_id), style: 0)?
+    put(@s, row: 5, column: 0, value: .text(v: label(labels, key: "currency")), style: styles.label)?
+    put(@s, row: 5, column: 1, value: .text(v: doc.currency), style: 0)?
+    row @= 6
+
+    if doc.currency != company.currency
+        put(@s, row: row, column: 0, value: .text(v: label(labels, key: "exchange")), style: styles.label)?
+        put(@s, row: row, column: 1, value: .number(v: amount.to_float(doc.exchange_rate)), style: 0)?
+        put(@s, row: row, column: 2, value: .text(v: f"{doc.currency} = 1 {company.currency}"), style: 0)?
+        row @ row + 1
+    row @ row + 1
+    headings = [
+        label(labels, key: "description")
+        label(labels, key: "quantity")
+        label(labels, key: "unit")
+        label(labels, key: "unit_price")
+        label(labels, key: "vat") + " %"
+        label(labels, key: "amount")
+    ]
+
+    for i in range(from: 0, to: headings.len())
+        put(@s, row: row, column: i, value: .text(v: headings[i]), style: styles.heading)?
+
+    row @ row + 1
+
+    for l in doc.lines
+        put(@s, row: row, column: 0, value: .text(v: l.description), style: 0)?
+        put(@s, row: row, column: 1, value: number(l.quantity), style: styles.quantity)?
+        put(@s, row: row, column: 2, value: .text(v: l.unit), style: 0)?
+        put(@s, row: row, column: 3, value: number(l.unit_price), style: styles.money)?
+        put(@s, row: row, column: 4, value: number(l.rate), style: styles.rate)?
+        put(@s, row: row, column: 5, value: number(l.net), style: styles.money)?
+        row @ row + 1
+
+    row @ row + 1
+    put(@s, row: row, column: 3, value: .text(v: label(labels, key: "rate") + " %"), style: styles.heading)?
+    put(@s, row: row, column: 4, value: .text(v: label(labels, key: "taxable")), style: styles.heading)?
+    put(@s, row: row, column: 5, value: .text(v: label(labels, key: "tax")), style: styles.heading)?
+    row @ row + 1
+
+    for t in doc.taxes
+        put(@s, row: row, column: 3, value: number(t.rate), style: styles.rate)?
+        put(@s, row: row, column: 4, value: number(t.net), style: styles.money)?
+        put(@s, row: row, column: 5, value: number(t.tax), style: styles.money)?
+        row @ row + 1
+
+    row @ row + 1
+
+    gross_key = if is_invoice
+        "total_due"
+    else
+        "total_credited"
+    put_total(@s, row: row, text: label(labels, key: "total_net"), d: doc.net, style: styles.total)?
+    put_total(@s, row: row + 1, text: label(labels, key: "total_vat"), d: doc.tax, style: styles.total)?
+    put_total(@s, row: row + 2, text: label(labels, key: gross_key), d: doc.gross, style: styles.total)?
+    xlsx.set_column_width(@s, first: 0, last: 0, width: 42.0)?
+    xlsx.set_column_width(@s, first: 1, last: 5, width: 16.0)?
+    xlsx.add_sheet(@wb, s)?
+    return xlsx.encode(wb)
+
+# The styles of a sheet whose amounts have `digits` after the point,
+# added to `wb`.
+#
+# - `wb`: the workbook.
+# - `digits`: the currency's digits.
+function styles_of(@wb: xlsx.Workbook, digits: i64) -> Styles
+    money_format = if digits == 0
+        "#,##0"
+    else
+        "#,##0." + repeat("0", to_u64(digits).must())
+    title @= xlsx.default_style()
+    title.font.bold @ true
+    title.font.size @ 14.0
+    heading @= xlsx.default_style()
+    heading.font.bold @ true
+    heading.fill @ xlsx.Fill(pattern: .solid, color: "D9D9D9", background: "")
+    label_style @= xlsx.default_style()
+    label_style.font.bold @ true
+    money @= xlsx.default_style()
+    money.number_format @ money_format
+    quantity @= xlsx.default_style()
+    quantity.number_format @ "#,##0.####"
+    rate @= xlsx.default_style()
+    rate.number_format @ "0.##"
+    day @= xlsx.default_style()
+    day.number_format @ "yyyy-mm-dd"
+    total @= money
+    total.font.bold @ true
+    return Styles(
+        title: xlsx.add_style(@wb, style: title),
+        heading: xlsx.add_style(@wb, style: heading),
+        label: xlsx.add_style(@wb, style: label_style),
+        money: xlsx.add_style(@wb, style: money),
+        quantity: xlsx.add_style(@wb, style: quantity),
+        rate: xlsx.add_style(@wb, style: rate),
+        day: xlsx.add_style(@wb, style: day),
+        total: xlsx.add_style(@wb, style: total)
+    )
+
+# Sets the cell at `row` and `column` of `s` to `value` in `style`.
+#
+# - `s`: the sheet.
+# - `row`: the row, from 0.
+# - `column`: the column, from 0.
+# - `value`: the value.
+# - `style`: the style's index in the workbook.
+#
+# Fails as `xlsx.set_value` fails.
+function put(@s: xlsx.Sheet, row: i64, column: i64, value: xlsx.Value, style: i64) -> ()?
+    xlsx.set_value(@s, row: row, column: column, value: value)?
+
+    if style != 0
+        xlsx.set_style(@s, row: row, column: column, style: style)?
+    return ok()
+
+# Sets a total's label and its amount in the last two columns of `row`.
+#
+# - `s`: the sheet.
+# - `row`: the row.
+# - `text`: the label.
+# - `d`: the amount.
+# - `style`: the amount's style.
+#
+# Fails as `put` fails.
+function put_total(@s: xlsx.Sheet, row: i64, text: str, d: big.Decimal, style: i64) -> ()?
+    put(@s, row: row, column: 4, value: .text(v: text), style: 0)?
+    return put(@s, row: row, column: 5, value: number(d), style: style)
+
+# `d` as a number of a cell.
+#
+# - `d`: an amount, a quantity or a rate of the books.
+function number(d: big.Decimal) -> xlsx.Value
+    return .number(v: amount.to_float(d))
+
+# The label of `key`, or the key where the catalog has none.
+#
+# - `labels`: the labels by key.
+# - `key`: the label's key.
+function label(labels: {str: str}, key: str) -> str
+    return labels[key].default(key)
+
+## Reading back
+
+# The text of every cell of `data`'s sheets, a row a line and the cells of
+# a row separated by tabs, each value written as `xlsx.format_value`
+# writes it: what an accountant's spreadsheet holds, whatever bytes the
+# zip around it took.
+#
+# - `data`: an XLSX file.
+#
+# Fails as `xlsx.decode` and `xlsx.rows_of` fail.
+function text_of(data: [u8]) -> str?
+    wb = xlsx.decode(data, options: xlsx.default_read_options())?
+    lines: [str] @= []
+
+    for s in wb.sheets
+        lines @ lines.push("[" + s.name + "]")
+
+        for r in xlsx.rows_of(s, limit: 100000)?
+            lines @ lines.push(r.map(xlsx.format_value).join("\t"))
+
+    return ok(lines.join("\n"))
+
+test "workbook_of: a document's sheet read back, its numbers exact"
+    doc @= ledger.sample(.invoice, day: "2026-03-01")
+    doc.number @ "INV-2026-0001"
+    italian = catalogs.catalog_for(language: "it", dir: "").must()
+    data = workbook_of(doc, company: regime.company_with(oss: true), catalog: italian).must()
+    text = text_of(data).must()
+    assert strings.contains(s: text, substr: "[INV-2026-0001]\nFattura\tINV-2026-0001")
+    assert strings.contains(s: text, substr: "Atlas\t2\tpc\t39.9\t4\t79.8")
+    assert strings.contains(s: text, substr: "Totale da pagare\t82.99")
+    assert workbook_of(doc, company: regime.company_with(oss: true), catalog: italian).must() == data

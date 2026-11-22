@@ -1,0 +1,235 @@
+# `test` and `[` (XCU `test`): files asked about, texts compared, integers
+# compared, joined by `!`, `-a`, `-o` and brackets. The expression is read by
+# recursive descent over the arguments: `-o` binds loosest, then `-a`, then
+# `!`, then one primary; a lone argument is true where it is not empty.
+
+use <rebel>/fs
+use <rebel>/numbers
+
+use builtins/table
+use exec/state
+use exec/streams
+
+# The reading state of one expression: its arguments and the next one.
+record Reader
+    # The arguments.
+    operands: [str]
+    # The index of the next one.
+    at: i64
+    # How many `!` and `(` the reading stands inside.
+    depth: i64
+
+# `test expression`: 0 where it holds, 1 where it does not, 2 for a mistake.
+#
+# - `sh`: the shell.
+# - `operands`: the expression's arguments.
+# - `place`: its places.
+function run(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0
+        return 1
+
+    r @= Reader(operands: operands, at: 0, depth: 0)
+
+    held = match either(@r)
+        .ok h  => h
+        .err e => return table.complain(@sh, place: place, name: "test", message: e.msg, status: 2)
+
+    if r.at < operands.len()
+        return table.complain(
+            @sh,
+            place: place,
+            name: "test",
+            message: f"`{operands[r.at]}` was not expected",
+            status: 2
+        )
+
+    if held
+        return 0
+
+    return 1
+
+# `[ expression ]`: `test` whose last argument must be `]`.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments, `]` last.
+# - `place`: its places.
+function run_bracket(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0 || operands[operands.len() - 1] != "]"
+        return table.complain(@sh, place: place, name: "[", message: "the last argument must be `]`", status: 2)
+
+    return run(@sh, operands: operands.slice(from: 0, to: operands.len() - 1), place: place)
+
+# The next argument, "" past the last.
+#
+# - `r`: the reader.
+function peek(r: Reader lent) -> str
+    if r.at < r.operands.len()
+        return r.operands[r.at]
+
+    return ""
+
+# `a -o b`.
+#
+# - `r`: the reader.
+function either(@r: Reader) -> bool?
+    held @= both(@r)?
+
+    while peek(r) == "-o" && r.at < r.operands.len()
+        r.at @ r.at + 1
+        right = both(@r)?
+        held @ held || right
+
+    return ok(held)
+
+# `a -a b`.
+#
+# - `r`: the reader.
+function both(@r: Reader) -> bool?
+    held @= negation(@r)?
+
+    while peek(r) == "-a" && r.at < r.operands.len()
+        r.at @ r.at + 1
+        right = negation(@r)?
+        held @ held && right
+
+    return ok(held)
+
+# `! a`.
+#
+# - `r`: the reader.
+function negation(@r: Reader) -> bool?
+    if r.depth >= 100
+        return fail(code: "invalid", msg: "the expression nests deeper than 100")
+
+    r.depth @ r.depth + 1
+    held = negated(@r)
+    r.depth @ r.depth - 1
+    return held
+
+# What `negation` reads, its depth counted there.
+#
+# - `r`: the reader.
+function negated(@r: Reader) -> bool?
+    if peek(r) == "!" && r.at + 1 < r.operands.len()
+        r.at @ r.at + 1
+        return ok(!negation(@r)?)
+
+    return primary(@r)
+
+# One primary: a bracketed expression, a test of a file or a text, a
+# comparison, or a lone text.
+#
+# - `r`: the reader.
+function primary(@r: Reader) -> bool?
+    if r.at >= r.operands.len()
+        return fail(code: "invalid", msg: "an argument was expected")
+
+    first = r.operands[r.at]
+
+    if first == "(" && r.at + 2 < r.operands.len()
+        r.at @ r.at + 1
+        held = either(@r)?
+
+        if peek(r) != ")"
+            return fail(code: "invalid", msg: "a `(` is never closed by `)`")
+
+        r.at @ r.at + 1
+        return ok(held)
+
+    if r.at + 2 < r.operands.len() && is_binary(r.operands[r.at + 1])
+        left = first
+        op = r.operands[r.at + 1]
+        right = r.operands[r.at + 2]
+        r.at @ r.at + 3
+        return compare(left: left, op: op, right: right)
+
+    if first.len() == 2 && first[0] == '-' && r.at + 1 < r.operands.len() && !is_binary(first)
+        operand = r.operands[r.at + 1]
+        r.at @ r.at + 2
+        return unary(op: first, operand: operand)
+
+    r.at @ r.at + 1
+    return ok(first != "")
+
+# Whether `op` is a binary operator of `test`.
+#
+# - `op`: the argument.
+function is_binary(op: str) -> bool
+    return match op
+        "=" | "!=" | "-eq" | "-ne" | "-lt" | "-le" | "-gt" | "-ge" => true
+        _                                                          => false
+
+# A unary test: a file's kind, size or permission, or a text's emptiness.
+#
+# - `op`: the operator.
+# - `operand`: what it asks about.
+function unary(op: str, operand: str) -> bool?
+    return match op
+        "-n"        => ok(operand != "")
+        "-z"        => ok(operand == "")
+        "-e"        => ok(fs.exists(operand).default(false))
+        "-f"        => ok(fs.is_file(operand).default(false))
+        "-d"        => ok(fs.is_dir(operand).default(false))
+        "-L" | "-h" => ok(fs.is_link(operand).default(false))
+        "-s" =>
+            match fs.info(operand)
+                .ok i  => ok(i.size > 0)
+                .err _ => ok(false)
+        "-r" => ok(has_bit(operand, bit: 0o444))
+        "-w" => ok(has_bit(operand, bit: 0o222))
+        "-x" => ok(has_bit(operand, bit: 0o111))
+        _    => fail(code: "invalid", msg: f"`{op}` is no test")
+
+# Whether the file at `p` exists with one of the permission bits of `bit`.
+#
+# - `p`: the path.
+# - `bit`: the bits, for owner, group and others.
+function has_bit(p: str, bit: i64) -> bool
+    return fs.permission_of(p).default(0) & bit != 0
+
+# A binary comparison of two texts or two integers.
+#
+# - `left`: the left side.
+# - `op`: the operator.
+# - `right`: the right side.
+function compare(left: str, op: str, right: str) -> bool?
+    if op == "="
+        return ok(left == right)
+
+    if op == "!="
+        return ok(left != right)
+
+    a = match numbers.parse_int(left)
+        .ok n  => n
+        .err _ => return fail(code: "invalid", msg: f"`{left}` is not an integer")
+
+    b = match numbers.parse_int(right)
+        .ok n  => n
+        .err _ => return fail(code: "invalid", msg: f"`{right}` is not an integer")
+
+    held = match op
+        "-eq" => a == b
+        "-ne" => a != b
+        "-lt" => a < b
+        "-le" => a <= b
+        "-gt" => a > b
+        _     => a >= b
+
+    return ok(held)
+
+# Whether `operands` hold, for the tests.
+#
+# - `operands`: the expression.
+function holds(operands: [str]) -> bool
+    r @= Reader(operands: operands, at: 0, depth: 0)
+    return either(@r).must()
+
+test "either: texts, integers, a negation and the two joins"
+    assert holds(["a", "=", "a"]) && !holds(["a", "!=", "a"])
+    assert holds(["3", "-lt", "10"]) && !holds(["3", "-gt", "10"])
+    assert holds(["!", "-z", "x"])
+    assert holds(["-n", "", "-o", "x"]) && !holds(["x", "-a", ""])
+    assert holds(["(", "1", "-eq", "1", ")"])
+
+test "unary: a folder and a file that is not there"
+    assert holds(["-d", "."]) && !holds(["-f", "no-such-file"]) && !holds(["-e", "no-such-file"])

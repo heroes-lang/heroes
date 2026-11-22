@@ -1,0 +1,261 @@
+# The payment QR code printed on a euro invoice: the code a payer's banking
+# app scans to fill in a SEPA credit transfer, written as the European
+# Payments Council's guidelines write it, EPC069-12 version 3.0 (issued and
+# effective 13 September 2022, read 2026-11-22). Banking apps across the
+# euro area read it, under the names GiroCode and EPC QR.
+#
+# The code holds lines in a fixed order: the service tag `BCD`, the version
+# `002`, the character set (`1`, UTF-8), the identification `SCT`, the
+# beneficiary's BIC (optional in version 002), name and IBAN, the amount as
+# `EUR` and its value, a purpose code, then either a structured RF
+# reference or a free text, never both, and a note for the payer. Lines are
+# separated by a line feed and the last line written is followed by
+# nothing, so empty lines at the end are left out. The whole holds at most
+# 331 bytes, which a symbol of version 13 holds at error correction level M,
+# the level the guideline asks.
+
+use <rebel>/big
+use <rebel>/bytes
+use <rebel>/qr
+use <rebel>/strings
+
+use bank/iban
+use bank/reference
+use money/amount
+
+## Codes
+
+# The code of a transfer the guideline has no form for: a name, an IBAN, a
+# BIC, an amount or a reference refused, or a payload past its bounds.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most bytes the payload holds.
+constant MAX_BYTES: i64
+    331
+
+# The largest version of symbol the guideline allows.
+constant MAX_VERSION: i64
+    13
+
+# The most characters of the beneficiary's name.
+constant MAX_NAME: i64
+    70
+
+# The most characters of a structured reference.
+constant MAX_REFERENCE: i64
+    35
+
+# The most characters of the free text.
+constant MAX_TEXT: i64
+    140
+
+# The most characters of the note to the payer.
+constant MAX_NOTE: i64
+    70
+
+## The transfer
+
+# What a payer's transfer is filled in with.
+record Transfer
+    # The beneficiary's BIC, "" where none is printed.
+    bic: str
+    # The beneficiary's name, as its account holds it.
+    name: str
+    # The beneficiary's IBAN, spaces allowed.
+    iban: str
+    # The amount in euro, from 0.01 to 999,999,999.99, at most two digits
+    # after the point.
+    amount: big.Decimal
+    # The RF creditor reference, "" where `text` is given instead.
+    reference: str
+    # The free text of the transfer, "" where `reference` is given.
+    text: str
+    # A note shown to the payer, "" for none.
+    note: str
+
+# The text the QR code of `t` holds.
+#
+# - `t`: the transfer.
+#
+# Fails `invalid` where the name is empty or longer than `MAX_NAME`
+# characters, the IBAN or the BIC is refused by `bank/iban`, the amount is
+# outside 0.01 to 999,999,999.99 or has a third digit after the point, the
+# reference is no RF creditor reference, both a reference and a text are
+# given, a field holds a line break, or the whole passes `MAX_BYTES`.
+function payload(t: Transfer) -> str?
+    one_line(what: "the beneficiary's name", value: t.name, most: MAX_NAME)?
+
+    if t.name == ""
+        return fail(code: INVALID, msg: "the beneficiary's name is empty")
+    account = iban.parse_iban(t.iban)?
+
+    bic = if t.bic == ""
+        ""
+    else
+        iban.parse_bic(t.bic)?
+    value = amount_text(t.amount)?
+
+    if t.reference != "" && t.text != ""
+        return fail(code: INVALID, msg: "a transfer carries either a reference or a text, never both")
+
+    if t.reference != "" && (t.reference.len() > MAX_REFERENCE || !reference.is_creditor_reference(t.reference))
+        return fail(code: INVALID, msg: f"\"{t.reference}\" is no RF creditor reference")
+    one_line(what: "the transfer's text", value: t.text, most: MAX_TEXT)?
+    one_line(what: "the note to the payer", value: t.note, most: MAX_NOTE)?
+    elements @= ["BCD", "002", "1", "SCT", bic, t.name, account, value, "", t.reference, t.text, t.note]
+
+    while elements[elements.len() - 1] == ""
+        elements @ elements.slice(from: 0, to: elements.len() - 1)
+
+    text = elements.join("\n")
+    size = bytes.from_text(text).len()
+
+    if size > MAX_BYTES
+        return fail(code: INVALID, msg: f"the payment code holds {size} bytes, past the guideline's {MAX_BYTES}")
+    return ok(text)
+
+# The QR code of `text`, at error correction level M.
+#
+# - `text`: a payload `payload` answered.
+#
+# Fails `invalid` where no symbol of version `MAX_VERSION` or below holds
+# it, and as `qr.make` fails.
+function code_of(text: str) -> qr.Code?
+    code = qr.make(text: text, level: .medium)?
+
+    if code.version > MAX_VERSION
+        return fail(
+            code: INVALID,
+            msg: f"the payment code needs a symbol of version {code.version}, past the guideline's {MAX_VERSION}"
+        )
+    return ok(code)
+
+# The amount as the payload writes it: `EUR`, then the value with a point
+# and no zero ending its fraction, `EUR12.3`.
+#
+# - `d`: the amount in euro.
+#
+# Fails `invalid` outside 0.01 to 999,999,999.99 or with a third digit after
+# the point.
+function amount_text(d: big.Decimal) -> str?
+    trimmed = big.trim_zeros(d)
+
+    if trimmed.scale > 2
+        return fail(
+            code: INVALID,
+            msg: f"an amount in euro has two digits after the point at most, and {amount.short(d)} has more"
+        )
+    least = big.parse_decimal("0.01")?
+    most = big.parse_decimal("999999999.99")?
+
+    if amount.compare(a: d, b: least) < 0 || amount.compare(a: d, b: most) > 0
+        return fail(
+            code: INVALID,
+            msg: f"the guideline takes amounts from 0.01 to 999999999.99 euro, and not {amount.short(d)}"
+        )
+    return ok("EUR" + big.format_decimal(trimmed))
+
+# Checks that `value` is one line of at most `most` characters.
+#
+# - `what`: what the value is, for the message.
+# - `value`: the text.
+# - `most`: the most characters.
+#
+# Fails `invalid` where it holds a line break or more characters.
+function one_line(what: str, value: str, most: i64) -> ()?
+    if strings.contains_any(s: value, set: "\r\n")
+        return fail(code: INVALID, msg: f"{what} holds a line break")
+    count = value.chars().len()
+
+    if count > most
+        return fail(code: INVALID, msg: f"{what} holds {count} characters, past the guideline's {most}")
+    return ok()
+
+# The guideline's second example, written with character set 1 where the
+# guideline's says 2, ISO 8859-1, since this program writes UTF-8 alone.
+test "payload: the EPC guideline's second example"
+    t = Transfer(
+        bic: "",
+        name: "François D'Alsace S.A.",
+        iban: "FR1420041010050500013M02606",
+        amount: big.parse_decimal("12.30").must(),
+        reference: "",
+        text: "Client:Marie Louise La Lune",
+        note: ""
+    )
+    p = payload(t).must()
+    assert p == "BCD\n002\n1\nSCT\n\nFrançois D'Alsace S.A.\nFR1420041010050500013M02606\nEUR12.3\n\n\nClient:Marie Louise La Lune"
+    assert p.chars().len() == 103
+
+# The guideline's first example, of version 001, which this program does
+# not write, is 96 bytes as the guideline says; its encoder wrote one byte
+# segment and reached version 6, and `qr.make`, splitting the digits into
+# numeric segments, fits it in version 5. Run 2026-11-22.
+test "code_of: the EPC guideline's first example in a symbol of version 5"
+    parts = [
+        "BCD"
+        "001"
+        "1"
+        "SCT"
+        "BHBLDEHHXXX"
+        "Franz Mustermänn"
+        "DE71110220330123456789"
+        "EUR12.3"
+        "GDDS"
+        "RF18539007547034"
+    ]
+    v1 = parts.join("\n")
+    assert bytes.from_text(v1).len() == 96
+    assert code_of(v1).must().version == 5
+
+test "payload: a reference, a BIC, a note, and an amount with no fraction"
+    t = Transfer(
+        bic: "bhbldehhxxx",
+        name: "Franz Mustermänn",
+        iban: "DE71 1102 2033 0123 4567 89",
+        amount: big.parse_decimal("1000.00").must(),
+        reference: "RF18539007547034",
+        text: "",
+        note: "Thank you"
+    )
+    assert payload(t).must() == "BCD\n002\n1\nSCT\nBHBLDEHHXXX\nFranz Mustermänn\nDE71110220330123456789\nEUR1000\n\nRF18539007547034\n\nThank you"
+
+test "payload: the refusals, each by its own rule"
+    good = Transfer(
+        bic: "",
+        name: "A",
+        iban: "DE71110220330123456789",
+        amount: big.parse_decimal("1").must(),
+        reference: "",
+        text: "",
+        note: ""
+    )
+    assert payload(good).must() == "BCD\n002\n1\nSCT\n\nA\nDE71110220330123456789\nEUR1"
+    no_name @= good
+    no_name.name @ ""
+    assert payload(no_name).is_err()
+    both @= good
+    both.reference @ "RF18539007547034"
+    both.text @ "x"
+    assert payload(both).is_err()
+    cent_fraction @= good
+    cent_fraction.amount @ big.parse_decimal("1.005").must()
+    assert payload(cent_fraction).is_err()
+    too_little @= good
+    too_little.amount @ big.parse_decimal("0.00").must()
+    assert payload(too_little).is_err()
+    too_much @= good
+    too_much.amount @ big.parse_decimal("1000000000").must()
+    assert payload(too_much).is_err()
+    broken @= good
+    broken.text @ "two\nlines"
+    assert payload(broken).is_err()
+    long_name @= good
+    long_name.name @ repeat("x", 71)
+    assert payload(long_name).is_err()
+    bad_reference @= good
+    bad_reference.reference @ "RF00INV1"
+    assert payload(bad_reference).is_err()

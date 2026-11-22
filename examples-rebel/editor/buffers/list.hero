@@ -1,0 +1,175 @@
+# The open buffers, kept in the order of their paths: an ordered map
+# (`containers/ordered`) from each path to its buffer. The order is what the
+# tab bar shows, so the tabs read like a listing of the folders, and where
+# a new file's tab goes does not depend on when it was opened; a path opened
+# twice is found rather than opened again; the next and the previous buffer
+# are the next and the previous key, and a buffer's place in the bar is its
+# key's rank.
+#
+# A slot is an index into `paths` and `open`, good until the next buffer is
+# closed; the editor holds the current buffer by its path and asks its slot
+# when it needs it.
+
+use <rebel>/containers/ordered
+use <rebel>/strings
+
+use buffers/buffer
+use text/document
+
+# The open buffers: an ordered map's shape and its two lists.
+record Buffers
+    # The map's shape.
+    order: ordered.Ordered
+    # The paths, by slot.
+    paths: [str]
+    # The buffers, by slot.
+    open: [buffer.Buffer]
+
+# No buffer open.
+function new_buffers() -> Buffers
+    return Buffers(order: ordered.new_map(), paths: [], open: [])
+
+# Whether `a` goes before `b` in the bar: by their bytes, as a listing sorts
+# names.
+#
+# - `a`: a path.
+# - `b`: another path.
+function by_path(a: str, b: str) -> bool
+    return strings.compare(a: a, b: b) < 0
+
+# How many buffers are open.
+#
+# - `list`: the buffers.
+function count(list: Buffers lent) -> i64
+    return ordered.size(list.order)
+
+# Puts `b` in the list under its path, in its place in the order.
+#
+# - `list`: the buffers; it gains `b`, or `b` replaces the buffer of the same
+#   path.
+# - `b`: the buffer.
+function add(@list: Buffers, b: buffer.Buffer)
+    ordered.put(@list.order, @list.paths, @list.open, key: b.path, value: b, less: by_path)
+
+# Whether a buffer of `path` is open.
+#
+# - `list`: the buffers.
+# - `path`: the path.
+function holds(list: Buffers lent, path: str) -> bool
+    return ordered.contains(list.order, list.paths, key: path, less: by_path)
+
+# The slot of the buffer of `path`.
+#
+# - `list`: the buffers.
+# - `path`: the path.
+#
+# Fails `not_found` where no buffer of `path` is open.
+function slot_of(list: Buffers lent, path: str) -> i64?
+    return ordered.slot_of(list.order, list.paths, key: path, less: by_path)
+
+# Takes the buffer of `path` out and answers it.
+#
+# - `list`: the buffers; it loses one.
+# - `path`: the path.
+#
+# Fails `not_found` where no buffer of `path` is open.
+function remove(@list: Buffers, path: str) -> buffer.Buffer?
+    return ordered.remove(@list.order, @list.paths, @list.open, key: path, less: by_path)
+
+# The paths in the bar's order.
+#
+# - `list`: the buffers.
+function paths_in_order(list: Buffers lent) -> [str]
+    return ordered.keys_in_order(list.order, list.paths)
+
+# The place of the buffer of `path` in the bar, from 0: how many paths go
+# before it.
+#
+# - `list`: the buffers.
+# - `path`: the path.
+function rank_of(list: Buffers lent, path: str) -> i64
+    return ordered.rank_of(list.order, list.paths, key: path, less: by_path)
+
+# The path of the buffer after the one of `path` in the bar, the first after
+# the last.
+#
+# - `list`: the buffers, at least one.
+# - `path`: the path of an open buffer.
+#
+# Aborts where no buffer is open.
+function next_path(list: Buffers lent, path: str) -> str
+    match ordered.higher_slot(list.order, list.paths, key: path, less: by_path)
+        .ok slot => return list.paths[slot]
+        .err _   => return list.paths[ordered.first_slot(list.order).must()]
+
+# The path of the buffer before the one of `path` in the bar, the last
+# before the first.
+#
+# - `list`: the buffers, at least one.
+# - `path`: the path of an open buffer.
+#
+# Aborts where no buffer is open.
+function previous_path(list: Buffers lent, path: str) -> str
+    match ordered.lower_slot(list.order, list.paths, key: path, less: by_path)
+        .ok slot => return list.paths[slot]
+        .err _   => return list.paths[ordered.last_slot(list.order).must()]
+
+# The path that takes the place of `path` once its buffer is closed: the one
+# after it in the bar, else the one before it.
+#
+# - `list`: the buffers, the closed one already taken out.
+# - `path`: the path of the buffer closed.
+#
+# Fails `not_found` where no buffer is left.
+function successor_of(list: Buffers lent, path: str) -> str?
+    match ordered.ceiling_slot(list.order, list.paths, key: path, less: by_path)
+        .ok slot => return ok(list.paths[slot])
+        .err _ =>
+            slot = ordered.last_slot(list.order)?
+            return ok(list.paths[slot])
+
+# The paths of the buffers that differ from their files, in the bar's order.
+#
+# - `list`: the buffers.
+function modified_paths(list: Buffers lent) -> [str]
+    found: [str] @= []
+
+    for slot in ordered.slots(list.order)
+        if buffer.is_modified(list.open[slot])
+            found @ found.push(list.paths[slot])
+
+    return found
+
+test "add: the bar in the order of the paths, and a path opened twice found"
+    list @= new_buffers()
+    add(@list, b: buffer.of_text(path: "src/main.txt", text: "", at: document.Pos(line: 0, col: 0)))
+    add(@list, b: buffer.of_text(path: "README", text: "", at: document.Pos(line: 0, col: 0)))
+    add(@list, b: buffer.of_text(path: "notes.txt", text: "", at: document.Pos(line: 0, col: 0)))
+    add(@list, b: buffer.of_text(path: "notes.txt", text: "", at: document.Pos(line: 0, col: 0)))
+    assert count(list) == 3
+    assert paths_in_order(list) == ["README", "notes.txt", "src/main.txt"]
+    assert rank_of(list, path: "notes.txt") == 1
+
+test "next_path and previous_path: around the bar's ends"
+    list @= new_buffers()
+
+    for p in ["b", "a", "c"]
+        add(@list, b: buffer.of_text(path: p, text: "", at: document.Pos(line: 0, col: 0)))
+
+    assert next_path(list, path: "a") == "b"
+    assert next_path(list, path: "c") == "a"
+    assert previous_path(list, path: "a") == "c"
+
+test "remove and successor_of: the next takes the place, else the one before"
+    list @= new_buffers()
+
+    for p in ["a", "b", "c"]
+        add(@list, b: buffer.of_text(path: p, text: "", at: document.Pos(line: 0, col: 0)))
+
+    assert remove(@list, path: "b").must().path == "b"
+    assert successor_of(list, path: "b").must() == "c"
+    _ = remove(@list, path: "c").must()
+    assert successor_of(list, path: "c").must() == "a"
+    _ = remove(@list, path: "a").must()
+    assert successor_of(list, path: "a").is_err()
+    assert remove(@list, path: "zz").is_err()

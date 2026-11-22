@@ -1,0 +1,176 @@
+# The commands that work on the work tree and the index: `init`, `add`,
+# `rm`, `status`, `diff` and `commit`. Each takes the repository and what
+# its arguments said, does its work through the modules below it, and
+# answers the text a person reads, so the command line prints it and the
+# demo prints it the same way.
+
+use <rebel>/strings
+
+use history/committing
+use objects/signatures
+use repo/layout
+use repo/refs
+use repo/staging
+use snapshot/patches
+use snapshot/tree_files
+use store/database
+use work/adding
+use work/status_report
+use work/tree_scan
+
+## Opening
+
+# The database of `repo`.
+#
+# - `repo`: the repository.
+#
+# Fails where a pack cannot be read.
+function open_db(repo: layout.Repo) -> database.Database?
+    return database.open_database(layout.objects_dir(repo))
+
+## init
+
+# Makes an empty repository at `root` and answers git's line about it.
+#
+# - `root`: the top of the work tree.
+#
+# Fails `exists` where one is there, and where a folder cannot be made.
+function init(root: str) -> str?
+    repo = layout.init(root)?
+    return ok(f"Initialized empty repository in {repo.dir}/")
+
+## add and rm
+
+# Stages `names` and answers which paths it staged and which it staged as
+# deleted, a line each, `add 'x'` and `remove 'x'` as `git add -v` writes.
+#
+# - `repo`: the repository.
+# - `names`: files, folders, or `.`.
+#
+# Fails as `adding.add_paths` does.
+function add(repo: layout.Repo, names: [str]) -> str?
+    db = open_db(repo)?
+    index @= staging.load(repo)?
+    added = adding.add_paths(repo, db: db, @index, names: names)?
+    staging.save(repo, index: index)?
+    lines: [str] @= []
+
+    for name in added.staged
+        lines @ lines.push(f"add '{name}'")
+
+    for name in added.removed
+        lines @ lines.push(f"remove '{name}'")
+
+    return ok(lines.join("\n"))
+
+# Unstages `names`, deleting their files unless `keep_files`, and answers
+# `rm 'x'` for each path.
+#
+# - `repo`: the repository.
+# - `names`: tracked paths or folders.
+# - `keep_files`: true to leave the files on disk.
+#
+# Fails as `adding.remove_paths` does.
+function remove(repo: layout.Repo, names: [str], keep_files: bool) -> str?
+    index @= staging.load(repo)?
+    removed = adding.remove_paths(repo, @index, names: names, keep_files: keep_files)?
+    staging.save(repo, index: index)?
+    lines: [str] @= []
+
+    for name in removed
+        lines @ lines.push(f"rm '{name}'")
+
+    return ok(lines.join("\n"))
+
+## status
+
+# The status of `repo`, long or short.
+#
+# - `repo`: the repository.
+# - `short`: true for two letters a path.
+#
+# Fails where the status cannot be computed.
+function status(repo: layout.Repo, short: bool) -> str?
+    db = open_db(repo)?
+    report = status_report.compute(repo, db: db)?
+
+    if short
+        return ok(status_report.format_short(report))
+    return ok(status_report.format_long(report))
+
+## diff
+
+# The tracked files of the work tree, each hashed from disk: what `diff`
+# compares the work tree by. Conflicted paths and files gone from disk are
+# left out.
+#
+# - `repo`: the repository.
+# - `index`: the index, which says which files are tracked.
+#
+# Fails where a file cannot be read.
+function work_files(repo: layout.Repo, index: staging.Index lent) -> {str: tree_files.Version}?
+    out: {str: tree_files.Version} @= {}
+
+    for e in staging.all_entries(index)
+        if e.stage != 0
+            continue
+
+        match tree_scan.stat(repo, name: e.name)
+            .ok f  => out[e.name] @ tree_files.Version(mode: f.mode, id: tree_scan.blob_id(repo, file: f)?)
+            .err _ => _ = 0
+
+    return ok(out)
+
+# The difference git's `diff` shows for the revisions `revisions`: none, the
+# index against the work tree; with `cached`, `HEAD` against the index; one,
+# that commit against the work tree; two, the first commit against the
+# second.
+#
+# - `repo`: the repository.
+# - `revisions`: no, one or two revisions.
+# - `cached`: true to compare `HEAD` with the index.
+#
+# Fails `invalid` for more than two revisions, `not_found` for a revision
+# that names nothing, and where an object or a file cannot be read.
+function diff(repo: layout.Repo, revisions: [str], cached: bool) -> str?
+    db = open_db(repo)?
+    index = staging.load(repo)?
+
+    if revisions.len() > 2
+        return fail(code: "invalid", msg: "diff compares at most two revisions")
+    older: {str: tree_files.Version} @= {}
+    newer: {str: tree_files.Version} @= {}
+
+    if revisions.len() == 2
+        older @ committing.files_of_commit(db, id: refs.resolve_commit(repo, db: db, text: revisions[0])?)?
+        newer @ committing.files_of_commit(db, id: refs.resolve_commit(repo, db: db, text: revisions[1])?)?
+    else if revisions.len() == 1
+        older @ committing.files_of_commit(db, id: refs.resolve_commit(repo, db: db, text: revisions[0])?)?
+        newer @ work_files(repo, index: index)?
+    else if cached
+        older @ status_report.head_files(repo, db: db)?
+        newer @ tree_files.flatten_index(index)
+    else
+        older @ tree_files.flatten_index(index)
+        newer @ work_files(repo, index: index)?
+    return ok(strings.trim_end(patches.patch_between(repo, db: db, older: older, newer: newer)?))
+
+## commit
+
+# Commits the index with `message`, or with the waiting merge's message
+# where `message` is empty, and answers git's lines about it.
+#
+# - `repo`: the repository.
+# - `message`: the message; empty takes a waiting merge's.
+# - `who`: who commits, and when.
+#
+# Fails as `committing.commit` does.
+function commit(repo: layout.Repo, message: str, who: signatures.Signature) -> str?
+    db = open_db(repo)?
+
+    text = if message == ""
+        refs.merge_message(repo).default("")
+    else
+        message
+    made = committing.commit(repo, db: db, message: text, who: who)?
+    return ok(made.summary)

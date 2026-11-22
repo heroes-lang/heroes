@@ -1,0 +1,41 @@
+# The small programs the shell's own binary also is, chosen by the name it
+# is run under, as BusyBox chooses: `upper`, `count`, `sorted`, `first`,
+# `snooze`, `fails` and `show`. A link to the binary named for one of them
+# runs that program and not the shell. They exist so a session can pipe
+# real child processes into one another on every system with the same
+# result: Windows has no `tr`, `wc`, `sort -u` or `sleep` that agree with
+# POSIX's, so a transcript built on them could not be the same everywhere.
+
+use tools/misc
+use tools/text
+
+# The programs' names.
+function names() -> [str]
+    return ["count", "fails", "first", "show", "snooze", "sorted", "upper"]
+
+# Whether `name` names one of the programs.
+#
+# - `name`: the name the binary was run under, without its suffix.
+function is_tool(name: str) -> bool
+    for n in names()
+        if n == name
+            return true
+
+    return false
+
+# Runs the program `name` with `arguments` and answers its exit status.
+#
+# - `name`: one of `names`.
+# - `arguments`: its arguments.
+function run(name: str, arguments: [str]) -> i64
+    return match name
+        "upper"  => text.upper(arguments)
+        "count"  => text.count(arguments)
+        "sorted" => text.sorted(arguments)
+        "first"  => text.first(arguments)
+        "snooze" => misc.snooze(arguments)
+        "fails"  => misc.fails(arguments)
+        _        => misc.show(arguments)
+
+test "is_tool: the programs, and the shell is none"
+    assert is_tool("upper") && is_tool("show") && !is_tool("shell") && !is_tool("")

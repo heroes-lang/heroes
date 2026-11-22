@@ -1,0 +1,206 @@
+# What each key does: every command the editor has, by name, with the line
+# its help screen shows, and the keys that run them when the settings say
+# nothing, in the manner of micro and nano. The settings' `[keys]` table
+# binds a key's name (`input/keynames`) to a command's name, over these;
+# `none` takes a key's binding away, so the key types its character or does
+# nothing.
+#
+# A key bound to no command and holding a character types it; Enter, Tab
+# and Backspace are bound like any key, so a person may move them.
+
+use <rebel>/term
+
+use input/keynames
+
+# The word that takes a key's binding away.
+constant UNBOUND: str
+    "none"
+
+# A command and what it does, as the help screen says it.
+record Command
+    # Its name, as the settings write it.
+    name: str
+    # What it does, in a few words.
+    about: str
+
+# Every command, in the order the help screen lists them.
+function commands() -> [Command]
+    return [
+        Command(name: "left", about: "one character left")
+        Command(name: "right", about: "one character right")
+        Command(name: "up", about: "one line up, the column kept")
+        Command(name: "down", about: "one line down, the column kept")
+        Command(name: "word_left", about: "to the start of the word before")
+        Command(name: "word_right", about: "to the end of the next word")
+        Command(name: "line_start", about: "to the indent, then the line's start")
+        Command(name: "line_end", about: "to the line's end")
+        Command(name: "page_up", about: "one screen up")
+        Command(name: "page_down", about: "one screen down")
+        Command(name: "file_start", about: "to the first line")
+        Command(name: "file_end", about: "to the last line")
+        Command(name: "goto_line", about: "to a line by its number")
+        Command(name: "newline", about: "break the line, keeping its indent")
+        Command(name: "indent", about: "type a tab")
+        Command(name: "backspace", about: "take out the character before")
+        Command(name: "delete", about: "take out the character after")
+        Command(name: "cut_line", about: "cut the line")
+        Command(name: "paste_lines", about: "paste the lines cut")
+        Command(name: "undo", about: "undo the last change")
+        Command(name: "redo", about: "redo the change undone")
+        Command(name: "find", about: "find a regular expression")
+        Command(name: "find_next", about: "the next match")
+        Command(name: "find_previous", about: "the match before")
+        Command(name: "replace", about: "replace matches, with $1 and ${name}")
+        Command(name: "describe", about: "the character's code points and bytes")
+        Command(name: "save", about: "save in the file's encoding")
+        Command(name: "encoding", about: "the encoding the next save writes")
+        Command(name: "reopen", about: "read the file again in an encoding")
+        Command(name: "reload", about: "read the file again from disk")
+        Command(name: "diff", about: "the buffer against the file on disk")
+        Command(name: "open", about: "open a file")
+        Command(name: "close", about: "close the buffer")
+        Command(name: "next_buffer", about: "the next tab")
+        Command(name: "previous_buffer", about: "the tab before")
+        Command(name: "help", about: "the keys and what they do")
+        Command(name: "quit", about: "close every buffer and leave")
+    ]
+
+# Whether `name` is a command's name, or `none`.
+#
+# - `name`: the name.
+function is_command(name: str) -> bool
+    if name == UNBOUND
+        return true
+
+    for c in commands()
+        if c.name == name
+            return true
+
+    return false
+
+# The keys bound when the settings say nothing, each key's name to its
+# command's.
+function default_keys() -> {str: str}
+    return {
+        "left": "left"
+        "right": "right"
+        "up": "up"
+        "down": "down"
+        "alt-b": "word_left"
+        "alt-f": "word_right"
+        "ctrl-left": "word_left"
+        "ctrl-right": "word_right"
+        "home": "line_start"
+        "end": "line_end"
+        "page_up": "page_up"
+        "page_down": "page_down"
+        "alt-<": "file_start"
+        "alt->": "file_end"
+        "ctrl-home": "file_start"
+        "ctrl-end": "file_end"
+        "ctrl-g": "goto_line"
+        "enter": "newline"
+        "tab": "indent"
+        "backspace": "backspace"
+        "delete": "delete"
+        "ctrl-k": "cut_line"
+        "ctrl-u": "paste_lines"
+        "ctrl-z": "undo"
+        "ctrl-y": "redo"
+        "ctrl-f": "find"
+        "ctrl-n": "find_next"
+        "ctrl-p": "find_previous"
+        "ctrl-r": "replace"
+        "alt-i": "describe"
+        "ctrl-s": "save"
+        "ctrl-e": "encoding"
+        "alt-e": "reopen"
+        "ctrl-l": "reload"
+        "ctrl-d": "diff"
+        "ctrl-o": "open"
+        "ctrl-w": "close"
+        "alt-n": "next_buffer"
+        "alt-p": "previous_buffer"
+        "f1": "help"
+        "ctrl-q": "quit"
+    }
+
+# The command `key` runs under `bound`, the bindings in force.
+#
+# - `bound`: each key's name to its command's, as the settings merged them.
+# - `key`: the key pressed.
+#
+# Fails `not_found` where the key is bound to nothing, or to `none`.
+function command_of(bound: {str: str}, key: term.Key) -> str?
+    name = keynames.name_of(key)
+    command = bound[name]?
+
+    if command == UNBOUND
+        return fail(code: "not_found", msg: f"{name} is bound to nothing")
+
+    return ok(command)
+
+# The names of the keys bound to `command`, in the order of `bound`, joined
+# by `, `; "" where none is.
+#
+# - `bound`: the bindings in force.
+# - `command`: a command's name.
+function keys_of_command(bound: {str: str}, command: str) -> str
+    found: [str] @= []
+
+    for k in keys(bound)
+        if bound[k].must() == command
+            found @ found.push(k)
+
+    return found.join(", ")
+
+# Checks each binding of `bound`: its key's name names a key and its command
+# is a command.
+#
+# - `bound`: the bindings, as the settings give them.
+#
+# Fails `invalid` naming the first binding that is neither, and the commands
+# there are.
+function check(bound: {str: str}) -> ()?
+    for k in keys(bound)
+        match keynames.key_of(k)
+            .ok _  => _ = 0
+            .err e => return fail(code: "invalid", msg: f"keys: {e.msg}")
+
+        command = bound[k].must()
+
+        if !is_command(command)
+            names = commands().map(name_of_command)
+            return fail(
+                code: "invalid",
+                msg: f"keys: \"{k}\" is bound to \"{command}\", which is no command; the commands are {names.join(", ")}"
+            )
+
+    return ok()
+
+# The name of `c`, for `map`.
+#
+# - `c`: a command.
+function name_of_command(c: Command) -> str
+    return c.name
+
+test "default_keys: every key named and every command known"
+    assert check(default_keys()).is_err() == false
+
+test "command_of: a key bound, a key unbound, and a key taken away"
+    bound @= default_keys()
+    assert command_of(bound, key: .control(letter: "s")).must() == "save"
+    assert command_of(bound, key: .character(text: "x")).is_err()
+    bound["ctrl-s"] @ UNBOUND
+    assert command_of(bound, key: .control(letter: "s")).is_err()
+
+test "check: a command misspelt and a key that never comes"
+    assert check({"ctrl-s": "sav"}).is_err()
+    assert check({"ctrl-m": "save"}).is_err()
+
+test "default_keys: Ctrl with Home and End, as xterm sends them"
+    assert command_of(default_keys(), key: keynames.key_of("ctrl-end").must()).must() == "file_end"
+    assert command_of(default_keys(), key: .other(bytes: [27, '[', '1', ';', '5', 'H'])).must() == "file_start"
+
+test "keys_of_command: two keys for one command"
+    assert keys_of_command(default_keys(), command: "word_right") == "alt-f, ctrl-right"

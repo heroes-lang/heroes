@@ -1,0 +1,298 @@
+# The build log, `.build_log` beside the outputs: for every target a step
+# has made, the digests it was made from, so the next build can tell what
+# changed. It is ninja's `.ninja_log` and `.ninja_deps` in one file, keyed
+# by content rather than by time (`state/content` says why).
+#
+# One JSON object a line, appended as each step ends, so a build stopped
+# halfway keeps what it finished: the first line names the format, each
+# later one records a target's step or forgets one, and the last line about
+# a target is the one that counts. A record is JSON because a path may hold
+# any character, a tab or a quote included, and JSON quotes every one.
+#
+#     {"build_log":1}
+#     {"out":"out/a.obj","command":"9e1c...","digest":"5d0f...","inputs":{"src/a.src":"77a2..."},"deps":{"src/a.h":"0c41...","gen/x.h":null},"ns":1843000}
+#     {"out":"out/b.obj","forget":true}
+#
+# The log is a cache of facts the disk can give again: a line that does not
+# read, the last one half-written by a build that was killed, or a log of
+# another format, is dropped and its target built again, never a failure.
+# It grows by a line a step, and is written again whole, holding only the
+# lines that count, once most of its lines no longer do.
+
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/strings
+use <rebel>/time
+
+use load/paths
+use model/buildfile
+
+# The format this program reads and writes, the first line's number.
+constant FORMAT: i64
+    1
+
+# The lines past twice the targets a log may hold before it is written again.
+constant SLACK: i64
+    100
+
+# What the log knows of one target: how its last good step was made.
+record Entry
+    # The target's output, as a node.
+    output: str
+    # The digest of the step's command and environment.
+    command: str
+    # The digest of the output the step left.
+    digest: str
+    # The digest of each input and implicit input as the step began.
+    inputs: {str: str}
+    # Each file the step's depfile named and its digest as the step ended;
+    # absent where nothing was there, so its arrival is a change too.
+    deps: {str: str?}
+    # How long the step ran.
+    duration: time.Duration
+
+# The log as read: the entry of each target, and how many lines held them.
+record Log
+    # The last entry of each target, in the order first recorded.
+    entries: {str: Entry}
+    # The records read, the first line's aside.
+    lines: i64
+    # Whether the file's first line names this program's format; false for
+    # a log that is not there or of another format, which is written anew.
+    current: bool
+
+# An empty log, as a first build finds it.
+function empty() -> Log
+    return Log(entries: {}, lines: 0, current: false)
+
+# The log of the build in `root`.
+#
+# - `root`: the build's folder.
+#
+# Fails where the file is there and the system will not let it be read,
+# with its code; a log that is not there, or holds bytes that are no text,
+# is empty.
+function read(root: str) -> Log?
+    place = paths.disk(root: root, name: paths.LOG_NAME)
+
+    text = match read_file(place)
+        .ok t => t
+        .err e =>
+            # No log is a first build; bytes that are no text are a log
+            # damaged past reading, a cache to make again like any line that
+            # does not read.
+            if e.code == "file_not_found" || e.code == "not_text"
+                return ok(empty())
+            return fail(code: e.code, msg: f"{paths.LOG_NAME}: {e.msg}")
+
+    return ok(parse(text))
+
+# The log `text` holds, every line that does not read dropped.
+#
+# - `text`: the file's text.
+function parse(text: str) -> Log
+    l @= empty()
+    lines = strings.lines(text)
+
+    if lines.len() == 0 || lines[0] != header()
+        return l
+
+    l.current @ true
+
+    for i in range(from: 1, to: lines.len())
+        match json.parse(lines[i])
+            .ok v =>
+                l.lines @ l.lines + 1
+                take(@l, v: v)
+            .err _ => _ = 0
+
+    return l
+
+# Takes the record `v` into `l`: an entry over the target's last, or the
+# target forgotten. A record that does not read is dropped.
+#
+# - `l`: the log, changed.
+# - `v`: one line's JSON.
+function take(@l: Log, v: json.Value)
+    output = match json.member(v, key: "out")
+        .ok o  => json.text_of(o).default("")
+        .err _ => ""
+
+    if output == ""
+        return
+
+    if json.member(v, key: "forget").is_err() == false
+        l.entries @ without(l.entries, output: output)
+        return
+
+    match entry_of(v, output: output)
+        .ok e  => l.entries[output] @ e
+        .err _ => _ = 0
+
+# `entries` without `output`'s.
+#
+# - `entries`: the entries.
+# - `output`: the target to leave out.
+function without(entries: {str: Entry}, output: str) -> {str: Entry}
+    out: {str: Entry} @= {}
+
+    for name in keys(entries)
+        if name != output
+            out[name] @ entries[name].must()
+
+    return out
+
+# The entry the record `v` writes for `output`.
+#
+# - `v`: one line's JSON.
+# - `output`: its `out`.
+#
+# Fails `invalid` where a field is missing or of another kind.
+function entry_of(v: json.Value, output: str) -> Entry?
+    inputs: {str: str} @= {}
+
+    for name in keys(json.members_of(json.member(v, key: "inputs")?)?)
+        inputs[name] @ json.text_of(json.member(json.member(v, key: "inputs")?, key: name)?)?
+
+    deps: {str: str?} @= {}
+    listed = json.member(v, key: "deps")?
+
+    for name in keys(json.members_of(listed)?)
+        d = json.member(listed, key: name)?
+
+        if json.is_null(d)
+            deps[name] @ fail(code: buildfile.NOT_FOUND, msg: "nothing was there")
+        else
+            deps[name] @ ok(json.text_of(d)?)
+
+    return ok(
+        Entry(output: output, command: json.text_of(json.member(v, key: "command")?)?, digest: json.text_of(json.member(v, key: "digest")?)?, inputs: inputs, deps: deps, duration: time.nanoseconds(json.int_of(json.member(v, key: "ns")?)?))
+    )
+
+# The first line of a log of this program's format.
+function header() -> str
+    return f"{{\"build_log\":{FORMAT}}}"
+
+# `e` as one line of the log.
+#
+# - `e`: the entry.
+function line_of(e: Entry) -> str
+    inputs: {str: json.Value} @= {}
+
+    for name in keys(e.inputs)
+        inputs[name] @ .text(v: e.inputs[name].must())
+
+    deps: {str: json.Value} @= {}
+
+    for name in keys(e.deps)
+        deps[name] @ match e.deps[name].must()
+            .ok d  => .text(v: d)
+            .err _ => .null_value
+
+    members: {str: json.Value} = {
+        "out": .text(v: e.output)
+        "command": .text(v: e.command)
+        "digest": .text(v: e.digest)
+        "inputs": .object(members: inputs)
+        "deps": .object(members: deps)
+        "ns": .number(v: to_f64(e.duration.nanoseconds))
+    }
+
+    # Every value above is text, an object of text or a finite number, each
+    # of which JSON writes.
+    return json.format(.object(members: members)).must()
+
+# The line that forgets `output`.
+#
+# - `output`: the target.
+function forget_line(output: str) -> str
+    members: {str: json.Value} = {"out": .text(v: output), "forget": .boolean(v: true)}
+
+    # Text and a boolean, which JSON writes.
+    return json.format(.object(members: members)).must()
+
+# Adds `line` to the log of the build in `root`.
+#
+# - `root`: the build's folder.
+# - `line`: one record, with no line end.
+#
+# Fails where the file cannot be written, with its code.
+function append(root: str, line: str) -> ()?
+    return fs.append_text(path: paths.disk(root: root, name: paths.LOG_NAME), text: line + "\n")
+
+# Writes the log of the build in `root` again whole: the format's line and
+# one line for each of `l`'s entries, in one step that no reader sees half
+# done.
+#
+# - `root`: the build's folder.
+# - `l`: the log; its line count becomes its entries'.
+#
+# Fails where the file cannot be written, with its code.
+function rewrite(root: str, @l: Log) -> ()?
+    lines: [str] @= [header()]
+
+    for name in keys(l.entries)
+        lines @ lines.push(line_of(l.entries[name].must()))
+
+    fs.write_atomic_text(path: paths.disk(root: root, name: paths.LOG_NAME), text: lines.join("\n") + "\n")?
+    l.lines @ keys(l.entries).len()
+    l.current @ true
+    return ok()
+
+# Whether `l` is to be written again before a build appends to it: it is
+# not there or of another format, or most of its lines no longer count.
+#
+# - `l`: the log as read.
+function is_due(l: Log lent) -> bool
+    return !l.current || l.lines > 2 * keys(l.entries).len() + SLACK
+
+## Tests
+
+# An entry of one input and two depfile names, one of them absent.
+function sample() -> Entry
+    return Entry(
+        output: "out/a b.obj",
+        command: "0000000000000001",
+        digest: "0000000000000002",
+        inputs: {"src/a \"q\".src": "0000000000000003"},
+        deps: {"src/a.h": ok("0000000000000004"), "gen/none.h": fail(code: "not_found", msg: "nothing")},
+        duration: time.nanoseconds(1_843_000)
+    )
+
+test "line_of and parse: an entry read back whole, quotes and an absent dep included"
+    l = parse(header() + "\n" + line_of(sample()) + "\n")
+    assert l.current && l.lines == 1
+    e = l.entries["out/a b.obj"].must()
+    assert e.command == sample().command && e.digest == sample().digest
+    assert e.inputs == sample().inputs
+    assert e.deps["src/a.h"].must().must() == "0000000000000004"
+    assert e.deps["gen/none.h"].must().is_err()
+    assert e.duration == time.nanoseconds(1_843_000)
+
+test "parse: the last line about a target counts, and a forget removes it"
+    first = sample()
+    second @= sample()
+    second.digest @ "00000000000000ff"
+    text = [header(), line_of(first), line_of(second), forget_line("out/none")].join("\n")
+    l = parse(text)
+    assert l.entries["out/a b.obj"].must().digest == "00000000000000ff"
+    assert l.lines == 3
+    gone = parse(text + "\n" + forget_line("out/a b.obj"))
+    assert keys(gone.entries).len() == 0
+
+test "parse: a half-written last line and a line of no JSON are dropped"
+    text = [header(), line_of(sample()), "{\"out\":\"out/c\",\"comm", "not json", "{\"out\":\"x\"}"].join("\n")
+    l = parse(text)
+    assert keys(l.entries) == ["out/a b.obj"]
+
+test "parse: an empty text, and a log of another format, are empty and not current"
+    assert !parse("").current
+    other = parse("{\"build_log\":0}\n" + line_of(sample()))
+    assert !other.current && keys(other.entries).len() == 0
+
+test "is_due: a log of another format, and one most of whose lines no longer count"
+    assert is_due(empty())
+    l @= parse(header() + "\n" + line_of(sample()))
+    assert !is_due(l)
+    l.lines @ 2 + SLACK + 1
+    assert is_due(l)

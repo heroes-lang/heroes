@@ -1,0 +1,259 @@
+# The customers and the items the books know, written and read. A
+# customer or an item is put whole, replacing the one of its key, and
+# checked before it is written: every text one line (`parties.clean_line`),
+# a country and a currency of their codes, a locale CLDR reads, a price
+# exact. A document keeps its own copy of what it printed, so changing a
+# customer or an item changes no document already issued.
+
+use <rebel>/big
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/sql
+use <rebel>/sql/sqlite
+
+use model/documents
+use model/parties
+use money/amount
+use store/database
+
+## Codes
+
+# The code of a customer or an item the books do not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+## Customers
+
+# `c`, every field checked and written in its one form: the key, the
+# country and the currency in capitals, the locale as CLDR writes it.
+#
+# - `c`: the customer as given.
+#
+# Fails `invalid` naming the first field that is not of its form.
+function checked_customer(c: parties.Customer) -> parties.Customer?
+    key = parties.parse_key(c.key)?
+    what = f"customer {key}"
+
+    locale = match i18n.parse_locale(c.locale)
+        .ok l  => i18n.format_locale(l)
+        .err _ => return fail(code: parties.INVALID, msg: f"{what}'s locale \"{c.locale}\" is no language tag")
+
+    if c.payment_days < 0 || c.payment_days > 365
+        return fail(code: parties.INVALID, msg: f"{what} pays in 0 to 365 days, and not {c.payment_days}")
+    return ok(
+        parties.Customer(key: key, name: parties.required_line(what: what + "'s name", value: c.name, most: parties.MAX_LINE)?, street: parties.required_line(what: what + "'s street", value: c.street, most: parties.MAX_LINE)?, postcode: parties.clean_line(what: what + "'s postal code", value: c.postcode, most: parties.MAX_LINE)?, city: parties.required_line(what: what + "'s city", value: c.city, most: parties.MAX_LINE)?, country: parties.parse_country(c.country)?, vat_id: parties.clean_line(what: what + "'s VAT number", value: c.vat_id, most: parties.MAX_LINE)?, email: parties.required_line(what: what + "'s mail address", value: c.email, most: parties.MAX_LINE)?, locale: locale, currency: amount.parse_currency(c.currency)?, payment_days: c.payment_days)
+    )
+
+# Writes `c`, checked, replacing the customer of its key.
+#
+# - `db`: the books.
+# - `c`: the customer.
+#
+# Answers the customer as written. Fails as `checked_customer` and
+# `sqlite.exec` fail.
+function put_customer(@db: sqlite.Db, c: parties.Customer) -> parties.Customer?
+    k = checked_customer(c)?
+    statement = "INSERT INTO customers (key, name, street, postcode, city, country, vat_id, email, locale, currency, payment_days) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11) ON CONFLICT (key) DO UPDATE SET name = excluded.name, street = excluded.street, postcode = excluded.postcode, city = excluded.city, country = excluded.country, vat_id = excluded.vat_id, email = excluded.email, locale = excluded.locale, currency = excluded.currency, payment_days = excluded.payment_days"
+    params: [sql.Value] = [
+        .text(v: k.key)
+        .text(v: k.name)
+        .text(v: k.street)
+        .text(v: k.postcode)
+        .text(v: k.city)
+        .text(v: k.country)
+        .text(v: k.vat_id)
+        .text(v: k.email)
+        .text(v: k.locale)
+        .text(v: k.currency)
+        .integer(v: k.payment_days)
+    ]
+    _ = sqlite.exec(@db, statement, params)?
+    return ok(k)
+
+# The customer of `key`.
+#
+# - `db`: the books.
+# - `key`: the customer's key, in any case.
+#
+# Fails `not_found` where the books hold none, and as `sqlite.query_one`
+# fails.
+function customer_named(@db: sqlite.Db, key: str) -> parties.Customer?
+    k = parties.parse_key(key)?
+
+    match sqlite.query_one(@db, "SELECT * FROM customers WHERE key = ?1", [.text(v: k)])
+        .ok row => return customer_of(row)
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"the books hold no customer {k}")
+            return fail(code: e.code, msg: e.msg)
+
+# Every customer, by key.
+#
+# - `db`: the books.
+#
+# Fails as `sqlite.query` fails.
+function customers(@db: sqlite.Db) -> [parties.Customer]?
+    found: [parties.Customer] @= []
+
+    for row in sqlite.query(@db, "SELECT * FROM customers ORDER BY key", [])?.rows
+        found @ found.push(customer_of(row)?)
+
+    return ok(found)
+
+# The customer a row of `customers` holds.
+#
+# - `row`: the row.
+#
+# Fails as the reads of `sql` fail on a row of another shape.
+function customer_of(row: sql.Row) -> parties.Customer?
+    return ok(
+        parties.Customer(key: sql.text_named(row, "key")?, name: sql.text_named(row, "name")?, street: sql.text_named(row, "street")?, postcode: sql.text_named(row, "postcode")?, city: sql.text_named(row, "city")?, country: sql.text_named(row, "country")?, vat_id: sql.text_named(row, "vat_id")?, email: sql.text_named(row, "email")?, locale: sql.text_named(row, "locale")?, currency: sql.text_named(row, "currency")?, payment_days: sql.integer_named(row, "payment_days")?)
+    )
+
+## Items
+
+# `item`, every field checked: its SKU a key, its texts one line each, its
+# price not negative, its tax class named.
+#
+# - `item`: the item as given.
+#
+# Fails `invalid` naming the first field that is not of its form.
+function checked_item(item: documents.Item) -> documents.Item?
+    sku = parties.parse_key(item.sku)?
+    what = f"item {sku}"
+
+    if amount.is_negative(item.price)
+        return fail(code: parties.INVALID, msg: f"{what}'s price is below zero")
+    return ok(
+        documents.Item(sku: sku, description: parties.required_line(what: what + "'s description", value: item.description, most: parties.MAX_LINE)?, unit: parties.required_line(what: what + "'s unit", value: item.unit, most: parties.MAX_KEY)?, price: item.price, tax_class: parties.required_line(what: what + "'s tax class", value: item.tax_class, most: parties.MAX_KEY)?)
+    )
+
+# Writes `item`, checked, replacing the item of its SKU.
+#
+# - `db`: the books.
+# - `item`: the item.
+#
+# Answers the item as written. Fails as `checked_item` and `sqlite.exec`
+# fail.
+function put_item(@db: sqlite.Db, item: documents.Item) -> documents.Item?
+    i = checked_item(item)?
+    statement = "INSERT INTO items (sku, description, unit, price, tax_class) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT (sku) DO UPDATE SET description = excluded.description, unit = excluded.unit, price = excluded.price, tax_class = excluded.tax_class"
+    params: [sql.Value] = [
+        .text(v: i.sku)
+        .text(v: i.description)
+        .text(v: i.unit)
+        .text(v: big.format_decimal(i.price))
+        .text(v: i.tax_class)
+    ]
+    _ = sqlite.exec(@db, statement, params)?
+    return ok(i)
+
+# The item of `sku`.
+#
+# - `db`: the books.
+# - `sku`: the item's SKU, in any case.
+#
+# Fails `not_found` where the books hold none, and as `sqlite.query_one`
+# fails.
+function item_named(@db: sqlite.Db, sku: str) -> documents.Item?
+    k = parties.parse_key(sku)?
+
+    match sqlite.query_one(@db, "SELECT * FROM items WHERE sku = ?1", [.text(v: k)])
+        .ok row => return item_of(row)
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"the books hold no item {k}")
+            return fail(code: e.code, msg: e.msg)
+
+# Every item, by SKU.
+#
+# - `db`: the books.
+#
+# Fails as `sqlite.query` fails.
+function items(@db: sqlite.Db) -> [documents.Item]?
+    found: [documents.Item] @= []
+
+    for row in sqlite.query(@db, "SELECT * FROM items ORDER BY sku", [])?.rows
+        found @ found.push(item_of(row)?)
+
+    return ok(found)
+
+# The item a row of `items` holds.
+#
+# - `row`: the row.
+#
+# Fails as the reads of `sql` fail, and `invalid` where its price is not
+# a decimal.
+function item_of(row: sql.Row) -> documents.Item?
+    return ok(
+        documents.Item(sku: sql.text_named(row, "sku")?, description: sql.text_named(row, "description")?, unit: sql.text_named(row, "unit")?, price: big.parse_decimal(sql.text_named(row, "price")?)?, tax_class: sql.text_named(row, "tax_class")?)
+    )
+
+## Tests
+
+# A customer of the tests.
+#
+# - `key`: its key.
+function sample_customer(key: str) -> parties.Customer
+    return parties.Customer(
+        key: key,
+        name: "Libreria Dante",
+        street: "Via Roma 1",
+        postcode: "00100",
+        city: "Roma",
+        country: "it",
+        vat_id: "IT00000000000",
+        email: "ordini@dante.example",
+        locale: "it_it",
+        currency: "eur",
+        payment_days: 30
+    )
+
+test "put_customer: checked, written in one form, read back and replaced"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-registry-*").must()
+    db @= database.open_books(dir + "/books.db").must()
+    written = put_customer(@db, c: sample_customer("dante")).must()
+    assert written.key == "DANTE" && written.country == "IT" && written.currency == "EUR" && written.locale == "it-IT"
+    assert customer_named(@db, key: "Dante").must() == written
+    changed @= sample_customer("DANTE")
+    changed.payment_days @ 60
+    _ = put_customer(@db, c: changed).must()
+    assert customer_named(@db, key: "DANTE").must().payment_days == 60 && customers(@db).must().len() == 1
+
+    match customer_named(@db, key: "NOBODY")
+        .ok _  => assert false
+        .err e => assert e.code == NOT_FOUND
+
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()
+
+test "checked_customer: a tab in a name, a bad locale and a long payment refused"
+    tabbed @= sample_customer("A")
+    tabbed.name @ "Libreria\tDante"
+    assert checked_customer(tabbed).is_err()
+    bad_locale @= sample_customer("A")
+    bad_locale.locale @ "not a locale"
+    assert checked_customer(bad_locale).is_err()
+    slow @= sample_customer("A")
+    slow.payment_days @ 400
+    assert checked_customer(slow).is_err()
+
+test "put_item: an exact price kept, a negative one refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-registry-*").must()
+    db @= database.open_books(dir + "/books.db").must()
+    i = documents.Item(
+        sku: "book-a",
+        description: "Atlas",
+        unit: "pc",
+        price: big.parse_decimal("39.9000").must(),
+        tax_class: "books"
+    )
+    _ = put_item(@db, item: i).must()
+    back = item_named(@db, sku: "BOOK-A").must()
+    assert big.format_decimal(back.price) == "39.9000" && back.tax_class == "books"
+    free @= i
+    free.price @ big.parse_decimal("-1").must()
+    assert put_item(@db, item: free).is_err()
+    assert items(@db).must().len() == 1
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()

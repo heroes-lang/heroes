@@ -1,0 +1,186 @@
+# The commit graph: each commit pointing to its parents, read from the
+# database as far back as the commits asked about reach. `graphs` answers
+# the questions a history asks of it: which commits a commit reaches (its
+# ancestors, itself included), the order a log shows them in (every commit
+# before its parents, `topological_order` over the graph turned around so a
+# commit depends on its children), and from those the merge base of two
+# commits: the common ancestors that no other common ancestor descends
+# from, as git-merge-base(1) defines the best ones.
+
+use <rebel>/graphs
+use <rebel>/time
+
+use objects/commits
+use store/database
+
+## The graph
+
+# The commits reachable from `tips` and their parents, each commit a key
+# whose list is its parents in order.
+#
+# - `db`: the database.
+# - `tips`: the commits to start from; a name repeated is walked once.
+#
+# Fails where a commit cannot be read or decoded.
+function parents_graph(db: database.Database lent, tips: [str]) -> {str: [str]}?
+    graph: {str: [str]} @= {}
+    stack @= tips
+
+    while stack.len() > 0
+        id = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        if !graph[id].is_err()
+            continue
+        c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+        graph[id] @ c.parents
+
+        for p in c.parents
+            if graph[p].is_err()
+                stack @ stack.push(p)
+
+    return ok(graph)
+
+# The commits `id` reaches in `graph`, itself first, the nearer before the
+# farther.
+#
+# - `graph`: a parents graph that holds `id`.
+# - `id`: a commit.
+function ancestors(graph: {str: [str]}, id: str) -> [str]
+    return graphs.reachable_from(graph, from: id).default([id])
+
+# The same graph turned around: each commit pointing to its children, every
+# commit of `graph` a key, in the order `order` lists them.
+#
+# - `graph`: a parents graph.
+# - `order`: every commit of `graph`, in the order the keys should take.
+function children_graph(graph: {str: [str]}, order: [str]) -> {str: [str]}
+    out: {str: [str]} @= {}
+
+    for id in order
+        out[id] @ []
+
+    for id in order
+        for p in graph[id].default([])
+            if !out[p].is_err()
+                listed @= out[p].must()
+                listed @ listed.push(id)
+                out[p] @ listed
+
+    return out
+
+# The commits `tips` reach, each before its parents, the tips' own lines
+# taken in the order the graph is walked: what `log` shows.
+#
+# - `db`: the database.
+# - `tips`: the commits to start from.
+#
+# Fails where a commit cannot be read; a graph of commits never has a cycle,
+# since a commit names its parents by their hashes.
+function log_order(db: database.Database lent, tips: [str]) -> [str]?
+    graph = parents_graph(db, tips: tips)?
+    seen: {str: bool} @= {}
+    order: [str] @= []
+
+    for tip in tips
+        for id in ancestors(graph, id: tip)
+            if seen[id].is_err()
+                seen[id] @ true
+                order @ order.push(id)
+
+    return graphs.topological_order(children_graph(graph, order: order))
+
+## Merge bases
+
+# The best common ancestors of `a` and `b`: those both reach that no other
+# common ancestor reaches, the newest by committer date first, then by name.
+#
+# - `db`: the database.
+# - `a`: a commit.
+# - `b`: another.
+#
+# Empty where the two share no history. Fails where a commit cannot be read.
+function merge_bases(db: database.Database lent, a: str, b: str) -> [str]?
+    graph = parents_graph(db, tips: [a, b])?
+    from_a: {str: bool} @= {}
+
+    for id in ancestors(graph, id: a)
+        from_a[id] @ true
+
+    common: [str] @= []
+
+    for id in ancestors(graph, id: b)
+        if !from_a[id].is_err()
+            common @ common.push(id)
+
+    below: {str: bool} @= {}
+
+    for id in common
+        if !below[id].is_err()
+            continue
+
+        for older in ancestors(graph, id: id)
+            if older != id
+                below[older] @ true
+
+    best: [str] @= []
+
+    for id in common
+        if below[id].is_err()
+            best @ best.push(id)
+
+    return newest_first(db, ids_given: best)
+
+# `ids_given` ordered by their committers' dates, the newest first, then by
+# name: an insertion sort, since the order's key is read from the database
+# and a function given to `sort_by` could not reach it.
+#
+# - `db`: the database.
+# - `ids_given`: commits.
+#
+# Fails where a commit cannot be read.
+function newest_first(db: database.Database lent, ids_given: [str]) -> [str]?
+    dated: {str: i64} @= {}
+
+    for id in ids_given
+        c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+        dated[id] @ time.unix_seconds(c.committer.when)
+
+    out @= sort(ids_given)
+    i @= 1
+
+    while i < out.len()
+        j @= i
+
+        while j > 0 && dated[out[j]].must() > dated[out[j - 1]].must()
+            held = out[j]
+            out[j] @ out[j - 1]
+            out[j - 1] @ held
+            j @ j - 1
+
+        i @ i + 1
+
+    return ok(out)
+
+# Whether `ancestor` is `id` or one of its ancestors.
+#
+# - `db`: the database.
+# - `ancestor`: a commit.
+# - `id`: another.
+#
+# Fails where a commit cannot be read.
+function is_ancestor(db: database.Database lent, ancestor: str, id: str) -> bool?
+    graph = parents_graph(db, tips: [id])?
+
+    for found in ancestors(graph, id: id)
+        if found == ancestor
+            return ok(true)
+
+    return ok(false)
+
+test "ancestors and children_graph: a small history with a merge"
+    graph = {"m": ["c", "t"], "c": ["a"], "t": ["a"], "a": []}
+    assert ancestors(graph, id: "m") == ["m", "c", "t", "a"]
+    children = children_graph(graph, order: ["m", "c", "t", "a"])
+    assert children["a"].must() == ["c", "t"]
+    assert graphs.topological_order(children).must() == ["m", "c", "t", "a"]

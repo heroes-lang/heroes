@@ -1,0 +1,244 @@
+# What the collector stand-in reads of OTLP's three requests, as one
+# `.proto` text `protobuf` reads at run time, and the summary it keeps of
+# each request. The messages and field numbers are those of
+# opentelemetry-proto 1.x (`common.proto`, `resource.proto`, `trace.proto`,
+# `metrics.proto`, `logs.proto` and the collector's three
+# `*_service.proto`), the numbers Rebel's `tracing`, `metrics` and `otlp`
+# write; only the fields the stand-in reads are declared, the others kept by
+# `protobuf.decode` as unknown and never read, the packages folded into one,
+# which the wire never carries. A field a declared message holds under
+# another type in the real files (a sum's temporality, a histogram point's
+# counts) is one the stand-in does not read.
+#
+# A request is decoded from protobuf, or read from OTLP's JSON, and either
+# way walked as the proto3 JSON mapping writes it (`protobuf.to_json`):
+# `resourceSpans`, `scopeSpans`, `parentSpanId`, `dataPoints`.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/protobuf
+
+# The schema's lines.
+function lines() -> [str]
+    return [
+        "syntax = \"proto3\";"
+        "package otlp;"
+        "message AnyValue {"
+        "  oneof value {"
+        "    string string_value = 1;"
+        "    bool bool_value = 2;"
+        "    int64 int_value = 3;"
+        "    double double_value = 4;"
+        "  }"
+        "}"
+        "message KeyValue {"
+        "  string key = 1;"
+        "  AnyValue value = 2;"
+        "}"
+        "message Resource {"
+        "  repeated KeyValue attributes = 1;"
+        "}"
+        "message ExportTraceServiceRequest {"
+        "  repeated ResourceSpans resource_spans = 1;"
+        "}"
+        "message ResourceSpans {"
+        "  Resource resource = 1;"
+        "  repeated ScopeSpans scope_spans = 2;"
+        "}"
+        "message ScopeSpans {"
+        "  repeated Span spans = 2;"
+        "}"
+        "message Span {"
+        "  bytes span_id = 2;"
+        "  bytes parent_span_id = 4;"
+        "  string name = 5;"
+        "  int32 kind = 6;"
+        "}"
+        "message ExportMetricsServiceRequest {"
+        "  repeated ResourceMetrics resource_metrics = 1;"
+        "}"
+        "message ResourceMetrics {"
+        "  Resource resource = 1;"
+        "  repeated ScopeMetrics scope_metrics = 2;"
+        "}"
+        "message ScopeMetrics {"
+        "  repeated Metric metrics = 2;"
+        "}"
+        "message Metric {"
+        "  string name = 1;"
+        "  oneof data {"
+        "    Points gauge = 5;"
+        "    Points sum = 7;"
+        "    Points histogram = 9;"
+        "  }"
+        "}"
+        "message Points {"
+        "  repeated Point data_points = 1;"
+        "}"
+        "message Point {"
+        "  fixed64 time_unix_nano = 3;"
+        "}"
+        "message ExportLogsServiceRequest {"
+        "  repeated ResourceLogs resource_logs = 1;"
+        "}"
+        "message ResourceLogs {"
+        "  Resource resource = 1;"
+        "  repeated ScopeLogs scope_logs = 2;"
+        "}"
+        "message ScopeLogs {"
+        "  repeated LogRecord log_records = 2;"
+        "}"
+        "message LogRecord {"
+        "  string severity_text = 3;"
+        "  AnyValue body = 5;"
+        "}"
+    ]
+
+# The schema. Fails as `protobuf.parse_schema_text` fails, which a test
+# holds it does not.
+function schema() -> protobuf.Schema?
+    return protobuf.parse_schema_text(name: "otlp.proto", text: lines().join("\n") + "\n")
+
+# A span received.
+record Span
+    # The `service.instance.id` of the resource it came under.
+    instance: str
+    # Its name.
+    name: str
+    # Whether it has a parent.
+    child: bool
+
+# A metric received.
+record Metric
+    # Its name.
+    name: str
+    # `gauge`, `sum` or `histogram`.
+    kind: str
+    # Its points.
+    points: i64
+
+# A log record received.
+record Record
+    # Its severity, as written.
+    severity: str
+    # Its body, a text.
+    body: str
+
+# The request of `type_name` that `body` holds, as the JSON mapping writes
+# it: decoded from protobuf, or read from JSON where `json_body` says so.
+# Fails `invalid` where it is no such request.
+#
+# - `s`: the schema.
+# - `type_name`: `otlp.ExportTraceServiceRequest` and its kin.
+# - `body`: the request's body.
+# - `json_body`: whether it is OTLP's JSON rather than protobuf.
+function mapped(s: protobuf.Schema, type_name: str, body: [u8], json_body: bool) -> json.Value?
+    m = if json_body
+        protobuf.from_json(s, type_name: type_name, v: json.parse(bytes.to_text(body)?)?)?
+    else
+        protobuf.decode(s, type_name: type_name, data: body)?
+    return protobuf.to_json(s, m: m)
+
+# The items of the list under `key` of `v`; none where it has none, as the
+# mapping leaves an empty list out.
+#
+# - `v`: an object.
+# - `key`: the member.
+function items(v: json.Value, key: str) -> [json.Value]
+    match json.member(v, key: key)
+        .ok list => return json.items_of(list).default([])
+        .err _   => return []
+
+# The text under `key` of `v`, "" where it has none.
+#
+# - `v`: an object.
+# - `key`: the member.
+function text(v: json.Value, key: str) -> str
+    match json.member(v, key: key)
+        .ok t  => return json.text_of(t).default("")
+        .err _ => return ""
+
+# The `service.instance.id` of the resource of `resourced`, "" where it
+# names none.
+#
+# - `resourced`: a `ResourceSpans` or its kin, mapped.
+function instance_of(resourced: json.Value) -> str
+    resource = json.member(resourced, key: "resource").default(.null_value)
+
+    for kv in items(resource, key: "attributes")
+        if text(kv, key: "key") == "service.instance.id"
+            return text(json.member(kv, key: "value").default(.null_value), key: "stringValue")
+
+    return ""
+
+# The spans of a traces request.
+#
+# - `s`: the schema.
+# - `body`: the request's body.
+# - `json_body`: whether it is JSON.
+function spans_of(s: protobuf.Schema, body: [u8], json_body: bool) -> [Span]?
+    request = mapped(s, type_name: "otlp.ExportTraceServiceRequest", body: body, json_body: json_body)?
+    found: [Span] @= []
+
+    for rs in items(request, key: "resourceSpans")
+        instance = instance_of(rs)
+
+        for ss in items(rs, key: "scopeSpans")
+            for span in items(ss, key: "spans")
+                found @ found.push(
+                    Span(instance: instance, name: text(span, key: "name"), child: text(span, key: "parentSpanId") != "")
+                )
+
+    return ok(found)
+
+# The metrics of a metrics request.
+#
+# - `s`: the schema.
+# - `body`: the request's body.
+# - `json_body`: whether it is JSON.
+function metrics_of(s: protobuf.Schema, body: [u8], json_body: bool) -> [Metric]?
+    request = mapped(s, type_name: "otlp.ExportMetricsServiceRequest", body: body, json_body: json_body)?
+    found: [Metric] @= []
+
+    for rm in items(request, key: "resourceMetrics")
+        for sm in items(rm, key: "scopeMetrics")
+            for m in items(sm, key: "metrics")
+                for kind in ["gauge", "sum", "histogram"]
+                    match json.member(m, key: kind)
+                        .ok data => found @ found.push(
+                            Metric(name: text(m, key: "name"), kind: kind, points: items(data, key: "dataPoints").len())
+                        )
+                        .err _   => _ = 0
+
+    return ok(found)
+
+# The records of a logs request.
+#
+# - `s`: the schema.
+# - `body`: the request's body.
+# - `json_body`: whether it is JSON.
+function records_of(s: protobuf.Schema, body: [u8], json_body: bool) -> [Record]?
+    request = mapped(s, type_name: "otlp.ExportLogsServiceRequest", body: body, json_body: json_body)?
+    found: [Record] @= []
+
+    for rl in items(request, key: "resourceLogs")
+        for sl in items(rl, key: "scopeLogs")
+            for r in items(sl, key: "logRecords")
+                body_text = text(json.member(r, key: "body").default(.null_value), key: "stringValue")
+                found @ found.push(Record(severity: text(r, key: "severityText"), body: body_text))
+
+    return ok(found)
+
+test "schema: the three requests read"
+    s = schema().must()
+    assert !protobuf.message_named(s, name: "otlp.ExportLogsServiceRequest").is_err()
+
+test "spans_of: a span's name and its parent, from OTLP's JSON and from protobuf"
+    s = schema().must()
+    text_body = "{\"resourceSpans\":[{\"resource\":{\"attributes\":[{\"key\":\"service.instance.id\",\"value\":{\"stringValue\":\"edge\"}}]},\"scopeSpans\":[{\"spans\":[{\"name\":\"a\"},{\"name\":\"b\",\"parentSpanId\":\"AAAAAAAAAAE=\"}]}]}]}"
+    spans = spans_of(s, body: bytes.from_text(text_body), json_body: true).must()
+    assert spans == [Span(instance: "edge", name: "a", child: false), Span(instance: "edge", name: "b", child: true)]
+    m = protobuf.from_json(s, type_name: "otlp.ExportTraceServiceRequest", v: json.parse(text_body).must()).must()
+    wire = protobuf.encode(s, m: m).must()
+    assert spans_of(s, body: wire, json_body: false).must() == spans
+    assert spans_of(s, body: [255, 255], json_body: false).is_err()

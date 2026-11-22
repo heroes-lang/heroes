@@ -1,0 +1,243 @@
+# The integers of arithmetic expansion: the tokens an expression is read
+# into, the numbers C writes (decimal, `0x` hexadecimal, `0` octal), and the
+# four operations checked before they are made, so a result outside the
+# signed 64-bit integers is a failure the shell tells and never the
+# language's overflow, which would end the shell (README § B2).
+
+use <rebel>/strings
+
+use syntax/words
+
+# The largest value a result may take.
+constant MAX: i64
+    9223372036854775807
+
+# The smallest value a result may take.
+constant MIN: i64
+    -9223372036854775807 - 1
+
+# A token of an arithmetic text.
+variant Token
+    # A number.
+    number
+        # Its value.
+        value: i64
+    # A variable's name.
+    name
+        # The name.
+        text: str
+    # An operator or a bracket.
+    op
+        # Its text.
+        text: str
+    # The end of the text.
+    end
+
+# The operators, the longest first.
+function operators() -> [str]
+    return [
+        "<<"
+        ">>"
+        "<="
+        ">="
+        "=="
+        "!="
+        "&&"
+        "||"
+        "+="
+        "-="
+        "*="
+        "("
+        ")"
+        "+"
+        "-"
+        "*"
+        "/"
+        "%"
+        "<"
+        ">"
+        "!"
+        "="
+        "&"
+        "|"
+        "^"
+        "~"
+    ]
+
+# The tokens of `text`.
+#
+# - `text`: the expression, its expansions done.
+#
+# Fails `invalid` naming a character that begins no token, or a number too
+# large.
+function tokens_of(text: str) -> [Token]?
+    found: [Token] @= []
+    i @= 0
+
+    while i < text.len()
+        b = text[i]
+
+        if b == ' ' || b == '\t' || b == '\n'
+            i @ i + 1
+        else if b >= '0' && b <= '9'
+            start = i
+
+            while i < text.len() && words.is_name_byte(text[i])
+                i @ i + 1
+
+            found @ found.push(.number(value: number_of(text.slice(from: start, to: i))?))
+        else if words.is_name_start(b)
+            start = i
+
+            while i < text.len() && words.is_name_byte(text[i])
+                i @ i + 1
+
+            found @ found.push(.name(text: text.slice(from: start, to: i)))
+        else
+            o = operator_at(text, at: i)
+
+            if o == ""
+                return fail(
+                    code: "invalid",
+                    msg: f"`{text.slice(from: i, to: char_end(text, at: i))}` begins nothing an arithmetic expression holds"
+                )
+
+            found @ found.push(.op(text: o))
+            i @ i + o.len()
+
+    found @ found.push(.end)
+    return ok(found)
+
+# The operator at byte `at` of `text`, "" where none stands.
+#
+# - `text`: the text.
+# - `at`: the byte index.
+function operator_at(text: str, at: i64) -> str
+    for o in operators()
+        if strings.has_prefix_at(s: text, prefix: o, at: at)
+            return o
+
+    return ""
+
+# The byte index just past the character that begins at `at`.
+#
+# - `text`: the text.
+# - `at`: a character's first byte.
+function char_end(text: str, at: i64) -> i64
+    n = if text[at] < 128
+        1
+    else if text[at] < 224
+        2
+    else if text[at] < 240
+        3
+    else
+        4
+
+    if at + n > text.len()
+        return text.len()
+
+    return at + n
+
+# The value `digits` writes: decimal, hexadecimal after `0x`, or octal after
+# a leading `0`, as C writes them.
+#
+# - `digits`: the number's text.
+function number_of(digits: str) -> i64?
+    base @= 10
+    body @= digits
+
+    if digits.len() > 2 && digits[0] == '0' && (digits[1] == 'x' || digits[1] == 'X')
+        base @ 16
+        body @ digits.slice(from: 2, to: digits.len())
+    else if digits.len() > 1 && digits[0] == '0'
+        base @ 8
+        body @ digits.slice(from: 1, to: digits.len())
+
+    value @= 0
+
+    for c in body.chars()
+        d = digit_value(c[0])
+
+        if d < 0 || d >= base
+            return fail(code: "invalid", msg: f"`{digits}` is not a number")
+
+        value @ checked_add(a: checked_mul(a: value, b: base)?, b: d)?
+
+    return ok(value)
+
+# The value of the digit `b` in any base up to 16, -1 for none.
+#
+# - `b`: the byte.
+function digit_value(b: u8) -> i64
+    if b >= '0' && b <= '9'
+        return (b - '0').to_i64().must()
+
+    if b >= 'a' && b <= 'f'
+        return (b - 'a').to_i64().must() + 10
+
+    if b >= 'A' && b <= 'F'
+        return (b - 'A').to_i64().must() + 10
+
+    return -1
+
+# `a + b`, failing `invalid` where it would not fit.
+#
+# - `a`: a term.
+# - `b`: another.
+function checked_add(a: i64, b: i64) -> i64?
+    if b > 0 && a > MAX - b || b < 0 && a < MIN - b
+        return fail(code: "invalid", msg: f"{a} + {b} is outside the 64-bit integers")
+
+    return ok(a + b)
+
+# `a - b`, failing `invalid` where it would not fit.
+#
+# - `a`: a term.
+# - `b`: another.
+function checked_sub(a: i64, b: i64) -> i64?
+    if b < 0 && a > MAX + b || b > 0 && a < MIN + b
+        return fail(code: "invalid", msg: f"{a} - {b} is outside the 64-bit integers")
+
+    return ok(a - b)
+
+# `a * b`, failing `invalid` where it would not fit.
+#
+# - `a`: a factor.
+# - `b`: another.
+function checked_mul(a: i64, b: i64) -> i64?
+    if a == 0 || b == 0
+        return ok(0)
+
+    too_big = if a > 0 && b > 0
+        a > MAX / b
+    else if a > 0
+        b < MIN / a
+    else if b > 0
+        a < MIN / b
+    else
+        a == MIN || b == MIN || a < MAX / b
+
+    if too_big
+        return fail(code: "invalid", msg: f"{a} * {b} is outside the 64-bit integers")
+
+    return ok(a * b)
+
+# `a / b` or `a % b` as C computes them, failing `invalid` for a division by
+# zero and for the one quotient that does not fit.
+#
+# - `a`: the dividend.
+# - `b`: the divisor.
+# - `remainder`: whether the remainder is answered.
+function checked_div(a: i64, b: i64, remainder: bool) -> i64?
+    if b == 0
+        return fail(code: "invalid", msg: "a division by zero")
+
+    if a == MIN && b == -1
+        if remainder
+            return ok(0)
+        return fail(code: "invalid", msg: f"{a} / -1 is outside the 64-bit integers")
+
+    if remainder
+        return ok(a % b)
+
+    return ok(a / b)

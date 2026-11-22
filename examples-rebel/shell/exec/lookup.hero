@@ -1,0 +1,94 @@
+# Where a command's name leads (XCU 2.9.1.1): a name holding a `/` is a path;
+# any other is looked for in the folders of the shell's own `PATH`, in order,
+# as a file this user may run. The shell searches its own variable, not the
+# process's environment, so `PATH=...` set in the shell changes where its
+# commands are found at once; `process` then starts the path found.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/os
+use <rebel>/path
+
+use exec/state
+
+# Whether `name` names a path rather than a command to look up.
+#
+# - `name`: the command's name.
+function is_path(name: str) -> bool
+    for c in name.chars()
+        if c == "/" || os.system() == .windows && c == "\\"
+            return true
+
+    return false
+
+# Whether the file at `p` is one this shell would run: a file, and on POSIX
+# one with a permission bit to run it.
+#
+# - `p`: the path.
+function runs(p: str) -> bool
+    if !fs.is_file(p).default(false)
+        return false
+
+    if os.system() == .windows
+        return true
+
+    return fs.permission_of(p).default(0) & 73 != 0
+
+# The path the command `name` runs; fails `not_found` where none is found.
+#
+# - `sh`: the shell, whose `PATH` is searched.
+# - `name`: the command's name.
+#
+# On Windows a name without the system's suffix is also tried with it.
+function find_program(sh: state.Shell lent, name: str) -> str?
+    suffix = os.executable_suffix()
+
+    if is_path(name)
+        if runs(name)
+            return ok(name)
+
+        if suffix != "" && runs(name + suffix)
+            return ok(name + suffix)
+
+        return fail(code: "not_found", msg: f"{name}: no such program")
+
+    for dir in path.split_list(state.get(sh, name: "PATH").default(""))
+        folder = if dir == ""
+            "."
+        else
+            dir
+
+        candidate = path.join_all([folder, name])
+
+        if runs(candidate)
+            return ok(candidate)
+
+        if suffix != "" && runs(candidate + suffix)
+            return ok(candidate + suffix)
+
+    return fail(code: "not_found", msg: f"{name}: command not found")
+
+# The names of the programs in the folders of `PATH`, sorted and each once,
+# for completing a command's name.
+#
+# - `sh`: the shell.
+function programs(sh: state.Shell lent) -> [str]
+    seen: {str: bool} @= {}
+
+    for dir in path.split_list(state.get(sh, name: "PATH").default(""))
+        match fs.read_dir(dir)
+            .ok entries =>
+                for e in entries
+                    seen[path.stem(e.name).default(e.name)] @ true
+            .err _ => _ = 0
+
+    return sort(keys(seen))
+
+test "find_program: a path that names nothing, and a name with no PATH"
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    state.set(@sh, name: "PATH", value: "")
+    assert find_program(sh, name: "./no-such-program").is_err()
+    assert find_program(sh, name: "no-such-program").is_err()
+
+test "is_path: a slash makes a path"
+    assert is_path("./a") && is_path("/bin/sh") && !is_path("ls")

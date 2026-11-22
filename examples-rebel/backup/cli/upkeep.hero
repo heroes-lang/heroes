@@ -1,0 +1,131 @@
+# The commands that look after a repository rather than add to it:
+# `forget` by a retention policy, `prune`, `check`, `export` as a tar
+# archive, and `copy` to another storage. Each opens the repository as
+# `cli/actions` does, prints the report `cli/report` writes, and closes
+# the repository whatever happened.
+
+use <rebel>/archive
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/strings
+
+use cli/actions
+use cli/report
+use engine/checker
+use engine/exporter
+use engine/pruner
+use engine/retention
+use engine/transfer
+use repo/records
+use repo/repository
+
+## Commands
+
+# `forget`: the snapshots a policy does not keep removed, and pruned where
+# `--prune` asks.
+#
+# - `f`: the arguments.
+function forget(f: flags.Found) -> ()?
+    r @= actions.opened(f)?
+    done = forget_with(@r, f: f)
+    repository.close(@r)
+    return done
+
+# The body of `forget`, the repository opened.
+#
+# - `r`: the repository.
+# - `f`: the arguments.
+function forget_with(@r: repository.Repository, f: flags.Found) -> ()?
+    p = retention.checked(retention.Policy(last: flags.int_of(f, "keep-last").default(0), hourly: flags.int_of(f, "keep-hourly").default(0), daily: flags.int_of(f, "keep-daily").default(0), weekly: flags.int_of(f, "keep-weekly").default(0), monthly: flags.int_of(f, "keep-monthly").default(0), yearly: flags.int_of(f, "keep-yearly").default(0)))?
+    apply_policy(@r, p: p)?
+
+    if flags.is_on(f, "prune")
+        actions.say(report.prune_lines(pruner.prune(@r)?))
+    return ok()
+
+# Removes the snapshots `p` does not keep, and prints what it decided.
+#
+# - `r`: the repository.
+# - `p`: the policy.
+#
+# Fails as the snapshots fail.
+function apply_policy(@r: repository.Repository, p: retention.Policy) -> ()?
+    verdicts = retention.decide(records.list_snapshots(@r)?, p: p)
+
+    for v in verdicts
+        if !v.kept
+            records.forget_snapshot(@r, id: v.s.id)?
+
+    actions.say(report.forget_lines(verdicts, p: p))
+    return ok()
+
+# `prune`: every pack, chunk and tree no snapshot reaches removed.
+#
+# - `f`: the arguments.
+function prune(f: flags.Found) -> ()?
+    r @= actions.opened(f)?
+    done = pruner.prune(@r)
+    repository.close(@r)
+    actions.say(report.prune_lines(done?))
+    return ok()
+
+# `check`: every chunk read and checked against its name; a damaged one
+# makes the command fail, after every finding is printed.
+#
+# - `f`: the arguments.
+function check(f: flags.Found) -> ()?
+    r @= actions.opened(f)?
+    done = checker.check(@r)
+    repository.close(@r)
+    found = done?
+    actions.say(report.check_lines(found))
+
+    if found.damaged.len() > 0
+        return fail(
+            code: actions.INVALID,
+            msg: f"{report.counted(found.damaged.len(), word: "chunk")} of the repository do not hold what was stored"
+        )
+    return ok()
+
+# `export`: a snapshot written as a tar archive, gzip where the file's
+# name ends in `.gz` or `.tgz`, to the standard output for `-`.
+#
+# - `f`: the arguments.
+function export(f: flags.Found) -> ()?
+    r @= actions.opened(f)?
+    done = export_with(@r, f: f)
+    repository.close(@r)
+    return done
+
+# The body of `export`, the repository opened.
+#
+# - `r`: the repository.
+# - `f`: the arguments.
+function export_with(@r: repository.Repository, f: flags.Found) -> ()?
+    s = records.find_snapshot(@r, wanted: flags.value_of(f, "SNAPSHOT")?)?
+    output = flags.value_of(f, "output")?
+
+    compression: archive.Compression = if strings.has_suffix(s: output, suffix: ".gz") || strings.has_suffix(s: output, suffix: ".tgz")
+        .gzip
+    else
+        .none
+
+    if output == "-"
+        done = exporter.export_tar(@r, s: s, to: io.stdout(), compression: compression, shown: false)?
+        _ = io.write_line(io.stderr(), line: report.export_line(done)).is_err()
+        return ok()
+    stream @= fs.create(output)?
+    written = exporter.export_tar(@r, s: s, to: stream, compression: compression, shown: !flags.is_on(f, "quiet"))
+    closed = io.close(@stream)
+    print(report.export_line(written?))
+    return closed
+
+# `copy`: every object the destination lacks copied to it, still sealed.
+#
+# - `f`: the arguments.
+function copy(f: flags.Found) -> ()?
+    from @= actions.storage_for(actions.repo_of(f)?)?
+    to @= actions.storage_for(flags.value_of(f, "to")?)?
+    actions.say([report.copy_line(transfer.copy_all(from: @from, to: @to, shown: !flags.is_on(f, "quiet"))?)])
+    return ok()

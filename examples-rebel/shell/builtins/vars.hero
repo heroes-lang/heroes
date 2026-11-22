@@ -1,0 +1,331 @@
+# The builtins of variables and parameters: `export`, `unset`, `set` (the
+# options and the positional parameters), `shift`, `read` and `local`.
+# `read` reads its input a byte at a time, so the next command reading the
+# same input starts where it stopped, as `while read line` needs.
+
+use <rebel>/numbers
+use <rebel>/process
+use <rebel>/strings
+
+use builtins/table
+use exec/state
+use exec/streams
+use expand/fields
+use syntax/words as names
+
+# `export [-p] name[=value]...`: each name exported, set first where a value
+# is given; with no name or `-p`, every exported variable written as a
+# command that would export it again.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function export(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0 || operands == ["-p"]
+        lines: [str] @= []
+
+        for name in sort(keys(sh.vars))
+            v = sh.vars[name].must()
+
+            if v.exported
+                lines @ lines.push(f"export {name}={process.quote(v.value)}\n")
+
+        _ = streams.write_out(@sh, place: place, text: lines.join(""))
+        return 0
+
+    status @= 0
+
+    for a in operands
+        named = assignment_of(a)
+
+        if !names.is_name(named.name)
+            status @ table.complain(
+                @sh,
+                place: place,
+                name: "export",
+                message: f"`{a}` is not a variable's name",
+                status: 1
+            )
+        else
+            if named.has_value
+                state.set(@sh, name: named.name, value: named.value)
+            state.export(@sh, name: named.name)
+
+    return status
+
+# A word `name=value` or `name` cut at its first `=`.
+record Named
+    # The name.
+    name: str
+    # Whether a value was given.
+    has_value: bool
+    # The value, "" where none was given.
+    value: str
+
+# `word` cut at its first `=`.
+#
+# - `word`: the argument.
+function assignment_of(word: str) -> Named
+    return match strings.split_once(s: word, sep: "=")
+        .ok h  => Named(name: h.before, has_value: true, value: h.after)
+        .err _ => Named(name: word, has_value: false, value: "")
+
+# `unset [-v | -f] names...`: each variable, or with `-f` each function,
+# taken away.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function unset(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    functions @= false
+    first @= 0
+
+    if operands.len() > 0 && (operands[0] == "-f" || operands[0] == "-v")
+        functions @ operands[0] == "-f"
+        first @ 1
+
+    status @= 0
+
+    for name in operands.slice(from: first, to: operands.len())
+        if !names.is_name(name)
+            status @ table.complain(@sh, place: place, name: "unset", message: f"`{name}` is not a name", status: 1)
+        else if functions
+            kept: {str: state.Function} @= {}
+
+            for f in keys(sh.functions)
+                if f != name
+                    kept[f] @ sh.functions[f].must()
+
+            sh.functions @ kept
+        else
+            state.unset(@sh, name: name)
+
+    return status
+
+# `set [-+efuvx]... [--] [arguments...]`: options turned on with `-` and off
+# with `+`, then the positional parameters replaced where arguments follow;
+# with none at all, every variable written as an assignment.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function set(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0
+        lines: [str] @= []
+
+        for name in sort(keys(sh.vars))
+            lines @ lines.push(f"{name}={process.quote(sh.vars[name].must().value)}\n")
+
+        _ = streams.write_out(@sh, place: place, text: lines.join(""))
+        return 0
+
+    i @= 0
+
+    while i < operands.len()
+        a = operands[i]
+
+        if a == "--"
+            sh.positional @ operands.slice(from: i + 1, to: operands.len())
+            return 0
+
+        if a.len() < 2 || a[0] != '-' && a[0] != '+'
+            sh.positional @ operands.slice(from: i, to: operands.len())
+            return 0
+
+        on = a[0] == '-'
+
+        for letter in a.slice(from: 1, to: a.len()).chars()
+            match letter
+                "e" => sh.options.errexit @ on
+                "x" => sh.options.xtrace @ on
+                "u" => sh.options.nounset @ on
+                "v" => sh.options.verbose @ on
+                "f" => sh.options.noglob @ on
+                _ => return table.complain(
+                    @sh,
+                    place: place,
+                    name: "set",
+                    message: f"-{letter}: no such option; e, f, u, v and x are",
+                    status: 2
+                )
+
+        i @ i + 1
+
+    return 0
+
+# `shift [n]`: the first `n` positional parameters taken off, 1 where none
+# is given.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function shift(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    n = if operands.len() == 0
+        1
+    else
+        match numbers.parse_int(operands[0])
+            .ok v => v
+            .err _ => return table.complain(
+                @sh,
+                place: place,
+                name: "shift",
+                message: f"`{operands[0]}` is not a number",
+                status: 1
+            )
+
+    if n < 0 || n > sh.positional.len()
+        return table.complain(
+            @sh,
+            place: place,
+            name: "shift",
+            message: f"cannot shift {n} of {sh.positional.len()} parameters",
+            status: 1
+        )
+
+    sh.positional @ sh.positional.slice(from: n, to: sh.positional.len())
+    return 0
+
+# `read [-r] names...`: one line of the input, cut into fields at `IFS`, the
+# first fields put in the first names and the rest of the line in the last;
+# `REPLY` where no name is given. Without `-r` a backslash takes the
+# character after it as itself. Fails with 1 at the input's end.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places, whose input is read.
+function read(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    raw = operands.len() > 0 && operands[0] == "-r"
+
+    targets @= if raw
+        operands.slice(from: 1, to: operands.len())
+    else
+        operands
+
+    if targets.len() == 0
+        targets @ ["REPLY"]
+
+    for t in targets
+        if !names.is_name(t)
+            return table.complain(
+                @sh,
+                place: place,
+                name: "read",
+                message: f"`{t}` is not a variable's name",
+                status: 2
+            )
+
+    line = match streams.read_line(place.input)
+        .ok l => l
+        .err _ =>
+            for t in targets
+                state.set(@sh, name: t, value: "")
+
+            return 1
+
+    text = if raw
+        strings.trim_end_any(s: line, set: "\r")
+    else
+        unescaped(strings.trim_end_any(s: line, set: "\r"))
+
+    ifs = state.get(sh, name: "IFS").default(fields.default_ifs())
+    values = cut_fields(text: text, ifs: ifs, count: targets.len())
+
+    for i in range(from: 0, to: targets.len())
+        value = if i < values.len()
+            values[i]
+        else
+            ""
+        state.set(@sh, name: targets[i], value: value)
+
+    return 0
+
+# `line` with each backslash taken out and the character after it kept.
+#
+# - `line`: the line.
+function unescaped(line: str) -> str
+    out: [str] @= []
+    escaping @= false
+
+    for c in line.chars()
+        if c == "\\" && !escaping
+            escaping @ true
+        else
+            out @ out.push(c)
+            escaping @ false
+
+    return out.join("")
+
+# `text` cut at the characters of `ifs` into at most `count` fields, the last
+# holding the rest of the line with the separators at its ends taken off.
+#
+# - `text`: the line.
+# - `ifs`: the separators.
+# - `count`: how many fields at most, 1 or more.
+function cut_fields(text: str, ifs: str, count: i64) -> [str]
+    out: [str] @= []
+    rest @= strings.trim_any(s: text, set: ifs)
+
+    while out.len() < count - 1 && rest != ""
+        at @= 0
+
+        while at < rest.len() && !fields.ifs_holds(ifs: ifs, c: rest.slice(from: at, to: at + 1))
+            at @ at + 1
+
+        out @ out.push(rest.slice(from: 0, to: at))
+        rest @ strings.trim_start_any(s: rest.slice(from: at, to: rest.len()), set: ifs)
+
+    if rest != ""
+        out @ out.push(strings.trim_end_any(s: rest, set: ifs))
+
+    return out
+
+# `local name[=value]...`: inside a function, each variable kept as it was
+# and given back when the function returns.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function local(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if sh.frames.len() == 0
+        return table.complain(
+            @sh,
+            place: place,
+            name: "local",
+            message: "only a function has local variables",
+            status: 1
+        )
+
+    top = sh.frames.len() - 1
+
+    for a in operands
+        named = assignment_of(a)
+
+        if !names.is_name(named.name)
+            return table.complain(
+                @sh,
+                place: place,
+                name: "local",
+                message: f"`{a}` is not a variable's name",
+                status: 1
+            )
+
+        if sh.frames[top][named.name].is_err()
+            before = match sh.vars[named.name]
+                .ok v  => state.Saved(had: true, variable: v)
+                .err _ => state.Saved(had: false, variable: state.Var(value: "", exported: false))
+
+            frames @= sh.frames
+            frames[top][named.name] @ before
+            sh.frames @ frames
+
+        state.set(@sh, name: named.name, value: named.value)
+
+    return 0
+
+test "cut_fields: names before the last get one field, the last the rest"
+    assert cut_fields(text: "  a b   c d ", ifs: " \t\n", count: 2) == ["a", "b   c d"]
+    assert cut_fields(text: "a", ifs: " \t\n", count: 3) == ["a"]
+    assert cut_fields(text: "x:y:z", ifs: ":", count: 3) == ["x", "y", "z"]
+
+test "unescaped: a backslash keeps the character after it"
+    assert unescaped("a\\ b\\\\c") == "a b\\c"

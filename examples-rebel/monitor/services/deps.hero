@@ -1,0 +1,198 @@
+# The services' dependencies as a graph, `graphs`' `{K: [K]}`: each service
+# pointing to the services it needs. From it come the stages services start
+# in (what is ready together starts together, as systemd starts units), the
+# order they stop in (the reverse: a service stops before what it needs),
+# and the services a failure impairs: every service that needs, directly or
+# through others, one that is down. A configuration whose services need each
+# other in a cycle is refused, the cycle named.
+
+use <rebel>/graphs
+use <rebel>/time
+
+use conf/settings
+
+# The graph of `specs`: each service's name pointing to the names it
+# depends on.
+#
+# - `specs`: the services.
+function graph_of(specs: [settings.ServiceSpec]) -> {str: [str]}
+    graph: {str: [str]} @= {}
+
+    for s in specs
+        graph[s.name] @ s.depends_on
+
+    return graph
+
+# The graph turned round: each service pointing to the services that depend
+# on it.
+#
+# - `specs`: the services.
+function dependents_of(specs: [settings.ServiceSpec]) -> {str: [str]}
+    turned: {str: [str]} @= {}
+
+    for s in specs
+        turned[s.name] @ turned[s.name].default([])
+
+        for needed in s.depends_on
+            turned[needed] @ turned[needed].default([]).push(s.name)
+
+    return turned
+
+# Checks that every dependency names a service and that no service needs
+# itself through others. Fails `invalid` naming the dependency that names
+# nothing, or the cycle as `a -> b -> a`.
+#
+# - `specs`: the services.
+function check(specs: [settings.ServiceSpec]) -> ()?
+    names: {str: bool} @= {}
+
+    for s in specs
+        names[s.name] @ true
+
+    for s in specs
+        for needed in s.depends_on
+            if names[needed].is_err()
+                return fail(
+                    code: "invalid",
+                    msg: f"the service \"{s.name}\" depends on \"{needed}\", which is no service"
+                )
+
+    graph = graph_of(specs)
+
+    match graphs.topological_order(graph)
+        .ok _ => return ok()
+        .err _ =>
+            cycle = graphs.cycle_of(graph).default([])
+            return fail(code: "invalid", msg: f"the services depend on each other in a cycle: {cycle.join(" -> ")}")
+
+# The stages the services start in: the first those that need nothing, each
+# next one those whose needs are all in the stages before it, each stage in
+# the order the configuration writes its services.
+#
+# - `specs`: the services, checked by `check`.
+#
+# Fails `invalid` where the graph has a cycle, which `check` refuses first.
+function start_stages(specs: [settings.ServiceSpec]) -> [[str]]?
+    graph = graph_of(specs)
+    nodes = graphs.nodes_of(graph)
+    sorter @= graphs.new_sorter(graph)?
+    stages: [[str]] @= []
+
+    while graphs.is_active(sorter)
+        handed = graphs.ready(@sorter)
+        stage: [str] @= []
+
+        for n in handed
+            stage @ stage.push(nodes[n])
+
+        for n in handed
+            graphs.done(@sorter, node: n)?
+
+        stages @ stages.push(in_written_order(specs, names: stage))
+
+    return ok(stages)
+
+# The names of `names` in the order `specs` writes them.
+#
+# - `specs`: the services.
+# - `names`: some of their names.
+function in_written_order(specs: [settings.ServiceSpec], names: [str]) -> [str]
+    wanted: {str: bool} @= {}
+
+    for n in names
+        wanted[n] @ true
+
+    ordered: [str] @= []
+
+    for s in specs
+        if !wanted[s.name].is_err()
+            ordered @ ordered.push(s.name)
+
+    return ordered
+
+# The order the services stop in: the last stage first, so each stops
+# before the services it needs.
+#
+# - `specs`: the services, checked by `check`.
+#
+# Fails as `start_stages` does.
+function stop_order(specs: [settings.ServiceSpec]) -> [str]?
+    stages = start_stages(specs)?
+    order: [str] @= []
+    i: i64 @= stages.len() - 1
+
+    while i >= 0
+        for name in stages[i]
+            order @ order.push(name)
+
+        i @ i - 1
+
+    return ok(order)
+
+# The services impaired by the services `down`: every one that needs one of
+# them, directly or through others, and is not down itself, in the order the
+# configuration writes them.
+#
+# - `specs`: the services.
+# - `down`: the names of the services that are not running.
+function impaired_by(specs: [settings.ServiceSpec], down: [str]) -> [str]
+    turned = dependents_of(specs)
+    is_down: {str: bool} @= {}
+
+    for d in down
+        is_down[d] @ true
+
+    reached: {str: bool} @= {}
+
+    for d in down
+        for name in graphs.reachable_from(turned, d).default([])
+            if is_down[name].is_err()
+                reached[name] @ true
+
+    return in_written_order(specs, names: keys(reached))
+
+# A service of a test: `name` needing `needs`.
+#
+# - `name`: its name.
+# - `needs`: what it depends on.
+function sample(name: str, needs: [str]) -> settings.ServiceSpec
+    return settings.ServiceSpec(
+        name: name,
+        command: [name],
+        depends_on: needs,
+        restart: .on_failure,
+        backoff: time.nanoseconds(0),
+        backoff_most: time.nanoseconds(0),
+        max_failures: 0,
+        memory_limit: 0,
+        input: .none,
+        stop_line: "",
+        stop_grace: time.nanoseconds(0)
+    )
+
+# The services of the tests: a web front needing an API, which needs a
+# database and a cache.
+function shop() -> [settings.ServiceSpec]
+    return [
+        sample("db", needs: [])
+        sample("cache", needs: [])
+        sample("api", needs: ["db", "cache"])
+        sample("web", needs: ["api"])
+    ]
+
+test "start_stages: what needs nothing first, then what needs only that"
+    assert start_stages(shop()).must() == [["db", "cache"], ["api"], ["web"]]
+    assert stop_order(shop()).must() == ["web", "api", "db", "cache"]
+
+test "impaired_by: a database down impairs all that needs it, through others too"
+    assert impaired_by(shop(), down: ["db"]) == ["api", "web"]
+    assert impaired_by(shop(), down: ["web"]).len() == 0
+    assert impaired_by(shop(), down: ["db", "api"]) == ["web"]
+
+test "check: a dependency that names nothing, and a cycle named"
+    assert check(shop()) == ok()
+    assert check([sample("a", needs: ["ghost"])]).is_err()
+
+    match check([sample("a", needs: ["b"]), sample("b", needs: ["a"])])
+        .ok _  => assert false
+        .err e => assert e.msg == "the services depend on each other in a cycle: a -> b -> a"

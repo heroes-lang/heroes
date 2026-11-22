@@ -1,0 +1,127 @@
+# The demo's thermometer: the device end of a pseudo-terminal pair, whose
+# other end the monitor opens as its sensor's serial port. It answers each
+# query line with the next reading of its series, as a probe polled over
+# RS-232 does (`T=+71.25C`), a line that is not its query with `ERR`, and
+# once its series is spent it answers nothing more, as a device that hangs
+# does, so the monitor's sensor goes silent.
+#
+# Darwin waits on no pseudo-terminal in a `poll` set (`unsupported`, read
+# 2026-11-22), so the loop that runs the device reads its end with a read
+# timeout of zero at each turn: what is there, at once, or nothing.
+
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/serial
+use <rebel>/strings
+
+# The query the device answers.
+constant QUERY: str
+    "MEAS:TEMP?"
+
+# The device.
+record Device
+    # The pseudo-terminal, by the path of its port side; empty where none
+    # could be made.
+    pairs: {str: serial.Pseudo}
+    # The port side's path, "" where there is none.
+    path: str
+    # The readings it answers, in order.
+    series: [f64]
+    # The queries answered with a reading.
+    answered: i64
+    # The queries left unanswered once the series was spent.
+    unanswered: i64
+    # The lines that were no query.
+    refused: i64
+    # The bytes of a line not yet ended.
+    partial: [u8]
+
+# A device answering `series`, on a new pseudo-terminal. Fails as
+# `serial.open_pseudo` fails, `unsupported` on Windows.
+#
+# - `series`: the readings, in order.
+function start(series: [f64]) -> Device?
+    pair = serial.open_pseudo()?
+    serial.set_timeouts(pair.controller, timeouts: serial.Timeouts(read_ms: 0, write_ms: 1_000, gap_ms: 0))?
+    return ok(
+        Device(pairs: {pair.path: pair}, path: pair.path, series: series, answered: 0, unanswered: 0, refused: 0, partial: [])
+    )
+
+# The line the device answers the reading `value` with: `T=+71.25C`.
+#
+# - `value`: the reading.
+function answer_of(value: f64) -> str
+    return "T=" + numbers.with_plus_sign(numbers.format_float(value, precision: 2)) + "C"
+
+# Reads what the monitor wrote, without waiting, and answers each whole line.
+#
+# - `d`: the device.
+function serve(@d: Device)
+    pair = match d.pairs[d.path]
+        .ok p  => p
+        .err _ => return
+
+    held @= d.partial
+
+    match io.read(pair.controller, n: 1_024)
+        .ok data =>
+            for b in data
+                held @ held.push(b)
+        .err _ => _ = 0
+
+    line_start: i64 @= 0
+
+    for i in range(from: 0, to: held.len())
+        if held[i] == 10
+            line = strings.trim(held.slice(from: line_start, to: i).validated_bytes().default(""))
+            answer(@d, controller: pair.controller, line: line)
+            line_start @ i + 1
+
+    d.partial @ held.slice(from: line_start, to: held.len())
+
+# Answers one line the monitor wrote.
+#
+# - `d`: the device.
+# - `controller`: its end.
+# - `line`: the line, trimmed.
+function answer(@d: Device, controller: io.Stream, line: str)
+    if line != QUERY
+        d.refused @ d.refused + 1
+        _ = io.write_text(controller, text: "ERR\r\n").is_err()
+        return
+
+    if d.answered >= d.series.len()
+        d.unanswered @ d.unanswered + 1
+        return
+    _ = io.write_text(controller, text: answer_of(d.series[d.answered]) + "\r\n").is_err()
+    d.answered @ d.answered + 1
+
+# Closes the device's end.
+#
+# - `d`: the device.
+function close(@d: Device)
+    for path in keys(d.pairs)
+        pair @= d.pairs[path].must()
+        _ = io.close(@pair.controller).is_err()
+
+    d.pairs @ {}
+
+test "answer_of: a reading as the device writes it"
+    assert answer_of(71.25) == "T=+71.25C"
+    assert answer_of(-4.5) == "T=-4.50C"
+
+test "serve: a query answered, a stranger line refused, silence once the series is spent"
+    d @= match start([21.5])
+        .ok made => made
+        .err _   => skip_test(reason: "this system makes no pseudo-terminal")
+
+    port @= serial.open(d.path, settings: serial.default_settings(baud: 9600)).must()
+    serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: 1_000, write_ms: 1_000, gap_ms: 0)).must()
+    io.write_text(port, text: QUERY + "\nhello\n" + QUERY + "\n").must()
+    serve(@d)
+    reader @= io.reader(port)
+    assert strings.trim(io.read_line(@reader).must()) == "T=+21.50C"
+    assert strings.trim(io.read_line(@reader).must()) == "ERR"
+    assert d.answered == 1 && d.refused == 1 && d.unanswered == 1
+    io.close(@port).must()
+    close(@d)

@@ -1,0 +1,258 @@
+# A file's bytes cut into chunks where its content says, so that two
+# versions of a file share every chunk their edits did not touch, and two
+# files holding the same run of bytes share its chunks too.
+#
+# Bytes that are not text are cut where the gear hash (`chunking/gear`)
+# hits, between the parameters' least and most. Text, UTF-8 holding no
+# zero byte, is cut only at the end of a line: the hash arms the cut, and
+# the next line end the text's own structure gives (`chunks.boundaries` at
+# the level of lines) takes it. So a chunk of text is whole lines, and an
+# edit inside one line moves no cut past the end of the lines its chunk
+# holds; a line longer than the most is cut at the most, as bytes are.
+#
+# The hash starts again at every chunk, so where a chunk ends depends on
+# its own bytes and nothing before it.
+
+use <rebel>/bytes
+use <rebel>/chunks
+
+use chunking/gear
+
+# Where `data` is cut: the end of each chunk, ascending, the last one
+# `data`'s length.
+#
+# - `data`: a file's bytes; none have no chunk.
+# - `t`: the repository's table.
+# - `p`: the repository's parameters, as `gear.checked` accepts them.
+function cut_points(data: [u8] lent, t: gear.Table lent, p: gear.Params) -> [i64]
+    lines = line_ends(data)
+    text = is_text(data)
+    ends: [i64] @= []
+    start @= 0
+
+    while start < data.len()
+        end = next_cut(data, from: start, t: t, p: p, lines: lines, text: text)
+        ends @ ends.push(end)
+        start @ end
+
+    return ends
+
+# Whether `data` is text to this cutter: UTF-8 with no zero byte, a
+# character its end cuts short allowed, since a file is read in windows.
+#
+# - `data`: the bytes.
+function is_text(data: [u8] lent) -> bool
+    for b in data
+        if b == 0
+            return false
+
+    return !bytes.to_text(data.slice(from: 0, to: whole_prefix(data))).is_err()
+
+# The length of `data` less the bytes of a character its end cuts short,
+# at most three: where a window of a file may end and still be text.
+#
+# - `data`: the bytes.
+function whole_prefix(data: [u8] lent) -> i64
+    n = data.len()
+    back @= 0
+
+    while back < 3 && back < n && data[n - 1 - back] >= 0x80 && data[n - 1 - back] < 0xc0
+        back @ back + 1
+
+    if back == n
+        return n
+    lead = data[n - 1 - back]
+
+    need = if lead >= 0xf0
+        4
+    else if lead >= 0xe0
+        3
+    else if lead >= 0xc0
+        2
+    else
+        1
+
+    if back + 1 < need
+        return n - 1 - back
+    return n
+
+# Where the lines of `data` end, as byte indices after each line break,
+# ascending; empty for bytes that are not text.
+#
+# - `data`: the bytes.
+function line_ends(data: [u8] lent) -> [i64]
+    if !is_text(data)
+        return []
+
+    text = match bytes.to_text(data.slice(from: 0, to: whole_prefix(data)))
+        .ok s  => s
+        .err _ => return []
+
+    ends: [i64] @= []
+
+    for at in chunks.boundaries(text, level: .lines)
+        if at > 0
+            ends @ ends.push(at)
+
+    return ends
+
+# The end of the chunk that begins at `from`.
+#
+# - `data`: the file's bytes.
+# - `from`: where the chunk begins, below `data`'s length.
+# - `t`: the table.
+# - `p`: the parameters.
+# - `lines`: where the lines end, for text; empty otherwise.
+# - `text`: whether `data` is text, which cuts only at line ends.
+function next_cut(data: [u8] lent, from: i64, t: gear.Table lent, p: gear.Params, lines: [i64] lent, text: bool) -> i64
+    limit = if data.len() - from < p.max
+        data.len()
+    else
+        from + p.max
+
+    h @= 0
+    armed @= false
+    last_line @= 0
+    li @= first_after(lines, at: from)
+    i @= from
+
+    while i < limit
+        h @ gear.roll(h, b: data[i], t: t)
+        size = i + 1 - from
+        reached = size >= p.min
+
+        if reached && gear.hits(h: h, bits: p.bits)
+            if !text
+                return i + 1
+            armed @ true
+
+        if text
+            while li < lines.len() && lines[li] < i + 1
+                li @ li + 1
+
+            if reached && li < lines.len() && lines[li] == i + 1
+                if armed
+                    return i + 1
+                last_line @ i + 1
+        i @ i + 1
+
+    if limit == data.len() || last_line == 0
+        return limit
+    return last_line
+
+# The position of the first of `lines` past `at`; `lines`' length where
+# none is.
+#
+# - `lines`: ascending byte indices.
+# - `at`: the index.
+function first_after(lines: [i64] lent, at: i64) -> i64
+    low @= 0
+    high @= lines.len()
+
+    while low < high
+        middle = (low + high) / 2
+
+        if lines[middle] <= at
+            low @ middle + 1
+        else
+            high @ middle
+
+    return low
+
+# Bytes drawn by a linear congruential generator from `seed`: content no
+# cut can be guessed for, the same on every run.
+#
+# - `seed`: the generator's start.
+# - `count`: how many bytes.
+function noise(seed: i64, count: i64) -> [u8]
+    out: [u8] @= []
+    x @= seed
+
+    for _ in range(from: 0, to: count)
+        x @ (x * 1_103_515_245 + 12_345) % 2_147_483_648
+        out @ out.push(to_u8(x / 65_536 % 256).must())
+
+    return out
+
+# The chunks of `data` the cut points `ends` make.
+#
+# - `data`: the bytes.
+# - `ends`: the cut points, as `cut_points` answers them.
+function pieces(data: [u8], ends: [i64]) -> [[u8]]
+    out: [[u8]] @= []
+    start @= 0
+
+    for end in ends
+        out @ out.push(data.slice(from: start, to: end))
+        start @ end
+
+    return out
+
+test "cut_points: nothing has no chunk, a short file one, every chunk within the bounds"
+    t = gear.table_of(11)
+    p = gear.Params(min: 256, bits: 9, max: 2048)
+    assert cut_points([], t: t, p: p) == []
+    assert cut_points([1, 2, 3], t: t, p: p) == [3]
+    data = noise(seed: 5, count: 50_000)
+    ends = cut_points(data, t: t, p: p)
+    assert ends[ends.len() - 1] == data.len()
+    start @= 0
+
+    for end in ends
+        assert end - start <= 2048
+        assert end - start >= 256 || end == data.len()
+        start @ end
+
+test "cut_points: bytes inserted at the start leave the later chunks as they were"
+    t = gear.table_of(11)
+    p = gear.Params(min: 256, bits: 9, max: 2048)
+    data = noise(seed: 5, count: 30_000)
+    before = pieces(data, ends: cut_points(data, t: t, p: p))
+    longer = bytes.concat([noise(seed: 9, count: 100), data])
+    after = pieces(longer, ends: cut_points(longer, t: t, p: p))
+    shared: {str: bool} @= {}
+
+    for c in before
+        shared[bytes.format_hex(c)] @ true
+
+    kept @= 0
+
+    for c in after
+        if shared[bytes.format_hex(c)].default(false)
+            kept @ kept + 1
+
+    assert kept >= before.len() - 2
+
+test "cut_points: text is cut only at the end of a line"
+    t = gear.table_of(3)
+    p = gear.Params(min: 100, bits: 7, max: 4000)
+    lines: [str] @= []
+
+    for i in range(from: 0, to: 400)
+        lines @ lines.push(f"line {i} of a text that grows and grows")
+
+    text = bytes.from_text(lines.join("\n") + "\n")
+
+    for end in cut_points(text, t: t, p: p)
+        assert text[end - 1] == '\n'
+
+test "is_text: a zero byte and bytes that are not UTF-8 are not text; é is"
+    assert !is_text([97, 0, 98])
+    assert !is_text([0xff, 0xfe])
+    assert is_text(bytes.from_text("é\n"))
+    assert is_text([])
+
+test "whole_prefix: a character cut short at the end is left out, a whole one kept"
+    e = bytes.from_text("aé")
+    assert whole_prefix(e) == 3
+    assert whole_prefix(e.slice(from: 0, to: 2)) == 1
+    assert whole_prefix([]) == 0
+    assert whole_prefix([0x80, 0x80, 0x80, 0x80]) == 4
+    assert is_text(e.slice(from: 0, to: 2))
+
+test "first_after: before, between, on and past the line ends"
+    assert first_after([10, 20, 30], at: 0) == 0
+    assert first_after([10, 20, 30], at: 10) == 1
+    assert first_after([10, 20, 30], at: 25) == 2
+    assert first_after([10, 20, 30], at: 30) == 3
+    assert first_after([], at: 5) == 0

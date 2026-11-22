@@ -1,0 +1,407 @@
+# The shell's grammar, read by recursive descent over the tokens of
+# `syntax/lexer`: lists of and-or lists of pipelines of commands, as POSIX
+# writes it (XCU 2.10). A script is read one complete command at a time, so a
+# shell runs each line before it reads the next, as every POSIX shell does,
+# and a mistake later in a script stops it only when it is reached; the
+# compound commands are `syntax/compound`'s and the simple ones with their
+# redirections `syntax/simple`'s.
+#
+# Every failure is `lexer.SYNTAX` or `lexer.INCOMPLETE`, its place kept in the
+# lexer's `error_at`.
+
+use syntax/ast
+use syntax/compound
+use syntax/lexer
+use syntax/simple
+use syntax/words
+
+# What a whole text parses into: its items and the bodies of its
+# here-documents.
+record Parsed
+    # The complete commands, in order.
+    items: [ast.Item]
+    # The here-documents' bodies, by number.
+    docs: {i64: ast.HereDoc}
+    # The number the next here-document of the shell takes.
+    next_doc: i64
+
+# The words that are reserved where a command begins.
+function reserved() -> [str]
+    return [
+        "if"
+        "then"
+        "else"
+        "elif"
+        "fi"
+        "do"
+        "done"
+        "case"
+        "esac"
+        "while"
+        "until"
+        "for"
+        "in"
+        "{"
+        "}"
+        "!"
+    ]
+
+# Whether `t` is the bare word `text`, a reserved word where a command begins.
+#
+# - `t`: the token.
+# - `text`: the word.
+function is_word(t: lexer.Lexed, text: str) -> bool
+    return match t.token
+        .word w                             => w.raw == text && ast.is_bare(w.word)
+        .number _ | .op _ | .newline | .end => false
+
+# Whether `t` is the operator `text`.
+#
+# - `t`: the token.
+# - `text`: the operator.
+function is_op(t: lexer.Lexed, text: str) -> bool
+    return match t.token
+        .op o                                 => o.text == text
+        .word _ | .number _ | .newline | .end => false
+
+# Whether `t` ends the list being read: one of `ends`, a reserved word or an
+# operator.
+#
+# - `t`: the token.
+# - `ends`: the words and operators that end it.
+function ends_list(t: lexer.Lexed, ends: [str]) -> bool
+    for e in ends
+        if is_word(t, text: e) || is_op(t, text: e)
+            return true
+
+    return false
+
+# `t` in words, for a message.
+#
+# - `t`: the token.
+function describe(t: lexer.Lexed) -> str
+    return match t.token
+        .word w   => f"`{w.raw}`"
+        .number n => f"the descriptor `{n.fd}`"
+        .op o     => f"`{o.text}`"
+        .newline  => "the line's end"
+        .end      => "the end of the text"
+
+# Takes every line end at the reading point.
+#
+# - `lx`: the lexer.
+function skip_newlines(@lx: lexer.Lexer) -> ()?
+    while peek_is_newline(@lx)?
+        _ = lexer.take(@lx)?
+
+    return ok()
+
+# Whether the next token is a line end.
+#
+# - `lx`: the lexer.
+function peek_is_newline(@lx: lexer.Lexer) -> bool?
+    t = lexer.peek(@lx)?
+    return ok(t.token == .newline)
+
+# Takes the bare word `text`, which must come next.
+#
+# - `lx`: the lexer.
+# - `text`: the word.
+# - `opened`: where the construct that needs it began, for the message where
+#   the text ends first.
+# - `what`: the construct, in words.
+function expect_word(@lx: lexer.Lexer, text: str, opened: i64, what: str) -> ()?
+    t = lexer.peek(@lx)?
+
+    if is_word(t, text: text)
+        _ = lexer.take(@lx)?
+        return ok()
+
+    if t.token == .end
+        return lexer.unfinished(@lx, at: opened, message: f"{what} is never ended by `{text}`")
+
+    return lexer.mistake(@lx, at: t.start, message: f"`{text}` was expected here, and {describe(t)} stands")
+
+# Takes the operator `text`, which must come next.
+#
+# - `lx`: the lexer.
+# - `text`: the operator.
+# - `opened`: where the construct that needs it began.
+# - `what`: the construct, in words.
+function expect_op(@lx: lexer.Lexer, text: str, opened: i64, what: str) -> ()?
+    t = lexer.peek(@lx)?
+
+    if is_op(t, text: text)
+        _ = lexer.take(@lx)?
+        return ok()
+
+    if t.token == .end
+        return lexer.unfinished(@lx, at: opened, message: f"{what} is never ended by `{text}`")
+
+    return lexer.mistake(@lx, at: t.start, message: f"`{text}` was expected here, and {describe(t)} stands")
+
+# The items of a list, up to one of `ends` (left for the caller to take) or
+# the text's end.
+#
+# - `lx`: the lexer.
+# - `ends`: the reserved words and operators that end the list.
+function parse_list(@lx: lexer.Lexer, ends: [str]) -> [ast.Item]?
+    items: [ast.Item] @= []
+
+    while true
+        skip_newlines(@lx)?
+        t = lexer.peek(@lx)?
+
+        if t.token == .end || ends_list(t, ends: ends)
+            return ok(items)
+
+        if ends.len() > 0 && is_terminator(t)
+            return lexer.mistake(
+                @lx,
+                at: t.start,
+                message: f"{expected(ends)} was expected here, and {describe(t)} stands"
+            )
+
+        items @ items.push(parse_item(@lx, ends: ends)?)
+
+    return ok(items)
+
+# Whether `t` is a word or an operator that only ends a construct: `then`,
+# `else`, `elif`, `fi`, `do`, `done`, `esac`, `}`, `)` or `;;`.
+#
+# - `t`: the token.
+function is_terminator(t: lexer.Lexed) -> bool
+    for w in ["then", "else", "elif", "fi", "do", "done", "esac", "}"]
+        if is_word(t, text: w)
+            return true
+
+    return is_op(t, text: ")") || is_op(t, text: ";;")
+
+# `ends` written for a message: `` `fi` ``, or `` `else` or `fi` ``.
+#
+# - `ends`: the words, at least one.
+function expected(ends: [str]) -> str
+    quoted: [str] @= []
+
+    for e in ends
+        quoted @ quoted.push("`" + e + "`")
+
+    return quoted.join(" or ")
+
+# One item: an and-or list and the `;` or `&` after it, which must be
+# followed by a line end, another item, one of `ends` or the text's end.
+#
+# - `lx`: the lexer.
+# - `ends`: what may end the list the item is in.
+function parse_item(@lx: lexer.Lexer, ends: [str]) -> ast.Item?
+    first = lexer.peek(@lx)?
+    chain = parse_and_or(@lx)?
+    text = lx.text.slice(from: first.start, to: lx.last_end)
+    after = lexer.peek(@lx)?
+    background = is_op(after, text: "&")
+
+    if background || is_op(after, text: ";")
+        _ = lexer.take(@lx)?
+    else if !(after.token == .newline || after.token == .end || ends_list(after, ends: ends))
+        return lexer.mistake(@lx, at: after.start, message: f"{describe(after)} cannot follow a command here")
+
+    return ok(ast.Item(chain: chain, background: background, text: text, at: lexer.place(lx, at: first.start)))
+
+# Pipelines joined by `&&` and `||`; a line end may follow either operator.
+#
+# - `lx`: the lexer.
+function parse_and_or(@lx: lexer.Lexer) -> ast.AndOr?
+    first = parse_pipeline(@lx)?
+    rest: [ast.Link] @= []
+
+    while true
+        t = lexer.peek(@lx)?
+        and_then = is_op(t, text: "&&")
+
+        if !and_then && !is_op(t, text: "||")
+            return ok(ast.AndOr(first: first, rest: rest))
+
+        _ = lexer.take(@lx)?
+        skip_newlines(@lx)?
+        rest @ rest.push(ast.Link(after_success: and_then, pipeline: parse_pipeline(@lx)?))
+
+    return ok(ast.AndOr(first: first, rest: rest))
+
+# Commands joined by `|`, after an optional `!`; a line end may follow `|`.
+#
+# - `lx`: the lexer.
+function parse_pipeline(@lx: lexer.Lexer) -> ast.Pipeline?
+    t = lexer.peek(@lx)?
+    negated = is_word(t, text: "!")
+
+    if negated
+        _ = lexer.take(@lx)?
+
+    stages: [ast.Command] @= [parse_command(@lx)?]
+
+    while is_op(lexer.peek(@lx)?, text: "|")
+        _ = lexer.take(@lx)?
+        skip_newlines(@lx)?
+        stages @ stages.push(parse_command(@lx)?)
+
+    return ok(ast.Pipeline(stages: stages, negated: negated, at: lexer.place(lx, at: t.start)))
+
+# One command: a compound command, a function's definition or a simple
+# command.
+#
+# - `lx`: the lexer.
+function parse_command(@lx: lexer.Lexer) -> ast.Command?
+    t = lexer.peek(@lx)?
+    lexer.enter(@lx, at: t.start)?
+    found = command_at(@lx, t: t)
+    lexer.leave(@lx)
+    return found
+
+# The command that begins with `t`, the next token.
+#
+# - `lx`: the lexer.
+# - `t`: the token, looked at and not taken.
+function command_at(@lx: lexer.Lexer, t: lexer.Lexed) -> ast.Command?
+    match t.token
+        .word w =>
+            if ast.is_bare(w.word)
+                match w.raw
+                    "if"              => return compound.parse_if(@lx)
+                    "while" | "until" => return compound.parse_loop(@lx)
+                    "for"             => return compound.parse_for(@lx)
+                    "case"            => return compound.parse_case(@lx)
+                    "{"               => return compound.parse_group(@lx)
+                    _ =>
+                        for r in reserved()
+                            if r == w.raw
+                                return lexer.mistake(@lx, at: t.start, message: f"`{w.raw}` cannot begin a command")
+
+            if simple.is_assignment(w.raw)
+                return simple.parse_simple(@lx, first: [])
+
+            _ = lexer.take(@lx)?
+
+            if words.is_name(w.raw) && is_op(lexer.peek(@lx)?, text: "(")
+                return compound.parse_function(@lx, name: w.raw, start: t.start)
+
+            return simple.parse_simple(@lx, first: [w.word])
+        .op o =>
+            if o.text == "("
+                return compound.parse_subshell(@lx)
+
+            if simple.is_redirection(o.text)
+                return simple.parse_simple(@lx, first: [])
+
+            return lexer.mistake(@lx, at: t.start, message: f"`{o.text}` cannot begin a command")
+        .number _ => return simple.parse_simple(@lx, first: [])
+        .newline => return lexer.mistake(@lx, at: t.start, message: "a command was expected before the line's end")
+        .end => return lexer.unfinished(@lx, at: t.start, message: "a command was expected before the end of the text")
+
+# The complete commands up to the next line end, which is taken with the
+# here-document bodies after it; none for a line that is blank or a comment.
+#
+# - `lx`: the lexer, at a line's start or after a complete command.
+function parse_line(@lx: lexer.Lexer) -> [ast.Item]?
+    items: [ast.Item] @= []
+
+    while true
+        t = lexer.peek(@lx)?
+
+        if t.token == .newline
+            _ = lexer.take(@lx)?
+            return ok(items)
+
+        if t.token == .end
+            return ok(items)
+
+        items @ items.push(parse_item(@lx, ends: [])?)
+
+    return ok(items)
+
+# A whole text parsed: every complete command and here-document in it.
+#
+# - `text`: the text.
+# - `source`: its number in the shell's list of sources.
+# - `next_doc`: the number its first here-document takes.
+#
+# Fails `lexer.SYNTAX` or `lexer.INCOMPLETE`; the place is lost, so the
+# caller that tells it parses with a lexer of its own.
+function parse_all(text: str, source: i64, next_doc: i64) -> Parsed?
+    lx @= lexer.new_lexer(text, base: 0, source: source, next_doc: next_doc)
+    items: [ast.Item] @= []
+
+    while lexer.peek(@lx)?.token != .end
+        for i in parse_line(@lx)?
+            items @ items.push(i)
+
+    return ok(Parsed(items: items, docs: lx.docs, next_doc: lx.next_doc))
+
+# The commands of a command substitution, `text`, read with a lexer of their
+# own whose places are those of the enclosing source and whose
+# here-documents join `lx`'s.
+#
+# - `lx`: the lexer reading the word the substitution stands in.
+# - `text`: the commands' text.
+# - `base`: the offset of its first byte in the source.
+function parse_nested(@lx: lexer.Lexer, text: str, base: i64) -> [ast.Item]?
+    inner @= lexer.new_lexer(text, base: base, source: lx.source, next_doc: lx.next_doc)
+    inner.depth @ lx.depth
+
+    items = match parse_list(@inner, ends: [])
+        .ok found => found
+        .err e =>
+            lx.error_at @ inner.error_at
+            return fail(code: e.code, msg: e.msg)
+
+    docs @= lx.docs
+
+    for k in keys(inner.docs)
+        docs[k] @ inner.docs[k]?
+
+    lx.docs @ docs
+    lx.next_doc @ inner.next_doc
+    return ok(items)
+
+# The items of `text` with its here-documents, for the tests.
+#
+# - `text`: the text.
+function items_of(text: str) -> [ast.Item]
+    return parse_all(text, source: 0, next_doc: 0).must().items
+
+test "parse_all: a pipeline in an and-or list, then a background item"
+    items = items_of("a | b && c || d; e &\n")
+    assert items.len() == 2
+    assert items[0].chain.first.stages.len() == 2 && items[0].chain.rest.len() == 2
+    assert !items[0].chain.rest[1].after_success
+    assert items[1].background && items[1].text == "e"
+
+test "parse_all: an unclosed if is incomplete, a stray fi a mistake"
+    match parse_all("if true; then echo\n", source: 0, next_doc: 0)
+        .ok _  => assert false
+        .err e => assert e.code == lexer.INCOMPLETE
+
+    match parse_all("fi\n", source: 0, next_doc: 0)
+        .ok _  => assert false
+        .err e => assert e.code == lexer.SYNTAX
+
+test "parse_line: one line at a time, a blank line answering none"
+    lx @= lexer.new_lexer("a\n\nb; c\n", base: 0, source: 0, next_doc: 0)
+    assert parse_line(@lx).must().len() == 1
+    assert parse_line(@lx).must().len() == 0
+    assert parse_line(@lx).must().len() == 2
+
+test "parse_all: a construct closed by the wrong word names the one expected"
+    match parse_all("if a\n  b\nfi\n", source: 0, next_doc: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "`then` was expected here, and `fi` stands"
+
+test "parse_all: subshells and substitutions nested past the limit are a mistake, not a crash"
+    deep = repeat("(", 150) + "x" + repeat(")", 150) + "\n"
+
+    match parse_all(deep, source: 0, next_doc: 0)
+        .ok _  => assert false
+        .err e => assert e.code == lexer.SYNTAX
+
+    substituted = "echo " + repeat("$(", 150) + "x" + repeat(")", 150) + "\n"
+    assert parse_all(substituted, source: 0, next_doc: 0).is_err()
+    assert parse_all(repeat("(", 20) + "x" + repeat(")", 20) + "\n", source: 0, next_doc: 0).must().items.len() == 1

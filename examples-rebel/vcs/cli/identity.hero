@@ -1,0 +1,38 @@
+# Who makes a commit or a tag, and when, for the command line. The name and
+# address come from `VCS_AUTHOR_NAME` and `VCS_AUTHOR_EMAIL`, else from the
+# system's user and host; the moment from `VCS_AUTHOR_DATE`, written as a
+# commit writes it (`1795251600 +0100`), else from the wall clock in the
+# machine's own zone. The variables are git's `GIT_AUTHOR_*` under this
+# program's name, so a script can make commits whose names never change.
+
+use <rebel>/os
+use <rebel>/strings
+use <rebel>/time
+
+use objects/signatures
+
+## Identity
+
+# The signature of the person running the program, now.
+#
+# Fails where `VCS_AUTHOR_DATE` is set and does not read, or the clock
+# cannot be read.
+function current() -> signatures.Signature?
+    name = os.env("VCS_AUTHOR_NAME").default(os.user_name().default("unknown"))
+    host = os.host_name().default("localhost")
+    email = os.env("VCS_AUTHOR_EMAIL").default(os.user_name().default("unknown") + "@" + host)
+
+    match os.env("VCS_AUTHOR_DATE")
+        .ok text =>
+            stamp = signatures.parse_signature(f"{name} <{email}> {strings.trim(text)}")?
+            return ok(stamp)
+        .err _ => _ = 0
+
+    now = time.now()?
+
+    minutes = match time.local_zone()
+        .ok zone => time.to_units(time.offset_at(zone, t: now).from_utc, unit: .minute)
+        .err _   => 0
+
+    whole = time.from_unix(whole_seconds: time.unix_seconds(now), extra_nanoseconds: 0)?
+    return ok(signatures.Signature(name: name, email: email, when: whole, offset_minutes: minutes))

@@ -1,0 +1,91 @@
+# Two folders compared as a backup sees them (`engine/scan`, its
+# `.backupignore` files honoured on both sides): each path's kind, a
+# file's content by its SHA-256, a link's target, and, where asked, the
+# times of every path and the permission bits of files and folders. The
+# folder compared itself is left out, since a restore writes into a folder
+# that is not the one backed up; a link's permission bits are left out,
+# since the system makes them and Linux has no call that sets them.
+#
+# The answer lists every difference in words, sorted by path, so a demo
+# prints it and a person reads what went wrong.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/path
+
+use engine/scan
+
+# The differences of `actual` from `expected`, one line each, sorted by
+# path; none where they agree.
+#
+# - `expected`: the folder as it should be.
+# - `actual`: the folder compared with it.
+# - `facts`: whether permission bits and times are compared too.
+#
+# Fails as the scans and the reads fail.
+function differences(expected: str, actual: str, facts: bool) -> [str]?
+    want = by_path(scan.scan(expected)?.found)
+    have = by_path(scan.scan(actual)?.found)
+    out: [str] @= []
+
+    for rel in sort(keys(want))
+        w = want[rel].must()
+
+        match have[rel]
+            .err _ => out @ out.push(f"{rel}: missing")
+            .ok h =>
+                if h.kind != w.kind
+                    out @ out.push(f"{rel}: of another kind")
+                else if w.kind == .symlink && h.target != w.target
+                    out @ out.push(f"{rel}: links to {h.target}, not {w.target}")
+                else if w.kind == .file && (h.size != w.size || content_of(root: expected, rel: rel)? != content_of(root: actual, rel: rel)?)
+                    out @ out.push(f"{rel}: another content")
+                else if facts && w.kind != .symlink && h.mode != w.mode
+                    out @ out.push(f"{rel}: permission {h.mode}, not {w.mode}")
+                else if facts && h.modified != w.modified
+                    out @ out.push(f"{rel}: another time")
+
+    for rel in sort(keys(have))
+        if want[rel].is_err()
+            out @ out.push(f"{rel}: not expected")
+
+    return ok(out)
+
+# The paths of `found` by their names below the root, the root left out.
+#
+# - `found`: what a scan found.
+function by_path(found: [scan.Found]) -> {str: scan.Found}
+    out: {str: scan.Found} @= {}
+
+    for f in found
+        if f.rel != ""
+            out[f.rel] @ f
+
+    return out
+
+# The SHA-256 of the file `rel` below `root`, hexadecimal.
+#
+# - `root`: the folder.
+# - `rel`: the path below it.
+#
+# Fails as `fs.read_bytes` fails.
+function content_of(root: str, rel: str) -> str?
+    return ok(bytes.format_hex(crypto.sha256(fs.read_bytes(path.join_all([root, path.from_slash(rel)]))?)))
+
+test "differences: a folder agrees with its copy; a changed, a missing and an extra file are told"
+    a = "build/backup-tests/compare-a"
+    b = "build/backup-tests/compare-b"
+    _ = fs.remove_all(a).is_err()
+    _ = fs.remove_all(b).is_err()
+    fs.make_dir_all(a + "/d").must()
+    fs.make_dir_all(b + "/d").must()
+    write_file(path: a + "/d/x", text: "one").must()
+    write_file(path: b + "/d/x", text: "one").must()
+    assert differences(expected: a, actual: b, facts: false).must() == []
+    write_file(path: b + "/d/x", text: "two").must()
+    write_file(path: a + "/y", text: "y").must()
+    write_file(path: b + "/z", text: "z").must()
+    assert differences(expected: a, actual: b, facts: false).must() == ["d/x: another content", "y: missing", "z: not expected"]
+    fs.remove_all(a).must()
+    fs.remove_all(b).must()

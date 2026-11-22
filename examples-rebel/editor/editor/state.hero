@@ -1,0 +1,281 @@
+# The editor as one value: its buffers in their order, the one shown, the
+# mode its keys go to, what a prompt at the bottom is asking, the last search
+# and replacement, the lines cut, the message under the status line, the
+# screen's size and the files watched. The real terminal and the demo both
+# drive this one value, a key at a time, and draw it; nothing here reads a
+# terminal or a clock, so a session played twice ends the same.
+
+use <rebel>/path as paths
+use <rebel>/regex
+use <rebel>/tui
+
+use buffers/buffer
+use buffers/list
+use files/disk
+use files/endings
+use search/matches
+use settings/settings
+
+# Where the keys go.
+variant Mode
+    # To the text.
+    editing
+    # To the line typed at the bottom, which `Asking` says is for what.
+    prompt
+    # To a question answered by one key, which `Asking` says.
+    confirm
+    # To the diff view, which scrolls and is left by Escape or `q`.
+    diff
+    # To the help view, which scrolls and is left by Escape or `q`.
+    help
+
+# What the prompt or the question at the bottom is asking for.
+variant Asking
+    # Nothing.
+    nothing
+    # A pattern to find.
+    find
+    # The pattern of a replacement.
+    replace_pattern
+    # Its template.
+    replace_template
+    # Whether to replace the match shown: y, n, a for all the rest, q.
+    replace_each
+    # A line's number.
+    goto_line
+    # A file's path.
+    open_file
+    # The encoding the next save writes.
+    save_encoding
+    # The encoding to read the file again in.
+    reopen_encoding
+    # Whether to read again a file another program changed.
+    reload
+        # The file's path.
+        path: str
+    # Whether to save a buffer before it is closed.
+    close
+        # The buffer's path.
+        path: str
+    # Whether to leave with buffers unsaved.
+    quit
+
+# The whole editor.
+record Editor
+    # The open buffers, in the order of their paths.
+    buffers: list.Buffers
+    # The path of the buffer shown; "" when none is open.
+    current: str
+    # The settings: options, bindings, colours.
+    setup: settings.Setup
+    # Where the keys go.
+    mode: Mode
+    # What the prompt or question asks.
+    asking: Asking
+    # The prompt's or the question's words.
+    question: str
+    # The line being typed at a prompt.
+    input: tui.Input
+    # The message under the status line, "" for none.
+    message: str
+    # Whether the message warns, drawn in the theme's warning style.
+    warn: bool
+    # The lines `cut_line` took, which `paste_lines` puts back.
+    clip: [str]
+    # The last pattern searched for, as typed.
+    pattern: str
+    # The last replacement's template, as typed.
+    template: str
+    # The last pattern, compiled; fails `not_found` before the first search.
+    searching: regex.Regex?
+    # The match the cursor stands on; fails `not_found` where none is shown.
+    hit: matches.Hit?
+    # How many replacements the replace in progress has made.
+    replaced: i64
+    # The lines of the diff view.
+    diff_lines: [str]
+    # The first row the diff or help view shows.
+    view_top: i64
+    # The screen's columns.
+    width: i64
+    # The screen's rows.
+    height: i64
+    # The files watched for changes by other programs.
+    watched: [disk.Watched]
+    # The paths of the files another program changed, not yet asked about.
+    stale: [str]
+    # The command the last key ran, "" for a key that typed; a run of
+    # `cut_line` gathers its lines.
+    last_command: str
+    # Whether the editor is done, the last buffer closed or `quit` answered.
+    done: bool
+
+# An editor with no buffer open, on a screen of `width` by `height`.
+#
+# - `setup`: the settings.
+# - `width`: the screen's columns.
+# - `height`: the screen's rows.
+function new_editor(setup: settings.Setup, width: i64, height: i64) -> Editor
+    return Editor(
+        buffers: list.new_buffers(),
+        current: "",
+        setup: setup,
+        mode: .editing,
+        asking: .nothing,
+        question: "",
+        input: tui.new_input(""),
+        message: "",
+        warn: false,
+        clip: [],
+        pattern: "",
+        template: "",
+        searching: fail(code: "not_found", msg: "nothing searched yet"),
+        hit: fail(code: "not_found", msg: "no match shown"),
+        replaced: 0,
+        diff_lines: [],
+        view_top: 0,
+        width: width,
+        height: height,
+        watched: [],
+        stale: [],
+        last_command: "",
+        done: false
+    )
+
+# The columns between tab stops.
+#
+# - `e`: the editor.
+function tab_width(e: Editor lent) -> i64
+    return e.setup.options.tab_width
+
+# The slot of the buffer shown.
+#
+# - `e`: the editor.
+#
+# Fails `not_found` where no buffer is open.
+function slot_of_current(e: Editor lent) -> i64?
+    return list.slot_of(e.buffers, path: e.current)
+
+# Says `text` under the status line, plainly.
+#
+# - `e`: the editor.
+# - `text`: the message.
+function say(@e: Editor, text: str)
+    e.message @ text
+    e.warn @ false
+
+# Says `text` under the status line, as a warning.
+#
+# - `e`: the editor.
+# - `text`: the message.
+function warn(@e: Editor, text: str)
+    e.message @ text
+    e.warn @ true
+
+# Opens the file at `path` and shows it, or shows its buffer where it is
+# open already; a file on disk is watched from then on.
+#
+# - `e`: the editor.
+# - `path`: the file's path.
+# - `named`: the encoding the person named, or "" to let the file say.
+#
+# Says how the file was read: its encoding and how it was chosen, its line
+# breaks, a byte that could not be read. Fails as `buffer.open` fails.
+function open_path(@e: Editor, path: str, named: str) -> ()?
+    if list.holds(e.buffers, path: path)
+        e.current @ path
+        say(@e, text: f"{path} is open already")
+        return ok()
+
+    b = buffer.open(path: path, named: named, most: e.setup.options.history)?
+    list.add(@e.buffers, b: b)
+    e.current @ path
+
+    if b.on_disk
+        match disk.start_watching(@e.watched, path: path)
+            .ok _  => _ = 0
+            .err w => warn(@e, text: f"{path} is not watched: {w.msg}")
+
+    say(@e, text: opened_message(b))
+    return ok()
+
+# What opening `b` says: the file's encoding, how it was chosen, its line
+# breaks, and the first byte the encoding could not read.
+#
+# - `b`: the buffer just opened.
+function opened_message(b: buffer.Buffer lent) -> str
+    if !b.on_disk
+        return f"{b.path}: a new file, {b.format.encoding}"
+
+    lines = b.doc.lines.len()
+    told = f"{b.path}: {disk.describe(b.format)}, {endings.name_of(b.format.ending)}, {lines} lines"
+
+    match b.unreadable
+        .ok at => return told + f"; byte {at} could not be read and is shown as U+FFFD"
+        .err _ => return told
+
+# The name a question gives the file at `path`: its last part, short
+# enough for the bottom line beside its keys.
+#
+# - `path`: the file's path.
+function name_of(path: str) -> str
+    return paths.name(path).default(path)
+
+# Takes the buffer of `path` out, stops watching its file, and shows the
+# buffer that takes its place; the editor is done when none is left.
+#
+# - `e`: the editor.
+# - `path`: the buffer's path.
+function close_path(@e: Editor, path: str)
+    _ = list.remove(@e.buffers, path: path).is_err()
+
+    match disk.stop_watching(@e.watched, path: path)
+        .ok _  => _ = 0
+        .err w => warn(@e, text: w.msg)
+
+    match list.successor_of(e.buffers, path: path)
+        .ok next =>
+            e.current @ next
+            say(@e, text: f"{path} closed")
+        .err _ =>
+            e.current @ ""
+            e.done @ true
+
+# Ends the editor's watches, as it does when it ends.
+#
+# - `e`: the editor.
+#
+# Fails as `disk.stop_all` fails.
+function stop(@e: Editor) -> ()?
+    return disk.stop_all(@e.watched)
+
+# Puts a prompt at the bottom, asking `asking` in `question`, its line
+# beginning with `text`.
+#
+# - `e`: the editor.
+# - `asking`: what it asks for.
+# - `question`: the words before the line.
+# - `text`: the line's first text, the last answer or "".
+function ask(@e: Editor, asking: Asking, question: str, text: str)
+    e.mode @ .prompt
+    e.asking @ asking
+    e.question @ question
+    e.input @ tui.new_input(text)
+
+# Puts a question answered by one key at the bottom.
+#
+# - `e`: the editor.
+# - `asking`: what it asks.
+# - `question`: the words, the keys that answer among them.
+function confirm(@e: Editor, asking: Asking, question: str)
+    e.mode @ .confirm
+    e.asking @ asking
+    e.question @ question
+
+# Takes the prompt or the question away and gives the keys to the text.
+#
+# - `e`: the editor.
+function settle(@e: Editor)
+    e.mode @ .editing
+    e.asking @ .nothing
+    e.question @ ""

@@ -1,0 +1,58 @@
+# The other end of the control socket: what `monitor ctl` runs to ask a
+# monitor one thing and print its answer. It connects, writes the request
+# as one message, reads the answer as one message and closes, the whole
+# bounded by the wait the caller gives.
+
+use <rebel>/io
+use <rebel>/ipc
+use <rebel>/time
+
+use control/protocol
+use control/server
+
+# The answer of the monitor at `path` to `request`.
+#
+# - `path`: the control socket's path.
+# - `request`: the request.
+# - `within`: the longest the whole exchange may take.
+#
+# Fails `file_not_found` or `closed` where no monitor listens at the path,
+# `timeout` where it does not answer in time, `invalid` where its answer
+# does not read, and as `ipc.connect` fails.
+function ask(path: str, request: protocol.Request, within: time.Duration) -> protocol.Answer?
+    s @= ipc.connect(path, within: within)?
+    sent = exchange(s, request: request, within: within)
+    _ = io.close(@s).is_err()
+    return sent
+
+# Writes `request` on `s` and reads the answer.
+#
+# - `s`: the connection, which the caller closes.
+# - `request`: the request.
+# - `within`: the deadline of every read and write.
+function exchange(s: io.Stream, request: protocol.Request, within: time.Duration) -> protocol.Answer?
+    ipc.set_deadline(s, deadline: within)?
+    ipc.write_message(s, data: protocol.encode_request(request))?
+    return protocol.decode_answer(ipc.read_message(s, most: protocol.MOST_BYTES)?)
+
+test "ask: a request served by a server of this process, then nobody at the path"
+    path = "build/monitor-test-control.sock"
+    srv @= server.open(path).must()
+    s @= ipc.connect(path, within: time.seconds(1).must()).must()
+    ipc.write_message(s, data: protocol.encode_request(protocol.Request(command: "status", args: []))).must()
+    incoming = server.next(@srv, within: time.seconds(1).must()).must()
+    assert incoming.request.command == "status"
+    server.answer(@srv, incoming: incoming, a: protocol.answer_lines(["fine"]))
+    assert protocol.decode_answer(ipc.read_message(s, most: 1_024).must()).must().lines == ["fine"]
+    io.close(@s).must()
+
+    match server.next(@srv, within: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == "timeout"
+
+    server.close(@srv)
+    assert ask(
+        path,
+        request: protocol.Request(command: "status", args: []),
+        within: time.milliseconds(200).must()
+    ).is_err()

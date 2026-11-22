@@ -1,0 +1,177 @@
+# The command line of `monitor`, read with `flags`:
+#
+#     monitor run --config /etc/monitor.toml [--dashboard]
+#     monitor check --config /etc/monitor.toml
+#     monitor ctl --config /etc/monitor.toml alerts
+#     monitor ctl --socket /run/monitor/control.sock restart cache
+#     monitor bench [--config /etc/monitor.toml]
+#     monitor demo [--dir build/monitor-demo]
+#
+# and the hidden `monitor workload service --name db` and `monitor workload
+# notify --file alerts.txt`, the small program the demo runs as its services
+# and its notifier.
+
+use <rebel>/flags
+
+# What the command line asked for.
+record Invocation
+    # `run`, `check`, `ctl`, `bench`, `demo`, `service`, `notify`, or
+    # `help` where the help is to be printed.
+    action: str
+    # The help, for `help`.
+    help: str
+    # The configuration file, "" where none was given.
+    config: str
+    # For `ctl`: the control socket, "" to read it from the configuration.
+    socket: str
+    # For `ctl`: the command and its arguments.
+    words: [str]
+    # For `run`: whether the dashboard takes the terminal.
+    dashboard: bool
+    # For `demo`: its folder.
+    dir: str
+    # For `service`: its name.
+    name: str
+    # For `notify`: the file it appends to.
+    file: str
+
+# The option naming the configuration file.
+#
+# - `required`: whether the command cannot do without it.
+function config_option(required: bool) -> flags.Argument
+    a = flags.with_env(
+        flags.option(long: "config", short: "c", value_name: "FILE", help: "the configuration file, TOML"),
+        name: "MONITOR_CONFIG"
+    )
+
+    if required
+        return flags.with_required(a)
+    return a
+
+# The whole declaration.
+function declaration() -> flags.Command
+    root @= flags.command(
+        name: "monitor",
+        about: "A system monitor: services supervised, files watched, a serial sensor read, alerts over every figure, a terminal dashboard, telemetry exported by OTLP."
+    )
+    run @= flags.command(name: "run", about: "Run the monitor until Ctrl-C or `monitor ctl quit`.")
+    flags.add(@run, a: config_option(true))
+    flags.add(@run, a: flags.flag(long: "dashboard", short: "d", help: "draw the dashboard on the terminal"))
+    flags.add_command(c: @root, sub: run)
+    check @= flags.command(
+        name: "check",
+        about: "Read a configuration, print its plan, and say whether a monitor runs it."
+    )
+    flags.add(@check, a: config_option(true))
+    flags.add_command(c: @root, sub: check)
+    ctl @= flags.with_options_first(
+        flags.command(name: "ctl", about: "Ask a running monitor: status, alerts, ack, silence, restart, start, stop, send, metrics, quit.")
+    )
+    flags.add(@ctl, a: config_option(false))
+    flags.add(
+        @ctl,
+        a: flags.option(long: "socket", short: "s", value_name: "PATH", help: "the control socket, where no configuration names it")
+    )
+    flags.add(
+        @ctl,
+        a: flags.with_arity(flags.positional(name: "request", help: "the command and its arguments"), arity: .at_least_one)
+    )
+    flags.add_command(c: @root, sub: ctl)
+    bench @= flags.command(name: "bench", about: "Measure what the monitor's own work costs.")
+    flags.add(@bench, a: config_option(false))
+    flags.add_command(c: @root, sub: bench)
+    demo @= flags.command(name: "demo", about: "Run the scripted demo against its stand-ins, on a fixed clock.")
+    flags.add(
+        @demo,
+        a: flags.with_default(flags.option(long: "dir", short: "", value_name: "DIR", help: "the demo's folder, made and removed"), value: "build/monitor-demo")
+    )
+    flags.add_command(c: @root, sub: demo)
+    workload @= flags.with_command_hidden(
+        flags.command(name: "workload", about: "A small program to supervise: a service, or a notifier.")
+    )
+    service @= flags.command(name: "service", about: "A service that does what its input asks.")
+    flags.add(
+        @service,
+        a: flags.with_required(flags.option(long: "name", short: "", value_name: "NAME", help: "its name"))
+    )
+    flags.add_command(c: @workload, sub: service)
+    notify @= flags.command(name: "notify", about: "A notifier that appends each alert to a file.")
+    flags.add(
+        @notify,
+        a: flags.with_required(flags.option(long: "file", short: "", value_name: "FILE", help: "the file"))
+    )
+    flags.add_command(c: @workload, sub: notify)
+    flags.add_command(c: @root, sub: workload)
+    return root
+
+# What `arguments` ask, `MONITOR_CONFIG` of `env` naming the configuration
+# where `--config` does not. Fails `invalid`, the usage in its message, where
+# they do not read.
+#
+# - `arguments`: the program's arguments, its name left out.
+# - `env`: the environment, `os.env_all()`'s answer.
+function read(arguments: [str], env: {str: str}) -> Invocation?
+    found = flags.parse_with_env(declaration(), arguments: arguments, env: env)?
+    inv @= Invocation(
+        action: "help",
+        help: "",
+        config: "",
+        socket: "",
+        words: [],
+        dashboard: false,
+        dir: "",
+        name: "",
+        file: ""
+    )
+
+    if flags.is_help(found)
+        inv.help @ flags.help_text(found)
+        return ok(inv)
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            inv.help @ flags.help_of(declaration())
+            return ok(inv)
+
+    inv.action @ flags.name_of(sub)
+
+    match inv.action
+        "run" =>
+            inv.config @ flags.value_of(sub, name: "config")?
+            inv.dashboard @ flags.is_on(sub, name: "dashboard")
+        "check" => inv.config @ flags.value_of(sub, name: "config")?
+        "ctl" =>
+            inv.config @ flags.value_of(sub, name: "config").default("")
+            inv.socket @ flags.value_of(sub, name: "socket").default("")
+            inv.words @ flags.values_of(sub, name: "request")
+
+            if inv.config == "" && inv.socket == ""
+                return fail(code: "invalid", msg: "monitor ctl: name the monitor by --config or --socket")
+        "bench" => inv.config @ flags.value_of(sub, name: "config").default("")
+        "demo"  => inv.dir @ flags.value_of(sub, name: "dir")?
+        "workload" =>
+            role = flags.subcommand(sub)?
+            inv.action @ flags.name_of(role)
+
+            if inv.action == "service"
+                inv.name @ flags.value_of(role, name: "name")?
+            else
+                inv.file @ flags.value_of(role, name: "file")?
+        _ => _ = 0
+
+    return ok(inv)
+
+test "read: a run with its dashboard, a ctl request and its words, the demo's folder"
+    r = read(["run", "--config", "m.toml", "--dashboard"], env: {}).must()
+    assert r.action == "run" && r.config == "m.toml" && r.dashboard
+    c = read(["ctl", "--socket", "s.sock", "send", "cache", "grow", "256"], env: {}).must()
+    assert c.action == "ctl" && c.socket == "s.sock" && c.words == ["send", "cache", "grow", "256"]
+    assert read(["demo"], env: {}).must().dir == "build/monitor-demo"
+
+test "read: the workload's two roles, help, and a ctl that names no monitor"
+    assert read(["workload", "service", "--name", "db"], env: {}).must().name == "db"
+    assert read(["workload", "notify", "--file", "n.txt"], env: {}).must().action == "notify"
+    assert read(["--help"], env: {}).must().action == "help"
+    assert read(["ctl", "status"], env: {}).is_err()
+    assert read(["run"], env: {}).is_err()

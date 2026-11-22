@@ -1,0 +1,117 @@
+# Loose objects: each object alone in a file named by its id, the first two
+# hexadecimal digits a folder and the other 38 the file's name, the framed
+# bytes compressed by zlib (RFC 1950), as git stores an object it has just
+# made (the Git Book's "Git Objects"). A new object is written whole to a
+# temporary file and renamed into place, so a reader never meets half of
+# one, and an object already there is never written again: its name is its
+# content.
+
+use <rebel>/compress
+use <rebel>/fs
+use <rebel>/path
+
+use objects/framing
+use objects/ids
+
+## Limits
+
+# The most bytes one object may inflate to: a corrupted or hostile file that
+# claims more fails `limit` instead of filling the memory.
+constant INFLATE_LIMIT: i64
+    1073741824
+
+## Loose objects
+
+# The file that holds the object `id` under the folder of objects `dir`.
+#
+# - `dir`: the repository's `objects` folder.
+# - `id`: a whole object name.
+function file_of(dir: str, id: str) -> str
+    return path.join_all([dir, id.slice(from: 0, to: 2), id.slice(from: 2, to: id.len())])
+
+# Whether the folder of objects `dir` holds `id` as a loose object.
+#
+# - `dir`: the repository's `objects` folder.
+# - `id`: a whole object name.
+function has_loose(dir: str, id: str) -> bool
+    return fs.is_file(file_of(dir: dir, id: id)).default(false)
+
+# Stores the object of `kind` holding `data` as a loose object, and answers
+# its name; an object already stored is left as it is.
+#
+# - `dir`: the repository's `objects` folder.
+# - `kind`: the object's kind.
+# - `data`: its content.
+#
+# Fails where its folder cannot be made or its file written, with `fs`'s
+# code.
+function write_loose(dir: str, kind: framing.Kind, data: [u8]) -> str?
+    raw = framing.framed(kind, data: data)
+    id = framing.id_of(kind, data: data)
+    file = file_of(dir: dir, id: id)
+
+    if fs.is_file(file).default(false)
+        return ok(id)
+    fs.make_dir_all(path.parent(file))?
+    packed = compress.compress(raw, options: compress.default_options(.zlib))?
+    fs.write_atomic_bytes(path: file, data: packed)?
+    return ok(id)
+
+# The object `id`, read from its loose file and checked against its name.
+#
+# - `dir`: the repository's `objects` folder.
+# - `id`: a whole object name.
+#
+# Fails `not_found` where no loose file holds it, `invalid` where the file
+# does not inflate, its frame does not read, or its content's hash is not
+# `id`, and `limit` where it would inflate past `INFLATE_LIMIT`.
+function read_loose(dir: str, id: str) -> framing.Object?
+    file = file_of(dir: dir, id: id)
+
+    if !fs.is_file(file).default(false)
+        return fail(code: "not_found", msg: f"no loose object {id}")
+    raw = compress.decompress(fs.read_bytes(file)?, format: .zlib, limit: INFLATE_LIMIT)?
+    object = framing.unframe(raw)?
+    found = framing.id_of(object.kind, data: object.data)
+
+    if found != id
+        return fail(code: "invalid", msg: f"the loose object {id} holds the content of {found}")
+    return ok(object)
+
+# The names of every loose object under `dir`, sorted.
+#
+# - `dir`: the repository's `objects` folder; one not there holds none.
+#
+# Fails where a folder cannot be read. Files that are not objects (`pack`,
+# `info`, a temporary file) are passed over.
+function loose_ids(dir: str) -> [str]?
+    if !fs.is_dir(dir).default(false)
+        return ok([])
+    out: [str] @= []
+
+    for folder in fs.read_dir(dir)?
+        if folder.kind != .directory || folder.name.len() != 2 || !ids.is_hex_prefix(folder.name)
+            continue
+
+        for entry in fs.read_dir(path.join_all([dir, folder.name]))?
+            id = folder.name + entry.name
+
+            if entry.kind == .file && ids.is_id(id)
+                out @ out.push(id)
+
+    return ok(sort(out))
+
+# Removes the loose file of `id`, and its folder where that is left empty.
+#
+# - `dir`: the repository's `objects` folder.
+# - `id`: a whole object name, stored loose.
+#
+# Fails where the file cannot be removed.
+function remove_loose(dir: str, id: str) -> ()?
+    file = file_of(dir: dir, id: id)
+    fs.remove(file)?
+    folder = path.parent(file)
+
+    if fs.read_dir(folder)?.len() == 0
+        fs.remove(folder)?
+    return ok()

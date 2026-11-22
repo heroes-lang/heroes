@@ -1,0 +1,314 @@
+# The steps of a plan run: a node is handed out once everything it needs is
+# done (`graphs.Sorter`), its verdict asked then, when the digests of what
+# it needs are final, and a stale target's step started on a worker thread,
+# up to `jobs` at once. A failed step stops the build: no step starts after
+# it, and the steps already running are waited for and told, as ninja does.
+#
+# Steps are collected in the order they started. The runtime answers
+# nothing about a thread but its wait (the `threads` ledger keeps
+# `thread/is-finished` pending), so the scheduler cannot take whichever
+# step ends first; it waits for the oldest, and a slot a younger step has
+# freed is filled only once the older ones end. What that buys is an
+# account that is the same on every run whatever the timing, `[k/n]` lines
+# and their outputs in one order, which ninja gives only at `-j 1`.
+#
+# Where the program caught Ctrl-C (`os.catch_stop`), the stop it asks is
+# taken as a failure is: nothing more starts, and what runs is collected.
+#
+# A step's record goes to the log as it is collected, so a build stopped by
+# a failure, or killed, keeps every step it finished; a failed step's record
+# is forgotten, so its target runs again however its output was left.
+
+use <rebel>/graphs
+use <rebel>/os
+use <rebel>/threads
+
+use engine/forecast
+use engine/prepare
+use engine/report
+use engine/step
+use engine/verdict
+use graph/plan
+use load/paths
+use model/buildfile
+use state/content
+use state/log
+
+# How a build runs.
+record Settings
+    # The build's folder.
+    root: str
+    # At most how many steps run at once, from 1.
+    jobs: i64
+    # Whether to print why each step runs.
+    explain: bool
+    # Whether to show each step's command rather than its description.
+    verbose: bool
+    # Whether to run nothing, telling what would run.
+    dry_run: bool
+
+# What came of a build.
+record Outcome
+    # The steps that ran and did what they were asked, or would in a dry run.
+    ran: i64
+    # The steps that failed.
+    failed: i64
+    # The targets found up to date.
+    up_to_date: i64
+    # The target of the first step that failed; absent where none did.
+    first_failure: str?
+    # Why the build stopped other than a step failing: the log not written,
+    # a thread refused; absent where nothing of the kind happened.
+    problem: str?
+
+# A step running.
+record Flight
+    # Its node's number in the sorter.
+    node: i64
+    # The step.
+    step: prepare.Prepared
+    # Why it runs.
+    reason: str
+    # The digest of each of its inputs as it started.
+    inputs: {str: str}
+    # The worker running it.
+    thread: threads.TextThread
+
+# An outcome of nothing yet.
+function nothing_yet() -> Outcome
+    return Outcome(
+        ran: 0,
+        failed: 0,
+        up_to_date: 0,
+        first_failure: fail(code: buildfile.NOT_FOUND, msg: "no step failed"),
+        problem: fail(code: buildfile.NOT_FOUND, msg: "nothing went wrong")
+    )
+
+# The steps that may run at once: `asked`, within what the runtime allows.
+#
+# - `asked`: the `-j` given, from 1.
+function slots_of(asked: i64) -> i64
+    most = threads.max_running()
+
+    if asked > most
+        return most
+
+    if asked < 1
+        return 1
+    return asked
+
+# The step `st` started on a worker.
+#
+# - `st`: the step.
+# - `reason`: why it runs.
+# - `node`: its node's number.
+# - `cache`: the files seen, which gives its inputs' digests.
+# - `root`: the build's folder.
+#
+# Fails `limit` where the system refuses a thread.
+function launch(st: prepare.Prepared, reason: str, node: i64, @cache: {str: content.Seen}, root: str) -> Flight?
+    inputs: {str: str} @= {}
+
+    for name in st.inputs
+        match content.digest_in(content.seen(@cache, root: root, name: name))
+            .ok d  => inputs[name] @ d
+            .err _ => _ = 0
+
+    depfile_place: str? = match st.depfile
+        .ok d  => ok(paths.disk(root: root, name: d))
+        .err _ => st.depfile
+
+    order = step.Order(
+        output: st.output,
+        place: paths.disk(root: root, name: st.output),
+        words: st.words,
+        dir: root,
+        env: st.env,
+        depfile: depfile_place,
+        time_limit: st.time_limit
+    )
+    t = step.start(order)?
+    return ok(Flight(node: node, step: st, reason: reason, inputs: inputs, thread: t))
+
+# The log's entry of a step that succeeded.
+#
+# - `fl`: the step.
+# - `d`: what its worker answered.
+# - `cache`: the files seen; this takes the output's new digest, and the
+#   digest of each file its depfile named.
+# - `root`: the build's folder.
+function entry_of(fl: Flight lent, d: step.Done lent, @cache: {str: content.Seen}, root: str) -> log.Entry
+    output = fl.step.output
+    digest = d.digest.default("")
+    cache[output] @ .file(digest: digest)
+    deps: {str: str?} @= {}
+
+    for written in d.deps
+        match paths.node_of(written: written, where: f"the depfile of {output}")
+            .ok node =>
+                if node != output && fl.inputs[node].is_err()
+                    deps[node] @ content.digest_in(content.seen(@cache, root: root, name: node))
+            .err _ => _ = 0
+
+    return log.Entry(
+        output: output,
+        command: fl.step.command,
+        digest: digest,
+        inputs: fl.inputs,
+        deps: deps,
+        duration: d.duration
+    )
+
+# The plan's steps, run.
+#
+# - `f`: the build file.
+# - `p`: the plan.
+# - `steps`: every target of the plan, prepared.
+# - `l`: the log; each step that ends well replaces its target's entry, and
+#   each that fails removes it, here and in the file.
+# - `cache`: the files seen in this build.
+# - `fc`: the forecast, which gives the count the `[k/n]` lines start from.
+# - `s`: how to run.
+function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepare.Prepared} lent, @l: log.Log, @cache: {str: content.Seen}, fc: forecast.Forecast lent, s: Settings) -> Outcome
+    out @= nothing_yet()
+
+    sorter @= match graphs.new_sorter(p.graph)
+        .ok made => made
+        .err e =>
+            out.problem @ ok(e.msg)
+            return out
+
+    # `queue` only grows and `head` walks it: taking the first of a list by
+    # a slice would copy the rest each time.
+    queue: [i64] @= []
+    head @= 0
+    flights: [Flight] @= []
+    coming: {str: bool} @= {}
+    told @= 0
+    expected @= fc.stale
+    stopped @= false
+    slots = slots_of(s.jobs)
+
+    while true
+        for n in graphs.ready(@sorter)
+            queue @ queue.push(n)
+
+        moved @= false
+
+        if !stopped && os.is_stop_asked()
+            # Ctrl-C, where the program caught it: no step starts after it,
+            # and those running are waited for and their records kept.
+            out.problem @ ok("interrupted: the build was asked to stop")
+            stopped @ true
+
+        while head < queue.len() && !stopped
+            node = queue[head]
+            name = p.nodes[node]
+
+            match buildfile.kind_of(f, name: name)
+                .phony | .source =>
+                    head @ head + 1
+                    graphs.done(@sorter, node).must()
+                    moved @ true
+                .target =>
+                    st = steps[name].must()
+
+                    match verdict.verdict_of(st, previous: l.entries[name], @cache, root: s.root, coming: coming)
+                        .up_to_date =>
+                            head @ head + 1
+                            out.up_to_date @ out.up_to_date + 1
+
+                            if verdict.is_stale(fc.verdicts[name].default(.up_to_date))
+                                expected @ expected - 1
+
+                                if s.explain
+                                    print(
+                                        report.explain_line(output: name, reason: "up to date: what it is made from came out the same bytes")
+                                    )
+
+                            graphs.done(@sorter, node).must()
+                            moved @ true
+                        .stale why =>
+                            if s.dry_run
+                                head @ head + 1
+                                told @ told + 1
+                                coming[name] @ true
+                                out.ran @ out.ran + 1
+
+                                if s.explain
+                                    print(report.explain_line(output: name, reason: why.reason))
+
+                                print(report.status_line(told: told, expected: expected, s: st, verbose: s.verbose))
+                                graphs.done(@sorter, node).must()
+                                moved @ true
+                            else if flights.len() >= slots
+                                break
+                            else
+                                head @ head + 1
+
+                                match launch(st, reason: why.reason, node: node, @cache, root: s.root)
+                                    .ok fl => flights @ flights.push(fl)
+                                    .err e =>
+                                        out.problem @ ok(f"the step of {name} could not start: {e.msg}")
+                                        stopped @ true
+
+        if moved && !stopped
+            continue
+
+        if flights.len() == 0
+            break
+
+        fl = flights[0]
+        flights @ flights.slice(from: 1, to: flights.len())
+        t @= fl.thread
+        d = step.finish(@t)
+        told @ told + 1
+        name = fl.step.output
+
+        if s.explain
+            print(report.explain_line(output: name, reason: fl.reason))
+
+        print(report.status_line(told: told, expected: expected, s: fl.step, verbose: s.verbose))
+
+        if d.succeeded
+            for line in report.written_lines(d.text)
+                print(line)
+
+            e = entry_of(fl, d: d, @cache, root: s.root)
+            l.entries[name] @ e
+            out.ran @ out.ran + 1
+            graphs.done(@sorter, fl.node).must()
+
+            match log.append(root: s.root, line: log.line_of(e))
+                .ok _ => _ = 0
+                .err problem =>
+                    out.problem @ ok(f"the build log could not be written: {problem.msg}")
+                    stopped @ true
+        else
+            print(report.failed_line(name, d: d))
+
+            for line in report.written_lines(d.text)
+                print(line)
+
+            out.failed @ out.failed + 1
+            stopped @ true
+
+            if out.first_failure.is_err()
+                out.first_failure @ ok(name)
+
+            l.entries @ log.without(l.entries, output: name)
+
+            # A forget line that cannot be written leaves the old record,
+            # which still says how the output was made then: the inputs
+            # that made this step stale still differ from it, and an output
+            # the failed step rewrote differs from its digest, so the next
+            # build runs the step again either way.
+            _ = log.append(root: s.root, line: log.forget_line(name)).is_err()
+
+    if !stopped && graphs.is_active(sorter)
+        # Every node the sorter holds is handed out once what it needs is
+        # done, so one left over means a step was never collected: told, not
+        # passed over as a build that ended well.
+        out.problem @ ok("the build ended with steps neither run nor found up to date")
+
+    return out

@@ -1,0 +1,175 @@
+# A key file: the repository's master key sealed under a key a password
+# derives, with what the derivation needs, written as JSON in the
+# repository's `keys/` folder. The repository holds one per password, so
+# a password is added or changed by writing a key file and never by
+# sealing the repository again; this tool writes the first at `init`.
+#
+# What it holds is safe to show: scrypt's costs, the salt, and the sealed
+# master key, which only the password opens.
+
+use <rebel>/bytes
+use <rebel>/crypto/seal
+use <rebel>/json
+
+use vault/kdf
+
+## Codes
+
+# The code of a key file that is not one.
+constant INVALID: str
+    "invalid"
+
+# The code of a password the key file does not open with.
+constant PERMISSION: str
+    "permission"
+
+## Bounds
+
+# The bytes of a key file's salt.
+constant SALT_BYTES: i64
+    16
+
+# What the sealed master key is bound to.
+constant BOUND: str
+    "backup master key"
+
+## Key files
+
+# One key file.
+record KeyFile
+    # The derivation's costs.
+    params: kdf.Params
+    # The salt, `SALT_BYTES` random bytes.
+    salt: [u8]
+    # The master key sealed under the derived key.
+    sealed: [u8]
+
+# A key file sealing `master` under the key `password` derives with
+# `salt` and `params`.
+#
+# - `password`: the password.
+# - `master`: the master key's bytes.
+# - `salt`: the salt, drawn by the caller.
+# - `params`: the derivation's costs.
+#
+# Fails as `kdf.derive` and the sealing fail.
+function make(password: str, master: [u8], salt: [u8], params: kdf.Params) -> KeyFile?
+    derived = kdf.derive(password, salt: salt, params: params)?
+    key @= seal.from_secret(.aes_256_gcm, secret: derived)?
+    sealed = seal.seal(key: key, text: master, associated: bytes.from_text(BOUND))
+    _ = seal.close(@key).is_err()
+    return ok(KeyFile(params: params, salt: salt, sealed: sealed?))
+
+# The master key's bytes `k` seals, opened with `password`.
+#
+# - `k`: the key file.
+# - `password`: the password typed.
+#
+# Fails `permission` where the password does not open it, and as
+# `kdf.derive` fails.
+function unlock(k: KeyFile, password: str) -> [u8]?
+    derived = kdf.derive(password, salt: k.salt, params: k.params)?
+    key @= seal.from_secret(.aes_256_gcm, secret: derived)?
+    opened = seal.open(key: key, sealed: k.sealed, associated: bytes.from_text(BOUND))
+    _ = seal.close(@key).is_err()
+
+    return match opened
+        .ok master => ok(master)
+        .err _     => fail(code: PERMISSION, msg: "the password does not open this repository's key")
+
+# `k` as the JSON a key file holds.
+#
+# - `k`: the key file.
+#
+# Fails as `json.format` fails, which a key file's numbers never make it.
+function encode(k: KeyFile) -> str?
+    members: {str: json.Value} = {
+        "kdf": .text(v: "scrypt")
+        "n": json.from_int(k.params.n)?
+        "r": json.from_int(k.params.r)?
+        "p": json.from_int(k.params.p)?
+        "salt": .text(v: bytes.format_base64(k.salt))
+        "data": .text(v: bytes.format_base64(k.sealed))
+    }
+    return json.format(.object(members: members))
+
+# The key file `text` holds.
+#
+# - `text`: the JSON of a key file.
+#
+# Fails `invalid` where it is not JSON, names another derivation, or lacks
+# a member.
+function decode(text: str) -> KeyFile?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "a key file is JSON: " + e.msg)
+
+    if text_member(v, name: "kdf")? != "scrypt"
+        return fail(code: INVALID, msg: "a key file's derivation is scrypt")
+
+    params = kdf.Params(
+        n: int_member(v, name: "n")?,
+        r: int_member(v, name: "r")?,
+        p: int_member(v, name: "p")?
+    )
+
+    salt = match bytes.parse_base64(text_member(v, name: "salt")?)
+        .ok s  => s
+        .err _ => return fail(code: INVALID, msg: "a key file's salt is base 64")
+
+    sealed = match bytes.parse_base64(text_member(v, name: "data")?)
+        .ok s  => s
+        .err _ => return fail(code: INVALID, msg: "a key file's data is base 64")
+
+    return ok(KeyFile(params: params, salt: salt, sealed: sealed))
+
+# The text of the member `name` of `v`.
+#
+# - `v`: an object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not a text.
+function text_member(v: json.Value, name: str) -> str?
+    return match json.member(v, name)
+        .ok m =>
+            match json.text_of(m)
+                .ok s  => ok(s)
+                .err _ => fail(code: INVALID, msg: f"a key file's {name} is a text")
+        .err _ => fail(code: INVALID, msg: f"a key file holds a {name}")
+
+# The integer of the member `name` of `v`.
+#
+# - `v`: an object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not an integer.
+function int_member(v: json.Value, name: str) -> i64?
+    return match json.member(v, name)
+        .ok m =>
+            match json.int_of(m)
+                .ok n  => ok(n)
+                .err _ => fail(code: INVALID, msg: f"a key file's {name} is an integer")
+        .err _ => fail(code: INVALID, msg: f"a key file holds a {name}")
+
+test "decode: text that is no JSON, another derivation and a member missing are refused"
+    assert decode("").is_err()
+    assert decode("{\"kdf\": \"pbkdf2\"}").is_err()
+    assert decode("{\"kdf\": \"scrypt\", \"n\": 16, \"r\": 8, \"p\": 1, \"salt\": \"AA==\"}").is_err()
+
+test "make: written, read back and opened by its password alone"
+    if !seal.is_available(.aes_256_gcm)
+        skip_test(reason: "this machine's cryptography has no AES-256-GCM")
+    master = bytes.repeated([9], n: 64)
+    k = make(
+        "correct horse",
+        master: master,
+        salt: bytes.repeated([3], n: 16),
+        params: kdf.params_of(16)
+    ).must()
+    back = decode(encode(k).must()).must()
+    assert back == k
+    assert unlock(back, password: "correct horse").must() == master
+
+    match unlock(back, password: "wrong horse")
+        .ok _  => assert false
+        .err e => assert e.code == PERMISSION

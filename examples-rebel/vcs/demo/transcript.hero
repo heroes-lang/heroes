@@ -1,0 +1,135 @@
+# What the demo prints, and the clock it signs with. Every command of the
+# demo is shown as a person would type it, `$ vcs <command>`, followed by
+# what the command answered, or by the line the command line would print
+# on its failure; the project's folder is left out of every answer, so the
+# transcript reads the same wherever the demo runs. Each commit and tag is
+# signed one minute after the one before, from 2026-11-21 10:00 at +0100,
+# so every object's name is the same on every run.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/time
+
+use objects/signatures
+use repo/layout
+
+## The clock
+
+# The first signature's moment: 2026-11-21T09:00:00Z, the Unix seconds.
+constant START_SECONDS: i64
+    1795251600
+
+# The signatures' clock, an hour ahead of UTC, in minutes.
+constant OFFSET_MINUTES: i64
+    60
+
+## The transcript
+
+# The demo in progress: the project, what has been printed, and the clock.
+record Transcript
+    # The project's repository.
+    repo: layout.Repo
+    # The transcript's lines so far.
+    lines: [str]
+    # How many signatures have been given.
+    ticks: i64
+
+# A transcript of the project at `root`, empty.
+#
+# - `root`: the project's folder.
+function begin(root: str) -> Transcript
+    return Transcript(repo: layout.at(root), lines: [], ticks: 0)
+
+# The next signature of `name`, one minute after the last one given.
+#
+# - `t`: the transcript, whose clock advances.
+# - `name`: who signs.
+# - `email`: their address.
+function sign(@t: Transcript, name: str, email: str) -> signatures.Signature
+    seconds = START_SECONDS + 60 * t.ticks
+    t.ticks @ t.ticks + 1
+    when = time.from_unix(whole_seconds: seconds, extra_nanoseconds: 0).must()
+    return signatures.Signature(name: name, email: email, when: when, offset_minutes: OFFSET_MINUTES)
+
+# `text` without the project's folder, so no path of this machine shows.
+#
+# - `t`: the transcript.
+# - `text`: an answer.
+function relative(t: Transcript lent, text: str) -> str
+    without = strings.replace_all(s: text, old: t.repo.root + "/", new: "")
+    return strings.replace_all(s: without, old: t.repo.root, new: ".")
+
+# Adds a line, or several joined by line feeds, to the transcript.
+#
+# - `t`: the transcript.
+# - `text`: what to add; empty adds nothing.
+function say(@t: Transcript, text: str)
+    if text == ""
+        return
+
+    for line in strings.split(s: text, sep: "\n")
+        t.lines @ t.lines.push(line)
+
+# Adds a section's heading, after an empty line.
+#
+# - `t`: the transcript.
+# - `title`: the heading's words.
+function section(@t: Transcript, title: str)
+    t.lines @ t.lines.push("")
+    t.lines @ t.lines.push("== " + title)
+
+# Adds the command `command` and what it answered: its text, or the line
+# the command line prints for its failure.
+#
+# - `t`: the transcript.
+# - `command`: the command's words after `vcs`.
+# - `answer`: what the command answered.
+function show(@t: Transcript, command: str, answer: str?)
+    t.lines @ t.lines.push("$ vcs " + command)
+
+    match answer
+        .ok text =>
+            shown = relative(t, text: text)
+            say(@t, text: shown)
+        .err e =>
+            verb = strings.split(s: command, sep: " ")[0]
+            shown = relative(t, text: f"vcs {verb}: {e.code}: {e.msg}")
+            say(@t, text: shown)
+
+# Writes `text` as the project's file `name`, its folders made, and says so.
+#
+# - `t`: the transcript.
+# - `name`: the file's path below the project, joined by `/`.
+# - `text`: its content.
+#
+# Fails where the file cannot be written.
+function write(@t: Transcript, name: str, text: str) -> ()?
+    file = layout.work_file(t.repo, name: name)
+    fs.make_dir_all(path.parent(file))?
+    fs.write_atomic_text(path: file, text: text)?
+    t.lines @ t.lines.push("  (wrote " + name + ")")
+    return ok()
+
+# Adds the content of the project's file `name`, as `cat` shows it.
+#
+# - `t`: the transcript.
+# - `name`: the file's path below the project.
+#
+# Fails where it cannot be read.
+function show_file(@t: Transcript, name: str) -> ()?
+    t.lines @ t.lines.push("$ cat " + name)
+    say(@t, text: strings.trim_end(read_file(layout.work_file(t.repo, name: name))?))
+    return ok()
+
+test "sign: one minute apart, an hour ahead of UTC"
+    t @= begin("p")
+    first = sign(@t, name: "Ada Lovelace", email: "ada@example.org")
+    second = sign(@t, name: "Ada Lovelace", email: "ada@example.org")
+    assert signatures.format_signature(first) == "Ada Lovelace <ada@example.org> 1795251600 +0100"
+    assert time.unix_seconds(second.when) == 1795251660
+
+test "relative: the project's folder left out of an answer"
+    t = begin("build/vcs-demo/project")
+    assert relative(t, text: "Initialized empty repository in build/vcs-demo/project/.vcs/") == "Initialized empty repository in .vcs/"
+    assert relative(t, text: "in build/vcs-demo/project") == "in ."

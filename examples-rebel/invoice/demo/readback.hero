@@ -1,0 +1,113 @@
+# How the demo tells what a document is: its files read back as a
+# customer's and an accountant's programs read them, and a digest of what
+# they hold rather than of their bytes, so the transcript says what the
+# documents show and stays the same whatever bytes a compressor chose.
+# Each line names the document, its customer, its language, its regime and
+# its total as the customer reads it; then the PDF's pages and the digest
+# of their text, the spreadsheet's rows and the digest of its cells, and
+# the payment code's version and payload, its lines joined by `|`.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/pdf
+use <rebel>/strings
+
+use bank/epc
+use l10n/written
+use ops/workspace
+use render/files
+use render/workbook
+use tax/regime
+
+## Digests
+
+# The first twelve hexadecimal digits of the SHA-256 of `text`.
+#
+# - `text`: any text.
+function digest(text: str) -> str
+    return bytes.format_hex(crypto.sha256_text(text)).slice(from: 0, to: 12)
+
+# The text of every page of the PDF `data`, a page's text after another's
+# with a form feed between, as `pdftotext` separates pages.
+#
+# - `data`: a PDF file.
+#
+# Fails as `pdf.decode` and `pdf.text_of` fail.
+function pdf_text(data: [u8]) -> str?
+    f = pdf.decode(data, password: "", limits: pdf.default_limits())?
+    pages: [str] @= []
+
+    for p in pdf.pages_of(f)
+        pages @ pages.push(pdf.text_of(f, page: p)?)
+
+    return ok(pages.join("\u{c}"))
+
+# How many pages the PDF `data` has.
+#
+# - `data`: a PDF file.
+#
+# Fails as `pdf.decode` fails.
+function page_count(data: [u8]) -> i64?
+    return ok(pdf.pages_of(pdf.decode(data, password: "", limits: pdf.default_limits())?).len())
+
+## The lines
+
+# The transcript's lines of a document done.
+#
+# - `done`: the document and its files.
+#
+# Fails as the readers fail on a file that does not read back.
+function lines_of(done: workspace.Done) -> [str]?
+    d = done.doc
+    locale = written.locale_of(d.customer.locale)?
+    total = written.money(locale, d: d.gross, currency: d.currency)?
+
+    head = match d.kind
+        .invoice =>
+            due = written.day(locale, t: d.due)
+            f"{d.number} to {d.customer.key} ({d.customer.locale}, {regime.name_of(d.regime)}), {written.day(locale, t: d.issued)}: {total}, due {due}"
+        .credit_note => f"{d.number} to {d.customer.key} ({d.customer.locale}, {regime.name_of(d.regime)}), {written.day(locale, t: d.issued)}: {total}, crediting {d.refers_to}"
+
+    cells = workbook.text_of(done.rendered.xlsx)?
+    pages = page_count(done.rendered.pdf)?
+
+    page_word = if pages == 1
+        "page"
+    else
+        "pages"
+    files_line = f"  pdf: {pages} {page_word}, its text {digest(pdf_text(done.rendered.pdf)?)}; xlsx: {strings.lines(cells).len()} rows, its cells {digest(cells)}"
+
+    code_line = if done.rendered.payload != ""
+        f"  payment code: version {epc.code_of(done.rendered.payload)?.version}, {strings.replace_all(s: done.rendered.payload, old: "\n", new: "|")}"
+    else if d.kind == .credit_note
+        "  no payment code: a credit note asks no payment"
+    else
+        f"  no payment code: a SEPA credit transfer is in euro, and this invoice is in {d.currency}"
+    return ok([head, files_line, code_line])
+
+# The text of `done`'s PDF as a reader shows it, each line after a margin
+# of `    | `.
+#
+# - `done`: the document and its files.
+#
+# Fails as `pdf_text` fails.
+function page_lines(done: workspace.Done) -> [str]?
+    shown: [str] @= []
+
+    for line in strings.lines(pdf_text(done.rendered.pdf)?)
+        shown @ shown.push("    | " + line)
+
+    return ok(shown)
+
+# Whether the files `done` holds are the ones kept in the data folder:
+# what was mailed is what the archive takes.
+#
+# - `ws`: the workspace.
+# - `done`: the document and its files.
+function is_kept(ws: workspace.Workspace lent, done: workspace.Done) -> bool
+    kept: [u8] = fs.read_bytes(files.file_of(data_dir: ws.settings.data_dir, doc: done.doc, ext: "pdf")).default([])
+    return kept == done.rendered.pdf
+
+test "digest: twelve digits of SHA-256"
+    assert digest("") == "e3b0c44298fc"

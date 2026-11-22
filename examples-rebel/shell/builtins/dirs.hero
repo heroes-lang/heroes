@@ -1,0 +1,65 @@
+# `cd` and `pwd`. The working folder is the process's own, so a child started
+# after `cd` starts there; the shell keeps `PWD` and `OLDPWD` beside it, as
+# POSIX asks, and `cd -` goes back to the folder before and writes it. A
+# folder is written with `/` between its names on every system, as the
+# shells of POSIX on Windows write it, so `${PWD##*/}` names the last folder
+# there too.
+
+use <rebel>/os
+use <rebel>/path
+
+use builtins/table
+use exec/state
+use exec/streams
+
+# `pwd`: the working folder.
+#
+# - `sh`: the shell.
+# - `place`: its places.
+function pwd(@sh: state.Shell, place: streams.Io) -> i64
+    match os.working_dir()
+        .ok dir =>
+            _ = streams.write_out(@sh, place: place, text: path.to_slash(dir) + "\n")
+            return 0
+        .err e => return table.complain(@sh, place: place, name: "pwd", message: e.msg, status: 1)
+
+# `cd [dir | -]`: makes `dir` the working folder, `HOME` where none is
+# given, the folder before where it is `-`.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function cd(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() > 1
+        return table.complain(@sh, place: place, name: "cd", message: "too many arguments", status: 1)
+
+    target @= ""
+    tell @= false
+
+    if operands.len() == 0
+        target @ match state.get(sh, name: "HOME")
+            .ok h  => h
+            .err _ => return table.complain(@sh, place: place, name: "cd", message: "HOME is not set", status: 1)
+    else if operands[0] == "-"
+        target @ match state.get(sh, name: "OLDPWD")
+            .ok d  => d
+            .err _ => return table.complain(@sh, place: place, name: "cd", message: "OLDPWD is not set", status: 1)
+
+        tell @ true
+    else
+        target @ operands[0]
+
+    before = path.to_slash(os.working_dir().default(""))
+
+    match os.change_dir(target)
+        .ok _  => _ = 0
+        .err e => return table.complain(@sh, place: place, name: "cd", message: f"{target}: {e.msg}", status: 1)
+
+    now = path.to_slash(os.working_dir().default(target))
+    state.set(@sh, name: "OLDPWD", value: before)
+    state.set(@sh, name: "PWD", value: now)
+
+    if tell
+        _ = streams.write_out(@sh, place: place, text: now + "\n")
+
+    return 0

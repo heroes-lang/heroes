@@ -1,0 +1,128 @@
+# A session of the shell, played by `shell --demo`. Every program it runs
+# is a small program of the shell's own binary, linked into PATH.
+
+# == words and quoting ==
+echo hello, world
+show "two words" 'single $quoted' "dollar \$escaped" back\ slash
+name=Heroes
+show "hello, $name" ${name}s "${missing:-a default}" ${missing-} ${name:+set}
+echo $name has ${#name} characters
+words="  spaced   out  "
+show $words "$words"
+
+# == expansions ==
+path=notes/today.txt
+echo ${path#*/} ${path%.txt} ${path##*.} ${path%%/*}
+echo today is $(echo saturday | upper)
+echo `echo backquoted` and $(echo $(echo nested))
+echo $((6 * 7)) $(( (1 + 2) * 3 )) $((17 % 5))
+i=0
+while [ $i -lt 3 ]; do i=$((i + 1)); echo pass $i; done
+echo ${unset_one:=assigned now} and still $unset_one
+
+# == files and redirections ==
+echo first line > notes.txt
+echo second line >> notes.txt
+upper < notes.txt
+count notes.txt
+fails 3 2>&1
+echo the status was $?
+fails 4 something broke 2> errors.txt
+echo "errors.txt holds: $(upper < errors.txt)"
+{ echo one; echo two; } > pair.txt
+sorted -r pair.txt
+echo thrown away > /dev/null
+
+# == here-documents ==
+upper <<EOF
+dear $name,
+the sum is $((40 + 2))
+EOF
+first 2 <<'END'
+$name stays as written
+and so does $(this)
+END
+
+# == globbing ==
+for n in alpha beta gamma; do echo $n > $n.txt; done
+echo *.txt
+echo ?eta.txt [ab]*.txt
+echo "*.txt" stays quoted, and *.none matches nothing
+
+# == pipelines ==
+echo "pear apple fig apple" | upper
+printf '%s\n' pear apple fig apple | sorted -u | count
+printf '%s\n' c b a | sorted | first 2 | upper
+printf '%s\n' b a | while read word; do echo "<$word>"; done | upper
+echo sorted: $(printf '%s\n' 3 1 2 | sorted)
+
+# == conditions and loops ==
+if [ -f notes.txt ]; then echo notes.txt is a file; else echo no notes; fi
+for f in *.txt; do
+    case $f in
+        a*|b*) echo "$f begins with a or b";;
+        *) echo "$f";;
+    esac
+done
+true && echo and ran || echo or ran
+false && echo never || echo the or branch ran
+! false; echo negated: $?
+for n in 1 2 3 4 5; do
+    if [ $n -eq 2 ]; then continue; fi
+    if [ $n -eq 4 ]; then break; fi
+    echo n is $n
+done
+
+# == functions ==
+greet() {
+    local who=${1:-world}
+    echo "hello, $who"
+    return 3
+}
+greet
+greet Heroes; echo greet returned $?
+countdown() { n=$1; while [ $n -gt 0 ]; do echo -n "$n "; n=$((n - 1)); done; echo liftoff; }
+countdown 3
+type echo greet if
+
+# == variables and the environment ==
+cd ..; echo now in ${PWD##*/}; cd work; echo back in ${PWD##*/}
+export GREETING=hi
+shell -c 'echo a child shell sees $GREETING'
+unset GREETING
+shell -c 'echo "a child shell sees ${GREETING-nothing}"'
+set -- one "two three"
+echo $# arguments: "$@"
+for a in "$@"; do show "$a"; done
+shift; echo after shift $# remains: $1
+set -x; echo traced "two words"; set +x
+
+# == background jobs ==
+snooze 20 &
+snooze 40 > /dev/null &
+jobs
+wait %1; echo the first job ended with $?
+fg %2
+jobs
+{ snooze 2; echo from a background group; } > bg.txt &
+wait
+upper < bg.txt
+
+# == mistakes ==
+nosuchcommand --help
+echo the status was $?
+( echo ${required:?is required}; echo never written )
+echo after the subshell: $?
+first 9 > broken.sh <<'END'
+echo this line runs
+if [ -f notes.txt ]
+    echo "then is missing"
+fi
+END
+shell broken.sh; echo broken.sh ended with $?
+shell -c 'echo "naïve ☕" )'
+shell -e -c 'echo before; false; echo never'; echo "under -e it ended with $?"
+
+# == history ==
+history 3
+echo goodbye

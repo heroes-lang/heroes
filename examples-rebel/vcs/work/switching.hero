@@ -1,0 +1,185 @@
+# Moving the work tree and the index from one snapshot to another: what
+# `checkout` does when it switches branches, and what a fast-forward merge
+# does. Only the paths the two snapshots hold differently are touched, so a
+# change the person made to any other path is carried across, as git
+# carries it. A path that is touched must hold, in the index and on disk,
+# exactly what the snapshot being left holds; where it does not, the move
+# would lose the person's work, and the whole move is refused before any
+# file is written, naming every such path. An untracked file in the way of
+# a file the new snapshot brings is refused the same way.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path
+
+use objects/trees
+use repo/layout
+use repo/staging
+use snapshot/patches
+use snapshot/tree_files
+use store/database
+use work/tree_scan
+
+## Writing files
+
+# Writes the version `v` of `name` into the work tree: a file with its
+# permission, or a link with its target, replacing what was there.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `name`: the path, joined by `/`.
+# - `v`: the version to write.
+#
+# Fails where the blob cannot be read or the file written.
+function write_version(repo: layout.Repo, db: database.Database lent, name: str, v: tree_files.Version) -> ()?
+    data = database.read_kind(db, id: v.id, kind: .blob)?
+    write_content(repo, name: name, mode: v.mode, data: data)?
+    return ok()
+
+# Writes `data` as the work file `name` of `mode`, replacing what was there.
+#
+# - `repo`: the repository.
+# - `name`: the path, joined by `/`.
+# - `mode`: a file, an executable or a link.
+# - `data`: the content, or a link's target.
+#
+# Fails where the folder or the file cannot be made.
+function write_content(repo: layout.Repo, name: str, mode: trees.Mode, data: [u8]) -> ()?
+    file = layout.work_file(repo, name: name)
+    fs.make_dir_all(path.parent(file))?
+
+    if fs.is_link(file).default(false) || mode == .link && fs.exists(file).default(false)
+        fs.remove(file)?
+
+    if mode == .link
+        return fs.symlink(target: bytes.to_text(data)?, name: file)
+    fs.write_atomic_bytes(path: file, data: data)?
+
+    permission = if mode == .executable
+        0o755
+    else
+        0o644
+    return fs.set_permission(file, permission: permission)
+
+# Removes the work file `name` and every folder above it left empty, up to
+# the top of the work tree.
+#
+# - `repo`: the repository.
+# - `name`: the path, joined by `/`.
+#
+# Fails where a file or a folder cannot be removed.
+function remove_work_file(repo: layout.Repo, name: str) -> ()?
+    file = layout.work_file(repo, name: name)
+
+    if fs.is_link(file).default(false) || fs.exists(file).default(false)
+        fs.remove(file)?
+    folder @= tree_files.folder_of(name)
+
+    while folder != ""
+        on_disk = layout.work_file(repo, name: folder)
+
+        if !fs.is_dir(on_disk).default(false) || fs.read_dir(on_disk)?.len() > 0
+            return ok()
+        fs.remove(on_disk)?
+        folder @ tree_files.folder_of(folder)
+
+    return ok()
+
+# The index entry of a work file just written as `v`, with its size and time
+# read back from disk.
+#
+# - `repo`: the repository.
+# - `name`: the path.
+# - `v`: the version written.
+#
+# Fails where the file cannot be read.
+function fresh_entry(repo: layout.Repo, name: str, v: tree_files.Version) -> staging.Entry?
+    f = tree_scan.stat(repo, name: name)?
+    return ok(
+        staging.Entry(name: name, stage: 0, mode: v.mode, id: v.id, size: f.size, seconds: f.seconds, nanoseconds: f.nanoseconds)
+    )
+
+## Moving
+
+# The paths a move from `before` to `after` would overwrite or delete while
+# they hold work of the person's: a staged change, a change on disk, or an
+# untracked file where the new snapshot brings one.
+#
+# - `repo`: the repository.
+# - `index`: the index.
+# - `before`: the snapshot being left.
+# - `after`: the snapshot being moved to.
+#
+# Fails where a work file cannot be read.
+function blocked_paths(repo: layout.Repo, index: staging.Index lent, before: {str: tree_files.Version}, after: {str: tree_files.Version}) -> [str]?
+    staged = tree_files.flatten_index(index)
+    out: [str] @= []
+
+    for name in patches.changed_paths(older: before, newer: after)
+        if !tree_files.same_version(a: staged[name], b: before[name])
+            out @ out.push(name)
+            continue
+        on_disk = tree_scan.stat(repo, name: name)
+
+        match before[name]
+            .ok v =>
+                match on_disk
+                    .ok f =>
+                        if f.mode != v.mode || tree_scan.blob_id(repo, file: f)? != v.id
+                            out @ out.push(name)
+                    .err _ => _ = 0
+            .err _ =>
+                if !on_disk.is_err() && !after[name].is_err()
+                    out @ out.push(name)
+
+    return ok(out)
+
+# Moves the work tree and `index` from the snapshot `before` to `after`,
+# touching only the paths they hold differently. The caller has checked
+# `blocked_paths`.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `index`: the index, which the caller owns and saves.
+# - `before`: the snapshot being left.
+# - `after`: the snapshot being moved to.
+#
+# Fails where a blob cannot be read or a file written or removed.
+function apply_move(repo: layout.Repo, db: database.Database lent, @index: staging.Index, before: {str: tree_files.Version}, after: {str: tree_files.Version}) -> ()?
+    for name in patches.changed_paths(older: before, newer: after)
+        match after[name]
+            .ok v =>
+                write_version(repo, db: db, name: name, v: v)?
+                _ = staging.remove_path(@index, name: name)
+                staging.put(@index, entry: fresh_entry(repo, name: name, v: v)?)
+            .err _ =>
+                remove_work_file(repo, name: name)?
+                _ = staging.remove_path(@index, name: name)
+
+    return ok()
+
+# Moves the work tree and the index of `repo` from `before` to `after`, or
+# refuses where that would lose the person's work.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `before`: the snapshot `HEAD` stands on.
+# - `after`: the snapshot to move to.
+#
+# Fails `invalid` where the index holds a conflict or a path is blocked,
+# naming them, and where a file cannot be read or written.
+function move(repo: layout.Repo, db: database.Database lent, before: {str: tree_files.Version}, after: {str: tree_files.Version}) -> ()?
+    index @= staging.load(repo)?
+    unresolved = staging.conflicted(index)
+
+    if unresolved.len() > 0
+        return fail(code: "invalid", msg: f"resolve the conflicts first: {unresolved.join(", ")}")
+    blocked = blocked_paths(repo, index: index, before: before, after: after)?
+
+    if blocked.len() > 0
+        return fail(
+            code: "invalid",
+            msg: f"local changes would be overwritten: {blocked.join(", ")}; commit them or put them aside first"
+        )
+    apply_move(repo, db: db, @index, before: before, after: after)?
+    return staging.save(repo, index: index)

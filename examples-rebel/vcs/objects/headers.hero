@@ -1,0 +1,130 @@
+# The text shape commits and annotated tags share: header lines, each a
+# keyword, a space and a value, then an empty line and the message (the Git
+# Book's "Git Objects"). A value that runs over several lines continues on
+# lines that begin with a space, as a signature block does; this program
+# writes none, and keeps the ones it reads whole so a commit it did not make
+# reads back as it was written.
+
+use <rebel>/bytes
+use <rebel>/strings
+
+## Headers
+
+# One header line: its keyword and its value.
+record Header
+    # The keyword: `tree`, `parent`, `author`, `object`, `tag`, and so on.
+    key: str
+    # Everything after the first space, continuation lines joined to it by
+    # line feeds with their leading space taken off.
+    value: str
+
+# An object's text cut at its empty line: the headers, then the message.
+record Parsed
+    # The headers in the order they stand.
+    headers: [Header]
+    # The message after the empty line, as written; empty where there is
+    # none.
+    message: str
+
+# The headers and the message of `data`, a commit's or a tag's content.
+#
+# - `data`: the object's content, which must be UTF-8.
+#
+# Fails `not_text` where it is not UTF-8, and `invalid` where a header line
+# holds no space or a continuation line comes first.
+function parse(data: [u8]) -> Parsed?
+    text = bytes.to_text(data)?
+    cut = strings.index_of(s: text, substr: "\n\n")
+
+    head = match cut
+        .ok at => text.slice(from: 0, to: at)
+        .err _ => strings.trim_suffix(s: text, suffix: "\n")
+
+    message = match cut
+        .ok at => text.slice(from: at + 2, to: text.len())
+        .err _ => ""
+
+    headers: [Header] @= []
+
+    for line in strings.split(s: head, sep: "\n")
+        if line == ""
+            continue
+
+        if line[0] == ' '
+            if headers.len() == 0
+                return fail(code: "invalid", msg: "an object's first header line continues nothing")
+            last = headers[headers.len() - 1]
+            headers[headers.len() - 1] @ Header(
+                key: last.key,
+                value: last.value + "\n" + line.slice(from: 1, to: line.len())
+            )
+            continue
+
+        halves = match strings.split_once(s: line, sep: " ")
+            .ok h  => h
+            .err _ => return fail(code: "invalid", msg: f"the header line \"{line}\" holds no space")
+
+        headers @ headers.push(Header(key: halves.before, value: halves.after))
+
+    return ok(Parsed(headers: headers, message: message))
+
+# The text of `headers` and `message` as an object holds them: each header
+# on its line, a value's line feeds continued by a space, an empty line, the
+# message.
+#
+# - `headers`: the headers, in order.
+# - `message`: the message, which ends with a line feed where it has one.
+function format(headers: [Header], message: str) -> [u8]
+    lines: [str] @= []
+
+    for h in headers
+        lines @ lines.push(h.key + " " + strings.replace_all(s: h.value, old: "\n", new: "\n "))
+
+    return bytes.from_text(lines.join("\n") + "\n\n" + message)
+
+# The value of the first header named `key`.
+#
+# - `parsed`: what `parse` read.
+# - `key`: the keyword asked for.
+#
+# Fails `not_found` where no header has that keyword.
+function value_of(parsed: Parsed, key: str) -> str?
+    for h in parsed.headers
+        if h.key == key
+            return ok(h.value)
+
+    return fail(code: "not_found", msg: f"the object has no \"{key}\" header")
+
+# The values of every header named `key`, in order: a commit's parents.
+#
+# - `parsed`: what `parse` read.
+# - `key`: the keyword asked for.
+function values_of(parsed: Parsed, key: str) -> [str]
+    out: [str] @= []
+
+    for h in parsed.headers
+        if h.key == key
+            out @ out.push(h.value)
+
+    return out
+
+test "parse: headers, a message, and a value that runs over two lines"
+    text = "tree abc\nparent one\nparent two\ngpgsig first\n second\n\nSubject\n\nBody\n"
+    p = parse(bytes.from_text(text)).must()
+    assert p.headers.len() == 4
+    assert values_of(p, key: "parent") == ["one", "two"]
+    assert value_of(p, key: "gpgsig").must() == "first\nsecond"
+    assert p.message == "Subject\n\nBody\n"
+    assert value_of(p, key: "author").is_err()
+
+test "parse: no message at all, and lines that do not read"
+    p = parse(bytes.from_text("tree abc\n")).must()
+    assert p.message == ""
+    assert parse(bytes.from_text(" lone\n\nm")).is_err()
+    assert parse(bytes.from_text("nospace\n\nm")).is_err()
+
+test "format: what parse reads back, a continued value included"
+    h = [Header(key: "tree", value: "abc"), Header(key: "gpgsig", value: "a\nb")]
+    text = format(h, message: "m\n")
+    assert bytes.to_text(text).must() == "tree abc\ngpgsig a\n b\n\nm\n"
+    assert parse(text).must().headers == h

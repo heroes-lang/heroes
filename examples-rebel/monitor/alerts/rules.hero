@@ -1,0 +1,309 @@
+# An alert rule's condition, read from the line a person writes in the
+# configuration, and judged against a value: a figure of a series' window,
+# a comparison and a threshold.
+#
+#     avg(sensor.temperature, 2m) > 70
+#     slope(sensor.temperature, 3m) > 4
+#     age(sensor.temperature) > 90s
+#     service.*.up < 1
+#     last(service.cache.memory) > 96MiB
+#
+# A bare key is its `last` figure. The window is a duration as `time`
+# reads one; `last` and `age` take none. The threshold may carry a unit: a
+# size (`KiB`, `MiB`, `GiB`, `kB`, `MB`, `GB`) is counted in bytes, a span
+# (`s`, `m`, `h`) in seconds, and `%` is the number itself. A key holding a
+# `*` makes one alert for each series it matches, named by the word the `*`
+# stands for.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+
+use conf/settings
+use series/window
+
+# How a value is compared with a threshold.
+variant Comparison
+    # Above.
+    above
+    # At or above.
+    at_least
+    # Below.
+    below
+    # At or below.
+    at_most
+    # Equal.
+    equal
+    # Not equal.
+    unequal
+
+# A condition, read.
+record Condition
+    # The figure of the window.
+    figure: window.Figure
+    # The series' key, or a pattern with one `*` word.
+    key: str
+    # The window's length; zero for `last` and `age`.
+    span: time.Duration
+    # The comparison.
+    comparison: Comparison
+    # The threshold, in the series' own unit.
+    threshold: f64
+    # The threshold as written, unit and all, for a person to read.
+    written: str
+
+# A rule ready to be judged.
+record Rule
+    # Its name.
+    name: str
+    # Its condition.
+    condition: Condition
+    # How long the condition must hold before it fires.
+    hold: time.Duration
+    # `critical`, `warning` or `info`.
+    severity: str
+    # The line a person reads.
+    summary: str
+
+# The comparisons, longest spelling first, so `>=` is not read as `>`.
+constant OPERATORS: [str]
+    [">=", "<=", "==", "!=", ">", "<"]
+
+# The comparison an operator spells.
+#
+# - `op`: one of `OPERATORS`.
+function comparison_of(op: str) -> Comparison
+    return match op
+        ">=" => .at_least
+        "<=" => .at_most
+        "==" => .equal
+        "!=" => .unequal
+        "<"  => .below
+        _    => .above
+
+# The operator that spells `c`.
+#
+# - `c`: the comparison.
+function operator_of(c: Comparison) -> str
+    return match c
+        .above    => ">"
+        .at_least => ">="
+        .below    => "<"
+        .at_most  => "<="
+        .equal    => "=="
+        .unequal  => "!="
+
+# Whether `value` stands to `threshold` as `c` asks.
+#
+# - `c`: the comparison.
+# - `value`: the figure.
+# - `threshold`: the threshold.
+function holds(c: Comparison, value: f64, threshold: f64) -> bool
+    return match c
+        .above    => value > threshold
+        .at_least => value >= threshold
+        .below    => value < threshold
+        .at_most  => value <= threshold
+        .equal    => value == threshold
+        .unequal  => value != threshold
+
+# The condition `text` writes. Fails `invalid`, saying where and why, for a
+# text that is none.
+#
+# - `text`: the condition, `avg(sensor.temperature, 2m) > 70`.
+function parse_condition(text: str) -> Condition?
+    for op in OPERATORS
+        match strings.split_once(s: text, sep: op)
+            .ok halves =>
+                left = strings.trim(halves.before)
+                right = strings.trim(halves.after)
+
+                if left == "" || right == ""
+                    return fail(code: "invalid", msg: f"\"{text}\": a condition is a figure, `{op}` and a threshold")
+                call = parse_call(left)?
+                return ok(
+                    Condition(figure: call.figure, key: call.key, span: call.span, comparison: comparison_of(op), threshold: parse_threshold(right)?, written: right)
+                )
+            .err _ => _ = 0
+
+    return fail(code: "invalid", msg: f"\"{text}\" compares nothing: write one of >, >=, <, <=, == or !=")
+
+# The left side of a condition, read.
+record Call
+    # The figure.
+    figure: window.Figure
+    # The key or pattern.
+    key: str
+    # The window.
+    span: time.Duration
+
+# The figure, the key and the window `text` names: `avg(key, 2m)`,
+# `age(key)` or a bare key. Fails `invalid` where it is none.
+#
+# - `text`: the left side, trimmed.
+function parse_call(text: str) -> Call?
+    open = match strings.index_of(s: text, substr: "(")
+        .ok at => at
+        .err _ => return ok(Call(figure: .last, key: checked_key(text)?, span: time.nanoseconds(0)))
+
+    if !strings.has_suffix(s: text, suffix: ")")
+        return fail(code: "invalid", msg: f"\"{text}\" opens a parenthesis it does not close")
+    figure = window.figure_named(strings.trim(text.slice(from: 0, to: open)))?
+    inside = strings.split(s: text.slice(from: open + 1, to: text.len() - 1), sep: ",")
+    key = checked_key(strings.trim(inside[0]))?
+
+    match figure
+        .last | .age =>
+            if inside.len() != 1
+                return fail(
+                    code: "invalid",
+                    msg: f"\"{text}\": `{window.figure_name(figure)}` takes a key and no window"
+                )
+            return ok(Call(figure: figure, key: key, span: time.nanoseconds(0)))
+        .avg | .min | .max | .p95 | .slope =>
+            if inside.len() != 2
+                return fail(
+                    code: "invalid",
+                    msg: f"\"{text}\": `{window.figure_name(figure)}` takes a key and a window, `2m`"
+                )
+            span = time.parse_duration(strings.trim(inside[1]))?
+
+            if span.nanoseconds <= 0
+                return fail(code: "invalid", msg: f"\"{text}\": a window is longer than zero")
+            return ok(Call(figure: figure, key: key, span: span))
+
+# `key`, where it is words of letters, digits, `-` and `_` joined by dots,
+# one of them `*` at most. Fails `invalid` otherwise.
+#
+# - `key`: the key as written.
+function checked_key(key: str) -> str?
+    words = strings.split(s: key, sep: ".")
+    stars: i64 @= 0
+
+    for word in words
+        if word == "*"
+            stars @ stars + 1
+        else if word == "" || !is_word(word)
+            return fail(code: "invalid", msg: f"\"{key}\" is no key: words of letters, digits, - and _ joined by dots")
+
+    if stars > 1
+        return fail(code: "invalid", msg: f"\"{key}\" holds {stars} `*`: one word at most stands for any")
+    return ok(key)
+
+# Whether `word` holds only ASCII letters, digits, `-` and `_`.
+#
+# - `word`: the word.
+function is_word(word: str) -> bool
+    for i in range(from: 0, to: word.len())
+        c = word[i]
+        letter = c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z'
+
+        if !letter && !(c >= '0' && c <= '9') && c != '-' && c != '_'
+            return false
+
+    return true
+
+# The threshold `text` writes, in the series' unit: a size in bytes, a span
+# in seconds, a bare number or a percentage as it is. Fails `invalid` where
+# it is none of these.
+#
+# - `text`: the threshold, `70`, `96MiB`, `90s`, `85%`.
+function parse_threshold(text: str) -> f64?
+    cut: i64 @= 0
+
+    while cut < text.len() && is_number_byte(text[cut])
+        cut @ cut + 1
+
+    number = text.slice(from: 0, to: cut)
+    unit = strings.trim(text.slice(from: cut, to: text.len()))
+
+    if number == ""
+        return fail(code: "invalid", msg: f"\"{text}\" is no threshold: a number, then a unit or none")
+    n = numbers.parse_float(number)?
+
+    match unit
+        "" | "%" => return ok(n)
+        "s"      => return ok(n)
+        "m"      => return ok(n * 60.0)
+        "h"      => return ok(n * 3600.0)
+        "B" | "KiB" | "MiB" | "GiB" =>
+            return ok(to_f64(numbers.parse_size(text, units: .binary)?))
+        "kB" | "MB" | "GB" =>
+            return ok(to_f64(numbers.parse_size(text, units: .decimal)?))
+        _ =>
+            return fail(
+                code: "invalid",
+                msg: f"\"{text}\": no unit \"{unit}\"; sizes KiB, MiB, GiB, kB, MB, GB; spans s, m, h; or %"
+            )
+
+# Whether `b` may stand in a number: a digit, a sign or a point.
+#
+# - `b`: the byte.
+function is_number_byte(b: u8) -> bool
+    return b >= '0' && b <= '9' || b == '.' || b == '-' || b == '+'
+
+# The rule `spec` writes. Fails `invalid` as its condition does, and for a
+# severity that is none of the three, the message naming the rule.
+#
+# - `spec`: the rule as the configuration holds it.
+function rule_of(spec: settings.RuleSpec) -> Rule?
+    condition = match parse_condition(spec.when)
+        .ok c  => c
+        .err e => return fail(code: "invalid", msg: f"the rule \"{spec.name}\": {e.msg}")
+
+    if spec.severity != "critical" && spec.severity != "warning" && spec.severity != "info"
+        return fail(
+            code: "invalid",
+            msg: f"the rule \"{spec.name}\": its severity is critical, warning or info, not \"{spec.severity}\""
+        )
+    return ok(
+        Rule(name: spec.name, condition: condition, hold: spec.hold, severity: spec.severity, summary: spec.summary)
+    )
+
+# The condition as one line, in the canonical spelling: what `monitor ctl
+# alerts` and the dashboard show.
+#
+# - `c`: the condition.
+function format_condition(c: Condition) -> str
+    left = match c.figure
+        .last                              => c.key
+        .age                               => f"age({c.key})"
+        .avg | .min | .max | .p95 | .slope => f"{window.figure_name(c.figure)}({c.key}, {time.format_duration(c.span)})"
+
+    return f"{left} {operator_of(c.comparison)} {c.written}"
+
+test "parse_condition: a mean over a window, a bare key, an age and a size"
+    hot = parse_condition("avg(sensor.temperature, 2m) > 70").must()
+    assert hot.figure == .avg && hot.key == "sensor.temperature" && hot.span == time.minutes(2).must()
+    assert hot.comparison == .above && hot.threshold == 70.0
+    down = parse_condition("service.*.up < 1").must()
+    assert down.figure == .last && down.key == "service.*.up" && down.comparison == .below
+    assert parse_condition("age(sensor.t) >= 90s").must().threshold == 90.0
+    assert parse_condition("last(service.cache.memory) > 96MiB").must().threshold == 100663296.0
+    assert parse_condition("max(x, 1m) <= 1.5h").must().threshold == 5400.0
+
+test "parse_condition: no operator, a window missing, an empty window, an unknown unit, two stars"
+    assert parse_condition("sensor.t").is_err()
+    assert parse_condition("avg(sensor.t) > 1").is_err()
+    assert parse_condition("avg(sensor.t, 0s) > 1").is_err()
+    assert parse_condition("sensor.t > 1 parsec").is_err()
+    assert parse_condition("a.*.* > 1").is_err()
+    assert parse_condition("last(a, 1m) > 1").is_err()
+    assert parse_condition("> 1").is_err()
+
+test "holds: each comparison at, below and above its threshold"
+    assert holds(.above, value: 2.0, threshold: 1.0) && !holds(.above, value: 1.0, threshold: 1.0)
+    assert holds(.at_least, value: 1.0, threshold: 1.0)
+    assert holds(.below, value: 0.0, threshold: 1.0) && !holds(.below, value: 1.0, threshold: 1.0)
+    assert holds(.at_most, value: 1.0, threshold: 1.0)
+    assert holds(.equal, value: 1.0, threshold: 1.0) && holds(.unequal, value: 2.0, threshold: 1.0)
+
+test "format_condition: the canonical spelling read back as the same condition"
+    for text in ["avg(sensor.temperature, 2m0s) > 70", "age(sensor.t) > 90s", "service.*.up < 1"]
+        c = parse_condition(text).must()
+        assert format_condition(c) == text
+        assert parse_condition(format_condition(c)).must() == c
+
+test "rule_of: a severity that is none of the three"
+    spec = settings.RuleSpec(name: "r", when: "a > 1", hold: time.nanoseconds(0), severity: "page", summary: "")
+    assert rule_of(spec).is_err()

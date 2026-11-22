@@ -1,0 +1,349 @@
+# Exact amounts of money and the arithmetic an invoice does with them:
+# prices, quantities, rates and exchange rates read from the text a person
+# types, a product and a percentage rounded to a currency's digits, sums,
+# and amounts written back as plain decimal text. Every amount is a
+# `big.Decimal`, so no cent is ever lost to a binary float; a float appears
+# only where a spreadsheet's cell asks for one (`render/workbook`).
+#
+# A rounding is always half away from zero, the commercial rounding a
+# person checks an invoice with by hand: 2.345 is 2.35. The banker's
+# rounding, `half_even`, would make it 2.34, which nobody checking the
+# total expects.
+#
+# Typed numbers are bounded so that every amount the program writes holds
+# at most fifteen significant digits, the most an IEEE 754 double holds
+# exactly for every decimal, so the spreadsheet's numbers are the
+# invoice's.
+
+use <rebel>/big
+use <rebel>/i18n/numbers as i18n_numbers
+
+## Codes
+
+# The code of a text that is not an amount, a quantity, a rate or a
+# currency of the form the program reads.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most digits after the point a typed price, quantity or tax rate
+# holds: four, enough for a unit price of a hundredth of a cent.
+constant MAX_FRACTION: i64
+    4
+
+# The most digits after the point an exchange rate holds: six, as a bank's
+# daily reference rates are written with at most five.
+constant MAX_RATE_FRACTION: i64
+    6
+
+# The most digits before the point: eleven, so that eleven digits and the
+# four after the point stay within fifteen.
+constant MAX_WHOLE: i64
+    11
+
+## Reading
+
+# A decimal of no sign typed by a person, read from `text`.
+#
+# - `text`: digits with at most one `.` among them; no sign, no exponent,
+#   no space and no grouping, since a comma could be either a decimal mark
+#   or a separator and the reader could not tell which.
+# - `what`: what the text is, named in a failure's message: "the price of
+#   BOOK-A".
+# - `most_fraction`: the most digits after the point.
+#
+# Fails `invalid` where `text` has no digit, holds another character or a
+# second point, more than `MAX_WHOLE` digits before the point or more than
+# `most_fraction` after it.
+function parse_plain(text: str, what: str, most_fraction: i64) -> big.Decimal?
+    whole @= 0
+    fraction @= 0
+    seen_point @= false
+
+    for i in range(from: 0, to: text.len())
+        c = text[i]
+
+        if c == '.'
+            if seen_point
+                return fail(code: INVALID, msg: f"{what} holds two points: \"{text}\"")
+            seen_point @ true
+        else if c >= '0' && c <= '9'
+            if seen_point
+                fraction @ fraction + 1
+            else
+                whole @ whole + 1
+        else
+            return fail(
+                code: INVALID,
+                msg: f"{what} is written with digits and at most one point, as 12.50, and \"{text}\" is not"
+            )
+
+    if whole + fraction == 0
+        return fail(code: INVALID, msg: f"{what} holds no digit: \"{text}\"")
+
+    if whole > MAX_WHOLE
+        return fail(code: INVALID, msg: f"{what} has more than {MAX_WHOLE} digits before the point: \"{text}\"")
+
+    if fraction > most_fraction
+        return fail(code: INVALID, msg: f"{what} has more than {most_fraction} digits after the point: \"{text}\"")
+    return big.parse_decimal(text)
+
+# A price, read from `text`: zero or more.
+#
+# - `text`: the price as `parse_plain` reads it.
+# - `what`: what the text is, for the message.
+#
+# Fails as `parse_plain` fails.
+function parse_price(text: str, what: str) -> big.Decimal?
+    return parse_plain(text: text, what: what, most_fraction: MAX_FRACTION)
+
+# A quantity, read from `text`: more than zero, so that no line of an
+# invoice is empty.
+#
+# - `text`: the quantity as `parse_plain` reads it: `3`, `2.5`.
+# - `what`: what the text is, for the message.
+#
+# Fails as `parse_plain` fails, and `invalid` where it is zero.
+function parse_quantity(text: str, what: str) -> big.Decimal?
+    q = parse_plain(text: text, what: what, most_fraction: MAX_FRACTION)?
+
+    if is_zero(q)
+        return fail(code: INVALID, msg: f"{what} is zero")
+    return ok(q)
+
+# A tax rate in percent, read from `text`: from 0 to 100.
+#
+# - `text`: the rate as `parse_plain` reads it: `22`, `5.5`.
+# - `what`: what the text is, for the message.
+#
+# Fails as `parse_plain` fails, and `invalid` above 100.
+function parse_rate(text: str, what: str) -> big.Decimal?
+    r = parse_plain(text: text, what: what, most_fraction: MAX_FRACTION)?
+
+    if compare(a: r, b: of_int(100)) > 0
+        return fail(code: INVALID, msg: f"{what} is more than 100 percent: \"{text}\"")
+    return ok(r)
+
+# An exchange rate, read from `text`: how many units of the document's
+# currency one unit of the company's currency buys, more than zero.
+#
+# - `text`: the rate as `parse_plain` reads it, with at most
+#   `MAX_RATE_FRACTION` digits after the point: `1.0850`.
+# - `what`: what the text is, for the message.
+#
+# Fails as `parse_plain` fails, and `invalid` where it is zero.
+function parse_exchange_rate(text: str, what: str) -> big.Decimal?
+    r = parse_plain(text: text, what: what, most_fraction: MAX_RATE_FRACTION)?
+
+    if is_zero(r)
+        return fail(code: INVALID, msg: f"{what} is zero")
+    return ok(r)
+
+# A currency's ISO 4217 code, read from `text` and answered in upper case.
+#
+# - `text`: three ASCII letters, in any case.
+#
+# Fails `invalid` where `text` is not three ASCII letters.
+function parse_currency(text: str) -> str?
+    if text.len() != 3
+        return fail(code: INVALID, msg: f"a currency is its three-letter ISO 4217 code, and \"{text}\" is not")
+    letters: [str] @= []
+
+    for i in range(from: 0, to: 3)
+        c = text[i]
+
+        if c >= 'a' && c <= 'z'
+            letters @ letters.push(upper_letter(c))
+        else if c >= 'A' && c <= 'Z'
+            letters @ letters.push(text.slice(from: i, to: i + 1))
+        else
+            return fail(code: INVALID, msg: f"a currency is its three-letter ISO 4217 code, and \"{text}\" is not")
+
+    return ok(letters.join(""))
+
+# The capital of the lower-case ASCII letter `c`, as a text of one byte.
+#
+# - `c`: a byte from `a` to `z`.
+function upper_letter(c: u8) -> str
+    return "ABCDEFGHIJKLMNOPQRSTUVWXYZ".slice(from: to_i64(c - 'a').must(), to: to_i64(c - 'a').must() + 1)
+
+## Arithmetic
+
+# Zero, at scale 0.
+function zero() -> big.Decimal
+    return of_int(0)
+
+# The whole number `n` as a decimal at scale 0.
+#
+# - `n`: any `i64`.
+function of_int(n: i64) -> big.Decimal
+    return big.Decimal(unscaled: big.from_int(n), scale: 0)
+
+# The digits after the point an amount of `currency` is written with: 2 for
+# `EUR` and `USD`, 0 for `JPY`, as CLDR's currency data says.
+#
+# - `currency`: an ISO 4217 code.
+function digits_of(currency: str) -> i64
+    return i18n_numbers.currency_digits(currency)
+
+# `d` rounded to `digits` after the point, half away from zero.
+#
+# - `d`: any decimal.
+# - `digits`: the digits kept after the point, 0 or more.
+function rounded(d: big.Decimal, digits: i64) -> big.Decimal
+    return big.with_scale(d, scale: digits, rounding: .half_away_from_zero)
+
+# `a` times `b`, rounded to `digits` after the point.
+#
+# - `a`: any decimal.
+# - `b`: any decimal.
+# - `digits`: the digits kept after the point.
+function times(a: big.Decimal, b: big.Decimal, digits: i64) -> big.Decimal
+    return rounded(big.multiply_decimal(a: a, b: b), digits: digits)
+
+# `rate` percent of `base`, rounded to `digits` after the point.
+#
+# - `base`: the amount the percentage is taken of.
+# - `rate`: the percentage, 22 for 22 %.
+# - `digits`: the digits kept after the point.
+function percent_of(base: big.Decimal, rate: big.Decimal, digits: i64) -> big.Decimal
+    product = big.multiply_decimal(a: base, b: rate)
+    return big.divide_decimal(n: product, by: of_int(100), scale: digits, rounding: .half_away_from_zero)
+
+# The sum of `amounts`, exact, at the largest of their scales; zero for
+# none.
+#
+# - `amounts`: the amounts.
+function total_of(amounts: [big.Decimal]) -> big.Decimal
+    total @= zero()
+
+    for a in amounts
+        total @ big.add_decimal(a: total, b: a)
+
+    return total
+
+# `a` plus `b`, exact.
+#
+# - `a`: any decimal.
+# - `b`: any decimal.
+function plus(a: big.Decimal, b: big.Decimal) -> big.Decimal
+    return big.add_decimal(a: a, b: b)
+
+# `a` less `b`, exact.
+#
+# - `a`: the decimal subtracted from.
+# - `b`: the decimal subtracted.
+function minus(a: big.Decimal, b: big.Decimal) -> big.Decimal
+    return big.subtract_decimal(a: a, b: b)
+
+# `d` with its sign turned.
+#
+# - `d`: any decimal.
+function negated(d: big.Decimal) -> big.Decimal
+    return big.Decimal(unscaled: big.negate(d.unscaled), scale: d.scale)
+
+# -1, 0 or 1 as `a` is below `b`, equal to it, or above it, whatever their
+# scales.
+#
+# - `a`: the decimal on the left.
+# - `b`: the decimal on the right.
+function compare(a: big.Decimal, b: big.Decimal) -> i64
+    return big.compare_decimal(a: a, b: b)
+
+# Whether `d` is zero, at any scale.
+#
+# - `d`: any decimal.
+function is_zero(d: big.Decimal) -> bool
+    return big.sign(d.unscaled) == 0
+
+# Whether `d` is below zero.
+#
+# - `d`: any decimal.
+function is_negative(d: big.Decimal) -> bool
+    return big.sign(d.unscaled) < 0
+
+## Writing
+
+# `d` written with exactly `digits` after the point, rounded where it has
+# more: `1234.50`, `-3.00`, `12` for no digits.
+#
+# - `d`: any decimal.
+# - `digits`: the digits written after the point.
+function plain(d: big.Decimal, digits: i64) -> str
+    return big.format_decimal(rounded(d, digits: digits))
+
+# `d` written with no zero ending its fraction and no point where it is
+# whole: `22`, `5.5`, `1.085`, the way a rate is read aloud.
+#
+# - `d`: any decimal.
+function short(d: big.Decimal) -> str
+    return big.format_decimal(big.trim_zeros(d))
+
+# `d` as the binary float nearest it, for a spreadsheet's cell: exact for
+# every amount this module reads and rounds, which holds fifteen
+# significant digits at most.
+#
+# - `d`: any decimal.
+function to_float(d: big.Decimal) -> f64
+    return big.float_of_decimal(d)
+
+test "parse_plain: whole, fraction, a point at either end, and the refusals"
+    assert plain(parse_plain(text: "12", what: "x", most_fraction: 4).must(), digits: 2) == "12.00"
+    assert short(parse_plain(text: "2.5000", what: "x", most_fraction: 4).must()) == "2.5"
+    assert short(parse_plain(text: ".5", what: "x", most_fraction: 4).must()) == "0.5"
+    assert short(parse_plain(text: "7.", what: "x", most_fraction: 4).must()) == "7"
+    assert parse_plain(text: "", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: ".", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "1.2.3", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "-1", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "1e3", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "1,50", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "1.23456", what: "x", most_fraction: 4).is_err()
+    assert parse_plain(text: "123456789012", what: "x", most_fraction: 4).is_err()
+    assert !parse_plain(text: "12345678901.1234", what: "x", most_fraction: 4).is_err()
+
+test "parse_plain: a failure names what was typed and what it is"
+    match parse_plain(text: "12,5", what: "the price of BOOK-A", most_fraction: 4)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the price of BOOK-A is written with digits and at most one point, as 12.50, and \"12,5\" is not"
+
+test "parse_quantity, parse_rate and parse_exchange_rate: their own bounds"
+    assert parse_quantity(text: "0", what: "q").is_err() && parse_quantity(text: "0.000", what: "q").is_err()
+    assert short(parse_quantity(text: "0.25", what: "q").must()) == "0.25"
+    assert short(parse_rate(text: "0", what: "r").must()) == "0" && short(parse_rate(text: "100", what: "r").must()) == "100"
+    assert parse_rate(text: "100.01", what: "r").is_err()
+    assert short(parse_exchange_rate(text: "1.085000", what: "e").must()) == "1.085"
+    assert parse_exchange_rate(text: "1.0850001", what: "e").is_err() && parse_exchange_rate(text: "0", what: "e").is_err()
+
+test "parse_currency: any case read, anything else refused"
+    assert parse_currency("eur").must() == "EUR" && parse_currency("UsD").must() == "USD"
+    assert parse_currency("EU").is_err() && parse_currency("EURO").is_err() && parse_currency("E1R").is_err()
+    assert parse_currency("ÉUR").is_err()
+
+test "rounded: half away from zero, at either sign"
+    assert plain(rounded(big.parse_decimal("2.345").must(), digits: 2), digits: 2) == "2.35"
+    assert plain(rounded(big.parse_decimal("2.344").must(), digits: 2), digits: 2) == "2.34"
+    assert plain(rounded(big.parse_decimal("-2.345").must(), digits: 2), digits: 2) == "-2.35"
+    assert plain(rounded(big.parse_decimal("0.5").must(), digits: 0), digits: 0) == "1"
+
+test "percent_of: a tax rounded once, and rates of no fraction or one"
+    assert plain(percent_of(base: big.parse_decimal("100.00").must(), rate: of_int(22), digits: 2), digits: 2) == "22.00"
+    assert plain(percent_of(base: big.parse_decimal("19.90").must(), rate: big.parse_decimal("5.5").must(), digits: 2), digits: 2) == "1.09"
+    assert plain(percent_of(base: big.parse_decimal("0.10").must(), rate: of_int(22), digits: 2), digits: 2) == "0.02"
+    assert is_zero(percent_of(base: big.parse_decimal("999.99").must(), rate: zero(), digits: 2))
+
+test "times, total_of, minus and negated: exact sums"
+    assert plain(times(a: big.parse_decimal("3").must(), b: big.parse_decimal("19.995").must(), digits: 2), digits: 2) == "59.99"
+    assert plain(total_of([]), digits: 2) == "0.00"
+    total = total_of([big.parse_decimal("0.1").must(), big.parse_decimal("0.2").must()])
+    assert compare(a: total, b: big.parse_decimal("0.3").must()) == 0
+    assert plain(minus(a: of_int(1), b: big.parse_decimal("0.01").must()), digits: 2) == "0.99"
+    assert is_negative(negated(of_int(3))) && !is_negative(zero())
+
+test "digits_of: two for the euro and the dollar, none for the yen"
+    assert digits_of("EUR") == 2 && digits_of("USD") == 2 && digits_of("JPY") == 0
+
+test "to_float: an amount of fifteen digits is exact"
+    assert to_float(big.parse_decimal("12345678901.2345").must()) == 12345678901.2345
+    assert to_float(big.parse_decimal("0.30").must()) == 0.3

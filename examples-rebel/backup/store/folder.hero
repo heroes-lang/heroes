@@ -1,0 +1,130 @@
+# A repository kept in a folder of this machine: each key a file under
+# the folder, its `/`-joined parts the folders on its way. A file is
+# written atomically (`fs.write_atomic_bytes`), so a backup stopped half
+# way, or a machine that loses its power, leaves an object whole or
+# absent, never half written; every object of a repository is written
+# once under a name its content decides, so whole-or-absent is all the
+# repository needs to stay readable.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use store/objects
+
+# The file that holds `key` under `root`.
+#
+# - `root`: the repository's folder.
+# - `key`: the key, its parts joined by `/`.
+#
+# Fails `invalid` where `key` is not one `objects.is_key` takes.
+function file_of(root: str, key: str) -> str?
+    if !objects.is_key(key)
+        return fail(code: objects.INVALID, msg: f"\"{key}\" is not a key of a repository")
+    return ok(path.join_all([root, path.from_slash(key)]))
+
+# Writes `data` as the object `key`, the folders on its way made.
+#
+# - `root`: the repository's folder.
+# - `key`: the key.
+# - `data`: the object's bytes.
+#
+# Fails `invalid` for a key that is not one, and as `fs.make_dir_all` and
+# `fs.write_atomic_bytes` fail.
+function put(root: str, key: str, data: [u8]) -> ()?
+    file = file_of(root: root, key: key)?
+    fs.make_dir_all(path.parent(file))?
+    return fs.write_atomic_bytes(file, data: data)
+
+# The bytes of the object `key`.
+#
+# - `root`: the repository's folder.
+# - `key`: the key.
+#
+# Fails `not_found` where no such object is there, `invalid` for a key that
+# is not one, and as `fs.read_bytes` fails.
+function get(root: str, key: str) -> [u8]?
+    file = file_of(root: root, key: key)?
+
+    return match fs.read_bytes(file)
+        .ok data => ok(data)
+        .err e =>
+            if e.code == fs.FILE_NOT_FOUND
+                fail(code: objects.NOT_FOUND, msg: f"the repository holds no {key}")
+            else
+                fail(code: e.code, msg: e.msg)
+
+# Every object whose key begins with `prefix`, sorted by key.
+#
+# - `root`: the repository's folder.
+# - `prefix`: a folder of the layout with its `/`, `snapshots/`, or "" for
+#   every object.
+#
+# A folder that is not there holds nothing. Fails as `fs.walk` and
+# `fs.info` fail.
+function list(root: str, prefix: str) -> [objects.Item]?
+    folder = strings.trim_suffix(s: prefix, suffix: "/")
+
+    start = if folder == ""
+        root
+    else
+        path.join_all([root, path.from_slash(folder)])
+
+    if !fs.exists(start)?
+        return ok([])
+    found: [objects.Item] @= []
+
+    for entry in fs.walk(start)?
+        if entry.kind == .file
+            key = if folder == ""
+                path.to_slash(entry.name)
+            else
+                folder + "/" + path.to_slash(entry.name)
+
+            if objects.is_key(key)
+                facts = fs.info(path.join_all([start, entry.name]))?
+                found @ found.push(objects.Item(key: key, size: facts.size))
+
+    return ok(objects.sorted_items(found))
+
+# Removes the object `key`; one that is not there is no failure.
+#
+# - `root`: the repository's folder.
+# - `key`: the key.
+#
+# Fails `invalid` for a key that is not one, and as `fs.remove` fails for
+# another reason than absence.
+function delete(root: str, key: str) -> ()?
+    file = file_of(root: root, key: key)?
+
+    return match fs.remove(file)
+        .ok _ => ok()
+        .err e =>
+            if e.code == fs.FILE_NOT_FOUND
+                ok()
+            else
+                fail(code: e.code, msg: e.msg)
+
+test "file_of: a key climbing out of the folder is refused"
+    assert file_of(root: "repo", key: "../x").is_err()
+    assert file_of(root: "repo", key: "data/ab/x").must() == path.join_all(["repo", "data", "ab", "x"])
+
+test "put: an object written, read, listed under its folder and removed"
+    root = "build/backup-tests/folder-put"
+    _ = fs.remove_all(root).is_err()
+    put(root: root, key: "data/ab/one", data: [1, 2, 3]).must()
+    put(root: root, key: "data/cd/two", data: [4]).must()
+    put(root: root, key: "config", data: []).must()
+    assert get(root: root, key: "data/ab/one").must() == [1, 2, 3]
+    listed = list(root: root, prefix: "data/").must()
+    assert listed == [objects.Item(key: "data/ab/one", size: 3), objects.Item(key: "data/cd/two", size: 1)]
+    assert list(root: root, prefix: "").must().len() == 3
+    assert list(root: root, prefix: "index/").must() == []
+    delete(root: root, key: "data/ab/one").must()
+    delete(root: root, key: "data/ab/one").must()
+
+    match get(root: root, key: "data/ab/one")
+        .ok _  => assert false
+        .err e => assert e.code == objects.NOT_FOUND
+
+    fs.remove_all(root).must()

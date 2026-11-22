@@ -1,0 +1,227 @@
+# A file's bytes read as text, and the text written back as bytes of the same
+# encoding, so a file in Latin-1, Shift_JIS or UTF-16 is saved as it came.
+# The encoding is the one the person names, else the one a byte order mark
+# names, else the one `unicode/encodings` guesses from the bytes; whichever it
+# is, the reading says how it was chosen and how sure the guess was.
+#
+# A read is strict first: where a byte cannot be read in the encoding, the
+# text is read again with U+FFFD in each such place, and the reading keeps
+# the index of the first, so the editor can say that saving would not write
+# those bytes back. A write is strict always: a character the encoding has
+# no bytes for refuses the save, and the message names it and where it
+# stands, rather than writing a `?` in its place.
+
+use <rebel>/bytes
+use <rebel>/strings
+use <rebel>/unicode
+use <rebel>/unicode/encodings
+use <rebel>/unicode/segment
+
+use text/glyphs
+
+# How a file's bytes were read as text.
+record Reading
+    # The text, its line breaks as the file wrote them.
+    text: str
+    # The encoding's name, as the WHATWG standard writes it: `UTF-8`,
+    # `windows-1252`, `Shift_JIS`, `UTF-16LE`.
+    encoding: str
+    # Whether a byte order mark began the bytes, which a save writes again.
+    bom: bool
+    # How the encoding was chosen: `named`, `byte order mark` or `detected`.
+    chosen: str
+    # How sure the choice is, from 0 to 1: the detection's confidence, 1 for
+    # a named encoding or a byte order mark.
+    confidence: f64
+    # The byte index, after any byte order mark, of the first sequence the
+    # encoding could not read, shown as U+FFFD; fails `not_found` where every
+    # byte was read.
+    unreadable: i64?
+
+# The text of `data` and how it was read.
+#
+# - `data`: the file's bytes; none read as the empty text in UTF-8.
+# - `named`: the encoding the person named, a label of the standard in any
+#   case (`latin1`, `sjis`, `utf-16le`); "" to let a byte order mark or the
+#   bytes themselves say.
+#
+# A named encoding whose byte order mark begins the bytes takes it off and
+# keeps it for the save; a mark of another encoding is read as text, since
+# the person asked for this one. Fails `not_found` where `named` names no
+# encoding of the standard.
+function read_text(data: [u8], named: str) -> Reading?
+    if named != ""
+        encoding = encodings.name_of(named)?
+        mark = encodings.bom_of(encoding)?
+        marked = mark.len() > 0 && bytes.has_prefix(s: data, prefix: mark)
+
+        payload = if marked
+            data.slice(from: mark.len(), to: data.len())
+        else
+            data
+        return decoded(payload, encoding: encoding, bom: marked, chosen: "named", confidence: 1.0)
+
+    match encodings.sniff_bom(data)
+        .ok encoding =>
+            mark = encodings.bom_of(encoding)?
+            return decoded(
+                data.slice(from: mark.len(), to: data.len()),
+                encoding: encoding,
+                bom: true,
+                chosen: "byte order mark",
+                confidence: 1.0
+            )
+        .err _ =>
+            guess = encodings.detect(data)
+            return decoded(data, encoding: guess.encoding, bom: false, chosen: "detected", confidence: guess.confidence)
+
+# `payload` read in `encoding`, strictly where it can be and with U+FFFD
+# where it cannot, as a `Reading` with the rest of its facts.
+#
+# - `payload`: the bytes after any byte order mark.
+# - `encoding`: the encoding's name.
+# - `bom`: whether a mark stood before `payload`.
+# - `chosen`: how the encoding was chosen.
+# - `confidence`: how sure the choice is.
+#
+# Fails `not_found` where `encoding` names none.
+function decoded(payload: [u8], encoding: str, bom: bool, chosen: str, confidence: f64) -> Reading?
+    match encodings.decode_strict(payload, encoding: encoding)
+        .ok text =>
+            return ok(
+                Reading(text: text, encoding: encoding, bom: bom, chosen: chosen, confidence: confidence, unreadable: fail(code: "not_found", msg: "every byte was read"))
+            )
+        .err e =>
+            if e.code != encodings.INVALID
+                return fail(code: e.code, msg: e.msg)
+
+    lossy = encodings.decode_without_bom(payload, encoding: encoding)?
+    first = encodings.valid_prefix_len(payload, encoding: encoding)?
+    return ok(
+        Reading(text: lossy, encoding: encoding, bom: bom, chosen: chosen, confidence: confidence, unreadable: ok(first))
+    )
+
+# `share`, from 0 to 1, as a whole percentage rounded to the nearest.
+#
+# - `share`: the share; outside 0 to 1 it is taken as the nearer end.
+function percent_of(share: f64) -> i64
+    if share <= 0.0
+        return 0
+
+    if share >= 1.0
+        return 100
+
+    return to_i64(share * 100.0 + 0.5).default(0)
+
+# The bytes that write `text` in `encoding`, a byte order mark first where
+# `bom` asks.
+#
+# - `text`: the text, its line breaks as the file is to hold them.
+# - `encoding`: the encoding's name.
+# - `bom`: whether to begin with the encoding's byte order mark; an encoding
+#   with none writes none.
+#
+# Fails `unsupported` where `encoding` has no bytes for a character of
+# `text`, the message naming the first such grapheme, its code points, and
+# its line and column counted from 1 in graphemes; fails `not_found` where
+# `encoding` names none.
+function write_text(text: str, encoding: str, bom: bool) -> [u8]?
+    encoded = match encodings.encode(s: text, encoding: encoding)
+        .ok b => b
+        .err e =>
+            if e.code == encodings.UNSUPPORTED
+                return fail(code: e.code, msg: unwritable(text: text, encoding: encoding))
+            return fail(code: e.code, msg: e.msg)
+
+    if !bom
+        return ok(encoded)
+
+    mark = encodings.bom_of(encoding)?
+    return ok(bytes.concat([mark, encoded]))
+
+# Why `encoding` cannot write `text`: the first grapheme it has no bytes for,
+# with its code points and its place.
+#
+# - `text`: a text `encoding` refused.
+# - `encoding`: the encoding's name.
+function unwritable(text: str, encoding: str) -> str
+    lines = strings.split(s: text, sep: "\n")
+
+    for n in range(from: 0, to: lines.len())
+        if encodings.encode(s: lines[n], encoding: encoding).is_err()
+            graphemes = segment.graphemes(lines[n])
+
+            for c in range(from: 0, to: graphemes.len())
+                g = graphemes[c]
+
+                if encodings.encode(s: g, encoding: encoding).is_err()
+                    return f"{encoding} has no bytes for \"{g}\" ({points_of(g)}) at line {n + 1}, column {c + 1}: save it in another encoding"
+
+    return f"{encoding} cannot write this text"
+
+# The code points of `g` as Unicode writes them, `U+0065 U+0301`.
+#
+# - `g`: a grapheme, or any text.
+function points_of(g: str) -> str
+    named: [str] @= []
+
+    for point in unicode.code_points(g)
+        named @ named.push(glyphs.code_name(point))
+
+    return named.join(" ")
+
+# The bytes `g` is written with in `encoding`, in upper-case hexadecimal
+# pairs, `C3 A9`.
+#
+# - `g`: a grapheme.
+# - `encoding`: the encoding's name.
+#
+# Fails `unsupported` where `encoding` has no bytes for it.
+function bytes_in(g: str, encoding: str) -> str?
+    written = encodings.encode(s: g, encoding: encoding)?
+    pairs: [str] @= []
+
+    for b in written
+        pairs @ pairs.push(bytes.format_hex_upper([b]))
+
+    return ok(pairs.join(" "))
+
+test "read_text: UTF-8 detected, and the empty file"
+    r = read_text(bytes.from_text("plain"), named: "").must()
+    assert r.encoding == "UTF-8" && r.chosen == "detected" && r.text == "plain"
+    assert read_text([], named: "").must().text == ""
+
+test "read_text: a UTF-16LE mark chooses the encoding and is kept for the save"
+    data = bytes.concat([[0xff, 0xfe], encodings.encode(s: "hé\r\n", encoding: "utf-16le").must()])
+    r = read_text(data, named: "").must()
+    assert r.encoding == "UTF-16LE" && r.bom && r.text == "hé\r\n" && r.chosen == "byte order mark"
+    assert write_text(text: r.text, encoding: r.encoding, bom: r.bom).must() == data
+
+test "read_text: Latin-1 named, read as windows-1252 and written back the same"
+    data: [u8] = [0x63, 0x61, 0x66, 0xe9, 0x20, 0x80]
+    r = read_text(data, named: "latin1").must()
+    assert r.encoding == "windows-1252" && r.text == "café €"
+    assert write_text(text: r.text, encoding: r.encoding, bom: false).must() == data
+
+test "read_text: a byte UTF-8 cannot read, its place kept"
+    r = read_text([0x61, 0x62, 0xff, 0x63], named: "utf-8").must()
+    assert r.text == "ab�c"
+    assert r.unreadable.must() == 2
+
+test "read_text: a label of no encoding"
+    assert read_text([0x61], named: "klingon").is_err()
+
+test "write_text: a character Shift_JIS has no bytes for, named with its place"
+    match write_text(text: "日本\nok 😀", encoding: "Shift_JIS", bom: false)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == encodings.UNSUPPORTED
+            assert e.msg == "Shift_JIS has no bytes for \"😀\" (U+1F600) at line 2, column 4: save it in another encoding"
+
+test "bytes_in: é in UTF-8 and in windows-1252, and a CJK character it lacks"
+    assert bytes_in(g: "é", encoding: "UTF-8").must() == "C3 A9"
+    assert bytes_in(g: "é", encoding: "windows-1252").must() == "E9"
+    assert bytes_in(g: "日", encoding: "windows-1252").is_err()
+
+test "points_of: a letter with a combining accent"
+    assert points_of(unicode.from_code_points([0x65, 0x301]).must()) == "U+0065 U+0301"

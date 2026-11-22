@@ -1,0 +1,128 @@
+# build: a build tool in make's and ninja's family. It reads `build.toml`
+# in the folder it is run in: rules (a command template naming `$in`,
+# `$out` and variables), targets each made by a rule from its inputs, phony
+# targets naming others, and variables. It checks the dependency graph
+# before running anything, a cycle told by its path and a missing input by
+# every target that needs it; it decides each step by the content digest of
+# its inputs and of its command, kept in `.build_log` beside the outputs,
+# never by file times; it reads the depfiles a step writes in make's format
+# to learn the headers no build file names; and it runs up to `-j N` steps
+# at once on worker threads, each step's output caught apart and printed
+# whole when the step is collected, the first failing step stopping the
+# build.
+#
+# Run for real, in a folder holding a `build.toml`:
+#
+#     build                      # the default targets
+#     build -j 8 out/app         # one target, eight steps at once
+#     build --explain            # why each step runs
+#     build -n                   # what would run, running nothing
+#     build --clean              # remove what the steps make
+#     build -t commands          # targets, commands, deps or graph
+#     build CFLAGS='-O0 -g'      # a variable over the file's own
+#
+# `build --demo` writes a small project under `build/build-demo/`, whose
+# steps are this program's own helpers (`build --helper ...`), builds it,
+# changes one input and rebuilds only what depends on it, shows a cycle and
+# a missing input refused and a failing step stopping a build, and prints
+# an account that is the same on every run.
+#
+# The packages of Rebel it uses, and what for:
+#
+# - `graphs`: the dependency graph's order, its cycles told by their path,
+#   the targets a run reaches, the stages a parallel build hands out, and
+#   the order a scope's variables are evaluated in;
+# - `hash`: XXH64, the digest of every input, output and command;
+# - `process`: each step's program run with no shell, its output caught,
+#   its time limit kept; a command shown quoted;
+# - `threads`: the worker threads the steps run on, up to `-j`;
+# - `fs`: outputs' folders made, files read, hashed, removed, the log
+#   appended and written whole, the folder's lock;
+# - `path`: every path made one node, written with `/` and cleaned, and put
+#   back on the disk;
+# - `regex`: the variables a template names, the names a build file gives,
+#   and the directives of the demo's toy language;
+# - `toml`: the build file;
+# - `flags`: the command line;
+# - `time`: the steps' time limits and durations, and the build's;
+# - `json`: the log's records, and what crosses to a worker thread and back;
+# - `strings`, `bytes`, `io`, `os`, `errors`: commands read into words, a
+#   step's output read as text, the error stream, the processors counted
+#   and the program's own path, failures told in one line.
+
+use <rebel>/errors
+use <rebel>/io
+use <rebel>/os
+
+use cli/command_line
+use demo/run as demo
+use engine/session
+use helpers/mill
+
+# The exit code of a command line the program does not read.
+constant USAGE: i64
+    2
+
+# Prints `message` on the error stream; a line that cannot be written is
+# dropped, there being nowhere else to say it.
+#
+# - `message`: the line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+# The words after `--helper`, where the program was run as one of the
+# demo's helpers; absent where it was not. Asked before the command line is
+# read, since a helper's words are its own and no option of `build`.
+function helper_words() -> [str]?
+    given = args_checked()
+
+    if given.len() == 0 || given[0].default("") != "--helper"
+        return fail(code: "not_found", msg: "no helper asked for")
+
+    words: [str] @= []
+
+    for i in range(from: 1, to: given.len())
+        words @ words.push(given[i]?)
+
+    return ok(words)
+
+function main()
+    match helper_words()
+        .ok words => exit(code: mill.run(words))
+        .err e =>
+            if e.code != "not_found"
+                complain(f"build --helper: {e.msg}")
+                exit(code: USAGE)
+
+    read = command_line.read_program()
+
+    i = match read
+        .ok found => found
+        .err _ =>
+            complain(errors.format_line(read))
+            exit(code: USAGE)
+
+    code = match i.action
+        "help" =>
+            print(i.help)
+            0
+        "demo" =>
+            match demo.run(i.demo_dir)
+                .ok _ => 0
+                .err e =>
+                    complain(f"build --demo: {e.msg}")
+                    1
+        _ =>
+            # Ctrl-C asks the build to stop rather than ending it with steps
+            # half collected: the scheduler starts nothing more and keeps
+            # the records of what ran. Where the system refuses, Ctrl-C ends
+            # the program as it would, the log holding every step collected.
+            _ = os.catch_stop().is_err()
+
+            match session.run(i.options)
+                .ok r => r.code
+                .err e =>
+                    complain(f"build: {e.msg}")
+                    1
+
+    exit(code: code)

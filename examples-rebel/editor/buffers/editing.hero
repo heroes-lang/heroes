@@ -1,0 +1,312 @@
+# How a buffer changes: every edit goes through `change` here, which applies
+# it to the text and remembers it in the history in one step, so the text
+# and the history never disagree; every move goes through `move_to`, which
+# seals the history's open group, so typing after a move is a change of its
+# own. A read again from disk, in the same encoding or another, is one
+# change too, and the format it brought is undone and redone with it.
+
+use <rebel>/strings
+
+use buffers/buffer
+use files/disk
+use history/undo
+use text/document
+use text/motion
+
+# Applies `edit` to `b`, remembers it, and puts the cursor at `after`.
+#
+# - `b`: the buffer.
+# - `edit`: the edit, at a place of `b`'s text.
+# - `kind`: what kind of change it is, for the history's groups.
+# - `tab_width`: the columns between tab stops, for the cursor's goal.
+function change(@b: buffer.Buffer, edit: document.Edit, kind: undo.Kind, tab_width: i64)
+    before = b.cursor
+    end = document.apply(@b.doc, edit: edit)
+    line = b.doc.lines[end.line]
+    after = document.Pos(line: end.line, col: motion.boundary_at_or_after(line, at: end.col))
+    undo.remember(@b.history, edit: edit, kind: kind, before: before, after: after)
+    b.cursor @ after
+    b.goal @ motion.column_of(b.doc, at: after, tab_width: tab_width)
+
+# Moves the cursor to `to`, closing the history's open group.
+#
+# - `b`: the buffer.
+# - `to`: the place, at a grapheme boundary.
+# - `keep_goal`: true for a move up or down, which keeps the column aimed at;
+#   false sets it to the new place's column.
+# - `tab_width`: the columns between tab stops.
+function move_to(@b: buffer.Buffer, to: document.Pos, keep_goal: bool, tab_width: i64)
+    undo.seal(@b.history)
+    b.cursor @ to
+
+    if !keep_goal
+        b.goal @ motion.column_of(b.doc, at: to, tab_width: tab_width)
+
+# Puts `text`, typed, in at the cursor: one character or a few, no line
+# break.
+#
+# - `b`: the buffer.
+# - `text`: the characters typed.
+# - `tab_width`: the columns between tab stops.
+function type_text(@b: buffer.Buffer, text: str, tab_width: i64)
+    change(@b, edit: document.Edit(at: b.cursor, removed: "", inserted: text), kind: .typing, tab_width: tab_width)
+
+# Puts `text`, pasted, in at the cursor as one change; its CRLF and lone
+# carriage-return breaks are made line feeds, as the text's own breaks are.
+#
+# - `b`: the buffer.
+# - `text`: the text pasted.
+# - `tab_width`: the columns between tab stops.
+function paste(@b: buffer.Buffer, text: str, tab_width: i64)
+    flat = strings.replace_all(s: strings.replace_all(s: text, old: "\r\n", new: "\n"), old: "\r", new: "\n")
+
+    if flat != ""
+        change(@b, edit: document.Edit(at: b.cursor, removed: "", inserted: flat), kind: .other, tab_width: tab_width)
+
+# Breaks the line at the cursor, the new line indented as the line it came
+# from, with its leading spaces and tabs.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+function newline(@b: buffer.Buffer, tab_width: i64)
+    line = b.doc.lines[b.cursor.line]
+    indent @= 0
+
+    while indent < line.len() && indent < b.cursor.col && (line[indent] == ' ' || line[indent] == '\t')
+        indent @ indent + 1
+
+    inserted = "\n" + line.slice(from: 0, to: indent)
+    change(@b, edit: document.Edit(at: b.cursor, removed: "", inserted: inserted), kind: .other, tab_width: tab_width)
+
+# Takes out the grapheme before the cursor, or joins the line to the one
+# above at its start; nothing at the document's start.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+function backspace(@b: buffer.Buffer, tab_width: i64)
+    from = motion.left(b.doc, at: b.cursor)
+
+    if from != b.cursor
+        removed = document.text_between(b.doc, from: from, to: b.cursor)
+        change(@b, edit: document.Edit(at: from, removed: removed, inserted: ""), kind: .deleting, tab_width: tab_width)
+
+# Takes out the grapheme after the cursor, or joins the next line to this
+# one at its end; nothing at the document's end.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+function delete_forward(@b: buffer.Buffer, tab_width: i64)
+    to = motion.right(b.doc, at: b.cursor)
+
+    if to != b.cursor
+        removed = document.text_between(b.doc, from: b.cursor, to: to)
+        change(
+            @b,
+            edit: document.Edit(at: b.cursor, removed: removed, inserted: ""),
+            kind: .deleting,
+            tab_width: tab_width
+        )
+
+# Takes out the cursor's line whole and answers its text, for a paste: with
+# its line break, or the one before it on the last line.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+#
+# On a document of one line it empties that line.
+function cut_line(@b: buffer.Buffer, tab_width: i64) -> str
+    n = b.cursor.line
+    text = b.doc.lines[n]
+    count = b.doc.lines.len()
+
+    edit = if n + 1 < count
+        document.Edit(at: document.Pos(line: n, col: 0), removed: text + "\n", inserted: "")
+    else if n > 0
+        document.Edit(at: document.Pos(line: n - 1, col: b.doc.lines[n - 1].len()), removed: "\n" + text, inserted: "")
+    else
+        document.Edit(at: document.Pos(line: 0, col: 0), removed: text, inserted: "")
+
+    change(@b, edit: edit, kind: .other, tab_width: tab_width)
+    b.cursor @ document.Pos(line: b.cursor.line, col: 0)
+    return text
+
+# Puts `lines` in above the cursor's line, as whole lines, and leaves the
+# cursor where it was in the text that moved down.
+#
+# - `b`: the buffer.
+# - `lines`: the lines, without their breaks; none puts nothing in.
+# - `tab_width`: the columns between tab stops.
+function paste_lines(@b: buffer.Buffer, lines: [str], tab_width: i64)
+    if lines.len() == 0
+        return
+
+    at = document.Pos(line: b.cursor.line, col: 0)
+    col = b.cursor.col
+    change(
+        @b,
+        edit: document.Edit(at: at, removed: "", inserted: lines.join("\n") + "\n"),
+        kind: .other,
+        tab_width: tab_width
+    )
+    b.cursor @ document.Pos(line: b.cursor.line, col: col)
+
+# Puts in the text of the file read again, `data` read in `format`, as one
+# change that undo takes back with its format and its saved state: a reload,
+# or the file read in another encoding.
+#
+# - `b`: the buffer.
+# - `text`: the text read, lines ending with line feeds.
+# - `format`: how it was read, which the buffer takes.
+# - `data`: the bytes read, which the buffer knows from then on.
+# - `tab_width`: the columns between tab stops.
+#
+# The cursor stays on its line, or the last line where the text is shorter.
+# A text the same as the buffer's makes no change, only the format taken.
+function reread(@b: buffer.Buffer, text: str, format: disk.Format, data: [u8], tab_width: i64)
+    was = b.format
+    saved_before = b.saved
+    same = data == b.known
+    b.format @ format
+
+    if text != buffer.text_of(b)
+        line = b.cursor.line
+        edit = document.replace_all_edit(b.doc, text: text)
+        before = b.cursor
+        _ = document.apply(@b.doc, edit: edit)
+
+        stay = if line < b.doc.lines.len()
+            line
+        else
+            b.doc.lines.len() - 1
+        after = document.Pos(line: stay, col: 0)
+        undo.remember_all(@b.history, edits: [edit], before: before, after: after)
+        b.cursor @ after
+        b.goal @ motion.column_of(b.doc, at: after, tab_width: tab_width)
+        read = buffer.Reread(
+            serial: undo.serial_of(b.history),
+            before: was,
+            after: format,
+            saved_before: saved_before,
+            same_bytes: same
+        )
+        b.rereads @ b.rereads.push(read)
+
+    buffer.mark_saved(@b, written: data)
+
+# Applies `edits`, one after another, as one change: every replacement of a
+# "replace all". The cursor goes to `after`.
+#
+# - `b`: the buffer.
+# - `edits`: the edits, each at a place of the text the ones before it
+#   left; none changes nothing.
+# - `after`: where the cursor stands after, at a grapheme boundary.
+# - `tab_width`: the columns between tab stops.
+function change_all(@b: buffer.Buffer, edits: [document.Edit], after: document.Pos, tab_width: i64)
+    if edits.len() == 0
+        return
+
+    before = b.cursor
+
+    for e in edits
+        _ = document.apply(@b.doc, edit: e)
+
+    undo.remember_all(@b.history, edits: edits, before: before, after: after)
+    b.cursor @ after
+    b.goal @ motion.column_of(b.doc, at: after, tab_width: tab_width)
+
+# Undoes the last group done, the cursor back where it stood before it, and
+# answers whether there was one.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+function undo_last(@b: buffer.Buffer, tab_width: i64) -> bool
+    match undo.undo(@b.history)
+        .ok g =>
+            i @= g.edits.len() - 1
+
+            while i >= 0
+                _ = document.apply(@b.doc, edit: document.inverse(g.edits[i]))
+                i @ i - 1
+
+            b.cursor @ g.before
+            b.goal @ motion.column_of(b.doc, at: g.before, tab_width: tab_width)
+
+            for r in b.rereads
+                if r.serial == g.serial
+                    b.format @ r.before
+
+                    if r.same_bytes
+                        b.saved @ r.saved_before
+
+            return true
+        .err _ => return false
+
+# Redoes the last group undone, the cursor where it stood after it, and
+# answers whether there was one.
+#
+# - `b`: the buffer.
+# - `tab_width`: the columns between tab stops.
+function redo_last(@b: buffer.Buffer, tab_width: i64) -> bool
+    match undo.redo(@b.history)
+        .ok g =>
+            for e in g.edits
+                _ = document.apply(@b.doc, edit: e)
+
+            b.cursor @ g.after
+            b.goal @ motion.column_of(b.doc, at: g.after, tab_width: tab_width)
+
+            for r in b.rereads
+                if r.serial == g.serial
+                    b.format @ r.after
+                    b.saved @ r.serial
+
+            return true
+        .err _ => return false
+
+test "type_text and backspace: a letter with a combining accent typed in two keys"
+    b @= buffer.of_text(path: "t", text: "caf", at: document.Pos(line: 0, col: 3))
+    type_text(@b, text: "e", tab_width: 4)
+    type_text(@b, text: "́", tab_width: 4)
+    assert b.cursor.col == 6 && b.goal == 4
+    backspace(@b, tab_width: 4)
+    assert buffer.text_of(b) == "caf" && b.cursor.col == 3
+    assert buffer.is_modified(b)
+    assert undo_last(@b, tab_width: 4)
+    assert buffer.text_of(b) == "café"
+
+test "newline: the indent kept, and undone as one change"
+    b @= buffer.of_text(path: "t", text: "    if x", at: document.Pos(line: 0, col: 8))
+    newline(@b, tab_width: 4)
+    assert b.doc.lines == ["    if x", "    "] && b.cursor == document.Pos(line: 1, col: 4)
+    assert undo_last(@b, tab_width: 4)
+    assert b.doc.lines == ["    if x"] && !buffer.is_modified(b)
+
+test "cut_line and paste_lines: the last line cut, then put back above"
+    b @= buffer.of_text(path: "t", text: "one\ntwo\nthree", at: document.Pos(line: 2, col: 2))
+    assert cut_line(@b, tab_width: 4) == "three"
+    assert b.doc.lines == ["one", "two"]
+    b.cursor @ document.Pos(line: 0, col: 0)
+    paste_lines(@b, lines: ["three"], tab_width: 4)
+    assert b.doc.lines == ["three", "one", "two"]
+
+test "reread: a reload of bytes another program changed, undone and left modified"
+    b @= buffer.of_text(path: "t", text: "a\nb\nc", at: document.Pos(line: 2, col: 1))
+    buffer.mark_saved(@b, written: [0x61])
+    reread(@b, text: "x", format: b.format, data: [0x78], tab_width: 4)
+    assert b.doc.lines == ["x"] && b.cursor == document.Pos(line: 0, col: 0)
+    assert !buffer.is_modified(b)
+    assert undo_last(@b, tab_width: 4)
+    assert buffer.text_of(b) == "a\nb\nc" && buffer.is_modified(b)
+    assert redo_last(@b, tab_width: 4)
+    assert !buffer.is_modified(b)
+
+test "reread: the same bytes in another encoding, undone with their format and clean"
+    b @= buffer.of_text(path: "t", text: "abc", at: document.Pos(line: 0, col: 0))
+    buffer.mark_saved(@b, written: [0x61, 0x62, 0x63])
+    latin = disk.Format(encoding: "windows-1252", bom: false, ending: "\n", chosen: "named", confidence: 1.0)
+    reread(@b, text: "äbc", format: latin, data: [0x61, 0x62, 0x63], tab_width: 4)
+    assert b.format.encoding == "windows-1252" && !buffer.is_modified(b)
+    assert undo_last(@b, tab_width: 4)
+    assert b.format.encoding == "UTF-8" && buffer.text_of(b) == "abc" && !buffer.is_modified(b)
+    assert redo_last(@b, tab_width: 4)
+    assert b.format.encoding == "windows-1252" && buffer.text_of(b) == "äbc" && !buffer.is_modified(b)

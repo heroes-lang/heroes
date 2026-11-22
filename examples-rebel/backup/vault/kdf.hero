@@ -1,0 +1,120 @@
+# The key a password derives, by scrypt (RFC 7914), whose cost is memory
+# as much as time, so a guesser's hardware gains little over the owner's.
+# The parameters are stored in each key file, so a repository made on a
+# slow machine opens on a fast one and the other way round, and a key file
+# made later may cost more than the first.
+#
+# `calibrated` chooses the cost the way restic does: the largest power of
+# two for N whose derivation, measured here, stays under a target, and
+# never less than 2^14, the figure `crypto.scrypt`'s documentation gives
+# for a login, nor more than 2^20, the one it gives for a file's key.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/time
+
+## Codes
+
+# The code of parameters scrypt refuses.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The bytes a password derives: a key of AES-256-GCM.
+constant KEY_BYTES: i64
+    32
+
+# The least N `calibrated` chooses, 2^14, a login's cost.
+constant LEAST_N: i64
+    16_384
+
+# The most N `calibrated` chooses, 2^20, a file key's cost: a gibibyte of
+# memory at r = 8.
+constant MOST_N: i64
+    1_048_576
+
+# The N `calibrated` measures with, 2^12.
+constant PROBE_N: i64
+    4_096
+
+## Parameters
+
+# scrypt's three costs.
+record Params
+    # The memory and time cost, a power of two from 2 up.
+    n: i64
+    # The block size, 8 as RFC 7914 and every tool use.
+    r: i64
+    # The parallel cost, 1.
+    p: i64
+
+# The parameters of cost `n`, its block size 8 and parallel cost 1.
+#
+# - `n`: a power of two from 2 up.
+function params_of(n: i64) -> Params
+    return Params(n: n, r: 8, p: 1)
+
+# The key `password` derives with `salt` under `params`.
+#
+# - `password`: the password, as typed; its bytes are its UTF-8.
+# - `salt`: the key file's salt, 16 bytes or more.
+# - `params`: the costs.
+#
+# Fails `invalid` where scrypt refuses the parameters.
+function derive(password: str, salt: [u8], params: Params) -> [u8]?
+    return crypto.scrypt(
+        password: bytes.from_text(password),
+        salt: salt,
+        n: params.n,
+        r: params.r,
+        p: params.p,
+        length: KEY_BYTES
+    )
+
+# The largest power of two N, from `LEAST_N` to `MOST_N`, whose derivation
+# this machine finishes within `target`, measured on one derivation of
+# `PROBE_N` and scaled, since scrypt's time grows with N.
+#
+# - `target`: the time one derivation may take.
+#
+# The answer depends on the machine and on what else runs on it; it is
+# written into the key file, which is the one place it is read again.
+function calibrated(target: time.Duration) -> Params
+    start = time.mark().default(time.Mark(nanoseconds: 0))
+    _ = derive("calibration", salt: bytes.repeated([0], n: 16), params: params_of(PROBE_N)).is_err()
+    took = time.to_units(time.elapsed(start).default(time.nanoseconds(1)), unit: .nanosecond)
+    return params_of(scaled_n(probe_nanoseconds: took, target_nanoseconds: time.to_units(target, unit: .nanosecond)))
+
+# The largest power of two from `LEAST_N` to `MOST_N` whose time,
+# `probe_nanoseconds` scaled from `PROBE_N`, stays within
+# `target_nanoseconds`.
+#
+# - `probe_nanoseconds`: how long `PROBE_N` took; below 1 counts as 1.
+# - `target_nanoseconds`: the time allowed.
+function scaled_n(probe_nanoseconds: i64, target_nanoseconds: i64) -> i64
+    unit = if probe_nanoseconds < 1
+        1
+    else
+        probe_nanoseconds
+
+    n @= LEAST_N
+
+    while n < MOST_N && unit * (n * 2 / PROBE_N) <= target_nanoseconds
+        n @ n * 2
+
+    return n
+
+test "scaled_n: a slow machine gets the least, a fast one more, never past the most"
+    assert scaled_n(probe_nanoseconds: 1_000_000_000, target_nanoseconds: 500_000_000) == LEAST_N
+    assert scaled_n(probe_nanoseconds: 0, target_nanoseconds: 500_000_000) == MOST_N
+    assert scaled_n(probe_nanoseconds: 10_000_000, target_nanoseconds: 500_000_000) == 131_072
+
+test "derive: one password and salt derive one key, another salt another"
+    params = params_of(16)
+    one = derive("hunter2", salt: bytes.repeated([1], n: 16), params: params).must()
+    assert one.len() == KEY_BYTES
+    assert derive("hunter2", salt: bytes.repeated([1], n: 16), params: params).must() == one
+    assert derive("hunter2", salt: bytes.repeated([2], n: 16), params: params).must() != one
+    assert derive("", salt: bytes.repeated([1], n: 16), params: params).must() != one
+    assert derive("x", salt: [1], params: params_of(3)).is_err()

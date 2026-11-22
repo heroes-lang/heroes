@@ -1,0 +1,53 @@
+# The demo's check against git itself: a few of the demo's objects, one of
+# each kind, are written to files and named by `git hash-object -t <kind>`
+# on this machine, and each name must be the one this program gave. It is
+# what shows the objects are git's, byte for byte, and not merely objects
+# that agree with themselves. Where `git` is not installed the check is
+# skipped, and its one line says so: that line is the one line of the
+# transcript that may differ between machines.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/process
+use <rebel>/strings
+
+use objects/framing
+use objects/ids
+use store/database
+
+## The check
+
+# The line the check prints: `git hash-object: ...`.
+#
+# - `db`: the demo repository's database.
+# - `names`: the objects to check, one of each kind.
+# - `scratch`: a folder the check may write its files in, made where it is
+#   not there.
+#
+# Fails where an object cannot be read or a file written; a `git` that is
+# missing or fails is reported in the line, not as a failure.
+function check_line(db: database.Database lent, names: [str], scratch: str) -> str?
+    fs.make_dir_all(scratch)?
+    kinds_seen: [str] @= []
+
+    for id in names
+        o = database.read_object(db, id: id)?
+        kind = framing.kind_name(o.kind)
+        file = path.join_all([scratch, ids.short(id)])
+        fs.write_bytes(path: file, data: o.data)?
+        asked = process.command("git", arguments: ["hash-object", "-t", kind, file])
+
+        match process.capture(asked)
+            .err e =>
+                if e.code == "not_found"
+                    return ok("git hash-object: skipped: no git on this machine")
+                return ok(f"git hash-object: failed on {kind} {ids.short(id)}: {e.msg}")
+            .ok answer =>
+                said = strings.trim(answer)
+
+                if said != id
+                    return ok(f"git hash-object: disagrees on the {kind} {id}: git names it {said}")
+
+        kinds_seen @ kinds_seen.push(kind)
+
+    return ok(f"git hash-object: agrees on {names.len()} objects, a {kinds_seen.join(", a ")}")

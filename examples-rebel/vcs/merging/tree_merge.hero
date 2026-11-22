@@ -1,0 +1,181 @@
+# The three-way merge of two snapshots, path by path, against their merge
+# base, by the rules git's merge follows for a path: where both sides hold
+# the same version there is nothing to do; where one side left the base's
+# version as it was, the other side's change is taken, a deletion included;
+# where both changed it, two texts are merged line by line
+# (`merging/line_merge`), and what cannot be merged is a conflict: lines
+# changed two ways (`content`), a file both sides added differently
+# (`add/add`), a file one side changed and the other deleted
+# (`modify/delete`), or a binary file or a link changed two ways. Only the
+# paths where the result is not already ours are answered.
+
+use <rebel>/bytes
+use <rebel>/diff
+
+use merging/line_merge
+use objects/trees
+use snapshot/tree_files
+use store/database
+
+## Outcomes
+
+# What the merge makes of one path that is not ours already.
+variant Outcome
+    # Their version is taken whole.
+    take
+        # The version taken.
+        version: tree_files.Version
+    # The path is deleted, as they deleted it.
+    drop
+    # Both sides' changes merged into a new content.
+    merged
+        # The merged file's mode.
+        mode: trees.Mode
+        # The merged content.
+        data: [u8]
+    # The path cannot be merged; the person resolves it.
+    conflict
+        # `content`, `add/add` or `modify/delete`, as git's message names
+        # the kind.
+        kind: str
+        # What the work file holds until it is resolved: the lines between
+        # markers, or the side that kept the file.
+        data: [u8]
+        # The work file's mode.
+        mode: trees.Mode
+        # The base's version, for stage 1, where the base held the path.
+        base: tree_files.Version?
+        # Our version, for stage 2, where we hold the path.
+        ours: tree_files.Version?
+        # Their version, for stage 3, where they hold the path.
+        theirs: tree_files.Version?
+
+# The lines of the blob of `v`, or none where it is binary.
+#
+# - `db`: the database.
+# - `v`: a version.
+#
+# Fails `not_text` where the blob is binary, and where it cannot be read.
+function blob_lines(db: database.Database lent, v: tree_files.Version) -> [str]?
+    data = database.read_kind(db, id: v.id, kind: .blob)?
+
+    if bytes.contains(s: data, substr: [0])
+        return fail(code: "not_text", msg: "a binary file")
+    return ok(diff.lines_of(bytes.to_text(data)?))
+
+# Whether `v` is a version two texts can be merged in: a file, executable or
+# not.
+#
+# - `v`: a version.
+function is_mergeable(v: tree_files.Version) -> bool
+    return v.mode == .file || v.mode == .executable
+
+# The mode a merged file takes: the one both sides agree on, else the one
+# that changed from the base's.
+#
+# - `base`: the base's version, where it held the path.
+# - `ours`: our version.
+# - `theirs`: their version.
+function merged_mode(base: tree_files.Version?, ours: tree_files.Version, theirs: tree_files.Version) -> trees.Mode
+    match base
+        .ok b =>
+            if b.mode == ours.mode
+                return theirs.mode
+        .err _ => _ = 0
+
+    return ours.mode
+
+# What the merge makes of a path both sides changed differently.
+#
+# - `db`: the database.
+# - `base`: the base's version, where it held the path.
+# - `ours`: our version, where we hold it.
+# - `theirs`: their version, where they hold it.
+# - `ours_label`: the name our side's markers carry: `HEAD`.
+# - `theirs_label`: the name their side's carry: the branch merged in.
+#
+# Fails where a blob cannot be read.
+function both_changed(db: database.Database lent, base: tree_files.Version?, ours: tree_files.Version?, theirs: tree_files.Version?, ours_label: str, theirs_label: str) -> Outcome?
+    if ours.is_err() || theirs.is_err()
+        kept = match ours
+            .ok o  => o
+            .err _ => theirs?
+
+        data = database.read_kind(db, id: kept.id, kind: .blob)?
+        return ok(.conflict(kind: "modify/delete", data: data, mode: kept.mode, base: base, ours: ours, theirs: theirs))
+    o = ours?
+    t = theirs?
+
+    kind = if base.is_err()
+        "add/add"
+    else
+        "content"
+    our_data = database.read_kind(db, id: o.id, kind: .blob)?
+
+    if !is_mergeable(o) || !is_mergeable(t)
+        return ok(.conflict(kind: kind, data: our_data, mode: o.mode, base: base, ours: ours, theirs: theirs))
+
+    base_lines: [str] = match base
+        .ok b  => blob_lines(db, v: b).default([])
+        .err _ => []
+
+    our_lines = blob_lines(db, v: o)
+    their_lines = blob_lines(db, v: t)
+
+    if our_lines.is_err() || their_lines.is_err()
+        return ok(.conflict(kind: kind, data: our_data, mode: o.mode, base: base, ours: ours, theirs: theirs))
+    m = line_merge.merge_lines(
+        base: base_lines,
+        ours: our_lines?,
+        theirs: their_lines?,
+        ours_label: ours_label,
+        theirs_label: theirs_label
+    )
+    data = bytes.from_text(m.lines.join(""))
+
+    if m.conflicts > 0
+        return ok(.conflict(kind: kind, data: data, mode: o.mode, base: base, ours: ours, theirs: theirs))
+    return ok(.merged(mode: merged_mode(base, ours: o, theirs: t), data: data))
+
+# What the merge of `ours` and `theirs` against `base` makes of each path
+# whose result is not already ours.
+#
+# - `db`: the database.
+# - `base`: the merge base's files.
+# - `ours`: our files.
+# - `theirs`: their files.
+# - `ours_label`: the name our side's markers carry.
+# - `theirs_label`: the name their side's carry.
+#
+# Fails where a blob cannot be read.
+function merge_trees(db: database.Database lent, base: {str: tree_files.Version}, ours: {str: tree_files.Version}, theirs: {str: tree_files.Version}, ours_label: str, theirs_label: str) -> {str: Outcome}?
+    every: {str: bool} @= {}
+
+    for name in keys(base)
+        every[name] @ true
+
+    for name in keys(ours)
+        every[name] @ true
+
+    for name in keys(theirs)
+        every[name] @ true
+
+    out: {str: Outcome} @= {}
+
+    for name in sort(keys(every))
+        b = base[name]
+        o = ours[name]
+        t = theirs[name]
+
+        if tree_files.same_version(a: o, b: t) || tree_files.same_version(a: b, b: t)
+            continue
+
+        if tree_files.same_version(a: b, b: o)
+            match t
+                .ok v  => out[name] @ .take(version: v)
+                .err _ => out[name] @ .drop
+
+            continue
+        out[name] @ both_changed(db, base: b, ours: o, theirs: t, ours_label: ours_label, theirs_label: theirs_label)?
+
+    return ok(out)

@@ -1,0 +1,119 @@
+# The notification of an alert: the program the configuration names under
+# `notify`, run once for each alert that fires or resolves, with the alert
+# as one JSON object on its input, as Netdata's `alarm-notify.sh` and
+# Monit's `exec` hand an alert to a script that pages, mails or posts it.
+# A pending alert and a silenced rule notify nobody.
+#
+#     {"alert": "service-down[db]", "rule": "service-down", "state": "firing",
+#      "severity": "critical", "summary": "a service is down",
+#      "at": "2026-11-22T09:04:30Z"}
+#
+# The program runs with no shell, its output kept for the journal, and is
+# ended at once past `LIMIT_SECONDS`, so a notifier that hangs cannot hold
+# the monitor up.
+
+use <rebel>/bytes
+use <rebel>/json
+use <rebel>/process
+use <rebel>/strings
+use <rebel>/time
+
+use alerts/engine
+
+# How long a notification may run.
+constant LIMIT_SECONDS: i64
+    10
+
+# Whether `t` is notified: an alert that fires, or a firing one that
+# resolves, outside a silence.
+#
+# - `t`: the transition.
+function is_notified(t: engine.Transition) -> bool
+    if t.silenced
+        return false
+    return t.after == .firing || t.before == .firing && t.after == .inactive
+
+# The word a notified transition is told with: `firing` or `resolved`.
+#
+# - `t`: the transition.
+function state_word(t: engine.Transition) -> str
+    if t.after == .firing
+        return "firing"
+    return "resolved"
+
+# The JSON object the notifier reads for `t`.
+#
+# - `t`: the transition.
+# - `exact`: whether the value that decided it is written.
+function message_of(t: engine.Transition, exact: bool) -> str
+    at = time.from_unix(whole_seconds: t.at / 1_000_000_000, extra_nanoseconds: 0).default(time.epoch())
+    members: {str: json.Value} @= {
+        "alert": .text(v: t.name)
+        "rule": .text(v: t.rule)
+        "state": .text(v: state_word(t))
+        "severity": .text(v: t.severity)
+        "summary": .text(v: t.summary)
+        "at": .text(v: time.format(at, layout: .rfc3339))
+    }
+
+    if exact && t.value == t.value && t.value != 1.0 / 0.0
+        members["value"] @ .number(v: t.value)
+    return json.format(.object(members: members)).default("{}")
+
+# Runs the notifier `command` for `t`, and answers its outcome in one line:
+# "" where it succeeded, else how it ended and the first line it wrote.
+#
+# - `command`: the program and its arguments.
+# - `t`: the transition.
+# - `exact`: whether the value that decided it is written.
+function run(command: [str], t: engine.Transition, exact: bool) -> str
+    c = process.with_time_limit(
+        process.with_error_to_output(process.with_input(process.command(command[0], command.slice(from: 1, to: command.len())), from: .text(text: message_of(t, exact: exact)))),
+        limit: time.seconds(LIMIT_SECONDS).default(time.nanoseconds(1))
+    )
+
+    match process.run(c)
+        .err e => return f"could not run: {e.code}: {e.msg}"
+        .ok finished =>
+            if process.is_success(finished.status)
+                return ""
+            said = strings.trim(bytes.to_text_lossy(finished.output))
+
+            first = match strings.split_once(s: said, sep: "\n")
+                .ok halves => halves.before
+                .err _     => said
+
+            if first == ""
+                return process.format_status(finished.status)
+            return process.format_status(finished.status) + ": " + first
+
+# A transition of the tests.
+#
+# - `after`: the phase entered.
+function sample(after: engine.Phase) -> engine.Transition
+    return engine.Transition(
+        at: 1_764_000_000_000_000_000,
+        name: "down[db]",
+        rule: "down",
+        before: .pending,
+        after: after,
+        value: 0.0,
+        severity: "critical",
+        summary: "a service is down",
+        silenced: false
+    )
+
+test "is_notified: firing and resolved, never pending, never silenced"
+    assert is_notified(sample(.firing))
+    assert !is_notified(sample(.pending))
+    resolved @= sample(.inactive)
+    resolved.before @ .firing
+    assert is_notified(resolved) && state_word(resolved) == "resolved"
+    quiet @= sample(.firing)
+    quiet.silenced @ true
+    assert !is_notified(quiet)
+
+test "message_of: the alert as JSON, its value only where figures are exact"
+    text = message_of(sample(.firing), exact: false)
+    assert text == "{\"alert\":\"down[db]\",\"rule\":\"down\",\"state\":\"firing\",\"severity\":\"critical\",\"summary\":\"a service is down\",\"at\":\"2025-11-24T16:00:00Z\"}"
+    assert strings.contains(s: message_of(sample(.firing), exact: true), substr: "\"value\":0")

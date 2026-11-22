@@ -1,0 +1,100 @@
+# The paths of a build: how a path written in a build file, a depfile or on
+# the command line becomes the one name the graph, the log and the messages
+# use, and how that name reaches the disk.
+#
+# A node's name is its path written with `/` and cleaned by POSIX's rules on
+# every system, so `src/./a.src`, `src//a.src` and `src\a.src` written on
+# Windows are one node, and a log written on one system reads on another.
+# It touches the disk only through `disk`, which puts the build's folder
+# before a relative name and the system's separator inside it.
+
+use <rebel>/path
+use <rebel>/strings
+
+use model/buildfile
+
+# The build log's file, in the build's folder.
+constant LOG_NAME: str
+    ".build_log"
+
+# The file a build holds locked while it runs, in the build's folder.
+constant LOCK_NAME: str
+    ".build_lock"
+
+# The node `written` names: written with `/` and cleaned.
+#
+# - `written`: a path as a build file, a depfile or a command line writes
+#   it, relative to the build's folder or absolute.
+# - `where`: what holds it, for the message, such as
+#   `build.toml: [targets."out/app"].inputs`.
+#
+# Fails `invalid` where `written` is empty or names the build's folder
+# itself.
+function node_of(written: str, where: str) -> str?
+    if strings.trim(written) == ""
+        return fail(code: buildfile.INVALID, msg: f"{where}: an empty path")
+
+    cleaned = path.clean_by(path.to_slash(written), rules: .posix)
+
+    if cleaned == "."
+        return fail(code: buildfile.INVALID, msg: f"{where}: \"{written}\" names the build's folder itself, not a file")
+    return ok(cleaned)
+
+# The node an output `written` names, which must stand inside the build's
+# folder: `--clean` removes outputs, and an output outside the folder is a
+# file a build has no right to remove.
+#
+# - `written`: the path as the build file writes it.
+# - `where`: what holds it, for the message.
+#
+# Fails `invalid` where it is empty, absolute, climbs out with `..`, or names
+# one of the build's own files.
+function output_of(written: str, where: str) -> str?
+    node = node_of(written: written, where: where)?
+
+    if !path.is_local_by(node, rules: .posix)
+        return fail(
+            code: buildfile.INVALID,
+            msg: f"{where}: the output \"{written}\" stands outside the build's folder"
+        )
+
+    if node == LOG_NAME || node == LOCK_NAME
+        return fail(code: buildfile.INVALID, msg: f"{where}: \"{node}\" is the build's own file")
+    return ok(node)
+
+# Where the node `name` stands on the disk.
+#
+# - `root`: the build's folder, as the command line gave it; `.` for the
+#   working folder.
+# - `name`: a node, as `node_of` answered it.
+#
+# An absolute node is its own place; a relative one stands under `root`.
+function disk(root: str, name: str) -> str
+    local = path.from_slash(name)
+
+    if path.is_abs(local) || root == "." || root == ""
+        return local
+    return path.join_all([root, local])
+
+test "node_of: separators doubled, a dot, a climb inside, and a Windows separator"
+    assert node_of(written: "src//./a.src", where: "t").must() == "src/a.src"
+    assert node_of(written: "out/x/../a.obj", where: "t").must() == "out/a.obj"
+    assert node_of(written: "/usr/include/stdio.h", where: "t").must() == "/usr/include/stdio.h"
+
+test "node_of: empty, blank and the folder itself are refused"
+    assert node_of(written: "", where: "t").is_err()
+    assert node_of(written: "   ", where: "t").is_err()
+    assert node_of(written: "./", where: "t").is_err()
+    assert node_of(written: "a/..", where: "t").is_err()
+
+test "output_of: inside is taken, outside and the build's own files are refused"
+    assert output_of(written: "out/app", where: "t").must() == "out/app"
+    assert output_of(written: "../elsewhere/app", where: "t").is_err()
+    assert output_of(written: "/tmp/app", where: "t").is_err()
+    assert output_of(written: ".build_log", where: "t").is_err()
+    assert output_of(written: "./.build_lock", where: "t").is_err()
+
+test "disk: the working folder adds nothing, another folder stands before"
+    assert disk(root: ".", name: "out/app") == path.from_slash("out/app")
+    assert disk(root: "demo", name: "out/app") == path.join_all(["demo", path.from_slash("out/app")])
+    assert disk(root: "demo", name: "/usr/include/a.h") == path.from_slash("/usr/include/a.h")

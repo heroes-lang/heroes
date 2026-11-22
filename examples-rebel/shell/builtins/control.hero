@@ -1,0 +1,144 @@
+# The builtins that move the running commands: `exit`, `return`, `break` and
+# `continue` set the shell's flow, which every loop over commands obeys;
+# `eval` and `.` read a text as commands and run them in this shell.
+
+use <rebel>/numbers
+
+use builtins/table
+use exec/script
+use exec/state
+use exec/streams
+
+# The status a builtin's numeric argument gives, the low eight bits as a
+# process's status keeps them; `fallback` where none is given.
+#
+# - `operands`: the arguments.
+# - `fallback`: the status where none is given.
+function status_of(operands: [str], fallback: i64) -> i64?
+    if operands.len() == 0
+        return ok(fallback)
+
+    n = numbers.parse_int(operands[0])?
+    return ok(n & 255)
+
+# `exit [n]`: ends the shell with `n`, or with the last status.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function exit_shell(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    code = match status_of(operands, fallback: sh.status)
+        .ok c => c
+        .err _ => table.complain(
+            @sh,
+            place: place,
+            name: "exit",
+            message: f"`{operands[0]}` is not a number",
+            status: 2
+        )
+
+    sh.flow @ .exiting(code: code)
+    return code
+
+# `return [n]`: leaves the function running with `n`, or with the last
+# status.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function give_back(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if sh.calls == 0
+        return table.complain(@sh, place: place, name: "return", message: "no function is running", status: 2)
+
+    code = match status_of(operands, fallback: sh.status)
+        .ok c => c
+        .err _ => return table.complain(
+            @sh,
+            place: place,
+            name: "return",
+            message: f"`{operands[0]}` is not a number",
+            status: 2
+        )
+
+    sh.status @ code
+    sh.flow @ .returning
+    return code
+
+# `break [n]` and `continue [n]`: leave `n` loops, or go on with the next
+# pass of the `n`th; `n` past the loops there are is read as all of them.
+#
+# - `sh`: the shell.
+# - `name`: `break` or `continue`.
+# - `operands`: the arguments.
+# - `place`: its places.
+function jump(@sh: state.Shell, name: str, operands: [str], place: streams.Io) -> i64
+    if sh.loops == 0
+        return table.complain(@sh, place: place, name: name, message: "no loop is running", status: 1)
+
+    asked: i64? = match operands.len()
+        0 => ok(1)
+        _ => numbers.parse_int(operands[0])
+
+    levels @= match asked
+        .ok n => n
+        .err _ => return table.complain(
+            @sh,
+            place: place,
+            name: name,
+            message: f"`{operands[0]}` is not a number",
+            status: 1
+        )
+
+    if levels < 1
+        return table.complain(@sh, place: place, name: name, message: f"{levels} is no count of loops", status: 1)
+
+    if levels > sh.loops
+        levels @ sh.loops
+
+    sh.flow @ if name == "break"
+        .breaking(levels: levels)
+    else
+        .continuing(levels: levels)
+
+    return 0
+
+# `eval words...`: the words joined by spaces, read and run as commands.
+#
+# - `sh`: the shell.
+# - `operands`: the words.
+# - `place`: its places.
+function eval(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    return script.run_text(@sh, name: "eval", text: operands.join(" ") + "\n", place: place, transcript: false)
+
+# `. file [arguments...]` and `source`: the file's commands run in this
+# shell, with the arguments as positional parameters while they run.
+#
+# - `sh`: the shell.
+# - `name`: `.` or `source`, for a message.
+# - `operands`: the file, then its arguments.
+# - `place`: its places.
+function source(@sh: state.Shell, name: str, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0
+        return table.complain(@sh, place: place, name: name, message: "a file's name is needed", status: 2)
+
+    text = match read_file(operands[0])
+        .ok t  => t
+        .err e => return table.complain(@sh, place: place, name: name, message: f"{operands[0]}: {e.msg}", status: 1)
+
+    outer = sh.positional
+
+    if operands.len() > 1
+        sh.positional @ operands.slice(from: 1, to: operands.len())
+
+    status = script.run_text(@sh, name: operands[0], text: text, place: place, transcript: false)
+
+    if operands.len() > 1
+        sh.positional @ outer
+
+    return status
+
+test "status_of: none, a number, and its low eight bits"
+    assert status_of([], fallback: 4).must() == 4
+    assert status_of(["3"], fallback: 0).must() == 3
+    assert status_of(["257"], fallback: 0).must() == 1
+    assert status_of(["x"], fallback: 0).is_err()

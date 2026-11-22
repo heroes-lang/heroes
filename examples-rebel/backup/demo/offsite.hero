@@ -1,0 +1,217 @@
+# The demo's offsite half: the S3 stand-in started on its own thread on
+# loopback, the local repository copied to a bucket of it, copied again to
+# show that a second copy sends nothing, then opened from the bucket with
+# the same password, listed, and restored and compared with the folder.
+# The stand-in refuses two puts with `503 SlowDown` and one get with
+# `500 InternalError`, so the storage's retries meet real failures; and a
+# client signing with another secret is refused by the stand-in's
+# Signature Version 4 check. The stand-in is then stopped and tells what it
+# saw. No port, time or key is printed.
+
+use <rebel>/net
+use <rebel>/os
+use <rebel>/s3
+use <rebel>/strings
+use <rebel>/threads
+
+use cli/report
+use demo/compare
+use engine/restorer
+use engine/transfer
+use repo/records
+use repo/repository
+use standins/ready
+use standins/s3_bucket
+use standins/s3_server
+use store/location
+use store/storage
+
+## The stand-in's world
+
+# The bucket the repository is copied to.
+constant BUCKET: str
+    "backups"
+
+# The prefix it stands under.
+constant PREFIX: str
+    "demo-host"
+
+# The region the stand-in answers for.
+constant REGION: str
+    "us-east-1"
+
+# The access key's id the stand-in knows; made up.
+constant KEY_ID: str
+    "AKIDBACKUPDEMO0001"
+
+# Its secret; made up, and never printed.
+constant SECRET: str
+    "backup-demo/secret/0001"
+
+## Running
+
+# The offsite half of the demo; answers 0 where every step ran.
+#
+# - `local`: the local repository's storage.
+# - `source`: the folder backed up, to compare restores with.
+# - `target`: the folder the restore from the bucket writes into.
+# - `password`: the repository's password.
+function run(local: storage.Storage, source: str, target: str, password: str) -> i64
+    match net.listen(host: "127.0.0.1", port: 0)
+        .err e =>
+            print("demo: the control port: " + e.msg)
+            return 1
+        .ok made =>
+            control @= made
+            code = with_control(local, control: control, source: source, target: target, password: password)
+            _ = net.close_listener(@control).is_err()
+            return code
+
+# The stand-in started, the offsite steps run, the stand-in stopped and
+# its account printed.
+#
+# - `local`: the local repository's storage.
+# - `control`: the demo's control listener.
+# - `source`: the folder backed up.
+# - `target`: the folder the restore writes into.
+# - `password`: the repository's password.
+function with_control(local: storage.Storage, control: net.Listener, source: str, target: str, password: str) -> i64
+    setup = s3_bucket.Setup(
+        control_port: control.address.port,
+        bucket: BUCKET,
+        region: REGION,
+        key_id: KEY_ID,
+        secret: SECRET,
+        refuse_puts: [3, 11],
+        refuse_gets: [5]
+    )
+
+    spawned = match threads.spawn_text(body: s3_server.run, arg: s3_bucket.format_setup(setup))
+        .ok t => t
+        .err e =>
+            print("demo: the S3 stand-in's thread: " + e.msg)
+            return 1
+
+    thread @= spawned
+
+    print("== an S3 service started on loopback: the demo's stand-in")
+
+    code = match ready.await_ready(control)
+        .err e =>
+            print("demo: the S3 stand-in never said it was ready: " + e.msg)
+            1
+        .ok told =>
+            print(f"{told.service}: ready on loopback, checking every request's Signature Version 4")
+            with_service(local, port: told.port, source: source, target: target, password: password)
+
+    os.ask_stop()
+    print("== what the S3 service saw")
+    print(threads.wait_text(@thread))
+    return code
+
+# The copies, the restore from the bucket and the refused client.
+#
+# - `local`: the local repository's storage.
+# - `port`: the stand-in's port.
+# - `source`: the folder backed up.
+# - `target`: the folder the restore writes into.
+# - `password`: the repository's password.
+function with_service(local: storage.Storage, port: i64, source: str, target: str, password: str) -> i64
+    where = f"s3:http://127.0.0.1:{port}/{BUCKET}/{PREFIX}"
+    right = s3.Credentials(access_key_id: KEY_ID, secret_access_key: SECRET, session_token: "")
+
+    remote @= match bucket_storage(where, credentials: right)
+        .ok s => s
+        .err e =>
+            print("demo: the bucket: " + e.msg)
+            return 1
+
+    from @= local
+    print(f"== the repository copied to {storage.describe(remote)}")
+
+    for round in [1, 2]
+        match transfer.copy_all(from: @from, to: @remote, shown: false)
+            .err e =>
+                print(f"demo: copy {round}: " + e.msg)
+                return 1
+            .ok done => print(report.copy_line(done))
+
+    traffic = storage.traffic_of(remote)
+    print(f"  S3 requests: {traffic.requests}, sent again after a failure that may pass: {traffic.retried}")
+    print("== the repository opened from the bucket with the same password")
+
+    r @= match repository.open(remote, password: password)
+        .ok opened => opened
+        .err e =>
+            print("demo: opening from the bucket: " + e.msg)
+            return 1
+
+    code = restored(@r, source: source, target: target)
+    after = storage.traffic_of(r.store)
+    repository.close(@r)
+    print(f"  S3 requests so far: {after.requests}, sent again after a failure that may pass: {after.retried}")
+    print("== a client signing with another secret")
+    wrong = s3.Credentials(access_key_id: KEY_ID, secret_access_key: "not-the-secret", session_token: "")
+
+    match bucket_storage(where, credentials: wrong)
+        .err e => print("demo: the bucket: " + e.msg)
+        .ok s =>
+            other @= s
+
+            match storage.list(@other, prefix: "snapshots/")
+                .ok _ => print("listed, which it should not have been")
+                .err e =>
+                    said = if strings.contains(s: e.msg, substr: "SignatureDoesNotMatch")
+                        "SignatureDoesNotMatch"
+                    else
+                        "another refusal"
+
+                    print(f"refused ({e.code}): {said}")
+
+    return code
+
+# The snapshots listed from the bucket, the newest restored into `target`
+# and compared with `source`.
+#
+# - `r`: the repository opened from the bucket.
+# - `source`: the folder backed up.
+# - `target`: the folder the restore writes into.
+function restored(@r: repository.Repository, source: str, target: str) -> i64
+    match records.list_snapshots(@r)
+        .err e =>
+            print("demo: the snapshots: " + e.msg)
+            return 1
+        .ok found =>
+            print(report.snapshot_table(found))
+
+            if found.len() == 0
+                return 1
+
+            match restorer.restore(@r, s: found[0], target: target, only: "", shown: false)
+                .err e =>
+                    print("demo: restoring from the bucket: " + e.msg)
+                    return 1
+                .ok done =>
+                    for line in report.restore_lines(done, c: r.counts)
+                        print(line)
+
+            match compare.differences(expected: source, actual: target, facts: true)
+                .err e =>
+                    print("demo: comparing: " + e.msg)
+                    return 1
+                .ok found_differences =>
+                    print(f"compared with the folder: {found_differences.len()} differences")
+
+                    for d in found_differences
+                        print("  " + d)
+
+            return 0
+
+# The storage of the bucket at `where`, signed with `credentials`.
+#
+# - `where`: the location.
+# - `credentials`: the keys.
+#
+# Fails as the location and the storage fail.
+function bucket_storage(where: str, credentials: s3.Credentials) -> storage.Storage?
+    return storage.storage_of(location.parse_location(where)?, credentials: credentials, region: REGION, attempts: 4)

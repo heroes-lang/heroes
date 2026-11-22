@@ -1,0 +1,230 @@
+# The books as an accountant reads them: the CSV export of a year, one row
+# for each document and each VAT rate it charged, and the totals of the
+# year by regime and rate. A credit note's amounts are written below zero,
+# so every column sums to what the year really billed; amounts in another
+# currency are also written in the company's own, each row converted at its
+# document's exchange rate and rounded on its own, the way the VAT return
+# declares them.
+#
+# The CSV follows RFC 4180 (`csv`): a header row, a comma between fields,
+# CR LF after each row, a field quoted where it holds a comma or a quote.
+# Its amounts are plain decimals with a point, whatever the company's
+# language, since a CSV is read by programs before people.
+
+use <rebel>/big
+use <rebel>/csv
+use <rebel>/strings
+
+use model/documents
+use model/parties
+use money/amount
+use tax/pricing
+use tax/regime
+
+## The export
+
+# The header of the accountant's CSV.
+function header() -> [str]
+    return [
+        "date"
+        "number"
+        "kind"
+        "credits"
+        "customer"
+        "name"
+        "country"
+        "vat_id"
+        "regime"
+        "currency"
+        "exchange_rate"
+        "rate"
+        "net"
+        "tax"
+        "company_currency"
+        "company_net"
+        "company_tax"
+    ]
+
+# The accountant's CSV of `docs`: the header, then a row for each document
+# and each of its rates, in the order given.
+#
+# - `docs`: the year's documents.
+# - `company`: the company, whose currency the last columns are in.
+function export_of(docs: [documents.Document], company: parties.Company) -> str
+    rows: [[str]] @= [header()]
+    digits = amount.digits_of(company.currency)
+
+    for d in docs
+        for t in d.taxes
+            net = signed(d, value: t.net)
+            tax = signed(d, value: t.tax)
+            rows @ rows.push(
+                [documents.day_text(d.issued), d.number, documents.kind_name(d.kind), d.refers_to, d.customer.key, d.customer.name, d.customer.country, d.customer.vat_id, regime.name_of(d.regime), d.currency, amount.short(d.exchange_rate), amount.short(t.rate), amount.plain(net, digits: amount.digits_of(d.currency)), amount.plain(tax, digits: amount.digits_of(d.currency)), company.currency, amount.plain(in_company(d: net, exchange_rate: d.exchange_rate, digits: digits), digits: digits), amount.plain(in_company(d: tax, exchange_rate: d.exchange_rate, digits: digits), digits: digits)]
+            )
+
+    return csv.format(rows)
+
+# `value` with the sign of `d`'s kind: below zero on a credit note.
+#
+# - `d`: the document.
+# - `value`: one of its amounts.
+function signed(d: documents.Document, value: big.Decimal) -> big.Decimal
+    match d.kind
+        .invoice     => return value
+        .credit_note => return amount.negated(value)
+
+# `d`, an amount in a document's currency, in the company's: divided by
+# the document's exchange rate and rounded to the company's digits.
+#
+# - `d`: the amount.
+# - `exchange_rate`: the units of the document's currency one unit of the
+#   company's bought.
+# - `digits`: the company's currency's digits.
+function in_company(d: big.Decimal, exchange_rate: big.Decimal, digits: i64) -> big.Decimal
+    return big.divide_decimal(n: d, by: exchange_rate, scale: digits, rounding: .half_away_from_zero)
+
+## The totals
+
+# The year's net and tax at one rate under one regime, in the company's
+# currency.
+record Total
+    # The regime.
+    regime: regime.Regime
+    # The rate, in percent.
+    rate: big.Decimal
+    # How many documents charged it.
+    documents: i64
+    # The net amounts, credit notes subtracted.
+    net: big.Decimal
+    # The taxes, credit notes subtracted.
+    tax: big.Decimal
+
+# The totals of `docs` by regime and rate, in the order of the regimes,
+# then from the lowest rate.
+#
+# - `docs`: the year's documents.
+# - `company`: the company.
+function totals_of(docs: [documents.Document], company: parties.Company) -> [Total]
+    digits = amount.digits_of(company.currency)
+    found: [Total] @= []
+
+    for r in regime.all_regimes()
+        rates: [big.Decimal] @= []
+
+        for d in docs
+            if d.regime == r
+                for t in d.taxes
+                    if !pricing.holds_rate(rates, rate: t.rate)
+                        rates @ rates.push(t.rate)
+
+        for rate in pricing.lowest_first(rates)
+            count @= 0
+            nets: [big.Decimal] @= []
+            tax_amounts: [big.Decimal] @= []
+
+            for d in docs
+                if d.regime == r
+                    for t in d.taxes
+                        if amount.compare(a: t.rate, b: rate) == 0
+                            count @ count + 1
+                            nets @ nets.push(
+                                in_company(d: signed(d, value: t.net), exchange_rate: d.exchange_rate, digits: digits)
+                            )
+                            tax_amounts @ tax_amounts.push(
+                                in_company(d: signed(d, value: t.tax), exchange_rate: d.exchange_rate, digits: digits)
+                            )
+
+            found @ found.push(
+                Total(regime: r, rate: rate, documents: count, net: amount.total_of(nets), tax: amount.total_of(tax_amounts))
+            )
+
+    return found
+
+# The totals written as a report's lines, aligned: the regime, the rate,
+# the documents, the net and the tax, then the year's sum.
+#
+# - `totals`: the totals.
+# - `company`: the company, whose currency they are in.
+function report_of(totals: [Total], company: parties.Company) -> [str]
+    digits = amount.digits_of(company.currency)
+    lines: [str] @= [
+        f"regime          rate  documents  {strings.pad_start(s: "net", width: 12, pad: " ")}  {strings.pad_start(s: "tax", width: 10, pad: " ")}"
+    ]
+    nets: [big.Decimal] @= []
+    tax_amounts: [big.Decimal] @= []
+
+    for t in totals
+        nets @ nets.push(t.net)
+        tax_amounts @ tax_amounts.push(t.tax)
+        regime_name = strings.pad_end(s: regime.name_of(t.regime), width: 14, pad: " ")
+        rate = strings.pad_start(s: amount.short(t.rate) + "%", width: 6, pad: " ")
+        lines @ lines.push(
+            f"{regime_name}  {rate}  {strings.pad_start(s: f"{t.documents}", width: 9, pad: " ")}  {strings.pad_start(s: amount.plain(t.net, digits: digits), width: 12, pad: " ")}  {strings.pad_start(s: amount.plain(t.tax, digits: digits), width: 10, pad: " ")}"
+        )
+
+    net = amount.plain(amount.total_of(nets), digits: digits)
+    tax = amount.plain(amount.total_of(tax_amounts), digits: digits)
+    lines @ lines.push(
+        f"total {company.currency}{repeat(" ", 26)}  {strings.pad_start(s: net, width: 12, pad: " ")}  {strings.pad_start(s: tax, width: 10, pad: " ")}"
+    )
+    return lines
+
+## Tests
+
+# A document of the tests: `kind`, in `currency` at `exchange`, one rate.
+#
+# - `kind`: its kind.
+# - `currency`: its currency.
+# - `exchange`: its exchange rate as text.
+# - `rate`: its rate as text.
+# - `net`: its net as text.
+# - `tax`: its tax as text.
+function sample(kind: documents.Kind, currency: str, exchange: str, rate: str, net: str, tax: str) -> documents.Document
+    row = documents.TaxRow(
+        rate: big.parse_decimal(rate).must(),
+        net: big.parse_decimal(net).must(),
+        tax: big.parse_decimal(tax).must()
+    )
+    return documents.Document(
+        number: "N-1",
+        kind: kind,
+        issued: documents.parse_day("2026-03-14").must(),
+        due: documents.parse_day("2026-03-14").must(),
+        customer: regime.customer_in(country: "IT", vat_id: ""),
+        currency: currency,
+        exchange_rate: big.parse_decimal(exchange).must(),
+        regime: .domestic,
+        lines: [],
+        taxes: [row],
+        net: row.net,
+        tax: row.tax,
+        gross: amount.plus(a: row.net, b: row.tax),
+        refers_to: "",
+        reference: ""
+    )
+
+test "export_of: a header, a row a rate, a credit below zero, dollars in euro"
+    co = regime.company_with(oss: true)
+    docs = [
+        sample(.invoice, currency: "EUR", exchange: "1", rate: "22", net: "100.00", tax: "22.00")
+        sample(.credit_note, currency: "EUR", exchange: "1", rate: "22", net: "10.00", tax: "2.20")
+        sample(.invoice, currency: "USD", exchange: "1.0850", rate: "0", net: "108.50", tax: "0.00")
+    ]
+    rows = csv.parse(export_of(docs, company: co)).must()
+    assert rows.len() == 4 && rows[0] == header()
+    assert rows[1][12] == "100.00" && rows[1][15] == "100.00"
+    assert rows[2][12] == "-10.00" && rows[2][16] == "-2.20"
+    assert rows[3][9] == "USD" && rows[3][10] == "1.085" && rows[3][15] == "100.00"
+
+test "totals_of: credit notes subtracted, each rate once, the lowest first"
+    co = regime.company_with(oss: true)
+    docs = [
+        sample(.invoice, currency: "EUR", exchange: "1", rate: "22", net: "100.00", tax: "22.00")
+        sample(.invoice, currency: "EUR", exchange: "1", rate: "4", net: "50.00", tax: "2.00")
+        sample(.credit_note, currency: "EUR", exchange: "1", rate: "22", net: "10.00", tax: "2.20")
+    ]
+    totals = totals_of(docs, company: co)
+    assert totals.len() == 2 && amount.short(totals[0].rate) == "4" && totals[1].documents == 2
+    assert amount.plain(totals[1].net, digits: 2) == "90.00" && amount.plain(totals[1].tax, digits: 2) == "19.80"
+    lines = report_of(totals, company: co)
+    assert lines.len() == 4 && strings.has_suffix(s: lines[3], suffix: "140.00       21.80")

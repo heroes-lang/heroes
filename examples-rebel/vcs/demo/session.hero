@@ -1,0 +1,330 @@
+# The demo: a whole session of the program, run on a project it writes in a
+# folder of its own and removes at the end, its transcript the same on
+# every run. Two people work on a small greeter: a first commit, a feature
+# branch merged back by a clean three-way merge, a line changed two ways on
+# two branches and merged with a conflict that is then resolved, a branch
+# merged by a fast-forward, an annotated tag; then the objects are checked
+# against `git hash-object`, packed with deltas by `gc`, checked by `fsck`,
+# read back from the pack, and a damaged object is shown found.
+#
+# Every command is the one the command line runs, called with the
+# project's repository and a signature from the transcript's clock instead
+# of the working folder and the wall clock.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path
+
+use commands/branch_commands
+use commands/object_commands
+use commands/tree_commands
+use demo/git_check
+use demo/transcript
+use history/committing
+use history/log_view
+use objects/commits
+use objects/framing
+use objects/ids
+use repo/layout
+use repo/refs
+use store/database
+use store/loose
+
+## The people
+
+# The first person's name.
+constant ADA: str
+    "Ada Lovelace"
+
+# Her address.
+constant ADA_MAIL: str
+    "ada@example.org"
+
+# The second person's name.
+constant GRACE: str
+    "Grace Hopper"
+
+# Her address.
+constant GRACE_MAIL: str
+    "grace@example.org"
+
+## The scenes
+
+# The repository made, the first files written, an ignored file left out,
+# and the first commit.
+#
+# - `t`: the transcript.
+#
+# Fails where a file cannot be written.
+function first_commit(@t: transcript.Transcript) -> ()?
+    transcript.section(@t, title: "a project and its first commit")
+    transcript.show(@t, command: "init", answer: tree_commands.init(t.repo.root))
+    transcript.write(@t, name: "README.md", text: "# Greeter\n\nA program that greets.\n")?
+    transcript.write(@t, name: "src/greet.txt", text: "Hello, world!\nHow are you today?\nHave a good day.\n")?
+    transcript.write(@t, name: ".vcsignore", text: "*.log\n")?
+    transcript.write(@t, name: "src/notes.log", text: "scratch notes, never committed\n")?
+    transcript.show(@t, command: "status", answer: tree_commands.status(t.repo, short: false))
+    transcript.show(@t, command: "add .", answer: tree_commands.add(t.repo, names: ["."]))
+    transcript.show(@t, command: "status --short", answer: tree_commands.status(t.repo, short: true))
+    who = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Start the greeter\"",
+        answer: tree_commands.commit(t.repo, message: "Start the greeter", who: who)
+    )
+    return ok()
+
+# A branch made and checked out, a file changed and one added on it,
+# committed by the second person; then a change on `main` meanwhile.
+#
+# - `t`: the transcript.
+#
+# Fails where a file cannot be written.
+function feature_branch(@t: transcript.Transcript) -> ()?
+    transcript.section(@t, title: "a feature branch, and main moving on")
+    transcript.show(
+        @t,
+        command: "branch feature",
+        answer: branch_commands.create_branch(t.repo, name: "feature", start: "")
+    )
+    transcript.show(
+        @t,
+        command: "checkout feature",
+        answer: branch_commands.checkout(t.repo, target: "feature", create: false)
+    )
+    transcript.write(@t, name: "src/greet.txt", text: "Hello, world!\nHow are you today?\nHave a good day.\nSee you tomorrow.\n")?
+    transcript.write(@t, name: "src/farewell.txt", text: "Goodbye, world!\n")?
+    transcript.show(@t, command: "diff", answer: tree_commands.diff(t.repo, revisions: [], cached: false))
+    transcript.show(@t, command: "add src", answer: tree_commands.add(t.repo, names: ["src"]))
+    grace = transcript.sign(@t, name: GRACE, email: GRACE_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Say goodbye too\"",
+        answer: tree_commands.commit(t.repo, message: "Say goodbye too", who: grace)
+    )
+    transcript.show(
+        @t,
+        command: "checkout main",
+        answer: branch_commands.checkout(t.repo, target: "main", create: false)
+    )
+    transcript.write(@t, name: "README.md", text: "# Greeter\n\nA program that greets its readers.\n")?
+    transcript.show(@t, command: "add README.md", answer: tree_commands.add(t.repo, names: ["README.md"]))
+    ada = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Describe the greeter\"",
+        answer: tree_commands.commit(t.repo, message: "Describe the greeter", who: ada)
+    )
+    transcript.show(
+        @t,
+        command: "log --graph --all",
+        answer: branch_commands.log(t.repo, revisions: [], all_refs: true, options: graph_options())
+    )
+    return ok()
+
+# The feature merged into `main`: each side changed other files, so the
+# three-way merge is clean and makes a merge commit.
+#
+# - `t`: the transcript.
+function clean_merge(@t: transcript.Transcript)
+    transcript.section(@t, title: "a clean three-way merge")
+    who = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(@t, command: "merge feature", answer: branch_commands.merge(t.repo, other: "feature", who: who))
+    transcript.show(
+        @t,
+        command: "log --graph",
+        answer: branch_commands.log(t.repo, revisions: [], all_refs: false, options: graph_options())
+    )
+
+# The first line changed one way on a new branch and another way on `main`;
+# the merge stops on the conflict, which is resolved by hand and committed.
+#
+# - `t`: the transcript.
+#
+# Fails where a file cannot be written.
+function conflicted_merge(@t: transcript.Transcript) -> ()?
+    transcript.section(@t, title: "a merge with a conflict, resolved")
+    transcript.show(
+        @t,
+        command: "checkout -b polish",
+        answer: branch_commands.checkout(t.repo, target: "polish", create: true)
+    )
+    transcript.write(@t, name: "src/greet.txt", text: "Hello, everyone!\nHow are you today?\nHave a good day.\nSee you tomorrow.\n")?
+    transcript.show(@t, command: "add src/greet.txt", answer: tree_commands.add(t.repo, names: ["src/greet.txt"]))
+    grace = transcript.sign(@t, name: GRACE, email: GRACE_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Greet everyone\"",
+        answer: tree_commands.commit(t.repo, message: "Greet everyone", who: grace)
+    )
+    transcript.show(
+        @t,
+        command: "checkout main",
+        answer: branch_commands.checkout(t.repo, target: "main", create: false)
+    )
+    transcript.write(@t, name: "src/greet.txt", text: "Hello, friends!\nHow are you today?\nHave a good day.\nSee you tomorrow.\n")?
+    transcript.show(@t, command: "add src/greet.txt", answer: tree_commands.add(t.repo, names: ["src/greet.txt"]))
+    ada = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Greet friends\"",
+        answer: tree_commands.commit(t.repo, message: "Greet friends", who: ada)
+    )
+    merger = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(@t, command: "merge polish", answer: branch_commands.merge(t.repo, other: "polish", who: merger))
+    transcript.show(@t, command: "status", answer: tree_commands.status(t.repo, short: false))
+    transcript.show_file(@t, name: "src/greet.txt")?
+    early = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(@t, command: "commit", answer: tree_commands.commit(t.repo, message: "", who: early))
+    transcript.write(@t, name: "src/greet.txt", text: "Hello, friends and everyone!\nHow are you today?\nHave a good day.\nSee you tomorrow.\n")?
+    transcript.show(@t, command: "add src/greet.txt", answer: tree_commands.add(t.repo, names: ["src/greet.txt"]))
+    resolved = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(@t, command: "commit", answer: tree_commands.commit(t.repo, message: "", who: resolved))
+    return ok()
+
+# A branch whose only new commit sits on top of `main`, merged by moving
+# `main` forward; then the release tagged and the merged branches listed and
+# one deleted.
+#
+# - `t`: the transcript.
+#
+# Fails where a file cannot be written.
+function fast_forward(@t: transcript.Transcript) -> ()?
+    transcript.section(@t, title: "a fast-forward, and a release tagged")
+    transcript.show(
+        @t,
+        command: "checkout -b docs",
+        answer: branch_commands.checkout(t.repo, target: "docs", create: true)
+    )
+    transcript.write(@t, name: "CHANGES.md", text: "# Changes\n\n## 1.0\n\n- Greets friends and everyone, and says goodbye.\n")?
+    transcript.show(@t, command: "add CHANGES.md", answer: tree_commands.add(t.repo, names: ["CHANGES.md"]))
+    grace = transcript.sign(@t, name: GRACE, email: GRACE_MAIL)
+    transcript.show(
+        @t,
+        command: "commit -m \"Keep a changelog\"",
+        answer: tree_commands.commit(t.repo, message: "Keep a changelog", who: grace)
+    )
+    transcript.show(
+        @t,
+        command: "checkout main",
+        answer: branch_commands.checkout(t.repo, target: "main", create: false)
+    )
+    forward = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(@t, command: "merge docs", answer: branch_commands.merge(t.repo, other: "docs", who: forward))
+    tagger = transcript.sign(@t, name: ADA, email: ADA_MAIL)
+    transcript.show(
+        @t,
+        command: "tag -m \"The first release\" v1.0",
+        answer: branch_commands.create_tag(t.repo, name: "v1.0", target: "", message: "The first release", who: tagger)
+    )
+    transcript.show(@t, command: "branch", answer: branch_commands.list_branches(t.repo))
+    transcript.show(
+        @t,
+        command: "branch -d feature",
+        answer: branch_commands.delete_branch(t.repo, name: "feature", force: false)
+    )
+    transcript.show(
+        @t,
+        command: "log -n 2",
+        answer: branch_commands.log(t.repo, revisions: [], all_refs: false, options: log_view.Options(oneline: false, graph: false, limit: 2))
+    )
+    transcript.show(
+        @t,
+        command: "log --graph",
+        answer: branch_commands.log(t.repo, revisions: [], all_refs: false, options: graph_options())
+    )
+    return ok()
+
+# One object of each kind named by `git hash-object` on this machine.
+#
+# - `t`: the transcript.
+# - `scratch`: a folder the check may write in.
+#
+# Fails where an object cannot be read or a file written.
+function check_with_git(@t: transcript.Transcript, scratch: str) -> ()?
+    transcript.section(@t, title: "the objects are git's")
+    db = database.open_database(layout.objects_dir(t.repo))?
+    head = refs.head_commit(t.repo)?
+    files = committing.files_of_commit(db, id: head)?
+    readme = files["README.md"]?.id
+    tree = tree_of(db, id: head)?
+    tag = refs.read_ref(t.repo, full: "refs/tags/v1.0")?
+    transcript.say(@t, text: git_check.check_line(db, names: [readme, tree, head, tag], scratch: scratch)?)
+    return ok()
+
+# The tree the commit `id` snapshots.
+#
+# - `db`: the database.
+# - `id`: a commit.
+#
+# Fails where it cannot be read.
+function tree_of(db: database.Database lent, id: str) -> str?
+    return ok(commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?.tree)
+
+# The objects packed, checked, read back from the pack, and an object made
+# to lie about its name found by `fsck`.
+#
+# - `t`: the transcript.
+#
+# Fails where a file cannot be written or removed.
+function upkeep(@t: transcript.Transcript) -> ()?
+    transcript.section(@t, title: "packed, checked, and read back")
+    transcript.show(@t, command: "gc", answer: object_commands.gc(t.repo))
+    transcript.show(@t, command: "fsck", answer: object_commands.fsck(t.repo))
+    transcript.show(
+        @t,
+        command: "log --oneline --all",
+        answer: branch_commands.log(t.repo, revisions: [], all_refs: true, options: log_view.Options(oneline: true, graph: false, limit: 0))
+    )
+    transcript.show(
+        @t,
+        command: "diff HEAD~2 HEAD~1",
+        answer: tree_commands.diff(t.repo, revisions: ["HEAD~2", "HEAD~1"], cached: false)
+    )
+    transcript.show(
+        @t,
+        command: "cat-file -p v1.0",
+        answer: object_commands.cat_file(t.repo, name: "v1.0", kind_only: false)
+    )
+    transcript.section(@t, title: "a damaged object found")
+    dir = layout.objects_dir(t.repo)
+    real = loose.write_loose(dir, kind: .blob, data: bytes.from_text("a blob stored under another's name\n"))?
+    claimed = framing.id_of(.blob, data: bytes.from_text("the content its name promises\n"))
+    fs.make_dir_all(path.parent(loose.file_of(dir: dir, id: claimed)))?
+    fs.rename(from: loose.file_of(dir: dir, id: real), to: loose.file_of(dir: dir, id: claimed))?
+    transcript.say(@t, text: f"  (moved the loose object {ids.short(real)} to the name {ids.short(claimed)})")
+    transcript.show(@t, command: "fsck", answer: object_commands.fsck(t.repo))
+    loose.remove_loose(dir: dir, id: claimed)?
+    transcript.say(@t, text: f"  (removed {ids.short(claimed)})")
+    transcript.show(@t, command: "status", answer: tree_commands.status(t.repo, short: false))
+    return ok()
+
+# The log's options for a graph, one line a commit.
+function graph_options() -> log_view.Options
+    return log_view.Options(oneline: true, graph: true, limit: 0)
+
+## The demo
+
+# Runs the demo in the folder `dir`, made empty first and removed at the
+# end, and answers its transcript.
+#
+# - `dir`: a folder of the demo's own, `build/vcs-demo`; whatever is there
+#   is removed.
+#
+# Fails where the folder cannot be made or removed, or a scene fails.
+function run(dir: str) -> str?
+    if fs.exists(dir)?
+        fs.remove_all(dir)?
+    fs.make_dir_all(dir)?
+    t @= transcript.begin(path.join_all([dir, "project"]))
+    transcript.say(@t, text: "vcs demo: two people, four branches, every kind of merge, one pack")
+    first_commit(@t)?
+    feature_branch(@t)?
+    clean_merge(@t)
+    conflicted_merge(@t)?
+    fast_forward(@t)?
+    check_with_git(@t, scratch: path.join_all([dir, "check"]))?
+    upkeep(@t)?
+    fs.remove_all(dir)?
+    transcript.say(@t, text: "\ndemo folder removed")
+    return ok(t.lines.join("\n"))

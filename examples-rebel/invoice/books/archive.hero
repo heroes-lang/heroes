@@ -1,0 +1,182 @@
+# The yearly archive: every document of a year, its PDF and its XLSX as
+# they were kept when issued, the year's accountant's CSV, and a manifest
+# of every member's SHA-256, together in one gzip-compressed tar file,
+# `archives/<year>.tar.gz` under the data folder. The manifest is written
+# as `sha256sum` writes one, `<hex>  <name>` a line, so after extracting
+# the archive `sha256sum -c <year>/MANIFEST.sha256` checks it with no
+# program of ours; `check_archive` checks it here.
+#
+# Each member bears the day of its document as its time, and the CSV and
+# the manifest the year's last document's day, so the same year makes the
+# same archive byte for byte, whenever it is made.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/time
+
+use model/documents
+use render/files
+
+## Codes
+
+# The code of an archive whose members do not match its manifest.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most bytes an archive is read to when checked, once decompressed: a
+# year of a small company's documents is a few megabytes.
+constant MAX_ARCHIVE_BYTES: i64
+    1_073_741_824
+
+## Making
+
+# The archive of `year`: the files of `docs`, read from the data folder,
+# then the CSV and the manifest.
+#
+# - `data_dir`: the data folder, where the documents' files are kept.
+# - `year`: the year, which names the archive's folder.
+# - `docs`: the year's documents, in the order the archive lists them.
+# - `csv_text`: the year's accountant's CSV.
+#
+# Fails as `fs.read_bytes` fails on a document's file that was never
+# made, naming it, and as `archive.encode_tar` fails.
+function archive_of(data_dir: str, year: i64, docs: [documents.Document], csv_text: str) -> [u8]?
+    members: [archive.TarMember] @= []
+    sums: [str] @= []
+    last @= time.date(year: year, month: 1, day: 1)?
+
+    for d in docs
+        for ext in ["pdf", "xlsx"]
+            file = files.file_of(data_dir: data_dir, doc: d, ext: ext)
+
+            data = match fs.read_bytes(file)
+                .ok b  => b
+                .err e => return fail(code: e.code, msg: f"{d.number}'s {ext} file: {e.msg}")
+
+            name = f"{year}/{d.number}.{ext}"
+            members @ members.push(member(name, data: data, day: d.issued))
+            sums @ sums.push(sum_line(name, data: data))
+
+        if time.is_after(a: d.issued, b: last)
+            last @ d.issued
+
+    csv_name = f"{year}/accounts-{year}.csv"
+    csv_data = bytes.from_text(csv_text)
+    members @ members.push(member(csv_name, data: csv_data, day: last))
+    sums @ sums.push(sum_line(csv_name, data: csv_data))
+    members @ members.push(member(f"{year}/MANIFEST.sha256", data: bytes.from_text(sums.join("")), day: last))
+    return archive.encode_tar(members, compression: .gzip)
+
+# A file member of the archive named `name`, holding `data`, bearing `day`.
+#
+# - `name`: its path in the archive.
+# - `data`: its bytes.
+# - `day`: its time.
+function member(name: str, data: [u8], day: time.Instant) -> archive.TarMember
+    entry @= archive.tar_entry(name, kind: .file)
+    entry.modified @ day
+    return archive.TarMember(entry: entry, data: data)
+
+# The manifest's line of `name`: its SHA-256 in hexadecimal, two spaces,
+# its name and a line feed, as `sha256sum` writes it.
+#
+# - `name`: the member's path.
+# - `data`: its bytes.
+function sum_line(name: str, data: [u8]) -> str
+    return bytes.format_hex(crypto.sha256(data)) + "  " + name + "\n"
+
+# The path of `year`'s archive under `data_dir`.
+#
+# - `data_dir`: the data folder.
+# - `year`: the year.
+function path_of(data_dir: str, year: i64) -> str
+    return data_dir + "/archives/" + f"{year}.tar.gz"
+
+## Checking
+
+# What an archive was found to hold.
+record Checked
+    # Its members, in order, the manifest included.
+    names: [str]
+    # The bytes of its members together.
+    size: i64
+    # The SHA-256 of its manifest, which names every other member's.
+    manifest_sum: str
+
+# Reads the archive `data` and checks every member against its manifest.
+#
+# - `data`: a `.tar.gz` that `archive_of` made.
+#
+# Fails `invalid` where it holds no manifest, a member the manifest does
+# not name, a name the manifest names twice or that no member has, or a
+# member whose bytes do not give its sum; and as `archive.decode_tar`
+# fails.
+function check_archive(data: [u8]) -> Checked?
+    members = archive.decode_tar(data, compression: .gzip, limit: MAX_ARCHIVE_BYTES)?
+    manifest_index @= -1
+
+    for i in range(from: 0, to: members.len())
+        if strings.has_suffix(s: members[i].entry.name, suffix: "/MANIFEST.sha256")
+            manifest_index @ i
+
+    if manifest_index < 0
+        return fail(code: INVALID, msg: "the archive holds no MANIFEST.sha256")
+    manifest = members[manifest_index]
+    listed: {str: str} @= {}
+
+    for line in strings.lines(bytes.to_text(manifest.data)?)
+        match strings.split_once(s: line, sep: "  ")
+            .err _ => return fail(code: INVALID, msg: f"the manifest's line \"{line}\" is no sum and name")
+            .ok h =>
+                if listed[h.after].is_err() == false
+                    return fail(code: INVALID, msg: f"the manifest names {h.after} twice")
+                listed[h.after] @ h.before
+
+    names: [str] @= []
+    size @= 0
+
+    for m in members
+        names @ names.push(m.entry.name)
+        size @ size + m.data.len()
+
+        if m.entry.name != manifest.entry.name
+            match listed[m.entry.name]
+                .err _ => return fail(code: INVALID, msg: f"{m.entry.name} is in the archive and not in its manifest")
+                .ok sum =>
+                    if bytes.format_hex(crypto.sha256(m.data)) != sum
+                        return fail(code: INVALID, msg: f"{m.entry.name} does not give the sum its manifest says")
+
+    if listed.len() != members.len() - 1
+        return fail(
+            code: INVALID,
+            msg: f"the manifest names {listed.len()} members, and the archive holds {members.len() - 1} beside it"
+        )
+    return ok(Checked(names: names, size: size, manifest_sum: bytes.format_hex(crypto.sha256(manifest.data))))
+
+test "check_archive: an archive's members against their manifest"
+    sums = sum_line("2026/a.pdf", data: bytes.from_text("a")) + sum_line("2026/b.csv", data: bytes.from_text("b"))
+    day = time.date(year: 2026, month: 3, day: 14).must()
+    good = [
+        member("2026/a.pdf", data: bytes.from_text("a"), day: day)
+        member("2026/b.csv", data: bytes.from_text("b"), day: day)
+        member("2026/MANIFEST.sha256", data: bytes.from_text(sums), day: day)
+    ]
+    data = archive.encode_tar(good, compression: .gzip).must()
+    c = check_archive(data).must()
+    assert c.names == ["2026/a.pdf", "2026/b.csv", "2026/MANIFEST.sha256"] && c.size == 2 + bytes.from_text(sums).len()
+    assert archive.encode_tar(good, compression: .gzip).must() == data
+    changed @= good
+    changed[1].data @ bytes.from_text("c")
+    assert check_archive(archive.encode_tar(changed, compression: .gzip).must()).is_err()
+    extra @= good
+    extra @ extra.push(member("2026/x", data: [], day: day))
+    assert check_archive(archive.encode_tar(extra, compression: .gzip).must()).is_err()
+    assert check_archive(archive.encode_tar([good[0]], compression: .gzip).must()).is_err()
+
+test "sum_line: the form sha256sum writes"
+    assert sum_line("x", data: []) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  x\n"

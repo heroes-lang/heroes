@@ -1,0 +1,169 @@
+# What the demo's mail server checks of a message before it takes it: the
+# checks a real server and a careful recipient make, so the demo proves the
+# message a customer would get rather than that some bytes arrived. A
+# message must carry `From`, `To`, `Subject`, `Date` and `Message-ID`; its
+# `From` must be the envelope's sender and its `To` among the envelope's
+# recipients; its text must name the document; it must carry exactly one
+# file, a PDF named after the document, which must read as a PDF whose
+# pages name the document's number too.
+#
+# The document's number is read from the attachment's name, `<number>.pdf`,
+# and looked for in the subject, the text and the PDF's pages.
+
+use <rebel>/bytes
+use <rebel>/mail
+use <rebel>/pdf
+use <rebel>/strings
+
+## Codes
+
+# The code of a message the server refuses.
+constant INVALID: str
+    "invalid"
+
+## The check
+
+# What the server found in a message it took.
+record Accepted
+    # The document's number.
+    number: str
+    # The attachment's file name.
+    filename: str
+    # The pages of the PDF.
+    pages: i64
+
+# Checks the message `data`, sent from `sender` to `recipients`.
+#
+# - `data`: the message's bytes, as DATA carried them, dots unstuffed.
+# - `sender`: the envelope's sender.
+# - `recipients`: the envelope's recipients.
+#
+# Fails `invalid` naming the first check that does not hold.
+function inspect(data: [u8], sender: str, recipients: [str]) -> Accepted?
+    m = mail.decode_message(data)
+
+    for name in ["From", "To", "Subject", "Date", "Message-ID"]
+        if !mail.has_field(m, name: name)
+            return fail(code: INVALID, msg: f"the message has no {name}")
+
+    _ = mail.date_of(m)?
+    from = mail.addresses_of(m, name: "From")?
+
+    if from.len() != 1 || mail.format_addr_spec(from[0]) != sender
+        return fail(code: INVALID, msg: f"the message's From is not its sender, {sender}")
+
+    for to in mail.addresses_of(m, name: "To")?
+        if !holds(recipients, address: mail.format_addr_spec(to))
+            return fail(code: INVALID, msg: f"the message's To names {mail.format_addr_spec(to)}, who is no recipient")
+
+    files = mail.attachments_of(m)
+
+    if files.len() != 1
+        return fail(
+            code: INVALID,
+            msg: f"the message carries {files.len()} files, and a document's message carries one"
+        )
+    file = files[0]
+    filename = mail.filename_of(file)?
+
+    if mail.content_type_of(file).media_type != "application/pdf" || !strings.has_suffix(s: filename, suffix: ".pdf")
+        return fail(code: INVALID, msg: f"{filename} is no PDF")
+    number = filename.slice(from: 0, to: filename.len() - 4)
+    subject = mail.decoded_value_of(m, name: "Subject")?
+
+    if !strings.contains(s: subject, substr: number)
+        return fail(code: INVALID, msg: f"the subject does not name {number}")
+    text = mail.text_of(mail.body_of(m, preferring: ["plain"])?)?
+
+    if !strings.contains(s: text, substr: number)
+        return fail(code: INVALID, msg: f"the message's text does not name {number}")
+    content = mail.content_of(file)?
+
+    if !bytes.has_prefix(s: content, prefix: bytes.from_text("%PDF-"))
+        return fail(code: INVALID, msg: f"{filename} does not open as a PDF does")
+    document = pdf.decode(content, password: "", limits: pdf.default_limits())?
+    pages = pdf.pages_of(document)
+    named @= false
+
+    for page in pages
+        if strings.contains(s: pdf.text_of(document, page: page)?, substr: number)
+            named @ true
+
+    if !named
+        return fail(code: INVALID, msg: f"no page of {filename} names {number}")
+    return ok(Accepted(number: number, filename: filename, pages: pages.len()))
+
+# Whether `addresses` holds `address`, the domain's case ignored.
+#
+# - `addresses`: the envelope's addresses.
+# - `address`: an address.
+function holds(addresses: [str], address: str) -> bool
+    for a in addresses
+        if strings.to_lower_ascii(a) == strings.to_lower_ascii(address)
+            return true
+
+    return false
+
+## Tests
+
+# A message of the tests, its fields and its one file given.
+#
+# - `subject`: its subject.
+# - `filename`: its file's name.
+# - `file`: its file's bytes.
+function message_with(subject: str, filename: str, file: [u8]) -> [u8]
+    attachment = mail.Attachment(filename: filename, media_type: "application/pdf", data: file, content_id: "")
+    m @= mail.compose(text: "Invoice INV-1 attached.", html: "", attachments: [attachment]).must()
+    m @ mail.with_field(m, name: "From", value: "Co <billing@co.example>")
+    m @ mail.with_field(m, name: "To", value: "Ana <ana@customer.example>")
+    m @ mail.with_field(m, name: "Subject", value: subject)
+    m @ mail.with_field(m, name: "Date", value: "Sat, 14 Mar 2026 09:00:00 +0000")
+    m @ mail.with_field(m, name: "Message-ID", value: "<1@co.example>")
+    return mail.encode_message(m, mail.standard_options()).must()
+
+# A PDF of one page whose text is `text`.
+#
+# - `text`: the page's text.
+function pdf_saying(text: str) -> [u8]
+    doc @= pdf.document()
+    pdf.add_page(@doc, size: pdf.size_of(.a6))
+    pdf.draw_text(@doc, x: 10.0, y: 10.0, text: text, align: .left).must()
+    return pdf.encode(doc).must()
+
+test "inspect: a document's message taken, and what it found"
+    data = message_with(subject: "Invoice INV-1", filename: "INV-1.pdf", file: pdf_saying("Invoice INV-1"))
+    a = inspect(data, sender: "billing@co.example", recipients: ["ana@customer.example"]).must()
+    assert a.number == "INV-1" && a.filename == "INV-1.pdf" && a.pages == 1
+
+test "inspect: each check refuses its own fault"
+    good_pdf = pdf_saying("Invoice INV-1")
+    assert inspect(
+        message_with(subject: "Invoice", filename: "INV-1.pdf", file: good_pdf),
+        sender: "billing@co.example",
+        recipients: ["ana@customer.example"]
+    ).is_err()
+    assert inspect(
+        message_with(subject: "Invoice INV-1", filename: "INV-1.pdf", file: pdf_saying("other")),
+        sender: "billing@co.example",
+        recipients: ["ana@customer.example"]
+    ).is_err()
+    assert inspect(
+        message_with(subject: "Invoice INV-1", filename: "INV-1.pdf", file: bytes.from_text("not a pdf")),
+        sender: "billing@co.example",
+        recipients: ["ana@customer.example"]
+    ).is_err()
+    assert inspect(
+        message_with(subject: "Invoice INV-1", filename: "INV-1.pdf", file: good_pdf),
+        sender: "other@co.example",
+        recipients: ["ana@customer.example"]
+    ).is_err()
+    assert inspect(
+        message_with(subject: "Invoice INV-1", filename: "INV-1.pdf", file: good_pdf),
+        sender: "billing@co.example",
+        recipients: ["bob@customer.example"]
+    ).is_err()
+    assert inspect(
+        bytes.from_text("Subject: x\r\n\r\nno file\r\n"),
+        sender: "billing@co.example",
+        recipients: []
+    ).is_err()

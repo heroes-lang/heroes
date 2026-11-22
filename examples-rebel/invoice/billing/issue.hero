@@ -1,0 +1,152 @@
+# Issuing an invoice: an order (a customer, a day, the items and how many
+# of each) turned into a complete document and written to the books under
+# its number. The customer's regime chooses the rates (`tax/regime`), the
+# configuration gives them (`tax/pricing`), and a customer invoiced in
+# another currency than the company's is priced at the exchange rate the
+# order states, which the invoice prints and keeps.
+#
+# An order is refused whole before anything is written where an item, a
+# rate or the exchange rate is missing, so the books never hold a document
+# its own data would not make again.
+
+use <rebel>/big
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use model/documents
+use model/parties
+use money/amount
+use store/ledger
+use store/registry
+use tax/pricing
+use tax/regime
+
+## Codes
+
+# The code of an order the program refuses.
+constant INVALID: str
+    "invalid"
+
+## Orders
+
+# How many units of an item an order or a return names.
+record Ordered
+    # The item's SKU.
+    sku: str
+    # How many units, more than zero.
+    quantity: big.Decimal
+
+# What a customer ordered on a day.
+record Order
+    # The customer's key.
+    customer: str
+    # The day of the invoice, at midnight UTC.
+    day: time.Instant
+    # The items and quantities, in the order the invoice lists them.
+    lines: [Ordered]
+    # How many units of the customer's currency one unit of the company's
+    # buys, for a customer invoiced in another currency; ignored, and 1,
+    # where the two are one.
+    exchange_rate: big.Decimal
+
+# The invoice of `order`, written to the books under its number.
+#
+# - `db`: the books.
+# - `company`: the company.
+# - `rates`: the configuration's rates.
+# - `order`: the order.
+#
+# Fails `invalid` where the order holds no line or a SKU twice, or names a
+# currency other than the company's with no exchange rate; `not_found`
+# where the customer, an item or a rate is missing; and as `ledger.issue`
+# fails.
+function invoice(@db: sqlite.Db, company: parties.Company, rates: pricing.RateTable, order: Order) -> documents.Document?
+    customer = registry.customer_named(@db, key: order.customer)?
+
+    if order.lines.len() == 0
+        return fail(code: INVALID, msg: f"an invoice to {customer.key} needs at least one line")
+    distinct(order.lines)?
+    exchange = exchange_for(company, customer: customer, given: order.exchange_rate)?
+    digits = amount.digits_of(customer.currency)
+    r = regime.regime_of(company, customer: customer)
+    lines: [documents.Line] @= []
+
+    for o in order.lines
+        item = registry.item_named(@db, sku: o.sku)?
+        rate = pricing.rate_for(rates, r: r, company: company, customer: customer, tax_class: item.tax_class)?
+        unit_price = pricing.converted(price: item.price, exchange_rate: exchange, digits: digits)
+        lines @ lines.push(
+            pricing.line_of(position: lines.len() + 1, item: item, quantity: o.quantity, unit_price: unit_price, rate: rate, digits: digits)
+        )
+
+    taxes = pricing.taxes_of(lines, digits: digits)
+    totals = pricing.totals_of(taxes, digits: digits)
+    due = time.add(order.day, d: time.days(customer.payment_days)?)?
+    doc = documents.Document(
+        number: "",
+        kind: .invoice,
+        issued: order.day,
+        due: due,
+        customer: customer,
+        currency: customer.currency,
+        exchange_rate: exchange,
+        regime: r,
+        lines: lines,
+        taxes: taxes,
+        net: totals.net,
+        tax: totals.tax,
+        gross: totals.gross,
+        refers_to: "",
+        reference: ""
+    )
+    return ledger.issue(@db, doc: doc)
+
+# The exchange rate an invoice to `customer` is priced at: 1 where the
+# customer's currency is the company's, `given` otherwise.
+#
+# - `company`: the company.
+# - `customer`: the customer.
+# - `given`: the order's rate; zero where it states none.
+#
+# Fails `invalid` where the currencies differ and `given` is zero or below.
+function exchange_for(company: parties.Company, customer: parties.Customer, given: big.Decimal) -> big.Decimal?
+    if customer.currency == company.currency
+        return ok(amount.of_int(1))
+
+    if amount.is_zero(given) || amount.is_negative(given)
+        return fail(
+            code: INVALID,
+            msg: f"{customer.key} is invoiced in {customer.currency}: give the {company.currency} to {customer.currency} exchange rate"
+        )
+    return ok(given)
+
+# Checks that `lines` names each SKU once.
+#
+# - `lines`: an order's lines.
+#
+# Fails `invalid` naming the first SKU named twice.
+function distinct(lines: [Ordered]) -> ()?
+    seen: {str: bool} @= {}
+
+    for o in lines
+        key = parties.parse_key(o.sku)?
+
+        if seen[key].default(false)
+            return fail(code: INVALID, msg: f"{key} is named twice: name it once with its whole quantity")
+        seen[key] @ true
+
+    return ok()
+
+test "distinct: one SKU in two cases is the same SKU"
+    one = big.parse_decimal("1").must()
+    assert distinct([Ordered(sku: "A", quantity: one), Ordered(sku: "B", quantity: one)]).is_err() == false
+    assert distinct([Ordered(sku: "a", quantity: one), Ordered(sku: "A", quantity: one)]).is_err()
+
+test "exchange_for: one currency needs no rate, two need one"
+    co = regime.company_with(oss: true)
+    euro = regime.customer_in(country: "FR", vat_id: "")
+    dollar @= regime.customer_in(country: "US", vat_id: "")
+    dollar.currency @ "USD"
+    assert amount.short(exchange_for(co, customer: euro, given: amount.zero()).must()) == "1"
+    assert exchange_for(co, customer: dollar, given: amount.zero()).is_err()
+    assert amount.short(exchange_for(co, customer: dollar, given: big.parse_decimal("1.0850").must()).must()) == "1.085"

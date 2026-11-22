@@ -1,0 +1,340 @@
+# The alerts' states, as Prometheus keeps them: each rule, for each series
+# its key matches, is `inactive`, `pending` while its condition has held for
+# less than the rule's `for`, or `firing`. At each evaluation every rule is
+# judged against the store, and each change of state is answered as a
+# `Transition`, which the monitor writes to its journal, counts, exports and
+# hands to the notification program. A firing alert may be acknowledged (a
+# person has seen it: it stays firing, quiet) or silenced for a span (it is
+# judged, and no transition of it is notified); a resolved alert forgets
+# its acknowledgement.
+#
+# A series a rule judges that has no sample in the window is no condition
+# held: the alert goes back to inactive, except for `age`, which is the
+# figure of a series that stopped.
+
+use <rebel>/maps
+use <rebel>/time
+
+use alerts/rules
+use conf/settings
+use series/store
+use series/window
+
+# Where an alert stands.
+variant Phase
+    # Its condition does not hold.
+    inactive
+    # Its condition holds, for less than the rule's `for`.
+    pending
+    # Its condition has held for the rule's `for`, and holds.
+    firing
+
+# One alert: a rule judged against one series.
+record Alert
+    # Its rule's name.
+    rule: str
+    # The word of the series a `*` stands for, "" where the key holds none.
+    label: str
+    # The series judged.
+    key: str
+    # Where it stands.
+    phase: Phase
+    # When it entered `pending`, in nanoseconds since 1970; what `for`
+    # counts from.
+    active_since: i64
+    # When it entered its phase.
+    since: i64
+    # The figure at the last evaluation; 0 where there was none.
+    value: f64
+    # Whether a person acknowledged it while it fired.
+    acknowledged: bool
+
+# A change of an alert's phase.
+record Transition
+    # When, in nanoseconds since 1970.
+    at: i64
+    # The alert's name, `rule` or `rule[label]`.
+    name: str
+    # Its rule.
+    rule: str
+    # Its phase before.
+    before: Phase
+    # Its phase after.
+    after: Phase
+    # The figure that decided it.
+    value: f64
+    # The rule's severity.
+    severity: str
+    # The rule's summary.
+    summary: str
+    # Whether it falls inside a silence, and so is not notified.
+    silenced: bool
+
+# Every rule and every alert.
+record Alerts
+    # The rules, in the order the configuration writes them.
+    rules: [rules.Rule]
+    # The alerts that have left `inactive` at least once, by name.
+    alerts: {str: Alert}
+    # Every transition, oldest first.
+    history: [Transition]
+    # Until when each silenced rule's transitions are not notified, in
+    # nanoseconds since 1970, by the rule's name.
+    silenced: {str: i64}
+
+# The alerts of `specs`, none active. Fails `invalid` as a rule's condition
+# does, which the configuration's reader has refused first.
+#
+# - `specs`: the rules as the configuration writes them.
+function new_alerts(specs: [settings.RuleSpec]) -> Alerts?
+    made: [rules.Rule] @= []
+
+    for spec in specs
+        made @ made.push(rules.rule_of(spec)?)
+
+    return ok(Alerts(rules: made, alerts: {}, history: [], silenced: {}))
+
+# The name of the alert of `rule` over the series `label` names: the rule's
+# name, or `rule[label]`.
+#
+# - `rule`: the rule's name.
+# - `label`: the word a `*` stands for, "" for none.
+function alert_name(rule: str, label: str) -> str
+    if label == ""
+        return rule
+    return f"{rule}[{label}]"
+
+# The name a phase is shown with.
+#
+# - `p`: the phase.
+function phase_name(p: Phase) -> str
+    return match p
+        .inactive => "inactive"
+        .pending  => "pending"
+        .firing   => "firing"
+
+# Judges every rule against `s` at `now` and answers the transitions, in
+# the order of the rules and, within one, of the series' keys.
+#
+# - `a`: the alerts, moved to their new phases.
+# - `s`: the samples.
+# - `now`: the moment of the evaluation.
+function evaluate(@a: Alerts, s: store.Store lent, now: time.Instant) -> [Transition]
+    changes: [Transition] @= []
+
+    for rule in a.rules
+        judged: {str: bool} @= {}
+
+        for key in store.keys_matching(s, pattern: rule.condition.key)
+            label = store.label_of(key: key, pattern: rule.condition.key)
+            name = alert_name(rule: rule.name, label: label)
+            judged[name] @ true
+            points = store.window_of(s, key: key, now: now, span: rule.condition.span)
+            figure = window.figure_of(rule.condition.figure, points: points, now: now.unix_nanoseconds)
+
+            held = match figure
+                .ok v  => rules.holds(rule.condition.comparison, value: v, threshold: rule.condition.threshold)
+                .err _ => false
+
+            value = figure.default(0.0)
+            alert = a.alerts[name].default(
+                Alert(rule: rule.name, label: label, key: key, phase: .inactive, active_since: 0, since: 0, value: 0.0, acknowledged: false)
+            )
+            moved = judged_alert(alert, rule: rule, held: held, value: value, now: now.unix_nanoseconds)
+            a.alerts[name] @ moved
+
+            if moved.phase != alert.phase
+                changes @ changes.push(
+                    transition_of(rule, alert: alert, moved: moved, name: name, now: now.unix_nanoseconds, quiet_until: a.silenced[rule.name].default(0))
+                )
+
+        # An alert whose series is gone from the store holds no condition.
+        for name in keys(a.alerts)
+            alert = a.alerts[name].must()
+
+            if alert.rule == rule.name && judged[name].is_err() && alert.phase != .inactive
+                moved = judged_alert(alert, rule: rule, held: false, value: 0.0, now: now.unix_nanoseconds)
+                a.alerts[name] @ moved
+                changes @ changes.push(
+                    transition_of(rule, alert: alert, moved: moved, name: name, now: now.unix_nanoseconds, quiet_until: a.silenced[rule.name].default(0))
+                )
+
+    for c in changes
+        a.history @ a.history.push(c)
+
+    return changes
+
+# `alert` judged once: its phase as `held` moves it at `now`.
+#
+# - `alert`: the alert before.
+# - `rule`: its rule.
+# - `held`: whether the condition holds now.
+# - `value`: the figure now.
+# - `now`: the moment, in nanoseconds since 1970.
+function judged_alert(alert: Alert, rule: rules.Rule, held: bool, value: f64, now: i64) -> Alert
+    moved @= alert
+    moved.value @ value
+
+    if !held
+        if alert.phase != .inactive
+            moved.phase @ .inactive
+            moved.since @ now
+            moved.acknowledged @ false
+        return moved
+
+    if alert.phase == .inactive
+        moved.active_since @ now
+        moved.since @ now
+        moved.phase @ .pending
+
+    if moved.phase == .pending && now - moved.active_since >= rule.hold.nanoseconds
+        moved.phase @ .firing
+        moved.since @ now
+    return moved
+
+# The transition from `alert` to `moved`.
+#
+# - `rule`: their rule.
+# - `alert`: the alert before.
+# - `moved`: the alert after.
+# - `name`: its name.
+# - `now`: the moment, in nanoseconds since 1970.
+# - `quiet_until`: when the rule's silence ends, 0 for none.
+function transition_of(rule: rules.Rule, alert: Alert, moved: Alert, name: str, now: i64, quiet_until: i64) -> Transition
+    return Transition(
+        at: now,
+        name: name,
+        rule: rule.name,
+        before: alert.phase,
+        after: moved.phase,
+        value: moved.value,
+        severity: rule.severity,
+        summary: rule.summary,
+        silenced: now < quiet_until
+    )
+
+# The alerts that are not inactive, firing first, each group by name.
+#
+# - `a`: the alerts.
+function active_of(a: Alerts lent) -> [Alert]
+    firing: [Alert] @= []
+    pending: [Alert] @= []
+
+    for name in sort(keys(a.alerts))
+        alert = a.alerts[name].must()
+
+        match alert.phase
+            .firing   => firing @ firing.push(alert)
+            .pending  => pending @ pending.push(alert)
+            .inactive => _ = 0
+
+    for p in pending
+        firing @ firing.push(p)
+
+    return firing
+
+# How many alerts are in `phase`.
+#
+# - `a`: the alerts.
+# - `phase`: the phase counted.
+function count_in(a: Alerts lent, phase: Phase) -> i64
+    n: i64 @= 0
+
+    for alert in maps.values(a.alerts)
+        if alert.phase == phase
+            n @ n + 1
+
+    return n
+
+# Acknowledges the firing alerts named `name`, or of the rule `name`, and
+# answers how many. Fails `not_found` where none fires by that name.
+#
+# - `a`: the alerts.
+# - `name`: an alert's name, `cache-memory` or `service-down[db]`, or a
+#   rule's, which reaches each of its alerts.
+function acknowledge(@a: Alerts, name: str) -> i64?
+    n: i64 @= 0
+
+    for key in keys(a.alerts)
+        alert @= a.alerts[key].must()
+
+        if (key == name || alert.rule == name) && alert.phase == .firing
+            alert.acknowledged @ true
+            a.alerts[key] @ alert
+            n @ n + 1
+
+    if n == 0
+        return fail(code: "not_found", msg: f"no alert named \"{name}\" is firing")
+    return ok(n)
+
+# Silences the rule `name` until `until`: its alerts are judged and shown,
+# and their transitions are not notified. Fails `not_found` where no rule
+# has the name.
+#
+# - `a`: the alerts.
+# - `name`: the rule's name.
+# - `until`: when the silence ends.
+function silence(@a: Alerts, name: str, until: time.Instant) -> ()?
+    found: bool @= false
+
+    for rule in a.rules
+        if rule.name == name
+            found @ true
+
+    if !found
+        return fail(code: "not_found", msg: f"no rule named \"{name}\"")
+    a.silenced[name] @ until.unix_nanoseconds
+    return ok()
+
+# The rules of the tests: a mean over two minutes held for one, and a
+# service down at once.
+function sample_specs() -> [settings.RuleSpec]
+    return [
+        settings.RuleSpec(name: "hot", when: "avg(t, 1m) > 70", hold: time.minutes(1).must(), severity: "critical", summary: "hot")
+        settings.RuleSpec(name: "down", when: "service.*.up < 1", hold: time.nanoseconds(0), severity: "warning", summary: "down")
+    ]
+
+# The moment `minutes` after the tests' start.
+#
+# - `minutes`: whole minutes.
+function minute(minutes: i64) -> time.Instant
+    return time.from_unix(whole_seconds: minutes * 60, extra_nanoseconds: 0).must()
+
+test "evaluate: pending, then firing once the condition has held for its for, then resolved"
+    a @= new_alerts(sample_specs()).must()
+    s @= store.new_store(time.hours(1).must())
+    store.add(@s, key: "t", at: minute(0), value: 75.0)
+    first = evaluate(@a, s: s, now: minute(0))
+    assert first.len() == 1 && first[0].after == .pending && first[0].name == "hot"
+    store.add(@s, key: "t", at: minute(1), value: 76.0)
+    second = evaluate(@a, s: s, now: minute(1))
+    assert second.len() == 1 && second[0].before == .pending && second[0].after == .firing
+    store.add(@s, key: "t", at: minute(2), value: 40.0)
+    store.add(@s, key: "t", at: minute(3), value: 40.0)
+    third = evaluate(@a, s: s, now: minute(3))
+    assert third.len() == 1 && third[0].after == .inactive
+    assert a.history.len() == 3
+
+test "evaluate: one alert for each series a star matches, firing at once with no for"
+    a @= new_alerts(sample_specs()).must()
+    s @= store.new_store(time.hours(1).must())
+    store.add(@s, key: "service.db.up", at: minute(0), value: 0.0)
+    store.add(@s, key: "service.web.up", at: minute(0), value: 1.0)
+    changes = evaluate(@a, s: s, now: minute(0))
+    assert changes.len() == 1 && changes[0].name == "down[db]" && changes[0].after == .firing
+    assert count_in(a, phase: .firing) == 1
+    assert active_of(a)[0].label == "db"
+
+test "acknowledge and silence: a firing alert seen, a rule silenced, a name that is none"
+    a @= new_alerts(sample_specs()).must()
+    s @= store.new_store(time.hours(1).must())
+    store.add(@s, key: "service.db.up", at: minute(0), value: 0.0)
+    _ = evaluate(@a, s: s, now: minute(0))
+    assert acknowledge(@a, name: "down").must() == 1
+    assert a.alerts["down[db]"].must().acknowledged
+    assert acknowledge(@a, name: "hot").is_err()
+    silence(@a, name: "hot", until: minute(10)).must()
+    store.add(@s, key: "t", at: minute(1), value: 90.0)
+    changes = evaluate(@a, s: s, now: minute(1))
+    assert changes[0].name == "hot" && changes[0].silenced
+    assert silence(@a, name: "cold", until: minute(10)).is_err()

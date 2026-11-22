@@ -1,0 +1,111 @@
+# The RF creditor reference of ISO 11649: the reference a payer copies
+# into a credit transfer so that the payment is matched to its invoice by
+# machine. It is `RF`, two check digits, and the creditor's own reference
+# of 1 to 21 letters and digits; its check digits are those of ISO 7064's
+# MOD 97-10, as an IBAN's are (`bank/iban`), so a reference mistyped by the
+# payer is refused by the payer's bank before the money moves.
+#
+# An invoice's reference is made from its number with every character that
+# is no letter or digit taken out: `INV-2026-0001` is `RF...INV20260001`.
+
+use <rebel>/strings
+
+use bank/iban
+
+## Codes
+
+# The code of a reference that is not of the form ISO 11649 writes.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most characters of the creditor's own reference after `RF` and its
+# check digits.
+constant MAX_BASE: i64
+    21
+
+## References
+
+# The RF creditor reference of `base`: `RF`, its check digits, then `base`.
+#
+# - `base`: the creditor's own reference, 1 to `MAX_BASE` digits and ASCII
+#   letters in either case; the letters are written as capitals.
+#
+# Fails `invalid` where `base` is empty, too long, or holds another
+# character.
+function creditor_reference(base: str) -> str?
+    s = strings.to_upper_ascii(base)
+
+    if s == "" || s.len() > MAX_BASE
+        return fail(
+            code: INVALID,
+            msg: f"a creditor's reference holds 1 to {MAX_BASE} letters and digits, and \"{base}\" holds {s.len()}"
+        )
+
+    match iban.remainder_97(s + "RF00")
+        .err _ => return fail(
+            code: INVALID,
+            msg: f"a creditor's reference holds letters and digits alone, and \"{base}\" holds another character"
+        )
+        .ok r =>
+            check = 98 - r
+
+            digits = if check < 10
+                f"0{check}"
+            else
+                f"{check}"
+            return ok("RF" + digits + s)
+
+# The creditor's reference made from a document's number: its letters and
+# digits, in order, every other character dropped.
+#
+# - `number`: the document's number, `INV-2026-0001`.
+#
+# Fails `invalid` where no letter or digit is left, or more than
+# `MAX_BASE` are.
+function reference_of_number(number: str) -> str?
+    kept: [str] @= []
+
+    for i in range(from: 0, to: number.len())
+        c = number[i]
+
+        if c >= '0' && c <= '9' || c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z'
+            kept @ kept.push(number.slice(from: i, to: i + 1))
+
+    return creditor_reference(kept.join(""))
+
+# Whether `s` is an RF creditor reference whose check digits hold.
+#
+# - `s`: the reference as it travels, with no space.
+function is_creditor_reference(s: str) -> bool
+    if s.len() < 5 || s.len() > MAX_BASE + 4 || !strings.has_prefix(s: s, prefix: "RF")
+        return false
+
+    match iban.remainder_97(s.slice(from: 4, to: s.len()) + s.slice(from: 0, to: 4))
+        .ok r  => return r == 1
+        .err _ => return false
+
+# The reference of the EPC guideline's first example, EPC069-12 version 3.0
+# (13 September 2022), read 2026-11-22.
+test "creditor_reference: the EPC guideline's reference made again"
+    assert creditor_reference("539007547034").must() == "RF18539007547034"
+    assert is_creditor_reference("RF18539007547034")
+
+test "creditor_reference: letters, a check below ten, and the refusals"
+    r = creditor_reference("inv20260001").must()
+    assert strings.has_prefix(s: r, prefix: "RF") && strings.has_suffix(s: r, suffix: "INV20260001")
+    assert is_creditor_reference(r)
+    assert creditor_reference("").is_err() && creditor_reference("1234567890123456789012").is_err()
+    assert creditor_reference("INV-1").is_err()
+
+test "reference_of_number: the punctuation of a number dropped"
+    assert reference_of_number("INV-2026-0001").must() == creditor_reference("INV20260001").must()
+    assert reference_of_number("--").is_err()
+
+test "is_creditor_reference: a digit mistyped, and texts that are no reference"
+    assert !is_creditor_reference("RF18539007547035")
+    assert !is_creditor_reference("RF19539007547034")
+    assert !is_creditor_reference("XX18539007547034")
+    assert !is_creditor_reference("RF18")
+    assert !is_creditor_reference("RF18 539007547034")

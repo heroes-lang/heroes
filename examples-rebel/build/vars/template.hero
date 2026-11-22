@@ -1,0 +1,201 @@
+# A template: text that names variables as `$name` or `${name}`, with `$$`
+# for one `$`, as make and ninja write them. This module finds the names a
+# template uses and substitutes their values; which value a name has is
+# `vars/scope`'s.
+#
+# A `$` that starts no name is refused rather than kept, so a mistyped
+# `$(out)` or a `$` meant for a shell is told where it stands instead of
+# reaching a command as text. Substitution is textual and happens once: a
+# value is inserted as it is and never read again for `$`.
+
+use <rebel>/process
+use <rebel>/regex
+use <rebel>/strings
+
+use model/buildfile
+
+# What follows a `$`: a second `$`, a name in braces, or a bare name. The
+# groups are 1 for `$$`, 2 for the braced name and 3 for the bare one.
+constant REFERENCE: str
+    "\\$(?:(\\$)|\\{([A-Za-z_][A-Za-z0-9_]*)\\}|([A-Za-z_][A-Za-z0-9_]*))"
+
+# The compiled pattern of a reference, compiled once by whoever substitutes
+# many templates and lent to every call.
+function pattern() -> regex.Regex
+    # `REFERENCE` is a constant this module's tests compile, so the `must`
+    # holds for every run.
+    return regex.compile(REFERENCE).must()
+
+# One reference in a template: where it stands and what it names.
+record Reference
+    # The byte where its `$` stands.
+    start: i64
+    # The byte after its last character.
+    end: i64
+    # The variable it names; absent for `$$`, which stands for one `$`.
+    name: str?
+
+# The reference whose `$` stands at `at` in `template`.
+#
+# - `template`: the template.
+# - `at`: the byte of a `$` in it.
+# - `re`: `pattern()`.
+#
+# Fails `invalid` where the `$` starts no name, saying where.
+function reference_at(template: str, at: i64, re: regex.Regex lent) -> Reference?
+    m = match regex.match_at(template, re, at)
+        .ok found => found
+        .err _ =>
+            return fail(
+                code: buildfile.INVALID,
+                msg: f"the `$` at byte {at} of \"{template}\" starts no variable: write `$name`, `${{name}}`, or `$$` for a `$`"
+            )
+
+    if regex.group(m, 1).is_err() == false
+        return ok(
+            Reference(start: m.start, end: m.end, name: fail(code: buildfile.NOT_FOUND, msg: "`$$` names no variable"))
+        )
+
+    braced = regex.group(m, 2)
+
+    match braced
+        .ok name => return ok(Reference(start: m.start, end: m.end, name: ok(name)))
+        .err _   => return ok(Reference(start: m.start, end: m.end, name: regex.group(m, 3)))
+
+# Every reference of `template`, in order.
+#
+# - `template`: the template.
+# - `re`: `pattern()`.
+#
+# Fails `invalid` where a `$` starts no name.
+function references_in(template: str, re: regex.Regex lent) -> [Reference]?
+    found: [Reference] @= []
+    at @= 0
+
+    while at < template.len()
+        dollar = strings.index_of_from(s: template, substr: "$", from: at)
+
+        match dollar
+            .ok d =>
+                r = reference_at(template, at: d, re: re)?
+                found @ found.push(r)
+                at @ r.end
+            .err _ => at @ template.len()
+
+    return ok(found)
+
+# The names `template` uses, each once, in the order they first appear.
+#
+# - `template`: the template.
+# - `re`: `pattern()`.
+#
+# Fails `invalid` where a `$` starts no name.
+function names_in(template: str, re: regex.Regex lent) -> [str]?
+    seen: {str: bool} @= {}
+    names: [str] @= []
+
+    for r in references_in(template, re: re)?
+        match r.name
+            .ok name =>
+                if seen[name].is_err()
+                    seen[name] @ true
+                    names @ names.push(name)
+            .err _ => _ = 0
+
+    return ok(names)
+
+# `template` with every reference replaced by its variable's value and every
+# `$$` by `$`.
+#
+# - `template`: the template.
+# - `values`: every variable the template may name, name to value.
+# - `re`: `pattern()`.
+#
+# Fails `invalid` where a `$` starts no name, and `not_found` where a name
+# has no value in `values`.
+function substitute(template: str, values: {str: str} lent, re: regex.Regex lent) -> str?
+    pieces: [str] @= []
+    at @= 0
+
+    for r in references_in(template, re: re)?
+        pieces @ pieces.push(template.slice(from: at, to: r.start))
+
+        match r.name
+            .ok name =>
+                match values[name]
+                    .ok v => pieces @ pieces.push(v)
+                    .err _ =>
+                        return fail(code: buildfile.NOT_FOUND, msg: f"no variable named `${name}` in \"{template}\"")
+            .err _ => pieces @ pieces.push("$")
+
+        at @ r.end
+
+    pieces @ pieces.push(template.slice(from: at, to: template.len()))
+    return ok(pieces.join(""))
+
+# `text` as a template that stands for itself: every `$` doubled.
+#
+# - `text`: any text, such as a value given on the command line.
+function literal(text: str) -> str
+    return strings.replace_all(s: text, old: "$", new: "$$")
+
+# `words` as one text a POSIX shell's quoting reads back as those words:
+# each quoted where it must be, joined by one space. It is how `$in` and a
+# TOML array of a build file become a template's text, so a path holding a
+# space stays one word of the command.
+#
+# - `words`: the words, in order; empty gives the empty text.
+function quoted(words: [str]) -> str
+    parts: [str] @= []
+
+    for w in words
+        parts @ parts.push(process.quote(w))
+
+    return parts.join(" ")
+
+test "pattern: the constant compiles"
+    assert regex.group_count(pattern()) == 3
+
+test "names_in: bare, braced, doubled, repeated and none"
+    re = pattern()
+    assert names_in("$mill --helper compile $in $out.d ${flags}x $$HOME $in", re: re).must() == ["mill", "in", "out", "flags"]
+    assert names_in("", re: re).must() == []
+    assert names_in("no variables at all", re: re).must() == []
+
+test "names_in: a `$` that starts no name is refused, wherever it stands"
+    re = pattern()
+    assert names_in("cc $(out)", re: re).is_err()
+    assert names_in("price $", re: re).is_err()
+    assert names_in("${unclosed", re: re).is_err()
+    assert names_in("$1", re: re).is_err()
+
+test "substitute: values inserted once, never read again for `$`"
+    re = pattern()
+    values = {"in": "a.src", "out": "out/a.obj", "x": "$in"}
+    assert substitute("cc $in -o ${out}.tmp", values: values, re: re).must() == "cc a.src -o out/a.obj.tmp"
+    assert substitute("echo $x and $$x", values: values, re: re).must() == "echo $in and $x"
+    assert substitute("", values: values, re: re).must() == ""
+
+test "substitute: a name with no value is not_found, naming it"
+    re = pattern()
+    values: {str: str} = {}
+
+    match substitute("cc $cflags", values: values, re: re)
+        .ok _ => assert false
+        .err e =>
+            assert e.code == buildfile.NOT_FOUND
+            assert strings.contains(s: e.msg, substr: "$cflags")
+
+test "substitute: text of more than one byte around a reference"
+    re = pattern()
+    assert substitute("café $n über", values: {"n": "日本"}, re: re).must() == "café 日本 über"
+
+test "literal: every `$` doubled, so substitution gives the text back"
+    re = pattern()
+    values: {str: str} = {}
+    assert substitute(literal("a$b $$c $"), values: values, re: re).must() == "a$b $$c $"
+
+test "quoted: plain words stand bare, a space or a quote is quoted, none is empty"
+    assert quoted(["src/a.src", "my file.src", "it's"]) == "src/a.src 'my file.src' 'it'\"'\"'s'"
+    assert quoted([]) == ""
+    assert strings.split_shell(quoted(["a b", "", "c"])).must() == ["a b", "", "c"]

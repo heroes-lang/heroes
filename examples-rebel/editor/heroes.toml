@@ -1,0 +1,24 @@
+[dependencies.rebel]
+path = "../../packages/rebel/0.1.0/files"
+packages = [
+    "bytes",
+    "config",
+    "containers/deque",
+    "containers/ordered",
+    "diff",
+    "flags",
+    "fs",
+    "fs/watch",
+    "json",
+    "numbers",
+    "os",
+    "path",
+    "regex",
+    "strings",
+    "term",
+    "time",
+    "tui",
+    "unicode",
+    "unicode/encodings",
+    "unicode/segment",
+]

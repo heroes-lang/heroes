@@ -1,0 +1,264 @@
+# The folder the demo backs up, written under `build/backup-demo/source`
+# with contents a generator draws from fixed seeds, and permission bits
+# and times set to fixed instants, so every run of the demo backs up the
+# same bytes and prints the same account. It holds what a backup meets:
+# text in Markdown and plain, a copy of a file, a name of more than one
+# byte per character, binary records, a log compressed already by gzip,
+# an executable script, an empty file, a link, and two paths its
+# `.backupignore` leaves out.
+#
+# Two rounds of edits come between the runs, as a day's work would: a
+# paragraph inserted into the middle of a document, a few records of the
+# binary rewritten in place, a draft added; then the draft removed, notes
+# appended, and the script's permission narrowed.
+
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/time
+
+## Bounds
+
+# The words the text is drawn from.
+constant WORDS: str
+    "the backup ran every night and kept each folder as it stood while the disk filled slowly with photos letters invoices drafts and the long notes of a project that changed its mind twice about where the river crossing should go so the morning report listed what had moved what had stayed and what was new since the last run"
+
+# The records of the binary file.
+constant RECORDS: i64
+    1536
+
+## Drawing
+
+# The next value of the generator after `x`: a linear congruential
+# generator modulo 2^31, the same on every machine.
+#
+# - `x`: the generator's state, 0 to 2^31 - 1.
+function next(x: i64) -> i64
+    return (x * 1_103_515_245 + 12_345) % 2_147_483_648
+
+# `paragraphs` paragraphs of text drawn from `seed`, lines of at most 72
+# characters, a blank line between paragraphs, a line feed at the end.
+#
+# - `seed`: the generator's start.
+# - `paragraphs`: how many.
+function text(seed: i64, paragraphs: i64) -> str
+    words = WORDS.split_words()
+    x @= seed
+    out: [str] @= []
+
+    for p in range(from: 0, to: paragraphs)
+        x @ next(x)
+        count = 30 + x / 65_536 % 50
+        line: [str] @= []
+        width @= 0
+
+        for _ in range(from: 0, to: count)
+            x @ next(x)
+            w = words[x / 65_536 % words.len()]
+
+            if width + w.len() + 1 > 72
+                out @ out.push(line.join(" "))
+                line @ []
+                width @ 0
+            line @ line.push(w)
+            width @ width + w.len() + 1
+
+        out @ out.push(line.join(" "))
+
+        if p < paragraphs - 1
+            out @ out.push("")
+
+    return out.join("\n") + "\n"
+
+# The words of `s`, split at single spaces.
+#
+# - `s`: the text.
+function split_words(s: str) -> [str]
+    out: [str] @= []
+    word: [str] @= []
+
+    for c in s.chars()
+        if c == " "
+            out @ out.push(word.join(""))
+            word @ []
+        else
+            word @ word.push(c)
+
+    out @ out.push(word.join(""))
+    return out
+
+# `count` records of 32 bytes from record `first`: a counter, a sensor's
+# number, a reading drawn from `seed`, and padding, as a logger writes
+# them; compressible, as such files are.
+#
+# - `first`: the first record's number.
+# - `count`: how many.
+# - `seed`: the generator's start.
+function records(first: i64, count: i64, seed: i64) -> [u8]
+    out: [u8] @= []
+    x @= seed
+
+    for i in range(from: first, to: first + count)
+        x @ next(x)
+        bytes.push_all(to: @out, from: bytes.encode_i64_le(i))
+        bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(i % 8).must()))
+        bytes.push_all(to: @out, from: bytes.encode_i32_le(to_i32(x / 65_536 % 2000).must()))
+        bytes.push_all(to: @out, from: bytes.repeated([0x2d], n: 16))
+
+    return out
+
+## Writing
+
+# The instant `minutes` past 2026-02-20 10:00 UTC, which every path of the
+# demo is dated from.
+#
+# - `minutes`: minutes past that instant.
+function at_minute(minutes: i64) -> time.Instant
+    return time.add(time.parse("2026-02-20T10:00:00Z", layout: .rfc3339).must(), d: time.minutes(minutes).must()).must()
+
+# Writes `data` at `rel` below `root`, with `mode` and the time `minutes`
+# past the demo's first instant.
+#
+# - `root`: the folder.
+# - `rel`: the path below it, parts joined by `/`.
+# - `data`: the bytes.
+# - `mode`: the permission bits.
+# - `minutes`: its time, in minutes past 2026-02-20 10:00 UTC.
+#
+# Fails as `fs` fails.
+function put(root: str, rel: str, data: [u8], mode: i64, minutes: i64) -> ()?
+    file = path.join_all([root, path.from_slash(rel)])
+    fs.make_dir_all(path.parent(file))?
+    fs.write_bytes(file, data: data)?
+    fs.set_permission(file, permission: mode)?
+    when = at_minute(minutes)
+    return fs.set_times(file, written: when, read: when)
+
+# Sets the bits and the time of every folder of the demo, deepest first,
+# since writing into a folder changes its time.
+#
+# - `root`: the folder.
+# - `minutes`: their time, in minutes past 2026-02-20 10:00 UTC.
+#
+# Fails as `fs` fails.
+function date_folders(root: str, minutes: i64) -> ()?
+    for rel in ["cache", "data", "bin", "docs", ""]
+        dir = if rel == ""
+            root
+        else
+            path.join_all([root, rel])
+
+        fs.set_permission(dir, permission: 0o755)?
+        when = at_minute(minutes)
+        fs.set_times(dir, written: when, read: when)?
+
+    return ok()
+
+# The guide as the first run sees it: thirty paragraphs.
+function guide_first() -> str
+    return text(seed: 2, paragraphs: 30)
+
+# Writes the folder as it stands before the first run, under `root`,
+# which is removed first.
+#
+# - `root`: the folder.
+#
+# Fails as `fs` and `compress` fail.
+function write_first(root: str) -> ()?
+    if fs.exists(root)?
+        fs.remove_all(root)?
+    fs.make_dir_all(root)?
+    put(root: root, rel: ".backupignore", data: bytes.from_text("cache/\n*.tmp\n"), mode: 0o644, minutes: 1)?
+    put(root: root, rel: "README.md", data: bytes.from_text("# Field notes\n\n" + text(seed: 1, paragraphs: 3)), mode: 0o644, minutes: 2)?
+    guide = bytes.from_text(guide_first())
+    put(root: root, rel: "docs/guide.md", data: guide, mode: 0o644, minutes: 3)?
+    put(root: root, rel: "docs/guide-copy.md", data: guide, mode: 0o644, minutes: 4)?
+    put(root: root, rel: "docs/notes.txt", data: bytes.from_text(text(seed: 3, paragraphs: 12)), mode: 0o644, minutes: 5)?
+    put(root: root, rel: "docs/résumé.txt", data: bytes.from_text(text(seed: 4, paragraphs: 2)), mode: 0o600, minutes: 6)?
+    put(root: root, rel: "data/telemetry.bin", data: records(first: 0, count: RECORDS, seed: 9), mode: 0o644, minutes: 7)?
+    logs = compress.compress(bytes.from_text(text(seed: 5, paragraphs: 40)), compress.default_options(.gzip))?
+    put(root: root, rel: "data/old-logs.gz", data: logs, mode: 0o644, minutes: 8)?
+    put(root: root, rel: "bin/sync.sh", data: bytes.from_text("#!/bin/sh\n# Pushes the night's backup offsite.\nset -eu\nbackup copy --repo \"$BACKUP_REPOSITORY\" --to \"$OFFSITE\"\n"), mode: 0o755, minutes: 9)?
+    put(root: root, rel: "empty.txt", data: [], mode: 0o644, minutes: 10)?
+    put(root: root, rel: "cache/thumbs.db", data: records(first: 0, count: 64, seed: 3), mode: 0o644, minutes: 11)?
+    put(root: root, rel: "scratch.tmp", data: bytes.from_text("scratch\n"), mode: 0o644, minutes: 12)?
+    link = path.join_all([root, "latest"])
+    fs.symlink(target: "docs/guide.md", name: link)?
+    fs.set_link_times(link, written: at_minute(13), read: at_minute(13))?
+    return date_folders(root, minutes: 20)
+
+# The first round of edits: a paragraph inserted into the middle of the
+# guide, ten records of the telemetry rewritten in place, a draft added.
+#
+# - `root`: the folder.
+#
+# Fails as `fs` fails.
+function edit_second(root: str) -> ()?
+    old = guide_first()
+    middle = old.len() / 2
+    cut @= middle
+
+    while cut < old.len() && old[cut] != '\n'
+        cut @ cut + 1
+
+    inserted = old.slice(from: 0, to: cut + 1) + "\n" + text(seed: 6, paragraphs: 1) + old.slice(from: cut + 1, to: old.len())
+    put(root: root, rel: "docs/guide.md", data: bytes.from_text(inserted), mode: 0o644, minutes: 1500)?
+    telemetry @= records(first: 0, count: RECORDS, seed: 9)
+    changed = records(first: 700, count: 10, seed: 77)
+
+    for i in range(from: 0, to: changed.len())
+        telemetry[700 * 32 + i] @ changed[i]
+
+    put(root: root, rel: "data/telemetry.bin", data: telemetry, mode: 0o644, minutes: 1501)?
+    put(root: root, rel: "docs/draft.txt", data: bytes.from_text(text(seed: 7, paragraphs: 10)), mode: 0o644, minutes: 1502)?
+    return date_folders(root, minutes: 1510)
+
+# The second round: the draft removed, a paragraph appended to the notes,
+# the script made readable by its owner alone.
+#
+# - `root`: the folder.
+#
+# Fails as `fs` fails.
+function edit_third(root: str) -> ()?
+    fs.remove(path.join_all([root, "docs", "draft.txt"]))?
+    notes = text(seed: 3, paragraphs: 12) + "\n" + text(seed: 8, paragraphs: 1)
+    put(root: root, rel: "docs/notes.txt", data: bytes.from_text(notes), mode: 0o644, minutes: 2000)?
+    fs.set_permission(path.join_all([root, "bin", "sync.sh"]), permission: 0o700)?
+    return date_folders(root, minutes: 2010)
+
+# The SHA-256 of the file at `file`, its first sixteen digits.
+#
+# - `file`: the path.
+#
+# Fails as `fs.read_bytes` fails.
+function digest_of(file: str) -> str?
+    return ok(bytes.format_hex(crypto.sha256(fs.read_bytes(file)?)).slice(from: 0, to: 16))
+
+test "text: the same seed draws the same text, every line within 72 characters"
+    t = text(seed: 2, paragraphs: 5)
+    assert t == text(seed: 2, paragraphs: 5) && t != text(seed: 3, paragraphs: 5)
+
+    for line in t.split_lines()
+        assert line.len() <= 72
+
+# The lines of `s`.
+#
+# - `s`: the text.
+function split_lines(s: str) -> [str]
+    out: [str] @= []
+    line: [str] @= []
+
+    for c in s.chars()
+        if c == "\n"
+            out @ out.push(line.join(""))
+            line @ []
+        else
+            line @ line.push(c)
+
+    return out
+
+test "records: 32 bytes a record, the same every time"
+    assert records(first: 0, count: 3, seed: 1).len() == 96
+    assert records(first: 5, count: 2, seed: 1) == records(first: 5, count: 2, seed: 1)

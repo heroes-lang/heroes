@@ -1,0 +1,223 @@
+vcs demo: two people, four branches, every kind of merge, one pack
+
+== a project and its first commit
+$ vcs init
+Initialized empty repository in .vcs/
+  (wrote README.md)
+  (wrote src/greet.txt)
+  (wrote .vcsignore)
+  (wrote src/notes.log)
+$ vcs status
+On branch main
+
+No commits yet
+
+Untracked files:
+    .vcsignore
+    README.md
+    src/
+
+nothing added to commit but untracked files present
+$ vcs add .
+add '.vcsignore'
+add 'README.md'
+add 'src/greet.txt'
+$ vcs status --short
+A  .vcsignore
+A  README.md
+A  src/greet.txt
+$ vcs commit -m "Start the greeter"
+[main (root-commit) 9d65bba] Start the greeter
+ 3 files changed, 7 insertions(+)
+
+== a feature branch, and main moving on
+$ vcs branch feature
+$ vcs checkout feature
+Switched to branch 'feature'
+  (wrote src/greet.txt)
+  (wrote src/farewell.txt)
+$ vcs diff
+diff --git a/src/greet.txt b/src/greet.txt
+index 623f471..5f0eaf9 100644
+--- a/src/greet.txt
++++ b/src/greet.txt
+@@ -1,3 +1,4 @@
+ Hello, world!
+ How are you today?
+ Have a good day.
++See you tomorrow.
+$ vcs add src
+add 'src/farewell.txt'
+add 'src/greet.txt'
+$ vcs commit -m "Say goodbye too"
+[feature 9f32683] Say goodbye too
+ 2 files changed, 2 insertions(+)
+$ vcs checkout main
+Switched to branch 'main'
+  (wrote README.md)
+$ vcs add README.md
+add 'README.md'
+$ vcs commit -m "Describe the greeter"
+[main 770c46d] Describe the greeter
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ vcs log --graph --all
+* 9f32683 (feature) Say goodbye too
+| * 770c46d (HEAD -> main) Describe the greeter
+|/
+* 9d65bba Start the greeter
+
+== a clean three-way merge
+$ vcs merge feature
+Merge made by the three-way strategy: bbf0d8e
+ 2 files changed, 2 insertions(+)
+$ vcs log --graph
+*   bbf0d8e (HEAD -> main) Merge branch 'feature'
+|\
+* | 770c46d Describe the greeter
+| * 9f32683 (feature) Say goodbye too
+|/
+* 9d65bba Start the greeter
+
+== a merge with a conflict, resolved
+$ vcs checkout -b polish
+Switched to a new branch 'polish'
+  (wrote src/greet.txt)
+$ vcs add src/greet.txt
+add 'src/greet.txt'
+$ vcs commit -m "Greet everyone"
+[polish 961a62c] Greet everyone
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ vcs checkout main
+Switched to branch 'main'
+  (wrote src/greet.txt)
+$ vcs add src/greet.txt
+add 'src/greet.txt'
+$ vcs commit -m "Greet friends"
+[main b590745] Greet friends
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+$ vcs merge polish
+CONFLICT (content): Merge conflict in src/greet.txt
+Automatic merge failed; fix conflicts and then commit the result.
+$ vcs status
+On branch main
+You have unmerged paths.
+
+Unmerged paths:
+    both modified:   src/greet.txt
+$ cat src/greet.txt
+<<<<<<< HEAD
+Hello, friends!
+=======
+Hello, everyone!
+>>>>>>> polish
+How are you today?
+Have a good day.
+See you tomorrow.
+$ vcs commit
+vcs commit: invalid: unmerged paths must be added first: src/greet.txt
+  (wrote src/greet.txt)
+$ vcs add src/greet.txt
+add 'src/greet.txt'
+$ vcs commit
+[main 9d78278] Merge branch 'polish'
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+== a fast-forward, and a release tagged
+$ vcs checkout -b docs
+Switched to a new branch 'docs'
+  (wrote CHANGES.md)
+$ vcs add CHANGES.md
+add 'CHANGES.md'
+$ vcs commit -m "Keep a changelog"
+[docs 091d092] Keep a changelog
+ 1 file changed, 5 insertions(+)
+$ vcs checkout main
+Switched to branch 'main'
+$ vcs merge docs
+Updating 9d78278..091d092
+Fast-forward
+ 1 file changed, 5 insertions(+)
+$ vcs tag -m "The first release" v1.0
+$ vcs branch
+  docs
+  feature
+* main
+  polish
+$ vcs branch -d feature
+Deleted branch feature (was 9f32683).
+$ vcs log -n 2
+commit 091d0929b792754cb6c3e4ff11d1a5c4c8f9ad65 (HEAD -> main, tag: v1.0, docs)
+Author: Grace Hopper <grace@example.org>
+Date:   Sat Nov 21 10:09:00 2026 +0100
+
+    Keep a changelog
+
+commit 9d782782b1fb8869e4cb22431a18dde656202a6a
+Merge: b590745 961a62c
+Author: Ada Lovelace <ada@example.org>
+Date:   Sat Nov 21 10:08:00 2026 +0100
+
+    Merge branch 'polish'
+$ vcs log --graph
+* 091d092 (HEAD -> main, tag: v1.0, docs) Keep a changelog
+*   9d78278 Merge branch 'polish'
+|\
+* | b590745 Greet friends
+| * 961a62c (polish) Greet everyone
+|/
+*   bbf0d8e Merge branch 'feature'
+|\
+* | 770c46d Describe the greeter
+| * 9f32683 Say goodbye too
+|/
+* 9d65bba Start the greeter
+
+== the objects are git's
+git hash-object: agrees on 4 objects, a blob, a tree, a commit, a tag
+
+== packed, checked, and read back
+$ vcs gc
+Packed 32 objects (15 as deltas) into pack-4165996ec8ab...
+Removed 32 loose objects and 0 old packs; 0 unreachable objects left loose
+$ vcs fsck
+Checked 32 objects, in 1 pack and loose files: every hash agrees with its content and every reference is there
+$ vcs log --oneline --all
+091d092 (HEAD -> main, tag: v1.0, docs) Keep a changelog
+9d78278 Merge branch 'polish'
+b590745 Greet friends
+961a62c (polish) Greet everyone
+bbf0d8e Merge branch 'feature'
+770c46d Describe the greeter
+9f32683 Say goodbye too
+9d65bba Start the greeter
+$ vcs diff HEAD~2 HEAD~1
+diff --git a/src/greet.txt b/src/greet.txt
+index 6fe5e67..3a086fa 100644
+--- a/src/greet.txt
++++ b/src/greet.txt
+@@ -1,4 +1,4 @@
+-Hello, friends!
++Hello, friends and everyone!
+ How are you today?
+ Have a good day.
+ See you tomorrow.
+$ vcs cat-file -p v1.0
+object 091d0929b792754cb6c3e4ff11d1a5c4c8f9ad65
+type commit
+tag v1.0
+tagger Ada Lovelace <ada@example.org> 1795252260 +0100
+
+The first release
+
+== a damaged object found
+  (moved the loose object 2dd8f60 to the name 3e93e06)
+$ vcs fsck
+vcs fsck: invalid: error: 3e93e06750101655545e1d4167041fcd346765a0: the loose object 3e93e06750101655545e1d4167041fcd346765a0 holds the content of 2dd8f602c885254e76f0ef33b98bae1769581848
+Checked 33 objects, in 1 pack and loose files: 1 problem found
+  (removed 3e93e06)
+$ vcs status
+On branch main
+
+nothing to commit, working tree clean
+
+demo folder removed

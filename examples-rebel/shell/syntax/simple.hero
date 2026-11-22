@@ -1,0 +1,224 @@
+# Simple commands and redirections of the shell's grammar (XCU 2.9.1 and
+# 2.7): the assignments before a command's name, its words, and its
+# redirections in any order among them, a descriptor's number written right
+# before its operator, a here-document's delimiter registered with the lexer
+# so its body is read after the line's end.
+
+use syntax/ast
+use syntax/lexer
+use syntax/parser
+use syntax/words
+
+# Whether `op` is a redirection's operator.
+#
+# - `op`: the operator.
+function is_redirection(op: str) -> bool
+    return op == "<" || op == ">" || op == ">>" || op == ">|" || op == "<>" || op == ">&" || op == "<&" || op == "<<" || op == "<<-"
+
+# Whether `raw`, a word as written, is an assignment: a name, then `=`.
+#
+# - `raw`: the word's source text.
+function is_assignment(raw: str) -> bool
+    i @= 0
+
+    while i < raw.len() && raw[i] != '='
+        i @ i + 1
+
+    return i > 0 && i < raw.len() && words.is_name(raw.slice(from: 0, to: i))
+
+# The assignment `w` writes, its name and the `=` taken out of its first
+# part.
+#
+# - `w`: the word, which `is_assignment` accepted.
+# - `raw`: its source text.
+function assignment_of(w: ast.Word, raw: str) -> ast.Assignment
+    name = raw.slice(from: 0, to: name_length(raw))
+    value: [ast.Part] @= []
+    index @= 0
+
+    for p in w.parts
+        if index == 0
+            match p
+                .literal l =>
+                    rest = l.text.slice(from: name.len() + 1, to: l.text.len())
+
+                    if rest != ""
+                        value @ value.push(.literal(text: rest))
+                .quoted _ | .param _ | .length _ | .command _ | .arith _ | .tilde _ => value @ value.push(p)
+        else
+            value @ value.push(p)
+        index @ index + 1
+
+    return ast.Assignment(name: name, value: ast.Word(parts: value, at: w.at), at: w.at)
+
+# How many bytes the name before the first `=` of `raw` takes.
+#
+# - `raw`: the word's source text.
+function name_length(raw: str) -> i64
+    i @= 0
+
+    while i < raw.len() && raw[i] != '='
+        i @ i + 1
+
+    return i
+
+# A simple command: its assignments, words and redirections, in any order
+# but that assignments come before the first word.
+#
+# - `lx`: the lexer.
+# - `first`: the first word, already taken, or none.
+function parse_simple(@lx: lexer.Lexer, first: [ast.Word]) -> ast.Command?
+    start = lexer.peek(@lx)?
+    assignments: [ast.Assignment] @= []
+    found: [ast.Word] @= first
+    redirects: [ast.Redirect] @= []
+
+    at = if first.len() > 0
+        first[0].at
+    else
+        lexer.place(lx, at: start.start)
+
+    while true
+        t = lexer.peek(@lx)?
+
+        match t.token
+            .number n =>
+                _ = lexer.take(@lx)?
+                op = lexer.take(@lx)?
+
+                match op.token
+                    .op o => redirects @ redirects.push(parse_redirect(@lx, fd: n.fd, op: o.text, at: op.start)?)
+                    .word _ | .number _ | .newline | .end => return lexer.mistake(
+                        @lx,
+                        at: op.start,
+                        message: "a redirection's operator was expected after the descriptor"
+                    )
+            .op o =>
+                if !is_redirection(o.text)
+                    return finish_simple(@lx, assignments: assignments, found: found, redirects: redirects, at: at)
+
+                _ = lexer.take(@lx)?
+                redirects @ redirects.push(parse_redirect(@lx, fd: default_fd(o.text), op: o.text, at: t.start)?)
+            .word w =>
+                _ = lexer.take(@lx)?
+
+                if found.len() == 0 && is_assignment(w.raw)
+                    assignments @ assignments.push(assignment_of(w.word, raw: w.raw))
+                else
+                    found @ found.push(w.word)
+            .newline | .end => return finish_simple(
+                @lx,
+                assignments: assignments,
+                found: found,
+                redirects: redirects,
+                at: at
+            )
+
+    return finish_simple(@lx, assignments: assignments, found: found, redirects: redirects, at: at)
+
+# The simple command of what was read, which must hold something.
+#
+# - `lx`: the lexer.
+# - `assignments`: the assignments read.
+# - `found`: the words read.
+# - `redirects`: the redirections read.
+# - `at`: where the command began.
+function finish_simple(@lx: lexer.Lexer, assignments: [ast.Assignment], found: [ast.Word], redirects: [ast.Redirect], at: ast.Place) -> ast.Command?
+    if assignments.len() == 0 && found.len() == 0 && redirects.len() == 0
+        t = lexer.peek(@lx)?
+        return lexer.mistake(@lx, at: t.start, message: f"a command was expected, and {parser.describe(t)} stands")
+
+    return ok(.simple(assignments: assignments, words: found, redirects: redirects, at: at))
+
+# The descriptor an operator redirects when no number is written before it.
+#
+# - `op`: the operator.
+function default_fd(op: str) -> i64
+    if op == "<" || op == "<>" || op == "<&" || op == "<<" || op == "<<-"
+        return 0
+
+    return 1
+
+# The redirection whose operator was just taken: its word, or its
+# here-document registered for the next line end.
+#
+# - `lx`: the lexer.
+# - `fd`: the descriptor redirected.
+# - `op`: the operator.
+# - `at`: where the operator stood.
+function parse_redirect(@lx: lexer.Lexer, fd: i64, op: str, at: i64) -> ast.Redirect?
+    if fd > 2
+        return lexer.mistake(
+            @lx,
+            at: at,
+            message: f"the descriptor {fd} is not one this shell redirects: 0, 1 and 2 are"
+        )
+
+    t = lexer.take(@lx)?
+
+    match t.token
+        .word w =>
+            kind: ast.RedirectOp = match op
+                "<"        => .input
+                ">" | ">|" => .output
+                ">>"       => .append
+                "<>"       => .read_write
+                ">&"       => .dup_output
+                "<&"       => .dup_input
+                _          => .here_doc
+
+            doc = if kind == .here_doc
+                lexer.add_pending(@lx, delimiter: w.word, raw: w.raw, strip_tabs: op == "<<-")?
+            else
+                -1
+
+            return ok(ast.Redirect(fd: fd, op: kind, target: w.word, heredoc: doc, at: lexer.place(lx, at: at)))
+        .end => return lexer.unfinished(@lx, at: at, message: f"the redirection `{op}` needs a word after it")
+        .number _ | .op _ | .newline => return lexer.mistake(
+            @lx,
+            at: t.start,
+            message: f"the redirection `{op}` needs a word after it, and {parser.describe(t)} stands"
+        )
+
+# The redirections after a compound command.
+#
+# - `lx`: the lexer.
+function parse_redirects(@lx: lexer.Lexer) -> [ast.Redirect]?
+    found: [ast.Redirect] @= []
+
+    while true
+        t = lexer.peek(@lx)?
+
+        match t.token
+            .number n =>
+                _ = lexer.take(@lx)?
+                op = lexer.take(@lx)?
+
+                match op.token
+                    .op o => found @ found.push(parse_redirect(@lx, fd: n.fd, op: o.text, at: op.start)?)
+                    .word _ | .number _ | .newline | .end => return lexer.mistake(
+                        @lx,
+                        at: op.start,
+                        message: "a redirection's operator was expected after the descriptor"
+                    )
+            .op o =>
+                if !is_redirection(o.text)
+                    return ok(found)
+                _ = lexer.take(@lx)?
+                found @ found.push(parse_redirect(@lx, fd: default_fd(o.text), op: o.text, at: t.start)?)
+            .word _ | .newline | .end => return ok(found)
+
+    return ok(found)
+
+test "parse_all: assignments, redirections and a descriptor"
+    items = parser.items_of("X=1 Y=$Z cmd <in >>out 2>&1\n")
+
+    match items[0].chain.first.stages[0]
+        .simple s =>
+            assert s.assignments.len() == 2 && s.assignments[0].name == "X"
+            assert s.words.len() == 1 && s.redirects.len() == 3
+            assert s.redirects[2].fd == 2 && s.redirects[2].op == .dup_output
+        .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ | .define _ => assert false
+
+test "is_assignment: a name and an equals sign"
+    assert is_assignment("a=1") && is_assignment("_x=") && !is_assignment("=1") && !is_assignment("1a=2") && !is_assignment("ab")

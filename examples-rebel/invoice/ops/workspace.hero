@@ -1,0 +1,237 @@
+# What the invoicing tool does, each a function the command line and the
+# demo both call: the books opened from a configuration, an invoice issued
+# and a credit note made with their files written at once, a document
+# mailed, a year's CSV exported, its totals reported and its archive made
+# and checked.
+#
+# A document's files are written in the same command that issues it, so
+# the books and the folder of documents agree: what a customer was sent is
+# what is kept, and the year's archive takes the files as they were kept
+# rather than drawing them again with a layout changed since.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/image
+use <rebel>/image/png
+use <rebel>/mail/smtp
+use <rebel>/path
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use billing/credit
+use billing/issue
+use books/accounts
+use books/archive
+use conf/settings
+use l10n/catalogs
+use mailing/message
+use model/documents
+use render/files
+use render/layout
+use store/database
+use store/ledger
+
+## Codes
+
+# The code of a logo that is not one the documents can carry.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The largest logo, in pixels a side: a logo is drawn a few centimetres
+# wide, and a larger one only makes every PDF heavier.
+constant MAX_LOGO_SIDE: i64
+    2000
+
+## The workspace
+
+# The books open, with what every document is drawn with.
+record Workspace
+    # The configuration.
+    settings: settings.Settings
+    # The books.
+    db: sqlite.Db
+    # The company, the layout and the logo.
+    kit: files.Kit
+
+# The books the configuration at `config` names, opened, its data folder and
+# database made where they are new.
+#
+# - `config`: the configuration file.
+# - `env`: the environment's variables the configuration is read under.
+#
+# The books are the caller's to close with `close`. Fails as
+# `settings.load`, `database.open_books` and `files.kit_of` fail, and as
+# `load_logo` fails on the company's logo.
+function open(config: str, env: {str: str}) -> Workspace?
+    s = settings.load(config, env: env)?
+    fs.make_dir_all(s.data_dir)?
+
+    layout_text = if s.layout_file == ""
+        layout.default_layout()
+    else
+        read_file(path: s.layout_file)?
+    logo = load_logo(s.logo_file)?
+    kit = files.kit_of(s.company, layout_text: layout_text, logo: logo)?
+    db = database.open_books(path.join_all([s.data_dir, "books.db"]))?
+    return ok(Workspace(settings: s, db: db, kit: kit))
+
+# Closes the books.
+#
+# - `ws`: the workspace.
+#
+# Fails as `sqlite.close` fails.
+function close(@ws: Workspace) -> ()?
+    return sqlite.close(@ws.db)
+
+# The company's logo, a PNG file's bytes, checked to decode; [] for none.
+#
+# - `file`: the logo's path, "" for none.
+#
+# Fails as `fs.read_bytes` and `png.decode_image` fail, and `invalid` where
+# a side passes `MAX_LOGO_SIDE`, the message naming the file.
+function load_logo(file: str) -> [u8]?
+    if file == ""
+        return ok([])
+    data = fs.read_bytes(file)?
+
+    match png.decode_image(data, limits: image.default_limits())
+        .err e => return fail(code: e.code, msg: f"the logo {file}: {e.msg}")
+        .ok img =>
+            if img.width > MAX_LOGO_SIDE || img.height > MAX_LOGO_SIDE
+                return fail(
+                    code: INVALID,
+                    msg: f"the logo {file} is {img.width} by {img.height} pixels, past {MAX_LOGO_SIDE} a side"
+                )
+            return ok(data)
+
+## Documents
+
+# A document done: written to the books, and its files.
+record Done
+    # The document.
+    doc: documents.Document
+    # Its files.
+    rendered: files.Rendered
+
+# The catalog of the language of the locale `tag`, the company's own
+# wording over the carried one.
+#
+# - `ws`: the workspace.
+# - `tag`: a BCP 47 tag.
+#
+# Fails as `catalogs.catalog_for` fails.
+function catalog_of(ws: Workspace lent, tag: str) -> i18n.Catalog?
+    return catalogs.catalog_for(language: catalogs.language_of(tag)?, dir: ws.settings.translations_dir)
+
+# `doc`'s files drawn and written to the data folder.
+#
+# - `ws`: the workspace.
+# - `doc`: the document.
+#
+# Fails as `files.rendered` and `fs.write_atomic_bytes` fail.
+function write_files(ws: Workspace lent, doc: documents.Document) -> files.Rendered?
+    r = files.rendered(doc, kit: ws.kit, catalog: catalog_of(ws, tag: doc.customer.locale)?)?
+    fs.make_dir_all(files.folder_of(ws.settings.data_dir, year: documents.year_of(doc.issued)))?
+    fs.write_atomic_bytes(files.file_of(data_dir: ws.settings.data_dir, doc: doc, ext: "pdf"), data: r.pdf)?
+    fs.write_atomic_bytes(files.file_of(data_dir: ws.settings.data_dir, doc: doc, ext: "xlsx"), data: r.xlsx)?
+    return ok(r)
+
+# The invoice of `order`, issued and its files written.
+#
+# - `ws`: the workspace.
+# - `order`: the order.
+#
+# Fails as `issue.invoice` and `write_files` fail; a document whose files
+# fail is in the books, and `render` writes them again.
+function invoice(@ws: Workspace, order: issue.Order) -> Done?
+    doc = issue.invoice(@ws.db, company: ws.settings.company, rates: ws.settings.rates, order: order)?
+    return ok(Done(doc: doc, rendered: write_files(ws, doc: doc)?))
+
+# The credit note of `returned` against the invoice `number`, made and its
+# files written.
+#
+# - `ws`: the workspace.
+# - `number`: the invoice's number.
+# - `day`: the credit note's day.
+# - `returned`: what is credited; none credits all that is left.
+#
+# Fails as `credit.credit_note` and `write_files` fail.
+function credit_note(@ws: Workspace, number: str, day: time.Instant, returned: [issue.Ordered]) -> Done?
+    doc = credit.credit_note(@ws.db, number: number, day: day, returned: returned)?
+    return ok(Done(doc: doc, rendered: write_files(ws, doc: doc)?))
+
+# The document `number`'s files written again, as the configured layout
+# draws them: for a document whose files were lost or never written.
+#
+# - `ws`: the workspace.
+# - `number`: the document's number.
+#
+# Fails as `ledger.document_named` and `write_files` fail.
+function render(@ws: Workspace, number: str) -> Done?
+    doc = ledger.document_named(@ws.db, number: number)?
+    return ok(Done(doc: doc, rendered: write_files(ws, doc: doc)?))
+
+# Mails the document `number` to its customer, its PDF as kept, and
+# answers the server's reply.
+#
+# - `ws`: the workspace.
+# - `number`: the document's number.
+# - `sent_at`: the moment the message says it is sent.
+#
+# Fails as `ledger.document_named` fails, as `fs.read_bytes` fails where the
+# PDF was never written, and as `message.outgoing` and `message.send` fail.
+function mail(@ws: Workspace, number: str, sent_at: time.Instant) -> smtp.Reply?
+    doc = ledger.document_named(@ws.db, number: number)?
+    pdf = fs.read_bytes(files.file_of(data_dir: ws.settings.data_dir, doc: doc, ext: "pdf"))?
+    out = message.outgoing(doc, company: ws.settings.company, catalog: catalog_of(ws, tag: doc.customer.locale)?, pdf: pdf, sent_at: sent_at)?
+    return message.send(ws.settings.mail, local_name: "", out: out)
+
+## The year
+
+# The accountant's CSV of `year`.
+#
+# - `ws`: the workspace.
+# - `year`: the year.
+#
+# Fails as `ledger.documents_of` fails.
+function export(@ws: Workspace, year: i64) -> str?
+    return ok(accounts.export_of(ledger.documents_of(@ws.db, year: year)?, company: ws.settings.company))
+
+# The report of `year`'s totals by regime and rate.
+#
+# - `ws`: the workspace.
+# - `year`: the year.
+#
+# Fails as `ledger.documents_of` fails.
+function report(@ws: Workspace, year: i64) -> [str]?
+    docs = ledger.documents_of(@ws.db, year: year)?
+    return ok(accounts.report_of(accounts.totals_of(docs, company: ws.settings.company), company: ws.settings.company))
+
+# An archive made, written and read back.
+record Archived
+    # Where it was written.
+    file: str
+    # Its bytes.
+    data: [u8]
+    # What reading it back found.
+    checked: archive.Checked
+
+# The archive of `year` made from the kept files, written to the data
+# folder's `archives/<year>.tar.gz`, and read back from there against its
+# manifest.
+#
+# - `ws`: the workspace.
+# - `year`: the year.
+#
+# Fails as `archive.archive_of`, `fs.write_atomic_bytes` and
+# `archive.check_archive` fail.
+function archive_year(@ws: Workspace, year: i64) -> Archived?
+    docs = ledger.documents_of(@ws.db, year: year)?
+    data = archive.archive_of(data_dir: ws.settings.data_dir, year: year, docs: docs, csv_text: accounts.export_of(docs, company: ws.settings.company))?
+    file = archive.path_of(ws.settings.data_dir, year: year)
+    fs.make_dir_all(path.parent(file))?
+    fs.write_atomic_bytes(file, data: data)?
+    back = fs.read_bytes(file)?
+    return ok(Archived(file: file, data: back, checked: archive.check_archive(back)?))

@@ -1,0 +1,215 @@
+# The samples the collectors take, kept in memory as one series per metric
+# key (`sensor.temperature`, `service.cache.memory`), each a list of points
+# in the order they were taken, for the rules' windows and the dashboard's
+# sparklines. A series keeps the points of its last `keep` only: older ones
+# are dropped as a newer one comes, so the memory a monitor holds does not
+# grow with the time it runs.
+#
+# A key is words joined by dots. A rule names one key, or a pattern whose
+# one `*` part stands for any single word, `service.*.up`, which
+# `keys_matching` answers.
+
+use <rebel>/strings
+use <rebel>/time
+
+# One sample.
+record Point
+    # When it was taken, in nanoseconds since 1970 on the monitor's clock.
+    at: i64
+    # Its value.
+    value: f64
+
+# One sample a collector took, before it is added to its series.
+record Sample
+    # The metric's key.
+    key: str
+    # Its value.
+    value: f64
+
+# Every series.
+record Store
+    # Each key's points, oldest first.
+    series: {str: [Point]}
+    # How far back a series reaches.
+    keep: time.Duration
+
+# An empty store keeping `keep` of every series.
+#
+# - `keep`: how far back each series reaches, above zero.
+function new_store(keep: time.Duration) -> Store
+    return Store(series: {}, keep: keep)
+
+# Adds the sample `value` of `key` taken at `at`, dropping the points of
+# that series older than the store's `keep` before `at`.
+#
+# - `s`: the store.
+# - `key`: the metric's key.
+# - `at`: when it was taken; a sample is never older than the series' last.
+# - `value`: the value.
+function add(@s: Store, key: str, at: time.Instant, value: f64)
+    points @= s.series[key].default([])
+    points @ points.push(Point(at: at.unix_nanoseconds, value: value))
+    oldest = at.unix_nanoseconds - s.keep.nanoseconds
+    first: i64 @= 0
+
+    while first < points.len() && points[first].at < oldest
+        first @ first + 1
+
+    if first > 0
+        points @ points.slice(from: first, to: points.len())
+    s.series[key] @ points
+
+# The points of `key` taken within `span` before `now`, `now` itself
+# included, oldest first; empty where there are none.
+#
+# - `s`: the store.
+# - `key`: the metric's key.
+# - `now`: the end of the window.
+# - `span`: its length; zero answers the last point alone, where there is
+#   one.
+function window_of(s: Store lent, key: str, now: time.Instant, span: time.Duration) -> [Point]
+    points = s.series[key].default([])
+
+    if points.len() == 0
+        return []
+
+    if span.nanoseconds == 0
+        return [points[points.len() - 1]]
+
+    since = now.unix_nanoseconds - span.nanoseconds
+    first: i64 @= points.len()
+
+    while first > 0 && points[first - 1].at > since
+        first @ first - 1
+
+    return points.slice(from: first, to: points.len())
+
+# Adds every sample of `samples`, taken at `at`.
+#
+# - `s`: the store.
+# - `samples`: the samples.
+# - `at`: when they were taken.
+function add_all(@s: Store, samples: [Sample], at: time.Instant)
+    for sample in samples
+        add(@s, key: sample.key, at: at, value: sample.value)
+
+# The last point of `key`. Fails `not_found` where the series has none.
+#
+# - `s`: the store.
+# - `key`: the metric's key.
+function last_of(s: Store lent, key: str) -> Point?
+    points = s.series[key].default([])
+
+    if points.len() == 0
+        return fail(code: "not_found", msg: f"no sample of \"{key}\" yet")
+    return ok(points[points.len() - 1])
+
+# The values of the last `count` points of `key`, oldest first: fewer where
+# the series holds fewer.
+#
+# - `s`: the store.
+# - `key`: the metric's key.
+# - `count`: how many, 0 or more.
+function recent_values(s: Store lent, key: str, count: i64) -> [f64]
+    points = s.series[key].default([])
+    first: i64 @= points.len() - count
+
+    if first < 0
+        first @ 0
+    values: [f64] @= []
+
+    for p in points.slice(from: first, to: points.len())
+        values @ values.push(p.value)
+
+    return values
+
+# The keys `pattern` names, sorted: itself where it holds no `*`, else every
+# key of the store whose words match it, the `*` matching any one word.
+#
+# - `s`: the store.
+# - `pattern`: a key, or one with `*` for one of its words.
+function keys_matching(s: Store lent, pattern: str) -> [str]
+    if !strings.contains(s: pattern, substr: "*")
+        return [pattern]
+    wanted = strings.split(s: pattern, sep: ".")
+    found: [str] @= []
+
+    for key in keys(s.series)
+        words = strings.split(s: key, sep: ".")
+
+        if words.len() == wanted.len() && words_match(words: words, wanted: wanted)
+            found @ found.push(key)
+
+    return sort(found)
+
+# Whether `words` match `wanted` word by word, a `*` of `wanted` matching
+# any word.
+#
+# - `words`: a key's words.
+# - `wanted`: a pattern's words, as many.
+function words_match(words: [str], wanted: [str]) -> bool
+    for i in range(from: 0, to: words.len())
+        if wanted[i] != "*" && wanted[i] != words[i]
+            return false
+
+    return true
+
+# The word of `key` that `pattern`'s `*` stands for, "" where the pattern
+# holds none.
+#
+# - `key`: a key `keys_matching` answered for `pattern`.
+# - `pattern`: the pattern.
+function label_of(key: str, pattern: str) -> str
+    wanted = strings.split(s: pattern, sep: ".")
+    words = strings.split(s: key, sep: ".")
+
+    for i in range(from: 0, to: wanted.len())
+        if wanted[i] == "*" && i < words.len()
+            return words[i]
+
+    return ""
+
+# The values of `points`, in order.
+#
+# - `points`: the points.
+function values_of(points: [Point]) -> [f64]
+    values: [f64] @= []
+
+    for p in points
+        values @ values.push(p.value)
+
+    return values
+
+test "add: points older than the store keeps are dropped as a new one comes"
+    s @= new_store(time.minutes(2).must())
+    t0 = time.from_unix(whole_seconds: 1_000, extra_nanoseconds: 0).must()
+    add(@s, key: "a", at: t0, value: 1.0)
+    add(@s, key: "a", at: time.add(t0, d: time.minutes(1).must()).must(), value: 2.0)
+    add(@s, key: "a", at: time.add(t0, d: time.minutes(3).must()).must(), value: 3.0)
+    assert values_of(s.series["a"].must()) == [2.0, 3.0]
+
+test "window_of: within the span, the last alone for zero, and nothing for a key never seen"
+    s @= new_store(time.hours(1).must())
+    t0 = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+
+    for i in range(from: 0, to: 5)
+        add(@s, key: "t", at: time.add(t0, d: time.seconds(i * 30).must()).must(), value: to_f64(i))
+
+    now = time.add(t0, d: time.minutes(2).must()).must()
+    assert values_of(window_of(s, key: "t", now: now, span: time.minutes(1).must())) == [3.0, 4.0]
+    assert values_of(window_of(s, key: "t", now: now, span: time.nanoseconds(0))) == [4.0]
+    assert window_of(s, key: "none", now: now, span: time.minutes(1).must()).len() == 0
+    assert last_of(s, key: "none").is_err()
+    assert recent_values(s, key: "t", count: 2) == [3.0, 4.0]
+    assert recent_values(s, key: "t", count: 9).len() == 5
+
+test "keys_matching: a plain key, a pattern over services, and its label"
+    s @= new_store(time.hours(1).must())
+    t0 = time.from_unix(whole_seconds: 0, extra_nanoseconds: 0).must()
+    add(@s, key: "service.web.up", at: t0, value: 1.0)
+    add(@s, key: "service.db.up", at: t0, value: 0.0)
+    add(@s, key: "service.db.memory", at: t0, value: 5.0)
+    assert keys_matching(s, pattern: "service.*.up") == ["service.db.up", "service.web.up"]
+    assert keys_matching(s, pattern: "sensor.t") == ["sensor.t"]
+    assert label_of(key: "service.db.up", pattern: "service.*.up") == "db"
+    assert label_of(key: "sensor.t", pattern: "sensor.t") == ""

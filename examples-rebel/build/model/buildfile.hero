@@ -1,0 +1,145 @@
+# What a build file says once it has been read and checked: its variables,
+# its rules, its targets and its phony targets. `load/reader` makes one from
+# TOML and nothing else does, so every value here has passed its checks: a
+# target's rule exists, every path is written with `/` and cleaned, an output
+# stands inside the build's folder, and no name is both a target and a
+# phony target.
+
+use <rebel>/time
+
+# The code of a build file, a command line or a step that is not what the
+# program reads; the message says where.
+constant INVALID: str
+    "invalid"
+
+# The code of a name that names nothing: a target, a rule, a variable.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a step that did not end well, or of a build it stopped.
+constant FAILED: str
+    "failed"
+
+# A variable as a build file writes it.
+variant Setting
+    # A TOML string: a template whose value is its text, substituted.
+    text
+        # The template.
+        v: str
+    # A TOML array of strings: words, each a template substituted on its
+    # own and then quoted, so an item stays one word of a command whatever
+    # its value holds, a space or a quote included.
+    words
+        # The templates, one a word.
+        items: [str]
+
+# How a target is made from its inputs.
+record Rule
+    # The rule's name, the key of its `[rules.<name>]` table.
+    name: str
+    # The command's template: text naming `$in`, `$out` and variables, read
+    # into the program and its arguments as a POSIX shell reads a line once
+    # every variable is substituted, and run with no shell.
+    command: str
+    # What a step of this rule is shown as, a template; absent where the
+    # step is shown by its command.
+    description: str?
+    # Where the step writes the files it read, in make's format, a template
+    # naming one path; absent for a rule whose steps write none.
+    depfile: str?
+    # How long a step may run before it is ended; absent where it may run
+    # as long as it takes.
+    time_limit: time.Duration?
+    # Variables set in the step's environment, each value a template.
+    env: {str: str}
+
+# One file a rule makes, and what it is made from.
+record Target
+    # The file the step makes, relative to the build's folder.
+    output: str
+    # The name of the rule that makes it.
+    rule: str
+    # The files `$in` names, in order: each a source or another target.
+    inputs: [str]
+    # Files the step reads that `$in` does not name, the program it runs
+    # among them: a change in one rebuilds the target as an input's does.
+    implicit: [str]
+    # Targets built before this one whose changes do not rebuild it, as a
+    # generated header is before the depfile that will name it exists.
+    after: [str]
+    # Variables of this target alone, over the build file's own; a variable
+    # naming itself reads the build file's value.
+    vars: {str: Setting}
+
+# A build file, read and checked.
+record BuildFile
+    # The file's name as it was given, for every message about it.
+    name: str
+    # The file's own variables, as written.
+    vars: {str: Setting}
+    # The rules, by name, in the order the file defines them.
+    rules: {str: Rule}
+    # The targets, by output, in the order the file defines them.
+    targets: {str: Target}
+    # The phony targets, each a name for the targets and files it lists.
+    phony: {str: [str]}
+    # What a build with no target named builds; empty where the file says
+    # nothing, and every target nothing else needs is built.
+    defaults: [str]
+
+# What a node of the dependency graph is.
+variant Kind
+    # A file a target makes.
+    target
+    # A name for a list of other nodes, with no file of its own.
+    phony
+    # A file no target makes, which must be there.
+    source
+
+# What `name` is in `f`.
+#
+# - `f`: the build file.
+# - `name`: a node of its graph: an output, a phony target's name, or a
+#   file named as an input.
+function kind_of(f: BuildFile, name: str) -> Kind
+    if f.targets[name].is_err() == false
+        return .target
+
+    if f.phony[name].is_err() == false
+        return .phony
+    return .source
+
+# The inputs of `t` whose changes rebuild it: its explicit inputs then its
+# implicit ones, each once, in that order.
+#
+# - `t`: the target.
+function hashed_inputs(t: Target) -> [str]
+    seen: {str: bool} @= {}
+    out: [str] @= []
+
+    for name in t.inputs
+        if seen[name].is_err()
+            seen[name] @ true
+            out @ out.push(name)
+
+    for name in t.implicit
+        if seen[name].is_err()
+            seen[name] @ true
+            out @ out.push(name)
+
+    return out
+
+test "hashed_inputs: an implicit input named again is kept once, in the order met"
+    t = Target(
+        output: "out/a.obj",
+        rule: "compile",
+        inputs: ["src/a.src", "src/b.src"],
+        implicit: ["src/a.src", "tools/mill"],
+        after: [],
+        vars: {}
+    )
+    assert hashed_inputs(t) == ["src/a.src", "src/b.src", "tools/mill"]
+
+test "hashed_inputs: a target of no input has none"
+    t = Target(output: "out/stamp", rule: "touch", inputs: [], implicit: [], after: [], vars: {})
+    assert hashed_inputs(t) == []

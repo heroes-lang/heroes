@@ -1,0 +1,126 @@
+# The commands the shell runs itself rather than as a child, because they
+# change the shell (`cd`, `export`, `exit`, `read`) or must see its state
+# (`jobs`, `history`, `type`), and the few every script runs so often that a
+# child for each would be wasted (`echo`, `test`, `true`). The special
+# builtins of POSIX (XCU 2.14) are found before a function of the same name;
+# the others after one, so a function may wrap them.
+
+use builtins/conditions
+use builtins/control
+use builtins/dirs
+use builtins/history
+use builtins/jobctl
+use builtins/output
+use builtins/vars
+use exec/state
+use exec/streams
+
+# The special builtins, found before functions.
+function specials() -> [str]
+    return [":", ".", "break", "continue", "eval", "exit", "export", "return", "set", "shift", "unset"]
+
+# The other builtins, found after functions.
+function regulars() -> [str]
+    return [
+        "["
+        "cd"
+        "echo"
+        "false"
+        "fg"
+        "help"
+        "history"
+        "jobs"
+        "kill"
+        "local"
+        "printf"
+        "pwd"
+        "read"
+        "source"
+        "test"
+        "true"
+        "type"
+        "wait"
+    ]
+
+# Whether `name` is a special builtin.
+#
+# - `name`: the command's name.
+function is_special(name: str) -> bool
+    for n in specials()
+        if n == name
+            return true
+
+    return false
+
+# Whether `name` is a builtin that is not special.
+#
+# - `name`: the command's name.
+function is_builtin(name: str) -> bool
+    for n in regulars()
+        if n == name
+            return true
+
+    return false
+
+# Every builtin's name, sorted.
+function names() -> [str]
+    every @= specials()
+
+    for n in regulars()
+        every @ every.push(n)
+
+    return sort(every)
+
+# Runs the builtin `argv[0]` with the rest of `argv` and answers its status.
+#
+# - `sh`: the shell.
+# - `argv`: the name and the arguments.
+# - `place`: its places.
+function run(@sh: state.Shell, argv: [str], place: streams.Io) -> i64
+    operands = argv.slice(from: 1, to: argv.len())
+
+    return match argv[0]
+        ":" | "true"         => 0
+        "false"              => 1
+        "echo"               => output.echo(@sh, operands: operands, place: place)
+        "printf"             => output.printf(@sh, operands: operands, place: place)
+        "type"               => output.type_of(@sh, operands: operands, place: place)
+        "help"               => output.help(@sh, names: names(), place: place)
+        "pwd"                => dirs.pwd(@sh, place: place)
+        "cd"                 => dirs.cd(@sh, operands: operands, place: place)
+        "export"             => vars.export(@sh, operands: operands, place: place)
+        "unset"              => vars.unset(@sh, operands: operands, place: place)
+        "set"                => vars.set(@sh, operands: operands, place: place)
+        "shift"              => vars.shift(@sh, operands: operands, place: place)
+        "read"               => vars.read(@sh, operands: operands, place: place)
+        "local"              => vars.local(@sh, operands: operands, place: place)
+        "exit"               => control.exit_shell(@sh, operands: operands, place: place)
+        "return"             => control.give_back(@sh, operands: operands, place: place)
+        "break" | "continue" => control.jump(@sh, name: argv[0], operands: operands, place: place)
+        "eval"               => control.eval(@sh, operands: operands, place: place)
+        "." | "source"       => control.source(@sh, name: argv[0], operands: operands, place: place)
+        "test"               => conditions.run(@sh, operands: operands, place: place)
+        "["                  => conditions.run_bracket(@sh, operands: operands, place: place)
+        "jobs"               => jobctl.list_jobs(@sh, operands: operands, place: place)
+        "fg"                 => jobctl.fg(@sh, operands: operands, place: place)
+        "wait"               => jobctl.wait(@sh, operands: operands, place: place)
+        "kill"               => jobctl.kill(@sh, operands: operands, place: place)
+        "history"            => history.run(@sh, operands: operands, place: place)
+        _                    => 127
+
+# Tells a builtin's mistake on its error, as `shell: name: what`, and
+# answers `status`.
+#
+# - `sh`: the shell.
+# - `place`: the builtin's places.
+# - `name`: the builtin.
+# - `message`: what is wrong.
+# - `status`: the status it ends with.
+function complain(@sh: state.Shell, place: streams.Io, name: str, message: str, status: i64) -> i64
+    streams.write_err(@sh, place: place, text: f"shell: {name}: {message}\n")
+    return status
+
+test "is_special: exit is, echo is not; every name sorted once"
+    assert is_special("exit") && !is_special("echo") && is_builtin("echo")
+    every = names()
+    assert every == sort(every) && every.len() == specials().len() + regulars().len()

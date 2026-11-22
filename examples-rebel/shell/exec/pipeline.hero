@@ -1,0 +1,232 @@
+# Pipelines of two commands or more (XCU 2.9.2), each stage's output the next
+# one's input. A stage that is a program is a child whose output is a pipe
+# `process` makes, and the next stage reads that pipe's end, so two programs
+# side by side run at once and the data streams through, whatever its size;
+# the pipe is the child's alone, so a child writing to a reader that ended is
+# ended by SIGPIPE, as under any shell. A stage that is no program (a
+# builtin, a function, a compound command) runs in a copy of the shell, as a
+# subshell; what it writes for the next stage is captured and handed on as
+# text, which a child reads from a temporary file, so no stage ever waits on
+# a pipe that nobody reads. The status is the last stage's.
+
+use <rebel>/io
+use <rebel>/process
+
+use diag/report
+use exec/run as executor
+use exec/simple
+use exec/state
+use exec/streams
+use syntax/ast
+
+# What the pipeline holds between two stages: the input of the next, and
+# which child's output pipe it is, for the shell to close its own copy of
+# that end once the next stage has read it or holds its own.
+record Joint
+    # The next stage's input.
+    feed: streams.Feed
+    # The index of the child whose output `feed` reads, -1 for none.
+    from_child: i64
+
+# A joint holding nothing yet: the next stage reads `feed`, no pipe's end.
+#
+# - `feed`: the input.
+function joint_of(feed: streams.Feed) -> Joint
+    return Joint(feed: feed, from_child: -1)
+
+# The joint after `child`, the stage at `index` of the children: its output
+# pipe's end, or nothing where a redirection of its own sent its output
+# elsewhere, so the next stage reads the end at once, as under any shell.
+#
+# - `child`: the child just started.
+# - `index`: its index in the list of children.
+function joint_after(child: process.Child, index: i64) -> Joint
+    if io.is_closed(child.output)
+        return joint_of(.nothing)
+
+    return Joint(feed: .stream(s: child.output), from_child: index)
+
+# Closes the shell's copy of the pipe's end `j` reads, once the stage that
+# reads it is done with it or started with its own copy.
+#
+# - `j`: the joint, then holding nothing.
+# - `children`: the children started, whose outputs are the pipes' ends.
+function release_joint(@j: Joint, @children: [process.Child])
+    if j.from_child >= 0
+        _ = io.close(@children[j.from_child].output).is_err()
+
+    j.from_child @ -1
+
+# Runs `p`, a pipeline of several stages, and answers the last stage's
+# status.
+#
+# - `sh`: the shell.
+# - `p`: the pipeline.
+# - `place`: its places: the first stage reads its input, the last writes
+#   its output, and every stage writes its error.
+function run(@sh: state.Shell, p: ast.Pipeline, place: streams.Io) -> i64
+    joint @= joint_of(place.input)
+    children: [process.Child] @= []
+    status @= 0
+    last_started @= false
+
+    for i in range(from: 0, to: p.stages.len())
+        stage = p.stages[i]
+        last = i == p.stages.len() - 1
+        prepared: [simple.Prepared] @= []
+        failed @= false
+
+        match stage
+            .simple _ =>
+                match simple.prepare(@sh, cmd: stage)
+                    .ok x => prepared @ [x]
+                    .err e =>
+                        report.tell(@sh, place: place, at: sh.error_at, message: e.msg)
+                        failed @ true
+            .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ | .define _ => _ = 0
+
+        external = prepared.len() == 1 && is_external(prepared[0])
+
+        if failed
+            release_joint(@joint, @children)
+            joint @ joint_of(.nothing)
+            status @ 1
+            last_started @ false
+        else if external && !(last && is_capture(place.output))
+            sink: streams.Sink = if last
+                place.output
+            else
+                .pipe
+
+            started = simple.start_prepared(
+                @sh,
+                prep: prepared[0],
+                place: streams.Io(input: joint.feed, output: sink, error: place.error)
+            )
+            release_joint(@joint, @children)
+
+            match started
+                .ok child =>
+                    children @ children.push(child)
+                    last_started @ last
+
+                    if !last
+                        joint @ joint_after(child, index: children.len() - 1)
+                .err _ =>
+                    status @ 127
+                    last_started @ false
+                    joint @ joint_of(.nothing)
+        else
+            status @ run_inside(@sh, stage: stage, prepared: prepared, feed: joint.feed, last: last, place: place)
+            release_joint(@joint, @children)
+            joint @ joint_of(.text(text: state.close_capture_if(@sh, open: !last)))
+            last_started @ false
+
+    release_joint(@joint, @children)
+
+    for k in range(from: 0, to: children.len())
+        code = simple.wait_child(@children[k])
+
+        if k == children.len() - 1 && last_started
+            status @ code
+
+    sh.status @ status
+    return status
+
+# Runs a stage that is no program in a copy of the shell and answers its
+# status. A stage before the last writes to a capture the shell opens and
+# leaves open, for the caller to close and hand on.
+#
+# - `sh`: the shell.
+# - `stage`: the stage.
+# - `prepared`: the stage prepared, where it is a simple command.
+# - `feed`: what it reads.
+# - `last`: whether it is the pipeline's last stage.
+# - `place`: the pipeline's places.
+function run_inside(@sh: state.Shell, stage: ast.Command, prepared: [simple.Prepared], feed: streams.Feed, last: bool, place: streams.Io) -> i64
+    sub @= executor.subshell_of(sh)
+    opened @= streams.nothing_opened()
+
+    input: streams.Feed = match streams.readable(feed, @opened)
+        .ok f  => f
+        .err _ => .nothing
+
+    sink: streams.Sink = if last
+        place.output
+    else
+        .capture(level: state.open_capture(@sub))
+
+    stage_place = streams.Io(input: input, output: sink, error: place.error)
+
+    status @= if prepared.len() == 1
+        simple.run_prepared(@sub, prep: prepared[0], place: stage_place)
+    else
+        executor.run_command(@sub, cmd: stage, place: stage_place)
+
+    match sub.flow
+        .exiting e                                         => status @ e.code
+        .normal | .breaking _ | .continuing _ | .returning => _ = 0
+
+    executor.end_subshell(sh: @sh, sub: @sub)
+    streams.close_all(@opened)
+    return status
+
+# Whether a prepared stage is a program.
+#
+# - `prep`: the stage.
+function is_external(prep: simple.Prepared) -> bool
+    return match prep.kind
+        .external _                                     => true
+        .assign_only | .builtin | .defined | .missing _ => false
+
+# Whether `sink` is a capture of the shell.
+#
+# - `sink`: the sink.
+function is_capture(sink: streams.Sink) -> bool
+    return match sink
+        .capture _                   => true
+        .stream _ | .discard | .pipe => false
+
+# Starts every stage of a pipeline, all of them programs, joined by the pipes
+# `process` makes, and answers the children without waiting for them: a
+# background job.
+#
+# - `sh`: the shell.
+# - `prepared`: the stages, prepared, each a program.
+# - `place`: its places.
+#
+# Fails where a stage does not start, after telling it; the children
+# started before it are given up to run on.
+function start_all(@sh: state.Shell, prepared: [simple.Prepared], place: streams.Io) -> [process.Child]?
+    joint @= joint_of(place.input)
+    children: [process.Child] @= []
+
+    for i in range(from: 0, to: prepared.len())
+        last = i == prepared.len() - 1
+
+        sink: streams.Sink = if last
+            place.output
+        else
+            .pipe
+
+        started = simple.start_prepared(
+            @sh,
+            prep: prepared[i],
+            place: streams.Io(input: joint.feed, output: sink, error: place.error)
+        )
+        release_joint(@joint, @children)
+
+        match started
+            .ok child =>
+                children @ children.push(child)
+
+                if !last
+                    joint @ joint_after(child, index: children.len() - 1)
+            .err e =>
+                for k in range(from: 0, to: children.len())
+                    _ = process.release(@children[k]).is_err()
+
+                return fail(code: e.code, msg: e.msg)
+
+    release_joint(@joint, @children)
+    return ok(children)

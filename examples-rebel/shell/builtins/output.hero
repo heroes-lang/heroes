@@ -1,0 +1,282 @@
+# The builtins that write: `echo`, `printf`, `type` and `help`. `echo` takes
+# `-n` alone and reads no escape, as bash's does by default; `printf` reads
+# the format POSIX gives it (XCU `printf`): `%s`, `%d`, `%i`, `%x`, `%o`,
+# `%c` and `%%` with a width and the `-` and `0` flags, the escapes `\n`,
+# `\t`, `\r`, `\\` and `\"`, the format used again while arguments remain.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/term
+
+use builtins/table
+use exec/lookup
+use exec/state
+use exec/streams
+use syntax/parser
+
+# `echo [-n] words...`: the words, one space between, then a line end unless
+# `-n` comes first.
+#
+# - `sh`: the shell.
+# - `operands`: the arguments.
+# - `place`: its places.
+function echo(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    first @= 0
+    newline @= true
+
+    while first < operands.len() && operands[first] == "-n"
+        newline @ false
+        first @ first + 1
+
+    text = operands.slice(from: first, to: operands.len()).join(" ")
+
+    end = if newline
+        "\n"
+    else
+        ""
+
+    if !streams.write_out(@sh, place: place, text: text + end)
+        return 1
+
+    return 0
+
+# `printf format [arguments...]`.
+#
+# - `sh`: the shell.
+# - `operands`: the format, then the arguments.
+# - `place`: its places.
+function printf(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    if operands.len() == 0
+        return table.complain(@sh, place: place, name: "printf", message: "a format is needed", status: 2)
+
+    done = formatted(operands[0], values: operands.slice(from: 1, to: operands.len()))
+
+    if !streams.write_out(@sh, place: place, text: done.text)
+        return 1
+
+    for m in done.mistakes
+        streams.write_err(@sh, place: place, text: f"shell: printf: {m}\n")
+
+    if done.mistakes.len() > 0
+        return 1
+
+    return 0
+
+# What `printf` writes, and the arguments it could not read as numbers.
+record Formatted
+    # The text.
+    text: str
+    # One message for each argument a numeric conversion could not read.
+    mistakes: [str]
+
+# The text `format` makes of `values`, used again while values remain.
+#
+# - `format`: the format.
+# - `values`: the arguments.
+function formatted(format: str, values: [str]) -> Formatted
+    out: [str] @= []
+    mistakes: [str] @= []
+    next @= 0
+    first_pass @= true
+
+    while first_pass || next < values.len() && next > 0
+        first_pass @ false
+        used_before = next
+        i @= 0
+
+        while i < format.len()
+            b = format[i]
+
+            if b == '\\' && i + 1 < format.len()
+                out @ out.push(escape_of(format[i + 1]))
+                i @ i + 2
+            else if b == '%' && i + 1 < format.len()
+                spec_end @= i + 1
+
+                while spec_end < format.len() && is_flag_or_digit(format[spec_end])
+                    spec_end @ spec_end + 1
+
+                if spec_end >= format.len()
+                    out @ out.push(format.slice(from: i, to: format.len()))
+                    i @ format.len()
+                else
+                    conversion = format[spec_end]
+                    flags = format.slice(from: i + 1, to: spec_end)
+
+                    if conversion == '%'
+                        out @ out.push("%")
+                    else
+                        value = if next < values.len()
+                            values[next]
+                        else
+                            ""
+
+                        if next < values.len()
+                            next @ next + 1
+
+                        converted = convert(conversion, flags: flags, value: value)
+                        out @ out.push(converted.text)
+
+                        for m in converted.mistakes
+                            mistakes @ mistakes.push(m)
+
+                    i @ spec_end + 1
+            else
+                start = i
+
+                while i < format.len() && format[i] != '\\' && format[i] != '%'
+                    i @ i + 1
+
+                if i == start
+                    i @ i + 1
+
+                out @ out.push(format.slice(from: start, to: i))
+
+        if next == used_before
+            return Formatted(text: out.join(""), mistakes: mistakes)
+
+    return Formatted(text: out.join(""), mistakes: mistakes)
+
+# Whether `b` may stand between `%` and a conversion: a flag or a digit of the
+# width.
+#
+# - `b`: the byte.
+function is_flag_or_digit(b: u8) -> bool
+    return b == '-' || b == '0' || b == ' ' || b == '+' || b >= '1' && b <= '9'
+
+# The character the escape `\c` writes, the two characters where `c` is no
+# escape `printf` reads.
+#
+# - `c`: the byte after the backslash.
+function escape_of(c: u8) -> str
+    return match c
+        'n'  => "\n"
+        't'  => "\t"
+        'r'  => "\r"
+        '\\' => "\\"
+        '"'  => "\""
+        _    => "\\" + [c].validated_bytes().default("?")
+
+# One conversion of `printf`.
+#
+# - `conversion`: the conversion's letter.
+# - `flags`: the flags and width before it.
+# - `value`: the argument.
+function convert(conversion: u8, flags: str, value: str) -> Formatted
+    left = strings.contains(s: flags, substr: "-")
+    zeros = !left && strings.has_prefix(s: flags, prefix: "0")
+    width = width_of(flags)
+    mistakes: [str] @= []
+
+    body = match conversion
+        's' => value
+        'c' =>
+            if value == ""
+                ""
+            else
+                value.chars()[0]
+        'd' | 'i' | 'x' | 'o' =>
+            n = match number_of(value)
+                .ok v => v
+                .err _ =>
+                    mistakes @ mistakes.push(f"`{value}` is not a number")
+                    0
+
+            match conversion
+                'x' => numbers.format_int(n: n, base: 16)
+                'o' => numbers.format_int(n: n, base: 8)
+                _   => f"{n}"
+        _ => "%" + flags + [conversion].validated_bytes().default("?")
+
+    padded = if body.chars().len() >= width
+        body
+    else if left
+        strings.pad_end(s: body, width: width, pad: " ")
+    else if zeros
+        strings.pad_zeros(body, width: width)
+    else
+        strings.pad_start(s: body, width: width, pad: " ")
+
+    return Formatted(text: padded, mistakes: mistakes)
+
+# The width the digits of `flags` write, 0 for none.
+#
+# - `flags`: the flags and width.
+function width_of(flags: str) -> i64
+    n @= 0
+
+    for c in flags.chars()
+        if c[0] >= '0' && c[0] <= '9' && n < 10000
+            n @ n * 10 + (c[0] - '0').to_i64().must()
+
+    return n
+
+# The integer `value` writes, an empty one 0, a leading `'` the code of the
+# character after it, as POSIX's `printf` reads one.
+#
+# - `value`: the argument.
+function number_of(value: str) -> i64?
+    text = strings.trim(value)
+
+    if text == ""
+        return ok(0)
+
+    if text[0] == '\'' && text.len() > 1
+        return ok(text.slice(from: 1, to: text.len()).chars()[0][0].to_i64().must())
+
+    return numbers.parse_int(text)
+
+# `type names...`: what each name runs.
+#
+# - `sh`: the shell.
+# - `operands`: the names.
+# - `place`: its places.
+function type_of(@sh: state.Shell, operands: [str], place: streams.Io) -> i64
+    status @= 0
+
+    for name in operands
+        said @= ""
+
+        for r in parser.reserved()
+            if r == name
+                said @ f"{name} is a shell keyword"
+
+        if said == ""
+            said @ if table.is_special(name)
+                f"{name} is a special shell builtin"
+            else if !sh.functions[name].is_err()
+                f"{name} is a function"
+            else if table.is_builtin(name)
+                f"{name} is a shell builtin"
+            else
+                match lookup.find_program(sh, name: name)
+                    .ok p  => f"{name} is {p}"
+                    .err _ => ""
+
+        if said == ""
+            streams.write_err(@sh, place: place, text: f"shell: type: {name}: not found\n")
+            status @ 1
+        else
+            _ = streams.write_out(@sh, place: place, text: said + "\n")
+
+    return status
+
+# `help`: the builtins, in columns.
+#
+# - `sh`: the shell.
+# - `names`: the builtins' names.
+# - `place`: its places.
+function help(@sh: state.Shell, names: [str], place: streams.Io) -> i64
+    text = "The builtins of this shell; any other name runs a function or a program on PATH:\n" + term.format_columns(names, width: 64)
+    _ = streams.write_out(@sh, place: place, text: text)
+    return 0
+
+test "formatted: strings, numbers, a width, flags and the format used again"
+    assert formatted("%s-%d\\n", values: ["a", "7"]).text == "a-7\n"
+    assert formatted("[%5s][%-3s][%03d]", values: ["ab", "c", "7"]).text == "[   ab][c  ][007]"
+    assert formatted("%s,", values: ["a", "b", "c"]).text == "a,b,c,"
+    assert formatted("%x %o %c %%", values: ["255", "8", "hello"]).text == "ff 10 h %"
+
+test "formatted: an argument that is no number is told and written as 0"
+    f = formatted("%d", values: ["ten"])
+    assert f.text == "0" && f.mistakes.len() == 1

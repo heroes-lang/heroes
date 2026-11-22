@@ -1,0 +1,241 @@
+# The demo's script: the configuration it runs the monitor with, the
+# readings its thermometer gives, and what happens at which moment of its
+# fourteen minutes. The monitor's clock starts at `START` and moves 30
+# seconds at each collection; each step runs before the collection of its
+# moment, so the collection sees what it did.
+#
+# The story: four services start in their stages; a configuration file is
+# written and changed; the cache is told to hold 256 MiB, past its limit;
+# the spool fills past its bound; the database crashes and is started again
+# after its backoff, its dependants impaired meanwhile; the room heats up
+# and cools down; an operator, from another process, lists the alerts,
+# acknowledges one and restarts the cache; the spool is emptied and the
+# file removed; the thermometer stops answering; the web front stops
+# heeding a stop, and is stopped by force at the end.
+
+use <rebel>/strings
+
+# When the demo's clock starts.
+constant START: str
+    "2026-11-22T09:00:00Z"
+
+# The seconds between two collections.
+constant STEP_SECONDS: i64
+    30
+
+# The last moment the clock reaches, in seconds from the start.
+constant END_SECONDS: i64
+    840
+
+# The services' memory limit, on the cache.
+constant CACHE_LIMIT: str
+    "96MiB"
+
+# The thermometer's readings, one a collection from the start; past them it
+# answers nothing.
+function temperatures() -> [f64]
+    return [
+        45.0
+        46.0
+        47.0
+        48.0
+        50.0
+        54.0
+        59.0
+        64.0
+        69.0
+        73.0
+        76.0
+        77.0
+        77.0
+        76.0
+        74.0
+        71.0
+        67.0
+        63.0
+        59.0
+        56.0
+        54.0
+        53.0
+    ]
+
+# What a step does.
+variant Action
+    # Writes a file of the watched paths, then waits for the watch to tell
+    # it.
+    write
+        # Its path below the demo's folder.
+        path: str
+        # Its text.
+        text: str
+    # Removes a file of the watched paths, then waits for the watch to tell
+    # it.
+    remove
+        # Its path below the demo's folder.
+        path: str
+    # Runs `monitor ctl` with these words, in another process, and prints
+    # what it prints.
+    ctl
+        # The words after `ctl`.
+        words: [str]
+    # Runs `monitor check` on the demo's configuration, in another process.
+    check
+    # Writes a line to a service's input, as the service's own doing: what
+    # makes it crash or hold memory.
+    tell
+        # The service.
+        service: str
+        # The line.
+        line: str
+    # Waits until the cache's memory is past its limit.
+    await_memory
+    # Waits until a service has ended.
+    await_end
+        # The service.
+        service: str
+    # Prints the dashboard's frame.
+    frame
+
+# One step.
+record Step
+    # When, in seconds from the start.
+    at: i64
+    # What it does, said in the transcript; "" says nothing.
+    said: str
+    # What it does.
+    action: Action
+
+# Every step, in the order they run.
+function steps() -> [Step]
+    spool_file = strings.pad_end(s: "", width: 20_480, pad: "x")
+    return [
+        Step(at: 0, said: "another monitor is started on the same configuration", action: .check)
+        Step(at: 0, said: "", action: .frame)
+        Step(at: 60, said: "the configuration file of the app is written", action: .write(path: "watched/conf/app.toml", text: "port = 8080\nworkers = 4\n"))
+        Step(at: 120, said: "an operator tells the cache to hold 256 MiB", action: .ctl(words: ["send", "cache", "grow", "256"]))
+        Step(at: 120, said: "", action: .await_memory)
+        Step(at: 150, said: "the configuration file is changed", action: .write(path: "watched/conf/app.toml", text: "port = 8080\nworkers = 16\nlog = \"debug\"\n"))
+        Step(at: 180, said: "three batches land in the spool", action: .write(path: "watched/spool/batch-1.dat", text: spool_file))
+        Step(at: 180, said: "", action: .write(path: "watched/spool/batch-2.dat", text: spool_file))
+        Step(at: 180, said: "", action: .write(path: "watched/spool/incoming/batch-3.dat", text: spool_file))
+        Step(at: 240, said: "the database crashes", action: .tell(service: "db", line: "exit 3"))
+        Step(at: 240, said: "", action: .await_end(service: "db"))
+        Step(at: 270, said: "", action: .frame)
+        Step(at: 360, said: "an operator asks what fires", action: .ctl(words: ["alerts"]))
+        Step(at: 360, said: "and acknowledges the cache's alert", action: .ctl(words: ["ack", "cache-memory"]))
+        Step(at: 420, said: "an operator restarts the cache", action: .ctl(words: ["restart", "cache"]))
+        Step(at: 480, said: "the spool is emptied", action: .remove(path: "watched/spool/batch-1.dat"))
+        Step(at: 480, said: "", action: .remove(path: "watched/spool/batch-2.dat"))
+        Step(at: 480, said: "", action: .remove(path: "watched/spool/incoming/batch-3.dat"))
+        Step(at: 540, said: "the configuration file is removed", action: .remove(path: "watched/conf/app.toml"))
+        Step(at: 600, said: "", action: .frame)
+        Step(at: 660, said: "an operator asks how the monitor stands", action: .ctl(words: ["status"]))
+        Step(at: 780, said: "the web front stops heeding a stop", action: .ctl(words: ["send", "web", "stubborn"]))
+        Step(at: 840, said: "", action: .frame)
+    ]
+
+# The demo's configuration, as a person would write it.
+#
+# - `exe`: the monitor's own program, which runs the services and the
+#   notifier.
+# - `dir`: the demo's folder.
+# - `port`: the sensor's port, or "" where none could be made.
+# - `otlp`: the collector's base URL.
+function config_text(exe: str, dir: str, port: str, otlp: str) -> str
+    sensor_port = if port == ""
+        "handed-in"
+    else
+        port
+    lines: [str] @= [
+        "name = \"demo\""
+        "interval = \"30s\""
+        f"control = \"{dir}/control.sock\""
+        "host = false"
+        "exact_figures = false"
+        f"notify = [\"{exe}\", \"workload\", \"notify\", \"--file\", \"{dir}/notifications.txt\"]"
+        ""
+        "[logs]"
+        f"dir = \"{dir}/logs\""
+        "max_bytes = \"2KiB\""
+        "keep = 3"
+        "daily = true"
+        "compress = false"
+        ""
+        "[export]"
+        f"otlp = \"{otlp}\""
+        "every = \"5m\""
+        "gzip = true"
+        ""
+        "[dashboard]"
+        "history = 24"
+        ""
+        "[sensor]"
+        "name = \"temperature\""
+        f"port = \"{sensor_port}\""
+        "baud = 9600"
+        "query = \"MEAS:TEMP?\""
+        "unit = \"C\""
+        "timeout = \"2s\""
+        "low = 0"
+        "high = 100"
+    ]
+
+    for name in ["db", "cache", "api", "web"]
+        needs = match name
+            "api" => "[\"db\", \"cache\"]"
+            "web" => "[\"api\"]"
+            _     => "[]"
+
+        lines @ lines.push("")
+        lines @ lines.push("[[service]]")
+        lines @ lines.push(f"name = \"{name}\"")
+        lines @ lines.push(f"command = [\"{exe}\", \"workload\", \"service\", \"--name\", \"{name}\"]")
+        lines @ lines.push(f"depends_on = {needs}")
+        lines @ lines.push("restart = \"on-failure\"")
+        lines @ lines.push("backoff = \"1m\"")
+        lines @ lines.push("max_failures = 3")
+        lines @ lines.push("input = \"pipe\"")
+        lines @ lines.push("stop_line = \"stop\"")
+        lines @ lines.push("stop_grace = \"10s\"")
+
+        if name == "cache"
+            lines @ lines.push(f"memory_limit = \"{CACHE_LIMIT}\"")
+
+    lines @ lines.push("")
+
+    for w in [["conf", "false"], ["spool", "true"]]
+        lines @ lines.push("[[watch]]")
+        lines @ lines.push(f"name = \"{w[0]}\"")
+        lines @ lines.push(f"path = \"{dir}/watched/{w[0]}\"")
+        lines @ lines.push(f"tree = {w[1]}")
+        lines @ lines.push("")
+
+    rules = [
+        ["temperature-high", "avg(sensor.temperature, 2m) > 70", "1m", "critical", "the room is hot"]
+        ["temperature-rising", "slope(sensor.temperature, 3m) > 4", "0s", "warning", "the room heats up fast"]
+        ["sensor-silent", "age(sensor.temperature) > 90s", "0s", "warning", "the thermometer does not answer"]
+        ["service-down", "service.*.up < 1", "30s", "critical", "a service is down"]
+        ["service-impaired", "service.*.impaired > 0", "30s", "warning", "a service runs without what it needs"]
+        ["cache-memory", "service.cache.memory > 96MiB", "1m", "warning", "the cache holds more than its limit"]
+        ["spool-full", "watch.spool.bytes > 48KiB", "0s", "warning", "the spool fills up"]
+    ]
+
+    for r in rules
+        lines @ lines.push("[[rule]]")
+        lines @ lines.push(f"name = \"{r[0]}\"")
+        lines @ lines.push(f"when = \"{r[1]}\"")
+        lines @ lines.push(f"for = \"{r[2]}\"")
+        lines @ lines.push(f"severity = \"{r[3]}\"")
+        lines @ lines.push(f"summary = \"{r[4]}\"")
+        lines @ lines.push("")
+
+    return lines.join("\n")
+
+test "steps: in the order of their moments, each within the clock's run"
+    last: i64 @= 0
+
+    for s in steps()
+        assert s.at >= last && s.at <= END_SECONDS && s.at % STEP_SECONDS == 0
+        last @ s.at
+
+    assert temperatures().len() * STEP_SECONDS < END_SECONDS

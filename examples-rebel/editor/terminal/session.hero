@@ -1,0 +1,89 @@
+# The editor on a real terminal: full-screen by `tui`, one frame flushed
+# after every event, writing only the cells that changed. The loop waits at
+# most a fifth of a second for a key, a paste or a new size, then asks the
+# files' watches what other programs did, without waiting, so a change on
+# disk is offered within that time though nobody types.
+#
+# Whatever ends the loop, the terminal is put back and every watch closed
+# before the editor answers, so an error is read on the shell's own screen.
+# A command that fails, a save the system refuses, is told on the bottom
+# line and the editor goes on.
+
+use <rebel>/time
+use <rebel>/tui
+
+use editor/press
+use editor/state
+use editor/watching
+use view/layout
+use view/screen
+
+# How long the loop waits for an event before it asks the watches, in
+# milliseconds.
+constant TICK_MS: i64
+    200
+
+# Runs the editor on the program's terminal until it is done.
+#
+# - `e`: the editor, its buffers open.
+#
+# Fails `unsupported` where the standard output is no terminal, and as
+# `tui.flush` fails where the terminal is gone; the terminal is put back and
+# the watches closed either way.
+function run(@e: state.Editor) -> ()?
+    started = tui.start(tui.default_options())
+
+    t @= match started
+        .ok held => held
+        .err x =>
+            _ = state.stop(@e).is_err()
+            return fail(code: x.code, msg: x.msg)
+
+    area = tui.area_of(t)
+    e.width @ area.width
+    e.height @ area.height
+    ended = loop(@e, @t)
+    stopped = tui.stop(@t)
+    closed = state.stop(@e)
+    ended?
+    stopped?
+    closed?
+    return ok()
+
+# Draws, waits for an event, gives it to the editor, asks the watches,
+# until the editor is done.
+#
+# - `e`: the editor.
+# - `t`: the terminal in full-screen mode.
+#
+# Fails where the terminal fails.
+function loop(@e: state.Editor, @t: tui.Terminal) -> ()?
+    tick = time.milliseconds(TICK_MS)?
+    now = time.nanoseconds(0)
+
+    while !e.done
+        layout.follow(@e)
+        frame = screen.draw(e)
+        tui.flush(@t, frame: frame.buffer, cursor: frame.cursor)?
+
+        match tui.read_event_within(@t, limit: tick)
+            .ok ev =>
+                match ev
+                    .key k =>
+                        match press.press_key(@e, key: k.key)
+                            .ok _  => _ = 0
+                            .err x => state.warn(@e, text: x.msg)
+                    .pasted p => press.press_paste(@e, text: p.text)
+                    .resized r =>
+                        e.width @ r.width
+                        e.height @ r.height
+                    .mouse _ | .focus_gained | .focus_lost => _ = 0
+            .err x =>
+                if x.code != tui.TIMEOUT
+                    return fail(code: x.code, msg: x.msg)
+
+        match watching.poll(@e, limit: now)
+            .ok _  => watching.offer(@e)
+            .err x => state.warn(@e, text: f"the files are no longer watched: {x.msg}")
+
+    return ok()

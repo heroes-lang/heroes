@@ -1,0 +1,306 @@
+# The editor's colours: one `term.Style` for each part of the screen, each
+# written in the settings as words a person reads, `black on yellow`,
+# `bright_black`, `white on #303030 bold`. A colour is a name of the
+# terminal's sixteen (`red`, `bright_blue`), `default` for the terminal's
+# own, `#rrggbb` for a colour of 24 bits, or a number from 0 to 255 for the
+# palette; the first colour is the text's, the one after `on` the
+# background's, and the other words are attributes (`bold`, `dim`,
+# `italic`, `underline`, `blink`, `reverse`, `hidden`, `strike`).
+#
+# The defaults are written in the same words and read by the same reader, so
+# a part of the screen has one way to be given its colour.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/term
+
+# The styles of the parts of the screen.
+record Theme
+    # The text.
+    text: term.Style
+    # The line numbers.
+    gutter: term.Style
+    # The tab bar.
+    tabs: term.Style
+    # The current buffer's tab.
+    tab_selected: term.Style
+    # The status line.
+    status: term.Style
+    # A message under the status line.
+    message: term.Style
+    # A message that warns: an error, a refusal, a change on disk.
+    warning: term.Style
+    # The matches of the last search.
+    found: term.Style
+    # The match the cursor stands on.
+    found_current: term.Style
+    # The stand-ins drawn for tabs' controls and invisible characters: `^M`,
+    # `<U+200B>`.
+    stand_in: term.Style
+    # A line the diff view shows added.
+    diff_added: term.Style
+    # A line the diff view shows removed.
+    diff_removed: term.Style
+    # A hunk's header in the diff view, `@@ -1,3 +1,4 @@`.
+    diff_hunk: term.Style
+    # The files' names at the top of the diff view.
+    diff_header: term.Style
+
+# The parts of the screen a colour may be given to, in the order the
+# settings document them.
+function element_names() -> [str]
+    return [
+        "text"
+        "gutter"
+        "tabs"
+        "tab_selected"
+        "status"
+        "message"
+        "warning"
+        "found"
+        "found_current"
+        "stand_in"
+        "diff_added"
+        "diff_removed"
+        "diff_hunk"
+        "diff_header"
+    ]
+
+# The colour of each part when the settings give none, in the words the
+# settings read.
+function default_colors() -> {str: str}
+    return {
+        "text": "default"
+        "gutter": "bright_black"
+        "tabs": "default"
+        "tab_selected": "reverse bold"
+        "status": "reverse"
+        "message": "default"
+        "warning": "yellow bold"
+        "found": "black on yellow"
+        "found_current": "black on bright_green bold"
+        "stand_in": "magenta"
+        "diff_added": "green"
+        "diff_removed": "red"
+        "diff_hunk": "cyan"
+        "diff_header": "bold"
+    }
+
+# The theme `colors` gives, each part by its name.
+#
+# - `colors`: a style's words by the part's name; every name of
+#   `element_names` must be there, as the settings' defaults make sure.
+#
+# Fails `invalid` naming the part and the word it cannot read.
+function theme_of(colors: {str: str}) -> Theme?
+    return ok(
+        Theme(text: part(colors, name: "text")?, gutter: part(colors, name: "gutter")?, tabs: part(colors, name: "tabs")?, tab_selected: part(colors, name: "tab_selected")?, status: part(colors, name: "status")?, message: part(colors, name: "message")?, warning: part(colors, name: "warning")?, found: part(colors, name: "found")?, found_current: part(colors, name: "found_current")?, stand_in: part(colors, name: "stand_in")?, diff_added: part(colors, name: "diff_added")?, diff_removed: part(colors, name: "diff_removed")?, diff_hunk: part(colors, name: "diff_hunk")?, diff_header: part(colors, name: "diff_header")?)
+    )
+
+# The style of the part `name`, read from its words in `colors`.
+#
+# - `colors`: the words by part.
+# - `name`: the part.
+#
+# Fails `invalid` where the part is missing or its words are not a style.
+function part(colors: {str: str}, name: str) -> term.Style?
+    words = match colors[name]
+        .ok w  => w
+        .err _ => return fail(code: "invalid", msg: f"no colour is given for \"{name}\"")
+
+    match parse_style(words)
+        .ok s  => return ok(s)
+        .err e => return fail(code: e.code, msg: f"colors.{name}: {e.msg}")
+
+# The style `words` say: a colour for the text, `on` and a colour for the
+# background, attributes in any order.
+#
+# - `words`: the words, separated by spaces; "" is the plain style.
+#
+# Fails `invalid` naming the first word that is neither a colour, `on` nor
+# an attribute, and where `on` is not followed by a colour or the text is
+# given two colours.
+function parse_style(words: str) -> term.Style?
+    style @= term.plain()
+    has_foreground @= false
+    parts = strings.words(words)
+    i @= 0
+
+    while i < parts.len()
+        w = parts[i]
+
+        if w == "on"
+            if i + 1 >= parts.len()
+                return fail(code: "invalid", msg: f"\"on\" is followed by no colour in \"{words}\"")
+            style @ term.with_background(style, color: color_named(parts[i + 1])?)
+            i @ i + 2
+            continue
+
+        match attribute_named(w)
+            .ok a =>
+                style @ term.with_attribute(style, a: a)
+            .err _ =>
+                if has_foreground
+                    return fail(
+                        code: "invalid",
+                        msg: f"\"{w}\" in \"{words}\" is no attribute, and the text has its colour already"
+                    )
+                style @ term.with_foreground(style, color: color_named(w)?)
+                has_foreground @ true
+
+        i @ i + 1
+
+    return ok(style)
+
+# The terminal's colours by the names the settings write.
+function color_names() -> {str: term.Color}
+    return {
+        "default": .default
+        "black": .black
+        "red": .red
+        "green": .green
+        "yellow": .yellow
+        "blue": .blue
+        "magenta": .magenta
+        "cyan": .cyan
+        "white": .white
+        "bright_black": .bright_black
+        "bright_red": .bright_red
+        "bright_green": .bright_green
+        "bright_yellow": .bright_yellow
+        "bright_blue": .bright_blue
+        "bright_magenta": .bright_magenta
+        "bright_cyan": .bright_cyan
+        "bright_white": .bright_white
+    }
+
+# The colour `word` names: a name of the sixteen, `default`, `#rrggbb`, or a
+# number of the palette, 0 to 255.
+#
+# - `word`: one word.
+#
+# Fails `invalid` where it names no colour.
+function color_named(word: str) -> term.Color?
+    match color_names()[word]
+        .ok c  => return ok(c)
+        .err _ => _ = 0
+
+    if word.len() == 7 && word[0] == '#'
+        red = numbers.parse_int_base(word.slice(from: 1, to: 3), base: 16)
+        green = numbers.parse_int_base(word.slice(from: 3, to: 5), base: 16)
+        blue = numbers.parse_int_base(word.slice(from: 5, to: 7), base: 16)
+
+        if !red.is_err() && !green.is_err() && !blue.is_err()
+            return ok(.rgb(red: to_u8(red.must())?, green: to_u8(green.must())?, blue: to_u8(blue.must())?))
+
+    match numbers.parse_u8(word)
+        .ok n => return ok(.indexed(n: n))
+        .err _ => return fail(
+            code: "invalid",
+            msg: f"\"{word}\" is no colour: a name such as \"cyan\" or \"bright_black\", \"default\", \"#rrggbb\", or 0 to 255"
+        )
+
+# The attribute `word` names.
+#
+# - `word`: one word.
+#
+# Fails `invalid` where it names none.
+function attribute_named(word: str) -> term.Attribute?
+    return match word
+        "bold"      => ok(.bold)
+        "dim"       => ok(.dim)
+        "italic"    => ok(.italic)
+        "underline" => ok(.underline)
+        "blink"     => ok(.blink)
+        "reverse"   => ok(.reverse)
+        "hidden"    => ok(.hidden)
+        "strike"    => ok(.strike)
+        _           => fail(code: "invalid", msg: f"\"{word}\" is no attribute")
+
+# The words that write `style` again, as `parse_style` reads them:
+# `black on yellow bold`, `default` for the plain style.
+#
+# - `style`: the style.
+function describe(style: term.Style) -> str
+    words: [str] @= []
+
+    if style.foreground != .default || style.background == .default && style.attributes.len() == 0
+        words @ words.push(color_name(style.foreground))
+
+    if style.background != .default
+        words @ words.push("on")
+        words @ words.push(color_name(style.background))
+
+    for a in style.attributes
+        words @ words.push(attribute_name(a))
+
+    return words.join(" ")
+
+# The word that names `c` in the settings.
+#
+# - `c`: a colour.
+function color_name(c: term.Color) -> str
+    return match c
+        .default        => "default"
+        .black          => "black"
+        .red            => "red"
+        .green          => "green"
+        .yellow         => "yellow"
+        .blue           => "blue"
+        .magenta        => "magenta"
+        .cyan           => "cyan"
+        .white          => "white"
+        .bright_black   => "bright_black"
+        .bright_red     => "bright_red"
+        .bright_green   => "bright_green"
+        .bright_yellow  => "bright_yellow"
+        .bright_blue    => "bright_blue"
+        .bright_magenta => "bright_magenta"
+        .bright_cyan    => "bright_cyan"
+        .bright_white   => "bright_white"
+        .indexed i      => to_str(i.n)
+        .rgb rgb        => "#" + hex_pair(rgb.red) + hex_pair(rgb.green) + hex_pair(rgb.blue)
+
+# The two hexadecimal digits of `n`.
+#
+# - `n`: a byte.
+function hex_pair(n: u8) -> str
+    return strings.pad_zeros(numbers.format_int(n: to_i64(n).default(0), base: 16), width: 2)
+
+# The word that names the attribute `a`.
+#
+# - `a`: an attribute.
+function attribute_name(a: term.Attribute) -> str
+    return match a
+        .bold      => "bold"
+        .dim       => "dim"
+        .italic    => "italic"
+        .underline => "underline"
+        .blink     => "blink"
+        .reverse   => "reverse"
+        .hidden    => "hidden"
+        .strike    => "strike"
+
+test "parse_style: a colour on a background with an attribute, and words back"
+    s = parse_style("black on yellow bold").must()
+    assert s.foreground == .black && s.background == .yellow && s.attributes == [.bold]
+    assert describe(s) == "black on yellow bold"
+
+test "parse_style: 24 bits, the palette, the plain style and an attribute alone"
+    assert parse_style("#ff8000 on 236").must().foreground == .rgb(red: 255, green: 128, blue: 0)
+    assert describe(parse_style("#ff8000 on 236").must()) == "#ff8000 on 236"
+    assert parse_style("").must() == term.plain()
+    assert describe(term.plain()) == "default"
+    assert describe(parse_style("reverse").must()) == "reverse"
+
+test "parse_style: a word that is nothing, two colours, and on with nothing after"
+    assert parse_style("pink").is_err()
+    assert parse_style("red green").is_err()
+    assert parse_style("red on").is_err()
+    assert parse_style("#12345g").is_err()
+
+test "theme_of: the defaults read, and one part missing"
+    t = theme_of(default_colors()).must()
+    assert t.found == parse_style("black on yellow").must()
+    partial: {str: str} = {"text": "default"}
+    assert theme_of(partial).is_err()

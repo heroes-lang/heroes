@@ -1,0 +1,166 @@
+# What a file holds and what a step runs, each reduced to a digest: the
+# facts a rebuild is decided by.
+#
+# A rebuild is decided by the bytes of every input and the words of the
+# command, never by a file's time of last change, as make and ninja decide
+# it. A time says when a file was written, not whether what it holds
+# changed, and it lies both ways: a checkout, a copy, an editor's save of
+# the same bytes or `touch` moves it forward and rebuilds what did not
+# change; a restore from a backup, a file copied with its times kept, a
+# clock set back or a second's resolution of a file system leaves it behind
+# and skips what did change. A digest of the bytes changes exactly when the
+# bytes do. It also gives the early cut-off a time cannot: a step whose
+# output comes out the same bytes as before leaves every step after it
+# alone. The price is reading each input once a build.
+#
+# The digest is XXH64 (`hash.xxh64`), sixty-four bits written as sixteen hex
+# digits: a change goes unseen only where two contents share all sixty-four
+# bits, about one chance in 2^64 for each change, and the inputs of a build
+# are its own author's files, not an adversary's, so a cryptographic hash
+# would buy nothing here and cost time on every byte.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/hash
+use <rebel>/io
+
+use load/paths
+
+# The bytes a file is read in at once.
+constant CHUNK: i64
+    65_536
+
+# What a node's file was found to be when it was looked at.
+variant Seen
+    # A file, and the digest of its bytes.
+    file
+        # Sixteen hex digits.
+        digest: str
+    # Nothing at its path.
+    missing
+    # Something that could not be read as a file.
+    unreadable
+        # Why, in words: a folder, or the system's refusal.
+        reason: str
+
+# `n` as sixteen hex digits, the highest first.
+#
+# - `n`: a 64-bit digest.
+function hex(n: u64) -> str
+    return bytes.format_hex(bytes.encode_u64_be(n))
+
+# The digest of the bytes of the file at `place`, read in chunks so a large
+# output never stands in memory whole.
+#
+# - `place`: the file's path on the disk.
+#
+# Fails as `fs.open` and `io.read` do, with their codes.
+function digest_of_file(place: str) -> str?
+    s @= fs.open(place)?
+    state @= hash.start_xxh64(0)
+    done @= false
+
+    while !done
+        match io.read(s, n: CHUNK)
+            .ok chunk =>
+                if chunk.len() == 0
+                    done @ true
+                else
+                    hash.update_xxh64(@state, data: chunk)
+            .err e =>
+                # The read's failure is the one told; a close that fails
+                # after it has nothing to add.
+                _ = io.close(@s).is_err()
+                return fail(code: e.code, msg: f"{place}: {e.msg}")
+
+    io.close(@s)?
+    return ok(hex(state.value))
+
+# The digest of `text`'s bytes.
+#
+# - `text`: any text.
+function digest_of_text(text: str) -> str
+    return hex(hash.xxh64_text(text, seed: 0))
+
+# The digest of a command: its words, then its environment's variables in
+# the order of their names, each length first, so no two commands give one
+# text to hash however their words split.
+#
+# - `words`: the program and its arguments.
+# - `env`: the variables the step sets.
+function digest_of_command(words: [str], env: {str: str}) -> str
+    state @= hash.start_xxh64(0)
+
+    for w in words
+        hash.update_xxh64_text(@state, s: f"w{w.len()}:{w}\n")
+
+    for name in sort(keys(env))
+        value = env[name].default("")
+        hash.update_xxh64_text(@state, s: f"e{name.len()}:{name}={value.len()}:{value}\n")
+
+    return hex(state.value)
+
+# What the file of node `name` is now, read from the disk.
+#
+# - `root`: the build's folder.
+# - `name`: the node.
+function look(root: str, name: str) -> Seen
+    place = paths.disk(root: root, name: name)
+
+    is_file = match fs.is_file(place)
+        .ok answer => answer
+        .err e     => return .unreadable(reason: e.msg)
+
+    if is_file
+        match digest_of_file(place)
+            .ok d  => return .file(digest: d)
+            .err e => return .unreadable(reason: e.msg)
+
+    if fs.is_dir(place).default(false)
+        return .unreadable(reason: "it is a folder")
+
+    if fs.exists(place).default(false)
+        return .unreadable(reason: "it is not a file")
+    return .missing
+
+# What node `name`'s file is, from `cache` where it was looked at in this
+# build, else looked at now and kept.
+#
+# - `cache`: what was seen so far, node to what it was; this adds `name`.
+# - `root`: the build's folder.
+# - `name`: the node.
+function seen(@cache: {str: Seen}, root: str, name: str) -> Seen
+    match cache[name]
+        .ok s => return s
+        .err _ =>
+            s = look(root: root, name: name)
+            cache[name] @ s
+            return s
+
+# The digest `s` holds; absent where it is no file.
+#
+# - `s`: what a file was seen to be.
+function digest_in(s: Seen) -> str?
+    match s
+        .file f                  => return ok(f.digest)
+        .missing | .unreadable _ => return fail(code: "not_found", msg: "no file")
+
+test "hex: zero, one and the largest, always sixteen digits"
+    assert hex(0) == "0000000000000000"
+    assert hex(1) == "0000000000000001"
+    assert hex(18446744073709551615) == "ffffffffffffffff"
+
+test "digest_of_text: XXH64 of the empty text and of one word, seed 0"
+    assert digest_of_text("") == "ef46db3751d8e999"
+    assert digest_of_text("a") != digest_of_text("b")
+
+test "digest_of_command: the split of the words and the environment count"
+    plain: {str: str} = {}
+    assert digest_of_command(["cc", "a b"], env: plain) != digest_of_command(["cc", "a", "b"], env: plain)
+    assert digest_of_command(["cc"], env: {"A": "1"}) != digest_of_command(["cc"], env: plain)
+    assert digest_of_command(["cc"], env: {"A": "1", "B": "2"}) == digest_of_command(["cc"], env: {"B": "2", "A": "1"})
+
+test "digest_in: a file's digest, nothing for the rest"
+    assert digest_in(.file(digest: "00")).must() == "00"
+    assert digest_in(.missing).is_err()
+    assert digest_in(.unreadable(reason: "it is a folder")).is_err()

@@ -1,0 +1,72 @@
+# invoice: invoicing for a small business. It keeps the company's customers
+# and items in SQLite, issues numbered invoices and credit notes with their
+# VAT computed per line and per country in exact decimals, writes each
+# document as a PDF drawn from a layout template, with the company's logo
+# and, on a euro invoice, the payment QR code of a SEPA credit transfer, and
+# as an XLSX sheet beside it, mails the PDF to the customer in the
+# customer's language, and at the year's end exports the accountant's CSV,
+# reports the totals by VAT rate and makes the year's archive of every
+# document, checked against its manifest.
+#
+# Run for real:
+#
+#     heroes build examples-rebel/invoice/main.hero -o invoice
+#     ./invoice init invoice.toml                  # the data folder and books
+#     ./invoice import invoice.toml customers customers.csv
+#     ./invoice import invoice.toml items items.csv
+#     ./invoice issue invoice.toml ROSSI 2026-03-02 BOOK-ATLAS=3 DESIGN-HOUR=6.5
+#     ./invoice issue invoice.toml HARBOR today BOOK-ATLAS=40 --rate 1.0850
+#     ./invoice credit invoice.toml INV-2026-0001 today BOOK-ATLAS=1
+#     ./invoice mail invoice.toml INV-2026-0001
+#     ./invoice export invoice.toml 2026 accounts-2026.csv
+#     ./invoice report invoice.toml 2026
+#     ./invoice archive invoice.toml 2026
+#
+# `conf/settings.hero` documents the configuration file, which names the
+# data folder the books (`books.db`), the documents
+# (`documents/<year>/<number>.pdf` and `.xlsx`) and the archives
+# (`archives/<year>.tar.gz`) are kept in; `cli/commands.hero` documents
+# every command. The mail server's password stands in the environment,
+# `INVOICE_SMTP__PASSWORD`, never in the file. `render/sheet.hero` documents
+# the layout language a company's own layout is written in.
+#
+# The demo, `./invoice demo` (`main.args`), starts on loopback the SMTP
+# server it carries (`standins/smtp_server`), which checks each message and
+# its PDF before it takes it, and runs a month of a publisher's invoicing
+# under a fixed clock: three customers in Italy, France and the United
+# States, three invoices and a credit note, two requests refused, every
+# document mailed and one login refused, the CSV, the totals and the
+# archive. Each document is told by digests of what its files hold read
+# back, never by a timestamp.
+#
+# Rebel's packages, and what for:
+#
+# - `big`: every amount, quantity, rate and exchange rate an exact decimal,
+#   and the IBAN's and the RF reference's check digits on integers of any
+#   length;
+# - `sql`, `sql/sqlite`: the books;
+# - `i18n`, `i18n/numbers`, `i18n/dates`: the customer's language, its
+#   catalog of words read from `.po` files, amounts with their currency and
+#   days with their month's name;
+# - `template`: the page's layout and the mail's subject and text;
+# - `pdf`, `image`, `image/png`, `qr`: the document drawn, the logo read and,
+#   in the demo, drawn, the payment code made and drawn;
+# - `xlsx`: the spreadsheet of each document;
+# - `mail`, `mail/smtp`: the message built, sent, and read by the stand-in;
+# - `csv`: the imports and the accountant's export;
+# - `archive`, `crypto`: the year's archive and its manifest of SHA-256;
+# - `config`, `json`: the configuration in layers, TOML's file under the
+#   environment, and the values a template reads;
+# - `net`, `io`, `threads`, `os`: the stand-in's socket and thread, the
+#   stop, the environment;
+# - `fs`, `path`, `time`, `strings`, `bytes`, `numbers`: throughout.
+
+use cli/commands
+use demo/script
+
+function main()
+    words = args()
+
+    if words.len() == 1 && words[0] == "demo"
+        exit(code: script.run())
+    exit(code: commands.run(words))

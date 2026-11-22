@@ -1,0 +1,207 @@
+# The demo: a small project written under the demo's folder and built the
+# way a person builds one, every invocation printed as the command line it
+# stands for and run through `engine/session`, which is what the command
+# line runs. Between the builds the demo edits the project as a person
+# would, so each build shows one thing: a first build four steps at a time,
+# nothing to do, a file touched and nothing rebuilt, one source edited and
+# only what depends on it rebuilt, a header no build file names, an object
+# rebuilt to the same bytes and the link skipped, a dry run, a command
+# changed, an output changed by hand, a failing step stopping the build, a
+# time limit, a cycle and a missing input refused, the folder's lock, the
+# tools, and a clean. Then the account, and the folder removed.
+#
+# The steps are this program's own helpers, named by the variable `mill`
+# set to this program's path, which is never printed: the build file's
+# default is `build`, as a person who has it on PATH runs the project. No
+# time is printed, and steps are collected in the order they started, so
+# the transcript is the same on every run whatever runs faster.
+
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/process
+use <rebel>/strings
+
+use demo/account
+use demo/project
+use engine/session
+use load/paths
+use state/lock
+
+# The options every invocation of the demo starts from.
+#
+# - `dir`: the project's folder.
+# - `mill`: this program's path, quoted for a command, or "" for a tool,
+#   which runs no step and so shows the build file's own `mill`.
+function base(dir: str, mill: str) -> session.Options
+    o @= session.default_options(dir)
+    o.show_times @ false
+
+    if mill != ""
+        o.overrides @ {"mill": mill}
+
+    return o
+
+# Prints `line`, then a blank line before what follows.
+#
+# - `line`: a section's heading.
+function section(line: str)
+    print("")
+    print(line)
+
+# Runs `o` as the command line `asked` would, printing it, and keeps its row.
+#
+# - `rows`: the account's rows, which gains one.
+# - `asked`: the command line it stands for.
+# - `o`: the session's options.
+function invoke(@rows: [account.Row], asked: str, o: session.Options)
+    print(f"$ {asked}")
+    result = session.run(o)
+
+    match result
+        .ok r => print(f"exit {r.code}")
+        .err e =>
+            print(f"build: {e.msg}")
+            print("exit 1")
+
+    rows @ rows.push(account.Row(asked: asked, result: result))
+
+# Prints the file `name` of the project, each line indented.
+#
+# - `dir`: the project's folder.
+# - `name`: the file, as a node.
+#
+# Fails where it cannot be read, with its code.
+function show(dir: str, name: str) -> ()?
+    text = read_file(paths.disk(root: dir, name: name))?
+    print(f"--- {name}")
+
+    for line in strings.lines(strings.trim_suffix(s: text, suffix: "\n"))
+        if line == ""
+            print("")
+        else
+            print("    " + line)
+
+    return ok()
+
+# The demo, run in `dir`, which it makes and removes.
+#
+# - `dir`: the demo's folder, relative to the working folder.
+#
+# Fails where the project cannot be written or this program's path read,
+# with its code; a build that fails is part of the account, no failure.
+function run(dir: str) -> ()?
+    mill = process.quote(os.executable_path()?)
+    project.write_all(dir)?
+    rows: [account.Row] @= []
+    plain = base(dir: dir, mill: mill)
+    tools = base(dir: dir, mill: "")
+    print("== the project: a version file, a header and two sources of mill, and its build file")
+    show(dir: dir, name: "build.toml")?
+    show(dir: dir, name: "src/main.src")?
+
+    section("== a first build, four steps at a time")
+    four @= plain
+    four.jobs @ 4
+    invoke(@rows, asked: "build -j 4", o: four)
+
+    section("== again: every digest is the one the log holds")
+    invoke(@rows, asked: "build", o: plain)
+
+    explained @= plain
+    explained.explain @ true
+    four_explained @= four
+    four_explained.explain @ true
+
+    section("== src/util.h touched: its time moves, its bytes do not")
+    fs.touch(paths.disk(root: dir, name: "src/util.h"))?
+    invoke(@rows, asked: "build --explain", o: explained)
+
+    section("== src/util.src edited: only what is made from it runs")
+    project.put(dir: dir, name: "src/util.src", text: project.util_src("hi"))?
+    invoke(@rows, asked: "build -j 4 --explain", o: four_explained)
+
+    section("== src/util.h edited: no build file names it, both depfiles do")
+    project.put(dir: dir, name: "src/util.h", text: project.util_h(["greeting", "farewell"]))?
+    invoke(@rows, asked: "build -j 4 --explain", o: four_explained)
+
+    section("== a comment of src/main.src changed: its object comes out the same bytes, so no link")
+    project.put(dir: dir, name: "src/main.src", text: project.main_src("where the program starts"))?
+    invoke(@rows, asked: "build --explain", o: explained)
+
+    section("== the version moved: the generated header, then what its depfile ties to it")
+    project.put(dir: dir, name: "src/version.txt", text: project.version_txt("1.5.0"))?
+    invoke(@rows, asked: "build --explain", o: explained)
+
+    section("== a dry run after an edit runs nothing; the build after it runs what it said")
+    project.put(dir: dir, name: "src/util.src", text: project.util_src("hey"))?
+    dry @= explained
+    dry.dry_run @ true
+    invoke(@rows, asked: "build -n --explain", o: dry)
+    invoke(@rows, asked: "build", o: plain)
+
+    section("== the build file keeps comments now: the compile command changed")
+    project.put(dir: dir, name: "build.toml", text: project.build_toml("", with_tool: false))?
+    invoke(@rows, asked: "build -j 4 --explain", o: four_explained)
+
+    section("== out/app changed by hand: its bytes are no longer those its step left")
+    project.put(dir: dir, name: "out/app", text: "tampered\n")?
+    invoke(@rows, asked: "build --explain", o: explained)
+
+    section("== what the log learned from the depfiles")
+    deps @= tools
+    deps.tool @ ok("deps")
+    invoke(@rows, asked: "build -t deps", o: deps)
+
+    section("== a second program whose source does not compile stops the build; the steps already started are told")
+    project.put(dir: dir, name: "build.toml", text: project.build_toml("", with_tool: true))?
+    project.put(dir: dir, name: "src/tool.src", text: project.tool_src(true))?
+    project.put(dir: dir, name: "src/util.src", text: project.util_src("hello again"))?
+    two @= plain
+    two.jobs @ 2
+    invoke(@rows, asked: "build -j 2", o: two)
+
+    section("== the source fixed: only what did not finish runs")
+    project.put(dir: dir, name: "src/tool.src", text: project.tool_src(false))?
+    invoke(@rows, asked: "build -j 2", o: two)
+
+    section("== a step past its rule's time limit is ended")
+    slow @= plain
+    slow.file @ "slow.toml"
+    invoke(@rows, asked: "build -f slow.toml", o: slow)
+
+    section("== a cycle is refused before anything runs, told by its path")
+    show(dir: dir, name: "cycle.toml")?
+    cycle @= plain
+    cycle.file @ "cycle.toml"
+    invoke(@rows, asked: "build -f cycle.toml", o: cycle)
+
+    section("== a missing input is refused, with every target that needs it")
+    missing @= plain
+    missing.file @ "missing.toml"
+    invoke(@rows, asked: "build -f missing.toml", o: missing)
+
+    section("== while another build holds the folder, a second is refused")
+    held @= lock.take(dir)?
+    invoke(@rows, asked: "build", o: plain)
+    lock.release(@held)?
+
+    section("== the commands, as a POSIX shell reads them back")
+    commands @= tools
+    commands.tool @ ok("commands")
+    invoke(@rows, asked: "build -t commands", o: commands)
+
+    section("== clean; then a dry run finds everything to do")
+    cleaning @= plain
+    cleaning.clean @ true
+    cleaning.verbose @ true
+    invoke(@rows, asked: "build --clean -v", o: cleaning)
+    after @= plain
+    after.dry_run @ true
+    invoke(@rows, asked: "build -n", o: after)
+
+    print("")
+
+    for line in account.lines_of(rows)
+        print(line)
+
+    return fs.remove_all(dir)

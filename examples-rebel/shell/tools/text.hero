@@ -1,0 +1,156 @@
+# The programs of `tools/kit` that read text: each reads the files it is
+# given, or its input where none is, and writes to its output; a file it
+# cannot read is told on its error and it ends with 1.
+#
+#     upper [file...]          the text in upper case
+#     count [file...]          its lines, words and bytes
+#     sorted [-r] [-u] [file...]  its lines sorted by their bytes
+#     first [n] [file...]      its first n lines, 10 by default
+
+use <rebel>/io
+use <rebel>/lists
+use <rebel>/numbers
+use <rebel>/strings
+
+# What a program read: the text, or why it could not.
+record Input
+    # The text read, every file's in order.
+    text: str
+    # A message for each file that could not be read.
+    mistakes: [str]
+
+# The text of `files`, or of the program's input where there is none.
+#
+# - `files`: the paths.
+function read_input(files: [str]) -> Input
+    if files.len() == 0
+        return match io.read_all_text(io.stdin())
+            .ok t  => Input(text: t, mistakes: [])
+            .err e => Input(text: "", mistakes: [f"the input: {e.msg}"])
+
+    texts: [str] @= []
+    mistakes: [str] @= []
+
+    for f in files
+        match read_file(f)
+            .ok t  => texts @ texts.push(t)
+            .err e => mistakes @ mistakes.push(f"{f}: {e.msg}")
+
+    return Input(text: texts.join(""), mistakes: mistakes)
+
+# Writes `text` to the output and each mistake to the error; answers 1 where
+# there was a mistake, else 0.
+#
+# - `name`: the program, for its messages.
+# - `text`: what it writes.
+# - `mistakes`: what went wrong.
+function finish(name: str, text: str, mistakes: [str]) -> i64
+    written = io.write_text(io.stdout(), text: text)
+
+    for m in mistakes
+        _ = io.write_text(io.stderr(), text: f"{name}: {m}\n").is_err()
+
+    if mistakes.len() > 0 || written.is_err()
+        return 1
+
+    return 0
+
+# `upper`: the text in upper case.
+#
+# - `arguments`: the files.
+function upper(arguments: [str]) -> i64
+    got = read_input(arguments)
+    return finish(name: "upper", text: strings.to_upper(got.text), mistakes: got.mistakes)
+
+# `count`: the lines, the words and the bytes of the text, on one line.
+#
+# - `arguments`: the files.
+function count(arguments: [str]) -> i64
+    got = read_input(arguments)
+    return finish(name: "count", text: counted(got.text) + "\n", mistakes: got.mistakes)
+
+# The lines, the words and the bytes of `text`, as `count` writes them: a
+# line is a line feed, as `wc -l` counts it.
+#
+# - `text`: the text.
+function counted(text: str) -> str
+    lines = strings.count_of(s: text, substr: "\n")
+    return f"{lines} lines, {strings.words(text).len()} words, {text.len()} bytes"
+
+# `sorted [-r] [-u]`: the lines sorted by their bytes, reversed with `-r`,
+# each once with `-u`.
+#
+# - `arguments`: the options, then the files.
+function sorted(arguments: [str]) -> i64
+    reverse @= false
+    unique @= false
+    first_file @= 0
+
+    while first_file < arguments.len() && (arguments[first_file] == "-r" || arguments[first_file] == "-u")
+        if arguments[first_file] == "-r"
+            reverse @ true
+        else
+            unique @ true
+        first_file @ first_file + 1
+
+    got = read_input(arguments.slice(from: first_file, to: arguments.len()))
+    return finish(name: "sorted", text: sorted_text(got.text, reverse: reverse, unique: unique), mistakes: got.mistakes)
+
+# The lines of `text` sorted, as `sorted` writes them.
+#
+# - `text`: the text.
+# - `reverse`: whether the order is the other way.
+# - `unique`: whether each line is kept once.
+function sorted_text(text: str, reverse: bool, unique: bool) -> str
+    lines @= sort(strings.lines(text))
+
+    if unique
+        lines @ lists.compact(lines, same: same_text)
+
+    if reverse
+        lines @ lists.reverse(lines)
+
+    if lines.len() == 0
+        return ""
+
+    return lines.join("\n") + "\n"
+
+# Whether two lines are the same.
+#
+# - `left`: a line.
+# - `right`: another.
+function same_text(left: str, right: str) -> bool
+    return left == right
+
+# `first [n]`: the first `n` lines, 10 where no number comes first.
+#
+# - `arguments`: the count, then the files.
+function first(arguments: [str]) -> i64
+    n @= 10
+    files @= arguments
+
+    if arguments.len() > 0
+        match numbers.parse_int(arguments[0])
+            .ok v =>
+                n @ v
+                files @ arguments.slice(from: 1, to: arguments.len())
+            .err _ => _ = 0
+
+    got = read_input(files)
+    lines = lists.take(strings.lines(got.text), n: n)
+
+    shown = if lines.len() == 0
+        ""
+    else
+        lines.join("\n") + "\n"
+
+    return finish(name: "first", text: shown, mistakes: got.mistakes)
+
+test "counted: lines, words and bytes, and an empty text"
+    assert counted("a b\nc\n") == "2 lines, 3 words, 6 bytes"
+    assert counted("") == "0 lines, 0 words, 0 bytes"
+
+test "sorted_text: by bytes, reversed, each once"
+    assert sorted_text("b\na\nb\n", reverse: false, unique: false) == "a\nb\nb\n"
+    assert sorted_text("b\na\nb\n", reverse: true, unique: true) == "b\na\n"
+    assert sorted_text("", reverse: false, unique: false) == ""

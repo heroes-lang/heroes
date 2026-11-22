@@ -1,0 +1,127 @@
+# A snapshot written out as one tar archive (POSIX.1-2001's ustar, with
+# PAX records where a name or a field needs them, `archive`'s writer),
+# plain or gzip, so it can be handed to somebody with no backup tool, or
+# kept on a medium that outlives this one. The archive holds every folder,
+# file and link of the snapshot below its root, with their permission
+# bits and times, folders before what they hold; no owner is written.
+#
+# A file's content goes into the archive chunk by chunk as it is read,
+# each chunk checked, and the whole file's SHA-256 is checked once its
+# last chunk is written: an archive is never written from a chunk the
+# repository does not hold whole.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/io
+use <rebel>/time
+
+use engine/meter
+use engine/restorer
+use model/snapshot
+use model/tree
+use repo/chunk_store
+use repo/repository
+
+## Codes
+
+# The code of a file whose content is not the one backed up.
+constant INVALID: str
+    "invalid"
+
+## Exporting
+
+# What an export wrote.
+record Exported
+    # The files.
+    files: i64
+    # The folders.
+    dirs: i64
+    # The links.
+    links: i64
+    # The bytes of the files.
+    bytes: i64
+
+# Writes the snapshot `s` as a tar archive to `to`.
+#
+# - `r`: the repository; its index is read, and its counts grow.
+# - `s`: the snapshot.
+# - `to`: the stream the archive goes to; the caller closes it.
+# - `compression`: none, or gzip.
+# - `shown`: whether a progress bar is drawn.
+#
+# Fails `invalid` where a file's content is not the one backed up, and as
+# the repository and the writer fail.
+function export_tar(@r: repository.Repository, s: snapshot.Snapshot, to: io.Stream, compression: archive.Compression, shown: bool) -> Exported?
+    steps = restorer.plan(@r, start: restorer.start_of(@r, s: s, only: "")?)?
+    owed @= 0
+
+    for st in steps
+        owed @ owed + st.node.size
+
+    m @= meter.meter("export", total: owed, shown: shown)
+    w @= archive.tar_writer(to, compression: compression)
+    done @= Exported(files: 0, dirs: 0, links: 0, bytes: 0)
+
+    for st in steps
+        if st.rel != ""
+            match st.node.kind
+                .directory =>
+                    archive.write_tar_header(@w, entry: entry_of(st, kind: .directory))?
+                    done.dirs @ done.dirs + 1
+                .symlink =>
+                    e @= entry_of(st, kind: .symlink)
+                    e.link @ st.node.target
+                    archive.write_tar_header(@w, entry: e)?
+                    done.links @ done.links + 1
+                .file =>
+                    e @= entry_of(st, kind: .file)
+                    e.size @ st.node.size
+                    archive.write_tar_header(@w, entry: e)?
+                    write_content(@r, @w, @m, st: st)?
+                    done.files @ done.files + 1
+                    done.bytes @ done.bytes + st.node.size
+
+    archive.finish_tar(@w)?
+    meter.done(@m)
+    return ok(done)
+
+# The tar header of `st`: its path, kind, permission bits and time.
+#
+# - `st`: the step.
+# - `kind`: the entry's kind.
+function entry_of(st: restorer.Step, kind: archive.Kind) -> archive.TarEntry
+    e @= archive.tar_entry(st.rel, kind: kind)
+    e.mode @ st.node.mode
+    e.modified @ time.Instant(unix_nanoseconds: st.node.modified)
+    return e
+
+# Writes the file `st`'s chunks as its entry's data, checked whole.
+#
+# - `r`: the repository.
+# - `w`: the writer, whose entry in hand is the file's.
+# - `m`: the meter.
+# - `st`: the file's step.
+#
+# Fails `invalid` where its SHA-256 is not the one backed up, and as the
+# chunks and the writer fail.
+function write_content(@r: repository.Repository, @w: archive.TarWriter, @m: meter.Meter, st: restorer.Step) -> ()?
+    state @= crypto.start(.sha256)
+
+    for id in st.node.chunks
+        data = chunk_store.load_chunk(@r, id: id)?
+        archive.write_tar_data(@w, data: data)?
+        crypto.update(@state, data: data)
+        meter.tick(@m, n: data.len())
+
+    if bytes.format_hex(crypto.digest(state)) != st.node.digest
+        return fail(code: INVALID, msg: f"{st.rel} does not hold the content backed up")
+    return ok()
+
+test "entry_of: a step's path, bits and time in its header"
+    st = restorer.Step(
+        rel: "docs/a.txt",
+        node: tree.file_node(name: "a.txt", mode: 0o640, modified: 7, size: 0, chunks: [], digest: "")
+    )
+    e = entry_of(st, kind: .file)
+    assert e.name == "docs/a.txt" && e.mode == 0o640 && e.modified == time.Instant(unix_nanoseconds: 7)

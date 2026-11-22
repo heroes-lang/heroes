@@ -1,0 +1,314 @@
+# The words a document and its mail are written in, in the customer's
+# language. Every text is a gettext message whose identifier is its
+# English, so an English document needs no catalog and a language with no
+# catalog falls back to English word by word. Italian, French and German
+# are carried in the program; a company changes a wording, or adds a
+# language, with a `.po` file in the folder its configuration names
+# (`translations`): `<folder>/it.po` is read over the carried Italian, each
+# message it translates replacing the carried one, so a file needs to hold
+# only the messages it changes.
+#
+# The mail's subject and bodies are messages too, and their translations
+# are templates (`mailing/message` renders them): a translator moves a
+# `{{ .number }}` where the language puts it.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+
+use tax/regime
+
+## The labels
+
+# Each label a document's layout reads, by the key the layout names it
+# with (`.labels.invoice`), and its English.
+function labels() -> [[str]]
+    return [
+        ["invoice", "Invoice"]
+        ["credit_note", "Credit note"]
+        ["number", "Number"]
+        ["date", "Date"]
+        ["due", "Due date"]
+        ["bill_to", "Bill to"]
+        ["vat_id", "VAT ID"]
+        ["description", "Description"]
+        ["quantity", "Quantity"]
+        ["unit", "Unit"]
+        ["unit_price", "Unit price"]
+        ["vat", "VAT"]
+        ["amount", "Amount"]
+        ["taxable", "Taxable amount"]
+        ["rate", "Rate"]
+        ["tax", "Tax"]
+        ["total_net", "Total net"]
+        ["total_vat", "Total VAT"]
+        ["total_due", "Total due"]
+        ["total_credited", "Total credited"]
+        ["pay_to", "Pay by bank transfer to"]
+        ["reference", "Reference"]
+        ["credits", "Credits invoice"]
+        ["exchange", "Exchange rate"]
+        ["currency", "Currency"]
+        ["scan", "Scan to pay"]
+        ["nothing_due", "Nothing to pay: the amount is credited."]
+    ]
+
+## The mail's messages
+
+# The English of the mail's subject, a template.
+constant SUBJECT: str
+    "{{ .kind }} {{ .number }} from {{ .company }}"
+
+# The English of the body of the mail that sends an invoice, a template.
+constant INVOICE_BODY: str
+    "Dear {{ .customer }},\n\nplease find attached our invoice {{ .number }} of {{ .date }} for {{ .total }}, due on {{ .due }}.\n\nKind regards,\n{{ .company }}\n"
+
+# The English of the body of the mail that sends a credit note, a
+# template.
+constant CREDIT_BODY: str
+    "Dear {{ .customer }},\n\nplease find attached our credit note {{ .number }} of {{ .date }} for {{ .total }}, which credits invoice {{ .refers_to }}.\n\nKind regards,\n{{ .company }}\n"
+
+## The carried translations
+
+# The carried translations of `language`, each a pair of the English and
+# its translation; none for a language the program does not carry.
+#
+# - `language`: a language subtag, lower case: `it`.
+function carried(language: str) -> [[str]]
+    if language == "it"
+        return italian()
+
+    if language == "fr"
+        return french()
+
+    if language == "de"
+        return german()
+    return []
+
+# Italian.
+function italian() -> [[str]]
+    return [
+        ["Invoice", "Fattura"]
+        ["Credit note", "Nota di credito"]
+        ["Number", "Numero"]
+        ["Date", "Data"]
+        ["Due date", "Scadenza"]
+        ["Bill to", "Destinatario"]
+        ["VAT ID", "Partita IVA"]
+        ["Description", "Descrizione"]
+        ["Quantity", "Quantità"]
+        ["Unit", "U.M."]
+        ["Unit price", "Prezzo unitario"]
+        ["VAT", "IVA"]
+        ["Amount", "Importo"]
+        ["Taxable amount", "Imponibile"]
+        ["Rate", "Aliquota"]
+        ["Tax", "Imposta"]
+        ["Total net", "Totale imponibile"]
+        ["Total VAT", "Totale IVA"]
+        ["Total due", "Totale da pagare"]
+        ["Total credited", "Totale accreditato"]
+        ["Pay by bank transfer to", "Pagamento con bonifico a"]
+        ["Reference", "Riferimento"]
+        ["Credits invoice", "Storno della fattura"]
+        ["Exchange rate", "Tasso di cambio"]
+        ["Currency", "Valuta"]
+        ["Scan to pay", "Inquadra per pagare"]
+        ["Nothing to pay: the amount is credited.", "Nessun pagamento dovuto: l'importo è accreditato."]
+        [regime.note_of(.destination), "IVA del paese del cliente, dichiarata tramite lo sportello unico OSS."]
+        [regime.note_of(.reverse_charge), "Inversione contabile: l'IVA è dovuta dal cliente."]
+        [regime.note_of(.export), "Operazione non soggetta a IVA: cliente fuori dall'Unione europea."]
+        [SUBJECT, "{{ .kind }} {{ .number }} da {{ .company }}"]
+        [INVOICE_BODY, "Gentile {{ .customer }},\n\nin allegato la nostra fattura {{ .number }} del {{ .date }} di {{ .total }}, con scadenza il {{ .due }}.\n\nCordiali saluti,\n{{ .company }}\n"]
+        [CREDIT_BODY, "Gentile {{ .customer }},\n\nin allegato la nostra nota di credito {{ .number }} del {{ .date }} di {{ .total }}, a storno della fattura {{ .refers_to }}.\n\nCordiali saluti,\n{{ .company }}\n"]
+    ]
+
+# French.
+function french() -> [[str]]
+    return [
+        ["Invoice", "Facture"]
+        ["Credit note", "Avoir"]
+        ["Number", "Numéro"]
+        ["Date", "Date"]
+        ["Due date", "Échéance"]
+        ["Bill to", "Client"]
+        ["VAT ID", "N° TVA"]
+        ["Description", "Désignation"]
+        ["Quantity", "Quantité"]
+        ["Unit", "Unité"]
+        ["Unit price", "Prix unitaire"]
+        ["VAT", "TVA"]
+        ["Amount", "Montant"]
+        ["Taxable amount", "Base HT"]
+        ["Rate", "Taux"]
+        ["Tax", "Montant TVA"]
+        ["Total net", "Total HT"]
+        ["Total VAT", "Total TVA"]
+        ["Total due", "Net à payer"]
+        ["Total credited", "Total crédité"]
+        ["Pay by bank transfer to", "Virement bancaire à"]
+        ["Reference", "Référence"]
+        ["Credits invoice", "Avoir sur la facture"]
+        ["Exchange rate", "Taux de change"]
+        ["Currency", "Devise"]
+        ["Scan to pay", "Scanner pour payer"]
+        ["Nothing to pay: the amount is credited.", "Aucun paiement dû : le montant est crédité."]
+        [regime.note_of(.destination), "TVA du pays du client, déclarée par le guichet unique OSS."]
+        [regime.note_of(.reverse_charge), "Autoliquidation : la TVA est due par le client."]
+        [regime.note_of(.export), "TVA non applicable : client hors de l'Union européenne."]
+        [SUBJECT, "{{ .kind }} {{ .number }} de {{ .company }}"]
+        [INVOICE_BODY, "Bonjour {{ .customer }},\n\nveuillez trouver ci-joint notre facture {{ .number }} du {{ .date }} d'un montant de {{ .total }}, à régler avant le {{ .due }}.\n\nCordialement,\n{{ .company }}\n"]
+        [CREDIT_BODY, "Bonjour {{ .customer }},\n\nveuillez trouver ci-joint notre avoir {{ .number }} du {{ .date }} d'un montant de {{ .total }}, sur la facture {{ .refers_to }}.\n\nCordialement,\n{{ .company }}\n"]
+    ]
+
+# German.
+function german() -> [[str]]
+    return [
+        ["Invoice", "Rechnung"]
+        ["Credit note", "Gutschrift"]
+        ["Number", "Nummer"]
+        ["Date", "Datum"]
+        ["Due date", "Fällig am"]
+        ["Bill to", "Kunde"]
+        ["VAT ID", "USt-IdNr."]
+        ["Description", "Beschreibung"]
+        ["Quantity", "Menge"]
+        ["Unit", "Einheit"]
+        ["Unit price", "Einzelpreis"]
+        ["VAT", "USt."]
+        ["Amount", "Betrag"]
+        ["Taxable amount", "Nettobetrag"]
+        ["Rate", "Satz"]
+        ["Tax", "Steuer"]
+        ["Total net", "Nettosumme"]
+        ["Total VAT", "Umsatzsteuer"]
+        ["Total due", "Zu zahlen"]
+        ["Total credited", "Gutgeschrieben"]
+        ["Pay by bank transfer to", "Überweisung an"]
+        ["Reference", "Verwendungszweck"]
+        ["Credits invoice", "Gutschrift zur Rechnung"]
+        ["Exchange rate", "Wechselkurs"]
+        ["Currency", "Währung"]
+        ["Scan to pay", "Zum Bezahlen scannen"]
+        ["Nothing to pay: the amount is credited.", "Keine Zahlung fällig: der Betrag wird gutgeschrieben."]
+        [regime.note_of(.destination), "Umsatzsteuer des Kundenlandes, erklärt über den One-Stop-Shop."]
+        [regime.note_of(.reverse_charge), "Steuerschuldnerschaft des Leistungsempfängers."]
+        [regime.note_of(.export), "Nicht steuerbar: Kunde außerhalb der Europäischen Union."]
+        [SUBJECT, "{{ .kind }} {{ .number }} von {{ .company }}"]
+        [INVOICE_BODY, "Guten Tag {{ .customer }},\n\nanbei erhalten Sie unsere Rechnung {{ .number }} vom {{ .date }} über {{ .total }}, fällig am {{ .due }}.\n\nMit freundlichen Grüßen\n{{ .company }}\n"]
+        [CREDIT_BODY, "Guten Tag {{ .customer }},\n\nanbei erhalten Sie unsere Gutschrift {{ .number }} vom {{ .date }} über {{ .total }} zur Rechnung {{ .refers_to }}.\n\nMit freundlichen Grüßen\n{{ .company }}\n"]
+    ]
+
+## Catalogs
+
+# The catalog of `language`: the carried translations, with those of
+# `<dir>/<language>.po` over them where the folder holds one.
+#
+# - `language`: a language subtag, lower case.
+# - `dir`: the folder of the company's own `.po` files, "" for none.
+#
+# Fails as `fs.read_bytes` and `i18n.parse_po` fail on the company's file,
+# the message naming it; a folder with no file for the language is no
+# failure.
+function catalog_for(language: str, dir: str) -> i18n.Catalog?
+    messages: [i18n.Message] @= []
+
+    for pair in carried(language)
+        messages @ messages.push(i18n.new_message(id: pair[0], translation: pair[1]))
+
+    catalog @= i18n.new_catalog(messages)?
+
+    if dir == ""
+        return ok(catalog)
+    file = path.join_all([dir, language + ".po"])
+
+    if !fs.exists(file).default(false)
+        return ok(catalog)
+
+    match read_file(path: file)
+        .err e => return fail(code: e.code, msg: f"{file}: {e.msg}")
+        .ok text =>
+            match i18n.parse_po(text)
+                .err e => return fail(code: e.code, msg: f"{file}: {e.msg}")
+                .ok own =>
+                    for m in own.messages
+                        if is_usable(m)
+                            i18n.add_message(@catalog, message: m)?
+
+                    return ok(catalog)
+
+# Whether a message of a company's file replaces a carried one: one that
+# is not the header, not obsolete, not marked fuzzy, and translated.
+#
+# - `m`: the message.
+function is_usable(m: i18n.Message) -> bool
+    if m.id == "" || m.obsolete || m.translations.len() == 0 || m.translations[0] == ""
+        return false
+
+    for flag in m.flags
+        if flag == "fuzzy"
+            return false
+
+    return true
+
+# The labels of a document in `catalog`'s language, by key.
+#
+# - `catalog`: the language's catalog.
+function labels_in(catalog: i18n.Catalog) -> {str: str}
+    found: {str: str} @= {}
+
+    for pair in labels()
+        found[pair[0]] @ i18n.translate(catalog, id: pair[1])
+
+    return found
+
+# The language subtag of the locale `tag` names: `it` for `it-IT`.
+#
+# - `tag`: a BCP 47 tag.
+#
+# Fails as `i18n.parse_locale` fails.
+function language_of(tag: str) -> str?
+    return ok(i18n.parse_locale(tag)?.language)
+
+test "carried: every language translates every label and every message"
+    english: [str] @= []
+
+    for pair in labels()
+        english @ english.push(pair[1])
+
+    for r in regime.all_regimes()
+        if regime.note_of(r) != ""
+            english @ english.push(regime.note_of(r))
+
+    english @ english.push(SUBJECT)
+    english @ english.push(INVOICE_BODY)
+    english @ english.push(CREDIT_BODY)
+
+    for language in ["it", "fr", "de"]
+        catalog = catalog_for(language: language, dir: "").must()
+
+        for id in english
+            assert i18n.find_message(catalog, id: id).is_err() == false
+
+        assert carried(language).len() == english.len()
+
+test "catalog_for: English and an unknown language answer the English"
+    assert i18n.translate(catalog_for(language: "en", dir: "").must(), id: "Invoice") == "Invoice"
+    assert i18n.translate(catalog_for(language: "ja", dir: "").must(), id: "Due date") == "Due date"
+    assert labels_in(catalog_for(language: "it", dir: "").must())["total_due"].must() == "Totale da pagare"
+
+test "catalog_for: a company's file changes one message and keeps the others"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-po-*").must()
+    po = "msgid \"\"\nmsgstr \"\"\n\"Content-Type: text/plain; charset=UTF-8\\n\"\n\nmsgid \"Total due\"\nmsgstr \"Totale da saldare\"\n\n#, fuzzy\nmsgid \"Invoice\"\nmsgstr \"Fatturina\"\n"
+    write_file(path: path.join_all([dir, "it.po"]), text: po).must()
+    catalog = catalog_for(language: "it", dir: dir).must()
+    assert i18n.translate(catalog, id: "Total due") == "Totale da saldare"
+    assert i18n.translate(catalog, id: "Invoice") == "Fattura"
+    assert i18n.translate(catalog_for(language: "fr", dir: dir).must(), id: "Total due") == "Net à payer"
+    write_file(path: path.join_all([dir, "de.po"]), text: "msgid \"x\"\nmsgstr").must()
+    assert catalog_for(language: "de", dir: dir).is_err()
+    fs.remove_all(dir).must()
+
+test "language_of: the language of a tag"
+    assert language_of("fr-FR").must() == "fr" && language_of("en").must() == "en"
+    assert language_of("").is_err()

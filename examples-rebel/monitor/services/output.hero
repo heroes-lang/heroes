@@ -1,0 +1,128 @@
+# A service's output, standard output and error together, captured into its
+# own log file `<name>.log` in the log folder, rotated as the journal is:
+# what supervisord's `stdout_logfile` does. Bytes arrive in pieces as the
+# loop reads the pipe; each whole line is written with the monitor's time
+# before it, and what is left after the last line feed waits for the rest
+# of its line, or for the service's end.
+#
+# Bytes that are not UTF-8 are written with U+FFFD in their place, as Rust's
+# and Python's lossy readers do, so no output of a service is ever refused.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/log/files
+use <rebel>/path
+use <rebel>/time
+
+use conf/settings
+
+# The longest a line waits for its end: past it, it is written as it is.
+constant LONGEST_LINE: i64
+    65_536
+
+# One service's capture.
+record Capture
+    # Its log file.
+    file: files.Rotating
+    # The bytes after the last line feed, waiting for their line's end.
+    partial: [u8]
+    # The lines written.
+    lines: i64
+    # The lines that could not be written.
+    lost: i64
+    # Its pipe's key in the loop's set, -1 where the pipe is not in one.
+    key: i64
+
+# The capture of the service `name`, its file opened to append in the log
+# folder.
+#
+# - `logs`: the log settings.
+# - `name`: the service's name.
+#
+# Fails as `files.open` fails.
+function open(logs: settings.Logs, name: str) -> Capture?
+    rotation = files.Rotation(
+        max_bytes: logs.max_bytes,
+        daily: logs.daily,
+        keep: logs.keep,
+        keep_days: 0,
+        compress: logs.compress
+    )
+    file = files.open(path.join_all([logs.dir, name + ".log"]), rotation: rotation)?
+    return ok(Capture(file: file, partial: [], lines: 0, lost: 0, key: -1))
+
+# Takes `data`, a piece of the output read at `at`, and writes every line it
+# ends.
+#
+# - `c`: the capture.
+# - `data`: the bytes read.
+# - `at`: when, on the monitor's clock.
+function take(@c: Capture, data: [u8], at: time.Instant)
+    held @= c.partial
+    bytes.push_all(to: @held, from: data)
+    start: i64 @= 0
+
+    for i in range(from: 0, to: held.len())
+        if held[i] == 10
+            write_line(@c, line: held.slice(from: start, to: i), at: at)
+            start @ i + 1
+
+    rest = held.slice(from: start, to: held.len())
+
+    if rest.len() >= LONGEST_LINE
+        write_line(@c, line: rest, at: at)
+        c.partial @ []
+    else
+        c.partial @ rest
+
+# Writes what waits after the last line feed as a line of its own, at the
+# service's end.
+#
+# - `c`: the capture.
+# - `at`: when, on the monitor's clock.
+function finish(@c: Capture, at: time.Instant)
+    if c.partial.len() > 0
+        write_line(@c, line: c.partial, at: at)
+        c.partial @ []
+
+# Writes one line, its carriage return taken off, with its time before it.
+#
+# - `c`: the capture.
+# - `line`: the line's bytes, without its line feed.
+# - `at`: when, on the monitor's clock.
+function write_line(@c: Capture, line: [u8], at: time.Instant)
+    cut: i64 @= line.len()
+
+    if cut > 0 && line[cut - 1] == 13
+        cut @ cut - 1
+    text = bytes.to_text_lossy(line.slice(from: 0, to: cut))
+
+    match files.write_line(@c.file, line: f"{time.format(at, layout: .rfc3339_milliseconds)} {text}", at: at)
+        .ok _  => c.lines @ c.lines + 1
+        .err _ => c.lost @ c.lost + 1
+
+# Closes the capture's file, writing what waits first.
+#
+# - `c`: the capture.
+# - `at`: when, on the monitor's clock.
+#
+# Fails as `files.close` fails.
+function close(@c: Capture, at: time.Instant) -> ()?
+    finish(@c, at: at)
+    return files.close(@c.file)
+
+test "take: lines written as their ends come, the rest kept for the next piece, bytes no text replaced"
+    dir = "build/monitor-test-output"
+    _ = fs.remove_all(dir).is_err()
+    logs = settings.Logs(dir: dir, max_bytes: 0, keep: 0, daily: false, compress: false)
+    c @= open(logs, name: "svc").must()
+    t0 = time.from_unix(whole_seconds: 1_764_000_000, extra_nanoseconds: 0).must()
+    take(@c, data: bytes.from_text("ready\r\nhold"), at: t0)
+    assert c.lines == 1 && c.partial.len() == 4
+    take(@c, data: bytes.from_text("ing 5\nbad "), at: t0)
+    take(@c, data: [255, 10, 101, 110, 100], at: t0)
+    close(@c, at: t0).must()
+    assert c.lines == 4
+    stamp = "2025-11-24T16:00:00.000Z"
+    want = [stamp + " ready", stamp + " holding 5", stamp + " bad �", stamp + " end"].join("\n") + "\n"
+    assert read_file(path.join_all([dir, "svc.log"])).must() == want

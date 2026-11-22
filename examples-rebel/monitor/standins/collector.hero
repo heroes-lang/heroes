@@ -1,0 +1,270 @@
+# An OpenTelemetry collector on loopback, the demo's stand-in for one: it
+# receives OTLP over HTTP as a collector's `otlphttp` receiver does, at
+# `/v1/traces`, `/v1/metrics` and `/v1/logs`, and keeps a summary of what
+# each request held. It checks what a receiver checks: `POST`, a path it
+# serves, a body of `application/x-protobuf` or `application/json` (gzip
+# undone where the request says so) that reads as the path's request; else
+# `405`, `404`, `415` or `400`, and an exporter is told. An accepted request
+# is answered `200` with an empty export response.
+#
+# `POST /standin/stop` is the stand-in's own, no collector's: the demo asks
+# it there to end its loop once the monitor has sent its last export.
+#
+# It serves on the thread that runs it, each connection's request read
+# whole when the loop's set tells it readable, bounded by a deadline.
+
+use <rebel>/compress
+use <rebel>/http
+use <rebel>/io
+use <rebel>/maps
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/protobuf
+use <rebel>/strings
+
+use standins/otlp_proto
+
+# How long a connection may take to send its request, from its accepting.
+constant CONNECTION_MS: i64
+    10_000
+
+# The largest body read once gzip is undone: 16 MiB.
+constant MOST_BODY: i64
+    16_777_216
+
+# The stand-in.
+record Collector
+    # The listener on 127.0.0.1.
+    listener: net.Listener
+    # Its key in the set.
+    listen_key: i64
+    # The connections not yet answered, by key.
+    conns: {i64: net.Conn}
+    # The schema of the requests.
+    schema: protobuf.Schema
+    # Every span received.
+    spans: [otlp_proto.Span]
+    # Every metric received.
+    metrics: [otlp_proto.Metric]
+    # Every log record received.
+    records: [otlp_proto.Record]
+    # Requests accepted, by path.
+    accepted: {str: i64}
+    # Requests refused, by status.
+    refused: {i64: i64}
+    # Whether the stop was asked.
+    stopped: bool
+
+# A collector on 127.0.0.1 at a port the system chooses, its listener in
+# `set`.
+#
+# - `set`: the loop's set.
+#
+# Fails as `net.listen`, `poll.add_listener` and the schema fail.
+function start(set: poll.Set) -> Collector?
+    l = net.listen(host: "127.0.0.1", port: 0)?
+    key = poll.add_listener(set, l: l)?
+    return ok(
+        Collector(listener: l, listen_key: key, conns: {}, schema: otlp_proto.schema()?, spans: [], metrics: [], records: [], accepted: {}, refused: {}, stopped: false)
+    )
+
+# The base URL an exporter is given: `http://127.0.0.1:<port>`.
+#
+# - `c`: the collector.
+function base_url(c: Collector lent) -> str
+    return f"http://127.0.0.1:{c.listener.address.port}"
+
+# Acts on the ready key `key` where it is the collector's, and answers
+# whether it was: a connection accepted, or a request read, answered and
+# its connection closed.
+#
+# - `c`: the collector.
+# - `set`: the loop's set.
+# - `key`: a key a wait told ready.
+function serve(@c: Collector, set: poll.Set, key: i64) -> bool
+    if key == c.listen_key
+        match net.accept(c.listener, deadline_ms: CONNECTION_MS)
+            .ok conn =>
+                match poll.add_conn(set, c: conn, interest: .read)
+                    .ok added => c.conns[added] @ conn
+                    .err _ =>
+                        held @= conn
+                        _ = io.close(@held.stream).is_err()
+            .err _ => _ = 0
+
+        return true
+
+    match c.conns[key]
+        .err _ => return false
+        .ok found =>
+            conn @= found
+            reader @= io.reader(conn.stream)
+
+            match http.next_request(@reader, limits: http.default_limits())
+                .ok r =>
+                    answer @= answer_of(@c, r: r)
+                    answer.closing @ true
+                    _ = http.write_answer(conn.stream, r: r, response: answer).is_err()
+                .err _ => count_refused(@c, status: 400)
+
+            _ = poll.remove(set, key: key).is_err()
+            _ = io.close(@conn.stream).is_err()
+            c.conns @ maps.remove(c.conns, key: key)
+            return true
+
+# Counts a request refused with `status`.
+#
+# - `c`: the collector.
+# - `status`: the status answered.
+function count_refused(@c: Collector, status: i64)
+    c.refused[status] @ c.refused[status].default(0) + 1
+
+# The body of `r` with gzip undone where its `Content-Encoding` asks. Fails
+# `unsupported` for another encoding, and as `compress.decompress` fails.
+#
+# - `r`: the request.
+function body_of(r: http.Request) -> [u8]?
+    encoding = strings.to_lower_ascii(strings.trim(http.value_of(r.headers, name: "Content-Encoding").default("")))
+
+    if encoding == "" || encoding == "identity"
+        return ok(r.body)
+
+    if encoding == "gzip"
+        return compress.decompress(r.body, format: .gzip, limit: MOST_BODY)
+    return fail(code: "unsupported", msg: f"a body encoded {encoding}")
+
+# The answer to `r`, what it held kept where it is a request the collector
+# reads.
+#
+# - `c`: the collector.
+# - `r`: the request.
+function answer_of(@c: Collector, r: http.Request) -> http.Response
+    path = r.url.path
+
+    if r.method != "POST"
+        count_refused(@c, status: 405)
+        refusal @= http.respond_text(405, text: "only POST is received\n")
+        refusal.headers @ http.with_header(refusal.headers, name: "Allow", value: "POST")
+        return refusal
+
+    if path == "/standin/stop"
+        c.stopped @ true
+        return http.respond_text(200, text: "stopping\n")
+
+    if path != "/v1/traces" && path != "/v1/metrics" && path != "/v1/logs"
+        count_refused(@c, status: 404)
+        return http.respond_text(404, text: f"no receiver at {path}\n")
+    kind = strings.to_lower_ascii(http.value_of(r.headers, name: "Content-Type").default(""))
+    json_body = strings.has_prefix(s: kind, prefix: "application/json")
+
+    if !json_body && !strings.has_prefix(s: kind, prefix: "application/x-protobuf")
+        count_refused(@c, status: 415)
+        return http.respond_text(415, text: "OTLP is application/x-protobuf or application/json\n")
+
+    match read_request(@c, path: path, body: body_of(r), json_body: json_body)
+        .ok _ =>
+            c.accepted[path] @ c.accepted[path].default(0) + 1
+
+            if json_body
+                return http.respond(200, content_type: "application/json", body: [123, 125])
+            return http.respond(200, content_type: "application/x-protobuf", body: [])
+        .err e =>
+            count_refused(@c, status: 400)
+            return http.respond_text(400, text: f"no OTLP request: {e.msg}\n")
+
+# Reads the request of `path` from `body` and keeps what it held. Fails
+# where it is none.
+#
+# - `c`: the collector.
+# - `path`: the path it was posted to.
+# - `body`: its body, gzip undone, or why it could not be.
+# - `json_body`: whether it is JSON.
+function read_request(@c: Collector, path: str, body: [u8]?, json_body: bool) -> ()?
+    data = body?
+
+    if path == "/v1/traces"
+        for s in otlp_proto.spans_of(c.schema, body: data, json_body: json_body)?
+            c.spans @ c.spans.push(s)
+    else if path == "/v1/metrics"
+        for m in otlp_proto.metrics_of(c.schema, body: data, json_body: json_body)?
+            c.metrics @ c.metrics.push(m)
+    else
+        for r in otlp_proto.records_of(c.schema, body: data, json_body: json_body)?
+            c.records @ c.records.push(r)
+
+    return ok()
+
+# Closes every connection and the listener.
+#
+# - `c`: the collector.
+# - `set`: the loop's set.
+function close(@c: Collector, set: poll.Set)
+    for key in keys(c.conns)
+        conn @= c.conns[key].must()
+        _ = poll.remove(set, key: key).is_err()
+        _ = io.close(@conn.stream).is_err()
+
+    c.conns @ {}
+    _ = poll.remove(set, key: c.listen_key).is_err()
+    _ = net.close_listener(@c.listener).is_err()
+
+# What the collector received, as the demo prints it: the requests by path,
+# the refusals, the spans by name with how many were children, the metrics
+# by name with their points, and the log records counted by severity, the
+# warnings' and errors' bodies written out.
+#
+# - `c`: the collector.
+function account(c: Collector lent) -> [str]
+    lines: [str] @= []
+
+    for path in sort(keys(c.accepted))
+        lines @ lines.push(f"accepted {c.accepted[path].must()} requests at {path}")
+
+    for status in sort(keys(c.refused))
+        lines @ lines.push(f"refused {c.refused[status].must()} requests with {status}")
+
+    by_name: {str: i64} @= {}
+    children: {str: i64} @= {}
+    instances: {str: bool} @= {}
+
+    for s in c.spans
+        by_name[s.name] @ by_name[s.name].default(0) + 1
+        instances[s.instance] @ true
+
+        if s.child
+            children[s.name] @ children[s.name].default(0) + 1
+
+    lines @ lines.push(f"spans from {sort(keys(instances)).join(", ")}:")
+
+    for name in sort(keys(by_name))
+        lines @ lines.push(f"  {name}: {by_name[name].must()}, {children[name].default(0)} under a parent")
+
+    points: {str: i64} @= {}
+    kinds: {str: str} @= {}
+
+    for m in c.metrics
+        points[m.name] @ points[m.name].default(0) + m.points
+        kinds[m.name] @ m.kind
+
+    lines @ lines.push("metrics, points summed over every request:")
+
+    for name in sort(keys(points))
+        lines @ lines.push(f"  {name} ({kinds[name].must()}): {points[name].must()} points")
+
+    severities: {str: i64} @= {}
+
+    for r in c.records
+        severities[r.severity] @ severities[r.severity].default(0) + 1
+
+    counted: [str] @= []
+
+    for severity in sort(keys(severities))
+        counted @ counted.push(f"{severities[severity].must()} {severity}")
+
+    lines @ lines.push(f"log records: {c.records.len()}, {counted.join(", ")}; the warnings and errors:")
+
+    for r in c.records
+        if r.severity == "WARN" || r.severity == "ERROR"
+            lines @ lines.push(f"  {r.severity} {r.body}")
+
+    return lines

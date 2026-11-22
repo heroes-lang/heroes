@@ -1,0 +1,237 @@
+# A repository kept in a bucket of an S3 service: each key an object under
+# the repository's prefix, put, read, listed and deleted through `s3`,
+# every request signed by Signature Version 4.
+#
+# Each request is tried again by this module's own backoff, exponential
+# and spread by chance (`retries`), where the failure may pass: S3 asked to
+# slow down, failed inside, or the connection failed or timed out. The
+# client's own retries are turned off, so one policy says how often and
+# how long, and the counts of requests and retries are this module's to
+# tell. A refusal no retry mends (a signature, a permission, a key or an
+# argument refused, an object that is not there) is answered at once.
+
+use <rebel>/retries
+use <rebel>/s3
+use <rebel>/time
+
+use store/objects
+
+## A bucket
+
+# A bucket the repository is kept in, and how its requests are tried.
+record Bucket
+    # The client, its own retries off.
+    client: s3.Client
+    # The bucket's name.
+    name: str
+    # The prefix every key stands under, no `/` at either end; "" for none.
+    prefix: str
+    # The waits between attempts, and how many attempts in all.
+    policy: retries.Backoff
+    # The fraction every wait's spread is drawn at, from 0 to 1, or below 0
+    # to draw it by chance at each wait.
+    fraction: f64
+    # The requests sent, retries included.
+    requests: i64
+    # The requests that failed in a way that may pass and were sent again.
+    retried: i64
+
+# The policy a bucket's requests are tried by: a first wait of `first`,
+# doubling up to `longest`, each spread by a fifth either side, at most
+# `attempts` attempts in all.
+#
+# - `first`: the wait after the first failure, above zero.
+# - `longest`: the longest wait, at least `first`.
+# - `attempts`: the most attempts of one request, at least 1.
+#
+# Fails `invalid` where `retries` refuses the policy.
+function policy_of(first: time.Duration, longest: time.Duration, attempts: i64) -> retries.Backoff?
+    doubling = retries.backoff(first: first, multiplier: 2.0, longest: longest)?
+    spread = retries.with_jitter(doubling, .spread(factor: 0.2))?
+    return retries.with_attempts(spread, attempts: attempts)
+
+# A bucket reached by `client`, its own retries turned off.
+#
+# - `client`: the client, signed with the repository's keys.
+# - `name`: the bucket's name.
+# - `prefix`: the prefix of the repository's keys.
+# - `policy`: how a request is tried again.
+# - `fraction`: the spread's fraction, below 0 to draw it by chance.
+function bucket(client: s3.Client, name: str, prefix: str, policy: retries.Backoff, fraction: f64) -> Bucket
+    quiet @= client
+    quiet.max_attempts @ 1
+    return Bucket(
+        client: quiet,
+        name: name,
+        prefix: prefix,
+        policy: policy,
+        fraction: fraction,
+        requests: 0,
+        retried: 0
+    )
+
+## Requests
+
+# One request to the bucket.
+variant Request
+    # An object written.
+    put
+        # The repository's key.
+        key: str
+        # The bytes.
+        data: [u8]
+    # An object read whole.
+    get
+        # The repository's key.
+        key: str
+    # The objects under a folder of the layout.
+    listing
+        # The repository's prefix, `snapshots/`, or "" for every object.
+        prefix: str
+    # An object deleted.
+    delete
+        # The repository's key.
+        key: str
+
+# What a request answered: the bytes read, or the objects listed; empty
+# for the rest.
+record Answer
+    # An object's bytes, for `get`.
+    data: [u8]
+    # The objects found, the repository's keys, for `listing`.
+    items: [objects.Item]
+
+# The key the bucket holds the repository's `key` under.
+#
+# - `b`: the bucket.
+# - `key`: the repository's key.
+function full_key(b: Bucket lent, key: str) -> str
+    if b.prefix == ""
+        return key
+    return b.prefix + "/" + key
+
+# Whether a failure may pass if the request is sent again: S3 asked to
+# slow down or failed inside, or the connection failed or timed out.
+#
+# - `code`: the failure's code.
+function is_passing(code: str) -> bool
+    return code == s3.LIMIT || code == s3.FAILED || code == s3.CLOSED || code == s3.TIMEOUT
+
+# The answer to `r`, the request sent again by the bucket's policy while
+# it fails in a way that may pass.
+#
+# - `b`: the bucket; its counts of requests and retries grow.
+# - `r`: the request.
+#
+# Fails `invalid` for a key that is not one, `not_found` for an object that
+# is not there, and as the last attempt failed.
+function send(@b: Bucket, r: Request) -> Answer?
+    retry @= retries.new_retry(b.policy)
+    begun = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while true
+        b.requests @ b.requests + 1
+
+        match attempt(b, r: r)
+            .ok answer => return ok(answer)
+            .err e =>
+                if !is_passing(e.code)
+                    return fail(code: e.code, msg: e.msg)
+                spent = time.elapsed(begun).default(time.nanoseconds(0))
+
+                fraction = if b.fraction >= 0.0
+                    b.fraction
+                else
+                    retries.random_fraction().default(0.5)
+
+                match retries.next_wait(@retry, spent: spent, fraction: fraction)
+                    .err _ => return fail(code: e.code, msg: e.msg)
+                    .ok wait =>
+                        b.retried @ b.retried + 1
+                        time.sleep(wait)
+
+    return fail(code: s3.FAILED, msg: "no attempt was made")
+
+# One attempt of `r`.
+#
+# - `b`: the bucket.
+# - `r`: the request.
+#
+# Fails as the `s3` call fails, and `invalid` for a key that is not one.
+function attempt(b: Bucket lent, r: Request) -> Answer?
+    none: [objects.Item] = []
+
+    return match r
+        .put p =>
+            checked_key(p.key)?
+            opts @= s3.default_put_options()
+            opts.content_type @ "application/octet-stream"
+            _ = s3.put_object(b.client, bucket: b.name, key: full_key(b, key: p.key), data: p.data, options: opts)?
+            ok(Answer(data: [], items: none))
+        .get g =>
+            checked_key(g.key)?
+            found = s3.get_object(b.client, bucket: b.name, key: full_key(b, key: g.key))?
+            ok(Answer(data: found.data, items: none))
+        .listing l =>
+            under = full_key(b, key: l.prefix)
+
+            asked = if b.prefix == "" || l.prefix != ""
+                under
+            else
+                b.prefix + "/"
+
+            skip = if b.prefix == ""
+                0
+            else
+                b.prefix.len() + 1
+
+            items: [objects.Item] @= []
+
+            for s in s3.list_all_objects(b.client, bucket: b.name, prefix: asked)?
+                key = s.key.slice(from: skip, to: s.key.len())
+
+                if objects.is_key(key)
+                    items @ items.push(objects.Item(key: key, size: s.size))
+
+            ok(Answer(data: [], items: objects.sorted_items(items)))
+        .delete d =>
+            checked_key(d.key)?
+            s3.delete_object(b.client, bucket: b.name, key: full_key(b, key: d.key))?
+            ok(Answer(data: [], items: none))
+
+# Nothing, where `key` is a key of a repository.
+#
+# - `key`: the key.
+#
+# Fails `invalid` where it is not.
+function checked_key(key: str) -> ()?
+    if !objects.is_key(key)
+        return fail(code: objects.INVALID, msg: f"\"{key}\" is not a key of a repository")
+    return ok()
+
+test "is_passing: throttling, a failure inside and a lost connection pass; a refused signature and a missing key do not"
+    assert is_passing(s3.LIMIT) && is_passing(s3.FAILED) && is_passing(s3.CLOSED) && is_passing(s3.TIMEOUT)
+    assert !is_passing(s3.PERMISSION) && !is_passing(s3.NOT_FOUND) && !is_passing(s3.INVALID)
+
+test "bucket: the client's own retries off, keys under the prefix"
+    client = s3.minio_client(
+        endpoint: "http://127.0.0.1:9000",
+        credentials: s3.Credentials(access_key_id: "a", secret_access_key: "s", session_token: "")
+    )
+    policy = policy_of(first: time.milliseconds(1).must(), longest: time.milliseconds(4).must(), attempts: 3).must()
+    b = bucket(client, name: "repo", prefix: "hosts/a", policy: policy, fraction: 0.5)
+    assert b.client.max_attempts == 1 && b.policy.attempts == 3
+    assert full_key(b, key: "config") == "hosts/a/config"
+    assert full_key(bucket(client, name: "repo", prefix: "", policy: policy, fraction: 0.5), key: "config") == "config"
+
+test "send: a key climbing out is refused before anything is sent"
+    client = s3.minio_client(
+        endpoint: "http://127.0.0.1:1",
+        credentials: s3.Credentials(access_key_id: "a", secret_access_key: "s", session_token: "")
+    )
+    policy = policy_of(first: time.milliseconds(1).must(), longest: time.milliseconds(1).must(), attempts: 1).must()
+    b @= bucket(client, name: "repo", prefix: "", policy: policy, fraction: 0.5)
+
+    match send(@b, r: .get(key: "../x"))
+        .ok _  => assert false
+        .err e => assert e.code == objects.INVALID

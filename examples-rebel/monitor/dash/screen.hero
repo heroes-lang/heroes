@@ -1,0 +1,143 @@
+# The dashboard on the terminal, as htop holds one: the screen taken whole
+# by `tui`, a frame drawn after each collection and after each key, only
+# the cells that changed written; the arrows move the selection over the
+# services, `r` restarts the one selected, `a` acknowledges every alert
+# firing, `q` quits. The terminal's input joins the loop's set, so a key is
+# read as soon as it is pressed and never waited for.
+
+use <rebel>/io
+use <rebel>/poll
+use <rebel>/term
+use <rebel>/time
+use <rebel>/tui
+
+use dash/draw
+use dash/view
+
+# What a key asks of the monitor.
+variant Ask
+    # Nothing.
+    nothing
+    # To stop.
+    quit
+    # To restart the service selected.
+    restart
+    # To acknowledge every alert firing.
+    acknowledge
+    # Only a new frame: the selection moved or the size changed.
+    redraw
+
+# The terminal while the dashboard holds it.
+record Screen
+    # The terminal, held under one key while it is open.
+    terminals: {str: tui.Terminal}
+    # The terminal input's key in the loop's set, -1 where it is not in it.
+    key: i64
+    # The service selected.
+    selected: i64
+
+# The key the terminal is held under.
+constant HELD: str
+    "terminal"
+
+# Takes the terminal, its input in `set`. Fails `unsupported` where the
+# program's output is no terminal, and as `tui.start` fails.
+#
+# - `set`: the loop's set.
+function open(set: poll.Set) -> Screen?
+    t = tui.start(tui.default_options())?
+    key = poll.add_stream(set, s: io.stdin(), interest: .read).default(-1)
+    return ok(Screen(terminals: {HELD: t}, key: key, selected: 0))
+
+# Draws `v` and writes what changed.
+#
+# - `s`: the screen.
+# - `v`: the view.
+function show(@s: Screen, v: view.View)
+    match s.terminals[HELD]
+        .err _ => return
+        .ok held =>
+            t @= held
+            frame = draw.draw(v, area: tui.area_of(t), selected: s.selected)
+            _ = tui.flush(@t, frame: frame, cursor: .hidden).is_err()
+            s.terminals[HELD] @ t
+
+# What the keys pressed since the last look ask, read without waiting.
+#
+# - `s`: the screen.
+# - `services`: how many services the selection moves over.
+function asks(@s: Screen, services: i64) -> [Ask]
+    found: [Ask] @= []
+
+    t @= match s.terminals[HELD]
+        .ok held => held
+        .err _   => return []
+
+    while true
+        match tui.read_event_within(@t, limit: time.nanoseconds(0))
+            .err _ => break
+            .ok e =>
+                ask: Ask = match e
+                    .key k                                             => ask_of(@s, key: k.key, services: services)
+                    .resized _                                         => .redraw
+                    .mouse _ | .pasted _ | .focus_gained | .focus_lost => .nothing
+
+                found @ found.push(ask)
+
+    s.terminals[HELD] @ t
+    return found
+
+# What `key` asks, the selection moved where it is an arrow.
+#
+# - `s`: the screen.
+# - `key`: the key.
+# - `services`: how many services there are.
+function ask_of(@s: Screen, key: term.Key, services: i64) -> Ask
+    match key
+        .character c =>
+            return match c.text
+                "q" => .quit
+                "r" => .restart
+                "a" => .acknowledge
+                _   => .nothing
+        .control c =>
+            if c.letter == "c"
+                return .quit
+            return .nothing
+        .up =>
+            if s.selected > 0
+                s.selected @ s.selected - 1
+            return .redraw
+        .down =>
+            if s.selected + 1 < services
+                s.selected @ s.selected + 1
+            return .redraw
+        .enter | .tab | .backspace | .escape | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete | .function_key _ | .other _ =>
+            return .nothing
+
+# Gives the terminal back as it was.
+#
+# - `s`: the screen.
+# - `set`: the loop's set.
+function close(@s: Screen, set: poll.Set)
+    if s.key >= 0
+        _ = poll.remove(set, key: s.key).is_err()
+
+    match s.terminals[HELD]
+        .ok held =>
+            t @= held
+            _ = tui.stop(@t).is_err()
+        .err _ => _ = 0
+
+    s.terminals @ {}
+
+test "ask_of: the keys of the dashboard, the selection kept within the services"
+    s @= Screen(terminals: {}, key: -1, selected: 0)
+    assert ask_of(@s, key: .character(text: "q"), services: 3) == .quit
+    assert ask_of(@s, key: .control(letter: "c"), services: 3) == .quit
+    assert ask_of(@s, key: .up, services: 3) == .redraw && s.selected == 0
+    _ = ask_of(@s, key: .down, services: 3)
+    _ = ask_of(@s, key: .down, services: 3)
+    _ = ask_of(@s, key: .down, services: 3)
+    assert s.selected == 2
+    assert ask_of(@s, key: .character(text: "r"), services: 3) == .restart

@@ -1,0 +1,212 @@
+# A repository's chunks: asked about, stored once, packed, and read back
+# checked. A chunk is stored only where the repository does not hold it,
+# which is the whole of deduplication: the question goes first to the
+# chunks of the pack being filled, which no summary holds yet, then to the
+# summary, which answers "new" for certain or "maybe", and a "maybe" to
+# the index, read from the storage the first time it is needed.
+#
+# A chunk read back is opened under the master key, decompressed to the
+# length its index entry gives, and named again: a chunk whose bytes do
+# not give its name fails, so a restore is checked chunk by chunk and a
+# storage that changed a byte, or swapped two chunks, is told.
+
+use repo/codec
+use repo/index
+use repo/layout
+use repo/pack
+use repo/repository
+use repo/summary
+use store/storage
+use vault/master
+
+## Codes
+
+# The code of a chunk whose bytes do not give its name, or that the
+# repository does not hold.
+constant INVALID: str
+    "invalid"
+
+## Asking
+
+# Whether the repository holds the chunk `id`.
+#
+# - `r`: the repository; its counts grow, and its index is read where the
+#   summary may hold `id`.
+# - `id`: the chunk's name.
+#
+# Fails as reading the index fails.
+function holds(@r: repository.Repository, id: str) -> bool?
+    r.counts.lookups @ r.counts.lookups + 1
+
+    if r.filling_ids[id].default(false)
+        r.counts.index_held @ r.counts.index_held + 1
+        return ok(true)
+
+    if !summary.may_hold(r.filter, id: id)
+        r.counts.summary_new @ r.counts.summary_new + 1
+        return ok(false)
+
+    if !index.holds(r.chunk_index, id: id)
+        repository.read_index(@r)?
+
+    if index.holds(r.chunk_index, id: id)
+        r.counts.index_held @ r.counts.index_held + 1
+        return ok(true)
+    r.counts.false_maybes @ r.counts.false_maybes + 1
+    return ok(false)
+
+## Storing
+
+# What storing one chunk came to.
+record Stored
+    # The chunk's name.
+    id: str
+    # Whether the repository did not hold it and this call stored it.
+    fresh: bool
+    # The bytes it took on the storage; 0 where it was held already.
+    stored_bytes: i64
+
+# Stores `plain` as a chunk where the repository does not hold it, and
+# answers its name.
+#
+# - `r`: the repository; the chunk joins the pack being filled, and a full
+#   pack is written.
+# - `plain`: the chunk's bytes.
+# - `squeeze`: whether Zstandard is tried; false for a file compressed
+#   already.
+#
+# Fails as `holds`, the sealing and the storage fail.
+function store_chunk(@r: repository.Repository, plain: [u8], squeeze: bool) -> Stored?
+    id = master.name_of(r.key, data: plain)
+
+    if holds(@r, id: id)?
+        return ok(Stored(id: id, fresh: false, stored_bytes: 0))
+    encoded = codec.encode(r.key, plain: plain, bound: "data " + id, level: r.config.level, squeeze: squeeze)?
+    pack.add(@r.filling, id: id, stored: encoded.stored, raw: plain.len())
+    r.filling_ids[id] @ true
+    r.counts.chunks_written @ r.counts.chunks_written + 1
+    r.counts.stored_bytes @ r.counts.stored_bytes + encoded.stored.len()
+
+    if !encoded.compressed
+        r.counts.stored_raw @ r.counts.stored_raw + 1
+
+    if r.filling.data.len() >= r.config.pack_bytes
+        write_pack(@r)?
+    return ok(Stored(id: id, fresh: true, stored_bytes: encoded.stored.len()))
+
+# Writes the pack being filled, where it holds anything, and puts its
+# chunks in the index and the summary.
+#
+# - `r`: the repository; the pack is written, and an empty one begun.
+#
+# Fails as the sealing and the storage fail.
+function write_pack(@r: repository.Repository) -> ()?
+    if pack.is_empty(r.filling)
+        return ok()
+    done = pack.finish(r.key, b: r.filling)?
+    storage.put(@r.store, key: layout.pack(done.name), data: done.data)?
+    index.put_pack(@r.chunk_index, name: done.name, entries: done.entries)
+
+    for e in done.entries
+        summary.add(@r.filter, id: e.id)
+
+    r.filter_owed @ true
+    r.fresh.packs @ r.fresh.packs.push(done.name)
+    r.fresh.entries @ r.fresh.entries.push(done.entries)
+    r.filling @ pack.builder()
+    r.filling_ids @ {}
+    r.counts.packs_written @ r.counts.packs_written + 1
+    return ok()
+
+# Writes what this process owes the storage: the pack being filled, an
+# index file of the packs no index file lists, and the summary, built
+# again larger where it holds more chunks than it was sized for.
+#
+# - `r`: the repository; nothing is owed after.
+#
+# Fails as the storage and the sealing fail.
+function flush(@r: repository.Repository) -> ()?
+    write_pack(@r)?
+
+    if r.fresh.packs.len() > 0
+        written = index.encode(r.key, l: r.fresh)?
+        storage.put(@r.store, key: layout.index_file(written.name), data: written.stored)?
+        names @= r.index_files
+        names @ names.push(written.name)
+        r.index_files @ sort(names)
+        r.fresh @ index.Listing(packs: [], entries: [])
+        r.filter.covers @ r.index_files
+        r.filter_owed @ true
+
+    if summary.is_overfull(r.filter)
+        repository.rebuild_filter(@r)?
+
+    if r.filter_owed
+        storage.put(@r.store, key: layout.SUMMARY, data: summary.encode(r.key, s: r.filter)?)?
+        r.filter_owed @ false
+    return ok()
+
+## Reading
+
+# The bytes of the chunk `id`, checked: opened, decompressed and named
+# again.
+#
+# - `r`: the repository; its index is read where it was not, and the pack
+#   holding the chunk is kept for the next read.
+# - `id`: the chunk's name.
+#
+# Fails `invalid` where the repository holds no such chunk or its bytes do
+# not give its name, and as the storage and the opening fail.
+function load_chunk(@r: repository.Repository, id: str) -> [u8]?
+    repository.read_index(@r)?
+
+    place = match index.place_of(r.chunk_index, id: id)
+        .ok p  => p
+        .err _ => return fail(code: INVALID, msg: f"the repository holds no chunk {short(id)}")
+
+    slot = cached_slot(@r, name: place.pack)?
+    stored = pack.stored_of(r.cache_packs[slot], e: pack.Entry(id: id, offset: place.offset, length: place.length, raw: place.raw))?
+    plain = codec.decode(r.key, stored: stored, bound: "data " + id, limit: place.raw)?
+
+    if plain.len() != place.raw || master.name_of(r.key, data: plain) != id
+        return fail(code: INVALID, msg: f"the chunk {short(id)} does not hold the bytes its name was made of")
+    r.counts.chunks_checked @ r.counts.chunks_checked + 1
+    return ok(plain)
+
+# The place in the cache of the pack `name`, read from the storage where
+# it is not cached, replacing the pack read longest ago once the cache
+# holds `repository.CACHED_PACKS`.
+#
+# - `r`: the repository; its cache and its count of packs read change.
+# - `name`: the pack's name.
+#
+# Fails as the storage fails.
+function cached_slot(@r: repository.Repository, name: str) -> i64?
+    for i in range(from: 0, to: r.cache_names.len())
+        if r.cache_names[i] == name
+            return ok(i)
+
+    data = storage.get(@r.store, key: layout.pack(name))?
+    r.counts.packs_read @ r.counts.packs_read + 1
+
+    if r.cache_names.len() < repository.CACHED_PACKS
+        r.cache_names @ r.cache_names.push(name)
+        r.cache_packs @ r.cache_packs.push(data)
+        return ok(r.cache_names.len() - 1)
+    slot = r.cache_next
+    r.cache_names[slot] @ name
+    r.cache_packs[slot] @ data
+    r.cache_next @ (slot + 1) % repository.CACHED_PACKS
+    return ok(slot)
+
+# The first twelve digits of a name, as a message shows it.
+#
+# - `id`: the name.
+function short(id: str) -> str
+    if id.len() <= 12
+        return id
+    return id.slice(from: 0, to: 12)
+
+test "short: a long name cut to twelve digits, a short one whole"
+    assert short("0123456789abcdef") == "0123456789ab"
+    assert short("abc") == "abc"

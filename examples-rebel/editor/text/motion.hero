@@ -1,0 +1,218 @@
+# Where the cursor goes for each move: one grapheme left or right, one word,
+# to a line's start or end, a line or a page up or down. A grapheme is what a
+# reader sees as one character (UAX #29), so a flag, a family of emoji joined
+# by zero-width joiners or a letter with its accents is one step; a word is a
+# piece between two of UAX #29's word boundaries that holds a letter, a
+# digit or an ideograph. Moving up or down keeps the column the cursor aimed
+# at, counted in screen columns, so it crosses a line of wide characters to
+# the place drawn above or below it and never lands inside one.
+#
+# Every function takes a place at a grapheme boundary and answers one.
+
+use <rebel>/unicode
+use <rebel>/unicode/segment
+
+use text/document
+use text/glyphs
+
+# The place one grapheme left of `at`, or the end of the line above at a
+# line's start; `at` itself at the document's start.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function left(doc: document.Document lent, at: document.Pos) -> document.Pos
+    if at.col > 0
+        return document.Pos(line: at.line, col: segment.previous_grapheme_boundary(doc.lines[at.line], at: at.col))
+
+    if at.line > 0
+        return document.Pos(line: at.line - 1, col: doc.lines[at.line - 1].len())
+
+    return at
+
+# The place one grapheme right of `at`, or the start of the line below at a
+# line's end; `at` itself at the document's end.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function right(doc: document.Document lent, at: document.Pos) -> document.Pos
+    line = doc.lines[at.line]
+
+    if at.col < line.len()
+        return document.Pos(line: at.line, col: segment.next_grapheme_boundary(line, at: at.col))
+
+    if at.line + 1 < doc.lines.len()
+        return document.Pos(line: at.line + 1, col: 0)
+
+    return at
+
+# Whether `piece`, one piece between two word boundaries, is a word: it holds
+# a letter, a digit, an ideograph or `_`.
+#
+# - `piece`: the piece.
+function is_word(piece: str) -> bool
+    for c in piece.chars()
+        if unicode.is_alphanumeric(c) || c == "_"
+            return true
+
+    return false
+
+# The end of the next word at or after `at`: past the pieces that are no
+# word, then past the word. At a line's end, the start of the next line.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function word_right(doc: document.Document lent, at: document.Pos) -> document.Pos
+    line = doc.lines[at.line]
+
+    if at.col >= line.len()
+        return right(doc, at: at)
+
+    bounds = segment.word_boundaries(line)
+
+    for i in range(from: 0, to: bounds.len() - 1)
+        if bounds[i + 1] > at.col && is_word(line.slice(from: bounds[i], to: bounds[i + 1]))
+            return document.Pos(line: at.line, col: bounds[i + 1])
+
+    return document.Pos(line: at.line, col: line.len())
+
+# The start of the word before `at`: back over the pieces that are no word,
+# then to the start of the word. At a line's start, the end of the line
+# above.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function word_left(doc: document.Document lent, at: document.Pos) -> document.Pos
+    if at.col == 0
+        return left(doc, at: at)
+
+    line = doc.lines[at.line]
+    bounds = segment.word_boundaries(line)
+    i @= bounds.len() - 2
+
+    while i >= 0
+        if bounds[i] < at.col && is_word(line.slice(from: bounds[i], to: bounds[i + 1]))
+            return document.Pos(line: at.line, col: bounds[i])
+        i @ i - 1
+
+    return document.Pos(line: at.line, col: 0)
+
+# Where Home takes the cursor: to the first character that is not a space or
+# a tab, or to the line's start where it stands there already, as most
+# editors do.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function line_start(doc: document.Document lent, at: document.Pos) -> document.Pos
+    line = doc.lines[at.line]
+    indent @= 0
+
+    while indent < line.len() && (line[indent] == ' ' || line[indent] == '\t')
+        indent @ indent + 1
+
+    if at.col == indent
+        return document.Pos(line: at.line, col: 0)
+
+    return document.Pos(line: at.line, col: indent)
+
+# The end of the line `at` stands on.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+function line_end(doc: document.Document lent, at: document.Pos) -> document.Pos
+    return document.Pos(line: at.line, col: doc.lines[at.line].len())
+
+# The screen column the cursor `at` stands in.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+# - `tab_width`: the columns between tab stops.
+function column_of(doc: document.Document lent, at: document.Pos, tab_width: i64) -> i64
+    shown = glyphs.glyphs_of(doc.lines[at.line], tab_width: tab_width)
+    return glyphs.column_at(shown, at: at.col)
+
+# The place `by` lines below `at` (above where `by` is negative), stopping at
+# the first and the last line, at the grapheme that covers the column `goal`.
+#
+# - `doc`: the document.
+# - `at`: the cursor.
+# - `by`: how many lines to move; a page is the text area's height.
+# - `goal`: the screen column the cursor aims at, kept across moves.
+# - `tab_width`: the columns between tab stops.
+function vertical(doc: document.Document lent, at: document.Pos, by: i64, goal: i64, tab_width: i64) -> document.Pos
+    target @= at.line + by
+
+    if target < 0
+        target @ 0
+
+    if target >= doc.lines.len()
+        target @ doc.lines.len() - 1
+
+    line = doc.lines[target]
+    shown = glyphs.glyphs_of(line, tab_width: tab_width)
+    return document.Pos(line: target, col: glyphs.index_at_column(shown, goal: goal, line_len: line.len()))
+
+# The first grapheme boundary of `line` at or after the byte `at`: where a
+# cursor stands after a character typed joins the grapheme before it, a
+# combining accent after its letter or the second half of a flag.
+#
+# - `line`: the line.
+# - `at`: a byte index at a character's start, 0 to the length.
+function boundary_at_or_after(line: str, at: i64) -> i64
+    start = segment.previous_grapheme_boundary(line, at: at)
+
+    if start == at
+        return at
+
+    return segment.next_grapheme_boundary(line, at: start)
+
+test "left and right: over a flag, a family and a letter with its accent"
+    family = unicode.from_code_points([0x1f468, 0x200d, 0x1f469, 0x200d, 0x1f467]).must()
+    accent = unicode.from_code_points([0x65, 0x301]).must()
+    doc = document.from_text("🇮🇹" + family + accent + "\nz")
+    p1 = right(doc, at: document.Pos(line: 0, col: 0))
+    assert p1.col == 8
+    p2 = right(doc, at: p1)
+    assert p2.col == 8 + family.len()
+    p3 = right(doc, at: p2)
+    assert p3.col == doc.lines[0].len()
+    assert right(doc, at: p3) == document.Pos(line: 1, col: 0)
+    assert left(doc, at: document.Pos(line: 1, col: 0)) == p3
+    assert left(doc, at: p3) == p2
+
+test "left and right: stopping at the document's ends"
+    doc = document.from_text("ab")
+    assert left(doc, at: document.Pos(line: 0, col: 0)) == document.Pos(line: 0, col: 0)
+    assert right(doc, at: document.Pos(line: 0, col: 2)) == document.Pos(line: 0, col: 2)
+
+test "word_right and word_left: words, punctuation, a contraction and a number"
+    doc = document.from_text("can't stop, 3.14 now")
+    p1 = word_right(doc, at: document.Pos(line: 0, col: 0))
+    assert p1.col == 5
+    p2 = word_right(doc, at: p1)
+    assert p2.col == 10
+    p3 = word_right(doc, at: p2)
+    assert p3.col == 16
+    assert word_left(doc, at: p3).col == 12
+    assert word_left(doc, at: document.Pos(line: 0, col: 12)).col == 6
+
+test "word_right: at a line's end, the next line's start"
+    doc = document.from_text("one\ntwo")
+    assert word_right(doc, at: document.Pos(line: 0, col: 3)) == document.Pos(line: 1, col: 0)
+    assert word_left(doc, at: document.Pos(line: 1, col: 0)) == document.Pos(line: 0, col: 3)
+
+test "line_start: to the indent first, then to the start"
+    doc = document.from_text("    code")
+    assert line_start(doc, at: document.Pos(line: 0, col: 6)).col == 4
+    assert line_start(doc, at: document.Pos(line: 0, col: 4)).col == 0
+
+test "vertical: the column kept across a line of wide characters"
+    doc = document.from_text("abcdef\n日本語\nxy")
+    down = vertical(doc, at: document.Pos(line: 0, col: 3), by: 1, goal: 3, tab_width: 4)
+    assert down == document.Pos(line: 1, col: 3)
+    assert vertical(doc, at: down, by: 1, goal: 3, tab_width: 4) == document.Pos(line: 2, col: 2)
+    assert vertical(doc, at: down, by: -5, goal: 3, tab_width: 4) == document.Pos(line: 0, col: 3)
+
+test "boundary_at_or_after: after a combining accent typed, and at a boundary"
+    accent = unicode.from_code_points([0x65, 0x301]).must()
+    assert boundary_at_or_after("caf" + accent, at: 4) == 6
+    assert boundary_at_or_after("cafe", at: 3) == 3

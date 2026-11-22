@@ -1,0 +1,125 @@
+# The two pages that take the text's band: the diff of the buffer against
+# its file on disk, each line coloured by what it is (the files' names, a
+# hunk's header, a line added, a line removed), and the help, a table of
+# every command with the keys bound to it and what it does, read from the
+# bindings in force, so a key the settings moved is shown where it went.
+# Both scroll from `view_top`.
+
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/tui
+
+use editor/state
+use input/bindings
+use settings/theme
+use view/textarea
+
+# Draws the diff view's lines from `e.view_top` into `area` of `screen`.
+#
+# - `screen`: the frame.
+# - `area`: the text's band.
+# - `e`: the editor.
+function draw_diff(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent)
+    colors = e.setup.colors
+
+    for row in range(from: 0, to: area.height)
+        n = e.view_top + row
+
+        if n >= e.diff_lines.len()
+            break
+
+        line = e.diff_lines[n]
+        look = textarea.Look(
+            colors: plain_as(colors, style: style_of_diff_line(line, colors: colors)),
+            spans: [],
+            current: fail(code: "not_found", msg: ""),
+            tab_width: state.tab_width(e)
+        )
+        textarea.draw_line(@screen, x: area.x, y: area.y + row, width: area.width, line: line, left: 0, look: look)
+
+# The style of a line of a unified diff: its headers, a hunk's header, a
+# line added or removed, or the text's.
+#
+# - `line`: the line, without its line feed.
+# - `colors`: the theme.
+function style_of_diff_line(line: str, colors: theme.Theme) -> term.Style
+    if strings.has_prefix(s: line, prefix: "---") || strings.has_prefix(s: line, prefix: "+++")
+        return colors.diff_header
+
+    if strings.has_prefix(s: line, prefix: "@@")
+        return colors.diff_hunk
+
+    if strings.has_prefix(s: line, prefix: "+")
+        return colors.diff_added
+
+    if strings.has_prefix(s: line, prefix: "-")
+        return colors.diff_removed
+
+    if strings.has_prefix(s: line, prefix: "\\")
+        return colors.stand_in
+
+    return colors.text
+
+# `colors` with `style` as the text's, so a line is drawn in it by
+# `textarea.draw_line`.
+#
+# - `colors`: the theme.
+# - `style`: the style the line's text takes.
+function plain_as(colors: theme.Theme, style: term.Style) -> theme.Theme
+    held @= colors
+    held.text @ style
+    return held
+
+# Draws the help's table from `e.view_top` into `area` of `screen`: each
+# command, the keys bound to it, what it does.
+#
+# - `screen`: the frame.
+# - `area`: the text's band.
+# - `e`: the editor.
+function draw_help(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent)
+    rows = help_rows(e.setup.bound)
+    shown: [[str]] @= []
+
+    for n in range(from: e.view_top, to: rows.len())
+        shown @ shown.push(rows[n])
+
+    table @= tui.new_table(shown, widths: [.length(n: 18), .length(n: 15), .fill(weight: 1)])
+    header @= tui.new_row(["keys", "command", "what it does"])
+    header.style @ e.setup.colors.diff_header
+    table.header @ [header]
+    table.highlight_symbol @ ""
+    state_of_table @= tui.selection()
+    tui.draw_table(@screen, area: area, table: table, state: @state_of_table)
+
+# The help's rows, a command each: its keys, its name, what it does.
+#
+# - `bound`: the bindings in force.
+function help_rows(bound: {str: str}) -> [[str]]
+    rows: [[str]] @= []
+
+    for c in bindings.commands()
+        held = bindings.keys_of_command(bound, command: c.name)
+        rows @ rows.push([held, c.name, c.about])
+
+    return rows
+
+test "style_of_diff_line: the headers, a hunk, a line added and one removed"
+    colors = theme.theme_of(theme.default_colors()).must()
+    assert style_of_diff_line("--- a (on disk)", colors: colors) == colors.diff_header
+    assert style_of_diff_line("@@ -1,2 +1,2 @@", colors: colors) == colors.diff_hunk
+    assert style_of_diff_line("+new", colors: colors) == colors.diff_added
+    assert style_of_diff_line("-old", colors: colors) == colors.diff_removed
+    assert style_of_diff_line(" same", colors: colors) == colors.text
+    assert style_of_diff_line("-日本", colors: colors) == colors.diff_removed
+    assert style_of_diff_line("日", colors: colors) == colors.text
+
+test "help_rows: a command's keys as the bindings in force give them"
+    bound: {str: str} = {"f2": "save", "ctrl-s": "save"}
+    rows = help_rows(bound)
+    assert rows.any(is_save_row)
+
+# Whether `row` is the help's row of `save` with its two keys.
+#
+# - `row`: a row of the help.
+function is_save_row(row: [str]) -> bool
+    return row[1] == "save" && row[0] == "f2, ctrl-s"

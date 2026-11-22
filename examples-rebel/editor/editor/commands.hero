@@ -1,0 +1,218 @@
+# The commands of the text, by name: the moves, the edits, undo and redo,
+# cutting and pasting lines, and the character described. `run` is the one
+# door every key bound to a command goes through, and it hands the
+# commands about files, searching and the views to the modules beside this
+# one, so a command's name is read in one place.
+
+use <rebel>/unicode
+
+use buffers/editing
+use editor/files
+use editor/searching
+use editor/state
+use files/encoding
+use text/document
+use text/motion
+
+# Runs the command `command` on the editor.
+#
+# - `e`: the editor.
+# - `command`: a command's name, as `input/bindings` lists them.
+#
+# A command that needs a buffer does nothing where none is open. Fails
+# where the command's work fails: a save the system refuses, a file that
+# cannot be read.
+function run(@e: state.Editor, command: str) -> ()?
+    match command
+        "find" | "find_next" | "find_previous" | "replace" =>
+            searching.run(@e, command: command)
+            return ok()
+        "save" | "encoding" | "reopen" | "reload" | "diff" | "open" | "close" | "quit" | "next_buffer" | "previous_buffer" | "help" =>
+            return files.run(@e, command: command)
+        _ => _ = 0
+
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return ok()
+
+    e.hit @ fail(code: "not_found", msg: "the cursor moved")
+    tw = state.tab_width(e)
+
+    match command
+        "undo" =>
+            if !editing.undo_last(@e.buffers.open[at], tab_width: tw)
+                state.say(@e, text: "nothing to undo")
+        "redo" =>
+            if !editing.redo_last(@e.buffers.open[at], tab_width: tw)
+                state.say(@e, text: "nothing to redo")
+        "newline"     => editing.newline(@e.buffers.open[at], tab_width: tw)
+        "indent"      => editing.type_text(@e.buffers.open[at], text: "\t", tab_width: tw)
+        "backspace"   => editing.backspace(@e.buffers.open[at], tab_width: tw)
+        "delete"      => editing.delete_forward(@e.buffers.open[at], tab_width: tw)
+        "cut_line"    => cut(@e, at: at)
+        "paste_lines" => editing.paste_lines(@e.buffers.open[at], lines: e.clip, tab_width: tw)
+        "describe"    => describe(@e, at: at)
+        "goto_line"   => state.ask(@e, asking: .goto_line, question: "line: ", text: "")
+        _             => move(@e, at: at, command: command)
+
+    return ok()
+
+# Moves the cursor of the buffer at slot `at` by the move `command` names.
+#
+# - `e`: the editor.
+# - `at`: the slot of the buffer shown.
+# - `command`: a move's name; another name is told as unknown.
+function move(@e: state.Editor, at: i64, command: str)
+    b = e.buffers.open[at]
+    tw = state.tab_width(e)
+    page = text_rows(e)
+    here = b.cursor
+
+    match command
+        "left" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.left(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "right" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.right(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "word_left" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.word_left(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "word_right" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.word_right(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "line_start" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.line_start(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "line_end" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.line_end(b.doc, at: here),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "up" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.vertical(b.doc, at: here, by: -1, goal: b.goal, tab_width: tw),
+            keep_goal: true,
+            tab_width: tw
+        )
+        "down" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.vertical(b.doc, at: here, by: 1, goal: b.goal, tab_width: tw),
+            keep_goal: true,
+            tab_width: tw
+        )
+        "page_up" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.vertical(b.doc, at: here, by: -page, goal: b.goal, tab_width: tw),
+            keep_goal: true,
+            tab_width: tw
+        )
+        "page_down" => editing.move_to(
+            @e.buffers.open[at],
+            to: motion.vertical(b.doc, at: here, by: page, goal: b.goal, tab_width: tw),
+            keep_goal: true,
+            tab_width: tw
+        )
+        "file_start" => editing.move_to(
+            @e.buffers.open[at],
+            to: document.Pos(line: 0, col: 0),
+            keep_goal: false,
+            tab_width: tw
+        )
+        "file_end" => editing.move_to(
+            @e.buffers.open[at],
+            to: document.end_of_document(b.doc),
+            keep_goal: false,
+            tab_width: tw
+        )
+        _ => state.warn(@e, text: f"\"{command}\" is no command")
+
+# How many rows of text the screen shows: all but the tab bar, the status
+# line and the message line, and at least one.
+#
+# - `e`: the editor.
+function text_rows(e: state.Editor lent) -> i64
+    if e.height - 3 < 1
+        return 1
+
+    return e.height - 3
+
+# Types `text` at the cursor, as a key holding a character does.
+#
+# - `e`: the editor.
+# - `text`: the character or characters.
+function type_text(@e: state.Editor, text: str)
+    match state.slot_of_current(e)
+        .ok at =>
+            e.hit @ fail(code: "not_found", msg: "the text changed")
+            editing.type_text(@e.buffers.open[at], text: text, tab_width: state.tab_width(e))
+        .err _ => _ = 0
+
+# Pastes `text` at the cursor as one change.
+#
+# - `e`: the editor.
+# - `text`: the text pasted.
+function paste(@e: state.Editor, text: str)
+    match state.slot_of_current(e)
+        .ok at =>
+            e.hit @ fail(code: "not_found", msg: "the text changed")
+            editing.paste(@e.buffers.open[at], text: text, tab_width: state.tab_width(e))
+        .err _ => _ = 0
+
+# Cuts the cursor's line, adding it to the lines cut where the command
+# before was a cut too, as nano gathers a run of Ctrl-K.
+#
+# - `e`: the editor.
+# - `at`: the slot of the buffer shown.
+function cut(@e: state.Editor, at: i64)
+    gathering = e.last_command == "cut_line"
+    text = editing.cut_line(@e.buffers.open[at], tab_width: state.tab_width(e))
+
+    if gathering
+        e.clip @ e.clip.push(text)
+    else
+        e.clip @ [text]
+
+    state.say(@e, text: f"cut {e.clip.len()} line(s)")
+
+# Says what the grapheme at the cursor is: itself, its code points, how
+# many columns it takes, and its bytes in the buffer's encoding, or that the
+# encoding has none for it.
+#
+# - `e`: the editor.
+# - `at`: the slot of the buffer shown.
+function describe(@e: state.Editor, at: i64)
+    b = e.buffers.open[at]
+    line = b.doc.lines[b.cursor.line]
+
+    if b.cursor.col >= line.len()
+        state.say(@e, text: "the end of the line")
+        return
+
+    end = motion.right(b.doc, at: b.cursor).col
+    g = line.slice(from: b.cursor.col, to: end)
+    points = unicode.code_points(g).len()
+    tw = state.tab_width(e)
+    columns = motion.column_of(b.doc, at: document.Pos(line: b.cursor.line, col: end), tab_width: tw) - motion.column_of(b.doc, at: b.cursor, tab_width: tw)
+
+    written = match encoding.bytes_in(g: g, encoding: b.format.encoding)
+        .ok hex => f"{b.format.encoding} {hex}"
+        .err _  => f"{b.format.encoding} has no bytes for it"
+
+    state.say(@e, text: f"\"{g}\" {encoding.points_of(g)}, {points} code point(s), {columns} column(s); {written}")

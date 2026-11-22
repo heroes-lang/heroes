@@ -1,0 +1,81 @@
+# A repository made: its first key file sealing a master key under the
+# first password, and its settings sealed under the master key. Nothing
+# is written where the storage holds a repository already. What a
+# repository is made of, its master key, salt, name and chunker seed, is
+# drawn by the caller: from the system's generator in a real `init`, from
+# fixed texts in the demo.
+
+use <rebel>/bytes
+use <rebel>/crypto
+
+use repo/layout
+use repo/repository
+use repo/settings
+use repo/summary
+use store/objects
+use store/storage
+use vault/kdf
+use vault/keyfile
+use vault/master
+
+## Codes
+
+# The code of a repository that is there already where one is made.
+constant EXISTS: str
+    "exists"
+
+## Making
+
+# What a new repository is made of: drawn by the caller, from the
+# system's generator in a real run.
+record Setup
+    # The master key's 64 bytes.
+    material: [u8]
+    # The key file's salt.
+    salt: [u8]
+    # The password's derivation costs.
+    params: kdf.Params
+    # The settings.
+    config: settings.Settings
+
+# Makes a repository in `store`, opened with `password`.
+#
+# - `store`: the storage, holding no repository.
+# - `password`: the first password, sealing the master key in the first
+#   key file.
+# - `setup`: the master key, the salt, the costs and the settings.
+#
+# The repository is the caller's to close. Fails `exists` where the
+# storage holds a repository already, and as the storage, the sealing and
+# `settings.checked` fail.
+function init(store: storage.Storage, password: str, setup: Setup) -> repository.Repository?
+    s @= store
+
+    match storage.get(@s, key: layout.CONFIG)
+        .ok _ => return fail(code: EXISTS, msg: f"{storage.describe(s)} holds a repository already")
+        .err e =>
+            if e.code != objects.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    config = settings.checked(setup.config)?
+    file = keyfile.encode(keyfile.make(password, master: setup.material, salt: setup.salt, params: setup.params)?)?
+    storage.put(@s, key: layout.key_file(bytes.format_hex(crypto.sha256_text(file))), data: bytes.from_text(file))?
+    key @= master.from_material(setup.material)?
+
+    match settings.encode(config)
+        .err e =>
+            _ = master.close(@key).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok text =>
+            match master.seal_bytes(key, data: bytes.from_text(text), bound: layout.CONFIG)
+                .err e =>
+                    _ = master.close(@key).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok sealed =>
+                    match storage.put(@s, key: layout.CONFIG, data: sealed)
+                        .err e =>
+                            _ = master.close(@key).is_err()
+                            return fail(code: e.code, msg: e.msg)
+                        .ok _ => return ok(
+                            repository.opened(store: s, key: key, config: config, index_files: [], bloom: summary.sized(0))
+                        )

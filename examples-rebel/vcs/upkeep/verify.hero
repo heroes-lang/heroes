@@ -1,0 +1,139 @@
+# `fsck`: the repository checked from its bytes up, as git-fsck(1) checks
+# one. Every pack's objects are checked against the CRC-32 its index keeps;
+# every object, loose or packed, is read and its SHA-1 recomputed against
+# its name, then decoded as its kind says (a tree's entries, a commit's and
+# a tag's headers); every name a commit, a tree or a tag holds must name an
+# object of the database; and every ref must lead to a commit. An object
+# nothing names, no object, no ref and no entry of the index, is reported
+# as dangling, which is no error.
+
+use <rebel>/strings
+
+use objects/annotated
+use objects/commits
+use objects/framing
+use objects/ids
+use objects/trees
+use repo/layout
+use repo/refs
+use repo/staging
+use snapshot/patches
+use store/database
+use store/pack_files
+
+## Checking
+
+# What `fsck` found.
+record Checked
+    # Its report, one finding a line, then a summary.
+    text: str
+    # Whether nothing is damaged or missing; dangling objects are no damage.
+    sound: bool
+
+# The names `o` holds, as references to other objects.
+#
+# - `o`: an object.
+#
+# Fails `invalid` where it does not decode as its kind.
+function references_of(o: framing.Object) -> [str]?
+    out: [str] @= []
+
+    match o.kind
+        .commit =>
+            c = commits.decode_commit(o.data)?
+            out @ out.push(c.tree)
+
+            for p in c.parents
+                out @ out.push(p)
+        .tree =>
+            for e in trees.decode_tree(o.data)?
+                if e.mode != .gitlink
+                    out @ out.push(e.id)
+        .tag  => out @ out.push(annotated.decode_tag(o.data)?.target)
+        .blob => _ = 0
+
+    return ok(out)
+
+# Checks every object and ref of `repo`.
+#
+# - `repo`: the repository.
+#
+# Fails only where the database or a ref cannot be opened at all; damage
+# found is reported in the answer.
+function check(repo: layout.Repo) -> Checked?
+    db = database.open_database(layout.objects_dir(repo))?
+    problems: [str] @= []
+
+    for pack in db.packs
+        match pack_files.check_crcs(pack)
+            .ok _  => _ = 0
+            .err e => problems @ problems.push("error: " + e.msg)
+
+    every = database.every_id(db)?
+    named: {str: bool} @= {}
+    kinds: {str: str} @= {}
+    found: {str: bool} @= {}
+
+    for id in every
+        found[id] @ true
+
+    for id in every
+        match database.read_object(db, id: id)
+            .err e => problems @ problems.push(f"error: {id}: {e.msg}")
+            .ok o =>
+                kinds[id] @ framing.kind_name(o.kind)
+
+                match references_of(o)
+                    .err e => problems @ problems.push(
+                        f"error: {framing.kind_name(o.kind)} {id} does not decode: {e.msg}"
+                    )
+                    .ok held =>
+                        for target in held
+                            named[target] @ true
+
+                            if found[target].is_err()
+                                problems @ problems.push(
+                                    f"missing object {target}, named by {framing.kind_name(o.kind)} {ids.short(id)}"
+                                )
+
+    for folder in ["refs/heads", "refs/tags"]
+        for r in refs.list_refs(repo, folder: folder)?
+            named[r.id] @ true
+
+            match refs.peel_to_commit(db, id: r.id)
+                .ok _  => _ = 0
+                .err e => problems @ problems.push(f"error: {folder}/{r.name}: {e.msg}")
+
+    match refs.head_commit(repo)
+        .ok id => named[id] @ true
+        .err _ => _ = 0
+
+    for e in staging.all_entries(staging.load(repo)?)
+        named[e.id] @ true
+
+    dangling: [str] @= []
+
+    for id in every
+        if named[id].is_err() && !kinds[id].is_err()
+            dangling @ dangling.push(f"dangling {kinds[id].must()} {id}")
+
+    lines: [str] @= []
+
+    for p in problems
+        lines @ lines.push(p)
+
+    for d in dangling
+        lines @ lines.push(d)
+
+    packs = if db.packs.len() == 1
+        "1 pack"
+    else
+        f"{db.packs.len()} packs"
+    sound = problems.len() == 0
+
+    verdict = if sound
+        "every hash agrees with its content and every reference is there"
+    else
+        f"{patches.counted(problems.len(), word: "problem")} found"
+    lines @ lines.push(f"Checked {every.len()} objects, in {packs} and loose files: {verdict}")
+    return ok(Checked(text: strings.trim(lines.join("\n")), sound: sound))

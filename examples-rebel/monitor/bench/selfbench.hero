@@ -1,0 +1,131 @@
+# `monitor bench`: how much the monitor's own work costs, measured with
+# `bench`, so an operator knows what a collection every second would spend:
+# a sensor's line read, a rule's condition read, the 95th percentile of an
+# hour of samples, a frame of the dashboard drawn, a process's usage read
+# from the system, and a watched folder's snapshot taken.
+#
+# Each is measured as `bench` measures, a warm-up then rounds, and told with
+# its median, best and spread. A transcript that must read the same on every
+# machine tells the rounds kept alone, never a time: the demo measures with
+# every round kept (no round discarded as waiting), so its counts are the
+# rounds asked.
+
+use <rebel>/bench
+use <rebel>/fs
+use <rebel>/math
+use <rebel>/os
+use <rebel>/time
+
+use alerts/rules
+use collect/files
+use collect/sensor
+use conf/settings
+use dash/draw
+use dash/view
+use series/store
+use series/window
+
+# One measurement's result, as a line.
+record Result
+    # What was measured.
+    work: str
+    # The rounds kept.
+    kept: i64
+    # The measurement in one line, times and all.
+    text: str
+
+# The settings of the demo's measurement: five rounds of a millisecond,
+# every round kept, within ten seconds.
+function quick_settings() -> bench.Settings
+    s = bench.with_rounds(
+        bench.with_round(bench.default_settings(), round: time.milliseconds(1).default(time.nanoseconds(1_000_000))),
+        rounds: 5
+    )
+    return bench.with_waiting(s, share: math.INF)
+
+# The 95th percentile of `points`: the dearest figure a rule takes.
+#
+# - `points`: the window.
+function p95_of(points: [store.Point]) -> f64
+    return window.figure_of(.p95, points: points, now: 0).default(0.0)
+
+# A frame of `v` drawn at 80 by 24.
+#
+# - `v`: the view.
+function frame_of(v: view.View) -> i64
+    return draw.frame_lines(v, width: 80, height: 24).len()
+
+# The usage of the process `id`, its resident bytes.
+#
+# - `id`: the process.
+function usage_of(id: i64) -> i64
+    return os.process_usage(id).default(os.ProcessUsage(resident_bytes: 0, virtual_bytes: 0, user_ns: 0, system_ns: 0)).resident_bytes
+
+# How many files the snapshot of `spec` holds.
+#
+# - `spec`: the watched path.
+function scan_of(spec: settings.WatchSpec) -> i64
+    return files.scan(spec).default({}).len()
+
+# An hour of samples taken every five seconds.
+function an_hour() -> [store.Point]
+    points: [store.Point] @= []
+
+    for i in range(from: 0, to: 720)
+        points @ points.push(store.Point(at: i * 5_000_000_000, value: to_f64(i % 97)))
+
+    return points
+
+# The result of a measurement that came to `report`.
+#
+# - `work`: what was measured.
+# - `report`: what `bench.measure` answered.
+function result_of(work: str, report: bench.Report?) -> Result
+    match report
+        .ok r  => return Result(work: work, kept: r.summary.count, text: r.text)
+        .err e => return Result(work: work, kept: 0, text: f"{e.code}: {e.msg}")
+
+# Measures each of the monitor's works with `s`, the folder `scanned` the
+# one whose snapshot is taken.
+#
+# - `s`: the measurement's settings.
+# - `scanned`: the folder.
+function measure_all(s: bench.Settings, scanned: str) -> [Result]
+    sample_view = draw.sample_view()
+    spec = settings.WatchSpec(name: "bench", path: scanned, tree: true)
+    return [
+        result_of("a sensor's line read", report: bench.measure(work: sensor.parse_reading, input: "T=+21.50C", settings: s))
+        result_of("a rule's condition read", report: bench.measure(work: rules.parse_condition, input: "avg(sensor.temperature, 2m) > 70", settings: s))
+        result_of("an hour's 95th percentile", report: bench.measure(work: p95_of, input: an_hour(), settings: s))
+        result_of("a dashboard frame drawn", report: bench.measure(work: frame_of, input: sample_view, settings: s))
+        result_of("a process's usage read", report: bench.measure(work: usage_of, input: os.pid(), settings: s))
+        result_of("a folder's snapshot taken", report: bench.measure(work: scan_of, input: spec, settings: s))
+    ]
+
+# Each result as a line: with its times, or with its rounds alone where
+# `exact` is false.
+#
+# - `results`: the results.
+# - `exact`: whether times are told.
+function lines_of(results: [Result], exact: bool) -> [str]
+    lines: [str] @= []
+
+    for r in results
+        if exact
+            lines @ lines.push(f"{r.work}: {r.text}")
+        else
+            lines @ lines.push(f"{r.work}: {r.kept} rounds kept")
+
+    return lines
+
+test "measure_all: every work measured, its rounds kept as asked"
+    dir = "build/monitor-test-bench"
+    fs.make_dir_all(dir).must()
+    write_file(path: dir + "/a.txt", text: "a").must()
+    results = measure_all(quick_settings(), scanned: dir)
+    assert results.len() == 6
+
+    for r in results
+        assert r.kept == 5
+
+    assert lines_of(results, exact: false)[0] == "a sensor's line read: 5 rounds kept"

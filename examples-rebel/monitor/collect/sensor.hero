@@ -1,0 +1,384 @@
+# The sensor on a serial port: a thermometer, a hygrometer, any device that
+# answers a query with a line holding a number (`T=+21.50C`, `+021.5`,
+# `21.5 C`), or sends such lines by itself. The port is opened as `serial`
+# opens one, at the configured speed with 8 data bits, no parity and one
+# stop bit, every wait bounded by the sensor's timeout; a port that cannot
+# be opened, or whose device stops answering, is the sensor's status, never
+# the monitor's failure, and is tried again at the next reading.
+#
+# A reading is the first number of the line, read as `numbers` reads a
+# float. Where the program has no port to read (the demo on a system
+# without pseudo-terminals), the values are handed in by `hand`, and every
+# other part of the monitor sees them as it sees a port's.
+
+use <rebel>/io
+use <rebel>/numbers
+use <rebel>/serial
+use <rebel>/strings
+use <rebel>/time
+
+use conf/settings
+
+# The most bytes an answer may hold before its line feed.
+constant LONGEST_ANSWER: i64
+    256
+
+# How the last reading went.
+variant Status
+    # Not read yet.
+    unread
+    # A number was read.
+    ok
+    # No answer came within the timeout, or the device closed its end.
+    silent
+    # An answer came that holds no number.
+    garbled
+    # The port could not be opened.
+    absent
+
+# One reading.
+record Reading
+    # How it went.
+    status: Status
+    # The number, where `status` is `ok`.
+    value: f64
+    # Why it is not `ok`, in words; "" where it is.
+    why: str
+
+# The sensor and its port.
+record Sensor
+    # Its settings.
+    spec: settings.SensorSpec
+    # The open port, by its path; empty while it is closed.
+    ports: {str: io.Stream}
+    # How the last reading went.
+    status: Status
+    # Readings that gave a number.
+    readings: i64
+    # Readings that did not.
+    misses: i64
+    # Whether its values are handed in rather than read from its port.
+    handed: bool
+    # The bytes of a line not yet ended, where the device sends by itself.
+    partial: [u8]
+
+# The sensor of `spec`, its port not yet opened.
+#
+# - `spec`: the sensor's settings.
+# - `handed`: true where its values will be handed in by `hand` instead of
+#   read from a port.
+function new_sensor(spec: settings.SensorSpec, handed: bool) -> Sensor
+    return Sensor(spec: spec, ports: {}, status: .unread, readings: 0, misses: 0, handed: handed, partial: [])
+
+# The name a status is shown with.
+#
+# - `s`: the status.
+function status_name(s: Status) -> str
+    return match s
+        .unread  => "unread"
+        .ok      => "ok"
+        .silent  => "silent"
+        .garbled => "garbled"
+        .absent  => "absent"
+
+# The first number `line` holds: an optional sign, digits, a point and more
+# digits, wherever it begins. Fails `invalid` where it holds none.
+#
+# - `line`: the answer, its line end or not.
+function parse_reading(line: str) -> f64?
+    at: i64 @= 0
+
+    while at < line.len()
+        c = line[at]
+        digit_next = at + 1 < line.len() && is_digit(line[at + 1])
+
+        if is_digit(c) || (c == '+' || c == '-' || c == '.') && digit_next
+            break
+        at @ at + 1
+
+    if at == line.len()
+        return fail(code: "invalid", msg: f"no number in \"{strings.trim(line)}\"")
+    end: i64 @= at + 1
+
+    while end < line.len() && (is_digit(line[end]) || line[end] == '.')
+        end @ end + 1
+
+    return numbers.parse_float(line.slice(from: at, to: end))
+
+# Whether `b` is an ASCII digit.
+#
+# - `b`: the byte.
+function is_digit(b: u8) -> bool
+    return b >= '0' && b <= '9'
+
+# The timeout's milliseconds, at least 1.
+#
+# - `s`: the sensor.
+function timeout_ms(s: Sensor lent) -> i64
+    ms = s.spec.timeout.nanoseconds / 1_000_000
+
+    if ms < 1
+        return 1
+    return ms
+
+# Opens the port where it is closed. Fails as `serial.open` and
+# `serial.set_timeouts` fail; the sensor's status then says `absent`.
+#
+# - `s`: the sensor.
+function open_port(@s: Sensor) -> ()?
+    if s.ports.len() > 0
+        return ok()
+    port @= serial.open(s.spec.port, settings: serial.default_settings(baud: s.spec.baud))?
+    wait = timeout_ms(s)
+
+    read_wait = if s.spec.query == ""
+        0
+    else
+        wait
+
+    match serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: read_wait, write_ms: wait, gap_ms: 0))
+        .ok _ => s.ports[s.spec.port] @ port
+        .err e =>
+            _ = io.close(@port).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    return ok()
+
+# Closes the port where it is open.
+#
+# - `s`: the sensor.
+function close(@s: Sensor)
+    for name in keys(s.ports)
+        port @= s.ports[name].must()
+        _ = io.close(@port).is_err()
+
+    s.ports @ {}
+
+# Takes one reading: where the sensor has a query, asks the device and reads
+# its answer; where it has none, takes the last whole line the device has
+# sent since the reading before. A port that cannot be opened, a write or a
+# read the device does not take, and an answer with no number are a reading
+# of their status, the port closed again where its device has gone.
+#
+# - `s`: the sensor; its status and counts move.
+function read_once(@s: Sensor) -> Reading
+    match open_port(@s)
+        .ok _  => _ = 0
+        .err e => return missed(@s, status: .absent, why: f"{e.code}: {e.msg}")
+
+    if s.spec.query == ""
+        return read_sent(@s)
+
+    match ask(@s)
+        .ok _  => return read_answer(@s)
+        .err e => return missed(@s, status: .silent, why: f"the query was not taken: {e.code}")
+
+# Writes the query and a line feed to the open port, the bytes that waited
+# before it thrown away so the answer read is the query's. Fails as
+# `io.write_text` fails, the port then closed.
+#
+# - `s`: the sensor, its port open.
+function ask(@s: Sensor) -> ()?
+    port = s.ports[s.spec.port].must()
+    _ = serial.discard_input(port).is_err()
+
+    match io.write_text(port, text: s.spec.query + "\n")
+        .ok _ => return ok()
+        .err e =>
+            close(@s)
+            return fail(code: e.code, msg: e.msg)
+
+# Reads the answer to a query: bytes until a line feed or the timeout.
+#
+# - `s`: the sensor, its port open and its query written.
+function read_answer(@s: Sensor) -> Reading
+    port = s.ports[s.spec.port].must()
+    answer: [u8] @= []
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while true
+        match io.read(port, n: LONGEST_ANSWER)
+            .ok data =>
+                if data.len() == 0
+                    close(@s)
+                    return missed(@s, status: .silent, why: "the device closed its end")
+
+                for b in data
+                    answer @ answer.push(b)
+            .err e => return missed(@s, status: .silent, why: silence_of(s, code: e.code))
+
+        if has_line_end(answer) || answer.len() >= LONGEST_ANSWER
+            break
+        spent = time.elapsed(began).default(s.spec.timeout)
+
+        if spent.nanoseconds >= s.spec.timeout.nanoseconds
+            return missed(@s, status: .silent, why: "the answer did not end within the timeout")
+
+    match parse_reading(line_of(answer))
+        .ok v  => return got(@s, value: v)
+        .err e => return missed(@s, status: .garbled, why: e.msg)
+
+# The last whole line a device that sends by itself has sent since the
+# reading before, every byte waiting read without waiting for more; silent
+# where no line has ended.
+#
+# - `s`: the sensor, its port open with a read timeout of zero.
+function read_sent(@s: Sensor) -> Reading
+    port = s.ports[s.spec.port].must()
+    held @= s.partial
+
+    while held.len() < 65_536
+        match io.read(port, n: 4_096)
+            .ok data =>
+                if data.len() == 0
+                    close(@s)
+                    s.partial @ []
+                    return missed(@s, status: .silent, why: "the device closed its end")
+
+                for b in data
+                    held @ held.push(b)
+            .err _ => break
+
+    last_end: i64 @= -1
+    line_start: i64 @= 0
+
+    for i in range(from: 0, to: held.len())
+        if held[i] == 10
+            if i > last_end + 1
+                line_start @ last_end + 1
+            last_end @ i
+
+    s.partial @ held.slice(from: last_end + 1, to: held.len())
+
+    if last_end < 0
+        return missed(@s, status: .silent, why: "no line came since the reading before")
+
+    match parse_reading(line_of(held.slice(from: line_start, to: last_end + 1)))
+        .ok v  => return got(@s, value: v)
+        .err e => return missed(@s, status: .garbled, why: e.msg)
+
+# Whether `data` holds a line feed.
+#
+# - `data`: the bytes.
+function has_line_end(data: [u8]) -> bool
+    for b in data
+        if b == 10
+            return true
+
+    return false
+
+# The text of `data` up to its first line feed, a byte that is no UTF-8
+# making the whole answer garbled rather than refused.
+#
+# - `data`: the answer's bytes.
+function line_of(data: [u8]) -> str
+    end: i64 @= 0
+
+    while end < data.len() && data[end] != 10
+        end @ end + 1
+
+    return data.slice(from: 0, to: end).validated_bytes().default("")
+
+# Why a query went unanswered: `no answer within 2000 ms: timeout`.
+#
+# - `s`: the sensor.
+# - `code`: the read's code, `timeout` where the device was silent.
+function silence_of(s: Sensor lent, code: str) -> str
+    return f"no answer within {timeout_ms(s)} ms: {code}"
+
+# Hands in `value` as the sensor's reading, where its values do not come
+# from a port.
+#
+# - `s`: the sensor.
+# - `value`: the value.
+function hand(@s: Sensor, value: f64) -> Reading
+    return got(@s, value: value)
+
+# Hands in a reading that did not come.
+#
+# - `s`: the sensor.
+# - `why`: why, in words.
+function hand_silence(@s: Sensor, why: str) -> Reading
+    return missed(@s, status: .silent, why: why)
+
+# Counts a reading of `value`.
+#
+# - `s`: the sensor.
+# - `value`: the value read.
+function got(@s: Sensor, value: f64) -> Reading
+    s.status @ .ok
+    s.readings @ s.readings + 1
+    return Reading(status: .ok, value: value, why: "")
+
+# Counts a reading that gave no number.
+#
+# - `s`: the sensor.
+# - `status`: how it went.
+# - `why`: why, in words.
+function missed(@s: Sensor, status: Status, why: str) -> Reading
+    s.status @ status
+    s.misses @ s.misses + 1
+    return Reading(status: status, value: 0.0, why: why)
+
+test "parse_reading: the forms devices answer in, and an answer with no number"
+    assert parse_reading("T=+21.50C\r").must() == 21.5
+    assert parse_reading("+021.5").must() == 21.5
+    assert parse_reading("-4.25 C").must() == -4.25
+    assert parse_reading("humidity 45 %RH").must() == 45.0
+    assert parse_reading(".5").must() == 0.5
+    assert parse_reading("ERR").is_err()
+    assert parse_reading("").is_err()
+
+test "line_of: up to the first line feed, and bytes no UTF-8 read as no line"
+    assert line_of([50, 49, 13, 10, 57]) == "21\r"
+    assert line_of([255, 10]) == ""
+
+test "read_once: a port that is not there is absent, and the next reading tries again"
+    spec @= settings.no_sensor()
+    spec.name @ "t"
+    spec.port @ "/dev/rebel-monitor-no-such-port"
+    s @= new_sensor(spec, handed: false)
+    first = read_once(@s)
+    assert first.status == .absent && s.status == .absent && s.misses == 1
+    assert read_once(@s).status == .absent && s.misses == 2
+
+test "ask and read_answer: a device on a pseudo-terminal answers, then stops answering"
+    pair @= match serial.open_pseudo()
+        .ok p  => p
+        .err _ => skip_test(reason: "this system makes no pseudo-terminal")
+
+    spec @= settings.no_sensor()
+    spec.name @ "t"
+    spec.port @ pair.path
+    spec.query @ "T?"
+    spec.timeout @ time.milliseconds(200).must()
+    s @= new_sensor(spec, handed: false)
+    open_port(@s).must()
+    ask(@s).must()
+    assert io.read(pair.controller, n: 16).must() == [84, 63, 10]
+    io.write_text(pair.controller, text: "T=+21.50C\r\n").must()
+    assert read_answer(@s).value == 21.5
+    assert read_answer(@s).status == .silent && s.readings == 1 && s.misses == 1
+    close(@s)
+    io.close(@pair.controller).must()
+
+test "read_once: a device that sends by itself, its last whole line taken"
+    pair @= match serial.open_pseudo()
+        .ok p  => p
+        .err _ => skip_test(reason: "this system makes no pseudo-terminal")
+
+    spec @= settings.no_sensor()
+    spec.name @ "t"
+    spec.port @ pair.path
+    spec.timeout @ time.milliseconds(200).must()
+    s @= new_sensor(spec, handed: false)
+    open_port(@s).must()
+    io.write_text(pair.controller, text: "20.0\n21.0\n22").must()
+    time.sleep(time.milliseconds(50).must())
+    assert read_once(@s).value == 21.0
+    io.write_text(pair.controller, text: ".5\n").must()
+    time.sleep(time.milliseconds(50).must())
+    assert read_once(@s).value == 22.5
+    assert read_once(@s).status == .silent
+    close(@s)
+    io.close(@pair.controller).must()

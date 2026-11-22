@@ -1,0 +1,491 @@
+# The services the monitor runs and keeps running, as supervisord, runit or
+# systemd do: each started once every service it depends on runs, in the
+# stages `services/deps` orders; its output captured to its log file; its
+# end seen at the next step and answered by its restart policy, with a wait
+# that doubles at each failure in a row up to a bound, and given up after
+# its most failures in a row. Stopping one, and starting it again on
+# request, is `services/stopping`'s, over the functions here.
+#
+# Every child is the program's until it is waited for: a child seen ended is
+# reaped at once, its pipe read to its end first, so nothing it wrote is
+# lost and no process is left behind. A child is held in a map by its
+# service's name and taken out of it as it is waited for, since a copy of a
+# child kept after its wait would name a process given back.
+
+use <rebel>/io
+use <rebel>/log
+use <rebel>/maps
+use <rebel>/os
+use <rebel>/poll
+use <rebel>/process
+use <rebel>/time
+
+use conf/settings
+use services/deps
+use services/output
+
+# The most bytes read from a pipe at once.
+constant READ_MOST: i64
+    65_536
+
+# Where a service stands.
+variant State
+    # Not started yet: a service it depends on does not run.
+    waiting
+    # It runs.
+    running
+    # It ended and is started again once its wait has passed.
+    backoff
+    # It ended in failure and is not started again: its policy says never,
+    # or it failed its most times in a row.
+    failed
+    # It was stopped, or ended well with nothing to start it again.
+    stopped
+
+# One service and what is known of it.
+record Service
+    # Its settings.
+    spec: settings.ServiceSpec
+    # Where it stands.
+    state: State
+    # When it entered its state, in nanoseconds since 1970 on the monitor's
+    # clock.
+    since: i64
+    # For `backoff`: when it is started again.
+    due: i64
+    # How many times it was started.
+    starts: i64
+    # How many of those starts were restarts.
+    restarts: i64
+    # Its failures in a row, which its wait doubles with.
+    in_row: i64
+    # How it ended last, `exited with code 3`; "" where it never ended.
+    last_end: str
+    # The system's number for its process while it runs, 0 otherwise.
+    pid: i64
+
+# Something the supervisor did or saw, for the journal.
+record Event
+    # The service.
+    service: str
+    # How much it matters.
+    level: log.Level
+    # What happened, one line that names no number of the machine.
+    text: str
+    # Whether it was a restart.
+    restart: bool
+
+# The services, their children and their captures.
+record Supervisor
+    # Every service, in the order the configuration writes them.
+    services: [Service]
+    # The order they start in: the stages, one after another.
+    order: [str]
+    # The children that run, by service.
+    children: {str: process.Child}
+    # Each service's capture, kept across its restarts.
+    captures: {str: output.Capture}
+    # Where the captures write.
+    logs: settings.Logs
+    # The loop's set, which the children's pipes join while they run.
+    set: poll.Set
+
+# The supervisor of `specs`, every service waiting.
+#
+# - `specs`: the services, checked by `deps.check`.
+# - `logs`: where their output goes.
+# - `set`: the loop's set; the supervisor adds and removes its pipes.
+#
+# Fails `invalid` where the services depend on each other in a cycle.
+function new_supervisor(specs: [settings.ServiceSpec], logs: settings.Logs, set: poll.Set) -> Supervisor?
+    order: [str] @= []
+
+    for stage in deps.start_stages(specs)?
+        for name in stage
+            order @ order.push(name)
+
+    services: [Service] @= []
+
+    for spec in specs
+        services @ services.push(
+            Service(spec: spec, state: .waiting, since: 0, due: 0, starts: 0, restarts: 0, in_row: 0, last_end: "", pid: 0)
+        )
+
+    return ok(Supervisor(services: services, order: order, children: {}, captures: {}, logs: logs, set: set))
+
+# The name a state is shown with.
+#
+# - `s`: the state.
+function state_name(s: State) -> str
+    return match s
+        .waiting => "waiting"
+        .running => "running"
+        .backoff => "backoff"
+        .failed  => "failed"
+        .stopped => "stopped"
+
+# Where the service `name` stands in `sup.services`. Fails `not_found` where
+# no service has the name.
+#
+# - `sup`: the supervisor.
+# - `name`: the service's name.
+function index_of(sup: Supervisor lent, name: str) -> i64?
+    for i in range(from: 0, to: sup.services.len())
+        if sup.services[i].spec.name == name
+            return ok(i)
+
+    return fail(code: "not_found", msg: f"no service named \"{name}\"")
+
+# The names of the services that do not run.
+#
+# - `sup`: the supervisor.
+function down_names(sup: Supervisor lent) -> [str]
+    names: [str] @= []
+
+    for s in sup.services
+        if s.state != .running
+            names @ names.push(s.spec.name)
+
+    return names
+
+# Whether every service `spec` depends on runs.
+#
+# - `sup`: the supervisor.
+# - `spec`: the service.
+function needs_met(sup: Supervisor lent, spec: settings.ServiceSpec) -> bool
+    for needed in spec.depends_on
+        match index_of(sup, name: needed)
+            .ok i =>
+                if sup.services[i].state != .running
+                    return false
+            .err _ => return false
+
+    return true
+
+# One step at `at`: each child seen ended is reaped and its policy applied;
+# then each service waiting, or whose wait has passed, is started where all
+# it needs runs, in the order the stages give.
+#
+# - `sup`: the supervisor.
+# - `at`: the moment, on the monitor's clock.
+function step(@sup: Supervisor, at: time.Instant) -> [Event]
+    events: [Event] @= []
+
+    for name in sup.order
+        i = index_of(sup, name: name).must()
+
+        if sup.services[i].state == .running && has_ended(@sup, name: name)
+            events @ events.push(reap(@sup, i: i, at: at))
+
+    for name in sup.order
+        i = index_of(sup, name: name).must()
+        s = sup.services[i]
+        due = s.state == .waiting || s.state == .backoff && s.due <= at.unix_nanoseconds
+
+        if due && needs_met(sup, spec: s.spec)
+            events @ events.push(start(@sup, i: i, at: at))
+
+    return events
+
+# Whether the child of `name` has ended, asked without waiting; a child the
+# system cannot be asked about is taken as ended, so it is reaped.
+#
+# - `sup`: the supervisor.
+# - `name`: a service that runs.
+function has_ended(@sup: Supervisor, name: str) -> bool
+    child @= sup.children[name].must()
+
+    match process.has_ended(@child)
+        .ok ended =>
+            sup.children[name] @ child
+            return ended
+        .err _ => return true
+
+# Starts the service at `i`.
+#
+# - `sup`: the supervisor.
+# - `i`: where it stands in `sup.services`.
+# - `at`: the moment, on the monitor's clock.
+function start(@sup: Supervisor, i: i64, at: time.Instant) -> Event
+    spec = sup.services[i].spec
+
+    input: process.Input = match spec.input
+        .pipe => .pipe
+        .none => .nothing
+
+    rest = spec.command.slice(from: 1, to: spec.command.len())
+    command = process.with_error_to_output(
+        process.with_output(process.with_input(process.command(spec.command[0], rest), from: input), to: .pipe)
+    )
+
+    match process.start(command)
+        .err e => return ended_badly(@sup, i: i, at: at, how: f"could not start: {e.code}: {e.msg}")
+        .ok child =>
+            capture @= match sup.captures[spec.name]
+                .ok c => c
+                .err _ =>
+                    match output.open(sup.logs, name: spec.name)
+                        .ok c => c
+                        .err e =>
+                            _ = process.kill(child).is_err()
+                            stopped @= child
+                            _ = process.wait(@stopped).is_err()
+                            return ended_badly(@sup, i: i, at: at, how: f"could not open its log: {e.code}: {e.msg}")
+
+            capture.key @ poll.add_stream(sup.set, s: child.output, interest: .read).default(-1)
+            sup.captures[spec.name] @ capture
+            sup.children[spec.name] @ child
+            again = sup.services[i].starts > 0
+            sup.services[i].starts @ sup.services[i].starts + 1
+            sup.services[i].state @ .running
+            sup.services[i].since @ at.unix_nanoseconds
+            sup.services[i].pid @ child.id
+
+            if again
+                sup.services[i].restarts @ sup.services[i].restarts + 1
+                return Event(
+                    service: spec.name,
+                    level: .info,
+                    text: f"started again, restart {sup.services[i].restarts}",
+                    restart: true
+                )
+            return Event(service: spec.name, level: .info, text: "started", restart: false)
+
+# Reaps the ended child of the service at `i` and applies its policy.
+#
+# - `sup`: the supervisor.
+# - `i`: where it stands in `sup.services`.
+# - `at`: the moment, on the monitor's clock.
+function reap(@sup: Supervisor, i: i64, at: time.Instant) -> Event
+    name = sup.services[i].spec.name
+
+    how: process.Status = match finish_child(@sup, name: name, at: at)
+        .ok status => status
+        .err _     => .exited(code: -1)
+
+    sup.services[i].pid @ 0
+
+    if process.is_success(how) && sup.services[i].spec.restart != .always
+        sup.services[i].state @ .stopped
+        sup.services[i].since @ at.unix_nanoseconds
+        sup.services[i].in_row @ 0
+        sup.services[i].last_end @ process.format_status(how)
+        return Event(
+            service: name,
+            level: .info,
+            text: f"{process.format_status(how)}; not started again",
+            restart: false
+        )
+
+    if process.is_success(how)
+        sup.services[i].in_row @ 0
+        return backed_off(@sup, i: i, at: at, how: process.format_status(how), level: .info)
+    return ended_badly(@sup, i: i, at: at, how: process.format_status(how))
+
+# Applies the policy of the service at `i` to an end in failure: given up
+# where its policy says never or it failed its most times in a row, else a
+# wait before its next start.
+#
+# - `sup`: the supervisor.
+# - `i`: where it stands.
+# - `at`: the moment.
+# - `how`: how it ended, one line.
+function ended_badly(@sup: Supervisor, i: i64, at: time.Instant, how: str) -> Event
+    spec = sup.services[i].spec
+    sup.services[i].in_row @ sup.services[i].in_row + 1
+    sup.services[i].last_end @ how
+    sup.services[i].pid @ 0
+    gave_up = spec.restart == .never || spec.max_failures > 0 && sup.services[i].in_row >= spec.max_failures
+
+    if gave_up
+        sup.services[i].state @ .failed
+        sup.services[i].since @ at.unix_nanoseconds
+
+        if spec.restart == .never
+            return Event(
+                service: spec.name,
+                level: .error,
+                text: f"{how}; its policy starts it never again",
+                restart: false
+            )
+        return Event(
+            service: spec.name,
+            level: .error,
+            text: f"{how}; failed {sup.services[i].in_row} times in a row, not started again",
+            restart: false
+        )
+    return backed_off(@sup, i: i, at: at, how: how, level: .warn)
+
+# Puts the service at `i` in its wait before the next start: its backoff,
+# doubled for each failure in a row past the first, at most its longest.
+#
+# - `sup`: the supervisor.
+# - `i`: where it stands.
+# - `at`: the moment.
+# - `how`: how it ended.
+# - `level`: how much the end matters.
+function backed_off(@sup: Supervisor, i: i64, at: time.Instant, how: str, level: log.Level) -> Event
+    spec = sup.services[i].spec
+    wait = wait_after(spec, failures: sup.services[i].in_row)
+    sup.services[i].state @ .backoff
+    sup.services[i].since @ at.unix_nanoseconds
+    sup.services[i].due @ at.unix_nanoseconds + wait.nanoseconds
+    sup.services[i].last_end @ how
+    return Event(
+        service: spec.name,
+        level: level,
+        text: f"{how}; started again in {time.format_duration(wait)}",
+        restart: false
+    )
+
+# The wait before the start that follows `failures` failures in a row: the
+# backoff, doubled for each one past the first, never past the longest.
+#
+# - `spec`: the service.
+# - `failures`: its failures in a row, 0 or more.
+function wait_after(spec: settings.ServiceSpec, failures: i64) -> time.Duration
+    wait @= spec.backoff.nanoseconds
+    n: i64 @= 1
+
+    while n < failures && wait < spec.backoff_most.nanoseconds
+        wait @ wait * 2
+        n @ n + 1
+
+    if wait > spec.backoff_most.nanoseconds
+        wait @ spec.backoff_most.nanoseconds
+    return time.nanoseconds(wait)
+
+# Reads the pipe of the service `name`'s ended child to its end, then waits
+# for it and gives it back, and answers how it ended.
+#
+# - `sup`: the supervisor; the child leaves `children`.
+# - `name`: the service.
+# - `at`: the moment, the time of its last lines.
+#
+# Fails as `process.wait` fails; the child is ended at once and given back
+# all the same.
+function finish_child(@sup: Supervisor, name: str, at: time.Instant) -> process.Status?
+    child @= sup.children[name].must()
+    capture @= sup.captures[name].must()
+
+    if capture.key >= 0
+        _ = poll.remove(sup.set, key: capture.key).is_err()
+        capture.key @ -1
+
+    while true
+        match io.read(child.output, n: READ_MOST)
+            .ok data =>
+                if data.len() == 0
+                    break
+                output.take(@capture, data: data, at: at)
+            .err _ => break
+
+    output.finish(@capture, at: at)
+    sup.captures[name] @ capture
+    sup.children @ maps.remove(sup.children, key: name)
+
+    match process.wait(@child)
+        .ok status => return ok(status)
+        .err e =>
+            _ = process.kill(child).is_err()
+            _ = process.release(@child).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Reads what waits on the pipe whose key in the set is `key`, where it is a
+# service's, and answers whether it was.
+#
+# - `sup`: the supervisor.
+# - `key`: a key a wait on the set told ready.
+# - `at`: the moment, the time of the lines read.
+function read_ready(@sup: Supervisor, key: i64, at: time.Instant) -> bool
+    for name in keys(sup.captures)
+        capture @= sup.captures[name].must()
+
+        if capture.key == key && key >= 0
+            child = sup.children[name].must()
+
+            match io.read(child.output, n: READ_MOST)
+                .ok data =>
+                    if data.len() == 0
+                        _ = poll.remove(sup.set, key: key).is_err()
+                        capture.key @ -1
+                    else
+                        output.take(@capture, data: data, at: at)
+                .err _ =>
+                    _ = poll.remove(sup.set, key: key).is_err()
+                    capture.key @ -1
+
+            sup.captures[name] @ capture
+            return true
+
+    return false
+
+# The services' settings, in the order the configuration writes them.
+#
+# - `sup`: the supervisor.
+function service_specs(sup: Supervisor lent) -> [settings.ServiceSpec]
+    specs: [settings.ServiceSpec] @= []
+
+    for s in sup.services
+        specs @ specs.push(s.spec)
+
+    return specs
+
+# Writes `line` to the input of the service `name`. Fails `not_found` where
+# it does not run, `invalid` where its input is no pipe, and as `io.write`
+# fails.
+#
+# - `sup`: the supervisor.
+# - `name`: the service.
+# - `line`: the line, a line feed written after it.
+function send(sup: Supervisor lent, name: str, line: str) -> ()?
+    i = index_of(sup, name: name)?
+
+    if sup.services[i].spec.input != .pipe
+        return fail(code: "invalid", msg: f"the service \"{name}\" reads no pipe: its `input` is none")
+
+    match sup.children[name]
+        .ok child => return io.write_line(child.input, line: line)
+        .err _    => return fail(code: "not_found", msg: f"the service \"{name}\" does not run")
+
+# What the service `name`'s process holds and has spent now. Fails
+# `not_found` where it does not run, and as `process.usage_of` fails.
+#
+# - `sup`: the supervisor.
+# - `name`: the service.
+function usage_of(sup: Supervisor lent, name: str) -> os.ProcessUsage?
+    match sup.children[name]
+        .ok child => return process.usage_of(child)
+        .err _    => return fail(code: "not_found", msg: f"the service \"{name}\" does not run")
+
+# The lines each service's capture wrote, by name.
+#
+# - `sup`: the supervisor.
+function lines_written(sup: Supervisor lent) -> {str: i64}
+    lines: {str: i64} @= {}
+
+    for name in keys(sup.captures)
+        lines[name] @ sup.captures[name].must().lines
+
+    return lines
+
+# Closes every capture, once no service runs.
+#
+# - `sup`: the supervisor.
+# - `at`: the moment, the time of their last lines.
+function close(@sup: Supervisor, at: time.Instant)
+    for name in keys(sup.captures)
+        capture @= sup.captures[name].must()
+        _ = output.close(@capture, at: at).is_err()
+        sup.captures[name] @ capture
+
+test "wait_after: the backoff doubled for each failure past the first, never past the longest"
+    spec = deps.sample("svc", needs: [])
+    s @= spec
+    s.backoff @ time.seconds(10).must()
+    s.backoff_most @ time.seconds(60).must()
+    assert wait_after(s, failures: 0) == time.seconds(10).must()
+    assert wait_after(s, failures: 1) == time.seconds(10).must()
+    assert wait_after(s, failures: 2) == time.seconds(20).must()
+    assert wait_after(s, failures: 3) == time.seconds(40).must()
+    assert wait_after(s, failures: 9) == time.seconds(60).must()

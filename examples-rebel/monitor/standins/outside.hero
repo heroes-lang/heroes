@@ -1,0 +1,91 @@
+# The world outside the demo's monitor, served on one thread: the OTLP
+# collector on loopback and the thermometer on its pseudo-terminal. One
+# loop serves both: a wait on the collector's set bounded to a few
+# milliseconds, then a look at the thermometer's end without waiting, until
+# the collector is asked to stop or the run's longest time has passed.
+
+use <rebel>/poll
+use <rebel>/time
+
+use standins/collector
+use standins/device
+
+# How long one turn of the loop waits on the collector's set.
+constant TURN_MS: i64
+    5
+
+# The stand-ins.
+record Outside
+    # Their set.
+    set: poll.Set
+    # The collector.
+    collector: collector.Collector
+    # The thermometer; its `path` is "" where no pseudo-terminal could be
+    # made.
+    device: device.Device
+    # Why there is no thermometer's port, "" where there is one.
+    no_port: str
+
+# The stand-ins, started: the collector listening, the thermometer's
+# pseudo-terminal made where the system makes one.
+#
+# - `series`: the thermometer's readings.
+#
+# Fails as `poll.make` and `collector.start` fail.
+function start(series: [f64]) -> Outside?
+    set = poll.make(64)?
+    c = collector.start(set)?
+
+    match device.start(series)
+        .ok d => return ok(Outside(set: set, collector: c, device: d, no_port: ""))
+        .err e =>
+            none = device.Device(
+                pairs: {},
+                path: "",
+                series: series,
+                answered: 0,
+                unanswered: 0,
+                refused: 0,
+                partial: []
+            )
+            return ok(Outside(set: set, collector: c, device: none, no_port: e.code))
+
+# Serves both until the collector is asked to stop or `most` has passed.
+# Fails `timeout` where `most` passed first, and as the set's wait fails.
+#
+# - `o`: the stand-ins.
+# - `most`: the longest to serve, in real time.
+function serve(@o: Outside, most: time.Duration) -> ()?
+    began = time.mark()?
+
+    while !o.collector.stopped
+        for e in poll.wait(o.set, limit: time.milliseconds(TURN_MS)?)?
+            _ = collector.serve(@o.collector, set: o.set, key: e.key)
+
+        device.serve(@o.device)
+
+        if time.elapsed(began)?.nanoseconds > most.nanoseconds
+            return fail(
+                code: "timeout",
+                msg: f"the stand-ins were not asked to stop within {time.format_duration(most)}"
+            )
+
+    return ok()
+
+# Closes both and their set.
+#
+# - `o`: the stand-ins.
+function close(@o: Outside)
+    collector.close(@o.collector, set: o.set)
+    device.close(@o.device)
+    _ = poll.close(@o.set).is_err()
+
+# The one line of the serial part: the thermometer's queries where it ran
+# on a pseudo-terminal, else why it did not. The transcript's one line that
+# may differ from one system to another.
+#
+# - `o`: the stand-ins.
+function serial_line(o: Outside lent) -> str
+    if o.device.path == ""
+        return f"serial: skipped: no pseudo-terminal on this system ({o.no_port}); the thermometer's {o.device.series.len()} readings handed in"
+    return f"serial: the thermometer on a pseudo-terminal at 9600 baud answered {o.device.answered} queries and left {o.device.unanswered} unanswered, {o.device.refused} refused"

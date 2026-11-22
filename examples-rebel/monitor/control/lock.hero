@@ -1,0 +1,68 @@
+# The lock that keeps two monitors of one configuration from running at
+# once: two would start every service twice and fight over the control
+# socket. It is `ipc`'s lock named `monitor-<name>`, held by the running
+# monitor for its whole life; the system releases it when the process ends,
+# however it ends, so a monitor killed leaves no lock behind it, and the
+# next one is told the one before ended holding it.
+
+use <rebel>/ipc
+use <rebel>/time
+
+# The longest a configuration's name may be, so its lock's name holds the
+# 29 characters `ipc` allows: `monitor-` and the name.
+constant LONGEST_NAME: i64
+    21
+
+# The lock's name for the configuration `name`.
+#
+# - `name`: the configuration's name, a word of at most `LONGEST_NAME`.
+function lock_name(name: str) -> str
+    return "monitor-" + name
+
+# The lock of the configuration `name`, taken. Fails `exists` where another
+# monitor holds it, and as `ipc.open_lock` fails.
+#
+# - `name`: the configuration's name.
+function take(name: str) -> ipc.Lock?
+    l @= ipc.open_lock(lock_name(name), permission: 0o600)?
+
+    match ipc.acquire_lock(l, within: time.nanoseconds(0))
+        .ok _ => return ok(l)
+        .err e =>
+            _ = ipc.close_lock(@l).is_err()
+
+            if e.code == "timeout"
+                return fail(code: "exists", msg: f"another monitor runs the configuration \"{name}\"")
+            return fail(code: e.code, msg: e.msg)
+
+# Whether no monitor holds the lock of the configuration `name`, asked
+# without keeping it. Fails as `ipc.open_lock` fails.
+#
+# - `name`: the configuration's name.
+function is_free(name: str) -> bool?
+    match take(name)
+        .ok l =>
+            held @= l
+            release(@held)
+            return ok(true)
+        .err e =>
+            if e.code == "exists"
+                return ok(false)
+            return fail(code: e.code, msg: e.msg)
+
+# Releases and closes the lock `l`.
+#
+# - `l`: the lock, emptied.
+function release(@l: ipc.Lock)
+    _ = ipc.release_lock(l).is_err()
+    _ = ipc.close_lock(@l).is_err()
+
+test "take: held, released, and free again; a second take by the holding thread refused"
+    name = "lock-test"
+    first @= take(name).must()
+    assert take(name).is_err()
+    release(@first)
+    assert is_free(name) == ok(true)
+    again @= take(name).must()
+    release(@again)
+    _ = ipc.remove_lock(lock_name(name)).is_err()

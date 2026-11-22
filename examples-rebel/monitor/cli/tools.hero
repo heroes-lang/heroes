@@ -1,0 +1,91 @@
+# The one-shot commands: `monitor check`, which reads a configuration and
+# prints its plan (the services' start stages, the rules as the monitor
+# reads them) and whether a monitor runs it now, as `nginx -t` checks a
+# file before a reload; `monitor ctl`, which asks a running monitor one
+# thing over its control socket; and `monitor bench`, which measures the
+# monitor's own work.
+
+use <rebel>/bench
+use <rebel>/time
+
+use alerts/rules
+use bench/selfbench
+use cli/command_line
+use conf/reading
+use conf/settings
+use control/client
+use control/lock
+use control/protocol
+use services/deps
+
+# How long `monitor ctl` waits for its answer.
+constant CTL_SECONDS: i64
+    10
+
+# The lines of `monitor check` for the file `config_path`. Fails as the
+# file does not read, saying where.
+#
+# - `config_path`: the configuration file.
+function check(config_path: str) -> [str]?
+    c = reading.read(config_path)?
+
+    sensor = if settings.has_sensor(c)
+        "a sensor"
+    else
+        "no sensor"
+    lines: [str] @= [
+        f"configuration {c.name}: {c.services.len()} services, {c.watches.len()} watched paths, {sensor}, {c.rules.len()} rules"
+    ]
+    stages: [str] @= []
+
+    for stage in deps.start_stages(c.services)?
+        stages @ stages.push(stage.join(", "))
+
+    lines @ lines.push("start order: " + stages.join("; then "))
+    lines @ lines.push("rules:")
+
+    for spec in c.rules
+        r = rules.rule_of(spec)?
+        lines @ lines.push(
+            f"  {r.name}: {rules.format_condition(r.condition)} for {time.format_duration(r.hold)} ({r.severity})"
+        )
+
+    free = if lock.is_free(c.name)?
+        "free: no monitor runs this configuration"
+    else
+        "held: a monitor runs this configuration"
+    lines @ lines.push(f"lock {lock.lock_name(c.name)}: {free}")
+    return ok(lines)
+
+# The answer of the monitor `inv` names to the request of its words. Fails
+# as the socket or the configuration fails.
+#
+# - `inv`: the command line, its `words` the request.
+function ctl(inv: command_line.Invocation) -> protocol.Answer?
+    path = if inv.socket != ""
+        inv.socket
+    else
+        reading.read(inv.config)?.control
+    request = protocol.Request(command: inv.words[0], args: inv.words.slice(from: 1, to: inv.words.len()))
+    return client.ask(path, request: request, within: time.seconds(CTL_SECONDS)?)
+
+# The lines of `monitor bench`: each work with its median, best and spread,
+# the folder snapshotted the configuration's first watched path, or the
+# working folder.
+#
+# - `inv`: the command line.
+function benchmark(inv: command_line.Invocation) -> [str]?
+    scanned = if inv.config == ""
+        "."
+    else
+        first_watched(reading.read(inv.config)?)
+    results = selfbench.measure_all(bench.default_settings(), scanned: scanned)
+    return ok(selfbench.lines_of(results, exact: true))
+
+# The first watched path of `c`, or the working folder.
+#
+# - `c`: the configuration.
+function first_watched(c: settings.Config) -> str
+    if c.watches.len() == 0
+        return "."
+    return c.watches[0].path

@@ -1,0 +1,100 @@
+# Where a repository keeps what it keeps. Its folder, `.vcs` at the top of
+# the work tree, is laid out as git lays out `.git` (gitrepository-layout(5)):
+# `HEAD`, `objects/` with its two-digit folders and `pack/`, `refs/heads/`
+# and `refs/tags/`, `index`, a `config`, and `MERGE_HEAD` while a merge waits
+# for its conflicts to be resolved. The folder is named `.vcs` so this
+# program never writes into a git repository by mistake; git itself reads
+# it when told where it is, `git --git-dir=.vcs log`.
+
+use <rebel>/fs
+use <rebel>/path
+
+## The repository
+
+# The name of the repository's folder at the top of a work tree.
+constant DIR_NAME: str
+    ".vcs"
+
+# The branch a new repository's `HEAD` names before any commit exists.
+constant FIRST_BRANCH: str
+    "main"
+
+# A repository: its work tree and its own folder.
+record Repo
+    # The top of the work tree, absolute or as the caller gave it.
+    root: str
+    # The repository's folder, `root/.vcs`.
+    dir: str
+
+# The repository whose work tree begins at `root`, whether or not it has
+# been made.
+#
+# - `root`: the top of the work tree.
+function at(root: str) -> Repo
+    return Repo(root: root, dir: path.join_all([root, DIR_NAME]))
+
+# The path of `name` inside the repository's folder.
+#
+# - `repo`: the repository.
+# - `name`: a path below `.vcs`, its parts joined by `/`: `refs/heads/main`.
+function file_in(repo: Repo, name: str) -> str
+    return path.join_all([repo.dir, path.from_slash(name)])
+
+# The repository's `objects` folder.
+#
+# - `repo`: the repository.
+function objects_dir(repo: Repo) -> str
+    return file_in(repo, name: "objects")
+
+# The path of `name`, a path of the work tree written with `/`, on disk.
+#
+# - `repo`: the repository.
+# - `name`: a path below the top of the work tree: `src/main.c`.
+function work_file(repo: Repo, name: str) -> str
+    return path.join_all([repo.root, path.from_slash(name)])
+
+# Whether `repo`'s folder holds a repository: a `HEAD` and an `objects`
+# folder.
+#
+# - `repo`: the repository asked about.
+function exists(repo: Repo) -> bool
+    return fs.is_file(file_in(repo, name: "HEAD")).default(false) && fs.is_dir(objects_dir(repo)).default(false)
+
+# The repository whose work tree holds `start`: `start` itself, or the
+# nearest folder above it with a `.vcs` folder that holds a repository.
+#
+# - `start`: an absolute folder, the working folder for the command line.
+#
+# Fails `not_found` where no folder on the way up holds one.
+function discover(start: str) -> Repo?
+    candidates @= [start]
+
+    for above in path.ancestors(start)
+        candidates @ candidates.push(above)
+
+    for folder in candidates
+        if exists(at(folder))
+            return ok(at(folder))
+
+    return fail(code: "not_found", msg: f"no repository ({DIR_NAME}) in {start} or any folder above it")
+
+# Makes a new, empty repository at the top of the work tree `root`: its
+# folders, a `HEAD` naming the branch `main`, and a `config` git reads.
+#
+# - `root`: the top of the work tree, which is made where it is not there.
+#
+# Fails `exists` where a repository is there already, and where a folder or
+# a file cannot be written.
+function init(root: str) -> Repo?
+    repo = at(root)
+
+    if exists(repo)
+        return fail(code: "exists", msg: f"{repo.dir} holds a repository already")
+
+    for name in ["objects/pack", "objects/info", "refs/heads", "refs/tags"]
+        fs.make_dir_all(file_in(repo, name: name))?
+
+    fs.write_atomic_text(path: file_in(repo, name: "HEAD"), text: f"ref: refs/heads/{FIRST_BRANCH}\n")?
+    config = "[core]\n\trepositoryformatversion = 0\n\tfilemode = true\n\tbare = false\n"
+    fs.write_atomic_text(path: file_in(repo, name: "config"), text: config)?
+    return ok(repo)

@@ -1,0 +1,148 @@
+# Who made a commit or a tag, and when: the line `Name <email> seconds
+# +hhmm` that a commit's `author` and `committer` and a tag's `tagger` hold
+# (the Git Book's "Git Objects"). The moment is kept as an instant and the
+# offset apart, because the offset is the maker's own clock and part of the
+# object's bytes: two commits made at one instant from two zones are two
+# different objects, and a log shows each in its own zone.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+
+## Signatures
+
+# A person and the moment they signed, on their own clock.
+record Signature
+    # Their name; it holds no `<`, `>` or line feed.
+    name: str
+    # Their e-mail address, written between `<` and `>`.
+    email: str
+    # The moment, in UTC.
+    when: time.Instant
+    # How far their clock stood ahead of UTC, in minutes: 60 for `+0100`,
+    # -330 for `-0530`.
+    offset_minutes: i64
+
+# The text of `signature` as an object holds it after its keyword:
+# `Ada Lovelace <ada@example.org> 1795251600 +0100`.
+#
+# - `signature`: the signature.
+function format_signature(signature: Signature) -> str
+    seconds = time.unix_seconds(signature.when)
+    zone = format_offset(signature.offset_minutes)
+    return f"{signature.name} <{signature.email}> {seconds} {zone}"
+
+# The signature `text` writes, as `format_signature` writes one.
+#
+# - `text`: the part of a line after `author `, `committer ` or `tagger `.
+#
+# Fails `invalid` where no `<` and `>` hold an e-mail address, or the
+# seconds or the offset after it do not read.
+function parse_signature(text: str) -> Signature?
+    open = match strings.index_of(s: text, substr: " <")
+        .ok at => at
+        .err _ => return fail(code: "invalid", msg: f"no \" <\" begins an e-mail address in \"{text}\"")
+
+    close = match strings.index_of_from(s: text, substr: "> ", from: open)
+        .ok at => at
+        .err _ => return fail(code: "invalid", msg: f"no \"> \" ends the e-mail address in \"{text}\"")
+
+    rest = strings.words(text.slice(from: close + 2, to: text.len()))
+
+    if rest.len() != 2
+        return fail(code: "invalid", msg: f"a signature ends with seconds and an offset, not \"{rest.join(" ")}\"")
+    seconds = numbers.parse_int(rest[0])?
+    return ok(
+        Signature(name: text.slice(from: 0, to: open), email: text.slice(from: open + 2, to: close), when: time.from_unix(whole_seconds: seconds, extra_nanoseconds: 0)?, offset_minutes: parse_offset(rest[1])?)
+    )
+
+# An offset of `minutes` written as git writes it: a sign, two digits of
+# hours and two of minutes, `+0100` or `-0530`.
+#
+# - `minutes`: the offset in minutes, negative west of Greenwich; less than
+#   a day either way.
+function format_offset(minutes: i64) -> str
+    sign = if minutes < 0
+        "-"
+    else
+        "+"
+
+    size = if minutes < 0
+        -minutes
+    else
+        minutes
+    hours = strings.pad_zeros(f"{size / 60}", width: 2)
+    rest = strings.pad_zeros(f"{size % 60}", width: 2)
+    return sign + hours + rest
+
+# The offset in minutes that `text` writes, as `format_offset` writes one.
+#
+# - `text`: `+hhmm` or `-hhmm`.
+#
+# Fails `invalid` where it is not five characters of that shape.
+function parse_offset(text: str) -> i64?
+    if text.len() != 5 || text[0] != '+' && text[0] != '-'
+        return fail(code: "invalid", msg: f"\"{text}\" is no offset of the form +hhmm")
+    hours = numbers.parse_int(text.slice(from: 1, to: 3))?
+    minutes = numbers.parse_int(text.slice(from: 3, to: 5))?
+
+    if minutes > 59
+        return fail(code: "invalid", msg: f"\"{text}\" has {minutes} minutes past the hour")
+    size = hours * 60 + minutes
+
+    if text[0] == '-'
+        return ok(-size)
+    return ok(size)
+
+# The moment of `signature` on its maker's clock, as a log writes it:
+# `Sat Nov 21 10:00:00 2026 +0100`, the day of the month without a leading
+# zero.
+#
+# - `signature`: the signature.
+function format_date(signature: Signature) -> str
+    local = match time.add(signature.when, d: time.minutes(signature.offset_minutes).default(time.nanoseconds(0)))
+        .ok t  => t
+        .err _ => signature.when
+
+    parts = time.to_date_time(local)
+    day = time.weekday_name(time.weekday_of(local)).slice(from: 0, to: 3)
+    month = time.month_name(parts.month).default("???").slice(from: 0, to: 3)
+    clock = time.format(local, layout: .time_only)
+    return f"{day} {month} {parts.day} {clock} {parts.year} {format_offset(signature.offset_minutes)}"
+
+test "format_signature: a name, an address, seconds and an offset"
+    s = Signature(
+        name: "Ada Lovelace",
+        email: "ada@example.org",
+        when: time.from_unix(whole_seconds: 1795251600, extra_nanoseconds: 0).must(),
+        offset_minutes: 60
+    )
+    assert format_signature(s) == "Ada Lovelace <ada@example.org> 1795251600 +0100"
+
+test "parse_signature: a line back, an empty name, and lines that do not read"
+    s = parse_signature("Ada Lovelace <ada@example.org> 1795251600 +0100").must()
+    assert s.name == "Ada Lovelace"
+    assert s.email == "ada@example.org"
+    assert time.unix_seconds(s.when) == 1795251600
+    assert s.offset_minutes == 60
+    nameless = parse_signature(" <a@b> 0 -0530").must()
+    assert nameless.name == ""
+    assert nameless.offset_minutes == -330
+    assert parse_signature("Ada ada@example.org 1 +0100").is_err()
+    assert parse_signature("Ada <a@b> 1").is_err()
+    assert parse_signature("Ada <a@b> x +0100").is_err()
+
+test "format_offset and parse_offset: east, west, zero, and a bad minute"
+    assert format_offset(60) == "+0100"
+    assert format_offset(-330) == "-0530"
+    assert format_offset(0) == "+0000"
+    assert parse_offset("+0100").must() == 60
+    assert parse_offset("-0530").must() == -330
+    assert parse_offset("+0160").is_err()
+    assert parse_offset("0100").is_err()
+
+test "format_date: the maker's clock, as git's log writes it"
+    s = parse_signature("Ada Lovelace <ada@example.org> 1795251600 +0100").must()
+    assert format_date(s) == "Sat Nov 21 10:00:00 2026 +0100"
+    early = parse_signature("Ada Lovelace <ada@example.org> 1793610000 -0500").must()
+    assert format_date(early) == "Mon Nov 2 04:00:00 2026 -0500"

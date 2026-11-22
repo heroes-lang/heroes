@@ -1,0 +1,368 @@
+# `status`: how the work tree, the index and `HEAD` differ, in git's three
+# lists (git-status(1)): changes to be committed (`HEAD` against the index),
+# changes not staged (the index against the work tree), and untracked files
+# (on disk, not ignored, not in the index), with the paths a waiting merge
+# left conflicted apart. A work file is compared with its entry by size and
+# mode first and by the hash of its content when those agree, never by its
+# time (`repo/staging` says why). An untracked folder that holds no tracked
+# path is shown once, as `folder/`, as git shows it.
+
+use <rebel>/strings
+
+use objects/commits
+use objects/ids
+use repo/layout
+use repo/refs
+use repo/staging
+use snapshot/tree_files
+use store/database
+use work/tree_scan
+
+## The report
+
+# What happened to a path between two of the three states.
+variant ChangeKind
+    # It is in the newer state alone.
+    added
+    # It is in both, with another content or mode.
+    modified
+    # It is in the older state alone.
+    deleted
+
+# One path that differs.
+record Change
+    # The path, its parts joined by `/`.
+    name: str
+    # How it differs.
+    kind: ChangeKind
+
+# A path a merge left conflicted, and which sides changed it.
+record Conflict
+    # The path.
+    name: str
+    # The short code git gives it: `UU` both modified, `AA` both added, `DU`
+    # deleted by us, `UD` deleted by them, `AU` added by us, `UA` added by
+    # them.
+    code: str
+
+# Everything `status` reports.
+record Report
+    # `On branch main`, or `HEAD detached at 1a2b3c4`.
+    where: str
+    # Whether the branch has no commit yet.
+    unborn: bool
+    # Whether a merge waits to be committed.
+    merging: bool
+    # `HEAD` against the index, by path.
+    staged: [Change]
+    # The conflicted paths, by path.
+    conflicts: [Conflict]
+    # The index against the work tree, by path.
+    unstaged: [Change]
+    # Files and folders on disk the index does not hold, by path; a folder
+    # ends with `/`.
+    untracked: [str]
+
+# Whether `report` finds nothing to commit and nothing changed: the tree is
+# clean, untracked files apart.
+#
+# - `report`: a report.
+function is_clean(report: Report) -> bool
+    return report.staged.len() == 0 && report.conflicts.len() == 0 && report.unstaged.len() == 0
+
+# The changes from `older` to `newer`, sorted by path.
+#
+# - `older`: the files of the older state.
+# - `newer`: the files of the newer state.
+function changes_between(older: {str: tree_files.Version}, newer: {str: tree_files.Version}) -> [Change]
+    out: [Change] @= []
+    every: {str: bool} @= {}
+
+    for name in keys(older)
+        every[name] @ true
+
+    for name in keys(newer)
+        every[name] @ true
+
+    for name in sort(keys(every))
+        match older[name]
+            .err _ => out @ out.push(Change(name: name, kind: .added))
+            .ok before =>
+                match newer[name]
+                    .err _ => out @ out.push(Change(name: name, kind: .deleted))
+                    .ok after =>
+                        if before != after
+                            out @ out.push(Change(name: name, kind: .modified))
+
+    return out
+
+# The files of the commit `HEAD` stands on, or none where the branch has no
+# commit yet.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+#
+# Fails where `HEAD` or a tree cannot be read.
+function head_files(repo: layout.Repo, db: database.Database lent) -> {str: tree_files.Version}?
+    return match refs.head_commit(repo)
+        .err e =>
+            if e.code == "not_found"
+                ok({})
+            else
+                fail(code: e.code, msg: e.msg)
+        .ok id =>
+            c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+            tree_files.flatten(db, id: c.tree)
+
+# The code git gives a conflict whose index holds the stages `stages`.
+#
+# - `stages`: which of stages 1, 2 and 3 the path has, in order.
+function conflict_code(stages: [i64]) -> str
+    if stages == [1, 2, 3]
+        return "UU"
+
+    if stages == [2, 3]
+        return "AA"
+
+    if stages == [1, 3]
+        return "DU"
+
+    if stages == [1, 2]
+        return "UD"
+
+    if stages == [2]
+        return "AU"
+    return "UA"
+
+# The work tree's changes against the index's stage-0 entries.
+#
+# - `repo`: the repository.
+# - `index`: the index.
+# - `on_disk`: the work tree's files by path.
+#
+# Fails where a file cannot be read.
+function unstaged_changes(repo: layout.Repo, index: staging.Index lent, on_disk: {str: tree_scan.WorkFile}) -> [Change]?
+    out: [Change] @= []
+
+    for e in staging.all_entries(index)
+        if e.stage != 0
+            continue
+
+        match on_disk[e.name]
+            .err _ => out @ out.push(Change(name: e.name, kind: .deleted))
+            .ok f =>
+                if f.mode != e.mode || f.size != e.size && e.size != 0 || tree_scan.blob_id(repo, file: f)? != e.id
+                    out @ out.push(Change(name: e.name, kind: .modified))
+
+    return ok(out)
+
+# The untracked paths of `on_disk`: each file the index does not hold, or
+# the highest folder above it that holds no tracked path, ending `/`.
+#
+# - `on_disk`: the work tree's files.
+# - `index`: the index.
+function untracked_of(on_disk: [tree_scan.WorkFile], index: staging.Index lent) -> [str]
+    tracked: {str: bool} @= {}
+    tracked_folders: {str: bool} @= {}
+
+    for e in staging.all_entries(index)
+        tracked[e.name] @ true
+        folder @= tree_files.folder_of(e.name)
+
+        while folder != ""
+            tracked_folders[folder] @ true
+            folder @ tree_files.folder_of(folder)
+
+    shown: {str: bool} @= {}
+
+    for f in on_disk
+        if !tracked[f.name].is_err()
+            continue
+        parts = strings.split(s: f.name, sep: "/")
+        folder @= ""
+        label @= f.name
+        i @= 0
+
+        while i < parts.len() - 1
+            folder @ if folder == ""
+                parts[i]
+            else
+                folder + "/" + parts[i]
+
+            if tracked_folders[folder].is_err()
+                label @ folder + "/"
+                break
+            i @ i + 1
+
+        shown[label] @ true
+
+    return sort(keys(shown))
+
+# What `status` reports for `repo`.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+#
+# Fails where `HEAD`, the index, an object or the work tree cannot be read.
+function compute(repo: layout.Repo, db: database.Database lent) -> Report?
+    index = staging.load(repo)?
+    head = refs.read_head(repo)?
+
+    where = match head
+        .branch b   => f"On branch {b.name}"
+        .detached d => f"HEAD detached at {ids.short(d.id)}"
+
+    unborn = refs.head_commit(repo).is_err()
+    staged = changes_between(older: head_files(repo, db: db)?, newer: tree_files.flatten_index(index))
+    conflicts: [Conflict] @= []
+
+    for name in staging.conflicted(index)
+        stages: [i64] @= []
+
+        for stage in [1, 2, 3]
+            if !staging.entry_at(index, name: name, stage: stage).is_err()
+                stages @ stages.push(stage)
+
+        conflicts @ conflicts.push(Conflict(name: name, code: conflict_code(stages)))
+
+    files = tree_scan.scan(repo)?
+    on_disk: {str: tree_scan.WorkFile} @= {}
+
+    for f in files
+        on_disk[f.name] @ f
+
+    unstaged = unstaged_changes(repo, index: index, on_disk: on_disk)?
+    merging = !refs.merge_head(repo).is_err()
+    return ok(
+        Report(where: where, unborn: unborn, merging: merging, staged: without_conflicts(staged, conflicts: conflicts), conflicts: conflicts, unstaged: unstaged, untracked: untracked_of(files, index: index))
+    )
+
+# `changes` without the paths of `conflicts`, which are reported apart.
+#
+# - `changes`: staged changes.
+# - `conflicts`: the conflicted paths.
+function without_conflicts(changes: [Change], conflicts: [Conflict]) -> [Change]
+    conflicted: {str: bool} @= {}
+
+    for c in conflicts
+        conflicted[c.name] @ true
+
+    out: [Change] @= []
+
+    for c in changes
+        if conflicted[c.name].is_err()
+            out @ out.push(c)
+
+    return out
+
+## Writing it
+
+# The word git's long status writes before a change of `kind`.
+#
+# - `kind`: the change.
+function long_word(kind: ChangeKind) -> str
+    return match kind
+        .added    => "new file:   "
+        .modified => "modified:   "
+        .deleted  => "deleted:    "
+
+# The words git's long status writes before a conflict of `code`.
+#
+# - `code`: a code `conflict_code` answers.
+function conflict_words(code: str) -> str
+    return match code
+        "UU" => "both modified:   "
+        "AA" => "both added:      "
+        "DU" => "deleted by us:   "
+        "UD" => "deleted by them: "
+        "AU" => "added by us:     "
+        _    => "added by them:   "
+
+# `report` as git's long status writes it, its hints left out.
+#
+# - `report`: the report.
+function format_long(report: Report) -> str
+    lines: [str] @= [report.where]
+
+    if report.unborn
+        lines @ lines.push("")
+        lines @ lines.push("No commits yet")
+
+    if report.merging && report.conflicts.len() > 0
+        lines @ lines.push("You have unmerged paths.")
+    else if report.merging
+        lines @ lines.push("All conflicts fixed but you are still merging.")
+
+    if report.staged.len() > 0
+        lines @ lines.push("")
+        lines @ lines.push("Changes to be committed:")
+
+        for c in report.staged
+            lines @ lines.push("    " + long_word(c.kind) + c.name)
+
+    if report.conflicts.len() > 0
+        lines @ lines.push("")
+        lines @ lines.push("Unmerged paths:")
+
+        for c in report.conflicts
+            lines @ lines.push("    " + conflict_words(c.code) + c.name)
+
+    if report.unstaged.len() > 0
+        lines @ lines.push("")
+        lines @ lines.push("Changes not staged for commit:")
+
+        for c in report.unstaged
+            lines @ lines.push("    " + long_word(c.kind) + c.name)
+
+    if report.untracked.len() > 0
+        lines @ lines.push("")
+        lines @ lines.push("Untracked files:")
+
+        for name in report.untracked
+            lines @ lines.push("    " + name)
+
+    if is_clean(report)
+        lines @ lines.push("")
+
+        if report.untracked.len() > 0
+            lines @ lines.push("nothing added to commit but untracked files present")
+        else if report.unborn
+            lines @ lines.push("nothing to commit")
+        else
+            lines @ lines.push("nothing to commit, working tree clean")
+    return lines.join("\n")
+
+# The letter git's short status writes for a change of `kind`.
+#
+# - `kind`: the change.
+function short_letter(kind: ChangeKind) -> str
+    return match kind
+        .added    => "A"
+        .modified => "M"
+        .deleted  => "D"
+
+# `report` as git's short status writes it: two letters and the path, the
+# first letter the index's change and the second the work tree's.
+#
+# - `report`: the report.
+function format_short(report: Report) -> str
+    letters: {str: str} @= {}
+
+    for c in report.staged
+        letters[c.name] @ short_letter(c.kind) + " "
+
+    for c in report.unstaged
+        letters[c.name] @ letters[c.name].default(" ").slice(from: 0, to: 1) + short_letter(c.kind)
+
+    for c in report.conflicts
+        letters[c.name] @ c.code
+
+    lines: [str] @= []
+
+    for name in sort(keys(letters))
+        lines @ lines.push(letters[name].must() + " " + name)
+
+    for name in report.untracked
+        lines @ lines.push("?? " + name)
+
+    return lines.join("\n")

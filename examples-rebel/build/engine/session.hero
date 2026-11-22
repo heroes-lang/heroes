@@ -1,0 +1,207 @@
+# One invocation of the build tool, from its options to its exit code: the
+# build file read, its variables evaluated, the plan made and checked, every
+# step prepared, then a build, a dry run, a clean or a tool. What the
+# command line and the demo both call, so the demo runs exactly what a user
+# runs.
+#
+# Whatever writes the build's folder, a build or a clean, holds its lock
+# from before it reads the log to after its last line is written, and lets
+# it go however it ended. A dry run and a tool write nothing and take no
+# lock, so they answer while a build runs.
+
+use <rebel>/time
+
+use engine/clean
+use engine/forecast
+use engine/prepare
+use engine/report
+use engine/scheduler
+use graph/plan
+use load/paths
+use load/reader
+use model/buildfile
+use state/content
+use state/lock
+use state/log
+use tools/inspect
+use vars/scope
+use vars/template
+
+# What an invocation is asked to do.
+record Options
+    # The build's folder, where its build file and outputs stand: `.` for
+    # the working folder.
+    dir: str
+    # The build file's name, in `dir`.
+    file: str
+    # At most how many steps run at once, from 1.
+    jobs: i64
+    # Whether to run nothing and tell what would run.
+    dry_run: bool
+    # Whether to remove the outputs instead of building them.
+    clean: bool
+    # Whether to tell why each step runs.
+    explain: bool
+    # Whether to show commands rather than descriptions, and each file a
+    # clean removes.
+    verbose: bool
+    # The tool to run instead of a build, `inspect`'s; absent for a build.
+    tool: str?
+    # The targets asked for, as written; empty for the defaults.
+    targets: [str]
+    # The variables given as `NAME=VALUE`, over the build file's own.
+    overrides: {str: str}
+    # Whether the last line says how long the build took; the demo shows no
+    # time, so its account reads the same on every run.
+    show_times: bool
+
+# The options of a plain build of the build file in `dir`, everything else
+# at its default: one step at a time, nothing explained.
+#
+# - `dir`: the build's folder.
+function default_options(dir: str) -> Options
+    return Options(
+        dir: dir,
+        file: "build.toml",
+        jobs: 1,
+        dry_run: false,
+        clean: false,
+        explain: false,
+        verbose: false,
+        tool: fail(code: buildfile.NOT_FOUND, msg: "no tool"),
+        targets: [],
+        overrides: {},
+        show_times: true
+    )
+
+# What an invocation came to.
+record Result
+    # The exit code: 0 where it did what it was asked, 1 where a step failed
+    # or the build stopped.
+    code: i64
+    # The steps that ran well, or would in a dry run; the files a clean
+    # removed.
+    ran: i64
+    # The targets found up to date.
+    up_to_date: i64
+    # The steps that failed.
+    failed: i64
+
+# The result of an invocation that ran no step.
+#
+# - `code`: its exit code.
+function quiet(code: i64) -> Result
+    return Result(code: code, ran: 0, up_to_date: 0, failed: 0)
+
+# What everything of a build file comes to before anything runs.
+record Ready
+    # The build file.
+    file: buildfile.BuildFile
+    # The plan of the targets asked for.
+    plan: plan.Plan
+    # Every target of the plan, prepared.
+    steps: {str: prepare.Prepared}
+
+# The build file of `o` read and its plan made and prepared.
+#
+# - `o`: the options.
+#
+# Fails `file_not_found` where there is no build file, and as the reader,
+# the variables, the plan and the steps fail, each message naming the file.
+function ready_of(o: Options lent) -> Ready?
+    place = paths.disk(root: o.dir, name: o.file)
+
+    text = match read_file(place)
+        .ok t => t
+        .err e =>
+            if e.code == "file_not_found"
+                return fail(code: e.code, msg: f"no build file \"{o.file}\" here")
+            return fail(code: e.code, msg: f"{o.file}: {e.msg}")
+
+    f = reader.read(text: text, name: o.file)?
+    re = template.pattern()
+    file_values = scope.evaluate_file(f.vars, overrides: o.overrides, where: f.name, re: re)?
+    p = plan.plan_of(f, asked: o.targets)?
+    steps = prepare.prepare_all(f, p: p, file_values: file_values, re: re)?
+    return ok(Ready(file: f, plan: p, steps: steps))
+
+# What `o` asks for, done.
+#
+# - `o`: the options.
+#
+# Fails where the build file, the plan or a step does not read, where a
+# source is missing, where the log cannot be read, or where another build
+# holds the folder's lock; a step that fails is no failure here but a
+# result whose code is 1, its lines printed.
+function run(o: Options) -> Result?
+    r = ready_of(o)?
+
+    match o.tool
+        .ok name =>
+            inspect.run(tool: name, f: r.file, p: r.plan, steps: r.steps, root: o.dir)?
+            return ok(quiet(0))
+        .err _ => _ = 0
+
+    if o.clean
+        held @= lock.take(o.dir)?
+        cleaned = clean.run(r.plan, steps: r.steps, root: o.dir, verbose: o.verbose)
+        _ = lock.release(@held).is_err()
+        n = cleaned?
+        print(f"build: {report.count_of(n, noun: "file")} removed")
+        return ok(Result(code: 0, ran: n, up_to_date: 0, failed: 0))
+
+    plan.check_sources(r.file, p: r.plan, root: o.dir)?
+
+    if o.dry_run
+        return build(r, o: o)
+
+    held @= lock.take(o.dir)?
+    done = build(r, o: o)
+    _ = lock.release(@held).is_err()
+    return done
+
+# The build of `r` as `o` asks, its lines printed.
+#
+# - `r`: the build file, its plan and its steps.
+# - `o`: the options.
+#
+# Fails where the log cannot be read, or cannot be written before the build.
+function build(r: Ready lent, o: Options lent) -> Result?
+    began = time.mark()
+    l @= log.read(o.dir)?
+
+    if log.is_due(l) && !o.dry_run
+        log.rewrite(root: o.dir, @l)?
+
+    cache: {str: content.Seen} @= {}
+    fc = forecast.forecast_of(r.file, p: r.plan, steps: r.steps, l: l, @cache, root: o.dir)
+    settings = scheduler.Settings(root: o.dir, jobs: o.jobs, explain: o.explain, verbose: o.verbose, dry_run: o.dry_run)
+    out = scheduler.run(r.file, p: r.plan, steps: r.steps, @l, @cache, fc: fc, s: settings)
+    result = Result(code: 0, ran: out.ran, up_to_date: out.up_to_date, failed: out.failed)
+
+    if o.dry_run
+        print(report.dry_line(would: out.ran, up_to_date: out.up_to_date))
+        return ok(result)
+
+    match out.first_failure
+        .ok name =>
+            print(report.stopped_line(name, ran: out.ran, failed: out.failed))
+            return ok(Result(code: 1, ran: out.ran, up_to_date: out.up_to_date, failed: out.failed))
+        .err _ => _ = 0
+
+    match out.problem
+        .ok problem =>
+            print(f"build: stopped: {problem}")
+            return ok(Result(code: 1, ran: out.ran, up_to_date: out.up_to_date, failed: out.failed))
+        .err _ => _ = 0
+
+    took: time.Duration? = match began
+        .ok m =>
+            if o.show_times
+                time.elapsed(m)
+            else
+                fail(code: buildfile.NOT_FOUND, msg: "no time shown")
+        .err e => fail(code: e.code, msg: e.msg)
+
+    print(report.finished_line(ran: out.ran, up_to_date: out.up_to_date, took: took))
+    return ok(result)

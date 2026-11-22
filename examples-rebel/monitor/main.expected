@@ -1,0 +1,296 @@
+== the monitor, its clock from 2026-11-22T09:00:00Z, a collection every 30 seconds
+09:00:00 monitor: started: 4 services, 2 watched paths, 7 rules
+09:00:00 -- another monitor is started on the same configuration
+09:00:00 $ monitor check --config demo.toml
+           configuration demo: 4 services, 2 watched paths, a sensor, 7 rules
+           start order: db, cache; then api; then web
+           rules:
+             temperature-high: avg(sensor.temperature, 2m0s) > 70 for 1m0s (critical)
+             temperature-rising: slope(sensor.temperature, 3m0s) > 4 for 0s (warning)
+             sensor-silent: age(sensor.temperature) > 90s for 0s (warning)
+             service-down: service.*.up < 1 for 30s (critical)
+             service-impaired: service.*.impaired > 0 for 30s (warning)
+             cache-memory: service.cache.memory > 96MiB for 1m0s (warning)
+             spool-full: watch.spool.bytes > 48KiB for 0s (warning)
+           lock monitor-demo: held: a monitor runs this configuration
+09:00:00 service db: started
+09:00:00 service cache: started
+09:00:00 service api: started
+09:00:00 service web: started
+09:00:00 sensor temperature: answers
+== the dashboard at 09:00:00
+┌ demo | 09:00:00 | no alert ──────────────────────────────────────────────────┐
+│SERVICE    STATE      UP       RESTARTS MEMORY                                │
+│db         running    0s       0        -                                     │
+│cache      running    0s       0        under 96 MiB                          │
+│api        running    0s       0        -                                     │
+│web        running    0s       0        -                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ sensor temperature ──────────┐┌ alerts ──────────────────────────────────────┐
+│45.00 C, ok                   ││nothing pending or firing                     │
+│ 45% ===========..............││                                              │
+│                              ││                                              │
+│▇                             ││                                              │
+└──────────────────────────────┘└──────────────────────────────────────────────┘
+┌ events ──────────────────────────────────────────────────────────────────────┐
+│09:00:00 monitor: started: 4 services, 2 watched paths, 7 rules               │
+│09:00:00 service db: started                                                  │
+│09:00:00 service cache: started                                               │
+│09:00:00 service api: started                                                 │
+│09:00:00 service web: started                                                 │
+│09:00:00 sensor temperature: answers                                          │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit  up/down select  r restart the service selected  a acknowledge the alerts
+09:01:00 -- the configuration file of the app is written
+09:01:00 watch conf: created app.toml, 24 bytes
+09:02:00 -- an operator tells the cache to hold 256 MiB
+09:02:00 $ monitor ctl send cache grow 256
+           sent to cache
+09:02:00 control: sent a line to cache
+09:02:00 alert cache-memory: pending
+09:02:30 -- the configuration file is changed
+09:02:30 watch conf: changed app.toml, 39 bytes
+09:03:00 -- three batches land in the spool
+09:03:00 watch spool: created batch-1.dat, 20480 bytes
+09:03:00 watch spool: created batch-2.dat, 20480 bytes
+09:03:00 watch spool: created incoming/batch-3.dat, 20480 bytes
+09:03:00 alert temperature-rising: firing
+09:03:00 alert cache-memory: firing
+09:03:00 alert spool-full: firing
+09:04:00 -- the database crashes
+09:04:00 service db: exited with code 3; started again in 1m0s
+09:04:00 alert service-down[db]: pending
+09:04:00 alert service-impaired[api]: pending
+09:04:00 alert service-impaired[web]: pending
+09:04:30 alert service-down[db]: firing
+09:04:30 alert service-impaired[api]: firing
+09:04:30 alert service-impaired[web]: firing
+== the dashboard at 09:04:30
+┌ demo | 09:04:30 | 6 firing, 0 pending ───────────────────────────────────────┐
+│SERVICE    STATE      UP       RESTARTS MEMORY                                │
+│db         backoff             0        -                                     │
+│cache      running    4m30s    0        over 96 MiB                           │
+│api        impaired   4m30s    0        -                                     │
+│web        impaired   4m30s    0        -                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ sensor temperature ──────────┐┌ alerts ──────────────────────────────────────┐
+│73.00 C, ok                   ││FIRING     cache-memory            09:03:00   │
+│ 73% ==================.......││FIRING     service-down[db]        09:04:30   │
+│      ▁▂▃▃                    ││FIRING     service-impaired[api]   09:04:30   │
+│▇▇▇▇██████                    ││FIRING     service-impaired[web]   09:04:30   │
+└──────────────────────────────┘└──────────────────────────────────────────────┘
+┌ events ──────────────────────────────────────────────────────────────────────┐
+│09:03:00 alert spool-full: firing                                             │
+│09:04:00 service db: exited with code 3; started again in 1m0s                │
+│09:04:00 alert service-down[db]: pending                                      │
+│09:04:00 alert service-impaired[api]: pending                                 │
+│09:04:00 alert service-impaired[web]: pending                                 │
+│09:04:30 alert service-down[db]: firing                                       │
+│09:04:30 alert service-impaired[api]: firing                                  │
+│09:04:30 alert service-impaired[web]: firing                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit  up/down select  r restart the service selected  a acknowledge the alerts
+09:05:00 service db: started again, restart 1
+09:05:00 alert temperature-high: pending
+09:05:00 alert service-down[db]: resolved
+09:05:00 alert service-impaired[api]: resolved
+09:05:00 alert service-impaired[web]: resolved
+09:05:00 export: sent 14 families, 56 spans, 28 records
+09:06:00 -- an operator asks what fires
+09:06:00 $ monitor ctl alerts
+           firing cache-memory since 09:03:00: service.cache.memory > 96MiB (warning)
+           firing spool-full since 09:03:00: watch.spool.bytes > 48KiB (warning)
+           firing temperature-rising since 09:03:00: slope(sensor.temperature, 3m0s) > 4 (warning)
+           pending temperature-high since 09:05:00: avg(sensor.temperature, 2m0s) > 70 (critical)
+09:06:00 -- and acknowledges the cache's alert
+09:06:00 $ monitor ctl ack cache-memory
+           acknowledged 1 alert
+09:06:00 control: acknowledged cache-memory
+09:06:00 alert temperature-high: firing
+09:06:30 alert temperature-rising: resolved
+09:07:00 -- an operator restarts the cache
+09:07:00 $ monitor ctl restart cache
+           cache: stopped
+           cache: started again, restart 1
+09:07:00 control: restart cache
+09:07:00 service cache: stopped
+09:07:00 service cache: started again, restart 1
+09:07:00 alert cache-memory: resolved
+09:08:00 -- the spool is emptied
+09:08:00 watch spool: removed batch-1.dat
+09:08:00 watch spool: removed batch-2.dat
+09:08:00 watch spool: removed incoming/batch-3.dat
+09:08:00 alert spool-full: resolved
+09:08:30 alert temperature-high: resolved
+09:09:00 -- the configuration file is removed
+09:09:00 watch conf: removed app.toml
+09:10:00 export: sent 14 families, 53 spans, 14 records
+== the dashboard at 09:10:00
+┌ demo | 09:10:00 | no alert ──────────────────────────────────────────────────┐
+│SERVICE    STATE      UP       RESTARTS MEMORY                                │
+│db         running    5m0s     1        -                                     │
+│cache      running    3m0s     1        under 96 MiB                          │
+│api        running    10m0s    0        -                                     │
+│web        running    10m0s    0        -                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ sensor temperature ──────────┐┌ alerts ──────────────────────────────────────┐
+│54.00 C, ok                   ││nothing pending or firing                     │
+│ 54% =============............││                                              │
+│      ▁▂▃▃▄▄▄▄▃▃▂▂▁           ││                                              │
+│▇▇▇▇█████████████████         ││                                              │
+└──────────────────────────────┘└──────────────────────────────────────────────┘
+┌ events ──────────────────────────────────────────────────────────────────────┐
+│09:07:00 alert cache-memory: resolved                                         │
+│09:08:00 watch spool: removed batch-1.dat                                     │
+│09:08:00 watch spool: removed batch-2.dat                                     │
+│09:08:00 watch spool: removed incoming/batch-3.dat                            │
+│09:08:00 alert spool-full: resolved                                           │
+│09:08:30 alert temperature-high: resolved                                     │
+│09:09:00 watch conf: removed app.toml                                         │
+│09:10:00 export: sent 14 families, 53 spans, 14 records                       │
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit  up/down select  r restart the service selected  a acknowledge the alerts
+09:11:00 -- an operator asks how the monitor stands
+09:11:00 $ monitor ctl status
+           monitor demo at 09:11:00: 4 services, 0 alerts firing, 0 pending
+           service  state    up     restarts  last end
+           -------  -------  -----  --------  ------------------
+           db       running  6m0s          1  exited with code 3
+           cache    running  4m0s          1  -
+           api      running  11m0s         0  -
+           web      running  11m0s         0  -
+           sensor temperature: ok, 22 readings, 0 missed
+           watch conf: 0 bytes, 3 changes
+           watch spool: 0 bytes, 6 changes
+09:11:00 sensor temperature: silent: no answer within 2000 ms: timeout
+09:12:30 alert sensor-silent: firing
+09:13:00 -- the web front stops heeding a stop
+09:13:00 $ monitor ctl send web stubborn
+           sent to web
+09:13:00 control: sent a line to web
+== the dashboard at 09:14:00
+┌ demo | 09:14:00 | 1 firing, 0 pending ───────────────────────────────────────┐
+│SERVICE    STATE      UP       RESTARTS MEMORY                                │
+│db         running    9m0s     1        -                                     │
+│cache      running    7m0s     1        under 96 MiB                          │
+│api        running    14m0s    0        -                                     │
+│web        running    14m0s    0        -                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ sensor temperature ──────────┐┌ alerts ──────────────────────────────────────┐
+│53.00 C, silent               ││FIRING     sensor-silent           09:12:30   │
+│ 53% =============............││                                              │
+│      ▁▂▃▃▄▄▄▄▃▃▂▂▁           ││                                              │
+│▇▇▇▇██████████████████        ││                                              │
+└──────────────────────────────┘└──────────────────────────────────────────────┘
+┌ events ──────────────────────────────────────────────────────────────────────┐
+│09:08:00 watch spool: removed incoming/batch-3.dat                            │
+│09:08:00 alert spool-full: resolved                                           │
+│09:08:30 alert temperature-high: resolved                                     │
+│09:09:00 watch conf: removed app.toml                                         │
+│09:10:00 export: sent 14 families, 53 spans, 14 records                       │
+│09:11:00 sensor temperature: silent: no answer within 2000 ms: timeout        │
+│09:12:30 alert sensor-silent: firing                                          │
+│09:13:00 control: sent a line to web                                          │
+└──────────────────────────────────────────────────────────────────────────────┘
+q quit  up/down select  r restart the service selected  a acknowledge the alerts
+== the monitor stops
+09:14:00 service web: stopped by force: it did not end within its grace
+09:14:00 service api: stopped
+09:14:00 service db: stopped
+09:14:00 service cache: stopped
+09:14:00 monitor: stopped
+09:14:00 export: sent 14 families, 42 spans, 9 records
+== the account
+  service  starts  restarts  last end
+  -------  ------  --------  ------------------
+  db            2         1  exited with code 3
+  cache         2         1
+  api           1         0
+  web           1         0
+alerts: 20 transitions; fired:
+  cache-memory, 1 time
+  sensor-silent, 1 time
+  service-down[db], 1 time
+  service-impaired[api], 1 time
+  service-impaired[web], 1 time
+  spool-full, 1 time
+  temperature-high, 1 time
+  temperature-rising, 1 time
+firing at the end: sensor-silent
+notifications: 15 run, 0 failed; what the notifier wrote:
+  firing temperature-rising (warning) at 2026-11-22T09:03:00Z: the room heats up fast
+  firing cache-memory (warning) at 2026-11-22T09:03:00Z: the cache holds more than its limit
+  firing spool-full (warning) at 2026-11-22T09:03:00Z: the spool fills up
+  firing service-down[db] (critical) at 2026-11-22T09:04:30Z: a service is down
+  firing service-impaired[api] (warning) at 2026-11-22T09:04:30Z: a service runs without what it needs
+  firing service-impaired[web] (warning) at 2026-11-22T09:04:30Z: a service runs without what it needs
+  resolved service-down[db] (critical) at 2026-11-22T09:05:00Z: a service is down
+  resolved service-impaired[api] (warning) at 2026-11-22T09:05:00Z: a service runs without what it needs
+  resolved service-impaired[web] (warning) at 2026-11-22T09:05:00Z: a service runs without what it needs
+  firing temperature-high (critical) at 2026-11-22T09:06:00Z: the room is hot
+  resolved temperature-rising (warning) at 2026-11-22T09:06:30Z: the room heats up fast
+  resolved cache-memory (warning) at 2026-11-22T09:07:00Z: the cache holds more than its limit
+  resolved spool-full (warning) at 2026-11-22T09:08:00Z: the spool fills up
+  resolved temperature-high (critical) at 2026-11-22T09:08:30Z: the room is hot
+  firing sensor-silent (warning) at 2026-11-22T09:12:30Z: the thermometer does not answer
+control socket: 6 requests answered, 0 refused
+journal: 52 lines written, 0 lost
+log files, the lines each holds:
+  api.log                                  2
+  cache.log                                5
+  db.log                                   4
+  monitor-2026-11-22T09-05-00.000.log      27
+  monitor.log                              25
+  web.log                                  2
+the self-benchmark of the monitor's work:
+  a sensor's line read: 5 rounds kept
+  a rule's condition read: 5 rounds kept
+  an hour's 95th percentile: 5 rounds kept
+  a dashboard frame drawn: 5 rounds kept
+  a process's usage read: 5 rounds kept
+  a folder's snapshot taken: 5 rounds kept
+== what the collector received
+accepted 3 requests at /v1/logs
+accepted 3 requests at /v1/metrics
+accepted 3 requests at /v1/traces
+spans from demo:
+  collect.files: 29, 29 under a parent
+  collect.sensor: 29, 29 under a parent
+  collect.services: 29, 29 under a parent
+  control.ack: 1, 0 under a parent
+  control.alerts: 1, 0 under a parent
+  control.restart: 1, 0 under a parent
+  control.send: 2, 0 under a parent
+  control.status: 1, 0 under a parent
+  monitor.collect: 29, 0 under a parent
+  rules.evaluate: 29, 29 under a parent
+metrics, points summed over every request:
+  monitor_alert_transitions_total (sum): 44 points
+  monitor_alerts (gauge): 6 points
+  monitor_collect_duration_seconds (histogram): 9 points
+  monitor_control_requests_total (sum): 10 points
+  monitor_file_changes_total (sum): 13 points
+  monitor_sensor_readings_total (sum): 4 points
+  monitor_sensor_value (gauge): 3 points
+  monitor_service_cpu_percent (gauge): 12 points
+  monitor_service_impaired (gauge): 12 points
+  monitor_service_resident_bytes (gauge): 12 points
+  monitor_service_restarts_total (sum): 5 points
+  monitor_service_up (gauge): 12 points
+  monitor_ticks_total (sum): 3 points
+  monitor_watch_bytes (gauge): 6 points
+log records: 51, 40 INFO, 11 WARN; the warnings and errors:
+  WARN alert temperature-rising: firing
+  WARN alert cache-memory: firing
+  WARN alert spool-full: firing
+  WARN service db: exited with code 3; started again in 1m0s
+  WARN alert service-down[db]: firing
+  WARN alert service-impaired[api]: firing
+  WARN alert service-impaired[web]: firing
+  WARN alert temperature-high: firing
+  WARN sensor temperature: silent: no answer within 2000 ms: timeout
+  WARN alert sensor-silent: firing
+  WARN service web: stopped by force: it did not end within its grace
+serial: the thermometer on a pseudo-terminal at 9600 baud answered 22 queries and left 7 unanswered, 0 refused

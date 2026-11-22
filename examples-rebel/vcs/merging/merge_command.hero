@@ -1,0 +1,140 @@
+# `merge`: another line of history joined into the branch checked out.
+# Where the other commit is already in our history there is nothing to do;
+# where ours is in its history the branch is moved forward to it, a
+# fast-forward with no new commit; otherwise the two snapshots are merged
+# against their merge base (`merging/tree_merge`), the result written into
+# the work tree and the index, and committed with both commits as parents.
+# A merge that conflicts writes what it merged, puts each conflicted path at
+# stages 1 to 3 of the index with the markers in its work file, records the
+# other commit in `MERGE_HEAD`, and stops; resolving the files, `add` and
+# `commit` finish it.
+#
+# Unlike git, which lets a merge go ahead over local changes to paths it
+# does not touch, this merge asks for a clean work tree and index, so
+# nothing the person had not committed is ever mixed into a merge.
+
+use history/ancestry
+use history/committing
+use merging/tree_merge
+use objects/ids
+use objects/signatures
+use repo/layout
+use repo/refs
+use repo/staging
+use snapshot/patches
+use snapshot/tree_files
+use store/database
+use work/status_report
+use work/switching
+
+## Merging
+
+# Merges the commit `other_name` names into the branch `HEAD` names, and
+# answers git's report of what it did.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `other_name`: what the person typed: a branch, a tag, a commit.
+# - `who`: who makes the merge commit, and when.
+#
+# Fails `invalid` where a merge already waits, the work tree is not clean,
+# `HEAD` has no commit, or the histories share no commit; and where an
+# object, a file or a ref cannot be read or written. A merge that conflicts
+# is no failure: the report says so, and the merge waits.
+function merge(repo: layout.Repo, db: database.Database lent, other_name: str, who: signatures.Signature) -> str?
+    if !refs.merge_head(repo).is_err()
+        return fail(code: "invalid", msg: "a merge is waiting: resolve its conflicts, add them and commit first")
+
+    ours = match refs.head_commit(repo)
+        .ok id => id
+        .err _ => return fail(code: "invalid", msg: "the branch has no commit yet to merge into")
+
+    theirs = refs.resolve_commit(repo, db: db, text: other_name)?
+    report = status_report.compute(repo, db: db)?
+
+    if !status_report.is_clean(report)
+        return fail(code: "invalid", msg: "the work tree or the index holds changes: commit them before merging")
+    bases = ancestry.merge_bases(db, a: ours, b: theirs)?
+
+    if bases.len() == 0
+        return fail(code: "invalid", msg: f"{other_name} shares no history with HEAD")
+    base = bases[0]
+
+    if base == theirs
+        return ok("Already up to date.")
+    our_files = committing.files_of_commit(db, id: ours)?
+    their_files = committing.files_of_commit(db, id: theirs)?
+
+    if base == ours
+        switching.move(repo, db: db, before: our_files, after: their_files)?
+        refs.advance_head(repo, id: theirs)?
+        stat = patches.stat_between(repo, db: db, older: our_files, newer: their_files)?
+        return ok(f"Updating {ids.short(ours)}..{ids.short(theirs)}\nFast-forward\n{patches.format_stat(stat)}")
+    base_files = committing.files_of_commit(db, id: base)?
+    outcomes = tree_merge.merge_trees(db, base: base_files, ours: our_files, theirs: their_files, ours_label: "HEAD", theirs_label: other_name)?
+    index @= staging.load(repo)?
+    conflicted: [str] @= []
+
+    for name in sort(keys(outcomes))
+        match outcomes[name].must()
+            .take t =>
+                switching.write_version(repo, db: db, name: name, v: t.version)?
+                _ = staging.remove_path(@index, name: name)
+                staging.put(@index, entry: switching.fresh_entry(repo, name: name, v: t.version)?)
+            .drop =>
+                switching.remove_work_file(repo, name: name)?
+                _ = staging.remove_path(@index, name: name)
+            .merged m =>
+                id = database.write_object(db, kind: .blob, data: m.data)?
+                v = tree_files.Version(mode: m.mode, id: id)
+                switching.write_content(repo, name: name, mode: m.mode, data: m.data)?
+                _ = staging.remove_path(@index, name: name)
+                staging.put(@index, entry: switching.fresh_entry(repo, name: name, v: v)?)
+            .conflict c =>
+                switching.write_content(repo, name: name, mode: c.mode, data: c.data)?
+                _ = staging.remove_path(@index, name: name)
+                put_stage(@index, name: name, stage: 1, version: c.base)
+                put_stage(@index, name: name, stage: 2, version: c.ours)
+                put_stage(@index, name: name, stage: 3, version: c.theirs)
+                conflicted @ conflicted.push(f"CONFLICT ({c.kind}): Merge conflict in {name}")
+
+    staging.save(repo, index: index)?
+    message = f"Merge branch '{other_name}'\n"
+
+    if conflicted.len() > 0
+        refs.start_merge(repo, id: theirs, message: message)?
+        conflicted @ conflicted.push("Automatic merge failed; fix conflicts and then commit the result.")
+        return ok(conflicted.join("\n"))
+
+    # A clean merge is committed as a resolved one is: `MERGE_HEAD` gives the
+    # commit its second parent, and the commit clears it.
+    refs.start_merge(repo, id: theirs, message: message)?
+    made = committing.commit(repo, db: db, message: message, who: who)?
+    stat = patches.stat_between(repo, db: db, older: our_files, newer: committing.files_of_commit(db, id: made.id)?)?
+    return ok(f"Merge made by the three-way strategy: {ids.short(made.id)}\n{patches.format_stat(stat)}")
+
+# Puts `version` at `stage` of `name` in `index`, where the side holds the
+# path.
+#
+# - `index`: the index, which the caller owns.
+# - `name`: the conflicted path.
+# - `stage`: 1, 2 or 3.
+# - `version`: the side's version, or `not_found` where it does not hold the
+#   path.
+function put_stage(@index: staging.Index, name: str, stage: i64, version: tree_files.Version?)
+    match version
+        .ok v =>
+            staging.put(
+                @index,
+                entry: staging.Entry(name: name, stage: stage, mode: v.mode, id: v.id, size: 0, seconds: 0, nanoseconds: 0)
+            )
+        .err _ => _ = 0
+
+# The commit message a waiting merge will take, for `commit` to use where
+# the person gives none.
+#
+# - `repo`: the repository.
+#
+# Fails `not_found` where no merge waits.
+function waiting_message(repo: layout.Repo) -> str?
+    return refs.merge_message(repo)

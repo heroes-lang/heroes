@@ -1,0 +1,182 @@
+# A text run as commands: a script, the string of `-c`, what `eval` and `.`
+# read, or a line typed at the prompt. The text is read one complete command
+# at a time and each is run before the next is read, as POSIX shells do, so
+# a script's first lines run even where a later one is wrong; a mistake in
+# the grammar is told with its line, its column and a caret, and ends the
+# text with the status 2.
+#
+# In a transcript each command is written before it runs, `$ ` before its
+# first line and `> ` before the others, and a line that holds only a
+# comment or nothing is written as it is, so the output reads as the
+# session it was.
+
+use <rebel>/io
+use <rebel>/strings
+
+use diag/report
+use exec/run
+use exec/state
+use exec/streams
+use syntax/lexer
+use syntax/parser
+
+# Reads and runs `text` and answers the last status.
+#
+# - `sh`: the shell.
+# - `name`: the text's name in messages: a script's path, `stdin`, `-c`,
+#   `eval`.
+# - `text`: the commands.
+# - `place`: their places.
+# - `transcript`: whether each command is written to the output first.
+function run_text(@sh: state.Shell, name: str, text: str, place: streams.Io, transcript: bool) -> i64
+    if sh.depth >= state.MAX_DEPTH
+        streams.write_err(
+            @sh,
+            place: place,
+            text: f"shell: {name}: functions, `eval` and `.` nest deeper than {state.MAX_DEPTH}\n"
+        )
+        sh.status @ 1
+        return 1
+
+    sh.depth @ sh.depth + 1
+    status = run_source(@sh, name: name, text: text, place: place, transcript: transcript)
+    sh.depth @ sh.depth - 1
+    return status
+
+# Reads and runs `text`, its depth counted by `run_text`.
+#
+# - `sh`: the shell.
+# - `name`: the text's name in messages.
+# - `text`: the commands.
+# - `place`: their places.
+# - `transcript`: whether each command is written to the output first.
+function run_source(@sh: state.Shell, name: str, text: str, place: streams.Io, transcript: bool) -> i64
+    source = state.add_source(@sh, name: name, text: text)
+    lx @= lexer.new_lexer(text, base: 0, source: source, next_doc: sh.next_doc)
+
+    while state.going_on(sh)
+        start = if lx.ahead.len() > 0
+            lx.ahead[0].start
+        else
+            lx.pos
+
+        items = match parser.parse_line(@lx)
+            .ok found => found
+            .err e =>
+                if transcript
+                    echo(@sh, chunk: text.slice(from: start, to: text.len()))
+
+                message = if e.code == lexer.INCOMPLETE
+                    f"the text ends too soon: {e.msg}"
+                else
+                    e.msg
+
+                report.tell_syntax(@sh, at: lexer.place(lx, at: lx.error_at), message: message)
+                sh.status @ 2
+                return 2
+
+        state.keep_docs(@sh, docs: lx.docs, next_doc: lx.next_doc)
+
+        stop = if lx.ahead.len() > 0
+            lx.ahead[0].start
+        else
+            lx.pos
+
+        chunk = text.slice(from: start, to: stop)
+
+        if transcript
+            echo(@sh, chunk: chunk)
+
+        if sh.options.verbose && chunk != ""
+            _ = streams.write_to(@sh, sink: place.error, text: chunk)
+
+        if items.len() == 0
+            if chunk == ""
+                return sh.status
+        else
+            remember(@sh, line: strings.trim_end_any(s: chunk, set: "\n"))
+            run.run_items(@sh, items: items, place: place)
+
+    return sh.status
+
+# Adds `line` to the history.
+#
+# - `sh`: the shell.
+# - `line`: the command line read, without its last line end.
+function remember(@sh: state.Shell, line: str)
+    history @= sh.history
+    history @ history.push(line)
+    sh.history @ history
+
+# Writes `chunk`, the text of one command or of a line of comment, as a
+# transcript shows it.
+#
+# - `sh`: the shell.
+# - `chunk`: the text.
+function echo(@sh: state.Shell, chunk: str)
+    _ = streams.write_to(@sh, sink: .stream(s: sh.out), text: transcript_of(chunk))
+
+# `chunk` as a transcript writes it: `$ ` before the first line of a command
+# and `> ` before each line after it; a line of comment or a blank line as
+# it is.
+#
+# - `chunk`: the text read for one command or line.
+function transcript_of(chunk: str) -> str
+    if chunk == ""
+        return ""
+
+    body = strings.trim_end_any(s: chunk, set: "\n")
+    lines = strings.split(s: body, sep: "\n")
+    first = strings.trim_start(lines[0])
+
+    if first == "" || strings.has_prefix(s: first, prefix: "#")
+        return body + "\n"
+
+    out: [str] @= ["$ " + lines[0] + "\n"]
+
+    for l in lines.slice(from: 1, to: lines.len())
+        out @ out.push("> " + l + "\n")
+
+    return out.join("")
+
+test "transcript_of: a command, a command of two lines, a comment and a blank"
+    assert transcript_of("echo hi\n") == "$ echo hi\n"
+    assert transcript_of("if x\nthen y; fi\n") == "$ if x\n> then y; fi\n"
+    assert transcript_of("# quoting\n") == "# quoting\n"
+    assert transcript_of("\n") == "\n"
+
+# What `text` writes, output and messages together, run by a shell whose
+# `PATH` is empty, so only builtins and functions run: for the tests.
+#
+# - `text`: the commands.
+function ran(text: str) -> str
+    sh @= state.new_shell(name: "shell", exe: "", input: io.stdin(), out: io.stdout(), err: io.stdout())
+    state.set(@sh, name: "PATH", value: "")
+    level = state.open_capture(@sh)
+    place = streams.Io(input: .nothing, output: .capture(level: level), error: .capture(level: level))
+    _ = run_text(@sh, name: "test", text: text, place: place, transcript: false)
+    return state.close_capture(@sh)
+
+test "run_text: parameters, a length, arithmetic and a substitution"
+    assert ran("x=ab; echo \"$x${x}\" ${#x} $((1 + 2)) $(echo in)\n") == "abab 2 3 in\n"
+
+test "run_text: a function with a loop, continue and return"
+    assert ran("f() { for i in 1 2 3; do [ $i = 2 ] && continue; echo $i; done; return 4; }\nf; echo $?\n") == "1\n3\n4\n"
+
+test "run_text: a pipeline of builtins and a loop reading a here-document"
+    assert ran("printf '%s\\n' b a | while read l; do echo \"<$l>\"; done\n") == "<b>\n<a>\n"
+    assert ran("while read l; do echo got $l; done <<E\nx\ny\nE\n") == "got x\ngot y\n"
+
+test "run_text: a file written, read back, and a case"
+    assert ran("echo hi > build/shell-test-run.txt; read l < build/shell-test-run.txt; echo $l\ncase $l in h*) echo matched;; esac\n") == "hi\nmatched\n"
+
+test "run_text: a subshell keeps its changes, a substitution gives its status"
+    assert ran("x=1; (x=2; echo $x); echo $x\ny=$(false); echo $?\n") == "2\n1\n1\n"
+
+test "run_text: a command that is nowhere, -e, and break out of two loops"
+    assert ran("nosuch; echo $?\n") == "shell: test, line 1, column 1: nosuch: command not found\n127\n"
+    assert ran("set -e; echo a; false; echo b\n") == "a\n"
+    assert ran("for a in 1 2; do for b in 1 2; do echo $a$b; break 2; done; done\n") == "11\n"
+
+test "run_text: a function calling itself without end is stopped at the limit"
+    assert strings.has_suffix(s: ran("f() { f; }; f; echo after $?\n"), suffix: "nest deeper than 100\nafter 1\n")

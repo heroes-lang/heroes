@@ -1,0 +1,397 @@
+# The documents of the books: an invoice or a credit note written with its
+# number, its lines and its taxes in one transaction, read back whole, and
+# listed by year.
+#
+# A document's number is given here, in the transaction that writes it:
+# the series' last number of the year is read and moved on by one, so two
+# documents never share a number, and a document that fails to be written
+# takes none, leaving no gap. A series is also kept in the order of its
+# days: a document dated before the last one of its series and year is
+# refused, since a numbering in which a later number bears an earlier day
+# is the first thing an auditor asks about.
+
+use <rebel>/big
+use <rebel>/fs
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+use bank/reference
+use model/documents
+use model/parties
+use store/database
+use tax/regime
+
+## Codes
+
+# The code of a document the books do not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a document refused by the order of its series.
+constant INVALID: str
+    "invalid"
+
+## Writing
+
+# Writes `doc` under the next number of its series and year, and answers
+# it with that number and the RF creditor reference made of it.
+#
+# - `db`: the books.
+# - `doc`: the document, complete but for its number, which is ignored.
+#
+# Fails `invalid` where it is dated before the last document of its series
+# and year, and as `sqlite` fails; the books are then as they were.
+function issue(@db: sqlite.Db, doc: documents.Document) -> documents.Document?
+    sqlite.begin(@db)?
+
+    match numbered(@db, doc: doc)
+        .ok written =>
+            database.settle(@db, outcome: ok())?
+            return ok(written)
+        .err e =>
+            _ = database.settle(@db, outcome: fail(code: e.code, msg: e.msg)).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# `doc` numbered and written, inside the caller's transaction.
+#
+# - `db`: the books, inside a transaction.
+# - `doc`: the document.
+#
+# Fails as `issue` says.
+function numbered(@db: sqlite.Db, doc: documents.Document) -> documents.Document?
+    series = documents.series_of(doc.kind)
+    year = documents.year_of(doc.issued)
+    day = documents.day_text(doc.issued)
+    latest = sqlite.query_one(@db, "SELECT COALESCE(MAX(issued), '') FROM documents WHERE kind = ?1 AND year = ?2", [.text(v: documents.kind_name(doc.kind)), .integer(v: year)])?
+    last_day = sql.text_at(latest, 0)?
+
+    if last_day != "" && time.is_before(a: doc.issued, b: documents.parse_day(last_day)?)
+        return fail(
+            code: INVALID,
+            msg: f"the last {documents.kind_name(doc.kind)} of {year} is dated {last_day}, and a later number cannot bear {day}"
+        )
+    sequence = next_in(@db, series: series, year: year)?
+    given @= doc
+    given.number @ documents.number_of(doc.kind, year: year, sequence: sequence)
+    given.reference @ reference.reference_of_number(given.number)?
+    write(@db, doc: given)?
+    return ok(given)
+
+# The next number of `series` in `year`, the series moved on to it.
+#
+# - `db`: the books, inside a transaction.
+# - `series`: the series, `INV`.
+# - `year`: the year.
+#
+# Fails as `sqlite` fails.
+function next_in(@db: sqlite.Db, series: str, year: i64) -> i64?
+    rows = sqlite.query(@db, "SELECT last FROM sequences WHERE series = ?1 AND year = ?2", [.text(v: series), .integer(v: year)])?
+
+    if rows.rows.len() == 0
+        _ = sqlite.exec(@db, "INSERT INTO sequences (series, year, last) VALUES (?1, ?2, 1)", [.text(v: series), .integer(v: year)])?
+        return ok(1)
+    next = sql.integer_at(rows.rows[0], 0)? + 1
+    _ = sqlite.exec(@db, "UPDATE sequences SET last = ?3 WHERE series = ?1 AND year = ?2", [.text(v: series), .integer(v: year), .integer(v: next)])?
+    return ok(next)
+
+# Writes `doc`'s row, its lines and its taxes.
+#
+# - `db`: the books, inside a transaction.
+# - `doc`: the document, numbered.
+#
+# Fails as `sqlite.exec` fails: on a number already written, `exists`.
+function write(@db: sqlite.Db, doc: documents.Document) -> ()?
+    c = doc.customer
+    head: [sql.Value] = [
+        .text(v: doc.number)
+        .text(v: documents.kind_name(doc.kind))
+        .integer(v: documents.year_of(doc.issued))
+        .text(v: documents.day_text(doc.issued))
+        .text(v: documents.day_text(doc.due))
+        .text(v: c.key)
+        .text(v: c.name)
+        .text(v: c.street)
+        .text(v: c.postcode)
+        .text(v: c.city)
+        .text(v: c.country)
+        .text(v: c.vat_id)
+        .text(v: c.email)
+        .text(v: c.locale)
+        .integer(v: c.payment_days)
+        .text(v: doc.currency)
+        .text(v: big.format_decimal(doc.exchange_rate))
+        .text(v: regime.name_of(doc.regime))
+        .text(v: big.format_decimal(doc.net))
+        .text(v: big.format_decimal(doc.tax))
+        .text(v: big.format_decimal(doc.gross))
+        .text(v: doc.refers_to)
+        .text(v: doc.reference)
+    ]
+    _ = sqlite.exec(@db, "INSERT INTO documents (number, kind, year, issued, due, customer_key, customer_name, customer_street, customer_postcode, customer_city, customer_country, customer_vat_id, customer_email, customer_locale, payment_days, currency, exchange_rate, regime, net, tax, gross, refers_to, reference) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)", head)?
+
+    for l in doc.lines
+        line_values: [sql.Value] = [
+            .text(v: doc.number)
+            .integer(v: l.position)
+            .text(v: l.sku)
+            .text(v: l.description)
+            .text(v: l.unit)
+            .text(v: big.format_decimal(l.quantity))
+            .text(v: big.format_decimal(l.unit_price))
+            .text(v: big.format_decimal(l.net))
+            .text(v: l.tax_class)
+            .text(v: big.format_decimal(l.rate))
+        ]
+        _ = sqlite.exec(@db, "INSERT INTO lines VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)", line_values)?
+
+    for t in doc.taxes
+        tax_values: [sql.Value] = [
+            .text(v: doc.number)
+            .text(v: big.format_decimal(t.rate))
+            .text(v: big.format_decimal(t.net))
+            .text(v: big.format_decimal(t.tax))
+        ]
+        _ = sqlite.exec(@db, "INSERT INTO taxes VALUES (?1, ?2, ?3, ?4)", tax_values)?
+
+    return ok()
+
+## Reading
+
+# The document of `number`, whole.
+#
+# - `db`: the books.
+# - `number`: its number.
+#
+# Fails `not_found` where the books hold none, `invalid` where a value read
+# is not of its form, and as `sqlite` fails.
+function document_named(@db: sqlite.Db, number: str) -> documents.Document?
+    head = match sqlite.query_one(@db, "SELECT * FROM documents WHERE number = ?1", [.text(v: number)])
+        .ok row => row
+        .err e =>
+            if e.code == sql.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"the books hold no document {number}")
+            return fail(code: e.code, msg: e.msg)
+
+    lines: [documents.Line] @= []
+
+    for row in sqlite.query(@db, "SELECT * FROM lines WHERE number = ?1 ORDER BY position", [.text(v: number)])?.rows
+        lines @ lines.push(line_of(row)?)
+
+    taxes: [documents.TaxRow] @= []
+
+    for row in sqlite.query(@db, "SELECT * FROM taxes WHERE number = ?1", [.text(v: number)])?.rows
+        taxes @ taxes.push(
+            documents.TaxRow(rate: decimal_named(row, name: "rate")?, net: decimal_named(row, name: "net")?, tax: decimal_named(row, name: "tax")?)
+        )
+
+    return document_of(head, lines: lines, taxes: lowest_rate_first(taxes))
+
+# The numbers of `year`'s documents of `kind`, in the order of their
+# numbers.
+#
+# - `db`: the books.
+# - `year`: the year.
+# - `kind`: the series.
+#
+# Fails as `sqlite.query` fails.
+function numbers_of(@db: sqlite.Db, year: i64, kind: documents.Kind) -> [str]?
+    found: [str] @= []
+    rows = sqlite.query(@db, "SELECT number FROM documents WHERE year = ?1 AND kind = ?2 ORDER BY number", [.integer(v: year), .text(v: documents.kind_name(kind))])?
+
+    for row in rows.rows
+        found @ found.push(sql.text_at(row, 0)?)
+
+    return ok(found)
+
+# Every document of `year`: its invoices in the order of their numbers,
+# then its credit notes.
+#
+# - `db`: the books.
+# - `year`: the year.
+#
+# Fails as `document_named` fails.
+function documents_of(@db: sqlite.Db, year: i64) -> [documents.Document]?
+    found: [documents.Document] @= []
+
+    kinds: [documents.Kind] = [.invoice, .credit_note]
+
+    for kind in kinds
+        for number in numbers_of(@db, year: year, kind: kind)?
+            found @ found.push(document_named(@db, number: number)?)
+
+    return ok(found)
+
+# The credit notes written against the invoice `number`, in the order of
+# their numbers.
+#
+# - `db`: the books.
+# - `number`: the invoice's number.
+#
+# Fails as `document_named` fails.
+function credit_notes_of(@db: sqlite.Db, number: str) -> [documents.Document]?
+    found: [documents.Document] @= []
+    rows = sqlite.query(@db, "SELECT number FROM documents WHERE refers_to = ?1 AND kind = 'credit-note' ORDER BY number", [.text(v: number)])?
+
+    for row in rows.rows
+        found @ found.push(document_named(@db, number: sql.text_at(row, 0)?)?)
+
+    return ok(found)
+
+## Rows
+
+# The document a row of `documents` holds, with its lines and taxes.
+#
+# - `row`: the row.
+# - `lines`: its lines, in order.
+# - `taxes`: its taxes, from the lowest rate.
+#
+# Fails `invalid` where a value is not of its form.
+function document_of(row: sql.Row, lines: [documents.Line], taxes: [documents.TaxRow]) -> documents.Document?
+    customer = parties.Customer(
+        key: sql.text_named(row, "customer_key")?,
+        name: sql.text_named(row, "customer_name")?,
+        street: sql.text_named(row, "customer_street")?,
+        postcode: sql.text_named(row, "customer_postcode")?,
+        city: sql.text_named(row, "customer_city")?,
+        country: sql.text_named(row, "customer_country")?,
+        vat_id: sql.text_named(row, "customer_vat_id")?,
+        email: sql.text_named(row, "customer_email")?,
+        locale: sql.text_named(row, "customer_locale")?,
+        currency: sql.text_named(row, "currency")?,
+        payment_days: sql.integer_named(row, "payment_days")?
+    )
+    return ok(
+        documents.Document(number: sql.text_named(row, "number")?, kind: documents.parse_kind(sql.text_named(row, "kind")?)?, issued: documents.parse_day(sql.text_named(row, "issued")?)?, due: documents.parse_day(sql.text_named(row, "due")?)?, customer: customer, currency: sql.text_named(row, "currency")?, exchange_rate: decimal_named(row, name: "exchange_rate")?, regime: regime.parse_regime(sql.text_named(row, "regime")?)?, lines: lines, taxes: taxes, net: decimal_named(row, name: "net")?, tax: decimal_named(row, name: "tax")?, gross: decimal_named(row, name: "gross")?, refers_to: sql.text_named(row, "refers_to")?, reference: sql.text_named(row, "reference")?)
+    )
+
+# The line a row of `lines` holds.
+#
+# - `row`: the row.
+#
+# Fails `invalid` where a value is not of its form.
+function line_of(row: sql.Row) -> documents.Line?
+    return ok(
+        documents.Line(position: sql.integer_named(row, "position")?, sku: sql.text_named(row, "sku")?, description: sql.text_named(row, "description")?, unit: sql.text_named(row, "unit")?, quantity: decimal_named(row, name: "quantity")?, unit_price: decimal_named(row, name: "unit_price")?, net: decimal_named(row, name: "net")?, tax_class: sql.text_named(row, "tax_class")?, rate: decimal_named(row, name: "rate")?)
+    )
+
+# The decimal the text column `name` of `row` holds.
+#
+# - `row`: the row.
+# - `name`: the column.
+#
+# Fails `invalid` where it holds no decimal.
+function decimal_named(row: sql.Row, name: str) -> big.Decimal?
+    return big.parse_decimal(sql.text_named(row, name)?)
+
+# `taxes` from the lowest rate, as a document lists them.
+#
+# - `taxes`: the rows read, in any order.
+function lowest_rate_first(taxes: [documents.TaxRow]) -> [documents.TaxRow]
+    sorted: [documents.TaxRow] @= []
+
+    for t in taxes
+        placed: [documents.TaxRow] @= []
+        put @= false
+
+        for s in sorted
+            if !put && big.compare_decimal(a: t.rate, b: s.rate) < 0
+                placed @ placed.push(t)
+                put @ true
+            placed @ placed.push(s)
+
+        if !put
+            placed @ placed.push(t)
+        sorted @ placed
+
+    return sorted
+
+## Tests
+
+# A document of the tests, for the customer of `registry`'s tests, issued
+# on `day`.
+#
+# - `kind`: its kind.
+# - `day`: its day, `2026-03-14`.
+function sample(kind: documents.Kind, day: str) -> documents.Document
+    issued = documents.parse_day(day).must()
+    line = documents.Line(
+        position: 1,
+        sku: "BOOK-A",
+        description: "Atlas",
+        unit: "pc",
+        quantity: big.parse_decimal("2").must(),
+        unit_price: big.parse_decimal("39.90").must(),
+        net: big.parse_decimal("79.80").must(),
+        tax_class: "books",
+        rate: big.parse_decimal("4").must()
+    )
+    tax = documents.TaxRow(rate: line.rate, net: line.net, tax: big.parse_decimal("3.19").must())
+    return documents.Document(
+        number: "",
+        kind: kind,
+        issued: issued,
+        due: issued,
+        customer: parties.Customer(key: "DANTE", name: "Libreria Dante", street: "Via Roma 1", postcode: "00100", city: "Roma", country: "IT", vat_id: "IT00000000000", email: "ordini@dante.example", locale: "it-IT", currency: "EUR", payment_days: 30),
+        currency: "EUR",
+        exchange_rate: big.parse_decimal("1").must(),
+        regime: .domestic,
+        lines: [line],
+        taxes: [tax],
+        net: line.net,
+        tax: tax.tax,
+        gross: big.parse_decimal("82.99").must(),
+        refers_to: "",
+        reference: ""
+    )
+
+# The books of the tests, holding the customer the samples name.
+#
+# - `dir`: the folder the database is made in.
+function test_books(dir: str) -> sqlite.Db
+    db @= database.open_books(dir + "/books.db").must()
+    _ = sqlite.exec(
+        @db,
+        "INSERT INTO customers VALUES ('DANTE', 'Libreria Dante', 'Via Roma 1', '00100', 'Roma', 'IT', 'IT00000000000', 'ordini@dante.example', 'it-IT', 'EUR', 30)",
+        []
+    ).must()
+    return db
+
+test "issue: numbers given in order in each series, the document read back whole"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-ledger-*").must()
+    db @= test_books(dir)
+    first = issue(@db, doc: sample(.invoice, day: "2026-03-01")).must()
+    second = issue(@db, doc: sample(.invoice, day: "2026-03-01")).must()
+    note = issue(@db, doc: sample(.credit_note, day: "2026-03-02")).must()
+    assert first.number == "INV-2026-0001" && second.number == "INV-2026-0002" && note.number == "CN-2026-0001"
+    assert document_named(@db, number: "INV-2026-0002").must() == second
+    assert numbers_of(@db, year: 2026, kind: .invoice).must() == ["INV-2026-0001", "INV-2026-0002"]
+    assert documents_of(@db, year: 2026).must().len() == 3 && documents_of(@db, year: 2025).must().len() == 0
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()
+
+test "issue: a day before the series' last refused, and no number taken"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-ledger-*").must()
+    db @= test_books(dir)
+    _ = issue(@db, doc: sample(.invoice, day: "2026-03-10")).must()
+
+    match issue(@db, doc: sample(.invoice, day: "2026-03-09"))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    assert issue(@db, doc: sample(.invoice, day: "2026-03-10")).must().number == "INV-2026-0002"
+    assert issue(@db, doc: sample(.invoice, day: "2027-01-01")).must().number == "INV-2027-0001"
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()
+
+test "issue: a customer the books do not hold rolls the whole document back"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-ledger-*").must()
+    db @= test_books(dir)
+    stranger @= sample(.invoice, day: "2026-03-01")
+    stranger.customer.key @ "NOBODY"
+    assert issue(@db, doc: stranger).is_err()
+    assert numbers_of(@db, year: 2026, kind: .invoice).must().len() == 0
+    assert issue(@db, doc: sample(.invoice, day: "2026-03-01")).must().number == "INV-2026-0001"
+    assert document_named(@db, number: "INV-2026-0009").is_err()
+    sqlite.close(@db).must()
+    fs.remove_all(dir).must()

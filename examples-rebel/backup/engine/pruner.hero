@@ -1,0 +1,279 @@
+# Prune: what no snapshot reaches any more is removed from the storage,
+# by marking and sweeping. Every snapshot's trees are walked and every
+# chunk they name is marked in a set of bits, one bit per position of the
+# chunk index (`containers/bits` over `containers/indexed`'s positions),
+# so the marks of a million chunks are an eighth of a megabyte. Then each
+# pack is read against the marks: a pack whose chunks are all marked
+# stays, one with none marked is deleted, and one with some is written
+# again holding only those, each checked as it is copied.
+#
+# The order keeps the repository whole if prune stops anywhere: the new
+# packs are written, then the one new index file, and only then are the
+# old index files and the old packs deleted; a pack left behind by a stop
+# is found by the next prune and removed. Trees no snapshot reaches are
+# deleted last. The summary is built again from the new index.
+
+use <rebel>/containers/bits
+
+use repo/chunk_store
+use repo/codec
+use repo/index
+use repo/layout
+use repo/pack
+use repo/records
+use repo/repository
+use repo/summary
+use store/storage
+use vault/master
+
+## Codes
+
+# The code of a chunk a pack holds whose bytes do not give its name.
+constant INVALID: str
+    "invalid"
+
+## Pruning
+
+# What a prune did.
+record Pruned
+    # The snapshots whose trees were walked.
+    snapshots: i64
+    # The trees they reach.
+    trees_kept: i64
+    # The trees deleted.
+    trees_removed: i64
+    # The chunks still reached.
+    chunks_kept: i64
+    # The chunks no snapshot reaches, removed.
+    chunks_removed: i64
+    # The chunks snapshots name that the index does not hold: a damaged
+    # repository, told and never hidden.
+    chunks_missing: i64
+    # The packs kept as they were.
+    packs_kept: i64
+    # The packs deleted whole.
+    packs_removed: i64
+    # The packs written again with their live chunks alone.
+    packs_rewritten: i64
+    # The packs those were written into.
+    packs_written: i64
+    # The bytes the storage holds fewer of after.
+    bytes_freed: i64
+
+# Removes from `r` every pack, chunk and tree no snapshot reaches.
+#
+# - `r`: the repository; its index, index files and summary are replaced.
+#
+# Fails as the storage, the trees and the chunks fail; what was deleted
+# before a failure stays deleted, and nothing a snapshot reaches is ever
+# deleted.
+function prune(@r: repository.Repository) -> Pruned?
+    chunk_store.flush(@r)?
+    reached = reach(@r)?
+    repository.read_index(@r)?
+    count = index.count(r.chunk_index)
+    marks @= bits.new(count)
+    missing @= 0
+
+    for id in reached.chunks
+        match index.position_of(r.chunk_index, id: id)
+            .ok at => bits.set_bit(@marks, at)
+            .err _ => missing @ missing + 1
+
+    sizes: {str: i64} @= {}
+
+    for item in storage.list(@r.store, prefix: layout.DATA)?
+        sizes[layout.name_in(key: item.key, folder: layout.DATA)] @ item.size
+
+    listing = index.listing_of(r.chunk_index)
+    kept_index @= index.empty()
+    doomed: [str] @= []
+    refill @= pack.builder()
+    done @= Pruned(
+        snapshots: reached.snapshots,
+        trees_kept: reached.trees.len(),
+        trees_removed: 0,
+        chunks_kept: bits.count_ones(marks),
+        chunks_removed: count - bits.count_ones(marks),
+        chunks_missing: missing,
+        packs_kept: 0,
+        packs_removed: 0,
+        packs_rewritten: 0,
+        packs_written: 0,
+        bytes_freed: 0
+    )
+
+    for k in range(from: 0, to: listing.packs.len())
+        name = listing.packs[k]
+        entries = listing.entries[k]
+        live = live_entries(r.chunk_index, marks: marks, entries: entries)
+
+        if live.len() == entries.len()
+            index.put_pack(@kept_index, name: name, entries: entries)
+            done.packs_kept @ done.packs_kept + 1
+        else
+            doomed @ doomed.push(name)
+            done.bytes_freed @ done.bytes_freed + sizes[name].default(0)
+
+            if live.len() == 0
+                done.packs_removed @ done.packs_removed + 1
+            else
+                done.packs_rewritten @ done.packs_rewritten + 1
+                data = storage.get(@r.store, key: layout.pack(name))?
+
+                for e in live
+                    stored = pack.stored_of(data, e: e)?
+                    checked(r.key, stored: stored, e: e)?
+                    pack.add(@refill, id: e.id, stored: stored, raw: e.raw)
+
+                    if refill.data.len() >= r.config.pack_bytes
+                        done.bytes_freed @ done.bytes_freed - write_refill(@r, @kept_index, b: refill)?
+                        done.packs_written @ done.packs_written + 1
+                        refill @ pack.builder()
+
+    if !pack.is_empty(refill)
+        done.bytes_freed @ done.bytes_freed - write_refill(@r, @kept_index, b: refill)?
+        done.packs_written @ done.packs_written + 1
+
+    if doomed.len() > 0 || r.index_files.len() > 1
+        replace_index(@r, kept: kept_index)?
+
+    for name in doomed
+        storage.delete(@r.store, key: layout.pack(name))?
+
+    for item in storage.list(@r.store, prefix: layout.TREES)?
+        id = layout.name_in(key: item.key, folder: layout.TREES)
+
+        if !reached.trees[id].default(false)
+            storage.delete(@r.store, key: item.key)?
+            done.trees_removed @ done.trees_removed + 1
+            done.bytes_freed @ done.bytes_freed + item.size
+
+    r.cache_names @ []
+    r.cache_packs @ []
+    r.cache_next @ 0
+    return ok(done)
+
+# What the snapshots reach.
+record Reached
+    # The snapshots walked.
+    snapshots: i64
+    # The trees, by name.
+    trees: {str: bool}
+    # The chunks, each once.
+    chunks: [str]
+
+# Every tree and chunk the repository's snapshots reach, the trees read
+# from a list of their own rather than by recursion.
+#
+# - `r`: the repository.
+#
+# Fails as the snapshots and the trees fail.
+function reach(@r: repository.Repository) -> Reached?
+    found = records.list_snapshots(@r)?
+    trees: {str: bool} @= {}
+    seen: {str: bool} @= {}
+    chunk_ids: [str] @= []
+    queue: [str] @= []
+
+    for s in found
+        queue @ queue.push(s.tree)
+
+    next @= 0
+
+    while next < queue.len()
+        id = queue[next]
+        next @ next + 1
+
+        if !trees[id].default(false)
+            trees[id] @ true
+
+            for n in records.load_tree(@r, id: id)?.nodes
+                match n.kind
+                    .directory => queue @ queue.push(n.subtree)
+                    .symlink   => _ = 0
+                    .file =>
+                        for c in n.chunks
+                            if !seen[c].default(false)
+                                seen[c] @ true
+                                chunk_ids @ chunk_ids.push(c)
+
+    return ok(Reached(snapshots: found.len(), trees: trees, chunks: chunk_ids))
+
+# The entries of a pack whose chunks are marked.
+#
+# - `ix`: the index the marks are positions of.
+# - `marks`: one bit per position, set for a chunk still reached.
+# - `entries`: the pack's entries.
+function live_entries(ix: index.Index lent, marks: bits.Bits lent, entries: [pack.Entry]) -> [pack.Entry]
+    live: [pack.Entry] @= []
+
+    for e in entries
+        match index.position_of(ix, id: e.id)
+            .ok at =>
+                if bits.is_set(marks, at)
+                    live @ live.push(e)
+            .err _ => _ = 0
+
+    return live
+
+# Nothing, where `stored` opens and gives `e`'s name: a chunk is checked
+# before a prune copies it into a new pack.
+#
+# - `key`: the master key.
+# - `stored`: the chunk's sealed bytes.
+# - `e`: its entry.
+#
+# Fails `invalid` where it does not.
+function checked(key: master.Master lent, stored: [u8], e: pack.Entry) -> ()?
+    plain = codec.decode(key, stored: stored, bound: "data " + e.id, limit: e.raw)?
+
+    if master.name_of(key, data: plain) != e.id
+        return fail(code: INVALID, msg: f"the chunk {e.id} does not hold the bytes its name was made of")
+    return ok()
+
+# Writes the pack `b` and puts its chunks in `kept`, answering its size.
+#
+# - `r`: the repository.
+# - `kept`: the new index; grows.
+# - `b`: the pack, at least one chunk in it.
+#
+# Fails as the sealing and the storage fail.
+function write_refill(@r: repository.Repository, @kept: index.Index, b: pack.Builder) -> i64?
+    finished = pack.finish(r.key, b: b)?
+    storage.put(@r.store, key: layout.pack(finished.name), data: finished.data)?
+    index.put_pack(@kept, name: finished.name, entries: finished.entries)
+    return ok(finished.data.len())
+
+# Makes `kept` the repository's index: one index file written for it,
+# then every other deleted, and the summary built again from it.
+#
+# - `r`: the repository; its index, index files and summary are replaced.
+# - `kept`: the new index.
+#
+# Fails as the sealing and the storage fail.
+function replace_index(@r: repository.Repository, kept: index.Index) -> ()?
+    names: [str] @= []
+
+    if index.count(kept) > 0
+        written = index.encode(r.key, l: index.listing_of(kept))?
+        storage.put(@r.store, key: layout.index_file(written.name), data: written.stored)?
+        names @ names.push(written.name)
+
+    for old in r.index_files
+        if names.len() == 0 || names[0] != old
+            storage.delete(@r.store, key: layout.index_file(old))?
+
+    r.chunk_index @ kept
+    r.index_read @ true
+    r.index_files @ names
+    rebuilt @= summary.sized(index.count(kept) * 2)
+
+    for at in range(from: 0, to: index.count(kept))
+        summary.add(@rebuilt, id: index.id_at(kept, at: at))
+
+    rebuilt.covers @ names
+    r.filter @ rebuilt
+    storage.put(@r.store, key: layout.SUMMARY, data: summary.encode(r.key, s: rebuilt)?)?
+    r.filter_owed @ false
+    return ok()

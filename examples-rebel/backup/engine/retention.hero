@@ -1,0 +1,193 @@
+# Which snapshots a retention policy keeps, by restic's rules for
+# `forget`: the snapshots are read newest first, and for each kind of
+# period the policy names (hour, day, ISO week, month, year), the newest
+# snapshot of each of that many periods is kept; `last` keeps that many of
+# the newest whatever their periods. A snapshot kept for any reason is
+# kept, and the reasons are told. Every period is read in UTC, so a policy
+# keeps the same snapshots on every machine.
+#
+# A policy that keeps nothing is refused rather than read as "forget
+# everything", which no person means by leaving every option out.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+
+use model/snapshot
+
+## Codes
+
+# The code of a policy that keeps nothing, or a count below zero.
+constant INVALID: str
+    "invalid"
+
+## Policies
+
+# How many snapshots of each kind to keep; 0 keeps none for that reason.
+record Policy
+    # The newest, whatever their periods.
+    last: i64
+    # The newest of each of this many hours.
+    hourly: i64
+    # The newest of each of this many days.
+    daily: i64
+    # The newest of each of this many ISO weeks.
+    weekly: i64
+    # The newest of each of this many months.
+    monthly: i64
+    # The newest of each of this many years.
+    yearly: i64
+
+# `p`, checked.
+#
+# - `p`: the policy.
+#
+# Fails `invalid` where a count is below zero or every count is zero.
+function checked(p: Policy) -> Policy?
+    counts = [p.last, p.hourly, p.daily, p.weekly, p.monthly, p.yearly]
+
+    for c in counts
+        if c < 0
+            return fail(code: INVALID, msg: f"a policy keeps 0 snapshots or more of each kind, and {c} was asked")
+
+    if counts.all(is_zero)
+        return fail(
+            code: INVALID,
+            msg: "a policy that keeps no snapshot would forget them all: name at least one --keep option"
+        )
+    return ok(p)
+
+# Whether `n` is zero.
+#
+# - `n`: a count.
+function is_zero(n: i64) -> bool
+    return n == 0
+
+# What a policy decided of one snapshot.
+record Verdict
+    # The snapshot.
+    s: snapshot.Snapshot
+    # Whether it is kept.
+    kept: bool
+    # Why it is kept: `last`, `daily` and the rest; empty where it is not.
+    reasons: [str]
+
+# What `p` decides of each of `found`, newest first.
+#
+# - `found`: the snapshots, in any order.
+# - `p`: the policy, as `checked` accepts it.
+function decide(found: [snapshot.Snapshot], p: Policy) -> [Verdict]
+    ordered = snapshot.newest_first(found)
+    verdicts: [Verdict] @= []
+
+    for s in ordered
+        verdicts @ verdicts.push(Verdict(s: s, kept: false, reasons: []))
+
+    kinds = ["last", "hourly", "daily", "weekly", "monthly", "yearly"]
+    wanted = [p.last, p.hourly, p.daily, p.weekly, p.monthly, p.yearly]
+
+    for k in range(from: 0, to: kinds.len())
+        left @= wanted[k]
+        previous @= ""
+
+        for i in range(from: 0, to: verdicts.len())
+            if left > 0
+                period = period_of(verdicts[i].s.taken, kind: kinds[k], position: i)
+
+                if period != previous
+                    keep(@verdicts[i], reason: kinds[k])
+                    left @ left - 1
+                    previous @ period
+
+    return verdicts
+
+# Marks `v` kept for `reason`.
+#
+# - `v`: the verdict; kept, its reasons growing.
+# - `reason`: the kind that keeps it.
+function keep(@v: Verdict, reason: str)
+    v.kept @ true
+    v.reasons @ v.reasons.push(reason)
+
+# The period of `kind` that `t` falls in, as a text two snapshots share
+# exactly where they share the period.
+#
+# - `t`: the snapshot's time.
+# - `kind`: `last`, `hourly`, `daily`, `weekly`, `monthly` or `yearly`.
+# - `position`: the snapshot's place, newest first, which is its period for
+#   `last`: every snapshot its own.
+function period_of(t: time.Instant, kind: str, position: i64) -> str
+    d = time.to_date_time(t)
+
+    return match kind
+        "last"   => numbers.format_int(n: position, base: 10)
+        "hourly" => f"{d.year}-{d.month}-{d.day} {d.hour}"
+        "daily"  => f"{d.year}-{d.month}-{d.day}"
+        "weekly" =>
+            w = time.iso_week(t)
+            f"{w.year}-W{w.week}"
+        "monthly" => f"{d.year}-{d.month}"
+        _         => f"{d.year}"
+
+# The policy written as a person reads it: `last 2, daily 7`.
+#
+# - `p`: the policy.
+function describe(p: Policy) -> str
+    parts: [str] @= []
+    kinds = ["last", "hourly", "daily", "weekly", "monthly", "yearly"]
+    counts = [p.last, p.hourly, p.daily, p.weekly, p.monthly, p.yearly]
+
+    for k in range(from: 0, to: kinds.len())
+        if counts[k] > 0
+            parts @ parts.push(f"{kinds[k]} {counts[k]}")
+
+    return strings.trim(parts.join(", "))
+
+# A snapshot taken at `taken`, named `id`, for the tests.
+#
+# - `id`: its name.
+# - `taken`: its time, RFC 3339.
+function sample(id: str, taken: str) -> snapshot.Snapshot
+    return snapshot.Snapshot(
+        id: id,
+        taken: time.parse(taken, layout: .rfc3339).must(),
+        host: "h",
+        source: "/s",
+        tree: "",
+        parent: "",
+        tags: [],
+        totals: snapshot.no_totals()
+    )
+
+test "checked: a policy that keeps nothing and a count below zero are refused"
+    assert checked(Policy(last: 0, hourly: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0)).is_err()
+    assert checked(Policy(last: -1, hourly: 0, daily: 1, weekly: 0, monthly: 0, yearly: 0)).is_err()
+    assert !checked(Policy(last: 0, hourly: 0, daily: 1, weekly: 0, monthly: 0, yearly: 0)).is_err()
+
+test "decide: daily 2 keeps the newest of each of the two newest days"
+    found = [
+        sample(id: "a1", taken: "2026-03-01T09:00:00Z")
+        sample(id: "b1", taken: "2026-03-02T09:00:00Z")
+        sample(id: "b2", taken: "2026-03-02T18:00:00Z")
+    ]
+    v = decide(found, p: Policy(last: 0, hourly: 0, daily: 2, weekly: 0, monthly: 0, yearly: 0))
+    assert v.len() == 3
+    assert v[0].s.id == "b2" && v[0].kept && v[0].reasons == ["daily"]
+    assert v[1].s.id == "b1" && !v[1].kept
+    assert v[2].s.id == "a1" && v[2].kept
+
+test "decide: last 1 and monthly 1 keep the newest once with both reasons"
+    found = [sample(id: "a", taken: "2026-01-31T00:00:00Z"), sample(id: "b", taken: "2026-02-01T00:00:00Z")]
+    v = decide(found, p: Policy(last: 1, hourly: 0, daily: 0, weekly: 0, monthly: 1, yearly: 0))
+    assert v[0].kept && v[0].reasons == ["last", "monthly"]
+    assert !v[1].kept
+    assert decide([], p: Policy(last: 1, hourly: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0)) == []
+
+test "period_of: a week across a new year is one ISO week"
+    a = time.parse("2025-12-29T10:00:00Z", layout: .rfc3339).must()
+    b = time.parse("2026-01-02T10:00:00Z", layout: .rfc3339).must()
+    assert period_of(a, kind: "weekly", position: 0) == period_of(b, kind: "weekly", position: 1)
+    assert period_of(a, kind: "yearly", position: 0) != period_of(b, kind: "yearly", position: 1)
+
+test "describe: the kinds asked, in order"
+    assert describe(Policy(last: 2, hourly: 0, daily: 7, weekly: 0, monthly: 0, yearly: 1)) == "last 2, daily 7, yearly 1"

@@ -1,0 +1,258 @@
+# Depfiles in make's format, read and written: what a compiler writes with
+# `-MD -MF out.d` to say which files it read, so a build learns the headers
+# no build file names.
+#
+#     out/main.o: src/main.c src/util.h \
+#       gen/version.h
+#     src/util.h:
+#
+# Read as GCC and Clang write it and as make reads it: words split by
+# blanks; a backslash before a line's end joins the next line; `\ ` is a
+# space inside a name, `\#` a `#`, `\\` a backslash, and `$$` a `$`; a
+# backslash before anything else stands as itself, so a Windows path
+# `C:\src\a.c` reads whole; a `:` ends the targets where a blank or the
+# line's end follows it, so a drive's `C:\` is no separator; a `#` that
+# begins a word comments out the rest of the line. Every rule's
+# prerequisites are inputs, and the empty rules `-MP` adds for each header
+# give none.
+
+use model/buildfile
+
+# What a depfile says.
+record Depfile
+    # The files its rules are for, as written, each once.
+    targets: [str]
+    # The files they were made from, as written, each once, in the order
+    # first written.
+    inputs: [str]
+
+# The reader's place in a text: the characters, the one it stands at, and
+# the line it is on.
+record Cursor
+    # The text's characters, each one `str`.
+    chars: [str]
+    # The index of the character it stands at.
+    at: i64
+    # The line it stands on, from 1, for messages.
+    line: i64
+
+# Whether `c` separates words on a line.
+#
+# - `c`: one character.
+function is_blank(c: str) -> bool
+    return c == " " || c == "\t" || c == "\r"
+
+# The character `ahead` places after the cursor's, or "" past the end.
+#
+# - `cur`: the cursor.
+# - `ahead`: 0 for its own character, 1 for the next.
+function peek(cur: Cursor lent, ahead: i64) -> str
+    i = cur.at + ahead
+
+    if i >= cur.chars.len()
+        return ""
+    return cur.chars[i]
+
+# Whether the cursor stands on a backslash that ends its line, which joins
+# the next line to this one.
+#
+# - `cur`: the cursor.
+function at_join(cur: Cursor lent) -> bool
+    if peek(cur, ahead: 0) != "\\"
+        return false
+
+    next = peek(cur, ahead: 1)
+    return next == "\n" || next == "\r" && peek(cur, ahead: 2) == "\n"
+
+# Moves the cursor past the blanks and line joins before the next word, or
+# to the line's end.
+#
+# - `cur`: the cursor, moved.
+function skip_blanks(@cur: Cursor)
+    going @= true
+
+    while going
+        c = peek(cur, ahead: 0)
+
+        if c != "" && is_blank(c)
+            cur.at @ cur.at + 1
+        else if at_join(cur)
+            if peek(cur, ahead: 1) == "\r"
+                cur.at @ cur.at + 3
+            else
+                cur.at @ cur.at + 2
+
+            cur.line @ cur.line + 1
+        else
+            going @ false
+
+# One word read from the cursor, its escapes read: what it holds, and
+# whether a `:` ending the targets closed it.
+record Word
+    # The word, unescaped; empty where it was the `:` alone.
+    text: str
+    # Whether a `:` followed by a blank or the line's end ended it.
+    ends_targets: bool
+
+# The word the cursor stands on, the cursor moved past it.
+#
+# - `cur`: the cursor, at a word's first character, moved past its last.
+function read_word(@cur: Cursor) -> Word
+    out: [str] @= []
+
+    while true
+        c = peek(cur, ahead: 0)
+
+        if c == "" || c == "\n" || is_blank(c) || at_join(cur)
+            return Word(text: out.join(""), ends_targets: false)
+
+        if c == ":"
+            after = peek(cur, ahead: 1)
+
+            if after == "" || after == "\n" || is_blank(after) || after == "\\" && at_join_after(cur)
+                cur.at @ cur.at + 1
+                return Word(text: out.join(""), ends_targets: true)
+
+        if c == "\\"
+            next = peek(cur, ahead: 1)
+
+            if next == " " || next == "#" || next == "\\" || next == ":"
+                out @ out.push(next)
+                cur.at @ cur.at + 2
+                continue
+
+        if c == "$" && peek(cur, ahead: 1) == "$"
+            out @ out.push("$")
+            cur.at @ cur.at + 2
+            continue
+
+        out @ out.push(c)
+        cur.at @ cur.at + 1
+
+# Whether the backslash after the cursor's `:` ends its line.
+#
+# - `cur`: the cursor, on a `:`.
+function at_join_after(cur: Cursor lent) -> bool
+    next = peek(cur, ahead: 2)
+    return next == "\n" || next == "\r" && peek(cur, ahead: 3) == "\n"
+
+# Adds `word` to `list` unless it holds it already.
+#
+# - `list`: the words so far, the caller's.
+# - `seen`: the words `list` holds, the caller's.
+# - `word`: the word.
+function add_once(@list: [str], @seen: {str: bool}, word: str)
+    if seen[word].is_err()
+        seen[word] @ true
+        list @ list.push(word)
+
+# What the depfile `text` says.
+#
+# - `text`: the file's text; empty says nothing.
+#
+# Fails `invalid` where a line holds words and no `:`, naming the line.
+function parse(text: str) -> Depfile?
+    cur @= Cursor(chars: text.chars(), at: 0, line: 1)
+    targets: [str] @= []
+    target_seen: {str: bool} @= {}
+    inputs: [str] @= []
+    input_seen: {str: bool} @= {}
+    in_targets @= true
+    words_on_line @= 0
+
+    while cur.at < cur.chars.len()
+        skip_blanks(@cur)
+        c = peek(cur, ahead: 0)
+
+        if c == "" || c == "\n"
+            if in_targets && words_on_line > 0
+                return fail(code: buildfile.INVALID, msg: f"line {cur.line} of the depfile names files and no `:`")
+
+            in_targets @ true
+            words_on_line @ 0
+            cur.at @ cur.at + 1
+            cur.line @ cur.line + 1
+        else if c == "#"
+            while cur.at < cur.chars.len() && peek(cur, ahead: 0) != "\n"
+                cur.at @ cur.at + 1
+        else
+            w = read_word(@cur)
+            words_on_line @ words_on_line + 1
+
+            if w.text != ""
+                if in_targets
+                    add_once(@targets, @target_seen, word: w.text)
+                else
+                    add_once(@inputs, @input_seen, word: w.text)
+
+            if w.ends_targets
+                in_targets @ false
+
+    if in_targets && words_on_line > 0
+        return fail(code: buildfile.INVALID, msg: f"line {cur.line} of the depfile names files and no `:`")
+    return ok(Depfile(targets: targets, inputs: inputs))
+
+# `name` written as a depfile's word: a space as `\ `, a `#` as `\#`, a `$`
+# as `$$`, so `parse` reads it back whole.
+#
+# - `name`: a path.
+function escape(name: str) -> str
+    out: [str] @= []
+
+    for c in name.chars()
+        if c == " " || c == "#"
+            out @ out.push("\\" + c)
+        else if c == "$"
+            out @ out.push("$$")
+        else
+            out @ out.push(c)
+
+    return out.join("")
+
+# A depfile saying `target` was made from `inputs`, one input to a line
+# after the first, each line joined to the next as GCC writes it.
+#
+# - `target`: the file made.
+# - `inputs`: the files it was made from, in order.
+function format(target: str, inputs: [str]) -> str
+    lines: [str] @= [escape(target) + ":"]
+
+    for name in inputs
+        lines @ lines.push("  " + escape(name))
+
+    return lines.join(" \\\n") + "\n"
+
+test "parse: GCC's form, a joined line, and the empty rules of -MP"
+    text = "out/main.o: src/main.c src/util.h \\\n  gen/version.h\nsrc/util.h:\n\ngen/version.h:\n"
+    d = parse(text).must()
+    assert d.targets == ["out/main.o", "src/util.h", "gen/version.h"]
+    assert d.inputs == ["src/main.c", "src/util.h", "gen/version.h"]
+
+test "parse: escaped spaces, a hash, a dollar, and a Windows drive"
+    d = parse("out/my\\ file.o: C:\\src\\a\\ b.c x\\#1.h cost$$.h\n").must()
+    assert d.targets == ["out/my file.o"]
+    assert d.inputs == ["C:\\src\\a b.c", "x#1.h", "cost$.h"]
+
+test "parse: the empty text, a comment, CRLF line ends, an input named twice"
+    assert parse("").must().inputs == []
+    d = parse("# made by a compiler\r\nout.o: a.h \\\r\n a.h b.h\r\n").must()
+    assert d.inputs == ["a.h", "b.h"]
+
+test "parse: a `:` alone, and no blank before the inputs"
+    assert parse("out.o : a.h\n").must().inputs == ["a.h"]
+    assert parse("out.o:a.h\n").is_err()
+    assert parse("out.o: a.h").must().inputs == ["a.h"]
+
+test "parse: files and no `:` is invalid, naming the line"
+    match parse("out.o: a.h\nb.h c.h\n")
+        .ok _  => assert false
+        .err e => assert e.msg == "line 2 of the depfile names files and no `:`"
+
+test "format: what parse reads back whole, spaces, hashes and dollars in names"
+    inputs = ["src/a b.src", "src/#1.h", "src/$x.h", "src/日本.h"]
+    d = parse(format(target: "out/a b.obj", inputs: inputs)).must()
+    assert d.targets == ["out/a b.obj"]
+    assert d.inputs == inputs
+
+test "format: a target of no input"
+    assert format(target: "out/a", inputs: []) == "out/a:\n"

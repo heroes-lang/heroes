@@ -1,0 +1,324 @@
+# The expansions a `$` or a backquote begins, read into parts of a word:
+# `$name` and the special parameters, `${name}` with its operators and
+# `${#name}`, `$(...)` and backquoted commands, parsed as they are read so a
+# mistake inside one is told before anything runs, and `$((...))`. Each
+# nested form counts one level of `lexer.MAX_DEPTH`, so no text can nest
+# them deeper than the reading's stack allows.
+
+use syntax/ast
+use syntax/lexer
+use syntax/parser
+use syntax/words
+
+# The expansion a `$` begins, or the `$` itself where nothing it can begin
+# follows it.
+#
+# - `lx`: the lexer, at the `$`.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_dollar(@lx: lexer.Lexer, in_quotes: bool) -> ast.Part?
+    at = lx.pos
+
+    lone: ast.Part = if in_quotes
+        .quoted(text: "$")
+    else
+        .literal(text: "$")
+
+    if lx.pos + 1 >= lx.text.len()
+        lx.pos @ lx.pos + 1
+        return ok(lone)
+
+    c = lx.text[lx.pos + 1]
+
+    if c == '{' || c == '('
+        lexer.enter(@lx, at: at)?
+        found = read_nested(@lx, c: c, in_quotes: in_quotes)
+        lexer.leave(@lx)
+        return found
+
+    if words.is_name_start(c)
+        i @= lx.pos + 1
+
+        while i < lx.text.len() && words.is_name_byte(lx.text[i])
+            i @ i + 1
+
+        name = lx.text.slice(from: lx.pos + 1, to: i)
+        lx.pos @ i
+        return ok(.param(name: name, op: "", arg: [], in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+    if c >= '0' && c <= '9' || c == '?' || c == '#' || c == '$' || c == '!' || c == '@' || c == '*' || c == '-'
+        lx.pos @ lx.pos + 2
+        return ok(
+            .param(name: lx.text.slice(from: at + 1, to: at + 2), op: "", arg: [], in_quotes: in_quotes, at: lexer.place(lx, at: at))
+        )
+
+    lx.pos @ lx.pos + 1
+    return ok(lone)
+
+# `${...}`, `$((...))` or `$(...)`, whose `$` is at `lx.pos`.
+#
+# - `lx`: the lexer.
+# - `c`: the byte after the `$`, `{` or `(`.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_nested(@lx: lexer.Lexer, c: u8, in_quotes: bool) -> ast.Part?
+    if c == '{'
+        return read_braced(@lx, in_quotes: in_quotes)
+
+    if lx.pos + 2 < lx.text.len() && lx.text[lx.pos + 2] == '('
+        match closing_arith(lx.text, from: lx.pos + 3)
+            .ok close => return read_arith(@lx, close: close, in_quotes: in_quotes)
+            .err _    => _ = 0
+
+    return read_command(@lx, in_quotes: in_quotes)
+
+# The operators a `${name` may be followed by, the two-byte ones first.
+function brace_ops() -> [str]
+    return [":-", ":=", ":?", ":+", "%%", "##", "-", "=", "?", "+", "%", "#"]
+
+# The name of a parameter inside braces, at `lx.pos`: a variable's name, a
+# number of any length, or one special character; "" where none stands.
+#
+# - `lx`: the lexer.
+function read_param_name(@lx: lexer.Lexer) -> str
+    start = lx.pos
+
+    if lx.pos >= lx.text.len()
+        return ""
+
+    c = lx.text[lx.pos]
+
+    if words.is_name_start(c)
+        while lx.pos < lx.text.len() && words.is_name_byte(lx.text[lx.pos])
+            lx.pos @ lx.pos + 1
+    else if c >= '0' && c <= '9'
+        while lx.pos < lx.text.len() && lx.text[lx.pos] >= '0' && lx.text[lx.pos] <= '9'
+            lx.pos @ lx.pos + 1
+    else if c == '?' || c == '#' || c == '$' || c == '!' || c == '@' || c == '*' || c == '-'
+        lx.pos @ lx.pos + 1
+
+    return lx.text.slice(from: start, to: lx.pos)
+
+# `${...}`: a parameter, its length, or a parameter with an operator and a
+# word.
+#
+# - `lx`: the lexer, at the `$`.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_braced(@lx: lexer.Lexer, in_quotes: bool) -> ast.Part?
+    at = lx.pos
+    lx.pos @ lx.pos + 2
+
+    if lx.pos + 1 < lx.text.len() && lx.text[lx.pos] == '#' && lx.text[lx.pos + 1] != '}'
+        lx.pos @ lx.pos + 1
+        name = read_param_name(@lx)
+
+        if name == "" || lx.pos >= lx.text.len() || lx.text[lx.pos] != '}'
+            return lexer.mistake(@lx, at: at, message: "a bad substitution: `${#` takes a parameter's name and `}`")
+        lx.pos @ lx.pos + 1
+        return ok(.length(name: name, in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+    name = read_param_name(@lx)
+
+    if name == ""
+        if lx.pos >= lx.text.len()
+            return lexer.unfinished(@lx, at: at, message: "a `${` is never closed by `}`")
+        return lexer.mistake(@lx, at: at, message: "a bad substitution: `${` takes a parameter's name")
+
+    if lx.pos >= lx.text.len()
+        return lexer.unfinished(@lx, at: at, message: "a `${` is never closed by `}`")
+
+    if lx.text[lx.pos] == '}'
+        lx.pos @ lx.pos + 1
+        return ok(.param(name: name, op: "", arg: [], in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+    for o in brace_ops()
+        if lexer.has_text_at(text: lx.text, piece: o, at: lx.pos)
+            lx.pos @ lx.pos + o.len()
+
+            arg_mode: words.Mode = if in_quotes
+                .brace_double
+            else
+                .brace_bare
+
+            arg = words.scan_parts(@lx, mode: arg_mode)?
+            lx.pos @ lx.pos + 1
+            return ok(.param(name: name, op: o, arg: arg, in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+    return lexer.mistake(
+        @lx,
+        at: at,
+        message: f"a bad substitution: `{lx.text.slice(from: lx.pos, to: words.char_end(lx.text, at: lx.pos))}` after `${{{name}`"
+    )
+
+# The byte index of the `)` that closes the command substitution whose text
+# begins at `from`: quotes, escapes, comments, nested brackets and the
+# patterns of a `case` are stepped over. Fails `not_found` where none does.
+#
+# - `text`: the text.
+# - `from`: the index just past `$(`.
+function closing_paren(text: str, from: i64) -> i64?
+    depth @= 0
+    cases @= 0
+    i @= from
+    word_start @= true
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '\\'
+            i @ i + 2
+            word_start @ false
+        else if b == '\''
+            i @ i + 1
+
+            while i < text.len() && text[i] != '\''
+                i @ i + 1
+
+            i @ i + 1
+            word_start @ false
+        else if b == '"'
+            i @ i + 1
+
+            while i < text.len() && text[i] != '"'
+                if text[i] == '\\'
+                    i @ i + 1
+                i @ i + 1
+
+            i @ i + 1
+            word_start @ false
+        else if b == '#' && word_start
+            while i < text.len() && text[i] != '\n'
+                i @ i + 1
+        else if b == '('
+            depth @ depth + 1
+            i @ i + 1
+            word_start @ true
+        else if b == ')'
+            if depth == 0 && cases == 0
+                return ok(i)
+
+            if depth > 0
+                depth @ depth - 1
+            i @ i + 1
+            word_start @ true
+        else if word_start && lexer.has_text_at(text: text, piece: "case", at: i) && ends_word(text, at: i + 4)
+            cases @ cases + 1
+            i @ i + 4
+            word_start @ false
+        else if word_start && lexer.has_text_at(text: text, piece: "esac", at: i) && ends_word(text, at: i + 4)
+            if cases > 0
+                cases @ cases - 1
+            i @ i + 4
+            word_start @ false
+        else
+            word_start @ lexer.is_meta(b)
+            i @ i + 1
+
+    return fail(code: "not_found", msg: "no closing parenthesis")
+
+# Whether a word that ends just before `at` ends there: the text's end, a
+# blank or an operator follows.
+#
+# - `text`: the text.
+# - `at`: the byte index after the word.
+function ends_word(text: str, at: i64) -> bool
+    return at >= text.len() || lexer.is_meta(text[at])
+
+# The byte index of the first `)` of the `))` that closes an arithmetic
+# expansion whose text begins at `from`; fails `not_found` where the brackets
+# close otherwise, which makes it a command substitution of a subshell.
+#
+# - `text`: the text.
+# - `from`: the index just past `$((`.
+function closing_arith(text: str, from: i64) -> i64?
+    depth @= 0
+    i @= from
+
+    while i < text.len()
+        b = text[i]
+
+        if b == '('
+            depth @ depth + 1
+        else if b == ')'
+            if depth == 0
+                if i + 1 < text.len() && text[i + 1] == ')'
+                    return ok(i)
+                return fail(code: "not_found", msg: "the brackets close otherwise")
+            depth @ depth - 1
+        i @ i + 1
+
+    return fail(code: "not_found", msg: "no closing brackets")
+
+# `$((...))`: its text read into parts, which are expanded before the
+# expression is computed.
+#
+# - `lx`: the lexer, at the `$`.
+# - `close`: the index of the first `)` of the closing `))`.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_arith(@lx: lexer.Lexer, close: i64, in_quotes: bool) -> ast.Part?
+    at = lx.pos
+    inner = lexer.new_lexer(
+        lx.text.slice(from: at + 3, to: close),
+        base: lx.base + at + 3,
+        source: lx.source,
+        next_doc: lx.next_doc
+    )
+    sub @= inner
+    sub.depth @ lx.depth
+
+    parts = match words.scan_parts(@sub, mode: .body)
+        .ok p => p
+        .err e =>
+            lx.error_at @ sub.error_at
+            return fail(code: e.code, msg: e.msg)
+
+    lx.pos @ close + 2
+    return ok(.arith(parts: parts, in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+# `$(...)`: the commands between the brackets, parsed now so a mistake in
+# them is told before anything runs.
+#
+# - `lx`: the lexer, at the `$`.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_command(@lx: lexer.Lexer, in_quotes: bool) -> ast.Part?
+    at = lx.pos
+
+    close = match closing_paren(lx.text, from: at + 2)
+        .ok c  => c
+        .err _ => return lexer.unfinished(@lx, at: at, message: "a `$(` is never closed by `)`")
+
+    inner = lx.text.slice(from: at + 2, to: close)
+    body = parser.parse_nested(@lx, text: inner, base: lx.base + at + 2)?
+    lx.pos @ close + 1
+    return ok(.command(text: inner, body: body, in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+# A backquoted command: its text, with `\$`, ``\` `` and `\\` read as the
+# character they escape, parsed as `$(...)` is.
+#
+# - `lx`: the lexer, at the opening backquote.
+# - `in_quotes`: whether it stands inside double quotes.
+function read_backquote(@lx: lexer.Lexer, in_quotes: bool) -> ast.Part?
+    at = lx.pos
+    pieces: [str] @= []
+    i @= at + 1
+    run @= i
+
+    while i < lx.text.len() && lx.text[i] != '`'
+        if lx.text[i] == '\\' && i + 1 < lx.text.len() && (lx.text[i + 1] == '$' || lx.text[i + 1] == '`' || lx.text[i + 1] == '\\')
+            pieces @ pieces.push(lx.text.slice(from: run, to: i))
+            run @ i + 1
+            i @ i + 2
+        else
+            i @ i + 1
+
+    if i >= lx.text.len()
+        return lexer.unfinished(@lx, at: at, message: "a backquote is never closed")
+
+    pieces @ pieces.push(lx.text.slice(from: run, to: i))
+    inner = pieces.join("")
+    body = parser.parse_nested(@lx, text: inner, base: lx.base + at + 1)?
+    lx.pos @ i + 1
+    return ok(.command(text: inner, body: body, in_quotes: in_quotes, at: lexer.place(lx, at: at)))
+
+test "closing_paren: nested brackets, quotes and a case pattern"
+    assert closing_paren("echo (a) ')' \")\")", from: 0).must() == 16
+    assert closing_paren("case x in a) echo;; esac)", from: 0).must() == 24
+    assert closing_paren("never", from: 0).is_err()

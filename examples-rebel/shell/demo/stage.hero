@@ -1,0 +1,76 @@
+# The demo: a scripted session, read from the program's input, played in a
+# folder the demo makes under `build/shell-demo/` and removes after. Its
+# `bin/` holds a link to this binary for each program of `tools/kit` and one
+# named `shell`, and `PATH` names that folder alone, so every child the
+# session starts is one of these, the same on every system, and the session
+# reads the same everywhere. The shell starts with no variable of the
+# environment but `PATH` and `HOME`, the session's folder, and writes its
+# messages to its output, so the transcript holds them where they were said.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/os
+use <rebel>/path
+
+use demo/editing
+use exec/run
+use exec/script
+use exec/state
+use exec/streams
+use tools/kit
+
+# The folder the demo plays in.
+constant ROOT: str
+    "build/shell-demo"
+
+# Plays the session written on the program's input and answers its status.
+#
+# - `exe`: this program's own path, which the links name.
+function play(exe: str) -> i64?
+    started_in = os.working_dir()?
+    _ = fs.remove_all(ROOT).is_err()
+    fs.make_dir_all(ROOT + "/bin")?
+    fs.make_dir_all(ROOT + "/work")?
+    names @= kit.names()
+    names @ names.push("shell")
+
+    for name in names
+        place_program(exe: exe, to: path.join_all([ROOT, "bin", name + os.executable_suffix()]))?
+
+    bin = fs.to_abs(ROOT + "/bin")?
+    work = fs.to_abs(ROOT + "/work")?
+    session = io.read_all_text(io.stdin())?
+    os.change_dir(work)?
+    sh @= state.new_shell(name: "shell", exe: exe, input: io.stdin(), out: io.stdout(), err: io.stdout())
+    sh.options.transcript @ true
+    state.set(@sh, name: "PATH", value: bin)
+    state.export(@sh, name: "PATH")
+    state.set(@sh, name: "HOME", value: path.to_slash(work))
+    state.export(@sh, name: "HOME")
+    state.set(@sh, name: "PWD", value: path.to_slash(work))
+    _ = script.run_text(@sh, name: "session", text: session, place: streams.standard(sh), transcript: true)
+
+    if state.going_on(sh)
+        editing.play(@sh)
+
+    run.release_jobs(@sh)
+
+    status = match sh.flow
+        .exiting e                                         => e.code
+        .normal | .breaking _ | .continuing _ | .returning => sh.status
+
+    os.change_dir(started_in)?
+    fs.remove_all(ROOT)?
+    return ok(status)
+
+# Puts this binary at `to` under another name: a hard link, which costs no
+# space, or a copy where the system will not link it.
+#
+# - `exe`: this program's path.
+# - `to`: the new name.
+function place_program(exe: str, to: str) -> ()?
+    match fs.hard_link(existing: exe, name: to)
+        .ok _ => return ok()
+        .err _ =>
+            _ = fs.copy_file_with_facts(from: exe, to: to)?
+            return ok()

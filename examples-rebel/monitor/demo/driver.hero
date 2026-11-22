@@ -1,0 +1,336 @@
+# The demo's monitor, run on a thread of its own while the program's first
+# thread plays the world outside (the collector and the thermometer): the
+# configuration written and read back as a person's file is, the monitor
+# started on the fixed clock, and each moment of the script played: its
+# steps, then its collection, then its frame. Every line the monitor tells
+# is printed with its time; a tool run in another process (`monitor ctl`,
+# `monitor check`) is printed with what it printed.
+#
+# A step that waits on the world (a watch telling a change, a service's
+# memory growing, a process ending) waits in real time, bounded; the clock
+# the monitor reads moves only by the script.
+
+use <rebel>/fs
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/path
+use <rebel>/poll
+use <rebel>/process
+use <rebel>/strings
+use <rebel>/time
+
+use collect/files
+use conf/reading
+use conf/settings
+use control/lock
+use dash/draw
+use dash/view
+use demo/account
+use demo/script
+use engine/commands
+use engine/monitor
+use services/supervisor
+
+# The longest a step waits on the world, in real time.
+constant WAIT_SECONDS: i64
+    30
+
+# The frame's size.
+constant FRAME_WIDTH: i64
+    80
+
+# Its rows.
+constant FRAME_HEIGHT: i64
+    24
+
+# What the driver is handed by the first thread.
+record Handed
+    # The demo's folder.
+    dir: str
+    # The monitor's own program.
+    exe: str
+    # The thermometer's port, "" where none could be made.
+    port: str
+    # The collector's base URL.
+    otlp: str
+
+# The thread's body: the whole run, then the collector asked to stop
+# whatever came of it. Answers what went wrong, "" where nothing did.
+#
+# - `arg`: the `Handed` values as JSON.
+function drive(arg: str) -> str
+    handed = handed_of(arg)
+
+    problem = match handed
+        .ok h =>
+            match run(h)
+                .ok _  => ""
+                .err e => f"{e.code}: {e.msg}"
+        .err e => f"{e.code}: {e.msg}"
+
+    match handed
+        .ok h =>
+            client @= http.default_client()
+            client.deadline @ time.seconds(5).default(client.deadline)
+            _ = http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []).is_err()
+        .err _ => _ = 0
+
+    return problem
+
+# The `Handed` values `arg` holds.
+#
+# - `arg`: JSON.
+function handed_of(arg: str) -> Handed?
+    v = json.parse(arg)?
+    return ok(
+        Handed(dir: json.text_of(json.member(v, key: "dir")?)?, exe: json.text_of(json.member(v, key: "exe")?)?, port: json.text_of(json.member(v, key: "port")?)?, otlp: json.text_of(json.member(v, key: "otlp")?)?)
+    )
+
+# The `Handed` values as JSON, for the thread's argument.
+#
+# - `h`: the values.
+function arg_of(h: Handed) -> str
+    v: json.Value = .object(
+        members: {"dir": .text(v: h.dir), "exe": .text(v: h.exe), "port": .text(v: h.port), "otlp": .text(v: h.otlp)}
+    )
+    return json.format(v).default("{}")
+
+# The moment `seconds` after the start.
+#
+# - `start`: the start.
+# - `seconds`: the seconds.
+function moment(start: time.Instant, seconds: i64) -> time.Instant
+    return time.add(start, d: time.seconds(seconds).default(time.nanoseconds(0))).default(start)
+
+# Prints `line` with the time of day of `at` before it.
+#
+# - `at`: the moment.
+# - `line`: the line.
+function say(at: time.Instant, line: str)
+    print(view.clock_of(at.unix_nanoseconds) + " " + line)
+
+# Prints every line the monitor told since the last print.
+#
+# - `m`: the monitor.
+# - `at`: the moment.
+function say_told(@m: monitor.Monitor, at: time.Instant)
+    for line in monitor.take_told(@m)
+        say(at, line: line)
+
+# The whole run, its account printed at the end.
+#
+# - `h`: what the first thread handed.
+#
+# Fails where the configuration does not read or the monitor cannot start.
+function run(h: Handed) -> ()?
+    config_path = path.join_all([h.dir, "demo.toml"])
+    write_file(path: config_path, text: script.config_text(exe: h.exe, dir: h.dir, port: h.port, otlp: h.otlp))?
+    c = reading.read(config_path)?
+
+    for w in c.watches
+        fs.make_dir_all(w.path)?
+
+    held @= lock.take(c.name)?
+    ran = run_locked(h, c: c, config_path: config_path)
+    lock.release(@held)
+    return ran
+
+# The run, the configuration's lock held as a running monitor holds it.
+#
+# - `h`: what the first thread handed.
+# - `c`: the configuration, read.
+# - `config_path`: its file.
+#
+# Fails where the monitor cannot start.
+function run_locked(h: Handed, c: settings.Config, config_path: str) -> ()?
+    start = time.parse(script.START, layout: .rfc3339)?
+    m @= monitor.start(c, at: start, handed: h.port == "")?
+
+    if h.port == ""
+        m.handed @ script.temperatures()
+    print(f"== the monitor, its clock from {script.START}, a collection every {script.STEP_SECONDS} seconds")
+    say_told(@m, at: start)
+    steps = script.steps()
+    next: i64 @= 0
+    seconds: i64 @= 0
+
+    while seconds <= script.END_SECONDS
+        at = moment(start, seconds: seconds)
+
+        while next < steps.len() && steps[next].at == seconds && steps[next].action != .frame
+            play(@m, step: steps[next], h: h, config_path: config_path, at: at)
+            say_told(@m, at: at)
+            next @ next + 1
+
+        monitor.collect(@m, at: at)
+        pump(@m, at: at)
+        say_told(@m, at: at)
+
+        while next < steps.len() && steps[next].at == seconds && steps[next].action == .frame
+            print(f"== the dashboard at {view.clock_of(at.unix_nanoseconds)}")
+
+            for line in draw.frame_lines(view.view_of(m.config, sup: m.sup, s: m.series, a: m.alerts, j: m.journal, status: m.sensor.status, now: at), width: FRAME_WIDTH, height: FRAME_HEIGHT)
+                print(line)
+
+            next @ next + 1
+
+        seconds @ seconds + script.STEP_SECONDS
+
+    end = moment(start, seconds: script.END_SECONDS)
+    print("== the monitor stops")
+    _ = monitor.stop(@m, at: end)
+    say_told(@m, at: end)
+
+    for line in account.lines_of(m, dir: h.dir)
+        print(line)
+
+    return ok()
+
+# Reads what the services wrote since the last look, without waiting.
+#
+# - `m`: the monitor.
+# - `at`: the moment, the time of the lines read.
+function pump(@m: monitor.Monitor, at: time.Instant)
+    for e in poll.wait(m.set, limit: time.nanoseconds(0)).default([])
+        _ = supervisor.read_ready(@m.sup, key: e.key, at: at)
+
+# Plays one step at `at`.
+#
+# - `m`: the monitor.
+# - `step`: the step.
+# - `h`: what the first thread handed.
+# - `config_path`: the demo's configuration file.
+# - `at`: the moment.
+function play(@m: monitor.Monitor, step: script.Step, h: Handed, config_path: str, at: time.Instant)
+    if step.said != ""
+        say(at, line: "-- " + step.said)
+
+    match step.action
+        .write w =>
+            full = path.join_all([h.dir, w.path])
+
+            match fs.make_dir_all(path.parent(full))
+                .ok _  => _ = 0
+                .err e => say(at, line: f"!! {e.code}: {e.msg}")
+
+            match write_file(path: full, text: w.text)
+                .ok _  => settle(@m, relative: w.path, at: at)
+                .err e => say(at, line: f"!! {e.code}: {e.msg}")
+        .remove r =>
+            match fs.remove(path.join_all([h.dir, r.path]))
+                .ok _  => settle(@m, relative: r.path, at: at)
+                .err e => say(at, line: f"!! {e.code}: {e.msg}")
+        .ctl c =>
+            words @= ["ctl", "--socket", m.config.control]
+
+            for word in c.words
+                words @ words.push(word)
+
+            run_tool(@m, exe: h.exe, words: words, shown: "monitor ctl " + c.words.join(" "), at: at, serves: true)
+        .check => run_tool(
+            @m,
+            exe: h.exe,
+            words: ["check", "--config", config_path],
+            shown: "monitor check --config demo.toml",
+            at: at,
+            serves: false
+        )
+        .tell t =>
+            match supervisor.send(m.sup, name: t.service, line: t.line)
+                .ok _  => _ = 0
+                .err e => say(at, line: f"!! {e.code}: {e.msg}")
+        .await_memory =>
+            if !memory_passed(m, name: "cache")
+                say(at, line: f"!! the cache's memory did not pass its limit within {WAIT_SECONDS} s")
+        .await_end ae =>
+            if !ended(@m, name: ae.service)
+                say(at, line: f"!! {ae.service} did not end within {WAIT_SECONDS} s")
+        .frame => _ = 0
+
+# Waits for the watch of the path `relative` names to tell its change, and
+# notes it.
+#
+# - `m`: the monitor.
+# - `relative`: the path below the demo's folder: `watched/<name>/...`.
+# - `at`: the moment.
+function settle(@m: monitor.Monitor, relative: str, at: time.Instant)
+    name = strings.split(s: relative, sep: "/")[1]
+
+    for i in range(from: 0, to: m.files.watched.len())
+        if m.files.watched[i].spec.name == name
+            changes = files.take_settled(
+                @m.files,
+                i: i,
+                within: time.seconds(WAIT_SECONDS).default(time.nanoseconds(0))
+            )
+
+            if changes.len() == 0
+                say(at, line: f"!! the watch of {name} told nothing within {WAIT_SECONDS} s")
+            monitor.note_changes(@m, i: i, changes: changes, at: at)
+
+# Whether the memory of the service `name` passed its limit within the
+# wait.
+#
+# - `m`: the monitor.
+# - `name`: the service.
+function memory_passed(m: monitor.Monitor lent, name: str) -> bool
+    limit = settings.service_named(m.config, name: name).default(m.config.services[0]).memory_limit
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while time.elapsed(began).default(time.nanoseconds(0)).nanoseconds < WAIT_SECONDS * 1_000_000_000
+        match supervisor.usage_of(m.sup, name: name)
+            .ok usage =>
+                if usage.resident_bytes > limit
+                    return true
+            .err _ => _ = 0
+
+        time.sleep(time.milliseconds(20).default(time.nanoseconds(0)))
+
+    return false
+
+# Whether the service `name`'s process ended within the wait.
+#
+# - `m`: the monitor.
+# - `name`: the service.
+function ended(@m: monitor.Monitor, name: str) -> bool
+    began = time.mark().default(time.Mark(nanoseconds: 0))
+
+    while time.elapsed(began).default(time.nanoseconds(0)).nanoseconds < WAIT_SECONDS * 1_000_000_000
+        if supervisor.has_ended(@m.sup, name: name)
+            return true
+        time.sleep(time.milliseconds(10).default(time.nanoseconds(0)))
+
+    return false
+
+# Runs the monitor's own program with `words` in another process, serving
+# its one control request where it makes one, and prints the command and
+# what it printed.
+#
+# - `m`: the monitor.
+# - `exe`: the program.
+# - `words`: its arguments.
+# - `shown`: the command as the transcript shows it.
+# - `at`: the moment.
+# - `serves`: whether the tool asks the monitor over its control socket.
+function run_tool(@m: monitor.Monitor, exe: str, words: [str], shown: str, at: time.Instant, serves: bool)
+    say(at, line: "$ " + shown)
+    command = process.with_error_to_output(process.with_output(process.command(exe, words), to: .pipe))
+
+    match process.start(command)
+        .err e => say(at, line: f"!! {e.code}: {e.msg}")
+        .ok started =>
+            child @= started
+
+            if serves && commands.serve(@m, within: time.seconds(WAIT_SECONDS).default(time.nanoseconds(0)), most: 1, at: at) == 0
+                say(at, line: "!! no request came on the control socket")
+            said = io.read_all_text(child.output).default("")
+
+            for line in strings.lines(said)
+                print("           " + line)
+
+            match process.wait(@child)
+                .ok status =>
+                    if !process.is_success(status)
+                        print("           (" + process.format_status(status) + ")")
+                .err e => say(at, line: f"!! {e.code}: {e.msg}")

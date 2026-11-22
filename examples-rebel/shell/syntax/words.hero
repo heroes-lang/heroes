@@ -1,0 +1,325 @@
+# One word of the shell read into its parts: bare text, quoted text and the
+# expansions a `$` or a backquote begins, which `syntax/dollar` reads, with
+# the quoting rules of POSIX (XCU 2.2 and 2.6). What a part
+# was written as decides, when the word is expanded, whether its text may be
+# split into fields and whether its `*`, `?` and `[` match file names, so the
+# parts keep that and nothing else of the quotes.
+#
+# Each reading function advances `lx.pos` over what it read and never stops
+# inside a character: every byte that ends a run of text is ASCII.
+
+use syntax/ast
+use syntax/dollar
+use syntax/lexer
+
+# Where a run of parts is being read, which decides what ends it and what a
+# backslash or a quote means there.
+variant Mode
+    # A word: a blank, a line end or an operator ends it.
+    bare
+    # Inside `"..."`: the closing quote ends it and is taken.
+    double
+    # A here-document's body or an arithmetic text: only its end ends it.
+    body
+    # The word after an operator inside `${...}`, outside double quotes:
+    # the closing brace ends it, which the caller takes.
+    brace_bare
+    # The same inside double quotes.
+    brace_double
+
+# Whether text read in `mode` is quoted: never split, its glob characters
+# standing for themselves.
+#
+# - `mode`: the mode.
+function is_quoted(mode: Mode) -> bool
+    return match mode
+        .bare | .brace_bare             => false
+        .double | .body | .brace_double => true
+
+# Whether `b` ends a run of plain text read in `mode`.
+#
+# - `b`: the byte.
+# - `mode`: the mode.
+function ends_run(b: u8, mode: Mode) -> bool
+    if b == '\\' || b == '$' || b == '`'
+        return true
+
+    return match mode
+        .bare         => lexer.is_meta(b) || b == '\'' || b == '"'
+        .brace_bare   => b == '}' || b == '\'' || b == '"'
+        .double       => b == '"'
+        .brace_double => b == '}'
+        .body         => false
+
+# Whether `b` may begin a variable's name: an ASCII letter or `_`.
+#
+# - `b`: the byte.
+function is_name_start(b: u8) -> bool
+    return b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b == '_'
+
+# Whether `b` may stand inside a variable's name.
+#
+# - `b`: the byte.
+function is_name_byte(b: u8) -> bool
+    return is_name_start(b) || b >= '0' && b <= '9'
+
+# Whether `s` is a valid variable name: a letter or `_`, then letters, digits
+# and `_`.
+#
+# - `s`: the text.
+function is_name(s: str) -> bool
+    if s.len() == 0 || !is_name_start(s[0])
+        return false
+
+    for c in s.chars()
+        if !is_name_byte(c[0])
+            return false
+
+    return true
+
+# Adds `text` to `parts`, joined to the part before it where both are text of
+# the same quoting, so a word holds the fewest parts.
+#
+# - `parts`: the parts read so far.
+# - `text`: the text read.
+# - `quoted`: whether it was quoted.
+function add_text(@parts: [ast.Part], text: str, quoted: bool)
+    if parts.len() > 0
+        last = parts[parts.len() - 1]
+
+        match last
+            .literal l =>
+                if !quoted
+                    parts[parts.len() - 1] @ .literal(text: l.text + text)
+                    return
+            .quoted q =>
+                if quoted
+                    parts[parts.len() - 1] @ .quoted(text: q.text + text)
+                    return
+            .param _ | .length _ | .command _ | .arith _ | .tilde _ => _ = 0
+
+    if quoted
+        parts @ parts.push(.quoted(text: text))
+    else
+        parts @ parts.push(.literal(text: text))
+
+# Adds every part of `more` to `parts`, text joined as `add_text` joins it.
+#
+# - `parts`: the parts read so far.
+# - `more`: the parts to add.
+function add_parts(@parts: [ast.Part], more: [ast.Part])
+    for p in more
+        match p
+            .literal l                                              => add_text(@parts, text: l.text, quoted: false)
+            .quoted q                                               => add_text(@parts, text: q.text, quoted: true)
+            .param _ | .length _ | .command _ | .arith _ | .tilde _ => parts @ parts.push(p)
+
+# The byte index just past the character that begins at `at`.
+#
+# - `text`: the text.
+# - `at`: a character's first byte.
+function char_end(text: str, at: i64) -> i64
+    b = text[at]
+
+    n = if b < 128
+        1
+    else if b < 224
+        2
+    else if b < 240
+        3
+    else
+        4
+
+    if at + n > text.len()
+        return text.len()
+
+    return at + n
+
+# The word that begins at `lx.pos`, which is no blank and no operator.
+#
+# - `lx`: the lexer.
+function read_word(@lx: lexer.Lexer) -> ast.Word?
+    start = lx.pos
+    parts: [ast.Part] @= []
+
+    if lx.text[lx.pos] == '~'
+        match read_tilde(@lx)
+            .ok t  => parts @ parts.push(t)
+            .err _ => _ = 0
+
+    add_parts(parts: @parts, more: scan_parts(@lx, mode: .bare)?)
+    return ok(ast.Word(parts: parts, at: lexer.place(lx, at: start)))
+
+# A `~` or `~user` at a word's start, up to a `/` or the word's end; fails
+# `not_found`, reading nothing, where what follows the `~` is no user's name.
+#
+# - `lx`: the lexer, at the `~`.
+function read_tilde(@lx: lexer.Lexer) -> ast.Part?
+    i @= lx.pos + 1
+
+    while i < lx.text.len() && lx.text[i] != '/' && !lexer.is_meta(lx.text[i])
+        b = lx.text[i]
+
+        if !(is_name_byte(b) || b == '.' || b == '-')
+            return fail(code: "not_found", msg: "no user's name after the tilde")
+        i @ i + 1
+
+    user = lx.text.slice(from: lx.pos + 1, to: i)
+    lx.pos @ i
+    return ok(.tilde(user: user))
+
+# The parts read from `lx.pos` until what ends `mode`.
+#
+# - `lx`: the lexer.
+# - `mode`: where the parts stand.
+function scan_parts(@lx: lexer.Lexer, mode: Mode) -> [ast.Part]?
+    parts: [ast.Part] @= []
+    opened = lx.pos
+    quoted = is_quoted(mode)
+
+    while true
+        if lx.pos >= lx.text.len()
+            return match mode
+                .bare | .body => ok(parts)
+                .double       => lexer.unfinished(@lx, at: opened - 1, message: "a double quote is never closed")
+                .brace_bare | .brace_double => lexer.unfinished(
+                    @lx,
+                    at: opened,
+                    message: "a `${` is never closed by `}`"
+                )
+
+        b = lx.text[lx.pos]
+
+        stop = match mode
+            .bare                       => lexer.is_meta(b)
+            .double                     => b == '"'
+            .brace_bare | .brace_double => b == '}'
+            .body                       => false
+
+        if stop
+            if mode == .double
+                lx.pos @ lx.pos + 1
+
+                if parts.len() == 0
+                    parts @ parts.push(.quoted(text: ""))
+            return ok(parts)
+
+        if b == '\\'
+            read_escape(@lx, @parts, mode: mode)
+        else if b == '\'' && !quoted
+            add_text(@parts, text: read_single(@lx)?, quoted: true)
+        else if b == '"' && !quoted
+            lx.pos @ lx.pos + 1
+            add_parts(parts: @parts, more: scan_parts(@lx, mode: .double)?)
+        else if b == '$'
+            add_parts(parts: @parts, more: [dollar.read_dollar(@lx, in_quotes: quoted)?])
+        else if b == '`'
+            parts @ parts.push(dollar.read_backquote(@lx, in_quotes: quoted)?)
+        else
+            start = lx.pos
+
+            while lx.pos < lx.text.len() && !ends_run(lx.text[lx.pos], mode: mode)
+                lx.pos @ lx.pos + 1
+
+            add_text(@parts, text: lx.text.slice(from: start, to: lx.pos), quoted: quoted)
+
+    return ok(parts)
+
+# Reads a backslash and what it escapes, as `mode` reads one: outside quotes
+# it quotes the next character, inside them only `$`, a backquote, `\`, a
+# line end and, in double quotes, `"`; a line end after it joins two lines.
+#
+# - `lx`: the lexer, at the backslash.
+# - `parts`: the parts it adds to.
+# - `mode`: where it stands.
+function read_escape(@lx: lexer.Lexer, @parts: [ast.Part], mode: Mode)
+    if lx.pos + 1 >= lx.text.len()
+        add_text(@parts, text: "\\", quoted: true)
+        lx.pos @ lx.pos + 1
+        return
+
+    next = lx.text[lx.pos + 1]
+
+    if next == '\n'
+        lx.pos @ lx.pos + 2
+        return
+
+    special = match mode
+        .bare | .brace_bare => true
+        .double             => next == '$' || next == '`' || next == '\\' || next == '"'
+        .brace_double       => next == '$' || next == '`' || next == '\\' || next == '"' || next == '}'
+        .body               => next == '$' || next == '`' || next == '\\'
+
+    if special
+        end = char_end(lx.text, at: lx.pos + 1)
+        add_text(@parts, text: lx.text.slice(from: lx.pos + 1, to: end), quoted: true)
+        lx.pos @ end
+    else
+        add_text(@parts, text: "\\", quoted: true)
+        lx.pos @ lx.pos + 1
+
+# The text between single quotes, where every character stands for itself.
+#
+# - `lx`: the lexer, at the opening quote.
+function read_single(@lx: lexer.Lexer) -> str?
+    opened = lx.pos
+    i @= lx.pos + 1
+
+    while i < lx.text.len() && lx.text[i] != '\''
+        i @ i + 1
+
+    if i >= lx.text.len()
+        return lexer.unfinished(@lx, at: opened, message: "a single quote is never closed")
+
+    lx.pos @ i + 1
+    return ok(lx.text.slice(from: opened + 1, to: i))
+
+# The parts of a here-document's body whose delimiter was bare: `$`
+# expansions and backquotes live, a backslash escaping only `$`, a backquote,
+# `\` and a line end, every other character standing for itself.
+#
+# - `lx`: the lexer that read the body, which keeps where a mistake is.
+# - `body`: the body's text.
+# - `at`: the byte index of the lexer's text where the body began.
+function body_parts(@lx: lexer.Lexer, body: str, at: i64) -> [ast.Part]?
+    sub @= lexer.new_lexer(body, base: lx.base + at, source: lx.source, next_doc: lx.next_doc)
+    sub.depth @ lx.depth
+
+    return match scan_parts(@sub, mode: .body)
+        .ok p => ok(p)
+        .err e =>
+            lx.error_at @ sub.error_at
+            fail(code: e.code, msg: e.msg)
+
+# The parts of `text` read as one bare word, for the tests.
+#
+# - `text`: the word.
+function parts_of(text: str) -> [ast.Part]
+    lx @= lexer.new_lexer(text, base: 0, source: 0, next_doc: 0)
+    return read_word(@lx).must().parts
+
+test "read_word: quotes, escapes and a variable"
+    p = parts_of("a'b c'\\*\"$x d\"")
+    assert p.len() == 4
+    assert p[0] == .literal(text: "a")
+    assert p[1] == .quoted(text: "b c*")
+    assert p[3] == .quoted(text: " d")
+
+test "read_word: a braced operator, a length and an empty pair of quotes"
+    p = parts_of("${name:-none}")
+
+    match p[0]
+        .param x                                                              => assert x.name == "name" && x.op == ":-" && x.arg == [.literal(text: "none")]
+        .literal _ | .quoted _ | .length _ | .command _ | .arith _ | .tilde _ => assert false
+
+    assert parts_of("${#name}")[0] == .length(name: "name", in_quotes: false, at: ast.Place(source: 0, offset: 0))
+    assert parts_of("\"\"") == [.quoted(text: "")]
+
+test "read_word: a tilde, a lone dollar and special parameters"
+    assert parts_of("~/bin")[0] == .tilde(user: "")
+    assert parts_of("$")[0] == .literal(text: "$")
+    p = parts_of("$?$#")
+    assert p.len() == 2
+
+test "is_name: letters, digits and underscores"
+    assert is_name("_a1") && !is_name("1a") && !is_name("") && !is_name("a-b")

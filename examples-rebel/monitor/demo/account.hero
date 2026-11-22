@@ -1,0 +1,121 @@
+# The account the demo prints once its monitor has stopped: each service's
+# starts, restarts and last end; the alerts that fired and those still
+# firing; the notifications the notifier wrote; the control socket's
+# requests; the journal and the log files with their lines, old files set
+# aside by size among them; and the self-benchmark's rounds. Every line is
+# one the same run prints on every machine: no time of the system, no path,
+# no figure of the machine.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+use <rebel>/term
+
+use alerts/engine
+use bench/selfbench
+use engine/monitor
+
+# The account of the stopped monitor `m`, whose demo ran in `dir`.
+#
+# - `m`: the monitor, stopped.
+# - `dir`: the demo's folder.
+function lines_of(m: monitor.Monitor lent, dir: str) -> [str]
+    lines: [str] @= ["== the account"]
+    rows: [[str]] @= []
+
+    for s in m.sup.services
+        rows @ rows.push([s.spec.name, to_str(s.starts), to_str(s.restarts), s.last_end])
+
+    table = term.format_table(
+        term.Table(header: ["service", "starts", "restarts", "last end"], rows: rows, align: [], border: .simple)
+    )
+    add_all(lines: @lines, more: indented(strings.lines(table)))
+    fired: {str: i64} @= {}
+
+    for t in m.alerts.history
+        if t.after == .firing
+            fired[t.name] @ fired[t.name].default(0) + 1
+
+    lines @ lines.push(f"alerts: {m.alerts.history.len()} transitions; fired:")
+
+    for name in sort(keys(fired))
+        times = fired[name].must()
+        lines @ lines.push(f"  {name}, {times} time" + plural(times))
+
+    still: [str] @= []
+
+    for a in engine.active_of(m.alerts)
+        if a.phase == .firing
+            still @ still.push(engine.alert_name(rule: a.rule, label: a.label))
+
+    lines @ lines.push(f"firing at the end: {joined(still)}")
+    lines @ lines.push(f"notifications: {m.notified} run, {m.notify_failures} failed; what the notifier wrote:")
+    add_all(
+        lines: @lines,
+        more: indented(strings.lines(read_file(path.join_all([dir, "notifications.txt"])).default("")))
+    )
+    lines @ lines.push(f"control socket: {m.control.served} requests answered, {m.control.refused} refused")
+    lines @ lines.push(f"journal: {m.journal.written} lines written, {m.journal.lost} lost")
+    lines @ lines.push("log files, the lines each holds:")
+    add_all(lines: @lines, more: indented(log_files(path.join_all([dir, "logs"]))))
+    lines @ lines.push("the self-benchmark of the monitor's work:")
+    results = selfbench.measure_all(selfbench.quick_settings(), scanned: path.join_all([dir, "watched"]))
+    add_all(lines: @lines, more: indented(selfbench.lines_of(results, exact: m.config.exact_figures)))
+    return lines
+
+# The files of the log folder `dir`, sorted by name, each with its lines.
+#
+# - `dir`: the folder.
+function log_files(dir: str) -> [str]
+    names: [str] @= []
+
+    for e in fs.read_dir(dir).default([])
+        names @ names.push(e.name)
+
+    found: [str] @= []
+
+    for name in sort(names)
+        text = read_file(path.join_all([dir, name])).default("")
+        found @ found.push(f"{strings.pad_end(s: name, width: 40, pad: " ")} {strings.count_of(s: text, substr: "\n")}")
+
+    return found
+
+# `lines`, each two spaces in.
+#
+# - `lines`: the lines.
+function indented(lines: [str]) -> [str]
+    out: [str] @= []
+
+    for l in lines
+        out @ out.push("  " + l)
+
+    return out
+
+# Adds `more` to the end of `lines`.
+#
+# - `lines`: the caller's lines.
+# - `more`: the lines added.
+function add_all(@lines: [str], more: [str])
+    for l in more
+        lines @ lines.push(l)
+
+# `names` joined by commas, `none` where there are none.
+#
+# - `names`: the names.
+function joined(names: [str]) -> str
+    if names.len() == 0
+        return "none"
+    return names.join(", ")
+
+# "s" where `n` is not 1.
+#
+# - `n`: the count.
+function plural(n: i64) -> str
+    if n == 1
+        return ""
+    return "s"
+
+test "joined and indented: none, several, and lines set in"
+    assert joined([]) == "none"
+    assert joined(["a", "b"]) == "a, b"
+    assert indented(["x"]) == ["  x"]

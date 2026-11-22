@@ -1,0 +1,121 @@
+# `commit`: the index made into a snapshot. The index's entries are written
+# as trees, a commit object names the top tree, the commit `HEAD` stood on
+# as its first parent and, while a merge waits, the commit merged in as its
+# second, and the branch `HEAD` names moves to it. A commit that would
+# snapshot the same tree as its only parent is refused, as git refuses one
+# without `--allow-empty`, and so is one while a conflict is unresolved.
+# The line it answers is git's: `[main 1a2b3c4] Subject` and the count of
+# what changed.
+
+use <rebel>/strings
+
+use objects/commits
+use objects/ids
+use objects/signatures
+use repo/layout
+use repo/refs
+use repo/staging
+use snapshot/patches
+use snapshot/tree_files
+use store/database
+
+## Committing
+
+# A commit's message as it is stored: its trailing white space dropped and
+# one line feed after it.
+#
+# - `message`: what the person wrote.
+#
+# Fails `invalid` where nothing but white space is left: git refuses an
+# empty message.
+function clean_message(message: str) -> str?
+    trimmed = strings.trim_end(message)
+
+    if strings.trim(trimmed) == ""
+        return fail(code: "invalid", msg: "the commit message is empty")
+    return ok(trimmed + "\n")
+
+# What `commit` answers: the new commit's name and git's line about it.
+record Made
+    # The commit's name.
+    id: str
+    # `[main 1a2b3c4] Subject` and, on the next line, what changed.
+    summary: str
+
+# The files of the commit `id`, or none where `id` is empty.
+#
+# - `db`: the database.
+# - `id`: a commit's name, or empty for none.
+#
+# Fails where it cannot be read.
+function files_of_commit(db: database.Database lent, id: str) -> {str: tree_files.Version}?
+    if id == ""
+        return ok({})
+    c = commits.decode_commit(database.read_kind(db, id: id, kind: .commit)?)?
+    return tree_files.flatten(db, id: c.tree)
+
+# Commits the index of `repo` with `message`, `who` its author and
+# committer, and moves `HEAD`'s branch to it.
+#
+# - `repo`: the repository.
+# - `db`: its database.
+# - `message`: the message.
+# - `who`: who commits, and when.
+#
+# Fails `invalid` where the message is empty, a conflict is unresolved, or
+# there is nothing to commit; and where an object or a ref cannot be read
+# or written.
+function commit(repo: layout.Repo, db: database.Database lent, message: str, who: signatures.Signature) -> Made?
+    text = clean_message(message)?
+    index = staging.load(repo)?
+    unresolved = staging.conflicted(index)
+
+    if unresolved.len() > 0
+        return fail(code: "invalid", msg: f"unmerged paths must be added first: {unresolved.join(", ")}")
+
+    parent = match refs.head_commit(repo)
+        .ok id => id
+        .err e =>
+            if e.code != "not_found"
+                return fail(code: e.code, msg: e.msg)
+            ""
+
+    merging = refs.merge_head(repo)
+    parents: [str] @= []
+
+    if parent != ""
+        parents @ parents.push(parent)
+
+    match merging
+        .ok other => parents @ parents.push(other)
+        .err _    => _ = 0
+
+    tree = tree_files.write_from_index(db, index: index)?
+    before = files_of_commit(db, id: parent)?
+    after = tree_files.flatten_index(index)
+
+    if merging.is_err() && patches.changed_paths(older: before, newer: after).len() == 0
+        if parent == ""
+            return fail(code: "invalid", msg: "nothing to commit: the index is empty")
+        return fail(code: "invalid", msg: "nothing to commit: the index holds what the last commit holds")
+    c = commits.Commit(tree: tree, parents: parents, author: who, committer: who, message: text)
+    id = database.write_object(db, kind: .commit, data: commits.encode_commit(c))?
+    refs.advance_head(repo, id: id)?
+    refs.end_merge(repo)?
+
+    where = match refs.read_head(repo)?
+        .branch b   => b.name
+        .detached _ => "detached HEAD"
+
+    root = if parent == ""
+        " (root-commit)"
+    else
+        ""
+    stat = patches.stat_between(repo, db: db, older: before, newer: after)?
+    line = f"[{where}{root} {ids.short(id)}] {commits.subject_of(text)}"
+    return ok(Made(id: id, summary: line + "\n" + patches.format_stat(stat)))
+
+test "clean_message: trailing space dropped, one line feed added, empty refused"
+    assert clean_message("Add a file  \n\n").must() == "Add a file\n"
+    assert clean_message("Subject\n\nBody").must() == "Subject\n\nBody\n"
+    assert clean_message(" \n ").is_err()

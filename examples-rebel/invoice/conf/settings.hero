@@ -1,0 +1,320 @@
+# The invoicing tool's configuration: a TOML file naming the folder the
+# books are kept in, describing the company, giving the VAT rates of each
+# country it sells in, and saying how its mail is sent. It is read in two
+# layers by `config`, the file and over it the environment's variables
+# beginning `INVOICE_` (`INVOICE_SMTP__PASSWORD` is `smtp.password`), so the
+# mail server's password need not stand in a file. A key the program does
+# not read is refused by name, so a misspelt one is never silently
+# ignored, and a relative path is read from the file's own folder.
+#
+#     data = "books"                  # the folder of the books and documents
+#     layout = ""                     # the company's own layout, a template
+#     translations = ""               # a folder of <language>.po files
+#
+#     [company]
+#     name = "Tessera Editions S.r.l."
+#     street = "Via dei Mosaici 12"
+#     postcode = "48121"
+#     city = "Ravenna"
+#     country = "IT"
+#     vat_id = "IT01234567897"
+#     email = "billing@tessera.example"
+#     iban = "IT60 X054 2811 1010 0000 0123 456"
+#     bic = ""                        # optional on a euro payment code
+#     currency = "EUR"
+#     locale = "it-IT"
+#     logo = "logo.png"               # a PNG, "" for none
+#     oss = true                      # the One-Stop Shop (`tax/regime`)
+#
+#     [taxes.IT]                      # rates in percent, written as text
+#     books = "4"
+#     services = "22"
+#
+#     [smtp]
+#     host = "smtp.example.org"
+#     port = 587
+#     security = "starttls"           # or "implicit", or "plain"
+#     user = "billing@tessera.example"
+#     password = ""                   # or INVOICE_SMTP__PASSWORD
+#
+# A rate is written as text, `"5.5"`, so that no rate passes through a
+# binary float on its way to an exact decimal.
+
+use <rebel>/big
+use <rebel>/config
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/mail/smtp
+use <rebel>/strings
+
+use bank/iban
+use model/parties
+use money/amount
+use tax/pricing
+
+## Codes
+
+# The code of a configuration that holds a value of the wrong form.
+constant INVALID: str
+    "invalid"
+
+## The settings
+
+# How the company's mail is sent.
+record Mail
+    # The server's name.
+    host: str
+    # Its port, 1 to 65535.
+    port: i64
+    # How the connection is protected.
+    security: smtp.Security
+    # The user logged in as, "" for no login.
+    user: str
+    # The user's password.
+    password: str
+
+# What the configuration says.
+record Settings
+    # The folder the books and the documents are kept in.
+    data_dir: str
+    # The company's own layout template, "" for the one the program carries.
+    layout_file: str
+    # The folder of the company's own `.po` files, "" for none.
+    translations_dir: str
+    # The company's logo, a PNG, "" for none.
+    logo_file: str
+    # The company.
+    company: parties.Company
+    # The rates of every country it sells in.
+    rates: pricing.RateTable
+    # How its mail is sent.
+    mail: Mail
+
+# The settings' paths the program reads; any other is a mistake in the
+# file. `taxes` takes every country and class under it.
+function known_paths() -> [str]
+    return [
+        "data"
+        "layout"
+        "translations"
+        "company.name"
+        "company.street"
+        "company.postcode"
+        "company.city"
+        "company.country"
+        "company.vat_id"
+        "company.email"
+        "company.iban"
+        "company.bic"
+        "company.currency"
+        "company.locale"
+        "company.logo"
+        "company.oss"
+        "taxes"
+        "smtp.host"
+        "smtp.port"
+        "smtp.security"
+        "smtp.user"
+        "smtp.password"
+    ]
+
+# The settings of the file at `path`, under the variables of `env`.
+#
+# - `path`: the TOML file.
+# - `env`: the environment's variables: `os.env_all()`'s answer for a real
+#   run, a map of the program's own where nothing outside may change it.
+#
+# Fails as `config.read_layer` fails on the file; `not_found` where a key the
+# program needs is missing; `invalid` where a key is misspelt or a value is
+# not of its form, the message naming the key.
+function load(path: str, env: {str: str}) -> Settings?
+    file = config.read_layer(path)?
+    environment = config.from_env(name: "environment", env: env, options: config.env_options("INVOICE_"))?
+    s = config.merge([file, environment])
+    config.check_known(s, known_paths())?
+    config.require(s, ["data", "company.name", "company.street", "company.postcode", "company.city", "company.country", "company.vat_id", "company.email", "company.iban", "company.currency", "company.locale"])?
+    company = company_of(s)?
+    return ok(
+        Settings(data_dir: config.path_of(s, "data")?, layout_file: optional_path(s, key: "layout")?, translations_dir: optional_path(s, key: "translations")?, logo_file: optional_path(s, key: "company.logo")?, company: company, rates: rates_of(s)?, mail: mail_of(s)?)
+    )
+
+# The company the settings describe, each field checked.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where a field is not of its form.
+function company_of(s: config.Settings) -> parties.Company?
+    bic = if config.has_path(s, "company.bic")
+        config.text_of(s, "company.bic")?
+    else
+        ""
+
+    oss = if config.has_path(s, "company.oss")
+        config.bool_of(s, "company.oss")?
+    else
+        false
+
+    checked_bic = if bic == ""
+        ""
+    else
+        iban.parse_bic(bic)?
+    return ok(
+        parties.Company(name: parties.required_line(what: "company.name", value: config.text_of(s, "company.name")?, most: parties.MAX_LINE)?, street: parties.required_line(what: "company.street", value: config.text_of(s, "company.street")?, most: parties.MAX_LINE)?, postcode: parties.required_line(what: "company.postcode", value: config.text_of(s, "company.postcode")?, most: parties.MAX_LINE)?, city: parties.required_line(what: "company.city", value: config.text_of(s, "company.city")?, most: parties.MAX_LINE)?, country: parties.parse_country(config.text_of(s, "company.country")?)?, vat_id: parties.required_line(what: "company.vat_id", value: config.text_of(s, "company.vat_id")?, most: parties.MAX_LINE)?, email: parties.required_line(what: "company.email", value: config.text_of(s, "company.email")?, most: parties.MAX_LINE)?, iban: iban.parse_iban(config.text_of(s, "company.iban")?)?, bic: checked_bic, currency: amount.parse_currency(config.text_of(s, "company.currency")?)?, locale: i18n.format_locale(i18n.parse_locale(config.text_of(s, "company.locale")?)?), oss: oss)
+    )
+
+# The rates under `taxes`, every country and class read.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where a country is no ISO 3166 code, a class's name is
+# not one line, or a rate is not a rate written as text.
+function rates_of(s: config.Settings) -> pricing.RateTable?
+    countries: {str: {str: big.Decimal}} @= {}
+
+    if !config.has_path(s, "taxes")
+        return ok(pricing.RateTable(countries: countries))
+
+    for key in config.keys_of(s, "taxes")?
+        country = parties.parse_country(key)?
+        rates: {str: big.Decimal} @= {}
+
+        for c in config.keys_of(s, f"taxes.{key}")?
+            where = f"taxes.{key}.{c}"
+            tax_class = parties.required_line(what: where, value: c, most: parties.MAX_KEY)?
+            rates[tax_class] @ amount.parse_rate(text: config.text_of(s, where)?, what: where)?
+
+        countries[country] @ rates
+
+    return ok(pricing.RateTable(countries: countries))
+
+# How the company's mail is sent; a server named "" where the settings
+# name none, which `mailing/message` refuses when a document is mailed.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` where the security is none of the three or the port is
+# outside 1 to 65535.
+function mail_of(s: config.Settings) -> Mail?
+    if !config.has_path(s, "smtp.host")
+        return ok(Mail(host: "", port: 0, security: .starttls, user: "", password: ""))
+    host = config.text_of(s, "smtp.host")?
+    security = parse_security(text_or(s, key: "smtp.security", otherwise: "starttls")?)?
+
+    port = if config.has_path(s, "smtp.port")
+        config.int_of(s, "smtp.port")?
+    else
+        smtp.options(host, security: security).port
+
+    if port < 1 || port > 65535
+        return fail(code: INVALID, msg: f"smtp.port is from 1 to 65535, and the configuration says {port}")
+    return ok(
+        Mail(host: host, port: port, security: security, user: text_or(s, key: "smtp.user", otherwise: "")?, password: text_or(s, key: "smtp.password", otherwise: "")?)
+    )
+
+# The security `name` names: `starttls`, `implicit` or `plain`.
+#
+# - `name`: the name.
+#
+# Fails `invalid` where it names none.
+function parse_security(name: str) -> smtp.Security?
+    if name == "starttls"
+        return ok(.starttls)
+
+    if name == "implicit"
+        return ok(.implicit)
+
+    if name == "plain"
+        return ok(.plain)
+    return fail(
+        code: INVALID,
+        msg: f"smtp.security is starttls, implicit or plain, and the configuration says \"{name}\""
+    )
+
+# The text at `key`, or `otherwise` where the settings hold none.
+#
+# - `s`: the settings.
+# - `key`: the path.
+# - `otherwise`: the text answered where it is absent.
+#
+# Fails as `config.text_of` fails on a value that is not text.
+function text_or(s: config.Settings, key: str, otherwise: str) -> str?
+    if config.has_path(s, key)
+        return config.text_of(s, key)
+    return ok(otherwise)
+
+# The path at `key`, read from the folder of the file that gave it; ""
+# where the settings hold none or hold "".
+#
+# - `s`: the settings.
+# - `key`: the path.
+#
+# Fails as `config.path_of` fails.
+function optional_path(s: config.Settings, key: str) -> str?
+    if text_or(s, key: key, otherwise: "")? == ""
+        return ok("")
+    return config.path_of(s, key)
+
+## Tests
+
+# The configuration of the tests, with `extra` added at its end.
+#
+# - `extra`: more TOML.
+function test_toml(extra: str) -> str
+    parts = [
+        "data = \"books\""
+        "[company]"
+        "name = \"Tessera Editions S.r.l.\""
+        "street = \"Via dei Mosaici 12\""
+        "postcode = \"48121\""
+        "city = \"Ravenna\""
+        "country = \"it\""
+        "vat_id = \"IT01234567897\""
+        "email = \"billing@tessera.example\""
+        "iban = \"DE71 1102 2033 0123 4567 89\""
+        "currency = \"eur\""
+        "locale = \"it-IT\""
+        "oss = true"
+        "[taxes.IT]"
+        "books = \"4\""
+        "services = \"22\""
+        "[taxes.fr]"
+        "books = \"5.5\""
+        extra
+    ]
+    return parts.join("\n")
+
+test "load: the company, its rates, and the mail's password from the environment"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-conf-*").must()
+    file = dir + "/invoice.toml"
+    write_file(
+        path: file,
+        text: test_toml("[smtp]\nhost = \"127.0.0.1\"\nport = 2525\nsecurity = \"plain\"\nuser = \"billing\"\n")
+    ).must()
+    s = load(file, env: {"INVOICE_SMTP__PASSWORD": "s3cret"}).must()
+    assert s.data_dir == dir + "/books" && s.layout_file == "" && s.logo_file == ""
+    assert s.company.country == "IT" && s.company.currency == "EUR" && s.company.oss
+    assert s.company.iban == "DE71110220330123456789" && s.company.bic == ""
+    assert amount.short(pricing.rate_in(s.rates, country: "FR", tax_class: "books").must()) == "5.5"
+    assert s.mail.host == "127.0.0.1" && s.mail.port == 2525 && s.mail.security == .plain && s.mail.password == "s3cret"
+    fs.remove_all(dir).must()
+
+test "load: a misspelt key, a rate written as a number, and a bad IBAN are refused"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-conf-*").must()
+    file = dir + "/invoice.toml"
+    write_file(path: file, text: test_toml("[smtp]\nhots = \"x\"\n")).must()
+    assert load(file, env: {}).is_err()
+    write_file(path: file, text: test_toml("[taxes.DE]\nbooks = 7\n")).must()
+    assert load(file, env: {}).is_err()
+    write_file(path: file, text: strings.replace_all(s: test_toml(""), old: "4567 89", new: "4567 88")).must()
+    assert load(file, env: {}).is_err()
+    fs.remove_all(dir).must()
+
+test "load: no mail server named, and the port of STARTTLS by default"
+    dir = fs.make_temp_dir(dir: "build", pattern: "invoice-conf-*").must()
+    file = dir + "/invoice.toml"
+    write_file(path: file, text: test_toml("")).must()
+    assert load(file, env: {}).must().mail.host == ""
+    write_file(path: file, text: test_toml("[smtp]\nhost = \"smtp.example.org\"\n")).must()
+    m = load(file, env: {}).must().mail
+    assert m.port == 587 && m.security == .starttls && m.user == ""
+    fs.remove_all(dir).must()

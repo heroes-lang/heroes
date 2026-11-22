@@ -1,0 +1,67 @@
+# The demo's closing account: one row for every invocation it made, what
+# it asked for and what came of it, in columns.
+
+use <rebel>/strings
+
+use engine/session
+
+# One invocation of the demo.
+record Row
+    # What it asked for, as a command line.
+    asked: str
+    # What came of it: the result, or the failure that stopped it before
+    # any step.
+    result: session.Result?
+
+# The width the command lines are padded to.
+constant WIDTH: i64
+    40
+
+# What `r` came to, in a few words.
+#
+# - `r`: a row.
+function outcome_of(r: Row lent) -> str
+    match r.result
+        .ok done =>
+            if strings.contains(s: r.asked, substr: "--clean")
+                return f"{done.ran} removed, exit {done.code}"
+
+            if strings.contains(s: r.asked, substr: " -t ")
+                return f"ran nothing, exit {done.code}"
+
+            if strings.contains(s: r.asked, substr: " -n")
+                return f"{done.ran} would run, {done.up_to_date} up to date, exit {done.code}"
+
+            if done.failed > 0
+                return f"{done.ran} ran, {done.failed} failed, exit {done.code}"
+            return f"{done.ran} ran, {done.up_to_date} up to date, exit {done.code}"
+        .err _ => return "refused before any step, exit 1"
+
+# The account's lines: a heading, then one line a row.
+#
+# - `rows`: the rows, in the order they were made.
+function lines_of(rows: [Row]) -> [str]
+    lines: [str] @= ["== the account"]
+
+    for i in range(from: 0, to: rows.len())
+        number = strings.pad_start(s: f"{i + 1}", width: 2, pad: " ")
+        lines @ lines.push(
+            f"{number}  {strings.pad_end(s: rows[i].asked, width: WIDTH, pad: " ")}  {outcome_of(rows[i])}"
+        )
+
+    return lines
+
+test "lines_of: a build, a clean, a tool, a refusal and a dry run, each told its own way"
+    built = Row(asked: "build -j 4", result: ok(session.Result(code: 0, ran: 4, up_to_date: 0, failed: 0)))
+    cleaned = Row(asked: "build --clean -v", result: ok(session.Result(code: 0, ran: 6, up_to_date: 0, failed: 0)))
+    tool = Row(asked: "build -t deps", result: ok(session.quiet(0)))
+    stopped = Row(asked: "build -j 2", result: ok(session.Result(code: 1, ran: 1, up_to_date: 3, failed: 1)))
+    refused = Row(asked: "build -f cycle.toml", result: fail(code: "invalid", msg: "a cycle"))
+    dry = Row(asked: "build -n", result: ok(session.Result(code: 0, ran: 6, up_to_date: 0, failed: 0)))
+    lines = lines_of([built, cleaned, tool, stopped, refused, dry])
+    assert lines[1] == " 1  build -j 4" + repeat(" ", 30) + "  4 ran, 0 up to date, exit 0"
+    assert strings.has_suffix(s: lines[2], suffix: "6 removed, exit 0")
+    assert strings.has_suffix(s: lines[3], suffix: "ran nothing, exit 0")
+    assert strings.has_suffix(s: lines[4], suffix: "1 ran, 1 failed, exit 1")
+    assert strings.has_suffix(s: lines[5], suffix: "refused before any step, exit 1")
+    assert strings.has_suffix(s: lines[6], suffix: "6 would run, 0 up to date, exit 0")

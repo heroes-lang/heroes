@@ -1,0 +1,337 @@
+# A buffer's history of changes, undone and redone a group at a time. A
+# group is what a person thinks of as one change: a word typed, a run of
+# Backspace, a line cut, a paste, every replacement of one "replace all", a
+# reload from disk. Undo takes the last group done and puts it on the redo
+# side; a new change empties the redo side, as every editor does.
+#
+# Both sides are bounded deques (`containers/deque`): the side of changes
+# done holds at most the number of groups the settings name, and past it the
+# oldest group falls off the front while the newest goes on the back, which
+# is exactly a deque's bound; a plain list would move every group to drop
+# one.
+#
+# Typing gathers into one group until the cursor moves, another kind of
+# change comes, or a word begins after white space, so undo takes back one
+# word at a time. Inside a group, characters typed one after another are
+# merged into one edit, and so is a run of Backspace or Delete, so a long
+# paragraph typed costs a few edits rather than one per key.
+
+use <rebel>/containers/deque
+use <rebel>/strings
+
+use text/document
+
+# What kind of change a group gathers, which decides what may join it.
+variant Kind
+    # Characters typed.
+    typing
+    # Characters taken out by Backspace or Delete.
+    deleting
+    # Any other change: a line break, a cut, a paste, a replacement, a
+    # reload. It joins nothing and nothing joins it.
+    other
+
+# Edits undone and redone together.
+record Group
+    # The group's number, unique in its history, from 1; what a save
+    # remembers so the buffer knows whether it differs from its file.
+    serial: i64
+    # What kind of change it gathers.
+    kind: Kind
+    # The edits, in the order they were made.
+    edits: [document.Edit]
+    # The cursor before the first edit, where undo puts it back.
+    before: document.Pos
+    # The cursor after the last edit, where redo puts it.
+    after: document.Pos
+    # Whether an edit of its kind may still join it.
+    open: bool
+
+# The two sides of a history, each a deque's shape and its items.
+record History
+    # The groups done, the newest at the back.
+    done: deque.Deque
+    # The items of `done`.
+    done_groups: [Group]
+    # The groups undone, the one undone last at the back.
+    undone: deque.Deque
+    # The items of `undone`.
+    undone_groups: [Group]
+    # The serial the next group takes.
+    next_serial: i64
+
+# An empty history that keeps at most `most` groups on each side.
+#
+# - `most`: the most groups kept, from 1; older ones fall off.
+#
+# Aborts where `most` is below 1, as `deque.new_bounded` does.
+function new_history(most: i64) -> History
+    return History(
+        done: deque.new_bounded(most),
+        done_groups: [],
+        undone: deque.new_bounded(most),
+        undone_groups: [],
+        next_serial: 1
+    )
+
+# Remembers `edit`, made with the cursor at `before` and leaving it at
+# `after`: joined to the last group where it continues it, else as a new
+# group. The redo side is emptied.
+#
+# - `h`: the history.
+# - `edit`: the edit, already applied to the document.
+# - `kind`: what kind of change it is.
+# - `before`: the cursor before it.
+# - `after`: the cursor after it.
+function remember(@h: History, edit: document.Edit, kind: Kind, before: document.Pos, after: document.Pos)
+    deque.clear(@h.undone, @h.undone_groups)
+
+    match deque.pop_back(@h.done, @h.done_groups)
+        .ok last =>
+            if joins(last, edit: edit, kind: kind, before: before)
+                deque.push_back(@h.done, @h.done_groups, joined(last, edit: edit, after: after))
+                return
+            deque.push_back(@h.done, @h.done_groups, last)
+        .err _ => _ = 0
+
+    group = Group(serial: h.next_serial, kind: kind, edits: [edit], before: before, after: after, open: kind != .other)
+    h.next_serial @ h.next_serial + 1
+    deque.push_back(@h.done, @h.done_groups, group)
+
+# Remembers `edits`, made one after another as one change, as a new group
+# that nothing joins: every replacement of a "replace all", the text of a
+# reload.
+#
+# - `h`: the history.
+# - `edits`: the edits in the order they were applied; none remembers
+#   nothing.
+# - `before`: the cursor before the first.
+# - `after`: the cursor after the last.
+function remember_all(@h: History, edits: [document.Edit], before: document.Pos, after: document.Pos)
+    if edits.len() == 0
+        return
+
+    deque.clear(@h.undone, @h.undone_groups)
+    group = Group(serial: h.next_serial, kind: .other, edits: edits, before: before, after: after, open: false)
+    h.next_serial @ h.next_serial + 1
+    deque.push_back(@h.done, @h.done_groups, group)
+
+# Whether `edit` continues the group `last`: the same kind of change, the
+# group still open, made where the cursor was left, and not a word begun
+# after white space.
+#
+# - `last`: the group done last.
+# - `edit`: the new edit.
+# - `kind`: its kind.
+# - `before`: the cursor before it.
+function joins(last: Group, edit: document.Edit, kind: Kind, before: document.Pos) -> bool
+    if !last.open || last.kind != kind || last.after != before
+        return false
+
+    if kind != .typing
+        return true
+
+    previous = last.edits[last.edits.len() - 1].inserted
+    return !(ends_blank(previous) && !starts_blank(edit.inserted))
+
+# Whether `s` ends with a space, a tab or a line feed.
+#
+# - `s`: a text.
+function ends_blank(s: str) -> bool
+    return s.len() > 0 && strings.trim_end(s).len() < s.len()
+
+# Whether `s` begins with a space, a tab or a line feed.
+#
+# - `s`: a text.
+function starts_blank(s: str) -> bool
+    return s.len() > 0 && strings.trim_start(s).len() < s.len()
+
+# `last` with `edit` joined to it: merged into its last edit where the two
+# touch, a character typed after the last or a character taken out beside
+# the last, else added after it.
+#
+# - `last`: the group.
+# - `edit`: the edit that continues it.
+# - `after`: the cursor after `edit`.
+function joined(last: Group, edit: document.Edit, after: document.Pos) -> Group
+    edits = last.edits
+    tail = edits[edits.len() - 1]
+    merged @= edits.slice(from: 0, to: edits.len() - 1)
+
+    if tail.removed == "" && edit.removed == "" && document.end_after(tail.at, text: tail.inserted) == edit.at
+        merged @ merged.push(document.Edit(at: tail.at, removed: "", inserted: tail.inserted + edit.inserted))
+    else if tail.inserted == "" && edit.inserted == "" && document.end_after(edit.at, text: edit.removed) == tail.at
+        merged @ merged.push(document.Edit(at: edit.at, removed: edit.removed + tail.removed, inserted: ""))
+    else if tail.inserted == "" && edit.inserted == "" && edit.at == tail.at
+        merged @ merged.push(document.Edit(at: tail.at, removed: tail.removed + edit.removed, inserted: ""))
+    else
+        merged @ merged.push(tail)
+        merged @ merged.push(edit)
+
+    return Group(serial: last.serial, kind: last.kind, edits: merged, before: last.before, after: after, open: true)
+
+# Closes the last group, so the next edit begins a group of its own: after a
+# move of the cursor, a save, a search.
+#
+# - `h`: the history.
+function seal(@h: History)
+    match deque.pop_back(@h.done, @h.done_groups)
+        .ok last =>
+            closed = Group(
+                serial: last.serial,
+                kind: last.kind,
+                edits: last.edits,
+                before: last.before,
+                after: last.after,
+                open: false
+            )
+            deque.push_back(@h.done, @h.done_groups, closed)
+        .err _ => _ = 0
+
+# Takes the last group done to the redo side and answers it, for the buffer
+# to apply the inverse of its edits, last first.
+#
+# - `h`: the history.
+#
+# Fails `not_found` where nothing is left to undo.
+function undo(@h: History) -> Group?
+    last = deque.pop_back(@h.done, @h.done_groups)?
+    closed = Group(
+        serial: last.serial,
+        kind: last.kind,
+        edits: last.edits,
+        before: last.before,
+        after: last.after,
+        open: false
+    )
+    deque.push_back(@h.undone, @h.undone_groups, closed)
+    return ok(closed)
+
+# Takes the last group undone back to the side done and answers it, for the
+# buffer to apply its edits again, first first.
+#
+# - `h`: the history.
+#
+# Fails `not_found` where nothing is left to redo.
+function redo(@h: History) -> Group?
+    last = deque.pop_back(@h.undone, @h.undone_groups)?
+    deque.push_back(@h.done, @h.done_groups, last)
+    return ok(last)
+
+# The serial of the last group done, 0 where none is: the state a save
+# remembers.
+#
+# - `h`: the history.
+function serial_of(h: History lent) -> i64
+    match deque.last(h.done, h.done_groups)
+        .ok g  => return g.serial
+        .err _ => return 0
+
+# How many groups can be undone.
+#
+# - `h`: the history.
+function undo_count(h: History lent) -> i64
+    return deque.size(h.done)
+
+# How many groups can be redone.
+#
+# - `h`: the history.
+function redo_count(h: History lent) -> i64
+    return deque.size(h.undone)
+
+# An edit that puts `text` in at `at`, as typing does.
+#
+# - `at`: where.
+# - `text`: what.
+function typed(at: document.Pos, text: str) -> document.Edit
+    return document.Edit(at: at, removed: "", inserted: text)
+
+test "remember: a word typed a character at a time is one edit"
+    h @= new_history(10)
+    at @= document.Pos(line: 0, col: 0)
+
+    for c in ["h", "i", "!"]
+        after = document.Pos(line: 0, col: at.col + 1)
+        remember(@h, edit: typed(at: at, text: c), kind: .typing, before: at, after: after)
+        at @ after
+
+    assert undo_count(h) == 1
+    g = undo(@h).must()
+    assert g.edits == [typed(at: document.Pos(line: 0, col: 0), text: "hi!")]
+    assert g.before == document.Pos(line: 0, col: 0) && g.after == document.Pos(line: 0, col: 3)
+
+test "remember: a word begun after a space starts a group"
+    h @= new_history(10)
+    p0 = document.Pos(line: 0, col: 0)
+    p1 = document.Pos(line: 0, col: 3)
+    p2 = document.Pos(line: 0, col: 4)
+    remember(@h, edit: typed(at: p0, text: "an "), kind: .typing, before: p0, after: p1)
+    remember(@h, edit: typed(at: p1, text: "x"), kind: .typing, before: p1, after: p2)
+    assert undo_count(h) == 2
+
+test "remember: a run of Backspace merged, and a move between two runs seals"
+    h @= new_history(10)
+    remember(
+        @h,
+        edit: document.Edit(at: document.Pos(line: 0, col: 4), removed: "d", inserted: ""),
+        kind: .deleting,
+        before: document.Pos(line: 0, col: 5),
+        after: document.Pos(line: 0, col: 4)
+    )
+    remember(
+        @h,
+        edit: document.Edit(at: document.Pos(line: 0, col: 3), removed: "l", inserted: ""),
+        kind: .deleting,
+        before: document.Pos(line: 0, col: 4),
+        after: document.Pos(line: 0, col: 3)
+    )
+    assert undo_count(h) == 1
+    seal(@h)
+    remember(
+        @h,
+        edit: document.Edit(at: document.Pos(line: 0, col: 2), removed: "r", inserted: ""),
+        kind: .deleting,
+        before: document.Pos(line: 0, col: 3),
+        after: document.Pos(line: 0, col: 2)
+    )
+    assert undo_count(h) == 2
+    _ = undo(@h).must()
+    assert undo(@h).must().edits == [document.Edit(at: document.Pos(line: 0, col: 3), removed: "ld", inserted: "")]
+
+test "undo and redo: the redo side emptied by a new change"
+    h @= new_history(10)
+    p0 = document.Pos(line: 0, col: 0)
+    remember(@h, edit: typed(at: p0, text: "\n"), kind: .other, before: p0, after: document.Pos(line: 1, col: 0))
+    assert serial_of(h) == 1
+    _ = undo(@h).must()
+    assert serial_of(h) == 0 && redo_count(h) == 1
+    _ = redo(@h).must()
+    assert serial_of(h) == 1
+    _ = undo(@h).must()
+    remember(@h, edit: typed(at: p0, text: "x"), kind: .typing, before: p0, after: document.Pos(line: 0, col: 1))
+    assert redo_count(h) == 0 && serial_of(h) == 2
+
+test "new_history: the oldest group falls off past the bound"
+    h @= new_history(2)
+
+    for n in range(from: 0, to: 3)
+        p = document.Pos(line: 0, col: n)
+        remember(@h, edit: typed(at: p, text: "\n"), kind: .other, before: p, after: p)
+
+    assert undo_count(h) == 2
+    assert undo(@h).must().serial == 3
+    assert undo(@h).must().serial == 2
+    assert undo(@h).is_err()
+
+test "remember_all: many edits undone as one, and none remembered as nothing"
+    h @= new_history(5)
+    p = document.Pos(line: 0, col: 0)
+    remember_all(@h, edits: [], before: p, after: p)
+    assert undo_count(h) == 0
+    remember_all(
+        @h,
+        edits: [typed(at: p, text: "a"), typed(at: document.Pos(line: 1, col: 0), text: "b")],
+        before: p,
+        after: p
+    )
+    assert undo(@h).must().edits.len() == 2

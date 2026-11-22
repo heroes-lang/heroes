@@ -1,0 +1,124 @@
+# Replacing matches of a regular expression by a template that names the
+# match's groups: `$1` and `${1}` the first group's text, `$name` and
+# `${name}` a named group's, `$0` the whole match, `$$` one dollar sign, as
+# `regex.expand` reads it. One match is replaced at a time while the person
+# answers yes or no to each, or every match at once; either way each
+# replacement is an `Edit`, so undo takes it back.
+#
+# "Replace all" makes one edit per line that holds a match, the line before
+# and after, built from the last line to the first, so each edit's place is
+# still where it was when the ones after it in the list are applied; and the
+# history keeps them as one group, so one undo puts every line back.
+
+use <rebel>/regex
+
+use search/matches
+use text/document
+
+# What "replace all" made.
+record Replaced
+    # The edits, the last line's first, each replacing a whole line.
+    edits: [document.Edit]
+    # How many matches were replaced.
+    count: i64
+    # How many lines changed.
+    lines: i64
+
+# Checks that `template` is one `regex.expand` reads for `re`: every group
+# it names is a group of the pattern, and every `$` is followed by a name, a
+# number, a brace or another `$`.
+#
+# - `re`: the pattern.
+# - `template`: the template.
+#
+# Fails `invalid` with `regex`'s message where it is not.
+function check_template(re: regex.Regex, template: str) -> ()?
+    _ = regex.substitute_all(s: "", re: re, template: template)?
+    return ok()
+
+# The edit that replaces the match `hit` by `template` filled from its
+# groups.
+#
+# - `doc`: the document.
+# - `re`: the pattern that found `hit`.
+# - `hit`: a match the search found.
+# - `template`: the replacement's template.
+#
+# Fails `not_found` where the match is no longer where `hit` says, which a
+# change since the search makes; `invalid` where the template names a group
+# the pattern has not.
+function edit_of(doc: document.Document lent, re: regex.Regex, hit: matches.Hit, template: str) -> document.Edit?
+    m = regex.match_at(s: doc.lines[hit.line], re: re, at: hit.from)?
+    filled = regex.expand(m, template: template)?
+    return ok(document.Edit(at: document.Pos(line: hit.line, col: hit.from), removed: m.text, inserted: filled))
+
+# The edits that replace every match of `re` in `doc` by `template`, as
+# `regex.substitute_all` replaces them in each line.
+#
+# - `doc`: the document.
+# - `re`: the pattern.
+# - `template`: the replacement's template.
+#
+# Empty edits where nothing matches. Fails `invalid` where the template names
+# a group the pattern has not.
+function replace_all(doc: document.Document lent, re: regex.Regex, template: str) -> Replaced?
+    edits: [document.Edit] @= []
+    count @= 0
+    n @= doc.lines.len() - 1
+
+    while n >= 0
+        line = doc.lines[n]
+        found = regex.search_all(line, re).len()
+
+        if found > 0
+            replaced = regex.substitute_all(s: line, re: re, template: template)?
+
+            if replaced != line
+                edits @ edits.push(document.Edit(at: document.Pos(line: n, col: 0), removed: line, inserted: replaced))
+
+            count @ count + found
+        n @ n - 1
+
+    return ok(Replaced(edits: edits, count: count, lines: edits.len()))
+
+test "check_template: a group the pattern has, one it has not, and a lone dollar"
+    re = regex.compile("(?P<user>\\w+)@(\\w+)").must()
+    assert check_template(re, template: "$2 for ${user}, $$5").is_err() == false
+    assert check_template(re, template: "$3").is_err()
+    assert check_template(re, template: "cost $").is_err()
+
+test "edit_of: one match replaced with its groups swapped"
+    doc = document.from_text("mail ann@example.org now")
+    re = regex.compile("(\\w+)@(\\w+)\\.org").must()
+    hit = matches.Hit(line: 0, from: 5, to: 20)
+    edit = edit_of(doc, re: re, hit: hit, template: "$2:$1").must()
+    assert edit == document.Edit(at: document.Pos(line: 0, col: 5), removed: "ann@example.org", inserted: "example:ann")
+
+test "edit_of: a match no longer where the search found it"
+    doc = document.from_text("nothing here")
+    re = regex.compile("x+").must()
+    assert edit_of(doc, re: re, hit: matches.Hit(line: 0, from: 2, to: 3), template: "y").is_err()
+
+test "replace_all: two lines changed, three matches, undone as written"
+    doc @= document.from_text("a1 b2\nnone\nc3")
+    re = regex.compile("([a-z])(\\d)").must()
+    got = replace_all(doc, re: re, template: "$2$1").must()
+    assert got.count == 3 && got.lines == 2
+    assert got.edits[0].at.line == 2
+
+    for e in got.edits
+        _ = document.apply(@doc, edit: e)
+
+    assert doc.lines == ["1a 2b", "none", "3c"]
+    i @= got.edits.len() - 1
+
+    while i >= 0
+        _ = document.apply(@doc, edit: document.inverse(got.edits[i]))
+        i @ i - 1
+
+    assert doc.lines == ["a1 b2", "none", "c3"]
+
+test "replace_all: nothing matches"
+    doc = document.from_text("abc")
+    got = replace_all(doc, re: regex.compile("\\d").must(), template: "#").must()
+    assert got.count == 0 && got.edits.len() == 0

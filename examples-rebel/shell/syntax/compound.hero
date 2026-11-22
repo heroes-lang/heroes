@@ -1,0 +1,266 @@
+# The compound commands of the shell's grammar (XCU 2.9.4): `{ }`, `( )`,
+# `if`, `while`, `until`, `for` and `case`, and a function's definition,
+# whose body is one of them (XCU 2.9.5). Each reads its reserved words where
+# a command begins, its lists through `parser.parse_list`, and the
+# redirections written after it.
+
+use syntax/ast
+use syntax/lexer
+use syntax/parser
+use syntax/simple
+use syntax/words
+
+# `{ list; }`.
+#
+# - `lx`: the lexer, at the `{`.
+function parse_group(@lx: lexer.Lexer) -> ast.Command?
+    opened = lexer.take(@lx)?.start
+    body = parser.parse_list(@lx, ends: ["}"])?
+    parser.expect_word(@lx, text: "}", opened: opened, what: "the group `{`")?
+    return ok(.group(body: body, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened)))
+
+# `( list )`.
+#
+# - `lx`: the lexer, at the `(`.
+function parse_subshell(@lx: lexer.Lexer) -> ast.Command?
+    opened = lexer.take(@lx)?.start
+    body = parser.parse_list(@lx, ends: [")"])?
+    parser.expect_op(@lx, text: ")", opened: opened, what: "the subshell `(`")?
+    return ok(.subshell(body: body, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened)))
+
+# `if list; then list; [elif list; then list;]... [else list;] fi`.
+#
+# - `lx`: the lexer, at the `if`.
+function parse_if(@lx: lexer.Lexer) -> ast.Command?
+    opened = lexer.take(@lx)?.start
+    arms: [ast.Arm] @= []
+    otherwise: [ast.Item] @= []
+    more @= true
+
+    while more
+        condition = parser.parse_list(@lx, ends: ["then"])?
+        parser.expect_word(@lx, text: "then", opened: opened, what: "the condition of `if`")?
+        body = parser.parse_list(@lx, ends: ["elif", "else", "fi"])?
+        arms @ arms.push(ast.Arm(condition: condition, body: body))
+        t = lexer.peek(@lx)?
+
+        if parser.is_word(t, text: "elif")
+            _ = lexer.take(@lx)?
+        else
+            more @ false
+
+    t = lexer.peek(@lx)?
+
+    if parser.is_word(t, text: "else")
+        _ = lexer.take(@lx)?
+        otherwise @ parser.parse_list(@lx, ends: ["fi"])?
+
+    parser.expect_word(@lx, text: "fi", opened: opened, what: "`if`")?
+    return ok(
+        .if_then(arms: arms, otherwise: otherwise, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened))
+    )
+
+# `while list; do list; done` and `until list; do list; done`.
+#
+# - `lx`: the lexer, at the `while` or `until`.
+function parse_loop(@lx: lexer.Lexer) -> ast.Command?
+    first = lexer.take(@lx)?
+    opened = first.start
+    until = parser.is_word(first, text: "until")
+    condition = parser.parse_list(@lx, ends: ["do"])?
+    parser.expect_word(@lx, text: "do", opened: opened, what: "the condition of the loop")?
+    body = parser.parse_list(@lx, ends: ["done"])?
+    parser.expect_word(@lx, text: "done", opened: opened, what: "the loop")?
+    return ok(
+        .repeat(condition: condition, body: body, until: until, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened))
+    )
+
+# `for name [in word...]; do list; done`; without `in`, the positional
+# parameters are walked.
+#
+# - `lx`: the lexer, at the `for`.
+function parse_for(@lx: lexer.Lexer) -> ast.Command?
+    opened = lexer.take(@lx)?.start
+    t = lexer.take(@lx)?
+
+    name = match t.token
+        .word w =>
+            if !words.is_name(w.raw)
+                return lexer.mistake(@lx, at: t.start, message: f"`for` takes a variable's name, and `{w.raw}` is none")
+            w.raw
+        .end => return lexer.unfinished(@lx, at: opened, message: "`for` is never given its variable")
+        .number _ | .op _ | .newline => return lexer.mistake(
+            @lx,
+            at: t.start,
+            message: f"`for` takes a variable's name, and {parser.describe(t)} stands"
+        )
+
+    parser.skip_newlines(@lx)?
+    found: [ast.Word] @= []
+    over_args @= true
+
+    if parser.is_word(lexer.peek(@lx)?, text: "in")
+        _ = lexer.take(@lx)?
+        over_args @ false
+        reading @= true
+
+        while reading
+            w = lexer.peek(@lx)?
+
+            match w.token
+                .word x =>
+                    _ = lexer.take(@lx)?
+                    found @ found.push(x.word)
+                .number _ | .op _ | .newline | .end => reading @ false
+
+    sep = lexer.peek(@lx)?
+
+    if parser.is_op(sep, text: ";")
+        _ = lexer.take(@lx)?
+
+    parser.skip_newlines(@lx)?
+    parser.expect_word(@lx, text: "do", opened: opened, what: "`for`")?
+    body = parser.parse_list(@lx, ends: ["done"])?
+    parser.expect_word(@lx, text: "done", opened: opened, what: "the loop")?
+    return ok(
+        .for_each(name: name, words: found, over_args: over_args, body: body, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened))
+    )
+
+# `case word in [(]pattern[|pattern]...) list;; ... esac`.
+#
+# - `lx`: the lexer, at the `case`.
+function parse_case(@lx: lexer.Lexer) -> ast.Command?
+    opened = lexer.take(@lx)?.start
+    t = lexer.take(@lx)?
+
+    subject = match t.token
+        .word w => w.word
+        .end    => return lexer.unfinished(@lx, at: opened, message: "`case` is never given its word")
+        .number _ | .op _ | .newline => return lexer.mistake(
+            @lx,
+            at: t.start,
+            message: f"`case` takes a word, and {parser.describe(t)} stands"
+        )
+
+    parser.skip_newlines(@lx)?
+    parser.expect_word(@lx, text: "in", opened: opened, what: "`case`")?
+    arms: [ast.CaseArm] @= []
+
+    while true
+        parser.skip_newlines(@lx)?
+        next = lexer.peek(@lx)?
+
+        if parser.is_word(next, text: "esac")
+            _ = lexer.take(@lx)?
+            return ok(
+                .case_of(subject: subject, arms: arms, redirects: simple.parse_redirects(@lx)?, at: lexer.place(lx, at: opened))
+            )
+
+        if next.token == .end
+            return lexer.unfinished(@lx, at: opened, message: "`case` is never ended by `esac`")
+
+        if parser.is_op(next, text: "(")
+            _ = lexer.take(@lx)?
+
+        patterns = parse_patterns(@lx, opened: opened)?
+        body = parser.parse_list(@lx, ends: [";;", "esac"])?
+
+        if parser.is_op(lexer.peek(@lx)?, text: ";;")
+            _ = lexer.take(@lx)?
+
+        arms @ arms.push(ast.CaseArm(patterns: patterns, body: body))
+
+    return lexer.unfinished(@lx, at: opened, message: "`case` is never ended by `esac`")
+
+# The patterns of one arm of a `case`, joined by `|` and ended by `)`, which
+# is taken.
+#
+# - `lx`: the lexer.
+# - `opened`: where the `case` began.
+function parse_patterns(@lx: lexer.Lexer, opened: i64) -> [ast.Word]?
+    patterns: [ast.Word] @= []
+
+    while true
+        t = lexer.take(@lx)?
+
+        match t.token
+            .word w => patterns @ patterns.push(w.word)
+            .end    => return lexer.unfinished(@lx, at: opened, message: "`case` is never ended by `esac`")
+            .number _ | .op _ | .newline => return lexer.mistake(
+                @lx,
+                at: t.start,
+                message: f"a pattern was expected, and {parser.describe(t)} stands"
+            )
+
+        after = lexer.take(@lx)?
+
+        if parser.is_op(after, text: ")")
+            return ok(patterns)
+
+        if !parser.is_op(after, text: "|")
+            if after.token == .end
+                return lexer.unfinished(@lx, at: opened, message: "`case` is never ended by `esac`")
+            return lexer.mistake(
+                @lx,
+                at: after.start,
+                message: f"`)` or `|` was expected after a pattern, and {parser.describe(after)} stands"
+            )
+
+    return ok(patterns)
+
+# `name() compound-command`: the name was taken and `(` comes next.
+#
+# - `lx`: the lexer, at the `(`.
+# - `name`: the function's name.
+# - `start`: the byte index the name began at.
+function parse_function(@lx: lexer.Lexer, name: str, start: i64) -> ast.Command?
+    _ = lexer.take(@lx)?
+    parser.expect_op(@lx, text: ")", opened: start, what: f"the definition of `{name}`")?
+    parser.skip_newlines(@lx)?
+    t = lexer.peek(@lx)?
+    body = parser.parse_command(@lx)?
+
+    match body
+        .simple _ | .define _ => return lexer.mistake(
+            @lx,
+            at: t.start,
+            message: f"the body of `{name}` must be a compound command, such as `{{ ...; }}`"
+        )
+        .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ => _ = 0
+
+    text = lx.text.slice(from: start, to: lx.last_end)
+    return ok(.define(name: name, body: [body], text: text, at: lexer.place(lx, at: start)))
+
+test "parse_if: an elif and an else"
+    items = parser.items_of("if a; then b; elif c; then d; else e; fi\n")
+
+    match items[0].chain.first.stages[0]
+        .if_then i                                                                            => assert i.arms.len() == 2 && i.otherwise.len() == 1
+        .simple _ | .group _ | .subshell _ | .repeat _ | .for_each _ | .case_of _ | .define _ => assert false
+
+test "parse_for: with words, and over the arguments"
+    items = parser.items_of("for x in a b; do echo $x; done\nfor y\ndo :; done\n")
+
+    match items[0].chain.first.stages[0]
+        .for_each f                                                                          => assert f.name == "x" && f.words.len() == 2 && !f.over_args
+        .simple _ | .group _ | .subshell _ | .if_then _ | .repeat _ | .case_of _ | .define _ => assert false
+
+    match items[1].chain.first.stages[0]
+        .for_each f                                                                          => assert f.over_args && f.body.len() == 1
+        .simple _ | .group _ | .subshell _ | .if_then _ | .repeat _ | .case_of _ | .define _ => assert false
+
+test "parse_case: two arms, one with two patterns and a parenthesis"
+    items = parser.items_of("case $x in\n  (a|b) one;;\n  *) two\nesac\n")
+
+    match items[0].chain.first.stages[0]
+        .case_of c                                                                            => assert c.arms.len() == 2 && c.arms[0].patterns.len() == 2
+        .simple _ | .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .define _ => assert false
+
+test "parse_function: a group as the body, and a simple command refused"
+    items = parser.items_of("greet() { echo hi; }\n")
+
+    match items[0].chain.first.stages[0]
+        .define d                                                                              => assert d.name == "greet" && d.text == "greet() { echo hi; }"
+        .simple _ | .group _ | .subshell _ | .if_then _ | .repeat _ | .for_each _ | .case_of _ => assert false
+
+    assert parser.parse_all("f() echo hi\n", source: 0, next_doc: 0).is_err()

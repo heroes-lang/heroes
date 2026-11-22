@@ -1,0 +1,343 @@
+# The demo, run by `backup demo`: a scripted day of backups under
+# `build/backup-demo/`, every step done by the same engine the real
+# commands drive, printing the same reports, and removed at the end.
+#
+# A folder is written (`demo/fixture`), a repository made, and the folder
+# backed up three times with edits between, each run printing the chunks
+# it read, stored and found held. The snapshots are listed with the
+# deduplication ratio; the newest is restored and compared with the
+# folder, and one file of the first restored alone and checked against
+# the digest it had then. A retention policy forgets the middle snapshot,
+# a prune removes what only it reached, a check reads every chunk, and the
+# newest snapshot is exported as a tar archive, read back and compared.
+# The repository is then copied to an S3 stand-in and restored from it
+# (`demo/offsite`). Last, one byte of a pack is changed and the check
+# names the chunk it broke.
+#
+# Determinism: the master key, the salt, the repository's name and the
+# chunker's seed are drawn from fixed texts here instead of the system's
+# generator, and the snapshots' times are fixed instants, so every name
+# the demo prints is the same on every run; the seals' nonces are still
+# drawn by the system, and nothing printed depends on them. The password's
+# cost is scrypt's N = 1024 instead of the calibrated cost a real `init`
+# chooses, so the demo runs in seconds.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/os
+use <rebel>/path
+use <rebel>/s3
+use <rebel>/time
+
+use chunking/gear
+use cli/report
+use demo/compare
+use demo/fixture
+use demo/offsite
+use demo/proofs
+use engine/archiver
+use engine/checker
+use engine/pruner
+use engine/restorer
+use engine/retention
+use repo/making
+use repo/records
+use repo/repository
+use repo/settings
+use store/location
+use store/storage
+use vault/kdf
+
+## The demo's world
+
+# Where everything the demo writes stands.
+constant ROOT: str
+    "build/backup-demo"
+
+# The folder backed up.
+constant SOURCE: str
+    "build/backup-demo/source"
+
+# The local repository.
+constant REPO: str
+    "build/backup-demo/repo"
+
+# The repository's password; made up.
+constant PASSWORD: str
+    "correct horse battery staple"
+
+# The host the snapshots are of.
+constant HOST: str
+    "demo-host"
+
+## Running
+
+# Runs the demo and answers the program's exit code: 0 where every step
+# ran and every comparison agreed.
+function run() -> i64
+    match os.catch_stop()
+        .err e =>
+            print("demo: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    if fs.exists(ROOT).default(false)
+        _ = fs.remove_all(ROOT).is_err()
+
+    code = steps()
+    _ = fs.remove_all(ROOT).is_err()
+    return code
+
+# Every step, stopping at the first that fails.
+function steps() -> i64
+    print(f"== a folder written under {SOURCE}")
+
+    match fixture.write_first(SOURCE)
+        .err e =>
+            print("demo: the folder: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    first_digest = fixture.digest_of(path.join_all([SOURCE, "docs", "guide.md"])).default("")
+    print(f"docs/guide.md sha256 {first_digest}, docs/guide-copy.md the same bytes")
+    print(".backupignore leaves out cache/ and *.tmp")
+
+    store = match storage.storage_of(location.parse_location(REPO).must(), credentials: s3.Credentials(access_key_id: "", secret_access_key: "", session_token: ""), region: "", attempts: 1)
+        .ok s => s
+        .err e =>
+            print("demo: the storage: " + e.msg)
+            return 1
+
+    print(f"== a repository made in {REPO}")
+
+    match making.init(store, password: PASSWORD, setup: setup())
+        .err e =>
+            print("demo: init: " + e.msg)
+            return 1
+        .ok made =>
+            r @= made
+            c = r.config.cutting
+            print(
+                f"chunks of {c.min} to {c.max} bytes, 2^{c.bits} past the least on average; packs of {report.size(r.config.pack_bytes)}; Zstandard level {r.config.level}"
+            )
+            repository.close(@r)
+
+    names: [str] @= []
+    edits = [
+        ""
+        "== the folder edited: a paragraph inserted into docs/guide.md, ten records of data/telemetry.bin rewritten, docs/draft.txt added"
+        "== the folder edited: docs/draft.txt removed, a paragraph appended to docs/notes.txt, bin/sync.sh made 0700"
+    ]
+    times = ["2026-03-01T09:00:00Z", "2026-03-02T09:00:00Z", "2026-03-02T18:00:00Z"]
+
+    for n in range(from: 0, to: 3)
+        if n > 0
+            print(edits[n])
+
+            edited = if n == 1
+                fixture.edit_second(SOURCE)
+            else
+                fixture.edit_third(SOURCE)
+
+            if edited.is_err()
+                print("demo: editing the folder failed")
+                return 1
+        print(f"== run {n + 1}, {times[n]}")
+
+        match backup_once(store, n: n + 1, taken: time.parse(times[n], layout: .rfc3339).must())
+            .err e =>
+                print("demo: run: " + e.msg)
+                return 1
+            .ok id => names @ names.push(id)
+
+    return with_snapshots(store, names: names, first_digest: first_digest)
+
+# The settings and keys of the demo's repository, drawn from fixed texts.
+function setup() -> making.Setup
+    return making.Setup(
+        material: crypto.sha512_text("backup demo: master key"),
+        salt: crypto.sha256_text("backup demo: salt").slice(from: 0, to: 16),
+        params: kdf.params_of(1024),
+        config: settings.Settings(version: settings.VERSION, id: bytes.format_hex(crypto.md5_text("backup demo: repository")), seed: 0x5eed_0bac_c0de_2026, cutting: gear.Params(min: 256, bits: 10, max: 4096), pack_bytes: 32_768, level: 3)
+    )
+
+# One run: the repository opened, the folder backed up, the report
+# printed; answers the snapshot's name.
+#
+# - `store`: the repository's storage.
+# - `n`: the run's number, from 1.
+# - `taken`: the snapshot's time.
+#
+# Fails as the repository and the run fail.
+function backup_once(store: storage.Storage, n: i64, taken: time.Instant) -> str?
+    r @= repository.open(store, password: PASSWORD)?
+    done = archiver.run(
+        @r,
+        o: archiver.Options(source: SOURCE, host: HOST, tags: [f"run-{n}"], taken: taken, shown: false)
+    )
+    c = r.counts
+    repository.close(@r)
+    saved = done?.saved
+
+    parent = if saved.parent == ""
+        ""
+    else
+        saved.parent.slice(from: 0, to: 8)
+
+    for line in report.run_lines(saved, c: c, parent: parent)
+        print(line)
+
+    return ok(saved.id)
+
+# The steps after the runs, on the snapshots they made.
+#
+# - `store`: the repository's storage.
+# - `names`: the snapshots' names, oldest first.
+# - `first_digest`: docs/guide.md's digest before the first run.
+function with_snapshots(store: storage.Storage, names: [str], first_digest: str) -> i64
+    r @= match repository.open(store, password: PASSWORD)
+        .ok opened => opened
+        .err e =>
+            print("demo: opening: " + e.msg)
+            return 1
+
+    code = local_steps(@r, names: names, first_digest: first_digest)
+    local = r.store
+    repository.close(@r)
+
+    if code != 0
+        return code
+    code_offsite = offsite.run(local, source: SOURCE, target: path.join_all([ROOT, "restore-s3"]), password: PASSWORD)
+
+    if code_offsite != 0
+        return code_offsite
+    return proofs.tampered(store, password: PASSWORD)
+
+# The listing, the restores, forget, prune, check and export.
+#
+# - `r`: the local repository.
+# - `names`: the snapshots' names, oldest first.
+# - `first_digest`: docs/guide.md's digest before the first run.
+function local_steps(@r: repository.Repository, names: [str], first_digest: str) -> i64
+    print("== the snapshots")
+
+    match records.list_snapshots(@r)
+        .err e =>
+            print("demo: the snapshots: " + e.msg)
+            return 1
+        .ok found =>
+            print(report.snapshot_table(found))
+            proofs.told(@r, found: found)
+
+    print("== the newest snapshot restored and compared with the folder")
+    latest_target = path.join_all([ROOT, "restore-latest"])
+
+    match restore_and_compare(@r, id: names[2], target: latest_target, only: "")
+        .err e =>
+            print("demo: restoring: " + e.msg)
+            return 1
+        .ok _ => _ = 0
+
+    print("== docs/guide.md alone, from the first snapshot")
+    one_target = path.join_all([ROOT, "restore-first"])
+    r.counts @ repository.no_counts()
+
+    match records.load_snapshot(@r, id: names[0])
+        .err e =>
+            print("demo: the first snapshot: " + e.msg)
+            return 1
+        .ok s =>
+            match restorer.restore(@r, s: s, target: one_target, only: "docs/guide.md", shown: false)
+                .err e =>
+                    print("demo: restoring one file: " + e.msg)
+                    return 1
+                .ok done =>
+                    for line in report.restore_lines(done, c: r.counts)
+                        print(line)
+
+    again = fixture.digest_of(path.join_all([one_target, "docs", "guide.md"])).default("")
+
+    if again == first_digest
+        print(f"sha256 {again}: the bytes docs/guide.md held before the first run")
+    else
+        print(f"sha256 {again}: not the bytes docs/guide.md held before the first run, {first_digest}")
+        return 1
+
+    return pruned_steps(@r, names: names)
+
+# The snapshot `id` restored into `target` and compared with the folder.
+#
+# - `r`: the repository; its counts start again.
+# - `id`: the snapshot's name.
+# - `target`: the folder written into.
+# - `only`: a path to restore alone, "" for all.
+#
+# Fails where a step fails or the comparison finds a difference.
+function restore_and_compare(@r: repository.Repository, id: str, target: str, only: str) -> ()?
+    r.counts @ repository.no_counts()
+    s = records.load_snapshot(@r, id: id)?
+    done = restorer.restore(@r, s: s, target: target, only: only, shown: false)?
+
+    for line in report.restore_lines(done, c: r.counts)
+        print(line)
+
+    found = compare.differences(expected: SOURCE, actual: target, facts: true)?
+    print(f"compared with the folder: {found.len()} differences")
+
+    for d in found
+        print("  " + d)
+
+    if found.len() > 0
+        return fail(code: "invalid", msg: "the restore is not the folder")
+    return ok()
+
+# Forget, prune, check and export.
+#
+# - `r`: the repository.
+# - `names`: the snapshots' names, oldest first.
+function pruned_steps(@r: repository.Repository, names: [str]) -> i64
+    print("== forget, keeping the newest snapshot of each of the two newest days")
+    policy = retention.Policy(last: 0, hourly: 0, daily: 2, weekly: 0, monthly: 0, yearly: 0)
+
+    match records.list_snapshots(@r)
+        .err e =>
+            print("demo: the snapshots: " + e.msg)
+            return 1
+        .ok found =>
+            verdicts = retention.decide(found, p: policy)
+
+            for v in verdicts
+                if !v.kept && records.forget_snapshot(@r, id: v.s.id).is_err()
+                    print("demo: forgetting failed")
+                    return 1
+
+            for line in report.forget_lines(verdicts, p: policy)
+                print(line)
+
+    print("== prune")
+
+    match pruner.prune(@r)
+        .err e =>
+            print("demo: prune: " + e.msg)
+            return 1
+        .ok p =>
+            for line in report.prune_lines(p)
+                print(line)
+
+    match records.list_snapshots(@r)
+        .ok found => proofs.told(@r, found: found)
+        .err _    => _ = 0
+
+    print("== check: every chunk read and named again")
+
+    match checker.check(@r)
+        .err e =>
+            print("demo: check: " + e.msg)
+            return 1
+        .ok c =>
+            for line in report.check_lines(c)
+                print(line)
+
+    print("== the newest snapshot exported as a tar archive")
+    return proofs.exported(@r, id: names[2], root: ROOT, source: SOURCE)

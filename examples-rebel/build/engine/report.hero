@@ -1,0 +1,142 @@
+# The lines a build prints, each made here and printed by its caller, so a
+# test reads the same text a terminal shows.
+#
+# A step is told once it has ended and been collected: an explanation where
+# `--explain` asks, its line `[k/n] description`, then everything it wrote,
+# whole. `n` is the steps the build expects to run and can only fall, as a
+# step found up to date once what it needs came out the same bytes leaves
+# the count; `k` counts the steps told so far.
+
+use <rebel>/process
+use <rebel>/strings
+use <rebel>/time
+
+use engine/prepare
+use engine/step
+
+# `n` and the noun, singular for one: `1 step`, `3 steps`.
+#
+# - `n`: the count.
+# - `noun`: the singular noun, made plural by an `s`.
+function count_of(n: i64, noun: str) -> str
+    if n == 1
+        return f"1 {noun}"
+    return f"{n} {noun}s"
+
+# The line that explains why a target's step runs, or that it does not.
+#
+# - `output`: the target.
+# - `reason`: what `verdict` said.
+function explain_line(output: str, reason: str) -> str
+    return f"explain: {output}: {reason}"
+
+# The line of a step: its place among the steps and what it is.
+#
+# - `told`: how many steps were told before it and with it, from 1.
+# - `expected`: how many the build expects to run now.
+# - `s`: the step.
+# - `verbose`: whether to show its command rather than its description.
+function status_line(told: i64, expected: i64, s: prepare.Prepared lent, verbose: bool) -> str
+    shown = if verbose
+        process.quote_all(s.words)
+    else
+        s.description
+
+    return f"[{told}/{expected}] {shown}"
+
+# The lines a step wrote, its last line's end taken off; none where it wrote
+# nothing.
+#
+# - `text`: what it wrote.
+function written_lines(text: str) -> [str]
+    if text == ""
+        return []
+    return strings.lines(strings.trim_suffix(s: text, suffix: "\n"))
+
+# The line of a step that failed.
+#
+# - `output`: the target.
+# - `d`: what its worker answered.
+function failed_line(output: str, d: step.Done lent) -> str
+    return f"FAILED: {output}: {d.ended}"
+
+# The last line of a build that ran to its end.
+#
+# - `ran`: the steps that ran.
+# - `up_to_date`: the targets left alone.
+# - `took`: how long the build took; absent where it is not to be shown, as
+#   in the demo, whose account must read the same on every run.
+function finished_line(ran: i64, up_to_date: i64, took: time.Duration?) -> str
+    # Shown to the millisecond: the nanoseconds a clock reads past it say
+    # nothing a person acts on.
+    timing = match took
+        .ok d  => f" in {time.format_duration(time.nanoseconds(time.to_units(d, unit: .millisecond) * 1_000_000))}"
+        .err _ => ""
+
+    if ran == 0
+        return f"build: nothing to do, {count_of(up_to_date, noun: "target")} up to date{timing}"
+    return f"build: {count_of(ran, noun: "step")} run, {count_of(up_to_date, noun: "target")} up to date{timing}"
+
+# The last line of a dry run.
+#
+# - `would`: the steps that would run.
+# - `up_to_date`: the targets that would be left alone.
+function dry_line(would: i64, up_to_date: i64) -> str
+    if would == 0
+        return f"build: nothing would run, {count_of(up_to_date, noun: "target")} up to date (dry run)"
+    return f"build: {count_of(would, noun: "step")} would run, {count_of(up_to_date, noun: "target")} up to date (dry run)"
+
+# The last line of a build a step stopped.
+#
+# - `output`: the target whose step failed first.
+# - `ran`: the steps that ran well before the build stopped.
+# - `failed`: the steps that failed, the first among them.
+function stopped_line(output: str, ran: i64, failed: i64) -> str
+    others = if failed > 1
+        f", {count_of(failed - 1, noun: "other step")} failed with it"
+    else
+        ""
+
+    return f"build: stopped, the step of {output} failed{others}; {count_of(ran, noun: "step")} ran"
+
+## Tests
+
+# A step whose description and command differ.
+function sample_step() -> prepare.Prepared
+    return prepare.Prepared(
+        output: "out/a b.obj",
+        rule: "compile",
+        words: ["mill", "--helper", "compile", "src/a b.src"],
+        description: "compile out/a b.obj",
+        depfile: fail(code: "not_found", msg: "none"),
+        env: {},
+        time_limit: fail(code: "not_found", msg: "none"),
+        command: "c",
+        inputs: []
+    )
+
+test "count_of: one, none and many"
+    assert count_of(1, noun: "step") == "1 step"
+    assert count_of(0, noun: "step") == "0 steps"
+    assert count_of(12, noun: "target") == "12 targets"
+
+test "status_line: the description, and the command quoted where verbose"
+    s = sample_step()
+    assert status_line(told: 2, expected: 5, s: s, verbose: false) == "[2/5] compile out/a b.obj"
+    assert status_line(told: 2, expected: 5, s: s, verbose: true) == "[2/5] mill --helper compile 'src/a b.src'"
+
+test "written_lines: nothing, one line with and without its end, and blank lines kept"
+    assert written_lines("") == []
+    assert written_lines("warning: x\n") == ["warning: x"]
+    assert written_lines("a") == ["a"]
+    assert written_lines("a\n\nb\n") == ["a", "", "b"]
+
+test "finished_line: nothing to do, steps run, and a time shown"
+    none: time.Duration? = fail(code: "not_found", msg: "not shown")
+    assert finished_line(ran: 0, up_to_date: 4, took: none) == "build: nothing to do, 4 targets up to date"
+    assert finished_line(ran: 1, up_to_date: 1, took: none) == "build: 1 step run, 1 target up to date"
+    assert finished_line(ran: 2, up_to_date: 0, took: ok(time.microseconds(1_500_400).must())) == "build: 2 steps run, 0 targets up to date in 1.5s"
+
+test "stopped_line: one step failed, and two"
+    assert stopped_line("out/x", ran: 3, failed: 1) == "build: stopped, the step of out/x failed; 3 steps ran"
+    assert stopped_line("out/x", ran: 0, failed: 2) == "build: stopped, the step of out/x failed, 1 other step failed with it; 0 steps ran"

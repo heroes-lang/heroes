@@ -1,0 +1,200 @@
+# A pack's index, the `.idx` file beside each `.pack`, in version 2 of
+# gitformat-pack(5): the magic bytes `\377tOc` and the version, a fan-out
+# table of 256 counts (how many names begin with a byte at or below each
+# value), the sorted names, a CRC-32 of each object's packed bytes, each
+# object's offset in the pack (four bytes, the top bit sending an offset of
+# 2 GiB or more to a table of eight-byte ones), the pack's own checksum, and
+# the SHA-1 of everything before it. With it an object is found in a pack by
+# a binary search over names instead of a read of the whole pack.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/lists
+use <rebel>/strings
+
+use objects/ids
+
+## The index
+
+# One object of a pack, as its index records it.
+record Located
+    # The object's name.
+    id: str
+    # The CRC-32 of the bytes the pack holds for it: its header, a delta's
+    # base reference, and its compressed data.
+    crc: u32
+    # Where those bytes begin in the pack.
+    offset: i64
+
+# A pack's index, read.
+record PackIndex
+    # Every object of the pack, sorted by name.
+    objects: [Located]
+    # The pack's trailing SHA-1, which names its content.
+    pack_checksum: [u8]
+
+# The first four bytes of every index of version 2.
+function magic() -> [u8]
+    return [0xff, 't', 'O', 'c']
+
+# The offset of 2 GiB, the first a four-byte entry cannot hold.
+constant LARGE_OFFSET: i64
+    0x80000000
+
+# Whether `a`'s name sorts before `b`'s: the order of an index.
+#
+# - `a`: an object.
+# - `b`: another.
+function located_before(a: Located, b: Located) -> bool
+    return strings.compare(a: a.id, b: b.id) < 0
+
+# The content of the index of a pack holding `objects`.
+#
+# - `objects`: every object of the pack, in any order, their names whole and
+#   distinct.
+# - `pack_checksum`: the pack's trailing SHA-1, 20 bytes.
+#
+# Fails `invalid` where a name is not whole.
+function encode_index(objects: [Located], pack_checksum: [u8]) -> [u8]?
+    sorted = lists.sort_by(objects, less: located_before)
+    out @= magic()
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(2))
+    fanout: [i64] @= []
+
+    for _ in range(from: 0, to: 256)
+        fanout @ fanout.push(0)
+
+    for o in sorted
+        first = to_i64(ids.raw_of(o.id)?[0]).must()
+        fanout[first] @ fanout[first] + 1
+
+    total @= 0
+
+    for count in fanout
+        total @ total + count
+        bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(total).must()))
+
+    for o in sorted
+        bytes.push_all(to: @out, from: ids.raw_of(o.id)?)
+
+    for o in sorted
+        bytes.push_all(to: @out, from: bytes.encode_u32_be(o.crc))
+
+    large: [i64] @= []
+
+    for o in sorted
+        if o.offset < LARGE_OFFSET
+            bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(o.offset).must()))
+        else
+            bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(LARGE_OFFSET + large.len()).must()))
+            large @ large.push(o.offset)
+
+    for offset in large
+        bytes.push_all(to: @out, from: bytes.encode_u64_be(to_u64(offset).must()))
+
+    bytes.push_all(to: @out, from: pack_checksum)
+    bytes.push_all(to: @out, from: crypto.sha1(out))
+    return ok(out)
+
+# The index whose content is `data`, its checksum and its order checked.
+#
+# - `data`: an `.idx` file's bytes.
+#
+# Fails `invalid` where the magic, the version, the fan-out, the order of
+# the names, a large offset's place or the trailing checksum is wrong, or
+# the file is cut short.
+function decode_index(data: [u8]) -> PackIndex?
+    if data.len() < 8 + 256 * 4 + 40 || data.slice(from: 0, to: 4) != magic()
+        return fail(code: "invalid", msg: "a pack index that does not begin as version 2 does")
+
+    if bytes.decode_u32_be(data, at: 4)? != 2
+        return fail(code: "invalid", msg: "a pack index of a version other than 2")
+    body = data.slice(from: 0, to: data.len() - 20)
+
+    if crypto.sha1(body) != data.slice(from: data.len() - 20, to: data.len())
+        return fail(code: "invalid", msg: "a pack index whose trailing checksum is not its content's")
+    count = to_i64(bytes.decode_u32_be(data, at: 8 + 255 * 4)?).must()
+    names_at = 8 + 256 * 4
+    crcs_at = names_at + count * 20
+    offsets_at = crcs_at + count * 4
+    large_at = offsets_at + count * 4
+
+    if large_at + 40 > data.len()
+        return fail(code: "invalid", msg: f"a pack index of {count} objects cut short")
+    out: [Located] @= []
+    previous @= ""
+
+    for i in range(from: 0, to: count)
+        id = ids.hex_of(data.slice(from: names_at + i * 20, to: names_at + i * 20 + 20))?
+
+        if i > 0 && strings.compare(a: previous, b: id) >= 0
+            return fail(code: "invalid", msg: f"a pack index's names out of order at {id}")
+        previous @ id
+        crc = bytes.decode_u32_be(data, at: crcs_at + i * 4)?
+        small = to_i64(bytes.decode_u32_be(data, at: offsets_at + i * 4)?).must()
+        offset @= small
+
+        if small >= LARGE_OFFSET
+            slot = large_at + (small - LARGE_OFFSET) * 8
+
+            if slot + 8 > data.len() - 40
+                return fail(
+                    code: "invalid",
+                    msg: f"a pack index's large offset {small - LARGE_OFFSET} is past its table"
+                )
+            offset @ to_i64(bytes.decode_u64_be(data, at: slot)?)?
+        out @ out.push(Located(id: id, crc: crc, offset: offset))
+
+    return ok(PackIndex(objects: out, pack_checksum: data.slice(from: data.len() - 40, to: data.len() - 20)))
+
+# Where `id` stands in the index `index`, by a binary search.
+#
+# - `index`: a pack's index.
+# - `id`: a whole object name.
+#
+# Fails `not_found` where the pack does not hold it.
+function slot_of(index: PackIndex lent, id: str) -> i64?
+    low @= 0
+    high @= index.objects.len()
+
+    while low < high
+        middle = (low + high) / 2
+        order = strings.compare(a: index.objects[middle].id, b: id)
+
+        if order == 0
+            return ok(middle)
+
+        if order < 0
+            low @ middle + 1
+        else
+            high @ middle
+
+    return fail(code: "not_found", msg: f"the pack does not hold {id}")
+
+test "encode_index and decode_index: three objects there and back, sorted"
+    objects = [
+        Located(id: "ce013625030ba8dba906f756967f9e9ca394464a", crc: 7, offset: 12)
+        Located(id: "0d8a474fc67971fb3dd7616e26323d3066442555", crc: 8, offset: 40)
+        Located(id: "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", crc: 9, offset: 90)
+    ]
+    checksum = crypto.sha1(bytes.from_text("pack"))
+    back = decode_index(encode_index(objects, pack_checksum: checksum).must()).must()
+    assert back.objects.len() == 3
+    assert back.objects[0].id == "0d8a474fc67971fb3dd7616e26323d3066442555"
+    assert back.objects[2].offset == 90
+    assert back.pack_checksum == checksum
+    assert slot_of(back, id: "ce013625030ba8dba906f756967f9e9ca394464a").must() == 1
+    assert slot_of(back, id: ids.ZERO).is_err()
+
+test "encode_index: an offset past 2 GiB goes to the large table"
+    big = Located(id: "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391", crc: 1, offset: 0x123456789)
+    back = decode_index(encode_index([big], pack_checksum: crypto.sha1([])).must()).must()
+    assert back.objects[0].offset == 0x123456789
+
+test "decode_index: an empty pack's index, a flipped byte, and a file cut short"
+    empty = encode_index([], pack_checksum: crypto.sha1([])).must()
+    assert decode_index(empty).must().objects.len() == 0
+    flipped @= empty
+    flipped[10] @ 1
+    assert decode_index(flipped).is_err()
+    assert decode_index(empty.slice(from: 0, to: 100)).is_err()

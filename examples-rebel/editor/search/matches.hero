@@ -1,0 +1,238 @@
+# Searching a document by a regular expression (`regex`), forwards and
+# backwards from the cursor, wrapping past either end, and counting where a
+# match stands among all of them, `match 2 of 5`.
+#
+# A pattern matches inside one line, as it does in nano and micro: the text
+# searched is each line without its line break, so `^` and `$` are a line's
+# start and end. The search runs in time linear in the text whatever the
+# pattern, which is `regex`'s promise, so no pattern typed at the prompt can
+# hang the editor. A match of the empty text is found where it stands, and
+# the search steps one grapheme past it to find the next, so it always
+# moves on.
+
+use <rebel>/regex
+use <rebel>/unicode/segment
+
+use text/document
+
+# One match in a document.
+record Hit
+    # The line.
+    line: i64
+    # The byte where it begins.
+    from: i64
+    # The byte after its end.
+    to: i64
+
+# What a search found, and whether it went past an end of the document to
+# find it.
+record Found
+    # The match.
+    hit: Hit
+    # Whether the search wrapped: from the last line to the first going
+    # forwards, from the first to the last going backwards.
+    wrapped: bool
+
+# Where a match stands among all the matches of a document.
+record Tally
+    # Its number, from 1, in the order of the text.
+    index: i64
+    # How many matches the document holds.
+    total: i64
+
+# The pattern `pattern` compiled, case ignored where `ignore_case` asks.
+#
+# - `pattern`: the pattern, as `regex` reads one.
+# - `ignore_case`: whether a letter matches its other case too.
+#
+# Fails as `regex.compile` fails: `invalid` with the byte and the reason, or
+# `limit`.
+function compile_pattern(pattern: str, ignore_case: bool) -> regex.Regex?
+    if ignore_case
+        return regex.compile("(?i)" + pattern)
+
+    return regex.compile(pattern)
+
+# The first match of `re` in `line` that begins at the byte `from` or after
+# it, or strictly after it where `strictly` asks.
+#
+# - `line`: the line.
+# - `re`: the pattern.
+# - `from`: a byte index at a character's first byte, 0 to the length.
+# - `strictly`: whether a match beginning at `from` is passed over.
+#
+# Fails `not_found` where there is none.
+function first_in_line(line: str, re: regex.Regex, from: i64, strictly: bool) -> regex.Match?
+    m = regex.search_from(s: line, re: re, from: from)?
+
+    if !strictly || m.start > from
+        return ok(m)
+
+    if from >= line.len()
+        return fail(code: regex.NOT_FOUND, msg: "no match after the end of the line")
+
+    return regex.search_from(s: line, re: re, from: segment.next_grapheme_boundary(line, at: from))
+
+# The next match of `re` from `at`, wrapping to the first line past the
+# last.
+#
+# - `doc`: the document.
+# - `re`: the pattern.
+# - `at`: where the search begins.
+# - `strictly`: whether a match beginning at `at` is passed over, as "find
+#   next" asks once a match is shown.
+#
+# A match beginning at `at` is found again after a wrap where it is the
+# only one. Fails `not_found` where the document holds no match at all.
+function next_hit(doc: document.Document lent, re: regex.Regex, at: document.Pos, strictly: bool) -> Found?
+    count = doc.lines.len()
+
+    for step in range(from: 0, to: count + 1)
+        n = (at.line + step) % count
+        wrapped = at.line + step >= count
+
+        from = if step == 0
+            at.col
+        else
+            0
+        exclusive = step == 0 && strictly
+
+        match first_in_line(doc.lines[n], re: re, from: from, strictly: exclusive)
+            .ok m =>
+                if step < count || m.start <= at.col
+                    return ok(Found(hit: Hit(line: n, from: m.start, to: m.end), wrapped: wrapped))
+            .err _ => _ = 0
+
+    return fail(code: regex.NOT_FOUND, msg: "no match in the whole text")
+
+# The last match of `re` in `line` that begins before the byte `before`.
+#
+# - `line`: the line.
+# - `re`: the pattern.
+# - `before`: a byte index, 0 to the length plus one; the line's length plus
+#   one takes every match.
+#
+# Fails `not_found` where there is none.
+function last_in_line(line: str, re: regex.Regex, before: i64) -> regex.Match?
+    found: [regex.Match] @= []
+
+    for m in regex.search_all(line, re)
+        if m.start < before
+            found @ found.push(m)
+
+    if found.len() == 0
+        return fail(code: regex.NOT_FOUND, msg: "no match before the byte")
+
+    return ok(found[found.len() - 1])
+
+# The match of `re` before `at`, wrapping to the last line past the first.
+#
+# - `doc`: the document.
+# - `re`: the pattern.
+# - `at`: where the search begins; a match beginning there is passed over.
+#
+# Fails `not_found` where the document holds no match at all.
+function previous_hit(doc: document.Document lent, re: regex.Regex, at: document.Pos) -> Found?
+    count = doc.lines.len()
+
+    for step in range(from: 0, to: count + 1)
+        n = (at.line - step % count + count) % count
+        wrapped = at.line - step < 0
+
+        before = if step == 0
+            at.col
+        else
+            doc.lines[n].len() + 1
+
+        match last_in_line(doc.lines[n], re: re, before: before)
+            .ok m =>
+                if step < count || m.start >= at.col
+                    return ok(Found(hit: Hit(line: n, from: m.start, to: m.end), wrapped: wrapped))
+            .err _ => _ = 0
+
+    return fail(code: regex.NOT_FOUND, msg: "no match in the whole text")
+
+# Where `hit` stands among the matches of `re` in `doc`, and how many there
+# are.
+#
+# - `doc`: the document.
+# - `re`: the pattern.
+# - `hit`: a match the search found.
+#
+# The matches are counted as `regex.search_all` finds them, line by line.
+function tally_of(doc: document.Document lent, re: regex.Regex, hit: Hit) -> Tally
+    total @= 0
+    index @= 0
+
+    for n in range(from: 0, to: doc.lines.len())
+        for m in regex.search_all(doc.lines[n], re)
+            total @ total + 1
+
+            if n < hit.line || n == hit.line && m.start <= hit.from
+                index @ index + 1
+
+    return Tally(index: index, total: total)
+
+# The matches of `re` in `line` that hold at least one character, for the
+# screen to show them.
+#
+# - `line`: the line.
+# - `re`: the pattern.
+function spans_in_line(line: str, re: regex.Regex) -> [regex.Span]
+    spans: [regex.Span] @= []
+
+    for m in regex.search_all(line, re)
+        if m.end > m.start
+            spans @ spans.push(regex.Span(start: m.start, end: m.end))
+
+    return spans
+
+test "next_hit: from the cursor, past a match at the cursor, and wrapped"
+    doc = document.from_text("one fish\ntwo fish\nred fish")
+    re = compile_pattern("fish", ignore_case: false).must()
+    first = next_hit(doc, re: re, at: document.Pos(line: 0, col: 0), strictly: false).must()
+    assert first == Found(hit: Hit(line: 0, from: 4, to: 8), wrapped: false)
+    second = next_hit(doc, re: re, at: document.Pos(line: 0, col: 4), strictly: true).must()
+    assert second.hit.line == 1
+    around = next_hit(doc, re: re, at: document.Pos(line: 2, col: 4), strictly: true).must()
+    assert around == Found(hit: Hit(line: 0, from: 4, to: 8), wrapped: true)
+
+test "next_hit: the only match is the one at the cursor, found again after a wrap"
+    doc = document.from_text("alpha\nbeta")
+    re = compile_pattern("ph", ignore_case: false).must()
+    again = next_hit(doc, re: re, at: document.Pos(line: 0, col: 2), strictly: true).must()
+    assert again == Found(hit: Hit(line: 0, from: 2, to: 4), wrapped: true)
+
+test "next_hit: no match at all, and the case ignored"
+    doc = document.from_text("Hello\nworld")
+    assert next_hit(
+        doc,
+        re: compile_pattern("bye", ignore_case: false).must(),
+        at: document.Pos(line: 0, col: 0),
+        strictly: false
+    ).is_err()
+    assert next_hit(doc, re: compile_pattern("hello", ignore_case: true).must(), at: document.Pos(line: 1, col: 0), strictly: false).must().wrapped
+
+test "previous_hit: back on the same line, then up, then wrapped to the end"
+    doc = document.from_text("a1 a2\nb\na3")
+    re = compile_pattern("a\\d", ignore_case: false).must()
+    back = previous_hit(doc, re: re, at: document.Pos(line: 0, col: 3)).must()
+    assert back.hit == Hit(line: 0, from: 0, to: 2) && !back.wrapped
+    around = previous_hit(doc, re: re, at: document.Pos(line: 0, col: 0)).must()
+    assert around.hit == Hit(line: 2, from: 0, to: 2) && around.wrapped
+    up = previous_hit(doc, re: re, at: document.Pos(line: 2, col: 0)).must()
+    assert up.hit == Hit(line: 0, from: 3, to: 5)
+
+test "tally_of: the second of three, across lines"
+    doc = document.from_text("x y\nx\nz x")
+    re = compile_pattern("x", ignore_case: false).must()
+    assert tally_of(doc, re: re, hit: Hit(line: 1, from: 0, to: 1)) == Tally(index: 2, total: 3)
+
+test "spans_in_line: the empty matches left out"
+    re = compile_pattern("b*", ignore_case: false).must()
+    assert spans_in_line("abba", re: re) == [regex.Span(start: 1, end: 3)]
+
+test "first_in_line: a match of the empty text steps one grapheme on"
+    re = compile_pattern("", ignore_case: false).must()
+    assert first_in_line("日x", re: re, from: 0, strictly: true).must().start == 3
+    assert first_in_line("x", re: re, from: 1, strictly: true).is_err()

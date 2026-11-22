@@ -1,0 +1,95 @@
+# The keys a repository's objects are kept under, one place for all of
+# them, so the storage, the pruner and the copier agree on what a key
+# means:
+#
+# - `config`, the repository's settings, sealed;
+# - `keys/<name>`, one key file per password, readable JSON;
+# - `data/<two hex digits>/<pack>`, the packs of sealed chunks, spread over
+#   256 folders as restic spreads them, so no folder of a large
+#   repository holds millions of names;
+# - `trees/<id>`, one sealed tree per folder state, named by its content;
+# - `index/<id>`, which pack holds each chunk, one file per run, sealed;
+# - `snapshots/<id>`, one sealed snapshot per run;
+# - `summary`, the Bloom filter of every chunk the index holds, sealed.
+
+use <rebel>/strings
+
+## Keys
+
+# The key of the repository's settings.
+constant CONFIG: str
+    "config"
+
+# The key of the Bloom filter over the index.
+constant SUMMARY: str
+    "summary"
+
+# The folder of the key files, with its `/`.
+constant KEYS: str
+    "keys/"
+
+# The folder of the packs, with its `/`.
+constant DATA: str
+    "data/"
+
+# The folder of the trees, with its `/`.
+constant TREES: str
+    "trees/"
+
+# The folder of the index files, with its `/`.
+constant INDEX: str
+    "index/"
+
+# The folder of the snapshots, with its `/`.
+constant SNAPSHOTS: str
+    "snapshots/"
+
+# The key of the key file named `name`.
+#
+# - `name`: the key file's name.
+function key_file(name: str) -> str
+    return KEYS + name
+
+# The key of the pack named `name`, under the folder its first two digits
+# name.
+#
+# - `name`: the pack's name, hexadecimal.
+function pack(name: str) -> str
+    return DATA + name.slice(from: 0, to: 2) + "/" + name
+
+# The key of the tree named `id`.
+#
+# - `id`: the tree's name.
+function tree(id: str) -> str
+    return TREES + id
+
+# The key of the index file named `id`.
+#
+# - `id`: the index file's name.
+function index_file(id: str) -> str
+    return INDEX + id
+
+# The key of the snapshot named `id`.
+#
+# - `id`: the snapshot's name.
+function snapshot(id: str) -> str
+    return SNAPSHOTS + id
+
+# The name a key under `folder` gives its object: the key's last part.
+#
+# - `key`: a key under `folder`.
+# - `folder`: one of the folders above, with its `/`.
+function name_in(key: str, folder: str) -> str
+    rest = strings.trim_prefix(s: key, prefix: folder)
+
+    return match strings.split_once_last(s: rest, sep: "/")
+        .ok h  => h.after
+        .err _ => rest
+
+test "pack: under the folder of its first two digits"
+    assert pack("ab12cd") == "data/ab/ab12cd"
+
+test "name_in: a pack's and a snapshot's names"
+    assert name_in(key: "data/ab/ab12cd", folder: DATA) == "ab12cd"
+    assert name_in(key: snapshot("ff00"), folder: SNAPSHOTS) == "ff00"
+    assert name_in(key: "x", folder: SNAPSHOTS) == "x"
