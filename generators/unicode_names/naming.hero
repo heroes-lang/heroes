@@ -1,0 +1,199 @@
+# The names of `unicode/names`' name table: which code points a rule of UAX
+# #44 (its table 4.8) names and which `UnicodeData.txt` names itself, the
+# words of those names, the most used first, and each name as the words it
+# is made of.
+
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+use runs
+
+# What a name a rule makes begins with, by the rule's number: rule 1 is the
+# Hangul syllables', which spells the jamo; every other is its prefix and the
+# code point in hexadecimal.
+constant RULE_PREFIXES: [str]
+    [
+        "CJK UNIFIED IDEOGRAPH-"
+        "HANGUL SYLLABLE "
+        "TANGUT IDEOGRAPH-"
+        "KHITAN SMALL SCRIPT CHARACTER-"
+        "NUSHU CHARACTER-"
+        "CJK COMPATIBILITY IDEOGRAPH-"
+        "EGYPTIAN HIEROGLYPH-"
+    ]
+
+# The words of the names held in texts of this many bytes, the last aside.
+constant CHUNK: i64
+    4000
+
+# What `UnicodeData.txt` names: the code points a rule names, as ranges
+# `first << 24 | last << 3 | rule`; the others in order, with their names.
+record Named
+    rules: [i64]
+    points: [i64]
+    names: [str]
+
+# `n`, 0 or more, in uppercase hexadecimal of four digits at least, as a
+# name a rule makes writes it.
+function hex(n: i64) -> str
+    digits = "0123456789ABCDEF"
+    out @= ""
+    rest @= n
+
+    while rest > 0 || out.len() < 4
+        at = rest % 16
+        out @ digits.slice(from: at, to: at + 1) + out
+        rest @ rest / 16
+
+    return out
+
+# The rule that names a range of `<..., First>` and `<..., Last>` lines
+# labelled `label`, or -1 for one whose code points have no name.
+function range_rule(label: str) -> i64
+    if strings.has_prefix(s: label, prefix: "<CJK Ideograph")
+        return 0
+
+    if strings.has_prefix(s: label, prefix: "<Hangul Syllable")
+        return 1
+
+    if strings.has_prefix(s: label, prefix: "<Tangut Ideograph")
+        return 2
+    return -1
+
+# What `UnicodeData.txt`, `text`, names, and by which rule.
+#
+# Fails `invalid` where a line does not read, or a range's last line is
+# missing.
+function named_of(text: str) -> Named?
+    rule_of @= runs.filled(-1)
+    points: [i64] @= []
+    names: [str] @= []
+    open @= -1
+    open_rule @= -1
+
+    for line in ucdkit.data_lines(text)?
+        name = line.fields[0]
+
+        if strings.has_suffix(s: name, suffix: ", First>")
+            open @ line.first
+            open_rule @ range_rule(name)
+        else if strings.has_suffix(s: name, suffix: ", Last>")
+            if open < 0
+                return fail(code: "invalid", msg: f"the range that ends at {line.first} has no first line")
+
+            if open_rule >= 0
+                point @= open
+
+                while point <= line.first
+                    rule_of[point] @ open_rule
+                    point @ point + 1
+
+            open @ -1
+        else if !strings.has_prefix(s: name, prefix: "<")
+            rule @= -1
+            at @= 0
+
+            while at < RULE_PREFIXES.len()
+                if at != 1 && name == RULE_PREFIXES[at] + hex(line.first)
+                    rule @ at
+                at @ at + 1
+
+            if rule >= 0
+                rule_of[line.first] @ rule
+            else
+                points @ points.push(line.first)
+                names @ names.push(name)
+
+    if open >= 0
+        return fail(code: "invalid", msg: f"the range opened at {open} has no last line")
+    rules: [i64] @= []
+
+    for one in runs.runs_of(rule_of, none: -1)
+        rules @ rules.push(one.first << 24 | one.last << 3 | one.value)
+
+    return ok(Named(rules: rules, points: points, names: names))
+
+# The words of `names`, the most used first, those used as often in the
+# order of their bytes.
+function words_of(names: [str]) -> [str]
+    counts: {str: i64} @= {}
+
+    for name in names
+        for word in strings.split(s: name, sep: " ")
+            counts[word] @ counts[word].default(0) + 1
+
+    by_count: {i64: [str]} @= {}
+
+    for word in keys(counts)
+        n = counts[word].must()
+        held = by_count[n].default([])
+        by_count[n] @ held.push(word)
+
+    out: [str] @= []
+    times = sort(keys(by_count))
+    at @= times.len() - 1
+
+    while at >= 0
+        for word in sort(by_count[times[at]].must())
+            out @ out.push(word)
+
+        at @ at - 1
+
+    return out
+
+# `n` full stops.
+function stops(n: i64) -> str
+    out: [str] @= []
+
+    while out.len() < n
+        out @ out.push(".")
+
+    return out.join("")
+
+# The texts of `CHUNK` bytes `words` are written into one after another,
+# each but the last filled out with full stops so no word crosses from one
+# to the next, and where each word stands, `offset << 5 | length`.
+record Text
+    texts: [str]
+    spans: [i64]
+
+function text_of(words: [str]) -> Text
+    out @= Text(texts: [], spans: [])
+    current @= ""
+    offset @= 0
+
+    for word in words
+        if current.len() + word.len() > CHUNK
+            out.texts @ out.texts.push(current + stops(CHUNK - current.len()))
+            offset @ offset + CHUNK
+            current @ ""
+        out.spans @ out.spans.push(offset + current.len() << 5 | word.len())
+        current @ current + word
+
+    out.texts @ out.texts.push(current)
+    return out
+
+## Tests
+
+test "hex: four digits at least, uppercase"
+    assert hex(0x41) == "0041" && hex(0x2fa1d) == "2FA1D"
+
+test "named_of: a range a rule names, one that names nothing, a name a rule makes, and a name of its own"
+    text = "3400;<CJK Ideograph Extension A, First>;Lo;0;L;;;;;N;;;;;\n3402;<CJK Ideograph Extension A, Last>;Lo;0;L;;;;;N;;;;;\nE000;<Private Use, First>;Co;0;L;;;;;N;;;;;\nE001;<Private Use, Last>;Co;0;L;;;;;N;;;;;\nF900;CJK COMPATIBILITY IDEOGRAPH-F900;Lo;0;L;8C48;;;;N;;;;;\nF901;CJK COMPATIBILITY IDEOGRAPH-F901;Lo;0;L;66F4;;;;N;;;;;\nF902;SOMETHING ELSE;Lo;0;L;;;;;N;;;;;\n"
+    got = named_of(text).must()
+    assert got.rules == [0x3400 << 24 | 0x3402 << 3, 0xf900 << 24 | 0xf901 << 3 | 5]
+    assert got.points == [0xf902] && got.names == ["SOMETHING ELSE"]
+
+test "words_of: the most used first, a tie by its bytes"
+    assert words_of(["B A", "C A", "B D"]) == ["A", "B", "C", "D"]
+
+test "text_of: a word that would cross a text begins the next, the one before filled out with full stops"
+    word = "ABCDEFGHIJKLMNOPQRSTUVWXYZABCD"
+    words: [str] @= []
+
+    while words.len() < 134
+        words @ words.push(word)
+
+    got = text_of(words)
+    assert got.texts.len() == 2 && got.texts[0].len() == CHUNK && strings.has_suffix(s: got.texts[0], suffix: "D" + stops(10))
+    assert got.spans[132] == 132 * 30 << 5 | 30 && got.spans[133] == CHUNK << 5 | 30 && got.texts[1] == word

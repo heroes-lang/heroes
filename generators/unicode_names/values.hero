@@ -1,0 +1,208 @@
+# The numeric values, the Bidi_Class and the mirroring of `unicode/names`'
+# properties, read from `DerivedNumericType.txt`, `DerivedNumericValues.txt`,
+# `DerivedBidiClass.txt`, `PropertyValueAliases.txt`, `UnicodeData.txt` and
+# `BidiMirroring.txt`.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+use runs
+use scripts
+
+# The Numeric_Type values a code point that writes a number has, by their
+# number: the long names of `PropertyValueAliases.txt`, in lowercase.
+constant NUMERIC_KINDS: [str]
+    ["decimal", "digit", "numeric"]
+
+# The code points that write a number, ascending: `code point << 2 |
+# kind`, and the number's numerator and denominator in lowest terms beside.
+record Numbers
+    points: [i64]
+    numerators: [i64]
+    denominators: [i64]
+
+# The greatest common divisor of `a` and `b`, both 0 or more.
+function gcd(a: i64, b: i64) -> i64
+    x @= a
+    y @= b
+
+    while y != 0
+        rest = x % y
+        x @ y
+        y @ rest
+
+    return x
+
+# The fraction the field `text` writes: `7`, `-1/2`, in lowest terms, the
+# denominator above 0.
+#
+# Fails `invalid` where it is not one.
+function fraction(text: str) -> [i64]?
+    halves = strings.split(s: text, sep: "/")
+    numerator = numbers.parse_int(halves[0])?
+
+    denominator = if halves.len() == 2
+        numbers.parse_int(halves[1])?
+    else
+        1
+
+    if halves.len() > 2 || denominator <= 0
+        return fail(code: "invalid", msg: f"\"{text}\" is not a number the database writes")
+
+    magnitude = if numerator < 0
+        -numerator
+    else
+        numerator
+    common = gcd(a: magnitude, b: denominator)
+    return ok([numerator / common, denominator / common])
+
+# What `types`, `DerivedNumericType.txt`, and `values`,
+# `DerivedNumericValues.txt`, give.
+#
+# Fails `invalid` where a line does not read, or a code point with a value
+# has no type of `NUMERIC_KINDS`.
+function numbers_of(types: str, values: str) -> Numbers?
+    kind @= runs.filled(-1)
+
+    for line in ucdkit.data_lines(types)?
+        index = scripts.index_in(NUMERIC_KINDS, name: strings.to_lower(line.fields[0]))
+
+        if index < 0
+            return fail(code: "invalid", msg: f"the numeric type \"{line.fields[0]}\" of {line.first} is none of three")
+        runs.fill(@kind, line: line, value: index)
+
+    numerators: {i64: i64} @= {}
+    denominators: {i64: i64} @= {}
+
+    for line in ucdkit.data_lines(values)?
+        if line.fields.len() < 3
+            return fail(code: "invalid", msg: f"the numeric value of {line.first} has {line.fields.len()} fields")
+        value = fraction(line.fields[2])?
+        point @= line.first
+
+        while point <= line.last
+            numerators[point] @ value[0]
+            denominators[point] @ value[1]
+            point @ point + 1
+
+    out @= Numbers(points: [], numerators: [], denominators: [])
+
+    for point in sort(keys(numerators))
+        if kind[point] < 0
+            return fail(code: "invalid", msg: f"the code point {point} has a numeric value and no type")
+        out.points @ out.points.push(point << 2 | kind[point])
+        out.numerators @ out.numerators.push(numerators[point].must())
+        out.denominators @ out.denominators.push(denominators[point].must())
+
+    return ok(out)
+
+# Every code point's Bidi_Class: the short names in the order of their
+# bytes, and the runs `first << 8 | class`.
+record Bidi
+    names: [str]
+    runs: [i64]
+
+# What `classes`, `DerivedBidiClass.txt`, and `aliases`,
+# `PropertyValueAliases.txt`, give: a `# @missing:` line's long name is
+# written as its short one, and a later line over an earlier one.
+#
+# Fails `invalid` where a line does not read, or a code point is left with
+# no class.
+function bidi_of(classes: str, aliases: str) -> Bidi?
+    short_of: {str: str} @= {}
+
+    for row in runs.rows(aliases)
+        if row.len() >= 3 && row[0] == "bc"
+            for name in row.slice(from: 1, to: row.len())
+                short_of[name] @ row[1]
+
+    lines: [ucdkit.Line] @= []
+
+    for line in ucdkit.missing_lines(classes)?
+        lines @ lines.push(line)
+
+    for line in ucdkit.data_lines(classes)?
+        lines @ lines.push(line)
+
+    seen: {str: bool} @= {}
+
+    for line in lines
+        seen[short_of[line.fields[0]].default(line.fields[0])] @ true
+
+    names = sort(keys(seen))
+    values @= runs.filled(-1)
+
+    for line in lines
+        runs.fill(
+            @values,
+            line: line,
+            value: scripts.index_in(names, name: short_of[line.fields[0]].default(line.fields[0]))
+        )
+
+    for value in values
+        if value < 0
+            return fail(code: "invalid", msg: "a code point has no Bidi_Class")
+
+    out @= Bidi(names: names, runs: [])
+
+    for one in runs.runs_of(values, none: -1)
+        out.runs @ out.runs.push(one.first << 8 | one.value)
+
+    return ok(out)
+
+# The Bidi_Mirrored characters of `UnicodeData.txt`, `text`, as ranges
+# `first << 21 | last`.
+#
+# Fails `invalid` where a line does not read.
+function mirrored_of(text: str) -> [i64]?
+    lines: [ucdkit.Line] @= []
+
+    for line in ucdkit.data_lines(text)?
+        if line.fields.len() > 8 && line.fields[8] == "Y"
+            lines @ lines.push(line)
+
+    return ok(runs.ranges_of(lines))
+
+# The characters `BidiMirroring.txt`, `text`, gives a mirror, ascending, and
+# the mirror of each beside it.
+record Mirrors
+    sources: [i64]
+    targets: [i64]
+
+# What `BidiMirroring.txt`, `text`, gives.
+#
+# Fails `invalid` where a line does not read.
+function mirrors_of(text: str) -> Mirrors?
+    target_of: {i64: i64} @= {}
+
+    for line in ucdkit.data_lines(text)?
+        target_of[line.first] @ ucdkit.hex_of(line.fields[0])?
+
+    out @= Mirrors(sources: sort(keys(target_of)), targets: [])
+
+    for source in out.sources
+        out.targets @ out.targets.push(target_of[source].must())
+
+    return ok(out)
+
+## Tests
+
+test "fraction: a whole number, a negative half, and one reduced"
+    assert fraction("7").must() == [7, 1] && fraction("-1/2").must() == [-1, 2] && fraction("2/4").must() == [1, 2]
+    assert fraction("1/0").is_err()
+
+test "numbers_of: a digit, a fraction, and a value with no type refused"
+    got = numbers_of(types: "0030 ; Decimal\n00BD ; Numeric\n", values: "0030 ; 0.0 ; ; 0\n00BD ; 0.5 ; ; 1/2\n").must()
+    assert got.points == [0x30 << 2, 0xbd << 2 | 2] && got.numerators == [0, 1] && got.denominators == [1, 2]
+    assert numbers_of(types: "", values: "0030 ; 0.0 ; ; 0\n").is_err()
+
+test "bidi_of: a missing line's long name as its short one, a later line over it"
+    aliases = "bc ; L ; Left_To_Right\nbc ; R ; Right_To_Left\n"
+    got = bidi_of(classes: "# @missing: 0000..10FFFF; Left_To_Right\n0590 ; R\n", aliases: aliases).must()
+    assert got.names == ["L", "R"]
+    assert got.runs == [0, 0x590 << 8 | 1, 0x591 << 8]
+
+test "mirrors_of: each source and its mirror, ascending"
+    got = mirrors_of("0029; 0028 # RIGHT PARENTHESIS\n0028; 0029 # LEFT PARENTHESIS\n").must()
+    assert got.sources == [0x28, 0x29] && got.targets == [0x29, 0x28]

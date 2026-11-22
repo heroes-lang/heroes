@@ -1,0 +1,110 @@
+# Runs and ranges of code points, the shapes every table of
+# `unicode/names` packs its properties into, and the rows of a file of the
+# database whose first field is no code point.
+
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+# A run of code points that hold one value: the first, the last, the value.
+record Run
+    first: i64
+    last: i64
+    value: i64
+
+# One value for each code point, from 0, every one `value`.
+function filled(value: i64) -> [i64]
+    out: [i64] @= []
+
+    while out.len() < ucdkit.POINTS
+        out @ out.push(value)
+
+    return out
+
+# The runs of `values`, one value for each code point from 0, `none` for no
+# value: every code point with a value, consecutive ones holding the same
+# value joined, ascending.
+function runs_of(values: [i64], none: i64) -> [Run]
+    out: [Run] @= []
+    at @= 0
+
+    while at < values.len()
+        value = values[at]
+
+        if value != none
+            if out.len() > 0 && out[out.len() - 1].last == at - 1 && out[out.len() - 1].value == value
+                out[out.len() - 1].last @ at
+            else
+                out @ out.push(Run(first: at, last: at, value: value))
+        at @ at + 1
+
+    return out
+
+# The ranges `first << 21 | last` of the code points `lines` name, joined
+# where they touch, ascending.
+function ranges_of(lines: [ucdkit.Line]) -> [i64]
+    values @= filled(0)
+
+    for line in lines
+        point @= line.first
+
+        while point <= line.last
+            values[point] @ 1
+            point @ point + 1
+
+    out: [i64] @= []
+
+    for one in runs_of(values, none: 0)
+        out @ out.push(one.first << 21 | one.last)
+
+    return out
+
+# Each value of `values` written on the code points of `line`.
+function fill(@values: [i64], line: ucdkit.Line lent, value: i64)
+    point @= line.first
+
+    while point <= line.last
+        values[point] @ value
+        point @ point + 1
+
+# The fields of every line of `text` that holds data, each trimmed, its
+# comment cut: what `PropertyValueAliases.txt` and `PropertyAliases.txt`
+# write, whose first field names a property.
+function rows(text: str) -> [[str]]
+    out: [[str]] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        body = strings.split(s: line, sep: "#")[0]
+
+        if strings.trim(body) != ""
+            fields: [str] @= []
+
+            for field in strings.split(s: body, sep: ";")
+                fields @ fields.push(strings.trim(field))
+
+            out @ out.push(fields)
+
+    return out
+
+## Tests
+
+test "rows: the fields of each data line trimmed, comments and blank lines left out"
+    assert rows("# a comment\nsc ; Adlm ; Adlam # a note\n\nAlpha ; Alphabetic\n") == [["sc", "Adlm", "Adlam"], ["Alpha", "Alphabetic"]]
+
+test "runs_of: consecutive code points of one value joined, a gap or another value apart, none left out"
+    values @= filled(0)
+    values[1] @ 5
+    values[2] @ 5
+    values[3] @ 6
+    values[5] @ 6
+    got = runs_of(values, none: 0)
+    assert got.len() == 3
+    assert got[0] == Run(first: 1, last: 2, value: 5) && got[1] == Run(first: 3, last: 3, value: 6)
+    assert got[2] == Run(first: 5, last: 5, value: 6)
+
+test "ranges_of: two lines that touch joined, one apart left apart"
+    lines = [
+        ucdkit.Line(first: 0x41, last: 0x5a, fields: ["X"])
+        ucdkit.Line(first: 0x5b, last: 0x5b, fields: ["X"])
+        ucdkit.Line(first: 0x61, last: 0x61, fields: ["X"])
+    ]
+    assert ranges_of(lines) == [0x41 << 21 | 0x5b, 0x61 << 21 | 0x61]

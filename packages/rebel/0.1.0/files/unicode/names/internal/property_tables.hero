@@ -3,28 +3,25 @@
 # `DerivedCoreProperties.txt` and `emoji-data.txt`, numeric values, the
 # Bidi_Class, Bidi_Mirrored and the mirroring glyphs.
 #
-# The table is data, made and not typed: a one-off program read the Unicode
-# Character Database 17.0.0 (UCD.zip of https://www.unicode.org/Public/17.0.0/ucd/,
-# fetched 2026-11-17), packed it, and held every one of the 1,114,112 code
-# points to Python 3.15.2's `unicodedata` (17.0.0: block, Bidi_Class and
-# Bidi_Mirrored of every assigned character, XID_Start, XID_Continue and the
-# three numeric values) and to ICU 78.3 (Unicode 17.0: script, script
-# extensions, Bidi_Class, every binary property here, the mirroring glyph),
-# then wrote this module whole. Nothing here is edited by hand. What it read:
+# Generated, never edited by hand: the Heroes program
+# `generators/unicode_names/` read the Unicode Character Database 17.0.0,
+# each file held to its SHA-256, packed it into the tables below, and wrote
+# this module whole; its `check` command says whether this module is still
+# what it writes. What it read:
 #
-# - `Scripts.txt`, SHA-256 9f5e50d3abaee7d6
-# - `ScriptExtensions.txt`, SHA-256 ec2107e58825a158
-# - `PropertyValueAliases.txt`, SHA-256 64e9a5f76f7a1e8b
-# - `PropertyAliases.txt`, SHA-256 4441f573caf952ff
-# - `Blocks.txt`, SHA-256 c0edefaf1a19771e
-# - `PropList.txt`, SHA-256 130dcddcaadaf071
-# - `DerivedCoreProperties.txt`, SHA-256 24c7fed1195c482f
-# - `emoji-data.txt`, SHA-256 2cb2bb9455cda83e
-# - `DerivedNumericType.txt`, SHA-256 7c83684d3336b698
-# - `DerivedNumericValues.txt`, SHA-256 139b976bdc288be0
-# - `DerivedBidiClass.txt`, SHA-256 4867b4b7f0731ed1
-# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575
-# - `BidiMirroring.txt`, SHA-256 a2f16fb873ab4fcd
+# - `Scripts.txt`, SHA-256 9f5e50d3abaee7d6ce09480f325c706f485ae3240912527e651954d2d6b035bf
+# - `ScriptExtensions.txt`, SHA-256 ec2107e58825a1586acee8e0911ce18260394ac8b87e535ca325f1ccbeb06bc6
+# - `PropertyValueAliases.txt`, SHA-256 64e9a5f76f7a1e8b5a47d6a1f9a26522a251208f5276bdfa1559dac7cf2e827a
+# - `PropertyAliases.txt`, SHA-256 4441f573caf952ffece1d7c892e7715bd7136dfc26f96eb6f268bf1e474715fb
+# - `Blocks.txt`, SHA-256 c0edefaf1a19771e830a82735472716af6bf3c3975f6c2a23ffbe2580fbbcb15
+# - `PropList.txt`, SHA-256 130dcddcaadaf071008bdfce1e7743e04fdfbc910886f017d9f9ac931d8c64dd
+# - `DerivedCoreProperties.txt`, SHA-256 24c7fed1195c482faaefd5c1e7eb821c5ee1fb6de07ecdbaa64b56a99da22c08
+# - `emoji-data.txt`, SHA-256 2cb2bb9455cda83e8481541ecf5b6dfda66a3bb89efa3fa7c5297eccf607b72b
+# - `DerivedNumericType.txt`, SHA-256 7c83684d3336b698381745b78a971c3e1242cb3fcac58604469086c19b6edcee
+# - `DerivedNumericValues.txt`, SHA-256 139b976bdc288be01c80f018523da769cf2845109b5a7f0f8a432db64bfedcfa
+# - `DerivedBidiClass.txt`, SHA-256 4867b4b7f0731ed1bfcd34cc6251211ff1542541fce0734b6fbda139ee80b3a4
+# - `UnicodeData.txt`, SHA-256 2e1efc1dcb59c575eedf5ccae60f95229f706ee6d031835247d843c11d96470c
+# - `BidiMirroring.txt`, SHA-256 a2f16fb873ab4fcdf3221cb1a8a85a134ddd6ed03603181823ff5206af3741ce
 
 # The long name of every script, in the order of their bytes.
 constant SCRIPT_NAMES: [str]
