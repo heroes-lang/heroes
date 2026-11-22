@@ -96,6 +96,14 @@ the live account on 2026-11-20; the program's docstring has the detail:
    since no run has left it out; `--no-connect` exists for that experiment;
 6. waits for `ssh win`, and past its time says what Tailscale reads of the box.
 
+**No key is kept in the repository.** Before the first step the program reads
+the portal's Firebase web key, its Firebase project and its API's address from
+the `REACT_APP_` block of the portal's own JavaScript, which the page ships to
+every visitor. The first version wrote the key into the program, and on
+2026-11-22 GitHub's secret scanning flagged it: the key is appOnFly's and
+public by design, so nothing was rotated, but a literal goes stale when
+appOnFly rotates it and alarms on every copy of the tree.
+
 **The first run, 2026-11-20**, from Stopped: the start was accepted at
 14:44:45, the machine read Starting at 14:44:52 and Running at 14:45:06, the
 timer was armed to 5 h 59 m, Connect answered `connect`, and `ssh win`
