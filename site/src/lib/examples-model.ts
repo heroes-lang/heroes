@@ -72,8 +72,13 @@ const CATALOGUE = 'heroes.toml';
 /** The folder a fetch places packages in, which no `use` can spell (panel 235's R7). */
 const PLACED = 'heroes.packages';
 
-/** Files that are the harness's inputs rather than the program's own data. */
-const HARNESS_FILES = new Set(['main.args', 'main.expected', 'main.stdin']);
+/**
+ * Files that are the harness's inputs rather than the program's own data:
+ * the corpus's three, and the two an application of `examples-rebel/`
+ * declares about the machines its demo runs on, which the check of Rebel's
+ * programs reads (`examples-rebel/README.md` § A10).
+ */
+const HARNESS_FILES = new Set(['main.args', 'main.expected', 'main.stdin', 'main.varies', 'main.skips']);
 
 /**
  * A file a program's folder holds for its readers and never opens: the folder's

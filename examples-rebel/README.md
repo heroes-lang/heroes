@@ -579,6 +579,37 @@ speaking the real protocol far enough for the demo, never a paid call; no clock,
 port, path or timing is printed. The same binary with other arguments does the real job, and
 its header comment says how.
 
+**The check of Rebel's programs holds this section true**: `heroes run
+tests/harness/rebel_apps.hero -- <compiler> [--partial] [--library <folder>]... [<name>...]`,
+from the repository's root, on this Mac and on every leg of Rebel's pipeline
+(`.github/workflows/rebel.yml`). It finds the programs by walking this folder, never by a
+list; builds them four at a time; runs each application's demo, and each twin as the `corpus`
+suite runs its original, from the repository's root; and holds each to its expectation byte for
+byte, its exit code too. A folder holding `main.expected` is an application, one whose
+`examples/<name>/` holds a `main.hero` is a twin, and any other folder fails the check by name.
+It also asks that the applications' catalogues, between them, list every face of Rebel, a face
+being a ledger (§ A8); `--partial` tells the faces no application lists without failing, while
+the applications are still being written.
+
+What a machine decides is declared beside `main.expected`, in two files of one grammar, a line
+`<word>: <text>`, the text being everything after the colon's one space, with `#` comments and
+blank lines; any other line refuses the file, and the program with it. Nothing is matched by
+likeness:
+
+- **`main.varies`**, a line of the transcript another machine prints in another form:
+  `line: <the line as main.expected holds it>`, then `or: <another form>` for each other form,
+  each written whole, and `why: <the machine fact that decides which>`. The line stands in
+  `main.expected` exactly once, its forms are allowed at its place and nowhere else, and every
+  other line is held to its bytes; the check's line for the program says which form the run
+  printed. `inventory`'s ODBC store is one: `odbc: skipped: no ODBC driver` where unixODBC knows
+  no SQLite driver, the store's own account line where it does.
+- **`main.skips`**, a platform where the demo cannot run: `<platform>: <reason>`, the platform
+  `linux`, `darwin` or `windows`, each at most once. The program is still built there, and the
+  check says `SKIP <app> on <platform>: <reason>`, never a pass. `registry` on Windows is one,
+  its packages being signed with Ed25519, which Windows' CNG lacks.
+
+A twin declares neither: it prints its original's bytes on every platform.
+
 ## B1. What costs
 
 - **`+` on `str` copies both sides**, so a concatenation in a loop is

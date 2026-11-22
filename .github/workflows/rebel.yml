@@ -15,14 +15,19 @@
 #     rules, and red where the verb refuses one (`tests/harness/rebel_docs.hero`).
 #     A step of this file's own ran `heroes doc` over every face from step 65a
 #     to step 94a, which removed it as the check's repetition;
-#   - **Rebel's example program**, `examples-rebel/jq.hero`, built and run on
-#     one filter of its own usage lines;
 #   - **every package's own tests**, through the drivers
 #     `examples-rebel/reach_*.hero` (the `plan` job counts them), each
 #     `heroes test` plain, and on the two Linux legs also under
 #     `--sanitize`, since LeakSanitizer is there and a driver reaches the
 #     floors' C bindings (`.claude/rules/platforms.md` § Linux is where a leak
-#     in a binding is visible).
+#     in a binding is visible);
+#   - **Rebel's programs**, in a part of their own, `programs`, beside the
+#     drivers' parts and with their installs: every
+#     application of `examples-rebel/` built and its demo held to its
+#     `main.expected`, every twin held to its original's, and the
+#     applications' catalogues asked for every face of Rebel, by the check of
+#     Rebel's programs (`tests/harness/rebel_apps.hero`, README § A10), a
+#     small jq among them (`examples-rebel/jq/`).
 #
 # Every system library a Rebel package links or loads is installed below, on
 # the platform that lacks it (the author's decision 6 of 2026-11-19: nothing is
@@ -98,9 +103,9 @@ env:
   BYTES: 20000000
 
 jobs:
-  # ─────────────── The suite, the documentation and the example ───────────────
+  # ───────────────────── The suite and the documentation ─────────────────────
   coherence:
-    name: ${{ matrix.leg.name }}, Rebel's suite, documentation and example
+    name: ${{ matrix.leg.name }}, Rebel's suite and documentation
     runs-on: ${{ matrix.leg.os }}
     timeout-minutes: 120
     strategy:
@@ -159,21 +164,6 @@ jobs:
         shell: bash
         run: ./heroes-from-seed${{ matrix.leg.exe }} run tests/harness/main.hero -- ./heroes${{ matrix.leg.exe }} rebel
 
-      # One of the example's own usage lines, its output compared byte for
-      # byte: the runtime writes stdout in binary mode on Windows
-      # (`runtime/parts/os.c`), so the bytes are the same on every leg.
-      # Measured on the author's Mac at `9149e72d0`: built in 58 s, it printed
-      # these two lines at exit 0.
-      - name: Rebel's example program, built and run
-        if: ${{ !cancelled() && steps.stage2.outcome == 'success' }}
-        shell: bash
-        run: |
-          mkdir -p build
-          ./heroes${{ matrix.leg.exe }} build examples-rebel/jq.hero -o build/jq${{ matrix.leg.exe }}
-          printf '%s' '{"albums":[{"title":"Low"},{"title":"Lodger"}]}' | ./build/jq${{ matrix.leg.exe }} -r '.albums[] | .title' > build/jq.out
-          printf 'Low\nLodger\n' > build/jq.want
-          cmp build/jq.want build/jq.out
-
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #
   # Whether one job running every driver ends inside GitHub's six hours on
@@ -187,7 +177,7 @@ jobs:
   # timed them yet; every run's seconds go to the job's summary, so a later
   # commit can place them by their minutes as `ci.yml`'s tables are placed.
   plan:
-    name: Rebel's drivers in parts
+    name: Rebel's drivers in parts, and the programs' part
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
@@ -230,6 +220,10 @@ jobs:
             exit 1
           fi
           echo "${#drivers[@]} drivers in $PARTS parts"
+          # One more part, `programs`, holding no driver: Rebel's programs,
+          # judged by the step of that name in this job's installs.
+          json="$json,{\"part\":\"programs\",\"drivers\":\"\"}"
+          echo "and the part programs, the check of Rebel's programs"
           echo "parts=[$json]" >> "$GITHUB_OUTPUT"
 
   tests:
@@ -410,6 +404,7 @@ jobs:
       # leg meant to run them. Darwin's login keychain and Windows' Credential
       # Manager are the runner's own.
       - name: The part's drivers
+        if: ${{ matrix.slice.drivers != '' }}
         shell: bash
         env:
           LEG: ${{ matrix.leg.name }}
@@ -510,3 +505,55 @@ jobs:
           done
           if [ -n "$red" ]; then echo "::error::the runs of this part that did not end green:$red"; fi
           exit "$worst"
+
+      # The part `programs` (job `plan`): every program of `examples-rebel/`
+      # judged by the check of Rebel's programs, `tests/harness/rebel_apps.hero`
+      # (`examples-rebel/README.md` § A10): each application built and its demo
+      # held to its `main.expected` byte for byte, each twin to its original's
+      # in `examples/`, four built or run at once, and the applications'
+      # catalogues asked, between them, for every face of Rebel. It is a part
+      # of this job, beside the drivers' parts rather than after them, since a
+      # job after them all would wait for the slowest and be skipped where any
+      # is red; and it takes this job's installs: SQLite for the programs that
+      # keep their data in it, its headers by `CPATH` and its import library
+      # by `--library` on Windows, as every driver above takes them; and on
+      # Linux and Darwin SQLite's ODBC driver registered as `SQLite3`, so
+      # `inventory`'s ODBC store runs there and prints its account in the form
+      # its `main.varies` declares, where Windows prints the skip. A demo that
+      # cannot run on a platform is told `SKIP` by its `main.skips`
+      # (`registry` on Windows), never passed.
+      #
+      # `--partial` while the twenty applications of the milestone's list are
+      # still being written: a face no application lists is told on the
+      # coverage's line and does not fail the step. It goes when the last of
+      # them lands, and a face unlisted then fails the step.
+      #
+      # The harness is built by stage 1 and judges stage 2, as the `rebel`
+      # suite's step does. Every build and every run of the check is bounded by
+      # the check itself (an hour a build, five minutes a demo), and its output by
+      # `BYTES`; its lines go to the job's summary.
+      - name: Rebel's programs
+        if: ${{ matrix.slice.part == 'programs' }}
+        shell: bash
+        env:
+          LEG: ${{ matrix.leg.name }}
+          EXE: ${{ matrix.leg.exe }}
+        run: |
+          set +e
+          mkdir -p build
+          set -- "./heroes$EXE" --partial
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            export CPATH="$SQLITE_INCLUDE"
+            set -- "$@" --library "$SQLITE_LIB"
+          fi
+          "./heroes-from-seed$EXE" run tests/harness/rebel_apps.hero -- "$@" 2>&1 | head -c "$BYTES" | tee build/rebel-apps.log
+          code=${PIPESTATUS[0]}
+          {
+            echo "### $LEG, Rebel's programs"
+            echo
+            echo '```'
+            grep -E '^(ok   |FAIL |SKIP |told |rebel_apps: )' build/rebel-apps.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -ne 0 ]; then echo "::error title=Rebel's programs::exit $code, $(grep -E '^rebel_apps: [0-9]' build/rebel-apps.log | tail -n 1)"; fi
+          exit "$code"

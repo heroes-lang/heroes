@@ -1,0 +1,490 @@
+# THE CHECK OF REBEL'S PROGRAMS, a root of the harness beside `main.hero`:
+#
+#     heroes run tests/harness/rebel_apps.hero -- <compiler> [--partial] [--library <folder>]... [<name>...]
+#
+# from the repository's root. It walks `examples-rebel/` (README § A10) and
+# judges every folder there, or only the folders named:
+#
+# - **an application**, a folder holding `main.expected`, is built and its
+#   demo run with its `main.args` and `main.stdin`; its transcript is held to
+#   `main.expected` byte for byte and its exit code too, a line its
+#   `main.varies` declares allowed the other forms it names, and a platform
+#   its `main.skips` names told `SKIP <app> on <platform>: <reason>` after
+#   the build (`rebel_apps_declared.hero`);
+# - **a twin**, whose original `examples/<name>/` holds a `main.hero`, is
+#   built and run as the `corpus` suite runs the original and held to the
+#   original's `main.expected` (`rebel_apps_run.hero`);
+# - **the coverage**: the faces the applications' catalogues list, between
+#   them, against every face of Rebel (`rebel_apps_coverage.hero`). A face
+#   no application lists is told, and fails the check unless `--partial`
+#   says the applications are still being written.
+#
+# It prints one line per program and the coverage, then each failure's
+# detail, then its count. Programs are found by walking the folder, never by
+# a list, so a new application is judged the day it lands. **Four programs at
+# most are built or run at once**, each on a thread of its own taking every
+# fourth program in name order (`hero_thread_spawn_str`, spec § 13), the
+# build cache shared as six builds at once share it (`suite_cache.hero`).
+# `--library <folder>` is handed to every build, as the CI hands SQLite's
+# import library to every driver on Windows (`.github/workflows/rebel.yml`).
+#
+# Exit 0 where every program holds or is skipped by its declaration and the
+# coverage holds or is partial; 1 where one does not; 2 where the check
+# could not run: an argument it does not take, a name no folder bears, or a
+# working folder that is not the repository's root. A program and not a verb
+# of `heroes`, for the reason `main.hero` is one: CLAUDE.md § 10's stopping
+# rule.
+
+use rebel_apps_coverage
+use rebel_apps_declared
+use rebel_apps_run
+use rebel_tree
+use shell
+use strings
+
+extern "hero_os.h"
+    function hero_thread_spawn_str(body: (function(str) -> str), arg: str) -> i64
+    function hero_thread_join_str(handle: i64) -> str
+
+# The most programs built or run at once.
+constant AT_ONCE: i64
+    4
+
+# A file every Darwin has, `freed_bytes.hero`'s reading of the platform.
+constant DARWIN_MARK: str
+    "/System/Library/CoreServices/SystemVersion.plist"
+
+# A file every Linux kernel answers, the kernel's own name for itself
+# (proc(5)).
+constant LINUX_MARK: str
+    "/proc/sys/kernel/ostype"
+
+# What the command line asks.
+record Asked
+    # The compiler that builds every program.
+    compiler: str
+    # Whether a face no application lists is told and does not fail.
+    partial: bool
+    # Each `--library <folder>`, as the words handed to every build.
+    building: [str]
+    # The folders named, none for every folder.
+    names: [str]
+
+function main()
+    asked = asked_of(args())
+
+    if asked.is_err()
+        print("rebel_apps: " + rebel_apps_run.refusal_of(asked))
+        print(
+            "usage: heroes run tests/harness/rebel_apps.hero -- <compiler> [--partial] [--library <folder>]... [<name>...]"
+        )
+        exit(code: 2)
+
+    if !shell.is_directory(rebel_apps_run.REBEL) || !shell.is_directory(rebel_apps_run.ORIGINALS)
+        print(
+            "rebel_apps: no " + rebel_apps_run.REBEL + "/ and " + rebel_apps_run.ORIGINALS + "/ here; run it from the repository's root"
+        )
+        exit(code: 2)
+    scratch = "build/rebel-apps-" + shell.pid().to_str()
+    found = folders(scratch)
+
+    if found.is_err()
+        print("rebel_apps: " + rebel_apps_run.refusal_of(found))
+        exit(code: 2)
+    chosen = chosen_of(found: found.must(), names: asked.must().names)
+
+    if chosen.is_err()
+        print("rebel_apps: " + rebel_apps_run.refusal_of(chosen))
+        exit(code: 2)
+    s = rebel_apps_run.Setting(
+        compiler: asked.must().compiler,
+        scratch: scratch,
+        platform: platform(),
+        building: asked.must().building
+    )
+    print(
+        "rebel_apps: " + chosen.must().len().to_str() + " programs of " + rebel_apps_run.REBEL + "/ on " + s.platform + ", " + AT_ONCE.to_str() + " at a time, built by " + s.compiler
+    )
+    verdicts = all_judged(names: chosen.must(), s: s)
+    covered = coverage(scratch: scratch, names: found.must(), partial: asked.must().partial)
+    _ = shell.remove_tree(scratch).is_err()
+
+    for line in told(verdicts: verdicts, covered: covered)
+        print(line)
+
+    if !held(verdicts: verdicts, covered: covered)
+        exit(code: 1)
+
+# The command line read: the compiler first, then `--partial`, each
+# `--library <folder>` and the names, in any order.
+#
+# - `given`: the arguments after the program's name.
+#
+# Fails `usage` where no compiler is given, a `--library` names no folder,
+# or a word opening `--` is none of the two.
+function asked_of(given: [str]) -> Asked?
+    if given.len() == 0 || strings.has_prefix(s: given[0], prefix: "--")
+        return fail(code: "usage", msg: "the first word is the compiler that builds every program")
+    partial: bool @= false
+    building: [str] @= []
+    names: [str] @= []
+    at: i64 @= 1
+
+    while at < given.len()
+        word = given[at]
+
+        if word == "--partial"
+            partial @ true
+        else if word == "--library"
+            if at + 1 == given.len() || strings.has_prefix(s: given[at + 1], prefix: "--")
+                return fail(code: "usage", msg: "`--library` names no folder")
+            building @ building.push(word).push(given[at + 1])
+            at @ at + 1
+        else if strings.has_prefix(s: word, prefix: "--")
+            return fail(code: "usage", msg: "`" + word + "` is neither `--partial` nor `--library <folder>`")
+        else
+            names @ names.push(word)
+        at @ at + 1
+
+    return ok(Asked(compiler: given[0], partial: partial, building: building, names: names))
+
+# The name of every folder of `examples-rebel/`, in name order.
+function folders(scratch: str) -> [str]?
+    out: [str] @= []
+
+    for dir in shell.list_directories(scratch: scratch, dir: rebel_apps_run.REBEL)?
+        out @ out.push(strings.base_name(path: dir))
+
+    return ok(out.sort())
+
+# The folders to judge: every one where no name is given, else the names,
+# each a folder that stands there.
+#
+# - `found`: every folder's name.
+# - `names`: the names the command line gave.
+#
+# Fails `unknown` naming the first name no folder bears, since a run that
+# selected nothing is a green run that judged nothing.
+function chosen_of(found: [str], names: [str]) -> [str]?
+    if names.len() == 0
+        return ok(found)
+
+    for name in names
+        if !rebel_apps_declared.among(word: name, words: found)
+            return fail(
+                code: "unknown",
+                msg: "no folder " + rebel_apps_run.REBEL + "/" + name + "; the folders are " + found.join(" ")
+            )
+
+    return ok(names)
+
+# This machine's platform: `windows` where an executable is named `.exe`,
+# `darwin` and `linux` by a file each holds, and `other` anywhere else, where
+# no skip a program declares applies.
+function platform() -> str
+    if shell.exe_suffix() == ".exe"
+        return "windows"
+
+    if shell.exists(DARWIN_MARK)
+        return "darwin"
+
+    if shell.exists(LINUX_MARK)
+        return "linux"
+    return "other"
+
+# The verdicts on `names`, in their order: `AT_ONCE` threads, the `k`th
+# judging every `AT_ONCE`th name from the `k`th, each program built and run
+# in turn on its thread.
+function all_judged(names: [str], s: rebel_apps_run.Setting) -> [rebel_apps_run.Verdict]
+    handles: [i64] @= []
+
+    for k in range(from: 0, to: AT_ONCE)
+        mine: [str] @= []
+        at: i64 @= k
+
+        while at < names.len()
+            mine @ mine.push(names[at])
+            at @ at + AT_ONCE
+
+        if mine.len() > 0
+            handles @ handles.push(hero_thread_spawn_str(body: judging, arg: job_of(s: s, names: mine)))
+
+    by_name: {str: rebel_apps_run.Verdict} @= {}
+
+    for h in handles
+        for v in verdicts_of(hero_thread_join_str(handle: h)).must()
+            by_name[v.name] @ v
+
+    out: [rebel_apps_run.Verdict] @= []
+
+    for name in names
+        out @ out.push(by_name[name].must())
+
+    return out
+
+# A thread's body: the setting and the names `job` carries judged in turn,
+# their verdicts packed.
+function judging(job: str) -> str
+    fields = unpacked(job).must()
+    s = rebel_apps_run.Setting(
+        compiler: fields[0],
+        scratch: fields[1],
+        platform: fields[2],
+        building: unpacked(fields[3]).must()
+    )
+    out: [str] @= []
+
+    for name in unpacked(fields[4]).must()
+        v = rebel_apps_run.verdict_of(p: rebel_apps_run.program_named(name), s: s)
+        out @ out.push(packed([v.name, v.outcome, v.said, v.detail, v.built.to_str(), v.ran.to_str()]))
+
+    return packed(out)
+
+# What a thread is handed: `s` and the names it judges.
+function job_of(s: rebel_apps_run.Setting, names: [str]) -> str
+    return packed([s.compiler, s.scratch, s.platform, packed(s.building), packed(names)])
+
+# The verdicts a thread gave back.
+function verdicts_of(text: str) -> [rebel_apps_run.Verdict]?
+    out: [rebel_apps_run.Verdict] @= []
+
+    for one in unpacked(text)?
+        f = unpacked(one)?
+
+        if f.len() != 6
+            return fail(code: "malformed", msg: "a verdict of " + f.len().to_str() + " fields, where one holds 6")
+        out @ out.push(
+            rebel_apps_run.Verdict(name: f[0], outcome: f[1], said: f[2], detail: f[3], built: strings.to_number(f[4])?, ran: strings.to_number(f[5])?)
+        )
+
+    return ok(out)
+
+# Texts joined so any text survives the trip, each as its length in bytes,
+# a colon, and its bytes: the one value a thread takes and gives back is a
+# `str` (spec § 13), and a separator could stand inside a program's output.
+function packed(fields: [str]) -> str
+    out: [str] @= []
+
+    for one in fields
+        out @ out.push(one.len().to_str() + ":" + one)
+
+    return out.join("")
+
+# The texts `packed` joined. Fails `malformed` where `text` is not its shape.
+function unpacked(text: str) -> [str]?
+    out: [str] @= []
+    at: i64 @= 0
+
+    while at < text.len()
+        colon: i64 @= at
+
+        while colon < text.len() && text[colon] != ':'
+            colon @ colon + 1
+
+        size = strings.to_number(text.slice(from: at, to: colon))
+
+        if colon == text.len() || size.is_err() || size.must() < 0 || colon + 1 + size.must() > text.len()
+            return fail(code: "malformed", msg: "no packed field at byte " + at.to_str())
+        out @ out.push(text.slice(from: colon + 1, to: colon + 1 + size.must()))
+        at @ colon + 1 + size.must()
+
+    return ok(out)
+
+# What the check finds of the coverage: the faces, how many applications
+# list some, the faces none lists, and whether that fails the check.
+record Covered
+    # Every face of Rebel, or none where they could not be read.
+    faces: [str]
+    # How many applications were read.
+    applications: i64
+    # The faces no application lists.
+    unused: [str]
+    # Why the coverage could not be asked, "" where it was.
+    refused: str
+    # Whether a face no application lists is told rather than failed.
+    partial: bool
+
+# The coverage over every application among `names`, whatever the run judges:
+# the faces of Rebel's newest version against the union of their catalogues'
+# `packages` lines.
+function coverage(scratch: str, names: [str], partial: bool) -> Covered
+    nothing: [str] = []
+    root = rebel_tree.source_root(scratch)
+
+    if root.is_err()
+        return Covered(
+            faces: nothing,
+            applications: 0,
+            unused: nothing,
+            refused: rebel_apps_run.refusal_of(root),
+            partial: partial
+        )
+    faces = rebel_apps_coverage.faces(scratch: scratch, root: root.must())
+
+    if faces.is_err()
+        return Covered(
+            faces: nothing,
+            applications: 0,
+            unused: nothing,
+            refused: rebel_apps_run.refusal_of(faces),
+            partial: partial
+        )
+    used: [[str]] @= []
+
+    for name in names
+        p = rebel_apps_run.program_named(name)
+
+        if p.kind != "application"
+            continue
+        catalogue = p.folder + "/heroes.toml"
+        text = read_file(catalogue)
+
+        if text.is_err()
+            return Covered(
+                faces: faces.must(),
+                applications: used.len(),
+                unused: nothing,
+                refused: "cannot read " + catalogue + ": " + rebel_apps_run.refusal_of(text),
+                partial: partial
+            )
+        listed = rebel_apps_coverage.listed(text.must())
+
+        if listed.is_err()
+            return Covered(
+                faces: faces.must(),
+                applications: used.len(),
+                unused: nothing,
+                refused: catalogue + ": " + rebel_apps_run.refusal_of(listed),
+                partial: partial
+            )
+        used @ used.push(listed.must())
+
+    return Covered(
+        faces: faces.must(),
+        applications: used.len(),
+        unused: rebel_apps_coverage.unused(every: faces.must(), used: used),
+        refused: "",
+        partial: partial
+    )
+
+# Whether the coverage holds: read, and every face listed or the run partial.
+function coverage_holds(c: Covered) -> bool
+    return c.refused.len() == 0 && (c.partial || c.unused.len() == 0)
+
+# The coverage's line.
+function coverage_line(c: Covered) -> str
+    if c.refused.len() > 0
+        return "FAIL coverage (it could not be read: " + c.refused + ")"
+    head = c.faces.len().to_str() + " faces, " + (c.faces.len() - c.unused.len()).to_str() + " listed by " + counted(n: c.applications, one: "application")
+
+    if c.unused.len() == 0
+        return "ok   coverage (" + head + ", every face)"
+    tail = c.unused.len().to_str() + " listed by none: " + c.unused.join(" ")
+
+    if c.partial
+        return "told coverage (" + head + ", partial: " + tail + ")"
+    return "FAIL coverage (" + head + ", " + tail + ")"
+
+# `n` and the word, `one` where `n` is 1 and its plural in `s` otherwise.
+function counted(n: i64, one: str) -> str
+    if n == 1
+        return "1 " + one
+    return n.to_str() + " " + one + "s"
+
+# Whether the check holds: every program `ok` or skipped by its
+# declaration, and the coverage.
+function held(verdicts: [rebel_apps_run.Verdict], covered: Covered) -> bool
+    for v in verdicts
+        if v.outcome == "FAIL"
+            return false
+
+    return coverage_holds(covered)
+
+# Everything the check prints after its first line: a line per program, the
+# coverage's, each failure's detail indented under its name, and the count.
+function told(verdicts: [rebel_apps_run.Verdict], covered: Covered) -> [str]
+    out: [str] @= []
+    tally: {str: i64} @= {"ok": 0, "FAIL": 0, "SKIP": 0}
+
+    for v in verdicts
+        out @ out.push(rebel_apps_run.line_of(v))
+        tally[v.outcome] @ tally[v.outcome].default(0) + 1
+
+    out @ out.push(coverage_line(covered))
+
+    for v in verdicts
+        if v.outcome == "FAIL"
+            out @ out.push("")
+            out @ out.push("FAIL " + v.name)
+
+            for row in strings.lines(v.detail)
+                out @ out.push("  " + row)
+
+    out @ out.push(
+        "rebel_apps: " + verdicts.len().to_str() + " programs, " + tally["ok"].default(0).to_str() + " passed, " + tally["FAIL"].default(0).to_str() + " failed, " + tally["SKIP"].default(0).to_str() + " skipped; coverage " + coverage_word(covered)
+    )
+    return out
+
+function coverage_word(c: Covered) -> str
+    if !coverage_holds(c)
+        return "failed"
+
+    if c.unused.len() > 0
+        return "partial"
+    return "whole"
+
+test "asked_of: the compiler first, then the flags and the names in any order, and every word it refuses"
+    a = asked_of(["./heroes-next", "notes", "--partial", "--library", "C:/sqlite/lib", "json"]).must()
+    assert a.compiler == "./heroes-next"
+    assert a.partial
+    assert a.building == ["--library", "C:/sqlite/lib"]
+    assert a.names == ["notes", "json"]
+    plain = asked_of(["./heroes"]).must()
+    assert !plain.partial
+    assert plain.building.len() == 0 && plain.names.len() == 0
+    assert asked_of([]).is_err()
+    assert asked_of(["--partial"]).is_err()
+    assert asked_of(["./heroes", "--library"]).is_err()
+    assert asked_of(["./heroes", "--library", "--partial"]).is_err()
+    assert asked_of(["./heroes", "--all"]).is_err()
+
+test "packed and unpacked: any text survives the trip, colons, digits, line feeds and characters of more than one byte"
+    fields = ["", "4:abc", "a\nb", "é:ü", "12345"]
+    assert unpacked(packed(fields)).must() == fields
+    assert unpacked(packed([])).must().len() == 0
+    assert unpacked(packed([packed(fields), "x"])).must()[0] == packed(fields)
+    assert unpacked("3:ab").is_err()
+    assert unpacked("x:ab").is_err()
+    assert unpacked("2ab").is_err()
+    assert unpacked("-1:").is_err()
+
+test "chosen_of: every folder where no name is given, and a name no folder bears refused"
+    found = ["agent", "json", "notes"]
+    assert chosen_of(found: found, names: []).must() == found
+    assert chosen_of(found: found, names: ["notes"]).must() == ["notes"]
+    assert chosen_of(found: found, names: ["notes", "nope"]).is_err()
+
+test "platform: one of the three, or other, and this machine's is one of the three"
+    assert rebel_apps_declared.among(word: platform(), words: rebel_apps_declared.PLATFORMS)
+
+test "told: a line per program, the coverage, each failure's detail, then the count; and what holds"
+    verdicts = [
+        rebel_apps_run.Verdict(name: "a", outcome: "ok", said: "application", detail: "", built: 3, ran: 1)
+        rebel_apps_run.Verdict(name: "b", outcome: "SKIP", said: "on windows: no Ed25519", detail: "", built: 2, ran: -1)
+        rebel_apps_run.Verdict(name: "c", outcome: "FAIL", said: "twin: printed something else", detail: "one\ntwo", built: 5, ran: 1)
+    ]
+    whole = Covered(faces: ["x", "y"], applications: 2, unused: [], refused: "", partial: false)
+    lines = told(verdicts: verdicts, covered: whole)
+    assert lines == ["ok   a (application; built in 3 s, ran in 1 s)", "SKIP b on windows: no Ed25519", "FAIL c (twin: printed something else; built in 5 s, ran in 1 s)", "ok   coverage (2 faces, 2 listed by 2 applications, every face)", "", "FAIL c", "  one", "  two", "rebel_apps: 3 programs, 1 passed, 1 failed, 1 skipped; coverage whole"]
+    assert !held(verdicts: verdicts, covered: whole)
+    assert held(verdicts: verdicts.slice(from: 0, to: 2), covered: whole)
+
+    # A face no application lists fails the check, or is told under `--partial`.
+    short = Covered(faces: ["x", "y"], applications: 1, unused: ["y"], refused: "", partial: false)
+    assert coverage_line(short) == "FAIL coverage (2 faces, 1 listed by 1 application, 1 listed by none: y)"
+    assert !held(verdicts: [], covered: short)
+    partial = Covered(faces: ["x", "y"], applications: 1, unused: ["y"], refused: "", partial: true)
+    assert coverage_line(partial) == "told coverage (2 faces, 1 listed by 1 application, partial: 1 listed by none: y)"
+    assert held(verdicts: [], covered: partial)
+    unread = Covered(faces: [], applications: 0, unused: [], refused: "no Rebel", partial: true)
+    assert !held(verdicts: [], covered: unread)

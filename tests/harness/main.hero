@@ -815,6 +815,14 @@ constant CARDS_PROGRAM: str
 constant REVIEW_PROGRAM: str
     "tests/harness/rebel_review.hero"
 
+# **AND THE EIGHTH, the check of Rebel's programs** (M-rebel-library,
+# `examples-rebel/README.md` § A10): `rebel_apps.hero` and the modules only it
+# reaches, which find, build, run and judge the programs of `examples-rebel/`
+# and ask the applications' coverage of Rebel's faces. Tested the same way,
+# one test for the root.
+constant APPS_PROGRAM: str
+    "tests/harness/rebel_apps.hero"
+
 # Every module the root `root` reaches through its `use` lines, the root among
 # them, each named by its path under `dir` without `.hero`, in the order they
 # are found: `issues`, and a placed package's module by its tree,
@@ -1214,6 +1222,32 @@ test "the coherence review's readout's own tests run with the net's own, every b
     assert ran.code == 0
     assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "rebel_review").must()).join("\n") == ""
     held = blocks(dir: "tests/harness", root: "rebel_review").must()
+    said: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if counts(strings.words(line))
+            said @ said.push(line)
+
+    assert said == [held.to_str() + " tests, all passed"]
+    assert !shell.remove_tree(scratch).is_err()
+
+test "the check of Rebel's programs' own tests run with the net's own, every block its modules hold and all passed"
+    compiler = shell.some_compiler().must()
+    scratch = shell.own_scratch()
+    ran = shell.run(scratch: scratch, program: compiler, words: [compiler, "test", APPS_PROGRAM]).must()
+    failed: [str] @= []
+
+    for line in strings.lines(ran.out)
+        if strings.has_prefix(s: line, prefix: "FAIL \"")
+            failed @ failed.push(line)
+
+    for line in skips_in(ran.out)
+        print(APPS_PROGRAM + ": " + line)
+
+    assert failed.join("\n") == ""
+    assert ran.code == 0
+    assert strays(out: ran.out, modules: reached(dir: "tests/harness", root: "rebel_apps").must()).join("\n") == ""
+    held = blocks(dir: "tests/harness", root: "rebel_apps").must()
     said: [str] @= []
 
     for line in strings.lines(ran.out)

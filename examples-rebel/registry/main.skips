@@ -1,0 +1,2 @@
+# The platforms where the demo cannot run.
+windows: the registry signs and verifies every package with Ed25519, which `crypto/keypairs` answers `unsupported` on Windows, whose CNG has no Ed25519

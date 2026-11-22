@@ -4,8 +4,8 @@
 # `--toml` as one TOML document, both read into a `json.Value` by their own
 # packages, so the same filter reads all three, as yq does.
 #
-#     heroes run examples-rebel/jq.hero -- '.albums[] | .title' albums.json
-#     heroes run examples-rebel/jq.hero -- --yaml -r '.name' config.yaml
+#     heroes run examples-rebel/jq/main.hero -- '.albums[] | .title' albums.json
+#     heroes run examples-rebel/jq/main.hero -- --yaml -r '.name' config.yaml
 #
 # Options, before the filter: `-c` one line a value, `-r` a text written
 # raw, `-n` the filter run once on `null`, `-s` every value read into one

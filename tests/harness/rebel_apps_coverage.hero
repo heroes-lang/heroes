@@ -1,0 +1,158 @@
+# Whether Rebel's applications between them use every face of Rebel, the
+# author's word of 2026-11-21 (`examples-rebel/README.md` § A10: *between
+# them using every face of Rebel*), asked by the check of Rebel's programs
+# (`rebel_apps.hero`).
+#
+# **A face is a ledger** (README § A8): every package Rebel offers keeps a
+# `<package>.ledger` beside its face, so the faces are read off the newest
+# version folder's ledgers (`rebel_tree.source_root`), never off a list. **An
+# application uses what its catalogue lists**: `heroes add -C <app>
+# rebel/<face>` writes each face it uses into the `packages` line of its
+# `[dependencies.rebel]` entry, and a `use` of a face not listed is refused
+# (spec § 1), so that line is exactly what the program reaches by name.
+
+use rebel_tree
+use shell
+use strings
+
+# The entry of an application's catalogue that places Rebel, as
+# `heroes add --as rebel` writes it.
+constant ENTRY: str
+    "[dependencies.rebel]"
+
+# Every face of the Rebel at `root`, a version's `files/`: each ledger's path
+# under it without `.ledger`, `compress/zstd`, in the order of their paths.
+#
+# - `scratch`: the folder a listing may use.
+# - `root`: the version's `files/` folder.
+function faces(scratch: str, root: str) -> [str]?
+    nothing: [str] = []
+    out: [str] @= []
+
+    for file in shell.list_tree(scratch: scratch, dir: root, skip: nothing)?
+        if strings.has_suffix(s: file, suffix: ".ledger")
+            out @ out.push(rebel_tree.relative(root: root, file: file, suffix: ".ledger"))
+
+    return ok(out.sort())
+
+# The faces the `[dependencies.rebel]` entry of `text`, a catalogue, lists on
+# its `packages` line, written on one line or one face a line as `heroes add`
+# writes it; none where the catalogue has no such entry or the entry no such
+# line.
+#
+# - `text`: the catalogue's text.
+#
+# Fails `malformed`, naming the line, where the `packages` value is not a
+# bracketed list of quoted names, or its bracket never closes.
+function listed(text: str) -> [str]?
+    out: [str] @= []
+    inside: bool @= false
+    open: bool @= false
+    number: i64 @= 0
+
+    for row in strings.lines(text)
+        number @ number + 1
+
+        if strings.has_prefix(s: row, prefix: "[")
+            inside @ row == ENTRY
+
+            if open
+                return fail(
+                    code: "malformed",
+                    msg: "line " + number.to_str() + " opens a table inside the `packages` list, whose bracket never closed"
+                )
+            continue
+
+        if open
+            if strings.trimmed(row) == "]"
+                open @ false
+            else
+                out @ with_names(names: out, cell: strings.trimmed(row), number: number)?
+            continue
+
+        if !inside || !strings.has_prefix(s: row, prefix: "packages = [")
+            continue
+        rest = strings.without_prefix(text: row, prefix: "packages = [")
+
+        if strings.has_suffix(s: rest, suffix: "]")
+            for cell in strings.split_on(text: rest.slice(from: 0, to: rest.len() - 1), byte: ',')
+                if strings.trimmed(cell).len() > 0
+                    out @ with_names(names: out, cell: strings.trimmed(cell), number: number)?
+        else if strings.trimmed(rest).len() == 0
+            open @ true
+        else
+            return fail(
+                code: "malformed",
+                msg: "line " + number.to_str() + ", `" + row + "`, is not a `packages` line `heroes add` writes"
+            )
+
+    if open
+        return fail(code: "malformed", msg: "the `packages` list of " + ENTRY + " never closes its bracket")
+    return ok(out)
+
+# `names` with the one name `cell` quotes, `"compress/zstd"` or
+# `"compress/zstd",`.
+function with_names(names: [str], cell: str, number: i64) -> [str]?
+    quoted = strings.without_suffix(text: cell, suffix: ",")
+
+    if quoted.len() < 3 || quoted[0] != '"' || quoted[quoted.len() - 1] != '"'
+        return fail(
+            code: "malformed",
+            msg: "line " + number.to_str() + " lists `" + cell + "`, which is no quoted name"
+        )
+    return ok(names.push(quoted.slice(from: 1, to: quoted.len() - 1)))
+
+# The faces of `every` no list of `used` names, in `every`'s order.
+#
+# - `every`: every face.
+# - `used`: each application's listed faces.
+function unused(every: [str], used: [[str]]) -> [str]
+    seen: {str: bool} @= {}
+
+    for names in used
+        for name in names
+            seen[name] @ true
+
+    out: [str] @= []
+
+    for face in every
+        if seen[face].is_err()
+            out @ out.push(face)
+
+    return out
+
+test "listed: the rebel entry's packages, on one line or one a line, and none elsewhere"
+    many = "[dependencies.rebel]\npath = \"../../packages/rebel/0.1.0/files\"\npackages = [\n    \"bytes\",\n    \"compress/zstd\",\n]\n"
+    assert listed(many).must() == ["bytes", "compress/zstd"]
+    assert listed("[dependencies.rebel]\npath = \"x\"\npackages = [\"strings\"]\n").must() == ["strings"]
+    assert listed("[dependencies.rebel]\npackages = [\"a\", \"b/c\"]\n").must() == ["a", "b/c"]
+    assert listed("[dependencies.rebel]\npackages = []\n").must().len() == 0
+    assert listed("").must().len() == 0
+
+    # Another entry's packages are not Rebel's faces.
+    assert listed("[dependencies.kit]\npackages = [\"csv\"]\n[dependencies.rebel]\npackages = [\"json\"]\n").must() == ["json"]
+
+test "listed: a list it cannot read is refused by its line, never read as fewer faces"
+    assert listed("[dependencies.rebel]\npackages = [\n    bytes,\n]\n").is_err()
+    assert listed("[dependencies.rebel]\npackages = [\n    \"bytes\",\n").is_err()
+    assert listed("[dependencies.rebel]\npackages = [\n    \"bytes\",\n[dependencies.kit]\n").is_err()
+    assert listed("[dependencies.rebel]\npackages = [\"a\"\n").is_err()
+    assert listed("[dependencies.rebel]\npackages = [\"\"]\n").is_err()
+
+test "unused: the faces no application lists, in the faces' order, a face listed twice counted once"
+    faces_all = ["bytes", "compress", "compress/zstd", "json"]
+    assert unused(every: faces_all, used: [["json", "bytes"], ["json"]]) == ["compress", "compress/zstd"]
+    assert unused(every: faces_all, used: []) == faces_all
+    assert unused(every: faces_all, used: [faces_all]).len() == 0
+
+test "faces: every ledger of Rebel's newest version, 149 or more, each named as its package"
+    scratch = shell.own_scratch()
+    root = rebel_tree.source_root(scratch).must()
+    found = faces(scratch: scratch, root: root).must()
+
+    # 149 faces on 2026-11-22: a reading that finds fewer is a broken walk.
+    assert found.len() >= 149
+    assert found[0] == "acme"
+    assert strings.contains(s: found.join(" "), substr: " compress/zstd ")
+    assert !strings.contains(s: found.join(" "), substr: "internal")
+    assert !shell.remove_tree(scratch).is_err()
