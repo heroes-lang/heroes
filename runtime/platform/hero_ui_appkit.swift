@@ -262,6 +262,12 @@ private final class Native {
     var status: NSStatusItem?
     // Whether a window takes files dropped on it (`hero_ui_set_drop`).
     var dropping = false
+    // A text area's own undo, so its edits are undone apart from every
+    // other widget's; made at its first edit.
+    var undo: UndoManager?
+    // A text field's selection, in bytes of its text, kept when it last
+    // gave the keys up; nil for its text's end.
+    var fieldRange: (Int64, Int64)?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -802,6 +808,23 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
     }
 
+    // A text field giving the keys up keeps its selection, which the
+    // system's field shows no longer.
+    func controlTextDidEndEditing(_ note: Notification) {
+        guard let field = note.object as? NSTextField, let widget = widgets[Int64(field.tag)], widget.kind == kindTextField, let editor = note.userInfo?["NSFieldEditor"] as? NSText else {
+            return
+        }
+        widget.fieldRange = bytesOf(editor.string, editor.selectedRange)
+    }
+
+    // A text area's own undo, made at its first edit.
+    func undoManager(for view: NSTextView) -> UndoManager? {
+        guard let widget = widgets.values.first(where: { $0.textView === view }) else {
+            return nil
+        }
+        return areaUndo(widget)
+    }
+
     func controlTextDidChange(_ note: Notification) {
         if let field = note.object as? NSTextField {
             queue(eventText, Int64(field.tag), 0, 0)
@@ -881,10 +904,23 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             }
         case kindLabel, kindTextField:
             (widget.view as? NSTextField)?.stringValue = text
+            if widget.kind == kindTextField {
+                widget.fieldRange = nil
+                if let field = widget.view as? NSTextField, let editor = field.currentEditor() {
+                    editor.undoManager?.removeAllActions()
+                    editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0)
+                }
+            }
         case kindButton, kindCheckbox:
             (widget.view as? NSButton)?.title = text
         case kindTextArea:
-            widget.textView?.string = text
+            if let area = widget.textView {
+                area.string = text
+                // The program's text is where undo stops, its caret at
+                // its end.
+                widget.undo?.removeAllActions()
+                area.setSelectedRange(NSRange(location: (text as NSString).length, length: 0))
+            }
         case kindMenu:
             widget.menu?.title = text
             widget.item?.title = text
@@ -1355,9 +1391,21 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             button.performClick(nil)
         case eventText:
             if let area = widget.textView {
+                // Typed as the person's edit: one undo of its own, the
+                // text replaced whole through the text view's input.
                 if area.isEditable {
-                    area.string = text
-                    area.didChangeText()
+                    area.breakUndoCoalescing()
+                    area.insertText(text, replacementRange: NSRange(location: 0, length: (area.string as NSString).length))
+                    area.breakUndoCoalescing()
+                    // The undo groups what is registered in one pass of the
+                    // loop, which a person's keys each have and injected
+                    // edits given at one wait share: a pass of its own
+                    // closes this edit's group (measured 2026-11-22, a
+                    // zero-time pass brings the grouping level to 0; ending
+                    // the group by hand raises).
+                    if let manager = widget.undo, manager.groupingLevel > 0 {
+                        _ = CFRunLoopRunInMode(.defaultMode, 0, true)
+                    }
                 }
             } else if let field = widget.view as? NSTextField, field.isEnabled {
                 field.stringValue = text
@@ -3566,4 +3614,196 @@ public func hero_ui_appkit_drop(_ id: Int64, _ x: Int64, _ y: Int64, _ paths: Un
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.drop(id, x, y, list) ?? answerNotFound
     }
+}
+
+// MARK: undo and the selection in text widgets
+
+private let undoUndo: Int64 = 1
+
+extension Backend {
+    // Text area `widget`'s own undo.
+    func areaUndo(_ widget: Native) -> UndoManager {
+        if let made = widget.undo {
+            return made
+        }
+        let made = UndoManager()
+        widget.undo = made
+        return made
+    }
+
+    // The undo of text field or text area `widget`: a text area's own, a
+    // text field's its field editor's while it has the keys, none else.
+    func undoOf(_ widget: Native) -> UndoManager? {
+        if widget.kind == kindTextArea {
+            return areaUndo(widget)
+        }
+        if let field = widget.view as? NSTextField, let editor = field.currentEditor() {
+            return editor.undoManager
+        }
+        return nil
+    }
+
+    // Undoes or redoes the last edit of `id`, telling the program nothing:
+    // the answer, and whether one was there.
+    func undo(_ id: Int64, _ which: Int64) -> (Int64, Bool) {
+        guard let widget = widgets[id] else {
+            return (answerNotFound, false)
+        }
+        guard widget.kind == kindTextField || widget.kind == kindTextArea else {
+            return (answerInvalid, false)
+        }
+        guard let manager = undoOf(widget), which == undoUndo ? manager.canUndo : manager.canRedo else {
+            return (answerOk, false)
+        }
+        muted = true
+        if which == undoUndo {
+            manager.undo()
+        } else {
+            manager.redo()
+        }
+        muted = false
+        return (answerOk, true)
+    }
+
+    func canUndo(_ id: Int64, _ which: Int64) -> (Int64, Bool) {
+        guard let widget = widgets[id] else {
+            return (answerNotFound, false)
+        }
+        guard widget.kind == kindTextField || widget.kind == kindTextArea else {
+            return (answerInvalid, false)
+        }
+        guard let manager = undoOf(widget) else {
+            return (answerOk, false)
+        }
+        return (answerOk, which == undoUndo ? manager.canUndo : manager.canRedo)
+    }
+
+    // The selection `range` of `text`, in UTF-16 units, as bytes of its
+    // UTF-8, each end at a character's first byte.
+    func bytesOf(_ text: String, _ range: NSRange) -> (Int64, Int64) {
+        return (byteAt(text, range.location), byteAt(text, range.location + range.length))
+    }
+
+    // The UTF-8 offset of UTF-16 offset `at` of `text`, back to the start
+    // of the character it falls in.
+    func byteAt(_ text: String, _ at: Int) -> Int64 {
+        let units = text.utf16
+        var index = units.index(units.startIndex, offsetBy: min(max(0, at), units.count))
+        while index > units.startIndex, index.samePosition(in: text.unicodeScalars) == nil {
+            index = units.index(before: index)
+        }
+        return Int64(text.utf8.distance(from: text.utf8.startIndex, to: index))
+    }
+
+    // The UTF-16 offset of byte `at` of `text`'s UTF-8; nil outside the
+    // text or inside a character.
+    func unitAt(_ text: String, _ at: Int64) -> Int? {
+        let bytes = text.utf8
+        guard at >= 0, at <= Int64(bytes.count) else {
+            return nil
+        }
+        let index = bytes.index(bytes.startIndex, offsetBy: Int(at))
+        guard index.samePosition(in: text.unicodeScalars) != nil else {
+            return nil
+        }
+        return text.utf16.distance(from: text.utf16.startIndex, to: index)
+    }
+
+    func setTextSelection(_ id: Int64, _ start: Int64, _ end: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        if let area = widget.textView, widget.kind == kindTextArea {
+            let text = area.string
+            guard let from = unitAt(text, start), let to = unitAt(text, end), from <= to else {
+                return answerInvalid
+            }
+            let range = NSRange(location: from, length: to - from)
+            area.setSelectedRange(range)
+            area.scrollRangeToVisible(range)
+            return answerOk
+        }
+        guard widget.kind == kindTextField, let field = widget.view as? NSTextField, field.isEnabled, !field.isHiddenOrHasHiddenAncestor, let window = field.window else {
+            return answerInvalid
+        }
+        let text = field.stringValue
+        guard let from = unitAt(text, start), let to = unitAt(text, end), from <= to else {
+            return answerInvalid
+        }
+        if field.currentEditor() == nil && !window.makeFirstResponder(field) {
+            return answerInvalid
+        }
+        guard let editor = field.currentEditor() else {
+            return answerInvalid
+        }
+        editor.selectedRange = NSRange(location: from, length: to - from)
+        widget.fieldRange = (start, end)
+        return answerOk
+    }
+
+    func textSelection(_ id: Int64) -> (Int64, Int64, Int64) {
+        guard let widget = widgets[id] else {
+            return (answerNotFound, 0, 0)
+        }
+        if let area = widget.textView, widget.kind == kindTextArea {
+            let (from, to) = bytesOf(area.string, area.selectedRange())
+            return (answerOk, from, to)
+        }
+        guard widget.kind == kindTextField, let field = widget.view as? NSTextField else {
+            return (answerInvalid, 0, 0)
+        }
+        if let editor = field.currentEditor() {
+            let (from, to) = bytesOf(editor.string, editor.selectedRange)
+            return (answerOk, from, to)
+        }
+        let end = Int64(field.stringValue.utf8.count)
+        if let (from, to) = widget.fieldRange, to <= end {
+            return (answerOk, from, to)
+        }
+        return (answerOk, end, end)
+    }
+}
+
+@c
+public func hero_ui_appkit_undo(_ id: Int64, _ which: Int64, _ done: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let done = done else {
+        return answerInvalid
+    }
+    let (answer, did) = MainActor.assumeIsolated { () -> (Int64, Bool) in
+        return backend()?.undo(id, which) ?? (answerNotFound, false)
+    }
+    done.pointee = did ? 1 : 0
+    return answer
+}
+
+@c
+public func hero_ui_appkit_can_undo(_ id: Int64, _ which: Int64, _ can: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let can = can else {
+        return answerInvalid
+    }
+    let (answer, able) = MainActor.assumeIsolated { () -> (Int64, Bool) in
+        return backend()?.canUndo(id, which) ?? (answerNotFound, false)
+    }
+    can.pointee = able ? 1 : 0
+    return answer
+}
+
+@c
+public func hero_ui_appkit_set_text_selection(_ id: Int64, _ start: Int64, _ end: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setTextSelection(id, start, end) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_text_selection(_ id: Int64, _ start: UnsafeMutablePointer<Int64>?, _ end: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let start = start, let end = end else {
+        return answerInvalid
+    }
+    let (answer, from, to) = MainActor.assumeIsolated { () -> (Int64, Int64, Int64) in
+        return backend()?.textSelection(id) ?? (answerNotFound, 0, 0)
+    }
+    start.pointee = from
+    end.pointee = to
+    return answer
 }

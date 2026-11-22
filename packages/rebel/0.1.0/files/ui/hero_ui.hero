@@ -205,6 +205,13 @@ extern "hero_ui.h"
     # Files dropped on a window.
     constant HERO_UI_EVENT_DROP: i64
     function hero_ui_set_drop(app: App, id: i64, on: i64) -> i64
+    # Undo and the selection in text widgets.
+    constant HERO_UI_UNDO: i64
+    constant HERO_UI_REDO: i64
+    function hero_ui_undo(app: App, id: i64, which: i64) -> i64
+    function hero_ui_can_undo(app: App, id: i64, which: i64) -> i64
+    function hero_ui_set_text_selection(app: App, id: i64, start: i64, end: i64) -> i64
+    function hero_ui_text_selection(app: App, id: i64, @start: i64, @end: i64) -> i64
     # Accessible names, and a label tied to its field.
     function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
     function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
@@ -1048,6 +1055,44 @@ function answer_quit(app: App, go: i64) -> i64
 # - `on`: 1 or 0.
 function set_drop(app: App, id: i64, on: i64) -> i64
     return hero_ui_set_drop(app, id: id, on: on)
+
+# 1 once the last edit of text field or text area `id` is undone, `which`
+# `HERO_UI_UNDO`, or the last undone redone, `HERO_UI_REDO`; 0 where none
+# was there; or -1.
+#
+# - `app`: the app.
+# - `id`: the text field or the text area.
+# - `which`: undo or redo.
+function undo(app: App, id: i64, which: i64) -> i64
+    return hero_ui_undo(app, id: id, which: which)
+
+# 1 where `undo` with `which` would undo or redo an edit of `id` now, 0
+# where not; or -1.
+#
+# - `app`: the app.
+# - `id`: the text field or the text area.
+# - `which`: undo or redo.
+function can_undo(app: App, id: i64, which: i64) -> i64
+    return hero_ui_can_undo(app, id: id, which: which)
+
+# 0 once bytes `start` to `end` of the text of `id` are selected; or -1.
+#
+# - `app`: the app.
+# - `id`: the text field or the text area.
+# - `start`: the first byte, at a character's first byte or the text's end.
+# - `end`: the byte after the last, likewise, at least `start`.
+function set_text_selection(app: App, id: i64, start: i64, end: i64) -> i64
+    return hero_ui_set_text_selection(app, id: id, start: start, end: end)
+
+# 0 once the selection of `id` is written through `start` and `end`, in
+# bytes of its text; or -1.
+#
+# - `app`: the app.
+# - `id`: the text field or the text area.
+# - `start`: where its first byte is written.
+# - `end`: where the byte after its last is written.
+function text_selection(app: App, id: i64, @start: i64, @end: i64) -> i64
+    return hero_ui_text_selection(app, id: id, start: @start, end: @end)
 
 # 0 once widget `id` holds the accessible name `name`, none taking it back;
 # or -1.

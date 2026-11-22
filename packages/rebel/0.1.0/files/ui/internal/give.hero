@@ -155,7 +155,14 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
                 n @= app.table.nodes[t.widget.id].must()
 
                 if n.text != t.text
+                    # A text area keeps the person's edit to undo; the
+                    # caret stands at the text's end.
+                    if n.kind == hero_ui.HERO_UI_TEXT_AREA
+                        n.undone @ n.undone.push(n.text)
+                        n.redone @ []
                     n.text @ t.text
+                    n.selection_start @ -1
+                    n.selection_end @ -1
                     model.put(@app.table, n: n)
                     return [.text_changed(widget: t.widget, text: t.text)]
         .choose c =>

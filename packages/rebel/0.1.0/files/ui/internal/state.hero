@@ -199,6 +199,12 @@ function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
     check.text_ok(text: text, one_line: one_line, what: "the text")?
     n.text @ text
 
+    # The program's text is where undo stops, its caret at its end.
+    n.undone @ []
+    n.redone @ []
+    n.selection_start @ -1
+    n.selection_end @ -1
+
     if app.native
         native.push_text(app, n: n)?
     return stored(@app, n: n, measured: true)
