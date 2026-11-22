@@ -410,8 +410,17 @@ constant SHARED_BY_DECISION: [str]
 # at 181555e9a, raised with defect 2588's repair: M-rebel-library's platform
 # layer put its tables, locks and once-found functions between calls, sixteen
 # members of them, the hundred that defect named among them.
+#
+# **360 on 2026-11-22**, told by this suite's own `FLOOR` line in lane
+# lane-ui-native: `hero_ui.c`'s Win32 and GTK 4 arms put the UI thread's own
+# table of widgets, its scaling functions, its activation context and its
+# paths between calls, each `_Thread_local`, and GTK's functions found once,
+# the three entries above: 36 objects in `hero_ui.c` where it held 9, by this
+# rule's spelling read line by line that day, which took the tree from 333,
+# inside a quarter above 275, to 360; panel 254's mailbox, merged the same
+# day, had put 8 of the 333 there.
 constant LEAST_SHARED_STATE: i64
-    275
+    360
 
 function run_all(scratch: str) -> report.Report?
     nothing: [str] = []
