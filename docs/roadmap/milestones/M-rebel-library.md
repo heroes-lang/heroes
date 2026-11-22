@@ -598,6 +598,17 @@ And two more the same minute:
   D01 to D19, the settlements of the author's answer of 2026-11-20 about 20:4x, and every bullet of
   § Decided on the fly by the coordinator below are turned as accepted, 2026-11-22.
 
+## The author's answer of 2026-11-22, afternoon: everything lands together, and nothing is added
+
+Asked whether to land once the blocking defects closed (about five to seven hours, the `ui` package's
+remaining capabilities following in a second round on `main`) or once those capabilities stood on the
+three systems too (about thirteen to nineteen hours, both the coordinator's inference from the lanes'
+measured durations that day), the author chose the second, meant as: *there is a great deal to bring to
+`main` and I want to bring it all together; the CI finds what we do not find here, but it is far slower;
+finish everything, and we add nothing more*. So the landing waits for every capability of
+`ui-feature-catalogue`'s ordered list on macOS, Win32 and GTK 4, and the round takes no new item beyond
+the open issues and the catalogue's rows.
+
 ## Decided on the fly by the coordinator, for the author to turn
 
 - **The packages, in layers** (`examples-rebel/README.md` § A1): `io` holds
