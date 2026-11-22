@@ -1126,9 +1126,25 @@ static int64_t hero_ipc_channel_close(void *payload) {
 #endif
 
 
+/* The descriptor a wait on a channel uses (`hero_stream_hold_waitable`): on
+ * POSIX its socket, which a read and a write reach directly, non-blocking
+ * and with no bytes kept between calls, so its readiness is the channel's.
+ * Windows waits on a socket of `hero_net.h`'s alone (`hero_poll.h`), and a
+ * channel there may be a named pipe, so there it is none. */
+static int64_t hero_ipc_channel_waitable(void *payload) {
+#if defined(_WIN32)
+    (void)payload;
+    hero_stream_set_error(HERO_STREAM_UNSUPPORTED, 0);
+    return -1;
+#else
+    return (int64_t)((hero_ipc_channel *)payload)->fd;
+#endif
+}
+
 /* The table every channel's stream is made with: it stays where it is for
  * as long as any of them is open, and nothing writes it. */
-static const hero_stream_ops hero_ipc_channel_ops = { hero_ipc_channel_read, hero_ipc_channel_write, hero_ipc_channel_close };
+static const hero_stream_ops hero_ipc_channel_ops = { hero_ipc_channel_read, hero_ipc_channel_write, hero_ipc_channel_close,
+                                                      hero_ipc_channel_waitable };
 
 /* The channel under `s`, held until `hero_stream_release(s)`; NULL with the
  * failure named where `s` is no open stream this member made. */

@@ -19,7 +19,7 @@
  * a file, a pipe, the process's own input and outputs, a terminal, and,
  * through another member of the layer, a socket, are each a `hero_stream`,
  * read and written by the same two calls. A stream over something another
- * member holds is made from that member's table of three functions
+ * member holds is made from that member's table of functions
  * (`hero_stream_make`, below), so this member names no other: a program that
  * only reads files links no socket.
  *
@@ -257,11 +257,23 @@ int64_t hero_stream_last_os_error(void);
  * `hero_stream_close`, or, where another thread is still inside `read` or
  * `write`, when the last such call returns. So it never runs beside a
  * `read` or a `write` of the same stream, which may themselves run beside
- * each other on two threads. */
+ * each other on two threads.
+ *
+ * `waitable` answers the descriptor the system can wait on for the stream
+ * (the `int` on POSIX), one whose readiness IS the stream's: a `read` or a
+ * `write` of the table moves bytes, or meets the end, without waiting once
+ * the descriptor is ready, and keeps no bytes it took from the system that
+ * the descriptor would not show. Or -1, the failure named, where the
+ * platform waits on no such thing. It is called while the stream is held,
+ * so `close` does not run beside it, and is what `hero_stream_hold_waitable`
+ * answers; NULL for a table whose stream has no such descriptor, a stream
+ * holding bytes it already read (a TLS session's opened records) among
+ * them. */
 typedef struct hero_stream_ops {
     int64_t (*read)(void *payload, void *buffer, uint64_t count);
     int64_t (*write)(void *payload, const void *data, uint64_t count);
     int64_t (*close)(void *payload);
+    int64_t (*waitable)(void *payload);
 } hero_stream_ops;
 
 /* A stream over `payload`, read, written and closed through `ops`, which
@@ -273,7 +285,8 @@ typedef struct hero_stream_ops {
  * streams as it can: the caller then still owns `payload`, and `close` was
  * not called. It has no position, no size and no descriptor: `seek`, `size`
  * and `truncate` fail `HERO_STREAM_NOT_SEEKABLE`, `sync`, `descriptor` and
- * `hold` `HERO_STREAM_UNSUPPORTED`. */
+ * `hold` `HERO_STREAM_UNSUPPORTED`; a wait reaches what it stands on through
+ * the table's `waitable` alone (`hero_stream_hold_waitable`). */
 hero_stream *hero_stream_make(void *payload, const hero_stream_ops *ops, int64_t kind);
 
 /* Sets this layer's last error on the calling thread, `kind` one of the
@@ -320,6 +333,18 @@ int64_t hero_stream_hold(hero_stream *s);
  * of the process's own three), it is `hero_stream_hold`. Released by
  * `hero_stream_release`, once. */
 int64_t hero_stream_hold_shared(hero_stream *s);
+
+/* What a member that waits for a stream to be ready needs (`hero_poll.h`):
+ * the descriptor the system waits on, HELD as `hero_stream_hold` holds one,
+ * until `hero_stream_release` is called on the same handle, once. For a
+ * stream on a descriptor it is that descriptor; for one made by
+ * `hero_stream_make` it is what its table's `waitable` answers, the payload
+ * held so its `close` waits for the release (defect 2667: a serial port and
+ * an ipc channel stand on a descriptor a wait can use, and were refused).
+ * -1 with nothing held: `HERO_STREAM_NOT_OPEN` for what is no open stream,
+ * `HERO_STREAM_UNSUPPORTED` for one whose table has no `waitable`, or the
+ * failure `waitable` named. */
+int64_t hero_stream_hold_waitable(hero_stream *s);
 
 /* Ends one `hero_stream_hold` of `s`, which may have been closed meanwhile:
  * where it was and this was its last user, what it stands on is released

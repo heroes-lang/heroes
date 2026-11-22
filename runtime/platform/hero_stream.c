@@ -1503,6 +1503,38 @@ int64_t hero_stream_hold(hero_stream *s) {
     return number;
 }
 
+int64_t hero_stream_hold_waitable(hero_stream *s) {
+    hero_stream_use use;
+    int64_t number = -1;
+
+    if (!hero_stream_take(s, &use)) {
+        return -1;
+    }
+    if (use.ops == NULL) {
+        number = hero_stream_number_of(&use);
+    } else if (use.ops->waitable == NULL) {
+        hero_stream_fail(HERO_STREAM_UNSUPPORTED, 0);
+    } else {
+        /* The slot is busy, so the table's `close` cannot run meanwhile. */
+        hero_stream_clear();
+        number = use.ops->waitable(use.payload);
+        if (number < 0 && hero_stream_failed_kind == HERO_STREAM_OK) {
+            hero_stream_fail(HERO_STREAM_UNSUPPORTED, 0);
+        }
+    }
+    if (number < 0) {
+        hero_stream_done(&use);
+        return -1;
+    }
+    /* The call's own use of the slot stays, as the hold, until the
+     * release, as in `hero_stream_hold`. */
+    hero_stream_enter();
+    use.slot->holds += 1;
+    hero_stream_leave();
+    hero_stream_clear();
+    return number;
+}
+
 int64_t hero_stream_hold_shared(hero_stream *s) {
     int64_t number = hero_stream_hold(s);
 

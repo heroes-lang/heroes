@@ -826,16 +826,20 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
     if (kind == HERO_STREAM_KIND_FILE) {
         return hero_poll_enter_entry(set, HERO_POLL_ON_FILE, (unsigned)interest, -1, -1, NULL, -1, 0);
     }
-    if (kind == HERO_STREAM_KIND_SOCKET) {
+    /* A socket's stream `hero_stream_net.h` made; one of another member's
+     * that says it is a socket (an ipc channel, a TLS session) is
+     * `hero_stream_net_socket`'s `HERO_STREAM_INVALID` and is waited on as
+     * every other stream is, below. */
+    hero_net_socket *socket = kind == HERO_STREAM_KIND_SOCKET ? hero_stream_net_socket(s) : NULL;
+
+    if (kind == HERO_STREAM_KIND_SOCKET && socket == NULL && hero_stream_last_error() != HERO_STREAM_INVALID) {
+        hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
+        return -1;
+    }
+    if (socket != NULL) {
         /* The socket under the stream, held only while its own hold is
          * taken: from then the descriptor stays open for the entry whatever
          * closes the stream, and the stream's close shuts the socket down. */
-        hero_net_socket *socket = hero_stream_net_socket(s);
-
-        if (socket == NULL) {
-            hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
-            return -1;
-        }
         int64_t fd = -1;
         int64_t hold = hero_net_hold(socket, &fd);
 
@@ -861,7 +865,10 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
     hero_poll_fail(HERO_POLL_UNSUPPORTED, 0);
     return -1;
 #else
-    int64_t fd = hero_stream_hold(s);
+    /* The stream's own descriptor, or the one its table says its readiness
+     * is (a serial port's, an ipc channel's); a table with none, a TLS
+     * session's, is `HERO_STREAM_UNSUPPORTED` (`hero_stream.h`). */
+    int64_t fd = hero_stream_hold_waitable(s);
 
     if (fd < 0) {
         hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
