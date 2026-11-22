@@ -1,18 +1,19 @@
-# The chat server: one thread, one poll loop, every connection on it. The
-# listener's connections are read as HTTP requests and routed: the API's
-# routes are answered and their connections closed; a sign-in is parked
-# while its password is hashed on a thread of its own (`hashing`), whose
-# datagram the loop hears; and `/socket` is upgraded to a WebSocket that
-# stays in the loop, read as its frames come. The bridge's MQTT and NATS
+# The chat server: one thread, one poll loop, owning everything the server
+# keeps: its database, its rooms, every WebSocket, the bridge's MQTT and
+# NATS clients. Each connection the listener accepts is handed whole to a
+# reader thread (`server/readers`), which reads its one HTTP request within
+# `REQUEST_MS` and hands the connection back with the request, ringing the
+# loop's doorbell; the loop then routes it: the API's routes are answered
+# and their connections closed; a sign-in is parked while its password is
+# hashed on a thread of its own (`hashing`), whose datagram the loop hears;
+# and `/socket` is upgraded to a WebSocket that stays in the loop, read as
+# its frames come. A client that connects and says nothing, or sends its
+# request slowly, holds its reader alone, never the loop. The bridge's
 # clients are in the loop too, so a device's message reaches the room as
 # soon as its broker sends it, and a timer links the bridge again where a
 # broker went away. The loop ends at the program's stop (Ctrl-C, SIGTERM, or
-# `os.ask_stop` in the demo), and then every connection, the bridge and the
-# database are closed.
-#
-# An HTTP request is read whole before the loop goes on, within
-# `REQUEST_MS`, which bounds what a client that connects and says nothing
-# costs the others; a WebSocket is read only when `poll` says it is ready.
+# `os.ask_stop` in the demo); then the readers are waited for, and every
+# connection, the bridge and the database are closed.
 
 use <rebel>/bytes
 use <rebel>/http
@@ -34,6 +35,7 @@ use server/actions
 use server/api
 use server/hashing
 use server/hub
+use server/readers
 use server/settings
 use server/state
 use standins/told
@@ -132,38 +134,40 @@ function answer_and_close(@stream: io.Stream, r: http.Request, response: http.Re
     _ = http.write_answer(stream, r: r, response: closing).is_err()
     _ = io.close(@stream).is_err()
 
-# Accepts the connection `l` holds and answers its request: the API's, or the
-# WebSocket's upgrade.
+# Answers a request a reader read: the API's, or the WebSocket's upgrade.
 #
 # - `srv`: the server.
 # - `set`: the poll set.
-# - `l`: the listener.
-function on_accept(@srv: state.Server, set: poll.Set, l: net.Listener lent)
-    tcp @= match net.accept(l, deadline_ms: REQUEST_MS)
-        .ok c  => c
-        .err _ => return
-
-    reader @= io.reader(tcp.stream)
-
-    r = match http.next_request(@reader, limits: http.default_limits())
-        .ok got => got
-        .err _ =>
-            # `next_request` has answered what a status answers; the
-            # connection ends either way.
-            _ = io.close(@tcp.stream).is_err()
-            return
-
+# - `reader`: the request's reader, whose stream the server now holds.
+# - `r`: the request.
+function on_read(@srv: state.Server, set: poll.Set, @reader: io.Reader, r: http.Request)
     match web.route(srv.router, r: r)
-        .err _ => answer_and_close(@tcp.stream, r: r, response: web.not_routed(srv.router, r: r))
+        .err _ => answer_and_close(@reader.stream, r: r, response: web.not_routed(srv.router, r: r))
         .ok found =>
             if found.name == api.SOCKET_ROUTE
                 open_socket(@srv, set: set, @reader, r: r)
             else if found.name == api.REGISTER_ROUTE
-                begin_sign_in(@srv, stream: tcp.stream, r: r, begun: api.begin_register(@srv, r: r))
+                begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_register(@srv, r: r))
             else if found.name == api.LOGIN_ROUTE
-                begin_sign_in(@srv, stream: tcp.stream, r: r, begun: api.begin_login(@srv, r: r))
+                begin_sign_in(@srv, stream: reader.stream, r: r, begun: api.begin_login(@srv, r: r))
             else
-                answer_and_close(@tcp.stream, r: r, response: api.answer(@srv, found: found, r: r))
+                answer_and_close(@reader.stream, r: r, response: api.answer(@srv, found: found, r: r))
+
+# Answers every request the readers have handed over, and drains the
+# doorbell's datagrams that told of them.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+# - `crew`: the readers' mailboxes and the doorbell.
+function on_doorbell(@srv: state.Server, set: poll.Set, crew: Crew lent)
+    _ = net.receive(crew.doorbell).is_err()
+
+    while true
+        match readers.next_read(crew.reads)
+            .err _ => return
+            .ok got =>
+                read @= got
+                on_read(@srv, set: set, @read.reader, r: read.r)
 
 # Answers a sign-in at once where it needs no hash, else parks it until its
 # hash is made off the loop.
@@ -366,7 +370,8 @@ function watch(srv: state.Server lent, set: poll.Set, @w: Watch)
 # - `l`: the listener.
 # - `listening`: the listener's key.
 # - `hashed`: the key of the socket the hashing threads tell.
-function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, listening: i64, hashed: i64)
+# - `crew`: the readers' mailboxes, the doorbell and its key.
+function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, listening: i64, hashed: i64, crew: Crew lent)
     w @= Watch(mqtt_key: -1, mqtt_streams: [], nats_key: -1, nats_streams: [])
     watch(srv, set: set, @w)
     every = time.seconds(RELINK_SECONDS).must()
@@ -387,7 +392,9 @@ function run_loop(@srv: state.Server, set: poll.Set, l: net.Listener lent, liste
 
         for e in events
             if e.key == listening
-                on_accept(@srv, set: set, l: l)
+                readers.hand(l, conns: crew.conns, deadline_ms: REQUEST_MS)
+            else if e.key == crew.doorbell_key
+                on_doorbell(@srv, set: set, crew: crew)
             else if e.key == relinking
                 _ = mirroring.relink(@srv.links)
             else if e.key == hashed
@@ -477,15 +484,34 @@ function serve_ready(s: settings.Settings) -> str?
     closed?
     return ok(said)
 
-# Waits on the listener, the bridge and the hashing socket in a poll set, tells the starter
-# where the server listens, and serves until the program's stop.
+# The readers and what the loop reaches them by.
+record Crew
+    # The connections accepted, each taken by one reader.
+    conns: (mailbox net.Conn)
+    # The requests read, each with its connection.
+    reads: (mailbox readers.Read)
+    # The socket the readers ring after each hand-over.
+    doorbell: net.UdpSocket
+    # Its key in the poll set.
+    doorbell_key: i64
+
+# How many readers read new connections' requests at once: each holds one
+# connection for its request's deadline at most.
+constant READERS: i64
+    8
+
+# Waits on the listener, the bridge, the hashing socket and the readers'
+# doorbell in a poll set, starts the readers, tells the starter where the
+# server listens, and serves until the program's stop; then closes the
+# readers' mailbox, closes what they had handed over unanswered, and waits
+# for every reader.
 #
 # - `srv`: the server, started.
 # - `s`: the settings, which name the starter's socket.
 # - `l`: the listener.
 #
-# Fails as `poll.make`, `poll.add_listener` and `told.ready` fail; the set
-# is closed whatever it answers.
+# Fails as `poll.make`, `poll.add_listener`, `net.open_udp` and `told.ready`
+# fail; the set and the doorbell are closed whatever it answers.
 function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener lent) -> ()?
     set @= poll.make(4096)?
 
@@ -495,14 +521,57 @@ function serve_started(@srv: state.Server, s: settings.Settings, l: net.Listener
             _ = poll.close(@set).is_err()
             return fail(code: e.code, msg: e.msg)
 
-    listening = match tell_ready(set, s: s, l: l)
-        .ok key => key
+    bell @= match net.open_udp(host: "127.0.0.1", port: 0)
+        .ok u => u
         .err e =>
             _ = poll.close(@set).is_err()
             return fail(code: e.code, msg: e.msg)
 
-    run_loop(@srv, set: set, l: l, listening: listening, hashed: hashed)
-    return poll.close(@set)
+    ended = with_doorbell(@srv, set: set, s: s, l: l, hashed: hashed, bell: bell)
+    _ = net.close_udp(@bell).is_err()
+    closed = poll.close(@set)
+    ended?
+    return closed
+
+# `serve_started`'s work once the doorbell is open.
+#
+# - `srv`: the server.
+# - `set`: the poll set.
+# - `s`: the settings.
+# - `l`: the listener.
+# - `hashed`: the hashing socket's key.
+# - `bell`: the doorbell, which the caller closes.
+function with_doorbell(@srv: state.Server, set: poll.Set, s: settings.Settings, l: net.Listener lent, hashed: i64, bell: net.UdpSocket) -> ()?
+    bell_key = poll.add_udp(set, u: bell, interest: .read)?
+    listening = tell_ready(set, s: s, l: l)?
+    conns: (mailbox net.Conn) = mailbox()
+    reads: (mailbox readers.Read) = mailbox()
+    pool: [(thread i64)] @= []
+    handed = readers.Start(conns: conns, reads: reads, doorbell: bell.address.port)
+
+    while pool.len() < READERS
+        match spawn(readers.work, handed)
+            .ok t  => pool @ pool.push(t)
+            .err _ => break
+
+    crew = Crew(conns: conns, reads: reads, doorbell: bell, doorbell_key: bell_key)
+    run_loop(@srv, set: set, l: l, listening: listening, hashed: hashed, crew: crew)
+    conns.close()
+    reads.close()
+
+    # A request handed over at the stop is not answered: its connection is
+    # closed, as a sign-in waiting for its hash is (`shut`).
+    while true
+        match readers.next_read(reads)
+            .err _ => break
+            .ok got =>
+                read @= got
+                _ = io.close(@read.reader.stream).is_err()
+
+    for t in pool
+        _ = t.wait()
+
+    return ok()
 
 # Adds the listener to `set` and tells the starter, where there is one, the
 # port it listens on; answers the listener's key.
