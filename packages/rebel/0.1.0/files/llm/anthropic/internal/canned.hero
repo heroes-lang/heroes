@@ -54,7 +54,7 @@ function events(pairs: [str]) -> str
 # over a connection to a listener of this thread, so none is assumed free.
 function start(answers: [str]) -> Started
     control @= net.listen(host: "127.0.0.1", port: 0).must()
-    t = threads.spawn_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR)).must()
+    t = threads.start_text(body: serve, arg: f"{control.address.port}" + SEPARATOR + answers.join(SEPARATOR)).must()
     said = told(control)
     net.close_listener(@control).must()
     return Started(port: numbers.parse_int(said).must(), thread: t)

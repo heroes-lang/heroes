@@ -1,13 +1,13 @@
 # A function run over a list of values on several threads, the answers in the
 # order of the values: at most `workers` threads run at once, each started on
-# one value, and the oldest is waited for before the next starts, so the
-# answers come in order and no handle leaves the call. The runtime's own
-# ceiling bounds `workers`, since it panics past it.
+# one value by the language's `spawn`, and the oldest is waited for before the
+# next starts, so the answers come in order and no thread leaves the call. The
+# runtime's own ceiling bounds `workers`, past which a start would fail.
 
 use threads/hero_os
 use threads/internal/samples
 
-# The code of a thread the system refused to start, the face's `LIMIT`.
+# The code of a thread no start could make, the face's `LIMIT`.
 constant LIMIT: str
     "limit"
 
@@ -22,62 +22,56 @@ function width(workers: i64) -> i64
     return workers
 
 # `body` of each of `values` on threads, at most `workers` at once, the
-# answers in order. Fails `limit` where the system refuses a thread, after
-# waiting for those already started.
+# answers in order. Fails `limit` where the system, or the runtime's bound,
+# refuses a thread, after waiting for those already started.
 function run_all(body: (function(i64) -> i64), values: [i64], workers: i64) -> [i64]?
     wide = width(workers: workers)
-    handles: [i64] @= []
+    running: [(thread i64)] @= []
     out: [i64] @= []
 
     while out.len() < values.len()
-        while handles.len() < values.len() && handles.len() - out.len() < wide
-            why: i64 @= 0
-            handle = hero_os.start(body: body, arg: values[handles.len()], bytes: 0, why: @why)
+        while running.len() < values.len() && running.len() - out.len() < wide
+            match spawn(body, values[running.len()])
+                .ok started => running @ running.push(started)
+                .err e =>
+                    refused = running.len()
 
-            if handle < 0
-                at: i64 @= out.len()
+                    while out.len() < running.len()
+                        out @ out.push(running[out.len()].wait())
 
-                while at < handles.len()
-                    _ = hero_os.finish(handles[at])
-                    at @ at + 1
+                    return fail(
+                        code: LIMIT,
+                        msg: f"no thread could start for value {refused} of {values.len()}: {e.msg}"
+                    )
 
-                return fail(
-                    code: LIMIT,
-                    msg: f"the system refused to start a thread for value {handles.len()} of {values.len()} (its own number {why})"
-                )
-            handles @ handles.push(handle)
-
-        out @ out.push(hero_os.finish(handles[out.len()]))
+        out @ out.push(running[out.len()].wait())
 
     return ok(out)
 
 # `body` of each of `values` on threads, at most `workers` at once, the
-# answers in order, each a copy. Fails `limit` where the system refuses a
-# thread, after waiting for those already started.
+# answers in order, each a copy. Fails `limit` where the system, or the
+# runtime's bound, refuses a thread, after waiting for those already started.
 function run_all_text(body: (function(str) -> str), values: [str], workers: i64) -> [str]?
     wide = width(workers: workers)
-    handles: [i64] @= []
+    running: [(thread str)] @= []
     out: [str] @= []
 
     while out.len() < values.len()
-        while handles.len() < values.len() && handles.len() - out.len() < wide
-            why: i64 @= 0
-            handle = hero_os.start_text(body: body, arg: values[handles.len()], bytes: 0, why: @why)
+        while running.len() < values.len() && running.len() - out.len() < wide
+            match spawn(body, values[running.len()])
+                .ok started => running @ running.push(started)
+                .err e =>
+                    refused = running.len()
 
-            if handle < 0
-                at: i64 @= out.len()
+                    while out.len() < running.len()
+                        out @ out.push(running[out.len()].wait())
 
-                while at < handles.len()
-                    _ = hero_os.finish_text(handles[at])
-                    at @ at + 1
+                    return fail(
+                        code: LIMIT,
+                        msg: f"no thread could start for text {refused} of {values.len()}: {e.msg}"
+                    )
 
-                return fail(
-                    code: LIMIT,
-                    msg: f"the system refused to start a thread for text {handles.len()} of {values.len()} (its own number {why})"
-                )
-            handles @ handles.push(handle)
-
-        out @ out.push(hero_os.finish_text(handles[out.len()]))
+        out @ out.push(running[out.len()].wait())
 
     return ok(out)
 

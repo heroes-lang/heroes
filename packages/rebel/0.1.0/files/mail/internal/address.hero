@@ -131,14 +131,14 @@ function entry(@c: lex.Cursor) -> Entry?
             if lex.peek(c) == ','
                 c.at @ c.at + 1
                 continue
-            members @ members.push(mailbox(@c)?)
+            members @ members.push(mailbox_at(@c)?)
 
         return ok(.group(name: name, members: members))
     c.at @ start
-    return ok(.one(box: mailbox(@c)?))
+    return ok(.one(box: mailbox_at(@c)?))
 
 # The mailbox `c` stands at.
-function mailbox(@c: lex.Cursor) -> Mailbox?
+function mailbox_at(@c: lex.Cursor) -> Mailbox?
     start = c.at
     before = words_at(@c)?
     next = lex.peek(c)

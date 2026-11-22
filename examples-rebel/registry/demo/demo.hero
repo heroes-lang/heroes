@@ -107,7 +107,7 @@ function serve_session(s: settings.Settings, l: net.Listener, dir: str, given_to
             _ = serving.close(@state).is_err()
             return fail(code: e.code, msg: e.msg)
 
-    client_thread @= match threads.spawn_text(body: session.run, arg: arg)
+    client_thread @= match threads.start_text(body: session.run, arg: arg)
         .ok t => t
         .err e =>
             _ = serving.close(@state).is_err()
