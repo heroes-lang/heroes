@@ -1111,4 +1111,51 @@ int64_t hero_ui_accessible_name(hero_ui_app *app, int64_t id, void *buffer, uint
  * is no label. */
 int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label);
 
+/* -- THE SESSION'S END ASKING THE PROGRAM -----------------------------------
+ *
+ * wxWidgets' `wxEVT_QUERY_END_SESSION`, Qt's `commitDataRequest`: the
+ * system asks the app to end, at the person's logout, restart or shutdown or
+ * at another program's request, and an editor with unsaved work is asked
+ * before it is ended. */
+
+/* The system asks the app to end: `value` 1 for the session's end (the
+ * person logging out, restarting or shutting down), 0 for another quit
+ * asked of the app (on macOS the Dock's Quit, another program's quit
+ * request); `id` 0. Nothing ends, and the system waits: the program saves
+ * what the person would lose, then answers by `hero_ui_answer_quit`, or by
+ * `hero_ui_close`, which answers that the app ends. Each ask is queued, none
+ * replacing another. `hero_ui_inject` with this kind asks the app to end as
+ * the system would, `value` 1 as the session's end, `id` 0. The app menu's
+ * Quit on macOS is not such an ask: it asks every window to close
+ * (`HERO_UI_ROLE_QUIT`). */
+#define HERO_UI_EVENT_QUIT 19
+
+/* Answers every ask to end the app not yet answered: `go` 1, the app ends
+ * and the session's end goes on once it has; 0, the app stays, and a
+ * session's end waiting on it is cancelled, as the person's own Cancel in
+ * an editor's "save changes?" would. With no ask waiting it answers
+ * nothing. 0, or -1. */
+int64_t hero_ui_answer_quit(hero_ui_app *app, int64_t go);
+
+/* -- FILES DROPPED ON A WINDOW ----------------------------------------------
+ *
+ * wxWidgets' `wxWindow::DragAcceptFiles` and `wxDropFilesEvent`: the person
+ * drags files from the system's file manager and drops them on a window, an
+ * editor opening each. */
+
+/* The person dropped files on window `id`, which takes them
+ * (`hero_ui_set_drop`): `value` and `second` the point of the drop, in
+ * points from the top-left corner of the window's content; the text the
+ * paths, each followed by one zero byte, read by `hero_ui_event_text`. A
+ * drop on a text area of the window is the window's; one on a web view is
+ * the page's own, and one on a text field the person is typing in types
+ * the path, as the system's fields do. `hero_ui_inject` with this kind
+ * drops the paths `text` holds, each followed by one zero byte, on window
+ * `id` at `value`, `second`, as the person would. */
+#define HERO_UI_EVENT_DROP 20
+
+/* Has window `id` take files dropped on it, `on` 1, or take none, 0, as a
+ * window does until asked. 0, or -1, `INVALID` where `id` is no window. */
+int64_t hero_ui_set_drop(hero_ui_app *app, int64_t id, int64_t on);
+
 #endif
