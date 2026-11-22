@@ -1,10 +1,13 @@
-# The Public Suffix List, made data: every rule of the list as
-# publicsuffix.org served it on 2026-11-18, version 2026-11-17_06-40-19_UTC, commit
-# 88df16b430cd, SHA-256 da4e972c64017bea..., each label of a name in another
+# The Public Suffix List, made data: every rule of the list at version
+# 2026-11-17_06-40-19_UTC, commit 88df16b430cd, each label of a name in another
 # script written as its A-label (`xn--` and Punycode), sorted by bytes, and
-# whether it stands in the list's ICANN section. Nothing below this header
-# is edited by hand: a one-off program read the list and wrote this module
-# whole.
+# whether it stands in the list's ICANN section.
+#
+# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`
+# read the list as it stands at that commit of github.com/publicsuffix/list,
+# kept in its folder `publicsuffix/`, held it to the copy publicsuffix.org served
+# of that version (SHA-256 da4e972c64017bea...), and wrote this module whole; its
+# `check` command says whether this module is still what it writes.
 #
 # The list is the Mozilla Foundation's, under the Mozilla Public License
 # 2.0 (https://mozilla.org/MPL/2.0/), and so are these rules made from it.

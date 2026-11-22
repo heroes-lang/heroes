@@ -250,6 +250,10 @@ jobs:
             https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken/model.py
           ./heroes run generators/tokenizer_tables/main.hero -- check build/generators/tiktoken
 
+      # The list and its tests are kept in `generators/http_suffixes/publicsuffix/`.
+      - name: generators/http_suffixes, the Public Suffix List of http/suffixes
+        run: ./heroes run generators/http_suffixes/main.hero -- check
+
       # The tests of `generators/tablekit/`, the package every generator
       # writes its tables with. A generator's own tests are left to whoever
       # changes it: `heroes test` runs every test its program reaches, Rebel's

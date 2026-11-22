@@ -1,0 +1,158 @@
+# The Public Suffix List and its test file read as publicsuffix.org's page
+# "Format" describes them: a rule is a line's text up to its first white
+# space, a line opening `//` is a comment, the rules between `===BEGIN ICANN
+# DOMAINS===` and `===END ICANN DOMAINS===` are ICANN's and those between
+# the private section's two lines a private domain's; a case of the test
+# file is a line `checkPublicSuffix(host, domain);`, each a quoted name or
+# `null`.
+
+use <rebel>/strings
+
+use punycode
+
+# A rule: as the list writes it with its labels as A-labels, and its section.
+record Rule
+    text: str
+    icann: bool
+
+# A case of the test file: a host, and its registrable domain, "" for none.
+record Case
+    host: str
+    domain: str
+
+# The comment lines publicsuffix.org writes after the list's seventh line in
+# the copy it serves: the version and the commit, then an empty line.
+#
+# - `version`: the version, as `// VERSION: ` names it.
+# - `commit`: the commit's 40 hexadecimal digits.
+function served_lines(version: str, commit: str) -> [str]
+    return [f"// VERSION: {version}", f"// COMMIT: {commit}", ""]
+
+# The copy publicsuffix.org served of the list `text` at `version`: the
+# list's first seven lines, `served_lines`, then the rest.
+#
+# - `text`: the list as it stands in the repository at `commit`.
+# - `version`: the version publicsuffix.org named it.
+# - `commit`: the commit's 40 hexadecimal digits.
+function served_copy(text: str, version: str, commit: str) -> str
+    lines = strings.split(s: text, sep: "\n")
+
+    if lines.len() < 7
+        return text
+    out: [str] @= []
+
+    for line in lines.slice(from: 0, to: 7)
+        out @ out.push(line)
+
+    for line in served_lines(version: version, commit: commit)
+        out @ out.push(line)
+
+    for line in lines.slice(from: 7, to: lines.len())
+        out @ out.push(line)
+
+    return out.join("\n")
+
+# Every rule of the list `text`, each label written as its A-label, sorted
+# by bytes.
+#
+# - `text`: the list's whole text.
+#
+# Fails `invalid` where a rule stands outside both sections or a section is
+# left open.
+function rules(text: str) -> [Rule]?
+    by_text: {str: bool} @= {}
+    section @= ""
+
+    for line in strings.split(s: text, sep: "\n")
+        if strings.has_prefix(s: line, prefix: "//")
+            if strings.contains(s: line, substr: "===BEGIN ICANN DOMAINS===")
+                section @ "icann"
+            else if strings.contains(s: line, substr: "===BEGIN PRIVATE DOMAINS===")
+                section @ "private"
+            else if strings.contains(s: line, substr: "===END ")
+                section @ ""
+        else
+            words = strings.words(line)
+
+            if words.len() > 0
+                if section == ""
+                    return fail(code: "invalid", msg: f"the rule \"{words[0]}\" stands outside both sections")
+                by_text[a_labels(words[0])] @ section == "icann"
+
+    if section != ""
+        return fail(code: "invalid", msg: "the list leaves a section open")
+    out: [Rule] @= []
+
+    for one in sort(keys(by_text))
+        out @ out.push(Rule(text: one, icann: by_text[one].must()))
+
+    return ok(out)
+
+# `name` with each label written as its A-label.
+#
+# - `name`: labels joined by `.`.
+function a_labels(name: str) -> str
+    out: [str] @= []
+
+    for label in strings.split(s: name, sep: ".")
+        out @ out.push(punycode.a_label(label))
+
+    return out.join(".")
+
+# Every case of the test file `text` but the one of a null host, in its
+# order, each name written with A-labels.
+#
+# - `text`: the test file's whole text.
+#
+# Fails `invalid` where a case's line is not two names or `null` apart by a
+# comma.
+function cases(text: str) -> [Case]?
+    out: [Case] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        code = strings.trim(line)
+
+        if strings.has_prefix(s: code, prefix: "checkPublicSuffix(")
+            inside = strings.trim_suffix(s: strings.trim_prefix(s: code, prefix: "checkPublicSuffix("), suffix: ");")
+            parts = strings.split(s: inside, sep: ", ")
+
+            if parts.len() != 2 || !strings.has_suffix(s: code, suffix: ");")
+                return fail(code: "invalid", msg: f"the line \"{code}\" is not a host and a domain")
+            host = name_of(parts[0])?
+
+            if parts[0] != "null"
+                out @ out.push(Case(host: a_labels(host), domain: a_labels(name_of(parts[1])?)))
+
+    return ok(out)
+
+# The name `written` quotes, "" for `null`.
+#
+# Fails `invalid` where it is neither.
+function name_of(written: str) -> str?
+    if written == "null"
+        return ok("")
+
+    if written.len() < 2 || !strings.has_prefix(s: written, prefix: "'") || !strings.has_suffix(s: written, suffix: "'")
+        return fail(code: "invalid", msg: f"\"{written}\" is neither a quoted name nor null")
+    return ok(written.slice(from: 1, to: written.len() - 1))
+
+## Tests
+
+test "rules: both sections, a rule's words after white space left, a name in another script, sorted by bytes"
+    text = "// head\n// ===BEGIN ICANN DOMAINS===\ncom\n*.ck\n!www.ck\n公司.cn\n// ===END ICANN DOMAINS===\n// ===BEGIN PRIVATE DOMAINS===\nblogspot.com extra words\n// ===END PRIVATE DOMAINS===\n"
+    got = rules(text).must()
+    assert got == [Rule(text: "!www.ck", icann: true), Rule(text: "*.ck", icann: true), Rule(text: "blogspot.com", icann: false), Rule(text: "com", icann: true), Rule(text: "xn--55qx5d.cn", icann: true)]
+
+test "rules: a rule outside both sections, and a section left open"
+    assert rules("com\n").is_err()
+    assert rules("// ===BEGIN ICANN DOMAINS===\ncom\n").is_err()
+
+test "cases: the null host left out, null as no domain, the host's case kept, names in another script as A-labels"
+    text = "// null input.\ncheckPublicSuffix(null, null);\ncheckPublicSuffix('WwW.example.COM', 'example.com');\n//checkPublicSuffix('local', null);\ncheckPublicSuffix('公司.cn', null);\n"
+    assert cases(text).must() == [Case(host: "WwW.example.COM", domain: "example.com"), Case(host: "xn--55qx5d.cn", domain: "")]
+    assert cases("checkPublicSuffix('a');\n").is_err()
+    assert cases("checkPublicSuffix(a, 'b');\n").is_err()
+
+test "served_copy: the version, the commit and an empty line after the seventh line"
+    copy = served_copy(text: "1\n2\n3\n4\n5\n6\n7\n8\n", version: "v", commit: "c")
+    assert copy == "1\n2\n3\n4\n5\n6\n7\n// VERSION: v\n// COMMIT: c\n\n8\n"

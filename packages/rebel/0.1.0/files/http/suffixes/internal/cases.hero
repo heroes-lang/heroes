@@ -1,9 +1,12 @@
-# The cases of the list's own test file of 2026-11-18, tests/test_psl.txt of
-# github.com/publicsuffix/list (public domain, CC0; SHA-256 8f50ad958916d6a8...),
-# fetched on 2026-11-18: each a host and the registrable domain the list
+# The cases of the list's own test file, tests/test_psl.txt of
+# github.com/publicsuffix/list at commit 88df16b430cd (public domain, CC0;
+# SHA-256 8f50ad958916d6a8...): each a host and the registrable domain the list
 # gives it, "" where it gives none. A name in another script is written in
-# A-labels, made by a one-off program; the case of a null host is left out,
-# no `str` being null. Nothing here is edited by hand.
+# A-labels; the case of a null host is left out, no `str` being null.
+#
+# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`
+# read the file, kept in its folder `publicsuffix/`, and wrote this module
+# whole; its `check` command says whether this module is still what it writes.
 
 # The hosts asked about.
 constant HOSTS: [str]
