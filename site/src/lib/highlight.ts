@@ -480,6 +480,8 @@ export function tokenize(source: string): Token[] {
   };
   const markAt = (word: string, start: number, end: number): boolean => {
     if (!marks.has(word)) return false;
+    // `(thread T)` and `(mailbox T)`'s words, contextual since panel 254.
+    if (word === 'thread' || word === 'mailbox') return handleType(word, start, end);
     if (word === 'as') return lineHead === 'use' && source[start - 1] === ' ' && previous !== null && previous.kind === 'ident';
     if (word === 'link' || word === 'pkgconfig') return lineHead === 'extern' && previous !== null && previous.kind === 's';
     if (word === 'rest') return '(,\n'.includes(charBefore(start)) && /^ *: *zero\b *(?:[,)#]|$)/.test(restOfLine(end));
@@ -597,7 +599,7 @@ export function tokenize(source: string): Token[] {
             ? 'x'
             : declared
               ? 'd'
-              : types.has(word) || handleType(word, i, end)
+              : types.has(word)
                 ? 't'
                 : 'ident';
       push(kind, word);
