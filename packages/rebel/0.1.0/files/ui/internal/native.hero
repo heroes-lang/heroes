@@ -61,17 +61,18 @@ function made(app: ui.App, n: model.Node) -> ()?
 
 # The native parent of `n`: none for a window; the menu for a menu's item
 # and a menu inside a menu; the tabs for a page and the split for a pane;
+# the widget for its context menu;
 # for every other widget the frame it stands in, the nearest window, page,
 # scrolled box or pane over it.
 function native_parent(app: ui.App, n: model.Node) -> i64
     if n.kind == hero_ui.HERO_UI_WINDOW
         return 0
 
-    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE || n.kind == hero_ui.HERO_UI_CONTEXT_MENU
         return n.parent
 
-    # A menu inside a menu stands in that menu.
-    if n.kind == hero_ui.HERO_UI_MENU && app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_MENU
+    # A menu inside a menu, or a context menu, stands in that menu.
+    if n.kind == hero_ui.HERO_UI_MENU && (app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_MENU || app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_CONTEXT_MENU)
         return n.parent
     at @= n.parent
 

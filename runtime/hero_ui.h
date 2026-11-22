@@ -996,4 +996,16 @@ int64_t hero_ui_tree_remove(hero_ui_app *app, int64_t id, int64_t item);
  * foldable), `NOT_FOUND`. */
 int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t on);
 
+/* -- A CONTEXT MENU ----------------------------------------------------------
+ *
+ * A menu shown where the person right-clicks a widget, or Control-clicks
+ * it on macOS, as wxWidgets' `wxWindow::PopupMenu` on `wxEVT_CONTEXT_MENU`:
+ * a file's Open, Rename and Delete. Its parent is the widget, or a window
+ * for its content; one a widget. Its items are made as a menu's are,
+ * `HERO_UI_MENU_ITEM`, `HERO_UI_MENU_SEPARATOR` and `HERO_UI_MENU` with it
+ * for parent, and choosing one queues `HERO_UI_EVENT_MENU` as any item's
+ * does; a shortcut of its items is shown and takes no key. Destroying it
+ * takes it from the widget. */
+#define HERO_UI_CONTEXT_MENU 30
+
 #endif

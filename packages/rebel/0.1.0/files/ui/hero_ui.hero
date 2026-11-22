@@ -188,6 +188,8 @@ extern "hero_ui.h"
     function hero_ui_tree_add(app: App, id: i64, item: i64, under: i64, @text: [u8] counted_by count lent, count: u64, foldable: i64) -> i64
     function hero_ui_tree_remove(app: App, id: i64, item: i64) -> i64
     function hero_ui_tree_unfold(app: App, id: i64, item: i64, on: i64) -> i64
+    # A menu shown where the person right-clicks a widget.
+    constant HERO_UI_CONTEXT_MENU: i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64

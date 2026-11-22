@@ -505,12 +505,12 @@ dropped
   python  tkinter.Tcl, tkinter.CallWrapper, tkinter.getboolean, tkinter.Misc, tkinter.BaseWidget, tkinter.Widget, ttk.Widget, ttk.tclobjs_to_py, ttk.setup_master (Tcl's interpreter and the classes every widget inherits, which a program never names here); ttk.Sizegrip (the corner a window is resized by, which the system draws); scrolledtext.example, filedialog.test, dnd.Tester, dnd.test (the modules' own demonstrations)
 
 capability ui/context-menu  a menu shown where the person right-clicks a widget
-  heroes  pending
+  heroes  ui.context_menu, ui.menu_item, ui.menu_separator, ui.check_item, ui.radio_item, ui.menu, ui.Event.menu_chosen, ui.Kind.context_menu
   go      -
   rust    -
   python  tkinter.Menu.tk_popup, tkinter.Menu.post
   wx      wxContextMenuEvent, wxWindow (PopupMenu)
-  note    catalogue MN07 (must); macOS `NSView.menu` or `NSMenu.popUp`, Windows `TrackPopupMenuEx` on `WM_CONTEXTMENU`, Linux `GtkPopoverMenu`
+  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
 
 capability ui/text-selection  a text widget's selection and caret set and read, and its undo
   heroes  pending

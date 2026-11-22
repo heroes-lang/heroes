@@ -14,15 +14,16 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/give
 use ui/internal/makers
 use ui/internal/model
 
 # A new check or radio item, `mode` one of `HERO_UI_CHECK_BOX` and
-# `HERO_UI_CHECK_RADIO`, at the end of menu `into` (`ui.check_item`,
+# `HERO_UI_CHECK_RADIO`, at the end of menu or context menu `into` (`ui.check_item`,
 # `ui.radio_item`): checked where `checked`, a radio item's group's others
 # then unchecked.
 function checkable(@app: ui.App, into: ui.Widget, text: str, mode: i64, checked: bool) -> ui.Widget?
-    menu = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU], what: "a menu")?
+    menu = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU, hero_ui.HERO_UI_CONTEXT_MENU], what: "a menu or a context menu")?
     check.text_ok(text: text, one_line: true, what: "the text")?
     n @= model.blank(
         id: model.take_id(@app.table),
@@ -118,7 +119,8 @@ function items_of(m: model.Model, window: i64) -> [i64]
     out: [i64] @= []
 
     for menu in m.nodes[window].must().menus
-        walked(m, id: menu, @out)
+        if m.nodes[menu].must().kind == hero_ui.HERO_UI_MENU
+            walked(m, id: menu, @out)
 
     return out
 
@@ -227,4 +229,70 @@ test "menus inside menus, check and radio items: on the native side made, chosen
     ui.set_checked(@app, widget: by_name, checked: true).must()
     assert ui.is_checked(app, widget: by_name).must() && !ui.is_checked(app, widget: by_date).must()
     ui.destroy(@app, widget: order).must()
+    ui.close(@app).must()
+
+test "context_menu: refused on a menu, a menu's item, a timer, a page and a widget with one already; items, a separator, a check item and a menu inside it chosen, its shortcut taking no key, none chosen where its widget is greyed out, and drawn beside its widget out of the layout (catalogue MN07)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    bar = ui.menu(@app, into: w, title: "File").must()
+    files = ui.list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    before = ui.rect_of(@app, widget: files).must()
+    actions = ui.context_menu(@app, widget: files).must()
+    assert fixture.code_of(ui.context_menu(@app, widget: files)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: bar)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: actions)) == ui.INVALID
+    assert fixture.code_of(ui.context_menu(@app, widget: ui.timer(@app, every: time.seconds(1).must()).must())) == ui.INVALID
+    open_file = ui.menu_item(@app, into: actions, text: "Open").must()
+    _ = ui.menu_separator(@app, into: actions).must()
+    hidden = ui.check_item(@app, into: actions, text: "Show Hidden", checked: false).must()
+    more = ui.menu(@app, into: actions, title: "Open With").must()
+    editor = ui.menu_item(@app, into: more, text: "Editor").must()
+    ui.set_shortcut(
+        @app,
+        item: open_file,
+        shortcut: ui.Shortcut(key: "o", primary: true, shift: false, alt: false)
+    ).must()
+    assert ui.rect_of(@app, widget: files).must() == before
+    lines = ui.render(@app).must()
+    assert lines[3] == "    context_menu #4" && lines[4] == "      menu_item #6 \"Open\" primary+o"
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "o", primary: true, shift: false, alt: false)).must()
+    ui.inject(@app, input: .choose_menu(item: hidden)).must()
+    ui.inject(@app, input: .choose_menu(item: editor)).must()
+    assert give.events_of(@app, within: time.nanoseconds(0)) == [.menu_chosen(item: hidden), .menu_chosen(item: editor)]
+    assert ui.is_checked(app, widget: hidden).must()
+    ui.set_enabled(@app, widget: files, on: false).must()
+    ui.inject(@app, input: .choose_menu(item: open_file)).must()
+    assert give.events_of(@app, within: time.nanoseconds(0)) == []
+    ui.destroy(@app, widget: actions).must()
+    assert fixture.code_of(ui.inject(@app, input: .choose_menu(item: open_file))) == ui.CLOSED
+    _ = ui.context_menu(@app, widget: files).must()
+    ui.close(@app).must()
+
+test "context_menu: on the native side made on a list, a text area and a window, its items chosen through the system's own path, taken away and made again (catalogue MN07)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Files", width: 240, height: 200).must()
+    files = ui.list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    notes = ui.text_area(@app, into: w, text: "").must()
+    actions = ui.context_menu(@app, widget: files).must()
+    open_file = ui.menu_item(@app, into: actions, text: "Open").must()
+    more = ui.menu(@app, into: actions, title: "Open With").must()
+    editor = ui.menu_item(@app, into: more, text: "Editor").must()
+    words = ui.context_menu(@app, widget: notes).must()
+    clear = ui.menu_item(@app, into: words, text: "Clear").must()
+    everywhere = ui.context_menu(@app, widget: w).must()
+    refresh = ui.menu_item(@app, into: everywhere, text: "Refresh").must()
+    _ = ui.rect_of(@app, widget: files).must()
+    ui.inject(@app, input: .choose_menu(item: open_file)).must()
+    ui.inject(@app, input: .choose_menu(item: editor)).must()
+    ui.inject(@app, input: .choose_menu(item: clear)).must()
+    ui.inject(@app, input: .choose_menu(item: refresh)).must()
+    came = give.events_of(@app, within: time.milliseconds(300).must())
+    assert came == [.menu_chosen(item: open_file), .menu_chosen(item: editor), .menu_chosen(item: clear), .menu_chosen(item: refresh)]
+    ui.destroy(@app, widget: actions).must()
+    again = ui.context_menu(@app, widget: files).must()
+    _ = ui.menu_item(@app, into: again, text: "Open").must()
     ui.close(@app).must()

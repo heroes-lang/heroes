@@ -305,7 +305,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             guard let owner = widgets[parent] else {
                 return answerNotFound
             }
-            guard owner.kind == kindMenu, let menu = owner.menu else {
+            guard owner.kind == kindMenu || owner.kind == kindContextMenu, let menu = owner.menu else {
                 return answerInvalid
             }
             let item: NSMenuItem
@@ -331,7 +331,7 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         // A menu inside a menu: its item holds it among the outer menu's
         // items, in the order made.
-        if kind == kindMenu && owner.kind == kindMenu, let outer = owner.menu {
+        if kind == kindMenu && (owner.kind == kindMenu || owner.kind == kindContextMenu), let outer = owner.menu {
             let menu = NSMenu(title: "")
             menu.autoenablesItems = false
             let item = NSMenuItem(title: "", action: nil, keyEquivalent: "")
@@ -508,6 +508,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         if widget.kind == kindTree {
             forests[id] = nil
+        }
+        if widget.kind == kindContextMenu, let owner = widgets[widget.parent], let target = contextTarget(owner), target.menu === widget.menu {
+            target.menu = nil
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -2604,6 +2607,14 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             pane.clipsToBounds = true
             split.addArrangedSubview(pane)
             made.view = pane
+        case kindContextMenu:
+            guard let target = contextTarget(owner), !widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) else {
+                return answerInvalid
+            }
+            let menu = NSMenu(title: "")
+            menu.autoenablesItems = false
+            target.menu = menu
+            made.menu = menu
         case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable, kindTree:
             guard let content = contentOf(owner) else {
                 return answerInvalid
@@ -3322,5 +3333,28 @@ public func hero_ui_appkit_tree_remove(_ id: Int64, _ item: Int64) -> Int64 {
 public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.treeUnfold(id, item, on == 1, true) ?? answerNotFound
+    }
+}
+
+// MARK: a context menu
+
+// `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
+private let kindContextMenu: Int64 = 30
+
+extension Backend {
+    // The view whose menu a context menu of `owner` is: the one the
+    // person's right click lands on, a list's or a table's rows, a tree's
+    // outline, a text area's text, a window's content.
+    func contextTarget(_ owner: Native) -> NSView? {
+        if owner.kind == kindWindow {
+            return owner.window?.contentView
+        }
+        if owner.kind == kindTree {
+            return outlineOf(owner)
+        }
+        if owner.kind == kindMenu || owner.kind == kindMenuItem || owner.kind == kindMenuSeparator || owner.kind == kindContextMenu || owner.kind == kindPage || owner.kind == kindPane {
+            return nil
+        }
+        return owner.table ?? owner.textView ?? owner.view
     }
 }

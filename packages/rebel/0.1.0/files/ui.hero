@@ -289,6 +289,8 @@ variant Kind
     table
     # Items under items, folded and unfolded.
     tree
+    # A menu shown where the person right-clicks a widget.
+    context_menu
 
 # What `widget` is.
 #
@@ -1121,23 +1123,39 @@ function set_picture(@app: App, widget: Widget, img: image.Image) -> ()?
 ## Menus
 
 # A new menu titled `title` at the end of window `into`'s menu bar, or at
-# the end of menu `into`, a menu inside a menu (Open Recent, Format > Font).
-# On macOS the menu bar at the top of the screen shows the menus of the
-# window in front, after the application's own menu.
+# the end of menu or context menu `into`, a menu inside a menu (Open
+# Recent, Format > Font). On macOS the menu bar at the top of the screen
+# shows the menus of the window in front, after the application's own menu.
 #
 # - `app`: the app it is made in.
-# - `into`: the window, or the menu.
+# - `into`: the window, the menu or the context menu.
 # - `title`: one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
 function menu(@app: App, into: Widget, title: str) -> Widget?
     return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU, text: title)
 
-# A new item at the end of menu `into`, showing `text`; choosing it, by the
-# mouse or its shortcut, is `.menu_chosen`.
+# A new context menu of `widget`: the menu the system shows where the
+# person right-clicks the widget, or Control-clicks it on macOS, as a
+# file's Open, Rename and Delete, wxWidgets' `wxWindow::PopupMenu`. Its
+# items are made by `menu_item`, `menu_separator`, `check_item`,
+# `radio_item` and `menu` into it, and choosing one is `.menu_chosen`; a
+# shortcut set on one of its items is shown and takes no key. One a widget;
+# `destroy` takes it away.
 #
 # - `app`: the app it is made in.
-# - `into`: the menu.
+# - `widget`: a widget the person clicks, or a window for its content.
+#
+# Fails `closed`, `invalid` for a menu, a menu's item, a timer, a page or a
+# pane, or a widget with a context menu already, `failed`.
+function context_menu(@app: App, widget: Widget) -> Widget?
+    return makers.context_menu(@app, widget: widget)
+
+# A new item at the end of menu or context menu `into`, showing `text`;
+# choosing it, by the mouse or its shortcut, is `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu or the context menu.
 # - `text`: one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`. See also `set_shortcut`.
@@ -1153,12 +1171,12 @@ function menu_item(@app: App, into: Widget, text: str) -> Widget?
 function menu_separator(@app: App, into: Widget) -> Widget?
     return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU_SEPARATOR, text: "")
 
-# A new item at the end of menu `into` that the person checks and unchecks
-# by choosing it (View > Show Sidebar), as wxWidgets' `wxITEM_CHECK`; each
-# choice turns it over before its `.menu_chosen`.
+# A new item at the end of menu or context menu `into` that the person
+# checks and unchecks by choosing it (View > Show Sidebar), as wxWidgets'
+# `wxITEM_CHECK`; each choice turns it over before its `.menu_chosen`.
 #
 # - `app`: the app it is made in.
-# - `into`: the menu.
+# - `into`: the menu or the context menu.
 # - `text`: one line without a zero byte.
 # - `checked`: whether it starts checked.
 #
@@ -1167,13 +1185,14 @@ function menu_separator(@app: App, into: Widget) -> Widget?
 function check_item(@app: App, into: Widget, text: str, checked: bool) -> Widget?
     return menus.checkable(@app, into: into, text: text, mode: hero_ui.HERO_UI_CHECK_BOX, checked: checked)
 
-# A new item at the end of menu `into` of a group of which one is checked
-# (View > as Icons, as List), as wxWidgets' `wxITEM_RADIO`: the radio items
-# of a menu no other item or separator stands between are one group, and
-# choosing one checks it and unchecks the others before its `.menu_chosen`.
+# A new item at the end of menu or context menu `into` of a group of which
+# one is checked (View > as Icons, as List), as wxWidgets' `wxITEM_RADIO`:
+# the radio items of a menu no other item or separator stands between are
+# one group, and choosing one checks it and unchecks the others before its
+# `.menu_chosen`.
 #
 # - `app`: the app it is made in.
-# - `into`: the menu.
+# - `into`: the menu or the context menu.
 # - `text`: one line without a zero byte.
 # - `checked`: whether it starts checked, the others of its group then
 #   unchecked.
@@ -2990,6 +3009,18 @@ test "sort_of: unsorted"
     w = window(@app, title: "Files", width: 300, height: 200).must()
     files = table(@app, into: w, columns: ["Name"]).must()
     assert sort_of(app, widget: files).must() == .unsorted
+    close(@app).must()
+
+# A file's Open and Delete, shown where the person right-clicks the list.
+test "context_menu: a file's actions"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 200, height: 120).must()
+    files = list(@app, into: w, items: ["notes.txt"], multiple: false).must()
+    actions = context_menu(@app, widget: files).must()
+    open_file = menu_item(@app, into: actions, text: "Open").must()
+    _ = menu_item(@app, into: actions, text: "Delete").must()
+    inject(@app, input: .choose_menu(item: open_file)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: open_file)
     close(@app).must()
 
 # A disk's folders, loaded as the person unfolds them.
