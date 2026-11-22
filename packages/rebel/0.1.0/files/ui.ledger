@@ -329,11 +329,21 @@ capability ui/file-dialogs  the system's dialogs to open files and to save one, 
   python  filedialog.askopenfilename, filedialog.askopenfilenames, filedialog.asksaveasfilename, filedialog.askopenfile, filedialog.askopenfiles, filedialog.asksaveasfile, filedialog.Open, filedialog.SaveAs, filedialog.FileDialog, filedialog.LoadFileDialog, filedialog.SaveFileDialog, commondialog.Dialog
   note    a dialog answers paths; a file is opened by `fs` or `io`, never by the dialog, `askopenfile`'s
 
-capability ui/folder-dialog  the system's dialog to choose a folder
-  heroes  pending
+capability ui/folder-dialog  the system's dialog to choose a folder, or several
+  heroes  ui.open_folders
   go      -
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
+  wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
+  note    it waits for the person, as the file dialogs do, an injected choice taken first; macOS by `NSOpenPanel` choosing folders, Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
+
+capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
+  heroes  ui.ask, ui.Answer
+  go      -
+  rust    -
+  python  -
+  wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
+  note    the first button is pressed by Return and the one the program names by Escape; it answers the button's index and waits for the person, as `message` does; macOS by `NSAlert`'s buttons, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system

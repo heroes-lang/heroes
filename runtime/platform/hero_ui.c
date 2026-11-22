@@ -2882,3 +2882,87 @@ int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus) {
     *focus = found;
     return 0;
 }
+
+/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS -------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
+    return hero_ui_appkit_folder_dialog(multiple, title, title_count, bytes);
+}
+
+static int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
+    return hero_ui_appkit_ask(tone, title, title_count, text, text_count, buttons, buttons_count, cancel, pressed);
+}
+
+#else
+
+static int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
+    (void)multiple;
+    (void)title;
+    (void)title_count;
+    (void)bytes;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
+    (void)tone;
+    (void)title;
+    (void)title_count;
+    (void)text;
+    (void)text_count;
+    (void)buttons;
+    (void)buttons_count;
+    (void)cancel;
+    (void)pressed;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple, const void *title, uint64_t title_count) {
+    int64_t bytes = 0;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false)) {
+        return -1;
+    }
+    if (window < 0 || (multiple != 0 && multiple != 1)) {
+        return hero_ui_said(HERO_UI_INVALID, "a folder dialog's window is 0 or more, `multiple` 0 or 1");
+    }
+    if (hero_ui_windows_answered(hero_ui_arm_folder_dialog(multiple, title, (int64_t)title_count, &bytes), "showing a folder dialog", window) != 0) {
+        return -1;
+    }
+    return bytes;
+}
+
+int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel) {
+    const uint8_t *labels = buttons;
+    int64_t count = 0;
+    int64_t pressed = 0;
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_text_given(title, title_count, "the title", false) || !hero_ui_text_given(text, text_count, "the text", false) || !hero_ui_text_given(buttons, buttons_count, "the buttons", true)) {
+        return -1;
+    }
+    for (uint64_t at = 0; at < buttons_count; at += 1) {
+        if (labels[at] == 0) {
+            if (at == 0 || labels[at - 1] == 0) {
+                return hero_ui_said(HERO_UI_INVALID, "a button's label is empty, and a person reads none");
+            }
+            count += 1;
+        } else if (labels[at] == '\n') {
+            return hero_ui_said(HERO_UI_INVALID, "a button's label holds a line feed, and shows one line");
+        }
+    }
+    if (count < 1 || count > HERO_UI_ASK_BUTTONS_MOST) {
+        (void)snprintf(words, sizeof words, "a message box of %lld buttons; it holds 1 to %d", (long long)count, HERO_UI_ASK_BUTTONS_MOST);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (window < 0 || tone < HERO_UI_TONE_INFO || tone > HERO_UI_TONE_ERROR || cancel < -1 || cancel >= count) {
+        return hero_ui_said(HERO_UI_INVALID, "a message box's window is 0 or more, its tone hero_ui.h's, and its cancel button -1 or one of its buttons");
+    }
+    if (hero_ui_windows_answered(hero_ui_arm_ask(tone, title, (int64_t)title_count, text, (int64_t)text_count, labels, (int64_t)buttons_count, cancel, &pressed), "showing a message box", window) != 0) {
+        return -1;
+    }
+    return pressed;
+}

@@ -150,6 +150,10 @@ extern "hero_ui.h"
     function hero_ui_set_button_key(app: App, id: i64, key: i64) -> i64
     function hero_ui_set_focus(app: App, id: i64) -> i64
     function hero_ui_focus(app: App, id: i64, @focus: i64) -> i64
+    # A folder chosen, and a message box of the program's words.
+    constant HERO_UI_ASK_BUTTONS_MOST: i64
+    function hero_ui_folder_dialog(app: App, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
+    function hero_ui_ask(app: App, window: i64, tone: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64, @buttons: [u8] counted_by buttons_count lent, buttons_count: u64, cancel: i64) -> i64
     function hero_ui_screens(app: App, @values: [i64] counted_by count lent, count: u64) -> i64
     function hero_ui_frame_of(app: App, id: i64, @screen: i64, @x: i64, @y: i64, @width: i64, @height: i64) -> i64
     function hero_ui_set_position(app: App, id: i64, screen: i64, x: i64, y: i64) -> i64
@@ -784,6 +788,45 @@ function set_focus(app: App, id: i64) -> i64
 # - `focus`: written the widget's number.
 function focus_of(app: App, id: i64, @focus: i64) -> i64
     return hero_ui_focus(app, id: id, focus: @focus)
+
+# The bytes of the folders the person chose, each path followed by one zero
+# byte, which `dialog_paths` writes; 0 where they cancelled; or -1.
+#
+# - `app`: the app showing it.
+# - `window`: the window it stands over, 0 for none.
+# - `multiple`: 1 to let the person choose several, 0 for one.
+# - `title`: UTF-8 with no zero byte; left as it was handed.
+# - `title_count`: how many of its first bytes.
+function folder_dialog(app: App, window: i64, multiple: i64, @title: [u8], title_count: u64) -> i64
+    return hero_ui_folder_dialog(app, window: window, multiple: multiple, @title, title_count: title_count)
+
+# The index of the button the person pressed in a message box of the
+# program's words, or -1.
+#
+# - `app`: the app showing it.
+# - `window`: the window it stands over, 0 for none.
+# - `tone`: one of `HERO_UI_TONE_INFO` to `HERO_UI_TONE_ERROR`.
+# - `title`: UTF-8 with no zero byte; left as it was handed.
+# - `title_count`: how many of its first bytes.
+# - `text`: UTF-8 with no zero byte; left as it was handed.
+# - `text_count`: how many of its first bytes.
+# - `buttons`: each label's UTF-8 followed by one zero byte, 1 to
+#   `HERO_UI_ASK_BUTTONS_MOST` of them; left as it was handed.
+# - `buttons_count`: how many of its first bytes.
+# - `cancel`: the index of the button Escape presses, or -1.
+function ask(app: App, window: i64, tone: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64, @buttons: [u8], buttons_count: u64, cancel: i64) -> i64
+    return hero_ui_ask(
+        app,
+        window: window,
+        tone: tone,
+        title: @title,
+        title_count: title_count,
+        text: @text,
+        text_count: text_count,
+        buttons: @buttons,
+        buttons_count: buttons_count,
+        cancel: cancel
+    )
 
 ## Tests
 

@@ -766,4 +766,30 @@ int64_t hero_ui_set_focus(hero_ui_app *app, int64_t id);
  * no window), `NOT_FOUND`. */
 int64_t hero_ui_focus(hero_ui_app *app, int64_t id, int64_t *focus);
 
+/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS ---------------
+ *
+ * wxWidgets' `wxDirDialog`, and `wxMessageDialog` with labels of the
+ * program's (`SetYesNoCancelLabels`) or Electron's `showMessageBox` with
+ * its `buttons`: "Save", "Don't Save", "Cancel" before a document closes.
+ * Each waits for the person, as `hero_ui_message` and the file dialogs do. */
+
+/* The most buttons a message box of the program's words holds. */
+#define HERO_UI_ASK_BUTTONS_MOST 16
+
+/* Shows the system's dialog to choose a folder, or several where `multiple`
+ * is 1, over window `window` (0 for none), titled `title`, and waits for
+ * the person. Answers the bytes the chosen paths take, each followed by one
+ * zero byte, which `hero_ui_dialog_paths` then writes; 0 where the person
+ * cancelled; -1 on failure. */
+int64_t hero_ui_folder_dialog(hero_ui_app *app, int64_t window, int64_t multiple, const void *title, uint64_t title_count);
+
+/* Shows a message box over window `window` (0 for none) of `tone`, with
+ * `title` and `text`, whose buttons are `buttons`, each label one line of
+ * UTF-8 followed by one zero byte, `buttons_count` bytes in all, 1 to
+ * `HERO_UI_ASK_BUTTONS_MOST` of them, in the order the person reads them:
+ * the first is pressed by Return, and the one at index `cancel` by Escape
+ * (-1 for none). Waits for the person and answers the index of the button
+ * pressed, or -1. */
+int64_t hero_ui_ask(hero_ui_app *app, int64_t window, int64_t tone, const void *title, uint64_t title_count, const void *text, uint64_t text_count, const void *buttons, uint64_t buttons_count, int64_t cancel);
+
 #endif

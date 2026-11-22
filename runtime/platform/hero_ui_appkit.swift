@@ -1848,6 +1848,93 @@ public func hero_ui_appkit_focus(_ id: Int64, _ focus: UnsafeMutablePointer<Int6
     return answerOk
 }
 
+extension Backend {
+    // Shows the system's dialog to choose folders, one or, where
+    // `multiple`, several, and keeps the paths chosen, each followed by one
+    // zero byte, for `dialog_paths`; answers their bytes, 0 where the person
+    // cancelled. It waits for the person, as the file dialogs do.
+    func folderDialog(_ multiple: Bool, _ title: String) -> Int64 {
+        let panel = NSOpenPanel()
+        panel.title = title
+        panel.message = title
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.canCreateDirectories = true
+        panel.allowsMultipleSelection = multiple
+        guard panel.runModal() == .OK else {
+            paths = []
+            return 0
+        }
+        var joined: [UInt8] = []
+        for url in panel.urls {
+            let path = Array(url.path.utf8)
+            if path.contains(0) {
+                continue
+            }
+            joined.append(contentsOf: path)
+            joined.append(0)
+        }
+        paths = joined
+        return Int64(joined.count)
+    }
+
+    // Shows a message box of `tone` whose buttons are `buttons`, in order,
+    // the first its default (Return) and the one at `cancel` pressed by
+    // Escape where it is 0 or more, and waits for the person: answers the
+    // index of the button pressed.
+    func ask(_ tone: Int64, _ title: String, _ text: String, _ buttons: [String], _ cancel: Int64) -> Int64 {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = text
+        alert.alertStyle = tone == toneError ? .critical : (tone == toneWarning ? .warning : .informational)
+        for label in buttons {
+            alert.addButton(withTitle: label)
+        }
+        if cancel >= 0 && cancel < Int64(alert.buttons.count) && cancel != 0 {
+            alert.buttons[Int(cancel)].keyEquivalent = "\u{1b}"
+        }
+        let pressed = alert.runModal().rawValue - NSApplication.ModalResponse.alertFirstButtonReturn.rawValue
+        if pressed >= 0 && pressed < buttons.count {
+            return Int64(pressed)
+        }
+        return cancel >= 0 ? cancel : 0
+    }
+}
+
+@c
+public func hero_ui_appkit_folder_dialog(_ multiple: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ bytes: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let bytes = bytes else {
+        return answerInvalid
+    }
+    let heading = text(title, titleCount)
+    let got = MainActor.assumeIsolated { () -> Int64? in
+        return backend()?.folderDialog(multiple == 1, heading)
+    }
+    guard let length = got else {
+        return answerNotFound
+    }
+    bytes.pointee = length
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_ask(_ tone: Int64, _ title: UnsafePointer<UInt8>?, _ titleCount: Int64, _ said: UnsafePointer<UInt8>?, _ saidCount: Int64, _ buttons: UnsafePointer<UInt8>?, _ buttonsCount: Int64, _ cancel: Int64, _ pressed: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let pressed = pressed else {
+        return answerInvalid
+    }
+    let heading = text(title, titleCount)
+    let words = text(said, saidCount)
+    let labels = texts(buttons, buttonsCount)
+    let got = MainActor.assumeIsolated { () -> Int64? in
+        return backend()?.ask(tone, heading, words, labels, cancel)
+    }
+    guard let index = got else {
+        return answerNotFound
+    }
+    pressed.pointee = index
+    return answerOk
+}
+
 // A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.
 private let roleNone: Int64 = 0
 private let roleAbout: Int64 = 1

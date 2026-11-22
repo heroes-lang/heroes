@@ -71,17 +71,18 @@
 # `limit` and `failed` (README § A4).
 #
 # Not written yet, each a `pending` block of its ledger: the native side on
-# Windows, by Win32; the native side on Linux, by GTK; a thread's message to the user
-# interface, through feature 2647's mailbox; a box drawn with a title and a
-# frame around it; a text field whose text is masked; a combo box the person
-# may type into; a progress bar that moves with no value; a number typed, or
-# stepped up and down; a line between the widgets of a box; a menu inside a
-# menu; the system's dialog to choose a folder; pages chosen by tabs; rows of
-# cells in columns; a tree of items folded and unfolded; a box whose content
-# scrolls; two panes whose border the person drags; an area the program draws
-# into, with its keys and its mouse; a tip shown over a widget; the system's clipboard; a date, a colour
-# or a font chosen in the system's own picker; an icon in the system's tray or
-# menu bar, and its notifications; a file dragged onto a window.
+# Windows, by Win32; the native side on Linux, by GTK; a thread's message to
+# the user interface, through feature 2647's mailbox; a box drawn with a
+# title and a frame around it; a text field whose text is masked; a combo
+# box the person may type into; a progress bar that moves with no value; a
+# number typed, or stepped up and down; a line between the widgets of a box;
+# a menu inside a menu; pages chosen by tabs; rows of cells in columns; a
+# tree of items folded and unfolded; a box whose content scrolls; two panes
+# whose border the person drags; an area the program draws into, with its
+# keys and its mouse; a tip shown over a widget; the system's clipboard; a
+# date, a colour or a font chosen in the system's own picker; an icon in the
+# system's tray or menu bar, and its notifications; a file dragged onto a
+# window.
 
 use bytes
 use image
@@ -1399,6 +1400,10 @@ variant Answer
     yes
     # No.
     no
+    # A button of a box of the program's words (`ask`).
+    button
+        # Its index among the box's buttons, from 0.
+        index: i64
 
 # Files a file dialog offers, by their extensions.
 record Filter
@@ -1464,6 +1469,43 @@ function open_files(@app: App, over: Widget, title: str, filters: [Filter], mult
 # `failed`.
 function save_file(@app: App, over: Widget, title: str, name: str, filters: [Filter]) -> Choice?
     return dialogs.files(@app, over: over, title: title, name: name, filters: filters, save: true, multiple: false)
+
+# Shows the system's dialog to choose a folder over window `over` and waits
+# for the person, as wxWidgets' `wxDirDialog`; a choice `inject` queued is
+# taken instead, and no dialog is shown.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `multiple`: whether the person may choose several folders.
+#
+# The paths are the folders'. Fails `closed`, and `closed` on a headless app
+# where no choice was injected; `invalid` where an injected choice holds
+# several paths and `multiple` is false; `failed`. See also `open_files`.
+function open_folders(@app: App, over: Widget, title: str, multiple: bool) -> Choice?
+    return dialogs.folders(@app, over: over, title: title, multiple: multiple)
+
+# Shows a message box over window `over` whose buttons say the program's
+# own words, as "Save", "Don't Save" and "Cancel" before a document closes,
+# and waits for the person to press one; answers its index. An answer
+# `inject` queued is taken instead and no box is shown: `.button(index:)`,
+# or `.cancel` for the button Escape presses.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `text`: what it says, without a zero byte.
+# - `tone`: its tone.
+# - `buttons`: the buttons' labels in the order the person reads them, 1
+#   to 16, each one line, not empty, without a zero byte; the first is
+#   pressed by Return.
+# - `cancel`: the index of the button Escape presses, or -1 for none.
+#
+# Fails `closed`; `invalid` for a label or a `cancel` out of its range, or
+# an injected answer that is no button of the box; `closed` on a headless
+# app where no answer was injected; `failed`. See also `message`.
+function ask(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: [str], cancel: i64) -> i64?
+    return dialogs.ask(@app, over: over, title: title, text: text, tone: tone, buttons: buttons, cancel: cancel)
 
 ## Drawing as text
 
@@ -2395,6 +2437,32 @@ test "set_button_key: OK by Return"
     set_button_key(@app, widget: ok_button, key: .enter).must()
     press_key(@app, widget: w, shortcut: Shortcut(key: "Enter", primary: false, shift: false, alt: false)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
+    close(@app).must()
+
+# A folder chosen for a project.
+test "open_folders: one chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Project", width: 100, height: 60).must()
+    inject(@app, input: .pick_files(paths: ["/tmp/project"])).must()
+    assert open_folders(@app, over: w, title: "Choose the project's folder", multiple: false).must() == .chosen(paths: ["/tmp/project"])
+    close(@app).must()
+
+# Save, Don't Save or Cancel before a document closes, the person choosing
+# the second.
+test "ask: Save, Don't Save, Cancel"
+    app @= open(.headless).must()
+    w = window(@app, title: "Notes", width: 100, height: 60).must()
+    inject(@app, input: .answer(answer: .button(index: 1))).must()
+    pressed = ask(
+        @app,
+        over: w,
+        title: "Save the changes?",
+        text: "They are lost otherwise.",
+        tone: .warning,
+        buttons: ["Save", "Don't Save", "Cancel"],
+        cancel: 2
+    ).must()
+    assert pressed == 1
     close(@app).must()
 
 # A question answered Yes by an injected answer.
