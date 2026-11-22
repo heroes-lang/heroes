@@ -294,3 +294,12 @@ None: the historian did not sit (soundness lane). ThreadSanitizer's `setjmp` rec
 ## Author's verdict
 
 *Pending.*
+
+**Ratified by the author's reading, 2026-11-23, at about 00:35**, in conversation (the answers *1a* and *2a*
+to the coordinator's recommendations, meant as: *ratify R1 to R5 as written; and the words of the refusals
+R4 names are owed to the spec, a sentence written in a small sitting with the spec-warden*). So, beneath
+the verdict: **R1** (route C on both platforms, Darwin's C4r and Linux's "C, 2679 alone") and **R2** (the
+copied buffer runs, the refill stays refused, so ruling B's known cost of 2026-11-20 is lifted) are the
+runtime lane's; **R3**'s design is defect 2702's repair; **R4** keeps G refused on both platforms, told in
+words true of each, and the spec sentence is the next sitting's (no paid run is authorized for it, so its
+blind reading is owed, not run); **R5**'s list is what the landing owes.
