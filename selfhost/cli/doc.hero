@@ -30,7 +30,9 @@
 # root holds no expression, so what the name and type stages say of it can only
 # be of its `use`, never used, and is dropped; what its parse and its module
 # graph say is the operand's own fault, a name no catalogue reaches, and is
-# told.
+# told, with what that root is. A `.hero` file whose `use` lines start above
+# its own folder, a module nested in a tree, is refused as a root is, each
+# refusal naming the form that reads it (`cli/doc_operand.hero`, defect 2615).
 
 use ast
 use check/state
@@ -38,6 +40,7 @@ use check/type_fit
 use checker
 use cli/argv
 use cli/check
+use cli/doc_operand
 use cli/doc_shape
 use cli/doc_text
 use cli/input
@@ -93,14 +96,14 @@ function answered(inv: argv.Invocation, library: str, folder: str) -> Answered
         if root.is_err()
             io.eprint(text: "error: " + read_failure(root))
             return Answered(exit: .failed_exit, reference: "")
-        return reading(root.must(), inv: inv, target: path)
+        return reading(root.must(), inv: inv, target: path, folder: folder)
     read = input.read_compilation(path: path, library: library)
 
     if read.is_err()
         io.eprint(text: "error: " + read_failure(read))
         return Answered(exit: .failed_exit, reference: "")
     s = read.must()
-    return reading(s, inv: inv, target: source.module_at(s, s.files[0].start))
+    return reading(s, inv: inv, target: source.module_at(s, s.files[0].start), folder: folder)
 
 function holds_line_break(text: str) -> bool
     for c in text.chars()
@@ -127,15 +130,21 @@ function apart_from_root(said: [diag.Diagnostic], s: source.Source, target: str)
 
     return kept
 
-# The stages, each told and stopping where it speaks, then the reference.
-function reading(s: source.Source, inv: argv.Invocation, target: str) -> Answered
+# The stages, each told and stopping where it speaks, then the reference;
+# `folder` is the one whose catalogue a package's module is read through.
+function reading(s: source.Source, inv: argv.Invocation, target: str, folder: str) -> Answered
     unverified.say(s, inv)
     parsed = parse.parse_source(s)
-    stop = check.report(parsed.diagnostics, s, inv, stage: 1)
+    stop = check.report(doc_operand.noted(parsed.diagnostics, s, target: target, folder: folder), s, inv, stage: 1)
 
     if !stop.is_err()
         return Answered(exit: stop.must(), reference: "")
-    stop_g = check.report(modules.errors(s, parsed.uses), s, inv, stage: 2)
+    stop_g = check.report(
+        doc_operand.noted(modules.errors(s, parsed.uses), s, target: target, folder: folder),
+        s,
+        inv,
+        stage: 2
+    )
 
     if !stop_g.is_err()
         return Answered(exit: stop_g.must(), reference: "")
@@ -158,6 +167,7 @@ function reading(s: source.Source, inv: argv.Invocation, target: str) -> Answere
 
     if !stop_d.is_err()
         return Answered(exit: stop_d.must(), reference: "")
+
     return Answered(
         exit: .ok_exit,
         reference: reference(parsed.tree, s, decls: parsed.decls, c: c, target: target, file: file)
@@ -246,7 +256,7 @@ function asked(operand: str) -> argv.Invocation
 # The run of the verb over a module held as text, named `name`.
 function of_text(name: str, text: str) -> Answered
     s = modules.load_text(path: name, root_text: text, library: library_source.text()).must()
-    return reading(s, inv: asked(name), target: source.module_at(s, s.files[0].start))
+    return reading(s, inv: asked(name), target: source.module_at(s, s.files[0].start), folder: "")
 
 # A module of two functions and an example, the second function's line
 # written as `line`.

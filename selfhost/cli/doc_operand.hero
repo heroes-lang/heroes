@@ -1,0 +1,246 @@
+# What `heroes doc` adds to a refusal of its operand, so the refusal names the
+# form that reads the module (spec § 1; panel 253's R2, ratified 2026-11-19;
+# design.md §4.17; defect 2615). The verb reads a `.hero` file as a root,
+# whose `use` lines start at its own folder, and `<name>/<module>` through the
+# catalogue of the folder it runs in (`cli/doc.hero`).
+#
+# **A module nested in a tree is no root**: its `use` lines start at the
+# tree's root, so read as a root each fails `unknown_module`, which is true
+# and names no way forward. Where a folder the operand's own path climbs to
+# holds every file those lines name, the file is the module of the tree
+# rooted there whose path is its own below that folder, and each such
+# refusal is given a note naming the command that reads it: through the
+# entry of the folder's catalogue whose root is that folder where one is,
+# else through an entry to write. The folder is asked of the files the
+# failed lines name, never guessed from the path's shape, and only the
+# folders the operand's own spelling climbs to are asked: a `..` is never
+# climbed past, nor the root of the file system.
+#
+# **A package's module is read through a root of one line held in memory**,
+# `heroes-doc-root.hero`, which the graph's refusals name as the file
+# compiled; each refusal standing on that line is given a note saying what
+# that file is and which catalogue it reads.
+
+use cli/process
+use cli/strings
+use diag
+use library_source
+use module/catalogue
+use module/folders
+use module/packages
+use modules
+use parse
+use source
+
+# The diagnostics `said` of the compilation `s` read for `target`, each
+# refusal of the operand's own `use` lines given the note naming the form
+# that reads the module, and each refusal on the one-line root of a package's
+# module the note saying what that root is. `folder` is the folder whose
+# catalogue the verb reads, "" the one it runs in, else ending in `/`.
+function noted(said: [diag.Diagnostic], s: source.Source, target: str, folder: str) -> [diag.Diagnostic]
+    if source.module_at(s, s.files[0].start) != target
+        return each_noted(said, s: s, code: "", note: root_note(target: target, root: s.name))
+    failed: [str] @= []
+
+    for d in said
+        if d.code == "unknown_module" && source.is_root(s, d.span.start)
+            failed @ failed.push(source.span_text(s, d.span))
+
+    if failed.len() == 0 || !strings.ends_with(text: s.name, suffix: ".hero")
+        return said
+    root = root_of(path: s.name, failed: failed)
+
+    if root.is_err()
+        return said
+    return each_noted(
+        said,
+        s: s,
+        code: "unknown_module",
+        note: nested_note(path: s.name, root: root.must(), folder: folder)
+    )
+
+# `said` with `note` added to each diagnostic standing in the root file whose
+# code is `code`, every code where `code` is "".
+function each_noted(said: [diag.Diagnostic], s: source.Source, code: str, note: str) -> [diag.Diagnostic]
+    out: [diag.Diagnostic] @= []
+
+    for d in said
+        kept: diag.Diagnostic @= d
+
+        if source.is_root(s, d.span.start) && (code == "" || d.code == code)
+            kept.notes @ kept.notes.push(note)
+        out @ out.push(kept)
+
+    return out
+
+# What the one-line root of a package's module is, told beside a refusal
+# standing on it.
+function root_note(target: str, root: str) -> str
+    return "`heroes doc '" + target + "'` reads the module through a program of one line, `use " + target + "`, held in memory as `" + root + "` in the folder it runs in and written nowhere, so the catalogue it reads is that folder's `" + catalogue.FILE + "`"
+
+## A module nested in a tree
+
+# The nearest folder above the file `path`'s own, as `path` spells it, that
+# holds the file each of `failed` names; none where no folder its spelling
+# climbs to does.
+function root_of(path: str, failed: [str]) -> str?
+    at: str @= folders.directory_text(path)
+
+    while climbable(at)
+        at @ folders.directory_text(at.slice(from: 0, to: at.len() - 1))
+
+        if holds_all(folder: at, failed: failed)
+            return ok(at)
+
+    return fail(code: "none", msg: "no folder above the file's own holds every file its `use` lines name")
+
+# Whether the folder `at` has a parent its spelling names: a last part that is
+# a name, never `.`, `..` or a drive's `C:`, and never the root of the file
+# system.
+function climbable(at: str) -> bool
+    if at.len() < 2
+        return false
+    last = last_part(at.slice(from: 0, to: at.len() - 1))
+    return last.len() > 0 && last != "." && last != ".." && !strings.ends_with(text: last, suffix: ":")
+
+# The part of `text` after its last separator, all of it where none is.
+function last_part(text: str) -> str
+    return text.slice(from: folders.directory_text(text).len(), to: text.len())
+
+# Whether `folder` holds `<module>.hero` for each module of `failed`.
+function holds_all(folder: str, failed: [str]) -> bool
+    for module in failed
+        if !process.path_exists(folder + module + ".hero")
+            return false
+
+    return true
+
+# The note naming the command that reads the file `path` as the module of the
+# tree rooted at `root`: through the catalogue of `folder` where an entry of
+# it is read from `root`, else through an entry written for it.
+function nested_note(path: str, root: str, folder: str) -> str
+    module = path.slice(from: root.len(), to: path.len() - ".hero".len())
+    opening = "`" + shown(root) + "` holds every file the `use` lines of `" + path + "` name: they start at that folder, so the file is the module `" + module + "` of the tree rooted there and no root of its own; "
+    listed = catalogue.read(opened: folder, named: folder)
+    book = packages.book(named: folder, opened: folder)
+
+    for e in listed.entries
+        if same_folder(a: packages.rooted(book, e: e).root, b: root)
+            return opening + "`heroes doc '<" + e.name + ">/" + module + "'` reads it there, through the entry `" + e.name + "` of `" + listed.file + "`, which names that folder"
+
+    return opening + "`heroes doc` reads such a module as a package's, through the catalogue `" + folder + catalogue.FILE + "` of the folder it runs in: an entry naming that folder, `[dependencies.tree]` with `path = \"" + entry_path(below(root: root, folder: folder)) + "\"`, then `heroes doc '<tree>/" + module + "'`"
+
+# A folder as a message names it, `.` for the one the command runs in.
+function shown(folder: str) -> str
+    if folder.len() == 0
+        return "."
+    return folder
+
+# The folder `root` as the catalogue in `folder` reaches it: below `folder`
+# where `root` stands there, as it is spelt otherwise.
+function below(root: str, folder: str) -> str
+    if strings.starts_with(text: root, prefix: folder)
+        return root.slice(from: folder.len(), to: root.len())
+    return root
+
+# A folder as a `path` entry writes it: without its last separator, `.` for
+# the one the catalogue stands in.
+function entry_path(folder: str) -> str
+    if folder.len() == 0
+        return "."
+
+    if folder.len() > 1
+        return folder.slice(from: 0, to: folder.len() - 1)
+    return folder
+
+# Whether two folders, each ending in a separator or "", are one as spelt:
+# `./` and `/./` are dropped from each before they are compared.
+function same_folder(a: str, b: str) -> bool
+    return plain(a) == plain(b)
+
+# A folder's spelling with each part that is `.` left out.
+function plain(folder: str) -> str
+    out: [str] @= []
+    from: i64 @= 0
+    at: i64 @= 0
+
+    while at < folder.len()
+        if folder[at] == '/'
+            part = folder.slice(from: from, to: at)
+
+            if part != "."
+                out @ out.push(part + "/")
+            from @ at + 1
+        at @ at + 1
+
+    out @ out.push(folder.slice(from: from, to: folder.len()))
+    return out.join("")
+
+## Tests
+
+test "a folder is climbed by its spelling, never past `..`, `.` or the root"
+    assert climbable("a/b/")
+    assert climbable("/a/")
+    assert !climbable("")
+    assert !climbable("/")
+    assert !climbable("../")
+    assert !climbable("a/../")
+    assert !climbable("./")
+    assert !climbable("C:\\")
+    assert last_part("a/b") == "b"
+    assert last_part("b") == "b"
+
+test "a folder is shown and written as a `path` entry writes it"
+    assert shown("") == "."
+    assert shown("a/") == "a/"
+    assert entry_path("") == "."
+    assert entry_path("a/b/") == "a/b"
+    assert entry_path("/") == "/"
+    assert same_folder(a: "./a/./b/", b: "a/b/")
+    assert !same_folder(a: "a/", b: "b/a/")
+
+# The module graph's refusals of the compilation rooted at `path`, its text
+# read from disk, as the verb notes them, read through the catalogue of
+# `folder`.
+function graph_noted(path: str, folder: str) -> [diag.Diagnostic]
+    s = modules.load_text(path: path, root_text: read_file(path).must(), library: library_source.text()).must()
+    said = modules.errors(s, parse.parse_source(s).uses)
+    return noted(said, s: s, target: source.module_at(s, s.files[0].start), folder: folder)
+
+test "a nested module's refusals name the root its `use` lines start at and the command that reads it (defect 2615)"
+    dir = "build/selftest-doc-operand/"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(dir)
+    assert !process.mkdir_all(dir + "kit/inner").is_err()
+    assert !write_file(path: dir + "kit/parts.hero", text: "# One.\nfunction one() -> i64\n    return 1\n").is_err()
+    leaf = dir + "kit/inner/leaf.hero"
+    assert !write_file(path: leaf, text: "# Leaf.\n\nuse parts\n\n# Two.\nfunction two() -> i64\n    return parts.one() + 1\n").is_err()
+
+    # No catalogue reaches the tree: the entry to write is named.
+    said = graph_noted(path: leaf, folder: dir)
+    assert said.len() == 1
+    assert said[0].code == "unknown_module"
+    assert said[0].notes.len() == 1
+    assert said[0].notes[0] == "`" + dir + "kit/` holds every file the `use` lines of `" + leaf + "` name: they start at that folder, so the file is the module `inner/leaf` of the tree rooted there and no root of its own; `heroes doc` reads such a module as a package's, through the catalogue `" + dir + "heroes.toml` of the folder it runs in: an entry naming that folder, `[dependencies.tree]` with `path = \"kit\"`, then `heroes doc '<tree>/inner/leaf'`"
+
+    # An entry of the folder's catalogue names the tree: its command is named.
+    assert !write_file(path: dir + "heroes.toml", text: "[dependencies.kit]\npath = \"./kit\"\n").is_err()
+    listed = graph_noted(path: leaf, folder: dir)
+    assert listed[0].notes[0] == "`" + dir + "kit/` holds every file the `use` lines of `" + leaf + "` name: they start at that folder, so the file is the module `inner/leaf` of the tree rooted there and no root of its own; `heroes doc '<kit>/inner/leaf'` reads it there, through the entry `kit` of `" + dir + "heroes.toml`, which names that folder"
+
+    # A `use` no folder above answers is refused as it was, with no note.
+    lost = dir + "kit/inner/lost.hero"
+    assert !write_file(path: lost, text: "# Lost.\n\nuse parts\nuse nowhere\n\n# Two.\nfunction two() -> i64\n    return parts.one() + 1\n").is_err()
+
+    for d in graph_noted(path: lost, folder: dir)
+        assert d.notes.len() == 0
+
+test "a refusal on the one-line root of a package's module says what that root is (defect 2615)"
+    dir = "build/selftest-doc-operand-root/"
+    assert !process.remove_tree(dir).is_err() || !process.is_directory(dir)
+    assert !process.mkdir_all(dir).is_err()
+    root = dir + "heroes-doc-root.hero"
+    s = modules.load_text(path: root, root_text: "use <kit>/words\n", library: library_source.text()).must()
+    said = noted(modules.errors(s, parse.parse_source(s).uses), s: s, target: "<kit>/words", folder: dir)
+    assert said.len() == 1
+    assert said[0].code == "unknown_entry"
+    assert said[0].notes[said[0].notes.len() - 1] == "`heroes doc '<kit>/words'` reads the module through a program of one line, `use <kit>/words`, held in memory as `" + root + "` in the folder it runs in and written nowhere, so the catalogue it reads is that folder's `heroes.toml`"
