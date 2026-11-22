@@ -33,6 +33,7 @@
 #include <commctrl.h>
 #include <commdlg.h>
 #include <cderr.h>
+#include <dwmapi.h>
 #include <wchar.h>
 #include "hero_ui_web_win32.h"
 
@@ -126,6 +127,7 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "msimg32.lib")
+#pragma comment(lib, "dwmapi.lib")
 #endif
 
 _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA holds a widget's 64-bit number");
@@ -145,6 +147,24 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 #define HERO_UI_WIN_STEPS 1000000
 /* The room a file dialog's answer has, in UTF-16 units. */
 #define HERO_UI_WIN_PATHS_ROOM (1u << 20)
+/* Which of a window's settings `window_set` makes: `hero_ui.c`'s numbers,
+ * defined here where `hero_ui_arm.h` does not yet name them. */
+#ifndef HERO_UI_WINDOW_SET_ON_TOP
+#define HERO_UI_WINDOW_SET_ON_TOP 1
+#define HERO_UI_WINDOW_SET_FRAMED 2
+#define HERO_UI_WINDOW_SET_OPACITY 3
+#define HERO_UI_WINDOW_SET_BACKDROP 4
+#define HERO_UI_WINDOW_SET_MODAL 5
+#endif
+/* DWM's system backdrop, Windows 11 22H2's (`dwmapi.h` of an older SDK
+ * names neither): the attribute and its Mica. */
+#define HERO_UI_WIN_BACKDROP_TYPE 38
+#define HERO_UI_WIN_BACKDROP_MICA 2
+/* A monitor's own scale, `GetDpiForMonitor`'s effective one. */
+#define HERO_UI_WIN_EFFECTIVE_DPI 0
+/* How long `press_key` waits for the key it sent to come back through the
+ * queue. */
+#define HERO_UI_WIN_KEY_WAIT_MS 2000u
 
 static const wchar_t hero_ui_win_window_class[] = L"HeroesUiWindow";
 static const wchar_t hero_ui_win_panel_class[] = L"HeroesUiPanel";
@@ -216,6 +236,39 @@ struct hero_ui_native {
     HBITMAP bitmap;
     int64_t bitmap_width;
     int64_t bitmap_height;
+    /* What a widget whose parent this is stands in (CONTAINERS): a
+     * window's client area, a page's, a pane's or a scrolled box's content
+     * window; NULL for a widget that holds none. */
+    HWND inside;
+    /* A window's place among the screens (WINDOWS ON THE SCREEN): whether
+     * it is watched, the state and the screen last told, in full screen with
+     * the style and the place to give back, framed, made modal, disabled by
+     * another window's modality, its backdrop. */
+    bool watched;
+    int64_t state_told;
+    int64_t screen_told;
+    int64_t moved_x;
+    int64_t moved_y;
+    bool full_screen;
+    LONG_PTR style_before;
+    LONG_PTR extended_before;
+    WINDOWPLACEMENT placement_before;
+    bool unframed;
+    bool modal;
+    bool held_by_modal;
+    int64_t backdrop;
+    /* A window's control that had the keys when it was left, given them
+     * again when it is activated (THE WIDGET WITH THE KEYS); whether it was
+     * shown once; whether its controls' Tab order wants making again; its
+     * buttons for Return and for Escape. */
+    HWND focus;
+    bool shown_once;
+    bool tabs_stale;
+    int64_t enter_button;
+    int64_t escape_button;
+    /* A menu item's check mode, `HERO_UI_CHECK_*`, and its state. */
+    int64_t check;
+    bool checked;
 };
 
 /* The scaling functions of `user32` (POINTS ARE MAPPED), NULL where this
@@ -250,6 +303,19 @@ static _Thread_local int64_t hero_ui_win_injecting;
 /* The paths the last file dialog answered, each followed by one zero byte. */
 static _Thread_local uint8_t *hero_ui_win_paths;
 static _Thread_local int64_t hero_ui_win_paths_count;
+
+/* `shcore`'s scale of a monitor (Windows 8.1), found by `GetProcAddress`
+ * where this Windows has it, since a program's import of it would stop it
+ * loading where it does not. */
+typedef HRESULT(WINAPI *hero_ui_win_monitor_dpi)(HMONITOR, int, UINT *, UINT *);
+static _Thread_local hero_ui_win_monitor_dpi hero_ui_win_dpi_for_monitor;
+/* Above 0 while the program's own call moves a window or changes its
+ * state, so WINDOWS ON THE SCREEN tells none of it as the person's. */
+static _Thread_local int64_t hero_ui_win_quiet;
+/* The window made modal, 0 for none. */
+static _Thread_local int64_t hero_ui_win_modal;
+/* The app's icon, NULL for the system's own. */
+static _Thread_local HICON hero_ui_win_icon;
 
 /* -- Words, numbers and text ------------------------------------------------ */
 
@@ -356,6 +422,38 @@ static wchar_t *hero_ui_win_wide(const uint8_t *text, int64_t count, unsigned wa
     return written;
 }
 
+/* `units` units of UTF-16 at `wide` as UTF-8 in a block of
+ * `hero_layer_alloc`, its length through `*bytes`, CR LF read as a line feed
+ * where `lines` (the one CR `hero_ui_win_wide` writes before every line feed,
+ * so a text written and read back is the text written); NULL where memory
+ * ran out. */
+static uint8_t *hero_ui_win_narrow(const wchar_t *wide, int units, bool lines, int64_t *bytes) {
+    uint8_t *narrow;
+    int made = 0;
+    int64_t kept = 0;
+
+    *bytes = 0;
+    if (units > 0) {
+        made = WideCharToMultiByte(CP_UTF8, 0, wide, units, NULL, 0, NULL, NULL);
+    }
+    narrow = hero_layer_alloc(made > 0 ? (size_t)made : 1u);
+    if (narrow == NULL) {
+        return NULL;
+    }
+    if (made > 0) {
+        made = WideCharToMultiByte(CP_UTF8, 0, wide, units, (char *)narrow, made, NULL, NULL);
+    }
+    for (int i = 0; i < made; i += 1) {
+        if (lines && narrow[i] == '\r' && i + 1 < made && narrow[i + 1] == '\n') {
+            continue;
+        }
+        narrow[kept] = narrow[i];
+        kept += 1;
+    }
+    *bytes = kept;
+    return narrow;
+}
+
 /* The text of control `hwnd` as UTF-8 in a block of `hero_layer_alloc`, its
  * length through `*bytes`, CR LF read as a line feed where `lines`; NULL
  * where memory ran out. */
@@ -364,8 +462,6 @@ static uint8_t *hero_ui_win_text_of(HWND hwnd, bool lines, int64_t *bytes) {
     wchar_t *wide;
     uint8_t *narrow;
     int read;
-    int made = 0;
-    int64_t kept = 0;
 
     *bytes = 0;
     if (units < 0) {
@@ -376,29 +472,8 @@ static uint8_t *hero_ui_win_text_of(HWND hwnd, bool lines, int64_t *bytes) {
         return NULL;
     }
     read = GetWindowTextW(hwnd, wide, units + 1);
-    if (read < 0) {
-        read = 0;
-    }
-    if (read > 0) {
-        made = WideCharToMultiByte(CP_UTF8, 0, wide, read, NULL, 0, NULL, NULL);
-    }
-    narrow = hero_layer_alloc(made > 0 ? (size_t)made : 1u);
-    if (narrow == NULL) {
-        hero_layer_free(wide);
-        return NULL;
-    }
-    if (made > 0) {
-        made = WideCharToMultiByte(CP_UTF8, 0, wide, read, (char *)narrow, made, NULL, NULL);
-    }
+    narrow = hero_ui_win_narrow(wide, read > 0 ? read : 0, lines, bytes);
     hero_layer_free(wide);
-    for (int i = 0; i < made; i += 1) {
-        if (lines && narrow[i] == '\r' && i + 1 < made && narrow[i + 1] == '\n') {
-            continue;
-        }
-        narrow[kept] = narrow[i];
-        kept += 1;
-    }
-    *bytes = kept;
     return narrow;
 }
 
@@ -707,11 +782,39 @@ static bool hero_ui_win_least(HWND hwnd, MINMAXINFO *limits) {
 
 /* -- Menus and shortcuts ---------------------------------------------------- */
 
-/* Whether menu item `item`, its menu and its window let the person choose it. */
-static bool hero_ui_win_usable(const hero_ui_native *item) {
-    const hero_ui_native *menu = hero_ui_find(item->parent);
+/* Whether widget `widget` and every container it stands in is shown and
+ * enabled as the program set them. */
+static bool hero_ui_win_reachable(const hero_ui_native *widget) {
+    for (const hero_ui_native *at = widget; at != NULL && at->kind != HERO_UI_WINDOW; at = hero_ui_find(at->parent)) {
+        if (!at->visible || !at->enabled) {
+            return false;
+        }
+    }
+    return true;
+}
 
-    return item->kind == HERO_UI_MENU_ITEM && item->enabled && item->visible && menu != NULL && menu->enabled && menu->visible;
+/* Whether menu item `item`, every menu it stands in and its window let the
+ * person choose it: a context menu's item while the widget it belongs to is
+ * shown and enabled. */
+static bool hero_ui_win_usable(const hero_ui_native *item) {
+    if (item->kind != HERO_UI_MENU_ITEM || !item->enabled || !item->visible) {
+        return false;
+    }
+    for (const hero_ui_native *at = hero_ui_find(item->parent); at != NULL; at = hero_ui_find(at->parent)) {
+        if (at->kind == HERO_UI_MENU) {
+            if (!at->enabled || !at->visible) {
+                return false;
+            }
+            continue;
+        }
+        if (at->kind == HERO_UI_CONTEXT_MENU) {
+            const hero_ui_native *target = hero_ui_find(at->parent);
+
+            return target != NULL && hero_ui_win_reachable(target);
+        }
+        return at->kind == HERO_UI_WINDOW;
+    }
+    return false;
 }
 
 /* The menu item of command number `command`, or NULL. */
@@ -817,9 +920,13 @@ static wchar_t *hero_ui_win_item_text(const hero_ui_native *item) {
     return hero_ui_win_menu_text(item->label, keys);
 }
 
-/* Fills menu `menu`'s pop-up again with its items shown, in their order. */
+/* Fills menu `menu`'s pop-up again, a menu's or a context menu's, with its
+ * items, separators and menus shown, in their order: a check item with its
+ * mark, a radio item's drawn as a dot. `RemoveMenu` takes an inner menu out
+ * without destroying it, so each inner menu stays its own until its widget
+ * is destroyed. */
 static int64_t hero_ui_win_fill_menu(hero_ui_native *menu) {
-    hero_ui_native *window = hero_ui_win_window(menu->parent);
+    hero_ui_native *window = hero_ui_win_window(menu->window);
     int64_t answer = HERO_UI_OK;
 
     while (GetMenuItemCount(menu->menu) > 0) {
@@ -829,26 +936,36 @@ static int64_t hero_ui_win_fill_menu(hero_ui_native *menu) {
     }
     for (int64_t i = 0; i < menu->order.count; i += 1) {
         hero_ui_native *item = hero_ui_find(menu->order.at[i]);
-        wchar_t *text;
-        BOOL added;
+        MENUITEMINFOW info;
+        wchar_t *text = NULL;
+        int at = GetMenuItemCount(menu->menu);
 
         if (item == NULL || !item->visible) {
             continue;
         }
+        memset(&info, 0, sizeof info);
+        info.cbSize = (UINT)sizeof info;
         if (item->kind == HERO_UI_MENU_SEPARATOR) {
-            added = AppendMenuW(menu->menu, MF_SEPARATOR, item->command, NULL);
+            info.fMask = MIIM_FTYPE | MIIM_ID;
+            info.fType = MFT_SEPARATOR;
+            info.wID = item->command;
         } else {
-            text = hero_ui_win_item_text(item);
+            text = item->kind == HERO_UI_MENU ? hero_ui_win_menu_text(item->label, L"") : hero_ui_win_item_text(item);
             if (text == NULL) {
                 answer = HERO_UI_LIMIT;
                 continue;
             }
-            added = AppendMenuW(menu->menu, MF_STRING | (item->enabled ? MF_ENABLED : MF_GRAYED), item->command, text);
-            hero_layer_free(text);
+            info.fMask = MIIM_FTYPE | MIIM_STRING | MIIM_STATE | (item->kind == HERO_UI_MENU ? MIIM_SUBMENU : MIIM_ID);
+            info.fType = MFT_STRING | (item->check == HERO_UI_CHECK_RADIO ? MFT_RADIOCHECK : 0);
+            info.fState = (item->enabled ? MFS_ENABLED : MFS_GRAYED) | (item->check != HERO_UI_CHECK_NONE && item->checked ? MFS_CHECKED : MFS_UNCHECKED);
+            info.dwTypeData = text;
+            info.wID = item->command;
+            info.hSubMenu = item->kind == HERO_UI_MENU ? item->menu : NULL;
         }
-        if (!added && answer == HERO_UI_OK) {
+        if (!InsertMenuItemW(menu->menu, (UINT)(at < 0 ? 0 : at), TRUE, &info) && answer == HERO_UI_OK) {
             answer = hero_ui_win_failed("adding an item to a menu", GetLastError());
         }
+        hero_layer_free(text);
     }
     if (window != NULL) {
         window->accelerators_stale = true;
@@ -857,6 +974,18 @@ static int64_t hero_ui_win_fill_menu(hero_ui_native *menu) {
         }
     }
     return answer;
+}
+
+/* Fills again what menu, item or separator `widget` stands in: a window's
+ * menu bar, a menu or a context menu. */
+static int64_t hero_ui_win_fill_bar(hero_ui_native *window);
+static int64_t hero_ui_win_refill_owner(const hero_ui_native *widget) {
+    hero_ui_native *owner = hero_ui_find(widget->parent);
+
+    if (owner == NULL) {
+        return HERO_UI_OK;
+    }
+    return owner->kind == HERO_UI_WINDOW ? hero_ui_win_fill_bar(owner) : hero_ui_win_fill_menu(owner);
 }
 
 /* Fills window `window`'s menu bar again with its menus shown, in their
@@ -916,12 +1045,38 @@ static int64_t hero_ui_win_fill_bar(hero_ui_native *window) {
     return answer;
 }
 
-/* Makes window `window`'s accelerator table again from the shortcuts of its
- * menu items shown. */
+/* Counts, where `table` is NULL, or writes into `table` from `*count`, the
+ * shortcuts of menu `menu`'s items shown and of the menus inside it. */
+static void hero_ui_win_gather_keys(const hero_ui_native *menu, ACCEL *table, int64_t *count) {
+    for (int64_t i = 0; i < menu->order.count; i += 1) {
+        const hero_ui_native *item = hero_ui_find(menu->order.at[i]);
+
+        if (item == NULL || !item->visible) {
+            continue;
+        }
+        if (item->kind == HERO_UI_MENU) {
+            hero_ui_win_gather_keys(item, table, count);
+            continue;
+        }
+        if (item->kind != HERO_UI_MENU_ITEM || item->key == 0) {
+            continue;
+        }
+        if (table != NULL) {
+            table[*count].fVirt = (BYTE)(FVIRTKEY | item->held);
+            table[*count].key = item->key;
+            table[*count].cmd = item->command;
+        }
+        *count += 1;
+    }
+}
+
+/* Makes window `window`'s accelerator table again from the shortcuts of the
+ * items shown of its menu bar's menus and the menus inside them; a context
+ * menu's shortcuts are shown and take no key. */
 static void hero_ui_win_make_accelerators(hero_ui_native *window) {
     ACCEL *table;
     int64_t most = 0;
-    int count = 0;
+    int64_t count = 0;
 
     if (window->accelerators != NULL) {
         (void)DestroyAcceleratorTable(window->accelerators);
@@ -931,7 +1086,9 @@ static void hero_ui_win_make_accelerators(hero_ui_native *window) {
     for (int64_t m = 0; m < window->order.count; m += 1) {
         hero_ui_native *menu = hero_ui_find(window->order.at[m]);
 
-        most += menu != NULL ? menu->order.count : 0;
+        if (menu != NULL && menu->visible) {
+            hero_ui_win_gather_keys(menu, NULL, &most);
+        }
     }
     if (most == 0 || most > INT32_MAX) {
         return;
@@ -946,23 +1103,12 @@ static void hero_ui_win_make_accelerators(hero_ui_native *window) {
     for (int64_t m = 0; m < window->order.count; m += 1) {
         hero_ui_native *menu = hero_ui_find(window->order.at[m]);
 
-        if (menu == NULL || !menu->visible) {
-            continue;
-        }
-        for (int64_t i = 0; i < menu->order.count; i += 1) {
-            hero_ui_native *item = hero_ui_find(menu->order.at[i]);
-
-            if (item == NULL || item->kind != HERO_UI_MENU_ITEM || item->key == 0 || !item->visible) {
-                continue;
-            }
-            table[count].fVirt = (BYTE)(FVIRTKEY | item->held);
-            table[count].key = item->key;
-            table[count].cmd = item->command;
-            count += 1;
+        if (menu != NULL && menu->visible) {
+            hero_ui_win_gather_keys(menu, table, &count);
         }
     }
     if (count > 0) {
-        window->accelerators = CreateAcceleratorTableW(table, count);
+        window->accelerators = CreateAcceleratorTableW(table, (int)count);
     }
     hero_layer_free(table);
 }
@@ -1021,6 +1167,49 @@ static int64_t hero_ui_win_checked_radio(const hero_ui_native *group) {
     return -1;
 }
 
+/* Whether widget `id` is a radio item. */
+static bool hero_ui_win_is_radio(int64_t id) {
+    const hero_ui_native *item = hero_ui_find(id);
+
+    return item != NULL && item->kind == HERO_UI_MENU_ITEM && item->check == HERO_UI_CHECK_RADIO;
+}
+
+/* Checks radio item `item` and unchecks the other radio items of its group:
+ * those of its menu no other item or separator stands between, in the
+ * order the program made them. */
+static void hero_ui_win_check_in_group(hero_ui_native *item) {
+    hero_ui_native *menu = hero_ui_find(item->parent);
+    int64_t at = -1;
+    int64_t first;
+    int64_t last;
+
+    item->checked = true;
+    if (menu == NULL) {
+        return;
+    }
+    for (int64_t i = 0; i < menu->order.count && at < 0; i += 1) {
+        at = menu->order.at[i] == item->id ? i : -1;
+    }
+    if (at < 0) {
+        return;
+    }
+    first = at;
+    last = at;
+    while (first > 0 && hero_ui_win_is_radio(menu->order.at[first - 1])) {
+        first -= 1;
+    }
+    while (last + 1 < menu->order.count && hero_ui_win_is_radio(menu->order.at[last + 1])) {
+        last += 1;
+    }
+    for (int64_t i = first; i <= last; i += 1) {
+        hero_ui_native *other = hero_ui_find(menu->order.at[i]);
+
+        if (other != NULL && other != item) {
+            other->checked = false;
+        }
+    }
+}
+
 /* A control's notification `code` to its parent, or a menu's or a shortcut's
  * command where `control` is NULL. */
 static void hero_ui_win_command(UINT code, UINT command, HWND control) {
@@ -1030,7 +1219,16 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
         hero_ui_native *item = code <= 1 ? hero_ui_win_item_of(command) : NULL;
 
         if (item != NULL && hero_ui_win_usable(item)) {
-            hero_ui_tell(HERO_UI_EVENT_MENU, item->id, 0, 0);
+            /* A check item turned over, a radio item checked alone in its
+             * group, before its event, which carries the state after. */
+            if (item->check == HERO_UI_CHECK_BOX) {
+                item->checked = !item->checked;
+                (void)hero_ui_win_refill_owner(item);
+            } else if (item->check == HERO_UI_CHECK_RADIO) {
+                hero_ui_win_check_in_group(item);
+                (void)hero_ui_win_refill_owner(item);
+            }
+            hero_ui_tell(HERO_UI_EVENT_MENU, item->id, item->check != HERO_UI_CHECK_NONE && item->checked ? 1 : 0, 0);
         }
         return;
     }
@@ -1069,6 +1267,14 @@ static void hero_ui_win_command(UINT code, UINT command, HWND control) {
     case HERO_UI_LIST_MULTIPLE:
         if (code == LBN_SELCHANGE) {
             hero_ui_tell(HERO_UI_EVENT_SELECT, widget->id, 0, 0);
+        } else if (code == LBN_DBLCLK) {
+            /* The row double-clicked, which holds the list's caret; its
+             * first click's choice came before. */
+            LRESULT row = SendMessageW(control, LB_GETCARETINDEX, 0, 0);
+
+            if (row >= 0 && row < widget->items) {
+                hero_ui_tell(HERO_UI_EVENT_ACTIVATE, widget->id, (int64_t)row, 0);
+            }
         }
         break;
     case HERO_UI_COMBO:
@@ -1153,11 +1359,25 @@ static void hero_ui_win_quit(void) {
     }
 }
 
+/* What the parts below the procedure handle, each defined in its part. */
+static void hero_ui_win_moved(HWND hwnd, bool moved);
+static void hero_ui_win_state_changed(HWND hwnd);
+static bool hero_ui_win_window_activated(HWND hwnd, WPARAM state);
+static void hero_ui_win_dialog_key(HWND hwnd, UINT which);
+static bool hero_ui_win_show_context(HWND target, LPARAM at, bool inherit);
+static hero_ui_native *hero_ui_win_widget_at(HWND hwnd);
+
 static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
     hero_ui_native *widget;
 
     switch (message) {
     case WM_COMMAND:
+        /* Return or Escape the dialog manager gives the window, from no
+         * control of this arm's (RETURN AND ESCAPE). */
+        if (lparam == 0 && HIWORD(wparam) == 0 && (LOWORD(wparam) == IDOK || LOWORD(wparam) == IDCANCEL)) {
+            hero_ui_win_dialog_key(hwnd, LOWORD(wparam));
+            return 0;
+        }
         hero_ui_win_command(HIWORD(wparam), LOWORD(wparam), (HWND)lparam);
         return 0;
     case WM_HSCROLL:
@@ -1165,6 +1385,11 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             hero_ui_win_slid((HWND)lparam);
         }
         return 0;
+    case WM_CONTEXTMENU:
+        if (hero_ui_win_show_context((HWND)wparam, lparam, true)) {
+            return 0;
+        }
+        break;
     case WM_CLOSE:
         widget = hero_ui_win_of(hwnd);
         if (widget != NULL && widget->kind == HERO_UI_WINDOW) {
@@ -1172,10 +1397,22 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
             return 0;
         }
         break;
+    case WM_ACTIVATE:
+        if (hero_ui_win_window_activated(hwnd, wparam)) {
+            return 0;
+        }
+        break;
+    case WM_MOVE:
+        hero_ui_win_moved(hwnd, true);
+        break;
+    case WM_DISPLAYCHANGE:
+        hero_ui_win_moved(hwnd, false);
+        break;
     case WM_SIZE:
         if (wparam != SIZE_MINIMIZED) {
             hero_ui_win_sized(hwnd);
         }
+        hero_ui_win_state_changed(hwnd);
         break;
     case WM_GETMINMAXINFO:
         if (hero_ui_win_least(hwnd, (MINMAXINFO *)lparam)) {
@@ -1184,10 +1421,44 @@ static LRESULT CALLBACK hero_ui_win_proc(HWND hwnd, UINT message, WPARAM wparam,
         break;
     case HERO_UI_WIN_DPICHANGED:
         hero_ui_win_rescaled(hwnd, HIWORD(wparam), (const RECT *)lparam);
+        hero_ui_win_moved(hwnd, false);
         return 0;
+    case WM_NCHITTEST:
+        /* A window with no frame is moved by a drag on its background, and
+         * a box's background stands aside for it. */
+        widget = hero_ui_win_widget_at(hwnd);
+        if (widget != NULL) {
+            hero_ui_native *window = hero_ui_win_window(widget->window);
+
+            if (window != NULL && window->unframed) {
+                LRESULT hit = DefWindowProcW(hwnd, message, wparam, lparam);
+
+                if (hit != HTCLIENT) {
+                    return hit;
+                }
+                return widget->kind == HERO_UI_WINDOW && widget->hwnd == hwnd ? HTCAPTION : HTTRANSPARENT;
+            }
+        }
+        break;
+    case WM_NCLBUTTONDBLCLK:
+        /* A double click on a window's background is no maximize. */
+        widget = hero_ui_win_of(hwnd);
+        if (widget != NULL && widget->kind == HERO_UI_WINDOW && widget->unframed && wparam == HTCAPTION) {
+            return 0;
+        }
+        break;
     case WM_ERASEBKGND:
         widget = hero_ui_win_of(hwnd);
         if (widget != NULL && widget->kind == HERO_UI_IMAGE) {
+            return 1;
+        }
+        if (widget != NULL && widget->kind == HERO_UI_WINDOW && widget->backdrop == HERO_UI_BACKDROP_TRANSLUCENT) {
+            /* Black is what DWM draws its material through. */
+            RECT area;
+
+            if (GetClientRect(hwnd, &area)) {
+                (void)FillRect((HDC)wparam, &area, (HBRUSH)GetStockObject(BLACK_BRUSH));
+            }
             return 1;
         }
         break;
@@ -1303,6 +1574,7 @@ int64_t hero_ui_arm_open(void) {
         hero_ui_win_find_function(user32, "SystemParametersInfoForDpi", &hero_ui_win_parameters, sizeof hero_ui_win_parameters);
         hero_ui_win_find_function(user32, "GetSystemMetricsForDpi", &hero_ui_win_metrics, sizeof hero_ui_win_metrics);
         hero_ui_win_find_function(user32, "SetThreadDpiAwarenessContext", &hero_ui_win_awareness, sizeof hero_ui_win_awareness);
+        hero_ui_win_find_function(LoadLibraryW(L"shcore.dll"), "GetDpiForMonitor", &hero_ui_win_dpi_for_monitor, sizeof hero_ui_win_dpi_for_monitor);
     }
     hero_ui_win_take_styles();
     if (hero_ui_win_awareness != NULL && !hero_ui_win_aware) {
@@ -1328,9 +1600,13 @@ int64_t hero_ui_arm_open(void) {
     }
     hero_ui_unmute();
     hero_ui_win_injecting = 0;
+    hero_ui_win_quiet = 0;
+    hero_ui_win_modal = 0;
     hero_ui_make_host();
     return HERO_UI_OK;
 }
+
+static void hero_ui_win_hold_others(int64_t except, bool hold);
 
 /* Destroys `widget`'s system objects and gives back its record; its children
  * are gone already. */
@@ -1339,6 +1615,10 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
 
     switch (widget->kind) {
     case HERO_UI_WINDOW:
+        if (hero_ui_win_modal == widget->id) {
+            hero_ui_win_modal = 0;
+            hero_ui_win_hold_others(widget->id, false);
+        }
         if (widget->hwnd != NULL) {
             (void)SetWindowLongPtrW(widget->hwnd, GWLP_USERDATA, 0);
             if (GetMenu(widget->hwnd) != NULL) {
@@ -1359,8 +1639,14 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
     case HERO_UI_MENU:
         if (owner != NULL) {
             hero_ui_ids_drop(&owner->order, widget->id);
-            (void)hero_ui_win_fill_bar(owner);
+            (void)hero_ui_win_refill_owner(widget);
         }
+        if (widget->menu != NULL) {
+            (void)DestroyMenu(widget->menu);
+        }
+        break;
+    case HERO_UI_CONTEXT_MENU:
+        /* Taken from its widget with it: a right click finds none now. */
         if (widget->menu != NULL) {
             (void)DestroyMenu(widget->menu);
         }
@@ -1443,6 +1729,11 @@ void hero_ui_arm_close(void) {
     hero_layer_free(hero_ui_win_paths);
     hero_ui_win_paths = NULL;
     hero_ui_win_paths_count = 0;
+    hero_ui_win_modal = 0;
+    if (hero_ui_win_icon != NULL) {
+        (void)DestroyIcon(hero_ui_win_icon);
+        hero_ui_win_icon = NULL;
+    }
     if (hero_ui_win_activated) {
         (void)DeactivateActCtx(0, hero_ui_win_cookie);
         hero_ui_win_activated = false;
@@ -1465,10 +1756,11 @@ static HWND hero_ui_win_control(const hero_ui_native *window, HWND parent, const
     return made;
 }
 
-/* Makes web view `id` in window `window`: THE WEB VIEW, kind 17, is
- * `hero_ui_web_win32.c`'s, which draws WebView2 into the window; this arm
- * keeps its record, its place and whether it is shown. */
-static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window) {
+/* Makes web view `id` in window `window`, standing in `inside`, its client
+ * area or a container's: THE WEB VIEW, kind 17, is `hero_ui_web_win32.c`'s,
+ * which draws WebView2 there; this arm keeps its record, its place and
+ * whether it is shown. */
+static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window, HWND inside) {
     hero_ui_native *made = hero_layer_alloc_zero(1, sizeof *made);
     int64_t answer;
 
@@ -1485,7 +1777,7 @@ static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window) {
         hero_layer_free(made);
         return HERO_UI_LIMIT;
     }
-    answer = hero_ui_win_web(hero_ui_web_win32_create(id, hero_ui_web_host_of(), window->hwnd));
+    answer = hero_ui_win_web(hero_ui_web_win32_create(id, hero_ui_web_host_of(), inside));
     if (answer != HERO_UI_OK) {
         hero_ui_forget(id);
         hero_layer_free(made);
@@ -1493,10 +1785,43 @@ static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window) {
     return answer;
 }
 
+static void hero_ui_win_give_icon(HWND hwnd);
+static bool hero_ui_win_subclass_edit(HWND hwnd);
+
+/* Whether `owner` holds a widget of `kind`: a menu bar's menu, a menu's
+ * or a context menu's items and menus, a page in tabs, at most two panes in
+ * a split, a context menu on a widget a right click lands on (none on a
+ * menu, an item, a page or a pane, one a widget), and every other kind in a
+ * window or a container. */
+static bool hero_ui_win_holds_kind(const hero_ui_native *owner, int64_t kind) {
+    switch (kind) {
+    case HERO_UI_MENU_ITEM:
+    case HERO_UI_MENU_SEPARATOR:
+        return owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
+    case HERO_UI_MENU:
+        return owner->kind == HERO_UI_WINDOW || owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_CONTEXT_MENU;
+    case HERO_UI_CONTEXT_MENU:
+        if (owner->kind == HERO_UI_MENU || owner->kind == HERO_UI_MENU_ITEM || owner->kind == HERO_UI_MENU_SEPARATOR || owner->kind == HERO_UI_CONTEXT_MENU || owner->kind == HERO_UI_PAGE || owner->kind == HERO_UI_PANE) {
+            return false;
+        }
+        for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+            const hero_ui_native *menu = hero_ui_at(at);
+
+            if (menu != NULL && menu->kind == HERO_UI_CONTEXT_MENU && menu->parent == owner->id) {
+                return false;
+            }
+        }
+        return true;
+    default:
+        return owner->inside != NULL;
+    }
+}
+
 int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     hero_ui_native *owner = NULL;
     hero_ui_native *window = NULL;
     hero_ui_native *made;
+    HWND inside;
     int64_t answer = HERO_UI_OK;
 
     if (hero_ui_find(id) != NULL) {
@@ -1507,7 +1832,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (owner == NULL) {
             return HERO_UI_NOT_FOUND;
         }
-        if ((kind == HERO_UI_MENU_ITEM || kind == HERO_UI_MENU_SEPARATOR) != (owner->kind == HERO_UI_MENU) || (owner->kind != HERO_UI_MENU && owner->kind != HERO_UI_WINDOW)) {
+        if (!hero_ui_win_holds_kind(owner, kind)) {
             return HERO_UI_INVALID;
         }
         window = hero_ui_win_window(owner->window);
@@ -1516,8 +1841,9 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         }
     }
     if (kind == HERO_UI_WEBVIEW) {
-        return hero_ui_win_make_web(id, window);
+        return hero_ui_win_make_web(id, window, owner->inside);
     }
+    inside = owner != NULL ? owner->inside : NULL;
     made = hero_layer_alloc_zero(1, sizeof *made);
     if (made == NULL) {
         return HERO_UI_LIMIT;
@@ -1539,43 +1865,45 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             made->font = hero_ui_win_font(made->dpi);
             made->content_width = 100;
             made->content_height = 100;
+            made->inside = made->hwnd;
         }
         break;
     case HERO_UI_LABEL:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"STATIC", SS_LEFT | SS_NOPREFIX, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"STATIC", SS_LEFT | SS_NOPREFIX, 0, id);
         break;
     case HERO_UI_BUTTON:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"BUTTON", BS_PUSHBUTTON | WS_TABSTOP, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_PUSHBUTTON | WS_TABSTOP, 0, id);
         break;
     case HERO_UI_TEXT_FIELD:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"EDIT", ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_AUTOHSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_TEXT_AREA:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"EDIT", ES_LEFT | ES_MULTILINE | ES_WANTRETURN | ES_AUTOVSCROLL | WS_VSCROLL | WS_TABSTOP, WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_CHECKBOX:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"BUTTON", BS_AUTOCHECKBOX | WS_TABSTOP, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"BUTTON", BS_AUTOCHECKBOX | WS_TABSTOP, 0, id);
         break;
     case HERO_UI_RADIO_GROUP:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, hero_ui_win_panel_class, 0, WS_EX_CONTROLPARENT, id);
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_panel_class, 0, WS_EX_CONTROLPARENT, id);
         break;
     case HERO_UI_LIST:
     case HERO_UI_LIST_MULTIPLE:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"LISTBOX", LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP | (kind == HERO_UI_LIST_MULTIPLE ? LBS_EXTENDEDSEL : 0), WS_EX_CLIENTEDGE, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"LISTBOX", LBS_NOTIFY | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP | (kind == HERO_UI_LIST_MULTIPLE ? LBS_EXTENDEDSEL : 0), WS_EX_CLIENTEDGE, id);
         break;
     case HERO_UI_COMBO:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, L"COMBOBOX", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, L"COMBOBOX", CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, 0, id);
         break;
     case HERO_UI_PROGRESS:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, PROGRESS_CLASSW, 0, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, PROGRESS_CLASSW, 0, 0, id);
         break;
     case HERO_UI_SLIDER:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, TRACKBAR_CLASSW, TBS_HORZ | TBS_NOTICKS | WS_TABSTOP, 0, id);
         break;
     case HERO_UI_IMAGE:
-        made->hwnd = hero_ui_win_control(window, window->hwnd, hero_ui_win_picture_class, 0, 0, id);
+        made->hwnd = hero_ui_win_control(window, inside, hero_ui_win_picture_class, 0, 0, id);
         break;
     case HERO_UI_MENU:
+    case HERO_UI_CONTEXT_MENU:
         made->menu = CreatePopupMenu();
         if (made->menu == NULL) {
             answer = hero_ui_win_failed("making a menu", GetLastError());
@@ -1592,7 +1920,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         answer = HERO_UI_INVALID;
         break;
     }
-    if (answer == HERO_UI_OK && made->hwnd == NULL && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR) {
+    if (answer == HERO_UI_OK && made->hwnd == NULL && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR && kind != HERO_UI_CONTEXT_MENU) {
         answer = hero_ui_win_failed("making a widget", GetLastError());
     }
     if (answer == HERO_UI_OK && !hero_ui_keep(id, made)) {
@@ -1611,13 +1939,26 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         hero_layer_free(made);
         return answer;
     }
+    if (window != NULL) {
+        window->tabs_stale = true;
+    }
     switch (kind) {
     case HERO_UI_WINDOW:
         hero_ui_win_size_content(made);
+        if (hero_ui_win_icon != NULL) {
+            hero_ui_win_give_icon(made->hwnd);
+        }
+        if (hero_ui_win_modal != 0) {
+            /* Made while another window is modal: held as the others are. */
+            made->held_by_modal = true;
+            (void)EnableWindow(made->hwnd, FALSE);
+        }
         break;
     case HERO_UI_TEXT_FIELD:
     case HERO_UI_TEXT_AREA:
         (void)SendMessageW(made->hwnd, EM_SETLIMITTEXT, 0, 0);
+        /* Where it fails the field shows its own menu alone. */
+        (void)hero_ui_win_subclass_edit(made->hwnd);
         break;
     case HERO_UI_SLIDER:
     case HERO_UI_PROGRESS:
@@ -1628,7 +1969,7 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
             hero_ui_win_drop(made);
             return HERO_UI_LIMIT;
         }
-        return hero_ui_win_fill_bar(owner);
+        return owner->kind == HERO_UI_WINDOW ? hero_ui_win_fill_bar(owner) : hero_ui_win_fill_menu(owner);
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR:
         if (!hero_ui_ids_add(&owner->order, id)) {
@@ -1649,6 +1990,9 @@ int64_t hero_ui_arm_destroy(int64_t id) {
     hero_ui_win_destroy_tree(id);
     return HERO_UI_OK;
 }
+
+
+static void hero_ui_win_first_shown(hero_ui_native *window);
 
 int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
@@ -1684,7 +2028,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     if (widget->kind == HERO_UI_MENU || widget->kind == HERO_UI_MENU_ITEM) {
         hero_layer_free(widget->label);
         widget->label = wide;
-        return widget->kind == HERO_UI_MENU ? hero_ui_win_fill_bar(hero_ui_find(widget->parent)) : hero_ui_win_fill_menu(hero_ui_find(widget->parent));
+        return hero_ui_win_refill_owner(widget);
     }
     hero_ui_mute(1);
     set = SetWindowTextW(widget->hwnd, wide);
@@ -1839,6 +2183,18 @@ int64_t hero_ui_arm_set_value(int64_t id, int64_t value) {
         }
         hero_ui_win_check_radio(widget, value);
         return HERO_UI_OK;
+    case HERO_UI_MENU_ITEM:
+        /* A check or radio item's state; checking a radio item unchecks
+         * the others of its group. */
+        if (widget->check == HERO_UI_CHECK_NONE || (value != 0 && value != 1)) {
+            return HERO_UI_INVALID;
+        }
+        if (value == 1 && widget->check == HERO_UI_CHECK_RADIO) {
+            hero_ui_win_check_in_group(widget);
+        } else {
+            widget->checked = value == 1;
+        }
+        return hero_ui_win_refill_owner(widget);
     default:
         return HERO_UI_INVALID;
     }
@@ -1913,17 +2269,23 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         switch (widget->kind) {
         case HERO_UI_WINDOW:
             if (on == 1) {
-                (void)ShowWindow(widget->hwnd, SW_SHOWNORMAL);
+                bool first = !widget->shown_once;
+
+                (void)ShowWindow(widget->hwnd, first ? SW_SHOWNORMAL : SW_SHOW);
                 (void)SetForegroundWindow(widget->hwnd);
+                if (first) {
+                    hero_ui_win_first_shown(widget);
+                }
             } else {
                 (void)ShowWindow(widget->hwnd, SW_HIDE);
             }
             return HERO_UI_OK;
+        case HERO_UI_CONTEXT_MENU:
+            return HERO_UI_OK;
         case HERO_UI_MENU:
-            return hero_ui_win_fill_bar(hero_ui_find(widget->parent));
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
-            return hero_ui_win_fill_menu(hero_ui_find(widget->parent));
+            return hero_ui_win_refill_owner(widget);
         case HERO_UI_WEBVIEW:
             hero_ui_win_put(widget);
             return HERO_UI_OK;
@@ -1940,10 +2302,11 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         widget->enabled = on == 1;
         switch (widget->kind) {
         case HERO_UI_MENU:
-            return hero_ui_win_fill_bar(hero_ui_find(widget->parent));
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
-            return hero_ui_win_fill_menu(hero_ui_find(widget->parent));
+            return hero_ui_win_refill_owner(widget);
+        case HERO_UI_CONTEXT_MENU:
+            return HERO_UI_OK;
         default:
             for (int64_t i = 0; i < widget->radio_count; i += 1) {
                 (void)EnableWindow(widget->radios[i], on == 1);
@@ -2015,7 +2378,7 @@ int64_t hero_ui_arm_set_shortcut(int64_t id, const uint8_t *key, int64_t count, 
     item->key = code;
     item->key_extended = extended;
     item->held = (BYTE)(((modifiers & HERO_UI_PRIMARY) != 0 ? FCONTROL : 0) | ((modifiers & HERO_UI_SHIFT) != 0 ? FSHIFT : 0) | ((modifiers & HERO_UI_ALT) != 0 ? FALT : 0));
-    return hero_ui_win_fill_menu(hero_ui_find(item->parent));
+    return hero_ui_win_refill_owner(item);
 }
 
 int64_t hero_ui_arm_set_image(int64_t id, const uint8_t *rgba, int64_t width, int64_t height) {
@@ -2115,6 +2478,13 @@ int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y, int64
     }
     if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW) {
         return HERO_UI_INVALID;
+    }
+    if (index < 0 && (widget->x != x || widget->y != y)) {
+        hero_ui_native *window = hero_ui_win_window(widget->window);
+
+        if (window != NULL) {
+            window->tabs_stale = true;
+        }
     }
     if (index >= 0) {
         int64_t *place;
@@ -2323,6 +2693,12 @@ int64_t hero_ui_arm_value(int64_t id, int64_t *value) {
     case HERO_UI_RADIO_GROUP:
         *value = hero_ui_win_checked_radio(widget);
         return HERO_UI_OK;
+    case HERO_UI_MENU_ITEM:
+        if (widget->check == HERO_UI_CHECK_NONE) {
+            return HERO_UI_INVALID;
+        }
+        *value = widget->checked ? 1 : 0;
+        return HERO_UI_OK;
     default:
         return HERO_UI_INVALID;
     }
@@ -2390,6 +2766,8 @@ int64_t hero_ui_arm_selection(int64_t id, int64_t *indices, int64_t count, int64
     return HERO_UI_OK;
 }
 
+static void hero_ui_win_settle_tabs(hero_ui_native *window);
+
 /* Whether `message` was a window's shortcut or a key the dialog manager
  * moves between controls by, and so is handled. */
 static bool hero_ui_win_translated(MSG *message) {
@@ -2400,6 +2778,9 @@ static bool hero_ui_win_translated(MSG *message) {
         return false;
     }
     if (message->message >= WM_KEYFIRST && message->message <= WM_KEYLAST) {
+        if (message->message == WM_KEYDOWN && message->wParam == VK_TAB) {
+            hero_ui_win_settle_tabs(window);
+        }
         if (window->accelerators_stale) {
             hero_ui_win_make_accelerators(window);
         }
@@ -2437,6 +2818,8 @@ int64_t hero_ui_arm_pump(int64_t ms) {
     }
 }
 
+static hero_ui_native *hero_ui_win_key_button(int64_t id);
+
 /* Presses button `button`, a push button's, a checkbox's or a radio item's,
  * by `BM_CLICK`, and where Win32 dropped the press sends the `BN_CLICKED`
  * the control would have (WHAT `inject` DOES). */
@@ -2457,6 +2840,36 @@ static void hero_ui_win_press(HWND button, bool toggles) {
     (void)SendMessageW(GetParent(button), WM_COMMAND, MAKEWPARAM(0, BN_CLICKED), (LPARAM)button);
 }
 
+/* Opens row `row` of list `widget` as the person's double click does: the
+ * row chosen first where it is not, its choice told by the list's own
+ * notification, then the row told opened. */
+static int64_t hero_ui_win_open_row(hero_ui_native *widget, int64_t row) {
+    bool chosen;
+
+    if (widget->kind != HERO_UI_LIST && widget->kind != HERO_UI_LIST_MULTIPLE) {
+        return HERO_UI_INVALID;
+    }
+    if (row >= widget->items) {
+        return HERO_UI_INVALID;
+    }
+    if (!IsWindowEnabled(widget->hwnd)) {
+        return HERO_UI_OK;
+    }
+    chosen = widget->kind == HERO_UI_LIST ? SendMessageW(widget->hwnd, LB_GETCURSEL, 0, 0) == (LRESULT)row : SendMessageW(widget->hwnd, LB_GETSEL, (WPARAM)row, 0) > 0;
+    if (!chosen) {
+        if (widget->kind == HERO_UI_LIST) {
+            (void)SendMessageW(widget->hwnd, LB_SETCURSEL, (WPARAM)row, 0);
+        } else {
+            (void)SendMessageW(widget->hwnd, LB_SETSEL, FALSE, -1);
+            (void)SendMessageW(widget->hwnd, LB_SETSEL, TRUE, (LPARAM)row);
+        }
+        (void)SendMessageW(GetParent(widget->hwnd), WM_COMMAND, MAKEWPARAM(0, LBN_SELCHANGE), (LPARAM)widget->hwnd);
+    }
+    (void)SendMessageW(widget->hwnd, LB_SETCARETINDEX, (WPARAM)row, FALSE);
+    hero_ui_tell(HERO_UI_EVENT_ACTIVATE, widget->id, row, 0);
+    return HERO_UI_OK;
+}
+
 int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count) {
     hero_ui_native *widget = hero_ui_find(id);
     int64_t answer = HERO_UI_OK;
@@ -2466,6 +2879,25 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     }
     hero_ui_win_injecting += 1;
     switch (kind) {
+    case HERO_UI_EVENT_ACTIVATE:
+        answer = hero_ui_win_open_row(widget, value);
+        break;
+    case HERO_UI_EVENT_SUBMIT:
+        if (widget->kind != HERO_UI_TEXT_FIELD) {
+            answer = HERO_UI_INVALID;
+        } else if (IsWindowEnabled(widget->hwnd)) {
+            /* The window's button for Return takes it first, as the
+             * person's Return reaches it. */
+            hero_ui_native *window = hero_ui_win_window(widget->window);
+            hero_ui_native *button = window != NULL ? hero_ui_win_key_button(window->enter_button) : NULL;
+
+            if (button != NULL) {
+                hero_ui_win_press(button->hwnd, false);
+            } else {
+                hero_ui_tell(HERO_UI_EVENT_SUBMIT, widget->id, 0, 0);
+            }
+        }
+        break;
     case HERO_UI_EVENT_CLICK:
     case HERO_UI_EVENT_TOGGLE:
         if (widget->kind == HERO_UI_BUTTON || widget->kind == HERO_UI_CHECKBOX) {
@@ -2848,120 +3280,806 @@ int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
     return widget->kind == HERO_UI_WEBVIEW ? hero_ui_win_web(hero_ui_web_win32_post(id, text, count)) : HERO_UI_INVALID;
 }
 
-/* -- WHAT THIS ARM DOES NOT DRAW -------------------------------------------
+/* -- THE KINDS AND ACTS THIS ARM DRAWS -------------------------------------
  *
- * The calls `hero_ui.c` adds after THE WEB VIEW'S ENTRY POINTS that only the
- * macOS arm draws: each answers `HERO_UI_UNSUPPORTED` here, which the entry
- * point tells in `hero_ui_elsewhere`'s words, and `hero_ui_arm_makes` and
- * `hero_ui_arm_acts` answer false for the kinds and acts this arm does not
- * draw. Drawing one is writing its function here, and answering true for
- * its kind or act. */
-
-/* -- THE CALLS ON A WINDOW AS THE SYSTEM SHOWS IT ---------------------- */
-
-/* This part's kinds from `HERO_UI_TABS` on, a menu inside a menu, and the
- * acts `ACTIVATE`, `SUBMIT`, `SORT` and `UNFOLD` are drawn on macOS alone:
- * every other arm answers false here, so the entry point tells
- * `HERO_UI_UNSUPPORTED` in `hero_ui_elsewhere`'s words before that arm's
- * `create` or `inject`, which knows none of them, could call the kind or
- * the act `HERO_UI_INVALID`. An arm that draws one answers true for it. */
+ * Every kind and act of `hero_ui.h` but BOXES THE SYSTEM DRAWS, A TABLE and
+ * A TREE, which the macOS arm alone draws yet (`hero_ui_elsewhere`'s words),
+ * and a context menu on a web view: a web view's menu is WebView2's own,
+ * which this arm does not replace. */
 bool hero_ui_arm_makes(int64_t kind, int64_t parent) {
-    const hero_ui_native *owner;
+    const hero_ui_native *owner = hero_ui_find(parent);
 
-    if (kind >= HERO_UI_TABS) {
+    if (kind >= HERO_UI_TABS && kind <= HERO_UI_TREE) {
         return false;
     }
-    if (kind != HERO_UI_MENU) {
-        return true;
-    }
-    owner = hero_ui_find(parent);
-    return owner == NULL || owner->kind != HERO_UI_MENU;
+    return kind != HERO_UI_CONTEXT_MENU || owner == NULL || owner->kind != HERO_UI_WEBVIEW;
 }
 
 bool hero_ui_arm_acts(int64_t act) {
-    return act != HERO_UI_EVENT_ACTIVATE && act != HERO_UI_EVENT_SUBMIT && act != HERO_UI_EVENT_SORT && act != HERO_UI_EVENT_UNFOLD;
+    return act != HERO_UI_EVENT_SORT && act != HERO_UI_EVENT_UNFOLD;
 }
 
+/* Every `HERO_UI_OTHER` and `HERO_UI_UNSUPPORTED` of this arm is said
+ * through `hero_ui_refused`, so the words kept are the last refusal's own. */
 int64_t hero_ui_arm_windows_words(char *words, int64_t count) {
-    (void)words;
-    (void)count;
+    return hero_ui_arm_words(words, count);
+}
+
+/* -- WINDOWS ON THE SCREEN -------------------------------------------------
+ *
+ * A screen is a monitor, `EnumDisplayMonitors`' order with the primary one
+ * first. Windows gives a thread aware of each monitor's scale every place
+ * in physical pixels, so a monitor's area and work area are given in points
+ * at its own scale (`GetDpiForMonitor`), its origin at the primary's scale,
+ * so that screens side by side stay side by side in the primary's points.
+ * A window's frame is `GetWindowRect`'s, as wxWidgets' `GetPosition` reads
+ * it, the border Windows keeps around a frame for resizing included: one
+ * rectangle a window has shown or hidden, so a place set and read back is
+ * the place set. Its position is from its screen's top-left corner at that
+ * screen's scale, its size at the window's own; a minimized window's frame
+ * is the one it is restored to, and a full screen's the monitor's.
+ *
+ * WHAT THE PERSON DOES is read from the window's own messages once it is
+ * watched (`watch`, at every show): `WM_MOVE` tells a new position, a new
+ * monitor before it, `WM_SIZE` a new state, `WM_DISPLAYCHANGE` and
+ * `WM_DPICHANGED` a monitor that changed; each only where it differs from
+ * the one last told, and none while the program's own call runs (`quiet`).
+ * A minimized window's move to Windows' parking place is no move. */
+
+/* The monitors, the primary one first; `failed` where memory ran out. */
+typedef struct hero_ui_win_monitors {
+    HMONITOR *at;
+    int64_t count;
+    int64_t room;
+    bool failed;
+} hero_ui_win_monitors;
+
+static BOOL CALLBACK hero_ui_win_monitor_found(HMONITOR monitor, HDC dc, LPRECT area, LPARAM data) {
+    hero_ui_win_monitors *list = (hero_ui_win_monitors *)data;
+    MONITORINFO info;
+
+    (void)dc;
+    (void)area;
+    if (list->count == list->room) {
+        int64_t room = list->room == 0 ? 8 : list->room * 2;
+        HMONITOR *grown = hero_layer_grow(list->at, (size_t)room * sizeof *grown);
+
+        if (grown == NULL) {
+            list->failed = true;
+            return FALSE;
+        }
+        list->at = grown;
+        list->room = room;
+    }
+    memset(&info, 0, sizeof info);
+    info.cbSize = (DWORD)sizeof info;
+    if (GetMonitorInfoW(monitor, &info) && (info.dwFlags & MONITORINFOF_PRIMARY) != 0) {
+        memmove(list->at + 1, list->at, (size_t)list->count * sizeof *list->at);
+        list->at[0] = monitor;
+    } else {
+        list->at[list->count] = monitor;
+    }
+    list->count += 1;
+    return TRUE;
+}
+
+/* Lists the monitors into `list`, which the caller frees; false where
+ * Windows or memory refused. */
+static bool hero_ui_win_list_monitors(hero_ui_win_monitors *list) {
+    memset(list, 0, sizeof *list);
+    if (!EnumDisplayMonitors(NULL, NULL, hero_ui_win_monitor_found, (LPARAM)list) || list->failed || list->count == 0) {
+        hero_layer_free(list->at);
+        memset(list, 0, sizeof *list);
+        return false;
+    }
+    return true;
+}
+
+/* Monitor `monitor`'s scale, its dots an inch; the system's where this
+ * Windows names no monitor's own. */
+static UINT hero_ui_win_monitor_scale(HMONITOR monitor) {
+    UINT x = 0;
+    UINT y = 0;
+
+    if (hero_ui_win_dpi_for_monitor != NULL && hero_ui_win_dpi_for_monitor(monitor, HERO_UI_WIN_EFFECTIVE_DPI, &x, &y) == S_OK && x > 0) {
+        return x;
+    }
+    return hero_ui_win_dpi(NULL);
+}
+
+/* Monitor `monitor`'s whole area and work area, in pixels. */
+static bool hero_ui_win_monitor_areas(HMONITOR monitor, RECT *whole, RECT *work) {
+    MONITORINFO info;
+
+    memset(&info, 0, sizeof info);
+    info.cbSize = (DWORD)sizeof info;
+    if (!GetMonitorInfoW(monitor, &info)) {
+        return false;
+    }
+    *whole = info.rcMonitor;
+    *work = info.rcWork;
+    return true;
+}
+
+/* The index of `monitor` among `list`'s, 0 where it is not among them. */
+static int64_t hero_ui_win_screen_index(const hero_ui_win_monitors *list, HMONITOR monitor) {
+    for (int64_t i = 0; i < list->count; i += 1) {
+        if (list->at[i] == monitor) {
+            return i;
+        }
+    }
     return 0;
 }
 
-int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
-    (void)id;
-    (void)key;
-    (void)count;
-    (void)modifiers;
-    return HERO_UI_UNSUPPORTED;
+/* The frame window `window` has or is restored to, in pixels: a minimized
+ * or maximized window's restored frame through its placement, whose
+ * workspace coordinates are moved by its monitor's task bar to the screen's. */
+static bool hero_ui_win_frame_rect(const hero_ui_native *window, RECT *frame) {
+    WINDOWPLACEMENT placement;
+
+    if (window->full_screen || !IsIconic(window->hwnd)) {
+        return GetWindowRect(window->hwnd, frame) != FALSE;
+    }
+    memset(&placement, 0, sizeof placement);
+    placement.length = (UINT)sizeof placement;
+    if (!GetWindowPlacement(window->hwnd, &placement)) {
+        return false;
+    }
+    *frame = placement.rcNormalPosition;
+    if ((GetWindowLongPtrW(window->hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW) == 0) {
+        RECT whole;
+        RECT work;
+
+        if (hero_ui_win_monitor_areas(MonitorFromRect(frame, MONITOR_DEFAULTTONEAREST), &whole, &work)) {
+            OffsetRect(frame, work.left - whole.left, work.top - whole.top);
+        }
+    }
+    return true;
 }
 
-/* -- WINDOWS ON THE SCREEN ------------------------------------------------- */
+/* The monitor window `window` stands on most, its frame's as it is restored
+ * where it is minimized. */
+static HMONITOR hero_ui_win_monitor_of(const hero_ui_native *window) {
+    RECT frame;
+
+    if (IsIconic(window->hwnd) && hero_ui_win_frame_rect(window, &frame)) {
+        return MonitorFromRect(&frame, MONITOR_DEFAULTTONEAREST);
+    }
+    return MonitorFromWindow(window->hwnd, MONITOR_DEFAULTTONEAREST);
+}
+
+/* Window `window`'s screen and its frame's position on it, in points. */
+static bool hero_ui_win_place_of(const hero_ui_native *window, int64_t *screen, int64_t *x, int64_t *y) {
+    hero_ui_win_monitors list;
+    HMONITOR monitor = hero_ui_win_monitor_of(window);
+    RECT frame;
+    RECT whole;
+    RECT work;
+    UINT scale;
+
+    if (!hero_ui_win_frame_rect(window, &frame) || !hero_ui_win_monitor_areas(monitor, &whole, &work)) {
+        return false;
+    }
+    scale = hero_ui_win_monitor_scale(monitor);
+    *screen = 0;
+    if (hero_ui_win_list_monitors(&list)) {
+        *screen = hero_ui_win_screen_index(&list, monitor);
+        hero_layer_free(list.at);
+    }
+    *x = hero_ui_win_pt(frame.left - whole.left, scale);
+    *y = hero_ui_win_pt(frame.top - whole.top, scale);
+    return true;
+}
+
+/* The state window `window` stands in now, `HERO_UI_STATE_*`. */
+static int64_t hero_ui_win_state_now(const hero_ui_native *window) {
+    if (IsIconic(window->hwnd)) {
+        return HERO_UI_STATE_MINIMIZED;
+    }
+    if (window->full_screen) {
+        return HERO_UI_STATE_FULL_SCREEN;
+    }
+    return IsZoomed(window->hwnd) ? HERO_UI_STATE_MAXIMIZED : HERO_UI_STATE_NORMAL;
+}
+
+/* Notes where window `window` stands as told, so the person's next act is
+ * told where it differs from this. */
+static void hero_ui_win_note_place(hero_ui_native *window) {
+    int64_t screen = 0;
+    int64_t x = 0;
+    int64_t y = 0;
+
+    window->state_told = hero_ui_win_state_now(window);
+    if (hero_ui_win_place_of(window, &screen, &x, &y)) {
+        window->screen_told = screen;
+        if (!IsIconic(window->hwnd)) {
+            window->moved_x = x;
+            window->moved_y = y;
+        }
+    }
+}
+
+/* Whether what window `hwnd` is told now is the person's to tell: a window
+ * watched, no program's call under way. */
+static hero_ui_native *hero_ui_win_watched(HWND hwnd) {
+    hero_ui_native *window = hero_ui_win_of(hwnd);
+
+    if (window == NULL || window->kind != HERO_UI_WINDOW || !window->watched || hero_ui_win_quiet > 0 || hero_ui_is_muted()) {
+        return NULL;
+    }
+    return window;
+}
+
+/* Tells window `hwnd`'s screen where it changed, then its position where
+ * `moved` and it changed (`WM_MOVE`), each against the one last told. */
+static void hero_ui_win_moved(HWND hwnd, bool moved) {
+    hero_ui_native *window = hero_ui_win_watched(hwnd);
+    int64_t screen = 0;
+    int64_t x = 0;
+    int64_t y = 0;
+
+    if (window == NULL || IsIconic(hwnd) || !hero_ui_win_place_of(window, &screen, &x, &y)) {
+        return;
+    }
+    if (screen != window->screen_told) {
+        window->screen_told = screen;
+        hero_ui_tell(HERO_UI_EVENT_SCREEN, window->id, screen, 0);
+    }
+    if (moved && (x != window->moved_x || y != window->moved_y)) {
+        window->moved_x = x;
+        window->moved_y = y;
+        hero_ui_tell(HERO_UI_EVENT_MOVE, window->id, x, y);
+    }
+}
+
+/* Tells window `hwnd`'s state where it changed (`WM_SIZE`). */
+static void hero_ui_win_state_changed(HWND hwnd) {
+    hero_ui_native *window = hero_ui_win_watched(hwnd);
+    int64_t now;
+
+    if (window == NULL) {
+        return;
+    }
+    now = hero_ui_win_state_now(window);
+    if (now != window->state_told) {
+        window->state_told = now;
+        hero_ui_tell(HERO_UI_EVENT_STATE, window->id, now, 0);
+    }
+}
 
 int64_t hero_ui_arm_watch(int64_t id) {
-    (void)id;
+    hero_ui_native *window = hero_ui_win_window(id);
+
+    if (window != NULL && !window->watched) {
+        hero_ui_win_note_place(window);
+        window->watched = true;
+    }
     return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_screens(int64_t *values, int64_t count, int64_t *screens) {
-    (void)values;
-    (void)count;
-    (void)screens;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_win_monitors list;
+    RECT primary;
+    RECT unused;
+    UINT primary_scale;
+
+    if (!hero_ui_win_list_monitors(&list)) {
+        return hero_ui_win_failed("listing the monitors", GetLastError());
+    }
+    primary_scale = hero_ui_win_monitor_scale(list.at[0]);
+    if (!hero_ui_win_monitor_areas(list.at[0], &primary, &unused)) {
+        hero_layer_free(list.at);
+        return hero_ui_win_failed("reading the primary monitor", GetLastError());
+    }
+    *screens = list.count;
+    if (list.count * HERO_UI_SCREEN_FIELDS <= count) {
+        for (int64_t i = 0; i < list.count; i += 1) {
+            int64_t *at = values + i * HERO_UI_SCREEN_FIELDS;
+            UINT scale = hero_ui_win_monitor_scale(list.at[i]);
+            RECT whole;
+            RECT work;
+
+            if (!hero_ui_win_monitor_areas(list.at[i], &whole, &work)) {
+                hero_layer_free(list.at);
+                return hero_ui_win_failed("reading a monitor", GetLastError());
+            }
+            at[HERO_UI_SCREEN_LEFT] = hero_ui_win_pt(whole.left - primary.left, primary_scale);
+            at[HERO_UI_SCREEN_TOP] = hero_ui_win_pt(whole.top - primary.top, primary_scale);
+            at[HERO_UI_SCREEN_WIDTH] = hero_ui_win_pt(whole.right - whole.left, scale);
+            at[HERO_UI_SCREEN_HEIGHT] = hero_ui_win_pt(whole.bottom - whole.top, scale);
+            at[HERO_UI_SCREEN_WORK_LEFT] = at[HERO_UI_SCREEN_LEFT] + hero_ui_win_pt(work.left - whole.left, scale);
+            at[HERO_UI_SCREEN_WORK_TOP] = at[HERO_UI_SCREEN_TOP] + hero_ui_win_pt(work.top - whole.top, scale);
+            at[HERO_UI_SCREEN_WORK_WIDTH] = hero_ui_win_pt(work.right - work.left, scale);
+            at[HERO_UI_SCREEN_WORK_HEIGHT] = hero_ui_win_pt(work.bottom - work.top, scale);
+            at[HERO_UI_SCREEN_SCALE] = (int64_t)scale * 100 / 96;
+        }
+    }
+    hero_layer_free(list.at);
+    return HERO_UI_OK;
+}
+
+/* Window `id` for a call of this part: NOT_FOUND where no widget is `id`,
+ * INVALID where it is no window. */
+static hero_ui_native *hero_ui_win_window_of(int64_t id, int64_t *kind) {
+    hero_ui_native *widget = hero_ui_find(id);
+
+    *kind = widget == NULL ? HERO_UI_NOT_FOUND : HERO_UI_INVALID;
+    return widget != NULL && widget->kind == HERO_UI_WINDOW ? widget : NULL;
 }
 
 int64_t hero_ui_arm_frame_of(int64_t id, int64_t *screen, int64_t *x, int64_t *y, int64_t *width, int64_t *height) {
-    (void)id;
-    (void)screen;
-    (void)x;
-    (void)y;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    RECT frame;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (!hero_ui_win_frame_rect(window, &frame) || !hero_ui_win_place_of(window, screen, x, y)) {
+        return hero_ui_win_failed("reading a window's frame", GetLastError());
+    }
+    *width = hero_ui_win_pt(frame.right - frame.left, window->dpi);
+    *height = hero_ui_win_pt(frame.bottom - frame.top, window->dpi);
+    return HERO_UI_OK;
+}
+
+/* Puts window `window`'s frame's top-left corner at `left`, `top` pixels:
+ * the frame itself where it stands as it is drawn, the frame it is restored
+ * to where it is minimized or maximized, and the one it leaves full screen
+ * for where it is in full screen. */
+static bool hero_ui_win_frame_to(hero_ui_native *window, int left, int top) {
+    WINDOWPLACEMENT *kept = &window->placement_before;
+    WINDOWPLACEMENT placement;
+    RECT frame;
+
+    if (!window->full_screen && !IsIconic(window->hwnd) && !IsZoomed(window->hwnd)) {
+        if (!SetWindowPos(window->hwnd, NULL, left, top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE)) {
+            return false;
+        }
+        /* A move onto a monitor of another scale resizes the frame by
+         * `WM_DPICHANGED`'s rectangle, which may move its corner: put back. */
+        if (GetWindowRect(window->hwnd, &frame) && (frame.left != left || frame.top != top)) {
+            (void)SetWindowPos(window->hwnd, NULL, left, top, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+        return true;
+    }
+    if (!window->full_screen) {
+        memset(&placement, 0, sizeof placement);
+        placement.length = (UINT)sizeof placement;
+        if (!GetWindowPlacement(window->hwnd, &placement)) {
+            return false;
+        }
+        kept = &placement;
+    }
+    frame = kept->rcNormalPosition;
+    if ((GetWindowLongPtrW(window->hwnd, GWL_EXSTYLE) & WS_EX_TOOLWINDOW) == 0) {
+        RECT whole;
+        RECT work;
+        RECT target = {left, top, left + (frame.right - frame.left), top + (frame.bottom - frame.top)};
+
+        if (hero_ui_win_monitor_areas(MonitorFromRect(&target, MONITOR_DEFAULTTONEAREST), &whole, &work)) {
+            left -= work.left - whole.left;
+            top -= work.top - whole.top;
+        }
+    }
+    OffsetRect(&kept->rcNormalPosition, left - frame.left, top - frame.top);
+    return window->full_screen || SetWindowPlacement(window->hwnd, kept) != FALSE;
 }
 
 int64_t hero_ui_arm_set_position(int64_t id, int64_t screen, int64_t x, int64_t y, int64_t person) {
-    (void)id;
-    (void)screen;
-    (void)x;
-    (void)y;
-    (void)person;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    hero_ui_win_monitors list;
+    RECT whole;
+    RECT work;
+    UINT scale;
+    bool moved;
+    DWORD code;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (!hero_ui_win_list_monitors(&list)) {
+        return hero_ui_win_failed("listing the monitors", GetLastError());
+    }
+    if (screen >= list.count || !hero_ui_win_monitor_areas(list.at[screen], &whole, &work)) {
+        hero_layer_free(list.at);
+        return screen >= list.count ? HERO_UI_INVALID : hero_ui_win_failed("reading a monitor", GetLastError());
+    }
+    scale = hero_ui_win_monitor_scale(list.at[screen]);
+    hero_layer_free(list.at);
+    hero_ui_win_quiet += person == 1 ? 0 : 1;
+    moved = hero_ui_win_frame_to(window, whole.left + hero_ui_win_px(x, scale), whole.top + hero_ui_win_px(y, scale));
+    code = GetLastError();
+    hero_ui_win_quiet -= person == 1 ? 0 : 1;
+    if (person != 1) {
+        hero_ui_win_note_place(window);
+    }
+    return moved ? HERO_UI_OK : hero_ui_win_failed("moving a window", code);
 }
 
 int64_t hero_ui_arm_center(int64_t id, int64_t over) {
-    (void)id;
-    (void)over;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    hero_ui_native *anchor = NULL;
+    RECT frame;
+    RECT around;
+    RECT whole;
+    RECT work;
+    int width;
+    int height;
+    int left;
+    int top;
+    bool moved;
+    DWORD code;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (over != 0) {
+        anchor = hero_ui_win_window_of(over, &kind);
+        if (anchor == NULL) {
+            return kind;
+        }
+    }
+    if (!hero_ui_win_frame_rect(window, &frame) || (anchor != NULL && !hero_ui_win_frame_rect(anchor, &around))) {
+        return hero_ui_win_failed("reading a window's frame", GetLastError());
+    }
+    if (!hero_ui_win_monitor_areas(anchor != NULL ? MonitorFromRect(&around, MONITOR_DEFAULTTONEAREST) : hero_ui_win_monitor_of(window), &whole, &work)) {
+        return hero_ui_win_failed("reading a monitor", GetLastError());
+    }
+    if (anchor == NULL) {
+        around = work;
+    }
+    width = frame.right - frame.left;
+    height = frame.bottom - frame.top;
+    left = around.left + ((around.right - around.left) - width) / 2;
+    top = around.top + ((around.bottom - around.top) - height) / 2;
+    /* Within the work area as far as the frame's size allows, its top-left
+     * corner kept on it first. */
+    left = left + width > work.right ? work.right - width : left;
+    top = top + height > work.bottom ? work.bottom - height : top;
+    left = left < work.left ? work.left : left;
+    top = top < work.top ? work.top : top;
+    hero_ui_win_quiet += 1;
+    moved = hero_ui_win_frame_to(window, left, top);
+    code = GetLastError();
+    hero_ui_win_quiet -= 1;
+    hero_ui_win_note_place(window);
+    return moved ? HERO_UI_OK : hero_ui_win_failed("centring a window", code);
+}
+
+/* Takes window `window` into full screen: its style and placement kept,
+ * then no frame and the whole of its monitor. */
+static bool hero_ui_win_enter_full(hero_ui_native *window) {
+    RECT whole;
+    RECT work;
+    LONG_PTR style;
+
+    if (!hero_ui_win_monitor_areas(hero_ui_win_monitor_of(window), &whole, &work)) {
+        return false;
+    }
+    memset(&window->placement_before, 0, sizeof window->placement_before);
+    window->placement_before.length = (UINT)sizeof window->placement_before;
+    if (!GetWindowPlacement(window->hwnd, &window->placement_before)) {
+        return false;
+    }
+    window->style_before = GetWindowLongPtrW(window->hwnd, GWL_STYLE);
+    window->extended_before = GetWindowLongPtrW(window->hwnd, GWL_EXSTYLE);
+    style = (window->style_before & ~(LONG_PTR)(WS_OVERLAPPEDWINDOW | WS_BORDER | WS_DLGFRAME)) | WS_POPUP;
+    window->full_screen = true;
+    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
+    (void)SetWindowLongPtrW(window->hwnd, GWL_EXSTYLE, window->extended_before & ~(LONG_PTR)(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
+    return SetWindowPos(window->hwnd, NULL, whole.left, whole.top, whole.right - whole.left, whole.bottom - whole.top, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW) != FALSE;
+}
+
+/* Takes window `window` out of full screen, its style and placement given
+ * back. */
+static bool hero_ui_win_leave_full(hero_ui_native *window) {
+    window->full_screen = false;
+    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, window->style_before);
+    (void)SetWindowLongPtrW(window->hwnd, GWL_EXSTYLE, window->extended_before);
+    (void)SetWindowPos(window->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    return SetWindowPlacement(window->hwnd, &window->placement_before) != FALSE;
+}
+
+/* Shows window `window` as `program` asks, or, for the person, presses the
+ * button of the title bar that does it. */
+static void hero_ui_win_show_as(hero_ui_native *window, int program, WPARAM button, bool person) {
+    if (person) {
+        (void)SendMessageW(window->hwnd, WM_SYSCOMMAND, button, 0);
+    } else {
+        (void)ShowWindow(window->hwnd, program);
+    }
+}
+
+/* Brings window `window` to `target`, leaving the state it stands in first:
+ * restored from the task bar, out of full screen, out of maximized. */
+static int64_t hero_ui_win_bring(hero_ui_native *window, int64_t target, bool person) {
+    if (hero_ui_win_state_now(window) == target) {
+        return HERO_UI_OK;
+    }
+    if (IsIconic(window->hwnd) && target != HERO_UI_STATE_MINIMIZED) {
+        hero_ui_win_show_as(window, SW_RESTORE, SC_RESTORE, person);
+    }
+    if (window->full_screen && target != HERO_UI_STATE_FULL_SCREEN && !hero_ui_win_leave_full(window)) {
+        return hero_ui_win_failed("taking a window out of full screen", GetLastError());
+    }
+    if (IsZoomed(window->hwnd) && target != HERO_UI_STATE_MAXIMIZED && target != HERO_UI_STATE_MINIMIZED) {
+        hero_ui_win_show_as(window, SW_RESTORE, SC_RESTORE, person);
+    }
+    switch (target) {
+    case HERO_UI_STATE_MINIMIZED:
+        if (!IsIconic(window->hwnd)) {
+            hero_ui_win_show_as(window, SW_MINIMIZE, SC_MINIMIZE, person);
+        }
+        break;
+    case HERO_UI_STATE_MAXIMIZED:
+        if (!IsZoomed(window->hwnd)) {
+            hero_ui_win_show_as(window, SW_MAXIMIZE, SC_MAXIMIZE, person);
+        }
+        break;
+    case HERO_UI_STATE_FULL_SCREEN:
+        if (!window->full_screen && !hero_ui_win_enter_full(window)) {
+            return hero_ui_win_failed("taking a window into full screen", GetLastError());
+        }
+        break;
+    default:
+        break;
+    }
+    if (hero_ui_win_state_now(window) != target) {
+        return hero_ui_refused(HERO_UI_OTHER, "Windows did not bring the window to that state");
+    }
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_set_state(int64_t id, int64_t state, int64_t person) {
-    (void)id;
-    (void)state;
-    (void)person;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    int64_t answer;
+
+    if (window == NULL) {
+        return kind;
+    }
+    if (!IsWindowVisible(window->hwnd)) {
+        /* `ShowWindow` would show it, which only the program does. */
+        return hero_ui_refused(HERO_UI_OTHER, "the window is hidden, and Windows brings only a window it shows to a state");
+    }
+    hero_ui_win_quiet += person == 1 ? 0 : 1;
+    answer = hero_ui_win_bring(window, state, person == 1);
+    hero_ui_win_quiet -= person == 1 ? 0 : 1;
+    if (person != 1) {
+        hero_ui_win_note_place(window);
+    }
+    return answer;
 }
 
 int64_t hero_ui_arm_state(int64_t id, int64_t *state) {
-    (void)id;
-    (void)state;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+
+    if (window == NULL) {
+        return kind;
+    }
+    *state = hero_ui_win_state_now(window);
+    return HERO_UI_OK;
+}
+
+/* Gives window `window` its frame, or takes it away, keeping its content's
+ * size and its frame's top-left corner; a window that may be resized keeps
+ * the border the person resizes it by. */
+static int64_t hero_ui_win_set_framed(hero_ui_native *window, bool on) {
+    LONG_PTR style = GetWindowLongPtrW(window->hwnd, GWL_STYLE);
+    bool resizable = (style & WS_THICKFRAME) != 0;
+
+    if (window->full_screen) {
+        return hero_ui_refused(HERO_UI_OTHER, "a window in full screen has no frame to give or take");
+    }
+    if (on) {
+        style = (style & ~(LONG_PTR)WS_POPUP) | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | (resizable ? WS_THICKFRAME | WS_MAXIMIZEBOX : 0);
+    } else {
+        style = (style & ~(LONG_PTR)(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX)) | WS_POPUP;
+    }
+    window->unframed = !on;
+    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
+    hero_ui_mute(1);
+    (void)SetWindowPos(window->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    hero_ui_mute(-1);
+    hero_ui_win_size_content(window);
+    return HERO_UI_OK;
+}
+
+/* Puts Windows 11's translucent material, Mica, behind window `window`'s
+ * widgets, or takes it away: the frame extended over the whole client
+ * area, which this arm then paints black, DWM's transparent. */
+static int64_t hero_ui_win_set_backdrop(hero_ui_native *window, int64_t backdrop) {
+    int type = backdrop == HERO_UI_BACKDROP_TRANSLUCENT ? HERO_UI_WIN_BACKDROP_MICA : 1;
+    MARGINS margins = {0, 0, 0, 0};
+    HRESULT done = DwmSetWindowAttribute(window->hwnd, HERO_UI_WIN_BACKDROP_TYPE, &type, (DWORD)sizeof type);
+
+    if (FAILED(done)) {
+        if (backdrop == HERO_UI_BACKDROP_NONE) {
+            window->backdrop = HERO_UI_BACKDROP_NONE;
+            return HERO_UI_OK;
+        }
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "this Windows has no translucent material for a window (DWM's system backdrop came with Windows 11 22H2)");
+    }
+    if (backdrop == HERO_UI_BACKDROP_TRANSLUCENT) {
+        margins.cxLeftWidth = -1;
+        margins.cxRightWidth = -1;
+        margins.cyTopHeight = -1;
+        margins.cyBottomHeight = -1;
+    }
+    (void)DwmExtendFrameIntoClientArea(window->hwnd, &margins);
+    window->backdrop = backdrop;
+    (void)InvalidateRect(window->hwnd, NULL, TRUE);
+    return HERO_UI_OK;
+}
+
+/* Every window of the app, but `except`, enabled, `on`, or disabled: a
+ * window made modal holds the others so, and gives back only the ones it
+ * held. */
+static void hero_ui_win_hold_others(int64_t except, bool hold) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+
+        if (window == NULL || window->kind != HERO_UI_WINDOW || window->id == except) {
+            continue;
+        }
+        if (hold && IsWindowEnabled(window->hwnd)) {
+            window->held_by_modal = true;
+            (void)EnableWindow(window->hwnd, FALSE);
+        } else if (!hold && window->held_by_modal) {
+            window->held_by_modal = false;
+            (void)EnableWindow(window->hwnd, TRUE);
+        }
+    }
+}
+
+/* Makes window `window` modal, or ends its modality. */
+static int64_t hero_ui_win_set_modal(hero_ui_native *window, bool on) {
+    if (on) {
+        if (hero_ui_win_modal != 0 && hero_ui_win_modal != window->id) {
+            return hero_ui_refused(HERO_UI_OTHER, "another window is modal already, and one is at a time");
+        }
+        hero_ui_win_modal = window->id;
+        hero_ui_win_hold_others(window->id, true);
+        (void)EnableWindow(window->hwnd, TRUE);
+        if (IsWindowVisible(window->hwnd)) {
+            (void)SetForegroundWindow(window->hwnd);
+        }
+        return HERO_UI_OK;
+    }
+    if (hero_ui_win_modal == window->id) {
+        hero_ui_win_modal = 0;
+        hero_ui_win_hold_others(window->id, false);
+    }
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_window_set(int64_t id, int64_t which, int64_t value) {
-    (void)id;
-    (void)which;
-    (void)value;
-    return HERO_UI_UNSUPPORTED;
+    int64_t kind;
+    hero_ui_native *window = hero_ui_win_window_of(id, &kind);
+    LONG_PTR extended;
+
+    if (window == NULL) {
+        return kind;
+    }
+    switch (which) {
+    case HERO_UI_WINDOW_SET_ON_TOP:
+        if (!SetWindowPos(window->hwnd, value == 1 ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE)) {
+            return hero_ui_win_failed("keeping a window on top", GetLastError());
+        }
+        return HERO_UI_OK;
+    case HERO_UI_WINDOW_SET_FRAMED: {
+        int64_t answer;
+
+        hero_ui_win_quiet += 1;
+        answer = hero_ui_win_set_framed(window, value == 1);
+        hero_ui_win_quiet -= 1;
+        hero_ui_win_note_place(window);
+        return answer;
+    }
+    case HERO_UI_WINDOW_SET_OPACITY:
+        extended = GetWindowLongPtrW(window->hwnd, GWL_EXSTYLE);
+        if (value == 255) {
+            (void)SetWindowLongPtrW(window->hwnd, GWL_EXSTYLE, extended & ~(LONG_PTR)WS_EX_LAYERED);
+            (void)RedrawWindow(window->hwnd, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_FRAME | RDW_ALLCHILDREN);
+            return HERO_UI_OK;
+        }
+        (void)SetWindowLongPtrW(window->hwnd, GWL_EXSTYLE, extended | WS_EX_LAYERED);
+        if (!SetLayeredWindowAttributes(window->hwnd, 0, (BYTE)value, LWA_ALPHA)) {
+            return hero_ui_win_failed("setting a window's opacity", GetLastError());
+        }
+        return HERO_UI_OK;
+    case HERO_UI_WINDOW_SET_BACKDROP:
+        return hero_ui_win_set_backdrop(window, value);
+    case HERO_UI_WINDOW_SET_MODAL:
+        return hero_ui_win_set_modal(window, value == 1);
+    default:
+        return HERO_UI_INVALID;
+    }
+}
+
+/* Gives every window the app's icon, `hero_ui_win_icon`, or the class's,
+ * the system's own, where it is NULL. */
+static void hero_ui_win_give_icon(HWND hwnd) {
+    (void)SendMessageW(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hero_ui_win_icon);
+    (void)SendMessageW(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hero_ui_win_icon);
 }
 
 int64_t hero_ui_arm_set_icon(const uint8_t *rgba, int64_t width, int64_t height) {
-    (void)rgba;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    HICON made = NULL;
+    HICON before = hero_ui_win_icon;
+
+    if (width > 0 && height > 0) {
+        BITMAPV5HEADER format;
+        ICONINFO parts;
+        void *bits = NULL;
+        HBITMAP color;
+        HBITMAP mask;
+        uint8_t *into;
+
+        if (width > 4096 || height > 4096) {
+            return hero_ui_refused(HERO_UI_OTHER, "an icon of Windows is at most 4096 pixels a side");
+        }
+        memset(&format, 0, sizeof format);
+        format.bV5Size = (DWORD)sizeof format;
+        format.bV5Width = (LONG)width;
+        format.bV5Height = -(LONG)height;
+        format.bV5Planes = 1;
+        format.bV5BitCount = 32;
+        format.bV5Compression = BI_BITFIELDS;
+        format.bV5RedMask = 0x00FF0000u;
+        format.bV5GreenMask = 0x0000FF00u;
+        format.bV5BlueMask = 0x000000FFu;
+        format.bV5AlphaMask = 0xFF000000u;
+        color = CreateDIBSection(NULL, (BITMAPINFO *)&format, DIB_RGB_COLORS, &bits, NULL, 0);
+        mask = CreateBitmap((int)width, (int)height, 1, 1, NULL);
+        if (color == NULL || bits == NULL || mask == NULL) {
+            if (color != NULL) {
+                (void)DeleteObject(color);
+            }
+            if (mask != NULL) {
+                (void)DeleteObject(mask);
+            }
+            return HERO_UI_LIMIT;
+        }
+        /* An icon's colour bitmap holds its alpha straight, as given. */
+        into = bits;
+        for (int64_t i = 0; i < width * height; i += 1) {
+            into[i * 4 + 0] = rgba[i * 4 + 2];
+            into[i * 4 + 1] = rgba[i * 4 + 1];
+            into[i * 4 + 2] = rgba[i * 4 + 0];
+            into[i * 4 + 3] = rgba[i * 4 + 3];
+        }
+        memset(&parts, 0, sizeof parts);
+        parts.fIcon = TRUE;
+        parts.hbmColor = color;
+        parts.hbmMask = mask;
+        made = CreateIconIndirect(&parts);
+        (void)DeleteObject(color);
+        (void)DeleteObject(mask);
+        if (made == NULL) {
+            return hero_ui_win_failed("making the app's icon", GetLastError());
+        }
+    }
+    hero_ui_win_icon = made;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+
+        if (window != NULL && window->kind == HERO_UI_WINDOW) {
+            hero_ui_win_give_icon(window->hwnd);
+        }
+    }
+    if (before != NULL) {
+        (void)DestroyIcon(before);
+    }
+    return HERO_UI_OK;
 }
 
+/* The modal session is AppKit's alone: here a modal window's others are
+ * disabled and the ordinary loop serves. */
 bool hero_ui_arm_modal_here(void) {
     return false;
 }
@@ -2971,37 +4089,598 @@ int64_t hero_ui_arm_modal_pump(int64_t ms) {
     return HERO_UI_UNSUPPORTED;
 }
 
-/* -- A MENU ITEM'S ROLE ---------------------------------------------------- */
+/* -- KEYS PRESSED BY THE PROGRAM, AND THE WIDGET WITH THE KEYS -------------
+ *
+ * A key is pressed by `SendInput`, the person's keyboard's own path, so the
+ * accelerator table, the dialog manager and the control see it as theirs;
+ * Windows hands it to the foreground window alone, so the window is brought
+ * there first and a refusal by its foreground lock is told. The loop runs
+ * until the key's release has come back through the queue.
+ *
+ * THE KEYS IN A WINDOW: Windows gives the keys to one control of the thread's
+ * active window. A window keeps the control that had them when it was left
+ * (`WM_ACTIVATE`) and gives them back when it is activated again, as a
+ * dialog does, so each window answers its own control whether it is active
+ * or not; a window shown the first time gives them to its first control in
+ * the Tab order, which is the order its controls stand in, left to right and
+ * top to bottom (each container's children put in that order before a Tab
+ * moves the keys).
+ *
+ * RETURN AND ESCAPE are the dialog manager's (`IsDialogMessageW` in `pump`):
+ * a control that does not take Return itself (a field, a list, a table, a
+ * tree) gives its window `IDOK`, and Escape gives it `IDCANCEL`; the window
+ * presses its button for that key where it has one the person reaches, and
+ * otherwise Return submits the field or opens the row chosen. A text area
+ * takes Return as a new line, and a focused push button is pressed by it,
+ * the dialog manager's own. */
 
-/* Win32 and GTK 4 hold no application menu, so their arm, once written,
- * checks the item and answers it done, the item staying where the program
- * put it (`hero_ui.h`, A MENU ITEM'S ROLE); until then no native app opens
- * here and this is not reached. */
-int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
-    (void)id;
-    (void)role;
-    return HERO_UI_UNSUPPORTED;
+/* The widget whose control `hwnd` is, or stands in: a radio item's group, a
+ * list view's header's table; NULL for none of this arm's. */
+static hero_ui_native *hero_ui_win_widget_at(HWND hwnd) {
+    for (HWND at = hwnd; at != NULL; at = GetParent(at)) {
+        hero_ui_native *widget = hero_ui_win_of(at);
+
+        if (widget != NULL) {
+            return widget;
+        }
+        if ((GetWindowLongPtrW(at, GWL_STYLE) & WS_CHILD) == 0) {
+            break;
+        }
+    }
+    return NULL;
 }
 
-/* -- RETURN AND ESCAPE ----------------------------------------------------- */
-
-int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
-    (void)id;
-    (void)key;
-    return HERO_UI_UNSUPPORTED;
+/* Whether a widget of `kind` takes the keys. */
+static bool hero_ui_win_takes_keys(int64_t kind) {
+    switch (kind) {
+    case HERO_UI_BUTTON:
+    case HERO_UI_TEXT_FIELD:
+    case HERO_UI_TEXT_AREA:
+    case HERO_UI_CHECKBOX:
+    case HERO_UI_RADIO_GROUP:
+    case HERO_UI_LIST:
+    case HERO_UI_LIST_MULTIPLE:
+    case HERO_UI_COMBO:
+    case HERO_UI_SLIDER:
+        return true;
+    default:
+        return false;
+    }
 }
 
-/* -- THE WIDGET WITH THE KEYS ---------------------------------------------- */
+/* The control of widget `widget` that takes the keys: a radio group's item
+ * checked, else its first. */
+static HWND hero_ui_win_key_control(const hero_ui_native *widget) {
+    if (widget->kind == HERO_UI_RADIO_GROUP) {
+        int64_t checked = hero_ui_win_checked_radio(widget);
+
+        return widget->radio_count == 0 ? widget->hwnd : widget->radios[checked >= 0 ? checked : 0];
+    }
+    return widget->hwnd;
+}
+
+/* Puts the controls standing in `parent` in the order they stand, left to
+ * right and top to bottom, which is the dialog manager's Tab order, then
+ * those of each container among them. */
+static void hero_ui_win_order_tabs(HWND parent) {
+    int64_t count = 0;
+    hero_ui_native **row;
+
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *widget = hero_ui_at(at);
+
+        count += widget != NULL && widget->kind != HERO_UI_WINDOW && widget->hwnd != NULL && GetParent(widget->hwnd) == parent ? 1 : 0;
+    }
+    if (count == 0) {
+        return;
+    }
+    row = hero_layer_alloc((size_t)count * sizeof *row);
+    if (row == NULL) {
+        return;
+    }
+    count = 0;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *widget = hero_ui_at(at);
+
+        if (widget != NULL && widget->kind != HERO_UI_WINDOW && widget->hwnd != NULL && GetParent(widget->hwnd) == parent) {
+            int64_t i = count;
+
+            /* By top, then left, then the order made. */
+            while (i > 0 && (row[i - 1]->y > widget->y || (row[i - 1]->y == widget->y && (row[i - 1]->x > widget->x || (row[i - 1]->x == widget->x && row[i - 1]->id > widget->id))))) {
+                row[i] = row[i - 1];
+                i -= 1;
+            }
+            row[i] = widget;
+            count += 1;
+        }
+    }
+    for (int64_t i = 0; i < count; i += 1) {
+        (void)SetWindowPos(row[i]->hwnd, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER);
+    }
+    for (int64_t i = 0; i < count; i += 1) {
+        if (row[i]->inside != NULL) {
+            hero_ui_win_order_tabs(row[i]->inside);
+        }
+    }
+    hero_layer_free(row);
+}
+
+/* Window `window`'s controls in their Tab order, where a place changed. */
+static void hero_ui_win_settle_tabs(hero_ui_native *window) {
+    if (window->tabs_stale) {
+        window->tabs_stale = false;
+        hero_ui_win_order_tabs(window->hwnd);
+    }
+}
+
+/* The control of window `window` that has the keys: Windows' own where the
+ * window is active, else the one it keeps; NULL for none. */
+static HWND hero_ui_win_focus_in(const hero_ui_native *window) {
+    HWND focus = GetFocus();
+
+    if (focus != NULL && IsChild(window->hwnd, focus)) {
+        return focus;
+    }
+    return window->focus != NULL && IsWindow(window->focus) && IsChild(window->hwnd, window->focus) ? window->focus : NULL;
+}
+
+/* Gives control `control` of window `window` the keys: kept by the window,
+ * and given now where the window is active. */
+static void hero_ui_win_give_keys(hero_ui_native *window, HWND control) {
+    window->focus = control;
+    if (control != NULL && GetActiveWindow() == window->hwnd) {
+        (void)SetFocus(control);
+    }
+}
+
+/* Window `hwnd` activated or left (`WM_ACTIVATE`): left, the control with
+ * the keys kept; activated, given them back. Answers whether it handled it. */
+static bool hero_ui_win_window_activated(HWND hwnd, WPARAM state) {
+    hero_ui_native *window = hero_ui_win_of(hwnd);
+    HWND focus;
+
+    if (window == NULL || window->kind != HERO_UI_WINDOW) {
+        return false;
+    }
+    if (LOWORD(state) == WA_INACTIVE) {
+        focus = GetFocus();
+        if (focus != NULL && IsChild(hwnd, focus)) {
+            window->focus = focus;
+        }
+        return false;
+    }
+    if (HIWORD(state) != 0) {
+        return false;
+    }
+    focus = hero_ui_win_focus_in(window);
+    if (focus == NULL) {
+        hero_ui_win_settle_tabs(window);
+        focus = GetNextDlgTabItem(hwnd, NULL, FALSE);
+    }
+    if (focus != NULL && focus != hwnd) {
+        window->focus = focus;
+        (void)SetFocus(focus);
+        return true;
+    }
+    return false;
+}
+
+/* Window `window` shown the first time: its first control in the Tab order
+ * given the keys, where the program gave them to none. */
+static void hero_ui_win_first_shown(hero_ui_native *window) {
+    HWND first;
+
+    window->shown_once = true;
+    window->tabs_stale = true;
+    hero_ui_win_settle_tabs(window);
+    if (hero_ui_win_focus_in(window) != NULL) {
+        hero_ui_win_give_keys(window, hero_ui_win_focus_in(window));
+        return;
+    }
+    first = GetNextDlgTabItem(window->hwnd, NULL, FALSE);
+    if (first != NULL && first != window->hwnd && hero_ui_win_widget_at(first) != NULL) {
+        hero_ui_win_give_keys(window, first);
+    }
+}
 
 int64_t hero_ui_arm_set_focus(int64_t id) {
-    (void)id;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = hero_ui_win_window(widget->window);
+    if (window == NULL || widget->hwnd == NULL || !hero_ui_win_reachable(widget)) {
+        return HERO_UI_INVALID;
+    }
+    switch (widget->kind) {
+    case HERO_UI_TEXT_FIELD:
+    case HERO_UI_TEXT_AREA:
+    case HERO_UI_LIST:
+    case HERO_UI_LIST_MULTIPLE:
+        hero_ui_win_give_keys(window, widget->hwnd);
+        return HERO_UI_OK;
+    default:
+        return HERO_UI_INVALID;
+    }
 }
 
 int64_t hero_ui_arm_focus(int64_t id, int64_t *focus) {
-    (void)id;
-    (void)focus;
-    return HERO_UI_UNSUPPORTED;
+    hero_ui_native *window = hero_ui_find(id);
+    HWND control;
+    hero_ui_native *found;
+
+    if (window == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (window->kind != HERO_UI_WINDOW) {
+        return HERO_UI_INVALID;
+    }
+    control = hero_ui_win_focus_in(window);
+    found = control != NULL ? hero_ui_win_widget_at(control) : NULL;
+    /* A container takes the keys only where it holds no control that does:
+     * the window is answered for it. */
+    *focus = found != NULL && found->inside == NULL ? found->id : window->id;
+    return HERO_UI_OK;
+}
+
+/* The `INPUT` of virtual key `key` going down or up. */
+static INPUT hero_ui_win_key_input(WORD key, bool extended, bool up) {
+    INPUT input;
+
+    memset(&input, 0, sizeof input);
+    input.type = INPUT_KEYBOARD;
+    input.ki.wVk = key;
+    input.ki.wScan = (WORD)MapVirtualKeyW(key, MAPVK_VK_TO_VSC);
+    input.ki.dwFlags = (extended ? KEYEVENTF_EXTENDEDKEY : 0) | (up ? KEYEVENTF_KEYUP : 0);
+    return input;
+}
+
+/* Runs the loop until virtual key `last` comes back released, or
+ * `HERO_UI_WIN_KEY_WAIT_MS` pass, then takes what it left queued; whatever
+ * the key queued stays queued for `wait`. */
+static void hero_ui_win_key_back(WORD last) {
+    ULONGLONG deadline = GetTickCount64() + HERO_UI_WIN_KEY_WAIT_MS;
+    bool came = false;
+    MSG message;
+
+    while (!came) {
+        ULONGLONG now = GetTickCount64();
+
+        while (!came && PeekMessageW(&message, NULL, 0, 0, PM_REMOVE)) {
+            came = (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == last;
+            if (message.message == WM_QUIT) {
+                hero_ui_win_quit();
+                continue;
+            }
+            if (!hero_ui_win_translated(&message)) {
+                (void)TranslateMessage(&message);
+                (void)DispatchMessageW(&message);
+            }
+        }
+        if (came || now >= deadline) {
+            break;
+        }
+        (void)MsgWaitForMultipleObjectsEx(0, NULL, (DWORD)(deadline - now), QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+    }
+    while (PeekMessageW(&message, NULL, 0, 0, PM_REMOVE)) {
+        if (message.message == WM_QUIT) {
+            hero_ui_win_quit();
+            continue;
+        }
+        if (!hero_ui_win_translated(&message)) {
+            (void)TranslateMessage(&message);
+            (void)DispatchMessageW(&message);
+        }
+    }
+}
+
+int64_t hero_ui_arm_press_key(int64_t id, const uint8_t *key, int64_t count, int64_t modifiers) {
+    static const struct {
+        int64_t held;
+        WORD key;
+    } helds[] = {{HERO_UI_PRIMARY, VK_CONTROL}, {HERO_UI_SHIFT, VK_SHIFT}, {HERO_UI_ALT, VK_MENU}};
+    hero_ui_native *widget = hero_ui_find(id);
+    hero_ui_native *window;
+    INPUT inputs[8];
+    UINT made = 0;
+    WORD code = 0;
+    bool extended = false;
+    WORD last;
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = widget->kind == HERO_UI_WINDOW ? widget : hero_ui_win_window(widget->window);
+    if (window == NULL || !hero_ui_win_key_of(key, count, &code, &extended) || (widget != window && (!hero_ui_win_takes_keys(widget->kind) || widget->hwnd == NULL || !hero_ui_win_reachable(widget)))) {
+        return HERO_UI_INVALID;
+    }
+    if (!IsWindowVisible(window->hwnd)) {
+        return hero_ui_refused(HERO_UI_OTHER, "the window is hidden, and Windows hands a key to a window it shows");
+    }
+    if (GetForegroundWindow() != window->hwnd) {
+        (void)SetForegroundWindow(window->hwnd);
+    }
+    if (GetForegroundWindow() != window->hwnd) {
+        return hero_ui_refused(HERO_UI_OTHER, "Windows keeps another window in front (its foreground lock), so a key pressed would go there");
+    }
+    if (widget != window) {
+        window->focus = hero_ui_win_key_control(widget);
+        (void)SetFocus(window->focus);
+    }
+    hero_ui_win_settle_tabs(window);
+    for (size_t i = 0; i < sizeof helds / sizeof helds[0]; i += 1) {
+        if ((modifiers & helds[i].held) != 0) {
+            inputs[made++] = hero_ui_win_key_input(helds[i].key, false, false);
+        }
+    }
+    inputs[made++] = hero_ui_win_key_input(code, extended, false);
+    inputs[made++] = hero_ui_win_key_input(code, extended, true);
+    last = code;
+    for (size_t i = sizeof helds / sizeof helds[0]; i > 0; i -= 1) {
+        if ((modifiers & helds[i - 1].held) != 0) {
+            inputs[made++] = hero_ui_win_key_input(helds[i - 1].key, false, true);
+            last = helds[i - 1].key;
+        }
+    }
+    if (SendInput(made, inputs, (int)sizeof inputs[0]) != made) {
+        return hero_ui_win_failed("pressing a key (SendInput, which a program of a higher integrity's window refuses)", GetLastError());
+    }
+    hero_ui_win_key_back(last);
+    return HERO_UI_OK;
+}
+
+/* Whether button `button` is one the person presses by a key now: shown,
+ * enabled, in a window. */
+static hero_ui_native *hero_ui_win_key_button(int64_t id) {
+    hero_ui_native *button = id != 0 ? hero_ui_find(id) : NULL;
+
+    return button != NULL && button->kind == HERO_UI_BUTTON && hero_ui_win_reachable(button) && IsWindowEnabled(button->hwnd) ? button : NULL;
+}
+
+
+/* Return, `IDOK`, or Escape, `IDCANCEL`, the dialog manager gave window
+ * `hwnd`: its button for that key pressed where the person reaches it; else
+ * for Return the field with the keys submitted, or the row or item chosen
+ * of the list, table or tree with them opened. */
+static void hero_ui_win_dialog_key(HWND hwnd, UINT which) {
+    hero_ui_native *window = hero_ui_win_of(hwnd);
+    hero_ui_native *button;
+    hero_ui_native *focused;
+    HWND focus;
+
+    if (window == NULL || window->kind != HERO_UI_WINDOW) {
+        return;
+    }
+    button = hero_ui_win_key_button(which == IDCANCEL ? window->escape_button : window->enter_button);
+    if (button != NULL) {
+        hero_ui_win_press(button->hwnd, false);
+        return;
+    }
+    focus = GetFocus();
+    focused = which == IDOK && focus != NULL && IsChild(hwnd, focus) ? hero_ui_win_widget_at(focus) : NULL;
+    if (focused == NULL || !IsWindowEnabled(focused->hwnd)) {
+        return;
+    }
+    switch (focused->kind) {
+    case HERO_UI_TEXT_FIELD:
+        hero_ui_tell(HERO_UI_EVENT_SUBMIT, focused->id, 0, 0);
+        break;
+    case HERO_UI_LIST:
+    case HERO_UI_LIST_MULTIPLE: {
+        /* The first row chosen, which the header says Return opens. */
+        int64_t first = -1;
+
+        if (focused->kind == HERO_UI_LIST) {
+            first = (int64_t)SendMessageW(focused->hwnd, LB_GETCURSEL, 0, 0);
+        } else {
+            for (int64_t i = 0; i < focused->items && first < 0; i += 1) {
+                first = SendMessageW(focused->hwnd, LB_GETSEL, (WPARAM)i, 0) > 0 ? i : -1;
+            }
+        }
+        if (first >= 0) {
+            hero_ui_tell(HERO_UI_EVENT_ACTIVATE, focused->id, first, 0);
+        }
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
+    hero_ui_native *button = hero_ui_find(id);
+    hero_ui_native *window;
+    hero_ui_native *before;
+
+    if (button == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    window = hero_ui_win_window(button->window);
+    if (button->kind != HERO_UI_BUTTON || window == NULL) {
+        return HERO_UI_INVALID;
+    }
+    if (window->enter_button == id) {
+        window->enter_button = 0;
+        (void)SendMessageW(button->hwnd, BM_SETSTYLE, BS_PUSHBUTTON, TRUE);
+    }
+    if (window->escape_button == id) {
+        window->escape_button = 0;
+    }
+    if (key == HERO_UI_BUTTON_KEY_ENTER) {
+        before = hero_ui_find(window->enter_button);
+        if (before != NULL && before->hwnd != NULL) {
+            (void)SendMessageW(before->hwnd, BM_SETSTYLE, BS_PUSHBUTTON, TRUE);
+        }
+        window->enter_button = id;
+        /* Drawn as its window's default, as the system's dialogs draw it. */
+        (void)SendMessageW(button->hwnd, BM_SETSTYLE, BS_DEFPUSHBUTTON, TRUE);
+    } else if (key == HERO_UI_BUTTON_KEY_ESCAPE) {
+        window->escape_button = id;
+    }
+    return HERO_UI_OK;
+}
+
+/* -- A MENU ITEM'S ROLE ---------------------------------------------------- */
+
+/* Windows holds no application menu, so an item keeps the place the program
+ * gave it and its role asks nothing more of it. */
+int64_t hero_ui_arm_set_role(int64_t id, int64_t role) {
+    hero_ui_native *item = hero_ui_find(id);
+
+    (void)role;
+    if (item == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return item->kind == HERO_UI_MENU_ITEM ? HERO_UI_OK : HERO_UI_INVALID;
+}
+
+/* -- CHECK AND RADIO MENU ITEMS -------------------------------------------- */
+
+int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
+    hero_ui_native *item = hero_ui_find(id);
+
+    if (item == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (item->kind != HERO_UI_MENU_ITEM) {
+        return HERO_UI_INVALID;
+    }
+    item->check = mode;
+    item->checked = false;
+    return hero_ui_win_refill_owner(item);
+}
+
+/* -- A CONTEXT MENU ---------------------------------------------------------
+ *
+ * A context menu is a pop-up menu kept by the widget it belongs to, shown by
+ * `TrackPopupMenuEx` where Windows asks for one (`WM_CONTEXTMENU`: the
+ * person's right click, Shift+F10 or the menu key) over that widget, or over
+ * a widget standing in it that has none of its own; its items' `WM_COMMAND`
+ * reaches the window as a menu bar's does. An edit control shows a menu of
+ * its own (Undo, Cut, Copy, Paste), so a field or a text area is subclassed
+ * and its own menu gives way to the program's where it has one. */
+
+/* The context menu of widget `id`, or NULL. */
+static hero_ui_native *hero_ui_win_context_of(int64_t id) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *menu = hero_ui_at(at);
+
+        if (menu != NULL && menu->kind == HERO_UI_CONTEXT_MENU && menu->parent == id) {
+            return menu;
+        }
+    }
+    return NULL;
+}
+
+/* Shows the context menu the person asked for over control `target`, at
+ * `at` on the screen, or under the control for the keyboard's (-1, -1): the
+ * control's widget's own, else that of the nearest container or window it
+ * stands in, where `inherit`. Answers whether one was shown. */
+static bool hero_ui_win_show_context(HWND target, LPARAM at, bool inherit) {
+    hero_ui_native *widget = hero_ui_win_widget_at(target);
+    hero_ui_native *menu = NULL;
+    hero_ui_native *window;
+    POINT point;
+
+    for (hero_ui_native *each = widget; each != NULL && menu == NULL; each = hero_ui_find(each->parent)) {
+        menu = hero_ui_win_context_of(each->id);
+        if (!inherit || each->kind == HERO_UI_WINDOW) {
+            break;
+        }
+    }
+    window = menu != NULL ? hero_ui_win_window(menu->window) : NULL;
+    if (menu == NULL || window == NULL || menu->menu == NULL) {
+        return false;
+    }
+    point.x = (short)LOWORD(at);
+    point.y = (short)HIWORD(at);
+    if (at == (LPARAM)-1 || (point.x == -1 && point.y == -1)) {
+        RECT area;
+
+        if (!GetWindowRect(target, &area)) {
+            return false;
+        }
+        point.x = area.left + (area.right - area.left) / 2;
+        point.y = area.top + (area.bottom - area.top) / 2;
+    }
+    (void)hero_ui_win_fill_menu(menu);
+    (void)TrackPopupMenuEx(menu->menu, TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON, point.x, point.y, window->hwnd, NULL);
+    return true;
+}
+
+/* The property an edit control keeps its own procedure in. */
+static const wchar_t hero_ui_win_base_name[] = L"HeroesUiBase";
+
+static LRESULT CALLBACK hero_ui_win_edit_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+    WNDPROC base = (WNDPROC)GetPropW(hwnd, hero_ui_win_base_name);
+
+    if (message == WM_CONTEXTMENU && hero_ui_win_show_context(hwnd, lparam, false)) {
+        return 0;
+    }
+    if (message == WM_NCDESTROY) {
+        (void)SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)base);
+        (void)RemovePropW(hwnd, hero_ui_win_base_name);
+    }
+    return base != NULL ? CallWindowProcW(base, hwnd, message, wparam, lparam) : DefWindowProcW(hwnd, message, wparam, lparam);
+}
+
+/* Subclasses edit control `hwnd` (A CONTEXT MENU); false where Windows
+ * refused, the control then left as it was. */
+static bool hero_ui_win_subclass_edit(HWND hwnd) {
+    LONG_PTR base = GetWindowLongPtrW(hwnd, GWLP_WNDPROC);
+
+    if (base == 0 || !SetPropW(hwnd, hero_ui_win_base_name, (HANDLE)base)) {
+        return false;
+    }
+    if (SetWindowLongPtrW(hwnd, GWLP_WNDPROC, (LONG_PTR)hero_ui_win_edit_proc) == 0) {
+        (void)RemovePropW(hwnd, hero_ui_win_base_name);
+        return false;
+    }
+    return true;
+}
+
+/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE ----------------------- */
+
+/* The character an edit control of the common controls' current look masks
+ * a password with (version 6's own, a black circle). */
+#define HERO_UI_WIN_MASK 0x25CF
+
+int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
+    hero_ui_native *field = hero_ui_find(id);
+
+    if (field == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (field->kind != HERO_UI_TEXT_FIELD) {
+        return HERO_UI_INVALID;
+    }
+    (void)SendMessageW(field->hwnd, EM_SETPASSWORDCHAR, on == 1 ? (WPARAM)HERO_UI_WIN_MASK : 0, 0);
+    (void)InvalidateRect(field->hwnd, NULL, TRUE);
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
+    hero_ui_native *bar = hero_ui_find(id);
+    LONG_PTR style;
+
+    if (bar == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (bar->kind != HERO_UI_PROGRESS) {
+        return HERO_UI_INVALID;
+    }
+    style = GetWindowLongPtrW(bar->hwnd, GWL_STYLE);
+    if (on == 1) {
+        (void)SetWindowLongPtrW(bar->hwnd, GWL_STYLE, style | PBS_MARQUEE);
+        (void)SendMessageW(bar->hwnd, PBM_SETMARQUEE, TRUE, 0);
+    } else {
+        (void)SendMessageW(bar->hwnd, PBM_SETMARQUEE, FALSE, 0);
+        (void)SetWindowLongPtrW(bar->hwnd, GWL_STYLE, style & ~(LONG_PTR)PBS_MARQUEE);
+        hero_ui_win_show_range(bar);
+    }
+    return HERO_UI_OK;
 }
 
 /* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS -------------- */
@@ -3024,28 +4703,6 @@ int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count,
     (void)buttons_count;
     (void)cancel;
     (void)pressed;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- CHECK AND RADIO MENU ITEMS -------------------------------------------- */
-
-int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
-    (void)id;
-    (void)mode;
-    return HERO_UI_UNSUPPORTED;
-}
-
-/* -- A MASKED FIELD, AND A PROGRESS BAR WITH NO VALUE ----------------------- */
-
-int64_t hero_ui_arm_set_masked(int64_t id, int64_t on) {
-    (void)id;
-    (void)on;
-    return HERO_UI_UNSUPPORTED;
-}
-
-int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
-    (void)id;
-    (void)on;
     return HERO_UI_UNSUPPORTED;
 }
 
