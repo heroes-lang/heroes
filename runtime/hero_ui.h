@@ -347,8 +347,9 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * queued as the page's is (THE WEB VIEW, below; `LIMIT` where
  * `HERO_UI_QUEUE_MOST` wait for the page already); `ACTIVATE` opens row
  * `value` of list `id`, choosing it first where it is not chosen, as a
- * double click does. Its event is queued as the person's would be. 0, or
- * -1, `UNSUPPORTED` where the system offers no such path. */
+ * double click does; `SUBMIT` presses Return in text field `id`. Its event
+ * is queued as the person's would be. 0, or -1, `UNSUPPORTED` where the
+ * system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
 
 /* Shows a message box over window `window` (0 for none), with `title` and
@@ -719,5 +720,31 @@ int64_t hero_ui_inject_window(hero_ui_app *app, int64_t kind, int64_t id, int64_
  * away. 0, or -1: `INVALID` (a role these do not name, a widget no menu
  * item), `NOT_FOUND`. */
 int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role);
+
+/* -- RETURN AND ESCAPE -----------------------------------------------------
+ *
+ * Return pressed in a text field, and the buttons Return and Escape press
+ * wherever their window has the keys, as wxWidgets' `wxEVT_TEXT_ENTER`,
+ * `wxButton::SetDefault` and a dialog's `wxID_CANCEL` give them: a search
+ * field searches, a dialog's OK and Cancel answer the keys every dialog
+ * answers. A window's button for Return takes Return before any field of
+ * it, as the systems' dialogs do. */
+
+/* The person pressed Return in text field `id`; its text is asked of the
+ * field. */
+#define HERO_UI_EVENT_SUBMIT 14
+
+/* The key that presses a button: none, as a button is made; Return, the
+ * button then drawn as its window's default; Escape. */
+#define HERO_UI_BUTTON_KEY_NONE 0
+#define HERO_UI_BUTTON_KEY_ENTER 1
+#define HERO_UI_BUTTON_KEY_ESCAPE 2
+
+/* Lets `key` press button `id` wherever its window has the keys, the one
+ * of its window that had that key losing it, or takes the key away,
+ * `HERO_UI_BUTTON_KEY_NONE`. Pressed so, the button's
+ * `HERO_UI_EVENT_CLICK` is queued as a click's. 0, or -1: `INVALID` (a key
+ * these do not name, a widget no button), `NOT_FOUND`. */
+int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key);
 
 #endif

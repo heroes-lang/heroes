@@ -2017,7 +2017,7 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
-    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE) {
+    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT) {
         (void)snprintf(words, sizeof words, "the act %lld is no act a person does", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2800,4 +2800,35 @@ int64_t hero_ui_set_role(hero_ui_app *app, int64_t id, int64_t role) {
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     return hero_ui_windows_answered(hero_ui_arm_set_role(id, role), "giving a menu item its role", id);
+}
+
+/* -- RETURN AND ESCAPE ----------------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
+    return hero_ui_appkit_set_button_key(id, key);
+}
+
+#else
+
+static int64_t hero_ui_arm_set_button_key(int64_t id, int64_t key) {
+    (void)id;
+    (void)key;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_set_button_key(hero_ui_app *app, int64_t id, int64_t key) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (key < HERO_UI_BUTTON_KEY_NONE || key > HERO_UI_BUTTON_KEY_ESCAPE) {
+        (void)snprintf(words, sizeof words, "the key %lld is none of HERO_UI_BUTTON_KEY_NONE to HERO_UI_BUTTON_KEY_ESCAPE", (long long)key);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    return hero_ui_windows_answered(hero_ui_arm_set_button_key(id, key), "giving a button its key", id);
 }

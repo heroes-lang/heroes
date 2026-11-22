@@ -95,6 +95,7 @@ private let eventClose: Int64 = 7
 private let eventResize: Int64 = 8
 private let eventMessage: Int64 = 9
 private let eventActivate: Int64 = 13
+private let eventSubmit: Int64 = 14
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -377,6 +378,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             field.usesSingleLineMode = true
             field.delegate = self
             field.tag = Int(widget.id)
+            // A text field sends its action when the person presses Return
+            // in it (`HERO_UI_EVENT_SUBMIT`), and not when its editing ends
+            // another way.
+            field.target = self
+            field.action = #selector(submitted(_:))
             return field
         case kindTextArea:
             let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: areaWidth, height: areaHeight))
@@ -652,6 +658,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
 
     @objc func clicked(_ sender: NSButton) {
         queue(eventClick, Int64(sender.tag), 0, 0)
+    }
+
+    @objc func submitted(_ sender: NSTextField) {
+        queue(eventSubmit, Int64(sender.tag), 0, 0)
     }
 
     @objc func toggled(_ sender: NSButton) {
@@ -1241,6 +1251,19 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             if window.styleMask.contains(.resizable) {
                 window.setContentSize(NSSize(width: CGFloat(value), height: CGFloat(second)))
             }
+        case eventSubmit:
+            guard widget.kind == kindTextField, let field = widget.view as? NSTextField else {
+                return answerInvalid
+            }
+            // Return goes to the window's default button before the field,
+            // as AppKit gives the person's Return.
+            if field.isEnabled {
+                if let button = field.window?.defaultButtonCell?.controlView as? NSButton, button.isEnabled, !button.isHiddenOrHasHiddenAncestor {
+                    button.performClick(nil)
+                } else {
+                    field.sendAction(field.action, to: field.target)
+                }
+            }
         case eventActivate:
             guard let table = widget.table, value >= 0, value < Int64(widget.items.count) else {
                 return answerInvalid
@@ -1709,6 +1732,54 @@ public func hero_ui_appkit_words(_ words: UnsafeMutablePointer<CChar>?, _ count:
     }
     words[length] = 0
     return Int64(length)
+}
+
+// The keys a button may be pressed by, `hero_ui.h`'s `HERO_UI_BUTTON_KEY_*`,
+// and the key equivalent AppKit gives each.
+private let buttonKeyNone: Int64 = 0
+private let buttonKeyEnter: Int64 = 1
+private let buttonKeyEscape: Int64 = 2
+private let enterEquivalent = "\r"
+private let escapeEquivalent = "\u{1b}"
+
+extension Backend {
+    // Lets `key` press button `id` wherever its window has the keys: Return
+    // as the window's default button, which AppKit draws as such, or Escape
+    // as its Cancel. A window has one button of each; the one that had the
+    // key before loses it.
+    func setButtonKey(_ id: Int64, _ key: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindButton, let button = widget.view as? NSButton, key >= buttonKeyNone, key <= buttonKeyEscape else {
+            return answerInvalid
+        }
+        let window = widgets[widget.parent]?.window
+        let equivalent = key == buttonKeyEnter ? enterEquivalent : (key == buttonKeyEscape ? escapeEquivalent : "")
+        if !equivalent.isEmpty {
+            for other in widgets.values where other.parent == widget.parent && other.id != id && other.kind == kindButton {
+                if let held = other.view as? NSButton, held.keyEquivalent == equivalent {
+                    held.keyEquivalent = ""
+                }
+            }
+        }
+        if button.keyEquivalent == enterEquivalent && window?.defaultButtonCell === button.cell {
+            window?.defaultButtonCell = nil
+        }
+        button.keyEquivalent = equivalent
+        button.keyEquivalentModifierMask = []
+        if key == buttonKeyEnter, let cell = button.cell as? NSButtonCell {
+            window?.defaultButtonCell = cell
+        }
+        return answerOk
+    }
+}
+
+@c
+public func hero_ui_appkit_set_button_key(_ id: Int64, _ key: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setButtonKey(id, key) ?? answerNotFound
+    }
 }
 
 // A menu item's roles, `hero_ui.h`'s `HERO_UI_ROLE_*`.

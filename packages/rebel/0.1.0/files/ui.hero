@@ -698,6 +698,30 @@ function label(@app: App, into: Widget, text: str) -> Widget?
 function button(@app: App, into: Widget, text: str) -> Widget?
     return makers.make(@app, into: into, kind: hero_ui.HERO_UI_BUTTON, text: text, items: [])
 
+# The key that presses a button wherever its window has the keys.
+variant ButtonKey
+    # None, as a button is made.
+    none
+    # Return, the button drawn as its window's default, as a dialog's OK is.
+    enter
+    # Escape, as a dialog's Cancel is.
+    escape
+
+# Lets `key` press `widget` wherever its window has the keys, as wxWidgets'
+# `wxButton::SetDefault` and a dialog's Cancel do; the button of its window
+# that had that key loses it. Pressed so, it is `.clicked`. A window's
+# button for Return takes Return before any of its text fields, as the
+# systems' dialogs do.
+#
+# - `app`: the app holding it.
+# - `widget`: the button.
+# - `key`: the key; `.none` takes it away.
+#
+# Fails `closed`, `invalid` for a widget no button, `failed`. See also
+# `press_key`, `Event.submitted`.
+function set_button_key(@app: App, widget: Widget, key: ButtonKey) -> ()?
+    return state.set_button_key(@app, button: widget, key: key)
+
 # A new text field in `into` holding `text`, one line the person types;
 # each change is `.text_changed`.
 #
@@ -1139,6 +1163,13 @@ variant Event
         window: Widget
         # The screen, from 0.
         screen: i64
+    # The person pressed Return in a text field: a search field searches, a
+    # chat field sends; its text is the field's (`text_of`). A window whose
+    # button Return presses (`set_button_key`) gives that button's
+    # `.clicked` instead.
+    submitted
+        # The text field.
+        widget: Widget
     # The person opened a row of a list, by a double click on it or by the
     # Return key while the list had the keys: a file manager enters the
     # folder, a mail client opens the message. A first click's choice comes
@@ -1238,6 +1269,10 @@ variant Input
         window: Widget
         # The state.
         state: WindowState
+    # Presses Return in a text field.
+    submit
+        # The text field.
+        widget: Widget
     # Opens a row of a list as a double click on it does, choosing it first
     # where it is not chosen.
     activate
@@ -1287,10 +1322,12 @@ function inject(@app: App, input: Input) -> ()?
 # the system's own path, so the menu item whose shortcut it is, the
 # system's Edit menu (undo, redo, cut, copy, paste and select all in a text
 # widget) and the widget take it as the person's; on the headless side,
-# whose widgets no system edits, it chooses the first item of the window's
+# whose widgets no system edits, Return and Escape press the window's button
+# for them (`set_button_key`), a key chooses the first item of the window's
 # menus whose shortcut it is, the item and its menu enabled, as
-# `.menu_chosen`, and does nothing else. A widget greyed out or hidden takes
-# no key, as a person could not give it one.
+# `.menu_chosen`, and Return in a text field is `.submitted`; nothing else.
+# A widget greyed out or hidden takes no key, as a person could not give it
+# one.
 #
 # - `app`: the app it is pressed in; a native one's windows are laid out and
 #   shown first.
@@ -1653,7 +1690,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -2306,6 +2343,16 @@ test "set_modal: a dialog"
     inject(@app, input: .ask_close(window: document)).must()
     inject(@app, input: .ask_close(window: dialog)).must()
     assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: dialog)
+    close(@app).must()
+
+# A dialog's OK pressed by Return wherever its window has the keys.
+test "set_button_key: OK by Return"
+    app @= open(.headless).must()
+    w = window(@app, title: "Ask", width: 160, height: 80).must()
+    ok_button = button(@app, into: w, text: "OK").must()
+    set_button_key(@app, widget: ok_button, key: .enter).must()
+    press_key(@app, widget: w, shortcut: Shortcut(key: "Enter", primary: false, shift: false, alt: false)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
     close(@app).must()
 
 # A question answered Yes by an injected answer.

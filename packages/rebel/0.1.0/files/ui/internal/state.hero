@@ -413,6 +413,30 @@ function set_role(@app: ui.App, item: ui.Widget, role: ui.MenuRole) -> ()?
     n.role @ code
     return stored(@app, n: n, measured: false)
 
+# Gives a button the key that presses it (`ui.set_button_key`): the
+# button of its window that had that key loses it, on both sides.
+function set_button_key(@app: ui.App, button: ui.Widget, key: ui.ButtonKey) -> ()?
+    n @= check.node_kind(app, widget: button, kinds: [hero_ui.HERO_UI_BUTTON], what: "a button")?
+
+    code = match key
+        .none   => hero_ui.HERO_UI_BUTTON_KEY_NONE
+        .enter  => hero_ui.HERO_UI_BUTTON_KEY_ENTER
+        .escape => hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+
+    if app.native && hero_ui.set_button_key(app.handle, id: n.id, key: code) < 0
+        return failure.last(f"giving button {n.id} its key")
+
+    if code != hero_ui.HERO_UI_BUTTON_KEY_NONE
+        for id in keys(app.table.nodes)
+            other @= app.table.nodes[id].must()
+
+            if other.id != n.id && other.window == n.window && other.button_key == code
+                other.button_key @ hero_ui.HERO_UI_BUTTON_KEY_NONE
+                model.put(@app.table, n: other)
+
+    n.button_key @ code
+    return stored(@app, n: n, measured: false)
+
 # Puts `n` back in the table, measured again where `measured` (its text,
 # items or pixels moved), and marks its window for a layout.
 function stored(@app: ui.App, n: model.Node, measured: bool) -> ()?
@@ -491,4 +515,28 @@ test "set_role: on the native side the About, Settings and Quit items take their
     assert first == .menu_chosen(item: about)
     assert second == .menu_chosen(item: quit)
     ui.set_role(@app, item: about, role: .plain).must()
+    ui.close(@app).must()
+
+test "set_button_key: Return and Escape each press one button of a window, the one before losing its key, drawn; taken away; a widget no button invalid"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    ok_button = ui.button(@app, into: w, text: "OK").must()
+    other = ui.button(@app, into: w, text: "Apply").must()
+    cancel = ui.button(@app, into: w, text: "Cancel").must()
+    label = ui.label(@app, into: w, text: "x").must()
+    ui.set_button_key(@app, widget: ok_button, key: .enter).must()
+    ui.set_button_key(@app, widget: other, key: .enter).must()
+    ui.set_button_key(@app, widget: cancel, key: .escape).must()
+    lines = ui.render(@app).must()
+    assert lines[1] == "  button #2 \"OK\" at 12,12 40x24"
+    assert lines[2] == "  button #3 \"Apply\" default at 12,42 64x24"
+    assert lines[3] == "  button #4 \"Cancel\" cancel at 12,72 72x24"
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Enter", primary: false, shift: false, alt: false)).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Escape", primary: false, shift: false, alt: false)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: other)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: cancel)
+    ui.set_button_key(@app, widget: cancel, key: .none).must()
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Escape", primary: false, shift: false, alt: false)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    assert fixture.code_of(ui.set_button_key(@app, widget: label, key: .enter)) == ui.INVALID
     ui.close(@app).must()

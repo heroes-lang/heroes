@@ -5,7 +5,9 @@
 # Command+C, Command+V and the rest reach a text widget) and the widget with
 # the keys take it as the person's, and their events come at the next
 # `wait`s. The headless side holds no system that edits a text, so there a
-# key chooses the menu item whose shortcut it is and does nothing else.
+# key presses the window's button for Return or Escape, chooses the menu
+# item whose shortcut it is, or submits a text field on Return, and does
+# nothing else.
 
 use bytes
 use time
@@ -42,10 +44,26 @@ function press(@app: ui.App, widget: ui.Widget, shortcut: ui.Shortcut) -> ()?
 
     if !give.reachable(app, id: n.id)
         return ok()
+
+    # As the systems take a key: the window's button for Return or Escape
+    # first, then a menu item's shortcut, then the widget with the keys.
+    if held == 0 && (shortcut.key == "Enter" || shortcut.key == "Escape")
+        pressed = if shortcut.key == "Enter"
+            hero_ui.HERO_UI_BUTTON_KEY_ENTER
+        else
+            hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+
+        button = give.key_button(app, window: n.window, key: pressed)
+
+        if button != 0
+            app.events @ app.events.push(.clicked(widget: check.widget_of(app, id: button)))
+            return ok()
     item = item_for(app.table, window: n.window, key: shortcut.key, modifiers: held)
 
     if item != 0
         app.events @ app.events.push(.menu_chosen(item: check.widget_of(app, id: item)))
+    else if held == 0 && shortcut.key == "Enter" && n.kind == hero_ui.HERO_UI_TEXT_FIELD
+        app.events @ app.events.push(.submitted(widget: widget))
     return ok()
 
 # The kinds a key is pressed in: a window, and the widgets every system
@@ -114,7 +132,7 @@ test "press: on the headless side a key chooses the first enabled item whose sho
             .ok event =>
                 match event
                     .menu_chosen m => told @ told.push(f"menu_chosen {m.item.id}")
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
                         told @ told.push("another event")
             .err _ => break
 
@@ -164,7 +182,7 @@ function changes(@app: ui.App, widget: ui.Widget) -> i64
                     .text_changed t =>
                         if t.widget == widget
                             found @ found + 1
-                    .clicked _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
+                    .clicked _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
                         _ = 0
             .err _ => break
 

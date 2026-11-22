@@ -94,7 +94,7 @@ function steps(@d: desk.Desk) -> ()?
 
                 if posted.len() > 0
                     keep(posted[0], keeps: s.keep, @names)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
                 return fail(code: "failed", msg: "the page's message did not come")
 
     print("== the report, as the page is answered for it")

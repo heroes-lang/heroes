@@ -103,6 +103,7 @@ function told(ws: Widgets, event: ui.Event) -> str
         .state_changed c     => "state_changed " + named(ws, widget: c.window)
         .screen_changed c    => "screen_changed " + named(ws, widget: c.window)
         .activated a         => "activated " + named(ws, widget: a.widget) + " " + a.index.to_str()
+        .submitted s         => "submitted " + named(ws, widget: s.widget)
 
 # The name the program gives `widget`.
 function named(ws: Widgets, widget: ui.Widget) -> str
@@ -169,7 +170,7 @@ function run(@app: ui.App) -> ()?
                 counted @ counted + 1
                 ui.set_value(@app, widget: ws.done, value: counted)?
             .close_asked _ => closing @ true
-            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ =>
+            .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .submitted _ =>
                 _ = 0
 
     print("name: " + ui.text_of(app, widget: ws.name)?)

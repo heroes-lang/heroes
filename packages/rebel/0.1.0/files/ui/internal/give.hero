@@ -66,6 +66,8 @@ function checked(app: ui.App, input: ui.Input) -> ()?
             desk.position_ok(app, screen: d.screen, x: d.x, y: d.y)?
         .change_state c =>
             _ = check.node_kind(app, widget: c.window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+        .submit s =>
+            _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD], what: "a text field")?
         .activate a =>
             n = check.node_kind(app, widget: a.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE], what: "a list")?
 
@@ -93,6 +95,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .drag_window d                            => d.window.id
         .change_state c                           => c.window.id
         .activate a                               => a.widget.id
+        .submit s                                 => s.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
 
     if id == 0
@@ -187,6 +190,9 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
                     told @ told.push(event)
 
                 return told
+        .submit s =>
+            if reachable(app, id: s.widget.id)
+                return [return_pressed(app, widget: s.widget)]
         .activate a =>
             if reachable(app, id: a.widget.id)
                 n @= app.table.nodes[a.widget.id].must()
@@ -203,6 +209,27 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
             _ = 0
 
     return none
+
+# What Return pressed in text field `widget` gives: its window's button for
+# Return clicked where it has one the person can reach, as the systems'
+# dialogs do, else the field submitted.
+function return_pressed(app: ui.App, widget: ui.Widget) -> ui.Event
+    held = key_button(app, window: app.table.nodes[widget.id].must().window, key: hero_ui.HERO_UI_BUTTON_KEY_ENTER)
+
+    if held != 0
+        return .clicked(widget: check.widget_of(app, id: held))
+    return .submitted(widget: widget)
+
+# The button of window `window` that `key` presses, where the person can
+# reach it; 0, the number no widget takes, where none is.
+function key_button(app: ui.App, window: i64, key: i64) -> i64
+    for id in keys(app.table.nodes)
+        n = app.table.nodes[id].must()
+
+        if n.window == window && n.kind == hero_ui.HERO_UI_BUTTON && n.button_key == key && reachable(app, id: id)
+            return id
+
+    return 0
 
 # Whether `indices` holds `index`.
 function chosen(indices: [i64], index: i64) -> bool
@@ -301,4 +328,45 @@ test "activate: on the native side a row opened through the system's own path, a
     assert told == [.selection_changed(widget: files, indices: [2]), .activated(widget: files, index: 2), .activated(widget: files, index: 2)]
     assert ui.selection_of(app, widget: files).must() == [2]
     assert fixture.code_of(ui.inject(@app, input: .activate(widget: files, index: 3))) == ui.INVALID
+    ui.close(@app).must()
+
+test "submit: Return in a text field submitted, or its window's button for Return clicked where the person reaches it; a widget no text field invalid (catalogue CT15, CT04)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    field = ui.text_field(@app, into: w, text: "find").must()
+    area = ui.text_area(@app, into: w, text: "").must()
+    ok_button = ui.button(@app, into: w, text: "OK").must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .submitted(widget: field)
+    ui.set_button_key(@app, widget: ok_button, key: .enter).must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
+    ui.set_enabled(@app, widget: ok_button, on: false).must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .submitted(widget: field)
+    ui.set_enabled(@app, widget: field, on: false).must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    assert fixture.code_of(ui.inject(@app, input: .submit(widget: area))) == ui.INVALID
+    ui.close(@app).must()
+
+test "submit: on the native side Return in a text field submitted, and its window's default button clicked once it has one (catalogue CT15, CT04)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Find", width: 240, height: 100).must()
+    field = ui.text_field(@app, into: w, text: "find").must()
+    ok_button = ui.button(@app, into: w, text: "OK").must()
+    cancel = ui.button(@app, into: w, text: "Cancel").must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert events_of(@app, within: time.milliseconds(300).must()) == [.submitted(widget: field)]
+    ui.set_button_key(@app, widget: ok_button, key: .enter).must()
+    ui.set_button_key(@app, widget: cancel, key: .escape).must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert events_of(@app, within: time.milliseconds(300).must()) == [.clicked(widget: ok_button)]
+    ui.set_button_key(@app, widget: ok_button, key: .none).must()
+    ui.inject(@app, input: .submit(widget: field)).must()
+    assert events_of(@app, within: time.milliseconds(300).must()) == [.submitted(widget: field)]
     ui.close(@app).must()

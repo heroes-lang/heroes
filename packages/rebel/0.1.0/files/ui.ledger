@@ -181,12 +181,21 @@ capability ui/button  a button the person presses
   rust    -
   python  tkinter.Button, ttk.Button
 
+capability ui/button-keys  the buttons Return and Escape press wherever their window has the keys: a dialog's OK, drawn as the default, and its Cancel
+  heroes  ui.set_button_key, ui.ButtonKey
+  go      -
+  rust    -
+  python  tkinter.Button
+  wx      wxButton (SetDefault), wxDialog (SetAffirmativeId, SetEscapeId)
+  note    tkinter's `default` option of a button draws it and binds no key; a window's button for Return takes Return before its text fields, as each system's dialogs do; macOS by `defaultButtonCell` and the Escape key equivalent, Windows pending (`DM_SETDEFID`, `IDCANCEL` through `IsDialogMessageW`), Linux pending (`gtk_window_set_default_widget`, a shortcut for Escape)
+
 capability ui/text-field  one line of text the person types, set and read back
-  heroes  ui.text_field, ui.set_text, ui.text_of, ui.Event.text_changed
+  heroes  ui.text_field, ui.set_text, ui.text_of, ui.Event.text_changed, ui.Event.submitted, ui.Input.submit
   go      ui.NewEntry, Entry.SetText, Entry.Text, Entry.OnChanged, Entry.ReadOnly, Entry.SetReadOnly
   rust    -
   python  tkinter.Entry, ttk.Entry
-  note    a field the person may not change is one greyed out, `set_enabled`
+  wx      wxTextCtrl (wxTE_PROCESS_ENTER, wxEVT_TEXT_ENTER)
+  note    a field the person may not change is one greyed out, `set_enabled`; Return pressed in it is `.submitted`, unless its window's button for Return takes it (macOS by the field's action, Windows and Linux pending: `EN_` has none, so a subclass's `WM_KEYDOWN` `VK_RETURN`; `GtkText`'s `activate`)
 
 capability ui/text-area  lines of text the person types
   heroes  ui.text_area, ui.set_text, ui.text_of

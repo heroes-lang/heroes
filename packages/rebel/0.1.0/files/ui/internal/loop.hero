@@ -106,7 +106,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => app.answers @ app.answers.push(a.answer)
         .pick_files p => app.choices @ app.choices.push(.chosen(paths: p.paths))
         .cancel_files => app.choices @ app.choices.push(.cancelled)
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -177,6 +177,8 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         # took no new size, so nothing is answered.
         if laid.w != was_w || laid.h != was_h
             app.events @ app.events.push(.resized(window: w, width: laid.w, height: laid.h))
+    else if kind == hero_ui.HERO_UI_EVENT_SUBMIT
+        app.events @ app.events.push(.submitted(widget: w))
     else if kind == hero_ui.HERO_UI_EVENT_ACTIVATE
         app.events @ app.events.push(.activated(widget: w, index: taken[2]))
     else if kind == hero_ui.HERO_UI_EVENT_MOVE || kind == hero_ui.HERO_UI_EVENT_STATE || kind == hero_ui.HERO_UI_EVENT_SCREEN
@@ -267,6 +269,7 @@ function alive(app: ui.App, event: ui.Event) -> bool
         .state_changed s     => s.window.id
         .screen_changed s    => s.window.id
         .activated a         => a.widget.id
+        .submitted s         => s.widget.id
         .message m           => m.widget.id
 
     return !model.node_of(app.table, id: id).is_err()

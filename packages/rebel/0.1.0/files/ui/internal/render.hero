@@ -57,6 +57,11 @@ function line_of(n: model.Node, visible: bool) -> str
         parts @ parts.push(mark).push(quoted(n.text))
     else if model.has_text(k)
         parts @ parts.push(quoted(n.text))
+
+        if n.button_key == hero_ui.HERO_UI_BUTTON_KEY_ENTER
+            parts @ parts.push("default")
+        else if n.button_key == hero_ui.HERO_UI_BUTTON_KEY_ESCAPE
+            parts @ parts.push("cancel")
     else if model.has_items(k)
         if k == hero_ui.HERO_UI_LIST_MULTIPLE
             parts @ parts.push("multiple")
