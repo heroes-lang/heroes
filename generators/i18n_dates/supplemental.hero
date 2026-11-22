@@ -1,0 +1,116 @@
+# What `date_tables` holds of CLDR's supplemental data, read from
+# `cldr-core/supplemental/numberingSystems.json`, `weekData.json`,
+# `timeData.json` and `dayPeriods.json`: each a list of keys in the order of
+# their bytes and the value of each.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+
+# Keys and the value of each, in the order of the keys' bytes.
+record Pairs
+    keys_of: [str]
+    values: [str]
+
+# `found`'s keys in the order of their bytes, and their values in that order.
+function pairs_of(found: {str: str} lent) -> Pairs
+    names = sort(keys(found))
+    values: [str] @= []
+
+    for name in names
+        values @ values.push(found[name].must())
+
+    return Pairs(keys_of: names, values: values)
+
+# The supplemental file `file` of `cldr-core` at the keys `path`.
+#
+# Fails as `cldrkit.member_at` fails.
+function supplemental(release: cldrkit.Release lent, file: str, path: [str]) -> json.Value?
+    return cldrkit.member_at(release, name: "cldr-core/supplemental/" + file, path: path)
+
+# The numbering systems with ten digits, `numeric` ones, and their digits.
+#
+# Fails as reading the file fails.
+function digit_systems(release: cldrkit.Release lent) -> Pairs?
+    found: {str: str} @= {}
+
+    for one in cldrkit.entries(supplemental(release, file: "numberingSystems.json", path: ["supplemental", "numberingSystems"])?)?
+        if json.text_of(json.member(one.value, key: "_type")?)? == "numeric"
+            digits = json.text_of(json.member(one.value, key: "_digits")?)?
+
+            if digits.chars().len() == 10
+                found[one.key] @ digits
+
+    return ok(pairs_of(found))
+
+# The regions of `weekData.json`'s member `name`, `firstDay` or `minDays`,
+# and the value of each; a key naming an alternative (`GB-alt-variant`) is
+# left out.
+#
+# Fails as reading the file fails.
+function week_data(release: cldrkit.Release lent, name: str) -> Pairs?
+    found: {str: str} @= {}
+
+    for one in cldrkit.entries(supplemental(release, file: "weekData.json", path: ["supplemental", "weekData", name])?)?
+        if !strings.contains(s: one.key, substr: "-alt-")
+            found[one.key] @ json.text_of(one.value)?
+
+    return ok(pairs_of(found))
+
+# The regions and languages of `timeData.json`, and the hour each prefers.
+#
+# Fails as reading the file fails.
+function hour_cycles(release: cldrkit.Release lent) -> Pairs?
+    found: {str: str} @= {}
+
+    for one in cldrkit.entries(supplemental(release, file: "timeData.json", path: ["supplemental", "timeData"])?)?
+        found[one.key] @ json.text_of(json.member(one.value, key: "_preferred")?)?
+
+    return ok(pairs_of(found))
+
+# The languages of `dayPeriods.json`'s rule sets, and the rules of each: every
+# period's `name at` or `name from before`, in the order of the names' bytes,
+# separated by `;`.
+#
+# Fails as reading the file fails, and `invalid` where a rule has neither
+# `_at` nor `_from` and `_before`.
+function period_rules(release: cldrkit.Release lent) -> Pairs?
+    found: {str: str} @= {}
+
+    for language in cldrkit.entries(supplemental(release, file: "dayPeriods.json", path: ["supplemental", "dayPeriodRuleSet"])?)?
+        rules: {str: str} @= {}
+
+        for rule in cldrkit.entries(language.value)?
+            rules[rule.key] @ rule_text(rule.value)?
+
+        written: [str] @= []
+
+        for name in sort(keys(rules))
+            written @ written.push(name + " " + rules[name].must())
+
+        found[language.key] @ written.join(";")
+
+    return ok(pairs_of(found))
+
+# A day period rule's times: its `_at`, or its `_from` and `_before`.
+#
+# Fails `invalid` where it has neither.
+function rule_text(rule: json.Value) -> str?
+    members = json.members_of(rule)?
+
+    match members["_at"]
+        .ok at => return json.text_of(at)
+        .err _ => _ = 0
+
+    return ok(json.text_of(json.member(rule, key: "_from")?)? + " " + json.text_of(json.member(rule, key: "_before")?)?)
+
+## Tests
+
+test "pairs_of: keys in the order of their bytes, each value beside its key"
+    got = pairs_of({"b": "2", "001": "w", "a": "1"})
+    assert got.keys_of == ["001", "a", "b"] && got.values == ["w", "1", "2"]
+
+test "rule_text: a moment, a span, and a rule of neither"
+    assert rule_text(json.parse("{\"_at\": \"12:00\"}").must()).must() == "12:00"
+    assert rule_text(json.parse("{\"_from\": \"06:00\", \"_before\": \"12:00\"}").must()).must() == "06:00 12:00"
+    assert rule_text(json.parse("{\"_from\": \"06:00\"}").must()).is_err()

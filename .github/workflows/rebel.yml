@@ -280,6 +280,9 @@ jobs:
       - name: generators/i18n_numbers, CLDR 49's number table of i18n/numbers
         run: ./heroes run generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
+      - name: generators/i18n_dates, CLDR 49's calendar table of i18n/dates
+        run: ./heroes run generators/i18n_dates/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
       # The five files of `generators/unicode_tables/main.hero`'s `UCD_URL`;
       # the generator holds each to its SHA-256.
       - name: generators/unicode_tables, Unicode 17.0.0's category, property, case and fold tables of unicode
