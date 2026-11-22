@@ -1843,12 +1843,12 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_CONTEXT_MENU) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TRAY) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
-    if ((kind == HERO_UI_WINDOW) != (parent == 0) || parent < 0) {
-        (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window has none, every other kind one", (long long)kind, (long long)parent);
+    if ((kind == HERO_UI_WINDOW || kind == HERO_UI_TRAY) != (parent == 0) || parent < 0) {
+        (void)snprintf(words, sizeof words, "a widget of kind %lld in parent %lld: a window and a tray icon have none, every other kind one", (long long)kind, (long long)parent);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     if (!hero_ui_arm_makes(kind, parent)) {
@@ -2484,6 +2484,8 @@ static const char *hero_ui_making(int64_t kind) {
         return "making a tree";
     case HERO_UI_CONTEXT_MENU:
         return "making a context menu";
+    case HERO_UI_TRAY:
+        return "making a tray icon";
     case HERO_UI_MENU:
         return "making a menu inside a menu";
     default:
@@ -3558,4 +3560,36 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
         return hero_ui_said(HERO_UI_INVALID, "a tree's item is 1 or more and the state 0 or 1");
     }
     return hero_ui_windows_answered(hero_ui_arm_tree_unfold(id, item, on), "unfolding a tree's item", id);
+}
+
+/* -- AN ICON IN THE TRAY, AND AN APP OUT OF THE DOCK ------------------------ */
+
+#if defined(__APPLE__)
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    return hero_ui_appkit_set_docked(on);
+}
+
+#else
+
+/* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
+ * shared words are (`hero_ui_refused`), so no word another call left is told
+ * with it. An arm that draws one defines it in its own member, and its system
+ * leaves this block's condition. */
+
+int64_t hero_ui_arm_set_docked(int64_t on) {
+    (void)on;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer keeps an app out of the Dock on macOS alone, and this system's arm has no such call");
+}
+
+#endif
+
+int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (on != 0 && on != 1) {
+        return hero_ui_said(HERO_UI_INVALID, "whether the app stands in the Dock is 0 or 1");
+    }
+    return hero_ui_answered(hero_ui_arm_set_docked(on), "keeping the app in the Dock or out of it", 0);
 }

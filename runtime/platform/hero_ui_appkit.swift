@@ -215,6 +215,8 @@ private final class Native {
     var check: Int64 = 0
     // A web view's page and what it keeps.
     var page: WebPage?
+    // A tray icon's status item in the menu bar.
+    var status: NSStatusItem?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -273,6 +275,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerNotFound
         }
         let made = Native(id: id, kind: kind, parent: parent)
+        if kind == kindTray {
+            return makeTray(made)
+        }
         if kind == kindWindow {
             let window = KeyedWindow(contentRect: NSRect(x: 0, y: 0, width: 100, height: 100), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -498,6 +503,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         if widget.kind == kindContextMenu, let owner = widgets[widget.parent], let target = contextTarget(owner), target.menu === widget.menu {
             target.menu = nil
+        }
+        if widget.kind == kindContextMenu, let status = widgets[widget.parent]?.status, status.menu === widget.menu {
+            status.menu = nil
+        }
+        if let status = widget.status {
+            NSStatusBar.system.removeStatusItem(status)
+            widget.status = nil
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -812,6 +824,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerNotFound
         }
         switch widget.kind {
+        case kindTray:
+            setTrayText(widget, text)
         case kindWindow:
             widget.window?.title = text
         case kindPage:
@@ -1090,6 +1104,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     }
 
     func setImage(_ id: Int64, _ rgba: UnsafePointer<UInt8>?, _ width: Int64, _ height: Int64) -> Int64 {
+        if let tray = widgets[id], tray.kind == kindTray {
+            return setTrayImage(tray, rgba, width, height)
+        }
         guard let widget = widgets[id], let picture = widget.view as? NSImageView else {
             return widgets[id] == nil ? answerNotFound : answerInvalid
         }
@@ -2264,6 +2281,13 @@ public func hero_ui_appkit_pump(_ ms: Int64) -> Int64 {
     return answerOk
 }
 
+@c
+public func hero_ui_appkit_set_docked(_ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setDocked(on == 1) ?? answerNotFound
+    }
+}
+
 // Ends the wait of the loop `pump` runs, once another member queued an
 // event (a sheet's answer, which AppKit hands its completion handler outside
 // any event): the event is counted as this member's, and an event of the
@@ -2383,12 +2407,19 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             split.addArrangedSubview(pane)
             made.view = pane
         case kindContextMenu:
-            guard let target = contextTarget(owner), !widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) else {
+            if widgets.values.contains(where: { $0.kind == kindContextMenu && $0.parent == owner.id }) {
                 return answerInvalid
             }
             let menu = NSMenu(title: "")
             menu.autoenablesItems = false
-            target.menu = menu
+            // A tray icon's menu opens at its click, the status item's own.
+            if let status = owner.status {
+                status.menu = menu
+            } else if let target = contextTarget(owner) {
+                target.menu = menu
+            } else {
+                return answerInvalid
+            }
             made.menu = menu
         case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable, kindTree:
             guard let content = contentOf(owner) else {
@@ -3115,8 +3146,73 @@ public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) 
 
 // `hero_ui.h`'s `HERO_UI_CONTEXT_MENU`.
 private let kindContextMenu: Int64 = 30
+private let kindTray: Int64 = 31
+
+// The height of a tray icon's image in the menu bar, in points: the bar's
+// own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a
+// 22-point bar, unread here; 18 keeps an image of the program's whole).
+private let trayHeight: CGFloat = 18
 
 extension Backend {
+    // Makes tray icon `made`, a status item of the menu bar's, its parent 0,
+    // showing nothing until the program gives it words or an image.
+    func makeTray(_ made: Native) -> Int64 {
+        if made.parent != 0 {
+            return answerInvalid
+        }
+        let status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        status.isVisible = true
+        made.status = status
+        widgets[made.id] = made
+        return answerOk
+    }
+
+    // Gives tray icon `tray` the words `text`: its tip, and its face where
+    // it shows no image.
+    func setTrayText(_ tray: Native, _ text: String) {
+        guard let button = tray.status?.button else {
+            return
+        }
+        button.toolTip = text.isEmpty ? nil : text
+        button.title = button.image == nil ? text : ""
+        tray.items = [text]
+    }
+
+    // Gives tray icon `tray` the image of `width` by `height` pixels at
+    // `rgba`, drawn `trayHeight` points high in the menu bar, its words then
+    // its tip alone; an image of no pixels shows its words again.
+    func setTrayImage(_ tray: Native, _ rgba: UnsafePointer<UInt8>?, _ width: Int64, _ height: Int64) -> Int64 {
+        guard let button = tray.status?.button else {
+            return answerInvalid
+        }
+        let words = tray.items.first ?? ""
+        if width == 0 || height == 0 {
+            button.image = nil
+            button.title = words
+            return answerOk
+        }
+        guard let rgba = rgba, let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(width), pixelsHigh: Int(height), bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bitmapFormat: [.alphaNonpremultiplied], bytesPerRow: Int(width) * 4, bitsPerPixel: 32), let into = rep.bitmapData else {
+            return answerLimit
+        }
+        into.update(from: rgba, count: Int(width) * Int(height) * 4)
+        let image = NSImage(size: NSSize(width: trayHeight * CGFloat(width) / CGFloat(height), height: trayHeight))
+        image.addRepresentation(rep)
+        button.image = image
+        button.title = ""
+        return answerOk
+    }
+
+    // Shows the app in the Dock and with a menu bar of its own, `on`, or
+    // keeps it out of both, its tray icons and windows staying, as a menu-bar
+    // utility does (`NSApplication.ActivationPolicy.accessory`).
+    func setDocked(_ on: Bool) -> Int64 {
+        guard NSApp.setActivationPolicy(on ? .regular : .accessory) else {
+            words = "the system refused to change whether the app stands in the Dock"
+            return answerOther
+        }
+        return answerOk
+    }
+
     // The view whose menu a context menu of `owner` is: the one the
     // person's right click lands on, a list's or a table's rows, a tree's
     // outline, a text area's text, a window's content.

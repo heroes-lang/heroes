@@ -147,6 +147,13 @@ int64_t hero_ui_arm_answer_dialog(int64_t dialog, int64_t value, const uint8_t *
 void hero_ui_arm_dialogs_end(int64_t window);
 int64_t hero_ui_arm_dialogs_words(char *words, int64_t count);
 
+/* THE TRAY (`hero_ui.h`): a tray icon is a kind `hero_ui_arm_makes` and
+ * `create` answer, its words and its image `set_text`'s and `set_image`'s;
+ * `set_docked` keeps the app in the Dock or out of it. `hero_ui.c` defines
+ * `set_docked` on macOS, and for the Win32 and GTK 4 arms as a refusal in
+ * CALLS NO C ARM DRAWS YET until an arm defines its own. */
+int64_t hero_ui_arm_set_docked(int64_t on);
+
 /* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
  * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
  * person has answered, writing the answer through its last parameter (the

@@ -1037,4 +1037,22 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
  * read by `hero_ui_event_text`. */
 #define HERO_UI_EVENT_DIALOG 17
 
+/* -- AN ICON IN THE TRAY, AND AN APP OUT OF THE DOCK -------------------------
+ *
+ * wxWidgets' `wxTaskBarIcon`, Tauri's tray: an icon the system shows in its
+ * tray, at the right of the menu bar on macOS, with a menu the person opens
+ * by clicking it, and a utility that lives there alone. A widget of kind
+ * `HERO_UI_TRAY` stands in no window, its parent 0, as a window's; one app
+ * may show several. `hero_ui_set_image` gives its icon, pixels as an
+ * image's, drawn at the menu bar's height on macOS; `hero_ui_set_text` its
+ * words, shown where it has no icon and as its tip. Its menu is a context
+ * menu whose parent is the tray (A CONTEXT MENU), each item's choosing
+ * queuing `HERO_UI_EVENT_MENU`. Destroying it takes it from the tray. */
+#define HERO_UI_TRAY 31
+
+/* Shows the app in the Dock and with a menu bar of its own, `on` 1, as it
+ * opens, or keeps it out of both, 0, its tray icons and its windows staying:
+ * a utility of the tray alone (macOS's accessory application). 0, or -1. */
+int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on);
+
 #endif

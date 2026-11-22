@@ -191,6 +191,9 @@ extern "hero_ui.h"
     constant HERO_UI_CONTEXT_MENU: i64
     # A dialog's answer, queued once the person gives it.
     constant HERO_UI_EVENT_DIALOG: i64
+    # An icon in the tray, and an app out of the Dock.
+    constant HERO_UI_TRAY: i64
+    function hero_ui_set_docked(app: App, on: i64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, dialog: i64, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
@@ -996,6 +999,14 @@ function ask(app: App, dialog: i64, window: i64, tone: i64, @title: [u8], title_
         buttons_count: buttons_count,
         cancel: cancel
     )
+
+# 0 once the app stands in the Dock and with a menu bar of its own, `on`
+# 1, or out of both, 0; or -1.
+#
+# - `app`: the app.
+# - `on`: 1 or 0.
+function set_docked(app: App, on: i64) -> i64
+    return hero_ui_set_docked(app, on: on)
 
 ## Tests
 

@@ -41,7 +41,7 @@ function made(app: ui.App, n: model.Node) -> ()?
     if model.has_range(n.kind) || n.kind == hero_ui.HERO_UI_CHECKBOX
         push_value(app, n: n)?
 
-    if n.kind == hero_ui.HERO_UI_IMAGE
+    if n.kind == hero_ui.HERO_UI_IMAGE || n.kind == hero_ui.HERO_UI_TRAY && n.pixels.len() > 0
         push_image(app, n: n)?
 
     if n.masked && hero_ui.set_masked(app.handle, id: n.id, on: 1) < 0
@@ -59,13 +59,13 @@ function made(app: ui.App, n: model.Node) -> ()?
             return failure.last(f"sizing window {n.id}")
     return ok()
 
-# The native parent of `n`: none for a window; the menu for a menu's item
+# The native parent of `n`: none for a window and a tray icon; the menu for a menu's item
 # and a menu inside a menu; the tabs for a page and the split for a pane;
 # the widget for its context menu;
 # for every other widget the frame it stands in, the nearest window, page,
 # scrolled box or pane over it.
 function native_parent(app: ui.App, n: model.Node) -> i64
-    if n.kind == hero_ui.HERO_UI_WINDOW
+    if n.kind == hero_ui.HERO_UI_WINDOW || n.kind == hero_ui.HERO_UI_TRAY
         return 0
 
     if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE || n.kind == hero_ui.HERO_UI_CONTEXT_MENU
@@ -198,7 +198,7 @@ function placed(app: ui.App, nodes: {i64: model.Node}, window: i64) -> ()?
     if hero_ui.set_size(app.handle, id: window, width: w.w, height: w.h) < 0
         return failure.last(f"sizing window {window}")
 
-    for id in model.subtree(model.Model(nodes: nodes, next_id: 0, windows: [], timers: []), id: window)
+    for id in model.subtree(model.Model(nodes: nodes, next_id: 0, windows: [], timers: [], trays: []), id: window)
         n = nodes[id].must()
 
         # The system sizes a page and a pane itself.

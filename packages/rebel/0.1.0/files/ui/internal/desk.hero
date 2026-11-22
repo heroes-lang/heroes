@@ -427,6 +427,16 @@ function set_modal(@app: ui.App, window: ui.Widget, on: bool) -> ()?
     model.put(@app.table, n: n)
     return ok()
 
+# Keeps the app in the Dock or out of it (`ui.set_docked`), kept on both
+# sides.
+function set_docked(@app: ui.App, on: bool) -> ()?
+    check.opened(app)?
+
+    if app.native && hero_ui.set_docked(app.handle, on: check.number_of(on)) < 0
+        return failure.last("keeping the app in the Dock or out of it")
+    app.docked @ on
+    return ok()
+
 # Gives the app its icon (`ui.set_icon`).
 function set_icon(@app: ui.App, img: image.Image) -> ()?
     check.opened(app)?
@@ -453,9 +463,15 @@ function set_icon(@app: ui.App, img: image.Image) -> ()?
     return ok()
 
 # Whether the person can reach window `window` with an act: it is shown, and
-# no other window of the app is modal.
+# no other window of the app is modal; for `window` 0, a tray icon's menu,
+# no window is modal.
 function open_to_person(app: ui.App, window: i64) -> bool
     held = modal_of(app)
+
+    # A tray icon's menu stands in no window: the person reaches it where
+    # no window holds them.
+    if window == 0
+        return held == 0
 
     if held != 0 && held != window
         return false

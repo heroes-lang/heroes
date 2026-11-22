@@ -482,12 +482,28 @@ capability ui/pickers  a date, a colour or a font chosen in the system's own pic
   python  colorchooser.askcolor, colorchooser.Chooser, font.Font, font.families, font.names, font.nametofont
   wx      wxDatePickerCtrl, wxTimePickerCtrl, wxColourPickerCtrl, wxFontPickerCtrl, wxColourDialog, wxFontDialog
 
-capability ui/tray  an icon in the system's tray or menu bar, and its notifications
-  heroes  pending
+capability ui/tray  an icon in the system's tray or menu bar, with the menu its click opens
+  heroes  ui.tray, ui.Kind.tray, ui.context_menu, ui.set_picture, ui.set_text
   go      -
   rust    tauri::tray::TrayIcon
   python  -
-  wx      wxTaskBarIcon (SetIcon, PopupMenu), wxNotificationMessage
+  wx      wxTaskBarIcon (SetIcon, PopupMenu)
+  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows pending (`Shell_NotifyIconW` and a hidden window for its messages), Linux pending (GTK 4 has no tray: a StatusNotifierItem over D-Bus)
+
+capability ui/docked  an app out of the Dock and the menu bar, living in the tray alone
+  heroes  ui.set_docked
+  go      -
+  rust    -
+  python  -
+  wx      -
+  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows pending (no task bar button: `WS_EX_TOOLWINDOW` on its windows, unread), Linux pending (GTK 4 removed skip-taskbar, so `unsupported` there)
+
+capability ui/notification  a notification of the system's: a title and its words
+  heroes  pending
+  go      -
+  rust    -
+  python  -
+  wx      wxNotificationMessage
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  pending

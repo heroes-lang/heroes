@@ -193,6 +193,9 @@ record App
     shown: [dialogs.Shown]
     # The number of the last dialog the app showed, 0 before the first.
     dialogs_made: i64
+    # Whether the app stands in the Dock and with a menu bar of its own
+    # (`set_docked`), as it opens.
+    docked: bool
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -297,6 +300,8 @@ variant Kind
     tree
     # A menu shown where the person right-clicks a widget.
     context_menu
+    # An icon in the system's tray.
+    tray
 
 # What `widget` is.
 #
@@ -1116,10 +1121,11 @@ function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
 function selection_of(app: App, widget: Widget) -> [i64]?
     return state.selection_of(app, widget: widget)
 
-# Shows `img` in picture `widget`, which takes its size.
+# Shows `img` in picture `widget`, which takes its size, or as tray icon
+# `widget`'s image, drawn at the menu bar's height on macOS.
 #
 # - `app`: the app holding it.
-# - `widget`: a picture.
+# - `widget`: a picture or a tray icon.
 # - `img`: the image, of any format; its sides 0 to `MOST_SIZE`.
 #
 # Fails `closed`, `invalid`, `failed`.
@@ -1147,15 +1153,45 @@ function menu(@app: App, into: Widget, title: str) -> Widget?
 # items are made by `menu_item`, `menu_separator`, `check_item`,
 # `radio_item` and `menu` into it, and choosing one is `.menu_chosen`; a
 # shortcut set on one of its items is shown and takes no key. One a widget;
-# `destroy` takes it away.
+# `destroy` takes it away. A tray icon's is the menu its click opens.
 #
 # - `app`: the app it is made in.
-# - `widget`: a widget the person clicks, or a window for its content.
+# - `widget`: a widget the person clicks, a window for its content, or a
+#   tray icon.
 #
 # Fails `closed`, `invalid` for a menu, a menu's item, a timer, a page or a
 # pane, or a widget with a context menu already, `failed`.
 function context_menu(@app: App, widget: Widget) -> Widget?
     return makers.context_menu(@app, widget: widget)
+
+# A new icon in the system's tray, at the right of the menu bar on macOS,
+# showing `text`, as wxWidgets' `wxTaskBarIcon` and Tauri's tray: its menu
+# is a context menu made on it (`context_menu`), which the person opens by
+# clicking the icon, its items' choosing `.menu_chosen`; `set_picture`
+# gives it an image, and its text then stays as its tip. It stands in no
+# window, and `destroy` takes it from the tray.
+#
+# - `app`: the app it is made in.
+# - `text`: one line without a zero byte, what it shows where it has no
+#   image and its tip.
+#
+# Fails `closed`, `invalid`, `unsupported` where the system's arm draws no
+# tray (Windows and Linux, pending), `failed`. See also `set_docked`.
+function tray(@app: App, text: str) -> Widget?
+    return makers.tray(@app, text: text)
+
+# Shows the app in the Dock and with a menu bar of its own, `on`, as it
+# opens, or keeps it out of both, its tray icons and its windows staying:
+# a utility of the tray alone, as Electron's `app.setActivationPolicy`
+# with `accessory`. Kept on the headless side.
+#
+# - `app`: the app.
+# - `on`: whether it stands in the Dock.
+#
+# Fails `closed`, `unsupported` where the system's arm has no such call
+# (Windows and Linux, pending), `failed`. See also `tray`.
+function set_docked(@app: App, on: bool) -> ()?
+    return desk.set_docked(@app, on: on)
 
 # A new item at the end of menu or context menu `into`, showing `text`;
 # choosing it, by the mouse or its shortcut, is `.menu_chosen`.

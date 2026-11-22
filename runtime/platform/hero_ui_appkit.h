@@ -124,6 +124,8 @@ int64_t hero_ui_appkit_inject(int64_t kind, int64_t id, int64_t value, int64_t s
 
 void hero_ui_appkit_wake(void);
 
+int64_t hero_ui_appkit_set_docked(int64_t on);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);

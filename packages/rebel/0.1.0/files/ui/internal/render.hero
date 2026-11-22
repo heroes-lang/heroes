@@ -19,6 +19,9 @@ function lines(@app: ui.App) -> [str]?
     for window in app.table.windows
         drawn(app.table, id: window, depth: 0, shown: true, @out)
 
+    for tray in app.table.trays
+        drawn(app.table, id: tray, depth: 0, shown: true, @out)
+
     return ok(out)
 
 # Writes node `id` and what it holds into `out`, `depth` levels deep;

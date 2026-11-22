@@ -107,6 +107,9 @@ function of_code(code: i64) -> ui.Kind
     if code == hero_ui.HERO_UI_CONTEXT_MENU
         return .context_menu
 
+    if code == hero_ui.HERO_UI_TRAY
+        return .tray
+
     if code == hero_ui.HERO_UI_PANE
         return .pane
     return .webview
@@ -364,9 +367,9 @@ function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
         what: "a list, a combo box, a radio group, tabs, a table or a tree"
     )
 
-# Shows an image in a picture (`ui.set_picture`).
+# Shows an image in a picture or as a tray icon (`ui.set_picture`).
 function set_picture(@app: ui.App, widget: ui.Widget, img: image.Image) -> ()?
-    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_IMAGE], what: "a picture")?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_IMAGE, hero_ui.HERO_UI_TRAY], what: "a picture or a tray icon")?
     makers.with_pixels(@n, img: img)?
 
     if app.native
