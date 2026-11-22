@@ -330,6 +330,19 @@ jobs:
             https://data.iana.org/time-zones/releases/tzdata2026f.tar.gz
           ./heroes run generators/time_zones/main.hero -- check build/generators/tzdata2026f.tar.gz
 
+      # The eight files of `generators/unicode_segment/main.hero`'s `UCD_URL`,
+      # each under its folder there; the generator holds each to its SHA-256.
+      - name: generators/unicode_segment, Unicode 17.0.0's break classes, widths and flags of unicode/segment
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in LineBreak.txt EastAsianWidth.txt DerivedCoreProperties.txt UnicodeData.txt \
+            auxiliary/WordBreakProperty.txt auxiliary/SentenceBreakProperty.txt auxiliary/GraphemeBreakProperty.txt \
+            emoji/emoji-data.txt; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
+              "https://www.unicode.org/Public/17.0.0/ucd/$f"
+          done
+          ./heroes run generators/unicode_segment/main.hero -- check build/generators/ucd-17.0.0
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
