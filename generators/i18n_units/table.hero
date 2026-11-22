@@ -32,7 +32,7 @@ constant HEADER: [str]
         "# letters, `+` and `/`, as `date_data.number_at` reads them."
         "#"
         "# Generated, never edited by hand: the Heroes program"
-        "# `packages/rebel/generate/i18n_units/` read CLDR 49's JSON,"
+        "# `generators/i18n_units/` read CLDR 49's JSON,"
         "# `cldr-49.0.0-json-full.zip` of"
         "# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/"
         "# (SHA-256"
