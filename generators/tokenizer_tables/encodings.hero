@@ -1,0 +1,175 @@
+# The pattern and the special tokens of each encoding the tables carry, as
+# tiktoken 0.14.0's `tiktoken_ext/openai_public.py` defines them. That file
+# is Python, which this program does not run; so each piece it takes from it
+# is written here, and `held` finds every piece in the file's text exactly
+# as written there, where a newer file that changed one would not hold it.
+
+use <rebel>/strings
+
+# A special token: its text and its number.
+record Special
+    text: str
+    number: i64
+
+# What the tables say of one encoding.
+record Encoding
+    # The pattern, as tiktoken writes it.
+    pattern: str
+    # Its special tokens in the order of their numbers, two of one number in
+    # the order `openai_public.py`'s dictionary inserts them.
+    specials: [Special]
+    # The texts of `openai_public.py` the pattern and the specials are read
+    # from, each found there by `held`.
+    evidence: [str]
+
+# `cl100k_base`: its pattern, a raw string, and its five special tokens.
+function cl100k_base() -> Encoding
+    pattern = "'(?i:[sdmt]|ll|ve|re)|[^\\r\\n\\p{L}\\p{N}]?+\\p{L}++|\\p{N}{1,3}+| ?[^\\s\\p{L}\\p{N}]++[\\r\\n]*+|\\s++$|\\s*[\\r\\n]|\\s+(?!\\S)|\\s"
+    return Encoding(
+        pattern: pattern,
+        specials: [Special(text: "<|endoftext|>", number: 100257), Special(text: "<|fim_prefix|>", number: 100258), Special(text: "<|fim_middle|>", number: 100259), Special(text: "<|fim_suffix|>", number: 100260), Special(text: "<|endofprompt|>", number: 100276)],
+        evidence: ["\"pat_str\": r\"\"\"" + pattern + "\"\"\",", "ENDOFTEXT = \"<|endoftext|>\"", "FIM_PREFIX = \"<|fim_prefix|>\"", "FIM_MIDDLE = \"<|fim_middle|>\"", "FIM_SUFFIX = \"<|fim_suffix|>\"", "ENDOFPROMPT = \"<|endofprompt|>\"", "        ENDOFTEXT: 100257,\n        FIM_PREFIX: 100258,\n        FIM_MIDDLE: 100259,\n        FIM_SUFFIX: 100260,\n        ENDOFPROMPT: 100276,\n"]
+    )
+
+# The seven alternatives `o200k_base`'s pattern joins with `|`.
+function o200k_parts() -> [str]
+    return [
+        "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]*[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]+(?i:'s|'t|'re|'ve|'m|'ll|'d)?"
+        "[^\\r\\n\\p{L}\\p{N}]?[\\p{Lu}\\p{Lt}\\p{Lm}\\p{Lo}\\p{M}]+[\\p{Ll}\\p{Lm}\\p{Lo}\\p{M}]*(?i:'s|'t|'re|'ve|'m|'ll|'d)?"
+        "\\p{N}{1,3}"
+        " ?[^\\s\\p{L}\\p{N}]+[\\r\\n/]*"
+        "\\s*[\\r\\n]+"
+        "\\s+(?!\\S)"
+        "\\s+"
+    ]
+
+# `o200k_base`: its pattern, the seven parts joined by `|` as the file's
+# `"|".join` joins them, and its two special tokens.
+function o200k_base() -> Encoding
+    parts = o200k_parts()
+    listed: [str] @= []
+
+    for part in parts
+        listed @ listed.push("            r\"\"\"" + part + "\"\"\",")
+
+    return Encoding(
+        pattern: parts.join("|"),
+        specials: [Special(text: "<|endoftext|>", number: 199999), Special(text: "<|endofprompt|>", number: 200018)],
+        evidence: ["    special_tokens = {ENDOFTEXT: 199999, ENDOFPROMPT: 200018}", "    pat_str = \"|\".join(\n        [\n" + listed.join("\n") + "\n        ]\n    )"]
+    )
+
+# The tokens `o200k_harmony` names, in the order its dictionary writes them
+# after `o200k_base`'s two: `<|endoftext|>` again, which keeps its place and
+# its number, then the rest.
+function harmony_named() -> [Special]
+    return [
+        Special(text: "<|startoftext|>", number: 199998)
+        Special(text: "<|endoftext|>", number: 199999)
+        Special(text: "<|reserved_200000|>", number: 200000)
+        Special(text: "<|reserved_200001|>", number: 200001)
+        Special(text: "<|return|>", number: 200002)
+        Special(text: "<|constrain|>", number: 200003)
+        Special(text: "<|reserved_200004|>", number: 200004)
+        Special(text: "<|channel|>", number: 200005)
+        Special(text: "<|start|>", number: 200006)
+        Special(text: "<|end|>", number: 200007)
+        Special(text: "<|message|>", number: 200008)
+        Special(text: "<|reserved_200009|>", number: 200009)
+        Special(text: "<|reserved_200010|>", number: 200010)
+        Special(text: "<|reserved_200011|>", number: 200011)
+        Special(text: "<|call|>", number: 200012)
+    ]
+
+# The first and the end of the numbers `o200k_harmony` reserves by its
+# comprehension, `<|reserved_N|>` for each.
+constant RESERVED_FIRST: i64
+    200013
+
+constant RESERVED_END: i64
+    201088
+
+# `o200k_harmony`: `o200k_base`'s pattern and special tokens, then those it
+# names, then its reserved ones, in the order of their numbers.
+function o200k_harmony() -> Encoding
+    base = o200k_base()
+    inserted: [Special] @= []
+
+    for one in base.specials
+        inserted @ inserted.push(one)
+
+    named: [str] @= []
+
+    for one in harmony_named()
+        named @ named.push(f"        \"{one.text}\": {one.number},")
+
+        if !has_text(inserted, text: one.text)
+            inserted @ inserted.push(one)
+
+    for n in range(from: RESERVED_FIRST, to: RESERVED_END)
+        inserted @ inserted.push(Special(text: f"<|reserved_{n}|>", number: n))
+
+    return Encoding(
+        pattern: base.pattern,
+        specials: by_number(inserted),
+        evidence: ["    base_enc = o200k_base()\n    name = \"o200k_harmony\"\n    pat_str = base_enc[\"pat_str\"]\n    mergeable_ranks = base_enc[\"mergeable_ranks\"]\n    special_tokens = {\n        **base_enc[\"special_tokens\"],\n" + named.join("\n") + "\n    } | {f\"<|reserved_{i}|>\": i for i in range(" + to_str(RESERVED_FIRST) + ", " + to_str(RESERVED_END) + ")}"]
+    )
+
+# Whether `specials` holds one whose text is `text`.
+function has_text(specials: [Special] lent, text: str) -> bool
+    for one in specials
+        if one.text == text
+            return true
+
+    return false
+
+# `specials` in the order of their numbers, two of one number in the order
+# they come in.
+function by_number(specials: [Special]) -> [Special]
+    numbers: {i64: i64} @= {}
+
+    for one in specials
+        numbers[one.number] @ 0
+
+    out: [Special] @= []
+
+    for number in sort(keys(numbers))
+        for one in specials
+            if one.number == number
+                out @ out.push(one)
+
+    return out
+
+# Nothing where every piece of `encoding.evidence` stands in `source`, the
+# text of `openai_public.py`.
+#
+# - `encoding`: the encoding.
+# - `name`: its name, which a failure names.
+# - `source`: the file's text.
+#
+# Fails `invalid`, naming the first piece the file does not hold.
+function held(encoding: Encoding lent, name: str, source: str) -> ()?
+    for piece in encoding.evidence
+        if !strings.contains(s: source, substr: piece)
+            return fail(code: "invalid", msg: f"openai_public.py does not hold what {name} reads from it: {piece}")
+
+    return ok()
+
+## Tests
+
+test "by_number: ordered by number, a tie kept in the order it came"
+    specials = by_number([Special(text: "b", number: 2), Special(text: "a", number: 1), Special(text: "c", number: 2)])
+    assert specials == [Special(text: "a", number: 1), Special(text: "b", number: 2), Special(text: "c", number: 2)]
+
+test "o200k_harmony: 1,091 tokens, the base's two first among their numbers, and the tie at 200018"
+    specials = o200k_harmony().specials
+    assert specials.len() == 1091
+    assert specials[0] == Special(text: "<|startoftext|>", number: 199998)
+    assert specials[1] == Special(text: "<|endoftext|>", number: 199999)
+    assert specials[20] == Special(text: "<|endofprompt|>", number: 200018)
+    assert specials[21] == Special(text: "<|reserved_200018|>", number: 200018)
+    assert specials[1090] == Special(text: "<|reserved_201087|>", number: 201087)
+
+test "held: a piece the source holds, and one it does not"
+    one = Encoding(pattern: "p", specials: [], evidence: ["ab", "cd"])
+    assert !held(one, name: "x", source: "abcd").is_err()
+    assert held(one, name: "x", source: "abc").is_err()

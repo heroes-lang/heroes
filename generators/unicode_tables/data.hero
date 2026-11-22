@@ -1,0 +1,134 @@
+# The Unicode Character Database 17.0.0 read for `unicode`'s tables, as UAX
+# #44 describes its files: `UnicodeData.txt` (each code point's general
+# category and simple case mappings, a range given by a line `<…, First>`
+# and a line `<…, Last>`, every code point it does not list `Cn`);
+# `SpecialCasing.txt` (the case mappings of several characters, those with a
+# condition left out, which apply only in some languages or contexts); and
+# `CaseFolding.txt` (status `C` the simple and full folding, `S` the simple
+# alone, `F` the full alone, `T` the Turkic, which is left out).
+
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+# What `UnicodeData.txt` gives every code point.
+record Characters
+    # The general category of each code point, its two letters.
+    categories: [str]
+    # The simple upper, lower and title case of each, itself where the file
+    # gives none; a title case it does not give is the upper case.
+    upper: [i64]
+    lower: [i64]
+    title: [i64]
+
+# What `UnicodeData.txt`'s `text` gives every code point.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid` where a line does not have fifteen fields or a code point
+# does not read, and where a range's first line is not followed by its last.
+function characters(text: str) -> Characters?
+    categories: [str] @= []
+    upper: [i64] @= []
+    lower: [i64] @= []
+    title: [i64] @= []
+    at @= 0
+
+    while at < ucdkit.POINTS
+        categories @ categories.push("Cn")
+        upper @ upper.push(at)
+        lower @ lower.push(at)
+        title @ title.push(at)
+        at @ at + 1
+
+    first @= -1
+
+    for line in strings.split(s: text, sep: "\n")
+        if line != ""
+            fields = strings.split(s: line, sep: ";")
+
+            if fields.len() != 15
+                return fail(code: "invalid", msg: f"the line \"{line}\" does not have fifteen fields")
+            point = ucdkit.hex_of(fields[0])?
+
+            if strings.has_suffix(s: fields[1], suffix: ", First>")
+                first @ point
+            else if strings.has_suffix(s: fields[1], suffix: ", Last>")
+                if first < 0
+                    return fail(code: "invalid", msg: f"the range ending at {point} has no first line")
+                at @ first
+
+                while at <= point
+                    categories[at] @ fields[2]
+                    at @ at + 1
+
+                first @ -1
+            else
+                categories[point] @ fields[2]
+
+                if fields[12] != ""
+                    upper[point] @ ucdkit.hex_of(fields[12])?
+
+                if fields[13] != ""
+                    lower[point] @ ucdkit.hex_of(fields[13])?
+
+                if fields[14] != ""
+                    title[point] @ ucdkit.hex_of(fields[14])?
+                else
+                    title[point] @ upper[point]
+
+    return ok(Characters(categories: categories, upper: upper, lower: lower, title: title))
+
+# The mappings of several characters `SpecialCasing.txt`'s `text` gives
+# without a condition, for one of lower (field 1), title (field 2) and upper
+# (field 3), by code point.
+#
+# - `text`: the file's whole text.
+# - `field`: 1, 2 or 3.
+#
+# Fails as reading its lines fails.
+function special(text: str, field: i64) -> {i64: [i64]}?
+    out: {i64: [i64]} @= {}
+
+    for line in ucdkit.data_lines(text)?
+        conditioned = line.fields.len() > 4 && line.fields[3] != ""
+
+        if !conditioned
+            points = ucdkit.points_of(line.fields[field - 1])?
+
+            if points.len() > 1
+                out[line.first] @ points
+
+    return ok(out)
+
+# The foldings of `CaseFolding.txt`'s `text` of the status `status`, `C`,
+# `S` or `F`, by code point.
+#
+# Fails as reading its lines fails.
+function foldings(text: str, status: str) -> {i64: [i64]}?
+    out: {i64: [i64]} @= {}
+
+    for line in ucdkit.data_lines(text)?
+        if line.fields[0] == status
+            out[line.first] @ ucdkit.points_of(line.fields[1])?
+
+    return ok(out)
+
+## Tests
+
+test "characters: a mapping given, a title case not given read as the upper, a range of one category, and a code point not listed"
+    text = "0061;LATIN SMALL LETTER A;Ll;0;L;;;;;N;;;0041;;0041\n01C5;LATIN CAPITAL LETTER D WITH SMALL LETTER Z WITH CARON;Lt;0;L;<compat> 0044 017E;;;;N;;;01C4;01C6;01C5\n3400;<CJK Ideograph Extension A, First>;Lo;0;L;;;;;N;;;;;\n4DBF;<CJK Ideograph Extension A, Last>;Lo;0;L;;;;;N;;;;;\n00E0;LATIN SMALL LETTER A WITH GRAVE;Ll;0;L;0061 0300;;;;N;;;00C0;;\n"
+    got = characters(text).must()
+    assert got.categories[0x61] == "Ll" && got.upper[0x61] == 0x41 && got.title[0x61] == 0x41
+    assert got.title[0xe0] == 0xc0 && got.lower[0x1c5] == 0x1c6
+    assert got.categories[0x3400] == "Lo" && got.categories[0x4dbf] == "Lo" && got.categories[0x4dc0] == "Cn"
+    assert got.upper[0x62] == 0x62
+    assert characters("0061;A;Ll\n").is_err()
+
+test "special and foldings: a mapping of several characters, one with a condition left out, and each status apart"
+    casing = "00DF; 00DF; 0053 0073; 0053 0053; # LATIN SMALL LETTER SHARP S\n0130; 0069 0307; 0130; 0130; tr; # LATIN CAPITAL LETTER I WITH DOT ABOVE\n0049; 0131; 0049; 0049; tr; # LATIN CAPITAL LETTER I\n"
+    assert special(casing, field: 3).must() == {0xdf: [0x53, 0x53]}
+    assert special(casing, field: 1).must() == {}
+    folding = "0041; C; 0061; # A\n00DF; F; 0073 0073; # SHARP S\n1E9E; S; 00DF; # CAPITAL SHARP S\n"
+    assert foldings(text: folding, status: "C").must() == {0x41: [0x61]}
+    assert foldings(text: folding, status: "F").must() == {0xdf: [0x73, 0x73]}
+    assert foldings(text: folding, status: "S").must() == {0x1e9e: [0xdf]}

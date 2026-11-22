@@ -1,0 +1,156 @@
+# The text of `i18n`'s `plural_tables` from CLDR's supplemental data: for
+# each locale CLDR gives rules, its cardinal rules (`plurals.json`), its
+# ordinal rules (`ordinals.json`) and its plural ranges (`pluralRanges.json`).
+#
+# A locale's rules are written as `parse_plural_rules` reads them: each
+# category in the order CLDR lists it, `category: rule`, the rule's text as
+# CLDR writes it with the space at its ends left off, apart by `; `. Its
+# ranges are `start end result` for each range CLDR lists, in its order,
+# apart by `;`.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+use <tablekit>/tablekit
+
+# The prefix of a rule's key in `plurals.json` and `ordinals.json`.
+constant RULE_KEY: str
+    "pluralRule-count-"
+
+# The prefix of a range's key in `pluralRanges.json`, and the word between
+# its start and its end.
+constant RANGE_KEY: str
+    "pluralRange-start-"
+
+constant RANGE_END: str
+    "-end-"
+
+# A locale and what the table writes for it.
+record Row
+    locale: str
+    text: str
+
+# The rows of the object `by_locale`, `plurals-type-cardinal` or
+# `plurals-type-ordinal`, in the order of the locales' bytes.
+#
+# - `by_locale`: each locale's rules, keyed by `RULE_KEY` and a category.
+#
+# Fails `invalid` where a key is not a rule's, and as reading the JSON fails.
+function rule_rows(by_locale: json.Value) -> [Row]?
+    texts: {str: str} @= {}
+
+    for locale in cldrkit.entries(by_locale)?
+        parts: [str] @= []
+
+        for rule in cldrkit.entries(locale.value)?
+            if !strings.has_prefix(s: rule.key, prefix: RULE_KEY)
+                return fail(code: "invalid", msg: f"{locale.key} has a key {rule.key} that is no rule's")
+            category = strings.trim_prefix(s: rule.key, prefix: RULE_KEY)
+            parts @ parts.push(category + ": " + strings.trim(json.text_of(rule.value)?))
+
+        texts[locale.key] @ parts.join("; ")
+
+    return ok(sorted_rows(texts))
+
+# The rows of `plurals` of `pluralRanges.json`, in the order of the locales'
+# bytes.
+#
+# - `by_locale`: each locale's ranges, keyed by `RANGE_KEY`, a start,
+#   `RANGE_END` and an end.
+#
+# Fails `invalid` where a key is not a range's, and as reading the JSON fails.
+function range_rows(by_locale: json.Value) -> [Row]?
+    texts: {str: str} @= {}
+
+    for locale in cldrkit.entries(by_locale)?
+        parts: [str] @= []
+
+        for pair in cldrkit.entries(locale.value)?
+            ends = strings.split(s: strings.trim_prefix(s: pair.key, prefix: RANGE_KEY), sep: RANGE_END)
+
+            if !strings.has_prefix(s: pair.key, prefix: RANGE_KEY) || ends.len() != 2
+                return fail(code: "invalid", msg: f"{locale.key} has a key {pair.key} that is no range's")
+            parts @ parts.push(ends[0] + " " + ends[1] + " " + json.text_of(pair.value)?)
+
+        texts[locale.key] @ parts.join(";")
+
+    return ok(sorted_rows(texts))
+
+# The rows of `texts`, in the order of their locales' bytes.
+function sorted_rows(texts: {str: str} lent) -> [Row]
+    out: [Row] @= []
+
+    for locale in sort(keys(texts))
+        out @ out.push(Row(locale: locale, text: texts[locale].must()))
+
+    return out
+
+# The keys and the values of `rows`, each a constant, with their comments.
+#
+# Fails as writing a literal fails.
+function pair_constants(rows: [Row] lent, keys_name: str, keys_comment: [str], values_name: str, values_comment: [str]) -> [str]?
+    locales: [str] @= []
+    texts: [str] @= []
+
+    for row in rows
+        locales @ locales.push(row.locale)
+        texts @ texts.push(row.text)
+
+    return ok(
+        [tablekit.strings_constant(comment: keys_comment, name: keys_name, items: locales)?, tablekit.strings_constant(comment: values_comment, name: values_name, items: texts)?]
+    )
+
+# The whole text of `plural_tables`.
+#
+# - `release`: CLDR 49's zip, open.
+# - `generated`: the header's lines that say which program wrote it.
+#
+# Fails as reading the three files and writing a literal fail.
+function module_text(release: cldrkit.Release lent, generated: [str]) -> str?
+    plurals = cldrkit.member(release, name: "cldr-core/supplemental/plurals.json")?
+    version = json.text_of(cldrkit.at_keys(plurals, path: ["supplemental", "version", "_cldrVersion"])?)?
+    cardinal = rule_rows(cldrkit.at_keys(plurals, path: ["supplemental", "plurals-type-cardinal"])?)?
+    ordinal = rule_rows(cldrkit.member_at(release, name: "cldr-core/supplemental/ordinals.json", path: ["supplemental", "plurals-type-ordinal"])?)?
+    ranges = range_rows(cldrkit.member_at(release, name: "cldr-core/supplemental/pluralRanges.json", path: ["supplemental", "plurals"])?)?
+    head: [str] @= [
+        f"# The plural rules and plural ranges of CLDR release {version}, for every locale it"
+        "# gives rules: what `plural_rules` reads, in the syntax `parse_plural_rules`"
+        "# reads, samples kept."
+        "#"
+    ]
+
+    for line in generated
+        head @ head.push(line)
+
+    parts: [str] @= [
+        head.join("\n")
+        tablekit.string_constant(comment: ["# The CLDR release the tables hold."], name: "CLDR_VERSION", value: version)?
+    ]
+
+    for one in pair_constants(cardinal, keys_name: "CARDINAL_KEYS", keys_comment: ["# The locales CLDR gives cardinal rules, in the order of their bytes."], values_name: "CARDINAL_RULES", values_comment: ["# Each locale's cardinal rules, in the order of `CARDINAL_KEYS`."])?
+        parts @ parts.push(one)
+
+    for one in pair_constants(ordinal, keys_name: "ORDINAL_KEYS", keys_comment: ["# The locales CLDR gives ordinal rules, in the order of their bytes."], values_name: "ORDINAL_RULES", values_comment: ["# Each locale's ordinal rules, in the order of `ORDINAL_KEYS`."])?
+        parts @ parts.push(one)
+
+    for one in pair_constants(ranges, keys_name: "RANGE_KEYS", keys_comment: ["# The locales CLDR gives plural ranges, in the order of their bytes."], values_name: "RANGE_RULES", values_comment: ["# Each locale's ranges, `start end result` separated by `;`, in the order of", "# `RANGE_KEYS`."])?
+        parts @ parts.push(one)
+
+    return ok(parts.join("\n\n") + "\n")
+
+## Tests
+
+test "rule_rows: categories in CLDR's order, a rule's spaces left off, locales by their bytes"
+    v = json.parse(
+        "{\"am\": {\"pluralRule-count-one\": \"i = 0 or n = 1 @integer 0, 1\", \"pluralRule-count-other\": \" @integer 2~17\"}, \"af\": {\"pluralRule-count-other\": \" @integer 0~15\"}}"
+    ).must()
+    rows = rule_rows(v).must()
+    assert rows == [Row(locale: "af", text: "other: @integer 0~15"), Row(locale: "am", text: "one: i = 0 or n = 1 @integer 0, 1; other: @integer 2~17")]
+    assert rule_rows(json.parse("{\"af\": {\"count-one\": \"x\"}}").must()).is_err()
+
+test "range_rows: each range as start, end and result, in CLDR's order"
+    v = json.parse(
+        "{\"af\": {\"pluralRange-start-one-end-other\": \"other\", \"pluralRange-start-other-end-one\": \"other\"}}"
+    ).must()
+    assert range_rows(v).must() == [Row(locale: "af", text: "one other other;other one other")]
+    assert range_rows(json.parse("{\"af\": {\"pluralRange-start-one\": \"x\"}}").must()).is_err()

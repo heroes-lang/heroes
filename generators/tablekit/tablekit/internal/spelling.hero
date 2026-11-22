@@ -1,0 +1,56 @@
+# Which characters a string literal writes by `\u{…}`, and how: the rule of
+# the compiler's lexer (`selfhost/shown_char.hero`'s `unshowable`, less the
+# NUL and the characters written by a letter), so a table written here reads
+# back as the texts it was made from.
+
+# Whether a string writes the character `code` by `\u{…}`: a control
+# character but the tab, the line feed and the carriage return, a
+# bidirectional control, U+2028 or U+2029.
+#
+# - `code`: a code point.
+function by_code(code: i64) -> bool
+    if code < 32
+        return code != 9 && code != 10 && code != 13
+
+    if code >= 127 && code < 160
+        return true
+
+    if code == 1564 || code == 8206 || code == 8207 || code == 8232 || code == 8233
+        return true
+    return code >= 8234 && code <= 8238 || code >= 8294 && code <= 8297
+
+# `code` in lowercase hexadecimal with no leading zero, the one spelling of
+# `\u{…}`.
+#
+# - `code`: a code point, 0 or more.
+function hex_of(code: i64) -> str
+    digits = "0123456789abcdef"
+    out: [str] @= []
+    rest @= code
+
+    while rest > 0
+        out @ out.push(digits.slice(from: rest % 16, to: rest % 16 + 1))
+        rest @ rest / 16
+
+    if out.len() == 0
+        return "0"
+    ordered: [str] @= []
+    at @= out.len() - 1
+
+    while at >= 0
+        ordered @ ordered.push(out[at])
+        at @ at - 1
+
+    return ordered.join("")
+
+## Tests
+
+test "by_code: the controls but three, the bidirectional marks, the separators, and what a line shows"
+    for code in [1, 8, 11, 12, 27, 31, 127, 128, 159, 1564, 8206, 8207, 8232, 8233, 8234, 8238, 8294, 8297]
+        assert by_code(code)
+
+    for code in [9, 10, 13, 32, 126, 160, 233, 8203, 8205, 8239, 8293, 8298, 65279, 128512]
+        assert !by_code(code)
+
+test "hex_of: zero, one digit, and several"
+    assert hex_of(0) == "0" && hex_of(15) == "f" && hex_of(8207) == "200f" && hex_of(1114111) == "10ffff"

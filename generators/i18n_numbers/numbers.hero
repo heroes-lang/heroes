@@ -1,0 +1,211 @@
+# What `number_tables` holds of each locale, read from its
+# `cldr-numbers-full/main/<locale>/numbers.json` and `currencies.json`.
+#
+# A locale's numbering systems are those it gives symbols for, in the order
+# of their names' bytes. For each, its symbols are the fourteen fields of
+# `SYMBOL_FIELDS`; its patterns the standard decimal, percent, scientific and
+# currency patterns, the currency pattern with a letter beside the number,
+# the accounting pattern and its form with a letter beside the number, the
+# space inserted before and after a currency, and the locale's minimum
+# grouping digits; its compact patterns, short and long, each entry
+# `power count pattern` in the order CLDR writes them. A field CLDR does not
+# give is empty.
+#
+# A locale's currency symbols are, for each currency it names in the order of
+# their codes' bytes, its symbol (the code where it gives none) and its narrow
+# symbol (its symbol where it gives none). The root's block holds every one
+# that is not the code twice; another locale's holds every one that is not the
+# code twice and is not the root's. So a locale that writes a currency's code
+# for both, as `ast` writes `XXX`, is read as the root writes it.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+
+# The field separator of a block, and the entry separator of a list.
+constant FIELD: str
+    "\u{1}"
+
+constant ENTRY: str
+    "\u{2}"
+
+# The prefix of a numbering system's symbols in `numbers.json`.
+constant SYMBOLS_KEY: str
+    "symbols-numberSystem-"
+
+# The symbols of a block, in its order.
+function symbol_fields() -> [str]
+    return [
+        "decimal"
+        "group"
+        "percentSign"
+        "perMille"
+        "plusSign"
+        "minusSign"
+        "exponential"
+        "superscriptingExponent"
+        "infinity"
+        "nan"
+        "approximatelySign"
+        "timeSeparator"
+        "currencyDecimal"
+        "currencyGroup"
+    ]
+
+# What a locale writes numbers with in one numbering system.
+record System
+    name: str
+    symbols: str
+    patterns: str
+    short: str
+    long: str
+
+# What `number_tables` holds of one locale.
+record Locale
+    tag: str
+    default: str
+    native: str
+    systems: [System]
+    currencies: str
+
+# The text at `key` of the object `v`, "" where it has no such key.
+#
+# Fails `invalid` where the member is there and is not a text.
+function text_or_empty(v: json.Value, key: str) -> str?
+    return match json.member(v, key: key)
+        .ok found => json.text_of(found)
+        .err _    => ok("")
+
+# The text at the keys `path` of `v`, "" where one is absent.
+#
+# Fails `invalid` where the member is there and is not a text.
+function text_at_or_empty(v: json.Value, path: [str]) -> str?
+    return match cldrkit.at_keys(v, path: path)
+        .ok found => json.text_of(found)
+        .err _    => ok("")
+
+# The compact patterns `formats`, a system's `decimalFormats`, gives at the
+# width `width`, `short` or `long`: each `power count pattern`, apart by
+# `ENTRY`; "" where it gives none.
+#
+# Fails `invalid` where a key is not `power-count-category`.
+function compact(formats: json.Value, width: str) -> str?
+    found = match cldrkit.at_keys(formats, path: [width, "decimalFormat"])
+        .ok v  => v
+        .err _ => return ok("")
+
+    out: [str] @= []
+
+    for one in cldrkit.entries(found)?
+        parts = strings.split(s: one.key, sep: "-count-")
+
+        if parts.len() != 2
+            return fail(code: "invalid", msg: f"the compact pattern key {one.key} is not a power and a count")
+        out @ out.push([parts[0], parts[1], json.text_of(one.value)?].join(FIELD))
+
+    return ok(out.join(ENTRY))
+
+# One numbering system `name` of `numbers`, a locale's `numbers.json`.
+#
+# Fails as reading its JSON fails.
+function system_of(numbers: json.Value, name: str) -> System?
+    symbols = json.member(numbers, key: SYMBOLS_KEY + name)?
+    symbol_texts: [str] @= []
+
+    for field in symbol_fields()
+        symbol_texts @ symbol_texts.push(text_or_empty(symbols, key: field)?)
+
+    decimal = json.member(numbers, key: "decimalFormats-numberSystem-" + name)?
+    currency = json.member(numbers, key: "currencyFormats-numberSystem-" + name)?
+    patterns = [
+        json.text_of(json.member(decimal, key: "standard")?)?
+        text_at_or_empty(numbers, path: ["percentFormats-numberSystem-" + name, "standard"])?
+        text_at_or_empty(numbers, path: ["scientificFormats-numberSystem-" + name, "standard"])?
+        text_or_empty(currency, key: "standard")?
+        text_or_empty(currency, key: "standard-alphaNextToNumber")?
+        text_or_empty(currency, key: "accounting")?
+        text_or_empty(currency, key: "accounting-alphaNextToNumber")?
+        text_at_or_empty(currency, path: ["currencySpacing", "beforeCurrency", "insertBetween"])?
+        text_at_or_empty(currency, path: ["currencySpacing", "afterCurrency", "insertBetween"])?
+        text_or_empty(numbers, key: "minimumGroupingDigits")?
+    ]
+    return ok(
+        System(name: name, symbols: symbol_texts.join(FIELD), patterns: patterns.join(FIELD), short: compact(decimal, width: "short")?, long: compact(decimal, width: "long")?)
+    )
+
+# The symbol and the narrow symbol of each currency of `currencies`, a
+# locale's `currencies` object, by code.
+#
+# Fails as reading its JSON fails.
+function currency_symbols(currencies: json.Value) -> {str: str}?
+    out: {str: str} @= {}
+
+    for one in cldrkit.entries(currencies)?
+        symbol = match json.member(one.value, key: "symbol")
+            .ok found => json.text_of(found)?
+            .err _    => one.key
+
+        narrow = match json.member(one.value, key: "symbol-alt-narrow")
+            .ok found => json.text_of(found)?
+            .err _    => symbol
+
+        out[one.key] @ symbol + FIELD + narrow
+
+    return ok(out)
+
+# The currency block of a locale whose symbols are `mine`, the root's being
+# `root`, or of the root itself where `is_root`: each entry `code symbol
+# narrow`, in the order of the codes' bytes, apart by `ENTRY`.
+function currency_block(mine: {str: str} lent, root: {str: str} lent, is_root: bool) -> str
+    out: [str] @= []
+
+    for code in sort(keys(mine))
+        pair = mine[code].must()
+        bare = code + FIELD + code
+        roots = root[code].default(bare)
+
+        if pair != bare && (is_root || pair != roots)
+            out @ out.push(code + FIELD + pair)
+
+    return out.join(ENTRY)
+
+# What `number_tables` holds of `tag`.
+#
+# - `release`: CLDR 49's zip, open.
+# - `tag`: the locale, as CLDR's folders name it.
+# - `root`: the root's currency symbols, by code.
+#
+# Fails as reading its two files fails.
+function read_locale(release: cldrkit.Release lent, tag: str, root: {str: str} lent) -> Locale?
+    numbers = cldrkit.member_at(release, name: f"cldr-numbers-full/main/{tag}/numbers.json", path: ["main", tag, "numbers"])?
+    names: [str] @= []
+
+    for one in cldrkit.entries(numbers)?
+        if strings.has_prefix(s: one.key, prefix: SYMBOLS_KEY)
+            names @ names.push(strings.trim_prefix(s: one.key, prefix: SYMBOLS_KEY))
+
+    systems: [System] @= []
+
+    for name in sort(names)
+        systems @ systems.push(system_of(numbers, name: name)?)
+
+    currencies = currency_symbols(cldrkit.member_at(release, name: f"cldr-numbers-full/main/{tag}/currencies.json", path: ["main", tag, "numbers", "currencies"])?)?
+    return ok(
+        Locale(tag: tag, default: json.text_of(json.member(numbers, key: "defaultNumberingSystem")?)?, native: json.text_of(cldrkit.at_keys(numbers, path: ["otherNumberingSystems", "native"])?)?, systems: systems, currencies: currency_block(mine: currencies, root: root, is_root: tag == "und"))
+    )
+
+## Tests
+
+test "currency_block: the root's every one but the code twice, another's only where it is not the root's nor the code twice"
+    root = {"AUD": "A$\u{1}$", "AFN": "AFN\u{1}؋", "AED": "AED\u{1}AED"}
+    assert currency_block(mine: root, root: root, is_root: true) == "AFN\u{1}AFN\u{1}؋\u{2}AUD\u{1}A$\u{1}$"
+    mine = {"AUD": "A$\u{1}$", "XXX": "XXX\u{1}XXX", "CAD": "CAD\u{1}$"}
+    assert currency_block(mine: mine, root: root, is_root: false) == "CAD\u{1}CAD\u{1}$"
+
+test "compact: entries in CLDR's order, a width it does not give, and a key that is no power and count"
+    formats = json.parse(
+        "{\"short\": {\"decimalFormat\": {\"1000-count-one\": \"0K\", \"1000-count-other\": \"0K\"}}}"
+    ).must()
+    assert compact(formats, width: "short").must() == "1000\u{1}one\u{1}0K\u{2}1000\u{1}other\u{1}0K"
+    assert compact(formats, width: "long").must() == ""
+    assert compact(json.parse("{\"short\": {\"decimalFormat\": {\"1000\": \"0K\"}}}").must(), width: "short").is_err()

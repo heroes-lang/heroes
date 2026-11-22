@@ -1,0 +1,252 @@
+# `IdnaTestV2.txt` of UTS #46 read as its header says to read it, and each of
+# its lines written as a case of `url/idna`'s `conformance_cases`.
+#
+# A line holds seven columns apart by `;`, each trimmed of spaces and tabs,
+# then `#` and a comment: the source; ToUnicode's text and its status; the
+# non-transitional ToASCII's text and status; the transitional ToASCII's
+# text and status. A blank text is the text before it (the source's for
+# ToUnicode), `""` is the empty text, and a character may be written
+# `\uXXXX` or `\x{X…}`. A status is a list of codes in brackets; a blank one
+# is no code for ToUnicode and the status before it for the others.
+#
+# A case is `source;unicode;ascii;transitional;outcomes`. An operation whose
+# status holds a code fails, `e`, and its column is left empty, since a
+# failure's text is not compared; ToUnicode's X4_2 is no failure, ToUnicode
+# reading no length. An operation that answers, `o`, has its text written,
+# but as an empty column where the column before it already reads as that
+# text. A text is written as `conform.text_of` reads it: printable ASCII as
+# itself but `^`, `"`, `\`, `{`, `}` and `;`, every other character as `^`,
+# its code point in lowercase hexadecimal, and `^`.
+
+use <rebel>/strings
+use <rebel>/unicode
+
+# The first and the last code point of the surrogates, which no `str` holds.
+constant SURROGATE_FIRST: i64
+    55296
+
+constant SURROGATE_LAST: i64
+    57343
+
+# The cases of the file `text` in its order, and how many lines were left
+# out for holding a surrogate.
+record Read
+    cases: [str]
+    left_out: i64
+
+# Every case of `text`, the whole of `IdnaTestV2.txt`.
+#
+# Fails `invalid` where a line is not seven columns, an escape is not one,
+# or a status is not a list in brackets.
+function read_cases(text: str) -> Read?
+    out: [str] @= []
+    left_out @= 0
+
+    for line in strings.split(s: text, sep: "\n")
+        body = strings.split(s: line, sep: "#")[0]
+
+        if strings.trim(body) != ""
+            columns = strings.split(s: body, sep: ";")
+
+            if columns.len() != 7 && !(columns.len() == 8 && strings.trim(columns[7]) == "")
+                return fail(code: "invalid", msg: f"the line \"{line}\" is not seven columns")
+            points = column_points(columns: columns)?
+
+            if holds_surrogate(points)
+                left_out @ left_out + 1
+            else
+                out @ out.push(case_of(columns)?)
+
+    return ok(Read(cases: out, left_out: left_out))
+
+# The code points of every text column of `columns`, for the surrogate test.
+function column_points(columns: [str] lent) -> [i64]?
+    out: [i64] @= []
+
+    for at in [0, 1, 3, 5]
+        for point in points_of(strings.trim(columns[at]))?
+            out @ out.push(point)
+
+    return ok(out)
+
+# Whether `points` holds a surrogate.
+function holds_surrogate(points: [i64] lent) -> bool
+    for point in points
+        if point >= SURROGATE_FIRST && point <= SURROGATE_LAST
+            return true
+
+    return false
+
+# The case of one line's seven `columns`.
+#
+# Fails as reading a text or a status fails.
+function case_of(columns: [str] lent) -> str?
+    source = points_of(strings.trim(columns[0]))?
+    unicode_text = text_or(column: strings.trim(columns[1]), before: source)?
+    ascii_text = text_or(column: strings.trim(columns[3]), before: unicode_text)?
+    transitional_text = text_or(column: strings.trim(columns[5]), before: ascii_text)?
+    unicode_status = status_or(column: strings.trim(columns[2]), before: [])?
+    ascii_status = status_or(column: strings.trim(columns[4]), before: unicode_status)?
+    transitional_status = status_or(column: strings.trim(columns[6]), before: ascii_status)?
+    unicode_fails = fails(status: unicode_status, ignore: "X4_2")
+    ascii_fails = fails(status: ascii_status, ignore: "")
+    transitional_fails = fails(status: transitional_status, ignore: "")
+    written: [str] @= [written_text(source)]
+    shown @= source
+
+    for step in [Step(text: unicode_text, failed: unicode_fails), Step(text: ascii_text, failed: ascii_fails), Step(text: transitional_text, failed: transitional_fails)]
+        if step.failed || step.text == shown
+            written @ written.push("")
+        else
+            written @ written.push(written_text(step.text))
+
+        if !step.failed
+            shown @ step.text
+
+    written @ written.push(letter(unicode_fails) + letter(ascii_fails) + letter(transitional_fails))
+    return ok(written.join(";"))
+
+# One operation of a case: the text the file gives it and whether it fails.
+record Step
+    text: [i64]
+    failed: bool
+
+# `e` for an operation that fails, `o` for one that answers.
+function letter(failed: bool) -> str
+    if failed
+        return "e"
+    return "o"
+
+# Whether `status` holds a code but `ignore`.
+function fails(status: [str] lent, ignore: str) -> bool
+    for code in status
+        if code != ignore
+            return true
+
+    return false
+
+# The text of a text column: `before` where it is blank, none where it is
+# `""`, else its characters.
+#
+# Fails as `points_of` fails.
+function text_or(column: str, before: [i64]) -> [i64]?
+    if column == ""
+        return ok(before)
+    return points_of(column)
+
+# The codes of a status column: `before` where it is blank.
+#
+# Fails `invalid` where it is not a list in brackets.
+function status_or(column: str, before: [str]) -> [str]?
+    if column == ""
+        return ok(before)
+
+    if !strings.has_prefix(s: column, prefix: "[") || !strings.has_suffix(s: column, suffix: "]")
+        return fail(code: "invalid", msg: f"the status \"{column}\" is not a list in brackets")
+    out: [str] @= []
+
+    for code in strings.split(s: column.slice(from: 1, to: column.len() - 1), sep: ",")
+        if strings.trim(code) != ""
+            out @ out.push(strings.trim(code))
+
+    return ok(out)
+
+# The code points `column` writes: `""` none, and `\uXXXX` and `\x{X…}`
+# each the character of that hexadecimal number.
+#
+# Fails `invalid` where an escape is cut short or not hexadecimal.
+function points_of(column: str) -> [i64]?
+    if column == "\"\""
+        return ok([])
+    out: [i64] @= []
+    at @= 0
+    points = unicode.code_points(column)
+
+    while at < points.len()
+        if points[at] == '\\' && at + 1 < points.len() && points[at + 1] == 'u'
+            out @ out.push(hex_value(points.slice(from: at + 2, to: at + 6), column: column)?)
+            at @ at + 6
+        else if points[at] == '\\' && at + 2 < points.len() && points[at + 1] == 'x' && points[at + 2] == '{'
+            end @= at + 3
+
+            while end < points.len() && points[end] != '}'
+                end @ end + 1
+
+            out @ out.push(hex_value(points.slice(from: at + 3, to: end), column: column)?)
+            at @ end + 1
+        else
+            out @ out.push(points[at])
+            at @ at + 1
+
+    return ok(out)
+
+# The number the hexadecimal digits `digits` write.
+#
+# Fails `invalid`, naming `column`, where there are none or one is not a
+# digit.
+function hex_value(digits: [i64], column: str) -> i64?
+    if digits.len() == 0
+        return fail(code: "invalid", msg: f"the column \"{column}\" holds an escape with no digits")
+    value @= 0
+
+    for d in digits
+        if d >= '0' && d <= '9'
+            value @ value * 16 + d - '0'
+        else if d >= 'a' && d <= 'f'
+            value @ value * 16 + d - 'a' + 10
+        else if d >= 'A' && d <= 'F'
+            value @ value * 16 + d - 'A' + 10
+        else
+            return fail(code: "invalid", msg: f"the column \"{column}\" holds an escape that is not hexadecimal")
+
+    return ok(value)
+
+# `points` written as `conform.text_of` reads it.
+function written_text(points: [i64] lent) -> str
+    out: [str] @= []
+
+    for point in points
+        if point >= 32 && point <= 126 && !strings.contains(s: "^\"\\{};", substr: unicode.from_code_point(point).must())
+            out @ out.push(unicode.from_code_point(point).must())
+        else
+            out @ out.push("^" + lower_hex(point) + "^")
+
+    return out.join("")
+
+# `n` in lowercase hexadecimal with no leading zero.
+function lower_hex(n: i64) -> str
+    digits = "0123456789abcdef"
+
+    if n == 0
+        return "0"
+    out @= ""
+    rest @= n
+
+    while rest > 0
+        out @ digits.slice(from: rest % 16, to: rest % 16 + 1) + out
+        rest @ rest / 16
+
+    return out
+
+## Tests
+
+test "case_of: every column blank, a ToUnicode text that is the source, ToASCII's texts, and the outcomes"
+    assert case_of(strings.split(s: "fass.de; ; ; ; ; ; ", sep: ";")).must() == "fass.de;;;;ooo"
+    assert case_of(strings.split(s: "faß.de; ; ; xn--fa-hia.de; ; fass.de; ", sep: ";")).must() == "fa^df^.de;;xn--fa-hia.de;fass.de;ooo"
+    assert case_of(strings.split(s: "Faß.de; faß.de; ; xn--fa-hia.de; ; fass.de; ", sep: ";")).must() == "Fa^df^.de;fa^df^.de;xn--fa-hia.de;fass.de;ooo"
+
+test "case_of: a status inherited, X4_2 no failure in ToUnicode, an explicit empty text, and a failure's text left out"
+    assert case_of(strings.split(s: "\"\"; ; [X4_2]; ; [A4_1, A4_2]; ; ", sep: ";")).must() == ";;;;oee"
+    assert case_of(strings.split(s: "xn--1ug; \\u200D; [C2]; xn--1ug; ; ; ", sep: ";")).must() == "xn--1ug;;;;eee"
+    assert case_of(strings.split(s: "\\u200D; ; [C2]; xn--1ug; ; \"\"; [A4_1, A4_2]", sep: ";")).must() == "^200d^;;;;eee"
+
+test "points_of and written_text: both escapes, the characters written by number, and a cut escape"
+    assert points_of("a\\u00DFb\\x{1F600}").must() == [97, 223, 98, 128512]
+    assert written_text([94, 34, 92, 123, 125, 59, 32, 65, 127, 0]) == "^5e^^22^^5c^^7b^^7d^^3b^ A^7f^^0^"
+    assert points_of("\\x{}").is_err()
+    assert points_of("\\u00G0").is_err()
+
+test "read_cases: comments left, a line with a surrogate counted and left out"
+    got = read_cases("# head\nfass.de; ; ; ; ; ;  # fass.de\na\\uD900z; ; [V7]; ; [V7, A3]; ;  # az\n").must()
+    assert got.cases == ["fass.de;;;;ooo"] && got.left_out == 1
+    assert read_cases("a; b\n").is_err()

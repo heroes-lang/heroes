@@ -1,0 +1,129 @@
+# CLDR 49's JSON release, `cldr-49.0.0-json-full.zip`, as the generators of
+# Rebel's CLDR tables read it: the zip held to the SHA-256 it is pinned to,
+# then any member read as JSON and walked by its keys. Nothing is taken from
+# a zip whose digest is not the pinned one.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/json
+
+# The release the tables are made from: CLDR 49's JSON, every package in its
+# full coverage, as the Unicode Consortium publishes it.
+constant SOURCE_URL: str
+    "https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip"
+
+# The SHA-256 of the bytes `SOURCE_URL` served when it was fetched on
+# 2026-11-21, in lowercase hexadecimal.
+constant SOURCE_SHA256: str
+    "3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174"
+
+# The most bytes one member of the zip may hold once inflated: the largest
+# file a generator reads, a locale's `units.json`, holds about 300 KB.
+constant MEMBER_LIMIT: i64
+    16777216
+
+# The zip, open, with its members by name.
+record Release
+    zip: archive.ZipReader
+    members: {str: archive.ZipEntry}
+
+# The zip at `path`, read whole, held to `SOURCE_SHA256` and opened.
+#
+# - `path`: the zip as fetched from `SOURCE_URL`.
+#
+# Fails where it cannot be read, `invalid` where its digest is another (the
+# message naming both), and as `archive.decode_zip` fails.
+function open(path: str) -> Release?
+    data = fs.read_bytes(path)?
+    digest = bytes.format_hex(crypto.sha256(data))
+
+    if digest != SOURCE_SHA256
+        return fail(
+            code: "invalid",
+            msg: f"the zip has SHA-256 {digest}, and the zip of {SOURCE_URL} the tables are pinned to has {SOURCE_SHA256}"
+        )
+    zip = archive.decode_zip(data)?
+    members: {str: archive.ZipEntry} @= {}
+
+    for entry in zip.entries
+        members[entry.name] @ entry
+
+    return ok(Release(zip: zip, members: members))
+
+# The member `name` of `release`, read as JSON.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip: `cldr-core/supplemental/plurals.json`.
+#
+# Fails `not_found` where the zip holds no such member, and as reading it,
+# its text and its JSON fail.
+function member(release: Release lent, name: str) -> json.Value?
+    entry = match release.members[name]
+        .ok found => found
+        .err _    => return fail(code: "not_found", msg: f"the zip holds no {name}")
+
+    data = archive.read_zip_entry(release.zip, entry: entry, limit: MEMBER_LIMIT)?
+    return json.parse(bytes.to_text(data)?)
+
+# The value at the keys `path` of `v`, each an object's member.
+#
+# - `v`: the value walked from.
+# - `path`: the keys, outermost first.
+#
+# Fails `not_found`, naming the key, where one is absent.
+function at_keys(v: json.Value, path: [str]) -> json.Value?
+    here @= v
+
+    for key in path
+        here @ json.member(here, key: key)?
+
+    return ok(here)
+
+# The member `name` of `release` at the keys `path`.
+#
+# - `release`: the open zip.
+# - `name`: the member's path in the zip.
+# - `path`: the keys, outermost first.
+#
+# Fails as `member` and `at_keys` fail.
+function member_at(release: Release lent, name: str, path: [str]) -> json.Value?
+    return at_keys(member(release, name: name)?, path: path)
+
+# The members of the object `v` in the order the file writes them, each its
+# key and its value.
+#
+# - `v`: an object.
+#
+# Fails `invalid` where `v` is not an object.
+function entries(v: json.Value) -> [Entry]?
+    members = json.members_of(v)?
+    out: [Entry] @= []
+
+    for key in keys(members)
+        out @ out.push(Entry(key: key, value: members[key].must()))
+
+    return ok(out)
+
+# A member of an object: its key and its value.
+record Entry
+    key: str
+    value: json.Value
+
+## Tests
+
+test "at_keys: a path found, a key absent, and none"
+    v = json.parse("{\"a\": {\"b\": 1}}").must()
+    assert json.int_of(at_keys(v, path: ["a", "b"]).must()).must() == 1
+    assert at_keys(v, path: ["a", "c"]).is_err()
+    assert at_keys(v, path: []).must() == v
+
+test "entries: the order the file writes, and a value that is no object"
+    v = json.parse("{\"z\": 1, \"a\": 2}").must()
+    got = entries(v).must()
+    assert got.len() == 2 && got[0].key == "z" && got[1].key == "a"
+    assert entries(json.parse("[1]").must()).is_err()
+
+test "open: a file that is not there, and bytes that are not the pinned zip"
+    assert open("generators/cldrkit/no such zip").is_err()

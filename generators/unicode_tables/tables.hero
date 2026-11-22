@@ -1,0 +1,278 @@
+# The text of `unicode`'s four tables of Unicode 17.0.0: the general category
+# of every code point (`category_table`), the sets a category does not tell
+# (`property_tables`), the case mappings (`case_tables`) and the foldings
+# and the letters' orbits (`fold_tables`). Each packing is read back and held
+# to the data before it is written.
+
+use <tablekit>/tablekit
+
+use data
+use ranges
+
+# Unicode's two letters for each general category, in the order the runs
+# number them, which is `classes.hero`'s.
+function category_names() -> [str]
+    return [
+        "Lu"
+        "Ll"
+        "Lt"
+        "Lm"
+        "Lo"
+        "Mn"
+        "Mc"
+        "Me"
+        "Nd"
+        "Nl"
+        "No"
+        "Pc"
+        "Pd"
+        "Ps"
+        "Pe"
+        "Pi"
+        "Pf"
+        "Po"
+        "Sm"
+        "Sc"
+        "Sk"
+        "So"
+        "Zs"
+        "Zl"
+        "Zp"
+        "Cc"
+        "Cf"
+        "Cs"
+        "Co"
+        "Cn"
+    ]
+
+# The header's paragraph that says which program wrote a table and from what.
+#
+# - `files`: its lines naming the files, the first opening `# files`.
+function generated_lines(files: [str], fetched: str) -> [str]
+    out: [str] @= [
+        "# Generated, never edited by hand: the Heroes program"
+        "# `generators/unicode_tables/` read the Unicode Character Database 17.0.0"
+        f"# (https://www.unicode.org/Public/17.0.0/ucd/, fetched {fetched}), its"
+    ]
+
+    for line in files
+        out @ out.push(line)
+
+    return out
+
+# A table's whole text: its header lines and its parts, a blank line between
+# each, a line feed at the end.
+function module_text(head: [str], parts: [str]) -> str
+    pieces: [str] @= [head.join("\n")]
+
+    for part in parts
+        pieces @ pieces.push(part)
+
+    return pieces.join("\n\n") + "\n"
+
+# The test that `name`'s elements ascend.
+function ascends(name: str) -> str
+    return [f"test \"{name} ascends\"", "    at: i64 @= 1", "", f"    while at < {name}.len()", f"        assert {name}[at - 1] < {name}[at]", "        at @ at + 1"].join(
+        "\n"
+    )
+
+# The test that `a` and `b` are as long.
+function as_long(a: str, b: str) -> str
+    return [f"test \"{a} and {b} are as long\"", f"    assert {a}.len() == {b}.len()"].join("\n")
+
+# The text of `category_table`.
+#
+# Fails `invalid` where a category is not one of `category_names`, or the
+# runs do not read back.
+function category_text(characters: data.Characters lent, fetched: str) -> str?
+    names = category_names()
+    numbers: {str: i64} @= {}
+    at @= 0
+
+    while at < names.len()
+        numbers[names[at]] @ at
+        at @ at + 1
+
+    values: [i64] @= []
+
+    for category in characters.categories
+        match numbers[category]
+            .ok found => values @ values.push(found)
+            .err _    => return fail(code: "invalid", msg: f"UnicodeData.txt names a category {category}")
+
+    runs = ranges.runs_of(values, shift: 5)
+    ranges.held_runs(runs: runs, values: values, shift: 5)?
+    head: [str] @= [
+        "# The general category of every code point, in Unicode 17.0.0: the table"
+        "# `classes.hero` reads."
+        "#"
+    ]
+
+    for line in generated_lines(files: ["# file `UnicodeData.txt`, reduced it to runs, held every lookup to the file's", "# answer for each of the 1,114,112 code points, and wrote this module whole;", "# its `check` command says whether this module is still what it writes."], fetched: fetched)
+        head @ head.push(line)
+
+    tail = [
+        "## Tests"
+        ""
+        "test \"RUNS ascends, begins at 0, and names thirty categories\""
+        "    at: i64 @= 1"
+        ""
+        "    while at < RUNS.len()"
+        "        assert RUNS[at - 1] < RUNS[at]"
+        "        at @ at + 1"
+        ""
+        "    assert RUNS[0] >> 5 == 0"
+        f"    assert NAMES.len() == {names.len()}"
+    ]
+    return ok(
+        module_text(head: head, parts: [tablekit.strings_constant(comment: ["# Unicode's two letters for each general category, in the order the runs", "# number them: the five of letters first, then marks, numbers, punctuation,", "# symbols, separators, and the five of `C`."], name: "NAMES", items: names)?, tablekit.numbers_constant(comment: ["# The runs of one general category, each `first << 5 | category`: the code", "# points from `first` up to the next run's share the category `NAMES` holds at", "# that index. The first run begins at 0 and the runs ascend, so every code", "# point is in the last run that begins at or before it."], name: "RUNS", items: runs), tail.join("\n")])
+    )
+
+# One set of `property_tables`: its name, its comment and its code points.
+record Set
+    name: str
+    comment: [str]
+    members: [bool]
+
+# The text of `property_tables`.
+#
+# Fails `invalid` where a set's ranges do not read back.
+function property_text(sets: [Set] lent, fetched: str) -> str?
+    head: [str] @= [
+        "# The sets of code points that a general category does not tell, in Unicode"
+        "# 17.0.0: white space, and what is lower case, upper case, alphabetic or"
+        "# passed over in casing without its category saying so. `classes.hero` reads"
+        "# them."
+        "#"
+    ]
+
+    for line in generated_lines(files: ["# files `PropList.txt`, `DerivedCoreProperties.txt` and `UnicodeData.txt`,", "# reduced them to ranges, held every lookup to the files' answer for each of", "# the 1,114,112 code points, and wrote this module whole; its `check` command", "# says whether this module is still what it writes."], fetched: fetched)
+        head @ head.push(line)
+
+    head @ head.push("#")
+    head @ head.push("# Each entry is a range, `first << 21 | last`, both ends in it, ascending.")
+    parts: [str] @= []
+    tests: [str] @= []
+
+    for one in sets
+        set_ranges = ranges.set_ranges(one.members)
+        ranges.held_set(set_ranges, set: one.members)?
+        parts @ parts.push(tablekit.numbers_constant(comment: one.comment, name: one.name, items: set_ranges))
+        tests @ tests.push(ascends(one.name))
+
+    parts @ parts.push("## Tests\n\n" + tests.join("\n\n"))
+    return ok(module_text(head: head, parts: parts))
+
+# One map of a table packed as ranges: its name, the comments of its two
+# constants, and its code points with their deltas.
+record DeltaMap
+    name: str
+    ranges_comment: [str]
+    deltas_comment: [str]
+    points: [i64]
+    deltas: [i64]
+
+# One map of a table to several characters: its name, the comment of its
+# first constant, and its code points with their characters.
+record Special
+    name: str
+    from_comment: [str]
+    mapped: {i64: [i64]}
+
+# The packed characters of `points`: `first | second << 21 | third << 42`.
+#
+# Fails `invalid` where there are not two or three.
+function packed(points: [i64] lent) -> i64?
+    if points.len() == 2
+        return ok(points[0] | points[1] << 21)
+
+    if points.len() == 3
+        return ok(points[0] | points[1] << 21 | points[2] << 42)
+    return fail(code: "invalid", msg: f"a mapping of {points.len()} characters is not two or three")
+
+# The constants of `map`: its ranges and its deltas.
+#
+# Fails `invalid` where they do not read back.
+function delta_constants(map_of: DeltaMap lent) -> [str]?
+    out = ranges.delta_ranges(points: map_of.points, deltas: map_of.deltas)
+    ranges.held_deltas(out, points: map_of.points, deltas: map_of.deltas)?
+    return ok(
+        [tablekit.numbers_constant(comment: map_of.ranges_comment, name: map_of.name + "_RANGES", items: out.ranges), tablekit.numbers_constant(comment: map_of.deltas_comment, name: map_of.name + "_DELTAS", items: out.deltas)]
+    )
+
+# The constants of `special`: its code points and their characters.
+#
+# Fails as `packed` fails.
+function special_constants(special: Special lent) -> [str]?
+    from = sort(keys(special.mapped))
+    to: [i64] @= []
+
+    for point in from
+        to @ to.push(packed(special.mapped[point].must())?)
+
+    return ok(
+        [tablekit.numbers_constant(comment: special.from_comment, name: special.name + "_SPECIAL_FROM", items: from), tablekit.numbers_constant(comment: [f"# What the code point `{special.name}_SPECIAL_FROM` holds at the same index is written", "# as: two or three code points, `first | second << 21 | third << 42`, the", "# third 0 where there are two."], name: special.name + "_SPECIAL_TO", items: to)]
+    )
+
+# The tests of a table of maps and specials: each range list and each
+# special list of two or more ascends, then each pair is as long.
+function range_tests(maps: [DeltaMap] lent, specials: [Special] lent) -> str
+    tests: [str] @= []
+
+    for one in maps
+        tests @ tests.push(ascends(one.name + "_RANGES"))
+
+    for one in specials
+        if one.mapped.len() > 1
+            tests @ tests.push(ascends(one.name + "_SPECIAL_FROM"))
+
+    for one in maps
+        tests @ tests.push(as_long(a: one.name + "_RANGES", b: one.name + "_DELTAS"))
+
+    for one in specials
+        tests @ tests.push(as_long(a: one.name + "_SPECIAL_FROM", b: one.name + "_SPECIAL_TO"))
+
+    return "## Tests\n\n" + tests.join("\n\n")
+
+# The lines every ranges table's header ends with.
+function range_lines() -> [str]
+    return [
+        "#"
+        "# Each entry is one range, `first << 22 | last << 1 | step - 1`: the code"
+        "# points from `first` to `last`, every one where `step` is 1 and every second"
+        "# where it is 2, in ascending order."
+    ]
+
+# The code points where `mapped` is not `against`, and the delta of each to
+# `mapped`.
+function deltas_where(mapped: [i64] lent, against: [i64] lent, skip: {i64: [i64]} lent) -> DeltaMap
+    points: [i64] @= []
+    deltas: [i64] @= []
+    at @= 0
+
+    while at < mapped.len()
+        if mapped[at] != against[at] && skip[at].is_err()
+            points @ points.push(at)
+            deltas @ deltas.push(mapped[at] - at)
+        at @ at + 1
+
+    return DeltaMap(name: "", ranges_comment: [], deltas_comment: [], points: points, deltas: deltas)
+
+# `one` named `name`, with the comment of its ranges and the comment
+# `deltas_comment` writes for its deltas.
+function named(one: DeltaMap, name: str, ranges_comment: [str]) -> DeltaMap
+    return DeltaMap(
+        name: name,
+        ranges_comment: ranges_comment,
+        deltas_comment: deltas_comment(name),
+        points: one.points,
+        deltas: one.deltas
+    )
+
+# The comment of a deltas constant of the ranges `name`.
+function deltas_comment(name: str) -> [str]
+    line = f"# What is added to a code point of the range `{name}_RANGES` holds at the same"
+
+    if line.len() > 79
+        return [f"# What is added to a code point of the range `{name}_RANGES` holds at the", "# same index."]
+    return [line, "# index."]

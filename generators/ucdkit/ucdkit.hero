@@ -1,0 +1,150 @@
+# A file of the Unicode Character Database read as UAX #44 section 4.2
+# describes its data files: each line a code point or a range `first..last`
+# in hexadecimal, then fields apart by `;`, then `#` and a comment; and its
+# `# @missing:` lines, which give the value of every code point a data line
+# does not name, the later of two for a code point in both prevailing.
+
+use <rebel>/strings
+
+# The most a code point is, and how many there are.
+constant LAST_POINT: i64
+    1114111
+
+constant POINTS: i64
+    1114112
+
+# A line of a data file: its code points and its fields, each trimmed.
+record Line
+    first: i64
+    last: i64
+    fields: [str]
+
+# The data lines of `text`, in its order.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid` where a line's code points do not read.
+function data_lines(text: str) -> [Line]?
+    out: [Line] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        body = strings.split(s: line, sep: "#")[0]
+
+        if strings.trim(body) != ""
+            out @ out.push(line_of(body)?)
+
+    return ok(out)
+
+# The `# @missing:` lines of `text`, in its order, read as data lines.
+#
+# Fails `invalid` where one does not read.
+function missing_lines(text: str) -> [Line]?
+    out: [Line] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        if strings.has_prefix(s: line, prefix: "# @missing:")
+            out @ out.push(line_of(strings.trim_prefix(s: line, prefix: "# @missing:"))?)
+
+    return ok(out)
+
+# The line `body` writes, its comment cut.
+#
+# Fails `invalid` where its first field is not a code point or a range.
+function line_of(body: str) -> Line?
+    fields = strings.split(s: body, sep: ";")
+    points = strings.trim(fields[0])
+    first_text = strings.split(s: points, sep: "..")[0]
+
+    last_text = if strings.contains(s: points, substr: "..")
+        strings.split(s: points, sep: "..")[1]
+    else
+        first_text
+    first = hex_of(first_text)?
+    last = hex_of(last_text)?
+
+    if last < first || last > LAST_POINT
+        return fail(code: "invalid", msg: f"the range \"{points}\" is not one")
+    rest: [str] @= []
+
+    for field in fields.slice(from: 1, to: fields.len())
+        rest @ rest.push(strings.trim(field))
+
+    return ok(Line(first: first, last: last, fields: rest))
+
+# The number the hexadecimal `text` writes.
+#
+# Fails `invalid` where it is empty or holds anything else.
+function hex_of(text: str) -> i64?
+    digits = "0123456789ABCDEF"
+    value @= 0
+
+    if text == "" || text.len() > 6
+        return fail(code: "invalid", msg: f"\"{text}\" is not a code point")
+
+    for c in text.chars()
+        at = match strings.index_of(s: digits, substr: c)
+            .ok found => found
+            .err _    => return fail(code: "invalid", msg: f"\"{text}\" is not a code point")
+
+        value @ value * 16 + at
+
+    return ok(value)
+
+# The code points of a field of code points apart by spaces: `0073 0073`.
+#
+# Fails `invalid` where one does not read.
+function points_of(field: str) -> [i64]?
+    out: [i64] @= []
+
+    for word in strings.words(field)
+        out @ out.push(hex_of(word)?)
+
+    return ok(out)
+
+# Whether each code point, from 0 to `LAST_POINT`, has the binary property
+# `name` the data lines of `text` give, as `PropList.txt` and
+# `DerivedCoreProperties.txt` give theirs: a line naming it in its first
+# field.
+#
+# - `text`: the file's whole text.
+# - `name`: the property's name: `White_Space`.
+#
+# Fails as `data_lines` fails.
+function property_set(text: str, name: str) -> [bool]?
+    out: [bool] @= []
+
+    for _ in range(from: 0, to: POINTS)
+        out @ out.push(false)
+
+    for line in data_lines(text)?
+        if line.fields.len() > 0 && line.fields[0] == name
+            at @= line.first
+
+            while at <= line.last
+                out[at] @ true
+                at @ at + 1
+
+    return ok(out)
+
+## Tests
+
+test "data_lines and missing_lines: a code point, a range, comments, an empty field, and the defaults"
+    text = "# @missing: 0000..10FFFF; Left_To_Right\n# head\n0041..005A    ; L # L&  [26] LATIN\n00AD          ; ignored                  # 1.1  SOFT HYPHEN\n200C..200D    ; deviation  ;               # 1.1\n"
+    lines = data_lines(text).must()
+    assert lines.len() == 3
+    assert lines[0] == Line(first: 0x41, last: 0x5a, fields: ["L"])
+    assert lines[2] == Line(first: 0x200c, last: 0x200d, fields: ["deviation", ""])
+    assert missing_lines(text).must() == [Line(first: 0, last: 0x10ffff, fields: ["Left_To_Right"])]
+
+test "line_of and points_of: a range backwards, past U+10FFFF, small letters, and a list of code points"
+    assert line_of("005A..0041 ; L").is_err()
+    assert line_of("110000 ; L").is_err()
+    assert line_of("00e0 ; L").is_err()
+    assert points_of("0073 0073").must() == [0x73, 0x73]
+    assert points_of("").must() == []
+
+test "property_set: a range and a code point of the property, another property's left"
+    text = "0009..000D    ; White_Space # Cc   [5]\n0020          ; White_Space # Zs\n0041          ; Other_Math # L\n"
+    set = property_set(text: text, name: "White_Space").must()
+    assert set[9] && set[13] && set[32] && !set[14] && !set[65]
+    assert set.len() == POINTS

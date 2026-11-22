@@ -1,0 +1,147 @@
+# A label written as its A-label: `xn--` and the label in Punycode, RFC 3492,
+# its section 6.3's encoding procedure with the parameters of section 5, where
+# the label holds a character above ASCII, else the label itself. The
+# generator has its own, rather than `url/idna`'s, so a defect of the
+# package's encoder cannot pass into the table it is held to.
+
+use <rebel>/unicode
+
+# Section 5's parameters.
+constant BASE: i64
+    36
+
+constant TMIN: i64
+    1
+
+constant TMAX: i64
+    26
+
+constant SKEW: i64
+    38
+
+constant DAMP: i64
+    700
+
+constant INITIAL_BIAS: i64
+    72
+
+constant INITIAL_N: i64
+    128
+
+# `label` as an A-label where it holds a character above ASCII, else as it
+# is. Its characters are written as they are, neither mapped nor checked.
+#
+# - `label`: one label of a name.
+function a_label(label: str) -> str
+    points = unicode.code_points(label)
+
+    for point in points
+        if point >= INITIAL_N
+            return "xn--" + encode(points)
+
+    return label
+
+# `points` in Punycode, without the `xn--`.
+#
+# - `points`: the label's code points.
+function encode(points: [i64]) -> str
+    out: [str] @= []
+
+    for point in points
+        if point < INITIAL_N
+            out @ out.push(unicode.from_code_point(point).must())
+
+    basic = out.len()
+
+    if basic > 0
+        out @ out.push("-")
+    n @= INITIAL_N
+    delta @= 0
+    bias @= INITIAL_BIAS
+    handled @= basic
+
+    while handled < points.len()
+        least @= -1
+
+        for point in points
+            if point >= n && (least < 0 || point < least)
+                least @ point
+
+        delta @ delta + (least - n) * (handled + 1)
+        n @ least
+
+        for point in points
+            if point < n
+                delta @ delta + 1
+
+            if point == n
+                q @= delta
+                k @= BASE
+
+                while true
+                    t = threshold(k: k, bias: bias)
+
+                    if q < t
+                        break
+                    out @ out.push(digit(t + (q - t) % (BASE - t)))
+                    q @ (q - t) / (BASE - t)
+                    k @ k + BASE
+
+                out @ out.push(digit(q))
+                bias @ adapt(delta: delta, points: handled + 1, first: handled == basic)
+                delta @ 0
+                handled @ handled + 1
+
+        delta @ delta + 1
+        n @ n + 1
+
+    return out.join("")
+
+# The threshold of the digit at `k`, section 6.2: `TMIN` up to the bias,
+# `TMAX` from the bias plus `TMAX`, else `k` less the bias.
+function threshold(k: i64, bias: i64) -> i64
+    if k <= bias
+        return TMIN
+
+    if k >= bias + TMAX
+        return TMAX
+    return k - bias
+
+# The bias after a character is written, section 6.1.
+function adapt(delta: i64, points: i64, first: bool) -> i64
+    d @= if first
+        delta / DAMP
+    else
+        delta / 2
+    d @ d + d / points
+    k @= 0
+
+    while d > (BASE - TMIN) * TMAX / 2
+        d @ d / (BASE - TMIN)
+        k @ k + BASE
+
+    return k + (BASE - TMIN + 1) * d / (d + SKEW)
+
+# The basic code point of the digit `d`, section 5: `a` to `z` for 0 to 25,
+# `0` to `9` for 26 to 35.
+function digit(d: i64) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+    return letters.slice(from: d, to: d + 1)
+
+## Tests
+
+test "a_label: ASCII as it is, and the samples of RFC 3492 section 7.1 that are one label"
+    assert a_label("com") == "com"
+    assert a_label("") == ""
+    assert a_label("食狮") == "xn--85x722f"
+    assert a_label("公司") == "xn--55qx5d"
+    assert a_label("中国") == "xn--fiqs8s"
+
+    # (B) Chinese (simplified), the RFC's own sample.
+    assert a_label("他们为什么不说中文") == "xn--ihqwcrb4cv8a8dqg056pqjye"
+
+    # (L) 3<nen>B<gumi><kinpachi><sensei>: basic characters before and among the others.
+    assert a_label("3年B組金八先生") == "xn--3B-ww4c5e180e575a65lsy2b"
+
+    # (P) Maji<de>Koi<suru>5<byou><mae>.
+    assert a_label("MajiでKoiする5秒前") == "xn--MajiKoi5-783gue6qz075azm5e"

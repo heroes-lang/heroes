@@ -1,11 +1,12 @@
 # The general category of every code point, in Unicode 17.0.0: the table
 # `classes.hero` reads.
 #
-# The table is data, made and not typed: a one-off program asked Python 3.15.2's
-# `unicodedata`, whose `unidata_version` is 17.0.0, and Go 1.27.3's `unicode`,
-# whose `Version` is 17.0.0, on 2026-11-15, reduced their answers to ranges,
-# held every lookup to the answers for each of the 1,114,112 code points, and
-# wrote this module whole. Nothing here is edited by hand.
+# Generated, never edited by hand: the Heroes program
+# `generators/unicode_tables/` read the Unicode Character Database 17.0.0
+# (https://www.unicode.org/Public/17.0.0/ucd/, fetched 2026-11-22), its
+# file `UnicodeData.txt`, reduced it to runs, held every lookup to the file's
+# answer for each of the 1,114,112 code points, and wrote this module whole;
+# its `check` command says whether this module is still what it writes.
 
 # Unicode's two letters for each general category, in the order the runs
 # number them: the five of letters first, then marks, numbers, punctuation,

@@ -1,0 +1,237 @@
+# The generator of `url/idna`'s three tables of UTS #46 for Unicode 17.0.0:
+# the IDNA Mapping Table (`mapping_table`), the three properties of a code
+# point IDNA's checks read (`property_table`), and the conformance cases of
+# `IdnaTestV2.txt` (`conformance_cases`), each written byte for byte, or
+# checked against the module in the tree.
+#
+# Its input is five files the Unicode Consortium serves under folders named
+# for the version, which never change: `IdnaMappingTable.txt` and
+# `IdnaTestV2.txt` of `IDNA_URL`, and `DerivedBidiClass.txt`,
+# `DerivedJoiningType.txt` and `DerivedCombiningClass.txt` of
+# `EXTRACTED_URL`, fetched into one folder under those names and each held
+# to its SHA-256 below. Run from the repository's root:
+#
+#     heroes run generators/url_idna/main.hero -- write <folder>
+#     heroes run generators/url_idna/main.hero -- check <folder>
+#
+# `write` writes the modules. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where a
+# file's digest is not the pinned one, or where a line of a file is not what
+# its header says the file holds.
+
+use <tablekit>/tablekit
+
+use conformance
+use tables
+
+constant IDNA_URL: str
+    "https://www.unicode.org/Public/17.0.0/idna/"
+
+constant EXTRACTED_URL: str
+    "https://www.unicode.org/Public/17.0.0/ucd/extracted/"
+
+# The day the files were read for the digests below.
+constant FETCHED: str
+    "2026-11-22"
+
+constant TEST_SHA256: str
+    "beb5d0be20e896189b03209a82fdc34f06351502bbd4b8e2523583fc2954d9cf"
+
+constant MAPPING_SHA256: str
+    "87f05505dc026fdb2bff16132bdc68a8014675836882a9a2b1844540ad3be382"
+
+constant BIDI_SHA256: str
+    "4867b4b7f0731ed1bfcd34cc6251211ff1542541fce0734b6fbda139ee80b3a4"
+
+constant JOINING_SHA256: str
+    "f39ebe974825d6736aee15582250307aa532b2cfab3caf3f86bd23fddc9c5c4d"
+
+constant COMBINING_SHA256: str
+    "191463abfbd202703c6fd6776a92a23ac44ec65e0476a7f95aa91ca492cef29b"
+
+# The folder of the modules, from the repository's root.
+constant TABLES: str
+    "packages/rebel/0.1.0/files/url/idna/internal/"
+
+# How many cases a test holds.
+constant CHUNK: i64
+    100
+
+# The module's whole text for `read`.
+#
+# - `read`: the file's cases and how many lines were left out.
+function module_text(read: conformance.Read lent) -> str
+    lines: [str] @= [
+        "# The conformance cases of UTS #46 for Unicode 17.0.0, run through"
+        "# `conform.failures` against `process`: every line of `IdnaTestV2.txt` of"
+        "# https://www.unicode.org/Public/17.0.0/idna/ (dated 2025-05-01, SHA-256"
+        f"# {TEST_SHA256.slice(from: 0, to: 16)}...) but the {read.left_out} that hold a surrogate,"
+        "# which no `str` holds. Each case is ToUnicode, ToASCII and transitional"
+        "# ToASCII with every check on, as the file runs them, and UTS #46's X4_2 read"
+        "# as no error in ToUnicode, which reads no length."
+        "#"
+        "# A case is `source;unicode;ascii;transitional;outcomes`, each text written as"
+        "# `conform.text_of` reads it: printable ASCII as itself but `^`, `\"`, `\\`,"
+        "# `{`, `}` and `;`, and every other character as `^`, its code point in"
+        "# hexadecimal, and `^`. An empty column is the column before it. The outcomes"
+        "# are one letter for each operation: `o` answers the text, `e` fails `invalid`."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/url_idna/`"
+        f"# read the file, fetched {FETCHED}, and wrote this module whole, each outcome"
+        "# the status the file gives the operation, and each text the file's where the"
+        "# operation answers one; its `check` command says whether this module is"
+        "# still what it writes. Only a test build reads the cases."
+        ""
+        "use url/idna/internal/conform"
+        ""
+        "# How many cases the tests below run."
+        "constant CASES: i64"
+        "    " + to_str(read.cases.len())
+        ""
+        "## Tests"
+    ]
+    from @= 1
+
+    while from <= read.cases.len()
+        to = if from + CHUNK - 1 < read.cases.len()
+            from + CHUNK - 1
+        else
+            read.cases.len()
+        lines @ lines.push("")
+        lines @ lines.push(f"test \"conformance_cases: IdnaTestV2's cases {from} to {to}\"")
+        lines @ lines.push("    cases = [")
+        at @= from
+
+        while at <= to
+            lines @ lines.push("        \"" + read.cases[at - 1] + "\"")
+            at @ at + 1
+
+        lines @ lines.push("    ]")
+        lines @ lines.push("    assert conform.failures(cases) == []")
+        from @ to + 1
+
+    return lines.join("\n") + "\n"
+
+# The text of `mapping_table`.
+#
+# - `mapping`: the table packed.
+function mapping_text(mapping: tables.Mapping lent) -> str
+    head = [
+        "# The IDNA Mapping Table of UTS #46 for Unicode 17.0.0: the status of every"
+        "# code point, and what a mapped one becomes. `lookup.hero` reads it."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/url_idna/`"
+        f"# read `IdnaMappingTable.txt` of {IDNA_URL} (dated"
+        f"# 2025-07-25, SHA-256 {MAPPING_SHA256.slice(from: 0, to: 16)}...), fetched {FETCHED},"
+        "# reduced it to runs, held every lookup to the file's answer for each of the"
+        "# 1,114,112 code points, and wrote this module whole; its `check` command"
+        "# says whether this module is still what it writes."
+    ]
+    tail = [
+        "## Tests"
+        ""
+        "test \"mapping_table: RUNS ascends from 0, every status is known, STARTS ascends to the end of POINTS\""
+        "    at: i64 @= 1"
+        ""
+        "    while at < RUNS.len()"
+        "        assert RUNS[at - 1] >> 16 < RUNS[at] >> 16"
+        "        assert RUNS[at] & 7 <= 4"
+        "        assert (RUNS[at] >> 3 & 8191) + 1 < STARTS.len()"
+        "        at @ at + 1"
+        ""
+        "    assert RUNS[0] >> 16 == 0"
+        f"    assert RUNS.len() == {mapping.runs.len()}"
+        "    assert STARTS[0] == 0"
+        "    assert STARTS[STARTS.len() - 1] == POINTS.len()"
+        f"    assert STARTS.len() == {mapping.starts.len()}"
+        "    step: i64 @= 1"
+        ""
+        "    while step < STARTS.len()"
+        "        assert STARTS[step - 1] <= STARTS[step]"
+        "        step @ step + 1"
+    ]
+    return [head.join("\n"), tablekit.numbers_constant(comment: ["# The runs of one status and one mapping, each `first << 16 | target << 3 |", "# status`: the code points from `first` up to the next run's share the status,", "# 0 valid, 1 ignored, 2 mapped, 3 deviation, 4 disallowed, and a mapped or", "# deviation one becomes the code points of the target numbered `target` (see", "# `STARTS`), 0 for the other statuses. The first run begins at 0 and the runs", "# ascend, so every code point is in the last run that begins at or before it."], name: "RUNS", items: mapping.runs), tablekit.numbers_constant(comment: ["# Where each target begins in `POINTS`: the target numbered `t` is the code", "# points of `POINTS` from `STARTS[t]` up to `STARTS[t + 1]`, so there is one", "# entry more than there are targets. A target may be empty, as the deviations", "# U+200C and U+200D map to nothing."], name: "STARTS", items: mapping.starts), tablekit.numbers_constant(comment: ["# The code points of every target, one after another."], name: "POINTS", items: mapping.points), tail.join("\n")].join("\n\n") + "\n"
+
+# The text of `property_table`.
+#
+# - `runs`: the table's runs.
+function property_text(runs: [i64] lent) -> str
+    head = [
+        "# Three properties of every code point in Unicode 17.0.0 that IDNA's checks"
+        "# read and `unicode` does not offer: the bidirectional class (RFC 5893), and"
+        "# the joining type and the canonical combining class (RFC 5892, Appendix A)."
+        "# `lookup.hero` reads it."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/url_idna/`"
+        "# read the Unicode Character Database 17.0.0 of"
+        "# https://www.unicode.org/Public/17.0.0/ucd/, `extracted/DerivedBidiClass.txt`"
+        f"# (SHA-256 {BIDI_SHA256.slice(from: 0, to: 16)}...), `extracted/DerivedJoiningType.txt`"
+        f"# ({JOINING_SHA256.slice(from: 0, to: 16)}...) and `extracted/DerivedCombiningClass.txt`"
+        f"# ({COMBINING_SHA256.slice(from: 0, to: 16)}...), their `@missing` defaults included,"
+        f"# fetched {FETCHED}, reduced them to runs, held every lookup to the files"
+        "# for each of the 1,114,112 code points, and wrote this module whole; its"
+        "# `check` command says whether this module is still what it writes."
+    ]
+    tail = [
+        "## Tests"
+        ""
+        "test \"property_table: RUNS ascends from 0, every field within its codes\""
+        "    at: i64 @= 1"
+        ""
+        "    while at < RUNS.len()"
+        "        assert RUNS[at - 1] >> 18 < RUNS[at] >> 18"
+        "        assert RUNS[at] >> 11 & 15 <= 11"
+        "        assert RUNS[at] >> 8 & 7 <= 4"
+        "        at @ at + 1"
+        ""
+        "    assert RUNS[0] >> 18 == 0"
+        f"    assert RUNS.len() == {runs.len()}"
+    ]
+    return [head.join("\n"), tablekit.numbers_constant(comment: ["# The runs of one set of the three properties, each `first << 18 | bidi << 11", "# | joining << 8 | combining`. The code points from `first` up to the next", "# run's share them. `bidi` is 0 L, 1 R, 2 AL, 3 AN, 4 EN, 5 ES, 6 CS, 7 ET, 8", "# ON, 9 BN, 10 NSM, and 11 for every class RFC 5893 does not name; `joining`", "# is 0 for none (U, and C, which RFC 5892 does not read), 1 L, 2 D, 3 R, 4 T;", "# `combining` is the canonical combining class, 0 to 254, 9 being a virama.", "# The first run begins at 0 and the runs ascend."], name: "RUNS", items: runs), tail.join("\n")].join("\n\n") + "\n"
+
+# The text of the file `name` in `folder`, held to `sha256`.
+function source(folder: str, name: str, sha256: str) -> str?
+    return tablekit.pinned_text(path: folder + "/" + name, sha256: sha256)
+
+# Does what `command` asks with every module, reading the files in
+# `folder`, and answers the worst code it reached.
+#
+# - `command`: `write` or `check`.
+# - `folder`: the folder holding the five files.
+#
+# Fails as reading a file, making a table and writing or reading a module
+# fail.
+function run(command: str, folder: str) -> i64?
+    read = conformance.read_cases(source(folder: folder, name: "IdnaTestV2.txt", sha256: TEST_SHA256)?)?
+    mapping = tables.mapping(source(folder: folder, name: "IdnaMappingTable.txt", sha256: MAPPING_SHA256)?)?
+    runs = tables.properties(bidi: source(folder: folder, name: "DerivedBidiClass.txt", sha256: BIDI_SHA256)?, joining: source(folder: folder, name: "DerivedJoiningType.txt", sha256: JOINING_SHA256)?, combining: source(folder: folder, name: "DerivedCombiningClass.txt", sha256: COMBINING_SHA256)?)?
+    code @= tablekit.settle(command: command, path: TABLES + "mapping_table.hero", text: mapping_text(mapping))?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "property_table.hero", text: property_text(runs))?
+    )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "conformance_cases.hero", text: module_text(read))?
+    )
+    return ok(code)
+
+function main()
+    words = tablekit.command_words("url_idna")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/url_idna/main.hero -- write|check <folder of the files of ",
+            IDNA_URL,
+            " and ",
+            EXTRACTED_URL,
+            ">"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], folder: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

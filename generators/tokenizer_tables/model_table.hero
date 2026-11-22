@@ -1,0 +1,69 @@
+# tiktoken 0.14.0's `tiktoken/model.py` read for its two tables: the
+# dictionary `MODEL_TO_ENCODING`, a whole name to its encoding, and
+# `MODEL_PREFIX_TO_ENCODING`, the start of a name to its encoding, which
+# `encoding_name_for_model` tries in the order written. Each entry stands on
+# a line of its own, `"name": "encoding",`, maybe a comment after it; a
+# line that is only a comment is left.
+
+use <rebel>/strings
+
+# One entry of a table: a name or the start of one, and its encoding.
+record Entry
+    name: str
+    encoding: str
+
+# The entries of the dictionary `name` in `text`, in the order written.
+#
+# - `text`: the whole of `model.py`.
+# - `name`: `MODEL_TO_ENCODING` or `MODEL_PREFIX_TO_ENCODING`.
+#
+# Fails `invalid` where the dictionary is not found, a line of it is not an
+# entry or a comment, or a name stands twice.
+function entries(text: str, name: str) -> [Entry]?
+    opening = name + ": dict[str, str] = {\n"
+
+    start = match strings.index_of(s: text, substr: opening)
+        .ok at => at + opening.len()
+        .err _ => return fail(code: "invalid", msg: f"model.py holds no dictionary {name}")
+
+    end = match strings.index_of_from(s: text, substr: "\n}\n", from: start)
+        .ok at => at
+        .err _ => return fail(code: "invalid", msg: f"the dictionary {name} does not close")
+
+    out: [Entry] @= []
+
+    for line in strings.split(s: text.slice(from: start, to: end), sep: "\n")
+        code = strings.trim(strings.split(s: line, sep: "#")[0])
+
+        if code != ""
+            one = entry_of(code)?
+
+            for seen in out
+                if seen.name == one.name
+                    return fail(code: "invalid", msg: f"{name} names {one.name} twice")
+
+            out @ out.push(one)
+
+    return ok(out)
+
+# The entry `code` writes: `"name": "encoding",`.
+#
+# Fails `invalid` where it is not that.
+function entry_of(code: str) -> Entry?
+    parts = strings.split(s: code, sep: "\"")
+
+    if parts.len() != 5 || parts[0] != "" || parts[2] != ": " || parts[4] != ","
+        return fail(code: "invalid", msg: f"the line \"{code}\" is not an entry of a dictionary of names")
+    return ok(Entry(name: parts[1], encoding: parts[3]))
+
+## Tests
+
+test "entries: the order written, a comment line and a comment after an entry left, and the other dictionary not read"
+    text = "A: dict[str, str] = {\n    \"o1\": \"o200k_base\",\n    # chat\n    \"gpt-4\": \"cl100k_base\",  # e.g.\n}\n\nB: dict[str, str] = {\n    \"x\": \"y\",\n}\n"
+    assert entries(text: text, name: "A").must() == [Entry(name: "o1", encoding: "o200k_base"), Entry(name: "gpt-4", encoding: "cl100k_base")]
+    assert entries(text: text, name: "B").must() == [Entry(name: "x", encoding: "y")]
+    assert entries(text: text, name: "C").is_err()
+
+test "entries: a line that is not an entry, and a name twice"
+    assert entries(text: "A: dict[str, str] = {\n    \"o1\" = \"x\",\n}\n", name: "A").is_err()
+    assert entries(text: "A: dict[str, str] = {\n    \"o1\": \"x\",\n    \"o1\": \"y\",\n}\n", name: "A").is_err()

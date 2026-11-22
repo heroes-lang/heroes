@@ -1,0 +1,93 @@
+# The text of `i18n/locales`' `locale_data` from CLDR's core data: every tag
+# `likelySubtags.json` gives likely subtags for, with them, and every
+# language, script, region and variant alias of `aliases.json`, with its
+# replacement, each in the order of its key's bytes.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <tablekit>/tablekit
+
+# The keys of `pairs` in the order of their bytes, and the value of each.
+record Sorted
+    keys: [str]
+    values: [str]
+
+# The members of the object `v`, sorted by their keys' bytes, each value read
+# by `field`: the text itself where it is "", else the text of that member.
+#
+# Fails as reading the JSON fails.
+function sorted_texts(v: json.Value, field: str) -> Sorted?
+    texts: {str: str} @= {}
+
+    for one in cldrkit.entries(v)?
+        texts[one.key] @ if field == ""
+            json.text_of(one.value)?
+        else
+            json.text_of(json.member(one.value, key: field)?)?
+
+    names = sort(keys(texts))
+    values: [str] @= []
+
+    for name in names
+        values @ values.push(texts[name].must())
+
+    return ok(Sorted(keys: names, values: values))
+
+# The two constants of `sorted`, each with its comment.
+#
+# Fails as writing a literal fails.
+function constants(sorted: Sorted lent, keys_name: str, keys_comment: [str], values_name: str, values_comment: [str]) -> [str]?
+    return ok(
+        [tablekit.strings_constant(comment: keys_comment, name: keys_name, items: sorted.keys)?, tablekit.strings_constant(comment: values_comment, name: values_name, items: sorted.values)?]
+    )
+
+# The whole text of `locale_data`.
+#
+# - `release`: CLDR 49's zip, open.
+# - `generated`: the header's lines that say which program wrote it.
+#
+# Fails as reading the two files and writing a literal fail.
+function module_text(release: cldrkit.Release lent, generated: [str]) -> str?
+    likely = sorted_texts(cldrkit.member_at(release, name: "cldr-core/supplemental/likelySubtags.json", path: ["supplemental", "likelySubtags"])?, field: "")?
+    alias = cldrkit.member_at(release, name: "cldr-core/supplemental/aliases.json", path: ["supplemental", "metadata", "alias"])?
+    languages = sorted_texts(json.member(alias, key: "languageAlias")?, field: "_replacement")?
+    scripts = sorted_texts(json.member(alias, key: "scriptAlias")?, field: "_replacement")?
+    regions = sorted_texts(json.member(alias, key: "territoryAlias")?, field: "_replacement")?
+    variants = sorted_texts(json.member(alias, key: "variantAlias")?, field: "_replacement")?
+    head: [str] @= [
+        "# The likely subtags and the aliases of CLDR release 49, which"
+        "# `i18n/locales` reads: for a language, a script, a region or two or three"
+        "# of them, the full tag it is most likely; for a deprecated or legacy code,"
+        "# the code that replaces it."
+        "#"
+    ]
+
+    for line in generated
+        head @ head.push(line)
+
+    parts: [str] @= [head.join("\n")]
+    groups = [
+        constants(likely, keys_name: "LIKELY_KEYS", keys_comment: ["# The tags likely subtags are given for, `und` the empty language, in the", "# order of their bytes."], values_name: "LIKELY_VALUES", values_comment: ["# The full tag of each, in the order of `LIKELY_KEYS`."])?
+        constants(languages, keys_name: "LANGUAGE_KEYS", keys_comment: ["# The language aliases, a language alone or with a region or variant, in", "# the order of their bytes."], values_name: "LANGUAGE_VALUES", values_comment: ["# The tag replacing each, in the order of `LANGUAGE_KEYS`."])?
+        constants(scripts, keys_name: "SCRIPT_KEYS", keys_comment: ["# The script aliases, in the order of their bytes."], values_name: "SCRIPT_VALUES", values_comment: ["# The script replacing each."])?
+        constants(regions, keys_name: "REGION_KEYS", keys_comment: ["# The region aliases, in the order of their bytes."], values_name: "REGION_VALUES", values_comment: ["# The regions replacing each, separated by spaces, the first the default."])?
+        constants(variants, keys_name: "VARIANT_KEYS", keys_comment: ["# The variant aliases, in the order of their bytes."], values_name: "VARIANT_VALUES", values_comment: ["# The variant replacing each."])?
+    ]
+
+    for group in groups
+        for one in group
+            parts @ parts.push(one)
+
+    return ok(parts.join("\n\n") + "\n")
+
+## Tests
+
+test "sorted_texts: keys by their bytes, a value read whole and one read from a member"
+    plain = sorted_texts(json.parse("{\"und\": \"en-Latn-US\", \"aa\": \"aa-Latn-ET\"}").must(), field: "").must()
+    assert plain.keys == ["aa", "und"] && plain.values == ["aa-Latn-ET", "en-Latn-US"]
+    replaced = sorted_texts(
+        json.parse("{\"heploc\": {\"_reason\": \"deprecated\", \"_replacement\": \"alalc97\"}}").must(),
+        field: "_replacement"
+    ).must()
+    assert replaced.values == ["alalc97"]
+    assert sorted_texts(json.parse("{\"x\": {\"_reason\": \"deprecated\"}}").must(), field: "_replacement").is_err()

@@ -1,10 +1,14 @@
 # The special tokens of the encoding `o200k_harmony`, the one OpenAI's
 # gpt-oss models read: its ordinary tokens and its pattern are
-# `o200k_base`'s, held equal by the program that wrote this module, and
-# its 1091 special tokens are these. Nothing below this header is edited
-# by hand: the one-off program `gen_tables.py`, which is not in the tree
-# (defect 2639), read them from tiktoken 0.14.0 on 2026-11-18 and wrote this
-# module whole.
+# `o200k_base`'s, and its 1091 special tokens are these.
+#
+# Generated, never edited by hand: the Heroes program
+# `generators/tokenizer_tables/` held them, and that the encoding takes
+# `o200k_base`'s pattern and ordinary tokens, to tiktoken 0.14.0's
+# `tiktoken_ext/openai_public.py` (SHA-256
+# 954392738e60d0fb6dca1dad80872efc47c8e2733babecbbf0a23970ed66c2cb,
+# fetched 2026-11-22), and wrote this module whole; its `check` command
+# says whether this module is still what it writes.
 #
 # Taken from OpenAI's tiktoken, whose licence travels with it here, as its
 # LICENSE states it:

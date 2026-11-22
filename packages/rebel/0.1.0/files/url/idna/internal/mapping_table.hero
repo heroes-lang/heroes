@@ -1,12 +1,12 @@
 # The IDNA Mapping Table of UTS #46 for Unicode 17.0.0: the status of every
 # code point, and what a mapped one becomes. `lookup.hero` reads it.
 #
-# The table is data, made and not typed: a one-off program read
-# `IdnaMappingTable.txt` of https://www.unicode.org/Public/17.0.0/idna/ (dated
-# 2025-07-25, SHA-256 87f05505dc026fdb...) on 2026-11-17,
+# Generated, never edited by hand: the Heroes program `generators/url_idna/`
+# read `IdnaMappingTable.txt` of https://www.unicode.org/Public/17.0.0/idna/ (dated
+# 2025-07-25, SHA-256 87f05505dc026fdb...), fetched 2026-11-22,
 # reduced it to runs, held every lookup to the file's answer for each of the
-# 1,114,112 code points, and wrote this module whole. Nothing here is edited by
-# hand.
+# 1,114,112 code points, and wrote this module whole; its `check` command
+# says whether this module is still what it writes.
 
 # The runs of one status and one mapping, each `first << 16 | target << 3 |
 # status`: the code points from `first` up to the next run's share the status,

@@ -1,0 +1,35 @@
+# Distinct texts numbered in the order they are first met, which is how
+# `number_tables` holds its blocks: a locale names a block by its number, and
+# a block many locales share is held once.
+
+# The texts met so far, and the number of each.
+record Blocks
+    items: [str]
+    numbers: {str: i64}
+
+# No texts yet.
+function empty() -> Blocks
+    return Blocks(items: [], numbers: {})
+
+# The number of `text` in `blocks`, added at the end where it is new.
+#
+# - `blocks`: the texts met so far.
+# - `text`: the text met.
+function number_of(@blocks: Blocks, text: str) -> i64
+    match blocks.numbers[text]
+        .ok found => return found
+        .err _    => _ = 0
+
+    number = blocks.items.len()
+    blocks.items @ blocks.items.push(text)
+    blocks.numbers[text] @ number
+    return number
+
+## Tests
+
+test "number_of: a new text added at the end, a known one found"
+    blocks @= empty()
+    assert number_of(@blocks, text: "a") == 0
+    assert number_of(@blocks, text: "b") == 1
+    assert number_of(@blocks, text: "a") == 0
+    assert blocks.items == ["a", "b"]
