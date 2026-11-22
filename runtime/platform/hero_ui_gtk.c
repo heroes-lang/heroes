@@ -228,6 +228,22 @@ typedef union hero_ui_gtk_iter {
 typedef void (*hero_ui_gtk_callback)(void);
 typedef int (*hero_ui_gtk_source)(void *data);
 typedef void (*hero_ui_gtk_ready)(void *source, void *result, void *data);
+/* GDBus's `GDBusSignalCallback`, and its `GDBusInterfaceVTable`: a method's
+ * handler, a property's reader and writer, and the eight pointers GIO keeps
+ * for itself, as `gio/gdbusconnection.h` lays them out. */
+typedef void (*hero_ui_gtk_dbus_signal)(void *connection, const char *sender, const char *path, const char *interface, const char *signal, void *parameters, void *data);
+typedef struct hero_ui_gtk_dbus_vtable {
+    void (*method_call)(void *connection, const char *sender, const char *path, const char *interface, const char *method, void *parameters, void *invocation, void *data);
+    void *(*get_property)(void *connection, const char *sender, const char *path, const char *interface, const char *property, hero_ui_gerror **error, void *data);
+    int (*set_property)(void *connection, const char *sender, const char *path, const char *interface, const char *property, void *value, hero_ui_gerror **error, void *data);
+    void *padding[8];
+} hero_ui_gtk_dbus_vtable;
+/* GObject's `GValue`: its type and two words of its value, zeroed before
+ * `g_value_init`. */
+typedef struct hero_ui_gtk_value {
+    size_t type;
+    uint64_t data[2];
+} hero_ui_gtk_value;
 
 typedef struct hero_ui_gtk_functions {
     int (*init_check)(void);
@@ -590,6 +606,50 @@ typedef struct hero_ui_gtk_functions {
     void *(*list_append)(void *list, void *data);
     void (*list_free)(void *list);
     int (*type_check_instance_is_a)(void *instance, size_t type);
+    /* GIO's D-Bus, for the tray (AN ICON IN THE TRAY) and the session's end
+     * (THE SESSION'S END ASKING THE PROGRAM). */
+    char *(*dbus_address_get_for_bus_sync)(int type, void *cancellable, hero_ui_gerror **error);
+    void *(*dbus_connection_new_for_address_sync)(const char *address, int flags, void *observer, void *cancellable, hero_ui_gerror **error);
+    int (*dbus_connection_close_sync)(void *connection, void *cancellable, hero_ui_gerror **error);
+    const char *(*dbus_connection_get_unique_name)(void *connection);
+    void *(*dbus_node_info_new_for_xml)(const char *xml, hero_ui_gerror **error);
+    void *(*dbus_node_info_lookup_interface)(void *info, const char *name);
+    unsigned (*dbus_connection_register_object)(void *connection, const char *path, void *interface, const hero_ui_gtk_dbus_vtable *vtable, void *data, void (*free_data)(void *data), hero_ui_gerror **error);
+    int (*dbus_connection_unregister_object)(void *connection, unsigned id);
+    int (*dbus_connection_emit_signal)(void *connection, const char *destination, const char *path, const char *interface, const char *signal, void *parameters, hero_ui_gerror **error);
+    void (*dbus_connection_call)(void *connection, const char *name, const char *path, const char *interface, const char *method, void *parameters, const void *reply_type, int flags, int timeout, void *cancellable, hero_ui_gtk_ready callback, void *data);
+    void *(*dbus_connection_call_finish)(void *connection, void *result, hero_ui_gerror **error);
+    unsigned (*dbus_connection_signal_subscribe)(void *connection, const char *sender, const char *interface, const char *member, const char *path, const char *arg0, int flags, hero_ui_gtk_dbus_signal callback, void *data, void (*free_data)(void *data));
+    void (*dbus_connection_signal_unsubscribe)(void *connection, unsigned id);
+    void (*dbus_method_invocation_return_value)(void *invocation, void *parameters);
+    void (*dbus_method_invocation_return_dbus_error)(void *invocation, const char *name, const char *message);
+    void *(*variant_builder_new)(const char *type);
+    void (*variant_builder_add_value)(void *builder, void *value);
+    void *(*variant_builder_end)(void *builder);
+    void (*variant_builder_unref)(void *builder);
+    void *(*variant_new_fixed_array)(const char *type, const void *elements, size_t count, size_t size);
+    void *(*variant_new_variant)(void *value);
+    void *(*variant_get_child_value)(void *value, size_t index);
+    size_t (*variant_n_children)(void *value);
+    int32_t (*variant_get_int32)(void *value);
+    uint32_t (*variant_get_uint32)(void *value);
+    int (*variant_get_boolean)(void *value);
+    int (*variant_is_of_type)(void *value, const char *type);
+    void *(*variant_ref_sink)(void *value);
+    const char *(*variant_get_string)(void *value, size_t *length);
+    const char **(*variant_get_strv)(void *value, size_t *length);
+    const void *(*variant_get_fixed_array)(void *value, size_t *count, size_t size);
+    const char *(*keyval_name)(unsigned keyval);
+    /* GTK's drop target, GIO's files and GObject's values, for files dropped
+     * on a window (FILES DROPPED ON A WINDOW). */
+    void *(*drop_target_new)(size_t type, int actions);
+    void (*event_controller_set_propagation_phase)(void *controller, int phase);
+    void *(*file_new_for_path)(const char *path);
+    void *(*value_init)(hero_ui_gtk_value *value, size_t type);
+    void (*value_take_boxed)(hero_ui_gtk_value *value, void *boxed);
+    void (*value_unset)(hero_ui_gtk_value *value);
+    /* GTK 4.8's, NULL where the library has none. */
+    void *(*file_list_new_from_array)(void *const *files, size_t count);
     /* GTK 4.10's, GTK 4.14's and the X11 backend's, NULL where the library
      * has none of them. */
     void (*file_dialog_select_folder)(void *dialog, void *parent, void *cancellable, hero_ui_gtk_ready callback, void *data);
@@ -1004,6 +1064,45 @@ static void hero_ui_gtk_load(void) {
     HERO_UI_GTK_NEED(list_append, "g_list_append");
     HERO_UI_GTK_NEED(list_free, "g_list_free");
     HERO_UI_GTK_NEED(type_check_instance_is_a, "g_type_check_instance_is_a");
+    HERO_UI_GTK_NEED(dbus_address_get_for_bus_sync, "g_dbus_address_get_for_bus_sync");
+    HERO_UI_GTK_NEED(dbus_connection_new_for_address_sync, "g_dbus_connection_new_for_address_sync");
+    HERO_UI_GTK_NEED(dbus_connection_close_sync, "g_dbus_connection_close_sync");
+    HERO_UI_GTK_NEED(dbus_connection_get_unique_name, "g_dbus_connection_get_unique_name");
+    HERO_UI_GTK_NEED(dbus_node_info_new_for_xml, "g_dbus_node_info_new_for_xml");
+    HERO_UI_GTK_NEED(dbus_node_info_lookup_interface, "g_dbus_node_info_lookup_interface");
+    HERO_UI_GTK_NEED(dbus_connection_register_object, "g_dbus_connection_register_object");
+    HERO_UI_GTK_NEED(dbus_connection_unregister_object, "g_dbus_connection_unregister_object");
+    HERO_UI_GTK_NEED(dbus_connection_emit_signal, "g_dbus_connection_emit_signal");
+    HERO_UI_GTK_NEED(dbus_connection_call, "g_dbus_connection_call");
+    HERO_UI_GTK_NEED(dbus_connection_call_finish, "g_dbus_connection_call_finish");
+    HERO_UI_GTK_NEED(dbus_connection_signal_subscribe, "g_dbus_connection_signal_subscribe");
+    HERO_UI_GTK_NEED(dbus_connection_signal_unsubscribe, "g_dbus_connection_signal_unsubscribe");
+    HERO_UI_GTK_NEED(dbus_method_invocation_return_value, "g_dbus_method_invocation_return_value");
+    HERO_UI_GTK_NEED(dbus_method_invocation_return_dbus_error, "g_dbus_method_invocation_return_dbus_error");
+    HERO_UI_GTK_NEED(variant_builder_new, "g_variant_builder_new");
+    HERO_UI_GTK_NEED(variant_builder_add_value, "g_variant_builder_add_value");
+    HERO_UI_GTK_NEED(variant_builder_end, "g_variant_builder_end");
+    HERO_UI_GTK_NEED(variant_builder_unref, "g_variant_builder_unref");
+    HERO_UI_GTK_NEED(variant_new_fixed_array, "g_variant_new_fixed_array");
+    HERO_UI_GTK_NEED(variant_new_variant, "g_variant_new_variant");
+    HERO_UI_GTK_NEED(variant_get_child_value, "g_variant_get_child_value");
+    HERO_UI_GTK_NEED(variant_n_children, "g_variant_n_children");
+    HERO_UI_GTK_NEED(variant_get_int32, "g_variant_get_int32");
+    HERO_UI_GTK_NEED(variant_get_uint32, "g_variant_get_uint32");
+    HERO_UI_GTK_NEED(variant_get_boolean, "g_variant_get_boolean");
+    HERO_UI_GTK_NEED(variant_is_of_type, "g_variant_is_of_type");
+    HERO_UI_GTK_NEED(variant_ref_sink, "g_variant_ref_sink");
+    HERO_UI_GTK_NEED(variant_get_string, "g_variant_get_string");
+    HERO_UI_GTK_NEED(variant_get_strv, "g_variant_get_strv");
+    HERO_UI_GTK_NEED(variant_get_fixed_array, "g_variant_get_fixed_array");
+    HERO_UI_GTK_NEED(keyval_name, "gdk_keyval_name");
+    HERO_UI_GTK_NEED(drop_target_new, "gtk_drop_target_new");
+    HERO_UI_GTK_NEED(event_controller_set_propagation_phase, "gtk_event_controller_set_propagation_phase");
+    HERO_UI_GTK_NEED(file_new_for_path, "g_file_new_for_path");
+    HERO_UI_GTK_NEED(value_init, "g_value_init");
+    HERO_UI_GTK_NEED(value_take_boxed, "g_value_take_boxed");
+    HERO_UI_GTK_NEED(value_unset, "g_value_unset");
+    HERO_UI_GTK_MAY(file_list_new_from_array, "gdk_file_list_new_from_array");
     HERO_UI_GTK_MAY(file_list_get_files, "gdk_file_list_get_files");
     HERO_UI_GTK_MAY(file_dialog_select_folder, "gtk_file_dialog_select_folder");
     HERO_UI_GTK_MAY(file_dialog_select_folder_finish, "gtk_file_dialog_select_folder_finish");
@@ -1188,6 +1287,20 @@ struct hero_ui_native {
     int64_t panes;
     /* The accessible name the program gave, NULL for none. */
     char *accessible;
+    /* A tray icon (AN ICON IN THE TRAY): its own connection to the session
+     * bus while it is shown, NULL while it is not, the two objects it serves
+     * there and its watch of the watcher's name; its menu's layout's
+     * revision and whether a change waits to be told; its icon, ARGB32 in
+     * the network's byte order, `image_width` by `image_height`. */
+    void *bus;
+    unsigned item_object;
+    unsigned menu_object;
+    unsigned watcher_watch;
+    uint32_t revision;
+    bool layout_due;
+    uint8_t *argb;
+    /* A window's drop target while it takes dropped files, else NULL. */
+    void *drop_target;
 };
 
 /* What the calls below `hero_ui_arm_create` define and it calls. */
@@ -1218,6 +1331,15 @@ static void hero_ui_gtk_watch_appearance(void);
 static void hero_ui_gtk_unwatch_appearance(void);
 static bool hero_ui_gtk_keep_path(void *file, uint8_t **paths, int64_t *count, int64_t *room);
 static void *hero_ui_gtk_filters(const uint8_t *filters, int64_t count, int64_t *made);
+static int64_t hero_ui_gtk_tray_make(hero_ui_native *made);
+static void hero_ui_gtk_tray_drop(hero_ui_native *tray);
+static void hero_ui_gtk_tray_changed(const hero_ui_native *node);
+static void hero_ui_gtk_tray_words(hero_ui_native *tray);
+static int64_t hero_ui_gtk_tray_image(hero_ui_native *tray, const uint8_t *rgba, int64_t width, int64_t height);
+static int64_t hero_ui_gtk_tray_shown(hero_ui_native *tray, bool shown);
+static int64_t hero_ui_gtk_tray_named(hero_ui_native *tray, const uint8_t *name, int64_t count);
+static hero_ui_native *hero_ui_gtk_tray_of_node(const hero_ui_native *node);
+static int64_t hero_ui_gtk_tray_click(hero_ui_native *tray, const hero_ui_native *item);
 
 /* Above 0 while `inject` acts, so a slider moved to where it stands is told. */
 static _Thread_local int64_t hero_ui_gtk_injecting;
@@ -1315,6 +1437,14 @@ static hero_ui_native *hero_ui_gtk_window(int64_t id) {
     hero_ui_native *window = hero_ui_find(id);
 
     return window != NULL && window->kind == HERO_UI_WINDOW ? window : NULL;
+}
+
+/* The window or the tray icon of number `id`, whose action group holds the
+ * actions of the menu items standing in it, or NULL. */
+static hero_ui_native *hero_ui_gtk_holder(int64_t id) {
+    hero_ui_native *top = hero_ui_find(id);
+
+    return top != NULL && (top->kind == HERO_UI_WINDOW || top->kind == HERO_UI_TRAY) ? top : NULL;
 }
 
 /* `value` as GTK's `int` of a size or a place. */
@@ -1545,6 +1675,9 @@ static int64_t hero_ui_gtk_fill_menu(hero_ui_native *menu) {
         }
         hero_ui_gtk.object_unref(section);
     }
+    /* A tray icon's menu is read from the records by the desktop's tray,
+     * which is told it changed. */
+    hero_ui_gtk_tray_changed(menu);
     return answer;
 }
 
@@ -1591,6 +1724,7 @@ static void hero_ui_gtk_show_check(hero_ui_native *item) {
     } else {
         hero_ui_gtk.simple_action_set_state(item->action, hero_ui_gtk.variant_new_string(item->checked ? HERO_UI_GTK_RADIO_ON : HERO_UI_GTK_RADIO_OFF));
     }
+    hero_ui_gtk_tray_changed(item);
 }
 
 /* Checks radio item `item` and unchecks the other radio items of its group:
@@ -1843,15 +1977,18 @@ static void hero_ui_gtk_drop(hero_ui_native *widget) {
             hero_ui_gtk.object_unref(widget->menu_model);
         }
         break;
+    case HERO_UI_TRAY:
+        hero_ui_gtk_tray_drop(widget);
+        break;
     case HERO_UI_MENU_ITEM:
     case HERO_UI_MENU_SEPARATOR: {
-        hero_ui_native *window = hero_ui_gtk_window(widget->window);
+        hero_ui_native *window = hero_ui_gtk_holder(widget->window);
 
         if (owner != NULL) {
             hero_ui_ids_drop(&owner->order, widget->id);
             (void)hero_ui_gtk_fill_menu(owner);
         }
-        if (window != NULL && widget->shortcut != NULL) {
+        if (window != NULL && window->shortcuts != NULL && widget->shortcut != NULL) {
             hero_ui_gtk.shortcut_controller_remove_shortcut(window->shortcuts, widget->shortcut);
         }
         if (window != NULL && widget->action != NULL) {
@@ -2037,13 +2174,10 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     if (hero_ui_find(id) != NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (kind == HERO_UI_TRAY) {
-        return hero_ui_refused(HERO_UI_UNSUPPORTED, "GTK 4 has no tray icon (GTK 3's GtkStatusIcon is gone), and this arm draws no StatusNotifierItem over D-Bus in its place");
-    }
     if (kind == HERO_UI_TABLE && (hero_ui_gtk.column_view_sorter_get_primary_sort_column == NULL || hero_ui_gtk.column_view_sorter_get_primary_sort_order == NULL)) {
         return hero_ui_refused(HERO_UI_UNSUPPORTED, "a table's sort is read from GTK 4.10's gtk_column_view_sorter_get_primary_sort_column, which this GTK lacks");
     }
-    if (kind != HERO_UI_WINDOW) {
+    if (kind != HERO_UI_WINDOW && kind != HERO_UI_TRAY) {
         owner = hero_ui_find(parent);
         if (owner == NULL) {
             return HERO_UI_NOT_FOUND;
@@ -2051,9 +2185,13 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (!hero_ui_gtk_takes(owner, kind)) {
             return HERO_UI_INVALID;
         }
-        window = hero_ui_gtk_window(owner->window);
+        /* A tray icon holds its menu's items as a window holds its own. */
+        window = hero_ui_gtk_holder(owner->window);
         if (window == NULL) {
             return HERO_UI_NOT_FOUND;
+        }
+        if (window->kind == HERO_UI_TRAY && id > INT32_MAX) {
+            return hero_ui_refused(HERO_UI_LIMIT, "a tray icon's menu names its items to the desktop by 32-bit numbers (com.canonical.dbusmenu), and this widget's number is past them");
         }
     }
     if (kind == HERO_UI_WEBVIEW) {
@@ -2175,11 +2313,18 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         made->menu_model = hero_ui_gtk.menu_new();
         ok = made->menu_model != NULL;
         break;
+    case HERO_UI_TRAY:
+        /* Its menu's items' actions, which no widget holds: the desktop's
+         * tray chooses them through the menu it serves. */
+        made->actions = hero_ui_gtk.simple_action_group_new();
+        ok = made->actions != NULL;
+        break;
     default:
         hero_layer_free(made);
         return HERO_UI_INVALID;
     }
-    if (!ok || (made->widget == NULL && kind != HERO_UI_WINDOW && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR && kind != HERO_UI_CONTEXT_MENU) || !hero_ui_keep(id, made)) {
+    if (!ok || (made->widget == NULL && kind != HERO_UI_WINDOW && kind != HERO_UI_MENU && kind != HERO_UI_MENU_ITEM && kind != HERO_UI_MENU_SEPARATOR && kind != HERO_UI_CONTEXT_MENU && kind != HERO_UI_TRAY) ||
+        !hero_ui_keep(id, made)) {
         if (made->tree != NULL || made->selection != NULL) {
             hero_ui_gtk_free_view(made);
         }
@@ -2228,6 +2373,8 @@ int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         return hero_ui_gtk_hang(made, owner);
     case HERO_UI_CONTEXT_MENU:
         return hero_ui_gtk_attach_context(made, owner);
+    case HERO_UI_TRAY:
+        return hero_ui_gtk_tray_make(made);
     default:
         hero_ui_gtk_stand(made);
         return HERO_UI_OK;
@@ -2271,6 +2418,7 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     case HERO_UI_MENU:
     case HERO_UI_MENU_ITEM:
     case HERO_UI_PAGE:
+    case HERO_UI_TRAY:
         break;
     default:
         return HERO_UI_INVALID;
@@ -2323,6 +2471,9 @@ int64_t hero_ui_arm_set_text(int64_t id, const uint8_t *text, int64_t count) {
     }
     if (widget->kind == HERO_UI_MENU_ITEM) {
         return hero_ui_gtk_fill_menu(hero_ui_find(widget->parent));
+    }
+    if (widget->kind == HERO_UI_TRAY) {
+        hero_ui_gtk_tray_words(widget);
     }
     return HERO_UI_OK;
 }
@@ -2671,6 +2822,8 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
             /* The system sizes them, so they stand shown as the program asks. */
             hero_ui_gtk.widget_set_visible(widget->widget, on == 1 ? 1 : 0);
             return HERO_UI_OK;
+        case HERO_UI_TRAY:
+            return hero_ui_gtk_tray_shown(widget, on == 1);
         default:
             hero_ui_gtk_show_placed(widget);
             return HERO_UI_OK;
@@ -2689,6 +2842,9 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
             return hero_ui_gtk_fill_menu(hero_ui_find(widget->parent));
+        case HERO_UI_TRAY:
+            /* A greyed-out tray icon's menu chooses nothing. */
+            return hero_ui_gtk_context_refill(widget);
         default:
             for (int64_t i = 0; i < widget->radio_count; i += 1) {
                 hero_ui_gtk.widget_set_sensitive(widget->radios[i], on == 1 ? 1 : 0);
@@ -2751,7 +2907,7 @@ int64_t hero_ui_arm_set_shortcut(int64_t id, const uint8_t *key, int64_t count, 
     if (item->kind != HERO_UI_MENU_ITEM || (count > 0 && !hero_ui_gtk_key_of(key, count, &keyval))) {
         return HERO_UI_INVALID;
     }
-    window = hero_ui_gtk_window(item->window);
+    window = hero_ui_gtk_holder(item->window);
     if (window == NULL) {
         return HERO_UI_NOT_FOUND;
     }
@@ -2789,6 +2945,9 @@ int64_t hero_ui_arm_set_image(int64_t id, const uint8_t *rgba, int64_t width, in
 
     if (picture == NULL) {
         return HERO_UI_NOT_FOUND;
+    }
+    if (picture->kind == HERO_UI_TRAY) {
+        return hero_ui_gtk_tray_image(picture, rgba, width, height);
     }
     if (picture->kind != HERO_UI_IMAGE) {
         return HERO_UI_INVALID;
@@ -3298,6 +3457,10 @@ int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64_t seco
     case HERO_UI_EVENT_MENU:
         if (widget->kind != HERO_UI_MENU_ITEM) {
             answer = HERO_UI_INVALID;
+        } else if (hero_ui_gtk_tray_of_node(widget) != NULL) {
+            /* A tray icon's item is chosen as the desktop's tray chooses
+             * it, by the menu's `Event` through the bus. */
+            answer = hero_ui_gtk_tray_click(hero_ui_gtk_tray_of_node(widget), widget);
         } else if (hero_ui_gtk_usable(widget)) {
             /* A radio item's action takes its target, as its menu hands it. */
             hero_ui_gtk.action_activate(widget->action, widget->check == HERO_UI_CHECK_RADIO ? hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON) : NULL);
@@ -4057,7 +4220,7 @@ int64_t hero_ui_arm_set_check(int64_t id, int64_t mode) {
     if (item->kind != HERO_UI_MENU_ITEM) {
         return HERO_UI_INVALID;
     }
-    window = hero_ui_gtk_window(item->window);
+    window = hero_ui_gtk_holder(item->window);
     if (window == NULL) {
         return HERO_UI_NOT_FOUND;
     }
@@ -4145,6 +4308,10 @@ static int64_t hero_ui_gtk_attach_context(hero_ui_native *menu, hero_ui_native *
     void *target;
 
     owner->context = menu->id;
+    if (owner->kind == HERO_UI_TRAY) {
+        /* The desktop's tray opens it, from the menu the icon serves. */
+        return hero_ui_gtk_fill_menu(menu);
+    }
     if (owner->kind == HERO_UI_TEXT_FIELD || owner->kind == HERO_UI_TEXT_AREA) {
         hero_ui_gtk_extra_menu(owner, menu->menu_model);
         return hero_ui_gtk_fill_menu(menu);
@@ -7761,6 +7928,9 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
+    if (widget->kind == HERO_UI_TRAY) {
+        return hero_ui_gtk_tray_named(widget, name, count);
+    }
     target = hero_ui_gtk_accessible_of(widget);
     if (target == NULL) {
         return HERO_UI_INVALID;
@@ -7788,7 +7958,7 @@ int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, 
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (hero_ui_gtk_accessible_of(widget) == NULL) {
+    if (widget->kind != HERO_UI_TRAY && hero_ui_gtk_accessible_of(widget) == NULL) {
         return HERO_UI_INVALID;
     }
     bytes = widget->accessible != NULL ? strlen(widget->accessible) : 0;
@@ -7823,6 +7993,877 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
 
         hero_ui_gtk.accessible_update_relation(target, HERO_GTK_ACCESSIBLE_RELATION_LABELLED_BY, labels, -1);
         hero_ui_gtk.list_free(labels);
+    }
+    return HERO_UI_OK;
+}
+
+/* -- AN ICON IN THE TRAY --------------------------------------------------------
+ *
+ * GTK 4 draws no tray icon (GTK 3's `GtkStatusIcon` is gone), so a tray icon
+ * is the desktop's own protocol over the D-Bus session bus: a
+ * StatusNotifierItem (`org.kde.StatusNotifierItem`) with its menu as a
+ * `com.canonical.dbusmenu` beside it, which the desktop's tray, the host,
+ * draws and opens itself. Each icon has a connection of its own, its item at
+ * `/StatusNotifierItem`, the path the protocol names for an item registered
+ * by its bus name, and its menu at `/MenuBar`: the StatusNotifierWatcher
+ * forgets an item when its bus name goes, so closing the connection takes the
+ * icon from the tray when it is destroyed or hidden, whatever the watcher.
+ * Where no watcher owns `org.kde.StatusNotifierWatcher` the desktop draws no
+ * such icon (GNOME without an extension), and making one is `UNSUPPORTED`
+ * naming it; a watcher that comes back (its panel restarted) is told every
+ * shown icon again.
+ *
+ * The menu is read from the arm's records each time a host asks, so it
+ * cannot drift from what the program set: an item's id is its widget's
+ * number, the menu's own 0, a change told as `LayoutUpdated` once per turn
+ * of the loop. A host's `clicked` activates the item's action as a window
+ * menu's click does, and `inject` sends that same `Event` to the icon through
+ * the bus, so a case chooses an item by the path a host's click takes.
+ *
+ * Its words are the item's title and tip, and its label where it has no
+ * image (`XAyatanaLabel`, Ayatana's, which the hosts that draw words read);
+ * its image the item's `IconPixmap`, ARGB32 in the network's byte order. A
+ * host that draws icons alone shows its own for an icon with no image.
+ * Written from the StatusNotifierItem specification of freedesktop.org, the
+ * dbusmenu interface's introspection and GIO's documentation. */
+
+#define HERO_UI_GTK_TRAY_ITEM "org.kde.StatusNotifierItem"
+#define HERO_UI_GTK_TRAY_WATCHER "org.kde.StatusNotifierWatcher"
+#define HERO_UI_GTK_TRAY_MENU "com.canonical.dbusmenu"
+#define HERO_UI_GTK_TRAY_ITEM_PATH "/StatusNotifierItem"
+#define HERO_UI_GTK_TRAY_MENU_PATH "/MenuBar"
+#define HERO_UI_GTK_DBUS_INVALID "org.freedesktop.DBus.Error.InvalidArgs"
+/* GDBus's `G_DBUS_CONNECTION_FLAGS_AUTHENTICATION_CLIENT` with
+ * `G_DBUS_CONNECTION_FLAGS_MESSAGE_BUS_CONNECTION`. */
+#define HERO_G_DBUS_CONNECTION_FLAGS_BUS 9
+/* The longest side of the icon an item serves, in pixels: a tray draws one
+ * at 16 to 64, and the bus carries every pixel each time a host asks, so a
+ * larger image is first drawn smaller by whole blocks. */
+#define HERO_UI_GTK_TRAY_ICON_MOST 256
+
+static const char hero_ui_gtk_tray_item_xml[] =
+    "<node><interface name='org.kde.StatusNotifierItem'>"
+    "<property name='Category' type='s' access='read'/>"
+    "<property name='Id' type='s' access='read'/>"
+    "<property name='Title' type='s' access='read'/>"
+    "<property name='Status' type='s' access='read'/>"
+    "<property name='WindowId' type='i' access='read'/>"
+    "<property name='IconThemePath' type='s' access='read'/>"
+    "<property name='IconName' type='s' access='read'/>"
+    "<property name='IconPixmap' type='a(iiay)' access='read'/>"
+    "<property name='OverlayIconName' type='s' access='read'/>"
+    "<property name='OverlayIconPixmap' type='a(iiay)' access='read'/>"
+    "<property name='AttentionIconName' type='s' access='read'/>"
+    "<property name='AttentionIconPixmap' type='a(iiay)' access='read'/>"
+    "<property name='AttentionMovieName' type='s' access='read'/>"
+    "<property name='ToolTip' type='(sa(iiay)ss)' access='read'/>"
+    "<property name='ItemIsMenu' type='b' access='read'/>"
+    "<property name='Menu' type='o' access='read'/>"
+    "<property name='XAyatanaLabel' type='s' access='read'/>"
+    "<property name='XAyatanaLabelGuide' type='s' access='read'/>"
+    "<method name='ContextMenu'><arg name='x' type='i' direction='in'/><arg name='y' type='i' direction='in'/></method>"
+    "<method name='Activate'><arg name='x' type='i' direction='in'/><arg name='y' type='i' direction='in'/></method>"
+    "<method name='SecondaryActivate'><arg name='x' type='i' direction='in'/><arg name='y' type='i' direction='in'/></method>"
+    "<method name='Scroll'><arg name='delta' type='i' direction='in'/><arg name='orientation' type='s' direction='in'/></method>"
+    "<signal name='NewTitle'/><signal name='NewIcon'/><signal name='NewAttentionIcon'/><signal name='NewOverlayIcon'/><signal name='NewToolTip'/>"
+    "<signal name='NewStatus'><arg name='status' type='s'/></signal>"
+    "<signal name='XAyatanaNewLabel'><arg name='label' type='s'/><arg name='guide' type='s'/></signal>"
+    "</interface></node>";
+
+static const char hero_ui_gtk_tray_menu_xml[] =
+    "<node><interface name='com.canonical.dbusmenu'>"
+    "<property name='Version' type='u' access='read'/>"
+    "<property name='TextDirection' type='s' access='read'/>"
+    "<property name='Status' type='s' access='read'/>"
+    "<property name='IconThemePath' type='as' access='read'/>"
+    "<method name='GetLayout'><arg name='parentId' type='i' direction='in'/><arg name='recursionDepth' type='i' direction='in'/>"
+    "<arg name='propertyNames' type='as' direction='in'/><arg name='revision' type='u' direction='out'/><arg name='layout' type='(ia{sv}av)' direction='out'/></method>"
+    "<method name='GetGroupProperties'><arg name='ids' type='ai' direction='in'/><arg name='propertyNames' type='as' direction='in'/>"
+    "<arg name='properties' type='a(ia{sv})' direction='out'/></method>"
+    "<method name='GetProperty'><arg name='id' type='i' direction='in'/><arg name='name' type='s' direction='in'/><arg name='value' type='v' direction='out'/></method>"
+    "<method name='Event'><arg name='id' type='i' direction='in'/><arg name='eventId' type='s' direction='in'/><arg name='data' type='v' direction='in'/>"
+    "<arg name='timestamp' type='u' direction='in'/></method>"
+    "<method name='EventGroup'><arg name='events' type='a(isvu)' direction='in'/><arg name='idErrors' type='ai' direction='out'/></method>"
+    "<method name='AboutToShow'><arg name='id' type='i' direction='in'/><arg name='needUpdate' type='b' direction='out'/></method>"
+    "<method name='AboutToShowGroup'><arg name='ids' type='ai' direction='in'/><arg name='updatesNeeded' type='ai' direction='out'/>"
+    "<arg name='idErrors' type='ai' direction='out'/></method>"
+    "<signal name='ItemsPropertiesUpdated'><arg name='updatedProps' type='a(ia{sv})'/><arg name='removedProps' type='a(ias)'/></signal>"
+    "<signal name='LayoutUpdated'><arg name='revision' type='u'/><arg name='parent' type='i'/></signal>"
+    "<signal name='ItemActivationRequested'><arg name='id' type='i'/><arg name='timestamp' type='u'/></signal>"
+    "</interface></node>";
+
+/* The two interfaces as GIO reads them, the item's and the menu's, parsed
+ * once and kept for the process, as the library is. */
+static void *hero_ui_gtk_tray_nodes[2];
+static void *hero_ui_gtk_tray_interfaces[2];
+
+static bool hero_ui_gtk_tray_described(void) {
+    static const char *const xml[2] = {hero_ui_gtk_tray_item_xml, hero_ui_gtk_tray_menu_xml};
+    static const char *const names[2] = {HERO_UI_GTK_TRAY_ITEM, HERO_UI_GTK_TRAY_MENU};
+
+    for (size_t i = 0; i < 2; i += 1) {
+        if (hero_ui_gtk_tray_nodes[i] == NULL) {
+            hero_ui_gerror *error = NULL;
+
+            hero_ui_gtk_tray_nodes[i] = hero_ui_gtk.dbus_node_info_new_for_xml(xml[i], &error);
+            if (error != NULL) {
+                hero_ui_gtk.error_free(error);
+            }
+            if (hero_ui_gtk_tray_nodes[i] == NULL) {
+                return false;
+            }
+            hero_ui_gtk_tray_interfaces[i] = hero_ui_gtk.dbus_node_info_lookup_interface(hero_ui_gtk_tray_nodes[i], names[i]);
+        }
+        if (hero_ui_gtk_tray_interfaces[i] == NULL) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* The tray icon whose object or watch carried `data`, while `connection` is
+ * still its own, else NULL. */
+static hero_ui_native *hero_ui_gtk_tray_at(void *data, void *connection) {
+    hero_ui_native *tray = hero_ui_find((int64_t)(intptr_t)data);
+
+    return tray != NULL && tray->kind == HERO_UI_TRAY && connection != NULL && tray->bus == connection ? tray : NULL;
+}
+
+/* The tray icon whose menu `node` stands in, at any depth, or the icon
+ * itself; else NULL. A menu's item, separator or inner menu stands in the
+ * window, or the tray icon, its menu holds its actions for (`window`). */
+static hero_ui_native *hero_ui_gtk_tray_of_node(const hero_ui_native *node) {
+    hero_ui_native *top = node != NULL ? hero_ui_find(node->window) : NULL;
+
+    return top != NULL && top->kind == HERO_UI_TRAY ? top : NULL;
+}
+
+/* What a host names `id` in tray icon `tray`'s menu into `*node`: 0 the menu
+ * itself, NULL where the icon has none; else an item, a separator or a menu
+ * inside it. False where the menu holds no such id. */
+static bool hero_ui_gtk_tray_node(const hero_ui_native *tray, int32_t id, hero_ui_native **node) {
+    hero_ui_native *found;
+
+    if (id == 0) {
+        *node = tray->context != 0 ? hero_ui_find(tray->context) : NULL;
+        return true;
+    }
+    found = id > 0 ? hero_ui_find(id) : NULL;
+    if (found == NULL || found->window != tray->id || (found->kind != HERO_UI_MENU && found->kind != HERO_UI_MENU_ITEM && found->kind != HERO_UI_MENU_SEPARATOR)) {
+        return false;
+    }
+    *node = found;
+    return true;
+}
+
+/* -- Its menu, as the host reads it -- */
+
+/* Whether a host asking for `names` (none: every one) wants `name`. */
+static bool hero_ui_gtk_tray_wanted(const char *const *names, const char *name) {
+    if (names == NULL || names[0] == NULL) {
+        return true;
+    }
+    for (size_t i = 0; names[i] != NULL; i += 1) {
+        if (strcmp(names[i], name) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static void hero_ui_gtk_tray_put(void *props, const char *name, void *value) {
+    hero_ui_gtk.variant_builder_add_value(props, hero_ui_gtk.variant_new("{sv}", name, value));
+}
+
+/* Whether `node` and every menu above it, up to the tray icon, take the
+ * person's choice. */
+static bool hero_ui_gtk_tray_enabled(const hero_ui_native *node) {
+    for (const hero_ui_native *at = node; at != NULL; at = hero_ui_find(at->parent)) {
+        if (!at->enabled) {
+            return false;
+        }
+        if (at->kind == HERO_UI_TRAY) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Item `item`'s shortcut, as dbusmenu shows one: its keys held, then its
+ * key, by GDK's names. */
+static void hero_ui_gtk_tray_shortcut(void *props, const hero_ui_native *item) {
+    const char *keys[4];
+    size_t held = 0;
+    const char *key = hero_ui_gtk.keyval_name(item->keyval);
+    void *one;
+
+    if (key == NULL) {
+        return;
+    }
+    if ((item->held & HERO_GDK_CONTROL_MASK) != 0) {
+        keys[held++] = "Control";
+    }
+    if ((item->held & HERO_GDK_ALT_MASK) != 0) {
+        keys[held++] = "Alt";
+    }
+    if ((item->held & HERO_GDK_SHIFT_MASK) != 0) {
+        keys[held++] = "Shift";
+    }
+    keys[held++] = key;
+    one = hero_ui_gtk.variant_new_strv(keys, (long)held);
+    hero_ui_gtk_tray_put(props, "shortcut", hero_ui_gtk.variant_new_array("as", &one, 1));
+}
+
+/* The properties of `node` a host asks by `names`, dbusmenu's: NULL or the
+ * context menu is the menu itself. */
+static void *hero_ui_gtk_tray_props(const hero_ui_native *node, const char *const *names) {
+    void *props = hero_ui_gtk.variant_builder_new("a{sv}");
+    void *made;
+
+    if (node == NULL || node->kind == HERO_UI_CONTEXT_MENU) {
+        if (hero_ui_gtk_tray_wanted(names, "children-display")) {
+            hero_ui_gtk_tray_put(props, "children-display", hero_ui_gtk.variant_new_string("submenu"));
+        }
+    } else if (node->kind == HERO_UI_MENU_SEPARATOR) {
+        if (hero_ui_gtk_tray_wanted(names, "type")) {
+            hero_ui_gtk_tray_put(props, "type", hero_ui_gtk.variant_new_string("separator"));
+        }
+        if (hero_ui_gtk_tray_wanted(names, "visible")) {
+            hero_ui_gtk_tray_put(props, "visible", hero_ui_gtk.variant_new_boolean(node->visible ? 1 : 0));
+        }
+    } else {
+        if (hero_ui_gtk_tray_wanted(names, "label")) {
+            /* dbusmenu reads `_` as a key's mark, as GTK's menus do. */
+            char *label = hero_ui_gtk_marked(node->label);
+
+            hero_ui_gtk_tray_put(props, "label", hero_ui_gtk.variant_new_string(label != NULL ? label : ""));
+            hero_layer_free(label);
+        }
+        if (hero_ui_gtk_tray_wanted(names, "enabled")) {
+            hero_ui_gtk_tray_put(props, "enabled", hero_ui_gtk.variant_new_boolean(hero_ui_gtk_tray_enabled(node) ? 1 : 0));
+        }
+        if (hero_ui_gtk_tray_wanted(names, "visible")) {
+            hero_ui_gtk_tray_put(props, "visible", hero_ui_gtk.variant_new_boolean(node->visible ? 1 : 0));
+        }
+        if (node->kind == HERO_UI_MENU && hero_ui_gtk_tray_wanted(names, "children-display")) {
+            hero_ui_gtk_tray_put(props, "children-display", hero_ui_gtk.variant_new_string("submenu"));
+        }
+        if (node->kind == HERO_UI_MENU_ITEM && node->check != HERO_UI_CHECK_NONE) {
+            if (hero_ui_gtk_tray_wanted(names, "toggle-type")) {
+                hero_ui_gtk_tray_put(props, "toggle-type", hero_ui_gtk.variant_new_string(node->check == HERO_UI_CHECK_RADIO ? "radio" : "checkmark"));
+            }
+            if (hero_ui_gtk_tray_wanted(names, "toggle-state")) {
+                hero_ui_gtk_tray_put(props, "toggle-state", hero_ui_gtk.variant_new("i", node->checked ? 1 : 0));
+            }
+        }
+        if (node->kind == HERO_UI_MENU_ITEM && node->keyval != 0 && hero_ui_gtk_tray_wanted(names, "shortcut")) {
+            hero_ui_gtk_tray_shortcut(props, node);
+        }
+    }
+    made = hero_ui_gtk.variant_builder_end(props);
+    hero_ui_gtk.variant_builder_unref(props);
+    return made;
+}
+
+/* `node`'s layout, `(ia{sv}av)`, its children `depth` deep (below 0 every
+ * one): a menu's shown children, in their order; NULL the menu a tray icon
+ * without one has, empty. */
+static void *hero_ui_gtk_tray_layout(const hero_ui_native *node, int32_t depth, const char *const *names) {
+    bool root = node == NULL || node->kind == HERO_UI_CONTEXT_MENU;
+    void *children = hero_ui_gtk.variant_builder_new("av");
+    void *props = hero_ui_gtk_tray_props(node, names);
+    void *made;
+
+    if (node != NULL && depth != 0 && (node->kind == HERO_UI_MENU || (root && node->visible))) {
+        for (int64_t i = 0; i < node->order.count; i += 1) {
+            hero_ui_native *child = hero_ui_find(node->order.at[i]);
+
+            if (child != NULL && child->id <= INT32_MAX) {
+                hero_ui_gtk.variant_builder_add_value(children, hero_ui_gtk.variant_new_variant(hero_ui_gtk_tray_layout(child, depth > 0 ? depth - 1 : -1, names)));
+            }
+        }
+    }
+    made = hero_ui_gtk.variant_new("(i@a{sv}@av)", root ? 0 : (int32_t)node->id, props, hero_ui_gtk.variant_builder_end(children));
+    hero_ui_gtk.variant_builder_unref(children);
+    return made;
+}
+
+/* Adds `(id, properties)` of `node` and of every node under it to `out`. */
+static void hero_ui_gtk_tray_every(void *out, const hero_ui_native *node, const char *const *names) {
+    bool root = node == NULL || node->kind == HERO_UI_CONTEXT_MENU;
+
+    hero_ui_gtk.variant_builder_add_value(out, hero_ui_gtk.variant_new("(i@a{sv})", root ? 0 : (int32_t)node->id, hero_ui_gtk_tray_props(node, names)));
+    for (int64_t i = 0; node != NULL && (root || node->kind == HERO_UI_MENU) && i < node->order.count; i += 1) {
+        hero_ui_native *child = hero_ui_find(node->order.at[i]);
+
+        if (child != NULL && child->id <= INT32_MAX) {
+            hero_ui_gtk_tray_every(out, child, names);
+        }
+    }
+}
+
+/* What a host's event on `node` does: `clicked` on an item the person may
+ * choose activates its action, as a window menu's click does. */
+static void hero_ui_gtk_tray_event(hero_ui_native *node, const char *event) {
+    if (node != NULL && node->kind == HERO_UI_MENU_ITEM && strcmp(event, "clicked") == 0 && hero_ui_gtk_usable(node)) {
+        /* A radio item's action takes its target, as its menu hands it. */
+        hero_ui_gtk.action_activate(node->action, node->check == HERO_UI_CHECK_RADIO ? hero_ui_gtk.variant_new_string(HERO_UI_GTK_RADIO_ON) : NULL);
+    }
+}
+
+/* Argument `index` of a call's `parameters`, read as an `i`, a `u` or an
+ * `s`: GIO checked each call's arguments against the interface. */
+static int32_t hero_ui_gtk_tray_int(void *parameters, size_t index) {
+    void *child = hero_ui_gtk.variant_get_child_value(parameters, index);
+    int32_t value = hero_ui_gtk.variant_get_int32(child);
+
+    hero_ui_gtk.variant_unref(child);
+    return value;
+}
+
+static void hero_ui_gtk_tray_menu_call(void *connection, const char *sender, const char *path, const char *interface, const char *method, void *parameters, void *invocation, void *data) {
+    hero_ui_native *tray = hero_ui_gtk_tray_at(data, connection);
+    hero_ui_native *node = NULL;
+
+    (void)sender;
+    (void)path;
+    (void)interface;
+    if (tray == NULL) {
+        hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, "org.freedesktop.DBus.Error.UnknownObject", "this tray icon is gone");
+        return;
+    }
+    if (strcmp(method, "GetLayout") == 0 || strcmp(method, "GetGroupProperties") == 0) {
+        bool layout = method[3] == 'L';
+        void *asked = hero_ui_gtk.variant_get_child_value(parameters, layout ? 2 : 1);
+        const char **names = hero_ui_gtk.variant_get_strv(asked, NULL);
+
+        if (layout && !hero_ui_gtk_tray_node(tray, hero_ui_gtk_tray_int(parameters, 0), &node)) {
+            hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, HERO_UI_GTK_DBUS_INVALID, "this tray icon's menu holds no item of that id");
+        } else if (layout) {
+            void *tree = hero_ui_gtk_tray_layout(node, hero_ui_gtk_tray_int(parameters, 1), names);
+
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(u@(ia{sv}av))", tray->revision, tree));
+        } else {
+            void *wanted = hero_ui_gtk.variant_get_child_value(parameters, 0);
+            size_t count = 0;
+            const int32_t *ids = hero_ui_gtk.variant_get_fixed_array(wanted, &count, sizeof *ids);
+            void *out = hero_ui_gtk.variant_builder_new("a(ia{sv})");
+
+            if (count == 0) {
+                /* No id asks every item's. */
+                (void)hero_ui_gtk_tray_node(tray, 0, &node);
+                hero_ui_gtk_tray_every(out, node, names);
+            }
+            for (size_t i = 0; i < count; i += 1) {
+                if (hero_ui_gtk_tray_node(tray, ids[i], &node)) {
+                    hero_ui_gtk.variant_builder_add_value(out, hero_ui_gtk.variant_new("(i@a{sv})", ids[i], hero_ui_gtk_tray_props(node, names)));
+                }
+            }
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(@a(ia{sv}))", hero_ui_gtk.variant_builder_end(out)));
+            hero_ui_gtk.variant_builder_unref(out);
+            hero_ui_gtk.variant_unref(wanted);
+        }
+        hero_ui_gtk.g_free(names);
+        hero_ui_gtk.variant_unref(asked);
+        return;
+    }
+    if (strcmp(method, "GetProperty") == 0) {
+        void *asked = hero_ui_gtk.variant_get_child_value(parameters, 1);
+        const char *names[2] = {hero_ui_gtk.variant_get_string(asked, NULL), NULL};
+        void *props = hero_ui_gtk_tray_node(tray, hero_ui_gtk_tray_int(parameters, 0), &node) ? hero_ui_gtk.variant_ref_sink(hero_ui_gtk_tray_props(node, names)) : NULL;
+
+        if (props != NULL && hero_ui_gtk.variant_n_children(props) == 1) {
+            void *entry = hero_ui_gtk.variant_get_child_value(props, 0);
+            void *value = hero_ui_gtk.variant_get_child_value(entry, 1);
+
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(@v)", value));
+            hero_ui_gtk.variant_unref(value);
+            hero_ui_gtk.variant_unref(entry);
+        } else {
+            hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, HERO_UI_GTK_DBUS_INVALID, "this tray icon's menu holds no such item, or the item no such property");
+        }
+        if (props != NULL) {
+            hero_ui_gtk.variant_unref(props);
+        }
+        hero_ui_gtk.variant_unref(asked);
+        return;
+    }
+    if (strcmp(method, "Event") == 0 || strcmp(method, "AboutToShow") == 0) {
+        if (!hero_ui_gtk_tray_node(tray, hero_ui_gtk_tray_int(parameters, 0), &node)) {
+            hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, HERO_UI_GTK_DBUS_INVALID, "this tray icon's menu holds no item of that id");
+        } else if (method[0] == 'E') {
+            void *event = hero_ui_gtk.variant_get_child_value(parameters, 1);
+
+            hero_ui_gtk_tray_event(node, hero_ui_gtk.variant_get_string(event, NULL));
+            hero_ui_gtk.variant_unref(event);
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, NULL);
+        } else {
+            /* The menu is always read whole, so it needs no update first. */
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(b)", 0));
+        }
+        return;
+    }
+    if (strcmp(method, "EventGroup") == 0 || strcmp(method, "AboutToShowGroup") == 0) {
+        bool events = method[0] == 'E';
+        void *asked = hero_ui_gtk.variant_get_child_value(parameters, 0);
+        size_t count = hero_ui_gtk.variant_n_children(asked);
+        size_t failed = 0;
+        void *errors = hero_ui_gtk.variant_builder_new("ai");
+        void *errors_made;
+
+        for (size_t i = 0; i < count; i += 1) {
+            void *each = hero_ui_gtk.variant_get_child_value(asked, i);
+            int32_t id = events ? hero_ui_gtk_tray_int(each, 0) : hero_ui_gtk.variant_get_int32(each);
+
+            if (!hero_ui_gtk_tray_node(tray, id, &node)) {
+                hero_ui_gtk.variant_builder_add_value(errors, hero_ui_gtk.variant_new("i", id));
+                failed += 1;
+            } else if (events) {
+                void *event = hero_ui_gtk.variant_get_child_value(each, 1);
+
+                hero_ui_gtk_tray_event(node, hero_ui_gtk.variant_get_string(event, NULL));
+                hero_ui_gtk.variant_unref(event);
+            }
+            hero_ui_gtk.variant_unref(each);
+        }
+        errors_made = hero_ui_gtk.variant_ref_sink(hero_ui_gtk.variant_builder_end(errors));
+        hero_ui_gtk.variant_builder_unref(errors);
+        if (events && count > 0 && failed == count) {
+            hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, HERO_UI_GTK_DBUS_INVALID, "this tray icon's menu holds no item of those ids");
+        } else if (events) {
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(@ai)", errors_made));
+        } else {
+            hero_ui_gtk.dbus_method_invocation_return_value(invocation, hero_ui_gtk.variant_new("(@ai@ai)", hero_ui_gtk.variant_new_array("i", NULL, 0), errors_made));
+        }
+        hero_ui_gtk.variant_unref(errors_made);
+        hero_ui_gtk.variant_unref(asked);
+        return;
+    }
+    hero_ui_gtk.dbus_method_invocation_return_dbus_error(invocation, "org.freedesktop.DBus.Error.UnknownMethod", "the menu has no such method");
+}
+
+static void *hero_ui_gtk_tray_menu_property(void *connection, const char *sender, const char *path, const char *interface, const char *property, hero_ui_gerror **error, void *data) {
+    (void)connection;
+    (void)sender;
+    (void)path;
+    (void)interface;
+    (void)error;
+    (void)data;
+    if (strcmp(property, "Version") == 0) {
+        return hero_ui_gtk.variant_new("u", 3u);
+    }
+    if (strcmp(property, "TextDirection") == 0) {
+        return hero_ui_gtk.variant_new_string("ltr");
+    }
+    if (strcmp(property, "Status") == 0) {
+        return hero_ui_gtk.variant_new_string("normal");
+    }
+    /* IconThemePath: none. */
+    return hero_ui_gtk.variant_new_strv(NULL, 0);
+}
+
+/* -- The item, as the host reads it -- */
+
+/* Tray icon `tray`'s image, `a(iiay)`: none where it has none, or for an
+ * icon of the protocol's that this arm draws none of. */
+static void *hero_ui_gtk_tray_pixmap(const hero_ui_native *tray) {
+    void *icons = hero_ui_gtk.variant_builder_new("a(iiay)");
+    void *made;
+
+    if (tray != NULL && tray->argb != NULL) {
+        void *bytes = hero_ui_gtk.variant_new_fixed_array("y", tray->argb, (size_t)(tray->image_width * tray->image_height * 4), 1);
+
+        hero_ui_gtk.variant_builder_add_value(icons, hero_ui_gtk.variant_new("(ii@ay)", (int)tray->image_width, (int)tray->image_height, bytes));
+    }
+    made = hero_ui_gtk.variant_builder_end(icons);
+    hero_ui_gtk.variant_builder_unref(icons);
+    return made;
+}
+
+static void hero_ui_gtk_tray_item_call(void *connection, const char *sender, const char *path, const char *interface, const char *method, void *parameters, void *invocation, void *data) {
+    (void)connection;
+    (void)sender;
+    (void)path;
+    (void)interface;
+    (void)method;
+    (void)parameters;
+    (void)data;
+    /* The icon is its menu (`ItemIsMenu`): a click opens it in the host, and
+     * neither a click, a secondary click nor a scroll is told. */
+    hero_ui_gtk.dbus_method_invocation_return_value(invocation, NULL);
+}
+
+static void *hero_ui_gtk_tray_item_property(void *connection, const char *sender, const char *path, const char *interface, const char *property, hero_ui_gerror **error, void *data) {
+    hero_ui_native *tray = hero_ui_gtk_tray_at(data, connection);
+    const char *words = tray != NULL && tray->label != NULL ? tray->label : "";
+
+    (void)sender;
+    (void)path;
+    (void)interface;
+    (void)error;
+    if (strcmp(property, "Category") == 0) {
+        return hero_ui_gtk.variant_new_string("ApplicationStatus");
+    }
+    if (strcmp(property, "Id") == 0) {
+        char name[256];
+        char id[320];
+
+        hero_ui_gtk_program_name(name, sizeof name);
+        (void)snprintf(id, sizeof id, "%s-%lld", name, tray != NULL ? (long long)tray->id : 0LL);
+        return hero_ui_gtk.variant_new_string(id);
+    }
+    if (strcmp(property, "Title") == 0) {
+        /* What a screen reader names it by, where the program named it. */
+        return hero_ui_gtk.variant_new_string(tray != NULL && tray->accessible != NULL ? tray->accessible : words);
+    }
+    if (strcmp(property, "Status") == 0) {
+        return hero_ui_gtk.variant_new_string("Active");
+    }
+    if (strcmp(property, "WindowId") == 0) {
+        return hero_ui_gtk.variant_new("i", 0);
+    }
+    if (strcmp(property, "IconPixmap") == 0) {
+        return hero_ui_gtk_tray_pixmap(tray);
+    }
+    if (strcmp(property, "OverlayIconPixmap") == 0 || strcmp(property, "AttentionIconPixmap") == 0) {
+        return hero_ui_gtk_tray_pixmap(NULL);
+    }
+    if (strcmp(property, "ToolTip") == 0) {
+        return hero_ui_gtk.variant_new("(s@a(iiay)ss)", "", hero_ui_gtk_tray_pixmap(NULL), words, "");
+    }
+    if (strcmp(property, "ItemIsMenu") == 0) {
+        return hero_ui_gtk.variant_new_boolean(1);
+    }
+    if (strcmp(property, "Menu") == 0) {
+        return hero_ui_gtk.variant_new("o", HERO_UI_GTK_TRAY_MENU_PATH);
+    }
+    if (strcmp(property, "XAyatanaLabel") == 0) {
+        return hero_ui_gtk.variant_new_string(tray != NULL && tray->argb == NULL ? words : "");
+    }
+    /* IconName, IconThemePath, OverlayIconName, AttentionIconName,
+     * AttentionMovieName, XAyatanaLabelGuide: none. */
+    return hero_ui_gtk.variant_new_string("");
+}
+
+static const hero_ui_gtk_dbus_vtable hero_ui_gtk_tray_item_vtable = {
+    .method_call = hero_ui_gtk_tray_item_call,
+    .get_property = hero_ui_gtk_tray_item_property,
+};
+
+static const hero_ui_gtk_dbus_vtable hero_ui_gtk_tray_menu_vtable = {
+    .method_call = hero_ui_gtk_tray_menu_call,
+    .get_property = hero_ui_gtk_tray_menu_property,
+};
+
+/* Tells the host tray icon `tray`'s words, name and image changed. */
+static void hero_ui_gtk_tray_words(hero_ui_native *tray) {
+    static const char *const changed[] = {"NewTitle", "NewIcon", "NewToolTip"};
+    const char *words = tray->label != NULL ? tray->label : "";
+
+    if (tray->bus == NULL) {
+        return;
+    }
+    for (size_t i = 0; i < sizeof changed / sizeof changed[0]; i += 1) {
+        (void)hero_ui_gtk.dbus_connection_emit_signal(tray->bus, NULL, HERO_UI_GTK_TRAY_ITEM_PATH, HERO_UI_GTK_TRAY_ITEM, changed[i], NULL, NULL);
+    }
+    (void)hero_ui_gtk.dbus_connection_emit_signal(tray->bus, NULL, HERO_UI_GTK_TRAY_ITEM_PATH, HERO_UI_GTK_TRAY_ITEM, "XAyatanaNewLabel", hero_ui_gtk.variant_new("(ss)", tray->argb == NULL ? words : "", ""), NULL);
+}
+
+/* Whether a layout's change waits for the loop's next turn to be told. */
+static _Thread_local bool hero_ui_gtk_tray_due;
+
+/* Tells each tray icon's host its menu changed: once a turn, however many
+ * calls changed it. */
+static int hero_ui_gtk_tray_tell(void *data) {
+    (void)data;
+    hero_ui_gtk_tray_due = false;
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *tray = hero_ui_at(at);
+
+        if (tray != NULL && tray->kind == HERO_UI_TRAY && tray->layout_due) {
+            tray->layout_due = false;
+            tray->revision += 1u;
+            if (tray->bus != NULL) {
+                (void)hero_ui_gtk.dbus_connection_emit_signal(tray->bus, NULL, HERO_UI_GTK_TRAY_MENU_PATH, HERO_UI_GTK_TRAY_MENU, "LayoutUpdated", hero_ui_gtk.variant_new("(ui)", tray->revision, 0), NULL);
+            }
+        }
+    }
+    return 0;
+}
+
+static void hero_ui_gtk_tray_changed(const hero_ui_native *node) {
+    hero_ui_native *tray = hero_ui_gtk_tray_of_node(node);
+
+    if (tray == NULL) {
+        return;
+    }
+    tray->layout_due = true;
+    if (!hero_ui_gtk_tray_due) {
+        hero_ui_gtk_tray_due = true;
+        (void)hero_ui_gtk.idle_add(hero_ui_gtk_tray_tell, NULL);
+    }
+}
+
+/* -- Shown, hidden, made and destroyed -- */
+
+/* A call through the bus whose answer tells nothing: the registration with
+ * the watcher and the injected click. */
+static void hero_ui_gtk_tray_sent(void *source, void *result, void *data) {
+    hero_ui_gerror *error = NULL;
+    void *reply = hero_ui_gtk.dbus_connection_call_finish(source, result, &error);
+
+    (void)data;
+    if (reply != NULL) {
+        hero_ui_gtk.variant_unref(reply);
+    }
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+    }
+}
+
+/* Registers tray icon `tray`'s item with the watcher by its bus name. Not
+ * waited for: a watcher may read the item before it answers, and the item
+ * answers on this thread. */
+static void hero_ui_gtk_tray_register(hero_ui_native *tray) {
+    const char *name = hero_ui_gtk.dbus_connection_get_unique_name(tray->bus);
+
+    if (name != NULL) {
+        hero_ui_gtk.dbus_connection_call(tray->bus, HERO_UI_GTK_TRAY_WATCHER, "/StatusNotifierWatcher", HERO_UI_GTK_TRAY_WATCHER, "RegisterStatusNotifierItem", hero_ui_gtk.variant_new("(s)", name), NULL, 0, -1, NULL,
+                                         hero_ui_gtk_tray_sent, NULL);
+    }
+}
+
+/* The watcher's name changed owner: a new watcher is told the icon again. */
+static void hero_ui_gtk_tray_watcher_moved(void *connection, const char *sender, const char *path, const char *interface, const char *signal, void *parameters, void *data) {
+    hero_ui_native *tray = hero_ui_gtk_tray_at(data, connection);
+    void *owner;
+
+    (void)sender;
+    (void)path;
+    (void)interface;
+    (void)signal;
+    if (tray == NULL || !hero_ui_gtk.variant_is_of_type(parameters, "(sss)")) {
+        return;
+    }
+    owner = hero_ui_gtk.variant_get_child_value(parameters, 2);
+    if (hero_ui_gtk.variant_get_string(owner, NULL)[0] != '\0') {
+        hero_ui_gtk_tray_register(tray);
+    }
+    hero_ui_gtk.variant_unref(owner);
+}
+
+/* Takes tray icon `tray` from the desktop's tray: its connection closed, so
+ * the watcher forgets its item. */
+static void hero_ui_gtk_tray_hide(hero_ui_native *tray) {
+    void *bus = tray->bus;
+
+    if (bus == NULL) {
+        return;
+    }
+    tray->bus = NULL;
+    if (tray->watcher_watch != 0) {
+        hero_ui_gtk.dbus_connection_signal_unsubscribe(bus, tray->watcher_watch);
+    }
+    if (tray->menu_object != 0) {
+        (void)hero_ui_gtk.dbus_connection_unregister_object(bus, tray->menu_object);
+    }
+    if (tray->item_object != 0) {
+        (void)hero_ui_gtk.dbus_connection_unregister_object(bus, tray->item_object);
+    }
+    tray->watcher_watch = 0;
+    tray->menu_object = 0;
+    tray->item_object = 0;
+    (void)hero_ui_gtk.dbus_connection_close_sync(bus, NULL, NULL);
+    hero_ui_gtk.object_unref(bus);
+}
+
+/* Whether a D-Bus session bus is named, so that GIO finds it without
+ * launching one of its own (`dbus-launch`'s autolaunch): a bus it launched
+ * would hold no watcher and no session manager. */
+static bool hero_ui_gtk_bus_named(void) {
+    const char *runtime = getenv("XDG_RUNTIME_DIR");
+    char path[4096];
+
+    if (hero_ui_gtk_named("DBUS_SESSION_BUS_ADDRESS")) {
+        return true;
+    }
+    return runtime != NULL && runtime[0] == '/' && snprintf(path, sizeof path, "%s/bus", runtime) < (int)sizeof path && access(path, F_OK) == 0;
+}
+
+/* Shows tray icon `tray` in the desktop's tray: a connection of its own, its
+ * item and menu served there, registered with the watcher. */
+static int64_t hero_ui_gtk_tray_show(hero_ui_native *tray) {
+    char words[HERO_UI_WORDS_MOST];
+    hero_ui_gerror *error = NULL;
+    void *data = (void *)(intptr_t)tray->id;
+    void *bus = NULL;
+    void *reply;
+    char *address;
+    bool watched = false;
+
+    if (tray->bus != NULL) {
+        return HERO_UI_OK;
+    }
+    if (!hero_ui_gtk_bus_named()) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "no D-Bus session bus is named (neither DBUS_SESSION_BUS_ADDRESS nor XDG_RUNTIME_DIR's bus), and a tray icon reaches the desktop's tray through a StatusNotifierWatcher on one");
+    }
+    if (!hero_ui_gtk_tray_described()) {
+        return hero_ui_refused(HERO_UI_OTHER, "GIO could not read the D-Bus interfaces of a StatusNotifierItem and its menu");
+    }
+    address = hero_ui_gtk.dbus_address_get_for_bus_sync(HERO_G_BUS_TYPE_SESSION, NULL, &error);
+    if (address != NULL) {
+        bus = hero_ui_gtk.dbus_connection_new_for_address_sync(address, HERO_G_DBUS_CONNECTION_FLAGS_BUS, NULL, NULL, &error);
+        hero_ui_gtk.g_free(address);
+    }
+    if (bus == NULL) {
+        (void)snprintf(words, sizeof words, "no D-Bus session bus answers (%s), and a tray icon reaches the desktop's tray through a StatusNotifierWatcher on it", error != NULL && error->message != NULL ? error->message : "no words");
+        if (error != NULL) {
+            hero_ui_gtk.error_free(error);
+        }
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, words);
+    }
+    reply = hero_ui_gtk.dbus_connection_call_sync(bus, "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus", "NameHasOwner", hero_ui_gtk.variant_new("(s)", HERO_UI_GTK_TRAY_WATCHER), "(b)", 0, 5000, NULL, &error);
+    if (reply != NULL) {
+        void *owned = hero_ui_gtk.variant_get_child_value(reply, 0);
+
+        watched = hero_ui_gtk.variant_get_boolean(owned) != 0;
+        hero_ui_gtk.variant_unref(owned);
+        hero_ui_gtk.variant_unref(reply);
+    }
+    if (error != NULL) {
+        hero_ui_gtk.error_free(error);
+        error = NULL;
+    }
+    if (!watched) {
+        (void)hero_ui_gtk.dbus_connection_close_sync(bus, NULL, NULL);
+        hero_ui_gtk.object_unref(bus);
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "no StatusNotifierWatcher (org.kde.StatusNotifierWatcher) answers on the D-Bus session bus, so the desktop draws no StatusNotifierItem (GNOME draws one only with an extension), and GTK 4 has no tray icon of its own (GTK 3's GtkStatusIcon is gone)");
+    }
+    tray->item_object = hero_ui_gtk.dbus_connection_register_object(bus, HERO_UI_GTK_TRAY_ITEM_PATH, hero_ui_gtk_tray_interfaces[0], &hero_ui_gtk_tray_item_vtable, data, NULL, &error);
+    if (tray->item_object != 0) {
+        tray->menu_object = hero_ui_gtk.dbus_connection_register_object(bus, HERO_UI_GTK_TRAY_MENU_PATH, hero_ui_gtk_tray_interfaces[1], &hero_ui_gtk_tray_menu_vtable, data, NULL, &error);
+    }
+    if (tray->item_object == 0 || tray->menu_object == 0) {
+        (void)snprintf(words, sizeof words, "GIO could not serve a tray icon on the D-Bus session bus (%s)", error != NULL && error->message != NULL ? error->message : "no words");
+        if (error != NULL) {
+            hero_ui_gtk.error_free(error);
+        }
+        tray->bus = bus;
+        hero_ui_gtk_tray_hide(tray);
+        return hero_ui_refused(HERO_UI_OTHER, words);
+    }
+    tray->watcher_watch = hero_ui_gtk.dbus_connection_signal_subscribe(bus, "org.freedesktop.DBus", "org.freedesktop.DBus", "NameOwnerChanged", "/org/freedesktop/DBus", HERO_UI_GTK_TRAY_WATCHER, 0, hero_ui_gtk_tray_watcher_moved, data, NULL);
+    tray->bus = bus;
+    hero_ui_gtk_tray_register(tray);
+    return HERO_UI_OK;
+}
+
+static int64_t hero_ui_gtk_tray_shown(hero_ui_native *tray, bool shown) {
+    int64_t answer = HERO_UI_OK;
+
+    if (!shown) {
+        hero_ui_gtk_tray_hide(tray);
+    } else {
+        answer = hero_ui_gtk_tray_show(tray);
+        tray->visible = answer == HERO_UI_OK;
+    }
+    return answer;
+}
+
+static int64_t hero_ui_gtk_tray_make(hero_ui_native *made) {
+    int64_t answer = hero_ui_gtk_tray_show(made);
+
+    if (answer != HERO_UI_OK) {
+        hero_ui_gtk_drop(made);
+    }
+    return answer;
+}
+
+static void hero_ui_gtk_tray_drop(hero_ui_native *tray) {
+    hero_ui_gtk_tray_hide(tray);
+    hero_layer_free(tray->argb);
+    tray->argb = NULL;
+    if (tray->actions != NULL) {
+        hero_ui_gtk.object_unref(tray->actions);
+        tray->actions = NULL;
+    }
+}
+
+static int64_t hero_ui_gtk_tray_named(hero_ui_native *tray, const uint8_t *name, int64_t count) {
+    char *made = NULL;
+
+    if (count > 0) {
+        made = hero_ui_gtk_text(name, count, false);
+        if (made == NULL) {
+            return HERO_UI_LIMIT;
+        }
+    }
+    hero_layer_free(tray->accessible);
+    tray->accessible = made;
+    hero_ui_gtk_tray_words(tray);
+    return HERO_UI_OK;
+}
+
+/* Keeps `rgba`, `width` by `height`, as tray icon `tray`'s image: ARGB32 in
+ * the network's byte order, as the protocol reads it, unpremultiplied; a
+ * side past `HERO_UI_GTK_TRAY_ICON_MOST` drawn smaller by the mean of whole
+ * blocks, each colour weighed by its alpha. 0 by 0 takes it away. */
+static int64_t hero_ui_gtk_tray_image(hero_ui_native *tray, const uint8_t *rgba, int64_t width, int64_t height) {
+    int64_t block;
+    int64_t made_width;
+    int64_t made_height;
+    uint8_t *argb = NULL;
+
+    if (width > 0 && height > 0) {
+        block = (width > height ? width : height) <= HERO_UI_GTK_TRAY_ICON_MOST ? 1 : ((width > height ? width : height) + HERO_UI_GTK_TRAY_ICON_MOST - 1) / HERO_UI_GTK_TRAY_ICON_MOST;
+        made_width = (width + block - 1) / block;
+        made_height = (height + block - 1) / block;
+        argb = hero_layer_alloc((size_t)(made_width * made_height * 4));
+        if (argb == NULL) {
+            return HERO_UI_LIMIT;
+        }
+        for (int64_t y = 0; y < made_height; y += 1) {
+            for (int64_t x = 0; x < made_width; x += 1) {
+                uint64_t sum[4] = {0, 0, 0, 0};
+                uint64_t pixels = 0;
+                uint8_t *out = argb + (y * made_width + x) * 4;
+
+                for (int64_t dy = 0; dy < block && y * block + dy < height; dy += 1) {
+                    for (int64_t dx = 0; dx < block && x * block + dx < width; dx += 1) {
+                        const uint8_t *in = rgba + ((y * block + dy) * width + x * block + dx) * 4;
+
+                        sum[0] += (uint64_t)in[0] * in[3];
+                        sum[1] += (uint64_t)in[1] * in[3];
+                        sum[2] += (uint64_t)in[2] * in[3];
+                        sum[3] += in[3];
+                        pixels += 1;
+                    }
+                }
+                out[0] = (uint8_t)(sum[3] / pixels);
+                for (size_t c = 0; c < 3; c += 1) {
+                    out[c + 1] = (uint8_t)(sum[3] > 0 ? sum[c] / sum[3] : 0);
+                }
+            }
+        }
+    } else {
+        made_width = 0;
+        made_height = 0;
+    }
+    hero_layer_free(tray->argb);
+    tray->argb = argb;
+    tray->image_width = made_width;
+    tray->image_height = made_height;
+    hero_ui_gtk_tray_words(tray);
+    return HERO_UI_OK;
+}
+
+static int64_t hero_ui_gtk_tray_click(hero_ui_native *tray, const hero_ui_native *item) {
+    const char *name = tray->bus != NULL ? hero_ui_gtk.dbus_connection_get_unique_name(tray->bus) : NULL;
+
+    /* A hidden icon's menu is chosen by no one. */
+    if (name != NULL) {
+        hero_ui_gtk.dbus_connection_call(tray->bus, name, HERO_UI_GTK_TRAY_MENU_PATH, HERO_UI_GTK_TRAY_MENU, "Event", hero_ui_gtk.variant_new("(isvu)", (int32_t)item->id, "clicked", hero_ui_gtk.variant_new("i", 0), 0u), NULL, 0, 5000,
+                                         NULL, hero_ui_gtk_tray_sent, NULL);
     }
     return HERO_UI_OK;
 }
