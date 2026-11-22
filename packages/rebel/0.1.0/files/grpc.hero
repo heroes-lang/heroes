@@ -1645,6 +1645,7 @@ test "methods_of: a unary method and one whose server streams"
 # A server's connection over what `net` accepted; the client calls once.
 test "server: one call found, read and answered"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Upper hello").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1668,6 +1669,7 @@ test "server: one call found, read and answered"
 # A server closed after its calls.
 test "close_server: closed once, refused twice"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Unknown x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1682,6 +1684,7 @@ test "close_server: closed once, refused twice"
 # the server itself.
 test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /other.Svc/Do x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1698,6 +1701,7 @@ test "next_call: an unknown method answered UNIMPLEMENTED, then the connection's
 # Requests read until the client's last.
 test "read_request: one request, then the end"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Count abc").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1722,6 +1726,7 @@ test "read_request: one request, then the end"
 # The call's first metadata sent before its response.
 test "write_headers: metadata before the response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1745,6 +1750,7 @@ test "write_headers: metadata before the response"
 # Responses streamed by a server.
 test "write_response: three responses, then OK"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Three x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1765,6 +1771,7 @@ test "write_response: three responses, then OK"
 # A call ended with an error and no response: gRPC's trailers-only answer.
 test "finish: PERMISSION_DENIED with no response"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1782,6 +1789,7 @@ test "finish: PERMISSION_DENIED with no response"
 # A call with no deadline.
 test "left_ms: -1 where the client sent no grpc-timeout"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /test.Echo/Echo x").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1799,6 +1807,7 @@ test "left_ms: -1 where the client sent no grpc-timeout"
 # A health watch told of a change.
 test "set_health: a watcher told the server is serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1816,6 +1825,7 @@ test "set_health: a watcher told the server is serving"
 # A health check answered by the server itself.
 test "answer_health: the server as a whole serving"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Check ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1829,6 +1839,7 @@ test "answer_health: the server as a whole serving"
 # A health watch answered with the status now.
 test "watch_health: service_unknown for a service with no health kept"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(body: fixture.call, arg: f"{l.address.port} /grpc.health.v1.Health/Watch ").must()
     accepted = net.accept(l, deadline_ms: 10000).must()
     stream @= accepted.stream
@@ -1845,6 +1856,7 @@ test "watch_health: service_unknown for a service with no health kept"
 # Server reflection's list of services.
 test "answer_reflection: the list of services"
     l @= net.listen(host: "127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     calling @= threads.start_text(
         body: fixture.call,
         arg: f"{l.address.port} /grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo :\u{1}*"
