@@ -12,17 +12,11 @@
 # hexadecimal, and `^`. An empty column is the column before it. The outcomes
 # are one letter for each operation: `o` answers the text, `e` fails `invalid`.
 #
-# Made and not typed: a one-off program read the file on 2026-11-17, held
-# every line to a reference of UTS #46 that used Python 3.15.2's NFC (6,391 of
-# 6,391 lines agreeing), and wrote this module whole, marking `n`, a failure
-# `unsupported`, the 2,532 operations on 844 lines whose normalization to NFC
-# the package's quick check could not settle. On 2026-11-20, with the
-# normalization `unicode/normalize`'s (the coherence review's D17), a second
-# one-off program read the same file (SHA-256 checked), wrote every line
-# again, held the 5,545 lines with no `n` to this module's own byte for byte,
-# and replaced the 844 lines' outcomes by the file's: 694 `eee`, 102 `ooo`, 30
-# `oee`, 18 `eeo`, their texts written. Nothing here is edited by hand. Only a
-# test build reads the cases.
+# Generated, never edited by hand: the Heroes program `generators/url_idna/`
+# read the file, fetched 2026-11-22, and wrote this module whole, each outcome
+# the status the file gives the operation, and each text the file's where the
+# operation answers one; its `check` command says whether this module is
+# still what it writes. Only a test build reads the cases.
 
 use url/idna/internal/conform
 

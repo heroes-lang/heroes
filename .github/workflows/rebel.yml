@@ -257,23 +257,40 @@ jobs:
       - name: generators/http_suffixes, the Public Suffix List of http/suffixes
         run: ./heroes run generators/http_suffixes/main.hero -- check
 
+      # The five files of `generators/url_idna/main.hero`'s `IDNA_URL` and
+      # `EXTRACTED_URL`; the generator holds each to its SHA-256.
+      - name: generators/url_idna, UTS 46's mapping table, properties and conformance cases of url/idna
+        run: |
+          mkdir -p build/generators/idna-17.0.0
+          for f in IdnaMappingTable IdnaTestV2; do
+            curl --fail --location --silent --show-error -o "build/generators/idna-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/idna/$f.txt"
+          done
+          for f in DerivedBidiClass DerivedJoiningType DerivedCombiningClass; do
+            curl --fail --location --silent --show-error -o "build/generators/idna-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/ucd/extracted/$f.txt"
+          done
+          ./heroes run generators/url_idna/main.hero -- check build/generators/idna-17.0.0
+
       # The zip `generators/i18n_units` fetched above; `generators/cldrkit`
       # holds it to its SHA-256.
       - name: generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
         run: ./heroes run generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
 
       # The tests of the packages the generators share: `generators/tablekit/`,
-      # which every generator writes its tables with, and `generators/cldrkit/`,
-      # which reads CLDR's zip. A generator's own tests are left
+      # which every generator writes its tables with, `generators/cldrkit/`,
+      # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
+      # Unicode Character Database's files. A generator's own tests are left
       # to whoever changes it: `heroes test` runs every test its program
       # reaches, Rebel's packages' among them (1,875 tests and three minutes
       # for `tablekit` alone on 2026-11-22, on a Mac running other builds),
       # which the `coherence` job runs already, and each `check` above judges
       # a generator's whole output byte for byte.
-      - name: generators/tablekit and cldrkit, their tests
+      - name: generators/tablekit, cldrkit and ucdkit, their tests
         run: |
           ./heroes test generators/tablekit/tablekit.hero
           ./heroes test generators/cldrkit/cldrkit.hero
+          ./heroes test generators/ucdkit/ucdkit.hero
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #

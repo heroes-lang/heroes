@@ -3,23 +3,15 @@
 # the joining type and the canonical combining class (RFC 5892, Appendix A).
 # `lookup.hero` reads it.
 #
-# The table is data, made and not typed: a one-off program read the Unicode
-# Character Database 17.0.0 of https://www.unicode.org/Public/17.0.0/ucd/ on
-# 2026-11-17, `extracted/DerivedBidiClass.txt` (SHA-256
-# 4867b4b7f0731ed1...), `extracted/DerivedJoiningType.txt`
+# Generated, never edited by hand: the Heroes program `generators/url_idna/`
+# read the Unicode Character Database 17.0.0 of
+# https://www.unicode.org/Public/17.0.0/ucd/, `extracted/DerivedBidiClass.txt`
+# (SHA-256 4867b4b7f0731ed1...), `extracted/DerivedJoiningType.txt`
 # (f39ebe974825d673...) and `extracted/DerivedCombiningClass.txt`
-# (191463abfbd20270...), their `@missing` defaults included, held the
-# bidirectional and combining classes to Python 3.15.2's `unicodedata`
-# (17.0.0) for every assigned code point, reduced them to runs, held every
-# lookup to the files for each of the 1,114,112 code points, and wrote this
-# module whole. Nothing here is edited by hand but the test at its end, which
-# reads the packing and was written again with it. Until 2026-11-20 it held a
-# fourth property, NFC_Quick_Check, which stood in for a normalization to NFC;
-# `unicode/normalize` makes that normalization since the coherence review's
-# D17, and the table was made again without it, by a program that first made
-# the 1,904 runs of 2026-11-17 again value for value from the same four files
-# (`DerivedNormalizationProps.txt`, 71fd6a206a2c0cdd..., the fourth), then the
-# 1,716 runs below, every code point's lookup held to the files.
+# (191463abfbd20270...), their `@missing` defaults included,
+# fetched 2026-11-22, reduced them to runs, held every lookup to the files
+# for each of the 1,114,112 code points, and wrote this module whole; its
+# `check` command says whether this module is still what it writes.
 
 # The runs of one set of the three properties, each `first << 18 | bidi << 11
 # | joining << 8 | combining`. The code points from `first` up to the next
