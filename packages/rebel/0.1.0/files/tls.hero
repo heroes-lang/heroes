@@ -533,55 +533,71 @@ test "is_available: asked before a connection is made"
             .ok _  => assert false
             .err e => assert e.code == UNSUPPORTED
 
-# A connection to a server of the Internet, checked by the system's own
-# store: where this machine has no network the failure is a value, and
-# never a certificate refused.
-test "connect: example.com at port 443, offering HTTP/1.1"
-    made = connect(
-        host: "example.com",
-        port: 443,
-        deadline: time.seconds(10).must(),
-        client: Client(roots: "", protocols: ["http/1.1"])
-    )
-
-    match made
-        .ok s =>
-            stream @= s.stream
-            assert version_of(stream).must() >= 12
-            io.close(@stream).must()
-        .err e => assert e.code != INVALID
+# A connection to this package's own server on the loopback address, its
+# certificate checked against the roots given (the test authority), offering
+# HTTP/1.1: four bytes each way, and the server heard them.
+test "connect: the loopback server, its certificate checked, offering HTTP/1.1"
+    if is_available()
+        server @= loopback.start_after("plain")
+        made = connect(
+            host: "localhost",
+            port: server.port,
+            deadline: time.seconds(10).must(),
+            client: Client(roots: fixture.ROOT, protocols: ["http/1.1"])
+        ).must()
+        stream @= made.stream
+        assert version_of(stream).must() >= 12
+        assert protocol_of(stream).must() == "http/1.1"
+        io.write_text(stream, text: "ping").must()
+        assert io.read_exact(stream, n: 4).must() == [112, 111, 110, 103]
+        io.close(@stream).must()
+        assert threads.wait_text(@server.thread) == "ping"
 
 # The same connection with nothing checked, as a test reaches a server
-# whose certificate nobody signed.
-test "connect_unchecked_for_tests: example.com, its certificate not looked at"
-    made = connect_unchecked_for_tests(host: "example.com", port: 443, deadline: time.seconds(10).must(), protocols: [])
-
-    match made
-        .ok s =>
-            stream @= s.stream
-            io.close(@stream).must()
-        .err e => assert e.code != INVALID
+# whose certificate nobody signed: here one signed by itself.
+test "connect_unchecked_for_tests: a server whose certificate is signed by itself"
+    if is_available()
+        server @= loopback.start_after("self")
+        made = connect_unchecked_for_tests(
+            host: "localhost",
+            port: server.port,
+            deadline: time.seconds(10).must(),
+            protocols: []
+        )
+        stream @= made.must().stream
+        io.write_text(stream, text: "ping").must()
+        assert io.read_exact(stream, n: 4).must() == [112, 111, 110, 103]
+        io.close(@stream).must()
+        assert threads.wait_text(@server.thread) == "ping"
 
 # TLS begun over a TCP connection `net` made, as Postgres's `sslmode`
 # begins it after its own request; on macOS it fails `unsupported` and the
 # connection stays the caller's.
-test "client_over: example.com over a connection of net"
-    made = net.connect(host: "example.com", port: 443, deadline_ms: 10000)
+test "client_over: the loopback server over a connection of net"
+    if is_available()
+        server @= loopback.start_after("plain")
+        c = net.connect(host: "127.0.0.1", port: server.port, deadline_ms: 10000).must()
+        inner @= c.stream
+        secured = client_over(@inner, host: "localhost", client: Client(roots: fixture.ROOT, protocols: []))
 
-    match made
-        .err e => assert e.code != INVALID
-        .ok c =>
-            inner @= c.stream
-            secured = client_over(@inner, host: "example.com", client: Client(roots: "", protocols: []))
-
-            match secured
-                .ok s =>
-                    stream @= s
-                    io.close(@stream).must()
-                .err e => assert e.code != INVALID
-
-            if !io.is_closed(inner)
+        match secured
+            .ok s =>
+                stream @= s
+                io.write_text(stream, text: "ping").must()
+                assert io.read_exact(stream, n: 4).must() == [112, 111, 110, 103]
+                io.close(@stream).must()
+                assert threads.wait_text(@server.thread) == "ping"
+            .err e =>
+                assert e.code == UNSUPPORTED
                 io.close(@inner).must()
+                quiet @= connect(host: "localhost", port: server.port, deadline: time.seconds(10).must(), client: Client(roots: fixture.ROOT, protocols: [])).must().stream
+                io.write_text(quiet, text: "ping").must()
+                assert io.read_exact(quiet, n: 4).must() == [112, 111, 110, 103]
+                io.close(@quiet).must()
+                assert threads.wait_text(@server.thread) == "ping"
+
+        if !io.is_closed(inner)
+            io.close(@inner).must()
 
 # A server presenting a certificate for `localhost` on a port the system
 # chooses, and a client of this process on a thread of its own reaching it.
