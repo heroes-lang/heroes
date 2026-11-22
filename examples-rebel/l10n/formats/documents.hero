@@ -1,0 +1,261 @@
+# Rows as a JSON or a YAML document, one entry for each message rather than
+# for each form, the shape web and mobile projects keep translations in:
+#
+#     locale: pl
+#     forms: [one, few, many]
+#     messages:
+#       - id: Your cart
+#         translation: Twój koszyk
+#         state: translated
+#       - context: cart
+#         id: "{count} item"
+#         plural_id: "{count} items"
+#         translations: {one: "{count} produkt", few: "{count} produkty", many: "{count} produktów"}
+#         state: translated
+#
+# A plural message's forms are keyed by their CLDR category, as `formats/rows`
+# names them. YAML is read into the same values JSON is (`yaml.parse` answers
+# a `json.Value`), so the two formats are one tree written two ways, and a
+# file of either reads back as the rows it was written from.
+
+use <rebel>/json
+use <rebel>/yaml
+
+use formats/rows
+
+## Codes
+
+# The code of a document that is not this shape.
+constant INVALID: str
+    "invalid"
+
+## Writing
+
+# The document of `list`, the rows of the locale `tag` whose forms are
+# `forms`.
+#
+# - `list`: the rows, a plural message's forms one after another.
+# - `tag`: the locale's tag.
+# - `forms`: the names of its categories, in their order.
+function document_of(list: [rows.Row], tag: str, forms: [str]) -> json.Value
+    entries: [json.Value] @= []
+    at @= 0
+
+    while at < list.len()
+        first = list[at]
+        group: [rows.Row] @= [first]
+        at @ at + 1
+
+        while at < list.len() && first.plural_id != "" && list[at].id == first.id && list[at].context == first.context
+            group @ group.push(list[at])
+            at @ at + 1
+
+        entries @ entries.push(entry_of(group))
+
+    members: {str: json.Value} = {
+        "locale": .text(v: tag)
+        "forms": .list(items: forms.map(text_value))
+        "messages": .list(items: entries)
+    }
+    return .object(members: members)
+
+# One message's entry, from its rows.
+#
+# - `group`: the message's rows, one, or one for each form.
+function entry_of(group: [rows.Row]) -> json.Value
+    first = group[0]
+    members: {str: json.Value} @= {}
+
+    if first.context != ""
+        members["context"] @ text_value(first.context)
+
+    members["id"] @ text_value(first.id)
+
+    if first.plural_id != ""
+        members["plural_id"] @ text_value(first.plural_id)
+        forms: {str: json.Value} @= {}
+
+        for r in group
+            forms[r.form] @ text_value(r.translation)
+
+        members["translations"] @ .object(members: forms)
+    else
+        members["translation"] @ text_value(first.translation)
+
+    members["state"] @ text_value(state_of(group))
+
+    if first.note != ""
+        members["note"] @ text_value(first.note)
+
+    return .object(members: members)
+
+# A message's state from its forms': `fuzzy` where one is, `translated` or
+# `untranslated` where all are, `partial` otherwise.
+#
+# - `group`: the message's rows.
+function state_of(group: [rows.Row]) -> str
+    translated @= 0
+    empty @= 0
+
+    for r in group
+        if r.state == "fuzzy"
+            return "fuzzy"
+
+        if r.translation == ""
+            empty @ empty + 1
+        else
+            translated @ translated + 1
+
+    if empty == 0
+        return "translated"
+
+    if translated == 0
+        return "untranslated"
+
+    return "partial"
+
+# A text as a JSON value.
+#
+# - `s`: the text.
+function text_value(s: str) -> json.Value
+    return .text(v: s)
+
+# `list` as a JSON document, indented two spaces, ending with a line feed.
+#
+# - `list`: the rows.
+# - `tag`: the locale's tag.
+# - `forms`: its categories' names.
+#
+# Fails `unsupported` where `json` cannot write the value, which a document
+# of texts never is.
+function format_json(list: [rows.Row], tag: str, forms: [str]) -> str?
+    return ok(json.format_indented(document_of(list, tag: tag, forms: forms), width: 2)? + "\n")
+
+# `list` as a YAML document.
+#
+# - `list`: the rows.
+# - `tag`: the locale's tag.
+# - `forms`: its categories' names.
+#
+# Fails as `yaml.format` fails, which a document of texts does not.
+function format_yaml(list: [rows.Row], tag: str, forms: [str]) -> str?
+    return yaml.format(document_of(list, tag: tag, forms: forms))
+
+## Reading
+
+# The rows of a JSON document of this shape.
+#
+# - `text`: the document.
+#
+# Fails `invalid` where it is not JSON or not this shape.
+function parse_json(text: str) -> [rows.Row]?
+    v = match json.parse(text)
+        .ok read => read
+        .err e   => return fail(code: INVALID, msg: f"not JSON: {e.msg}")
+
+    return rows_of_document(v)
+
+# The rows of a YAML document of this shape.
+#
+# - `text`: the document.
+#
+# Fails `invalid` where it is not YAML or not this shape.
+function parse_yaml(text: str) -> [rows.Row]?
+    v = match yaml.parse(text)
+        .ok read => read
+        .err e   => return fail(code: INVALID, msg: f"not YAML: {e.msg}")
+
+    return rows_of_document(v)
+
+# The rows a document holds, a plural message's forms in the order its
+# `translations` are written.
+#
+# - `v`: the document's value.
+#
+# Fails `invalid` where it has no `messages` list, or an entry is no mapping
+# or has no id.
+function rows_of_document(v: json.Value) -> [rows.Row]?
+    list = match json.member(v, key: "messages")
+        .ok m  => m
+        .err _ => return fail(code: INVALID, msg: "the document has no \"messages\"")
+
+    items = match json.items_of(list)
+        .ok found => found
+        .err _    => return fail(code: INVALID, msg: f"\"messages\" holds a {json.kind_of(list)}, not a list")
+
+    found: [rows.Row] @= []
+    at @= 0
+
+    for item in items
+        at @ at + 1
+
+        if json.members_of(item).is_err()
+            return fail(code: INVALID, msg: f"message {at} is a {json.kind_of(item)}, not a mapping")
+
+        id = text_of(item, key: "id")
+
+        if id == ""
+            return fail(code: INVALID, msg: f"message {at} has no id")
+
+        context = text_of(item, key: "context")
+        plural = text_of(item, key: "plural_id")
+        state = text_of(item, key: "state")
+        note = text_of(item, key: "note")
+
+        match json.member(item, key: "translations")
+            .ok forms =>
+                inner = match json.members_of(forms)
+                    .ok m  => m
+                    .err _ => return fail(code: INVALID, msg: f"the translations of \"{id}\" are no mapping of forms")
+
+                for form in keys(inner)
+                    found @ found.push(
+                        rows.Row(context: context, id: id, plural_id: plural, form: form, source: "", translation: json.text_of(inner[form].must()).default(""), state: state, note: note)
+                    )
+            .err _ =>
+                found @ found.push(
+                    rows.Row(context: context, id: id, plural_id: plural, form: "", source: "", translation: text_of(item, key: "translation"), state: state, note: note)
+                )
+
+    return ok(found)
+
+# The text under `key` of a mapping, empty where it is absent or no text.
+#
+# - `v`: the mapping.
+# - `key`: the key.
+function text_of(v: json.Value, key: str) -> str
+    return match json.member(v, key: key)
+        .ok found => json.text_of(found).default("")
+        .err _    => ""
+
+## Tests
+
+# Rows of one plural message and one plain one, for the tests.
+function sample_rows() -> [rows.Row]
+    return [
+        rows.Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "one", source: "", translation: "{count} produkt", state: "translated", note: "the badge")
+        rows.Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "few", source: "", translation: "", state: "untranslated", note: "the badge")
+        rows.Row(context: "", id: "Cart", plural_id: "", form: "", source: "", translation: "Koszyk", state: "translated", note: "")
+    ]
+
+test "format_json and parse_json: one entry for each message, read back as its rows"
+    text = format_json(sample_rows(), tag: "pl", forms: ["one", "few", "many"]).must()
+    read = parse_json(text).must()
+    assert read.len() == 3
+    assert read[1].form == "few"
+    assert read[1].state == "partial"
+    assert read[2].translation == "Koszyk"
+    assert json.text_of(json.member(json.parse(text).must(), key: "locale").must()).must() == "pl"
+
+test "format_yaml and parse_yaml: the same rows through YAML"
+    text = format_yaml(sample_rows(), tag: "pl", forms: ["one", "few", "many"]).must()
+    read = parse_yaml(text).must()
+    assert read.len() == 3
+    assert read[0].translation == "{count} produkt"
+    assert read[0].context == "cart"
+
+test "rows_of_document: no messages, an entry that is no mapping, one with no id"
+    assert parse_json("{}").is_err()
+    assert parse_json("{\"messages\": [1]}").is_err()
+    assert parse_json("{\"messages\": [{\"translation\": \"x\"}]}").is_err()
+    assert parse_yaml("messages: []\n").must() == []

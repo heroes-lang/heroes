@@ -1,0 +1,275 @@
+# Extraction over a whole tree: every source file under the project's source
+# folders read by the scanner its extension names, and the messages found
+# merged into the template, `<domain>.pot`, gettext's `xgettext` step.
+#
+# One message used in several places is one entry with every place as a
+# reference and every note once, in the order the files and lines stand. The
+# files are taken in the order of their paths' bytes, so the template is the
+# same on every system and diffs cleanly from one extraction to the next. A
+# message used once with a plural and once without is the plural one, and
+# told: gettext keys both by their id and could not keep them apart.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/maps
+use <rebel>/path
+
+use catalog/messages
+use extract/found
+use extract/heroes_calls
+use extract/templates
+use project/session
+
+## What is read
+
+# The scanner a file's extension names: `heroes` for `.hero`, `template`
+# for `.html`, `.htm`, `.jinja` and `.j2`, and empty for any other file,
+# which is passed over.
+#
+# - `file`: the file's path.
+function scanner_of(file: str) -> str
+    ext = path.ext(file).default("")
+
+    if ext == ".hero"
+        return "heroes"
+
+    if ext == ".html" || ext == ".htm" || ext == ".jinja" || ext == ".j2"
+        return "template"
+
+    return ""
+
+# The files under `roots` a scanner reads, `/` between their parts, in the
+# order of their paths' bytes.
+#
+# - `roots`: the source folders, from the project's root.
+#
+# Fails as `fs.walk` fails, `file_not_found` where a folder is missing.
+function source_files(roots: [str]) -> [str]?
+    files: [str] @= []
+
+    for root in roots
+        for e in fs.walk(root)?
+            if e.kind == .file
+                file = path.to_slash(path.join_all([root, e.name]))
+
+                if scanner_of(file) != ""
+                    files @ files.push(path.clean(file))
+
+    return ok(sort(files))
+
+## Extraction
+
+# What extracting a tree found.
+record Extraction
+    # The template's messages, in the order first used, each untranslated.
+    messages: [i18n.Message]
+    # The places passed over, in the order of the files and their lines.
+    problems: [found.Problem]
+    # How many uses of messages each file holds, by file, in order.
+    uses: {str: i64}
+
+# The messages of every source file under `roots`.
+#
+# - `roots`: the source folders.
+#
+# Fails as `source_files` fails; a file that is not UTF-8 is a problem told,
+# not a failure, so one bad file does not stop the rest.
+function extract_tree(roots: [str]) -> Extraction?
+    p = templates.patterns()
+    uses_found: [found.Found] @= []
+    problems: [found.Problem] @= []
+    uses: {str: i64} @= {}
+
+    for file in source_files(roots)?
+        match read_file(file)
+            .err e => problems @ problems.push(found.Problem(file: file, line: 0, message: f"not read: {e.msg}"))
+            .ok text =>
+                scan = if scanner_of(file) == "heroes"
+                    heroes_calls.scan_source(source: text, file: file)
+                else
+                    templates.scan_template(source: text, file: file, p: p)
+
+                uses[file] @ scan.found.len()
+
+                for f in scan.found
+                    uses_found @ uses_found.push(f)
+
+                for problem in scan.problems
+                    problems @ problems.push(problem)
+
+    merged = merge(uses_found)
+
+    for problem in merged.problems
+        problems @ problems.push(problem)
+
+    return ok(Extraction(messages: merged.messages, problems: problems, uses: uses))
+
+# Messages merged from their uses, and the clashes found.
+record Merged
+    # One message for each key, in the order first used.
+    messages: [i18n.Message]
+    # The uses that clash with an earlier one's plural.
+    problems: [found.Problem]
+
+# One message for each key of `uses`, in the order first used: a map keeps
+# its keys in the order they were first put in, a replaced one in its place.
+#
+# - `uses`: every use, in the order of their files and lines.
+function merge(uses: [found.Found]) -> Merged
+    by_key: {str: i18n.Message} @= {}
+    problems: [found.Problem] @= []
+
+    for f in uses
+        key = messages.key_from(f.context, id: f.id)
+        place = found.place(f.file, line: f.line)
+
+        match by_key[key]
+            .err _ => by_key[key] @ first_use(f)
+            .ok m =>
+                plural_now = !f.plural_id.is_err()
+
+                if plural_now != messages.is_plural(m) || plural_now && f.plural_id.must() != m.plural_id.must()
+                    problems @ problems.push(
+                        found.Problem(file: f.file, line: f.line, message: f"\"{f.id}\" is used with another plural at {m.references[0]}; gettext keys both by their id, so the plural one is kept")
+                    )
+
+                by_key[key] @ another_use(m, f: f, place: place)
+
+    return Merged(messages: maps.values(by_key), problems: problems)
+
+# The message of a first use: untranslated, its place its one reference.
+#
+# - `f`: the use.
+function first_use(f: found.Found) -> i18n.Message
+    forms = if f.plural_id.is_err()
+        [""]
+    else
+        ["", ""]
+
+    notes: [str] = if f.note == ""
+        []
+    else
+        [f.note]
+
+    return i18n.Message(
+        context: f.context,
+        id: f.id,
+        plural_id: f.plural_id,
+        translations: forms,
+        comments: [],
+        extracted_comments: notes,
+        references: [found.place(f.file, line: f.line)],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+
+# `m` with another use: its place added, its note added where new, and a
+# plural taken where it had none.
+#
+# - `m`: the message so far.
+# - `f`: the use.
+# - `place`: the use's place.
+function another_use(m: i18n.Message, f: found.Found, place: str) -> i18n.Message
+    references @= m.references
+
+    if !references.contains_text(place)
+        references @ references.push(place)
+
+    notes @= m.extracted_comments
+
+    if f.note != "" && !notes.contains_text(f.note)
+        notes @ notes.push(f.note)
+
+    take_plural = m.plural_id.is_err() && !f.plural_id.is_err()
+
+    plural = if take_plural
+        f.plural_id
+    else
+        m.plural_id
+
+    forms = if take_plural
+        ["", ""]
+    else
+        m.translations
+
+    return i18n.Message(
+        context: m.context,
+        id: m.id,
+        plural_id: plural,
+        translations: forms,
+        comments: m.comments,
+        extracted_comments: notes,
+        references: references,
+        flags: m.flags,
+        previous: m.previous,
+        obsolete: false
+    )
+
+# Whether `xs` holds `x`.
+#
+# - `xs`: the texts.
+# - `x`: the text.
+function contains_text(xs: [str], x: str) -> bool
+    for each in xs
+        if each == x
+            return true
+
+    return false
+
+## The template
+
+# The template: `header`, then `extracted`'s messages.
+#
+# - `header`: the header, as `template_header` makes it.
+# - `extracted`: the messages.
+#
+# Fails as `i18n.new_catalog` fails, which a header with no `Plural-Forms`
+# never does.
+function template_of(header: i18n.Message, extracted: [i18n.Message]) -> i18n.Catalog?
+    all_messages @= [header]
+
+    for m in extracted
+        all_messages @ all_messages.push(m)
+
+    return i18n.new_catalog(all_messages)
+
+# The header a template of `domain` begins with, made at `when`: the fields
+# xgettext writes, and no `Plural-Forms`, which only a language has.
+#
+# - `domain`: the gettext domain.
+# - `when`: the extraction's date, as `messages.gettext_date` writes one.
+function template_header(domain: str, when: str) -> i18n.Message
+    fields = [
+        messages.Field(name: "Project-Id-Version", value: domain)
+        messages.Field(name: "POT-Creation-Date", value: when)
+        messages.Field(name: "MIME-Version", value: "1.0")
+        messages.Field(name: "Content-Type", value: "text/plain; charset=UTF-8")
+        messages.Field(name: "Content-Transfer-Encoding", value: "8bit")
+        messages.Field(name: "X-Generator", value: f"l10n {session.VERSION}")
+    ]
+    return messages.header_message(fields, comments: [f"The messages of {domain}, extracted by l10n."])
+
+## Tests
+
+test "merge: one message for each key, every place, every note once, and a plural clash"
+    uses = [
+        found.Found(context: found.none("context"), id: "Open", plural_id: found.none("plural"), file: "a.hero", line: 3, note: "a verb")
+        found.Found(context: ok("menu"), id: "Open", plural_id: found.none("plural"), file: "a.hero", line: 4, note: "")
+        found.Found(context: found.none("context"), id: "Open", plural_id: found.none("plural"), file: "b.html", line: 9, note: "a verb")
+        found.Found(context: found.none("context"), id: "Open", plural_id: ok("Opens"), file: "c.hero", line: 1, note: "")
+    ]
+    merged = merge(uses)
+    assert merged.messages.len() == 2
+    assert merged.messages[0].references == ["a.hero:3", "b.html:9", "c.hero:1"]
+    assert merged.messages[0].extracted_comments == ["a verb"]
+    assert merged.messages[0].plural_id.must() == "Opens"
+    assert merged.messages[0].translations == ["", ""]
+    assert merged.messages[1].context.must() == "menu"
+    assert merged.problems.len() == 1
+
+test "scanner_of: by extension, and a file passed over"
+    assert scanner_of("src/cart.hero") == "heroes"
+    assert scanner_of("templates/a.j2") == "template"
+    assert scanner_of("README.md") == ""
+    assert scanner_of("Makefile") == ""

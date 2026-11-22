@@ -1,0 +1,312 @@
+# The commands that make and keep the catalogues: `init` writes a project's
+# settings, `extract` the template, `merge` each locale's catalogue, `pseudo`
+# a pseudo-translation, `compile` the `.mo` files a program reads, and
+# `lookup` asks those files for a message as the program will.
+#
+# Each answers its exit code, 0 where it did its work; a failure is answered
+# as a `T?` and told by `commands/cli`. Every path a command prints is
+# written with `/`, the project's own paths being relative to its root, so
+# what it says reads the same on every system.
+
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+
+use catalog/compile
+use catalog/merge
+use catalog/messages
+use catalog/store
+use extract/extractor
+use plural/gettext_forms
+use preview/pseudo
+use project/config
+use project/locale_tags
+use project/session
+use review/table
+
+## Codes
+
+# The code of a file a command would not replace.
+constant EXISTS: str
+    "exists"
+
+# The code of a locale the project does not have.
+constant NOT_FOUND: str
+    "not_found"
+
+## init
+
+# `init`: writes the settings of a new project in the working folder.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails `exists` where the folder holds `l10n.yaml` already, and as a tag
+# that names no language fails.
+function init_command(s: session.Session, f: flags.Found) -> i64?
+    if fs.exists(config.FILE_NAME).default(false)
+        return fail(code: EXISTS, msg: f"{config.FILE_NAME} is here already, and is not replaced")
+
+    domain = flags.value_of(f, "domain")?
+    source = locale_tags.canonical_tag(flags.value_of(f, "source")?)?
+    tags: [str] @= []
+
+    for written in flags.values_of(f, "locales")
+        tags @ tags.push(locale_tags.canonical_tag(written)?)
+
+    text = config.initial_text(domain: domain, source: source, locale_list: tags)
+    p = config.parse_project(text)?
+    write_file(path: config.FILE_NAME, text: text)?
+    session.say_lines(s, lines: [f"wrote {config.FILE_NAME}: {p.domain}, from {p.source} into {p.locales.join(", ")}"])?
+    return ok(0)
+
+## extract
+
+# `extract`: reads every source's messages into the template.
+#
+# - `s`: the session.
+# - `_`: what the parse found, `extract` taking no flag.
+#
+# Fails as the settings, the sources and the template's writing fail.
+function extract_command(s: session.Session, _: flags.Found) -> i64?
+    p = store.load_project()?
+    x = extractor.extract_tree(p.sources)?
+    when = messages.gettext_date(s.now)
+    catalog = extractor.template_of(extractor.template_header(domain: p.domain, when: when), extracted: x.messages)?
+    file = store.template_path(p)
+    store.write_po(file, catalog: catalog)?
+    plural @= 0
+    context @= 0
+
+    for m in x.messages
+        if messages.is_plural(m)
+            plural @ plural + 1
+
+        if !m.context.is_err()
+            context @ context + 1
+
+    lines: [str] @= [
+        f"extracted {session.counted(s, n: x.messages.len(), noun: "message", nouns: "messages")}, {plural} with a plural and {context} with a context, from {session.counted(s, n: keys(x.uses).len(), noun: "file", nouns: "files")}:"
+    ]
+    body: [[str]] @= []
+
+    for name in keys(x.uses)
+        body @ body.push([name, session.count_text(s, n: x.uses[name].must())])
+
+    for line in table.lines_of(["file", "uses"], align: [.left, .right], body: body)
+        lines @ lines.push("  " + line)
+
+    for problem in x.problems
+        lines @ lines.push(f"{problem.file}:{problem.line}: {problem.message}")
+
+    lines @ lines.push(f"wrote {path.to_slash(file)}")
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+## merge
+
+# `merge`: brings each chosen locale's catalogue up to date with the
+# template, making it where there is none.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where there is no template yet, and as a catalogue's reading and
+# writing fail.
+function merge_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    template = read_template(p)?
+    when = messages.gettext_date(s.now)
+    lines: [str] @= []
+
+    for tag in chosen_locales(p, f: f)?
+        file = store.catalog_path(p, tag: tag)
+        old = store.read_po_or_empty(file)?
+        merged = merge.merge_catalog(template: template, old: old, locale: locale_tags.read_tag(tag)?, when: when)?
+        store.write_po(file, catalog: merged.catalog)?
+        r = merged.report
+        lines @ lines.push(
+            f"{tag}: {r.kept} kept, {r.added.len()} new, {r.guessed.len()} guessed, {r.obsoleted.len()} made obsolete, {r.revived} brought back"
+        )
+
+        for g in r.guessed
+            lines @ lines.push(
+                f"    guessed \"{g.message}\" from \"{g.from}\", {g.percent}% alike: fuzzy until confirmed"
+            )
+
+        for o in r.obsoleted
+            lines @ lines.push(f"    obsolete \"{o}\": no source uses it")
+
+        if r.old_forms != ""
+            lines @ lines.push(
+                f"    Plural-Forms was \"{r.old_forms}\"; CLDR {i18n.CLDR_VERSION} says \"{r.forms}\", and {session.counted(s, n: r.remapped, noun: "plural message was", nouns: "plural messages were")} moved to its forms"
+            )
+
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+# The project's template.
+#
+# - `p`: the project.
+#
+# Fails `file_not_found` where `extract` has not written it, saying so.
+function read_template(p: config.Project) -> i18n.Catalog?
+    file = store.template_path(p)
+
+    if !fs.exists(file).default(false)
+        return fail(code: "file_not_found", msg: f"no template {path.to_slash(file)}: `l10n extract` writes it")
+
+    return ok(store.read_po(file)?.catalog)
+
+# The locales a command works on: those `--locale` names, each a locale of
+# the project or one whose catalogue is there, or every locale of the
+# project.
+#
+# - `p`: the project.
+# - `f`: what the parse found, of a command declaring `--locale`.
+#
+# Fails `invalid` where a tag names no language, and `not_found` where it is
+# neither the project's nor has a catalogue.
+function chosen_locales(p: config.Project, f: flags.Found) -> [str]?
+    given = flags.values_of(f, "locale")
+
+    if given.len() == 0
+        return ok(p.locales)
+
+    tags: [str] @= []
+
+    for written in given
+        tag = locale_tags.canonical_tag(written)?
+
+        if !p.locales.holds(tag) && !fs.exists(store.catalog_path(p, tag: tag)).default(false)
+            return fail(code: NOT_FOUND, msg: f"{tag} is no locale of this project, which has {p.locales.join(", ")}")
+
+        tags @ tags.push(tag)
+
+    return ok(tags)
+
+# Whether `xs` holds `x`.
+#
+# - `xs`: the tags.
+# - `x`: a tag.
+function holds(xs: [str], x: str) -> bool
+    for each in xs
+        if each == x
+            return true
+
+    return false
+
+## pseudo
+
+# `pseudo`: writes the pseudo-translation of the template into the
+# pseudo-locale's catalogue.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where there is no template, and as the writing fails.
+function pseudo_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    template = read_template(p)?
+    locale = locale_tags.read_tag(flags.value_of(f, "locale")?)?
+    tag = locale_tags.tag_of(locale)
+    forms = gettext_forms.forms_of(locale)?
+    header = [
+        messages.Field(name: "Project-Id-Version", value: p.domain)
+        messages.Field(name: "PO-Revision-Date", value: messages.gettext_date(s.now))
+        messages.Field(name: "Language", value: tag)
+        messages.Field(name: "MIME-Version", value: "1.0")
+        messages.Field(name: "Content-Type", value: "text/plain; charset=UTF-8")
+        messages.Field(name: "Content-Transfer-Encoding", value: "8bit")
+        messages.Field(name: "Plural-Forms", value: forms.header)
+        messages.Field(name: "X-Generator", value: f"l10n {session.VERSION}")
+    ]
+    catalog = pseudo.pseudo_catalog(template, tag: tag, forms: forms, header: header)?
+    file = store.catalog_path(p, tag: tag)
+    store.write_po(file, catalog: catalog)?
+    session.say_lines(s, lines: [f"wrote {path.to_slash(file)}: {session.counted(s, n: messages.live_messages(catalog).len(), noun: "message", nouns: "messages")} pseudo-translated into {tag}"])?
+    return ok(0)
+
+## compile
+
+# `compile`: writes each chosen locale's catalogue as a `.mo` file.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where a catalogue is missing, and as its writing fails.
+function compile_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    lines: [str] @= []
+
+    for tag in chosen_locales(p, f: f)?
+        file = store.catalog_path(p, tag: tag)
+
+        if !fs.exists(file).default(false)
+            return fail(code: "file_not_found", msg: f"no catalogue {path.to_slash(file)}: `l10n merge` makes it")
+
+        done = compile.compile_catalog(store.read_po(file)?.catalog, catalogs: p.catalogs, domain: p.domain, locale: locale_tags.read_tag(tag)?)?
+        lines @ lines.push(
+            f"{tag}: {session.counted(s, n: done.held, noun: "message", nouns: "messages")}, {done.left_out} left out, {session.counted(s, n: done.size, noun: "byte", nouns: "bytes")} in {path.to_slash(done.file)}"
+        )
+
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+## lookup
+
+# `lookup`: what a program asking for the reader's languages shows for a
+# message, through the compiled catalogues.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails as a compiled catalogue's reading fails.
+function lookup_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    languages = split_languages(flags.value_of(f, "lang")?)
+    context = flags.value_of(f, "context")
+    plural = flags.value_of(f, "plural")
+    n = flags.int_of(f, "count")?
+    id = flags.value_of(f, "ID")?
+    looked = compile.look_up(catalogs: p.catalogs, domain: p.domain, languages: languages, context: context, id: id, plural_id: plural, n: n)?
+
+    where = if looked.file == ""
+        "no compiled catalogue for those languages, so the source shows"
+    else if !looked.translated
+        f"{path.to_slash(looked.file)} does not hold it, so the source shows"
+    else if looked.form >= 0
+        f"form {looked.form} of {path.to_slash(looked.file)}"
+    else
+        path.to_slash(looked.file)
+
+    session.say_lines(s, lines: [f"\"{looked.text}\"", "    " + where])?
+    return ok(0)
+
+# The languages of gettext's `LANGUAGE`, separated by `:` or `,`.
+#
+# - `list`: the list, `pt_BR:pt`.
+function split_languages(list: str) -> [str]
+    found: [str] @= []
+    current: [str] @= []
+
+    for c in list.chars()
+        if c == ":" || c == ","
+            if current.len() > 0
+                found @ found.push(current.join(""))
+                current @ []
+        else if c != " "
+            current @ current.push(c)
+
+    if current.len() > 0
+        found @ found.push(current.join(""))
+
+    return found
+
+## Tests
+
+test "split_languages: colons, commas, spaces and empty items"
+    assert split_languages("pt_BR:pt") == ["pt_BR", "pt"]
+    assert split_languages(" de, en ::") == ["de", "en"]
+    assert split_languages("") == []

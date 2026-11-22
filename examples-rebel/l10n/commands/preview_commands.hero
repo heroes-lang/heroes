@@ -1,0 +1,137 @@
+# The commands that show translations as readers see them: `preview` lists
+# a locale's messages with every placeholder filled by a sample of its kind
+# and every plural form at a number of its category; `render` writes an
+# HTML template in a locale, chosen by name or by a reader's
+# `Accept-Language`, and ends the page with a comment saying how it was made.
+
+use <rebel>/flags
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/regex
+
+use catalog/messages
+use catalog/store
+use check/placeholders
+use plural/gettext_forms
+use preview/fill
+use preview/render
+use preview/samples
+use project/config
+use project/locale_tags
+use project/session
+
+## preview
+
+# `preview`: the messages of a locale's catalogue, filled, those `--match`
+# matches where it is given.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where the locale has no catalogue, and `invalid` where `--match` is
+# no regular expression.
+function preview_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    tag = locale_tags.canonical_tag(flags.value_of(f, "locale")?)?
+    catalog = catalog_of(p, tag: tag)?.catalog
+    setting = samples.setting_of(tag, project: p, now: s.now)?
+    forms = gettext_forms.forms_of(setting.locale)?
+    placeholder_patterns = placeholders.patterns()
+
+    chosen: regex.Regex? = match flags.value_of(f, "match")
+        .ok pattern =>
+            match regex.compile(pattern)
+                .ok re => ok(re)
+                .err e => return fail(code: "invalid", msg: f"--match \"{pattern}\" is no regular expression: {e.msg}")
+        .err e => fail(code: e.code, msg: e.msg)
+
+    lines: [str] @= [samples.describe(setting), ""]
+    shown @= 0
+
+    for m in messages.live_messages(catalog)
+        wanted = match chosen
+            .ok re => regex.contains(messages.label_of(m) + "\n" + m.plural_id.default(""), re: re)
+            .err _ => true
+
+        if wanted
+            for line in fill.preview_lines(m, s: setting, forms: forms, declared: p.placeholders, p: placeholder_patterns)
+                lines @ lines.push(line)
+
+            shown @ shown + 1
+
+    lines @ lines.push(f"{session.counted(s, n: shown, noun: "message", nouns: "messages")} shown")
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+# The catalogue of `tag`.
+#
+# - `p`: the project.
+# - `tag`: the locale's tag.
+#
+# Fails `file_not_found` where there is none, saying which command makes it.
+function catalog_of(p: config.Project, tag: str) -> store.Loaded?
+    file = store.catalog_path(p, tag: tag)
+
+    if !fs.exists(file).default(false)
+        return fail(
+            code: "file_not_found",
+            msg: f"no catalogue {path.to_slash(file)}: `l10n merge --locale {tag}` makes it"
+        )
+
+    return store.read_po(file)
+
+## render
+
+# `render`: a template written in a locale, then a comment saying which
+# locale and why, what was left in the source language, and how many link
+# hosts were written in ASCII.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails as the template's and the catalogue's reading fail, and where no
+# catalogue answers the reader's `Accept-Language`.
+function render_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    file = flags.value_of(f, "TEMPLATE")?
+
+    chosen = match flags.value_of(f, "accept")
+        .ok header => Choice(
+            tag: locale_tags.negotiate(header, tags: p.locales)?,
+            why: f"chosen for Accept-Language \"{header}\""
+        )
+        .err _ => Choice(tag: locale_tags.canonical_tag(flags.value_of(f, "locale")?)?, why: "as asked")
+
+    catalog = catalog_of(p, tag: chosen.tag)?
+    setting = samples.setting_of(chosen.tag, project: p, now: s.now)?
+    count = flags.int_of(f, "count")?
+    source = read_file(file)?
+    r = render.render(
+        source,
+        catalog: catalog.catalog,
+        s: setting,
+        count: count,
+        declared: p.placeholders,
+        p: render.patterns()
+    )
+
+    page = if r.html.len() > 0 && r.html[r.html.len() - 1] == '\n'
+        r.html
+    else
+        r.html + "\n"
+
+    left = if r.untranslated.len() == 0
+        "every message translated"
+    else
+        "in the source language: " + r.untranslated.join("; ")
+
+    session.say(s, text: page)?
+    session.say_lines(s, lines: [f"<!-- l10n: {chosen.tag}, {chosen.why}; plural messages for {count}; {r.hosts} link hosts in ASCII; {left} -->"])?
+    return ok(0)
+
+# The locale a page is rendered in, and why it was chosen.
+record Choice
+    # The locale's tag.
+    tag: str
+    # Why, for the page's closing comment.
+    why: str

@@ -1,0 +1,333 @@
+# An HTML template as a reader of one locale would get it, its `{# ... #}`
+# comments dropped as Jinja drops them: every message the
+# extractor reads there (`extract/templates`) replaced by its translation in
+# the locale's catalogue with its placeholders filled by samples, the page's
+# `lang` set to the locale and `dir="rtl"` added for a script written right
+# to left, and every link's host written in ASCII, as UTS #46's ToASCII
+# writes it for the request a browser makes, while the text a reader sees
+# keeps the host as people write it. A character drawn as nothing, such as
+# the right-to-left mark CLDR puts around an Arabic amount, is written as an
+# HTML character reference (`preview/invisible`), the same character to a
+# browser and a visible one in the page's source.
+#
+# A message the catalogue does not translate, or only guesses, shows its
+# source text, as gettext shows it, and the render's report names it. A
+# plural message takes the form the catalogue's own `Plural-Forms` chooses
+# for the count the caller gives.
+
+use <rebel>/i18n
+use <rebel>/lists
+use <rebel>/regex
+use <rebel>/url/idna
+
+use catalog/messages
+use check/placeholders
+use extract/templates
+use preview/fill
+use preview/invisible
+use preview/samples
+use project/locale_tags
+
+## Patterns
+
+# A whole `{{ call(...) }}` expression, the function in group 1 and its
+# arguments in group 2.
+constant EXPRESSION: str
+    "\\{\\{\\s*(npgettext|pgettext|ngettext|gettext|_)\\((.*?)\\)\\s*\\}\\}"
+
+# The `<html>` tag, its attributes in group 1.
+constant HTML_TAG: str
+    "<html\\b([^>]*)>"
+
+# A template's comment, `{# ... #}`, which no reader gets.
+constant COMMENT: str
+    "(?s)\\{#.*?#\\}"
+
+# A `lang` or `dir` attribute.
+constant LANG_OR_DIR: str
+    "\\s(?:lang|dir)\\s*=\\s*\"[^\"]*\""
+
+# A link's scheme in group 1 and its host, with any user and port, in group
+# 2, inside an `href` or `src` attribute.
+constant LINK: str
+    "\\b(?:href|src)=\"(https?://)([^/\"?#]+)"
+
+# The patterns a render uses, compiled once.
+record Patterns
+    # The extractor's patterns.
+    templates: templates.Patterns
+    # The placeholders' patterns.
+    placeholders: placeholders.Patterns
+    # `EXPRESSION`.
+    expression: regex.Regex
+    # `HTML_TAG`.
+    html: regex.Regex
+    # `COMMENT`.
+    comment: regex.Regex
+    # `LANG_OR_DIR`.
+    lang_or_dir: regex.Regex
+    # `LINK`.
+    link: regex.Regex
+
+# Every pattern compiled; this module's constants, which its tests compile.
+function patterns() -> Patterns
+    return Patterns(
+        templates: templates.patterns(),
+        placeholders: placeholders.patterns(),
+        expression: regex.compile(EXPRESSION).must(),
+        html: regex.compile(HTML_TAG).must(),
+        comment: regex.compile(COMMENT).must(),
+        lang_or_dir: regex.compile(LANG_OR_DIR).must(),
+        link: regex.compile(LINK).must()
+    )
+
+## Rendering
+
+# A rendered page, and what the render could not translate.
+record Rendered
+    # The page.
+    html: str
+    # The messages shown in the source language, as a person reads their
+    # keys, each once.
+    untranslated: [str]
+    # How many link hosts were written in ASCII.
+    hosts: i64
+
+# A stretch of the template that a message replaces.
+record Replacement
+    # Its first byte.
+    start: i64
+    # The byte after it.
+    end: i64
+    # The message's context, absent for none.
+    context: str?
+    # Its id.
+    id: str
+    # Its plural, absent for none.
+    plural_id: str?
+
+# `source` rendered with `catalog` for the locale of `s`.
+#
+# - `source`: the template's text.
+# - `catalog`: the locale's catalogue.
+# - `s`: the locale's sample setting.
+# - `count`: the number every plural message is shown for.
+# - `declared`: the project's kinds of placeholders.
+# - `p`: the patterns.
+function render(source: str, catalog: i18n.Catalog, s: samples.Setting, count: i64, declared: {str: str}, p: Patterns) -> Rendered
+    found = lists.sort_by(replacements(source, p: p), less: starts_before)
+    pieces: [str] @= []
+    untranslated: [str] @= []
+    at @= 0
+
+    for r in found
+        if r.start >= at
+            pieces @ pieces.push(source.slice(from: at, to: r.start))
+            shown = shown_text(r, catalog: catalog, count: count, declared: declared)
+
+            if !shown.translated && !untranslated.has_label(shown.label)
+                untranslated @ untranslated.push(shown.label)
+
+            pieces @ pieces.push(
+                fill.filled(shown.text, kinds: shown.kinds, s: s, count: count, p: p.placeholders)
+            )
+            at @ r.end
+
+    pieces @ pieces.push(source.slice(from: at, to: source.len()))
+    uncommented = regex.replace_all(s: pieces.join(""), re: p.comment, new: "")
+    page = with_language(page: uncommented, locale_tag: s.tag, rtl: is_rtl(s), p: p)
+    linked = with_ascii_hosts(page, p: p)
+    return Rendered(html: invisible.as_references(linked.html), untranslated: untranslated, hosts: linked.hosts)
+
+# The stretches of `source` a message replaces: each `{{ call(...) }}` and
+# each `trans` block.
+#
+# - `source`: the template.
+# - `p`: the patterns.
+function replacements(source: str, p: Patterns) -> [Replacement]
+    found: [Replacement] @= []
+
+    for m in regex.search_all(source, re: p.expression)
+        name = regex.group(m, n: 1).must()
+        texts = regex.search_all(regex.group(m, n: 2).default(""), re: p.templates.literal).map(templates.literal_text)
+
+        match templates.from_call(name, texts: texts)
+            .ok parts => found @ found.push(
+                Replacement(start: m.start, end: m.end, context: parts.context, id: parts.id, plural_id: parts.plural_id)
+            )
+            .err _    => _ = 0
+
+    for m in regex.search_all(source, re: p.templates.block)
+        tag = regex.group(m, n: 1).default("")
+
+        context: str? = match regex.search(tag, re: p.templates.context)
+            .ok c  => ok(templates.unescaped(regex.group(c, n: 1).default("")))
+            .err _ => messages.absent("context")
+
+        plural: str? = match regex.group(m, n: 3)
+            .ok text => ok(templates.block_text(text, variable: p.templates.variable))
+            .err _   => messages.absent("plural")
+
+        id = templates.block_text(regex.group(m, n: 2).default(""), variable: p.templates.variable)
+        found @ found.push(Replacement(start: m.start, end: m.end, context: context, id: id, plural_id: plural))
+
+    return found
+
+# Whether `a` begins before `b`.
+#
+# - `a`: a replacement.
+# - `b`: another.
+function starts_before(a: Replacement, b: Replacement) -> bool
+    return a.start < b.start
+
+# The text a replacement shows, whether it is a translation, and the kind of
+# each of its placeholders.
+record Shown
+    # The text, placeholders not yet filled.
+    text: str
+    # Whether it is the catalogue's translation.
+    translated: bool
+    # The message, as a person reads its key.
+    label: str
+    # The kind of each placeholder: as its message writes it, else as the
+    # project declares it.
+    kinds: {str: str}
+
+# What `r` shows: the translation of its form for `count`, or its source
+# text where the catalogue has no confirmed translation.
+#
+# - `r`: the replacement.
+# - `catalog`: the catalogue.
+# - `count`: the number a plural message is shown for.
+# - `declared`: the project's kinds of placeholders.
+function shown_text(r: Replacement, catalog: i18n.Catalog, count: i64, declared: {str: str}) -> Shown
+    key = messages.key_from(r.context, id: r.id)
+    label = messages.label_of_key(key)
+
+    source = if r.plural_id.is_err() || count == 1
+        r.id
+    else
+        r.plural_id.must()
+
+    match messages.find_live(catalog, key: key)
+        .err _ => return Shown(text: source, translated: false, label: label, kinds: declared)
+        .ok m =>
+            kinds = fill.kinds_of(m, declared: declared, p: placeholders.patterns())
+
+            if !messages.is_translated(m)
+                return Shown(text: source, translated: false, label: label, kinds: kinds)
+
+            at = if messages.is_plural(m)
+                i18n.plural_index(catalog.plural_forms, n: count).default(0)
+            else
+                0
+
+            if at >= m.translations.len()
+                return Shown(text: source, translated: false, label: label, kinds: kinds)
+
+            return Shown(text: m.translations[at], translated: true, label: label, kinds: kinds)
+
+## The page's language
+
+# Whether `s`'s locale is written right to left, by the script CLDR says
+# its language is most likely written in: the scripts whose letters are of
+# the bidirectional classes R or AL (UAX #9), Arabic, Hebrew, Syriac,
+# Thaana, N'Ko, Adlam and Hanifi Rohingya, as the Unicode Character
+# Database 17.0.0 gives them, read 2026-11-22 through Python's
+# `unicodedata`.
+#
+# - `s`: the setting.
+function is_rtl(s: samples.Setting) -> bool
+    script = locale_tags.script_of(s.locale)
+
+    for rtl in ["Arab", "Hebr", "Syrc", "Thaa", "Nkoo", "Adlm", "Rohg"]
+        if script == rtl
+            return true
+
+    return false
+
+# `page` with its `<html>` tag's `lang` set to `locale_tag`, and `dir="rtl"`
+# where `rtl`; a page with no `<html>` tag is as it was.
+#
+# - `page`: the page.
+# - `locale_tag`: the locale's tag.
+# - `rtl`: whether the locale is written right to left.
+# - `p`: the patterns.
+function with_language(page: str, locale_tag: str, rtl: bool, p: Patterns) -> str
+    m = match regex.search(page, re: p.html)
+        .ok found => found
+        .err _    => return page
+
+    rest = regex.replace_all(s: regex.group(m, n: 1).default(""), re: p.lang_or_dir, new: "")
+
+    dir = if rtl
+        " dir=\"rtl\""
+    else
+        ""
+
+    tag = f"<html lang=\"{locale_tag}\"{dir}{rest}>"
+    return page.slice(from: 0, to: m.start) + tag + page.slice(from: m.end, to: page.len())
+
+## Links
+
+# A page with its link hosts in ASCII, and how many changed.
+record Linked
+    # The page.
+    html: str
+    # How many hosts were rewritten.
+    hosts: i64
+
+# `page` with the host of every `href` and `src` written as ToASCII writes
+# it with the URL Standard's flags; a host that does not convert, or holds a
+# placeholder's brace, is left as written.
+#
+# - `page`: the page.
+# - `p`: the patterns.
+function with_ascii_hosts(page: str, p: Patterns) -> Linked
+    pieces: [str] @= []
+    at @= 0
+    changed @= 0
+
+    for m in regex.search_all(page, re: p.link)
+        span = regex.span(m, n: 2).must()
+        host = regex.group(m, n: 2).must()
+
+        match idna.to_ascii(host, options: idna.url_options())
+            .ok ascii =>
+                if ascii != host
+                    pieces @ pieces.push(page.slice(from: at, to: span.start))
+                    pieces @ pieces.push(ascii)
+                    at @ span.end
+                    changed @ changed + 1
+            .err _ => _ = 0
+
+    pieces @ pieces.push(page.slice(from: at, to: page.len()))
+    return Linked(html: pieces.join(""), hosts: changed)
+
+# Whether `labels` holds `label`.
+#
+# - `labels`: the labels.
+# - `label`: the label.
+function has_label(labels: [str], label: str) -> bool
+    for l in labels
+        if l == label
+            return true
+
+    return false
+
+## Tests
+
+test "render: a call and a block translated, a plural by its count, the language set, a host in ASCII"
+    text = "msgid \"\"\nmsgstr \"Language: de\\nPlural-Forms: nplurals=2; plural=(n==1 ? 0 : 1);\\n\"\n\nmsgid \"Your order\"\nmsgstr \"Ihre Bestellung\"\n\nmsgid \"{count} parcel\"\nmsgid_plural \"{count} parcels\"\nmsgstr[0] \"{count} Paket\"\nmsgstr[1] \"{count} Pakete\"\n"
+    catalog = i18n.parse_po(text).must()
+    s = samples.setting_of("de", project: samples.sample_project(), now: fill.samples_now()).must()
+    page = "<html lang=\"en\"><h1>{{ _(\"Your order\") }}</h1>\n<p>{% trans count=n %}{{ count }} parcel{% pluralize %}{{ count }} parcels{% endtrans %}</p>\n<a href=\"https://bücher.example/hilfe\">bücher.example</a> {{ _(\"Help\") }}</html>"
+    r = render(page, catalog: catalog, s: s, count: 3, declared: {}, p: patterns())
+    assert r.html == "<html lang=\"de\"><h1>Ihre Bestellung</h1>\n<p>3 Pakete</p>\n<a href=\"https://xn--bcher-kva.example/hilfe\">bücher.example</a> Help</html>"
+    assert r.untranslated == ["Help"]
+    assert r.hosts == 1
+
+test "with_language: right to left for Arabic, a page with no html tag untouched"
+    p = patterns()
+    assert with_language(page: "<html dir=\"ltr\" class=\"x\">", locale_tag: "ar", rtl: true, p: p) == "<html lang=\"ar\" dir=\"rtl\" class=\"x\">"
+    assert with_language(page: "<p>x</p>", locale_tag: "ar", rtl: true, p: p) == "<p>x</p>"

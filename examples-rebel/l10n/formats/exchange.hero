@@ -1,0 +1,164 @@
+# The formats a catalogue is imported from and exported to, chosen by a
+# name or by a file's extension: `po`, `csv`, `xlsx`, `json` and `yaml`.
+#
+# Every text format is read from its bytes through `formats/text_decode`, so
+# a CSV file saved by Excel in windows-1252 or as UTF-16, and a `.po` file in
+# the charset its header declares, are read right and the report says how;
+# a workbook is a zip of XML that names its own encoding. A `.po` file from
+# elsewhere is read as rows through its own `Plural-Forms`, so its forms land
+# on the categories they were written for whatever header it has.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+use <rebel>/xlsx
+
+use catalog/store
+use formats/csv_format
+use formats/documents
+use formats/rows
+use formats/text_decode
+use formats/workbook
+use plural/gettext_forms
+
+## Codes
+
+# The code of a format this program does not read or write.
+constant UNSUPPORTED: str
+    "unsupported"
+
+## Formats
+
+# The formats, by name.
+function format_names() -> [str]
+    return ["po", "csv", "xlsx", "json", "yaml"]
+
+# The format `named` names, or `file`'s extension where `named` is empty:
+# `.po` and `.pot`, `.csv` and `.tsv`, `.xlsx`, `.json`, `.yaml` and
+# `.yml`.
+#
+# - `file`: the file's path.
+# - `named`: a format's name given by a flag, or empty.
+#
+# Fails `unsupported` where the name or the extension is none of these.
+function format_of(file: str, named: str) -> str?
+    if named != ""
+        for f in format_names()
+            if f == named
+                return ok(f)
+
+        return fail(code: UNSUPPORTED, msg: f"no format \"{named}\"; the formats are {format_names().join(", ")}")
+
+    ext = path.ext(file).default("")
+
+    if ext == ".po" || ext == ".pot"
+        return ok("po")
+
+    if ext == ".csv" || ext == ".tsv"
+        return ok("csv")
+
+    if ext == ".xlsx"
+        return ok("xlsx")
+
+    if ext == ".json"
+        return ok("json")
+
+    if ext == ".yaml" || ext == ".yml"
+        return ok("yaml")
+
+    return fail(
+        code: UNSUPPORTED,
+        msg: f"{file} has no extension this program reads; name its format, one of {format_names().join(", ")}"
+    )
+
+## Reading
+
+# Rows read from a file, and how its bytes were read.
+record Read
+    # The rows.
+    rows: [rows.Row]
+    # The file's encoding, empty for a workbook.
+    encoding: str
+    # How the encoding was found, empty for a workbook.
+    how: str
+
+# The rows of `file` in `format`, for the locale whose forms are `forms`.
+#
+# - `file`: the path.
+# - `format`: a name `format_of` answers.
+# - `forms`: the locale's forms, which a `.po` file's forms are moved onto.
+# - `rules`: the locale's rules.
+# - `encoding`: the label of the encoding a person names, empty to find it.
+# - `sheet`: the sheet of a workbook, the locale's tag.
+#
+# Fails as the file's reading fails, `file_not_found` where it is missing,
+# and as its format's reader fails.
+function read_rows(file: str, format: str, forms: gettext_forms.Forms, rules: i18n.PluralRules, encoding: str, sheet: str) -> Read?
+    if format == "xlsx"
+        wb = xlsx.load(file)?
+        return ok(Read(rows: workbook.rows_of_sheet(wb, name: sheet)?, encoding: "", how: ""))
+
+    if format == "po"
+        loaded = store.read_po(file)?
+        return ok(
+            Read(rows: rows.rows_of(loaded.catalog, forms: forms, rules: rules), encoding: loaded.encoding, how: loaded.how)
+        )
+
+    decoded = text_decode.decode_text(fs.read_bytes(file)?, declared: encoding)?
+
+    read = if format == "csv"
+        csv_format.parse_rows(decoded.text)
+    else if format == "json"
+        documents.parse_json(decoded.text)
+    else
+        documents.parse_yaml(decoded.text)
+
+    return ok(Read(rows: read?, encoding: decoded.encoding, how: decoded.how))
+
+## Writing
+
+# Writes the rows of the locale `tag` to `file` in `format`, which is no
+# workbook and no `.po` file: those are written by `workbook` and `store`.
+#
+# - `file`: the path; its folder is made.
+# - `format`: `csv`, `json` or `yaml`.
+# - `list`: the rows.
+# - `tag`: the locale's tag, which a document names.
+# - `forms`: the locale's forms.
+#
+# Fails `unsupported` for another format, and as the writing fails.
+function write_text_rows(file: str, format: str, list: [rows.Row], tag: str, forms: gettext_forms.Forms) -> ()?
+    names = gettext_forms.category_names(forms)
+
+    text = if format == "csv"
+        csv_format.format_rows(list)
+    else if format == "json"
+        documents.format_json(list, tag: tag, forms: names)?
+    else if format == "yaml"
+        documents.format_yaml(list, tag: tag, forms: names)?
+    else
+        return fail(code: UNSUPPORTED, msg: f"{format} is not written as text")
+
+    fs.make_dir_all(path.parent(file))?
+    write_file(path: file, text: text)?
+    return ok()
+
+# Writes a workbook to `file`, making its folder.
+#
+# - `file`: the path.
+# - `wb`: the workbook.
+#
+# Fails as `xlsx.encode` and the writing fail.
+function write_workbook(file: str, wb: xlsx.Workbook) -> ()?
+    fs.make_dir_all(path.parent(file))?
+    fs.write_bytes(file, data: xlsx.encode(wb)?)?
+    return ok()
+
+## Tests
+
+test "format_of: by name, by extension, and refusals"
+    assert format_of(file: "a.tsv", named: "").must() == "csv"
+    assert format_of(file: "a.yml", named: "").must() == "yaml"
+    assert format_of(file: "a.txt", named: "json").must() == "json"
+    assert format_of(file: "a.txt", named: "").is_err()
+    assert format_of(file: "a.csv", named: "parquet").is_err()

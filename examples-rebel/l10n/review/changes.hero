@@ -1,0 +1,259 @@
+# What changed between two versions of one locale's translations, for a
+# reviewer: the messages added and removed, by set difference over their
+# keys; and for each message in both, every form whose translation changed,
+# shown word by word as `git diff --word-diff` shows it, `[-old-]{+new+}`,
+# and every guess confirmed or turned into one.
+#
+# The two versions may be in any format the program reads, a `.po` file
+# against a spreadsheet a translator sent back, since both are read into
+# rows first (`formats/exchange`). The unified form, `--unified`, is a line
+# for each form, `label [form] = translation`, compared by `diff -u`'s rules,
+# so it can be pasted into a review tool that reads patches.
+
+use <rebel>/diff
+use <rebel>/sets
+
+use catalog/messages
+use formats/rows
+
+## Entries
+
+# One message's translations in one version.
+record Entry
+    # Its key.
+    key: str
+    # How a person reads it.
+    label: str
+    # Each form's translation, by form, `""` for a message with no plural.
+    forms: {str: str}
+    # Whether a form of it is a guess.
+    fuzzy: bool
+
+# The entries of `list`, one for each message, in the order first met.
+#
+# - `list`: the rows of one version.
+function entries_of(list: [rows.Row]) -> {str: Entry}
+    found: {str: Entry} @= {}
+
+    for r in list
+        key = messages.key_from(rows.context_of(r), id: r.id)
+
+        entry @= match found[key]
+            .ok e  => e
+            .err _ => Entry(key: key, label: messages.label_of_key(key), forms: {}, fuzzy: false)
+
+        entry.forms[r.form] @ r.translation
+        entry.fuzzy @ entry.fuzzy || r.state == "fuzzy"
+        found[key] @ entry
+
+    return found
+
+## Changes
+
+# What changed, as lines for a reviewer and the counts beside them.
+record Review
+    # The lines, in the new version's order, the removed ones after.
+    lines: [str]
+    # Messages only the new version holds.
+    added: i64
+    # Messages only the old version holds.
+    removed: i64
+    # Messages whose translation changed.
+    changed: i64
+    # Guesses confirmed.
+    confirmed: i64
+
+# The review of `old` against `new`.
+#
+# - `old`: the rows of the version before.
+# - `new`: the rows of the version after.
+function review(old: [rows.Row], new: [rows.Row]) -> Review
+    before = entries_of(old)
+    after = entries_of(new)
+    before_keys = sets.from_list(keys(before))
+    after_keys = sets.from_list(keys(after))
+    lines: [str] @= []
+    added @= 0
+    changed @= 0
+    confirmed @= 0
+
+    for key in keys(after)
+        e = after[key].must()
+
+        if !sets.contains(before_keys, element: key)
+            added @ added + 1
+
+            guess = if e.fuzzy
+                "  (a guess to confirm)"
+            else
+                ""
+
+            lines @ lines.push(f"+ {e.label}{guess}")
+
+            for form in keys(e.forms)
+                if e.forms[form].must() != ""
+                    lines @ lines.push("    " + form_prefix(form) + e.forms[form].must())
+        else
+            o = before[key].must()
+            moved: [str] @= []
+
+            for form in keys(e.forms)
+                was = o.forms[form].default("")
+                now = e.forms[form].must()
+
+                if was != now
+                    moved @ moved.push("    " + form_prefix(form) + word_diff(old: was, new: now))
+
+            if moved.len() > 0
+                changed @ changed + 1
+                lines @ lines.push(f"~ {e.label}")
+
+                for line in moved
+                    lines @ lines.push(line)
+            else if o.fuzzy && !e.fuzzy
+                confirmed @ confirmed + 1
+                lines @ lines.push(f"= {e.label}: the guess is confirmed")
+            else if !o.fuzzy && e.fuzzy
+                lines @ lines.push(f"? {e.label}: now a guess to confirm")
+
+    removed @= 0
+
+    for key in keys(before)
+        if !sets.contains(after_keys, element: key)
+            removed @ removed + 1
+            lines @ lines.push(f"- {before[key].must().label}")
+
+    return Review(lines: lines, added: added, removed: removed, changed: changed, confirmed: confirmed)
+
+# The words a form's line begins with: `few: `, or nothing for a message
+# with no plural.
+#
+# - `form`: the form.
+function form_prefix(form: str) -> str
+    if form == ""
+        return ""
+
+    return form + ": "
+
+# `old` turned into `new`, word by word: the words they share as they are,
+# the removed between `[-` and `-]`, the added between `{+` and `+}`.
+#
+# - `old`: the text before; empty, the whole text is added.
+# - `new`: the text after; empty, the whole text is removed.
+function word_diff(old: str, new: str) -> str
+    before = diff.words_of(old)
+    after = diff.words_of(new)
+    pieces: [str] @= []
+
+    for op in diff.edits(old: before, new: after)
+        removed = before.slice(from: op.old_from, to: op.old_to).join("")
+        put = after.slice(from: op.new_from, to: op.new_to).join("")
+
+        match op.tag
+            .equal  => pieces @ pieces.push(removed)
+            .delete => pieces @ pieces.push("[-" + removed + "-]")
+            .insert => pieces @ pieces.push("{+" + put + "+}")
+            .replace =>
+                pieces @ pieces.push("[-" + removed + "-]")
+                pieces @ pieces.push("{+" + put + "+}")
+
+    return pieces.join("")
+
+## The unified form
+
+# The difference of the two versions in the unified format, a line for each
+# form; empty where they are the same.
+#
+# - `old`: the rows before.
+# - `new`: the rows after.
+# - `old_name`: the old version's name, for `---`.
+# - `new_name`: the new version's name, for `+++`.
+function unified(old: [rows.Row], new: [rows.Row], old_name: str, new_name: str) -> str
+    return diff.format_unified(
+        old: lines_of(old),
+        new: lines_of(new),
+        options: diff.default_options(old_name: old_name, new_name: new_name)
+    )
+
+# A line for each row, `label [form] = translation`, line breaks written
+# `\n`, each ending with a line feed.
+#
+# - `list`: the rows.
+function lines_of(list: [rows.Row]) -> [str]
+    lines: [str] @= []
+
+    for r in list
+        key = messages.key_from(rows.context_of(r), id: r.id)
+
+        form = if r.form == ""
+            ""
+        else
+            f" [{r.form}]"
+
+        lines @ lines.push(messages.label_of_key(key) + form + " = " + one_line(r.translation) + "\n")
+
+    return lines
+
+# `s` with each line feed written as `\n`.
+#
+# - `s`: the text.
+function one_line(s: str) -> str
+    pieces: [str] @= []
+
+    for c in s.chars()
+        if c == "\n"
+            pieces @ pieces.push("\\n")
+        else
+            pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+## Tests
+
+# A row for the tests.
+#
+# - `id`: the id.
+# - `form`: the form.
+# - `translation`: the translation.
+# - `state`: the state.
+function row(id: str, form: str, translation: str, state: str) -> rows.Row
+    return rows.Row(
+        context: "",
+        id: id,
+        plural_id: "",
+        form: form,
+        source: "",
+        translation: translation,
+        state: state,
+        note: ""
+    )
+
+test "word_diff: words removed, added and replaced, and either side empty"
+    assert word_diff(old: "Ihr Warenkorb ist leer.", new: "Ihr Einkaufswagen ist leer.") == "Ihr [-Warenkorb-]{+Einkaufswagen+} ist leer."
+    assert word_diff(old: "", new: "Neu") == "{+Neu+}"
+    assert word_diff(old: "Alt", new: "") == "[-Alt-]"
+    assert word_diff(old: "same", new: "same") == "same"
+
+test "review: added, removed, changed and confirmed"
+    old = [
+        row(id: "Sign in", form: "", translation: "Anmelden", state: "translated")
+        row(id: "Gone", form: "", translation: "Weg", state: "translated")
+        row(id: "Total", form: "", translation: "Summe", state: "fuzzy")
+    ]
+    new = [
+        row(id: "Sign in", form: "", translation: "Einloggen", state: "translated")
+        row(id: "Total", form: "", translation: "Summe", state: "translated")
+        row(id: "New", form: "", translation: "Neu", state: "translated")
+    ]
+    r = review(old: old, new: new)
+    assert r.lines == ["~ Sign in", "    [-Anmelden-]{+Einloggen+}", "= Total: the guess is confirmed", "+ New", "    Neu", "- Gone"]
+    assert r.added == 1
+    assert r.removed == 1
+    assert r.changed == 1
+    assert r.confirmed == 1
+
+test "unified: a hunk for a changed form, nothing for equal versions"
+    old = [row(id: "a", form: "", translation: "x\ny", state: "translated")]
+    new = [row(id: "a", form: "", translation: "z", state: "translated")]
+    assert unified(old: old, new: new, old_name: "de.po", new_name: "de.json") == "--- de.po\n+++ de.json\n@@ -1 +1 @@\n-a = x\\ny\n+a = z\n"
+    assert unified(old: old, new: old, old_name: "a", new_name: "b") == ""

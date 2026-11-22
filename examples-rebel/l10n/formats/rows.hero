@@ -1,0 +1,324 @@
+# A catalogue as the rows a translator works on outside it, in a
+# spreadsheet, a CSV file or a JSON or YAML document, and rows from such a
+# file applied back to a catalogue.
+#
+# A row is one form of one message: a message with no plural is one row, a
+# plural message one row for each form its language has, each named by its
+# CLDR category (`one`, `few`, `many`) rather than by gettext's form number,
+# so a translator reads which numbers a form is for, and rows written for one
+# `Plural-Forms` apply to a catalogue that has another. The category of a
+# form is found by asking the catalogue's own expression which form the
+# category's first sample number takes; where two categories take one form,
+# which is how an old header lacks a category, the second's row says `fuzzy`.
+#
+# A text applied is put in NFC first (UAX #15), since what a translator's
+# keyboard or editor wrote may be decomposed and look the same.
+
+use <rebel>/i18n
+use <rebel>/sets
+use <rebel>/unicode/normalize
+
+use catalog/messages
+use plural/gettext_forms
+use plural/samples
+
+## Rows
+
+# One form of one message.
+record Row
+    # The message's context, empty for none.
+    context: str
+    # The message's id.
+    id: str
+    # The message's plural text, empty for none.
+    plural_id: str
+    # The category the form stands for, `few`; empty for a message with no
+    # plural.
+    form: str
+    # The source text the form translates: the id, or the plural text for a
+    # form other than `one`.
+    source: str
+    # The translation, empty for none.
+    translation: str
+    # `translated`, `fuzzy` or `untranslated`.
+    state: str
+    # The notes to the translator, joined by `; `.
+    note: str
+
+# The names of a row's columns, in the order every format writes them.
+function columns() -> [str]
+    return ["context", "id", "plural_id", "form", "source", "translation", "state", "note"]
+
+# The values of `r` in the order of `columns`.
+#
+# - `r`: the row.
+function values_of(r: Row) -> [str]
+    return [r.context, r.id, r.plural_id, r.form, r.source, r.translation, r.state, r.note]
+
+# The row a record of named values holds, as a CSV file's header or a
+# spreadsheet's first row names them; a column not given is empty.
+#
+# - `named`: the values by column name.
+#
+# Fails `invalid` where it gives no `id`.
+function row_of(named: {str: str}) -> Row?
+    id = named["id"].default("")
+
+    if id == ""
+        return fail(code: "invalid", msg: "a row with no id")
+
+    return ok(
+        Row(context: named["context"].default(""), id: id, plural_id: named["plural_id"].default(""), form: named["form"].default(""), source: named["source"].default(""), translation: named["translation"].default(""), state: named["state"].default(""), note: named["note"].default(""))
+    )
+
+# The rows of `catalog`'s live messages, their plural forms named by the
+# categories of `forms`.
+#
+# - `catalog`: a catalogue, the project's or one from elsewhere.
+# - `forms`: its locale's forms.
+# - `rules`: its locale's plural rules.
+function rows_of(catalog: i18n.Catalog, forms: gettext_forms.Forms, rules: i18n.PluralRules) -> [Row]
+    rows: [Row] @= []
+
+    for m in messages.live_messages(catalog)
+        context = m.context.default("")
+        note = m.extracted_comments.join("; ")
+        state = messages.state_of(m)
+
+        if messages.is_plural(m)
+            taken: {i64: bool} @= {}
+
+            for category in forms.categories
+                at = match samples.first_sample(rules, category: category)
+                    .ok n  => i18n.plural_index(catalog.plural_forms, n: n).default(0)
+                    .err _ => 0
+
+                text = if at < m.translations.len()
+                    m.translations[at]
+                else
+                    ""
+
+                shared = sets.contains(taken, element: at)
+                taken @ sets.add(taken, element: at)
+
+                row_state = if text == ""
+                    "untranslated"
+                else if shared
+                    "fuzzy"
+                else
+                    state
+
+                source = if category == .one
+                    m.id
+                else
+                    m.plural_id.must()
+
+                rows @ rows.push(
+                    Row(context: context, id: m.id, plural_id: m.plural_id.must(), form: i18n.plural_name(category), source: source, translation: text, state: row_state, note: note)
+                )
+        else
+            text = if m.translations.len() > 0
+                m.translations[0]
+            else
+                ""
+
+            rows @ rows.push(
+                Row(context: context, id: m.id, plural_id: "", form: "", source: m.id, translation: text, state: state, note: note)
+            )
+
+    return rows
+
+## Applying rows
+
+# What applying rows did.
+record Applied
+    # The catalogue after.
+    catalog: i18n.Catalog
+    # Messages whose translation changed.
+    updated: [str]
+    # Messages the rows gave the same translation they had.
+    unchanged: i64
+    # Texts that were not in NFC and were composed.
+    composed: i64
+    # Rows naming no message of the catalogue, as a person reads their key.
+    unknown: [str]
+    # Rows naming a form the language does not have.
+    wrong_forms: [str]
+    # Messages a row marks as a guess, as a person reads their key: a form
+    # the file did not tell apart from another, or one its translator marked.
+    guessed: [str]
+
+# `catalog` with the translations `rows` give: an empty translation changes
+# nothing, a message every form of which is written comes out confirmed
+# unless a row of it says `fuzzy`.
+#
+# - `catalog`: the locale's catalogue.
+# - `rows`: the rows, from any format.
+# - `forms`: the locale's forms.
+#
+# Fails as `i18n.new_catalog` fails, which a catalogue it read does not.
+function apply_rows(catalog: i18n.Catalog, rows: [Row], forms: gettext_forms.Forms) -> Applied?
+    by_key: {str: [Row]} @= {}
+    order: [str] @= []
+
+    for r in rows
+        key = messages.key_from(context_of(r), id: r.id)
+
+        match by_key[key]
+            .ok list => by_key[key] @ list.push(r)
+            .err _ =>
+                order @ order.push(key)
+                by_key[key] @ [r]
+
+    known = sets.from_list(messages.live_keys(catalog))
+    unknown: [str] @= []
+
+    for key in order
+        if !sets.contains(known, element: key)
+            unknown @ unknown.push(messages.label_of_key(key))
+
+    changed: [i18n.Message] @= []
+    updated: [str] @= []
+    unchanged @= 0
+    composed @= 0
+    wrong: [str] @= []
+    guessed: [str] @= []
+
+    for m in catalog.messages
+        given: [Row] = if m.obsolete || messages.is_header(m)
+            []
+        else
+            by_key[messages.key_of(m)].default([])
+
+        if given.len() == 0
+            changed @ changed.push(m)
+        else
+            texts @= if messages.is_plural(m)
+                fitted(m.translations, count: forms.categories.len())
+            else
+                fitted(m.translations, count: 1)
+
+            fuzzy @= false
+
+            for r in given
+                at = form_index(m, form: r.form, forms: forms)
+
+                if at < 0
+                    wrong @ wrong.push(f"{messages.label_of(m)}: {r.form}")
+                else
+                    text = normalize.to_nfc(r.translation)
+
+                    if text != r.translation
+                        composed @ composed + 1
+
+                    if text != ""
+                        texts[at] @ text
+
+                    fuzzy @ fuzzy || r.state == "fuzzy"
+
+            done = messages.with_translations(m, translations: texts)
+
+            confirmed = if fuzzy || !messages.is_complete(done)
+                done
+            else
+                messages.without_flag(done, flag: "fuzzy")
+
+            if fuzzy
+                guessed @ guessed.push(messages.label_of(m))
+
+            final = if fuzzy
+                messages.with_flag(confirmed, flag: "fuzzy")
+            else
+                confirmed
+
+            if final.translations == m.translations && final.flags == m.flags
+                unchanged @ unchanged + 1
+            else
+                updated @ updated.push(messages.label_of(m))
+
+            changed @ changed.push(final)
+
+    return ok(
+        Applied(catalog: i18n.new_catalog(changed)?, updated: updated, unchanged: unchanged, composed: composed, unknown: unknown, wrong_forms: wrong, guessed: guessed)
+    )
+
+# The form a row's `form` names in `m`: 0 for a message with no plural and
+# no form, the category's place for a plural one, -1 where it names none.
+#
+# - `m`: the message.
+# - `form`: the row's form.
+# - `forms`: the locale's forms.
+function form_index(m: i18n.Message, form: str, forms: gettext_forms.Forms) -> i64
+    if !messages.is_plural(m)
+        return if form == ""
+            0
+        else
+            -1
+
+    category = match i18n.parse_plural_name(form)
+        .ok c  => c
+        .err _ => return -1
+
+    return gettext_forms.index_of_category(forms, category: category).default(-1)
+
+# `texts` cut or padded with empty forms to `count`.
+#
+# - `texts`: the forms.
+# - `count`: how many.
+function fitted(texts: [str], count: i64) -> [str]
+    sized: [str] @= []
+
+    for k in range(from: 0, to: count)
+        if k < texts.len()
+            sized @ sized.push(texts[k])
+        else
+            sized @ sized.push("")
+
+    return sized
+
+# A row's context: absent where the row's is empty.
+#
+# - `r`: the row.
+function context_of(r: Row) -> str?
+    if r.context == ""
+        return messages.absent("context")
+
+    return ok(r.context)
+
+## Tests
+
+# A Polish catalogue for the tests, its header CLDR's.
+function sample_pl() -> i18n.Catalog
+    header = gettext_forms.forms_of(i18n.parse_locale("pl").must()).must().header
+    text = f"msgid \"\"\nmsgstr \"Language: pl\\nPlural-Forms: {header}\\n\"\n\nmsgctxt \"cart\"\nmsgid \"{{count}} item\"\nmsgid_plural \"{{count}} items\"\nmsgstr[0] \"{{count}} produkt\"\nmsgstr[1] \"\"\nmsgstr[2] \"\"\n\nmsgid \"Cart\"\nmsgstr \"\"\n"
+    return i18n.parse_po(text).must()
+
+test "rows_of: a row for each form, named by its category, and one for a message with no plural"
+    pl = i18n.parse_locale("pl").must()
+    forms = gettext_forms.forms_of(pl).must()
+    rows = rows_of(sample_pl(), forms: forms, rules: i18n.plural_rules(pl, kind: .cardinal))
+    assert rows.len() == 4
+    assert rows[0].form == "one"
+    assert rows[0].source == "{count} item"
+    assert rows[1].form == "few"
+    assert rows[1].source == "{count} items"
+    assert rows[1].state == "untranslated"
+    assert rows[3].form == ""
+
+test "apply_rows: forms by name, a text composed, an unknown row and a wrong form"
+    pl = i18n.parse_locale("pl").must()
+    forms = gettext_forms.forms_of(pl).must()
+    rows = [
+        Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "few", source: "", translation: "{count} produkty", state: "", note: "")
+        Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "many", source: "", translation: "{count} produktów", state: "", note: "")
+        Row(context: "", id: "Cart", plural_id: "", form: "", source: "", translation: normalize.to_nfd("Koszyk zakupów"), state: "", note: "")
+        Row(context: "", id: "Nowhere", plural_id: "", form: "", source: "", translation: "x", state: "", note: "")
+        Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "other", source: "", translation: "x", state: "", note: "")
+    ]
+    a = apply_rows(sample_pl(), rows: rows, forms: forms).must()
+    assert a.updated == ["[cart] {count} item", "Cart"]
+    assert a.composed == 1
+    assert a.unknown == ["Nowhere"]
+    assert a.wrong_forms == ["[cart] {count} item: other"]
+    assert a.catalog.messages[1].translations == ["{count} produkt", "{count} produkty", "{count} produktów"]
+    assert a.catalog.messages[2].translations == ["Koszyk zakupów"]
