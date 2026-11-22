@@ -137,8 +137,9 @@ int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on);
  * or every one where `window` is 0, before the window or the app goes; and
  * `dialogs_words` gives the words of the last `HERO_UI_OTHER` or
  * `HERO_UI_UNSUPPORTED` they answered. `hero_ui.c` defines them on macOS,
- * by `hero_ui_appkit_dialogs.swift`'s sheets, and for the Win32 and GTK 4
- * arms by THE WAITING FORM below, until an arm defines its own. */
+ * by `hero_ui_appkit_dialogs.swift`'s sheets, and for the Win32 arm by THE
+ * WAITING FORM below, until it defines its own; the GTK 4 arm defines its
+ * own, GTK's dialogs answering later by their callbacks. */
 int64_t hero_ui_arm_show_message(int64_t dialog, int64_t window, int64_t tone, int64_t buttons, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count);
 int64_t hero_ui_arm_show_ask(int64_t dialog, int64_t window, int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel);
 int64_t hero_ui_arm_show_files(int64_t dialog, int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count);
@@ -195,8 +196,8 @@ int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t
 int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
 int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label);
 
-/* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
- * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
+/* THE WAITING FORM of the dialogs, which the Win32 arm defines and
+ * `hero_ui.c` wraps for it: each shows its dialog and returns once the
  * person has answered, writing the answer through its last parameter (the
  * button, `HERO_UI_ANSWER_*`, or the index; the bytes of the paths chosen,
  * each followed by one zero byte, 0 where the person cancelled, which
@@ -228,6 +229,7 @@ size_t hero_ui_copy_text(char *into, size_t most, const char *text);
 bool hero_ui_is_utf8(const uint8_t *text, uint64_t length);
 int64_t hero_ui_refused(int64_t kind, const char *words);
 void hero_ui_tell(int64_t kind, int64_t id, int64_t value, int64_t second);
+void hero_ui_tell_text(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
 void hero_ui_make_host(void);
 hero_ui_native *hero_ui_find(int64_t id);
 bool hero_ui_keep(int64_t id, hero_ui_native *widget);
