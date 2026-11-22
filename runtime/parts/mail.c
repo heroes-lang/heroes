@@ -326,12 +326,15 @@ static void hero_mail_drop_note(HeroMail *m, HeroMailNote *n, int with_queue) {
     int outer_marking = hero_mail_marking;
     hero_mail_dropping = m;
     hero_mail_marking = with_queue;
-    _Alignas(max_align_t) unsigned char small[256];
-    void *v = m->desc->size <= sizeof small ? (void *)small : hero_malloc_raw(m->desc->size);
+    /* A value of 256 bytes or fewer is rebuilt on the stack. Not named
+     * `small`: the Windows SDK's `rpcndr.h`, which `windows.h` includes,
+     * defines `small` as a macro for `char`. */
+    _Alignas(max_align_t) unsigned char on_stack[256];
+    void *v = m->desc->size <= sizeof on_stack ? (void *)on_stack : hero_malloc_raw(m->desc->size);
     n->value.at = 0;
     m->take(&n->value, v);
     m->desc->drop(v);
-    if (v != (void *)small) hero_free_raw(v);
+    if (v != (void *)on_stack) hero_free_raw(v);
     hero_cross_free(&n->value);
     hero_free_raw(n);
     hero_mail_dropping = outer;
