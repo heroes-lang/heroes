@@ -79,6 +79,12 @@ int64_t hero_ui_appkit_set_columns(int64_t id, const uint8_t *titles, int64_t co
 
 int64_t hero_ui_appkit_set_sort(int64_t id, int64_t column, int64_t ascending);
 
+int64_t hero_ui_appkit_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable);
+
+int64_t hero_ui_appkit_tree_remove(int64_t id, int64_t item);
+
+int64_t hero_ui_appkit_tree_unfold(int64_t id, int64_t item, int64_t on);
+
 int64_t hero_ui_appkit_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes);
 
 int64_t hero_ui_appkit_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed);

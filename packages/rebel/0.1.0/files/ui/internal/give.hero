@@ -18,6 +18,7 @@ use ui/internal/layout
 use ui/internal/menus
 use ui/internal/model
 use ui/internal/tables
+use ui/internal/trees
 
 # Fails where `input` cannot be given to `app` as its widget stands now:
 # `closed` where the widget's life has ended, `invalid` where it is of
@@ -30,10 +31,15 @@ function checked(app: ui.App, input: ui.Input) -> ()?
             n = check.node_kind(app, widget: t.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD, hero_ui.HERO_UI_TEXT_AREA], what: "a text field or a text area")?
             check.text_ok(text: t.text, one_line: n.kind == hero_ui.HERO_UI_TEXT_FIELD, what: "the text typed")?
         .choose c =>
-            n = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE], what: "a list, a combo box, a radio group, tabs or a table")?
+            n = check.node_kind(app, widget: c.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE], what: "a list, a combo box, a radio group, tabs, a table or a tree")?
 
             if n.kind == hero_ui.HERO_UI_TABS
                 frames.page_ok(n, indices: c.indices)?
+            else if n.kind == hero_ui.HERO_UI_TREE
+                trees.chosen_ok(n, indices: c.indices)?
+
+                for item in c.indices
+                    trees.reached_ok(n, item: item)?
             else
                 check.indices_ok(n, indices: c.indices)?
 
@@ -78,9 +84,11 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .submit s =>
             _ = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_TEXT_FIELD], what: "a text field")?
         .activate a =>
-            n = check.node_kind(app, widget: a.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_TABLE], what: "a list or a table")?
+            n = check.node_kind(app, widget: a.widget, kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE], what: "a list, a table or a tree")?
 
-            if a.index < 0 || a.index >= model.rows_of(n)
+            if n.kind == hero_ui.HERO_UI_TREE
+                trees.reached_ok(n, item: a.index)?
+            else if a.index < 0 || a.index >= model.rows_of(n)
                 return fail(
                     code: failure.INVALID,
                     msg: f"row {a.index} is past the {model.rows_of(n)} rows of {model.kind_name(n.kind)} {n.id}"
@@ -88,6 +96,15 @@ function checked(app: ui.App, input: ui.Input) -> ()?
         .sort s =>
             n = check.node_kind(app, widget: s.widget, kinds: [hero_ui.HERO_UI_TABLE], what: "a table")?
             tables.column_ok(n, column: s.column)?
+        .unfold u =>
+            n = check.node_kind(app, widget: u.widget, kinds: [hero_ui.HERO_UI_TREE], what: "a tree")?
+            trees.reached_ok(n, item: u.item)?
+
+            if !trees.opens(n, item: u.item)
+                return fail(
+                    code: failure.INVALID,
+                    msg: f"item {u.item} of tree {n.id} is not foldable and holds no item"
+                )
 
     return ok()
 
@@ -109,6 +126,7 @@ function alive(app: ui.App, input: ui.Input) -> bool
         .activate a                               => a.widget.id
         .submit s                                 => s.widget.id
         .sort s                                   => s.widget.id
+        .unfold u                                 => u.widget.id
         .answer _ | .pick_files _ | .cancel_files => 0
 
     if id == 0
@@ -212,6 +230,9 @@ function applied(@app: ui.App, input: ui.Input) -> [ui.Event]
         .sort s =>
             if reachable(app, id: s.widget.id)
                 return [tables.sorted(@app, id: s.widget.id, column: s.column, ascending: s.ascending)]
+        .unfold u =>
+            if reachable(app, id: u.widget.id)
+                return trees.told(@app, id: u.widget.id, item: u.item, on: u.open)
         .activate a =>
             if reachable(app, id: a.widget.id)
                 n @= app.table.nodes[a.widget.id].must()

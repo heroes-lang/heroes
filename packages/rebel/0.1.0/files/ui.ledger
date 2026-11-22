@@ -411,12 +411,13 @@ capability ui/table  rows of cells in columns, several chosen, one opened, sorte
   wx      wxDataViewListCtrl, wxListCtrl (wxLC_REPORT), wxDataViewCtrl
   note    catalogue CT32, CT33 and CT30 (must); text cells, the person widening columns, several rows chosen; the program sorts its own rows on `.sort_asked` and gives them again, the table never reordering them; macOS by `NSTableView` with sort descriptors; Windows pending (the list view in report mode, `LVN_COLUMNCLICK`, `HDF_SORTUP`), Linux pending (`GtkColumnView`); cells of images, checkboxes or progress (Go's `AppendImageColumn` and the rest), a cell edited in place and rows loaded as they are scrolled to (CT31) are not offered
 
-capability ui/tree  a tree of items folded and unfolded
-  heroes  pending
+capability ui/tree  a tree of items folded and unfolded, one chosen and opened, what is under an item loaded when the person unfolds it
+  heroes  ui.tree, ui.add_item, ui.remove_item, ui.items_under, ui.item_text, ui.set_unfolded, ui.is_unfolded, ui.set_selection, ui.selection_of, ui.Event.unfolded, ui.Event.activated, ui.Input.unfold, ui.Kind.tree
   go      -
   rust    -
   python  ttk.Treeview
   wx      wxTreeCtrl, wxDataViewTreeCtrl
+  note    catalogue CT35 and CT37 (must); items numbered by the tree, one chosen; macOS by `NSOutlineView`, folding an item measured to tell the fold and then let go of the choice under it; Windows pending (the tree view, `TVN_ITEMEXPANDINGW` with `cChildren` for a foldable item), Linux pending (`GtkListView` over a `GtkTreeListModel` with `GtkTreeExpander`); an item's text changed in place, icons and several items chosen are not offered
 
 capability ui/scrolled  a box whose content scrolls
   heroes  ui.scrolled, ui.Kind.scrolled

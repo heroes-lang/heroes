@@ -126,7 +126,7 @@ function of(n: model.Node) -> [i64]
             return [0, 0]
         return [widest(n.items) * COLUMN + AROUND, n.items.len() * MARK]
 
-    if k == hero_ui.HERO_UI_LIST || k == hero_ui.HERO_UI_LIST_MULTIPLE
+    if k == hero_ui.HERO_UI_LIST || k == hero_ui.HERO_UI_LIST_MULTIPLE || k == hero_ui.HERO_UI_TREE
         return [FIELD, AREA_HEIGHT]
 
     if k == hero_ui.HERO_UI_COMBO

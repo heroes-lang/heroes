@@ -8,6 +8,7 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/loop
 use ui/internal/model
+use ui/internal/trees
 
 # Every window of `app` as lines, laid out first (`ui.render`).
 function lines(@app: ui.App) -> [str]?
@@ -27,6 +28,9 @@ function drawn(m: model.Model, id: i64, depth: i64, shown: bool, @out: [str])
     n = m.nodes[id].must()
     visible = shown && n.visible
     out @ out.push(repeat("  ", to_u64(depth).must()) + line_of(n, visible: visible))
+
+    if n.kind == hero_ui.HERO_UI_TREE
+        trees.drawn_items(n, under: 0, depth: depth + 1, @out)
 
     for menu in n.menus
         drawn(m, id: menu, depth: depth + 1, shown: visible, @out)
@@ -94,6 +98,8 @@ function line_of(n: model.Node, visible: bool) -> str
         parts @ parts.push(f"content {n.width}x{n.height}")
     else if model.is_split(k)
         parts @ parts.push(f"divider {n.value} in {n.least}..{n.most}")
+    else if k == hero_ui.HERO_UI_TREE
+        parts @ parts.push(f"{n.branches.len()} items").push("chosen " + numbers(n.chosen))
     else if k == hero_ui.HERO_UI_TABLE
         parts @ parts.push(quoted_all(n.titles)).push(f"{model.rows_of(n)} rows").push("chosen " + numbers(n.chosen))
 

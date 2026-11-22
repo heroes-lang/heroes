@@ -506,6 +506,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if widget.kind == kindPage {
             removePage(widget)
         }
+        if widget.kind == kindTree {
+            forests[id] = nil
+        }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
             item.menu?.removeItem(item)
@@ -966,6 +969,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if widget.kind == kindTabs {
             return setPage(widget, indices)
         }
+        if widget.kind == kindTree {
+            return treeChoose(widget, indices, true)
+        }
         guard let table = widget.table else {
             return answerInvalid
         }
@@ -1174,6 +1180,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if let size = boxPreferred(widget) ?? tablePreferred(widget) {
             return size
         }
+        if widget.kind == kindTree {
+            return NSSize(width: fieldWidth, height: areaHeight)
+        }
         switch widget.kind {
         case kindTextField:
             return NSSize(width: fieldWidth, height: (widget.view as? NSTextField)?.intrinsicContentSize.height ?? 22)
@@ -1246,6 +1255,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         if widget.kind == kindTabs {
             return pageShown(widget)
         }
+        if widget.kind == kindTree {
+            return treeChosen(widget)
+        }
         if let table = widget.table {
             return table.selectedRowIndexes.map { Int64($0) }
         }
@@ -1279,6 +1291,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         if kind == eventSort {
             return widget.kind == kindTable ? injectSort(widget, value, second == 1) : answerInvalid
+        }
+        if let answer = injectTree(kind, widget, value, second) {
+            return answer
         }
         switch kind {
         case eventClick, eventToggle:
@@ -1892,8 +1907,8 @@ extension Backend {
         guard let widget = widgets[id] else {
             return answerNotFound
         }
-        let typed: NSView? = widget.textView ?? widget.table ?? widget.view
-        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
+        let typed: NSView? = widget.textView ?? widget.table ?? (widget.kind == kindTree ? outlineOf(widget) : nil) ?? widget.view
+        guard [kindTextField, kindTextArea, kindList, kindListMultiple, kindTable, kindTree].contains(widget.kind), let view = typed, let window = view.window, view.acceptsFirstResponder else {
             return answerInvalid
         }
         return window.makeFirstResponder(view) ? answerOk : answerInvalid
@@ -1911,7 +1926,7 @@ extension Backend {
         }
         let field = (responder as? NSTextView)?.delegate as? NSTextField
         for other in widgets.values where other.kind != kindWindow && windowOf(other)?.id == id {
-            if other.view === responder || other.textView === responder || other.table === responder || (field != nil && other.view === field) {
+            if other.view === responder || other.textView === responder || other.table === responder || (other.kind == kindTree && outlineOf(other) === responder) || (field != nil && other.view === field) {
                 return other.id
             }
         }
@@ -2589,12 +2604,14 @@ extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
             pane.clipsToBounds = true
             split.addArrangedSubview(pane)
             made.view = pane
-        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable:
+        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn, kindTable, kindTree:
             guard let content = contentOf(owner) else {
                 return answerInvalid
             }
             let view: NSView
-            if kind == kindTable {
+            if kind == kindTree {
+                view = makeTree(made)
+            } else if kind == kindTable {
                 view = makeTable(made)
             } else if kind == kindTabs {
                 let tabs = NSTabView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
@@ -2960,5 +2977,350 @@ public func hero_ui_appkit_set_columns(_ id: Int64, _ titles: UnsafePointer<UInt
 public func hero_ui_appkit_set_sort(_ id: Int64, _ column: Int64, _ ascending: Int64) -> Int64 {
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.setSort(id, column, ascending == 1) ?? answerNotFound
+    }
+}
+
+// MARK: a tree: items folded and unfolded
+
+// `hero_ui.h`'s `HERO_UI_TREE` and `HERO_UI_EVENT_UNFOLD`.
+private let kindTree: Int64 = 29
+private let eventUnfold: Int64 = 16
+
+// One item of a tree: the object the outline view holds for it, its number
+// the program's.
+private final class TreeItem: NSObject {
+    let number: Int64
+    let under: Int64
+    var text: String
+    var foldable: Bool
+    var children: [Int64] = []
+
+    init(number: Int64, under: Int64, text: String, foldable: Bool) {
+        self.number = number
+        self.under = under
+        self.text = text
+        self.foldable = foldable
+    }
+}
+
+// The items of one tree, by number, and the numbers of its top items.
+private final class Forest {
+    var items: [Int64: TreeItem] = [:]
+    var top: [Int64] = []
+}
+
+// Each tree's items, by the tree's widget number.
+@MainActor
+private var forests: [Int64: Forest] = [:]
+
+// An outline view whose Return and keypad Enter open the row chosen, as a
+// list's do.
+private final class ReturningOutline: NSOutlineView {
+    var returned: ((Int) -> Void)?
+
+    override func keyDown(with event: NSEvent) {
+        if (event.keyCode == 0x24 || event.keyCode == 0x4C), selectedRow >= 0, let returned = returned {
+            returned(selectedRow)
+            return
+        }
+        super.keyDown(with: event)
+    }
+}
+
+extension Backend: NSOutlineViewDataSource, NSOutlineViewDelegate {
+    // A tree's view: an outline view of one column with no header, in a
+    // scroll view, one item chosen at most.
+    func makeTree(_ widget: Native) -> NSView {
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: fieldWidth, height: areaHeight))
+        scroll.hasVerticalScroller = true
+        scroll.borderType = .bezelBorder
+        let outline = ReturningOutline(frame: scroll.bounds)
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("items"))
+        column.resizingMask = .autoresizingMask
+        outline.addTableColumn(column)
+        outline.outlineTableColumn = column
+        outline.headerView = nil
+        outline.allowsMultipleSelection = false
+        outline.allowsEmptySelection = true
+        outline.dataSource = self
+        outline.delegate = self
+        outline.target = self
+        outline.doubleAction = #selector(treeDoubleClicked(_:))
+        outline.returned = { [weak self, weak outline] row in
+            if let outline = outline {
+                self?.treeOpened(outline, row)
+            }
+        }
+        scroll.documentView = outline
+        forests[widget.id] = Forest()
+        return scroll
+    }
+
+    // The outline view of tree `widget`.
+    func outlineOf(_ widget: Native) -> NSOutlineView? {
+        return (widget.view as? NSScrollView)?.documentView as? NSOutlineView
+    }
+
+    // The tree's widget number an outline view stands for.
+    func treeId(_ outline: NSOutlineView) -> Int64? {
+        return widgets.values.first(where: { $0.kind == kindTree && outlineOf($0) === outline })?.id
+    }
+
+    // Adds item `item` under `under` of tree `id`, at the end.
+    func treeAdd(_ id: Int64, _ item: Int64, _ under: Int64, _ text: String, _ foldable: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        if forest.items[item] != nil || (under != 0 && forest.items[under] == nil) {
+            return answerNotFound
+        }
+        forest.items[item] = TreeItem(number: item, under: under, text: text, foldable: foldable)
+        muted = true
+        if under == 0 {
+            forest.top.append(item)
+            outline.reloadItem(nil, reloadChildren: true)
+        } else if let parent = forest.items[under] {
+            parent.children.append(item)
+            outline.reloadItem(parent, reloadChildren: true)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // Takes item `item` and every item under it out of tree `id`.
+    func treeRemove(_ id: Int64, _ item: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        guard let gone = forest.items[item] else {
+            return answerNotFound
+        }
+        var held: [Int64] = [item]
+        var at = 0
+        while at < held.count {
+            held.append(contentsOf: forest.items[held[at]]?.children ?? [])
+            at += 1
+        }
+        muted = true
+        for each in held {
+            forest.items[each] = nil
+        }
+        if gone.under == 0 {
+            forest.top.removeAll { $0 == item }
+            outline.reloadItem(nil, reloadChildren: true)
+        } else if let parent = forest.items[gone.under] {
+            parent.children.removeAll { $0 == item }
+            outline.reloadItem(parent, reloadChildren: true)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // Unfolds or folds item `item` of tree `id`; nothing is queued where
+    // `quiet`, the person's event where not.
+    func treeUnfold(_ id: Int64, _ item: Int64, _ on: Bool, _ quiet: Bool) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard widget.kind == kindTree, let forest = forests[id], let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        guard let node = forest.items[item] else {
+            return answerNotFound
+        }
+        if !node.foldable && node.children.isEmpty {
+            return answerInvalid
+        }
+        muted = quiet
+        if on {
+            outline.expandItem(node)
+        } else {
+            outline.collapseItem(node)
+        }
+        muted = false
+        return answerOk
+    }
+
+    // The item chosen in tree `widget`, as a selection.
+    func treeChosen(_ widget: Native) -> [Int64] {
+        guard let outline = outlineOf(widget), outline.selectedRow >= 0, let node = outline.item(atRow: outline.selectedRow) as? TreeItem else {
+            return []
+        }
+        return [node.number]
+    }
+
+    // Chooses item `numbers`' one in tree `widget`, or none; the items over
+    // it unfolded so it shows. Nothing is queued where `quiet`.
+    func treeChoose(_ widget: Native, _ numbers: [Int64], _ quiet: Bool) -> Int64 {
+        guard let outline = outlineOf(widget), let forest = forests[widget.id], numbers.count <= 1 else {
+            return answerInvalid
+        }
+        muted = quiet
+        defer {
+            muted = false
+        }
+        guard let number = numbers.first else {
+            outline.deselectAll(nil)
+            return answerOk
+        }
+        guard let node = forest.items[number] else {
+            return answerInvalid
+        }
+        // The person chooses only an item they see; the program's choice
+        // unfolds the items over it.
+        if !quiet && outline.row(forItem: node) < 0 {
+            return answerInvalid
+        }
+        var over: [TreeItem] = []
+        var at = node.under
+        while at != 0, let parent = forest.items[at] {
+            over.insert(parent, at: 0)
+            at = parent.under
+        }
+        for parent in over {
+            outline.expandItem(parent)
+        }
+        let row = outline.row(forItem: node)
+        if row < 0 {
+            return answerInvalid
+        }
+        outline.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        return answerOk
+    }
+
+    // What the person does to tree `widget` through the system's own path:
+    // an item chosen, opened, unfolded or folded. Nil for every other
+    // widget.
+    func injectTree(_ kind: Int64, _ widget: Native, _ value: Int64, _ second: Int64) -> Int64? {
+        guard widget.kind == kindTree else {
+            return nil
+        }
+        guard let outline = outlineOf(widget) else {
+            return answerInvalid
+        }
+        switch kind {
+        case eventSelect:
+            return treeChoose(widget, value < 0 ? [] : [value], false)
+        case eventActivate:
+            guard let node = forests[widget.id]?.items[value] else {
+                return answerInvalid
+            }
+            if outline.row(forItem: node) < 0 {
+                return answerInvalid
+            }
+            if treeChosen(widget) != [value] {
+                let chose = treeChoose(widget, [value], false)
+                if chose != answerOk {
+                    return chose
+                }
+            }
+            treeOpened(outline, outline.row(forItem: node))
+            return answerOk
+        case eventUnfold:
+            return treeUnfold(widget.id, value, second == 1, false)
+        default:
+            return answerInvalid
+        }
+    }
+
+    // Row `row` of `outline` opened by the person.
+    func treeOpened(_ outline: NSOutlineView, _ row: Int) {
+        guard outline.isEnabled, let node = outline.item(atRow: row) as? TreeItem, let id = treeId(outline) else {
+            return
+        }
+        queue(eventActivate, id, node.number, 0)
+    }
+
+    @objc func treeDoubleClicked(_ sender: NSOutlineView) {
+        if sender.clickedRow >= 0 {
+            treeOpened(sender, sender.clickedRow)
+        }
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, numberOfChildrenOfItem item: Any?) -> Int {
+        guard let id = treeId(outlineView), let forest = forests[id] else {
+            return 0
+        }
+        if let node = item as? TreeItem {
+            return node.children.count
+        }
+        return forest.top.count
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, child index: Int, ofItem item: Any?) -> Any {
+        guard let id = treeId(outlineView), let forest = forests[id] else {
+            return NSNull()
+        }
+        let numbers = (item as? TreeItem)?.children ?? forest.top
+        guard index >= 0, index < numbers.count, let node = forest.items[numbers[index]] else {
+            return NSNull()
+        }
+        return node
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, isItemExpandable item: Any) -> Bool {
+        guard let node = item as? TreeItem else {
+            return false
+        }
+        return node.foldable || !node.children.isEmpty
+    }
+
+    func outlineView(_ outlineView: NSOutlineView, viewFor tableColumn: NSTableColumn?, item: Any) -> NSView? {
+        guard let node = item as? TreeItem else {
+            return nil
+        }
+        let cell = NSTextField(labelWithString: node.text)
+        cell.lineBreakMode = .byTruncatingTail
+        return cell
+    }
+
+    func outlineViewSelectionDidChange(_ notification: Notification) {
+        if let outline = notification.object as? NSOutlineView, let id = treeId(outline) {
+            queue(eventSelect, id, 0, 0)
+        }
+    }
+
+    func outlineViewItemDidExpand(_ notification: Notification) {
+        treeFolded(notification, 1)
+    }
+
+    func outlineViewItemDidCollapse(_ notification: Notification) {
+        treeFolded(notification, 0)
+    }
+
+    // An item unfolded, 1, or folded, 0, queued with its number.
+    func treeFolded(_ notification: Notification, _ state: Int64) {
+        guard let outline = notification.object as? NSOutlineView, let node = notification.userInfo?["NSObject"] as? TreeItem, let id = treeId(outline) else {
+            return
+        }
+        queue(eventUnfold, id, node.number, state)
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_add(_ id: Int64, _ item: Int64, _ under: Int64, _ text: UnsafePointer<UInt8>?, _ count: Int64, _ foldable: Int64) -> Int64 {
+    let words: String = text.map { String(decoding: UnsafeBufferPointer(start: $0, count: Int(count)), as: UTF8.self) } ?? ""
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeAdd(id, item, under, words, foldable == 1) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_remove(_ id: Int64, _ item: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeRemove(id, item) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_tree_unfold(_ id: Int64, _ item: Int64, _ on: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.treeUnfold(id, item, on == 1, true) ?? answerNotFound
     }
 }

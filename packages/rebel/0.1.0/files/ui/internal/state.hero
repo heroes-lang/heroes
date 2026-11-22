@@ -20,6 +20,7 @@ use ui/internal/menus
 use ui/internal/model
 use ui/internal/native
 use ui/internal/sizes
+use ui/internal/trees
 
 # What `widget` is (`ui.kind_of`).
 function kind_of(app: ui.App, widget: ui.Widget) -> ui.Kind?
@@ -99,6 +100,9 @@ function of_code(code: i64) -> ui.Kind
 
     if code == hero_ui.HERO_UI_TABLE
         return .table
+
+    if code == hero_ui.HERO_UI_TREE
+        return .tree
 
     if code == hero_ui.HERO_UI_PANE
         return .pane
@@ -329,6 +333,9 @@ function set_selection(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
 
     if n.kind == hero_ui.HERO_UI_TABS
         frames.page_ok(n, indices: indices)?
+    else if n.kind == hero_ui.HERO_UI_TREE
+        trees.chosen_ok(n, indices: indices)?
+        trees.chose(@n, indices: indices)
     else
         check.indices_ok(n, indices: indices)?
     n.chosen @ indices
@@ -350,8 +357,8 @@ function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE],
-        what: "a list, a combo box, a radio group, tabs or a table"
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS, hero_ui.HERO_UI_TABLE, hero_ui.HERO_UI_TREE],
+        what: "a list, a combo box, a radio group, tabs, a table or a tree"
     )
 
 # Shows an image in a picture (`ui.set_picture`).

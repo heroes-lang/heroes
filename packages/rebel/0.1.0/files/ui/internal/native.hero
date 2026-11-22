@@ -115,10 +115,10 @@ function push_columns(app: ui.App, n: model.Node) -> ()?
         return failure.last(f"showing the sort of table {n.id}")
     return ok()
 
-# Pushes what `n`, a list, a combo box, a radio group, tabs or a table, has
-# chosen.
+# Pushes what `n`, a list, a combo box, a radio group, tabs, a table or a
+# tree, has chosen.
 function push_chosen(app: ui.App, n: model.Node) -> ()?
-    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS || n.kind == hero_ui.HERO_UI_TABLE
+    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS || n.kind == hero_ui.HERO_UI_TABLE || n.kind == hero_ui.HERO_UI_TREE
         chosen @= n.chosen
 
         if hero_ui.set_selection(app.handle, id: n.id, @chosen, count: to_u64(chosen.len()).must()) < 0
@@ -467,6 +467,15 @@ function give(app: ui.App, input: ui.Input) -> ()?
             )
         .submit s =>
             return injected(app, kind: hero_ui.HERO_UI_EVENT_SUBMIT, id: s.widget.id, value: 0, second: 0, text: "")
+        .unfold u =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_UNFOLD,
+                id: u.widget.id,
+                value: u.item,
+                second: number_of(u.open),
+                text: ""
+            )
         .sort s =>
             return injected(
                 app,

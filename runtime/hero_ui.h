@@ -353,7 +353,9 @@ int64_t hero_ui_lost(hero_ui_app *app);
  * `value` of list or table `id`, choosing it first where it is not chosen,
  * as a double click does; `SUBMIT` presses Return in text field `id`;
  * `SORT` clicks the header of column `value` of table `id` until the table
- * stands sorted by it in the order `second` names. Its event
+ * stands sorted by it in the order `second` names; `UNFOLD` unfolds item
+ * `value` of tree `id`, `second` 1, or folds it, 0; `SELECT` and
+ * `ACTIVATE` take a tree's item by its number. Its event
  * is queued as the person's would be. 0, or -1, `UNSUPPORTED` where the
  * system offers no such path. */
 int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value, int64_t second, const void *text, uint64_t count);
@@ -956,5 +958,42 @@ int64_t hero_ui_set_columns(hero_ui_app *app, int64_t id, const void *titles, ui
  * where `column` is -1. No event is queued. 0, or -1: `INVALID` (a widget
  * no table, a column past its columns), `NOT_FOUND`. */
 int64_t hero_ui_set_sort(hero_ui_app *app, int64_t id, int64_t column, int64_t ascending);
+
+/* -- A TREE: ITEMS FOLDED AND UNFOLDED ---------------------------------------
+ *
+ * Items under items, each folded or unfolded by the person, one chosen, as
+ * wxWidgets' `wxTreeCtrl`: a disk's folders, a mail client's mailboxes. A
+ * tree's parent is a window or a container. Its items are numbered by the
+ * program, 1 or more, 0 naming the tree's top. An item may be FOLDABLE
+ * before it holds any item, so a program loads what is under it only when
+ * the person unfolds it, as a disk's folders cannot all load at once.
+ * `hero_ui_set_selection` and `hero_ui_selection` set and read the item
+ * chosen, by its number, one at most; the person choosing queues
+ * `HERO_UI_EVENT_SELECT`, opening an item by a double click or Return
+ * `HERO_UI_EVENT_ACTIVATE` with its number, and unfolding or folding one
+ * `HERO_UI_EVENT_UNFOLD`. */
+#define HERO_UI_TREE 29
+
+/* The person unfolded item `value` of tree `id`, `second` 1, or folded it,
+ * 0. An item unfolded the first time while it holds none is the program's
+ * moment to add what is under it. */
+#define HERO_UI_EVENT_UNFOLD 16
+
+/* Adds item `item` to tree `id`, at the end of the items under item
+ * `under` (0 for the top), showing `text`, one line of UTF-8, `count`
+ * bytes; foldable where `foldable` is 1 though it holds no item yet. 0, or
+ * -1: `INVALID` (a widget no tree, an item below 1, a text not so),
+ * `NOT_FOUND` (no item `under`, or `item` taken). */
+int64_t hero_ui_tree_add(hero_ui_app *app, int64_t id, int64_t item, int64_t under, const void *text, uint64_t count, int64_t foldable);
+
+/* Takes item `item` out of tree `id`, with every item under it; nothing is
+ * queued, the choice of one of them gone with it. 0, or -1: `INVALID`,
+ * `NOT_FOUND`. */
+int64_t hero_ui_tree_remove(hero_ui_app *app, int64_t id, int64_t item);
+
+/* Unfolds item `item` of tree `id`, 1, or folds it, 0, as the person
+ * would, but with no event queued. 0, or -1: `INVALID` (an item that is not
+ * foldable), `NOT_FOUND`. */
+int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t on);
 
 #endif

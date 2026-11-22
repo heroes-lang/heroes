@@ -111,6 +111,10 @@ record Node
     sorted_by: i64
     # Whether a table is sorted ascending.
     ascending: bool
+    # A tree's items, in the order added.
+    branches: [Branch]
+    # The last number a tree gave an item.
+    last_branch: i64
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -250,6 +254,21 @@ constant WINDOW_PADDING: i64
 function empty() -> Model
     return Model(nodes: {}, next_id: 1, windows: [], timers: [])
 
+# One item of a tree: its number, the item it stands under (0 for the
+# top), its text, whether the person may unfold it before it holds an item,
+# and whether it is unfolded.
+record Branch
+    # Its number, 1 or more.
+    number: i64
+    # The item it stands under, 0 for the top.
+    under: i64
+    # What it shows.
+    text: str
+    # Whether the person may unfold it before it holds an item.
+    foldable: bool
+    # Whether it is unfolded.
+    unfolded: bool
+
 # A node of `kind` numbered `id` under `parent` in `window`, every other
 # field at its blank: no text, no items, enabled and shown, a box's spacing
 # and no padding, filling nothing.
@@ -298,6 +317,8 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         titles: [],
         sorted_by: -1,
         ascending: true,
+        branches: [],
+        last_branch: 0,
         every: 0,
         due: 0,
         preferred_width: 0,
@@ -460,7 +481,7 @@ function is_split(kind: i64) -> bool
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind) || kind == hero_ui.HERO_UI_TABLE || kind == hero_ui.HERO_UI_TREE
 
 # The rows list or table `n` holds: a list's items, a table's cells over
 # its columns.
@@ -518,6 +539,7 @@ function kind_name(kind: i64) -> str
         "split_column"
         "pane"
         "table"
+        "tree"
     ]
 
     if kind < 0 || kind >= names.len()

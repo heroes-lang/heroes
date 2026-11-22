@@ -75,8 +75,7 @@
 # the user interface, through feature 2647's mailbox; a box drawn with a
 # title and a frame around it; a combo box the person may type into; a
 # number typed, or stepped up and down; a line between the widgets of a box;
-# a tree of items folded and unfolded; an area the program draws into, with
-# its keys and its mouse; a tip shown over a widget; a date, a colour or a
+# an area the program draws into, with its keys and its mouse; a tip shown over a widget; a date, a colour or a
 # font chosen in the system's own picker; an icon in the system's tray or
 # menu bar, and its notifications; a file dragged onto a window.
 
@@ -98,6 +97,7 @@ use ui/internal/model
 use ui/internal/render as drawing
 use ui/internal/state
 use ui/internal/tables
+use ui/internal/trees
 
 ## Codes
 
@@ -287,6 +287,8 @@ variant Kind
     pane
     # Rows of cells in columns.
     table
+    # Items under items, folded and unfolded.
+    tree
 
 # What `widget` is.
 #
@@ -1080,14 +1082,15 @@ function set_items(@app: App, widget: Widget, items: [str]) -> ()?
     return state.set_items(@app, widget: widget, items: items)
 
 # Chooses the items at `indices` of a list, a combo box or a radio group,
-# or the rows of a table, or shows the page of tabs at its one index. No
+# or the rows of a table, or shows the page of tabs at its one index, or
+# chooses a tree's item by its number, the items over it unfolded. No
 # event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box, a radio group, tabs or a table.
+# - `widget`: a list, a combo box, a radio group, tabs, a table or a tree.
 # - `indices`: item or row indices, ascending and each once, at most one
 #   but for a list of several choices and a table; none chooses nothing;
-#   exactly one for tabs.
+#   exactly one for tabs; a tree's item number, or none.
 #
 # Fails `closed`, `invalid` where an index is past the items or the indices
 # are out of order, `failed`.
@@ -1096,10 +1099,10 @@ function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
 
 # The indices of the items a list, a combo box or a radio group has chosen
 # now, or the rows of a table, ascending, empty where none is; the index of
-# the page tabs show.
+# the page tabs show; the number of the item a tree has chosen.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box, a radio group, tabs or a table.
+# - `widget`: a list, a combo box, a radio group, tabs, a table or a tree.
 #
 # Fails `closed`, `invalid`, `failed`.
 function selection_of(app: App, widget: Widget) -> [i64]?
@@ -1312,6 +1315,93 @@ function set_sort(@app: App, widget: Widget, order: Sort) -> ()?
 function sort_of(app: App, widget: Widget) -> Sort?
     return tables.sort_of(app, widget: widget)
 
+## Trees
+
+# A new tree in `into`: items under items, each folded and unfolded by the
+# person, one chosen, as a disk's folders or a mail client's mailboxes,
+# wxWidgets' `wxTreeCtrl`. It holds no item until `add_item`;
+# `set_selection` and `selection_of` choose and read the item chosen by its
+# number; the person choosing one is `.selection_changed`, opening one by a
+# double click or Return `.activated` with its number, unfolding or folding
+# one `.unfolded`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`. See also `add_item`.
+function tree(@app: App, into: Widget) -> Widget?
+    return trees.tree(@app, into: into)
+
+# Adds an item showing `text` at the end of the items under item `under`
+# of tree `widget`, and answers its number, the tree's next from 1. A
+# foldable item shows its triangle before it holds an item, so the program
+# adds what is under it on `.unfolded`, as a disk's folders load.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `under`: the item it stands under; 0 for the top.
+# - `text`: one line without a zero byte.
+# - `foldable`: true where the person may unfold it before it holds an
+#   item.
+#
+# Fails `closed`, `invalid`, `failed`. See also `remove_item`.
+function add_item(@app: App, widget: Widget, under: i64, text: str, foldable: bool) -> i64?
+    return trees.add(@app, widget: widget, under: under, text: text, foldable: foldable)
+
+# Takes item `item` out of tree `widget`, with every item under it; the
+# choice of one of them goes with it. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`, `failed`.
+function remove_item(@app: App, widget: Widget, item: i64) -> ()?
+    return trees.remove(@app, widget: widget, item: item)
+
+# The numbers of the items right under item `item` of tree `widget`, in
+# order.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number; 0 for the top.
+#
+# Fails `closed`, `invalid`.
+function items_under(app: App, widget: Widget, item: i64) -> [i64]?
+    return trees.under_of(app, widget: widget, item: item)
+
+# The text item `item` of tree `widget` shows.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`.
+function item_text(app: App, widget: Widget, item: i64) -> str?
+    return trees.text_of(app, widget: widget, item: item)
+
+# Unfolds or folds item `item` of tree `widget`. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: a foldable item, or one holding items.
+# - `on`: true to unfold it, false to fold it.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_unfolded(@app: App, widget: Widget, item: i64, on: bool) -> ()?
+    return trees.set_unfolded(@app, widget: widget, item: item, on: on)
+
+# Whether item `item` of tree `widget` is unfolded.
+#
+# - `app`: the app holding it.
+# - `widget`: a tree.
+# - `item`: the item's number.
+#
+# Fails `closed`, `invalid`.
+function is_unfolded(app: App, widget: Widget, item: i64) -> bool?
+    return trees.is_unfolded(app, widget: widget, item: item)
+
 ## The clipboard
 
 # What the system's clipboard holds of one kind, or takes in place of all
@@ -1503,6 +1593,16 @@ variant Event
         column: i64
         # Whether ascending.
         ascending: bool
+    # The person unfolded or folded an item of a tree: an item unfolded the
+    # first time while it holds none is the program's moment to add what is
+    # under it (`add_item`).
+    unfolded
+        # The tree.
+        widget: Widget
+        # The item's number.
+        item: i64
+        # True for unfolded, false for folded.
+        open: bool
     # A web view's page sent a text by its bridge, `heroes.send` (the
     # framing of `ui/webview`'s `parse_call` reads a call in it).
     message
@@ -1613,6 +1713,14 @@ variant Input
         column: i64
         # Whether ascending.
         ascending: bool
+    # Unfolds or folds an item of a tree the person sees, by its triangle.
+    unfold
+        # The tree.
+        widget: Widget
+        # The item's number.
+        item: i64
+        # True to unfold, false to fold.
+        open: bool
     # Presses a button of the next message box `message` shows.
     answer
         # The button.
@@ -2090,7 +2198,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .submitted _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]
@@ -2882,6 +2990,76 @@ test "sort_of: unsorted"
     w = window(@app, title: "Files", width: 300, height: 200).must()
     files = table(@app, into: w, columns: ["Name"]).must()
     assert sort_of(app, widget: files).must() == .unsorted
+    close(@app).must()
+
+# A disk's folders, loaded as the person unfolds them.
+test "tree: folders loaded when unfolded"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    inject(@app, input: .unfold(widget: folders, item: home, open: true)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .unfolded(widget: folders, item: home, open: true)
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: true).must()
+    close(@app).must()
+
+# Two folders under a third.
+test "add_item: two under one"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Music", foldable: false).must()
+    assert items_under(app, widget: folders, item: home).must().len() == 2
+    close(@app).must()
+
+# A folder deleted with what it held.
+test "remove_item: a folder and its own"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    _ = add_item(@app, widget: folders, under: home, text: "Desktop", foldable: false).must()
+    remove_item(@app, widget: folders, item: home).must()
+    assert items_under(app, widget: folders, item: 0).must() == []
+    close(@app).must()
+
+# The top of a tree.
+test "items_under: the top"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    assert items_under(app, widget: folders, item: 0).must() == [home]
+    close(@app).must()
+
+# An item's text read back.
+test "item_text: Home"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    assert item_text(app, widget: folders, item: home).must() == "Home"
+    close(@app).must()
+
+# A folder unfolded by the program.
+test "set_unfolded: Home opened"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    set_unfolded(@app, widget: folders, item: home, on: true).must()
+    assert is_unfolded(app, widget: folders, item: home).must()
+    close(@app).must()
+
+# A folder folded as it was made.
+test "is_unfolded: folded at first"
+    app @= open(.headless).must()
+    w = window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = tree(@app, into: w).must()
+    home = add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    assert !is_unfolded(app, widget: folders, item: home).must()
     close(@app).must()
 
 # Paths copied as a file manager copies them, and read back by a Paste.

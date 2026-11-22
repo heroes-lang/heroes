@@ -1,0 +1,350 @@
+# A tree (`ui.tree`): items under items, each folded or unfolded by the
+# person, one chosen, as wxWidgets' `wxTreeCtrl`. Its items are the node's
+# `branches`, numbered by the tree from 1 in the order added, 0 naming its
+# top; the item chosen is its `chosen`. An item may be foldable before it
+# holds any, so the program adds what is under it when the person unfolds
+# it (`.unfolded`), as a disk's folders load. The person reaches only an
+# item they see, every item over it unfolded; the program's choice unfolds
+# the items over the one it chooses.
+
+use bytes
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/give
+use ui/internal/makers
+use ui/internal/model
+
+# A new tree in `into` (`ui.tree`), holding no item.
+function tree(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+    n = model.blank(id: model.take_id(@app.table), kind: hero_ui.HERO_UI_TREE, parent: parent.id, window: parent.window)
+    return makers.added(@app, n: n)
+
+# The node of tree `widget`.
+function tree_of(app: ui.App, widget: ui.Widget) -> model.Node?
+    return check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_TREE], what: "a tree")
+
+# The index of item `item` among tree `n`'s branches, -1 where it holds none.
+function at_of(n: model.Node, item: i64) -> i64
+    for i in range(from: 0, to: n.branches.len())
+        if n.branches[i].number == item
+            return i
+
+    return -1
+
+# Fails `invalid` where tree `n` holds no item `item`.
+function item_ok(n: model.Node, item: i64) -> ()?
+    if at_of(n, item: item) < 0
+        return fail(code: failure.INVALID, msg: f"tree {n.id} holds no item {item}")
+    return ok()
+
+# Adds an item showing `text` under item `under` of tree `widget`, at the
+# end (`ui.add_item`), and answers its number.
+function add(@app: ui.App, widget: ui.Widget, under: i64, text: str, foldable: bool) -> i64?
+    n @= tree_of(app, widget: widget)?
+    check.text_ok(text: text, one_line: true, what: "the item's text")?
+
+    if under != 0
+        item_ok(n, item: under)?
+    item = n.last_branch + 1
+
+    if app.native
+        given @= bytes.from_text(text)
+
+        if hero_ui.tree_add(app.handle, id: n.id, item: item, under: under, @given, count: to_u64(given.len()).must(), foldable: check.number_of(foldable)) < 0
+            return failure.last(f"adding an item to tree {n.id}")
+    n.branches @ n.branches.push(
+        model.Branch(number: item, under: under, text: text, foldable: foldable, unfolded: false)
+    )
+    n.last_branch @ item
+    model.put(@app.table, n: n)
+    return ok(item)
+
+# The numbers of `item` and of every item under it in tree `n`.
+function held(n: model.Node, item: i64) -> [i64]
+    out: [i64] @= [item]
+    at @= 0
+
+    while at < out.len()
+        for b in n.branches
+            if b.under == out[at]
+                out @ out.push(b.number)
+
+        at @ at + 1
+
+    return out
+
+# Takes item `item` of tree `widget` out, with every item under it
+# (`ui.remove_item`); the choice of one of them goes with it.
+function remove(@app: ui.App, widget: ui.Widget, item: i64) -> ()?
+    n @= tree_of(app, widget: widget)?
+    item_ok(n, item: item)?
+
+    if app.native && hero_ui.tree_remove(app.handle, id: n.id, item: item) < 0
+        return failure.last(f"taking item {item} out of tree {n.id}")
+    gone = held(n, item: item)
+    kept: [model.Branch] @= []
+
+    for b in n.branches
+        if !holds(gone, value: b.number)
+            kept @ kept.push(b)
+
+    n.branches @ kept
+
+    if n.chosen.len() > 0 && holds(gone, value: n.chosen[0])
+        n.chosen @ []
+    model.put(@app.table, n: n)
+    return ok()
+
+# Whether `values` holds `value`.
+function holds(values: [i64], value: i64) -> bool
+    for v in values
+        if v == value
+            return true
+
+    return false
+
+# The numbers of the items under item `item` of tree `widget`, in order,
+# 0 for its top (`ui.items_under`).
+function under_of(app: ui.App, widget: ui.Widget, item: i64) -> [i64]?
+    n = tree_of(app, widget: widget)?
+
+    if item != 0
+        item_ok(n, item: item)?
+    return ok(children(n, item: item))
+
+# The numbers of the items right under `item` in tree `n`, in order.
+function children(n: model.Node, item: i64) -> [i64]
+    out: [i64] @= []
+
+    for b in n.branches
+        if b.under == item
+            out @ out.push(b.number)
+
+    return out
+
+# The text of item `item` of tree `widget` (`ui.item_text`).
+function text_of(app: ui.App, widget: ui.Widget, item: i64) -> str?
+    n = tree_of(app, widget: widget)?
+    item_ok(n, item: item)?
+    return ok(n.branches[at_of(n, item: item)].text)
+
+# Whether item `item` of tree `n` may be unfolded: foldable, or holding
+# items.
+function opens(n: model.Node, item: i64) -> bool
+    b = n.branches[at_of(n, item: item)]
+    return b.foldable || children(n, item: item).len() > 0
+
+# Unfolds or folds item `item` of tree `widget` with no event
+# (`ui.set_unfolded`).
+function set_unfolded(@app: ui.App, widget: ui.Widget, item: i64, on: bool) -> ()?
+    n @= tree_of(app, widget: widget)?
+    item_ok(n, item: item)?
+
+    if !opens(n, item: item)
+        return fail(code: failure.INVALID, msg: f"item {item} of tree {n.id} is not foldable and holds no item")
+
+    if app.native && hero_ui.tree_unfold(app.handle, id: n.id, item: item, on: check.number_of(on)) < 0
+        return failure.last(f"unfolding item {item} of tree {n.id}")
+    unfolded_to(@n, item: item, on: on)
+    model.put(@app.table, n: n)
+    return ok()
+
+# Writes item `item` of tree `n` unfolded, or folded.
+function unfolded_to(@n: model.Node, item: i64, on: bool)
+    at = at_of(n, item: item)
+    b @= n.branches[at]
+    b.unfolded @ on
+    n.branches[at] @ b
+
+# Whether item `item` of tree `widget` is unfolded (`ui.is_unfolded`).
+function is_unfolded(app: ui.App, widget: ui.Widget, item: i64) -> bool?
+    n = tree_of(app, widget: widget)?
+    item_ok(n, item: item)?
+    return ok(n.branches[at_of(n, item: item)].unfolded)
+
+# Whether the person sees item `item` of tree `n`: every item over it
+# unfolded.
+function seen(n: model.Node, item: i64) -> bool
+    at @= n.branches[at_of(n, item: item)].under
+
+    while at != 0
+        b = n.branches[at_of(n, item: at)]
+
+        if !b.unfolded
+            return false
+        at @ b.under
+
+    return true
+
+# Fails `invalid` where the person cannot reach item `item` of tree `n`: it
+# is none of its items, or an item over it is folded.
+function reached_ok(n: model.Node, item: i64) -> ()?
+    item_ok(n, item: item)?
+
+    if !seen(n, item: item)
+        return fail(
+            code: failure.INVALID,
+            msg: f"item {item} of tree {n.id} is under a folded item, out of the person's sight"
+        )
+    return ok()
+
+# Fails `invalid` where `indices` is no choice of tree `n`: none, or one of
+# its items.
+function chosen_ok(n: model.Node, indices: [i64]) -> ()?
+    if indices.len() > 1
+        return fail(
+            code: failure.INVALID,
+            msg: f"tree {n.id} has one item chosen at most, and {indices.len()} were given"
+        )
+
+    for item in indices
+        item_ok(n, item: item)?
+
+    return ok()
+
+# The program's choice of `indices` in tree `n`: every item over the one
+# chosen unfolded.
+function chose(@n: model.Node, indices: [i64])
+    n.chosen @ indices
+
+    for item in indices
+        at @= n.branches[at_of(n, item: item)].under
+
+        while at != 0
+            unfolded_to(@n, item: at, on: true)
+            at @ n.branches[at_of(n, item: at)].under
+
+# The lines that draw tree `n`'s items under it at `depth`: each item's
+# number, text and fold, nested under the item it stands under.
+function drawn_items(n: model.Node, under: i64, depth: i64, @out: [str])
+    for item in children(n, item: under)
+        b = n.branches[at_of(n, item: item)]
+
+        mark = if b.unfolded
+            " unfolded"
+        else if opens(n, item: item)
+            " folded"
+        else
+            ""
+
+        chosen = if n.chosen == [item]
+            " chosen"
+        else
+            ""
+
+        out @ out.push(repeat("  ", to_u64(depth).must()) + f"item {item} \"{b.text}\"{mark}{chosen}")
+        drawn_items(n, under: item, depth: depth + 1, @out)
+
+# What the person unfolding or folding item `item` of tree `id` does: its
+# state written, the choice of an item it folds away let go, and the
+# events that tell it where it changed.
+function told(@app: ui.App, id: i64, item: i64, on: bool) -> [ui.Event]
+    n @= app.table.nodes[id].must()
+    none: [ui.Event] = []
+
+    if n.branches[at_of(n, item: item)].unfolded == on
+        return none
+    unfolded_to(@n, item: item, on: on)
+    w = check.widget_of(app, id: id)
+    out: [ui.Event] @= [.unfolded(widget: w, item: item, open: on)]
+
+    # An item folded hides the items under it, and the system lets go of
+    # the choice of one of them after it tells the fold, as AppKit's
+    # outline view was measured to do.
+    if !on && n.chosen.len() == 1 && n.chosen[0] != item && holds(held(n, item: item), value: n.chosen[0])
+        n.chosen @ []
+        out @ out.push(.selection_changed(widget: w, indices: []))
+    model.put(@app.table, n: n)
+    return out
+
+## Tests
+
+test "tree, add_item, remove_item, set_unfolded: refused under an item it does not hold, for a text of two lines, an item past its items, an item neither foldable nor holding any unfolded; the person's choice, opening and unfolding of an item under a folded one, two items chosen, and set_selection of an item it does not hold"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    folders = ui.tree(@app, into: w).must()
+    assert fixture.code_of(ui.add_item(@app, widget: folders, under: 9, text: "x", foldable: false)) == ui.INVALID
+    assert fixture.code_of(ui.add_item(@app, widget: folders, under: 0, text: "a\nb", foldable: false)) == ui.INVALID
+    home = ui.add_item(@app, widget: folders, under: 0, text: "Home", foldable: false).must()
+    music = ui.add_item(@app, widget: folders, under: home, text: "Music", foldable: false).must()
+    assert fixture.code_of(ui.remove_item(@app, widget: folders, item: 9)) == ui.INVALID
+    assert fixture.code_of(ui.set_unfolded(@app, widget: folders, item: music, on: true)) == ui.INVALID
+    assert fixture.code_of(ui.item_text(app, widget: folders, item: 9)) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .choose(widget: folders, indices: [music]))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .activate(widget: folders, index: music))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .unfold(widget: folders, item: music, open: true))) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .choose(widget: folders, indices: [home, music]))) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: folders, indices: [9])) == ui.INVALID
+    assert fixture.code_of(ui.add_item(@app, widget: w, under: 0, text: "x", foldable: false)) == ui.INVALID
+    ui.close(@app).must()
+
+test "tree: items numbered in the order added and drawn nested; a foldable item unfolded by the person and its items added then; one chosen and opened; folded again and told, the choice under it gone; the program's choice unfolding the items over it; an item taken out with its own and the choice of one (catalogue CT35, CT37)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Folders", width: 200, height: 200).must()
+    folders = ui.tree(@app, into: w).must()
+    home = ui.add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    work = ui.add_item(@app, widget: folders, under: 0, text: "Work", foldable: false).must()
+    assert home == 1 && work == 2
+    assert ui.items_under(app, widget: folders, item: 0).must() == [home, work]
+    ui.inject(@app, input: .unfold(widget: folders, item: home, open: true)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .unfolded(widget: folders, item: home, open: true)
+    desktop = ui.add_item(@app, widget: folders, under: home, text: "Desktop", foldable: true).must()
+    deep = ui.add_item(@app, widget: folders, under: desktop, text: "Photos", foldable: false).must()
+    assert ui.render(@app).must().slice(from: 1, to: 5) == ["  tree #2 4 items chosen [] at 12,12 160x96", "    item 1 \"Home\" unfolded", "      item 3 \"Desktop\" folded", "        item 4 \"Photos\""]
+    ui.inject(@app, input: .choose(widget: folders, indices: [desktop])).must()
+    ui.inject(@app, input: .activate(widget: folders, index: desktop)).must()
+    ui.inject(@app, input: .unfold(widget: folders, item: home, open: false)).must()
+    came = give.events_of(@app, within: time.nanoseconds(0))
+    assert came == [.selection_changed(widget: folders, indices: [desktop]), .activated(widget: folders, index: desktop), .unfolded(widget: folders, item: home, open: false), .selection_changed(widget: folders, indices: [])]
+    ui.set_selection(@app, widget: folders, indices: [deep]).must()
+    assert ui.selection_of(app, widget: folders).must() == [deep]
+    assert ui.is_unfolded(app, widget: folders, item: home).must() && ui.is_unfolded(app, widget: folders, item: desktop).must()
+    ui.remove_item(@app, widget: folders, item: home).must()
+    assert ui.items_under(app, widget: folders, item: 0).must() == [work]
+    assert ui.selection_of(app, widget: folders).must() == []
+    assert fixture.code_of(ui.item_text(app, widget: folders, item: deep)) == ui.INVALID
+    ui.close(@app).must()
+
+test "tree: on the native side items added under items, one unfolded by the person through the system's own path and its items added then, chosen and opened, folded and told with the choice under it gone, the program's choice of a deep item unfolding the items over it with no event, an item taken out with its own (catalogue CT35, CT37)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Folders", width: 240, height: 200).must()
+    folders = ui.tree(@app, into: w).must()
+    home = ui.add_item(@app, widget: folders, under: 0, text: "Home", foldable: true).must()
+    work = ui.add_item(@app, widget: folders, under: 0, text: "Work", foldable: false).must()
+    _ = ui.rect_of(@app, widget: folders).must()
+    ui.inject(@app, input: .unfold(widget: folders, item: home, open: true)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .unfolded(widget: folders, item: home, open: true)
+    desktop = ui.add_item(@app, widget: folders, under: home, text: "Desktop", foldable: true).must()
+    deep = ui.add_item(@app, widget: folders, under: desktop, text: "Photos", foldable: false).must()
+    ui.inject(@app, input: .choose(widget: folders, indices: [desktop])).must()
+    ui.inject(@app, input: .activate(widget: folders, index: desktop)).must()
+    ui.inject(@app, input: .unfold(widget: folders, item: home, open: false)).must()
+    came = give.events_of(@app, within: time.milliseconds(300).must())
+    assert came.len() >= 3 && seen_in(came, event: .activated(widget: folders, index: desktop))
+    assert came[came.len() - 2] == .unfolded(widget: folders, item: home, open: false)
+    assert came[came.len() - 1] == .selection_changed(widget: folders, indices: [])
+    assert ui.selection_of(app, widget: folders).must() == []
+    ui.set_selection(@app, widget: folders, indices: [deep]).must()
+    assert give.events_of(@app, within: time.milliseconds(300).must()) == []
+    assert ui.selection_of(app, widget: folders).must() == [deep]
+    ui.remove_item(@app, widget: folders, item: home).must()
+    assert ui.selection_of(app, widget: folders).must() == []
+    assert ui.items_under(app, widget: folders, item: 0).must() == [work]
+    ui.close(@app).must()
+
+# Whether `events` holds `event`.
+function seen_in(events: [ui.Event], event: ui.Event) -> bool
+    for each in events
+        if each == event
+            return true
+
+    return false

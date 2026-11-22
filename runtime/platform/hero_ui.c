@@ -1706,7 +1706,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TABLE) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_TREE) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2017,7 +2017,7 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
     }
-    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT && kind != HERO_UI_EVENT_SORT) {
+    if ((kind < HERO_UI_EVENT_CLICK || kind > HERO_UI_EVENT_MESSAGE) && kind != HERO_UI_EVENT_ACTIVATE && kind != HERO_UI_EVENT_SUBMIT && kind != HERO_UI_EVENT_SORT && kind != HERO_UI_EVENT_UNFOLD) {
         (void)snprintf(words, sizeof words, "the act %lld is no act a person does", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -2026,6 +2026,10 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     }
     if (kind == HERO_UI_EVENT_ACTIVATE && value < 0) {
         (void)snprintf(words, sizeof words, "row %lld of a list; a row is 0 or more", (long long)value);
+        return hero_ui_said(HERO_UI_INVALID, words);
+    }
+    if (kind == HERO_UI_EVENT_UNFOLD && (value < 1 || (second != 0 && second != 1))) {
+        (void)snprintf(words, sizeof words, "unfolding item %lld, %lld; an item is 1 or more and the state 0 or 1", (long long)value, (long long)second);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
     if (kind == HERO_UI_EVENT_SORT && (value < 0 || (second != 0 && second != 1))) {
@@ -3329,4 +3333,84 @@ int64_t hero_ui_set_sort(hero_ui_app *app, int64_t id, int64_t column, int64_t a
         return hero_ui_said(HERO_UI_INVALID, "a sort is a column from -1, none, and a flag of 0 or 1");
     }
     return hero_ui_windows_answered(hero_ui_arm_set_sort(id, column, ascending), "showing a table's sort", id);
+}
+
+/* -- A TREE ---------------------------------------------------------------- */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
+    return hero_ui_appkit_tree_add(id, item, under, text, count, foldable);
+}
+
+static int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
+    return hero_ui_appkit_tree_remove(id, item);
+}
+
+static int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
+    return hero_ui_appkit_tree_unfold(id, item, on);
+}
+
+#else
+
+static int64_t hero_ui_arm_tree_add(int64_t id, int64_t item, int64_t under, const uint8_t *text, int64_t count, int64_t foldable) {
+    (void)id;
+    (void)item;
+    (void)under;
+    (void)text;
+    (void)count;
+    (void)foldable;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
+    (void)id;
+    (void)item;
+    return HERO_UI_UNSUPPORTED;
+}
+
+static int64_t hero_ui_arm_tree_unfold(int64_t id, int64_t item, int64_t on) {
+    (void)id;
+    (void)item;
+    (void)on;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_tree_add(hero_ui_app *app, int64_t id, int64_t item, int64_t under, const void *text, uint64_t count, int64_t foldable) {
+    const uint8_t *bytes = text;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(text, count, "an item's text", false)) {
+        return -1;
+    }
+    if (item < 1 || under < 0 || (foldable != 0 && foldable != 1)) {
+        return hero_ui_said(HERO_UI_INVALID, "a tree's item is 1 or more, the item it stands under 0 or more, and foldable 0 or 1");
+    }
+    for (uint64_t at = 0; at < count; at += 1) {
+        if (bytes[at] == '\n' || bytes[at] == 0) {
+            return hero_ui_said(HERO_UI_INVALID, "an item's text holds a line feed or a zero byte, and an item shows one line");
+        }
+    }
+    return hero_ui_windows_answered(hero_ui_arm_tree_add(id, item, under, bytes, (int64_t)count, foldable), "adding a tree's item", id);
+}
+
+int64_t hero_ui_tree_remove(hero_ui_app *app, int64_t id, int64_t item) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (item < 1) {
+        return hero_ui_said(HERO_UI_INVALID, "a tree's item is 1 or more");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_tree_remove(id, item), "taking a tree's item out", id);
+}
+
+int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t on) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (item < 1 || (on != 0 && on != 1)) {
+        return hero_ui_said(HERO_UI_INVALID, "a tree's item is 1 or more and the state 0 or 1");
+    }
+    return hero_ui_windows_answered(hero_ui_arm_tree_unfold(id, item, on), "unfolding a tree's item", id);
 }
