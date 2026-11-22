@@ -69,7 +69,7 @@ constant FAILED: i64
     1
 
 function main()
-    match flags.parse(cli.declaration(), args())
+    match flags.parse_args(cli.declaration())
         .ok found =>
             if flags.is_help(found)
                 report.line(flags.help_text(found))

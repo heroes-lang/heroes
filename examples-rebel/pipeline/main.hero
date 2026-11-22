@@ -52,8 +52,23 @@
 use core/commands
 use demo/supervise
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"pipeline: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    words = args()
+    words = text_arguments()
 
     if words.len() == 1 && words[0] == "demo"
         exit(code: supervise.run())

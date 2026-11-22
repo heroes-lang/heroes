@@ -70,8 +70,23 @@ record Asked
     # The folders named, none for every folder.
     names: [str]
 
+# The program's arguments, each as text. An argument that is not UTF-8 is a
+# usage error, told by its place counted from 1, and the program ends as its
+# other usage errors do, where `args()` would abort.
+function text_arguments() -> [str]
+    given: [str] @= []
+
+    for one in args_checked()
+        match one
+            .ok text => given @ given.push(text)
+            .err _ =>
+                print(f"rebel_apps: argument {given.len() + 1} is not UTF-8")
+                exit(code: 2)
+
+    return given
+
 function main()
-    asked = asked_of(args())
+    asked = asked_of(text_arguments())
 
     if asked.is_err()
         print("rebel_apps: " + rebel_apps_run.refusal_of(asked))
