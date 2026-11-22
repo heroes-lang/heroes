@@ -148,6 +148,18 @@ record Node
     label: i64
     # Whether a window takes files dropped on it.
     dropping: bool
+    # A text area's texts before each edit the person made since the program
+    # last set its text, oldest first, which undo goes back through.
+    undone: [str]
+    # Its texts undone, the last undone last, which redo goes forward
+    # through.
+    redone: [str]
+    # A text field's or a text area's selection, in bytes of its text; -1
+    # for its text's end, where the program's text and the person's edits
+    # leave the caret.
+    selection_start: i64
+    # The byte after its last; -1 for the text's end.
+    selection_end: i64
 
 # What a web view keeps on both sides, so each answers alike: the assets as
 # the program put them, without their bodies, which the platform layer
@@ -342,7 +354,11 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0),
         accessible: "",
         label: 0,
-        dropping: false
+        dropping: false,
+        undone: [],
+        redone: [],
+        selection_start: -1,
+        selection_end: -1
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was

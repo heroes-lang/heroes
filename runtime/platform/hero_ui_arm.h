@@ -188,6 +188,16 @@ int64_t hero_ui_arm_ask_quit(int64_t session_end);
 int64_t hero_ui_arm_set_drop(int64_t id, int64_t on);
 int64_t hero_ui_arm_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count);
 
+/* UNDO AND THE SELECTION IN TEXT WIDGETS (`hero_ui.h`): `undo` writes
+ * through `done` 1 where an edit was undone or redone, 0 where none was,
+ * and `can_undo` through `can` likewise; the selection is in bytes of the
+ * text. On macOS by `hero_ui_appkit.swift`; refusals for the Win32 and GTK
+ * 4 arms in `hero_ui.c`'s CALLS NO C ARM DRAWS YET. */
+int64_t hero_ui_arm_undo(int64_t id, int64_t which, int64_t *done);
+int64_t hero_ui_arm_can_undo(int64_t id, int64_t which, int64_t *can);
+int64_t hero_ui_arm_set_text_selection(int64_t id, int64_t start, int64_t end);
+int64_t hero_ui_arm_text_selection(int64_t id, int64_t *start, int64_t *end);
+
 /* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
  * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
  * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits

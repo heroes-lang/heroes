@@ -88,6 +88,7 @@ use ui/internal/clips
 use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/drops
+use ui/internal/editing
 use ui/internal/failure
 use ui/internal/fixture
 use ui/internal/frames
@@ -1010,6 +1011,94 @@ function set_text(@app: App, widget: Widget, text: str) -> ()?
 # Fails `closed`, `invalid`, `failed`.
 function text_of(app: App, widget: Widget) -> str?
     return state.text_of(app, widget: widget)
+
+# A part of a text, in bytes of its UTF-8: from `start` to `end`, the
+# caret where they are equal.
+record TextRange
+    # The first byte.
+    start: i64
+    # The byte after the last.
+    end: i64
+
+# Undoes the last edit of text field or text area `widget`, as wxWidgets'
+# `wxTextEntry::Undo` and the Edit menu's Undo: true where one was undone,
+# false where none was there. A text area keeps the person's edits from the
+# last text the program set, which none undoes past; a text field keeps
+# those the person types while it has the keys, as the system's fields do
+# (the headless side, whose fields no person types into, keeps none).
+# Nothing is told: the text it leaves is `text_of`'s.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area.
+#
+# Fails `closed`, `invalid` for a widget of another kind, `unsupported`
+# where the system's arm undoes none (Windows and Linux, pending),
+# `failed`. See also `redo`, `can_undo`.
+function undo(@app: App, widget: Widget) -> bool?
+    return editing.undone(@app, widget: widget, which: hero_ui.HERO_UI_UNDO)
+
+# Redoes the last edit `undo` undid, as `wxTextEntry::Redo`: true where one
+# was redone, false where none was there; a new edit ends what can be
+# redone.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area.
+#
+# Fails as `undo` does.
+function redo(@app: App, widget: Widget) -> bool?
+    return editing.undone(@app, widget: widget, which: hero_ui.HERO_UI_REDO)
+
+# Whether `undo` would undo an edit of `widget` now, as
+# `wxTextEntry::CanUndo`: what greys an editor's own Undo item.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area.
+#
+# Fails as `undo` does.
+function can_undo(app: App, widget: Widget) -> bool?
+    return editing.undoable(app, widget: widget, which: hero_ui.HERO_UI_UNDO)
+
+# Whether `redo` would redo an edit of `widget` now, as
+# `wxTextEntry::CanRedo`.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area.
+#
+# Fails as `undo` does.
+function can_redo(app: App, widget: Widget) -> bool?
+    return editing.undoable(app, widget: widget, which: hero_ui.HERO_UI_REDO)
+
+# Selects bytes `start` to `end` of the text of text field or text area
+# `widget`, as wxWidgets' `wxTextEntry::SetSelection`: what a find, a
+# replace or a go to line shows; `start` equal to `end` puts the caret
+# there with nothing selected. A text area scrolls to show it; a text field
+# takes the keys, where a field shows its selection.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area, a field shown and not greyed
+#   out.
+# - `start`: the first byte, at a character's first byte or the text's end.
+# - `end`: the byte after the last, likewise, at least `start`.
+#
+# Fails `closed`, `invalid` for a widget of another kind, a field hidden or
+# greyed out, or a byte outside the text or inside a character;
+# `unsupported` where the system's arm selects none (Windows and Linux,
+# pending), `failed`. See also `text_selection_of`.
+function select_text(@app: App, widget: Widget, start: i64, end: i64) -> ()?
+    return editing.select_text(@app, widget: widget, start: start, end: end)
+
+# The selection of text field or text area `widget`, in bytes of its text,
+# as `wxTextEntry::GetSelection`: the caret where nothing is selected. The
+# program's text and the person's edit leave the caret at the text's end;
+# a text field without the keys answers the selection it had when it last
+# held them.
+#
+# - `app`: the app.
+# - `widget`: the text field or the text area.
+#
+# Fails as `select_text` does.
+function text_selection_of(app: App, widget: Widget) -> TextRange?
+    return editing.selection_of(app, widget: widget)
 
 # Lets the person use `widget`, or greys it out; a widget greyed out gives
 # no event.

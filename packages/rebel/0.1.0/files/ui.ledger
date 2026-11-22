@@ -541,12 +541,12 @@ capability ui/context-menu  a menu shown where the person right-clicks a widget
   note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`; a web view's refused `unsupported`, WebView2 showing a menu of its own, lane-ui-win32's W2), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
 
 capability ui/text-selection  a text widget's selection and caret set and read, and its undo
-  heroes  pending
+  heroes  ui.undo, ui.redo, ui.can_undo, ui.can_redo, ui.select_text, ui.text_selection_of, ui.TextRange
   go      -
   rust    -
   python  tkinter.Text.tag_add, tkinter.Text.mark_set, tkinter.Text.edit_undo, tkinter.Text.edit_redo, tkinter.Entry.selection_range, tkinter.Entry.icursor
   wx      wxTextEntry (SetSelection, GetSelection, SetInsertionPoint, GetInsertionPoint, Undo, Redo, CanUndo, CanRedo)
-  note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the system's own undo already (ui/edit-menu); macOS `NSTextView.selectedRange` and its `undoManager`, Windows `EM_SETSEL` and the Rich Edit's undo levels, Linux `GtkEditable` and `GtkTextBuffer`'s undo
+  note    catalogue CT17 and CT18 (must); the Edit menu's Undo and Redo reach the same undo (ui/edit-menu); a text area keeps the person's edits from the program's last text, each injected edit one of its own, a text field those typed while it has the keys (the headless side's fields keep none); the selection in bytes of the UTF-8 text, each end at a character's first byte, the program's text and an edit leaving the caret at the end; a field takes the keys to show its selection and keeps it once it gives them up; the program's undo tells nothing; macOS by each text area's own `UndoManager` (its text view's delegate's `undoManager(for:)`), a field's by its field editor, the selection by `NSTextView.selectedRange` across UTF-16; the insertion point apart from the selection, an undo limit and the program's own edits as undo steps are not offered; Windows pending (`EM_UNDO`, `EM_CANUNDO`, `EM_SETSEL`, `EM_GETSEL` in UTF-16 units; one level only without a Rich Edit), Linux pending (`GtkTextBuffer`'s `undo`, `redo`, `can-undo`, `select_range`; `GtkEditable`'s `select_region` in characters)
 
 capability ui/session-end  the person logging out or shutting down, asked of the program first
   heroes  ui.Event.quit_asked, ui.answer_quit, ui.Input.ask_quit
