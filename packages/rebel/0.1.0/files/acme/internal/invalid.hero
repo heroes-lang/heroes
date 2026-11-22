@@ -1,0 +1,69 @@
+# What `wait_authorization` and `wait_order` say of an authorization or an
+# order that turned invalid: each problem by its type and its detail, as
+# `wire.told` tells every refusal of the server, so a program tells a CAA
+# refusal from a wrong answer or an unreachable responder by the type and
+# not by the server's English (defect 2677).
+
+use acme
+use acme/internal/wire
+
+# The words of `p`, its subproblems' after them.
+#
+# - `p`: the problem.
+function words_of(p: acme.Problem) -> str
+    subs: [str] @= []
+
+    for sub in p.subproblems
+        subs @ subs.push(wire.subproblem_told(value: sub.identifier.value, kind: sub.kind, detail: sub.detail))
+
+    return wire.told(kind: p.kind, detail: p.detail, subproblems: subs)
+
+# The message of `a`, which turned invalid: each problem of each challenge,
+# after the challenge's kind, `http-01: caa: ...`.
+#
+# - `a`: the authorization, its status "invalid".
+function authorization_message(a: acme.Authorization) -> str
+    said: [str] @= []
+
+    for c in a.challenges
+        for p in c.problems
+            said @ said.push(f"{c.kind}: {words_of(p)}")
+
+    if said.len() == 0
+        return f"the authorization of {a.identifier.value} turned invalid, and the server named no problem"
+    return f"the authorization of {a.identifier.value} turned invalid: {said.join("; ")}"
+
+# The message of `o`, which turned invalid: each of its problems.
+#
+# - `o`: the order, its status "invalid".
+function order_message(o: acme.Order) -> str
+    said: [str] @= []
+
+    for p in o.problems
+        said @ said.push(words_of(p))
+
+    if said.len() == 0
+        return "the order turned invalid, and the server named no problem"
+    return f"the order turned invalid: {said.join("; ")}"
+
+## Tests
+
+test "authorization_message: a CAA refusal and a wrong answer told by their types, and none named"
+    text = "{\"status\":\"invalid\",\"identifier\":{\"type\":\"dns\",\"value\":\"other.certs.test\"},\"challenges\":[{\"type\":\"http-01\",\"url\":\"https://ca/c/1\",\"status\":\"invalid\",\"token\":\"t\",\"error\":{\"type\":\"urn:ietf:params:acme:error:caa\",\"detail\":\"the CAA records forbid it\"}},{\"type\":\"dns-01\",\"url\":\"https://ca/c/2\",\"status\":\"invalid\",\"token\":\"u\",\"error\":{\"type\":\"urn:ietf:params:acme:error:incorrectResponse\",\"detail\":\"no TXT record\"}}]}"
+    a = acme.parse_authorization(text: text, url: "https://ca/a/1").must()
+    assert authorization_message(a) == "the authorization of other.certs.test turned invalid: http-01: caa: the CAA records forbid it; dns-01: incorrectResponse: no TXT record"
+    bare = acme.parse_authorization(
+        text: "{\"status\":\"invalid\",\"identifier\":{\"type\":\"dns\",\"value\":\"x.test\"},\"challenges\":[]}",
+        url: "https://ca/a/2"
+    ).must()
+    assert authorization_message(bare) == "the authorization of x.test turned invalid, and the server named no problem"
+
+test "order_message: a problem with a subproblem for one identifier, and none named"
+    text = "{\"status\":\"invalid\",\"identifiers\":[{\"type\":\"dns\",\"value\":\"_example.org\"}],\"authorizations\":[],\"finalize\":\"https://ca/f/1\",\"error\":{\"type\":\"urn:ietf:params:acme:error:rejectedIdentifier\",\"detail\":\"Some were rejected\",\"subproblems\":[{\"type\":\"urn:ietf:params:acme:error:malformed\",\"detail\":\"Invalid underscore\",\"identifier\":{\"type\":\"dns\",\"value\":\"_example.org\"}}]}}"
+    o = acme.parse_order(text: text, url: "https://ca/o/1").must()
+    assert order_message(o) == "the order turned invalid: rejectedIdentifier: Some were rejected (_example.org: malformed: Invalid underscore)"
+    bare = acme.parse_order(
+        text: "{\"status\":\"invalid\",\"identifiers\":[],\"authorizations\":[],\"finalize\":\"https://ca/f/2\"}",
+        url: "https://ca/o/2"
+    ).must()
+    assert order_message(bare) == "the order turned invalid, and the server named no problem"
