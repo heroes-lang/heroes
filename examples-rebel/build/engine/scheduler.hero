@@ -71,8 +71,8 @@ record Flight
     reason: str
     # The digest of each of its inputs as it started.
     inputs: {str: str}
-    # The worker running it.
-    thread: threads.TextThread
+    # The worker running it, which answers the step's outcome.
+    thread: (thread step.Done)
 
 # An outcome of nothing yet.
 function nothing_yet() -> Outcome
@@ -260,8 +260,7 @@ function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepar
 
         fl = flights[0]
         flights @ flights.slice(from: 1, to: flights.len())
-        t @= fl.thread
-        d = step.finish(@t)
+        d = fl.thread.wait()
         told @ told + 1
         name = fl.step.output
 
