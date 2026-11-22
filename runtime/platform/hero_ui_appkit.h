@@ -132,6 +132,10 @@ int64_t hero_ui_appkit_accessible_name(int64_t id, uint8_t *buffer, int64_t coun
 
 int64_t hero_ui_appkit_set_label_for(int64_t id, int64_t label);
 
+int64_t hero_ui_appkit_set_drop(int64_t id, int64_t on);
+
+int64_t hero_ui_appkit_drop(int64_t id, int64_t x, int64_t y, const uint8_t *paths, int64_t count);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);
