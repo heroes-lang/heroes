@@ -1,0 +1,200 @@
+# A web view's table of assets, its policy, its origins, its page and its
+# posts, as `ui/webview`'s face changes them: each change checked by the
+# layer's own rules (`ui/webview/internal/rules`), kept in the web view's
+# node (`model.Web`) on both sides, and handed to the platform layer on the
+# native side, which serves and delivers. A refusal changes nothing on
+# either side: the node is written after the layer has said yes.
+
+use bytes
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/model
+use ui/webview/internal/rules
+
+# The node of web view `view` in `app`. Fails `closed` where its life has
+# ended, `invalid` where it is another app's or no web view.
+function node_of(app: ui.App, view: ui.Widget) -> model.Node?
+    return check.node_kind(app, widget: view, kinds: [hero_ui.HERO_UI_WEBVIEW], what: "a web view")
+
+# The index of the asset at `path` in `web`, or -1.
+function index_of(web: model.Web, path: str) -> i64
+    for i in range(from: 0, to: web.assets.len())
+        if web.assets[i].path == path
+            return i
+
+    return -1
+
+# `text`'s bytes and their count, as the floor takes a text.
+function counted(text: str) -> u64
+    return to_u64(text.len()).must()
+
+# Puts the asset at `path` of `content_type` and `body` into `view`'s
+# table, replacing the one there. Fails `invalid` for a path, a type or a
+# body the table refuses, `limit` past its most, and as `node_of` does.
+function put(@app: ui.App, view: ui.Widget, path: str, content_type: str, body: [u8]) -> ()?
+    n @= node_of(app, view: view)?
+
+    if !rules.path_ok(path, folder: false)
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{path}\" is no asset's path: `/` and segments of A-Z, a-z, 0-9, `-`, `.`, `_` and `~` joined by `/`, never `.` or `..`, at most {hero_ui.HERO_UI_WEB_PATH_MOST} bytes"
+        )
+
+    if !rules.type_ok(content_type)
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{content_type}\" is no content type: `type/subtype`, then parameters, printable ASCII, at most {hero_ui.HERO_UI_WEB_TYPE_MOST} bytes"
+        )
+
+    if body.len() > hero_ui.HERO_UI_WEB_ASSET_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"a body of {body.len()} bytes, past the {hero_ui.HERO_UI_WEB_ASSET_MOST} an asset holds"
+        )
+    at = index_of(n.web, path: path)
+
+    before = if at >= 0
+        n.web.assets[at].size
+    else
+        0
+
+    if at < 0 && n.web.assets.len() == hero_ui.HERO_UI_WEB_ASSETS_MOST
+        return fail(
+            code: failure.LIMIT,
+            msg: f"web view {view.id} holds {hero_ui.HERO_UI_WEB_ASSETS_MOST} assets already, as many as its table takes"
+        )
+    after = n.web.bytes - before + body.len()
+
+    if after > hero_ui.HERO_UI_WEB_BYTES_MOST
+        return fail(
+            code: failure.LIMIT,
+            msg: f"web view {view.id}'s assets would take {after} bytes, past the {hero_ui.HERO_UI_WEB_BYTES_MOST} its table takes"
+        )
+
+    if app.native
+        p @= bytes.from_text(path)
+        t @= bytes.from_text(content_type)
+        b @= body
+
+        if hero_ui.web_asset(app.handle, id: view.id, path: @p, path_count: counted(path), type: @t, type_count: counted(content_type), body: @b, body_count: to_u64(body.len()).must()) < 0
+            return failure.last(f"putting the asset \"{path}\"")
+    made = model.WebAsset(path: path, content_type: content_type, size: body.len())
+
+    if at >= 0
+        n.web.assets[at] @ made
+    else
+        n.web.assets @ n.web.assets.push(made)
+    n.web.bytes @ after
+    model.put(@app.table, n: n)
+    return ok()
+
+# Takes the asset at `path` out of `view`'s table. Fails `not_found` where
+# it holds none, `invalid` for no asset's path, and as `node_of` does.
+function remove(@app: ui.App, view: ui.Widget, path: str) -> ()?
+    n @= node_of(app, view: view)?
+
+    if !rules.path_ok(path, folder: false)
+        return fail(code: failure.INVALID, msg: f"\"{path}\" is no asset's path")
+    at = index_of(n.web, path: path)
+
+    if at < 0
+        return fail(code: "not_found", msg: f"web view {view.id} holds no asset at \"{path}\"")
+
+    if app.native
+        p @= bytes.from_text(path)
+
+        if hero_ui.web_remove(app.handle, id: view.id, path: @p, path_count: counted(path)) < 0
+            return failure.last(f"removing the asset \"{path}\"")
+    kept: [model.WebAsset] @= []
+
+    for each in n.web.assets
+        if each.path != path
+            kept @ kept.push(each)
+
+    n.web.bytes @ n.web.bytes - n.web.assets[at].size
+    n.web.assets @ kept
+    model.put(@app.table, n: n)
+    return ok()
+
+# Sets the policy `view`'s responses carry, "" for the layer's own. Fails
+# `invalid` where it is no printable ASCII or too long.
+function set_policy(@app: ui.App, view: ui.Widget, policy: str) -> ()?
+    n @= node_of(app, view: view)?
+
+    if !rules.policy_ok(policy)
+        return fail(
+            code: failure.INVALID,
+            msg: f"a policy is printable ASCII, at most {hero_ui.HERO_UI_WEB_POLICY_MOST} bytes"
+        )
+
+    if app.native
+        p @= bytes.from_text(policy)
+
+        if hero_ui.web_policy(app.handle, id: view.id, @p, count: counted(policy)) < 0
+            return failure.last("setting the policy")
+    n.web.policy @ policy
+    model.put(@app.table, n: n)
+    return ok()
+
+# Lets `view`'s page go to `origin`. Fails `invalid` where it is no origin,
+# `limit` past the most, and as `node_of` does.
+function allow(@app: ui.App, view: ui.Widget, origin: str) -> ()?
+    n @= node_of(app, view: view)?
+    normal = rules.origin_ok(origin)?
+
+    for each in n.web.origins
+        if each == normal
+            return ok()
+
+    if n.web.origins.len() == hero_ui.HERO_UI_WEB_ORIGINS_MOST
+        return fail(
+            code: failure.LIMIT,
+            msg: f"web view {view.id} allows {hero_ui.HERO_UI_WEB_ORIGINS_MOST} origins already, as many as it takes"
+        )
+
+    if app.native
+        o @= bytes.from_text(origin)
+
+        if hero_ui.web_allow(app.handle, id: view.id, @o, count: counted(origin)) < 0
+            return failure.last(f"allowing the origin \"{origin}\"")
+    n.web.origins @ n.web.origins.push(normal)
+    model.put(@app.table, n: n)
+    return ok()
+
+# Has `view` show `path` of the app's own origin. Fails `invalid` where it
+# is no page's path, and as `node_of` does.
+function navigate(@app: ui.App, view: ui.Widget, path: str) -> ()?
+    n @= node_of(app, view: view)?
+
+    if !rules.page_ok(path)
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{path}\" is no page's path: an asset's path or a folder's ending in `/`, then perhaps a query and a fragment, at most {hero_ui.HERO_UI_WEB_PATH_MOST} bytes"
+        )
+
+    if app.native
+        p @= bytes.from_text(path)
+
+        if hero_ui.web_navigate(app.handle, id: view.id, @p, count: counted(path)) < 0
+            return failure.last(f"showing the page \"{path}\"")
+    n.web.page @ path
+    model.put(@app.table, n: n)
+    return ok()
+
+# Posts `text` to `view`'s page. Fails `invalid` where it holds a zero byte
+# or is longer than a message takes, `limit` where the page is loading and
+# as many texts wait for it as it keeps, and as `node_of` does.
+function post(@app: ui.App, view: ui.Widget, text: str) -> ()?
+    n @= node_of(app, view: view)?
+    check.text_ok(text: text, one_line: false, what: "the text posted")?
+
+    if app.native
+        t @= bytes.from_text(text)
+
+        if hero_ui.web_post(app.handle, id: view.id, @t, count: counted(text)) < 0
+            return failure.last("posting a text to the page")
+    n.web.posted @ n.web.posted + 1
+    model.put(@app.table, n: n)
+    return ok()

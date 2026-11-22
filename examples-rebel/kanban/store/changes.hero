@@ -1,0 +1,78 @@
+# One change of a board, made whole or not at all: the board's JSON read
+# before it, a transaction begun, the change made by the caller, then the
+# board's JSON after it and the history's line written, and the transaction
+# committed; a failure anywhere rolls every part back, so the database, the
+# history and the search index never hold half a change.
+#
+# The language has no closures, so the caller makes its change between
+# `begin` and `finish` and calls `abandon` where it failed:
+#
+#     before = changes.begin(@s, board: id)?
+#     match cards.add(@s, column: c, title: t, body: b)
+#         .err e => return changes.abandon(@s, code: e.code, msg: e.msg)
+#         .ok card => changes.finish(@s, board: id, label: "...", before: before)?
+
+use <rebel>/sql/sqlite
+
+use store/boards
+use store/finder
+use store/history
+use store/snapshot
+use store/store
+
+# Board `board`'s JSON as it stands, "" where it is not there (a board about
+# to be made), with a transaction begun.
+#
+# - `s`: the store.
+# - `board`: the board about to change; "" for one about to be made.
+function begin(@s: store.Store, board: str) -> str?
+    before = if board.len() > 0 && !boards.board_named(@s, id: board).is_err()
+        snapshot.text_of(@s, board: board)?
+    else
+        ""
+
+    sqlite.begin(@s.db)?
+    return ok(before)
+
+# Ends the change of board `board` begun with `before`: its JSON after, the
+# history's line, the commit, and the search index made again. A failure
+# rolls the change back and is answered.
+#
+# - `s`: the store.
+# - `board`: the board that changed.
+# - `label`: the change, as a person reads it.
+# - `before`: what `begin` answered.
+function finish(@s: store.Store, board: str, label: str, before: str) -> ()?
+    match ended(@s, board: board, label: label, before: before)
+        .ok _  => return finder.rebuild(@s)
+        .err e => return abandon(@s, code: e.code, msg: e.msg)
+
+function ended(@s: store.Store, board: str, label: str, before: str) -> ()?
+    after = if boards.board_named(@s, id: board).is_err()
+        ""
+    else
+        snapshot.text_of(@s, board: board)?
+
+    history.keep(@s, board: board, label: label, before: before, after: after)?
+    sqlite.commit(@s.db)?
+    return ok()
+
+# Commits a change that keeps no line in the history, an undo or a redo,
+# and makes the search index again; a failure rolls it back.
+#
+# - `s`: the store.
+function commit(@s: store.Store) -> ()?
+    match sqlite.commit(@s.db)
+        .ok _  => return finder.rebuild(@s)
+        .err e => return abandon(@s, code: e.code, msg: e.msg)
+
+# Rolls back the change begun and answers its failure, `code` and `msg`, so
+# a caller writes `return changes.abandon(@s, code: e.code, msg: e.msg)`.
+#
+# - `s`: the store.
+# - `code`: the failure's code, of README § A4.
+# - `msg`: what was asked and what was found.
+function abandon<T>(@s: store.Store, code: str, msg: str) -> T?
+    if sqlite.in_transaction(s.db)
+        _ = sqlite.rollback(@s.db).is_err()
+    return fail(code: code, msg: msg)

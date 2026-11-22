@@ -21,7 +21,10 @@
  * on the main thread alone, with the arguments `hero_ui.c` has checked
  * (THE ARM there says which and what each means); `words` answers the bytes
  * of the last failure's words it wrote, and `dialog_paths` the bytes of the
- * last file dialog's paths, writing them where they fit.
+ * last file dialog's paths, writing them where they fit. `open` takes, beside
+ * `push`, the three functions a web view asks and the bridge's script, as
+ * `hero_ui_web.h`'s `hero_ui_web_host` names them, each a parameter of its
+ * own since Swift reads no C structure here.
  */
 
 #ifndef HERO_UI_APPKIT_H
@@ -31,7 +34,7 @@
 
 int64_t hero_ui_appkit_here(void);
 
-int64_t hero_ui_appkit_open(void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t));
+int64_t hero_ui_appkit_open(void (*push)(int64_t, int64_t, int64_t, int64_t, const uint8_t *, int64_t), int64_t (*serve)(int64_t, const uint8_t *, int64_t, const uint8_t *, int64_t, int64_t *, const uint8_t **), int64_t (*ask)(int64_t, int64_t, const uint8_t *, int64_t), void (*gone)(int64_t), const uint8_t *bridge, int64_t bridge_count);
 
 void hero_ui_appkit_close(void);
 
@@ -78,5 +81,9 @@ int64_t hero_ui_appkit_message(int64_t window, int64_t tone, int64_t buttons, co
 int64_t hero_ui_appkit_file_dialog(int64_t window, int64_t save, int64_t multiple, const uint8_t *title, int64_t title_count, const uint8_t *name, int64_t name_count, const uint8_t *filters, int64_t filters_count, int64_t *bytes);
 
 int64_t hero_ui_appkit_dialog_paths(uint8_t *buffer, int64_t count);
+
+int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
+
+int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);
 
 #endif

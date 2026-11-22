@@ -55,11 +55,11 @@ capability ui/native-linux  the native side on Linux, by GTK
   python  -
 
 capability ui/webview  the system's web view as a widget, with a bridge to its scripts
-  heroes  pending
+  heroes  ui/webview.webview, ui/webview.post, ui.Kind, ui.Event, ui.Input
   go      -
   rust    tauri::WebviewWindow, tauri::Webview
   python  -
-  note    the kind `ui.Kind.webview` and the event `ui.Event.message` stand in the face for it
+  note    the web view, its assets, its policy and its bridge are `ui/webview`'s, a subpackage so only the programs that show a page carry its rules, and `ui/webview.ledger` holds each capability; this package's `ui.Kind.webview`, `ui.Event.message` and `ui.Input.send` are what its app reads and gives of them
 
 capability ui/mailbox  a thread's message to the user interface, through feature 2647's mailbox
   heroes  pending

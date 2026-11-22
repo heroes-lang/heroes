@@ -1,0 +1,114 @@
+# The command line, read as `args_checked` gives it (spec § 11), so an
+# argument that is not UTF-8 is a usage error naming its place, never an
+# abort:
+#
+#     kanban [--web FOLDER] [--data FILE]   the board in a window
+#     kanban --demo [--web FOLDER]          the scripted session, no window
+#     kanban --help                         this text
+#
+# `--web` names the folder of the page's files, by default `web` beside the
+# program; `--data` the database, by default `kanban.sqlite` in the folder
+# the system keeps a user's data in, under `kanban`.
+
+use <rebel>/os
+use <rebel>/path
+
+# What the program was asked to do.
+variant Mode
+    # The board in a window of the system's own.
+    window
+    # The scripted session on the headless side.
+    demo
+    # The usage printed.
+    help
+
+# The command line read.
+record Command
+    # What to do.
+    mode: Mode
+    # The folder of the page's files.
+    web: str
+    # The database's file; "" for the demo, which makes its own.
+    data: str
+
+# The usage text, printed for `--help` and after a usage error.
+constant USAGE: str
+    "usage: kanban [--web FOLDER] [--data FILE] | kanban --demo [--web FOLDER] | kanban --help"
+
+# The command `given` asks for, each argument as `args_checked` read it.
+# Fails `invalid`, its message the usage error to print, for an argument
+# that is no UTF-8, an option this program has not, an option's missing
+# value, or `--data` with `--demo`.
+#
+# - `given`: the arguments after the program's name.
+function read(given: [str?]) -> Command?
+    words: [str] @= []
+
+    for i in range(from: 0, to: given.len())
+        match given[i]
+            .ok w  => words @ words.push(w)
+            .err _ => return fail(code: "invalid", msg: f"argument {i + 1} is not UTF-8 text")
+
+    demo @= false
+    web @= ""
+    data @= ""
+    at @= 0
+
+    while at < words.len()
+        w = words[at]
+
+        if w == "--help" || w == "-h"
+            return ok(Command(mode: .help, web: "", data: ""))
+        else if w == "--demo"
+            demo @ true
+        else if w == "--web" || w == "--data"
+            if at + 1 == words.len()
+                return fail(code: "invalid", msg: f"{w} needs a value")
+
+            if w == "--web"
+                web @ words[at + 1]
+            else
+                data @ words[at + 1]
+            at @ at + 1
+        else
+            return fail(code: "invalid", msg: f"no option is named \"{w}\"")
+        at @ at + 1
+
+    if demo && data.len() > 0
+        return fail(code: "invalid", msg: "--demo makes its own database; --data is for the window")
+
+    if demo
+        return ok(Command(mode: .demo, web: web, data: data))
+    return ok(Command(mode: .window, web: web, data: data))
+
+# The folder of the page's files: `web` as given, else `web` beside the
+# program. Fails as `os.executable_path` does.
+#
+# - `web`: the folder given, "" for none.
+function web_folder(web: str) -> str?
+    if web.len() > 0
+        return ok(web)
+    return ok(path.join_all([path.parent(os.executable_path()?), "web"]))
+
+# The database's file: `data` as given, else `kanban/kanban.sqlite` in the
+# user's data folder. Fails as `os.data_dir` does.
+#
+# - `data`: the file given, "" for none.
+function data_file(data: str) -> str?
+    if data.len() > 0
+        return ok(data)
+    return ok(path.join_all([os.data_dir()?, "kanban", "kanban.sqlite"]))
+
+## Tests
+
+test "read: the window by default, the demo, the help, and the two values"
+    assert read([]).must() == Command(mode: .window, web: "", data: "")
+    assert read([ok("--demo"), ok("--web"), ok("w")]).must() == Command(mode: .demo, web: "w", data: "")
+    assert read([ok("--data"), ok("b.sqlite")]).must().data == "b.sqlite"
+    assert read([ok("--help")]).must().mode == .help
+
+test "read: an argument no UTF-8, an unknown option, a missing value, --data with --demo"
+    assert read([fail(code: "not_text", msg: "x")]).is_err()
+    assert read([ok("--fast")]).is_err()
+    assert read([ok("--web")]).is_err()
+    assert read([ok("--demo"), ok("--data"), ok("x")]).is_err()

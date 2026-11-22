@@ -1,0 +1,73 @@
+# The one handler of the page's messages, which the bridge feeds on the
+# desktop and the demo's scripted session feeds on the headless side alike:
+# a framed call (`ui/webview.parse_call`) is answered by `api/calls`, its
+# answer or its refusal posted back, and where it changed a board the event
+# `board.changed` posted after it, so every page showing the board draws it
+# again. A text that is no framed call is no message this page sends, and is
+# left unanswered.
+
+use <rebel>/ui/webview
+
+use api/calls
+use api/views
+use app/desk
+
+# Answers the message `text` of the page, and answers the texts it posted,
+# in order: the answer or the refusal, then the event where a board changed;
+# none for a text that is no call. Fails where posting fails, the web view
+# or the app being closed.
+#
+# - `d`: the desk.
+# - `text`: the message.
+function handle(@d: desk.Desk, text: str) -> [str]?
+    none: [str] = []
+
+    call = match webview.parse_call(text)
+        .ok c  => c
+        .err _ => return ok(none)
+
+    posted: [str] @= []
+    changed @= ""
+
+    match calls.answer(@d, name: call.name, given: call.args)
+        .ok outcome =>
+            changed @ outcome.changed
+
+            match webview.format_answer(call, value: outcome.value)
+                .ok t  => posted @ posted.push(t)
+                .err e => posted @ posted.push(webview.format_refusal(call, code: e.code, msg: e.msg))
+        .err e => posted @ posted.push(webview.format_refusal(call, code: e.code, msg: e.msg))
+
+    if changed.len() > 0
+        posted @ posted.push(
+            webview.format_event("board.changed", data: views.object([views.pair("board", views.text(changed))])).must()
+        )
+
+    for t in posted
+        webview.post(@d.app, view: d.view, text: t)?
+
+    return ok(posted)
+
+# Does the call `name`, which the person chose from the menu bar rather
+# than the page asked, and answers the texts it posted: the event where a
+# board changed, and no answer, since no promise of the page waits for one.
+# A refusal, nothing to undo for instance, is no failure of the program and
+# posts nothing. Fails where posting fails.
+#
+# - `d`: the desk.
+# - `name`: the call, one taking no arguments.
+function act(@d: desk.Desk, name: str) -> [str]?
+    posted: [str] @= []
+
+    match calls.answer(@d, name: name, given: .null_value)
+        .ok outcome =>
+            if outcome.changed.len() > 0
+                posted @ posted.push(
+                    webview.format_event("board.changed", data: views.object([views.pair("board", views.text(outcome.changed))])).must()
+                )
+        .err _ => _ = 0
+
+    for t in posted
+        webview.post(@d.app, view: d.view, text: t)?
+
+    return ok(posted)

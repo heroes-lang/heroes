@@ -37,11 +37,25 @@
  * which asks every window to close), then the menus of the window in front,
  * moved into it each time a window comes to the front.
  *
+ * THE WEB VIEW is WebKit's `WKWebView` (`hero_ui.h`, THE WEB VIEW). What it
+ * serves, where its page may go and which message is heard are asked of
+ * `hero_ui.c` through the functions `open` hands over (`hero_ui_web.h`), so
+ * this arm decides none of them: a request of the app's scheme is answered
+ * whole, at once, with what `serve` wrote; a navigation goes on where `ask`
+ * says so; a message is queued where `ask` hears its sender. Its page keeps
+ * nothing on disk (a website data store of its own, in memory), opens no
+ * window, downloads nothing, is denied the camera and the microphone, and
+ * its file chooser opens nothing. A text the program posts is handed to the
+ * page once a page of the app's own origin has loaded, through the bridge's
+ * `heroes.deliver` as an argument of the call and never inside a script's
+ * text, so no text of the program's is read as a script.
+ *
  * Written from Apple's AppKit documentation; no other library's source.
  */
 
 import AppKit
 import UniformTypeIdentifiers
+import WebKit
 
 // The kinds of failure, `hero_ui.h`'s numbers.
 private let answerOk: Int64 = 0
@@ -68,6 +82,7 @@ private let kindImage: Int64 = 13
 private let kindMenu: Int64 = 14
 private let kindMenuItem: Int64 = 15
 private let kindMenuSeparator: Int64 = 16
+private let kindWebView: Int64 = 17
 
 // The kinds of event, `hero_ui.h`'s numbers.
 private let eventClick: Int64 = 1
@@ -78,6 +93,7 @@ private let eventValue: Int64 = 5
 private let eventMenu: Int64 = 6
 private let eventClose: Int64 = 7
 private let eventResize: Int64 = 8
+private let eventMessage: Int64 = 9
 
 // The keys held with a shortcut, `hero_ui.h`'s numbers.
 private let heldPrimary: Int64 = 1
@@ -108,10 +124,43 @@ private let pressedNo: Int64 = 4
 private let fieldWidth: CGFloat = 160
 private let areaWidth: CGFloat = 240
 private let areaHeight: CGFloat = 96
+private let viewWidth: CGFloat = 320
+private let viewHeight: CGFloat = 240
+
+// `hero_ui_web.h`'s questions, the indices of `serve`'s answer, and the
+// app's own scheme.
+private let askFrame: Int64 = 1
+private let askSubframe: Int64 = 2
+private let askSender: Int64 = 3
+private let askOurs: Int64 = 4
+private let servedStatus = 0
+private let servedLength = 1
+private let servedTypeCount = 2
+private let servedBodyCount = 3
+private let servedPolicyCount = 4
+private let servedNumbers = 5
+private let servedType = 0
+private let servedBody = 1
+private let servedPolicy = 2
+private let servedTexts = 3
+private let appScheme = "app"
+// The most texts a web view keeps for its page while the page loads,
+// `HERO_UI_QUEUE_MOST`.
+private let heldMost = 4096
 
 /// The function `hero_ui.c` queues an event by: its kind, its widget, its
 /// two values, and a text with its count.
 public typealias HeroUiPush = @convention(c) (Int64, Int64, Int64, Int64, UnsafePointer<UInt8>?, Int64) -> Void
+
+/// What a request of the app's scheme is answered: `hero_ui_web.h`'s
+/// `hero_ui_web_serve_fn`.
+public typealias HeroUiServe = @convention(c) (Int64, UnsafePointer<UInt8>?, Int64, UnsafePointer<UInt8>?, Int64, UnsafeMutablePointer<Int64>?, UnsafeMutablePointer<UnsafePointer<UInt8>?>?) -> Int64
+
+/// Whether a URL is allowed for a question: `hero_ui_web_ask_fn`.
+public typealias HeroUiAsk = @convention(c) (Int64, Int64, UnsafePointer<UInt8>?, Int64) -> Int64
+
+/// That a web view is gone: `hero_ui_web_gone_fn`.
+public typealias HeroUiGone = @convention(c) (Int64) -> Void
 
 // A window's content: its y axis down, as `hero_ui.h` places widgets.
 private final class FlippedView: NSView {
@@ -140,6 +189,8 @@ private final class Native {
     var items: [String] = []
     // A window's menus, in order.
     var menus: [Int64] = []
+    // A web view's page and what it keeps.
+    var page: WebPage?
 
     init(id: Int64, kind: Int64, parent: Int64) {
         self.id = id
@@ -155,6 +206,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     static var launched = false
 
     let push: HeroUiPush
+    let serve: HeroUiServe
+    let ask: HeroUiAsk
+    let gone: HeroUiGone
+    // The bridge's script, which every web view gives its pages.
+    let bridge: String
     var widgets: [Int64: Native] = [:]
     var tables: [ObjectIdentifier: Int64] = [:]
     var words = ""
@@ -163,8 +219,20 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     // Set while the program sets what would otherwise queue an event.
     var muted = false
 
-    init(push: @escaping HeroUiPush) {
+    init(push: @escaping HeroUiPush, serve: @escaping HeroUiServe, ask: @escaping HeroUiAsk, gone: @escaping HeroUiGone, bridge: String) {
         self.push = push
+        self.serve = serve
+        self.ask = ask
+        self.gone = gone
+        self.bridge = bridge
+    }
+
+    // Queues a message the page of web view `id` sent, `bytes` its UTF-8.
+    func queueMessage(_ id: Int64, _ bytes: [UInt8]) {
+        pushed += 1
+        bytes.withUnsafeBufferPointer { buffer in
+            push(eventMessage, id, 0, 0, buffer.baseAddress, Int64(buffer.count))
+        }
     }
 
     func queue(_ kind: Int64, _ id: Int64, _ value: Int64, _ second: Int64) {
@@ -210,6 +278,18 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         }
         guard let owner = widgets[parent], owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
             return answerNotFound
+        }
+        if kind == kindWebView {
+            guard let page = WebPage.made(id: id, backend: self) else {
+                words = "WebKit refused to serve the scheme " + appScheme + " in a web view"
+                return answerOther
+            }
+            page.view.frame = NSRect(x: 0, y: 0, width: 0, height: 0)
+            content.addSubview(page.view)
+            made.view = page.view
+            made.page = page
+            widgets[id] = made
+            return answerOk
         }
         if kind == kindMenu {
             let menu = NSMenu(title: "")
@@ -329,6 +409,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             tables[ObjectIdentifier(table)] = nil
             table.dataSource = nil
             table.delegate = nil
+        }
+        if let page = widget.page {
+            page.close()
+            widget.page = nil
+            gone(id)
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -805,6 +890,8 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return size
         case kindImage:
             return (widget.view as? NSImageView)?.image?.size ?? NSSize(width: 0, height: 0)
+        case kindWebView:
+            return NSSize(width: viewWidth, height: viewHeight)
         default:
             return widget.view?.fittingSize ?? NSSize(width: 0, height: 0)
         }
@@ -948,10 +1035,44 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             if window.styleMask.contains(.resizable) {
                 window.setContentSize(NSSize(width: CGFloat(value), height: CGFloat(second)))
             }
+        case eventMessage:
+            guard let page = widget.page else {
+                return answerInvalid
+            }
+            if !page.sendAsPage(text) {
+                return answerLimit
+            }
         default:
             return answerInvalid
         }
         return answerOk
+    }
+
+    // MARK: web views
+
+    func webLoad(_ id: Int64, _ url: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let page = widget.page else {
+            return answerInvalid
+        }
+        guard let target = URL(string: url) else {
+            words = "WebKit reads no URL in " + url
+            return answerOther
+        }
+        page.load(target)
+        return answerOk
+    }
+
+    func webPost(_ id: Int64, _ text: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let page = widget.page else {
+            return answerInvalid
+        }
+        return page.post(text) ? answerOk : answerLimit
     }
 
     // MARK: dialogs
@@ -1040,6 +1161,264 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     }
 }
 
+// What WebKit keeps a strong hold on, its script message handler and its
+// scheme handler: a stand-in that reaches the page weakly, so the page and
+// its `WKWebView` are given back when the widget is destroyed although the
+// view's configuration keeps the stand-in.
+@MainActor
+private final class WebProxy: NSObject, WKScriptMessageHandler, WKURLSchemeHandler {
+    weak var page: WebPage?
+
+    func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+        page?.received(message)
+    }
+
+    func webView(_ view: WKWebView, start task: any WKURLSchemeTask) {
+        if let page = page {
+            page.answer(task)
+        } else {
+            task.didFailWithError(URLError(.cancelled))
+        }
+    }
+
+    func webView(_ view: WKWebView, stop task: any WKURLSchemeTask) {
+        // Every request is answered whole inside `start`, so none is left
+        // to stop.
+    }
+}
+
+// One web view: its `WKWebView`, whether a page of the app's own origin has
+// loaded, and what waits for one: the texts posted, and those `inject` has
+// the page send, in the order given, each `asPage` where the page sends it.
+@MainActor
+private final class WebPage: NSObject, WKNavigationDelegate, WKUIDelegate {
+    let id: Int64
+    unowned let backend: Backend
+    let view: WKWebView
+    let proxy: WebProxy
+    var ready = false
+    var held: [(asPage: Bool, text: String)] = []
+
+    private init(id: Int64, backend: Backend, view: WKWebView, proxy: WebProxy) {
+        self.id = id
+        self.backend = backend
+        self.view = view
+        self.proxy = proxy
+    }
+
+    // A web view of number `id`, or nil where WebKit already serves the
+    // app's scheme itself, which `setURLSchemeHandler` would end the
+    // process for.
+    static func made(id: Int64, backend: Backend) -> WebPage? {
+        if WKWebView.handlesURLScheme(appScheme) {
+            return nil
+        }
+        let proxy = WebProxy()
+        let configuration = WKWebViewConfiguration()
+        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistent()
+        configuration.setURLSchemeHandler(proxy, forURLScheme: appScheme)
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+        configuration.preferences.inactiveSchedulingPolicy = .none
+        let controller = WKUserContentController()
+        controller.addUserScript(WKUserScript(source: backend.bridge, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        controller.add(proxy, name: "heroes")
+        configuration.userContentController = controller
+        let view = WKWebView(frame: NSRect(x: 0, y: 0, width: 0, height: 0), configuration: configuration)
+        view.allowsBackForwardNavigationGestures = false
+        view.allowsMagnification = false
+        let page = WebPage(id: id, backend: backend, view: view, proxy: proxy)
+        proxy.page = page
+        view.navigationDelegate = page
+        view.uiDelegate = page
+        return page
+    }
+
+    // Lets go of WebKit before the view is removed: no delegate is called
+    // for this page again, and its message handler is taken away.
+    func close() {
+        view.stopLoading()
+        view.navigationDelegate = nil
+        view.uiDelegate = nil
+        view.configuration.userContentController.removeScriptMessageHandler(forName: "heroes")
+        proxy.page = nil
+        held = []
+        ready = false
+    }
+
+    func load(_ url: URL) {
+        ready = false
+        view.load(URLRequest(url: url))
+    }
+
+    // Hands `text` to the page now, or keeps it for the next page of the
+    // app's own origin; false where `heldMost` wait already.
+    func post(_ text: String) -> Bool {
+        return given(asPage: false, text)
+    }
+
+    // Has the page's own bridge send `text`, as its script would (`inject`),
+    // now or once a page of the app's own origin has loaded.
+    func sendAsPage(_ text: String) -> Bool {
+        return given(asPage: true, text)
+    }
+
+    func given(asPage: Bool, _ text: String) -> Bool {
+        if ready {
+            run(asPage: asPage, text)
+            return true
+        }
+        if held.count >= heldMost {
+            return false
+        }
+        held.append((asPage: asPage, text: text))
+        return true
+    }
+
+    // The text handed to the bridge as an argument of a call, never inside
+    // the script's own text.
+    func run(asPage: Bool, _ text: String) {
+        let script = asPage ? "window.heroes.send(t)" : "window.heroes.deliver(t)"
+        view.callAsyncJavaScript(script, arguments: ["t": text], in: nil, in: .page, completionHandler: nil)
+    }
+
+    // `ask` of `url` for `what`.
+    func allowed(_ what: Int64, _ url: String) -> Bool {
+        let bytes = Array(url.utf8)
+        return bytes.withUnsafeBufferPointer { buffer in
+            backend.ask(what, id, buffer.baseAddress, Int64(buffer.count)) == 1
+        }
+    }
+
+    // MARK: the bridge's messages
+
+    func received(_ message: WKScriptMessage) {
+        let origin = message.frameInfo.securityOrigin
+        var from = origin.protocol + "://" + origin.host
+        if origin.port != 0 {
+            from += ":" + String(origin.port)
+        }
+        guard message.frameInfo.isMainFrame, let text = message.body as? String else {
+            _ = allowed(askSender, "")
+            return
+        }
+        if allowed(askSender, from) {
+            backend.queueMessage(id, Array(text.utf8))
+        }
+    }
+
+    // MARK: the app's scheme
+
+    func answer(_ task: any WKURLSchemeTask) {
+        guard let url = task.request.url else {
+            task.didFailWithError(URLError(.badURL))
+            return
+        }
+        let method = Array((task.request.httpMethod ?? "GET").utf8)
+        let whole = Array(url.absoluteString.utf8)
+        var numbers = [Int64](repeating: 0, count: servedNumbers)
+        var texts = [UnsafePointer<UInt8>?](repeating: nil, count: servedTexts)
+        var body = Data()
+        var type = ""
+        var policy = ""
+        method.withUnsafeBufferPointer { methodBytes in
+            whole.withUnsafeBufferPointer { urlBytes in
+                numbers.withUnsafeMutableBufferPointer { numbersOut in
+                    texts.withUnsafeMutableBufferPointer { textsOut in
+                        _ = backend.serve(id, methodBytes.baseAddress, Int64(methodBytes.count), urlBytes.baseAddress, Int64(urlBytes.count), numbersOut.baseAddress, textsOut.baseAddress)
+                        // Copied now: the layer's bytes live only while
+                        // this call runs.
+                        type = copied(textsOut[servedType], numbersOut[servedTypeCount])
+                        policy = copied(textsOut[servedPolicy], numbersOut[servedPolicyCount])
+                        if let bytes = textsOut[servedBody], numbersOut[servedBodyCount] > 0 {
+                            body = Data(bytes: bytes, count: Int(numbersOut[servedBodyCount]))
+                        }
+                    }
+                }
+            }
+        }
+        var headers = [
+            "Content-Type": type,
+            "Content-Length": String(numbers[servedLength]),
+            "Content-Security-Policy": policy,
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-store",
+            "Referrer-Policy": "no-referrer",
+        ]
+        if numbers[servedStatus] == 405 {
+            headers["Allow"] = "GET, HEAD"
+        }
+        guard let response = HTTPURLResponse(url: url, statusCode: Int(numbers[servedStatus]), httpVersion: "HTTP/1.1", headerFields: headers) else {
+            task.didFailWithError(URLError(.cannotParseResponse))
+            return
+        }
+        task.didReceive(response)
+        if !body.isEmpty {
+            task.didReceive(body)
+        }
+        task.didFinish()
+    }
+
+    // MARK: where the page may go
+
+    func webView(_ view: WKWebView, decidePolicyFor action: WKNavigationAction, decisionHandler: @escaping @MainActor (WKNavigationActionPolicy) -> Void) {
+        guard let frame = action.targetFrame, !action.shouldPerformDownload, let url = action.request.url else {
+            decisionHandler(.cancel)
+            return
+        }
+        decisionHandler(allowed(frame.isMainFrame ? askFrame : askSubframe, url.absoluteString) ? .allow : .cancel)
+    }
+
+    func webView(_ view: WKWebView, decidePolicyFor response: WKNavigationResponse, decisionHandler: @escaping @MainActor (WKNavigationResponsePolicy) -> Void) {
+        decisionHandler(response.canShowMIMEType ? .allow : .cancel)
+    }
+
+    func webView(_ view: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+        ready = false
+    }
+
+    func webView(_ view: WKWebView, didFinish navigation: WKNavigation!) {
+        guard let url = view.url, allowed(askOurs, url.absoluteString) else {
+            // A page of another origin receives nothing the program posted.
+            ready = false
+            held = []
+            return
+        }
+        ready = true
+        let waiting = held
+        held = []
+        for each in waiting {
+            run(asPage: each.asPage, each.text)
+        }
+    }
+
+    func webViewWebContentProcessDidTerminate(_ view: WKWebView) {
+        ready = false
+        view.reload()
+    }
+
+    // MARK: what the page may not do
+
+    func webView(_ view: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+        return nil
+    }
+
+    func webView(_ view: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping @MainActor (WKPermissionDecision) -> Void) {
+        decisionHandler(.deny)
+    }
+
+    func webView(_ view: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping @MainActor ([URL]?) -> Void) {
+        completionHandler(nil)
+    }
+}
+
+// The text of `count` bytes at `bytes`, read as UTF-8.
+private func copied(_ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> String {
+    guard let bytes = bytes, count > 0 else {
+        return ""
+    }
+    return String(decoding: UnsafeBufferPointer(start: bytes, count: Int(count)), as: UTF8.self)
+}
+
 // The texts of `count` bytes at `bytes`, each followed by one zero byte.
 private func texts(_ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> [String] {
     guard let bytes = bytes, count > 0 else {
@@ -1069,10 +1448,11 @@ public func hero_ui_appkit_here() -> Int64 {
 }
 
 @c
-public func hero_ui_appkit_open(_ push: HeroUiPush?) -> Int64 {
-    guard let push = push else {
+public func hero_ui_appkit_open(_ push: HeroUiPush?, _ serve: HeroUiServe?, _ ask: HeroUiAsk?, _ gone: HeroUiGone?, _ bridge: UnsafePointer<UInt8>?, _ bridgeCount: Int64) -> Int64 {
+    guard let push = push, let serve = serve, let ask = ask, let gone = gone else {
         return answerInvalid
     }
+    let script = text(bridge, bridgeCount)
     return MainActor.assumeIsolated { () -> Int64 in
         let app = NSApplication.shared
         _ = app.setActivationPolicy(.regular)
@@ -1080,7 +1460,7 @@ public func hero_ui_appkit_open(_ push: HeroUiPush?) -> Int64 {
             app.finishLaunching()
             Backend.launched = true
         }
-        let made = Backend(push: push)
+        let made = Backend(push: push, serve: serve, ask: ask, gone: gone, bridge: script)
         Backend.shared = made
         app.mainMenu = made.appMenuBar(menus: [])
         return answerOk
@@ -1352,4 +1732,20 @@ public func hero_ui_appkit_dialog_paths(_ buffer: UnsafeMutablePointer<UInt8>?, 
         }
     }
     return Int64(kept.count)
+}
+
+@c
+public func hero_ui_appkit_web_load(_ id: Int64, _ url: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let target = text(url, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.webLoad(id, target) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_web_post(_ id: Int64, _ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let posted = text(bytes, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.webPost(id, posted) ?? answerNotFound
+    }
 }

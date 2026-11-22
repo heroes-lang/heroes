@@ -1,0 +1,67 @@
+# The cards searched by their titles and notes: an index in memory, BM25 of
+# `search`, each card under its number, rebuilt from the database after every
+# change, so it never answers a card that is gone or misses one that is
+# there. A board holds at most `model.CARDS_MOST` cards, so the rebuild reads
+# a few hundred rows at most in the boards a person keeps.
+
+use <rebel>/search
+
+use store/boards
+use store/cards
+use store/model
+use store/store
+
+# The most cards a search answers.
+constant HITS_MOST: i64
+    20
+
+# One card a search found.
+record Found
+    # The card.
+    card: model.Card
+    # The title of its column.
+    column: str
+    # Its score: larger is better.
+    score: f64
+
+# The index made again from every card of the store.
+#
+# - `s`: the store; its index is replaced.
+function rebuild(@s: store.Store) -> ()?
+    index @= search.new_index(options())?
+
+    for c in cards.every(@s)?
+        search.insert(@index, id: c.number, text: c.title + "\n" + c.body)?
+
+    s.index @ index
+    return ok()
+
+# The index's settings: BM25's usual, with English's stop words left out.
+function options() -> search.Options
+    o @= search.default_options()
+    o.stop_words @ search.english_stop_words()
+    return o
+
+# The cards of board `board` that match `query`, the best first, at most
+# `HITS_MOST`. Fails `invalid` where the query is not one `search.search`
+# reads.
+#
+# - `s`: the store.
+# - `board`: the board searched.
+# - `query`: words, `+word`, `-word`, `"a phrase"` and `word*`.
+function matching(@s: store.Store, board: str, query: str) -> [Found]?
+    limit = search.size(s.index)
+    index = s.index
+    hits = search.search(index, query: query, limit: limit)?
+    out: [Found] @= []
+
+    for hit in hits
+        if out.len() == HITS_MOST
+            break
+        c = cards.card_numbered(@s, number: hit.id)?
+        col = boards.column_named(@s, id: c.column)?
+
+        if col.board == board
+            out @ out.push(Found(card: c, column: col.title, score: hit.score))
+
+    return ok(out)

@@ -1,0 +1,182 @@
+# The boards and their columns: made, renamed, put in order, deleted, and
+# read back in order. A board is made with the three columns a kanban board
+# starts with; a column deleted takes its cards with it, by the foreign key.
+# Every change here runs inside the transaction `store/changes` opened, so
+# these functions never begin or commit one themselves.
+
+use <rebel>/sql/sqlite
+
+use store/model
+use store/rows
+use store/store
+use store/titles
+
+## Codes
+
+# The code of a board or a column that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+# The columns a new board starts with, left to right.
+constant FIRST_COLUMNS: [str]
+    ["To do", "Doing", "Done"]
+
+## Boards
+
+# Every board, in its place.
+#
+# - `s`: the store.
+function boards(@s: store.Store) -> [model.Board]?
+    found = sqlite.query(@s.db, statement: f"SELECT {rows.BOARD_COLUMNS} FROM boards ORDER BY position, id", params: [])?
+    out: [model.Board] @= []
+
+    for row in found.rows
+        out @ out.push(rows.board_of(row)?)
+
+    return ok(out)
+
+# The board named `id`. Fails `not_found` where none is.
+#
+# - `s`: the store.
+# - `id`: the board's name.
+function board_named(@s: store.Store, id: str) -> model.Board?
+    match sqlite.query_one(@s.db, statement: f"SELECT {rows.BOARD_COLUMNS} FROM boards WHERE id = ?1", params: [.text(v: id)])
+        .ok row => return rows.board_of(row)
+        .err e =>
+            if e.code == "not_found"
+                return fail(code: NOT_FOUND, msg: f"no board is named {id}")
+            return fail(code: e.code, msg: e.msg)
+
+# A new board titled `title`, after every other, with `FIRST_COLUMNS`.
+# Fails `invalid` for a title `titles.checked` refuses.
+#
+# - `s`: the store; its clock and its names move on.
+# - `title`: the board's title.
+function create(@s: store.Store, title: str) -> model.Board?
+    kept = titles.checked(title: title, what: "the board's title")?
+    now = store.stamp(@s)?
+    made = model.Board(
+        id: store.name(@s)?,
+        title: kept,
+        position: rows.number(@s.db, statement: "SELECT COALESCE(MAX(position) + 1, 0) FROM boards", params: [])?,
+        created: now,
+        updated: now
+    )
+    insert_board(@s, b: made)?
+
+    for t in FIRST_COLUMNS
+        _ = add_column(@s, board: made.id, title: t)?
+
+    return ok(made)
+
+# Writes the board `b` as it stands, its name new.
+#
+# - `s`: the store.
+# - `b`: the board.
+function insert_board(@s: store.Store, b: model.Board) -> ()?
+    _ = sqlite.exec(@s.db, statement: "INSERT INTO boards (id, title, position, created, updated) VALUES (?1, ?2, ?3, ?4, ?5)", params: [.text(v: b.id), .text(v: b.title), .integer(v: b.position), .text(v: b.created), .text(v: b.updated)])?
+    return ok()
+
+# Gives board `id` the title `title`. Fails `not_found`, `invalid`.
+#
+# - `s`: the store.
+# - `id`: the board's name.
+# - `title`: its new title.
+function rename(@s: store.Store, id: str, title: str) -> ()?
+    _ = board_named(@s, id: id)?
+    kept = titles.checked(title: title, what: "the board's title")?
+    _ = sqlite.exec(@s.db, statement: "UPDATE boards SET title = ?2 WHERE id = ?1", params: [.text(v: id), .text(v: kept)])?
+    return touch(@s, board: id)
+
+# Deletes board `id`, its columns and their cards. Fails `not_found`.
+#
+# - `s`: the store.
+# - `id`: the board's name.
+function delete(@s: store.Store, id: str) -> ()?
+    _ = board_named(@s, id: id)?
+    _ = sqlite.exec(@s.db, statement: "DELETE FROM boards WHERE id = ?1", params: [.text(v: id)])?
+    return ok()
+
+# Writes now as the moment board `board` last changed.
+#
+# - `s`: the store; its clock moves on.
+# - `board`: the board's name.
+function touch(@s: store.Store, board: str) -> ()?
+    _ = sqlite.exec(@s.db, statement: "UPDATE boards SET updated = ?2 WHERE id = ?1", params: [.text(v: board), .text(v: store.stamp(@s)?)])?
+    return ok()
+
+## Columns
+
+# The columns of board `board`, left to right.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+function columns(@s: store.Store, board: str) -> [model.Column]?
+    found = sqlite.query(@s.db, statement: f"SELECT {rows.COLUMN_COLUMNS} FROM columns WHERE board = ?1 ORDER BY position, id", params: [.text(v: board)])?
+    out: [model.Column] @= []
+
+    for row in found.rows
+        out @ out.push(rows.column_of(row)?)
+
+    return ok(out)
+
+# The column named `id`. Fails `not_found` where none is.
+#
+# - `s`: the store.
+# - `id`: the column's name.
+function column_named(@s: store.Store, id: str) -> model.Column?
+    match sqlite.query_one(@s.db, statement: f"SELECT {rows.COLUMN_COLUMNS} FROM columns WHERE id = ?1", params: [.text(v: id)])
+        .ok row => return rows.column_of(row)
+        .err e =>
+            if e.code == "not_found"
+                return fail(code: NOT_FOUND, msg: f"no column is named {id}")
+            return fail(code: e.code, msg: e.msg)
+
+# A new column titled `title` at the right of board `board`. Fails
+# `not_found` for no such board, `invalid` for a refused title or a board
+# holding `model.COLUMNS_MOST` columns already.
+#
+# - `s`: the store; its names move on.
+# - `board`: the board's name.
+# - `title`: the column's title.
+function add_column(@s: store.Store, board: str, title: str) -> model.Column?
+    _ = board_named(@s, id: board)?
+    kept = titles.checked(title: title, what: "the column's title")?
+    held = rows.number(@s.db, statement: "SELECT COUNT(*) FROM columns WHERE board = ?1", params: [.text(v: board)])?
+
+    if held >= model.COLUMNS_MOST
+        return fail(code: "invalid", msg: f"the board holds {held} columns, as many as a board takes")
+    made = model.Column(id: store.name(@s)?, board: board, title: kept, position: held)
+    insert_column(@s, c: made)?
+    touch(@s, board: board)?
+    return ok(made)
+
+# Writes the column `c` as it stands, its name new.
+#
+# - `s`: the store.
+# - `c`: the column.
+function insert_column(@s: store.Store, c: model.Column) -> ()?
+    _ = sqlite.exec(@s.db, statement: "INSERT INTO columns (id, board, title, position) VALUES (?1, ?2, ?3, ?4)", params: [.text(v: c.id), .text(v: c.board), .text(v: c.title), .integer(v: c.position)])?
+    return ok()
+
+# Gives column `id` the title `title`. Fails `not_found`, `invalid`.
+#
+# - `s`: the store.
+# - `id`: the column's name.
+# - `title`: its new title.
+function rename_column(@s: store.Store, id: str, title: str) -> ()?
+    c = column_named(@s, id: id)?
+    kept = titles.checked(title: title, what: "the column's title")?
+    _ = sqlite.exec(@s.db, statement: "UPDATE columns SET title = ?2 WHERE id = ?1", params: [.text(v: id), .text(v: kept)])?
+    return touch(@s, board: c.board)
+
+# Deletes column `id` and its cards, the columns at its right moving one
+# place left. Fails `not_found`.
+#
+# - `s`: the store.
+# - `id`: the column's name.
+function delete_column(@s: store.Store, id: str) -> ()?
+    c = column_named(@s, id: id)?
+    _ = sqlite.exec(@s.db, statement: "DELETE FROM columns WHERE id = ?1", params: [.text(v: id)])?
+    _ = sqlite.exec(@s.db, statement: "UPDATE columns SET position = position - 1 WHERE board = ?1 AND position > ?2", params: [.text(v: c.board), .integer(v: c.position)])?
+    return touch(@s, board: c.board)

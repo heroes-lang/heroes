@@ -1,0 +1,107 @@
+# The ledger of `ui/webview`: what a program whose interface is a web page in
+# the system's own web view can do, one block per capability, and what Rebel
+# answers. The lists are this machine's, 2026-11-22. Neither Go's standard
+# library nor Python's holds a web view, and this machine holds no module of
+# either that does (`go doc` finds no `github.com/webview/webview_go`, and
+# `python3 -I -c "import webview"` answers `ModuleNotFoundError`), so their
+# columns are `-`. Rust's is Tauri 2.12.5's, which this machine holds under
+# `~/.cargo/registry`, its `Webview` and `WebviewBuilder` read from its
+# `src/webview/mod.rs`, its scheme, its commands and its events named where
+# they stand; Tauri is the shape this package takes.
+
+capability webview/make  the system's own web view, made in a window of a `ui` app
+  heroes  ui/webview.webview, ui.Kind
+  go      -
+  rust    WebviewBuilder::new, Webview::builder, Webview::window, Webview::window_ref, Webview::label, Webview::with_webview
+  python  -
+  note    WebKit on macOS, WebView2 on Windows, WebKitGTK 6.0 on Linux; where the system has none the maker fails `unsupported` and names what is missing, never a browser the program carries
+
+capability webview/place  where the web view stands and how big it is
+  heroes  ui.set_fit, ui.rect_of, ui.set_visible, ui.destroy
+  go      -
+  rust    Webview::bounds, Webview::set_bounds, Webview::position, Webview::set_position, Webview::size, Webview::set_size, Webview::set_auto_resize, WebviewBuilder::auto_resize, Webview::show, Webview::hide, Webview::close, Webview::reparent
+  python  -
+  note    the web view is a widget of `ui`, laid out by its rows, columns and grids like any other
+
+capability webview/assets  the page and its files served from the program, never from a port
+  heroes  ui/webview.put_asset, ui/webview.remove_asset, ui/webview.assets_of, ui/webview.asset, ui/webview.Asset, ui/webview.ORIGIN
+  go      -
+  rust    tauri::Builder::register_uri_scheme_protocol, tauri::Builder::register_asynchronous_uri_scheme_protocol, WebviewBuilder::use_https_scheme
+  python  -
+  note    every file is an asset of the web view's own table at `app://localhost`, served through the system's hook for a scheme; no socket and no loopback server stand anywhere. Tauri answers each request by a closure of the program, which the language has no form for, so the program puts its files first and the layer answers from them
+
+capability webview/content-types  the type each file is served with
+  heroes  ui/webview.content_type_of
+  go      -
+  rust    -
+  python  -
+  note    Go 1.27.4's `mime.TypeByExtension` on this machine for every extension it names, with `charset=utf-8` on every text, Python 3.15.2's `mimetypes` for `md`; and `nosniff` on every response, so a file is what its type says
+
+capability webview/requests  what a request of the page is answered
+  heroes  ui/webview.response_of, ui/webview.Response
+  go      -
+  rust    WebviewBuilder::on_web_resource_request
+  python  -
+  note    200 for GET and HEAD of a path the table holds, a folder's `index.html`, 404 otherwise, 405 for another method; `response_of` answers on the headless side what the native side serves
+
+capability webview/policy  the content security policy every response carries
+  heroes  ui/webview.set_policy, ui/webview.policy_of, ui/webview.DEFAULT_POLICY
+  go      -
+  rust    -
+  python  -
+  note    Tauri writes its policy into the HTML it serves; here it is a header of every response, so no page can drop it, and the layer's own refuses a script written inside the HTML
+
+capability webview/navigation  where the page may go
+  heroes  ui/webview.navigate, ui/webview.page_of, ui/webview.allow_origin, ui/webview.allows, ui/webview.load_html
+  go      -
+  rust    Webview::navigate, Webview::url, Webview::reload, WebviewBuilder::on_navigation, WebviewBuilder::on_page_load, WebviewBuilder::limit_navigations_to_app_bound_domains
+  python  -
+  note    the app's own origin, the empty frames and the origins the program allowed; every other navigation is cancelled before it starts, and a page of an allowed origin is never heard by the bridge
+
+capability webview/messages  texts from the page to the program and from the program to the page
+  heroes  ui/webview.post, ui.Event, ui.Input
+  go      -
+  rust    tauri::Emitter::emit, tauri::Listener::listen, tauri::ipc::Channel, Webview::on_message
+  python  -
+  note    the page's `heroes.send` arrives as `ui.Event.message`, the program's `post` reaches the function the page gave `heroes.receive`; UTF-8, at most 16 MiB, no zero byte, the page's main frame of the app's own origin alone
+
+capability webview/commands  a call of the page answered by the program
+  heroes  ui/webview.parse_call, ui/webview.format_answer, ui/webview.format_refusal, ui/webview.format_event, ui/webview.Call
+  go      -
+  rust    tauri::Builder::invoke_handler, tauri::generate_handler, tauri::command, Webview::resolve_command_scope
+  python  -
+  note    `heroes.invoke(name, args)` answers a promise over a JSON framing of the two directions of texts; the program matches a call's name itself, where Tauri dispatches it to a function a macro registered
+
+capability webview/eval  a script the program writes, run in the page
+  heroes  refused: a script built from a program's text is an injection a posted text cannot be; the page gives the bridge a function and the program posts it a value
+  go      -
+  rust    Webview::eval, Webview::eval_with_callback, WebviewBuilder::initialization_script, WebviewBuilder::initialization_script_for_all_frames
+  python  -
+
+capability webview/storage  cookies and storage kept by the web view
+  heroes  refused: the page's cookies and storage live in memory and end with the web view, so no page keeps state the program does not see; the program keeps its own
+  go      -
+  rust    Webview::cookies, Webview::cookies_for_url, Webview::set_cookie, Webview::delete_cookie, Webview::clear_all_browsing_data, WebviewBuilder::data_directory, WebviewBuilder::data_store_identifier, WebviewBuilder::incognito
+  python  -
+
+capability webview/permissions  what the page may ask of the machine
+  heroes  refused: a new window, a download, the camera, the microphone, the location and a file chooser are refused to every page, so the page reaches nothing of the person's but what the program hands it
+  go      -
+  rust    WebviewBuilder::on_permission_request, WebviewBuilder::on_new_window, WebviewBuilder::on_download, WebviewBuilder::enable_clipboard_access, WebviewBuilder::disable_drag_drop_handler
+  python  -
+
+capability webview/devtools  the engine's developer tools
+  heroes  pending
+  go      -
+  rust    Webview::open_devtools, Webview::close_devtools, Webview::is_devtools_open, WebviewBuilder::devtools
+  python  -
+  note    off on every system until a program can ask for them in a debug build alone
+
+capability webview/zoom  the page's zoom
+  heroes  pending
+  go      -
+  rust    Webview::set_zoom, WebviewBuilder::zoom_hotkeys_enabled
+  python  -
+
+dropped
+  rust    WebviewBuilder::from_config, WebviewBuilder::with_environment, WebviewBuilder::with_webview_configuration, WebviewBuilder::with_related_view, WebviewBuilder::with_input_accessory_view_builder, WebviewBuilder::additional_browser_args, WebviewBuilder::browser_extensions_enabled, WebviewBuilder::extensions_path, WebviewBuilder::proxy_url, WebviewBuilder::user_agent, WebviewBuilder::scroll_bar_style, WebviewBuilder::general_autofill_enabled, WebviewBuilder::allow_link_preview, WebviewBuilder::accept_first_mouse, WebviewBuilder::focused, WebviewBuilder::disable_javascript, WebviewBuilder::transparent, WebviewBuilder::background_color, WebviewBuilder::background_throttling, WebviewBuilder::on_document_title_changed, Webview::set_background_color, Webview::set_focus, Webview::cursor_position, Webview::print, Webview::convert_file_src, Webview::run_on_main_thread, Webview::on_webview_event (the engine's own handles and settings, which a widget of a `ui` app never exposes; a page whose scripts are off, a browser extension, a proxy and a file URL each undo what the app's own origin keeps; the background, the focus, the cursor and printing are the window's, `ui`'s; a closure run on the main thread is what `ui.wait` makes unneeded)
