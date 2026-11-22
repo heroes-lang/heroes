@@ -2683,8 +2683,10 @@ int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         }
         style = GetWindowLongPtrW(widget->hwnd, GWL_STYLE);
         style = on == 1 ? (style | WS_THICKFRAME | WS_MAXIMIZEBOX) : (style & ~(LONG_PTR)(WS_THICKFRAME | WS_MAXIMIZEBOX));
-        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, style);
+        /* Muted from the style on, which Windows may answer by a resize at
+         * once (`hero_ui_win_set_framed`). */
         hero_ui_mute(1);
+        (void)SetWindowLongPtrW(widget->hwnd, GWL_STYLE, style);
         (void)SetWindowPos(widget->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
         hero_ui_mute(-1);
         hero_ui_win_size_content(widget);
@@ -4401,8 +4403,12 @@ static int64_t hero_ui_win_set_framed(hero_ui_native *window, bool on) {
         style = (style & ~(LONG_PTR)(WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_THICKFRAME)) | WS_POPUP;
     }
     window->unframed = !on;
-    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
+    /* The style changed is the program's own change, and Windows may resize
+     * the window for it at once: measured on Windows Server 2025, a window
+     * that had left full screen took a `WM_SIZE` from `SetWindowLongPtrW`
+     * itself, which unmuted was told as the person's resize. */
     hero_ui_mute(1);
+    (void)SetWindowLongPtrW(window->hwnd, GWL_STYLE, style);
     (void)SetWindowPos(window->hwnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     hero_ui_mute(-1);
     hero_ui_win_size_content(window);
