@@ -1482,7 +1482,14 @@ static int64_t hero_ui_win_fill_bar(hero_ui_native *window) {
         hero_layer_free(text);
     }
     if ((shown > 0) != had) {
+        /* Taking the bar on or off sends the window a `WM_SIZE` of the
+         * content the bar's height shorter or taller: the program's own
+         * change, muted, and the content given its size again (measured on
+         * Windows Server 2025, 2026-11-22: unmuted, a content set to 420 by
+         * 300 was told resized to 420 by 280 as a menu was made). */
+        hero_ui_muted += 1;
         (void)SetMenu(window->hwnd, shown > 0 ? window->menu : NULL);
+        hero_ui_muted -= 1;
         hero_ui_win_size_content(window);
     } else if (had) {
         (void)DrawMenuBar(window->hwnd);
