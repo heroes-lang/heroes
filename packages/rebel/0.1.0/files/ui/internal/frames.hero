@@ -1,0 +1,430 @@
+# Boxes the system draws, as wxWidgets' `wxNotebook`, `wxScrolledWindow` and
+# `wxSplitterWindow`: pages chosen by tabs (`ui.tabs`, `ui.page`), a box
+# whose content scrolls (`ui.scrolled`), and two panes whose divider the
+# person drags (`ui.split`, `ui.pane`). A page, a scrolled box and a pane
+# are frames: each lays its widgets out as a column does, in its own
+# content, from that content's top-left corner, and on the native side each
+# widget stands in that content, which the system clips, scrolls and shows.
+#
+# **Their room, the same on every side.** Tabs need the most any page
+# needs, with the room their tabs and border take around it (`insets`: the
+# system's own on the native side, `sizes.TAB_SIDE` and `sizes.TAB_TOP` on
+# the headless side); every page is laid out in the same rectangle, the
+# chosen one shown and the others out of the person's reach. A scrolled box
+# needs its content's width and the room its scroll bar takes, and its
+# content's height up to `SCROLL_HEIGHT`; its content is laid out as wide as
+# its inside and as high as it needs, or its inside where that is more, and
+# scrolls up and down where it is higher. A split needs its panes' needs
+# along its line with the divider between them, and the most of them
+# across; its divider stands where the program or the person put it, or in
+# the middle until one did, and never leaves a pane less than it needs.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/layout
+use ui/internal/makers
+use ui/internal/model
+use ui/internal/sizes
+
+# The most a scrolled box needs high, in points, its content scrolling past
+# it; `ui.set_fit`'s least height asks for more.
+constant SCROLL_HEIGHT: i64
+    100
+
+# New tabs in `into` (`ui.tabs`).
+function tabs(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_TABS)
+
+# A new scrolled box in `into` (`ui.scrolled`).
+function scrolled(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    return drawn_box(@app, into: into, kind: hero_ui.HERO_UI_SCROLL)
+
+# A new split in `into` (`ui.split`), its panes side by side where
+# `side_by_side`, one over the other where not.
+function split(@app: ui.App, into: ui.Widget, side_by_side: bool) -> ui.Widget?
+    kind = if side_by_side
+        hero_ui.HERO_UI_SPLIT_ROW
+    else
+        hero_ui.HERO_UI_SPLIT_COLUMN
+
+    return drawn_box(@app, into: into, kind: kind)
+
+# A new box the system draws of `kind`, tabs, a scrolled box or a split, in
+# box `into`, and the room its own drawing takes read from the system.
+function drawn_box(@app: ui.App, into: ui.Widget, kind: i64) -> ui.Widget?
+    parent = makers.boxed(app, into: into)?
+    n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
+    n.insets @ sizes.insets_of(kind)
+    made = makers.added(@app, n: n)?
+
+    if app.native && (kind == hero_ui.HERO_UI_TABS || kind == hero_ui.HERO_UI_SCROLL)
+        left @= 0
+        top @= 0
+        right @= 0
+        bottom @= 0
+
+        if hero_ui.insets(app.handle, id: made.id, left: @left, top: @top, right: @right, bottom: @bottom) < 0
+            refused: ui.Widget? = failure.last(
+                f"reading the room {model.kind_name(kind)} {made.id} draws around its content"
+            )
+            _ = makers.destroy(@app, widget: made).is_err()
+            return refused
+        laid @= app.table.nodes[made.id].must()
+        laid.insets @ [left, top, right, bottom]
+        model.put(@app.table, n: laid)
+    return ok(made)
+
+# A new page of tabs `into` whose tab reads `title` (`ui.page`): the first
+# page made is the one shown.
+function page(@app: ui.App, into: ui.Widget, title: str) -> ui.Widget?
+    holder = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_TABS], what: "tabs")?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_PAGE,
+        parent: holder.id,
+        window: holder.window
+    )
+    n.text @ title
+    n.padding @ model.WINDOW_PADDING
+    made = makers.added(@app, n: n)?
+    t @= app.table.nodes[holder.id].must()
+
+    if t.chosen.len() == 0
+        t.chosen @ [0]
+        model.put(@app.table, n: t)
+    return ok(made)
+
+# A new pane of split `into` (`ui.pane`), the first its left or top one.
+# Fails `invalid` where the split holds two already.
+function pane(@app: ui.App, into: ui.Widget) -> ui.Widget?
+    holder = check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN], what: "a split")?
+
+    if holder.children.len() >= 2
+        return fail(code: failure.INVALID, msg: f"split {holder.id} holds two panes already, the most a split holds")
+    n = model.blank(id: model.take_id(@app.table), kind: hero_ui.HERO_UI_PANE, parent: holder.id, window: holder.window)
+    return makers.added(@app, n: n)
+
+# Fails `invalid` where `indices` is not one page of tabs `n`.
+function page_ok(n: model.Node, indices: [i64]) -> ()?
+    if indices.len() != 1 || indices[0] < 0 || indices[0] >= n.children.len()
+        return fail(
+            code: failure.INVALID,
+            msg: f"tabs {n.id} show one page of their {n.children.len()}, and {indices.len()} indices were given or one is past them"
+        )
+    return ok()
+
+# Fails `invalid` where `value` is no place for a divider.
+function divider_ok(value: i64) -> ()?
+    if value < 0 || value > ui.MOST_SIZE
+        return fail(code: failure.INVALID, msg: f"a divider's place of {value}; it takes 0 to {ui.MOST_SIZE}")
+    return ok()
+
+# Whether page `id` is the one its tabs show; true for any other node.
+function shown_page(m: model.Model, id: i64) -> bool
+    n = m.nodes[id].must()
+
+    if n.kind != hero_ui.HERO_UI_PAGE
+        return true
+    holder = m.nodes[n.parent].must()
+
+    for i in range(from: 0, to: holder.children.len())
+        if holder.children[i] == id
+            return holder.chosen == [i]
+
+    return false
+
+# The least room tabs, a split or a scrolled box `n` needs inside its
+# margin, for its shown children's needs `needs`, in order, and `column`,
+# what they need laid out as a column; `column` for every other box.
+function need(n: model.Node, needs: [[i64]], column: [i64]) -> [i64]
+    around_w = n.insets[0] + n.insets[2]
+    around_h = n.insets[1] + n.insets[3]
+
+    if n.kind == hero_ui.HERO_UI_TABS
+        return [layout.most_of(needs, axis: 0) + around_w, layout.most_of(needs, axis: 1) + around_h]
+
+    if n.kind == hero_ui.HERO_UI_SCROLL
+        return [column[0] + around_w, layout.least(a: column[1], b: SCROLL_HEIGHT) + around_h]
+
+    if model.is_split(n.kind)
+        along = axis_of(n)
+
+        between = if needs.len() == 2
+            n.preferred_width
+        else
+            0
+
+        total = layout.sum_of(needs, axis: along) + between
+        across = layout.most_of(needs, axis: 1 - along)
+
+        if along == 0
+            return [total, across]
+        return [across, total]
+    return column
+
+# The axis split `n` lays its panes along: 0 side by side, 1 one over the
+# other.
+function axis_of(n: model.Node) -> i64
+    if n.kind == hero_ui.HERO_UI_SPLIT_ROW
+        return 0
+    return 1
+
+# Arranges the pages of tabs `id`, its shown children `kids`, each in the
+# rectangle inside its tabs and border.
+function arrange_tabs(@nodes: {i64: model.Node}, id: i64, kids: [i64])
+    n = nodes[id].must()
+    x = n.x + n.insets[0]
+    y = n.y + n.insets[1]
+    width = layout.most(a: n.w - n.insets[0] - n.insets[2], b: 0)
+    height = layout.most(a: n.h - n.insets[1] - n.insets[3], b: 0)
+
+    for page_id in kids
+        layout.arrange(@nodes, id: page_id, x: x, y: y, width: width, height: height)
+
+# Arranges the panes of split `id`, its shown children `kids`: the divider
+# where it was put, or in the middle, kept between the first pane's need
+# and the room less the second's and the divider; the place it stands at
+# and that range written into the split, its `value`, `least` and `most`.
+function arrange_split(@nodes: {i64: model.Node}, id: i64, kids: [i64])
+    n @= nodes[id].must()
+
+    if kids.len() == 1
+        layout.arrange(@nodes, id: kids[0], x: n.x, y: n.y, width: n.w, height: n.h)
+        return
+    along = axis_of(n)
+
+    room = if along == 0
+        n.w
+    else
+        n.h
+
+    divider = n.preferred_width
+    first = layout.need_on(nodes[kids[0]].must(), axis: along)
+    second = layout.need_on(nodes[kids[1]].must(), axis: along)
+    least = first
+    most = layout.most(a: room - divider - second, b: least)
+
+    wanted = if n.divided
+        n.value
+    else
+        (room - divider) / 2
+
+    at = layout.least(a: layout.most(a: wanted, b: least), b: most)
+    n.value @ at
+    n.least @ least
+    n.most @ most
+    nodes[id] @ n
+    rest = layout.most(a: room - at - divider, b: 0)
+
+    if along == 0
+        layout.arrange(@nodes, id: kids[0], x: n.x, y: n.y, width: at, height: n.h)
+        layout.arrange(@nodes, id: kids[1], x: n.x + at + divider, y: n.y, width: rest, height: n.h)
+    else
+        layout.arrange(@nodes, id: kids[0], x: n.x, y: n.y, width: n.w, height: at)
+        layout.arrange(@nodes, id: kids[1], x: n.x, y: n.y + at + divider, width: n.w, height: rest)
+
+# The size scrolled box `n`'s content is laid out at, `[width, height]`:
+# as wide as its inside, and as high as `column`, what its children need as
+# a column, or its inside where that is more. Its inside is the box less
+# the room its scroll bar takes.
+function scroll_content(n: model.Node, column: [i64]) -> [i64]
+    inside_w = layout.most(a: n.w - n.insets[0] - n.insets[2], b: 0)
+    inside_h = layout.most(a: n.h - n.insets[1] - n.insets[3], b: 0)
+    return [layout.most(a: inside_w, b: column[0]), layout.most(a: inside_h, b: column[1])]
+
+# What the person dragging split `id`'s divider to `value` does on the
+# headless side, as the system does it: the divider kept within the range
+# the layout last gave it, the panes laid out anew, and `.value_changed`
+# with the place it stands at where it moved.
+function dragged(@app: ui.App, id: i64, value: i64) -> [ui.Event]
+    n @= app.table.nodes[id].must()
+    none: [ui.Event] = []
+
+    if n.children.len() < 2
+        return none
+    at = layout.least(a: layout.most(a: value, b: n.least), b: n.most)
+
+    if at == n.value
+        return none
+    n.value @ at
+    n.divided @ true
+    model.put(@app.table, n: n)
+    model.marks_dirty(@app.table, window: n.window)
+    return [.value_changed(widget: check.widget_of(app, id: id), value: at)]
+
+## Tests
+
+test "tabs, page, split, pane: refused into a widget that holds none, a page into anything but tabs and a pane into anything but a split, a widget into tabs or a split, a third pane, a title of two lines; tabs shown by one page within their pages alone; a divider's place below 0 or past MOST_SIZE"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = ui.button(@app, into: w, text: "B").must()
+    assert fixture.code_of(ui.tabs(@app, into: b)) == ui.INVALID
+    assert fixture.code_of(ui.scrolled(@app, into: b)) == ui.INVALID
+    t = ui.tabs(@app, into: w).must()
+    assert ui.selection_of(app, widget: t).must() == []
+    assert fixture.code_of(ui.page(@app, into: w, title: "One")) == ui.INVALID
+    assert fixture.code_of(ui.page(@app, into: t, title: "One\nTwo")) == ui.INVALID
+    assert fixture.code_of(ui.button(@app, into: t, text: "B")) == ui.INVALID
+    _ = ui.page(@app, into: t, title: "One").must()
+    assert ui.selection_of(app, widget: t).must() == [0]
+    assert fixture.code_of(ui.set_selection(@app, widget: t, indices: [1])) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: t, indices: [])) == ui.INVALID
+    assert fixture.code_of(ui.set_selection(@app, widget: t, indices: [0, 0])) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .choose(widget: t, indices: [1]))) == ui.INVALID
+    s = ui.split(@app, into: w, side_by_side: false).must()
+    assert fixture.code_of(ui.pane(@app, into: t)) == ui.INVALID
+    assert fixture.code_of(ui.button(@app, into: s, text: "B")) == ui.INVALID
+    _ = ui.pane(@app, into: s).must()
+    _ = ui.pane(@app, into: s).must()
+    assert fixture.code_of(ui.pane(@app, into: s)) == ui.INVALID
+    assert fixture.code_of(ui.set_value(@app, widget: s, value: -1)) == ui.INVALID
+    assert fixture.code_of(ui.set_value(@app, widget: s, value: ui.MOST_SIZE + 1)) == ui.INVALID
+    assert fixture.code_of(ui.inject(@app, input: .slide(widget: s, value: -1))) == ui.INVALID
+    ui.close(@app).must()
+
+test "tabs and page: laid out with the room of their tabs around the largest page, every page in the same rectangle and its widgets from the page's top-left corner; the page shown chosen by the person and by the program; a widget of a page not shown out of the person's reach and of the Tab order (catalogue LY10)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Settings", width: 200, height: 100).must()
+    t = ui.tabs(@app, into: w).must()
+    general = ui.page(@app, into: t, title: "General").must()
+    ok_button = ui.button(@app, into: general, text: "OK").must()
+    more = ui.page(@app, into: t, title: "More").must()
+    name = ui.text_field(@app, into: more, text: "").must()
+    assert ui.rect_of(@app, widget: w).must() == ui.Rect(x: 0, y: 0, width: 224, height: 112)
+    assert ui.rect_of(@app, widget: t).must() == ui.Rect(x: 12, y: 12, width: 200, height: 88)
+    assert ui.rect_of(@app, widget: general).must() == ui.rect_of(@app, widget: more).must()
+    assert ui.rect_of(@app, widget: more).must() == ui.Rect(x: 20, y: 44, width: 184, height: 48)
+    assert ui.rect_of(@app, widget: name).must() == ui.Rect(x: 12, y: 12, width: 160, height: 24)
+    assert ui.render(@app).must()[1] == "  tabs #2 chosen [0] at 12,12 200x88"
+    ui.inject(@app, input: .type_text(widget: name, text: "unseen")).must()
+    ui.inject(@app, input: .choose(widget: t, indices: [1])).must()
+    ui.inject(@app, input: .click(widget: ok_button)).must()
+    ui.inject(@app, input: .type_text(widget: name, text: "Ada")).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: t, indices: [1])
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .text_changed(widget: name, text: "Ada")
+    ui.press_key(@app, widget: w, shortcut: ui.Shortcut(key: "Tab", primary: false, shift: false, alt: false)).must()
+    assert ui.focus_of(app, widget: w).must() == name
+    ui.set_selection(@app, widget: t, indices: [0]).must()
+    assert ui.selection_of(app, widget: t).must() == [0]
+    ui.inject(@app, input: .click(widget: ok_button)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: ok_button)
+    ui.destroy(@app, widget: more).must()
+    assert fixture.code_of(ui.set_selection(@app, widget: t, indices: [1])) == ui.INVALID
+    ui.close(@app).must()
+
+test "scrolled: needs its content's width and at most SCROLL_HEIGHT high, its content laid out as high as it needs from the content's top-left corner; a least height asked and the room filled giving it more, its content as wide as it (catalogue LY08)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Log", width: 200, height: 100).must()
+    log = ui.scrolled(@app, into: w).must()
+    lines: [ui.Widget] @= []
+
+    for i in range(from: 0, to: 30)
+        lines @ lines.push(ui.label(@app, into: log, text: f"line {i}").must())
+
+    assert ui.rect_of(@app, widget: log).must() == ui.Rect(x: 12, y: 12, width: 56, height: SCROLL_HEIGHT)
+    assert ui.rect_of(@app, widget: w).must().height == SCROLL_HEIGHT + 24
+    assert ui.rect_of(@app, widget: lines[29]).must() == ui.Rect(x: 0, y: 638, width: 56, height: 16)
+    assert ui.render(@app).must()[1] == "  scrolled #2 content 56x654 at 12,12 56x100"
+    ui.set_fit(
+        @app,
+        widget: log,
+        fit: ui.Fit(stretch: 0, fill: true, align: .start, min_width: 0, min_height: 150, margin: 0)
+    ).must()
+    assert ui.rect_of(@app, widget: log).must() == ui.Rect(x: 12, y: 12, width: 176, height: 150)
+    assert ui.render(@app).must()[1] == "  scrolled #2 content 176x654 at 12,12 176x150"
+    ui.close(@app).must()
+
+test "split and pane: needs its panes' needs and the divider; the divider in the middle, put by the program and dragged by the person within the panes' needs, told where it moved, kept within them on a resize; one pane over the other; one pane filling the split (catalogue LY09)"
+    app @= ui.open(.headless).must()
+    w = ui.window(@app, title: "Files", width: 600, height: 200).must()
+    s = ui.split(@app, into: w, side_by_side: true).must()
+    ui.set_fit(
+        @app,
+        widget: s,
+        fit: ui.Fit(stretch: 1, fill: true, align: .start, min_width: 0, min_height: 0, margin: 0)
+    ).must()
+    left = ui.pane(@app, into: s).must()
+    places = ui.list(@app, into: left, items: ["Home"], multiple: false).must()
+    right = ui.pane(@app, into: s).must()
+    _ = ui.text_area(@app, into: right, text: "").must()
+    assert ui.rect_of(@app, widget: s).must() == ui.Rect(x: 12, y: 12, width: 576, height: 176)
+    assert ui.value_of(app, widget: s).must() == 287
+    assert ui.rect_of(@app, widget: left).must() == ui.Rect(x: 12, y: 12, width: 287, height: 176)
+    assert ui.rect_of(@app, widget: right).must() == ui.Rect(x: 300, y: 12, width: 288, height: 176)
+    assert ui.rect_of(@app, widget: places).must() == ui.Rect(x: 0, y: 0, width: 160, height: 96)
+    assert ui.render(@app).must()[1] == "  split_row #2 divider 287 in 160..335 at 12,12 576x176"
+    ui.set_value(@app, widget: s, value: 200).must()
+    assert ui.rect_of(@app, widget: right).must() == ui.Rect(x: 213, y: 12, width: 375, height: 176)
+    ui.inject(@app, input: .slide(widget: s, value: 500)).must()
+    ui.inject(@app, input: .slide(widget: s, value: 400)).must()
+    ui.inject(@app, input: .slide(widget: s, value: 170)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: s, value: 335)
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: s, value: 170)
+    ui.set_value(@app, widget: s, value: 330).must()
+    ui.inject(@app, input: .resize(window: w, width: 500, height: 200)).must()
+    _ = ui.wait(@app, within: time.nanoseconds(0)).must()
+    assert ui.value_of(app, widget: s).must() == 235
+    ui.set_value(@app, widget: s, value: 0).must()
+    _ = ui.rect_of(@app, widget: s).must()
+    assert ui.value_of(app, widget: s).must() == 160
+    stacked = ui.split(@app, into: w, side_by_side: false).must()
+    top = ui.pane(@app, into: stacked).must()
+    _ = ui.button(@app, into: top, text: "Up").must()
+    assert ui.rect_of(@app, widget: top).must() == ui.rect_of(@app, widget: stacked).must()
+    bottom = ui.pane(@app, into: stacked).must()
+    _ = ui.button(@app, into: bottom, text: "Down").must()
+    assert ui.rect_of(@app, widget: bottom).must().y == ui.rect_of(@app, widget: top).must().y + ui.value_of(app, widget: stacked).must() + sizes.DIVIDER
+    ui.close(@app).must()
+
+test "tabs, a scrolled box and a split: on the native side made with their widgets in their content, a tab chosen and the divider dragged through the system's own path and told, the divider kept within the panes' needs, read back as the system holds them (catalogue LY08, LY09, LY10)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Boxes", width: 520, height: 360).must()
+    t = ui.tabs(@app, into: w).must()
+    general = ui.page(@app, into: t, title: "General").must()
+    name = ui.text_field(@app, into: general, text: "Ada").must()
+    more = ui.page(@app, into: t, title: "More").must()
+    log = ui.scrolled(@app, into: more).must()
+
+    for i in range(from: 0, to: 20)
+        _ = ui.label(@app, into: log, text: f"line {i}").must()
+
+    s = ui.split(@app, into: w, side_by_side: true).must()
+    ui.set_fit(
+        @app,
+        widget: s,
+        fit: ui.Fit(stretch: 1, fill: true, align: .start, min_width: 0, min_height: 0, margin: 0)
+    ).must()
+    left = ui.pane(@app, into: s).must()
+    _ = ui.button(@app, into: left, text: "Left").must()
+    right = ui.pane(@app, into: s).must()
+    _ = ui.button(@app, into: right, text: "Right").must()
+    assert ui.rect_of(@app, widget: name).must().x == model.WINDOW_PADDING
+    assert ui.selection_of(app, widget: t).must() == [0]
+    ui.inject(@app, input: .choose(widget: t, indices: [1])).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .selection_changed(widget: t, indices: [1])
+    assert ui.selection_of(app, widget: t).must() == [1]
+    ui.set_selection(@app, widget: t, indices: [0]).must()
+    assert ui.selection_of(app, widget: t).must() == [0]
+    at = ui.value_of(app, widget: s).must()
+    laid = app.table.nodes[s.id].must()
+    assert at == laid.value && laid.least < laid.most
+    ui.inject(@app, input: .slide(widget: s, value: laid.least + 10)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: s, value: laid.least + 10)
+    assert ui.value_of(app, widget: s).must() == laid.least + 10
+    ui.inject(@app, input: .slide(widget: s, value: 0)).must()
+    assert ui.wait(@app, within: time.seconds(2).must()).must() == .value_changed(widget: s, value: laid.least)
+    ui.set_value(@app, widget: s, value: laid.most).must()
+    _ = ui.rect_of(@app, widget: s).must()
+    assert ui.value_of(app, widget: s).must() == laid.most
+    assert ui.rect_of(@app, widget: log).must().height == SCROLL_HEIGHT
+    ui.destroy(@app, widget: t).must()
+    ui.close(@app).must()

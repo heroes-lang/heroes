@@ -13,6 +13,7 @@ use ui/hero_ui
 use ui/internal/check
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/frames
 use ui/internal/loop
 use ui/internal/makers
 use ui/internal/menus
@@ -83,6 +84,21 @@ function of_code(code: i64) -> ui.Kind
 
     if code == hero_ui.HERO_UI_TIMER
         return .timer
+
+    if code == hero_ui.HERO_UI_TABS
+        return .tabs
+
+    if code == hero_ui.HERO_UI_PAGE
+        return .page
+
+    if code == hero_ui.HERO_UI_SCROLL
+        return .scrolled
+
+    if model.is_split(code)
+        return .split
+
+    if code == hero_ui.HERO_UI_PANE
+        return .pane
     return .webview
 
 # Where `widget` stands (`ui.rect_of`).
@@ -230,8 +246,12 @@ function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
 function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
     n @= valued(app, widget: widget, kind: kind)?
 
-    if kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
+    if kind == hero_ui.HERO_UI_SLIDER && n.kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
         return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
+
+    if model.is_split(n.kind)
+        frames.divider_ok(value)?
+        n.divided @ true
     n.value @ value
 
     if app.native
@@ -249,15 +269,15 @@ function value_of(app: ui.App, widget: ui.Widget, kind: i64) -> i64?
     return ok(n.value)
 
 # The node of `widget`: a checkbox where `kind` is `HERO_UI_CHECKBOX`, a
-# slider or a progress bar where it is `HERO_UI_SLIDER`.
+# slider, a progress bar or a split where it is `HERO_UI_SLIDER`.
 function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
     if kind == hero_ui.HERO_UI_CHECKBOX
         return check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS],
-        what: "a slider or a progress bar"
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS, hero_ui.HERO_UI_SPLIT_ROW, hero_ui.HERO_UI_SPLIT_COLUMN],
+        what: "a slider, a progress bar or a split"
     )
 
 # Sets a slider's or a progress bar's range (`ui.set_range`).
@@ -303,7 +323,11 @@ function set_items(@app: ui.App, widget: ui.Widget, items: [str]) -> ()?
 # Chooses items (`ui.set_selection`).
 function set_selection(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
     n @= chooser(app, widget: widget)?
-    check.indices_ok(n, indices: indices)?
+
+    if n.kind == hero_ui.HERO_UI_TABS
+        frames.page_ok(n, indices: indices)?
+    else
+        check.indices_ok(n, indices: indices)?
     n.chosen @ indices
 
     if app.native
@@ -318,13 +342,13 @@ function selection_of(app: ui.App, widget: ui.Widget) -> [i64]?
         return native.read_selection(app, id: n.id)
     return ok(n.chosen)
 
-# The node of `widget`, a list, a combo box or a radio group.
+# The node of `widget`, a list, a combo box, a radio group or tabs.
 function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
     return check.node_kind(
         app,
         widget: widget,
-        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP],
-        what: "a list, a combo box or a radio group"
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP, hero_ui.HERO_UI_TABS],
+        what: "a list, a combo box, a radio group or tabs"
     )
 
 # Shows an image in a picture (`ui.set_picture`).

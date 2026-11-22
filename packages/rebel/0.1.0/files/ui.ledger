@@ -365,10 +365,12 @@ capability ui/ask-value  a dialog asking one value, a text or a number
   python  simpledialog.askinteger, simpledialog.askfloat, simpledialog.askstring, simpledialog.Dialog
 
 capability ui/tabs  pages chosen by tabs
-  heroes  pending
+  heroes  ui.tabs, ui.page, ui.set_selection, ui.selection_of, ui.Event.selection_changed, ui.Input.choose, ui.Kind.tabs, ui.Kind.page
   go      ui.NewTab, Tab.Append, Tab.Delete, Tab.InsertAt, Tab.Margined, Tab.SetMargined, Tab.NumPages
   rust    -
   python  ttk.Notebook
+  wx      wxNotebook (AddPage, SetSelection, GetSelection, wxEVT_NOTEBOOK_PAGE_CHANGED)
+  note    catalogue LY10; macOS by `NSTabView`, its pages' content frames of their own; Windows pending (the tab control, `WC_TABCONTROL`, with a child window a page), Linux pending (`GtkNotebook`); a page taken out and put back in another place, and a tab's icon, are not offered
 
 capability ui/table  rows of cells in columns
   heroes  pending
@@ -383,16 +385,20 @@ capability ui/tree  a tree of items folded and unfolded
   python  ttk.Treeview
 
 capability ui/scrolled  a box whose content scrolls
-  heroes  pending
+  heroes  ui.scrolled, ui.Kind.scrolled
   go      ui.NewScrollingArea, Area.ScrollTo, Area.SetSize
   rust    -
   python  tkinter.Scrollbar, ttk.Scrollbar, tkinter.XView, tkinter.YView
+  wx      wxScrolledWindow (SetScrollRate, SetVirtualSize)
+  note    catalogue LY08; up and down alone, its content as wide as its inside; macOS by `NSScrollView` with a flipped document view; Windows pending (`WS_VSCROLL` and the arm moving a child window), Linux pending (`GtkScrolledWindow`); the program scrolling it to a widget (`wxScrolledWindow::Scroll`) is not offered
 
 capability ui/split  two panes whose border the person drags
-  heroes  pending
+  heroes  ui.split, ui.pane, ui.set_value, ui.value_of, ui.Event.value_changed, ui.Input.slide, ui.Kind.split, ui.Kind.pane
   go      -
   rust    -
   python  tkinter.PanedWindow, ttk.Panedwindow
+  wx      wxSplitterWindow (SplitVertically, SplitHorizontally, SetSashPosition, GetSashPosition, SetMinimumPaneSize, wxEVT_SPLITTER_SASH_POS_CHANGED)
+  note    catalogue LY09; two panes, the divider kept where neither gets less than it needs; macOS by `NSSplitView`, the person's drag told by its notification's divider index; Windows pending (no splitter control: the arm draws the divider and moves two child windows), Linux pending (`GtkPaned`); three panes or more, and a pane folded away, are not offered
 
 capability ui/drawing  an area the program draws into, with its keys and its mouse
   heroes  pending

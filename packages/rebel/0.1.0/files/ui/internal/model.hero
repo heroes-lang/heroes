@@ -99,6 +99,12 @@ record Node
     masked: bool
     # Whether a progress bar moves with no value.
     moving: bool
+    # The room tabs' or a scrolled box's own drawing takes around its
+    # content, `[left, top, right, bottom]` in points.
+    insets: [i64]
+    # Whether the program or the person placed a split's divider, which
+    # stands in the middle until one does.
+    divided: bool
     # A timer's period, in nanoseconds.
     every: i64
     # When a timer fires next, on the app's clock, in nanoseconds.
@@ -281,6 +287,8 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         check: hero_ui.HERO_UI_CHECK_NONE,
         masked: false,
         moving: false,
+        insets: [0, 0, 0, 0],
+        divided: false,
         every: 0,
         due: 0,
         preferred_width: 0,
@@ -422,12 +430,28 @@ function without(ids: [i64], id: i64) -> [i64]
 # Whether a node of `kind` holds widgets laid out in it: a window, a row, a
 # column or a grid.
 function holds_widgets(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_ROW || kind == hero_ui.HERO_UI_COLUMN || kind == hero_ui.HERO_UI_GRID
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_ROW || kind == hero_ui.HERO_UI_COLUMN || kind == hero_ui.HERO_UI_GRID || is_drawn_box(kind)
+
+# Whether a node of `kind` is a box the system draws: tabs, a page, a
+# scrolled box, a split, a pane.
+function is_drawn_box(kind: i64) -> bool
+    return kind >= hero_ui.HERO_UI_TABS && kind <= hero_ui.HERO_UI_PANE
+
+# Whether a node of `kind` is a frame: a window, a page, a scrolled box or a
+# pane, whose children stand in its own content, placed from its top-left
+# corner.
+function is_frame(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_PAGE || kind == hero_ui.HERO_UI_SCROLL || kind == hero_ui.HERO_UI_PANE
+
+# Whether a node of `kind` is a split, its panes side by side or one over
+# the other.
+function is_split(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_SPLIT_ROW || kind == hero_ui.HERO_UI_SPLIT_COLUMN
 
 # Whether a node of `kind` is a widget the native side makes, every kind but
 # the program's own boxes and timers.
 function is_native(kind: i64) -> bool
-    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW || is_drawn_box(kind)
 
 # Whether a node of `kind` is placed in its window's content by the layout:
 # every widget but a window, a menu, a menu's items and a timer.
@@ -440,7 +464,7 @@ function has_items(kind: i64) -> bool
 
 # Whether a node of `kind` shows a text the program sets.
 function has_text(kind: i64) -> bool
-    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_TEXT_AREA || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_MENU || kind == hero_ui.HERO_UI_MENU_ITEM
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_TEXT_AREA || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_MENU || kind == hero_ui.HERO_UI_MENU_ITEM || kind == hero_ui.HERO_UI_PAGE
 
 # Whether a node of `kind` runs between a lowest and a highest value.
 function has_range(kind: i64) -> bool
@@ -471,6 +495,12 @@ function kind_name(kind: i64) -> str
         "column"
         "grid"
         "timer"
+        "tabs"
+        "page"
+        "scrolled"
+        "split_row"
+        "split_column"
+        "pane"
     ]
 
     if kind < 0 || kind >= names.len()

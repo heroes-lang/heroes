@@ -342,7 +342,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widgets[id] = made
             return answerOk
         }
-        guard owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
+        if let answer = createBox(id, kind, owner, made) {
+            return answer
+        }
+        guard let content = contentOf(owner) else {
             return answerInvalid
         }
         if kind == kindWebView {
@@ -399,7 +402,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             field.tag = Int(widget.id)
             // A text field sends its action when the person presses Return
             // in it (`HERO_UI_EVENT_SUBMIT`), and not when its editing ends
-            // another way.
+            // another way: AppKit's own default sends it too when the field
+            // leaves the window while it is edited, its page hidden by a
+            // tab chosen, as measured on this Mac.
+            field.cell?.sendsActionOnEndEditing = false
             field.target = self
             field.action = #selector(submitted(_:))
             return field
@@ -496,6 +502,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             page.close()
             widget.page = nil
             gone(id)
+        }
+        if widget.kind == kindPage {
+            removePage(widget)
         }
         widget.view?.removeFromSuperview()
         if let item = widget.item {
@@ -808,6 +817,12 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         switch widget.kind {
         case kindWindow:
             widget.window?.title = text
+        case kindPage:
+            if let tabs = widgets[widget.parent]?.view as? NSTabView {
+                for item in tabs.tabViewItems where item.view === widget.view {
+                    item.label = text
+                }
+            }
         case kindLabel, kindTextField:
             (widget.view as? NSTextField)?.stringValue = text
         case kindButton, kindCheckbox:
@@ -869,6 +884,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return setDivider(widget, value)
+        }
         if widget.kind == kindMenuItem {
             guard widget.check != checkNone, value == 0 || value == 1, let item = widget.item else {
                 return answerInvalid
@@ -918,6 +936,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return setDividerRange(widget, least, most)
+        }
         if let slider = widget.view as? NSSlider {
             slider.minValue = Double(least)
             slider.maxValue = Double(most)
@@ -934,6 +955,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func setSelection(_ id: Int64, _ indices: [Int64]) -> Int64 {
         guard let widget = widgets[id] else {
             return answerNotFound
+        }
+        if widget.kind == kindTabs {
+            return setPage(widget, indices)
         }
         guard let table = widget.table else {
             return answerInvalid
@@ -1081,6 +1105,14 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     }
 
     func setSize(_ id: Int64, _ which: Int64, _ width: Int64, _ height: Int64) -> Int64 {
+        // A scrolled box's size is its content's.
+        if let widget = widgets[id], widget.kind == kindScroll {
+            guard which != sizeLeast, let document = (widget.view as? NSScrollView)?.documentView else {
+                return answerInvalid
+            }
+            document.setFrameSize(NSSize(width: CGFloat(width), height: CGFloat(height)))
+            return answerOk
+        }
         guard let widget = widgets[id], let window = widget.window else {
             return widgets[id] == nil ? answerNotFound : answerInvalid
         }
@@ -1107,6 +1139,10 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return answerNotFound
         }
+        // The system sizes a page and a pane itself.
+        if widget.kind == kindPage || widget.kind == kindPane {
+            return answerInvalid
+        }
         if index < 0 {
             guard let view = widget.view else {
                 return answerInvalid
@@ -1127,6 +1163,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func preferred(_ id: Int64) -> NSSize? {
         guard let widget = widgets[id] else {
             return nil
+        }
+        if let size = boxPreferred(widget) {
+            return size
         }
         switch widget.kind {
         case kindTextField:
@@ -1171,6 +1210,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
         guard let widget = widgets[id] else {
             return nil
         }
+        if let split = widget.view as? NSSplitView, widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            return dividerAt(split)
+        }
         if widget.kind == kindMenuItem && widget.check != checkNone {
             return widget.item?.state == .on ? 1 : 0
         }
@@ -1193,6 +1235,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func selection(_ id: Int64) -> [Int64]? {
         guard let widget = widgets[id] else {
             return nil
+        }
+        if widget.kind == kindTabs {
+            return pageShown(widget)
         }
         if let table = widget.table {
             return table.selectedRowIndexes.map { Int64($0) }
@@ -1221,6 +1266,9 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
     func inject(_ kind: Int64, _ id: Int64, _ value: Int64, _ second: Int64, _ text: String) -> Int64 {
         guard let widget = widgets[id] else {
             return answerNotFound
+        }
+        if let answer = injectBox(kind, widget, value) {
+            return answer
         }
         switch kind {
         case eventClick, eventToggle:
@@ -1799,10 +1847,10 @@ extension Backend {
         guard widget.kind == kindButton, let button = widget.view as? NSButton, key >= buttonKeyNone, key <= buttonKeyEscape else {
             return answerInvalid
         }
-        let window = widgets[widget.parent]?.window
+        let window = windowOf(widget)?.window
         let equivalent = key == buttonKeyEnter ? enterEquivalent : (key == buttonKeyEscape ? escapeEquivalent : "")
         if !equivalent.isEmpty {
-            for other in widgets.values where other.parent == widget.parent && other.id != id && other.kind == kindButton {
+            for other in widgets.values where other.kind == kindButton && other.id != id && windowOf(other)?.id == windowOf(widget)?.id {
                 if let held = other.view as? NSButton, held.keyEquivalent == equivalent {
                     held.keyEquivalent = ""
                 }
@@ -1852,7 +1900,7 @@ extension Backend {
             return id
         }
         let field = (responder as? NSTextView)?.delegate as? NSTextField
-        for other in widgets.values where other.parent == id {
+        for other in widgets.values where other.kind != kindWindow && windowOf(other)?.id == id {
             if other.view === responder || other.textView === responder || other.table === responder || (field != nil && other.view === field) {
                 return other.id
             }
@@ -1998,6 +2046,7 @@ extension Backend {
         made.isHidden = old.isHidden
         made.delegate = self
         made.tag = old.tag
+        made.cell?.sendsActionOnEndEditing = false
         made.target = self
         made.action = #selector(submitted(_:))
         parent.replaceSubview(old, with: made)
@@ -2451,4 +2500,295 @@ public func hero_ui_appkit_web_post(_ id: Int64, _ bytes: UnsafePointer<UInt8>?,
     return MainActor.assumeIsolated { () -> Int64 in
         return backend()?.webPost(id, posted) ?? answerNotFound
     }
+}
+
+// MARK: boxes the system draws: pages, a scrolled box, two panes
+
+// The kinds of `hero_ui.h`'s BOXES THE SYSTEM DRAWS.
+private let kindTabs: Int64 = 22
+private let kindPage: Int64 = 23
+private let kindScroll: Int64 = 24
+private let kindSplitRow: Int64 = 25
+private let kindSplitColumn: Int64 = 26
+private let kindPane: Int64 = 27
+
+// The key AppKit's notification of a divider dragged by the person carries,
+// and a resize of the split's own place does not.
+private let dividerDragged = "NSSplitViewDividerIndex"
+
+// A split view whose divider the person drags within the range the program
+// set, its panes' least sizes.
+private final class BoundedSplitView: NSSplitView {
+    var least: CGFloat = 0
+    var most: CGFloat = .greatestFiniteMagnitude
+}
+
+extension Backend: NSTabViewDelegate, NSSplitViewDelegate {
+    // The view a widget whose parent is `owner` stands in: a window's
+    // content, a page's view, a scrolled box's content, a pane's view; nil
+    // for any other parent.
+    func contentOf(_ owner: Native) -> NSView? {
+        switch owner.kind {
+        case kindWindow:
+            return owner.window?.contentView
+        case kindPage, kindPane:
+            return owner.view
+        case kindScroll:
+            return (owner.view as? NSScrollView)?.documentView
+        default:
+            return nil
+        }
+    }
+
+    // The window `widget` stands in, its parents walked up to it.
+    func windowOf(_ widget: Native) -> Native? {
+        var at: Native? = widget
+        while let each = at {
+            if each.kind == kindWindow {
+                return each
+            }
+            at = widgets[each.parent]
+        }
+        return nil
+    }
+
+    // Makes `made`, of a kind of BOXES THE SYSTEM DRAWS, in `owner`; nil
+    // for every other kind, which `create` makes itself.
+    func createBox(_ id: Int64, _ kind: Int64, _ owner: Native, _ made: Native) -> Int64? {
+        switch kind {
+        case kindPage:
+            guard owner.kind == kindTabs, let tabs = owner.view as? NSTabView else {
+                return answerInvalid
+            }
+            let page = FlippedView(frame: tabs.contentRect)
+            page.clipsToBounds = true
+            let item = NSTabViewItem(identifier: NSNumber(value: id))
+            item.view = page
+            muted = true
+            tabs.addTabViewItem(item)
+            muted = false
+            made.view = page
+        case kindPane:
+            guard owner.kind == kindSplitRow || owner.kind == kindSplitColumn, let split = owner.view as? NSSplitView else {
+                return answerInvalid
+            }
+            if split.arrangedSubviews.count >= 2 {
+                return answerInvalid
+            }
+            let pane = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+            pane.clipsToBounds = true
+            split.addArrangedSubview(pane)
+            made.view = pane
+        case kindTabs, kindScroll, kindSplitRow, kindSplitColumn:
+            guard let content = contentOf(owner) else {
+                return answerInvalid
+            }
+            let view: NSView
+            if kind == kindTabs {
+                let tabs = NSTabView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                tabs.delegate = self
+                view = tabs
+            } else if kind == kindScroll {
+                let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                let document = FlippedView(frame: NSRect(x: 0, y: 0, width: 0, height: 0))
+                scroll.documentView = document
+                scroll.hasVerticalScroller = true
+                scroll.hasHorizontalScroller = false
+                scroll.autohidesScrollers = true
+                scroll.drawsBackground = false
+                view = scroll
+            } else {
+                let split = BoundedSplitView(frame: NSRect(x: 0, y: 0, width: 400, height: 300))
+                split.isVertical = kind == kindSplitRow
+                split.dividerStyle = .thin
+                split.delegate = self
+                view = split
+            }
+            content.addSubview(view)
+            made.view = view
+        default:
+            return nil
+        }
+        widgets[id] = made
+        return answerOk
+    }
+
+    // The room tabs or a scrolled box draws around its content.
+    func insets(_ id: Int64) -> (Int64, Int64, Int64, Int64)? {
+        guard let widget = widgets[id] else {
+            return nil
+        }
+        if let tabs = widget.view as? NSTabView, widget.kind == kindTabs {
+            let saved = tabs.frame
+            tabs.frame = NSRect(x: saved.minX, y: saved.minY, width: 400, height: 300)
+            let inner = tabs.contentRect
+            tabs.frame = saved
+            let left = Int64(inner.minX.rounded(.up))
+            let right = Int64((400 - inner.maxX).rounded(.up))
+            let top = tabs.isFlipped ? Int64(inner.minY.rounded(.up)) : Int64((300 - inner.maxY).rounded(.up))
+            let bottom = tabs.isFlipped ? Int64((300 - inner.maxY).rounded(.up)) : Int64(inner.minY.rounded(.up))
+            return (left, top, right, bottom)
+        }
+        if let scroll = widget.view as? NSScrollView, widget.kind == kindScroll {
+            let frame = NSSize(width: 400, height: 300)
+            let inner = NSScrollView.contentSize(forFrameSize: frame, horizontalScrollerClass: nil, verticalScrollerClass: NSScroller.self, borderType: scroll.borderType, controlSize: .regular, scrollerStyle: NSScroller.preferredScrollerStyle)
+            return (0, 0, Int64((400 - inner.width).rounded(.up)), Int64((300 - inner.height).rounded(.up)))
+        }
+        return (-1, -1, -1, -1)
+    }
+
+    // What `preferred` answers for a kind of BOXES THE SYSTEM DRAWS: the
+    // divider's thickness on both axes for a split, nothing for the others,
+    // whose room the layout finds from what they hold.
+    func boxPreferred(_ widget: Native) -> NSSize? {
+        switch widget.kind {
+        case kindSplitRow, kindSplitColumn:
+            let thickness = (widget.view as? NSSplitView)?.dividerThickness ?? 1
+            return NSSize(width: thickness, height: thickness)
+        case kindTabs, kindPage, kindScroll, kindPane:
+            return NSSize(width: 0, height: 0)
+        default:
+            return nil
+        }
+    }
+
+    // The divider's place: the first pane's width or height.
+    func dividerAt(_ split: NSSplitView) -> Int64 {
+        guard let first = split.arrangedSubviews.first else {
+            return 0
+        }
+        return Int64((split.isVertical ? first.frame.width : first.frame.height).rounded())
+    }
+
+    // Sets the divider of split `widget` at `value` points, its panes laid
+    // out at once; nothing is queued.
+    func setDivider(_ widget: Native, _ value: Int64) -> Int64 {
+        guard let split = widget.view as? NSSplitView, value >= 0 else {
+            return answerInvalid
+        }
+        if split.arrangedSubviews.count == 2 {
+            muted = true
+            split.setPosition(CGFloat(value), ofDividerAt: 0)
+            split.adjustSubviews()
+            split.setPosition(CGFloat(value), ofDividerAt: 0)
+            muted = false
+        }
+        return answerOk
+    }
+
+    // Sets the range the person may drag split `widget`'s divider within.
+    func setDividerRange(_ widget: Native, _ least: Int64, _ most: Int64) -> Int64 {
+        guard let split = widget.view as? BoundedSplitView, least >= 0, least <= most else {
+            return answerInvalid
+        }
+        split.least = CGFloat(least)
+        split.most = CGFloat(most)
+        return answerOk
+    }
+
+    // Shows page `index` of tabs `widget`; nothing is queued.
+    func setPage(_ widget: Native, _ indices: [Int64]) -> Int64 {
+        guard let tabs = widget.view as? NSTabView, indices.count == 1, indices[0] >= 0, indices[0] < Int64(tabs.numberOfTabViewItems) else {
+            return answerInvalid
+        }
+        muted = true
+        tabs.selectTabViewItem(at: Int(indices[0]))
+        muted = false
+        return answerOk
+    }
+
+    // The index of the page tabs `widget` shows, as a selection; none where
+    // it holds no page.
+    func pageShown(_ widget: Native) -> [Int64] {
+        guard let tabs = widget.view as? NSTabView, let item = tabs.selectedTabViewItem else {
+            return []
+        }
+        return [Int64(tabs.indexOfTabViewItem(item))]
+    }
+
+    // Takes page `widget` out of its tabs.
+    func removePage(_ widget: Native) {
+        guard let tabs = widgets[widget.parent]?.view as? NSTabView else {
+            return
+        }
+        for item in tabs.tabViewItems where item.view === widget.view {
+            muted = true
+            tabs.removeTabViewItem(item)
+            muted = false
+        }
+    }
+
+    // What the person does to tabs and a split, through the system's own
+    // path: a tab chosen, a divider dragged to `value`. Nil for every other
+    // widget.
+    func injectBox(_ kind: Int64, _ widget: Native, _ value: Int64) -> Int64? {
+        if widget.kind == kindTabs {
+            guard kind == eventSelect, let tabs = widget.view as? NSTabView else {
+                return answerInvalid
+            }
+            guard value >= 0, value < Int64(tabs.numberOfTabViewItems) else {
+                return answerInvalid
+            }
+            tabs.selectTabViewItem(at: Int(value))
+            return answerOk
+        }
+        if widget.kind == kindSplitRow || widget.kind == kindSplitColumn {
+            guard kind == eventValue, let split = widget.view as? BoundedSplitView, split.arrangedSubviews.count == 2 else {
+                return answerInvalid
+            }
+            let at = min(max(CGFloat(value), split.least), split.most)
+            split.setPosition(at, ofDividerAt: 0)
+            queue(eventValue, widget.id, dividerAt(split), 0)
+            return answerOk
+        }
+        return nil
+    }
+
+    // The person chose a tab.
+    func tabView(_ tabView: NSTabView, didSelect tabViewItem: NSTabViewItem?) {
+        guard let item = tabViewItem, let id = widgets.values.first(where: { $0.view === tabView })?.id else {
+            return
+        }
+        queue(eventSelect, id, Int64(tabView.indexOfTabViewItem(item)), 0)
+    }
+
+    // The person dragged a divider: queued with its place. AppKit names the
+    // divider in its notification for its own adjustments too, made while
+    // the window is laid out, so the person's drag is the one made with the
+    // mouse's button held; a resize of the split's place names none.
+    func splitViewDidResizeSubviews(_ notification: Notification) {
+        guard notification.userInfo?[dividerDragged] != nil, NSEvent.pressedMouseButtons & 1 == 1, let split = notification.object as? NSSplitView, let id = widgets.values.first(where: { $0.view === split })?.id else {
+            return
+        }
+        queue(eventValue, id, dividerAt(split), 0)
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMinCoordinate proposedMinimumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        return max(proposedMinimumPosition, (splitView as? BoundedSplitView)?.least ?? 0)
+    }
+
+    func splitView(_ splitView: NSSplitView, constrainMaxCoordinate proposedMaximumPosition: CGFloat, ofSubviewAt dividerIndex: Int) -> CGFloat {
+        return min(proposedMaximumPosition, (splitView as? BoundedSplitView)?.most ?? proposedMaximumPosition)
+    }
+}
+
+@c
+public func hero_ui_appkit_insets(_ id: Int64, _ left: UnsafeMutablePointer<Int64>?, _ top: UnsafeMutablePointer<Int64>?, _ right: UnsafeMutablePointer<Int64>?, _ bottom: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let left = left, let top = top, let right = right, let bottom = bottom else {
+        return answerInvalid
+    }
+    let found = MainActor.assumeIsolated { () -> (Int64, Int64, Int64, Int64)? in
+        return backend()?.insets(id)
+    }
+    guard let (l, t, r, b) = found else {
+        return answerNotFound
+    }
+    if l < 0 {
+        return answerInvalid
+    }
+    left.pointee = l
+    top.pointee = t
+    right.pointee = r
+    bottom.pointee = b
+    return answerOk
 }

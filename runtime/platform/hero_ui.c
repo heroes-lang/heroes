@@ -1706,7 +1706,7 @@ int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t paren
     if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
         return -1;
     }
-    if (kind < HERO_UI_WINDOW || kind > HERO_UI_WEBVIEW) {
+    if (kind < HERO_UI_WINDOW || (kind > HERO_UI_WEBVIEW && kind < HERO_UI_TABS) || kind > HERO_UI_PANE) {
         (void)snprintf(words, sizeof words, "the kind %lld is no kind the native side makes", (long long)kind);
         return hero_ui_said(HERO_UI_INVALID, words);
     }
@@ -3227,4 +3227,39 @@ int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count) 
     }
     hero_ui_fine();
     return bytes;
+}
+
+/* -- BOXES THE SYSTEM DRAWS ------------------------------------------------ */
+
+#if defined(__APPLE__)
+
+static int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    return hero_ui_appkit_insets(id, left, top, right, bottom);
+}
+
+#else
+
+static int64_t hero_ui_arm_insets(int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    (void)id;
+    (void)left;
+    (void)top;
+    (void)right;
+    (void)bottom;
+    return HERO_UI_UNSUPPORTED;
+}
+
+#endif
+
+int64_t hero_ui_insets(hero_ui_app *app, int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (left == NULL || top == NULL || right == NULL || bottom == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "the insets: no room was given for one of the four");
+    }
+    *left = 0;
+    *top = 0;
+    *right = 0;
+    *bottom = 0;
+    return hero_ui_answered(hero_ui_arm_insets(id, left, top, right, bottom), "reading the room a widget draws around its content", id);
 }

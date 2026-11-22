@@ -221,8 +221,10 @@ int64_t hero_ui_close(hero_ui_app *app);
 int64_t hero_ui_number(hero_ui_app *app);
 
 /* Makes the native widget `id` of `kind` in `parent` (the kinds above say
- * which parent each takes), hidden, empty and at no place until set and
- * placed; a window is made hidden and shown by `set_visible`. 0, or -1:
+ * which parent each takes, a container standing for a window where a
+ * window is named: BOXES THE SYSTEM DRAWS, below), hidden, empty and at
+ * no place until set and placed; a window is made hidden and shown by
+ * `set_visible`. 0, or -1:
  * `INVALID`, `NOT_FOUND` (no parent of that number, or `id` taken),
  * `UNSUPPORTED`, `LIMIT`, `OTHER`. */
 int64_t hero_ui_create(hero_ui_app *app, int64_t id, int64_t kind, int64_t parent);
@@ -284,8 +286,8 @@ int64_t hero_ui_set_size(hero_ui_app *app, int64_t id, int64_t width, int64_t he
 /* Sets the least size the person may give window `id`'s content. 0, or -1. */
 int64_t hero_ui_set_min_size(hero_ui_app *app, int64_t id, int64_t width, int64_t height);
 
-/* Places widget `id` at `x`, `y` in its window's content, `width` by
- * `height` points. 0, or -1. */
+/* Places widget `id` at `x`, `y` in its window's content, or its
+ * container's, `width` by `height` points. 0, or -1. */
 int64_t hero_ui_place(hero_ui_app *app, int64_t id, int64_t x, int64_t y, int64_t width, int64_t height);
 
 /* Places the item `index` of radio group `id` at `x`, `y` in its window's
@@ -872,5 +874,46 @@ int64_t hero_ui_clipboard_read(hero_ui_app *app, int64_t kind, int64_t *width, i
  * its `count` bytes hold it, and answers the bytes it takes all the same;
  * -1 where no read has found anything. */
 int64_t hero_ui_clipboard_bytes(hero_ui_app *app, void *buffer, uint64_t count);
+
+/* -- BOXES THE SYSTEM DRAWS: PAGES, A SCROLLED BOX, TWO PANES ---------------
+ *
+ * Pages chosen by tabs (wxWidgets' `wxNotebook`), a box whose content
+ * scrolls (`wxScrolledWindow`) and two panes whose border the person drags
+ * (`wxSplitterWindow`). A page, a scrolled box and a pane are CONTAINERS:
+ * a widget whose parent is one stands in the container's own content, and
+ * `hero_ui_place` gives its place from that content's top-left corner, as
+ * a window's widgets are placed from its content's; every kind a window
+ * holds, these included, may have a container for its parent instead. The
+ * system sizes a page and a pane itself, and `hero_ui_place` refuses them. */
+
+/* Tabs above pages, one page shown at a time; its parent a window or a
+ * container. Holds pages alone. `hero_ui_set_selection` and
+ * `hero_ui_selection` set and read the page shown, by its index in the
+ * order the pages were made; the person choosing a tab queues
+ * `HERO_UI_EVENT_SELECT`. */
+#define HERO_UI_TABS 22
+/* A page of tabs, a container; `hero_ui_set_text` sets its tab's title. */
+#define HERO_UI_PAGE 23
+/* A box whose content scrolls up and down within it, a container;
+ * `hero_ui_set_size` sets its content's size. */
+#define HERO_UI_SCROLL 24
+/* Two panes side by side, or one over the other, and the divider between
+ * them that the person drags; its parent a window or a container. Holds two
+ * panes at most. `hero_ui_set_value` and `hero_ui_value` set and read the
+ * divider's place, the first pane's width or height in points;
+ * `hero_ui_set_range` bounds where the person may drag it; the person
+ * dragging it queues `HERO_UI_EVENT_VALUE` with its place. Its
+ * `hero_ui_preferred` is the divider's thickness on both axes. */
+#define HERO_UI_SPLIT_ROW 25
+#define HERO_UI_SPLIT_COLUMN 26
+/* A pane of a split, a container, the first made the left or the top one. */
+#define HERO_UI_PANE 27
+
+/* Writes the room tabs' or a scrolled box's own drawing takes inside its
+ * place around its content, in points, through `left`, `top`, `right` and
+ * `bottom`: the tabs and the border around a page, the scroll bar where
+ * the system draws it beside the content rather than over it. 0, or -1:
+ * `INVALID` (a widget of another kind), `NOT_FOUND`. */
+int64_t hero_ui_insets(hero_ui_app *app, int64_t id, int64_t *left, int64_t *top, int64_t *right, int64_t *bottom);
 
 #endif

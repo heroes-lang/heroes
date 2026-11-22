@@ -75,12 +75,11 @@
 # the user interface, through feature 2647's mailbox; a box drawn with a
 # title and a frame around it; a combo box the person may type into; a
 # number typed, or stepped up and down; a line between the widgets of a box;
-# pages chosen by tabs; rows of cells in columns; a tree of items folded and
-# unfolded; a box whose content scrolls; two panes whose border the person
-# drags; an area the program draws into, with its keys and its mouse; a tip
-# shown over a widget; a date, a colour or a font
-# chosen in the system's own picker; an icon in the system's tray or menu
-# bar, and its notifications; a file dragged onto a window.
+# rows of cells in columns; a tree of items folded and unfolded; an area the
+# program draws into, with its keys and its mouse; a tip shown over a
+# widget; a date, a colour or a font chosen in the system's own picker; an
+# icon in the system's tray or menu bar, and its notifications; a file
+# dragged onto a window.
 
 use bytes
 use image
@@ -91,6 +90,7 @@ use ui/internal/desk
 use ui/internal/dialogs
 use ui/internal/failure
 use ui/internal/fixture
+use ui/internal/frames
 use ui/internal/keyboard
 use ui/internal/loop
 use ui/internal/makers
@@ -275,6 +275,16 @@ variant Kind
     timer
     # The system's web view, made by `ui/webview`'s `webview`.
     webview
+    # Pages chosen by tabs.
+    tabs
+    # A page of tabs.
+    page
+    # A box whose content scrolls.
+    scrolled
+    # Two panes and the divider between them.
+    split
+    # A pane of a split.
+    pane
 
 # What `widget` is.
 #
@@ -298,8 +308,8 @@ function kind_of(app: App, widget: Widget) -> Kind?
 function destroy(@app: App, widget: Widget) -> ()?
     return makers.destroy(@app, widget: widget)
 
-# A rectangle in a window's content, in points from its top-left corner,
-# the y axis down.
+# A rectangle in a window's content, or a page's, a scrolled box's or a
+# pane's, in points from its top-left corner, the y axis down.
 record Rect
     # The left edge.
     x: i64
@@ -310,8 +320,10 @@ record Rect
     # The height, 0 or more.
     height: i64
 
-# Where `widget` stands in its window's content, laid out first where
-# anything changed; for a window, its content's size at 0, 0.
+# Where `widget` stands in its window's content, or in the content of the
+# page, scrolled box or pane it stands in, laid out first where anything
+# changed; for a window, its content's size at 0, 0; for a page or a pane,
+# where its tabs or its split shows it.
 #
 # - `app`: the app holding it; its windows are laid out where needed.
 # - `widget`: a window, or a widget or a box a window holds.
@@ -582,7 +594,8 @@ function set_modal(@app: App, widget: Widget, on: bool) -> ()?
 # left, `model.SPACING` points between two.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 #
 # Fails `closed`, `invalid` where `into` holds no widgets.
 function row(@app: App, into: Widget) -> Widget?
@@ -592,7 +605,8 @@ function row(@app: App, into: Widget) -> Widget?
 # the top, `model.SPACING` points between two.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 #
 # Fails `closed`, `invalid` where `into` holds no widgets.
 function column(@app: App, into: Widget) -> Widget?
@@ -603,12 +617,86 @@ function column(@app: App, into: Widget) -> Widget?
 # high as its highest.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `columns`: the cells of a row, 1 to `MOST_STRETCH`.
 #
 # Fails `closed`, `invalid`. See also `set_grid_stretch`.
 function grid(@app: App, into: Widget, columns: i64) -> Widget?
     return makers.grid(@app, into: into, columns: columns)
+
+# New tabs in `into`: pages one at a time, each chosen by its tab, as a
+# settings window shows them, wxWidgets' `wxNotebook`. They need the most
+# any page needs and the room their tabs and border take; every page is laid
+# out in the same room, the one chosen shown. `set_selection` and
+# `selection_of` choose and read the page shown by its index, in the order
+# made; the person choosing a tab is `.selection_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`. See also `page`.
+function tabs(@app: App, into: Widget) -> Widget?
+    return frames.tabs(@app, into: into)
+
+# A new page of tabs `into`, at the end, whose tab reads `title`: a box that
+# lays its children out one under another, as a column does, with a
+# window's padding. The first page made is the one shown; a widget of a page
+# not shown is out of the person's reach.
+#
+# - `app`: the app it is made in.
+# - `into`: tabs.
+# - `title`: its tab's text, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `failed`. See also `tabs`.
+function page(@app: App, into: Widget, title: str) -> Widget?
+    return frames.page(@app, into: into, title: title)
+
+# A new box in `into` whose content scrolls up and down, as a settings
+# panel longer than its window, wxWidgets' `wxScrolledWindow`: it lays its
+# children out one under another, as a column does, as wide as its inside
+# and as high as they need, and the person scrolls it where they need more
+# than it has. It needs its content's width, and its content's height up to
+# 100 points; `set_fit`'s least height asks for more, `stretch` gives it the
+# room left.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+#
+# Fails `closed`, `invalid`, `failed`.
+function scrolled(@app: App, into: Widget) -> Widget?
+    return frames.scrolled(@app, into: into)
+
+# A new split in `into`: two panes and the divider between them, which the
+# person drags, as a file manager's sidebar beside its files, wxWidgets'
+# `wxSplitterWindow`. It needs its panes' needs and the divider's thickness
+# along its line. The divider stands in the middle until the program
+# (`set_value`) or the person moves it, always where neither pane gets less
+# than it needs; `value_of` reads the first pane's width, or height, and the
+# person dragging it is `.value_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
+# - `side_by_side`: true for panes side by side, false for one over the
+#   other.
+#
+# Fails `closed`, `invalid`, `failed`. See also `pane`.
+function split(@app: App, into: Widget, side_by_side: bool) -> Widget?
+    return frames.split(@app, into: into, side_by_side: side_by_side)
+
+# A new pane of split `into`, the first made the left or the top one: a box
+# that lays its children out one under another, as a column does.
+#
+# - `app`: the app it is made in.
+# - `into`: a split.
+#
+# Fails `closed`, `invalid` where the split holds two panes already,
+# `failed`. See also `split`.
+function pane(@app: App, into: Widget) -> Widget?
+    return frames.pane(@app, into: into)
 
 # Where a widget stands across its box's line when it does not fill it.
 variant Align
@@ -683,7 +771,8 @@ function set_grid_stretch(@app: App, widget: Widget, columns: [i64], rows: [i64]
 # A new label in `into` showing `text`, a line feed starting a new line.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows, without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -693,7 +782,8 @@ function label(@app: App, into: Widget, text: str) -> Widget?
 # A new button in `into` showing `text`; pressing it is `.clicked`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows, one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -728,7 +818,8 @@ function set_button_key(@app: App, widget: Widget, key: ButtonKey) -> ()?
 # each change is `.text_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it holds first, one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -741,7 +832,8 @@ function text_field(@app: App, into: Widget, text: str) -> Widget?
 # `.submitted`. `render` draws one mark a character and never the text.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it holds first, one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -752,7 +844,8 @@ function password_field(@app: App, into: Widget, text: str) -> Widget?
 # change is `.text_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it holds first, without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -763,7 +856,8 @@ function text_area(@app: App, into: Widget, text: str) -> Widget?
 # `.toggled`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `text`: what it shows beside its box, one line without a zero byte.
 # - `checked`: whether it starts checked.
 #
@@ -775,7 +869,8 @@ function checkbox(@app: App, into: Widget, text: str, checked: bool) -> Widget?
 # chosen; each choice is `.selection_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte; none makes a
 #   group with nothing chosen.
 #
@@ -788,7 +883,8 @@ function radio_group(@app: App, into: Widget, items: [str]) -> Widget?
 # the Return key `.activated`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte.
 # - `multiple`: whether the person may choose several.
 #
@@ -806,7 +902,8 @@ function list(@app: App, into: Widget, items: [str], multiple: bool) -> Widget?
 # `.selection_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `items`: the items, each one line without a zero byte.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`.
@@ -817,7 +914,8 @@ function combo(@app: App, into: Widget, items: [str]) -> Widget?
 # `most`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `most`: the value that fills it, 1 or more.
 #
 # Fails `closed`, `invalid`, `limit`, `failed`. See also `set_value`.
@@ -839,7 +937,8 @@ function set_moving(@app: App, widget: Widget, on: bool) -> ()?
 # each move by the person is `.value_changed`.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `least`: the value at its start, below `most`.
 # - `most`: the value at its end.
 # - `value`: where the knob starts, from `least` to `most`.
@@ -851,7 +950,8 @@ function slider(@app: App, into: Widget, least: i64, most: i64, value: i64) -> W
 # A new picture in `into` showing `img` at one point a pixel.
 #
 # - `app`: the app it is made in.
-# - `into`: a window, a row, a column or a grid.
+# - `into`: a window, a row, a column, a grid, a page, a scrolled box or a
+#   pane.
 # - `img`: the image, of any format, shown as 8-bit RGBA; its sides 0 to
 #   `MOST_SIZE`.
 #
@@ -930,21 +1030,24 @@ function set_checked(@app: App, widget: Widget, checked: bool) -> ()?
 function is_checked(app: App, widget: Widget) -> bool?
     return state.is_checked(app, widget: widget)
 
-# Moves a slider's knob, or fills a progress bar, to `value`. No event comes
-# of it.
+# Moves a slider's knob, or fills a progress bar, to `value`, or puts a
+# split's divider `value` points from its start, kept where neither pane
+# gets less than it needs. No event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
-# - `value`: from its lowest value to its highest.
+# - `widget`: a slider, a progress bar or a split.
+# - `value`: from its lowest value to its highest; for a split 0 to
+#   `MOST_SIZE`.
 #
 # Fails `closed`, `invalid`, `failed`. See also `set_range`.
 function set_value(@app: App, widget: Widget, value: i64) -> ()?
     return state.set_value(@app, widget: widget, value: value, kind: hero_ui.HERO_UI_SLIDER)
 
-# The value a slider's knob or a progress bar stands at now.
+# The value a slider's knob or a progress bar stands at now, or the place a
+# split's divider stands at, the first pane's width or height.
 #
 # - `app`: the app holding it.
-# - `widget`: a slider or a progress bar.
+# - `widget`: a slider, a progress bar or a split.
 #
 # Fails `closed`, `invalid`, `failed`.
 function value_of(app: App, widget: Widget) -> i64?
@@ -974,13 +1077,13 @@ function set_range(@app: App, widget: Widget, least: i64, most: i64) -> ()?
 function set_items(@app: App, widget: Widget, items: [str]) -> ()?
     return state.set_items(@app, widget: widget, items: items)
 
-# Chooses the items at `indices` of a list, a combo box or a radio group. No
-# event comes of it.
+# Chooses the items at `indices` of a list, a combo box or a radio group,
+# or shows the page of tabs at its one index. No event comes of it.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box or a radio group.
+# - `widget`: a list, a combo box, a radio group or tabs.
 # - `indices`: item indices, ascending and each once, at most one but for a
-#   list of several choices; none chooses nothing.
+#   list of several choices; none chooses nothing; exactly one for tabs.
 #
 # Fails `closed`, `invalid` where an index is past the items or the indices
 # are out of order, `failed`.
@@ -988,10 +1091,10 @@ function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
     return state.set_selection(@app, widget: widget, indices: indices)
 
 # The indices of the items a list, a combo box or a radio group has chosen
-# now, ascending; empty where none is.
+# now, ascending, empty where none is; the index of the page tabs show.
 #
 # - `app`: the app holding it.
-# - `widget`: a list, a combo box or a radio group.
+# - `widget`: a list, a combo box, a radio group or tabs.
 #
 # Fails `closed`, `invalid`, `failed`.
 function selection_of(app: App, widget: Widget) -> [i64]?
@@ -2577,6 +2680,64 @@ test "set_backdrop: translucent"
     w = window(@app, title: "Sidebar", width: 100, height: 60).must()
     set_backdrop(@app, widget: w, backdrop: .translucent).must()
     assert render(@app).must()[0] == "window #1 \"Sidebar\" 100x60 translucent"
+    close(@app).must()
+
+# A settings window of two pages, the second chosen by its tab.
+test "tabs: two pages of settings"
+    app @= open(.headless).must()
+    w = window(@app, title: "Settings", width: 320, height: 200).must()
+    pages = tabs(@app, into: w).must()
+    _ = page(@app, into: pages, title: "General").must()
+    _ = page(@app, into: pages, title: "Advanced").must()
+    inject(@app, input: .choose(widget: pages, indices: [1])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: pages, indices: [1])
+    close(@app).must()
+
+# A page's own widgets, laid out from its top-left corner.
+test "page: a field on a page"
+    app @= open(.headless).must()
+    w = window(@app, title: "Settings", width: 320, height: 200).must()
+    general = page(@app, into: tabs(@app, into: w).must(), title: "General").must()
+    name = text_field(@app, into: general, text: "Ada").must()
+    assert rect_of(@app, widget: name).must().x == 12
+    close(@app).must()
+
+# Thirty lines in a box of a hundred points, which scrolls.
+test "scrolled: thirty lines"
+    app @= open(.headless).must()
+    w = window(@app, title: "Log", width: 200, height: 100).must()
+    log = scrolled(@app, into: w).must()
+
+    for i in range(from: 0, to: 30)
+        _ = label(@app, into: log, text: f"line {i}").must()
+
+    assert rect_of(@app, widget: log).must().height == 100
+    close(@app).must()
+
+# A sidebar beside the files, its divider dragged by the person.
+test "split: a sidebar"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 400, height: 200).must()
+    sides = split(@app, into: w, side_by_side: true).must()
+    set_fit(
+        @app,
+        widget: sides,
+        fit: Fit(stretch: 1, fill: true, align: .start, min_width: 0, min_height: 0, margin: 0)
+    ).must()
+    _ = pane(@app, into: sides).must()
+    _ = pane(@app, into: sides).must()
+    inject(@app, input: .slide(widget: sides, value: 120)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: sides, value: 120)
+    close(@app).must()
+
+# A list in the left pane.
+test "pane: a list on the left"
+    app @= open(.headless).must()
+    w = window(@app, title: "Files", width: 400, height: 200).must()
+    sides = split(@app, into: w, side_by_side: true).must()
+    places = list(@app, into: pane(@app, into: sides).must(), items: ["Home", "Desktop"], multiple: false).must()
+    _ = pane(@app, into: sides).must()
+    assert rect_of(@app, widget: places).must().x == 0
     close(@app).must()
 
 # Paths copied as a file manager copies them, and read back by a Paste.

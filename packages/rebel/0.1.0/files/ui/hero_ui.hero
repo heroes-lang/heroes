@@ -166,6 +166,15 @@ extern "hero_ui.h"
     function hero_ui_clipboard_write(app: App, kind: i64, @bytes: [u8] counted_by count lent, count: u64, width: i64, height: i64) -> i64
     function hero_ui_clipboard_read(app: App, kind: i64, @width: i64, @height: i64) -> i64
     function hero_ui_clipboard_bytes(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    # Boxes the system draws: pages chosen by tabs, a box whose content
+    # scrolls, two panes and the divider between them.
+    constant HERO_UI_TABS: i64
+    constant HERO_UI_PAGE: i64
+    constant HERO_UI_SCROLL: i64
+    constant HERO_UI_SPLIT_ROW: i64
+    constant HERO_UI_SPLIT_COLUMN: i64
+    constant HERO_UI_PANE: i64
+    function hero_ui_insets(app: App, id: i64, @left: i64, @top: i64, @right: i64, @bottom: i64) -> i64
     # A folder chosen, and a message box of the program's words.
     constant HERO_UI_ASK_BUTTONS_MOST: i64
     function hero_ui_folder_dialog(app: App, window: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64) -> i64
@@ -862,6 +871,18 @@ function clipboard_read(app: App, kind: i64, @width: i64, @height: i64) -> i64
 # - `count`: the bytes `buffer` takes.
 function clipboard_bytes(app: App, @buffer: [u8], count: u64) -> i64
     return hero_ui_clipboard_bytes(app, @buffer, count: count)
+
+# 0 once the room tabs' or a scrolled box's own drawing takes around its
+# content is written, in points; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: tabs or a scrolled box.
+# - `left`: where the room on the left is written.
+# - `top`: where the room above is written.
+# - `right`: where the room on the right is written.
+# - `bottom`: where the room below is written.
+function insets(app: App, id: i64, @left: i64, @top: i64, @right: i64, @bottom: i64) -> i64
+    return hero_ui_insets(app, id: id, left: @left, top: @top, right: @right, bottom: @bottom)
 
 # The bytes of the folders the person chose, each path followed by one zero
 # byte, which `dialog_paths` writes; 0 where they cancelled; or -1.

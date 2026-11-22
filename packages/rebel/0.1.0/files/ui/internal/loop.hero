@@ -158,7 +158,14 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         app.events @ app.events.push(.toggled(widget: w, checked: taken[2] == 1))
     else if kind == hero_ui.HERO_UI_EVENT_VALUE
         n.value @ taken[2]
+
+        # The person's divider lays its panes out anew.
+        if model.is_split(n.kind)
+            n.divided @ true
         model.put(@app.table, n: n)
+
+        if model.is_split(n.kind)
+            model.marks_dirty(@app.table, window: n.window)
         app.events @ app.events.push(.value_changed(widget: w, value: taken[2]))
     else if kind == hero_ui.HERO_UI_EVENT_MENU
         menus.told(@app, id: id, value: taken[2])

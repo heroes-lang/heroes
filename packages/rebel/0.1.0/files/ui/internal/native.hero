@@ -52,20 +52,26 @@ function made(app: ui.App, n: model.Node) -> ()?
             return failure.last(f"sizing window {n.id}")
     return ok()
 
-# The native parent of `n`: none for a window, the window for a widget or a
-# menu, the menu for a menu's item.
+# The native parent of `n`: none for a window; the menu for a menu's item
+# and a menu inside a menu; the tabs for a page and the split for a pane;
+# for every other widget the frame it stands in, the nearest window, page,
+# scrolled box or pane over it.
 function native_parent(app: ui.App, n: model.Node) -> i64
     if n.kind == hero_ui.HERO_UI_WINDOW
         return 0
 
-    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+    if n.kind == hero_ui.HERO_UI_MENU_ITEM || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE
         return n.parent
 
     # A menu inside a menu stands in that menu.
     if n.kind == hero_ui.HERO_UI_MENU && app.table.nodes[n.parent].must().kind == hero_ui.HERO_UI_MENU
         return n.parent
-    _ = app
-    return n.window
+    at @= n.parent
+
+    while !model.is_frame(app.table.nodes[at].must().kind)
+        at @ app.table.nodes[at].must().parent
+
+    return at
 
 # Pushes `n`'s text.
 function push_text(app: ui.App, n: model.Node) -> ()?
@@ -87,9 +93,9 @@ function push_items(app: ui.App, n: model.Node) -> ()?
         return failure.last(f"setting the items of widget {n.id}")
     return push_chosen(app, n: n)
 
-# Pushes what `n`, a list, a combo box or a radio group, has chosen.
+# Pushes what `n`, a list, a combo box, a radio group or tabs, has chosen.
 function push_chosen(app: ui.App, n: model.Node) -> ()?
-    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE
+    if n.kind == hero_ui.HERO_UI_LIST || n.kind == hero_ui.HERO_UI_LIST_MULTIPLE || n.kind == hero_ui.HERO_UI_TABS
         chosen @= n.chosen
 
         if hero_ui.set_selection(app.handle, id: n.id, @chosen, count: to_u64(chosen.len()).must()) < 0
@@ -171,11 +177,31 @@ function placed(app: ui.App, nodes: {i64: model.Node}, window: i64) -> ()?
     for id in model.subtree(model.Model(nodes: nodes, next_id: 0, windows: [], timers: []), id: window)
         n = nodes[id].must()
 
-        if !model.is_native(n.kind) || !model.is_placed(n.kind)
+        # The system sizes a page and a pane itself.
+        if !model.is_native(n.kind) || !model.is_placed(n.kind) || n.kind == hero_ui.HERO_UI_PAGE || n.kind == hero_ui.HERO_UI_PANE
             continue
 
         if hero_ui.place(app.handle, id: id, x: n.x, y: n.y, width: n.w, height: n.h) < 0
             return failure.last(f"placing widget {id}")
+
+        if n.kind == hero_ui.HERO_UI_SCROLL && hero_ui.set_size(app.handle, id: id, width: n.width, height: n.height) < 0
+            return failure.last(f"sizing the content of scrolled box {id}")
+
+        # A split's divider is placed after the split, which lays its panes
+        # out anew as it is placed; the person drags it from the first
+        # pane's need to the room less the second's, a range of one point
+        # where the two meet.
+        if model.is_split(n.kind) && n.children.len() == 2
+            top = if n.most > n.least
+                n.most
+            else
+                n.least + 1
+
+            if hero_ui.set_range(app.handle, id: id, least: n.least, most: top) < 0
+                return failure.last(f"bounding the divider of split {id}")
+
+            if hero_ui.set_value(app.handle, id: id, value: n.value) < 0
+                return failure.last(f"placing the divider of split {id}")
 
         if n.kind == hero_ui.HERO_UI_RADIO_GROUP
             count = n.items.len()
