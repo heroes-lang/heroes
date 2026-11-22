@@ -125,9 +125,45 @@ function links(headers: [http.Header], relation: str) -> [str]
 
     return out
 
+# The last part of a problem's type where it is one of RFC 8555's,
+# `urn:ietf:params:acme:error:caa` read as `caa`; any other type whole.
+#
+# - `kind`: the type, a URN.
+function short_kind(kind: str) -> str
+    prefix = "urn:ietf:params:acme:error:"
+
+    if kind.len() > prefix.len() && kind.slice(from: 0, to: prefix.len()) == prefix
+        return kind.slice(from: prefix.len(), to: kind.len())
+    return kind
+
+# The words a problem is told in, in every failure of `acme`: its type as
+# `short_kind` reads it, its detail, then its subproblems' words in
+# parentheses. The type comes first so a program tells a CAA refusal from a
+# wrong answer by the type and not by the server's English (RFC 8555 § 6.7
+# lists the types a client acts on).
+#
+# - `kind`: the problem's type, a URN; "" where the server named none.
+# - `detail`: what the server said.
+# - `subproblems`: each subproblem's words, as `subproblem_told` writes them.
+function told(kind: str, detail: str, subproblems: [str]) -> str
+    if subproblems.len() == 0
+        return f"{short_kind(kind)}: {detail}"
+    return f"{short_kind(kind)}: {detail} ({subproblems.join("; ")})"
+
+# The words of a subproblem: the identifier it is about where it names one,
+# then its type and its detail as `told` writes them.
+#
+# - `value`: the identifier's value, "" where it names none.
+# - `kind`: the subproblem's type.
+# - `detail`: what the server said of it.
+function subproblem_told(value: str, kind: str, detail: str) -> str
+    if value == ""
+        return told(kind: kind, detail: detail, subproblems: [])
+    return value + ": " + told(kind: kind, detail: detail, subproblems: [])
+
 # The failure a problem document `body`, answered with `status`, says: its
-# type's last part chooses the code, its detail and its subproblems' make
-# the message.
+# type's last part chooses the code, and `told` writes the message from its
+# type, its detail and its subproblems'.
 function problem<T>(status: i64, body: [u8]) -> T?
     kind: str @= ""
     detail: str @= ""
@@ -141,23 +177,18 @@ function problem<T>(status: i64, body: [u8]) -> T?
                     detail @ json.text_of(json.member(v: v, key: "detail").default(.null_value)).default("")
 
                     for sub in json.items_of(json.member(v: v, key: "subproblems").default(.null_value)).default([])
+                        sub_kind = json.text_of(json.member(v: sub, key: "type").default(.null_value)).default("")
                         said = json.text_of(json.member(v: sub, key: "detail").default(.null_value)).default("")
+                        named = json.member(v: sub, key: "identifier").default(.null_value)
+                        value = json.text_of(json.member(v: named, key: "value").default(.null_value)).default("")
 
-                        if said.len() > 0
-                            extra @ extra.push(said)
+                        if sub_kind.len() > 0 || said.len() > 0
+                            extra @ extra.push(subproblem_told(value: value, kind: sub_kind, detail: said))
                 .err _ => detail @ text
         .err _ => detail @ "the body is not text"
 
-    prefix = "urn:ietf:params:acme:error:"
-    short: str @= kind
-
-    if kind.len() > prefix.len() && kind.slice(from: 0, to: prefix.len()) == prefix
-        short @ kind.slice(from: prefix.len(), to: kind.len())
-    tail: str @= ""
-
-    if extra.len() > 0
-        tail @ f" ({extra.join("; ")})"
-    message = f"the server answered {status} {short}: {detail}{tail}"
+    short = short_kind(kind)
+    message = f"the server answered {status} {told(kind: kind, detail: detail, subproblems: extra)}"
 
     if short == "rateLimited"
         return fail(code: codes.LIMIT, msg: message)
@@ -333,7 +364,7 @@ test "problem: the codes by type, the detail and the subproblems"
 
     match got1
         .ok _  => assert false
-        .err e => assert e.code == "failed" && e.msg == "the server answered 400 rejectedIdentifier: no (CAA forbids)"
+        .err e => assert e.code == "failed" && e.msg == "the server answered 400 rejectedIdentifier: no (caa: CAA forbids)"
 
     limited = bytes.from_text("{\"type\":\"urn:ietf:params:acme:error:rateLimited\",\"detail\":\"slow\"}")
     got2: i64? = problem(status: 429, body: limited)
@@ -354,6 +385,29 @@ test "problem: the codes by type, the detail and the subproblems"
     match got4
         .ok _  => assert false
         .err e => assert e.msg == "the server answered 500 : oops"
+
+test "told and subproblem_told: RFC 8555's types by their last part, another type whole, none, and subproblems with and without an identifier"
+    assert told(kind: "urn:ietf:params:acme:error:caa", detail: "CAA forbids", subproblems: []) == "caa: CAA forbids"
+    assert told(kind: "urn:example:other", detail: "d", subproblems: []) == "urn:example:other: d"
+    assert told(kind: "", detail: "oops", subproblems: []) == ": oops"
+    assert short_kind("urn:ietf:params:acme:error:") == "urn:ietf:params:acme:error:"
+    one = subproblem_told(
+        value: "_example.org",
+        kind: "urn:ietf:params:acme:error:malformed",
+        detail: "Invalid underscore"
+    )
+    two = subproblem_told(value: "", kind: "urn:ietf:params:acme:error:dns", detail: "no answer")
+    assert told(kind: "urn:ietf:params:acme:error:malformed", detail: "Some were rejected", subproblems: [one, two]) == "malformed: Some were rejected (_example.org: malformed: Invalid underscore; dns: no answer)"
+
+test "problem: a subproblem's identifier named before its type"
+    body = bytes.from_text(
+        "{\"type\":\"urn:ietf:params:acme:error:rejectedIdentifier\",\"detail\":\"no\",\"subproblems\":[{\"type\":\"urn:ietf:params:acme:error:caa\",\"detail\":\"CAA forbids\",\"identifier\":{\"type\":\"dns\",\"value\":\"a.example\"}}]}"
+    )
+    got: i64? = problem(status: 400, body: body)
+
+    match got
+        .ok _  => assert false
+        .err e => assert e.msg == "the server answered 400 rejectedIdentifier: no (a.example: caa: CAA forbids)"
 
 test "stamped: the User-Agent added, once"
     r = stamped(stamped(http.request(method: "GET", target: "https://ca.example/dir").must()))

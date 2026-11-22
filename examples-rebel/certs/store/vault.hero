@@ -65,28 +65,6 @@ function is_keyring(s: Store) -> bool
         .keyring _ => true
         .files _   => false
 
-# `s` as one line of text, `keyring <service>` or `files <folder>`, which
-# `parse_store` reads back: how a store crosses into a thread.
-#
-# - `s`: the store.
-function format_store(s: Store) -> str
-    return match s
-        .keyring k => "keyring " + k.service
-        .files f   => "files " + f.folder
-
-# The store `text` writes, as `format_store` writes it.
-#
-# - `text`: the line.
-#
-# Fails `invalid` where it is neither form.
-function parse_store(text: str) -> Store?
-    if text.len() > 8 && text.slice(from: 0, to: 8) == "keyring "
-        return ok(.keyring(service: text.slice(from: 8, to: text.len())))
-
-    if text.len() > 6 && text.slice(from: 0, to: 6) == "files "
-        return ok(.files(folder: text.slice(from: 6, to: text.len())))
-    return fail(code: INVALID, msg: "a key store is written \"keyring <service>\" or \"files <folder>\"")
-
 ## Keys
 
 # Keeps `secret` under `name`, replacing what stood there.
@@ -223,11 +201,6 @@ test "file_of: spaces made dashes, and a name that could leave the folder refuse
     assert file_of(folder: "keys", name: "../account").is_err()
     assert file_of(folder: "keys", name: "").is_err()
     assert file_of(folder: "keys", name: "a/b").is_err()
-
-test "parse_store: what format_store writes reads back, and anything else refused"
-    assert parse_store(format_store(.keyring(service: "certs"))).must() == .keyring(service: "certs")
-    assert parse_store(format_store(.files(folder: "/var/lib/certs/keys"))).must() == .files(folder: "/var/lib/certs/keys")
-    assert parse_store("vault x").is_err()
 
 test "describe: neither form names a service or a path"
     assert describe(.keyring(service: "secret-service-name")) == "the system's keyring"

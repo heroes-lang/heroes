@@ -1,10 +1,15 @@
 # The 121 transforms of Brotli, RFC 7932 Appendix B, and the context
 # tables of section 7.1, written as the appendix's own serialization (each
 # transform its prefix, a zero, its kind, its suffix, a zero) and as bytes,
-# all in hexadecimal. The tables are data, made and not typed: a one-off
-# program read the RFC's text (fetched 2026-11-18), held them to the
-# lengths and CRC-32s the RFC gives (0x3d965f81; 0x8e91efb7, 0xd01a32f4,
-# 0x0dd7a0d6), and wrote this module whole. Nothing here is edited by hand.
+# all in hexadecimal.
+#
+# Generated, never edited by hand: the Heroes program `generators/brotli/`
+# read the RFC's text (https://www.rfc-editor.org/rfc/rfc7932.txt, SHA-256
+# 394abd1879e016f4eac89512c2acaf92f7b2d67feb8ab58b6b118c213be07146,
+# fetched 2026-11-22), held
+# the tables to the lengths and CRC-32s the RFC gives (0x3d965f81;
+# 0x8e91efb7, 0xd01a32f4, 0x0dd7a0d6), and wrote this module whole; its
+# `check` command says whether this module is still what it writes.
 
 # The 121 transforms, serialized as the appendix says: 648 bytes.
 constant TRANSFORMS: str

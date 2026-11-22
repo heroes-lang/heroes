@@ -1,0 +1,24 @@
+# A generic function instantiated at `()` builds `ok(v)` from a unit value
+# (defect 2682, 2026-11-22). `heroes check` accepted it, since `ok(v)` with
+# `v: T` is checked once for every `T`, and `heroes build` stopped at exit 2:
+# clang refused `.as.ok = t6`, a temporary the unit rule never declares. The
+# emitter now builds such an `ok` as `ok()` is, the tag alone.
+#
+# This shape: an array of `()?`, each element of a `for` handed to the
+# pass-through and the answers kept in a second array.
+
+function pass<T>(r: T?) -> T?
+    match r
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: e.msg)
+
+function main()
+    x: ()? = ok()
+    y: ()? = fail(code: "kept", msg: "the second")
+    out: [()?] @= []
+
+    for r in [x, y]
+        out @ out.push(pass(r))
+
+    print(out[0].is_err())
+    print(out[1].is_err())

@@ -1,0 +1,5 @@
+<p class="tagline">Markdown to plain text, written again with Rebel&rsquo;s markdown package, which reads the text by the CommonMark specification.</p>
+
+<p>Rebel&rsquo;s <code>markdown</code> reads the text into a tree of blocks and inline pieces by CommonMark 0.31.2, the specification most Markdown tools follow, in place of the original&rsquo;s own rules for blocks and its scanner for the markup inside a line. What stays this program&rsquo;s own is the plain-text page it writes from that tree: headings underlined, list markers rewritten, a quote after <code>|</code>, code indented, and the outline view.</p>
+
+<p>On the sample the two print the same bytes. Elsewhere they part, because this one reads CommonMark and the original reads each line by its first characters: quoted lines that follow each other become one paragraph here, a numbered list counts from its first item, a list and a quote can nest, and an address between angle brackets is a link.</p>

@@ -1,0 +1,255 @@
+# The two tables `url/idna`'s `lookup.hero` reads, made from the Unicode
+# Character Database 17.0.0: the IDNA Mapping Table of UTS #46 as runs of
+# one status and one mapping (`mapping_table`), and three properties of
+# every code point as runs (`property_table`). Every code point's value is
+# set first, then cut into runs where it changes, and every lookup of the
+# runs, a binary search as `lookup.hero` makes it, is held to the value it
+# was made from.
+
+use <rebel>/strings
+use <ucdkit>/ucdkit
+
+# The mapping table packed: the runs, where each target begins, and the
+# targets' code points.
+record Mapping
+    runs: [i64]
+    starts: [i64]
+    points: [i64]
+
+# The number `RUNS` gives a status of the mapping table.
+#
+# Fails `invalid` for a status UTS #46 does not define.
+function status_number(status: str) -> i64?
+    return match status
+        "valid"      => ok(0)
+        "ignored"    => ok(1)
+        "mapped"     => ok(2)
+        "deviation"  => ok(3)
+        "disallowed" => ok(4)
+        _            => fail(code: "invalid", msg: f"the mapping table names a status {status}")
+
+# The mapping table packed from `text`, the whole of `IdnaMappingTable.txt`:
+# each code point's `target << 3 | status`, a mapped or deviation one's
+# target the number of its mapping among the distinct mappings in the order
+# the code points first take them, 0 for the others; then runs of one value,
+# each `first << 16 | value`.
+#
+# Fails `invalid` where a line's status or mapping does not read, a code
+# point is named twice or not at all, or a lookup of the runs does not give
+# a code point's value.
+function mapping(text: str) -> Mapping?
+    values: [i64] @= []
+    named: [bool] @= []
+
+    for _ in range(from: 0, to: ucdkit.POINTS)
+        values @ values.push(0)
+        named @ named.push(false)
+
+    targets: {str: i64} @= {}
+    starts: [i64] @= [0]
+    points: [i64] @= []
+
+    for line in ucdkit.data_lines(text)?
+        status = status_number(line.fields[0])?
+        target @= 0
+
+        if status == 2 || status == 3
+            key = if line.fields.len() > 1
+                line.fields[1]
+            else
+                ""
+
+            target @ match targets[key]
+                .ok found => found
+                .err _ =>
+                    for point in ucdkit.points_of(key)?
+                        points @ points.push(point)
+
+                    targets[key] @ starts.len() - 1
+                    starts @ starts.push(points.len())
+                    starts.len() - 2
+        at @= line.first
+
+        while at <= line.last
+            if named[at]
+                return fail(code: "invalid", msg: f"the mapping table names {at} twice")
+            named[at] @ true
+            values[at] @ target << 3 | status
+            at @ at + 1
+
+    for point in range(from: 0, to: ucdkit.POINTS)
+        if !named[point]
+            return fail(code: "invalid", msg: f"the mapping table does not name {point}")
+
+    runs = runs_of(values: values, shift: 16)
+    held(runs: runs, values: values, shift: 16)?
+    return ok(Mapping(runs: runs, starts: starts, points: points))
+
+# The bidirectional classes RFC 5893 names, numbered as `property_table`
+# numbers them; every other class is 11.
+function bidi_number(name: str) -> i64
+    names = ["L", "R", "AL", "AN", "EN", "ES", "CS", "ET", "ON", "BN", "NSM"]
+    at @= 0
+
+    while at < names.len()
+        if names[at] == name
+            return at
+        at @ at + 1
+
+    return 11
+
+# The short name of a bidirectional class the `@missing` lines write long.
+#
+# Fails `invalid` for a long name this program does not know.
+function bidi_short(long: str) -> str?
+    return match long
+        "Left_To_Right"       => ok("L")
+        "Right_To_Left"       => ok("R")
+        "Arabic_Letter"       => ok("AL")
+        "European_Terminator" => ok("ET")
+        _                     => fail(code: "invalid", msg: f"DerivedBidiClass.txt's @missing names {long}")
+
+# The joining types RFC 5892 Appendix A reads, numbered as `property_table`
+# numbers them: 0 for U and C, which it does not read, 1 L, 2 D, 3 R, 4 T.
+#
+# Fails `invalid` for a type the file should not give.
+function joining_number(kind: str) -> i64?
+    return match kind
+        "U" | "C" | "Non_Joining" => ok(0)
+        "L"                       => ok(1)
+        "D"                       => ok(2)
+        "R"                       => ok(3)
+        "T"                       => ok(4)
+        _                         => fail(code: "invalid", msg: f"DerivedJoiningType.txt names a joining type {kind}")
+
+# The property table's runs from the three files' texts: each code point's
+# `bidi << 11 | joining << 8 | combining`, its `@missing` defaults first and
+# its data lines over them, then runs of one value, each `first << 18 |
+# value`.
+#
+# Fails `invalid` where a line does not read, a value is past its field, or
+# a lookup of the runs does not give a code point's value.
+function properties(bidi: str, joining: str, combining: str) -> [i64]?
+    bidi_values: [i64] @= []
+    joining_values: [i64] @= []
+    combining_values: [i64] @= []
+
+    for _ in range(from: 0, to: ucdkit.POINTS)
+        bidi_values @ bidi_values.push(0)
+        joining_values @ joining_values.push(0)
+        combining_values @ combining_values.push(0)
+
+    for line in ucdkit.missing_lines(bidi)?
+        fill(@bidi_values, line: line, value: bidi_number(bidi_short(line.fields[0])?))
+
+    for line in ucdkit.data_lines(bidi)?
+        fill(@bidi_values, line: line, value: bidi_number(line.fields[0]))
+
+    for line in ucdkit.missing_lines(joining)?
+        fill(@joining_values, line: line, value: joining_number(line.fields[0])?)
+
+    for line in ucdkit.data_lines(joining)?
+        fill(@joining_values, line: line, value: joining_number(line.fields[0])?)
+
+    for line in ucdkit.data_lines(combining)?
+        ccc = number_of(line.fields[0])?
+
+        if ccc > 254
+            return fail(code: "invalid", msg: f"DerivedCombiningClass.txt gives the class {ccc}")
+        fill(@combining_values, line: line, value: ccc)
+
+    values: [i64] @= []
+    at @= 0
+
+    while at < ucdkit.POINTS
+        values @ values.push(bidi_values[at] << 11 | joining_values[at] << 8 | combining_values[at])
+        at @ at + 1
+
+    runs = runs_of(values: values, shift: 18)
+    held(runs: runs, values: values, shift: 18)?
+    return ok(runs)
+
+# `values` from `line.first` to `line.last` set to `value`.
+function fill(@values: [i64], line: ucdkit.Line lent, value: i64)
+    at @= line.first
+
+    while at <= line.last
+        values[at] @ value
+        at @ at + 1
+
+# `text`, decimal digits alone, as a number.
+#
+# Fails `invalid` where it is empty or holds anything else.
+function number_of(text: str) -> i64?
+    value @= 0
+
+    if text == ""
+        return fail(code: "invalid", msg: "a combining class is empty")
+
+    for c in text.chars()
+        at = match strings.index_of(s: "0123456789", substr: c)
+            .ok found => found
+            .err _    => return fail(code: "invalid", msg: f"\"{text}\" is not a combining class")
+
+        value @ value * 10 + at
+
+    return ok(value)
+
+# The runs of `values`, each `first << shift | value`, a run beginning at 0
+# and wherever the value changes.
+function runs_of(values: [i64] lent, shift: i64) -> [i64]
+    out: [i64] @= []
+    at @= 0
+
+    while at < values.len()
+        if at == 0 || values[at] != values[at - 1]
+            out @ out.push(at << shift | values[at])
+        at @ at + 1
+
+    return out
+
+# Nothing where the run that a binary search finds for each code point, as
+# `lookup.hero` searches, holds that code point's value.
+#
+# Fails `invalid`, naming the first code point whose lookup does not.
+function held(runs: [i64] lent, values: [i64] lent, shift: i64) -> ()?
+    mask = (1 << shift) - 1
+    point @= 0
+
+    while point < values.len()
+        low @= 0
+        high @= runs.len() - 1
+
+        while low < high
+            middle = (low + high + 1) / 2
+
+            if runs[middle] >> shift <= point
+                low @ middle
+            else
+                high @ middle - 1
+
+        if runs[low] & mask != values[point]
+            return fail(code: "invalid", msg: f"the runs give {point} another value than the files")
+        point @ point + 1
+
+    return ok()
+
+## Tests
+
+test "runs_of and held: a run at 0, one where the value changes, none where it stays"
+    values = [5, 5, 7, 7, 7, 5]
+    runs = runs_of(values: values, shift: 8)
+    assert runs == [0 << 8 | 5, 2 << 8 | 7, 5 << 8 | 5]
+    assert !held(runs: runs, values: values, shift: 8).is_err()
+    assert held(runs: [0 << 8 | 5], values: values, shift: 8).is_err()
+
+test "bidi_number, bidi_short and joining_number: each named class, one RFC 5893 does not name, and a long name unknown"
+    assert bidi_number("L") == 0 && bidi_number("NSM") == 10 && bidi_number("WS") == 11
+    assert bidi_short("Arabic_Letter").must() == "AL"
+    assert bidi_short("Boundary_Neutral").is_err()
+    assert joining_number("C").must() == 0 && joining_number("T").must() == 4
+    assert joining_number("X").is_err()
+
+test "status_number: the five statuses and one UTS #46 dropped"
+    assert status_number("valid").must() == 0 && status_number("disallowed").must() == 4
+    assert status_number("disallowed_STD3_valid").is_err()

@@ -186,7 +186,11 @@
 
 /* The runtime's door for a signal other than SIGINT and SIGTERM (panel 247's
  * G): its own C handler counts each delivery, and the program takes the count
- * between its steps. Needs nothing; declared in `hero_os.h`. */
+ * between its steps. Needs nothing; declared in `hero_os.h`, and the two the
+ * platform layer hands it, SIGINT and SIGTERM, in the header the layer's
+ * members alone include (feature 2669), named first so clang checks the
+ * definitions against it. */
+#include "platform/hero_layer_signal.h"
 #include "parts/sigdoor.c"
 
 /* Which thread this program was started on, and the refusal a callback entry

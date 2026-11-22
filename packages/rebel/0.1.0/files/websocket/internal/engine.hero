@@ -101,6 +101,11 @@ record State
     kept_code: str
     # Its message.
     kept_msg: str
+    # A failure a read met after the messages it answered, which the next
+    # read answers once, before the one kept; "" for none.
+    owed_code: str
+    # Its message.
+    owed_msg: str
     # How many pongs came.
     pongs: i64
     # The bytes of the last pong.
@@ -138,6 +143,8 @@ function start(client: bool, agreed: negotiating.Agreed, level: i64, min_bytes: 
         ended: false,
         kept_code: "",
         kept_msg: "",
+        owed_code: "",
+        owed_msg: "",
         pongs: 0,
         last_pong: [],
         deflating: deflating.start(agreed, level: level, min_bytes: min_bytes)
@@ -258,9 +265,16 @@ function fill(@stream: io.Stream, @s: State) -> ()?
     add_onto(out: @s.inbox, data: got)
     return ok()
 
-# The failure a read answers on a connection that cannot read: the one kept,
-# or the close.
-function refused<T>(s: State lent) -> T?
+# The failure a read answers on a connection that cannot read: the one the
+# read before it owes, once; else the one kept, or the close.
+function refused<T>(@s: State) -> T?
+    if s.owed_code != ""
+        code = s.owed_code
+        msg = s.owed_msg
+        s.owed_code @ ""
+        s.owed_msg @ ""
+        return fail(code: code, msg: msg)
+
     if s.kept_code != ""
         return fail(code: s.kept_code, msg: s.kept_msg)
     return fail(code: CLOSED, msg: closed_message(s))
@@ -399,7 +413,7 @@ test "failing: a close of the code written once, the stream ended, and the reads
     assert io.read_exact(two.first.stream, n: 4).must() == [136, 2, 3, 241]
     assert s.ended && s.sent_code == 1009 && !can_read(s) && !is_open(s)
 
-    later: i64? = refused(s)
+    later: i64? = refused(@s)
 
     match later
         .ok _  => assert false

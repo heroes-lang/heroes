@@ -11,9 +11,7 @@
 # key or a nonce, so the transcript is the same on every run.
 
 use <rebel>/kafka
-use <rebel>/net
 use <rebel>/os
-use <rebel>/threads
 
 use config/loader
 use core/consume
@@ -88,8 +86,8 @@ constant REFUSALS: i64
 
 # A stand-in started on its thread, and the port it said it listens on.
 record Started
-    # The thread, owed its wait.
-    thread: threads.TextThread
+    # The thread, owed its wait, which answers what the service saw.
+    thread: (thread str)
     # The port its notification said, 0 where none came.
     port: i64
 
@@ -102,26 +100,16 @@ function run() -> i64
             return 1
         .ok _ => _ = 0
 
-    match net.listen(host: "127.0.0.1", port: 0)
-        .err e =>
-            print("demo: the control port: " + e.msg)
-            return 1
-        .ok opened =>
-            control @= opened
-            code = with_control(control)
-            _ = net.close_listener(@control).is_err()
-            return code
+    return supervised()
 
 # The stand-ins started, the demo run, the stand-ins stopped and told.
-#
-# - `control`: the supervisor's control listener.
-function with_control(control: net.Listener) -> i64
+function supervised() -> i64
     print("== services, started on loopback and told ready")
     started: [Started] @= []
     failed @= false
 
     for service in ["kafka", "s3", "postgres"]
-        match started_service(service, control: control)
+        match started_service(service)
             .err e =>
                 print(f"demo: {service}: {e.msg}")
                 failed @ true
@@ -143,39 +131,25 @@ function with_control(control: net.Listener) -> i64
     print("== what each service saw")
 
     for one in started
-        thread @= one.thread
-        print(threads.wait_text(@thread))
+        print(one.thread.wait())
 
     return code
 
-# One stand-in started on its thread and its notification awaited.
+# One stand-in started on its thread, its setup handed whole, and its
+# notification awaited on the mailbox handed with it.
 #
 # - `service`: `kafka`, `s3` or `postgres`.
-# - `control`: the control listener.
 #
 # Fails where the thread cannot start.
-function started_service(service: str, control: net.Listener) -> Started?
-    port = control.address.port
+function started_service(service: str) -> Started?
+    notices: (mailbox notify.Ready) = mailbox()
 
-    arg = match service
-        "kafka" => kafka_broker.format_setup(
-            kafka_broker.Setup(control_port: port, user: USER, password: KAFKA_PASSWORD, topics: [kafka_state.Topic(name: "clicks", partitions: 1), kafka_state.Topic(name: consume.DEAD_LETTER_TOPIC, partitions: 1), kafka_state.Topic(name: "orders", partitions: 2)])
-        )
-        "s3" => s3_store.format_setup(
-            s3_store.Setup(control_port: port, bucket: BUCKET, region: REGION, access_key_id: ACCESS_KEY_ID, secret: SECRET_KEY, fail_part: REFUSED_KEY, fail_count: REFUSALS)
-        )
-        _ => pg_server.format_setup(
-            pg_server.Setup(control_port: port, user: USER, password: PG_PASSWORD, database: DATABASE)
-        )
+    thread = match service
+        "kafka" => spawn(kafka_broker.run, kafka_broker.Setup(told: notices, user: USER, password: KAFKA_PASSWORD, topics: [kafka_state.Topic(name: "clicks", partitions: 1), kafka_state.Topic(name: consume.DEAD_LETTER_TOPIC, partitions: 1), kafka_state.Topic(name: "orders", partitions: 2)]))?
+        "s3" => spawn(s3_service.run, s3_service.Start(setup: s3_store.Setup(bucket: BUCKET, region: REGION, access_key_id: ACCESS_KEY_ID, secret: SECRET_KEY, fail_part: REFUSED_KEY, fail_count: REFUSALS), told: notices))?
+        _ => spawn(pg_server.run, pg_server.Setup(told: notices, user: USER, password: PG_PASSWORD, database: DATABASE))?
 
-    body = match service
-        "kafka" => kafka_broker.run
-        "s3"    => s3_service.run
-        _       => pg_server.run
-
-    thread = threads.spawn_text(body: body, arg: arg)?
-
-    match notify.await_ready(control)
+    match notify.await_ready(notices)
         .err _ => return ok(Started(thread: thread, port: 0))
         .ok r =>
             if r.service != service
@@ -334,16 +308,15 @@ function scraped(p: pipeline.Pipeline lent) -> i64
         .ok made =>
             e @= made
 
-            match threads.spawn_text(body: scrape.run, arg: to_str(exporter.port_of(e)))
+            match spawn(scrape.run, exporter.port_of(e))
                 .err x =>
                     exporter.close(@e)
                     print("demo: the scraper: " + x.msg)
                     return 1
-                .ok spawned =>
-                    scraper @= spawned
+                .ok scraper =>
                     answered = exporter.answer_one(@e, registry: p.registry, wait_ms: 10_000)
                     exporter.close(@e)
-                    print(threads.wait_text(@scraper))
+                    print(scraper.wait())
 
                     if answered.is_err()
                         return 1

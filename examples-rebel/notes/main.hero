@@ -33,8 +33,10 @@
 # serves its document; `xml` writes the Atom feed; `i18n` and `i18n/dates`
 # write the pages in English or Italian with their dates; `log` writes JSON
 # lines, `metrics` serves Prometheus's text; `config`, `toml` and `flags`
-# read the settings in layers; `time`, `net`, `threads`, `os`, `fs`, `io`,
-# `strings`, `bytes`, `numbers` and `url` do the rest.
+# read the settings in layers; `time`, `net`, `os`, `fs`, `io`, `strings`,
+# `bytes`, `numbers` and `url` do the rest. The server's loop owns the
+# state, and its workers and the demo's client run on threads of the
+# language's own (`spawn`, mailboxes).
 
 use <rebel>/flags
 

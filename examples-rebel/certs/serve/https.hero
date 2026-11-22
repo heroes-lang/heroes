@@ -14,7 +14,6 @@ use <rebel>/x509
 
 use config/loader
 use config/settings
-use core/fields
 use core/ready
 use issue/order
 use pki/facts
@@ -60,22 +59,22 @@ function identity_of(s: settings.Settings, store: vault.Store, name: str) -> Ide
 ## Serving
 
 # `name` served over HTTPS on `host` at `port` until the program is asked
-# to stop, the starter at `control_port` told once it listens.
+# to stop, the starter told on `told` once it listens.
 #
 # - `s`: the settings.
 # - `store`: the key store.
 # - `name`: the certificate's name.
 # - `host`: the address listened on.
 # - `port`: the port, 0 for one the system chooses.
-# - `control_port`: the starter's control port, 0 for none.
+# - `told`: where the starter waits to hear the server listens.
 #
 # Fails as `identity_of`, `tls.listen`, `ready.tell` and `http.serve_tls_with`
 # fail.
-function serve(s: settings.Settings, store: vault.Store, name: str, host: str, port: i64, control_port: i64) -> ()?
+function serve(s: settings.Settings, store: vault.Store, name: str, host: str, port: i64, told: (mailbox ready.Ready)) -> ()?
     identity = identity_of(s, store: store, name: name)?
     listener @= tls.listen(host: host, port: port, server: tls.Server(chain: identity.chain, key: identity.key, protocols: ["http/1.1"]))?
 
-    match ready.tell(control_port, facts: {"SERVICE": "https", "PORT": to_str(listener.port)})
+    match ready.tell(told, said: ready.Ready(service: "https", port: listener.port, https_root: ""))
         .err e =>
             _ = tls.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)
@@ -95,34 +94,39 @@ function serve(s: settings.Settings, store: vault.Store, name: str, host: str, p
 function listen_of(s: settings.Settings) -> net.Address?
     return net.parse_address_port(s.serve.listen)
 
-# The server's thread. Its named values: `CONTROL`, the starter's control
-# port; `CONFIG`, the configuration file's path in base 64; `KEYS`, the key
-# store as `vault.format_store` writes it; `NAME`, the certificate. Answers
-# its last line.
-#
-# - `arg`: the named values, `core/fields`' text.
-function run(arg: str) -> str
-    match started(arg)
-        .ok _  => return "https: served until the stop"
-        .err e => return "https: " + e.msg
+# What the server's thread is handed, whole.
+record Setup
+    # The configuration file's path.
+    config: str
+    # The key store.
+    store: vault.Store
+    # The certificate's name.
+    name: str
+    # Where the starter waits to hear the server listens.
+    told: (mailbox ready.Ready)
 
-# The thread's work: its values read, and `serve` on 127.0.0.1.
+# The server's thread. Answers its last line. The readiness mailbox is
+# closed on every path, so a server that could not listen is told to its
+# starter at once.
 #
-# - `arg`: the thread's named values.
+# - `setup`: the configuration, the key store, the certificate and the
+#   readiness mailbox.
+function run(setup: Setup) -> str
+    outcome = match started(setup)
+        .ok _  => "https: served until the stop"
+        .err e => "https: " + e.msg
+
+    setup.told.close()
+    return outcome
+
+# The thread's work: the configuration read, and `serve` on 127.0.0.1.
 #
-# Fails as `fields`, `loader.parse`, `vault.parse_store` and `serve` fail.
-function started(arg: str) -> ()?
-    named = fields.parse_fields(arg)?
-    s = loader.parse(read_file(fields.decoded_of(named, name: "CONFIG")?)?)?
-    store = vault.parse_store(fields.text_of(named, name: "KEYS")?)?
-    return serve(
-        s,
-        store: store,
-        name: fields.text_of(named, name: "NAME")?,
-        host: "127.0.0.1",
-        port: 0,
-        control_port: fields.int_of(named, name: "CONTROL")?
-    )
+# - `setup`: what the thread was handed.
+#
+# Fails as `loader.parse` and `serve` fail.
+function started(setup: Setup) -> ()?
+    s = loader.parse(read_file(setup.config)?)?
+    return serve(s, store: setup.store, name: setup.name, host: "127.0.0.1", port: 0, told: setup.told)
 
 # The answer to `r`: the page at `/`, 404 elsewhere.
 #

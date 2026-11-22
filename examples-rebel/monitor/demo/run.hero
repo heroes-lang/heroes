@@ -7,7 +7,6 @@
 
 use <rebel>/fs
 use <rebel>/os
-use <rebel>/threads
 use <rebel>/time
 
 use demo/driver
@@ -28,12 +27,21 @@ constant MOST_MINUTES: i64
 function run(dir: str) -> ()?
     _ = fs.remove_all(dir).is_err()
     fs.make_dir_all(dir)?
-    o @= outside.start(script.temperatures())?
     exe = os.executable_path()?
+    most = time.minutes(MOST_MINUTES)?
+    o @= outside.start(script.temperatures())?
     handed = driver.Handed(dir: dir, exe: exe, port: o.device.path, otlp: collector.base_url(o.collector))
-    t @= threads.spawn_text(driver.drive, arg: driver.arg_of(handed))?
-    served = outside.serve(@o, most: time.minutes(MOST_MINUTES)?)
-    problem = threads.wait_text(@t)
+
+    # Nothing between the start and the wait can fail, so the thread is
+    # always waited for and the stand-ins always closed.
+    t = match spawn(driver.drive, handed)
+        .ok running => running
+        .err e =>
+            outside.close(@o)
+            return fail(code: e.code, msg: e.msg)
+
+    served = outside.serve(@o, most: most)
+    problem = t.wait()
 
     if problem != ""
         print("the run's problem: " + problem)

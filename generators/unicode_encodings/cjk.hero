@@ -1,0 +1,221 @@
+# The tables of the WHATWG Encoding Standard's multi-byte encodings that
+# `unicode/encodings` reads: Big5, EUC-KR, gb18030 with its ranges, jis0208
+# with the katakana of ISO-2022-JP, and jis0212. Each decoder's table holds
+# every pointer's code point; each encoder's the pointer the standard's
+# encoder writes for a code point (its section "Indexes": the index pointer,
+# the first, but where the encoder says otherwise).
+
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use indexes
+use layout
+use pack
+
+# The first pointer the Big5 encoder writes: the index Big5 pointer leaves
+# out Hong Kong's extensions, the pointers below (0xA1 - 0x81) * 157.
+constant BIG5_LOW: i64
+    5024
+
+# The first and the last pointer the index Shift_JIS pointer leaves out.
+constant SHIFT_JIS_GAP_FIRST: i64
+    8272
+
+constant SHIFT_JIS_GAP_LAST: i64
+    8835
+
+# The code points whose last pointer of index Big5 the encoder writes, as
+# the index Big5 pointer says.
+function big5_last() -> [i64]
+    return [0x2550, 0x255e, 0x2561, 0x256a, 0x5341, 0x5345]
+
+# The constants every decoder's table opens with: its words and its size.
+#
+# - `index`: the index.
+# - `title`: how the comment names it: `index Big5`.
+#
+# Fails as `pack.decode_words` fails.
+function decoder_constants(index: indexes.Index lent, title: str) -> [str]?
+    words = pack.decode_words(index, size: indexes.size_of(index))?
+    return ok(
+        [tablekit.numbers_constant(comment: [f"# The code point of each pointer of {title}, from 0: pointer `p`'s is bits", "# `21 * (p % 3)` up of word `p / 3`, 21 bits, 0 where the index has none."], name: "DECODE", items: words), tablekit.number_constant(comment: ["# One more than the largest pointer of the index: no pointer from here has a code point."], name: "POINTERS", value: indexes.size_of(index))]
+    )
+
+# The constants of an encoder's table: its words and how many pointers they
+# hold.
+#
+# - `pointers`: the pointers, ordered by their code points.
+# - `which`: what the comment says the pointers are: `the first pointer of each`.
+#
+# Fails as `pack.encode_words` fails.
+function encoder_constants(pointers: [i64], which: str) -> [str]?
+    words = pack.encode_words(pointers)?
+    return ok(
+        [tablekit.numbers_constant(comment: [f"# The pointer the encoder writes for each code point it has, {which}, ordered by", "# the code points: the `k`th is bits `15 * (k % 4)` up of word `k / 4`, 15 bits,", "# and its code point is the decoder's for it."], name: "ENCODE", items: words), tablekit.number_constant(comment: ["# How many pointers `ENCODE` holds."], name: "ENCODE_COUNT", value: pointers.len())]
+    )
+
+# The text of `big5_table`.
+#
+# - `index`: index Big5.
+#
+# Fails as packing fails.
+function big5_text(index: indexes.Index lent) -> str?
+    constants: [str] @= decoder_constants(index, title: "index Big5")?
+    pointers = pack.encoder_pointers(index, low: BIG5_LOW, last: big5_last())
+
+    for one in encoder_constants(pointers, which: "the index Big5 pointer: the pointers below (0xA1 - 0x81) * 157, Hong Kong's extensions, left out, and the last pointer of U+2550, U+255E, U+2561, U+256A, U+5341 and U+5345")?
+        constants @ constants.push(one)
+
+    return ok(
+        layout.module_text(intro: ["# Index Big5 of the WHATWG Encoding Standard, Big5 with the Hong Kong", "# Supplementary Character Set, both ways: the tables `chinese.hero` reads."], sources: [indexes.source_line(index)], constants: constants)
+    )
+
+# The text of `euc_kr_table`.
+#
+# - `index`: index EUC-KR.
+#
+# Fails as packing fails.
+function euc_kr_text(index: indexes.Index lent) -> str?
+    constants: [str] @= decoder_constants(index, title: "index EUC-KR")?
+
+    for one in encoder_constants(pack.encoder_pointers(index, low: 0, last: []), which: "the first pointer of each")?
+        constants @ constants.push(one)
+
+    return ok(
+        layout.module_text(intro: ["# Index EUC-KR of the WHATWG Encoding Standard, KS X 1001 with the Unified", "# Hangul Code, Windows code page 949, both ways: the table `korean.hero` reads."], sources: [indexes.source_line(index)], constants: constants)
+    )
+
+# The text of `gb18030_table`.
+#
+# - `index`: index gb18030.
+# - `ranges`: index gb18030 ranges.
+#
+# Fails as packing fails, and `invalid` where a range's pointer or code point
+# is not above the one before it.
+function gb18030_text(index: indexes.Index lent, ranges: indexes.Index lent) -> str?
+    constants: [str] @= decoder_constants(index, title: "index gb18030")?
+
+    for one in encoder_constants(pack.encoder_pointers(index, low: 0, last: []), which: "the first pointer of each")?
+        constants @ constants.push(one)
+
+    packed: [i64] @= []
+    at @= 0
+
+    while at < ranges.pointers.len()
+        if at > 0 && ranges.points[at] <= ranges.points[at - 1]
+            return fail(
+                code: "invalid",
+                msg: f"{ranges.file}: the code point of pointer {ranges.pointers[at]} is not above the one before it"
+            )
+        packed @ packed.push(ranges.pointers[at] << 21 | ranges.points[at])
+        at @ at + 1
+
+    constants @ constants.push(
+        tablekit.numbers_constant(comment: ["# Index gb18030 ranges: each `pointer << 21 | code point`, the pointers and the", "# code points both ascending, the four-byte sequences of GB18030 read from them."], name: "RANGES", items: packed)
+    )
+    return ok(
+        layout.module_text(intro: ["# Index gb18030 and index gb18030 ranges of the WHATWG Encoding Standard,", "# GB18030-2022's two-byte table and the ranges of its four-byte sequences:", "# the tables `chinese.hero` reads for gb18030 and GBK."], sources: [indexes.source_line(index), indexes.source_line(ranges)], constants: constants)
+    )
+
+# The text of `jis0208_table`.
+#
+# - `index`: index jis0208.
+# - `katakana`: index ISO-2022-JP katakana.
+#
+# Fails as packing fails, and `invalid` where the katakana's pointers are not
+# 0 and up without a gap.
+function jis0208_text(index: indexes.Index lent, katakana: indexes.Index lent) -> str?
+    constants: [str] @= decoder_constants(index, title: "index jis0208")?
+    first = pack.encoder_pointers(index, low: 0, last: [])
+
+    for one in encoder_constants(first, which: "the first pointer of each, as EUC-JP and ISO-2022-JP write")?
+        constants @ constants.push(one)
+
+    constants @ constants.push(
+        tablekit.numbers_constant(comment: ["# The code points whose Shift_JIS pointer is not their first: the index Shift_JIS", "# pointer leaves out the pointers 8272 to 8835, so these take a later one. Each", "# `code point << 15 | pointer`, ascending."], name: "SHIFT_JIS_ENCODE", items: shift_jis_moved(index))
+    )
+    at @= 0
+
+    while at < katakana.pointers.len()
+        if katakana.pointers[at] != at
+            return fail(
+                code: "invalid",
+                msg: f"{katakana.file}: pointer {katakana.pointers[at]} stands where {at} should"
+            )
+        at @ at + 1
+
+    constants @ constants.push(
+        tablekit.numbers_constant(comment: ["# Index ISO-2022-JP katakana: the full-width code point the encoder writes for U+FF61 plus each index."], name: "KATAKANA", items: katakana.points)
+    )
+    return ok(
+        layout.module_text(intro: ["# Index jis0208 of the WHATWG Encoding Standard, JIS X 0208 with the IBM and", "# NEC extensions, both ways, and index ISO-2022-JP katakana: the tables", "# `japanese.hero` reads for EUC-JP, ISO-2022-JP and Shift_JIS."], sources: [indexes.source_line(index), indexes.source_line(katakana)], constants: constants)
+    )
+
+# The text of `jis0212_table`.
+#
+# - `index`: index jis0212.
+#
+# Fails as packing fails.
+function jis0212_text(index: indexes.Index lent) -> str?
+    return ok(
+        layout.module_text(intro: ["# Index jis0212 of the WHATWG Encoding Standard, JIS X 0212, which the EUC-JP", "# decoder alone reads: no encoder writes it. The table `japanese.hero` reads."], sources: [indexes.source_line(index)], constants: decoder_constants(index, title: "index jis0212")?)
+    )
+
+# Every code point of `index` whose index Shift_JIS pointer, its first
+# pointer outside 8272 to 8835, is not its first pointer: `code point << 15 |
+# pointer`, ascending.
+#
+# - `index`: index jis0208.
+function shift_jis_moved(index: indexes.Index lent) -> [i64]
+    first: {i64: i64} @= {}
+    shift_jis: {i64: i64} @= {}
+    at @= 0
+
+    while at < index.pointers.len()
+        pointer = index.pointers[at]
+        point = index.points[at]
+
+        if first[point].is_err()
+            first[point] @ pointer
+
+        if (pointer < SHIFT_JIS_GAP_FIRST || pointer > SHIFT_JIS_GAP_LAST) && shift_jis[point].is_err()
+            shift_jis[point] @ pointer
+        at @ at + 1
+
+    out: [i64] @= []
+
+    for point in sort(keys(shift_jis))
+        pointer = shift_jis[point].must()
+
+        if pointer != first[point].must()
+            out @ out.push(point << 15 | pointer)
+
+    return out
+
+## Tests
+
+test "shift_jis_moved: a code point first in the gap moves to its next pointer, one only in the gap and one before it stay"
+    one = indexes.Index(
+        file: "f",
+        identifier: "i",
+        date: "d",
+        pointers: [100, 8300, 8400, 9000],
+        points: [0x41, 0x42, 0x43, 0x42]
+    )
+    assert shift_jis_moved(one) == [0x42 << 15 | 9000]
+
+test "big5_text: a decoder of two pointers, the extensions left out, and the header naming the file"
+    index = indexes.Index(
+        file: "index-big5.txt",
+        identifier: "abc",
+        date: "2024-09-18",
+        pointers: [5023, 5024, 5025],
+        points: [0x43f0, 0x2550, 0x2550]
+    )
+    text = big5_text(index).must()
+    assert strings.contains(
+        s: text,
+        substr: "# - `index-big5.txt`, Identifier abc, Date 2024-09-18\n\n# The code point of each pointer of index Big5"
+    )
+    assert strings.contains(s: text, substr: "constant ENCODE: [i64]\n    [\n        5025\n    ]")
+    assert strings.contains(s: text, substr: "constant ENCODE_COUNT: i64\n    1\n")

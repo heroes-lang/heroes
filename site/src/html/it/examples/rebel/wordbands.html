@@ -1,0 +1,3 @@
+<p class="tagline">Parole contate su più thread, riscritto con threads di Rebel, che avvia i thread e raccoglie quello che ognuno ha contato.</p>
+
+<p>Il pacchetto <code>threads</code> di Rebel avvia un thread per ogni fascia di testo, li aspetta tutti e restituisce i loro conteggi in ordine, al posto delle chiamate dirette dell&rsquo;originale alle funzioni del runtime per i thread e della sua lista di thread da aspettare. <code>strings</code> divide il testo in parole, <code>maps</code> conta ogni parola e <code>math</code> somma i conteggi, restituendo un errore invece di fermare il programma se la somma non ci sta. Ogni thread costruisce ancora il testo che legge a partire dal solo numero che riceve, quindi niente è condiviso e torna indietro solo un numero.</p>

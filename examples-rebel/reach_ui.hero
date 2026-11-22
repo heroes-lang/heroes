@@ -6,9 +6,10 @@
 #
 # With no argument it runs on the headless side and prints the same lines on
 # every machine, the window drawn as text first. With `--native` it opens
-# the system's own widgets (AppKit on macOS), drives the same session
-# through the system's own paths, a button pressed by `performClick` and the
-# like, and prints the same events and state; the window shows for the
+# the system's own widgets (AppKit on macOS, Win32's controls on Windows, GTK
+# 4 elsewhere), drives the same session through the system's own paths, a
+# button pressed by `performClick`, `BM_CLICK` or its `clicked` signal and
+# the like, and prints the same events and state; the window shows for the
 # moment the session takes.
 
 use <rebel>/image
@@ -243,6 +244,46 @@ test "the driver: the session on the headless side, every event and the state le
                 break
 
     assert lines == ["clicked button", "text_changed name 3 bytes", "text_changed note 12 bytes", "toggled wrap true", "selection_changed size [1]", "selection_changed fruits [0, 2]", "selection_changed day [2]", "value_changed volume 80", "menu_chosen open", "clicked button", "close_asked window"]
+    ui.close(@app).must()
+
+# The same session on the system's own widgets, where this machine offers
+# them to the session: each act given through the system's own path, the
+# same events in the same order as the headless side's, and the state the
+# person left read back from the system.
+test "the driver: the session on the system's own widgets, the same events and the state left"
+    app @= ui.open(.automatic).must()
+
+    if !ui.is_native(app)
+        ui.close(@app).must()
+        skip_test(
+            reason: "no native user interface here: no window server, no window station that shows, or no display named, for this session"
+        )
+    ws = made(@app).must()
+
+    for input in session(ws)
+        ui.inject(@app, input: input).must()
+
+    lines: [str] @= []
+    closing @= false
+
+    while !closing
+        event = ui.wait(@app, within: time.seconds(5).must()).must()
+        lines @ lines.push(told(ws, event: event))
+
+        match event
+            .close_asked _ => closing @ true
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .timer_fired _ | .resized _ | .message _ =>
+                _ = 0
+
+    assert lines == ["clicked button", "text_changed name 3 bytes", "text_changed note 12 bytes", "toggled wrap true", "selection_changed size [1]", "selection_changed fruits [0, 2]", "selection_changed day [2]", "value_changed volume 80", "menu_chosen open", "clicked button", "close_asked window"]
+    assert ui.text_of(app, widget: ws.name).must() == "Ada"
+    assert ui.text_of(app, widget: ws.note).must() == "first\nsecond"
+    assert ui.is_checked(app, widget: ws.wrap).must()
+    assert ui.selection_of(app, widget: ws.size).must() == [1]
+    assert ui.selection_of(app, widget: ws.fruits).must() == [0, 2]
+    assert ui.selection_of(app, widget: ws.day).must() == [2]
+    assert ui.value_of(app, widget: ws.volume).must() == 80
+    ui.destroy(@app, widget: ws.window).must()
     ui.close(@app).must()
 
 # What a thread other than `main`'s gets when it opens an app: 1 where it is

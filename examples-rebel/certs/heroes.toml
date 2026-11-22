@@ -21,7 +21,6 @@ packages = [
     "pem",
     "random",
     "strings",
-    "threads",
     "time",
     "tls",
     "toml",

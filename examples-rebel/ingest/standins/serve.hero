@@ -68,15 +68,14 @@ record Loop
     accepted: i64
 
 # A loop listening on a port of 127.0.0.1 the system chooses, its port told
-# to the supervisor at `control_port` as `service`.
+# to the supervisor on `told` as `service`.
 #
 # - `service`: the stand-in's name, as the supervisor waits for it.
-# - `control_port`: the supervisor's control port; 0 tells nobody, for a
-#   stand-in a program runs on its own.
+# - `told`: the mailbox the supervisor waits on.
 #
 # The program owes the loop a `close`. Fails as `net.listen`, `poll.make`
 # and `notify.ready` fail.
-function open(service: str, control_port: i64) -> Loop?
+function open(service: str, told: (mailbox notify.Ready)) -> Loop?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
     match poll.make(MOST_ENTRIES)
@@ -92,13 +91,13 @@ function open(service: str, control_port: i64) -> Loop?
                     _ = net.close_listener(@listener).is_err()
                     return fail(code: e.code, msg: e.msg)
                 .ok key =>
-                    if control_port > 0
-                        match notify.ready(control_port: control_port, service: service, port: listener.address.port)
-                            .err e =>
-                                _ = poll.close(@set).is_err()
-                                _ = net.close_listener(@listener).is_err()
-                                return fail(code: e.code, msg: e.msg)
-                            .ok _ => _ = 0
+                    match notify.ready(told, service: service, port: listener.address.port)
+                        .err e =>
+                            _ = poll.close(@set).is_err()
+                            _ = net.close_listener(@listener).is_err()
+                            return fail(code: e.code, msg: e.msg)
+                        .ok _ => _ = 0
+
                     return ok(Loop(set: set, listener: listener, listener_key: key, peers: [], next_id: 1, accepted: 0))
 
 # The port the loop listens on.

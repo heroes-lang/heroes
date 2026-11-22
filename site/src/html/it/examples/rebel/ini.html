@@ -1,0 +1,5 @@
+<p class="tagline">Il lettore di file INI riscritto con le funzioni di testo di Rebel, che tiene le proprie regole su cosa un file di configurazione può ripetere.</p>
+
+<p>Il pacchetto <code>strings</code> di Rebel legge ogni riga, toglie gli spazi, distingue l&rsquo;intestazione di una sezione da un commento e separa una chiave dal suo valore, al posto delle funzioni di testo scritte dall&rsquo;originale. Le regole restano di questo programma: una chiave prima di ogni sezione finisce nella sezione vuota invece di andare persa, una chiave ripetuta è un errore perché nessuno può sapere quale delle due intendesse chi ha scritto il file, una sezione ripetuta si unisce alla prima, e una riga che non è niente di tutto questo è un errore con il suo numero di riga.</p>
+
+<p>Rebel ha anche un pacchetto <code>ini</code>, e questo programma non lo usa. Quel pacchetto legge l&rsquo;INI come fa configparser di Python, dove una sola opzione decide insieme per le sezioni e per le chiavi ripetute, mentre questo programma unisce le une e rifiuta le altre. Sono regole ragionevoli tutte e due, quindi il programma tiene la sua e la scrive sopra <code>strings</code>.</p>

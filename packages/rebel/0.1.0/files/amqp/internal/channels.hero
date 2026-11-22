@@ -44,7 +44,7 @@ function add_tag(@tags: [str], tag: str)
 # - `s`: the session.
 function open_channel(@s: state.Session) -> i64?
     if !s.open
-        return waiting.closed_failure(s)
+        return waiting.closed_failure(@s)
     n: i64 @= 1
 
     while n < s.chans.len() && s.chans[n].open
@@ -68,7 +68,7 @@ function open_channel(@s: state.Session) -> i64?
 # - `n`: the channel.
 function close_channel(@s: state.Session, n: i64) -> ()?
     if !s.open
-        return waiting.closed_failure(s)
+        return waiting.closed_failure(@s)
 
     if !state.is_open(s, channel: n)
         return waiting.channel_closed(s, n: n)
@@ -199,7 +199,7 @@ function queue_count(@s: state.Session, n: i64, payload: [u8], method_id: i64) -
 # - `mandatory`: whether a message no queue takes comes back.
 function publish(@s: state.Session, n: i64, exchange_name: str, routing_key: str, m: model.Message lent, mandatory: bool) -> i64?
     if !s.open
-        return waiting.closed_failure(s)
+        return waiting.closed_failure(@s)
 
     if !state.is_open(s, channel: n)
         return waiting.channel_closed(s, n: n)
@@ -306,7 +306,7 @@ function cancel(@s: state.Session, n: i64, tag: str) -> ()?
 # - `flags`: the bits after the tag.
 function settle(@s: state.Session, n: i64, method_id: i64, tag: i64, flags: [bool]) -> ()?
     if !s.open
-        return waiting.closed_failure(s)
+        return waiting.closed_failure(@s)
 
     if !state.is_open(s, channel: n)
         return waiting.channel_closed(s, n: n)

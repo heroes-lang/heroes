@@ -1,0 +1,108 @@
+# The table of the WHATWG Encoding Standard's single-byte encodings that
+# `unicode/encodings`' `single.hero` reads: for each, in the standard's
+# order, the code point of each byte from 0x80 up, and the byte the encoder
+# writes for each code point, the first of the bytes that read as it (the
+# standard's single-byte encoder takes the index pointer, the first).
+
+use <rebel>/strings
+use <tablekit>/tablekit
+
+use indexes
+use layout
+use pack
+
+# The words of one encoding's decoder: the 128 bytes from 0x80, three to a
+# word.
+constant WORDS_EACH: i64
+    43
+
+# One encoding: its name and its index.
+record Single
+    # Its name, as the standard writes it: `ISO-8859-8-I`.
+    name: str
+    # Its index, which ISO-8859-8 and ISO-8859-8-I share.
+    index: indexes.Index
+
+# The file of the index an encoding named `name` reads: `index-` and its name
+# in lower case, but ISO-8859-8-I's, which is ISO-8859-8's.
+#
+# - `name`: the encoding's name, as the standard writes it.
+function file_of(name: str) -> str
+    lower = strings.to_lower_ascii(name)
+
+    if lower == "iso-8859-8-i"
+        return "index-iso-8859-8.txt"
+    return "index-" + lower + ".txt"
+
+# The text of `single_byte_table`.
+#
+# - `encodings`: every single-byte encoding, in the standard's order.
+#
+# Fails as packing fails, and `invalid` where an index has a pointer past
+# 127.
+function module_text(encodings: [Single]) -> str?
+    decode: [i64] @= []
+    encode: [i64] @= []
+    starts: [i64] @= [0]
+    sources: [str] @= []
+    seen: {str: i64} @= {}
+
+    for one in encodings
+        for word in pack.decode_words(one.index, size: WORDS_EACH * 3)?
+            decode @ decode.push(word)
+
+        if indexes.size_of(one.index) > 128
+            return fail(code: "invalid", msg: f"{one.index.file} has a pointer past 127")
+
+        for pointer in pack.encoder_pointers(one.index, low: 0, last: [])
+            encode @ encode.push(point_at(one.index, pointer: pointer) << 7 | pointer)
+
+        starts @ starts.push(encode.len())
+
+        if seen[one.index.file].is_err()
+            seen[one.index.file] @ 0
+            sources @ sources.push(indexes.source_line(one.index))
+
+    return ok(
+        layout.module_text(intro: [f"# The {encodings.len()} single-byte encodings of the WHATWG Encoding Standard: the code", "# point of each byte from 0x80 up, and the byte of each code point, the", "# tables `single.hero` reads."], sources: sources, constants: [tablekit.numbers_constant(comment: ["# For the encoding numbered `e` from 0, in the standard's order of the", f"# single-byte encodings, the {WORDS_EACH} words from `{WORDS_EACH} * e`: the code point of the byte", "# `0x80 + p` is bits `21 * (p % 3)` up of word `p / 3`, 21 bits, 0 where the", "# byte is none."], name: "DECODE", items: decode), tablekit.numbers_constant(comment: ["# For the encoding numbered `e`, the words from `ENCODE_STARTS[e]` up to the", "# next start, each `code point << 7 | byte - 0x80`, ascending: the byte of each", "# code point the encoding writes, the first where two bytes read as one."], name: "ENCODE", items: encode), tablekit.numbers_constant(comment: ["# Where each encoding's words of `ENCODE` begin, and their end last."], name: "ENCODE_STARTS", items: starts)])
+    )
+
+# The code point of `pointer` in `index`, which has it.
+function point_at(index: indexes.Index lent, pointer: i64) -> i64
+    at @= 0
+
+    while index.pointers[at] != pointer
+        at @ at + 1
+
+    return index.points[at]
+
+## Tests
+
+test "file_of: a name in capitals, one already small, and ISO-8859-8-I"
+    assert file_of("IBM866") == "index-ibm866.txt"
+    assert file_of("macintosh") == "index-macintosh.txt"
+    assert file_of("ISO-8859-8-I") == "index-iso-8859-8.txt"
+    assert file_of("x-mac-cyrillic") == "index-x-mac-cyrillic.txt"
+
+test "module_text: two encodings sharing an index, written once among the sources, each byte's code point and each code point's first byte"
+    index = indexes.Index(
+        file: "index-a.txt",
+        identifier: "i",
+        date: "d",
+        pointers: [0, 1, 127],
+        points: [0x410, 0x410, 0x20ac]
+    )
+    text = module_text([Single(name: "A", index: index), Single(name: "A-I", index: index)]).must()
+    assert strings.contains(s: text, substr: "# The 2 single-byte encodings")
+    assert strings.contains(s: text, substr: "Date d\n\n# For the encoding")
+    assert strings.contains(
+        s: text,
+        substr: "constant ENCODE: [i64]\n    [\n        133120\n        1070719\n        133120\n        1070719\n    ]"
+    )
+    assert strings.contains(
+        s: text,
+        substr: "constant ENCODE_STARTS: [i64]\n    [\n        0\n        2\n        4\n    ]"
+    )
+    assert module_text(
+        [Single(name: "B", index: indexes.Index(file: "f", identifier: "i", date: "d", pointers: [128], points: [65]))]
+    ).is_err()

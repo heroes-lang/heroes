@@ -22,9 +22,7 @@ use <rebel>/amqp
 use <rebel>/bytes
 use <rebel>/io
 use <rebel>/net
-use <rebel>/numbers
 use <rebel>/poll
-use <rebel>/strings
 use <rebel>/time
 
 use standins/amqp_channels
@@ -449,50 +447,32 @@ function beat(b: amqp_state.Broker lent)
         if b.peers[i].open && b.peers[i].heartbeat_s > 0 && b.peers[i].stage == .open
             amqp_state.send(b, i: i, kind: amqp_wire.HEARTBEAT, channel: 0, payload: [])
 
-# The fault `text` asks: `none`, or `restart:<exchange>:<publish>:<refusals>`.
+# Listens on the loopback, tells the starter on `to` where, serves until
+# the program's stop, and answers what it carried.
 #
-# - `text`: the fault's text.
-#
-# Fails `invalid` where it is neither.
-function fault_of(text: str) -> amqp_state.Fault?
-    if text == "none"
-        return ok(amqp_state.Fault(exchange: "", after: 0, refusals: 0, seen: 0, left: 0))
-
-    parts = strings.split(s: text, sep: ":")
-
-    if parts.len() != 4 || parts[0] != "restart" || parts[1] == ""
-        return fail(code: "invalid", msg: f"\"{text}\" is no fault: none, or restart:<exchange>:<publish>:<refusals>")
-
-    after = numbers.parse_int(parts[2])?
-    refusals = numbers.parse_int(parts[3])?
-    return ok(amqp_state.Fault(exchange: parts[1], after: after, refusals: refusals, seen: 0, left: 0))
-
-# Listens on the loopback, tells the starter at `told_port` where, serves
-# until the program's stop, and answers what it carried.
-#
-# - `told_port`: the port of the starter's socket.
+# - `to`: the mailbox the starter waits on.
 # - `fault`: the failure asked of the broker.
 #
 # Fails as `net.listen` and `poll.make` fail, the starter told first.
-function serve_on(told_port: i64, fault: amqp_state.Fault) -> str?
+function serve_on(to: (mailbox told.Told), fault: amqp_state.Fault) -> str?
     l @= match net.listen(host: "127.0.0.1", port: 0)
         .ok got => got
         .err e =>
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(to, why: e.msg).is_err()
             return fail(code: e.code, msg: e.msg)
 
     set @= match poll.make(256)
         .ok got => got
         .err e =>
             _ = net.close_listener(@l).is_err()
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(to, why: e.msg).is_err()
             return fail(code: e.code, msg: e.msg)
 
     listening = poll.add_listener(set, l: l)?
 
     # Half the heartbeat, as RabbitMQ sends them.
     beating = poll.add_timer(set, first: time.seconds(HEARTBEAT_S / 2)?, every: time.seconds(HEARTBEAT_S / 2)?)?
-    told.ready(port: told_port, listening: l.address.port)?
+    told.ready(to, listening: l.address.port)?
     b @= amqp_state.Broker(
         peers: [],
         host: amqp_store.new_host(),
@@ -530,24 +510,23 @@ function serve_on(told_port: i64, fault: amqp_state.Fault) -> str?
         f"the AMQP stand-in: {b.peers.len()} connections, {b.published} published, {b.delivered} delivered, {b.acked} acknowledged, {b.restarts} restart, {b.refused} refused"
     )
 
-# The body of the stand-in's thread: serves until the program's stop.
+# What the stand-in's thread is handed, whole.
+record Start
+    # The mailbox the starter waits on.
+    to: (mailbox told.Told)
+    # The failure asked of the broker.
+    fault: amqp_state.Fault
+
+# The body of the stand-in's thread: serves until the program's stop. The
+# mailbox is closed as the thread ends, so a stand-in that ends before
+# telling is told to the starter at once.
 #
-# - `arg`: the port of the starter's socket, a space, and the fault.
-function run(arg: str) -> str
-    parts = strings.words(arg)
+# - `start`: the mailbox and the fault.
+function run(start: Start) -> str
+    outcome = serve_on(start.to, fault: start.fault)
+    start.to.close()
 
-    if parts.len() != 2
-        return f"the AMQP stand-in: \"{arg}\" is not a port and a fault"
-
-    told_port = match numbers.parse_int(parts[0])
-        .ok p  => p
-        .err _ => return f"the AMQP stand-in: \"{parts[0]}\" is no port"
-
-    fault = match fault_of(parts[1])
-        .ok f  => f
-        .err e => return f"the AMQP stand-in: {e.msg}"
-
-    return match serve_on(told_port, fault: fault)
+    return match outcome
         .ok said => said
         .err e   => f"the AMQP stand-in failed: {e.msg}"
 
@@ -560,13 +539,6 @@ test "login_of: PLAIN's three parts, AMQPLAIN's table, and a mechanism of neithe
     assert login_of(mechanism: "AMQPLAIN", response: table.slice(from: 4, to: table.len())).must() == Login(user: "guest", password: "guest")
     assert login_of(mechanism: "PLAIN", response: bytes.from_text("guest")).is_err()
     assert login_of(mechanism: "EXTERNAL", response: []).is_err()
-
-test "fault_of: none, a restart, and a text that is neither"
-    assert fault_of("none").must().exchange == ""
-    f = fault_of("restart:alerts:3:2").must()
-    assert f.exchange == "alerts" && f.after == 3 && f.refusals == 2
-    assert fault_of("restart:alerts:3").is_err()
-    assert fault_of("crash").is_err()
 
 test "name_of: the connection's name, and none"
     assert name_of([amqp.Field(name: "connection_name", value: .text(v: "iothub"))]) == "iothub"

@@ -1,0 +1,87 @@
+# A gRPC call over HTTP/2, routed and admitted as any request and then
+# relayed with its answers streamed back, on the thread that owns the
+# gateway's state (`core/owner`), which the client's connection is handed
+# to for the call.
+
+use <rebel>/grpc
+use <rebel>/http
+use <rebel>/http2
+use <rebel>/strings
+
+use core/state
+use core/telemetry
+use proxy/relay
+use proxy/replies
+use route/pipeline
+
+# A gRPC call, routed and admitted as any request, then relayed; a call no
+# gRPC route takes is answered `UNIMPLEMENTED`, one past its rate limit
+# `RESOURCE_EXHAUSTED`, as gRPC's own servers answer them.
+#
+# - `gw`: the state.
+# - `h2`: the connection.
+# - `r`: the call.
+# - `remote`: the client's address.
+function called(@gw: state.Gateway, @h2: http2.Conn, r: http2.Request, remote: str)
+    client = pipeline.client_named(key: key_of(r.headers, name: gw.settings.client_header), remote: remote)
+
+    match pipeline.admit(@gw, host: r.authority, target: r.path, client: client)
+        .refused refusal =>
+            code = if refusal.response.status == 429
+                grpc.STATUS_RESOURCE_EXHAUSTED
+            else
+                grpc.STATUS_UNIMPLEMENTED
+
+            done = relay.refuse(@h2, stream: r.stream, code: code, message: replies.problem_of(refusal.response))
+            counted(@gw, route: refusal.route, method: r.path, done: done)
+        .admitted a =>
+            match a.routed.route.kind
+                .grpc =>
+                    done = relay.relay(@gw, @h2, r: r, routed: a.routed, client: client)
+                    counted(@gw, route: a.routed.route.name, method: r.path, done: done)
+                .proxy | .graphql | .metrics | .transcode _ =>
+                    done = relay.refuse(
+                        @h2,
+                        stream: r.stream,
+                        code: grpc.STATUS_UNIMPLEMENTED,
+                        message: f"the route {a.routed.route.name} takes no gRPC call"
+                    )
+                    counted(@gw, route: a.routed.route.name, method: r.path, done: done)
+
+# A relayed call counted: its request, its bytes and its status.
+#
+# - `gw`: the state.
+# - `route`: the route's name.
+# - `method`: the call's path.
+# - `done`: what the relay came to.
+function counted(@gw: state.Gateway, route: str, method: str, done: relay.Relayed)
+    telemetry.answered_bytes(@gw.registry, route: route, status: 200, size: done.bytes)
+    telemetry.relayed(
+        @gw.registry,
+        method: method,
+        status: grpc.status_name(done.code).default(f"{done.code}"),
+        count: done.messages
+    )
+
+# The value of the field `name` among `fields`.
+#
+# - `fields`: an HTTP/2 header list.
+# - `name`: the name sought, in any case.
+#
+# Fails `not_found` where none is so named.
+function key_of(fields: [http2.Field], name: str) -> str?
+    wanted = strings.to_lower_ascii(name)
+
+    for f in fields
+        if strings.to_lower_ascii(f.name) == wanted
+            return ok(f.value)
+
+    return fail(code: http.NOT_FOUND, msg: f"no field {name}")
+
+# The call `r` refused `UNAVAILABLE`, as a server that is stopping refuses
+# a call it will not relay.
+#
+# - `conn`: the client's connection.
+# - `r`: the call.
+function refused_while_stopping(@conn: http2.Conn, r: http2.Request)
+    _ = relay.refuse(@conn, stream: r.stream, code: grpc.STATUS_UNAVAILABLE, message: "the gateway is stopping")

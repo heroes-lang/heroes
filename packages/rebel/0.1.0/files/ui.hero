@@ -57,9 +57,10 @@
 # the program itself, through `inject`, one input at each `wait`. A
 # program's tests and a demo run headless and print the same transcript on
 # every machine, with no screen; `open(.automatic)` takes the native side
-# where the system offers one and the headless side where it does not. On
-# macOS the native side is AppKit; on Windows and Linux it is pending, and
-# `.automatic` opens headless there.
+# where the system offers one and the headless side where it does not. The
+# native side is AppKit on macOS, Win32's own controls on Windows, and GTK 4
+# on Linux and every other system, opened where it is installed and a
+# display is named.
 #
 # **The backend's interface** is the platform layer's `hero_ui.h`, one shape
 # for every system: a widget made by its number, its kind and its window,
@@ -70,14 +71,14 @@
 # It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
 # `limit` and `failed` (README § A4).
 #
-# Not written yet, each a `pending` block of its ledger: the native side on
-# Windows, by Win32; the native side on Linux, by GTK; a thread's message to
-# the user interface, through feature 2647's mailbox; a box drawn with a
-# title and a frame around it; a combo box the person may type into; a
-# number typed, or stepped up and down; a line between the widgets of a box;
-# an area the program draws into, with its keys and its mouse; a tip shown over a widget; a date, a colour or a
-# font chosen in the system's own picker; an icon in the system's tray or
-# menu bar, and its notifications; a file dragged onto a window.
+# Not written yet, each a `pending` block of its ledger: a thread's message to
+# the user interface, through feature 2647's mailbox; a box drawn with a title
+# and a frame around it; a combo box the person may type into; a number
+# typed, or stepped up and down; a line between the widgets of a box; an area
+# the program draws into, with its keys and its mouse; a tip shown over a
+# widget; a date, a colour or a font chosen in the system's own picker; an
+# icon in the system's tray or menu bar, and its notifications; a file
+# dragged onto a window.
 
 use bytes
 use image

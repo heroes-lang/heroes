@@ -113,6 +113,25 @@ function buffered(@s: state.Session) -> Scanned?
         .ok p  => return ok(Scanned(complete: true, packet: p))
         .err e => return lost(@s, code: model.INVALID, msg: f"{s.target} sent a malformed packet: {e.msg}")
 
+# Acts on every packet whole in the buffer, reading nothing. A call that
+# waits for one answer ends with it, since one read may bring the answer
+# and what the server wrote after it: a message left as bytes here is one
+# `held_count` does not count, and the stream, drained, never makes `poll`
+# tell a program of it (defect 2675).
+#
+# - `s`: the session; the connection lost where the bytes are no MQTT or a
+#   packet cannot be acted on.
+function apply_whole(@s: state.Session) -> ()?
+    while true
+        got = buffered(@s)?
+
+        if !got.complete
+            return ok()
+
+        match apply(@s, p: got.packet)
+            .ok _  => _ = 0
+            .err e => return lost(@s, code: e.code, msg: e.msg)
+
 # The next packet, reading until it is whole.
 #
 # - `s`: the session.

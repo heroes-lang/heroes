@@ -3,12 +3,14 @@
 # of them, the full tag it is most likely; for a deprecated or legacy code,
 # the code that replaces it.
 #
-# The table is data, made and not typed: a one-off Heroes program,
-# `gen_locales.hero`, which is not in the tree (defect 2639), read CLDR 49's
-# JSON (`cldr-49.0.0-json-full.zip` of
-# https://github.com/unicode-org/cldr-json/releases, SHA-256 3b1f5d684d29c541,
-# fetched 2026-11-18), its files `supplemental/likelySubtags.json` and
-# `aliases.json`, and wrote this module whole. Nothing here is edited by hand.
+# Generated, never edited by hand: the Heroes program `generators/i18n_core/`
+# read CLDR 49's JSON, `cldr-49.0.0-json-full.zip` of
+# https://github.com/unicode-org/cldr-json/releases/download/49.0.0/
+# (SHA-256
+# 3b1f5d684d29c541d3acf91fe834b3fe36ae0f34775e3ee50e93558bf14ca174,
+# fetched 2026-11-21), its files `cldr-core/supplemental/likelySubtags.json`
+# and `aliases.json`, and wrote this module whole; its `check` command says
+# whether this module is still what it writes.
 
 # The tags likely subtags are given for, `und` the empty language, in the
 # order of their bytes.

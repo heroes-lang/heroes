@@ -1,0 +1,26 @@
+# A generic function instantiated at `()` builds `ok(v)` from a unit value
+# (defect 2682, 2026-11-22). `heroes check` accepted it, since `ok(v)` with
+# `v: T` is checked once for every `T`, and `heroes build` stopped at exit 2:
+# clang refused `.as.ok = t6`, a temporary the unit rule never declares. The
+# emitter now builds such an `ok` as `ok()` is, the tag alone.
+#
+# This shape: a variant case whose field is `()?`, bound by a `match` arm and
+# handed to the pass-through.
+
+variant Slot
+    full
+        r: ()?
+    empty
+
+function pass<T>(r: T?) -> T?
+    match r
+        .ok v  => return ok(v)
+        .err e => return fail(code: e.code, msg: e.msg)
+
+function main()
+    x: ()? = ok()
+    s: Slot = .full(r: x)
+
+    match s
+        .full f => print(pass(f.r).is_err())
+        .empty  => print("empty")

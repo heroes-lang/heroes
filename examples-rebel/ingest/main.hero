@@ -40,7 +40,8 @@
 # - `sql`, `sql/postgres`, `sql/migrate`: the aggregates, the ledger, the
 #   schema; `jobs`, `jobs/postgres_store`: the writes kept for a replay;
 # - `scram`: the logins to PostgreSQL and Kafka, both sides;
-# - `threads`: the compression of a window's copies, the demo's services;
+# - the language's own threads (`spawn`, mailboxes), no package: the
+#   compression of a window's copies, the demo's services;
 # - `retries`: the backoff of every put; `metrics`: the pipeline's own
 #   metrics; `http`, `net`, `poll`, `io`: serving them, the stand-ins;
 # - `toml`: the settings' file; `errors`: what a failure was doing, said

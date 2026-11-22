@@ -3,9 +3,10 @@
 # bits and written as its last decimal digits; codes compared in constant
 # time over a window of counters; and the otpauth URI of Google
 # Authenticator's Key Uri Format, which hands a key to an authenticator app,
-# its key in base 32 (RFC 4648) and its label and issuer percent-escaped
-# (RFC 3986). The base 32 and the escaping are written here because
-# `bytes` has no base 32 yet and `url` stands on this package's own layer.
+# its key in base 32 with no padding (RFC 4648, as
+# `bytes.format_base32_unpadded` writes it) and its label and issuer
+# percent-escaped (RFC 3986). The escaping is written here because `url`
+# stands on this package's own layer.
 
 use bytes
 use crypto/internal/compare
@@ -23,10 +24,6 @@ constant LEAST_DIGITS: i64
 # bits, below 10^10, so a longer code would only add zeros in front.
 constant MOST_DIGITS: i64
     10
-
-# The alphabet of base 32, RFC 4648's.
-constant BASE32: str
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 
 # The hexadecimal digits a percent escape writes, upper case as RFC 3986
 # recommends.
@@ -157,29 +154,6 @@ function steps_around(step: u64, window: u64) -> [u64]
 
     return out
 
-# `data` in base 32, RFC 4648's alphabet with no padding, as the Key Uri
-# Format writes a key.
-function base32(data: [u8]) -> str
-    out: [str] @= []
-    buffer: i64 @= 0
-    bits: i64 @= 0
-
-    for b in data
-        buffer @ buffer << 8 | to_i64(b).must()
-        bits @ bits + 8
-
-        while bits >= 5
-            index = buffer >> bits - 5 & 31
-            out @ out.push(BASE32.slice(from: index, to: index + 1))
-            bits @ bits - 5
-
-        buffer @ buffer & (1 << bits) - 1
-
-    if bits > 0
-        index = buffer << 5 - bits & 31
-        out @ out.push(BASE32.slice(from: index, to: index + 1))
-    return out.join("")
-
 # Whether `b` stands as itself in a URI, RFC 3986's unreserved characters:
 # ASCII letters and digits, `-`, `.`, `_` and `~`.
 function is_unreserved(b: u8) -> bool
@@ -237,7 +211,7 @@ function uri(kind_word: str, account: str, issuer: str, kind: engine.Kind, key: 
         escaped(account)
     else
         escaped(issuer) + ":" + escaped(account)
-    pieces: [str] @= [f"otpauth://{kind_word}/{label}?secret={base32(key)}"]
+    pieces: [str] @= [f"otpauth://{kind_word}/{label}?secret={bytes.format_base32_unpadded(key)}"]
 
     if issuer.len() > 0
         pieces @ pieces.push("&issuer=" + escaped(issuer))
@@ -318,18 +292,6 @@ test "otp counters_ahead and steps_around: no window, a window, the largest coun
     assert steps_around(step: 10, window: 2) == [10, 9, 11, 8, 12]
     assert steps_around(step: 0, window: 1) == [0, 1]
     assert steps_around(step: 1, window: 2) == [1, 0, 2, 3]
-
-# Python's `base64.b32encode`, its padding taken off, answered these.
-test "otp base32: no bytes, one to five, six, and RFC 4226's secret"
-    assert base32([]) == ""
-    assert base32(bytes.from_text("f")) == "MY"
-    assert base32(bytes.from_text("fo")) == "MZXQ"
-    assert base32(bytes.from_text("foo")) == "MZXW6"
-    assert base32(bytes.from_text("foob")) == "MZXW6YQ"
-    assert base32(bytes.from_text("fooba")) == "MZXW6YTB"
-    assert base32(bytes.from_text("foobar")) == "MZXW6YTBOI"
-    assert base32(rfc_key()) == "GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"
-    assert base32([255, 255, 255, 255, 255]) == "77777777"
 
 # Python's `urllib.parse.quote(s, safe="")` answered these.
 test "otp escaped: unreserved characters kept, a space, an at sign, characters of two bytes, and the signs of a query"

@@ -1,6 +1,7 @@
 # The executor of lists, and-or lists, pipelines and compound commands
 # (XCU 2.9): each runs in the shell it is handed and leaves its status in
 # `sh.status`. A `break`, `continue`, `return` or `exit` sets `sh.flow`, and
+# so does a Ctrl-C an interactive shell counted, seen before each command;
 # every loop over commands here stops at once while it is not `.normal`, so
 # the jump unwinds to the loop, the function or the shell that ends it.
 #
@@ -8,6 +9,7 @@
 # copy of the shell, so what it changes ends with it; only its status and
 # what it wrote to a capture come back.
 
+use <rebel>/os
 use <rebel>/process
 
 use diag/report
@@ -28,6 +30,10 @@ use syntax/ast
 # - `place`: their three places.
 function run_items(@sh: state.Shell, items: [ast.Item], place: streams.Io)
     for item in items
+        if os.take_signals(.interrupt) > 0
+            sh.status @ 130
+            sh.flow @ .interrupted
+
         if !state.going_on(sh)
             return
         run_item(@sh, item: item, place: place)
@@ -274,7 +280,7 @@ function loop_ends(@sh: state.Shell) -> bool
                 return true
             sh.flow @ .normal
             return false
-        .returning | .exiting _ => return true
+        .returning | .exiting _ | .interrupted => return true
 
 # `while` or `until`: the condition, then the body while it decides so.
 #
@@ -380,6 +386,10 @@ function in_subshell(@sh: state.Shell, body: [ast.Item], place: streams.Io) -> i
     status = match sub.flow
         .exiting e                                         => e.code
         .normal | .breaking _ | .continuing _ | .returning => sub.status
+        .interrupted                                       => 130
+
+    if sub.flow == .interrupted
+        sh.flow @ .interrupted
 
     end_subshell(sh: @sh, sub: @sub)
     sh.status @ status
@@ -403,6 +413,10 @@ function substitute(@sh: state.Shell, body: [ast.Item]) -> str
     status = match sub.flow
         .exiting e                                         => e.code
         .normal | .breaking _ | .continuing _ | .returning => sub.status
+        .interrupted                                       => 130
+
+    if sub.flow == .interrupted
+        sh.flow @ .interrupted
 
     end_subshell(sh: @sh, sub: @sub)
     sh.status @ status

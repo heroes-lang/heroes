@@ -168,17 +168,22 @@ jobs:
 
   # ─────────────── Every generated table still its generator's ───────────────
   #
-  # Each program under `generators/` writes one of Rebel's generated tables
-  # from pinned public data and has a `check` that reads the table in the tree
-  # and exits 0 where it is byte for byte what the generator writes, 1 where
-  # it is not (naming the first line that differs), and 2 where its input's
-  # digest is not the pinned one. The input is fetched here by the URL the
-  # generator records, so no generator can rot unseen. One leg: the tables
-  # are text, the same on every platform.
+  # Each program under `generators/` writes one or more of Rebel's generated
+  # tables from pinned public data and has a `check` that reads the tables in
+  # the tree and exits 0 where each is byte for byte what the generator
+  # writes, 1 where one is not (naming the first line that differs), and 2
+  # where its input is not the one it is pinned to. An input whose licence
+  # lets it be copied and whose source serves only its latest version is kept
+  # in the generator's own folder; any other is fetched here by the URL the
+  # generator records and held to the SHA-256 it pins, so no generator can rot
+  # unseen. One leg: the tables are text, the same on every platform.
   generators:
     name: Linux x86-64, every generated table checked against its generator
     runs-on: ubuntu-26.04
-    timeout-minutes: 60
+    # Each step builds a generator with the Rebel packages it reads, one to
+    # four minutes apiece on a Mac running other builds on 2026-11-22; how
+    # long the job takes on a runner is unrun, so the limit leaves room.
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
 
@@ -201,6 +206,157 @@ jobs:
           curl --fail --location --silent --show-error -o build/generators/cldr-49.0.0-json-full.zip \
             https://github.com/unicode-org/cldr-json/releases/download/49.0.0/cldr-49.0.0-json-full.zip
           ./heroes run generators/i18n_units/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      # The WHATWG's files are kept in `generators/unicode_encodings/whatwg/`.
+      - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
+        run: ./heroes run generators/unicode_encodings/main.hero -- check
+
+      # `generators/brotli/main.hero`'s `SOURCE_URL`; the generator holds the
+      # text to its `SOURCE_SHA256` itself.
+      - name: generators/brotli, RFC 7932's dictionary, transforms and context tables of compress/brotli
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/rfc7932.txt \
+            https://www.rfc-editor.org/rfc/rfc7932.txt
+          ./heroes run generators/brotli/main.hero -- check build/generators/rfc7932.txt
+
+      # The HTML Standard's `entities.json` is kept in
+      # `generators/html_entities/whatwg/`.
+      - name: generators/html_entities, the HTML Standard's named character references of html
+        run: ./heroes run generators/html_entities/main.hero -- check
+
+      # The five files of `generators/unicode_cases/main.hero`'s
+      # `AUXILIARY_URL` and `UCD_URL`; the generator holds each to its SHA-256.
+      - name: generators/unicode_cases, Unicode 17.0.0's conformance cases of unicode/segment and unicode/normalize
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in GraphemeBreakTest WordBreakTest SentenceBreakTest LineBreakTest; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/ucd/auxiliary/$f.txt"
+          done
+          curl --fail --location --silent --show-error -o build/generators/ucd-17.0.0/NormalizationTest.txt \
+            https://www.unicode.org/Public/17.0.0/ucd/NormalizationTest.txt
+          ./heroes run generators/unicode_cases/main.hero -- check build/generators/ucd-17.0.0
+
+      # The four files of `generators/tokenizer_tables/main.hero`'s
+      # `RANKS_URL` and `TIKTOKEN_URL`; the generator holds each to its SHA-256.
+      - name: generators/tokenizer_tables, tiktoken's tables of tokenizer/tables
+        run: |
+          mkdir -p build/generators/tiktoken
+          for f in cl100k_base o200k_base; do
+            curl --fail --location --silent --show-error -o "build/generators/tiktoken/$f.tiktoken" \
+              "https://openaipublic.blob.core.windows.net/encodings/$f.tiktoken"
+          done
+          curl --fail --location --silent --show-error -o build/generators/tiktoken/openai_public.py \
+            https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken_ext/openai_public.py
+          curl --fail --location --silent --show-error -o build/generators/tiktoken/model.py \
+            https://raw.githubusercontent.com/openai/tiktoken/0.14.0/tiktoken/model.py
+          ./heroes run generators/tokenizer_tables/main.hero -- check build/generators/tiktoken
+
+      # The list and its tests are kept in `generators/http_suffixes/publicsuffix/`.
+      - name: generators/http_suffixes, the Public Suffix List of http/suffixes
+        run: ./heroes run generators/http_suffixes/main.hero -- check
+
+      # The five files of `generators/url_idna/main.hero`'s `IDNA_URL` and
+      # `EXTRACTED_URL`; the generator holds each to its SHA-256.
+      - name: generators/url_idna, UTS 46's mapping table, properties and conformance cases of url/idna
+        run: |
+          mkdir -p build/generators/idna-17.0.0
+          for f in IdnaMappingTable IdnaTestV2; do
+            curl --fail --location --silent --show-error -o "build/generators/idna-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/idna/$f.txt"
+          done
+          for f in DerivedBidiClass DerivedJoiningType DerivedCombiningClass; do
+            curl --fail --location --silent --show-error -o "build/generators/idna-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/ucd/extracted/$f.txt"
+          done
+          ./heroes run generators/url_idna/main.hero -- check build/generators/idna-17.0.0
+
+      # The zip `generators/i18n_units` fetched above; `generators/cldrkit`
+      # holds it to its SHA-256.
+      - name: generators/i18n_core, CLDR 49's plural, locale and alias tables of i18n
+        run: ./heroes run generators/i18n_core/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      - name: generators/i18n_numbers, CLDR 49's number table of i18n/numbers
+        run: ./heroes run generators/i18n_numbers/main.hero -- check build/generators/cldr-49.0.0-json-full.zip
+
+      # The five files of `generators/unicode_tables/main.hero`'s `UCD_URL`;
+      # the generator holds each to its SHA-256.
+      - name: generators/unicode_tables, Unicode 17.0.0's category, property, case and fold tables of unicode
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in UnicodeData PropList DerivedCoreProperties SpecialCasing CaseFolding; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/ucd/$f.txt"
+          done
+          ./heroes run generators/unicode_tables/main.hero -- check build/generators/ucd-17.0.0
+
+      # `generators/html_tables/main.hero`'s `SOURCE_URL`, the standard's
+      # source at a commit; the generator holds it to its `SOURCE_SHA256`.
+      - name: generators/html_tables, the HTML Standard's doctype lists and SVG name tables of html
+        run: |
+          mkdir -p build/generators/whatwg-html
+          curl --fail --location --silent --show-error -o build/generators/whatwg-html/source \
+            https://raw.githubusercontent.com/whatwg/html/efcc0bcdec596651e2cb316ab076c0bdc7c4d120/source
+          ./heroes run generators/html_tables/main.hero -- check build/generators/whatwg-html/source
+
+      # `generators/pdf_tables/main.hero`'s `AGL_URL`, `AFM_URL` and
+      # `MAPPINGS_URL`; the generator holds each file to its SHA-256 in
+      # `INPUTS`.
+      - name: generators/pdf_tables, the glyph list, the 14 fonts' metrics and the encodings of pdf
+        run: |
+          mkdir -p build/generators/pdf
+          for f in glyphlist zapfdingbats; do
+            curl --fail --location --silent --show-error -o "build/generators/pdf/$f.txt" \
+              "https://raw.githubusercontent.com/adobe-type-tools/agl-aglfn/4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6/$f.txt"
+          done
+          for f in Helvetica Helvetica-Bold Helvetica-Oblique Helvetica-BoldOblique Times-Roman Times-Bold \
+            Times-Italic Times-BoldItalic Courier Courier-Bold Courier-Oblique Courier-BoldOblique Symbol ZapfDingbats; do
+            curl --fail --location --silent --show-error -o "build/generators/pdf/$f.afm" \
+              "https://raw.githubusercontent.com/matplotlib/matplotlib/v3.10.0/lib/matplotlib/mpl-data/fonts/pdfcorefonts/$f.afm"
+          done
+          curl --fail --location --silent --show-error -o build/generators/pdf/CP1252.TXT \
+            https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT
+          curl --fail --location --silent --show-error -o build/generators/pdf/ROMAN.TXT \
+            https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMAN.TXT
+          ./heroes run generators/pdf_tables/main.hero -- check build/generators/pdf
+
+      # `generators/time_zones/main.hero`'s `SOURCE_URL`; the generator holds
+      # the archive to its `SOURCE_SHA256` itself.
+      - name: generators/time_zones, the IANA time zone database's names of time
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/tzdata2026f.tar.gz \
+            https://data.iana.org/time-zones/releases/tzdata2026f.tar.gz
+          ./heroes run generators/time_zones/main.hero -- check build/generators/tzdata2026f.tar.gz
+
+      # The eight files of `generators/unicode_segment/main.hero`'s `UCD_URL`,
+      # each under its folder there; the generator holds each to its SHA-256.
+      - name: generators/unicode_segment, Unicode 17.0.0's break classes, widths and flags of unicode/segment
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in LineBreak.txt EastAsianWidth.txt DerivedCoreProperties.txt UnicodeData.txt \
+            auxiliary/WordBreakProperty.txt auxiliary/SentenceBreakProperty.txt auxiliary/GraphemeBreakProperty.txt \
+            emoji/emoji-data.txt; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
+              "https://www.unicode.org/Public/17.0.0/ucd/$f"
+          done
+          ./heroes run generators/unicode_segment/main.hero -- check build/generators/ucd-17.0.0
+
+      # The tests of the packages the generators share: `generators/tablekit/`,
+      # which every generator writes its tables with, `generators/cldrkit/`,
+      # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
+      # Unicode Character Database's files. A generator's own tests are left
+      # to whoever changes it: `heroes test` runs every test its program
+      # reaches, Rebel's packages' among them (1,875 tests and three minutes
+      # for `tablekit` alone on 2026-11-22, on a Mac running other builds),
+      # which the `coherence` job runs already, and each `check` above judges
+      # a generator's whole output byte for byte.
+      - name: generators/tablekit, cldrkit and ucdkit, their tests
+        run: |
+          ./heroes test generators/tablekit/tablekit.hero
+          ./heroes test generators/cldrkit/cldrkit.hero
+          ./heroes test generators/ucdkit/ucdkit.hero
 
   # ──────────────── The drivers, dealt into parts, on every leg ────────────────
   #
@@ -293,16 +449,21 @@ jobs:
       # opened by `runtime/platform/hero_odbc.c`; and SQLite's ODBC driver,
       # `libsqliteodbc`, which registers itself as `SQLite3`, the name
       # `sql/odbc`'s live tests look for
-      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`). Each
+      # (`packages/rebel/0.1.0/files/sql/odbc/internal/fixture.hero`); GTK 4's
+      # `libgtk-4.so.1`, opened by `runtime/platform/hero_ui.c`'s Linux arm,
+      # and Xvfb, an X server with no screen, which the drivers' step runs
+      # them under so `ui`'s native tests run here rather than skip. Each
       # asked for by the name the code asks, after the install.
       - name: Install what Rebel binds and opens, Linux
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc
+          sudo apt-get install -y clang libsqlite3-dev openssl libsecret-1-0 libsecret-tools gnome-keyring dbus unixodbc libsqliteodbc libgtk-4-1 xvfb xauth
           test -f /usr/include/sqlite3.h \
             || { echo '::error::sqlite3.h is not in /usr/include after the install, so sql/sqlite would be refused `ffi_missing_header`'; exit 1; }
-          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2'; do
+          command -v xvfb-run > /dev/null \
+            || { echo '::error::xvfb-run is missing after the install, so ui would answer `unsupported` and skip its native tests'; exit 1; }
+          for wanted in 'libssl\.so\.[34]' 'libcrypto\.so\.[34]' 'libsecret-1\.so\.0' 'libodbc\.so\.2' 'libgtk-4\.so\.1'; do
             ldconfig -p | grep -Eq "^[[:space:]]+$wanted " \
               || { echo "::error::the loader knows no $wanted after the install, so the member that opens it would answer \`unsupported\`"; exit 1; }
           done
@@ -440,7 +601,18 @@ jobs:
       # Service `hero_keyring.c` reaches through libsecret; a secret stored and
       # read back first, so `keyring`'s tests never answer `unsupported` on a
       # leg meant to run them. Darwin's login keychain and Windows' Credential
-      # Manager are the runner's own.
+      # Manager are the runner's own. And inside an X server with no screen,
+      # `xvfb-run`'s, GTK told to speak X11 to it (`GDK_BACKEND=x11`), so
+      # `ui`'s native tests draw GTK 4's own widgets there; its display is
+      # asked to answer first, as the keyring is. The `sanitize` run is given
+      # no display, so those two tests skip there with their reason: under
+      # LeakSanitizer a GTK program's exit reads fontconfig's own allocations,
+      # which pango's font cache keeps for the process's life, as leaks (17,433
+      # bytes in 597 allocations, none of the layer's, Linux arm64 under Xvfb,
+      # 2026-11-22), and GTK's icons reach libpng's `setjmp` into a buffer of
+      # the heap it frees, which `runtime/parts/sigjump.c` reads at the next
+      # save point (ASan's heap-use-after-free that day), each a defect of its
+      # own; the `plain` run draws GTK.
       - name: The part's drivers
         if: ${{ matrix.slice.drivers != '' }}
         shell: bash
@@ -453,7 +625,8 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Linux" ] && [ -z "${REBEL_SESSION:-}" ]; then
             export REBEL_SESSION=1
-            exec dbus-run-session -- bash --noprofile --norc "$0"
+            export GDK_BACKEND=x11
+            exec dbus-run-session -- xvfb-run -a --server-args='-screen 0 1280x1024x24' bash --noprofile --norc "$0"
           fi
           set +e
           if [ "$RUNNER_OS" = "Linux" ]; then
@@ -464,6 +637,9 @@ jobs:
               && secret-tool clear service rebel-ci account probe \
               || { echo "::error::the Secret Service keeps no secret in this session, so keyring's tests would answer \`unsupported\` on a leg meant to run them"; exit 1; }
             echo "the Secret Service keeps a secret in this session"
+            [ -n "${DISPLAY:-}" ] && [ -S "/tmp/.X11-unix/X${DISPLAY#:}" ] \
+              || { echo "::error::no X server answers at DISPLAY='${DISPLAY:-}', so ui's native tests would skip on a leg meant to run them"; exit 1; }
+            echo "an X server with no screen answers at $DISPLAY"
           fi
           # `timeout` by its path, since Windows' System32 holds a
           # `timeout.exe` that waits instead: GNU's on Darwin (`gtimeout`) and
@@ -510,7 +686,10 @@ jobs:
               log="$logs/$name.$run.log"
               echo "::group::$name, $run"
               start=$(date +%s)
-              "$bound" -k 30 "$LIMIT" "./heroes$EXE" test "$@" 2>&1 | head -c "$BYTES" > "$log"
+              shown=""
+              if [ "$run" = "sanitize" ]; then shown="-u DISPLAY -u WAYLAND_DISPLAY"; fi
+              # shellcheck disable=SC2086
+              env $shown "$bound" -k 30 "$LIMIT" "./heroes$EXE" test "$@" 2>&1 | head -c "$BYTES" > "$log"
               code=${PIPESTATUS[0]}
               took=$(( $(date +%s) - start ))
               said=""

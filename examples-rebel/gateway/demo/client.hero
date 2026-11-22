@@ -15,7 +15,6 @@ use <rebel>/http
 use <rebel>/http2
 use <rebel>/io
 use <rebel>/json
-use <rebel>/net
 use <rebel>/os
 use <rebel>/strings
 use <rebel>/time
@@ -42,24 +41,22 @@ constant API_KEY: str
 constant CALL_SECONDS: i64
     10
 
-# The client's thread: the session against the gateway whose port and
-# trusted authority `arg` holds, then the program's stop asked. Answers the
-# session's transcript.
+# What the client's thread is handed, whole.
+record Start
+    # The gateway's port on 127.0.0.1.
+    port: i64
+    # The PEM of the authority to trust.
+    roots: str
+
+# The client's thread: the session against the gateway at `start`'s port,
+# trusting `start`'s authority alone, then the program's stop asked.
+# Answers the session's transcript.
 #
-# - `arg`: the gateway's port in decimal, a line end, then the PEM of the
-#   authority to trust.
-function run(arg: str) -> str
+# - `start`: the gateway's port and the authority to trust.
+function run(start: Start) -> str
     lines: [str] @= []
-
-    match strings.split_once(s: arg, sep: "\n")
-        .err _ => lines @ lines.push("client: no port and authority given")
-        .ok h =>
-            match net.parse_port(h.before)
-                .err e => lines @ lines.push("client: " + e.msg)
-                .ok port =>
-                    over_h1(@lines, port: port, roots: h.after)
-                    over_h2(@lines, port: port, roots: h.after)
-
+    over_h1(@lines, port: start.port, roots: start.roots)
+    over_h2(@lines, port: start.port, roots: start.roots)
     os.ask_stop()
     return lines.join("\n")
 

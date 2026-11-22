@@ -35,7 +35,8 @@
 # - `hash`: XXH64, the digest of every input, output and command;
 # - `process`: each step's program run with no shell, its output caught,
 #   its time limit kept; a command shown quoted;
-# - `threads`: the worker threads the steps run on, up to `-j`;
+# - `threads`: how many threads the runtime runs at once, which `-j` is
+#   held to; the steps run on threads of the language's own (`spawn`);
 # - `fs`: outputs' folders made, files read, hashed, removed, the log
 #   appended and written whole, the folder's lock;
 # - `path`: every path made one node, written with `/` and cleaned, and put

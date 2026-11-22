@@ -26,7 +26,8 @@
 # - `csv`, `xlsx`, `json`, `yaml`, `toml`, `ini`, `xml`, `msgpack`, `cbor`,
 #   `bson`: the formats, each read into the model and written from it
 #   (`formats/*_file`); Java properties are read and written here
-#   (`formats/properties_file`), Rebel having no package for them.
+#   (`formats/properties_file`), since the program flattens nested lists in
+#   Spring's manner, which Rebel's `java_properties` leaves to its caller.
 # - `json/path`: `--path`, the RFC 9535 queries (`query/selection`).
 # - `big` and `numbers`: the exact decimals of the model, sums and means to
 #   the digit (`model/decimal`, `query/evaluate`, `query/aggregate`).

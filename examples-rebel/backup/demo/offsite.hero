@@ -8,11 +8,9 @@
 # Signature Version 4 check. The stand-in is then stopped and tells what it
 # saw. No port, time or key is printed.
 
-use <rebel>/net
 use <rebel>/os
 use <rebel>/s3
 use <rebel>/strings
-use <rebel>/threads
 
 use cli/report
 use demo/compare
@@ -50,34 +48,16 @@ constant SECRET: str
 
 ## Running
 
-# The offsite half of the demo; answers 0 where every step ran.
+# The offsite half of the demo: the stand-in started, the offsite steps
+# run, the stand-in stopped and its account printed. Answers 0 where every
+# step ran.
 #
 # - `local`: the local repository's storage.
 # - `source`: the folder backed up, to compare restores with.
 # - `target`: the folder the restore from the bucket writes into.
 # - `password`: the repository's password.
 function run(local: storage.Storage, source: str, target: str, password: str) -> i64
-    match net.listen(host: "127.0.0.1", port: 0)
-        .err e =>
-            print("demo: the control port: " + e.msg)
-            return 1
-        .ok made =>
-            control @= made
-            code = with_control(local, control: control, source: source, target: target, password: password)
-            _ = net.close_listener(@control).is_err()
-            return code
-
-# The stand-in started, the offsite steps run, the stand-in stopped and
-# its account printed.
-#
-# - `local`: the local repository's storage.
-# - `control`: the demo's control listener.
-# - `source`: the folder backed up.
-# - `target`: the folder the restore writes into.
-# - `password`: the repository's password.
-function with_control(local: storage.Storage, control: net.Listener, source: str, target: str, password: str) -> i64
     setup = s3_bucket.Setup(
-        control_port: control.address.port,
         bucket: BUCKET,
         region: REGION,
         key_id: KEY_ID,
@@ -86,27 +66,27 @@ function with_control(local: storage.Storage, control: net.Listener, source: str
         refuse_gets: [5]
     )
 
-    spawned = match threads.spawn_text(body: s3_server.run, arg: s3_bucket.format_setup(setup))
+    told: (mailbox ready.Ready) = mailbox()
+
+    stand_in = match spawn(s3_server.run, s3_server.Start(setup: setup, ready: told))
         .ok t => t
         .err e =>
             print("demo: the S3 stand-in's thread: " + e.msg)
             return 1
 
-    thread @= spawned
-
     print("== an S3 service started on loopback: the demo's stand-in")
 
-    code = match ready.await_ready(control)
+    code = match ready.await_ready(told)
         .err e =>
             print("demo: the S3 stand-in never said it was ready: " + e.msg)
             1
-        .ok told =>
-            print(f"{told.service}: ready on loopback, checking every request's Signature Version 4")
-            with_service(local, port: told.port, source: source, target: target, password: password)
+        .ok heard =>
+            print(f"{heard.service}: ready on loopback, checking every request's Signature Version 4")
+            with_service(local, port: heard.port, source: source, target: target, password: password)
 
     os.ask_stop()
     print("== what the S3 service saw")
-    print(threads.wait_text(@thread))
+    print(stand_in.wait())
     return code
 
 # The copies, the restore from the bucket and the refused client.

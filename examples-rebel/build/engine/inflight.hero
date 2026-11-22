@@ -1,0 +1,90 @@
+# The steps of a build in flight: each started on a worker thread that is
+# handed its order whole (`step.start`) and sends its ticket on the
+# scheduler's mailbox as it ends, and the worker that ended first waited for
+# by that ticket (feature 2668), so the scheduler (`engine/scheduler`) fills
+# a freed slot at once whatever older step still runs.
+
+use engine/prepare
+use engine/step
+use load/paths
+use state/content
+
+# A step started and not yet applied by the scheduler.
+record Flight
+    # Its node's number in the sorter.
+    node: i64
+    # The step.
+    step: prepare.Prepared
+    # Why it runs.
+    reason: str
+    # The digest of each of its inputs as it started.
+    inputs: {str: str}
+    # Its number among the steps this build started, from 0, which its
+    # worker sends on the scheduler's mailbox as it ends.
+    ticket: i64
+    # The worker running it, which answers the step's outcome.
+    thread: (thread step.Done)
+
+# The step `st` started on a worker.
+#
+# - `st`: the step.
+# - `reason`: why it runs.
+# - `node`: its node's number.
+# - `cache`: the files seen, which gives its inputs' digests.
+# - `root`: the build's folder.
+# - `ticket`: its number among the steps this build started.
+# - `ended`: the mailbox its worker sends `ticket` on as it ends.
+#
+# Fails `limit` where the system refuses a thread.
+function launch(st: prepare.Prepared, reason: str, node: i64, @cache: {str: content.Seen}, root: str, ticket: i64, ended: (mailbox i64)) -> Flight?
+    inputs: {str: str} @= {}
+
+    for name in st.inputs
+        match content.digest_in(content.seen(@cache, root: root, name: name))
+            .ok d  => inputs[name] @ d
+            .err _ => _ = 0
+
+    depfile_place: str? = match st.depfile
+        .ok d  => ok(paths.disk(root: root, name: d))
+        .err _ => st.depfile
+
+    order = step.Order(
+        output: st.output,
+        place: paths.disk(root: root, name: st.output),
+        words: st.words,
+        dir: root,
+        env: st.env,
+        depfile: depfile_place,
+        time_limit: st.time_limit
+    )
+    t = step.start(order, ticket: ticket, ended: ended)?
+    return ok(Flight(node: node, step: st, reason: reason, inputs: inputs, ticket: ticket, thread: t))
+
+# Waits for whichever worker of `flights` ends next and keeps its outcome
+# under its ticket: the worker whose ticket `ended` gives first, which has
+# ended or is ending, so its wait does not block; or, once `ended` answers
+# the program's stop, the oldest not yet waited for. Answers how many
+# workers it waited for: 1, or 0 for a ticket of one waited for already.
+#
+# - `flights`: the steps started and not yet applied.
+# - `outcomes`: the outcomes waited for, by ticket; this adds one.
+# - `ended`: the mailbox the workers send their tickets on.
+function waited_one(flights: [Flight] lent, @outcomes: {i64: step.Done}, ended: (mailbox i64)) -> i64
+    match ended.receive(within_ms: -1)
+        .ok ticket =>
+            if !outcomes[ticket].is_err()
+                return 0
+
+            for fl in flights
+                if fl.ticket == ticket
+                    outcomes[ticket] @ fl.thread.wait()
+                    return 1
+
+            return 0
+        .err _ =>
+            for fl in flights
+                if outcomes[fl.ticket].is_err()
+                    outcomes[fl.ticket] @ fl.thread.wait()
+                    return 1
+
+            return 0

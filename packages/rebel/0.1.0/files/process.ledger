@@ -224,11 +224,12 @@ capability child/usage  the memory and processor time a running child holds and 
   python  -
   note    added 2026-11-17 (queue 58); psutil's `Popen` and `Process.memory_info` the yardstick; `os.process_usage` of the child's id while the child is held, refused `invalid` once it was waited for or given up, since its id may name another process then (POSIX keeps an unwaited child's id, Windows a process's id while a handle to it is open)
 
-capability child/signal  any signal sent to a child
-  heroes  refused: two requests are portable, to end and to end at once; any other signal is POSIX's alone, and the floor sends none
+capability child/signal  any signal sent to a child, or to every process of its group
+  heroes  process.send_signal, process.send_group_signal
   go      os.Process.Signal, os.Signal
   rust    Child::send_signal, Child::send_process_group_signal, Child::kill_process_group
-  python  Popen.send_signal
+  python  Popen.send_signal, os.kill, os.killpg
+  note    added 2026-11-22 (feature 2670), refused until then. A signal is named by `os.Signal` and numbered by the platform (`os.signal_number`), never by a bare number. A group is read and sent to under the floor's lock while nothing has taken the child's status, so its number is the group the child stands in, as `kill` is guarded for a pid; a group that is this process's own is `invalid`, since the signal would reach this process too, and a child that has ended names no group. Windows `unsupported`: a console's events reach its whole group and never one process
 
 capability child/find  a process found by its number
   heroes  refused: the floor names a process by the handle that started it, never by a number, which may name another process by then
@@ -270,11 +271,32 @@ capability status/text  how a child ended, as words
   python  -
   note    `exited with code 3`, `ended by signal 9`, `ended at its time limit`; Go writes `exit status 3` and `signal: killed`, Rust `exit status: 3`
 
-capability status/stopped  a core dumped, a child stopped or continued
-  heroes  refused: the floor reports how a child ended, its code or its signal; a stopped or continued child has not ended, and a core is the system's file
-  go      -
-  rust    ExitStatus::core_dumped, ExitStatus::stopped_signal, ExitStatus::continued, ExitStatusError::core_dumped, ExitStatusError::stopped_signal, ExitStatusError::continued
-  python  -
+capability status/stopped  a child stopped by a signal, and seen to go on
+  heroes  process.State, process.wait_or_stop, process.state_of
+  go      syscall.WaitStatus.Stopped, syscall.WaitStatus.StopSignal, syscall.WaitStatus.Continued
+  rust    ExitStatus::stopped_signal, ExitStatus::continued, ExitStatusError::stopped_signal, ExitStatusError::continued
+  python  os.WUNTRACED, os.WCONTINUED, os.WIFSTOPPED, os.WSTOPSIG, os.WIFCONTINUED
+  note    added 2026-11-22 (feature 2670), refused until then. A stop is a `State` of a started child, never a `Status`, which says how a child ended: `wait_or_stop` waits for the end or the next stop, `state_of` looks without waiting and sees a going on too. `wait` still waits for the end alone, a stopped child too. Windows has no stop of these, `.running` or `.ended` there
+
+capability status/core  whether a child that a signal ended left a core
+  heroes  refused: a core is the system's file, written where its settings say, and the signal that ended the child is in `.signaled`
+  go      syscall.WaitStatus.CoreDump
+  rust    ExitStatus::core_dumped, ExitStatusError::core_dumped
+  python  os.WCOREDUMP
+
+capability command/group  a child started in a process group of its own, or in another child's
+  heroes  process.Group, process.with_own_group, process.with_group_of
+  go      syscall.SysProcAttr.Setpgid, syscall.SysProcAttr.Pgid
+  rust    Command::process_group
+  python  Popen(process_group=), os.setpgid, os.getpgid, os.setpgrp, os.getpgrp
+  note    added 2026-11-22 (feature 2670): what a shell's job control stands on. The group is set in the child before it becomes the program (`posix_spawn`'s `POSIX_SPAWN_SETPGROUP`, `setpgid` after a fork), so it stands when `start` answers; a child joins the group its leader stands in, read when it starts, and a leader that has ended, been waited for or given up, or stands in this process's own group is `invalid`. Windows `unsupported`: `CREATE_NEW_PROCESS_GROUP` is a group Ctrl-Break alone reaches
+
+capability terminal/foreground  the group in front at the terminal handed to a child's group and taken back, and asked
+  heroes  process.give_terminal, process.take_terminal, process.holds_terminal
+  go      syscall.SysProcAttr.Foreground, syscall.SysProcAttr.Ctty
+  rust    -
+  python  os.tcsetpgrp, os.tcgetpgrp
+  note    added 2026-11-22 (feature 2670). The terminal is a stream the program names, its controlling one, never a terminal found behind its back; SIGTTOU is held on the calling thread across `tcsetpgrp`, so a shell outside the front takes the terminal back rather than being stopped, as POSIX's `tcsetpgrp` says of a caller that blocks it; measured on this Mac under `script` on 2026-11-22, where a plain `tcsetpgrp` from a group outside the front was stopped by SIGTTOU and the floor's took the front back, both from an orphaned group and from one a job-control shell made. A stream that is no terminal, or not the controlling one, is `unsupported`, as on Windows
 
 capability lookup/path  where a program is in the folders of PATH
   heroes  process.path_of
@@ -306,8 +328,8 @@ capability own/id  the program's own number
 capability platform/attributes  what one system alone gives a child: its user, its group, a session, a chroot, code run before it starts, Windows' creation flags and windows
   heroes  refused: each is one system's alone, and the floor starts every child the same way on every platform
   go      exec.Cmd.SysProcAttr, exec.Cmd.ExtraFiles, os.ProcAttr.Sys, os.Process.WithHandle
-  rust    Command::uid, Command::gid, Command::groups, Command::process_group, Command::setsid, Command::chroot, Command::pre_exec, Command::before_exec, Command::exec, Command::create_pidfd, Command::creation_flags, Command::show_window, Command::inherit_handles, Command::async_pipes, Command::spawn_with_attributes, Command::startupinfo_force_feedback, Command::startupinfo_fullscreen, Command::startupinfo_untrusted_source, Command::desktop, Child::main_thread_handle
-  python  Popen(close_fds=), Popen(pass_fds=), Popen(start_new_session=), Popen(process_group=), Popen(user=), Popen(group=), Popen(extra_groups=), Popen(umask=), Popen(preexec_fn=), Popen(restore_signals=), Popen(startupinfo=), Popen(creationflags=), Popen(executable=)
+  rust    Command::uid, Command::gid, Command::groups, Command::setsid, Command::chroot, Command::pre_exec, Command::before_exec, Command::exec, Command::create_pidfd, Command::creation_flags, Command::show_window, Command::inherit_handles, Command::async_pipes, Command::spawn_with_attributes, Command::startupinfo_force_feedback, Command::startupinfo_fullscreen, Command::startupinfo_untrusted_source, Command::desktop, Child::main_thread_handle
+  python  Popen(close_fds=), Popen(pass_fds=), Popen(start_new_session=), Popen(user=), Popen(group=), Popen(extra_groups=), Popen(umask=), Popen(preexec_fn=), Popen(restore_signals=), Popen(startupinfo=), Popen(creationflags=), Popen(executable=)
 
 dropped  a buffer size, a text mode or an encoding: a child's bytes are bytes, and text is UTF-8 checked where it is asked for
   go      -

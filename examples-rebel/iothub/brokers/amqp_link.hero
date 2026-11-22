@@ -112,8 +112,8 @@ function is_up(l: Link lent) -> bool
 function holds(l: Link lent) -> bool
     return l.connections.len() > 0 && amqp.held_of(l.connections[0]) > 0
 
-# The deliveries the connection holds, those its buffer holds whole, and
-# those one read of its stream brings, in the order they came.
+# The deliveries the connection holds and those one read of its stream
+# brings, in the order they came.
 #
 # - `l`: the link, up.
 # - `read`: whether the stream is readable, so one read is made; without
@@ -127,9 +127,7 @@ function take(@l: Link, read: bool) -> [amqp.Delivery]?
 
     got: [amqp.Delivery] @= []
 
-    # A zero wait parses what the buffer holds whole before it gives up: a
-    # confirmation the hub waited for may have been read with a delivery
-    # behind it, which `held_of` does not count.
+    # A zero wait takes a delivery held, and answers `timeout` once none is.
     while true
         match amqp.next_delivery(@l.connections[0], wait: time.nanoseconds(0))
             .ok d => got @ got.push(d)

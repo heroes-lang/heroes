@@ -1,6 +1,7 @@
 # A child's end through the floor: waited for, its command's time limit kept
-# on the monotonic clock, or looked at without waiting; and the CPU time it
-# used, read once it has ended.
+# on the monotonic clock, or looked at without waiting; the same with a stop
+# told beside the end, for a shell's job control; and the CPU time it used,
+# read once it has ended.
 
 use process/hero_proc
 use process/internal/clock
@@ -22,10 +23,13 @@ record Seen
     user_ns: i64
     # Nanoseconds of CPU time the system spent for it.
     system_ns: i64
+    # The signal it was seen stopped by where it has not ended, 0 where it
+    # was not; only a look that tells a stop sets it.
+    stop_signal: i64
 
 # What is seen of a child that runs.
 function running() -> Seen
-    return Seen(ended: false, code: 0, signal: 0, timed_out: false, user_ns: 0, system_ns: 0)
+    return Seen(ended: false, code: 0, signal: 0, timed_out: false, user_ns: 0, system_ns: 0, stop_signal: 0)
 
 # The end of `p`, waiting for it, `timed_out` saying whether its time limit
 # ended it. Fails with the code of the floor's refusal.
@@ -40,7 +44,9 @@ function settled(p: hero_proc.Proc, timed_out: bool, asked: str, program: str) -
 
     if hero_proc.cpu(p, user_ns: @user, system_ns: @system) < 0
         return codes.last(asked: asked, program: program, dir: "")
-    return ok(Seen(ended: true, code: code, signal: signal, timed_out: timed_out, user_ns: user, system_ns: system))
+    return ok(
+        Seen(ended: true, code: code, signal: signal, timed_out: timed_out, user_ns: user, system_ns: system, stop_signal: 0)
+    )
 
 # The end of `p`, ended at once for its time limit and waited for.
 function stopped(p: hero_proc.Proc, asked: str, program: str) -> Seen?
@@ -78,6 +84,67 @@ function waited(p: hero_proc.Proc, started: i64, limit: i64, asked: str, program
         seen = looked(p, started: started, limit: limit, asked: asked, program: program)?
 
         if seen.ended
+            return ok(seen)
+        left = deadline - clock.now()?
+
+        if left < pause
+            clock.rest(max_with(a: left, b: 0))
+        else
+            clock.rest(pause)
+        pause @ clock.next_pause(pause)
+
+# What is seen of `p` now, never waiting, a stop told beside the end: its end
+# where it has ended, else the signal it was last seen stopped by, or neither;
+# past `limit` as `looked` keeps it, a stopped child too, since SIGKILL ends
+# one.
+function looked_state(p: hero_proc.Proc, started: i64, limit: i64, asked: str, program: str) -> Seen?
+    stop: i64 @= 0
+    where = hero_proc.state(p, waits: 0, stop_signal: @stop)
+
+    if where < 0
+        return codes.last(asked: asked, program: program, dir: "")
+
+    if where == 1
+        return settled(p, timed_out: false, asked: asked, program: program)
+
+    if limit > 0 && clock.now()? >= clock.deadline(started: started, limit: limit)
+        return stopped(p, asked: asked, program: program)
+    seen @= running()
+
+    if where == 2
+        seen.stop_signal @ stop
+    return ok(seen)
+
+# The end of `p` or its next stop, waiting for the first: a stop it was seen in
+# before the call, `was_stopped`, is waited past until it is seen to go on, as
+# the floor's own wait does. Where `limit` is above 0 it looks again as
+# `waited` does, and ends the child at once past it.
+function waited_state(p: hero_proc.Proc, started: i64, limit: i64, was_stopped: bool, asked: str, program: str) -> Seen?
+    if limit <= 0
+        stop: i64 @= 0
+        where = hero_proc.state(p, waits: 1, stop_signal: @stop)
+
+        if where < 0
+            return codes.last(asked: asked, program: program, dir: "")
+
+        if where == 1
+            return settled(p, timed_out: false, asked: asked, program: program)
+        seen @= running()
+        seen.stop_signal @ stop
+        return ok(seen)
+    deadline = clock.deadline(started: started, limit: limit)
+    pause: i64 @= clock.SHORTEST
+    earlier @= was_stopped
+
+    while true
+        seen = looked_state(p, started: started, limit: limit, asked: asked, program: program)?
+
+        if seen.ended
+            return ok(seen)
+
+        if seen.stop_signal == 0
+            earlier @ false
+        else if !earlier
             return ok(seen)
         left = deadline - clock.now()?
 

@@ -1,0 +1,43 @@
+# Ctrl-C counted again and again, never ending the program and never asking
+# the stop (feature 2669): what a shell or a REPL needs, whose Ctrl-C reaches
+# the child it runs in front and must leave the shell running, the second
+# time as the first. The runtime's door alone still refuses the stop's two
+# signals (panel 247's R7); the platform layer hands SIGINT to it, and from
+# then three interrupts each come, are survived and are counted one by one.
+# The stop is refused after, since a signal is the stop's or a count's for
+# the process's life, and the program ends at exit 0 with its leak check run.
+# On Windows the interrupt is the console's Ctrl-C, counted on the thread the
+# system makes for it (unrun there).
+extern "hero_net.h"
+    constant HERO_NET_INVALID: i64
+    function hero_net_count_signal(sig: i32) -> i64
+    function hero_net_catch_stop() -> i64
+    function hero_net_last_error() -> i64
+
+extern "hero_os.h"
+    constant HERO_SIGNAL_INTERRUPT: i32
+    function hero_signal_number(name: i32) -> i32
+    function hero_signal_watch(sig: i32) -> i64
+    function hero_signal_take(sig: i32) -> i64
+
+extern "the-platform-layer-stop.h"
+    constant STOP_INTERRUPT: i64
+    function stop_begin(interrupt_ignored: i64) -> i64
+    function stop_send_now(what: i64) -> i64
+
+function main()
+    print(f"the program starts with the interrupt at its default: {stop_begin(interrupt_ignored: 0)}")
+    interrupt = hero_signal_number(HERO_SIGNAL_INTERRUPT)
+    print(f"the runtime's door alone refuses it: {hero_signal_watch(interrupt)}")
+    print(f"the layer counts it: {hero_net_count_signal(interrupt)}")
+    print(f"counted before any came: {hero_signal_take(interrupt)}")
+    sent @= 0
+
+    while sent < 3
+        sent @ sent + 1
+        print(
+            f"interrupt {sent} sent: {stop_send_now(what: STOP_INTERRUPT)}, survived, counted {hero_signal_take(interrupt)}"
+        )
+
+    print(f"the stop refused now: {hero_net_catch_stop()}, as invalid: {hero_net_last_error() == HERO_NET_INVALID}")
+    print(f"counted a second time: {hero_net_count_signal(interrupt)}")

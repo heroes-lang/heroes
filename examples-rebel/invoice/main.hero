@@ -57,8 +57,8 @@
 # - `archive`, `crypto`: the year's archive and its manifest of SHA-256;
 # - `config`, `json`: the configuration in layers, TOML's file under the
 #   environment, and the values a template reads;
-# - `net`, `io`, `threads`, `os`: the stand-in's socket and thread, the
-#   stop, the environment;
+# - `net`, `io`, `os`: the stand-in's socket, the stop, the environment,
+#   the stand-in on a thread of the language's own (`spawn`, a mailbox);
 # - `fs`, `path`, `time`, `strings`, `bytes`, `numbers`: throughout.
 
 use cli/commands

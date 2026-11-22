@@ -1,0 +1,244 @@
+# The conformance files of the Unicode Character Database read as their
+# headers say to read them, and the case modules of Rebel written from them.
+#
+# A break test (`GraphemeBreakTest.txt` and its kin, UAX #29 and UAX #14)
+# holds on each line a text as code points in hexadecimal between marks,
+# `÷` where a break is and `×` where none is, then `#` and a comment; the
+# first mark is the same on every line of a file, and so is the last (`÷`
+# and `÷` in UAX #29's files, `×` and `÷` in UAX #14's). A case is that text
+# with `/` for `÷` and `x` for `×`, the first and last mark left out.
+#
+# `NormalizationTest.txt` (UAX #15) holds on each line five columns of code
+# points, each ended by `;`, then `#` and a comment, with lines opening `@`
+# that name its parts. A case is the five columns joined by `;`.
+
+use <rebel>/strings
+
+# A case module: where it stands, what its header says, and which cases
+# of which file it runs.
+record Spec
+    # The module, from the repository's root.
+    path: str
+    # Its name, which every test's title opens with.
+    name: str
+    # The header's lines that say what the module holds.
+    intro: [str]
+    # The `use` line of the module that runs the cases.
+    runner: str
+    # The file's name without `.txt`, which every test's title names.
+    file: str
+    # What the assertion passes after `cases`: `, kind: conform.LINES`, or "".
+    kind: str
+    # The first case the module runs, counted from 1, and the last.
+    first: i64
+    last: i64
+
+# How many cases a test holds.
+constant CHUNK: i64
+    250
+
+# The cases of a break test's `text`, one for each line that holds one, in
+# the file's order.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid` where a line is not a case, or where its first or last
+# mark is not the first line's.
+function break_cases(text: str) -> [str]?
+    out: [str] @= []
+    ends @= ""
+
+    for line in strings.split(s: text, sep: "\n")
+        body = strings.trim(strings.split(s: line, sep: "#")[0])
+
+        if body != ""
+            one = break_case(body)?
+
+            if ends == ""
+                ends @ one.ends
+            else if one.ends != ends
+                return fail(
+                    code: "invalid",
+                    msg: f"the line \"{body}\" opens or ends with another mark than the file's first line"
+                )
+            out @ out.push(one.text)
+
+    return ok(out)
+
+# A case read from a line, and the marks the line opens and ends with.
+record Case
+    text: str
+    ends: str
+
+# The case of one line's `body`, the part before its `#`.
+#
+# Fails `invalid` where it does not alternate a mark and a code point, a
+# mark first and a mark last.
+function break_case(body: str) -> Case?
+    words = strings.words(body)
+
+    if words.len() < 3 || words.len() % 2 == 0
+        return fail(code: "invalid", msg: f"the line \"{body}\" is not marks and code points")
+    out: [str] @= []
+    at @= 0
+
+    while at < words.len()
+        if at % 2 == 1
+            if !is_hex(words[at])
+                return fail(
+                    code: "invalid",
+                    msg: f"the line \"{body}\" holds \"{words[at]}\" where a code point should stand"
+                )
+            out @ out.push(words[at])
+        else
+            mark = match words[at]
+                "÷" => "/"
+                "×" => "x"
+                _ => return fail(
+                    code: "invalid",
+                    msg: f"the line \"{body}\" holds \"{words[at]}\" where a mark should stand"
+                )
+
+            if at > 0 && at < words.len() - 1
+                out @ out.push(mark)
+        at @ at + 1
+
+    return ok(Case(text: out.join(""), ends: words[0] + words[words.len() - 1]))
+
+# The cases of `NormalizationTest.txt`'s `text`: for each line that is not a
+# comment, a part's heading or empty, its five columns joined by `;`.
+#
+# - `text`: the file's whole text.
+#
+# Fails `invalid` where a line holds fewer than five columns.
+function normalization_cases(text: str) -> [str]?
+    out: [str] @= []
+
+    for line in strings.split(s: text, sep: "\n")
+        body = strings.trim(strings.split(s: line, sep: "#")[0])
+
+        if body != "" && !strings.has_prefix(s: body, prefix: "@")
+            columns = strings.split(s: body, sep: ";")
+
+            if columns.len() < 6 || strings.trim(columns[5]) != ""
+                return fail(code: "invalid", msg: f"the line \"{body}\" is not five columns each ended by `;`")
+            out @ out.push(columns.slice(from: 0, to: 5).join(";"))
+
+    return ok(out)
+
+# Whether `s` is a code point written in hexadecimal: one to six digits,
+# capitals.
+function is_hex(s: str) -> bool
+    if s == "" || s.len() > 6
+        return false
+
+    for c in s.chars()
+        if !strings.contains(s: "0123456789ABCDEF", substr: c)
+            return false
+
+    return true
+
+# The whole text of the module `spec` names, its cases taken from `cases`.
+#
+# - `spec`: the module.
+# - `cases`: every case of its file, in the file's order.
+# - `generated`: the header's lines that say which program wrote it.
+#
+# Fails `invalid` where the file holds fewer cases than `spec` runs.
+function module_text(spec: Spec lent, cases: [str] lent, generated: [str]) -> str?
+    if spec.last > cases.len() || spec.first < 1 || spec.first > spec.last
+        return fail(
+            code: "invalid",
+            msg: f"{spec.file} holds {cases.len()} cases, and {spec.path} runs {spec.first} to {spec.last}"
+        )
+    head: [str] @= []
+
+    for line in spec.intro
+        head @ head.push(line)
+
+    head @ head.push("#")
+
+    for line in generated
+        head @ head.push(line)
+
+    lines: [str] @= [
+        head.join("\n")
+        ""
+        spec.runner
+        ""
+        "# How many lines of the file the tests below run."
+        "constant CASES: i64"
+        "    " + to_str(spec.last - spec.first + 1)
+        ""
+        "## Tests"
+    ]
+    from @= spec.first
+
+    while from <= spec.last
+        to = if from + CHUNK - 1 < spec.last
+            from + CHUNK - 1
+        else
+            spec.last
+        lines @ lines.push("")
+        lines @ lines.push(f"test \"{spec.name}: {spec.file}'s lines {from} to {to}\"")
+        lines @ lines.push("    cases = [")
+        at @= from
+
+        while at <= to
+            lines @ lines.push("        \"" + cases[at - 1] + "\"")
+            at @ at + 1
+
+        lines @ lines.push("    ]")
+        lines @ lines.push("    assert conform.failures(cases" + spec.kind + ") == []")
+        from @ to + 1
+
+    return ok(lines.join("\n") + "\n")
+
+## Tests
+
+test "break_case: breaks and none, a single code point, either first mark, and lines that are not a case"
+    assert break_case("÷ 000D ÷ 0308 × 000A ÷").must() == Case(text: "000D/0308x000A", ends: "÷÷")
+    assert break_case("÷ 1F3FF ÷").must().text == "1F3FF"
+    assert break_case("× 2757 × 2757 ÷").must() == Case(text: "2757x2757", ends: "×÷")
+    assert break_case("÷ 000D × 000A").is_err()
+    assert break_case("÷ 000D + 000A ÷").is_err()
+    assert break_case("÷ 000d ÷").is_err()
+    assert break_case("÷ ÷ ÷").is_err()
+    assert break_case("÷").is_err()
+
+test "break_cases: comments and empty lines left, a case's comment cut, and a line whose ends are not the first line's"
+    assert break_cases("# A head.\n\n÷ 0041 × 0308 ÷\t#  ÷ [0.2] A\n÷ 0020 ÷ 0020 ÷\t# two\n").must() == ["0041x0308", "0020/0020"]
+    assert break_cases("× 0041 ÷\n× 0042 ÷\n").must() == ["0041", "0042"]
+    assert break_cases("÷ 0041 ÷\n× 0042 ÷\n").is_err()
+
+test "normalization_cases: a part's heading and comments left, the five columns kept, a short line refused"
+    text = "# Head\n@Part0 # Specific cases\n1E0A;1E0A;0044 0307;1E0A;0044 0307; # (D) LETTER\n"
+    assert normalization_cases(text).must() == ["1E0A;1E0A;0044 0307;1E0A;0044 0307"]
+    assert normalization_cases("1E0A;1E0A;0044 0307; # short\n").is_err()
+
+test "module_text: cases in tests of 250, the last one shorter, and a range past the file refused"
+    cases: [str] @= []
+
+    for n in range(from: 0, to: 252)
+        cases @ cases.push(to_str(n))
+
+    spec = Spec(
+        path: "p",
+        name: "m_cases",
+        intro: ["# Cases."],
+        runner: "use r",
+        file: "T",
+        kind: ", kind: conform.K",
+        first: 2,
+        last: 252
+    )
+    text = module_text(spec, cases: cases, generated: ["# By a program."]).must()
+    assert strings.has_prefix(
+        s: text,
+        prefix: "# Cases.\n#\n# By a program.\n\nuse r\n\n# How many lines of the file the tests below run.\nconstant CASES: i64\n    251\n\n## Tests\n\ntest \"m_cases: T's lines 2 to 251\"\n    cases = [\n        \"1\"\n"
+    )
+    assert strings.has_suffix(
+        s: text,
+        suffix: "test \"m_cases: T's lines 252 to 252\"\n    cases = [\n        \"251\"\n    ]\n    assert conform.failures(cases, kind: conform.K) == []\n"
+    )
+    assert module_text(spec, cases: ["a"], generated: []).is_err()

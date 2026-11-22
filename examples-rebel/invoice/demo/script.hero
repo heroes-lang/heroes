@@ -17,11 +17,8 @@
 
 use <rebel>/csv
 use <rebel>/fs
-use <rebel>/io
-use <rebel>/net
 use <rebel>/os
 use <rebel>/strings
-use <rebel>/threads
 use <rebel>/time
 
 use billing/issue
@@ -75,49 +72,41 @@ function made_folder() -> str?
 #
 # - `folder`: the work folder.
 function in_folder(folder: str) -> i64
-    match net.listen(host: "127.0.0.1", port: 0)
+    print("== the mail server, on loopback")
+    port_box: (mailbox i64) = mailbox()
+    start = smtp_server.Start(user: fixtures.MAIL_USER, password: fixtures.MAIL_PASSWORD, ready: port_box)
+
+    match spawn(smtp_server.run, start)
         .err e =>
-            print("demo: the control port: " + e.msg)
+            print("demo: the stand-in would not start: " + e.msg)
             return 1
-        .ok listening =>
-            control @= listening
-            print("== the mail server, on loopback")
-            arg = f"{control.address.port}\n{fixtures.MAIL_USER}\n{fixtures.MAIL_PASSWORD}"
-
-            match threads.spawn_text(body: smtp_server.run, arg: arg)
+        .ok server =>
+            code = match awaited_port(port_box)
                 .err e =>
-                    _ = net.close_listener(@control).is_err()
-                    print("demo: the stand-in would not start: " + e.msg)
-                    return 1
-                .ok started =>
-                    server @= started
+                    print("demo: the stand-in never said it was ready: " + e.msg)
+                    1
+                .ok port =>
+                    print("smtp: ready")
+                    scripted(folder, smtp_port: port)
 
-                    code = match awaited_port(control)
-                        .err e =>
-                            print("demo: the stand-in never said it was ready: " + e.msg)
-                            1
-                        .ok port =>
-                            print("smtp: ready")
-                            scripted(folder, smtp_port: port)
+            os.ask_stop()
+            print("== the mail server, stopped")
+            print(server.wait())
+            return code
 
-                    os.ask_stop()
-                    _ = net.close_listener(@control).is_err()
-                    print("== the mail server, stopped")
-                    print(threads.wait_text(@server))
-                    return code
-
-# The port the stand-in's notice names, awaited ten seconds at most.
+# The port the stand-in sends once it listens, awaited ten seconds at most.
 #
-# - `control`: the demo's control listener.
+# - `from`: the mailbox handed to the stand-in.
 #
-# Fails `timeout` where no notice comes, and as `smtp_server.parse_notice`
-# fails.
-function awaited_port(control: net.Listener) -> i64?
-    made = net.accept(control, deadline_ms: smtp_server.NOTICE_MS)?
-    conn @= made
-    text = io.read_all_text(conn.stream)
-    _ = io.close(@conn.stream).is_err()
-    return smtp_server.parse_notice(text?)
+# Fails `closed` where the stand-in ended without sending it, `timeout`
+# where nothing came in time.
+function awaited_port(from: (mailbox i64)) -> i64?
+    match from.receive(within_ms: smtp_server.NOTICE_MS)
+        .ok port => return ok(port)
+        .err e =>
+            if e.code == "closed"
+                return fail(code: e.code, msg: "it ended without saying its port")
+            return fail(code: e.code, msg: e.msg)
 
 # The company's files written, the books opened, the script run, the books
 # closed.

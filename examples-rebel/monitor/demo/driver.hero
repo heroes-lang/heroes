@@ -13,7 +13,6 @@
 use <rebel>/fs
 use <rebel>/http
 use <rebel>/io
-use <rebel>/json
 use <rebel>/path
 use <rebel>/poll
 use <rebel>/process
@@ -44,7 +43,7 @@ constant FRAME_WIDTH: i64
 constant FRAME_HEIGHT: i64
     24
 
-# What the driver is handed by the first thread.
+# What the driver is handed by the first thread, whole.
 record Handed
     # The demo's folder.
     dir: str
@@ -58,43 +57,16 @@ record Handed
 # The thread's body: the whole run, then the collector asked to stop
 # whatever came of it. Answers what went wrong, "" where nothing did.
 #
-# - `arg`: the `Handed` values as JSON.
-function drive(arg: str) -> str
-    handed = handed_of(arg)
-
-    problem = match handed
-        .ok h =>
-            match run(h)
-                .ok _  => ""
-                .err e => f"{e.code}: {e.msg}"
+# - `h`: where the run works and what it talks to.
+function drive(h: Handed) -> str
+    problem = match run(h)
+        .ok _  => ""
         .err e => f"{e.code}: {e.msg}"
 
-    match handed
-        .ok h =>
-            client @= http.default_client()
-            client.deadline @ time.seconds(5).default(client.deadline)
-            _ = http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []).is_err()
-        .err _ => _ = 0
-
+    client @= http.default_client()
+    client.deadline @ time.seconds(5).default(client.deadline)
+    _ = http.post(client, target: h.otlp + "/standin/stop", content_type: "text/plain", body: []).is_err()
     return problem
-
-# The `Handed` values `arg` holds.
-#
-# - `arg`: JSON.
-function handed_of(arg: str) -> Handed?
-    v = json.parse(arg)?
-    return ok(
-        Handed(dir: json.text_of(json.member(v, key: "dir")?)?, exe: json.text_of(json.member(v, key: "exe")?)?, port: json.text_of(json.member(v, key: "port")?)?, otlp: json.text_of(json.member(v, key: "otlp")?)?)
-    )
-
-# The `Handed` values as JSON, for the thread's argument.
-#
-# - `h`: the values.
-function arg_of(h: Handed) -> str
-    v: json.Value = .object(
-        members: {"dir": .text(v: h.dir), "exe": .text(v: h.exe), "port": .text(v: h.port), "otlp": .text(v: h.otlp)}
-    )
-    return json.format(v).default("{}")
 
 # The moment `seconds` after the start.
 #

@@ -78,6 +78,13 @@ function last<T>(asked: str, program: str, dir: str) -> T?
     if kind == hero_proc.HERO_PROC_UNSUPPORTED
         return of(code: UNSUPPORTED, asked: asked, why: "this platform has no such request")
 
+    if kind == hero_proc.HERO_PROC_ENDED
+        return of(
+            code: INVALID,
+            asked: asked,
+            why: "the child has ended, so it names no process group: a group is named by a child of it that runs or is stopped"
+        )
+
     if kind == hero_proc.HERO_PROC_RUNNING
         return of(code: INVALID, asked: asked, why: "the child still runs")
 
@@ -149,7 +156,9 @@ function refused_start(program: str, dir: str) -> ()?
         out_kind: hero_proc.HERO_PROC_STDIO_NOTHING,
         out_stream: nullptr,
         err_kind: hero_proc.HERO_PROC_STDIO_NOTHING,
-        err_stream: nullptr
+        err_stream: nullptr,
+        group_kind: hero_proc.HERO_PROC_GROUP_PARENT,
+        leader: nullptr
     )
     assert p == nullptr
     return last(asked: "t", program: program, dir: dir)

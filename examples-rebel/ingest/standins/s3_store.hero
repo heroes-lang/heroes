@@ -8,18 +8,10 @@
 use <rebel>/bytes
 use <rebel>/crypto
 use <rebel>/http
-use <rebel>/numbers
 use <rebel>/s3
 use <rebel>/strings
 use <rebel>/time
 use <rebel>/url
-
-## Codes
-
-# The code of a thread argument that does not say how to start the
-# service.
-constant INVALID: str
-    "invalid"
 
 ## Bounds
 
@@ -33,10 +25,8 @@ constant MOST_KEYS: i64
 
 ## Starting
 
-# How the supervisor starts the service.
+# What the service holds, from the supervisor.
 record Setup
-    # The supervisor's control port.
-    control_port: i64
     # The one bucket.
     bucket: str
     # The region it answers for.
@@ -49,29 +39,6 @@ record Setup
     fail_part: str
     # How many such puts are refused before they are taken.
     fail_count: i64
-
-# The thread argument that starts a service of `setup`, its fields one a
-# line.
-#
-# - `setup`: what the service holds.
-function format_setup(setup: Setup) -> str
-    return [to_str(setup.control_port), setup.bucket, setup.region, setup.access_key_id, setup.secret, setup.fail_part, to_str(setup.fail_count)].join(
-        "\n"
-    )
-
-# The setup `text` writes.
-#
-# - `text`: the thread argument.
-#
-# Fails `invalid` where it is not seven lines, or a number is not one.
-function parse_setup(text: str) -> Setup?
-    lines = strings.split(s: text, sep: "\n")
-
-    if lines.len() != 7
-        return fail(code: INVALID, msg: f"the S3 service's setup is seven lines, and {lines.len()} came")
-    return ok(
-        Setup(control_port: numbers.parse_int(lines[0])?, bucket: lines[1], region: lines[2], access_key_id: lines[3], secret: lines[4], fail_part: lines[5], fail_count: numbers.parse_int(lines[6])?)
-    )
 
 ## The store
 
@@ -335,27 +302,12 @@ function is_before(a: str, b: str) -> bool
 
     return a.len() < b.len()
 
-test "format_setup, parse_setup: what one writes the other reads"
-    s = Setup(
-        control_port: 9,
-        bucket: "b",
-        region: "us-east-1",
-        access_key_id: "AK",
-        secret: "S/x",
-        fail_part: "",
-        fail_count: 0
-    )
-    back = parse_setup(format_setup(s)).must()
-    assert back.bucket == "b" && back.secret == "S/x" && back.fail_part == "" && back.fail_count == 0
-    assert parse_setup("1\nb").is_err()
-
 test "escaped, is_before: XML's characters, the order of bytes"
     assert escaped("a&b<\"c\">'") == "a&amp;b&lt;&quot;c&quot;&gt;&apos;"
     assert is_before(a: "a", b: "b") && is_before(a: "a", b: "ab") && !is_before(a: "b", b: "a") && !is_before(a: "a", b: "a")
 
 test "put, get, listing: an object kept in the order of keys, read back, listed by prefix; a failure on purpose first"
     setup = Setup(
-        control_port: 0,
         bucket: "b",
         region: "us-east-1",
         access_key_id: "AK",

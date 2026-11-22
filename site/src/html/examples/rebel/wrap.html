@@ -1,0 +1,5 @@
+<p class="tagline">Text folded to a width, written again with Rebel&rsquo;s unicode/segment, keeping the program&rsquo;s own rules for where a line breaks.</p>
+
+<p>Rebel&rsquo;s <code>unicode/segment</code> folds the text, as many words on a line as the width allows, and measures the widest line; its <code>strings</code> cuts the text into words. The program keeps its four rules and asks them of Rebel: a word that fits exactly stays on the line, a word longer than the width is left whole on a line of its own because breaking a web address is worse than a long line, any run of spaces and line breaks counts as one space, and no line ends in a space.</p>
+
+<p>On the original&rsquo;s sample the two print the same bytes. They part elsewhere: Rebel breaks wherever Unicode&rsquo;s rules for breaking lines allow, after a hyphen too, and counts a line&rsquo;s width in the columns a terminal draws, where the original breaks at spaces alone and counts bytes.</p>

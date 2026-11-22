@@ -23,10 +23,8 @@
 use <rebel>/bytes
 use <rebel>/crypto
 use <rebel>/fs
-use <rebel>/net
 use <rebel>/os
 use <rebel>/sql/odbc
-use <rebel>/threads
 use <rebel>/xlsx
 
 use conf/settings
@@ -60,13 +58,6 @@ constant DATABASE: str
     "inventory"
 
 ## The demo
-
-# A stand-in started on its thread, and the port it said it listens on.
-record Started
-    # The thread, owed its wait.
-    thread: threads.TextThread
-    # The port it said, 0 where it said none.
-    port: i64
 
 # What one store's run gave.
 record Run
@@ -103,60 +94,77 @@ function made_folder() -> str?
 #
 # - `folder`: the work folder.
 function in_folder(folder: str) -> i64
-    match net.listen(host: "127.0.0.1", port: 0)
-        .err e =>
-            print("demo: the control port: " + e.msg)
-            return 1
-        .ok listening =>
-            control @= listening
-            port = control.address.port
-            print("== the stand-ins, on loopback")
-            mysql_arg = f"{port}\n{MYSQL_USER}\n{MYSQL_PASSWORD}\n{DATABASE}"
-            mysql_side = started(service: "mysql", body: mysql_standin.run, arg: mysql_arg, control: control)
-            mongo_side = started(service: "mongodb", body: mongo_standin.run, arg: f"{port}", control: control)
-            code @= 1
+    print("== the stand-ins, on loopback")
+    running: [(thread str)] @= []
 
-            if mysql_side.port > 0 && mongo_side.port > 0
-                code @ with_stand_ins(folder, mysql_port: mysql_side.port, mongo_port: mongo_side.port)
-            os.ask_stop()
-            _ = net.close_listener(@control).is_err()
-            print("== the stand-ins, stopped")
+    # Each stand-in tells its connections on a mailbox of its own, which
+    # the demo reads before it asks the stop.
+    sessions: [(mailbox ready.Session)] @= []
+    mysql_told: (mailbox ready.Ready) = mailbox()
+    mysql_sessions: (mailbox ready.Session) = mailbox()
+    mysql_port @= 0
+    mysql_start = mysql_standin.Start(
+        user: MYSQL_USER,
+        password: MYSQL_PASSWORD,
+        database: DATABASE,
+        ready: mysql_told,
+        sessions: mysql_sessions
+    )
 
-            for side in [mysql_side, mongo_side]
-                thread @= side.thread
-                print(threads.wait_text(@thread))
+    match spawn(mysql_standin.run, mysql_start)
+        .err e => print("demo: mysql would not start: " + e.msg)
+        .ok t =>
+            running @ running.push(t)
+            sessions @ sessions.push(mysql_sessions)
+            mysql_port @ port_said(service: "mysql", from: mysql_told)
 
-            return code
+    mongo_told: (mailbox ready.Ready) = mailbox()
+    mongo_sessions: (mailbox ready.Session) = mailbox()
+    mongo_port @= 0
 
-# A stand-in started on a thread, and its notice awaited.
+    match spawn(mongo_standin.run, mongo_standin.Start(ready: mongo_told, sessions: mongo_sessions))
+        .err e => print("demo: mongodb would not start: " + e.msg)
+        .ok t =>
+            running @ running.push(t)
+            sessions @ sessions.push(mongo_sessions)
+            mongo_port @ port_said(service: "mongodb", from: mongo_told)
+
+    code @= 1
+
+    if mysql_port > 0 && mongo_port > 0
+        code @ with_stand_ins(folder, mysql_port: mysql_port, mongo_port: mongo_port)
+
+    # Every store is closed by now; the stop is asked only once each
+    # stand-in has read and answered all its clients sent, so no account
+    # depends on whether the stop or a client's last request came first.
+    for from in sessions
+        match ready.await_idle(from, within_ms: ready.NOTICE_MS)
+            .ok _ => _ = 0
+            .err e =>
+                print("demo: a stand-in did not end its connections: " + e.msg)
+                code @ 1
+
+    os.ask_stop()
+    print("== the stand-ins, stopped")
+
+    for t in running
+        print(t.wait())
+
+    return code
+
+# The port the stand-in `service` said it listens on, after a line saying
+# it is ready; 0, after a line saying why, where it said none.
 #
-# - `service`: its name, as its notice says it.
-# - `body`: its thread's function.
-# - `arg`: what its thread is handed.
-# - `control`: the demo's control listener.
-function started(service: str, body: (function(str) -> str), arg: str, control: net.Listener) -> Started
-    match threads.spawn_text(body: body, arg: arg)
+# - `service`: its name, as the transcript says it.
+# - `from`: the mailbox handed to its thread.
+function port_said(service: str, from: (mailbox ready.Ready)) -> i64
+    match ready.await_ready(from)
         .err e =>
-            print(f"demo: {service} would not start: {e.msg}")
-            return Started(thread: threads.spawn_text(body: nothing_to_do, arg: "").must(), port: 0)
-        .ok thread =>
-            match ready.await_ready(control)
-                .err e =>
-                    print(f"demo: {service} never said it was ready: {e.msg}")
-                    return Started(thread: thread, port: 0)
-                .ok r =>
-                    if r.service != service
-                        print(f"demo: {r.service} answered where {service} was awaited")
-                        return Started(thread: thread, port: 0)
-                    print(f"{service}: ready")
-                    return Started(thread: thread, port: r.port)
-
-# The body of a thread that has nothing to do: what a stand-in that would
-# not start is replaced by, so every place holds a thread to wait for.
-#
-# - `arg`: ignored.
-function nothing_to_do(arg: str) -> str
-    return "a stand-in that did not start" + arg
+            print(f"demo: {service} never said it was ready: {e.msg}")
+            return 0
+        .ok r =>
+            print(f"{service}: ready")
+            return r.port
 
 # The stores run, the accounts compared, then the import with bad rows and
 # the export.

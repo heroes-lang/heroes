@@ -21,13 +21,13 @@ use <rebel>/protobuf
 use <rebel>/random
 use <rebel>/serial
 use <rebel>/strings
-use <rebel>/threads
 use <rebel>/uuid
 
 use codecs/proto
 use config/registry
 use hub/loop
 use standins/amqp_broker
+use standins/amqp_state
 use standins/mqtt_broker
 use standins/nats_server
 use standins/told
@@ -43,11 +43,6 @@ constant RETRY_SEED: i64
 # The station's speed, in bits a second, NMEA 0183's.
 constant STATION_BAUD: i64
     4_800
-
-# The AMQP stand-in's fault: it restarts at the third publish to `alerts`,
-# and refuses the next two connections while its virtual host comes up.
-constant AMQP_FAULT: str
-    "restart:alerts:3:2"
 
 # The demo's weather station: the device's end of its serial line.
 record Station
@@ -69,8 +64,9 @@ record Station
 record World
     # The demo's folder.
     folder: str
-    # The threads, in the order started: MQTT, AMQP, NATS, then the hub.
-    started: [threads.TextThread]
+    # The threads, in the order started: MQTT, AMQP, NATS, then the hub;
+    # each answers what it carried.
+    started: [(thread str)]
     # The MQTT stand-in's port.
     mqtt_port: i64
     # The AMQP stand-in's port.
@@ -231,45 +227,51 @@ function write_hub_folder(w: World lent, devices: registry.Registry) -> str?
     write_file(path: path.join_all([w.folder, "plant.proto"]), text: vibration_proto())?
     return ok(config)
 
-# Starts `body` on a thread of its own with `arg`, and waits for it to tell
-# its port.
+# The AMQP stand-in's fault: it restarts at the third publish to `alerts`,
+# and refuses the next two connections while its virtual host comes up.
+function amqp_fault() -> amqp_state.Fault
+    return amqp_state.Fault(exchange: "alerts", after: 3, refusals: 2, seen: 0, left: 0)
+
+# Starts `body` on a thread of its own with `setup`, handed whole, and waits
+# for it to tell its port on `to`, the mailbox `setup` carries to it.
 #
 # - `w`: the world, which gains the thread.
-# - `ear`: the socket the thread tells its port to.
 # - `body`: the thread's function.
-# - `arg`: what it is given.
+# - `setup`: what it is given.
+# - `to`: the mailbox `setup` holds.
 #
-# Fails as `threads.spawn_text` and `told.heard` fail.
-function start_thread(@w: World, ear: net.UdpSocket lent, body: (function(str) -> str), arg: str) -> i64?
-    t = threads.spawn_text(body: body, arg: arg)?
+# Fails `limit` where no thread can be started, and as `told.heard` fails.
+function start_thread<S>(@w: World, body: (function(S) -> str), setup: S, to: (mailbox told.Told)) -> i64?
+    t = spawn(body, setup)?
     started @= w.started
     started @ started.push(t)
     w.started @ started
-    return told.heard(ear)
+    return told.heard(to)
 
 # Starts the three brokers' stand-ins.
 #
 # - `w`: the world, which gains them.
-# - `ear`: the socket they tell their ports to.
 #
 # Fails as `start_thread` fails.
-function start_brokers(@w: World, ear: net.UdpSocket lent) -> ()?
-    told_port = to_str(ear.address.port)
-    w.mqtt_port @ start_thread(@w, ear: ear, body: mqtt_broker.run, arg: told_port)?
-    w.amqp_port @ start_thread(@w, ear: ear, body: amqp_broker.run, arg: told_port + " " + AMQP_FAULT)?
-    w.nats_port @ start_thread(@w, ear: ear, body: nats_server.run, arg: told_port)?
+function start_brokers(@w: World) -> ()?
+    mqtt_to: (mailbox told.Told) = mailbox()
+    w.mqtt_port @ start_thread(@w, body: mqtt_broker.run, setup: mqtt_to, to: mqtt_to)?
+    amqp_to: (mailbox told.Told) = mailbox()
+    w.amqp_port @ start_thread(@w, body: amqp_broker.run, setup: amqp_broker.Start(to: amqp_to, fault: amqp_fault()), to: amqp_to)?
+    nats_to: (mailbox told.Told) = mailbox()
+    w.nats_port @ start_thread(@w, body: nats_server.run, setup: nats_to, to: nats_to)?
     return ok()
 
 # Starts the hub on the settings at `config`, and takes its connection to
 # the station where the station is on the loopback.
 #
 # - `w`: the world, which gains the hub.
-# - `ear`: the socket the hub tells its port to.
 # - `config`: the settings file's path.
 #
 # Fails as `start_thread` and `take_hub` fail.
-function start_hub(@w: World, ear: net.UdpSocket lent, config: str) -> ()?
-    w.hub_port @ start_thread(@w, ear: ear, body: loop.run, arg: f"{ear.address.port} {config}")?
+function start_hub(@w: World, config: str) -> ()?
+    hub_to: (mailbox told.Told) = mailbox()
+    w.hub_port @ start_thread(@w, body: loop.run, setup: loop.Start(to: hub_to, config: config), to: hub_to)?
     take_hub(@w.station)?
     return ok()
 

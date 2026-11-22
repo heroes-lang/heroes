@@ -513,12 +513,20 @@ record Entry
     # Its value.
     value: Reply
 
-# A reply read from bytes, and where the bytes after it begin.
-record Decoded
-    # The reply.
-    reply: Reply
-    # The byte index of the first byte after it.
-    next: i64
+# What `decode_next` found at a place in bytes read so far: a whole reply,
+# or bytes that end inside one that more bytes may complete. Bytes that no
+# more bytes could make RESP are a failure, never `partial`, so a reader
+# reads more only where waiting can help.
+variant Decoded
+    # A whole reply, and where the bytes after it begin.
+    whole
+        # The reply.
+        reply: Reply
+        # The byte index of the first byte after it.
+        next: i64
+    # The bytes end inside the reply, and all of them so far are RESP: read
+    # more onto the same bytes and ask again from the same place.
+    partial
 
 # The one reply `data` holds, with nothing after it.
 #
@@ -529,20 +537,33 @@ record Decoded
 # passes the client's bounds; `unsupported` for a streamed string or
 # aggregate. See also `decode_next`.
 function decode(data: [u8]) -> Reply?
-    d = decode_next(data, from: 0)?
+    match decode_next(data, from: 0)?
+        .whole w =>
+            if w.next != data.len()
+                return fail(code: INVALID, msg: f"the reply ends at byte {w.next} of {data.len()}")
+            return ok(w.reply)
+        .partial => return fail(code: INVALID, msg: "the bytes end inside a reply that begins at byte 0")
 
-    if d.next != data.len()
-        return fail(code: INVALID, msg: f"the reply ends at byte {d.next} of {data.len()}")
-    return ok(d.reply)
-
-# The reply that begins at byte `from` of `data`, and where the next begins.
-# An attribute before it is read and dropped.
+# The reply that begins at byte `from` of `data` and where the next begins,
+# or that the bytes end inside it: what a reader holding the bytes a
+# connection has sent so far asks, to read more or to refuse. An attribute
+# before the reply is read and dropped.
 #
-# - `data`: bytes holding replies one after another.
-# - `from`: where the reply begins, 0 to `data`'s length.
+# - `data`: bytes holding replies one after another, the last perhaps cut
+#   short.
+# - `from`: where the reply begins, 0 to `data`'s length; at the length the
+#   answer is `partial`.
 #
-# It holds its own stack, so a reply nested deep never deepens the
-# program's. Fails as `decode` does, but for bytes after the reply.
+# `partial` where every byte from `from` on is RESP so far and the reply is
+# not whole: a type's byte, a line not ended whose bytes can still begin its
+# token, a bulk string shorter than its length, an aggregate with elements
+# to come. It holds its own stack, so a reply nested deep never deepens the
+# program's.
+#
+# Fails `invalid` where the bytes are no RESP, at the first byte that tells
+# it even before its line ends, or nest past 128 aggregates; `limit` where a
+# string or a line passes the client's bounds, a line with no end included;
+# `unsupported` for a streamed string or aggregate. See also `decode`.
 function decode_next(data: [u8], from: i64) -> Decoded?
     levels: [[Reply]] @= []
     kinds: [u8] @= []
@@ -554,7 +575,7 @@ function decode_next(data: [u8], from: i64) -> Decoded?
         scanned = resp.scan(data, at: at)?
 
         if !scanned.complete
-            return fail(code: INVALID, msg: f"the bytes end inside a reply that begins at byte {from}")
+            return ok(.partial)
         t = scanned.token
         at @ t.next
 
@@ -620,7 +641,7 @@ function decode_next(data: [u8], from: i64) -> Decoded?
                         value @ .array(items: items)
 
                     if depth == 0
-                        return ok(Decoded(reply: value, next: at))
+                        return ok(.whole(reply: value, next: at))
                     stack.put(@levels[depth - 1], item: value)
                     wants[depth - 1] @ wants[depth - 1] - 1
 
@@ -1441,9 +1462,31 @@ test "decode and decode_next: bytes after a reply, a reply cut short, nesting pa
         .err e => assert e.code == "invalid" && e.msg == "the reply nests past 128 levels"
 
     two = bytes.from_text(":1\r\n$2\r\nhi\r\n")
-    first = decode_next(two, from: 0).must()
-    assert first.reply == .integer(v: 1) && first.next == 4
-    assert decode_next(two, from: first.next).must().reply == .bulk(v: bytes.from_text("hi"))
+    assert decode_next(two, from: 0).must() == .whole(reply: .integer(v: 1), next: 4)
+    assert decode_next(two, from: 4).must() == .whole(reply: .bulk(v: bytes.from_text("hi")), next: 12)
+
+    match decode(bytes.from_text("*2\r\n:1\r\n"))
+        .ok _  => assert false
+        .err e => assert e.code == "invalid" && e.msg == "the bytes end inside a reply that begins at byte 0"
+
+test "decode_next: partial at every cut of a nested reply, and invalid where the bytes can be no RESP, before and after their line ends"
+    whole = bytes.from_text("*2\r\n%1\r\n+k\r\n$3\r\nv\r\n\r\n:-7\r\n")
+    reply = decode_next(whole, from: 0).must()
+    assert reply == .whole(reply: .array(items: [.mapping(entries: [Entry(key: .simple(v: "k"), value: .bulk(v: bytes.from_text("v\r\n")))]), .integer(v: -7)]), next: whole.len())
+
+    for cut in range(from: 0, to: whole.len())
+        assert decode_next(whole.slice(from: 0, to: cut), from: 0).must() == .partial
+
+    for wrong in ["x", "*2\r\n:1\r\nG", "*2\r\n:1a", "$3\r\nabcd", "#x", "*1\r\n_x"]
+        match decode_next(bytes.from_text(wrong), from: 0)
+            .ok _  => assert false
+            .err e => assert e.code == "invalid"
+
+    match decode_next(bytes.from_text("*2\r\n:1\r\nGET"), from: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the reply holds 'G' at byte 8, which begins no RESP type"
+
+    assert decode_next(bytes.from_text("+OK\r\n"), from: 5).must() == .partial
 
 test "decode: an array of a hundred thousand elements, read in time linear in its length"
     big: [u8] @= bytes.from_text("*100000\r\n")
@@ -1839,11 +1882,14 @@ test "set_deadline: a receive that times out"
 test "decode: a bulk string"
     assert decode(bytes.from_text("$5\r\nhello\r\n")).must() == .bulk(v: bytes.from_text("hello"))
 
-# Two replies read one after the other.
-test "decode_next: an integer then a simple string"
-    data = bytes.from_text(":1\r\n+OK\r\n")
-    first = decode_next(data, from: 0).must()
-    assert decode_next(data, from: first.next).must().reply == .simple(v: "OK")
+# Replies read one after another from the bytes a connection has sent so
+# far, the last one partial until more bytes come.
+test "decode_next: an integer, then a simple string cut short and completed"
+    data = bytes.from_text(":1\r\n+O")
+    assert decode_next(data, from: 0).must() == .whole(reply: .integer(v: 1), next: 4)
+    assert decode_next(data, from: 4).must() == .partial
+    more = bytes.concat([data, bytes.from_text("K\r\n")])
+    assert decode_next(more, from: 4).must() == .whole(reply: .simple(v: "OK"), next: 9)
 
 # The bytes of a command.
 test "encode_command: GET of a key"

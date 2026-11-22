@@ -1,0 +1,159 @@
+# The two packings `unicode/encodings`' `lookup.hero` reads, made from an
+# index and each read back as `lookup` reads it and held to what it was made
+# from: a decoder's table, the code point of each pointer, three 21-bit
+# fields to a word; and an encoder's, pointers ordered by their code points,
+# four 15-bit fields to a word.
+
+use indexes
+
+# The bits of a code point in a decoder's word.
+constant POINT_BITS: i64
+    21
+
+# The bits of a pointer in an encoder's word.
+constant POINTER_BITS: i64
+    15
+
+# The code point of each pointer of `index` below `size`, three to a word:
+# pointer `p`'s is bits `21 * (p % 3)` up of word `p / 3`, 0 where the index
+# has none; the last word filled with zeros.
+#
+# - `index`: the index.
+# - `size`: how many pointers the table holds, the index's own
+#   `indexes.size_of` or more.
+#
+# Fails `invalid` where a pointer is `size` or past it, or a word read back
+# does not give a pointer's code point.
+function decode_words(index: indexes.Index lent, size: i64) -> [i64]?
+    if indexes.size_of(index) > size
+        return fail(code: "invalid", msg: f"{index.file} has pointers past {size}")
+    words: [i64] @= []
+    word @= 0
+    at @= 0
+    pointer @= 0
+
+    while pointer < (size + 2) / 3 * 3
+        if at < index.pointers.len() && index.pointers[at] == pointer
+            word @ word | index.points[at] << POINT_BITS * (pointer % 3)
+            at @ at + 1
+
+        if pointer % 3 == 2
+            words @ words.push(word)
+            word @ 0
+        pointer @ pointer + 1
+
+    at @ 0
+
+    while at < index.pointers.len()
+        if point_of(words: words, size: size, pointer: index.pointers[at]) != index.points[at]
+            return fail(code: "invalid", msg: f"{index.file}: pointer {index.pointers[at]} does not read back")
+        at @ at + 1
+
+    return ok(words)
+
+# The code point `lookup.point_of` reads for `pointer` in `words`, 0 where it
+# has none.
+function point_of(words: [i64] lent, size: i64, pointer: i64) -> i64
+    if pointer < 0 || pointer >= size
+        return 0
+    return words[pointer / 3] >> POINT_BITS * (pointer % 3) & 0x1fffff
+
+# `pointers` packed four to a word: the `k`th is bits `15 * (k % 4)` up of word
+# `k / 4`.
+#
+# - `pointers`: the pointers, each from 0 to 32,767.
+#
+# Fails `invalid` where a pointer is outside that range or a word read back
+# does not give it.
+function encode_words(pointers: [i64]) -> [i64]?
+    words: [i64] @= []
+    word @= 0
+    k @= 0
+
+    for pointer in pointers
+        if pointer < 0 || pointer >= 1 << POINTER_BITS
+            return fail(code: "invalid", msg: f"pointer {pointer} is past 15 bits")
+        word @ word | pointer << POINTER_BITS * (k % 4)
+
+        if k % 4 == 3
+            words @ words.push(word)
+            word @ 0
+        k @ k + 1
+
+    if k % 4 != 0
+        words @ words.push(word)
+    k @ 0
+
+    for pointer in pointers
+        if words[k / 4] >> POINTER_BITS * (k % 4) & 0x7fff != pointer
+            return fail(code: "invalid", msg: f"pointer {pointer} does not read back")
+        k @ k + 1
+
+    return ok(words)
+
+# The pointer an encoder writes for each code point `index` has, ordered by
+# the code points: the first of the code point's pointers from `low` up, or
+# the last where the code point is one of `last`.
+#
+# - `index`: the index.
+# - `low`: the first pointer an encoder writes; those below it are left out.
+# - `last`: the code points whose last pointer the encoder writes.
+function encoder_pointers(index: indexes.Index lent, low: i64, last: [i64]) -> [i64]
+    chosen: {i64: i64} @= {}
+    at @= 0
+
+    while at < index.pointers.len()
+        pointer = index.pointers[at]
+        point = index.points[at]
+
+        if pointer >= low
+            match chosen[point]
+                .ok _ =>
+                    if holds(last, point)
+                        chosen[point] @ pointer
+                .err _ => chosen[point] @ pointer
+        at @ at + 1
+
+    out: [i64] @= []
+
+    for point in sort(keys(chosen))
+        out @ out.push(chosen[point].must())
+
+    return out
+
+# Whether `xs` holds `x`.
+function holds(xs: [i64] lent, x: i64) -> bool
+    for one in xs
+        if one == x
+            return true
+
+    return false
+
+## Tests
+
+test "decode_words: three to a word, an empty slot, a size not a multiple of three, and each read back"
+    one = indexes.Index(file: "f", identifier: "i", date: "d", pointers: [0, 1, 2, 4], points: [1, 2, 0x10ffff, 5])
+    words = decode_words(one, size: 5).must()
+    assert decode_words(one, size: 4).is_err()
+    assert decode_words(one, size: 7).must() == [1 | 2 << 21 | 0x10ffff << 42, 5 << 21, 0]
+    assert words == [1 | 2 << 21 | 0x10ffff << 42, 5 << 21]
+    assert point_of(words: words, size: 5, pointer: 3) == 0
+    assert point_of(words: words, size: 5, pointer: 5) == 0
+
+test "encode_words: four to a word, a last word part filled, none, and a pointer past 15 bits"
+    assert encode_words([1, 2, 3, 4, 5]).must() == [1 | 2 << 15 | 3 << 30 | 4 << 45, 5]
+    assert encode_words([]).must() == []
+    assert encode_words([32768]).is_err()
+    assert encode_words([-1]).is_err()
+
+test "encoder_pointers: the first pointer of a code point, the last where asked, those below the low one left out, by code point"
+    one = indexes.Index(
+        file: "f",
+        identifier: "i",
+        date: "d",
+        pointers: [0, 3, 5, 7, 9],
+        points: [0x30, 0x20, 0x10, 0x20, 0x10]
+    )
+    assert encoder_pointers(one, low: 0, last: []) == [5, 3, 0]
+    assert encoder_pointers(one, low: 0, last: [0x10]) == [9, 3, 0]
+    assert encoder_pointers(one, low: 4, last: []) == [5, 7]

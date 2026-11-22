@@ -1,0 +1,3 @@
+<p class="tagline">The text adventure, written again with Rebel: the same game played from the same script, printing the same transcript to the byte.</p>
+
+<p>Rebel&rsquo;s <code>strings</code> reads the script&rsquo;s commands and cuts the verb from the rest of each line, its <code>graphs</code> walks the map for the test that every room can be reached, and its <code>maps</code> gives a room&rsquo;s exits, three jobs the original does with helpers of its own. The game stays this program&rsquo;s: each turn takes the state of the game and gives back the new state and the lines to print, and the program ends by reaching the end of <code>main</code> rather than calling exit, so the tests can still check for memory the program failed to release.</p>

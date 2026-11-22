@@ -15,8 +15,10 @@ use time
 
 # Writes the central directory and the end records, ZIP64's where the
 # count, a size or an offset needs them, with the archive's `comment`.
-# Fails `invalid` where the comment passes 65,535 bytes.
+# Fails `invalid` where a member is begun and not ended or the comment
+# passes 65,535 bytes.
 function finish(@sink: zip_write.Sink, comment: str) -> ()?
+    zip_write.none_open(sink)?
     raw_comment = bytes.from_text(comment)
 
     if raw_comment.len() > 0xffff

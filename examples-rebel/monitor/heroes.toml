@@ -30,7 +30,6 @@ packages = [
     "stats",
     "strings",
     "term",
-    "threads",
     "time",
     "toml",
     "tracing",

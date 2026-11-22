@@ -228,7 +228,9 @@ test "read_text: a secret that is no UTF-8 is not_text, and an absent one not_fo
             match absent
                 .ok _  => assert false
                 .err e => assert e.code == NOT_FOUND
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 test "remove: an absent secret is not_found, its message naming the account and the service"
     service = hero_keyring.test_service("face-absent")
@@ -237,8 +239,11 @@ test "remove: an absent secret is not_found, its message naming the account and 
     match removed
         .ok _ => assert false
         .err e =>
-            assert e.code == NOT_FOUND || e.code == UNSUPPORTED || e.code == PERMISSION
-            assert e.msg.len() > 0
+            if e.code == UNSUPPORTED || e.code == PERMISSION
+                skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
+            assert e.code == NOT_FOUND
+            asked = f"removing the secret of \"ghost\" under \"{service}\": "
+            assert e.msg.len() > asked.len() && e.msg.slice(from: 0, to: asked.len()) == asked
 
 ## Examples
 
@@ -246,7 +251,9 @@ test "remove: an absent secret is not_found, its message naming the account and 
 test "system: the name of this machine's keyring"
     match system()
         .ok name => assert name == "macOS Keychain" || name == "Windows Credential Manager" || name == "Secret Service"
-        .err e   => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # A token kept for an account, then read back as it was stored.
 test "store: a token kept for an account"
@@ -256,8 +263,10 @@ test "store: a token kept for an account"
     _ = remove_all(service).is_err()
 
     match stored
-        .ok _  => assert back.must() == [116, 111, 107, 101, 110]
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .ok _ => assert back.must() == [116, 111, 107, 101, 110]
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # A password kept as text, and the next store replacing it.
 test "store_text: a password kept, then replaced"
@@ -271,7 +280,9 @@ test "store_text: a password kept, then replaced"
         .ok _ =>
             assert !second.is_err()
             assert back.must() == "correct horse"
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # A key of bytes read back, and an account that holds none told apart.
 test "read: a key read back, and an account with none"
@@ -288,7 +299,9 @@ test "read: a key read back, and an account with none"
             match none
                 .ok _  => assert false
                 .err e => assert e.code == NOT_FOUND
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # A password read as text, characters of more than one byte kept.
 test "read_text: a password read as text"
@@ -298,8 +311,10 @@ test "read_text: a password read as text"
     _ = remove_all(service).is_err()
 
     match stored
-        .ok _  => assert back.must() == "pässwörd"
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .ok _ => assert back.must() == "pässwörd"
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # A secret removed when the account signs out, and gone after.
 test "remove: a secret removed, then not_found"
@@ -316,7 +331,9 @@ test "remove: a secret removed, then not_found"
             match after
                 .ok _  => assert false
                 .err e => assert e.code == NOT_FOUND
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # The accounts a service holds secrets for, in order.
 test "accounts: the accounts of a service, ordered"
@@ -327,8 +344,10 @@ test "accounts: the accounts of a service, ordered"
     _ = remove_all(service).is_err()
 
     match stored
-        .ok _  => assert listed.must() == ["alice", "bob"]
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .ok _ => assert listed.must() == ["alice", "bob"]
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")
 
 # Every secret of a service removed at once, as an uninstaller does.
 test "remove_all: every secret of a service removed"
@@ -342,4 +361,6 @@ test "remove_all: every secret of a service removed"
         .ok _ =>
             assert !cleared.is_err()
             assert left.must().len() == 0
-        .err e => assert e.code == UNSUPPORTED || e.code == PERMISSION
+        .err e =>
+            assert e.code == UNSUPPORTED || e.code == PERMISSION
+            skip_test(reason: f"no keyring this program may use: {e.code}, {e.msg}")

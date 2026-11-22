@@ -1,9 +1,13 @@
 # Which encoding each of OpenAI's models reads, by its whole name or by the
 # start of it, as tiktoken 0.14.0 answers `encoding_name_for_model`: a
 # whole name first, then the first start, in this order, that the name
-# begins with. Nothing here is edited by hand: the one-off program
-# `gen_tables.py`, which is not in the tree (defect 2639), read tiktoken's two
-# tables on 2026-11-18 and wrote this module whole.
+# begins with.
+#
+# Generated, never edited by hand: the Heroes program
+# `generators/tokenizer_tables/` read tiktoken 0.14.0's two tables in
+# `tiktoken/model.py` (SHA-256 600f26902d1cf6a1a5f54e37be988b3e0d911f1ff17ba7060bb361f9b5295521,
+# fetched 2026-11-22), and wrote this module whole; its `check` command
+# says whether this module is still what it writes.
 
 # The whole names.
 constant MODELS: [str]

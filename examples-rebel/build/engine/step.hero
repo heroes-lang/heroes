@@ -4,19 +4,17 @@
 # The hashing and the reading are done on the worker too, so a build of
 # large outputs hashes them in parallel as it runs them.
 #
-# A thread is handed one text and answers one text (`threads.spawn_text`),
-# and nothing else crosses: the order is JSON and so is the answer, whose
-# fields are the facts the main thread needs and no handle. The step's
+# The order crosses to the worker whole and the answer comes back whole,
+# each a copy (spec § 11); the answer holds the facts the main thread needs
+# and no handle, so nothing the worker opened outlives it. The step's
 # output is caught whole, never written to the terminal as it comes, so the
 # outputs of steps running side by side are never interleaved; the main
 # thread prints each whole once its step is collected.
 
 use <rebel>/bytes
 use <rebel>/fs
-use <rebel>/json
 use <rebel>/path
 use <rebel>/process
-use <rebel>/threads
 use <rebel>/time
 
 use load/paths
@@ -57,126 +55,6 @@ record Done
     deps: [str]
     # How long the step took, from its folder made to its output hashed.
     duration: time.Duration
-
-## The order and the answer as text
-
-# `o` as the text a worker is handed.
-#
-# - `o`: the order.
-function order_text(o: Order) -> str
-    words: [json.Value] @= []
-
-    for w in o.words
-        words @ words.push(.text(v: w))
-
-    env: {str: json.Value} @= {}
-
-    for name in keys(o.env)
-        env[name] @ .text(v: o.env[name].default(""))
-
-    depfile_value: json.Value = match o.depfile
-        .ok d  => .text(v: d)
-        .err _ => .null_value
-
-    limit_value: json.Value = match o.time_limit
-        .ok d  => .number(v: to_f64(d.nanoseconds))
-        .err _ => .null_value
-
-    members: {str: json.Value} = {
-        "output": .text(v: o.output)
-        "place": .text(v: o.place)
-        "words": .list(items: words)
-        "dir": .text(v: o.dir)
-        "env": .object(members: env)
-        "depfile": depfile_value
-        "limit_ns": limit_value
-    }
-
-    # Text, lists and objects of text and a finite number: JSON writes each.
-    return json.format(.object(members: members)).must()
-
-# The order `text` holds.
-#
-# - `text`: what `order_text` wrote.
-#
-# Fails `invalid` where it is not such a text.
-function order_of(text: str) -> Order?
-    v = json.parse(text)?
-    words: [str] @= []
-
-    for w in json.items_of(json.member(v, key: "words")?)?
-        words @ words.push(json.text_of(w)?)
-
-    env: {str: str} @= {}
-    listed = json.member(v, key: "env")?
-
-    for name in keys(json.members_of(listed)?)
-        env[name] @ json.text_of(json.member(listed, key: name)?)?
-
-    d = json.member(v, key: "depfile")?
-    limit = json.member(v, key: "limit_ns")?
-
-    depfile_place: str? = if json.is_null(d)
-        fail(code: "not_found", msg: "no depfile")
-    else
-        ok(json.text_of(d)?)
-
-    time_limit: time.Duration? = if json.is_null(limit)
-        fail(code: "not_found", msg: "no limit")
-    else
-        ok(time.nanoseconds(json.int_of(limit)?))
-
-    return ok(
-        Order(output: json.text_of(json.member(v, key: "output")?)?, place: json.text_of(json.member(v, key: "place")?)?, words: words, dir: json.text_of(json.member(v, key: "dir")?)?, env: env, depfile: depfile_place, time_limit: time_limit)
-    )
-
-# `d` as the text a worker answers.
-#
-# - `d`: the answer.
-function done_text(d: Done) -> str
-    deps: [json.Value] @= []
-
-    for name in d.deps
-        deps @ deps.push(.text(v: name))
-
-    digest_value: json.Value = match d.digest
-        .ok s  => .text(v: s)
-        .err _ => .null_value
-
-    members: {str: json.Value} = {
-        "succeeded": .boolean(v: d.succeeded)
-        "ended": .text(v: d.ended)
-        "text": .text(v: d.text)
-        "digest": digest_value
-        "deps": .list(items: deps)
-        "ns": .number(v: to_f64(d.duration.nanoseconds))
-    }
-
-    # Text, a boolean, a list of text and a finite number: JSON writes each.
-    return json.format(.object(members: members)).must()
-
-# The answer `text` holds.
-#
-# - `text`: what `done_text` wrote.
-#
-# Fails `invalid` where it is not such a text.
-function done_of(text: str) -> Done?
-    v = json.parse(text)?
-    deps: [str] @= []
-
-    for name in json.items_of(json.member(v, key: "deps")?)?
-        deps @ deps.push(json.text_of(name)?)
-
-    d = json.member(v, key: "digest")?
-
-    digest: str? = if json.is_null(d)
-        fail(code: "not_found", msg: "no digest")
-    else
-        ok(json.text_of(d)?)
-
-    return ok(
-        Done(succeeded: json.bool_of(json.member(v, key: "succeeded")?)?, ended: json.text_of(json.member(v, key: "ended")?)?, text: json.text_of(json.member(v, key: "text")?)?, digest: digest, deps: deps, duration: time.nanoseconds(json.int_of(json.member(v, key: "ns")?)?))
-    )
 
 ## The step itself
 
@@ -318,70 +196,57 @@ function run(o: Order) -> Done
         duration: since(began)
     )
 
-# The body of a worker thread: the order `text` run, its answer as text.
-#
-# - `text`: what `order_text` wrote.
-function run_text(text: str) -> str
-    match order_of(text)
-        .ok o => return done_text(run(o))
-        .err e => return done_text(
-            failed(ended: f"did not start: its order does not read: {e.msg}", text: "", took: time.nanoseconds(0))
-        )
+# What a worker is handed, whole: its order, and where it says it has
+# ended.
+record Work
+    # The order.
+    order: Order
+    # The step's number among those the build started, which the worker
+    # sends on `ended` as it ends.
+    ticket: i64
+    # The scheduler's mailbox of steps that ended.
+    ended: (mailbox i64)
 
-# A worker thread started on `o`.
+# The body of a worker thread: the order run, then its ticket sent on
+# `ended`, so the scheduler learns which of its workers ended first without
+# waiting on any of them (feature 2668). Answers what `run` answers.
 #
-# - `o`: the order.
+# - `w`: the order, its ticket and the mailbox.
+function work(w: Work) -> Done
+    d = run(w.order)
+
+    # A send fails only once the mailbox has answered a stop; the scheduler
+    # then waits for its workers by their threads alone.
+    _ = w.ended.send(w.ticket).is_err()
+    return d
+
+# A worker thread started on `o`, which sends `ticket` on `ended` as it ends
+# and answers what `run` answers.
 #
-# Fails `limit` where the system refuses a thread, as `threads.spawn_text`
-# does.
-function start(o: Order) -> threads.TextThread?
-    return threads.spawn_text(body: run_text, arg: order_text(o))
-
-# What the worker `t` answered, waiting for it.
+# - `o`: the order, handed to the worker whole.
+# - `ticket`: the step's number among those the build started.
+# - `ended`: the scheduler's mailbox of steps that ended.
 #
-# - `t`: the thread, which this spends.
-function finish(@t: threads.TextThread) -> Done
-    text = threads.wait_text(@t)
+# Fails `limit` where the system, or the runtime's bound of threads running
+# at once, refuses a thread.
+function start(o: Order, ticket: i64, ended: (mailbox i64)) -> (thread Done)?
+    return spawn(work, Work(order: o, ticket: ticket, ended: ended))
 
-    match done_of(text)
-        .ok d  => return d
-        .err e => return failed(ended: f"answered what does not read: {e.msg}", text: "", took: time.nanoseconds(0))
-
-test "order_text and order_of: an order read back whole, absent fields included"
+test "start: a worker sends its ticket as it ends, and its outcome comes back whole"
+    ended: (mailbox i64) = mailbox()
     o = Order(
-        output: "out/a b.obj",
-        place: "demo/out/a b.obj",
-        words: ["mill", "--helper", "compile", "src/a \"x\".src"],
-        dir: "demo",
-        env: {"LANG": "C"},
-        depfile: ok("demo/out/a b.obj.d"),
-        time_limit: ok(time.milliseconds(300).must())
-    )
-    assert order_of(order_text(o)).must() == o
-    bare = Order(
         output: "o",
         place: "o",
-        words: ["x"],
+        words: ["/no/such/program/of/the/build"],
         dir: ".",
-        env: {},
+        env: {"LANG": "C"},
         depfile: fail(code: "not_found", msg: "no depfile"),
         time_limit: fail(code: "not_found", msg: "no limit")
     )
-    read_back = order_of(order_text(bare)).must()
-    assert read_back.depfile.is_err() && read_back.time_limit.is_err() && read_back.words == ["x"]
-
-test "done_text and done_of: an answer read back, its output text of more than one byte"
-    d = Done(
-        succeeded: true,
-        ended: "exited with code 0",
-        text: "warning: café\n",
-        digest: ok("00ff"),
-        deps: ["src/a.h"],
-        duration: time.nanoseconds(12)
-    )
-    back = done_of(done_text(d)).must()
-    assert back.succeeded && back.text == d.text && back.digest.must() == "00ff" && back.deps == ["src/a.h"]
-    assert back.duration == time.nanoseconds(12)
+    t = start(o, ticket: 7, ended: ended).must()
+    assert ended.receive(within_ms: 60000).must() == 7
+    d = t.wait()
+    assert !d.succeeded && d.digest.is_err() && d.ended.slice(from: 0, to: 14) == "did not start:"
 
 test "program_of: a name stays, an absolute path stays, a relative path is read from the build's folder"
     assert program_of(word: "mill", dir: "demo") == "mill"

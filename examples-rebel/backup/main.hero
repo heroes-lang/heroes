@@ -63,7 +63,8 @@
 # - `term`: the progress bar, the table of snapshots, the password typed;
 #   `flags`: the command line;
 # - `json`: every record the repository holds;
-# - `http`, `net`, `url`, `threads`: the S3 stand-in;
+# - `http`, `net`, `url`: the S3 stand-in, on a thread of the language's
+#   own (`spawn`, a mailbox);
 # - `io`, `os`, `time`, `bytes`, `strings`, `numbers`: throughout.
 
 use cli/commands

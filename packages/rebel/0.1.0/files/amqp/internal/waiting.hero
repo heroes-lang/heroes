@@ -22,10 +22,18 @@ function deadline(wait_ms: i64) -> i64
         return reading.now_ms() + 1
     return reading.now_ms() + wait_ms
 
-# The failure of a connection that is not open.
+# The failure of a connection that is not open: the failure that lost it
+# while a call that had its answer acted on what followed, answered once by
+# the call after (`settle`); else the server's close, or that it is closed.
 #
-# - `s`: the session.
-function closed_failure<T>(s: state.Session lent) -> T?
+# - `s`: the session; what it kept is answered once.
+function closed_failure<T>(@s: state.Session) -> T?
+    match s.kept
+        .ok _ => _ = 0
+        .err e =>
+            s.kept @ ok()
+            return fail(code: e.code, msg: e.msg)
+
     if s.closed_by_server
         return fail(code: model.CLOSED, msg: f"{s.target} closed the connection: {s.closing.code} {s.closing.text}")
     return fail(code: model.CLOSED, msg: f"the connection to {s.target} is closed")
@@ -80,7 +88,7 @@ function wait_once(@s: state.Session, until: i64) -> ()?
 function step(@s: state.Session, until: i64) -> reading.Event?
     while true
         if !s.open
-            return closed_failure(s)
+            return closed_failure(@s)
         t = reading.taken(@s)?
 
         if t.complete
@@ -93,12 +101,28 @@ function step(@s: state.Session, until: i64) -> reading.Event?
 function drain(@s: state.Session) -> ()?
     while true
         if !s.open
-            return closed_failure(s)
+            return closed_failure(@s)
         t = reading.taken(@s)?
 
         if !t.complete
             return ok()
         _ = dispatch.apply(@s, t: t)?
+
+# Acts on every frame whole in the bytes read once a wait has its answer:
+# one read may bring the answer and what the server wrote after it, and a
+# delivery left there as bytes is one `held_of` does not count and that
+# `poll`, the stream drained, never tells a program of (defect 2675). The
+# answer came, so the call answers it whatever follows: a failure that
+# loses the connection here is kept, and the next call answers it.
+#
+# - `s`: the session.
+function settle(@s: state.Session)
+    if s.open
+        match drain(@s)
+            .ok _ => _ = 0
+            .err e =>
+                if !s.open
+                    s.kept @ fail(code: e.code, msg: e.msg)
 
 # The failure of a channel the server closed.
 #
@@ -133,6 +157,7 @@ function await_reply(@s: state.Session, n: i64, awaited: [i64], until: i64) -> d
                                 )
 
                             if !awaited.any(is_close_key)
+                                settle(@s)
                                 return channel_failure(s, n: n, c: c.closing)
                         .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .get_empty | .confirm _ | .reply _ => _ = 0
 
@@ -140,6 +165,7 @@ function await_reply(@s: state.Session, n: i64, awaited: [i64], until: i64) -> d
 
                     for want in awaited
                         if k == want
+                            settle(@s)
                             return ok(r.method)
             .got _ | .other => _ = 0
 
@@ -157,7 +183,7 @@ function is_close_key(k: i64) -> bool
 # - `keys`: the answers awaited.
 function call(@s: state.Session, n: i64, payload: [u8] lent, awaited: [i64]) -> decoding.Incoming?
     if !s.open
-        return closed_failure(s)
+        return closed_failure(@s)
 
     if n > 0 && !state.is_open(s, channel: n)
         return channel_closed(s, n: n)
@@ -182,7 +208,7 @@ function channel_closed<T>(s: state.Session lent, n: i64) -> T?
 # - `payload`: the `basic.get`.
 function call_get(@s: state.Session, n: i64, payload: [u8] lent) -> model.Delivery?
     if !s.open
-        return closed_failure(s)
+        return closed_failure(@s)
 
     if !state.is_open(s, channel: n)
         return channel_closed(s, n: n)
@@ -195,12 +221,17 @@ function call_get(@s: state.Session, n: i64, payload: [u8] lent) -> model.Delive
         match event
             .got g =>
                 if g.channel == n
+                    settle(@s)
                     return ok(g.delivery)
             .reply r =>
                 if r.channel == n
                     match r.method
-                        .get_empty => return fail(code: model.NOT_FOUND, msg: "the queue is empty")
-                        .close c => return channel_failure(s, n: n, c: c.closing)
+                        .get_empty =>
+                            settle(@s)
+                            return fail(code: model.NOT_FOUND, msg: "the queue is empty")
+                        .close c =>
+                            settle(@s)
+                            return channel_failure(s, n: n, c: c.closing)
                         .start _ | .secure _ | .tune _ | .blocked _ | .unblocked | .flow _ | .declare_ok _ | .count _ | .tagged _ | .cancelled _ | .returned _ | .deliver _ | .get_ok _ | .confirm _ | .reply _ => _ = 0
             .other => _ = 0
 
@@ -221,6 +252,7 @@ function next_delivery(@s: state.Session, until: i64) -> model.Delivery?
     else if s.delivery_at > 1024 && s.delivery_at * 2 > s.deliveries.len()
         s.deliveries @ s.deliveries.slice(from: s.delivery_at, to: s.deliveries.len())
         s.delivery_at @ 0
+    settle(@s)
     return ok(d)
 
 # The first returned message held, taken; waiting until `until` for one.
@@ -237,6 +269,7 @@ function next_return(@s: state.Session, until: i64) -> model.Return?
     if s.return_at == s.returns.len()
         s.returns @ []
         s.return_at @ 0
+    settle(@s)
     return ok(r)
 
 # The first confirmation held on channel `n`, taken; waiting until `until`.
@@ -249,6 +282,7 @@ function next_confirmation(@s: state.Session, n: i64, until: i64) -> model.Confi
         _ = step(@s, until: until)?
 
     if !state.is_open(s, channel: n)
+        settle(@s)
         return channel_closed(s, n: n)
     at = s.chans[n].confirmation_at
     c = s.chans[n].confirmations[at]
@@ -257,6 +291,7 @@ function next_confirmation(@s: state.Session, n: i64, until: i64) -> model.Confi
     if at + 1 == s.chans[n].confirmations.len()
         s.chans[n].confirmations @ []
         s.chans[n].confirmation_at @ 0
+    settle(@s)
     return ok(c)
 
 # Waits until no publish of channel `n` is outstanding, then forgets the
@@ -270,11 +305,13 @@ function settle_all(@s: state.Session, n: i64, until: i64) -> [i64]?
         _ = step(@s, until: until)?
 
     if !state.is_open(s, channel: n)
+        settle(@s)
         return channel_closed(s, n: n)
     refused = s.chans[n].nacked
     s.chans[n].nacked @ []
     s.chans[n].confirmations @ []
     s.chans[n].confirmation_at @ 0
+    settle(@s)
     return ok(refused)
 
 test "await_reply: a delivery for a consumer held while the answer is awaited, then the answer"
@@ -291,6 +328,85 @@ test "await_reply: a delivery for a consumer held while the answer is awaited, t
     ).must()
     assert answer == .reply(class_id: 60, method_id: 11) && w.session.deliveries.len() == 1
     fixture.unwire(@w)
+
+test "await_reply and call_get: a delivery read behind the answer is held, nothing whole left unread"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 11, fields: []), fixture.delivery(channel: 1, tag: 1, body: [7])])
+    ).must()
+    answer = await_reply(
+        @w.session,
+        n: 1,
+        awaited: [decoding.key(class_id: 60, method_id: 11)],
+        until: deadline(2000)
+    ).must()
+    assert answer == .reply(class_id: 60, method_id: 11) && state.held(w.session) == 1
+    assert w.session.at == w.session.buf.len()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 72, fields: [0]), fixture.delivery(channel: 1, tag: 2, body: [8])])
+    ).must()
+
+    match call_get(@w.session, n: 1, payload: [0, 60, 0, 70, 0, 0, 1, 'q', 0])
+        .ok _  => assert false
+        .err e => assert e.code == "not_found" && state.held(w.session) == 2
+
+    fixture.unwire(@w)
+
+test "next_delivery, next_return, next_confirmation and settle_all: a delivery read behind what each took is held"
+    w @= fixture.wired()
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.delivery(channel: 1, tag: 1, body: [1]), fixture.delivery(channel: 1, tag: 2, body: [2])])
+    ).must()
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 1 && state.held(w.session) == 1
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 2
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.returned(channel: 1, body: [3]), fixture.delivery(channel: 1, tag: 3, body: [4])])
+    ).must()
+    assert next_return(@w.session, until: deadline(2000)).must().code == 312 && state.held(w.session) == 1
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 3
+    w.session.chans[1].confirming @ true
+    w.session.chans[1].outstanding @ [1, 2]
+    ack: [u8] = [0, 0, 0, 0, 0, 0, 0, 1, 0]
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: ack), fixture.delivery(channel: 1, tag: 4, body: [5])])
+    ).must()
+    assert next_confirmation(@w.session, n: 1, until: deadline(2000)).must().tag == 1 && state.held(w.session) == 1
+    assert next_delivery(@w.session, until: deadline(2000)).must().tag == 4
+    second: [u8] = [0, 0, 0, 0, 0, 0, 0, 2, 0]
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: second), fixture.delivery(channel: 1, tag: 5, body: [6])])
+    ).must()
+    assert settle_all(@w.session, n: 1, until: deadline(2000)).must() == [] && state.held(w.session) == 1
+    assert w.session.at == w.session.buf.len()
+    fixture.unwire(@w)
+
+test "settle_all: deliveries past the most held behind the confirmation lose the connection, settle_all answers, and the call after fails limit, once"
+    w @= fixture.wired()
+    w.session.options.most_held @ 1
+    w.session.chans[1].confirming @ true
+    w.session.chans[1].outstanding @ [1]
+    acked: [u8] = [0, 0, 0, 0, 0, 0, 0, 1, 0]
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: acked), fixture.delivery(channel: 1, tag: 1, body: [1]), fixture.delivery(channel: 1, tag: 2, body: [2])])
+    ).must()
+    assert settle_all(@w.session, n: 1, until: deadline(2000)).must() == [] && !w.session.open
+
+    match call_get(@w.session, n: 1, payload: [0, 60, 0, 70, 0, 0, 1, 'q', 0])
+        .ok _  => assert false
+        .err e => assert e.code == "limit"
+
+    match call_get(@w.session, n: 1, payload: [0, 60, 0, 70, 0, 0, 1, 'q', 0])
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && e.msg == "the connection to server is closed"
+
+    _ = io.close(@w.peer).is_err()
 
 test "await_reply: no answer in time, and a channel the server closes"
     w @= fixture.wired()

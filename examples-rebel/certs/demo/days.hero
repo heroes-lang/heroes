@@ -16,7 +16,7 @@ use <rebel>/time
 
 use config/settings
 use core/clock
-use core/fields
+use core/ready
 use demo/probes
 use demo/stage
 use issue/account
@@ -55,12 +55,10 @@ record Stand
     store: vault.Store
     # Day 0.
     origin: time.Instant
-    # The control listener, for the HTTPS server's start.
-    control: net.Listener
 
 # The whole session; the steps that did not go as written, counted.
 #
-# - `stand`: the configuration, the store, day 0 and the control listener.
+# - `stand`: the configuration, the store and day 0.
 # - `started`: the services started, the HTTPS server added.
 function session(stand: Stand, @started: [stage.Service]) -> i64
     s = stand.loaded.s
@@ -218,13 +216,16 @@ function served(stand: Stand, @started: [stage.Service]) -> i64
     name = s.serve.certificate
     print(f"== HTTPS served with the certificate {name}, renewed today")
 
-    told = match stage.start(https.run, arg: {"CONFIG": fields.encoded(stand.loaded.file), "KEYS": vault.format_store(stand.store), "NAME": name}, control: stand.control, @started)
+    https_box: (mailbox ready.Ready) = mailbox()
+    setup = https.Setup(config: stand.loaded.file, store: stand.store, name: name, told: https_box)
+
+    said = match stage.start(https.run, setup: setup, told: https_box, @started)
         .ok t => t
         .err e =>
             print("https: " + e.msg)
             return 1
 
-    port = stage.port_of(told)
+    port = said.port
     trust = read_file(s.acme.trust).default("")
     failures @= 0
 

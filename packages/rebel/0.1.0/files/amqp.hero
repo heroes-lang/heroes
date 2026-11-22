@@ -42,6 +42,7 @@
 
 use amqp/internal/channels
 use amqp/internal/encoding
+use amqp/internal/fixture
 use amqp/internal/link
 use amqp/internal/model
 use amqp/internal/reading
@@ -597,7 +598,7 @@ function stream_of(c: Connection) -> io.Stream?
 # `next_delivery`.
 function read_ready(@c: Connection) -> ()?
     if !c.session.open
-        return waiting.closed_failure(c.session)
+        return waiting.closed_failure(@c.session)
     link.arm(c.session.link, ms: 1)?
 
     match reading.fill(@c.session)
@@ -608,7 +609,10 @@ function read_ready(@c: Connection) -> ()?
 
     return waiting.drain(@c.session)
 
-# The values held unread: deliveries, returned messages and confirmations.
+# The values held unread: deliveries, returned messages and confirmations;
+# every whole frame a call read, while it waited for something else or in
+# the read that brought its own answer, is acted on before the call
+# returns, so what it holds is counted here.
 #
 # - `c`: the connection.
 #
@@ -1928,6 +1932,34 @@ test "connect: an option out of range is refused before anything is sent, and no
     match connect(o)
         .ok _  => assert false
         .err e => assert e.code == "closed" || e.code == "timeout" || e.code == "failed"
+
+test "wait_confirms, held_of, read_ready: a delivery read behind the confirmation is held, and a loop on poll takes it"
+    w @= fixture.wired()
+    c @= Connection(session: w.session)
+    c.session.chans[1].confirming @ true
+    c.session.chans[1].outstanding @ [1]
+    acked: [u8] = [0, 0, 0, 0, 0, 0, 0, 1, 0]
+    io.write(
+        w.peer,
+        data: bytes.concat([fixture.method(channel: 1, class_id: 60, method_id: 80, fields: acked), fixture.delivery(channel: 1, tag: 1, body: [7])])
+    ).must()
+    wait_confirms(@c, channel: Channel(id: 1), wait: time.seconds(2).must()).must()
+    assert held_of(c) == 1
+    set @= poll.make(2).must()
+    _ = poll.add_stream(set, s: stream_of(c).must(), interest: .read).must()
+    got: [i64] @= []
+
+    for _ in range(from: 0, to: 3)
+        if held_of(c) == 0 && poll.wait(set, limit: time.milliseconds(100).must()).must().len() > 0
+            read_ready(@c).must()
+
+        while held_of(c) > 0
+            got @ got.push(next_delivery(@c, wait: time.nanoseconds(0)).must().tag)
+
+    assert got == [1]
+    poll.close(@set).must()
+    link.close(@c.session.link)
+    _ = io.close(@w.peer).is_err()
 
 test "value_of: present, absent"
     fields = [Field(name: "a", value: .int32(v: 1))]

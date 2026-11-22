@@ -9,7 +9,6 @@
 use <rebel>/amqp
 use <rebel>/mqtt
 use <rebel>/nats
-use <rebel>/numbers
 use <rebel>/path
 use <rebel>/poll
 use <rebel>/time
@@ -241,16 +240,12 @@ function has_key(ready: [i64], key: i64) -> bool
     return false
 
 # Reads the link of `protocol` and handles every message it gives: what its
-# client holds, what its buffer holds whole, and, where `read` says the
-# stream is ready, what one read brings. An AMQP delivery is acknowledged
-# once handled; one the link was lost before acknowledging is the broker's
-# to deliver again. Answers how many messages were handled.
-#
-# A call that waits for a reply (a flush, an acknowledgement, a
-# confirmation) may read a message behind the reply and keep it in the
-# client's buffer, where `held_of` does not count it and `poll` will never
-# report it; so every client is also asked with a zero wait, which parses
-# what its buffer holds.
+# client holds and, where `read` says the stream is ready, what one read
+# brings. A call that waits for a reply (a flush, an acknowledgement, a
+# confirmation) holds what was read with the reply, which `held_of` counts.
+# An AMQP delivery is acknowledged once handled; one the link was lost
+# before acknowledging is the broker's to deliver again. Answers how many
+# messages were handled.
 #
 # - `h`: the hub.
 # - `protocol`: the broker.
@@ -271,14 +266,6 @@ function read_link(@h: state.Hub, protocol: registry.Protocol, read: bool) -> i6
                     .err e =>
                         handling.lose(@h, protocol: .mqtt, why: e.code)
                         return 0
-
-            match mqtt_link.take_buffered(@h.mqtt)
-                .ok more =>
-                    for m in more
-                        got @ got.push(m)
-                .err e =>
-                    handling.lose(@h, protocol: .mqtt, why: e.code)
-                    return 0
 
             for m in got
                 handling.handle(@h, protocol: .mqtt, address: m.topic, payload: m.payload)
@@ -312,14 +299,6 @@ function read_link(@h: state.Hub, protocol: registry.Protocol, read: bool) -> i6
                         handling.lose(@h, protocol: .nats, why: e.code)
                         return 0
 
-            match nats_link.take_buffered(@h.nats)
-                .ok more =>
-                    for m in more
-                        got @ got.push(m)
-                .err e =>
-                    handling.lose(@h, protocol: .nats, why: e.code)
-                    return 0
-
             for m in got
                 handling.handle(@h, protocol: .nats, address: m.subject, payload: m.data)
                 handled @ handled + 1
@@ -337,8 +316,9 @@ function read_brokers(@h: state.Hub, ready: [i64])
     _ = read_link(@h, protocol: .nats, read: has_key(ready, key: h.nats.key))
 
 # Flushes what the turn published to NATS, then handles what any client
-# read behind a reply it waited for, again until nothing more is held: the
-# handling publishes, and a publish waits for its reply too.
+# holds, again until nothing more is held: a call that waits for a reply
+# holds what came with it, and handling a message publishes, which waits
+# for a reply too.
 #
 # - `h`: the hub.
 function settle(@h: state.Hub)
@@ -411,52 +391,35 @@ function serve(@h: state.Hub)
 function settings_at(config: str) -> settings.Settings?
     return settings.parse(text: read_file(config)?, folder: path.parent(config))
 
+# What the hub's thread in the demo is handed, whole.
+record Start
+    # The mailbox the starter waits on.
+    to: (mailbox told.Told)
+    # The settings file's path.
+    config: str
+
 # The body of the hub's thread in the demo: the hub begun quiet, its links
 # made, its HTTP port told to the starter, then served until the program's
 # stop; answers what it did. A hub that cannot begin tells the starter why,
-# so the starter never waits for a port that will not come.
+# and the mailbox is closed as the thread ends, so the starter never waits
+# for a port that will not come.
 #
-# - `arg`: the port of the starter's socket, a space, and the settings
-#   file's path.
-function run(arg: str) -> str
-    at = space_at(arg)
-
-    told_port = match numbers.parse_int(arg.slice(from: 0, to: at))
-        .ok p  => p
-        .err _ => return f"the hub: \"{arg}\" does not begin with a port"
-
-    config = if at < arg.len()
-        arg.slice(from: at + 1, to: arg.len())
-    else
-        ""
-
-    begun: state.Hub? = match settings_at(config)
+# - `start`: the mailbox and the settings file's path.
+function run(start: Start) -> str
+    begun: state.Hub? = match settings_at(start.config)
         .ok s  => state.begin(s, quiet: true)
         .err e => fail(code: e.code, msg: e.msg)
 
     h @= match begun
         .ok got => got
         .err e =>
-            _ = told.failed(port: told_port, why: e.msg).is_err()
+            _ = told.failed(start.to, why: e.msg).is_err()
             return f"the hub could not begin: {e.msg}"
 
     start_links(@h)
-    _ = told.ready(port: told_port, listening: server.port_of(h.feed)).is_err()
+    _ = told.ready(start.to, listening: server.port_of(h.feed)).is_err()
     serve(@h)
     return state.end(@h)
 
-# The index of the first space of `text`, or its length where it has none.
-#
-# - `text`: the text.
-function space_at(text: str) -> i64
-    for i in range(from: 0, to: text.len())
-        if text[i] == ' '
-            return i
-
-    return text.len()
-
 test "has_key: a key there, one not, and none"
     assert has_key([3, 5], key: 5) && !has_key([3, 5], key: 4) && !has_key([-1], key: -1)
-
-test "space_at: the first space, and none"
-    assert space_at("4040 hub/hub.json") == 4 && space_at("4040") == 4

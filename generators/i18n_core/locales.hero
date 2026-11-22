@@ -1,0 +1,251 @@
+# The text of `i18n`'s `locale_tables` from CLDR's core data: what CLDR says
+# of the languages it has data for.
+#
+# The locales CLDR has data for are those `availableLocales.json` lists and
+# those `parentLocales.json` names, as a child or as a parent; their
+# languages are their first subtags. Each language's script and region are
+# those of its likely subtags (`likelySubtags.json`). A language and a region
+# whose likely subtags give another script than the language's are kept, and
+# so is a language and a script among the available locales whose likely
+# subtags give another region than the language's. The grandfathered tags
+# are RFC 5646's (its section 2.1, the productions `irregular` and
+# `regular`), each with the replacement `aliases.json` gives it.
+
+use <cldrkit>/cldrkit
+use <rebel>/json
+use <rebel>/strings
+use <tablekit>/tablekit
+
+# The tags RFC 5646 calls grandfathered, as its section 2.1 writes them.
+function grandfathered() -> [str]
+    return [
+        "en-GB-oed"
+        "i-ami"
+        "i-bnn"
+        "i-default"
+        "i-enochian"
+        "i-hak"
+        "i-klingon"
+        "i-lux"
+        "i-mingo"
+        "i-navajo"
+        "i-pwn"
+        "i-tao"
+        "i-tay"
+        "i-tsu"
+        "sgn-BE-FR"
+        "sgn-BE-NL"
+        "sgn-CH-DE"
+        "art-lojban"
+        "cel-gaulish"
+        "no-bok"
+        "no-nyn"
+        "zh-guoyu"
+        "zh-hakka"
+        "zh-min"
+        "zh-min-nan"
+        "zh-xiang"
+    ]
+
+# CLDR's core data the table is made from.
+record Core
+    # The locales `availableLocales.json` lists in its full set.
+    available: [str]
+    # Each child of `parentLocales.json` and its parent.
+    parents: {str: str}
+    # Each tag of `likelySubtags.json` and its likely subtags.
+    likely: {str: str}
+    # Each language alias of `aliases.json`, its key in lower case, and its
+    # replacement.
+    aliases: {str: str}
+
+# The core data of `release`.
+#
+# Fails as reading the four files fails.
+function read_core(release: cldrkit.Release lent) -> Core?
+    available: [str] @= []
+
+    for item in json.items_of(cldrkit.member_at(release, name: "cldr-core/availableLocales.json", path: ["availableLocales", "full"])?)?
+        available @ available.push(json.text_of(item)?)
+
+    parents: {str: str} @= {}
+
+    for one in cldrkit.entries(cldrkit.member_at(release, name: "cldr-core/supplemental/parentLocales.json", path: ["supplemental", "parentLocales", "parentLocale"])?)?
+        parents[one.key] @ json.text_of(one.value)?
+
+    likely: {str: str} @= {}
+
+    for one in cldrkit.entries(cldrkit.member_at(release, name: "cldr-core/supplemental/likelySubtags.json", path: ["supplemental", "likelySubtags"])?)?
+        likely[one.key] @ json.text_of(one.value)?
+
+    aliases: {str: str} @= {}
+
+    for one in cldrkit.entries(cldrkit.member_at(release, name: "cldr-core/supplemental/aliases.json", path: ["supplemental", "metadata", "alias", "languageAlias"])?)?
+        aliases[strings.to_lower_ascii(one.key)] @ json.text_of(json.member(one.value, key: "_replacement")?)?
+
+    return ok(Core(available: available, parents: parents, likely: likely, aliases: aliases))
+
+# The subtag at `at` of the likely subtags of `tag`.
+#
+# Fails `not_found` where CLDR gives `tag` no likely subtags.
+function likely_part(core: Core lent, tag: str, at: i64) -> str?
+    full = match core.likely[tag]
+        .ok found => found
+        .err _    => return fail(code: "not_found", msg: f"likelySubtags.json gives {tag} nothing")
+
+    parts = strings.split(s: full, sep: "-")
+    return ok(parts[at])
+
+# Whether `s` is a script subtag: four letters, the first a capital.
+function is_script(s: str) -> bool
+    return s.len() == 4 && s[0] >= 'A' && s[0] <= 'Z'
+
+# Whether `s` is a region subtag: two capitals or three digits.
+function is_region(s: str) -> bool
+    if s.len() == 2
+        return s[0] >= 'A' && s[0] <= 'Z' && s[1] >= 'A' && s[1] <= 'Z'
+    return s.len() == 3 && s[0] >= '0' && s[0] <= '9' && s[1] >= '0' && s[1] <= '9' && s[2] >= '0' && s[2] <= '9'
+
+# The languages of every locale CLDR has data for, in the order of their
+# bytes.
+function languages(core: Core lent) -> [str]
+    seen: {str: bool} @= {}
+
+    for locale in core.available
+        seen[strings.split(s: locale, sep: "-")[0]] @ true
+
+    for child in keys(core.parents)
+        seen[strings.split(s: child, sep: "-")[0]] @ true
+        seen[strings.split(s: core.parents[child].must(), sep: "-")[0]] @ true
+
+    return sort(keys(seen))
+
+# Two constants of `[str]`, each with its comment.
+#
+# Fails as writing a literal fails.
+function pair(keys_name: str, keys_comment: [str], keys_items: [str], values_name: str, values_comment: [str], values_items: [str]) -> [str]?
+    return ok(
+        [tablekit.strings_constant(comment: keys_comment, name: keys_name, items: keys_items)?, tablekit.strings_constant(comment: values_comment, name: values_name, items: values_items)?]
+    )
+
+# The whole text of `locale_tables`.
+#
+# - `release`: CLDR 49's zip, open.
+# - `generated`: the header's lines that say which program wrote it.
+#
+# Fails as reading the four files fails, `not_found` where a language has no
+# likely subtags or a grandfathered tag no replacement, and as writing a
+# literal fails.
+function module_text(release: cldrkit.Release lent, generated: [str]) -> str?
+    core = read_core(release)?
+    langs = languages(core)
+    parent_keys = sort(keys(core.parents))
+    parent_values: [str] @= []
+
+    for child in parent_keys
+        parent_values @ parent_values.push(core.parents[child].must())
+
+    scripts: [str] @= []
+
+    for lang in langs
+        scripts @ scripts.push(likely_part(core, tag: lang, at: 1)?)
+
+    region_scripts: {str: str} @= {}
+
+    for tag in keys(core.likely)
+        parts = strings.split(s: tag, sep: "-")
+
+        if parts.len() == 2 && parts[0] != "und" && is_region(parts[1]) && holds(langs, item: parts[0])
+            script = likely_part(core, tag: tag, at: 1)?
+
+            if script != likely_part(core, tag: parts[0], at: 1)?
+                region_scripts[tag] @ script
+
+    likely_regions: {str: str} @= {}
+
+    for lang in langs
+        likely_regions[lang] @ last_part(core.likely[lang].must())
+
+    for locale in core.available
+        parts = strings.split(s: locale, sep: "-")
+
+        if parts.len() > 1 && is_script(parts[1])
+            tag = parts[0] + "-" + parts[1]
+
+            match core.likely[tag]
+                .ok full =>
+                    if last_part(full) != likely_regions[parts[0]].must()
+                        likely_regions[tag] @ last_part(full)
+                .err _ => _ = 0
+
+    old_keys: [str] @= []
+
+    for tag in grandfathered()
+        old_keys @ old_keys.push(strings.to_lower_ascii(tag))
+
+    old_keys @ sort(old_keys)
+    old_values: [str] @= []
+
+    for tag in old_keys
+        match core.aliases[tag]
+            .ok found => old_values @ old_values.push(found)
+            .err _ => return fail(code: "not_found", msg: f"aliases.json gives the grandfathered {tag} no replacement")
+
+    head: [str] @= [
+        "# What CLDR release 49 says of the languages it has data for, which"
+        "# `fallback_chain` and the subpackages read: the parent locales, the script"
+        "# each language is likely written in and the regions that choose another,"
+        "# each language's likely region, and the tags RFC 5646 calls grandfathered"
+        "# with the tags CLDR replaces them with."
+        "#"
+    ]
+
+    for line in generated
+        head @ head.push(line)
+
+    parts: [str] @= [head.join("\n")]
+    groups = [
+        pair(keys_name: "PARENT_KEYS", keys_comment: ["# The locales whose parent is not their truncation, in the order of their", "# bytes."], keys_items: parent_keys, values_name: "PARENT_VALUES", values_comment: ["# The parent of each, in the order of `PARENT_KEYS`."], values_items: parent_values)?
+        pair(keys_name: "SCRIPT_KEYS", keys_comment: ["# The languages CLDR has data for, in the order of their bytes."], keys_items: langs, values_name: "SCRIPT_VALUES", values_comment: ["# The script each is likely written in, in the order of `SCRIPT_KEYS`."], values_items: scripts)?
+        pair(keys_name: "REGION_SCRIPT_KEYS", keys_comment: ["# A language and a region, `az-IQ`, where the region chooses a script other", "# than the language's own, in the order of their bytes."], keys_items: sort(keys(region_scripts)), values_name: "REGION_SCRIPT_VALUES", values_comment: ["# The script each chooses, in the order of `REGION_SCRIPT_KEYS`."], values_items: values_in_order(region_scripts))?
+        pair(keys_name: "LIKELY_REGION_KEYS", keys_comment: ["# A language, or a language and a script, CLDR has data for, in the order", "# of their bytes."], keys_items: sort(keys(likely_regions)), values_name: "LIKELY_REGION_VALUES", values_comment: ["# The region each is likely spoken in, in the order of", "# `LIKELY_REGION_KEYS`."], values_items: values_in_order(likely_regions))?
+        pair(keys_name: "GRANDFATHERED_KEYS", keys_comment: ["# The grandfathered tags of RFC 5646, lower case, in the order of their", "# bytes."], keys_items: old_keys, values_name: "GRANDFATHERED_VALUES", values_comment: ["# The tag CLDR replaces each with, in the order of `GRANDFATHERED_KEYS`."], values_items: old_values)?
+    ]
+
+    for group in groups
+        for one in group
+            parts @ parts.push(one)
+
+    return ok(parts.join("\n\n") + "\n")
+
+# The values of `pairs` in the order of their keys' bytes.
+function values_in_order(pairs: {str: str} lent) -> [str]
+    out: [str] @= []
+
+    for key in sort(keys(pairs))
+        out @ out.push(pairs[key].must())
+
+    return out
+
+# Whether `items` holds `item`.
+function holds(items: [str] lent, item: str) -> bool
+    for one in items
+        if one == item
+            return true
+
+    return false
+
+# The last subtag of `tag`.
+function last_part(tag: str) -> str
+    parts = strings.split(s: tag, sep: "-")
+    return parts[parts.len() - 1]
+
+## Tests
+
+test "is_script and is_region: a script, a region of letters and of digits, and what is neither"
+    assert is_script("Latn") && !is_script("latn") && !is_script("US")
+    assert is_region("US") && is_region("419") && !is_region("Latn") && !is_region("us") && !is_region("4a9")
+
+test "languages: the available locales' and the parents' languages, once each, by their bytes"
+    core = Core(available: ["en", "en-GB", "sr-Latn"], parents: {"kaa-Latn": "root"}, likely: {}, aliases: {})
+    assert languages(core) == ["en", "kaa", "root", "sr"]

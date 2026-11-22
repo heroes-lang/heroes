@@ -52,9 +52,9 @@
 # - `bench`: the self-benchmark;
 # - `time`: the monitor's clock, durations, the demo's fixed clock;
 # - `toml`, `flags`, `json`, `protobuf`, `http`, `net`, `compress`,
-#   `threads`, `numbers`, `strings`, `bytes`, `maps`, `math`, `errors`,
-#   `io`: the configuration, the command line, the control protocol, the
-#   collector stand-in, the demo's two threads.
+#   `numbers`, `strings`, `bytes`, `maps`, `math`, `errors`, `io`: the
+#   configuration, the command line, the control protocol, the collector
+#   stand-in; the demo's two threads are the language's own (`spawn`).
 
 use <rebel>/errors
 use <rebel>/io

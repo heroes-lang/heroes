@@ -17,7 +17,6 @@
 use <rebel>/fs
 use <rebel>/http
 use <rebel>/net
-use <rebel>/threads
 use <rebel>/time
 
 use app/reports
@@ -59,14 +58,14 @@ function steps(folder: str) -> i64?
     site @= site_server.new()
     print(f"searchd demo: Fika Notes, a site of {site.pages.len()} pages, served on loopback")
     print("-- crawl")
-    crawling @= threads.spawn_text(body: crawl_then_stop, arg: config)?
+    crawling = spawn(crawl_then_stop, config)?
     site_served = site_server.serve(@site, l: l)
-    crawled = threads.wait_text(@crawling)
+    crawled = crawling.wait()
     net.close_listener(@l)?
     site_served?
     print(f"the site answered {site.answered} requests, {agents_of(site)}")
 
-    if crawled != "ok"
+    if !crawled
         return ok(1)
 
     print("-- index")
@@ -81,21 +80,22 @@ function steps(folder: str) -> i64?
 
     print(f"the index written and read back: {e.docs.len()} pages, {e.title_order.len()} indexed")
     svc = service.service(e)?
+    grace = time.seconds(2)?
     api @= net.listen(host: "127.0.0.1", port: 0)?
-    asking @= threads.spawn_text(body: session.run, arg: f"http://127.0.0.1:{api.address.port}")?
+    asking = spawn(session.run, f"http://127.0.0.1:{api.address.port}")?
     answered = http.serve_until_stopped(
         http.default_server(),
         l: api,
         state: svc,
         handler: service.answer,
-        grace: time.seconds(2)?
+        grace: grace
     )
-    asked = threads.wait_text(@asking)
+    asked = asking.wait()
     net.close_listener(@api)?
     counts = answered?
     print(f"the server stopped, asked as Ctrl-C asks: {counts.answered} requests answered, {counts.cut} cut")
 
-    if asked != "ok"
+    if !asked
         return ok(1)
 
     return ok(0)
@@ -113,16 +113,17 @@ function agents_of(site: site_server.Site lent) -> str
     return f"from {names.len()} agents: {names.join(", ")}"
 
 # The crawl of the settings in `config`, written and reported, then the
-# site asked to stop whatever happened; `ok`, or `failed` after a line
-# saying why. A thread's body, so it takes and gives one text.
+# site asked to stop whatever happened, run as a thread's body; answers
+# whether the crawl went as written, after a line saying why where it did
+# not.
 #
 # - `config`: the settings file.
-function crawl_then_stop(config: str) -> str
+function crawl_then_stop(config: str) -> bool
     outcome = match crawl_step(config)
-        .ok _ => "ok"
+        .ok _ => true
         .err e =>
             print(f"crawl: failed: {e.code}: {e.msg}")
-            "failed"
+            false
 
     stop_site(config)
     return outcome

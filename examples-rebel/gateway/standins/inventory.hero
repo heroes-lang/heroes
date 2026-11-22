@@ -3,14 +3,13 @@
 # written through its own `.proto` at run time (`protobuf`): `GetStock`, a
 # unary call answering one item's stock, and `WatchMovements`, a call whose
 # server streams every movement of an item's stock, oldest first, then
-# ends. It runs on a thread of its own, told its supervisor's control port,
-# and serves one connection after another until the program is asked to
-# stop.
+# ends. It runs on a thread of its own, tells its port on a mailbox its
+# supervisor waits on, and serves one connection after another until the
+# program is asked to stop.
 
 use <rebel>/grpc
 use <rebel>/io
 use <rebel>/net
-use <rebel>/numbers
 use <rebel>/protobuf
 
 use demo/notify
@@ -89,31 +88,33 @@ function count_of(item: Item) -> i64
 ## Serving
 
 # The service's thread: listens on a port the system chooses, tells the
-# supervisor at the control port `arg` holds, and serves until stopped.
+# supervisor on the mailbox it is handed, and serves until stopped.
 # Answers how many calls it answered, as a line.
 #
-# - `arg`: the supervisor's control port, in decimal.
-function run(arg: str) -> str
-    match numbers.parse_int(arg)
-        .err e => return "inventory: no control port: " + e.msg
-        .ok control =>
-            match served(control)
-                .ok calls => return f"inventory: calls answered {calls}"
-                .err e    => return "inventory: " + e.msg
+# - `told`: where the supervisor waits to hear the service listens; closed
+#   as the thread ends, so a service that ends before telling is told at
+#   once.
+function run(told: (mailbox notify.Ready)) -> str
+    outcome = served(told)
+    told.close()
+
+    match outcome
+        .ok calls => return f"inventory: calls answered {calls}"
+        .err e    => return "inventory: " + e.msg
 
 # Every connection accepted served until the program is asked to stop.
 #
-# - `control`: the supervisor's control port.
+# - `told`: where the supervisor waits to hear the service listens.
 #
 # Fails as `protobuf.parse_schema_text`, `net.listen` and `notify.ready`
 # fail.
-function served(control: i64) -> i64?
+function served(told: (mailbox notify.Ready)) -> i64?
     schema = protobuf.parse_schema_text(name: "inventory.proto", text: PROTO)?
     service = protobuf.service_named(schema, name: SERVICE)?
     methods = grpc.methods_of(service)
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
-    match notify.ready(control_port: control, service: NAME, port: listener.address.port)
+    match notify.ready(told, service: NAME, port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)

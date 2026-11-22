@@ -98,5 +98,5 @@ stock.csv: 10 rows under its header, its lines ending CR LF as RFC 4180 writes t
 stock.xlsx: sheets Stock and Valuation; Stock 10 rows under its header
   Valuation's total 973.99, from =SUM(D2:D9)
 == the stand-ins, stopped
-mysql stand-in: 2 connections served, 754 requests answered
+mysql stand-in: 2 connections served, 755 requests answered
 mongodb stand-in: 1 connections served, 212 commands answered

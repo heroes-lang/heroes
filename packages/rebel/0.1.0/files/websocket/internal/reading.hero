@@ -6,6 +6,7 @@ use bytes
 use io
 use net
 use websocket/internal/engine
+use websocket/internal/frames
 use websocket/internal/handmade
 use websocket/internal/stepping
 
@@ -29,32 +30,37 @@ record Got
 function next(@stream: io.Stream, @s: engine.State, b: engine.Bounds, parts: bool) -> Got?
     while true
         if !engine.can_read(s)
-            return engine.refused(s)
+            return engine.refused(@s)
         st = stepping.step(@stream, @s, b: b, parts: parts, waits: true)?
 
         match st
             .data d  => return ok(Got(text: d.text, data: d.data, last: d.last))
             .nothing => _ = 0
-            .ended   => return engine.refused(s)
+            .ended   => return engine.refused(@s)
             .more    => engine.fill(@stream, @s)?
 
 # The whole messages what `s` holds completes, reading `stream` once where
-# it completes none.
+# it holds no whole frame.
 #
 # - `stream`, `s`: the connection.
 # - `b`: its bounds.
 #
-# Where the connection ends or fails after some messages, they are answered
-# and the next call fails. Fails as `next` does where no message came first.
+# Takes every frame whole before it returns, so `held` counts none after it
+# while the connection reads on; and reads only where no frame was taken, a
+# control frame and a fragment included, so a call made because `held`
+# counted frames never waits. Where the connection ends or fails after some
+# messages, they are answered, and the next read answers the failure once,
+# then `closed`. Fails as `next` does where no message came first.
 function ready(@stream: io.Stream, @s: engine.State, b: engine.Bounds) -> [Got]?
     out: [Got] @= []
     read: bool @= false
+    took: bool @= false
 
     while true
         if !engine.can_read(s)
             if out.len() > 0
                 return ok(out)
-            return engine.refused(s)
+            return engine.refused(@s)
 
         st = match stepping.step(@stream, @s, b: b, parts: false, waits: false)
             .ok got => got
@@ -63,22 +69,55 @@ function ready(@stream: io.Stream, @s: engine.State, b: engine.Bounds) -> [Got]?
                     return fail(code: e.code, msg: e.msg)
 
                 if s.ended
-                    s.kept_code @ e.code
-                    s.kept_msg @ e.msg
+                    s.owed_code @ e.code
+                    s.owed_msg @ e.msg
                 return ok(out)
 
         match st
-            .data d  => out @ out.push(Got(text: d.text, data: d.data, last: true))
-            .nothing => _ = 0
+            .data d =>
+                out @ out.push(Got(text: d.text, data: d.data, last: true))
+                took @ true
+            .nothing => took @ true
             .ended =>
                 if out.len() > 0
                     return ok(out)
-                return engine.refused(s)
+                return engine.refused(@s)
             .more =>
-                if read || out.len() > 0
+                if read || took
                     return ok(out)
                 read @ true
                 engine.fill(@stream, @s)?
+
+# How many frames `s` holds whole, which `ready` takes without reading:
+# each frame whose payload has come, a control frame and a fragment among
+# them; a head no frame has; and the next frame where `step` refuses its
+# head before its payload comes. A read takes every byte the stream has, so
+# frames past the one a call answers stay here, where the stream, drained,
+# no longer tells of them. None once the connection reads no more.
+#
+# - `s`: the connection's state.
+# - `b`: its bounds.
+function held(s: engine.State lent, b: engine.Bounds) -> i64
+    if !engine.can_read(s)
+        return 0
+    count: i64 @= 0
+    at: i64 @= s.at
+
+    while true
+        h = match frames.head_at(s.inbox, at: at)
+            .more    => return count
+            .wrong _ => return count + 1
+            .head f  => f.h
+
+        if h.length <= s.inbox.len() - at - h.size
+            count @ count + 1
+            at @ at + h.size + h.length
+        else if count > 0
+            return count
+        else
+            match stepping.refusal(s, h: h, b: b, parts: s.reading && s.by_parts)
+                .accepted          => return 0
+                .failed _ | .mixed => return 1
 
 # Writes `data` to the client's end of `two`, as a peer writes it.
 function sent(two: net.Pair lent, data: [u8])
@@ -375,6 +414,73 @@ test "ready: a frame cut in pieces read as they come, two messages from one read
     )
     last = ready(@two.second.stream, @s, b: handmade.bounds()).must()
     assert last.len() == 1 && s.ended && s.got_code == 1000
+
+    match ready(@two.second.stream, @s, b: handmade.bounds())
+        .ok _  => assert false
+        .err e => assert e.code == engine.CLOSED
+
+    io.close(@two.first.stream).must()
+
+test "held: nothing, a frame cut, whole frames of every kind, a head no frame has, heads refused before their payload, and nothing once ended"
+    b = handmade.bounds()
+    s @= handmade.server()
+    assert held(s, b: b) == 0
+    whole = texted([104, 105], fin: true)
+    s.inbox @ whole.slice(from: 0, to: 3)
+    assert held(s, b: b) == 0
+    s.inbox @ whole.slice(from: 0, to: 7)
+    assert held(s, b: b) == 0
+    ping = handmade.frame(opcode: 9, fin: true, rsv: 0, payload: [], masked: true)
+    s.inbox @ bytes.concat([whole, ping, texted([1], fin: false), whole.slice(from: 0, to: 7)])
+    assert held(s, b: b) == 3
+    s.at @ whole.len()
+    assert held(s, b: b) == 2
+    s.at @ 0
+    s.inbox @ [129, 255, 128, 0, 0, 0, 0, 0, 0, 0]
+    assert held(s, b: b) == 1
+    unmasked = handmade.frame(opcode: 1, fin: true, rsv: 0, payload: [1, 2, 3], masked: false)
+    s.inbox @ unmasked.slice(from: 0, to: 3)
+    assert held(s, b: b) == 1
+    s.inbox @ [129, 255, 0, 0, 0, 0, 0, 32, 0, 0, 1, 2, 3, 4, 5]
+    assert held(s, b: b) == 1
+    s.inbox @ handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [1, 2, 3], masked: true).slice(from: 0, to: 7)
+    assert held(s, b: b) == 1
+    s.inbox @ bytes.concat([whole, unmasked.slice(from: 0, to: 3)])
+    assert held(s, b: b) == 1
+    s.inbox @ bytes.concat([whole, whole])
+    s.ended @ true
+    assert held(s, b: b) == 0
+
+test "ready: a ping or a fragment held taken without reading, then the rest read"
+    two @= net.pair(deadline_ms: 300).must()
+    s @= handmade.server()
+    s.inbox @ handmade.frame(opcode: 9, fin: true, rsv: 0, payload: [5], masked: true)
+    assert held(s, b: handmade.bounds()) == 1
+    assert ready(@two.second.stream, @s, b: handmade.bounds()).must().len() == 0
+    assert handmade.read_frame(two.first.stream).must().payload == [5] && held(s, b: handmade.bounds()) == 0
+    s.inbox @ texted([1], fin: false)
+    s.at @ 0
+    assert held(s, b: handmade.bounds()) == 1
+    assert ready(@two.second.stream, @s, b: handmade.bounds()).must().len() == 0
+    sent(two, data: handmade.frame(opcode: 0, fin: true, rsv: 0, payload: [2], masked: true))
+    got = ready(@two.second.stream, @s, b: handmade.bounds()).must()
+    assert got.len() == 1 && got[0].data == [1, 2] && held(s, b: handmade.bounds()) == 0
+    io.close(@two.first.stream).must()
+    engine.end_stream(@two.second.stream, @s)
+
+test "ready: a failure met after a message, answered once by the next read, then closed"
+    two @= net.pair(deadline_ms: 5_000).must()
+    s @= handmade.server()
+    sent(
+        two,
+        data: bytes.concat([texted([104], fin: true), handmade.frame(opcode: 1, fin: true, rsv: 2, payload: [105], masked: true)])
+    )
+    got = ready(@two.second.stream, @s, b: handmade.bounds()).must()
+    assert got.len() == 1 && got[0].data == [104] && s.ended && held(s, b: handmade.bounds()) == 0
+
+    match next(@two.second.stream, @s, b: handmade.bounds(), parts: false)
+        .ok _  => assert false
+        .err e => assert e.code == engine.INVALID
 
     match ready(@two.second.stream, @s, b: handmade.bounds())
         .ok _  => assert false

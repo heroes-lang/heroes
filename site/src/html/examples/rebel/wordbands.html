@@ -1,0 +1,3 @@
+<p class="tagline">Words counted on threads, written again with Rebel&rsquo;s threads, which starts the threads and collects what each counted.</p>
+
+<p>Rebel&rsquo;s <code>threads</code> starts one thread for each band of text, waits for every one and gives back their counts in order, in place of the original&rsquo;s own calls to the runtime&rsquo;s thread functions and its list of threads to wait for. Its <code>strings</code> cuts the text into words, its <code>maps</code> counts each word, and its <code>math</code> adds the counts, answering an error rather than stopping the program if the sum does not fit. Each thread still builds the text it reads from the one number it is given, so nothing is shared and only a number comes back.</p>

@@ -1,0 +1,308 @@
+# RFC 7932's text read for the data Brotli's decoder needs: Appendix A's
+# static dictionary, written as lines of hexadecimal; section 7.1's three
+# context tables, written as lists of numbers; and Appendix B's 121
+# transforms, written as a table of C string literals and kinds, serialized
+# as the appendix says. Each is held to the length and CRC-32 the RFC gives
+# for it, so a text read wrongly is refused rather than written.
+
+use <rebel>/bytes
+use <rebel>/hash
+use <rebel>/strings
+
+# The dictionary's length and CRC-32, Appendix A.
+constant DICTIONARY_LENGTH: i64
+    122784
+
+constant DICTIONARY_CRC: u32
+    0x5136cb04
+
+# The transforms' serialized length and CRC-32, Appendix B.
+constant TRANSFORMS_LENGTH: i64
+    648
+
+constant TRANSFORMS_CRC: u32
+    0x3d965f81
+
+# How many transforms Appendix B lists.
+constant TRANSFORM_COUNT: i64
+    121
+
+# The CRC-32 of Lut0, Lut1 and Lut2, section 7.1; each is 256 bytes.
+constant LUT0_CRC: u32
+    0x8e91efb7
+
+constant LUT1_CRC: u32
+    0xd01a32f4
+
+constant LUT2_CRC: u32
+    0x0dd7a0d6
+
+# The dictionary of Appendix A: every line between its heading and the
+# bit-depth array that holds hexadecimal digits alone, read as bytes.
+#
+# - `text`: the RFC's whole text.
+#
+# Fails `invalid` where the bytes are not the length or the CRC-32 the
+# appendix gives, or the appendix is not found.
+function dictionary(text: str) -> [u8]?
+    region = between(text: text, from: "Appendix A.  Static Dictionary Data", to: "The number of words for each length")?
+    out: [u8] @= []
+
+    for line in strings.split(s: region, sep: "\n")
+        digits = strings.trim(line)
+
+        if digits != "" && all_hex(digits)
+            bytes.push_all(to: @out, from: bytes.parse_hex(digits)?)
+
+    held(what: "the dictionary", data: out, length: DICTIONARY_LENGTH, crc: DICTIONARY_CRC)?
+    return ok(out)
+
+# Lut0, Lut1 or Lut2 of section 7.1: the 256 numbers after `name` and `:=`.
+#
+# - `text`: the RFC's whole text.
+# - `name`: `Lut0`, `Lut1` or `Lut2`.
+# - `crc`: the CRC-32 the section gives for it.
+#
+# Fails `invalid` where it is not found, a number is past a byte, or the
+# bytes are not 256 or not the CRC-32 the section gives.
+function lut(text: str, name: str, crc: u32) -> [u8]?
+    at = match strings.index_of(s: text, substr: name + " :=")
+        .ok found => found + name.len() + 3
+        .err _    => return fail(code: "invalid", msg: f"the RFC holds no {name}")
+
+    out: [u8] @= []
+
+    for line in strings.split(s: text.slice(from: at, to: text.len()), sep: "\n")
+        if out.len() == 256
+            break
+
+        for word in strings.split(s: line, sep: ",")
+            number = strings.trim(word)
+
+            if number != ""
+                if !all_decimal(number) || number.len() > 3
+                    return fail(code: "invalid", msg: f"{name} holds \"{number}\", which is no byte")
+                out @ out.push(to_u8(decimal(number)).must())
+
+    held(what: name, data: out, length: 256, crc: crc)?
+    return ok(out)
+
+# The transforms of Appendix B, serialized as it says: for each, in the order
+# of their IDs, its prefix, a zero, the number of its kind, its suffix and a
+# zero.
+#
+# - `text`: the RFC's whole text.
+#
+# Fails `invalid` where a line of the table does not read, an ID is out of
+# order, a kind is unknown, or the bytes are not the length or the CRC-32
+# the appendix gives.
+function transforms(text: str) -> [u8]?
+    region = between(text: text, from: "Appendix B.  List of Word Transformations", to: "Appendix C.")?
+    out: [u8] @= []
+    count @= 0
+
+    for line in strings.split(s: region, sep: "\n")
+        words = strings.trim(line)
+
+        if words != "" && words[0] >= '0' && words[0] <= '9'
+            row = read_row(words)?
+
+            if row.id != count
+                return fail(code: "invalid", msg: f"transform {row.id} stands where {count} should")
+            bytes.push_all(to: @out, from: row.prefix)
+            out @ out.push(0)
+            out @ out.push(kind_number(row.kind)?)
+            bytes.push_all(to: @out, from: row.suffix)
+            out @ out.push(0)
+            count @ count + 1
+
+    if count != TRANSFORM_COUNT
+        return fail(code: "invalid", msg: f"Appendix B lists {count} transforms, not {TRANSFORM_COUNT}")
+    held(what: "the transforms", data: out, length: TRANSFORMS_LENGTH, crc: TRANSFORMS_CRC)?
+    return ok(out)
+
+# One line of Appendix B's table.
+record Row
+    id: i64
+    prefix: [u8]
+    kind: str
+    suffix: [u8]
+
+# A literal read from a line, and where the line goes on after it.
+record Quoted
+    value: [u8]
+    next: i64
+
+# The row `line` writes: an ID, a quoted prefix, a kind and a quoted suffix,
+# apart by spaces.
+#
+# Fails `invalid` where it does not hold these.
+function read_row(line: str) -> Row?
+    at @= 0
+
+    while at < line.len() && line[at] >= '0' && line[at] <= '9'
+        at @ at + 1
+
+    id = decimal(line.slice(from: 0, to: at))
+    prefix = read_quoted(line, from: skip_spaces(line, from: at))?
+    start = skip_spaces(line, from: prefix.next)
+    end @= start
+
+    while end < line.len() && line[end] != ' '
+        end @ end + 1
+
+    suffix = read_quoted(line, from: skip_spaces(line, from: end))?
+
+    if skip_spaces(line, from: suffix.next) != line.len()
+        return fail(code: "invalid", msg: f"the line \"{line}\" goes on past its suffix")
+    return ok(Row(id: id, prefix: prefix.value, kind: line.slice(from: start, to: end), suffix: suffix.value))
+
+# The C string literal of `line` that opens at `from`, its escapes `\"`,
+# `\\`, `\n`, `\t` and `\x` with two hexadecimal digits read as the bytes they
+# write.
+#
+# Fails `invalid` where no literal opens there, it does not close, or an
+# escape is another.
+function read_quoted(line: str, from: i64) -> Quoted?
+    if from >= line.len() || line[from] != '"'
+        return fail(code: "invalid", msg: f"the line \"{line}\" has no literal at {from}")
+    out: [u8] @= []
+    at @= from + 1
+
+    while at < line.len() && line[at] != '"'
+        if line[at] != '\\'
+            out @ out.push(line[at])
+            at @ at + 1
+        else if at + 1 < line.len() && (line[at + 1] == '"' || line[at + 1] == '\\')
+            out @ out.push(line[at + 1])
+            at @ at + 2
+        else if at + 1 < line.len() && line[at + 1] == 'n'
+            out @ out.push(10)
+            at @ at + 2
+        else if at + 1 < line.len() && line[at + 1] == 't'
+            out @ out.push(9)
+            at @ at + 2
+        else if at + 3 < line.len() && line[at + 1] == 'x'
+            bytes.push_all(to: @out, from: bytes.parse_hex(line.slice(from: at + 2, to: at + 4))?)
+            at @ at + 4
+        else
+            return fail(code: "invalid", msg: f"the line \"{line}\" holds an escape this reader does not know")
+
+    if at >= line.len()
+        return fail(code: "invalid", msg: f"the line \"{line}\" holds a literal that does not close")
+    return ok(Quoted(value: out, next: at + 1))
+
+# The first place of `line` from `from` that is not a space.
+function skip_spaces(line: str, from: i64) -> i64
+    at @= from
+
+    while at < line.len() && line[at] == ' '
+        at @ at + 1
+
+    return at
+
+# The number Appendix B gives a transform's kind: 0 for Identity, 1 for
+# FermentFirst, 2 for FermentAll, 3 to 11 for OmitFirst1 to OmitFirst9, 12
+# to 20 for OmitLast1 to OmitLast9.
+#
+# Fails `invalid` for any other name.
+function kind_number(kind: str) -> u8?
+    if kind == "Identity"
+        return ok(0)
+
+    if kind == "FermentFirst"
+        return ok(1)
+
+    if kind == "FermentAll"
+        return ok(2)
+
+    if kind.len() == 10 && strings.has_prefix(s: kind, prefix: "OmitFirst") && all_decimal(kind.slice(from: 9, to: 10)) && kind[9] != '0'
+        return to_u8(2 + decimal(kind.slice(from: 9, to: 10)))
+
+    if kind.len() == 9 && strings.has_prefix(s: kind, prefix: "OmitLast") && all_decimal(kind.slice(from: 8, to: 9)) && kind[8] != '0'
+        return to_u8(11 + decimal(kind.slice(from: 8, to: 9)))
+    return fail(code: "invalid", msg: f"no transform is of the kind {kind}")
+
+# The text of `text` after the first `from` and before the first `to` after
+# it.
+#
+# Fails `invalid` where either is not found.
+function between(text: str, from: str, to: str) -> str?
+    start = match strings.index_of(s: text, substr: from)
+        .ok found => found + from.len()
+        .err _    => return fail(code: "invalid", msg: f"the RFC holds no \"{from}\"")
+
+    end = match strings.index_of_from(s: text, substr: to, from: start)
+        .ok found => found
+        .err _    => return fail(code: "invalid", msg: f"the RFC holds no \"{to}\" after \"{from}\"")
+
+    return ok(text.slice(from: start, to: end))
+
+# Nothing where `data` is `length` bytes of CRC-32 `crc`.
+#
+# Fails `invalid`, naming `what`, where it is not.
+function held(what: str, data: [u8], length: i64, crc: u32) -> ()?
+    if data.len() != length || hash.crc32(data) != crc
+        return fail(
+            code: "invalid",
+            msg: f"{what} read is {data.len()} bytes of CRC-32 {hash.crc32(data)}, and the RFC gives {length} of {crc}"
+        )
+    return ok()
+
+# Whether `s` holds hexadecimal digits alone, small or capital.
+function all_hex(s: str) -> bool
+    for c in s.chars()
+        if !strings.contains(s: "0123456789abcdefABCDEF", substr: c)
+            return false
+
+    return true
+
+# Whether `s` holds decimal digits alone, and at least one.
+function all_decimal(s: str) -> bool
+    if s == ""
+        return false
+
+    for c in s.chars()
+        if !strings.contains(s: "0123456789", substr: c)
+            return false
+
+    return true
+
+# `s`, decimal digits alone, as a number; a byte always fits an `i64`.
+function decimal(s: str) -> i64
+    value @= 0
+
+    for c in s.chars()
+        value @ value * 10 + to_i64(c[0] - '0').must()
+
+    return value
+
+## Tests
+
+test "read_row: an empty prefix and a suffix, an escaped quotation mark, a line feed and a tab, and two bytes by `\\x`"
+    row = read_row("19           \"\"     Identity               \"\\\"\"").must()
+    assert row.id == 19 && row.prefix == [] && row.kind == "Identity" && row.suffix == [34]
+    assert read_row("50 \"\" Identity \"\\n\\t\"").must().suffix == [10, 9]
+    assert read_row("102   \"\\xc2\\xa0\"   Identity                 \"\"").must().prefix == [0xc2, 0xa0]
+    assert read_row("1 \"\" Identity").is_err()
+    assert read_row("1 \"\" Identity \"\" x").is_err()
+    assert read_row("1 \"\\q\" Identity \"\"").is_err()
+
+test "kind_number: each kind, the ends of the omissions, and names that are none"
+    assert kind_number("Identity").must() == 0 && kind_number("FermentFirst").must() == 1 && kind_number("FermentAll").must() == 2
+    assert kind_number("OmitFirst1").must() == 3 && kind_number("OmitFirst9").must() == 11
+    assert kind_number("OmitLast1").must() == 12 && kind_number("OmitLast9").must() == 20
+    assert kind_number("OmitFirst0").is_err() && kind_number("OmitLast10").is_err() && kind_number("Upper").is_err()
+
+test "held: the CRC-32 of 123456789, and a length or a value that is not the one given"
+    nine = bytes.from_text("123456789")
+    assert !held(what: "x", data: nine, length: 9, crc: 0xcbf43926).is_err()
+    assert held(what: "x", data: nine, length: 8, crc: 0xcbf43926).is_err()
+    assert held(what: "x", data: nine, length: 9, crc: 0).is_err()
+
+test "between, all_hex, all_decimal and decimal"
+    assert between(text: "a [b] c", from: "[", to: "]").must() == "b"
+    assert between(text: "a b", from: "[", to: "]").is_err()
+    assert all_hex("09afAF") && !all_hex("0g")
+    assert all_decimal("120") && !all_decimal("") && !all_decimal("1a")
+    assert decimal("120") == 120

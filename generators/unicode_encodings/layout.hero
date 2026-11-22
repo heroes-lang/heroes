@@ -1,0 +1,66 @@
+# The text of a table module of `unicode/encodings`: its header, which says
+# what the table is, that this program made it and from which files, then
+# its constants, a blank line between each, and a line feed at its end.
+
+use <rebel>/strings
+
+# The day the vendored files of `whatwg/` were read from
+# encoding.spec.whatwg.org, which serves the Encoding Standard's resources at
+# their latest version under the same names.
+constant FETCHED: str
+    "2026-11-22"
+
+# The paragraph every table's header holds after what the table is: which
+# program wrote it and how.
+function generated_lines() -> [str]
+    return [
+        "# Generated, never edited by hand: the Heroes program"
+        "# `generators/unicode_encodings/` read the WHATWG Encoding Standard's"
+        "# resources, kept in its folder `whatwg/` as encoding.spec.whatwg.org"
+        f"# served them on {FETCHED}, as the standard says to read them, packed"
+        "# them, held every packed value to the value it read, and wrote this"
+        "# module whole; its `check` command says whether this module is still"
+        "# what it writes. What it read:"
+    ]
+
+# A table module's whole text.
+#
+# - `intro`: the header's lines that say what the table is.
+# - `sources`: one line for each file the table was made from.
+# - `constants`: the text of each constant, comment included.
+function module_text(intro: [str], sources: [str], constants: [str]) -> str
+    head: [str] @= []
+
+    for line in intro
+        head @ head.push(line)
+
+    head @ head.push("#")
+
+    for line in generated_lines()
+        head @ head.push(line)
+
+    head @ head.push("#")
+
+    for line in sources
+        head @ head.push(line)
+
+    parts: [str] @= [head.join("\n")]
+
+    for one in constants
+        parts @ parts.push(one)
+
+    return parts.join("\n\n") + "\n"
+
+## Tests
+
+test "module_text: the intro, the paragraph, the sources, and each constant apart"
+    text = module_text(
+        intro: ["# A table."],
+        sources: ["# - `a.txt`"],
+        constants: ["constant A: i64\n    1", "constant B: i64\n    2"]
+    )
+    assert strings.has_prefix(s: text, prefix: "# A table.\n#\n# Generated, never edited by hand: the Heroes program\n")
+    assert strings.has_suffix(
+        s: text,
+        suffix: "what it writes. What it read:\n#\n# - `a.txt`\n\nconstant A: i64\n    1\n\nconstant B: i64\n    2\n"
+    )

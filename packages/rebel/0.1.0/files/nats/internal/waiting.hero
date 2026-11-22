@@ -15,8 +15,10 @@ use nats/internal/reading
 use nats/internal/session
 use nats/internal/state
 use net
+use poll
 use strings
 use threads
+use time
 
 # One operation of the server acted on, within the wait that ends at
 # `until` on the monotonic clock: a `PING` of the client's own sent where
@@ -30,7 +32,7 @@ use threads
 function step_until(@s: state.Session, until: i64) -> reading.Event?
     while true
         if s.closed
-            return session.closed_failure(s)
+            return session.closed_failure(@s)
 
         if !s.open
             dialing.recover(@s, code: model.CLOSED, msg: "the connection was lost")?
@@ -120,11 +122,13 @@ function next(@s: state.Session, sid: i64, wait_ms: i64) -> model.Message?
             state.take_of(@s, sid: sid)
 
         match taken
-            .ok m  => return ok(m)
+            .ok m =>
+                settle(@s)
+                return ok(m)
             .err _ => _ = 0
 
         if s.closed
-            return session.closed_failure(s)
+            return session.closed_failure(@s)
 
         if sid != 0
             _ = session.sub_of(s, sid: sid)?
@@ -149,6 +153,7 @@ function flush(@s: state.Session, wait_ms: i64) -> ()?
             _ = step_until(@s, until: until)?
 
         if s.stats.reconnects == made
+            settle(@s)
             return ok()
 
 # The reply to `m`, published with a reply subject of the client's inbox.
@@ -161,7 +166,7 @@ function request(@s: state.Session, m: model.Message, wait_ms: i64) -> model.Mes
         return fail(code: model.INVALID, msg: f"a wait is 1 millisecond or more, and {wait_ms} was asked")
 
     if s.closed
-        return session.closed_failure(s)
+        return session.closed_failure(@s)
 
     if s.mux_sid == 0
         prefix = inbox.next(s.options.inbox_prefix)?
@@ -179,20 +184,27 @@ function request(@s: state.Session, m: model.Message, wait_ms: i64) -> model.Mes
         match step_until(@s, until: until)?
             .reply r =>
                 if r.m.subject == reply
+                    settle(@s)
+
                     if r.m.status == 503
                         return fail(code: model.NOT_FOUND, msg: f"no one listens on \"{m.subject}\"")
                     return ok(r.m)
             .held | .pong | .error _ | .other => _ = 0
 
-# The messages held and those one read completes.
+# The messages held and those one read completes; what the buffer holds
+# whole is acted on first, and the read is made only where nothing is held.
 #
 # - `s`: the session.
 function read_ready(@s: state.Session) -> [model.Message]?
     if s.held_count == 0 && s.closed
-        return session.closed_failure(s)
+        return session.closed_failure(@s)
 
-    if s.held_count == 0 && s.open
-        ops_held(@s)?
+    if s.open
+        match ops_held(@s)
+            .ok _ => _ = 0
+            .err e =>
+                if s.held_count == 0
+                    return fail(code: e.code, msg: e.msg)
 
         if s.held_count == 0 && s.open
             match link.arm(s.link, ms: s.options.connect_ms)
@@ -229,6 +241,22 @@ function ops_held(@s: state.Session) -> ()?
 
     return ok()
 
+# Acts on every operation whole in the buffer once a wait has its answer:
+# one read may bring the answer and what the server wrote after it, and a
+# message left there as bytes is one `held_count` does not count and that
+# `poll`, the stream drained, never tells a program of (defect 2675). The
+# answer came, so the call answers it whatever follows: a connection found
+# lost here is made again as `ops_held` does it, and where that fails the
+# session keeps the failure, which the next call answers.
+#
+# - `s`: the session.
+function settle(@s: state.Session)
+    match ops_held(@s)
+        .ok _ => _ = 0
+        .err e =>
+            if s.closed
+                s.kept @ fail(code: e.code, msg: e.msg)
+
 # Ends every subscription, reads what came before the server's `PONG`, and
 # closes the connection, the held messages kept.
 #
@@ -236,7 +264,7 @@ function ops_held(@s: state.Session) -> ()?
 # - `wait_ms`: milliseconds, 1 or more.
 function drain(@s: state.Session, wait_ms: i64) -> ()?
     if s.closed
-        return session.closed_failure(s)
+        return session.closed_failure(@s)
     out: [u8] @= []
 
     for sid in s.order
@@ -272,6 +300,26 @@ function reconnecting_client(url: str) -> str
 
     _ = session.close(@s).is_err()
     return answer
+
+# For the tests: the data of every message a loop on one thread takes in
+# `turns` turns, as a program serving several clients with `poll` writes
+# it: what the session holds is read at once, and otherwise its stream is
+# waited on for a tenth of a second and read where it is readable.
+#
+# - `s`: the session, open over a stream `poll` waits on.
+# - `turns`: the turns.
+function polled(@s: state.Session, turns: i64) -> [[u8]]
+    set @= poll.make(2).must()
+    _ = poll.add_stream(set, s: link.stream_of(s.link).must(), interest: .read).must()
+    got: [[u8]] @= []
+
+    for _ in range(from: 0, to: turns)
+        if s.held_count > 0 || poll.wait(set, limit: time.milliseconds(100).must()).must().len() > 0
+            for m in read_ready(@s).must()
+                got @ got.push(m.data)
+
+    poll.close(@set).must()
+    return got
 
 test "next: a message read, then held ones first, then a timeout where nothing comes"
     r @= fixture.rig("MSG a 1 2\r\nhi\r\n")
@@ -312,8 +360,7 @@ test "flush: the PONG of the PING sent, then a timeout where none comes, and a w
     fixture.close_rig(@r)
 
 test "request: an older reply dropped, the reply to its own inbox, then no responders"
-    script = "MSG _INBOX.T.0 7 1\r\nx\r\nMSG _INBOX.T.1 7 2\r\nok\r\nHMSG _INBOX.T.2 7 16 16\r\nNATS/1.0 503\r\n\r\n\r\n"
-    r @= fixture.rig(script)
+    r @= fixture.rig("MSG _INBOX.T.0 7 1\r\nx\r\nMSG _INBOX.T.1 7 2\r\nok\r\n")
     state.put_sub(
         @r.session.subs,
         sub: state.Sub(sid: 7, subject: "_INBOX.T.*", queue: "", most: 0, delivered: 0, dropped: 0, pending: 0, internal: true)
@@ -330,6 +377,7 @@ test "request: an older reply dropped, the reply to its own inbox, then no respo
         description: ""
     )
     assert request(@r.session, m: q, wait_ms: 1000).must().data == bytes.from_text("ok")
+    fixture.say(r.peer, text: "HMSG _INBOX.T.2 7 16 16\r\nNATS/1.0 503\r\n\r\n\r\n")
 
     match request(@r.session, m: q, wait_ms: 1000)
         .ok _  => assert false
@@ -358,6 +406,62 @@ test "drain: UNSUB for every subscription, the messages before the PONG held, re
     assert fixture.heard(r.peer) == "SUB a 1\r\nUNSUB 1\r\nPING\r\n"
     fixture.close(@r.peer.stream)
 
+test "flush: a message read behind its PONG is held, and a loop on poll takes it"
+    r @= fixture.rig("PONG\r\nMSG a 1 2\r\nhi\r\n")
+    _ = session.subscribe(@r.session, subject: "a", queue: "", internal: false).must()
+    flush(@r.session, wait_ms: 1000).must()
+    assert r.session.held_count == 1 && r.session.at == r.session.buf.len()
+    assert polled(@r.session, turns: 3) == [bytes.from_text("hi")]
+    fixture.close_rig(@r)
+
+test "request: a message read behind its reply is held, and a loop on poll takes it"
+    r @= fixture.rig("MSG _INBOX.T.1 7 2\r\nok\r\nMSG a 1 1\r\nx\r\n")
+    _ = session.subscribe(@r.session, subject: "a", queue: "", internal: false).must()
+    state.put_sub(
+        @r.session.subs,
+        sub: state.Sub(sid: 7, subject: "_INBOX.T.*", queue: "", most: 0, delivered: 0, dropped: 0, pending: 0, internal: true)
+    )
+    r.session.mux_sid @ 7
+    r.session.mux_prefix @ "_INBOX.T"
+    q = model.Message(
+        subject: "svc",
+        reply: "",
+        headers: [],
+        data: bytes.from_text("q"),
+        sid: 0,
+        status: 0,
+        description: ""
+    )
+    assert request(@r.session, m: q, wait_ms: 1000).must().data == bytes.from_text("ok")
+    assert r.session.held_count == 1 && polled(@r.session, turns: 3) == [bytes.from_text("x")]
+    fixture.close_rig(@r)
+
+test "next: of any subscription and of one, the messages read behind the one answered are held, and a loop on poll takes them"
+    r @= fixture.rig("MSG a 1 1\r\nw\r\nMSG a 1 1\r\nx\r\n")
+    a = session.subscribe(@r.session, subject: "a", queue: "", internal: false).must()
+    b = session.subscribe(@r.session, subject: "b", queue: "", internal: false).must()
+    assert next(@r.session, sid: 0, wait_ms: 1000).must().data == bytes.from_text("w")
+    assert r.session.held_count == 1 && polled(@r.session, turns: 3) == [bytes.from_text("x")]
+    fixture.say(r.peer, text: "MSG b 2 1\r\ny\r\nMSG a 1 1\r\nz\r\n")
+    assert next(@r.session, sid: b, wait_ms: 1000).must().data == bytes.from_text("y")
+    assert r.session.held_count == 1 && polled(@r.session, turns: 3) == [bytes.from_text("z")] && a == 1
+    fixture.close_rig(@r)
+
+test "flush: bytes that are no NATS behind the PONG end the session, flush answers, and the call after says why, once"
+    r @= fixture.rig("PONG\r\nWHAT\r\n")
+    flush(@r.session, wait_ms: 1000).must()
+    assert r.session.closed
+
+    match next(@r.session, sid: 0, wait_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.code == "closed" && strings.contains(s: e.msg, substr: "bytes that are no NATS")
+
+    match next(@r.session, sid: 0, wait_ms: 0)
+        .ok _  => assert false
+        .err e => assert e.msg == "the client of the test's server is closed"
+
+    fixture.close(@r.peer.stream)
+
 test "a connection the server ends, with no reconnection allowed, closes the client"
     r @= fixture.rig("")
     fixture.close(@r.peer.stream)
@@ -368,6 +472,7 @@ test "a connection the server ends, with no reconnection allowed, closes the cli
 
 test "a lost connection made again: a fake server closes the first, the client connects again, subscribes anew and reads"
     l @= net.listen("127.0.0.1", port: 0).must()
+    net.set_accept_deadline(l, deadline_ms: 30000).must()
     t @= threads.start_text(body: reconnecting_client, arg: f"nats://127.0.0.1:{l.address.port}").must()
     info = "INFO {\"server_id\":\"F\",\"max_payload\":1024,\"headers\":true}\r\n"
     first @= net.accept(l, deadline_ms: 5000).must()

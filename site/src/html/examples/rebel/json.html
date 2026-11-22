@@ -1,0 +1,5 @@
+<p class="tagline">The JSON reader, written again with Rebel&rsquo;s json package: a document in, its shape and its canonical form out.</p>
+
+<p>Rebel&rsquo;s <code>json</code> reads the document by RFC 8259, the standard that defines JSON, with a limit on how deep it may nest, and writes a value back in the canonical form of RFC 8785, on one line with every object&rsquo;s members ordered by their keys. It replaces the reader and the writer the original carries, with the C function that program binds to read numbers. What stays this program&rsquo;s own is its question about a document, how many values it holds and how deep they nest, and its three exit codes: 0 for a document it read, 1 for one it could not, 2 for being asked wrong.</p>
+
+<p>The two print the same thing for the sample, and part elsewhere: on a text that is not JSON, on a member that is missing, and on details of the canonical form, the order of some keys, how two control characters are escaped and how a very small number is written. The comment at the top of <code>main.hero</code> lists each difference.</p>

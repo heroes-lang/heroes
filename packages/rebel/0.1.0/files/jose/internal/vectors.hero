@@ -2,11 +2,15 @@
 # 7518 held as tests of the private modules that sign, verify and decrypt:
 # each figure written here as compact JSON, generated from the RFC's text by
 # reading its figures and writing them again with no white space, so no
-# value is copied by hand. What a platform lacks (P-521 everywhere, Ed25519
-# on Windows) is asked to fail `unsupported`, and runs where the platform
-# has it.
+# value is copied by hand. P-521, which no package below offers, is asked to
+# fail `unsupported` everywhere; what one platform may lack (Ed25519 on
+# Windows, AES-GCM on a Linux machine with no `libcrypto.so.3`) is asked of
+# the platform first, and a test it lacks ends skipped, naming why, never
+# passed.
 
 use bytes
+use crypto/keypairs
+use crypto/seal
 use jose/internal/compact
 use jose/internal/encryption
 use jose/internal/general
@@ -131,37 +135,42 @@ test "RFC 7520 § 4.8: three signatures, the RSA one and the HMAC one each verif
     assert by_hmac.protected["alg"].must() == .text(v: "HS256")
     assert general.verify(three_signatures(), trusted: [value_of(hmac_key())], accepted: ["RS256"]).is_err()
 
-test "RFC 7520 § 5.6: dir and A128GCM decrypted to Figure 72's text, or unsupported where the platform has no AES-GCM"
+test "RFC 7520 § 5.6: dir and A128GCM decrypted to Figure 72's text, where the platform has AES-128-GCM"
+    if !seal.is_available(.aes_128_gcm)
+        skip_test(reason: "this platform's own cryptography does not seal with AES-128-GCM")
     general_form = dir_general()
     token = [member_text(text: general_form, name: "protected"), "", member_text(text: general_form, name: "iv"), member_text(text: general_form, name: "ciphertext"), member_text(text: general_form, name: "tag")].join(
         "."
     )
     expected = "You can trust us to stick with you through thick and thin–to the bitter end. And you can trust us to keep any secret of yours–closer than you keep it yourself. But you cannot trust us to let you face trouble alone, and go off without a word. We are your friends, Frodo."
 
-    match encryption.decrypt(token, trusted: [value_of(dir_key())], accepted_algorithms: ["dir"], accepted_encryptions: ["A128GCM"])
-        .err e => assert e.code == "unsupported"
-        .ok got =>
-            assert got.plaintext == bytes.from_text(expected)
-            changed = token.slice(from: 0, to: token.len() - 2) + "AA"
-            assert encryption.decrypt(
-                changed,
-                trusted: [value_of(dir_key())],
-                accepted_algorithms: ["dir"],
-                accepted_encryptions: ["A128GCM"]
-            ).is_err()
+    got = encryption.decrypt(
+        token,
+        trusted: [value_of(dir_key())],
+        accepted_algorithms: ["dir"],
+        accepted_encryptions: ["A128GCM"]
+    ).must()
+    assert got.plaintext == bytes.from_text(expected)
+    changed = token.slice(from: 0, to: token.len() - 2) + "AA"
+    assert encryption.decrypt(
+        changed,
+        trusted: [value_of(dir_key())],
+        accepted_algorithms: ["dir"],
+        accepted_encryptions: ["A128GCM"]
+    ).is_err()
 
-test "RFC 8037 Appendix A.4: Ed25519 signed byte for byte, or unsupported where the platform has no Ed25519"
+test "RFC 8037 Appendix A.4: Ed25519 signed byte for byte, where the platform has Ed25519"
+    if !keypairs.is_available(.ed25519)
+        skip_test(reason: "this platform's own cryptography has no Ed25519")
     key = value_of(
         "{\"kty\":\"OKP\",\"crv\":\"Ed25519\",\"d\":\"nWGxne_9WmC6hEr0kuwsxERJxWl7MmkZcDusAxyuf2A\",\"x\":\"11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo\"}"
     )
     expected = "eyJhbGciOiJFZERTQSJ9.RXhhbXBsZSBvZiBFZDI1NTE5IHNpZ25pbmc.hgyY0il_MGCjP0JzlnLWG1PPOt7-09PGcvMg3AIbQR6dWbhijcNR4ki4iylGjg5BhVsPt9g7sVvpAr_MuM0KAg"
     none: {str: json.Value} = {}
 
-    match compact.sign(bytes.from_text("Example of Ed25519 signing"), key: key, name: "EdDSA", header: none)
-        .err e => assert e.code == "unsupported"
-        .ok token =>
-            assert token == expected
-            assert !compact.verify(expected, given: [], detached: false, trusted: [jwk.write(jwk.public_of(jwk.read(key).must()).must())], accepted: ["EdDSA"]).is_err()
+    token = compact.sign(bytes.from_text("Example of Ed25519 signing"), key: key, name: "EdDSA", header: none).must()
+    assert token == expected
+    assert !compact.verify(expected, given: [], detached: false, trusted: [jwk.write(jwk.public_of(jwk.read(key).must()).must())], accepted: ["EdDSA"]).is_err()
 
 test "RFC 7517 Appendix A.2's EC private key read and its public half: the members, the curve, the use"
     key = jwk.read(

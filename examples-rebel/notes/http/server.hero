@@ -1,15 +1,21 @@
-# The server's loop: one thread waits with `poll` on the listener, every
-# HTTP connection, every WebSocket and a timer, and serves whichever is
-# ready, so a WebSocket held open never keeps a page from being answered.
-# A request is read as its bytes come, by `http.read_ready`, so a client
-# that sends half a request holds no other client back; once whole it is
-# handled by the pipeline and its answer written, and a connection kept
-# alive goes back to waiting.
+# The server's loop, on the thread that owns the state (`app/state`): it
+# waits with `poll` on the listener, every WebSocket, a timer and one ring
+# per worker, hands each connection it accepts to the workers
+# (`http/workers`) with `m.send(@conn)`, and answers what they ask, each
+# request handled by the pipeline against the state on this thread, so the
+# database, the search index, the limiters and the hub are reached from one
+# thread and nothing is locked (spec § 11; panel 254). A worker reads its
+# connection's requests as their bytes come and writes the answers, so a
+# client that sends half a request, or reads its answer slowly, holds its
+# worker alone; a WebSocket held open never keeps a page from being
+# answered.
 #
 # The loop ends at the stop: a signal after `os.catch_stop` (SIGTERM, Ctrl-C)
 # fails the wait `stopped`, and the API's `stop_server` sets the state's
 # `stopping`. Either way the same shutdown follows: no connection accepted
-# after, every idle connection closed, every WebSocket told 1001.
+# after, every worker's stop bell rung so each closes the connection it
+# waits on, what the workers had asked answered `stopping`, every worker
+# waited for, every WebSocket told 1001.
 
 use <rebel>/http
 use <rebel>/io
@@ -21,6 +27,7 @@ use <rebel>/websocket
 
 use app/state
 use http/pipeline
+use http/workers
 use ops/ops
 use realtime/realtime
 
@@ -32,18 +39,15 @@ constant FAILED: str
 
 ## The loop
 
-# The most entries the poll set holds: the listener, the timer and the
-# connections.
+# The most entries the poll set holds: the listener, the timer, the rings
+# and the WebSockets.
 constant MOST_ENTRIES: i64
     4096
 
-# One HTTP connection waiting for its next request.
-record Plain
-    # What is read of its requests so far, the reader over the connection's
-    # stream within.
-    requests: http.RequestReader
-    # The peer's address, `host:port`, which a request's `remote` takes.
-    remote: str
+# How many workers read connections at once: each holds one connection
+# until its client leaves or goes quiet past the settings' deadline.
+constant WORKERS: i64
+    8
 
 # What a serving did, told at its end.
 record Served
@@ -58,18 +62,149 @@ record Served
     # What asked the stop: `signal` or `api`.
     by: str
 
+# The loop's end of one worker's bells.
+record Bell
+    # The end of the worker's ring, which the loop reads.
+    ring: net.Conn
+    # Its key in the poll set.
+    key: i64
+    # The end of the worker's stop bell, which the loop writes at the stop.
+    stop: net.Conn
+
 # Serves every connection `l` accepts, until the stop.
 #
 # - `app`: the state.
 # - `l`: the listener; its owner closes it after.
 #
-# Fails `failed` where the system's wait fails, and as `poll.make` fails.
+# Fails `failed` where the system's wait fails, and as `poll.make` fails;
+# every worker started is waited for first.
 function run(@app: state.App, l: net.Listener) -> Served?
     set @= poll.make(MOST_ENTRIES)?
+    asks: (mailbox workers.Ask) = mailbox()
+    conns: (mailbox net.Conn) = mailbox()
+    bell_box: (mailbox workers.Bells) = mailbox()
+    bells: [Bell] @= []
+    pool: [(thread workers.Worked)] @= []
+    idle_ms = time.to_units(app.settings.deadline, unit: .millisecond)
+    start = workers.Start(conns: conns, asks: asks, bells: bell_box, limits: app_limits(app), idle_ms: idle_ms)
+
+    while pool.len() < WORKERS
+        match rung(set: set, to: bell_box)
+            .err _ => break
+            .ok bell =>
+                match spawn(workers.work, start)
+                    .err _ =>
+                        _ = poll.remove(set, key: bell.key).is_err()
+                        bells @ bells.push(bell)
+                        break
+                    .ok t =>
+                        pool @ pool.push(t)
+                        bells @ bells.push(bell)
+
+    outcome = looped(@app, set: set, l: l, conns: conns, asks: asks, bells: bells)
+    bell_box.close()
+    idle @= 0
+
+    # The workers are woken and their asks answered before they are waited
+    # for, so none waits on this thread while this thread waits on it.
+    for b in bells
+        _ = io.write(b.stop.stream, data: [1]).is_err()
+
+    conns.close()
+    asks.close()
+    drained(asks)
+
+    for t in pool
+        idle @ idle + t.wait().idle_closed
+
+    for b in bells
+        ends @= b
+        _ = poll.remove(set, key: ends.key).is_err()
+        _ = io.close(@ends.ring.stream).is_err()
+        _ = io.close(@ends.stop.stream).is_err()
+
+    told = realtime.going_away(@app.hub)
+    ops.gauge(@app.registry, name: ops.SOCKETS, value: 0)
+    poll.close(@set)?
+    by = outcome?.by
+    _ = log.info(
+        app.logger,
+        msg: "server stopped",
+        fields: [log.text(key: "by", value: by), log.integer("requests", value: app.answered), log.integer("websockets_told", value: told)]
+    ).is_err()
+    return ok(
+        Served(connections: outcome?.connections, requests: app.answered, sockets_told: told, idle_closed: idle, by: by)
+    )
+
+# One worker's two bells made, the loop's ends kept and the ring waited
+# on, the worker's ends handed to `to` for the worker that takes them.
+#
+# - `set`: the poll set.
+# - `to`: the workers' mailbox of bells.
+#
+# Fails as `net.pair`, `poll.add_conn` and the hand-over fail, every end
+# made closed.
+function rung(set: poll.Set, to: (mailbox workers.Bells)) -> Bell?
+    ring @= net.pair(net.FOREVER)?
+
+    match net.pair(net.FOREVER)
+        .err e =>
+            _ = io.close(@ring.first.stream).is_err()
+            _ = io.close(@ring.second.stream).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok made =>
+            stop @= made
+
+            match poll.add_conn(set, c: ring.first, interest: .read)
+                .err e =>
+                    closed_all(a: @ring, b: @stop)
+                    return fail(code: e.code, msg: e.msg)
+                .ok key =>
+                    given @= workers.Bells(ring: ring.second, stop: stop.second)
+
+                    match workers.hand(to, @given)
+                        .err e =>
+                            _ = poll.remove(set, key: key).is_err()
+                            _ = io.close(@given.ring.stream).is_err()
+                            _ = io.close(@given.stop.stream).is_err()
+                            _ = io.close(@ring.first.stream).is_err()
+                            _ = io.close(@stop.first.stream).is_err()
+                            return fail(code: e.code, msg: e.msg)
+                        .ok _ => return ok(Bell(ring: ring.first, key: key, stop: stop.first))
+
+# Closes the four ends of two pairs.
+#
+# - `a`: one pair.
+# - `b`: the other.
+function closed_all(@a: net.Pair, @b: net.Pair)
+    _ = io.close(@a.first.stream).is_err()
+    _ = io.close(@a.second.stream).is_err()
+    _ = io.close(@b.first.stream).is_err()
+    _ = io.close(@b.second.stream).is_err()
+
+# What the loop did until the stop.
+record Looped
+    # The connections accepted.
+    connections: i64
+    # What asked the stop: `signal` or `api`.
+    by: str
+
+# The loop itself, until the stop: connections accepted and handed to the
+# workers, the WebSockets read, the timer's pings sent, the workers' asks
+# answered as their rings wake the wait.
+#
+# - `app`: the state.
+# - `set`: the poll set, the rings in it.
+# - `l`: the listener.
+# - `conns`: the workers' mailbox of connections.
+# - `asks`: the workers' asks.
+# - `bells`: the loop's ends of the workers' bells.
+#
+# Fails `failed` where the system's wait fails, and as the poll set fails.
+function looped(@app: state.App, set: poll.Set, l: net.Listener, conns: (mailbox net.Conn), asks: (mailbox workers.Ask), bells: [Bell] lent) -> Looped?
     listening = poll.add_listener(set, l: l)?
     every = app.settings.ping_every
     ticker = poll.add_timer(set, first: every, every: every)?
-    links: {i64: Plain} @= {}
     accepted: i64 @= 0
     by: str @= ""
 
@@ -88,39 +223,91 @@ function run(@app: state.App, l: net.Listener) -> Served?
 
         for e in events
             if e.key == listening
-                if accept_one(app, set: set, @links, l: l)
+                if handed(app, l: l, conns: conns)
                     accepted @ accepted + 1
             else if e.key == ticker
                 drop_keys(set, keys_gone: realtime.ping_all(@app.hub))
             else if realtime.holds(app.hub, key: e.key)
-                match realtime.on_readable(@app.hub, key: e.key)
-                    .open => _ = 0
-                    .closed _ =>
-                        _ = poll.remove(set, key: e.key).is_err()
-                        ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+                on_socket(@app, set: set, key: e.key)
             else
-                serve_ready(@app, set: set, @links, key: e.key)
+                quieted(bells, key: e.key)
 
             drop_keys(set, keys_gone: app.gone)
             app.gone @ []
 
-    idle: i64 @= 0
+        # Every ask waiting is answered after every wait, rung or not, so an
+        # ask whose ring was lost is answered within the wait's second.
+        while !app.stopping
+            match asks.receive(within_ms: 0)
+                .err _  => break
+                .ok ask => answered(@app, set: set, ask: ask)
 
-    for key in keys(links)
-        reader @= links[key].must().requests.reader
-        _ = poll.remove(set, key: key).is_err()
-        _ = io.close(@reader.stream).is_err()
-        idle @ idle + 1
+    _ = poll.remove(set, key: listening).is_err()
+    _ = poll.remove(set, key: ticker).is_err()
+    return ok(Looped(connections: accepted, by: by))
 
-    told = realtime.going_away(@app.hub)
-    ops.gauge(@app.registry, name: ops.SOCKETS, value: 0)
-    poll.close(@set)?
-    _ = log.info(
-        app.logger,
-        msg: "server stopped",
-        fields: [log.text(key: "by", value: by), log.integer("requests", value: app.answered), log.integer("websockets_told", value: told)]
-    ).is_err()
-    return ok(Served(connections: accepted, requests: app.answered, sockets_told: told, idle_closed: idle, by: by))
+# Accepts the connection `l` holds and hands it to the workers; whether one
+# was taken.
+#
+# - `app`: the state, whose settings give a connection's deadline.
+# - `l`: the listener, ready.
+# - `conns`: the workers' mailbox of connections.
+function handed(app: state.App lent, l: net.Listener, conns: (mailbox net.Conn)) -> bool
+    deadline_ms = time.to_units(app.settings.deadline, unit: .millisecond)
+
+    conn @= match net.accept(l, deadline_ms: deadline_ms)
+        .ok c  => c
+        .err _ => return false
+
+    match conns.send(@conn)
+        .ok _ => return true
+        .err _ =>
+            # Not sent, the program stopping: the connection is still this
+            # thread's.
+            _ = io.close(@conn.stream).is_err()
+            return false
+
+# Reads what the ring with `key` holds, so it stops waking the wait: one
+# byte per ask, the asks themselves answered after the wait.
+#
+# - `bells`: the loop's ends of the workers' bells.
+# - `key`: the key the wait told readable.
+function quieted(bells: [Bell] lent, key: i64)
+    for b in bells
+        if b.key == key
+            _ = io.read(b.ring.stream, n: 4096).is_err()
+            return
+
+# The answer to one ask, on this thread: a request handled by the pipeline
+# and answered on its mailbox, or a connection adopted as a WebSocket.
+#
+# - `app`: the state.
+# - `set`: the poll set, which gains an adopted WebSocket.
+# - `ask`: the ask.
+function answered(@app: state.App, set: poll.Set, ask: workers.Ask)
+    match ask
+        .request q =>
+            match pipeline.handle(@app, r: q.r)
+                .respond rs => workers.answer(q.back, reply: .respond(response: rs.response))
+                .upgrade u  => workers.answer(q.back, reply: .upgrade(user_id: u.user_id, user: u.user))
+        .adopt a =>
+            reader @= a.reader
+            adopted(@app, set: set, @reader, r: a.r, user_id: a.user_id, user: a.user)
+
+# What the workers had asked when the stop came, answered: each request
+# `stopping`, each connection handed over closed.
+#
+# - `asks`: the workers' asks, closed.
+function drained(asks: (mailbox workers.Ask))
+    while true
+        match asks.receive(within_ms: 0)
+            .err _ => break
+            .ok ask =>
+                match ask
+                    .request q => workers.answer(q.back, reply: .stopping)
+                    .adopt a =>
+                        reader @= a.reader
+                        _ = io.close(@reader.stream).is_err()
 
 # Takes each of `keys_gone` out of `set`; one already out is no failure.
 #
@@ -129,73 +316,6 @@ function run(@app: state.App, l: net.Listener) -> Served?
 function drop_keys(set: poll.Set, keys_gone: [i64])
     for key in keys_gone
         _ = poll.remove(set, key: key).is_err()
-
-# Accepts the connection `l` holds and waits on it; whether one was taken.
-#
-# - `app`: the state, whose settings give a connection's deadline.
-# - `set`: the poll set.
-# - `links`: the HTTP connections, which gain it.
-# - `l`: the listener, ready.
-function accept_one(app: state.App lent, set: poll.Set, @links: {i64: Plain}, l: net.Listener) -> bool
-    deadline_ms = time.to_units(app.settings.deadline, unit: .millisecond)
-
-    conn = match net.accept(l, deadline_ms: deadline_ms)
-        .ok c  => c
-        .err _ => return false
-
-    match poll.add_conn(set, c: conn, interest: .read)
-        .ok key =>
-            links[key] @ Plain(
-                requests: http.request_reader(io.reader(conn.stream)),
-                remote: net.format_address(conn.remote)
-            )
-            return true
-        .err _ =>
-            stream @= conn.stream
-            _ = io.close(@stream).is_err()
-            return false
-
-# Serves the requests the connection `key` holds now: each read as its bytes
-# come, handled and answered, until no request is whole, the connection
-# closes, or it becomes a WebSocket.
-#
-# - `app`: the state.
-# - `set`: the poll set.
-# - `links`: the HTTP connections; the connection leaves it when it closes
-#   or is upgraded.
-# - `key`: the connection's key, which `poll` told readable.
-function serve_ready(@app: state.App, set: poll.Set, @links: {i64: Plain}, key: i64)
-    link = match links[key]
-        .ok got => got
-        .err _ =>
-            _ = poll.remove(set, key: key).is_err()
-            return
-
-    requests @= link.requests
-
-    while true
-        read = match http.read_ready(@requests, limits: app_limits(app))
-            .ok got => got
-            .err _ =>
-                close_link(set, @links, key: key, @requests.reader)
-                return
-
-        r: http.Request @= match read
-            .request got => got.request
-            .waiting     => break
-
-        r.remote @ link.remote
-
-        match pipeline.handle(@app, r: r)
-            .upgrade u =>
-                upgrade(@app, set: set, @links, key: key, @requests.reader, r: r, user_id: u.user_id, user: u.user)
-                return
-            .respond rs =>
-                if http.write_answer(requests.reader.stream, r: r, response: rs.response).is_err() || r.closing || rs.response.closing
-                    close_link(set, @links, key: key, @requests.reader)
-                    return
-
-    links[key] @ Plain(requests: requests, remote: link.remote)
 
 # The limits a request is read with: the usual ones, its body bounded by the
 # settings.
@@ -206,53 +326,31 @@ function app_limits(app: state.App lent) -> http.Limits
     limits.body_bytes @ app.settings.body_bytes
     return limits
 
-# Closes the connection `key` and stops waiting on it.
-#
-# - `set`: the poll set.
-# - `links`: the HTTP connections, which lose it.
-# - `key`: its key.
-# - `reader`: its reader, whose stream is closed.
-function close_link(set: poll.Set, @links: {i64: Plain}, key: i64, @reader: io.Reader)
-    _ = poll.remove(set, key: key).is_err()
-    _ = io.close(@reader.stream).is_err()
-    links @ without(links, key: key)
-
-# `links` without `key`.
-#
-# - `links`: the connections.
-# - `key`: the key left out.
-function without(links: {i64: Plain}, key: i64) -> {i64: Plain}
-    out: {i64: Plain} @= {}
-
-    for k in keys(links)
-        if k != key
-            out[k] @ links[k].must()
-
-    return out
-
-# Turns the connection `key` into the WebSocket of the account `user`: its
-# 101 written, its deadline lifted so it may stay open, the hub given it under
-# the same poll key.
+# Turns the connection `reader` reads into the WebSocket of the account
+# `user`: its 101 written, its deadline lifted so it may stay open, the
+# poll set waiting on it, the hub given it under its key.
 #
 # - `app`: the state.
 # - `set`: the poll set.
-# - `links`: the HTTP connections, which lose it.
-# - `key`: its key.
 # - `reader`: its reader, handed to `websocket.upgrade`.
 # - `r`: the opening request.
 # - `user_id`: the account's number.
 # - `user`: the account's name.
-function upgrade(@app: state.App, set: poll.Set, @links: {i64: Plain}, key: i64, @reader: io.Reader, r: http.Request, user_id: i64, user: str)
-    links @ without(links, key: key)
-
+function adopted(@app: state.App, set: poll.Set, @reader: io.Reader, r: http.Request, user_id: i64, user: str)
     conn = match websocket.upgrade(@reader, r: r, server: websocket.default_server())
         .ok c => c
         .err _ =>
-            _ = poll.remove(set, key: key).is_err()
             _ = io.close(@reader.stream).is_err()
             return
 
     _ = net.set_deadline(conn.stream, deadline_ms: net.FOREVER).is_err()
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            dropped @= conn
+            _ = websocket.drop(@dropped).is_err()
+            return
 
     if realtime.admit(@app.hub, key: key, conn: conn, user_id: user_id, user: user).is_err()
         _ = poll.remove(set, key: key).is_err()
@@ -261,3 +359,20 @@ function upgrade(@app: state.App, set: poll.Set, @links: {i64: Plain}, key: i64,
         return
 
     ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))
+
+    # What the client wrote with its request is held by the socket, and its
+    # stream, drained, does not tell of it (`websocket`'s head).
+    if realtime.held(app.hub, key: key) > 0
+        on_socket(@app, set: set, key: key)
+
+# Reads the socket `key`, and lets it go from `set` where it closed.
+#
+# - `app`: the state.
+# - `set`: the poll set.
+# - `key`: the socket's key.
+function on_socket(@app: state.App, set: poll.Set, key: i64)
+    match realtime.on_readable(@app.hub, key: key)
+        .open => _ = 0
+        .closed _ =>
+            _ = poll.remove(set, key: key).is_err()
+            ops.gauge(@app.registry, name: ops.SOCKETS, value: realtime.count(app.hub))

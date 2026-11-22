@@ -11,11 +11,10 @@
 # the versions it advertises, the login before any request past it, each
 # batch's format, length and CRC-32C, the group's generation and members.
 
-use <rebel>/numbers
 use <rebel>/os
-use <rebel>/strings
 use <rebel>/time
 
+use demo/notify
 use standins/kafka_api
 use standins/kafka_codec
 use standins/kafka_group_api
@@ -25,12 +24,6 @@ use standins/kafka_records
 use standins/kafka_state
 use standins/scram_server
 use standins/serve
-
-## Codes
-
-# The code of a thread argument that does not say how to start the broker.
-constant INVALID: str
-    "invalid"
 
 ## Bounds
 
@@ -45,10 +38,11 @@ constant IDLE_MS: i64
 
 ## Starting
 
-# How the supervisor starts the broker.
+# How the supervisor starts the broker, handed to its thread whole.
 record Setup
-    # The supervisor's control port.
-    control_port: i64
+    # Where the supervisor waits to hear the broker listens; closed once it
+    # has been told, or as the thread ends.
+    told: (mailbox notify.Ready)
     # The user it logs in, "" for none.
     user: str
     # The user's password.
@@ -56,45 +50,17 @@ record Setup
     # The topics it holds.
     topics: [kafka_state.Topic]
 
-# The thread argument that starts a broker of `setup`: its fields one a
-# line, the topics as `name:partitions` joined by commas.
-#
-# - `setup`: what the broker holds.
-function format_setup(setup: Setup) -> str
-    parts: [str] @= []
-
-    for t in setup.topics
-        parts @ parts.push(f"{t.name}:{t.partitions}")
-
-    return f"{setup.control_port}\n{setup.user}\n{setup.password}\n{parts.join(",")}"
-
-# The setup `text` writes, as `format_setup` writes it.
-#
-# - `text`: the thread argument.
-#
-# Fails `invalid` where it is not four lines, or a port or a count is no
-# number.
-function parse_setup(text: str) -> Setup?
-    lines = strings.split(s: text, sep: "\n")
-
-    if lines.len() != 4
-        return fail(code: INVALID, msg: f"the broker's setup is four lines, and {lines.len()} came")
-    control = numbers.parse_int(lines[0])?
-    topics: [kafka_state.Topic] @= []
-
-    for item in strings.split(s: lines[3], sep: ",")
-        if item != ""
-            h = strings.split_once(s: item, sep: ":")?
-            topics @ topics.push(kafka_state.Topic(name: h.before, partitions: numbers.parse_int(h.after)?))
-
-    return ok(Setup(control_port: control, user: lines[1], password: lines[2], topics: topics))
-
 # The broker's thread: listens, tells the supervisor its port, and serves
-# until the program is asked to stop. Answers its account as one line.
+# until the program is asked to stop. Answers its account as one line. The
+# readiness mailbox is closed on every path, so a broker that could not
+# listen is told to the supervisor at once.
 #
-# - `arg`: the setup, as `format_setup` writes it.
-function run(arg: str) -> str
-    match served(arg)
+# - `setup`: what the broker holds and where it tells it listens.
+function run(setup: Setup) -> str
+    outcome = served(setup)
+    setup.told.close()
+
+    match outcome
         .ok b  => return account(b)
         .err e => return "kafka: " + e.msg
 
@@ -138,14 +104,13 @@ record Held
 
 # The broker served until the stop, and the state it ended in.
 #
-# - `arg`: the setup.
+# - `setup`: what the broker holds and where it tells it listens.
 #
-# Fails `invalid` where the setup is not one, and as `serve.open` fails.
-function served(arg: str) -> kafka_state.Broker?
-    setup = parse_setup(arg)?
+# Fails as `serve.open` fails.
+function served(setup: Setup) -> kafka_state.Broker?
     salt = os.random_bytes(16)?
     verifier = scram_server.verifier_of(setup.password, salt: salt, iterations: 4096)?
-    loop @= serve.open("kafka", control_port: setup.control_port)?
+    loop @= serve.open("kafka", told: setup.told)?
     b @= kafka_state.new(serve.port_of(loop), topics: setup.topics, user: setup.user, verifier: verifier)
     held: [Held] @= []
 
@@ -435,20 +400,6 @@ function let_go(@loop: serve.Loop, @b: kafka_state.Broker, @held: [Held], peer: 
             kept @ kept.push(h)
 
     held @ kept
-
-test "format_setup, parse_setup: what one writes the other reads"
-    s = Setup(
-        control_port: 7,
-        user: "u",
-        password: "p w",
-        topics: [kafka_state.Topic(name: "a", partitions: 2), kafka_state.Topic(name: "b", partitions: 1)]
-    )
-    back = parse_setup(format_setup(s)).must()
-    assert back.control_port == 7 && back.password == "p w" && back.topics.len() == 2 && back.topics[0].partitions == 2
-
-test "parse_setup: three lines and a port that is no number are refused"
-    assert parse_setup("1\nu\np").is_err()
-    assert parse_setup("x\nu\np\na:1").is_err()
 
 test "wait_limit: the idle wait with nothing held, none once a held time has passed"
     assert wait_limit([]) == IDLE_MS

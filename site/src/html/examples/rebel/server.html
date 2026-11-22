@@ -1,0 +1,5 @@
+<p class="tagline">The small web server, written again with Rebel&rsquo;s http, net and threads, each connection still served on a thread of its own.</p>
+
+<p>Rebel&rsquo;s <code>http</code> reads each request by RFC 9112, the standard for HTTP/1.1 messages, within fixed limits, answers 400 to what is not a request and writes each response; its <code>net</code> listens, accepts and connects; its <code>threads</code> starts each thread and waits for it. Together they replace the original&rsquo;s own <code>http.hero</code> and <code>net.hero</code> and its direct calls to the runtime&rsquo;s thread functions.</p>
+
+<p>The loop that gives each connection its own thread stays this program&rsquo;s: Rebel&rsquo;s <code>http.serve</code> serves one connection at a time and leaves that loop to the program. A connection crosses into its thread as a number and is taken back with it there, since a Heroes thread is handed one number and nothing else. Run with no words it plays both sides in one process and prints the same thing on every run; run as <code>serve 8080</code> it waits for connections on that port from the machine itself.</p>

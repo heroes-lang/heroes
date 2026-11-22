@@ -1,0 +1,5 @@
+<p class="tagline">Testo mandato a capo entro una larghezza, riscritto con unicode/segment di Rebel, mantenendo le regole del programma su dove va a capo una riga.</p>
+
+<p>Il pacchetto <code>unicode/segment</code> di Rebel manda a capo il testo, con tante parole per riga quante ne permette la larghezza, e misura la riga più larga; <code>strings</code> divide il testo in parole. Il programma tiene le sue quattro regole e le chiede a Rebel: una parola che entra esattamente resta sulla riga, una parola più lunga della larghezza resta intera su una riga tutta sua perché spezzare un indirizzo web è peggio di una riga lunga, ogni sequenza di spazi e di a capo vale un solo spazio, e nessuna riga finisce con uno spazio.</p>
+
+<p>Sull&rsquo;esempio dell&rsquo;originale i due stampano gli stessi byte. Altrove si separano: Rebel va a capo dove lo permettono le regole di Unicode per spezzare le righe, anche dopo un trattino, e misura la larghezza di una riga nelle colonne che disegna un terminale, mentre l&rsquo;originale va a capo solo agli spazi e conta i byte.</p>

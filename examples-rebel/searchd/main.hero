@@ -39,8 +39,9 @@
 # `i18n` and `i18n/collate` order titles as the site's language orders
 # them; `hash` hashes the fingerprints' word runs; `toml` reads the
 # settings; `flags` reads the command line; `json` is the crawl store, the
-# index's pages and the API; `net`, `io`, `threads`, `os`, `time`, `fs`,
-# `strings`, `bytes`, `numbers`, `lists`, `math` and `unicode` do the rest.
+# index's pages and the API; `net`, `io`, `os`, `time`, `fs`, `strings`,
+# `bytes`, `numbers`, `lists`, `math` and `unicode` do the rest. The demo's
+# threads are the language's own (`spawn`).
 
 use <rebel>/flags
 

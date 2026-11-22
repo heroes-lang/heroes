@@ -1,0 +1,5 @@
+<p class="tagline">Il registro contabile in SQLite riscritto con sql/sqlite di Rebel al posto dei suoi collegamenti a SQLite, e ogni totale ancora verificato due volte.</p>
+
+<p>Il pacchetto <code>sql/sqlite</code> di Rebel apre il database in memoria, esegue le istruzioni con i valori legati ai segnaposto, prepara un&rsquo;istruzione una volta per eseguirla molte volte e restituisce le righe di una query. Sostituisce il collegamento all&rsquo;interfaccia C di SQLite che l&rsquo;originale scrive da sé, con i suoi handle e la cura che ogni istruzione venga chiusa e ogni messaggio d&rsquo;errore liberato su ogni percorso. Il pacchetto <code>sql</code> legge i valori di una riga secondo il loro tipo e rifiuta un testo letto come numero invece di restituire zero, e <code>strings</code> allinea le colonne del resoconto.</p>
+
+<p>Il registro, gli importi tenuti in centesimi, il resoconto e la verifica restano di questo programma: ogni totale è calcolato due volte, una dall&rsquo;SQL di SQLite e una da Heroes sulle stesse righe, e il programma stampa <code>yes</code> solo dove i due coincidono al centesimo.</p>

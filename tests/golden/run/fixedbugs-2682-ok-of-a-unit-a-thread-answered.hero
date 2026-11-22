@@ -1,0 +1,19 @@
+# A generic function instantiated at `()` builds `ok(v)` from a unit value
+# (defect 2682, 2026-11-22). `heroes check` accepted it, since `ok(v)` with
+# `v: T` is checked once for every `T`, and `heroes build` stopped at exit 2:
+# clang refused `.as.ok = t6`, a temporary the unit rule never declares. The
+# emitter now builds such an `ok` as `ok()` is, the tag alone.
+#
+# This shape: the answer `wait` gives for a thread whose function answers
+# `()`.
+
+function run<T>(f: (function(i64) -> T)) -> T?
+    t = spawn(f, 1)?
+    v = t.wait()
+    return ok(v)
+
+function work(n: i64)
+    print(f"worked {n}")
+
+function main()
+    print(run(work).is_err())

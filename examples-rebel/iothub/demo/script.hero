@@ -11,10 +11,8 @@
 
 use <rebel>/fs
 use <rebel>/http
-use <rebel>/net
 use <rebel>/os
 use <rebel>/strings
-use <rebel>/threads
 
 use config/registry
 use demo/devices
@@ -24,20 +22,12 @@ use demo/world
 use feed/view
 use hub/loop
 use routes/rules
-use standins/told
 
 # Runs the demo and prints its transcript; ends the program with 1 where a
 # step fails, after stopping what it started.
 function run()
     folder = match world.make_folder()
         .ok f => f
-        .err e =>
-            print(f"demo failed: {e.msg}")
-            exit(code: 1)
-            return
-
-    ear @= match told.open_ear()
-        .ok got => got
         .err e =>
             print(f"demo failed: {e.msg}")
             exit(code: 1)
@@ -52,7 +42,7 @@ function run()
         hub_port: 0,
         station: world.Station(ends: [], port: "", on_pty: false, why_not: "", listeners: [])
     )
-    outcome = play(@w, ear: ear)
+    outcome = play(@w)
 
     match outcome
         .ok _  => _ = 0
@@ -68,11 +58,10 @@ function run()
     i @= w.started.len() - 1
 
     while i >= 0
-        print(threads.wait_text(@w.started[i]))
+        print(w.started[i].wait())
         i @ i - 1
 
     world.close_station(@w.station)
-    _ = net.close_udp(@ear).is_err()
     removed = !fs.remove_all(folder).is_err()
     print(f"the demo's folder removed: {removed}")
 
@@ -82,10 +71,9 @@ function run()
 # The session, from the brokers' start to the clients' leaving.
 #
 # - `w`: the world, which gains every thread started.
-# - `ear`: the socket the threads tell their ports to.
-function play(@w: world.World, ear: net.UdpSocket lent) -> ()?
+function play(@w: world.World) -> ()?
     print("== the brokers ==")
-    world.start_brokers(@w, ear: ear)?
+    world.start_brokers(@w)?
     print("the MQTT, AMQP and NATS stand-ins listen on the loopback")
     print(f"the AMQP stand-in will restart at the third publish to the exchange alerts")
     w.station @ world.open_station()?
@@ -104,7 +92,7 @@ function play(@w: world.World, ear: net.UdpSocket lent) -> ()?
         )
 
     config = world.write_hub_folder(w, devices: devices_registered)?
-    world.start_hub(@w, ear: ear, config: config)?
+    world.start_hub(@w, config: config)?
     print("")
     print("== the hub ==")
     print(

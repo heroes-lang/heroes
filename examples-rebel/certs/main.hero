@@ -46,8 +46,9 @@
 #   answers; `toml`: the configuration, the renewal records, the demo's file
 #   edited in place;
 # - `time`: the injected clock, validities, renewal windows; `random`: the
-#   stand-in CA's seeded tokens, nonces and serials; `threads`, `os`: the
-#   demo's services and their stop; `fs`, `path`, `strings`, `bytes`,
+#   stand-in CA's seeded tokens, nonces and serials; `os`: the stop of the
+#   demo's services, which run on threads of the language's own (`spawn`,
+#   mailboxes); `fs`, `path`, `strings`, `bytes`,
 #   `json`, `numbers`: throughout.
 
 use <rebel>/acme
@@ -233,7 +234,9 @@ function responding(s: settings.Settings) -> i64
             return 1
         .ok _ => _ = 0
 
-    match responder.serve(folder: s.http01.webroot, host: "", port: s.http01.listen, control_port: 0)
+    # A person started the responder, so nobody waits on the mailbox it says
+    # it listens on; what it says there goes with the mailbox.
+    match responder.serve(folder: s.http01.webroot, host: "", port: s.http01.listen, told: mailbox())
         .ok done =>
             print(f"responder: requests answered {done.answered}")
             return 0
@@ -264,7 +267,9 @@ function serving(s: settings.Settings, store: vault.Store) -> i64
                     return 1
                 .ok _ => _ = 0
 
-            match https.serve(s, store: store, name: name, host: net.format_host(where.host), port: where.port, control_port: 0)
+            # A person started the server, so nobody waits on the mailbox it
+            # says it listens on; what it says there goes with the mailbox.
+            match https.serve(s, store: store, name: name, host: net.format_host(where.host), port: where.port, told: mailbox())
                 .ok _ => return 0
                 .err e =>
                     print("certs: " + e.msg)

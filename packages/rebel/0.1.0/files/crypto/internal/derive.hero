@@ -3,8 +3,17 @@
 # nothing yet, and copies it for every tag, so the key is hashed once however
 # many tags are made. The face checks the lengths and the count before it
 # calls; here they are taken as given.
+#
+# PBKDF2 of the four HMACs every platform's library computes, by SHA-1,
+# SHA-256, SHA-384 and SHA-512, is asked of the system first (`by_system`):
+# the code below took 4.85 s for the 600,000 iterations of HMAC-SHA-256 OWASP
+# asks of a login, built at `-O2` on an Apple silicon Mac (2026-11-22, feature 2655),
+# most of it in the lists each HMAC allocates, where the system's library
+# takes a fraction of a second. The code below gives the same bytes, and
+# serves every other digest and a machine whose system has none.
 
 use bytes
+use crypto/hero_crypto
 use crypto/internal/engine
 use crypto/internal/word
 
@@ -70,6 +79,53 @@ function pbkdf2(keyed: engine.Run, salt: [u8], iterations: i64, length: i64) -> 
 
     return out.slice(from: 0, to: length)
 
+# PBKDF2's key by the system's own library, as `pbkdf2` makes it: the HMAC
+# of `kind` over `password`, `salt` and `iterations`, `length` bytes.
+#
+# - `kind`: the digest; SHA-1, SHA-256, SHA-384 and SHA-512 are the system's.
+# - `password`: the password's bytes.
+# - `salt`: the salt's bytes.
+# - `iterations`: 1 or more.
+# - `length`: the key's bytes, 1 or more.
+#
+# Fails `unsupported` where the system computes no PBKDF2 of `kind` or the
+# sizes pass what its call takes, and `failed` where it refuses; the caller
+# then computes the same key itself.
+function by_system(kind: engine.Kind, password: [u8], salt: [u8], iterations: i64, length: i64) -> [u8]?
+    digest = match kind
+        .sha1   => hero_crypto.HERO_CRYPTO_PBKDF2_SHA1
+        .sha256 => hero_crypto.HERO_CRYPTO_PBKDF2_SHA256
+        .sha384 => hero_crypto.HERO_CRYPTO_PBKDF2_SHA384
+        .sha512 => hero_crypto.HERO_CRYPTO_PBKDF2_SHA512
+        .md5 | .sha224 | .sha512_224 | .sha512_256 | .sha3_224 | .sha3_256 | .sha3_384 | .sha3_512 | .shake128 | .shake256 | .cshake128 | .cshake256 =>
+            0
+
+    most = to_i64(hero_crypto.HERO_CRYPTO_PBKDF2_MOST).must()
+
+    if digest == 0 || hero_crypto.offers(digest) != 1 || password.len() > most || salt.len() > most || iterations > most || length > most
+        return fail(code: "unsupported", msg: "the system computes no such PBKDF2")
+    secret @= password
+    given @= salt
+    out: [u8] @= []
+
+    for _ in range(from: 0, to: length)
+        out @ out.push(0)
+
+    got = hero_crypto.pbkdf2(
+        digest,
+        password: @secret,
+        password_count: to_u64(secret.len()).must(),
+        salt: @given,
+        salt_count: to_u64(given.len()).must(),
+        iterations: to_u64(iterations).must(),
+        buffer: @out,
+        count: to_u64(length).must()
+    )
+
+    if got != length
+        return fail(code: "failed", msg: "the system's PBKDF2 failed")
+    return ok(out)
+
 # The HMAC of `data` under `key` by `kind`, for the tests.
 function tag_of(kind: engine.Kind, key: [u8], data: [u8]) -> [u8]
     run @= engine.begin_keyed(kind, key)
@@ -113,6 +169,21 @@ test "derive pbkdf2: RFC 6070's cases by SHA-1, one, two and 4096 iterations, a 
     zero = engine.begin_keyed(.sha1, bytes.concat([bytes.from_text("pass"), [0], bytes.from_text("word")]))
     zero_salt = bytes.concat([bytes.from_text("sa"), [0], bytes.from_text("lt")])
     assert bytes.format_hex(pbkdf2(keyed: zero, salt: zero_salt, iterations: 4096, length: 16)) == "56fa6aa75548099dcc37d7f03425e0c3"
+
+test "derive pbkdf2 and by_system: the same key both ways for each of the four HMACs, the empty password and salt, 1 to 3 blocks, and SHA-224 left to this code"
+    passwords: [[u8]] = [[], bytes.from_text("password"), [0x70, 0x61, 0x73, 0x73, 0x00, 0x77, 0x6f, 0x72, 0x64]]
+    salt: [u8] = [0x73, 0x61, 0x00, 0x6c, 0x74]
+    kinds: [engine.Kind] = [.sha1, .sha256, .sha384, .sha512]
+
+    for kind in kinds
+        for password in passwords
+            for length in [1, 20, 65, 130]
+                match by_system(kind, password: password, salt: salt, iterations: 3, length: length)
+                    .ok key => assert key == pbkdf2(keyed: engine.begin_keyed(kind, password), salt: salt, iterations: 3, length: length)
+                    .err e  => assert e.code == "unsupported" && hero_crypto.offers(hero_crypto.HERO_CRYPTO_PBKDF2_SHA256) != 1
+
+    assert by_system(.sha224, password: [1], salt: [2], iterations: 1, length: 28).is_err()
+    assert by_system(.sha3_256, password: [1], salt: [2], iterations: 1, length: 32).is_err()
 
 test "derive pbkdf2: RFC 7914's first case by SHA-256, and 130 bytes by SHA-512 over three blocks"
     passwd = engine.begin_keyed(.sha256, bytes.from_text("passwd"))

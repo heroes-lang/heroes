@@ -1,0 +1,159 @@
+# The generator of `http/suffixes`' two tables: the Public Suffix List's
+# rules (`rules`) and the cases of the list's own test file (`cases`), each
+# written byte for byte, or checked against the table in the tree.
+#
+# Its input is `public_suffix_list.dat` and the list's `test_psl.txt` as they
+# stand at commit `COMMIT` of github.com/publicsuffix/list, kept unchanged in
+# `publicsuffix/` beside this file and each held to its SHA-256 below. The
+# list is the Mozilla Foundation's, under the Mozilla Public License 2.0
+# (https://mozilla.org/MPL/2.0/), whose notice the file carries; the test
+# file is in the public domain (CC0). publicsuffix.org serves only the
+# latest list, under one name, with its version and commit written into it:
+# the copy it served of `VERSION` is the file at `COMMIT` with those lines
+# added, which `run` rebuilds and holds to `SERVED_SHA256`, the digest of
+# the copy the tables were first made from.
+#
+# Run from the repository's root:
+#
+#     heroes run generators/http_suffixes/main.hero -- write
+#     heroes run generators/http_suffixes/main.hero -- check
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, or where
+# a file is not the one pinned.
+
+use <rebel>/bytes
+use <tablekit>/tablekit
+
+use list
+
+# The list's version, as publicsuffix.org named it, and the commit of
+# github.com/publicsuffix/list it was built from.
+constant VERSION: str
+    "2026-11-17_06-40-19_UTC"
+
+constant COMMIT: str
+    "88df16b430cd20c98a83e3a7ecac8ee471374842"
+
+# The SHA-256 of the list and of the test file at `COMMIT`, and of the copy
+# publicsuffix.org served of `VERSION`.
+constant LIST_SHA256: str
+    "5c29d768ab3d5dffeece7773b6201c02ce9c3a4b1c250e485156d9994547d85c"
+
+constant TESTS_SHA256: str
+    "8f50ad958916d6a8f79fba2363501475571acce752757f9126fe9d2f17dd920d"
+
+constant SERVED_SHA256: str
+    "da4e972c64017bea3a2529e2e4879d9295a2346f868da510a91458f804bbfc50"
+
+# The folder of the input and of the tables, from the repository's root.
+constant SOURCES: str
+    "generators/http_suffixes/publicsuffix/"
+
+constant TABLES: str
+    "packages/rebel/0.1.0/files/http/suffixes/internal/"
+
+# The list's notice, which the rules carry with them.
+function notice_lines() -> [str]
+    return [
+        "#"
+        "# The list is the Mozilla Foundation's, under the Mozilla Public License"
+        "# 2.0 (https://mozilla.org/MPL/2.0/), and so are these rules made from it."
+        "# The list's own notice, as its file states it, travels with them:"
+        "#"
+        "# This Source Code Form is subject to the terms of the Mozilla Public"
+        "# License, v. 2.0. If a copy of the MPL was not distributed with this"
+        "# file, You can obtain one at https://mozilla.org/MPL/2.0/."
+    ]
+
+# The text of `rules`.
+#
+# Fails as writing a literal fails.
+function rules_text(rules: [list.Rule] lent) -> str?
+    head: [str] @= [
+        "# The Public Suffix List, made data: every rule of the list at version"
+        f"# {VERSION}, commit {COMMIT.slice(from: 0, to: 12)}, each label of a name in another"
+        "# script written as its A-label (`xn--` and Punycode), sorted by bytes, and"
+        "# whether it stands in the list's ICANN section."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`"
+        "# read the list as it stands at that commit of github.com/publicsuffix/list,"
+        f"# kept in its folder `publicsuffix/`, held it to the copy publicsuffix.org served"
+        f"# of that version (SHA-256 {SERVED_SHA256.slice(from: 0, to: 16)}...), and wrote this module whole; its"
+        "# `check` command says whether this module is still what it writes."
+    ]
+
+    for line in notice_lines()
+        head @ head.push(line)
+
+    texts: [str] @= []
+    icann: [str] @= []
+
+    for one in rules
+        texts @ texts.push(one.text)
+        icann @ icann.push(to_str(one.icann))
+
+    return ok(
+        [head.join("\n"), tablekit.string_constant(comment: ["# The list's version."], name: "VERSION", value: VERSION)?, tablekit.strings_constant(comment: ["# The rules, as the list writes them in A-labels: `com`, `*.ck`, `!www.ck`,", "# sorted by their bytes."], name: "RULES", items: texts)?, tablekit.list_constant(comment: ["# For each rule of `RULES`, at the same place, whether it is ICANN's, else a", "# private domain's."], head: "constant ICANN: [bool]", lines: icann)].join("\n\n") + "\n"
+    )
+
+# The text of `cases`.
+#
+# Fails as writing a literal fails.
+function cases_text(cases: [list.Case] lent) -> str?
+    hosts: [str] @= []
+    wanted: [str] @= []
+
+    for one in cases
+        hosts @ hosts.push(one.host)
+        wanted @ wanted.push(one.domain)
+
+    head = [
+        "# The cases of the list's own test file, its test_psl.txt, of"
+        f"# github.com/publicsuffix/list at commit {COMMIT.slice(from: 0, to: 12)} (public domain, CC0;"
+        f"# SHA-256 {TESTS_SHA256.slice(from: 0, to: 16)}...): each a host and the registrable domain the list"
+        "# gives it, \"\" where it gives none. A name in another script is written in"
+        "# A-labels; the case of a null host is left out, no `str` being null."
+        "#"
+        "# Generated, never edited by hand: the Heroes program `generators/http_suffixes/`"
+        "# read the file, kept in its folder `publicsuffix/`, and wrote this module"
+        "# whole; its `check` command says whether this module is still what it writes."
+    ]
+    return ok(
+        [head.join("\n"), tablekit.strings_constant(comment: ["# The hosts asked about."], name: "HOSTS", items: hosts)?, tablekit.strings_constant(comment: ["# For each host, at the same place, its registrable domain; \"\" for none."], name: "WANTED", items: wanted)?].join("\n\n") + "\n"
+    )
+
+# Does what `command` asks with both tables, and answers the worse code it
+# reached.
+#
+# - `command`: `write` or `check`.
+#
+# Fails as reading a file, holding the list to the copy publicsuffix.org
+# served, and writing or reading a table fail.
+function run(command: str) -> i64?
+    text = tablekit.pinned_text(path: SOURCES + "public_suffix_list.dat", sha256: LIST_SHA256)?
+    served = tablekit.sha256_hex(bytes.from_text(list.served_copy(text: text, version: VERSION, commit: COMMIT)))
+
+    if served != SERVED_SHA256
+        return fail(
+            code: "invalid",
+            msg: f"the copy of {VERSION} rebuilt from the list at {COMMIT} has SHA-256 {served}, not the {SERVED_SHA256} of the copy publicsuffix.org served"
+        )
+    rules = rules_text(list.rules(text)?)?
+    cases = cases_text(list.cases(tablekit.pinned_text(path: SOURCES + "test_psl.txt", sha256: TESTS_SHA256)?)?)?
+    code = tablekit.settle(command: command, path: TABLES + "rules.hero", text: rules)?
+    return ok(tablekit.worst(a: code, b: tablekit.settle(command: command, path: TABLES + "cases.hero", text: cases)?))
+
+function main()
+    words = tablekit.command_words("http_suffixes")
+
+    if words.len() != 1 || words[0] != "write" && words[0] != "check"
+        print("usage, from the repository's root: heroes run generators/http_suffixes/main.hero -- write|check")
+        exit(code: 2)
+
+    match run(words[0])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

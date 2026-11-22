@@ -12,9 +12,7 @@ use <rebel>/strings
 use <rebel>/time
 
 use packages/names
-use server/api
 use server/loop
-use server/serving
 use server/settings
 use server/tokens
 use store/database
@@ -32,20 +30,11 @@ function serve(config: str) -> ()?
     l @= net.listen(host: s.host, port: s.port)?
     base = loop.base_url_of(s, address: l.address)
 
-    match serving.open(s, base_url: base, router: api.router()?)
-        .ok opened =>
-            state @= opened
-            print(f"registry: serving {base} from {s.data_dir}")
-            served = loop.serve(@state, l: l)
-            closed = serving.close(@state)
-            net.close_listener(@l)?
-            served?
-            closed?
-            print(f"registry: stopped after {state.answered} requests")
-            return ok()
-        .err e =>
-            _ = net.close_listener(@l).is_err()
-            return fail(code: e.code, msg: e.msg)
+    print(f"registry: serving {base} from {s.data_dir}")
+    served = loop.serve(s, base_url: base, l: l)
+    net.close_listener(@l)?
+    print(f"registry: stopped after {served?.answered} requests")
+    return ok()
 
 # Makes a token for the publisher `--publisher`, made where it is new, and
 # prints it: the one time it is ever shown.

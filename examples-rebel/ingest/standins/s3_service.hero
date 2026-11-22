@@ -22,12 +22,24 @@ use standins/s3_store
 
 ## Serving
 
+# What the service's thread is handed, whole.
+record Start
+    # The bucket and what it refuses on purpose.
+    setup: s3_store.Setup
+    # Where the supervisor waits to hear the service listens.
+    told: (mailbox notify.Ready)
+
 # The service's thread: listens, tells the supervisor its port, and serves
-# until stopped. Answers its account as one line.
+# until stopped. Answers its account as one line. The readiness mailbox is
+# closed on every path, so a service that could not listen is told to the
+# supervisor at once.
 #
-# - `arg`: the setup, as `format_setup` writes it.
-function run(arg: str) -> str
-    match served(arg)
+# - `start`: the setup and the readiness mailbox.
+function run(start: Start) -> str
+    outcome = served(start)
+    start.told.close()
+
+    match outcome
         .err e => return "s3: " + e.msg
         .ok s =>
             total: i64 @= 0
@@ -39,15 +51,14 @@ function run(arg: str) -> str
 
 # Every connection served until the program is asked to stop.
 #
-# - `arg`: the setup.
+# - `start`: the setup and the readiness mailbox.
 #
-# Fails `invalid` where the setup is not one, and as `net.listen` and
-# `notify.ready` fail.
-function served(arg: str) -> s3_store.Store?
-    setup = s3_store.parse_setup(arg)?
+# Fails as `net.listen` and `notify.ready` fail.
+function served(start: Start) -> s3_store.Store?
+    setup = start.setup
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
-    match notify.ready(control_port: setup.control_port, service: "s3", port: listener.address.port)
+    match notify.ready(start.told, service: "s3", port: listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)
