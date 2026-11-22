@@ -1,0 +1,83 @@
+# `--clean`: the files a plan's steps make, removed, and their records
+# forgotten, as `ninja -t clean` does. What a step makes is its output and
+# its depfile; a source is never touched, nor a folder, nor anything outside
+# the build's folder, which the reader already refuses as an output.
+# Folders the steps made are left: one may hold what no step made.
+
+use <rebel>/fs
+
+use engine/prepare
+use graph/plan
+use load/paths
+use state/log
+
+# Removes the file of node `name` where there is one, and says whether it
+# did.
+#
+# - `root`: the build's folder.
+# - `name`: an output or a depfile, as a node.
+#
+# Fails where the file is there and cannot be removed, with its code.
+function remove_file(root: str, name: str) -> bool?
+    if !path_is_local(name)
+        return ok(false)
+
+    place = paths.disk(root: root, name: name)
+
+    if !fs.is_file(place).default(false)
+        return ok(false)
+
+    fs.remove(place)?
+    return ok(true)
+
+# Whether `name` stands inside the build's folder, the only place a clean
+# removes from.
+#
+# - `name`: a node.
+function path_is_local(name: str) -> bool
+    return paths.output_of(written: name, where: "clean").is_err() == false
+
+# The outputs and depfiles of `p`'s targets removed, and their log records
+# forgotten.
+#
+# - `p`: the plan.
+# - `steps`: its targets, prepared, which name their depfiles.
+# - `root`: the build's folder.
+# - `verbose`: whether to print each file removed.
+#
+# Answers how many files it removed. Fails where a file or the log cannot
+# be removed or written, with its code; what was removed before stays so.
+function run(p: plan.Plan lent, steps: {str: prepare.Prepared} lent, root: str, verbose: bool) -> i64?
+    removed @= 0
+    cleaned: {str: bool} @= {}
+
+    for name in keys(p.graph)
+        match steps[name]
+            .ok st =>
+                cleaned[name] @ true
+                files @= [st.output]
+
+                match st.depfile
+                    .ok d  => files @ files.push(d)
+                    .err _ => _ = 0
+
+                for file in files
+                    if remove_file(root: root, name: file)?
+                        removed @ removed + 1
+
+                        if verbose
+                            print(f"removed {file}")
+            .err _ => _ = 0
+
+    l @= log.read(root)?
+    kept: {str: log.Entry} @= {}
+
+    for name in keys(l.entries)
+        if cleaned[name].is_err()
+            kept[name] @ l.entries[name].must()
+
+    if keys(kept).len() != keys(l.entries).len()
+        l.entries @ kept
+        log.rewrite(root: root, @l)?
+
+    return ok(removed)

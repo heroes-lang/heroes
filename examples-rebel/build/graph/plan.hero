@@ -1,0 +1,328 @@
+# The dependency graph of a build, and the part of it a run is asked for.
+#
+# A node is a target's output, a phony target's name, or a source: a file
+# named as an input that no target makes. A node points to the nodes it
+# needs: a target to its inputs, its implicit inputs and its `after` list, a
+# phony target to what it lists. That is the `{K: [K]}` `graphs` reads, a
+# node's list being its predecessors as Python's `TopologicalSorter` takes
+# them, so the graph is the build file's own lists and nothing else.
+#
+# A plan is checked before anything runs, and only on the part asked for, as
+# ninja checks it: a cycle is told by its path, and a source that is not
+# there by every target that needs it.
+
+use <rebel>/fs
+use <rebel>/graphs
+
+use load/paths
+use model/buildfile
+use vars/scope
+
+# What a run builds: the targets asked for and every node they reach.
+record Plan
+    # The targets asked for, as nodes, in the order asked.
+    wanted: [str]
+    # The part of the build's graph `wanted` reaches: each target and phony
+    # target, in the build file's order, and the nodes it needs.
+    graph: {str: [str]}
+    # Every node of `graph`, numbered as `graphs.new_sorter` numbers them.
+    nodes: [str]
+
+# The whole graph of `f`: every target and phony target and what it needs.
+#
+# - `f`: the build file.
+function graph_of(f: buildfile.BuildFile lent) -> {str: [str]}
+    g: {str: [str]} @= {}
+
+    for output in keys(f.targets)
+        t = f.targets[output].must()
+        needs @= t.inputs
+
+        for name in t.implicit
+            needs @ needs.push(name)
+
+        for name in t.after
+            needs @ needs.push(name)
+
+        g[output] @ needs
+
+    for name in keys(f.phony)
+        g[name] @ f.phony[name].must()
+
+    return g
+
+# The targets a run asked for `asked` builds.
+#
+# - `f`: the build file.
+# - `asked`: the names the command line gave, as written; empty for the
+#   file's defaults, or where it names none, every target and phony target
+#   nothing else needs, in the file's order, then any target those do not
+#   reach, which only a cycle leaves.
+#
+# Fails `not_found` where a name is no target or phony target of `f`, and
+# `invalid` where it is empty.
+function wanted_of(f: buildfile.BuildFile lent, asked: [str]) -> [str]?
+    if asked.len() > 0
+        out: [str] @= []
+
+        for written in asked
+            node = paths.node_of(written: written, where: "the command line")?
+
+            match buildfile.kind_of(f, name: node)
+                .target | .phony => out @ out.push(node)
+                .source          => return fail(code: buildfile.NOT_FOUND, msg: f"{f.name} has no target \"{node}\"")
+
+        return ok(out)
+
+    if f.defaults.len() > 0
+        return ok(f.defaults)
+
+    g = graph_of(f)
+    needed: {str: bool} @= {}
+
+    for name in keys(g)
+        for other in g[name].must()
+            needed[other] @ true
+
+    roots: [str] @= []
+    reached: {str: bool} @= {}
+
+    for name in keys(g)
+        if needed[name].is_err()
+            roots @ roots.push(name)
+
+            for node in graphs.reachable_from(g, name).default([name])
+                reached[node] @ true
+
+    # A target on a cycle that nothing outside the cycle needs is needed by
+    # another target, so it is no root, and no root reaches it: it is asked
+    # for here, so its cycle is told rather than passed over as nothing to
+    # build.
+    for name in keys(g)
+        if reached[name].is_err()
+            roots @ roots.push(name)
+
+            for node in graphs.reachable_from(g, name).default([name])
+                reached[node] @ true
+
+    return ok(roots)
+
+# The plan of a run of `f` asked for `asked`, its graph checked.
+#
+# - `f`: the build file.
+# - `asked`: the names the command line gave, as `wanted_of` reads them.
+#
+# Fails as `wanted_of` does, and `invalid` where the part asked for holds a
+# cycle, the message showing it from a node back to itself.
+function plan_of(f: buildfile.BuildFile lent, asked: [str]) -> Plan?
+    wanted = wanted_of(f, asked: asked)?
+    full = graph_of(f)
+    reached: {str: bool} @= {}
+
+    for w in wanted
+        match graphs.reachable_from(full, w)
+            .ok found =>
+                for node in found
+                    reached[node] @ true
+            .err _ => reached[w] @ true
+
+    sub: {str: [str]} @= {}
+
+    for name in keys(full)
+        if reached[name].is_err() == false
+            sub[name] @ full[name].must()
+
+    match graphs.topological_order(sub)
+        .ok _  => _ = 0
+        .err _ => return fail(code: buildfile.INVALID, msg: f"{f.name}: {cycle_told(sub)}")
+
+    return ok(Plan(wanted: wanted, graph: sub, nodes: graphs.nodes_of(sub)))
+
+# The cycle of `g` in words: each node needing the next, the first again at
+# the end.
+#
+# - `g`: a graph `graphs.topological_order` refused.
+function cycle_told(g: {str: [str]} lent) -> str
+    # `cycle_of` lists each node needed by the one after it; the message reads
+    # the other way, each node needing the next.
+    match graphs.cycle_of(g)
+        .ok cycle =>
+            shown: [str] @= []
+
+            for node in scope.backwards(cycle)
+                shown @ shown.push(f"\"{node}\"")
+
+            return f"a cycle of dependencies: {shown.join(" needs ")}"
+        .err _ => return "a cycle of dependencies"
+
+# The nodes of `p` that need `name`, each once, in the build file's order.
+#
+# - `p`: the plan.
+# - `name`: a node.
+function needers_of(p: Plan lent, name: str) -> [str]
+    out: [str] @= []
+
+    for other in keys(p.graph)
+        named @= false
+
+        for listed in p.graph[other].must()
+            if listed == name
+                named @ true
+
+        if named
+            out @ out.push(other)
+
+    return out
+
+# Nothing, where every source `p` needs is a file in `root`.
+#
+# - `f`: the build file, whose name opens the message.
+# - `p`: the plan.
+# - `root`: the build's folder.
+#
+# Fails `not_found` naming each source that is not there and every target
+# that needs it, and `invalid` naming one that is a folder, since a build's
+# inputs are files whose bytes it hashes.
+function check_sources(f: buildfile.BuildFile lent, p: Plan lent, root: str) -> ()?
+    missing: [str] @= []
+    folders: [str] @= []
+
+    for name in p.nodes
+        match buildfile.kind_of(f, name: name)
+            .target | .phony => _ = 0
+            .source =>
+                place = paths.disk(root: root, name: name)
+
+                if !fs.is_file(place).default(false)
+                    needers: [str] @= []
+
+                    for n in needers_of(p, name: name)
+                        needers @ needers.push(f"\"{n}\"")
+
+                    if fs.is_dir(place).default(false)
+                        folders @ folders.push(
+                            f"\"{name}\", needed by {needers.join(" and ")}, is a folder, not a file"
+                        )
+                    else
+                        missing @ missing.push(
+                            f"missing input \"{name}\", needed by {needers.join(" and ")}, and no target makes it"
+                        )
+
+    if missing.len() > 0
+        return fail(code: buildfile.NOT_FOUND, msg: f"{f.name}: {missing.join("; ")}")
+
+    if folders.len() > 0
+        return fail(code: buildfile.INVALID, msg: f"{f.name}: {folders.join("; ")}")
+    return ok()
+
+# The targets of `p` in an order where each comes after what it needs, the
+# order `-t commands` lists them in.
+#
+# - `f`: the build file.
+# - `p`: the plan, whose graph has no cycle.
+function targets_in_order(f: buildfile.BuildFile lent, p: Plan lent) -> [str]
+    out: [str] @= []
+
+    for name in graphs.topological_order(p.graph).default(p.nodes)
+        match buildfile.kind_of(f, name: name)
+            .target          => out @ out.push(name)
+            .phony | .source => _ = 0
+
+    return out
+
+## Tests
+
+# A build file of three targets, a phony target and a target nothing needs.
+function sample() -> buildfile.BuildFile
+    rule = buildfile.Rule(
+        name: "r",
+        command: "x",
+        description: fail(code: "not_found", msg: "none"),
+        depfile: fail(code: "not_found", msg: "none"),
+        time_limit: fail(code: "not_found", msg: "none"),
+        env: {}
+    )
+    a = buildfile.Target(
+        output: "out/a.obj",
+        rule: "r",
+        inputs: ["src/a.src"],
+        implicit: ["src/a.h"],
+        after: [],
+        vars: {}
+    )
+    b = buildfile.Target(
+        output: "out/b.obj",
+        rule: "r",
+        inputs: ["src/b.src"],
+        implicit: ["src/a.h"],
+        after: [],
+        vars: {}
+    )
+    app = buildfile.Target(
+        output: "out/app",
+        rule: "r",
+        inputs: ["out/a.obj", "out/b.obj"],
+        implicit: [],
+        after: [],
+        vars: {}
+    )
+    other = buildfile.Target(output: "out/other", rule: "r", inputs: ["src/o.src"], implicit: [], after: [], vars: {})
+    return buildfile.BuildFile(
+        name: "build.toml",
+        vars: {},
+        rules: {"r": rule},
+        targets: {"out/a.obj": a, "out/b.obj": b, "out/app": app, "out/other": other},
+        phony: {"all": ["out/app"]},
+        defaults: []
+    )
+
+test "wanted_of: the roots where nothing is asked, the defaults, and a name asked"
+    f @= sample()
+    assert wanted_of(f, asked: []).must() == ["out/other", "all"]
+    f.defaults @ ["out/a.obj"]
+    assert wanted_of(f, asked: []).must() == ["out/a.obj"]
+    assert wanted_of(f, asked: ["out//app"]).must() == ["out/app"]
+
+test "wanted_of: a name that is no target, a source among them, is not_found"
+    f = sample()
+    assert wanted_of(f, asked: ["out/none"]).is_err()
+    assert wanted_of(f, asked: ["src/a.src"]).is_err()
+
+test "wanted_of: a cycle nothing outside it needs is asked for, so it is told"
+    f @= sample()
+    first @= f.targets["out/a.obj"].must()
+    first.inputs @ ["out/b.obj"]
+    f.targets["out/a.obj"] @ first
+    second @= f.targets["out/b.obj"].must()
+    second.inputs @ ["out/a.obj"]
+    f.targets["out/b.obj"] @ second
+    f.targets @ {"out/a.obj": first, "out/b.obj": second}
+    f.phony @ {}
+    assert wanted_of(f, asked: []).must() == ["out/a.obj"]
+    assert plan_of(f, asked: []).is_err()
+
+test "plan_of: only what the asked target reaches, in the file's order"
+    f = sample()
+    p = plan_of(f, asked: ["all"]).must()
+    assert keys(p.graph) == ["out/a.obj", "out/b.obj", "out/app", "all"]
+    assert p.nodes.len() == 7
+    assert targets_in_order(f, p: p) == ["out/a.obj", "out/b.obj", "out/app"]
+
+test "plan_of: a cycle is told by its path, and only where it is asked for"
+    f @= sample()
+    looped @= f.targets["out/a.obj"].must()
+    looped.inputs @ ["out/app"]
+    f.targets["out/a.obj"] @ looped
+
+    match plan_of(f, asked: ["out/app"])
+        .ok _  => assert false
+        .err e => assert e.msg == "build.toml: a cycle of dependencies: \"out/a.obj\" needs \"out/app\" needs \"out/a.obj\""
+
+    assert plan_of(f, asked: ["out/other"]).is_err() == false
+
+test "needers_of: every target that needs a node, once each"
+    f = sample()
+    p = plan_of(f, asked: ["all"]).must()
+    assert needers_of(p, name: "src/a.h") == ["out/a.obj", "out/b.obj"]
+    assert needers_of(p, name: "out/app") == ["all"]
+    assert needers_of(p, name: "nothing") == []

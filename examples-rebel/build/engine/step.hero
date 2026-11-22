@@ -1,0 +1,393 @@
+# One step run on a worker thread: its folder made, its program started
+# with its output and its errors caught together in one pipe, waited for,
+# and, where it ended well, its depfile read and its output's digest taken.
+# The hashing and the reading are done on the worker too, so a build of
+# large outputs hashes them in parallel as it runs them.
+#
+# A thread is handed one text and answers one text (`threads.spawn_text`),
+# and nothing else crosses: the order is JSON and so is the answer, whose
+# fields are the facts the main thread needs and no handle. The step's
+# output is caught whole, never written to the terminal as it comes, so the
+# outputs of steps running side by side are never interleaved; the main
+# thread prints each whole once its step is collected.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/json
+use <rebel>/path
+use <rebel>/process
+use <rebel>/threads
+use <rebel>/time
+
+use load/paths
+use state/content
+use state/depfile
+
+# What a worker is told to do.
+record Order
+    # The target's output, as a node, for messages.
+    output: str
+    # Where the output stands on the disk.
+    place: str
+    # The program and its arguments.
+    words: [str]
+    # The folder the program runs in: the build's.
+    dir: str
+    # Variables set in the program's environment.
+    env: {str: str}
+    # Where the depfile stands on the disk; absent where the rule names none.
+    depfile: str?
+    # How long the program may run; absent for no limit.
+    time_limit: time.Duration?
+
+# What a worker answers.
+record Done
+    # Whether the step did what it was asked: ended with the code 0, wrote
+    # its output, and wrote its depfile where its rule names one.
+    succeeded: bool
+    # How the program ended, in words: `exited with code 1`, or why it never
+    # started.
+    ended: str
+    # What the program wrote to its output and its error, together, as text;
+    # bytes that are not UTF-8 are written as U+FFFD.
+    text: str
+    # The digest of the output it left; absent where it did not succeed.
+    digest: str?
+    # The files its depfile names, as written; empty where there is none.
+    deps: [str]
+    # How long the step took, from its folder made to its output hashed.
+    duration: time.Duration
+
+## The order and the answer as text
+
+# `o` as the text a worker is handed.
+#
+# - `o`: the order.
+function order_text(o: Order) -> str
+    words: [json.Value] @= []
+
+    for w in o.words
+        words @ words.push(.text(v: w))
+
+    env: {str: json.Value} @= {}
+
+    for name in keys(o.env)
+        env[name] @ .text(v: o.env[name].default(""))
+
+    depfile_value: json.Value = match o.depfile
+        .ok d  => .text(v: d)
+        .err _ => .null_value
+
+    limit_value: json.Value = match o.time_limit
+        .ok d  => .number(v: to_f64(d.nanoseconds))
+        .err _ => .null_value
+
+    members: {str: json.Value} = {
+        "output": .text(v: o.output)
+        "place": .text(v: o.place)
+        "words": .list(items: words)
+        "dir": .text(v: o.dir)
+        "env": .object(members: env)
+        "depfile": depfile_value
+        "limit_ns": limit_value
+    }
+
+    # Text, lists and objects of text and a finite number: JSON writes each.
+    return json.format(.object(members: members)).must()
+
+# The order `text` holds.
+#
+# - `text`: what `order_text` wrote.
+#
+# Fails `invalid` where it is not such a text.
+function order_of(text: str) -> Order?
+    v = json.parse(text)?
+    words: [str] @= []
+
+    for w in json.items_of(json.member(v, key: "words")?)?
+        words @ words.push(json.text_of(w)?)
+
+    env: {str: str} @= {}
+    listed = json.member(v, key: "env")?
+
+    for name in keys(json.members_of(listed)?)
+        env[name] @ json.text_of(json.member(listed, key: name)?)?
+
+    d = json.member(v, key: "depfile")?
+    limit = json.member(v, key: "limit_ns")?
+
+    depfile_place: str? = if json.is_null(d)
+        fail(code: "not_found", msg: "no depfile")
+    else
+        ok(json.text_of(d)?)
+
+    time_limit: time.Duration? = if json.is_null(limit)
+        fail(code: "not_found", msg: "no limit")
+    else
+        ok(time.nanoseconds(json.int_of(limit)?))
+
+    return ok(
+        Order(output: json.text_of(json.member(v, key: "output")?)?, place: json.text_of(json.member(v, key: "place")?)?, words: words, dir: json.text_of(json.member(v, key: "dir")?)?, env: env, depfile: depfile_place, time_limit: time_limit)
+    )
+
+# `d` as the text a worker answers.
+#
+# - `d`: the answer.
+function done_text(d: Done) -> str
+    deps: [json.Value] @= []
+
+    for name in d.deps
+        deps @ deps.push(.text(v: name))
+
+    digest_value: json.Value = match d.digest
+        .ok s  => .text(v: s)
+        .err _ => .null_value
+
+    members: {str: json.Value} = {
+        "succeeded": .boolean(v: d.succeeded)
+        "ended": .text(v: d.ended)
+        "text": .text(v: d.text)
+        "digest": digest_value
+        "deps": .list(items: deps)
+        "ns": .number(v: to_f64(d.duration.nanoseconds))
+    }
+
+    # Text, a boolean, a list of text and a finite number: JSON writes each.
+    return json.format(.object(members: members)).must()
+
+# The answer `text` holds.
+#
+# - `text`: what `done_text` wrote.
+#
+# Fails `invalid` where it is not such a text.
+function done_of(text: str) -> Done?
+    v = json.parse(text)?
+    deps: [str] @= []
+
+    for name in json.items_of(json.member(v, key: "deps")?)?
+        deps @ deps.push(json.text_of(name)?)
+
+    d = json.member(v, key: "digest")?
+
+    digest: str? = if json.is_null(d)
+        fail(code: "not_found", msg: "no digest")
+    else
+        ok(json.text_of(d)?)
+
+    return ok(
+        Done(succeeded: json.bool_of(json.member(v, key: "succeeded")?)?, ended: json.text_of(json.member(v, key: "ended")?)?, text: json.text_of(json.member(v, key: "text")?)?, digest: digest, deps: deps, duration: time.nanoseconds(json.int_of(json.member(v, key: "ns")?)?))
+    )
+
+## The step itself
+
+# A step that did not succeed, and why.
+#
+# - `ended`: how it ended, in words.
+# - `text`: what it wrote.
+# - `took`: how long it took.
+function failed(ended: str, text: str, took: time.Duration) -> Done
+    return Done(
+        succeeded: false,
+        ended: ended,
+        text: text,
+        digest: fail(code: "not_found", msg: "the step failed"),
+        deps: [],
+        duration: took
+    )
+
+# How long since `began`, or nothing where the clock gave no reading.
+#
+# - `began`: the reading the step began at.
+function since(began: time.Mark?) -> time.Duration
+    match began
+        .ok m  => return time.elapsed(m).default(time.nanoseconds(0))
+        .err _ => return time.nanoseconds(0)
+
+# The program `word` names, for a child working in `dir`: a relative path
+# holding a separator is read from `dir`, as the step's own working folder
+# reads it, where the system would read it from this process's; a name
+# alone is looked for in PATH and an absolute path stands as it is.
+#
+# - `word`: the command's first word.
+# - `dir`: the build's folder.
+function program_of(word: str, dir: str) -> str
+    if path.is_abs(word) || !word.chars().any(path.is_sep)
+        return word
+    return paths.disk(root: dir, name: word)
+
+# How a program that did not end well ended, in words.
+#
+# - `status`: how it ended.
+# - `limit`: its time limit, where it had one.
+function ended_words(status: process.Status, limit: time.Duration?) -> str
+    match status
+        .timed_out =>
+            match limit
+                .ok d  => return f"ran past its time limit of {time.format_duration(d)} and was ended"
+                .err _ => return "ran past its time limit and was ended"
+        .exited _ | .signaled _ => return process.format_status(status)
+
+# The step `o` asks for, run to its end.
+#
+# - `o`: the order.
+function run(o: Order) -> Done
+    began = time.mark()
+    folder = path.parent(o.place)
+
+    if folder != "" && folder != "."
+        match fs.make_dir_all(folder)
+            .ok _ => _ = 0
+            .err e => return failed(
+                ended: f"did not start: the folder {folder} could not be made: {e.msg}",
+                text: "",
+                took: since(began)
+            )
+
+    match o.depfile
+        .ok d =>
+            # A depfile left by an earlier run must not be read as this one's.
+            match fs.remove(d)
+                .ok _ => _ = 0
+                .err e =>
+                    if e.code != "file_not_found"
+                        return failed(
+                            ended: f"did not start: the old depfile {d} could not be removed: {e.msg}",
+                            text: "",
+                            took: since(began)
+                        )
+        .err _ => _ = 0
+
+    c @= process.command(program_of(word: o.words[0], dir: o.dir), arguments: o.words.slice(from: 1, to: o.words.len()))
+    c @ process.with_dir(c, dir: o.dir)
+    c @ process.with_input(c, from: .nothing)
+    c @ process.with_output(c, to: .pipe)
+    c @ process.with_error_to_output(c)
+    c @ process.with_env_all(c, variables: o.env)
+
+    match o.time_limit
+        .ok d  => c @ process.with_time_limit(c, limit: d)
+        .err _ => _ = 0
+
+    finished = match process.run(c)
+        .ok f  => f
+        .err e => return failed(ended: f"did not start: {e.msg}", text: "", took: since(began))
+
+    text = bytes.to_text_lossy(finished.output)
+
+    if !process.is_success(finished.status)
+        return failed(ended: ended_words(finished.status, limit: o.time_limit), text: text, took: since(began))
+
+    deps: [str] @= []
+
+    match o.depfile
+        .ok d =>
+            written = match read_file(d)
+                .ok t => t
+                .err _ => return failed(
+                    ended: f"exited with code 0 and wrote no depfile at {d}",
+                    text: text,
+                    took: since(began)
+                )
+
+            match depfile.parse(written)
+                .ok parsed => deps @ parsed.inputs
+                .err e => return failed(
+                    ended: f"exited with code 0 and wrote a depfile that does not read: {e.msg}",
+                    text: text,
+                    took: since(began)
+                )
+        .err _ => _ = 0
+
+    digest = match content.digest_of_file(o.place)
+        .ok found => found
+        .err e =>
+            if e.code == "file_not_found"
+                return failed(ended: f"exited with code 0 and wrote no \"{o.output}\"", text: text, took: since(began))
+            return failed(
+                ended: f"exited with code 0 and its output cannot be read: {e.msg}",
+                text: text,
+                took: since(began)
+            )
+
+    return Done(
+        succeeded: true,
+        ended: "exited with code 0",
+        text: text,
+        digest: ok(digest),
+        deps: deps,
+        duration: since(began)
+    )
+
+# The body of a worker thread: the order `text` run, its answer as text.
+#
+# - `text`: what `order_text` wrote.
+function run_text(text: str) -> str
+    match order_of(text)
+        .ok o => return done_text(run(o))
+        .err e => return done_text(
+            failed(ended: f"did not start: its order does not read: {e.msg}", text: "", took: time.nanoseconds(0))
+        )
+
+# A worker thread started on `o`.
+#
+# - `o`: the order.
+#
+# Fails `limit` where the system refuses a thread, as `threads.spawn_text`
+# does.
+function start(o: Order) -> threads.TextThread?
+    return threads.spawn_text(body: run_text, arg: order_text(o))
+
+# What the worker `t` answered, waiting for it.
+#
+# - `t`: the thread, which this spends.
+function finish(@t: threads.TextThread) -> Done
+    text = threads.wait_text(@t)
+
+    match done_of(text)
+        .ok d  => return d
+        .err e => return failed(ended: f"answered what does not read: {e.msg}", text: "", took: time.nanoseconds(0))
+
+test "order_text and order_of: an order read back whole, absent fields included"
+    o = Order(
+        output: "out/a b.obj",
+        place: "demo/out/a b.obj",
+        words: ["mill", "--helper", "compile", "src/a \"x\".src"],
+        dir: "demo",
+        env: {"LANG": "C"},
+        depfile: ok("demo/out/a b.obj.d"),
+        time_limit: ok(time.milliseconds(300).must())
+    )
+    assert order_of(order_text(o)).must() == o
+    bare = Order(
+        output: "o",
+        place: "o",
+        words: ["x"],
+        dir: ".",
+        env: {},
+        depfile: fail(code: "not_found", msg: "no depfile"),
+        time_limit: fail(code: "not_found", msg: "no limit")
+    )
+    read_back = order_of(order_text(bare)).must()
+    assert read_back.depfile.is_err() && read_back.time_limit.is_err() && read_back.words == ["x"]
+
+test "done_text and done_of: an answer read back, its output text of more than one byte"
+    d = Done(
+        succeeded: true,
+        ended: "exited with code 0",
+        text: "warning: café\n",
+        digest: ok("00ff"),
+        deps: ["src/a.h"],
+        duration: time.nanoseconds(12)
+    )
+    back = done_of(done_text(d)).must()
+    assert back.succeeded && back.text == d.text && back.digest.must() == "00ff" && back.deps == ["src/a.h"]
+    assert back.duration == time.nanoseconds(12)
+
+test "program_of: a name stays, an absolute path stays, a relative path is read from the build's folder"
+    assert program_of(word: "mill", dir: "demo") == "mill"
+    assert program_of(word: "tools/mill", dir: "demo") == paths.disk(root: "demo", name: "tools/mill")
+    assert program_of(word: "tools/mill", dir: ".") == path.from_slash("tools/mill")
+
+test "ended_words: a time limit says how long it was, an exit says its code"
+    assert ended_words(.timed_out, limit: ok(time.milliseconds(300).must())) == "ran past its time limit of 300ms and was ended"
+    assert ended_words(.exited(code: 2), limit: fail(code: "not_found", msg: "none")) == "exited with code 2"

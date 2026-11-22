@@ -1,0 +1,179 @@
+# The demo's project: a program in mill, the toy language of
+# `helpers/mill`, made of a generated version header, two sources compiled
+# to objects and the objects linked, plus the build files the demo uses to
+# show what a build refuses. Every file is a text written here, so the
+# project is the same on every run, and every later edit the demo makes is
+# a text of this module too.
+
+use <rebel>/fs
+use <rebel>/path
+
+use load/paths
+use load/reader
+
+# The build file's head: its defaults, its variables and its rules.
+#
+# - `strip`: the value of the variable `strip`, which the compile rule
+#   passes to the helper; the demo changes it to change the command.
+function head(strip: str) -> [str]
+    return [
+        "# A program in mill, a toy language, generated, compiled and linked by"
+        "# helpers that are the build program itself (`build --helper ...`)."
+        "default = [\"all\"]"
+        ""
+        "[vars]"
+        "# The helpers' program: `build` where it is on PATH; the demo names"
+        "# itself on its command line, as `mill=<its path>`."
+        "mill = \"build\""
+        f"strip = \"{strip}\""
+        ""
+        "[rules.generate]"
+        "command = \"$mill --helper generate $in $out\""
+        "description = \"generate $out\""
+        ""
+        "[rules.compile]"
+        "command = \"$mill --helper compile $in $out --depfile $out.d $strip\""
+        "description = \"compile $out\""
+        "depfile = \"$out.d\""
+        ""
+        "[rules.link]"
+        "command = \"$mill --helper link $out $in\""
+        "description = \"link $out\""
+    ]
+
+# The build file's targets of the program itself.
+function program_targets() -> [str]
+    return [
+        ""
+        "[targets.\"gen/version.h\"]"
+        "rule = \"generate\""
+        "inputs = [\"src/version.txt\"]"
+        ""
+        "[targets.\"out/main.obj\"]"
+        "rule = \"compile\""
+        "inputs = [\"src/main.src\"]"
+        "# Made first, since the compile reads it; its depfile names it after."
+        "after = [\"gen/version.h\"]"
+        ""
+        "[targets.\"out/util.obj\"]"
+        "rule = \"compile\""
+        "inputs = [\"src/util.src\"]"
+        ""
+        "[targets.\"out/app\"]"
+        "rule = \"link\""
+        "inputs = [\"out/main.obj\", \"out/util.obj\"]"
+    ]
+
+# The project's build file.
+#
+# - `strip`: the value of the variable `strip`.
+# - `with_tool`: whether it also builds `out/tool`, from a source of its
+#   own and the util object.
+function build_toml(strip: str, with_tool: bool) -> str
+    lines @= head(strip)
+
+    for line in program_targets()
+        lines @ lines.push(line)
+
+    if with_tool
+        for line in ["", "[targets.\"out/tool.obj\"]", "rule = \"compile\"", "inputs = [\"src/tool.src\"]", "", "[targets.\"out/tool\"]", "rule = \"link\"", "inputs = [\"out/tool.obj\", \"out/util.obj\"]"]
+            lines @ lines.push(line)
+
+    everything = if with_tool
+        "all = [\"out/app\", \"out/tool\"]"
+    else
+        "all = [\"out/app\"]"
+
+    lines @ lines.push("")
+    lines @ lines.push("[phony]")
+    lines @ lines.push(everything)
+    return lines.join("\n") + "\n"
+
+# A build file whose three targets need each other in a ring.
+function cycle_toml() -> str
+    return ["default = [\"out/c.obj\"]", "", "[rules.link]", "command = \"build --helper link $out $in\"", "", "[targets.\"out/a.obj\"]", "rule = \"link\"", "inputs = [\"out/c.obj\"]", "", "[targets.\"out/b.obj\"]", "rule = \"link\"", "inputs = [\"out/a.obj\"]", "", "[targets.\"out/c.obj\"]", "rule = \"link\"", "inputs = [\"out/b.obj\"]"].join("\n") + "\n"
+
+# A build file two of whose targets need a source nobody wrote.
+function missing_toml() -> str
+    return ["[rules.compile]", "command = \"build --helper compile $in $out\"", "", "[targets.\"out/extra.obj\"]", "rule = \"compile\"", "inputs = [\"src/extra.src\"]", "", "[targets.\"out/more.obj\"]", "rule = \"compile\"", "inputs = [\"src/main.src\", \"src/extra.src\"]"].join("\n") + "\n"
+
+# A build file whose one step runs past its rule's time limit.
+function slow_toml() -> str
+    return ["[vars]", "mill = \"build\"", "", "[rules.wait]", "command = \"$mill --helper wait 10000\"", "description = \"wait for $out\"", "timeout = \"200ms\"", "", "[targets.\"out/never\"]", "rule = \"wait\""].join("\n") + "\n"
+
+# The version the generated header holds.
+#
+# - `version`: the version, as `1.4.2`.
+function version_txt(version: str) -> str
+    return version + "\n"
+
+# The header both sources include, which no build file names.
+#
+# - `exports`: the names it exports, one a line.
+function util_h(exports: [str]) -> str
+    lines: [str] @= ["// what util exports"]
+
+    for name in exports
+        lines @ lines.push(f"export {name}")
+
+    return lines.join("\n") + "\n"
+
+# The util source.
+#
+# - `greeting`: the greeting it defines.
+function util_src(greeting: str) -> str
+    return f"#include \"src/util.h\"\ngreeting = \"{greeting}\"\n"
+
+# The main source.
+#
+# - `comment`: its comment line's text, which a stripped compile drops.
+function main_src(comment: str) -> str
+    return ["#include \"src/util.h\"", "#include \"gen/version.h\"", f"// {comment}", "print greeting", "print version", "#warning greeting is not localized yet"].join("\n") + "\n"
+
+# The tool's source, which fails to compile where `broken` says.
+#
+# - `broken`: whether it holds an `#error`.
+function tool_src(broken: bool) -> str
+    if broken
+        return "#include \"src/util.h\"\nprint greeting\n#error the tool's parser is not written yet\n"
+    return "#include \"src/util.h\"\nprint greeting\nprint \"tool\"\n"
+
+# Writes `text` as the file `name` of the project in `dir`, its folder made.
+#
+# - `dir`: the project's folder.
+# - `name`: the file, as a node.
+# - `text`: what it holds.
+#
+# Fails where the folder or the file cannot be written, with its code.
+function put(dir: str, name: str, text: str) -> ()?
+    place = paths.disk(root: dir, name: name)
+    fs.make_dir_all(path.parent(place))?
+    return fs.write_atomic_text(path: place, text: text)
+
+# The project written afresh in `dir`: whatever stood there removed first.
+#
+# - `dir`: the project's folder.
+#
+# Fails where it cannot be removed or written, with its code.
+function write_all(dir: str) -> ()?
+    if fs.exists(dir).default(false)
+        fs.remove_all(dir)?
+
+    fs.make_dir_all(dir)?
+    put(dir: dir, name: "build.toml", text: build_toml("--strip-comments", with_tool: false))?
+    put(dir: dir, name: "src/version.txt", text: version_txt("1.4.2"))?
+    put(dir: dir, name: "src/util.h", text: util_h(["greeting"]))?
+    put(dir: dir, name: "src/util.src", text: util_src("hello"))?
+    put(dir: dir, name: "src/main.src", text: main_src("the program's entry"))?
+    put(dir: dir, name: "cycle.toml", text: cycle_toml())?
+    put(dir: dir, name: "missing.toml", text: missing_toml())?
+    return put(dir: dir, name: "slow.toml", text: slow_toml())
+
+test "build_toml: each build file of the demo reads, the tool's adding two targets"
+    plain = reader.read(text: build_toml("--strip-comments", with_tool: false), name: "build.toml").must()
+    assert keys(plain.targets) == ["gen/version.h", "out/main.obj", "out/util.obj", "out/app"]
+    full = reader.read(text: build_toml("", with_tool: true), name: "build.toml").must()
+    assert keys(full.targets).len() == 6 && full.phony["all"].must() == ["out/app", "out/tool"]
+    assert keys(reader.read(text: cycle_toml(), name: "cycle.toml").must().targets).len() == 3
+    assert keys(reader.read(text: missing_toml(), name: "missing.toml").must().targets).len() == 2
+    assert reader.read(text: slow_toml(), name: "slow.toml").must().rules["wait"].must().time_limit.is_err() == false

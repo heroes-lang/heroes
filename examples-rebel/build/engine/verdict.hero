@@ -1,0 +1,228 @@
+# Whether a target's step runs, and why: what `--explain` prints.
+#
+# A step runs where its output is missing, where the log holds no record of
+# it, where its command changed, where an input or a file its depfile named
+# changed, appeared or went, or where its output was changed since the step
+# made it. Each is asked of digests (`state/content`), never of times. The
+# questions are asked in that order and the first that holds is the reason
+# given, so the reason is the plainest one there is.
+#
+# Asked when a step's every dependency is done, so the digests of their
+# outputs are final: a dependency rebuilt to the same bytes leaves this one
+# up to date, the early cut-off. Asked before a build too, of what would
+# run, and then a dependency that would run first is a reason of its own,
+# since its new bytes are not known yet.
+
+use <rebel>/time
+
+use engine/prepare
+use state/content
+use state/log
+
+# What a step is to do.
+variant Verdict
+    # Nothing: every digest is the one the log holds.
+    up_to_date
+    # Run.
+    stale
+        # Why, in words, as `--explain` prints it after the output's name.
+        reason: str
+
+# Whether `v` says run.
+#
+# - `v`: a verdict.
+function is_stale(v: Verdict) -> bool
+    match v
+        .up_to_date => return false
+        .stale _    => return true
+
+# Whether the file `seen` now is what the log says it was: both a file of
+# one digest, or both nothing.
+#
+# - `logged`: the digest the log holds, absent where nothing was there.
+# - `seen`: what the file is now.
+function is_same(logged: str?, seen: content.Seen) -> bool
+    match seen
+        .file f =>
+            match logged
+                .ok d  => return d == f.digest
+                .err _ => return false
+        .missing =>
+            return logged.is_err()
+        .unreadable _ =>
+            return false
+
+# The verdict on `step`.
+#
+# - `step`: the target's step.
+# - `previous`: the log's entry of its target, absent where it has none.
+# - `cache`: the files seen in this build, which this adds to.
+# - `root`: the build's folder.
+# - `coming`: the targets that will run before this one in the build being
+#   planned, whose new bytes are not known yet; empty once they have run.
+function verdict_of(step: prepare.Prepared lent, previous: log.Entry?, @cache: {str: content.Seen}, root: str, coming: {str: bool} lent) -> Verdict
+    output = step.output
+    now = content.seen(@cache, root: root, name: output)
+
+    match now
+        .file _       => _ = 0
+        .missing      => return .stale(reason: "it is missing")
+        .unreadable u => return .stale(reason: f"it cannot be read: {u.reason}")
+
+    e = match previous
+        .ok found => found
+        .err _    => return .stale(reason: "the build log holds no record of it")
+
+    if e.command != step.command
+        return .stale(reason: "its command changed")
+
+    listed: {str: bool} @= {}
+
+    for name in step.inputs
+        listed[name] @ true
+
+        if coming[name].is_err() == false
+            return .stale(reason: f"\"{name}\" will be rebuilt first")
+
+        logged = match e.inputs[name]
+            .ok d  => d
+            .err _ => return .stale(reason: f"\"{name}\" is a new input")
+
+        match content.seen(@cache, root: root, name: name)
+            .file f =>
+                if f.digest != logged
+                    return .stale(reason: f"\"{name}\" changed")
+            .missing      => return .stale(reason: f"\"{name}\" is missing")
+            .unreadable u => return .stale(reason: f"\"{name}\" cannot be read: {u.reason}")
+
+    for name in keys(e.inputs)
+        if listed[name].is_err()
+            return .stale(reason: f"\"{name}\" is no longer an input")
+
+    for name in keys(e.deps)
+        if coming[name].is_err() == false
+            return .stale(reason: f"\"{name}\", which its depfile named, will be rebuilt first")
+
+        logged = e.deps[name].must()
+        found = content.seen(@cache, root: root, name: name)
+
+        if !is_same(logged, seen: found)
+            return .stale(reason: dep_change(name, logged: logged, found: found))
+
+    if !is_same(ok(e.digest), seen: now)
+        return .stale(reason: "it was changed since its step made it")
+    return .up_to_date
+
+# How a file the depfile named changed, in words.
+#
+# - `name`: the file.
+# - `logged`: its digest in the log, absent where nothing was there.
+# - `found`: what it is now.
+function dep_change(name: str, logged: str?, found: content.Seen) -> str
+    said = f"\"{name}\", which its depfile named,"
+
+    match found
+        .missing      => return f"{said} is gone"
+        .unreadable u => return f"{said} cannot be read: {u.reason}"
+        .file _ =>
+            if logged.is_err()
+                return f"{said} appeared"
+            return f"{said} changed"
+
+## Tests
+
+# A step of two inputs and its log entry, every digest as the cache holds it.
+function sample_step() -> prepare.Prepared
+    return prepare.Prepared(
+        output: "out/a.obj",
+        rule: "compile",
+        words: ["mill", "compile"],
+        description: "compile out/a.obj",
+        depfile: ok("out/a.obj.d"),
+        env: {},
+        time_limit: fail(code: "not_found", msg: "none"),
+        command: "c1",
+        inputs: ["src/a.src", "tools/mill"]
+    )
+
+# The log's entry that matches `step` and `cache`.
+function sample_entry() -> log.Entry
+    return log.Entry(
+        output: "out/a.obj",
+        command: "c1",
+        digest: "o1",
+        inputs: {"src/a.src": "s1", "tools/mill": "m1"},
+        deps: {"src/a.h": ok("h1"), "gen/none.h": fail(code: "not_found", msg: "none")},
+        duration: time.nanoseconds(0)
+    )
+
+# What the build saw of every file `step` and `entry` name.
+function sample_cache() -> {str: content.Seen}
+    return {
+        "out/a.obj": .file(digest: "o1")
+        "src/a.src": .file(digest: "s1")
+        "tools/mill": .file(digest: "m1")
+        "src/a.h": .file(digest: "h1")
+        "gen/none.h": .missing
+    }
+
+# The reason the verdict gives with `c` seen, "" where it is up to date.
+#
+# - `s`: the step.
+# - `e`: the log's entry.
+# - `c`: what the files are.
+# - `coming`: the targets that will run first.
+function reason_with(s: prepare.Prepared, e: log.Entry?, c: {str: content.Seen}, coming: {str: bool}) -> str
+    seen @= c
+
+    match verdict_of(s, previous: e, @seen, root: ".", coming: coming)
+        .up_to_date => return ""
+        .stale st   => return st.reason
+
+test "verdict_of: every digest as logged is up to date, a dep still absent included"
+    none: {str: bool} = {}
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: sample_cache(), coming: none) == ""
+
+test "verdict_of: the output missing, then no record, then a changed command"
+    none: {str: bool} = {}
+    gone @= sample_cache()
+    gone["out/a.obj"] @ .missing
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: gone, coming: none) == "it is missing"
+    assert reason_with(sample_step(), e: fail(code: "not_found", msg: "none"), c: sample_cache(), coming: none) == "the build log holds no record of it"
+    other @= sample_step()
+    other.command @ "c2"
+    assert reason_with(other, e: ok(sample_entry()), c: sample_cache(), coming: none) == "its command changed"
+
+test "verdict_of: an input changed, new, dropped, and coming first"
+    none: {str: bool} = {}
+    changed @= sample_cache()
+    changed["src/a.src"] @ .file(digest: "s2")
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: changed, coming: none) == "\"src/a.src\" changed"
+    more @= sample_step()
+    more.inputs @ ["src/a.src", "tools/mill", "src/b.src"]
+    assert reason_with(more, e: ok(sample_entry()), c: sample_cache(), coming: none) == "\"src/b.src\" is a new input"
+    fewer @= sample_step()
+    fewer.inputs @ ["src/a.src"]
+    assert reason_with(fewer, e: ok(sample_entry()), c: sample_cache(), coming: none) == "\"tools/mill\" is no longer an input"
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: sample_cache(), coming: {"src/a.src": true}) == "\"src/a.src\" will be rebuilt first"
+
+test "verdict_of: a depfile's file changed, gone, and appeared"
+    none: {str: bool} = {}
+    changed @= sample_cache()
+    changed["src/a.h"] @ .file(digest: "h2")
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: changed, coming: none) == "\"src/a.h\", which its depfile named, changed"
+    gone @= sample_cache()
+    gone["src/a.h"] @ .missing
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: gone, coming: none) == "\"src/a.h\", which its depfile named, is gone"
+    came @= sample_cache()
+    came["gen/none.h"] @ .file(digest: "n1")
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: came, coming: none) == "\"gen/none.h\", which its depfile named, appeared"
+
+test "verdict_of: the output changed by hand, and an input that is a folder"
+    none: {str: bool} = {}
+    edited @= sample_cache()
+    edited["out/a.obj"] @ .file(digest: "o9")
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: edited, coming: none) == "it was changed since its step made it"
+    folder @= sample_cache()
+    folder["src/a.src"] @ .unreadable(reason: "it is a folder")
+    assert reason_with(sample_step(), e: ok(sample_entry()), c: folder, coming: none) == "\"src/a.src\" cannot be read: it is a folder"

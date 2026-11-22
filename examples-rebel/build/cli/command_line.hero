@@ -1,0 +1,184 @@
+# The command line of `build`: its options, read by `flags` into the
+# options of a session, or into the demo.
+#
+#     build [-C DIR] [-f FILE] [-j N] [-n] [--clean] [--explain] [-v]
+#           [-t TOOL] [TARGET...] [NAME=VALUE...]
+#     build --demo [--demo-dir DIR]
+#
+# A word holding `=` sets a variable over the build file's own, as make
+# reads `CC=clang`: everything before the first `=` is the name, the rest
+# the value, taken as it is. Every other word names a target.
+
+use <rebel>/flags
+use <rebel>/os
+use <rebel>/strings
+
+use engine/session
+use model/buildfile
+use tools/inspect
+
+# The most steps `-j` may ask for at once.
+constant MOST_JOBS: i64
+    1_024
+
+# What the command line asked for.
+record Invocation
+    # `build`, `demo` or `help`.
+    action: str
+    # The help to print, for `help`.
+    help: str
+    # The session's options, for `build`.
+    options: session.Options
+    # The demo's folder, for `demo`.
+    demo_dir: str
+
+# The command line's declaration.
+function declaration() -> flags.Command
+    c @= flags.command(
+        name: "build",
+        about: "Build the targets of a build file: each step run when the bytes of what it is made from, or its command, changed since it last ran."
+    )
+    c @ flags.with_epilog(
+        c,
+        text: "A word NAME=VALUE sets the variable NAME over the build file's own. The build file is TOML: [vars], [rules.NAME], [targets.\"OUTPUT\"], [phony] and default."
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "dir", short: "C", value_name: "DIR", help: "the build's folder, where the build file and the outputs stand"), value: ".")
+    )
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "file", short: "f", value_name: "FILE", help: "the build file, in the build's folder"), value: "build.toml")
+    )
+    flags.add(
+        @c,
+        a: flags.with_range(flags.with_kind(flags.option(long: "jobs", short: "j", value_name: "N", help: "run at most N steps at once; the processors by default"), kind: .integer), lowest: 1, highest: MOST_JOBS)
+    )
+    flags.add(@c, a: flags.flag(long: "dry-run", short: "n", help: "run nothing; tell what would run"))
+    flags.add(@c, a: flags.flag(long: "clean", short: "", help: "remove what the steps make, and forget their records"))
+    flags.add(@c, a: flags.flag(long: "explain", short: "", help: "tell why each step runs"))
+    flags.add(
+        @c,
+        a: flags.flag(long: "verbose", short: "v", help: "show each step's command, and each file a clean removes")
+    )
+    flags.add(
+        @c,
+        a: flags.with_kind(flags.option(long: "tool", short: "t", value_name: "TOOL", help: "run a tool instead of a build"), kind: .choice(among: inspect.names()))
+    )
+    flags.add(@c, a: flags.flag(long: "demo", short: "", help: "run the scripted demo in a project it writes"))
+    flags.add(
+        @c,
+        a: flags.with_default(flags.option(long: "demo-dir", short: "", value_name: "DIR", help: "the demo's folder, made and removed by it"), value: "build/build-demo")
+    )
+    flags.add(
+        @c,
+        a: flags.with_arity(flags.positional(name: "TARGET", help: "a target or a phony target; NAME=VALUE sets a variable"), arity: .many)
+    )
+    return c
+
+# The steps to run at once where `-j` is not given: one a processor.
+function default_jobs() -> i64
+    return os.processor_count().default(1)
+
+# A plain invocation of `action`.
+#
+# - `action`: what it asks for.
+function plain(action: str) -> Invocation
+    return Invocation(action: action, help: "", options: session.default_options("."), demo_dir: "")
+
+# What `arguments` ask for.
+#
+# - `arguments`: the program's arguments, its name left out.
+#
+# Fails `invalid` where they are not what the declaration reads, the message
+# ending with the usage, and where a `NAME=VALUE` has no name.
+function read(arguments: [str]) -> Invocation?
+    return invocation_of(flags.parse(declaration(), arguments: arguments)?)
+
+# What the program's own arguments ask for. Unlike `args()`, it never
+# aborts on an argument that is not UTF-8: it fails `not_text`.
+function read_program() -> Invocation?
+    return invocation_of(flags.parse_args(declaration())?)
+
+# What the parse `found` asks for.
+#
+# - `found`: what `flags.parse` found.
+#
+# Fails `invalid` where a `NAME=VALUE` has no name.
+function invocation_of(found: flags.Found) -> Invocation?
+    if flags.is_help(found)
+        out @= plain("help")
+        out.help @ flags.help_text(found)
+        return ok(out)
+
+    if flags.is_on(found, name: "demo")
+        out @= plain("demo")
+        out.demo_dir @ flags.value_of(found, name: "demo-dir")?
+        return ok(out)
+
+    o @= session.default_options(flags.value_of(found, name: "dir")?)
+    o.file @ flags.value_of(found, name: "file")?
+
+    o.jobs @ if flags.is_given(found, name: "jobs")
+        flags.int_of(found, name: "jobs")?
+    else
+        default_jobs()
+
+    o.dry_run @ flags.is_on(found, name: "dry-run")
+    o.clean @ flags.is_on(found, name: "clean")
+    o.explain @ flags.is_on(found, name: "explain")
+    o.verbose @ flags.is_on(found, name: "verbose")
+
+    if flags.is_given(found, name: "tool")
+        o.tool @ ok(flags.value_of(found, name: "tool")?)
+
+    targets: [str] @= []
+    overrides: {str: str} @= {}
+
+    for word in flags.values_of(found, name: "TARGET")
+        match strings.split_once(s: word, sep: "=")
+            .ok halves =>
+                if halves.before == ""
+                    return fail(code: buildfile.INVALID, msg: f"\"{word}\" sets a variable with no name")
+
+                overrides[halves.before] @ halves.after
+            .err _ => targets @ targets.push(word)
+
+    o.targets @ targets
+    o.overrides @ overrides
+
+    if o.clean && o.dry_run
+        return fail(
+            code: buildfile.INVALID,
+            msg: "--clean and --dry-run do not go together: a clean removes, a dry run touches nothing"
+        )
+
+    out @= plain("build")
+    out.options @ o
+    return ok(out)
+
+test "read: the options of a build, targets and a variable set"
+    i = read(["-C", "proj", "-j", "8", "--explain", "-n", "out/app", "CC=clang -O2", "all"]).must()
+    assert i.action == "build"
+    assert i.options.dir == "proj" && i.options.jobs == 8 && i.options.explain && i.options.dry_run
+    assert i.options.targets == ["out/app", "all"]
+    assert i.options.overrides["CC"].must() == "clang -O2"
+    assert i.options.file == "build.toml" && !i.options.clean
+
+test "read: the defaults, a tool, and the demo"
+    plain_build = read([]).must()
+    assert plain_build.options.dir == "." && plain_build.options.jobs >= 1 && plain_build.options.tool.is_err()
+    assert read(["-t", "deps"]).must().options.tool.must() == "deps"
+    demo = read(["--demo"]).must()
+    assert demo.action == "demo" && demo.demo_dir == "build/build-demo"
+
+test "read: a value of `=` kept whole, an empty name refused, and a bad count of jobs"
+    assert read(["X=a=b"]).must().options.overrides["X"].must() == "a=b"
+    assert read(["=x"]).is_err()
+    assert read(["-j", "0"]).is_err()
+    assert read(["-j", "many"]).is_err()
+    assert read(["-t", "nothing"]).is_err()
+    assert read(["--clean", "-n"]).is_err()
+
+test "read: help asked for"
+    assert read(["--help"]).must().action == "help"

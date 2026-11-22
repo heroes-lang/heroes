@@ -1,0 +1,289 @@
+# The values of a build's variables, in two scopes as ninja has them: the
+# build file's own, evaluated once, and a target's, which adds `$in`, `$out`
+# and the target's `vars` over the file's and is what its rule's templates
+# read. Every value is one text, ready to be substituted into a template.
+#
+# A variable may name others, so each scope is evaluated in an order where a
+# variable comes after every variable it names: `graphs.topological_order`
+# over the graph of who names whom. Where no such order exists the variables
+# name each other in a cycle, and `graphs.cycle_of` says which, so the
+# message shows the path rather than only that one exists. Inside a target,
+# a variable naming itself reads the build file's value of that name, as
+# `cflags = "$cflags -g"` means in ninja; it is no cycle.
+
+use <rebel>/graphs
+use <rebel>/regex
+
+use model/buildfile
+use vars/template
+
+# The variable that names a target's inputs, quoted into one text.
+constant IN: str
+    "in"
+
+# The variable that names a target's output, quoted.
+constant OUT: str
+    "out"
+
+# The variables of `graph` in an order where each comes after those it
+# names.
+#
+# - `graph`: each variable and the variables it names.
+# - `where`: what holds them, for the message.
+#
+# Fails `invalid` where they name each other in a cycle, the message
+# showing it as `$a -> $b -> $a`.
+function order_of(graph: {str: [str]}, where: str) -> [str]?
+    match graphs.topological_order(graph)
+        .ok order => return ok(order)
+        .err _    => _ = 0
+
+    # `cycle_of` lists each variable named by the one after it; the message
+    # reads the other way, each variable naming the next.
+    shown = match graphs.cycle_of(graph)
+        .ok cycle => dollars(backwards(cycle)).join(" -> ")
+        .err _    => "a cycle"
+
+    return fail(code: buildfile.INVALID, msg: f"{where}: the variables name each other in a cycle: {shown}")
+
+# `names` from the last to the first.
+#
+# - `names`: any list of names.
+function backwards(names: [str]) -> [str]
+    out: [str] @= []
+    i @= names.len() - 1
+
+    while i >= 0
+        out @ out.push(names[i])
+        i @ i - 1
+
+    return out
+
+# Each of `names` with a `$` before it.
+#
+# - `names`: variable names.
+function dollars(names: [str]) -> [str]
+    out: [str] @= []
+
+    for name in names
+        out @ out.push("$" + name)
+
+    return out
+
+# The variables `setting` names, each once, in the order they first appear.
+#
+# - `setting`: a variable as written.
+# - `re`: `template.pattern()`.
+#
+# Fails `invalid` where a `$` starts no name.
+function names_of(setting: buildfile.Setting, re: regex.Regex lent) -> [str]?
+    match setting
+        .text t => return template.names_in(t.v, re: re)
+        .words w =>
+            seen: {str: bool} @= {}
+            names: [str] @= []
+
+            for item in w.items
+                for name in template.names_in(item, re: re)?
+                    if seen[name].is_err()
+                        seen[name] @ true
+                        names @ names.push(name)
+
+            return ok(names)
+
+# The value of `setting`: a text substituted, or words each substituted and
+# then quoted and joined, so each stays one word.
+#
+# - `setting`: a variable as written.
+# - `values`: the values it may name.
+# - `re`: `template.pattern()`.
+#
+# Fails as `template.substitute` does.
+function value_of(setting: buildfile.Setting, values: {str: str} lent, re: regex.Regex lent) -> str?
+    match setting
+        .text t => return template.substitute(t.v, values: values, re: re)
+        .words w =>
+            words: [str] @= []
+
+            for item in w.items
+                words @ words.push(template.substitute(item, values: values, re: re)?)
+
+            return ok(template.quoted(words))
+
+# The build file's variables, each evaluated: `settings` with `overrides` in
+# place of the file's own values of those names.
+#
+# - `settings`: the file's variables, as written.
+# - `overrides`: values given on the command line, `NAME=VALUE`, each taken
+#   as it is with no `$` read in it; a name the file does not define is
+#   defined by it.
+# - `where`: the build file's name, for the messages.
+# - `re`: `template.pattern()`.
+#
+# Fails `invalid` where a template's `$` starts no name, where a variable
+# names `$in` or `$out`, which only a target has, or where variables name
+# each other in a cycle; `not_found` where one names a variable that is not
+# there.
+function evaluate_file(settings: {str: buildfile.Setting}, overrides: {str: str}, where: str, re: regex.Regex lent) -> {str: str}?
+    written @= settings
+
+    for name in keys(overrides)
+        written[name] @ .text(v: template.literal(overrides[name].default("")))
+
+    graph: {str: [str]} @= {}
+
+    for name in keys(written)
+        named = names_of(written[name].must(), re: re)?
+
+        for other in named
+            if other == IN || other == OUT
+                return fail(
+                    code: buildfile.INVALID,
+                    msg: f"{where}: [vars].{name} names `${other}`, which only a rule's templates and a target's `vars` may name"
+                )
+
+            if written[other].is_err()
+                return fail(
+                    code: buildfile.NOT_FOUND,
+                    msg: f"{where}: [vars].{name} names `${other}`, which no variable is"
+                )
+
+        graph[name] @ named
+
+    values: {str: str} @= {}
+
+    for name in order_of(graph, where: f"{where}: [vars]")?
+        values[name] @ value_of(written[name].must(), values: values, re: re)?
+
+    return ok(values)
+
+# The values `t`'s rule reads: the file's, then `$in` and `$out`, then the
+# target's own variables over them.
+#
+# - `file_values`: what `evaluate_file` answered.
+# - `t`: the target.
+# - `where`: what names the target, for the messages, such as
+#   `build.toml: [targets."out/app"]`.
+# - `re`: `template.pattern()`.
+#
+# Fails `invalid` where a `$` starts no name or the target's variables name
+# each other in a cycle, and `not_found` where one names a variable that is
+# not there.
+function evaluate_target(file_values: {str: str} lent, t: buildfile.Target, where: str, re: regex.Regex lent) -> {str: str}?
+    values @= file_values
+    values[IN] @ template.quoted(t.inputs)
+    values[OUT] @ template.quoted([t.output])
+    graph: {str: [str]} @= {}
+
+    for name in keys(t.vars)
+        edges: [str] @= []
+
+        for other in names_of(t.vars[name].must(), re: re)?
+            own = t.vars[other].is_err() == false
+
+            if own && other != name
+                edges @ edges.push(other)
+            else if values[other].is_err()
+                return fail(
+                    code: buildfile.NOT_FOUND,
+                    msg: f"{where}.vars.{name} names `${other}`, which no variable is"
+                )
+
+        graph[name] @ edges
+
+    for name in order_of(graph, where: f"{where}.vars")?
+        values[name] @ value_of(t.vars[name].must(), values: values, re: re)?
+
+    return ok(values)
+
+test "evaluate_file: a variable after those it names, whatever the file's order"
+    re = template.pattern()
+    settings: {str: buildfile.Setting} = {
+        "cflags": .text(v: "$base -O2")
+        "base": .text(v: "-Wall")
+        "cc": .text(v: "clang")
+    }
+    values = evaluate_file(settings, overrides: {}, where: "build.toml", re: re).must()
+    assert values["cflags"].must() == "-Wall -O2"
+    assert values["cc"].must() == "clang"
+
+test "evaluate_file: words each substituted then quoted, so each stays one word"
+    re = template.pattern()
+    settings: {str: buildfile.Setting} = {"dir": .text(v: "my dir"), "flags": .words(items: ["-I$dir", "-O2", "it's"])}
+    values = evaluate_file(settings, overrides: {}, where: "build.toml", re: re).must()
+    assert values["flags"].must() == "'-Imy dir' -O2 'it'\"'\"'s'"
+    empty: {str: buildfile.Setting} = {"none": .words(items: [])}
+    assert evaluate_file(empty, overrides: {}, where: "build.toml", re: re).must()["none"].must() == ""
+
+test "evaluate_file: an override replaces the file's value and is read with no `$`"
+    re = template.pattern()
+    settings: {str: buildfile.Setting} = {"mill": .text(v: "mill"), "run": .text(v: "$mill --helper")}
+    values = evaluate_file(
+        settings,
+        overrides: {"mill": "/opt/a $b/mill", "extra": "x"},
+        where: "build.toml",
+        re: re
+    ).must()
+    assert values["run"].must() == "/opt/a $b/mill --helper"
+    assert values["extra"].must() == "x"
+
+test "evaluate_file: a cycle is told as its path, a variable naming itself too"
+    re = template.pattern()
+    looped: {str: buildfile.Setting} = {"a": .text(v: "$b"), "b": .words(items: ["$c"]), "c": .text(v: "$a")}
+
+    match evaluate_file(looped, overrides: {}, where: "build.toml", re: re)
+        .ok _  => assert false
+        .err e => assert e.msg == "build.toml: [vars]: the variables name each other in a cycle: $a -> $b -> $c -> $a"
+
+    itself: {str: buildfile.Setting} = {"a": .text(v: "x $a")}
+    assert evaluate_file(itself, overrides: {}, where: "build.toml", re: re).is_err()
+
+test "evaluate_file: `$in` refused at the file's level, an unknown name not_found"
+    re = template.pattern()
+    files: {str: buildfile.Setting} = {"a": .text(v: "$in")}
+    assert evaluate_file(files, overrides: {}, where: "build.toml", re: re).is_err()
+    lost: {str: buildfile.Setting} = {"a": .text(v: "$nobody")}
+
+    match evaluate_file(lost, overrides: {}, where: "build.toml", re: re)
+        .ok _  => assert false
+        .err e => assert e.code == buildfile.NOT_FOUND
+
+test "evaluate_target: `$in` quoted, a target's variable naming itself reads the file's"
+    re = template.pattern()
+    file_values = {"cflags": "-O2", "mill": "mill"}
+    t = buildfile.Target(
+        output: "out/my app",
+        rule: "link",
+        inputs: ["a.obj", "b c.obj"],
+        implicit: [],
+        after: [],
+        vars: {"extra": .text(v: "$cflags -v"), "cflags": .text(v: "$cflags -g")}
+    )
+    values = evaluate_target(file_values, t: t, where: "t", re: re).must()
+    assert values["in"].must() == "a.obj 'b c.obj'"
+    assert values["out"].must() == "'out/my app'"
+    assert values["cflags"].must() == "-O2 -g"
+    assert values["extra"].must() == "-O2 -g -v"
+    assert values["mill"].must() == "mill"
+
+test "evaluate_target: a cycle among a target's variables, and a name nowhere"
+    re = template.pattern()
+    file_values: {str: str} = {}
+    looped = buildfile.Target(
+        output: "o",
+        rule: "r",
+        inputs: [],
+        implicit: [],
+        after: [],
+        vars: {"a": .text(v: "$b"), "b": .text(v: "$a")}
+    )
+    assert evaluate_target(file_values, t: looped, where: "t", re: re).is_err()
+    lost = buildfile.Target(
+        output: "o",
+        rule: "r",
+        inputs: [],
+        implicit: [],
+        after: [],
+        vars: {"a": .text(v: "$nowhere")}
+    )
+    assert evaluate_target(file_values, t: lost, where: "t", re: re).is_err()

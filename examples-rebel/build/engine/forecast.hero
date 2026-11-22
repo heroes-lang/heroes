@@ -1,0 +1,140 @@
+# What a build expects to run, decided before it runs anything: every
+# target of the plan in an order where each comes after what it needs, its
+# verdict asked with every target already found stale counted as coming
+# first, since its new bytes are not known yet.
+#
+# This is all a dry run does, and it is how a real build knows the `n` of
+# its `[k/n]` before its first step: the forecast can only say too much,
+# never too little, because a target none of whose dependencies would run
+# has inputs no step of the build can change. During the build a forecast
+# step found up to date, its dependencies rebuilt to the same bytes, leaves
+# the count.
+
+use <rebel>/graphs
+use <rebel>/time
+
+use engine/prepare
+use engine/verdict
+use graph/plan
+use load/reader
+use model/buildfile
+use state/content
+use state/log
+use vars/scope
+use vars/template
+
+# What a build expects of each target.
+record Forecast
+    # The targets in the order they were asked about, each before what
+    # needs it.
+    order: [str]
+    # Each target's verdict.
+    verdicts: {str: verdict.Verdict}
+    # How many are stale.
+    stale: i64
+
+# The forecast of `p`.
+#
+# - `f`: the build file.
+# - `p`: the plan, whose graph has no cycle.
+# - `steps`: every target of the plan, prepared.
+# - `l`: the build log.
+# - `cache`: the files seen in this build, which this adds to: every input,
+#   output and depfile's file the plan names.
+# - `root`: the build's folder.
+function forecast_of(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepare.Prepared} lent, l: log.Log lent, @cache: {str: content.Seen}, root: str) -> Forecast
+    # Kept in plain names and put in the record at the end: a list grown
+    # through a record's field is copied whole at every push.
+    order: [str] @= []
+    verdicts: {str: verdict.Verdict} @= {}
+    stale @= 0
+    coming: {str: bool} @= {}
+
+    for name in graphs.topological_order(p.graph).default(p.nodes)
+        match buildfile.kind_of(f, name: name)
+            .phony | .source => _ = 0
+            .target =>
+                v = verdict.verdict_of(
+                    steps[name].must(),
+                    previous: l.entries[name],
+                    @cache,
+                    root: root,
+                    coming: coming
+                )
+
+                if verdict.is_stale(v)
+                    coming[name] @ true
+                    stale @ stale + 1
+
+                order @ order.push(name)
+                verdicts[name] @ v
+
+    return Forecast(order: order, verdicts: verdicts, stale: stale)
+
+# How many targets of `fc` are up to date.
+#
+# - `fc`: the forecast.
+function up_to_date_of(fc: Forecast lent) -> i64
+    return fc.order.len() - fc.stale
+
+## Tests
+
+# A build file of two objects linked into one program.
+function sample_text() -> str
+    lines = [
+        "[rules.r]"
+        "command = \"tool $in $out\""
+        "[targets.\"out/a\"]"
+        "rule = \"r\""
+        "inputs = [\"src/a\"]"
+        "[targets.\"out/b\"]"
+        "rule = \"r\""
+        "inputs = [\"src/b\"]"
+        "[targets.\"out/app\"]"
+        "rule = \"r\""
+        "inputs = [\"out/a\", \"out/b\"]"
+    ]
+    return lines.join("\n")
+
+# The log's entry of `output`, made from `inputs` into `digest`.
+#
+# - `steps`: the prepared steps, which give the command's digest.
+# - `output`: the target.
+# - `digest`: its output's digest.
+# - `inputs`: its inputs' digests.
+function logged(steps: {str: prepare.Prepared}, output: str, digest: str, inputs: {str: str}) -> log.Entry
+    return log.Entry(
+        output: output,
+        command: steps[output].must().command,
+        digest: digest,
+        inputs: inputs,
+        deps: {},
+        duration: time.nanoseconds(0)
+    )
+
+test "forecast_of: a changed source makes its target stale, and what needs it, the rest up to date"
+    f = reader.read(text: sample_text(), name: "b").must()
+    p = plan.plan_of(f, asked: []).must()
+    re = template.pattern()
+    values = scope.evaluate_file(f.vars, overrides: {}, where: f.name, re: re).must()
+    steps = prepare.prepare_all(f, p: p, file_values: values, re: re).must()
+    l @= log.empty()
+    l.entries @ {
+        "out/a": logged(steps, output: "out/a", digest: "oa", inputs: {"src/a": "a1"})
+        "out/b": logged(steps, output: "out/b", digest: "ob", inputs: {"src/b": "b1"})
+        "out/app": logged(steps, output: "out/app", digest: "op", inputs: {"out/a": "oa", "out/b": "ob"})
+    }
+
+    # Every file the forecast asks about is in the cache, so it reads no disk.
+    cache: {str: content.Seen} @= {
+        "src/a": .file(digest: "a2")
+        "src/b": .file(digest: "b1")
+        "out/a": .file(digest: "oa")
+        "out/b": .file(digest: "ob")
+        "out/app": .file(digest: "op")
+    }
+    fc = forecast_of(f, p: p, steps: steps, l: l, @cache, root: ".")
+    assert fc.stale == 2 && up_to_date_of(fc) == 1
+    assert fc.verdicts["out/a"].must() == .stale(reason: "\"src/a\" changed")
+    assert fc.verdicts["out/b"].must() == .up_to_date
+    assert fc.verdicts["out/app"].must() == .stale(reason: "\"out/a\" will be rebuilt first")

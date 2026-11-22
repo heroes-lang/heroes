@@ -1,0 +1,144 @@
+# The values of a TOML document read as the build file's fields: a string,
+# an array of strings, a table, each refused with a message saying where it
+# stands and what was found there instead. The reader asks these and never
+# matches on a `toml.Value` itself, so every refusal reads the same way.
+
+use <rebel>/toml
+
+use model/buildfile
+
+# What `v` is, in the words a message uses: `a string`, `an array`.
+#
+# - `v`: a value of the document.
+function kind_name(v: toml.Value) -> str
+    match v
+        .text _                                                           => return "a string"
+        .integer _                                                        => return "an integer"
+        .float _                                                          => return "a float"
+        .boolean _                                                        => return "a boolean"
+        .date_time _ | .local_date_time _ | .local_date _ | .local_time _ => return "a date or a time"
+        .array _                                                          => return "an array"
+        .table _                                                          => return "a table"
+
+# The refusal of `v` standing at `where` where `wanted` was expected.
+#
+# - `v`: the value found.
+# - `where`: where it stands, such as `build.toml: [rules.cc].command`.
+# - `wanted`: what was expected, such as `a string`.
+function refused<T>(v: toml.Value, where: str, wanted: str) -> T?
+    return fail(code: buildfile.INVALID, msg: f"{where} is {kind_name(v)}, where {wanted} was expected")
+
+# The text of `v`.
+#
+# - `v`: the value.
+# - `where`: where it stands, for the message.
+#
+# Fails `invalid` where `v` is no string.
+function text_of(v: toml.Value, where: str) -> str?
+    match v
+        .text t => return ok(t.v)
+        .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+            return refused(v, where: where, wanted: "a string")
+
+# The texts of `v`, an array of strings.
+#
+# - `v`: the value.
+# - `where`: where it stands; an item's message adds its index.
+#
+# Fails `invalid` where `v` is no array or an item is no string.
+function texts_of(v: toml.Value, where: str) -> [str]?
+    match v
+        .array a =>
+            out: [str] @= []
+
+            for i in range(from: 0, to: a.items.len())
+                out @ out.push(text_of(a.items[i], where: f"{where}[{i}]")?)
+
+            return ok(out)
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+            return refused(v, where: where, wanted: "an array of strings")
+
+# The members of `v`, a table, in the order the document defines them.
+#
+# - `v`: the value.
+# - `where`: where it stands, for the message.
+#
+# Fails `invalid` where `v` is no table.
+function table_of(v: toml.Value, where: str) -> {str: toml.Value}?
+    match v
+        .table t => return ok(t.members)
+        .text _ | .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ =>
+            return refused(v, where: where, wanted: "a table")
+
+# A variable as `v` writes it: a string a text, an array of strings words.
+#
+# - `v`: the value.
+# - `where`: where it stands, for the message.
+#
+# Fails `invalid` where `v` is neither.
+function setting_of(v: toml.Value, where: str) -> buildfile.Setting?
+    match v
+        .text t  => return ok(.text(v: t.v))
+        .array _ => return ok(.words(items: texts_of(v, where: where)?))
+        .integer _ | .float _ | .boolean _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .table _ =>
+            return refused(v, where: where, wanted: "a string or an array of strings")
+
+# Nothing, where every key of `members` is one of `allowed`.
+#
+# - `members`: a table's members.
+# - `allowed`: the keys the table may hold, in the order a message lists them.
+# - `where`: the table, for the message.
+#
+# Fails `invalid` naming the first key that is not allowed and every key
+# that is, so a misspelt field is told instead of being read as nothing.
+function only_keys(members: {str: toml.Value} lent, allowed: [str], where: str) -> ()?
+    known: {str: bool} @= {}
+
+    for key in allowed
+        known[key] @ true
+
+    for key in keys(members)
+        if known[key].is_err()
+            listed: [str] @= []
+
+            for a in allowed
+                listed @ listed.push(f"`{a}`")
+
+            return fail(code: buildfile.INVALID, msg: f"{where} has no field `{key}`; it takes {listed.join(", ")}")
+
+    return ok()
+
+test "kind_name: every kind of value named"
+    doc = toml.parse("a = 1\nb = \"x\"\nc = [1]\nd = {}\ne = 1.5\nf = true\ng = 2026-11-21").must()
+    assert kind_name(toml.value_at(doc, ["a"]).must()) == "an integer"
+    assert kind_name(toml.value_at(doc, ["b"]).must()) == "a string"
+    assert kind_name(toml.value_at(doc, ["c"]).must()) == "an array"
+    assert kind_name(toml.value_at(doc, ["d"]).must()) == "a table"
+    assert kind_name(toml.value_at(doc, ["e"]).must()) == "a float"
+    assert kind_name(toml.value_at(doc, ["f"]).must()) == "a boolean"
+    assert kind_name(toml.value_at(doc, ["g"]).must()) == "a date or a time"
+
+test "texts_of: an array of strings, an empty one, and an item of another kind"
+    doc = toml.parse("a = [\"x\", \"y\"]\nb = []\nc = [\"x\", 2]").must()
+    assert texts_of(toml.value_at(doc, ["a"]).must(), where: "a").must() == ["x", "y"]
+    assert texts_of(toml.value_at(doc, ["b"]).must(), where: "b").must() == []
+
+    match texts_of(toml.value_at(doc, ["c"]).must(), where: "c")
+        .ok _  => assert false
+        .err e => assert e.msg == "c[1] is an integer, where a string was expected"
+
+test "setting_of: a string is a text, an array words, a number refused"
+    doc = toml.parse("a = \"-O2\"\nb = [\"-I\", \"x y\"]\nc = 3").must()
+    assert setting_of(toml.value_at(doc, ["a"]).must(), where: "a").must() == .text(v: "-O2")
+    assert setting_of(toml.value_at(doc, ["b"]).must(), where: "b").must() == .words(items: ["-I", "x y"])
+    assert setting_of(toml.value_at(doc, ["c"]).must(), where: "c").is_err()
+
+test "only_keys: a misspelt field is told with the fields there are"
+    doc = toml.parse("rule = \"cc\"\ninputz = []").must()
+    members = table_of(doc, where: "t").must()
+
+    match only_keys(members, allowed: ["rule", "inputs"], where: "t")
+        .ok _  => assert false
+        .err e => assert e.msg == "t has no field `inputz`; it takes `rule`, `inputs`"
+
+    assert only_keys(members, allowed: ["rule", "inputz"], where: "t").is_err() == false

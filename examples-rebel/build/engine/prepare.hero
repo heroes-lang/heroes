@@ -1,0 +1,184 @@
+# A target's step made ready to run: its rule's templates substituted in
+# the target's scope, its command read into words, and the digest a rebuild
+# compares. Every target of a plan is prepared before anything runs, so a
+# variable that names nothing or a command that does not read fails the
+# build before its first step rather than halfway through.
+#
+# A command is read into words as a POSIX shell reads a line, by its quotes
+# and backslashes alone (`strings.split_shell`), and run with no shell, as
+# ninja runs a command on Windows and as `process` runs every one: no pipe,
+# redirection or glob is read, and a rule that needs a shell names it,
+# `sh -c '...'`. `$in` and `$out` are quoted before they are substituted, so
+# a path holding a space stays one word.
+
+use <rebel>/errors
+use <rebel>/process
+use <rebel>/regex
+use <rebel>/strings
+use <rebel>/time
+
+use graph/plan
+use load/paths
+use load/reader
+use model/buildfile
+use state/content
+use vars/scope
+use vars/template
+
+# A target's step, ready to run.
+record Prepared
+    # The target's output, as a node.
+    output: str
+    # The name of its rule.
+    rule: str
+    # The program and its arguments.
+    words: [str]
+    # What the step is shown as: its rule's description, or its command.
+    description: str
+    # The depfile the step writes, as a node; absent where its rule names
+    # none.
+    depfile: str?
+    # The variables set in the step's environment, over the build's own.
+    env: {str: str}
+    # How long the step may run; absent where its rule sets no limit.
+    time_limit: time.Duration?
+    # The digest of `words` and `env`, which the log compares.
+    command: str
+    # Its inputs and implicit inputs, each once, whose digests the log keeps.
+    inputs: [str]
+
+# The step of `t`.
+#
+# - `f`: the build file.
+# - `file_values`: the file's variables, evaluated.
+# - `t`: the target.
+# - `re`: `template.pattern()`.
+#
+# Fails where a template names a variable that is not there (`not_found`)
+# or does not read, the command reads into no words, or the depfile's path
+# is not one path (`invalid`); each message names the rule and the target.
+function prepare(f: buildfile.BuildFile lent, file_values: {str: str} lent, t: buildfile.Target, re: regex.Regex lent) -> Prepared?
+    where = f"{f.name}: [targets.\"{t.output}\"]"
+    values = scope.evaluate_target(file_values, t: t, where: where, re: re)?
+    r = f.rules[t.rule].must()
+    in_rule = f"{f.name}: [rules.{r.name}]"
+    for_target = f"for \"{t.output}\""
+    text = errors.context(template.substitute(r.command, values: values, re: re), what: f"{in_rule}.command, {for_target}")?
+    words = errors.context(strings.split_shell(text), what: f"{in_rule}.command, {for_target}")?
+
+    if words.len() == 0 || words[0] == ""
+        return fail(
+            code: buildfile.INVALID,
+            msg: f"{in_rule}.command, {for_target}, names no program once its variables are substituted"
+        )
+
+    description = match r.description
+        .ok d => errors.context(template.substitute(d, values: values, re: re), what: f"{in_rule}.description, {for_target}")?
+        .err _ => process.quote_all(words)
+
+    env: {str: str} @= {}
+
+    for name in keys(r.env)
+        env[name] @ errors.context(template.substitute(r.env[name].must(), values: values, re: re), what: f"{in_rule}.env.{name}, {for_target}")?
+
+    depfile: str? = match r.depfile
+        .ok written => ok(
+            depfile_of(written: written, values: values, t: t, where: f"{in_rule}.depfile, {for_target}", re: re)?
+        )
+        .err _ => r.depfile
+
+    return ok(
+        Prepared(output: t.output, rule: t.rule, words: words, description: description, depfile: depfile, env: env, time_limit: r.time_limit, command: content.digest_of_command(words, env: env), inputs: buildfile.hashed_inputs(t))
+    )
+
+# The node of the depfile `written` names for `t`.
+#
+# - `written`: the rule's `depfile` template.
+# - `values`: the target's values.
+# - `t`: the target.
+# - `where`: the field, for the message.
+# - `re`: `template.pattern()`.
+#
+# Fails `invalid` where the path does not read as one word, is empty, or
+# names the target's output or one of its inputs, which the step must not
+# overwrite with a list of files; `not_found` where a variable is not there.
+function depfile_of(written: str, values: {str: str} lent, t: buildfile.Target lent, where: str, re: regex.Regex lent) -> str?
+    text = errors.context(template.substitute(written, values: values, re: re), what: where)?
+    words = errors.context(strings.split_shell(text), what: where)?
+
+    if words.len() != 1
+        return fail(
+            code: buildfile.INVALID,
+            msg: f"{where}: \"{text}\" is {words.len()} words, where one path was expected"
+        )
+
+    node = paths.node_of(written: words[0], where: where)?
+
+    if node == t.output
+        return fail(code: buildfile.INVALID, msg: f"{where}: \"{node}\" is the target's own output")
+
+    for name in buildfile.hashed_inputs(t)
+        if name == node
+            return fail(code: buildfile.INVALID, msg: f"{where}: \"{node}\" is one of the target's inputs")
+
+    return ok(node)
+
+# Every target of `p`, prepared, in the build file's order.
+#
+# - `f`: the build file.
+# - `p`: the plan.
+# - `file_values`: the file's variables, evaluated.
+# - `re`: `template.pattern()`.
+#
+# Fails as `prepare` does, on the first target whose step does not prepare.
+function prepare_all(f: buildfile.BuildFile lent, p: plan.Plan lent, file_values: {str: str} lent, re: regex.Regex lent) -> {str: Prepared}?
+    out: {str: Prepared} @= {}
+
+    for name in keys(p.graph)
+        match f.targets[name]
+            .ok t  => out[name] @ prepare(f, file_values: file_values, t: t, re: re)?
+            .err _ => _ = 0
+
+    return ok(out)
+
+## Tests
+
+# The steps of `text`'s targets, prepared, the file's variables as written.
+#
+# - `text`: a build file.
+function prepared_of(text: str) -> {str: Prepared}?
+    f = reader.read(text: text, name: "b")?
+    re = template.pattern()
+    values = scope.evaluate_file(f.vars, overrides: {}, where: f.name, re: re)?
+    return prepare_all(f, p: plan.plan_of(f, asked: [])?, file_values: values, re: re)
+
+test "prepare: the command read into words, a path with a space one word, the depfile one path"
+    text = ["[vars]", "cflags = [\"-O2\", \"-Wall\"]", "[rules.compile]", "command = \"cc -c $in -o $out -MF $out.d $cflags\"", "description = \"compile $out\"", "depfile = \"$out.d\"", "env = { LANG = \"C\" }", "[targets.\"out/a b.obj\"]", "rule = \"compile\"", "inputs = [\"src/a b.c\"]"].join(
+        "\n"
+    )
+    st = prepared_of(text).must()["out/a b.obj"].must()
+    assert st.words == ["cc", "-c", "src/a b.c", "-o", "out/a b.obj", "-MF", "out/a b.obj.d", "-O2", "-Wall"]
+    assert st.description == "compile 'out/a b.obj'"
+    assert st.depfile.must() == "out/a b.obj.d"
+    assert st.env["LANG"].must() == "C"
+    assert st.inputs == ["src/a b.c"]
+
+test "prepare: a rule with no description is shown by its command"
+    st = prepared_of("[rules.r]\ncommand = \"touch $out\"\n[targets.\"out/x y\"]\nrule = \"r\"").must()["out/x y"].must()
+    assert st.description == "touch 'out/x y'"
+    assert st.depfile.is_err()
+
+test "prepare: a command naming no program, a quote left open, and an unknown variable"
+    assert prepared_of(
+        "[vars]\nnothing = \"\"\n[rules.r]\ncommand = \"$nothing\"\n[targets.\"o\"]\nrule = \"r\""
+    ).is_err()
+    assert prepared_of("[rules.r]\ncommand = \"echo 'open\"\n[targets.\"o\"]\nrule = \"r\"").is_err()
+    assert prepared_of("[rules.r]\ncommand = \"echo $nope\"\n[targets.\"o\"]\nrule = \"r\"").is_err()
+
+test "prepare: a depfile that is the output, an input, or two words, is refused"
+    head = "[rules.r]\ncommand = \"x $in $out\"\n"
+    target = "[targets.\"o\"]\nrule = \"r\"\ninputs = [\"i\"]"
+    assert prepared_of(head + "depfile = \"$out\"\n" + target).is_err()
+    assert prepared_of(head + "depfile = \"$in\"\n" + target).is_err()
+    assert prepared_of(head + "depfile = \"a b\"\n" + target).is_err()
+    assert prepared_of(head + "depfile = \"$out.d\"\n" + target).must()["o"].must().depfile.must() == "o.d"

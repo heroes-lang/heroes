@@ -1,0 +1,454 @@
+# A build file read from its TOML text into a checked `buildfile.BuildFile`.
+#
+# The file's shape, every table and field optional but a rule's `command`
+# and a target's `rule`:
+#
+#     default = ["all"]
+#
+#     [vars]
+#     cflags = ["-O2", "-Wall"]
+#
+#     [rules.compile]
+#     command = "cc -c $in -o $out -MD -MF $out.d $cflags"
+#     description = "compile $out"
+#     depfile = "$out.d"
+#     timeout = "5m"
+#     env = { LANG = "C" }
+#
+#     [targets."out/main.o"]
+#     rule = "compile"
+#     inputs = ["src/main.c"]
+#     implicit = []
+#     after = ["gen/version.h"]
+#     vars = { cflags = "$cflags -g" }
+#
+#     [phony]
+#     all = ["out/app"]
+#
+# Everything a later stage relies on is checked here, before anything runs:
+# a field nobody reads is refused rather than ignored, since a misspelt
+# `inputz` read as nothing builds the wrong thing in silence; a name of a
+# rule or a variable matches its pattern; a target names a rule the file
+# defines; an output stands inside the build's folder and is made by one
+# target only; a phony target is not also a file a target makes; and every
+# default names a target or a phony target. The graph's own faults, a cycle
+# and a missing input, are `graph/plan`'s, which reads only what is asked.
+
+use <rebel>/regex
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/toml
+
+use load/fields
+use load/paths
+use model/buildfile
+use vars/scope
+
+# A rule's name: a letter or `_`, then letters, digits, `_` and `-`.
+constant RULE_NAME: str
+    "^[A-Za-z_][A-Za-z0-9_-]*$"
+
+# A variable's name, as a template's `$name` reads it.
+constant VARIABLE_NAME: str
+    "^[A-Za-z_][A-Za-z0-9_]*$"
+
+# The patterns the reader holds names to, compiled once for a file.
+record Patterns
+    # `RULE_NAME`, compiled.
+    rule: regex.Regex
+    # `VARIABLE_NAME`, compiled.
+    variable: regex.Regex
+
+# `RULE_NAME` and `VARIABLE_NAME`, compiled.
+function patterns() -> Patterns
+    # Both are constants this module's tests compile, so `must` holds.
+    return Patterns(rule: regex.compile(RULE_NAME).must(), variable: regex.compile(VARIABLE_NAME).must())
+
+# The build file `text` holds.
+#
+# - `text`: the file's TOML.
+# - `name`: the file's name as the command line gave it, which opens every
+#   message.
+#
+# Fails `invalid` where the text is not TOML 1.1.0 or is not a build file,
+# and `not_found` where a target names a rule, or a default a target, that
+# the file does not define; each message says where.
+function read(text: str, name: str) -> buildfile.BuildFile?
+    doc = match toml.parse(text)
+        .ok d  => d
+        .err e => return fail(code: buildfile.INVALID, msg: f"{name}: {e.msg}")
+
+    top = fields.table_of(doc, where: name)?
+    fields.only_keys(top, allowed: ["default", "vars", "rules", "targets", "phony"], where: name)?
+    p = patterns()
+    settings = read_vars(top, name: name, p: p)?
+    rules = read_rules(top, name: name, p: p)?
+    targets = read_targets(top, name: name, rules: rules, p: p)?
+    phony = read_phony(top, name: name, targets: targets)?
+    f @= buildfile.BuildFile(name: name, vars: settings, rules: rules, targets: targets, phony: phony, defaults: [])
+    f.defaults @ read_defaults(top, f: f)?
+    return ok(f)
+
+# The table `key` of `top`, or no member where it is absent.
+#
+# - `top`: the document's members.
+# - `key`: the table's key.
+# - `name`: the file's name, for the message.
+#
+# Fails `invalid` where `key` holds something other than a table.
+function section_of(top: {str: toml.Value} lent, key: str, name: str) -> {str: toml.Value}?
+    match top[key]
+        .ok v  => return fields.table_of(v, where: f"{name}: {key}")
+        .err _ => return ok({})
+
+# The variables of `[vars]`.
+#
+# - `top`: the document's members.
+# - `name`: the file's name, for the messages.
+# - `p`: the name patterns.
+#
+# Fails `invalid` where a name is no variable's name, is `in` or `out`, or a
+# value is neither a string nor an array of strings.
+function read_vars(top: {str: toml.Value} lent, name: str, p: Patterns lent) -> {str: buildfile.Setting}?
+    members = section_of(top, key: "vars", name: name)?
+    return settings_of(members, where: f"{name}: [vars]", p: p)
+
+# The variables `members` hold, as a `vars` table writes them.
+#
+# - `members`: the table's members.
+# - `where`: the table, for the messages.
+# - `p`: the name patterns.
+#
+# Fails `invalid` where a name is no variable's name, is `in` or `out`, or a
+# value is neither a string nor an array of strings.
+function settings_of(members: {str: toml.Value} lent, where: str, p: Patterns lent) -> {str: buildfile.Setting}?
+    out: {str: buildfile.Setting} @= {}
+
+    for key in keys(members)
+        if !regex.contains(key, p.variable)
+            return fail(
+                code: buildfile.INVALID,
+                msg: f"{where}: `{key}` is no variable's name: a letter or `_`, then letters, digits and `_`"
+            )
+
+        if key == scope.IN || key == scope.OUT
+            return fail(code: buildfile.INVALID, msg: f"{where}: `{key}` is the target's own and is not set")
+
+        out[key] @ fields.setting_of(members[key].must(), where: f"{where}.{key}")?
+
+    return ok(out)
+
+# The rules of `[rules]`.
+#
+# - `top`: the document's members.
+# - `name`: the file's name, for the messages.
+# - `p`: the name patterns.
+#
+# Fails `invalid` where a rule's name, field or value is not what a rule
+# reads.
+function read_rules(top: {str: toml.Value} lent, name: str, p: Patterns lent) -> {str: buildfile.Rule}?
+    members = section_of(top, key: "rules", name: name)?
+    out: {str: buildfile.Rule} @= {}
+
+    for key in keys(members)
+        where = f"{name}: [rules.{key}]"
+
+        if !regex.contains(key, p.rule)
+            return fail(
+                code: buildfile.INVALID,
+                msg: f"{where}: `{key}` is no rule's name: a letter or `_`, then letters, digits, `_` and `-`"
+            )
+
+        out[key] @ rule_of(members[key].must(), rule: key, where: where)?
+
+    return ok(out)
+
+# The rule `v` writes.
+#
+# - `v`: the rule's table.
+# - `rule`: its name.
+# - `where`: the table, for the messages.
+#
+# Fails `invalid` where a field is unknown or of the wrong kind, the command
+# is missing or blank, the time limit is no duration above zero, or a
+# variable of its environment has no name a system takes.
+function rule_of(v: toml.Value, rule: str, where: str) -> buildfile.Rule?
+    t = fields.table_of(v, where: where)?
+    fields.only_keys(t, allowed: ["command", "description", "depfile", "timeout", "env"], where: where)?
+
+    command = match t["command"]
+        .ok c  => fields.text_of(c, where: f"{where}.command")?
+        .err _ => return fail(code: buildfile.INVALID, msg: f"{where} has no `command`")
+
+    if strings.trim(command) == ""
+        return fail(code: buildfile.INVALID, msg: f"{where}.command is blank")
+
+    r @= buildfile.Rule(
+        name: rule,
+        command: command,
+        description: fail(code: buildfile.NOT_FOUND, msg: "no description"),
+        depfile: fail(code: buildfile.NOT_FOUND, msg: "no depfile"),
+        time_limit: fail(code: buildfile.NOT_FOUND, msg: "no time limit"),
+        env: {}
+    )
+
+    match t["description"]
+        .ok d  => r.description @ ok(fields.text_of(d, where: f"{where}.description")?)
+        .err _ => _ = 0
+
+    match t["depfile"]
+        .ok d  => r.depfile @ ok(fields.text_of(d, where: f"{where}.depfile")?)
+        .err _ => _ = 0
+
+    match t["timeout"]
+        .ok d =>
+            written = fields.text_of(d, where: f"{where}.timeout")?
+            r.time_limit @ ok(limit_of(written: written, where: f"{where}.timeout")?)
+        .err _ => _ = 0
+
+    match t["env"]
+        .ok e  => r.env @ env_of(e, where: f"{where}.env")?
+        .err _ => _ = 0
+
+    return ok(r)
+
+# The duration `written` gives a step, above zero.
+#
+# - `written`: a duration's text, as `30s` or `5m`.
+# - `where`: the field, for the message.
+#
+# Fails `invalid` where it is no duration or is not above zero.
+function limit_of(written: str, where: str) -> time.Duration?
+    d = match time.parse_duration(written)
+        .ok found => found
+        .err _    => return fail(code: buildfile.INVALID, msg: f"{where}: \"{written}\" is no duration, as 30s or 5m")
+
+    if d.nanoseconds <= 0
+        return fail(code: buildfile.INVALID, msg: f"{where}: a step needs a time above zero, not \"{written}\"")
+    return ok(d)
+
+# The environment `v` sets, name to template.
+#
+# - `v`: the `env` table.
+# - `where`: the table, for the messages.
+#
+# Fails `invalid` where a value is no string, or a name is empty or holds
+# `=`, which no system takes in a variable's name.
+function env_of(v: toml.Value, where: str) -> {str: str}?
+    members = fields.table_of(v, where: where)?
+    out: {str: str} @= {}
+
+    for key in keys(members)
+        if key == "" || key.chars().any(is_equals)
+            return fail(code: buildfile.INVALID, msg: f"{where}: \"{key}\" is no variable's name")
+
+        out[key] @ fields.text_of(members[key].must(), where: f"{where}.{key}")?
+
+    return ok(out)
+
+# Whether `c` is `=`.
+#
+# - `c`: one character.
+function is_equals(c: str) -> bool
+    return c == "="
+
+# The targets of `[targets]`, keyed by their outputs as nodes.
+#
+# - `top`: the document's members.
+# - `name`: the file's name, for the messages.
+# - `rules`: the file's rules.
+# - `p`: the name patterns.
+#
+# Fails `invalid` where a target's output, field or value is not what a
+# target reads, or two keys name one output; `not_found` where its rule is
+# not defined.
+function read_targets(top: {str: toml.Value} lent, name: str, rules: {str: buildfile.Rule} lent, p: Patterns lent) -> {str: buildfile.Target}?
+    members = section_of(top, key: "targets", name: name)?
+    out: {str: buildfile.Target} @= {}
+    written_as: {str: str} @= {}
+
+    for key in keys(members)
+        where = f"{name}: [targets.\"{key}\"]"
+        output = paths.output_of(written: key, where: where)?
+
+        match written_as[output]
+            .ok first => return fail(
+                code: buildfile.INVALID,
+                msg: f"{where} makes \"{output}\", which [targets.\"{first}\"] makes already"
+            )
+            .err _ => written_as[output] @ key
+
+        out[output] @ target_of(members[key].must(), output: output, where: where, rules: rules, p: p)?
+
+    return ok(out)
+
+# The target `v` writes.
+#
+# - `v`: the target's table.
+# - `output`: its output, as a node.
+# - `where`: the table, for the messages.
+# - `rules`: the file's rules.
+# - `p`: the name patterns.
+#
+# Fails as `read_targets` does.
+function target_of(v: toml.Value, output: str, where: str, rules: {str: buildfile.Rule} lent, p: Patterns lent) -> buildfile.Target?
+    t = fields.table_of(v, where: where)?
+    fields.only_keys(t, allowed: ["rule", "inputs", "implicit", "after", "vars"], where: where)?
+
+    rule = match t["rule"]
+        .ok r  => fields.text_of(r, where: f"{where}.rule")?
+        .err _ => return fail(code: buildfile.INVALID, msg: f"{where} has no `rule`")
+
+    if rules[rule].is_err()
+        return fail(code: buildfile.NOT_FOUND, msg: f"{where}.rule names `{rule}`, which the file does not define")
+
+    settings: {str: buildfile.Setting} = match t["vars"]
+        .ok s  => settings_of(fields.table_of(s, where: f"{where}.vars")?, where: f"{where}.vars", p: p)?
+        .err _ => {}
+
+    return ok(
+        buildfile.Target(output: output, rule: rule, inputs: nodes_at(t, key: "inputs", where: where)?, implicit: nodes_at(t, key: "implicit", where: where)?, after: nodes_at(t, key: "after", where: where)?, vars: settings)
+    )
+
+# The nodes the list `key` of `t` names, none where it is absent.
+#
+# - `t`: a target's members.
+# - `key`: `inputs`, `implicit` or `after`.
+# - `where`: the target's table, for the messages.
+#
+# Fails `invalid` where the list is no array of strings or a path in it is
+# empty or names the build's folder.
+function nodes_at(t: {str: toml.Value} lent, key: str, where: str) -> [str]?
+    written: [str] = match t[key]
+        .ok v  => fields.texts_of(v, where: f"{where}.{key}")?
+        .err _ => []
+
+    out: [str] @= []
+
+    for i in range(from: 0, to: written.len())
+        out @ out.push(paths.node_of(written: written[i], where: f"{where}.{key}[{i}]")?)
+
+    return ok(out)
+
+# The phony targets of `[phony]`, each name to the nodes it lists.
+#
+# - `top`: the document's members.
+# - `name`: the file's name, for the messages.
+# - `targets`: the file's targets.
+#
+# Fails `invalid` where a value is no array of strings, a path is empty, or
+# a phony name is a file a target makes.
+function read_phony(top: {str: toml.Value} lent, name: str, targets: {str: buildfile.Target} lent) -> {str: [str]}?
+    members = section_of(top, key: "phony", name: name)?
+    out: {str: [str]} @= {}
+
+    for key in keys(members)
+        where = f"{name}: [phony].\"{key}\""
+        node = paths.node_of(written: key, where: where)?
+
+        if targets[node].is_err() == false
+            return fail(
+                code: buildfile.INVALID,
+                msg: f"{where} names \"{node}\", the file [targets.\"{node}\"] makes; a phony target names no file"
+            )
+
+        if out[node].is_err() == false
+            return fail(code: buildfile.INVALID, msg: f"{where} is the phony target \"{node}\" a second time")
+
+        listed = fields.texts_of(members[key].must(), where: where)?
+        nodes: [str] @= []
+
+        for i in range(from: 0, to: listed.len())
+            nodes @ nodes.push(paths.node_of(written: listed[i], where: f"{where}[{i}]")?)
+
+        out[node] @ nodes
+
+    return ok(out)
+
+# The defaults of `default`, each a target or a phony target of `f`.
+#
+# - `top`: the document's members.
+# - `f`: the file read so far.
+#
+# Fails `invalid` where `default` is no array of strings, and `not_found`
+# where it names what is neither.
+function read_defaults(top: {str: toml.Value} lent, f: buildfile.BuildFile lent) -> [str]?
+    listed: [str] = match top["default"]
+        .ok v  => fields.texts_of(v, where: f"{f.name}: default")?
+        .err _ => []
+
+    out: [str] @= []
+
+    for i in range(from: 0, to: listed.len())
+        where = f"{f.name}: default[{i}]"
+        node = paths.node_of(written: listed[i], where: where)?
+
+        match buildfile.kind_of(f, name: node)
+            .target | .phony => out @ out.push(node)
+            .source => return fail(code: buildfile.NOT_FOUND, msg: f"{where} names \"{node}\", which is no target")
+
+    return ok(out)
+
+## Tests
+
+# A small build file every test below reads.
+function sample() -> str
+    return ["default = [\"all\"]", "[vars]", "cflags = [\"-O2\", \"-Wall\"]", "[rules.compile]", "command = \"cc -c $in -o $out $cflags\"", "description = \"compile $out\"", "depfile = \"$out.d\"", "timeout = \"5m\"", "env = { LANG = \"C\" }", "[rules.link]", "command = \"cc -o $out $in\"", "[targets.\"out/./main.o\"]", "rule = \"compile\"", "inputs = [\"src/main.c\"]", "after = [\"gen//version.h\"]", "vars = { cflags = \"$cflags -g\" }", "[targets.\"out/app\"]", "rule = \"link\"", "inputs = [\"out/main.o\"]", "[phony]", "all = [\"out/app\"]"].join(
+        "\n"
+    )
+
+test "read: every table and field, the paths cleaned, the order kept"
+    f = read(text: sample(), name: "build.toml").must()
+    assert keys(f.targets) == ["out/main.o", "out/app"]
+    main = f.targets["out/main.o"].must()
+    assert main.after == ["gen/version.h"]
+    assert main.vars["cflags"].must() == .text(v: "$cflags -g")
+    assert f.vars["cflags"].must() == .words(items: ["-O2", "-Wall"])
+    compile = f.rules["compile"].must()
+    assert compile.depfile.must() == "$out.d"
+    assert compile.time_limit.must() == time.minutes(5).must()
+    assert compile.env["LANG"].must() == "C"
+    assert f.rules["link"].must().description.is_err()
+    assert f.defaults == ["all"]
+    assert f.phony["all"].must() == ["out/app"]
+
+test "read: an empty file is a build of nothing"
+    f = read(text: "", name: "build.toml").must()
+    assert keys(f.targets).len() == 0 && f.defaults == []
+
+test "read: text that is not TOML says where, behind the file's name"
+    match read(text: "[rules\ncommand = 1", name: "build.toml")
+        .ok _  => assert false
+        .err e => assert e.code == buildfile.INVALID && e.msg.slice(from: 0, to: 16) == "build.toml: line"
+
+test "read: a misspelt field, a key at the top, and a rule with no command"
+    assert read(text: "[targets.\"a\"]\nrule = \"r\"\ninputz = []\n[rules.r]\ncommand = \"x\"", name: "b").is_err()
+    assert read(text: "target = 1", name: "b").is_err()
+    assert read(text: "[rules.r]\ndescription = \"x\"", name: "b").is_err()
+    assert read(text: "[rules.r]\ncommand = \"  \"", name: "b").is_err()
+
+test "read: an undefined rule is not_found, an output outside the folder invalid"
+    match read(text: "[targets.\"a\"]\nrule = \"nope\"", name: "b")
+        .ok _  => assert false
+        .err e => assert e.code == buildfile.NOT_FOUND
+
+    assert read(text: "[rules.r]\ncommand = \"x\"\n[targets.\"../a\"]\nrule = \"r\"", name: "b").is_err()
+
+test "read: two keys naming one output, and a phony target that is a file"
+    twice = "[rules.r]\ncommand = \"x\"\n[targets.\"out/a\"]\nrule = \"r\"\n[targets.\"out/./a\"]\nrule = \"r\""
+    assert read(text: twice, name: "b").is_err()
+    both = "[rules.r]\ncommand = \"x\"\n[targets.\"a\"]\nrule = \"r\"\n[phony]\na = []"
+    assert read(text: both, name: "b").is_err()
+
+test "read: a bad name of a rule and of a variable, `$in` set, a bad time limit"
+    assert read(text: "[rules.\"1x\"]\ncommand = \"x\"", name: "b").is_err()
+    assert read(text: "[vars]\n\"a-b\" = \"x\"", name: "b").is_err()
+    assert read(text: "[vars]\nin = \"x\"", name: "b").is_err()
+    assert read(text: "[rules.r]\ncommand = \"x\"\ntimeout = \"0s\"", name: "b").is_err()
+    assert read(text: "[rules.r]\ncommand = \"x\"\ntimeout = \"soon\"", name: "b").is_err()
+    assert read(text: "[rules.r]\ncommand = \"x\"\nenv = { \"A=B\" = \"x\" }", name: "b").is_err()
+
+test "read: a default naming no target is not_found"
+    match read(text: "default = [\"nothing\"]", name: "b")
+        .ok _  => assert false
+        .err e => assert e.code == buildfile.NOT_FOUND

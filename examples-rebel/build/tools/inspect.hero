@@ -1,0 +1,169 @@
+# The tools `-t` names, which read a build and run nothing, as ninja's own:
+#
+# - `targets`: every target with its rule, and every phony target, the
+#   defaults marked;
+# - `commands`: the command of every step the targets asked for need, each
+#   after the steps it needs, as a POSIX shell reads it back;
+# - `deps`: what the log learned from each target's depfile;
+# - `graph`: the plan's graph in Graphviz's DOT, an arrow from what a node
+#   needs to the node.
+#
+# Each answers its lines, which `run` prints, so a test reads them as a
+# terminal shows them.
+
+use <rebel>/json
+use <rebel>/process
+
+use engine/prepare
+use graph/plan
+use model/buildfile
+use state/log
+
+# The tools there are, in the order the help lists them.
+function names() -> [str]
+    return ["targets", "commands", "deps", "graph"]
+
+# The lines of `targets`.
+#
+# - `f`: the build file.
+function targets_lines(f: buildfile.BuildFile lent) -> [str]
+    defaults: {str: bool} @= {}
+
+    for name in f.defaults
+        defaults[name] @ true
+
+    lines: [str] @= []
+
+    for name in keys(f.targets)
+        mark = if defaults[name].is_err()
+            ""
+        else
+            " (default)"
+
+        lines @ lines.push(f"{name}: {f.targets[name].must().rule}{mark}")
+
+    for name in keys(f.phony)
+        mark = if defaults[name].is_err()
+            ""
+        else
+            " (default)"
+
+        lines @ lines.push(f"{name}: phony{mark}")
+
+    return lines
+
+# The lines of `commands`.
+#
+# - `f`: the build file.
+# - `p`: the plan.
+# - `steps`: its targets, prepared.
+function commands_lines(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepare.Prepared} lent) -> [str]
+    lines: [str] @= []
+
+    for name in plan.targets_in_order(f, p: p)
+        lines @ lines.push(process.quote_all(steps[name].must().words))
+
+    return lines
+
+# The lines of `deps`: each target whose rule names a depfile and that the
+# log has a record of.
+#
+# - `p`: the plan.
+# - `steps`: its targets, prepared.
+# - `l`: the build log.
+function deps_lines(p: plan.Plan lent, steps: {str: prepare.Prepared} lent, l: log.Log lent) -> [str]
+    lines: [str] @= []
+
+    for name in keys(p.graph)
+        has_depfile = match steps[name]
+            .ok st => st.depfile.is_err() == false
+            .err _ => false
+
+        if !has_depfile
+            continue
+
+        match l.entries[name]
+            .ok e =>
+                found = keys(e.deps)
+                lines @ lines.push(f"{name}: {found.len()} named by its depfile")
+
+                for dep in found
+                    absent = if e.deps[dep].must().is_err()
+                        " (absent)"
+                    else
+                        ""
+
+                    lines @ lines.push(f"    {dep}{absent}")
+            .err _ => _ = 0
+
+    return lines
+
+# The lines of `graph`.
+#
+# - `f`: the build file.
+# - `p`: the plan.
+function graph_lines(f: buildfile.BuildFile lent, p: plan.Plan lent) -> [str]
+    lines: [str] @= ["digraph build {", "    rankdir = \"LR\";"]
+
+    for name in p.nodes
+        shape = match buildfile.kind_of(f, name: name)
+            .target => "box"
+            .phony  => "diamond"
+            .source => "ellipse"
+
+        lines @ lines.push(f"    {json.quote(name)} [shape = \"{shape}\"];")
+
+    for name in keys(p.graph)
+        for needed in p.graph[name].must()
+            lines @ lines.push(f"    {json.quote(needed)} -> {json.quote(name)};")
+
+    lines @ lines.push("}")
+    return lines
+
+# The tool `tool` run, its lines printed.
+#
+# - `tool`: one of `names()`.
+# - `f`: the build file.
+# - `p`: the plan of the targets asked for.
+# - `steps`: its targets, prepared.
+# - `root`: the build's folder, whose log `deps` reads.
+#
+# Fails `invalid` where `tool` is no tool, naming those there are, and as
+# `log.read` does for `deps`.
+function run(tool: str, f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepare.Prepared} lent, root: str) -> ()?
+    lines = match tool
+        "targets"  => targets_lines(f)
+        "commands" => commands_lines(f, p: p, steps: steps)
+        "graph"    => graph_lines(f, p: p)
+        "deps"     => deps_lines(p, steps: steps, l: log.read(root)?)
+        _ => return fail(
+            code: buildfile.INVALID,
+            msg: f"there is no tool \"{tool}\"; the tools are {names().join(", ")}"
+        )
+
+    for line in lines
+        print(line)
+
+    return ok()
+
+test "targets_lines: targets with their rules, then phony ones, the defaults marked"
+    rule = buildfile.Rule(
+        name: "cc",
+        command: "cc",
+        description: fail(code: "not_found", msg: "none"),
+        depfile: fail(code: "not_found", msg: "none"),
+        time_limit: fail(code: "not_found", msg: "none"),
+        env: {}
+    )
+    a = buildfile.Target(output: "out/a", rule: "cc", inputs: [], implicit: [], after: [], vars: {})
+    f = buildfile.BuildFile(
+        name: "b",
+        vars: {},
+        rules: {"cc": rule},
+        targets: {"out/a": a},
+        phony: {"all": ["out/a"]},
+        defaults: ["all"]
+    )
+    assert targets_lines(f) == ["out/a: cc", "all: phony (default)"]
+    p = plan.plan_of(f, asked: []).must()
+    assert graph_lines(f, p: p) == ["digraph build {", "    rankdir = \"LR\";", "    \"out/a\" [shape = \"box\"];", "    \"all\" [shape = \"diamond\"];", "    \"out/a\" -> \"all\";", "}"]
