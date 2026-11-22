@@ -1,0 +1,9 @@
+extern "cojump.h"
+    function cj_run(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("coroutine jumped out of its handler: ", cj_run(cb: answer))

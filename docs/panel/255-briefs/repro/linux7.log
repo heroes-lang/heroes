@@ -1,0 +1,4 @@
+plain_heap plain exit=0 plain_heap: 1 | 
+plain_heap sanitize exit=0 plain_heap: 1 | 
+plain_mmap plain exit=0 plain_mmap: 1 | 
+plain_mmap sanitize exit=0 plain_mmap: 1 | 

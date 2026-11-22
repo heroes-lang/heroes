@@ -1,0 +1,12 @@
+extern "jumpout.h"
+    function jo_heap(cb: (function(i64) -> i64)) -> i64
+    function jo_tls(cb: (function(i64) -> i64)) -> i64
+    function jo_lib(path: cstr lent, cb: (function(i64) -> i64)) -> i64
+    function co_run(cb: (function(i64) -> i64)) -> i64
+
+function answer(n: i64) -> i64
+    print("answer ran for ", n)
+    return n * 10
+
+function main()
+    print("lib ", jo_lib(path: "./libjo.dylib".cstr(), cb: answer))
