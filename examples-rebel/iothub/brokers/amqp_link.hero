@@ -1,0 +1,195 @@
+# The hub's link to its AMQP broker. Devices publish to a durable topic
+# exchange; the hub reads them from a durable queue of its own bound to it,
+# on one channel, with a prefetch so the broker never sends more than the
+# hub reads, acknowledging each delivery only once the hub has handled it:
+# a reading the hub was handling when it died is delivered again. It
+# publishes on a second channel in confirm mode, persistent, and waits for
+# the broker's confirmation, so a publish this module calls sent is one the
+# broker has taken; one the broker never confirmed is the caller's to hold.
+#
+# Its topology is declared on every connection, the first and each one
+# after a loss, since a broker that restarted may have lost what was not
+# durable. The connection is held in a list of at most one, empty while the
+# broker is down, because `amqp`'s calls work on its place through `@`.
+
+use <rebel>/amqp
+use <rebel>/time
+
+use config/settings
+
+# The channel the hub reads on.
+constant READING: i64
+    1
+
+# The channel the hub publishes on, in confirm mode.
+constant PUBLISHING: i64
+    2
+
+# The link.
+record Link
+    # The connection, one at most; empty while the broker is down.
+    connections: [amqp.Connection]
+    # The connection's stream's key in the hub's poll set, -1 while down.
+    key: i64
+
+# A link that is down.
+function down() -> Link
+    return Link(connections: [], key: -1)
+
+# Declares the hub's topology on `c`: the devices' exchange, the hub's queue
+# and its bindings, the exchanges it publishes to; then the prefetch, the
+# consumer, and confirm mode on the publishing channel.
+#
+# - `c`: the connection, its two channels open.
+# - `s`: the AMQP settings.
+# - `outputs`: the exchanges the hub publishes to.
+#
+# Fails as the declarations fail: `invalid` where one exists with other
+# properties, `not_found`, `permission`, `closed`.
+function declare(@c: amqp.Connection, s: settings.AmqpSettings, outputs: [str]) -> ()?
+    reading = amqp.Channel(id: READING)
+    publishing = amqp.Channel(id: PUBLISHING)
+    devices @= amqp.exchange(name: s.exchange, kind: amqp.TOPIC)
+    devices.durable @ true
+    amqp.declare_exchange(@c, channel: reading, e: devices)?
+
+    for name in outputs
+        out @= amqp.exchange(name: name, kind: amqp.TOPIC)
+        out.durable @ true
+        amqp.declare_exchange(@c, channel: publishing, e: out)?
+
+    q @= amqp.queue(s.queue)
+    q.durable @ true
+    _ = amqp.declare_queue(@c, channel: reading, q: q)?
+
+    for key in s.bindings
+        amqp.bind_queue(@c, channel: reading, queue_name: s.queue, exchange_name: s.exchange, routing_key: key, arguments: [])?
+
+    amqp.qos(@c, channel: reading, prefetch_count: s.prefetch, prefetch_size: 0, global: false)?
+    consumer @= amqp.consumer(s.queue)
+    consumer.tag @ "iothub"
+    _ = amqp.consume(@c, channel: reading, k: consumer)?
+    return amqp.select_confirms(@c, channel: publishing)
+
+# A connection to the broker `s` names, its topology declared.
+#
+# - `s`: the AMQP settings.
+# - `name`: the connection's name, which the broker shows.
+# - `outputs`: the exchanges the hub publishes to.
+#
+# The caller owes the connection an `amqp.close`. Fails as
+# `amqp.parse_url`, `amqp.connect` and `declare` fail: `permission` where
+# the broker refuses the login or the virtual host.
+function connect(s: settings.AmqpSettings, name: str, outputs: [str]) -> amqp.Connection?
+    opts @= amqp.parse_url(s.url)?
+    opts.connection_name @ name
+    opts.wait @ time.seconds(5)?
+    c @= amqp.connect(opts)?
+
+    outcome: ()? = match amqp.open_channel(@c)
+        .ok _ =>
+            match amqp.open_channel(@c)
+                .ok _  => declare(@c, s: s, outputs: outputs)
+                .err e => fail(code: e.code, msg: e.msg)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    match outcome
+        .ok _ => return ok(c)
+        .err e =>
+            _ = amqp.close(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Whether the link is up.
+#
+# - `l`: the link.
+function is_up(l: Link lent) -> bool
+    return l.connections.len() > 0 && !amqp.is_closed(l.connections[0])
+
+# Whether the connection holds deliveries a read of its stream would not
+# tell.
+#
+# - `l`: the link.
+function holds(l: Link lent) -> bool
+    return l.connections.len() > 0 && amqp.held_of(l.connections[0]) > 0
+
+# The deliveries the connection holds, those its buffer holds whole, and
+# those one read of its stream brings, in the order they came.
+#
+# - `l`: the link, up.
+# - `read`: whether the stream is readable, so one read is made; without
+#   it, nothing is read and only what was read already is taken.
+#
+# Fails as `amqp.read_ready` and `amqp.next_delivery` fail: `closed` where
+# the broker closed the connection.
+function take(@l: Link, read: bool) -> [amqp.Delivery]?
+    if read
+        amqp.read_ready(@l.connections[0])?
+
+    got: [amqp.Delivery] @= []
+
+    # A zero wait parses what the buffer holds whole before it gives up: a
+    # confirmation the hub waited for may have been read with a delivery
+    # behind it, which `held_of` does not count.
+    while true
+        match amqp.next_delivery(@l.connections[0], wait: time.nanoseconds(0))
+            .ok d => got @ got.push(d)
+            .err e =>
+                if e.code == amqp.TIMEOUT
+                    return ok(got)
+                return fail(code: e.code, msg: e.msg)
+
+# Acknowledges `d`, once the hub has handled it.
+#
+# - `l`: the link, up.
+# - `d`: the delivery.
+#
+# Fails as `amqp.ack` fails.
+function ack(@l: Link, d: amqp.Delivery) -> ()?
+    return amqp.ack(@l.connections[0], d: d, multiple: false)
+
+# Publishes `body` to `exchange` with `key`, persistent and as JSON, and
+# waits for the broker's confirmation.
+#
+# - `l`: the link, up.
+# - `exchange`: the exchange.
+# - `key`: the routing key.
+# - `body`: the reading's JSON.
+#
+# Fails as `amqp.publish` and `amqp.wait_confirms` fail: `closed` where the
+# connection was lost before the confirmation came, the message then not
+# known to be taken.
+function send(@l: Link, exchange: str, key: str, body: [u8]) -> ()?
+    m @= amqp.message(body)
+    m.content_type @ "application/json"
+    m.delivery_mode @ amqp.PERSISTENT
+    m.app_id @ "iothub"
+    publishing = amqp.Channel(id: PUBLISHING)
+    _ = amqp.publish(@l.connections[0], channel: publishing, exchange_name: exchange, routing_key: key, m: m, mandatory: false)?
+    return amqp.wait_confirms(@l.connections[0], channel: publishing, wait: time.seconds(5)?)
+
+# Why the broker closed the connection, as its reply said: `320
+# CONNECTION_FORCED - ...`; "" where it said nothing.
+#
+# - `l`: the link.
+function closing_text(l: Link lent) -> str
+    if l.connections.len() == 0
+        return ""
+
+    return match amqp.closing_of(l.connections[0])
+        .ok c  => f"{c.code} {c.text}"
+        .err _ => ""
+
+# Ends the connection, with connection.close where it can still be
+# written, and leaves the link down.
+#
+# - `l`: the link.
+function close(@l: Link)
+    if l.connections.len() > 0 && !amqp.is_closed(l.connections[0])
+        _ = amqp.close(@l.connections[0]).is_err()
+
+    l.connections @ []
+    l.key @ -1
+
+test "down, is_up, holds, closing_text: a link with no connection"
+    l = down()
+    assert !is_up(l) && !holds(l) && closing_text(l) == ""

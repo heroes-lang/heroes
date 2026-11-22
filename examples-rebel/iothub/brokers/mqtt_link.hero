@@ -1,0 +1,121 @@
+# The hub's link to its MQTT broker: one MQTT 5 client, subscribed at QoS 1
+# to the topic filters devices publish under, publishing readings and routed
+# messages at QoS 1 so that a publish the call returned from has been taken
+# by the broker. The client's own reconnection is turned off: the hub
+# supervises every broker the same way (`brokers/recovery`), and a lost
+# client is closed and made anew.
+#
+# The client is held in a list of at most one, empty while the broker is
+# down: `mqtt`'s calls work on the client's own place through `@`, which a
+# list's element lends and a `T?` field cannot.
+
+use <rebel>/mqtt
+use <rebel>/time
+
+use config/settings
+
+# The link.
+record Link
+    # The client, one at most; empty while the broker is down.
+    clients: [mqtt.Client]
+    # The client's stream's key in the hub's poll set, -1 while it is down.
+    key: i64
+
+# A link that is down.
+function down() -> Link
+    return Link(clients: [], key: -1)
+
+# A client of the broker `s` names, connected and subscribed.
+#
+# - `s`: the MQTT settings.
+#
+# The caller owes the client a `mqtt.close` or `mqtt.drop`. Fails as
+# `mqtt.parse_url`, `mqtt.connect` and `mqtt.subscribe_many` fail.
+function connect(s: settings.MqttSettings) -> mqtt.Client?
+    opts @= mqtt.parse_url(s.url)?
+    opts.client_id @ s.client_id
+    opts.reconnect.attempts @ 0
+    opts.wait @ time.seconds(5)?
+    c @= mqtt.connect(opts)?
+
+    if s.filters.len() == 0
+        return ok(c)
+
+    subscriptions: [mqtt.Subscription] @= []
+
+    for f in s.filters
+        subscriptions @ subscriptions.push(mqtt.subscription(f, qos: 1))
+
+    match mqtt.subscribe_many(@c, subscriptions: subscriptions, properties: [])
+        .ok _ => return ok(c)
+        .err e =>
+            _ = mqtt.drop(@c).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Whether the link is up.
+#
+# - `l`: the link.
+function is_up(l: Link lent) -> bool
+    return l.clients.len() > 0
+
+# The messages the client holds and one read of its stream completes.
+#
+# - `l`: the link, up.
+#
+# Fails as `mqtt.read_ready` fails: `closed` where the broker is lost.
+function take(@l: Link) -> [mqtt.Message]?
+    return mqtt.read_ready(@l.clients[0])
+
+# Whether the client holds messages a read of its stream would not tell.
+#
+# - `l`: the link.
+function holds(l: Link lent) -> bool
+    return l.clients.len() > 0 && mqtt.held_of(l.clients[0]) > 0
+
+# The messages the client has read and not given out, parsed or still in
+# its buffer, taken without reading the stream: a call that waited for an
+# acknowledgement may have read a message behind it, which `held_of` does
+# not count and `poll` will never report, and a zero
+# wait parses it.
+#
+# - `l`: the link, up.
+#
+# Fails as `mqtt.next_message` fails for another reason than nothing being
+# there.
+function take_buffered(@l: Link) -> [mqtt.Message]?
+    got: [mqtt.Message] @= []
+
+    while true
+        match mqtt.next_message(@l.clients[0], wait: time.nanoseconds(0))
+            .ok m => got @ got.push(m)
+            .err e =>
+                if e.code == mqtt.TIMEOUT
+                    return ok(got)
+                return fail(code: e.code, msg: e.msg)
+
+# Publishes `body` on `topic` at QoS 1, waiting for the broker's PUBACK.
+#
+# - `l`: the link, up.
+# - `topic`: the topic.
+# - `body`: the payload.
+#
+# Fails as `mqtt.publish` fails.
+function send(@l: Link, topic: str, body: [u8]) -> ()?
+    return mqtt.publish(@l.clients[0], topic: topic, payload: body, qos: 1, retain: false)
+
+# Ends the client, with a DISCONNECT where it can still be written, and
+# leaves the link down.
+#
+# - `l`: the link.
+function close(@l: Link)
+    # A client its broker closed already needs no DISCONNECT; one whose
+    # DISCONNECT cannot be written is closed all the same.
+    if l.clients.len() > 0 && !mqtt.is_closed(l.clients[0])
+        _ = mqtt.close(@l.clients[0]).is_err()
+
+    l.clients @ []
+    l.key @ -1
+
+test "down, is_up, holds: a link with no client"
+    l = down()
+    assert !is_up(l) && !holds(l) && l.key == -1

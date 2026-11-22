@@ -1,0 +1,462 @@
+# The hub's loop, one thread for everything: each turn tries again every
+# broker and port whose wait is over, waits in one poll set for any stream
+# to be ready (no longer than the next attempt, nor than the gateway's
+# reading interval where it has ports), then reads its sources in a fixed
+# order, MQTT, AMQP, NATS, the serial ports, the HTTP server, so that what
+# came at once is handled in an order that does not depend on the system's.
+# It ends when the program's stop is asked: Ctrl-C, or the demo's end.
+
+use <rebel>/amqp
+use <rebel>/mqtt
+use <rebel>/nats
+use <rebel>/numbers
+use <rebel>/path
+use <rebel>/poll
+use <rebel>/time
+
+use brokers/amqp_link
+use brokers/mqtt_link
+use brokers/nats_link
+use brokers/recovery
+use config/registry
+use config/settings
+use feed/server
+use hub/handling
+use hub/state
+use hub/telemetry
+use serial/gateway
+use standins/told
+
+# How often the gateway's ports are read, in milliseconds: a line of NMEA
+# at 4800 baud takes over 100 ms to come, so reading every 20 ms finds each
+# well within it.
+constant SERIAL_EVERY_MS: i64
+    20
+
+# Connects the link of `protocol` and adds its stream to the poll set.
+#
+# - `h`: the hub.
+# - `protocol`: the broker.
+#
+# Fails `not_found` where the settings name no such broker, and as the
+# link's `connect` fails.
+function connect(@h: state.Hub, protocol: registry.Protocol) -> ()?
+    match protocol
+        .mqtt =>
+            c = mqtt_link.connect(h.s.mqtt?)?
+            h.mqtt.clients @ [c]
+            h.mqtt.key @ poll.add_stream(h.set, s: mqtt.stream_of(c)?, interest: .read)?
+        .amqp =>
+            c = amqp_link.connect(h.s.amqp?, name: h.s.name, outputs: settings.output_exchanges(h.s))?
+            h.amqp.connections @ [c]
+            h.amqp.key @ poll.add_stream(h.set, s: amqp.stream_of(c)?, interest: .read)?
+        .nats =>
+            c = nats_link.connect(h.s.nats?, name: h.s.name)?
+            h.nats.clients @ [c]
+            h.nats.key @ poll.add_stream(h.set, s: nats.stream_of(c)?, interest: .read)?
+        .serial => return fail(code: "unsupported", msg: "a serial port is no broker")
+
+    telemetry.record_up(@h.telemetry, broker: registry.protocol_name(protocol), up: true)
+    return ok()
+
+# Where the recovery of the link of `protocol` stands.
+#
+# - `h`: the hub.
+# - `protocol`: the broker.
+function state_of(h: state.Hub lent, protocol: registry.Protocol) -> recovery.Recovery
+    return match protocol
+        .mqtt           => h.mqtt_state
+        .amqp           => h.amqp_state
+        .nats | .serial => h.nats_state
+
+# Sets where the recovery of the link of `protocol` stands.
+#
+# - `h`: the hub.
+# - `protocol`: the broker.
+# - `r`: where it stands.
+function set_state(@h: state.Hub, protocol: registry.Protocol, r: recovery.Recovery)
+    match protocol
+        .mqtt           => h.mqtt_state @ r
+        .amqp           => h.amqp_state @ r
+        .nats | .serial => h.nats_state @ r
+
+# The brokers the settings name, in the order the hub reads them.
+#
+# - `s`: the settings.
+function brokers_of(s: settings.Settings lent) -> [registry.Protocol]
+    named: [registry.Protocol] @= []
+
+    if !s.mqtt.is_err()
+        named @ named.push(.mqtt)
+
+    if !s.amqp.is_err()
+        named @ named.push(.amqp)
+
+    if !s.nats.is_err()
+        named @ named.push(.nats)
+
+    return named
+
+# One attempt to bring back the link of `protocol`, whose wait is over:
+# connected, it sends what the outbox held for it; refused, its next wait is
+# drawn. Either is told.
+#
+# - `h`: the hub.
+# - `protocol`: the broker.
+# - `now`: the monotonic clock's reading.
+function attempt(@h: state.Hub, protocol: registry.Protocol, now: time.Mark)
+    r @= state_of(h, protocol: protocol)
+    name = registry.protocol_name(protocol)
+
+    match connect(@h, protocol: protocol)
+        .ok _ =>
+            recovery.recover(@r)
+            set_state(@h, protocol: protocol, r: r)
+            telemetry.record_reconnection(@h.telemetry, broker: name)
+            sent = handling.flush_held(@h, protocol: protocol)
+            state.emit(@h, topic: name, text: f"up again after {r.attempts} attempts; held publishes sent: {sent}")
+        .err e =>
+            wait = recovery.fail_attempt(@r, chance: @h.chance, now: now)
+            set_state(@h, protocol: protocol, r: r)
+
+            shown = match wait
+                .ok w  => recovery.shown_wait(w)
+                .err _ => "a moment"
+
+            state.emit(@h, topic: name, text: f"attempt {r.attempts} refused ({e.code}); next attempt in {shown}")
+
+# The name a port's events are told under: `serial bench`.
+#
+# - `h`: the hub.
+# - `i`: the port's index.
+function port_topic(h: state.Hub lent, i: i64) -> str
+    return f"serial {h.ports[i].spec.name}"
+
+# Marks port `i` lost: closed, its first wait drawn, the loss told.
+#
+# - `h`: the hub.
+# - `i`: the port's index.
+# - `why`: the failure's code.
+function lose_port(@h: state.Hub, i: i64, why: str)
+    gateway.close(@h.ports[i])
+    now = time.mark().default(time.Mark(nanoseconds: 0))
+
+    shown = match recovery.lose(@h.port_states[i], chance: @h.chance, now: now)
+        .ok w  => recovery.shown_wait(w)
+        .err _ => "a moment"
+
+    state.emit(@h, topic: port_topic(h, i: i), text: f"lost: {why}; next attempt in {shown}")
+
+# One attempt to open port `i` again, whose wait is over.
+#
+# - `h`: the hub.
+# - `i`: the port's index.
+# - `now`: the monotonic clock's reading.
+function attempt_port(@h: state.Hub, i: i64, now: time.Mark)
+    match gateway.open(@h.ports[i])
+        .ok _ =>
+            recovery.recover(@h.port_states[i])
+            state.emit(@h, topic: port_topic(h, i: i), text: f"open again after {h.port_states[i].attempts} attempts")
+        .err e =>
+            shown = match recovery.fail_attempt(@h.port_states[i], chance: @h.chance, now: now)
+                .ok w  => recovery.shown_wait(w)
+                .err _ => "a moment"
+
+            state.emit(
+                @h,
+                topic: port_topic(h, i: i),
+                text: f"attempt {h.port_states[i].attempts} refused ({e.code}); next attempt in {shown}"
+            )
+
+# Connects every broker and opens every port once, as the hub begins; one
+# that refuses is lost from the start and tried again with the backoff, so a
+# hub starts while a broker is still coming up.
+#
+# - `h`: the hub.
+function start_links(@h: state.Hub)
+    for p in brokers_of(h.s)
+        match connect(@h, protocol: p)
+            .ok _  => _ = 0
+            .err e => handling.lose(@h, protocol: p, why: e.code)
+
+    for i in range(from: 0, to: h.ports.len())
+        match gateway.open(@h.ports[i])
+            .ok _  => _ = 0
+            .err e => lose_port(@h, i: i, why: e.code)
+
+# Tries again every broker and port whose wait is over.
+#
+# - `h`: the hub.
+# - `now`: the monotonic clock's reading.
+function retry_due(@h: state.Hub, now: time.Mark)
+    for p in brokers_of(h.s)
+        if recovery.is_due(state_of(h, protocol: p), now: now)
+            attempt(@h, protocol: p, now: now)
+
+    for i in range(from: 0, to: h.ports.len())
+        if recovery.is_due(h.port_states[i], now: now)
+            attempt_port(@h, i: i, now: now)
+
+# How long the turn may wait: `limit`, or less where an attempt falls due
+# sooner, the ports are to be read, or a client holds messages already.
+#
+# - `h`: the hub.
+# - `now`: the monotonic clock's reading.
+# - `limit`: the longest wait.
+function wait_limit(h: state.Hub lent, now: time.Mark, limit: time.Duration) -> time.Duration
+    shortest @= limit
+
+    for p in brokers_of(h.s)
+        d = recovery.until_due(state_of(h, protocol: p), now: now, longest: limit)
+
+        if d.nanoseconds < shortest.nanoseconds
+            shortest @ d
+
+    for i in range(from: 0, to: h.ports.len())
+        d = if gateway.is_open(h.ports[i])
+            time.nanoseconds(SERIAL_EVERY_MS * 1_000_000)
+        else
+            recovery.until_due(h.port_states[i], now: now, longest: limit)
+
+        if d.nanoseconds < shortest.nanoseconds
+            shortest @ d
+
+    if mqtt_link.holds(h.mqtt) || amqp_link.holds(h.amqp) || nats_link.holds(h.nats)
+        return time.nanoseconds(0)
+
+    return shortest
+
+# Whether `ready` holds `key`.
+#
+# - `ready`: the keys found ready.
+# - `key`: a key, -1 for none.
+function has_key(ready: [i64], key: i64) -> bool
+    if key < 0
+        return false
+
+    for k in ready
+        if k == key
+            return true
+
+    return false
+
+# Reads the link of `protocol` and handles every message it gives: what its
+# client holds, what its buffer holds whole, and, where `read` says the
+# stream is ready, what one read brings. An AMQP delivery is acknowledged
+# once handled; one the link was lost before acknowledging is the broker's
+# to deliver again. Answers how many messages were handled.
+#
+# A call that waits for a reply (a flush, an acknowledgement, a
+# confirmation) may read a message behind the reply and keep it in the
+# client's buffer, where `held_of` does not count it and `poll` will never
+# report it; so every client is also asked with a zero wait, which parses
+# what its buffer holds.
+#
+# - `h`: the hub.
+# - `protocol`: the broker.
+# - `read`: whether its stream was found ready.
+function read_link(@h: state.Hub, protocol: registry.Protocol, read: bool) -> i64
+    if !handling.is_up(h, protocol: protocol)
+        return 0
+
+    handled @= 0
+
+    match protocol
+        .mqtt =>
+            got: [mqtt.Message] @= []
+
+            if read || mqtt_link.holds(h.mqtt)
+                match mqtt_link.take(@h.mqtt)
+                    .ok more => got @ more
+                    .err e =>
+                        handling.lose(@h, protocol: .mqtt, why: e.code)
+                        return 0
+
+            match mqtt_link.take_buffered(@h.mqtt)
+                .ok more =>
+                    for m in more
+                        got @ got.push(m)
+                .err e =>
+                    handling.lose(@h, protocol: .mqtt, why: e.code)
+                    return 0
+
+            for m in got
+                handling.handle(@h, protocol: .mqtt, address: m.topic, payload: m.payload)
+                handled @ handled + 1
+        .amqp =>
+            got = match amqp_link.take(@h.amqp, read: read)
+                .ok more => more
+                .err e =>
+                    handling.lose(@h, protocol: .amqp, why: handling.why_lost(h, protocol: .amqp, code: e.code))
+                    return 0
+
+            for d in got
+                handling.handle(@h, protocol: .amqp, address: d.exchange + "/" + d.routing_key, payload: d.message.body)
+                handled @ handled + 1
+
+                if handling.is_up(h, protocol: .amqp)
+                    match amqp_link.ack(@h.amqp, d: d)
+                        .ok _ => _ = 0
+                        .err e => handling.lose(
+                            @h,
+                            protocol: .amqp,
+                            why: handling.why_lost(h, protocol: .amqp, code: e.code)
+                        )
+        .nats =>
+            got: [nats.Message] @= []
+
+            if read || nats_link.holds(h.nats)
+                match nats_link.take(@h.nats)
+                    .ok more => got @ more
+                    .err e =>
+                        handling.lose(@h, protocol: .nats, why: e.code)
+                        return 0
+
+            match nats_link.take_buffered(@h.nats)
+                .ok more =>
+                    for m in more
+                        got @ got.push(m)
+                .err e =>
+                    handling.lose(@h, protocol: .nats, why: e.code)
+                    return 0
+
+            for m in got
+                handling.handle(@h, protocol: .nats, address: m.subject, payload: m.data)
+                handled @ handled + 1
+        .serial => _ = 0
+
+    return handled
+
+# Reads every broker, MQTT, AMQP then NATS.
+#
+# - `h`: the hub.
+# - `ready`: the keys found ready.
+function read_brokers(@h: state.Hub, ready: [i64])
+    _ = read_link(@h, protocol: .mqtt, read: has_key(ready, key: h.mqtt.key))
+    _ = read_link(@h, protocol: .amqp, read: has_key(ready, key: h.amqp.key))
+    _ = read_link(@h, protocol: .nats, read: has_key(ready, key: h.nats.key))
+
+# Flushes what the turn published to NATS, then handles what any client
+# read behind a reply it waited for, again until nothing more is held: the
+# handling publishes, and a publish waits for its reply too.
+#
+# - `h`: the hub.
+function settle(@h: state.Hub)
+    while true
+        match nats_link.flush(@h.nats)
+            .ok _ => _ = 0
+            .err e =>
+                if handling.is_up(h, protocol: .nats)
+                    handling.lose(@h, protocol: .nats, why: e.code)
+
+        handled = read_link(@h, protocol: .mqtt, read: false) + read_link(@h, protocol: .amqp, read: false) + read_link(@h, protocol: .nats, read: false)
+
+        if handled == 0
+            break
+
+# Reads every open port and handles every whole line, by the port's name.
+#
+# - `h`: the hub.
+function read_ports(@h: state.Hub)
+    for i in range(from: 0, to: h.ports.len())
+        if gateway.is_open(h.ports[i])
+            match gateway.read_lines(@h.ports[i])
+                .ok lines =>
+                    for line in lines
+                        handling.handle(@h, protocol: .serial, address: h.ports[i].spec.name, payload: line)
+                .err e => lose_port(@h, i: i, why: e.code)
+
+# One turn of the loop.
+#
+# - `h`: the hub.
+# - `limit`: the longest it waits for something to be ready.
+#
+# Answers false once the program's stop is asked, or the poll set fails.
+function turn(@h: state.Hub, limit: time.Duration) -> bool
+    now = time.mark().default(time.Mark(nanoseconds: 0))
+    retry_due(@h, now: now)
+
+    events = match poll.wait(h.set, limit: wait_limit(h, now: now, limit: limit))
+        .ok got => got
+        .err _  => return false
+
+    ready: [i64] @= []
+
+    for e in events
+        ready @ ready.push(e.key)
+
+    read_brokers(@h, ready: ready)
+    read_ports(@h)
+
+    for key in ready
+        if key != h.mqtt.key && key != h.amqp.key && key != h.nats.key
+            _ = server.on_ready(@h.feed, set: h.set, key: key, registry: h.telemetry, devices: h.devices_text)
+
+    telemetry.record_watchers(@h.telemetry, count: h.feed.watchers.len())
+    settle(@h)
+    return true
+
+# Turns the loop until the program's stop is asked.
+#
+# - `h`: the hub.
+function serve(@h: state.Hub)
+    while turn(@h, limit: time.seconds(1).must())
+        _ = 0
+
+# The settings the file at `config` holds, its paths read from its folder.
+#
+# - `config`: the settings file's path.
+#
+# Fails as `read_file` and `settings.parse` fail.
+function settings_at(config: str) -> settings.Settings?
+    return settings.parse(text: read_file(config)?, folder: path.parent(config))
+
+# The body of the hub's thread in the demo: the hub begun quiet, its links
+# made, its HTTP port told to the starter, then served until the program's
+# stop; answers what it did. A hub that cannot begin tells the starter why,
+# so the starter never waits for a port that will not come.
+#
+# - `arg`: the port of the starter's socket, a space, and the settings
+#   file's path.
+function run(arg: str) -> str
+    at = space_at(arg)
+
+    told_port = match numbers.parse_int(arg.slice(from: 0, to: at))
+        .ok p  => p
+        .err _ => return f"the hub: \"{arg}\" does not begin with a port"
+
+    config = if at < arg.len()
+        arg.slice(from: at + 1, to: arg.len())
+    else
+        ""
+
+    begun: state.Hub? = match settings_at(config)
+        .ok s  => state.begin(s, quiet: true)
+        .err e => fail(code: e.code, msg: e.msg)
+
+    h @= match begun
+        .ok got => got
+        .err e =>
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return f"the hub could not begin: {e.msg}"
+
+    start_links(@h)
+    _ = told.ready(port: told_port, listening: server.port_of(h.feed)).is_err()
+    serve(@h)
+    return state.end(@h)
+
+# The index of the first space of `text`, or its length where it has none.
+#
+# - `text`: the text.
+function space_at(text: str) -> i64
+    for i in range(from: 0, to: text.len())
+        if text[i] == ' '
+            return i
+
+    return text.len()
+
+test "has_key: a key there, one not, and none"
+    assert has_key([3, 5], key: 5) && !has_key([3, 5], key: 4) && !has_key([-1], key: -1)
+
+test "space_at: the first space, and none"
+    assert space_at("4040 hub/hub.json") == 4 && space_at("4040") == 4

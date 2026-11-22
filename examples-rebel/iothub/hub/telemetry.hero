@@ -1,0 +1,155 @@
+# The hub's metrics, served in Prometheus's text format at `/metrics`: the
+# readings each device sent and the bytes their payloads took by encoding,
+# the payloads refused and the messages from devices nobody registered, the
+# publishes each rule and the re-publication made, whether each broker is
+# up and how often it was made again, the publishes held for a broker that
+# is down, and the dashboards watching the feed. Every family is described
+# once here, so a name is written in one place; the hub records through the
+# functions below and never by a family's name.
+#
+# Nothing measured here is a time: a scrape of a hub that did the same work
+# reads the same numbers, which is what lets the demo print one.
+
+use <rebel>/metrics
+use <rebel>/time
+
+use codecs/reading
+
+# The readings decoded, by device and the protocol they came by.
+constant READINGS: str
+    "iothub_readings_total"
+
+# The payloads refused, by device and the code their codec failed with.
+constant REFUSED: str
+    "iothub_refused_payloads_total"
+
+# The messages that came at an address no device is registered at.
+constant UNKNOWN: str
+    "iothub_unregistered_messages_total"
+
+# The publishes made, by rule (`republish` for the hub's own) and protocol.
+constant ROUTED: str
+    "iothub_published_total"
+
+# Whether each broker is up, 1 or 0.
+constant UP: str
+    "iothub_broker_up"
+
+# The times each broker was lost and made again.
+constant RECONNECTIONS: str
+    "iothub_broker_reconnections_total"
+
+# The publishes held for a broker that is down.
+constant HELD: str
+    "iothub_held_publishes"
+
+# The dashboards connected to the feed.
+constant WATCHERS: str
+    "iothub_feed_clients"
+
+# The sizes of payloads, by encoding, in bytes.
+constant PAYLOAD_BYTES: str
+    "iothub_payload_bytes"
+
+# A registry with the hub's families described.
+#
+# Fails `exists` where two families share a name, which the constants above
+# never do.
+function new_telemetry() -> metrics.Registry?
+    r @= metrics.new_registry()
+    metrics.register(@r, d: metrics.counter(name: READINGS, help: "Readings decoded, by device and protocol.", labels: ["device", "source"]))?
+    metrics.register(@r, d: metrics.counter(name: REFUSED, help: "Payloads a device's codec refused.", labels: ["device", "code"]))?
+    metrics.register(@r, d: metrics.counter(name: UNKNOWN, help: "Messages at an address no device is registered at.", labels: ["source"]))?
+    metrics.register(@r, d: metrics.counter(name: ROUTED, help: "Publishes made, by rule and protocol.", labels: ["rule", "protocol"]))?
+    metrics.register(@r, d: metrics.gauge(name: UP, help: "Whether a broker is up.", labels: ["broker"]))?
+    metrics.register(@r, d: metrics.counter(name: RECONNECTIONS, help: "Times a broker was lost and made again.", labels: ["broker"]))?
+    metrics.register(@r, d: metrics.gauge(name: HELD, help: "Publishes held for a broker that is down.", labels: ["broker"]))?
+    metrics.register(@r, d: metrics.gauge(name: WATCHERS, help: "Dashboards connected to the feed.", labels: []))?
+    metrics.register(@r, d: metrics.histogram(name: PAYLOAD_BYTES, help: "Sizes of payloads decoded, in bytes.", labels: ["encoding"], buckets: [16.0, 32.0, 64.0, 128.0, 256.0, 512.0]))?
+    return ok(r)
+
+# Records a reading decoded.
+#
+# - `r`: the registry.
+# - `got`: the reading.
+function record_reading(@r: metrics.Registry, got: reading.Reading lent)
+    # A family and labels described above are never refused.
+    _ = metrics.inc(@r, name: READINGS, labels: [got.device, got.source]).is_err()
+    _ = metrics.observe(@r, name: PAYLOAD_BYTES, labels: [got.encoding], value: to_f64(got.size)).is_err()
+
+# Records a payload refused.
+#
+# - `r`: the registry.
+# - `device`: the device.
+# - `code`: the code its codec failed with.
+function record_refused(@r: metrics.Registry, device: str, code: str)
+    _ = metrics.inc(@r, name: REFUSED, labels: [device, code]).is_err()
+
+# Records a message from an address no device is registered at.
+#
+# - `r`: the registry.
+# - `source`: the protocol it came by.
+function record_unknown(@r: metrics.Registry, source: str)
+    _ = metrics.inc(@r, name: UNKNOWN, labels: [source]).is_err()
+
+# Records a publish made.
+#
+# - `r`: the registry.
+# - `rule`: the rule, or `republish`.
+# - `protocol`: the protocol it was made over.
+function record_published(@r: metrics.Registry, rule: str, protocol: str)
+    _ = metrics.inc(@r, name: ROUTED, labels: [rule, protocol]).is_err()
+
+# Records whether `broker` is up.
+#
+# - `r`: the registry.
+# - `broker`: the broker's protocol.
+# - `up`: whether it is up.
+function record_up(@r: metrics.Registry, broker: str, up: bool)
+    value = if up
+        1.0
+    else
+        0.0
+
+    _ = metrics.set(@r, name: UP, labels: [broker], value: value).is_err()
+
+# Records a broker made again after a loss.
+#
+# - `r`: the registry.
+# - `broker`: the broker's protocol.
+function record_reconnection(@r: metrics.Registry, broker: str)
+    _ = metrics.inc(@r, name: RECONNECTIONS, labels: [broker]).is_err()
+
+# Records the publishes held for `broker`.
+#
+# - `r`: the registry.
+# - `broker`: the broker's protocol.
+# - `count`: how many are held.
+function record_held(@r: metrics.Registry, broker: str, count: i64)
+    _ = metrics.set(@r, name: HELD, labels: [broker], value: to_f64(count)).is_err()
+
+# Records the dashboards connected.
+#
+# - `r`: the registry.
+# - `count`: how many.
+function record_watchers(@r: metrics.Registry, count: i64)
+    _ = metrics.set(@r, name: WATCHERS, labels: [], value: to_f64(count)).is_err()
+
+test "new_telemetry, record_reading: a reading counted and its size observed in its bucket"
+    r @= new_telemetry().must()
+    got = reading.Reading(
+        device: "fridge-07",
+        id: "x",
+        source: "mqtt",
+        encoding: "cbor",
+        taken: time.epoch(),
+        received: time.epoch(),
+        values: [],
+        size: 40
+    )
+    record_reading(@r, got: got)
+    record_reading(@r, got: got)
+    assert metrics.value_of(r, name: READINGS, labels: ["fridge-07", "mqtt"]).must() == 2.0
+    assert metrics.count_of(r, name: PAYLOAD_BYTES, labels: ["cbor"]).must() == 2
+    record_up(@r, broker: "amqp", up: false)
+    assert metrics.value_of(r, name: UP, labels: ["amqp"]).must() == 0.0

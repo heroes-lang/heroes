@@ -1,0 +1,172 @@
+# The serial gateway: sensors on serial lines, a weather station on RS-232
+# or a probe behind a USB adapter, read line by line. A port is a device's
+# path, opened by `serial` at its speed with 8 data bits, no parity and one
+# stop bit; or `tcp://host:port`, a serial device server's raw socket, as
+# ser2net and the boxes that put RS-485 on Ethernet offer one. Either is an
+# `io.Stream`, so everything after the opening is one code.
+#
+# A port is read at every turn of the hub's loop without waiting: the read
+# answers what is there or nothing, since Darwin waits on no pseudo-terminal
+# in a poll set and a serial line is slow beside the loop's turns. A line
+# ends at a line feed, its carriage return taken off; a line longer than
+# NMEA's 82 bytes many times over is noise, dropped and counted. A port that
+# fails or ends is lost, closed, and opened again with the hub's backoff.
+
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/net
+use <rebel>/serial
+use <rebel>/strings
+
+use config/settings
+
+# The prefix of a serial device server's address.
+constant TCP_PREFIX: str
+    "tcp://"
+
+# The most bytes a line may hold before it is dropped as noise.
+constant LONGEST_LINE: i64
+    1_024
+
+# One port of the gateway.
+record Port
+    # Its settings.
+    spec: settings.PortSettings
+    # Its stream, one at most; empty while it is closed.
+    streams: [io.Stream]
+    # The bytes of a line not yet ended.
+    partial: [u8]
+    # The lines read whole.
+    lines: i64
+    # The lines dropped as noise.
+    dropped: i64
+
+# A port not yet opened.
+#
+# - `spec`: its settings.
+function closed_port(spec: settings.PortSettings) -> Port
+    return Port(spec: spec, streams: [], partial: [], lines: 0, dropped: 0)
+
+# Whether `port` names a serial device server rather than a device.
+#
+# - `port`: the port's setting.
+function is_tcp(port: str) -> bool
+    return strings.has_prefix(s: port, prefix: TCP_PREFIX)
+
+# The stream of the port `spec` names, set to answer a read at once.
+#
+# - `spec`: the port's settings.
+#
+# The caller owes the stream an `io.close`. Fails as `serial.open` and
+# `serial.set_timeouts` fail (`not_found`, `permission`, `unsupported`), or
+# as `net.split_host_port` and `net.connect` fail for a device server.
+function open_stream(spec: settings.PortSettings) -> io.Stream?
+    if is_tcp(spec.port)
+        hp = net.split_host_port(spec.port.slice(from: TCP_PREFIX.len(), to: spec.port.len()))?
+
+        # A deadline of 0 makes every read answer what is there at once, as
+        # a serial port's read timeout of 0 does.
+        conn = net.connect(hp.host, port: hp.port, deadline_ms: 0)?
+        return ok(conn.stream)
+
+    port @= serial.open(spec.port, settings: serial.default_settings(baud: spec.baud))?
+
+    match serial.set_timeouts(port, timeouts: serial.Timeouts(read_ms: 0, write_ms: 1_000, gap_ms: 0))
+        .ok _ => return ok(port)
+        .err e =>
+            _ = io.close(@port).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+# Opens `p` where it is closed.
+#
+# - `p`: the port.
+#
+# Fails as `open_stream` fails.
+function open(@p: Port) -> ()?
+    if p.streams.len() > 0
+        return ok()
+
+    p.streams @ [open_stream(p.spec)?]
+    p.partial @ []
+    return ok()
+
+# Whether `p` is open.
+#
+# - `p`: the port.
+function is_open(p: Port lent) -> bool
+    return p.streams.len() > 0
+
+# Closes `p` where it is open.
+#
+# - `p`: the port.
+function close(@p: Port)
+    if p.streams.len() > 0
+        _ = io.close(@p.streams[0]).is_err()
+
+    p.streams @ []
+    p.partial @ []
+
+# Splits what `p` holds into its whole lines, keeping the rest for the next
+# read; a line past `LONGEST_LINE` is dropped.
+#
+# - `p`: the port, its partial line consumed.
+function whole_lines(@p: Port) -> [[u8]]
+    lines: [[u8]] @= []
+    held = p.partial
+    start @= 0
+
+    for i in range(from: 0, to: held.len())
+        if held[i] == 10
+            line @= held.slice(from: start, to: i)
+
+            if line.len() > 0 && line[line.len() - 1] == 13
+                line @ line.slice(from: 0, to: line.len() - 1)
+
+            if line.len() > LONGEST_LINE
+                p.dropped @ p.dropped + 1
+            else if line.len() > 0
+                lines @ lines.push(line)
+                p.lines @ p.lines + 1
+            start @ i + 1
+
+    rest = held.slice(from: start, to: held.len())
+
+    if rest.len() > LONGEST_LINE
+        p.dropped @ p.dropped + 1
+        p.partial @ []
+    else
+        p.partial @ rest
+
+    return lines
+
+# The whole lines `p` received since the last read, reading what is there
+# without waiting.
+#
+# - `p`: the port, open.
+#
+# Fails `closed` where the device or the server ended its side, and as
+# `io.read` fails for any reason but nothing being there.
+function read_lines(@p: Port) -> [[u8]]?
+    data = match io.read(p.streams[0], n: 4_096)
+        .ok d => d
+        .err e =>
+            if e.code == "timeout"
+                return ok([])
+            return fail(code: e.code, msg: e.msg)
+
+    if data.len() == 0
+        return fail(code: "closed", msg: f"the port {p.spec.name} ended")
+
+    bytes.push_all(to: @p.partial, from: data)
+    return ok(whole_lines(@p))
+
+test "whole_lines: CR LF and LF ends, an empty line, a line kept for later, and noise dropped"
+    p @= closed_port(settings.PortSettings(name: "bench", port: "/dev/null", baud: 4800))
+    p.partial @ bytes.from_text("$A*00\r\n\n$B*00\n$C")
+    assert whole_lines(@p) == [bytes.from_text("$A*00"), bytes.from_text("$B*00")]
+    assert p.partial == bytes.from_text("$C") && p.lines == 2
+    p.partial @ bytes.repeated(bytes.from_text("x"), n: 2_000)
+    assert whole_lines(@p).len() == 0 && p.dropped == 1 && p.partial.len() == 0
+
+test "is_tcp: a device server, and a device"
+    assert is_tcp("tcp://127.0.0.1:4001") && !is_tcp("/dev/ttyUSB0") && !is_tcp("COM3")

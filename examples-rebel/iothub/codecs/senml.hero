@@ -1,0 +1,327 @@
+# SenML packs in CBOR (RFC 8428 § 6), the form a constrained device sends
+# its measurements in: an array of records, each a map keyed by small
+# integers, where base fields (a base name, time, unit and value) carry over
+# to the records after them. This module resolves every record as § 4.6
+# says and answers the numeric ones as measurements; and, for a device whose
+# registry schema is not `senml`, reads a plain CBOR map of names to numbers.
+#
+# A record is known by its own name `n`: the base name usually names the
+# device, which the registry knows already, so the registry's `fields` are
+# matched against `n`, and against the whole resolved name where `n` is
+# empty. A time below 2^28 seconds is relative to the moment the pack came,
+# as § 4.5.3 says; the pack's moment is its first record's.
+
+use <rebel>/cbor
+use <rebel>/time
+use <rebel>/uuid
+
+use codecs/reading
+use config/registry
+
+# The code of a payload that is not what this module reads.
+constant INVALID: str
+    "invalid"
+
+# RFC 8428's CBOR labels (Table 4): the base fields, negative, and the
+# record's own, from 0.
+constant BASE_NAME: i64
+    -2
+
+# The label of the base time.
+constant BASE_TIME: i64
+    -3
+
+# The label of the base unit.
+constant BASE_UNIT: i64
+    -4
+
+# The label of the base value.
+constant BASE_VALUE: i64
+    -5
+
+# The label of a record's name.
+constant NAME: i64
+    0
+
+# The label of a record's unit.
+constant UNIT: i64
+    1
+
+# The label of a record's numeric value.
+constant VALUE: i64
+    2
+
+# The label of a record's text value, which is no measurement.
+constant TEXT_VALUE: i64
+    3
+
+# The label of a record's boolean value, which is no measurement.
+constant BOOL_VALUE: i64
+    4
+
+# The label of a record's sum.
+constant SUM: i64
+    5
+
+# The label of a record's time.
+constant TIME: i64
+    6
+
+# The label of a record's data value, which is no measurement.
+constant DATA_VALUE: i64
+    8
+
+# Times below this many seconds are relative to now (RFC 8428 § 4.5.3).
+constant RELATIVE_BELOW: f64
+    268_435_456.0
+
+# The base fields in force at a record: those of the records before it.
+record Base
+    # The base name, "" for none.
+    name: str
+    # The base time, in seconds.
+    time: f64
+    # The base unit, "" for none.
+    unit: str
+    # The base value.
+    value: f64
+
+# The number a CBOR item holds: an integer of either sign or a float.
+#
+# - `v`: the item.
+#
+# Fails `invalid` where it is no number.
+function number_of(v: cbor.Value) -> f64?
+    return match v
+        .unsigned u => ok(to_f64(u.v))
+        .negative n => ok(-1.0 - to_f64(n.n))
+        .float f    => ok(f.v)
+        .binary _ | .text _ | .list _ | .pairs _ | .tagged _ | .boolean _ | .null_value | .undefined | .simple _ => fail(
+            code: INVALID,
+            msg: f"a {cbor.kind_of(v)} where SenML holds a number"
+        )
+
+# The entry of `item` labelled `label`.
+#
+# - `item`: a SenML record.
+# - `label`: the label.
+#
+# Fails `not_found` where the record holds none.
+function labelled(item: cbor.Value, label: i64) -> cbor.Value?
+    return cbor.entry_value(v: item, key: cbor.from_int(label))
+
+# The text of the entry `label`, `otherwise` where it is absent.
+#
+# - `item`: a SenML record.
+# - `label`: the label.
+# - `otherwise`: the text where it is absent.
+#
+# Fails `invalid` where it stands and is no text.
+function text_or(item: cbor.Value, label: i64, otherwise: str) -> str?
+    return match labelled(item, label: label)
+        .err _ => ok(otherwise)
+        .ok v =>
+            match cbor.text_of(v)
+                .ok t  => ok(t)
+                .err _ => fail(code: INVALID, msg: f"the label {label} holds a {cbor.kind_of(v)}, not a text")
+
+# The number of the entry `label`, `otherwise` where it is absent.
+#
+# - `item`: a SenML record.
+# - `label`: the label.
+# - `otherwise`: the number where it is absent.
+#
+# Fails `invalid` where it stands and is no number.
+function number_or(item: cbor.Value, label: i64, otherwise: f64) -> f64?
+    return match labelled(item, label: label)
+        .err _ => ok(otherwise)
+        .ok v  => number_of(v)
+
+# The instant `seconds` names, those below 2^28 counted from `now`.
+#
+# - `seconds`: a resolved SenML time, finite.
+# - `now`: the moment the pack came.
+#
+# Fails `invalid` where it falls outside what an instant holds.
+function instant_of(seconds: f64, now: time.Instant) -> time.Instant?
+    nanoseconds = match to_i64(seconds * 1_000_000_000.0)
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: f"the time {seconds} is outside what a moment holds")
+
+    if seconds < RELATIVE_BELOW
+        return match time.add(now, d: time.nanoseconds(nanoseconds))
+            .ok t  => ok(t)
+            .err _ => fail(code: INVALID, msg: f"the relative time {seconds} is outside what a moment holds")
+
+    return ok(time.Instant(unix_nanoseconds: nanoseconds))
+
+# The measurements of a SenML pack, and the moment of its first record.
+#
+# - `d`: the device that sent it, whose `fields` name its records.
+# - `payload`: the CBOR bytes: an array of maps.
+# - `now`: the moment the pack came, for the times below 2^28.
+#
+# Fails `invalid` where the bytes are no CBOR, the item is no array of
+# maps, a field holds the wrong kind, or a record has neither a name nor a
+# base name.
+function decode_pack(d: registry.Device lent, payload: [u8], now: time.Instant) -> reading.Decoded?
+    pack = match cbor.decode(payload)
+        .ok v  => v
+        .err e => return fail(code: INVALID, msg: f"no CBOR: {e.msg}")
+
+    records = match cbor.items_of(pack)
+        .ok items => items
+        .err _    => return fail(code: INVALID, msg: f"a SenML pack is an array, and this is a {cbor.kind_of(pack)}")
+
+    base @= Base(name: "", time: 0.0, unit: "", value: 0.0)
+    values: [reading.Measurement] @= []
+    taken: time.Instant? @= fail(code: "not_found", msg: "the pack holds no record with a value")
+
+    for item in records
+        if cbor.kind_of(item) != "pairs"
+            return fail(code: INVALID, msg: f"a SenML record is a map, and this is a {cbor.kind_of(item)}")
+
+        base.name @ text_or(item, label: BASE_NAME, otherwise: base.name)?
+        base.time @ number_or(item, label: BASE_TIME, otherwise: base.time)?
+        base.unit @ text_or(item, label: BASE_UNIT, otherwise: base.unit)?
+        base.value @ number_or(item, label: BASE_VALUE, otherwise: base.value)?
+        own = text_or(item, label: NAME, otherwise: "")?
+        whole = base.name + own
+
+        if whole == ""
+            return fail(code: INVALID, msg: "a SenML record has neither a name nor a base name")
+
+        # A record that holds only base fields measures nothing; one with a
+        # text, a boolean or data holds a value that is no number.
+        numeric = !labelled(item, label: VALUE).is_err() || !labelled(item, label: SUM).is_err()
+
+        if numeric
+            key = if own == ""
+                whole
+            else
+                own
+
+            field = registry.field_of(d, key: key)
+            unit = text_or(item, label: UNIT, otherwise: base.unit)?
+
+            shown_unit = if field.unit != ""
+                field.unit
+            else
+                unit
+
+            value = match labelled(item, label: VALUE)
+                .ok _  => base.value + number_or(item, label: VALUE, otherwise: 0.0)?
+                .err _ => number_or(item, label: SUM, otherwise: 0.0)?
+
+            values @ values.push(reading.Measurement(quantity: field.quantity, value: value, unit: shown_unit))
+
+            if taken.is_err()
+                taken @ ok(instant_of(base.time + number_or(item, label: TIME, otherwise: 0.0)?, now: now)?)
+
+    return ok(reading.Decoded(values: values, taken: taken))
+
+# The measurements of a plain CBOR map of names to numbers, the moment
+# under the device's `time_key` in seconds since 1970 or as an epoch time
+# tagged 1.
+#
+# - `d`: the device that sent it.
+# - `payload`: the CBOR bytes: a map with text keys.
+#
+# Fails `invalid` where the bytes are no CBOR or no map.
+function decode_map(d: registry.Device lent, payload: [u8]) -> reading.Decoded?
+    v = match cbor.decode(payload)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"no CBOR: {e.msg}")
+
+    entries = match cbor.entries_of(v)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"a map was expected, and this is a {cbor.kind_of(v)}")
+
+    values: [reading.Measurement] @= []
+    taken: time.Instant? @= fail(code: "not_found", msg: "the map holds no time")
+
+    for e in entries
+        key = cbor.text_of(e.key).default("")
+
+        if key != "" && key == d.time_key
+            item = cbor.content_of(e.value).default(e.value)
+            taken @ ok(instant_of(number_of(item)?, now: time.epoch())?)
+        else if key != ""
+            match number_of(e.value)
+                .ok x =>
+                    field = registry.field_of(d, key: key)
+                    values @ values.push(reading.Measurement(quantity: field.quantity, value: x, unit: field.unit))
+                .err _ => _ = 0
+
+    return ok(reading.Decoded(values: values, taken: taken))
+
+# The measurements a CBOR payload of `d` holds, by its schema: a SenML pack
+# for `senml`, a plain map for any other.
+#
+# - `d`: the device.
+# - `payload`: the bytes.
+# - `now`: the moment it came.
+#
+# Fails `invalid` as `decode_pack` and `decode_map` fail.
+function decode(d: registry.Device lent, payload: [u8], now: time.Instant) -> reading.Decoded?
+    if d.schema == "senml"
+        return decode_pack(d, payload: payload, now: now)
+    return decode_map(d, payload: payload)
+
+test "decode_pack: base fields carried over, a relative time, and a text value left out"
+    d = registry.Device(
+        id: uuid.nil_uuid(),
+        name: "fridge-07",
+        protocol: .mqtt,
+        address: "devices/fridge-07/up",
+        encoding: .cbor,
+        schema: "senml",
+        time_key: "",
+        fields: [registry.FieldMap(key: "temp", quantity: "temperature", unit: "")]
+    )
+    pack: cbor.Value = .list(
+        items: [.pairs(entries: [cbor.Entry(key: cbor.from_int(-2), value: .text(v: "urn:dev:mac:0024befffe804ff1:")), cbor.Entry(key: cbor.from_int(-3), value: cbor.from_int(1_795_338_000)), cbor.Entry(key: cbor.from_int(-4), value: .text(v: "Cel")), cbor.Entry(key: cbor.from_int(0), value: .text(v: "temp")), cbor.Entry(key: cbor.from_int(2), value: .float(v: 4.5))]), .pairs(entries: [cbor.Entry(key: cbor.from_int(0), value: .text(v: "hum")), cbor.Entry(key: cbor.from_int(1), value: .text(v: "%RH")), cbor.Entry(key: cbor.from_int(2), value: cbor.from_int(61))]), .pairs(entries: [cbor.Entry(key: cbor.from_int(0), value: .text(v: "door")), cbor.Entry(key: cbor.from_int(3), value: .text(v: "closed"))])]
+    )
+    got = decode_pack(d, payload: cbor.encode(pack).must(), now: time.epoch()).must()
+    assert got.values == [reading.Measurement(quantity: "temperature", value: 4.5, unit: "Cel"), reading.Measurement(quantity: "hum", value: 61.0, unit: "%RH")]
+    assert got.taken.must() == time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()
+    now = time.from_unix(whole_seconds: 1_795_338_100, extra_nanoseconds: 0).must()
+    relative: cbor.Value = .list(
+        items: [.pairs(entries: [cbor.Entry(key: cbor.from_int(0), value: .text(v: "temp")), cbor.Entry(key: cbor.from_int(2), value: .float(v: 3.0)), cbor.Entry(key: cbor.from_int(6), value: cbor.from_int(-10))])]
+    )
+    assert decode_pack(d, payload: cbor.encode(relative).must(), now: now).must().taken.must() == time.from_unix(whole_seconds: 1_795_338_090, extra_nanoseconds: 0).must()
+
+test "decode_pack: no CBOR, no array, a record that is no map, and one with no name"
+    d = registry.Device(
+        id: uuid.nil_uuid(),
+        name: "x",
+        protocol: .mqtt,
+        address: "a",
+        encoding: .cbor,
+        schema: "senml",
+        time_key: "",
+        fields: []
+    )
+    assert decode_pack(d, payload: [0x9f], now: time.epoch()).is_err()
+    assert decode_pack(d, payload: cbor.encode(cbor.from_int(1)).must(), now: time.epoch()).is_err()
+    assert decode_pack(d, payload: cbor.encode(.list(items: [cbor.from_int(1)])).must(), now: time.epoch()).is_err()
+    nameless: cbor.Value = .list(items: [.pairs(entries: [cbor.Entry(key: cbor.from_int(2), value: cbor.from_int(1))])])
+    assert decode_pack(d, payload: cbor.encode(nameless).must(), now: time.epoch()).is_err()
+
+test "decode_map: numbers by name, a tagged epoch time, and a text left out"
+    d = registry.Device(
+        id: uuid.nil_uuid(),
+        name: "x",
+        protocol: .mqtt,
+        address: "a",
+        encoding: .cbor,
+        schema: "",
+        time_key: "at",
+        fields: [registry.FieldMap(key: "t", quantity: "temperature", unit: "Cel")]
+    )
+    m: cbor.Value = .pairs(
+        entries: [cbor.Entry(key: .text(v: "t"), value: .float(v: 20.5)), cbor.Entry(key: .text(v: "at"), value: .tagged(tag: 1, content: [cbor.from_int(1_795_338_000)])), cbor.Entry(key: .text(v: "label"), value: .text(v: "kitchen"))]
+    )
+    got = decode_map(d, payload: cbor.encode(m).must()).must()
+    assert got.values == [reading.Measurement(quantity: "temperature", value: 20.5, unit: "Cel")]
+    assert got.taken.must() == time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()

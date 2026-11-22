@@ -1,0 +1,573 @@
+# A loopback stand-in for an AMQP 0-9-1 broker, RabbitMQ's protocol, so
+# the demo's press, the hub and the pager speak AMQP to something on this
+# machine. It runs on a thread of its own and serves every connection on one
+# poll loop, and it is honest where the demo leans on it: the protocol
+# header checked; the handshake of § 2.2.4 (start, a PLAIN or AMQPLAIN login
+# checked against its one user, tune, open of the virtual host `/`), every
+# method answered in its order; channels opened before use; exchanges,
+# queues and bindings declared with a broker's checks; publishes assembled
+# from their frames, routed by the exchange's kind and confirmed after;
+# deliveries bounded by each channel's prefetch and acknowledged, refused or
+# given back; heartbeats sent where one was agreed.
+#
+# The demo may ask it for one failure, a restart: at the publish to an
+# exchange it names, the broker closes every connection with 320,
+# CONNECTION_FORCED, as RabbitMQ does when it shuts down, keeps what a
+# restart keeps, and refuses the next connection.open with 530, NOT_ALLOWED,
+# while its virtual host is still coming up. Nothing here reads a clock to
+# decide it: the failure falls on a counted publish and the refusals on
+# counted connections, so the demo's transcript is the same on every run.
+
+use <rebel>/amqp
+use <rebel>/bytes
+use <rebel>/io
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/poll
+use <rebel>/strings
+use <rebel>/time
+
+use standins/amqp_channels
+use standins/amqp_methods
+use standins/amqp_state
+use standins/amqp_store
+use standins/amqp_wire
+use standins/told
+
+# The one user, as a fresh RabbitMQ has it.
+constant USER: str
+    "guest"
+
+# The user's password.
+constant PASSWORD: str
+    "guest"
+
+# The highest channel number this broker agrees.
+constant CHANNEL_MAX: i64
+    2_047
+
+# The heartbeat this broker proposes, in seconds, RabbitMQ's.
+constant HEARTBEAT_S: i64
+    60
+
+# The reply text of a connection.open refused while the virtual host comes
+# up again.
+constant DOWN_TEXT: str
+    "NOT_ALLOWED - vhost / is down"
+
+# A user and a password, as a login carries them.
+record Login
+    # The user.
+    user: str
+    # The password.
+    password: str
+
+# The user and password of a login: SASL PLAIN's `\0user\0password`, or
+# AMQPLAIN's field table of `LOGIN` and `PASSWORD` without its length.
+#
+# - `mechanism`: `PLAIN` or `AMQPLAIN`.
+# - `response`: the response's bytes.
+#
+# Fails `invalid` where the mechanism is another or the response is not
+# what it writes.
+function login_of(mechanism: str, response: [u8]) -> Login?
+    if mechanism == "PLAIN"
+        parts = bytes.split(s: response, sep: [0])
+
+        if parts.len() != 3
+            return fail(code: "invalid", msg: "a PLAIN response is three parts between zero bytes")
+
+        return ok(Login(user: bytes.to_text(parts[1])?, password: bytes.to_text(parts[2])?))
+
+    if mechanism == "AMQPLAIN"
+        table = amqp.decode_table(bytes.concat([bytes.encode_u32_be(to_u32(response.len())?), response]))?
+
+        user = match amqp.value_of(table, name: "LOGIN")?
+            .text t => t.v
+            .boolean _ | .int8 _ | .uint8 _ | .int16 _ | .uint16 _ | .int32 _ | .uint32 _ | .int64 _ | .float32 _ | .float64 _ | .decimal _ | .binary _ | .timestamp _ | .array _ | .table _ | .void => ""
+
+        password = match amqp.value_of(table, name: "PASSWORD")?
+            .text t => t.v
+            .boolean _ | .int8 _ | .uint8 _ | .int16 _ | .uint16 _ | .int32 _ | .uint32 _ | .int64 _ | .float32 _ | .float64 _ | .decimal _ | .binary _ | .timestamp _ | .array _ | .table _ | .void => ""
+
+        return ok(Login(user: user, password: password))
+
+    return fail(code: "invalid", msg: f"the mechanism {mechanism} is neither PLAIN nor AMQPLAIN")
+
+# The connection's name its client properties give, "" for none.
+#
+# - `properties`: the client's properties.
+function name_of(properties: [amqp.Field]) -> str
+    return match amqp.value_of(properties, name: "connection_name")
+        .ok v =>
+            match v
+                .text t => t.v
+                .boolean _ | .int8 _ | .uint8 _ | .int16 _ | .uint16 _ | .int32 _ | .uint32 _ | .int64 _ | .float32 _ | .float64 _ | .decimal _ | .binary _ | .timestamp _ | .array _ | .table _ | .void => ""
+        .err _ => ""
+
+# Answers one method of the connection, on channel 0, by where the
+# handshake stands: a method out of its turn is a connection error, 503.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `m`: the method.
+function on_connection_method(@b: amqp_state.Broker, set: poll.Set, i: i64, m: amqp_methods.Method)
+    stage = b.peers[i].stage
+
+    match m
+        .start_ok s =>
+            if stage != .starting
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 503,
+                    text: "COMMAND_INVALID - connection.start-ok out of its turn",
+                    cause: 10_011
+                )
+                return
+
+            good = match login_of(mechanism: s.mechanism, response: s.response)
+                .ok l  => l.user == USER && l.password == PASSWORD
+                .err _ => false
+
+            if !good
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 403,
+                    text: f"ACCESS_REFUSED - Login was refused using authentication mechanism {s.mechanism}.",
+                    cause: 10_011
+                )
+                return
+
+            b.peers[i].name @ name_of(s.properties)
+            amqp_state.send_method(
+                b,
+                i: i,
+                channel: 0,
+                payload: amqp_methods.tune(channel_max: CHANNEL_MAX, frame_max: amqp_state.FRAME_MAX, heartbeat_s: HEARTBEAT_S)
+            )
+            b.peers[i].stage @ .tuning
+        .tune_ok t =>
+            if stage != .tuning
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 503,
+                    text: "COMMAND_INVALID - connection.tune-ok out of its turn",
+                    cause: 10_031
+                )
+                return
+
+            if t.frame_max > 0 && t.frame_max < amqp_state.FRAME_MAX
+                b.peers[i].frame_max @ t.frame_max
+
+            b.peers[i].heartbeat_s @ t.heartbeat_s
+            b.peers[i].stage @ .opening
+        .open o =>
+            if stage != .opening
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 503,
+                    text: "COMMAND_INVALID - connection.open out of its turn",
+                    cause: 10_040
+                )
+            else if o.vhost != "/"
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 530,
+                    text: f"NOT_ALLOWED - vhost {o.vhost} not found",
+                    cause: 10_040
+                )
+            else if b.fault.left > 0
+                b.fault.left @ b.fault.left - 1
+                b.refused @ b.refused + 1
+                amqp_state.connection_error(@b, i: i, code: 530, text: DOWN_TEXT, cause: 10_040)
+            else
+                amqp_state.send_method(b, i: i, channel: 0, payload: amqp_methods.open_ok())
+                b.peers[i].stage @ .open
+        .close _ =>
+            amqp_state.send_method(b, i: i, channel: 0, payload: amqp_methods.bare(class_id: 10, method_id: 51))
+            amqp_state.drop_peer(@b, set: set, i: i)
+        .close_ok => amqp_state.drop_peer(@b, set: set, i: i)
+        .channel_open | .channel_close | .channel_close_ok | .exchange_declare _ | .queue_declare _ | .queue_bind _ | .qos _ | .consume _ | .cancel _ | .publish _ | .ack _ | .nack _ | .confirm_select _ | .unserved _ => amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 503,
+            text: "COMMAND_INVALID - a channel's method on channel 0",
+            cause: 0
+        )
+
+# Whether `m` is connection.close or close-ok, the two methods a closing
+# connection still answers.
+#
+# - `m`: the method.
+function ends_connection(m: amqp_methods.Method) -> bool
+    return match m
+        .close _ | .close_ok => true
+        .start_ok _ | .tune_ok _ | .open _ | .channel_open | .channel_close | .channel_close_ok | .exchange_declare _ | .queue_declare _ | .queue_bind _ | .qos _ | .consume _ | .cancel _ | .publish _ | .ack _ | .nack _ | .confirm_select _ | .unserved _ => false
+
+# Opens channel `channel` of peer `i`, answering channel.open-ok; one open
+# already is a connection error, 504.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `channel`: the channel's number.
+function open_channel(@b: amqp_state.Broker, i: i64, channel: i64)
+    j = amqp_state.chan_index(b, i: i, id: channel)
+    fresh = amqp_state.Chan(
+        id: channel,
+        open: true,
+        confirming: false,
+        published: 0,
+        delivered: 0,
+        prefetch: 0,
+        unacked: [],
+        assembling: []
+    )
+
+    if j >= 0 && b.peers[i].channels[j].open
+        amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 504,
+            text: "CHANNEL_ERROR - second 'channel.open' seen",
+            cause: 20_010
+        )
+        return
+
+    if channel > CHANNEL_MAX
+        amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 504,
+            text: f"CHANNEL_ERROR - channel {channel} past {CHANNEL_MAX}",
+            cause: 20_010
+        )
+        return
+
+    if j >= 0
+        b.peers[i].channels[j] @ fresh
+    else
+        channels @= b.peers[i].channels
+        channels @ channels.push(fresh)
+        b.peers[i].channels @ channels
+
+    amqp_state.send_method(b, i: i, channel: channel, payload: amqp_methods.channel_open_ok())
+
+# Acts on one frame of peer `i`.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+# - `f`: the frame.
+function on_frame(@b: amqp_state.Broker, set: poll.Set, i: i64, f: amqp_wire.Frame)
+    if f.kind == amqp_wire.HEARTBEAT
+        return
+
+    closing = b.peers[i].stage == .closing
+
+    if f.kind != amqp_wire.METHOD && f.channel == 0
+        if !closing
+            amqp_state.connection_error(@b, i: i, code: 505, text: "UNEXPECTED_FRAME - content on channel 0", cause: 0)
+        return
+
+    if f.kind == amqp_wire.METHOD
+        m = match amqp_methods.decode(f.payload)
+            .ok got => got
+            .err e =>
+                if !closing
+                    amqp_state.connection_error(@b, i: i, code: 502, text: f"SYNTAX_ERROR - {e.msg}", cause: 0)
+                return
+
+        if f.channel == 0
+            # Each side answers the other's close, so a close crossing the
+            # broker's own is answered too (§ 2.2.4).
+            if closing && !ends_connection(m)
+                return
+            on_connection_method(@b, set: set, i: i, m: m)
+            return
+
+        if closing
+            return
+
+        if b.peers[i].stage != .open
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 504,
+                text: "CHANNEL_ERROR - the connection is not open",
+                cause: 0
+            )
+            return
+
+        if m == .channel_open
+            open_channel(@b, i: i, channel: f.channel)
+            return
+
+        j = amqp_state.chan_index(b, i: i, id: f.channel)
+
+        if j < 0 || !b.peers[i].channels[j].open
+            if m != .channel_close_ok
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 504,
+                    text: "CHANNEL_ERROR - expected 'channel.open'",
+                    cause: 0
+                )
+            return
+
+        if b.peers[i].channels[j].assembling.len() > 0
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 505,
+                text: "UNEXPECTED_FRAME - a method inside a publish's content",
+                cause: 0
+            )
+            return
+
+        amqp_channels.on_method(@b, i: i, j: j, m: m)
+        return
+
+    if closing
+        return
+
+    j = amqp_state.chan_index(b, i: i, id: f.channel)
+
+    if j < 0 || !b.peers[i].channels[j].open
+        amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 504,
+            text: "CHANNEL_ERROR - content on a channel not open",
+            cause: 0
+        )
+        return
+
+    amqp_channels.content(@b, i: i, j: j, f: f)
+
+# Reads what peer `i` sent and acts on its protocol header and on every
+# whole frame of it.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `i`: the peer's index.
+function on_readable(@b: amqp_state.Broker, set: poll.Set, i: i64)
+    data = match io.read(b.peers[i].stream, n: 65_536)
+        .ok d => d
+        .err _ =>
+            amqp_state.drop_peer(@b, set: set, i: i)
+            return
+
+    if data.len() == 0
+        amqp_state.drop_peer(@b, set: set, i: i)
+        return
+
+    bytes.push_all(to: @b.peers[i].held, from: data)
+
+    if b.peers[i].stage == .greeting
+        held = b.peers[i].held
+
+        if held.len() < 8
+            return
+
+        if held.slice(from: 0, to: 8) != amqp_wire.protocol_header()
+            # § 4.2.2: a broker that does not speak the version asked writes
+            # the header of the one it speaks, and closes.
+            _ = io.write(b.peers[i].stream, data: amqp_wire.protocol_header()).is_err()
+            amqp_state.drop_peer(@b, set: set, i: i)
+            return
+
+        b.peers[i].held @ held.slice(from: 8, to: held.len())
+        amqp_state.send_method(b, i: i, channel: 0, payload: amqp_methods.start())
+        b.peers[i].stage @ .starting
+
+    while b.peers[i].open
+        held = b.peers[i].held
+        n = amqp_wire.frame_length(held, most: b.peers[i].frame_max)
+
+        if n == 0
+            return
+
+        if n < 0
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 501,
+                text: "FRAME_ERROR - a frame past the size agreed",
+                cause: 0
+            )
+            amqp_state.drop_peer(@b, set: set, i: i)
+            return
+
+        b.peers[i].held @ held.slice(from: n, to: held.len())
+
+        match amqp_wire.decode_frame(held.slice(from: 0, to: n))
+            .ok f => on_frame(@b, set: set, i: i, f: f)
+            .err _ =>
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 501,
+                    text: "FRAME_ERROR - a frame not ended by 0xCE",
+                    cause: 0
+                )
+                amqp_state.drop_peer(@b, set: set, i: i)
+
+# Accepts the connection `l` holds and adds it to the set.
+#
+# - `b`: the broker.
+# - `set`: the poll set.
+# - `l`: the listener.
+function accept(@b: amqp_state.Broker, set: poll.Set, l: net.Listener lent)
+    conn @= match net.accept(l, deadline_ms: net.FOREVER)
+        .ok c  => c
+        .err _ => return
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            _ = io.close(@conn.stream).is_err()
+            return
+
+    peers @= b.peers
+    peers @ peers.push(
+        amqp_state.Peer(key: key, stream: conn.stream, held: [], stage: .greeting, name: "", frame_max: amqp_state.FRAME_MAX, heartbeat_s: 0, channels: [], open: true)
+    )
+    b.peers @ peers
+
+# Sends a heartbeat frame to every open connection that agreed one.
+#
+# - `b`: the broker.
+function beat(b: amqp_state.Broker lent)
+    for i in range(from: 0, to: b.peers.len())
+        if b.peers[i].open && b.peers[i].heartbeat_s > 0 && b.peers[i].stage == .open
+            amqp_state.send(b, i: i, kind: amqp_wire.HEARTBEAT, channel: 0, payload: [])
+
+# The fault `text` asks: `none`, or `restart:<exchange>:<publish>:<refusals>`.
+#
+# - `text`: the fault's text.
+#
+# Fails `invalid` where it is neither.
+function fault_of(text: str) -> amqp_state.Fault?
+    if text == "none"
+        return ok(amqp_state.Fault(exchange: "", after: 0, refusals: 0, seen: 0, left: 0))
+
+    parts = strings.split(s: text, sep: ":")
+
+    if parts.len() != 4 || parts[0] != "restart" || parts[1] == ""
+        return fail(code: "invalid", msg: f"\"{text}\" is no fault: none, or restart:<exchange>:<publish>:<refusals>")
+
+    after = numbers.parse_int(parts[2])?
+    refusals = numbers.parse_int(parts[3])?
+    return ok(amqp_state.Fault(exchange: parts[1], after: after, refusals: refusals, seen: 0, left: 0))
+
+# Listens on the loopback, tells the starter at `told_port` where, serves
+# until the program's stop, and answers what it carried.
+#
+# - `told_port`: the port of the starter's socket.
+# - `fault`: the failure asked of the broker.
+#
+# Fails as `net.listen` and `poll.make` fail, the starter told first.
+function serve_on(told_port: i64, fault: amqp_state.Fault) -> str?
+    l @= match net.listen(host: "127.0.0.1", port: 0)
+        .ok got => got
+        .err e =>
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    set @= match poll.make(256)
+        .ok got => got
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            _ = told.failed(port: told_port, why: e.msg).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    listening = poll.add_listener(set, l: l)?
+
+    # Half the heartbeat, as RabbitMQ sends them.
+    beating = poll.add_timer(set, first: time.seconds(HEARTBEAT_S / 2)?, every: time.seconds(HEARTBEAT_S / 2)?)?
+    told.ready(port: told_port, listening: l.address.port)?
+    b @= amqp_state.Broker(
+        peers: [],
+        host: amqp_store.new_host(),
+        consumers: [],
+        fault: fault,
+        published: 0,
+        delivered: 0,
+        acked: 0,
+        restarts: 0,
+        refused: 0,
+        tags: 0
+    )
+
+    while true
+        events = match poll.wait(set, limit: time.hours(1).must())
+            .ok got => got
+            .err _  => break
+
+        for e in events
+            if e.key == listening
+                accept(@b, set: set, l: l)
+            else if e.key == beating
+                beat(b)
+            else
+                for i in range(from: 0, to: b.peers.len())
+                    if b.peers[i].open && b.peers[i].key == e.key
+                        on_readable(@b, set: set, i: i)
+
+    for i in range(from: 0, to: b.peers.len())
+        amqp_state.drop_peer(@b, set: set, i: i)
+
+    poll.close(@set)?
+    net.close_listener(@l)?
+    return ok(
+        f"the AMQP stand-in: {b.peers.len()} connections, {b.published} published, {b.delivered} delivered, {b.acked} acknowledged, {b.restarts} restart, {b.refused} refused"
+    )
+
+# The body of the stand-in's thread: serves until the program's stop.
+#
+# - `arg`: the port of the starter's socket, a space, and the fault.
+function run(arg: str) -> str
+    parts = strings.words(arg)
+
+    if parts.len() != 2
+        return f"the AMQP stand-in: \"{arg}\" is not a port and a fault"
+
+    told_port = match numbers.parse_int(parts[0])
+        .ok p  => p
+        .err _ => return f"the AMQP stand-in: \"{parts[0]}\" is no port"
+
+    fault = match fault_of(parts[1])
+        .ok f  => f
+        .err e => return f"the AMQP stand-in: {e.msg}"
+
+    return match serve_on(told_port, fault: fault)
+        .ok said => said
+        .err e   => f"the AMQP stand-in failed: {e.msg}"
+
+test "login_of: PLAIN's three parts, AMQPLAIN's table, and a mechanism of neither"
+    plain = login_of(mechanism: "PLAIN", response: [0, 'g', 'u', 'e', 's', 't', 0, 'p', 'w'])
+    assert plain.must() == Login(user: "guest", password: "pw")
+    table = amqp.encode_table(
+        [amqp.Field(name: "LOGIN", value: .text(v: "guest")), amqp.Field(name: "PASSWORD", value: .text(v: "guest"))]
+    ).must()
+    assert login_of(mechanism: "AMQPLAIN", response: table.slice(from: 4, to: table.len())).must() == Login(user: "guest", password: "guest")
+    assert login_of(mechanism: "PLAIN", response: bytes.from_text("guest")).is_err()
+    assert login_of(mechanism: "EXTERNAL", response: []).is_err()
+
+test "fault_of: none, a restart, and a text that is neither"
+    assert fault_of("none").must().exchange == ""
+    f = fault_of("restart:alerts:3:2").must()
+    assert f.exchange == "alerts" && f.after == 3 && f.refusals == 2
+    assert fault_of("restart:alerts:3").is_err()
+    assert fault_of("crash").is_err()
+
+test "name_of: the connection's name, and none"
+    assert name_of([amqp.Field(name: "connection_name", value: .text(v: "iothub"))]) == "iothub"
+    assert name_of([]) == ""

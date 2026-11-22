@@ -1,0 +1,89 @@
+# What the hub holds for a broker that is down: every publish a reading
+# owes that broker, kept in the order it was owed and sent when the broker
+# is back, so a broker's restart delays a reading and never loses it. The
+# outbox is bounded: past its bound the oldest held publish is dropped and
+# counted, since a hub that holds without bound is a hub a long outage
+# kills.
+
+use config/registry
+
+# One publish waiting for its broker.
+record Held
+    # The broker's protocol.
+    protocol: registry.Protocol
+    # Where it is published: a topic, `<exchange>/<key>` or a subject.
+    address: str
+    # Its body: the reading's JSON.
+    body: [u8]
+    # The rule that sent it, or `republish`.
+    rule: str
+
+# The publishes held.
+record Outbox
+    # The publishes, the oldest first.
+    held: [Held]
+    # The most held at once, 1 or more.
+    most: i64
+    # The publishes dropped past `most`.
+    dropped: i64
+
+# An empty outbox holding `most` publishes at most.
+#
+# - `most`: the bound, 1 or more.
+function new_outbox(most: i64) -> Outbox
+    return Outbox(held: [], most: most, dropped: 0)
+
+# Holds `h`, dropping the oldest held publish where the outbox is full.
+#
+# - `o`: the outbox.
+# - `h`: the publish.
+function hold(@o: Outbox, h: Held)
+    held @= o.held
+
+    if held.len() >= o.most
+        held @ held.slice(from: 1, to: held.len())
+        o.dropped @ o.dropped + 1
+
+    held @ held.push(h)
+    o.held @ held
+
+# The publishes held for `protocol`, in their order, taken out of the
+# outbox.
+#
+# - `o`: the outbox.
+# - `protocol`: the broker that is back.
+function take_for(@o: Outbox, protocol: registry.Protocol) -> [Held]
+    taken: [Held] @= []
+    kept: [Held] @= []
+
+    for h in o.held
+        if h.protocol == protocol
+            taken @ taken.push(h)
+        else
+            kept @ kept.push(h)
+
+    o.held @ kept
+    return taken
+
+# The publishes held for `protocol`.
+#
+# - `o`: the outbox.
+# - `protocol`: the broker.
+function count_for(o: Outbox lent, protocol: registry.Protocol) -> i64
+    n @= 0
+
+    for h in o.held
+        if h.protocol == protocol
+            n @ n + 1
+
+    return n
+
+test "hold, take_for: held in order, taken for one broker, the oldest dropped past the bound"
+    o @= new_outbox(2)
+    hold(@o, h: Held(protocol: .amqp, address: "alerts/a", body: [1], rule: "r"))
+    hold(@o, h: Held(protocol: .nats, address: "b", body: [2], rule: "r"))
+    hold(@o, h: Held(protocol: .amqp, address: "alerts/c", body: [3], rule: "r"))
+    assert o.dropped == 1 && count_for(o, protocol: .amqp) == 1
+    taken = take_for(@o, protocol: .amqp)
+    assert taken.len() == 1 && taken[0].body == [3]
+    assert o.held.len() == 1 && take_for(@o, protocol: .mqtt).len() == 0

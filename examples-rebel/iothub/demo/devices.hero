@@ -1,0 +1,232 @@
+# The demo's devices, each a plain client of its broker as a device in the
+# field is, and none a client of the hub: a fridge that sends SenML packs in
+# CBOR over MQTT, a press whose vibration sensor publishes Protocol Buffers
+# to an AMQP exchange with publisher confirms, a tracker that sends
+# MessagePack over NATS, and a stranger, a device nobody registered, on
+# MQTT. Each payload is made here the way the device's firmware would make
+# it, by the same packages the hub reads it with.
+#
+# Every publish returns once its broker has taken it (MQTT's PUBACK, AMQP's
+# confirmation, NATS's flush), and the stand-ins route before they answer,
+# so the hub has the message when the call returns.
+
+use <rebel>/amqp
+use <rebel>/cbor
+use <rebel>/mqtt
+use <rebel>/msgpack
+use <rebel>/nats
+use <rebel>/protobuf
+use <rebel>/time
+
+use codecs/nmea
+use codecs/proto
+use demo/world
+
+# The fridge's SenML base name: its MAC address, as RFC 8428's examples
+# name a device.
+constant FRIDGE_NAME: str
+    "urn:dev:mac:0024befffe804ff1:"
+
+# How long a device waits for its broker to take a publish.
+constant WAIT_SECONDS: i64
+    10
+
+# The devices' clients, each one at most.
+record Fleet
+    # The fridge, on MQTT.
+    fridge: [mqtt.Client]
+    # A device nobody registered, on MQTT.
+    stranger: [mqtt.Client]
+    # The press, on AMQP.
+    press: [amqp.Connection]
+    # The tracker, on NATS.
+    tracker: [nats.Client]
+    # The press's `.proto` schema.
+    schema: protobuf.Schema
+
+## Payloads
+
+# A CBOR map's entry under an integer label.
+#
+# - `label`: the label.
+# - `value`: the value.
+function labelled(label: i64, value: cbor.Value) -> cbor.Entry
+    return cbor.Entry(key: cbor.from_int(label), value: value)
+
+# The fridge's SenML pack: a temperature and a humidity, measured at
+# `seconds` since 1970, the base name and time given once (RFC 8428 § 6).
+#
+# - `seconds`: when it measured them.
+# - `temperature`: degrees Celsius.
+# - `humidity`: percent of relative humidity.
+#
+# Fails as `cbor.encode` fails, which it does not for this pack.
+function senml_pack(seconds: i64, temperature: f64, humidity: f64) -> [u8]?
+    pack: cbor.Value = .list(
+        items: [.pairs(entries: [labelled(-2, value: .text(v: FRIDGE_NAME)), labelled(-3, value: cbor.from_int(seconds)), labelled(0, value: .text(v: "temp")), labelled(1, value: .text(v: "Cel")), labelled(2, value: .float(v: temperature))]), .pairs(entries: [labelled(0, value: .text(v: "hum")), labelled(1, value: .text(v: "%RH")), labelled(2, value: .float(v: humidity))])]
+    )
+    return cbor.encode(pack)
+
+# The tracker's MessagePack map: where it is, how fast, its battery, and the
+# moment as the timestamp extension.
+#
+# - `lat`: latitude, degrees.
+# - `lon`: longitude, degrees.
+# - `speed`: kilometres an hour.
+# - `battery`: percent.
+# - `at`: when it measured them.
+#
+# Fails as `msgpack.encode` fails, which it does not for this map.
+function tracker_fix(lat: f64, lon: f64, speed: f64, battery: i64, at: time.Instant) -> [u8]?
+    m: msgpack.Value = .pairs(
+        entries: [msgpack.Entry(key: .text(v: "lat"), value: .float(v: lat)), msgpack.Entry(key: .text(v: "lon"), value: .float(v: lon)), msgpack.Entry(key: .text(v: "spd"), value: .float(v: speed)), msgpack.Entry(key: .text(v: "bat"), value: msgpack.from_int(battery)), msgpack.Entry(key: .text(v: "ts"), value: msgpack.from_instant(at))]
+    )
+    return msgpack.encode(m)
+
+# The press's vibration, as a `plant.Vibration` on the wire.
+#
+# - `schema`: the press's schema.
+# - `rms`: the velocity's RMS, mm/s.
+# - `peak`: the peak acceleration, g.
+# - `at`: when it measured them.
+#
+# Fails as `protobuf.set` and `protobuf.encode` fail, which they do not for
+# this message.
+function vibration(schema: protobuf.Schema lent, rms: f64, peak: f64, at: time.Instant) -> [u8]?
+    m @= protobuf.new_message(schema, type_name: "plant.Vibration")?
+    protobuf.set(schema, m: @m, field: "sensor", value: .text(v: "press-2"))?
+    protobuf.set_float(schema, m: @m, field: "rms_mm_s", x: rms)?
+    protobuf.set_float(schema, m: @m, field: "peak_g", x: peak)?
+    protobuf.set(schema, m: @m, field: "taken", value: .message(m: protobuf.from_instant(at)))?
+    return protobuf.encode(schema, m: m)
+
+# The station's XDR sentence of an air temperature, a humidity and a
+# pressure, its checksum computed: `$WIXDR,C,21.5,C,AIR,...*13`.
+#
+# - `air`: the temperature, written as given.
+# - `humidity`: the humidity, written as given.
+# - `pressure`: the pressure in bar, written as given.
+function xdr(air: str, humidity: str, pressure: str) -> str
+    body = f"WIXDR,C,{air},C,AIR,H,{humidity},P,RH,P,{pressure},B,BARO"
+    return "$" + body + "*" + nmea.hex_pair(nmea.checksum_of(body))
+
+## Clients
+
+# An MQTT client of the stand-in at `port`, named `name`.
+#
+# - `port`: the broker's port on the loopback.
+# - `name`: the client identifier.
+#
+# The caller owes it a `mqtt.close`. Fails as `mqtt.connect` fails.
+function mqtt_client(port: i64, name: str) -> mqtt.Client?
+    opts @= mqtt.options("127.0.0.1")
+    opts.port @ port
+    opts.client_id @ name
+    opts.reconnect.attempts @ 0
+    return mqtt.connect(opts)
+
+# The press's connection to the AMQP stand-in at `port`: channel 1 open in
+# confirm mode.
+#
+# - `port`: the broker's port on the loopback.
+#
+# The caller owes it an `amqp.close`. Fails as `amqp.connect`,
+# `amqp.open_channel` and `amqp.select_confirms` fail.
+function press_connection(port: i64) -> amqp.Connection?
+    opts @= amqp.options("127.0.0.1")
+    opts.port @ port
+    opts.connection_name @ "press-2"
+    c @= amqp.connect(opts)?
+    channel = amqp.open_channel(@c)?
+    amqp.select_confirms(@c, channel: channel)?
+    return ok(c)
+
+# The devices' clients, connected to the stand-ins of `w`.
+#
+# - `w`: the world, its brokers and hub started.
+#
+# Fails as a client's connection fails.
+function connect_fleet(w: world.World lent) -> Fleet?
+    opts @= nats.options([f"nats://127.0.0.1:{w.nats_port}"])
+    opts.name @ "tracker-3"
+    opts.reconnect.attempts @ 0
+    return ok(
+        Fleet(fridge: [mqtt_client(w.mqtt_port, name: "fridge-07")?], stranger: [mqtt_client(w.mqtt_port, name: "ghost-1")?], press: [press_connection(w.amqp_port)?], tracker: [nats.connect(opts)?], schema: proto.schema_of({"plant.proto": world.vibration_proto()})?)
+    )
+
+# The fridge publishes `payload` on its uplink, at QoS 1.
+#
+# - `f`: the fleet.
+# - `payload`: the bytes.
+function fridge_says(@f: Fleet, payload: [u8]) -> ()?
+    return mqtt.publish(@f.fridge[0], topic: "devices/fridge-07/up", payload: payload, qos: 1, retain: false)
+
+# The unregistered device publishes `payload` on its own uplink.
+#
+# - `f`: the fleet.
+# - `payload`: the bytes.
+function stranger_says(@f: Fleet, payload: [u8]) -> ()?
+    return mqtt.publish(@f.stranger[0], topic: "devices/ghost-1/up", payload: payload, qos: 1, retain: false)
+
+# The press publishes `payload` to the plant's exchange, persistent, and
+# waits for the broker's confirmation.
+#
+# - `f`: the fleet.
+# - `payload`: the bytes.
+function press_says(@f: Fleet, payload: [u8]) -> ()?
+    m @= amqp.message(payload)
+    m.content_type @ "application/x-protobuf"
+    m.delivery_mode @ amqp.PERSISTENT
+    channel = amqp.Channel(id: 1)
+    _ = amqp.publish(@f.press[0], channel: channel, exchange_name: "plant", routing_key: "line1.press-2.vibration", m: m, mandatory: false)?
+    return amqp.wait_confirms(@f.press[0], channel: channel, wait: time.seconds(WAIT_SECONDS)?)
+
+# The tracker publishes `payload` on its subject, flushed.
+#
+# - `f`: the fleet.
+# - `payload`: the bytes.
+function tracker_says(@f: Fleet, payload: [u8]) -> ()?
+    nats.publish(@f.tracker[0], subject: "fleet.tracker-3.position", data: payload)?
+    return nats.flush(@f.tracker[0], wait: time.seconds(WAIT_SECONDS)?)
+
+# The press connects again, as every client of a restarted broker must:
+# its old connection, closed by the broker, let go.
+#
+# - `f`: the fleet.
+# - `port`: the broker's port.
+#
+# Fails as `press_connection` fails.
+function reconnect_press(@f: Fleet, port: i64) -> ()?
+    # The broker closed the old one; its own close answers that.
+    _ = amqp.close(@f.press[0]).is_err()
+    f.press @ [press_connection(port)?]
+    return ok()
+
+# Closes every device's client.
+#
+# - `f`: the fleet.
+function close_fleet(@f: Fleet)
+    for i in range(from: 0, to: f.fridge.len())
+        _ = mqtt.close(@f.fridge[i]).is_err()
+
+    for i in range(from: 0, to: f.stranger.len())
+        _ = mqtt.close(@f.stranger[i]).is_err()
+
+    for i in range(from: 0, to: f.press.len())
+        _ = amqp.close(@f.press[i]).is_err()
+
+    for i in range(from: 0, to: f.tracker.len())
+        _ = nats.close(@f.tracker[i]).is_err()
+
+    f.fridge @ []
+    f.stranger @ []
+    f.press @ []
+    f.tracker @ []
+
+test "xdr: the checksum Python computes for the same sentence"
+    assert xdr(air: "21.5", humidity: "48.2", pressure: "1.0132") == "$WIXDR,C,21.5,C,AIR,H,48.2,P,RH,P,1.0132,B,BARO*13"
+
+test "senml_pack: what the hub's codec reads back"
+    data = senml_pack(seconds: 1_795_338_000, temperature: 4.5, humidity: 61.0).must()
+    v = cbor.decode(data).must()
+    assert cbor.items_of(v).must().len() == 2

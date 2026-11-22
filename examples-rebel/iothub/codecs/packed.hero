@@ -1,0 +1,120 @@
+# MessagePack payloads: a map whose text keys name the values, as a tracker
+# or a gateway that counts its bytes sends them (`{"lat": 45.07, "bat": 87}`).
+# Every number becomes a measurement named by the registry's `fields`; the
+# key the registry names as the device's time holds the moment, as the
+# timestamp extension (type -1) or as seconds since 1970. Texts, booleans,
+# binaries and nested values are not measurements and are left out.
+
+use <rebel>/msgpack
+use <rebel>/time
+use <rebel>/uuid
+
+use codecs/reading
+use config/registry
+
+# The code of a payload that is not what this module reads.
+constant INVALID: str
+    "invalid"
+
+# The number a MessagePack object holds: an integer of either sign or a
+# float.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where it is no number.
+function number_of(v: msgpack.Value) -> f64?
+    return match v
+        .unsigned u => ok(to_f64(u.v))
+        .negative n => ok(to_f64(n.v))
+        .float f    => ok(f.v)
+        .nil_value | .boolean _ | .text _ | .binary _ | .list _ | .pairs _ | .extension _ => fail(
+            code: INVALID,
+            msg: f"a {msgpack.kind_of(v)} where a number was expected"
+        )
+
+# The moment the time key's object `v` holds: the timestamp extension, or a
+# number of seconds since 1970.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where it is neither, or past what an instant holds.
+function moment_of(v: msgpack.Value) -> time.Instant?
+    match msgpack.instant_of(v)
+        .ok t  => return ok(t)
+        .err _ => _ = 0
+
+    seconds = number_of(v)?
+
+    return match to_i64(seconds * 1_000_000_000.0)
+        .ok n  => ok(time.Instant(unix_nanoseconds: n))
+        .err _ => fail(code: INVALID, msg: f"the time {seconds} is outside what a moment holds")
+
+# The measurements a MessagePack map of `d` holds, and its moment.
+#
+# - `d`: the device that sent it.
+# - `payload`: the bytes: one map with text keys.
+#
+# Fails `invalid` where the bytes are no MessagePack, no map, or the time
+# key holds no moment.
+function decode(d: registry.Device lent, payload: [u8]) -> reading.Decoded?
+    v = match msgpack.decode(payload)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"no MessagePack: {e.msg}")
+
+    entries = match msgpack.entries_of(v)
+        .ok got => got
+        .err _  => return fail(code: INVALID, msg: f"a map was expected, and this is a {msgpack.kind_of(v)}")
+
+    values: [reading.Measurement] @= []
+    taken: time.Instant? @= fail(code: "not_found", msg: "the map holds no time")
+
+    for e in entries
+        key = msgpack.text_of(e.key).default("")
+
+        if key == ""
+            continue
+
+        if key == d.time_key
+            taken @ ok(moment_of(e.value)?)
+            continue
+
+        match number_of(e.value)
+            .ok x =>
+                field = registry.field_of(d, key: key)
+                values @ values.push(reading.Measurement(quantity: field.quantity, value: x, unit: field.unit))
+            .err _ => _ = 0
+
+    return ok(reading.Decoded(values: values, taken: taken))
+
+# A tracker of the tests, its keys named.
+function tracker() -> registry.Device
+    return registry.Device(
+        id: uuid.nil_uuid(),
+        name: "tracker-3",
+        protocol: .nats,
+        address: "fleet.tracker-3.position",
+        encoding: .msgpack,
+        schema: "",
+        time_key: "ts",
+        fields: [registry.FieldMap(key: "bat", quantity: "battery", unit: "%"), registry.FieldMap(key: "spd", quantity: "speed", unit: "km/h")]
+    )
+
+test "decode: numbers named, a timestamp extension, a negative integer, and a text left out"
+    at = time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()
+    m: msgpack.Value = .pairs(
+        entries: [msgpack.Entry(key: .text(v: "spd"), value: .float(v: 42.5)), msgpack.Entry(key: .text(v: "bat"), value: msgpack.from_int(87)), msgpack.Entry(key: .text(v: "alt"), value: msgpack.from_int(-3)), msgpack.Entry(key: .text(v: "ts"), value: msgpack.from_instant(at)), msgpack.Entry(key: .text(v: "fw"), value: .text(v: "1.4.2"))]
+    )
+    got = decode(tracker(), payload: msgpack.encode(m).must()).must()
+    assert got.values == [reading.Measurement(quantity: "speed", value: 42.5, unit: "km/h"), reading.Measurement(quantity: "battery", value: 87.0, unit: "%"), reading.Measurement(quantity: "alt", value: -3.0, unit: "")]
+    assert got.taken.must() == at
+
+test "decode: seconds as the time, no time at all, no map, and bytes that are no MessagePack"
+    seconds: msgpack.Value = .pairs(
+        entries: [msgpack.Entry(key: .text(v: "ts"), value: msgpack.from_int(1_795_338_000))]
+    )
+    assert decode(tracker(), payload: msgpack.encode(seconds).must()).must().taken.must() == time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()
+    timeless: msgpack.Value = .pairs(entries: [msgpack.Entry(key: .text(v: "bat"), value: msgpack.from_int(5))])
+    assert decode(tracker(), payload: msgpack.encode(timeless).must()).must().taken.is_err()
+    assert decode(tracker(), payload: msgpack.encode(msgpack.from_int(1)).must()).is_err()
+    assert decode(tracker(), payload: [0xc1]).is_err()
+    assert decode(tracker(), payload: []).is_err()

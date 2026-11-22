@@ -1,0 +1,59 @@
+# The one door of the codecs: a payload of a registered device made into a
+# reading, by the encoding and schema the registry gives the device. Which
+# protocol carried the payload makes no difference here; the hub adds it to
+# the reading, with the moment the payload came, which stands for the
+# device's own where the payload says none.
+
+use <rebel>/protobuf
+use <rebel>/time
+use <rebel>/uuid
+
+use codecs/nmea
+use codecs/packed
+use codecs/proto
+use codecs/reading
+use codecs/senml
+use config/registry
+
+# The reading a payload of `d` makes.
+#
+# - `schema`: the hub's `.proto` files, read when it started.
+# - `d`: the device that sent the payload.
+# - `payload`: its bytes, as the protocol delivered them.
+# - `received`: the moment the hub received them, by its clock.
+#
+# Fails as the device's codec fails: `invalid` for bytes that are not what
+# the encoding writes, `not_found` for a message type the schema lacks,
+# `unsupported` for an NMEA sentence the hub does not read.
+function decode(schema: protobuf.Schema lent, d: registry.Device lent, payload: [u8], received: time.Instant) -> reading.Reading?
+    got = match d.encoding
+        .cbor     => senml.decode(d, payload: payload, now: received)?
+        .msgpack  => packed.decode(d, payload: payload)?
+        .protobuf => proto.decode(schema, d: d, payload: payload)?
+        .nmea     => nmea.decode(d, payload: payload)?
+
+    return ok(
+        reading.Reading(device: d.name, id: uuid.format(d.id), source: registry.protocol_name(d.protocol), encoding: registry.encoding_name(d.encoding), taken: got.taken.default(received), received: received, values: got.values, size: payload.len())
+    )
+
+test "decode: an NMEA line whose sentence carries no time takes the moment it came"
+    schema = proto.schema_of({}).must()
+    d = nmea.station()
+    at = time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()
+    r = decode(
+        schema,
+        d: d,
+        payload: [36, 87, 73, 88, 68, 82, 44, 67, 44, 45, 51, 46, 50, 53, 44, 67, 44, 65, 73, 82, 42, 51, 68],
+        received: at
+    ).must()
+    assert r.device == "wx-1" && r.source == "serial" && r.encoding == "nmea"
+    assert r.taken == at && r.received == at && r.size == 23
+    assert reading.values_line(r) == "air_temperature -3.25 Cel"
+
+test "decode: a payload its codec refuses fails with the codec's code"
+    schema = proto.schema_of({}).must()
+    refused = decode(schema, d: packed.tracker(), payload: [0xc1], received: time.epoch())
+
+    match refused
+        .ok _  => assert false
+        .err e => assert e.code == "invalid"
