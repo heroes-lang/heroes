@@ -396,7 +396,7 @@ capability ui/dialogs-answered-later  a dialog that answers its call at once and
   rust    -
   python  -
   wx      wxDialog (ShowWindowModal, unread)
-  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Windows and Linux pending: the layer wraps their waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner; `GtkAlertDialog.choose`, `GtkFileDialog`)
+  note    catalogue DG04; every dialog of `ui` answers so, the waiting form gone (README § A5), and destroying its window ends it unanswered; an answer or a choice injected answers the oldest dialog shown that takes it, else the next one; macOS by a sheet of the window it stands over, `beginSheetModal(for:completionHandler:)`, an injected answer pressing its button through AppKit, and a choice injected into a file or a folder dialog `unsupported`, AppKit's panels taking none from the program (their `ok:` raises *not implemented*), a cancel ending the sheet; Linux by `GtkAlertDialog`'s `choose` and `GtkFileDialog` (GTK 4.10; `GtkMessageDialog` and `GtkFileChooserNative` before), each answering by its callback, an injected answer pressing the button of its label in the alert's own window and a choice in a file dialog refused, only a cancel taken; Windows pending: the layer wraps its waiting dialogs, so the call waits for the person and the answer comes through the queue as it returns (`TaskDialogIndirect` and `IFileDialog` on a modeless owner)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system
@@ -488,7 +488,7 @@ capability ui/tray  an icon in the system's tray or menu bar, with the menu its 
   rust    tauri::tray::TrayIcon
   python  -
   wx      wxTaskBarIcon (SetIcon, PopupMenu)
-  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows pending (`Shell_NotifyIconW` and a hidden window for its messages), Linux pending (GTK 4 has no tray: a StatusNotifierItem over D-Bus)
+  note    catalogue SY01; a widget of no window, its menu a context menu made on it, its image drawn at the menu bar's height and its words its tip; a click on the icon itself is not told (SY02); macOS by an `NSStatusItem` of the system's status bar, its `menu` the context menu's; Windows pending (`Shell_NotifyIconW` and a hidden window for its messages), Linux refused by name (GTK 4 has no tray, and the arm draws no StatusNotifierItem over D-Bus in its place)
 
 capability ui/docked  an app out of the Dock and the menu bar, living in the tray alone
   heroes  ui.set_docked
@@ -496,7 +496,7 @@ capability ui/docked  an app out of the Dock and the menu bar, living in the tra
   rust    -
   python  -
   wx      -
-  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows pending (no task bar button: `WS_EX_TOOLWINDOW` on its windows, unread), Linux pending (GTK 4 removed skip-taskbar, so `unsupported` there)
+  note    catalogue AP21; kept on the headless side; macOS by `NSApplication.setActivationPolicy` with `.accessory` and `.regular`; Windows pending (no task bar button: `WS_EX_TOOLWINDOW` on its windows, unread), Linux by X11's `_NET_WM_STATE_SKIP_TASKBAR` where the window manager offers it (GTK 4 removed skip-taskbar), refused by name on Wayland and with no window manager
 
 capability ui/notification  a notification of the system's: a title and its words
   heroes  ui.notify
@@ -504,7 +504,7 @@ capability ui/notification  a notification of the system's: a title and its word
   rust    -
   python  -
   wx      wxNotificationMessage
-  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows pending (a toast of the AppUserModelID's), Linux pending (`GNotification` through the portal)
+  note    catalogue SY05; kept on the headless side; the system may hold it back where the person has not allowed it, and tells the program nothing; its actions are not offered (SY06); macOS by `UNUserNotificationCenter`, which serves an application bundle alone, so a program outside one (every program `heroes build` writes today, PK01) is told `unsupported` before the center is touched, where it would trap; Windows pending (a toast of the AppUserModelID's), Linux by `org.freedesktop.Notifications` on the session bus, as libnotify hands it, so no application id is needed (measured with dunst), refused by GLib's words with no bus or no server; through the portal in a sandbox, not offered
 
 capability ui/drag-drop  a file dragged onto a window
   heroes  pending
@@ -561,7 +561,7 @@ capability ui/appearance  the system's dark or light appearance, and its change
   rust    -
   python  -
   wx      wxSystemSettings (GetAppearance), wxSystemAppearance (IsDark), wxSysColourChangedEvent
-  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows pending (the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`), Linux pending (`GtkSettings`'s `gtk-interface-color-scheme`, 4.20, or the portal's `color-scheme`)
+  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows pending (the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`), Linux by `GtkSettings`: its `gtk-interface-color-scheme` (4.20) where GTK has it, else the dark variant it draws, turned by `gtk-application-prefer-dark-theme` and watched by its notifications; the portal's `color-scheme`, not read
 
 capability ui/accessibility  each widget's name and its label read by the system's screen reader
   heroes  ui.set_accessible_name, ui.set_label_for
@@ -569,7 +569,7 @@ capability ui/accessibility  each widget's name and its label read by the system
   rust    -
   python  -
   wx      wxAccessible, wxWindow (SetName, SetLabel)
-  note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows pending (UI Automation's name, the label the `STATIC` made just before its field), Linux pending (`gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL`, `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`)
+  note    catalogue AX02 (must); a widget's own words name it until the program names it; kept on the headless side; macOS by `NSAccessibility`'s `setAccessibilityLabel` on the view the person reaches, a window's, a menu item's or a tray icon's button, and a label tied by `setAccessibilityTitleUIElement`; Windows pending (UI Automation's name, the label the `STATIC` made just before its field), Linux by `gtk_accessible_update_property` with `GTK_ACCESSIBLE_PROPERTY_LABEL` and `gtk_accessible_update_relation` with `GTK_ACCESSIBLE_RELATION_LABELLED_BY`, the name read back from the arm's own record, GTK reading none
 
 capability ui/single-instance  one copy of the program running, a second handing its documents to the first
   heroes  pending
