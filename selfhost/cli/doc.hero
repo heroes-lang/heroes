@@ -14,13 +14,14 @@
 # parameter's own name, `@` where the parameter is, a label exactly where the
 # checker's label rule asks one: `check/type_fit.hero`'s `shared`, over the
 # types the checker interned for the written parameters) and its examples
-# (`cli/doc_text.hero`). The call is written `<binding>.<name>(...)`, the
-# binding being what a `use` of the module binds, its last part; where that
-# part is no name a `use` can spell (a file `two-words.hero`), no program
-# reaches the module by a `use`, and the call is written bare, as the module
-# itself writes it. **A reference is the same bytes on every run**: it
-# reads the source and the checker, never the clock, the machine or a path
-# but the module's own name.
+# (`cli/doc_text.hero`); a documented test titled with a name no function of
+# the module has is told on stderr, a note at exit 0 (defect 2628). The call
+# is written `<binding>.<name>(...)`, the binding being what a `use` of the
+# module binds, its last part; where that part is no name a `use` can spell
+# (a file `two-words.hero`), no program reaches the module by a `use`, and
+# the call is written bare, as the module itself writes it. **A reference is
+# the same bytes on every run**: it reads the source and the checker, never
+# the clock, the machine or a path but the module's own name.
 #
 # A package's module is read as a package's module, never as a root: the verb
 # reads a root of one line, `use <name>/<module>`, held in memory and written
@@ -167,6 +168,11 @@ function reading(s: source.Source, inv: argv.Invocation, target: str, folder: st
 
     if !stop_d.is_err()
         return Answered(exit: stop_d.must(), reference: "")
+
+    # A documented test titled with a name no function of the module has is
+    # told, the reference printed all the same (`cli/doc_text.hero`).
+    for note in doc_text.unattached(s, decls: parsed.decls, target: target)
+        io.eprint(text: "note: " + note)
 
     return Answered(
         exit: .ok_exit,
