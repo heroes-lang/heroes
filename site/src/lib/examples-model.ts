@@ -383,12 +383,15 @@ function buildExample(
   }
 
   // What the program reads is asked of the program, never of its folder: a file
-  // a line of its `main.args` names, a header one of its `extern` groups names,
-  // and `main.stdin`. A folder also holds files the program never opens, the
-  // packages program's README and its cards among them, which the folder rule
-  // listed as input (defect 2332). A file that is neither read nor a document
-  // this module knows is a build error, never a skip.
+  // a line of its `main.args` names, or a file of a folder one names (`kanban`
+  // serves the page in the folder its `--web` names), a header one of its
+  // `extern` groups names, and `main.stdin`. A folder also holds files the
+  // program never opens, the packages program's README and its cards among
+  // them, which the folder rule listed as input (defect 2332). A file that is
+  // neither read nor a document this module knows is a build error, never a
+  // skip.
   const named = new Set(args);
+  const underNamed = (path: string) => args.some((one) => path.startsWith(`${one.replace(/\/+$/, '')}/`));
   const headers = new Set(groups.map((group) => `${dir}/${group.header}`));
   const cataloguePath = `${dir}/${CATALOGUE}`;
   const catalogue = kind !== 'gallery' && otherPaths.includes(cataloguePath) ? inputFile(cataloguePath, dir) : null;
@@ -397,14 +400,14 @@ function buildExample(
   for (const path of otherPaths) {
     if (HARNESS_FILES.has(basename(path))) continue;
     if (path === cataloguePath && catalogue !== null) continue;
-    if (named.has(path) || headers.has(path)) {
+    if (named.has(path) || underNamed(path) || headers.has(path)) {
       inputs.push(inputFile(path, dir));
       continue;
     }
     if (isDocument(path, dir)) continue;
     throw new Error(
       `${path} is in ${dir} and the program does not read it.\n` +
-        `  no line of main.args names it, no extern group names it as a header, and it\n` +
+        `  no line of main.args names it or a folder holding it, no extern group names it as a header, and it\n` +
         `  is neither the folder's README.md, its catalogue nor a file of a package it\n` +
         `  fetched. A page lists under Input only what its program reads (defect 2332):\n` +
         `  name the file in main.args, or teach this module what kind of file it is.`
