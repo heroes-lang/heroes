@@ -1,0 +1,204 @@
+# The lab's numbers: one value of a tower of four kinds, the narrowest that
+# holds it exactly. A whole number of any size and a fraction in lowest terms
+# are exact (`big`); a real is a binary float and a complex number two of
+# them (`math/complex`). An operation answers in the wider of its operands'
+# kinds, so `1/3 + 1/6` stays the exact `1/2` and `1/3 + 0.5` is a float, and
+# a result is narrowed back where it can be: a fraction whose denominator is 1
+# is a whole number, a complex number whose imaginary part is zero a real.
+#
+# This module holds the kinds, their constructors and their conversions;
+# `numbers/arith` computes with them and `numbers/text` writes them.
+
+use <rebel>/big
+use <rebel>/math
+use <rebel>/math/complex
+
+# The code of a value of a kind the operation does not take: a complex
+# number to order, a real where only an exact number is read.
+constant INVALID: str
+    "invalid"
+
+# A number of the lab: exact where it can be, a float where it must.
+variant Number
+    # A whole number of any size, exact.
+    integer
+        # Its value.
+        value: big.Integer
+    # A fraction in lowest terms whose denominator is above 1, exact.
+    rational
+        # Its value; `of_fraction` keeps the denominator above 1.
+        value: big.Fraction
+    # A binary float, `f64`.
+    real
+        # Its value.
+        value: f64
+    # A complex number of two floats whose imaginary part is not zero.
+    complex
+        # Its value; `of_complex` keeps the imaginary part non-zero.
+        value: complex.Complex
+
+# The whole number `n`.
+#
+# - `n`: any `i64`.
+function of_int(n: i64) -> Number
+    return .integer(value: big.from_int(n))
+
+# The whole number `n`.
+#
+# - `n`: any integer of `big`.
+function of_integer(n: big.Integer) -> Number
+    return .integer(value: n)
+
+# The fraction `f`, a whole number where its denominator is 1.
+#
+# - `f`: any fraction of `big`, in lowest terms as `big` keeps it.
+function of_fraction(f: big.Fraction) -> Number
+    if f.denominator == big.from_int(1)
+        return .integer(value: f.numerator)
+    return .rational(value: f)
+
+# The real `x`.
+#
+# - `x`: any `f64`, an infinity and a nan included.
+function of_real(x: f64) -> Number
+    return .real(value: x)
+
+# The complex number `z`, a real where its imaginary part is zero, so
+# `(2i)^2` is the real `-4`.
+#
+# - `z`: any complex number.
+function of_complex(z: complex.Complex) -> Number
+    if z.im == 0.0
+        return .real(value: z.re)
+    return .complex(value: z)
+
+# The complex number of parts `re` and `im`, narrowed as `of_complex` does.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part.
+function of_parts(re: f64, im: f64) -> Number
+    return of_complex(complex.Complex(re: re, im: im))
+
+# Where `n` stands in the tower: 0 whole, 1 fraction, 2 real, 3 complex.
+#
+# - `n`: the number.
+function rank(n: Number) -> i64
+    return match n
+        .integer _  => 0
+        .rational _ => 1
+        .real _     => 2
+        .complex _  => 3
+
+# Whether `n` is held exactly: a whole number or a fraction.
+#
+# - `n`: the number.
+function is_exact(n: Number) -> bool
+    return rank(n) <= 1
+
+# The name of `n`'s kind, as `type` answers it: `integer`, `rational`,
+# `real` or `complex`.
+#
+# - `n`: the number.
+function kind_name(n: Number) -> str
+    return match n
+        .integer _  => "integer"
+        .rational _ => "rational"
+        .real _     => "real"
+        .complex _  => "complex"
+
+# `n` as a fraction, a whole number's denominator being 1.
+#
+# - `n`: the number.
+#
+# Fails `invalid` where `n` is a real or a complex number, which `exact`
+# turns into a fraction on purpose.
+function fraction_of(n: Number) -> big.Fraction?
+    return match n
+        .integer i  => ok(big.fraction(numerator: i.value, denominator: big.from_int(1)))
+        .rational q => ok(q.value)
+        .real _     => fail(code: INVALID, msg: "a real is not exact; `exact(x)` reads its exact value")
+        .complex _  => fail(code: INVALID, msg: "a complex number is not exact")
+
+# `n` as a float, a fraction rounded to the nearest.
+#
+# - `n`: the number.
+#
+# Fails `invalid` where `n` is complex.
+function float_of(n: Number) -> f64?
+    return match n
+        .integer i  => ok(big.float_of(i.value))
+        .rational q => ok(big.float_of_fraction(q.value))
+        .real r     => ok(r.value)
+        .complex _  => fail(code: INVALID, msg: "a complex number has no single real value; take `re` or `abs` of it")
+
+# `n` as a complex number, its imaginary part zero unless it is one.
+#
+# - `n`: the number.
+function complex_of(n: Number) -> complex.Complex
+    return match n
+        .integer i  => complex.Complex(re: big.float_of(i.value), im: 0.0)
+        .rational q => complex.Complex(re: big.float_of_fraction(q.value), im: 0.0)
+        .real r     => complex.Complex(re: r.value, im: 0.0)
+        .complex z  => z.value
+
+# `n` as an `i64`, where it is a whole number that fits.
+#
+# - `n`: the number.
+# - `what`: what the number is for, named in the message.
+#
+# Fails `invalid` where `n` is not a whole number (a real with no fraction
+# is taken), and `does_not_fit` where it is outside `i64`.
+function int_of(n: Number, what: str) -> i64?
+    match n
+        .integer i => return big.int_of(i.value)
+        .real r =>
+            if math.is_finite(r.value) && math.trunc(r.value) == r.value && math.abs(r.value) < 9_007_199_254_740_992.0
+                return to_i64(r.value)
+            return fail(code: INVALID, msg: f"{what} is a whole number, not {r.value}")
+        .rational _ => return fail(code: INVALID, msg: f"{what} is a whole number, not a fraction")
+        .complex _  => return fail(code: INVALID, msg: f"{what} is a whole number, not a complex number")
+
+# Whether `n` is zero, exactly or as a float.
+#
+# - `n`: the number.
+function is_zero(n: Number) -> bool
+    return match n
+        .integer i  => big.sign(i.value) == 0
+        .rational _ => false
+        .real r     => r.value == 0.0
+        .complex _  => false
+
+# Whether `n` is a whole number below zero, a fraction below zero, or a
+# real below zero; never for a complex number.
+#
+# - `n`: the number.
+function is_negative(n: Number) -> bool
+    return match n
+        .integer i  => big.sign(i.value) < 0
+        .rational q => big.sign(q.value.numerator) < 0
+        .real r     => r.value < 0.0
+        .complex _  => false
+
+test "of_fraction: a denominator of one is a whole number, others stay fractions"
+    two = of_fraction(big.fraction(numerator: big.from_int(4), denominator: big.from_int(2)))
+    assert two == of_int(2)
+    half = of_fraction(big.fraction(numerator: big.from_int(1), denominator: big.from_int(2)))
+    assert rank(half) == 1
+    assert kind_name(half) == "rational"
+
+test "of_complex: a zero imaginary part narrows to a real"
+    assert of_parts(re: -4.0, im: 0.0) == of_real(-4.0)
+    assert rank(of_parts(re: 0.0, im: 2.0)) == 3
+
+test "int_of: whole numbers, a whole real, and the refusals"
+    assert int_of(of_int(-7), what: "n").must() == -7
+    assert int_of(of_real(3.0), what: "n").must() == 3
+    assert int_of(of_real(3.5), what: "n").is_err()
+    assert int_of(of_parts(re: 1.0, im: 1.0), what: "n").is_err()
+    huge = of_integer(big.power(base: big.from_int(2), exponent: 70))
+    assert int_of(huge, what: "n").is_err()
+
+test "float_of and complex_of: every kind, a complex refused as a float"
+    assert float_of(of_fraction(big.fraction(numerator: big.from_int(1), denominator: big.from_int(4)))).must() == 0.25
+    assert float_of(of_parts(re: 1.0, im: 2.0)).is_err()
+    assert complex_of(of_int(3)) == complex.Complex(re: 3.0, im: 0.0)

@@ -1,0 +1,128 @@
+# Rows as comma-separated values (RFC 4180): a header naming the columns,
+# then a record for each row, each line ended with CR LF as the RFC and
+# every spreadsheet write it.
+#
+# Reading goes by the header's names, not by place, so a translator may
+# reorder the columns or delete the ones they do not need; only `id` and
+# `translation` must stay. Excel saves "CSV" with semicolons in languages
+# whose decimal mark is a comma, so the separator is the one of `,`, `;` and
+# a tab that the header line holds most of. The bytes have been read as text
+# before this module sees them (`formats/text_decode`).
+
+use <rebel>/csv
+
+use formats/rows
+
+## Writing
+
+# `list` as CSV: the header, then a record for each row.
+#
+# - `list`: the rows.
+function format_rows(list: [rows.Row]) -> str
+    records: [[str]] @= [rows.columns()]
+
+    for r in list
+        records @ records.push(rows.values_of(r))
+
+    return csv.format(records)
+
+## Reading
+
+# The rows of `text`, a CSV file with a header.
+#
+# - `text`: the file's text.
+#
+# Fails `invalid` where it is not CSV, its header has no `id` or no
+# `translation` column, or a record has no id, the message naming the line.
+function parse_rows(text: str) -> [rows.Row]?
+    options @= csv.strict_read_options()
+    options.separator @ separator_of(text)
+    options.ragged @ true
+
+    records = match csv.parse_records(text, options: options)
+        .ok found => found
+        .err e    => return fail(code: "invalid", msg: f"not CSV: {e.msg}")
+
+    if records.len() > 0
+        named = keys(records[0])
+
+        for wanted in ["id", "translation"]
+            if !named.has_name(wanted)
+                return fail(code: "invalid", msg: f"the header has no \"{wanted}\" column; it has {named.join(", ")}")
+
+    found: [rows.Row] @= []
+    line @= 1
+
+    for named_row in records
+        line @ line + 1
+
+        match rows.row_of(named_row)
+            .ok r  => found @ found.push(r)
+            .err e => return fail(code: "invalid", msg: f"record {line}: {e.msg}")
+
+    return ok(found)
+
+# The separator of `text`'s first line: whichever of `,`, `;` and a tab it
+# holds most of outside quotes, a comma where it holds none.
+#
+# - `text`: the file's text.
+function separator_of(text: str) -> str
+    commas @= 0
+    semicolons @= 0
+    tabs @= 0
+    quoted @= false
+
+    for i in range(from: 0, to: text.len())
+        b = text[i]
+
+        if b == '\n'
+            break
+
+        if b == '"'
+            quoted @ !quoted
+        else if !quoted && b == ','
+            commas @ commas + 1
+        else if !quoted && b == ';'
+            semicolons @ semicolons + 1
+        else if !quoted && b == '\t'
+            tabs @ tabs + 1
+
+    if semicolons > commas && semicolons >= tabs
+        return ";"
+
+    if tabs > commas && tabs > semicolons
+        return "\t"
+
+    return ","
+
+# Whether `names` holds `name`.
+#
+# - `names`: the header's names.
+# - `name`: the name.
+function has_name(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+## Tests
+
+test "format_rows and parse_rows: a round trip, quotes and line breaks kept"
+    list = [
+        rows.Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "one", source: "{count} item", translation: "{count} Artikel, \"neu\"", state: "translated", note: "the badge")
+        rows.Row(context: "", id: "Two\nlines", plural_id: "", form: "", source: "Two\nlines", translation: "", state: "untranslated", note: "")
+    ]
+    text = format_rows(list)
+    assert parse_rows(text).must() == list
+
+test "parse_rows: columns in another order, a semicolon file, a missing column"
+    text = "translation;id\r\nÖffnen;Open\r\n"
+    read = parse_rows(text).must()
+    assert read[0].id == "Open"
+    assert read[0].translation == "Öffnen"
+    assert read[0].context == ""
+    assert parse_rows("id,state\r\nOpen,x\r\n").is_err()
+    assert parse_rows("id,translation\r\n,x\r\n").is_err()
+    assert separator_of("a\tb\tc\n") == "\t"
+    assert separator_of("\"a,b\";c\n") == ";"

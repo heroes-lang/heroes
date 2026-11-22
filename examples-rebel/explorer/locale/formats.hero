@@ -1,0 +1,192 @@
+# How the explorer writes and orders what it shows in the person's locale: a
+# size in the locale's digits and separators, a date and a time as the
+# locale writes them in the person's zone, the age of a file in its words,
+# and names ordered by the locale's collation. The words of the explorer's
+# own interface are English; numbers, dates and order follow the locale.
+#
+# Names are ordered with the numeric option on, so `file9` comes before
+# `file10`, as a person counts them, and at the tertiary strength, so
+# `Äpfel` and `apfel` sit together and still keep one order. A size counts in
+# powers of 1000 (kB, MB, GB), the SI prefixes.
+
+use <rebel>/i18n
+use <rebel>/i18n/collate
+use <rebel>/i18n/dates
+use <rebel>/i18n/numbers
+use <rebel>/time
+
+# The locale a run with no language in its environment takes.
+constant FALLBACK_LOCALE: str
+    "en-US"
+
+# The units of a size past 999 bytes, each a thousand times the one before.
+constant UNIT_NAMES: [str]
+    ["kB", "MB", "GB", "TB", "PB"]
+
+# What the explorer needs to write and order in one locale.
+record Formats
+    # The locale's tag as given: `de-DE`.
+    tag: str
+    # The locale itself.
+    locale: i18n.Locale
+    # The zone dates are shown in.
+    zone: time.Zone
+    # The order of names: the locale's collation with numbers read as
+    # numbers.
+    collator: collate.Collator
+
+# The formats of the locale `tag` in `zone`.
+#
+# - `tag`: a BCP 47 tag, `de-DE`, or a POSIX locale name, `de_DE.UTF-8`.
+# - `zone`: the zone dates are shown in.
+#
+# Fails `invalid` where `tag` is neither, as `i18n.parse_locale` fails.
+function formats_of(tag: str, zone: time.Zone) -> Formats?
+    locale = match i18n.parse_locale(tag)
+        .ok l  => l
+        .err _ => i18n.parse_posix(tag)?
+
+    options @= collate.default_options()
+    options.numeric @ true
+    return ok(Formats(tag: tag, locale: locale, zone: zone, collator: collate.collator_with(locale, options: options)))
+
+# The formats of the person running the program: the first language the
+# environment names, else `FALLBACK_LOCALE`; the system's zone, else UTC.
+function system_formats() -> Formats
+    zone = time.local_zone().default(time.utc_zone())
+
+    for name in i18n.environment_languages()
+        match formats_of(name, zone: zone)
+            .ok f  => return f
+            .err _ => _ = 0
+
+    return formats_of(FALLBACK_LOCALE, zone: zone).must()
+
+# A size in bytes as a person reads it: `0 bytes`, `1 byte`, `999 bytes`,
+# then one decimal of the largest unit it reaches, `1,2 kB` in German.
+#
+# - `f`: the formats.
+# - `size`: the size in bytes, 0 or more; a negative one is written as 0.
+function size_text(f: Formats, size: i64) -> str
+    if size < 1000
+        n = if size < 0
+            0
+        else
+            size
+
+        return count_text(f, n: n, one: "byte", other: "bytes")
+
+    unit @= 1000
+    at @= 0
+
+    while at + 1 < UNIT_NAMES.len() && size / unit >= 1000
+        unit @ unit * 1000
+        at @ at + 1
+
+    return f"{one_decimal(f, whole: size, unit: unit)} {UNIT_NAMES[at]}"
+
+# `whole / unit` written in the locale with one decimal, rounded half to
+# even, from an exact decimal text so that no float rounds it twice.
+#
+# - `f`: the formats.
+# - `whole`: the dividend, 0 or more.
+# - `unit`: the divisor, a power of 1000.
+function one_decimal(f: Formats, whole: i64, unit: i64) -> str
+    rest = (whole % unit).to_str()
+    zeros = repeat("0", to_u64(unit.to_str().len() - 1 - rest.len()).must())
+    exact = f"{whole / unit}.{zeros}{rest}"
+    options @= numbers.number_options(.decimal)
+    options.min_fraction_digits @ 1
+    options.max_fraction_digits @ 1
+    return numbers.format_number(f.locale, number: exact, options: options).default(exact)
+
+# `n` in the locale's digits with the English word for one or for many:
+# `1 item`, `1.234 items` in German.
+#
+# - `f`: the formats.
+# - `n`: the count.
+# - `one`: the word for exactly one.
+# - `other`: the word for any other count.
+function count_text(f: Formats, n: i64, one: str, other: str) -> str
+    word = if n == 1
+        one
+    else
+        other
+
+    return f"{numbers.format_int(f.locale, n: n)} {word}"
+
+# A whole number in the locale's digits and group separators.
+#
+# - `f`: the formats.
+# - `n`: the number.
+function int_text(f: Formats, n: i64) -> str
+    return numbers.format_int(f.locale, n: n)
+
+# An instant as the locale writes a date and a short time in the zone:
+# `14.03.2026, 09:26` in German.
+#
+# - `f`: the formats.
+# - `t`: the instant.
+function date_text(f: Formats, t: time.Instant) -> str
+    return dates.format_date_time(f.locale, t: t, zone: f.zone, date_style: .medium, time_style: .short)
+
+# How long before `now` the instant `t` was, in the locale's words, by the
+# word it has where it has one: `vor 2 Tagen`, `gestern`, `jetzt` in German.
+#
+# - `f`: the formats.
+# - `t`: the instant.
+# - `now`: the instant it is told from, which the caller's clock gives.
+function age_text(f: Formats, t: time.Instant, now: time.Instant) -> str
+    return dates.format_relative_instant_named(f.locale, t: t, now: now, style: .long)
+
+# The collation key of `name`: bytes whose order is the locale's order of
+# names, weighed once so that a list kept in order compares bytes.
+#
+# - `f`: the formats.
+# - `name`: the name.
+function name_key(f: Formats, name: str) -> [u8]
+    return collate.sort_key(f.collator, s: name)
+
+# `names` in the locale's order.
+#
+# - `f`: the formats.
+# - `names`: the names, in any order.
+function sorted_names(f: Formats, names: [str]) -> [str]
+    return collate.sort_texts(f.collator, texts: names)
+
+# The formats of German in a zone one hour east of UTC, which the tests of
+# this program's modules share.
+function german() -> Formats
+    zone = time.fixed_zone(name: "CET", offset: time.hours(1).must()).must()
+    return formats_of("de-DE", zone: zone).must()
+
+test "size_text: zero, one, the last byte count, and each unit's first, with the locale's separator"
+    f = german()
+    assert size_text(f, size: 0) == "0 bytes"
+    assert size_text(f, size: 1) == "1 byte"
+    assert size_text(f, size: 999) == "999 bytes"
+    assert size_text(f, size: 1000) == "1,0 kB"
+    assert size_text(f, size: 1250) == "1,2 kB"
+    assert size_text(f, size: 1350) == "1,4 kB"
+    assert size_text(f, size: 999999) == "1.000,0 kB"
+    assert size_text(f, size: 1000000) == "1,0 MB"
+    assert size_text(f, size: -5) == "0 bytes"
+
+test "size_text: the largest i64 in the largest unit"
+    f = german()
+    assert size_text(f, size: 9223372036854775807) == "9.223,4 PB"
+
+test "sorted_names: numbers read as numbers, accents beside their letters"
+    f = german()
+    assert sorted_names(f, names: ["file10", "Zebra", "file9", "Äpfel", "apfel", "Apfel"]) == ["apfel", "Apfel", "Äpfel", "file9", "file10", "Zebra"]
+
+test "date_text and count_text: German digits and dates"
+    f = german()
+    assert date_text(f, t: time.date(year: 2026, month: 3, day: 14).must()) == "14.03.2026, 01:00"
+    assert count_text(f, n: 1234, one: "item", other: "items") == "1.234 items"
+    assert count_text(f, n: 1, one: "item", other: "items") == "1 item"
+
+test "formats_of: a POSIX name is read, a word that is neither refused"
+    zone = time.utc_zone()
+    assert formats_of("de_DE.UTF-8", zone: zone).must().locale.region == "DE"
+    assert formats_of("not a tag!", zone: zone).is_err()

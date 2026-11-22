@@ -1,0 +1,68 @@
+# The names of boards, columns and cards: UUIDs of version 7, which sort by
+# the moment they were made, so a list ordered by name is ordered by age. The
+# real program draws them as `uuid.new_v7` does; the demo builds each from
+# the fixed clock's moment and a counter in the bits RFC 9562 § 6.2 lets a
+# counter stand in, so its names are the same on every run and still valid
+# version 7 UUIDs.
+
+use <rebel>/time
+use <rebel>/uuid
+
+# Where names come from.
+record Ids
+    # Whether names are counted rather than drawn.
+    counted: bool
+    # The milliseconds since 1970 a counted name carries.
+    milliseconds: i64
+    # The names counted so far.
+    made: i64
+
+# Names drawn at random, as the real program takes them.
+function drawn() -> Ids
+    return Ids(counted: false, milliseconds: 0, made: 0)
+
+# Names counted from 1, each carrying the moment `at`.
+#
+# - `at`: the moment every counted name carries, 1970 or later.
+function counted(at: time.Instant) -> Ids
+    return Ids(counted: true, milliseconds: time.unix_milliseconds(at), made: 0)
+
+# A new name. Fails as `uuid.new_v7` does where names are drawn, and
+# `does_not_fit` past the 4,096th counted one or a moment past what 48 bits
+# hold.
+#
+# - `ids`: where names come from; a counted one counts one more.
+function next(@ids: Ids) -> str?
+    if !ids.counted
+        return ok(uuid.format(uuid.new_v7()?))
+    ids.made @ ids.made + 1
+
+    if ids.made > 4095 || ids.milliseconds < 0 || ids.milliseconds >= 281474976710656
+        return fail(
+            code: "does_not_fit",
+            msg: f"the counted name {ids.made} at {ids.milliseconds} ms does not fit a version 7 UUID"
+        )
+
+    # `unix_ts_ms` in the first 48 bits, the version 7 in the next 4, the
+    # count in `rand_a`'s 12; then the variant `10` and the count again.
+    high = to_u64(ids.milliseconds * 65536 + 28672 + ids.made).must()
+    low = to_u64(ids.made).must() + 9223372036854775808
+    return ok(uuid.format(uuid.Uuid(high: high, low: low)))
+
+## Tests
+
+test "next: counted names are version 7 UUIDs, in order, and the same on every run"
+    ids @= counted(time.from_unix(whole_seconds: 1767225600, extra_nanoseconds: 0).must())
+    first = next(@ids).must()
+    second = next(@ids).must()
+    assert first == "019b76da-a800-7001-8000-000000000001"
+    assert second == "019b76da-a800-7002-8000-000000000002"
+    assert uuid.version_of(uuid.parse(first).must()) == 7
+    assert uuid.compare(a: uuid.parse(first).must(), b: uuid.parse(second).must()) < 0
+
+test "next: drawn names are version 7 UUIDs, each new"
+    ids @= drawn()
+    a = next(@ids).must()
+    b = next(@ids).must()
+    assert a != b
+    assert uuid.version_of(uuid.parse(a).must()) == 7

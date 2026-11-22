@@ -1,0 +1,349 @@
+# The lab's evaluator: a statement run against the notebook's names, and an
+# expression's tree (`lang/ast`) walked to its value. Calls are
+# `eval/calls`', which comes back here to evaluate a user function's body:
+# the two modules use each other, as a call and an expression do.
+#
+# A name is read from the parameters of the function being evaluated first,
+# then from the names the notebook has given values, then from the
+# constants; a name that is a function, the notebook's or a built-in, reads
+# as that function, so it can be handed to `map` or `plot`.
+#
+# A failure says where: its message opens with the line and the column of
+# the expression that failed, once, however deep the failure began
+# (`placed`).
+
+use <rebel>/maps
+
+use eval/builtins
+use eval/calls
+use eval/machine
+use eval/matrices
+use eval/operators
+use eval/scalars
+use eval/value
+use eval/vectors
+use lang/ast
+
+# Runs the statement `s`: an expression's value answered, a name given its
+# value (and answered), a function defined (and nothing answered).
+#
+# - `m`: the evaluation; a name or a function is added to it.
+# - `s`: the statement.
+#
+# Fails where the expression fails, or where the name given is a built-in's
+# or a constant's.
+function run(@m: machine.Machine, s: ast.Statement) -> value.Value?
+    machine.begin_statement(@m)
+
+    match s
+        .show w => return evaluate(@m, n: w.expr, scope: {})
+        .assign a =>
+            _ = placed(a.expr, r: name_free(a.target))?
+            v = evaluate(@m, n: a.expr, scope: {})?
+            m.values[a.target] @ v
+            m.functions @ maps.remove(m.functions, key: a.target)
+            return ok(v)
+        .define d =>
+            _ = placed(d.body, r: name_free(d.target))?
+            m.functions[d.target] @ machine.Function(params: d.params, body: d.body)
+            m.values @ maps.remove(m.values, key: d.target)
+            return ok(.nothing)
+
+# Nothing, where `name` is free for a notebook to take. It answers a
+# `value.Value?` and not a `()?` because `placed` instantiated at `()`
+# emits C that clang refuses, the compiler's defect and not this program's.
+#
+# - `name`: the name to be given.
+#
+# Fails `invalid` where `name` is a built-in's or a constant's.
+function name_free(name: str) -> value.Value?
+    if builtins.is_builtin(name)
+        return fail(code: value.INVALID, msg: f"`{name}` is a built-in function; choose another name")
+
+    if builtins.is_constant(name)
+        return fail(code: value.INVALID, msg: f"`{name}` is a constant; choose another name")
+    return ok(.nothing)
+
+# Whether `msg` opens with a place, `12:5: `, so a failure is placed once.
+#
+# - `msg`: the message.
+function has_place(msg: str) -> bool
+    at @= 0
+    colons @= 0
+
+    while at < msg.len() && colons < 2
+        c = msg[at]
+
+        if c == ':'
+            if at == 0 || !(msg[at - 1] >= '0' && msg[at - 1] <= '9')
+                return false
+            colons @ colons + 1
+        else if !(c >= '0' && c <= '9')
+            return false
+        at @ at + 1
+
+    return colons == 2
+
+# `r`, its failure's message opened with the place of `n` where it has none.
+#
+# - `n`: the expression that failed.
+# - `r`: what it came to.
+function placed<T>(n: ast.Node, r: T?) -> T?
+    match r
+        .ok v => return ok(v)
+        .err e =>
+            if has_place(e.msg)
+                return fail(code: e.code, msg: e.msg)
+            return fail(code: e.code, msg: f"{ast.place_of(n)}: {e.msg}")
+
+# The value of the expression `n`, its nesting counted: the walk of a tree
+# recurses as deep as the tree, and a deep one (a sum of thousands of terms,
+# a recursion that does not end) fails `limit` past `machine.MOST_NESTING`
+# rather than running the program off its stack.
+#
+# - `m`: the evaluation: the names, the functions, the generator, the
+#   counters.
+# - `n`: the expression.
+# - `scope`: the parameters of the function being evaluated, none outside
+#   one.
+#
+# Fails where an operation, a call or a name fails, with its place.
+function evaluate(@m: machine.Machine, n: ast.Node, scope: {str: value.Value} lent) -> value.Value?
+    if m.nesting >= machine.MOST_NESTING
+        return placed(n, r: too_nested())
+    m.nesting @ m.nesting + 1
+    answer = walk(@m, n: n, scope: scope)
+    m.nesting @ m.nesting - 1
+    return answer
+
+# The failure of an expression nested past `machine.MOST_NESTING`.
+function too_nested() -> value.Value?
+    return fail(code: machine.LIMIT, msg: f"expressions and calls nested more than {machine.MOST_NESTING} deep")
+
+# The value of `n`, each form's work in a function of its own, so the frame
+# a level of nesting takes off the stack is this dispatch's and no more.
+#
+# - `m`: the evaluation.
+# - `n`: the expression.
+# - `scope`: the parameters in scope.
+function walk(@m: machine.Machine, n: ast.Node, scope: {str: value.Value} lent) -> value.Value?
+    return match n.form
+        .number x      => ok(.number(value: x.value))
+        .text t        => ok(.text(value: t.value))
+        .truth b       => ok(.truth(value: b.value))
+        .name x        => placed(n, r: lookup(m, scope: scope, id: x.id))
+        .unary u       => unary(@m, n: n, op: u.op, operand: u.operand[0], scope: scope)
+        .binary b      => binary(@m, n: n, op: b.op, operands: b.operands, scope: scope)
+        .factorial f   => factorial(@m, n: n, operand: f.operand[0], scope: scope)
+        .call c        => calls.call_node(@m, n: n, callee: c.callee, arguments: c.args, scope: scope)
+        .index i       => indexed(@m, n: n, target: i.target[0], positions: i.positions, scope: scope)
+        .vector v      => vector(@m, items: v.items, scope: scope)
+        .matrix rows   => matrix_literal(@m, n: n, rows: rows.rows, scope: scope)
+        .range r       => span(@m, n: n, parts: r.parts, scope: scope)
+        .conditional c => conditional(@m, parts: c.parts, scope: scope)
+
+# `op operand`.
+#
+# - `m`: the evaluation.
+# - `n`: the operation's node.
+# - `op`: `-` or `not`.
+# - `operand`: the operand.
+# - `scope`: the parameters in scope.
+function unary(@m: machine.Machine, n: ast.Node, op: str, operand: ast.Node, scope: {str: value.Value} lent) -> value.Value?
+    v = evaluate(@m, n: operand, scope: scope)?
+    return placed(n, r: operators.unary(op, v: v))
+
+# `operand!`.
+#
+# - `m`: the evaluation.
+# - `n`: the node.
+# - `operand`: the operand.
+# - `scope`: the parameters in scope.
+function factorial(@m: machine.Machine, n: ast.Node, operand: ast.Node, scope: {str: value.Value} lent) -> value.Value?
+    v = evaluate(@m, n: operand, scope: scope)?
+    return placed(n, r: scalars.factorial(v))
+
+# The vector of `items`' values.
+#
+# - `m`: the evaluation.
+# - `items`: the elements.
+# - `scope`: the parameters in scope.
+function vector(@m: machine.Machine, items: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    return ok(.vector(items: each(@m, nodes: items, scope: scope)?))
+
+# The matrix of `rows`' values.
+#
+# - `m`: the evaluation.
+# - `n`: the literal's node.
+# - `rows`: the rows' entries.
+# - `scope`: the parameters in scope.
+function matrix_literal(@m: machine.Machine, n: ast.Node, rows: [[ast.Node]], scope: {str: value.Value} lent) -> value.Value?
+    values: [[value.Value]] @= []
+
+    for row in rows
+        values @ values.push(each(@m, nodes: row, scope: scope)?)
+
+    return placed(n, r: matrices.of_rows(values))
+
+# The range `a:b` or `a:step:b`.
+#
+# - `m`: the evaluation.
+# - `n`: the range's node.
+# - `parts`: its two or three parts.
+# - `scope`: the parameters in scope.
+function span(@m: machine.Machine, n: ast.Node, parts: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    v = each(@m, nodes: parts, scope: scope)?
+
+    if v.len() == 2
+        return placed(n, r: vectors.span(first: v[0], step: value.of_int(1), last: v[1]))
+    return placed(n, r: vectors.span(first: v[0], step: v[1], last: v[2]))
+
+# `if c then a else b`: `a` or `b`, the other never evaluated.
+#
+# - `m`: the evaluation.
+# - `parts`: the condition and the two values.
+# - `scope`: the parameters in scope.
+function conditional(@m: machine.Machine, parts: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    condition = evaluate(@m, n: parts[0], scope: scope)?
+
+    if placed(parts[0], r: value.truth_of(condition, what: "an `if`'s condition"))?
+        return evaluate(@m, n: parts[1], scope: scope)
+    return evaluate(@m, n: parts[2], scope: scope)
+
+# The values of `nodes`, in order.
+#
+# - `m`: the evaluation.
+# - `nodes`: the expressions.
+# - `scope`: the parameters in scope.
+function each(@m: machine.Machine, nodes: [ast.Node], scope: {str: value.Value} lent) -> [value.Value]?
+    out: [value.Value] @= []
+
+    for x in nodes
+        out @ out.push(evaluate(@m, n: x, scope: scope)?)
+
+    return ok(out)
+
+# The value of the name `id`: a parameter, a name of the notebook, a
+# constant, or a function.
+#
+# - `m`: the evaluation.
+# - `scope`: the parameters in scope.
+# - `id`: the name.
+#
+# Fails `not_found` where nothing has the name.
+function lookup(m: machine.Machine lent, scope: {str: value.Value} lent, id: str) -> value.Value?
+    match scope[id]
+        .ok v  => return ok(v)
+        .err _ => _ = 0
+
+    match m.values[id]
+        .ok v  => return ok(v)
+        .err _ => _ = 0
+
+    match builtins.constant_of(id)
+        .ok v  => return ok(v)
+        .err _ => _ = 0
+
+    if !m.functions[id].is_err() || builtins.is_builtin(id)
+        return ok(.callable(name: id))
+    return fail(code: "not_found", msg: f"`{id}` is not defined")
+
+# `left op right`. A chain leaning left, `1 + 2 + 3 + ...` or `a * b / c`,
+# is a tree as deep as it is long, so its spine is walked with a loop: the
+# leftmost operand evaluated first, then each operation in turn with its
+# right operand, the order and the answer those of the recursion, the stack
+# that of one level. `and` and `or` evaluate their right side only where the
+# left does not decide.
+#
+# - `m`: the evaluation.
+# - `n`: the operation's node, for its place.
+# - `op`: the operator.
+# - `operands`: the two operands.
+# - `scope`: the parameters in scope.
+function binary(@m: machine.Machine, n: ast.Node, op: str, operands: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    if op == "and" || op == "or"
+        return logical(@m, n: n, op: op, operands: operands, scope: scope)
+    ops: [str] @= [op]
+    rights: [ast.Node] @= [operands[1]]
+    places: [ast.Node] @= [n]
+    leftmost @= operands[0]
+    leaning @= true
+
+    while leaning
+        match leftmost.form
+            .binary b =>
+                if b.op == "and" || b.op == "or"
+                    leaning @ false
+                else
+                    ops @ ops.push(b.op)
+                    rights @ rights.push(b.operands[1])
+                    places @ places.push(leftmost)
+                    leftmost @ b.operands[0]
+            .number _ | .text _ | .truth _ | .name _ | .unary _ | .factorial _ | .call _ | .index _ | .vector _ | .matrix _ | .range _ | .conditional _ =>
+                leaning @ false
+
+    acc @= evaluate(@m, n: leftmost, scope: scope)?
+    at @= ops.len() - 1
+
+    while at >= 0
+        right = evaluate(@m, n: rights[at], scope: scope)?
+        acc @ placed(places[at], r: operators.binary(ops[at], left: acc, right: right))?
+        at @ at - 1
+
+    return ok(acc)
+
+# `left and right` or `left or right`: the right side evaluated only where
+# the left does not decide.
+#
+# - `m`: the evaluation.
+# - `n`: the operation's node, for its place.
+# - `op`: `and` or `or`.
+# - `operands`: the two operands.
+# - `scope`: the parameters in scope.
+function logical(@m: machine.Machine, n: ast.Node, op: str, operands: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    left = evaluate(@m, n: operands[0], scope: scope)?
+    l = placed(n, r: value.truth_of(left, what: f"`{op}`'s left side"))?
+
+    if op == "and" && !l || op == "or" && l
+        return ok(.truth(value: l))
+    right = evaluate(@m, n: operands[1], scope: scope)?
+    return ok(.truth(value: placed(n, r: value.truth_of(right, what: f"`{op}`'s right side"))?))
+
+# `target[positions]`: an element of a vector, or several; an entry of a
+# matrix, or a row as a vector; counted from 1.
+#
+# - `m`: the evaluation.
+# - `n`: the index's node.
+# - `target`: the indexed expression.
+# - `positions`: the positions.
+# - `scope`: the parameters in scope.
+function indexed(@m: machine.Machine, n: ast.Node, target: ast.Node, positions: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    whole = evaluate(@m, n: target, scope: scope)?
+    at = each(@m, nodes: positions, scope: scope)?
+
+    match whole
+        .vector items =>
+            if at.len() != 1
+                return placed(n, r: refused_index("a vector is indexed by one position"))
+            return placed(n, r: vectors.pick(items.items, at: at[0]))
+        .matrix mm =>
+            if at.len() == 2
+                return placed(n, r: matrices.entry(mm.value, row: at[0], col: at[1]))
+
+            if at.len() == 1
+                return placed(n, r: matrices.row_at(mm.value, at: at[0]))
+            return placed(n, r: refused_index("a matrix is indexed by a row, or a row and a column"))
+        .number _ | .truth _ | .text _ | .callable _ | .plot _ | .nothing =>
+            return placed(n, r: refused_index(f"a {value.kind_name(whole)} is not indexed; a vector or a matrix is"))
+
+# The failure of an index, saying `why`.
+#
+# - `why`: the rule broken.
+function refused_index(why: str) -> value.Value?
+    return fail(code: value.INVALID, msg: why)
+
+test "has_place: a place opens the message, other digits and colons do not"
+    assert has_place("12:5: `x` is not defined")
+    assert !has_place("`x`: 1:2")
+    assert !has_place("12: no column")
+    assert !has_place("")

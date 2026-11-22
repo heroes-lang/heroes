@@ -1,0 +1,136 @@
+# The lab's numbers written as text, the way a person reads them in a
+# transcript: a whole number in full, a fraction as `7/12`, a real to twelve
+# significant digits with a point so it never reads as a whole number (`2.0`,
+# `0.3`, `1.2e+20`), and a complex number as `3 + 4i`.
+#
+# Twelve digits and not the seventeen a float may need to read back: a
+# calculator shows `0.1 + 0.2` as `0.3`, and the last digits of a float are
+# where two systems' `libm` may part by one unit, so a transcript written to
+# twelve reads the same on every machine. `exactly` writes the seventeen.
+
+use <rebel>/big
+use <rebel>/math
+use <rebel>/numbers
+use <rebel>/strings
+
+use numbers/scalar
+
+# The significant digits a real is written with.
+constant DIGITS: i64
+    12
+
+# The most digits a whole number is written with in full; past it, its
+# first digits and its count.
+constant MOST_DIGITS: i64
+    600
+
+# `n` as the lab writes it in a transcript.
+#
+# - `n`: the number.
+function format(n: scalar.Number) -> str
+    return match n
+        .integer i  => format_integer(i.value)
+        .rational q => format_integer(q.value.numerator) + "/" + format_integer(q.value.denominator)
+        .real x     => format_real(x.value)
+        .complex z  => format_complex(re: z.value.re, im: z.value.im)
+
+# `n` in full, or, past `MOST_DIGITS` digits, its first fifty, an ellipsis
+# and its count of digits, so a huge power stays one readable line.
+#
+# - `n`: the whole number.
+function format_integer(n: big.Integer) -> str
+    text = big.format(n)
+    count = big.digit_count(n)
+
+    if count <= MOST_DIGITS
+        return text
+    shown: i64 @= 50
+
+    if big.sign(n) < 0
+        shown @ 51
+    return f"{text.slice(from: 0, to: shown)}... ({count} digits)"
+
+# `x` to `DIGITS` significant digits, with a point or an exponent so it never
+# reads as a whole number: `2.0`, `-0.5`, `1.5e+20`, `inf`, `nan`.
+#
+# - `x`: the float.
+function format_real(x: f64) -> str
+    text = numbers.trim_negative_zero(numbers.format_float_general(x, digits: DIGITS))
+
+    if math.is_finite(x) && !strings.contains_any(s: text, set: ".e")
+        return text + ".0"
+    return text
+
+# A part of a complex number: as `format_real`, but a whole value without its
+# point, since `3 + 4i` is plainly not exact already.
+#
+# - `x`: the part.
+function format_part(x: f64) -> str
+    return numbers.trim_negative_zero(numbers.format_float_general(x, digits: DIGITS))
+
+# The complex number `re + im i`: `3 + 4i`, `3 - 4i`, `2i`, `-i`; the real
+# part left out where it is zero.
+#
+# - `re`: the real part.
+# - `im`: the imaginary part, not zero.
+function format_complex(re: f64, im: f64) -> str
+    magnitude = math.abs(im)
+    unit: str @= "i"
+
+    if magnitude != 1.0
+        unit @ format_part(magnitude) + "i"
+
+    if re == 0.0
+        if im < 0.0
+            return "-" + unit
+        return unit
+
+    if im < 0.0 || math.has_minus_sign(im)
+        return format_part(re) + " - " + unit
+    return format_part(re) + " + " + unit
+
+# `x` in the fewest digits that read back as the same float, every digit a
+# float holds: what `exactly` shows.
+#
+# - `x`: the float.
+function format_shortest(x: f64) -> str
+    return numbers.format_float_shortest(x)
+
+# The decimal expansion of the exact number `f` to `places` digits after the
+# point, the last rounded half to even: `1/7` to 10 places is
+# `0.1428571429`.
+#
+# - `f`: the fraction.
+# - `places`: the digits after the point, 0 or more.
+function decimal_places(f: big.Fraction, places: i64) -> str
+    return big.format_decimal(big.decimal_of_fraction(f, scale: places, rounding: .half_even))
+
+test "format: each kind of number"
+    assert format(scalar.of_int(-42)) == "-42"
+    seven_twelfths = scalar.of_fraction(big.fraction(numerator: big.from_int(7), denominator: big.from_int(12)))
+    assert format(seven_twelfths) == "7/12"
+    assert format(scalar.of_real(2.0)) == "2.0"
+    assert format(scalar.of_real(0.1 + 0.2)) == "0.3"
+    assert format(scalar.of_parts(re: 3.0, im: -4.0)) == "3 - 4i"
+
+test "format_real: an exponent, an infinity, a nan, a negative zero"
+    assert format_real(150_000_000_000_000_000_000.0) == "1.5e+20"
+    assert format_real(math.INF) == "inf"
+    assert format_real(math.NAN) == "nan"
+    assert format_real(-0.0) == "0.0"
+    assert format_real(0.000_012_5) == "1.25e-05"
+
+test "format_complex: a unit part, a zero real part, a negative one"
+    assert format_complex(re: 0.0, im: 1.0) == "i"
+    assert format_complex(re: 0.0, im: -2.5) == "-2.5i"
+    assert format_complex(re: -1.0, im: 1.0) == "-1 + i"
+
+test "format_integer: in full, and cut past the most digits"
+    assert format_integer(big.from_int(123)) == "123"
+    huge = big.power(base: big.from_int(10), exponent: 700)
+    assert format_integer(huge) == "10000000000000000000000000000000000000000000000000... (701 digits)"
+
+test "decimal_places: one seventh rounded to even"
+    seventh = big.fraction(numerator: big.from_int(1), denominator: big.from_int(7))
+    assert decimal_places(seventh, places: 10) == "0.1428571429"
+    assert decimal_places(big.fraction(numerator: big.from_int(1), denominator: big.from_int(8)), places: 2) == "0.12"

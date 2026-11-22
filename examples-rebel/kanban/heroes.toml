@@ -1,0 +1,18 @@
+[dependencies.rebel]
+path = "../../packages/rebel/0.1.0/files"
+packages = [
+    "fs",
+    "html/sanitize",
+    "json",
+    "markdown",
+    "os",
+    "path",
+    "search",
+    "sql",
+    "sql/sqlite",
+    "template",
+    "time",
+    "ui",
+    "ui/webview",
+    "uuid",
+]

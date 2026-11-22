@@ -1,0 +1,106 @@
+# The demo's transcript: the headless drawing of the windows (`ui.render`)
+# after each step. The first drawing is printed whole; after it, each step
+# prints the lines of the widgets it changed, as they stand now, and a line
+# `gone` for each widget a step destroyed, so a reader sees what the step
+# did and nothing it left alone. A widget is known by its number, `#12`,
+# which its app never gives twice.
+
+use <rebel>/strings
+use <rebel>/ui
+
+use app/controller
+
+# What the transcript printed last.
+record Transcript
+    # The drawing printed last, one line a widget.
+    last: [str]
+
+# A transcript that has printed nothing.
+function new_transcript() -> Transcript
+    nothing: [str] = []
+    return Transcript(last: nothing)
+
+# Prints the heading of a step.
+#
+# - `title`: what the step does.
+function heading(title: str)
+    print("")
+    print(f"== {title} ==")
+
+# Prints the whole drawing of the windows.
+#
+# - `t`: the transcript; it keeps the drawing.
+# - `c`: the controller.
+function whole(@t: Transcript, @c: controller.Controller)
+    lines = ui.render(@c.app).default([])
+
+    for line in lines
+        print(line)
+
+    t.last @ lines
+
+# Prints the lines of the widgets that changed since the drawing printed
+# last, and the widgets gone, and says so where nothing changed.
+#
+# - `t`: the transcript; it keeps the new drawing.
+# - `c`: the controller.
+function changes(@t: Transcript, @c: controller.Controller)
+    lines = ui.render(@c.app).default([])
+    told @= 0
+
+    for line in lines
+        if !holds(t.last, line: line)
+            print(line)
+            told @ told + 1
+
+    for old in t.last
+        key = key_of(old)
+
+        if key != "" && !has_key(lines, key: key)
+            print(f"gone: {strings.trim(old)}")
+            told @ told + 1
+
+    if told == 0
+        print("(the window did not change)")
+
+    t.last @ lines
+
+# Whether `lines` holds `line`.
+#
+# - `lines`: the lines.
+# - `line`: the line.
+function holds(lines: [str], line: str) -> bool
+    for l in lines
+        if l == line
+            return true
+
+    return false
+
+# Whether a line of `lines` draws the widget `key`.
+#
+# - `lines`: the lines.
+# - `key`: a widget's number, `#12`.
+function has_key(lines: [str], key: str) -> bool
+    for l in lines
+        if key_of(l) == key
+            return true
+
+    return false
+
+# The widget's number a drawn line names, `#12`: the second word of the
+# line; empty where there is none.
+#
+# - `line`: a line of the drawing.
+function key_of(line: str) -> str
+    words = strings.words(line)
+
+    if words.len() < 2 || !strings.has_prefix(s: words[1], prefix: "#")
+        return ""
+
+    return words[1]
+
+test "key_of: a widget's number, and none in a line that draws none"
+    assert key_of("  button #17 \"Go\" at 12,352 40x24") == "#17"
+    assert key_of("window #1 \"Test\" 300x388") == "#1"
+    assert key_of("") == ""
+    assert key_of("loose words") == ""

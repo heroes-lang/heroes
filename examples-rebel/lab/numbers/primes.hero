@@ -1,0 +1,259 @@
+# The whole numbers' own functions: primality, the next prime, the prime
+# factors, the factorial, the binomial coefficient, the greatest common
+# divisor and the least common multiple, every answer exact (`big`).
+#
+# A factorization divides by the small primes first, up to `TRIAL_LIMIT`,
+# then splits what is left by Pollard's rho method with Floyd's cycle
+# finding, a factor of about twenty digits taking a fraction of a second. A
+# cofactor that resists `RHO_TRIES` walks of `RHO_STEPS` steps is answered
+# as it is and said to be composite, never claimed prime.
+
+use <rebel>/big
+use <rebel>/math
+
+# The code of an argument outside what the function reads.
+constant INVALID: str
+    "invalid"
+
+# The code of an answer too large to compute.
+constant LIMIT: str
+    "limit"
+
+# The rounds of Miller and Rabin's test a probable prime passes: past a
+# chance of four to the minus forty of a composite passing.
+constant ROUNDS: i64
+    20
+
+# The largest divisor tried by division before Pollard's rho takes over.
+constant TRIAL_LIMIT: i64
+    20_000
+
+# The steps of one walk of Pollard's rho before it gives up.
+constant RHO_STEPS: i64
+    200_000
+
+# The walks of Pollard's rho, each with another constant, before a cofactor
+# is answered unsplit.
+constant RHO_TRIES: i64
+    8
+
+# The largest `n` whose factorial is computed: about 770,000 bits, near the
+# limit an exact power keeps.
+constant MOST_FACTORIAL: i64
+    50_000
+
+# What `factor` answers: the prime factors, each as often as it divides,
+# the smallest first, and what could not be split.
+record Factors
+    # The primes, ascending, a prime repeated as often as it divides; -1
+    # first where the number is negative.
+    primes: [big.Integer]
+    # A composite factor no walk split, 1 where every factor is prime.
+    unsplit: big.Integer
+
+# Whether `n` is prime: certainly where it is below 2^64, as Miller and
+# Rabin's test with `ROUNDS` rounds is, and with a chance of error below
+# 4^-20 above.
+#
+# - `n`: any whole number; below 2 is never prime.
+function is_prime(n: big.Integer) -> bool
+    if big.compare(a: n, b: big.from_int(2)) < 0
+        return false
+    return big.is_probable_prime(n, rounds: ROUNDS)
+
+# The smallest prime above `n`.
+#
+# - `n`: any whole number.
+function next_prime(n: big.Integer) -> big.Integer
+    two = big.from_int(2)
+
+    if big.compare(a: n, b: two) < 0
+        return two
+    candidate @= big.add(a: n, b: big.from_int(1))
+
+    if !big.bit(candidate, index: 0)
+        candidate @ big.add(a: candidate, b: big.from_int(1))
+
+    while !is_prime(candidate)
+        candidate @ big.add(a: candidate, b: two)
+
+    return candidate
+
+# The prime factors of `n`, the smallest first.
+#
+# - `n`: any whole number but zero; 1 has none, and a negative number has
+#   -1 first.
+#
+# Fails `invalid` where `n` is zero, which every prime divides.
+function factor(n: big.Integer) -> Factors?
+    if big.sign(n) == 0
+        return fail(code: INVALID, msg: "0 has no prime factorization: every prime divides it")
+    found: [big.Integer] @= []
+
+    if big.sign(n) < 0
+        found @ found.push(big.from_int(-1))
+    left @= big.abs(n)
+    divisor @= 2
+
+    while divisor <= TRIAL_LIMIT && big.compare(a: big.multiply(a: big.from_int(divisor), b: big.from_int(divisor)), b: left) <= 0
+        d = big.from_int(divisor)
+        split = big.divide(n: left, by: d, rounding: .floor)
+
+        if big.sign(split.remainder) == 0
+            found @ found.push(d)
+            left @ split.quotient
+        else if divisor == 2
+            divisor @ 3
+        else
+            divisor @ divisor + 2
+
+    one = big.from_int(1)
+
+    if left == one
+        return ok(Factors(primes: found, unsplit: one))
+
+    if big.compare(a: left, b: big.from_int(TRIAL_LIMIT * TRIAL_LIMIT)) < 0 || is_prime(left)
+        found @ found.push(left)
+        return ok(Factors(primes: found, unsplit: one))
+    pending: [big.Integer] @= [left]
+    unsplit @= one
+
+    while pending.len() > 0
+        m = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+
+        if is_prime(m)
+            found @ found.push(m)
+        else
+            match rho_divisor(m)
+                .ok d =>
+                    pending @ pending.push(d)
+                    pending @ pending.push(big.divide(n: m, by: d, rounding: .floor).quotient)
+                .err _ => unsplit @ big.multiply(a: unsplit, b: m)
+
+    return ok(Factors(primes: ascending(found), unsplit: unsplit))
+
+# A divisor of `m` other than 1 and `m`, by Pollard's rho: the walk
+# `x -> x^2 + c` modulo `m` from 2, the tortoise one step at a time and the
+# hare two, until their difference shares a factor with `m`.
+#
+# - `m`: a composite number above `TRIAL_LIMIT` squared.
+#
+# Fails `not_found` where `RHO_TRIES` walks of `RHO_STEPS` steps split
+# nothing.
+function rho_divisor(m: big.Integer) -> big.Integer?
+    one = big.from_int(1)
+
+    for c in range(from: 1, to: RHO_TRIES + 1)
+        constant_term = big.from_int(c)
+        tortoise @= big.from_int(2)
+        hare @= big.from_int(2)
+        steps @= 0
+
+        while steps < RHO_STEPS
+            tortoise @ step(x: tortoise, plus: constant_term, modulus: m)
+            hare @ step(x: step(x: hare, plus: constant_term, modulus: m), plus: constant_term, modulus: m)
+            d = big.gcd(a: big.abs(big.subtract(a: tortoise, b: hare)), b: m)
+
+            if d == m
+                steps @ RHO_STEPS
+            else if d != one
+                return ok(d)
+            else
+                steps @ steps + 1
+
+    return fail(code: "not_found", msg: "Pollard's rho found no divisor")
+
+# One step of the rho walk: `x^2 + plus`, modulo `modulus`.
+#
+# - `x`: where the walk stands.
+# - `plus`: the walk's constant.
+# - `modulus`: the number being split.
+function step(x: big.Integer, plus: big.Integer, modulus: big.Integer) -> big.Integer
+    return big.divide_euclidean(n: big.add(a: big.multiply(a: x, b: x), b: plus), by: modulus).remainder
+
+# `xs` sorted from the smallest, by insertion: a factorization holds few.
+#
+# - `xs`: the numbers.
+function ascending(xs: [big.Integer]) -> [big.Integer]
+    out: [big.Integer] @= []
+
+    for x in xs
+        at @= out.len()
+
+        while at > 0 && big.compare(a: out[at - 1], b: x) > 0
+            at @ at - 1
+
+        head = out.slice(from: 0, to: at)
+        tail = out.slice(from: at, to: out.len())
+        out @ head
+        out @ out.push(x)
+
+        for t in tail
+            out @ out.push(t)
+
+    return out
+
+# `n` factorial, exactly.
+#
+# - `n`: 0 to `MOST_FACTORIAL`.
+#
+# Fails `invalid` where `n` is negative and `limit` past `MOST_FACTORIAL`.
+function factorial(n: i64) -> big.Integer?
+    if n < 0
+        return fail(code: INVALID, msg: f"no factorial of the negative number {n}")
+
+    if n > MOST_FACTORIAL
+        return fail(code: LIMIT, msg: f"{n}! would be too large; the most is {MOST_FACTORIAL}!")
+    return ok(big.factorial(n))
+
+# The number of ways to choose `k` things of `n`, exactly.
+#
+# - `n`: the things, 0 to `MOST_FACTORIAL`.
+# - `k`: how many are chosen; outside 0 to `n` there are none.
+#
+# Fails `invalid` where `n` is negative, `limit` past `MOST_FACTORIAL`.
+function binomial(n: i64, k: i64) -> big.Integer?
+    if n < 0
+        return fail(code: INVALID, msg: "binomial takes n of 0 or more")
+
+    if n > MOST_FACTORIAL
+        return fail(code: LIMIT, msg: f"binomial({n}, k) would be too large")
+
+    if k < 0 || k > n
+        return ok(big.from_int(0))
+    return ok(big.binomial(n: n, k: math.min_i64(a: k, b: n - k)))
+
+test "is_prime: the edges, a Mersenne prime, a Carmichael number"
+    assert !is_prime(big.from_int(1))
+    assert is_prime(big.from_int(2))
+    assert !is_prime(big.from_int(561))
+    assert is_prime(big.subtract(a: big.power(base: big.from_int(2), exponent: 127), b: big.from_int(1)))
+
+test "next_prime: below two, after an even and an odd number"
+    assert next_prime(big.from_int(-5)) == big.from_int(2)
+    assert next_prime(big.from_int(13)) == big.from_int(17)
+    assert next_prime(big.from_int(14)) == big.from_int(17)
+
+test "factor: small numbers, a negative one, Fermat's F5, and zero refused"
+    assert factor(big.from_int(360)).must().primes == [big.from_int(2), big.from_int(2), big.from_int(2), big.from_int(3), big.from_int(3), big.from_int(5)]
+    assert factor(big.from_int(-6)).must().primes == [big.from_int(-1), big.from_int(2), big.from_int(3)]
+    f5 = big.add(a: big.power(base: big.from_int(2), exponent: 32), b: big.from_int(1))
+    assert factor(f5).must().primes == [big.from_int(641), big.from_int(6_700_417)]
+    assert factor(big.from_int(1)).must().primes == []
+    assert factor(big.from_int(0)).is_err()
+
+test "factor: two primes of eleven digits split by the rho walk"
+    p = big.from_int(10_000_000_019)
+    q = big.from_int(10_000_000_033)
+    found = factor(big.multiply(a: p, b: q)).must()
+    assert found.primes == [p, q]
+    assert found.unsplit == big.from_int(1)
+
+test "factorial and binomial: the edges and the limit"
+    assert factorial(0).must() == big.from_int(1)
+    assert factorial(20).must() == big.from_int(2_432_902_008_176_640_000)
+    assert factorial(-1).is_err()
+    assert factorial(MOST_FACTORIAL + 1).is_err()
+    assert binomial(n: 10, k: 3).must() == big.from_int(120)
+    assert binomial(n: 5, k: 7).must() == big.from_int(0)

@@ -1,0 +1,168 @@
+# A file's bytes read as text in the encoding they are in, which nobody
+# declared: a byte order mark decides where there is one, and otherwise the
+# WHATWG encodings are weighed against the bytes (`unicode/encodings`'s
+# `detect`), so a price list saved by an old Windows machine in
+# windows-1252, a note in Shift_JIS or a UTF-16 file reads as the person
+# wrote it. The preview shows the text this way and the search by content
+# searches it, so a word with an accent is found in any of them.
+#
+# Bytes holding a zero byte, with no UTF-16 mark to explain it, are not
+# text: an image, an executable, a database. They are shown as bytes and
+# never searched.
+
+use <rebel>/unicode/encodings
+
+# The bytes looked at to tell text from data.
+constant SNIFF_BYTES: i64
+    8192
+
+# A file's bytes read as text.
+record Decoded
+    # The text.
+    text: str
+    # The encoding's name, as the standard writes it: `windows-1252`.
+    encoding: str
+    # How the encoding was found: `byte order mark`, or `detected, 68% sure`.
+    how: str
+    # The line break the text uses: `LF`, `CRLF`, `CR`, `mixed`, or `none`
+    # for a text of one line.
+    line_break: str
+
+# Whether `data` is data rather than text: a zero byte among its first
+# `SNIFF_BYTES`, where no UTF-16 byte order mark begins it.
+#
+# - `data`: the file's bytes.
+function is_binary(data: [u8]) -> bool
+    match encodings.sniff_bom(data)
+        .ok found =>
+            if found != encodings.UTF_8
+                return false
+        .err _ => _ = 0
+
+    for i in range(from: 0, to: min_of(a: data.len(), b: SNIFF_BYTES))
+        if data[i] == 0
+            return true
+
+    return false
+
+# The smaller of two numbers.
+#
+# - `a`: one.
+# - `b`: the other.
+function min_of(a: i64, b: i64) -> i64
+    if a < b
+        return a
+
+    return b
+
+# `data` read as text in its encoding.
+#
+# - `data`: the file's bytes, text by `is_binary`.
+function decode(data: [u8]) -> Decoded
+    match encodings.sniff_bom(data)
+        .ok found =>
+            text = encodings.decode(data, encoding: found).default("")
+            return Decoded(text: text, encoding: found, how: "byte order mark", line_break: line_break_of(text))
+        .err _ => _ = 0
+
+    guess = encodings.detect(data)
+    text = encodings.decode(data, encoding: guess.encoding).default("")
+
+    # A confidence is from 0 to 1, so its percent always fits.
+    percent = to_i64(guess.confidence * 100.0 + 0.5).must()
+    return Decoded(
+        text: text,
+        encoding: guess.encoding,
+        how: f"detected, {percent}% sure",
+        line_break: line_break_of(text)
+    )
+
+# The line break `text` uses: `LF`, `CRLF`, `CR`, `mixed` where it uses
+# more than one, `none` where it has none.
+#
+# - `text`: the text.
+function line_break_of(text: str) -> str
+    lf @= 0
+    crlf @= 0
+    cr @= 0
+    at @= 0
+
+    while at < text.len()
+        if text[at] == '\r'
+            if at + 1 < text.len() && text[at + 1] == '\n'
+                crlf @ crlf + 1
+                at @ at + 1
+            else
+                cr @ cr + 1
+        else if text[at] == '\n'
+            lf @ lf + 1
+
+        at @ at + 1
+
+    kinds @= 0
+
+    for n in [lf, crlf, cr]
+        if n > 0
+            kinds @ kinds + 1
+
+    if kinds == 0
+        return "none"
+
+    if kinds > 1
+        return "mixed"
+
+    if lf > 0
+        return "LF"
+
+    if crlf > 0
+        return "CRLF"
+
+    return "CR"
+
+# The lines of `text`, each without its break, whatever break it uses.
+#
+# - `text`: the text.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    begin @= 0
+    at @= 0
+
+    while at < text.len()
+        if text[at] == '\n' || text[at] == '\r'
+            out @ out.push(text.slice(from: begin, to: at))
+
+            if text[at] == '\r' && at + 1 < text.len() && text[at + 1] == '\n'
+                at @ at + 1
+
+            begin @ at + 1
+
+        at @ at + 1
+
+    if begin < text.len()
+        out @ out.push(text.slice(from: begin, to: text.len()))
+
+    return out
+
+test "line_break_of: none, each kind, and a text that mixes two"
+    assert line_break_of("one line") == "none"
+    assert line_break_of("a\nb\n") == "LF"
+    assert line_break_of("a\r\nb\r\n") == "CRLF"
+    assert line_break_of("a\rb") == "CR"
+    assert line_break_of("a\nb\r\n") == "mixed"
+
+test "lines_of: every break, a last line without one, and empty lines kept"
+    assert lines_of("a\r\nb\nc\rd") == ["a", "b", "c", "d"]
+    assert lines_of("a\n\nb\n") == ["a", "", "b"]
+    assert lines_of("") == []
+
+test "is_binary: a zero byte, text, and UTF-16 whose zeros are explained by its mark"
+    assert is_binary([0x89, 0x50, 0x4e, 0x47, 0x00])
+    assert !is_binary([104, 105])
+    assert !is_binary([0xff, 0xfe, 104, 0, 105, 0])
+
+test "decode: windows-1252 detected, and UTF-16 by its mark"
+    latin = decode(encodings.encode(s: "Crème brûlée à la carte, prix: 12 €", encoding: encodings.WINDOWS_1252).must())
+    assert latin.text == "Crème brûlée à la carte, prix: 12 €"
+    assert latin.encoding == encodings.WINDOWS_1252
+    wide = decode([0xff, 0xfe, 104, 0, 105, 0])
+    assert wide.text == "hi" && wide.how == "byte order mark" && wide.encoding == encodings.UTF_16LE

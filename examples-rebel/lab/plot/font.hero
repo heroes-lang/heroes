@@ -1,0 +1,170 @@
+# The lab's own bitmap font, five pixels wide and seven high, for the
+# titles and the tick labels of its plots: `image` draws no text. A glyph is
+# written as seven rows of five, `#` a pixel drawn and `.` one left, the rows
+# separated by spaces, so the shapes can be read and changed in this file.
+#
+# It holds the digits, the letters (a small letter is drawn as its capital),
+# the space and the punctuation a formula or a number needs; any other
+# character is drawn as `?`. Each character takes six columns, its five and
+# a space, at the scale it is drawn.
+
+use <rebel>/image
+use <rebel>/strings
+
+# The width of one glyph in pixels, before scaling.
+constant GLYPH_WIDTH: i64
+    5
+
+# The height of one glyph in pixels, before scaling.
+constant GLYPH_HEIGHT: i64
+    7
+
+# The columns a character advances, its glyph and one of space.
+constant ADVANCE: i64
+    6
+
+# The rows of the glyph of `c`, `#` a pixel: seven rows of five.
+#
+# - `c`: one character; a small letter is drawn as its capital.
+function glyph(c: str) -> str
+    return match strings.to_upper_ascii(c)
+        "0" => ".###. #...# #..## #.#.# ##..# #...# .###."
+        "1" => "..#.. .##.. ..#.. ..#.. ..#.. ..#.. .###."
+        "2" => ".###. #...# ....# ...#. ..#.. .#... #####"
+        "3" => "##### ...#. ..#.. ...#. ....# #...# .###."
+        "4" => "...#. ..##. .#.#. #..#. ##### ...#. ...#."
+        "5" => "##### #.... ####. ....# ....# #...# .###."
+        "6" => "..##. .#... #.... ####. #...# #...# .###."
+        "7" => "##### ....# ...#. ..#.. .#... .#... .#..."
+        "8" => ".###. #...# #...# .###. #...# #...# .###."
+        "9" => ".###. #...# #...# .#### ....# ...#. .##.."
+        "A" => ".###. #...# #...# ##### #...# #...# #...#"
+        "B" => "####. #...# #...# ####. #...# #...# ####."
+        "C" => ".###. #...# #.... #.... #.... #...# .###."
+        "D" => "###.. #..#. #...# #...# #...# #..#. ###.."
+        "E" => "##### #.... #.... ####. #.... #.... #####"
+        "F" => "##### #.... #.... ####. #.... #.... #...."
+        "G" => ".###. #...# #.... #.### #...# #...# .####"
+        "H" => "#...# #...# #...# ##### #...# #...# #...#"
+        "I" => ".###. ..#.. ..#.. ..#.. ..#.. ..#.. .###."
+        "J" => "..### ...#. ...#. ...#. ...#. #..#. .##.."
+        "K" => "#...# #..#. #.#.. ##... #.#.. #..#. #...#"
+        "L" => "#.... #.... #.... #.... #.... #.... #####"
+        "M" => "#...# ##.## #.#.# #.#.# #...# #...# #...#"
+        "N" => "#...# #...# ##..# #.#.# #..## #...# #...#"
+        "O" => ".###. #...# #...# #...# #...# #...# .###."
+        "P" => "####. #...# #...# ####. #.... #.... #...."
+        "Q" => ".###. #...# #...# #...# #.#.# #..#. .##.#"
+        "R" => "####. #...# #...# ####. #.#.. #..#. #...#"
+        "S" => ".#### #.... #.... .###. ....# ....# ####."
+        "T" => "##### ..#.. ..#.. ..#.. ..#.. ..#.. ..#.."
+        "U" => "#...# #...# #...# #...# #...# #...# .###."
+        "V" => "#...# #...# #...# #...# #...# .#.#. ..#.."
+        "W" => "#...# #...# #...# #.#.# #.#.# #.#.# .#.#."
+        "X" => "#...# #...# .#.#. ..#.. .#.#. #...# #...#"
+        "Y" => "#...# #...# .#.#. ..#.. ..#.. ..#.. ..#.."
+        "Z" => "##### ....# ...#. ..#.. .#... #.... #####"
+        " " => "..... ..... ..... ..... ..... ..... ....."
+        "-" => "..... ..... ..... ##### ..... ..... ....."
+        "+" => "..... ..#.. ..#.. ##### ..#.. ..#.. ....."
+        "." => "..... ..... ..... ..... ..... .##.. .##.."
+        "," => "..... ..... ..... ..... .##.. ..#.. .#..."
+        ":" => "..... .##.. .##.. ..... .##.. .##.. ....."
+        "(" => "...#. ..#.. .#... .#... .#... ..#.. ...#."
+        ")" => ".#... ..#.. ...#. ...#. ...#. ..#.. .#..."
+        "[" => ".###. .#... .#... .#... .#... .#... .###."
+        "]" => ".###. ...#. ...#. ...#. ...#. ...#. .###."
+        "/" => "..... ....# ...#. ..#.. .#... #.... ....."
+        "=" => "..... ..... ##### ..... ##### ..... ....."
+        "*" => "..... ..#.. #.#.# .###. #.#.# ..#.. ....."
+        "^" => "..#.. .#.#. #...# ..... ..... ..... ....."
+        "_" => "..... ..... ..... ..... ..... ..... #####"
+        "%" => "##... ##..# ...#. ..#.. .#... #..## ...##"
+        "<" => "...#. ..#.. .#... #.... .#... ..#.. ...#."
+        ">" => ".#... ..#.. ...#. ....# ...#. ..#.. .#..."
+        "!" => "..#.. ..#.. ..#.. ..#.. ..#.. ..... ..#.."
+        "'" => "..#.. ..#.. .#... ..... ..... ..... ....."
+        "|" => "..#.. ..#.. ..#.. ..#.. ..#.. ..#.. ..#.."
+        _   => ".###. #...# ....# ...#. ..#.. ..... ..#.."
+
+# The width `text` takes drawn at `scale`, in pixels: six columns a
+# character, the last one's space left out.
+#
+# - `text`: the text.
+# - `scale`: the pixels a glyph's pixel takes, 1 or more.
+function width_of(text: str, scale: i64) -> i64
+    count = text.chars().len()
+
+    if count == 0
+        return 0
+    return (count * ADVANCE - 1) * scale
+
+# Draws `text` on `img` with its top left corner at column `x`, row `y`,
+# each pixel of a glyph a square of `scale` pixels; what falls outside the
+# image is dropped.
+#
+# - `img`: the image drawn on.
+# - `text`: the text.
+# - `x`: the left column.
+# - `y`: the top row.
+# - `scale`: the pixels a glyph's pixel takes, 1 or more.
+# - `color`: the colour of the text.
+function draw_text(@img: image.Image, text: str, x: i64, y: i64, scale: i64, color: image.Color)
+    left @= x
+
+    for c in text.chars()
+        rows = glyph(c)
+        row @= 0
+        col @= 0
+
+        for mark in rows.chars()
+            if mark == " "
+                row @ row + 1
+                col @ 0
+            else
+                if mark == "#"
+                    image.fill_rect(
+                        @img,
+                        x: left + col * scale,
+                        y: y + row * scale,
+                        width: scale,
+                        height: scale,
+                        color: color
+                    )
+                col @ col + 1
+
+        left @ left + ADVANCE * scale
+
+# Whether every glyph has seven rows of five columns, for a test.
+#
+# - `c`: the character.
+function well_formed(c: str) -> bool
+    rows = strings.split(s: glyph(c), sep: " ")
+
+    if rows.len() != GLYPH_HEIGHT
+        return false
+
+    for r in rows
+        if r.len() != GLYPH_WIDTH
+            return false
+
+    return true
+
+test "glyph: every glyph seven rows of five, a small letter its capital, an unknown a question mark"
+    for c in "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ -+.,:()[]/=*^_%<>!'|".chars()
+        assert well_formed(c)
+
+    assert glyph("a") == glyph("A")
+    assert glyph("~") == glyph("?")
+
+test "width_of: six columns a character, the last space left out"
+    assert width_of("", scale: 2) == 0
+    assert width_of("ab", scale: 1) == 11
+    assert width_of("ab", scale: 2) == 22
+
+test "draw_text: the pixels of a glyph drawn at its place"
+    img @= image.blank(width: 12, height: 8, format: .gray).must()
+    white = image.Color(r: 255, g: 255, b: 255, a: 255)
+    draw_text(@img, text: "-", x: 0, y: 0, scale: 1, color: white)
+    assert image.color_at(img, x: 0, y: 3).r == 255
+    assert image.color_at(img, x: 0, y: 2).r == 0

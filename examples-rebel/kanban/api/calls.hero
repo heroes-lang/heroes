@@ -1,0 +1,240 @@
+# Every call the page makes (`web/app.js`), by its name: what it reads of its
+# arguments, what it asks of the store, and what it answers. A call that
+# changes a board goes through `store/changes`, so it is whole or nothing and
+# undo can take it back, and its answer says which board changed, which the
+# handler tells the page as the event `board.changed`.
+#
+# The calls that show the person a dialog, export and import, and the one
+# that writes the report's page, are `transfer/files`' and `app/report`'s,
+# since they need the window.
+
+use <rebel>/json
+
+use api/arguments
+use api/optional
+use api/views
+use app/desk
+use app/report
+use store/boards
+use store/cards
+use store/changes
+use store/finder
+use store/history
+use text/notes
+use transfer/files
+
+# What a call answered: its value, and the board it changed, "" for none.
+record Outcome
+    # The value the page's promise resolves with.
+    value: json.Value
+    # The board the call changed, "" where it changed none.
+    changed: str
+
+# The outcome of a call that changed no board.
+function read_only(value: json.Value) -> Outcome
+    return Outcome(value: value, changed: "")
+
+# The answer to the call `name` with `given`. Fails `not_found` for a name
+# no call has, and as the call fails.
+#
+# - `d`: the desk.
+# - `name`: the call's name.
+# - `given`: its arguments.
+function answer(@d: desk.Desk, name: str, given: json.Value) -> Outcome?
+    match name
+        "boards.list" => return ok(read_only(views.boards_json(@d.store)?))
+        "board.get" => return ok(read_only(views.board_json(@d.store, board: arguments.text(given, key: "board")?)?))
+        "board.create" => return board_create(@d, given: given)
+        "board.rename" => return board_rename(@d, given: given)
+        "board.delete" => return board_delete(@d, given: given)
+        "column.add" => return column_add(@d, given: given)
+        "column.rename" => return column_rename(@d, given: given)
+        "column.delete" => return column_delete(@d, given: given)
+        "card.get" => return ok(
+            read_only(views.card_json(cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?))
+        )
+        "card.add"    => return card_add(@d, given: given)
+        "card.edit"   => return card_edit(@d, given: given)
+        "card.move"   => return card_move(@d, given: given)
+        "card.delete" => return card_delete(@d, given: given)
+        "preview" => return ok(
+            read_only(views.object([views.pair("html", views.text(notes.html_of(arguments.text(given, key: "body")?)))]))
+        )
+        "search" => return ok(
+            read_only(views.found_json(finder.matching(@d.store, board: arguments.text(given, key: "board")?, query: arguments.text(given, key: "query")?)?))
+        )
+        "undo"        => return stepped(@d, redo: false)
+        "redo"        => return stepped(@d, redo: true)
+        "export.file" => return ok(read_only(files.export_board(@d, board: arguments.text(given, key: "board")?)?))
+        "import.file" => return imported(@d)
+        "report"      => return ok(read_only(report.shown(@d, board: arguments.text(given, key: "board")?)?))
+        _             => return fail(code: "not_found", msg: f"no call is named \"{name}\"")
+
+## Boards
+
+function board_create(@d: desk.Desk, given: json.Value) -> Outcome?
+    title = arguments.text(given, key: "title")?
+    before = changes.begin(@d.store, board: "")?
+
+    made = match boards.create(@d.store, title: title)
+        .ok b  => b
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: made.id, label: f"make the board \"{made.title}\"", before: before)?
+    return ok(
+        Outcome(value: views.object([views.pair("id", views.text(made.id)), views.pair("title", views.text(made.title))]), changed: made.id)
+    )
+
+function board_rename(@d: desk.Desk, given: json.Value) -> Outcome?
+    board = arguments.text(given, key: "board")?
+    title = arguments.text(given, key: "title")?
+    before = changes.begin(@d.store, board: board)?
+
+    match boards.rename(@d.store, id: board, title: title)
+        .ok _  => _ = 0
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: f"rename the board \"{title}\"", before: before)?
+    return ok(Outcome(value: .boolean(v: true), changed: board))
+
+function board_delete(@d: desk.Desk, given: json.Value) -> Outcome?
+    board = arguments.text(given, key: "board")?
+    title = boards.board_named(@d.store, id: board)?.title
+    before = changes.begin(@d.store, board: board)?
+
+    match boards.delete(@d.store, id: board)
+        .ok _  => _ = 0
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: f"delete the board \"{title}\"", before: before)?
+    return ok(Outcome(value: .boolean(v: true), changed: board))
+
+## Columns
+
+function column_add(@d: desk.Desk, given: json.Value) -> Outcome?
+    board = arguments.text(given, key: "board")?
+    title = arguments.text(given, key: "title")?
+    before = changes.begin(@d.store, board: board)?
+
+    made = match boards.add_column(@d.store, board: board, title: title)
+        .ok c  => c
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: f"add the column \"{made.title}\"", before: before)?
+    return ok(Outcome(value: views.column_json(made), changed: board))
+
+function column_rename(@d: desk.Desk, given: json.Value) -> Outcome?
+    column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
+    title = arguments.text(given, key: "title")?
+    before = changes.begin(@d.store, board: column.board)?
+
+    match boards.rename_column(@d.store, id: column.id, title: title)
+        .ok _  => _ = 0
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: column.board, label: f"rename the column \"{column.title}\"", before: before)?
+    return ok(Outcome(value: .boolean(v: true), changed: column.board))
+
+function column_delete(@d: desk.Desk, given: json.Value) -> Outcome?
+    column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
+    before = changes.begin(@d.store, board: column.board)?
+
+    match boards.delete_column(@d.store, id: column.id)
+        .ok _  => _ = 0
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: column.board, label: f"delete the column \"{column.title}\"", before: before)?
+    return ok(Outcome(value: .boolean(v: true), changed: column.board))
+
+## Cards
+
+function card_add(@d: desk.Desk, given: json.Value) -> Outcome?
+    column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
+    title = arguments.text(given, key: "title")?
+    body = optional.text_or(given, key: "body", otherwise: "")?
+    before = changes.begin(@d.store, board: column.board)?
+
+    made = match cards.add(@d.store, column: column.id, title: title, body: body)
+        .ok c  => c
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: column.board, label: f"add the card \"{made.title}\"", before: before)?
+    return ok(Outcome(value: views.card_json(made), changed: column.board))
+
+function card_edit(@d: desk.Desk, given: json.Value) -> Outcome?
+    card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
+    title = arguments.text(given, key: "title")?
+    body = arguments.text(given, key: "body")?
+    board = boards.column_named(@d.store, id: card.column)?.board
+    before = changes.begin(@d.store, board: board)?
+
+    made = match cards.edit(@d.store, id: card.id, title: title, body: body)
+        .ok c  => c
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: f"edit the card \"{made.title}\"", before: before)?
+    return ok(Outcome(value: views.card_json(made), changed: board))
+
+function card_move(@d: desk.Desk, given: json.Value) -> Outcome?
+    card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
+    column = boards.column_named(@d.store, id: arguments.text(given, key: "column")?)?
+    position = arguments.whole(given, key: "position")?
+    before = changes.begin(@d.store, board: column.board)?
+
+    made = match cards.move(@d.store, id: card.id, column: column.id, position: position)
+        .ok c  => c
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: column.board, label: f"move the card \"{made.title}\" to \"{column.title}\"", before: before)?
+    return ok(Outcome(value: views.card_json(made), changed: column.board))
+
+function card_delete(@d: desk.Desk, given: json.Value) -> Outcome?
+    card = cards.card_named(@d.store, id: arguments.text(given, key: "card")?)?
+    board = boards.column_named(@d.store, id: card.column)?.board
+    before = changes.begin(@d.store, board: board)?
+
+    match cards.delete(@d.store, id: card.id)
+        .ok _  => _ = 0
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: f"delete the card \"{card.title}\"", before: before)?
+    return ok(Outcome(value: .boolean(v: true), changed: board))
+
+## Undo, redo and import
+
+# Undo, or redo where `redo`: the board put back, inside a transaction of
+# its own, and the index made again. Fails `not_found` where there is
+# nothing to undo or redo.
+function stepped(@d: desk.Desk, redo: bool) -> Outcome?
+    _ = changes.begin(@d.store, board: "")?
+
+    stepped_by = if redo
+        history.redo(@d.store)
+    else
+        history.undo(@d.store)
+
+    done = match stepped_by
+        .ok s  => s
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.commit(@d.store)?
+    return ok(
+        Outcome(value: views.object([views.pair("board", views.text(done.board)), views.pair("label", views.text(done.label))]), changed: done.board)
+    )
+
+# Import: the person chooses a file, and the board it holds is made, a new
+# board with new names, a change undo takes back.
+function imported(@d: desk.Desk) -> Outcome?
+    chosen = files.chosen_import(@d)?
+
+    if chosen.len() == 0
+        return ok(read_only(views.object([views.pair("board", .null_value)])))
+    text = files.read_board_file(chosen)?
+    before = changes.begin(@d.store, board: "")?
+
+    board = match files.restored(@d, text: text)
+        .ok b  => b
+        .err e => return changes.abandon(@d.store, code: e.code, msg: e.msg)
+
+    changes.finish(@d.store, board: board, label: "import a board", before: before)?
+    return ok(Outcome(value: views.object([views.pair("board", views.text(board))]), changed: board))

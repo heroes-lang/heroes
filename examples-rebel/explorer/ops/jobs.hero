@@ -1,0 +1,384 @@
+# A long operation the explorer runs while the window stays alive: a copy,
+# a move, a move to the trash, an archive made or extracted, a file hashed,
+# a search. The window's timer calls `step` once a tick, each step doing a
+# bounded piece of the work, so the person sees the progress dialog move
+# and can press Cancel between two pieces; only one operation runs at once.
+#
+# When it ends, by finishing, failing or being cancelled, `action_of` says
+# what Undo keeps (what was done, however far it got) and `summary_of` what
+# the status line says.
+
+use <rebel>/path as paths
+use <rebel>/time
+
+use locale/formats
+use ops/hashing
+use ops/packing
+use ops/transfer
+use ops/trash
+use ops/undo
+use ops/unpacking
+use search/finder
+
+# The most bytes a step of a copy copies.
+constant COPY_BUDGET: i64
+    524288
+
+# Entries being moved to the trash.
+record Trashing
+    # The trash folder.
+    trash_dir: str
+    # The entries' paths.
+    items: [str]
+    # The index of the next one.
+    at: i64
+    # Those in the trash so far.
+    done: [trash.Trashed]
+
+# The work of an operation, and how far it got.
+variant Work
+    # Entries copied into a folder.
+    copying
+        # The copy.
+        t: transfer.Transfer
+    # Entries moved into a folder.
+    moving
+        # The move.
+        t: transfer.Transfer
+    # Entries moved to the trash.
+    trashing
+        # The entries.
+        t: Trashing
+    # An archive being written.
+    packing
+        # The archive.
+        p: packing.Packing
+    # An archive being extracted.
+    unpacking
+        # The extraction.
+        u: unpacking.Unpacking
+    # A file being hashed.
+    hashing
+        # The hashing.
+        h: hashing.Hashing
+    # A search.
+    searching
+        # The search.
+        s: finder.Search
+
+# An operation under way.
+record Job
+    # What the progress dialog's title says: `Copying 3 items`.
+    title: str
+    # The work.
+    work: Work
+    # Whether the operation ended: finished, failed or cancelled.
+    finished: bool
+    # Whether the person cancelled it.
+    cancelled: bool
+    # The failure that ended it; empty where none did.
+    failure: str
+
+# How far an operation is, for the progress bar.
+record Progress
+    # The units done.
+    done: i64
+    # The units in all, 1 at least.
+    total: i64
+    # What the dialog says under the bar: the entry in hand.
+    note: str
+
+# A job of `work` titled `title`, not begun.
+#
+# - `title`: the dialog's title.
+# - `work`: the work.
+function new_job(title: str, work: Work) -> Job
+    return Job(title: title, work: work, finished: false, cancelled: false, failure: "")
+
+# A move of `items` to the trash.
+#
+# - `trash_dir`: the trash folder.
+# - `items`: the entries' paths.
+function trashing_of(trash_dir: str, items: [str]) -> Work
+    done: [trash.Trashed] = []
+    return .trashing(t: Trashing(trash_dir: trash_dir, items: items, at: 0, done: done))
+
+# Does the next piece of the work; ends the job where the work is done or a
+# piece failed.
+#
+# - `j`: the job; it moves on.
+# - `now`: the explorer's clock's time, which an archive and the trash are
+#   stamped with.
+function step(@j: Job, now: time.Instant)
+    if j.finished
+        return
+
+    match j.work
+        .copying c =>
+            t @= c.t
+
+            match transfer.step_copy(@t, budget: COPY_BUDGET)
+                .ok _ =>
+                    j.finished @ transfer.is_done(t)
+                .err x =>
+                    _ = transfer.stop_copy(@t)
+                    end_with(@j, failure: x.msg)
+
+            j.work @ .copying(t: t)
+        .moving m =>
+            t @= m.t
+
+            match transfer.step_move(@t)
+                .ok _  => j.finished @ transfer.is_done(t)
+                .err x => end_with(@j, failure: x.msg)
+
+            j.work @ .moving(t: t)
+        .trashing tr =>
+            t @= tr.t
+
+            if t.at >= t.items.len()
+                j.finished @ true
+            else
+                match trash.put_in(trash: t.trash_dir, item: t.items[t.at], at: now)
+                    .ok put =>
+                        t.done @ t.done.push(put)
+                        t.at @ t.at + 1
+                        j.finished @ t.at >= t.items.len()
+                    .err x => end_with(@j, failure: x.msg)
+
+            j.work @ .trashing(t: t)
+        .packing pk =>
+            p @= pk.p
+
+            match packing.step(@p)
+                .ok _ =>
+                    if packing.is_done(p)
+                        match packing.finish(@p, stamp: now)
+                            .ok _ => j.finished @ true
+                            .err x =>
+                                packing.abandon(@p)
+                                end_with(@j, failure: x.msg)
+                .err x =>
+                    packing.abandon(@p)
+                    end_with(@j, failure: x.msg)
+
+            j.work @ .packing(p: p)
+        .unpacking up =>
+            u @= up.u
+
+            match unpacking.step(@u)
+                .ok _ =>
+                    if unpacking.is_done(u)
+                        match unpacking.finish(@u, made: now)
+                            .ok _  => j.finished @ true
+                            .err x => end_with(@j, failure: x.msg)
+                .err x =>
+                    unpacking.abandon(@u)
+                    end_with(@j, failure: x.msg)
+
+            j.work @ .unpacking(u: u)
+        .hashing hs =>
+            h @= hs.h
+
+            match hashing.step(@h)
+                .ok _ => j.finished @ h.ended
+                .err x =>
+                    hashing.close(@h)
+                    end_with(@j, failure: x.msg)
+
+            j.work @ .hashing(h: h)
+        .searching se =>
+            s @= se.s
+            finder.step(@s)
+            j.finished @ s.ended
+            j.work @ .searching(s: s)
+
+# Ends `j` with `failure`.
+#
+# - `j`: the job.
+# - `failure`: the message of what failed.
+function end_with(@j: Job, failure: str)
+    j.failure @ failure
+    j.finished @ true
+
+# Cancels `j` where it stands: a copy's file in hand removed, an archive
+# being made or extracted removed whole, a file being hashed closed. What a
+# copy, a move or a move to the trash did so far stays done.
+#
+# - `j`: the job; it ends.
+function cancel(@j: Job)
+    if j.finished
+        return
+
+    match j.work
+        .copying c =>
+            t @= c.t
+            _ = transfer.stop_copy(@t)
+            j.work @ .copying(t: t)
+        .packing pk =>
+            p @= pk.p
+            packing.abandon(@p)
+            j.work @ .packing(p: p)
+        .unpacking up =>
+            u @= up.u
+            unpacking.abandon(@u)
+            j.work @ .unpacking(u: u)
+        .hashing hs =>
+            h @= hs.h
+            hashing.close(@h)
+            j.work @ .hashing(h: h)
+        .moving _ | .trashing _ | .searching _ => _ = 0
+
+    j.cancelled @ true
+    j.finished @ true
+
+# How far `j` is.
+#
+# - `j`: the job.
+function progress_of(j: Job) -> Progress
+    match j.work
+        .copying c =>
+            t = c.t
+            note = note_at(t)
+
+            if t.plan.bytes > 0
+                return Progress(done: t.copied, total: t.plan.bytes, note: note)
+
+            return Progress(done: t.at, total: at_least_one(t.plan.items.len()), note: note)
+        .moving m => return Progress(done: m.t.at, total: at_least_one(m.t.plan.items.len()), note: note_at(m.t))
+        .trashing tr =>
+            note = if tr.t.at < tr.t.items.len()
+                tr.t.items[tr.t.at]
+            else
+                ""
+
+            return Progress(done: tr.t.at, total: at_least_one(tr.t.items.len()), note: note)
+        .packing pk =>
+            p = pk.p
+
+            note = if p.at < p.members.len()
+                p.members[p.at].name
+            else
+                ""
+
+            return Progress(done: p.at, total: at_least_one(p.members.len()), note: note)
+        .unpacking up => return Progress(
+            done: unpacking.progress_of(up.u),
+            total: at_least_one(unpacking.progress_end(up.u)),
+            note: up.u.archive
+        )
+        .hashing hs => return Progress(done: hs.h.read, total: at_least_one(hs.h.size), note: hs.h.file)
+        .searching se =>
+            s = se.s
+
+            note = if s.at < s.entries.len()
+                s.entries[s.at].name
+            else
+                ""
+
+            return Progress(done: s.at, total: at_least_one(s.entries.len()), note: note)
+
+# What the copy or the move is on: the original of the item in hand.
+#
+# - `t`: the transfer.
+function note_at(t: transfer.Transfer) -> str
+    if t.at < t.plan.items.len()
+        return t.plan.items[t.at].from
+
+    return ""
+
+# `n`, or 1 where it is less, so a progress bar always has an end.
+#
+# - `n`: a count.
+function at_least_one(n: i64) -> i64
+    if n < 1
+        return 1
+
+    return n
+
+# What Undo keeps of the ended job `j`: what it did, however far it got;
+# none for a hash or a search, which change nothing.
+#
+# - `j`: the job, ended.
+#
+# Fails `not_found` where it changed nothing.
+function action_of(j: Job) -> undo.Action?
+    match j.work
+        .copying c =>
+            pairs = transfer.whole_tops(c.t)
+
+            if pairs.len() > 0
+                return ok(.copied(pairs: pairs))
+        .moving m =>
+            pairs = transfer.moved_so_far(m.t)
+
+            if pairs.len() > 0
+                return ok(.moved(pairs: pairs))
+        .trashing tr =>
+            if tr.t.done.len() > 0
+                return ok(.trashed(items: tr.t.done))
+        .packing pk =>
+            if j.failure == "" && !j.cancelled
+                return ok(.made(paths: [pk.p.archive], what: "Compress"))
+        .unpacking up =>
+            if j.failure == "" && !j.cancelled
+                return ok(.made(paths: [up.u.into], what: "Extract"))
+        .hashing _ | .searching _ => _ = 0
+
+    return fail(code: "not_found", msg: "nothing changed")
+
+# What the status line says of the ended job `j`.
+#
+# - `f`: the formats, for the counts.
+# - `j`: the job, ended.
+function summary_of(f: formats.Formats, j: Job) -> str
+    if j.failure != ""
+        return f"{j.title} stopped: {j.failure}"
+
+    if j.cancelled
+        return f"{j.title} cancelled"
+
+    match j.work
+        .copying c => return f"Copied {items_text(f, n: c.t.plan.tops.len())}, {formats.size_text(f, size: c.t.copied)}"
+        .moving m => return f"Moved {items_text(f, n: m.t.plan.tops.len())}"
+        .trashing tr => return f"Moved {items_text(f, n: tr.t.done.len())} to the trash"
+        .packing pk => return f"Compressed {formats.count_text(f, n: pk.p.members.len(), one: "entry", other: "entries")} into {name_of(pk.p.archive)}"
+        .unpacking up =>
+            passed = if up.u.skipped.len() > 0
+                f"; passed over {up.u.skipped.join("; ")}"
+            else
+                ""
+
+            return f"Extracted {formats.count_text(f, n: up.u.written.len(), one: "entry", other: "entries")} into {name_of(up.u.into)}{passed}"
+        .hashing hs => return f"Hashed {name_of(hs.h.file)}, {formats.size_text(f, size: hs.h.read)}"
+        .searching se =>
+            s = se.s
+
+            passed = if s.passed_over > 0
+                f", {formats.count_text(f, n: s.passed_over, one: "file", other: "files")} passed over"
+            else
+                ""
+
+            return f"Found {formats.count_text(f, n: s.hits.len(), one: "match", other: "matches")} for \"{s.query.text}\"{passed}"
+
+# `1 item`, `3 items`.
+#
+# - `f`: the formats.
+# - `n`: the count.
+function items_text(f: formats.Formats, n: i64) -> str
+    return formats.count_text(f, n: n, one: "item", other: "items")
+
+# The last part of `p`, or `p` where it has none.
+#
+# - `p`: a path.
+function name_of(p: str) -> str
+    return paths.name(p).default(p)
+
+test "at_least_one: zero and below become one, the rest stay"
+    assert at_least_one(0) == 1
+    assert at_least_one(-4) == 1
+    assert at_least_one(7) == 7
+
+test "name_of: a path's last part, and a name alone"
+    assert name_of("a/b/c.zip") == "c.zip"
+    assert name_of("c.zip") == "c.zip"

@@ -1,0 +1,384 @@
+# The explorer's quick commands on files, run on its state with no window
+# in sight: rename one entry or several by a pattern, make a folder, put
+# back from the trash and empty it, cut and copy, undo and redo, and the
+# bookmarks. Each changes the disk at once and keeps its action for Undo;
+# the long commands, which run a step a tick, are `app/operations`'.
+#
+# A command that cannot run answers why, in words for the status line; it
+# never leaves the disk half changed by its own doing: a batch rename checks
+# every new name before it renames the first.
+
+use <rebel>/bytes
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/regex
+
+use model/clock
+use model/explorer
+use ops/jobs
+use ops/names
+use ops/transfer
+use ops/trash
+use ops/undo
+use store/bookmarks
+
+# Keeps `a`, just done, for Undo, and stamps the folders it changed.
+#
+# - `ex`: the explorer.
+# - `a`: the action.
+function keep(@ex: explorer.Explorer, a: undo.Action)
+    undo.keep(@ex.undo, a: a)
+    stamp(ex, a: a)
+
+# Gives every folder `a` changed, the one holding each entry it names, the
+# time of the explorer's clock. The system stamps a folder whose entries
+# change with its own clock, which nothing holds still; stamped again here,
+# a folder's date is the explorer's clock's like every date the explorer
+# writes: on a real run the moment the operation ended, within it of what
+# the system wrote, and in a demo the instant the demo injected.
+#
+# - `ex`: the explorer.
+# - `a`: the action.
+function stamp(ex: explorer.Explorer lent, a: undo.Action)
+    now = clock.now(ex.clock)
+    done: [str] @= []
+
+    for p in undo.paths_of(a)
+        folder = paths.parent(p)
+
+        if !transfer.holds(done, name: folder)
+            done @ done.push(folder)
+            _ = fs.set_times(folder, written: now, read: now).is_err()
+
+# Renames the one entry chosen to `new_name`.
+#
+# - `ex`: the explorer; the entry stays chosen under its new name.
+# - `new_name`: the name typed.
+#
+# Fails `invalid` where not exactly one entry is chosen or the name is not
+# one (`names.checked`), `exists` where the folder holds the name already,
+# and as `fs.rename` fails.
+function rename(@ex: explorer.Explorer, new_name: str) -> ()?
+    if ex.chosen.len() != 1 || ex.showing_results
+        return fail(code: "invalid", msg: "choose one entry of the folder to rename it")
+
+    name = names.checked(new_name)?
+    old = ex.chosen[0]
+
+    if name == old
+        return ok()
+
+    if names.is_taken(folder: ex.folder, name: name) && !same_but_case(a: name, b: old)
+        return fail(code: "exists", msg: f"\"{name}\" is in this folder already")
+
+    from = paths.join_all([ex.folder, old])
+    to = paths.join_all([ex.folder, name])
+    fs.rename(from: from, to: to)?
+    keep(@ex, a: .renamed(pairs: [undo.Pair(from: from, to: to)]))
+    _ = explorer.apply_changes(@ex, names: [old, name])
+    explorer.choose_names(@ex, names: [name])
+    ex.status @ f"Renamed \"{old}\" to \"{name}\""
+    return ok()
+
+# Whether two names differ only by the case of ASCII letters, which a
+# rename on a volume that ignores case may still make.
+#
+# - `a`: one name.
+# - `b`: the other.
+function same_but_case(a: str, b: str) -> bool
+    if a.len() != b.len()
+        return false
+
+    for i in range(from: 0, to: a.len())
+        if lower_byte(a[i]) != lower_byte(b[i])
+            return false
+
+    return true
+
+# The byte of an ASCII capital as its small letter, any other byte as it is.
+#
+# - `b`: the byte.
+function lower_byte(b: u8) -> u8
+    if b >= 'A' && b <= 'Z'
+        return b + 32
+
+    return b
+
+# Renames every entry chosen whose name `pattern` matches, its first match
+# replaced by `template` (`$1` and `${name}` writing a group).
+#
+# - `ex`: the explorer; the renamed entries stay chosen.
+# - `pattern`: the regular expression.
+# - `template`: what a match becomes.
+#
+# Every new name is checked first, against the names the folder holds and
+# each other, and nothing is renamed where one is refused. Fails `invalid`
+# where nothing is chosen, the pattern is not one, or a new name is not one;
+# `not_found` where it matches no name; `exists` where two entries would
+# take one name; and as `fs.rename` fails.
+function rename_by_pattern(@ex: explorer.Explorer, pattern: str, template: str) -> ()?
+    if ex.chosen.len() == 0 || ex.showing_results
+        return fail(code: "invalid", msg: "choose the entries to rename")
+
+    re = match regex.compile(pattern)
+        .ok r  => r
+        .err x => return fail(code: "invalid", msg: f"\"{pattern}\" is not a pattern: {x.msg}")
+
+    pairs: [undo.Pair] @= []
+    taken: [str] @= []
+    leaving: [str] @= []
+
+    for old in ex.chosen
+        if !regex.contains(old, re: re)
+            continue
+
+        name = names.checked(regex.substitute(s: old, re: re, template: template)?)?
+
+        if name == old
+            continue
+
+        if transfer.holds(taken, name: name) || names.is_taken(folder: ex.folder, name: name) && !transfer.holds(ex.chosen, name: name)
+            return fail(code: "exists", msg: f"two entries would be named \"{name}\"")
+
+        taken @ taken.push(name)
+        leaving @ leaving.push(old)
+        pairs @ pairs.push(undo.Pair(from: paths.join_all([ex.folder, old]), to: paths.join_all([ex.folder, name])))
+
+    if pairs.len() == 0
+        return fail(code: "not_found", msg: f"\"{pattern}\" changes no name chosen")
+
+    for p in by_name_clash_order(pairs)
+        fs.rename(from: p.from, to: p.to)?
+
+    keep(@ex, a: .renamed(pairs: pairs))
+    changed: [str] @= leaving
+
+    for t in taken
+        changed @ changed.push(t)
+
+    _ = explorer.apply_changes(@ex, names: changed)
+    explorer.choose_names(@ex, names: taken)
+    ex.status @ f"Renamed {jobs.items_text(ex.formats, n: pairs.len())}"
+    return ok()
+
+# The pairs in an order where no rename takes a name another pair has not
+# yet left: a pair whose new name is another's old one goes after it.
+#
+# - `pairs`: the renames.
+#
+# Where the renames form a ring (`a` to `b` and `b` to `a`) no order holds,
+# and the pairs are answered as given, the clash told by `fs.rename`.
+function by_name_clash_order(pairs: [undo.Pair]) -> [undo.Pair]
+    left @= pairs
+    out: [undo.Pair] @= []
+
+    while left.len() > 0
+        moved @= false
+        rest: [undo.Pair] @= []
+
+        for p in left
+            waits @= false
+
+            for q in left
+                if q.from == p.to && q != p
+                    waits @ true
+
+            if waits
+                rest @ rest.push(p)
+            else
+                out @ out.push(p)
+                moved @ true
+
+        if !moved
+            for p in rest
+                out @ out.push(p)
+
+            return out
+
+        left @ rest
+
+    return out
+
+# Makes a folder named `name` in the folder shown, and chooses it.
+#
+# - `ex`: the explorer.
+# - `name`: the name typed.
+#
+# The folder's time is the explorer's clock's. Fails `invalid` where the
+# name is not one, `exists` where it is taken, and as `fs.make_dir` fails.
+function make_folder(@ex: explorer.Explorer, name: str) -> ()?
+    checked = names.checked(name)?
+
+    if names.is_taken(folder: ex.folder, name: checked)
+        return fail(code: "exists", msg: f"\"{checked}\" is in this folder already")
+
+    made = paths.join_all([ex.folder, checked])
+    fs.make_dir(made)?
+    now = clock.now(ex.clock)
+    _ = fs.set_times(made, written: now, read: now).is_err()
+    keep(@ex, a: .made_folder(folder: made))
+    _ = explorer.apply_changes(@ex, names: [checked])
+    explorer.choose_names(@ex, names: [checked])
+    ex.status @ f"Made the folder \"{checked}\""
+    return ok()
+
+# Puts back the entries chosen in the trash's folder where they came from.
+#
+# - `ex`: the explorer, showing the trash's folder.
+#
+# Fails `invalid` where the folder shown is not the trash's or nothing is
+# chosen, and as `trash.restore` fails.
+function put_back(@ex: explorer.Explorer) -> ()?
+    if !paths.is_same(path: ex.folder, other: trash.files_dir(ex.settings.trash)) || ex.chosen.len() == 0
+        return fail(code: "invalid", msg: "choose entries in the trash to put them back")
+
+    back: [str] @= []
+
+    for t in trash.entries(ex.settings.trash)?
+        for name in ex.chosen
+            if paths.name(t.stored).default("") == name
+                back @ back.push(trash.restore(t)?)
+
+    keep(@ex, a: .restored(paths: back))
+    explorer.refresh(@ex)?
+    ex.status @ f"Put back {jobs.items_text(ex.formats, n: back.len())}"
+    return ok()
+
+# Removes everything the trash holds, for good.
+#
+# - `ex`: the explorer; it shows the trash's folder again where it did.
+#
+# Nothing it removed can be undone, so Undo forgets the actions that lead
+# into the trash. Fails as `trash.empty_out` fails.
+function empty_trash(@ex: explorer.Explorer) -> ()?
+    gone = trash.empty_out(ex.settings.trash)?
+    ex.undo @ undo.new_undo()
+
+    if paths.is_same(path: ex.folder, other: trash.files_dir(ex.settings.trash))
+        explorer.refresh(@ex)?
+
+    ex.status @ f"Emptied the trash: {jobs.items_text(ex.formats, n: gone)} removed for good"
+    return ok()
+
+# Takes the entries chosen for Paste: to move them where `cut`, to copy
+# them otherwise.
+#
+# - `ex`: the explorer.
+# - `cut`: whether Paste moves them.
+#
+# Fails `invalid` where nothing is chosen.
+function take_chosen(@ex: explorer.Explorer, cut: bool) -> ()?
+    if ex.chosen.len() == 0
+        return fail(code: "invalid", msg: "choose what to cut or copy")
+
+    ex.clipboard @ explorer.Clipboard(paths: explorer.chosen_paths(ex), cut: cut)
+
+    verb = if cut
+        "Cut"
+    else
+        "Copied"
+
+    ex.status @ f"{verb} {jobs.items_text(ex.formats, n: ex.clipboard.paths.len())}; Paste puts them in a folder"
+    return ok()
+
+# Undoes the latest action.
+#
+# - `ex`: the explorer; the folder is read again.
+#
+# Fails as `undo.undo` fails.
+function undo_last(@ex: explorer.Explorer) -> ()?
+    said = undo.undo(@ex.undo, trash_dir: ex.settings.trash, at: clock.now(ex.clock))?
+    stamp(ex, a: ex.undo.undone[ex.undo.undone.len() - 1])
+    _ = explorer.refresh(@ex).is_err()
+    ex.status @ capitalized(said)
+    return ok()
+
+# Does again the latest action undone.
+#
+# - `ex`: the explorer; the folder is read again.
+#
+# Fails as `undo.redo` fails.
+function redo_last(@ex: explorer.Explorer) -> ()?
+    said = undo.redo(@ex.undo, trash_dir: ex.settings.trash, at: clock.now(ex.clock))?
+    stamp(ex, a: ex.undo.done[ex.undo.done.len() - 1])
+    _ = explorer.refresh(@ex).is_err()
+    ex.status @ capitalized(said)
+    return ok()
+
+# `s` with its first letter a capital, where it is an ASCII letter.
+#
+# - `s`: the text.
+function capitalized(s: str) -> str
+    if s.len() == 0 || s[0] < 'a' || s[0] > 'z'
+        return s
+
+    return bytes.to_text([s[0] - 32]).default("") + s.slice(from: 1, to: s.len())
+
+# Bookmarks the folder shown under `name`.
+#
+# - `ex`: the explorer.
+# - `name`: the bookmark's name; the folder's own where empty.
+#
+# Fails as `bookmarks.add` fails.
+function add_bookmark(@ex: explorer.Explorer, name: str) -> ()?
+    given = if name == ""
+        paths.name(ex.folder).default(ex.folder)
+    else
+        name
+
+    bookmarks.add(@ex.bookmarks, name: given, folder: ex.folder)?
+    ex.status @ f"Bookmarked \"{ex.folder}\" as \"{given}\""
+    return ok()
+
+# Removes the bookmark of the folder shown.
+#
+# - `ex`: the explorer.
+#
+# Fails `not_found` where it is not bookmarked, and as `bookmarks.remove`
+# fails.
+function remove_bookmark(@ex: explorer.Explorer) -> ()?
+    at = bookmarks.index_of(ex.bookmarks, folder: ex.folder)?
+    name = ex.bookmarks.items[at].name
+    bookmarks.remove(@ex.bookmarks, index: at)?
+    ex.status @ f"Removed the bookmark \"{name}\""
+    return ok()
+
+# Shows the folder of the bookmark at `index`.
+#
+# - `ex`: the explorer.
+# - `index`: the bookmark's place, from 0.
+#
+# Fails `not_found` past the bookmarks, and as `explorer.go_to` fails.
+function go_to_bookmark(@ex: explorer.Explorer, index: i64) -> ()?
+    if index < 0 || index >= ex.bookmarks.items.len()
+        return fail(code: "not_found", msg: f"no bookmark at {index}")
+
+    return explorer.go_to(@ex, folder: ex.bookmarks.items[index].folder)
+
+# Shows the folder of the result chosen, with its entry chosen.
+#
+# - `ex`: the explorer, showing results with one chosen.
+#
+# Fails `invalid` where not one result is chosen, and as
+# `explorer.go_to` fails.
+function reveal_result(@ex: explorer.Explorer) -> ()?
+    if !ex.showing_results || ex.chosen.len() != 1
+        return fail(code: "invalid", msg: "choose one result to show it in its folder")
+
+    at = explorer.chosen_paths(ex)[0]
+    explorer.go_to(@ex, folder: paths.parent(at))?
+    explorer.choose_names(@ex, names: [paths.name(at)?])
+    return ok()
+
+test "by_name_clash_order: a rename onto a name another leaves waits for it, a ring is kept as given"
+    chain = [undo.Pair(from: "a", to: "b"), undo.Pair(from: "b", to: "c")]
+    assert by_name_clash_order(chain) == [undo.Pair(from: "b", to: "c"), undo.Pair(from: "a", to: "b")]
+    ring = [undo.Pair(from: "a", to: "b"), undo.Pair(from: "b", to: "a")]
+    assert by_name_clash_order(ring) == ring
+
+test "same_but_case and capitalized: ASCII case alone, and the first letter"
+    assert same_but_case(a: "Notes.TXT", b: "notes.txt")
+    assert !same_but_case(a: "notes", b: "notes2")
+    assert capitalized("undid Rename") == "Undid Rename"
+    assert capitalized("") == ""
+    assert capitalized("Élan") == "Élan"

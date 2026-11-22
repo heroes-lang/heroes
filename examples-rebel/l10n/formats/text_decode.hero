@@ -1,0 +1,135 @@
+# The text of a file whose encoding nobody promised: a catalogue saved by an
+# old editor in ISO-8859-2, a spreadsheet exported by Excel as "Unicode text"
+# (UTF-16 with a byte order mark), a CSV saved on Windows in windows-1252.
+#
+# The encoding is taken from the strongest evidence first: a byte order mark,
+# which no text in another encoding begins with; then the encoding the caller
+# names, a `--encoding` flag or the `charset` a catalogue's header declares;
+# then UTF-8, where every byte reads as UTF-8, which text in a legacy
+# encoding almost never does; and only then the WHATWG encodings' detector's
+# guess, whose confidence the report prints. Every text comes out as UTF-8,
+# and how it was read is said, so a wrong guess is seen and can be named.
+
+use <rebel>/bytes
+use <rebel>/regex
+use <rebel>/unicode
+use <rebel>/unicode/encodings
+
+## Codes
+
+# The code of bytes the encoding named cannot read, and of a label naming
+# no encoding.
+constant INVALID: str
+    "invalid"
+
+## Decoding
+
+# A text read from bytes, and how its encoding was found.
+record Decoded
+    # The text, as UTF-8.
+    text: str
+    # The encoding's name as the WHATWG standard writes it, `windows-1252`.
+    encoding: str
+    # How the encoding was found: `a byte order mark`, `declared`, `every byte
+    # reads as UTF-8`, or `guessed, 94% sure`.
+    how: str
+
+# The text `data` holds.
+#
+# - `data`: the file's bytes.
+# - `declared`: the label of the encoding the caller names, `latin1` or
+#   `ISO-8859-2`; empty where nobody names one.
+#
+# A byte order mark outranks `declared`, as a browser reads one. Fails
+# `invalid` where `declared` names no encoding, or the bytes are not text in
+# the encoding it names, the message saying at which byte.
+function decode_text(data: [u8], declared: str) -> Decoded?
+    match encodings.sniff_bom(data)
+        .ok bom =>
+            text = encodings.decode(data, encoding: bom)?
+            return ok(Decoded(text: text, encoding: bom, how: "a byte order mark"))
+        .err _ => _ = 0
+
+    if declared != ""
+        name = match encodings.name_of(declared)
+            .ok found => found
+            .err _    => return fail(code: INVALID, msg: f"\"{declared}\" names no encoding")
+
+        return match encodings.decode_strict(data, encoding: name)
+            .ok text => ok(Decoded(text: text, encoding: name, how: "declared"))
+            .err _ =>
+                at = encodings.valid_prefix_len(data, encoding: name).default(0)
+                fail(code: INVALID, msg: f"the bytes are not {name}, as declared: byte {at} begins no character of it")
+
+    if unicode.is_utf8(data)
+        return ok(
+            Decoded(text: bytes.to_text(data).must(), encoding: encodings.UTF_8, how: "every byte reads as UTF-8")
+        )
+
+    guess = encodings.detect(data)
+    text = encodings.decode(data, encoding: guess.encoding)?
+    percent = to_i64(guess.confidence * 100.0).default(0)
+    return ok(Decoded(text: text, encoding: guess.encoding, how: f"guessed, {percent}% sure"))
+
+# The character set a gettext catalogue's header declares, `ISO-8859-2` in
+# `Content-Type: text/plain; charset=ISO-8859-2`, read from its bytes before
+# they are text: every encoding a catalogue may be in writes the header's
+# ASCII as ASCII.
+#
+# - `data`: the catalogue's bytes.
+#
+# Fails `not_found` where no `charset=` is written.
+function declared_charset(data: [u8]) -> str?
+    head = encodings.decode_isomorphic(data.take_bytes(4096))
+    re = regex.compile("charset=([A-Za-z0-9._:-]+)").must()
+
+    return match regex.search(head, re: re)
+        .ok m  => ok(regex.group(m, n: 1).must())
+        .err _ => fail(code: "not_found", msg: "the catalogue declares no charset")
+
+# Whether `encoding` is UTF-8 by the standard's name.
+#
+# - `encoding`: a label.
+function is_utf8_label(encoding: str) -> bool
+    return encodings.name_of(encoding).default("") == encodings.UTF_8
+
+# At most the first `n` bytes of `data`.
+#
+# - `data`: the bytes.
+# - `n`: how many, 0 or more.
+function take_bytes(data: [u8], n: i64) -> [u8]
+    if data.len() <= n
+        return data
+
+    return data.slice(from: 0, to: n)
+
+## Tests
+
+test "decode_text: a byte order mark, UTF-8, a declaration, and a guess"
+    utf16 = bytes.concat(
+        [encodings.bom_of(encodings.UTF_16LE).must(), encodings.encode(s: "Grüße", encoding: encodings.UTF_16LE).must()]
+    )
+    read = decode_text(utf16, declared: "").must()
+    assert read.text == "Grüße"
+    assert read.how == "a byte order mark"
+    plain = decode_text(bytes.from_text("Grüße"), declared: "").must()
+    assert plain.encoding == "UTF-8"
+    latin2 = encodings.encode(s: "Zażółć gęślą jaźń", encoding: encodings.ISO_8859_2).must()
+    assert decode_text(latin2, declared: "latin2").must().text == "Zażółć gęślą jaźń"
+    western = encodings.encode(
+        s: "Grüße aus Köln, die Bücher und das Café sind schön",
+        encoding: encodings.WINDOWS_1252
+    ).must()
+    guessed = decode_text(western, declared: "")
+    assert guessed.must().text == "Grüße aus Köln, die Bücher und das Café sind schön"
+
+test "decode_text: a label naming nothing, and bytes not in the declared encoding"
+    assert decode_text(bytes.from_text("x"), declared: "klingon").is_err()
+    assert decode_text([0x82, 0xa0], declared: "utf-8").is_err()
+
+test "declared_charset: read from the header's bytes, absent where none is"
+    data = bytes.from_text("msgid \"\"\nmsgstr \"Content-Type: text/plain; charset=ISO-8859-2\\n\"\n")
+    assert declared_charset(data).must() == "ISO-8859-2"
+    assert declared_charset(bytes.from_text("msgid \"a\"\n")).is_err()
+    assert is_utf8_label("utf8")
+    assert !is_utf8_label("latin1")

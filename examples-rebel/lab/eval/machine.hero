@@ -1,0 +1,179 @@
+# What an evaluation carries from one statement to the next: the names the
+# notebook or the session has given values, the functions it has defined,
+# the random generator of the cell being evaluated, the plots it has
+# written, and the counters that stop a runaway recursion.
+#
+# **Every cell draws from its own generator** (`random`'s PCG), seeded by the
+# notebook's seed and the cell's name: re-evaluating one cell after an edit
+# draws the same numbers it drew before, whatever else was re-evaluated, so
+# a sample changes only where its own cell changed.
+#
+# **A recursion is bounded three times**: by its depth, past `MOST_DEPTH`
+# calls in one another, and by the nesting of the expressions being
+# evaluated, past `MOST_NESTING`, both before the program's own stack runs
+# out; and by its count, past `MOST_CALLS` calls in one statement, so
+# `fib(40)` written the slow way fails `limit` rather than holding the
+# notebook for minutes.
+
+use <rebel>/hash
+use <rebel>/random
+
+use eval/value
+use lang/ast
+use plot/files
+
+# The code of a computation past the lab's bounds.
+constant LIMIT: str
+    "limit"
+
+# The most calls one statement may make.
+constant MOST_CALLS: i64
+    2_000_000
+
+# The most calls standing inside one another. A call of a user function
+# takes about 45 KB of the stack in a build at `-O0`, the compiler's
+# default, every temporary of the emitted C keeping its own slot: measured
+# 2026-11-22 on macOS's 8 MB stack, a recursion of 180 calls answered and
+# one of 190 exhausted it. Linux gives the same 8 MB and Windows programs
+# are linked with 64 MB; 64 calls take about a third of the smallest.
+constant MOST_DEPTH: i64
+    64
+
+# The most evaluations of expressions standing inside one another, a call
+# counting one or two of them: what a deep tree or a deep recursion may take
+# of the stack before it fails `limit`. A level takes at most half of what a
+# call does (`MOST_DEPTH`), so 160 levels take under half of an 8 MB stack.
+constant MOST_NESTING: i64
+    160
+
+# A function the notebook defined: `f(x, y) = body`.
+record Function
+    # The parameters' names, in order.
+    params: [str]
+    # What it answers.
+    body: ast.Node
+
+# The state of an evaluation.
+record Machine
+    # The names given values.
+    values: {str: value.Value}
+    # The functions defined.
+    functions: {str: Function}
+    # The notebook's seed, the high word of every cell's generator.
+    seed: u64
+    # The generator the cell being evaluated draws from.
+    generator: random.Generator
+    # The calls made by the statement being evaluated.
+    calls: i64
+    # The calls standing inside one another now.
+    depth: i64
+    # The evaluations of expressions standing inside one another now.
+    nesting: i64
+    # The folder plots are written to, "" to write none.
+    plots: str
+    # The name of the cell being evaluated: the name of its plots' files and
+    # the low word of its generator.
+    cell: str
+    # The plots the cell has drawn so far.
+    drawn: i64
+    # The plots written since `enter_cell`.
+    written: [value.Plot]
+
+# An evaluation with no name given, writing its plots into `plots`.
+#
+# - `plots`: the folder, or "" to write no file.
+# - `seed`: the notebook's seed.
+function new(plots: str, seed: u64) -> Machine
+    return Machine(
+        values: {},
+        functions: {},
+        seed: seed,
+        generator: generator_for(seed: seed, cell: "session"),
+        calls: 0,
+        depth: 0,
+        nesting: 0,
+        plots: plots,
+        cell: "session",
+        drawn: 0,
+        written: []
+    )
+
+# The generator of the cell `cell`: the seed as its high word, the 64-bit
+# FNV-1a hash of the cell's name as its low.
+#
+# - `seed`: the notebook's seed.
+# - `cell`: the cell's name.
+function generator_for(seed: u64, cell: str) -> random.Generator
+    return random.Generator(high: seed, low: hash.fnv1a_64_text(cell))
+
+# Makes `m` evaluate the cell `cell`: its own generator from the start, its
+# plots counted from one, none written yet.
+#
+# - `m`: the evaluation.
+# - `cell`: the cell's name.
+function enter_cell(@m: Machine, cell: str)
+    m.cell @ cell
+    m.generator @ generator_for(seed: m.seed, cell: cell)
+    m.drawn @ 0
+    m.written @ []
+
+# Starts the count of calls of one statement.
+#
+# - `m`: the evaluation.
+function begin_statement(@m: Machine)
+    m.calls @ 0
+    m.depth @ 0
+    m.nesting @ 0
+
+# Counts one call, and answers whether the statement has now made more
+# than `MOST_CALLS`.
+#
+# - `m`: the evaluation.
+function count_call(@m: Machine) -> bool
+    m.calls @ m.calls + 1
+    return m.calls > MOST_CALLS
+
+# What a statement past `MOST_CALLS` calls is told.
+function too_many_calls() -> str
+    return f"more than {MOST_CALLS} calls in one statement: a recursion that does not end, or one too slow to wait for"
+
+# The name of the next plot of the cell: the cell's name, then `-2`, `-3`
+# for its later plots.
+#
+# - `m`: the evaluation; its count of plots grows by one.
+function next_plot_file(@m: Machine) -> str
+    m.drawn @ m.drawn + 1
+
+    if m.drawn == 1
+        return m.cell + ".png"
+    return f"{m.cell}-{m.drawn}.png"
+
+# Notes the plot `w` titled `title` as written by the cell, and answers it
+# as a value.
+#
+# - `m`: the evaluation.
+# - `w`: what was written.
+# - `title`: the plot's title.
+function record_plot(@m: Machine, w: files.Written, title: str) -> value.Value
+    p = value.Plot(file: w.file, title: title, width: w.width, height: w.height, size: w.size, crc: w.crc)
+    m.written @ m.written.push(p)
+    return .plot(value: p)
+
+test "enter_cell: each cell its own generator, the same again on re-entry"
+    m @= new(plots: "", seed: 7)
+    enter_cell(@m, cell: "a")
+    first = random.next_u64(@m.generator)
+    enter_cell(@m, cell: "b")
+    other = random.next_u64(@m.generator)
+    enter_cell(@m, cell: "a")
+    assert random.next_u64(@m.generator) == first
+    assert other != first
+
+test "next_plot_file and count_call: names after the cell, the call limit"
+    m @= new(plots: "", seed: 1)
+    enter_cell(@m, cell: "fit")
+    assert next_plot_file(@m) == "fit.png"
+    assert next_plot_file(@m) == "fit-2.png"
+    m.calls @ MOST_CALLS - 1
+    assert !count_call(@m)
+    assert count_call(@m)

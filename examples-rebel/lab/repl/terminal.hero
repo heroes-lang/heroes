@@ -1,0 +1,71 @@
+# The REPL at a terminal: each line read with `term`'s line editor (the
+# arrows, the history, Ctrl-A and Ctrl-E, Tab completing the commands, the
+# built-ins and the session's names), run by `repl/session`, and its answer
+# printed, a failure in red where the terminal takes colour (`term` writes
+# plain text to a pipe, a file or a terminal under `NO_COLOR`).
+#
+# Where the input is no terminal its lines are read as they come, with no
+# prompt, so `echo "2^100" | lab` prints the number. Ctrl-C gives up the
+# line being typed; Ctrl-D on an empty line, `:quit`, or the end of the
+# input end the session.
+
+use <rebel>/io
+use <rebel>/term
+
+use repl/session
+
+# What the editor draws before a line.
+constant PROMPT: str
+    "lab> "
+
+# `line` as printed: red where it tells a failure and `colours` holds.
+#
+# - `line`: an answer's line.
+# - `colours`: whether the output takes colour.
+function painted(line: str, colours: bool) -> str
+    if colours && line.len() >= 6 && line.slice(from: 0, to: 6) == "error:"
+        return term.styled(line, style: term.with_foreground(term.plain(), color: .red))
+    return line
+
+# Runs a session at the terminal until it ends, and answers the exit code:
+# 0 at its end, 1 where the input could not be read.
+#
+# - `plots`: the folder its plots are written to.
+# - `seed`: the seed of its random generator.
+function run(plots: str, seed: u64) -> i64
+    s @= session.new(plots: plots, seed: seed, times: true)
+    colours = term.has_colors(io.stdout())
+    prompt: str @= PROMPT
+
+    if colours
+        prompt @ term.styled(
+            PROMPT,
+            style: term.with_attribute(term.with_foreground(term.plain(), color: .blue), a: .bold)
+        )
+    editor @= term.line_editor(prompt)
+
+    if io.is_terminal(io.stdin()).default(false)
+        print(
+            "lab: exact numbers, complex numbers, matrices, statistics and plots; :help lists what it knows, :quit leaves"
+        )
+
+    while !s.done
+        match term.read_line_completing(@editor, input: io.stdin(), complete: term.complete_words, state: session.words(s))
+            .ok line =>
+                for out in session.enter(@s, line: line)
+                    print(painted(out, colours: colours))
+            .err e =>
+                if e.code == term.STOPPED
+                    print("(Ctrl-D or :quit leaves)")
+                else if e.code == term.CLOSED
+                    s.done @ true
+                else
+                    print(painted(f"error: the input could not be read: {e.code}: {e.msg}", colours: colours))
+                    return 1
+
+    return 0
+
+test "painted: a failure red only where colour is taken"
+    assert painted("error: x", colours: false) == "error: x"
+    assert painted("1/2", colours: true) == "1/2"
+    assert painted("error: x", colours: true) != "error: x"

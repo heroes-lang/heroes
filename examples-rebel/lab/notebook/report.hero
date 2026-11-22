@@ -1,0 +1,129 @@
+# A notebook's run told as lines: the notebook's size, seed and evaluation
+# order, each cell's transcript under its header in that order, and a count
+# of what ran, failed, could not run or was skipped, and of the plots
+# written; and, after an edit, which cells ran again and which kept their
+# outcome. What `lab run` prints and the demo's transcript holds.
+
+use notebook/cells
+use notebook/graph
+use notebook/run
+
+# The header of the cell `c`: its name and its flags.
+#
+# - `c`: the cell.
+function header_of(c: cells.Cell) -> str
+    if c.flags.len() == 0
+        return "== cell " + c.name
+    return "== cell " + c.name + " [" + c.flags.join(", ") + "]"
+
+# The transcript of the cell `name`: its header, its lines, its timing.
+#
+# - `r`: the run.
+# - `name`: the cell.
+function cell_lines(r: run.Run, name: str) -> [str]
+    out: [str] @= [header_of(cells.cell_named(r.notebook, name: name).must())]
+
+    match r.outcomes[name]
+        .ok o =>
+            for line in o.lines
+                out @ out.push(line)
+
+            if o.timing != ""
+                out @ out.push(o.timing)
+        .err _ => out @ out.push("not run")
+
+    return out
+
+# The opening lines: the cells, the seed, the order they run in.
+#
+# - `r`: the run.
+function opening(r: run.Run) -> [str]
+    return [
+        f"== notebook: {r.notebook.cells.len()} cells, seed {r.notebook.seed}"
+        "order: " + graph.order(r.analysis).join(", ")
+    ]
+
+# The closing line: how many cells ran, failed, could not run or were
+# skipped, and how many plots they wrote.
+#
+# - `r`: the run.
+function counts(r: run.Run) -> str
+    ran @= 0
+    failed @= 0
+    blocked @= 0
+    skipped @= 0
+    plots @= 0
+
+    for name in keys(r.outcomes)
+        o = r.outcomes[name].must()
+        plots @ plots + o.plots.len()
+
+        match o.status
+            .ran     => ran @ ran + 1
+            .failed  => failed @ failed + 1
+            .blocked => blocked @ blocked + 1
+            .skipped => skipped @ skipped + 1
+
+    return f"== {r.notebook.cells.len()} cells: {ran} ran, {failed} failed, {blocked} cannot run, {skipped} skipped; {plots} plots written"
+
+# The whole transcript of `r`: the opening, every cell in the order it ran,
+# a blank line before each, and the counts.
+#
+# - `r`: the run.
+function full(r: run.Run) -> [str]
+    out @= opening(r)
+
+    for name in graph.order(r.analysis)
+        out @ out.push("")
+
+        for line in cell_lines(r, name: name)
+            out @ out.push(line)
+
+    out @ out.push("")
+    out @ out.push(counts(r))
+    return out
+
+# The transcript of a re-run after the cell `edited` changed: which cells
+# ran again and which kept their outcome, the transcript of each that ran,
+# and the counts of the notebook as it now stands.
+#
+# - `again`: the re-run.
+# - `edited`: the cell the edit changed.
+function after_edit(again: run.Rerun, edited: str) -> [str]
+    r = again.run
+    out: [str] @= [
+        f"== after editing the cell {edited}: {again.ran.len()} of {r.notebook.cells.len()} cells run again"
+        "ran again: " + names_or_none(again.ran)
+        "kept: " + names_or_none(again.kept)
+    ]
+
+    for name in again.ran
+        out @ out.push("")
+
+        for line in cell_lines(r, name: name)
+            out @ out.push(line)
+
+    out @ out.push("")
+    out @ out.push(counts(r))
+    return out
+
+# `names` joined by commas, or `none`.
+#
+# - `names`: the names.
+function names_or_none(names: [str]) -> str
+    if names.len() == 0
+        return "none"
+    return names.join(", ")
+
+test "full: the opening, each cell under its header, the counts"
+    r = run.of_text("%% b [quiet]\ny = x\n%% a\nx = 2\n")
+    assert full(r) == ["== notebook: 2 cells, seed 1", "order: a, b", "", "== cell a", "in:  x = 2", "out: 2", "", "== cell b [quiet]", "in:  y = x", "", "== 2 cells: 2 ran, 0 failed, 0 cannot run, 0 skipped; 0 plots written"]
+
+test "after_edit: the cells run again and kept, named"
+    first = run.of_text("%% a\nx = 2\n%% b\ny = x\n%% c\nz = 1\n")
+    again = run.rerun(first, nb: cells.with_source(first.notebook, name: "a", source: "x = 3").must())
+    lines = after_edit(again, edited: "a")
+    assert lines[0] == "== after editing the cell a: 2 of 3 cells run again"
+    assert lines[1] == "ran again: a, b"
+    assert lines[2] == "kept: c"
+    assert names_or_none([]) == "none"

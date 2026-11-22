@@ -154,6 +154,7 @@ packages = [
     "tracing",
     "tui",
     "ui",
+    "ui/webview",
     "unicode",
     "unicode/encodings",
     "unicode/names",

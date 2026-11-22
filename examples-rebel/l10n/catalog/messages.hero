@@ -1,0 +1,470 @@
+# What this program asks of a gettext message and of a catalogue's header,
+# over `i18n`'s own `Message` and `Catalog`, which hold what a `.po` file
+# writes and nothing of this program's.
+#
+# A message is known by its key, its context and its id, as gettext looks it
+# up: two messages with one id in two contexts are two messages. A message is
+# translated when every one of its forms is written and it is not `fuzzy`,
+# the flag a merge sets on a translation it guessed and a person must
+# confirm; gettext never shows a fuzzy translation, and neither do the
+# coverage and the compiled catalogues here.
+#
+# The header is the message with the empty id: its translation is a list of
+# `Name: value` lines, kept here in their order so a catalogue written back
+# differs from the one read only where a field was changed.
+
+use <rebel>/i18n
+use <rebel>/lists
+use <rebel>/time
+
+## Codes
+
+# The code of a field or a message that is absent.
+constant NOT_FOUND: str
+    "not_found"
+
+## Absence
+
+# The absent value of an optional field of a message: no context, no plural.
+#
+# - `what`: what is absent, for the message.
+function absent(what: str) -> str?
+    return fail(code: NOT_FOUND, msg: f"the message has no {what}")
+
+## Keys
+
+# The text that separates a context from an id in a key: the byte gettext
+# writes between them in a compiled catalogue, which no message text holds.
+constant CONTEXT_GLUE: str
+    "\u{4}"
+
+# The key `m` is looked up by: its id, after its context and `CONTEXT_GLUE`
+# where it has one.
+#
+# - `m`: the message.
+function key_of(m: i18n.Message) -> str
+    return match m.context
+        .ok c  => c + CONTEXT_GLUE + m.id
+        .err _ => m.id
+
+# The key of a context, which may be absent, and an id.
+#
+# - `context`: the context, absent for none; the empty context is one.
+# - `id`: the id.
+function key_from(context: str?, id: str) -> str
+    return match context
+        .ok c  => c + CONTEXT_GLUE + id
+        .err _ => id
+
+# How a person reads a key: `[context] id`, or the id alone.
+#
+# - `key`: a key as `key_of` makes it.
+function label_of_key(key: str) -> str
+    for i in range(from: 0, to: key.len())
+        if key[i] == 4
+            return "[" + key.slice(from: 0, to: i) + "] " + key.slice(from: i + 1, to: key.len())
+
+    return key
+
+# How a person reads a message's key.
+#
+# - `m`: the message.
+function label_of(m: i18n.Message) -> str
+    return label_of_key(key_of(m))
+
+## What a message is
+
+# Whether `m` is a catalogue's header: the empty id, with no context.
+#
+# - `m`: the message.
+function is_header(m: i18n.Message) -> bool
+    return m.id == "" && m.context.is_err()
+
+# Whether `m` has a plural, so its translations are the plural forms.
+#
+# - `m`: the message.
+function is_plural(m: i18n.Message) -> bool
+    return !m.plural_id.is_err()
+
+# Whether `m` carries `flag` among its flags.
+#
+# - `m`: the message.
+# - `flag`: the flag, `fuzzy`.
+function has_flag(m: i18n.Message, flag: str) -> bool
+    for f in m.flags
+        if f == flag
+            return true
+
+    return false
+
+# `m` with `flag` among its flags, once.
+#
+# - `m`: the message.
+# - `flag`: the flag.
+function with_flag(m: i18n.Message, flag: str) -> i18n.Message
+    if has_flag(m, flag: flag)
+        return m
+
+    flags = lists.concat(xs: [flag], then: m.flags)
+    return message_with_flags(m, flags: flags)
+
+# `m` without `flag`.
+#
+# - `m`: the message.
+# - `flag`: the flag.
+function without_flag(m: i18n.Message, flag: str) -> i18n.Message
+    kept: [str] @= []
+
+    for f in m.flags
+        if f != flag
+            kept @ kept.push(f)
+
+    return message_with_flags(m, flags: kept)
+
+# `m` with `flags` in place of its own.
+#
+# - `m`: the message.
+# - `flags`: the flags.
+function message_with_flags(m: i18n.Message, flags: [str]) -> i18n.Message
+    return i18n.Message(
+        context: m.context,
+        id: m.id,
+        plural_id: m.plural_id,
+        translations: m.translations,
+        comments: m.comments,
+        extracted_comments: m.extracted_comments,
+        references: m.references,
+        flags: flags,
+        previous: m.previous,
+        obsolete: m.obsolete
+    )
+
+# `m` with `translations` in place of its own.
+#
+# - `m`: the message.
+# - `translations`: the forms.
+function with_translations(m: i18n.Message, translations: [str]) -> i18n.Message
+    return i18n.Message(
+        context: m.context,
+        id: m.id,
+        plural_id: m.plural_id,
+        translations: translations,
+        comments: m.comments,
+        extracted_comments: m.extracted_comments,
+        references: m.references,
+        flags: m.flags,
+        previous: m.previous,
+        obsolete: m.obsolete
+    )
+
+# Whether `m` is a translation to confirm: a merge's guess.
+#
+# - `m`: the message.
+function is_fuzzy(m: i18n.Message) -> bool
+    return has_flag(m, flag: "fuzzy")
+
+# Whether every form of `m` is written.
+#
+# - `m`: the message.
+function is_complete(m: i18n.Message) -> bool
+    if m.translations.len() == 0
+        return false
+
+    for t in m.translations
+        if t == ""
+            return false
+
+    return true
+
+# Whether no form of `m` is written.
+#
+# - `m`: the message.
+function is_empty(m: i18n.Message) -> bool
+    for t in m.translations
+        if t != ""
+            return false
+
+    return true
+
+# Whether `m` is translated: every form written, not fuzzy, not obsolete.
+#
+# - `m`: the message.
+function is_translated(m: i18n.Message) -> bool
+    return !m.obsolete && !is_fuzzy(m) && is_complete(m)
+
+# The word a report gives `m`'s state: `translated`, `fuzzy`, `partial` or
+# `untranslated`.
+#
+# - `m`: the message.
+function state_of(m: i18n.Message) -> str
+    if is_fuzzy(m)
+        return "fuzzy"
+
+    if is_complete(m)
+        return "translated"
+
+    if is_empty(m)
+        return "untranslated"
+
+    return "partial"
+
+# The messages of `catalog` that are neither its header nor obsolete, in
+# their order.
+#
+# - `catalog`: the catalogue.
+function live_messages(catalog: i18n.Catalog) -> [i18n.Message]
+    found: [i18n.Message] @= []
+
+    for m in catalog.messages
+        if !m.obsolete && !is_header(m)
+            found @ found.push(m)
+
+    return found
+
+# The keys of `catalog`'s live messages, in their order.
+#
+# - `catalog`: the catalogue.
+function live_keys(catalog: i18n.Catalog) -> [str]
+    return live_messages(catalog).map(key_of)
+
+# The live message of `catalog` with `key`.
+#
+# - `catalog`: the catalogue.
+# - `key`: the key, as `key_of` makes it.
+#
+# Fails `not_found` where none has it.
+function find_live(catalog: i18n.Catalog, key: str) -> i18n.Message?
+    for m in catalog.messages
+        if !m.obsolete && !is_header(m) && key_of(m) == key
+            return ok(m)
+
+    return fail(code: NOT_FOUND, msg: f"no message {label_of_key(key)}")
+
+## The header
+
+# One field of a header: `Language: de`.
+record Field
+    # The field's name, as written.
+    name: str
+    # Its value, without the space after the colon.
+    value: str
+
+# The fields of a header's text, in their order; a line with no colon is
+# left out.
+#
+# - `text`: the header message's translation.
+function fields_of(text: str) -> [Field]
+    found: [Field] @= []
+
+    for line in text.split_lines()
+        colon = index_of_colon(line)
+
+        if colon > 0
+            value = line.slice(from: colon + 1, to: line.len())
+            found @ found.push(Field(name: line.slice(from: 0, to: colon), value: trimmed_start(value)))
+
+    return found
+
+# The text of a header holding `fields`, each on a line of its own.
+#
+# - `fields`: the fields, in their order.
+function text_of_fields(fields: [Field]) -> str
+    lines: [str] @= []
+
+    for f in fields
+        lines @ lines.push(f.name + ": " + f.value + "\n")
+
+    return lines.join("")
+
+# `fields` with `name` set to `value`: in its place where it is there, at the
+# end where it is not.
+#
+# - `fields`: the fields.
+# - `name`: the field's name, compared ignoring ASCII case.
+# - `value`: its value.
+function with_field(fields: [Field], name: str, value: str) -> [Field]
+    changed: [Field] @= []
+    found @= false
+
+    for f in fields
+        if lower_ascii(f.name) == lower_ascii(name)
+            changed @ changed.push(Field(name: f.name, value: value))
+            found @ true
+        else
+            changed @ changed.push(f)
+
+    if !found
+        changed @ changed.push(Field(name: name, value: value))
+
+    return changed
+
+# The value of the field `name`.
+#
+# - `fields`: the fields.
+# - `name`: the name, compared ignoring ASCII case.
+#
+# Fails `not_found` where no field has it.
+function field_value(fields: [Field], name: str) -> str?
+    for f in fields
+        if lower_ascii(f.name) == lower_ascii(name)
+            return ok(f.value)
+
+    return fail(code: NOT_FOUND, msg: f"the header has no {name}")
+
+# The header of `catalog`'s fields, empty where it has no header.
+#
+# - `catalog`: the catalogue.
+function header_fields(catalog: i18n.Catalog) -> [Field]
+    for m in catalog.messages
+        if is_header(m) && !m.obsolete && m.translations.len() > 0
+            return fields_of(m.translations[0])
+
+    return []
+
+# A header message holding `fields`, with `comments` above it.
+#
+# - `fields`: the fields.
+# - `comments`: the translator's comments, a line each.
+function header_message(fields: [Field], comments: [str]) -> i18n.Message
+    return i18n.Message(
+        context: absent("context"),
+        id: "",
+        plural_id: absent("plural"),
+        translations: [text_of_fields(fields)],
+        comments: comments,
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+
+# The header comments of `catalog`, empty where it has no header.
+#
+# - `catalog`: the catalogue.
+function header_comments(catalog: i18n.Catalog) -> [str]
+    for m in catalog.messages
+        if is_header(m) && !m.obsolete
+            return m.comments
+
+    return []
+
+# `t` as a gettext header writes a date, `2026-03-05 09:30+0000`, in UTC.
+#
+# - `t`: the instant.
+function gettext_date(t: time.Instant) -> str
+    d = time.to_date_time(t)
+    return f"{d.year}-{two(d.month)}-{two(d.day)} {two(d.hour)}:{two(d.minute)}+0000"
+
+## Small helpers
+
+# `n`, from 0 to 99, in two digits.
+#
+# - `n`: the number.
+function two(n: i64) -> str
+    if n < 10
+        return "0" + n.to_str()
+
+    return n.to_str()
+
+# The lines of `text`, a trailing line feed making no empty last line.
+#
+# - `text`: the text.
+function split_lines(text: str) -> [str]
+    lines: [str] @= []
+    start @= 0
+
+    for i in range(from: 0, to: text.len())
+        if text[i] == '\n'
+            lines @ lines.push(text.slice(from: start, to: i))
+            start @ i + 1
+
+    if start < text.len()
+        lines @ lines.push(text.slice(from: start, to: text.len()))
+
+    return lines
+
+# The index of the first `:` in `line`, or -1.
+#
+# - `line`: the line.
+function index_of_colon(line: str) -> i64
+    for i in range(from: 0, to: line.len())
+        if line[i] == ':'
+            return i
+
+    return -1
+
+# `s` without the spaces at its start.
+#
+# - `s`: the text.
+function trimmed_start(s: str) -> str
+    at @= 0
+
+    while at < s.len() && s[at] == ' '
+        at @ at + 1
+
+    return s.slice(from: at, to: s.len())
+
+# `s` with its ASCII capitals made small: header names compare so.
+#
+# - `s`: the text.
+function lower_ascii(s: str) -> str
+    pieces: [str] @= []
+
+    for c in s.chars()
+        if c.len() == 1 && c[0] >= 'A' && c[0] <= 'Z'
+            pieces @ pieces.push(to_lower_letter(c))
+        else
+            pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+# One ASCII capital made small.
+#
+# - `c`: the letter, `A` to `Z`.
+function to_lower_letter(c: str) -> str
+    letters = "abcdefghijklmnopqrstuvwxyz"
+    at = to_i64(c[0] - 'A').must()
+    return letters.slice(from: at, to: at + 1)
+
+## Tests
+
+test "key_of: a context makes another key, and its label shows it"
+    plain = i18n.new_message(id: "Open", translation: "Öffnen")
+    assert key_of(plain) == "Open"
+    menu = i18n.Message(
+        context: ok("menu"),
+        id: "Open",
+        plural_id: absent("plural"),
+        translations: [""],
+        comments: [],
+        extracted_comments: [],
+        references: [],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    assert key_of(menu) != key_of(plain)
+    assert label_of(menu) == "[menu] Open"
+    assert label_of(plain) == "Open"
+
+test "state_of: translated, fuzzy, partial and untranslated"
+    m = i18n.new_message(id: "a", translation: "b")
+    assert state_of(m) == "translated"
+    assert state_of(with_flag(m, flag: "fuzzy")) == "fuzzy"
+    assert state_of(with_translations(m, translations: ["x", ""])) == "partial"
+    assert state_of(with_translations(m, translations: ["", ""])) == "untranslated"
+    assert !is_translated(with_flag(m, flag: "fuzzy"))
+    assert without_flag(with_flag(m, flag: "fuzzy"), flag: "fuzzy").flags == []
+
+test "fields_of: read, a field changed in place, one added at the end"
+    fields = fields_of("Language: de\nplural-forms: nplurals=2; plural=(n != 1);\n")
+    assert field_value(fields, name: "Plural-Forms").must() == "nplurals=2; plural=(n != 1);"
+    changed = with_field(fields, name: "Language", value: "de-CH")
+    assert text_of_fields(changed) == "Language: de-CH\nplural-forms: nplurals=2; plural=(n != 1);\n"
+    assert with_field(fields, name: "X-Generator", value: "l10n").len() == 3
+    assert field_value(fields, name: "Missing").is_err()
+
+test "gettext_date: UTC, two digits each"
+    t = time.from_unix(whole_seconds: 1772703000, extra_nanoseconds: 0).must()
+    assert gettext_date(t) == "2026-03-05 09:30+0000"

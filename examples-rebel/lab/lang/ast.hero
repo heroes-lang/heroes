@@ -1,0 +1,134 @@
+# The tree of the lab's language: what `lang/parser` reads a cell or a REPL
+# line into and `eval/evaluate` walks. An expression is a `Node`, its form and
+# the place it begins; a line of a cell is a `Statement`, an expression shown,
+# a name given a value, or a function defined.
+#
+# A node holds its children in lists, since a record holds its fields by
+# value and may contain itself only through a list: a binary operation's two
+# operands are the two elements of `operands`.
+
+use numbers/scalar
+
+# One expression and where it begins in its source.
+record Node
+    # What it is.
+    form: Form
+    # Its line in the notebook or the session, from 1.
+    line: i64
+    # Its column, from 1.
+    column: i64
+
+# The forms of an expression.
+variant Form
+    # A number written out: `42`, `0.5`, `2i`.
+    number
+        # Its value.
+        value: scalar.Number
+    # A text between double quotes.
+    text
+        # Its characters, the escapes read.
+        value: str
+    # `true` or `false`.
+    truth
+        # Which.
+        value: bool
+    # A name: a variable, a constant or a function.
+    name
+        # The name.
+        id: str
+    # `-x` or `not x`.
+    unary
+        # `-` or `not`.
+        op: str
+        # The one operand.
+        operand: [Node]
+    # `a + b` and every other operator of two operands.
+    binary
+        # The operator: `+ - * / % ^ == != < <= > >= and or`.
+        op: str
+        # The two operands, the left first.
+        operands: [Node]
+    # `n!`.
+    factorial
+        # The one operand.
+        operand: [Node]
+    # `f(a, b)`.
+    call
+        # The function's name.
+        callee: str
+        # The arguments, in order.
+        args: [Node]
+    # `v[i]` or `m[r, c]`.
+    index
+        # The one value indexed.
+        target: [Node]
+        # The positions, counted from 1.
+        positions: [Node]
+    # `[a, b, c]`.
+    vector
+        # The elements.
+        items: [Node]
+    # `[a, b; c, d]`: rows separated by `;`.
+    matrix
+        # The rows, each a list of entries.
+        rows: [[Node]]
+    # `a:b` or `a:step:b`, the whole numbers or the steps from `a` to `b`,
+    # both included.
+    range
+        # The first, the step where there is one, and the last.
+        parts: [Node]
+    # `if c then a else b`.
+    conditional
+        # The condition, the value where it holds, the value where not.
+        parts: [Node]
+
+# One line of a cell or of a session.
+variant Statement
+    # An expression whose value is shown.
+    show
+        # The expression.
+        expr: Node
+    # `x = expr`: the name given the expression's value.
+    assign
+        # The name.
+        target: str
+        # The expression.
+        expr: Node
+    # `f(x, y) = expr`: a function of the named parameters.
+    define
+        # The function's name.
+        target: str
+        # The parameters' names, in order.
+        params: [str]
+        # What the function answers.
+        body: Node
+
+# The node of `form` at `line` and `column`.
+#
+# - `form`: the form.
+# - `line`: the line, from 1.
+# - `column`: the column, from 1.
+function node(form: Form, line: i64, column: i64) -> Node
+    return Node(form: form, line: line, column: column)
+
+# Where `n` begins, as `line:column`.
+#
+# - `n`: the node.
+function place_of(n: Node) -> str
+    return f"{n.line}:{n.column}"
+
+# The expression a statement computes: the shown one, the assigned one, or
+# the body of the defined function.
+#
+# - `s`: the statement.
+function expression_of(s: Statement) -> Node
+    return match s
+        .show w   => w.expr
+        .assign a => a.expr
+        .define d => d.body
+
+test "place_of and expression_of: a node's place, each statement's expression"
+    n = node(.name(id: "x"), line: 3, column: 7)
+    assert place_of(n) == "3:7"
+    assert expression_of(.assign(target: "y", expr: n)) == n
+    assert expression_of(.define(target: "f", params: ["x"], body: n)) == n

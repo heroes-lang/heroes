@@ -1,0 +1,172 @@
+# The explorer's small windows: the one that asks for a name (Rename, New
+# Folder, Add Bookmark) or for a pattern and what it becomes (Rename with
+# Pattern), the progress of a long operation with its Cancel button, and a
+# file's checksums. `ui` offers no dialog that asks for a text, and refuses
+# one on purpose (its ledger's `ui/ask-value`): a window with a field and two
+# buttons is the way, made here.
+#
+# Each window keeps its widgets' numbers in a record the controller holds
+# while it is open; the controller destroys it when it is answered.
+
+use <rebel>/ui
+
+use ops/hashing
+use ops/jobs
+
+# What the question window asks for.
+variant Asking
+    # The new name of the entry chosen.
+    rename
+    # The name of a new folder.
+    new_folder
+    # The name of a bookmark of the folder shown.
+    bookmark
+    # A pattern and what its match becomes, for the entries chosen.
+    pattern
+
+# A question window.
+record Ask
+    # What it asks for.
+    asking: Asking
+    # The window.
+    window: ui.Widget
+    # The field typed into.
+    first: ui.Widget
+    # The second field, for a pattern's template; none otherwise.
+    second: [ui.Widget]
+    # Answers with what was typed.
+    ok: ui.Widget
+    # Closes it, answering nothing.
+    cancel: ui.Widget
+
+# Opens a question window.
+#
+# - `app`: the app.
+# - `asking`: what it asks for.
+# - `title`: its title.
+# - `prompt`: the words over the field.
+# - `text`: what the field holds first.
+#
+# Fails as `ui`'s makers fail.
+function open_ask(@app: ui.App, asking: Asking, title: str, prompt: str, text: str) -> Ask?
+    w = ui.window(@app, title: title, width: 360, height: 120)?
+    ui.set_resizable(@app, widget: w, on: false)?
+    form = ui.grid(@app, into: w, columns: 2)?
+    _ = ui.label(@app, into: form, text: prompt)?
+    first = ui.text_field(@app, into: form, text: text)?
+    second: [ui.Widget] @= []
+
+    if asking == .pattern
+        _ = ui.label(@app, into: form, text: "Becomes")?
+        second @ second.push(ui.text_field(@app, into: form, text: "")?)
+
+    answers = ui.row(@app, into: w)?
+    cancel = ui.button(@app, into: answers, text: "Cancel")?
+    ok_button = ui.button(@app, into: answers, text: "OK")?
+    return ok(Ask(asking: asking, window: w, first: first, second: second, ok: ok_button, cancel: cancel))
+
+# The words of a question window for `asking`: its title and its prompt.
+#
+# - `asking`: what it asks for.
+function title_of(asking: Asking) -> str
+    return match asking
+        .rename     => "Rename"
+        .new_folder => "New Folder"
+        .bookmark   => "Add Bookmark"
+        .pattern    => "Rename with Pattern"
+
+# The words over the field of a question window for `asking`.
+#
+# - `asking`: what it asks for.
+function prompt_of(asking: Asking) -> str
+    return match asking
+        .rename     => "New name"
+        .new_folder => "Folder name"
+        .bookmark   => "Bookmark name"
+        .pattern    => "Pattern"
+
+# A window showing a long operation's progress.
+record Progress
+    # The window.
+    window: ui.Widget
+    # The bar.
+    bar: ui.Widget
+    # What the operation is on.
+    note: ui.Widget
+    # Stops the operation.
+    cancel: ui.Widget
+
+# Opens the progress window of `j`.
+#
+# - `app`: the app.
+# - `j`: the job.
+#
+# Fails as `ui`'s makers fail.
+function open_progress(@app: ui.App, j: jobs.Job) -> Progress?
+    w = ui.window(@app, title: j.title, width: 360, height: 100)?
+    ui.set_resizable(@app, widget: w, on: false)?
+    bar = ui.progress(@app, into: w, most: 1)?
+    fill @= ui.default_fit()
+    fill.fill @ true
+    ui.set_fit(@app, widget: bar, fit: fill)?
+    note = ui.label(@app, into: w, text: "")?
+    cancel = ui.button(@app, into: w, text: "Cancel")?
+    p = Progress(window: w, bar: bar, note: note, cancel: cancel)
+    show_progress(@app, p: p, j: j)?
+    return ok(p)
+
+# Sets the progress window from how far `j` is.
+#
+# - `app`: the app.
+# - `p`: the window.
+# - `j`: the job.
+#
+# Fails as `ui`'s setters fail.
+function show_progress(@app: ui.App, p: Progress, j: jobs.Job) -> ()?
+    at = jobs.progress_of(j)
+
+    done = if at.done > at.total
+        at.total
+    else
+        at.done
+
+    ui.set_range(@app, widget: p.bar, least: 0, most: at.total)?
+    ui.set_value(@app, widget: p.bar, value: done)?
+    ui.set_text(@app, widget: p.note, text: at.note)?
+    return ok()
+
+# A window showing a file's checksums, each in a field a person can select
+# and copy.
+record Digests
+    # The window.
+    window: ui.Widget
+    # One field a checksum.
+    fields: [ui.Widget]
+    # Closes it.
+    close: ui.Widget
+
+# Opens the window of `file`'s checksums.
+#
+# - `app`: the app.
+# - `file`: the file's name.
+# - `digests`: the checksums.
+#
+# Fails as `ui`'s makers fail.
+function open_digests(@app: ui.App, file: str, digests: [hashing.Digest]) -> Digests?
+    w = ui.window(@app, title: f"Checksums of {file}", width: 420, height: 140)?
+    form = ui.grid(@app, into: w, columns: 2)?
+    fields: [ui.Widget] @= []
+
+    for d in digests
+        _ = ui.label(@app, into: form, text: d.name)?
+        fields @ fields.push(ui.text_field(@app, into: form, text: d.value)?)
+
+    _ = ui.label(@app, into: w, text: "Checksums tell a damaged copy; they are no proof against tampering.")?
+    close = ui.button(@app, into: w, text: "Close")?
+    return ok(Digests(window: w, fields: fields, close: close))
+
+test "title_of and prompt_of: every question has its words"
+    every: [Asking] = [.rename, .new_folder, .bookmark, .pattern]
+
+    for a in every
+        assert title_of(a) != "" && prompt_of(a) != ""

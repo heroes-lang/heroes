@@ -1,0 +1,361 @@
+# The lab's built-in functions and constants: their names, how many
+# arguments each takes, and the module that answers each (`eval/scalars`,
+# `eval/vectors`, `eval/matrices`, `eval/series`, `eval/sampling`,
+# `eval/drawing`). The functions that call a function given to them
+# (`map`, `plot`, `integrate`, `findroot`) are `eval/calls`', which knows how
+# to call one; their names and counts are listed here with the others, so
+# the help and the completion see every built-in in one place.
+#
+# A built-in's name is taken: a notebook may not give it a value or define
+# a function by it, so `sin` always means the sine.
+
+use <rebel>/math
+
+use eval/drawing
+use eval/machine
+use eval/matrices
+use eval/sampling
+use eval/scalars
+use eval/series
+use eval/show
+use eval/value
+use eval/vectors
+use numbers/scalar
+
+# The constants, each a name and what it is.
+constant CONSTANTS: [str]
+    [
+        "pi"
+        "e"
+        "tau"
+        "phi"
+        "i"
+        "inf"
+        "nan"
+    ]
+
+# Every built-in function other than the elementwise and the statistical
+# ones, which `scalars.ELEMENTWISE`, `series.ONE_SERIES` and
+# `series.TWO_SERIES` list.
+constant OTHERS: [str]
+    [
+        "log"
+        "atan2"
+        "isprime"
+        "nextprime"
+        "factor"
+        "factorial"
+        "binomial"
+        "gcd"
+        "lcm"
+        "numerator"
+        "denominator"
+        "rat"
+        "digits"
+        "len"
+        "sum"
+        "prod"
+        "min"
+        "max"
+        "sort"
+        "reverse"
+        "cumsum"
+        "linspace"
+        "dot"
+        "norm"
+        "zeros"
+        "ones"
+        "eye"
+        "diag"
+        "size"
+        "transpose"
+        "det"
+        "inv"
+        "solve"
+        "lstsq"
+        "rank"
+        "rref"
+        "trace"
+        "lu"
+        "qr"
+        "chol"
+        "eig"
+        "eigvecs"
+        "cross"
+        "rot2"
+        "rot3"
+        "rotate"
+        "quantiles"
+        "runif"
+        "rnorm"
+        "randint"
+        "sample"
+        "shuffle"
+        "hist"
+        "scatter"
+        "type"
+        "str"
+        "map"
+        "plot"
+        "integrate"
+        "findroot"
+    ]
+
+# The value of the constant `name`.
+#
+# - `name`: the name.
+#
+# Fails `not_found` where no constant has it.
+function constant_of(name: str) -> value.Value?
+    return match name
+        "pi"  => ok(value.of_real(math.PI))
+        "e"   => ok(value.of_real(math.E))
+        "tau" => ok(value.of_real(math.TAU))
+        "phi" => ok(value.of_real(math.PHI))
+        "i"   => ok(.number(value: scalar.of_parts(re: 0.0, im: 1.0)))
+        "inf" => ok(value.of_real(math.INF))
+        "nan" => ok(value.of_real(math.NAN))
+        _     => fail(code: "not_found", msg: f"no constant `{name}`")
+
+# Whether `name` is a constant.
+#
+# - `name`: the name.
+function is_constant(name: str) -> bool
+    return !constant_of(name).is_err()
+
+# Whether `name` is a built-in function.
+#
+# - `name`: the name.
+function is_builtin(name: str) -> bool
+    if scalars.is_elementwise(name) || series.is_one_series(name) || series.is_two_series(name)
+        return true
+
+    for o in OTHERS
+        if o == name
+            return true
+
+    return false
+
+# Every built-in function's name and every constant's, ascending: what the
+# REPL completes and `:help` lists.
+function names() -> [str]
+    every: [str] @= []
+
+    for n in scalars.ELEMENTWISE
+        every @ every.push(n)
+
+    for n in series.ONE_SERIES
+        every @ every.push(n)
+
+    for n in series.TWO_SERIES
+        every @ every.push(n)
+
+    for n in OTHERS
+        every @ every.push(n)
+
+    for n in CONSTANTS
+        every @ every.push(n)
+
+    return sort(every)
+
+# The least and the most arguments the built-in `name` takes.
+#
+# - `name`: a built-in function's name.
+function arity_of(name: str) -> [i64]
+    if scalars.is_elementwise(name) || series.is_one_series(name)
+        return [1, 1]
+
+    if series.is_two_series(name)
+        return [2, 2]
+
+    return match name
+        "log"                                                                      => [1, 2]
+        "quantiles"                                                                => [1, 2]
+        "runif" | "rnorm"                                                          => [1, 3]
+        "hist"                                                                     => [1, 3]
+        "scatter"                                                                  => [2, 3]
+        "plot"                                                                     => [3, 4]
+        "linspace" | "randint" | "rotate" | "integrate" | "findroot"               => [3, 3]
+        "atan2" | "binomial" | "gcd" | "lcm" | "rat" | "digits" | "dot"            => [2, 2]
+        "zeros" | "ones" | "solve" | "lstsq" | "cross" | "rot3" | "sample" | "map" => [2, 2]
+        _                                                                          => [1, 1]
+
+# Fails `invalid` where `given` is not a count of arguments `name` takes.
+#
+# - `name`: the built-in's name.
+# - `given`: the arguments.
+function check_arity(name: str, given: [value.Value]) -> ()?
+    bounds = arity_of(name)
+    n = given.len()
+
+    if n >= bounds[0] && n <= bounds[1]
+        return ok()
+    wanted: str @= f"{bounds[0]} to {bounds[1]} arguments"
+
+    if bounds[0] == bounds[1]
+        wanted @ f"{bounds[0]} argument"
+
+        if bounds[0] != 1
+            wanted @ wanted + "s"
+    return fail(code: value.INVALID, msg: f"`{name}` takes {wanted}, not {n}")
+
+# The argument at `at`, or nothing past the arguments given.
+#
+# - `given`: the arguments.
+# - `at`: the position, from 0.
+function optional(given: [value.Value], at: i64) -> value.Value
+    if at < given.len()
+        return given[at]
+    return .nothing
+
+# The title an optional argument gives, or `otherwise`.
+#
+# - `v`: the argument, or nothing.
+# - `otherwise`: the title where none is given.
+#
+# Fails `invalid` where a title given is not a text.
+function title_of(v: value.Value, otherwise: str) -> str?
+    if v == .nothing
+        return ok(otherwise)
+    return value.text_of(v, what: "a plot's title")
+
+# The built-in `name` called with `given`, its count of arguments checked.
+#
+# - `m`: the evaluation: its generator for the draws, its folder for the
+#   plots.
+# - `name`: a built-in function's name, not one of `eval/calls`'.
+# - `given`: the arguments, evaluated.
+#
+# Fails as the built-in fails, `invalid` for a wrong count of arguments.
+function call(@m: machine.Machine, name: str, given: [value.Value]) -> value.Value?
+    check_arity(name, given: given)?
+
+    if scalars.is_elementwise(name)
+        return scalars.elementwise(name, v: given[0])
+
+    if series.is_one_series(name)
+        return series.one_series(name, v: given[0])
+
+    if series.is_two_series(name)
+        return series.two_series(name, x: given[0], y: given[1])
+
+    return match name
+        "log" =>
+            if given.len() == 1
+                scalars.elementwise("ln", v: given[0])
+            else
+                scalars.two_numbers("log", first: given[0], second: given[1])
+        "atan2"              => scalars.two_numbers("atan2", first: given[0], second: given[1])
+        "isprime"            => scalars.is_prime(given[0])
+        "nextprime"          => scalars.next_prime(given[0])
+        "factor"             => scalars.factor(given[0])
+        "factorial"          => scalars.factorial(given[0])
+        "binomial"           => scalars.binomial(n: given[0], k: given[1])
+        "gcd"                => scalars.divisor(a: given[0], b: given[1], least_multiple: false)
+        "lcm"                => scalars.divisor(a: given[0], b: given[1], least_multiple: true)
+        "numerator"          => scalars.part_of_fraction(given[0], top: true)
+        "denominator"        => scalars.part_of_fraction(given[0], top: false)
+        "rat"                => scalars.approximate(x: given[0], most: given[1])
+        "digits"             => scalars.digits(x: given[0], places: given[1])
+        "len"                => vectors.length_of(given[0])
+        "sum"                => vectors.total(given[0])
+        "prod"               => vectors.product(given[0])
+        "min"                => vectors.extreme(given[0], greatest: false)
+        "max"                => vectors.extreme(given[0], greatest: true)
+        "sort"               => vectors.sorted(given[0])
+        "reverse"            => vectors.reversed(given[0])
+        "cumsum"             => vectors.running_sums(given[0])
+        "linspace"           => vectors.evenly(from: given[0], to: given[1], count: given[2])
+        "dot"                => vectors.dot(u: given[0], v: given[1])
+        "norm"               => vectors.norm(given[0])
+        "zeros"              => matrices.filled(rows: given[0], cols: given[1], fill: 0)
+        "ones"               => matrices.filled(rows: given[0], cols: given[1], fill: 1)
+        "eye"                => matrices.identity(given[0])
+        "diag"               => matrices.diagonal(given[0])
+        "size"               => matrices.shape(given[0])
+        "transpose"          => matrices.transposed(given[0])
+        "det"                => matrices.determinant(given[0])
+        "inv"                => matrices.inverse(given[0])
+        "solve"              => matrices.solved(a: given[0], b: given[1])
+        "lstsq"              => matrices.least_squares(a: given[0], b: given[1])
+        "rank"               => matrices.rank(given[0])
+        "rref"               => matrices.reduced(given[0])
+        "trace"              => matrices.trace(given[0])
+        "lu" | "qr" | "chol" => matrices.decomposition(name, v: given[0])
+        "eig"                => matrices.eigenvalues(given[0])
+        "eigvecs"            => matrices.eigenvectors(given[0])
+        "cross"              => matrices.cross(u: given[0], v: given[1])
+        "rot2"               => matrices.rotation_2d(given[0])
+        "rot3"               => matrices.rotation_3d(axis: given[0], angle: given[1])
+        "rotate"             => matrices.rotated(v: given[0], axis: given[1], angle: given[2])
+        "quantiles" => series.quantiles(
+            v: given[0],
+            parts: default_to(v: optional(given, at: 1), fallback: value.of_int(4))
+        )
+        "runif" =>
+            sampling.uniform(
+                @m,
+                count: given[0],
+                low: default_to(v: optional(given, at: 1), fallback: value.of_int(0)),
+                high: default_to(v: optional(given, at: 2), fallback: value.of_int(1))
+            )
+        "rnorm" =>
+            sampling.normal(
+                @m,
+                count: given[0],
+                mean: default_to(v: optional(given, at: 1), fallback: value.of_int(0)),
+                spread: default_to(v: optional(given, at: 2), fallback: value.of_int(1))
+            )
+        "randint" => sampling.integers(@m, from: given[0], to: given[1], count: given[2])
+        "sample"  => sampling.sample(@m, v: given[0], count: given[1])
+        "shuffle" => sampling.shuffled(@m, v: given[0])
+        "hist" => drawing.histogram(
+            @m,
+            data: given[0],
+            bins: optional(given, at: 1),
+            title: title_of(optional(given, at: 2), otherwise: "histogram")?
+        )
+        "scatter" => drawing.scatter(
+            @m,
+            x: given[0],
+            y: given[1],
+            title: title_of(optional(given, at: 2), otherwise: "scatter")?
+        )
+        "type" => ok(.text(value: value.kind_name(given[0])))
+        "str"  => ok(.text(value: show.inline(given[0])))
+        _      => fail(code: value.INVALID, msg: f"`{name}` is not answered here")
+
+# `v`, or `fallback` where `v` is nothing.
+#
+# - `v`: an optional argument.
+# - `fallback`: what stands where it was not given.
+function default_to(v: value.Value, fallback: value.Value) -> value.Value
+    if v == .nothing
+        return fallback
+    return v
+
+test "is_builtin and names: every kind of built-in found, the list ascending"
+    assert is_builtin("sin") && is_builtin("mean") && is_builtin("corr") && is_builtin("solve") && is_builtin("plot")
+    assert !is_builtin("pi") && !is_builtin("x")
+    listing = names()
+    assert listing == sort(listing)
+    assert is_constant("pi") && !is_constant("sin")
+
+test "check_arity: counts said in words"
+    match check_arity("sqrt", given: [])
+        .ok _  => assert false
+        .err e => assert e.msg == "`sqrt` takes 1 argument, not 0"
+
+    match check_arity("plot", given: [])
+        .ok _  => assert false
+        .err e => assert e.msg == "`plot` takes 3 to 4 arguments, not 0"
+
+    assert !check_arity("runif", given: [value.of_int(1)]).is_err()
+
+test "call: a few built-ins through the table"
+    m @= machine.new(plots: "", seed: 1)
+    assert call(@m, name: "log", given: [value.of_int(1)]).must() == value.of_real(0.0)
+    assert call(@m, name: "sum", given: [.vector(items: [value.of_int(1), value.of_int(2)])]).must() == value.of_int(3)
+    assert call(@m, name: "type", given: [value.of_int(1)]).must() == .text(value: "integer")
+    assert call(@m, name: "quantiles", given: [value.of_floats([1.0, 2.0, 3.0, 4.0, 5.0])]).must() == value.of_floats([1.5, 3.0, 4.5])
+    assert value.floats_of(call(@m, name: "rnorm", given: [value.of_int(3)]).must(), what: "x").must().len() == 3

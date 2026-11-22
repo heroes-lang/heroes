@@ -1,0 +1,641 @@
+# The lab's grammar, read by recursive descent from the tokens of
+# `lang/tokens` into the tree of `lang/ast`. A cell is statements, one to a
+# line; inside parentheses and brackets a line end is skipped, so a matrix
+# may be written over several lines:
+#
+#     statement   = expression [ "=" expression ]
+#     expression  = "if" expression "then" expression "else" expression
+#                 | disjunction
+#     disjunction = conjunction { "or" conjunction }
+#     conjunction = negation { "and" negation }
+#     negation    = "not" negation | comparison
+#     comparison  = span [ ( "==" | "!=" | "<" | "<=" | ">" | ">=" ) span ]
+#     span        = sum [ ":" sum [ ":" sum ] ]
+#     sum         = product { ( "+" | "-" ) product }
+#     product     = prefix { ( "*" | "/" | "%" ) prefix }
+#     prefix      = ( "-" | "+" ) prefix | power
+#     power       = postfix [ "^" prefix ]
+#     postfix     = primary { "!" | "[" expression { "," expression } "]" }
+#     primary     = number | text | "true" | "false" | name [ "(" arguments ")" ]
+#                 | "(" expression ")" | "[" rows "]"
+#     rows        = [ expression { ( "," | ";" ) expression } ]
+#
+# So `-2^2` is `-4`, `2^-1` is `1/2` and `2^3^2` is `2^9`, as mathematics
+# reads them. The left side of `=` is a name, `x = 1`, or a function's name
+# and its parameters, `f(x, y) = x * y`.
+#
+# Every failure is `invalid`, its message opening with the line and the
+# column of the token where the reading stopped: `2:7: expected an
+# expression, found `*``.
+
+use <rebel>/scanner
+
+use lang/ast
+use lang/tokens
+
+# The code of a text that is not the lab's language.
+constant INVALID: str
+    "invalid"
+
+# The operators that compare two values.
+constant COMPARISONS: [str]
+    [
+        "=="
+        "!="
+        "<"
+        "<="
+        ">"
+        ">="
+    ]
+
+# The most expressions a reading stands inside: a text nested deeper is
+# refused with its place rather than read by a recursion that would run the
+# program off its stack. A level of brackets takes a dozen functions of the
+# descent; measured 2026-11-22 on macOS's 8 MB stack in a build at `-O0`, 75
+# nested brackets were read and 100 exhausted it, so 32 leaves more than half.
+constant MOST_NESTING: i64
+    32
+
+# A reading in progress: the tokens, the next one's index, and how many
+# brackets are open, inside which a line end is skipped.
+record Parser
+    # Every token of the source, the `end` token last.
+    tokens: [scanner.Token]
+    # The index of the next token not yet read.
+    at: i64
+    # The brackets and parentheses open.
+    depth: i64
+    # What is added to a token's line to give its line in the notebook.
+    line_offset: i64
+    # The expressions the reading stands inside now.
+    nesting: i64
+
+# The statements of `source`, one to a line.
+#
+# - `source`: the text of a cell or a line typed at the prompt.
+# - `first_line`: the line of the notebook `source` begins on, 1 for a text
+#   of its own; the places in the tree and the messages count from it.
+#
+# Fails `invalid` at the first place the text is not the language.
+function parse(source: str, first_line: i64) -> [ast.Statement]?
+    p @= Parser(tokens: tokens.tokens_of(source), at: 0, depth: 0, line_offset: first_line - 1, nesting: 0)
+    found: [ast.Statement] @= []
+
+    while true
+        while peek(p).kind == .newline
+            _ = advance(@p)
+
+        if peek(p).kind == .end
+            return ok(found)
+        found @ found.push(statement(@p)?)
+        after = peek(p)
+
+        if after.kind != .newline && after.kind != .end
+            return problem(p, at: after, message: f"expected the end of the line, found {tokens.describe(after)}")
+
+# The one expression of `source`.
+#
+# - `source`: the text.
+#
+# Fails `invalid` where it is not one expression.
+function parse_expression(source: str) -> ast.Node?
+    p @= Parser(tokens: tokens.tokens_of(source), at: 0, depth: 0, line_offset: 0, nesting: 0)
+    e = expression(@p)?
+    after = peek(p)
+
+    if after.kind != .end
+        return problem(p, at: after, message: f"expected the end of the expression, found {tokens.describe(after)}")
+    return ok(e)
+
+# The index of the next token to read: line ends passed over while a
+# bracket is open.
+#
+# - `p`: the reading.
+function position(p: Parser lent) -> i64
+    at @= p.at
+
+    if p.depth > 0
+        while p.tokens[at].kind == .newline
+            at @ at + 1
+
+    return at
+
+# The next token, not read.
+#
+# - `p`: the reading.
+function peek(p: Parser lent) -> scanner.Token
+    return p.tokens[position(p)]
+
+# The next token, read: the reading stands after it, or stays at the end.
+#
+# - `p`: the reading.
+function advance(@p: Parser) -> scanner.Token
+    at = position(p)
+    t = p.tokens[at]
+
+    if t.kind != .end
+        p.at @ at + 1
+    return t
+
+# Whether `t` is the operator `text`.
+#
+# - `t`: the token.
+# - `text`: the operator.
+function is_op(t: scanner.Token, text: str) -> bool
+    return t.kind == .operator && t.text == text
+
+# Whether `t` is the keyword `word`.
+#
+# - `t`: the token.
+# - `word`: the keyword.
+function is_keyword(t: scanner.Token, word: str) -> bool
+    return t.kind == .keyword && t.text == word
+
+# The failure at the token `at`: `invalid`, its line and column first.
+#
+# - `p`: the reading, for the line's offset.
+# - `at`: where the reading stopped.
+# - `message`: what was wrong.
+function problem<T>(p: Parser lent, at: scanner.Token, message: str) -> T?
+    return fail(code: INVALID, msg: f"{at.start.line + p.line_offset}:{at.start.column}: {message}")
+
+# The node of `form` at the place of `t`.
+#
+# - `p`: the reading, for the line's offset.
+# - `t`: the token the node begins at.
+# - `form`: the form.
+function node_at(p: Parser lent, t: scanner.Token, form: ast.Form) -> ast.Node
+    return ast.node(form, line: t.start.line + p.line_offset, column: t.start.column)
+
+# Reads the operator `text`, or fails saying what stood instead.
+#
+# - `p`: the reading.
+# - `text`: the operator expected.
+# - `context`: what it closes or separates, for the message.
+function expect_op(@p: Parser, text: str, context: str) -> ()?
+    t = peek(p)
+
+    if !is_op(t, text: text)
+        return problem(p, at: t, message: f"expected `{text}` {context}, found {tokens.describe(t)}")
+    _ = advance(@p)
+    return ok()
+
+# Reads the keyword `word`, or fails saying what stood instead.
+#
+# - `p`: the reading.
+# - `word`: the keyword expected.
+function expect_keyword(@p: Parser, word: str) -> ()?
+    t = peek(p)
+
+    if !is_keyword(t, word: word)
+        return problem(p, at: t, message: f"expected `{word}`, found {tokens.describe(t)}")
+    _ = advance(@p)
+    return ok()
+
+# One statement: an expression shown, a name given a value, or a function
+# defined.
+#
+# - `p`: the reading.
+function statement(@p: Parser) -> ast.Statement?
+    left = expression(@p)?
+    equals = peek(p)
+
+    if !is_op(equals, text: "=")
+        return ok(.show(expr: left))
+    _ = advance(@p)
+    value = expression(@p)?
+
+    match left.form
+        .name n => return ok(.assign(target: n.id, expr: value))
+        .call c =>
+            params: [str] @= []
+
+            for a in c.args
+                match a.form
+                    .name n =>
+                        for seen in params
+                            if seen == n.id
+                                return problem(
+                                    p,
+                                    at: equals,
+                                    message: f"the parameter `{n.id}` of `{c.callee}` is named twice"
+                                )
+
+                        params @ params.push(n.id)
+                    .number _ | .text _ | .truth _ | .unary _ | .binary _ | .factorial _ | .call _ | .index _ | .vector _ | .matrix _ | .range _ | .conditional _ =>
+                        return problem(
+                            p,
+                            at: equals,
+                            message: f"a parameter of `{c.callee}` is a name, as in `{c.callee}(x) = ...`"
+                        )
+
+            return ok(.define(target: c.callee, params: params, body: value))
+        .number _ | .text _ | .truth _ | .unary _ | .binary _ | .factorial _ | .index _ | .vector _ | .matrix _ | .range _ | .conditional _ =>
+            return problem(
+                p,
+                at: equals,
+                message: "only a name, `x = ...`, or a function's head, `f(x) = ...`, stands left of `=`; `==` compares"
+            )
+
+# Counts one level of nesting more, and fails `invalid` past
+# `MOST_NESTING`.
+#
+# - `p`: the reading.
+function deeper(@p: Parser) -> ()?
+    if p.nesting >= MOST_NESTING
+        return problem(p, at: peek(p), message: f"expressions nested more than {MOST_NESTING} deep")
+    p.nesting @ p.nesting + 1
+    return ok()
+
+# An expression, an `if` first.
+#
+# - `p`: the reading.
+function expression(@p: Parser) -> ast.Node?
+    deeper(@p)?
+    e: ast.Node? @= fail(code: INVALID, msg: "unread")
+
+    if is_keyword(peek(p), word: "if")
+        e @ conditional(@p)
+    else
+        e @ disjunction(@p)
+    p.nesting @ p.nesting - 1
+    return e
+
+# `if c then a else b`.
+#
+# - `p`: the reading, standing at the `if`.
+function conditional(@p: Parser) -> ast.Node?
+    start = advance(@p)
+    condition = expression(@p)?
+    expect_keyword(@p, word: "then")?
+    yes = expression(@p)?
+    expect_keyword(@p, word: "else")?
+    no = expression(@p)?
+    return ok(node_at(p, t: start, form: .conditional(parts: [condition, yes, no])))
+
+# The node of a binary operation `op` at the token `t`.
+#
+# - `p`: the reading.
+# - `t`: the operator's token.
+# - `left`: the left operand.
+# - `right`: the right operand.
+function binary_at(p: Parser lent, t: scanner.Token, left: ast.Node, right: ast.Node) -> ast.Node
+    return node_at(p, t: t, form: .binary(op: t.text, operands: [left, right]))
+
+# `a or b or ...`.
+#
+# - `p`: the reading.
+function disjunction(@p: Parser) -> ast.Node?
+    left @= conjunction(@p)?
+
+    while is_keyword(peek(p), word: "or")
+        t = advance(@p)
+        right = conjunction(@p)?
+        left @ binary_at(p, t: t, left: left, right: right)
+
+    return ok(left)
+
+# `a and b and ...`.
+#
+# - `p`: the reading.
+function conjunction(@p: Parser) -> ast.Node?
+    left @= negation(@p)?
+
+    while is_keyword(peek(p), word: "and")
+        t = advance(@p)
+        right = negation(@p)?
+        left @ binary_at(p, t: t, left: left, right: right)
+
+    return ok(left)
+
+# `not a`, or a comparison.
+#
+# - `p`: the reading.
+function negation(@p: Parser) -> ast.Node?
+    if is_keyword(peek(p), word: "not")
+        t = advance(@p)
+        deeper(@p)?
+        operand = negation(@p)?
+        p.nesting @ p.nesting - 1
+        return ok(node_at(p, t: t, form: .unary(op: "not", operand: [operand])))
+    return comparison(@p)
+
+# Whether `t` is one of the comparing operators.
+#
+# - `t`: the token.
+function is_comparison(t: scanner.Token) -> bool
+    if t.kind != .operator
+        return false
+
+    for c in COMPARISONS
+        if t.text == c
+            return true
+
+    return false
+
+# `a < b` and the other comparisons, which do not chain.
+#
+# - `p`: the reading.
+function comparison(@p: Parser) -> ast.Node?
+    left = span(@p)?
+
+    if !is_comparison(peek(p))
+        return ok(left)
+    t = advance(@p)
+    right = span(@p)?
+
+    if is_comparison(peek(p))
+        return problem(
+            p,
+            at: peek(p),
+            message: "comparisons do not chain: join them with `and`, as in `a < b and b < c`"
+        )
+    return ok(binary_at(p, t: t, left: left, right: right))
+
+# `a:b` and `a:step:b`, or a sum alone.
+#
+# - `p`: the reading.
+function span(@p: Parser) -> ast.Node?
+    first = sum(@p)?
+
+    if !is_op(peek(p), text: ":")
+        return ok(first)
+    t = advance(@p)
+    second = sum(@p)?
+
+    if !is_op(peek(p), text: ":")
+        return ok(node_at(p, t: t, form: .range(parts: [first, second])))
+    _ = advance(@p)
+    third = sum(@p)?
+    return ok(node_at(p, t: t, form: .range(parts: [first, second, third])))
+
+# `a + b - c`, from the left.
+#
+# - `p`: the reading.
+function sum(@p: Parser) -> ast.Node?
+    left @= product(@p)?
+
+    while is_op(peek(p), text: "+") || is_op(peek(p), text: "-")
+        t = advance(@p)
+        right = product(@p)?
+        left @ binary_at(p, t: t, left: left, right: right)
+
+    return ok(left)
+
+# `a * b / c % d`, from the left.
+#
+# - `p`: the reading.
+function product(@p: Parser) -> ast.Node?
+    left @= prefix(@p)?
+
+    while is_op(peek(p), text: "*") || is_op(peek(p), text: "/") || is_op(peek(p), text: "%")
+        t = advance(@p)
+        right = prefix(@p)?
+        left @ binary_at(p, t: t, left: left, right: right)
+
+    return ok(left)
+
+# `-a` and `+a`, or a power.
+#
+# - `p`: the reading.
+function prefix(@p: Parser) -> ast.Node?
+    if is_op(peek(p), text: "-")
+        t = advance(@p)
+        deeper(@p)?
+        operand = prefix(@p)?
+        p.nesting @ p.nesting - 1
+        return ok(node_at(p, t: t, form: .unary(op: "-", operand: [operand])))
+
+    if is_op(peek(p), text: "+")
+        _ = advance(@p)
+        deeper(@p)?
+        operand = prefix(@p)?
+        p.nesting @ p.nesting - 1
+        return ok(operand)
+    return power(@p)
+
+# `a ^ b`, from the right: the exponent is a prefix, so `2^-1` and `2^3^2`
+# read as mathematics reads them.
+#
+# - `p`: the reading.
+function power(@p: Parser) -> ast.Node?
+    base = postfix(@p)?
+
+    if !is_op(peek(p), text: "^")
+        return ok(base)
+    t = advance(@p)
+    exponent = prefix(@p)?
+    return ok(binary_at(p, t: t, left: base, right: exponent))
+
+# A primary, then any `!` and indexing after it.
+#
+# - `p`: the reading.
+function postfix(@p: Parser) -> ast.Node?
+    e @= primary(@p)?
+
+    while is_op(peek(p), text: "!") || is_op(peek(p), text: "[")
+        t = advance(@p)
+
+        if t.text == "!"
+            e @ node_at(p, t: t, form: .factorial(operand: [e]))
+        else
+            p.depth @ p.depth + 1
+            positions = listed(@p, closing: "]")?
+            p.depth @ p.depth - 1
+
+            if positions.len() == 0
+                return problem(p, at: t, message: "an index names a position, from 1")
+            e @ node_at(p, t: t, form: .index(target: [e], positions: positions))
+
+    return ok(e)
+
+# The expressions up to the closing `closing`, separated by `,`, the closing
+# read; none where it stands at once.
+#
+# - `p`: the reading, inside the bracket.
+# - `closing`: `)` or `]`.
+function listed(@p: Parser, closing: str) -> [ast.Node]?
+    found: [ast.Node] @= []
+
+    if is_op(peek(p), text: closing)
+        _ = advance(@p)
+        return ok(found)
+
+    while true
+        found @ found.push(expression(@p)?)
+        t = peek(p)
+
+        if is_op(t, text: closing)
+            _ = advance(@p)
+            return ok(found)
+
+        if !is_op(t, text: ",")
+            return problem(p, at: t, message: f"expected `,` or `{closing}`, found {tokens.describe(t)}")
+        _ = advance(@p)
+
+# A number, a text, `true`, `false`, a name or a call, a parenthesized
+# expression, a vector or a matrix.
+#
+# - `p`: the reading.
+function primary(@p: Parser) -> ast.Node?
+    t = peek(p)
+
+    match t.kind
+        .integer | .float | .custom _ =>
+            _ = advance(@p)
+
+            match tokens.number_of(t)
+                .ok n  => return ok(node_at(p, t: t, form: .number(value: n)))
+                .err e => return problem(p, at: t, message: e.msg)
+        .string =>
+            _ = advance(@p)
+
+            match scanner.text_of(t)
+                .ok s  => return ok(node_at(p, t: t, form: .text(value: s)))
+                .err e => return problem(p, at: t, message: e.msg)
+        .keyword =>
+            if t.text == "true" || t.text == "false"
+                _ = advance(@p)
+                return ok(node_at(p, t: t, form: .truth(value: t.text == "true")))
+
+            if t.text == "if"
+                return conditional(@p)
+            return problem(p, at: t, message: f"expected an expression, found the keyword `{t.text}`")
+        .identifier =>
+            _ = advance(@p)
+
+            if !is_op(peek(p), text: "(") || p.tokens[position(p)].start.offset != t.end.offset
+                return ok(node_at(p, t: t, form: .name(id: t.text)))
+            _ = advance(@p)
+            p.depth @ p.depth + 1
+            given = listed(@p, closing: ")")?
+            p.depth @ p.depth - 1
+            return ok(node_at(p, t: t, form: .call(callee: t.text, args: given)))
+        .operator =>
+            if t.text == "("
+                _ = advance(@p)
+                p.depth @ p.depth + 1
+                inner = expression(@p)?
+                expect_op(@p, text: ")", context: "to close the parenthesis")?
+                p.depth @ p.depth - 1
+                return ok(inner)
+
+            if t.text == "["
+                return bracketed(@p)
+            return problem(p, at: t, message: f"expected an expression, found {tokens.describe(t)}")
+        .invalid i => return problem(p, at: t, message: i.reason)
+        .raw_string | .character | .comment | .whitespace | .newline | .other | .end =>
+            return problem(p, at: t, message: f"expected an expression, found {tokens.describe(t)}")
+
+# A vector `[a, b]` or a matrix `[a, b; c, d]`, the `[` not yet read.
+#
+# - `p`: the reading.
+function bracketed(@p: Parser) -> ast.Node?
+    start = advance(@p)
+    p.depth @ p.depth + 1
+    rows: [[ast.Node]] @= []
+    row: [ast.Node] @= []
+
+    if is_op(peek(p), text: "]")
+        _ = advance(@p)
+        p.depth @ p.depth - 1
+        return ok(node_at(p, t: start, form: .vector(items: [])))
+    reading @= true
+
+    while reading
+        row @ row.push(expression(@p)?)
+        t = advance(@p)
+
+        if is_op(t, text: ";")
+            rows @ rows.push(row)
+            row @ []
+        else if is_op(t, text: "]")
+            rows @ rows.push(row)
+            reading @ false
+        else if !is_op(t, text: ",")
+            return problem(p, at: t, message: f"expected `,`, `;` or `]` in a list, found {tokens.describe(t)}")
+
+    p.depth @ p.depth - 1
+
+    if rows.len() == 1
+        return ok(node_at(p, t: start, form: .vector(items: rows[0])))
+    return ok(node_at(p, t: start, form: .matrix(rows: rows)))
+
+# The one statement `source` reads as, for a test.
+#
+# - `source`: the line.
+function one(source: str) -> ast.Statement
+    return parse(source, first_line: 1).must()[0]
+
+# The operator at the root of the shown expression `source`, for a test.
+#
+# - `source`: the line.
+function root_op(source: str) -> str
+    match ast.expression_of(one(source)).form
+        .binary b => return b.op
+        .unary u  => return u.op
+        .number _ | .text _ | .truth _ | .name _ | .factorial _ | .call _ | .index _ | .vector _ | .matrix _ | .range _ | .conditional _ =>
+            return ""
+
+test "parse: precedence of the arithmetic, power from the right, unary minus below power"
+    assert root_op("1 + 2 * 3") == "+"
+    assert root_op("-2^2") == "-"
+    assert root_op("2^3^2") == "^"
+    assert root_op("a < b + 1") == "<"
+    assert root_op("not a and b") == "and"
+
+test "parse: an assignment, a definition, a statement on each line"
+    ss = parse("x = 1\nf(a, b) = a * b\n\nf(x, 2)", first_line: 1).must()
+    assert ss.len() == 3
+
+    match ss[1]
+        .define d           => assert d.target == "f" && d.params == ["a", "b"]
+        .show _ | .assign _ => assert false
+
+test "parse: a matrix over two lines, a vector, an index, a range, a factorial"
+    match ast.expression_of(one("[1, 2;\n 3, 4]")).form
+        .matrix m => assert m.rows.len() == 2 && m.rows[1].len() == 2
+        .number _ | .text _ | .truth _ | .name _ | .unary _ | .binary _ | .factorial _ | .call _ | .index _ | .vector _ | .range _ | .conditional _ =>
+            assert false
+
+    assert ast.expression_of(one("v[2]")).form != ast.expression_of(one("v")).form
+
+    match ast.expression_of(one("1:2:9")).form
+        .range r => assert r.parts.len() == 3
+        .number _ | .text _ | .truth _ | .name _ | .unary _ | .binary _ | .factorial _ | .call _ | .index _ | .vector _ | .matrix _ | .conditional _ =>
+            assert false
+
+    match ast.expression_of(one("5!")).form
+        .factorial _ => assert true
+        .number _ | .text _ | .truth _ | .name _ | .unary _ | .binary _ | .call _ | .index _ | .vector _ | .matrix _ | .range _ | .conditional _ =>
+            assert false
+
+test "parse: errors with their place"
+    assert parse("1 + * 2", first_line: 1).is_err()
+
+    match parse("x = 1\ny = (2", first_line: 10)
+        .ok _  => assert false
+        .err e => assert e.msg == "11:7: expected `)` to close the parenthesis, found the end of the input"
+
+    match parse("a < b < c", first_line: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "1:7: comparisons do not chain: join them with `and`, as in `a < b and b < c`"
+
+    assert parse("3 = x", first_line: 1).is_err()
+    assert parse("f(1) = 2", first_line: 1).is_err()
+    assert parse("\"open", first_line: 1).is_err()
+
+test "parse: a name and a parenthesis apart are no call, and so no statement"
+    match parse("f (2)", first_line: 1)
+        .ok _  => assert false
+        .err e => assert e.msg == "1:3: expected the end of the line, found `(`"
+
+    assert !parse("f(2)", first_line: 1).is_err()
+
+test "parse: nesting past the bound refused with its place, at the bound read"
+    deep = repeat("(", to_u64(MOST_NESTING + 1).must()) + "1" + repeat(")", to_u64(MOST_NESTING + 1).must())
+    assert parse(deep, first_line: 1).is_err()
+    fits = repeat("(", to_u64(MOST_NESTING - 1).must()) + "1" + repeat(")", to_u64(MOST_NESTING - 1).must())
+    assert !parse(fits, first_line: 1).is_err()
+    assert parse(repeat("-", 40) + "1", first_line: 1).is_err()
+    assert !parse(repeat("-", 20) + "1", first_line: 1).is_err()

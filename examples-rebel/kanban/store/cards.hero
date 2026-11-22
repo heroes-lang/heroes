@@ -1,0 +1,187 @@
+# The cards: added at the foot of a column, edited, moved to a place in any
+# column of their board, deleted, and read back in order. A column's cards
+# hold the places 0, 1, 2 and on with no gap, and every change here keeps
+# them so: a card taken out closes its gap, a card put in opens one. Every
+# change runs inside the transaction `store/changes` opened.
+
+use <rebel>/sql/sqlite
+
+use store/boards
+use store/model
+use store/rows
+use store/store
+use store/titles
+
+## Codes
+
+# The code of a card that is not there.
+constant NOT_FOUND: str
+    "not_found"
+
+## Reading
+
+# The cards of column `column`, top to bottom.
+#
+# - `s`: the store.
+# - `column`: the column's name.
+function in_column(@s: store.Store, column: str) -> [model.Card]?
+    found = sqlite.query(@s.db, statement: f"SELECT {rows.CARD_COLUMNS} FROM cards WHERE column_id = ?1 ORDER BY position, number", params: [.text(v: column)])?
+    out: [model.Card] @= []
+
+    for row in found.rows
+        out @ out.push(rows.card_of(row)?)
+
+    return ok(out)
+
+# Every card, in the order of their numbers: what the search index holds.
+#
+# - `s`: the store.
+function every(@s: store.Store) -> [model.Card]?
+    found = sqlite.query(@s.db, statement: f"SELECT {rows.CARD_COLUMNS} FROM cards ORDER BY number", params: [])?
+    out: [model.Card] @= []
+
+    for row in found.rows
+        out @ out.push(rows.card_of(row)?)
+
+    return ok(out)
+
+# The card named `id`. Fails `not_found` where none is.
+#
+# - `s`: the store.
+# - `id`: the card's name.
+function card_named(@s: store.Store, id: str) -> model.Card?
+    match sqlite.query_one(@s.db, statement: f"SELECT {rows.CARD_COLUMNS} FROM cards WHERE id = ?1", params: [.text(v: id)])
+        .ok row => return rows.card_of(row)
+        .err e =>
+            if e.code == "not_found"
+                return fail(code: NOT_FOUND, msg: f"no card is named {id}")
+            return fail(code: e.code, msg: e.msg)
+
+# The card whose number is `number`. Fails `not_found` where none is.
+#
+# - `s`: the store.
+# - `number`: the card's number, as the search index names it.
+function card_numbered(@s: store.Store, number: i64) -> model.Card?
+    match sqlite.query_one(@s.db, statement: f"SELECT {rows.CARD_COLUMNS} FROM cards WHERE number = ?1", params: [.integer(v: number)])
+        .ok row => return rows.card_of(row)
+        .err e =>
+            if e.code == "not_found"
+                return fail(code: NOT_FOUND, msg: f"no card is numbered {number}")
+            return fail(code: e.code, msg: e.msg)
+
+# How many cards board `board` holds.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+function count_on(@s: store.Store, board: str) -> i64?
+    return rows.number(
+        @s.db,
+        statement: "SELECT COUNT(*) FROM cards JOIN columns ON columns.id = cards.column_id WHERE columns.board = ?1",
+        params: [.text(v: board)]
+    )
+
+## Changing
+
+# A new card titled `title` with the notes `body`, at the foot of column
+# `column`. Fails `not_found` for no such column, `invalid` for a refused
+# title or notes, or a board holding `model.CARDS_MOST` cards already.
+#
+# - `s`: the store; its clock and its names move on.
+# - `column`: the column's name.
+# - `title`: the card's title.
+# - `body`: its notes, Markdown.
+function add(@s: store.Store, column: str, title: str, body: str) -> model.Card?
+    c = boards.column_named(@s, id: column)?
+    kept = titles.checked(title: title, what: "the card's title")?
+    notes = titles.body_checked(body)?
+    held = count_on(@s, board: c.board)?
+
+    if held >= model.CARDS_MOST
+        return fail(code: "invalid", msg: f"the board holds {held} cards, as many as a board takes")
+    now = store.stamp(@s)?
+    made = model.Card(
+        number: 0,
+        id: store.name(@s)?,
+        column: column,
+        title: kept,
+        body: notes,
+        position: rows.number(@s.db, statement: "SELECT COUNT(*) FROM cards WHERE column_id = ?1", params: [.text(v: column)])?,
+        created: now,
+        updated: now
+    )
+    number = insert(@s, card: made)?
+    boards.touch(@s, board: c.board)?
+    return ok(
+        model.Card(number: number, id: made.id, column: made.column, title: made.title, body: made.body, position: made.position, created: made.created, updated: made.updated)
+    )
+
+# Writes `card` as it stands, its name new, and answers the number SQLite
+# gave it.
+#
+# - `s`: the store.
+# - `card`: the card; its `number` is not written.
+function insert(@s: store.Store, card: model.Card) -> i64?
+    done = sqlite.exec(@s.db, statement: "INSERT INTO cards (id, column_id, title, body, position, created, updated) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)", params: [.text(v: card.id), .text(v: card.column), .text(v: card.title), .text(v: card.body), .integer(v: card.position), .text(v: card.created), .text(v: card.updated)])?
+    return done.last_id
+
+# Gives card `id` the title `title` and the notes `body`. Fails `not_found`,
+# `invalid`.
+#
+# - `s`: the store; its clock moves on.
+# - `id`: the card's name.
+# - `title`: its new title.
+# - `body`: its new notes.
+function edit(@s: store.Store, id: str, title: str, body: str) -> model.Card?
+    old = card_named(@s, id: id)?
+    kept = titles.checked(title: title, what: "the card's title")?
+    notes = titles.body_checked(body)?
+    now = store.stamp(@s)?
+    _ = sqlite.exec(@s.db, statement: "UPDATE cards SET title = ?2, body = ?3, updated = ?4 WHERE id = ?1", params: [.text(v: id), .text(v: kept), .text(v: notes), .text(v: now)])?
+    boards.touch(@s, board: boards.column_named(@s, id: old.column)?.board)?
+    return card_named(@s, id: id)
+
+# Moves card `id` to the place `position` of column `column`, on the same
+# board: the cards below its old place move up one, those from its new place
+# down one. A place past the foot is the foot. Fails `not_found` for no
+# such card or column, `invalid` for a column of another board or a place
+# below 0.
+#
+# - `s`: the store; its clock moves on.
+# - `id`: the card's name.
+# - `column`: the column it goes to.
+# - `position`: its place there, from 0.
+function move(@s: store.Store, id: str, column: str, position: i64) -> model.Card?
+    old = card_named(@s, id: id)?
+    leaving = boards.column_named(@s, id: old.column)?
+    joining = boards.column_named(@s, id: column)?
+
+    if leaving.board != joining.board
+        return fail(code: "invalid", msg: f"column {column} stands on another board than card {id}")
+
+    if position < 0
+        return fail(code: "invalid", msg: f"the place {position} is below 0")
+
+    # Out of its column first, its gap closed; then into the new one, a gap
+    # opened at the place, which is at most the column's count now.
+    _ = sqlite.exec(@s.db, statement: "UPDATE cards SET position = position - 1 WHERE column_id = ?1 AND position > ?2", params: [.text(v: old.column), .integer(v: old.position)])?
+    held = rows.number(@s.db, statement: "SELECT COUNT(*) FROM cards WHERE column_id = ?1 AND id != ?2", params: [.text(v: column), .text(v: id)])?
+
+    place = if position > held
+        held
+    else
+        position
+
+    _ = sqlite.exec(@s.db, statement: "UPDATE cards SET position = position + 1 WHERE column_id = ?1 AND position >= ?2 AND id != ?3", params: [.text(v: column), .integer(v: place), .text(v: id)])?
+    _ = sqlite.exec(@s.db, statement: "UPDATE cards SET column_id = ?2, position = ?3, updated = ?4 WHERE id = ?1", params: [.text(v: id), .text(v: column), .integer(v: place), .text(v: store.stamp(@s)?)])?
+    boards.touch(@s, board: joining.board)?
+    return card_named(@s, id: id)
+
+# Deletes card `id`, the cards below it moving up one. Fails `not_found`.
+#
+# - `s`: the store.
+# - `id`: the card's name.
+function delete(@s: store.Store, id: str) -> ()?
+    old = card_named(@s, id: id)?
+    _ = sqlite.exec(@s.db, statement: "DELETE FROM cards WHERE id = ?1", params: [.text(v: id)])?
+    _ = sqlite.exec(@s.db, statement: "UPDATE cards SET position = position - 1 WHERE column_id = ?1 AND position > ?2", params: [.text(v: old.column), .integer(v: old.position)])?
+    return boards.touch(@s, board: boards.column_named(@s, id: old.column)?.board)

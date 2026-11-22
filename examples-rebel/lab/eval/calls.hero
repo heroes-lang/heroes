@@ -1,0 +1,406 @@
+# Calls: a function named in an expression found and called with its
+# arguments' values. A function the notebook defined is called by binding
+# its parameters and evaluating its body (`eval/evaluate`), its depth and
+# the statement's count of calls bounded (`eval/machine`); a built-in is
+# answered by `eval/builtins`.
+#
+# The four built-ins that call a function handed to them are here, since
+# calling one is this module's work: `map(f, v)` applies `f` to each
+# element, `plot(f, a, b)` draws `f` over `a` to `b` from `SAMPLES` points,
+# `integrate(f, a, b)` is adaptive Simpson's rule, and `findroot(f, a, b)` is
+# bisection between two points where `f` has opposite signs. Where `f`
+# answers a complex number at a point, a plot leaves the point out and the
+# others fail.
+
+use <rebel>/math
+
+use eval/builtins
+use eval/drawing
+use eval/evaluate
+use eval/machine
+use eval/value
+use lang/ast
+use plot/charts
+
+# The built-ins that call a function handed to them.
+constant HIGHER: [str]
+    [
+        "map"
+        "plot"
+        "integrate"
+        "findroot"
+    ]
+
+# The points a function's graph is drawn from.
+constant SAMPLES: i64
+    400
+
+# The tolerance of `integrate`: an interval is split until Simpson's rule
+# on it and on its two halves agree within this, scaled down by the depth.
+constant TOLERANCE: f64
+    0.000_000_000_1
+
+# The most times `integrate` halves an interval.
+constant MOST_HALVINGS: i64
+    40
+
+# Whether `name` is a built-in that calls a function handed to it.
+#
+# - `name`: the name.
+function is_higher(name: str) -> bool
+    for h in HIGHER
+        if h == name
+            return true
+
+    return false
+
+# The value of the call `callee(arguments)` standing at `n`: the arguments
+# evaluated in `scope`, then the function called, the name read through a
+# parameter or a name holding a function where one does.
+#
+# - `m`: the evaluation.
+# - `n`: the call's node, for its place.
+# - `callee`: the name written.
+# - `arguments`: the arguments' expressions.
+# - `scope`: the parameters in scope.
+function call_node(@m: machine.Machine, n: ast.Node, callee: str, arguments: [ast.Node], scope: {str: value.Value} lent) -> value.Value?
+    given = evaluate.each(@m, nodes: arguments, scope: scope)?
+    target: str @= callee
+
+    match evaluate.lookup(m, scope: scope, id: callee)
+        .ok v =>
+            match v
+                .callable c => target @ c.name
+                .number _ | .truth _ | .text _ | .vector _ | .matrix _ | .plot _ | .nothing =>
+                    return evaluate.placed(n, r: not_callable(callee, v: v))
+        .err _ => _ = 0
+
+    return invoke(@m, name: target, given: given, at: n)
+
+# The failure of a call to a name that holds no function.
+#
+# - `callee`: the name.
+# - `v`: what it holds.
+function not_callable(callee: str, v: value.Value) -> value.Value?
+    return fail(code: value.INVALID, msg: f"`{callee}` is a {value.kind_name(v)}, not a function")
+
+# The function `name` called with `given`.
+#
+# - `m`: the evaluation.
+# - `name`: a function's name.
+# - `given`: the arguments' values.
+# - `at`: the call's node, for its place.
+#
+# Fails `not_found` where no function has the name, else as the function
+# fails.
+function invoke(@m: machine.Machine, name: str, given: [value.Value], at: ast.Node) -> value.Value?
+    match m.functions[name]
+        .ok f  => return apply_user(@m, name: name, f: f, given: given, at: at)
+        .err _ => _ = 0
+
+    if is_higher(name)
+        return evaluate.placed(at, r: higher(@m, name: name, given: given, at: at))
+
+    if builtins.is_builtin(name)
+        return evaluate.placed(at, r: builtins.call(@m, name: name, given: given))
+    return evaluate.placed(at, r: no_function(name))
+
+# The failure of a call to a name no function has.
+#
+# - `name`: the name.
+function no_function(name: str) -> value.Value?
+    return fail(code: "not_found", msg: f"no function `{name}`")
+
+# The function value `f` called with `given`.
+#
+# - `m`: the evaluation.
+# - `f`: a function value.
+# - `given`: the arguments.
+# - `at`: the call's node.
+#
+# Fails `invalid` where `f` is no function.
+function apply(@m: machine.Machine, f: value.Value, given: [value.Value], at: ast.Node) -> value.Value?
+    match f
+        .callable c => return invoke(@m, name: c.name, given: given, at: at)
+        .number _ | .truth _ | .text _ | .vector _ | .matrix _ | .plot _ | .nothing =>
+            return value.refusal(what: "the function handed over", wanted: "a function", v: f)
+
+# The user function `f`, named `name`, called with `given`: its parameters
+# bound to them and its body evaluated, one level deeper.
+#
+# - `m`: the evaluation.
+# - `name`: the function's name.
+# - `f`: the function.
+# - `given`: the arguments, one for each parameter.
+# - `at`: the call's node.
+#
+# Fails `invalid` for a wrong count of arguments, `limit` past the bounds of
+# depth and count, and as the body fails.
+function apply_user(@m: machine.Machine, name: str, f: machine.Function, given: [value.Value], at: ast.Node) -> value.Value?
+    if given.len() != f.params.len()
+        return evaluate.placed(at, r: wrong_count(name, wanted: f.params.len(), given: given.len()))
+
+    if machine.count_call(@m)
+        return evaluate.placed(at, r: past_bound(machine.too_many_calls()))
+
+    if m.depth >= machine.MOST_DEPTH
+        return evaluate.placed(at, r: too_deep(name))
+    scope: {str: value.Value} @= {}
+
+    for k in range(from: 0, to: given.len())
+        scope[f.params[k]] @ given[k]
+
+    m.depth @ m.depth + 1
+    answer = evaluate.evaluate(@m, n: f.body, scope: scope)
+    m.depth @ m.depth - 1
+    return answer
+
+# The failure of a call with the wrong count of arguments.
+#
+# - `name`: the function.
+# - `wanted`: the count it takes.
+# - `given`: the count given.
+function wrong_count(name: str, wanted: i64, given: i64) -> value.Value?
+    noun: str @= "arguments"
+
+    if wanted == 1
+        noun @ "argument"
+    return fail(code: value.INVALID, msg: f"`{name}` takes {wanted} {noun}, not {given}")
+
+# The failure of a statement past one of the machine's bounds, telling
+# `why`.
+#
+# - `why`: the bound passed.
+function past_bound(why: str) -> value.Value?
+    return fail(code: machine.LIMIT, msg: why)
+
+# The failure of a recursion past `machine.MOST_DEPTH`.
+#
+# - `name`: the function called.
+function too_deep(name: str) -> value.Value?
+    return fail(
+        code: machine.LIMIT,
+        msg: f"`{name}` called {machine.MOST_DEPTH} deep: a recursion that does not reach its end"
+    )
+
+# The higher-order built-in `name` called with `given`.
+#
+# - `m`: the evaluation.
+# - `name`: a name of `HIGHER`.
+# - `given`: the arguments.
+# - `at`: the call's node.
+function higher(@m: machine.Machine, name: str, given: [value.Value], at: ast.Node) -> value.Value?
+    builtins.check_arity(name, given: given)?
+
+    if name == "map"
+        return mapped(@m, f: given[0], v: given[1], at: at)
+    a = value.float_of(given[1], what: f"{name}'s start")?
+    b = value.float_of(given[2], what: f"{name}'s end")?
+
+    if !(b > a)
+        return fail(code: value.INVALID, msg: f"{name}'s end is above its start")
+
+    if name == "plot"
+        return graph(@m, f: given[0], low: a, high: b, title: optional_title(given, f: given[0])?, at: at)
+
+    if name == "integrate"
+        return ok(value.of_real(integral(@m, f: given[0], low: a, high: b, at: at)?))
+    return ok(value.of_real(root(@m, f: given[0], low: a, high: b, at: at)?))
+
+# The title of a plot: the fourth argument where given, else `f(x)`.
+#
+# - `given`: the arguments of `plot`.
+# - `f`: the function plotted.
+function optional_title(given: [value.Value], f: value.Value) -> str?
+    if given.len() == 4
+        return value.text_of(given[3], what: "plot's title")
+
+    match f
+        .callable c                                                                 => return ok(c.name + "(x)")
+        .number _ | .truth _ | .text _ | .vector _ | .matrix _ | .plot _ | .nothing => return ok("graph")
+
+# `f` applied to each element of the vector `v`.
+#
+# - `m`: the evaluation.
+# - `f`: a function of one argument.
+# - `v`: a vector.
+# - `at`: the call's node.
+function mapped(@m: machine.Machine, f: value.Value, v: value.Value, at: ast.Node) -> value.Value?
+    match v
+        .vector items =>
+            out: [value.Value] @= []
+
+            for x in items.items
+                out @ out.push(apply(@m, f: f, given: [x], at: at)?)
+
+            return ok(.vector(items: out))
+        .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return value.refusal(what: "map's second argument", wanted: "a vector", v: v)
+
+# The real value of `f` at `x`, a nan where it is complex.
+#
+# - `m`: the evaluation.
+# - `f`: a function of one number.
+# - `x`: the point.
+# - `at`: the call's node.
+#
+# Fails where `f` fails, or answers what is no number.
+function real_at(@m: machine.Machine, f: value.Value, x: f64, at: ast.Node) -> f64?
+    y = apply(@m, f: f, given: [value.of_real(x)], at: at)?
+    n = value.number_of(y, what: "the function's value")?
+
+    match n
+        .complex _                         => return ok(math.NAN)
+        .integer _ | .rational _ | .real _ => return ok(value.float_of(y, what: "the function's value").must())
+
+# The graph of `f` over `low` to `high`, written as the cell's next plot.
+#
+# - `m`: the evaluation.
+# - `f`: a function of one number.
+# - `low`: the interval's start.
+# - `high`: its end.
+# - `title`: the plot's title.
+# - `at`: the call's node.
+function graph(@m: machine.Machine, f: value.Value, low: f64, high: f64, title: str, at: ast.Node) -> value.Value?
+    xs: [f64] @= []
+    ys: [f64] @= []
+
+    for k in range(from: 0, to: SAMPLES)
+        x = low + (high - low) * to_f64(k) / to_f64(SAMPLES - 1)
+        xs @ xs.push(x)
+        ys @ ys.push(real_at(@m, f: f, x: x, at: at)?)
+
+    return drawing.written(@m, picture: charts.graph(xs: xs, ys: ys, title: title)?, title: title)
+
+# One interval of adaptive Simpson's rule, with what is known of it.
+record Piece
+    # Its start.
+    low: f64
+    # Its end.
+    high: f64
+    # The function at its start, its middle and its end.
+    values: [f64]
+    # Simpson's rule over the whole of it.
+    whole: f64
+    # The error it may keep.
+    tolerance: f64
+    # How many halvings made it.
+    depth: i64
+
+# Simpson's rule over `low` to `high` from the function's three values there.
+#
+# - `low`: the start.
+# - `high`: the end.
+# - `values`: the function at the start, the middle and the end.
+function simpson(low: f64, high: f64, values: [f64]) -> f64
+    return (high - low) / 6.0 * (values[0] + 4.0 * values[1] + values[2])
+
+# The real value of `f` at `x`, refusing what is not finite.
+#
+# - `m`: the evaluation.
+# - `f`: the function.
+# - `x`: the point.
+# - `at`: the call's node.
+function finite_at(@m: machine.Machine, f: value.Value, x: f64, at: ast.Node) -> f64?
+    y = real_at(@m, f: f, x: x, at: at)?
+
+    if !math.is_finite(y)
+        return fail(code: value.INVALID, msg: f"the function is not finite at {x}, inside the interval")
+    return ok(y)
+
+# The integral of `f` from `low` to `high` by adaptive Simpson's rule: an
+# interval whose two halves agree with it within its tolerance is kept with
+# Richardson's correction, the others halved, each half keeping half the
+# tolerance, with a list for the stack.
+#
+# - `m`: the evaluation.
+# - `f`: a function of one number.
+# - `low`: the start.
+# - `high`: the end, above `low`.
+# - `at`: the call's node.
+#
+# Fails `invalid` where `f` is not finite at a point it is read at.
+function integral(@m: machine.Machine, f: value.Value, low: f64, high: f64, at: ast.Node) -> f64?
+    middle = (low + high) / 2.0
+    first = [
+        finite_at(@m, f: f, x: low, at: at)?
+        finite_at(@m, f: f, x: middle, at: at)?
+        finite_at(@m, f: f, x: high, at: at)?
+    ]
+    pending: [Piece] @= [
+        Piece(low: low, high: high, values: first, whole: simpson(low: low, high: high, values: first), tolerance: TOLERANCE, depth: 0)
+    ]
+    total @= 0.0
+
+    while pending.len() > 0
+        p = pending[pending.len() - 1]
+        pending @ pending.slice(from: 0, to: pending.len() - 1)
+        mid = (p.low + p.high) / 2.0
+        left_values = [p.values[0], finite_at(@m, f: f, x: (p.low + mid) / 2.0, at: at)?, p.values[1]]
+        right_values = [p.values[1], finite_at(@m, f: f, x: (mid + p.high) / 2.0, at: at)?, p.values[2]]
+        left = simpson(low: p.low, high: mid, values: left_values)
+        right = simpson(low: mid, high: p.high, values: right_values)
+        gap = left + right - p.whole
+
+        if p.depth >= MOST_HALVINGS || math.abs(gap) <= 15.0 * p.tolerance
+            total @ total + left + right + gap / 15.0
+        else
+            half = p.tolerance / 2.0
+            pending @ pending.push(
+                Piece(low: mid, high: p.high, values: right_values, whole: right, tolerance: half, depth: p.depth + 1)
+            )
+            pending @ pending.push(
+                Piece(low: p.low, high: mid, values: left_values, whole: left, tolerance: half, depth: p.depth + 1)
+            )
+
+    return ok(total)
+
+# A root of `f` between `low` and `high` by bisection, `f` having opposite
+# signs at the two ends: the interval halved, the half where the sign
+# changes kept, until the halves meet in the last bit.
+#
+# - `m`: the evaluation.
+# - `f`: a function of one number.
+# - `low`: one end.
+# - `high`: the other, above `low`.
+# - `at`: the call's node.
+#
+# Fails `invalid` where the signs at the two ends are the same.
+function root(@m: machine.Machine, f: value.Value, low: f64, high: f64, at: ast.Node) -> f64?
+    a @= low
+    b @= high
+    fa @= finite_at(@m, f: f, x: a, at: at)?
+    fb = finite_at(@m, f: f, x: b, at: at)?
+
+    if fa == 0.0
+        return ok(a)
+
+    if fb == 0.0
+        return ok(b)
+
+    if fa < 0.0 == (fb < 0.0)
+        return fail(
+            code: value.INVALID,
+            msg: f"findroot needs a change of sign: the function is {fa} at {low} and {fb} at {high}"
+        )
+
+    for _ in range(from: 0, to: 200)
+        mid = a + (b - a) / 2.0
+
+        if mid == a || mid == b
+            return ok(mid)
+        fm = finite_at(@m, f: f, x: mid, at: at)?
+
+        if fm == 0.0
+            return ok(mid)
+
+        if fm < 0.0 == (fa < 0.0)
+            a @ mid
+            fa @ fm
+        else
+            b @ mid
+
+    return ok(a + (b - a) / 2.0)
+
+test "simpson: exact for a cubic"
+    assert simpson(low: 0.0, high: 2.0, values: [0.0, 1.0, 8.0]) == 4.0

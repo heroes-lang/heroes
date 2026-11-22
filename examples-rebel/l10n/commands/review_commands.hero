@@ -1,0 +1,175 @@
+# The commands a reviewer runs: `status`, how far each language is
+# translated and what the languages share; `check`, what a reader would see
+# wrong, exiting 1 where anything would be; and `diff`, what changed between
+# two versions of one language's translations, in any two formats.
+#
+# Counts and percentages are written in the session's own language
+# (`session.count_text`), the language of the person reading the report,
+# never of the catalogue reported on.
+
+use <rebel>/flags
+use <rebel>/i18n
+use <rebel>/sets
+
+use catalog/messages
+use catalog/store
+use check/catalog_checks
+use check/findings
+use commands/catalog_commands
+use formats/exchange
+use plural/gettext_forms
+use project/locale_tags
+use project/session
+use review/changes
+use review/coverage
+use review/table
+
+## status
+
+# The most messages `status` names that no language translates.
+constant NAMED_AT_MOST: i64
+    10
+
+# `status`: the coverage of every locale of the project.
+#
+# - `s`: the session.
+# - `_`: what the parse found, `status` taking no flag.
+#
+# Fails where there is no template, and as a catalogue's reading fails.
+function status_command(s: session.Session, _: flags.Found) -> i64?
+    p = store.load_project()?
+    template = catalog_commands.read_template(p)?
+    order = messages.live_keys(template)
+    keys_set = sets.from_list(order)
+    catalogs = store.read_all(p)?
+    all_coverage: [coverage.LocaleCoverage] @= []
+    body: [[str]] @= []
+
+    for tag in p.locales
+        c = match catalogs[tag]
+            .ok catalog => coverage.coverage_of(tag, template_keys: keys_set, catalog: catalog)
+            .err _      => coverage.absent_coverage(tag, template_keys: keys_set)
+
+        all_coverage @ all_coverage.push(c)
+
+        share = if c.present
+            session.percent_text(s, share: coverage.share_text(c))
+        else
+            "no catalogue"
+
+        body @ body.push(
+            [tag, session.count_text(s, n: coverage.count_of(c.translated)), session.count_text(s, n: coverage.count_of(c.fuzzy)), session.count_text(s, n: coverage.count_of(c.untranslated)), session.count_text(s, n: c.stale), share]
+        )
+
+    lines: [str] @= [
+        f"{session.counted(s, n: order.len(), noun: "message", nouns: "messages")} in the template, {session.counted(s, n: p.locales.len(), noun: "language", nouns: "languages")}"
+        ""
+    ]
+    titles = ["locale", "translated", "guessed", "untranslated", "stale", "share"]
+
+    for line in table.lines_of(titles, align: [.left, .right, .right, .right, .right, .right], body: body)
+        lines @ lines.push(line)
+
+    a = coverage.across(order, locales: all_coverage)
+    lines @ lines.push("")
+    lines @ lines.push(f"translated in every language: {session.count_text(s, n: a.everywhere.len())}")
+    lines @ lines.push(f"translated in some languages only: {session.count_text(s, n: a.somewhere.len())}")
+    lines @ lines.push(f"translated in none: {session.count_text(s, n: a.nowhere.len())}")
+
+    for k in range(from: 0, to: a.nowhere.len())
+        if k < NAMED_AT_MOST
+            lines @ lines.push(f"    \"{messages.label_of_key(a.nowhere[k])}\"")
+
+    if a.nowhere.len() > NAMED_AT_MOST
+        lines @ lines.push(f"    and {a.nowhere.len() - NAMED_AT_MOST} more")
+
+    session.say_lines(s, lines: lines)?
+    return ok(0)
+
+## check
+
+# `check`: every finding in the chosen catalogues, after composing their
+# texts to NFC where `--fix` asks; 1 where any finding is an error.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails where a catalogue is missing, and as its reading and writing fail.
+function check_command(s: session.Session, f: flags.Found) -> i64?
+    p = store.load_project()?
+    patterns = catalog_checks.patterns()
+    fix = flags.is_on(f, "fix")
+    found: [findings.Finding] @= []
+    lines: [str] @= []
+    tags = catalog_commands.chosen_locales(p, f: f)?
+
+    for tag in tags
+        file = store.catalog_path(p, tag: tag)
+        catalog @= store.read_po(file)?.catalog
+
+        if fix
+            fixed = catalog_checks.fix_nfc(catalog)?
+
+            if fixed.changed > 0
+                store.write_po(file, catalog: fixed.catalog)?
+                lines @ lines.push(
+                    f"{tag}: {session.counted(s, n: fixed.changed, noun: "text", nouns: "texts")} composed to NFC"
+                )
+
+            catalog @ fixed.catalog
+
+        for finding in catalog_checks.check_catalog(catalog, locale: locale_tags.read_tag(tag)?, p: patterns)
+            found @ found.push(finding)
+
+    for finding in found
+        for line in findings.lines_of(finding)
+            lines @ lines.push(line)
+
+    errors = findings.errors_in(found)
+    warnings = found.len() - errors
+    lines @ lines.push(
+        f"{session.counted(s, n: errors, noun: "error", nouns: "errors")} and {session.counted(s, n: warnings, noun: "warning", nouns: "warnings")} in {session.counted(s, n: tags.len(), noun: "catalogue", nouns: "catalogues")}"
+    )
+    session.say_lines(s, lines: lines)?
+
+    if errors > 0
+        return ok(1)
+
+    return ok(0)
+
+## diff
+
+# `diff`: the changes between two versions of one locale's translations.
+#
+# - `s`: the session.
+# - `f`: what the parse found.
+#
+# Fails as either version's reading fails.
+function diff_command(s: session.Session, f: flags.Found) -> i64?
+    locale = locale_tags.read_tag(flags.value_of(f, "locale")?)?
+    tag = locale_tags.tag_of(locale)
+    forms = gettext_forms.forms_of(locale)?
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+    sheet = flags.value_of(f, "sheet").default(tag)
+    old_file = flags.value_of(f, "OLD")?
+    new_file = flags.value_of(f, "NEW")?
+    old = exchange.read_rows(file: old_file, format: exchange.format_of(file: old_file, named: "")?, forms: forms, rules: rules, encoding: "", sheet: sheet)?
+    new = exchange.read_rows(file: new_file, format: exchange.format_of(file: new_file, named: "")?, forms: forms, rules: rules, encoding: "", sheet: sheet)?
+
+    if flags.is_on(f, "unified")
+        text = changes.unified(old: old.rows, new: new.rows, old_name: old_file, new_name: new_file)
+
+        if text == ""
+            session.say_lines(s, lines: ["the two versions are the same"])?
+        else
+            session.say(s, text: text)?
+
+        return ok(0)
+
+    r = changes.review(old: old.rows, new: new.rows)
+    lines @= r.lines
+    lines @ lines.push(
+        f"{r.added} added, {r.removed} removed, {r.changed} changed, {session.counted(s, n: r.confirmed, noun: "guess", nouns: "guesses")} confirmed"
+    )
+    session.say_lines(s, lines: lines)?
+    return ok(0)

@@ -1,0 +1,78 @@
+# The database's tables, and the database opened with them. One file holds
+# every board; a column and its cards go with their board, a card with its
+# column, by SQLite's own foreign keys, which `open` turns on for its
+# connection since SQLite leaves them off.
+#
+# The schema's version is SQLite's `user_version`: 0 for a new file, which
+# `open` makes `VERSION`; a file of a later version is refused, since this
+# program cannot know what its tables mean.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+use <rebel>/time
+
+# The schema's version this program writes and reads.
+constant VERSION: i64
+    1
+
+# Every table, made where it is not there.
+constant TABLES: str
+    "CREATE TABLE IF NOT EXISTS boards (id TEXT PRIMARY KEY, title TEXT NOT NULL, position INTEGER NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL); CREATE TABLE IF NOT EXISTS columns (id TEXT PRIMARY KEY, board TEXT NOT NULL REFERENCES boards(id) ON DELETE CASCADE, title TEXT NOT NULL, position INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS columns_by_board ON columns(board, position); CREATE TABLE IF NOT EXISTS cards (number INTEGER PRIMARY KEY, id TEXT NOT NULL UNIQUE, column_id TEXT NOT NULL REFERENCES columns(id) ON DELETE CASCADE, title TEXT NOT NULL, body TEXT NOT NULL, position INTEGER NOT NULL, created TEXT NOT NULL, updated TEXT NOT NULL); CREATE INDEX IF NOT EXISTS cards_by_column ON cards(column_id, position); CREATE TABLE IF NOT EXISTS history (seq INTEGER PRIMARY KEY, board TEXT NOT NULL, label TEXT NOT NULL, before TEXT NOT NULL, after TEXT NOT NULL, undone INTEGER NOT NULL DEFAULT 0);"
+
+# The database in the file at `path`, made where it is not there, with its
+# tables, foreign keys on, and a wait of five seconds for a lock another
+# program holds. Fails as `sqlite.open` and its statements fail, and
+# `invalid` where the file's schema is a later version than `VERSION`.
+#
+# - `path`: the file.
+function open(path: str) -> sqlite.Db?
+    db @= sqlite.open(path)?
+
+    match ready(@db)
+        .ok _ => return ok(db)
+        .err e =>
+            _ = sqlite.close(@db).is_err()
+            return fail(code: e.code, msg: f"the database at {path} could not be readied: {e.msg}")
+
+# The database in memory alone, with its tables: what the tests use.
+function open_memory() -> sqlite.Db?
+    db @= sqlite.open_memory()?
+    ready(@db)?
+    return ok(db)
+
+# Gives `db` its settings and its tables. Fails `invalid` for a later
+# schema, and as the statements fail.
+#
+# - `db`: the connection.
+function ready(@db: sqlite.Db) -> ()?
+    sqlite.set_busy_timeout(@db, timeout: time.seconds(5)?)?
+    _ = sqlite.exec(@db, statement: "PRAGMA foreign_keys = ON", params: [])?
+    version = sql.integer_at(sqlite.query_one(@db, statement: "PRAGMA user_version", params: [])?, index: 0)?
+
+    if version > VERSION
+        return fail(
+            code: "invalid",
+            msg: f"the database is of schema {version}, and this program knows {VERSION} and before"
+        )
+    sqlite.exec_script(@db, script: TABLES)?
+    _ = sqlite.exec(@db, statement: f"PRAGMA user_version = {VERSION}", params: [])?
+    return ok()
+
+## Tests
+
+test "open_memory: every table is there, foreign keys are on, and the version is written"
+    db @= open_memory().must()
+    tables = sqlite.query(
+        @db,
+        statement: "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
+        params: []
+    ).must()
+    names: [str] @= []
+
+    for row in tables.rows
+        names @ names.push(sql.text_at(row, index: 0).must())
+
+    assert names == ["boards", "cards", "columns", "history"]
+    assert sql.integer_at(sqlite.query_one(@db, statement: "PRAGMA foreign_keys", params: []).must(), index: 0).must() == 1
+    assert sql.integer_at(sqlite.query_one(@db, statement: "PRAGMA user_version", params: []).must(), index: 0).must() == VERSION
+    sqlite.close(@db).must()

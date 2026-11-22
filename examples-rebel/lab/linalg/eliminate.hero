@@ -1,0 +1,278 @@
+# Gauss-Jordan elimination over the lab's numbers, and what it answers: the
+# reduced row echelon form, the rank, the determinant, the inverse, and the
+# solution of a square system.
+#
+# A matrix of whole numbers and fractions is eliminated exactly, every pivot
+# the first non-zero entry of its column, so its inverse and its solution
+# are exact fractions and its determinant an exact number. A matrix holding
+# a float is eliminated in floats with partial pivoting, the pivot the
+# largest entry of its column, and an entry within `tolerance_of` of zero
+# counts as zero, which is how a float matrix is found singular.
+
+use <rebel>/math
+
+use linalg/matrix
+use numbers/arith
+use numbers/functions
+use numbers/scalar
+
+# What `reduce` answers.
+record Reduction
+    # The reduced row echelon form: each pivot 1, alone in its column.
+    form: matrix.Matrix
+    # The count of pivots.
+    rank: i64
+    # The column of each pivot, the first row's first.
+    pivots: [i64]
+    # The determinant of the square block reduced, zero where a column of it
+    # has no pivot.
+    determinant: scalar.Number
+
+# The size of `n` as a float, the modulus of a complex `n`.
+#
+# - `n`: the number.
+function size_of(n: scalar.Number) -> f64
+    return scalar.float_of(functions.abs(n)).must()
+
+# The largest size an entry of `m` may have and still count as zero: the
+# largest entry's size times the larger side times eight units in the last
+# place of 1, so the rounding of the elimination is not taken for a value.
+#
+# - `m`: the matrix.
+function tolerance_of(m: matrix.Matrix lent) -> f64
+    largest @= 0.0
+
+    for x in m.cells
+        largest @ math.max(a: largest, b: size_of(x))
+
+    sides = to_f64(math.max_i64(a: m.rows, b: m.cols))
+    return largest * sides * math.EPSILON * 8.0
+
+# The row at or below `from` whose entry in `col` pivots: the first non-zero
+# where the matrix is exact, the largest where it is not.
+#
+# - `m`: the matrix.
+# - `col`: the column.
+# - `from`: the first row looked at.
+# - `exact`: whether the matrix is exact.
+# - `tolerance`: the size at or below which a float entry is zero.
+#
+# Fails `not_found` where every entry from `from` down is zero.
+function pivot_row(m: matrix.Matrix lent, col: i64, from: i64, exact: bool, tolerance: f64) -> i64?
+    best @= -1
+    best_size @= tolerance
+
+    for r in range(from: from, to: m.rows)
+        x = matrix.at(m, row: r, col: col)
+
+        if exact
+            if !scalar.is_zero(x)
+                return ok(r)
+        else
+            s = size_of(x)
+
+            if s > best_size
+                best @ r
+                best_size @ s
+
+    if best < 0
+        return fail(code: "not_found", msg: f"no pivot in column {col}")
+    return ok(best)
+
+# Swaps the rows `first` and `second` of `m`.
+#
+# - `m`: the matrix changed.
+# - `first`: one row.
+# - `second`: the other.
+function swap_rows(@m: matrix.Matrix, first: i64, second: i64)
+    for c in range(from: 0, to: m.cols)
+        x = matrix.at(m, row: first, col: c)
+        matrix.put(@m, row: first, col: c, value: matrix.at(m, row: second, col: c))
+        matrix.put(@m, row: second, col: c, value: x)
+
+# The zero of `m`'s kind: exact for an exact matrix, a float otherwise.
+#
+# - `exact`: whether the matrix is exact.
+function zero_of(exact: bool) -> scalar.Number
+    if exact
+        return scalar.of_int(0)
+    return scalar.of_real(0.0)
+
+# The reduced row echelon form of `m` over its first `upto` columns, its
+# rank, its pivots and the determinant of that block.
+#
+# - `m`: the matrix, an augmented one where `upto` is below its columns.
+# - `upto`: the columns pivots are sought in, 1 to `m.cols`.
+#
+# The columns past `upto` are carried along: the right side of a system, or
+# the identity an inverse is read from.
+function reduce(m: matrix.Matrix, upto: i64) -> Reduction
+    a @= m
+    exact = matrix.kind_of(m) <= 1
+    tolerance = tolerance_of(m)
+    product @= scalar.of_int(1)
+    pivots: [i64] @= []
+    row @= 0
+
+    for col in range(from: 0, to: upto)
+        if row < a.rows
+            match pivot_row(a, col: col, from: row, exact: exact, tolerance: tolerance)
+                .err _ => product @ scalar.of_int(0)
+                .ok p =>
+                    if p != row
+                        swap_rows(@a, first: p, second: row)
+                        product @ arith.negate(product)
+                    pivot = matrix.at(a, row: row, col: col)
+                    product @ arith.multiply(a: product, b: pivot)
+
+                    for c in range(from: 0, to: a.cols)
+                        matrix.put(
+                            @a,
+                            row: row,
+                            col: c,
+                            value: arith.divide(a: matrix.at(a, row: row, col: c), b: pivot).must()
+                        )
+
+                    matrix.put(@a, row: row, col: col, value: scalar.of_int(1))
+
+                    for r in range(from: 0, to: a.rows)
+                        if r != row
+                            clear_entry(@a, target: r, source: row, col: col, exact: exact)
+
+                    pivots @ pivots.push(col)
+                    row @ row + 1
+
+    if pivots.len() < upto
+        product @ zero_of(exact)
+    return Reduction(form: a, rank: pivots.len(), pivots: pivots, determinant: product)
+
+# Subtracts from row `target` of `m` the multiple of row `source` that makes
+# its entry in `col` zero, the pivot of `source` there being 1.
+#
+# - `m`: the matrix changed.
+# - `target`: the row cleared.
+# - `source`: the pivot's row.
+# - `col`: the pivot's column.
+# - `exact`: whether the matrix is exact, so the cleared entry is an exact
+#   zero or a float one.
+function clear_entry(@m: matrix.Matrix, target: i64, source: i64, col: i64, exact: bool)
+    factor = matrix.at(m, row: target, col: col)
+
+    if scalar.is_zero(factor)
+        return
+
+    for c in range(from: 0, to: m.cols)
+        taken = arith.multiply(a: factor, b: matrix.at(m, row: source, col: c))
+        matrix.put(@m, row: target, col: c, value: arith.subtract(a: matrix.at(m, row: target, col: c), b: taken))
+
+    matrix.put(@m, row: target, col: col, value: zero_of(exact))
+
+# The determinant of `m`, exact where `m` is exact.
+#
+# - `m`: a square matrix.
+#
+# Fails `invalid` where `m` is not square.
+function determinant(m: matrix.Matrix) -> scalar.Number?
+    if m.rows != m.cols
+        return fail(code: matrix.INVALID, msg: f"a matrix of {m.rows} by {m.cols} has no determinant: it is not square")
+    return ok(reduce(m, upto: m.cols).determinant)
+
+# The inverse of `m`, exact where `m` is exact.
+#
+# - `m`: a square matrix.
+#
+# Fails `invalid` where `m` is not square or is singular, saying its rank.
+function inverse(m: matrix.Matrix) -> matrix.Matrix?
+    if m.rows != m.cols
+        return fail(code: matrix.INVALID, msg: f"a matrix of {m.rows} by {m.cols} has no inverse: it is not square")
+    both = matrix.beside(a: m, b: matrix.identity(m.rows)?)?
+    r = reduce(both, upto: m.cols)
+
+    if r.rank < m.rows
+        return fail(code: matrix.INVALID, msg: f"the matrix is singular: its rank is {r.rank}, not {m.rows}")
+    return ok(matrix.columns(r.form, from: m.cols, to: both.cols))
+
+# The `x` with `a x = b`, exact where both are exact.
+#
+# - `a`: a square matrix.
+# - `b`: the right side, a column or several, with as many rows as `a`.
+#
+# Fails `invalid` where `a` is not square, the rows differ, or the system
+# has no single solution: none where it is inconsistent, many where it is
+# not, each said with the rank.
+function solve(a: matrix.Matrix, b: matrix.Matrix) -> matrix.Matrix?
+    if a.rows != a.cols
+        return fail(
+            code: matrix.INVALID,
+            msg: f"solve takes a square matrix, not one of {a.rows} by {a.cols}; `lstsq` fits one with more rows"
+        )
+    both = matrix.beside(a: a, b: b)?
+    r = reduce(both, upto: a.cols)
+
+    if r.rank < a.rows
+        whole = reduce(both, upto: both.cols)
+
+        if whole.rank > r.rank
+            return fail(
+                code: matrix.INVALID,
+                msg: f"the system has no solution: the matrix's rank is {r.rank} and the augmented one's {whole.rank}"
+            )
+        return fail(
+            code: matrix.INVALID,
+            msg: f"the system has many solutions: the matrix's rank is {r.rank} of {a.rows}"
+        )
+    return ok(matrix.columns(r.form, from: a.cols, to: both.cols))
+
+# The rank of `m`: the count of its independent rows.
+#
+# - `m`: the matrix.
+function rank(m: matrix.Matrix) -> i64
+    return reduce(m, upto: m.cols).rank
+
+# The reduced row echelon form of `m`.
+#
+# - `m`: the matrix.
+function rref(m: matrix.Matrix) -> matrix.Matrix
+    return reduce(m, upto: m.cols).form
+
+# The test's matrix of whole numbers, row after row.
+#
+# - `rows`: the rows.
+# - `cols`: the columns.
+# - `xs`: the entries.
+function whole_matrix(rows: i64, cols: i64, xs: [i64]) -> matrix.Matrix
+    cells: [scalar.Number] @= []
+
+    for x in xs
+        cells @ cells.push(scalar.of_int(x))
+
+    return matrix.make(rows: rows, cols: cols, cells: cells).must()
+
+test "determinant: exact, a swap's sign, singular, not square"
+    assert determinant(whole_matrix(rows: 2, cols: 2, xs: [3, 8, 4, 6])).must() == scalar.of_int(-14)
+    assert determinant(whole_matrix(rows: 2, cols: 2, xs: [0, 1, 1, 0])).must() == scalar.of_int(-1)
+    assert determinant(whole_matrix(rows: 3, cols: 3, xs: [1, 2, 3, 4, 5, 6, 7, 8, 9])).must() == scalar.of_int(0)
+    assert determinant(whole_matrix(rows: 2, cols: 3, xs: [1, 2, 3, 4, 5, 6])).is_err()
+
+test "inverse: exact fractions, a product with the original, singular refused"
+    a = whole_matrix(rows: 2, cols: 2, xs: [2, 1, 1, 3])
+    inv = inverse(a).must()
+    fifth = arith.divide(a: scalar.of_int(1), b: scalar.of_int(5)).must()
+    assert matrix.at(inv, row: 0, col: 1) == arith.negate(fifth)
+    assert matrix.multiply(a: a, b: inv).must() == matrix.identity(2).must()
+    assert inverse(whole_matrix(rows: 2, cols: 2, xs: [1, 2, 2, 4])).is_err()
+
+test "solve: one solution, none, many"
+    a = whole_matrix(rows: 2, cols: 2, xs: [1, 1, 1, -1])
+    x = solve(a: a, b: whole_matrix(rows: 2, cols: 1, xs: [3, 1])).must()
+    assert x == whole_matrix(rows: 2, cols: 1, xs: [2, 1])
+    flat = whole_matrix(rows: 2, cols: 2, xs: [1, 1, 2, 2])
+    assert solve(a: flat, b: whole_matrix(rows: 2, cols: 1, xs: [1, 3])).is_err()
+    assert solve(a: flat, b: whole_matrix(rows: 2, cols: 1, xs: [1, 2])).is_err()
+
+test "reduce: floats with partial pivoting, a near-zero pivot counted as zero"
+    m = matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 2.0, 4.000_000_000_000_001])
+    assert rank(m) == 1
+    n = matrix.of_floats(rows: 2, cols: 2, xs: [0.0, 1.0, 1.0, 0.0])
+    assert determinant(n).must() == scalar.of_real(-1.0)
+    assert rref(whole_matrix(rows: 2, cols: 3, xs: [1, 2, 3, 2, 4, 7])) == whole_matrix(rows: 2, cols: 3, xs: [1, 2, 0, 0, 0, 1])

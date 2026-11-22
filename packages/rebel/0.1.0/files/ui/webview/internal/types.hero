@@ -1,0 +1,135 @@
+# The content type a web view's asset takes from its path's extension, so a
+# program puts a file and the page reads it as what it is: the browser
+# sniffs nothing, since every response says `X-Content-Type-Options:
+# nosniff`, and a script served under another type does not run.
+#
+# The table is Go 1.27.4's `mime.TypeByExtension` on this machine, read
+# 2026-11-22, every text type with its `charset=utf-8`, which is what a
+# Heroes `str` holds; and `md`, which Go's answers nothing for, is Python
+# 3.15.2's `mimetypes.guess_type` with the same charset. An extension
+# neither names is `application/octet-stream`, which no page runs or shows
+# as text.
+
+# The type an extension no row names takes.
+constant UNKNOWN: str
+    "application/octet-stream"
+
+# The extensions in lower case, and the type of each, in one order.
+constant EXTENSIONS: [str]
+    [
+        "html"
+        "htm"
+        "css"
+        "js"
+        "mjs"
+        "json"
+        "svg"
+        "png"
+        "jpg"
+        "jpeg"
+        "gif"
+        "webp"
+        "avif"
+        "ico"
+        "woff"
+        "woff2"
+        "ttf"
+        "otf"
+        "txt"
+        "xml"
+        "wasm"
+        "pdf"
+        "mp4"
+        "webm"
+        "mp3"
+        "wav"
+        "ogg"
+        "csv"
+        "md"
+    ]
+
+constant TYPES: [str]
+    [
+        "text/html; charset=utf-8"
+        "text/html; charset=utf-8"
+        "text/css; charset=utf-8"
+        "text/javascript; charset=utf-8"
+        "text/javascript; charset=utf-8"
+        "application/json"
+        "image/svg+xml"
+        "image/png"
+        "image/jpeg"
+        "image/jpeg"
+        "image/gif"
+        "image/webp"
+        "image/avif"
+        "image/x-icon"
+        "font/woff"
+        "font/woff2"
+        "font/ttf"
+        "font/otf"
+        "text/plain; charset=utf-8"
+        "application/xml"
+        "application/wasm"
+        "application/pdf"
+        "video/mp4"
+        "video/webm"
+        "audio/mpeg"
+        "audio/x-wav"
+        "audio/ogg"
+        "text/csv; charset=utf-8"
+        "text/markdown; charset=utf-8"
+    ]
+
+# The extension of `path`'s last segment, after its last `.`, in lower
+# case; "" where it has none or the segment begins with its only `.`.
+function extension_of(path: str) -> str
+    at @= path.len()
+
+    while at > 0 && path[at - 1] != '/' && path[at - 1] != '.'
+        at @ at - 1
+
+    if at <= 1 || path[at - 1] != '.' || path[at - 2] == '/'
+        return ""
+    out: [u8] @= []
+
+    for i in range(from: at, to: path.len())
+        c = path[i]
+
+        if c >= 'A' && c <= 'Z'
+            out @ out.push(c - 'A' + 'a')
+        else
+            out @ out.push(c)
+
+    return out.validated_bytes().must()
+
+# The content type of `path`, by its extension.
+function type_of(path: str) -> str
+    ext = extension_of(path)
+
+    for i in range(from: 0, to: EXTENSIONS.len())
+        if EXTENSIONS[i] == ext
+            return TYPES[i]
+
+    return UNKNOWN
+
+## Tests
+
+test "extension_of: a file, a folder's file, none, a dot file, a dot in a folder, upper case"
+    assert extension_of("/index.html") == "html"
+    assert extension_of("/a/b.min.JS") == "js"
+    assert extension_of("/README") == ""
+    assert extension_of("/.hidden") == ""
+    assert extension_of("/a.b/c") == ""
+    assert extension_of("") == ""
+
+test "type_of: every row, a text with its charset, and an extension no row names"
+    assert EXTENSIONS.len() == TYPES.len()
+    assert type_of("/index.html") == "text/html; charset=utf-8"
+    assert type_of("/app.mjs") == "text/javascript; charset=utf-8"
+    assert type_of("/data.json") == "application/json"
+    assert type_of("/logo.SVG") == "image/svg+xml"
+    assert type_of("/font.woff2") == "font/woff2"
+    assert type_of("/notes.md") == "text/markdown; charset=utf-8"
+    assert type_of("/a.bin") == UNKNOWN
+    assert type_of("/noext") == UNKNOWN

@@ -1,0 +1,164 @@
+# The explorer's settings: what the person chose once and keeps, read from a
+# TOML file at the start. A key the file does not hold keeps the default, a
+# key of the wrong type is refused with its name, and a key the explorer
+# does not know is left alone, so a newer file read by an older explorer
+# still opens.
+#
+#     [view]
+#     show_hidden = false
+#     sort = "name"            # name, size, modified or type
+#     descending = false
+#     locale = "de-DE"         # the environment's when absent
+#
+#     [places]
+#     trash = "/path/to/trash" # the trash folder the explorer keeps
+#     bookmarks = "/path/to/bookmarks.toml"
+
+use <rebel>/os
+use <rebel>/path as paths
+use <rebel>/toml
+
+use model/sorting
+
+# The folder under the system's configuration and data folders the
+# explorer's files go in.
+constant FOLDER_NAME: str
+    "heroes-explorer"
+
+# What the explorer was told to do.
+record Settings
+    # Whether entries whose names begin with a dot are shown.
+    show_hidden: bool
+    # The order of a folder's entries.
+    order: sorting.Order
+    # The locale's tag; empty for the environment's.
+    locale: str
+    # The folder the trash keeps what is deleted in.
+    trash: str
+    # The file the bookmarks are kept in.
+    bookmarks: str
+
+# The settings of a person who wrote none: hidden entries hidden, names
+# ascending, the environment's locale, the trash and the bookmarks under the
+# system's data and configuration folders (the working folder where the
+# system names none).
+function defaults() -> Settings
+    data = os.data_dir().default(".")
+    config = os.config_dir().default(".")
+    return Settings(
+        show_hidden: false,
+        order: sorting.by_name(),
+        locale: "",
+        trash: paths.join_all([data, FOLDER_NAME, "trash"]),
+        bookmarks: paths.join_all([config, FOLDER_NAME, "bookmarks.toml"])
+    )
+
+# The settings file of a person: `explorer.toml` in the explorer's folder
+# under the system's configuration folder.
+function settings_file() -> str
+    config = os.config_dir().default(".")
+    return paths.join_all([config, FOLDER_NAME, "explorer.toml"])
+
+# The settings `text` gives over `base`, each key it holds taking the
+# place of the base's.
+#
+# - `text`: the settings file's text.
+# - `base`: the settings it starts from.
+# - `file`: the file's path, named by a failure's message.
+#
+# Fails `invalid` where the text is not TOML, or a key holds a value of the
+# wrong type, or `sort` names no column.
+function read_text(text: str, base: Settings, file: str) -> Settings?
+    doc = match toml.parse(text)
+        .ok d  => d
+        .err x => return fail(code: "invalid", msg: f"{file}: {x.msg}")
+
+    s @= base
+    s.show_hidden @ flag_at(doc, path: ["view", "show_hidden"], file: file, absent: s.show_hidden)?
+    s.order.descending @ flag_at(doc, path: ["view", "descending"], file: file, absent: s.order.descending)?
+    column = text_at(doc, path: ["view", "sort"], file: file, absent: sorting.column_name(s.order.column))?
+
+    match sorting.parse_column(column)
+        .ok c  => s.order.column @ c
+        .err x => return fail(code: "invalid", msg: f"{file}: view.sort: {x.msg}")
+
+    s.locale @ text_at(doc, path: ["view", "locale"], file: file, absent: s.locale)?
+    s.trash @ text_at(doc, path: ["places", "trash"], file: file, absent: s.trash)?
+    s.bookmarks @ text_at(doc, path: ["places", "bookmarks"], file: file, absent: s.bookmarks)?
+    return ok(s)
+
+# The settings in `file` over `base`; the base itself where the file is not
+# there.
+#
+# - `file`: the settings file's path.
+# - `base`: the settings it starts from.
+#
+# Fails as `read_text` fails, and as `read_file` fails on a file that is
+# there.
+function read(file: str, base: Settings) -> Settings?
+    match read_file(file)
+        .ok text => return read_text(text: text, base: base, file: file)
+        .err x =>
+            if x.code == "file_not_found"
+                return ok(base)
+
+            return fail(code: x.code, msg: x.msg)
+
+# The boolean under `path`, or `absent` where the document holds none.
+#
+# - `doc`: the document.
+# - `path`: the keys.
+# - `file`: the file's path, for the message.
+# - `absent`: the value where the key is absent.
+#
+# Fails `invalid` where the value is not a boolean.
+function flag_at(doc: toml.Value, path: [str], file: str, absent: bool) -> bool?
+    match toml.value_at(doc, path: path)
+        .ok v =>
+            match v
+                .boolean b => return ok(b.v)
+                .text _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{file}: {path.join(".")} is not true or false")
+        .err _ => return ok(absent)
+
+# The text under `path`, or `absent` where the document holds none.
+#
+# - `doc`: the document.
+# - `path`: the keys.
+# - `file`: the file's path, for the message.
+# - `absent`: the value where the key is absent.
+#
+# Fails `invalid` where the value is not a text.
+function text_at(doc: toml.Value, path: [str], file: str, absent: str) -> str?
+    match toml.value_at(doc, path: path)
+        .ok v =>
+            match v
+                .text t => return ok(t.v)
+                .boolean _ | .integer _ | .float _ | .date_time _ | .local_date_time _ | .local_date _ | .local_time _ | .array _ | .table _ =>
+                    return fail(code: "invalid", msg: f"{file}: {path.join(".")} is not a text")
+        .err _ => return ok(absent)
+
+# The settings of the tests: everything at its default but the places.
+function plain() -> Settings
+    return Settings(show_hidden: false, order: sorting.by_name(), locale: "", trash: "t", bookmarks: "b.toml")
+
+test "read_text: every key read over the base, an unknown key left alone"
+    s = read_text(
+        text: "[view]\nshow_hidden = true\nsort = \"size\"\ndescending = true\nlocale = \"de-DE\"\ncolour = \"blue\"\n[places]\ntrash = \"/tmp/t\"\n",
+        base: plain(),
+        file: "f"
+    ).must()
+    assert s.show_hidden && s.order.descending && s.order.column == .size
+    assert s.locale == "de-DE" && s.trash == "/tmp/t" && s.bookmarks == "b.toml"
+
+test "read_text: an empty file is the base, a wrong type and an unknown column refused with the key's name"
+    assert read_text(text: "", base: plain(), file: "f").must() == plain()
+    wrong = read_text(text: "[view]\nshow_hidden = \"yes\"\n", base: plain(), file: "f")
+    assert wrong.is_err()
+
+    match wrong
+        .ok _  => assert false
+        .err x => assert x.msg == "f: view.show_hidden is not true or false"
+
+    assert read_text(text: "[view]\nsort = \"colour\"\n", base: plain(), file: "f").is_err()
+    assert read_text(text: "[view\n", base: plain(), file: "f").is_err()

@@ -1,0 +1,108 @@
+# The folders the person went through, for Back and Forward as a browser
+# keeps them: going to a folder by any way but Back and Forward pushes the
+# folder left behind and forgets what Forward held. The list behind is
+# bounded, its oldest folders forgotten first, so a long session holds no
+# more than `MOST` folders.
+
+# The most folders Back remembers.
+constant MOST: i64
+    100
+
+# The folders behind and ahead of the one shown.
+record History
+    # The folders Back goes to, the nearest last.
+    back: [str]
+    # The folders Forward goes to, the nearest last.
+    forward: [str]
+
+# A history with nothing behind and nothing ahead.
+function new_history() -> History
+    nothing: [str] = []
+    return History(back: nothing, forward: nothing)
+
+# Records that the person left `leaving` for another folder, by any way but
+# Back and Forward.
+#
+# - `h`: the history; `leaving` goes behind, and what was ahead is
+#   forgotten.
+# - `leaving`: the folder left.
+function visit(@h: History, leaving: str)
+    if h.back.len() > 0 && h.back[h.back.len() - 1] == leaving
+        h.forward @ []
+        return
+
+    h.back @ h.back.push(leaving)
+
+    if h.back.len() > MOST
+        h.back @ h.back.slice(from: h.back.len() - MOST, to: h.back.len())
+
+    h.forward @ []
+
+# The folder Back goes to from `current`.
+#
+# - `h`: the history; the folder is taken from behind and `current` goes
+#   ahead.
+# - `current`: the folder shown now.
+#
+# Fails `not_found` where nothing is behind.
+function back(@h: History, current: str) -> str?
+    if h.back.len() == 0
+        return fail(code: "not_found", msg: "no folder before this one")
+
+    to = h.back[h.back.len() - 1]
+    h.back @ h.back.slice(from: 0, to: h.back.len() - 1)
+    h.forward @ h.forward.push(current)
+    return ok(to)
+
+# The folder Forward goes to from `current`.
+#
+# - `h`: the history; the folder is taken from ahead and `current` goes
+#   behind.
+# - `current`: the folder shown now.
+#
+# Fails `not_found` where nothing is ahead.
+function forward(@h: History, current: str) -> str?
+    if h.forward.len() == 0
+        return fail(code: "not_found", msg: "no folder after this one")
+
+    to = h.forward[h.forward.len() - 1]
+    h.forward @ h.forward.slice(from: 0, to: h.forward.len() - 1)
+    h.back @ h.back.push(current)
+    return ok(to)
+
+# Whether Back has somewhere to go.
+#
+# - `h`: the history.
+function can_go_back(h: History) -> bool
+    return h.back.len() > 0
+
+# Whether Forward has somewhere to go.
+#
+# - `h`: the history.
+function can_go_forward(h: History) -> bool
+    return h.forward.len() > 0
+
+test "back and forward: a visit forgets what was ahead, and either end answers not_found"
+    h @= new_history()
+    assert back(@h, current: "a").is_err()
+    visit(@h, leaving: "a")
+    visit(@h, leaving: "b")
+    assert back(@h, current: "c").must() == "b"
+    assert back(@h, current: "b").must() == "a"
+    assert !can_go_back(h)
+    assert forward(@h, current: "a").must() == "b"
+    visit(@h, leaving: "b")
+    assert !can_go_forward(h)
+    assert forward(@h, current: "d").is_err()
+
+test "visit: the same folder twice in a row is remembered once, and the oldest goes past the most"
+    h @= new_history()
+    visit(@h, leaving: "a")
+    visit(@h, leaving: "a")
+    assert h.back == ["a"]
+
+    for i in range(from: 0, to: MOST + 5)
+        visit(@h, leaving: f"f{i}")
+
+    assert h.back.len() == MOST
+    assert h.back[0] == "f5"

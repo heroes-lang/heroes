@@ -1,0 +1,207 @@
+# A board whole as JSON: what `export` writes to a file, what `import` reads
+# back, and what the history keeps before and after each change, so undo is
+# the board put back as it was. One form for the three, so an undo can never
+# put back something an export would not have written.
+#
+#     {"kanban": 1, "board": {"id": "...", "title": "...", "position": 0,
+#      "created": "...", "updated": "...", "columns": [{"id": "...",
+#      "title": "...", "cards": [{"id": "...", "title": "...",
+#      "body": "...", "created": "...", "updated": "..."}]}]}}
+#
+# A column's place is its place in the list, a card's its place in its
+# column's. Read back, everything is checked as the store checks what a
+# person types: a title, a card's notes, a moment, the counts a board holds.
+
+use <rebel>/json
+use <rebel>/time
+use <rebel>/uuid
+
+use store/boards
+use store/cards
+use store/model
+use store/store
+use store/titles
+
+# The form's number, which a file carries as `kanban`.
+constant FORM: i64
+    1
+
+## Writing
+
+# Board `board` as JSON. Fails `not_found` for no such board.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+function document_of(@s: store.Store, board: str) -> json.Value?
+    b = boards.board_named(@s, id: board)?
+    columns: [json.Value] @= []
+
+    for c in boards.columns(@s, board: board)?
+        in_it: [json.Value] @= []
+
+        for card in cards.in_column(@s, column: c.id)?
+            in_it @ in_it.push(
+                object([pair("id", .text(v: card.id)), pair("title", .text(v: card.title)), pair("body", .text(v: card.body)), pair("created", .text(v: card.created)), pair("updated", .text(v: card.updated))])
+            )
+
+        columns @ columns.push(
+            object([pair("id", .text(v: c.id)), pair("title", .text(v: c.title)), pair("cards", .list(items: in_it))])
+        )
+
+    whole = object(
+        [pair("id", .text(v: b.id)), pair("title", .text(v: b.title)), pair("position", number_json(b.position)), pair("created", .text(v: b.created)), pair("updated", .text(v: b.updated)), pair("columns", .list(items: columns))]
+    )
+    return ok(object([pair("kanban", number_json(FORM)), pair("board", whole)]))
+
+# Board `board` as JSON text, indented by two spaces: a file a person can
+# read. Fails as `document_of` does.
+#
+# - `s`: the store.
+# - `board`: the board's name.
+function text_of(@s: store.Store, board: str) -> str?
+    return json.format_indented(document_of(@s, board: board)?, width: 2)
+
+# A member of an object: its key and its value.
+record Pair
+    # The key.
+    key: str
+    # The value.
+    value: json.Value
+
+function pair(key: str, value: json.Value) -> Pair
+    return Pair(key: key, value: value)
+
+# The object of `pairs`, in their order.
+function object(pairs: [Pair]) -> json.Value
+    members: {str: json.Value} @= {}
+
+    for p in pairs
+        members[p.key] @ p.value
+
+    return .object(members: members)
+
+# `n` as a JSON number; every number here is a place or a form, far below
+# 2^53.
+function number_json(n: i64) -> json.Value
+    return .number(v: n.to_f64())
+
+## Reading
+
+# The board the JSON text `text` holds, written into the store, and its
+# name. Where `fresh`, it is a new board at the end with new names for it,
+# its columns and its cards, as an import makes one; otherwise it takes the
+# names and the place the text gives, as undo puts a board back, and the
+# board of that name must not be there. Fails `invalid` where the text is no
+# board of this form, saying where, and as the store fails.
+#
+# - `s`: the store; its names move on where `fresh`.
+# - `text`: the JSON text.
+# - `fresh`: whether the board takes new names.
+function restore(@s: store.Store, text: str, fresh: bool) -> str?
+    whole = match json.parse(text)
+        .ok v  => v
+        .err e => return fail(code: "invalid", msg: f"the file is no JSON: {e.msg}")
+
+    if json.int_of(member(whole, key: "kanban", at: "the file")?).default(0) != FORM
+        return fail(code: "invalid", msg: f"the file is no board of this program: it carries no `\"kanban\": {FORM}`")
+    b = member(whole, key: "board", at: "the file")?
+    column_list = json.items_of(member(b, key: "columns", at: "the board")?).default([])
+
+    if column_list.len() > model.COLUMNS_MOST
+        return fail(
+            code: "invalid",
+            msg: f"the board holds {column_list.len()} columns, past the {model.COLUMNS_MOST} a board takes"
+        )
+    card_count @= 0
+
+    for c in column_list
+        card_count @ card_count + json.items_of(member(c, key: "cards", at: "a column")?).default([]).len()
+
+    if card_count > model.CARDS_MOST
+        return fail(
+            code: "invalid",
+            msg: f"the board holds {card_count} cards, past the {model.CARDS_MOST} a board takes"
+        )
+    id = named(@s, v: b, fresh: fresh, at: "the board")?
+
+    place = if fresh
+        boards.boards(@s)?.len()
+    else
+        json.int_of(member(b, key: "position", at: "the board")?).default(-1)
+
+    if place < 0
+        return fail(code: "invalid", msg: "the board's `position` is no place, 0 or more")
+    made = model.Board(
+        id: id,
+        title: titles.checked(title: text_in(b, key: "title", at: "the board")?, what: "the board's title")?,
+        position: place,
+        created: moment(b, key: "created", at: "the board")?,
+        updated: moment(b, key: "updated", at: "the board")?
+    )
+    boards.insert_board(@s, b: made)?
+
+    for i in range(from: 0, to: column_list.len())
+        c = column_list[i]
+        column = model.Column(
+            id: named(@s, v: c, fresh: fresh, at: f"column {i}")?,
+            board: id,
+            title: titles.checked(title: text_in(c, key: "title", at: f"column {i}")?, what: f"column {i}'s title")?,
+            position: i
+        )
+        boards.insert_column(@s, c: column)?
+        card_list = json.items_of(member(c, key: "cards", at: f"column {i}")?).default([])
+
+        for j in range(from: 0, to: card_list.len())
+            k = card_list[j]
+            at = f"card {j} of column {i}"
+            card = model.Card(
+                number: 0,
+                id: named(@s, v: k, fresh: fresh, at: at)?,
+                column: column.id,
+                title: titles.checked(title: text_in(k, key: "title", at: at)?, what: f"{at}'s title")?,
+                body: titles.body_checked(text_in(k, key: "body", at: at)?)?,
+                position: j,
+                created: moment(k, key: "created", at: at)?,
+                updated: moment(k, key: "updated", at: at)?
+            )
+            _ = cards.insert(@s, card: card)?
+
+    return ok(id)
+
+# The member `key` of object `v`. Fails `invalid` naming `at` where `v` is no
+# object or holds none.
+function member(v: json.Value, key: str, at: str) -> json.Value?
+    match json.member(v, key: key)
+        .ok m  => return ok(m)
+        .err _ => return fail(code: "invalid", msg: f"{at} has no `{key}`")
+
+# The text `key` of object `v`. Fails `invalid` where it is none.
+function text_in(v: json.Value, key: str, at: str) -> str?
+    match json.text_of(member(v, key: key, at: at)?)
+        .ok t  => return ok(t)
+        .err _ => return fail(code: "invalid", msg: f"{at}'s `{key}` is no text")
+
+# The moment `key` of `v`, RFC 3339 to the second in UTC as the store writes
+# one. Fails `invalid` where it is no such moment.
+function moment(v: json.Value, key: str, at: str) -> str?
+    t = text_in(v, key: key, at: at)?
+
+    match time.parse(t, layout: .rfc3339_seconds)
+        .ok i =>
+            written = time.format(i, layout: .rfc3339_seconds)
+
+            if written != t
+                return fail(code: "invalid", msg: f"{at}'s `{key}` is {t}, where a moment is written as {written}")
+            return ok(t)
+        .err e => return fail(code: "invalid", msg: f"{at}'s `{key}` is no moment: {e.msg}")
+
+# The name of the thing `v` holds: a new one where `fresh`, else its `id`,
+# which must be a UUID. Fails `invalid` where it is none.
+function named(@s: store.Store, v: json.Value, fresh: bool, at: str) -> str?
+    if fresh
+        return store.name(@s)
+    id = text_in(v, key: "id", at: at)?
+
+    if uuid.parse(id).is_err()
+        return fail(code: "invalid", msg: f"{at}'s `id` is no UUID")
+    return ok(id)

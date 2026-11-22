@@ -1,0 +1,177 @@
+# The names the explorer gives what it makes: a name a person typed is
+# checked before anything is written, and a name already taken in a folder
+# is turned into a free one by a number before its extension, `report.txt`
+# into `report 2.txt`, then `report 3.txt`, a `.tar.gz` kept whole as one
+# extension and a number already there counted on rather than doubled.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/strings
+
+# The longest name a file system takes, in bytes: what `getconf NAME_MAX /`
+# answers on APFS (macOS 27.2.1, run 2026-11-22).
+constant MOST_NAME_BYTES: i64
+    255
+
+# The extensions kept whole when a number goes before the extension.
+constant DOUBLE_EXTENSIONS: [str]
+    [".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst"]
+
+# `name` where it is fit to be an entry's name, as a person typed it.
+#
+# - `name`: the name typed.
+#
+# Fails `invalid`, the message saying why: an empty name, `.` or `..`, a
+# name holding `/`, a line break or a zero byte, or one longer than
+# `MOST_NAME_BYTES` bytes.
+function checked(name: str) -> str?
+    if name == "" || strings.trim(name) == ""
+        return fail(code: "invalid", msg: "a name cannot be empty")
+
+    if name == "." || name == ".."
+        return fail(code: "invalid", msg: f"\"{name}\" names a folder that is always there")
+
+    if strings.contains_any(s: name, set: "/\n\r\t") || has_zero_byte(name)
+        return fail(code: "invalid", msg: f"\"{name}\" holds a character a name cannot: a slash, a line break or a tab")
+
+    if name.len() > MOST_NAME_BYTES
+        return fail(
+            code: "invalid",
+            msg: f"the name is {name.len()} bytes long, and a name holds at most {MOST_NAME_BYTES}"
+        )
+
+    return ok(name)
+
+# The parts of `name` a number goes between: what comes before the number
+# and the extension after it.
+record Parts
+    # The name without its extension, its trailing number taken off.
+    base: str
+    # The number the name ends with already, 1 where none.
+    number: i64
+    # The extension with its dot, a double one kept whole, empty for none.
+    ext: str
+
+# The parts of `name`.
+#
+# - `name`: an entry's name.
+function parts_of(name: str) -> Parts
+    ext @= ""
+    lower = strings.to_lower(name)
+
+    for double in DOUBLE_EXTENSIONS
+        if strings.has_suffix(s: lower, suffix: double) && name.len() > double.len()
+            ext @ name.slice(from: name.len() - double.len(), to: name.len())
+
+    if ext == ""
+        ext @ paths.ext(name).default("")
+
+        if ext == "."
+            ext @ ""
+
+    stem = name.slice(from: 0, to: name.len() - ext.len())
+    space = strings.index_of_last(s: stem, substr: " ").default(-1)
+
+    if space > 0 && space + 1 < stem.len()
+        digits = stem.slice(from: space + 1, to: stem.len())
+
+        if is_number(digits) && number_of(digits) >= 2
+            return Parts(base: stem.slice(from: 0, to: space), number: number_of(digits), ext: ext)
+
+    return Parts(base: stem, number: 1, ext: ext)
+
+# Whether `s` holds a zero byte, which no system takes in a name.
+#
+# - `s`: the text.
+function has_zero_byte(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] == 0
+            return true
+
+    return false
+
+# Whether `s` is one to six ASCII digits with no leading zero.
+#
+# - `s`: the text.
+function is_number(s: str) -> bool
+    if s.len() == 0 || s.len() > 6 || s[0] == '0'
+        return false
+
+    for c in s.chars()
+        if c[0] < '0' || c[0] > '9'
+            return false
+
+    return true
+
+# The number `digits` writes, one to six ASCII digits.
+#
+# - `digits`: the digits.
+function number_of(digits: str) -> i64
+    n @= 0
+
+    for c in digits.chars()
+        n @ n * 10 + to_i64(c[0] - '0').must()
+
+    return n
+
+# `name` with the number `n` before its extension: `report 3.txt`; `name`
+# itself for 1.
+#
+# - `p`: the name's parts.
+# - `n`: the number, 1 or more.
+function numbered(p: Parts, n: i64) -> str
+    if n <= 1
+        return p.base + p.ext
+
+    return f"{p.base} {n}{p.ext}"
+
+# A name for `wanted` that nothing in `folder` holds: `wanted` itself where
+# it is free, else the next number after the one it holds.
+#
+# - `folder`: the folder the name goes in.
+# - `wanted`: the name asked for.
+#
+# A name the disk cannot answer for counts as taken, so the answer is free
+# wherever the disk can tell.
+function free_name(folder: str, wanted: str) -> str
+    if !is_taken(folder: folder, name: wanted)
+        return wanted
+
+    p = parts_of(wanted)
+    n @= p.number + 1
+
+    while is_taken(folder: folder, name: numbered(p, n: n))
+        n @ n + 1
+
+    return numbered(p, n: n)
+
+# Whether `folder` holds something named `name`, a link to nothing
+# included.
+#
+# - `folder`: the folder.
+# - `name`: the name.
+function is_taken(folder: str, name: str) -> bool
+    return !fs.link_info(paths.join_all([folder, name])).is_err()
+
+test "checked: the names a person cannot give, and one they can"
+    assert checked("").is_err()
+    assert checked("   ").is_err()
+    assert checked("..").is_err()
+    assert checked("a/b").is_err()
+    assert checked("two\nlines").is_err()
+    assert checked(repeat("x", 256)).is_err()
+    assert checked(repeat("x", 255)).must().len() == 255
+    assert checked("café notes.txt").must() == "café notes.txt"
+
+test "parts_of: an extension, a double one, a number kept, a leading zero and a dot file"
+    assert parts_of("report.txt") == Parts(base: "report", number: 1, ext: ".txt")
+    assert parts_of("backup.tar.gz") == Parts(base: "backup", number: 1, ext: ".tar.gz")
+    assert parts_of("report 7.txt") == Parts(base: "report", number: 7, ext: ".txt")
+    assert parts_of("take 07.txt") == Parts(base: "take 07", number: 1, ext: ".txt")
+    assert parts_of(".profile") == Parts(base: ".profile", number: 1, ext: "")
+    assert parts_of("Photos") == Parts(base: "Photos", number: 1, ext: "")
+
+test "numbered: the number before the extension, none for one"
+    assert numbered(parts_of("a.tar.gz"), n: 2) == "a 2.tar.gz"
+    assert numbered(parts_of("a"), n: 1) == "a"
+    assert numbered(parts_of("report 2.txt"), n: 3) == "report 3.txt"

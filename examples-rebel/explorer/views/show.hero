@@ -1,0 +1,245 @@
+# Sets the main window's widgets from the explorer's state, all of them each
+# time: the title and the path, the tree and the bookmarks with the folder
+# shown chosen in each, the header and the rows with what is chosen, the
+# preview, the status line, and which buttons and menu items can be used
+# now. Setting a widget gives no event (`ui`'s rule), so drawing the state
+# never feeds back into it.
+#
+# Nothing here decides anything: whether Rename can be used is a question
+# about the state (`can_rename`), asked here and asked again by the command
+# itself, so a shortcut pressed on a greyed item is refused the same way.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/ui
+
+use locale/formats
+use model/explorer
+use model/history
+use model/listing
+use model/tree
+use ops/trash
+use ops/undo
+use search/finder
+use store/bookmarks
+use views/rows
+use views/window
+
+# Sets every widget of the main window and its menus from `ex`.
+#
+# - `app`: the app.
+# - `menus`: the menus; the Bookmarks menu's items are made again where the
+#   bookmarks changed.
+# - `w`: the window's widgets.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s setters fail.
+function sync(@app: ui.App, @menus: window.Menus, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    name = paths.name(ex.folder).default(ex.folder)
+    ui.set_text(@app, widget: w.window, text: f"Explorer: {name}")?
+    ui.set_text(@app, widget: w.location, text: ex.folder)?
+    folder_rows(@app, w: w, ex: ex)?
+    entry_rows(@app, w: w, ex: ex)?
+    preview_panes(@app, w: w, ex: ex)?
+    ui.set_text(@app, widget: w.status, text: explorer.status_line(ex))?
+    buttons(@app, w: w, ex: ex)?
+    menu_states(@app, menus: menus, ex: ex)?
+    bookmark_items(@app, menus: @menus, ex: ex)?
+    return ok()
+
+# The tree's rows and the bookmarks' rows, the folder shown chosen in each.
+#
+# - `app`: the app.
+# - `w`: the widgets.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s setters fail.
+function folder_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    shown = tree.rows(ex.tree, f: ex.formats, show_hidden: ex.settings.show_hidden)
+    labels: [str] @= []
+
+    for r in shown
+        labels @ labels.push(tree.label_of(r))
+
+    ui.set_items(@app, widget: w.tree, items: labels)?
+
+    match tree.index_of(shown, folder: ex.folder)
+        .ok at => ui.set_selection(@app, widget: w.tree, indices: [at])?
+        .err _ => _ = 0
+
+    marks: [str] @= []
+
+    for b in ex.bookmarks.items
+        marks @ marks.push(rows.bookmark_row(b))
+
+    ui.set_items(@app, widget: w.places, items: marks)?
+
+    match bookmarks.index_of(ex.bookmarks, folder: ex.folder)
+        .ok at => ui.set_selection(@app, widget: w.places, indices: [at])?
+        .err _ => _ = 0
+
+    return ok()
+
+# The header and the rows of the entries, or of a search's results, with
+# what is chosen.
+#
+# - `app`: the app.
+# - `w`: the widgets.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s setters fail.
+function entry_rows(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    lines: [str] @= []
+
+    if ex.showing_results
+        ui.set_text(@app, widget: w.header, text: f"Results under {ex.results_root}")?
+
+        for h in ex.results
+            lines @ lines.push(finder.hit_text(h))
+    else
+        ui.set_text(@app, widget: w.header, text: rows.header(ex.settings.order))?
+
+        for e in listing.rows(ex.listing)
+            lines @ lines.push(rows.entry_row(ex.formats, e: e))
+
+    ui.set_items(@app, widget: w.entries, items: lines)?
+    ui.set_selection(@app, widget: w.entries, indices: explorer.chosen_rows(ex))?
+    return ok()
+
+# The preview pane: the title, the facts, the picture where there is one
+# and the text where there is any; the rest hidden.
+#
+# - `app`: the app.
+# - `w`: the widgets.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s setters fail.
+function preview_panes(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    p = ex.preview
+    ui.set_text(@app, widget: w.title, text: p.title)?
+    ui.set_text(@app, widget: w.facts, text: p.facts.join("\n"))?
+
+    if p.pictures.len() > 0
+        ui.set_picture(@app, widget: w.picture, img: p.pictures[0])?
+        ui.set_visible(@app, widget: w.picture, on: true)?
+    else
+        ui.set_visible(@app, widget: w.picture, on: false)?
+
+    ui.set_text(@app, widget: w.text, text: p.text)?
+    ui.set_visible(@app, widget: w.text, on: p.text != "")?
+    return ok()
+
+# Which buttons can be used now.
+#
+# - `app`: the app.
+# - `w`: the widgets.
+# - `ex`: the explorer.
+#
+# Fails as `ui.set_enabled` fails.
+function buttons(@app: ui.App, w: window.Widgets, ex: explorer.Explorer lent) -> ()?
+    idle = !explorer.is_busy(ex)
+    ui.set_enabled(@app, widget: w.back, on: idle && history.can_go_back(ex.history))?
+    ui.set_enabled(@app, widget: w.forward, on: idle && history.can_go_forward(ex.history))?
+    ui.set_enabled(@app, widget: w.up, on: idle && can_go_up(ex))?
+    ui.set_enabled(@app, widget: w.open, on: idle && ex.chosen.len() == 1)?
+    ui.set_enabled(@app, widget: w.search, on: idle)?
+    ui.set_enabled(@app, widget: w.clear, on: ex.showing_results)?
+    return ok()
+
+# Which menu items can be used now, and the words of Undo and Redo.
+#
+# - `app`: the app.
+# - `menus`: the menus.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s setters fail.
+function menu_states(@app: ui.App, menus: window.Menus, ex: explorer.Explorer lent) -> ()?
+    idle = !explorer.is_busy(ex)
+    some = ex.chosen.len() > 0
+    one = ex.chosen.len() == 1
+    in_folder = !ex.showing_results
+    ui.set_enabled(@app, widget: menus.open_item, on: idle && one)?
+    ui.set_enabled(@app, widget: menus.new_folder, on: idle && in_folder)?
+    ui.set_enabled(@app, widget: menus.rename, on: idle && one && in_folder)?
+    ui.set_enabled(@app, widget: menus.rename_pattern, on: idle && some && in_folder)?
+    ui.set_enabled(@app, widget: menus.compress_zip, on: idle && some && in_folder)?
+    ui.set_enabled(@app, widget: menus.compress_tar, on: idle && some && in_folder)?
+    ui.set_enabled(@app, widget: menus.extract, on: idle && one && in_folder)?
+    ui.set_enabled(@app, widget: menus.hash_item, on: idle && one)?
+    ui.set_enabled(@app, widget: menus.trash_item, on: idle && some && !is_trash(ex))?
+    ui.set_enabled(@app, widget: menus.put_back, on: idle && some && is_trash(ex))?
+    ui.set_enabled(@app, widget: menus.empty_trash, on: idle)?
+    ui.set_text(@app, widget: menus.undo_item, text: undo.undo_text(ex.undo))?
+    ui.set_text(@app, widget: menus.redo_item, text: undo.redo_text(ex.undo))?
+    ui.set_enabled(@app, widget: menus.undo_item, on: idle && ex.undo.done.len() > 0)?
+    ui.set_enabled(@app, widget: menus.redo_item, on: idle && ex.undo.undone.len() > 0)?
+    ui.set_enabled(@app, widget: menus.cut, on: idle && some)?
+    ui.set_enabled(@app, widget: menus.copy, on: idle && some)?
+    ui.set_enabled(@app, widget: menus.paste, on: idle && in_folder && ex.clipboard.paths.len() > 0)?
+    ui.set_enabled(@app, widget: menus.back_item, on: idle && history.can_go_back(ex.history))?
+    ui.set_enabled(@app, widget: menus.forward_item, on: idle && history.can_go_forward(ex.history))?
+    ui.set_enabled(@app, widget: menus.up_item, on: idle && can_go_up(ex))?
+
+    hidden_words = if ex.settings.show_hidden
+        "Hide Hidden Files"
+    else
+        "Show Hidden Files"
+
+    ui.set_text(@app, widget: menus.hidden, text: hidden_words)?
+    ui.set_enabled(@app, widget: menus.add_mark, on: bookmarks.index_of(ex.bookmarks, folder: ex.folder).is_err())?
+    ui.set_enabled(@app, widget: menus.remove_mark, on: !bookmarks.index_of(ex.bookmarks, folder: ex.folder).is_err())?
+    return ok()
+
+# The Bookmarks menu's items, one a bookmark: the items that still name
+# their bookmark in its place are kept, and from the first that does not,
+# the items are made again, since a menu takes a new item only at its end.
+#
+# - `app`: the app.
+# - `menus`: the menus; `mark_items` holds the items made.
+# - `ex`: the explorer.
+#
+# Fails as `ui`'s makers fail.
+function bookmark_items(@app: ui.App, @menus: window.Menus, ex: explorer.Explorer lent) -> ()?
+    kept @= 0
+
+    while kept < menus.mark_items.len() && kept < ex.bookmarks.items.len() && ui.text_of(app, widget: menus.mark_items[kept]).default("") == ex.bookmarks.items[kept].name
+        kept @ kept + 1
+
+    if kept == menus.mark_items.len() && kept == ex.bookmarks.items.len()
+        return ok()
+
+    for old in menus.mark_items.slice(from: kept, to: menus.mark_items.len())
+        ui.destroy(@app, widget: old)?
+
+    made @= menus.mark_items.slice(from: 0, to: kept)
+
+    for b in ex.bookmarks.items.slice(from: kept, to: ex.bookmarks.items.len())
+        made @ made.push(ui.menu_item(@app, into: menus.marks_menu, text: b.name)?)
+
+    menus.mark_items @ made
+    return ok()
+
+# Whether the folder shown has a folder above it.
+#
+# - `ex`: the explorer.
+function can_go_up(ex: explorer.Explorer lent) -> bool
+    return paths.parent(ex.folder) != ex.folder && !paths.name(ex.folder).is_err()
+
+# Whether the folder shown is the trash's.
+#
+# - `ex`: the explorer.
+function is_trash(ex: explorer.Explorer lent) -> bool
+    return paths.is_same(path: ex.folder, other: trash.files_dir(ex.settings.trash))
+
+# Whether `folder` is there to be shown, for a bookmark or a typed path.
+#
+# - `folder`: the path.
+function is_folder(folder: str) -> bool
+    return fs.is_dir(folder).default(false)
+
+# The words of a count of entries, for a dialog.
+#
+# - `ex`: the explorer.
+# - `n`: the count.
+function items_words(ex: explorer.Explorer lent, n: i64) -> str
+    return formats.count_text(ex.formats, n: n, one: "item", other: "items")

@@ -1,0 +1,314 @@
+# The built-ins of numbers: the functions of one number, which a vector or a
+# matrix takes entry by entry (`sin(v)` is the sine of each element, as
+# NumPy and Julia's broadcasting give it), the functions of two numbers, and
+# the functions of whole numbers, which answer exactly.
+
+use <rebel>/big
+
+use eval/value
+use linalg/matrix
+use numbers/arith
+use numbers/functions
+use numbers/primes
+use numbers/scalar
+use numbers/text
+
+# The functions of one number a vector or a matrix takes entry by entry.
+constant ELEMENTWISE: [str]
+    [
+        "sqrt"
+        "cbrt"
+        "exp"
+        "ln"
+        "log10"
+        "log2"
+        "sin"
+        "cos"
+        "tan"
+        "asin"
+        "acos"
+        "atan"
+        "sinh"
+        "cosh"
+        "tanh"
+        "abs"
+        "sign"
+        "re"
+        "im"
+        "conj"
+        "arg"
+        "floor"
+        "ceil"
+        "round"
+        "trunc"
+        "gamma"
+        "erf"
+        "exact"
+        "float"
+    ]
+
+# Whether `name` is a function of one number taken entry by entry.
+#
+# - `name`: the built-in's name.
+function is_elementwise(name: str) -> bool
+    for e in ELEMENTWISE
+        if e == name
+            return true
+
+    return false
+
+# The function `name` of the one number `n`.
+#
+# - `name`: a name of `ELEMENTWISE`.
+# - `n`: the number.
+#
+# Fails `invalid` where `n` is outside what the function reads (a complex
+# number rounded, a nan made exact).
+function number_function(name: str, n: scalar.Number) -> scalar.Number?
+    return match name
+        "sqrt"  => ok(functions.sqrt(n))
+        "cbrt"  => ok(functions.cbrt(n))
+        "exp"   => ok(functions.exp(n))
+        "ln"    => ok(functions.ln(n))
+        "log10" => ok(functions.log10(n))
+        "log2"  => ok(functions.log2(n))
+        "sin"   => ok(functions.sin(n))
+        "cos"   => ok(functions.cos(n))
+        "tan"   => ok(functions.tan(n))
+        "asin"  => ok(functions.asin(n))
+        "acos"  => ok(functions.acos(n))
+        "atan"  => ok(functions.atan(n))
+        "sinh"  => ok(functions.sinh(n))
+        "cosh"  => ok(functions.cosh(n))
+        "tanh"  => ok(functions.tanh(n))
+        "abs"   => ok(functions.abs(n))
+        "sign"  => ok(functions.sign(n))
+        "re"    => ok(functions.real_part(n))
+        "im"    => ok(functions.imaginary_part(n))
+        "conj"  => ok(functions.conjugate(n))
+        "arg"   => ok(functions.phase(n))
+        "floor" => functions.rounded(n, rounding: .floor)
+        "ceil"  => functions.rounded(n, rounding: .ceiling)
+        "round" => functions.rounded(n, rounding: .half_even)
+        "trunc" => functions.rounded(n, rounding: .toward_zero)
+        "gamma" => functions.gamma(n)
+        "erf"   => functions.erf(n)
+        "exact" => functions.exact(n)
+        "float" => float_number(n)
+        _       => fail(code: value.INVALID, msg: f"`{name}` is no function of one number")
+
+# `n` as a float, or a complex number as it is.
+#
+# - `n`: the number.
+function float_number(n: scalar.Number) -> scalar.Number?
+    match scalar.float_of(n)
+        .ok x  => return ok(scalar.of_real(x))
+        .err _ => return ok(n)
+
+# The function `name` of `v`, entry by entry where `v` is a vector or a
+# matrix.
+#
+# - `name`: a name of `ELEMENTWISE`.
+# - `v`: a number, a vector of numbers or a matrix.
+#
+# Fails `invalid` where `v` is no number, a vector holds an element that is
+# none, or the function refuses an entry.
+function elementwise(name: str, v: value.Value) -> value.Value?
+    match v
+        .number n => return ok(.number(value: number_function(name, n: n.value)?))
+        .vector items =>
+            out: [value.Value] @= []
+
+            for item in items.items
+                out @ out.push(elementwise(name, v: item)?)
+
+            return ok(.vector(items: out))
+        .matrix m =>
+            cells: [scalar.Number] @= []
+
+            for x in m.value.cells
+                cells @ cells.push(number_function(name, n: x)?)
+
+            return ok(.matrix(value: matrix.make(rows: m.value.rows, cols: m.value.cols, cells: cells)?))
+        .truth _ | .text _ | .callable _ | .plot _ | .nothing =>
+            return value.refusal(what: f"{name}'s argument", wanted: "a number, a vector or a matrix", v: v)
+
+# The whole number `v` holds, of any size.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is not a whole number.
+function whole_of(v: value.Value, what: str) -> big.Integer?
+    match value.number_of(v, what: what)?
+        .integer i => return ok(i.value)
+        .rational _ | .real _ | .complex _ => return fail(
+            code: value.INVALID,
+            msg: f"{what} is a whole number, exactly"
+        )
+
+# Whether `v` is a prime number.
+#
+# - `v`: a whole number.
+#
+# Fails `invalid` where it is not one.
+function is_prime(v: value.Value) -> value.Value?
+    return ok(.truth(value: primes.is_prime(whole_of(v, what: "isprime's argument")?)))
+
+# The smallest prime above `v`.
+#
+# - `v`: a whole number.
+#
+# Fails `invalid` where it is not one.
+function next_prime(v: value.Value) -> value.Value?
+    return ok(.number(value: scalar.of_integer(primes.next_prime(whole_of(v, what: "nextprime's argument")?))))
+
+# The prime factors of `v` as a vector, the smallest first, each as often as
+# it divides: `factor(360)` is `[2, 2, 2, 3, 3, 5]`, whose product is 360.
+#
+# - `v`: a whole number but zero.
+#
+# Fails `invalid` where it is zero or not whole, and `limit` where a factor
+# resists every walk of Pollard's rho, naming it.
+function factor(v: value.Value) -> value.Value?
+    found = primes.factor(whole_of(v, what: "factor's argument")?)?
+
+    if found.unsplit != big.from_int(1)
+        return fail(
+            code: primes.LIMIT,
+            msg: f"the factor {text.format_integer(found.unsplit)} is composite and was not split"
+        )
+    out: [value.Value] @= []
+
+    for p in found.primes
+        out @ out.push(.number(value: scalar.of_integer(p)))
+
+    return ok(.vector(items: out))
+
+# `v` factorial, exactly; a real or complex `v` through the gamma function.
+#
+# - `v`: a whole number from 0, or any real.
+#
+# Fails `invalid` where `v` is a negative whole number, `limit` past
+# `primes.MOST_FACTORIAL`.
+function factorial(v: value.Value) -> value.Value?
+    n = value.number_of(v, what: "the factorial's argument")?
+
+    match n
+        .integer i =>
+            k = big.int_of(i.value)?
+            return ok(.number(value: scalar.of_integer(primes.factorial(k)?)))
+        .rational _ | .real _ =>
+            plus_one = arith.add(a: n, b: scalar.of_int(1))
+            return ok(.number(value: functions.gamma(plus_one)?))
+        .complex _ => return fail(code: value.INVALID, msg: "the factorial of a complex number is not offered")
+
+# The binomial coefficient `n` choose `k`, exactly.
+#
+# - `n`: the things.
+# - `k`: how many are chosen.
+#
+# Fails `invalid` where either is not a whole number, `limit` where `n` is
+# too large.
+function binomial(n: value.Value, k: value.Value) -> value.Value?
+    picked = primes.binomial(n: value.int_of(n, what: "binomial's n")?, k: value.int_of(k, what: "binomial's k")?)?
+    return ok(.number(value: scalar.of_integer(picked)))
+
+# The greatest common divisor of `a` and `b`, or their least common multiple.
+#
+# - `a`: a whole number.
+# - `b`: a whole number.
+# - `least_multiple`: whether the least common multiple is asked.
+#
+# Fails `invalid` where either is not whole.
+function divisor(a: value.Value, b: value.Value, least_multiple: bool) -> value.Value?
+    x = whole_of(a, what: "the first argument")?
+    y = whole_of(b, what: "the second argument")?
+
+    if least_multiple
+        return ok(.number(value: scalar.of_integer(big.lcm(a: x, b: y))))
+    return ok(.number(value: scalar.of_integer(big.gcd(a: x, b: y))))
+
+# The numerator or the denominator of the exact `v`.
+#
+# - `v`: an exact number.
+# - `top`: whether the numerator is asked.
+#
+# Fails `invalid` where `v` is not exact.
+function part_of_fraction(v: value.Value, top: bool) -> value.Value?
+    f = scalar.fraction_of(value.number_of(v, what: "the fraction")?)?
+
+    if top
+        return ok(.number(value: scalar.of_integer(f.numerator)))
+    return ok(.number(value: scalar.of_integer(f.denominator)))
+
+# The fraction nearest `x` with a denominator of at most `most`.
+#
+# - `x`: a real or exact number.
+# - `most`: the largest denominator, a whole number from 1.
+#
+# Fails `invalid` where either is outside that.
+function approximate(x: value.Value, most: value.Value) -> value.Value?
+    n = value.number_of(x, what: "rat's number")?
+    return ok(.number(value: functions.approximate(n, most: whole_of(most, what: "rat's largest denominator")?)?))
+
+# The decimal expansion of `x` to `places` digits after the point, as a
+# text: `digits(1/7, 30)`; exact for an exact `x`, the float's exact binary
+# value for a real one.
+#
+# - `x`: a real or exact number.
+# - `places`: 0 to 10,000.
+#
+# Fails `invalid` where `x` is complex or a nan, or `places` is outside.
+function digits(x: value.Value, places: value.Value) -> value.Value?
+    k = value.int_of(places, what: "the places")?
+
+    if k < 0 || k > 10_000
+        return fail(code: value.INVALID, msg: "digits takes 0 to 10000 places")
+    f = scalar.fraction_of(functions.exact(value.number_of(x, what: "digits' number")?)?).must()
+    return ok(.text(value: text.decimal_places(f, places: k)))
+
+# The angle of (`x`, `y`), the logarithm of `x` to `base`.
+#
+# - `name`: `atan2` or `log`.
+# - `first`: `y` for `atan2`, the number for `log`.
+# - `second`: `x` for `atan2`, the base for `log`.
+#
+# Fails `invalid` where an argument is no number.
+function two_numbers(name: str, first: value.Value, second: value.Value) -> value.Value?
+    a = value.number_of(first, what: f"{name}'s first argument")?
+    b = value.number_of(second, what: f"{name}'s second argument")?
+
+    if name == "atan2"
+        return ok(.number(value: functions.atan2(y: a, x: b)?))
+    return ok(.number(value: functions.log_base(n: a, base: b)))
+
+test "elementwise: a number, a vector, a matrix, a text refused"
+    assert elementwise("sqrt", v: value.of_int(9)).must() == value.of_int(3)
+    v: value.Value = .vector(items: [value.of_int(4), value.of_int(-1)])
+    assert elementwise("sqrt", v: v).must() == .vector(items: [value.of_int(2), .number(value: scalar.of_parts(re: 0.0, im: 1.0))])
+    m = matrix.make(rows: 1, cols: 2, cells: [scalar.of_int(1), scalar.of_int(-2)]).must()
+    assert elementwise("abs", v: .matrix(value: m)).must() == .matrix(value: matrix.make(rows: 1, cols: 2, cells: [scalar.of_int(1), scalar.of_int(2)]).must())
+    assert elementwise("sin", v: .text(value: "x")).is_err()
+
+test "factor, is_prime, next_prime: exact whole numbers, a real refused"
+    assert factor(value.of_int(360)).must() == .vector(items: [value.of_int(2), value.of_int(2), value.of_int(2), value.of_int(3), value.of_int(3), value.of_int(5)])
+    assert is_prime(value.of_int(97)).must() == .truth(value: true)
+    assert next_prime(value.of_int(97)).must() == value.of_int(101)
+    assert is_prime(value.of_real(7.0)).is_err()
+
+test "factorial and binomial: exact, through gamma for a real"
+    assert factorial(value.of_int(5)).must() == value.of_int(120)
+    half_factorial = scalar.float_of(functions.gamma(scalar.of_real(1.5)).must()).must()
+    assert factorial(value.of_real(0.5)).must() == value.of_real(half_factorial)
+    assert factorial(value.of_int(-1)).is_err()
+    assert binomial(n: value.of_int(6), k: value.of_int(2)).must() == value.of_int(15)
+
+test "digits, approximate and the parts of a fraction"
+    seventh: value.Value = .number(value: arith.divide(a: scalar.of_int(1), b: scalar.of_int(7)).must())
+    assert digits(x: seventh, places: value.of_int(5)).must() == .text(value: "0.14286")
+    assert part_of_fraction(seventh, top: false).must() == value.of_int(7)
+    third: value.Value = .number(value: arith.divide(a: scalar.of_int(1), b: scalar.of_int(3)).must())
+    assert approximate(x: value.of_real(0.333_333), most: value.of_int(10)).must() == third
+    assert divisor(a: value.of_int(12), b: value.of_int(18), least_multiple: false).must() == value.of_int(6)
+    assert divisor(a: value.of_int(4), b: value.of_int(6), least_multiple: true).must() == value.of_int(12)

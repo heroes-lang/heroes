@@ -1,0 +1,202 @@
+# The order a folder's entries are shown in: by name, size, date or type,
+# ascending or descending, folders always before the rest. Each entry is weighed once into a
+# `Key` of bytes, compared byte by byte, since the ordered map that holds the
+# listing (`containers/ordered`) takes its order as a top-level function and
+# no function can hold the locale's collator: the collator's weights are in
+# the key itself.
+#
+# A descending order is the ascending one walked from its end, so its key
+# puts the folders in the group that comes last; the walk from the end then
+# shows them first.
+
+use <rebel>/strings
+use <rebel>/time
+
+use locale/formats
+use model/entry
+
+# What the entries are ordered by.
+variant Column
+    # Their names, in the locale's collation.
+    name
+    # Their sizes in bytes; folders, of size 0, by their names among
+    # themselves.
+    size
+    # When they were last written.
+    modified
+    # Their type's name, then their names.
+    type
+
+# An order of the listing.
+record Order
+    # What it orders by.
+    column: Column
+    # Whether the largest, the latest or the last name comes first.
+    descending: bool
+
+# An entry weighed for the order: compared group first, then `primary`, then
+# the name's collation key, then the name's bytes, so no two names of one
+# folder are equal.
+record Key
+    # 0 for the group shown first in the ascending walk, 1 for the other.
+    group: i64
+    # The column's weight, bytes compared one by one.
+    primary: [u8]
+    # The name's collation key.
+    name_key: [u8]
+    # The name itself, the last tie-break.
+    name: str
+
+# The order a folder opens with: names, ascending.
+function by_name() -> Order
+    return Order(column: .name, descending: false)
+
+# The key of `e` in `order`.
+#
+# - `f`: the formats, whose collator weighs names and type names.
+# - `e`: the entry.
+# - `order`: the order.
+function key_of(f: formats.Formats, e: entry.Entry, order: Order) -> Key
+    folder_first = if e.opens
+        0
+    else
+        1
+
+    group = if order.descending
+        1 - folder_first
+    else
+        folder_first
+
+    nothing: [u8] = []
+
+    primary = match order.column
+        .name     => nothing
+        .size     => int_bytes(e.size)
+        .modified => int_bytes(e.modified.unix_nanoseconds)
+        .type     => formats.name_key(f, name: e.type_name)
+
+    return Key(group: group, primary: primary, name_key: formats.name_key(f, name: e.name), name: e.name)
+
+# Whether `a` goes before `b`: the order of an ordered map of keys.
+#
+# - `a`: the first key.
+# - `b`: the second key.
+function key_less(a: Key, b: Key) -> bool
+    if a.group != b.group
+        return a.group < b.group
+
+    by_primary = compare_bytes(left: a.primary, right: b.primary)
+
+    if by_primary != 0
+        return by_primary < 0
+
+    by_names = compare_bytes(left: a.name_key, right: b.name_key)
+
+    if by_names != 0
+        return by_names < 0
+
+    return strings.compare(a: a.name, b: b.name) < 0
+
+# How `left` compares with `right` byte by byte: -1, 0 or 1, a prefix before
+# the longer bytes it begins.
+#
+# - `left`: the first bytes.
+# - `right`: the second bytes.
+function compare_bytes(left: [u8], right: [u8]) -> i64
+    at @= 0
+
+    while at < left.len() && at < right.len()
+        if left[at] != right[at]
+            if left[at] < right[at]
+                return -1
+
+            return 1
+
+        at @ at + 1
+
+    if left.len() == right.len()
+        return 0
+
+    if left.len() < right.len()
+        return -1
+
+    return 1
+
+# The eight bytes of `n`, most significant first, its sign bit turned over
+# so that the bytes of a negative number come before a positive one's.
+#
+# - `n`: the number.
+function int_bytes(n: i64) -> [u8]
+    out: [u8] @= []
+
+    for i in range(from: 0, to: 8)
+        shift = 8 * (7 - i)
+        byte @= n >> shift & 0xff
+
+        if i == 0
+            byte @ byte ^ 0x80
+
+        out @ out.push(to_u8(byte).must())
+
+    return out
+
+# Every column, in the order the View menu offers them.
+function columns() -> [Column]
+    every: [Column] = [.name, .size, .modified, .type]
+    return every
+
+# The column's name as the settings file and the menu write it.
+#
+# - `c`: the column.
+function column_name(c: Column) -> str
+    return match c
+        .name     => "name"
+        .size     => "size"
+        .modified => "modified"
+        .type     => "type"
+
+# The column `text` names.
+#
+# - `text`: `name`, `size`, `modified` or `type`.
+#
+# Fails `invalid` for any other text.
+function parse_column(text: str) -> Column?
+    for c in columns()
+        if column_name(c) == text
+            return ok(c)
+
+    return fail(code: "invalid", msg: f"no column \"{text}\": name, size, modified or type")
+
+test "int_bytes: the least, a negative, zero and the largest in order"
+    values = [-9223372036854775807 - 1, -1, 0, 1, 9223372036854775807]
+
+    for i in range(from: 1, to: values.len())
+        assert compare_bytes(left: int_bytes(values[i - 1]), right: int_bytes(values[i])) < 0
+
+test "compare_bytes: empty, a prefix, equal, and a byte that differs"
+    assert compare_bytes(left: [], right: []) == 0
+    assert compare_bytes(left: [1, 2], right: [1, 2, 3]) == -1
+    assert compare_bytes(left: [1, 2, 3], right: [1, 2]) == 1
+    assert compare_bytes(left: [1, 9], right: [2]) == -1
+
+test "key_less: folders first ascending, last in the key descending, then the name"
+    f = formats.german()
+    folder = entry.Entry(
+        name: "zeta",
+        kind: .directory,
+        size: 0,
+        modified: time.epoch(),
+        type_name: "Folder",
+        opens: true
+    )
+    file = entry.Entry(name: "alpha.txt", kind: .file, size: 9, modified: time.epoch(), type_name: "Text", opens: false)
+    up = by_name()
+    assert key_less(a: key_of(f, e: folder, order: up), b: key_of(f, e: file, order: up))
+    down = Order(column: .size, descending: true)
+    assert key_less(a: key_of(f, e: file, order: down), b: key_of(f, e: folder, order: down))
+
+test "parse_column: every column read back, and an unknown one refused"
+    for c in columns()
+        assert parse_column(column_name(c)).must() == c
+
+    assert parse_column("colour").is_err()

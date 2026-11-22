@@ -1,0 +1,115 @@
+# The text of each row the window's lists show. `ui` has no table of
+# columns yet (its ledger's `ui/table`, pending), so an entry's row is one
+# line of padded columns: its name, a folder's ending in `/` and a link's in
+# `@` as `ls -F` marks them, its size, its type and when it was last
+# written, the numbers and dates in the person's locale. The header above
+# the list names the columns the same way and marks the one the entries are
+# ordered by.
+#
+# Columns are counted in characters, which lines them up in the headless
+# drawing and in a list drawn in a fixed-width font; a proportional font
+# lines up the names alone.
+
+use <rebel>/fs
+use <rebel>/strings
+use <rebel>/time
+
+use locale/formats
+use model/entry
+use model/sorting
+use store/bookmarks
+
+# The characters of the name column.
+constant NAME_WIDTH: i64
+    24
+
+# The characters of the size column.
+constant SIZE_WIDTH: i64
+    10
+
+# The characters of the type column.
+constant TYPE_WIDTH: i64
+    12
+
+# The row of `e`.
+#
+# - `f`: the formats.
+# - `e`: the entry.
+function entry_row(f: formats.Formats, e: entry.Entry) -> str
+    marked = match e.kind
+        .directory     => e.name + "/"
+        .link          => e.name + "@"
+        .file | .other => e.name
+
+    size = if e.opens
+        "--"
+    else
+        formats.size_text(f, size: e.size)
+
+    return f"{column(marked, width: NAME_WIDTH)}  {strings.pad_start(s: size, width: SIZE_WIDTH, pad: " ")}  {column(e.type_name, width: TYPE_WIDTH)}  {formats.date_text(f, t: e.modified)}"
+
+# `s` padded with spaces to `width` characters, or cut to it with `…` at its
+# end.
+#
+# - `s`: the text.
+# - `width`: the characters, 2 or more.
+function column(s: str, width: i64) -> str
+    letters = s.chars()
+
+    if letters.len() > width
+        return letters.slice(from: 0, to: width - 1).join("") + "…"
+
+    return strings.pad_end(s: s, width: width, pad: " ")
+
+# The header over the entries, the column they are ordered by marked `▲`
+# ascending and `▼` descending.
+#
+# - `order`: the order.
+function header(order: sorting.Order) -> str
+    name = column(title_of(.name, order: order), width: NAME_WIDTH)
+    size = strings.pad_start(s: title_of(.size, order: order), width: SIZE_WIDTH, pad: " ")
+    type_title = column(title_of(.type, order: order), width: TYPE_WIDTH)
+    return f"{name}  {size}  {type_title}  {title_of(.modified, order: order)}"
+
+# A column's title, marked where the entries are ordered by it.
+#
+# - `c`: the column.
+# - `order`: the order.
+function title_of(c: sorting.Column, order: sorting.Order) -> str
+    title = match c
+        .name     => "Name"
+        .size     => "Size"
+        .type     => "Type"
+        .modified => "Modified"
+
+    if order.column != c
+        return title
+
+    if order.descending
+        return title + " ▼"
+
+    return title + " ▲"
+
+# A bookmark's row: its name, and `(missing)` where its folder is not there.
+#
+# - `b`: the bookmark.
+function bookmark_row(b: bookmarks.Bookmark) -> str
+    if fs.is_dir(b.folder).default(false)
+        return b.name
+
+    return b.name + " (missing)"
+
+test "column: a short text padded, a long one cut by characters with an ellipsis"
+    assert column("ab", width: 4) == "ab  "
+    assert column("crème brûlée", width: 6) == "crème…"
+
+test "header: the column in use marked by its direction"
+    up = header(sorting.by_name())
+    assert strings.has_prefix(s: up, prefix: "Name ▲ ")
+    down = header(sorting.Order(column: .size, descending: true))
+    assert strings.contains(s: down, substr: "Size ▼")
+
+test "entry_row: a folder marked, its size a dash, the date in German"
+    f = formats.german()
+    e = entry.Entry(name: "docs", kind: .directory, size: 0, modified: time.epoch(), type_name: "Folder", opens: true)
+    assert entry_row(f, e: e) == "docs/                             --  Folder        01.01.1970, 01:00"

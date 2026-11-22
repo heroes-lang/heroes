@@ -1,0 +1,387 @@
+# Copying and moving entries into a folder, a step at a time, so the window
+# stays alive while it runs and the person can cancel it. A copy is planned
+# first: every folder, file and link under each entry, in the order a walk
+# meets them, with the bytes of the whole; each step then copies up to a
+# budget of bytes, a large file across many steps with its two streams kept
+# open between them. A move is one step per entry, since `fs.move` renames
+# on one volume at once and copies across two whole.
+#
+# What is copied keeps the times and the permission bits of its original
+# (`fs.copy_facts`, the three Python's `shutil.copystat` gives), a folder's
+# times set once everything in it is written. A name taken in the folder is given a free one beside
+# it, never replaced; a folder is never copied or moved into itself. A copy
+# cancelled or failed keeps the entries it finished and removes the file it
+# was in the middle of, since half a file is no copy.
+
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path as paths
+
+use ops/names
+use ops/undo
+
+# The most bytes one read asks for.
+constant READ_SIZE: i64
+    65536
+
+# One thing a copy makes.
+record Item
+    # The original.
+    from: str
+    # The copy's path.
+    to: str
+    # What it is: a folder is made, a link made again, a file's bytes copied.
+    kind: fs.Kind
+    # The file's size in bytes, 0 for the rest.
+    size: i64
+    # The index in `Plan.tops` of the entry it belongs to.
+    top: i64
+
+# What a copy or a move will do.
+record Plan
+    # Each entry and where it goes.
+    tops: [undo.Pair]
+    # Everything a copy makes, each folder before what it holds; for a move,
+    # one item per entry.
+    items: [Item]
+    # The bytes of every file a copy makes; for a move, 0.
+    bytes: i64
+
+# A copy or a move under way.
+record Transfer
+    # What it does.
+    plan: Plan
+    # The index of the item in hand.
+    at: i64
+    # The original of the file in hand, open while it is being copied.
+    reading: [io.Stream]
+    # The copy of the file in hand, open while it is being written.
+    writing: [io.Stream]
+    # The bytes copied so far.
+    copied: i64
+
+# The plan of copying `sources` into `into`.
+#
+# - `sources`: the entries' paths.
+# - `into`: the folder they are copied into.
+#
+# Fails `invalid` where a folder would be copied into itself or `into` is no
+# folder, and as `fs.walk` fails on a folder that cannot be read.
+function plan_copy(sources: [str], into: str) -> Plan?
+    refuse_into_itself(sources, into: into)?
+    tops: [undo.Pair] @= []
+    items: [Item] @= []
+    total @= 0
+    taken: [str] @= []
+
+    for source in sources
+        top = tops.len()
+        name = free_beside(into: into, wanted: paths.name(source)?, taken: taken)
+        taken @ taken.push(name)
+        target = paths.join_all([into, name])
+        tops @ tops.push(undo.Pair(from: source, to: target))
+        own = fs.link_info(source)?
+        items @ items.push(Item(from: source, to: target, kind: own.kind, size: size_of(own), top: top))
+        total @ total + size_of(own)
+
+        if own.kind == .directory
+            for e in fs.walk(source)?
+                facts = fs.link_info(paths.join_all([source, e.name]))?
+                items @ items.push(
+                    Item(from: paths.join_all([source, e.name]), to: paths.join_all([target, e.name]), kind: facts.kind, size: size_of(facts), top: top)
+                )
+                total @ total + size_of(facts)
+
+    return ok(Plan(tops: tops, items: items, bytes: total))
+
+# The plan of moving `sources` into `into`; an entry already in `into` is
+# left where it is.
+#
+# - `sources`: the entries' paths.
+# - `into`: the folder they move into.
+#
+# Fails `invalid` where a folder would move into itself or `into` is no
+# folder.
+function plan_move(sources: [str], into: str) -> Plan?
+    refuse_into_itself(sources, into: into)?
+    tops: [undo.Pair] @= []
+    items: [Item] @= []
+    taken: [str] @= []
+
+    for source in sources
+        if paths.is_same(path: paths.parent(source), other: into)
+            continue
+
+        name = free_beside(into: into, wanted: paths.name(source)?, taken: taken)
+        taken @ taken.push(name)
+        target = paths.join_all([into, name])
+        items @ items.push(Item(from: source, to: target, kind: fs.link_info(source)?.kind, size: 0, top: tops.len()))
+        tops @ tops.push(undo.Pair(from: source, to: target))
+
+    return ok(Plan(tops: tops, items: items, bytes: 0))
+
+# A name free in `into` and among the names this plan gives already.
+#
+# - `into`: the folder.
+# - `wanted`: the entry's own name.
+# - `taken`: the names the plan gives already.
+function free_beside(into: str, wanted: str, taken: [str]) -> str
+    name @= names.free_name(folder: into, wanted: wanted)
+
+    while holds(taken, name: name)
+        p = names.parts_of(name)
+        name @ names.free_name(folder: into, wanted: names.numbered(p, n: p.number + 1))
+
+    return name
+
+# Whether `xs` holds `name`.
+#
+# - `xs`: the names.
+# - `name`: the name.
+function holds(xs: [str], name: str) -> bool
+    for x in xs
+        if x == name
+            return true
+
+    return false
+
+# The bytes a copy reads for an entry: a file's size, nothing for the rest.
+#
+# - `facts`: the entry's own facts.
+function size_of(facts: fs.Info) -> i64
+    if facts.kind == .file
+        return facts.size
+
+    return 0
+
+# Refuses a plan that would put a folder inside itself.
+#
+# - `sources`: the entries.
+# - `into`: the folder they go into.
+#
+# Fails `invalid` where `into` is one of `sources` or stands under one, or
+# is no folder.
+function refuse_into_itself(sources: [str], into: str) -> ()?
+    if !fs.is_dir(into).default(false)
+        return fail(code: "invalid", msg: f"\"{into}\" is not a folder")
+
+    for source in sources
+        if paths.is_under(path: into, root: source)
+            return fail(code: "invalid", msg: f"\"{source}\" cannot go inside itself")
+
+    return ok()
+
+# A transfer of `plan` that has done nothing yet.
+#
+# - `plan`: the plan.
+function start(plan: Plan) -> Transfer
+    no_streams: [io.Stream] = []
+    return Transfer(plan: plan, at: 0, reading: no_streams, writing: no_streams, copied: 0)
+
+# Whether the transfer has done every item.
+#
+# - `t`: the transfer.
+function is_done(t: Transfer) -> bool
+    return t.at >= t.plan.items.len()
+
+# Copies up to `budget` bytes, whole folders and links and the next pieces
+# of files, and answers how many bytes it copied.
+#
+# - `t`: the transfer; it moves on.
+# - `budget`: the most bytes a step copies, 1 or more; a step makes at most
+#   that many entries as well, so a tree of empty files moves on too.
+#
+# When the last item is done, the folders take their originals' times. Fails
+# where the disk refuses an item, with its code; the file in hand is then
+# removed and `t` stands on it.
+function step_copy(@t: Transfer, budget: i64) -> i64?
+    spent @= 0
+    made @= 0
+
+    while spent < budget && made < budget && !is_done(t)
+        item = t.plan.items[t.at]
+
+        match item.kind
+            .directory =>
+                fs.make_dir(item.to)?
+                t.at @ t.at + 1
+                made @ made + 1
+            .link =>
+                fs.symlink(target: fs.read_link(item.from)?, name: item.to)?
+                t.at @ t.at + 1
+                made @ made + 1
+            .file | .other =>
+                if t.reading.len() == 0
+                    t.reading @ [fs.open(item.from)?]
+                    t.writing @ [fs.create(item.to)?]
+
+                want = if budget - spent < READ_SIZE
+                    budget - spent
+                else
+                    READ_SIZE
+
+                piece = io.read(t.reading[0], n: want)?
+
+                if piece.len() == 0
+                    close_streams(@t)?
+                    fs.copy_facts(from: item.from, to: item.to)?
+                    t.at @ t.at + 1
+                    made @ made + 1
+                else
+                    io.write(t.writing[0], data: piece)?
+                    spent @ spent + piece.len()
+                    t.copied @ t.copied + piece.len()
+
+    if is_done(t)
+        finish_folders(t.plan)?
+
+    return ok(spent)
+
+# Gives each folder the copy made the times of its original, the deepest
+# first, once nothing more is written into them.
+#
+# - `plan`: the plan.
+#
+# Fails as `fs.copy_facts` fails.
+function finish_folders(plan: Plan) -> ()?
+    at @= plan.items.len() - 1
+
+    while at >= 0
+        item = plan.items[at]
+
+        if item.kind == .directory
+            fs.copy_facts(from: item.from, to: item.to)?
+
+        at @ at - 1
+
+    return ok()
+
+# Closes the two streams of the file in hand.
+#
+# - `t`: the transfer; its streams are let go.
+#
+# Fails as `io.close` fails on the copy, whose last bytes the system may
+# report it could not write.
+function close_streams(@t: Transfer) -> ()?
+    if t.reading.len() > 0
+        held @= t.reading[0]
+        _ = io.close(@held).is_err()
+
+    t.reading @ []
+
+    if t.writing.len() > 0
+        held @= t.writing[0]
+        t.writing @ []
+        io.close(@held)?
+
+    return ok()
+
+# Stops the copy where it stands: the streams closed, the file in hand
+# removed. Answers the pairs of the entries copied whole, for Undo.
+#
+# - `t`: the transfer; it stays where it stopped.
+function stop_copy(@t: Transfer) -> [undo.Pair]
+    open_file = t.reading.len() > 0
+    _ = close_streams(@t).is_err()
+
+    if open_file && !is_done(t)
+        _ = fs.remove(t.plan.items[t.at].to).is_err()
+
+    return whole_tops(t)
+
+# The pairs of the entries whose every item is done.
+#
+# - `t`: the transfer.
+function whole_tops(t: Transfer) -> [undo.Pair]
+    out: [undo.Pair] @= []
+
+    for i in range(from: 0, to: t.plan.tops.len())
+        if top_done(t, top: i)
+            out @ out.push(t.plan.tops[i])
+
+    return out
+
+# Whether every item of the entry `top` is done.
+#
+# - `t`: the transfer.
+# - `top`: the entry's index in the plan's tops.
+function top_done(t: Transfer, top: i64) -> bool
+    for i in range(from: t.at, to: t.plan.items.len())
+        if t.plan.items[i].top == top
+            return false
+
+    return true
+
+# Moves the next entry, and answers whether one moved.
+#
+# - `t`: the transfer; it moves on by one entry.
+#
+# Fails as `fs.move` fails, `t` standing on the entry it could not move.
+function step_move(@t: Transfer) -> bool?
+    if is_done(t)
+        return ok(false)
+
+    item = t.plan.items[t.at]
+    fs.move(from: item.from, to: item.to)?
+    t.at @ t.at + 1
+    return ok(true)
+
+# The pairs of the entries moved so far, for Undo.
+#
+# - `t`: the transfer.
+function moved_so_far(t: Transfer) -> [undo.Pair]
+    return t.plan.tops.slice(from: 0, to: t.at)
+
+test "holds and free_beside: a name the plan gives already is not given twice"
+    assert holds(["a", "b"], name: "b")
+    assert !holds([], name: "a")
+
+test "whole_tops: an entry is whole once no item of it is left"
+    items = [
+        Item(from: "a", to: "x/a", kind: .directory, size: 0, top: 0)
+        Item(from: "a/f", to: "x/a/f", kind: .file, size: 3, top: 0)
+        Item(from: "b", to: "x/b", kind: .file, size: 2, top: 1)
+    ]
+    tops = [undo.Pair(from: "a", to: "x/a"), undo.Pair(from: "b", to: "x/b")]
+    t @= start(Plan(tops: tops, items: items, bytes: 5))
+    t.at @ 2
+    assert whole_tops(t) == [undo.Pair(from: "a", to: "x/a")]
+    t.at @ 3
+    assert whole_tops(t).len() == 2 && is_done(t)
+
+test "plan_copy and step_copy: a folder copied a budget at a time, its times kept, a second copy beside it named free, and a folder refused inside itself"
+    base = "build/explorer-tests/transfer"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base + "/src/inner").must()
+    fs.make_dir_all(base + "/dst").must()
+    write_file(path: base + "/src/inner/a.txt", text: "0123456789").must()
+    plan = plan_copy([base + "/src"], into: base + "/dst").must()
+    assert plan.bytes == 10 && plan.items.len() == 3
+    t @= start(plan)
+    steps @= 0
+
+    while !is_done(t)
+        _ = step_copy(@t, budget: 4).must()
+        steps @ steps + 1
+
+    assert steps > 2
+    assert read_file(base + "/dst/src/inner/a.txt").must() == "0123456789"
+    assert fs.info(base + "/dst/src/inner/a.txt").must().written == fs.info(base + "/src/inner/a.txt").must().written
+    second = plan_copy([base + "/src"], into: base + "/dst").must()
+    assert second.tops[0].to == base + "/dst/src 2"
+    assert plan_copy([base + "/src"], into: base + "/src/inner").is_err()
+    fs.remove_all(base).must()
+
+test "plan_move and step_move: an entry already in the folder stays, another moves"
+    base = "build/explorer-tests/move"
+    _ = fs.remove_all(base).is_err()
+    fs.make_dir_all(base + "/to").must()
+    write_file(path: base + "/a.txt", text: "a").must()
+    write_file(path: base + "/to/b.txt", text: "b").must()
+    plan = plan_move([base + "/a.txt", base + "/to/b.txt"], into: base + "/to").must()
+    assert plan.tops.len() == 1
+    t @= start(plan)
+    assert step_move(@t).must()
+    assert !step_move(@t).must()
+    assert fs.exists(base + "/to/a.txt").must()
+    fs.remove_all(base).must()

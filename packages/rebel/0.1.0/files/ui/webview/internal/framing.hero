@@ -1,0 +1,128 @@
+# The framing the bridge's `heroes.invoke` and `heroes.on` speak over its
+# two directions of texts (`hero_ui.h`, THE BRIDGE): a call the page sends
+# is `{"heroes":1,"id":N,"call":NAME,"args":ARGS}`, and the program answers
+# it with `{"heroes":1,"id":N,"ok":VALUE}` or refuses it with
+# `{"heroes":1,"id":N,"error":{"code":CODE,"msg":MSG}}`; an event the
+# program sends unasked is `{"heroes":1,"event":NAME,"data":DATA}`. The
+# script in the page reads the program's side; this module reads the page's
+# and writes the program's, so neither side builds JSON by hand.
+
+use json
+
+# The framing's own number, which every framed text carries as `heroes`, so
+# a text of the program's own protocol is never read as a call.
+constant VERSION: i64
+    1
+
+# The most a call's number may be: every integer up to it is exactly a
+# JSON number, which the page reads as a double.
+constant ID_MOST: i64
+    9007199254740991
+
+# A call the page made: its number, which the answer names, the name it
+# called, and its arguments.
+record Call
+    # The page's number for it, 1 to `ID_MOST`.
+    id: i64
+    # The name called, not empty.
+    name: str
+    # The arguments, `null` where the page gave none.
+    args: json.Value
+
+# The call `text` holds. Fails `invalid` where it is no JSON object with
+# `heroes` 1, an integer `id` from 1 to `ID_MOST` and a `call` that is a
+# text not empty, saying which.
+function parse(text: str) -> Call?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: "invalid", msg: f"the text is no JSON: {e.msg}")
+
+    if json.kind_of(v) != "object"
+        return fail(code: "invalid", msg: f"the text is a JSON {json.kind_of(v)}, and a call is an object")
+    version = json.member(v, key: "heroes")
+
+    if version.is_err() || json.int_of(version.must()).default(0) != VERSION
+        return fail(code: "invalid", msg: "the text carries no `\"heroes\": 1`, so it is no framed call")
+
+    id = match json.member(v, key: "id")
+        .ok n =>
+            match json.int_of(n)
+                .ok i  => i
+                .err _ => return fail(code: "invalid", msg: "the call's `id` is no integer")
+        .err _ => return fail(code: "invalid", msg: "the call has no `id`")
+
+    if id < 1 || id > ID_MOST
+        return fail(code: "invalid", msg: f"the call's `id` is {id}; it is 1 to {ID_MOST}")
+
+    name = match json.member(v, key: "call")
+        .ok n =>
+            match json.text_of(n)
+                .ok t  => t
+                .err _ => return fail(code: "invalid", msg: "the call's `call` is no text")
+        .err _ => return fail(code: "invalid", msg: "the text has no `call`, so it is no call")
+
+    if name.len() == 0
+        return fail(code: "invalid", msg: "the call names nothing")
+    given = json.member(v, key: "args").default(.null_value)
+    return ok(Call(id: id, name: name, args: given))
+
+# The text that answers `call` with `value`. Fails `unsupported` where
+# `value` holds a `nan` or an infinity, which JSON has no form for.
+function answer(call: Call, value: json.Value) -> str?
+    members: {str: json.Value} @= {}
+    members["heroes"] @ number(VERSION)
+    members["id"] @ number(call.id)
+    members["ok"] @ value
+    return json.format(.object(members: members))
+
+# The text that refuses `call` with `code` and the words `msg`.
+function refusal(call: Call, code: str, msg: str) -> str
+    told: {str: json.Value} @= {}
+    told["code"] @ .text(v: code)
+    told["msg"] @ .text(v: msg)
+    members: {str: json.Value} @= {}
+    members["heroes"] @ number(VERSION)
+    members["id"] @ number(call.id)
+    members["error"] @ .object(members: told)
+
+    # Numbers and texts alone, which JSON always has a form for.
+    return json.format(.object(members: members)).must()
+
+# The text of the event `name` with `data`. Fails `invalid` where `name` is
+# empty, `unsupported` where `data` holds a `nan` or an infinity.
+function event(name: str, data: json.Value) -> str?
+    if name.len() == 0
+        return fail(code: "invalid", msg: "an event names something")
+    members: {str: json.Value} @= {}
+    members["heroes"] @ number(VERSION)
+    members["event"] @ .text(v: name)
+    members["data"] @ data
+    return json.format(.object(members: members))
+
+# `n` as a JSON number; every value this module gives is at most `ID_MOST`,
+# which a double holds exactly.
+function number(n: i64) -> json.Value
+    return .number(v: n.to_f64())
+
+## Tests
+
+test "parse: a call with arguments, one without, and its number at the most"
+    c = parse("{\"heroes\":1,\"id\":7,\"call\":\"card.add\",\"args\":{\"title\":\"x\"}}").must()
+    assert c.id == 7
+    assert c.name == "card.add"
+    assert json.text_of(json.member(c.args, key: "title").must()).must() == "x"
+    bare = parse("{\"heroes\":1,\"id\":1,\"call\":\"boards\"}").must()
+    assert json.is_null(bare.args)
+    assert parse("{\"heroes\":1,\"id\":9007199254740991,\"call\":\"a\"}").must().id == ID_MOST
+
+test "parse: no JSON, a list, another version, no id, a fraction, zero, past the most, no call, an empty one"
+    for bad in ["hello", "[1]", "{\"heroes\":2,\"id\":1,\"call\":\"a\"}", "{\"id\":1,\"call\":\"a\"}", "{\"heroes\":1,\"call\":\"a\"}", "{\"heroes\":1,\"id\":1.5,\"call\":\"a\"}", "{\"heroes\":1,\"id\":0,\"call\":\"a\"}", "{\"heroes\":1,\"id\":9007199254740992,\"call\":\"a\"}", "{\"heroes\":1,\"id\":1}", "{\"heroes\":1,\"id\":1,\"call\":\"\"}", "{\"heroes\":1,\"id\":1,\"call\":3}"]
+        assert parse(bad).is_err()
+
+test "answer, refusal and event: the texts the bridge's script reads, in their order"
+    c = Call(id: 3, name: "x", args: .null_value)
+    assert answer(c, value: .boolean(v: true)).must() == "{\"heroes\":1,\"id\":3,\"ok\":true}"
+    assert refusal(c, code: "not_found", msg: "no card \"9\"") == "{\"heroes\":1,\"id\":3,\"error\":{\"code\":\"not_found\",\"msg\":\"no card \\\"9\\\"\"}}"
+    assert event("board.changed", data: .number(v: 2.0)).must() == "{\"heroes\":1,\"event\":\"board.changed\",\"data\":2}"
+    assert event("", data: .null_value).is_err()
+    assert answer(c, value: .number(v: 0.0 / 0.0)).is_err()

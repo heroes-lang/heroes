@@ -1,0 +1,174 @@
+# The statistics of a data series, by `stats`, which answers what Python's
+# `statistics` answers to the last bit: the means, the median and the mode,
+# the variances and deviations of a sample and of a population, quantiles,
+# and the covariance, correlations and fitted line of two series.
+#
+# A mean or a median of exact numbers is computed exactly here, so
+# `mean([1, 2])` is `3/2`; every other statistic, and any series holding a
+# float, goes to `stats` as floats.
+
+use <rebel>/stats
+
+use eval/value
+use eval/vectors
+use numbers/arith
+use numbers/scalar
+
+# The statistics of one series this module answers.
+constant ONE_SERIES: [str]
+    [
+        "mean"
+        "median"
+        "mode"
+        "var"
+        "sd"
+        "pvar"
+        "psd"
+        "gmean"
+        "hmean"
+    ]
+
+# The statistics of two series this module answers.
+constant TWO_SERIES: [str]
+    [
+        "cov"
+        "corr"
+        "spearman"
+        "linreg"
+    ]
+
+# Whether `name` is in `names`.
+#
+# - `name`: the name.
+# - `names`: the list.
+function listed(name: str, names: [str]) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+# Whether `name` is a statistic of one series.
+#
+# - `name`: the built-in's name.
+function is_one_series(name: str) -> bool
+    return listed(name, names: ONE_SERIES)
+
+# Whether `name` is a statistic of two series.
+#
+# - `name`: the built-in's name.
+function is_two_series(name: str) -> bool
+    return listed(name, names: TWO_SERIES)
+
+# Whether every number of `ns` is exact.
+#
+# - `ns`: the numbers.
+function all_exact(ns: [scalar.Number]) -> bool
+    for n in ns
+        if !scalar.is_exact(n)
+            return false
+
+    return true
+
+# The statistic `name` of the series `v`.
+#
+# - `name`: a name of `ONE_SERIES`.
+# - `v`: a vector of real numbers.
+#
+# Fails `invalid` where the series is empty, too short, or holds what the
+# statistic cannot read, as `stats` says; `does_not_fit` past the largest
+# float.
+function one_series(name: str, v: value.Value) -> value.Value?
+    ns = value.numbers_of(v, what: f"{name}'s data")?
+
+    if (name == "mean" || name == "median") && all_exact(ns) && ns.len() > 0
+        return exact_centre(name, ns: ns, v: v)
+    xs = value.finite_floats_of(v, what: f"{name}'s data")?
+
+    x = match name
+        "mean"   => stats.mean(xs)?
+        "median" => stats.median(xs)?
+        "mode"   => stats.mode(xs)?
+        "var"    => stats.variance(xs)?
+        "sd"     => stats.standard_deviation(xs)?
+        "pvar"   => stats.population_variance(xs)?
+        "psd"    => stats.population_standard_deviation(xs)?
+        "gmean"  => stats.geometric_mean(xs)?
+        "hmean"  => stats.harmonic_mean(xs)?
+        _        => return fail(code: value.INVALID, msg: f"`{name}` is no statistic of one series")
+
+    return ok(value.of_real(x))
+
+# The exact mean or median of the exact numbers `ns`.
+#
+# - `name`: `mean` or `median`.
+# - `ns`: the numbers, at least one, all exact.
+# - `v`: the same series as a value, for sorting.
+function exact_centre(name: str, ns: [scalar.Number], v: value.Value) -> value.Value?
+    count = scalar.of_int(ns.len())
+
+    if name == "mean"
+        s = value.number_of(vectors.total(v)?, what: "the sum").must()
+        return ok(.number(value: arith.divide(a: s, b: count).must()))
+    ordered = value.numbers_of(vectors.sorted(v)?, what: "the data").must()
+    middle = ns.len() / 2
+
+    if ns.len() % 2 == 1
+        return ok(.number(value: ordered[middle]))
+    both = arith.add(a: ordered[middle - 1], b: ordered[middle])
+    return ok(.number(value: arith.divide(a: both, b: scalar.of_int(2)).must()))
+
+# The cut points dividing the series `v` into `parts` parts of equal
+# probability, Python's `quantiles` with its exclusive method: `parts` less
+# one of them.
+#
+# - `v`: a vector of real numbers, at least two.
+# - `parts`: 2 or more; 4 gives the quartiles, 100 the percentiles.
+#
+# Fails `invalid` where the series is too short or `parts` below 2.
+function quantiles(v: value.Value, parts: value.Value) -> value.Value?
+    xs = value.finite_floats_of(v, what: "quantiles' data")?
+    return ok(value.of_floats(stats.quantiles(xs, parts: value.int_of(parts, what: "quantiles' parts")?)?))
+
+# The statistic `name` of the paired series `x` and `y`; `linreg` answers
+# `[slope, intercept]`.
+#
+# - `name`: a name of `TWO_SERIES`.
+# - `x`: a vector of real numbers.
+# - `y`: a vector of real numbers of the same length.
+#
+# Fails `invalid` as `stats` does: lengths that differ, fewer than two
+# pairs, a constant series.
+function two_series(name: str, x: value.Value, y: value.Value) -> value.Value?
+    xs = value.finite_floats_of(x, what: f"{name}'s first series")?
+    ys = value.finite_floats_of(y, what: f"{name}'s second series")?
+
+    if name == "linreg"
+        line = stats.linear_regression(x: xs, y: ys)?
+        return ok(value.of_floats([line.slope, line.intercept]))
+
+    answer = match name
+        "cov"      => stats.covariance(x: xs, y: ys)?
+        "corr"     => stats.correlation(x: xs, y: ys)?
+        "spearman" => stats.rank_correlation(x: xs, y: ys)?
+        _          => return fail(code: value.INVALID, msg: f"`{name}` is no statistic of two series")
+
+    return ok(value.of_real(answer))
+
+test "one_series: exact mean and median of whole numbers, Python's variance of floats"
+    v = value.of_numbers([scalar.of_int(1), scalar.of_int(2), scalar.of_int(4), scalar.of_int(5)])
+    assert one_series("mean", v: v).must() == .number(value: arith.divide(a: scalar.of_int(3), b: scalar.of_int(1)).must())
+    assert one_series("median", v: v).must() == value.of_int(3)
+    assert one_series("var", v: value.of_floats([2.75, 1.75, 1.25, 0.25, 0.5, 1.25, 3.5])).must() == value.of_real(1.372_023_809_523_809_5)
+    assert one_series("sd", v: value.of_floats([1.0])).is_err()
+    assert one_series("mean", v: .vector(items: [])).is_err()
+
+test "quantiles and two_series: the quartiles, a fitted line, lengths that differ"
+    q = quantiles(
+        v: value.of_floats([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]),
+        parts: value.of_int(4)
+    ).must()
+    assert q == value.of_floats([2.75, 5.5, 8.25])
+    fit = two_series("linreg", x: value.of_floats([1.0, 2.0, 3.0]), y: value.of_floats([2.0, 4.0, 6.0])).must()
+    assert fit == value.of_floats([2.0, 0.0])
+    assert two_series("corr", x: value.of_floats([1.0, 2.0]), y: value.of_floats([1.0])).is_err()

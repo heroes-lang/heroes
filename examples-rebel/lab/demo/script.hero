@@ -1,0 +1,50 @@
+# The demo's script: the edits made to the notebook after its first run, as
+# a person makes them in an editor, and the lines typed at the REPL after
+# them. Each edit replaces one cell's text whole.
+#
+# The first edit changes the parameters of the sample: the cells reading
+# them run again, a cell that failed on a division by zero now succeeds, and
+# every other cell keeps its outcome. The second makes the parameters read
+# a name the summary defines, a circle of cells none of which can run.
+
+# One edit: a cell's text replaced.
+record Edit
+    # The cell edited.
+    cell: str
+    # Its new text.
+    source: str
+
+# The edits, in the order they are made.
+function edits() -> [Edit]
+    return [
+        Edit(cell: "params", source: "n = 1000\nmu = 12\nsigma = 3")
+        Edit(cell: "params", source: "n = round(m)\nmu = 12\nsigma = 3")
+    ]
+
+# The lines typed at the REPL.
+function repl_lines() -> [str]
+    return [
+        "1/3 + 1/4"
+        "x = 2^64"
+        "x - 1"
+        "B = [1, 2; 3, 4]"
+        "B^3"
+        "inv(B)"
+        "eig(B)"
+        ":funcs"
+        "sq(t) = t^2"
+        "map(sq, [1/2, 2, 3i])"
+        ":vars"
+        ":funcs"
+        "1 + * 2"
+        "nowhere(2)"
+        "sq(1, 2)"
+        ":bench sum(1:1000)"
+        ":quit"
+    ]
+
+test "edits and repl_lines: two edits of the parameters, the session ending with :quit"
+    assert edits().len() == 2
+    assert edits()[0].cell == "params"
+    lines = repl_lines()
+    assert lines[lines.len() - 1] == ":quit"

@@ -1,0 +1,156 @@
+# Where a project keeps its catalogues, and how one is read and written.
+#
+# Under the folder the settings name (`locales` by default) stand the
+# template `<domain>.pot`, which `extract` writes, one `<tag>.po` for each
+# locale, which `merge`, `import` and people write, and the compiled `.mo`
+# files `compile` writes where gettext's own lookup looks for them
+# (`catalog/compile`).
+#
+# A catalogue is read from its bytes: the charset its header declares is
+# honoured, so an old catalogue in ISO-8859-2 reads right, and its header is
+# made to say UTF-8 then, since every catalogue is written back in UTF-8.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+
+use catalog/messages
+use formats/text_decode
+use project/config
+
+## Codes
+
+# The code of a catalogue that does not parse.
+constant INVALID: str
+    "invalid"
+
+## Paths
+
+# The path of the project's template, `locales/shop.pot`.
+#
+# - `p`: the project.
+function template_path(p: config.Project) -> str
+    return path.join_all([p.catalogs, p.domain + ".pot"])
+
+# The path of the catalogue of the locale `tag`, `locales/de.po`.
+#
+# - `p`: the project.
+# - `tag`: the locale's canonical tag.
+function catalog_path(p: config.Project, tag: str) -> str
+    return path.join_all([p.catalogs, tag + ".po"])
+
+## The settings
+
+# The project whose settings file stands in the working folder.
+#
+# Fails `file_not_found` where there is none, and as `config.parse_project`
+# fails.
+function load_project() -> config.Project?
+    text = match read_file(config.FILE_NAME)
+        .ok t  => t
+        .err e => return fail(code: e.code, msg: f"no {config.FILE_NAME} here: {e.msg}; `l10n init` writes one")
+
+    return config.parse_project(text)
+
+## Reading and writing
+
+# A catalogue read from a file, and the encoding its bytes were in.
+record Loaded
+    # The catalogue, its texts in UTF-8.
+    catalog: i18n.Catalog
+    # The encoding the file was in, by the WHATWG standard's name.
+    encoding: str
+    # How that encoding was found, as `text_decode.Decoded.how` says.
+    how: str
+
+# The catalogue in the `.po` file `file`, in the charset its header declares.
+#
+# - `file`: the path.
+#
+# Fails as `fs.read_bytes` fails, as `text_decode.decode_text` fails, and
+# `invalid` where the text is not a `.po` file, the message naming the file.
+function read_po(file: str) -> Loaded?
+    data = fs.read_bytes(file)?
+    decoded = text_decode.decode_text(data, declared: text_decode.declared_charset(data).default(""))?
+
+    catalog = match i18n.parse_po(decoded.text)
+        .ok c  => c
+        .err e => return fail(code: INVALID, msg: f"{file} is not a gettext catalogue: {e.msg}")
+
+    if decoded.encoding == "UTF-8"
+        return ok(Loaded(catalog: catalog, encoding: decoded.encoding, how: decoded.how))
+
+    fields = messages.with_field(
+        messages.header_fields(catalog),
+        name: "Content-Type",
+        value: "text/plain; charset=UTF-8"
+    )
+    return ok(Loaded(catalog: with_header(catalog, fields: fields)?, encoding: decoded.encoding, how: decoded.how))
+
+# The catalogue in `file`, or an empty one with no header where nothing is
+# there yet.
+#
+# - `file`: the path.
+#
+# Fails as `read_po` fails on a file that is there.
+function read_po_or_empty(file: str) -> i18n.Catalog?
+    if !fs.exists(file).default(false)
+        return i18n.new_catalog([])
+
+    return ok(read_po(file)?.catalog)
+
+# Writes `catalog` to `file` as a `.po` file in UTF-8, making its folder.
+#
+# - `file`: the path.
+# - `catalog`: the catalogue.
+#
+# Fails as `fs.make_dir_all` and `write_file` fail.
+function write_po(file: str, catalog: i18n.Catalog) -> ()?
+    fs.make_dir_all(path.parent(file))?
+    write_file(path: file, text: i18n.format_po(catalog))?
+    return ok()
+
+# `catalog` with a header holding `fields` in place of its own, or first
+# where it had none, its comments kept.
+#
+# - `catalog`: the catalogue.
+# - `fields`: the header's fields.
+#
+# Fails `invalid` where the fields' `Plural-Forms` does not parse.
+function with_header(catalog: i18n.Catalog, fields: [messages.Field]) -> i18n.Catalog?
+    header = messages.header_message(fields, comments: messages.header_comments(catalog))
+    kept: [i18n.Message] @= [header]
+
+    for m in catalog.messages
+        if !(messages.is_header(m) && !m.obsolete)
+            kept @ kept.push(m)
+
+    return i18n.new_catalog(kept)
+
+# The project's catalogues that are there, by tag, in the settings' order.
+#
+# - `p`: the project.
+#
+# Fails as `read_po` fails on any of them.
+function read_all(p: config.Project) -> {str: i18n.Catalog}?
+    found: {str: i18n.Catalog} @= {}
+
+    for tag in p.locales
+        file = catalog_path(p, tag: tag)
+
+        if fs.exists(file).default(false)
+            found[tag] @ read_po(file)?.catalog
+
+    return ok(found)
+
+## Tests
+
+test "with_header: a header put first, and replaced without moving"
+    m = i18n.new_message(id: "a", translation: "b")
+    plain = i18n.new_catalog([m]).must()
+    headed = with_header(plain, fields: [messages.Field(name: "Language", value: "de")]).must()
+    assert messages.is_header(headed.messages[0])
+    assert headed.messages.len() == 2
+    again = with_header(headed, fields: [messages.Field(name: "Language", value: "fr")]).must()
+    assert again.messages.len() == 2
+    assert messages.field_value(messages.header_fields(again), name: "Language").must() == "fr"

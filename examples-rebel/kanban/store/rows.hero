@@ -1,0 +1,48 @@
+# The store's records read from SQLite's rows, and the few statements every
+# part of the store shares: one row by its name, and a count. Each reader
+# names the columns it reads, so a statement's column order is the reader's
+# and no one else's.
+
+use <rebel>/sql
+use <rebel>/sql/sqlite
+
+use store/model
+
+# The columns `board_of` reads, in its order.
+constant BOARD_COLUMNS: str
+    "id, title, position, created, updated"
+
+# The columns `column_of` reads, in its order.
+constant COLUMN_COLUMNS: str
+    "id, board, title, position"
+
+# The columns `card_of` reads, in its order.
+constant CARD_COLUMNS: str
+    "number, id, column_id, title, body, position, created, updated"
+
+# The board `row` holds, read as `BOARD_COLUMNS` orders it.
+function board_of(row: sql.Row) -> model.Board?
+    return ok(
+        model.Board(id: sql.text_at(row, index: 0)?, title: sql.text_at(row, index: 1)?, position: sql.integer_at(row, index: 2)?, created: sql.text_at(row, index: 3)?, updated: sql.text_at(row, index: 4)?)
+    )
+
+# The column `row` holds, read as `COLUMN_COLUMNS` orders it.
+function column_of(row: sql.Row) -> model.Column?
+    return ok(
+        model.Column(id: sql.text_at(row, index: 0)?, board: sql.text_at(row, index: 1)?, title: sql.text_at(row, index: 2)?, position: sql.integer_at(row, index: 3)?)
+    )
+
+# The card `row` holds, read as `CARD_COLUMNS` orders it.
+function card_of(row: sql.Row) -> model.Card?
+    return ok(
+        model.Card(number: sql.integer_at(row, index: 0)?, id: sql.text_at(row, index: 1)?, column: sql.text_at(row, index: 2)?, title: sql.text_at(row, index: 3)?, body: sql.text_at(row, index: 4)?, position: sql.integer_at(row, index: 5)?, created: sql.text_at(row, index: 6)?, updated: sql.text_at(row, index: 7)?)
+    )
+
+# The one number `statement` answers with `params`: a count, a greatest
+# place.
+#
+# - `db`: the database.
+# - `statement`: a query answering one row whose first column is an integer.
+# - `params`: its placeholders' values.
+function number(@db: sqlite.Db, statement: str, params: [sql.Value]) -> i64?
+    return sql.integer_at(sqlite.query_one(@db, statement: statement, params: params)?, index: 0)

@@ -1,0 +1,86 @@
+# A table of text for a terminal, its columns aligned by the columns a
+# terminal gives each character (UAX #11), not by bytes or characters: a
+# Japanese character takes two, a combining accent none, so a column of
+# translations in several scripts still lines up.
+
+use <rebel>/unicode/segment
+
+## Tables
+
+# How a column's cells stand in it.
+variant Align
+    # Against its left edge: text.
+    left
+    # Against its right edge: numbers.
+    right
+
+# The lines of a table: the titles, a rule of dashes under each, then the
+# rows, each cell padded to its column's widest, two spaces between columns,
+# no space after the last.
+#
+# - `titles`: the columns' titles.
+# - `align`: how each column's cells stand, one for each title.
+# - `body`: the rows, each as many cells as there are titles.
+#
+# Aborts where `align` or a row has another number of cells than `titles`,
+# which the caller builds.
+function lines_of(titles: [str], align: [Align], body: [[str]]) -> [str]
+    assert align.len() == titles.len()
+    widths @= titles.map(segment.width_of)
+
+    for row in body
+        assert row.len() == titles.len()
+
+        for k in range(from: 0, to: row.len())
+            w = segment.width_of(row[k])
+
+            if w > widths[k]
+                widths[k] @ w
+
+    rules: [str] @= []
+
+    for w in widths
+        rules @ rules.push(repeat("-", to_u64(w).must()))
+
+    lines: [str] @= [line_of(titles, widths: widths, align: align), line_of(rules, widths: widths, align: align)]
+
+    for row in body
+        lines @ lines.push(line_of(row, widths: widths, align: align))
+
+    return lines
+
+# One line of a table.
+#
+# - `cells`: its cells.
+# - `widths`: each column's width.
+# - `align`: each column's alignment.
+function line_of(cells: [str], widths: [i64], align: [Align]) -> str
+    parts: [str] @= []
+
+    for k in range(from: 0, to: cells.len())
+        last = k == cells.len() - 1
+
+        cell = match align[k]
+            .right => segment.pad_start_columns(s: cells[k], width: widths[k], pad: " ")
+            .left =>
+                if last
+                    cells[k]
+                else
+                    segment.pad_end_columns(s: cells[k], width: widths[k], pad: " ")
+
+        parts @ parts.push(cell)
+
+    return parts.join("  ")
+
+## Tests
+
+test "lines_of: widths by the terminal's columns, numbers to the right"
+    lines = lines_of(
+        ["locale", "text", "n"],
+        align: [.left, .left, .right],
+        body: [["ja", "保存", "7"], ["de", "Speichern", "12"]]
+    )
+    assert lines[0] == "locale  text        n"
+    assert lines[1] == "------  ---------  --"
+    assert lines[2] == "ja      保存        7"
+    assert lines[3] == "de      Speichern  12"

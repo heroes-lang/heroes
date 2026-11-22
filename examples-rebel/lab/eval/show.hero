@@ -1,0 +1,143 @@
+# A value written as the lines a transcript shows: a number as
+# `numbers/text` writes it, a vector on one line, its middle elided past
+# `MOST_ITEMS`, and a matrix as aligned rows between brackets, laid out by
+# `term.format_table` so the columns line up by the cells each entry takes.
+
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/term
+
+use eval/value
+use linalg/matrix
+use numbers/text
+
+# The most elements a vector shows in full; past it, its first ten, its last
+# two and its count.
+constant MOST_ITEMS: i64
+    16
+
+# The most rows a matrix shows in full; past it, its shape alone.
+constant MOST_ROWS: i64
+    24
+
+# The lines `v` is shown as: none for nothing, one for most values, a line
+# per row for a matrix.
+#
+# - `v`: the value.
+function lines_of(v: value.Value) -> [str]
+    return match v
+        .nothing                                   => []
+        .matrix m                                  => matrix_lines(m.value)
+        .plot p                                    => [plot_line(p.value)]
+        .callable c                                => [f"function {c.name}"]
+        .number _ | .truth _ | .text _ | .vector _ => [inline(v)]
+
+# `v` on one line, as an element of a vector is written.
+#
+# - `v`: the value.
+function inline(v: value.Value) -> str
+    return match v
+        .number n   => text.format(n.value)
+        .truth b    => b.value.to_str()
+        .text t     => quoted(t.value)
+        .vector xs  => vector_text(xs.items)
+        .matrix m   => f"[a matrix of {m.value.rows} by {m.value.cols}]"
+        .callable c => c.name
+        .plot p     => p.value.file
+        .nothing    => "nothing"
+
+# `s` between double quotes, a quote and a backslash in it escaped, as the
+# language would read it back.
+#
+# - `s`: the text.
+function quoted(s: str) -> str
+    escaped = strings.replace_all(s: strings.replace_all(s: s, old: "\\", new: "\\\\"), old: "\"", new: "\\\"")
+    return "\"" + escaped + "\""
+
+# The elements of a vector between brackets, the middle elided where there
+# are more than `MOST_ITEMS`.
+#
+# - `items`: the elements.
+function vector_text(items: [value.Value]) -> str
+    parts: [str] @= []
+
+    if items.len() <= MOST_ITEMS
+        for item in items
+            parts @ parts.push(inline(item))
+
+        return "[" + parts.join(", ") + "]"
+
+    for item in items.slice(from: 0, to: 10)
+        parts @ parts.push(inline(item))
+
+    parts @ parts.push("...")
+
+    for item in items.slice(from: items.len() - 2, to: items.len())
+        parts @ parts.push(inline(item))
+
+    return "[" + parts.join(", ") + f"] ({items.len()} elements)"
+
+# The rows of `m`, each between brackets, its columns aligned to the right.
+#
+# - `m`: the matrix.
+function matrix_lines(m: matrix.Matrix) -> [str]
+    if m.rows > MOST_ROWS || m.cols > MOST_ROWS
+        return [f"[a matrix of {m.rows} by {m.cols}]"]
+    rows: [[str]] @= []
+
+    for r in range(from: 0, to: m.rows)
+        row: [str] @= []
+
+        for x in matrix.row_of(m, row: r)
+            row @ row.push(text.format(x))
+
+        rows @ rows.push(row)
+
+    aligns: [term.Align] @= []
+
+    for _ in range(from: 0, to: m.cols)
+        aligns @ aligns.push(.right)
+
+    laid = term.format_table(term.Table(header: [], rows: rows, align: aligns, border: .none))
+    out: [str] @= []
+
+    for line in strings.lines(laid)
+        if line != ""
+            out @ out.push("[ " + line + " ]")
+
+    return out
+
+# What the transcript says of a plot: its file, its size in pixels and in
+# bytes, and the CRC-32 of its bytes; never its folder.
+#
+# - `p`: the plot.
+function plot_line(p: value.Plot) -> str
+    crc = numbers.format_u64(to_u64(p.crc).must(), base: 16)
+    size = numbers.group_digits(s: p.size.to_str(), sep: ",", size: 3)
+    return f"plot {p.file}: {p.width}x{p.height}, {size} bytes, crc32 {strings.pad_start(s: crc, width: 8, pad: "0")}"
+
+test "lines_of: a number, a text, a vector, nothing"
+    assert lines_of(value.of_int(3)) == ["3"]
+    assert lines_of(.text(value: "a\"b")) == ["\"a\\\"b\""]
+    assert lines_of(.vector(items: [value.of_int(1), value.of_real(0.5)])) == ["[1, 0.5]"]
+    assert lines_of(.nothing) == []
+
+test "vector_text: a long vector elided, its count said"
+    items: [value.Value] @= []
+
+    for k in range(from: 1, to: 21)
+        items @ items.push(value.of_int(k))
+
+    assert vector_text(items) == "[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, ..., 19, 20] (20 elements)"
+
+test "matrix_lines: columns aligned right, each row between brackets"
+    m = matrix.make(
+        rows: 2,
+        cols: 2,
+        cells: [value.number_of(value.of_int(1), what: "x").must(), value.number_of(value.of_int(-20), what: "x").must(), value.number_of(value.of_int(300), what: "x").must(), value.number_of(value.of_int(4), what: "x").must()]
+    ).must()
+    assert matrix_lines(m) == ["[   1  -20 ]", "[ 300    4 ]"]
+
+test "plot_line: the size grouped, the CRC in eight hex digits"
+    p = value.Plot(file: "a.png", title: "a", width: 640, height: 400, size: 12_345, crc: 0x0a0b0c0d)
+    assert plot_line(p) == "plot a.png: 640x400, 12,345 bytes, crc32 0a0b0c0d"

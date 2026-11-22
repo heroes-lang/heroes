@@ -1,0 +1,80 @@
+# The explorer run for a person: the settings read, the locale chosen, the
+# bookmarks loaded, a window of the system's own widgets opened on the
+# folder asked for, and the window's loop run until the person closes it.
+# The folder is made absolute first, so the path bar, the bookmarks and the
+# trash's notes name it the same from wherever the explorer is started.
+#
+# Only the system's own widgets are asked for: a headless window nobody can
+# see would be no file manager, so a system `ui` has no native side for yet
+# is told so, and the program ends.
+
+use <rebel>/fs
+use <rebel>/path as paths
+use <rebel>/time
+use <rebel>/ui
+
+use app/controller
+use app/events
+use locale/formats
+use model/clock
+use model/explorer
+use store/bookmarks
+use store/settings
+
+# The longest the loop waits for the person between two looks at the
+# timer, in milliseconds.
+constant WAIT_MS: i64
+    100
+
+# Opens the explorer on `start` and runs it until its window is closed.
+#
+# - `start`: the folder shown first.
+# - `settings_path`: the settings file; empty for the person's own.
+# - `locale`: a locale's tag the command line gave; empty for the settings'
+#   or the environment's.
+#
+# Fails where the settings are refused, `start` is no folder, or the system
+# offers no native window (`unsupported`, `exists`), with `ui`'s code.
+function run(start: str, settings_path: str, locale: str) -> ()?
+    file = if settings_path == ""
+        settings.settings_file()
+    else
+        settings_path
+
+    s = settings.read(file, base: settings.defaults())?
+
+    tag = if locale != ""
+        locale
+    else
+        s.locale
+
+    f = if tag == ""
+        formats.system_formats()
+    else
+        formats.formats_of(tag, zone: time.local_zone().default(time.utc_zone()))?
+
+    folder = paths.clean(fs.to_abs(start)?)
+
+    if !fs.is_dir(folder).default(false)
+        return fail(code: "not_a_directory", msg: f"\"{start}\" is not a folder")
+
+    marks = bookmarks.load(s.bookmarks)?
+    ex = explorer.open_at(folder, s: s, f: f, c: clock.system_clock(), b: marks)?
+
+    app = match ui.open(.native)
+        .ok a => a
+        .err x =>
+            if x.code == ui.UNSUPPORTED
+                return fail(code: x.code, msg: f"this system has no native window for the explorer yet: {x.msg}")
+
+            return fail(code: x.code, msg: x.msg)
+
+    c @= controller.new_controller(app, ex: ex)?
+    within = time.milliseconds(WAIT_MS)?
+
+    while !c.done
+        if !events.step(@c, within: within)
+            break
+
+    controller.stop(@c)
+    return ok()

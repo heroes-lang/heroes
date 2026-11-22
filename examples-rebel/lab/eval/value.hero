@@ -1,0 +1,296 @@
+# The values a lab expression has: a number of the tower (`numbers/scalar`),
+# a truth, a text, a vector of values, a matrix of numbers, a function by
+# its name, a plot written to a file, or nothing (what defining a function
+# shows).
+#
+# A function is held by its name alone, never as a closure: a user function
+# reads the notebook's names when it is called, so a cell that changes `a`
+# changes what `f(x) = a * x` answers, as the dependency graph promises.
+#
+# The readers here (`number_of`, `floats_of`, `matrix_of`, ...) are how a
+# built-in takes its arguments: each fails `invalid` naming what the
+# argument is for and what it was given instead.
+
+use <rebel>/math
+
+use linalg/matrix
+use numbers/scalar
+
+# The code of an argument of the wrong kind.
+constant INVALID: str
+    "invalid"
+
+# A plot a cell wrote: what the transcript says of it, never its folder, so
+# the transcript reads the same wherever the plots go.
+record Plot
+    # The file's name, `spread.png`.
+    file: str
+    # Its title, drawn at its top.
+    title: str
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+    # Its size in bytes.
+    size: i64
+    # The CRC-32 of its bytes.
+    crc: u32
+
+# A value of the lab's language.
+variant Value
+    # A number.
+    number
+        # Its value.
+        value: scalar.Number
+    # `true` or `false`.
+    truth
+        # Which.
+        value: bool
+    # A text.
+    text
+        # Its characters.
+        value: str
+    # A list of values, most often of numbers: a data series.
+    vector
+        # The elements, in order.
+        items: [Value]
+    # A matrix of numbers.
+    matrix
+        # Its value.
+        value: matrix.Matrix
+    # A function, user-defined or built in, named.
+    callable
+        # Its name.
+        name: str
+    # A plot written by a cell.
+    plot
+        # What was written.
+        value: Plot
+    # No value: what a definition shows.
+    nothing
+
+# The name of `v`'s kind, as `type` answers it and messages name it.
+#
+# - `v`: the value.
+function kind_name(v: Value) -> str
+    return match v
+        .number n   => scalar.kind_name(n.value)
+        .truth _    => "boolean"
+        .text _     => "text"
+        .vector _   => "vector"
+        .matrix _   => "matrix"
+        .callable _ => "function"
+        .plot _     => "plot"
+        .nothing    => "nothing"
+
+# The whole number `n` as a value.
+#
+# - `n`: any `i64`.
+function of_int(n: i64) -> Value
+    return .number(value: scalar.of_int(n))
+
+# The real `x` as a value.
+#
+# - `x`: any float.
+function of_real(x: f64) -> Value
+    return .number(value: scalar.of_real(x))
+
+# The vector of the reals `xs`.
+#
+# - `xs`: the floats.
+function of_floats(xs: [f64]) -> Value
+    items: [Value] @= []
+
+    for x in xs
+        items @ items.push(of_real(x))
+
+    return .vector(items: items)
+
+# The vector of the numbers `ns`.
+#
+# - `ns`: the numbers.
+function of_numbers(ns: [scalar.Number]) -> Value
+    items: [Value] @= []
+
+    for n in ns
+        items @ items.push(.number(value: n))
+
+    return .vector(items: items)
+
+# The failure saying `what` takes `wanted` and was given `v`.
+#
+# - `what`: what the value is for, `sqrt's argument`.
+# - `wanted`: what it takes, `a number`.
+# - `v`: what it was given.
+function refusal<T>(what: str, wanted: str, v: Value) -> T?
+    return fail(code: INVALID, msg: f"{what} is {wanted}, not a {kind_name(v)}")
+
+# The number `v` holds.
+#
+# - `v`: the value.
+# - `what`: what it is for, for the message.
+#
+# Fails `invalid` where `v` is not a number.
+function number_of(v: Value, what: str) -> scalar.Number?
+    match v
+        .number n => return ok(n.value)
+        .truth _ | .text _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing => return refusal(
+            what: what,
+            wanted: "a number",
+            v: v
+        )
+
+# The float `v` holds, an exact number rounded.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is not a real number.
+function float_of(v: Value, what: str) -> f64?
+    n = number_of(v, what: what)?
+
+    match scalar.float_of(n)
+        .ok x  => return ok(x)
+        .err _ => return fail(code: INVALID, msg: f"{what} is a real number, not a complex one")
+
+# The `i64` `v` holds, where it is a whole number that fits.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is not a whole number.
+function int_of(v: Value, what: str) -> i64?
+    return scalar.int_of(number_of(v, what: what)?, what: what)
+
+# The truth `v` holds.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is not a truth.
+function truth_of(v: Value, what: str) -> bool?
+    match v
+        .truth b => return ok(b.value)
+        .number _ | .text _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return refusal(what: what, wanted: "true or false", v: v)
+
+# The text `v` holds.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is not a text.
+function text_of(v: Value, what: str) -> str?
+    match v
+        .text t => return ok(t.value)
+        .number _ | .truth _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return refusal(what: what, wanted: "a text", v: v)
+
+# The numbers of the vector `v`, or of a matrix row after row, or the one
+# number `v` is.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is no number, or holds an element that is none.
+function numbers_of(v: Value, what: str) -> [scalar.Number]?
+    match v
+        .number n => return ok([n.value])
+        .matrix m => return ok(m.value.cells)
+        .vector items =>
+            out: [scalar.Number] @= []
+
+            for item in items.items
+                match item
+                    .number n => out @ out.push(n.value)
+                    .truth _ | .text _ | .vector _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+                        return fail(code: INVALID, msg: f"{what} holds numbers, and one element is a {kind_name(item)}")
+
+            return ok(out)
+        .truth _ | .text _ | .callable _ | .plot _ | .nothing => return refusal(
+            what: what,
+            wanted: "a vector of numbers",
+            v: v
+        )
+
+# The floats of `v`, as `numbers_of` reads it, every exact number rounded.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `numbers_of` does, or an element is complex.
+function floats_of(v: Value, what: str) -> [f64]?
+    out: [f64] @= []
+
+    for n in numbers_of(v, what: what)?
+        match scalar.float_of(n)
+            .ok x  => out @ out.push(x)
+            .err _ => return fail(code: INVALID, msg: f"{what} holds real numbers, and one is complex")
+
+    return ok(out)
+
+# The floats of `v` with no nan among them, for a statistic or a plot.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` as `floats_of` does, or where an element is a nan.
+function finite_floats_of(v: Value, what: str) -> [f64]?
+    xs = floats_of(v, what: what)?
+
+    for x in xs
+        if math.is_nan(x)
+            return fail(code: INVALID, msg: f"{what} holds a nan")
+
+    return ok(xs)
+
+# The matrix `v` is: a matrix itself, a vector as one column, a number as a
+# matrix of one entry.
+#
+# - `v`: the value.
+# - `what`: what it is for.
+#
+# Fails `invalid` where `v` is none of these, or a vector holds an element
+# that is no number.
+function matrix_of(v: Value, what: str) -> matrix.Matrix?
+    match v
+        .matrix m => return ok(m.value)
+        .number n => return matrix.make(rows: 1, cols: 1, cells: [n.value])
+        .vector _ =>
+            ns = numbers_of(v, what: what)?
+
+            if ns.len() == 0
+                return fail(code: INVALID, msg: f"{what} is a matrix, not an empty vector")
+            return matrix.make(rows: ns.len(), cols: 1, cells: ns)
+        .truth _ | .text _ | .callable _ | .plot _ | .nothing => return refusal(what: what, wanted: "a matrix", v: v)
+
+# `m` as a value: a vector where it is one column, so `solve(A, b)` with a
+# vector `b` answers a vector.
+#
+# - `m`: the matrix.
+# - `as_vector`: whether a matrix of one column is answered as a vector.
+function of_matrix(m: matrix.Matrix, as_vector: bool) -> Value
+    if as_vector && m.cols == 1
+        return of_numbers(m.cells)
+    return .matrix(value: m)
+
+test "number_of and float_of: a number, a complex refused as a float, a text refused"
+    assert number_of(of_int(3), what: "x").must() == scalar.of_int(3)
+    assert float_of(.number(value: scalar.of_parts(re: 1.0, im: 1.0)), what: "x").is_err()
+
+    match float_of(.text(value: "a"), what: "sqrt's argument")
+        .ok _  => assert false
+        .err e => assert e.msg == "sqrt's argument is a number, not a text"
+
+test "numbers_of and floats_of: a vector, a number, a matrix, a stray element"
+    v: Value = .vector(items: [of_int(1), of_real(2.5)])
+    assert floats_of(v, what: "data").must() == [1.0, 2.5]
+    assert floats_of(of_int(4), what: "data").must() == [4.0]
+    assert numbers_of(.vector(items: [of_int(1), .truth(value: true)]), what: "data").is_err()
+    assert finite_floats_of(of_floats([1.0, math.NAN]), what: "data").is_err()
+
+test "matrix_of and of_matrix: a vector as a column, a column back as a vector"
+    m = matrix_of(.vector(items: [of_int(1), of_int(2)]), what: "b").must()
+    assert m.rows == 2 && m.cols == 1
+    assert of_matrix(m, as_vector: true) == .vector(items: [of_int(1), of_int(2)])
+    assert matrix_of(.vector(items: []), what: "b").is_err()
