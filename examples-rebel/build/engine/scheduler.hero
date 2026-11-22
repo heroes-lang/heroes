@@ -4,19 +4,25 @@
 # up to `jobs` at once. A failed step stops the build: no step starts after
 # it, and the steps already running are waited for and told, as ninja does.
 #
-# Steps are collected in the order they started. The runtime answers
-# nothing about a thread but its wait (the `threads` ledger keeps
-# `thread/is-finished` pending), so the scheduler cannot take whichever
-# step ends first; it waits for the oldest, and a slot a younger step has
-# freed is filled only once the older ones end. What that buys is an
-# account that is the same on every run whatever the timing, `[k/n]` lines
-# and their outputs in one order, which ninja gives only at `-j 1`.
+# Each worker sends its step's ticket on one mailbox as it ends, and the
+# scheduler takes whichever ended first and waits for that thread alone, so
+# a slot a quick step frees is filled at once with the next step ready,
+# however long an older step runs (feature 2668). What an ended step
+# changes, its `[k/n]` line and output, its record in the log, the steps it
+# unblocks, a failure's stop, is applied in the order the steps started: so
+# a build that succeeds prints the same account, `[k/n]` lines and their
+# outputs in one order, on every run, which ninja gives only at `-j 1`. A
+# failure can find steps running that a build of one slot would not have
+# started; they are waited for and told, as ninja does.
 #
 # Where the program caught Ctrl-C (`os.catch_stop`), the stop it asks is
 # taken as a failure is: nothing more starts, and what runs is collected.
+# The stop also makes the mailbox, once empty, answer `stopped` from then on
+# (spec § 11), and the workers still running are then waited for by their
+# threads, in the order they started.
 #
-# A step's record goes to the log as it is collected, so a build stopped by
-# a failure, or killed, keeps every step it finished; a failed step's record
+# A step's record goes to the log as it is applied, so a build stopped by a
+# failure, or killed, keeps every step it applied; a failed step's record
 # is forgotten, so its target runs again however its output was left.
 
 use <rebel>/graphs
@@ -24,6 +30,7 @@ use <rebel>/os
 use <rebel>/threads
 
 use engine/forecast
+use engine/inflight
 use engine/prepare
 use engine/report
 use engine/step
@@ -61,19 +68,6 @@ record Outcome
     # a thread refused; absent where nothing of the kind happened.
     problem: str?
 
-# A step running.
-record Flight
-    # Its node's number in the sorter.
-    node: i64
-    # The step.
-    step: prepare.Prepared
-    # Why it runs.
-    reason: str
-    # The digest of each of its inputs as it started.
-    inputs: {str: str}
-    # The worker running it, which answers the step's outcome.
-    thread: (thread step.Done)
-
 # An outcome of nothing yet.
 function nothing_yet() -> Outcome
     return Outcome(
@@ -97,39 +91,6 @@ function slots_of(asked: i64) -> i64
         return 1
     return asked
 
-# The step `st` started on a worker.
-#
-# - `st`: the step.
-# - `reason`: why it runs.
-# - `node`: its node's number.
-# - `cache`: the files seen, which gives its inputs' digests.
-# - `root`: the build's folder.
-#
-# Fails `limit` where the system refuses a thread.
-function launch(st: prepare.Prepared, reason: str, node: i64, @cache: {str: content.Seen}, root: str) -> Flight?
-    inputs: {str: str} @= {}
-
-    for name in st.inputs
-        match content.digest_in(content.seen(@cache, root: root, name: name))
-            .ok d  => inputs[name] @ d
-            .err _ => _ = 0
-
-    depfile_place: str? = match st.depfile
-        .ok d  => ok(paths.disk(root: root, name: d))
-        .err _ => st.depfile
-
-    order = step.Order(
-        output: st.output,
-        place: paths.disk(root: root, name: st.output),
-        words: st.words,
-        dir: root,
-        env: st.env,
-        depfile: depfile_place,
-        time_limit: st.time_limit
-    )
-    t = step.start(order)?
-    return ok(Flight(node: node, step: st, reason: reason, inputs: inputs, thread: t))
-
 # The log's entry of a step that succeeded.
 #
 # - `fl`: the step.
@@ -137,7 +98,7 @@ function launch(st: prepare.Prepared, reason: str, node: i64, @cache: {str: cont
 # - `cache`: the files seen; this takes the output's new digest, and the
 #   digest of each file its depfile named.
 # - `root`: the build's folder.
-function entry_of(fl: Flight lent, d: step.Done lent, @cache: {str: content.Seen}, root: str) -> log.Entry
+function entry_of(fl: inflight.Flight lent, d: step.Done lent, @cache: {str: content.Seen}, root: str) -> log.Entry
     output = fl.step.output
     digest = d.digest.default("")
     cache[output] @ .file(digest: digest)
@@ -182,7 +143,15 @@ function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepar
     # a slice would copy the rest each time.
     queue: [i64] @= []
     head @= 0
-    flights: [Flight] @= []
+
+    # The steps started and not yet applied, in the order they started; the
+    # outcome of each that ended, by ticket; how many workers run; the next
+    # ticket; and the mailbox every worker sends its ticket on as it ends.
+    flights: [inflight.Flight] @= []
+    outcomes: {i64: step.Done} @= {}
+    running @= 0
+    tickets @= 0
+    ended: (mailbox i64) = mailbox()
     coming: {str: bool} @= {}
     told @= 0
     expected @= fc.stale
@@ -241,13 +210,16 @@ function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepar
                                 print(report.status_line(told: told, expected: expected, s: st, verbose: s.verbose))
                                 graphs.done(@sorter, node).must()
                                 moved @ true
-                            else if flights.len() >= slots
+                            else if running >= slots
                                 break
                             else
                                 head @ head + 1
 
-                                match launch(st, reason: why.reason, node: node, @cache, root: s.root)
-                                    .ok fl => flights @ flights.push(fl)
+                                match inflight.launch(st, reason: why.reason, node: node, @cache, root: s.root, ticket: tickets, ended: ended)
+                                    .ok fl =>
+                                        flights @ flights.push(fl)
+                                        running @ running + 1
+                                        tickets @ tickets + 1
                                     .err e =>
                                         out.problem @ ok(f"the step of {name} could not start: {e.msg}")
                                         stopped @ true
@@ -258,9 +230,15 @@ function run(f: buildfile.BuildFile lent, p: plan.Plan lent, steps: {str: prepar
         if flights.len() == 0
             break
 
+        if outcomes[flights[0].ticket].is_err()
+            # The oldest step runs on: take whichever step ends next, so its
+            # slot is filled at the loop's top, and apply nothing yet.
+            running @ running - inflight.waited_one(flights, @outcomes, ended: ended)
+            continue
+
         fl = flights[0]
         flights @ flights.slice(from: 1, to: flights.len())
-        d = fl.thread.wait()
+        d = outcomes[fl.ticket].must()
         told @ told + 1
         name = fl.step.output
 

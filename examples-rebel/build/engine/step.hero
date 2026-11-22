@@ -196,14 +196,57 @@ function run(o: Order) -> Done
         duration: since(began)
     )
 
-# A worker thread started on `o`, which answers what `run` answers.
+# What a worker is handed, whole: its order, and where it says it has
+# ended.
+record Work
+    # The order.
+    order: Order
+    # The step's number among those the build started, which the worker
+    # sends on `ended` as it ends.
+    ticket: i64
+    # The scheduler's mailbox of steps that ended.
+    ended: (mailbox i64)
+
+# The body of a worker thread: the order run, then its ticket sent on
+# `ended`, so the scheduler learns which of its workers ended first without
+# waiting on any of them (feature 2668). Answers what `run` answers.
+#
+# - `w`: the order, its ticket and the mailbox.
+function work(w: Work) -> Done
+    d = run(w.order)
+
+    # A send fails only once the mailbox has answered a stop; the scheduler
+    # then waits for its workers by their threads alone.
+    _ = w.ended.send(w.ticket).is_err()
+    return d
+
+# A worker thread started on `o`, which sends `ticket` on `ended` as it ends
+# and answers what `run` answers.
 #
 # - `o`: the order, handed to the worker whole.
+# - `ticket`: the step's number among those the build started.
+# - `ended`: the scheduler's mailbox of steps that ended.
 #
 # Fails `limit` where the system, or the runtime's bound of threads running
 # at once, refuses a thread.
-function start(o: Order) -> (thread Done)?
-    return spawn(run, o)
+function start(o: Order, ticket: i64, ended: (mailbox i64)) -> (thread Done)?
+    return spawn(work, Work(order: o, ticket: ticket, ended: ended))
+
+test "start: a worker sends its ticket as it ends, and its outcome comes back whole"
+    ended: (mailbox i64) = mailbox()
+    o = Order(
+        output: "o",
+        place: "o",
+        words: ["/no/such/program/of/the/build"],
+        dir: ".",
+        env: {"LANG": "C"},
+        depfile: fail(code: "not_found", msg: "no depfile"),
+        time_limit: fail(code: "not_found", msg: "no limit")
+    )
+    t = start(o, ticket: 7, ended: ended).must()
+    assert ended.receive(within_ms: 60000).must() == 7
+    d = t.wait()
+    assert !d.succeeded && d.digest.is_err() && d.ended.slice(from: 0, to: 14) == "did not start:"
 
 test "program_of: a name stays, an absolute path stays, a relative path is read from the build's folder"
     assert program_of(word: "mill", dir: "demo") == "mill"
