@@ -208,6 +208,15 @@ jobs:
       - name: generators/unicode_encodings, the WHATWG Encoding Standard's tables of unicode/encodings
         run: ./heroes run generators/unicode_encodings/main.hero -- check
 
+      # `generators/brotli/main.hero`'s `SOURCE_URL`; the generator holds the
+      # text to its `SOURCE_SHA256` itself.
+      - name: generators/brotli, RFC 7932's dictionary, transforms and context tables of compress/brotli
+        run: |
+          mkdir -p build/generators
+          curl --fail --location --silent --show-error -o build/generators/rfc7932.txt \
+            https://www.rfc-editor.org/rfc/rfc7932.txt
+          ./heroes run generators/brotli/main.hero -- check build/generators/rfc7932.txt
+
       # The tests of `generators/tablekit/`, the package every generator
       # writes its tables with. A generator's own tests are left to whoever
       # changes it: `heroes test` runs every test its program reaches, Rebel's

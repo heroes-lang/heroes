@@ -1,9 +1,13 @@
 # The static dictionary of Brotli, RFC 7932 Appendix A: 122,784 bytes of
-# words, as hexadecimal text in pieces of 4,000 characters. The table is
-# data, made and not typed: a one-off program read the RFC's text
-# (https://www.rfc-editor.org/rfc/rfc7932.txt, fetched 2026-11-18), held
+# words, as hexadecimal text in pieces of 4,000 characters.
+#
+# Generated, never edited by hand: the Heroes program `generators/brotli/`
+# read the RFC's text (https://www.rfc-editor.org/rfc/rfc7932.txt, SHA-256
+# 394abd1879e016f4eac89512c2acaf92f7b2d67feb8ab58b6b118c213be07146,
+# fetched 2026-11-22), held
 # the bytes to the length and CRC-32 (0x5136cb04) the appendix gives, and
-# wrote this module whole. Nothing here is edited by hand.
+# wrote this module whole; its `check` command says whether this module is
+# still what it writes.
 
 use bytes
 
