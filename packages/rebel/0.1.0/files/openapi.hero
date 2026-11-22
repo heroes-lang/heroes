@@ -2136,17 +2136,24 @@ function route_name_of(endpoint: Endpoint) -> str
     return endpoint.method + " " + endpoint.path
 
 # Adds to `router` a route for every operation of `doc`, named by
-# `route_name_of`, under the path of its first server: the operation's, else
-# its path item's, else the document's, each variable at its default, so
-# `/pets` of a server `https://api.example.com/v1` is `/v1/pets`.
+# `route_name_of`, at the path a client asks for it: the operation's path
+# under the path of its first server, the operation's, else its path item's,
+# else the document's, each variable at its default, so `/pets` of a server
+# `https://api.example.com/v1` is `/v1/pets`.
 #
-# - `router`: the router, which gains the routes.
+# - `router`: a router of `web.new_router`, or a group of `web.new_group`,
+#   which gains the routes. In a group each route joins the group and keeps
+#   its path, which stands under the group's prefix: a group of `/v1` takes
+#   `/v1/pets` as its `/pets`, so `web.is_in_group` tells the document's
+#   routes and the steps a program gives the group reach them.
 # - `doc`: the document.
 #
-# Fails as `pattern_of` and `web.add` do, adding the routes before the one
-# that fails.
+# Fails `invalid` where an operation's path does not stand under the group's
+# prefix segment for segment, and as `pattern_of` and `web.add` do; it adds
+# none of the routes then. See also `add_site_routes`.
 function add_routes(@router: web.Router, doc: Document) -> ()?
     none: {str: str} = {}
+    grown @= router
 
     for e in operations_of(doc)
         servers: [Server] @= e.operation.servers
@@ -2160,8 +2167,10 @@ function add_routes(@router: web.Router, doc: Document) -> ()?
 
         if servers.len() > 0
             prefix @ routes.base_path(server_url(servers[0], values: none)?)
-        web.add(@router, method: e.method, pattern: pattern_of(prefix + e.path)?, name: route_name_of(e))?
+        whole = pattern_of(prefix + e.path)?
+        web.add(@grown, method: e.method, pattern: routes.rest_under(whole: whole, prefix: router.prefix)?, name: route_name_of(e))?
 
+    router @ grown
     return ok()
 
 ## Requests and responses validated
@@ -2439,24 +2448,29 @@ function new_site(doc: Document, title: str) -> Site?
 
 # Adds to `router` a `GET` route for each path of `site` that is not "",
 # named `ROUTE_DOCUMENT_JSON`, `ROUTE_DOCUMENT_YAML`, `ROUTE_SWAGGER_UI` and
-# `ROUTE_REDOC`.
+# `ROUTE_REDOC`, at that path.
 #
-# - `router`: the router, which gains the routes.
+# - `router`: a router of `web.new_router`, or a group of `web.new_group`,
+#   which gains the routes. In a group each route joins the group and keeps
+#   its path, which stands under the group's prefix, since the pages of
+#   `respond_site` send the browser to the document at `site.json_path`
+#   itself: a group of `/api` takes `/api/openapi.json` as its
+#   `/openapi.json`.
 # - `site`: the site.
 #
-# Fails as `web.add` does.
+# Fails `invalid` where a path of `site` does not stand under the group's
+# prefix segment for segment, and as `web.add` does; it adds none of the
+# routes then. See also `add_routes`.
 function add_site_routes(@router: web.Router, site: Site) -> ()?
-    if site.json_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.json_path, name: ROUTE_DOCUMENT_JSON)?
+    grown @= router
+    paths = [site.json_path, site.yaml_path, site.swagger_ui_path, site.redoc_path]
+    names = [ROUTE_DOCUMENT_JSON, ROUTE_DOCUMENT_YAML, ROUTE_SWAGGER_UI, ROUTE_REDOC]
 
-    if site.yaml_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.yaml_path, name: ROUTE_DOCUMENT_YAML)?
+    for i in range(from: 0, to: paths.len())
+        if paths[i] != ""
+            web.add(@grown, method: http.METHOD_GET, pattern: routes.rest_under(whole: paths[i], prefix: router.prefix)?, name: names[i])?
 
-    if site.swagger_ui_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.swagger_ui_path, name: ROUTE_SWAGGER_UI)?
-
-    if site.redoc_path != ""
-        web.add(@router, method: http.METHOD_GET, pattern: site.redoc_path, name: ROUTE_REDOC)?
+    router @ grown
     return ok()
 
 # Whether `name` is a route `add_site_routes` adds.
@@ -3980,6 +3994,93 @@ test "pattern_of and add_routes: the routes a router takes, under the first serv
     assert web.route(router, r: fixture.request(method: "GET", target: "/v1/pets/mine")).must().name == "myPets"
     assert pattern_of("/files/{name}.json").is_err()
 
+test "add_routes: a group under the server's path, the paths alone under a group, the prefix itself, a group of another path, a deeper group, a failure adding none"
+    doc @= new_document(title: "Notes", version: "1.0.0")
+    doc.servers @ [new_server(url: "/api", description: "")]
+    add_operation(
+        @doc,
+        path: "/notes",
+        method: "GET",
+        operation: new_operation(operation_id: "listNotes", summary: "")
+    ).must()
+    add_operation(
+        @doc,
+        path: "/notes/{slug}",
+        method: "DELETE",
+        operation: new_operation(operation_id: "deleteNote", summary: "")
+    ).must()
+    root @= web.new_router()
+    api @= web.new_group(root, name: "api", prefix: "/api").must()
+    add_routes(@api, doc: doc).must()
+    web.mount(router: @root, group: api).must()
+    found = web.route(root, r: fixture.request(method: "DELETE", target: "/api/notes/a")).must()
+    assert found.name == "deleteNote" && found.pattern == "/api/notes/:slug" && web.is_in_group(found, name: "api")
+    assert web.param_of(found, name: "slug").must() == "a"
+    assert web.route(root, r: fixture.request(method: "GET", target: "/api/api/notes")).is_err()
+
+    bare @= new_document(title: "Notes", version: "1.0.0")
+    add_operation(
+        @bare,
+        path: "/api",
+        method: "GET",
+        operation: new_operation(operation_id: "index", summary: "")
+    ).must()
+    add_operation(
+        @bare,
+        path: "/api/notes",
+        method: "GET",
+        operation: new_operation(operation_id: "listNotes", summary: "")
+    ).must()
+    plain @= web.new_group(web.new_router(), name: "api", prefix: "/api").must()
+    add_routes(@plain, doc: bare).must()
+    assert plain.routes.len() == 2 && plain.routes[0].pattern == "/api" && plain.routes[1].pattern == "/api/notes"
+    assert plain.routes[0].groups == ["api"]
+
+    for prefix in ["/v2", "/ap", "/api/x"]
+        other @= web.new_group(web.new_router(), name: "other", prefix: prefix).must()
+
+        match add_routes(@other, doc: doc)
+            .ok _  => assert false
+            .err e => assert e.code == INVALID && other.routes.len() == 0
+
+    notes @= web.new_group(web.new_router(), name: "notes", prefix: "/api/notes").must()
+    add_routes(@notes, doc: doc).must()
+    assert notes.routes[0].pattern == "/api/notes" && notes.routes[1].pattern == "/api/notes/:slug"
+
+    broken @= doc
+    add_operation(
+        @broken,
+        path: "/files/{name}.json",
+        method: "GET",
+        operation: new_operation(operation_id: "file", summary: "")
+    ).must()
+    whole @= web.new_router()
+
+    match add_routes(@whole, doc: broken)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && whole.routes.len() == 0
+
+test "add_site_routes: a group whose prefix the site's paths stand under, the default site refused by a group"
+    doc = parse(fixture.pets_yaml()).must()
+    site @= new_site(doc, title: "Pets").must()
+    api @= web.new_group(web.new_router(), name: "api", prefix: "/api").must()
+
+    match add_site_routes(@api, site: site)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && api.routes.len() == 0
+
+    site.json_path @ "/api/openapi.json"
+    site.yaml_path @ ""
+    site.swagger_ui_path @ "/api/docs"
+    site.redoc_path @ "/api"
+    add_site_routes(@api, site: site).must()
+    assert api.routes.len() == 3
+    found = web.route(api, r: fixture.request(method: "GET", target: "/api/openapi.json")).must()
+    assert found.name == ROUTE_DOCUMENT_JSON && web.is_in_group(found, name: "api")
+    assert web.route(api, r: fixture.request(method: "GET", target: "/api")).must().name == ROUTE_REDOC
+    page = bytes.to_text(respond_site(site, name: ROUTE_SWAGGER_UI).body).must()
+    assert strings.contains(s: page, substr: "url: \"/api/openapi.json\"")
+
 test "new_site, add_site_routes and respond_site: the document and its two pages"
     doc = parse(fixture.pets_yaml()).must()
     site = new_site(doc, title: "Pets <API>").must()
@@ -4676,6 +4777,24 @@ test "add_routes: a router of the document"
     router @= web.new_router()
     add_routes(@router, doc: doc).must()
     assert router.routes[0].pattern == "/pets/:petId"
+
+# A document's routes in a `web` group, so the group's steps reach them: the
+# server's path is the group's prefix.
+test "add_routes: a document's routes in the group of its server's path"
+    doc @= new_document(title: "Pets", version: "1.0.0")
+    doc.servers @ [new_server(url: "/v1", description: "")]
+    add_operation(
+        @doc,
+        path: "/pets",
+        method: "GET",
+        operation: new_operation(operation_id: "listPets", summary: "")
+    ).must()
+    root @= web.new_router()
+    api @= web.new_group(root, name: "api", prefix: "/v1").must()
+    add_routes(@api, doc: doc).must()
+    web.mount(router: @root, group: api).must()
+    found = web.route(root, r: fixture.request(method: "GET", target: "/v1/pets")).must()
+    assert found.name == "listPets" && web.is_in_group(found, name: "api")
 
 # A document compiled to validate requests.
 test "new_validator: a document's schemas compiled"

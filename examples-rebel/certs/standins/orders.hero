@@ -1,0 +1,205 @@
+# The stand-in CA's orders (RFC 8555 § 7.4): an order placed for
+# identifiers its policy takes (host names under its zone, a wildcard only
+# as the first label, IPv4 and IPv6 addresses by RFC 8738), one
+# authorization made for each with the challenges its kind may be proved
+# by, and an order read by its account.
+
+use <rebel>/dns
+use <rebel>/http
+use <rebel>/json
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+
+use standins/jws
+use standins/objects
+use standins/replies
+
+## Orders
+
+# Days an order or an authorization lasts once made.
+constant PENDING_DAYS: i64
+    7
+
+# `newOrder` (RFC 8555 § 7.4): an order of the request's identifiers, each
+# checked against the CA's policy, one authorization each.
+#
+# - `s`: the state.
+# - `r`: the request.
+function new_order(@s: objects.State, r: http.Request) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    payload = replies.members_of(auth.payload)
+    asked = json.items_of(payload["identifiers"].default(.null_value)).default([])
+
+    if asked.len() == 0 || asked.len() > 100
+        return objects.problem_response(kind: "malformed", detail: "an order names 1 to 100 identifiers")
+    identifiers: [objects.Identifier] @= []
+
+    for item in asked
+        one = replies.members_of_value(item)
+        i = objects.Identifier(
+            kind: json.text_of(one["type"].default(.null_value)).default(""),
+            value: strings.to_lower_ascii(json.text_of(one["value"].default(.null_value)).default(""))
+        )
+
+        match refusal_of(s, i: i)
+            .ok _  => identifiers @ identifiers.push(i)
+            .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    expires = time.add(s.now, d: time.days(PENDING_DAYS).must()).default(s.now)
+    authzs: [i64] @= []
+
+    for i in identifiers
+        authzs @ authzs.push(new_authz(@s, owner: auth.account, i: i, expires: expires))
+
+    made = objects.Order(
+        id: s.orders.len() + 1,
+        account: auth.account,
+        identifiers: identifiers,
+        authzs: authzs,
+        status: "pending",
+        expires: expires,
+        certificate: 0,
+        error: ""
+    )
+    s.orders @ s.orders.push(made)
+    s.counts.orders @ s.counts.orders + 1
+    return replies.located(
+        objects.order_json(s, o: made),
+        status: 201,
+        location: objects.url_of(s, kind: "order", id: made.id)
+    )
+
+# An authorization made for `i`, its challenges by the identifier's kind:
+# HTTP-01 and DNS-01 for a name, DNS-01 alone for a wildcard (RFC 8555
+# § 7.1.3), HTTP-01 alone for an address (RFC 8738 § 7). Answers its id.
+#
+# - `s`: the state.
+# - `owner`: the account's id.
+# - `i`: the order's identifier.
+# - `expires`: when it lapses.
+function new_authz(@s: objects.State, owner: i64, i: objects.Identifier, expires: time.Instant) -> i64
+    wildcard = strings.has_prefix(s: i.value, prefix: "*.")
+
+    proved = if wildcard
+        objects.Identifier(kind: i.kind, value: i.value.slice(from: 2, to: i.value.len()))
+    else
+        i
+
+    kinds = if i.kind == "ip"
+        ["http-01"]
+    else if wildcard
+        ["dns-01"]
+    else
+        ["http-01", "dns-01"]
+
+    challenges: [objects.Challenge] @= []
+
+    for kind in kinds
+        token = objects.drawn_text(@s, count: 32)
+        challenges @ challenges.push(
+            objects.Challenge(id: next_challenge_id(s) + challenges.len(), kind: kind, token: token, status: "pending", error: "")
+        )
+
+    made = objects.Authz(
+        id: s.authzs.len() + 1,
+        account: owner,
+        identifier: proved,
+        wildcard: wildcard,
+        status: "pending",
+        expires: expires,
+        challenges: challenges
+    )
+    s.authzs @ s.authzs.push(made)
+    return made.id
+
+# An order's URL posted to as a GET: the order as it stands.
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the order's id.
+function order(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if id < 1 || id > s.orders.len() || s.orders[id - 1].account != auth.account
+        return objects.missing(detail: "no order of this account is there")
+    return replies.located(objects.order_json(s, o: s.orders[id - 1]), status: 200, location: "")
+
+# Why the CA will not issue for `i`, or nothing: a name it can check under
+# its zone, of labels a host name may have, a wildcard only as its first
+# label; or an IPv4 or IPv6 address.
+#
+# - `s`: the state.
+# - `i`: the identifier asked.
+#
+# Fails `rejectedIdentifier`, `malformed` or `unsupportedIdentifier`.
+function refusal_of(s: objects.State, i: objects.Identifier) -> ()?
+    if i.kind == "ip"
+        match net.parse_host(i.value)
+            .ok _  => return ok()
+            .err _ => return fail(code: "malformed", msg: f"\"{i.value}\" is no IP address")
+
+    if i.kind != "dns"
+        return fail(code: "unsupportedIdentifier", msg: f"this CA issues for dns and ip identifiers, not {i.kind}")
+
+    name = if strings.has_prefix(s: i.value, prefix: "*.")
+        i.value.slice(from: 2, to: i.value.len())
+    else
+        i.value
+
+    if !net.parse_host(name).is_err() || !is_host_name(name)
+        return fail(code: "rejectedIdentifier", msg: f"\"{i.value}\" is no host name")
+
+    if !dns.is_subdomain(name: name + ".", of: s.origin)
+        return fail(
+            code: "rejectedIdentifier",
+            msg: f"this stand-in issues for names under {strings.trim_suffix(s: s.origin, suffix: ".")} alone, not {i.value}"
+        )
+    return ok()
+
+# Whether `name` is a host name: two labels or more, each 1 to 63 letters,
+# digits and `-`, neither first nor last a `-`, 253 bytes at most.
+#
+# - `name`: the name, lowercase.
+function is_host_name(name: str) -> bool
+    if name.len() == 0 || name.len() > 253
+        return false
+    labels = strings.split(s: name, sep: ".")
+
+    if labels.len() < 2
+        return false
+
+    for label in labels
+        if label.len() == 0 || label.len() > 63 || label[0] == '-' || label[label.len() - 1] == '-'
+            return false
+
+        for at in range(from: 0, to: label.len())
+            b = label[at]
+
+            if !(b >= 'a' && b <= 'z' || b >= '0' && b <= '9' || b == '-')
+                return false
+
+    return true
+
+# The id the next challenge made takes: one more than the most made.
+#
+# - `s`: the state.
+function next_challenge_id(s: objects.State) -> i64
+    count @= 0
+
+    for a in s.authzs
+        count @ count + a.challenges.len()
+
+    return count + 1
+
+test "is_host_name: labels of letters, digits and dashes, two at least"
+    assert is_host_name("www.certs.test")
+    assert !is_host_name("localhost")
+    assert !is_host_name("-a.test")
+    assert !is_host_name("a..test")
+    assert !is_host_name("a_b.test")

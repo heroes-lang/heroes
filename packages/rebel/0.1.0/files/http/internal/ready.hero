@@ -1,0 +1,350 @@
+# A request read from what a connection's reader holds and never past it:
+# its head's bytes taken as they come, then its body by its framing, so that
+# a server waiting on many connections with `poll` reads each one as its
+# bytes arrive and waits on none. It reads what `wire.read_bytes`,
+# `body.read` and `body.chunks` read, a byte for a byte, and fails where they
+# fail with their codes and their messages; what they learn by waiting, that
+# the stream has ended, it is told by its caller. Every byte it takes is
+# taken out of the reader, so a peer that sends a request a byte at a time
+# costs a byte of work at a time, and what it keeps is bounded by the limits:
+# the head's bytes, the body's, and one line of a chunked body.
+
+use http/internal/body
+use http/internal/policy
+use http/internal/read
+use http/internal/syntax
+use http/internal/wire
+use io
+
+## The head
+
+# The head of a request begun and not ended: what `wire.read_bytes` holds
+# between two of its reads.
+record Head
+    # The bytes taken so far, the empty lines before its first line among
+    # them.
+    bytes: [u8]
+    # How many bytes the line being read holds, its carriage returns aside.
+    line: i64
+    # Whether a byte other than a line end has been taken, so the first line
+    # has begun.
+    started: bool
+
+# A head of which nothing is taken.
+function no_head() -> Head
+    return Head(bytes: [], line: 0, started: false)
+
+# Takes from `r` what it holds of the head begun in `h`, up to and through
+# its empty line and never past it; true once the head is whole. Fails as
+# `wire.read_bytes` does: `limit` past `most` bytes; where `ended`, the
+# stream having answered its end, `closed` before the first line begins and
+# `invalid` after.
+function gather_head(@r: io.Reader, @h: Head, most: i64, ended: bool) -> bool?
+    held = io.buffered(r)
+
+    if held.len() == 0
+        if !ended
+            return ok(false)
+
+        if !h.started
+            return fail(code: wire.CLOSED, msg: "reading a message: the stream ended before it began")
+        return fail(
+            code: syntax.INVALID,
+            msg: f"reading a message: the stream ended inside its head, after {h.bytes.len()} bytes"
+        )
+    at: i64 @= 0
+    end: i64 @= -1
+
+    while end < 0 && at < held.len()
+        b = held[at]
+        at @ at + 1
+
+        if b == '\n'
+            if h.line == 0 && h.started
+                end @ at
+            h.line @ 0
+        else if b != '\r'
+            h.line @ h.line + 1
+            h.started @ true
+
+    if h.bytes.len() + at > most
+        return fail(code: syntax.LIMIT, msg: f"reading a message: its head is past {most} bytes")
+    taken = io.read_n(@r, n: at)?
+
+    for b in taken
+        h.bytes @ h.bytes.push(b)
+
+    return ok(end >= 0)
+
+## The body
+
+# Where the reading of a body stands.
+variant Stage
+    # The body is whole, or there is none.
+    whole
+    # A body of a known length.
+    length
+        # Its length in bytes.
+        total: i64
+        # The bytes still to come.
+        left: i64
+    # A chunk's size line, being read into `Body.line`.
+    size_line
+    # A chunk's data.
+    data
+        # The chunk's size in bytes.
+        size: i64
+        # The bytes still to come.
+        left: i64
+    # The line end after a chunk's data.
+    data_end
+        # Whether its carriage return is taken.
+        cr: bool
+    # The trailer's field lines, the one being read in `Body.line`.
+    trailer
+        # How many lines are read.
+        count: i64
+
+# A body being read: where its reading stands and what it holds so far.
+record Body
+    # Where it stands.
+    stage: Stage
+    # The body's bytes so far, its chunks joined.
+    content: [u8]
+    # The line of a chunked body being read, its line feed not yet come.
+    line: [u8]
+
+# A body of which nothing is read, standing for none between two requests.
+function no_body() -> Body
+    return Body(stage: .whole, content: [], line: [])
+
+# The reading of the body that follows the request head `h`, nothing read
+# yet. Fails as `body.of_request` and `body.within` do: `invalid` and
+# `unsupported` for a framing the head does not say well, `limit` where its
+# length is past `bounds`.
+function start_body(h: wire.Head, bounds: wire.Bounds) -> Body?
+    framing = body.of_request(h)?
+    body.within(framing, bounds: bounds)?
+
+    stage: Stage = match framing
+        .none    => .whole
+        .to_end  => .whole
+        .chunked => .size_line
+        .length l =>
+            if l.n == 0
+                .whole
+            else
+                .length(total: l.n, left: l.n)
+
+    return ok(Body(stage: stage, content: [], line: []))
+
+# Whether `b` is whole.
+function is_whole(b: Body lent) -> bool
+    return match b.stage
+        .whole                                                      => true
+        .length _ | .size_line | .data _ | .data_end _ | .trailer _ => false
+
+# The line `b.line` ends with the line feed now taken, as `body.text_line`
+# answers it: its carriage return dropped. Fails `invalid` where it holds a
+# carriage return of its own or a zero byte.
+function ended_line(b: Body lent) -> [u8]?
+    line: [u8] @= b.line
+
+    if line.len() > 0 && line[line.len() - 1] == '\r'
+        line @ line.slice(from: 0, to: line.len() - 1)
+
+    for x in line
+        if x == '\r' || x == 0
+            return fail(
+                code: syntax.INVALID,
+                msg: f"reading a chunked body: the line {syntax.shown_bytes(line)} holds a carriage return or a zero byte"
+            )
+
+    return ok(line)
+
+# Takes from `r` what it holds of the body `b` reads, never past its end; true
+# once it is whole. Fails as `body.read` and `body.chunks` do: `limit` past
+# `bounds` or a line past `body.CHUNK_LINE_BYTES`, `invalid` where a chunk is
+# malformed, and, where `ended`, the stream having answered its end, `invalid`
+# where the body is cut short.
+function gather_body(@r: io.Reader, @b: Body, bounds: wire.Bounds, ended: bool) -> bool?
+    held = io.buffered(r)
+    at: i64 @= 0
+    whole: bool @= false
+
+    while !whole && at < held.len()
+        match b.stage
+            .whole => whole @ true
+            .length l =>
+                n = if l.left < held.len() - at
+                    l.left
+                else
+                    held.len() - at
+
+                for k in range(from: at, to: at + n)
+                    b.content @ b.content.push(held[k])
+
+                at @ at + n
+
+                if n == l.left
+                    b.stage @ .whole
+                else
+                    b.stage @ .length(total: l.total, left: l.left - n)
+            .data d =>
+                n = if d.left < held.len() - at
+                    d.left
+                else
+                    held.len() - at
+
+                for k in range(from: at, to: at + n)
+                    b.content @ b.content.push(held[k])
+
+                at @ at + n
+
+                if n == d.left
+                    b.stage @ .data_end(cr: false)
+                else
+                    b.stage @ .data(size: d.size, left: d.left - n)
+            .data_end e =>
+                x = held[at]
+                at @ at + 1
+
+                if x == '\n'
+                    b.stage @ .size_line
+                else if x == '\r' && !e.cr
+                    b.stage @ .data_end(cr: true)
+                else
+                    return fail(
+                        code: syntax.INVALID,
+                        msg: "reading a chunked body: a chunk's data is not followed by a line end"
+                    )
+            .size_line =>
+                x = held[at]
+                at @ at + 1
+
+                if x == '\n'
+                    text = wire.text_of(ended_line(b)?)
+                    size = syntax.hexadecimal(s: syntax.trim_ows(body.strings_before(text, stop: ';')), what: "reading a chunk's size")?
+                    b.line @ []
+
+                    if size > bounds.body_bytes - b.content.len()
+                        return fail(
+                            code: syntax.LIMIT,
+                            msg: f"reading a chunked body: it is past the limit of {bounds.body_bytes} bytes"
+                        )
+
+                    if size == 0
+                        b.stage @ .trailer(count: 0)
+                    else
+                        b.stage @ .data(size: size, left: size)
+                else
+                    b.line @ b.line.push(x)
+
+                    if b.line.len() > body.CHUNK_LINE_BYTES
+                        return fail(
+                            code: syntax.LIMIT,
+                            msg: f"reading a chunked body: a line is past {body.CHUNK_LINE_BYTES} bytes"
+                        )
+            .trailer t =>
+                x = held[at]
+                at @ at + 1
+
+                if x == '\n'
+                    line = ended_line(b)?
+                    b.line @ []
+
+                    if line.len() == 0
+                        b.stage @ .whole
+                    else
+                        count = t.count + 1
+
+                        if count > bounds.field_count
+                            return fail(
+                                code: syntax.LIMIT,
+                                msg: f"reading a chunked body's trailer: it holds more than {bounds.field_count} fields"
+                            )
+                        _ = wire.field_of(line, number: count)?
+                        b.stage @ .trailer(count: count)
+                else
+                    b.line @ b.line.push(x)
+
+                    if b.line.len() > body.CHUNK_LINE_BYTES
+                        return fail(
+                            code: syntax.LIMIT,
+                            msg: f"reading a chunked body: a line is past {body.CHUNK_LINE_BYTES} bytes"
+                        )
+
+    _ = io.skip(@r, n: at)?
+
+    if is_whole(b)
+        return ok(true)
+
+    if !ended
+        return ok(false)
+    return cut_short(b)
+
+# The failure of the body `b` where the stream ended before it was whole, in
+# the words `body.read` and `body.chunks` say it.
+function cut_short(b: Body lent) -> bool?
+    return match b.stage
+        .whole => ok(true)
+        .length l => fail(
+            code: syntax.INVALID,
+            msg: f"reading a body of {l.total} bytes: the stream ended after {l.total - l.left}"
+        )
+        .data d => fail(
+            code: syntax.INVALID,
+            msg: f"reading a chunk of {d.size} bytes: the stream ended after {d.size - d.left}"
+        )
+        .data_end _ => fail(
+            code: syntax.INVALID,
+            msg: "reading a chunked body: a chunk's data is not followed by a line end"
+        )
+        .size_line | .trailer _ => fail(code: syntax.INVALID, msg: "reading a chunked body: the stream ended inside it")
+
+## Between two calls
+
+# Where a connection's next request stands between two calls of the face's
+# `read_ready`.
+record Progress
+    # Its head, while it is not whole.
+    head: Head
+    # Its body, once its head is whole.
+    body: Body
+    # Whether the stream has answered its end.
+    ended: bool
+    # Whether the next call may read the stream once: false right after a
+    # call answered a request, so the call made before waiting again reads
+    # nothing.
+    may_read: bool
+    # Whether every later call fails `closed`: a request that closes the
+    # connection was answered, or a call failed.
+    closed: bool
+
+# A connection before its first request: nothing taken, one read allowed.
+function start() -> Progress
+    return Progress(
+        head: no_head(),
+        body: no_body(),
+        ended: false,
+        may_read: true,
+        closed: false
+    )
+
+## Refusals
+
+# Fails with `code` and `msg`, after answering on `s` the status a request
+# that fails so is answered with, as `next_request` answers it
+# (`policy.refuse_for`: nothing for a code no status answers), and closes
+# `p`, so every later call fails `closed`.
+function refused<T>(@p: Progress, s: io.Stream, code: str, msg: str, in_head: bool) -> T?
+    policy.refuse_for(s, code: code, in_head: in_head, why: msg)
+    p.closed @ true
+    return fail(code: code, msg: msg)
+
+# Fails `unsupported` with `why`, after answering `status` on `s`, a head the
+# server will not serve as `next_request` refuses it, and closes `p`.
+function refused_head<T>(@p: Progress, s: io.Stream, status: i64, why: str) -> T?
+    policy.refuse(s, status_code: status, why: why)
+    p.closed @ true
+    return fail(code: read.UNSUPPORTED, msg: why)

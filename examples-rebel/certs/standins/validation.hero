@@ -1,0 +1,324 @@
+# What the stand-in CA checks before it calls an identifier proved, each
+# check asked of the world as a CA asks it, never taken from the client's
+# word:
+#
+# - HTTP-01 (RFC 8555 § 8.3): the name's address asked of the DNS
+#   stand-in, a connection made there to the responder's port, and
+#   `/.well-known/acme-challenge/<token>` fetched with the name as its
+#   `Host`; the body, its trailing white space aside, must be the key
+#   authorization. An address (RFC 8738) is connected to directly.
+# - DNS-01 (RFC 8555 § 8.4): the TXT records of `_acme-challenge.<name>`
+#   asked of the DNS stand-in; one must be the key authorization's SHA-256
+#   in base 64 for URLs.
+# - CAA (RFC 8659 § 3): the CAA records of the name, or of the nearest
+#   name above it that has any, up to the zone; where there are some, one
+#   `issue` (or, for a wildcard, `issuewild` where any is written) must
+#   name this CA.
+#
+# A failure's code is the ACME problem type a client is told: `dns`,
+# `connection`, `incorrectResponse`, `unauthorized` or `caa`.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/dns
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+
+## Bounds
+
+# How long a validation's connection, request and answer may take, in
+# milliseconds.
+constant FETCH_MS: i64
+    5_000
+
+## Asking
+
+# A resolver asking the DNS stand-in alone, once, over UDP, and not
+# recursively: the CA's own view of the names.
+#
+# - `dns_port`: the stand-in's port on 127.0.0.1.
+#
+# Fails as `dns.resolver` fails.
+function resolver_of(dns_port: i64) -> dns.Resolver?
+    r @= dns.resolver([f"127.0.0.1:{dns_port}"])?
+    r.timeout @ time.seconds(2)?
+    r.attempts @ 2
+    r.recursion @ false
+    return ok(r)
+
+## HTTP-01
+
+# The HTTP-01 answer of `token` for `value` fetched and held to `expected`.
+#
+# - `dns_port`: the DNS stand-in's port.
+# - `port`: the port the answer is fetched from: 80 for a real CA, the
+#   responder's here.
+# - `kind`: "dns" or "ip", the identifier's type.
+# - `value`: the name or the address.
+# - `token`: the challenge's token.
+# - `expected`: the key authorization.
+#
+# Fails `dns` where the name has no address, `connection` where nothing
+# answers there, `unauthorized` where the answer is not 200, and
+# `incorrectResponse` where its body is not the key authorization.
+function http01(dns_port: i64, port: i64, kind: str, value: str, token: str, expected: str) -> ()?
+    address = address_of(dns_port, kind: kind, value: value)?
+    where = f"the HTTP-01 answer of {value}"
+
+    made = match net.connect(host: net.format_host(address), port: port, deadline_ms: FETCH_MS)
+        .ok c  => c
+        .err e => return fail(code: "connection", msg: f"fetching {where}: {e.msg}")
+
+    conn @= made
+    reader @= io.reader(conn.stream)
+    asked = asked_request(
+        target: f"http://{net.format_host(address)}:{port}/.well-known/acme-challenge/{token}",
+        host: host_field(kind: kind, value: value)
+    )
+
+    answered: http.Response? = match asked
+        .ok r  => http.round_trip(@reader, r: r, limits: http.default_limits())
+        .err e => fail(code: e.code, msg: e.msg)
+
+    _ = io.close(@conn.stream).is_err()
+
+    match answered
+        .err e => return fail(code: "connection", msg: f"fetching {where}: {e.msg}")
+        .ok response =>
+            if response.status != 200
+                return fail(code: "unauthorized", msg: f"{where} was answered {response.status}")
+            body = strings.trim_end(bytes.to_text(response.body).default(""))
+
+            if body != expected
+                return fail(
+                    code: "incorrectResponse",
+                    msg: f"{where} is not this account's key authorization for its token"
+                )
+            return ok()
+
+# The GET of `target` with `host` as its `Host` field.
+#
+# - `target`: the URL dialled, the address and port in it.
+# - `host`: the name the request is for.
+#
+# Fails as `http.request` fails.
+function asked_request(target: str, host: str) -> http.Request?
+    r @= http.request(method: http.METHOD_GET, target: target)?
+    r.headers @ http.with_header(headers: r.headers, name: "Host", value: host)
+    r.closing @ true
+    return ok(r)
+
+# The `Host` field of a request for `value`: the name, or an IPv6 address
+# in brackets.
+#
+# - `kind`: "dns" or "ip".
+# - `value`: the name or the address.
+function host_field(kind: str, value: str) -> str
+    if kind == "ip" && strings.contains(s: value, substr: ":")
+        return "[" + value + "]"
+    return value
+
+# The address an identifier is reached at: an address itself, or the first
+# IPv4 address of the name.
+#
+# - `dns_port`: the DNS stand-in's port.
+# - `kind`: "dns" or "ip".
+# - `value`: the name or the address.
+#
+# Fails `dns` where the name has no address or the lookup fails.
+function address_of(dns_port: i64, kind: str, value: str) -> net.Host?
+    if kind == "ip"
+        match net.parse_host(value)
+            .ok a  => return ok(a)
+            .err _ => return fail(code: "malformed", msg: f"\"{value}\" is no address")
+    r = resolver_of(dns_port)?
+
+    match dns.lookup_addresses(r, name: absolute(value))
+        .err e => return fail(code: "dns", msg: f"no address of {value}: {e.msg}")
+        .ok found =>
+            for a in found
+                if net.is_v4(a)
+                    return ok(a)
+
+            if found.len() > 0
+                return ok(found[0])
+            return fail(code: "dns", msg: f"no address of {value}")
+
+## DNS-01
+
+# The TXT records of `_acme-challenge.<domain>` held to `expected_key`'s
+# digest.
+#
+# - `dns_port`: the DNS stand-in's port.
+# - `domain`: the name, a wildcard's `*.` left out.
+# - `expected_key`: the key authorization.
+#
+# Fails `dns` where the name cannot be asked, and `incorrectResponse` where
+# no TXT record holds the digest.
+function dns01(dns_port: i64, domain: str, expected_key: str) -> ()?
+    want = bytes.format_base64_url_unpadded(crypto.sha256_text(expected_key))
+    asked = "_acme-challenge." + domain
+    r = resolver_of(dns_port)?
+
+    match dns.lookup_txt(r, name: absolute(asked))
+        .err e =>
+            if e.code == dns.NOT_FOUND
+                return fail(code: "incorrectResponse", msg: f"no TXT record at {asked}")
+            return fail(code: "dns", msg: f"asking the TXT records of {asked}: {e.msg}")
+        .ok found =>
+            for t in found
+                if t == want
+                    return ok()
+
+            return fail(
+                code: "incorrectResponse",
+                msg: f"no TXT record at {asked} holds this key authorization's digest"
+            )
+
+## CAA
+
+# Whether this CA may issue for `domain`, by the CAA records of the nearest
+# name from `domain` up to `origin` that has any.
+#
+# - `dns_port`: the DNS stand-in's port.
+# - `domain`: the name, a wildcard's `*.` left out.
+# - `wildcard`: whether a wildcard of it is asked.
+# - `identity`: this CA's CAA identity.
+# - `origin`: the zone, the last name climbed to.
+#
+# Fails `caa` where records stand and none names this CA, or a critical
+# property is one this CA does not know; `dns` where a lookup fails.
+function caa(dns_port: i64, domain: str, wildcard: bool, identity: str, origin: str) -> ()?
+    r = resolver_of(dns_port)?
+    name @= absolute(domain)
+    top = absolute(origin)
+
+    while true
+        match dns.lookup(r, name: name, type_code: dns.TYPE_CAA)
+            .ok answer =>
+                if answer.records.len() > 0
+                    return allowed(answer.records, name: name, wildcard: wildcard, identity: identity)
+            .err e =>
+                if e.code != dns.NOT_FOUND
+                    return fail(code: "dns", msg: f"asking the CAA records of {name}: {e.msg}")
+
+        if name == top || !strings.contains(s: name, substr: ".")
+            return ok()
+        name @ parent_of(name)
+
+# Whether `records`, the CAA records of `name`, let `identity` issue: the
+# `issuewild` values for a wildcard where any is written, else the `issue`
+# values; where none of those is written, any CA may issue (RFC 8659 § 4).
+#
+# - `records`: the CAA records.
+# - `name`: their owner.
+# - `wildcard`: whether a wildcard is asked.
+# - `identity`: this CA's identity.
+#
+# Fails `caa` where they do not.
+function allowed(records: [dns.Record], name: str, wildcard: bool, identity: str) -> ()?
+    issue: [str] @= []
+    issuewild: [str] @= []
+
+    for r in records
+        match r.data
+            .caa c =>
+                tag = strings.to_lower_ascii(c.tag)
+                value = bytes.to_text(c.value).default("")
+
+                if tag == "issue"
+                    issue @ issue.push(value)
+                else if tag == "issuewild"
+                    issuewild @ issuewild.push(value)
+                else if c.flags & 128 != 0
+                    return fail(
+                        code: "caa",
+                        msg: f"the CAA records of {strings.trim_suffix(s: name, suffix: ".")} hold the critical property {tag}, which this CA does not know"
+                    )
+            .a _ | .aaaa _ | .ns _ | .cname _ | .dname _ | .ptr _ | .mx _ | .txt _ | .srv _ | .soa _ | .hinfo _ | .naptr _ | .svcb _ | .https _ | .ds _ | .dnskey _ | .rrsig _ | .nsec _ | .tlsa _ | .sshfp _ | .unknown _ =>
+                _ = 0
+
+    relevant = if wildcard && issuewild.len() > 0
+        issuewild
+    else
+        issue
+
+    if relevant.len() == 0
+        return ok()
+
+    for value in relevant
+        if issuer_of(value) == identity
+            return ok()
+
+    return fail(
+        code: "caa",
+        msg: f"the CAA records of {strings.trim_suffix(s: name, suffix: ".")} let no CA named {identity} issue"
+    )
+
+# The CA a CAA `issue` value names: the text before its first `;`, trimmed
+# and lowercase (RFC 8659 § 4.2).
+#
+# - `value`: the property's value.
+function issuer_of(value: str) -> str
+    match strings.split_once(s: value, sep: ";")
+        .ok h  => return strings.to_lower_ascii(strings.trim(h.before))
+        .err _ => return strings.to_lower_ascii(strings.trim(value))
+
+## Names
+
+# `name` with its last dot.
+#
+# - `name`: a name.
+function absolute(name: str) -> str
+    if strings.has_suffix(s: name, suffix: ".")
+        return name
+    return name + "."
+
+# The name above `name`: its first label taken off; "." for a name of one
+# label.
+#
+# - `name`: an absolute name.
+function parent_of(name: str) -> str
+    match strings.split_once(s: name, sep: ".")
+        .ok h =>
+            if h.after == ""
+                return "."
+            return h.after
+        .err _ => return "."
+
+test "issuer_of: the domain before its parameters, any case"
+    assert issuer_of("Standin.Certs.Test; account=1") == "standin.certs.test"
+    assert issuer_of(" ca.example.net ") == "ca.example.net"
+    assert issuer_of(";") == ""
+
+test "allowed: this CA named, another named, a wildcard's own records, no record at all"
+    mine = dns.Record(
+        name: "a.test.",
+        class_code: dns.CLASS_IN,
+        ttl: 60,
+        data: .caa(flags: 0, tag: "issue", value: bytes.from_text("ca.test"))
+    )
+    theirs = dns.Record(
+        name: "a.test.",
+        class_code: dns.CLASS_IN,
+        ttl: 60,
+        data: .caa(flags: 0, tag: "issue", value: bytes.from_text("other.test"))
+    )
+    no_wild = dns.Record(
+        name: "a.test.",
+        class_code: dns.CLASS_IN,
+        ttl: 60,
+        data: .caa(flags: 0, tag: "issuewild", value: bytes.from_text(";"))
+    )
+    assert !allowed([mine], name: "a.test.", wildcard: false, identity: "ca.test").is_err()
+    assert allowed([theirs], name: "a.test.", wildcard: false, identity: "ca.test").is_err()
+    assert allowed([mine, no_wild], name: "a.test.", wildcard: true, identity: "ca.test").is_err()
+    assert !allowed([mine, no_wild], name: "a.test.", wildcard: false, identity: "ca.test").is_err()
+    assert !allowed([], name: "a.test.", wildcard: false, identity: "ca.test").is_err()
+
+test "parent_of: one label off, down to the root"
+    assert parent_of("www.certs.test.") == "certs.test."
+    assert parent_of("test.") == "."

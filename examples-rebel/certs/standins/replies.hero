@@ -1,0 +1,76 @@
+# What the stand-in CA's resources answer with and read from a request: the
+# URL a request was sent to, which its JWS must name; a JSON answer with
+# its `Location`; a payload's members; and the small searches they share.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/json
+
+use standins/objects
+
+## Answers
+
+# The URL a request was sent to: the CA's base and the request's path.
+#
+# - `s`: the state.
+# - `r`: the request.
+function url_of_request(s: objects.State, r: http.Request) -> str
+    return s.base + r.url.path
+
+# A JSON response with `status`, and a `Location` where `location` is not "".
+#
+# - `value`: the body.
+# - `status`: the status.
+# - `location`: the object's URL, or "".
+function located(value: json.Value, status: i64, location: str) -> http.Response
+    out @= http.respond_json(status, value: value).default(http.respond_status(500))
+
+    if location != ""
+        out.headers @ http.with_header(headers: out.headers, name: "Location", value: location)
+    return out
+
+# The members of the JSON object `payload` holds; none for a POST-as-GET or
+# a payload that is no object.
+#
+# - `payload`: the payload's bytes.
+function members_of(payload: [u8]) -> {str: json.Value}
+    match bytes.to_text(payload)
+        .err _ => return {}
+        .ok t =>
+            match json.parse(t)
+                .ok v  => return members_of_value(v)
+                .err _ => return {}
+
+# The members of `v`, none where it is no object.
+#
+# - `v`: a JSON value.
+function members_of_value(v: json.Value) -> {str: json.Value}
+    return json.members_of(v).default({})
+
+# The text `v` holds, "" where it is no string.
+#
+# - `v`: a JSON value.
+function text_or_empty(v: json.Value) -> str
+    return json.text_of(v).default("")
+
+# Whether `list` holds `word`.
+#
+# - `list`: the texts.
+# - `word`: the one looked for.
+function holds_text(list: [str], word: str) -> bool
+    for item in list
+        if item == word
+            return true
+
+    return false
+
+# Whether `list` holds `id`.
+#
+# - `list`: the ids.
+# - `id`: the one looked for.
+function holds_id(list: [i64], id: i64) -> bool
+    for item in list
+        if item == id
+            return true
+
+    return false

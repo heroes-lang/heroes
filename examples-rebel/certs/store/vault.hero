@@ -1,0 +1,234 @@
+# Where the private keys are kept: the account's key, each certificate's
+# key and the TSIG secret of DNS updates. The system's keyring is the first
+# choice, under the configuration's `keyring_service`, one keyring account
+# per key, so no secret is written to the folder of certificates; where the
+# configuration names no service, or the machine's keyring does not answer
+# (a container, a server with no desktop session, a locked keychain), the
+# keys go to files of a folder only this user may open, as certbot keeps
+# its `privkey.pem`.
+#
+# A key is held as PEM text, or a secret as base 64, under a name such as
+# "account", "certificate site" or "tsig certs-update". No message of this
+# module holds a key.
+
+use <rebel>/fs
+use <rebel>/keyring
+use <rebel>/path
+
+## Codes
+
+# The code of a key no store holds.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a name that cannot name a key's file.
+constant INVALID: str
+    "invalid"
+
+## The store
+
+# Where the keys are kept.
+variant Store
+    # The system's keyring, one keyring account per key.
+    keyring
+        # The service the keys stand under.
+        service: str
+    # Files of the folder `folder`, made for this user alone.
+    files
+        # The folder, whose files are named for the keys.
+        folder: str
+
+# The store for `service` and `folder`: the keyring where `service` is not
+# empty and the keyring answers, the files of `folder` otherwise.
+#
+# - `service`: the keyring service; "" for files.
+# - `folder`: the folder of the files, used where the keyring is not.
+function choose(service: str, folder: str) -> Store
+    if service != "" && !keyring.system().is_err()
+        return .keyring(service: service)
+    return .files(folder: folder)
+
+# What a person is told of where `s` keeps the keys, with no name of a
+# service or a path in it, since the demo prints it.
+#
+# - `s`: the store.
+function describe(s: Store) -> str
+    return match s
+        .keyring _ => "the system's keyring"
+        .files _   => "files only this user may read, the system's keyring not answering here"
+
+# Whether `s` is the system's keyring.
+#
+# - `s`: the store.
+function is_keyring(s: Store) -> bool
+    return match s
+        .keyring _ => true
+        .files _   => false
+
+# `s` as one line of text, `keyring <service>` or `files <folder>`, which
+# `parse_store` reads back: how a store crosses into a thread.
+#
+# - `s`: the store.
+function format_store(s: Store) -> str
+    return match s
+        .keyring k => "keyring " + k.service
+        .files f   => "files " + f.folder
+
+# The store `text` writes, as `format_store` writes it.
+#
+# - `text`: the line.
+#
+# Fails `invalid` where it is neither form.
+function parse_store(text: str) -> Store?
+    if text.len() > 8 && text.slice(from: 0, to: 8) == "keyring "
+        return ok(.keyring(service: text.slice(from: 8, to: text.len())))
+
+    if text.len() > 6 && text.slice(from: 0, to: 6) == "files "
+        return ok(.files(folder: text.slice(from: 6, to: text.len())))
+    return fail(code: INVALID, msg: "a key store is written \"keyring <service>\" or \"files <folder>\"")
+
+## Keys
+
+# Keeps `secret` under `name`, replacing what stood there.
+#
+# - `s`: the store.
+# - `name`: the key's name: letters, digits, spaces, `.` and `-`.
+# - `secret`: the PEM or base 64 text kept.
+#
+# Fails `invalid` for a name of other characters, and as `keyring.store_text`
+# or `fs.write_atomic_text` fail.
+function put(s: Store, name: str, secret: str) -> ()?
+    match s
+        .keyring k => return keyring.store_text(service: k.service, account: name, secret: secret)
+        .files f =>
+            folder_made(f.folder)?
+            return fs.write_atomic_text(path: file_of(folder: f.folder, name: name)?, text: secret)
+
+# The text kept under `name`.
+#
+# - `s`: the store.
+# - `name`: the key's name.
+#
+# Fails `not_found` where none is kept, and as `keyring.read_text` and
+# `fs.read_bytes` fail.
+function get(s: Store, name: str) -> str?
+    match s
+        .keyring k =>
+            match keyring.read_text(service: k.service, account: name)
+                .ok text => return ok(text)
+                .err e =>
+                    if e.code == keyring.NOT_FOUND
+                        return fail(code: NOT_FOUND, msg: f"no key \"{name}\" is kept in the keyring")
+                    return fail(code: e.code, msg: e.msg)
+        .files f =>
+            match read_file(file_of(folder: f.folder, name: name)?)
+                .ok text => return ok(text)
+                .err e =>
+                    if e.code == "file_not_found"
+                        return fail(code: NOT_FOUND, msg: f"no key \"{name}\" is kept in the key folder")
+                    return fail(code: e.code, msg: e.msg)
+
+# Whether a key is kept under `name`.
+#
+# - `s`: the store.
+# - `name`: the key's name.
+function has(s: Store, name: str) -> bool
+    return !get(s, name: name).is_err()
+
+# Removes the key kept under `name`; done also where none was.
+#
+# - `s`: the store.
+# - `name`: the key's name.
+#
+# Fails as `keyring.remove` and `fs.remove` fail, but for a key absent.
+function remove(s: Store, name: str) -> ()?
+    match s
+        .keyring k =>
+            match keyring.remove(service: k.service, account: name)
+                .ok _ => return ok()
+                .err e =>
+                    if e.code == keyring.NOT_FOUND
+                        return ok()
+                    return fail(code: e.code, msg: e.msg)
+        .files f =>
+            match fs.remove(file_of(folder: f.folder, name: name)?)
+                .ok _ => return ok()
+                .err e =>
+                    if e.code == "file_not_found"
+                        return ok()
+                    return fail(code: e.code, msg: e.msg)
+
+# Removes every key of `s`: the service's whole keyring entries, or the key
+# folder.
+#
+# - `s`: the store.
+#
+# Fails as `keyring.remove_all` and `fs.remove_all` fail; a folder never
+# made is no failure.
+function remove_every(s: Store) -> ()?
+    match s
+        .keyring k => return keyring.remove_all(k.service)
+        .files f =>
+            match fs.remove_all(f.folder)
+                .ok _ => return ok()
+                .err e =>
+                    if e.code == "file_not_found"
+                        return ok()
+                    return fail(code: e.code, msg: e.msg)
+
+## Files
+
+# The file a key named `name` is kept in: its name's spaces made `-`, and
+# `.key` after it.
+#
+# - `folder`: the key folder.
+# - `name`: the key's name.
+#
+# Fails `invalid` where `name` is empty or holds a character other than a
+# letter, a digit, a space, `.` and `-`, or begins with `.`.
+function file_of(folder: str, name: str) -> str?
+    if name == "" || name[0] == '.'
+        return fail(code: INVALID, msg: f"\"{name}\" names no key")
+    out: [str] @= []
+
+    for c in name.chars()
+        b = c[0]
+        plain = b >= 'a' && b <= 'z' || b >= 'A' && b <= 'Z' || b >= '0' && b <= '9' || b == '.' || b == '-'
+
+        if b == ' '
+            out @ out.push("-")
+        else if plain
+            out @ out.push(c)
+        else
+            return fail(code: INVALID, msg: f"\"{name}\" names no key: it holds \"{c}\"")
+
+    return ok(path.join_all([folder, out.join("") + ".key"]))
+
+# The key folder, made for this user alone where it is not there.
+#
+# - `folder`: the folder.
+#
+# Fails as `fs.make_dir_all` and `fs.make_dir_with` fail.
+function folder_made(folder: str) -> ()?
+    if fs.is_dir(folder).default(false)
+        return ok()
+    parent = path.parent(folder)
+
+    if parent != "" && parent != folder
+        fs.make_dir_all(parent)?
+    return fs.make_dir_with(folder, permission: 0o700)
+
+test "file_of: spaces made dashes, and a name that could leave the folder refused"
+    assert file_of(folder: "keys", name: "certificate site").must() == path.join_all(["keys", "certificate-site.key"])
+    assert file_of(folder: "keys", name: "../account").is_err()
+    assert file_of(folder: "keys", name: "").is_err()
+    assert file_of(folder: "keys", name: "a/b").is_err()
+
+test "parse_store: what format_store writes reads back, and anything else refused"
+    assert parse_store(format_store(.keyring(service: "certs"))).must() == .keyring(service: "certs")
+    assert parse_store(format_store(.files(folder: "/var/lib/certs/keys"))).must() == .files(folder: "/var/lib/certs/keys")
+    assert parse_store("vault x").is_err()
+
+test "describe: neither form names a service or a path"
+    assert describe(.keyring(service: "secret-service-name")) == "the system's keyring"
+    assert describe(.files(folder: "/private/folder")) == "files only this user may read, the system's keyring not answering here"

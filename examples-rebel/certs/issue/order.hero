@@ -1,0 +1,188 @@
+# One certificate obtained, the whole of RFC 8555 § 7.4 from the client's
+# side: a fresh P-256 key made for it (certbot's default since its 2.0, so
+# a renewal never keeps a key that may have leaked); an order for its
+# domains, an address ordered as an `ip` identifier (RFC 8738); each
+# authorization proved (`challenges/solve`); a request signed by the new key
+# (`pki/request`); the order finalized and its chain downloaded; the chain
+# checked before anything is kept: its certificate holds the new key and
+# names every domain, and it verifies up to the configured roots at the
+# clock's moment. Then the version is archived, its key kept, and only then
+# made current (`store/lineage`).
+
+use <rebel>/acme
+use <rebel>/crypto/keypairs
+use <rebel>/net
+use <rebel>/time
+use <rebel>/x509
+
+use challenges/solve
+use config/settings
+use core/clock
+use pki/facts
+use pki/request
+use pki/signing
+use store/lineage as history
+use store/records
+use store/vault
+
+## Codes
+
+# The code of a chain that is not the certificate asked for.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long the CA may take to make an order ready or valid, in seconds.
+constant WAIT_SECONDS: i64
+    60
+
+## Obtaining
+
+# What an issue kept.
+record Obtained
+    # The version archived and made current.
+    version: i64
+    # The certificate's facts.
+    facts: facts.Facts
+    # A line for each authorization, saying how it was proved.
+    proofs: [str]
+
+# The key store's name of a certificate's key.
+#
+# - `name`: the certificate's name.
+function key_name(name: str) -> str
+    return "certificate " + name
+
+# `lineage` issued and kept, its new key in the store.
+#
+# - `client`: the client with an account.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `lineage`: the certificate.
+# - `c`: the clock the chain is checked at.
+#
+# Fails as each step fails: `failed` where the CA refuses an identifier or
+# an answer (its problem in the message), `invalid` where the chain is not
+# what was asked, and the codes of `acme`, `x509` and the stores.
+function obtain(@client: acme.Client, s: settings.Settings, store: vault.Store, lineage: settings.Lineage, c: clock.Clock) -> Obtained?
+    key @= keypairs.generate(.p256)?
+    got = with_key(@client, s: s, store: store, lineage: lineage, c: c, key: key)
+    _ = keypairs.close_private(@key).is_err()
+    return got
+
+# `obtain`'s work once the certificate's key is made, so the caller closes
+# it on every path.
+#
+# - `client`: the client.
+# - `s`: the settings.
+# - `store`: the key store.
+# - `lineage`: the certificate.
+# - `c`: the clock.
+# - `key`: the new key, which stays open.
+#
+# Fails as `obtain` fails.
+function with_key(@client: acme.Client, s: settings.Settings, store: vault.Store, lineage: settings.Lineage, c: clock.Clock, key: keypairs.PrivateKey) -> Obtained?
+    placed = acme.new_order(@client, request: order_request(lineage.domains))?
+    proofs: [str] @= []
+
+    for url in placed.authorizations
+        authorization = acme.fetch_authorization(@client, url: url)?
+        proofs @ proofs.push(solve.prove(@client, s: s, store: store, lineage: lineage, authorization: authorization)?)
+
+    ready = acme.wait_order(@client, url: placed.url, timeout: time.seconds(WAIT_SECONDS)?)?
+
+    if ready.status != "ready"
+        return fail(
+            code: INVALID,
+            msg: f"the order is {ready.status} once its authorizations are proved, where ready was expected"
+        )
+    csr = request.make(lineage.domains, key: key)?
+    finalized = acme.finalize(@client, order: ready, csr: csr)?
+    valid = acme.wait_order(@client, url: finalized.url, timeout: time.seconds(WAIT_SECONDS)?)?
+
+    if valid.certificate == ""
+        return fail(code: INVALID, msg: "the order is valid and names no certificate")
+    chain = acme.download(@client, url: valid.certificate)?
+    read = checked(s, chain: chain.pem, lineage: lineage, spki: signing.public_der(key)?, at: clock.now(c)?)?
+    version = history.archived(folder: s.store.folder, name: lineage.name, chain: chain.pem)?
+    vault.put(store, name: key_name(lineage.name), secret: keypairs.format_private_pem(key)?)?
+    history.make_current(folder: s.store.folder, name: lineage.name, version: version)?
+    found = facts.facts_of(read[0])?
+    records.remember_issue(folder: s.store.folder, lineage: lineage, version: version, serial: found.serial, not_after: found.not_after)?
+    return ok(Obtained(version: version, facts: found, proofs: proofs))
+
+# The order of `domains`: a name as a `dns` identifier, an address as an
+# `ip` one (RFC 8738), the validity left to the CA.
+#
+# - `domains`: the names and addresses.
+function order_request(domains: [str]) -> acme.OrderRequest
+    out @= acme.order_for(domains)
+    identifiers: [acme.Identifier] @= []
+
+    for d in domains
+        match net.parse_host(d)
+            .ok address => identifiers @ identifiers.push(acme.Identifier(kind: "ip", value: net.format_host(address)))
+            .err _      => identifiers @ identifiers.push(acme.Identifier(kind: "dns", value: d))
+
+    out.identifiers @ identifiers
+    return out
+
+## Checking
+
+# The chain read and checked before anything is kept: its certificate holds
+# the key the request was signed with, names every domain, and, where the
+# configuration names trusted roots, verifies up to one of them at `at` for
+# a TLS server of the first domain.
+#
+# - `s`: the settings.
+# - `chain`: the PEM downloaded.
+# - `lineage`: the certificate asked for.
+# - `spki`: the new key's SubjectPublicKeyInfo.
+# - `at`: the moment the chain must hold at.
+#
+# A wildcard's chain is verified for a name it covers, its `*` read as one
+# label. The certificates, the certificate first. Fails `invalid` saying what is
+# wrong, and as `x509.parse_certificates` and `x509.verify_chain` fail.
+function checked(s: settings.Settings, chain: str, lineage: settings.Lineage, spki: [u8], at: time.Instant) -> [x509.Certificate]?
+    read = x509.parse_certificates(chain)?
+
+    if read.len() == 0
+        return fail(code: INVALID, msg: "the chain downloaded holds no certificate")
+
+    if !facts.holds_key(read[0], spki: spki)
+        return fail(code: INVALID, msg: "the certificate downloaded does not hold the key its request was signed with")
+    named = facts.names_of(read[0])
+
+    for d in lineage.domains
+        if !holds(named, word: d)
+            return fail(code: INVALID, msg: f"the certificate downloaded does not name {d}")
+
+    if s.acme.trust != ""
+        roots = x509.parse_certificates(read_file(s.acme.trust)?)?
+
+        host = if settings.is_wildcard(lineage.domains[0])
+            "x" + lineage.domains[0].slice(from: 1, to: lineage.domains[0].len())
+        else
+            lineage.domains[0]
+
+        x509.verify_chain(read, options: x509.Verification(roots: roots, at: at, purpose: x509.SERVER_AUTH, host: host))?
+    return ok(read)
+
+# Whether `list` holds `word`.
+#
+# - `list`: the texts.
+# - `word`: the text looked for.
+function holds(list: [str], word: str) -> bool
+    for item in list
+        if item == word
+            return true
+
+    return false
+
+test "order_request: names as dns identifiers, an address as an ip one, written as net writes it"
+    asked = order_request(["example.org", "127.0.0.1", "::1"])
+    assert asked.identifiers[0].kind == "dns" && asked.identifiers[0].value == "example.org"
+    assert asked.identifiers[1].kind == "ip" && asked.identifiers[1].value == "127.0.0.1"
+    assert asked.identifiers[2].kind == "ip"
+    assert asked.not_before.is_err() && asked.profile == ""

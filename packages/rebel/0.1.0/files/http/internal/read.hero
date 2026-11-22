@@ -28,7 +28,14 @@ record Message
 # `wire.read_bytes` and `wire.parse_request` do, and `unsupported` for
 # another version.
 function request_head(@r: io.Reader, bounds: wire.Bounds) -> wire.Head?
-    h = wire.parse_request(wire.read_bytes(@r, most: bounds.head_bytes)?, most_fields: bounds.field_count)?
+    return head_of(wire.read_bytes(@r, most: bounds.head_bytes)?, bounds: bounds)
+
+# The request head `head` holds, its bytes from the first through its empty
+# line, of version 1.x: what `request_head` reads, and what a head gathered
+# as it comes is read into. Fails as `wire.parse_request` does, and
+# `unsupported` for another version.
+function head_of(head: [u8], bounds: wire.Bounds) -> wire.Head?
+    h = wire.parse_request(head, most_fields: bounds.field_count)?
 
     if h.major != 1
         return fail(code: UNSUPPORTED, msg: f"reading a request: its version HTTP/{h.major}.{h.minor} is not 1.x")

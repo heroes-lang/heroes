@@ -312,10 +312,12 @@ function talk(@r: io.Reader, data: [u8], method: str, bounds: wire.Bounds) -> re
     return read.response(@r, method: method, bounds: bounds)
 
 # The body after the request head `h` in `r`, `100 Continue` written first
-# where `continuing` and a body follows. Fails as `body.of_request`,
-# `io.write` and `body.read` fail.
+# where `continuing` and a body follows, once its length is held to
+# `bounds`, so a client is never asked for a body refused 413. Fails as
+# `body.of_request`, `body.within`, `io.write` and `body.read` fail.
 function body_after(@r: io.Reader, h: wire.Head, bounds: wire.Bounds, continuing: bool) -> [u8]?
     framing = body.of_request(h)?
+    body.within(framing, bounds: bounds)?
 
     bodiless = match framing
         .none              => true
@@ -323,8 +325,16 @@ function body_after(@r: io.Reader, h: wire.Head, bounds: wire.Bounds, continuing
         .chunked | .to_end => false
 
     if continuing && !bodiless
-        io.write(r.stream, data: [72, 84, 84, 80, 47, 49, 46, 49, 32, 49, 48, 48, 32, 67, 111, 110, 116, 105, 110, 117, 101, 13, 10, 13, 10])?
+        write_continue(r.stream)?
     return body.read(@r, framing: framing, bounds: bounds)
+
+# Writes `100 Continue` on `s`, RFC 9110 § 15.2.1: a client that asked for it
+# sends the body after it. Fails as `io.write` does.
+function write_continue(s: io.Stream) -> ()?
+    return io.write(
+        s,
+        data: [72, 84, 84, 80, 47, 49, 46, 49, 32, 49, 48, 48, 32, 67, 111, 110, 116, 105, 110, 117, 101, 13, 10, 13, 10]
+    )
 
 # Answers on `s`, where `code` failed reading a request, the status it calls
 # for, `why` its body, then nothing more on the connection: 400 for

@@ -1,0 +1,247 @@
+# The stand-in CA's certificates: an order finalized (RFC 8555 § 7.4) with a
+# request `x509` reads, whose own signature holds, whose key is not the
+# account's and whose names are exactly the order's, the certificate then
+# issued by `standins/authority`'s intermediate for 90 days; the chain
+# downloaded; a certificate revoked by the account that ordered it (RFC
+# 8555 § 7.6); and its renewal window (RFC 9773), the last third of its
+# life, or open at once once revoked.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/jose
+use <rebel>/json
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/x509
+
+use standins/authority
+use standins/jws
+use standins/objects
+use standins/replies
+
+## The certificate
+
+# Days a certificate issued is valid, its last second included, as the
+# CAs of the web issued them in 2025.
+constant VALID_DAYS: i64
+    90
+
+# `finalize` (RFC 8555 § 7.4): the order's request read, checked and a
+# certificate issued, the order valid at once.
+#
+# - `s`: the state.
+# - `a`: the authorities.
+# - `r`: the request.
+# - `id`: the order's id.
+function finalize(@s: objects.State, a: authority.Authority, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok got => got
+        .err e  => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if id < 1 || id > s.orders.len() || s.orders[id - 1].account != auth.account
+        return objects.missing(detail: "no order of this account is there")
+    o = s.orders[id - 1]
+
+    if o.status != "ready"
+        return objects.problem_response(
+            kind: "orderNotReady",
+            detail: f"the order is {o.status}, and only a ready one is finalized"
+        )
+    payload = replies.members_of(auth.payload)
+
+    asked = match request_of(payload: payload, o: o, account_key: auth.key)
+        .ok req => req
+        .err e  => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    serial = objects.serial_drawn(@s)
+    not_before = time.add(s.now, d: time.hours(-1).must()).default(s.now)
+    not_after = time.add(not_before, d: time.difference(a: time.days(VALID_DAYS).must(), b: time.seconds(1).must()).must()).default(
+        not_before
+    )
+    domains: [str] @= []
+
+    for i in o.identifiers
+        domains @ domains.push(i.value)
+
+    issued_der = match authority.issue(a, asked: authority.Asked(request: asked, domains: domains, serial: serial, not_before: not_before, not_after: not_after, issuer_url: s.base + "/acme/issuer/1"))
+        .ok der => der
+        .err e  => return objects.problem_response(kind: "serverInternal", detail: "issuing: " + e.msg)
+
+    chain = authority.chain_of(a, der: issued_der).default("")
+    made = objects.Issued(
+        id: s.issued.len() + 1,
+        account: auth.account,
+        der: issued_der,
+        chain: chain,
+        serial: serial,
+        authority_key_id: a.issuer_key_id,
+        not_before: not_before,
+        not_after: not_after,
+        revoked: false,
+        reason: 0
+    )
+    s.issued @ s.issued.push(made)
+    s.counts.issued @ s.counts.issued + 1
+    s.orders[id - 1].status @ "valid"
+    s.orders[id - 1].certificate @ made.id
+    return replies.located(
+        objects.order_json(s, o: s.orders[id - 1]),
+        status: 200,
+        location: objects.url_of(s, kind: "order", id: id)
+    )
+
+# The request `payload`'s `csr` holds, checked: read by `x509`, signed by
+# its own key, that key not the account's, and naming exactly the order's
+# identifiers.
+#
+# - `payload`: the finalize request's members.
+# - `o`: the order.
+# - `account_key`: the account's key.
+#
+# Fails `badCSR`, saying which check failed.
+function request_of(payload: {str: json.Value}, o: objects.Order, account_key: jose.Key) -> x509.Request?
+    der = match bytes.parse_base64_url_unpadded(json.text_of(payload["csr"].default(.null_value)).default(""))
+        .ok d  => d
+        .err _ => return fail(code: "badCSR", msg: "the csr is not base 64 for URLs")
+
+    request = match x509.decode_request(der)
+        .ok q  => q
+        .err e => return fail(code: "badCSR", msg: "the csr is no PKCS #10 request: " + e.msg)
+
+    if !x509.is_request_signed(request).default(false)
+        return fail(code: "badCSR", msg: "the csr's signature does not hold")
+
+    if request.public_key.der == jose.encode_public_der(account_key).default([])
+        return fail(code: "badCSR", msg: "the certificate's key may not be the account's (RFC 8555 § 11.1)")
+    asked = names_of(request)
+    wanted: [str] @= []
+
+    for i in o.identifiers
+        wanted @ wanted.push(i.value)
+
+    if sort(asked) != sort(wanted)
+        return fail(code: "badCSR", msg: f"the csr names {asked.join(", ")}, and the order {wanted.join(", ")}")
+    return ok(request)
+
+# The names and addresses a request's subjectAltName and common name ask,
+# each once.
+#
+# - `request`: the request read.
+function names_of(request: x509.Request) -> [str]
+    out: [str] @= []
+
+    match request.extensions.alt_names
+        .err _ => _ = 0
+        .ok list =>
+            for general in list
+                match general
+                    .dns d => out @ out.push(strings.to_lower_ascii(d.name))
+                    .ip a  => out @ out.push(net.format_host(a.address))
+                    .other_name _ | .email _ | .x400_address _ | .directory _ | .edi_party _ | .uri _ | .ip_network _ | .registered_id _ =>
+                        _ = 0
+
+    match x509.text_of(request.subject, oid: x509.COMMON_NAME)
+        .ok common =>
+            lowered = strings.to_lower_ascii(common)
+
+            if !replies.holds_text(out, word: lowered)
+                out @ out.push(lowered)
+        .err _ => _ = 0
+
+    return out
+
+# The certificate's URL posted to as a GET: its chain, PEM.
+#
+# - `s`: the state.
+# - `r`: the request.
+# - `id`: the certificate's id.
+function certificate(@s: objects.State, r: http.Request, id: i64) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    if id < 1 || id > s.issued.len() || s.issued[id - 1].account != auth.account
+        return objects.missing(detail: "no certificate of this account is there")
+    return http.respond(
+        200,
+        content_type: "application/pem-certificate-chain",
+        body: bytes.from_text(s.issued[id - 1].chain)
+    )
+
+# `revokeCert` (RFC 8555 § 7.6): a certificate the account ordered revoked,
+# for a reason RFC 5280 § 5.3.1 lets a subscriber give.
+#
+# - `s`: the state.
+# - `r`: the request.
+function revoke(@s: objects.State, r: http.Request) -> http.Response
+    auth = match jws.authenticate(@s, body: r.body, url: replies.url_of_request(s, r: r), with_key: false)
+        .ok a  => a
+        .err e => return objects.problem_response(kind: e.code, detail: e.msg)
+
+    payload = replies.members_of(auth.payload)
+    der = bytes.parse_base64_url_unpadded(json.text_of(payload["certificate"].default(.null_value)).default("")).default(
+        []
+    )
+    reason = json.int_of(payload["reason"].default(.number(v: 0.0))).default(-1)
+
+    if reason != 0 && reason != 1 && reason != 3 && reason != 4 && reason != 5
+        return objects.problem_response(
+            kind: "badRevocationReason",
+            detail: f"a subscriber revokes for reason 0, 1, 3, 4 or 5, not {reason}"
+        )
+
+    for k in range(from: 0, to: s.issued.len())
+        if s.issued[k].der == der
+            if s.issued[k].account != auth.account
+                return objects.problem_response(
+                    kind: "unauthorized",
+                    detail: "a certificate is revoked by the account that ordered it"
+                )
+
+            if s.issued[k].revoked
+                return objects.problem_response(kind: "alreadyRevoked", detail: "the certificate is revoked already")
+            s.issued[k].revoked @ true
+            s.issued[k].reason @ reason
+            s.counts.revoked @ s.counts.revoked + 1
+            return http.respond(200, content_type: "application/json", body: [])
+
+    return objects.problem_response(kind: "malformed", detail: "this CA issued no such certificate")
+
+# The renewal window of the certificate `id` names (RFC 9773 § 4.2): the
+# last third of its life begun, ten days long; a window already open for
+# one revoked, so it is replaced at once.
+#
+# - `s`: the state.
+# - `id`: the certificate's identifier, its authority key identifier and
+#   its serial, each in base 64 for URLs, a dot between.
+function renewal_info(s: objects.State, id: str) -> http.Response
+    halves = match strings.split_once(s: id, sep: ".")
+        .ok h => h
+        .err _ => return objects.problem_response(
+            kind: "malformed",
+            detail: "a renewal identifier is two parts with a dot between"
+        )
+
+    key_id = bytes.parse_base64_url_unpadded(halves.before).default([])
+    serial = bytes.parse_base64_url_unpadded(halves.after).default([])
+
+    for c in s.issued
+        if c.authority_key_id == key_id && c.serial == serial
+            lifetime = time.between(from: c.not_before, to: c.not_after).default(time.nanoseconds(0))
+
+            start = if c.revoked
+                time.add(s.now, d: time.hours(-1).must()).default(s.now)
+            else
+                time.add(c.not_before, d: time.scale(time.divide(lifetime, by: 3).default(lifetime), by: 2).default(lifetime)).default(
+                    s.now
+                )
+
+            end = time.add(start, d: time.days(10).must()).default(start)
+            window: {str: json.Value} = {"start": objects.stamp(start), "end": objects.stamp(end)}
+            members: {str: json.Value} = {"suggestedWindow": .object(members: window)}
+            out @= http.respond_json(200, value: .object(members: members)).default(http.respond_status(500))
+            out.headers @ http.with_header(headers: out.headers, name: "Retry-After", value: "21600")
+            return out
+
+    return objects.missing(detail: "this CA issued no certificate of that identifier")

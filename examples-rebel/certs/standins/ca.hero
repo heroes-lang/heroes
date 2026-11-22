@@ -1,0 +1,298 @@
+# The stand-in CA: an ACME server (RFC 8555) on 127.0.0.1 over HTTPS, on a
+# thread of its own, honest wherever the demo depends on it. Every request
+# is authenticated as `standins/jws` says, an answer is validated as
+# `standins/validation` says before an identifier is called proved, a
+# certificate is issued by `standins/authority`'s intermediate from a
+# request `x509` checked, and every answer carries a fresh nonce
+# (`Replay-Nonce`) and the directory's link. Its tokens, nonces and serial
+# numbers come from a generator seeded by its starter, and its clock is the
+# one its starter sets, so a run is the same at every run.
+#
+# Beside ACME's resources it serves what Pebble, the test CA of Let's
+# Encrypt, serves on its management port: the issuing root (`GET /roots/0`)
+# and, for the demo, the clock (`POST /manage/clock`, seconds since 1970 in
+# the body). It serves one connection at a time until the program is asked
+# to stop.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/random
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/tls
+
+use core/fields
+use core/ready
+use standins/accounts
+use standins/authority
+use standins/issuing
+use standins/jws
+use standins/objects
+use standins/orders
+use standins/proofs
+
+## Bounds
+
+# How long a client may take to connect and send its requests.
+constant CONNECTION_SECONDS: i64
+    10
+
+# How many accepts in a row may fail before the stand-in stops.
+constant MOST_FAILURES: i64
+    100
+
+## The thread
+
+# The stand-in's thread. Its named values: `CONTROL`, the starter's control
+# port; `DNS_PORT`, the DNS stand-in's; `HTTP01_PORT`, the port HTTP-01
+# answers are fetched from; `START`, its clock's first moment in seconds
+# since 1970; `SEED`, 32 bytes in hexadecimal; `IDENTITY`, its CAA
+# identity; `ORIGIN`, the zone it issues under. Answers its last line, what
+# it did, or why it could not serve.
+#
+# - `arg`: the named values, `core/fields`' text.
+function run(arg: str) -> str
+    match configured(arg)
+        .err e => return "acme: " + e.msg
+        .ok made =>
+            s @= made
+
+            match fields.parse_fields(arg)
+                .err e => return "acme: " + e.msg
+                .ok named =>
+                    control = fields.int_of(named, name: "CONTROL").default(0)
+
+                    match started(@s, control: control)
+                        .ok _ =>
+                            c = s.counts
+                            return f"acme: accounts made {c.accounts}, orders {c.orders}, authorizations proved {c.proved} and failed {c.failed}, certificates issued {c.issued} and revoked {c.revoked}; refused {c.bad_nonces} used nonce, {c.bad_signatures} signature that did not hold, {c.refused} other"
+                        .err e => return "acme: " + e.msg
+
+# The state `arg`'s named values describe, its lists empty.
+#
+# - `arg`: the thread's named values.
+#
+# Fails as `fields` fails on a value missing or of no form, and as
+# `random.from_seed_chacha8` fails on a seed that is not 32 bytes.
+function configured(arg: str) -> objects.State?
+    named = fields.parse_fields(arg)?
+    seed = bytes.parse_hex(fields.text_of(named, name: "SEED")?)?
+    start = time.from_unix(whole_seconds: fields.int_of(named, name: "START")?, extra_nanoseconds: 0)?
+    counts = objects.Counts(
+        accounts: 0,
+        orders: 0,
+        proved: 0,
+        failed: 0,
+        issued: 0,
+        revoked: 0,
+        bad_nonces: 0,
+        bad_signatures: 0,
+        refused: 0
+    )
+    return ok(
+        objects.State(base: "", identity: fields.text_of(named, name: "IDENTITY")?, origin: fields.text_of(named, name: "ORIGIN")? + ".", dns_port: fields.int_of(named, name: "DNS_PORT")?, http01_port: fields.int_of(named, name: "HTTP01_PORT")?, now: start, draws: random.from_seed_chacha8(seed)?, nonces: {}, accounts: [], orders: [], authzs: [], issued: [], counts: counts)
+    )
+
+# The authorities and the HTTPS identity made, the listener opened, the
+# starter told, and requests served until the stop.
+#
+# - `s`: the state; its base is set once the port is known.
+# - `control`: the starter's control port.
+#
+# Fails as `authority.make`, `authority.https_identity`, `tls.listen` and
+# `ready.tell` fail; everything opened is closed on every path.
+function started(@s: objects.State, control: i64) -> ()?
+    serials = [objects.serial_drawn(@s), objects.serial_drawn(@s)]
+    https = authority.https_identity(s.now, serials: [objects.serial_drawn(@s), objects.serial_drawn(@s)])?
+    a @= authority.make(s.now, serials: serials)?
+
+    match tls.listen(host: "127.0.0.1", port: 0, server: tls.Server(chain: https.chain, key: https.key, protocols: ["http/1.1"]))
+        .err e =>
+            authority.close(@a)
+            return fail(code: e.code, msg: e.msg)
+        .ok opened =>
+            listener @= opened
+            s.base @ f"https://127.0.0.1:{listener.port}"
+            told = ready.tell(
+                control,
+                facts: {"SERVICE": "acme", "PORT": to_str(listener.port), "HTTPS_ROOT": fields.encoded(https.root)}
+            )
+
+            if !told.is_err()
+                serve(@s, a: a, listener: listener)
+            _ = tls.close_listener(@listener).is_err()
+            authority.close(@a)
+            return told
+
+# Connections accepted and served, one at a time, until the stop.
+#
+# - `s`: the state.
+# - `a`: the authorities.
+# - `listener`: the TLS listener.
+function serve(@s: objects.State, a: authority.Authority, listener: tls.Listener)
+    failures @= 0
+
+    while failures < MOST_FAILURES
+        match tls.accept(listener, deadline: time.seconds(CONNECTION_SECONDS).default(time.max_duration()))
+            .err e =>
+                if e.code == tls.STOPPED || e.code == tls.CLOSED && listener.handle == nullptr
+                    break
+                failures @ failures + 1
+            .ok conn =>
+                failures @ 0
+                stream @= conn.stream
+                _ = tls.set_deadline(
+                    stream,
+                    deadline: time.seconds(CONNECTION_SECONDS).default(time.max_duration())
+                ).is_err()
+                serve_stream(@s, a: a, stream: stream)
+                _ = io.close(@stream).is_err()
+
+# The requests of one connection answered until it closes or asks to.
+#
+# - `s`: the state.
+# - `a`: the authorities.
+# - `stream`: the connection's stream; its owner closes it.
+function serve_stream(@s: objects.State, a: authority.Authority, stream: io.Stream)
+    reader @= io.reader(stream)
+
+    while true
+        r = match http.next_request(@reader, limits: http.default_limits())
+            .ok got => got
+            .err _  => return
+
+        answer = route(@s, a: a, r: r)
+
+        if http.write_answer(reader.stream, r: r, response: answer).is_err() || r.closing || answer.closing
+            return
+
+## Routing
+
+# The answer to `r`: an ACME resource, with a fresh nonce and the
+# directory's link, or a management resource.
+#
+# - `s`: the state.
+# - `a`: the authorities.
+# - `r`: the request.
+function route(@s: objects.State, a: authority.Authority, r: http.Request) -> http.Response
+    target = r.url.path
+
+    if target == "/roots/0" && r.method == http.METHOD_GET
+        return http.respond(200, content_type: "application/x-pem-file", body: bytes.from_text(a.root_pem))
+
+    if target == "/manage/clock" && r.method == http.METHOD_POST
+        return clock_set(@s, r: r)
+    answer = acme_route(@s, a: a, r: r)
+    return with_nonce(@s, response: answer)
+
+# An ACME resource's answer.
+#
+# - `s`: the state.
+# - `a`: the authorities.
+# - `r`: the request.
+function acme_route(@s: objects.State, a: authority.Authority, r: http.Request) -> http.Response
+    target = r.url.path
+
+    if r.method == http.METHOD_GET || r.method == http.METHOD_HEAD
+        if target == "/directory"
+            return http.respond_json(200, value: directory(s)).default(http.respond_status(500))
+
+        if target == "/acme/new-nonce"
+            status = if r.method == http.METHOD_HEAD
+                200
+            else
+                204
+
+            out @= http.respond_status(status)
+            out.headers @ http.with_header(headers: out.headers, name: "Cache-Control", value: "no-store")
+            return out
+
+        if strings.has_prefix(s: target, prefix: "/acme/renewal-info/")
+            return issuing.renewal_info(s, id: target.slice(from: 19, to: target.len()))
+
+        if target == "/acme/issuer/1"
+            return http.respond(200, content_type: "application/pkix-cert", body: a.issuer_der)
+        return objects.missing(detail: f"nothing is served at {target}")
+
+    if r.method != http.METHOD_POST
+        return objects.problem_response(kind: "malformed", detail: f"{r.method} is not taken here")
+
+    if http.value_of(r.headers, name: "Content-Type").default("") != "application/jose+json"
+        return objects.problem_response(kind: "malformed", detail: "a request's Content-Type is application/jose+json")
+
+    if target == "/acme/new-account"
+        return accounts.new_account(@s, r: r)
+
+    if target == "/acme/new-order"
+        return orders.new_order(@s, r: r)
+
+    if target == "/acme/revoke-cert"
+        return issuing.revoke(@s, r: r)
+    parts = strings.split(s: target, sep: "/")
+
+    if parts.len() < 4 || parts[1] != "acme"
+        return objects.missing(detail: f"nothing is served at {target}")
+    id = jws.id_of(parts[3]).default(0)
+
+    if parts.len() == 5 && parts[2] == "account" && parts[4] == "orders"
+        return accounts.orders_of(@s, r: r, id: id)
+
+    if parts.len() != 4
+        return objects.missing(detail: f"nothing is served at {target}")
+
+    return match parts[2]
+        "account"     => accounts.account(@s, r: r, id: id)
+        "order"       => orders.order(@s, r: r, id: id)
+        "authz"       => proofs.authz(@s, r: r, id: id)
+        "challenge"   => proofs.challenge(@s, r: r, id: id)
+        "finalize"    => issuing.finalize(@s, a: a, r: r, id: id)
+        "certificate" => issuing.certificate(@s, r: r, id: id)
+        _             => objects.missing(detail: f"nothing is served at {target}")
+
+# `response` with a fresh nonce and the directory's link, as RFC 8555
+# § 6.5 and § 7.1 ask of every answer.
+#
+# - `s`: the state.
+# - `response`: the answer.
+function with_nonce(@s: objects.State, response: http.Response) -> http.Response
+    out @= response
+    out.headers @ http.with_header(headers: out.headers, name: "Replay-Nonce", value: objects.fresh_nonce(@s))
+    out.headers @ http.with_header(headers: out.headers, name: "Link", value: f"<{s.base}/directory>;rel=\"index\"")
+    return out
+
+# The directory (RFC 8555 § 7.1.1), with the terms, the CAA identity and
+# the renewal information's URL.
+#
+# - `s`: the state.
+function directory(s: objects.State) -> json.Value
+    meta: {str: json.Value} = {
+        "termsOfService": .text(v: s.base + "/terms")
+        "caaIdentities": objects.texts([s.identity])
+        "externalAccountRequired": .boolean(v: false)
+    }
+    members: {str: json.Value} = {
+        "newNonce": .text(v: s.base + "/acme/new-nonce")
+        "newAccount": .text(v: s.base + "/acme/new-account")
+        "newOrder": .text(v: s.base + "/acme/new-order")
+        "revokeCert": .text(v: s.base + "/acme/revoke-cert")
+        "renewalInfo": .text(v: s.base + "/acme/renewal-info")
+        "meta": .object(members: meta)
+    }
+    return .object(members: members)
+
+# The clock set to the seconds since 1970 the body holds.
+#
+# - `s`: the state.
+# - `r`: the request.
+function clock_set(@s: objects.State, r: http.Request) -> http.Response
+    match numbers.parse_int(strings.trim(bytes.to_text(r.body).default("")))
+        .err _ => return http.respond_text(400, text: "the body holds the seconds since 1970\n")
+        .ok seconds =>
+            match time.from_unix(whole_seconds: seconds, extra_nanoseconds: 0)
+                .ok at =>
+                    s.now @ at
+                    return http.respond_status(204)
+                .err e => return http.respond_text(400, text: e.msg + "\n")

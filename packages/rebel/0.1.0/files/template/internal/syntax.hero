@@ -326,6 +326,19 @@ function compile_text(source: str, text: str, left: str, right: str, html: bool)
             main_slots @ slots
             slots @ 0
             blocks @ blocks.push(block(kind: BLOCK_DEFINE, opened: here, test_at: -1))
+        else if word == "clean"
+            action.take_word(@r, "clean")
+
+            if !html
+                return fail(
+                    code: "invalid",
+                    msg: lex.located(here, "`clean` writes HTML from outside as markup, which only the HTML mode places: read the template with `parse_html`")
+                )
+            value = action.pipe(@r, scope, html)?
+            action.finish(@r)?
+            s: program.Step @= program.step(kind: program.CLEAN, line: here.line, column: here.column)
+            s.cond @ program.only(value)
+            steps @ steps.push(s)
         else
             value = action.pipe(@r, scope, html)?
             action.finish(@r)?

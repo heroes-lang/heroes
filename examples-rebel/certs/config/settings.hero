@@ -1,0 +1,202 @@
+# What the certificate manager is told to do, read from its TOML file by
+# `config/loader`. The file, every key with its meaning:
+#
+#     [account]
+#     email = "ops@example.org"      # the account's contact, a mailto: URL made of it
+#     agree_terms = true             # the CA's terms of service agreed to
+#
+#     [acme]
+#     directory = "https://acme-v02.api.letsencrypt.org/directory"
+#     roots = ""                     # PEM file of the authority the CA's own HTTPS is
+#                                    # signed by, "" for the system's store (a test CA)
+#     trust = ""                     # PEM file of the roots an issued chain must lead
+#                                    # to, "" to leave that to the system's TLS
+#
+#     [store]
+#     folder = "/var/lib/certs"      # certificates, their history, the renewal records
+#     keyring_service = "certs"      # "" keeps the private keys in files under folder
+#
+#     [renewal]
+#     days_before_expiry = 30        # renewed once this many days or fewer are left
+#     renewal_info = true            # the CA's suggested window asked too (RFC 9773)
+#
+#     [http01]
+#     webroot = "/var/www/acme"      # where a token's answer is written for a web server,
+#                                    # or for `certs respond`
+#     listen = 80                    # the port `certs respond` serves the webroot on
+#
+#     [dns01]
+#     server = "192.0.2.53:53"       # the authority taking RFC 2136 updates
+#     zone = "example.org"           # the zone the records are written in
+#     tsig_key = "certs-update"      # the TSIG key's name; its secret is kept in the
+#                                    # key store, `certs secret` puts it there
+#
+#     [serve]
+#     listen = "127.0.0.1:8443"      # where `certs serve` answers HTTPS
+#     certificate = "site"           # with which certificate
+#
+#     [[certificate]]
+#     name = "site"                  # the folder's name for it, letters, digits and -
+#     domains = ["example.org", "www.example.org"]
+#     challenge = "http-01"          # or "dns-01", which a wildcard needs
+#
+# A domain may be an IPv4 or IPv6 address (RFC 8738), which `http-01` alone
+# proves.
+
+## The challenges
+
+# The challenge answered by a file served over HTTP (RFC 8555 § 8.3).
+constant HTTP_01: str
+    "http-01"
+
+# The challenge answered by a TXT record (RFC 8555 § 8.4).
+constant DNS_01: str
+    "dns-01"
+
+## The settings
+
+# The account at the CA.
+record Account
+    # The contact's address, written as `mailto:` before it.
+    email: str
+    # Whether the person running the program agreed to the CA's terms.
+    agree_terms: bool
+
+# The CA and what its answers are checked against.
+record Acme
+    # The directory's URL.
+    directory: str
+    # The PEM file of the authorities the CA's HTTPS may be signed by; "" for
+    # the system's store.
+    roots: str
+    # The PEM file of the roots an issued chain must lead to; "" where the
+    # system's TLS is left to judge it.
+    trust: str
+
+# Where what is kept stands.
+record Store
+    # The folder of certificates and records.
+    folder: str
+    # The keyring service the private keys are kept under; "" for files
+    # under `folder`.
+    keyring_service: str
+
+# When a certificate is renewed.
+record Renewal
+    # Renewed once this many whole days or fewer are left, 1 or more.
+    days_before_expiry: i64
+    # Whether the CA's renewal information is asked first.
+    renewal_info: bool
+
+# How an HTTP-01 answer is served.
+record Http01
+    # The folder whose `.well-known/acme-challenge/` holds the answers.
+    webroot: str
+    # The port the program's own responder serves the webroot on, 1 to
+    # 65535.
+    listen: i64
+
+# How a DNS-01 answer is published.
+record Dns01
+    # The authority taking updates, a host and a port; "" where no
+    # certificate asks DNS-01.
+    server: str
+    # The zone written in, absolute or not.
+    zone: str
+    # The TSIG key's name; "" signs nothing.
+    tsig_key: str
+
+# What `certs serve` serves.
+record Serving
+    # The address and port, as `127.0.0.1:8443`.
+    listen: str
+    # The certificate's name; "" for the first.
+    certificate: str
+
+# One certificate kept and renewed: certbot's lineage.
+record Lineage
+    # Its name, the folder it is kept in: letters, digits and `-`.
+    name: str
+    # The names and addresses it is for, the first its subject's.
+    domains: [str]
+    # How they are proved: `HTTP_01` or `DNS_01`.
+    challenge: str
+
+# The whole configuration.
+record Settings
+    # The account.
+    account: Account
+    # The CA.
+    acme: Acme
+    # Where things are kept.
+    store: Store
+    # When to renew.
+    renewal: Renewal
+    # HTTP-01's settings.
+    http01: Http01
+    # DNS-01's settings.
+    dns01: Dns01
+    # What `certs serve` serves.
+    serve: Serving
+    # The certificates, in the file's order.
+    certificates: [Lineage]
+
+## Asking
+
+# The code of a certificate the settings do not name.
+constant NOT_FOUND: str
+    "not_found"
+
+# The certificate named `name`.
+#
+# - `s`: the settings.
+# - `name`: the certificate's name.
+#
+# Fails `not_found` where none has it, the message naming those there are.
+function lineage_named(s: Settings, name: str) -> Lineage?
+    names: [str] @= []
+
+    for l in s.certificates
+        if l.name == name
+            return ok(l)
+        names @ names.push(l.name)
+
+    return fail(code: NOT_FOUND, msg: f"no certificate is named \"{name}\"; the file names {names.join(", ")}")
+
+# The account's contacts, as RFC 8555 § 7.3 writes them.
+#
+# - `s`: the settings.
+#
+# One `mailto:` URL, or none where no email is set.
+function contacts_of(s: Settings) -> [str]
+    if s.account.email == ""
+        return []
+    return ["mailto:" + s.account.email]
+
+# Whether `domain` is a wildcard name, `*.` before a domain.
+#
+# - `domain`: one of a certificate's domains.
+function is_wildcard(domain: str) -> bool
+    return domain.len() > 2 && domain[0] == '*' && domain[1] == '.'
+
+test "lineage_named: found, and absent with the names there are"
+    s = Settings(
+        account: Account(email: "", agree_terms: true),
+        acme: Acme(directory: "https://ca.test/dir", roots: "", trust: ""),
+        store: Store(folder: "/tmp/x", keyring_service: ""),
+        renewal: Renewal(days_before_expiry: 30, renewal_info: true),
+        http01: Http01(webroot: "/tmp/w", listen: 80),
+        dns01: Dns01(server: "", zone: "", tsig_key: ""),
+        serve: Serving(listen: "127.0.0.1:8443", certificate: ""),
+        certificates: [Lineage(name: "site", domains: ["a.test"], challenge: HTTP_01)]
+    )
+    assert lineage_named(s, name: "site").must().domains == ["a.test"]
+    absent = lineage_named(s, name: "mail")
+    assert absent.is_err()
+    assert contacts_of(s) == []
+
+test "is_wildcard: a star label first, and nothing else"
+    assert is_wildcard("*.example.org")
+    assert !is_wildcard("example.org")
+    assert !is_wildcard("*.")
+    assert !is_wildcard("a*.example.org")

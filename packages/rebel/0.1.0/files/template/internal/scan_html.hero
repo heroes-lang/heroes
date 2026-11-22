@@ -58,9 +58,11 @@ function closing_tag(s: str, from: i64, name: str) -> i64
 
     return s.len()
 
-# The context after a tag's `>`: the content of the element it opened.
+# The context after a tag's `>`: the content of the element it opened, the
+# elements left open moved by it.
 function after_tag(c: context.Context lent) -> context.Context
     next: context.Context @= context.initial()
+    next.opened @ context.opened_after(c.opened, tag: c.tag, self_closing: c.self_closing)
     element = c.element
 
     if element == names.ELEMENT_SCRIPT
@@ -79,6 +81,8 @@ function after_tag(c: context.Context lent) -> context.Context
 function after_value(c: context.Context lent) -> context.Context
     next: context.Context @= context.with_state(context.initial(), context.TAG)
     next.element @ c.element
+    next.tag @ c.tag
+    next.opened @ c.opened
 
     if c.attr == names.ATTR_SCRIPT_TYPE && !names.is_script_type(c.word)
         next.element @ names.ELEMENT_SCRIPT_OTHER
@@ -237,7 +241,9 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
                 at @ j
             else if closing_tag(s: text, from: at, name: name) == at
                 out @ out.push("</")
+                opened = c.opened
                 c @ context.with_state(context.initial(), context.TAG_NAME)
+                c.opened @ opened
                 c.word @ "/"
                 at @ at + 2
             else
@@ -271,14 +277,17 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
                     c.state @ context.AFTER_NAME
                 else if strings.has_prefix(s: c.word, prefix: "/")
                     c.element @ names.ELEMENT_NONE
+                    c.tag @ c.word
                     c.state @ context.TAG
                 else
                     c.element @ names.element_of(c.word)
+                    c.tag @ c.word
                     c.state @ context.TAG
                 c.word @ ""
         else if state == context.TAG || state == context.AFTER_NAME || state == context.BEFORE_VALUE
             if is_space(b)
                 out @ out.push(text.slice(from: at, to: at + 1))
+                c.self_closing @ false
                 at @ at + 1
             else if b == '>'
                 out @ out.push(">")
@@ -302,11 +311,13 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
             else if b == '/'
                 out @ out.push("/")
                 c.state @ context.TAG
+                c.self_closing @ true
                 at @ at + 1
             else
                 c.state @ context.ATTR_NAME
                 c.attr @ names.ATTR_PLAIN
                 c.word @ ""
+                c.self_closing @ false
 
                 # A `=` where a name begins is the name's first character,
                 # as the HTML standard's before-attribute-name state reads
@@ -342,7 +353,9 @@ function scan(text: str, start: context.Context, place: lex.Place) -> context.Sc
 
             if end < text.len()
                 out @ out.push("</")
+                opened = c.opened
                 c @ context.with_state(context.initial(), context.TAG_NAME)
+                c.opened @ opened
                 c.word @ "/"
                 at @ end + 2
 
