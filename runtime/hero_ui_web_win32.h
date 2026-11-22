@@ -5,11 +5,11 @@
  * `heroes_runtime.h`.
  *
  * hero_ui_web_win32.h: the web view's arm on Windows, Microsoft Edge's
- * WebView2, which `hero_ui.c`'s Win32 arm calls for a widget of kind
- * `HERO_UI_WEBVIEW` (`hero_ui.h`, THE WEB VIEW). A header of the platform
- * layer's own, as `hero_ui_appkit.h` is, and no group's: a program binds
- * `hero_ui.h`, whose functions check every argument and the thread before
- * any of these runs.
+ * WebView2, which the Win32 arm, `platform/hero_ui_win32.c`, calls for a
+ * widget of kind `HERO_UI_WEBVIEW` (`hero_ui.h`, THE WEB VIEW). A header of
+ * the platform layer's own, as `hero_ui_appkit.h` is, and no group's: a
+ * program binds `hero_ui.h`, whose functions check every argument and the
+ * thread before any of these runs.
  *
  * WHAT THE WIN32 ARM HOLDS, AND WHAT THIS MEMBER HOLDS. The Win32 arm keeps
  * the windows; this member loads `WebView2Loader.dll` at the first web view

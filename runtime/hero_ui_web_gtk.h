@@ -5,11 +5,11 @@
  * `heroes_runtime.h`.
  *
  * hero_ui_web_gtk.h: the web view's arm on Linux, WebKitGTK 6.0 (the GTK 4
- * build, `libwebkitgtk-6.0.so.4`, with libsoup 3), which `hero_ui.c`'s GTK
- * arm calls for a widget of kind `HERO_UI_WEBVIEW` (`hero_ui.h`, THE WEB
- * VIEW). A header of the platform layer's own, as `hero_ui_appkit.h` is, and
- * no group's: a program binds `hero_ui.h`, whose functions check every
- * argument and the thread before any of these runs.
+ * build, `libwebkitgtk-6.0.so.4`, with libsoup 3), which the GTK arm,
+ * `platform/hero_ui_gtk.c`, calls for a widget of kind `HERO_UI_WEBVIEW`
+ * (`hero_ui.h`, THE WEB VIEW). A header of the platform layer's own, as
+ * `hero_ui_appkit.h` is, and no group's: a program binds `hero_ui.h`, whose
+ * functions check every argument and the thread before any of these runs.
  *
  * WHAT THE GTK ARM HOLDS, AND WHAT THIS MEMBER HOLDS. The GTK arm opens GTK 4
  * and keeps the windows; this member opens WebKitGTK 6.0 with `dlopen` at the
