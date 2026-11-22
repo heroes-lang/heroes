@@ -1,0 +1,125 @@
+# The demo's hands and eyes: keys typed from a script, given to the editor
+# through the same door the terminal uses, and what a person would look at
+# printed as text: the screen, a frame at a time, its right edge marked; the
+# status line; the message; a cell's style in the settings' words.
+#
+# A script is text: each character is typed as the key that sends it, a
+# code point at a time, so a letter and its combining accent are two keys as
+# on a real keyboard; `<name>` presses the key of that name, as the settings
+# name keys (`<ctrl-s>`, `<alt-f>`, `<down>`, `<f3>`).
+
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/tui
+
+use editor/press
+use editor/state
+use input/keynames
+use settings/theme
+use view/layout
+use view/screen
+
+# The keys `script` presses, in order.
+#
+# - `script`: characters, and key names between `<` and `>`.
+#
+# Fails `invalid` where a name between `<` and `>` names no key, or a `<`
+# is never closed.
+function keys_of(script: str) -> [term.Key]?
+    pressed: [term.Key] @= []
+    name: [str] @= []
+    naming @= false
+
+    for c in script.chars()
+        if naming
+            if c == ">"
+                pressed @ pressed.push(keynames.key_of(name.join(""))?)
+                name @ []
+                naming @ false
+            else
+                name @ name.push(c)
+        else if c == "<"
+            naming @ true
+        else
+            pressed @ pressed.push(.character(text: c))
+
+    if naming
+        return fail(code: "invalid", msg: f"a key's name is not closed in \"{script}\"")
+
+    return ok(pressed)
+
+# Presses each key of `script` on the editor, scrolling after each as the
+# terminal's loop does before it draws.
+#
+# - `e`: the editor.
+# - `script`: the keys, as `keys_of` reads them.
+#
+# Fails where the script names no key or a command's work fails.
+function play(@e: state.Editor, script: str) -> ()?
+    for k in keys_of(script)?
+        press.press_key(@e, key: k)?
+        layout.follow(@e)
+
+    return ok()
+
+# Prints the screen of `e` as it stands, framed, under `title`.
+#
+# - `e`: the editor.
+# - `title`: what the screen shows.
+function show(e: state.Editor lent, title: str)
+    frame = screen.draw(e)
+    print(f"[{title}] {screen.cursor_text(frame.cursor)}")
+
+    for row in screen.text_of(frame)
+        print("  |" + row)
+
+# Prints the message under the status line, after `label`.
+#
+# - `e`: the editor.
+# - `label`: what was done.
+function said(e: state.Editor lent, label: str)
+    print(f"{label}: {e.message}")
+
+# Prints the status line's right half, after `label`: the encoding, the line
+# breaks, the line and the column.
+#
+# - `e`: the editor.
+# - `label`: what was done.
+function where(e: state.Editor lent, label: str)
+    print(f"{label}: {strings.trim(screen.status_of(e)[1])}")
+
+# Prints the line `n` of the buffer shown, from 1, after `label`.
+#
+# - `e`: the editor.
+# - `label`: what was done.
+# - `n`: the line's number, from 1.
+function line(e: state.Editor lent, label: str, n: i64)
+    match state.slot_of_current(e)
+        .ok at =>
+            lines = e.buffers.open[at].doc.lines
+
+            if n >= 1 && n <= lines.len()
+                print(f"{label}: \"{lines[n - 1]}\"")
+            else
+                print(f"{label}: line {n} is not in the buffer")
+        .err _ => print(f"{label}: no buffer is open")
+
+# The style of the cell at column `x` and row `y` of the screen, in the
+# settings' words: `black on bright_yellow`.
+#
+# - `e`: the editor.
+# - `x`: the column, from 0.
+# - `y`: the row, from 0.
+function style_at(e: state.Editor lent, x: i64, y: i64) -> str
+    frame = screen.draw(e)
+    return theme.describe(tui.cell_at(frame.buffer, x: x, y: y).style)
+
+test "keys_of: characters, a combining accent apart, and named keys"
+    got = keys_of("é<ctrl-s><down>").must()
+    assert got.len() == 4
+    assert got[1] == .character(text: "́")
+    assert got[2] == .control(letter: "s") && got[3] == .down
+
+test "keys_of: a name not closed, and a name of no key"
+    assert keys_of("a<ctrl-s").is_err()
+    assert keys_of("<warp>").is_err()

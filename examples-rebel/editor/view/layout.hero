@@ -1,0 +1,117 @@
+# Where each part of the screen stands, and the scroll that keeps the cursor
+# in view. The screen is four bands, top to bottom: the tab bar, the text,
+# the status line and the line of messages and prompts; `tui.split` cuts
+# them by constraints, so a screen of any size gives the text every row the
+# three one-row bands leave.
+#
+# The text scrolls as little as keeps the cursor inside it, in lines and in
+# screen columns, the columns counted as `text/glyphs` lays the line out, so
+# a line of wide characters scrolls by what is drawn.
+
+use <rebel>/tui
+
+use editor/state
+use text/glyphs
+
+# The four bands of the screen.
+record Areas
+    # The tab bar, one row.
+    tabs: tui.Rect
+    # The text, every other row.
+    text: tui.Rect
+    # The status line, one row.
+    status: tui.Rect
+    # The line of messages, prompts and questions, one row.
+    bottom: tui.Rect
+
+# The bands of a screen of `width` by `height`.
+#
+# - `width`: the screen's columns.
+# - `height`: the screen's rows.
+#
+# A screen of fewer than four rows gives the text none.
+function areas_of(width: i64, height: i64) -> Areas
+    screen = tui.Rect(x: 0, y: 0, width: width, height: height)
+    bands = tui.split(
+        screen,
+        layout: tui.new_layout(.vertical, constraints: [.length(n: 1), .fill(weight: 1), .length(n: 1), .length(n: 1)])
+    )
+    return Areas(tabs: bands[0], text: bands[1], status: bands[2], bottom: bands[3])
+
+# How many columns the line numbers take for a text of `count` lines: its
+# largest number's digits and a space, or none where they are not drawn.
+#
+# - `count`: the text's lines.
+# - `shown`: whether the line numbers are drawn.
+function gutter_width(count: i64, shown: bool) -> i64
+    if !shown
+        return 0
+
+    return to_str(count).len() + 1
+
+# Scrolls the buffer shown as little as keeps its cursor inside the text's
+# band.
+#
+# - `e`: the editor; the buffer's `top` and `left` change.
+function follow(@e: state.Editor)
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return
+
+    a = areas_of(width: e.width, height: e.height)
+    b = e.buffers.open[at]
+    rows = a.text.height
+    columns = a.text.width - gutter_width(b.doc.lines.len(), shown: e.setup.options.line_numbers)
+
+    if rows < 1 || columns < 1
+        return
+
+    top @= b.top
+
+    if b.cursor.line < top
+        top @ b.cursor.line
+
+    if b.cursor.line >= top + rows
+        top @ b.cursor.line - rows + 1
+
+    laid = glyphs.glyphs_of(b.doc.lines[b.cursor.line], tab_width: state.tab_width(e))
+    column = glyphs.column_at(laid, at: b.cursor.col)
+    wide = width_at(laid, at: b.cursor.col)
+    left @= b.left
+
+    if column < left
+        left @ column
+
+    if column + wide > left + columns
+        left @ column + wide - columns
+
+    e.buffers.open[at].top @ top
+    e.buffers.open[at].left @ left
+
+# The columns the glyph at byte `at` takes, 1 at the line's end, where the
+# cursor stands after the last glyph.
+#
+# - `laid`: the line's glyphs.
+# - `at`: a byte index at a glyph's start, or the line's length.
+function width_at(laid: [glyphs.Glyph] lent, at: i64) -> i64
+    for g in laid
+        if g.at == at
+            return g.width
+
+    return 1
+
+test "width_at: a wide character, a tab's stop, and the line's end"
+    laid = glyphs.glyphs_of("日\tx", tab_width: 4)
+    assert width_at(laid, at: 0) == 2
+    assert width_at(laid, at: 3) == 2
+    assert width_at(laid, at: 5) == 1
+
+test "areas_of: four bands of a screen of ten rows"
+    a = areas_of(width: 40, height: 10)
+    assert a.tabs == tui.Rect(x: 0, y: 0, width: 40, height: 1)
+    assert a.text == tui.Rect(x: 0, y: 1, width: 40, height: 7)
+    assert a.status.y == 8 && a.bottom.y == 9
+
+test "gutter_width: a hundred lines, and none drawn"
+    assert gutter_width(100, shown: true) == 4
+    assert gutter_width(100, shown: false) == 0

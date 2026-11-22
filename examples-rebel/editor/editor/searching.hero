@@ -1,0 +1,315 @@
+# Finding and replacing, as a person meets them: a prompt for the pattern,
+# the cursor taken to the next match and the match shown with its place
+# among all, `match 2 of 5`; then Ctrl-N and Ctrl-P to step, wrapping past
+# either end and saying so. A replacement asks the pattern, then the
+# template, then shows each match and asks: `y` replaces it, `n` leaves it,
+# `a` replaces it and every one after it to the end of the text as one
+# change, `q` stops. Each `y` is a change undo takes back alone.
+#
+# A pattern that does not compile is told with `regex`'s own message, which
+# names the byte and the reason, and the last good pattern stays.
+
+use <rebel>/regex
+
+use buffers/editing
+use editor/state
+use search/matches
+use search/replace
+use text/document
+
+# Runs `find`, `find_next`, `find_previous` or `replace`.
+#
+# - `e`: the editor.
+# - `command`: one of the four names.
+function run(@e: state.Editor, command: str)
+    match command
+        "find"          => state.ask(@e, asking: .find, question: "find (regex): ", text: e.pattern)
+        "replace"       => state.ask(@e, asking: .replace_pattern, question: "replace (regex): ", text: e.pattern)
+        "find_previous" => step(@e, forward: false)
+        _               => step(@e, forward: true)
+
+# Answers the prompt of `find`: the pattern compiled, kept, and its next
+# match from the cursor shown.
+#
+# - `e`: the editor.
+# - `pattern`: the pattern typed.
+function answer_find(@e: state.Editor, pattern: str)
+    state.settle(@e)
+
+    if compiled(@e, pattern: pattern)
+        show(@e, forward: true, from: cursor_of(e), strictly: false)
+
+# Answers the prompt of a replacement's pattern: compiled, kept, and the
+# template asked.
+#
+# - `e`: the editor.
+# - `pattern`: the pattern typed.
+function answer_pattern(@e: state.Editor, pattern: str)
+    state.settle(@e)
+
+    if compiled(@e, pattern: pattern)
+        state.ask(@e, asking: .replace_template, question: f"replace /{pattern}/ with: ", text: e.template)
+
+# Answers the prompt of a replacement's template: checked against the
+# pattern, kept, and the first match from the cursor shown and asked about.
+#
+# - `e`: the editor.
+# - `template`: the template typed, `$1` and `${name}` naming groups.
+function answer_template(@e: state.Editor, template: str)
+    state.settle(@e)
+
+    re = match e.searching
+        .ok r  => r
+        .err _ => return
+
+    match replace.check_template(re, template: template)
+        .ok _ => _ = 0
+        .err x =>
+            state.warn(@e, text: f"the template cannot be used: {x.msg}")
+            return
+
+    e.template @ template
+    e.replaced @ 0
+    show(@e, forward: true, from: cursor_of(e), strictly: false)
+
+    if !e.hit.is_err()
+        state.confirm(@e, asking: .replace_each, question: "replace this match? y, n, a all the rest, q quit")
+
+# Answers the question of a replacement for the match shown.
+#
+# - `e`: the editor.
+# - `answer`: the key's name: `y`, `n`, `a`, or anything else to stop.
+function answer_each(@e: state.Editor, answer: str)
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return
+
+    re = match e.searching
+        .ok r  => r
+        .err _ => return
+
+    hit = match e.hit
+        .ok h  => h
+        .err _ => return
+
+    match answer
+        "y" =>
+            match replace.edit_of(e.buffers.open[at].doc, re: re, hit: hit, template: e.template)
+                .ok edit =>
+                    editing.change(@e.buffers.open[at], edit: edit, kind: .other, tab_width: state.tab_width(e))
+                    e.replaced @ e.replaced + 1
+                    following(@e, from: e.buffers.open[at].cursor, strictly: edit.removed == "")
+                .err x => finish(@e, why: x.msg)
+        "n" =>
+            on = past_shown(e)
+            following(@e, from: on.at, strictly: on.strictly)
+        "a" =>
+            rest(@e, at: at, re: re, from: hit)
+        _ =>
+            finish(@e, why: "")
+
+# Shows the next match from `from` and asks about it, or ends the
+# replacement where the next one lies past the end of the text.
+#
+# - `e`: the editor.
+# - `from`: where the search goes on: after the replacement made, or after
+#   the match left alone.
+# - `strictly`: whether a match beginning at `from` is passed over: after a
+#   match of the empty text.
+function following(@e: state.Editor, from: document.Pos, strictly: bool)
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return
+
+    b = e.buffers.open[at]
+
+    re = match e.searching
+        .ok r  => r
+        .err _ => return
+
+    match matches.next_hit(b.doc, re: re, at: from, strictly: strictly)
+        .ok f =>
+            if f.wrapped
+                finish(@e, why: "")
+                return
+            go_to(@e, at: at, hit: f.hit)
+            state.say(@e, text: tally_text(e, hit: f.hit, wrapped: false))
+        .err _ => finish(@e, why: "")
+
+# Replaces the match `from` and every match after it to the end of the
+# text, as one change, and ends the replacement.
+#
+# - `e`: the editor.
+# - `at`: the slot of the buffer shown.
+# - `re`: the pattern.
+# - `from`: the match shown.
+function rest(@e: state.Editor, at: i64, re: regex.Regex, from: matches.Hit)
+    scratch @= e.buffers.open[at].doc
+    edits: [document.Edit] @= []
+    hit @= from
+    end @= document.Pos(line: from.line, col: from.from)
+
+    while true
+        edit = match replace.edit_of(scratch, re: re, hit: hit, template: e.template)
+            .ok x  => x
+            .err _ => break
+
+        end @ document.apply(@scratch, edit: edit)
+        edits @ edits.push(edit)
+
+        match matches.next_hit(scratch, re: re, at: end, strictly: edit.removed == "")
+            .ok f =>
+                if f.wrapped
+                    break
+                hit @ f.hit
+            .err _ => break
+
+    editing.change_all(@e.buffers.open[at], edits: edits, after: end, tab_width: state.tab_width(e))
+    e.replaced @ e.replaced + edits.len()
+    finish(@e, why: "")
+
+# Ends a replacement and says how many matches it replaced.
+#
+# - `e`: the editor.
+# - `why`: why it stopped where something went wrong, "" otherwise.
+function finish(@e: state.Editor, why: str)
+    state.settle(@e)
+    e.hit @ fail(code: "not_found", msg: "the replacement ended")
+
+    if why != ""
+        state.warn(@e, text: f"replaced {e.replaced}, then stopped: {why}")
+    else
+        state.say(@e, text: f"replaced {e.replaced} match(es)")
+
+# Compiles `pattern` as the search, saying why where it does not compile,
+# and answers whether it did.
+#
+# - `e`: the editor.
+# - `pattern`: the pattern typed.
+function compiled(@e: state.Editor, pattern: str) -> bool
+    match matches.compile_pattern(pattern, ignore_case: e.setup.options.ignore_case)
+        .ok re =>
+            e.pattern @ pattern
+            e.searching @ ok(re)
+            return true
+        .err x =>
+            state.warn(@e, text: f"/{pattern}/ is no pattern: {x.msg}")
+            return false
+
+# Goes to the next match, or the one before, of the last pattern, or asks
+# for one where none was searched yet.
+#
+# - `e`: the editor.
+# - `forward`: true for the next, false for the one before.
+function step(@e: state.Editor, forward: bool)
+    if e.searching.is_err()
+        state.ask(@e, asking: .find, question: "find (regex): ", text: "")
+        return
+
+    if !forward
+        show(@e, forward: false, from: cursor_of(e), strictly: true)
+        return
+
+    on = past_shown(e)
+    show(@e, forward: true, from: on.at, strictly: on.strictly)
+
+# Where a search for the next match goes on from, and whether a match there
+# is passed over.
+record Resume
+    # The place.
+    at: document.Pos
+    # Whether a match beginning there is passed over.
+    strictly: bool
+
+# Where the next match is looked for: after the end of the match the cursor
+# stands on, so a pattern that could match again inside it, `(\w+)@` one
+# letter on, finds the next match and not a piece of this one; from the
+# cursor, passing over a match there, where none is shown.
+#
+# - `e`: the editor.
+function past_shown(e: state.Editor lent) -> Resume
+    here = cursor_of(e)
+
+    match e.hit
+        .ok h =>
+            if here == document.Pos(line: h.line, col: h.from)
+                return Resume(at: document.Pos(line: h.line, col: h.to), strictly: h.to == h.from)
+        .err _ => _ = 0
+
+    return Resume(at: here, strictly: true)
+
+# The cursor of the buffer shown, the document's start where none is.
+#
+# - `e`: the editor.
+function cursor_of(e: state.Editor lent) -> document.Pos
+    match state.slot_of_current(e)
+        .ok at => return e.buffers.open[at].cursor
+        .err _ => return document.Pos(line: 0, col: 0)
+
+# Takes the cursor to the next match of the search, or the one before, and
+# says where it stands among all.
+#
+# - `e`: the editor.
+# - `forward`: the way to search.
+# - `from`: where the search begins: the cursor, or the end of the match
+#   shown.
+# - `strictly`: whether a match beginning at `from` is passed over.
+function show(@e: state.Editor, forward: bool, from: document.Pos, strictly: bool)
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return
+
+    re = match e.searching
+        .ok r  => r
+        .err _ => return
+
+    b = e.buffers.open[at]
+
+    found = if forward
+        matches.next_hit(b.doc, re: re, at: from, strictly: strictly)
+    else
+        matches.previous_hit(b.doc, re: re, at: from)
+
+    match found
+        .ok f =>
+            go_to(@e, at: at, hit: f.hit)
+            state.say(@e, text: tally_text(e, hit: f.hit, wrapped: f.wrapped))
+        .err _ =>
+            e.hit @ fail(code: "not_found", msg: "no match")
+            state.warn(@e, text: f"no match for /{e.pattern}/")
+
+# Puts the cursor at the start of `hit` and shows it as the current match.
+#
+# - `e`: the editor.
+# - `at`: the slot of the buffer shown.
+# - `hit`: the match.
+function go_to(@e: state.Editor, at: i64, hit: matches.Hit)
+    editing.move_to(
+        @e.buffers.open[at],
+        to: document.Pos(line: hit.line, col: hit.from),
+        keep_goal: false,
+        tab_width: state.tab_width(e)
+    )
+    e.hit @ ok(hit)
+
+# `match 2 of 5`, and whether the search wrapped to find it.
+#
+# - `e`: the editor.
+# - `hit`: the match shown.
+# - `wrapped`: whether the search went past an end.
+function tally_text(e: state.Editor lent, hit: matches.Hit, wrapped: bool) -> str
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return ""
+
+    re = match e.searching
+        .ok r  => r
+        .err _ => return ""
+
+    t = matches.tally_of(e.buffers.open[at].doc, re: re, hit: hit)
+    told = f"/{e.pattern}/: match {t.index} of {t.total}"
+
+    if wrapped
+        return told + ", the search wrapped"
+
+    return told

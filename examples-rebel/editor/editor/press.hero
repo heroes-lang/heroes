@@ -1,0 +1,183 @@
+# A key or a paste given to the editor, sent where the mode says: to the
+# text, where a key bound to a command runs it and any other key holding a
+# character types it; to the line typed at a prompt, which `tui`'s input
+# edits by graphemes until Enter answers or Escape gives up; to a question,
+# which one key answers; or to the diff and help views, which scroll. An
+# answer goes to the module that asked, by what `state.Asking` says was
+# asked, so a prompt never answers a question it did not put.
+#
+# This is the one door of the keys, so the real terminal and the demo's
+# scripted keys reach the editor the same way.
+
+use <rebel>/numbers
+use <rebel>/term
+use <rebel>/tui
+
+use buffers/editing
+use editor/commands
+use editor/files
+use editor/searching
+use editor/state
+use input/bindings
+use input/keynames
+use text/document
+
+# Does what `key` asks of the editor.
+#
+# - `e`: the editor.
+# - `key`: the key pressed.
+#
+# Fails where a command's work fails.
+function press_key(@e: state.Editor, key: term.Key) -> ()?
+    match e.mode
+        .editing      => return on_text(@e, key: key)
+        .prompt       => on_prompt(@e, key: key)
+        .confirm      => answer_question(@e, answer: keynames.name_of(key))
+        .diff | .help => on_view(@e, key: key)
+
+    return ok()
+
+# A key given to the text: its command, or its character typed.
+#
+# - `e`: the editor.
+# - `key`: the key.
+#
+# Fails where the command's work fails.
+function on_text(@e: state.Editor, key: term.Key) -> ()?
+    state.say(@e, text: "")
+
+    match bindings.command_of(e.setup.bound, key: key)
+        .ok command =>
+            commands.run(@e, command: command)?
+            e.last_command @ command
+        .err _ =>
+            e.last_command @ ""
+
+            match key
+                .character c => commands.type_text(@e, text: c.text)
+                .enter | .tab | .backspace | .escape | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete | .function_key _ | .control _ | .other _ =>
+                    state.warn(@e, text: f"{keynames.name_of(key)} does nothing; F1 lists the keys")
+
+    return ok()
+
+# A key given to the line typed at a prompt.
+#
+# - `e`: the editor.
+# - `key`: the key.
+function on_prompt(@e: state.Editor, key: term.Key)
+    match key
+        .enter => answer_prompt(@e, text: e.input.text)
+        .escape =>
+            state.settle(@e)
+            state.say(@e, text: "cancelled")
+        .character _ | .tab | .backspace | .up | .down | .left | .right | .home | .end | .page_up | .page_down | .insert | .delete | .function_key _ | .control _ | .other _ =>
+            _ = tui.press_input(@e.input, key: key)
+
+# A key given to the diff or the help view: the arrows and the pages scroll
+# it, Escape or `q` leaves it.
+#
+# - `e`: the editor.
+# - `key`: the key.
+function on_view(@e: state.Editor, key: term.Key)
+    page = e.height - 3
+
+    match keynames.name_of(key)
+        "up"        => scroll(@e, by: -1)
+        "down"      => scroll(@e, by: 1)
+        "page_up"   => scroll(@e, by: -page)
+        "page_down" => scroll(@e, by: page)
+        "escape" | "q" =>
+            e.mode @ .editing
+            state.say(@e, text: "")
+        _ => _ = 0
+
+# Scrolls the view `by` rows, never above its first.
+#
+# - `e`: the editor.
+# - `by`: the rows, negative upwards.
+function scroll(@e: state.Editor, by: i64)
+    e.view_top @ e.view_top + by
+
+    if e.view_top < 0
+        e.view_top @ 0
+
+# Gives the editor a pasted text: put in the text as one change, or in the
+# prompt's line with its line breaks made spaces, a prompt being one line.
+#
+# - `e`: the editor.
+# - `text`: the text pasted.
+function press_paste(@e: state.Editor, text: str)
+    match e.mode
+        .editing => commands.paste(@e, text: text)
+        .prompt =>
+            for c in text.chars()
+                piece = if c == "\n" || c == "\r"
+                    " "
+                else
+                    c
+                _ = tui.press_input(@e.input, key: .character(text: piece))
+        .confirm | .diff | .help => _ = 0
+
+# Takes `text`, the line typed at the prompt, as its answer.
+#
+# - `e`: the editor, at a prompt.
+# - `text`: the line typed.
+function answer_prompt(@e: state.Editor, text: str)
+    match e.asking
+        .find             => searching.answer_find(@e, pattern: text)
+        .replace_pattern  => searching.answer_pattern(@e, pattern: text)
+        .replace_template => searching.answer_template(@e, template: text)
+        .goto_line        => goto_line(@e, text: text)
+        .open_file        => files.answer_open(@e, path: text)
+        .save_encoding    => files.answer_save_encoding(@e, label: text)
+        .reopen_encoding  => files.answer_reopen(@e, label: text)
+        .replace_each | .reload _ | .close _ | .quit | .nothing =>
+            state.settle(@e)
+
+# Takes `answer`, the name of the key pressed, as the answer to the
+# question.
+#
+# - `e`: the editor, at a question.
+# - `answer`: the key's name: `y`, `n`, `a`, `q`, `escape` or another.
+function answer_question(@e: state.Editor, answer: str)
+    match e.asking
+        .replace_each => searching.answer_each(@e, answer: answer)
+        .reload r =>
+            state.settle(@e)
+
+            if answer == "y"
+                files.reload_from_disk(@e, path: r.path)
+            else
+                files.keep(@e, path: r.path)
+        .close c => files.answer_close(@e, path: c.path, answer: answer)
+        .quit    => files.answer_quit(@e, answer: answer)
+        .find | .replace_pattern | .replace_template | .goto_line | .open_file | .save_encoding | .reopen_encoding | .nothing =>
+            state.settle(@e)
+
+# Answers the prompt of `goto_line`: the cursor to the start of the line
+# numbered `text`, from 1.
+#
+# - `e`: the editor.
+# - `text`: the number typed.
+function goto_line(@e: state.Editor, text: str)
+    state.settle(@e)
+
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return
+
+    count = e.buffers.open[at].doc.lines.len()
+
+    match numbers.parse_int(text)
+        .ok n =>
+            if n < 1 || n > count
+                state.warn(@e, text: f"line {n} is not in the file: it has {count}")
+                return
+
+            editing.move_to(
+                @e.buffers.open[at],
+                to: document.Pos(line: n - 1, col: 0),
+                keep_goal: false,
+                tab_width: state.tab_width(e)
+            )
+        .err _ => state.warn(@e, text: f"\"{text}\" is no line number")

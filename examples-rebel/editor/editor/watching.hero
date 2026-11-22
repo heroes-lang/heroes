@@ -1,0 +1,82 @@
+# Changes other programs make to the open files, noticed and offered as a
+# reload. `poll` asks the watches (`fs/watch`) what they were told and, for
+# each file whose bytes now differ from the ones its buffer last read or
+# wrote, keeps its path; `offer` asks about the first kept path once the
+# keys are free, never in the middle of a prompt, and shows that buffer so
+# the person sees what the question is about.
+#
+# An event alone decides nothing: the editor's own saves are told too, and
+# the system may tell one write twice or two as one, so only bytes that
+# differ make an offer, and a file offered once is not offered again until
+# it changes again.
+
+use <rebel>/fs
+use <rebel>/time
+
+use buffers/buffer
+use buffers/list
+use editor/state
+use files/disk
+
+# Asks the watches what they were told, waiting at most `limit`, and keeps
+# the paths of the files that changed.
+#
+# - `e`: the editor; `stale` gains the paths, each once.
+# - `limit`: how long to wait for the first watch; zero between two keys.
+#
+# Fails as `watch.wait` fails.
+function poll(@e: state.Editor, limit: time.Duration) -> ()?
+    for path in disk.told(e.watched, limit: limit)?
+        match list.slot_of(e.buffers, path: path)
+            .ok at =>
+                if disk.differs(path, known: e.buffers.open[at].known) && !holds(e.stale, path: path)
+                    e.stale @ e.stale.push(path)
+            .err _ => _ = 0
+
+    return ok()
+
+# Whether `paths` holds `path`.
+#
+# - `paths`: the paths.
+# - `path`: the path looked for.
+function holds(paths: [str], path: str) -> bool
+    for p in paths
+        if p == path
+            return true
+
+    return false
+
+# Asks about the first file that changed, where the keys are on the text:
+# its buffer shown, and a question whether to read it again.
+#
+# - `e`: the editor; `stale` loses the path asked about.
+function offer(@e: state.Editor)
+    if e.mode != .editing || e.stale.len() == 0
+        return
+
+    path = e.stale[0]
+    e.stale @ e.stale.slice(from: 1, to: e.stale.len())
+
+    at = match list.slot_of(e.buffers, path: path)
+        .ok s  => s
+        .err _ => return
+
+    e.current @ path
+
+    if !fs.exists(path).default(false)
+        buffer.mark_differs(@e.buffers.open[at])
+        state.warn(@e, text: f"{path} was removed from disk; a save writes it again")
+        return
+
+    if buffer.is_modified(e.buffers.open[at])
+        state.confirm(
+            @e,
+            asking: .reload(path: path),
+            question: f"{state.name_of(path)} changed on disk and here: read it again? y, n"
+        )
+    else
+        state.confirm(
+            @e,
+            asking: .reload(path: path),
+            question: f"{state.name_of(path)} changed on disk: read it again? y, n"
+        )

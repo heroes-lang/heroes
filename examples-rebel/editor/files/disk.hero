@@ -1,0 +1,246 @@
+# A buffer's file on disk: read whole and turned into text by its encoding
+# and its line breaks, written back whole in one atomic step, and watched so
+# a change another program makes is noticed.
+#
+# A change is decided by the bytes, never by an event alone: the system may
+# tell of a write the editor made itself, of two writes as one, or of a
+# change made just before the watch began (`fs/watch`'s own warning), so
+# every event only asks the question, and the answer is whether the file's
+# bytes now differ from the bytes the buffer last read or wrote.
+
+use <rebel>/fs
+use <rebel>/fs/watch
+use <rebel>/time
+use <rebel>/unicode/encodings
+
+use files/encoding
+use files/endings
+
+# How a file's text is written as bytes, as it was read.
+record Format
+    # The encoding's name, as the WHATWG standard writes it.
+    encoding: str
+    # Whether the file begins with a byte order mark.
+    bom: bool
+    # The line break it writes, `endings.CRLF` or `endings.LF`.
+    ending: str
+    # How the encoding was chosen: `named`, `byte order mark`, `detected`,
+    # or `new file`.
+    chosen: str
+    # How sure the choice is, from 0 to 1.
+    confidence: f64
+
+# What reading a file found.
+record Loaded
+    # The text, each line ending with a line feed alone.
+    text: str
+    # How it is written back.
+    format: Format
+    # The bytes read, which a later change on disk is compared with; none for
+    # a file not yet on disk.
+    bytes: [u8]
+    # Whether the file was on disk: false for a new file, which the first
+    # save makes.
+    exists: bool
+    # The byte index of the first sequence the encoding could not read,
+    # shown as U+FFFD; fails `not_found` where every byte was read.
+    unreadable: i64?
+
+# A file watched for changes made by other programs.
+record Watched
+    # The file's path, as the buffer holds it.
+    path: str
+    # The watch; closed by `stop_watching` or `stop_all`.
+    watcher: watch.Watch
+
+# The file at `path` read as text.
+#
+# - `path`: the file's path.
+# - `named`: the encoding the person named, or "" to let a byte order mark
+#   or the bytes say.
+#
+# A path that names nothing is a new file, empty, in the named encoding or
+# UTF-8. Fails as `fs.read_bytes` fails otherwise (`is_a_directory`,
+# `permission`), and `not_found` where `named` names no encoding.
+function load(path: str, named: str) -> Loaded?
+    data = match fs.read_bytes(path)
+        .ok d => d
+        .err e =>
+            if e.code == fs.FILE_NOT_FOUND
+                return new_file(named)
+            return fail(code: e.code, msg: e.msg)
+
+    return ok(from_bytes(data, named: named)?)
+
+# The text `data` holds, as `load` reads a file's bytes.
+#
+# - `data`: the bytes.
+# - `named`: the encoding named, or "".
+#
+# Fails `not_found` where `named` names no encoding.
+function from_bytes(data: [u8], named: str) -> Loaded?
+    r = encoding.read_text(data, named: named)?
+    split = endings.split_endings(r.text)
+    format = Format(encoding: r.encoding, bom: r.bom, ending: split.ending, chosen: r.chosen, confidence: r.confidence)
+    return ok(Loaded(text: split.text, format: format, bytes: data, exists: true, unreadable: r.unreadable))
+
+# An empty new file in the encoding `named`, or UTF-8 where it is "".
+#
+# - `named`: a label, or "".
+#
+# Fails `not_found` where `named` names no encoding.
+function new_file(named: str) -> Loaded?
+    chosen_encoding = if named == ""
+        "UTF-8"
+    else
+        encodings.name_of(named)?
+    format = Format(encoding: chosen_encoding, bom: false, ending: endings.LF, chosen: "new file", confidence: 1.0)
+    return ok(
+        Loaded(text: "", format: format, bytes: [], exists: false, unreadable: fail(code: "not_found", msg: "a new file"))
+    )
+
+# What a format says of itself in a status line or a message:
+# `Shift_JIS, detected, 96% sure`.
+#
+# - `format`: the format.
+function describe(format: Format) -> str
+    if format.chosen == "detected"
+        return f"{format.encoding}, detected, {encoding.percent_of(format.confidence)}% sure"
+
+    return f"{format.encoding}, {format.chosen}"
+
+# The bytes `text` is saved as in `format`: its line breaks, its encoding and
+# its byte order mark.
+#
+# - `text`: the buffer's text, lines ending with line feeds.
+# - `format`: how the file is written.
+#
+# Fails as `encoding.write_text` fails: `unsupported` naming the first
+# character the encoding has no bytes for and where it stands.
+function encode(text: str, format: Format) -> [u8]?
+    return encoding.write_text(
+        text: endings.join_endings(text: text, ending: format.ending),
+        encoding: format.encoding,
+        bom: format.bom
+    )
+
+# Writes `data` as the whole of the file at `path`, so no reader and no crash
+# sees it half written.
+#
+# - `path`: the file's path.
+# - `data`: the bytes.
+#
+# Fails as `fs.write_atomic_bytes` fails.
+function save(path: str, data: [u8]) -> ()?
+    return fs.write_atomic_bytes(path, data: data)
+
+# Whether the file at `path` holds other bytes than `known`: a change made by
+# another program, or the file removed.
+#
+# - `path`: the file's path.
+# - `known`: the bytes the buffer last read or wrote.
+function differs(path: str, known: [u8]) -> bool
+    match fs.read_bytes(path)
+        .ok now => return now != known
+        .err _  => return true
+
+# Starts watching the file at `path`, where it is not watched already.
+#
+# - `watched`: the watches; it gains one.
+# - `path`: the file's path; the file must be on disk.
+#
+# Fails as `watch.open` fails.
+function start_watching(@watched: [Watched], path: str) -> ()?
+    for w in watched
+        if w.path == path
+            return ok()
+
+    w = watch.open(path)?
+    watched @ watched.push(Watched(path: path, watcher: w))
+    return ok()
+
+# Stops watching the file at `path`, closing its watch.
+#
+# - `watched`: the watches; it loses the one of `path`, if any.
+# - `path`: the file's path.
+#
+# Fails as `watch.close` fails; the watch is taken out either way.
+function stop_watching(@watched: [Watched], path: str) -> ()?
+    kept: [Watched] @= []
+    closing: [Watched] @= []
+
+    for w in watched
+        if w.path == path
+            closing @ closing.push(w)
+        else
+            kept @ kept.push(w)
+
+    watched @ kept
+
+    for w in closing
+        held @= w.watcher
+        watch.close(@held)?
+
+    return ok()
+
+# Closes every watch, as the editor does when it ends.
+#
+# - `watched`: the watches; it is emptied.
+#
+# Fails with the first failure of `watch.close`, every watch closed all the
+# same.
+function stop_all(@watched: [Watched]) -> ()?
+    first_failure: [str] @= []
+
+    for w in watched
+        held @= w.watcher
+
+        match watch.close(@held)
+            .ok _  => _ = 0
+            .err e => first_failure @ first_failure.push(e.msg)
+
+    watched @ []
+
+    if first_failure.len() > 0
+        return fail(code: "failed", msg: first_failure[0])
+
+    return ok()
+
+# The paths whose watch told of a change, waiting at most `limit` for the
+# first watch and asking the others without waiting.
+#
+# - `watched`: the watches.
+# - `limit`: how long to wait for the first watch's events; zero waits not
+#   at all, as the editor's loop asks between two keys.
+#
+# Each path is named once, however many events its watch told. Fails as
+# `watch.wait` fails.
+function told(watched: [Watched] lent, limit: time.Duration) -> [str]?
+    paths: [str] @= []
+    first @= true
+
+    for w in watched
+        wait_for = if first
+            limit
+        else
+            time.nanoseconds(0)
+        first @ false
+
+        if watch.wait(w.watcher, limit: wait_for)?.len() > 0
+            paths @ paths.push(w.path)
+
+    return ok(paths)
+
+test "from_bytes: a CRLF file in UTF-8, its line breaks made line feeds"
+    got = from_bytes([0x61, 0x0d, 0x0a, 0x62], named: "").must()
+    assert got.text == "a\nb"
+    assert got.format.ending == endings.CRLF && got.format.encoding == "UTF-8"
+    assert encode(got.text, format: got.format).must() == [0x61, 0x0d, 0x0a, 0x62]
+
+test "new_file: in UTF-8, and in an encoding named"
+    assert new_file("").must().format.encoding == "UTF-8"
+    assert new_file("sjis").must().format.encoding == "Shift_JIS"
+    assert new_file("klingon").is_err()
+
+test "describe: a new file and a named encoding"
+    assert describe(new_file("").must().format) == "UTF-8, new file"

@@ -1,0 +1,369 @@
+# The demo: the editor driven headless by scripted keys over files it
+# writes under `build/editor-demo/`, on a screen of 60 by 12 cells, printing
+# what a person would look at where it matters. It opens four files in four
+# encodings, moves by graphemes and words across a combining accent, a flag,
+# a family of emoji and Japanese, types and undoes a word at a time, finds
+# and replaces by a regular expression with captures, shows the diff
+# against the disk, saves each file in its own encoding (and refuses a
+# character Latin-1 has not), reads a file again in another encoding and
+# takes it back, is told when another program changes a file and reloads
+# it, shows its keys, and leaves. No clock, port or absolute path is
+# printed, and the environment it reads is a map of its own, so the
+# transcript is the same on every run.
+
+use <rebel>/time
+
+use demo/files
+use demo/hands
+use editor/state
+use editor/watching
+use files/disk
+use files/endings
+use settings/settings
+
+# The screen's columns.
+constant WIDTH: i64
+    60
+
+# The screen's rows.
+constant HEIGHT: i64
+    12
+
+# Plays the whole demo and answers the program's exit code: 0, or 1 where a
+# step failed, said on the last line.
+function run() -> i64
+    match play()
+        .ok _ => return 0
+        .err x =>
+            print(f"the demo stopped: {x.msg}")
+            _ = files.remove_all().is_err()
+            return 1
+
+# The scenes in order.
+#
+# Fails where a step fails.
+function play() -> ()?
+    paths = scene_files()?
+    s = scene_settings()?
+    e @= state.new_editor(s, width: WIDTH, height: HEIGHT)
+    scene_open(@e, paths: paths)?
+    scene_graphemes(@e)?
+    scene_typing(@e)?
+    scene_search(@e)?
+    scene_replace(@e)?
+    scene_diff(@e)?
+    scene_save(@e)?
+    scene_reopen(@e)?
+    scene_disk(@e)?
+    scene_help(@e)?
+    scene_leave(@e)?
+    return ok()
+
+# Writes the demo's files and says how each reads.
+#
+# Fails where a file cannot be written or read.
+function scene_files() -> [str]?
+    print("== the files ==")
+    paths = files.write_all()?
+    print(f"written under {files.FOLDER}: {paths.len()} files and editor.toml")
+
+    for p in paths
+        loaded = disk.load(path: p, named: "")?
+        print(
+            f"  {p}: {loaded.bytes.len()} bytes, {disk.describe(loaded.format)}, {endings.name_of(loaded.format.ending)}"
+        )
+
+    return ok(paths)
+
+# Reads the settings: the defaults, the demo's `editor.toml`, and an
+# environment of the demo's own that overrules the file's tab width.
+#
+# Fails where the settings are refused.
+function scene_settings() -> settings.Setup?
+    print("")
+    print("== the settings ==")
+    env: {str: str} = {"HEROES_EDITOR_TEXT__TAB_WIDTH": "8", "HOME": "/home/demo"}
+    s = settings.read_setup(file: files.path_of("editor.toml"), env: env, extra: [])?
+    print(f"tab width {s.options.tab_width}, from {settings.origin_of(s.merged, path: "text.tab_width")}")
+
+    for k in ["f2", "f3", "ctrl-l", "ctrl-s"]
+        print(f"key {k} runs {s.bound[k].default("nothing")}, from {settings.origin_of(s.merged, path: "keys." + k)}")
+
+    print(
+        f"colours: status from {settings.origin_of(s.merged, path: "colors.status")}, found from {settings.origin_of(s.merged, path: "colors.found")}"
+    )
+    return ok(s)
+
+# Opens the four files, the notes last, and shows the screen.
+#
+# - `e`: the editor.
+# - `paths`: the files, in the order they are opened.
+#
+# Fails where a file cannot be opened.
+function scene_open(@e: state.Editor, paths: [str]) -> ()?
+    print("")
+    print("== four files open, the tabs in the order of their paths ==")
+
+    for p in paths
+        state.open_path(@e, path: p, named: "")?
+        hands.said(e, label: "opened")
+
+    hands.show(e, title: "notes.txt")
+    return ok()
+
+# Moves across a combining accent, a flag, a family of emoji and wide
+# characters, and describes a grapheme.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_graphemes(@e: state.Editor) -> ()?
+    print("")
+    print("== moving by graphemes and words ==")
+    hands.play(@e, script: "<down><right><right><right><right>")?
+    hands.where(e, label: "down, then four times right over \"café\"")
+    hands.play(@e, script: "<left><alt-i>")?
+    hands.said(e, label: "left, then alt-i")
+    hands.play(@e, script: "<down>")?
+    hands.where(e, label: "down keeps the screen column, past the flag's two")
+    hands.play(@e, script: "<home><right>")?
+    hands.where(e, label: "home, then right steps over the whole flag")
+    hands.play(@e, script: "<alt-f><alt-f>")?
+    hands.where(e, label: "two words right: \"pasta\", then past the family to \"for\"")
+    hands.play(@e, script: "<alt-b><left><left>")?
+    hands.where(e, label: "a word left, then two left: the family is one step")
+    hands.play(@e, script: "<alt-i>")?
+    hands.said(e, label: "alt-i on it")
+    hands.play(@e, script: "<down>")?
+    hands.where(e, label: "down into Japanese, two cells a character")
+    return ok()
+
+# Types a line and takes it back a word at a time.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_typing(@e: state.Editor) -> ()?
+    print("")
+    print("== typing, and undo a word at a time ==")
+    hands.play(@e, script: "<ctrl-end>remember the milk")?
+    hands.line(e, label: "typed on the last line", n: 7)
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z", n: 7)
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z", n: 7)
+    hands.play(@e, script: "<ctrl-y>")?
+    hands.line(e, label: "ctrl-y", n: 7)
+    hands.play(@e, script: "<ctrl-y><enter>")?
+    hands.show(e, title: "ctrl-y, then enter")
+    return ok()
+
+# Finds mail addresses by a regular expression, steps through them, wraps,
+# and refuses a pattern that does not compile.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_search(@e: state.Editor) -> ()?
+    print("")
+    print("== find by regex ==")
+    hands.play(@e, script: "<ctrl-home><ctrl-f>(\\w+)@(\\w+)\\.org<enter>")?
+    hands.said(e, label: "ctrl-f (\\w+)@(\\w+)\\.org")
+    hands.show(e, title: "the first match")
+    print(f"the match the cursor is on: {hands.style_at(e, x: 2, y: 5)}; the other: {hands.style_at(e, x: 19, y: 5)}")
+    hands.play(@e, script: "<f3>")?
+    hands.said(e, label: "f3, bound to find_next by editor.toml")
+    hands.play(@e, script: "<ctrl-n>")?
+    hands.said(e, label: "ctrl-n")
+    hands.play(@e, script: "<ctrl-f><ctrl-u>(unclosed<enter>")?
+    hands.said(e, label: "ctrl-f (unclosed")
+    return ok()
+
+# Replaces the addresses by a template naming the groups: one answered yes,
+# the rest at once, then both undone and redone.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_replace(@e: state.Editor) -> ()?
+    print("")
+    print("== replace with captures ==")
+    hands.play(@e, script: "<ctrl-home><ctrl-r><enter>$2 for $1<enter>")?
+    hands.show(e, title: "the question")
+    hands.play(@e, script: "y")?
+    hands.line(e, label: "y", n: 5)
+    hands.play(@e, script: "a")?
+    hands.said(e, label: "a")
+    hands.line(e, label: "line 5", n: 5)
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z", n: 5)
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z", n: 5)
+    hands.play(@e, script: "<ctrl-y><ctrl-y>")?
+    hands.line(e, label: "ctrl-y twice", n: 5)
+    return ok()
+
+# Shows the buffer against its file on disk.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_diff(@e: state.Editor) -> ()?
+    print("")
+    print("== the buffer against the disk ==")
+    hands.play(@e, script: "<ctrl-d>")?
+    hands.said(e, label: "ctrl-d")
+    hands.show(e, title: "the diff view")
+    hands.play(@e, script: "<escape>")?
+    return ok()
+
+# Saves each file in its own encoding, shows the bytes written, refuses a
+# character windows-1252 has not, and saves that file in UTF-8 instead.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_save(@e: state.Editor) -> ()?
+    print("")
+    print("== saving in each file's encoding ==")
+    hands.play(@e, script: "<ctrl-s>")?
+    hands.said(e, label: "ctrl-s")
+    hands.play(@e, script: "<alt-n>Carte à <f2>")?
+    hands.said(e, label: "alt-n to prices.txt, typed \"Carte à \", f2")
+    print(files.dump_of(files.path_of("prices.txt")))
+    hands.play(@e, script: "寿司 <f2>")?
+    hands.said(e, label: "typed \"寿司 \", f2")
+    hands.play(@e, script: "<ctrl-e><ctrl-u>utf-8<enter>")?
+    hands.said(e, label: "ctrl-e utf-8")
+    hands.play(@e, script: "<f2>")?
+    hands.said(e, label: "f2")
+    print(files.dump_of(files.path_of("prices.txt")))
+    hands.play(@e, script: "<alt-n><end>, Heroes<ctrl-s>")?
+    hands.said(e, label: "alt-n to greeting.txt, typed \", Heroes\", ctrl-s")
+    print(files.dump_of(files.path_of("greeting.txt")))
+    hands.play(@e, script: "<alt-n><alt-i>")?
+    hands.said(e, label: "alt-n to japanese.txt, alt-i")
+    hands.play(@e, script: "<down><end>の寿司<ctrl-s>")?
+    hands.said(e, label: "typed \"の寿司\" on line 2, ctrl-s")
+    print(files.dump_of(files.path_of("japanese.txt")))
+    return ok()
+
+# Reads the Shift_JIS file again as EUC-JP, which garbles it, and takes the
+# read back with its encoding.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_reopen(@e: state.Editor) -> ()?
+    print("")
+    print("== read again in another encoding, and taken back ==")
+    hands.play(@e, script: "<alt-e>euc-jp<enter>")?
+    hands.said(e, label: "alt-e euc-jp")
+    hands.line(e, label: "line 1", n: 1)
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z", n: 1)
+    hands.where(e, label: "the status line")
+    return ok()
+
+# Another program changes the notes twice: the first change is kept out, and
+# the diff shows it; the second is read in, and taken back.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails or the change is never told.
+function scene_disk(@e: state.Editor) -> ()?
+    print("")
+    print("== another program changes a file ==")
+    hands.play(@e, script: "<alt-n>")?
+    notes = files.path_of("notes.txt")
+    other_program_appends(path: notes, line: "bread")?
+    await_change(@e)?
+    hands.show(e, title: "the change offered")
+    hands.play(@e, script: "n")?
+    hands.said(e, label: "n")
+    hands.play(@e, script: "<ctrl-d>")?
+    hands.show(e, title: "the diff view")
+    hands.play(@e, script: "<escape><ctrl-l>")?
+    hands.said(e, label: "escape, ctrl-l (taken away by editor.toml)")
+    other_program_appends(path: notes, line: "butter")?
+    await_change(@e)?
+    print(f"the second change asks: {e.question}")
+    hands.play(@e, script: "y")?
+    hands.said(e, label: "y")
+    hands.show(e, title: "notes.txt read again")
+    hands.play(@e, script: "<ctrl-z>")?
+    hands.line(e, label: "ctrl-z, the reload taken back: line 8", n: 8)
+    hands.play(@e, script: "<ctrl-y>")?
+    hands.line(e, label: "ctrl-y: line 8", n: 8)
+    return ok()
+
+# Appends `line` to the file at `path`, as another program would, on a line
+# of its own.
+#
+# - `path`: the file.
+# - `line`: the line, without its line feed.
+#
+# Fails where the file cannot be read or written.
+function other_program_appends(path: str, line: str) -> ()?
+    text = read_file(path)?
+
+    if text != "" && text[text.len() - 1] != '\n'
+        return write_file(path: path, text: text + "\n" + line + "\n")
+
+    return write_file(path: path, text: text + line + "\n")
+
+# Waits, at most ten seconds, for the watches to tell of a change whose bytes
+# differ, then lets the editor offer it.
+#
+# - `e`: the editor.
+#
+# Fails `timeout` where no change is told in that time.
+function await_change(@e: state.Editor) -> ()?
+    step = time.milliseconds(250)?
+
+    for _ in range(from: 0, to: 40)
+        watching.poll(@e, limit: step)?
+
+        if e.stale.len() > 0
+            watching.offer(@e)
+            return ok()
+
+    return fail(code: "timeout", msg: "no change on disk was told in ten seconds")
+
+# Shows the help page, its keys as the settings bound them.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails.
+function scene_help(@e: state.Editor) -> ()?
+    print("")
+    print("== the keys ==")
+    hands.play(@e, script: "<f1><page_down><page_down><down>")?
+    hands.show(e, title: "f1, two pages and a line down")
+    hands.play(@e, script: "<escape>")?
+    return ok()
+
+# Leaves: two buffers changed, the question that lists them answered no,
+# one closed and saved on the way, then left without saving the other.
+#
+# - `e`: the editor.
+#
+# Fails where a key fails or a watch cannot be closed.
+function scene_leave(@e: state.Editor) -> ()?
+    print("")
+    print("== leaving ==")
+    hands.play(@e, script: "<ctrl-end>jam<alt-p><ctrl-end>!<ctrl-q>")?
+    print(f"\"jam\" typed in notes.txt, \"!\" in japanese.txt, then ctrl-q asks: {e.question}")
+    hands.play(@e, script: "n<ctrl-w>")?
+    print(f"n, then ctrl-w asks: {e.question}")
+    hands.play(@e, script: "y")?
+    hands.said(e, label: "y")
+    hands.play(@e, script: "<ctrl-q>")?
+    print(f"ctrl-q asks: {e.question}")
+    hands.play(@e, script: "y")?
+    print(f"y: the editor is done: {e.done}; {e.watched.len()} files watched")
+    state.stop(@e)?
+    print(f"its watches closed: {e.watched.len()} left")
+    files.remove_all()?
+    print(f"removed {files.FOLDER}")
+    return ok()

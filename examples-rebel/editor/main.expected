@@ -1,0 +1,218 @@
+== the files ==
+written under build/editor-demo: 4 files and editor.toml
+  build/editor-demo/prices.txt: 26 bytes, windows-1252, detected, 34% sure, CRLF
+  build/editor-demo/japanese.txt: 28 bytes, Shift_JIS, detected, 88% sure, LF
+  build/editor-demo/greeting.txt: 30 bytes, UTF-16LE, byte order mark, CRLF
+  build/editor-demo/notes.txt: 142 bytes, UTF-8, detected, 68% sure, LF
+
+== the settings ==
+tab width 8, from the environment's HEROES_EDITOR_TEXT__TAB_WIDTH
+key f2 runs save, from build/editor-demo/editor.toml
+key f3 runs find_next, from build/editor-demo/editor.toml
+key ctrl-l runs none, from build/editor-demo/editor.toml
+key ctrl-s runs save, from the defaults
+colours: status from build/editor-demo/editor.toml, found from build/editor-demo/editor.toml
+
+== four files open, the tabs in the order of their paths ==
+opened: build/editor-demo/prices.txt: windows-1252, detected, 34% sure, CRLF, 3 lines
+opened: build/editor-demo/japanese.txt: Shift_JIS, detected, 88% sure, LF, 3 lines
+opened: build/editor-demo/greeting.txt: UTF-16LE, byte order mark, CRLF, 3 lines
+opened: build/editor-demo/notes.txt: UTF-8, detected, 68% sure, LF, 7 lines
+[notes.txt] the cursor at row 2, cell 3
+  | greeting.txt │ japanese.txt │ notes.txt │ prices.txt       |
+  |1 Shopping and contacts                                     |
+  |2 café crème: 2                                             |
+  |3 🇮🇹 pasta, 👨‍👩‍👧 for three                                    |
+  |4 日本語のメモ                                              |
+  |5 ann@example.org, bob@test.org                             |
+  |6         the end                                           |
+  |7                                                           |
+  |                                                            |
+  |                                                            |
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 1, Col 1 · 3/4 |
+  |build/editor-demo/notes.txt: UTF-8, detected, 68% sure, LF, |
+
+== moving by graphemes and words ==
+down, then four times right over "café": UTF-8 · LF · Ln 2, Col 5 · 3/4
+left, then alt-i: "é" U+0065 U+0301, 2 code point(s), 1 column(s); UTF-8 65 CC 81
+down keeps the screen column, past the flag's two: UTF-8 · LF · Ln 3, Col 3 · 3/4
+home, then right steps over the whole flag: UTF-8 · LF · Ln 3, Col 2 · 3/4
+two words right: "pasta", then past the family to "for": UTF-8 · LF · Ln 3, Col 15 · 3/4
+a word left, then two left: the family is one step: UTF-8 · LF · Ln 3, Col 10 · 3/4
+alt-i on it: "👨‍👩‍👧" U+1F468 U+200D U+1F469 U+200D U+1F467, 5 code point(s), 2 column(s); UTF-8 F0 9F 91 A8 E2 80 8D F0 9F 91 A9 E2 80 8D F0 9F 91 A7
+down into Japanese, two cells a character: UTF-8 · LF · Ln 4, Col 6 · 3/4
+
+== typing, and undo a word at a time ==
+typed on the last line: "remember the milk"
+ctrl-z: "remember the "
+ctrl-z: "remember "
+ctrl-y: "remember the "
+[ctrl-y, then enter] the cursor at row 9, cell 3
+  | greeting.txt │ japanese.txt │ notes.txt* │ prices.txt      |
+  |1 Shopping and contacts                                     |
+  |2 café crème: 2                                             |
+  |3 🇮🇹 pasta, 👨‍👩‍👧 for three                                    |
+  |4 日本語のメモ                                              |
+  |5 ann@example.org, bob@test.org                             |
+  |6         the end                                           |
+  |7 remember the milk                                         |
+  |8                                                           |
+  |                                                            |
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 8, Col 1 · 3/4 |
+  |                                                            |
+
+== find by regex ==
+ctrl-f (\w+)@(\w+)\.org: /(\w+)@(\w+)\.org/: match 1 of 2
+[the first match] the cursor at row 6, cell 3
+  | greeting.txt │ japanese.txt │ notes.txt* │ prices.txt      |
+  |1 Shopping and contacts                                     |
+  |2 café crème: 2                                             |
+  |3 🇮🇹 pasta, 👨‍👩‍👧 for three                                    |
+  |4 日本語のメモ                                              |
+  |5 ann@example.org, bob@test.org                             |
+  |6         the end                                           |
+  |7 remember the milk                                         |
+  |8                                                           |
+  |                                                            |
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 5, Col 1 · 3/4 |
+  |/(\w+)@(\w+)\.org/: match 1 of 2                            |
+the match the cursor is on: black on bright_green bold; the other: black on bright_yellow
+f3, bound to find_next by editor.toml: /(\w+)@(\w+)\.org/: match 2 of 2
+ctrl-n: /(\w+)@(\w+)\.org/: match 1 of 2, the search wrapped
+ctrl-f (unclosed: /(unclosed/ is no pattern: a group opened by `(` is never closed: its `)` is missing, at byte 0 of "(unclosed"
+
+== replace with captures ==
+[the question] the cursor at row 12, cell 49
+  | greeting.txt │ japanese.txt │ notes.txt* │ prices.txt      |
+  |1 Shopping and contacts                                     |
+  |2 café crème: 2                                             |
+  |3 🇮🇹 pasta, 👨‍👩‍👧 for three                                    |
+  |4 日本語のメモ                                              |
+  |5 ann@example.org, bob@test.org                             |
+  |6         the end                                           |
+  |7 remember the milk                                         |
+  |8                                                           |
+  |                                                            |
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 5, Col 1 · 3/4 |
+  |replace this match? y, n, a all the rest, q quit            |
+y: "example for ann, bob@test.org"
+a: replaced 2 match(es)
+line 5: "example for ann, test for bob"
+ctrl-z: "example for ann, bob@test.org"
+ctrl-z: "ann@example.org, bob@test.org"
+ctrl-y twice: "example for ann, test for bob"
+
+== the buffer against the disk ==
+ctrl-d: build/editor-demo/notes.txt: 2 line(s) added, 1 removed against the disk; Esc returns
+[the diff view] the cursor hidden
+  | greeting.txt │ japanese.txt │ notes.txt* │ prices.txt      |
+  |--- build/editor-demo/notes.txt (on disk)                   |
+  |+++ build/editor-demo/notes.txt (buffer)                    |
+  |@@ -2,5 +2,6 @@                                             |
+  | café crème: 2                                              |
+  | 🇮🇹 pasta, 👨‍👩‍👧 for three                                     |
+  | 日本語のメモ                                               |
+  |-ann@example.org, bob@test.org                              |
+  |+example for ann, test for bob                              |
+  |        the end                                             |
+  | build/editor-demo/notes.tx UTF-8 · LF · Ln 5, Col 30 · 3/4 |
+  |build/editor-demo/notes.txt: 2 line(s) added, 1 removed agai|
+
+== saving in each file's encoding ==
+ctrl-s: saved build/editor-demo/notes.txt: 160 bytes in UTF-8, LF
+alt-n to prices.txt, typed "Carte à ", f2: saved build/editor-demo/prices.txt: 34 bytes in windows-1252, CRLF
+    00000000  43 61 72 74 65 20 e0 20  50 72 69 78 3a 20 31 32  |Carte . Prix: 12|
+    00000010  20 80 0d 0a 43 72 e8 6d  65 20 62 72 fb 6c e9 65  | ...Cr.me br.l.e|
+    00000020  0d 0a                                             |..|
+typed "寿司 ", f2: not saved: windows-1252 has no bytes for "寿" (U+5BFF) at line 1, column 9: save it in another encoding
+ctrl-e utf-8: build/editor-demo/prices.txt will be saved in UTF-8
+f2: saved build/editor-demo/prices.txt: 47 bytes in UTF-8, CRLF
+    00000000  43 61 72 74 65 20 c3 a0  20 e5 af bf e5 8f b8 20  |Carte .. ...... |
+    00000010  50 72 69 78 3a 20 31 32  20 e2 82 ac 0d 0a 43 72  |Prix: 12 .....Cr|
+    00000020  c3 a8 6d 65 20 62 72 c3  bb 6c c3 a9 65 0d 0a     |..me br..l..e..|
+alt-n to greeting.txt, typed ", Heroes", ctrl-s: saved build/editor-demo/greeting.txt: 46 bytes in UTF-16LE, CRLF
+    00000000  ff fe 48 00 65 00 6c 00  6c 00 6f 00 2c 00 20 00  |..H.e.l.l.o.,. .|
+    00000010  48 00 65 00 72 00 6f 00  65 00 73 00 0d 00 0a 00  |H.e.r.o.e.s.....|
+    00000020  57 00 6f 00 72 00 6c 00  64 00 0d 00 0a 00        |W.o.r.l.d.....|
+alt-n to japanese.txt, alt-i: "日" U+65E5, 1 code point(s), 2 column(s); Shift_JIS 93 FA
+typed "の寿司" on line 2, ctrl-s: saved build/editor-demo/japanese.txt: 34 bytes in Shift_JIS, LF
+    00000000  93 fa 96 7b 8c ea 82 cc  83 65 83 4c 83 58 83 67  |...{.....e.L.X.g|
+    00000010  82 c5 82 b7 81 42 0a 93  8c 8b 9e 82 cc 8e f5 8e  |.....B..........|
+    00000020  69 0a                                             |i.|
+
+== read again in another encoding, and taken back ==
+alt-e euc-jp: build/editor-demo/japanese.txt read again: EUC-JP, named; Ctrl-Z takes it back; byte 0 could not be read and is shown as U+FFFD
+line 1: "��{���e�L�X�g���B"
+ctrl-z: "日本語のテキストです。"
+the status line: Shift_JIS · LF · Ln 2, Col 6 · 2/4
+
+== another program changes a file ==
+[the change offered] the cursor at row 12, cell 47
+  | greeting.txt │ japanese.txt │ notes.txt │ prices.txt       |
+  |1 Shopping and contacts                                     |
+  |2 café crème: 2                                             |
+  |3 🇮🇹 pasta, 👨‍👩‍👧 for three                                    |
+  |4 日本語のメモ                                              |
+  |5 example for ann, test for bob                             |
+  |6         the end                                           |
+  |7 remember the milk                                         |
+  |8                                                           |
+  |                                                            |
+  | build/editor-demo/notes.tx UTF-8 · LF · Ln 5, Col 30 · 3/4 |
+  |notes.txt changed on disk: read it again? y, n              |
+n: build/editor-demo/notes.txt kept as it is; a save will write it over the file
+[the diff view] the cursor hidden
+  | greeting.txt │ japanese.txt │ notes.txt* │ prices.txt      |
+  |--- build/editor-demo/notes.txt (on disk)                   |
+  |+++ build/editor-demo/notes.txt (buffer)                    |
+  |@@ -5,4 +5,3 @@                                             |
+  | example for ann, test for bob                              |
+  |        the end                                             |
+  | remember the milk                                          |
+  |-bread                                                      |
+  |                                                            |
+  |                                                            |
+  | build/editor-demo/notes.tx UTF-8 · LF · Ln 5, Col 30 · 3/4 |
+  |build/editor-demo/notes.txt: 0 line(s) added, 1 removed agai|
+escape, ctrl-l (taken away by editor.toml): ctrl-l does nothing; F1 lists the keys
+the second change asks: notes.txt changed on disk and here: read it again? y, n
+y: build/editor-demo/notes.txt read again: UTF-8, detected, 67% sure; Ctrl-Z takes it back
+[notes.txt read again] the cursor at row 6, cell 4
+  | greeting.txt │ japanese.txt │ notes.txt │ prices.txt       |
+  | 1 Shopping and contacts                                    |
+  | 2 café crème: 2                                            |
+  | 3 🇮🇹 pasta, 👨‍👩‍👧 for three                                   |
+  | 4 日本語のメモ                                             |
+  | 5 example for ann, test for bob                            |
+  | 6         the end                                          |
+  | 7 remember the milk                                        |
+  | 8 bread                                                    |
+  | 9 butter                                                   |
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 5, Col 1 · 3/4 |
+  |build/editor-demo/notes.txt read again: UTF-8, detected, 67%|
+ctrl-z, the reload taken back: line 8: ""
+ctrl-y: line 8: "bread"
+
+== the keys ==
+[f1, two pages and a line down] the cursor hidden
+  | greeting.txt │ japanese.txt │ notes.txt │ prices.txt       |
+  |keys               command         what it does             |
+  |ctrl-z             undo            undo the last change     |
+  |ctrl-y             redo            redo the change undone   |
+  |ctrl-f             find            find a regular expression|
+  |ctrl-n, f3         find_next       the next match           |
+  |ctrl-p             find_previous   the match before         |
+  |ctrl-r             replace         replace matches, with $1 |
+  |alt-i              describe        the character's code poin|
+  |ctrl-s, f2         save            save in the file's encodi|
+  | build/editor-demo/notes.txt UTF-8 · LF · Ln 5, Col 1 · 3/4 |
+  |                                                            |
+
+== leaving ==
+"jam" typed in notes.txt, "!" in japanese.txt, then ctrl-q asks: modified: japanese.txt, notes.txt; leave? y, n
+n, then ctrl-w asks: japanese.txt is modified: save it first? y, n, Esc
+y: build/editor-demo/japanese.txt closed
+ctrl-q asks: modified: notes.txt; leave? y, n
+y: the editor is done: true; 3 files watched
+its watches closed: 0 left
+removed build/editor-demo

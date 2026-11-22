@@ -1,0 +1,185 @@
+# The whole screen drawn from the editor, a frame at a time, as `tui` asks:
+# a blank buffer of the screen's size, each band drawn into it, and where
+# the cursor stands. The tab bar names each buffer in the list's order, a
+# `*` after a modified one; the status line says the file's encoding, its
+# line breaks, the cursor's line and column, and which buffer of how many;
+# the bottom line holds the prompt, the question, or the last message.
+#
+# The column the status line gives counts graphemes from 1, what a reader
+# sees as characters, so a letter with a combining accent is one column and
+# a CJK character one, though it takes two cells.
+
+use <rebel>/path
+use <rebel>/tui
+use <rebel>/unicode/segment
+
+use buffers/buffer
+use buffers/list
+use editor/state
+use files/endings
+use view/layout
+use view/pages
+use view/textarea
+
+# A frame to flush, and where the cursor stands on it.
+record Frame
+    # The cells.
+    buffer: tui.Buffer
+    # The cursor.
+    cursor: tui.Cursor
+
+# The frame of `e`: every band drawn, the cursor where the keys go.
+#
+# - `e`: the editor, scrolled by `layout.follow` first.
+function draw(e: state.Editor lent) -> Frame
+    a = layout.areas_of(width: e.width, height: e.height)
+    screen @= tui.blank(tui.Rect(x: 0, y: 0, width: e.width, height: e.height))
+    draw_tabs(@screen, area: a.tabs, e: e)
+
+    text_cursor: tui.Cursor = match e.mode
+        .diff =>
+            pages.draw_diff(@screen, area: a.text, e: e)
+            .hidden
+        .help =>
+            pages.draw_help(@screen, area: a.text, e: e)
+            .hidden
+        .editing | .prompt | .confirm => textarea.draw(@screen, area: a.text, e: e)
+
+    draw_status(@screen, area: a.status, e: e)
+    bottom_cursor = draw_bottom(@screen, area: a.bottom, e: e)
+
+    cursor = match e.mode
+        .prompt | .confirm       => bottom_cursor
+        .editing | .diff | .help => text_cursor
+
+    return Frame(buffer: screen, cursor: cursor)
+
+# Draws the tab bar: each buffer's file name in the list's order, a `*`
+# after one that is modified, the one shown highlighted.
+#
+# - `screen`: the frame.
+# - `area`: the tab bar's band.
+# - `e`: the editor.
+function draw_tabs(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent)
+    titles: [str] @= []
+
+    for p in list.paths_in_order(e.buffers)
+        mark = if buffer.is_modified(e.buffers.open[list.slot_of(e.buffers, path: p).must()])
+            "*"
+        else
+            ""
+        titles @ titles.push(path.name(p).default(p) + mark)
+
+    tabs @= tui.new_tabs(titles, selected: list.rank_of(e.buffers, path: e.current))
+    tabs.style @ e.setup.colors.tabs
+    tabs.highlight_style @ e.setup.colors.tab_selected
+    tui.draw_tabs(@screen, area: area, tabs: tabs)
+
+# The status line's two halves for the buffer shown: its path, and its
+# format, cursor and place among the buffers; the tab's `*` says whether it
+# is modified.
+#
+# - `e`: the editor.
+function status_of(e: state.Editor lent) -> [str]
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return [" no file", ""]
+
+    b = e.buffers.open[at]
+
+    mark = if b.format.bom
+        " BOM"
+    else
+        ""
+    line = b.doc.lines[b.cursor.line]
+    column = segment.graphemes(line.slice(from: 0, to: b.cursor.col)).len() + 1
+    place = list.rank_of(e.buffers, path: e.current) + 1
+    right = f"{b.format.encoding}{mark} · {endings.name_of(b.format.ending)} · Ln {b.cursor.line + 1}, Col {column} · {place}/{list.count(e.buffers)} "
+    return [" " + b.path, right]
+
+# Draws the status line in the theme's status style, its halves at either
+# end.
+#
+# - `screen`: the frame.
+# - `area`: the status line's band.
+# - `e`: the editor.
+function draw_status(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent)
+    style = e.setup.colors.status
+    tui.fill(@screen, area: area, symbol: " ", style: style)
+    halves = status_of(e)
+    right_width = segment.width_of(halves[1])
+    _ = tui.draw_text(@screen, x: area.x, y: area.y, text: halves[0], style: style, width: area.width - right_width - 1)
+    _ = tui.draw_text(
+        @screen,
+        x: area.x + area.width - right_width,
+        y: area.y,
+        text: halves[1],
+        style: style,
+        width: right_width
+    )
+
+# Draws the bottom line: the prompt's question and its line, the question
+# waiting for a key, or the last message; and answers where the cursor
+# stands for a prompt or a question.
+#
+# - `screen`: the frame.
+# - `area`: the bottom line's band.
+# - `e`: the editor.
+function draw_bottom(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent) -> tui.Cursor
+    colors = e.setup.colors
+
+    match e.mode
+        .prompt =>
+            after = tui.draw_text(
+                @screen,
+                x: area.x,
+                y: area.y,
+                text: e.question,
+                style: colors.message,
+                width: area.width
+            )
+            typed @= e.input
+            return tui.draw_input(
+                @screen,
+                area: tui.Rect(x: after, y: area.y, width: area.x + area.width - after, height: 1),
+                input: @typed
+            )
+        .confirm =>
+            after = tui.draw_text(
+                @screen,
+                x: area.x,
+                y: area.y,
+                text: e.question,
+                style: colors.warning,
+                width: area.width - 1
+            )
+            return .at(x: after, y: area.y)
+        .editing | .diff | .help =>
+            style = if e.warn
+                colors.warning
+            else
+                colors.message
+            _ = tui.draw_text(@screen, x: area.x, y: area.y, text: e.message, style: style, width: area.width)
+            return .hidden
+
+# The frame's rows as text, the cursor's cell marked where it stands: what
+# the demo prints of a screen, its right edge marked by `|` so the spaces at
+# a row's end show.
+#
+# - `frame`: the frame.
+function text_of(frame: Frame) -> [str]
+    rows: [str] @= []
+
+    for row in tui.to_lines(frame.buffer)
+        rows @ rows.push(row + "|")
+
+    return rows
+
+# The cursor's place in words, `the cursor at row 3, cell 7` counted from 1,
+# or `the cursor hidden`.
+#
+# - `cursor`: the cursor.
+function cursor_text(cursor: tui.Cursor) -> str
+    return match cursor
+        .hidden => "the cursor hidden"
+        .at a   => f"the cursor at row {a.y + 1}, cell {a.x + 1}"

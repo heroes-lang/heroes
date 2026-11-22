@@ -1,0 +1,75 @@
+# A file's line breaks, kept as the file wrote them. A file whose every line
+# feed follows a carriage return is a CRLF file: its text is edited with line
+# feeds alone and saved with CRLF again. Any other file is edited as it
+# stands, so a stray carriage return in a file of line feeds stays in its
+# line, drawn as `^M`, and is written back where it was; nothing is changed
+# that the person did not change.
+
+use <rebel>/strings
+
+# The line break a CRLF file writes.
+constant CRLF: str
+    "\r\n"
+
+# The line break every other file writes.
+constant LF: str
+    "\n"
+
+# A text with its line breaks made line feeds, and the break it had.
+record Split
+    # The text, each line ending with a line feed alone.
+    text: str
+    # The break the file wrote: `CRLF` or `LF`.
+    ending: str
+
+# `text` with its CRLF breaks made line feeds where every line feed of it
+# follows a carriage return, and the break it had.
+#
+# - `text`: a file's text as it was read.
+#
+# A text with no line feed is an `LF` file, the break a new line takes.
+function split_endings(text: str) -> Split
+    feeds = strings.count_of(s: text, substr: "\n")
+    pairs = strings.count_of(s: text, substr: CRLF)
+
+    if feeds > 0 && feeds == pairs
+        return Split(text: strings.replace_all(s: text, old: CRLF, new: LF), ending: CRLF)
+
+    return Split(text: text, ending: LF)
+
+# `text`, whose lines end with line feeds, with each line feed written as
+# `ending`.
+#
+# - `text`: the edited text.
+# - `ending`: `CRLF` or `LF`.
+function join_endings(text: str, ending: str) -> str
+    if ending == CRLF
+        return strings.replace_all(s: text, old: LF, new: CRLF)
+
+    return text
+
+# The name a status line gives `ending`: `CRLF` or `LF`.
+#
+# - `ending`: a line break.
+function name_of(ending: str) -> str
+    if ending == CRLF
+        return "CRLF"
+
+    return "LF"
+
+test "split_endings: a CRLF file, made line feeds and written back"
+    got = split_endings("one\r\ntwo\r\n")
+    assert got == Split(text: "one\ntwo\n", ending: CRLF)
+    assert join_endings(text: got.text, ending: got.ending) == "one\r\ntwo\r\n"
+
+test "split_endings: a stray carriage return keeps a file of line feeds as it is"
+    got = split_endings("one\r\ntwo\n")
+    assert got == Split(text: "one\r\ntwo\n", ending: LF)
+    assert join_endings(text: got.text, ending: got.ending) == "one\r\ntwo\n"
+
+test "split_endings: no line feed at all, and the empty text"
+    assert split_endings("alone").ending == LF
+    assert split_endings("") == Split(text: "", ending: LF)
+
+test "name_of: both breaks"
+    assert name_of(CRLF) == "CRLF" && name_of(LF) == "LF"

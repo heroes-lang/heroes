@@ -1,0 +1,204 @@
+# The text being edited, held as its lines without their line breaks, and
+# the one way it changes: an `Edit`, the text that stood at a place replaced
+# by another. Every change the editor makes, a key typed, a line cut, a
+# replacement, a reload, is an `Edit`, so undoing one is applying its
+# inverse and nothing else can change a document behind the history's back.
+#
+# A place is a line and a byte index into it. The editor keeps every place
+# it hands here at a character's first byte, and at a grapheme's first byte
+# where a cursor stands, so a slice here never splits a character.
+
+use <rebel>/strings
+
+# A place in a document.
+record Pos
+    # The line, from 0.
+    line: i64
+    # The byte index into the line, from 0 to its length, at a character's
+    # first byte.
+    col: i64
+
+# A text as its lines. Made by `from_text`; never without a line, since the
+# empty text is one empty line.
+record Document
+    # The lines, without their line breaks.
+    lines: [str]
+
+# One change to a document: the text `removed` that stood at `at`, replaced
+# by `inserted`. Either may be empty, and either may hold line feeds, which
+# join or split lines.
+record Edit
+    # Where the change begins.
+    at: Pos
+    # The text taken out, as it stood.
+    removed: str
+    # The text put in its place.
+    inserted: str
+
+# The document of `text`, cut at each line feed.
+#
+# - `text`: the text; its line feeds alone end lines, so a carriage return
+#   stays in its line.
+#
+# A text ending with a line feed ends with an empty line, so `text_of`
+# writes the same text back.
+function from_text(text: str) -> Document
+    return Document(lines: strings.split(s: text, sep: "\n"))
+
+# The text of `doc`, its lines joined by line feeds.
+#
+# - `doc`: the document.
+function text_of(doc: Document lent) -> str
+    return doc.lines.join("\n")
+
+# How many lines `doc` holds, at least 1.
+#
+# - `doc`: the document.
+function line_count(doc: Document lent) -> i64
+    return doc.lines.len()
+
+# The place after the last character of `doc`.
+#
+# - `doc`: the document.
+function end_of_document(doc: Document lent) -> Pos
+    last = doc.lines.len() - 1
+    return Pos(line: last, col: doc.lines[last].len())
+
+# Where `text` ends when it is put in at `at`: on the same line after it
+# where it holds no line feed, else on a later line after its last piece.
+#
+# - `at`: where the text begins.
+# - `text`: the text.
+function end_after(at: Pos, text: str) -> Pos
+    pieces = strings.split(s: text, sep: "\n")
+
+    if pieces.len() == 1
+        return Pos(line: at.line, col: at.col + text.len())
+
+    return Pos(line: at.line + pieces.len() - 1, col: pieces[pieces.len() - 1].len())
+
+# Whether `a` stands before `b`.
+#
+# - `a`: a place.
+# - `b`: another place.
+function is_before(a: Pos, b: Pos) -> bool
+    return a.line < b.line || a.line == b.line && a.col < b.col
+
+# The text between `from` and `to`, line feeds where lines end.
+#
+# - `doc`: the document.
+# - `from`: the first place; one after `to` answers the empty text.
+# - `to`: the place after the last character.
+#
+# Aborts where either place is outside the document, as a slice past the
+# end does.
+function text_between(doc: Document lent, from: Pos, to: Pos) -> str
+    if !is_before(a: from, b: to)
+        return ""
+
+    if from.line == to.line
+        return doc.lines[from.line].slice(from: from.col, to: to.col)
+
+    first = doc.lines[from.line]
+    pieces: [str] @= [first.slice(from: from.col, to: first.len())]
+
+    for n in range(from: from.line + 1, to: to.line)
+        pieces @ pieces.push(doc.lines[n])
+
+    pieces @ pieces.push(doc.lines[to.line].slice(from: 0, to: to.col))
+    return pieces.join("\n")
+
+# Applies `edit` to `doc` and answers where its inserted text ends, the
+# place a cursor stands after typing it.
+#
+# - `doc`: the document; its lines change.
+# - `edit`: the change; its `removed` text must be what stands at `edit.at`,
+#   which the history keeps true by applying only edits it recorded, in
+#   order.
+#
+# A change inside one line rewrites that line in place; one that joins or
+# splits lines rebuilds the list once.
+function apply(@doc: Document, edit: Edit) -> Pos
+    end = end_after(edit.at, text: edit.removed)
+    first = doc.lines[edit.at.line]
+    last = doc.lines[end.line]
+    joined = first.slice(from: 0, to: edit.at.col) + edit.inserted + last.slice(from: end.col, to: last.len())
+    middle = strings.split(s: joined, sep: "\n")
+
+    if edit.at.line == end.line && middle.len() == 1
+        doc.lines[edit.at.line] @ joined
+    else
+        rebuilt: [str] @= doc.lines.slice(from: 0, to: edit.at.line)
+
+        for piece in middle
+            rebuilt @ rebuilt.push(piece)
+
+        for n in range(from: end.line + 1, to: doc.lines.len())
+            rebuilt @ rebuilt.push(doc.lines[n])
+
+        doc.lines @ rebuilt
+
+    return end_after(edit.at, text: edit.inserted)
+
+# The edit that undoes `edit`: what it put in taken out, what it took out put
+# back, at the same place.
+#
+# - `edit`: the change to undo.
+function inverse(edit: Edit) -> Edit
+    return Edit(at: edit.at, removed: edit.inserted, inserted: edit.removed)
+
+# The edit that replaces the whole of `doc` by `text`: what a reload makes, so
+# a reload is undone as one change.
+#
+# - `doc`: the document.
+# - `text`: the text that takes its place.
+function replace_all_edit(doc: Document lent, text: str) -> Edit
+    return Edit(at: Pos(line: 0, col: 0), removed: text_of(doc), inserted: text)
+
+test "from_text: an empty text, a final line feed, and a carriage return kept"
+    assert from_text("").lines == [""]
+    assert from_text("a\nb\n").lines == ["a", "b", ""]
+    assert from_text("a\r\nb").lines == ["a\r", "b"]
+    assert text_of(from_text("a\nb\n")) == "a\nb\n"
+
+test "end_after: inside a line, across two line feeds, and the empty text"
+    assert end_after(Pos(line: 2, col: 3), text: "abc") == Pos(line: 2, col: 6)
+    assert end_after(Pos(line: 2, col: 3), text: "x\ny\nzz") == Pos(line: 4, col: 2)
+    assert end_after(Pos(line: 0, col: 5), text: "") == Pos(line: 0, col: 5)
+
+test "text_between: one line, three lines, and an empty range"
+    doc = from_text("first\nsecond\nthird")
+    assert text_between(doc, from: Pos(line: 0, col: 1), to: Pos(line: 0, col: 4)) == "irs"
+    assert text_between(doc, from: Pos(line: 0, col: 3), to: Pos(line: 2, col: 2)) == "st\nsecond\nth"
+    assert text_between(doc, from: Pos(line: 1, col: 2), to: Pos(line: 1, col: 2)) == ""
+
+test "apply: a character typed, a line split, two lines joined, and each undone"
+    doc @= from_text("hello world\nsecond")
+    typed = Edit(at: Pos(line: 0, col: 5), removed: "", inserted: ",")
+    assert apply(@doc, edit: typed) == Pos(line: 0, col: 6)
+    assert doc.lines == ["hello, world", "second"]
+    split = Edit(at: Pos(line: 0, col: 6), removed: " ", inserted: "\n")
+    assert apply(@doc, edit: split) == Pos(line: 1, col: 0)
+    assert doc.lines == ["hello,", "world", "second"]
+    joined = Edit(at: Pos(line: 1, col: 5), removed: "\n", inserted: " and ")
+    _ = apply(@doc, edit: joined)
+    assert doc.lines == ["hello,", "world and second"]
+    _ = apply(@doc, edit: inverse(joined))
+    _ = apply(@doc, edit: inverse(split))
+    _ = apply(@doc, edit: inverse(typed))
+    assert text_of(doc) == "hello world\nsecond"
+
+test "apply: the whole text replaced, from one line to three and back"
+    doc @= from_text("old")
+    whole = replace_all_edit(doc, text: "new\ntext\n")
+    assert apply(@doc, edit: whole) == Pos(line: 2, col: 0)
+    assert doc.lines == ["new", "text", ""]
+    _ = apply(@doc, edit: inverse(whole))
+    assert doc.lines == ["old"]
+
+test "apply: text of several bytes a character, put in and taken out"
+    doc @= from_text("日本")
+    _ = apply(@doc, edit: Edit(at: Pos(line: 0, col: 3), removed: "", inserted: "🇮🇹"))
+    assert doc.lines == ["日🇮🇹本"]
+    _ = apply(@doc, edit: Edit(at: Pos(line: 0, col: 3), removed: "🇮🇹", inserted: ""))
+    assert doc.lines == ["日本"]

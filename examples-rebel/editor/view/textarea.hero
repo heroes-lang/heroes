@@ -1,0 +1,183 @@
+# The text drawn into its band: the line numbers, then each line from the
+# buffer's first column shown, grapheme by grapheme as `text/glyphs` lays it
+# out, each in the theme's style: the matches of the last search, the match
+# the cursor stands on, and the stand-ins for controls and invisible
+# characters. A wide character that the band's left edge would cut is left
+# out rather than drawn half, and so is one its right edge would cut, as
+# terminals do.
+
+use <rebel>/regex
+use <rebel>/strings
+use <rebel>/term
+use <rebel>/tui
+
+use editor/state
+use search/matches
+use settings/theme
+use text/glyphs
+use view/layout
+
+# Draws the buffer shown into `area` of `screen`, and answers where the
+# cursor stands on the screen.
+#
+# - `screen`: the frame drawn into.
+# - `area`: the text's band.
+# - `e`: the editor.
+#
+# `.hidden` where no buffer is open or the cursor is outside the band.
+function draw(@screen: tui.Buffer, area: tui.Rect, e: state.Editor lent) -> tui.Cursor
+    at = match state.slot_of_current(e)
+        .ok s  => s
+        .err _ => return .hidden
+
+    b = e.buffers.open[at]
+    colors = e.setup.colors
+    count = b.doc.lines.len()
+    gutter = layout.gutter_width(count, shown: e.setup.options.line_numbers)
+    digits = gutter - 1
+    width = area.width - gutter
+
+    for row in range(from: 0, to: area.height)
+        n = b.top + row
+
+        if n >= count
+            break
+
+        y = area.y + row
+
+        if gutter > 0
+            number = strings.pad_start(s: to_str(n + 1), width: digits, pad: " ")
+            _ = tui.draw_text(@screen, x: area.x, y: y, text: number, style: colors.gutter, width: digits)
+
+        spans = spans_of(e, line: b.doc.lines[n])
+        current = current_span(e, n: n)
+        draw_line(
+            @screen,
+            x: area.x + gutter,
+            y: y,
+            width: width,
+            line: b.doc.lines[n],
+            left: b.left,
+            look: Look(colors: colors, spans: spans, current: current, tab_width: state.tab_width(e))
+        )
+
+    laid = glyphs.glyphs_of(b.doc.lines[b.cursor.line], tab_width: state.tab_width(e))
+    x = glyphs.column_at(laid, at: b.cursor.col) - b.left
+    y = b.cursor.line - b.top
+
+    if x < 0 || x >= width || y < 0 || y >= area.height
+        return .hidden
+
+    return .at(x: area.x + gutter + x, y: area.y + y)
+
+# How a line is drawn: the theme, the matches to show, and the tab stops.
+record Look
+    # The theme.
+    colors: theme.Theme
+    # The matches of the last search in the line.
+    spans: [regex.Span]
+    # The match the cursor stands on, where it is in this line; fails
+    # `not_found` otherwise.
+    current: regex.Span?
+    # The columns between tab stops.
+    tab_width: i64
+
+# Draws `line` from its screen column `left`, at most `width` cells from
+# column `x` of row `y`.
+#
+# - `screen`: the frame.
+# - `x`: the first column on the screen.
+# - `y`: the row.
+# - `width`: the cells the line may take.
+# - `line`: the line.
+# - `left`: the line's first column shown.
+# - `look`: its styles.
+function draw_line(@screen: tui.Buffer, x: i64, y: i64, width: i64, line: str, left: i64, look: Look)
+    for g in glyphs.glyphs_of(line, tab_width: look.tab_width)
+        if g.column < left
+            continue
+
+        offset = g.column - left
+
+        if offset + g.width > width
+            break
+
+        _ = tui.draw_text(@screen, x: x + offset, y: y, text: g.shown, style: style_of(g, look: look), width: g.width)
+
+# The style a glyph is drawn in: the current match's, a match's, a
+# stand-in's, or the text's.
+#
+# - `g`: the glyph.
+# - `look`: the line's styles.
+function style_of(g: glyphs.Glyph, look: Look) -> term.Style
+    match look.current
+        .ok c =>
+            if g.at >= c.start && g.at < c.end
+                return look.colors.found_current
+        .err _ => _ = 0
+
+    for s in look.spans
+        if g.at >= s.start && g.at < s.end
+            return look.colors.found
+
+    if g.stand_in
+        return look.colors.stand_in
+
+    return look.colors.text
+
+# The matches of the last search in `line`, none before the first search.
+#
+# - `e`: the editor.
+# - `line`: the line.
+function spans_of(e: state.Editor lent, line: str) -> [regex.Span]
+    match e.searching
+        .ok re => return matches.spans_in_line(line, re: re)
+        .err _ => return []
+
+# The match the cursor stands on, where it is on line `n`.
+#
+# - `e`: the editor.
+# - `n`: the line.
+#
+# Fails `not_found` where no match is shown on that line.
+function current_span(e: state.Editor lent, n: i64) -> regex.Span?
+    hit = e.hit?
+
+    if hit.line != n
+        return fail(code: "not_found", msg: "the match is on another line")
+
+    return ok(regex.Span(start: hit.from, end: hit.to))
+
+test "draw_line: a wide character cut by the right edge is left out"
+    screen @= tui.blank(tui.Rect(x: 0, y: 0, width: 5, height: 1))
+    look = Look(
+        colors: theme.theme_of(theme.default_colors()).must(),
+        spans: [],
+        current: fail(code: "not_found", msg: ""),
+        tab_width: 4
+    )
+    draw_line(@screen, x: 0, y: 0, width: 5, line: "ab日本", left: 0, look: look)
+    assert tui.to_lines(screen) == ["ab日 "]
+
+test "draw_line: scrolled past half of a wide character, and a tab drawn as spaces"
+    screen @= tui.blank(tui.Rect(x: 0, y: 0, width: 6, height: 1))
+    look = Look(
+        colors: theme.theme_of(theme.default_colors()).must(),
+        spans: [],
+        current: fail(code: "not_found", msg: ""),
+        tab_width: 4
+    )
+    draw_line(@screen, x: 0, y: 0, width: 6, line: "日\tx", left: 1, look: look)
+    assert tui.to_lines(screen) == ["   x  "]
+
+test "style_of: the current match over a match, a match over a stand-in"
+    colors = theme.theme_of(theme.default_colors()).must()
+    look = Look(
+        colors: colors,
+        spans: [regex.Span(start: 0, end: 4)],
+        current: ok(regex.Span(start: 2, end: 4)),
+        tab_width: 4
+    )
+    laid = glyphs.glyphs_of("ab\rd", tab_width: 4)
+    assert style_of(laid[0], look: look) == colors.found
+    assert style_of(laid[2], look: look) == colors.found_current
