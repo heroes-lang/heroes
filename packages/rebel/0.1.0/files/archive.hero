@@ -50,6 +50,7 @@ use archive/internal/zip_write
 use bytes
 use compress
 use fs
+use hash
 use io
 use path
 use time
@@ -882,11 +883,11 @@ function zip_writer(to: io.Stream) -> ZipWriter
 #   folder's name gets its `/`, and a symbolic link's data is its target.
 # - `data`: the data; empty for a folder.
 #
-# Fails `invalid` where the name is empty or passes 65,535 bytes, the kind
-# is a hard link or another, or a folder is given data; and as the stream
-# fails.
+# Fails `invalid` where a member `begin_zip_member` began is not ended, the
+# name is empty or passes 65,535 bytes, the kind is a hard link or another,
+# or a folder is given data; and as the stream fails.
 #
-# See also `add_zip_file`.
+# See also `add_zip_file`, `begin_zip_member`.
 function write_zip_entry(@w: ZipWriter, entry: ZipEntry, data: [u8]) -> ()?
     name: str @= entry.name
 
@@ -917,6 +918,86 @@ function write_zip_entry(@w: ZipWriter, entry: ZipEntry, data: [u8]) -> ()?
 
     zip_write.add_whole(@w.sink, name: name, comment: entry.comment, method: method, level: 6, modified: entry.modified, external: zip_write.external_of(mode: entry.mode, kind: kind), data: data)?
     return ok()
+
+# Begins the member `entry`, whose data follows in pieces by
+# `write_zip_data` and ends with `end_zip_member`: what `write_zip_entry`
+# writes whole, written a piece at a time, so a program that runs a long job
+# in steps writes a large member between two of them. The local header is
+# written now with no sizes; the CRC-32 and the sizes follow the data, in a
+# data descriptor.
+#
+# - `w`: the writer, with no member begun and not ended.
+# - `entry`: the member: name, kind, method, time, mode and comment, as
+#   `write_zip_entry` reads them; its `size` is the data's size in bytes
+#   where the program knows it, or -1 where it does not. The member's sizes
+#   are ZIP64's where it is -1 or within 5 % of 4 GiB, a reader of the data
+#   descriptor being told so by the header, and of 32 bits else, which the
+#   data may then not pass.
+#
+# Fails `invalid` where a member is begun and not ended, the name is empty
+# or passes 65,535 bytes, or the kind is a hard link or another; and as the
+# stream fails. See also `write_zip_data`, `end_zip_member`, `add_zip_file`.
+function begin_zip_member(@w: ZipWriter, entry: ZipEntry) -> ()?
+    name: str @= entry.name
+
+    if name == ""
+        return fail(code: INVALID, msg: "a zip member with no name")
+
+    kind: i64 @= 0
+
+    match entry.kind
+        .file    => _ = 0
+        .symlink => kind @ 2
+        .directory =>
+            kind @ 1
+
+            if name[name.len() - 1] != '/'
+                name @ name + "/"
+        .hard_link | .other _ => return fail(
+            code: INVALID,
+            msg: f"\"{name}\" is a hard link or a device, which a zip member does not hold"
+        )
+
+    method = match entry.method
+        .stored   => zip_read.STORED
+        .deflated => zip_read.DEFLATED
+
+    return zip_write.begin_member(
+        @w.sink,
+        name: name,
+        comment: entry.comment,
+        method: method,
+        level: 6,
+        modified: entry.modified,
+        external: zip_write.external_of(mode: entry.mode, kind: kind),
+        size: entry.size,
+        holds_data: kind != 1
+    )
+
+# Writes `data` as the next bytes of the member `begin_zip_member` began,
+# compressed by its method as they come, its CRC-32 counted.
+#
+# - `w`: the writer, a member begun.
+# - `data`: the next bytes of the member's data; none write nothing.
+#
+# Fails `invalid` where no member is begun, the member is a folder, or the
+# data would pass the 4 GiB a member begun with a smaller size holds; and as
+# the stream fails. See also `begin_zip_member`, `end_zip_member`.
+function write_zip_data(@w: ZipWriter, data: [u8]) -> ()?
+    return zip_write.member_part(@w.sink, data: data)
+
+# Ends the member `begin_zip_member` began: the compressor's last bytes,
+# then the data descriptor with the CRC-32 and the sizes of the data
+# written, and the member kept for the central directory `finish_zip`
+# writes.
+#
+# - `w`: the writer, its member begun ended by this call.
+#
+# Fails `invalid` where no member is begun, or where its data, compressed,
+# passed the 4 GiB its header allowed, the member then left out of the
+# directory; and as the stream fails. See also `begin_zip_member`.
+function end_zip_member(@w: ZipWriter) -> ()?
+    return zip_write.end_member(@w.sink)
 
 # Writes the file, folder or symbolic link at `file` on the disk as the
 # member `name`, with its mode and time; a file's data is read and
@@ -1004,7 +1085,8 @@ function add_zip_tree(@w: ZipWriter, dir: str, name: str, method: Method) -> ()?
 # - `w`: the writer, ended by this call.
 # - `comment`: the archive's comment, "" for none, at most 65,535 bytes.
 #
-# Fails `invalid` where the comment is longer, and as the stream fails.
+# Fails `invalid` where the comment is longer or a member `begin_zip_member`
+# began is not ended, and as the stream fails.
 #
 # See also `zip_writer`.
 function finish_zip(@w: ZipWriter, comment: str) -> ()?
@@ -1483,6 +1565,108 @@ test "encode_tar: the bytes a tar_writer writes, plain and gzip, read back by de
         .ok _  => assert false
         .err e => assert e.code == "invalid"
 
+test "begin_zip_member, write_zip_data and end_zip_member: no piece, one, three, stored and deflated, read back with their sizes and CRC-32"
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: zip_write.ZIP64_AT))
+    empty @= zip_entry("empty.txt", kind: .file)
+    empty.size @ -1
+    begin_zip_member(@w, entry: empty).must()
+    end_zip_member(@w).must()
+    stored @= zip_entry("one.txt", kind: .file)
+    stored.method @ .stored
+    stored.size @ 5
+    begin_zip_member(@w, entry: stored).must()
+    write_zip_data(@w, data: bytes.from_text("hello")).must()
+    end_zip_member(@w).must()
+    begin_zip_member(@w, entry: zip_entry("three.txt", kind: .file)).must()
+    write_zip_data(@w, data: bytes.from_text("a, ")).must()
+    write_zip_data(@w, data: []).must()
+    write_zip_data(@w, data: bytes.from_text(repeat("b", 1000))).must()
+    write_zip_data(@w, data: bytes.from_text(", é")).must()
+    end_zip_member(@w).must()
+    begin_zip_member(@w, entry: zip_entry("a folder", kind: .directory)).must()
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    r = decode_zip(w.sink.held).must()
+    assert r.entries.len() == 4 && r.entries[3].name == "a folder" && r.entries[3].kind == .directory
+    whole = bytes.from_text("a, " + repeat("b", 1000) + ", é")
+    three = entry_of(r, name: "three.txt").must()
+    assert three.size == whole.len() && three.compressed_size < whole.len() && three.crc == hash.crc32(whole)
+    assert read_zip_entry(r, entry: three, limit: 10000).must() == whole
+    assert read_zip_entry(r, entry: entry_of(r, name: "one.txt").must(), limit: 10).must() == bytes.from_text("hello")
+    empty_read = entry_of(r, name: "empty.txt").must()
+    assert empty_read.size == 0 && read_zip_entry(r, entry: empty_read, limit: 10).must() == []
+
+test "begin_zip_member, write_zip_data and end_zip_member: data and an end with none begun, one begun twice, a whole member, the end, and a folder's data refused"
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: zip_write.ZIP64_AT))
+
+    match write_zip_data(@w, data: [1])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "1 bytes of data written with no zip member begun"
+
+    assert end_zip_member(@w).is_err()
+    begin_zip_member(@w, entry: zip_entry("open.txt", kind: .file)).must()
+
+    match begin_zip_member(@w, entry: zip_entry("second.txt", kind: .file))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the zip member \"open.txt\" is begun and not ended: `end_zip_member` ends it"
+
+    assert write_zip_entry(@w, entry: zip_entry("whole.txt", kind: .file), data: [1]).is_err()
+    assert finish_zip(@w, comment: "").is_err()
+    end_zip_member(@w).must()
+    assert begin_zip_member(@w, entry: zip_entry("", kind: .file)).is_err()
+    assert begin_zip_member(@w, entry: zip_entry("h", kind: .hard_link)).is_err()
+    begin_zip_member(@w, entry: zip_entry("d", kind: .directory)).must()
+
+    match write_zip_data(@w, data: [1])
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the entry \"d/\" is refused: a folder holds no data"
+
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    assert decode_zip(w.sink.held).must().entries.len() == 2
+
+# Python 3.15.2's `zipfile`, its limit lowered to 100, wrote a local header
+# needing version 20 for a member of 95 bytes and 45, ZIP64's, for 96, and
+# refused data past the limit in a member opened smaller (2026-11-22).
+test "begin_zip_member: ZIP64 from the header where the size is not known or near 32 bits, 32 bits else, and data past them refused"
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: 100))
+    unknown @= zip_entry("unknown.txt", kind: .file)
+    unknown.method @ .stored
+    unknown.size @ -1
+    begin_zip_member(@w, entry: unknown).must()
+    assert w.sink.held[4] == 45
+    write_zip_data(@w, data: bytes.from_text(repeat("u", 150))).must()
+    end_zip_member(@w).must()
+    below @= zip_entry("below.txt", kind: .file)
+    below.size @ 95
+    at_below = w.sink.written
+    begin_zip_member(@w, entry: below).must()
+    assert w.sink.held[at_below + 4] == 20
+    end_zip_member(@w).must()
+    near @= zip_entry("near.txt", kind: .file)
+    near.size @ 96
+    at = w.sink.written
+    begin_zip_member(@w, entry: near).must()
+    assert w.sink.held[at + 4] == 45
+    end_zip_member(@w).must()
+    small @= zip_entry("small.txt", kind: .file)
+    small.method @ .stored
+    small.size @ 10
+    at_small = w.sink.written
+    begin_zip_member(@w, entry: small).must()
+    assert w.sink.held[at_small + 4] == 20
+    write_zip_data(@w, data: bytes.from_text(repeat("s", 60))).must()
+
+    match write_zip_data(@w, data: bytes.from_text(repeat("s", 40)))
+        .ok _  => assert false
+        .err e => assert e.code == INVALID && e.msg == "the entry \"small.txt\" is refused: its data passes 99 bytes, the 32-bit sizes its header was written with for the size it was begun with"
+
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    r = decode_zip(w.sink.held).must()
+    assert read_zip_entry(r, entry: entry_of(r, name: "unknown.txt").must(), limit: 1000).must() == bytes.from_text(repeat("u", 150))
+    assert read_zip_entry(r, entry: entry_of(r, name: "small.txt").must(), limit: 1000).must() == bytes.from_text(repeat("s", 60))
+
 ## Examples
 
 # Telling a zip archive by its first bytes.
@@ -1696,6 +1880,49 @@ test "zip_writer: one member"
     assert zip_reader(s).must().entries.len() == 1
     io.close(@s).must()
     fs.remove_all(root).must()
+
+# A large file's member written a step at a time, as a program with a
+# window writes it between two events: begun, its data in pieces, ended.
+test "begin_zip_member: a member written in pieces"
+    root = fs.make_temp_dir(dir: "build", pattern: "rebel-archive-*").must()
+    file = path.join_all([root, "pieces.zip"])
+    out @= fs.create(file).must()
+    w @= zip_writer(out)
+    e @= zip_entry("log.txt", kind: .file)
+    e.size @ -1
+    begin_zip_member(@w, entry: e).must()
+
+    for line in ["first line\n", "second line\n"]
+        write_zip_data(@w, data: bytes.from_text(line)).must()
+
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    io.close(@out).must()
+    s @= fs.open(file).must()
+    r = zip_reader(s).must()
+    assert read_zip_entry(r, entry: r.entries[0], limit: 1000).must() == bytes.from_text("first line\nsecond line\n")
+    io.close(@s).must()
+    fs.remove_all(root).must()
+
+# Two pieces of one member's data, deflated as they come.
+test "write_zip_data: two pieces of one member"
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: zip_write.ZIP64_AT))
+    begin_zip_member(@w, entry: zip_entry("two.txt", kind: .file)).must()
+    write_zip_data(@w, data: bytes.from_text("one, ")).must()
+    write_zip_data(@w, data: bytes.from_text("two")).must()
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    r = decode_zip(w.sink.held).must()
+    assert read_zip_entry(r, entry: r.entries[0], limit: 100).must() == bytes.from_text("one, two")
+
+# A member ended: its CRC-32 and its sizes are in the directory.
+test "end_zip_member: the sizes of the data written"
+    w @= ZipWriter(sink: zip_write.start_held(zip64_at: zip_write.ZIP64_AT))
+    begin_zip_member(@w, entry: zip_entry("n.txt", kind: .file)).must()
+    write_zip_data(@w, data: bytes.from_text("nine byte")).must()
+    end_zip_member(@w).must()
+    finish_zip(@w, comment: "").must()
+    assert decode_zip(w.sink.held).must().entries[0].size == 9
 
 # A member and its data, stored as it is.
 test "write_zip_entry: a stored member"

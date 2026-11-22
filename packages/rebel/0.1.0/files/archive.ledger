@@ -72,12 +72,12 @@ capability archive/zip-methods  methods other than stored and deflated, and encr
   python  zipfile.ZIP_BZIP2, zipfile.ZIP_LZMA, zipfile.ZIP_ZSTANDARD, ZipFile.setpassword, ZipFile.open(pwd=), ZipFile.read(pwd=), ZipFile.extract(pwd=)
   note    until 2026-11-21 this block said the formats were not in Rebel, which stopped being true when `compress/bzip2`, `compress/xz` and `compress/zstd` landed (the coherence review's L-D16). Whether zip's LZMA framing (a version and a properties header before a raw stream) is what `compress/xz.decompress_lzma` reads is unrun
 
-capability archive/zip-write  a zip archive written member by member
-  heroes  archive.zip_writer, archive.write_zip_entry, archive.finish_zip, archive.encode_zip, archive.ZipMember
+capability archive/zip-write  a zip archive written member by member, a member whole or its data in pieces
+  heroes  archive.zip_writer, archive.write_zip_entry, archive.begin_zip_member, archive.write_zip_data, archive.end_zip_member, archive.finish_zip, archive.encode_zip, archive.ZipMember
   go      zip.NewWriter, zip.Writer, zip.Writer.Create, zip.Writer.CreateHeader, zip.Writer.Close, zip.Writer.Flush, zip.Writer.SetComment
   rust    -
   python  ZipFile(mode="w"), ZipFile.writestr, ZipFile.open(mode="w"), ZipFile.close, ZipFile.comment
-  note    names past ASCII are written in UTF-8 and flagged so; every member says it was made on Unix, with its mode, and carries the extended timestamp. ZIP64's fields and end records are written exactly where a size, an offset or the count passes 32 bits, as Go writes them; Python writes them where it is asked to as well (`force_zip64`)
+  note    names past ASCII are written in UTF-8 and flagged so; every member says it was made on Unix, with its mode, and carries the extended timestamp. A member written whole has ZIP64's fields exactly where a size, an offset or the count passes 32 bits, as Go writes them. A member written in pieces (`begin_zip_member`, Go's `Create` and Python's `open(mode="w")`) has a data descriptor after its data, and ZIP64's sizes from its header on where the size it was begun with is -1 or within 5 % of 32 bits, as Python judges it (`force_zip64` where the size is not known), so a reader of the descriptor learns its width from the header; Go decides at the member's end instead. Past 32 bits in a member begun smaller is refused, as Python refuses it
 
 capability archive/zip-from-disk  members made from files on the disk
   heroes  archive.add_zip_file, archive.add_zip_tree
