@@ -1,0 +1,17 @@
+# A `(thread T)` or a `(mailbox T)` never reaches C (spec § 11; panel 254's
+# boundary row, the ffi-pragmatist's P6): in an `extern`'s parameter or
+# result, a callback's parameter or a group's record, each is refused at the
+# type, as every value C cannot hold is.
+#
+# Bulk regression case.
+
+extern "stdlib.h"
+    record Pair tag div_t
+        quot: i32
+        rem: (mailbox i64)  #~ ffi_field_type
+    function abs(m: (mailbox i64)) -> i32  #~ ffi_type
+    function labs(n: i64) -> (thread i64)  #~ ffi_type
+    function qsort(base: ptr, n: u64, size: u64, cmp: (function((thread i64), ptr) -> i32))  #~ ffi_type
+
+function main()
+    print(1)
