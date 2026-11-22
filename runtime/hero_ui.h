@@ -31,13 +31,21 @@
  *
  * THE SYSTEMS. On macOS the native side is AppKit, written in Swift
  * (`platform/hero_ui_appkit.swift`, which the layer compiles on an Apple
- * target alone). On Windows and Linux the native side answers
- * `HERO_UI_UNSUPPORTED` until their arms are written (Win32, and GTK opened
- * at the first call as `hero_keyring.c` opens libsecret), and a program
- * there runs on the headless side. `hero_ui_native_here` asks whether the
- * native side can open on this machine: macOS answers 0 where no window
- * server serves the session (a login over ssh), Linux will where no display
- * is named.
+ * target alone). On Windows it is Win32's own controls, made per-monitor
+ * aware of the scale so a point is a ninety-sixth of an inch at every
+ * monitor's scale, drawn in the common controls' current look, and linking
+ * `user32`, `gdi32`, `comctl32`, `comdlg32` and `msimg32` itself. On every
+ * other system it is GTK 4, opened at the first call with `dlopen` as
+ * `hero_keyring.c` opens libsecret, so no build needs GTK and a machine
+ * without `libgtk-4.so.1` answers `HERO_UI_UNSUPPORTED`, naming it; the
+ * least GTK it opens on is 4.0, and GTK 4.10's dialogs are used where the
+ * library has them. `hero_ui_native_here` asks whether the native side can
+ * open on this machine, where a person would see it: macOS answers 0 where
+ * no window server serves the session (a login over ssh), Windows where
+ * the process's window station shows nothing (a service's, or ssh's), and
+ * every other system where no display is named (`DISPLAY`,
+ * `WAYLAND_DISPLAY`) or GTK 4 is not installed. A program there runs on the
+ * headless side.
  *
  * THE HEADLESS SIDE is an app opened with `HERO_UI_HEADLESS`: a handle with
  * the same life and the same thread rule, on which every widget call answers
