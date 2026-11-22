@@ -1,0 +1,129 @@
+# Eight threads exchange records holding strings, lists, maps and mailboxes
+# through mailboxes for four thousand rounds, and every value arrives whole
+# and unchanged by what the sender did after (spec § 11; feature 2647): the
+# robustness proof the run form keeps, judged plain, at -O2 and under the
+# sanitizers.
+
+record Item
+    name: str
+    parts: [str]
+    weights: {str: i64}
+    nested: [[i64]]
+
+variant Msg
+    work
+        round: i64
+        item: Item
+        back: (mailbox Reply)
+    stop
+
+record Reply
+    round: i64
+    who: i64
+    item: Item
+    sum: i64?
+
+record Start
+    who: i64
+    inbox: (mailbox Msg)
+
+function item_of(round: i64) -> Item
+    words: [str] @= []
+    weights: {str: i64} @= {}
+    rows: [[i64]] @= []
+    k: i64 @= 0
+
+    while k < 4
+        word = f"w{round}-{k}"
+        words @ words.push(word)
+        weights[word] @ round * 10 + k
+        rows @ rows.push([round, k, round + k])
+        k @ k + 1
+
+    return Item(name: f"item {round}", parts: words, weights: weights, nested: rows)
+
+function sum_of(item: Item) -> i64?
+    total: i64 @= 0
+
+    for word in item.parts
+        total @ total + item.weights[word]?
+
+    return ok(total)
+
+function serve(start: Start) -> i64
+    served: i64 @= 0
+    going: bool @= true
+
+    while going
+        match start.inbox.receive(within_ms: 60000)
+            .ok msg =>
+                match msg
+                    .work w =>
+                        changed: Item @= w.item
+                        changed.parts @ changed.parts.push(f"seen by {start.who}")
+                        changed.weights[f"by {start.who}"] @ start.who
+                        w.back.send(Reply(round: w.round, who: start.who, item: changed, sum: sum_of(w.item)))
+                        served @ served + 1
+                    .stop => going @ false
+            .err e =>
+                print("thread ", start.who, ": ", e.code)
+                going @ false
+
+    return served
+
+function main()
+    threads = 8
+    rounds = 4000
+    replies: (mailbox Reply) = mailbox()
+    inboxes: [(mailbox Msg)] @= []
+    started: [(thread i64)] @= []
+    who: i64 @= 0
+
+    while who < threads
+        inbox: (mailbox Msg) = mailbox()
+        inboxes @ inboxes.push(inbox)
+        started @ started.push(spawn(serve, Start(who: who, inbox: inbox)).must())
+        who @ who + 1
+
+    round: i64 @= 0
+    sent: Item @= item_of(0)
+
+    while round < rounds
+        sent @ item_of(round)
+        inboxes[round % threads].send(.work(round: round, item: sent, back: replies))
+
+        # The sender writes its own value after the send; the copy sent is
+        # not this one.
+        sent.parts @ sent.parts.push("written after the send")
+        round @ round + 1
+
+    checked: i64 @= 0
+    seen: {i64: bool} @= {}
+
+    while checked < rounds
+        reply = replies.receive(within_ms: 60000).must()
+        expected = item_of(reply.round)
+        assert reply.item.name == expected.name
+        assert reply.item.parts.len() == 5
+        assert reply.item.parts[4] == f"seen by {reply.who}"
+        assert reply.item.weights[f"by {reply.who}"].must() == reply.who
+        assert reply.item.nested == expected.nested
+        assert reply.sum.must() == sum_of(expected).must()
+        assert reply.round % threads == reply.who
+        assert seen[reply.round].is_err()
+        seen[reply.round] @ true
+        checked @ checked + 1
+
+    for inbox in inboxes
+        inbox.send(.stop)
+
+    served: i64 @= 0
+
+    for t in started
+        served @ served + t.wait()
+
+    for inbox in inboxes
+        inbox.close()
+
+    replies.close()
+    print("served ", served, " checked ", checked)

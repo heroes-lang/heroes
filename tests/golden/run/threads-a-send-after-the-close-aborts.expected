@@ -1,0 +1,3 @@
+closed
+!at: threads-a-send-after-the-close-aborts.hero:9:5
+!panic: a value was sent to a mailbox after its close — a mailbox's life ends at its close for every copy of it, so nothing sends to it after

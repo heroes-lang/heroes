@@ -1,0 +1,18 @@
+# `mailbox()` takes what it carries from the `(mailbox T)` its position asks
+# for, as `[]` takes its element (spec § 11; feature 2647); with nothing
+# asking, it is refused, and a thread runs a function of one parameter.
+#
+# Bulk regression case.
+
+function add(a: i64, b: i64) -> i64
+    return a + b
+
+function main()
+    loose = mailbox()  #~ mailbox_needs_type
+    _ = loose
+    t = spawn(add, 1).must()  #~ thread_body
+    print(t.wait())
+    u = spawn(7, 1).must()  #~ thread_body
+    print(u.wait())
+    v = spawn(add).must()  #~ wrong_arity
+    print(v.wait())

@@ -1,0 +1,9 @@
+# A close keeps what was sent for a receive; a value still there when `main`
+# returns was sent and never received, and ends the program (spec § 13;
+# feature 2647).
+
+function main()
+    m: (mailbox str) = mailbox()
+    m.send("one")
+    m.close()
+    print("closed with one queued")

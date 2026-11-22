@@ -1,0 +1,2 @@
+end
+!panic: 2 mailbox(es) never closed and 1 value(s) sent and never received when `main` returned

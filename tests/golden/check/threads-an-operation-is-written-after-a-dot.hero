@@ -1,0 +1,11 @@
+# A thread's `wait` and a mailbox's `send`, `receive` and `close` are written
+# only after a dot, so their names stay free for the program's own functions
+# (spec § 9, § 11; feature 2647): called by name, with no function of the
+# program's taking it, one is told how it is written.
+#
+# Bulk regression case.
+
+function main()
+    m: (mailbox str) = mailbox()
+    send(m, "a")  #~ dot_only
+    m.close()

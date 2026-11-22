@@ -1,0 +1,2 @@
+tests/golden/check/threads-a-bound-names-its-unit.hero:14:21: error[bound_unnamed]: `receive` names its bound, `within_ms:`, so the unit it counts is read where it is written
+tests/golden/check/threads-a-bound-names-its-unit.hero:16:31: error[bound_unnamed]: `spawn_sized` names its bound, `bytes:`, so the unit it counts is read where it is written

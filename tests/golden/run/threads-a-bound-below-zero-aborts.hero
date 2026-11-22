@@ -1,0 +1,8 @@
+# A receive's bound is how many milliseconds it may wait, 0 for none, and one
+# below zero aborts, naming the line (spec § 11; feature 2647).
+
+function main()
+    m: (mailbox str) = mailbox()
+    wait = 0 - 5
+    print(m.receive(within_ms: wait).default("none"))
+    m.close()

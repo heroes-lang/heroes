@@ -1,0 +1,11 @@
+# When `main` returns, a mailbox nobody closed and a value sent and never
+# received end the program, saying how many and where each mailbox was
+# begun, as a lease nobody ended does (spec § 13; feature 2647).
+
+function main()
+    m: (mailbox [str]) = mailbox()
+    m.send(["a", "b"])
+    kept: (mailbox i64) = mailbox()
+    kept.send(1)
+    _ = kept.receive(within_ms: 0).must()
+    print("end")

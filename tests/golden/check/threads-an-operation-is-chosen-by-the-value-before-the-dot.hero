@@ -1,0 +1,19 @@
+# A thread's and a mailbox's operations are chosen by the value before the
+# dot (spec § 9, § 11; feature 2647): after a dot on a value of another kind,
+# with no function of the program's taking that name, each is told whose
+# operation it is.
+#
+# Bulk regression case.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function main()
+    m: (mailbox str) = mailbox()
+    t = spawn(twice, 2).must()
+    m.wait()  #~ operation_of_another
+    t.send(3)  #~ operation_of_another
+    word = "w"
+    word.close()  #~ operation_of_another
+    print(t.wait())
+    m.close()

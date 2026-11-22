@@ -1,0 +1,2 @@
+closed with one queued
+!panic: 1 value(s) sent to a mailbox and never received when `main` returned

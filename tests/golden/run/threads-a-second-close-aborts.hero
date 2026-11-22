@@ -1,0 +1,8 @@
+# A mailbox is closed once: a second close, through any copy, aborts
+# (spec § 11; feature 2647).
+
+function main()
+    m: (mailbox str) = mailbox()
+    copy = m
+    m.close()
+    copy.close()

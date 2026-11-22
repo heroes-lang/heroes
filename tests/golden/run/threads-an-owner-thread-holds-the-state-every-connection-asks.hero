@@ -1,0 +1,100 @@
+# The gateway's shape (feature 2647; `examples-rebel/gateway`): one owner
+# thread holds the state every request must see, a cache and its counters, and
+# sixteen connection threads ask it by mailbox, each request carrying the
+# mailbox its answer comes back on, so no value is held by two threads and
+# none is locked. Judged plain, at -O2 and under the sanitizers.
+
+variant Ask
+    get
+        key: str
+        back: (mailbox Answer)
+    put
+        key: str
+        value: str
+        back: (mailbox Answer)
+    count
+        back: (mailbox Answer)
+    stop
+
+record Answer
+    found: str?
+    hits: i64
+    entries: i64
+
+record Owned
+    cache: {str: str}
+    hits: {str: i64}
+
+function own(inbox: (mailbox Ask)) -> {str: i64}
+    state: Owned @= Owned(cache: {}, hits: {})
+    going: bool @= true
+
+    while going
+        match inbox.receive(within_ms: 60000).must()
+            .get g =>
+                state.hits[g.key] @ state.hits[g.key].default(0) + 1
+                g.back.send(
+                    Answer(found: state.cache[g.key], hits: state.hits[g.key].must(), entries: keys(state.cache).len())
+                )
+            .put p =>
+                state.cache[p.key] @ p.value
+                p.back.send(Answer(found: ok(p.value), hits: 0, entries: keys(state.cache).len()))
+            .count c => c.back.send(
+                Answer(found: fail(code: "none", msg: "no key asked"), hits: 0, entries: keys(state.cache).len())
+            )
+            .stop => going @ false
+
+    return state.hits
+
+record Connection
+    who: i64
+    requests: i64
+    owner: (mailbox Ask)
+
+function serve(c: Connection) -> i64
+    back: (mailbox Answer) = mailbox()
+    agreed: i64 @= 0
+    k: i64 @= 0
+
+    while k < c.requests
+        key = f"key-{k % 50}"
+        c.owner.send(.put(key: key, value: f"value-{k % 50}", back: back))
+        _ = back.receive(within_ms: 60000).must()
+        c.owner.send(.get(key: key, back: back))
+        answer = back.receive(within_ms: 60000).must()
+
+        if answer.found.must() == f"value-{k % 50}" && answer.hits >= 1
+            agreed @ agreed + 1
+        k @ k + 1
+
+    back.close()
+    return agreed
+
+function main()
+    owner: (mailbox Ask) = mailbox()
+    held = spawn(own, owner).must()
+    connections: [(thread i64)] @= []
+    n: i64 @= 0
+
+    while n < 16
+        connections @ connections.push(spawn(serve, Connection(who: n, requests: 500, owner: owner)).must())
+        n @ n + 1
+
+    agreed: i64 @= 0
+
+    for t in connections
+        agreed @ agreed + t.wait()
+
+    last: (mailbox Answer) = mailbox()
+    owner.send(.count(back: last))
+    entries = last.receive(within_ms: 60000).must().entries
+    last.close()
+    owner.send(.stop)
+    hits = held.wait()
+    owner.close()
+    total: i64 @= 0
+
+    for key in keys(hits)
+        total @ total + hits[key].must()
+
+    print("agreed ", agreed, " of ", 16 * 500, ", entries ", entries, ", hits ", total)
