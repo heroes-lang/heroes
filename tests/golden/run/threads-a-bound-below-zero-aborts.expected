@@ -1,2 +1,0 @@
-!at: threads-a-bound-below-zero-aborts.hero:7:11
-!panic: a mailbox was asked to wait a time below zero

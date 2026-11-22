@@ -1,2 +1,0 @@
-!at: threads-a-second-close-aborts.hero:8:5
-!panic: a mailbox was closed twice — its life ends at its first close, for every copy of it

@@ -16,3 +16,10 @@ function main()
     print(u.wait())
     v = spawn(add).must()  #~ wrong_arity
     print(v.wait())
+    r = Request(reply: mailbox())
+    r.reply.close()
+    replies: [(mailbox str)] = [mailbox(), mailbox()]
+    print(replies.len())
+
+record Request
+    reply: (mailbox str)

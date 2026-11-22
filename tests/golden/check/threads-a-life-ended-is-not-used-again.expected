@@ -1,5 +1,1 @@
-tests/golden/check/threads-a-life-ended-is-not-used-again.hero:22:5: error[handle_used_after_end]: `m` was closed by `m.close()` at line 21, and a closed mailbox takes no send and no second close
-tests/golden/check/threads-a-life-ended-is-not-used-again.hero:26:11: error[handle_used_after_end]: `t`'s life ended at `t.wait()` at line 25, for every copy of it, and this uses it again
-tests/golden/check/threads-a-life-ended-is-not-used-again.hero:30:11: error[handle_used_after_end]: `u` was handed to another thread by `spawn` at line 28, which ended its life here, and this uses it again
-tests/golden/check/threads-a-life-ended-is-not-used-again.hero:55:11: error[handle_used_after_end]: `t` was handed to another thread by `send` at line 54, which ended its life here, and this uses it again
-tests/golden/check/threads-a-life-ended-is-not-used-again.hero:57:5: error[handle_used_after_end]: `handles` was closed by `handles.close()` at line 56, and a closed mailbox takes no send and no second close
+tests/golden/check/threads-a-life-ended-is-not-used-again.hero:27:11: error[handle_used_after_end]: `t`'s life ended at `t.wait()` at line 26, for every copy of it, and this uses it again

@@ -11,10 +11,10 @@ function send(c: Counter, by: i64) -> Counter
     return Counter(count: c.count + by)
 
 function relay<A>(into: (mailbox A), value: A)
-    into.send(value)
+    into.send(value).must()
 
 function quiet(m: (mailbox i64))
-    m.send(7)
+    m.send(7).must()
 
 function depth(n: i64) -> i64
     if n == 0
@@ -35,7 +35,7 @@ function main()
     relay(by_name["first"].must(), 41)
     relay(boxes[1], 42)
     copy = boxes[2]
-    copy.send(43)
+    copy.send(43).must()
 
     for b in boxes
         print(b.receive(within_ms: 1000).must())

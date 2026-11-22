@@ -1,9 +1,0 @@
-# A close ends a mailbox's life for every copy of it, so a send through a
-# copy made before aborts, naming the line (spec § 11, § 13; feature 2647).
-
-function main()
-    m: (mailbox str) = mailbox()
-    copy = m
-    m.close()
-    print("closed")
-    copy.send("late")

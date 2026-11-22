@@ -10,7 +10,7 @@ function twice(n: i64) -> i64
 
 function main()
     m: (mailbox str) = mailbox()
-    m.send("a")
+    m.send("a").must()
     print(m.receive(within_ms: 5).must())  #~ bound_unnamed
     m.close()
     t = spawn_sized(twice, 2, bytes: 8388608).must()  #~ bound_unnamed

@@ -1,0 +1,37 @@
+# A thread is a handle with no null (spec § 3, § 11; panel 254's S3 and S11):
+# it crosses into another thread only through a mailbox, `m.send(@t)`, which
+# empties `t`, and the thread that receives it waits for it. A thread's
+# answer may hold another thread, which the waiter then holds.
+
+function twice(n: i64) -> i64
+    return n * 2
+
+function starter(n: i64) -> (thread i64)
+    return spawn(twice, n).must()
+
+function waiter(inbox: (mailbox (thread i64))) -> i64
+    sum: i64 @= 0
+
+    while true
+        got = inbox.receive(within_ms: 0 - 1)
+
+        if got.is_err()
+            return sum
+        sum @ sum + got.must().wait()
+
+    return sum
+
+function main()
+    inbox: (mailbox (thread i64)) = mailbox()
+    w = spawn(waiter, inbox).must()
+    k: i64 @= 1
+
+    while k <= 10
+        t: (thread i64) @= spawn(twice, k).must()
+        inbox.send(@t).must()
+        k @ k + 1
+
+    inbox.close()
+    print(w.wait())
+    inner = spawn(starter, 21).must().wait()
+    print(inner.wait())

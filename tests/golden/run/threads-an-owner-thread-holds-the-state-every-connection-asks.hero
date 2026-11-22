@@ -35,13 +35,13 @@ function own(inbox: (mailbox Ask)) -> {str: i64}
                 state.hits[g.key] @ state.hits[g.key].default(0) + 1
                 g.back.send(
                     Answer(found: state.cache[g.key], hits: state.hits[g.key].must(), entries: keys(state.cache).len())
-                )
+                ).must()
             .put p =>
                 state.cache[p.key] @ p.value
-                p.back.send(Answer(found: ok(p.value), hits: 0, entries: keys(state.cache).len()))
+                p.back.send(Answer(found: ok(p.value), hits: 0, entries: keys(state.cache).len())).must()
             .count c => c.back.send(
                 Answer(found: fail(code: "none", msg: "no key asked"), hits: 0, entries: keys(state.cache).len())
-            )
+            ).must()
             .stop => going @ false
 
     return state.hits
@@ -58,9 +58,9 @@ function serve(c: Connection) -> i64
 
     while k < c.requests
         key = f"key-{k % 50}"
-        c.owner.send(.put(key: key, value: f"value-{k % 50}", back: back))
+        c.owner.send(.put(key: key, value: f"value-{k % 50}", back: back)).must()
         _ = back.receive(within_ms: 60000).must()
-        c.owner.send(.get(key: key, back: back))
+        c.owner.send(.get(key: key, back: back)).must()
         answer = back.receive(within_ms: 60000).must()
 
         if answer.found.must() == f"value-{k % 50}" && answer.hits >= 1
@@ -86,10 +86,10 @@ function main()
         agreed @ agreed + t.wait()
 
     last: (mailbox Answer) = mailbox()
-    owner.send(.count(back: last))
+    owner.send(.count(back: last)).must()
     entries = last.receive(within_ms: 60000).must().entries
     last.close()
-    owner.send(.stop)
+    owner.send(.stop).must()
     hits = held.wait()
     owner.close()
     total: i64 @= 0

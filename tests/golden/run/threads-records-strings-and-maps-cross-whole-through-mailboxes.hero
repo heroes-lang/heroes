@@ -62,7 +62,7 @@ function serve(start: Start) -> i64
                         changed: Item @= w.item
                         changed.parts @ changed.parts.push(f"seen by {start.who}")
                         changed.weights[f"by {start.who}"] @ start.who
-                        w.back.send(Reply(round: w.round, who: start.who, item: changed, sum: sum_of(w.item)))
+                        w.back.send(Reply(round: w.round, who: start.who, item: changed, sum: sum_of(w.item))).must()
                         served @ served + 1
                     .stop => going @ false
             .err e =>
@@ -90,7 +90,7 @@ function main()
 
     while round < rounds
         sent @ item_of(round)
-        inboxes[round % threads].send(.work(round: round, item: sent, back: replies))
+        inboxes[round % threads].send(.work(round: round, item: sent, back: replies)).must()
 
         # The sender writes its own value after the send; the copy sent is
         # not this one.
@@ -115,7 +115,7 @@ function main()
         checked @ checked + 1
 
     for inbox in inboxes
-        inbox.send(.stop)
+        inbox.send(.stop).must()
 
     served: i64 @= 0
 
