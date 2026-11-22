@@ -69,6 +69,7 @@
 #include <commdlg.h>
 #include <cderr.h>
 #include <wchar.h>
+#include "hero_ui_web_win32.h"
 #elif defined(__APPLE__)
 #include <pthread.h>
 #include "hero_ui_appkit.h"
@@ -831,6 +832,21 @@ static _Thread_local int64_t hero_ui_win_paths_count;
 
 /* -- Words, numbers and text ------------------------------------------------ */
 
+/* The WebView2 member's answer `answer`, its words kept where it refused
+ * `HERO_UI_OTHER` or `HERO_UI_UNSUPPORTED`, so the failure says which
+ * part of WebView2 is missing. */
+static int64_t hero_ui_win_web(int64_t answer) {
+    char words[HERO_UI_WORDS_MOST];
+
+    if (answer != HERO_UI_OTHER && answer != HERO_UI_UNSUPPORTED) {
+        return answer;
+    }
+    if (hero_ui_web_win32_words(words, (int64_t)sizeof words) <= 0) {
+        (void)snprintf(words, sizeof words, "WebView2 refused, giving no words");
+    }
+    return hero_ui_refused(answer, words);
+}
+
 /* Answers `HERO_UI_OTHER` with `what` and the system's words for `code`. */
 static int64_t hero_ui_win_failed(const char *what, DWORD code) {
     char words[HERO_UI_WORDS_MOST];
@@ -1144,6 +1160,15 @@ static void hero_ui_win_put(hero_ui_native *widget) {
     int height = hero_ui_win_px(widget->height, dpi);
     UINT shown = widget->placed && widget->visible ? SWP_SHOWWINDOW : SWP_HIDEWINDOW;
 
+    if (widget->kind == HERO_UI_WEBVIEW) {
+        /* WebView2 draws into the window's client area where its member
+         * puts it, in that window's pixels. */
+        if (widget->placed) {
+            (void)hero_ui_web_win32_place(widget->id, hero_ui_win_px(widget->x, dpi), hero_ui_win_px(widget->y, dpi), hero_ui_win_px(widget->width, dpi), height);
+        }
+        (void)hero_ui_web_win32_show(widget->id, widget->placed && widget->visible ? 1 : 0);
+        return;
+    }
     if (widget->hwnd == NULL) {
         return;
     }
@@ -1211,7 +1236,7 @@ static void hero_ui_win_rescaled(HWND hwnd, UINT dpi, const RECT *suggested) {
     for (size_t at = 0; at < hero_ui_room; at += 1) {
         hero_ui_native *widget = hero_ui_at(at);
 
-        if (widget != NULL && widget->window == window->id && widget->kind != HERO_UI_WINDOW && widget->hwnd != NULL && widget->placed) {
+        if (widget != NULL && widget->window == window->id && widget->kind != HERO_UI_WINDOW && (widget->hwnd != NULL || widget->kind == HERO_UI_WEBVIEW) && widget->placed) {
             hero_ui_win_put(widget);
         }
     }
@@ -1919,6 +1944,11 @@ static void hero_ui_win_drop(hero_ui_native *widget) {
             (void)hero_ui_win_fill_menu(owner);
         }
         break;
+    case HERO_UI_WEBVIEW:
+        /* Before its window goes: the member closes WebView2's controller
+         * and calls the host's `gone`. */
+        (void)hero_ui_web_win32_destroy(widget->id);
+        break;
     default:
         for (int64_t i = 0; i < widget->radio_count; i += 1) {
             (void)SetWindowLongPtrW(widget->radios[i], GWLP_USERDATA, 0);
@@ -2007,6 +2037,34 @@ static HWND hero_ui_win_control(const hero_ui_native *window, HWND parent, const
     return made;
 }
 
+/* Makes web view `id` in window `window`: THE WEB VIEW, kind 17, is
+ * `hero_ui_web_win32.c`'s, which draws WebView2 into the window; this arm
+ * keeps its record, its place and whether it is shown. */
+static int64_t hero_ui_win_make_web(int64_t id, hero_ui_native *window) {
+    hero_ui_native *made = hero_layer_alloc_zero(1, sizeof *made);
+    int64_t answer;
+
+    if (made == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    made->id = id;
+    made->kind = HERO_UI_WEBVIEW;
+    made->parent = window->id;
+    made->window = window->id;
+    made->visible = true;
+    made->enabled = true;
+    if (!hero_ui_keep(id, made)) {
+        hero_layer_free(made);
+        return HERO_UI_LIMIT;
+    }
+    answer = hero_ui_win_web(hero_ui_web_win32_create(id, &hero_ui_web_hosted, window->hwnd));
+    if (answer != HERO_UI_OK) {
+        hero_ui_forget(id);
+        hero_layer_free(made);
+    }
+    return answer;
+}
+
 static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
     hero_ui_native *owner = NULL;
     hero_ui_native *window = NULL;
@@ -2015,11 +2073,6 @@ static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
 
     if (hero_ui_find(id) != NULL) {
         return HERO_UI_NOT_FOUND;
-    }
-    if (kind == HERO_UI_WEBVIEW) {
-        /* THE WEB VIEW, kind 17, is an arm of its own; until it stands here
-         * this arm makes none. */
-        return hero_ui_refused(HERO_UI_UNSUPPORTED, "the system's web view is not written for Windows yet");
     }
     if (kind != HERO_UI_WINDOW) {
         owner = hero_ui_find(parent);
@@ -2033,6 +2086,9 @@ static int64_t hero_ui_arm_create(int64_t id, int64_t kind, int64_t parent) {
         if (window == NULL) {
             return HERO_UI_NOT_FOUND;
         }
+    }
+    if (kind == HERO_UI_WEBVIEW) {
+        return hero_ui_win_make_web(id, window);
     }
     made = hero_layer_alloc_zero(1, sizeof *made);
     if (made == NULL) {
@@ -2440,13 +2496,17 @@ static int64_t hero_ui_arm_set_flag(int64_t id, int64_t which, int64_t on) {
         case HERO_UI_MENU_ITEM:
         case HERO_UI_MENU_SEPARATOR:
             return hero_ui_win_fill_menu(hero_ui_find(widget->parent));
+        case HERO_UI_WEBVIEW:
+            hero_ui_win_put(widget);
+            return HERO_UI_OK;
         default:
             (void)ShowWindow(widget->hwnd, widget->visible && widget->placed ? SW_SHOWNA : SW_HIDE);
             return HERO_UI_OK;
         }
     }
     if (which == HERO_UI_FLAG_ENABLED) {
-        if (widget->kind == HERO_UI_WINDOW) {
+        /* A window and a web view take no greying, as AppKit's take none. */
+        if (widget->kind == HERO_UI_WINDOW || widget->kind == HERO_UI_WEBVIEW) {
             return HERO_UI_INVALID;
         }
         widget->enabled = on == 1;
@@ -2625,7 +2685,7 @@ static int64_t hero_ui_arm_place(int64_t id, int64_t index, int64_t x, int64_t y
     if (widget == NULL) {
         return HERO_UI_NOT_FOUND;
     }
-    if (widget->hwnd == NULL || widget->kind == HERO_UI_WINDOW) {
+    if ((widget->hwnd == NULL && widget->kind != HERO_UI_WEBVIEW) || widget->kind == HERO_UI_WINDOW) {
         return HERO_UI_INVALID;
     }
     if (index >= 0) {
@@ -2775,6 +2835,12 @@ static int64_t hero_ui_arm_preferred(int64_t id, int64_t *width, int64_t *height
     case HERO_UI_IMAGE:
         *width = widget->bitmap_width;
         *height = widget->bitmap_height;
+        return HERO_UI_OK;
+    case HERO_UI_WEBVIEW:
+        /* The headless side's size of a web view, where nothing else decides
+         * it (`ui/internal/sizes.hero`). */
+        *width = 320;
+        *height = 240;
         return HERO_UI_OK;
     default:
         return HERO_UI_OK;
@@ -3057,6 +3123,11 @@ static int64_t hero_ui_arm_inject(int64_t kind, int64_t id, int64_t value, int64
             (void)SendMessageW(widget->hwnd, WM_SYSCOMMAND, SC_CLOSE, 0);
         }
         break;
+    case HERO_UI_EVENT_MESSAGE:
+        /* The page sends `text` by its own bridge, so the message comes as
+         * the page's would. */
+        answer = widget->kind == HERO_UI_WEBVIEW ? hero_ui_win_web(hero_ui_web_win32_send(id, text, count)) : HERO_UI_INVALID;
+        break;
     case HERO_UI_EVENT_RESIZE:
         if (widget->kind != HERO_UI_WINDOW) {
             answer = HERO_UI_INVALID;
@@ -3332,17 +3403,21 @@ static int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
 }
 
 static int64_t hero_ui_arm_web_load(int64_t id, const uint8_t *url, int64_t count) {
-    (void)id;
-    (void)url;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the web view is not wired into this arm");
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return widget->kind == HERO_UI_WEBVIEW ? hero_ui_win_web(hero_ui_web_win32_load(id, url, count)) : HERO_UI_INVALID;
 }
 
 static int64_t hero_ui_arm_web_post(int64_t id, const uint8_t *text, int64_t count) {
-    (void)id;
-    (void)text;
-    (void)count;
-    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the web view is not wired into this arm");
+    hero_ui_native *widget = hero_ui_find(id);
+
+    if (widget == NULL) {
+        return HERO_UI_NOT_FOUND;
+    }
+    return widget->kind == HERO_UI_WEBVIEW ? hero_ui_win_web(hero_ui_web_win32_post(id, text, count)) : HERO_UI_INVALID;
 }
 
 #else
