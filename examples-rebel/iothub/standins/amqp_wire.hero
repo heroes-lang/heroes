@@ -1,0 +1,331 @@
+# AMQP 0-9-1's wire, as the stand-in broker reads and writes it: frames (a
+# type, a channel, a size, the payload and the end octet 0xCE, § 4.2.3) and
+# the field types a method's arguments are made of (octets, shorts, longs
+# and long-longs in network order, short strings of up to 255 bytes, long
+# strings, packed bits and field tables, § 4.2.5). The `amqp` package reads
+# and writes the client's side and keeps its frames private; a broker needs
+# the other side, so it is written here from the specification, the field
+# tables alone handed to `amqp.encode_table` and `amqp.decode_table`.
+
+use <rebel>/amqp
+use <rebel>/bytes
+
+# The code of bytes that are no AMQP.
+constant INVALID: str
+    "invalid"
+
+# A method frame.
+constant METHOD: i64
+    1
+
+# A content header frame.
+constant HEADER: i64
+    2
+
+# A content body frame.
+constant BODY: i64
+    3
+
+# A heartbeat frame.
+constant HEARTBEAT: i64
+    8
+
+# The octet that ends every frame.
+constant FRAME_END: u8
+    206
+
+# The protocol header a client opens with: `AMQP`, 0, then version 0-9-1.
+function protocol_header() -> [u8]
+    return [65, 77, 81, 80, 0, 0, 9, 1]
+
+# One frame.
+record Frame
+    # Its type: `METHOD`, `HEADER`, `BODY` or `HEARTBEAT`.
+    kind: i64
+    # Its channel, 0 for the connection's own.
+    channel: i64
+    # Its payload.
+    payload: [u8]
+
+# The bytes the whole frame at the start of `held` takes: 7 bytes of
+# header, the payload, and the end octet. 0 where more bytes are needed; -1
+# where the frame passes `most` bytes.
+#
+# - `held`: the bytes read and not yet framed.
+# - `most`: the largest frame agreed, in bytes.
+function frame_length(held: [u8], most: i64) -> i64
+    if held.len() < 7
+        return 0
+
+    size = to_i64(bytes.decode_u32_be(held, at: 3).must()).must()
+    total = 7 + size + 1
+
+    if total > most
+        return -1
+
+    if held.len() < total
+        return 0
+
+    return total
+
+# The frame `data` holds whole, as `frame_length` measured it.
+#
+# - `data`: exactly one frame's bytes.
+#
+# Fails `invalid` where it does not end with 0xCE.
+function decode_frame(data: [u8]) -> Frame?
+    if data.len() < 8 || data[data.len() - 1] != FRAME_END
+        return fail(code: INVALID, msg: "a frame does not end with 0xCE")
+
+    return ok(
+        Frame(kind: to_i64(data[0]).must(), channel: to_i64(bytes.decode_u16_be(data, at: 1).must()).must(), payload: data.slice(from: 7, to: data.len() - 1))
+    )
+
+# The bytes of a frame of `kind` on `channel` holding `payload`.
+#
+# - `kind`: the frame's type.
+# - `channel`: its channel, 0 to 65,535.
+# - `payload`: its payload, under 4 GiB.
+function frame(kind: i64, channel: i64, payload: [u8]) -> [u8]
+    out: [u8] @= [to_u8(kind).must()]
+    bytes.push_all(to: @out, from: bytes.encode_u16_be(to_u16(channel).must()))
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(payload.len()).must()))
+    bytes.push_all(to: @out, from: payload)
+    return out.push(FRAME_END)
+
+## Reading arguments
+
+# A place in a method's arguments, read from the front.
+record Cursor
+    # The bytes.
+    data: [u8]
+    # The index of the next byte to read.
+    at: i64
+
+# A cursor at the start of `data`.
+#
+# - `data`: the bytes.
+function cursor(data: [u8]) -> Cursor
+    return Cursor(data: data, at: 0)
+
+# The fault of a read past the end.
+#
+# - `what`: what was being read.
+function cut_short(what: str) -> str
+    return f"the arguments end inside a {what}"
+
+# The next octet.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end.
+function take_u8(@c: Cursor) -> i64?
+    if c.at + 1 > c.data.len()
+        return fail(code: INVALID, msg: cut_short("octet"))
+
+    v = to_i64(c.data[c.at]).must()
+    c.at @ c.at + 1
+    return ok(v)
+
+# The next short, 16 bits in network order.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end.
+function take_u16(@c: Cursor) -> i64?
+    v = match bytes.decode_u16_be(c.data, at: c.at)
+        .ok n  => to_i64(n).must()
+        .err _ => return fail(code: INVALID, msg: cut_short("short"))
+
+    c.at @ c.at + 2
+    return ok(v)
+
+# The next long, 32 bits in network order.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end.
+function take_u32(@c: Cursor) -> i64?
+    v = match bytes.decode_u32_be(c.data, at: c.at)
+        .ok n  => to_i64(n).must()
+        .err _ => return fail(code: INVALID, msg: cut_short("long"))
+
+    c.at @ c.at + 4
+    return ok(v)
+
+# The next long-long, 64 bits in network order, read as a signed number:
+# a delivery tag or a body's size, neither of which reaches 2^63.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end.
+function take_u64(@c: Cursor) -> i64?
+    v = match bytes.decode_i64_be(c.data, at: c.at)
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: cut_short("long-long"))
+
+    c.at @ c.at + 8
+    return ok(v)
+
+# The next short string: an octet of length, then that many bytes of UTF-8.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end, or where the bytes are no UTF-8.
+function take_short_text(@c: Cursor) -> str?
+    n = take_u8(@c)?
+
+    if c.at + n > c.data.len()
+        return fail(code: INVALID, msg: cut_short("short string"))
+
+    text = match bytes.to_text(c.data.slice(from: c.at, to: c.at + n))
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "a short string is no UTF-8")
+
+    c.at @ c.at + n
+    return ok(text)
+
+# The next long string's bytes: a long of length, then that many bytes.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end.
+function take_long_bytes(@c: Cursor) -> [u8]?
+    n = take_u32(@c)?
+
+    if c.at + n > c.data.len()
+        return fail(code: INVALID, msg: cut_short("long string"))
+
+    got = c.data.slice(from: c.at, to: c.at + n)
+    c.at @ c.at + n
+    return ok(got)
+
+# The next field table.
+#
+# - `c`: the cursor, advanced.
+#
+# Fails `invalid` past the end or where the table is not what
+# `amqp.decode_table` reads.
+function take_table(@c: Cursor) -> [amqp.Field]?
+    n = take_u32(@c)?
+
+    if c.at + n > c.data.len()
+        return fail(code: INVALID, msg: cut_short("field table"))
+
+    fields = match amqp.decode_table(c.data.slice(from: c.at - 4, to: c.at + n))
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"a field table is refused: {e.msg}")
+
+    c.at @ c.at + n
+    return ok(fields)
+
+# Whether bit `index` of the octet `packed` is set: AMQP packs consecutive
+# bit arguments into octets, the first in the lowest bit.
+#
+# - `packed`: the octet.
+# - `index`: 0 to 7.
+function bit(packed: i64, index: i64) -> bool
+    return packed >> index & 1 == 1
+
+## Writing arguments
+
+# Appends a short.
+#
+# - `out`: the arguments being written.
+# - `v`: 0 to 65,535.
+function put_u16(@out: [u8], v: i64)
+    bytes.push_all(to: @out, from: bytes.encode_u16_be(to_u16(v).must()))
+
+# Appends a long.
+#
+# - `out`: the arguments being written.
+# - `v`: 0 to 2^32 - 1.
+function put_u32(@out: [u8], v: i64)
+    bytes.push_all(to: @out, from: bytes.encode_u32_be(to_u32(v).must()))
+
+# Appends a long-long.
+#
+# - `out`: the arguments being written.
+# - `v`: 0 or more.
+function put_u64(@out: [u8], v: i64)
+    bytes.push_all(to: @out, from: bytes.encode_i64_be(v))
+
+# Appends a short string, cut to 255 bytes where it is longer.
+#
+# - `out`: the arguments being written.
+# - `text`: the text; a reply text is the one string a broker writes that
+#   could pass 255 bytes, and it is cut before a continuation byte (10xxxxxx),
+#   so at a character's end.
+function put_short_text(@out: [u8], text: str)
+    data @= bytes.from_text(text)
+
+    if data.len() > 255
+        end @= 255
+
+        while end > 0 && data[end] >= 128 && data[end] < 192
+            end @ end - 1
+
+        data @ data.slice(from: 0, to: end)
+
+    out @ out.push(to_u8(data.len()).must())
+    bytes.push_all(to: @out, from: data)
+
+# Appends a long string.
+#
+# - `out`: the arguments being written.
+# - `data`: its bytes.
+function put_long_bytes(@out: [u8], data: [u8])
+    put_u32(@out, v: data.len())
+    bytes.push_all(to: @out, from: data)
+
+# Appends a field table; one `amqp.encode_table` refuses is written empty,
+# since every table the broker writes is its own and valid.
+#
+# - `out`: the arguments being written.
+# - `fields`: the fields.
+function put_table(@out: [u8], fields: [amqp.Field])
+    bytes.push_all(to: @out, from: amqp.encode_table(fields).default([0, 0, 0, 0]))
+
+# A method frame's payload: its class, its method and its arguments.
+#
+# - `class_id`: the class.
+# - `method_id`: the method.
+# - `arguments`: the arguments' bytes.
+function method_payload(class_id: i64, method_id: i64, arguments: [u8]) -> [u8]
+    out: [u8] @= []
+    put_u16(@out, v: class_id)
+    put_u16(@out, v: method_id)
+    bytes.push_all(to: @out, from: arguments)
+    return out
+
+test "frame, frame_length, decode_frame: a heartbeat, a frame cut short, one too large, and one with a wrong end"
+    beat = frame(kind: HEARTBEAT, channel: 0, payload: [])
+    assert beat == [8, 0, 0, 0, 0, 0, 0, 206]
+    assert frame_length(beat, most: 4096) == 8
+    assert frame_length(beat.slice(from: 0, to: 6), most: 4096) == 0
+    method = frame(kind: METHOD, channel: 1, payload: method_payload(class_id: 20, method_id: 10, arguments: [0]))
+    assert frame_length(method, most: 12) == -1
+    got = decode_frame(method).must()
+    assert got.kind == METHOD && got.channel == 1 && got.payload == [0, 20, 0, 10, 0]
+    wrong @= method
+    wrong[wrong.len() - 1] @ 0
+    assert decode_frame(wrong).is_err()
+
+test "take_short_text, take_table, take_u64: read back what put wrote, and a read past the end"
+    out: [u8] @= []
+    put_short_text(@out, text: "plant")
+    put_table(@out, fields: [amqp.Field(name: "x-max-length", value: .int32(v: 10))])
+    put_u64(@out, v: 4_294_967_296)
+    c @= cursor(out)
+    assert take_short_text(@c).must() == "plant"
+    assert take_table(@c).must() == [amqp.Field(name: "x-max-length", value: .int32(v: 10))]
+    assert take_u64(@c).must() == 4_294_967_296
+    assert take_u8(@c).is_err()
+
+test "put_short_text: a text past 255 bytes cut at a character's end"
+    out: [u8] @= []
+    put_short_text(@out, text: repeat("é", 200))
+    assert out[0] == 254 && out.len() == 255
+
+test "bit: the first argument in the lowest bit"
+    assert bit(packed: 5, index: 0) && !bit(packed: 5, index: 1) && bit(packed: 5, index: 2)

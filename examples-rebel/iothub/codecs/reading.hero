@@ -1,0 +1,228 @@
+# A reading: what the hub makes of one payload of one device, whatever
+# protocol carried it and whatever encoding wrote it. Every codec answers a
+# `Decoded`, the values and the moment the device says it measured them; the
+# hub adds who sent it and when it came, and re-publishes the result as the
+# JSON `reading_json` writes, which the dashboard's feed carries and
+# `reading_of` reads back.
+#
+# A value is a number with its quantity and unit. A payload's text, boolean
+# and byte values are not measurements and are left out, never turned into
+# numbers.
+
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/time
+
+# The code of a JSON reading that is not what `reading_json` writes.
+constant INVALID: str
+    "invalid"
+
+# One value a device measured.
+record Measurement
+    # What it measures, as the registry names it: `temperature`.
+    quantity: str
+    # The number.
+    value: f64
+    # The unit, as SenML writes units (`Cel`, `%RH`, `mm/s`); "" for none.
+    unit: str
+
+# What a codec read from one payload.
+record Decoded
+    # The values, in the order the payload holds them.
+    values: [Measurement]
+    # When the device measured them; fails `not_found` where the payload
+    # says no time, and the hub then takes the moment it came.
+    taken: time.Instant?
+
+# One reading, as the hub hands it on.
+record Reading
+    # The device's name.
+    device: str
+    # The device's identity, as `uuid.format` writes it.
+    id: str
+    # The protocol it came by: `mqtt`, `amqp`, `nats` or `serial`.
+    source: str
+    # The encoding it was read from: `cbor`, `msgpack`, `protobuf`, `nmea`.
+    encoding: str
+    # When the device measured it.
+    taken: time.Instant
+    # When the hub received it, by the hub's clock.
+    received: time.Instant
+    # The values.
+    values: [Measurement]
+    # The payload's size, in bytes.
+    size: i64
+
+# The value of `quantity` in `r`.
+#
+# - `r`: the reading.
+# - `quantity`: the quantity, compared byte for byte.
+#
+# Fails `not_found` where `r` holds no such value.
+function value_of(r: Reading lent, quantity: str) -> f64?
+    for m in r.values
+        if m.quantity == quantity
+            return ok(m.value)
+
+    return fail(code: "not_found", msg: f"{r.device}'s reading holds no {quantity}")
+
+# A number as a person reads it in a transcript: no exponent, at most four
+# digits after the point, none where it is whole.
+#
+# - `x`: the number, finite.
+function shown(x: f64) -> str
+    # Within a thousand million million the whole part is exact in an `f64`
+    # and an `i64`, so the comparison asks only whether a fraction stands.
+    if x < 1_000_000_000_000_000.0 && x > -1_000_000_000_000_000.0
+        whole = to_i64(x).must()
+
+        if to_f64(whole) == x
+            return to_str(whole)
+
+    text @= numbers.format_float(x, precision: 4)
+
+    while text.len() > 0 && text[text.len() - 1] == '0'
+        text @ text.slice(from: 0, to: text.len() - 1)
+
+    return text
+
+# The values of `r` as one line: `temperature 4.5 Cel, humidity 61 %RH`.
+#
+# - `r`: the reading.
+function values_line(r: Reading lent) -> str
+    parts: [str] @= []
+
+    for m in r.values
+        if m.unit == ""
+            parts @ parts.push(f"{m.quantity} {shown(m.value)}")
+        else
+            parts @ parts.push(f"{m.quantity} {shown(m.value)} {m.unit}")
+
+    if parts.len() == 0
+        return "no values"
+    return parts.join(", ")
+
+# `r` as the JSON the hub re-publishes: its device, identity, source and
+# encoding, its two moments in RFC 3339, and its values in order.
+#
+# - `r`: the reading.
+function reading_json(r: Reading lent) -> json.Value
+    values: [json.Value] @= []
+
+    for m in r.values
+        values @ values.push(
+            .object(members: {"quantity": .text(v: m.quantity), "value": .number(v: m.value), "unit": .text(v: m.unit)})
+        )
+
+    return .object(
+        members: {"device": .text(v: r.device), "id": .text(v: r.id), "source": .text(v: r.source), "encoding": .text(v: r.encoding), "taken": .text(v: time.format(r.taken, layout: .rfc3339)), "received": .text(v: time.format(r.received, layout: .rfc3339)), "size": .number(v: to_f64(r.size)), "values": .list(items: values)}
+    )
+
+# The text of `reading_json(r)`, on one line.
+#
+# - `r`: the reading.
+function reading_text(r: Reading lent) -> str
+    # Every number of a reading is finite, so the one failure `json.format`
+    # has, a NaN or an infinity, cannot come.
+    return json.format(reading_json(r)).default("{}")
+
+# The text member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member.
+#
+# Fails `invalid` where it is absent or no text.
+function text_at(v: json.Value, key: str) -> str?
+    return match json.member(v, key: key)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => ok(t)
+                .err _ => fail(code: INVALID, msg: f"the reading's \"{key}\" is no text")
+        .err _ => fail(code: INVALID, msg: f"the reading has no \"{key}\"")
+
+# The number member `key` of `v`.
+#
+# - `v`: an object.
+# - `key`: the member.
+#
+# Fails `invalid` where it is absent or no number.
+function number_at(v: json.Value, key: str) -> f64?
+    return match json.member(v, key: key)
+        .ok m =>
+            match json.number_of(m)
+                .ok n  => ok(n)
+                .err _ => fail(code: INVALID, msg: f"the reading's \"{key}\" is no number")
+        .err _ => fail(code: INVALID, msg: f"the reading has no \"{key}\"")
+
+# The instant member `key` of `v`, written in RFC 3339.
+#
+# - `v`: an object.
+# - `key`: the member.
+#
+# Fails `invalid` where it is absent or no such time.
+function instant_at(v: json.Value, key: str) -> time.Instant?
+    return match time.parse(text_at(v, key: key)?, layout: .rfc3339)
+        .ok t  => ok(t)
+        .err e => fail(code: INVALID, msg: f"the reading's \"{key}\" is no time: {e.msg}")
+
+# The reading the JSON `v` writes, as `reading_json` wrote it.
+#
+# - `v`: the JSON object.
+#
+# Fails `invalid` where a member is missing or of the wrong kind.
+function reading_of(v: json.Value) -> Reading?
+    items = match json.member(v, key: "values")
+        .ok m =>
+            match json.items_of(m)
+                .ok got => got
+                .err _  => return fail(code: INVALID, msg: "the reading's \"values\" is no list")
+        .err _ => return fail(code: INVALID, msg: "the reading has no \"values\"")
+
+    values: [Measurement] @= []
+
+    for item in items
+        values @ values.push(
+            Measurement(quantity: text_at(item, key: "quantity")?, value: number_at(item, key: "value")?, unit: text_at(item, key: "unit")?)
+        )
+
+    return ok(
+        Reading(device: text_at(v, key: "device")?, id: text_at(v, key: "id")?, source: text_at(v, key: "source")?, encoding: text_at(v, key: "encoding")?, taken: instant_at(v, key: "taken")?, received: instant_at(v, key: "received")?, values: values, size: to_i64(number_at(v, key: "size")?)?)
+    )
+
+test "shown: whole numbers, fractions cut to four digits, and a negative one"
+    assert shown(61.0) == "61"
+    assert shown(4.5) == "4.5"
+    assert shown(1.01326) == "1.0133"
+    assert shown(-2.25) == "-2.25"
+    assert shown(0.0) == "0"
+
+test "values_line, value_of: units, a value with none, and an empty reading"
+    r @= Reading(
+        device: "fridge-07",
+        id: "x",
+        source: "mqtt",
+        encoding: "cbor",
+        taken: time.epoch(),
+        received: time.epoch(),
+        values: [Measurement(quantity: "temperature", value: 4.5, unit: "Cel"), Measurement(quantity: "door", value: 1.0, unit: "")],
+        size: 30
+    )
+    assert values_line(r) == "temperature 4.5 Cel, door 1"
+    assert value_of(r, quantity: "door").must() == 1.0
+    assert value_of(r, quantity: "humidity").is_err()
+    r.values @ []
+    assert values_line(r) == "no values"
+
+test "reading_json, reading_of: a reading written and read back, and a text that is none"
+    r = Reading(
+        device: "press-2",
+        id: "6f1c2c8e-0b4a-4f7e-9a51-3f0d2b7c9e10",
+        source: "amqp",
+        encoding: "protobuf",
+        taken: time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must(),
+        received: time.from_unix(whole_seconds: 1_795_338_001, extra_nanoseconds: 0).must(),
+        values: [Measurement(quantity: "vibration_rms", value: 2.1, unit: "mm/s")],
+        size: 24
+    )
+    assert reading_of(json.parse(reading_text(r)).must()).must() == r
+    assert reading_of(json.parse("{\"device\": 1}").must()).is_err()

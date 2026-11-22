@@ -1,0 +1,225 @@
+# The hub's state, and how it begins and ends. The hub holds its settings
+# and registry, the `.proto` schema its protobuf devices are read by, its
+# clock, one poll set every stream of it waits in, a link to each broker and
+# a port of the gateway, each with where its recovery stands, the outbox of
+# what a down broker owes, the feed and its HTTP server, and its metrics.
+# Everything lives on one thread, so nothing here is shared or locked.
+#
+# What happens is told as events: on the feed, to every dashboard, and, for
+# a hub that serves in a terminal, as a line of its journal with the wall
+# clock's time.
+
+use <rebel>/metrics
+use <rebel>/poll
+use <rebel>/protobuf
+use <rebel>/random
+use <rebel>/retries
+use <rebel>/time
+
+use brokers/amqp_link
+use brokers/mqtt_link
+use brokers/nats_link
+use brokers/outbox
+use brokers/recovery
+use codecs/proto
+use config/registry
+use config/settings
+use feed/messages
+use feed/server
+use hub/clock
+use hub/telemetry
+use serial/gateway
+
+# The most publishes held for brokers that are down.
+constant MOST_HELD: i64
+    10_000
+
+# What the hub has done since it began.
+record Counts
+    # Readings decoded.
+    readings: i64
+    # Payloads refused.
+    refused: i64
+    # Messages from addresses no device is registered at.
+    unregistered: i64
+    # Publishes made.
+    published: i64
+    # Publishes held for a broker that was down.
+    held: i64
+
+# The hub.
+record Hub
+    # Its settings.
+    s: settings.Settings
+    # Its registry.
+    devices: registry.Registry
+    # The registry's JSON, as `/devices` serves it.
+    devices_text: str
+    # The schema of its `.proto` files.
+    schema: protobuf.Schema
+    # Its clock.
+    clock: clock.Clock
+    # The poll set every stream waits in.
+    set: poll.Set
+    # The MQTT link.
+    mqtt: mqtt_link.Link
+    # Where the MQTT link's recovery stands.
+    mqtt_state: recovery.Recovery
+    # The AMQP link.
+    amqp: amqp_link.Link
+    # Where the AMQP link's recovery stands.
+    amqp_state: recovery.Recovery
+    # The NATS link.
+    nats: nats_link.Link
+    # Where the NATS link's recovery stands.
+    nats_state: recovery.Recovery
+    # The gateway's ports.
+    ports: [gateway.Port]
+    # Where each port's recovery stands, by the same index.
+    port_states: [recovery.Recovery]
+    # The publishes held for brokers that are down.
+    held: outbox.Outbox
+    # The HTTP server of the feed, the metrics and the registry.
+    feed: server.Feed
+    # Its metrics.
+    telemetry: metrics.Registry
+    # The generator the waits' jitter is drawn from.
+    chance: random.Generator
+    # The policy of the waits.
+    policy: retries.Backoff
+    # Whether events go to the feed alone, rather than to the journal too.
+    quiet: bool
+    # What it has done.
+    counts: Counts
+
+# Tells an event: on the feed, and in the journal unless the hub is quiet.
+#
+# - `h`: the hub.
+# - `topic`: what it is about.
+# - `text`: what happened.
+function emit(@h: Hub, topic: str, text: str)
+    m: messages.Message = .event(topic: topic, text: text)
+    server.broadcast(@h.feed, set: h.set, text: messages.message_text(m))
+
+    if !h.quiet
+        at = match time.now()
+            .ok t  => time.format(t, layout: .rfc3339_seconds)
+            .err _ => "?"
+
+        print(f"{at} {topic}: {text}")
+
+# The schema of the `.proto` files `paths` name, each read whole and known
+# by its file's name, so one may import another beside it.
+#
+# - `paths`: the files' paths.
+#
+# Fails as `read_file` fails and as `proto.schema_of` fails.
+function schema_of(paths: [str]) -> protobuf.Schema?
+    texts: {str: str} @= {}
+
+    for p in paths
+        texts[path_name(p)] @ read_file(p)?
+
+    return proto.schema_of(texts)
+
+# The last part of `p`, after its last `/` or `\`.
+#
+# - `p`: a path.
+function path_name(p: str) -> str
+    at @= p.len()
+
+    while at > 0 && p[at - 1] != '/' && p[at - 1] != '\\'
+        at @ at - 1
+
+    return p.slice(from: at, to: p.len())
+
+# The generator the hub draws its jitter from: seeded where the settings
+# say, else from the system.
+#
+# - `r`: the retry settings.
+#
+# Fails as `random.from_system` fails.
+function chance_of(r: settings.RetrySettings) -> random.Generator?
+    return match r.seed
+        .ok seed => ok(random.Generator(high: to_u64(seed)?, low: 0x9e37_79b9_7f4a_7c15))
+        .err _   => random.from_system()
+
+# A hub of the settings `s`, its registry and schemas read, its HTTP server
+# listening and its poll set made, no broker connected yet.
+#
+# - `s`: the settings.
+# - `quiet`: whether its events go to the feed alone.
+#
+# Fails as the registry, the schemas, the poll set and the listener fail to
+# be read or made.
+function begin(s: settings.Settings, quiet: bool) -> Hub?
+    devices = registry.parse(read_file(s.registry)?)?
+    schema = schema_of(s.schemas)?
+
+    c = match s.clock
+        .ok start => clock.stepped_from(start)
+        .err _    => clock.wall()
+
+    set @= poll.make(1_024)?
+
+    feed = match server.open_feed(s.listen, set: set)
+        .ok f => f
+        .err e =>
+            _ = poll.close(@set).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    p = recovery.policy(first: s.retry.first, multiplier: s.retry.multiplier, longest: s.retry.longest)?
+    ports: [gateway.Port] @= []
+    port_states: [recovery.Recovery] @= []
+
+    for spec in s.serial
+        ports @ ports.push(gateway.closed_port(spec))
+        port_states @ port_states.push(recovery.up_under(p))
+
+    return ok(
+        Hub(s: s, devices: devices, devices_text: registry.format(devices), schema: schema, clock: c, set: set, mqtt: mqtt_link.down(), mqtt_state: recovery.up_under(p), amqp: amqp_link.down(), amqp_state: recovery.up_under(p), nats: nats_link.down(), nats_state: recovery.up_under(p), ports: ports, port_states: port_states, held: outbox.new_outbox(MOST_HELD), feed: feed, telemetry: telemetry.new_telemetry()?, chance: chance_of(s.retry)?, policy: p, quiet: quiet, counts: Counts(readings: 0, refused: 0, unregistered: 0, published: 0, held: 0))
+    )
+
+# The reconnections every link and port made.
+#
+# - `h`: the hub.
+function reconnections(h: Hub lent) -> i64
+    n @= h.mqtt_state.reconnections + h.amqp_state.reconnections + h.nats_state.reconnections
+
+    for r in h.port_states
+        n @ n + r.reconnections
+
+    return n
+
+# Ends the hub: every dashboard told it is going away, every link and port
+# closed, the poll set closed; answers what it did.
+#
+# - `h`: the hub.
+function end(@h: Hub) -> str
+    server.close(@h.feed, set: h.set)
+    mqtt_link.close(@h.mqtt)
+    amqp_link.close(@h.amqp)
+    nats_link.close(@h.nats)
+
+    for i in range(from: 0, to: h.ports.len())
+        gateway.close(@h.ports[i])
+
+    _ = poll.close(@h.set).is_err()
+    c = h.counts
+    return f"the hub: {c.readings} readings, {c.refused} refused, {c.unregistered} unregistered, {c.published} published, {c.held} held; links made again after a loss: {reconnections(h)}; requests served: {h.feed.served}"
+
+test "path_name: a path's last part, by either separator"
+    assert path_name("hub/plant.proto") == "plant.proto"
+    assert path_name("C:\\hub\\plant.proto") == "plant.proto"
+    assert path_name("plant.proto") == "plant.proto"
+
+test "chance_of: a seed draws the same numbers every time"
+    r = settings.RetrySettings(
+        first: time.milliseconds(1).must(),
+        multiplier: 2.0,
+        longest: time.seconds(1).must(),
+        seed: ok(7)
+    )
+    a @= chance_of(r).must()
+    b @= chance_of(r).must()
+    assert random.next_u64(@a) == random.next_u64(@b)

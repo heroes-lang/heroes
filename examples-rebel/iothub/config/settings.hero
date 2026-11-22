@@ -1,0 +1,440 @@
+# The hub's settings, read from one JSON file: where it serves its feed and
+# metrics, where its registry and `.proto` files are, the three brokers it
+# bridges (each optional), the serial ports of its gateway, where every
+# reading is re-published, the routing rules, and how a lost broker is
+# tried again. A path in the file is read from the file's own folder, so a
+# hub's folder can be moved whole.
+#
+#     {"name": "iothub", "listen": "127.0.0.1:8088",
+#      "registry": "devices.json", "schemas": ["plant.proto"],
+#      "mqtt": {"url": "mqtt://127.0.0.1:1883", "client_id": "iothub",
+#               "filters": ["devices/+/up"]},
+#      "amqp": {"url": "amqp://guest:guest@127.0.0.1:5672/",
+#               "exchange": "plant", "queue": "iothub.plant",
+#               "bindings": ["line1.#"], "prefetch": 16},
+#      "nats": {"url": "nats://127.0.0.1:4222", "subjects": ["fleet.>"]},
+#      "serial": [{"name": "bench", "port": "/dev/ttyUSB0", "baud": 4800}],
+#      "republish": "nats:iothub.readings.{device}",
+#      "rules": [{"name": "cold-chain", "from": "mqtt:devices/+/up",
+#                 "when": "temperature > 8",
+#                 "to": "amqp:alerts/coldchain.{device}"}],
+#      "retry": {"first_ms": 250, "multiplier": 2, "longest_ms": 30000}}
+#
+# Two settings exist for a run that must repeat itself, a demo or a test:
+# `clock`, an RFC 3339 moment from which the hub's clock steps one second a
+# reading instead of reading the wall clock, and `retry.seed`, which draws
+# the chance in the waits between attempts from a seeded generator.
+
+use <rebel>/json
+use <rebel>/path
+use <rebel>/time
+
+use routes/rules
+
+# The code of settings that are not what this module reads.
+constant INVALID: str
+    "invalid"
+
+# The MQTT broker the hub is a client of.
+record MqttSettings
+    # Its URL, as `mqtt.parse_url` reads one.
+    url: str
+    # The hub's client identifier, which no other client may take.
+    client_id: str
+    # The topic filters the hub subscribes to, devices' uplinks.
+    filters: [str]
+
+# The AMQP broker the hub is a client of: devices publish to a topic
+# exchange, and the hub reads them from a durable queue of its own bound to
+# it, so a reading published while the hub is away waits for it.
+record AmqpSettings
+    # Its URL, as `amqp.parse_url` reads one.
+    url: str
+    # The exchange devices publish to, declared durable and of kind topic.
+    exchange: str
+    # The hub's queue, declared durable.
+    queue: str
+    # The binding keys of the queue to the exchange.
+    bindings: [str]
+    # The most deliveries unacknowledged at once, 1 or more.
+    prefetch: i64
+
+# The NATS server the hub is a client of.
+record NatsSettings
+    # Its URL, as `nats.parse_url` reads one.
+    url: str
+    # The subjects the hub subscribes to, wildcards allowed.
+    subjects: [str]
+
+# One serial port of the gateway.
+record PortSettings
+    # The name the registry's serial devices give as their address.
+    name: str
+    # The port: a device's path, `/dev/ttyUSB0` or `COM3`, or a serial
+    # device server's raw TCP socket, `tcp://host:port`.
+    port: str
+    # Its speed, in bits a second.
+    baud: i64
+
+# How a lost broker or port is tried again: exponential waits with full
+# jitter (`retries.Jitter.full`), and no limit, since a hub never gives a
+# broker up.
+record RetrySettings
+    # The wait after the first failure.
+    first: time.Duration
+    # What each wait is multiplied by, at least 1.
+    multiplier: f64
+    # The longest wait.
+    longest: time.Duration
+    # The seed of the generator the chance is drawn from; fails `not_found`
+    # where the chance is the system's.
+    seed: i64?
+
+# The hub's settings.
+record Settings
+    # The hub's name, which its connections give the brokers.
+    name: str
+    # Where its HTTP server listens: the feed, the metrics, the registry.
+    listen: str
+    # The registry's path.
+    registry: str
+    # The `.proto` files' paths.
+    schemas: [str]
+    # The MQTT broker; fails `not_found` where the hub has none.
+    mqtt: MqttSettings?
+    # The AMQP broker; fails `not_found` where the hub has none.
+    amqp: AmqpSettings?
+    # The NATS server; fails `not_found` where the hub has none.
+    nats: NatsSettings?
+    # The gateway's ports, none for no gateway.
+    serial: [PortSettings]
+    # Where every reading is re-published as JSON, an address that may hold
+    # `{device}` and `{id}`; fails `not_found` where it is not.
+    republish: rules.Place?
+    # The routing rules, in order.
+    routes: [rules.Rule]
+    # How a lost broker or port is tried again.
+    retry: RetrySettings
+    # Where a stepped clock starts; fails `not_found` where the hub reads the
+    # wall clock.
+    clock: time.Instant?
+
+# The member `key` of `v`, failing `not_found` where it is absent.
+#
+# - `v`: an object.
+# - `key`: the member.
+function member_of(v: json.Value, key: str) -> json.Value?
+    return json.member(v, key: key)
+
+# The text member `key`, `otherwise` where it is absent.
+#
+# - `v`: an object.
+# - `key`: the member.
+# - `otherwise`: the text where it is absent.
+#
+# Fails `invalid` where it stands and is no text.
+function text_of(v: json.Value, key: str, otherwise: str) -> str?
+    return match member_of(v, key: key)
+        .err _ => ok(otherwise)
+        .ok m =>
+            match json.text_of(m)
+                .ok t  => ok(t)
+                .err _ => fail(code: INVALID, msg: f"\"{key}\" is no text")
+
+# The integer member `key`, `otherwise` where it is absent.
+#
+# - `v`: an object.
+# - `key`: the member.
+# - `otherwise`: the integer where it is absent.
+#
+# Fails `invalid` where it stands and is no integer.
+function int_of(v: json.Value, key: str, otherwise: i64) -> i64?
+    return match member_of(v, key: key)
+        .err _ => ok(otherwise)
+        .ok m =>
+            match json.int_of(m)
+                .ok n  => ok(n)
+                .err _ => fail(code: INVALID, msg: f"\"{key}\" is no integer")
+
+# The list of texts `key`, none where it is absent.
+#
+# - `v`: an object.
+# - `key`: the member.
+#
+# Fails `invalid` where it stands and is no list of texts.
+function texts_of(v: json.Value, key: str) -> [str]?
+    items = match member_of(v, key: key)
+        .err _ => return ok([])
+        .ok m =>
+            match json.items_of(m)
+                .ok got => got
+                .err _  => return fail(code: INVALID, msg: f"\"{key}\" is no list")
+
+    texts: [str] @= []
+
+    for item in items
+        match json.text_of(item)
+            .ok t  => texts @ texts.push(t)
+            .err _ => return fail(code: INVALID, msg: f"\"{key}\" holds what is no text")
+
+    return ok(texts)
+
+# `p` read from `folder` where it is relative.
+#
+# - `folder`: the settings' folder.
+# - `p`: a path the settings name.
+function resolved(folder: str, p: str) -> str
+    if p == "" || path.is_abs(p) || folder == ""
+        return p
+    return path.join_all([folder, p])
+
+# The MQTT section `v`.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where `url` is missing or a member is of the wrong kind.
+function mqtt_of(v: json.Value) -> MqttSettings?
+    url = text_of(v, key: "url", otherwise: "")?
+
+    if url == ""
+        return fail(code: INVALID, msg: "the mqtt section has no url")
+
+    return ok(
+        MqttSettings(url: url, client_id: text_of(v, key: "client_id", otherwise: "iothub")?, filters: texts_of(v, key: "filters")?)
+    )
+
+# The AMQP section `v`.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where `url`, `exchange` or `queue` is missing, or the
+# prefetch is below 1.
+function amqp_of(v: json.Value) -> AmqpSettings?
+    url = text_of(v, key: "url", otherwise: "")?
+    exchange = text_of(v, key: "exchange", otherwise: "")?
+    queue = text_of(v, key: "queue", otherwise: "")?
+
+    if url == "" || exchange == "" || queue == ""
+        return fail(code: INVALID, msg: "the amqp section names a url, an exchange and a queue")
+
+    prefetch = int_of(v, key: "prefetch", otherwise: 16)?
+
+    if prefetch < 1
+        return fail(code: INVALID, msg: f"the prefetch {prefetch} is below 1")
+
+    return ok(
+        AmqpSettings(url: url, exchange: exchange, queue: queue, bindings: texts_of(v, key: "bindings")?, prefetch: prefetch)
+    )
+
+# The NATS section `v`.
+#
+# - `v`: the object.
+#
+# Fails `invalid` where `url` is missing.
+function nats_of(v: json.Value) -> NatsSettings?
+    url = text_of(v, key: "url", otherwise: "")?
+
+    if url == ""
+        return fail(code: INVALID, msg: "the nats section has no url")
+
+    return ok(NatsSettings(url: url, subjects: texts_of(v, key: "subjects")?))
+
+# The serial ports `v` lists.
+#
+# - `v`: the settings' object.
+#
+# Fails `invalid` where a port has no name or no port, or a speed below 1.
+function ports_of(v: json.Value) -> [PortSettings]?
+    items = match member_of(v, key: "serial")
+        .err _ => return ok([])
+        .ok m =>
+            match json.items_of(m)
+                .ok got => got
+                .err _  => return fail(code: INVALID, msg: "\"serial\" is no list")
+
+    ports: [PortSettings] @= []
+
+    for item in items
+        p = PortSettings(
+            name: text_of(item, key: "name", otherwise: "")?,
+            port: text_of(item, key: "port", otherwise: "")?,
+            baud: int_of(item, key: "baud", otherwise: 9600)?
+        )
+
+        if p.name == "" || p.port == "" || p.baud < 1
+            return fail(code: INVALID, msg: "a serial port names its name, its port and a speed of 1 or more")
+
+        ports @ ports.push(p)
+
+    return ok(ports)
+
+# The retry section `v`, its defaults where it is absent: 250 ms doubled up
+# to 30 s.
+#
+# - `v`: the settings' object.
+#
+# Fails `invalid` where a wait is below 1 ms or the multiplier below 1.
+function retry_of(v: json.Value) -> RetrySettings?
+    r = member_of(v, key: "retry").default(.object(members: {}))
+    first_ms = int_of(r, key: "first_ms", otherwise: 250)?
+    longest_ms = int_of(r, key: "longest_ms", otherwise: 30_000)?
+
+    multiplier = match member_of(r, key: "multiplier")
+        .err _ => 2.0
+        .ok m =>
+            match json.number_of(m)
+                .ok x  => x
+                .err _ => return fail(code: INVALID, msg: "the retry's \"multiplier\" is no number")
+
+    if first_ms < 1 || longest_ms < first_ms || multiplier < 1.0
+        return fail(
+            code: INVALID,
+            msg: "the retry's waits are 1 ms or more, the longest no shorter than the first, the multiplier 1 or more"
+        )
+
+    seed: i64? = match member_of(r, key: "seed")
+        .err _ => fail(code: "not_found", msg: "the chance is the system's")
+        .ok _  => ok(int_of(r, key: "seed", otherwise: 0)?)
+
+    return ok(
+        RetrySettings(first: time.milliseconds(first_ms)?, multiplier: multiplier, longest: time.milliseconds(longest_ms)?, seed: seed)
+    )
+
+# The settings `text` holds, its paths read from `folder`.
+#
+# - `text`: the JSON of the settings file.
+# - `folder`: the folder the file stands in, "" for the working folder.
+#
+# Fails `invalid` where it is no JSON object, `listen` or `registry` is
+# missing, a section or a rule is not what it should be, or `clock` is no
+# RFC 3339 moment.
+function parse(text: str, folder: str) -> Settings?
+    v = match json.parse(text)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"the settings are no JSON: {e.msg}")
+
+    listen = text_of(v, key: "listen", otherwise: "")?
+    registry_path = text_of(v, key: "registry", otherwise: "")?
+
+    if listen == "" || registry_path == ""
+        return fail(code: INVALID, msg: "the settings name where to listen and the registry")
+
+    schemas: [str] @= []
+
+    for s in texts_of(v, key: "schemas")?
+        schemas @ schemas.push(resolved(folder: folder, p: s))
+
+    mqtt: MqttSettings? = match member_of(v, key: "mqtt")
+        .ok m  => ok(mqtt_of(m)?)
+        .err e => fail(code: e.code, msg: "the hub has no MQTT broker")
+
+    amqp: AmqpSettings? = match member_of(v, key: "amqp")
+        .ok m  => ok(amqp_of(m)?)
+        .err e => fail(code: e.code, msg: "the hub has no AMQP broker")
+
+    nats: NatsSettings? = match member_of(v, key: "nats")
+        .ok m  => ok(nats_of(m)?)
+        .err e => fail(code: e.code, msg: "the hub has no NATS server")
+
+    republish_text = text_of(v, key: "republish", otherwise: "")?
+
+    republish: rules.Place? = if republish_text == ""
+        fail(code: "not_found", msg: "readings are not re-published")
+    else
+        ok(rules.parse_place(republish_text)?)
+
+    routes: [rules.Rule] @= []
+
+    match member_of(v, key: "rules")
+        .err _ => _ = 0
+        .ok m =>
+            items = match json.items_of(m)
+                .ok got => got
+                .err _  => return fail(code: INVALID, msg: "\"rules\" is no list")
+
+            for item in items
+                routes @ routes.push(rules.rule_of(item)?)
+
+    clock_text = text_of(v, key: "clock", otherwise: "")?
+
+    clock: time.Instant? = if clock_text == ""
+        fail(code: "not_found", msg: "the hub reads the wall clock")
+    else
+        match time.parse(clock_text, layout: .rfc3339)
+            .ok t  => ok(t)
+            .err e => return fail(code: INVALID, msg: f"the clock \"{clock_text}\" is no RFC 3339 moment: {e.msg}")
+
+    return ok(
+        Settings(name: text_of(v, key: "name", otherwise: "iothub")?, listen: listen, registry: resolved(folder: folder, p: registry_path), schemas: schemas, mqtt: mqtt, amqp: amqp, nats: nats, serial: ports_of(v)?, republish: republish, routes: routes, retry: retry_of(v)?, clock: clock)
+    )
+
+# The exchanges the hub publishes to: those of its AMQP rules and of its
+# re-publication, each once, in the order the settings name them.
+#
+# - `s`: the settings.
+function output_exchanges(s: Settings lent) -> [str]
+    places: [rules.Place] @= []
+
+    match s.republish
+        .ok p  => places @ places.push(p)
+        .err _ => _ = 0
+
+    for r in s.routes
+        places @ places.push(r.destination)
+
+    names: [str] @= []
+
+    for p in places
+        if p.protocol == .amqp
+            name = p.address.slice(from: 0, to: exchange_end(p.address))
+
+            if name != "" && !contains(names, name: name)
+                names @ names.push(name)
+
+    return names
+
+# The index of the `/` that ends the exchange of an AMQP address, or its
+# length where it has none.
+#
+# - `address`: `<exchange>/<routing key>`.
+function exchange_end(address: str) -> i64
+    for i in range(from: 0, to: address.len())
+        if address[i] == '/'
+            return i
+
+    return address.len()
+
+# Whether `names` holds `name`.
+#
+# - `names`: the names.
+# - `name`: the name looked for.
+function contains(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+test "parse: every section, paths read from the folder, and the defaults"
+    text = "{\"listen\": \"127.0.0.1:0\", \"registry\": \"devices.json\", \"schemas\": [\"plant.proto\"], \"mqtt\": {\"url\": \"mqtt://127.0.0.1:1883\", \"filters\": [\"devices/+/up\"]}, \"amqp\": {\"url\": \"amqp://127.0.0.1\", \"exchange\": \"plant\", \"queue\": \"iothub.plant\", \"bindings\": [\"line1.#\"]}, \"serial\": [{\"name\": \"bench\", \"port\": \"/dev/ttyUSB0\", \"baud\": 4800}], \"republish\": \"nats:iothub.readings.{device}\", \"rules\": [{\"name\": \"cold\", \"from\": \"mqtt:devices/+/up\", \"when\": \"temperature > 8\", \"to\": \"amqp:alerts/coldchain.{device}\"}], \"retry\": {\"first_ms\": 50, \"seed\": 7}, \"clock\": \"2026-11-22T09:00:00Z\"}"
+    s = parse(text: text, folder: "hub").must()
+    assert s.name == "iothub" && s.registry == path.join_all(["hub", "devices.json"])
+    assert s.schemas == [path.join_all(["hub", "plant.proto"])]
+    assert s.mqtt.must().client_id == "iothub" && s.amqp.must().prefetch == 16
+    assert s.nats.is_err()
+    assert s.serial == [PortSettings(name: "bench", port: "/dev/ttyUSB0", baud: 4800)]
+    assert s.retry.first == time.milliseconds(50).must() && s.retry.seed.must() == 7
+    assert s.retry.longest == time.seconds(30).must()
+    assert s.clock.must() == time.parse("2026-11-22T09:00:00Z", layout: .rfc3339).must()
+    assert output_exchanges(s) == ["alerts"]
+
+test "parse: no listen, a section with no url, a rule refused, a clock that is none"
+    assert parse(text: "{\"registry\": \"d.json\"}", folder: "").is_err()
+    assert parse(text: "{\"listen\": \"x\", \"registry\": \"d\", \"mqtt\": {}}", folder: "").is_err()
+    assert parse(text: "{\"listen\": \"x\", \"registry\": \"d\", \"rules\": [{\"name\": \"r\"}]}", folder: "").is_err()
+    assert parse(text: "{\"listen\": \"x\", \"registry\": \"d\", \"clock\": \"today\"}", folder: "").is_err()
+    assert parse(
+        text: "{\"listen\": \"x\", \"registry\": \"d\", \"retry\": {\"multiplier\": 0.5}}",
+        folder: ""
+    ).is_err()
+    assert parse(text: "[", folder: "").is_err()

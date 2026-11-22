@@ -1,0 +1,51 @@
+# The hub's clock, which stamps every reading with the moment it came. It
+# reads the wall clock, or, where the settings name a start, steps one
+# second from it with each reading, so a run that must repeat itself (a
+# demo, a test, a replay of recorded traffic) stamps the same moments every
+# time. The waits between attempts to reach a lost broker are measured on
+# the monotonic clock, never on this one: a stepped clock does not move
+# while the hub waits.
+
+use <rebel>/time
+
+# The hub's clock.
+record Clock
+    # Whether it steps from a start rather than reading the wall clock.
+    stepped: bool
+    # The moment the next reading takes, for a stepped clock.
+    next: time.Instant
+
+# A clock that reads the wall clock.
+function wall() -> Clock
+    return Clock(stepped: false, next: time.epoch())
+
+# A clock that steps one second a reading from `start`.
+#
+# - `start`: the first reading's moment.
+function stepped_from(start: time.Instant) -> Clock
+    return Clock(stepped: true, next: start)
+
+# The moment of the reading being stamped: the wall clock's now, or the
+# stepped clock's next moment, after which it steps on.
+#
+# - `c`: the clock, stepped on.
+#
+# Fails as `time.now` fails, and `does_not_fit` where a stepped clock passes
+# the last instant.
+function tick(@c: Clock) -> time.Instant?
+    if !c.stepped
+        return time.now()
+
+    at = c.next
+    c.next @ time.add(at, d: time.seconds(1)?)?
+    return ok(at)
+
+test "tick: a stepped clock gives its start, then one second more each time"
+    start = time.parse("2026-11-22T09:00:00Z", layout: .rfc3339).must()
+    c @= stepped_from(start)
+    assert tick(@c).must() == start
+    assert time.format(tick(@c).must(), layout: .rfc3339) == "2026-11-22T09:00:01Z"
+
+test "tick: the wall clock reads after 2026"
+    c @= wall()
+    assert time.unix_seconds(tick(@c).must()) > 1_790_000_000

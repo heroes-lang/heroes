@@ -1,0 +1,536 @@
+# The AMQP stand-in's answers on a channel: exchanges and queues declared
+# and bound with the checks a broker makes (a passive declaration of what
+# does not exist is 404, a redeclaration with other properties 406, the
+# default exchange is never declared or bound, 403), the prefetch set,
+# consumers begun and cancelled, publishes assembled from their method,
+# header and body frames, routed and confirmed, and deliveries acknowledged
+# or refused. Every reply text is written as RabbitMQ writes it, a code and
+# its name, then what was wrong, so a client shows the same words.
+#
+# A publish to the exchange the demo's fault names is counted, and the one
+# it names restarts the broker before it is routed or confirmed: the
+# publisher's confirmation never comes, which is exactly what publisher
+# confirms exist to tell a program.
+
+use <rebel>/bytes
+
+use standins/amqp_methods
+use standins/amqp_state
+use standins/amqp_store
+use standins/amqp_wire
+
+# The reply text RabbitMQ closes every connection with when it shuts down.
+constant SHUTDOWN_TEXT: str
+    "CONNECTION_FORCED - broker forced connection closure with reason 'shutdown'"
+
+# The text of a refusal of the default exchange.
+constant DEFAULT_EXCHANGE_TEXT: str
+    "ACCESS_REFUSED - operation not permitted on the default exchange"
+
+# The text of a missing exchange.
+#
+# - `name`: its name.
+function no_exchange(name: str) -> str
+    return f"NOT_FOUND - no exchange '{name}' in vhost '/'"
+
+# The text of a missing queue.
+#
+# - `name`: its name.
+function no_queue(name: str) -> str
+    return f"NOT_FOUND - no queue '{name}' in vhost '/'"
+
+# Answers exchange.declare on channel `j` of peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `m`: the method.
+function declare_exchange(@b: amqp_state.Broker, i: i64, j: i64, m: amqp_methods.Method)
+    match m
+        .exchange_declare d =>
+            channel = b.peers[i].channels[j].id
+
+            if d.name == ""
+                amqp_state.channel_error(@b, i: i, j: j, code: 403, text: DEFAULT_EXCHANGE_TEXT, cause: 40_010)
+                return
+
+            at = amqp_store.exchange_index(b.host, name: d.name)
+
+            if d.passive && at < 0
+                amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_exchange(d.name), cause: 40_010)
+                return
+
+            if !d.passive && !amqp_store.is_routed_kind(d.kind)
+                amqp_state.connection_error(
+                    @b,
+                    i: i,
+                    code: 503,
+                    text: f"COMMAND_INVALID - invalid exchange type '{d.kind}'",
+                    cause: 40_010
+                )
+                return
+
+            if !d.passive && at >= 0 && (b.host.exchanges[at].kind != d.kind || b.host.exchanges[at].durable != d.durable)
+                amqp_state.channel_error(
+                    @b,
+                    i: i,
+                    j: j,
+                    code: 406,
+                    text: f"PRECONDITION_FAILED - inequivalent arg 'type' or 'durable' for exchange '{d.name}' in vhost '/'",
+                    cause: 40_010
+                )
+                return
+
+            if at < 0
+                exchanges @= b.host.exchanges
+                exchanges @ exchanges.push(amqp_store.Exchange(name: d.name, kind: d.kind, durable: d.durable))
+                b.host.exchanges @ exchanges
+
+            if !d.no_wait
+                amqp_state.send_method(
+                    b,
+                    i: i,
+                    channel: channel,
+                    payload: amqp_methods.bare(class_id: 40, method_id: 11)
+                )
+        .start_ok _ | .tune_ok _ | .open _ | .close _ | .close_ok | .channel_open | .channel_close | .channel_close_ok | .queue_declare _ | .queue_bind _ | .qos _ | .consume _ | .cancel _ | .publish _ | .ack _ | .nack _ | .confirm_select _ | .unserved _ => _ = 0
+
+# Answers queue.declare on channel `j` of peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `m`: the method.
+function declare_queue(@b: amqp_state.Broker, i: i64, j: i64, m: amqp_methods.Method)
+    match m
+        .queue_declare d =>
+            channel = b.peers[i].channels[j].id
+
+            name = if d.name == ""
+                amqp_store.generated_name(@b.host)
+            else
+                d.name
+
+            match amqp_store.check_name(name)
+                .ok _ => _ = 0
+                .err e =>
+                    if d.name != ""
+                        amqp_state.channel_error(@b, i: i, j: j, code: 403, text: e.msg, cause: 50_010)
+                        return
+
+            at = amqp_store.queue_index(b.host, name: name)
+
+            if d.passive && at < 0
+                amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_queue(name), cause: 50_010)
+                return
+
+            if at >= 0 && b.host.queues[at].exclusive && b.host.queues[at].owner != i
+                amqp_state.channel_error(
+                    @b,
+                    i: i,
+                    j: j,
+                    code: 405,
+                    text: f"RESOURCE_LOCKED - cannot obtain exclusive access to locked queue '{name}' in vhost '/'",
+                    cause: 50_010
+                )
+                return
+
+            if !d.passive && at >= 0 && b.host.queues[at].durable != d.durable
+                amqp_state.channel_error(
+                    @b,
+                    i: i,
+                    j: j,
+                    code: 406,
+                    text: f"PRECONDITION_FAILED - inequivalent arg 'durable' for queue '{name}' in vhost '/'",
+                    cause: 50_010
+                )
+                return
+
+            if at < 0
+                owner = if d.exclusive
+                    i
+                else
+                    -1
+
+                queues @= b.host.queues
+                queues @ queues.push(
+                    amqp_store.Queue(name: name, durable: d.durable, exclusive: d.exclusive, auto_delete: d.auto_delete, owner: owner, messages: [], turn: 0)
+                )
+                b.host.queues @ queues
+
+            q = amqp_store.queue_index(b.host, name: name)
+
+            if !d.no_wait
+                amqp_state.send_method(
+                    b,
+                    i: i,
+                    channel: channel,
+                    payload: amqp_methods.queue_declare_ok(name: name, messages: b.host.queues[q].messages.len(), consumers: amqp_state.consumers_of(b, queue: name))
+                )
+        .start_ok _ | .tune_ok _ | .open _ | .close _ | .close_ok | .channel_open | .channel_close | .channel_close_ok | .exchange_declare _ | .queue_bind _ | .qos _ | .consume _ | .cancel _ | .publish _ | .ack _ | .nack _ | .confirm_select _ | .unserved _ => _ = 0
+
+# Answers queue.bind on channel `j` of peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `queue`: the queue.
+# - `exchange`: the exchange.
+# - `key`: the binding key.
+# - `no_wait`: whether no answer is wanted.
+function bind_queue(@b: amqp_state.Broker, i: i64, j: i64, queue: str, exchange: str, key: str, no_wait: bool)
+    if exchange == ""
+        amqp_state.channel_error(@b, i: i, j: j, code: 403, text: DEFAULT_EXCHANGE_TEXT, cause: 50_020)
+        return
+
+    if amqp_store.exchange_index(b.host, name: exchange) < 0
+        amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_exchange(exchange), cause: 50_020)
+        return
+
+    if amqp_store.queue_index(b.host, name: queue) < 0
+        amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_queue(queue), cause: 50_020)
+        return
+
+    amqp_store.bind(@b.host, b: amqp_store.Binding(exchange: exchange, queue: queue, key: key))
+
+    if !no_wait
+        amqp_state.send_method(
+            b,
+            i: i,
+            channel: b.peers[i].channels[j].id,
+            payload: amqp_methods.bare(class_id: 50, method_id: 21)
+        )
+
+# Answers basic.consume on channel `j` of peer `i`, then delivers what is
+# ready.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `queue`: the queue read.
+# - `asked`: the tag asked, "" for one the broker gives.
+# - `no_ack`: whether deliveries need no acknowledgement.
+# - `no_wait`: whether no answer is wanted.
+function consume(@b: amqp_state.Broker, i: i64, j: i64, queue: str, asked: str, no_ack: bool, no_wait: bool)
+    channel = b.peers[i].channels[j].id
+
+    if amqp_store.queue_index(b.host, name: queue) < 0
+        amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_queue(queue), cause: 60_020)
+        return
+
+    tag @= asked
+
+    if tag == ""
+        b.tags @ b.tags + 1
+        tag @ f"amq.ctag-standin-{b.tags}"
+
+    for c in b.consumers
+        if c.peer == i && c.channel == channel && c.tag == tag
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 530,
+                text: f"NOT_ALLOWED - attempt to reuse consumer tag '{tag}'",
+                cause: 60_020
+            )
+            return
+
+    consumers @= b.consumers
+    consumers @ consumers.push(amqp_state.Consumer(peer: i, channel: channel, tag: tag, queue: queue, no_ack: no_ack))
+    b.consumers @ consumers
+
+    if !no_wait
+        amqp_state.send_method(b, i: i, channel: channel, payload: amqp_methods.tagged(method_id: 21, tag: tag))
+
+    amqp_state.dispatch(@b)
+
+# Answers basic.cancel on channel `j` of peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `tag`: the consumer's tag.
+# - `no_wait`: whether no answer is wanted.
+function cancel(@b: amqp_state.Broker, i: i64, j: i64, tag: str, no_wait: bool)
+    channel = b.peers[i].channels[j].id
+    kept: [amqp_state.Consumer] @= []
+
+    for c in b.consumers
+        if !(c.peer == i && c.channel == channel && c.tag == tag)
+            kept @ kept.push(c)
+
+    b.consumers @ kept
+
+    if !no_wait
+        amqp_state.send_method(b, i: i, channel: channel, payload: amqp_methods.tagged(method_id: 31, tag: tag))
+
+# What becomes of deliveries a client settles.
+variant Settlement
+    # Acknowledged: done with.
+    acknowledged
+    # Refused and dropped.
+    dropped
+    # Refused and given back to their queue.
+    requeued
+
+# Acknowledges or refuses deliveries on channel `j` of peer `i`: the one
+# tagged `tag`, or every one up to it with `multiple`, an unknown tag a
+# channel error 406 as RabbitMQ answers it.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `tag`: the delivery tag; 0 with `multiple` names every one.
+# - `multiple`: whether every delivery up to the tag is meant.
+# - `outcome`: what becomes of them.
+function settle(@b: amqp_state.Broker, i: i64, j: i64, tag: i64, multiple: bool, outcome: Settlement)
+    taken: [amqp_state.Unacked] @= []
+    kept: [amqp_state.Unacked] @= []
+
+    for u in b.peers[i].channels[j].unacked
+        if u.tag == tag || multiple && (tag == 0 || u.tag <= tag)
+            taken @ taken.push(u)
+        else
+            kept @ kept.push(u)
+
+    if taken.len() == 0
+        amqp_state.channel_error(
+            @b,
+            i: i,
+            j: j,
+            code: 406,
+            text: f"PRECONDITION_FAILED - unknown delivery tag {tag}",
+            cause: 60_080
+        )
+        return
+
+    b.peers[i].channels[j].unacked @ kept
+
+    match outcome
+        .acknowledged => b.acked @ b.acked + taken.len()
+        .requeued     => amqp_state.requeue(@b, gone: taken)
+        .dropped      => _ = 0
+
+    amqp_state.dispatch(@b)
+
+# Restarts the broker, as a node that shuts down and comes back: every
+# connection told 320 and released, its deliveries given back, each left to
+# answer close-ok before its socket is closed (§ 2.2.4: a socket closed at
+# once may reach the client as a reset, the reply it must read lost); then
+# what survives a restart kept and the rest gone, and the next
+# connection.open the fault names refused while the virtual host recovers.
+#
+# - `b`: the broker.
+function restart(@b: amqp_state.Broker)
+    for i in range(from: 0, to: b.peers.len())
+        if b.peers[i].open && b.peers[i].stage != .closing
+            amqp_state.send_method(
+                b,
+                i: i,
+                channel: 0,
+                payload: amqp_methods.close(class_id: 10, code: 320, text: SHUTDOWN_TEXT, cause: 0)
+            )
+            amqp_state.release(@b, i: i)
+            b.peers[i].stage @ .closing
+
+    b.host @ amqp_store.restarted(b.host)
+    b.consumers @ []
+    b.restarts @ b.restarts + 1
+    b.fault.left @ b.fault.refusals
+
+# Routes the whole publish `c` of channel `j` of peer `i`: a missing
+# exchange is a channel error 404, a mandatory message no queue takes is
+# returned, and a channel in confirm mode is sent its confirmation once the
+# message stands in every queue it goes to.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `c`: the publish, its body whole.
+function publish(@b: amqp_state.Broker, i: i64, j: i64, c: amqp_state.Content)
+    channel = b.peers[i].channels[j].id
+
+    if b.fault.exchange != "" && c.exchange == b.fault.exchange
+        b.fault.seen @ b.fault.seen + 1
+
+        if b.fault.seen == b.fault.after
+            restart(@b)
+            return
+
+    if amqp_store.exchange_index(b.host, name: c.exchange) < 0
+        amqp_state.channel_error(@b, i: i, j: j, code: 404, text: no_exchange(c.exchange), cause: 60_040)
+        return
+
+    stored = amqp_store.Stored(
+        exchange: c.exchange,
+        key: c.key,
+        properties: c.properties,
+        body: c.body,
+        persistent: amqp_store.is_persistent(c.properties),
+        redelivered: false
+    )
+    queues = amqp_store.route(b.host, exchange: c.exchange, key: c.key)
+
+    if queues.len() == 0 && c.mandatory
+        amqp_state.send_method(
+            b,
+            i: i,
+            channel: channel,
+            payload: amqp_methods.returned(exchange: c.exchange, key: c.key)
+        )
+        amqp_state.send_content(b, i: i, channel: channel, m: stored)
+
+    for q in queues
+        messages @= b.host.queues[q].messages
+        messages @ messages.push(stored)
+        b.host.queues[q].messages @ messages
+
+    b.published @ b.published + 1
+    amqp_state.dispatch(@b)
+
+    if b.peers[i].channels[j].confirming
+        b.peers[i].channels[j].published @ b.peers[i].channels[j].published + 1
+        amqp_state.send_method(
+            b,
+            i: i,
+            channel: channel,
+            payload: amqp_methods.confirmed(b.peers[i].channels[j].published)
+        )
+
+# Takes a content header or body frame on channel `j` of peer `i` into the
+# publish being assembled, and routes it once its body is whole. A content
+# frame with no publish before it, a header of another class, or more body
+# than the header said, is a connection error, 505 or 501.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `f`: the frame.
+function content(@b: amqp_state.Broker, i: i64, j: i64, f: amqp_wire.Frame)
+    if b.peers[i].channels[j].assembling.len() == 0
+        amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 505,
+            text: "UNEXPECTED_FRAME - a content frame with no basic.publish before it",
+            cause: 0
+        )
+        return
+
+    c @= b.peers[i].channels[j].assembling[0]
+
+    if f.kind == amqp_wire.HEADER
+        cur @= amqp_wire.cursor(f.payload)
+        class_id = amqp_wire.take_u16(@cur).default(0)
+        _ = amqp_wire.take_u16(@cur).default(0)
+        size = amqp_wire.take_u64(@cur).default(-1)
+
+        if c.size >= 0 || class_id != 60 || size < 0
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 505,
+                text: "UNEXPECTED_FRAME - a content header that is not the publish's",
+                cause: 0
+            )
+            return
+
+        c.size @ size
+        c.properties @ f.payload.slice(from: 12, to: f.payload.len())
+    else
+        if c.size < 0 || c.body.len() + f.payload.len() > c.size
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 501,
+                text: "FRAME_ERROR - a body past the size its header said",
+                cause: 0
+            )
+            return
+
+        bytes.push_all(to: @c.body, from: f.payload)
+
+    if c.size >= 0 && c.body.len() == c.size
+        b.peers[i].channels[j].assembling @ []
+        publish(@b, i: i, j: j, c: c)
+    else
+        b.peers[i].channels[j].assembling @ [c]
+
+# Answers one method on the open channel `j` of peer `i`.
+#
+# - `b`: the broker.
+# - `i`: the peer's index.
+# - `j`: the channel's index.
+# - `m`: the method.
+function on_method(@b: amqp_state.Broker, i: i64, j: i64, m: amqp_methods.Method)
+    channel = b.peers[i].channels[j].id
+
+    match m
+        .channel_close =>
+            amqp_state.end_channel(@b, i: i, j: j)
+            amqp_state.send_method(b, i: i, channel: channel, payload: amqp_methods.bare(class_id: 20, method_id: 41))
+            amqp_state.dispatch(@b)
+        .exchange_declare _ => declare_exchange(@b, i: i, j: j, m: m)
+        .queue_declare _    => declare_queue(@b, i: i, j: j, m: m)
+        .queue_bind q => bind_queue(
+            @b,
+            i: i,
+            j: j,
+            queue: q.queue,
+            exchange: q.exchange,
+            key: q.key,
+            no_wait: q.no_wait
+        )
+        .qos q =>
+            b.peers[i].channels[j].prefetch @ q.prefetch_count
+            amqp_state.send_method(b, i: i, channel: channel, payload: amqp_methods.bare(class_id: 60, method_id: 11))
+            amqp_state.dispatch(@b)
+        .consume c => consume(@b, i: i, j: j, queue: c.queue, asked: c.tag, no_ack: c.no_ack, no_wait: c.no_wait)
+        .cancel c  => cancel(@b, i: i, j: j, tag: c.tag, no_wait: c.no_wait)
+        .publish p =>
+            b.peers[i].channels[j].assembling @ [
+                amqp_state.Content(exchange: p.exchange, key: p.key, mandatory: p.mandatory, size: -1, properties: [], body: [])
+            ]
+        .ack a => settle(@b, i: i, j: j, tag: a.tag, multiple: a.multiple, outcome: .acknowledged)
+        .nack n =>
+            outcome: Settlement = if n.requeue
+                .requeued
+            else
+                .dropped
+
+            settle(@b, i: i, j: j, tag: n.tag, multiple: n.multiple, outcome: outcome)
+        .confirm_select c =>
+            b.peers[i].channels[j].confirming @ true
+
+            if !c.no_wait
+                amqp_state.send_method(
+                    b,
+                    i: i,
+                    channel: channel,
+                    payload: amqp_methods.bare(class_id: 85, method_id: 11)
+                )
+        .unserved u =>
+            amqp_state.connection_error(
+                @b,
+                i: i,
+                code: 540,
+                text: f"NOT_IMPLEMENTED - the stand-in does not serve method {u.class_id}.{u.method_id}",
+                cause: u.class_id * 1000 + u.method_id
+            )
+        # A method of the connection's on a channel, or a channel opened
+        # twice: a connection error, 503 and 504 as the specification says.
+        .start_ok _ | .tune_ok _ | .open _ | .close _ | .close_ok => amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 503,
+            text: "COMMAND_INVALID - a connection's method on a channel",
+            cause: 0
+        )
+        .channel_open => amqp_state.connection_error(
+            @b,
+            i: i,
+            code: 504,
+            text: "CHANNEL_ERROR - second 'channel.open' seen",
+            cause: 20_010
+        )
+        .channel_close_ok => _ = 0

@@ -1,0 +1,159 @@
+# Protocol Buffers payloads, read by the message type the registry names
+# for the device, out of the `.proto` files the hub reads when it starts:
+# no code is generated, so a new device type is a new `.proto` file and a
+# registry line, never a new hub. Every singular numeric field becomes a
+# measurement, named by the registry's `fields`; the field the registry
+# names as the device's time is a `google.protobuf.Timestamp` or a number of
+# seconds since 1970. A scalar field of proto3 at its default is not on the
+# wire, and is read as the zero it stands for: a vibration of 0 is a value.
+
+use <rebel>/protobuf
+use <rebel>/time
+use <rebel>/uuid
+
+use codecs/reading
+use config/registry
+
+# The code of a payload that is not what this module reads.
+constant INVALID: str
+    "invalid"
+
+# The code of a device whose message type the schema does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The full name of the well-known type of a moment.
+constant TIMESTAMP: str
+    "google.protobuf.Timestamp"
+
+# The schema `texts`, each `.proto` file's text by the name an import gives
+# it.
+#
+# - `texts`: the files; the well-known types' files need not be among them.
+#
+# Fails `invalid` as `protobuf.parse_schema_texts` fails, the message
+# naming the file, line and column.
+function schema_of(texts: {str: str}) -> protobuf.Schema?
+    if texts.len() == 0
+        return protobuf.parse_schema_text(name: "empty.proto", text: "syntax = \"proto3\";")
+    return protobuf.parse_schema_texts(texts)
+
+# The number a field's value holds, for the numeric kinds.
+#
+# - `v`: the value.
+#
+# Fails `invalid` for a value that is no number: a text, bytes, a boolean,
+# an enum, a message or a repeated field.
+function number_of(v: protobuf.Value) -> f64?
+    return match v
+        .int32 n  => ok(to_f64(n.v))
+        .int64 n  => ok(to_f64(n.v))
+        .uint32 n => ok(to_f64(n.v))
+        .uint64 n => ok(to_f64(n.v))
+        .float x  => ok(to_f64(x.v))
+        .double x => ok(x.v)
+        .boolean _ | .text _ | .binary _ | .enumeration _ | .message _ | .list _ | .entries _ => fail(
+            code: INVALID,
+            msg: f"a {protobuf.kind_of(v)} where a number was expected"
+        )
+
+# The moment a time field's value holds: a `Timestamp`, or seconds.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where it is neither, or past what an instant holds.
+function moment_of(v: protobuf.Value) -> time.Instant?
+    match protobuf.message_of(v)
+        .ok m =>
+            if m.type_name != TIMESTAMP
+                return fail(code: INVALID, msg: f"the time field holds a {m.type_name}, not a {TIMESTAMP}")
+
+            return match protobuf.instant_of(m)
+                .ok t  => ok(t)
+                .err e => fail(code: INVALID, msg: f"the time field is no moment: {e.msg}")
+        .err _ => _ = 0
+
+    seconds = number_of(v)?
+
+    return match to_i64(seconds * 1_000_000_000.0)
+        .ok n  => ok(time.Instant(unix_nanoseconds: n))
+        .err _ => fail(code: INVALID, msg: f"the time {seconds} is outside what a moment holds")
+
+# The measurements a payload of `d` holds, read as its message type.
+#
+# - `schema`: the hub's schema.
+# - `d`: the device, whose `schema` names a message type of `schema`.
+# - `payload`: the bytes of one message, as the wire writes it.
+#
+# Fails `not_found` where the schema holds no such type, and `invalid` where
+# the bytes are not such a message or the time field holds no moment.
+function decode(schema: protobuf.Schema lent, d: registry.Device lent, payload: [u8]) -> reading.Decoded?
+    t = match protobuf.message_named(schema, name: d.schema)
+        .ok got => got
+        .err _  => return fail(code: NOT_FOUND, msg: f"no message type \"{d.schema}\" in the hub's .proto files")
+
+    m = match protobuf.decode(schema, type_name: d.schema, data: payload)
+        .ok got => got
+        .err e  => return fail(code: INVALID, msg: f"no {d.schema}: {e.msg}")
+
+    values: [reading.Measurement] @= []
+    taken: time.Instant? @= fail(code: "not_found", msg: "the message holds no time")
+
+    for f in t.fields
+        if f.cardinality == .repeated
+            continue
+
+        v = protobuf.get(schema, m: m, field: f.name)?
+
+        if f.name == d.time_key
+            if protobuf.has(schema, m: m, field: f.name)?
+                taken @ ok(moment_of(v)?)
+            continue
+
+        match number_of(v)
+            .ok x =>
+                field = registry.field_of(d, key: f.name)
+                values @ values.push(reading.Measurement(quantity: field.quantity, value: x, unit: field.unit))
+            .err _ => _ = 0
+
+    return ok(reading.Decoded(values: values, taken: taken))
+
+# The `.proto` file of the tests: a machine's vibration.
+function vibration_proto() -> str
+    return ["syntax = \"proto3\";", "package plant;", "import \"google/protobuf/timestamp.proto\";", "message Vibration {", "  string sensor = 1;", "  double rms_mm_s = 2;", "  float peak_g = 3;", "  google.protobuf.Timestamp taken = 4;", "  uint32 sequence = 5;", "}"].join(
+        "\n"
+    )
+
+# A press of the tests, its fields named.
+function press() -> registry.Device
+    return registry.Device(
+        id: uuid.nil_uuid(),
+        name: "press-2",
+        protocol: .amqp,
+        address: "plant/line1.press-2.vibration",
+        encoding: .protobuf,
+        schema: "plant.Vibration",
+        time_key: "taken",
+        fields: [registry.FieldMap(key: "rms_mm_s", quantity: "vibration_rms", unit: "mm/s")]
+    )
+
+test "decode: a vibration read by its .proto, its timestamp, and a field at its default"
+    schema = schema_of({"plant.proto": vibration_proto()}).must()
+    at = time.from_unix(whole_seconds: 1_795_338_000, extra_nanoseconds: 0).must()
+    m @= protobuf.new_message(schema, type_name: "plant.Vibration").must()
+    protobuf.set(schema, m: @m, field: "sensor", value: .text(v: "press-2")).must()
+    protobuf.set_float(schema, m: @m, field: "rms_mm_s", x: 2.5).must()
+    protobuf.set(schema, m: @m, field: "taken", value: .message(m: protobuf.from_instant(at))).must()
+    protobuf.set_uint(schema, m: @m, field: "sequence", n: 17).must()
+    got = decode(schema, d: press(), payload: protobuf.encode(schema, m: m).must()).must()
+    assert got.values == [reading.Measurement(quantity: "vibration_rms", value: 2.5, unit: "mm/s"), reading.Measurement(quantity: "peak_g", value: 0.0, unit: ""), reading.Measurement(quantity: "sequence", value: 17.0, unit: "")]
+    assert got.taken.must() == at
+
+test "decode: a type the schema lacks, bytes that are no message, and no time"
+    schema = schema_of({"plant.proto": vibration_proto()}).must()
+    other @= press()
+    other.schema @ "plant.Pressure"
+    assert decode(schema, d: other, payload: []).is_err()
+    assert decode(schema, d: press(), payload: [0x12, 0x05]).is_err()
+    assert decode(schema, d: press(), payload: []).must().taken.is_err()
+    assert schema_of({"bad.proto": "message {"}).is_err()

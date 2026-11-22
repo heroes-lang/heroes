@@ -1,0 +1,250 @@
+# The hub's HTTP server, served from the hub's own loop on one thread: `GET
+# /feed` upgraded to a WebSocket that carries every reading and event as it
+# happens, `GET /metrics` in Prometheus's text format, and `GET /devices`,
+# the registry as JSON. A connection waits in the hub's poll set until its
+# request has come; a request is answered and its connection closed, but a
+# feed's, which stays for as long as its dashboard watches.
+#
+# A request's head and body are read with a deadline of their own, so a
+# client that sends half a request holds the hub at most that long. A
+# dashboard whose socket fails is dropped from the feed and told in the
+# count of watchers, never retried: it connects again itself.
+
+use <rebel>/bytes
+use <rebel>/http
+use <rebel>/io
+use <rebel>/metrics
+use <rebel>/net
+use <rebel>/poll
+use <rebel>/time
+use <rebel>/websocket
+
+# How long a request may take to come whole, in milliseconds.
+constant REQUEST_MS: i64
+    2_000
+
+# A connection whose request is awaited.
+record Waiting
+    # Its key in the poll set.
+    key: i64
+    # The reader of its stream, which owns the stream.
+    reader: io.Reader
+
+# A dashboard watching the feed.
+record Watcher
+    # Its key in the poll set.
+    key: i64
+    # Its WebSocket connection.
+    conn: websocket.Conn
+
+# The server.
+record Feed
+    # The listener, one at most; empty once closed.
+    listeners: [net.Listener]
+    # The listener's key in the poll set.
+    key: i64
+    # The connections whose request is awaited.
+    waiting: [Waiting]
+    # The dashboards.
+    watchers: [Watcher]
+    # The requests answered, upgrades included.
+    served: i64
+
+# A server listening at `listen`, its listener in `set`.
+#
+# - `listen`: `host:port`, port 0 for one the system chooses.
+# - `set`: the hub's poll set.
+#
+# The caller owes it a `close`. Fails as `net.split_host_port`, `net.listen`
+# and `poll.add_listener` fail.
+function open_feed(listen: str, set: poll.Set) -> Feed?
+    hp = net.split_host_port(listen)?
+    l @= net.listen(host: hp.host, port: hp.port)?
+
+    key = match poll.add_listener(set, l: l)
+        .ok k => k
+        .err e =>
+            _ = net.close_listener(@l).is_err()
+            return fail(code: e.code, msg: e.msg)
+
+    return ok(Feed(listeners: [l], key: key, waiting: [], watchers: [], served: 0))
+
+# The port the server listens on.
+#
+# - `f`: the server.
+function port_of(f: Feed lent) -> i64
+    return f.listeners[0].address.port
+
+# Accepts the connection the listener holds and waits for its request; one
+# the set has no room for is closed unserved.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+function accept(@f: Feed, set: poll.Set)
+    conn @= match net.accept(f.listeners[0], deadline_ms: REQUEST_MS)
+        .ok c  => c
+        .err _ => return
+
+    key = match poll.add_stream(set, s: conn.stream, interest: .read)
+        .ok k => k
+        .err _ =>
+            _ = io.close(@conn.stream).is_err()
+            return
+
+    waiting @= f.waiting
+    waiting @ waiting.push(Waiting(key: key, reader: io.reader(conn.stream)))
+    f.waiting @ waiting
+
+# Takes the waiting connection `w` out of the list, and out of the set and
+# closed unless `keep` says its stream lives on in a watcher.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `w`: the connection's index in `waiting`.
+# - `keep`: whether its stream went to a watcher.
+function forget(@f: Feed, set: poll.Set, w: i64, keep: bool)
+    if !keep
+        _ = poll.remove(set, key: f.waiting[w].key).is_err()
+        _ = io.close(@f.waiting[w].reader.stream).is_err()
+
+    kept: [Waiting] @= []
+
+    for i in range(from: 0, to: f.waiting.len())
+        if i != w
+            kept @ kept.push(f.waiting[i])
+
+    f.waiting @ kept
+
+# Reads and answers the request of waiting connection `w`.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `w`: the connection's index in `waiting`.
+# - `registry`: the hub's metrics.
+# - `devices`: the registry's JSON text.
+function answer(@f: Feed, set: poll.Set, w: i64, registry: metrics.Registry lent, devices: str)
+    r = match http.next_request(@f.waiting[w].reader, limits: http.default_limits())
+        .ok got => got
+        .err _ =>
+            # A refusal was answered on the stream already, where one is owed.
+            forget(@f, set: set, w: w, keep: false)
+            return
+
+    f.served @ f.served + 1
+
+    if r.url.path == "/feed" && websocket.is_upgrade(r)
+        key = f.waiting[w].key
+
+        match websocket.upgrade(@f.waiting[w].reader, r: r, server: websocket.default_server())
+            .ok conn =>
+                # The request's deadline, counted from the accept, is taken
+                # away: a dashboard stays as long as it watches, and its
+                # connection is read only when poll says a read is ready.
+                _ = websocket.set_deadline(conn, deadline: time.max_duration()).is_err()
+                watchers @= f.watchers
+                watchers @ watchers.push(Watcher(key: key, conn: conn))
+                f.watchers @ watchers
+                forget(@f, set: set, w: w, keep: true)
+            .err _ => forget(@f, set: set, w: w, keep: false)
+
+        return
+
+    response @= match r.url.path
+        "/metrics" => metrics.respond(registry, r: r)
+        "/devices" => http.respond(200, content_type: "application/json", body: bytes.from_text(devices))
+        _          => http.respond_not_found(r)
+
+    response.closing @ true
+    _ = http.write_answer(f.waiting[w].reader.stream, r: r, response: response).is_err()
+    forget(@f, set: set, w: w, keep: false)
+
+# Reads what dashboard `k` sent: its pings answered and its close
+# completed; a dashboard whose connection ends or fails is dropped.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `k`: the watcher's index.
+function on_watcher(@f: Feed, set: poll.Set, k: i64)
+    match websocket.read_ready(@f.watchers[k].conn)
+        .ok _ =>
+            if !websocket.is_open(f.watchers[k].conn)
+                drop_watcher(@f, set: set, k: k)
+        .err _ => drop_watcher(@f, set: set, k: k)
+
+# Drops dashboard `k`: out of the set, its connection dropped.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `k`: the watcher's index.
+function drop_watcher(@f: Feed, set: poll.Set, k: i64)
+    _ = poll.remove(set, key: f.watchers[k].key).is_err()
+    _ = websocket.drop(@f.watchers[k].conn).is_err()
+    kept: [Watcher] @= []
+
+    for i in range(from: 0, to: f.watchers.len())
+        if i != k
+            kept @ kept.push(f.watchers[i])
+
+    f.watchers @ kept
+
+# Sends `text` to every dashboard, dropping one whose connection fails.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `text`: the message's JSON text.
+function broadcast(@f: Feed, set: poll.Set, text: str)
+    k @= 0
+
+    while k < f.watchers.len()
+        if websocket.write_text(@f.watchers[k].conn, text: text).is_err()
+            drop_watcher(@f, set: set, k: k)
+        else
+            k @ k + 1
+
+# Acts on a ready key of the poll set, if it is one of the server's, and
+# answers whether it was.
+#
+# - `f`: the server.
+# - `set`: the poll set.
+# - `key`: the key found ready.
+# - `registry`: the hub's metrics.
+# - `devices`: the registry's JSON text.
+function on_ready(@f: Feed, set: poll.Set, key: i64, registry: metrics.Registry lent, devices: str) -> bool
+    if f.listeners.len() > 0 && key == f.key
+        accept(@f, set: set)
+        return true
+
+    for w in range(from: 0, to: f.waiting.len())
+        if f.waiting[w].key == key
+            answer(@f, set: set, w: w, registry: registry, devices: devices)
+            return true
+
+    for k in range(from: 0, to: f.watchers.len())
+        if f.watchers[k].key == key
+            on_watcher(@f, set: set, k: k)
+            return true
+
+    return false
+
+# Closes every connection, each dashboard told the hub is going away
+# (1001), and the listener.
+#
+# - `f`: the server, emptied.
+# - `set`: the poll set.
+function close(@f: Feed, set: poll.Set)
+    while f.watchers.len() > 0
+        _ = websocket.write_close(
+            @f.watchers[0].conn,
+            code: websocket.CLOSE_GOING_AWAY,
+            reason: "the hub is stopping"
+        ).is_err()
+        drop_watcher(@f, set: set, k: 0)
+
+    while f.waiting.len() > 0
+        forget(@f, set: set, w: 0, keep: false)
+
+    if f.listeners.len() > 0
+        _ = poll.remove(set, key: f.key).is_err()
+        _ = net.close_listener(@f.listeners[0]).is_err()
+
+    f.listeners @ []
