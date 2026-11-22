@@ -1,0 +1,85 @@
+# The generator of `pdf`'s three tables: Adobe's Glyph List
+# (`glyph_list.hero`), the widths and global metrics of the 14 standard fonts
+# (`metrics.hero`) and the single-byte encodings (`encodings.hero`), each
+# written byte for byte, or checked against the table in the tree.
+#
+# Its inputs are fetched into one folder and each held to its SHA-256 in
+# `INPUTS`: Adobe's `glyphlist.txt` and `zapfdingbats.txt` from
+# github.com/adobe-type-tools/agl-aglfn at `AGL_COMMIT` (BSD-3-Clause,
+# Copyright 2002-2019 Adobe), and the 14 Core AFM files as Matplotlib
+# `MATPLOTLIB_TAG` ships them (Adobe's notice in each). Run from the
+# repository's root:
+#
+#     heroes run generators/pdf_tables/main.hero -- write <folder>
+#     heroes run generators/pdf_tables/main.hero -- check <folder>
+#
+# `write` writes the tables. `check` reads them and exits 0 where each is
+# exactly what `write` would write, and 1 where one is not, naming its first
+# line that differs. Either exits 2 where its words are not these, where an
+# input's digest is not the pinned one, or where an input is not in the
+# shape this program reads.
+
+use <tablekit>/tablekit
+
+use glyphs
+
+# The commit of agl-aglfn the two lists are read at, its last.
+constant AGL_COMMIT: str
+    "4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6"
+
+# Where the two lists are served at `AGL_COMMIT`, the file's name after it.
+constant AGL_URL: str
+    "https://raw.githubusercontent.com/adobe-type-tools/agl-aglfn/4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6/"
+
+# The folder of the tables, from the repository's root.
+constant TABLES: str
+    "packages/rebel/0.1.0/files/pdf/internal/"
+
+# Each input's name in the folder and its SHA-256, in lowercase hexadecimal.
+constant INPUTS: [str]
+    [
+        "glyphlist.txt a3b2f61ced9f3644cc0d4ecde5c59df34ca286c689d9484a43a710a81c466789"
+        "zapfdingbats.txt f6394e3cb8a447e84a1dad75d4baaf2aa7f45dc104faf369f4720e1a774ef2dc"
+    ]
+
+# The text of the input `name` in `folder`, held to its pinned SHA-256.
+#
+# Fails as reading it fails, and `invalid` where `INPUTS` names no such
+# input or its digest is another.
+function input(folder: str, name: str) -> str?
+    for one in INPUTS
+        if one.slice(from: 0, to: name.len() + 1) == name + " "
+            return tablekit.pinned_text(
+                path: folder + "/" + name,
+                sha256: one.slice(from: name.len() + 1, to: one.len())
+            )
+
+    return fail(code: "invalid", msg: f"no input is named {name}")
+
+# Does what `command` asks with each table, and answers the worst code it
+# reached.
+#
+# Fails as reading an input, reading its data and writing or reading a table
+# fail.
+function run(command: str, folder: str) -> i64?
+    glyph_list = glyphs.merged([glyphs.read_list(input(folder: folder, name: "glyphlist.txt")?)?, glyphs.read_list(input(folder: folder, name: "zapfdingbats.txt")?)?])?
+    return tablekit.settle(
+        command: command,
+        path: TABLES + "glyph_list.hero",
+        text: glyphs.module_text(glyph_list, commit: AGL_COMMIT)?
+    )
+
+function main()
+    words = tablekit.command_words("pdf_tables")
+
+    if words.len() != 2 || words[0] != "write" && words[0] != "check"
+        print(
+            "usage, from the repository's root: heroes run generators/pdf_tables/main.hero -- write|check <folder of the inputs>"
+        )
+        exit(code: 2)
+
+    match run(command: words[0], folder: words[1])
+        .ok code => exit(code: code)
+        .err e =>
+            print("error: ", e.code, ": ", e.msg)
+            exit(code: 2)

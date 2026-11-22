@@ -300,6 +300,17 @@ jobs:
             https://raw.githubusercontent.com/whatwg/html/efcc0bcdec596651e2cb316ab076c0bdc7c4d120/source
           ./heroes run generators/html_tables/main.hero -- check build/generators/whatwg-html/source
 
+      # `generators/pdf_tables/main.hero`'s `AGL_URL`; the generator holds
+      # each file to its SHA-256 in `INPUTS`.
+      - name: generators/pdf_tables, Adobe's Glyph List of pdf
+        run: |
+          mkdir -p build/generators/pdf
+          for f in glyphlist zapfdingbats; do
+            curl --fail --location --silent --show-error -o "build/generators/pdf/$f.txt" \
+              "https://raw.githubusercontent.com/adobe-type-tools/agl-aglfn/4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6/$f.txt"
+          done
+          ./heroes run generators/pdf_tables/main.hero -- check build/generators/pdf
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
