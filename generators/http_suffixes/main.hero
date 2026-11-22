@@ -2,7 +2,7 @@
 # rules (`rules`) and the cases of the list's own test file (`cases`), each
 # written byte for byte, or checked against the table in the tree.
 #
-# Its input is `public_suffix_list.dat` and `tests/test_psl.txt` as they
+# Its input is `public_suffix_list.dat` and the list's `test_psl.txt` as they
 # stand at commit `COMMIT` of github.com/publicsuffix/list, kept unchanged in
 # `publicsuffix/` beside this file and each held to its SHA-256 below. The
 # list is the Mozilla Foundation's, under the Mozilla Public License 2.0
@@ -110,7 +110,7 @@ function cases_text(cases: [list.Case] lent) -> str?
         wanted @ wanted.push(one.domain)
 
     head = [
-        "# The cases of the list's own test file, tests/test_psl.txt of"
+        "# The cases of the list's own test file, its test_psl.txt, of"
         f"# github.com/publicsuffix/list at commit {COMMIT.slice(from: 0, to: 12)} (public domain, CC0;"
         f"# SHA-256 {TESTS_SHA256.slice(from: 0, to: 16)}...): each a host and the registrable domain the list"
         "# gives it, \"\" where it gives none. A name in another script is written in"
