@@ -1,0 +1,257 @@
+# The canvas every plot of the lab is drawn on: a white RGB image, a frame
+# mapping the data's ranges onto the pixels of its plotting area, the axes
+# with their ticks and labels, a light grid, and the title.
+#
+# The ticks fall on round numbers, 1, 2 or 5 times a power of ten, the step
+# found by multiplying and dividing by ten rather than by `log10`, and each
+# tick is a whole multiple of its step: so the ticks, their labels and every
+# pixel come from the basic operations alone, which IEEE 754 makes the same
+# on every machine, and a plot's bytes and their hash are the same wherever
+# it is drawn.
+
+use <rebel>/image
+use <rebel>/math
+use <rebel>/numbers
+
+use plot/font
+
+# The plot's width in pixels.
+constant WIDTH: i64
+    640
+
+# The plot's height in pixels.
+constant HEIGHT: i64
+    400
+
+# The pixels left of the plotting area, for the tick labels.
+constant LEFT: i64
+    72
+
+# The pixels right of the plotting area.
+constant RIGHT: i64
+    24
+
+# The pixels above the plotting area, for the title.
+constant TOP: i64
+    40
+
+# The pixels below the plotting area, for the tick labels.
+constant BOTTOM: i64
+    36
+
+# The most ticks an axis is given.
+constant MOST_TICKS: i64
+    8
+
+# The data's ranges and the pixels of the plotting area they map onto.
+record Frame
+    # The plotting area's left column.
+    left: i64
+    # Its top row.
+    top: i64
+    # Its width in pixels.
+    width: i64
+    # Its height in pixels.
+    height: i64
+    # The value at the left edge.
+    x_low: f64
+    # The value at the right edge.
+    x_high: f64
+    # The value at the bottom edge.
+    y_low: f64
+    # The value at the top edge.
+    y_high: f64
+
+# Opaque black, for the axes and the text.
+function black() -> image.Color
+    return image.Color(r: 0, g: 0, b: 0, a: 255)
+
+# The light gray of the grid.
+function grid_gray() -> image.Color
+    return image.Color(r: 228, g: 228, b: 228, a: 255)
+
+# The blue of a series.
+function blue() -> image.Color
+    return image.Color(r: 31, g: 119, b: 180, a: 255)
+
+# The red of a fitted line.
+function red() -> image.Color
+    return image.Color(r: 214, g: 39, b: 40, a: 255)
+
+# The gray of the line where y is zero.
+function zero_gray() -> image.Color
+    return image.Color(r: 150, g: 150, b: 150, a: 255)
+
+# The light blue a histogram's bars are filled with.
+function bar_blue() -> image.Color
+    return image.Color(r: 158, g: 202, b: 225, a: 255)
+
+# White, the background.
+function white() -> image.Color
+    return image.Color(r: 255, g: 255, b: 255, a: 255)
+
+# Every colour a plot is drawn with: what its file's palette holds, so a
+# plot is written as an indexed PNG of four bits a pixel.
+function palette() -> [image.Color]
+    return [white(), black(), grid_gray(), zero_gray(), blue(), red(), bar_blue()]
+
+# A white image of `WIDTH` by `HEIGHT`.
+function blank() -> image.Image
+    img @= image.blank(width: WIDTH, height: HEIGHT, format: .rgb).must()
+    image.fill_rect(@img, x: 0, y: 0, width: WIDTH, height: HEIGHT, color: white())
+    return img
+
+# The range from `low` to `high` widened where it is empty, so a constant
+# series still has a height to be drawn in.
+#
+# - `low`: the least value.
+# - `high`: the greatest value.
+function opened(low: f64, high: f64) -> [f64]
+    if high > low
+        return [low, high]
+    spread = math.max(a: math.abs(low) * 0.1, b: 1.0)
+    return [low - spread, high + spread]
+
+# The frame of the plotting area over the ranges given.
+#
+# - `x_low`: the least x.
+# - `x_high`: the greatest x.
+# - `y_low`: the least y.
+# - `y_high`: the greatest y.
+function frame(x_low: f64, x_high: f64, y_low: f64, y_high: f64) -> Frame
+    xs = opened(low: x_low, high: x_high)
+    ys = opened(low: y_low, high: y_high)
+    return Frame(
+        left: LEFT,
+        top: TOP,
+        width: WIDTH - LEFT - RIGHT,
+        height: HEIGHT - TOP - BOTTOM,
+        x_low: xs[0],
+        x_high: xs[1],
+        y_low: ys[0],
+        y_high: ys[1]
+    )
+
+# The column of the value `x`.
+#
+# - `f`: the frame.
+# - `x`: the value, inside the range or not.
+function column_of(f: Frame, x: f64) -> i64
+    share = (x - f.x_low) / (f.x_high - f.x_low)
+    return f.left + to_i64(math.round(math.clamp(x: share, low: -1.0, high: 2.0) * to_f64(f.width - 1))).must()
+
+# The row of the value `y`, the greater values higher.
+#
+# - `f`: the frame.
+# - `y`: the value, inside the range or not.
+function row_of(f: Frame, y: f64) -> i64
+    share = (y - f.y_low) / (f.y_high - f.y_low)
+    return f.top + f.height - 1 - to_i64(math.round(math.clamp(x: share, low: -1.0, high: 2.0) * to_f64(f.height - 1))).must()
+
+# The round step between at most `most` ticks over `low` to `high`: 1, 2 or
+# 5 times a power of ten.
+#
+# - `low`: the range's start.
+# - `high`: its end, above `low`.
+# - `most`: the most ticks wanted, 2 or more.
+function tick_step(low: f64, high: f64, most: i64) -> f64
+    raw = (high - low) / to_f64(most)
+    power @= 1.0
+
+    while power * 10.0 <= raw
+        power @ power * 10.0
+
+    while power > raw
+        power @ power / 10.0
+
+    for factor in [1.0, 2.0, 5.0, 10.0]
+        if power * factor >= raw
+            return power * factor
+
+    return power * 10.0
+
+# The ticks over `low` to `high`: every whole multiple of `tick_step`
+# inside it.
+#
+# - `low`: the range's start.
+# - `high`: its end, above `low`.
+function ticks(low: f64, high: f64) -> [f64]
+    step = tick_step(low: low, high: high, most: MOST_TICKS)
+    first = to_i64(math.ceil(low / step)).must()
+    last = to_i64(math.floor(high / step)).must()
+    out: [f64] @= []
+
+    for k in range(from: first, to: last + 1)
+        out @ out.push(to_f64(k) * step)
+
+    return out
+
+# The label of a tick: six significant digits, which hides the last bits a
+# multiple of a step such as 0.1 carries, and no minus sign on zero.
+#
+# - `x`: the tick's value.
+function tick_label(x: f64) -> str
+    return numbers.trim_negative_zero(numbers.format_float_general(x, digits: 6))
+
+# Draws the grid, the frame's border, the ticks and their labels, and the
+# title on `img`.
+#
+# - `img`: the canvas.
+# - `f`: the frame.
+# - `title`: drawn centred above the plotting area.
+function draw_axes(@img: image.Image, f: Frame, title: str)
+    bottom = f.top + f.height - 1
+    right = f.left + f.width - 1
+
+    for x in ticks(low: f.x_low, high: f.x_high)
+        c = column_of(f, x: x)
+        image.draw_line(@img, from_x: c, from_y: f.top, to_x: c, to_y: bottom, color: grid_gray())
+        image.draw_line(@img, from_x: c, from_y: bottom, to_x: c, to_y: bottom + 4, color: black())
+        label = tick_label(x)
+        font.draw_text(
+            @img,
+            text: label,
+            x: c - font.width_of(label, scale: 1) / 2,
+            y: bottom + 8,
+            scale: 1,
+            color: black()
+        )
+
+    for y in ticks(low: f.y_low, high: f.y_high)
+        r = row_of(f, y: y)
+        image.draw_line(@img, from_x: f.left, from_y: r, to_x: right, to_y: r, color: grid_gray())
+        image.draw_line(@img, from_x: f.left - 4, from_y: r, to_x: f.left, to_y: r, color: black())
+        label = tick_label(y)
+        font.draw_text(
+            @img,
+            text: label,
+            x: f.left - 8 - font.width_of(label, scale: 1),
+            y: r - 3,
+            scale: 1,
+            color: black()
+        )
+
+    image.draw_rect(@img, x: f.left, y: f.top, width: f.width, height: f.height, color: black())
+    font.draw_text(@img, text: title, x: (WIDTH - font.width_of(title, scale: 2)) / 2, y: 12, scale: 2, color: black())
+
+test "tick_step: round steps across magnitudes"
+    assert tick_step(low: 0.0, high: 10.0, most: 8) == 2.0
+    assert tick_step(low: 0.0, high: 1000.0, most: 8) == 200.0
+    assert tick_step(low: -0.3, high: 0.3, most: 8) == 0.1
+    assert tick_step(low: 0.0, high: 7.0, most: 8) == 1.0
+
+test "ticks: whole multiples of the step inside the range"
+    assert ticks(low: -1.0, high: 1.0) == [-1.0, -0.5, 0.0, 0.5, 1.0]
+    assert ticks(low: 0.5, high: 9.5) == [2.0, 4.0, 6.0, 8.0]
+
+test "column_of and row_of: the corners of the plotting area, the greater y higher"
+    f = frame(x_low: 0.0, x_high: 10.0, y_low: 0.0, y_high: 1.0)
+    assert column_of(f, x: 0.0) == LEFT
+    assert column_of(f, x: 10.0) == LEFT + f.width - 1
+    assert row_of(f, y: 1.0) == TOP
+    assert row_of(f, y: 0.0) == TOP + f.height - 1
+
+test "opened and tick_label: an empty range widened, a label without a minus zero"
+    assert opened(low: 5.0, high: 5.0) == [4.0, 6.0]
+    assert tick_label(-0.0) == "0"
+    assert tick_label(0.1 + 0.2) == "0.3"

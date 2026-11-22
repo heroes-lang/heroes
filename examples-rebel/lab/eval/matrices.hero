@@ -1,0 +1,338 @@
+# The built-ins of matrices: the matrices made (`zeros`, `ones`, `eye`,
+# `diag`), their shape, the transpose and the trace, the determinant, the
+# inverse and the solution of a system, the rank and the reduced row
+# echelon form, the decompositions, the eigenvalues, least squares, and the
+# geometry of the plane and of space.
+#
+# Which arithmetic answers is chosen by the matrix: a float matrix of two to
+# four rows goes to `math/linear`'s closed forms (`linalg/small`), an exact
+# matrix or a larger one to elimination (`linalg/eliminate`), which stays
+# exact, and the decompositions to `linalg/decompose` in floats. A vector
+# given where a matrix is read is one column, and a result of one column
+# given back for a vector is a vector.
+
+use eval/value
+use linalg/decompose
+use linalg/eliminate
+use linalg/matrix
+use linalg/small
+use numbers/arith
+use numbers/scalar
+
+# The matrix of `rows` by `cols` of `fill`.
+#
+# - `rows`: the rows.
+# - `cols`: the columns.
+# - `fill`: the entry, 0 or 1.
+#
+# Fails `invalid` where a side is no whole number from 1 or the matrix is
+# too large.
+function filled(rows: value.Value, cols: value.Value, fill: i64) -> value.Value?
+    m = matrix.filled(rows: value.int_of(rows, what: "the rows")?, cols: value.int_of(cols, what: "the columns")?, value: scalar.of_int(fill))?
+    return ok(.matrix(value: m))
+
+# The identity matrix of `n` rows.
+#
+# - `n`: the rows.
+#
+# Fails `invalid` where `n` is no whole number from 1.
+function identity(n: value.Value) -> value.Value?
+    return ok(.matrix(value: matrix.identity(value.int_of(n, what: "eye's size")?)?))
+
+# The square matrix with the numbers of `v` on its diagonal, zeros
+# elsewhere.
+#
+# - `v`: a vector of numbers, at least one.
+#
+# Fails `invalid` where `v` is empty or holds no number.
+function diagonal(v: value.Value) -> value.Value?
+    ns = value.numbers_of(v, what: "diag's argument")?
+    m @= matrix.filled(rows: ns.len(), cols: ns.len(), value: scalar.of_int(0))?
+
+    for k in range(from: 0, to: ns.len())
+        matrix.put(@m, row: k, col: k, value: ns[k])
+
+    return ok(.matrix(value: m))
+
+# The matrix of `rows`, each a list of number values: what a matrix literal
+# `[1, 2; 3, 4]` evaluates to.
+#
+# - `rows`: the rows' values.
+#
+# Fails `invalid` where an entry is no number or two rows differ in length.
+function of_rows(rows: [[value.Value]]) -> value.Value?
+    numbers: [[scalar.Number]] @= []
+
+    for row in rows
+        out: [scalar.Number] @= []
+
+        for v in row
+            out @ out.push(value.number_of(v, what: "a matrix's entry")?)
+
+        numbers @ numbers.push(out)
+
+    return ok(.matrix(value: matrix.of_rows(numbers)?))
+
+# The shape of `v`: `[rows, columns]` of a matrix, `[n]` of a vector.
+#
+# - `v`: a matrix or a vector.
+#
+# Fails `invalid` where `v` is neither.
+function shape(v: value.Value) -> value.Value?
+    match v
+        .matrix m     => return ok(.vector(items: [value.of_int(m.value.rows), value.of_int(m.value.cols)]))
+        .vector items => return ok(.vector(items: [value.of_int(items.items.len())]))
+        .number _ | .truth _ | .text _ | .callable _ | .plot _ | .nothing => return value.refusal(
+            what: "size's argument",
+            wanted: "a matrix or a vector",
+            v: v
+        )
+
+# Whether `v` is a vector, so a one-column answer goes back as one.
+#
+# - `v`: the value.
+function is_vector(v: value.Value) -> bool
+    return match v
+        .vector _                                                                     => true
+        .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing => false
+
+# The transpose of `v`; a vector becomes a matrix of one row.
+#
+# - `v`: a matrix or a vector.
+#
+# Fails `invalid` where `v` is neither.
+function transposed(v: value.Value) -> value.Value?
+    return ok(.matrix(value: matrix.transpose(value.matrix_of(v, what: "transpose's argument")?)))
+
+# The determinant of `v`: by `math/linear`'s closed form for a float matrix
+# of two to four rows, by elimination otherwise, exact for an exact matrix.
+#
+# - `v`: a square matrix.
+#
+# Fails `invalid` where it is not one.
+function determinant(v: value.Value) -> value.Value?
+    m = value.matrix_of(v, what: "det's argument")?
+
+    if small.fits(m)
+        return ok(value.of_real(small.determinant(m)?))
+    return ok(.number(value: eliminate.determinant(m)?))
+
+# The inverse of `v`, by the closed forms or by elimination as `determinant`
+# chooses.
+#
+# - `v`: a square matrix.
+#
+# Fails `invalid` where it is not square or is singular.
+function inverse(v: value.Value) -> value.Value?
+    m = value.matrix_of(v, what: "inv's argument")?
+
+    if small.fits(m)
+        return ok(.matrix(value: small.inverse(m)?))
+    return ok(.matrix(value: eliminate.inverse(m)?))
+
+# The `x` with `a x = b`, a vector where `b` is one.
+#
+# - `a`: a square matrix.
+# - `b`: the right side.
+#
+# Fails `invalid` where the shapes do not fit or the system has no single
+# solution.
+function solved(a: value.Value, b: value.Value) -> value.Value?
+    x = eliminate.solve(a: value.matrix_of(a, what: "solve's matrix")?, b: value.matrix_of(b, what: "solve's right side")?)?
+    return ok(value.of_matrix(x, as_vector: is_vector(b)))
+
+# The least-squares `x` of `a x = b`, a vector.
+#
+# - `a`: a matrix of more rows than columns.
+# - `b`: the right side, a vector.
+#
+# Fails `invalid` as `decompose.least_squares` does.
+function least_squares(a: value.Value, b: value.Value) -> value.Value?
+    x = decompose.least_squares(a: value.matrix_of(a, what: "lstsq's matrix")?, b: value.matrix_of(b, what: "lstsq's right side")?)?
+    return ok(value.of_matrix(x, as_vector: true))
+
+# The rank of `v`.
+#
+# - `v`: a matrix.
+#
+# Fails `invalid` where it is not one.
+function rank(v: value.Value) -> value.Value?
+    return ok(value.of_int(eliminate.rank(value.matrix_of(v, what: "rank's argument")?)))
+
+# The reduced row echelon form of `v`.
+#
+# - `v`: a matrix.
+#
+# Fails `invalid` where it is not one.
+function reduced(v: value.Value) -> value.Value?
+    return ok(.matrix(value: eliminate.rref(value.matrix_of(v, what: "rref's argument")?)))
+
+# The trace of `v`.
+#
+# - `v`: a square matrix.
+#
+# Fails `invalid` where it is not one.
+function trace(v: value.Value) -> value.Value?
+    return ok(.number(value: matrix.trace(value.matrix_of(v, what: "trace's argument")?)?))
+
+# The vector of the matrices `ms`.
+#
+# - `ms`: the matrices.
+function matrices(ms: [matrix.Matrix]) -> value.Value
+    out: [value.Value] @= []
+
+    for m in ms
+        out @ out.push(.matrix(value: m))
+
+    return .vector(items: out)
+
+# The decomposition `name` of `v`: `lu` answers `[P, L, U]` with
+# `P A = L U`, `qr` answers `[Q, R]`, `chol` answers `L`.
+#
+# - `name`: `lu`, `qr` or `chol`.
+# - `v`: the matrix.
+#
+# Fails `invalid` where the decomposition does not take it.
+function decomposition(name: str, v: value.Value) -> value.Value?
+    m = value.matrix_of(v, what: f"{name}'s argument")?
+
+    if name == "lu"
+        d = decompose.lu(m)?
+        return ok(matrices([d.p, d.l, d.u]))
+
+    if name == "qr"
+        d = decompose.qr(m)?
+        return ok(matrices([d.q, d.r]))
+    return ok(.matrix(value: decompose.cholesky(m)?))
+
+# The eigenvalues of `v`: from the characteristic polynomial for two by two,
+# exact or complex where it gives them so; by Jacobi's method for a larger
+# symmetric matrix, ascending.
+#
+# - `v`: a square matrix, symmetric past two by two.
+#
+# Fails `invalid` where it is not square, or is larger and not symmetric.
+function eigenvalues(v: value.Value) -> value.Value?
+    m = value.matrix_of(v, what: "eig's argument")?
+
+    if m.rows == 2 && m.cols == 2
+        return ok(value.of_numbers(decompose.eigen_2x2(m)?))
+    return ok(value.of_floats(decompose.eigen_symmetric(m)?.values))
+
+# The eigenvectors of the symmetric `v` as the columns of a matrix, in the
+# order of `eig`'s values.
+#
+# - `v`: a symmetric matrix.
+#
+# Fails `invalid` where it is not one.
+function eigenvectors(v: value.Value) -> value.Value?
+    return ok(.matrix(value: decompose.eigen_symmetric(value.matrix_of(v, what: "eigvecs' argument")?)?.vectors))
+
+# The cross product of the vectors of three `u` and `v`.
+#
+# - `u`: three real numbers.
+# - `v`: three real numbers.
+#
+# Fails `invalid` where either is not.
+function cross(u: value.Value, v: value.Value) -> value.Value?
+    return ok(
+        value.of_floats(small.cross(u: value.floats_of(u, what: "cross's first vector")?, v: value.floats_of(v, what: "cross's second vector")?)?)
+    )
+
+# The rotation of the plane by `angle` radians.
+#
+# - `angle`: a real number.
+#
+# Fails `invalid` where it is not one.
+function rotation_2d(angle: value.Value) -> value.Value?
+    return ok(.matrix(value: small.rotation_2d(value.float_of(angle, what: "rot2's angle")?)))
+
+# The rotation of space by `angle` radians about `axis`.
+#
+# - `axis`: three real numbers, not all zero.
+# - `angle`: a real number.
+#
+# Fails `invalid` where either is not.
+function rotation_3d(axis: value.Value, angle: value.Value) -> value.Value?
+    m = small.rotation_3d(axis: value.floats_of(axis, what: "rot3's axis")?, angle: value.float_of(angle, what: "rot3's angle")?)?
+    return ok(.matrix(value: m))
+
+# The vector `v` turned by `angle` radians about `axis`.
+#
+# - `v`: three real numbers.
+# - `axis`: three real numbers, not all zero.
+# - `angle`: a real number.
+#
+# Fails `invalid` where an argument is not that.
+function rotated(v: value.Value, axis: value.Value, angle: value.Value) -> value.Value?
+    turned = small.rotate(v: value.floats_of(v, what: "rotate's vector")?, axis: value.floats_of(axis, what: "rotate's axis")?, angle: value.float_of(angle, what: "rotate's angle")?)?
+    return ok(value.of_floats(turned))
+
+# The entry of `m` at the row `row` and the column `col`, counted from 1.
+#
+# - `m`: the matrix.
+# - `row`: the row.
+# - `col`: the column.
+#
+# Fails `invalid` where either is outside the matrix.
+function entry(m: matrix.Matrix, row: value.Value, col: value.Value) -> value.Value?
+    r = value.int_of(row, what: "a row")?
+    c = value.int_of(col, what: "a column")?
+
+    if r < 1 || r > m.rows || c < 1 || c > m.cols
+        return fail(code: value.INVALID, msg: f"entry ({r}, {c}) is outside a matrix of {m.rows} by {m.cols}")
+    return ok(.number(value: matrix.at(m, row: r - 1, col: c - 1)))
+
+# The row `at` of `m`, counted from 1, as a vector.
+#
+# - `m`: the matrix.
+# - `at`: the row.
+#
+# Fails `invalid` where `at` is outside the matrix.
+function row_at(m: matrix.Matrix, at: value.Value) -> value.Value?
+    r = value.int_of(at, what: "a row")?
+
+    if r < 1 || r > m.rows
+        return fail(code: value.INVALID, msg: f"row {r} is outside a matrix of {m.rows} rows")
+    return ok(value.of_numbers(matrix.row_of(m, row: r - 1)))
+
+# The matrix of whole numbers `xs`, row after row, as a value, for a test.
+#
+# - `rows`: the rows.
+# - `xs`: the entries.
+function whole(rows: i64, xs: [i64]) -> value.Value
+    cells: [scalar.Number] @= []
+
+    for x in xs
+        cells @ cells.push(scalar.of_int(x))
+
+    return .matrix(value: matrix.make(rows: rows, cols: xs.len() / rows, cells: cells).must())
+
+test "determinant and inverse: exact by elimination, floats by the closed form"
+    assert determinant(whole(rows: 2, xs: [1, 2, 3, 4])).must() == value.of_int(-2)
+    floats: value.Value = .matrix(value: matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 3.0, 4.0]))
+    assert determinant(floats).must() == value.of_real(-2.0)
+    assert inverse(whole(rows: 2, xs: [1, 1, 0, 1])).must() == whole(rows: 2, xs: [1, -1, 0, 1])
+    assert inverse(whole(rows: 2, xs: [1, 2, 2, 4])).is_err()
+
+test "solved: a vector answered for a vector, exact halves"
+    a = whole(rows: 2, xs: [2, 0, 0, 4])
+    b: value.Value = .vector(items: [value.of_int(2), value.of_int(2)])
+    half = arith.divide(a: scalar.of_int(1), b: scalar.of_int(2)).must()
+    assert solved(a: a, b: b).must() == .vector(items: [value.of_int(1), .number(value: half)])
+    assert solved(a: a, b: whole(rows: 2, xs: [2, 4])).must() == whole(rows: 2, xs: [1, 1])
+
+test "eigenvalues: exact for two by two, Jacobi's for a larger symmetric one, a larger skew refused"
+    assert eigenvalues(whole(rows: 2, xs: [2, 1, 1, 2])).must() == .vector(items: [value.of_int(1), value.of_int(3)])
+    three = eigenvalues(whole(rows: 3, xs: [2, 0, 0, 0, 3, 0, 0, 0, 1])).must()
+    assert three == value.of_floats([1.0, 2.0, 3.0])
+    assert eigenvalues(whole(rows: 3, xs: [1, 2, 0, 0, 1, 0, 0, 0, 1])).is_err()
+
+test "decomposition, shape, diagonal and entry"
+    lu = decomposition("lu", v: whole(rows: 2, xs: [1, 2, 3, 4])).must()
+    assert shape(lu).must() == .vector(items: [value.of_int(3)])
+    assert shape(whole(rows: 2, xs: [1, 2, 3, 4, 5, 6])).must() == .vector(items: [value.of_int(2), value.of_int(3)])
+    assert diagonal(.vector(items: [value.of_int(5), value.of_int(6)])).must() == whole(rows: 2, xs: [5, 0, 0, 6])
+    m = value.matrix_of(whole(rows: 2, xs: [1, 2, 3, 4]), what: "m").must()
+    assert entry(m, row: value.of_int(2), col: value.of_int(1)).must() == value.of_int(3)
+    assert entry(m, row: value.of_int(3), col: value.of_int(1)).is_err()

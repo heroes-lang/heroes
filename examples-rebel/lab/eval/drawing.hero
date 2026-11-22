@@ -1,0 +1,85 @@
+# The plots a cell writes: a chart of `plot/charts` encoded and written by
+# `plot/files` under the name the cell gives it (`eval/machine`), and
+# answered as a plot value the transcript describes. The function graph is
+# drawn by `eval/calls`, which samples the function; the histogram and the
+# scatter, which take data, are drawn here.
+
+use <rebel>/image
+
+use eval/machine
+use eval/value
+use plot/charts
+use plot/files
+
+# Writes `picture` as the cell's next plot and answers it.
+#
+# - `m`: the evaluation: its folder, and its count and list of plots, which
+#   grow by one.
+# - `picture`: the chart.
+# - `title`: its title.
+#
+# Fails where the file cannot be written, with its code.
+function written(@m: machine.Machine, picture: image.Image, title: str) -> value.Value?
+    file = machine.next_plot_file(@m)
+    w = files.write(picture, title: title, dir: m.plots, file: file)?
+    return ok(machine.record_plot(@m, w: w, title: title))
+
+# The bins Sturges's rule gives `count` values: one more than the base-two
+# logarithm of the count, rounded up, counted on whole numbers.
+#
+# - `count`: the values, 1 or more.
+function sturges(count: i64) -> i64
+    bins @= 1
+    power @= 1
+
+    while power < count
+        power @ power * 2
+        bins @ bins + 1
+
+    return bins
+
+# The histogram of `data` in `bins` bins, or in Sturges's count where
+# `bins` is nothing, written as the cell's next plot.
+#
+# - `m`: the evaluation.
+# - `data`: a vector of real numbers.
+# - `bins`: a whole number of bins, or nothing.
+# - `title`: the plot's title.
+#
+# Fails `invalid` where the data or the bins are not as said.
+function histogram(@m: machine.Machine, data: value.Value, bins: value.Value, title: str) -> value.Value?
+    xs = value.finite_floats_of(data, what: "hist's data")?
+    count: i64 @= sturges(xs.len())
+
+    if bins != .nothing
+        count @ value.int_of(bins, what: "hist's bins")?
+    h = charts.histogram(data: xs, bins: count, title: title)?
+    return written(@m, picture: h.picture, title: title)
+
+# The scatter of `x` against `y` with its fitted line, written as the
+# cell's next plot.
+#
+# - `m`: the evaluation.
+# - `x`: the abscissas.
+# - `y`: the ordinates, as many.
+# - `title`: the plot's title.
+#
+# Fails `invalid` where the series are not as said.
+function scatter(@m: machine.Machine, x: value.Value, y: value.Value, title: str) -> value.Value?
+    s = charts.scatter(xs: value.finite_floats_of(x, what: "scatter's x")?, ys: value.finite_floats_of(y, what: "scatter's y")?, title: title)?
+    return written(@m, picture: s.picture, title: title)
+
+test "sturges: one bin for one value, eleven for a thousand"
+    assert sturges(1) == 1
+    assert sturges(2) == 2
+    assert sturges(1000) == 11
+
+test "histogram and scatter: plots named after the cell, nothing written without a folder"
+    m @= machine.new(plots: "", seed: 1)
+    machine.enter_cell(@m, cell: "spread")
+    h = histogram(@m, data: value.of_floats([1.0, 2.0, 2.0, 3.0]), bins: .nothing, title: "h").must()
+    s = scatter(@m, x: value.of_floats([1.0, 2.0]), y: value.of_floats([2.0, 4.0]), title: "s").must()
+    assert m.written.len() == 2
+    assert m.written[0].file == "spread.png" && m.written[1].file == "spread-2.png"
+    assert h != s
+    assert histogram(@m, data: value.of_floats([1.0]), bins: value.of_int(0), title: "h").is_err()

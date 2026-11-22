@@ -1,0 +1,192 @@
+# The matrices of geometry, two to four rows square, handed to `math/linear`:
+# the determinant and the inverse of a float matrix of that size by its
+# closed forms, rotations of the plane and of space as matrices, a vector
+# turned about an axis by a quaternion, and the cross product.
+#
+# `math/linear` holds a matrix by its columns (`x_axis` is where the x axis
+# goes) and the lab holds one row after row, so `mat3_of` reads the columns
+# out of the rows and `rows_of_mat3` writes them back. A larger matrix, or an
+# exact one, goes through `linalg/eliminate` instead.
+
+use <rebel>/math
+use <rebel>/math/linear
+
+use linalg/matrix
+use numbers/scalar
+
+# Whether the closed forms take `m`: square, two to four rows, every entry
+# real and at least one a float.
+#
+# - `m`: the matrix.
+function fits(m: matrix.Matrix lent) -> bool
+    return m.rows == m.cols && m.rows >= 2 && m.rows <= 4 && matrix.kind_of(m) == 2
+
+# The two by two `xs`, row after row, as `math/linear` holds it.
+#
+# - `xs`: four floats.
+function mat2_of(xs: [f64]) -> linear.Mat2
+    return linear.Mat2(x_axis: linear.Vec2(x: xs[0], y: xs[2]), y_axis: linear.Vec2(x: xs[1], y: xs[3]))
+
+# The three by three `xs`, row after row, as `math/linear` holds it.
+#
+# - `xs`: nine floats.
+function mat3_of(xs: [f64]) -> linear.Mat3
+    return linear.Mat3(
+        x_axis: linear.Vec3(x: xs[0], y: xs[3], z: xs[6]),
+        y_axis: linear.Vec3(x: xs[1], y: xs[4], z: xs[7]),
+        z_axis: linear.Vec3(x: xs[2], y: xs[5], z: xs[8])
+    )
+
+# The four by four `xs`, row after row, as `math/linear` holds it.
+#
+# - `xs`: sixteen floats.
+function mat4_of(xs: [f64]) -> linear.Mat4
+    return linear.Mat4(
+        x_axis: linear.Vec4(x: xs[0], y: xs[4], z: xs[8], w: xs[12]),
+        y_axis: linear.Vec4(x: xs[1], y: xs[5], z: xs[9], w: xs[13]),
+        z_axis: linear.Vec4(x: xs[2], y: xs[6], z: xs[10], w: xs[14]),
+        w_axis: linear.Vec4(x: xs[3], y: xs[7], z: xs[11], w: xs[15])
+    )
+
+# `m` as a lab matrix.
+#
+# - `m`: the matrix of `math/linear`.
+function rows_of_mat2(m: linear.Mat2) -> matrix.Matrix
+    return matrix.of_floats(rows: 2, cols: 2, xs: [m.x_axis.x, m.y_axis.x, m.x_axis.y, m.y_axis.y])
+
+# `m` as a lab matrix.
+#
+# - `m`: the matrix of `math/linear`.
+function rows_of_mat3(m: linear.Mat3) -> matrix.Matrix
+    return matrix.of_floats(
+        rows: 3,
+        cols: 3,
+        xs: [m.x_axis.x, m.y_axis.x, m.z_axis.x, m.x_axis.y, m.y_axis.y, m.z_axis.y, m.x_axis.z, m.y_axis.z, m.z_axis.z]
+    )
+
+# `m` as a lab matrix.
+#
+# - `m`: the matrix of `math/linear`.
+function rows_of_mat4(m: linear.Mat4) -> matrix.Matrix
+    return matrix.of_floats(
+        rows: 4,
+        cols: 4,
+        xs: [m.x_axis.x, m.y_axis.x, m.z_axis.x, m.w_axis.x, m.x_axis.y, m.y_axis.y, m.z_axis.y, m.w_axis.y, m.x_axis.z, m.y_axis.z, m.z_axis.z, m.w_axis.z, m.x_axis.w, m.y_axis.w, m.z_axis.w, m.w_axis.w]
+    )
+
+# The determinant of `m` by `math/linear`'s closed form.
+#
+# - `m`: a matrix `fits` takes.
+#
+# Fails `invalid` where `fits` does not take `m`.
+function determinant(m: matrix.Matrix) -> f64?
+    if !fits(m)
+        return fail(code: matrix.INVALID, msg: "the closed forms take a float matrix of two to four rows")
+    xs = matrix.floats_of(m)?
+
+    if m.rows == 2
+        return ok(linear.determinant_mat2(mat2_of(xs)))
+
+    if m.rows == 3
+        return ok(linear.determinant_mat3(mat3_of(xs)))
+    return ok(linear.determinant_mat4(mat4_of(xs)))
+
+# The inverse of `m` by `math/linear`'s closed form.
+#
+# - `m`: a matrix `fits` takes.
+#
+# Fails `invalid` where `fits` does not take `m` or `m` is singular.
+function inverse(m: matrix.Matrix) -> matrix.Matrix?
+    if !fits(m)
+        return fail(code: matrix.INVALID, msg: "the closed forms take a float matrix of two to four rows")
+    xs = matrix.floats_of(m)?
+
+    if m.rows == 2
+        return ok(rows_of_mat2(linear.inverse_mat2(mat2_of(xs))?))
+
+    if m.rows == 3
+        return ok(rows_of_mat3(linear.inverse_mat3(mat3_of(xs))?))
+    return ok(rows_of_mat4(linear.inverse_mat4(mat4_of(xs))?))
+
+# The matrix turning the plane by `angle` radians counterclockwise.
+#
+# - `angle`: the angle in radians.
+function rotation_2d(angle: f64) -> matrix.Matrix
+    return rows_of_mat2(linear.rotation_mat2(angle))
+
+# The vector of three `xs` as `math/linear`'s.
+#
+# - `xs`: three floats.
+# - `what`: what the vector is, for the message.
+#
+# Fails `invalid` where `xs` does not hold three.
+function vec3_of(xs: [f64], what: str) -> linear.Vec3?
+    if xs.len() != 3
+        return fail(code: matrix.INVALID, msg: f"{what} is a vector of three numbers, not {xs.len()}")
+    return ok(linear.Vec3(x: xs[0], y: xs[1], z: xs[2]))
+
+# The matrix turning space by `angle` radians about `axis`, by the
+# right-hand rule.
+#
+# - `axis`: three floats, not all zero.
+# - `angle`: the angle in radians.
+#
+# Fails `invalid` where `axis` is not three numbers or is zero.
+function rotation_3d(axis: [f64], angle: f64) -> matrix.Matrix?
+    return ok(rows_of_mat3(linear.rotation_mat3(axis: vec3_of(axis, what: "the axis")?, angle: angle)?))
+
+# `v` turned by `angle` radians about `axis`, through the quaternion of that
+# rotation.
+#
+# - `v`: three floats.
+# - `axis`: three floats, not all zero.
+# - `angle`: the angle in radians.
+#
+# Fails `invalid` where a vector is not three numbers or `axis` is zero.
+function rotate(v: [f64], axis: [f64], angle: f64) -> [f64]?
+    q = linear.rotation_quat(axis: vec3_of(axis, what: "the axis")?, angle: angle)?
+    turned = linear.rotate_vec3(q, v: vec3_of(v, what: "the vector")?)
+    return ok([turned.x, turned.y, turned.z])
+
+# The cross product `u × v`, perpendicular to both by the right-hand rule.
+#
+# - `u`: three floats.
+# - `v`: three floats.
+#
+# Fails `invalid` where either is not three numbers.
+function cross(u: [f64], v: [f64]) -> [f64]?
+    w = linear.cross_vec3(a: vec3_of(u, what: "cross's first vector")?, b: vec3_of(v, what: "cross's second vector")?)
+    return ok([w.x, w.y, w.z])
+
+test "determinant and inverse: the closed forms, the rows and columns kept apart"
+    m = matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 3.0, 4.0])
+    assert determinant(m).must() == -2.0
+    inv = matrix.floats_of(inverse(m).must()).must()
+    wanted = [-2.0, 1.0, 1.5, -0.5]
+
+    for k in range(from: 0, to: 4)
+        assert math.abs(inv[k] - wanted[k]) < 0.000_000_000_001
+
+    shear = matrix.of_floats(rows: 3, cols: 3, xs: [1.0, 5.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0])
+    assert determinant(shear).must() == 2.0
+    assert math.abs(scalar.float_of(matrix.at(inverse(shear).must(), row: 0, col: 1)).must() + 5.0) < 0.000_000_000_001
+    assert inverse(matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 2.0, 4.0])).is_err()
+
+test "fits: exact matrices and large ones go to elimination"
+    exact = matrix.make(
+        rows: 2,
+        cols: 2,
+        cells: [scalar.of_int(1), scalar.of_int(0), scalar.of_int(0), scalar.of_int(1)]
+    ).must()
+    assert !fits(exact)
+    assert determinant(exact).is_err()
+    assert !fits(matrix.of_floats(rows: 5, cols: 5, xs: [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]))
+
+test "rotation_2d, rotation_3d, rotate and cross: a quarter turn and the axes"
+    q = rotation_2d(0.0)
+    assert q == matrix.of_floats(rows: 2, cols: 2, xs: [1.0, -0.0, 0.0, 1.0])
+    assert cross(u: [1.0, 0.0, 0.0], v: [0.0, 1.0, 0.0]).must() == [0.0, 0.0, 1.0]
+    assert cross(u: [1.0, 0.0], v: [0.0, 1.0, 0.0]).is_err()
+    assert rotation_3d(axis: [0.0, 0.0, 0.0], angle: 1.0).is_err()
+    turned = rotate(v: [1.0, 0.0, 0.0], axis: [0.0, 0.0, 1.0], angle: 0.0).must()
+    assert turned == [1.0, 0.0, 0.0]

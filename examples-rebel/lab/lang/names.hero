@@ -1,0 +1,102 @@
+# The names a statement defines and the names it reads, from which
+# `notebook/graph` draws the dependencies between cells: a cell that reads a
+# name another cell defines depends on that cell.
+#
+# A name read is a variable or a function called; a function's own
+# parameters are not read from outside it, so `f(x) = a * x` reads `a` and
+# not `x`. A name no cell defines is a built-in, a constant or a mistake,
+# which the evaluation tells apart.
+
+use lang/ast
+
+# The name `s` defines, "" where it shows a value and defines nothing.
+#
+# - `s`: the statement.
+function defined(s: ast.Statement) -> str
+    return match s
+        .show _   => ""
+        .assign a => a.target
+        .define d => d.target
+
+# Every name `s` reads, each once, in the order they first stand.
+#
+# - `s`: the statement.
+function used(s: ast.Statement) -> [str]
+    found: [str] @= []
+
+    match s
+        .show w   => gather(w.expr, bound: [], found: @found)
+        .assign a => gather(a.expr, bound: [], found: @found)
+        .define d => gather(d.body, bound: d.params, found: @found)
+
+    return found
+
+# Adds `name` to `found` unless it stands in `bound` or in `found` already.
+#
+# - `name`: the name read.
+# - `bound`: the parameters in scope.
+# - `found`: the names so far.
+function note(name: str, bound: [str], @found: [str])
+    for b in bound
+        if b == name
+            return
+
+    for f in found
+        if f == name
+            return
+
+    found @ found.push(name)
+
+# Adds the names `n` reads to `found`, walking its children with a list for
+# a stack rather than by recursion, so a deep expression costs no stack.
+#
+# - `n`: the expression.
+# - `bound`: the parameters in scope, not counted.
+# - `found`: the names so far.
+function gather(n: ast.Node, bound: [str], @found: [str])
+    waiting: [ast.Node] @= [n]
+
+    while waiting.len() > 0
+        here = waiting[waiting.len() - 1]
+        waiting @ waiting.slice(from: 0, to: waiting.len() - 1)
+
+        match here.form
+            .number _ | .text _ | .truth _ => _ = 0
+            .name x                        => note(x.id, bound: bound, found: @found)
+            .unary u                       => push_all(waiting: @waiting, nodes: u.operand)
+            .binary b                      => push_all(waiting: @waiting, nodes: b.operands)
+            .factorial f                   => push_all(waiting: @waiting, nodes: f.operand)
+            .call c =>
+                note(c.callee, bound: bound, found: @found)
+                push_all(waiting: @waiting, nodes: c.args)
+            .index i =>
+                push_all(waiting: @waiting, nodes: i.target)
+                push_all(waiting: @waiting, nodes: i.positions)
+            .vector v => push_all(waiting: @waiting, nodes: v.items)
+            .matrix m =>
+                for row in m.rows
+                    push_all(waiting: @waiting, nodes: row)
+            .range r       => push_all(waiting: @waiting, nodes: r.parts)
+            .conditional c => push_all(waiting: @waiting, nodes: c.parts)
+
+# Pushes `nodes` onto `waiting` in reverse, so they are taken in their own
+# order.
+#
+# - `waiting`: the stack.
+# - `nodes`: the nodes.
+function push_all(@waiting: [ast.Node], nodes: [ast.Node])
+    at @= nodes.len() - 1
+
+    while at >= 0
+        waiting @ waiting.push(nodes[at])
+        at @ at - 1
+
+test "used: names in order, once each, parameters left out"
+    x = ast.node(.name(id: "x"), line: 1, column: 1)
+    a = ast.node(.name(id: "a"), line: 1, column: 5)
+    times = ast.node(.binary(op: "*", operands: [a, x]), line: 1, column: 3)
+    call = ast.node(.call(callee: "g", args: [times, a]), line: 1, column: 1)
+    assert used(.define(target: "f", params: ["x"], body: call)) == ["g", "a"]
+    assert used(.show(expr: times)) == ["a", "x"]
+    assert defined(.assign(target: "y", expr: x)) == "y"
+    assert defined(.show(expr: x)) == ""

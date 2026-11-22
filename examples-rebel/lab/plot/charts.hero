@@ -1,0 +1,233 @@
+# The three charts the lab draws, each an image on the canvas of
+# `plot/canvas`: a function's graph over an interval, a histogram of a data
+# series, and a scatter of pairs with the line of least squares through them
+# (`stats.linear_regression`).
+#
+# A chart takes its data already computed, floats in lists; sampling a
+# function is the evaluator's, which knows how to call one. A point that is
+# not a finite number (a pole, a logarithm below zero) is left out, and a
+# graph's line is broken there rather than drawn through it.
+
+use <rebel>/image
+use <rebel>/math
+use <rebel>/stats
+
+use plot/canvas
+
+# The code of data a chart cannot draw.
+constant INVALID: str
+    "invalid"
+
+# The most bins a histogram is drawn with.
+constant MOST_BINS: i64
+    200
+
+# What `histogram` answers: the image and the counts it drew.
+record Histogram
+    # The chart.
+    picture: image.Image
+    # How many values fell in each bin, the lowest bin first.
+    counts: [i64]
+    # The bins' edges, one more than the bins, ascending.
+    edges: [f64]
+
+# What `scatter` answers: the image and the line drawn through the points.
+record Scatter
+    # The chart.
+    picture: image.Image
+    # The line of least squares, where the points have one: at least two and
+    # not every x one value.
+    fit: stats.Line?
+
+# `low` to `high` with a twentieth of the span added on each side, so no
+# point stands on the frame.
+#
+# - `low`: the least value.
+# - `high`: the greatest value.
+function padded(low: f64, high: f64) -> [f64]
+    margin = (high - low) * 0.05
+    return [low - margin, high + margin]
+
+# The least and the greatest finite value of `xs`, nothing where none is
+# finite.
+#
+# - `xs`: the values.
+function finite_range(xs: [f64]) -> [f64]
+    low @= math.INF
+    high @= -math.INF
+
+    for x in xs
+        if math.is_finite(x)
+            low @ math.min(a: low, b: x)
+            high @ math.max(a: high, b: x)
+
+    if low > high
+        return []
+    return [low, high]
+
+# The graph of the points (`xs[k]`, `ys[k]`), joined in order, a point
+# whose `y` is not finite breaking the line.
+#
+# - `xs`: the abscissas, ascending.
+# - `ys`: the ordinates, one for each of `xs`.
+# - `title`: drawn above the chart.
+#
+# Fails `invalid` where the lists differ in length or hold fewer than two
+# points, or no `y` is finite.
+function graph(xs: [f64], ys: [f64], title: str) -> image.Image?
+    if xs.len() != ys.len() || xs.len() < 2
+        return fail(code: INVALID, msg: "a graph needs two points or more, an ordinate for each abscissa")
+    y_range = finite_range(ys)
+
+    if y_range.len() == 0
+        return fail(code: INVALID, msg: "the function has no real value on the interval")
+    y_span = padded(low: y_range[0], high: y_range[1])
+    f = canvas.frame(x_low: xs[0], x_high: xs[xs.len() - 1], y_low: y_span[0], y_high: y_span[1])
+    img @= canvas.blank()
+    canvas.draw_axes(@img, f: f, title: title)
+
+    if f.y_low < 0.0 && f.y_high > 0.0
+        zero = canvas.row_of(f, y: 0.0)
+        image.draw_line(
+            @img,
+            from_x: f.left,
+            from_y: zero,
+            to_x: f.left + f.width - 1,
+            to_y: zero,
+            color: image.Color(r: 150, g: 150, b: 150, a: 255)
+        )
+
+    for k in range(from: 1, to: xs.len())
+        if math.is_finite(ys[k - 1]) && math.is_finite(ys[k])
+            x0 = canvas.column_of(f, x: xs[k - 1])
+            y0 = canvas.row_of(f, y: ys[k - 1])
+            x1 = canvas.column_of(f, x: xs[k])
+            y1 = canvas.row_of(f, y: ys[k])
+            image.draw_line(@img, from_x: x0, from_y: y0, to_x: x1, to_y: y1, color: canvas.blue())
+            image.draw_line(@img, from_x: x0, from_y: y0 + 1, to_x: x1, to_y: y1 + 1, color: canvas.blue())
+
+    return ok(img)
+
+# The histogram of `data` in `bins` bins of one width from its least value
+# to its greatest, the greatest counted in the last bin.
+#
+# - `data`: the values, finite, at least one.
+# - `bins`: the bins, 1 to `MOST_BINS`.
+# - `title`: drawn above the chart.
+#
+# Fails `invalid` where `data` is empty or holds a value that is not finite,
+# or `bins` is outside 1 to `MOST_BINS`.
+function histogram(data: [f64], bins: i64, title: str) -> Histogram?
+    if bins < 1 || bins > MOST_BINS
+        return fail(code: INVALID, msg: f"a histogram has 1 to {MOST_BINS} bins, not {bins}")
+    range_of = finite_range(data)
+
+    if range_of.len() == 0 || data.len() == 0
+        return fail(code: INVALID, msg: "a histogram needs at least one value")
+
+    for x in data
+        if !math.is_finite(x)
+            return fail(code: INVALID, msg: "a histogram counts finite values; one is not")
+
+    bounds = canvas.opened(low: range_of[0], high: range_of[1])
+    width = (bounds[1] - bounds[0]) / to_f64(bins)
+    counts: [i64] @= []
+    edges: [f64] @= []
+
+    for k in range(from: 0, to: bins)
+        counts @ counts.push(0)
+        edges @ edges.push(bounds[0] + to_f64(k) * width)
+
+    edges @ edges.push(bounds[1])
+
+    for x in data
+        at = math.min_i64(a: to_i64(math.floor((x - bounds[0]) / width)).must(), b: bins - 1)
+        counts[at] @ counts[at] + 1
+
+    tallest @= 1
+
+    for c in counts
+        tallest @ math.max_i64(a: tallest, b: c)
+
+    f = canvas.frame(x_low: bounds[0], x_high: bounds[1], y_low: 0.0, y_high: to_f64(tallest) * 1.08)
+    img @= canvas.blank()
+    canvas.draw_axes(@img, f: f, title: title)
+    fill = canvas.bar_blue()
+    base = canvas.row_of(f, y: 0.0)
+
+    for k in range(from: 0, to: bins)
+        if counts[k] > 0
+            x0 = canvas.column_of(f, x: edges[k])
+            x1 = canvas.column_of(f, x: edges[k + 1])
+            y = canvas.row_of(f, y: to_f64(counts[k]))
+            image.fill_rect(@img, x: x0, y: y, width: x1 - x0 + 1, height: base - y + 1, color: fill)
+            image.draw_rect(@img, x: x0, y: y, width: x1 - x0 + 1, height: base - y + 1, color: canvas.blue())
+
+    return ok(Histogram(picture: img, counts: counts, edges: edges))
+
+# The scatter of the points (`xs[k]`, `ys[k]`), and the line of least
+# squares through them where they have one.
+#
+# - `xs`: the abscissas, finite.
+# - `ys`: the ordinates, finite, one for each of `xs`.
+# - `title`: drawn above the chart.
+#
+# Fails `invalid` where the lists differ in length, are empty, or hold a
+# value that is not finite.
+function scatter(xs: [f64], ys: [f64], title: str) -> Scatter?
+    if xs.len() != ys.len() || xs.len() == 0
+        return fail(code: INVALID, msg: "a scatter needs one ordinate for each abscissa, and at least one point")
+
+    for k in range(from: 0, to: xs.len())
+        if !math.is_finite(xs[k]) || !math.is_finite(ys[k])
+            return fail(code: INVALID, msg: f"point {k + 1} of the scatter is not finite")
+
+    x_range = finite_range(xs)
+    y_range = finite_range(ys)
+    x_span = padded(low: x_range[0], high: x_range[1])
+    y_span = padded(low: y_range[0], high: y_range[1])
+    f = canvas.frame(x_low: x_span[0], x_high: x_span[1], y_low: y_span[0], y_high: y_span[1])
+    img @= canvas.blank()
+    canvas.draw_axes(@img, f: f, title: title)
+
+    for k in range(from: 0, to: xs.len())
+        image.fill_circle(
+            @img,
+            center_x: canvas.column_of(f, x: xs[k]),
+            center_y: canvas.row_of(f, y: ys[k]),
+            radius: 3,
+            color: canvas.blue()
+        )
+
+    fit = stats.linear_regression(x: xs, y: ys)
+
+    match fit
+        .ok line =>
+            left = canvas.row_of(f, y: line.slope * f.x_low + line.intercept)
+            right = canvas.row_of(f, y: line.slope * f.x_high + line.intercept)
+            last = f.left + f.width - 1
+            image.draw_line(@img, from_x: f.left, from_y: left, to_x: last, to_y: right, color: canvas.red())
+            image.draw_line(@img, from_x: f.left, from_y: left + 1, to_x: last, to_y: right + 1, color: canvas.red())
+        .err _ => _ = 0
+
+    return ok(Scatter(picture: img, fit: fit))
+
+test "graph: a line drawn, a function with no real value refused"
+    img = graph(xs: [0.0, 1.0, 2.0], ys: [0.0, 1.0, 4.0], title: "x^2").must()
+    assert img.width == canvas.WIDTH
+    assert graph(xs: [0.0, 1.0], ys: [math.NAN, math.INF], title: "none").is_err()
+    assert graph(xs: [0.0], ys: [1.0], title: "one").is_err()
+
+test "histogram: the counts of each bin, the greatest value in the last"
+    h = histogram(data: [1.0, 2.0, 2.0, 3.0, 4.0], bins: 3, title: "h").must()
+    assert h.counts == [1, 2, 2]
+    assert h.edges.len() == 4
+    assert histogram(data: [], bins: 3, title: "h").is_err()
+    assert histogram(data: [1.0], bins: 0, title: "h").is_err()
+    assert histogram(data: [5.0, 5.0], bins: 2, title: "h").must().counts == [0, 2]
+
+test "scatter: the fitted line of points on a line, a single point with none"
+    s = scatter(xs: [1.0, 2.0, 3.0], ys: [3.0, 5.0, 7.0], title: "s").must()
+    assert s.fit.must().slope == 2.0
+    assert scatter(xs: [1.0], ys: [2.0], title: "s").must().fit.is_err()
+    assert scatter(xs: [1.0, 2.0], ys: [1.0], title: "s").is_err()

@@ -1,0 +1,520 @@
+# The decompositions of a matrix in floats, which `math/linear` leaves out
+# past four by four: LU with partial pivoting (`P A = L U`), QR by
+# Householder reflections (`A = Q R`), Cholesky's factor of a symmetric
+# positive definite matrix (`A = L Lᵀ`), the eigenvalues and eigenvectors of
+# a symmetric matrix by Jacobi's rotations, and the least-squares solution of
+# a system with more equations than unknowns.
+#
+# Each reads its matrix as floats, so an exact matrix is decomposed in
+# floats too; a complex matrix is refused. The work is done on one list of
+# floats held row after row, `a[r * cols + c]`, and turned into a
+# `linalg/matrix` at the end. The eigenvalues of a two by two matrix are
+# taken from its characteristic polynomial in the lab's numbers instead, so
+# they stay exact where its discriminant is a square and come out complex
+# where it is negative.
+
+use <rebel>/math
+
+use linalg/matrix
+use numbers/arith
+use numbers/functions
+use numbers/scalar
+
+# The most sweeps of Jacobi's method: each halves the off-diagonal mass at
+# least, so a hundred is far past what a matrix of a thousand rows needs.
+constant MOST_SWEEPS: i64
+    100
+
+# What `lu` answers: `p a = l u`.
+record Lu
+    # The permutation of the rows: one 1 in each row and column.
+    p: matrix.Matrix
+    # Lower triangular, ones on its diagonal.
+    l: matrix.Matrix
+    # Upper triangular.
+    u: matrix.Matrix
+
+# What `qr` answers: `a = q r`.
+record Qr
+    # Orthogonal, as many rows and columns as `a` has rows.
+    q: matrix.Matrix
+    # Upper triangular, of `a`'s shape.
+    r: matrix.Matrix
+
+# What `eigen_symmetric` answers.
+record Eigen
+    # The eigenvalues, ascending.
+    values: [f64]
+    # The eigenvectors as columns, each of length 1, in the order of
+    # `values`.
+    vectors: matrix.Matrix
+
+# `m`'s entries as floats, refusing a complex one with the operation named.
+#
+# - `m`: the matrix.
+# - `what`: the operation, for the message.
+function floats_for(m: matrix.Matrix lent, what: str) -> [f64]?
+    match matrix.floats_of(m)
+        .ok xs => return ok(xs)
+        .err _ => return fail(code: matrix.INVALID, msg: f"{what} takes a matrix of real numbers")
+
+# Fails `invalid` where `m` is not square, naming `what`.
+#
+# - `m`: the matrix.
+# - `what`: the operation.
+function need_square(m: matrix.Matrix lent, what: str) -> ()?
+    if m.rows != m.cols
+        return fail(code: matrix.INVALID, msg: f"{what} takes a square matrix, not one of {m.rows} by {m.cols}")
+    return ok()
+
+# The identity of `n` rows as floats, row after row.
+#
+# - `n`: the rows.
+function identity_floats(n: i64) -> [f64]
+    out: [f64] @= []
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            if r == c
+                out @ out.push(1.0)
+            else
+                out @ out.push(0.0)
+
+    return out
+
+# The LU decomposition of `m` with partial pivoting: at each column the row
+# with the largest entry is swapped up, so no multiplier passes 1 in size.
+#
+# - `m`: a square matrix of real numbers.
+#
+# A singular matrix decomposes too, with a zero on `u`'s diagonal. Fails
+# `invalid` where `m` is not square or holds a complex number.
+function lu(m: matrix.Matrix) -> Lu?
+    need_square(m, what: "lu")?
+    n = m.rows
+    a @= floats_for(m, what: "lu")?
+    order @= range(from: 0, to: n)
+
+    for k in range(from: 0, to: n)
+        best @= k
+
+        for r in range(from: k + 1, to: n)
+            if math.abs(a[r * n + k]) > math.abs(a[best * n + k])
+                best @ r
+
+        if best != k
+            for c in range(from: 0, to: n)
+                x = a[k * n + c]
+                a[k * n + c] @ a[best * n + c]
+                a[best * n + c] @ x
+
+            moved = order[k]
+            order[k] @ order[best]
+            order[best] @ moved
+        pivot = a[k * n + k]
+
+        if pivot != 0.0
+            for r in range(from: k + 1, to: n)
+                factor = a[r * n + k] / pivot
+                a[r * n + k] @ factor
+
+                for c in range(from: k + 1, to: n)
+                    a[r * n + c] @ a[r * n + c] - factor * a[k * n + c]
+
+    lower: [f64] @= []
+    upper: [f64] @= []
+    perm: [f64] @= []
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            if c < r
+                lower @ lower.push(a[r * n + c])
+                upper @ upper.push(0.0)
+            else if c == r
+                lower @ lower.push(1.0)
+                upper @ upper.push(a[r * n + c])
+            else
+                lower @ lower.push(0.0)
+                upper @ upper.push(a[r * n + c])
+
+            if order[r] == c
+                perm @ perm.push(1.0)
+            else
+                perm @ perm.push(0.0)
+
+    return ok(
+        Lu(p: matrix.of_floats(rows: n, cols: n, xs: perm), l: matrix.of_floats(rows: n, cols: n, xs: lower), u: matrix.of_floats(rows: n, cols: n, xs: upper))
+    )
+
+# The QR decomposition of `m` by Householder reflections: each column below
+# the diagonal is reflected onto the diagonal, `r` collecting the reflected
+# matrix and `q` the product of the reflections.
+#
+# - `m`: a matrix of real numbers, with at least as many rows as columns.
+#
+# Fails `invalid` where `m` has more columns than rows or holds a complex
+# number.
+function qr(m: matrix.Matrix) -> Qr?
+    if m.rows < m.cols
+        return fail(
+            code: matrix.INVALID,
+            msg: f"qr takes a matrix with at least as many rows as columns, not {m.rows} by {m.cols}"
+        )
+    rows = m.rows
+    cols = m.cols
+    r @= floats_for(m, what: "qr")?
+    q @= identity_floats(rows)
+    steps = math.min_i64(a: rows - 1, b: cols)
+
+    for k in range(from: 0, to: steps)
+        v: [f64] @= []
+        length @= 0.0
+
+        for i in range(from: k, to: rows)
+            x = r[i * cols + k]
+            v @ v.push(x)
+            length @ length + x * x
+
+        length @ math.sqrt(length)
+
+        if length > 0.0
+            alpha: f64 @= length
+
+            if v[0] > 0.0
+                alpha @ -length
+            v[0] @ v[0] - alpha
+            size = math.sqrt(math.sum(squares(v)).default(0.0))
+
+            if size > 0.0
+                for i in range(from: 0, to: v.len())
+                    v[i] @ v[i] / size
+
+                for c in range(from: 0, to: cols)
+                    s @= 0.0
+
+                    for i in range(from: 0, to: v.len())
+                        s @ s + v[i] * r[(k + i) * cols + c]
+
+                    for i in range(from: 0, to: v.len())
+                        r[(k + i) * cols + c] @ r[(k + i) * cols + c] - 2.0 * v[i] * s
+
+                for row in range(from: 0, to: rows)
+                    s @= 0.0
+
+                    for j in range(from: 0, to: v.len())
+                        s @ s + q[row * rows + k + j] * v[j]
+
+                    for j in range(from: 0, to: v.len())
+                        q[row * rows + k + j] @ q[row * rows + k + j] - 2.0 * s * v[j]
+
+    for row in range(from: 0, to: rows)
+        for c in range(from: 0, to: math.min_i64(a: row, b: cols))
+            r[row * cols + c] @ 0.0
+
+    return ok(
+        Qr(q: matrix.of_floats(rows: rows, cols: rows, xs: q), r: matrix.of_floats(rows: rows, cols: cols, xs: r))
+    )
+
+# The square of each of `xs`.
+#
+# - `xs`: the floats.
+function squares(xs: [f64]) -> [f64]
+    out: [f64] @= []
+
+    for x in xs
+        out @ out.push(x * x)
+
+    return out
+
+# Cholesky's factor of `m`: the lower triangular `l` with `l lᵀ = m`.
+#
+# - `m`: a symmetric positive definite matrix of real numbers.
+#
+# Fails `invalid` where `m` is not square, not symmetric, holds a complex
+# number, or is not positive definite, naming the column where a square
+# root of a number not above zero was asked.
+function cholesky(m: matrix.Matrix) -> matrix.Matrix?
+    need_square(m, what: "chol")?
+
+    if !matrix.is_symmetric(m)
+        return fail(code: matrix.INVALID, msg: "chol takes a symmetric matrix")
+    n = m.rows
+    a = floats_for(m, what: "chol")?
+    l: [f64] @= []
+
+    for _ in range(from: 0, to: n * n)
+        l @ l.push(0.0)
+
+    for j in range(from: 0, to: n)
+        s @= a[j * n + j]
+
+        for k in range(from: 0, to: j)
+            s @ s - l[j * n + k] * l[j * n + k]
+
+        if s <= 0.0
+            return fail(
+                code: matrix.INVALID,
+                msg: f"the matrix is not positive definite: column {j + 1} has no real square root"
+            )
+        root = math.sqrt(s)
+        l[j * n + j] @ root
+
+        for i in range(from: j + 1, to: n)
+            t @= a[i * n + j]
+
+            for k in range(from: 0, to: j)
+                t @ t - l[i * n + k] * l[j * n + k]
+
+            l[i * n + j] @ t / root
+
+    return ok(matrix.of_floats(rows: n, cols: n, xs: l))
+
+# The eigenvalues and eigenvectors of the symmetric `m`, by Jacobi's
+# rotations: each rotation zeroes one entry off the diagonal, and sweeps
+# over every pair go on until what lies off the diagonal is negligible
+# beside the whole.
+#
+# - `m`: a symmetric matrix of real numbers.
+#
+# Fails `invalid` where `m` is not square, not symmetric or holds a complex
+# number.
+function eigen_symmetric(m: matrix.Matrix) -> Eigen?
+    need_square(m, what: "eig")?
+
+    if !matrix.is_symmetric(m)
+        return fail(code: matrix.INVALID, msg: "eig of a matrix past two by two takes a symmetric one")
+    n = m.rows
+    a @= floats_for(m, what: "eig")?
+    v @= identity_floats(n)
+    total = math.sum(squares(a)).default(0.0)
+    sweep @= 0
+
+    while sweep < MOST_SWEEPS && off_diagonal(a, n: n) > total * 0.000_000_000_000_000_000_000_01
+        for p in range(from: 0, to: n)
+            for q in range(from: p + 1, to: n)
+                if a[p * n + q] != 0.0
+                    rotate(a: @a, v: @v, n: n, p: p, q: q)
+
+        sweep @ sweep + 1
+
+    values: [f64] @= []
+
+    for k in range(from: 0, to: n)
+        values @ values.push(a[k * n + k])
+
+    order = ascending_order(values)
+    sorted: [f64] @= []
+    vectors: [f64] @= []
+
+    for k in order
+        sorted @ sorted.push(values[k])
+
+    for r in range(from: 0, to: n)
+        for k in order
+            vectors @ vectors.push(v[r * n + k])
+
+    return ok(Eigen(values: sorted, vectors: matrix.of_floats(rows: n, cols: n, xs: vectors)))
+
+# The sum of the squares of `a`'s entries off the diagonal.
+#
+# - `a`: a square matrix of floats, row after row.
+# - `n`: its rows.
+function off_diagonal(a: [f64], n: i64) -> f64
+    s @= 0.0
+
+    for r in range(from: 0, to: n)
+        for c in range(from: 0, to: n)
+            if r != c
+                s @ s + a[r * n + c] * a[r * n + c]
+
+    return s
+
+# One Jacobi rotation in the plane of `p` and `q`, chosen to make
+# `a[p][q]` zero: `a` becomes `Jᵀ a J` and `v` becomes `v J`.
+#
+# - `a`: the symmetric matrix, changed.
+# - `v`: the eigenvectors so far, changed.
+# - `n`: the rows of both.
+# - `p`: the first index, below `q`.
+# - `q`: the second index.
+function rotate(@a: [f64], @v: [f64], n: i64, p: i64, q: i64)
+    theta = (a[q * n + q] - a[p * n + p]) / (2.0 * a[p * n + q])
+    t: f64 @= 1.0 / (math.abs(theta) + math.sqrt(theta * theta + 1.0))
+
+    if theta < 0.0
+        t @ -t
+    c = 1.0 / math.sqrt(t * t + 1.0)
+    s = t * c
+
+    for k in range(from: 0, to: n)
+        kp = a[k * n + p]
+        kq = a[k * n + q]
+        a[k * n + p] @ c * kp - s * kq
+        a[k * n + q] @ s * kp + c * kq
+
+    for k in range(from: 0, to: n)
+        pk = a[p * n + k]
+        qk = a[q * n + k]
+        a[p * n + k] @ c * pk - s * qk
+        a[q * n + k] @ s * pk + c * qk
+
+    for k in range(from: 0, to: n)
+        kp = v[k * n + p]
+        kq = v[k * n + q]
+        v[k * n + p] @ c * kp - s * kq
+        v[k * n + q] @ s * kp + c * kq
+
+    a[p * n + q] @ 0.0
+    a[q * n + p] @ 0.0
+
+# The positions of `xs` in the order of their values, the smallest first,
+# a tie keeping the earlier position first.
+#
+# - `xs`: the values, none a nan.
+function ascending_order(xs: [f64]) -> [i64]
+    order @= range(from: 0, to: xs.len())
+
+    for i in range(from: 1, to: order.len())
+        at @= i
+
+        while at > 0 && xs[order[at - 1]] > xs[order[at]]
+            moved = order[at]
+            order[at] @ order[at - 1]
+            order[at - 1] @ moved
+            at @ at - 1
+
+    return order
+
+# The eigenvalues of the two by two `m` from its characteristic polynomial,
+# `x² - (a + d) x + (ad - bc)`, in the lab's numbers: exact where the
+# discriminant is the square of an exact number, complex where it is
+# negative. The smaller first where both are real.
+#
+# - `m`: a two by two matrix.
+#
+# Fails `invalid` where `m` is not two by two.
+function eigen_2x2(m: matrix.Matrix) -> [scalar.Number]?
+    if m.rows != 2 || m.cols != 2
+        return fail(code: matrix.INVALID, msg: "eigen_2x2 takes a two by two matrix")
+    a = matrix.at(m, row: 0, col: 0)
+    b = matrix.at(m, row: 0, col: 1)
+    c = matrix.at(m, row: 1, col: 0)
+    d = matrix.at(m, row: 1, col: 1)
+    half_trace = arith.divide(a: arith.add(a: a, b: d), b: scalar.of_int(2)).must()
+    det = arith.subtract(a: arith.multiply(a: a, b: d), b: arith.multiply(a: b, b: c))
+    discriminant = arith.subtract(a: arith.multiply(a: half_trace, b: half_trace), b: det)
+    root = functions.sqrt(discriminant)
+    return ok([arith.subtract(a: half_trace, b: root), arith.add(a: half_trace, b: root)])
+
+# The `x` of least squares for `a x = b`: the one making the length of
+# `a x - b` least, from `a = q r` as `r x = qᵀ b`, solved upwards.
+#
+# - `a`: a matrix of real numbers with at least as many rows as columns and
+#   independent columns.
+# - `b`: one column, with as many rows as `a`.
+#
+# Fails `invalid` where the shapes do not fit, an entry is complex, or the
+# columns of `a` are not independent.
+function least_squares(a: matrix.Matrix, b: matrix.Matrix) -> matrix.Matrix?
+    if b.cols != 1 || b.rows != a.rows
+        return fail(code: matrix.INVALID, msg: f"lstsq takes a column of {a.rows} rows as its right side")
+    d = qr(a)?
+    rhs = floats_for(matrix.multiply(a: matrix.transpose(d.q), b: b)?, what: "lstsq")?
+    r = floats_for(d.r, what: "lstsq")?
+    n = a.cols
+    largest @= 0.0
+
+    for k in range(from: 0, to: n)
+        largest @ math.max(a: largest, b: math.abs(r[k * n + k]))
+
+    x: [f64] @= []
+
+    for _ in range(from: 0, to: n)
+        x @ x.push(0.0)
+
+    row @= n - 1
+
+    while row >= 0
+        pivot = r[row * n + row]
+
+        if math.abs(pivot) <= largest * to_f64(a.rows) * math.EPSILON * 8.0
+            return fail(code: matrix.INVALID, msg: "lstsq needs independent columns: these are not")
+        s @= rhs[row]
+
+        for c in range(from: row + 1, to: n)
+            s @ s - r[row * n + c] * x[c]
+
+        x[row] @ s / pivot
+        row @ row - 1
+
+    return ok(matrix.of_floats(rows: n, cols: 1, xs: x))
+
+# Whether each entry of `a` is within `slack` of the same entry of `b`, as
+# floats.
+#
+# - `a`: one matrix.
+# - `b`: the other, of the same shape.
+# - `slack`: the largest difference allowed.
+function close(a: matrix.Matrix, b: matrix.Matrix, slack: f64) -> bool
+    xs = matrix.floats_of(a).must()
+    ys = matrix.floats_of(b).must()
+
+    for k in range(from: 0, to: xs.len())
+        if math.abs(xs[k] - ys[k]) > slack
+            return false
+
+    return true
+
+test "lu: the rows swapped by the pivot, P A equal to L U"
+    a = matrix.of_floats(rows: 3, cols: 3, xs: [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0])
+    d = lu(a).must()
+    left = matrix.multiply(a: d.p, b: a).must()
+    right = matrix.multiply(a: d.l, b: d.u).must()
+    assert close(a: left, b: right, slack: 0.000_000_000_001)
+    assert matrix.at(d.p, row: 0, col: 2) == scalar.of_real(1.0)
+
+test "qr: Q orthogonal, R upper triangular, their product the matrix"
+    a = matrix.of_floats(rows: 3, cols: 2, xs: [1.0, 1.0, 1.0, 2.0, 1.0, 3.0])
+    d = qr(a).must()
+    assert close(a: matrix.multiply(a: d.q, b: d.r).must(), b: a, slack: 0.000_000_000_001)
+    qtq = matrix.multiply(a: matrix.transpose(d.q), b: d.q).must()
+    assert close(a: qtq, b: matrix.of_floats(rows: 3, cols: 3, xs: identity_floats(3)), slack: 0.000_000_000_001)
+    assert matrix.at(d.r, row: 1, col: 0) == scalar.of_real(0.0)
+    assert qr(matrix.of_floats(rows: 1, cols: 2, xs: [1.0, 2.0])).is_err()
+
+test "cholesky: a factor found, a matrix that is not positive definite refused"
+    a = matrix.of_floats(rows: 2, cols: 2, xs: [4.0, 2.0, 2.0, 3.0])
+    l = cholesky(a).must()
+    assert close(a: matrix.multiply(a: l, b: matrix.transpose(l)).must(), b: a, slack: 0.000_000_000_001)
+    assert cholesky(matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 2.0, 1.0])).is_err()
+    assert cholesky(matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 0.0, 1.0])).is_err()
+
+test "eigen_symmetric: the eigenvalues of a known matrix, ascending"
+    a = matrix.of_floats(rows: 3, cols: 3, xs: [2.0, -1.0, 0.0, -1.0, 2.0, -1.0, 0.0, -1.0, 2.0])
+    e = eigen_symmetric(a).must()
+    assert math.abs(e.values[0] - (2.0 - math.SQRT_2)) < 0.000_000_000_01
+    assert math.abs(e.values[1] - 2.0) < 0.000_000_000_01
+    assert math.abs(e.values[2] - (2.0 + math.SQRT_2)) < 0.000_000_000_01
+    assert eigen_symmetric(matrix.of_floats(rows: 2, cols: 2, xs: [1.0, 2.0, 3.0, 4.0])).is_err()
+
+test "eigen_2x2: exact eigenvalues, complex ones of a rotation"
+    m = matrix.make(
+        rows: 2,
+        cols: 2,
+        cells: [scalar.of_int(2), scalar.of_int(1), scalar.of_int(1), scalar.of_int(2)]
+    ).must()
+    assert eigen_2x2(m).must() == [scalar.of_int(1), scalar.of_int(3)]
+    turn = matrix.make(
+        rows: 2,
+        cols: 2,
+        cells: [scalar.of_int(0), scalar.of_int(-1), scalar.of_int(1), scalar.of_int(0)]
+    ).must()
+    assert eigen_2x2(turn).must() == [scalar.of_parts(re: 0.0, im: -1.0), scalar.of_parts(re: 0.0, im: 1.0)]
+
+test "least_squares: a line through three points, dependent columns refused"
+    a = matrix.of_floats(rows: 3, cols: 2, xs: [1.0, 0.0, 1.0, 1.0, 1.0, 2.0])
+    b = matrix.of_floats(rows: 3, cols: 1, xs: [1.0, 3.0, 5.0])
+    x = least_squares(a: a, b: b).must()
+    assert close(a: x, b: matrix.of_floats(rows: 2, cols: 1, xs: [1.0, 2.0]), slack: 0.000_000_000_01)
+    twin = matrix.of_floats(rows: 3, cols: 2, xs: [1.0, 2.0, 2.0, 4.0, 3.0, 6.0])
+    assert least_squares(a: twin, b: b).is_err()

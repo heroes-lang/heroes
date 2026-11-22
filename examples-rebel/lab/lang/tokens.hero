@@ -1,0 +1,167 @@
+# The words of the lab's language, read by `scanner`: names, the keywords
+# `if then else and or not true false`, whole numbers in any of the forms
+# `0x1f`, `0b101`, `1_000`, floats `0.5` and `6.02e23`, imaginary numbers
+# `2i` and `1.5e-3i`, texts between double quotes, the operators, `#`
+# comments to the end of a line, and each line end as a token of its own,
+# since a line ends a statement.
+#
+# An imaginary number is a class of the program's own (`Rules.classes`), a
+# regular expression tried before the scanner's numbers, so `2i` is one token
+# and `2 i` two. A token the scanner cannot read is answered as `invalid`
+# with its reason, which `lang/parser` reports with its place.
+
+use <rebel>/big
+use <rebel>/numbers
+use <rebel>/regex
+use <rebel>/scanner
+use <rebel>/strings
+
+use numbers/scalar
+
+# The keywords: names the language keeps for itself.
+constant KEYWORDS: [str]
+    [
+        "if"
+        "then"
+        "else"
+        "and"
+        "or"
+        "not"
+        "true"
+        "false"
+    ]
+
+# The operators and the punctuation, the longest read first by the scanner.
+constant OPERATORS: [str]
+    [
+        "+"
+        "-"
+        "*"
+        "/"
+        "^"
+        "%"
+        "("
+        ")"
+        "["
+        "]"
+        ","
+        ";"
+        "="
+        "=="
+        "!="
+        "<"
+        "<="
+        ">"
+        ">="
+        "!"
+        ":"
+    ]
+
+# The pattern of an imaginary number: digits, an optional fraction and
+# exponent, and `i` standing at the end of a word.
+constant IMAGINARY: str
+    "[0-9][0-9_]*(\\.[0-9]*)?([eE][+-]?[0-9]+)?i\\b"
+
+# The scanner's rules for the lab's language.
+function rules() -> scanner.Rules
+    base = scanner.go_rules()
+    return scanner.Rules(
+        identifiers: true,
+        identifier_char: base.identifier_char,
+        keywords: KEYWORDS,
+        integers: true,
+        floats: true,
+        string_quotes: "\"",
+        raw_quotes: "",
+        char_quotes: "",
+        multiline_strings: false,
+        line_comments: ["#"],
+        block_comment_open: "",
+        block_comment_close: "",
+        nested_comments: false,
+        keep_comments: false,
+        whitespace: " \t\r",
+        keep_whitespace: false,
+        keep_newlines: true,
+        operators: OPERATORS,
+        classes: [regex.compile(IMAGINARY).must()]
+    )
+
+# Every token of `source`, the `end` token last.
+#
+# - `source`: the text of a cell or a line.
+function tokens_of(source: str) -> [scanner.Token]
+    return scanner.scan(source, rules: rules())
+
+# The number a number token spells: a whole number exactly, a float, or an
+# imaginary number.
+#
+# - `t`: a token of the kind `integer`, `float` or `custom`.
+#
+# Fails `invalid` where the token is no number the language reads: an octal
+# number with a leading zero, a `_` out of place, an exponent too large.
+function number_of(t: scanner.Token) -> scalar.Number?
+    match t.kind
+        .integer => return ok(scalar.of_integer(big.parse_literal(t.text)?))
+        .float   => return ok(scalar.of_real(float_text(t.text)?))
+        .custom _ =>
+            part = float_text(t.text.slice(from: 0, to: t.text.len() - 1))?
+            return ok(scalar.of_parts(re: 0.0, im: part))
+        .identifier | .keyword | .string | .raw_string | .character | .comment | .whitespace | .newline | .operator | .other | .invalid _ | .end =>
+            return fail(code: scalar.INVALID, msg: f"`{t.text}` is no number")
+
+# The float `s` spells, with any `_` between digits taken out.
+#
+# - `s`: the digits.
+#
+# Fails `invalid` where it is no float.
+function float_text(s: str) -> f64?
+    return numbers.parse_float(strings.replace_all(s: s, old: "_", new: ""))
+
+# How a message names `t`: the end of the text, the end of a line, or the
+# token's text in backquotes.
+#
+# - `t`: the token.
+function describe(t: scanner.Token) -> str
+    return match t.kind
+        .end     => "the end of the input"
+        .newline => "the end of the line"
+        .string  => "a text"
+        .identifier | .keyword | .integer | .float | .raw_string | .character | .comment | .whitespace | .operator | .custom _ | .other | .invalid _ =>
+            f"`{t.text}`"
+
+# The kinds of `tokens`, as `scanner.kind_name` names them, for a test.
+#
+# - `tokens`: the tokens.
+function kinds(tokens: [scanner.Token]) -> [str]
+    out: [str] @= []
+
+    for t in tokens
+        out @ out.push(scanner.kind_name(t.kind))
+
+    return out
+
+test "tokens_of: an imaginary number, a keyword, a two-character operator, a line end"
+    ts = tokens_of("z = 2.5i != x\nif")
+    assert kinds(ts) == ["identifier", "operator", "custom 0", "operator", "identifier", "line end", "keyword", "end of text"]
+    assert ts[3].text == "!="
+
+test "tokens_of: a comment skipped, `2 i` two tokens, `2im` a number and a name"
+    assert kinds(tokens_of("1 # one")) == ["integer", "end of text"]
+    assert kinds(tokens_of("2 i")) == ["integer", "identifier", "end of text"]
+    assert kinds(tokens_of("2im")) == ["integer", "identifier", "end of text"]
+
+test "number_of: whole numbers in every base, a float, an imaginary one, a leading zero refused"
+    ts = tokens_of("0x1f 1_000 0.25 3i 1e3 012")
+    assert number_of(ts[0]).must() == scalar.of_int(31)
+    assert number_of(ts[1]).must() == scalar.of_int(1000)
+    assert number_of(ts[2]).must() == scalar.of_real(0.25)
+    assert number_of(ts[3]).must() == scalar.of_parts(re: 0.0, im: 3.0)
+    assert number_of(ts[4]).must() == scalar.of_real(1000.0)
+    assert number_of(ts[5]).is_err()
+
+test "describe: the end, a line end, a token"
+    ts = tokens_of("x\n")
+    assert describe(ts[0]) == "`x`"
+    assert describe(ts[1]) == "the end of the line"
+    assert describe(ts[2]) == "the end of the input"

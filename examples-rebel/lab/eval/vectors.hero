@@ -1,0 +1,302 @@
+# The built-ins of vectors: their length, sum, product, least and greatest
+# element, the vector sorted, reversed and summed as it goes, evenly spaced
+# points, the dot product and the length of a vector, the ranges `a:b` and
+# `a:step:b`, and indexing from 1.
+#
+# A sum, a product or a dot product of exact numbers is exact, so
+# `sum(1:100)` is `5050` and `norm([3, 4])` is `5`; one float among them makes
+# the answer a float.
+
+use <rebel>/lists
+use <rebel>/math
+
+use eval/value
+use numbers/arith
+use numbers/functions
+use numbers/scalar
+
+# The most elements a range or `linspace` may make.
+constant MOST_ITEMS: i64
+    1_000_000
+
+# The count of `v`'s elements: a vector's, a matrix's entries, a text's
+# characters, 1 for a number.
+#
+# - `v`: the value.
+#
+# Fails `invalid` where `v` has no length.
+function length_of(v: value.Value) -> value.Value?
+    match v
+        .vector items => return ok(value.of_int(items.items.len()))
+        .matrix m     => return ok(value.of_int(m.value.rows * m.value.cols))
+        .text t       => return ok(value.of_int(t.value.chars().len()))
+        .number _     => return ok(value.of_int(1))
+        .truth _ | .callable _ | .plot _ | .nothing => return value.refusal(
+            what: "len's argument",
+            wanted: "a vector",
+            v: v
+        )
+
+# The sum of the numbers of `v`, exact where they are; 0 for none.
+#
+# - `v`: a vector of numbers, a matrix or a number.
+#
+# Fails `invalid` where an element is no number.
+function total(v: value.Value) -> value.Value?
+    s @= scalar.of_int(0)
+
+    for n in value.numbers_of(v, what: "sum's argument")?
+        s @ arith.add(a: s, b: n)
+
+    return ok(.number(value: s))
+
+# The product of the numbers of `v`, exact where they are; 1 for none.
+#
+# - `v`: a vector of numbers, a matrix or a number.
+#
+# Fails `invalid` where an element is no number.
+function product(v: value.Value) -> value.Value?
+    p @= scalar.of_int(1)
+
+    for n in value.numbers_of(v, what: "prod's argument")?
+        p @ arith.multiply(a: p, b: n)
+
+    return ok(.number(value: p))
+
+# The least of the numbers of `v`, or the greatest.
+#
+# - `v`: a vector of real numbers, at least one.
+# - `greatest`: whether the greatest is asked.
+#
+# Fails `invalid` where `v` is empty or holds a complex number or a nan.
+function extreme(v: value.Value, greatest: bool) -> value.Value?
+    ns = value.numbers_of(v, what: "the data")?
+
+    if ns.len() == 0
+        return fail(code: value.INVALID, msg: "an empty vector has no least or greatest element")
+    best @= ns[0]
+
+    for n in ns
+        order = arith.compare(a: n, b: best)?
+
+        if greatest && order > 0 || !greatest && order < 0
+            best @ n
+
+    return ok(.number(value: best))
+
+# Whether `a` stands before `b` in ascending order, for `lists.sort_by`.
+#
+# - `a`: one number.
+# - `b`: the other.
+#
+# Every pair has been compared once before the sort, so no comparison here
+# can fail; a pair that could not is taken as equal.
+function before(a: scalar.Number, b: scalar.Number) -> bool
+    return arith.compare(a: a, b: b).default(0) < 0
+
+# The numbers of `v` in ascending order, equal ones keeping their order.
+#
+# - `v`: a vector of real numbers.
+#
+# Fails `invalid` where an element is complex or a nan.
+function sorted(v: value.Value) -> value.Value?
+    ns = value.numbers_of(v, what: "sort's argument")?
+
+    for n in ns
+        _ = arith.compare(a: n, b: n)?
+
+    return ok(value.of_numbers(lists.sort_by(ns, less: before)))
+
+# The elements of `v` in reverse order.
+#
+# - `v`: a vector.
+#
+# Fails `invalid` where `v` is not one.
+function reversed(v: value.Value) -> value.Value?
+    match v
+        .vector items => return ok(.vector(items: lists.reverse(items.items)))
+        .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return value.refusal(what: "reverse's argument", wanted: "a vector", v: v)
+
+# The running sums of the numbers of `v`: element k is the sum of the first
+# k.
+#
+# - `v`: a vector of numbers.
+#
+# Fails `invalid` where an element is no number.
+function running_sums(v: value.Value) -> value.Value?
+    s @= scalar.of_int(0)
+    out: [scalar.Number] @= []
+
+    for n in value.numbers_of(v, what: "cumsum's argument")?
+        s @ arith.add(a: s, b: n)
+        out @ out.push(s)
+
+    return ok(value.of_numbers(out))
+
+# `count` floats evenly spaced from `from` to `to`, both included.
+#
+# - `from`: the first.
+# - `to`: the last.
+# - `count`: 2 to `MOST_ITEMS`.
+#
+# Fails `invalid` where an argument is no real number or `count` is outside.
+function evenly(from: value.Value, to: value.Value, count: value.Value) -> value.Value?
+    a = value.float_of(from, what: "linspace's start")?
+    b = value.float_of(to, what: "linspace's end")?
+    n = value.int_of(count, what: "linspace's count")?
+
+    if n < 2 || n > MOST_ITEMS
+        return fail(code: value.INVALID, msg: f"linspace makes 2 to {MOST_ITEMS} points, not {n}")
+    xs: [f64] @= []
+
+    for k in range(from: 0, to: n)
+        xs @ xs.push(a + (b - a) * to_f64(k) / to_f64(n - 1))
+
+    return ok(value.of_floats(xs))
+
+# The dot product of `u` and `v`: the sum of their products element by
+# element, exact where they are.
+#
+# - `u`: a vector of numbers.
+# - `v`: a vector of numbers of the same length.
+#
+# Fails `invalid` where the lengths differ or an element is no number.
+function dot(u: value.Value, v: value.Value) -> value.Value?
+    a = value.numbers_of(u, what: "dot's first vector")?
+    b = value.numbers_of(v, what: "dot's second vector")?
+
+    if a.len() != b.len()
+        return fail(code: value.INVALID, msg: f"dot takes two vectors of one length, not {a.len()} and {b.len()}")
+    s @= scalar.of_int(0)
+
+    for k in range(from: 0, to: a.len())
+        s @ arith.add(a: s, b: arith.multiply(a: a[k], b: functions.conjugate(b[k])))
+
+    return ok(.number(value: s))
+
+# The length of the vector `v`: the square root of the sum of the squares
+# of its elements' sizes, exact where that sum is an exact square.
+#
+# - `v`: a vector of numbers.
+#
+# Fails `invalid` where an element is no number.
+function norm(v: value.Value) -> value.Value?
+    s @= scalar.of_int(0)
+
+    for n in value.numbers_of(v, what: "norm's argument")?
+        size = functions.abs(n)
+        s @ arith.add(a: s, b: arith.multiply(a: size, b: size))
+
+    return ok(.number(value: functions.sqrt(s)))
+
+# The range from `first` to `last` by `step`, both ends included where the
+# steps land on `last`: exact where all three are exact.
+#
+# - `first`: the first number.
+# - `step`: the step, not zero; negative for a falling range.
+# - `last`: the bound.
+#
+# Fails `invalid` where an argument is no real number or the step is zero,
+# and `limit` past `MOST_ITEMS` elements.
+function span(first: value.Value, step: value.Value, last: value.Value) -> value.Value?
+    a = value.number_of(first, what: "a range's start")?
+    s = value.number_of(step, what: "a range's step")?
+    b = value.number_of(last, what: "a range's end")?
+    rising = arith.compare(a: s, b: scalar.of_int(0))?
+
+    if rising == 0
+        return fail(code: value.INVALID, msg: "a range's step is not zero")
+    _ = arith.compare(a: a, b: b)?
+    count_estimate = (scalar.float_of(b).must() - scalar.float_of(a).must()) / scalar.float_of(s).must()
+
+    if count_estimate > to_f64(MOST_ITEMS)
+        return fail(code: "limit", msg: f"a range of more than {MOST_ITEMS} elements")
+    exact = scalar.is_exact(a) && scalar.is_exact(s) && scalar.is_exact(b)
+    slack = math.abs(scalar.float_of(s).must()) * 0.000_000_001
+    out: [scalar.Number] @= []
+    k @= 0
+
+    while true
+        here = arith.add(a: a, b: arith.multiply(a: s, b: scalar.of_int(k)))
+        beyond = arith.subtract(a: here, b: b)
+        gap = scalar.float_of(beyond).must()
+
+        if exact
+            order = arith.compare(a: here, b: b).must()
+
+            if rising > 0 && order > 0 || rising < 0 && order < 0
+                return ok(value.of_numbers(out))
+        else if rising > 0 && gap > slack || rising < 0 && gap < -slack
+            return ok(value.of_numbers(out))
+        out @ out.push(here)
+        k @ k + 1
+
+# The position `at`, counted from 1, as an index from 0 into `count`
+# elements.
+#
+# - `at`: the position.
+# - `count`: the elements.
+#
+# Fails `invalid` where `at` is no whole number from 1 to `count`.
+function position_of(at: value.Value, count: i64) -> i64?
+    k = value.int_of(at, what: "an index")?
+
+    if k < 1 || k > count
+        return fail(code: value.INVALID, msg: f"index {k} is outside 1 to {count}")
+    return ok(k - 1)
+
+# The element of the vector `v` at the position `at`, counted from 1, or
+# the elements at each position of the vector `at`.
+#
+# - `v`: the vector.
+# - `at`: a position, or a vector of positions.
+#
+# Fails `invalid` where a position is outside the vector.
+function pick(v: [value.Value], at: value.Value) -> value.Value?
+    match at
+        .vector positions =>
+            out: [value.Value] @= []
+
+            for p in positions.items
+                out @ out.push(v[position_of(p, count: v.len())?])
+
+            return ok(.vector(items: out))
+        .number _ | .truth _ | .text _ | .matrix _ | .callable _ | .plot _ | .nothing =>
+            return ok(v[position_of(at, count: v.len())?])
+
+test "total, product and extreme: exact sums, a float among them, an empty vector"
+    v = value.of_numbers([scalar.of_int(1), scalar.of_int(2), scalar.of_int(3)])
+    assert total(v).must() == value.of_int(6)
+    assert product(v).must() == value.of_int(6)
+    assert extreme(v, greatest: true).must() == value.of_int(3)
+    assert extreme(.vector(items: []), greatest: false).is_err()
+    assert total(value.of_floats([0.5, 0.25])).must() == value.of_real(0.75)
+
+test "sorted, reversed and running_sums: order kept for ties, complex refused"
+    v = value.of_numbers([scalar.of_int(3), scalar.of_int(1), scalar.of_int(2)])
+    assert sorted(v).must() == value.of_numbers([scalar.of_int(1), scalar.of_int(2), scalar.of_int(3)])
+    assert reversed(v).must() == value.of_numbers([scalar.of_int(2), scalar.of_int(1), scalar.of_int(3)])
+    assert running_sums(v).must() == value.of_numbers([scalar.of_int(3), scalar.of_int(4), scalar.of_int(6)])
+    assert sorted(value.of_numbers([scalar.of_parts(re: 1.0, im: 1.0)])).is_err()
+
+test "span: exact ranges up and down, a float range ending within the slack"
+    assert span(first: value.of_int(1), step: value.of_int(1), last: value.of_int(4)).must() == value.of_numbers([scalar.of_int(1), scalar.of_int(2), scalar.of_int(3), scalar.of_int(4)])
+    assert span(first: value.of_int(5), step: value.of_int(-2), last: value.of_int(1)).must() == value.of_numbers([scalar.of_int(5), scalar.of_int(3), scalar.of_int(1)])
+    tenths = span(first: value.of_int(0), step: value.of_real(0.1), last: value.of_int(1)).must()
+    assert length_of(tenths).must() == value.of_int(11)
+    assert span(first: value.of_int(1), step: value.of_int(0), last: value.of_int(4)).is_err()
+    assert span(first: value.of_int(1), step: value.of_int(1), last: value.of_int(0)).must() == .vector(items: [])
+
+test "dot, norm and evenly: an exact length, the points of linspace"
+    assert norm(value.of_numbers([scalar.of_int(3), scalar.of_int(4)])).must() == value.of_int(5)
+    assert dot(u: value.of_numbers([scalar.of_int(1), scalar.of_int(2)]), v: value.of_numbers([scalar.of_int(3), scalar.of_int(4)])).must() == value.of_int(11)
+    assert evenly(from: value.of_int(0), to: value.of_int(1), count: value.of_int(5)).must() == value.of_floats([0.0, 0.25, 0.5, 0.75, 1.0])
+    assert evenly(from: value.of_int(0), to: value.of_int(1), count: value.of_int(1)).is_err()
+
+test "pick: from 1, a vector of positions, outside refused"
+    v = [value.of_int(10), value.of_int(20), value.of_int(30)]
+    assert pick(v, at: value.of_int(1)).must() == value.of_int(10)
+    assert pick(v, at: value.of_numbers([scalar.of_int(3), scalar.of_int(1)])).must() == .vector(items: [value.of_int(30), value.of_int(10)])
+    assert pick(v, at: value.of_int(4)).is_err()
+    assert pick(v, at: value.of_int(0)).is_err()
