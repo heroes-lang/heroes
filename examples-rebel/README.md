@@ -22,7 +22,7 @@ code is written. Everyone who writes a line of Rebel reads both first.
 
 ## A1. The packages
 
-A hundred and fifty packages, in layers. **A package may use any package of a layer below
+A hundred and fifty-one packages, in layers. **A package may use any package of a layer below
 its own**; the column "may use" names the packages its modules use, private modules and floors
 included, which the `rebel` suite reads from their `use` lines, so a `use` that names another
 package moves its row in the same change. There is no cycle.
@@ -70,6 +70,7 @@ package moves its row in the same change. There is no cycle.
 | 2 | `big` | integers and decimals of any size, exact | `numbers`, `random` |  |
 | 2 | `flags` | the arguments of a program: options, values, positionals, a generated help | `numbers`, `strings` |  |
 | 2 | `ini` | INI files read and written | `strings` |  |
+| 2 | `java_properties` | Java's properties files read and written as `java.util.Properties` reads and writes them: escapes, continued lines, comments, UTF-8 or ISO 8859-1 | `bytes`, `unicode` |  |
 | 2 | `semver` | versions (SemVer 2.0.0) compared, and ranges as Cargo reads them | `strings` |  |
 | 2 | `diff` | the differences of two lists or texts, as values and as unified output, and their similarity | `lists`, `strings`, `unicode` |  |
 | 2 | `pem` | PEM blocks read and written, their labels and headers | `bytes`, `strings` |  |
@@ -150,7 +151,7 @@ package moves its row in the same change. There is no cycle.
 | 5 | `fs/watch` | a file or a folder watched, and told what changed | `fs`, `io`, `net`, `path`, `poll`, `time` | `hero_watch.h` |
 | 5 | `sql/odbc` | any database the system's ODBC manager reaches, through the one `sql` API | `bytes`, `os`, `sql`, `time` | `hero_odbc.h` |
 | 5 | `ldap` | an LDAP client: bind, search, change, over TLS | `asn1`, `bytes`, `io`, `net`, `numbers`, `os`, `strings`, `threads`, `time`, `tls`, `url` |  |
-| 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
+| 5 | `config` | settings read in layers (files, the environment, flags, `.env` files) with a precedence, read by path | `flags`, `ini`, `java_properties`, `json`, `numbers`, `os`, `path`, `strings`, `time`, `toml`, `yaml` |  |
 | 5 | `amqp` | an AMQP 0-9-1 client (RabbitMQ): channels, exchanges, queues, publish and consume, acknowledgements | `bytes`, `io`, `math`, `net`, `numbers`, `os`, `poll`, `strings`, `time`, `tls`, `url` |  |
 | 5 | `kafka` | a Kafka client: produce, fetch, offsets and consumer groups over the wire protocol | `bytes`, `compress`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `threads`, `time`, `tls`, `url` |  |
 | 5 | `mongodb` | a MongoDB client over its wire protocol: SCRAM, CRUD, cursors, aggregation, transactions | `bson`, `bytes`, `crypto`, `dns`, `hash`, `io`, `net`, `numbers`, `os`, `scram`, `strings`, `time`, `tls`, `url`, `uuid` |  |

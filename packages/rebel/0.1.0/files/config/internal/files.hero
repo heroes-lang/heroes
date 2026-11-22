@@ -19,12 +19,13 @@ constant FILE_NOT_FOUND: str
 
 # The extensions a settings file is looked for with, in order.
 constant EXTENSIONS: str
-    ".json .toml .yaml .yml .ini"
+    ".json .toml .yaml .yml .ini .properties"
 
-# The format the extension of `file` names: `json`, `toml`, `yaml` or `ini`.
+# The format the extension of `file` names: `json`, `toml`, `yaml`, `ini` or
+# `properties`.
 # Fails `invalid` where it names none, or there is none.
 function format_word(file: str) -> str?
-    named = "\"" + file + "\" names no format of settings by its extension: .json, .toml, .yaml, .yml or .ini"
+    named = "\"" + file + "\" names no format of settings by its extension: .json, .toml, .yaml, .yml, .ini or .properties"
 
     match path.ext(file)
         .err _ => return fail(code: INVALID, msg: named)
@@ -42,6 +43,9 @@ function format_word(file: str) -> str?
 
             if word == ".ini"
                 return ok("ini")
+
+            if word == ".properties"
+                return ok("properties")
             return fail(code: INVALID, msg: named)
 
 # `name` in the folder `dir`, "" for the working folder.
@@ -109,7 +113,7 @@ test "format_word: each extension, any case, none, another"
     assert format_word("a/b.json").must() == "json"
     assert format_word("c.TOML").must() == "toml"
     assert format_word("c.yml").must() == "yaml" && format_word("c.yaml").must() == "yaml"
-    assert format_word("x.ini").must() == "ini"
+    assert format_word("x.ini").must() == "ini" && format_word("x.Properties").must() == "properties"
     assert format_word("x").is_err() && format_word("x.env").is_err() && format_word(".json").is_err()
 
 test "relative_to: no file, an absolute value, a relative one beside its file"
