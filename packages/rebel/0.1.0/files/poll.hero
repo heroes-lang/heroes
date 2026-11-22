@@ -22,10 +22,8 @@
 # `stopped` and `failed` (README § A4).
 #
 # A signal the program counts (`os.count_signal`) is waited on beside the rest
-# with `add_signals`.
-#
-# Not written yet, each a `pending` block of its ledger: a wait woken by another
-# thread of the program, for a reason of its own.
+# with `add_signals`, and a mailbox another thread sends to with
+# `add_mailbox`.
 
 use io
 use net
@@ -33,6 +31,7 @@ use os
 use poll/hero_poll
 use poll/internal/failure
 use poll/internal/ready
+use poll/internal/samples
 use time
 
 ## Codes
@@ -298,6 +297,30 @@ function add_signals(set: Set) -> i64?
             why: "this system's wait takes sockets alone, and a counted Ctrl-C ends `process.wait_or_signal` there"
         )
     return failure.key(answer: answer, asked: asked)
+
+# Adds a mailbox to the set, so a thread waiting on sockets, streams and
+# timers is woken by a value another thread sends: told `readable` while a
+# receive on it would not wait, because it holds a value, is closed or answers
+# `stopped`, and told again at every wait until the program takes what it
+# holds. Nothing rings it but the send, the close and the stop themselves, so
+# no value waits for a wake its sender forgot. The loop receives with
+# `within_ms: 0`, as many as it wants per event: what stays is told again.
+#
+# - `set`: the set.
+# - `m`: the mailbox; the set holds no copy of it, so the entry is told
+#   `hangup` once the program drops the mailbox's last copy.
+#
+# A mailbox stands in a set twice, and in many sets, each entry its own.
+#
+# Fails `closed` where the set is closed, `limit` where it holds the most it
+# was made for, and `failed` where the system gave the set no doorbell.
+# `change` refuses the entry `invalid`: it waits to read alone. See also
+# `remove`.
+function add_mailbox<T>(set: Set, m: (mailbox T)) -> i64?
+    return failure.key(
+        answer: hero_poll.add_mailbox(set.handle, number: m.number()),
+        asked: "adding a mailbox to a set"
+    )
 
 # Sets the timer `key` again from now, as `add_timer` sets one.
 #
@@ -603,4 +626,62 @@ test "wait_forever: ended by the one timer the set holds"
     s @= make(1).must()
     key = add_timer(s, first: time.nanoseconds(5000000), every: time.nanoseconds(0)).must()
     assert wait_forever(s).must()[0].key == key
+    close(@s).must()
+
+# A mailbox told while it holds a value, again until the value is taken, and
+# not before it came; closed, it stays told; its interest is fixed, and a
+# second entry, in this set or another, is its own.
+test "add_mailbox: told while a value waits and until it is taken, told once closed, its interest fixed"
+    s @= make(3).must()
+    other @= make(1).must()
+    m: (mailbox i64) = mailbox()
+    key = add_mailbox(s, m).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    m.send(5).must()
+
+    for _ in range(from: 0, to: 2)
+        events = wait(s, limit: time.nanoseconds(0)).must()
+        assert events.len() == 1
+        assert events[0].key == key && events[0].readable && !events[0].hangup && events[0].due == 0
+
+    there = add_mailbox(other, m).must()
+    assert wait(other, limit: time.nanoseconds(0)).must()[0].key == there
+    assert m.receive(within_ms: 0).must() == 5
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+
+    match change(s, key: key, interest: .write)
+        .ok _  => assert false
+        .err e => assert e.code == INVALID
+
+    second = add_mailbox(s, m).must()
+    assert second != key
+    m.close()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 2
+    remove(s, key: second).must()
+    assert wait(s, limit: time.nanoseconds(0)).must()[0].key == key
+    close(@s).must()
+    close(@other).must()
+
+# A mailbox whose last copy is dropped while it stands in a set: its number
+# names nothing, and the entry is told `hangup` until it is removed.
+test "add_mailbox: the mailbox's last copy dropped, its entry is told hangup"
+    s @= make(1).must()
+    key = samples.dropped_mailbox(s.handle)
+    assert key > 0
+    events = wait(s, limit: time.nanoseconds(0)).must()
+    assert events.len() == 1
+    assert events[0].key == key && events[0].hangup && events[0].readable
+    remove(s, key: key).must()
+    assert wait(s, limit: time.nanoseconds(0)).must().len() == 0
+    close(@s).must()
+
+# A value sent from another thread ends a wait that has no limit.
+test "add_mailbox: a send from another thread ends a wait with no limit"
+    s @= make(1).must()
+    m: (mailbox i64) = mailbox()
+    key = add_mailbox(s, m).must()
+    t = spawn(samples.sent_later, m).must()
+    assert wait_forever(s).must()[0].key == key
+    assert m.receive(within_ms: 0).must() == 42
+    assert t.wait() == 0
     close(@s).must()

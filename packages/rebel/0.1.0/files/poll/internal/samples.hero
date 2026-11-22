@@ -1,0 +1,23 @@
+# What the tests of `poll` hand to a thread or need dropped behind them: a
+# thread body must be a top-level function, and a mailbox's last copy goes
+# with the function that made it. The face declares nothing a program does
+# not write, so they stand here; no function here is part of the package.
+
+use poll/hero_poll
+use time
+
+# Sends 42 to `m` once its caller has had time to wait, and answers 0.
+#
+# - `m`: the mailbox, a copy of the waiting thread's.
+function sent_later(m: (mailbox i64)) -> i64
+    time.sleep(time.nanoseconds(20000000))
+    m.send(42).must()
+    return 0
+
+# Adds a mailbox made here to `set` and answers the entry's key, the
+# mailbox's last copy dropped as this returns.
+#
+# - `set`: the floor's set, open.
+function dropped_mailbox(set: hero_poll.Set) -> i64
+    m: (mailbox i64) = mailbox()
+    return hero_poll.add_mailbox(set, number: m.number())

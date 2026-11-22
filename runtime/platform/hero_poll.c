@@ -42,6 +42,24 @@
  * beside its entries: every wait of the process wakes at once, and every
  * later one finds it ready, as the stop is never taken back.
  *
+ * THE DOORBELL, AND A MAILBOX IN A SET (panel 256's R7 and R8, provisional).
+ * A mailbox entry stands on no descriptor: it is the number `m.number()`
+ * gave, and the runtime answers whether a receive on it would wait
+ * (`hero_layer_mail.h`). Every wait asks each mailbox of its set before it
+ * asks the system, so the entry is level as every other is. To end a wait
+ * already in the system, the set registers a watch on each mailbox, which the
+ * runtime rings, under the queue's lock, when the queue goes from empty to one
+ * value, at its close, at the stop and at its end; the ring rings the set's
+ * doorbell and takes no lock: an `EVFILT_USER` event of the set's own `kqueue`
+ * on Darwin and the BSDs, an `eventfd` in its `epoll` on Linux, a pipe on the
+ * array's POSIX systems, and on Windows a loopback datagram socket that hears
+ * itself alone. A wait told the doorbell empties it and asks the mailboxes
+ * again before it blocks, so a ring meanwhile is never lost. The doorbell is
+ * made at the set's first mailbox (Darwin's at its making, as it costs no
+ * descriptor) and closed at its release, after every watch is taken away.
+ * A WAIT THAT MUST NOT BLOCK RINGS ITS OWN DOORBELL on `kqueue`, in the one
+ * call: Darwin's `kevent` with a zero timeout that finds nothing ready costs
+ * tens of microseconds, one that finds an event a fraction of one.
  * HANGUP, BY SYSTEM: Darwin tells it as `EV_EOF` on the read or the write
  * filter, once the peer has closed its side; Linux as `EPOLLRDHUP` (the peer
  * closed its side) or `EPOLLHUP` (both are closed); Windows as `POLLHUP`. A
@@ -53,6 +71,7 @@
 
 /* The layer's one list of handle tags, after the member's own header. */
 #include "hero_handle_tag.h"
+#include "hero_layer_mail.h"
 #include "hero_layer_signal.h"
 #include "hero_stream_net.h"
 
@@ -85,6 +104,7 @@ typedef WSAPOLLFD hero_poll_fd;
  * other POSIX system `poll` over the set's array, as Windows waits. */
 #if defined(__linux__)
 #include <sys/epoll.h>
+#include <sys/eventfd.h>
 #define HERO_POLL_EPOLL 1
 #elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
 #include <sys/event.h>
@@ -132,6 +152,19 @@ _Static_assert(sizeof(void *) == 8 && sizeof(uintptr_t) == 8, "a set's handle ca
 /* The signals the program counts: a copy of the signal door's descriptor,
  * the entry's own, closed when it leaves the set (POSIX). */
 #define HERO_POLL_ON_SIGNALS 5
+/* A mailbox the runtime knows by number, watched (`hero_layer_mail.h`). */
+#define HERO_POLL_ON_MAILBOX 6
+
+/* What the system tells of the set's doorbell, which no key is: a key is
+ * `(life << 17) | (index + 1)` with a life below the tag, never all ones. */
+#define HERO_POLL_DOOR_KEY UINT64_MAX
+/* The doorbell's place in an array's answer, which no entry's index plus one
+ * reaches (65,536 entries). */
+#define HERO_POLL_DOOR_PLACE UINT32_MAX
+#if defined(HERO_POLL_KQUEUE)
+/* The doorbell's identifier among the set's `EVFILT_USER` events. */
+#define HERO_POLL_DOOR_IDENT 1
+#endif
 
 typedef struct {
     /* The life the entry holds or last held, which its key names. */
@@ -150,6 +183,8 @@ typedef struct {
      * its period in nanoseconds, 0 for once. */
     int64_t due;
     int64_t every;
+    /* A mailbox's number, -1 for none or once its watch is taken away. */
+    int64_t number;
     /* The index plus one of the next entry given back in the set, 0 none. */
     uint32_t next;
     /* The index plus one of the next and the previous entry of the set's list
@@ -181,9 +216,18 @@ typedef struct {
     uint32_t fresh;
     uint32_t given_back;
     uint32_t count;
-    /* The index plus one of the first timer and the first file, 0 none. */
+    /* The index plus one of the first timer, file and mailbox, 0 none. */
     uint32_t timers;
     uint32_t files;
+    uint32_t mailboxes;
+    /* The doorbell a mailbox's watch rings (THE DOORBELL, above), made at the
+     * set's first mailbox and kept to its end: an `eventfd` on Linux (both
+     * ends the one descriptor), a pipe on the array's POSIX systems, a
+     * loopback socket connected to itself on Windows; -1 for none, and always
+     * on Darwin and the BSDs, whose doorbell is an `EVFILT_USER` event of the
+     * set's own queue. */
+    int64_t door_in;
+    int64_t door_out;
     uint64_t rounds;
     /* The `kqueue` or the `epoll` of the set, -1 on the array's systems. */
     int queue;
@@ -207,7 +251,8 @@ static bool hero_poll_up_done;
 /* What a wait hands the system: each set's part is its range, filled by the
  * one wait the set allows, its last place the stop's bell. */
 static hero_poll_fd hero_poll_array[HERO_POLL_ENTRIES];
-/* The entry each place of the array stands for, index plus one. */
+/* The entry each place of the array stands for, index plus one, 0 for the
+ * stop's bell and `HERO_POLL_DOOR_PLACE` for the set's doorbell. */
 static uint32_t hero_poll_array_entry[HERO_POLL_ENTRIES];
 #endif
 
@@ -436,6 +481,157 @@ static void hero_poll_up(void) {
     }
 }
 
+/* -- the doorbell a mailbox rings (panel 256's R7 and R8, provisional) ----- */
+
+/* THE RING, called by the runtime under one queue's lock or the queues' list
+ * lock (`hero_layer_mail.h`): it takes no lock, does not wait, allocates
+ * nothing, and reads only what the set held before its first watch was
+ * registered. What it writes to stays open until every watch of the set is
+ * taken away (`hero_poll_release`), so a ring never reaches a descriptor the
+ * system has given to another file. A ring that finds the doorbell full has
+ * nothing to add: it is ready already. */
+static void hero_poll_ring(void *ctx) {
+    const hero_poll_slot *slot = (const hero_poll_slot *)ctx;
+#if defined(HERO_POLL_KQUEUE)
+    struct kevent trigger;
+
+    EV_SET(&trigger, HERO_POLL_DOOR_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, (void *)(uintptr_t)HERO_POLL_DOOR_KEY);
+    (void)kevent(slot->queue, &trigger, 1, NULL, 0, NULL);
+#elif defined(_WIN32)
+    (void)send((SOCKET)(uint64_t)slot->door_out, "\1", 1, 0);
+#elif defined(HERO_POLL_EPOLL)
+    uint64_t one = 1;
+    ssize_t wrote = write((int)slot->door_out, &one, sizeof one);
+
+    (void)wrote;
+#else
+    char one = 1;
+    ssize_t wrote = write((int)slot->door_out, &one, 1);
+
+    (void)wrote;
+#endif
+}
+
+#if defined(_WIN32)
+/* A datagram socket on the loopback that hears itself alone: bound at a port
+ * the system chooses, the address held exclusively so no other socket binds
+ * it again, and CONNECTED TO ITSELF, so Winsock drops a datagram from any
+ * other address, another process's among them; non-blocking and never
+ * inherited. `INVALID_SOCKET` where any of it is refused, nothing left made. */
+static SOCKET hero_poll_loopback(void) {
+    SOCKET s = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
+    if (s == INVALID_SOCKET) {
+        return INVALID_SOCKET;
+    }
+    struct sockaddr_in at;
+    int size = (int)sizeof at;
+    u_long on = 1;
+    BOOL alone = TRUE;
+
+    memset(&at, 0, sizeof at);
+    at.sin_family = AF_INET;
+    at.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    at.sin_port = 0;
+    /* `FIONBIO` is an unsigned bit pattern the call takes as its `long`. */
+    if (setsockopt(s, SOL_SOCKET, SO_EXCLUSIVEADDRUSE, (const char *)&alone, (int)sizeof alone) != 0 ||
+        bind(s, (const struct sockaddr *)&at, (int)sizeof at) != 0 || getsockname(s, (struct sockaddr *)&at, &size) != 0 ||
+        connect(s, (const struct sockaddr *)&at, (int)sizeof at) != 0 || ioctlsocket(s, (long)FIONBIO, &on) != 0 ||
+        !SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0)) {
+        (void)closesocket(s);
+        return INVALID_SOCKET;
+    }
+    return s;
+}
+#endif
+
+#if !defined(HERO_POLL_KQUEUE)
+/* A doorbell made for a set, outside the lock: its reading and its writing
+ * end. False with the system's number where it is refused. */
+static bool hero_poll_door_made(int64_t *in, int64_t *out, int64_t *code) {
+#if defined(_WIN32)
+    SOCKET s = hero_poll_loopback();
+
+    if (s == INVALID_SOCKET) {
+        *code = hero_poll_os_code();
+        return false;
+    }
+    *in = (int64_t)(uint64_t)s;
+    *out = *in;
+    return true;
+#elif defined(HERO_POLL_EPOLL)
+    int fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
+
+    if (fd < 0) {
+        *code = hero_poll_os_code();
+        return false;
+    }
+    *in = fd;
+    *out = fd;
+    return true;
+#else
+    int ends[2];
+
+    if (pipe(ends) != 0) {
+        *code = hero_poll_os_code();
+        return false;
+    }
+    for (int i = 0; i < 2; i += 1) {
+        int flags = fcntl(ends[i], F_GETFL);
+
+        if (fcntl(ends[i], F_SETFD, FD_CLOEXEC) != 0 || flags < 0 || fcntl(ends[i], F_SETFL, flags | O_NONBLOCK) != 0) {
+            *code = hero_poll_os_code();
+            (void)close(ends[0]);
+            (void)close(ends[1]);
+            return false;
+        }
+    }
+    *in = ends[0];
+    *out = ends[1];
+    return true;
+#endif
+}
+
+/* The doorbell's ends closed, once no watch can ring it. */
+static void hero_poll_door_close(int64_t in, int64_t out) {
+#if defined(_WIN32)
+    (void)out;
+    if (in >= 0) {
+        (void)closesocket((SOCKET)(uint64_t)in);
+    }
+#else
+    if (in >= 0) {
+        (void)close((int)in);
+    }
+    if (out >= 0 && out != in) {
+        (void)close((int)out);
+    }
+#endif
+}
+
+/* The doorbell emptied once the system told it, so it is told again for a
+ * later ring alone. A ring meanwhile is never lost: the wait asks every
+ * mailbox after this, before it blocks again. */
+static void hero_poll_door_drain(int64_t in) {
+#if defined(_WIN32)
+    char got[16];
+
+    while (recv((SOCKET)(uint64_t)in, got, (int)sizeof got, 0) > 0) {
+    }
+#elif defined(HERO_POLL_EPOLL)
+    uint64_t rings = 0;
+    ssize_t got = read((int)in, &rings, sizeof rings);
+
+    (void)got;
+#else
+    char got[64];
+
+    while (read((int)in, got, sizeof got) > 0) {
+    }
+#endif
+}
+#endif
+
 /* -- the tables ------------------------------------------------------------ */
 
 static hero_poll_set *hero_poll_handle(uint32_t index, uint64_t life) {
@@ -492,6 +688,8 @@ static void hero_poll_slot_free(hero_poll_slot *slot) {
     slot->waiting = false;
     slot->span = 0;
     slot->queue = -1;
+    slot->door_in = -1;
+    slot->door_out = -1;
     if (slot->life < HERO_POLL_LIFE_MOST) {
         slot->next = hero_poll_given_back;
         hero_poll_given_back = (uint32_t)(slot - hero_poll_sets) + 1;
@@ -638,6 +836,18 @@ static int hero_poll_queue(int64_t *code) {
             return -1;
         }
     }
+#if defined(HERO_POLL_KQUEUE)
+    /* The doorbell, an event of the queue's own that a ring triggers and a
+     * wait's taking of it clears: no descriptor, so every set has one. */
+    struct kevent door;
+
+    EV_SET(&door, HERO_POLL_DOOR_IDENT, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, (void *)(uintptr_t)HERO_POLL_DOOR_KEY);
+    if (kevent(q, &door, 1, NULL, 0, NULL) != 0) {
+        *code = hero_poll_os_code();
+        (void)close(q);
+        return -1;
+    }
+#endif
     return q;
 }
 #endif
@@ -696,6 +906,9 @@ hero_poll_set *hero_poll_make(int64_t most) {
         slot->count = 0;
         slot->timers = 0;
         slot->files = 0;
+        slot->mailboxes = 0;
+        slot->door_in = -1;
+        slot->door_out = -1;
         slot->rounds = 0;
         slot->queue = queue;
         slot->next = 0;
@@ -718,7 +931,7 @@ hero_poll_set *hero_poll_make(int64_t most) {
  * where it is a timer or a file. Its key, or -1 with the kind set; nothing of
  * the caller's hold is let go here, which the caller does on -1. */
 static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned interest, int64_t fd, int64_t net_hold, hero_stream *stream,
-                                     int64_t due, int64_t every) {
+                                     int64_t due, int64_t every, int64_t number) {
     int64_t kind = HERO_POLL_OK;
     int64_t os = 0;
     int64_t key = -1;
@@ -752,6 +965,7 @@ static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned in
         e->stream = stream;
         e->due = due;
         e->every = every;
+        e->number = number;
         e->next = 0;
         e->after = 0;
         e->before = 0;
@@ -775,6 +989,8 @@ static int64_t hero_poll_enter_entry(hero_poll_set *set, uint8_t on, unsigned in
                 hero_poll_link(&slot->timers, e);
             } else if (on == HERO_POLL_ON_FILE) {
                 hero_poll_link(&slot->files, e);
+            } else if (on == HERO_POLL_ON_MAILBOX) {
+                hero_poll_link(&slot->mailboxes, e);
             }
         }
     }
@@ -804,7 +1020,7 @@ int64_t hero_poll_add_socket(hero_poll_set *set, hero_net_socket *s, int64_t int
         hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
         return -1;
     }
-    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0);
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0, -1);
 
     if (key < 0) {
         int64_t kind = hero_poll_kind;
@@ -828,7 +1044,7 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
         return -1;
     }
     if (kind == HERO_STREAM_KIND_FILE) {
-        return hero_poll_enter_entry(set, HERO_POLL_ON_FILE, (unsigned)interest, -1, -1, NULL, -1, 0);
+        return hero_poll_enter_entry(set, HERO_POLL_ON_FILE, (unsigned)interest, -1, -1, NULL, -1, 0, -1);
     }
     /* A socket's stream `hero_stream_net.h` made; one of another member's
      * that says it is a socket (an ipc channel, a TLS session) is
@@ -852,7 +1068,7 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
             hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
             return -1;
         }
-        int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0);
+        int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SOCKET, (unsigned)interest, fd, hold, NULL, -1, 0, -1);
 
         if (key < 0) {
             int64_t failed = hero_poll_kind;
@@ -878,7 +1094,7 @@ int64_t hero_poll_add_stream(hero_poll_set *set, hero_stream *s, int64_t interes
         hero_poll_fail(hero_stream_last_error() == HERO_STREAM_NOT_OPEN ? HERO_POLL_NOT_OPEN : HERO_POLL_UNSUPPORTED, 0);
         return -1;
     }
-    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_STREAM, (unsigned)interest, fd, -1, s, -1, 0);
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_STREAM, (unsigned)interest, fd, -1, s, -1, 0, -1);
 
     if (key < 0) {
         int64_t failed = hero_poll_kind;
@@ -902,7 +1118,7 @@ int64_t hero_poll_add_timer(hero_poll_set *set, int64_t first_ns, int64_t every_
         hero_poll_fail(HERO_POLL_OTHER, 0);
         return -1;
     }
-    return hero_poll_enter_entry(set, HERO_POLL_ON_TIMER, 0, -1, -1, NULL, hero_poll_later(now, first_ns), every_ns);
+    return hero_poll_enter_entry(set, HERO_POLL_ON_TIMER, 0, -1, -1, NULL, hero_poll_later(now, first_ns), every_ns, -1);
 }
 
 int64_t hero_poll_add_signals(hero_poll_set *set) {
@@ -927,13 +1143,88 @@ int64_t hero_poll_add_signals(hero_poll_set *set) {
         hero_poll_fail(hero_poll_kind_of(code), code);
         return -1;
     }
-    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SIGNALS, HERO_POLL_READ, copy, -1, NULL, -1, 0);
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_SIGNALS, HERO_POLL_READ, copy, -1, NULL, -1, 0, -1);
 
     if (key < 0) {
         (void)close(copy);
     }
     return key;
 #endif
+}
+
+int64_t hero_poll_add_mailbox(hero_poll_set *set, int64_t number) {
+    if (hero_mail_ready(number) < 0) {
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    int64_t kind = HERO_POLL_OK;
+    hero_poll_slot *slot = NULL;
+    bool door = false;
+
+    hero_poll_enter();
+    slot = hero_poll_find(set);
+    if (slot == NULL) {
+        kind = HERO_POLL_NOT_OPEN;
+    } else if (slot->waiting) {
+        kind = HERO_POLL_INVALID;
+    } else {
+        door = slot->door_in < 0;
+    }
+    hero_poll_leave();
+
+    if (kind != HERO_POLL_OK) {
+        hero_poll_fail(kind, 0);
+        return -1;
+    }
+#if defined(HERO_POLL_KQUEUE)
+    (void)door;
+#else
+    if (door) {
+        int64_t in = -1;
+        int64_t out = -1;
+        int64_t code = 0;
+
+        if (!hero_poll_door_made(&in, &out, &code)) {
+            hero_poll_fail(hero_poll_kind_of(code) == HERO_POLL_LIMIT ? HERO_POLL_LIMIT : HERO_POLL_OTHER, code);
+            return -1;
+        }
+        bool kept = false;
+
+        hero_poll_enter();
+        if (hero_poll_find(set) == slot && slot->door_in < 0 && !slot->waiting) {
+#if defined(HERO_POLL_EPOLL)
+            code = hero_poll_watch(slot->queue, in, HERO_POLL_READ, 0, HERO_POLL_DOOR_KEY);
+#endif
+            if (code == 0) {
+                slot->door_in = in;
+                slot->door_out = out;
+                kept = true;
+            }
+        }
+        hero_poll_leave();
+
+        if (!kept) {
+            hero_poll_door_close(in, out);
+            if (code != 0) {
+                hero_poll_fail(hero_poll_kind_of(code), code);
+                return -1;
+            }
+        }
+    }
+#endif
+    int64_t key = hero_poll_enter_entry(set, HERO_POLL_ON_MAILBOX, HERO_POLL_READ, -1, -1, NULL, -1, 0, number);
+
+    if (key < 0) {
+        return -1;
+    }
+    /* Watched once it stands: a value sent before is found by the wait's own
+     * question, which comes before any block. */
+    if (hero_mail_watch(number, hero_poll_ring, slot) != 0) {
+        (void)hero_poll_remove(set, key);
+        hero_poll_fail(HERO_POLL_NOT_OPEN, 0);
+        return -1;
+    }
+    return key;
 }
 
 int64_t hero_poll_set_timer(hero_poll_set *set, int64_t key, int64_t first_ns, int64_t every_ns) {
@@ -985,7 +1276,7 @@ int64_t hero_poll_change(hero_poll_set *set, int64_t key, int64_t interest) {
         kind = HERO_POLL_INVALID;
     } else if (e == NULL) {
         kind = HERO_POLL_NOT_FOUND;
-    } else if (e->on == HERO_POLL_ON_TIMER || e->on == HERO_POLL_ON_SIGNALS || !hero_poll_interest_ok(interest)) {
+    } else if (e->on == HERO_POLL_ON_TIMER || e->on == HERO_POLL_ON_SIGNALS || e->on == HERO_POLL_ON_MAILBOX || !hero_poll_interest_ok(interest)) {
         kind = HERO_POLL_INVALID;
     } else {
         if (e->on == HERO_POLL_ON_SOCKET || e->on == HERO_POLL_ON_STREAM) {
@@ -1013,6 +1304,9 @@ typedef struct {
     hero_stream *stream;
     /* The signals entry's own copy of the door's descriptor, -1 for none. */
     int64_t copy;
+    /* A mailbox entry's number and the set its watch rings, -1 for none. */
+    int64_t number;
+    hero_poll_slot *watched;
 } hero_poll_held;
 
 static void hero_poll_let_go(hero_poll_held held) {
@@ -1027,22 +1321,29 @@ static void hero_poll_let_go(hero_poll_held held) {
         (void)close((int)held.copy);
     }
 #endif
+    if (held.number >= 0) {
+        /* -1 where the mailbox has gone, its watches with it. */
+        (void)hero_mail_unwatch(held.number, hero_poll_ring, held.watched);
+    }
 }
 
 /* The entry taken out of its set's lists and given back, what it held
  * answered. Under the lock; the system forgets the descriptor separately. */
 static hero_poll_held hero_poll_entry_free(hero_poll_slot *slot, hero_poll_entry *e) {
-    hero_poll_held held = { e->net_hold, e->stream, e->on == HERO_POLL_ON_SIGNALS ? e->fd : -1 };
+    hero_poll_held held = { e->net_hold, e->stream, e->on == HERO_POLL_ON_SIGNALS ? e->fd : -1, e->on == HERO_POLL_ON_MAILBOX ? e->number : -1, slot };
 
     if (e->on == HERO_POLL_ON_TIMER) {
         hero_poll_unlink(&slot->timers, e);
     } else if (e->on == HERO_POLL_ON_FILE) {
         hero_poll_unlink(&slot->files, e);
+    } else if (e->on == HERO_POLL_ON_MAILBOX) {
+        hero_poll_unlink(&slot->mailboxes, e);
     }
     e->on = HERO_POLL_ON_NOTHING;
     e->net_hold = -1;
     e->stream = NULL;
     e->fd = -1;
+    e->number = -1;
     slot->count -= 1;
     if (e->life < HERO_POLL_LIFE_MOST) {
         e->next = slot->given_back;
@@ -1053,7 +1354,7 @@ static hero_poll_held hero_poll_entry_free(hero_poll_slot *slot, hero_poll_entry
 
 int64_t hero_poll_remove(hero_poll_set *set, int64_t key) {
     int64_t kind = HERO_POLL_OK;
-    hero_poll_held held = { -1, NULL, -1 };
+    hero_poll_held held = { -1, NULL, -1, -1, NULL };
 
     hero_poll_enter();
     hero_poll_slot *slot = hero_poll_find(set);
@@ -1103,13 +1404,24 @@ int64_t hero_poll_count(hero_poll_set *set) {
  * then each entry given back and let go, then the slot. The set is closing,
  * so no other call finds it meanwhile. */
 static void hero_poll_release(hero_poll_slot *slot) {
+    /* Every watch taken away first: once the last is, no ring reaches the
+     * queue or the doorbell, which may then close. */
+    for (uint32_t at = slot->mailboxes; at != 0; at = hero_poll_entries[at - 1].after) {
+        hero_poll_entry *e = &hero_poll_entries[at - 1];
+
+        (void)hero_mail_unwatch(e->number, hero_poll_ring, slot);
+        e->number = -1;
+    }
 #if !defined(HERO_POLL_ARRAY)
     if (slot->queue >= 0) {
         (void)close(slot->queue);
     }
 #endif
+#if !defined(HERO_POLL_KQUEUE)
+    hero_poll_door_close(slot->door_in, slot->door_out);
+#endif
     for (uint32_t i = 0; i < slot->fresh; i += 1) {
-        hero_poll_held held = { -1, NULL, -1 };
+        hero_poll_held held = { -1, NULL, -1, -1, NULL };
 
         hero_poll_enter();
         hero_poll_entry *e = &hero_poll_entries[slot->base + i];
@@ -1242,6 +1554,25 @@ static uint64_t hero_poll_due(hero_poll_slot *slot, int64_t now, int64_t *events
     return written;
 }
 
+/* Each mailbox of the set asked, after the timers and the files and outside
+ * the lock: told READ while a receive on it would not wait, and HANGUP beside
+ * it once its last copy is gone; one event each, as many as there is room
+ * for, the rest told at the next wait, since each is asked again there. The
+ * set's entries stay as they are while it waits (ONE CALL AT A TIME). */
+static uint64_t hero_poll_mailboxes_told(uint32_t first, int64_t *events, uint64_t room, uint64_t written) {
+    for (uint32_t at = first; at != 0 && written < room; at = hero_poll_entries[at - 1].after) {
+        const hero_poll_entry *e = &hero_poll_entries[at - 1];
+        int64_t ready = hero_mail_ready(e->number);
+
+        if (ready == 0) {
+            continue;
+        }
+        hero_poll_tell(events, written, hero_poll_key(e), ready > 0 ? HERO_POLL_READ : HERO_POLL_READ | HERO_POLL_HANGUP, 0);
+        written += 1;
+    }
+    return written;
+}
+
 /* How long the system may wait, in milliseconds, rounded up so no wait ends
  * before its time: none past `ends` or the next timer, at most a chunk, and a
  * slice where the stop cannot be heard; -1 for no limit. */
@@ -1289,6 +1620,21 @@ static uint32_t hero_poll_fill(const hero_poll_slot *slot) {
 #endif
         p->events = (short)(((e->interest & HERO_POLL_READ) != 0 ? HERO_POLL_IN : 0) | ((e->interest & HERO_POLL_WRITE) != 0 ? HERO_POLL_OUT : 0));
         hero_poll_array_entry[slot->base + n] = slot->base + i + 1;
+        n += 1;
+    }
+    /* The doorbell while a mailbox stands: that entry takes no place, so the
+     * set's range, its most entries and the bell, holds the doorbell too. */
+    if (slot->mailboxes != 0 && slot->door_in >= 0) {
+        hero_poll_fd *p = &hero_poll_array[slot->base + n];
+
+        memset(p, 0, sizeof *p);
+#if defined(_WIN32)
+        p->fd = (SOCKET)(uint64_t)slot->door_in;
+#else
+        p->fd = (int)slot->door_in;
+#endif
+        p->events = HERO_POLL_IN;
+        hero_poll_array_entry[slot->base + n] = HERO_POLL_DOOR_PLACE;
         n += 1;
     }
 #if defined(_WIN32)
@@ -1345,6 +1691,8 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
         uint64_t written = 0;
         int64_t now = hero_poll_now();
         int queue = -1;
+        uint32_t mailboxes = 0;
+        int64_t door = -1;
 #if defined(HERO_POLL_ARRAY)
         uint32_t places = 0;
         uint32_t base = 0;
@@ -1362,6 +1710,8 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             slot->busy += 1;
             written = hero_poll_due(slot, now, events, room, &next);
             queue = slot->queue;
+            mailboxes = slot->mailboxes;
+            door = slot->door_in;
 #if defined(HERO_POLL_ARRAY)
             places = hero_poll_fill(slot);
             base = slot->base;
@@ -1373,6 +1723,10 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             hero_poll_fail(kind, 0);
             return -1;
         }
+        /* Asked before the system is: a value sent after this rings the
+         * doorbell, which ends the system's wait at once. */
+        written = hero_poll_mailboxes_told(mailboxes, events, room, written);
+        (void)door;
         int ms = written > 0 || (ends >= 0 && now >= ends) ? 0 : hero_poll_ms(now, ends, next, sliced);
         bool stopped = false;
         int64_t failed = 0;
@@ -1382,7 +1736,20 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
             struct kevent got[64];
             uint64_t want = room - written < 64 ? room - written : 64;
             struct timespec wait = { (time_t)(ms / 1000), (long)(ms % 1000) * 1000000L };
-            int n = kevent(queue, NULL, 0, got, (int)want, &wait);
+            /* A wait that must not block rings the set's own doorbell in the
+             * same call: Darwin's `kevent` that finds nothing ready with a
+             * zero timeout takes tens of microseconds, and one that finds an
+             * event a fraction of one (panel 256, the ffi-pragmatist's
+             * `kev0.c`), so an answer found before the system is asked never
+             * pays the empty call. */
+            struct kevent trigger;
+            int changes = 0;
+
+            if (ms == 0) {
+                EV_SET(&trigger, HERO_POLL_DOOR_IDENT, EVFILT_USER, 0, NOTE_TRIGGER, 0, (void *)(uintptr_t)HERO_POLL_DOOR_KEY);
+                changes = 1;
+            }
+            int n = kevent(queue, changes > 0 ? &trigger : NULL, changes, got, (int)want, &wait);
 
             if (n < 0 && errno != EINTR) {
                 failed = hero_poll_os_code();
@@ -1395,6 +1762,10 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
 
                 if (key == 0) {
                     stopped = true;
+                    continue;
+                }
+                if (key == HERO_POLL_DOOR_KEY || got[i].filter == EVFILT_USER) {
+                    /* Rung: the mailboxes are asked again before any block. */
                     continue;
                 }
                 if ((got[i].flags & EV_EOF) != 0) {
@@ -1426,6 +1797,10 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
 
                 if (key == 0) {
                     stopped = true;
+                    continue;
+                }
+                if (key == HERO_POLL_DOOR_KEY) {
+                    hero_poll_door_drain(door);
                     continue;
                 }
                 bits |= (said & EPOLLIN) != 0 ? HERO_POLL_READ : 0;
@@ -1476,6 +1851,10 @@ int64_t hero_poll_wait(hero_poll_set *set, int64_t limit_ns, int64_t *events, ui
                 }
                 if (entry == 0) {
                     stopped = true;
+                    continue;
+                }
+                if (entry == HERO_POLL_DOOR_PLACE) {
+                    hero_poll_door_drain(door);
                     continue;
                 }
                 bits |= (p->revents & HERO_POLL_IN) != 0 ? HERO_POLL_READ : 0;

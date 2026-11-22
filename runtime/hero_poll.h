@@ -45,6 +45,11 @@
  * defines it (`epoll` refuses one). Timers are this member's own, read on a
  * clock that never goes back, and need no descriptor.
  *
+ * A MAILBOX OF THE LANGUAGE stands in a set by the number `m.number()` gives
+ * (`hero_poll_add_mailbox`): told ready while a receive on it would not wait,
+ * and rung by the send itself, so a value sent from any thread ends a wait
+ * at once (`hero_poll.c`, THE DOORBELL).
+ *
  * WHAT A SET HOLDS IS KEPT OPEN. A stream or a socket in a set is held: closed
  * by the program meanwhile, its handle ends at once, as ever, and its
  * descriptor stays open until it leaves the set, so no file the system opens
@@ -167,6 +172,21 @@ int64_t hero_poll_add_timer(hero_poll_set *set, int64_t first_ns, int64_t every_
  * `HERO_POLL_UNSUPPORTED` on Windows, whose wait takes sockets alone. */
 int64_t hero_poll_add_signals(hero_poll_set *set);
 
+/* THE MAILBOX `number` NAMES added to the set (`m.number()`, spec § 11; panel
+ * 256's R7, provisional): one entry, told `HERO_POLL_READ` while a receive on
+ * it would not wait, because it holds a value, is closed or answers
+ * `stopped`, and `HERO_POLL_HANGUP` beside it once the mailbox's last copy is
+ * gone. Level-triggered as every entry is, and rung by the send itself: a
+ * value sent from any thread ends a wait at once, with nothing the sender
+ * does but send. The set holds no copy of the mailbox; a mailbox stands in a
+ * set twice, and in many sets, as a socket does. Its interest is fixed:
+ * `hero_poll_change` answers `HERO_POLL_INVALID`. Answers its key, or -1:
+ * `HERO_POLL_NOT_OPEN` for a set that is not open or a number that names no
+ * mailbox, `HERO_POLL_INVALID` while another thread waits on the set,
+ * `HERO_POLL_LIMIT`, and `HERO_POLL_OTHER` where the system gave no doorbell
+ * (THE DOORBELL, in `hero_poll.c`). */
+int64_t hero_poll_add_mailbox(hero_poll_set *set, int64_t number);
+
 /* The timer `key` set again, as `hero_poll_add_timer` sets one, from now.
  * Answers 0, or -1: `HERO_POLL_INVALID` for a time below 0 or a key that is no
  * timer, `HERO_POLL_NOT_FOUND`, `HERO_POLL_NOT_OPEN`. */
@@ -189,8 +209,9 @@ int64_t hero_poll_count(hero_poll_set *set);
  * stop is asked; then writes one event per ready entry into `events`,
  * `HERO_POLL_EVENT_NUMBERS` numbers each, as many as `count` numbers hold, and
  * answers how many events it wrote: 0 where the limit passed with none ready.
- * The timers fallen due come first, then the files, then what the system
- * told, in its order; what did not fit is told at the next wait. -1:
+ * The timers fallen due come first, then the files, then the mailboxes, then
+ * what the system told, in its order; what did not fit is told at the next
+ * wait. -1:
  * `HERO_POLL_INVALID` for a limit below -1 or a `count` below 3,
  * `HERO_POLL_NOT_OPEN`, `HERO_POLL_STOPPED`, and `HERO_POLL_OTHER` with the
  * system's number where its wait failed. */
