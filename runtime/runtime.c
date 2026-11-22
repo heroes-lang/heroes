@@ -349,9 +349,10 @@
  * own header; the first name is the header the members alone include, the tags
  * of their handle tables, so the key covers it and a copy of the runtime made
  * from this list holds it (named 2026-11-20). A member's own files follow it:
- * the CryptoKit member written in Swift and its C header, which the layer
- * compiles on an Apple target alone (`selfhost/cli/layer_swift.hero`, the
- * names under `platform/` that end in `.swift`); and Monocypher's, which
+ * the CryptoKit member and the AppKit member written in Swift and their C
+ * headers, which the layer compiles on an Apple target alone
+ * (`selfhost/cli/layer_swift.hero`, the names under `platform/` that end in
+ * `.swift`); and Monocypher's, which
  * `hero_crypto.c` compiles inside itself on macOS and which stand under
  * `vendor/`, outside `platform/`, so none is archived alone
  * (`runtime/vendor/monocypher/README.md`; decision 2594), its licence with
@@ -396,6 +397,10 @@
 #include "platform/hero_time.c"
 #include "hero_tls.h"
 #include "platform/hero_tls.c"
+#include "hero_ui.h"
+#include "platform/hero_ui.c"
+#include "platform/hero_ui_appkit.h"
+#include "platform/hero_ui_appkit.swift"
 #include "hero_watch.h"
 #include "platform/hero_watch.c"
 #endif
