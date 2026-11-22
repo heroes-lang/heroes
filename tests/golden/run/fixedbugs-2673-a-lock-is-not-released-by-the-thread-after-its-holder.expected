@@ -1,0 +1,2 @@
+a thread after the holder ended cannot release its lock: 1
+a thread after the holder ended is not told it holds the lock: 1

@@ -103,6 +103,8 @@
 #include "hero_handle_tag.h"
 /* A channel's block, given back by its stream's close. */
 #include "hero_layer_alloc.h"
+/* The runtime's own number for a thread, a lock's holder's. */
+#include "hero_layer_thread.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -224,6 +226,8 @@ typedef struct {
     bool closing;
     /* A lock: held by the thread `holder` names. */
     bool held;
+    /* The holding thread's number, `hero_layer_thread`'s. */
+    uint64_t holder;
     /* A pipe listener: an accept is in flight. */
     bool accepting;
     /* A listener's `HERO_IPC_SPACE_*`. */
@@ -239,7 +243,6 @@ typedef struct {
     /* A pipe listener's instance waiting for a client, a mapping, a
      * semaphore or a mutex. */
     HANDLE handle;
-    DWORD holder;
 #else
     /* A listener's socket, or a lock's file. */
     int fd;
@@ -247,7 +250,6 @@ typedef struct {
     dev_t device;
     ino_t inode;
     sem_t *semaphore;
-    pthread_t holder;
 #endif
 } hero_ipc_slot;
 
@@ -2910,13 +2912,16 @@ int64_t hero_ipc_semaphore_close(hero_ipc_semaphore *s) {
 
 /* -- locks ------------------------------------------------------------------- */
 
+/* A LOCK'S HOLDER IS THE RUNTIME'S NUMBER FOR ITS THREAD, never given to
+ * another thread of the process (`hero_layer_thread.h`). A `pthread_t`
+ * names a thread only while it runs, and Darwin hands a thread started
+ * after another ended the same one at once, as Windows reuses a thread's
+ * id, so a holder recorded that way was taken for a thread that never took
+ * the lock, which then released it and was told it held it (defect 2673). */
+
 /* Whether the calling thread is the one `slot` records. Under the lock. */
 static bool hero_ipc_mine(hero_ipc_slot *slot) {
-#if defined(_WIN32)
-    return slot->holder == GetCurrentThreadId();
-#else
-    return pthread_equal(slot->holder, pthread_self()) != 0;
-#endif
+    return slot->holder == hero_layer_thread();
 }
 
 /* Whether the calling thread holds the lock `name` through any handle.
@@ -2935,11 +2940,7 @@ static bool hero_ipc_held_here(const char *name) {
 /* Records the calling thread as the holder. Under the lock. */
 static void hero_ipc_hold(hero_ipc_slot *slot) {
     slot->held = true;
-#if defined(_WIN32)
-    slot->holder = GetCurrentThreadId();
-#else
-    slot->holder = pthread_self();
-#endif
+    slot->holder = hero_layer_thread();
 }
 
 /* Releases a lock the calling thread holds: the mark cleared, then the

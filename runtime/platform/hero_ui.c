@@ -48,6 +48,8 @@
 
 #include "hero_handle_tag.h"
 #include "hero_layer_alloc.h"
+/* The runtime's own number for a thread, the UI owner's on Windows. */
+#include "hero_layer_thread.h"
 
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -453,8 +455,11 @@ static int64_t hero_ui_arm_dialog_paths(uint8_t *buffer, int64_t count) {
 /* -- THE THREAD ------------------------------------------------------------ */
 
 #if defined(_WIN32)
-/* The thread that opened the process's first app, 0 before it. */
-static _Atomic uint32_t hero_ui_owner;
+/* The thread that opened the process's first app, by the runtime's number
+ * for it (`hero_layer_thread.h`); 0 before it. A thread's id is not used:
+ * Windows gives a thread started after the owner ended the same id, which
+ * was then taken for the UI thread (defect 2673's shape). */
+static _Atomic uint64_t hero_ui_owner;
 #endif
 
 /* Whether the calling thread is the UI thread, or, on Windows before the
@@ -463,8 +468,8 @@ static bool hero_ui_thread_is_ours(void) {
 #if defined(__APPLE__)
     return pthread_main_np() != 0;
 #elif defined(_WIN32)
-    uint32_t owner = atomic_load(&hero_ui_owner);
-    return owner == 0 || owner == (uint32_t)GetCurrentThreadId();
+    uint64_t owner = atomic_load(&hero_ui_owner);
+    return owner == 0 || owner == hero_layer_thread();
 #else
     return (long)syscall(SYS_gettid) == (long)getpid();
 #endif
@@ -474,8 +479,8 @@ static bool hero_ui_thread_is_ours(void) {
  * answers whether it is the UI thread. */
 static bool hero_ui_thread_claimed(void) {
 #if defined(_WIN32)
-    uint32_t none = 0;
-    uint32_t me = (uint32_t)GetCurrentThreadId();
+    uint64_t none = 0;
+    uint64_t me = hero_layer_thread();
 
     if (atomic_compare_exchange_strong(&hero_ui_owner, &none, me)) {
         return true;
