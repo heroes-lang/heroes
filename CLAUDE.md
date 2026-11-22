@@ -169,7 +169,11 @@ minutes, in a `/loop` and everywhere else, whatever a skill advises** (author
 instruction 2026-09-15), and each recap says what advanced, what was already
 closed, and what was deliberately not done and why (CL-010). **An agent an API
 limit stops is resumed by the session itself**, waiting in such wakeups until
-the limit resets, never for the author's word (author, 2026-11-22).
+the limit resets, never for the author's word (author, 2026-11-22). **Agents
+are kept short** (author, 2026-11-22, on a week whose spend was 58% contexts
+read again): a new task goes to a new agent whose brief points at files rather
+than restating them, never to a finished agent's long context; long output goes
+to a file, read back by `grep` or `tail`; the model stays Opus.
 
 **Every decision put to the author comes with a recommendation and its reason**,
 resting on a measurement and never a hope; the decision stays theirs (CL-024). A
