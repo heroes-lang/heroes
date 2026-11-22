@@ -6,36 +6,42 @@
 # what was found, which is how the demo hears the server's side.
 #
 # It runs on a thread of its own: it listens on 127.0.0.1 at a port the
-# system chooses, tells the demo the port over the demo's control port (a
-# thread is handed one text and answers one only when it ends, spec § 13),
-# and serves one connection after another until the program is asked to
-# stop; its thread then answers what it served.
+# system chooses, sends the demo the port on the mailbox it was handed
+# (spec § 11), and serves one connection after another until the program is
+# asked to stop; its thread then answers what it served.
 
 use <rebel>/io
 use <rebel>/net
-use <rebel>/strings
 
 use standins/smtp_session
 
 ## Bounds
 
-# How long a notice to the demo may take, in milliseconds.
+# How long the demo waits for the server's port, in milliseconds.
 constant NOTICE_MS: i64
     10_000
 
 ## The server
 
-# The stand-in's thread: serves until the program is asked to stop.
+# What the stand-in's thread is handed, whole.
+record Start
+    # The one user who may log in.
+    user: str
+    # Its password.
+    password: str
+    # Where the demo waits for the port the server listens on.
+    ready: (mailbox i64)
+
+# The stand-in's thread: serves until the program is asked to stop. The
+# readiness mailbox is closed on every path, so a server that could not
+# listen is told to the demo at once.
 #
-# - `arg`: three lines: the demo's control port, the one user and its
-#   password.
-function run(arg: str) -> str
-    lines = strings.split(s: arg, sep: "\n")
+# - `start`: the one user, its password and the readiness mailbox.
+function run(start: Start) -> str
+    outcome = served(start)
+    start.ready.close()
 
-    if lines.len() != 3
-        return "smtp stand-in: three lines asked, the control port, the user and the password"
-
-    match served(control: lines[0], user: lines[1], password: lines[2])
+    match outcome
         .ok t =>
             return f"smtp stand-in: {counted(t.connections, noun: "connection")}, {counted(t.taken, noun: "message")} taken, {t.refused} refused, {counted(t.logins_refused, noun: "login")} refused"
         .err e => return "smtp stand-in: " + e.msg
@@ -52,15 +58,14 @@ function counted(n: i64, noun: str) -> str
 
 # Every connection served, then what was served.
 #
-# - `control`: the demo's control port, in decimal.
-# - `user`: the one user.
-# - `password`: its password.
+# - `start`: the one user, its password and the readiness mailbox.
 #
-# Fails as `net.listen` fails, or where the demo cannot be told the port.
-function served(control: str, user: str, password: str) -> smtp_session.Tally?
+# Fails as `net.listen` fails, or where the demo no longer waits for the
+# port.
+function served(start: Start) -> smtp_session.Tally?
     listener @= net.listen(host: "127.0.0.1", port: 0)?
 
-    match tell(control_port: net.parse_port(control)?, port: listener.address.port)
+    match start.ready.send(listener.address.port)
         .err e =>
             _ = net.close_listener(@listener).is_err()
             return fail(code: e.code, msg: e.msg)
@@ -73,7 +78,7 @@ function served(control: str, user: str, password: str) -> smtp_session.Tally?
             .err _ => break
             .ok made =>
                 conn @= made
-                t = smtp_session.session(conn.stream, user: user, password: password)
+                t = smtp_session.session(conn.stream, user: start.user, password: start.password)
                 total @ smtp_session.Tally(
                     connections: total.connections + 1,
                     taken: total.taken + t.taken,
@@ -85,33 +90,5 @@ function served(control: str, user: str, password: str) -> smtp_session.Tally?
     _ = net.close_listener(@listener).is_err()
     return ok(total)
 
-# Tells the demo at `control_port` that the server listens on `port`: one
-# line, `READY <port>`.
-#
-# - `control_port`: the demo's control port on 127.0.0.1.
-# - `port`: the server's port.
-#
-# Fails as `net.connect` and `io.write_text` fail.
-function tell(control_port: i64, port: i64) -> ()?
-    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: NOTICE_MS)?
-    conn @= made
-    written = io.write_text(conn.stream, text: f"READY {port}\n")
-    _ = io.close(@conn.stream).is_err()
-    return written
-
-# The port a notice `READY <port>` names.
-#
-# - `line`: the notice.
-#
-# Fails `invalid` where it is none.
-function parse_notice(line: str) -> i64?
-    match strings.after_prefix(s: strings.trim(line), prefix: "READY ")
-        .err _   => return fail(code: "invalid", msg: f"\"{line}\" is no notice")
-        .ok rest => return net.parse_port(rest)
-
 test "counted: one, none and many"
     assert counted(1, noun: "login") == "1 login" && counted(0, noun: "login") == "0 logins" && counted(5, noun: "message") == "5 messages"
-
-test "parse_notice: a notice, and two that are not"
-    assert parse_notice("READY 2525\n").must() == 2525
-    assert parse_notice("READY x").is_err() && parse_notice("2525").is_err()
