@@ -1,0 +1,160 @@
+# The values a preview fills a message's placeholders with, each written as
+# its locale writes it, so a translator sees the sentence a reader will see:
+# the count in the locale's digits and grouping, an amount in the currency of
+# the region the language is most likely spoken in, a date in the locale's
+# long form and time zone, a host as people read it rather than as DNS holds
+# it, and a list in the locale's alphabetical order (UCA with CLDR's
+# tailoring: Swedish puts Å after Z, German beside A).
+#
+# Every value is made from the session's clock and the project's samples, so
+# a preview is the same each time it is made at the same moment.
+
+use <rebel>/i18n
+use <rebel>/i18n/collate
+use <rebel>/i18n/dates
+use <rebel>/i18n/numbers
+use <rebel>/time
+use <rebel>/unicode
+use <rebel>/url/idna
+
+use project/config
+use project/locale_tags
+
+## Codes
+
+# The code of a locale that names no language.
+constant INVALID: str
+    "invalid"
+
+## The sample amounts
+
+# The amount a `currency` placeholder shows, in decimal text.
+constant AMOUNT: str
+    "1234.5"
+
+# The fraction a `percent` placeholder shows.
+constant FRACTION: str
+    "0.256"
+
+## A locale's setting
+
+# What the samples of one locale are made from.
+record Setting
+    # The locale.
+    locale: i18n.Locale
+    # Its tag.
+    tag: str
+    # The moment a date shows.
+    now: time.Instant
+    # The zone a date is written in.
+    zone: time.Zone
+    # The currency an amount is written in, empty where CLDR names none.
+    currency: str
+    # The host a link shows, in ASCII.
+    host: str
+    # The texts a list shows, in the project's order.
+    items: [str]
+    # The locale's collation.
+    collator: collate.Collator
+
+# The setting of the locale `tag` in `project`, at `now`.
+#
+# - `tag`: the locale's tag.
+# - `project`: the project, which gives the zones and the samples.
+# - `now`: the session's moment.
+#
+# Fails `invalid` where `tag` names no language. A zone the system does not
+# know is UTC, which the preview's header says.
+function setting_of(tag: str, project: config.Project, now: time.Instant) -> Setting?
+    locale = locale_tags.read_tag(tag)?
+
+    zone = match project.zones[tag]
+        .ok name => time.load_zone(name).default(time.utc_zone())
+        .err _   => time.utc_zone()
+
+    return ok(
+        Setting(locale: locale, tag: tag, now: now, zone: zone, currency: locale_tags.currency_for(locale).default(""), host: project.sample_host, items: project.sample_list, collator: collate.collator_of(locale))
+    )
+
+## Values
+
+# The value a placeholder of `kind` shows in `s`'s locale.
+#
+# - `s`: the setting.
+# - `kind`: one of `config.placeholder_kinds`.
+# - `name`: the placeholder's name, which a `text` placeholder shows.
+# - `count`: the number a `number` placeholder shows, a plural form's sample.
+function value_of(s: Setting, kind: str, name: str, count: i64) -> str
+    if kind == "number"
+        return numbers.format_int(s.locale, n: count)
+
+    if kind == "percent"
+        return numbers.format_percent(s.locale, number: FRACTION).default(FRACTION)
+
+    if kind == "currency"
+        return amount_of(s)
+
+    if kind == "date"
+        return dates.format_date(s.locale, t: s.now, zone: s.zone, style: .long)
+
+    if kind == "time"
+        return dates.format_time(s.locale, t: s.now, zone: s.zone, style: .short)
+
+    if kind == "datetime"
+        return dates.format_date_time(s.locale, t: s.now, zone: s.zone, date_style: .medium, time_style: .short)
+
+    if kind == "relative"
+        return dates.format_relative_named(s.locale, amount: -1, unit: .day, style: .long)
+
+    if kind == "host"
+        return idna.to_unicode(s.host, options: idna.url_options()).default(s.host)
+
+    if kind == "list"
+        return collate.sort_texts(s.collator, texts: s.items).join(", ")
+
+    return f"‹{name}›"
+
+# `AMOUNT` in the locale's currency, or as a plain number where CLDR names
+# no currency for it.
+#
+# - `s`: the setting.
+function amount_of(s: Setting) -> str
+    if s.currency == ""
+        return numbers.format_decimal(s.locale, number: AMOUNT).default(AMOUNT)
+
+    return numbers.format_currency(s.locale, number: AMOUNT, currency: s.currency).default(AMOUNT)
+
+# The line a preview opens with for `s`: what each kind of sample is made
+# from, so a reader knows why the values are what they are.
+#
+# - `s`: the setting.
+function describe(s: Setting) -> str
+    currency = if s.currency == ""
+        "no currency"
+    else
+        s.currency
+
+    return f"{s.tag}: dates in {s.zone.name}, amounts in {currency}, {numbers.numbering_system_of(s.locale)} digits, lists in {s.tag}'s order"
+
+## Tests
+
+# A project for the tests, with Berlin's zone for German.
+function sample_project() -> config.Project
+    return config.parse_project(
+        "domain: shop\nsource: en\nlocales: [de, sv, ja]\nzones: {de: Europe/Berlin}\nsamples: {host: xn--bcher-kva.example, list: [Zürich, Århus, Oslo]}\n"
+    ).must()
+
+test "value_of: numbers, money, a date in a zone, a host and a list, each in its locale"
+    now = time.from_unix(whole_seconds: 1772703000, extra_nanoseconds: 0).must()
+    de = setting_of("de", project: sample_project(), now: now).must()
+    assert value_of(de, kind: "number", name: "n", count: 1234) == "1.234"
+    no_break_space = unicode.from_code_point(0xa0).must()
+    assert value_of(de, kind: "currency", name: "x", count: 0) == "1.234,50" + no_break_space + "€"
+    assert value_of(de, kind: "time", name: "x", count: 0) == "10:30"
+    assert value_of(de, kind: "host", name: "x", count: 0) == "bücher.example"
+    assert value_of(de, kind: "list", name: "x", count: 0) == "Århus, Oslo, Zürich"
+    sv = setting_of("sv", project: sample_project(), now: now).must()
+    assert value_of(sv, kind: "list", name: "x", count: 0) == "Oslo, Zürich, Århus"
+    ja = setting_of("ja", project: sample_project(), now: now).must()
+    assert value_of(ja, kind: "currency", name: "x", count: 0) == "￥1,234"
+    assert value_of(ja, kind: "text", name: "user", count: 0) == "‹user›"

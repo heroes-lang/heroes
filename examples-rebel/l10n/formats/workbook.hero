@@ -1,0 +1,239 @@
+# Rows as an Excel workbook (Office Open XML), the file translation agencies
+# most often ask for and send back: a sheet for each locale, named by its
+# tag, its first row the column names in bold over a fill and frozen so it
+# stays in view, the long columns widened and wrapped; and, where asked, a
+# first sheet `coverage` with each locale's counts and its share translated
+# as a percentage Excel itself formats.
+#
+# A sheet is read back by its header's names, as a CSV file is, so a
+# translator may move or hide columns. A cell Excel turned into a number or a
+# date, an id such as `404`, is read as the text Excel shows for it. The
+# bytes `xlsx` writes depend on the workbook alone, so an export written
+# twice is the same file.
+
+use <rebel>/xlsx
+
+use formats/rows
+
+## Writing
+
+# The rows of one locale, for its sheet.
+record LocaleRows
+    # The locale's tag, the sheet's name.
+    tag: str
+    # Its rows.
+    rows: [rows.Row]
+
+# One line of the `coverage` sheet.
+record Coverage
+    # The locale's tag.
+    tag: str
+    # Its messages translated.
+    translated: i64
+    # The messages of the template.
+    total: i64
+
+# The name of the summary sheet.
+constant COVERAGE_SHEET: str
+    "coverage"
+
+# The width of each column, in characters of Excel's default font's digit,
+# in the order of `rows.columns`.
+function column_widths() -> [f64]
+    return [12.0, 36.0, 28.0, 8.0, 36.0, 44.0, 12.0, 30.0]
+
+# The workbook of `sheets`, with a `coverage` sheet first where `summary`
+# holds a line.
+#
+# - `sheets`: the locales' rows, a sheet each, in order.
+# - `summary`: the coverage of each locale, empty for no summary sheet.
+#
+# Fails `invalid` where two locales share a tag, and as `xlsx` fails on a
+# text past `xlsx.MAX_TEXT_CHARS`.
+function workbook_of(sheets: [LocaleRows], summary: [Coverage]) -> xlsx.Workbook?
+    wb @= xlsx.new_workbook()
+    head = header_style()
+    head_index = xlsx.add_style(@wb, style: head)
+    percent_style @= xlsx.default_style()
+    percent_style.number_format @ "0.0%"
+    percent_index = xlsx.add_style(@wb, style: percent_style)
+    wrapped @= xlsx.default_style()
+    wrapped.wrap @ true
+    wrapped.vertical @ .top
+    wrapped_index = xlsx.add_style(@wb, style: wrapped)
+
+    if summary.len() > 0
+        sheet @= xlsx.new_sheet(COVERAGE_SHEET)
+        titles = ["locale", "translated", "messages", "share"]
+        xlsx.add_row(@sheet, values: titles.map(text_cell))?
+
+        for c in summary
+            share = if c.total == 0
+                0.0
+            else
+                to_f64(c.translated) / to_f64(c.total)
+
+            xlsx.add_row(@sheet, values: [text_cell(c.tag), .number(v: to_f64(c.translated)), .number(v: to_f64(c.total)), .number(v: share)])?
+            xlsx.set_style(@sheet, row: summary_row(sheet), column: 3, style: percent_index)?
+
+        styled_header(@sheet, columns: titles.len(), style: head_index)?
+        xlsx.set_column_width(@sheet, first: 0, last: 3, width: 12.0)?
+        xlsx.add_sheet(@wb, s: sheet)?
+
+    for locale in sheets
+        sheet @= xlsx.new_sheet(locale.tag)
+        xlsx.add_row(@sheet, values: rows.columns().map(text_cell))?
+
+        for r in locale.rows
+            xlsx.add_row(@sheet, values: rows.values_of(r).map(text_cell))?
+
+        styled_header(@sheet, columns: rows.columns().len(), style: head_index)?
+        widths = column_widths()
+
+        for k in range(from: 0, to: widths.len())
+            xlsx.set_column_width(@sheet, first: k, last: k, width: widths[k])?
+
+        for row in range(from: 1, to: locale.rows.len() + 1)
+            for column in [1, 4, 5]
+                if !xlsx.cell_at(sheet, row: row, column: column).is_err()
+                    xlsx.set_style(@sheet, row: row, column: column, style: wrapped_index)?
+
+        xlsx.add_sheet(@wb, s: sheet)?
+
+    return ok(wb)
+
+# The row the last line added to `sheet` stands on.
+#
+# - `sheet`: a sheet holding a line.
+function summary_row(sheet: xlsx.Sheet) -> i64
+    return sheet.cells[sheet.cells.len() - 1].row
+
+# Styles the first row's `columns` cells as a header, and freezes it.
+#
+# - `sheet`: the sheet, its header written.
+# - `columns`: how many columns the header has.
+# - `style`: the header's style index.
+#
+# Fails as `xlsx.set_style` and `xlsx.freeze` fail, which a sheet with its
+# header written does not.
+function styled_header(@sheet: xlsx.Sheet, columns: i64, style: i64) -> ()?
+    for k in range(from: 0, to: columns)
+        xlsx.set_style(@sheet, row: 0, column: k, style: style)?
+
+    xlsx.freeze(@sheet, rows: 1, columns: 0)?
+    return ok()
+
+# The header's style: bold, on a pale blue fill.
+function header_style() -> xlsx.Style
+    style @= xlsx.default_style()
+    style.font.bold @ true
+    style.fill @ xlsx.Fill(pattern: .solid, color: "DDEBF7", background: "")
+    return style
+
+# A text as a cell's value: nothing for the empty text, so an untranslated
+# form is an empty cell.
+#
+# - `s`: the text.
+function text_cell(s: str) -> xlsx.Value
+    if s == ""
+        return .empty
+
+    return .text(v: s)
+
+## Reading
+
+# The rows of the sheet `name` of `wb`.
+#
+# - `wb`: the workbook.
+# - `name`: the sheet's name, a locale's tag.
+#
+# Fails `not_found` where the workbook has no such sheet, naming the ones it
+# has, and `invalid` where the header has no `id` or no `translation`, or a
+# row has no id.
+function rows_of_sheet(wb: xlsx.Workbook, name: str) -> [rows.Row]?
+    sheet = match xlsx.sheet_of(wb, name: name)
+        .ok s => s
+        .err _ =>
+            return fail(
+                code: "not_found",
+                msg: f"the workbook has no sheet \"{name}\"; it has {xlsx.sheet_names(wb).join(", ")}"
+            )
+
+    values = xlsx.rows_of(sheet, limit: 10000000)?
+
+    if values.len() == 0
+        return ok([])
+
+    header = values[0].map(cell_text)
+
+    for wanted in ["id", "translation"]
+        if !header.has_column(wanted)
+            return fail(code: "invalid", msg: f"the sheet \"{name}\" has no \"{wanted}\" column")
+
+    found: [rows.Row] @= []
+
+    for r in range(from: 1, to: values.len())
+        named: {str: str} @= {}
+        filled @= false
+
+        for k in range(from: 0, to: header.len())
+            text = if k < values[r].len()
+                cell_text(values[r][k])
+            else
+                ""
+
+            named[header[k]] @ text
+            filled @ filled || text != ""
+
+        if filled
+            match rows.row_of(named)
+                .ok row => found @ found.push(row)
+                .err e  => return fail(code: "invalid", msg: f"the sheet \"{name}\", row {r + 1}: {e.msg}")
+
+    return ok(found)
+
+# The text a cell shows: its text, or what Excel shows for a number, a date,
+# a truth value or an error.
+#
+# - `v`: the cell's value.
+function cell_text(v: xlsx.Value) -> str
+    return match v
+        .empty                                      => ""
+        .text t                                     => t.v
+        .number _ | .boolean _ | .date _ | .error _ => xlsx.format_value(v)
+
+# Whether `names` holds `name`.
+#
+# - `names`: the header's names.
+# - `name`: the name.
+function has_column(names: [str], name: str) -> bool
+    for n in names
+        if n == name
+            return true
+
+    return false
+
+## Tests
+
+test "workbook_of and rows_of_sheet: the rows back from the bytes, the summary first"
+    list = [
+        rows.Row(context: "", id: "Cart", plural_id: "", form: "", source: "Cart", translation: "Koszyk", state: "translated", note: "")
+        rows.Row(context: "cart", id: "{count} item", plural_id: "{count} items", form: "few", source: "{count} items", translation: "", state: "untranslated", note: "the badge")
+    ]
+    wb = workbook_of(
+        [LocaleRows(tag: "pl", rows: list)],
+        summary: [Coverage(tag: "pl", translated: 1, total: 2)]
+    ).must()
+    assert xlsx.sheet_names(wb) == ["coverage", "pl"]
+    read = xlsx.decode(xlsx.encode(wb).must(), options: xlsx.default_read_options()).must()
+    assert rows_of_sheet(read, name: "pl").must() == list
+    assert xlsx.encode(wb).must() == xlsx.encode(wb).must()
+
+test "rows_of_sheet: a sheet missing, and an id Excel holds as a number"
+    wb @= xlsx.new_workbook()
+    sheet @= xlsx.new_sheet("de")
+    xlsx.add_row(@sheet, values: [.text(v: "id"), .text(v: "translation")]).must()
+    xlsx.add_row(@sheet, values: [.number(v: 404.0), .text(v: "Nicht gefunden")]).must()
+    xlsx.add_sheet(@wb, s: sheet).must()
+    assert rows_of_sheet(wb, name: "fr").is_err()
+    assert rows_of_sheet(wb, name: "de").must()[0].id == "404"

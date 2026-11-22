@@ -1,0 +1,197 @@
+# The placeholders a message holds, which its translation must keep: the
+# program fills them after the lookup, so a translation that drops `{total}`
+# shows no total, and one that writes `{totl}` shows a brace.
+#
+# Two notations are read. Braces, `{count}` or `{when, date}`, are this
+# program's own and Python's `str.format`'s: a name, and after a comma the
+# kind of value it holds, which `preview/samples` fills it with. printf's,
+# `%s`, `%d`, `%(name)s` and `%1$s`, which older code writes, is compared as
+# a multiset of its specifications, `%%` being a percent sign and no
+# placeholder. A brace in a message that is no placeholder, `{{`, is not
+# read as one.
+
+use <rebel>/maps
+use <rebel>/regex
+use <rebel>/sets
+
+## The patterns
+
+# A brace placeholder: its name in group 1, its kind in group 2.
+constant BRACE: str
+    "\\{([A-Za-z_][A-Za-z0-9_]*)(?:\\s*,\\s*([a-z]+))?\\s*\\}"
+
+# A printf specification, or `%%`.
+constant PRINTF: str
+    "%%|%(?:[0-9]+\\$|\\([A-Za-z_][A-Za-z0-9_]*\\))?[-+ #0]*[0-9]*(?:\\.[0-9]+)?[sdiufFeEgGxXoc]"
+
+# The two patterns, compiled once.
+record Patterns
+    # `BRACE`.
+    brace: regex.Regex
+    # `PRINTF`.
+    printf: regex.Regex
+
+# The patterns compiled; they are this module's constants, which its tests
+# compile, so a failure is this module's defect and aborts.
+function patterns() -> Patterns
+    return Patterns(brace: regex.compile(BRACE).must(), printf: regex.compile(PRINTF).must())
+
+## Reading a message
+
+# One brace placeholder, where it stands.
+record Placeholder
+    # Its name: `count`.
+    name: str
+    # The kind written after its comma, `date`; empty where none is.
+    kind: str
+    # The placeholder as written, `{when, date}`.
+    text: str
+    # The byte it begins at.
+    start: i64
+    # The byte after it.
+    end: i64
+
+# The brace placeholders of `text`, in order, each use once.
+#
+# - `text`: a message or a translation.
+# - `p`: the patterns.
+function placeholders_in(text: str, p: Patterns) -> [Placeholder]
+    found: [Placeholder] @= []
+
+    for m in regex.search_all(text, re: p.brace)
+        if !escaped_brace(text, at: m.start)
+            found @ found.push(
+                Placeholder(name: regex.group(m, n: 1).must(), kind: regex.group(m, n: 2).default(""), text: m.text, start: m.start, end: m.end)
+            )
+
+    return found
+
+# Whether the brace at `at` is the second of `{{`, a brace written as text.
+#
+# - `text`: the text.
+# - `at`: a `{`'s index.
+function escaped_brace(text: str, at: i64) -> bool
+    return at > 0 && text[at - 1] == '{'
+
+# The names of `text`'s brace placeholders, each use once, in order.
+#
+# - `text`: the text.
+# - `p`: the patterns.
+function names_in(text: str, p: Patterns) -> [str]
+    names: [str] @= []
+
+    for ph in placeholders_in(text, p: p)
+        names @ names.push(ph.name)
+
+    return names
+
+# The kind each placeholder of `text` is written with, where one is.
+#
+# - `text`: the text.
+# - `p`: the patterns.
+function kinds_in(text: str, p: Patterns) -> {str: str}
+    kinds: {str: str} @= {}
+
+    for ph in placeholders_in(text, p: p)
+        if ph.kind != ""
+            kinds[ph.name] @ ph.kind
+
+    return kinds
+
+# The printf specifications of `text`, in order, `%%` left out.
+#
+# - `text`: the text.
+# - `p`: the patterns.
+function specs_in(text: str, p: Patterns) -> [str]
+    specs: [str] @= []
+
+    for m in regex.search_all(text, re: p.printf)
+        if m.text != "%%"
+            specs @ specs.push(m.text)
+
+    return specs
+
+## Comparing
+
+# The names `required` holds that `text` does not, in `required`'s order.
+#
+# - `required`: the names a translation must keep.
+# - `text`: the translation.
+# - `p`: the patterns.
+function missing_names(required: [str], text: str, p: Patterns) -> [str]
+    have = sets.from_list(names_in(text, p: p))
+    return sets.to_list(sets.difference(s: sets.from_list(required), other: have))
+
+# The names `text` holds that `allowed` does not: placeholders the program
+# never fills.
+#
+# - `allowed`: the names the source holds.
+# - `text`: the translation.
+# - `p`: the patterns.
+function unknown_names(allowed: [str], text: str, p: Patterns) -> [str]
+    have = sets.from_list(names_in(text, p: p))
+    return sets.to_list(sets.difference(s: have, other: sets.from_list(allowed)))
+
+# How the printf specifications of `text` differ from `source`'s, as a
+# sentence, where they do: printf fills them by place and by type, so the
+# multisets must be equal; empty where they are.
+#
+# - `source`: the source text.
+# - `text`: the translation.
+# - `p`: the patterns.
+function printf_difference(source: str, text: str, p: Patterns) -> str
+    wanted = maps.counts(specs_in(source, p: p))
+    given = maps.counts(specs_in(text, p: p))
+
+    if wanted == given
+        return ""
+
+    return f"the printf specifications {spec_list(wanted)} of the source are {spec_list(given)} here"
+
+# The specifications of a count, `%s ×2, %d`, or `none`.
+#
+# - `counted`: each specification and how often it stands.
+function spec_list(counted: {str: i64}) -> str
+    if keys(counted).len() == 0
+        return "none"
+
+    parts: [str] @= []
+
+    for spec in keys(counted)
+        n = counted[spec].must()
+
+        if n == 1
+            parts @ parts.push(spec)
+        else
+            parts @ parts.push(f"{spec} ×{n}")
+
+    return parts.join(", ")
+
+## Tests
+
+test "placeholders_in: names, kinds, places, and a brace written as text"
+    p = patterns()
+    found = placeholders_in("{count} items by {when, date} {{not}} {x,list}", p: p)
+    assert found.map(placeholder_name) == ["count", "when", "x"]
+    assert found[1].kind == "date"
+    assert found[1].text == "{when, date}"
+    assert kinds_in("{when, date} {count}", p: p)["when"].must() == "date"
+    assert names_in("", p: p) == []
+
+test "missing_names and unknown_names: by set, whatever the order"
+    p = patterns()
+    assert missing_names(["count", "total"], text: "{total} für {count}", p: p) == []
+    assert missing_names(["count", "total"], text: "Summe: {total}", p: p) == ["count"]
+    assert unknown_names(["total"], text: "{totl}", p: p) == ["totl"]
+
+test "printf_difference: a multiset, %% left out"
+    p = patterns()
+    assert printf_difference(source: "%d of %s (100%%)", text: "%s: %d", p: p) == ""
+    assert printf_difference(source: "%(n)d files", text: "%d Dateien", p: p) != ""
+    assert printf_difference(source: "%s and %s", text: "%s", p: p) == "the printf specifications %s ×2 of the source are %s here"
+
+# A placeholder's name, for the tests' lists.
+#
+# - `ph`: the placeholder.
+function placeholder_name(ph: Placeholder) -> str
+    return ph.name

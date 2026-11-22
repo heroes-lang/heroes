@@ -1,0 +1,70 @@
+# The characters a text holds and nobody sees: Unicode's format characters
+# (category Cf), among them the right-to-left and Arabic letter marks CLDR
+# puts around an amount of money or a percentage in Arabic and Hebrew, the
+# soft hyphen, and the zero-width joiners and spaces.
+#
+# A translator must see them, since a mark lost or added changes how a
+# line of mixed scripts is laid out, so a preview for a terminal writes each
+# as its code point, `<U+200F>`. A page keeps them, and writes each as an
+# HTML character reference, `&#x200F;`, which a browser reads as the same
+# character, so the page's source shows where they stand.
+
+use <rebel>/lists
+use <rebel>/unicode
+
+## Writing them out
+
+# `text` with each format character written `<U+XXXX>`.
+#
+# - `text`: a text for a terminal.
+function shown(text: str) -> str
+    return replaced(text: text, before: "<U+", after: ">")
+
+# `text` with each format character written as an HTML character reference,
+# `&#xXXXX;`.
+#
+# - `text`: a page's text.
+function as_references(text: str) -> str
+    return replaced(text: text, before: "&#x", after: ";")
+
+# `text` with each format character written as its code point in upper-case
+# hexadecimal, at least four digits, between `before` and `after`.
+#
+# - `text`: the text.
+# - `before`: what opens the code point.
+# - `after`: what closes it.
+function replaced(text: str, before: str, after: str) -> str
+    pieces: [str] @= []
+
+    for c in text.chars()
+        if unicode.category(c) == .format
+            pieces @ pieces.push(before + hex_of(unicode.code_point(c)) + after)
+        else
+            pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+# `n` in upper-case hexadecimal, at least four digits.
+#
+# - `n`: a code point, 0 or more.
+function hex_of(n: i64) -> str
+    digits = "0123456789ABCDEF"
+    pieces: [str] @= []
+    left @= n
+
+    while left > 0 || pieces.len() < 4
+        d = left % 16
+        pieces @ lists.concat(xs: [digits.slice(from: d, to: d + 1)], then: pieces)
+        left @ left / 16
+
+    return pieces.join("")
+
+## Tests
+
+test "shown and as_references: marks written out, other text kept"
+    rlm = unicode.from_code_point(0x200f).must()
+    alm = unicode.from_code_point(0x61c).must()
+    assert shown(rlm + "1,234.50 ج.م." + rlm) == "<U+200F>1,234.50 ج.م.<U+200F>"
+    assert as_references("26" + alm + "%") == "26&#x061C;%"
+    assert shown("Grüße, 合計") == "Grüße, 合計"
+    assert hex_of(0x1d173) == "1D173"

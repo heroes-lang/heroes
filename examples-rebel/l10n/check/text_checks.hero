@@ -1,0 +1,258 @@
+# The checks of one translated text against its source text, each answering
+# what is wrong in a sentence, or the empty text where nothing is.
+#
+# - **NFC**: a text should be in Unicode's composed normal form, which is how
+#   every keyboard but some of macOS's writes it; an "é" written as "e" and a
+#   combining accent looks the same and compares, sorts and searches
+#   differently (UAX #15).
+# - **White space**: a source that begins or ends with a space or a line
+#   break is joined to something there, and its translation must be too.
+# - **Final punctuation**: a sentence that ends with a mark, in any script's
+#   punctuation (`.`, `。`, `؟`), should still end with one; one that does
+#   not, should not.
+# - **Markup**: the HTML tags of the source, as a multiset of their names,
+#   opening and closing, must all be there, in whatever order the
+#   language needs.
+# - **Links**: a host in a link must be a name UTS #46 allows, checked as DNS
+#   would need it, so a translator's `https://bücher-.example` is caught
+#   before a reader follows it. A host that is a placeholder is the
+#   program's to fill and is not checked.
+
+use <rebel>/maps
+use <rebel>/regex
+use <rebel>/unicode
+use <rebel>/unicode/normalize
+use <rebel>/url/idna
+
+## The patterns
+
+# An HTML tag: `/` in group 1 for a closing one, its name in group 2.
+constant TAG: str
+    "<(/?)([A-Za-z][A-Za-z0-9]*)\\b[^<>]*>"
+
+# A link's host and what precedes it in its authority: group 1.
+constant LINK: str
+    "\\bhttps?://([^/\\s\"'<>?#]+)"
+
+# The patterns, compiled once.
+record Patterns
+    # `TAG`.
+    tag: regex.Regex
+    # `LINK`.
+    link: regex.Regex
+
+# The patterns compiled; this module's constants, which its tests compile.
+function patterns() -> Patterns
+    return Patterns(tag: regex.compile(TAG).must(), link: regex.compile(LINK).must())
+
+## Checks
+
+# How `text` is not in NFC, or the empty text.
+#
+# - `text`: the translation.
+function nfc_problem(text: str) -> str
+    if normalize.is_nfc(text)
+        return ""
+
+    return f"not in NFC: {unicode.char_count(text)} characters where NFC writes {unicode.char_count(normalize.to_nfc(text))}; `check --fix` composes it"
+
+# How the white space at the ends of `text` differs from `source`'s, or the
+# empty text.
+#
+# - `source`: the source text.
+# - `text`: the translation.
+function whitespace_problem(source: str, text: str) -> str
+    if text == ""
+        return ""
+
+    if is_blank_byte(source[0]) != is_blank_byte(text[0])
+        return if is_blank_byte(source[0])
+            "the source begins with white space and the translation does not"
+        else
+            "the translation begins with white space and the source does not"
+
+    if is_blank_byte(source[source.len() - 1]) != is_blank_byte(text[text.len() - 1])
+        return if is_blank_byte(source[source.len() - 1])
+            "the source ends with white space and the translation does not"
+        else
+            "the translation ends with white space and the source does not"
+
+    return ""
+
+# How the final punctuation of `text` differs from `source`'s, or the empty
+# text.
+#
+# - `source`: the source text.
+# - `text`: the translation.
+function punctuation_problem(source: str, text: str) -> str
+    want = last_char(source)
+    have = last_char(text)
+
+    if want == "" || have == ""
+        return ""
+
+    if unicode.is_punctuation(want) && !unicode.is_punctuation(have)
+        return f"the source ends with \"{want}\" and the translation with no punctuation"
+
+    if !unicode.is_punctuation(want) && unicode.is_punctuation(have)
+        return f"the translation ends with \"{have}\" and the source with no punctuation"
+
+    return ""
+
+# How the HTML tags of `text` differ from `source`'s, or the empty text.
+#
+# - `source`: the source text.
+# - `text`: the translation.
+# - `p`: the patterns.
+function markup_problem(source: str, text: str, p: Patterns) -> str
+    wanted = maps.counts(tags_of(source, p: p))
+    given = maps.counts(tags_of(text, p: p))
+
+    if wanted == given
+        return ""
+
+    missing: [str] @= []
+    extra: [str] @= []
+
+    for tag in keys(wanted)
+        if given[tag].default(0) < wanted[tag].must()
+            missing @ missing.push(tag)
+
+    for tag in keys(given)
+        if wanted[tag].default(0) < given[tag].must()
+            extra @ extra.push(tag)
+
+    parts: [str] @= []
+
+    if missing.len() > 0
+        parts @ parts.push(f"{missing.join(" ")} missing")
+
+    if extra.len() > 0
+        parts @ parts.push(f"{extra.join(" ")} not in the source")
+
+    return "the markup differs: " + parts.join(", ")
+
+# The tags of `text`, each as `<b>` or `</b>`, names in lower case.
+#
+# - `text`: the text.
+# - `p`: the patterns.
+function tags_of(text: str, p: Patterns) -> [str]
+    tags: [str] @= []
+
+    for m in regex.search_all(text, re: p.tag)
+        name = lower(regex.group(m, n: 2).must())
+        slash = regex.group(m, n: 1).default("")
+        tags @ tags.push(f"<{slash}{name}>")
+
+    return tags
+
+# What is wrong with each link's host in `text`, a sentence each.
+#
+# - `text`: the translation.
+# - `p`: the patterns.
+function link_problems(text: str, p: Patterns) -> [str]
+    problems: [str] @= []
+
+    for m in regex.search_all(text, re: p.link)
+        host = host_of(regex.group(m, n: 1).must())
+
+        if host != "" && !has_brace(host)
+            match idna.to_ascii(host, options: idna.strict_options())
+                .ok _  => _ = 0
+                .err e => problems @ problems.push(f"the link's host \"{host}\" is no name DNS can hold: {e.msg}")
+
+    return problems
+
+# The host of a link's authority: what follows its `@`, without its port.
+#
+# - `authority`: what stands between `//` and the path.
+function host_of(authority: str) -> str
+    start @= 0
+
+    for i in range(from: 0, to: authority.len())
+        if authority[i] == '@'
+            start @ i + 1
+
+    end @= authority.len()
+
+    for i in range(from: start, to: authority.len())
+        if authority[i] == ':'
+            end @ i
+
+    return authority.slice(from: start, to: end)
+
+## Small helpers
+
+# Whether `b` is a space, a tab or a line break.
+#
+# - `b`: a byte.
+function is_blank_byte(b: u8) -> bool
+    return b == ' ' || b == '\n' || b == '\t' || b == '\r'
+
+# The last character of `s` that is no white space, or the empty text.
+#
+# - `s`: the text.
+function last_char(s: str) -> str
+    last @= ""
+
+    for c in s.chars()
+        if !unicode.is_space(c)
+            last @ c
+
+    return last
+
+# Whether `s` holds a brace, so it is a placeholder or holds one.
+#
+# - `s`: the text.
+function has_brace(s: str) -> bool
+    for i in range(from: 0, to: s.len())
+        if s[i] == '{' || s[i] == '}'
+            return true
+
+    return false
+
+# `s` with ASCII capitals made small.
+#
+# - `s`: the text, a tag's name.
+function lower(s: str) -> str
+    small = "abcdefghijklmnopqrstuvwxyz"
+    pieces: [str] @= []
+
+    for c in s.chars()
+        if c[0] >= 'A' && c[0] <= 'Z'
+            at = to_i64(c[0] - 'A').must()
+            pieces @ pieces.push(small.slice(from: at, to: at + 1))
+        else
+            pieces @ pieces.push(c)
+
+    return pieces.join("")
+
+## Tests
+
+test "nfc_problem: a decomposed accent, and a composed one"
+    decomposed = normalize.to_nfd("Café")
+    assert nfc_problem(decomposed) == "not in NFC: 5 characters where NFC writes 4; `check --fix` composes it"
+    assert nfc_problem("Café") == ""
+    assert nfc_problem("") == ""
+
+test "whitespace_problem and punctuation_problem: either end, any script's marks"
+    assert whitespace_problem(source: "Total: ", text: "Summe:") == "the source ends with white space and the translation does not"
+    assert whitespace_problem(source: "a", text: " b") == "the translation begins with white space and the source does not"
+    assert whitespace_problem(source: "a", text: "") == ""
+    assert punctuation_problem(source: "Saved.", text: "保存しました。") == ""
+    assert punctuation_problem(source: "Saved.", text: "Gespeichert") == "the source ends with \".\" and the translation with no punctuation"
+    assert punctuation_problem(source: "Why?", text: "لماذا؟") == ""
+
+test "markup_problem: a tag missing, a tag added, the order free"
+    p = patterns()
+    assert markup_problem(source: "<b>Free</b> delivery", text: "Livraison <b>gratuite</b>", p: p) == ""
+    assert markup_problem(source: "<b>Free</b> delivery", text: "Darmowa dostawa", p: p) == "the markup differs: <b> </b> missing"
+    assert markup_problem(source: "a", text: "<i>a</i>", p: p) == "the markup differs: <i> </i> not in the source"
+
+test "link_problems: a host DNS refuses, a good one, a placeholder and a port"
+    p = patterns()
+    assert link_problems("Visit https://bücher.example/help", p: p) == []
+    assert link_problems("Visit https://bücher-.example/help", p: p).len() == 1
+    assert link_problems("<a href=\"https://{site}/help\">", p: p) == []
+    assert link_problems("http://user@shop.example:8080/x", p: p) == []
+    assert host_of("user@shop.example:8080") == "shop.example"

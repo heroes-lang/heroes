@@ -1,0 +1,88 @@
+# What a check of the catalogues finds: one finding for each thing wrong,
+# with the catalogue, the message, the check that found it and what to do.
+#
+# An error is a translation that shows wrong to a reader: a placeholder lost,
+# a plural form missing, markup broken, a link to a host that cannot exist.
+# `check` exits 1 on any. A warning is worth a translator's look and never
+# fails the run: a guess not yet confirmed, a text not in NFC, white space or
+# final punctuation unlike the source's.
+
+## Findings
+
+# How much a finding matters.
+variant Severity
+    # A reader would see it wrong.
+    error
+    # A translator should look.
+    warning
+
+# One thing wrong in one message of one catalogue.
+record Finding
+    # The catalogue's locale, its tag.
+    locale: str
+    # The message, as a person reads its key; empty for the header.
+    message: str
+    # The check that found it: `plural-forms`, `placeholders`, `markup`,
+    # `links`, `nfc`, `whitespace`, `punctuation`, `fuzzy`.
+    check: str
+    # How much it matters.
+    severity: Severity
+    # What is wrong, in words a translator can act on.
+    detail: str
+
+# An error.
+#
+# - `locale`: the catalogue's tag.
+# - `message`: the message's label.
+# - `check`: the check's name.
+# - `detail`: what is wrong.
+function error(locale: str, message: str, check: str, detail: str) -> Finding
+    return Finding(locale: locale, message: message, check: check, severity: .error, detail: detail)
+
+# A warning.
+#
+# - `locale`: the catalogue's tag.
+# - `message`: the message's label.
+# - `check`: the check's name.
+# - `detail`: what is wrong.
+function warning(locale: str, message: str, check: str, detail: str) -> Finding
+    return Finding(locale: locale, message: message, check: check, severity: .warning, detail: detail)
+
+# How many of `found` are errors.
+#
+# - `found`: the findings.
+function errors_in(found: [Finding]) -> i64
+    n @= 0
+
+    for f in found
+        if f.severity == .error
+            n @ n + 1
+
+    return n
+
+# The lines a report writes for `f`: where and what, then the detail
+# indented.
+#
+# - `f`: the finding.
+function lines_of(f: Finding) -> [str]
+    word = match f.severity
+        .error   => "error"
+        .warning => "warning"
+
+    where = if f.message == ""
+        f.locale
+    else
+        f"{f.locale}: \"{f.message}\""
+
+    return [f"{word}[{f.check}] {where}", "    " + f.detail]
+
+## Tests
+
+test "lines_of and errors_in: an error, a warning, and the header"
+    found = [
+        error(locale: "de", message: "Total: {total}", check: "placeholders", detail: "{total} is missing")
+        warning(locale: "de", message: "", check: "fuzzy", detail: "x")
+    ]
+    assert errors_in(found) == 1
+    assert lines_of(found[0]) == ["error[placeholders] de: \"Total: {total}\"", "    {total} is missing"]
+    assert lines_of(found[1])[0] == "warning[fuzzy] de"

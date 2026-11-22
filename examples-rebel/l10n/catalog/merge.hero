@@ -1,0 +1,544 @@
+# A locale's catalogue brought up to date with the template, as gettext's
+# `msgmerge` does it: every message of the template is in the catalogue
+# after, in the template's order, with the references and notes the template
+# gives; a translation is carried to the message with the same key; a
+# message with none is given the translation of the most alike message the
+# template no longer holds, marked `fuzzy` with that message's text kept as
+# `#|`, so a translator sees what changed; and what the template no longer
+# holds is kept as obsolete, `#~`, while it has a translation to give.
+#
+# How alike two texts are is `difflib`'s ratio over their characters
+# (`diff.close_matches`), and a guess must be at least `FUZZY_CUTOFF` alike.
+#
+# The header's `Plural-Forms` is set from CLDR (`plural/gettext_forms`)
+# every time. Where the catalogue had another, each plural message's forms
+# are re-mapped through their categories: the new form of a category takes
+# the old form gettext's old expression chose for that category's first
+# sample number. Where two new forms come from one old form, which is how a
+# category the old header did not know appears (French `many`, for a million),
+# the message is marked fuzzy for a translator to confirm.
+
+use <rebel>/diff
+use <rebel>/i18n
+use <rebel>/sets
+
+use catalog/messages
+use plural/gettext_forms
+use plural/samples
+use project/session
+
+## Thresholds
+
+# How alike a message must be to one the template no longer holds for its
+# translation to be offered as a guess: 0 to 1, difflib's ratio. It is the
+# cutoff `difflib.get_close_matches` takes by default, Python 3.15.2's, read
+# 2026-11-22.
+constant FUZZY_CUTOFF: f64
+    0.6
+
+## The report
+
+# A translation guessed for a new message.
+record Guess
+    # The new message, as a person reads its key.
+    message: str
+    # The old message whose translation it was given.
+    from: str
+    # How alike the two texts are, 0 to 100.
+    percent: i64
+
+# What a merge did.
+record Report
+    # Messages whose translation was carried to the same key.
+    kept: i64
+    # Messages new to the catalogue, untranslated.
+    added: [str]
+    # Messages given a guessed translation.
+    guessed: [Guess]
+    # Messages the template no longer holds, kept obsolete.
+    obsoleted: [str]
+    # Obsolete messages the template holds again, brought back.
+    revived: i64
+    # Plural messages whose forms were moved to a new header's order.
+    remapped: i64
+    # The `Plural-Forms` the catalogue had, empty where it had none or the
+    # same as CLDR's.
+    old_forms: str
+    # The `Plural-Forms` it has now.
+    forms: str
+
+# A catalogue merged, and what was done.
+record Merged
+    # The catalogue.
+    catalog: i18n.Catalog
+    # The report.
+    report: Report
+
+## Merging
+
+# `old`, the catalogue of `tag`, brought up to date with `template`.
+#
+# - `template`: the template, as `extract` writes it.
+# - `old`: the locale's catalogue, empty where it has none yet.
+# - `locale`: the locale.
+# - `when`: the date a new catalogue's `PO-Revision-Date` takes.
+#
+# Fails `invalid` where CLDR's rules for the locale do not make a header,
+# which `plural/gettext_forms`' tests rule out for the languages they name.
+function merge_catalog(template: i18n.Catalog, old: i18n.Catalog, locale: i18n.Locale, when: str) -> Merged?
+    forms = gettext_forms.forms_of(locale)?
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+    old_fields = messages.header_fields(old)
+    old_header = messages.field_value(old_fields, name: "Plural-Forms").default("")
+    remap = old_header != "" && old_header != forms.header
+
+    template_keys = sets.from_list(messages.live_keys(template))
+    live: {str: i18n.Message} @= {}
+    gone: {str: i18n.Message} @= {}
+
+    for m in old.messages
+        if !messages.is_header(m)
+            if m.obsolete
+                gone[messages.key_of(m)] @ m
+            else
+                live[messages.key_of(m)] @ m
+
+    candidates: [i18n.Message] @= []
+
+    for key in keys(live)
+        m = live[key].must()
+
+        if !sets.contains(template_keys, element: key) && !messages.is_empty(m)
+            candidates @ candidates.push(m)
+
+    merged: [i18n.Message] @= []
+    kept @= 0
+    added: [str] @= []
+    guessed: [Guess] @= []
+    revived @= 0
+    remapped @= 0
+
+    for t in messages.live_messages(template)
+        key = messages.key_of(t)
+
+        exact: i18n.Message? = match live[key]
+            .ok m  => ok(m)
+            .err _ => gone[key]
+
+        match exact
+            .ok o =>
+                carried = carried_forms(
+                    o: o,
+                    t: t,
+                    forms: forms,
+                    rules: rules,
+                    old_forms: old.plural_forms,
+                    remap: remap
+                )
+
+                if carried.moved
+                    remapped @ remapped + 1
+
+                if o.obsolete
+                    revived @ revived + 1
+                kept @ kept + 1
+                merged @ merged.push(
+                    updated(t: t, o: o, translations: carried.translations, fuzzy: carried.fuzzy || messages.is_fuzzy(o), previous: o.previous)
+                )
+            .err _ =>
+                match closest(t, candidates: candidates)
+                    .ok c =>
+                        carried = carried_forms(
+                            o: c,
+                            t: t,
+                            forms: forms,
+                            rules: rules,
+                            old_forms: old.plural_forms,
+                            remap: remap
+                        )
+                        percent = to_i64(diff.ratio(a: t.id.chars(), b: c.id.chars()) * 100.0).default(0)
+                        guessed @ guessed.push(
+                            Guess(message: messages.label_of(t), from: messages.label_of(c), percent: percent)
+                        )
+                        merged @ merged.push(
+                            updated(t: t, o: c, translations: carried.translations, fuzzy: true, previous: previous_lines(c))
+                        )
+                    .err _ =>
+                        added @ added.push(messages.label_of(t))
+                        merged @ merged.push(untranslated(t, count: forms.categories.len()))
+
+    obsoleted: [str] @= []
+
+    for key in keys(live)
+        if !sets.contains(template_keys, element: key)
+            m = live[key].must()
+
+            if !messages.is_empty(m)
+                obsoleted @ obsoleted.push(messages.label_of(m))
+                merged @ merged.push(made_obsolete(m))
+
+    for key in keys(gone)
+        if !sets.contains(template_keys, element: key) && live[key].is_err()
+            merged @ merged.push(gone[key].must())
+
+    header = merged_header(old_fields, template: template, tag: i18n.format_locale(locale), forms: forms, when: when)
+    all_messages @= [messages.header_message(header, comments: header_comments(old, tag: i18n.format_locale(locale)))]
+
+    for m in merged
+        all_messages @ all_messages.push(m)
+
+    replaced = if remap
+        old_header
+    else
+        ""
+
+    report = Report(
+        kept: kept,
+        added: added,
+        guessed: guessed,
+        obsoleted: obsoleted,
+        revived: revived,
+        remapped: remapped,
+        old_forms: replaced,
+        forms: forms.header
+    )
+    return ok(Merged(catalog: i18n.new_catalog(all_messages)?, report: report))
+
+## Forms carried
+
+# A message's forms carried from an old message, and whether a person must
+# look at them again.
+record Carried
+    # The forms, as many as the new message holds.
+    translations: [str]
+    # Whether they need confirming: the plural changed, or two forms came
+    # from one.
+    fuzzy: bool
+    # Whether re-mapping moved any form.
+    moved: bool
+
+# The forms the template's `t` takes from the old `o`.
+#
+# - `o`: the old message.
+# - `t`: the template's message.
+# - `forms`: the locale's forms.
+# - `rules`: the locale's plural rules.
+# - `old_forms`: the plural forms the old catalogue's header gave.
+# - `remap`: whether the old header differs from `forms`.
+function carried_forms(o: i18n.Message, t: i18n.Message, forms: gettext_forms.Forms, rules: i18n.PluralRules, old_forms: i18n.PluralForms, remap: bool) -> Carried
+    count = forms.categories.len()
+
+    first = if o.translations.len() > 0
+        o.translations[0]
+    else
+        ""
+
+    if !messages.is_plural(t)
+        return Carried(translations: [first], fuzzy: messages.is_plural(o), moved: false)
+
+    if !messages.is_plural(o)
+        return Carried(translations: repeated(first, count: count), fuzzy: true, moved: false)
+
+    plural_changed = t.plural_id.must() != o.plural_id.must()
+
+    if !remap
+        return Carried(
+            translations: resized(o.translations, count: count),
+            fuzzy: plural_changed || o.translations.len() != count,
+            moved: false
+        )
+
+    moved: [str] @= []
+    sources: [i64] @= []
+
+    for category in forms.categories
+        at = match samples.first_sample(rules, category: category)
+            .ok n  => i18n.plural_index(old_forms, n: n).default(0)
+            .err _ => 0
+
+        sources @ sources.push(at)
+
+        moved @ if at < o.translations.len()
+            moved.push(o.translations[at])
+        else
+            moved.push("")
+
+    shared = sets.from_list(sources).keys_count() < sources.len()
+    return Carried(translations: moved, fuzzy: plural_changed || shared, moved: moved != o.translations)
+
+# How many keys `s` holds.
+#
+# - `s`: a set.
+function keys_count(s: {i64: bool}) -> i64
+    return keys(s).len()
+
+# `text` `count` times.
+#
+# - `text`: the text.
+# - `count`: how many, 0 or more.
+function repeated(text: str, count: i64) -> [str]
+    texts: [str] @= []
+
+    for _ in range(from: 0, to: count)
+        texts @ texts.push(text)
+
+    return texts
+
+# `texts` cut or padded with empty forms to `count`.
+#
+# - `texts`: the forms.
+# - `count`: how many the catalogue holds.
+function resized(texts: [str], count: i64) -> [str]
+    sized: [str] @= []
+
+    for k in range(from: 0, to: count)
+        if k < texts.len()
+            sized @ sized.push(texts[k])
+        else
+            sized @ sized.push("")
+
+    return sized
+
+## Messages made
+
+# The template's `t` with the old `o`'s translator comments and flags, and
+# `translations`.
+#
+# - `t`: the template's message, which gives the texts, references and notes.
+# - `o`: the old message, which gives the comments and flags.
+# - `translations`: the forms.
+# - `fuzzy`: whether it is marked fuzzy.
+# - `previous`: the `#|` lines it keeps.
+function updated(t: i18n.Message, o: i18n.Message, translations: [str], fuzzy: bool, previous: [str]) -> i18n.Message
+    kept_previous: [str] = if fuzzy
+        previous
+    else
+        []
+
+    base = i18n.Message(
+        context: t.context,
+        id: t.id,
+        plural_id: t.plural_id,
+        translations: translations,
+        comments: o.comments,
+        extracted_comments: t.extracted_comments,
+        references: t.references,
+        flags: o.flags,
+        previous: kept_previous,
+        obsolete: false
+    )
+
+    if fuzzy
+        return messages.with_flag(base, flag: "fuzzy")
+
+    return messages.without_flag(base, flag: "fuzzy")
+
+# The template's `t` untranslated: one empty form, or `count` for a plural.
+#
+# - `t`: the template's message.
+# - `count`: the locale's number of forms.
+function untranslated(t: i18n.Message, count: i64) -> i18n.Message
+    forms = if messages.is_plural(t)
+        repeated("", count: count)
+    else
+        [""]
+
+    return messages.with_translations(t, translations: forms)
+
+# `m` made obsolete: no references, since no source holds it any more.
+#
+# - `m`: the message.
+function made_obsolete(m: i18n.Message) -> i18n.Message
+    return i18n.Message(
+        context: m.context,
+        id: m.id,
+        plural_id: m.plural_id,
+        translations: m.translations,
+        comments: m.comments,
+        extracted_comments: [],
+        references: [],
+        flags: m.flags,
+        previous: m.previous,
+        obsolete: true
+    )
+
+# The message among `candidates` most alike `t`, of the same plural shape,
+# if one is at least `FUZZY_CUTOFF` alike.
+#
+# - `t`: the template's message.
+# - `candidates`: the translated messages the template no longer holds.
+#
+# Fails `not_found` where none is alike enough.
+function closest(t: i18n.Message, candidates: [i18n.Message]) -> i18n.Message?
+    ids: [str] @= []
+
+    for c in candidates
+        if messages.is_plural(c) == messages.is_plural(t)
+            ids @ ids.push(c.id)
+
+    best = diff.close_matches(word: t.id, possibilities: ids, n: 1, cutoff: FUZZY_CUTOFF)
+
+    if best.len() == 0
+        return fail(code: "not_found", msg: f"no message is like \"{t.id}\"")
+
+    for c in candidates
+        if c.id == best[0] && messages.is_plural(c) == messages.is_plural(t)
+            return ok(c)
+
+    return fail(code: "not_found", msg: f"no message is like \"{t.id}\"")
+
+# The `#|` lines that keep an old message's texts beside a guess.
+#
+# - `o`: the old message.
+function previous_lines(o: i18n.Message) -> [str]
+    lines: [str] @= []
+
+    match o.context
+        .ok c  => lines @ lines.push("msgctxt " + quoted(c))
+        .err _ => _ = 0
+
+    lines @ lines.push("msgid " + quoted(o.id))
+
+    match o.plural_id
+        .ok p  => lines @ lines.push("msgid_plural " + quoted(p))
+        .err _ => _ = 0
+
+    return lines
+
+# `s` as a `.po` file writes a string on one line: between double quotes,
+# with `\`, `"`, line feeds and tabs escaped.
+#
+# - `s`: the text.
+function quoted(s: str) -> str
+    pieces: [str] @= ["\""]
+
+    for c in s.chars()
+        if c == "\\"
+            pieces @ pieces.push("\\\\")
+        else if c == "\""
+            pieces @ pieces.push("\\\"")
+        else if c == "\n"
+            pieces @ pieces.push("\\n")
+        else if c == "\t"
+            pieces @ pieces.push("\\t")
+        else
+            pieces @ pieces.push(c)
+
+    pieces @ pieces.push("\"")
+    return pieces.join("")
+
+## The header
+
+# The header of a merged catalogue: the old one's fields kept, and the ones
+# a merge owns set: the project and the template's date, the language, UTF-8,
+# CLDR's plural forms, the generator; a revision date where there was none.
+#
+# - `old_fields`: the old header's fields, empty for a new catalogue.
+# - `template`: the template, whose fields give the project and its date.
+# - `tag`: the locale's tag.
+# - `forms`: the locale's forms.
+# - `when`: the date a new catalogue's `PO-Revision-Date` takes.
+function merged_header(old_fields: [messages.Field], template: i18n.Catalog, tag: str, forms: gettext_forms.Forms, when: str) -> [messages.Field]
+    from_template = messages.header_fields(template)
+    fields @= old_fields
+
+    for name in ["Project-Id-Version", "POT-Creation-Date"]
+        match messages.field_value(from_template, name: name)
+            .ok v  => fields @ messages.with_field(fields, name: name, value: v)
+            .err _ => _ = 0
+
+    if messages.field_value(fields, name: "PO-Revision-Date").is_err()
+        fields @ messages.with_field(fields, name: "PO-Revision-Date", value: when)
+
+    fields @ messages.with_field(fields, name: "Language", value: tag)
+    fields @ messages.with_field(fields, name: "MIME-Version", value: "1.0")
+    fields @ messages.with_field(fields, name: "Content-Type", value: "text/plain; charset=UTF-8")
+    fields @ messages.with_field(fields, name: "Content-Transfer-Encoding", value: "8bit")
+    fields @ messages.with_field(fields, name: "Plural-Forms", value: forms.header)
+    fields @ messages.with_field(fields, name: "X-Generator", value: f"l10n {session.VERSION}")
+    return fields
+
+# The comments above a merged catalogue's header: the old ones, or a line
+# naming the language for a new catalogue.
+#
+# - `old`: the old catalogue.
+# - `tag`: the locale's tag.
+function header_comments(old: i18n.Catalog, tag: str) -> [str]
+    kept = messages.header_comments(old)
+
+    if kept.len() > 0
+        return kept
+
+    return [f"The {tag} translations, kept by l10n."]
+
+## Tests
+
+# A template of two messages, one plural, for the tests.
+function sample_template() -> i18n.Catalog
+    header = messages.header_message([messages.Field(name: "Project-Id-Version", value: "shop")], comments: [])
+    one = i18n.Message(
+        context: messages.absent("context"),
+        id: "Your shopping cart is empty.",
+        plural_id: messages.absent("plural"),
+        translations: [""],
+        comments: [],
+        extracted_comments: ["the cart page"],
+        references: ["src/cart.hero:9"],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    many = i18n.Message(
+        context: ok("cart"),
+        id: "{count} item",
+        plural_id: ok("{count} items"),
+        translations: ["", ""],
+        comments: [],
+        extracted_comments: [],
+        references: ["src/cart.hero:12"],
+        flags: [],
+        previous: [],
+        obsolete: false
+    )
+    return i18n.new_catalog([header, one, many]).must()
+
+test "merge_catalog: a new catalogue takes CLDR's header and every message untranslated"
+    pl = i18n.parse_locale("pl").must()
+    m = merge_catalog(
+        template: sample_template(),
+        old: i18n.new_catalog([]).must(),
+        locale: pl,
+        when: "2026-03-05 09:30+0000"
+    ).must()
+    assert m.report.added.len() == 2
+    assert m.catalog.plural_forms.count == 3
+    assert m.catalog.messages[2].translations == ["", "", ""]
+
+test "merge_catalog: a guess for a changed text, an obsolete message, a revival"
+    de = i18n.parse_locale("de").must()
+    old_text = "msgid \"\"\nmsgstr \"Language: de\\nPlural-Forms: nplurals=2; plural=(n==1 ? 0 : 1);\\n\"\n\nmsgid \"Your cart is empty.\"\nmsgstr \"Ihr Warenkorb ist leer.\"\n\nmsgid \"Gone\"\nmsgstr \"Weg\"\n\n#~ msgctxt \"cart\"\n#~ msgid \"{count} item\"\n#~ msgid_plural \"{count} items\"\n#~ msgstr[0] \"{count} Artikel\"\n#~ msgstr[1] \"{count} Artikel\"\n"
+    old = i18n.parse_po(old_text).must()
+    m = merge_catalog(template: sample_template(), old: old, locale: de, when: "x").must()
+    assert m.report.guessed.len() == 1
+    assert m.report.guessed[0].from == "Your cart is empty."
+    assert m.report.revived == 1
+    assert m.report.obsoleted == ["Your cart is empty.", "Gone"]
+    guess = m.catalog.messages[1]
+    assert messages.is_fuzzy(guess)
+    assert guess.translations == ["Ihr Warenkorb ist leer."]
+    assert guess.previous == ["msgid \"Your cart is empty.\""]
+    assert messages.is_translated(m.catalog.messages[2])
+
+test "merge_catalog: an old French header re-mapped through the categories, the new form fuzzy"
+    fr = i18n.parse_locale("fr").must()
+    old_text = "msgid \"\"\nmsgstr \"Language: fr\\nPlural-Forms: nplurals=2; plural=(n > 1);\\n\"\n\nmsgctxt \"cart\"\nmsgid \"{count} item\"\nmsgid_plural \"{count} items\"\nmsgstr[0] \"{count} article\"\nmsgstr[1] \"{count} articles\"\n"
+    m = merge_catalog(template: sample_template(), old: i18n.parse_po(old_text).must(), locale: fr, when: "x").must()
+    assert m.report.remapped == 1
+    assert m.report.old_forms == "nplurals=2; plural=(n > 1);"
+    plural = m.catalog.messages[2]
+    assert plural.translations == ["{count} article", "{count} articles", "{count} articles"]
+    assert messages.is_fuzzy(plural)
+
+test "quoted: escapes, and the empty text"
+    assert quoted("a \"b\"\n\\") == "\"a \\\"b\\\"\\n\\\\\""
+    assert quoted("") == "\"\""

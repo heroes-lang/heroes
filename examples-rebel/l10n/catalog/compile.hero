@@ -1,0 +1,148 @@
+# Catalogues compiled for a running program, gettext's `msgfmt`, and a
+# message looked up through them as the program's own `i18n` calls will.
+#
+# A compiled catalogue holds only what a reader may see: the header and the
+# messages translated in every form and confirmed. A guess and a plural
+# message missing a form are left out, so the program shows its source text
+# for them, rather than a wrong form or an unconfirmed one. Each is written
+# to `<catalogs>/<language>/LC_MESSAGES/<domain>.mo`, the language in the
+# POSIX form gettext's lookup asks for (`pt_BR`, `sr_RS@latin`), so the
+# program's `i18n.catalog_paths` finds it by the reader's `LANGUAGE`.
+
+use <rebel>/fs
+use <rebel>/i18n
+use <rebel>/path
+
+use catalog/messages
+
+## Compiling
+
+# A catalogue compiled.
+record Compiled
+    # The file written.
+    file: str
+    # The messages it holds, the header not counted.
+    held: i64
+    # The messages left out: guesses, and forms missing.
+    left_out: i64
+    # Its length in bytes.
+    size: i64
+
+# The path a compiled catalogue of `locale` is written to.
+#
+# - `catalogs`: the project's catalogue folder.
+# - `domain`: the gettext domain.
+# - `locale`: the locale.
+function compiled_path(catalogs: str, domain: str, locale: i18n.Locale) -> str
+    return path.join_all([catalogs, i18n.format_posix(locale), "LC_MESSAGES", domain + ".mo"])
+
+# Compiles `catalog` of `locale` and writes it where gettext looks.
+#
+# - `catalog`: the locale's catalogue.
+# - `catalogs`: the project's catalogue folder.
+# - `domain`: the gettext domain.
+# - `locale`: the locale.
+#
+# Fails as the writing fails.
+function compile_catalog(catalog: i18n.Catalog, catalogs: str, domain: str, locale: i18n.Locale) -> Compiled?
+    kept: [i18n.Message] @= []
+    left_out @= 0
+
+    for m in catalog.messages
+        if messages.is_header(m) && !m.obsolete
+            kept @ kept.push(m)
+        else if !m.obsolete
+            if messages.is_translated(m)
+                kept @ kept.push(m)
+            else if !messages.is_empty(m)
+                left_out @ left_out + 1
+
+    data = i18n.encode_mo(i18n.new_catalog(kept)?)
+    file = compiled_path(catalogs: catalogs, domain: domain, locale: locale)
+    fs.make_dir_all(path.parent(file))?
+    fs.write_bytes(file, data: data)?
+    return ok(Compiled(file: file, held: kept.len() - 1, left_out: left_out, size: data.len()))
+
+## Looking up
+
+# A message looked up in the compiled catalogues.
+record Looked
+    # The compiled file that answered, empty where none did.
+    file: str
+    # The text the program shows.
+    text: str
+    # The plural form chosen, -1 for a message with no plural.
+    form: i64
+    # Whether a catalogue held a translation.
+    translated: bool
+
+# What a program asking for `languages` shows for a message: the first
+# compiled catalogue gettext's lookup finds for them, or none, in which case
+# the source text.
+#
+# - `catalogs`: the project's catalogue folder.
+# - `domain`: the gettext domain.
+# - `languages`: the reader's languages, the most wanted first, as gettext's
+#   `LANGUAGE` lists them: `pt_BR`, `de`.
+# - `context`: the message's context, absent for none.
+# - `id`: its id.
+# - `plural_id`: its plural, absent for none.
+# - `n`: the count a plural message is shown for.
+#
+# Fails as reading a compiled catalogue fails.
+function look_up(catalogs: str, domain: str, languages: [str], context: str?, id: str, plural_id: str?, n: i64) -> Looked?
+    source = match plural_id
+        .ok p =>
+            if n == 1
+                id
+            else
+                p
+        .err _ => id
+
+    for file in i18n.catalog_paths(dir: catalogs, domain: domain, languages: languages)
+        if fs.exists(file).default(false)
+            catalog = i18n.decode_mo(fs.read_bytes(file)?)?
+            key = messages.key_from(context, id: id)
+
+            return match find_message_in_key(catalog, key: key, context: context, id: id)
+                .err _ => ok(Looked(file: file, text: source, form: -1, translated: false))
+                .ok _ =>
+                    match plural_id
+                        .ok p =>
+                            form = i18n.plural_index(catalog.plural_forms, n: n).default(0)
+
+                            text = match context
+                                .ok c  => i18n.translate_plural_in(catalog, context: c, id: id, plural_id: p, n: n)
+                                .err _ => i18n.translate_plural(catalog, id: id, plural_id: p, n: n)
+
+                            ok(Looked(file: file, text: text, form: form, translated: true))
+                        .err _ =>
+                            text = match context
+                                .ok c  => i18n.translate_in(catalog, context: c, id: id)
+                                .err _ => i18n.translate(catalog, id: id)
+
+                            ok(Looked(file: file, text: text, form: -1, translated: true))
+
+    return ok(Looked(file: "", text: source, form: -1, translated: false))
+
+# The message of `catalog` with `context` and `id`.
+#
+# - `catalog`: a compiled catalogue.
+# - `key`: the message's key, for the message of a failure.
+# - `context`: the context, absent for none.
+# - `id`: the id.
+#
+# Fails `not_found` where it holds none.
+function find_message_in_key(catalog: i18n.Catalog, key: str, context: str?, id: str) -> i18n.Message?
+    return match context
+        .ok c => i18n.find_message_in(catalog, context: c, id: id)
+        .err _ =>
+            match i18n.find_message(catalog, id: id)
+                .ok m  => ok(m)
+                .err _ => fail(code: "not_found", msg: f"no {messages.label_of_key(key)}")
+
+## Tests
+
+test "compiled_path: the POSIX form gettext's lookup asks for"
+    de = i18n.parse_locale("pt-BR").must()
+    assert compiled_path(catalogs: "locales", domain: "shop", locale: de) == path.join_all(["locales", "pt_BR", "LC_MESSAGES", "shop.mo"])

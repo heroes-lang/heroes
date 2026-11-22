@@ -1,0 +1,233 @@
+# The sample project the demo works on: a small shop's sources, its order
+# page's template, its settings, and the files five translators sent back,
+# each the way such a file arrives in practice.
+#
+# - `inbox/de.csv`: saved by Excel in German, so separated by semicolons,
+#   in windows-1252 with no word of which encoding; one translation drops a
+#   placeholder, and one row translates a message the shop no longer has.
+# - `inbox/fr.po`: a catalogue from an older tool, in ISO-8859-15 as its
+#   header declares, with the two-form French `Plural-Forms` gettext's
+#   manual has long given, where CLDR now gives a third, for a million.
+# - `inbox/pl.xlsx`: a workbook with its columns in the translator's own
+#   order; one plural form left empty and one translation that lost its
+#   markup.
+# - `inbox/ar.csv`: Excel's "Unicode text", tab-separated UTF-16 with a byte
+#   order mark, two of Arabic's six forms filled.
+# - `inbox/ja.yaml`: UTF-8 written on a Mac that decomposed its kana (NFD),
+#   with a link to a host no DNS can hold.
+# - `inbox/de-fix.csv`: the German translator's correction, UTF-8.
+#
+# Every file is made here from text, encoded as its sender's tool would, so
+# the demo carries no binary file and its bytes are the same every run.
+
+use <rebel>/bytes
+use <rebel>/unicode/encodings
+use <rebel>/unicode/normalize
+use <rebel>/xlsx
+
+## Samples
+
+# One file of the sample project.
+record Sample
+    # Its path inside the project, `/` between its parts.
+    name: str
+    # Its bytes.
+    data: [u8]
+
+# Every file the project starts with, in the order they are written.
+#
+# Aborts where a text cannot be encoded as its sender's tool encodes it,
+# which this module's own texts never are: they hold only characters their
+# encodings have.
+function every_sample() -> [Sample]
+    return [
+        Sample(name: "src/cart.hero", data: bytes.from_text(cart_source(reworded: false)))
+        Sample(name: "src/checkout.hero", data: bytes.from_text(checkout_source()))
+        Sample(name: "templates/order.html", data: bytes.from_text(order_template()))
+        Sample(name: "inbox/de.csv", data: encodings.encode(s: german_csv(), encoding: encodings.WINDOWS_1252).must())
+        Sample(name: "inbox/fr.po", data: encodings.encode(s: french_po(), encoding: encodings.ISO_8859_15).must())
+        Sample(name: "inbox/pl.xlsx", data: xlsx.encode(polish_workbook()).must())
+        Sample(name: "inbox/ar.csv", data: bytes.concat([encodings.bom_of(encodings.UTF_16LE).must(), encodings.encode(s: arabic_text(), encoding: encodings.UTF_16LE).must()]))
+        Sample(name: "inbox/ja.yaml", data: bytes.from_text(normalize.to_nfd(japanese_yaml())))
+        Sample(name: "inbox/de-fix.csv", data: bytes.from_text(german_fix_csv()))
+    ]
+
+# `lines`, each ended with a line feed.
+#
+# - `lines`: the lines.
+function text_of(lines: [str]) -> str
+    return lines.join("\n") + "\n"
+
+## The settings
+
+# The settings the team writes after `init`: the kinds of the placeholders,
+# each language's time zone, and the samples of hosts and lists.
+function full_settings() -> str
+    return text_of(
+        ["# The settings of l10n, the translation tool, for the shop.", "domain: shop", "source: en", "locales: [de, fr, pl, ar, ja]", "sources: [src, templates]", "catalogs: locales", "placeholders: {count: number, total: currency, day: date, when: relative, site: host, cities: list}", "zones: {de: Europe/Berlin, fr: Europe/Paris, pl: Europe/Warsaw, ar: Africa/Cairo, ja: Asia/Tokyo}", "samples: {host: xn--bcher-kva.example, list: [Zürich, Århus, Łódź, Oslo, Ängelholm, Chicago]}"]
+    )
+
+## The sources
+
+# The cart's module; `reworded`, the version where a developer rewrote its
+# empty cart's sentence and dropped its checkout button.
+#
+# - `reworded`: whether it is the later version.
+function cart_source(reworded: bool) -> str
+    empty_line = if reworded
+        "    empty = i18n.translate(cat, id: \"Your shopping cart is empty.\")"
+    else
+        "    empty = i18n.translate(cat, id: \"Your cart is empty.\")"
+
+    button: [str] = if reworded
+        []
+    else
+        ["    checkout = cat.translate_in(\"button\", \"Check out\")"]
+
+    ending = if reworded
+        "    return [title, badge, empty, sum]"
+    else
+        "    return [title, badge, empty, sum, checkout]"
+
+    head = [
+        "# The shop's cart page, in the reader's language."
+        ""
+        "use <rebel>/i18n"
+        ""
+        "# The lines of the cart page."
+        "function cart_lines(cat: i18n.Catalog, n: i64) -> [str]"
+        "    # l10n: the title of the cart page"
+        "    title = i18n.translate(cat, id: \"Your cart\")"
+        "    # l10n: the badge on the cart's icon"
+        "    badge = i18n.translate_plural_in(cat, context: \"cart\", id: \"{count} item\", plural_id: \"{count} items\", n: n)"
+        empty_line
+        "    sum = i18n.translate(cat, id: \"Total: {total}\")"
+    ]
+    lines @= head
+
+    for line in button
+        lines @ lines.push(line)
+
+    lines @ lines.push(ending)
+    return text_of(lines)
+
+# The checkout's module, with one call extraction must refuse.
+function checkout_source() -> str
+    return text_of(
+        ["# What the checkout says once an order is placed.", "", "use <rebel>/i18n", "", "# The confirmation's lines.", "function confirmation(cat: i18n.Catalog, n: i64, who: str) -> [str]", "    # l10n: {total} is an amount of money, {day} the day it ships", "    placed = i18n.translate(cat, id: \"Your order of {total} ships on {day}.\")", "    parcels = i18n.translate_plural(cat, id: \"{count} parcel is on its way.\", plural_id: \"{count} parcels are on their way.\", n: n)", "    free = i18n.translate(cat, id: \"<b>Free</b> delivery on orders over {total}.\")", "    seen = i18n.translate(cat, id: \"Last seen {when}.\")", "    hello = i18n.translate(cat, id: f\"Hello {who}\")", "    return [placed, parcels, free, seen, hello]"]
+    )
+
+# The order page's template, in Jinja's forms.
+function order_template() -> str
+    return text_of(
+        ["<!doctype html>", "<html lang=\"en\">", "<head><title>{{ _(\"Your order\") }}</title></head>", "<body>", "{# l10n: the heading after payment #}", "<h1>{{ pgettext(\"order\", \"Order confirmed\") }}</h1>", "<p>{{ _(\"Your order of {total} ships on {day}.\") }}</p>", "<p>{% trans count=parcels %}{{ count }} parcel is on its way.{% pluralize %}{{ count }} parcels are on their way.{% endtrans %}</p>", "<p>{{ _(\"We deliver to {cities}.\") }}</p>", "<p>{{ _(\"Questions? Visit <a href=\\\"https://{site}/help\\\">our help pages</a>.\") }}</p>", "<p><a href=\"https://bücher.example/account\">{{ _(\"Your account\") }}</a></p>", "</body>", "</html>"]
+    )
+
+## The translators' files
+
+# The German translator's CSV, as Excel saves it in German: semicolons.
+function german_csv() -> str
+    lines = [
+        "context;id;plural_id;form;translation"
+        ";Your cart;;;Ihr Warenkorb"
+        "cart;{count} item;{count} items;one;{count} Artikel"
+        "cart;{count} item;{count} items;other;{count} Artikel"
+        ";Your cart is empty.;;;Ihr Warenkorb ist leer."
+        ";Total: {total};;;Gesamtsumme: {total}"
+        "button;Check out;;;Zur Kasse"
+        ";Your order of {total} ships on {day}.;;;Ihre Bestellung wird am {day} verschickt."
+        ";{count} parcel is on its way.;{count} parcels are on their way.;one;Ein Paket ist unterwegs."
+        ";{count} parcel is on its way.;{count} parcels are on their way.;other;{count} Pakete sind unterwegs."
+        ";<b>Free</b> delivery on orders over {total}.;;;<b>Kostenlose</b> Lieferung für Bestellungen über {total}."
+        ";Your order;;;Ihre Bestellung"
+        "order;Order confirmed;;;Bestellung bestätigt"
+        ";We deliver to {cities}.;;;Wir liefern nach {cities}."
+        ";\"Questions? Visit <a href=\"\"https://{site}/help\"\">our help pages</a>.\";;;\"Fragen? Besuchen Sie <a href=\"\"https://{site}/hilfe\"\">unsere Hilfeseiten</a>.\""
+        ";Your account;;;Ihr Kundenkonto"
+        ";Sale ends soon!;;;Nur noch heute: Rabatte auf Bücher und Möbel!"
+    ]
+    return lines.join("\r\n") + "\r\n"
+
+# The German translator's correction, the placeholder put back.
+function german_fix_csv() -> str
+    return text_of(
+        ["id,translation", "Your order of {total} ships on {day}.,Ihre Bestellung über {total} wird am {day} verschickt."]
+    )
+
+# The French catalogue from an older tool, its header declaring Latin-9 and
+# gettext's two-form French plural.
+function french_po() -> str
+    return text_of(
+        ["# Traductions françaises de la boutique.", "msgid \"\"", "msgstr \"\"", "\"Project-Id-Version: shop 0.9\\n\"", "\"Language: fr\\n\"", "\"Content-Type: text/plain; charset=ISO-8859-15\\n\"", "\"Plural-Forms: nplurals=2; plural=(n > 1);\\n\"", "", "msgid \"Your cart\"", "msgstr \"Votre panier\"", "", "msgctxt \"cart\"", "msgid \"{count} item\"", "msgid_plural \"{count} items\"", "msgstr[0] \"{count} article\"", "msgstr[1] \"{count} articles\"", "", "msgid \"Your cart is empty.\"", "msgstr \"Votre panier est vide.\"", "", "msgid \"Total: {total}\"", "msgstr \"Total : {total}\"", "", "msgctxt \"button\"", "msgid \"Check out\"", "msgstr \"Passer à la caisse\"", "", "msgid \"Your order of {total} ships on {day}.\"", "msgstr \"Votre commande de {total} sera expédiée le {day}.\"", "", "msgid \"{count} parcel is on its way.\"", "msgid_plural \"{count} parcels are on their way.\"", "msgstr[0] \"{count} colis est en route.\"", "msgstr[1] \"{count} colis sont en route.\"", "", "msgid \"<b>Free</b> delivery on orders over {total}.\"", "msgstr \"Livraison <b>gratuite</b> dès {total} d'achat.\"", "", "msgid \"Your order\"", "msgstr \"Votre commande\"", "", "msgctxt \"order\"", "msgid \"Order confirmed\"", "msgstr \"Commande confirmée\"", "", "msgid \"We deliver to {cities}.\"", "msgstr \"Nous livrons à {cities}.\"", "", "msgid \"Your account\"", "msgstr \"Votre compte\""]
+    )
+
+# The Polish translator's workbook: their own column order, a form left
+# empty, and markup lost.
+function polish_workbook() -> xlsx.Workbook
+    wb @= xlsx.new_workbook()
+    sheet @= xlsx.new_sheet("pl")
+    rows_written = [
+        ["id", "context", "form", "translation"]
+        ["Your cart", "", "", "Twój koszyk"]
+        ["{count} item", "cart", "one", "{count} produkt"]
+        ["{count} item", "cart", "few", "{count} produkty"]
+        ["{count} item", "cart", "many", "{count} produktów"]
+        ["Your cart is empty.", "", "", "Twój koszyk jest pusty."]
+        ["Total: {total}", "", "", "Razem: {total}"]
+        ["Check out", "button", "", "Do kasy"]
+        ["Your order of {total} ships on {day}.", "", "", "Twoje zamówienie o wartości {total} zostanie wysłane {day}."]
+        ["{count} parcel is on its way.", "", "one", "{count} paczka jest w drodze."]
+        ["{count} parcel is on its way.", "", "few", "{count} paczki są w drodze."]
+        ["<b>Free</b> delivery on orders over {total}.", "", "", "Darmowa dostawa od {total}."]
+        ["Last seen {when}.", "", "", "Ostatnio widziany {when}."]
+        ["Your order", "", "", "Twoje zamówienie"]
+        ["Order confirmed", "order", "", "Zamówienie potwierdzone"]
+        ["We deliver to {cities}.", "", "", "Dostarczamy do: {cities}."]
+        ["Questions? Visit <a href=\"https://{site}/help\">our help pages</a>.", "", "", "Pytania? Odwiedź <a href=\"https://{site}/pomoc\">nasze strony pomocy</a>."]
+        ["Your account", "", "", "Twoje konto"]
+    ]
+
+    for row in rows_written
+        xlsx.add_row(@sheet, values: row.map(cell)).must()
+
+    xlsx.add_sheet(@wb, s: sheet).must()
+    return wb
+
+# A text as a cell, nothing for the empty text.
+#
+# - `s`: the text.
+function cell(s: str) -> xlsx.Value
+    if s == ""
+        return .empty
+
+    return .text(v: s)
+
+# The Arabic translator's "Unicode text": tab-separated, before it is
+# encoded as UTF-16.
+function arabic_text() -> str
+    lines = [
+        "id\tcontext\tform\ttranslation"
+        "Your cart\t\t\tسلة التسوق"
+        "{count} item\tcart\tone\tمنتج واحد"
+        "{count} item\tcart\tother\t{count} منتج"
+        "Your order of {total} ships on {day}.\t\t\tسيتم شحن طلبك بقيمة {total} في {day}."
+        "We deliver to {cities}.\t\t\tنوصل إلى {cities}."
+        "Your order\t\t\tطلبك"
+        "Order confirmed\torder\t\tتم تأكيد الطلب"
+    ]
+    return lines.join("\r\n") + "\r\n"
+
+# The Japanese translator's YAML, before a Mac decomposes its kana.
+function japanese_yaml() -> str
+    return text_of(
+        ["locale: ja", "forms: [other]", "messages:", "  - id: \"Your cart\"", "    translation: \"ショッピングカート\"", "  - context: cart", "    id: \"{count} item\"", "    plural_id: \"{count} items\"", "    translations: {other: \"{count} 個の商品\"}", "  - id: \"Your cart is empty.\"", "    translation: \"カートは空です。\"", "  - id: \"Total: {total}\"", "    translation: \"合計: {total}\"", "  - context: button", "    id: \"Check out\"", "    translation: \"ご購入手続きへ\"", "  - id: \"Your order of {total} ships on {day}.\"", "    translation: \"ご注文（{total}）は{day}に発送されます。\"", "  - id: \"{count} parcel is on its way.\"", "    plural_id: \"{count} parcels are on their way.\"", "    translations: {other: \"{count} 個の荷物が配送中です。\"}", "  - id: \"Your order\"", "    translation: \"ご注文\"", "  - context: order", "    id: \"Order confirmed\"", "    translation: \"ご注文が確定しました\"", "  - id: \"We deliver to {cities}.\"", "    translation: \"{cities} へお届けします。\"", "  - id: \"Questions? Visit <a href=\\\"https://{site}/help\\\">our help pages</a>.\"", "    translation: \"ご質問は<a href=\\\"https://{site}/help\\\">ヘルプ</a>へ。お急ぎの方は https://ショップ-.example へ。\"", "  - id: \"Your account\"", "    translation: \"アカウント\""]
+    )
+
+## Tests
+
+test "every_sample: every file made, each in its sender's encoding"
+    found = every_sample()
+    assert found.len() == 9
+    assert encodings.sniff_bom(found[6].data).must() == "UTF-16LE"
+    assert !normalize.is_nfc(bytes.to_text(found[7].data).must())
+    assert encodings.detect(found[3].data).encoding == "windows-1252"

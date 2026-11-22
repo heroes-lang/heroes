@@ -1,0 +1,454 @@
+# A language's plural rules, as CLDR writes them, turned into the
+# `Plural-Forms` header a gettext catalogue chooses its forms by:
+#
+#     pl: one: i = 1 and v = 0; few: v = 0 and i % 10 = 2..4 and i % 100 != 12..14; ...
+#     nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);
+#
+# gettext asks its expression of a whole number `n` alone, so each CLDR
+# operand is read for a whole number: `n` and `i` are `n`, and the fraction
+# operands `v`, `w`, `f` and `t` and the exponent `c` and `e` are 0. A
+# relation on a constant is decided here, so `v = 0` vanishes and a branch
+# that needs a fraction disappears. The forms are the categories a whole
+# number reaches (`plural/samples`), in CLDR's order, and the last one is
+# taken where every condition before it fails.
+#
+# The expression is a claim, so `verify` asks gettext's own evaluator
+# (`i18n.plural_index`) at the numbers `samples.probe_numbers` names whether
+# each one takes the form of the category CLDR gives it; a header from
+# elsewhere is held to the same test by `disagreement`.
+
+use <rebel>/i18n
+
+use plural/samples
+
+## Codes
+
+# The code of a condition this module cannot read, and of a header that
+# disagrees with CLDR.
+constant INVALID: str
+    "invalid"
+
+## The forms
+
+# A language's gettext plural forms, from CLDR's rules.
+record Forms
+    # The categories the forms stand for, in their order: form 0 is the
+    # first.
+    categories: [i18n.Plural]
+    # The `Plural-Forms` value: `nplurals=2; plural=(n==1 ? 0 : 1);`.
+    header: str
+
+# The plural forms CLDR's cardinal rules give `locale`'s language.
+#
+# - `locale`: the locale; its language alone decides, as CLDR's rules are
+#   given per language.
+#
+# Fails `invalid` where a condition of CLDR's does not read, which `verify`'s
+# tests would have caught for every language they name.
+function forms_of(locale: i18n.Locale) -> Forms?
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+    categories = samples.integer_categories(rules)
+
+    if categories.len() <= 1
+        return ok(Forms(categories: categories, header: "nplurals=1; plural=0;"))
+
+    branches: [str] @= []
+
+    for k in range(from: 0, to: categories.len() - 1)
+        cond = condition_of(rules, category: categories[k])?
+        branches @ branches.push(f"{text_of(cond)} ? {k}")
+
+    expression = branches.join(" : ") + f" : {categories.len() - 1}"
+    return ok(Forms(categories: categories, header: f"nplurals={categories.len()}; plural=({expression});"))
+
+# The names of `forms`' categories, in their order.
+#
+# - `forms`: the forms.
+function category_names(forms: Forms) -> [str]
+    return forms.categories.map(i18n.plural_name)
+
+# The form `category` stands at in `forms`.
+#
+# - `forms`: the forms.
+# - `category`: the category.
+#
+# Fails `not_found` where no whole number of the language takes it.
+function index_of_category(forms: Forms, category: i18n.Plural) -> i64?
+    for k in range(from: 0, to: forms.categories.len())
+        if forms.categories[k] == category
+            return ok(k)
+
+    return fail(code: "not_found", msg: f"no form stands for {i18n.plural_name(category)}")
+
+## Holding a header to CLDR
+
+# Checks `forms` against CLDR's rules for `locale` at every probe number.
+#
+# - `forms`: the forms made for `locale`.
+# - `locale`: the locale.
+#
+# Fails `invalid` naming the first number at which they disagree.
+function verify(forms: Forms, locale: i18n.Locale) -> ()?
+    return match disagreement(header: forms.header, locale: locale)
+        .ok found => fail(code: INVALID, msg: found)
+        .err _    => ok()
+
+# How a `Plural-Forms` header disagrees with CLDR's rules for `locale`: its
+# count of forms, or the first probe number given a form other than the one
+# CLDR's category stands at.
+#
+# - `header`: the header's value, from any catalogue.
+# - `locale`: the catalogue's locale.
+#
+# Fails `not_found` where they agree at every probe number: the one answer
+# that means agreement.
+function disagreement(header: str, locale: i18n.Locale) -> str?
+    expected = forms_of(locale)?
+
+    read = match i18n.parse_plural_forms(header)
+        .ok forms => forms
+        .err e    => return ok(f"the Plural-Forms \"{header}\" does not parse: {e.msg}")
+
+    if read.count != expected.categories.len()
+        return ok(
+            f"nplurals={read.count}, where CLDR {i18n.CLDR_VERSION} gives whole numbers {expected.categories.len()} forms: {category_names(expected).join(", ")}"
+        )
+
+    rules = i18n.plural_rules(locale, kind: .cardinal)
+
+    for n in samples.probe_numbers(rules)
+        cldr = i18n.plural_of_int(locale, n: n)
+        wanted = index_of_category(expected, category: cldr)?
+        given = i18n.plural_index(read, n: n)?
+
+        if given != wanted
+            return ok(
+                f"n = {n} takes form {given}, where CLDR {i18n.CLDR_VERSION} says {i18n.plural_name(cldr)}, form {wanted}"
+            )
+
+    return fail(code: "not_found", msg: "the header agrees with CLDR")
+
+## Conditions read for a whole number
+
+# A condition as it stands for a whole number `n`: decided, or a C
+# expression still to test.
+variant Cond
+    # True for every whole number.
+    always
+    # False for every whole number.
+    never
+    # A C expression over `n`.
+    depends
+        # The expression.
+        text: str
+        # Whether its outermost operator is `||`, so it is put in parentheses
+        # before an `&&` joins it.
+        joined_by_or: bool
+
+# The C expression `cond` writes, `1` and `0` for the decided ones.
+#
+# - `cond`: the condition.
+function text_of(cond: Cond) -> str
+    return match cond
+        .always    => "1"
+        .never     => "0"
+        .depends t => t.text
+
+# The condition of `category` in `rules`, read for a whole number.
+#
+# - `rules`: a language's rules.
+# - `category`: the category.
+#
+# Fails `invalid` where the condition does not read.
+function condition_of(rules: i18n.PluralRules, category: i18n.Plural) -> Cond?
+    for r in rules.rules
+        if r.category == category
+            if r.condition == ""
+                return ok(.always)
+
+            return read_condition(r.condition)
+
+    return ok(.never)
+
+# One relation's left side: `n`, `i % 10`, or a constant for an operand a
+# whole number holds as 0.
+record Operand
+    # The C text of a side that depends on `n`, `n` or `n%10`; empty for a
+    # constant.
+    text: str
+    # The value of a side that holds a constant, where `text` is empty.
+    fixed: i64
+
+# A CLDR condition, `v = 0 and i % 10 = 2..4 or n = 0`, read for a whole
+# number.
+#
+# - `condition`: the condition, as `i18n.PluralRule.condition` holds it.
+#
+# Fails `invalid` where a word is not CLDR's syntax, naming it.
+function read_condition(condition: str) -> Cond?
+    words = tokens_of(condition)?
+    ors: [Cond] @= []
+    ands: [Cond] @= []
+    at @= 0
+
+    while at < words.len()
+        read = relation_at(words, at: at)?
+        ands @ ands.push(read.cond)
+        at @ read.next
+
+        if at < words.len()
+            if words[at] == "and"
+                at @ at + 1
+            else if words[at] == "or"
+                ors @ ors.push(all_of(ands))
+                ands @ []
+                at @ at + 1
+            else
+                return fail(code: INVALID, msg: f"\"{words[at]}\" where `and` or `or` was expected in \"{condition}\"")
+
+    ors @ ors.push(all_of(ands))
+    return ok(any_of(ors))
+
+# A relation read, and the word after it.
+record Read
+    # The relation as a condition.
+    cond: Cond
+    # The index of the word after it.
+    next: i64
+
+# The relation that begins at `words[at]`: an operand, maybe `% m`, `=` or
+# `!=`, and a list of values and ranges.
+#
+# - `words`: the condition's words.
+# - `at`: where the relation begins.
+#
+# Fails `invalid` where it is not one.
+function relation_at(words: [str], at: i64) -> Read?
+    if at >= words.len()
+        return fail(code: INVALID, msg: "a condition ends where a relation was expected")
+
+    operand = operand_of(words[at])?
+    here @= at + 1
+    side @= operand
+
+    if here < words.len() && words[here] == "%"
+        if here + 1 >= words.len()
+            return fail(code: INVALID, msg: "a `%` with no number after it")
+        m = whole_of(words[here + 1])?
+
+        side @ if operand.text == ""
+            Operand(text: "", fixed: operand.fixed % m)
+        else
+            Operand(text: f"{operand.text}%{m}", fixed: 0)
+
+        here @ here + 2
+
+    if here >= words.len() || words[here] != "=" && words[here] != "!="
+        return fail(code: INVALID, msg: "a relation with no `=` or `!=`")
+
+    equal = words[here] == "="
+    here @ here + 1
+    tests: [Cond] @= []
+    holds @= false
+    reading @= true
+
+    while reading
+        if here >= words.len()
+            return fail(code: INVALID, msg: "a relation with no value after its `=`")
+
+        low = whole_of(words[here])?
+        high @= low
+        here @ here + 1
+
+        if here + 1 < words.len() && words[here] == ".."
+            high @ whole_of(words[here + 1])?
+            here @ here + 2
+
+        if side.text == ""
+            holds @ holds || side.fixed >= low && side.fixed <= high
+        else
+            tests @ tests.push(member_test(side.text, low: low, high: high, equal: equal))
+
+        if here < words.len() && words[here] == ","
+            here @ here + 1
+        else
+            reading @ false
+
+    if side.text == ""
+        decided: Cond = if holds == equal
+            .always
+        else
+            .never
+
+        return ok(Read(cond: decided, next: here))
+
+    combined = if equal
+        any_of(tests)
+    else
+        all_of(tests)
+
+    return ok(Read(cond: combined, next: here))
+
+# The test of one value or range: `n%10==3`, `n%10>=2 && n%10<=4`, or, for
+# `!=`, `n%10!=3` and `(n%10<2 || n%10>4)`.
+#
+# - `side`: the left side's C text.
+# - `low`: the value, or the range's first.
+# - `high`: the range's last, `low` for a value.
+# - `equal`: whether the relation is `=`.
+function member_test(side: str, low: i64, high: i64, equal: bool) -> Cond
+    if low == high
+        operator = if equal
+            "=="
+        else
+            "!="
+
+        return .depends(text: f"{side}{operator}{low}", joined_by_or: false)
+
+    if equal
+        return .depends(text: f"{side}>={low} && {side}<={high}", joined_by_or: false)
+
+    return .depends(text: f"({side}<{low} || {side}>{high})", joined_by_or: false)
+
+# The conjunction of `parts`: a lone part as it is, never where one is never,
+# and otherwise the parts joined by `&&` with every `||` among them in
+# parentheses.
+#
+# - `parts`: the conditions.
+function all_of(parts: [Cond]) -> Cond
+    if parts.len() == 1
+        return parts[0]
+
+    texts: [str] @= []
+
+    for p in parts
+        match p
+            .never  => return .never
+            .always => _ = 0
+            .depends t =>
+                if t.joined_by_or
+                    texts @ texts.push(f"({t.text})")
+                else
+                    texts @ texts.push(t.text)
+
+    if texts.len() == 0
+        return .always
+
+    return .depends(text: texts.join(" && "), joined_by_or: false)
+
+# The disjunction of `parts`: always where one is always, the others joined
+# by `||`.
+#
+# - `parts`: the conditions.
+function any_of(parts: [Cond]) -> Cond
+    texts: [str] @= []
+    or_inside @= false
+
+    for p in parts
+        match p
+            .always => return .always
+            .never  => _ = 0
+            .depends t =>
+                texts @ texts.push(t.text)
+                or_inside @ or_inside || t.joined_by_or
+
+    if texts.len() == 0
+        return .never
+
+    return .depends(text: texts.join(" || "), joined_by_or: texts.len() > 1 || or_inside)
+
+# The operand `word` names, read for a whole number.
+#
+# - `word`: `n`, `i`, `v`, `w`, `f`, `t`, `c` or `e`.
+#
+# Fails `invalid` for any other word.
+function operand_of(word: str) -> Operand?
+    if word == "n" || word == "i"
+        return ok(Operand(text: "n", fixed: 0))
+
+    if word == "v" || word == "w" || word == "f" || word == "t" || word == "c" || word == "e"
+        return ok(Operand(text: "", fixed: 0))
+
+    return fail(code: INVALID, msg: f"\"{word}\" is no operand of CLDR's plural rules")
+
+# The whole number `word` writes.
+#
+# - `word`: the word.
+#
+# Fails `invalid` where it is none.
+function whole_of(word: str) -> i64?
+    return match samples.number_of(word)
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"\"{word}\" where a whole number was expected")
+
+# The words of a condition: operands and keywords, numbers, `%`, `=`, `!=`,
+# `..` and `,`, whatever the spaces between them.
+#
+# - `condition`: the condition.
+#
+# Fails `invalid` at a character CLDR's syntax does not use.
+function tokens_of(condition: str) -> [str]?
+    words: [str] @= []
+    at @= 0
+
+    while at < condition.len()
+        b = condition[at]
+
+        if b == ' '
+            at @ at + 1
+        else if b >= 'a' && b <= 'z' || b >= '0' && b <= '9'
+            start = at
+
+            while at < condition.len() && (condition[at] >= 'a' && condition[at] <= 'z' || condition[at] >= '0' && condition[at] <= '9')
+                at @ at + 1
+
+            words @ words.push(condition.slice(from: start, to: at))
+        else if b == '!' && at + 1 < condition.len() && condition[at + 1] == '='
+            words @ words.push("!=")
+            at @ at + 2
+        else if b == '.' && at + 1 < condition.len() && condition[at + 1] == '.'
+            words @ words.push("..")
+            at @ at + 2
+        else if b == '=' || b == '%' || b == ','
+            words @ words.push(condition.slice(from: at, to: at + 1))
+            at @ at + 1
+        else
+            return fail(
+                code: INVALID,
+                msg: f"\"{condition}\" holds a character CLDR's plural rules do not use at byte {at}"
+            )
+
+    return ok(words)
+
+## Tests
+
+test "forms_of: the headers of English, Polish and Japanese"
+    en = forms_of(i18n.parse_locale("en").must()).must()
+    assert en.header == "nplurals=2; plural=(n==1 ? 0 : 1);"
+    pl = forms_of(i18n.parse_locale("pl").must()).must()
+    assert pl.header == "nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);"
+    assert category_names(pl) == ["one", "few", "many"]
+    ja = forms_of(i18n.parse_locale("ja").must()).must()
+    assert ja.header == "nplurals=1; plural=0;"
+
+test "verify: every form of many languages agrees with CLDR at every probe number"
+    for tag in ["en", "de", "fr", "pt", "pt-PT", "es", "it", "pl", "ru", "uk", "cs", "sk", "lt", "lv", "ga", "gd", "cy", "br", "mt", "sl", "he", "ar", "is", "mk", "ro", "ja", "zh", "ko", "tr", "hr", "sr", "be", "kw"]
+        loc = i18n.parse_locale(tag).must()
+        forms = forms_of(loc).must()
+        assert verify(forms, locale: loc).is_err() == false
+
+test "disagreement: the old French header fails at a million, a wrong count at once"
+    fr = i18n.parse_locale("fr").must()
+    found = disagreement(header: "nplurals=2; plural=(n > 1);", locale: fr)
+    assert found.is_err() == false
+    pl = i18n.parse_locale("pl").must()
+    assert disagreement(header: forms_of(pl).must().header, locale: pl).is_err()
+
+test "read_condition: constants decided, ranges and lists joined"
+    assert text_of(read_condition("v = 0").must()) == "1"
+    assert text_of(read_condition("v != 0").must()) == "0"
+    assert text_of(read_condition("i = 0,1").must()) == "n==0 || n==1"
+    assert text_of(read_condition("n % 10 = 1 and n % 100 != 11..19").must()) == "n%10==1 && (n%100<11 || n%100>19)"
+    assert text_of(read_condition("e = 0 and i != 0 and i % 1000000 = 0 and v = 0 or e != 0..5").must()) == "n!=0 && n%1000000==0"
+    assert read_condition("x = 1").is_err()
+    assert read_condition("n = ").is_err()
