@@ -588,6 +588,43 @@ function press_key(app: App, id: i64, @key: [u8], count: u64, modifiers: i64) ->
 
 ## Tests
 
+test "create, value_of, selection_of, text_of: on the native side a widget the layer does not hold is not found, one of another kind invalid (defect 2681)"
+    if native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= open(HERO_UI_NATIVE)
+    assert app != nullptr
+    value @= 0
+    indices: [i64] @= []
+    room: [u8] @= []
+    assert value_of(app, id: 99, value: @value) == -1
+    assert last_error() == HERO_UI_NOT_FOUND
+    assert selection_of(app, id: 99, @indices, count: 4) == -1
+    assert last_error() == HERO_UI_NOT_FOUND
+    assert text_of(app, id: 99, @room, count: 16) == -1
+    assert last_error() == HERO_UI_NOT_FOUND
+    assert create(app, id: 1, kind: HERO_UI_WINDOW, parent: 0) == 0
+    assert create(app, id: 2, kind: HERO_UI_BUTTON, parent: 1) == 0
+    assert create(app, id: 3, kind: HERO_UI_PROGRESS, parent: 1) == 0
+    assert value_of(app, id: 2, value: @value) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert selection_of(app, id: 2, @indices, count: 4) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert text_of(app, id: 2, @room, count: 16) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert create(app, id: 4, kind: HERO_UI_LABEL, parent: 2) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert create(app, id: 4, kind: HERO_UI_MENU_ITEM, parent: 2) == -1
+    assert last_error() == HERO_UI_INVALID
+    assert create(app, id: 4, kind: HERO_UI_LABEL, parent: 99) == -1
+    assert last_error() == HERO_UI_NOT_FOUND
+    assert create(app, id: 2, kind: HERO_UI_LABEL, parent: 1) == -1
+    assert last_error() == HERO_UI_NOT_FOUND
+    assert set_enabled(app, id: 3, on: 0) == 0
+    assert set_enabled(app, id: 3, on: 1) == 0
+    assert close(@app) == 0
+
 test "press_key: a headless app holds no system to press a key in, and says so"
     app @= open(HERO_UI_HEADLESS)
     key: [u8] @= [97]

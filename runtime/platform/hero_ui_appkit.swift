@@ -260,8 +260,13 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             return answerOk
         }
         if kind == kindMenuItem || kind == kindMenuSeparator {
-            guard let owner = widgets[parent], owner.kind == kindMenu, let menu = owner.menu else {
+            // `hero_ui.h`'s two answers: no widget of that number is
+            // `NOT_FOUND`, a parent of a kind that holds no item `INVALID`.
+            guard let owner = widgets[parent] else {
                 return answerNotFound
+            }
+            guard owner.kind == kindMenu, let menu = owner.menu else {
+                return answerInvalid
             }
             let item: NSMenuItem
             if kind == kindMenuSeparator {
@@ -276,8 +281,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
             widgets[id] = made
             return answerOk
         }
-        guard let owner = widgets[parent], owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
+        guard let owner = widgets[parent] else {
             return answerNotFound
+        }
+        guard owner.kind == kindWindow, let window = owner.window, let content = window.contentView else {
+            return answerInvalid
         }
         if kind == kindWebView {
             guard let page = WebPage.made(id: id, backend: self) else {
@@ -803,6 +811,11 @@ private final class Backend: NSObject, NSWindowDelegate, NSTextFieldDelegate, NS
                 }
             } else if let control = widget.view as? NSControl {
                 control.isEnabled = on
+            } else if widget.view is NSProgressIndicator {
+                // AppKit's progress indicator takes no input and has no
+                // greyed state to draw, so there is nothing to change; the
+                // call is done, as on every other arm, and the face keeps
+                // what the program set.
             } else {
                 return answerInvalid
             }
@@ -1703,14 +1716,19 @@ public func hero_ui_appkit_text(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt
     guard let length = length else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> [UInt8]? in
-        guard let said = backend()?.text(id) else {
-            return nil
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, [UInt8]?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
         }
-        return Array(said.utf8)
+        return (true, backend.text(id).map { Array($0.utf8) })
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that holds no text `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let bytes = read else {
-        return answerNotFound
+        return answerInvalid
     }
     length.pointee = Int64(bytes.count)
     if let buffer = buffer, bytes.count <= Int(count) {
@@ -1726,8 +1744,16 @@ public func hero_ui_appkit_value(_ id: Int64, _ value: UnsafeMutablePointer<Int6
     guard let value = value else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> Int64? in
-        return backend()?.value(id)
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, Int64?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.value(id))
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that holds no value `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let found = read else {
         return answerInvalid
@@ -1741,8 +1767,16 @@ public func hero_ui_appkit_selection(_ id: Int64, _ indices: UnsafeMutablePointe
     guard let chosen = chosen else {
         return answerInvalid
     }
-    let read = MainActor.assumeIsolated { () -> [Int64]? in
-        return backend()?.selection(id)
+    let (held, read) = MainActor.assumeIsolated { () -> (Bool, [Int64]?) in
+        guard let backend = backend(), backend.widgets[id] != nil else {
+            return (false, nil)
+        }
+        return (true, backend.selection(id))
+    }
+    // A widget the native side does not hold is `NOT_FOUND`, one of a kind
+    // that chooses nothing `INVALID` (`hero_ui.h`).
+    guard held else {
+        return answerNotFound
     }
     guard let found = read else {
         return answerInvalid
