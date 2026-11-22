@@ -72,7 +72,7 @@ extern "hero_disk.h"
     function hero_disk_set_link_owner(path: cstr lent, user: i64, group: i64) -> i64
     function hero_disk_last_error() -> i64
     function hero_disk_last_os_error() -> i64
-    # Round 3 (2026-11-16): a lock handed what is no open stream.
+    # A lock handed what is no open stream.
     constant HERO_DISK_NOT_OPEN: i64
     # What `other_kind` answers: none for a file, a folder or a link, else
     # which other the path names.
@@ -90,7 +90,7 @@ extern "hero_disk.h"
     function hero_disk_set_permission(path: cstr lent, permission: i64) -> i64
     function hero_disk_set_link_permission(path: cstr lent, permission: i64) -> i64
     function hero_disk_set_link_times(path: cstr lent, written: i64, read: i64) -> i64
-    # Round 4 (2026-11-17): a file mapped in memory, a handle the layer issues
+    # A file mapped in memory, a handle the layer issues
     # and checks. One closed already, `nullptr`, or one it never issued is
     # `HERO_DISK_NOT_OPEN`, never a read of memory no longer mapped; no door
     # hands out an address inside a map.
@@ -1130,7 +1130,7 @@ test "set_link_times: a link's own times read back, its target's left as they we
     assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: ["f", "l"])
 
-# Round 4 (2026-11-17): a file put in place for good.
+# A file put in place for good.
 test "replace: a file over a file, over nothing, a folder either side, a link replaced itself, the same name, and a source not there"
     dir = test_folder("replace", holds: ["a", "b", "c", "d/x", "d", "l", "t"])
     assert !write_file(path: dir + "/a", text: "new").is_err()
@@ -1181,8 +1181,8 @@ test "sync_folder: a folder, the folder of a file just renamed, a file, a name n
         assert last_error() == HERO_DISK_NOT_FOUND
     test_clear(dir, holds: ["f"])
 
-# Round 4 (2026-11-17): a file mapped in memory.
-test "map: nullptr is no map, every door answers -1 with HERO_DISK_NOT_OPEN, the layer's own refusal"
+# A file mapped in memory.
+test "map_size: nullptr is no map, every door answers -1 with HERO_DISK_NOT_OPEN, the layer's own refusal"
     none: Mapping @= nullptr
     bytes: [u8] @= [1, 2, 3]
     assert map_size(none) == -1

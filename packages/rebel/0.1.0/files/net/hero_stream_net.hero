@@ -23,10 +23,11 @@ extern "hero_stream_net.h"
     # declares, and the header, which includes `hero_net.h` and
     # `hero_stream.h`, declares both. Their Heroes functions are the two other
     # floors' `close`, so none stands here.
+
     function hero_net_close(s: hero_net.Socket consumes) -> i64
     function hero_stream_close(s: hero_stream.Stream consumes) -> i64
     function hero_stream_net_of(s: hero_net.Socket transfers hero_net_close) -> hero_stream.Stream acquires hero_stream_close
-    # Round 3 (2026-11-16): the socket under a stream reached through it.
+    # The deadline of the socket under a stream, set through the stream.
     #
     # - `s`: a stream `hero_stream_net_of` made; it stays open.
     # - `ms`: milliseconds from now; 0 a deadline already passed,
@@ -181,7 +182,7 @@ test "a deadline set on the socket ends a read of the stream, told as a deadline
     assert hero_net.close(@accepted) == 0
     assert hero_net.close(@listener) == 0
 
-# Round 3: the deadline set again after the socket became a stream, which
+# The deadline set again after the socket became a stream, which
 # until then nothing could move.
 test "set_deadline: a stream's deadline moved, a read ending at it, then taken away by HERO_NET_FOREVER, and what is no stream over a socket"
     listener @= hero_net.listen(address: "127.0.0.1", port: 0)
