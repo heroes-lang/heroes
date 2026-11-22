@@ -343,6 +343,17 @@ jobs:
           done
           ./heroes run generators/unicode_segment/main.hero -- check build/generators/ucd-17.0.0
 
+      # The three files of `generators/unicode_normalize/main.hero`'s `UCD_URL`;
+      # the generator holds each to its SHA-256.
+      - name: generators/unicode_normalize, Unicode 17.0.0's classes, decompositions, compositions and quick checks of unicode/normalize
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in UnicodeData.txt DerivedNormalizationProps.txt PropList.txt; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$(basename "$f")" \
+              "https://www.unicode.org/Public/17.0.0/ucd/$f"
+          done
+          ./heroes run generators/unicode_normalize/main.hero -- check build/generators/ucd-17.0.0
+
       # The tests of the packages the generators share: `generators/tablekit/`,
       # which every generator writes its tables with, `generators/cldrkit/`,
       # which reads CLDR's zip, and `generators/ucdkit/`, which reads the
