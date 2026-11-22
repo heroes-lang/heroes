@@ -2288,6 +2288,42 @@ public func hero_ui_appkit_set_docked(_ on: Int64) -> Int64 {
     }
 }
 
+@c
+public func hero_ui_appkit_set_accessible_name(_ id: Int64, _ name: UnsafePointer<UInt8>?, _ count: Int64) -> Int64 {
+    let said = text(name, count)
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setAccessibleName(id, said) ?? answerNotFound
+    }
+}
+
+@c
+public func hero_ui_appkit_accessible_name(_ id: Int64, _ buffer: UnsafeMutablePointer<UInt8>?, _ count: Int64, _ length: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let length = length else {
+        return answerInvalid
+    }
+    let got = MainActor.assumeIsolated { () -> String? in
+        return backend()?.accessibleName(id)
+    }
+    guard let name = got else {
+        return answerNotFound
+    }
+    let bytes = Array(name.utf8)
+    if let buffer = buffer, bytes.count <= Int(count) {
+        for at in 0..<bytes.count {
+            buffer[at] = bytes[at]
+        }
+    }
+    length.pointee = Int64(bytes.count)
+    return answerOk
+}
+
+@c
+public func hero_ui_appkit_set_label_for(_ id: Int64, _ label: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        return backend()?.setLabelFor(id, label) ?? answerNotFound
+    }
+}
+
 // Ends the wait of the loop `pump` runs, once another member queued an
 // event (a sheet's answer, which AppKit hands its completion handler outside
 // any event): the event is counted as this member's, and an event of the
@@ -3152,6 +3188,70 @@ private let kindTray: Int64 = 31
 // own glyphs' (Apple's Human Interface Guidelines give 16 to 18 points of a
 // 22-point bar, unread here; 18 keeps an image of the program's whole).
 private let trayHeight: CGFloat = 18
+
+extension Backend {
+    // The object a screen reader reads for widget `widget`: the view the
+    // person types into or chooses in, a window's own window, a menu
+    // item's item; none for a menu, a timer's or a tray icon's, whose
+    // words are their own.
+    func accessibleOf(_ widget: Native) -> NSAccessibilityProtocol? {
+        if widget.kind == kindWindow {
+            return widget.window
+        }
+        if widget.kind == kindMenuItem {
+            return widget.item
+        }
+        if let status = widget.status {
+            return status.button
+        }
+        return widget.table ?? widget.textView ?? widget.view
+    }
+
+    // Gives widget `id` the accessible name `name`, or takes it back where
+    // `name` is empty.
+    func setAccessibleName(_ id: Int64, _ name: String) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let element = accessibleOf(widget) else {
+            return answerInvalid
+        }
+        element.setAccessibilityLabel(name.isEmpty ? nil : name)
+        return answerOk
+    }
+
+    // The accessible name widget `id` holds, "" for none.
+    func accessibleName(_ id: Int64) -> String? {
+        guard let widget = widgets[id], let element = accessibleOf(widget) else {
+            return nil
+        }
+        return element.accessibilityLabel() ?? ""
+    }
+
+    // Ties label `label` to widget `id`, which is then read by the label's
+    // words (`NSAccessibility`'s title element), or unties it where `label`
+    // is 0.
+    func setLabelFor(_ id: Int64, _ label: Int64) -> Int64 {
+        guard let widget = widgets[id] else {
+            return answerNotFound
+        }
+        guard let element = accessibleOf(widget) as? NSView else {
+            return answerInvalid
+        }
+        if label == 0 {
+            element.setAccessibilityTitleUIElement(nil)
+            return answerOk
+        }
+        guard let tied = widgets[label] else {
+            return answerNotFound
+        }
+        guard tied.kind == kindLabel, let words = tied.view else {
+            return answerInvalid
+        }
+        element.setAccessibilityTitleUIElement(words)
+        return answerOk
+    }
+}
 
 extension Backend {
     // Makes tray icon `made`, a status item of the menu bar's, its parent 0,

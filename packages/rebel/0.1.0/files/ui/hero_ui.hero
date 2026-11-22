@@ -199,6 +199,10 @@ extern "hero_ui.h"
     constant HERO_UI_APPEARANCE_DARK: i64
     constant HERO_UI_EVENT_APPEARANCE: i64
     function hero_ui_appearance(app: App, @appearance: i64) -> i64
+    # Accessible names, and a label tied to its field.
+    function hero_ui_set_accessible_name(app: App, id: i64, @name: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_accessible_name(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_set_label_for(app: App, id: i64, label: i64) -> i64
     # A notification of the system's.
     function hero_ui_notify(app: App, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
     # A folder chosen, and a message box of the program's words.
@@ -1022,6 +1026,34 @@ function set_docked(app: App, on: i64) -> i64
 # - `drawn`: where it is written.
 function appearance_now(app: App, @drawn: i64) -> i64
     return hero_ui_appearance(app, @drawn)
+
+# 0 once widget `id` holds the accessible name `name`, none taking it back;
+# or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `name`: one line of UTF-8; left as it was handed.
+# - `count`: how many of its first bytes; 0 for none.
+function set_accessible_name(app: App, id: i64, @name: [u8], count: u64) -> i64
+    return hero_ui_set_accessible_name(app, id: id, @name, count: count)
+
+# The length of the accessible name widget `id` holds, written into
+# `buffer` where it fits; 0 for none; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget.
+# - `buffer`: where the name is written; left `count` long.
+# - `count`: the bytes `buffer` holds.
+function accessible_name(app: App, id: i64, @buffer: [u8], count: u64) -> i64
+    return hero_ui_accessible_name(app, id: id, @buffer, count: count)
+
+# 0 once label `label` is tied to widget `id`, 0 untying it; or -1.
+#
+# - `app`: the app.
+# - `id`: the widget named.
+# - `label`: the label, or 0.
+function set_label_for(app: App, id: i64, label: i64) -> i64
+    return hero_ui_set_label_for(app, id: id, label: label)
 
 # 0 once the system shows a notification of `title` and `text`; or -1.
 #

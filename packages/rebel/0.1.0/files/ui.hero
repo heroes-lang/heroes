@@ -1218,6 +1218,37 @@ variant Appearance
 function appearance_of(app: App) -> Appearance?
     return desk.appearance_of(app)
 
+# Gives `widget` the name a screen reader says for it, where it shows no
+# words of its own (a picture, a slider, a button of an image) or its words
+# do not say what it is, as Qt's `QWidget::setAccessibleName` and ARIA's
+# `aria-label`. Kept on the headless side.
+#
+# - `app`: the app holding it.
+# - `widget`: a widget, a window, a menu item or a tray icon.
+# - `name`: one line without a zero byte; "" takes it back, the widget then
+#   named by its own words.
+#
+# Fails `closed`, `invalid` for a box, a menu or a timer, `unsupported`
+# where the system's arm has no such call (Windows and Linux, pending),
+# `failed`. See also `set_label_for`.
+function set_accessible_name(@app: App, widget: Widget, name: str) -> ()?
+    return state.set_accessible_name(@app, widget: widget, name: name)
+
+# Ties label `caption` to `widget`, the field or the control it names, so a screen
+# reader names the widget by the label's words, as Qt's
+# `QLabel::setBuddy` and ARIA's `aria-labelledby`. Kept on the headless
+# side.
+#
+# - `app`: the app holding them.
+# - `caption`: the label.
+# - `widget`: a widget in a window, not a label.
+#
+# Fails `closed`, `invalid`, `unsupported` where the system's arm has no
+# such call (Windows and Linux, pending), `failed`. See also
+# `set_accessible_name`.
+function set_label_for(@app: App, caption: Widget, widget: Widget) -> ()?
+    return state.set_label_for(@app, caption: caption, widget: widget)
+
 # Shows a notification of the system's, `title` and its words `text`, in
 # the system's own place beside every application's, as wxWidgets'
 # `wxNotificationMessage` and Electron's `Notification`. The system may hold

@@ -169,6 +169,14 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count);
 int64_t hero_ui_arm_appearance(int64_t *appearance);
 int64_t hero_ui_arm_appearance_set(int64_t appearance);
 
+/* ACCESSIBLE NAMES (`hero_ui.h`): defined on macOS by `hero_ui.c` handing
+ * them to `hero_ui_appkit.swift`, refusals for the Win32 and GTK 4 arms in
+ * CALLS NO C ARM DRAWS YET. `accessible_name` writes the name where it fits
+ * and its length through `length`, as `text` does. */
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count);
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label);
+
 /* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
  * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
  * person has answered, writing the answer through its last parameter (the

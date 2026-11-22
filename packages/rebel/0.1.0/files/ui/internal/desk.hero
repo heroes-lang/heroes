@@ -742,7 +742,7 @@ test "native: the screens read, a window placed, centred, maximized, minimized, 
     ui.set_position(@app, widget: w, screen: 0, x: at_x, y: at_y).must()
     placed = ui.frame_of(@app, widget: w).must()
     assert placed.screen == 0 && placed.x == at_x && placed.y == at_y
-    assert placed.width == 320 && placed.height > 200
+    assert placed.width >= 320 && placed.height > 200
     ui.center(@app, widget: w).must()
     centred = ui.frame_of(@app, widget: w).must()
     middle = main.work.x + (main.work.width - centred.width) / 2

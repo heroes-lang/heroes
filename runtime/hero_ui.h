@@ -1087,4 +1087,28 @@ int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count
  * `appearance`. 0, or -1. */
 int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance);
 
+/* -- ACCESSIBLE NAMES --------------------------------------------------------
+ *
+ * Qt's `QWidget::setAccessibleName` and `QLabel::setBuddy`, ARIA's
+ * `aria-label` and `aria-labelledby`: the name a screen reader says for a
+ * widget that shows no words of its own (a picture, a slider, a button of
+ * an image) or whose words do not say what it is, and a label tied to the
+ * field it names, so the field is read by the label's words. */
+
+/* Gives widget `id` the accessible name `name`, `count` bytes of one line;
+ * none, `count` 0, takes it back, the widget then named by its own words.
+ * 0, or -1. */
+int64_t hero_ui_set_accessible_name(hero_ui_app *app, int64_t id, const void *name, uint64_t count);
+
+/* Writes the accessible name widget `id` holds, as the system holds it,
+ * into `buffer` and answers its length, 0 for none; where it is longer than
+ * `count`, nothing is written and the length is answered all the same. -1
+ * on failure. */
+int64_t hero_ui_accessible_name(hero_ui_app *app, int64_t id, void *buffer, uint64_t count);
+
+/* Ties label `label` to widget `id`, which a screen reader then names by
+ * the label's words; `label` 0 unties it. 0, or -1, `INVALID` where `label`
+ * is no label. */
+int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label);
+
 #endif

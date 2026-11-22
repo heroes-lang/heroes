@@ -142,6 +142,10 @@ record Node
     shown: bool
     # A web view's table, policy, origins and page, as the program set them.
     web: Web
+    # The name a screen reader says for it, "" for its own words.
+    accessible: str
+    # The label tied to it, which a screen reader names it by; 0 for none.
+    label: i64
 
 # What a web view keeps on both sides, so each answers alike: the assets as
 # the program put them, without their bodies, which the platform layer
@@ -333,7 +337,9 @@ function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
         h: 0,
         dirty: true,
         shown: false,
-        web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0)
+        web: Web(assets: [], bytes: 0, policy: "", origins: [], page: "", posted: 0),
+        accessible: "",
+        label: 0
     )
 
 # The node numbered `id`. Fails `closed` where the table holds none: it was

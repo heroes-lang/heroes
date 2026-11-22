@@ -6,6 +6,7 @@
 # may have moved, and marks its window for a layout. No setter gives an
 # event: only what the person does is one.
 
+use bytes
 use image
 use time
 use ui
@@ -367,6 +368,45 @@ function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
         what: "a list, a combo box, a radio group, tabs, a table or a tree"
     )
 
+# Gives a widget the name a screen reader says for it
+# (`ui.set_accessible_name`), "" taking it back.
+function set_accessible_name(@app: ui.App, widget: ui.Widget, name: str) -> ()?
+    n @= check.node_of(app, widget: widget)?
+    check.text_ok(text: name, one_line: true, what: "the accessible name")?
+
+    if !model.is_native(n.kind) || n.kind == hero_ui.HERO_UI_MENU || n.kind == hero_ui.HERO_UI_CONTEXT_MENU || n.kind == hero_ui.HERO_UI_MENU_SEPARATOR
+        return fail(
+            code: failure.INVALID,
+            msg: f"a {model.kind_name(n.kind)} is nothing a screen reader names: a widget, a window, a menu item or a tray icon is"
+        )
+
+    if app.native
+        spelled @= bytes.from_text(name)
+
+        if hero_ui.set_accessible_name(app.handle, id: n.id, @spelled, count: to_u64(spelled.len()).must()) < 0
+            return failure.last(f"naming widget {n.id} for a screen reader")
+    n.accessible @ name
+    model.put(@app.table, n: n)
+    return ok()
+
+# Ties label `caption` to `widget`, which a screen reader then names by
+# the label's words (`ui.set_label_for`).
+function set_label_for(@app: ui.App, caption: ui.Widget, widget: ui.Widget) -> ()?
+    tied = check.node_kind(app, widget: caption, kinds: [hero_ui.HERO_UI_LABEL], what: "a label")?
+    n @= check.node_of(app, widget: widget)?
+
+    if !model.is_placed(n.kind) || n.kind == hero_ui.HERO_UI_LABEL || !model.is_native(n.kind)
+        return fail(
+            code: failure.INVALID,
+            msg: f"a {model.kind_name(n.kind)} takes no label of its own: a widget in a window that shows no words of its own does"
+        )
+
+    if app.native && hero_ui.set_label_for(app.handle, id: n.id, label: tied.id) < 0
+        return failure.last(f"tying label {tied.id} to widget {n.id}")
+    n.label @ tied.id
+    model.put(@app.table, n: n)
+    return ok()
+
 # Shows an image in a picture or as a tray icon (`ui.set_picture`).
 function set_picture(@app: ui.App, widget: ui.Widget, img: image.Image) -> ()?
     n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_IMAGE, hero_ui.HERO_UI_TRAY], what: "a picture or a tray icon")?
@@ -668,3 +708,48 @@ test "password_field and set_moving: on the native side a masked field set, type
     ui.set_value(@app, widget: bar, value: 5).must()
     assert ui.value_of(app, widget: bar).must() == 5
     ui.close(@app).must()
+
+test "set_accessible_name and set_label_for: kept on the headless side and taken back; a box, a menu, a timer and a name of two lines refused; a label tied to its field, and a label refused as the label or as the field (catalogue AX02)"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    dial = ui.slider(@app, into: w, least: 0, most: 10, value: 5).must()
+    ui.set_accessible_name(@app, widget: dial, name: "Volume").must()
+    assert app.table.nodes[dial.id].must().accessible == "Volume"
+    ui.set_accessible_name(@app, widget: dial, name: "").must()
+    assert app.table.nodes[dial.id].must().accessible == ""
+    box = ui.row(@app, into: w).must()
+    assert fixture.code_of(ui.set_accessible_name(@app, widget: box, name: "Tools")) == ui.INVALID
+    assert fixture.code_of(ui.set_accessible_name(@app, widget: dial, name: "a\nb")) == ui.INVALID
+    words = ui.label(@app, into: w, text: "Name:").must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    ui.set_label_for(@app, caption: words, widget: field).must()
+    assert app.table.nodes[field.id].must().label == words.id
+    assert fixture.code_of(ui.set_label_for(@app, caption: field, widget: words)) == ui.INVALID
+    assert fixture.code_of(ui.set_label_for(@app, caption: words, widget: words)) == ui.INVALID
+    ui.close(@app).must()
+
+test "set_accessible_name and set_label_for: on the native side the system holds the name and gives it back, takes it back, and ties a label to its field (catalogue AX02)"
+    if hero_ui.native_here() == 0
+        skip_test(
+            reason: "no native user interface for this session: no window server, no window station that shows, or no display named"
+        )
+    app @= ui.open(.native).must()
+    w = ui.window(@app, title: "Player", width: 240, height: 120).must()
+    dial = ui.slider(@app, into: w, least: 0, most: 10, value: 5).must()
+    named = ui.set_accessible_name(@app, widget: dial, name: "Volume")
+    refusal = fixture.unsupported_words(named)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    named.must()
+    room: [u8] @= []
+    length = hero_ui.accessible_name(app.handle, id: dial.id, @room, count: 64)
+    held = bytes.to_text(room.slice(from: 0, to: length)).must()
+    ui.set_accessible_name(@app, widget: dial, name: "").must()
+    emptied = hero_ui.accessible_name(app.handle, id: dial.id, @room, count: 64)
+    words = ui.label(@app, into: w, text: "Name:").must()
+    field = ui.text_field(@app, into: w, text: "").must()
+    ui.set_label_for(@app, caption: words, widget: field).must()
+    ui.close(@app).must()
+    assert length == 6 && held == "Volume" && emptied == 0

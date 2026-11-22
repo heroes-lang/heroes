@@ -126,6 +126,12 @@ void hero_ui_appkit_wake(void);
 
 int64_t hero_ui_appkit_set_docked(int64_t on);
 
+int64_t hero_ui_appkit_set_accessible_name(int64_t id, const uint8_t *name, int64_t count);
+
+int64_t hero_ui_appkit_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length);
+
+int64_t hero_ui_appkit_set_label_for(int64_t id, int64_t label);
+
 int64_t hero_ui_appkit_web_load(int64_t id, const uint8_t *url, int64_t count);
 
 int64_t hero_ui_appkit_web_post(int64_t id, const uint8_t *text, int64_t count);

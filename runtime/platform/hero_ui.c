@@ -1842,7 +1842,7 @@ int64_t hero_ui_number(hero_ui_app *app) {
 
 static int64_t hero_ui_elsewhere(const char *what);
 static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count);
-static int64_t hero_ui_system_answered(int64_t kind, const char *what);
+static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -2172,7 +2172,7 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
         if (id != 0 || value < 0 || value > HERO_UI_APPEARANCE_DARK || count != 0) {
             return hero_ui_said(HERO_UI_INVALID, "an appearance turned names no widget, 0, and is HERO_UI_APPEARANCE_* or 0 for the system's");
         }
-        return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would");
+        return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would", 0);
     }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
@@ -3601,6 +3601,18 @@ int64_t hero_ui_arm_appearance_set(int64_t appearance) {
     return hero_ui_appkit_appearance_set(appearance);
 }
 
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    return hero_ui_appkit_set_accessible_name(id, name, count);
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    return hero_ui_appkit_accessible_name(id, buffer, count, length);
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    return hero_ui_appkit_set_label_for(id, label);
+}
+
 #else
 
 /* CALLS NO C ARM DRAWS YET: each refuses in words of its own, kept where the
@@ -3635,6 +3647,27 @@ int64_t hero_ui_arm_appearance_set(int64_t appearance) {
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer turns the appearance on macOS alone, and this system's arm has no such call");
 }
 
+int64_t hero_ui_arm_set_accessible_name(int64_t id, const uint8_t *name, int64_t count) {
+    (void)id;
+    (void)name;
+    (void)count;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer names a widget for a screen reader on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_accessible_name(int64_t id, uint8_t *buffer, int64_t count, int64_t *length) {
+    (void)id;
+    (void)buffer;
+    (void)count;
+    (void)length;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer reads a widget's accessible name on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
+    (void)id;
+    (void)label;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer ties a label to its field on macOS alone, and this system's arm has no such call");
+}
+
 #endif
 
 int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
@@ -3648,8 +3681,9 @@ int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on) {
 }
 
 /* 0 where the arm answered `kind` `HERO_UI_OK`, else -1 with the failure
- * said as `what`, in the words of the member that answered it. */
-static int64_t hero_ui_system_answered(int64_t kind, const char *what) {
+ * said as `what`, in the words of the member that answered it, naming
+ * widget `id` where it is 1 or more. */
+static int64_t hero_ui_system_answered(int64_t kind, const char *what, int64_t id) {
     char words[HERO_UI_WORDS_MOST];
     char theirs[HERO_UI_WORDS_MOST];
 
@@ -3661,7 +3695,7 @@ static int64_t hero_ui_system_answered(int64_t kind, const char *what) {
         (void)snprintf(words, sizeof words, "%s: %s", what, theirs);
         return hero_ui_said(kind, words);
     }
-    return hero_ui_answered(kind, what, 0);
+    return hero_ui_answered(kind, what, id);
 }
 
 int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count) {
@@ -3673,7 +3707,7 @@ int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count
     if (title_count == 0 || memchr(heading, '\n', (size_t)title_count) != NULL) {
         return hero_ui_said(HERO_UI_INVALID, "a notification's title is one line, not empty");
     }
-    return hero_ui_system_answered(hero_ui_arm_notify(title, (int64_t)title_count, text, (int64_t)text_count), "showing a notification");
+    return hero_ui_system_answered(hero_ui_arm_notify(title, (int64_t)title_count, text, (int64_t)text_count), "showing a notification", 0);
 }
 
 int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance) {
@@ -3683,5 +3717,47 @@ int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance) {
     if (appearance == NULL) {
         return hero_ui_said(HERO_UI_INVALID, "no place was given for the appearance");
     }
-    return hero_ui_system_answered(hero_ui_arm_appearance(appearance), "asking the appearance");
+    return hero_ui_system_answered(hero_ui_arm_appearance(appearance), "asking the appearance", 0);
+}
+
+/* -- ACCESSIBLE NAMES -------------------------------------------------------- */
+
+int64_t hero_ui_set_accessible_name(hero_ui_app *app, int64_t id, const void *name, uint64_t count) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id) || !hero_ui_text_given(name, count, "the accessible name", false)) {
+        return -1;
+    }
+    if (count > 0 && memchr(name, '\n', (size_t)count) != NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "an accessible name is one line");
+    }
+    return hero_ui_system_answered(hero_ui_arm_set_accessible_name(id, name, (int64_t)count), "naming a widget for a screen reader", id);
+}
+
+int64_t hero_ui_accessible_name(hero_ui_app *app, int64_t id, void *buffer, uint64_t count) {
+    int64_t length = 0;
+    int64_t kind;
+
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (count > 0 && buffer == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "room was named for the name and none given");
+    }
+    if (count > (uint64_t)HERO_UI_TEXT_MOST) {
+        count = (uint64_t)HERO_UI_TEXT_MOST;
+    }
+    kind = hero_ui_arm_accessible_name(id, buffer, (int64_t)count, &length);
+    if (hero_ui_system_answered(kind, "reading a widget's accessible name", id) != 0) {
+        return -1;
+    }
+    return length;
+}
+
+int64_t hero_ui_set_label_for(hero_ui_app *app, int64_t id, int64_t label) {
+    if (hero_ui_enter_native(app) == NULL || !hero_ui_id_given(id)) {
+        return -1;
+    }
+    if (label < 0 || label == id) {
+        return hero_ui_said(HERO_UI_INVALID, "the label tied to a widget is another widget, 1 or more, or 0 for none");
+    }
+    return hero_ui_system_answered(hero_ui_arm_set_label_for(id, label), "tying a label to its widget", id);
 }
