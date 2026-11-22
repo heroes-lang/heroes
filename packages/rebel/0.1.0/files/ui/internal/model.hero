@@ -1,0 +1,427 @@
+# The widgets an app holds, as data: one `Node` per widget, box, window,
+# menu and timer, kept in a map by the number the app gave it, with the
+# tree's links as numbers. Every other module of `ui` reads and changes the
+# app through this one table, so the headless side and the native side see
+# the same widgets, the same state and the same geometry.
+#
+# **A number is given once.** An app numbers its widgets from 1 and never
+# gives a number twice, so a `ui.Widget` whose number the table no longer
+# holds has ended, and every call on it is told `closed`, never another
+# widget's state. Destroying a widget removes it and everything under it.
+#
+# The kinds are `hero_ui.h`'s numbers (`HERO_UI_WINDOW` and the rest), so the
+# native side and this table name a kind alike.
+
+use ui/hero_ui
+use ui/internal/failure
+
+# One widget, box, window, menu or timer, and every field any kind keeps;
+# a kind leaves the fields it has no use for at their blanks (`blank`).
+record Node
+    # The app's number for it, 1 or more.
+    id: i64
+    # One of `hero_ui.h`'s kinds.
+    kind: i64
+    # The box, window or menu holding it; 0 for a window and a timer.
+    parent: i64
+    # The window it stands in, its own number for a window, 0 for a timer.
+    window: i64
+    # What a window, a box or a menu holds, in order; a window's menus are
+    # in `menus`.
+    children: [i64]
+    # A window's menus, in order.
+    menus: [i64]
+    # Its text: a window's title, a label's, a button's, a checkbox's, a
+    # text field's or a text area's whole text, a menu's or an item's.
+    text: str
+    # The items of a list, a combo box or a radio group.
+    items: [str]
+    # The indices chosen among `items`, ascending.
+    chosen: [i64]
+    # A checkbox's state as 0 or 1, a slider's or a progress bar's value.
+    value: i64
+    # The lowest value of a slider or a progress bar.
+    least: i64
+    # The highest value of a slider or a progress bar.
+    most: i64
+    # Whether the person may use it.
+    enabled: bool
+    # Whether it is shown; a hidden widget takes no room.
+    visible: bool
+    # Whether the person may resize a window.
+    resizable: bool
+    # A window's content size as the program asked it, or an image's
+    # columns, in points.
+    width: i64
+    # A window's content height as asked, or an image's rows, in points.
+    height: i64
+    # A grid's columns, 1 or more.
+    columns: i64
+    # The room between two children of a window or a box, in points.
+    spacing: i64
+    # The room inside a window's or a box's edges, in points.
+    padding: i64
+    # A grid's weights for the room left, one per column, missing ones 0.
+    grow_columns: [i64]
+    # A grid's weights for the room left, one per row, missing ones 0.
+    grow_rows: [i64]
+    # Its share of the room its box has left along the box's line.
+    stretch: i64
+    # Whether it takes the whole room across its box's line.
+    fill: bool
+    # Where it stands across its box's line when it does not fill: 0 at the
+    # start, 1 in the middle, 2 at the end.
+    align: i64
+    # The least width the program asked for it, in points.
+    min_width: i64
+    # The least height the program asked for it, in points.
+    min_height: i64
+    # The room around it on every side, in points.
+    margin: i64
+    # An image's pixels, 8-bit RGBA, row after row.
+    pixels: [u8]
+    # A menu item's shortcut key, empty for none.
+    key: str
+    # The keys held with it, `HERO_UI_PRIMARY` and the rest added.
+    modifiers: i64
+    # A timer's period, in nanoseconds.
+    every: i64
+    # When a timer fires next, on the app's clock, in nanoseconds.
+    due: i64
+    # The size the system, or the headless side's measure, draws it at.
+    preferred_width: i64
+    # The height the system, or the headless side's measure, draws it at.
+    preferred_height: i64
+    # The least size it needs with its children, its margin included, as the
+    # layout's measure found it.
+    need_width: i64
+    # The least height it needs, its margin included.
+    need_height: i64
+    # Where the layout placed it in its window's content: its left edge.
+    x: i64
+    # Its top edge, the axis down.
+    y: i64
+    # Its width as placed.
+    w: i64
+    # Its height as placed.
+    h: i64
+    # Whether the window needs laying out again before it is drawn or read.
+    dirty: bool
+    # Whether a window has been shown once, after its first layout.
+    shown: bool
+
+# The table of one app.
+record Model
+    # Every node by its number.
+    nodes: {i64: Node}
+    # The number the next node takes.
+    next_id: i64
+    # The windows, in the order they were made.
+    windows: [i64]
+    # The timers, in the order they were made.
+    timers: [i64]
+
+# The room between two children, and inside a box's edges, that a new box
+# takes; a window's padding is `WINDOW_PADDING`.
+constant SPACING: i64
+    6
+
+# The room inside a window's edges a new window takes.
+constant WINDOW_PADDING: i64
+    12
+
+# An empty table, its first number 1.
+function empty() -> Model
+    return Model(nodes: {}, next_id: 1, windows: [], timers: [])
+
+# A node of `kind` numbered `id` under `parent` in `window`, every other
+# field at its blank: no text, no items, enabled and shown, a box's spacing
+# and no padding, filling nothing.
+function blank(id: i64, kind: i64, parent: i64, window: i64) -> Node
+    return Node(
+        id: id,
+        kind: kind,
+        parent: parent,
+        window: window,
+        children: [],
+        menus: [],
+        text: "",
+        items: [],
+        chosen: [],
+        value: 0,
+        least: 0,
+        most: 0,
+        enabled: true,
+        visible: true,
+        resizable: true,
+        width: 0,
+        height: 0,
+        columns: 1,
+        spacing: SPACING,
+        padding: 0,
+        grow_columns: [],
+        grow_rows: [],
+        stretch: 0,
+        fill: false,
+        align: 0,
+        min_width: 0,
+        min_height: 0,
+        margin: 0,
+        pixels: [],
+        key: "",
+        modifiers: 0,
+        every: 0,
+        due: 0,
+        preferred_width: 0,
+        preferred_height: 0,
+        need_width: 0,
+        need_height: 0,
+        x: 0,
+        y: 0,
+        w: 0,
+        h: 0,
+        dirty: true,
+        shown: false
+    )
+
+# The node numbered `id`. Fails `closed` where the table holds none: it was
+# destroyed, or its window or its app was.
+function node_of(m: Model, id: i64) -> Node?
+    match m.nodes[id]
+        .ok n  => return ok(n)
+        .err _ => return fail(code: failure.CLOSED, msg: f"widget {id} was destroyed, or its window or its app was")
+
+# Puts `n` in the table under its number, replacing what stood there.
+function put(@m: Model, n: Node)
+    m.nodes[n.id] @ n
+
+# Takes the next number for a node.
+function take_id(@m: Model) -> i64
+    id = m.next_id
+    m.next_id @ id + 1
+    return id
+
+# Adds `n`, a new node, and links it into its parent's children, or its
+# window's menus for a menu; a window or a timer joins the app's list.
+# Aborts where the parent is missing, which the makers check first.
+function add(@m: Model, n: Node)
+    put(@m, n: n)
+
+    if n.kind == hero_ui.HERO_UI_WINDOW
+        m.windows @ m.windows.push(n.id)
+    else if n.kind == hero_ui.HERO_UI_TIMER
+        m.timers @ m.timers.push(n.id)
+    else
+        parent @= node_of(m, id: n.parent).must()
+
+        if n.kind == hero_ui.HERO_UI_MENU
+            parent.menus @ parent.menus.push(n.id)
+        else
+            parent.children @ parent.children.push(n.id)
+        put(@m, n: parent)
+    marks_dirty(@m, window: n.window)
+
+# Marks `window` as needing a layout; 0, a timer's, marks nothing.
+function marks_dirty(@m: Model, window: i64)
+    match m.nodes[window]
+        .ok w =>
+            changed @= w
+            changed.dirty @ true
+            put(@m, n: changed)
+        .err _ =>
+            _ = 0
+
+# Every number under `id` and `id` itself, children before their parent, in
+# the order they stand: what destroying `id` removes.
+function subtree(m: Model, id: i64) -> [i64]
+    out: [i64] @= []
+    stack: [i64] @= [id]
+    visited: [i64] @= []
+
+    # A walk with an explicit stack: a node goes in `visited` once its
+    # children are pushed, so the order read back is the reverse of a
+    # parent-first walk, children before parents.
+    while stack.len() > 0
+        at = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+        visited @ visited.push(at)
+
+        match m.nodes[at]
+            .ok n =>
+                for child in n.menus
+                    stack @ stack.push(child)
+
+                for child in n.children
+                    stack @ stack.push(child)
+            .err _ =>
+                _ = 0
+
+    at @= visited.len() - 1
+
+    while at >= 0
+        out @ out.push(visited[at])
+        at @ at - 1
+
+    return out
+
+# Removes `id` and everything under it, unlinks it from its parent and the
+# app's lists, and answers the numbers removed, children first.
+function remove(@m: Model, id: i64) -> [i64]
+    gone = subtree(m, id: id)
+    n = node_of(m, id: id).must()
+
+    match m.nodes[n.parent]
+        .ok p =>
+            parent @= p
+            parent.children @ without(parent.children, id: id)
+            parent.menus @ without(parent.menus, id: id)
+            put(@m, n: parent)
+        .err _ =>
+            _ = 0
+
+    m.windows @ without(m.windows, id: id)
+    m.timers @ without(m.timers, id: id)
+    kept: {i64: Node} @= {}
+    dropped: {i64: bool} @= {}
+
+    for g in gone
+        dropped[g] @ true
+
+    for key in keys(m.nodes)
+        if dropped[key].is_err()
+            kept[key] @ m.nodes[key].must()
+
+    m.nodes @ kept
+    marks_dirty(@m, window: n.window)
+    return gone
+
+# `ids` without `id`, in order.
+function without(ids: [i64], id: i64) -> [i64]
+    out: [i64] @= []
+
+    for each in ids
+        if each != id
+            out @ out.push(each)
+
+    return out
+
+# Whether a node of `kind` holds widgets laid out in it: a window, a row, a
+# column or a grid.
+function holds_widgets(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_ROW || kind == hero_ui.HERO_UI_COLUMN || kind == hero_ui.HERO_UI_GRID
+
+# Whether a node of `kind` is a widget the native side makes, every kind but
+# the program's own boxes and timers.
+function is_native(kind: i64) -> bool
+    return kind >= hero_ui.HERO_UI_WINDOW && kind <= hero_ui.HERO_UI_WEBVIEW
+
+# Whether a node of `kind` is placed in its window's content by the layout:
+# every widget but a window, a menu, a menu's items and a timer.
+function is_placed(kind: i64) -> bool
+    return kind != hero_ui.HERO_UI_WINDOW && kind != hero_ui.HERO_UI_MENU && kind != hero_ui.HERO_UI_MENU_ITEM && kind != hero_ui.HERO_UI_MENU_SEPARATOR && kind != hero_ui.HERO_UI_TIMER
+
+# Whether a node of `kind` holds items: a list, a combo box or a radio group.
+function has_items(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_LIST || kind == hero_ui.HERO_UI_LIST_MULTIPLE || kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP
+
+# Whether a node of `kind` shows a text the program sets.
+function has_text(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_WINDOW || kind == hero_ui.HERO_UI_LABEL || kind == hero_ui.HERO_UI_BUTTON || kind == hero_ui.HERO_UI_TEXT_FIELD || kind == hero_ui.HERO_UI_TEXT_AREA || kind == hero_ui.HERO_UI_CHECKBOX || kind == hero_ui.HERO_UI_MENU || kind == hero_ui.HERO_UI_MENU_ITEM
+
+# Whether a node of `kind` runs between a lowest and a highest value.
+function has_range(kind: i64) -> bool
+    return kind == hero_ui.HERO_UI_SLIDER || kind == hero_ui.HERO_UI_PROGRESS
+
+# The name a kind is told by in a message and drawn by as text.
+function kind_name(kind: i64) -> str
+    names = [
+        "nothing"
+        "window"
+        "label"
+        "button"
+        "text_field"
+        "text_area"
+        "checkbox"
+        "radio_group"
+        "list"
+        "list"
+        "combo"
+        "progress"
+        "slider"
+        "picture"
+        "menu"
+        "menu_item"
+        "menu_separator"
+        "webview"
+        "row"
+        "column"
+        "grid"
+        "timer"
+    ]
+
+    if kind < 0 || kind >= names.len()
+        return "nothing"
+    return names[kind]
+
+## Tests
+
+test "add: a window, a column in it and a button in that, linked by number, the window dirty"
+    m @= empty()
+    w = take_id(@m)
+    add(@m, n: blank(id: w, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: w))
+    c = take_id(@m)
+    add(@m, n: blank(id: c, kind: hero_ui.HERO_UI_COLUMN, parent: w, window: w))
+    b = take_id(@m)
+    add(@m, n: blank(id: b, kind: hero_ui.HERO_UI_BUTTON, parent: c, window: w))
+    assert [w, c, b] == [1, 2, 3]
+    assert node_of(m, id: w).must().children == [c]
+    assert node_of(m, id: c).must().children == [b]
+    assert node_of(m, id: w).must().dirty
+    assert m.windows == [w]
+
+test "remove: a box and what it holds go, children first, and its parent forgets it; a number is never given again"
+    m @= empty()
+    w = take_id(@m)
+    add(@m, n: blank(id: w, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: w))
+    r = take_id(@m)
+    add(@m, n: blank(id: r, kind: hero_ui.HERO_UI_ROW, parent: w, window: w))
+    a = take_id(@m)
+    add(@m, n: blank(id: a, kind: hero_ui.HERO_UI_LABEL, parent: r, window: w))
+    b = take_id(@m)
+    add(@m, n: blank(id: b, kind: hero_ui.HERO_UI_BUTTON, parent: r, window: w))
+    assert remove(@m, id: r) == [a, b, r]
+    assert node_of(m, id: w).must().children.len() == 0
+    assert node_of(m, id: a).is_err()
+    assert take_id(@m) == 5
+
+test "remove: a window takes its menus and their items with it, and leaves the app's list"
+    m @= empty()
+    w = take_id(@m)
+    add(@m, n: blank(id: w, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: w))
+    menu = take_id(@m)
+    add(@m, n: blank(id: menu, kind: hero_ui.HERO_UI_MENU, parent: w, window: w))
+    item = take_id(@m)
+    add(@m, n: blank(id: item, kind: hero_ui.HERO_UI_MENU_ITEM, parent: menu, window: w))
+    assert node_of(m, id: w).must().menus == [menu]
+    assert remove(@m, id: w) == [item, menu, w]
+    assert m.windows.len() == 0
+    assert m.nodes.len() == 0
+
+test "node_of: a number never given, and one removed, are closed"
+    m = empty()
+
+    match node_of(m, id: 7)
+        .ok _  => assert false
+        .err e => assert e.code == failure.CLOSED
+
+test "kind_name: every kind has its name, and a number outside them none"
+    assert kind_name(hero_ui.HERO_UI_WINDOW) == "window"
+    assert kind_name(hero_ui.HERO_UI_LIST_MULTIPLE) == "list"
+    assert kind_name(hero_ui.HERO_UI_TIMER) == "timer"
+    assert kind_name(0) == "nothing"
+    assert kind_name(99) == "nothing"
+    assert holds_widgets(hero_ui.HERO_UI_GRID)
+    assert !holds_widgets(hero_ui.HERO_UI_MENU)
+    assert is_native(hero_ui.HERO_UI_WEBVIEW)
+    assert !is_native(hero_ui.HERO_UI_ROW)
+    assert !is_placed(hero_ui.HERO_UI_MENU_ITEM)

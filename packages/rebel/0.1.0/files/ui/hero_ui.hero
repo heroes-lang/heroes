@@ -1,0 +1,507 @@
+# The platform layer's native user interface, `hero_ui.h`, bound thin: one
+# function per C function, each answering what C answers, in C's order.
+# Where a call fails it answers -1, or `nullptr` for `open`, and
+# `last_error` then names the kind, `last_message` the words. Rebel's floor
+# of `ui` (`examples-rebel/README.md` § A2): no policy stands here, and the
+# face above it keeps the widgets' tree, lays it out, and turns every kind
+# into a code.
+#
+# The layer is C of the language's own beside the runtime, so this group
+# names its header and no `link`: on macOS the member's Swift half links
+# AppKit itself, and on Windows and Linux the native side answers
+# `HERO_UI_UNSUPPORTED` until its arm is written, so the same lines bind it
+# everywhere. An app is the one handle: `open` begins its life and `close`
+# ends it. A widget is a number the program gives, never a handle.
+#
+# Every text crosses as bytes and a count, so a text holding a zero byte is
+# the layer's `HERO_UI_INVALID` and never an abort at `.cstr()`.
+
+extern "hero_ui.h"
+    # An app open on the layer. It is a handle the layer issues and checks:
+    # one closed already, `nullptr`, or one it never issued is
+    # `HERO_UI_NOT_OPEN`, never a read of freed memory.
+    record App tag hero_ui_app
+    # The kinds of failure `last_error` answers, the same numbers on every
+    # platform.
+    constant HERO_UI_OK: i64
+    constant HERO_UI_INVALID: i64
+    constant HERO_UI_NOT_OPEN: i64
+    constant HERO_UI_WRONG_THREAD: i64
+    constant HERO_UI_UNSUPPORTED: i64
+    constant HERO_UI_BUSY: i64
+    constant HERO_UI_NOT_FOUND: i64
+    constant HERO_UI_LIMIT: i64
+    constant HERO_UI_OTHER: i64
+    # The two sides an app opens on.
+    constant HERO_UI_HEADLESS: i64
+    constant HERO_UI_NATIVE: i64
+    # The kinds of widget, the native side's and the program's own.
+    constant HERO_UI_WINDOW: i64
+    constant HERO_UI_LABEL: i64
+    constant HERO_UI_BUTTON: i64
+    constant HERO_UI_TEXT_FIELD: i64
+    constant HERO_UI_TEXT_AREA: i64
+    constant HERO_UI_CHECKBOX: i64
+    constant HERO_UI_RADIO_GROUP: i64
+    constant HERO_UI_LIST: i64
+    constant HERO_UI_LIST_MULTIPLE: i64
+    constant HERO_UI_COMBO: i64
+    constant HERO_UI_PROGRESS: i64
+    constant HERO_UI_SLIDER: i64
+    constant HERO_UI_IMAGE: i64
+    constant HERO_UI_MENU: i64
+    constant HERO_UI_MENU_ITEM: i64
+    constant HERO_UI_MENU_SEPARATOR: i64
+    constant HERO_UI_WEBVIEW: i64
+    constant HERO_UI_ROW: i64
+    constant HERO_UI_COLUMN: i64
+    constant HERO_UI_GRID: i64
+    constant HERO_UI_TIMER: i64
+    # The kinds of event the queue holds.
+    constant HERO_UI_EVENT_CLICK: i64
+    constant HERO_UI_EVENT_TEXT: i64
+    constant HERO_UI_EVENT_SELECT: i64
+    constant HERO_UI_EVENT_TOGGLE: i64
+    constant HERO_UI_EVENT_VALUE: i64
+    constant HERO_UI_EVENT_MENU: i64
+    constant HERO_UI_EVENT_CLOSE: i64
+    constant HERO_UI_EVENT_RESIZE: i64
+    constant HERO_UI_EVENT_MESSAGE: i64
+    # The keys held with a shortcut, added together.
+    constant HERO_UI_PRIMARY: i64
+    constant HERO_UI_SHIFT: i64
+    constant HERO_UI_ALT: i64
+    # A message box's tone, its buttons and the button pressed.
+    constant HERO_UI_TONE_INFO: i64
+    constant HERO_UI_TONE_WARNING: i64
+    constant HERO_UI_TONE_ERROR: i64
+    constant HERO_UI_BUTTONS_OK: i64
+    constant HERO_UI_BUTTONS_OK_CANCEL: i64
+    constant HERO_UI_BUTTONS_YES_NO: i64
+    constant HERO_UI_BUTTONS_YES_NO_CANCEL: i64
+    constant HERO_UI_ANSWER_OK: i64
+    constant HERO_UI_ANSWER_CANCEL: i64
+    constant HERO_UI_ANSWER_YES: i64
+    constant HERO_UI_ANSWER_NO: i64
+    # The most bytes one text holds, and the most events the queue holds.
+    constant HERO_UI_TEXT_MOST: i64
+    constant HERO_UI_QUEUE_MOST: i64
+    function hero_ui_on_ui_thread() -> i64
+    function hero_ui_native_here() -> i64
+    function hero_ui_open(backend: i64) -> App acquires hero_ui_close
+    function hero_ui_close(app: App consumes) -> i64
+    function hero_ui_number(app: App) -> i64
+    function hero_ui_create(app: App, id: i64, kind: i64, parent: i64) -> i64
+    function hero_ui_destroy(app: App, id: i64) -> i64
+    function hero_ui_set_text(app: App, id: i64, @text: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_set_items(app: App, id: i64, @items: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_set_value(app: App, id: i64, value: i64) -> i64
+    function hero_ui_set_range(app: App, id: i64, least: i64, most: i64) -> i64
+    function hero_ui_set_selection(app: App, id: i64, @indices: [i64] counted_by count lent, count: u64) -> i64
+    function hero_ui_set_enabled(app: App, id: i64, on: i64) -> i64
+    function hero_ui_set_visible(app: App, id: i64, on: i64) -> i64
+    function hero_ui_set_shortcut(app: App, id: i64, @key: [u8] counted_by count lent, count: u64, modifiers: i64) -> i64
+    function hero_ui_set_image(app: App, id: i64, @rgba: [u8] counted_by count lent, count: u64, width: i64, height: i64) -> i64
+    function hero_ui_set_resizable(app: App, id: i64, on: i64) -> i64
+    function hero_ui_set_size(app: App, id: i64, width: i64, height: i64) -> i64
+    function hero_ui_set_min_size(app: App, id: i64, width: i64, height: i64) -> i64
+    function hero_ui_place(app: App, id: i64, x: i64, y: i64, width: i64, height: i64) -> i64
+    function hero_ui_place_item(app: App, id: i64, index: i64, x: i64, y: i64, width: i64, height: i64) -> i64
+    function hero_ui_preferred(app: App, id: i64, @width: i64, @height: i64) -> i64
+    function hero_ui_text(app: App, id: i64, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_value(app: App, id: i64, @value: i64) -> i64
+    function hero_ui_selection(app: App, id: i64, @indices: [i64] counted_by count lent, count: u64) -> i64
+    function hero_ui_wait(app: App, ms: i64) -> i64
+    function hero_ui_next(app: App, @kind: i64, @id: i64, @value: i64, @second: i64) -> i64
+    function hero_ui_event_text(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_lost(app: App) -> i64
+    function hero_ui_inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8] counted_by title_count lent, title_count: u64, @text: [u8] counted_by text_count lent, text_count: u64) -> i64
+    function hero_ui_file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8] counted_by title_count lent, title_count: u64, @name: [u8] counted_by name_count lent, name_count: u64, @filters: [u8] counted_by filters_count lent, filters_count: u64) -> i64
+    function hero_ui_dialog_paths(app: App, @buffer: [u8] counted_by count lent, count: u64) -> i64
+    function hero_ui_last_error() -> i64
+    function hero_ui_last_message(@buffer: [u8] counted_by count lent, count: u64) -> i64
+
+# 1 where the calling thread is the one an app may open on, the process's
+# main thread, 0 where it is not.
+function on_ui_thread() -> i64
+    return hero_ui_on_ui_thread()
+
+# 1 where the native side can open on this machine, 0 where it cannot: no
+# arm for this system, or no window server or display for this session.
+function native_here() -> i64
+    return hero_ui_native_here()
+
+# A new app on `backend`, or `nullptr`, `last_error` then naming why.
+#
+# - `backend`: `HERO_UI_HEADLESS` or `HERO_UI_NATIVE`; another number is
+#   `HERO_UI_INVALID`, a thread other than the main one
+#   `HERO_UI_WRONG_THREAD`, a native side this machine lacks
+#   `HERO_UI_UNSUPPORTED`, and a second native app `HERO_UI_BUSY`.
+function open(backend: i64) -> App
+    return hero_ui_open(backend)
+
+# 0 once `app` is closed and every native widget it held destroyed, or -1.
+#
+# - `app`: the app closed; its life ends whatever the answer.
+function close(@app: App) -> i64
+    return hero_ui_close(app)
+
+# The app's number, from 1 and never given twice in one process, or -1.
+#
+# - `app`: the app asked.
+function number(app: App) -> i64
+    return hero_ui_number(app)
+
+# 0 once the native widget `id` of `kind` stands in `parent`, empty and at no
+# place, a window hidden; or -1.
+#
+# - `app`: the app it is made in; a headless one is `HERO_UI_UNSUPPORTED`.
+# - `id`: the program's number for it, 1 or more and not one the native side
+#   holds, else `HERO_UI_INVALID` or `HERO_UI_NOT_FOUND`.
+# - `kind`: one of the native kinds, `HERO_UI_WINDOW` to `HERO_UI_WEBVIEW`;
+#   a kind of the program's own is `HERO_UI_INVALID`.
+# - `parent`: 0 for a window; the window a widget or a menu stands in; the
+#   menu an item stands in.
+function create(app: App, id: i64, kind: i64, parent: i64) -> i64
+    return hero_ui_create(app, id: id, kind: kind, parent: parent)
+
+# 0 once the native widget `id` is destroyed, with a window's or a menu's
+# every widget; or -1, `HERO_UI_NOT_FOUND` where none stands.
+#
+# - `app`: the app holding it.
+# - `id`: the widget's number.
+function destroy(app: App, id: i64) -> i64
+    return hero_ui_destroy(app, id: id)
+
+# 0 once widget `id` shows the first `count` bytes of `text` as its text,
+# or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window, a label, a button, a checkbox, a text field, a text area,
+#   a menu or a menu item.
+# - `text`: UTF-8 with no zero byte; left as it was handed.
+# - `count`: how many of its first bytes, at most `HERO_UI_TEXT_MOST`.
+function set_text(app: App, id: i64, @text: [u8], count: u64) -> i64
+    return hero_ui_set_text(app, id: id, @text, count: count)
+
+# 0 once widget `id` holds the items `items` spells, nothing chosen; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a list, a combo box or a radio group.
+# - `items`: each item's UTF-8 followed by one zero byte; left as it was
+#   handed.
+# - `count`: how many of its first bytes; 0 for no item.
+function set_items(app: App, id: i64, @items: [u8], count: u64) -> i64
+    return hero_ui_set_items(app, id: id, @items, count: count)
+
+# 0 once widget `id` holds `value`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a checkbox, a slider, a progress bar, a combo box or a radio group.
+# - `value`: 0 or 1 for a checkbox, within the range for a slider or a
+#   progress bar, an item's index or -1 for a combo box or a radio group.
+function set_value(app: App, id: i64, value: i64) -> i64
+    return hero_ui_set_value(app, id: id, value: value)
+
+# 0 once slider or progress bar `id` runs from `least` to `most`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a slider or a progress bar.
+# - `least`: the lowest value, below `most`.
+# - `most`: the highest value.
+function set_range(app: App, id: i64, least: i64, most: i64) -> i64
+    return hero_ui_set_range(app, id: id, least: least, most: most)
+
+# 0 once list `id` has chosen the first `count` of `indices`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a list.
+# - `indices`: item indices, ascending; left as it was handed.
+# - `count`: how many of them; at most 1 for a list of one choice.
+function set_selection(app: App, id: i64, @indices: [i64], count: u64) -> i64
+    return hero_ui_set_selection(app, id: id, @indices, count: count)
+
+# 0 once widget `id` can be used, or is greyed out, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: any native widget.
+# - `on`: 1 to let the person use it, 0 to grey it out.
+function set_enabled(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_enabled(app, id: id, on: on)
+
+# 0 once widget `id` is shown or hidden, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: any native widget; a window shown comes to the front.
+# - `on`: 1 to show it, 0 to hide it.
+function set_visible(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_visible(app, id: id, on: on)
+
+# 0 once menu item `id` has the shortcut `key` with `modifiers`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a menu item.
+# - `key`: the key's name, `hero_ui.h`'s list; left as it was handed.
+# - `count`: how many of its first bytes; 0 takes the shortcut away.
+# - `modifiers`: `HERO_UI_PRIMARY`, `HERO_UI_SHIFT` and `HERO_UI_ALT` added.
+function set_shortcut(app: App, id: i64, @key: [u8], count: u64, modifiers: i64) -> i64
+    return hero_ui_set_shortcut(app, id: id, @key, count: count, modifiers: modifiers)
+
+# 0 once image widget `id` shows `rgba`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: an image widget.
+# - `rgba`: the pixels, 8-bit RGBA row after row; left as it was handed.
+# - `count`: their bytes, `width * height * 4`.
+# - `width`: the columns, 0 or more.
+# - `height`: the rows, 0 or more.
+function set_image(app: App, id: i64, @rgba: [u8], count: u64, width: i64, height: i64) -> i64
+    return hero_ui_set_image(app, id: id, @rgba, count: count, width: width, height: height)
+
+# 0 once window `id` may be resized by the person, or not; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `on`: 1 to let the person resize it, 0 to keep its size.
+function set_resizable(app: App, id: i64, on: i64) -> i64
+    return hero_ui_set_resizable(app, id: id, on: on)
+
+# 0 once window `id`'s content is `width` by `height` points, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `width`: points, 0 or more.
+# - `height`: points, 0 or more.
+function set_size(app: App, id: i64, width: i64, height: i64) -> i64
+    return hero_ui_set_size(app, id: id, width: width, height: height)
+
+# 0 once the person may make window `id`'s content no smaller than `width`
+# by `height` points, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a window.
+# - `width`: points, 0 or more.
+# - `height`: points, 0 or more.
+function set_min_size(app: App, id: i64, width: i64, height: i64) -> i64
+    return hero_ui_set_min_size(app, id: id, width: width, height: height)
+
+# 0 once widget `id` stands at `x`, `y` in its window's content, `width` by
+# `height` points, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a widget a window holds.
+# - `x`: points from the content's left edge.
+# - `y`: points from the content's top edge, the axis down.
+# - `width`: points, 0 or more.
+# - `height`: points, 0 or more.
+function place(app: App, id: i64, x: i64, y: i64, width: i64, height: i64) -> i64
+    return hero_ui_place(app, id: id, x: x, y: y, width: width, height: height)
+
+# 0 once item `index` of radio group `id` stands at `x`, `y` in its window's
+# content, `width` by `height` points, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a radio group.
+# - `index`: the item, from 0; past the items is `HERO_UI_INVALID`.
+# - `x`: points from the content's left edge.
+# - `y`: points from the content's top edge, the axis down.
+# - `width`: points, 0 or more.
+# - `height`: points, 0 or more.
+function place_item(app: App, id: i64, index: i64, x: i64, y: i64, width: i64, height: i64) -> i64
+    return hero_ui_place_item(app, id: id, index: index, x: x, y: y, width: width, height: height)
+
+# 0 with the size the system draws widget `id` at in `width` and `height`,
+# or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a native widget.
+# - `width`: set to the points wide.
+# - `height`: set to the points high.
+function preferred(app: App, id: i64, @width: i64, @height: i64) -> i64
+    return hero_ui_preferred(app, id: id, width: @width, height: @height)
+
+# The length of the text widget `id` holds now, written into `buffer` where
+# it fits and nothing written where it does not; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a text field or a text area.
+# - `buffer`: where the text is written, from its first byte; left `count`
+#   long.
+# - `count`: the bytes `buffer` holds.
+function text_of(app: App, id: i64, @buffer: [u8], count: u64) -> i64
+    return hero_ui_text(app, id: id, @buffer, count: count)
+
+# 0 with widget `id`'s value in `value`, or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a checkbox, a slider, a progress bar, a combo box or a radio group.
+# - `value`: set to the value; -1 for a combo box or a radio group with
+#   nothing chosen.
+function value_of(app: App, id: i64, @value: i64) -> i64
+    return hero_ui_value(app, id: id, value: @value)
+
+# How many items widget `id` has chosen, their indices written into
+# `indices` where they fit and nothing where they do not; or -1.
+#
+# - `app`: the app holding it.
+# - `id`: a list, a combo box or a radio group.
+# - `indices`: where the indices are written, ascending; left `count` long.
+# - `count`: the indices `indices` holds.
+function selection_of(app: App, id: i64, @indices: [i64], count: u64) -> i64
+    return hero_ui_selection(app, id: id, @indices, count: count)
+
+# 1 where the queue holds an event after the system's loop ran for at most
+# `ms` milliseconds, 0 where none came, or -1.
+#
+# - `app`: the app waited on.
+# - `ms`: the most milliseconds to run the loop; 0 runs it over what is
+#   ready.
+function wait(app: App, ms: i64) -> i64
+    return hero_ui_wait(app, ms: ms)
+
+# 1 with the queue's oldest event taken into the four places, 0 where the
+# queue is empty, or -1.
+#
+# - `app`: the app whose queue is read.
+# - `kind`: set to one of `HERO_UI_EVENT_*`.
+# - `id`: set to the widget's number.
+# - `value`: set to the event's first value.
+# - `second`: set to its second value.
+function next(app: App, @kind: i64, @id: i64, @value: i64, @second: i64) -> i64
+    return hero_ui_next(app, kind: @kind, id: @id, value: @value, second: @second)
+
+# The length of the text the last event taken carries, written into
+# `buffer` where it fits; 0 for none; or -1.
+#
+# - `app`: the app whose last event is asked.
+# - `buffer`: where the text is written; left `count` long.
+# - `count`: the bytes `buffer` holds.
+function event_text(app: App, @buffer: [u8], count: u64) -> i64
+    return hero_ui_event_text(app, @buffer, count: count)
+
+# How many events the queue dropped since `app` opened, or -1.
+#
+# - `app`: the app asked.
+function lost(app: App) -> i64
+    return hero_ui_lost(app)
+
+# 0 once the system has done what a person does, its event queued as the
+# person's would be; or -1.
+#
+# - `app`: the app acted on.
+# - `kind`: the event the act gives, one of `HERO_UI_EVENT_CLICK` to
+#   `HERO_UI_EVENT_RESIZE`.
+# - `id`: the widget acted on.
+# - `value`: the item chosen, the slider's value, the width; else 0.
+# - `second`: 1 to add the item to a list's choice, or the height; else 0.
+# - `text`: the text typed; left as it was handed.
+# - `count`: how many of its first bytes; 0 for none.
+function inject(app: App, kind: i64, id: i64, value: i64, second: i64, @text: [u8], count: u64) -> i64
+    return hero_ui_inject(app, kind: kind, id: id, value: value, second: second, @text, count: count)
+
+# The button the person pressed in a message box, one of
+# `HERO_UI_ANSWER_*`, or -1.
+#
+# - `app`: the app showing it.
+# - `window`: the window it stands over.
+# - `tone`: one of `HERO_UI_TONE_*`.
+# - `buttons`: one of `HERO_UI_BUTTONS_*`.
+# - `title`: its title, UTF-8; left as it was handed.
+# - `title_count`: how many of the title's first bytes.
+# - `text`: what it says, UTF-8; left as it was handed.
+# - `text_count`: how many of the text's first bytes.
+function message(app: App, window: i64, tone: i64, buttons: i64, @title: [u8], title_count: u64, @text: [u8], text_count: u64) -> i64
+    return hero_ui_message(
+        app,
+        window: window,
+        tone: tone,
+        buttons: buttons,
+        title: @title,
+        title_count: title_count,
+        text: @text,
+        text_count: text_count
+    )
+
+# The bytes of the paths the person chose in a file dialog, 0 where they
+# cancelled, or -1.
+#
+# - `app`: the app showing it.
+# - `window`: the window it stands over.
+# - `save`: 1 to save one file, 0 to open.
+# - `multiple`: 1 to let the person open several.
+# - `title`: its title, UTF-8; left as it was handed.
+# - `title_count`: how many of the title's first bytes.
+# - `name`: the name a save proposes, UTF-8; left as it was handed.
+# - `name_count`: how many of the name's first bytes.
+# - `filters`: each filter's name and its extensions joined by `;`, each
+#   followed by one zero byte; left as it was handed.
+# - `filters_count`: how many of its first bytes; 0 for every file.
+function file_dialog(app: App, window: i64, save: i64, multiple: i64, @title: [u8], title_count: u64, @name: [u8], name_count: u64, @filters: [u8], filters_count: u64) -> i64
+    return hero_ui_file_dialog(
+        app,
+        window: window,
+        save: save,
+        multiple: multiple,
+        title: @title,
+        title_count: title_count,
+        name: @name,
+        name_count: name_count,
+        filters: @filters,
+        filters_count: filters_count
+    )
+
+# The bytes of the paths the last file dialog answered, written into
+# `buffer` where they fit; or -1.
+#
+# - `app`: the app that showed it.
+# - `buffer`: where the paths are written; left `count` long.
+# - `count`: the bytes `buffer` holds.
+function dialog_paths(app: App, @buffer: [u8], count: u64) -> i64
+    return hero_ui_dialog_paths(app, @buffer, count: count)
+
+# The kind of the last call's failure on this thread, `HERO_UI_OK` after a
+# call that did not fail.
+function last_error() -> i64
+    return hero_ui_last_error()
+
+# The bytes of the last failure's words written into `buffer`, or -1.
+#
+# - `buffer`: where the words are written, UTF-8, cut where a character
+#   ends; left `count` long.
+# - `count`: the bytes `buffer` holds, 1 or more.
+function last_message(@buffer: [u8], count: u64) -> i64
+    return hero_ui_last_message(@buffer, count: count)
+
+## Tests
+
+test "open: a headless app opens on the main thread, is numbered, and closes"
+    assert on_ui_thread() == 1
+    app @= open(HERO_UI_HEADLESS)
+    assert app != nullptr
+    assert number(app) >= 1
+    assert close(@app) == 0
+
+test "open: a backend the layer does not know is refused as a value"
+    app = open(99)
+    assert app == nullptr
+    assert last_error() == HERO_UI_INVALID
+
+test "create: a headless app holds no native widget, and says so"
+    app @= open(HERO_UI_HEADLESS)
+    assert create(app, id: 1, kind: HERO_UI_WINDOW, parent: 0) == -1
+    assert last_error() == HERO_UI_UNSUPPORTED
+    room: [u8] @= [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    assert last_message(@room, count: 32) > 0
+    assert close(@app) == 0
+
+test "next: a headless app's queue is empty, and its wait answers none"
+    app @= open(HERO_UI_HEADLESS)
+    kind @= 0
+    id @= 0
+    value @= 0
+    second @= 0
+    assert wait(app, ms: 0) == 0
+    assert next(app, kind: @kind, id: @id, value: @value, second: @second) == 0
+    assert lost(app) == 0
+    assert close(@app) == 0

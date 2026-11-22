@@ -1,0 +1,261 @@
+# The beginnings and ends of `ui`'s lives: an app opened and closed, and
+# each widget, box, window, menu and timer made, numbered and added to the
+# table, its native widget made with it on the native side, and destroyed
+# with what it holds. Each maker checks every argument before it takes a
+# number, so a refusal changes nothing.
+
+use image
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/clock
+use ui/internal/failure
+use ui/internal/model
+use ui/internal/native
+use ui/internal/sizes
+
+# The shortest period a timer takes, a millisecond, in nanoseconds.
+constant LEAST_PERIOD: i64
+    1000000
+
+# The longest period a timer takes, a day, in nanoseconds.
+constant MOST_PERIOD: i64
+    86400000000000
+
+# A new app on `backend` (`ui.open`).
+function open(backend: ui.Backend) -> ui.App?
+    side = match backend
+        .native   => hero_ui.HERO_UI_NATIVE
+        .headless => hero_ui.HERO_UI_HEADLESS
+        .automatic =>
+            if hero_ui.native_here() == 1
+                hero_ui.HERO_UI_NATIVE
+            else
+                hero_ui.HERO_UI_HEADLESS
+
+    on_system = side == hero_ui.HERO_UI_NATIVE
+
+    # The clock is read before the app opens, so no failure can leave a
+    # handle open behind it.
+    opened = if on_system
+        time.mark()?
+    else
+        time.Mark(nanoseconds: 0)
+
+    handle = hero_ui.open(side)
+
+    if handle == nullptr
+        return failure.last("opening an app")
+    number = hero_ui.number(handle)
+    return ok(
+        ui.App(handle: handle, number: number, native: on_system, table: model.empty(), inputs: [], events: [], answers: [], choices: [], clock: 0, opened: opened)
+    )
+
+# Closes `app` (`ui.close`).
+function close(@app: ui.App) -> ()?
+    check.opened(app)?
+    answer = hero_ui.close(@app.handle)
+    app.handle @ nullptr
+    app.table @ model.empty()
+    app.inputs @ []
+    app.events @ []
+    app.answers @ []
+    app.choices @ []
+
+    if answer != 0
+        return failure.last("closing the app")
+    return ok()
+
+# A new window (`ui.window`).
+function window(@app: ui.App, title: str, width: i64, height: i64) -> ui.Widget?
+    check.opened(app)?
+    check.text_ok(text: title, one_line: true, what: "the title")?
+    check.size_ok(width, what: "the width")?
+    check.size_ok(height, what: "the height")?
+    id = model.take_id(@app.table)
+    n @= model.blank(id: id, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: id)
+    n.text @ title
+    n.width @ width
+    n.height @ height
+    n.padding @ model.WINDOW_PADDING
+    return added(@app, n: n)
+
+# A new widget or box of `kind` in `into`, showing `text` or holding
+# `items`: the first item chosen for a combo box or a radio group.
+function make(@app: ui.App, into: ui.Widget, kind: i64, text: str, items: [str]) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    one_line = kind != hero_ui.HERO_UI_LABEL && kind != hero_ui.HERO_UI_TEXT_AREA
+    check.text_ok(text: text, one_line: one_line, what: "the text")?
+    check.items_ok(items)?
+    n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
+    n.text @ text
+    n.items @ items
+
+    if (kind == hero_ui.HERO_UI_COMBO || kind == hero_ui.HERO_UI_RADIO_GROUP) && items.len() > 0
+        n.chosen @ [0]
+    return added(@app, n: n)
+
+# A new grid of `columns` in `into` (`ui.grid`).
+function grid(@app: ui.App, into: ui.Widget, columns: i64) -> ui.Widget?
+    parent = boxed(app, into: into)?
+
+    if columns < 1 || columns > ui.MOST_STRETCH
+        return fail(code: failure.INVALID, msg: f"a grid of {columns} columns; it takes 1 to {ui.MOST_STRETCH}")
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_GRID,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.columns @ columns
+    return added(@app, n: n)
+
+# A new checkbox (`ui.checkbox`).
+function checkbox(@app: ui.App, into: ui.Widget, text: str, checked: bool) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(
+        id: model.take_id(@app.table),
+        kind: hero_ui.HERO_UI_CHECKBOX,
+        parent: parent.id,
+        window: parent.window
+    )
+    n.text @ text
+    n.value @ check.number_of(checked)
+    return added(@app, n: n)
+
+# A new slider or progress bar of `kind`, running from `least` to `most`, at
+# `value`.
+function ranged(@app: ui.App, into: ui.Widget, kind: i64, least: i64, most: i64, value: i64) -> ui.Widget?
+    parent = boxed(app, into: into)?
+
+    if least >= most
+        return fail(
+            code: failure.INVALID,
+            msg: f"a range from {least} to {most}; its lowest value must be below its highest"
+        )
+
+    if value < least || value > most
+        return fail(code: failure.INVALID, msg: f"the value {value} is outside {least} to {most}")
+    n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
+    n.least @ least
+    n.most @ most
+    n.value @ value
+    return added(@app, n: n)
+
+# A new picture of `img` (`ui.picture`).
+function picture(@app: ui.App, into: ui.Widget, img: image.Image) -> ui.Widget?
+    parent = boxed(app, into: into)?
+    n @= model.blank(id: 0, kind: hero_ui.HERO_UI_IMAGE, parent: parent.id, window: parent.window)
+    with_pixels(@n, img: img)?
+    n.id @ model.take_id(@app.table)
+    return added(@app, n: n)
+
+# Gives `n` the pixels of `img` as 8-bit RGBA, its sides as its width and
+# height. Fails `invalid` where `img` is not a valid image or a side is past
+# `ui.MOST_SIZE`.
+function with_pixels(@n: model.Node, img: image.Image) -> ()?
+    if !image.is_valid(img)
+        return fail(
+            code: failure.INVALID,
+            msg: f"the image of {img.width} by {img.height} holds {img.pixels.len()} bytes, which its format does not fill"
+        )
+    check.size_ok(img.width, what: "the image's width")?
+    check.size_ok(img.height, what: "the image's height")?
+    rgba = image.convert(img, to: .rgba)
+    n.width @ rgba.width
+    n.height @ rgba.height
+    n.pixels @ rgba.pixels
+    return ok()
+
+# A new menu, menu item or separator of `kind` in `into`, showing `text`.
+function menu_part(@app: ui.App, into: ui.Widget, kind: i64, text: str) -> ui.Widget?
+    parent = if kind == hero_ui.HERO_UI_MENU
+        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    else
+        check.node_kind(app, widget: into, kinds: [hero_ui.HERO_UI_MENU], what: "a menu")?
+
+    check.text_ok(text: text, one_line: true, what: "the text")?
+    n @= model.blank(id: model.take_id(@app.table), kind: kind, parent: parent.id, window: parent.window)
+    n.text @ text
+    return added(@app, n: n)
+
+# A new timer of `every` (`ui.timer`).
+function timer(@app: ui.App, every: time.Duration) -> ui.Widget?
+    check.opened(app)?
+
+    if every.nanoseconds < LEAST_PERIOD || every.nanoseconds > MOST_PERIOD
+        return fail(
+            code: failure.INVALID,
+            msg: f"a timer of {every.nanoseconds} nanoseconds; it takes a millisecond to a day"
+        )
+    now = clock.now(app)?
+    n @= model.blank(id: model.take_id(@app.table), kind: hero_ui.HERO_UI_TIMER, parent: 0, window: 0)
+    n.every @ every.nanoseconds
+    n.due @ now + every.nanoseconds
+    return added(@app, n: n)
+
+# Destroys `widget` and what it holds (`ui.destroy`).
+function destroy(@app: ui.App, widget: ui.Widget) -> ()?
+    n = check.node_of(app, widget: widget)?
+    natives: [i64] @= []
+
+    for id in model.subtree(app.table, id: n.id)
+        if model.is_native(app.table.nodes[id].must().kind)
+            natives @ natives.push(id)
+
+    _ = model.remove(@app.table, id: n.id)
+
+    if app.native
+        for id in natives
+            native.destroyed(app, id: id)?
+
+    return ok()
+
+# The node of `into`, a window or a box that holds widgets.
+function boxed(app: ui.App, into: ui.Widget) -> model.Node?
+    return check.node_kind(
+        app,
+        widget: into,
+        kinds: [hero_ui.HERO_UI_WINDOW, hero_ui.HERO_UI_ROW, hero_ui.HERO_UI_COLUMN, hero_ui.HERO_UI_GRID],
+        what: "a window, a row, a column or a grid"
+    )
+
+# Adds `n`, a node of a new number, to `app`: on the native side its widget
+# is made first, given its state, measured and shown as its boxes are; on
+# the headless side it is measured by `sizes`. Where the native side
+# refuses, the widget it made is destroyed again and nothing is added.
+function added(@app: ui.App, n: model.Node) -> ui.Widget?
+    node @= n
+
+    if app.native && model.is_native(n.kind)
+        match native.made(app, n: node)
+            .ok _ => _ = 0
+            .err e =>
+                _ = native.destroyed(app, id: n.id).is_err()
+                return fail(code: e.code, msg: e.msg)
+
+        match measure(app, n: node)
+            .ok size =>
+                node.preferred_width @ size[0]
+                node.preferred_height @ size[1]
+            .err e =>
+                _ = native.destroyed(app, id: n.id).is_err()
+                return fail(code: e.code, msg: e.msg)
+    else
+        size = sizes.of(node)
+        node.preferred_width @ size[0]
+        node.preferred_height @ size[1]
+    model.add(@app.table, n: node)
+
+    if app.native && model.is_native(n.kind) && model.is_placed(n.kind)
+        native.shown(app, nodes: app.table.nodes, id: n.id)?
+    return ok(check.widget_of(app, id: n.id))
+
+# The size the system draws `n` at, `[0, 0]` for a window or a menu's part,
+# which the layout does not place.
+function measure(app: ui.App, n: model.Node) -> [i64]?
+    if !model.is_placed(n.kind)
+        return ok([0, 0])
+    return native.measure(app, n: n)

@@ -1,0 +1,433 @@
+# What the program sets on a widget and asks of it: its text, its items and
+# what is chosen, its value and range, whether it is used and shown, its
+# picture, its shortcut, how it takes room, a window's size. Each setter
+# checks its arguments first, changes the table, pushes the change to the
+# native side where there is one, measures the widget again where its size
+# may have moved, and marks its window for a layout. No setter gives an
+# event: only what the person does is one.
+
+use image
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/failure
+use ui/internal/loop
+use ui/internal/makers
+use ui/internal/model
+use ui/internal/native
+use ui/internal/sizes
+
+# What `widget` is (`ui.kind_of`).
+function kind_of(app: ui.App, widget: ui.Widget) -> ui.Kind?
+    n = check.node_of(app, widget: widget)?
+    return ok(of_code(n.kind))
+
+# The kind of `ui` a kind of the layer is.
+function of_code(code: i64) -> ui.Kind
+    if code == hero_ui.HERO_UI_WINDOW
+        return .window
+
+    if code == hero_ui.HERO_UI_ROW
+        return .row
+
+    if code == hero_ui.HERO_UI_COLUMN
+        return .column
+
+    if code == hero_ui.HERO_UI_GRID
+        return .grid
+
+    if code == hero_ui.HERO_UI_LABEL
+        return .label
+
+    if code == hero_ui.HERO_UI_BUTTON
+        return .button
+
+    if code == hero_ui.HERO_UI_TEXT_FIELD
+        return .text_field
+
+    if code == hero_ui.HERO_UI_TEXT_AREA
+        return .text_area
+
+    if code == hero_ui.HERO_UI_CHECKBOX
+        return .checkbox
+
+    if code == hero_ui.HERO_UI_RADIO_GROUP
+        return .radio_group
+
+    if code == hero_ui.HERO_UI_LIST || code == hero_ui.HERO_UI_LIST_MULTIPLE
+        return .list
+
+    if code == hero_ui.HERO_UI_COMBO
+        return .combo
+
+    if code == hero_ui.HERO_UI_PROGRESS
+        return .progress
+
+    if code == hero_ui.HERO_UI_SLIDER
+        return .slider
+
+    if code == hero_ui.HERO_UI_IMAGE
+        return .picture
+
+    if code == hero_ui.HERO_UI_MENU
+        return .menu
+
+    if code == hero_ui.HERO_UI_MENU_ITEM
+        return .menu_item
+
+    if code == hero_ui.HERO_UI_MENU_SEPARATOR
+        return .menu_separator
+
+    if code == hero_ui.HERO_UI_TIMER
+        return .timer
+    return .webview
+
+# Where `widget` stands (`ui.rect_of`).
+function rect_of(@app: ui.App, widget: ui.Widget) -> ui.Rect?
+    n = check.node_of(app, widget: widget)?
+
+    if !model.is_placed(n.kind) && n.kind != hero_ui.HERO_UI_WINDOW
+        return fail(
+            code: failure.INVALID,
+            msg: f"widget {n.id} is a {model.kind_name(n.kind)}, which stands in no window's content"
+        )
+    loop.settle(@app)?
+    at = model.node_of(app.table, id: n.id)?
+    return ok(ui.Rect(x: at.x, y: at.y, width: at.w, height: at.h))
+
+# Gives a window a content size (`ui.set_size`).
+function set_size(@app: ui.App, window: ui.Widget, width: i64, height: i64) -> ()?
+    n @= check.node_kind(app, widget: window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    check.size_ok(width, what: "the width")?
+    check.size_ok(height, what: "the height")?
+    n.width @ width
+    n.height @ height
+    return stored(@app, n: n, measured: false)
+
+# Lets the person resize a window, or not (`ui.set_resizable`).
+function set_resizable(@app: ui.App, window: ui.Widget, on: bool) -> ()?
+    n @= check.node_kind(app, widget: window, kinds: [hero_ui.HERO_UI_WINDOW], what: "a window")?
+    n.resizable @ on
+
+    if app.native
+        native.push_resizable(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# Gives a widget its fit (`ui.set_fit`).
+function set_fit(@app: ui.App, widget: ui.Widget, fit: ui.Fit) -> ()?
+    n @= check.node_of(app, widget: widget)?
+
+    if !model.is_placed(n.kind)
+        return fail(code: failure.INVALID, msg: f"widget {n.id} is a {model.kind_name(n.kind)}, which no box holds")
+    check.weight_ok(fit.stretch, what: "the stretch")?
+    check.size_ok(fit.min_width, what: "the least width")?
+    check.size_ok(fit.min_height, what: "the least height")?
+    check.size_ok(fit.margin, what: "the margin")?
+    n.stretch @ fit.stretch
+    n.fill @ fit.fill
+    n.min_width @ fit.min_width
+    n.min_height @ fit.min_height
+    n.margin @ fit.margin
+
+    n.align @ match fit.align
+        .start  => 0
+        .center => 1
+        .end    => 2
+
+    return stored(@app, n: n, measured: false)
+
+# Gives a box its spacing and padding (`ui.set_spacing`).
+function set_spacing(@app: ui.App, box: ui.Widget, spacing: i64, padding: i64) -> ()?
+    n @= makers.boxed(app, into: box)?
+    check.size_ok(spacing, what: "the spacing")?
+    check.size_ok(padding, what: "the padding")?
+    n.spacing @ spacing
+    n.padding @ padding
+    return stored(@app, n: n, measured: false)
+
+# Gives a grid's columns and rows their weights (`ui.set_grid_stretch`).
+function set_grid_stretch(@app: ui.App, grid: ui.Widget, columns: [i64], rows: [i64]) -> ()?
+    n @= check.node_kind(app, widget: grid, kinds: [hero_ui.HERO_UI_GRID], what: "a grid")?
+
+    for i in range(from: 0, to: columns.len())
+        check.weight_ok(columns[i], what: f"the weight of column {i}")?
+
+    for i in range(from: 0, to: rows.len())
+        check.weight_ok(rows[i], what: f"the weight of row {i}")?
+
+    n.grow_columns @ columns
+    n.grow_rows @ rows
+    return stored(@app, n: n, measured: false)
+
+# Sets what a widget shows as its text (`ui.set_text`).
+function set_text(@app: ui.App, widget: ui.Widget, text: str) -> ()?
+    n @= texted(app, widget: widget)?
+    one_line = n.kind != hero_ui.HERO_UI_LABEL && n.kind != hero_ui.HERO_UI_TEXT_AREA
+    check.text_ok(text: text, one_line: one_line, what: "the text")?
+    n.text @ text
+
+    if app.native
+        native.push_text(app, n: n)?
+    return stored(@app, n: n, measured: true)
+
+# The text a widget shows (`ui.text_of`): on the native side, the text a
+# text field or a text area holds as the person left it.
+function text_of(app: ui.App, widget: ui.Widget) -> str?
+    n = texted(app, widget: widget)?
+
+    if app.native && (n.kind == hero_ui.HERO_UI_TEXT_FIELD || n.kind == hero_ui.HERO_UI_TEXT_AREA)
+        return native.read_text(app, id: n.id)
+    return ok(n.text)
+
+# The node of `widget`, of a kind that shows a text.
+function texted(app: ui.App, widget: ui.Widget) -> model.Node?
+    n = check.node_of(app, widget: widget)?
+
+    if !model.has_text(n.kind)
+        return fail(code: failure.INVALID, msg: f"widget {n.id} is a {model.kind_name(n.kind)}, which shows no text")
+    return ok(n)
+
+# Lets the person use a widget, or greys it out (`ui.set_enabled`).
+function set_enabled(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
+    n @= check.node_of(app, widget: widget)?
+
+    if !model.is_native(n.kind) || n.kind == hero_ui.HERO_UI_WINDOW
+        return fail(
+            code: failure.INVALID,
+            msg: f"widget {n.id} is a {model.kind_name(n.kind)}, which the person does not use"
+        )
+    n.enabled @ on
+
+    if app.native
+        native.push_enabled(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# Shows or hides a widget (`ui.set_visible`).
+function set_visible(@app: ui.App, widget: ui.Widget, on: bool) -> ()?
+    n @= check.node_of(app, widget: widget)?
+
+    if !model.is_placed(n.kind) && n.kind != hero_ui.HERO_UI_WINDOW
+        return fail(
+            code: failure.INVALID,
+            msg: f"widget {n.id} is a {model.kind_name(n.kind)}, which is not shown in a window's content"
+        )
+    n.visible @ on
+    stored(@app, n: n, measured: false)?
+
+    if app.native
+        if n.kind == hero_ui.HERO_UI_WINDOW
+            if n.shown && hero_ui.set_visible(app.handle, id: n.id, on: check.number_of(on)) < 0
+                return failure.last(f"showing window {n.id}")
+        else
+            native.shown(app, nodes: app.table.nodes, id: n.id)?
+    return ok()
+
+# Sets a checkbox's state, where `kind` is `HERO_UI_CHECKBOX`, or a slider's
+# or a progress bar's value, where it is `HERO_UI_SLIDER`.
+function set_value(@app: ui.App, widget: ui.Widget, value: i64, kind: i64) -> ()?
+    n @= valued(app, widget: widget, kind: kind)?
+
+    if kind == hero_ui.HERO_UI_SLIDER && (value < n.least || value > n.most)
+        return fail(code: failure.INVALID, msg: f"the value {value} is outside {n.least} to {n.most}")
+    n.value @ value
+
+    if app.native
+        native.push_value(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# A checkbox's state as 0 or 1, where `kind` is `HERO_UI_CHECKBOX`, or a
+# slider's or a progress bar's value: on the native side, as the person left
+# it.
+function value_of(app: ui.App, widget: ui.Widget, kind: i64) -> i64?
+    n = valued(app, widget: widget, kind: kind)?
+
+    if app.native && n.kind != hero_ui.HERO_UI_PROGRESS
+        return native.read_value(app, id: n.id)
+    return ok(n.value)
+
+# The node of `widget`: a checkbox where `kind` is `HERO_UI_CHECKBOX`, a
+# slider or a progress bar where it is `HERO_UI_SLIDER`.
+function valued(app: ui.App, widget: ui.Widget, kind: i64) -> model.Node?
+    if kind == hero_ui.HERO_UI_CHECKBOX
+        return check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_CHECKBOX], what: "a checkbox")
+    return check.node_kind(
+        app,
+        widget: widget,
+        kinds: [hero_ui.HERO_UI_SLIDER, hero_ui.HERO_UI_PROGRESS],
+        what: "a slider or a progress bar"
+    )
+
+# Sets a slider's or a progress bar's range (`ui.set_range`).
+function set_range(@app: ui.App, widget: ui.Widget, least: i64, most: i64) -> ()?
+    n @= valued(app, widget: widget, kind: hero_ui.HERO_UI_SLIDER)?
+
+    if least >= most
+        return fail(
+            code: failure.INVALID,
+            msg: f"a range from {least} to {most}; its lowest value must be below its highest"
+        )
+
+    if n.kind == hero_ui.HERO_UI_PROGRESS && least != 0
+        return fail(code: failure.INVALID, msg: f"a progress bar runs from 0, and {least} was asked")
+    n.least @ least
+    n.most @ most
+
+    if n.value < least
+        n.value @ least
+
+    if n.value > most
+        n.value @ most
+
+    if app.native
+        native.push_range(app, n: n)?
+        native.push_value(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# Gives a list, a combo box or a radio group its items (`ui.set_items`).
+function set_items(@app: ui.App, widget: ui.Widget, items: [str]) -> ()?
+    n @= chooser(app, widget: widget)?
+    check.items_ok(items)?
+    n.items @ items
+    n.chosen @ []
+
+    if n.kind != hero_ui.HERO_UI_LIST && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE && items.len() > 0
+        n.chosen @ [0]
+
+    if app.native
+        native.push_items(app, n: n)?
+    return stored(@app, n: n, measured: true)
+
+# Chooses items (`ui.set_selection`).
+function set_selection(@app: ui.App, widget: ui.Widget, indices: [i64]) -> ()?
+    n @= chooser(app, widget: widget)?
+    check.indices_ok(n, indices: indices)?
+    n.chosen @ indices
+
+    if app.native
+        native.push_chosen(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# What a list, a combo box or a radio group has chosen (`ui.selection_of`).
+function selection_of(app: ui.App, widget: ui.Widget) -> [i64]?
+    n = chooser(app, widget: widget)?
+
+    if app.native
+        return native.read_selection(app, id: n.id)
+    return ok(n.chosen)
+
+# The node of `widget`, a list, a combo box or a radio group.
+function chooser(app: ui.App, widget: ui.Widget) -> model.Node?
+    return check.node_kind(
+        app,
+        widget: widget,
+        kinds: [hero_ui.HERO_UI_LIST, hero_ui.HERO_UI_LIST_MULTIPLE, hero_ui.HERO_UI_COMBO, hero_ui.HERO_UI_RADIO_GROUP],
+        what: "a list, a combo box or a radio group"
+    )
+
+# Shows an image in a picture (`ui.set_picture`).
+function set_picture(@app: ui.App, widget: ui.Widget, img: image.Image) -> ()?
+    n @= check.node_kind(app, widget: widget, kinds: [hero_ui.HERO_UI_IMAGE], what: "a picture")?
+    makers.with_pixels(@n, img: img)?
+
+    if app.native
+        native.push_image(app, n: n)?
+    return stored(@app, n: n, measured: true)
+
+# The keys a shortcut may name besides one letter or one digit, as
+# `hero_ui.h` lists them.
+function named_keys() -> [str]
+    return [
+        "F1"
+        "F2"
+        "F3"
+        "F4"
+        "F5"
+        "F6"
+        "F7"
+        "F8"
+        "F9"
+        "F10"
+        "F11"
+        "F12"
+        "Enter"
+        "Escape"
+        "Tab"
+        "Space"
+        "Delete"
+        "Backspace"
+        "Up"
+        "Down"
+        "Left"
+        "Right"
+        "Home"
+        "End"
+        "PageUp"
+        "PageDown"
+    ]
+
+# Whether `key` names a key a shortcut takes, or none where empty.
+function is_key(key: str) -> bool
+    if key.len() == 0
+        return true
+
+    if key.len() == 1
+        c = key[0]
+        return c >= 'a' && c <= 'z' || c >= '0' && c <= '9'
+
+    for named in named_keys()
+        if named == key
+            return true
+
+    return false
+
+# Gives a menu item its shortcut (`ui.set_shortcut`).
+function set_shortcut(@app: ui.App, item: ui.Widget, shortcut: ui.Shortcut) -> ()?
+    n @= check.node_kind(app, widget: item, kinds: [hero_ui.HERO_UI_MENU_ITEM], what: "a menu item")?
+
+    if !is_key(shortcut.key)
+        return fail(
+            code: failure.INVALID,
+            msg: f"\"{shortcut.key}\" names no key a shortcut takes: a letter a to z, a digit, or one of {named_keys().join(", ")}"
+        )
+    n.key @ shortcut.key
+    n.modifiers @ check.number_of(shortcut.primary) * hero_ui.HERO_UI_PRIMARY + check.number_of(shortcut.shift) * hero_ui.HERO_UI_SHIFT + check.number_of(shortcut.alt) * hero_ui.HERO_UI_ALT
+
+    if app.native
+        native.push_shortcut(app, n: n)?
+    return stored(@app, n: n, measured: false)
+
+# Puts `n` back in the table, measured again where `measured` (its text,
+# items or pixels moved), and marks its window for a layout.
+function stored(@app: ui.App, n: model.Node, measured: bool) -> ()?
+    node @= n
+
+    if measured && model.is_placed(n.kind)
+        size = if app.native
+            native.measure(app, n: n)?
+        else
+            sizes.of(n)
+
+        node.preferred_width @ size[0]
+        node.preferred_height @ size[1]
+    model.put(@app.table, n: node)
+    model.marks_dirty(@app.table, window: n.window)
+    return ok()
+
+## Tests
+
+test "is_key: a letter, a digit, a named key, none, and what is none of these"
+    assert is_key("o")
+    assert is_key("7")
+    assert is_key("F12")
+    assert is_key("PageDown")
+    assert is_key("")
+    assert !is_key("O")
+    assert !is_key("F13")
+    assert !is_key("é")
+    assert !is_key("ctrl+o")
+
+test "of_code: every kind of the layer is a kind of ui"
+    assert of_code(hero_ui.HERO_UI_LIST_MULTIPLE) == .list
+    assert of_code(hero_ui.HERO_UI_IMAGE) == .picture
+    assert of_code(hero_ui.HERO_UI_WEBVIEW) == .webview
+    assert of_code(hero_ui.HERO_UI_TIMER) == .timer

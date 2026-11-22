@@ -152,6 +152,7 @@ packages = [
     "toml",
     "tracing",
     "tui",
+    "ui",
     "unicode",
     "unicode/encodings",
     "unicode/names",

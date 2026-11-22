@@ -1,0 +1,31 @@
+# An app's clock, in nanoseconds since it opened, which its timers fire by.
+# A headless app's clock is a number the app holds and `wait` moves, so a
+# headless program's timers fire on the same waits on every machine and in
+# no time at all; a native app's is the monotonic clock's, which goes on
+# while the system's loop runs and never goes back.
+
+use time
+use ui
+
+# The app's clock now, in nanoseconds since it opened.
+function now(app: ui.App) -> i64?
+    if !app.native
+        return ok(app.clock)
+    passed = time.elapsed(app.opened)?
+    return ok(passed.nanoseconds)
+
+# `at` and `more` added, or the most an `i64` holds where the sum would pass
+# it: the time a wait that never ends stops at.
+function later(at: i64, more: i64) -> i64
+    most = 9223372036854775807
+
+    if more > most - at
+        return most
+    return at + more
+
+## Tests
+
+test "later: a sum, and one past the most an i64 holds"
+    assert later(at: 5, more: 7) == 12
+    assert later(at: 5, more: 9223372036854775807) == 9223372036854775807
+    assert later(at: 0, more: 9223372036854775807) == 9223372036854775807

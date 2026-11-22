@@ -1,0 +1,1872 @@
+# Windows holding the system's own widgets, in the manner of wxWidgets: a
+# button is an `NSButton` on macOS, a Win32 button on Windows, a GTK button
+# on Linux, never one this package draws, so a program looks and behaves as
+# the system's own programs do, its keys, its accessibility and its
+# languages included. The program makes windows, lays widgets out in them by
+# rows, columns and grids, asks `wait` for what the person did, and changes
+# its own state by it.
+#
+# What it does NOT do: draw a widget of its own, or anything into a window
+# (a drawing area is pending); a full-screen program in a terminal (`tui`);
+# decode an image file (`image`'s subpackages, whose `image.Image` a
+# `picture` shows); show a web page (`ui/webview`, pending).
+#
+# **No callbacks: the program asks.** The language has no closures, so no
+# widget calls the program back. `wait` runs the system's loop for a bounded
+# time and answers the next `Event`, a variant naming the widget by the
+# handle the program holds; the program matches it, changes its own state,
+# and sets the widgets that show it. Nothing the program sets is answered as
+# an event: only what the person does is.
+#
+# **A widget is a handle with a life.** An `App` is a handle of the platform
+# layer, begun by `open` and ended by `close`, and one nobody closes stops
+# the program when `main` returns, as every handle does (spec § 13). A
+# `Widget` is a number its app gave it, never an address: its life begins at
+# its maker and ends at `destroy`, of itself or of the box or window holding
+# it, or at `close`; every call on a widget whose life has ended fails
+# `closed`, and none can reach another widget, since an app never gives a
+# number twice and a widget of another app is `invalid`. A widget is not a
+# handle of spec § 13 because its window ends it: § 13's `transfers` would
+# end the program's own name for a widget handed to its window, and the
+# program names its widgets after that, in every event.
+#
+# **One thread.** AppKit, Win32 and GTK each hold the user interface on one
+# thread, and so does this package: an app opens only on the thread `main`
+# runs on, and `open` from another thread fails `unsupported`. An `App` is a
+# value no thread can be handed (a thread takes an `i64` or a `str`), so
+# every call on it is on that thread. Another thread's work reaches the user
+# interface through what the program shares with it, read when a `timer`
+# fires; the mailbox of feature 2647 will be the way once it lands.
+#
+# **The layout is computed here, the same on every platform**, in the
+# manner of wxWidgets' sizers: a window lays its children out in a column,
+# a `row` side by side, a `column` one under another, a `grid` in cells.
+# Each widget needs the size the system draws it at, or the least the
+# program asks (`Fit`), with its margin; along its box's line the room left
+# is shared among the children that stretch, by their weights, and across
+# it a child fills the room or stands at the start, the middle or the end. A
+# window is never smaller than its content needs. The layout runs at each
+# `wait`, `render` and `rect_of` after a change, and the native side only
+# places each widget at the rectangle it gives, in points from the top-left
+# corner of the window's content.
+#
+# **Two sides, one program.** On the native side the widgets are the
+# system's; on the headless side they are only this package's data, drawn
+# by fixed rules (`render` says which), and what the person does comes from
+# the program itself, through `inject`, one input at each `wait`. A
+# program's tests and a demo run headless and print the same transcript on
+# every machine, with no screen; `open(.automatic)` takes the native side
+# where the system offers one and the headless side where it does not. On
+# macOS the native side is AppKit; on Windows and Linux it is pending, and
+# `.automatic` opens headless there.
+#
+# **The backend's interface** is the platform layer's `hero_ui.h`, one shape
+# for every system: a widget made by its number, its kind and its window,
+# set, placed at a rectangle, read back, destroyed, and the queue of what
+# the person did, each event naming a number; every other side (Win32, GTK,
+# a web view) implements those calls and nothing of this module.
+#
+# It fails with `closed`, `invalid`, `timeout`, `unsupported`, `exists`,
+# `limit` and `failed` (README § A4).
+#
+# Not written yet, each a `pending` block of its ledger: the native side on
+# Windows, by Win32; the native side on Linux, by GTK; the system's web view
+# as a widget, with a bridge to its scripts; a thread's message to the user
+# interface, through feature 2647's mailbox; a box drawn with a title and a
+# frame around it; a text field whose text is masked; a combo box the person
+# may type into; a progress bar that moves with no value; a number typed, or
+# stepped up and down; a line between the widgets of a box; a menu inside a
+# menu; the system's dialog to choose a folder; pages chosen by tabs; rows of
+# cells in columns; a tree of items folded and unfolded; a box whose content
+# scrolls; two panes whose border the person drags; an area the program draws
+# into, with its keys and its mouse; the widget that has the keys, set and
+# asked; a tip shown over a widget; the system's clipboard; a date, a colour
+# or a font chosen in the system's own picker; an icon in the system's tray or
+# menu bar, and its notifications; a file dragged onto a window.
+
+use bytes
+use image
+use time
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/dialogs
+use ui/internal/failure
+use ui/internal/fixture
+use ui/internal/loop
+use ui/internal/makers
+use ui/internal/model
+use ui/internal/render as drawing
+use ui/internal/state
+
+## Codes
+
+# The app is closed, or the widget's life has ended: destroyed, its window
+# or its box destroyed, or its app closed; and a headless app whose injected
+# inputs are spent while no timer runs. Every function on an app or a
+# widget fails with it.
+constant CLOSED: str
+    failure.CLOSED
+
+# An argument the call cannot take: a size or a weight outside its range, a
+# text holding a zero byte, a widget of another app or of a kind the call
+# does not set, an index past the items. Every function that takes one fails
+# with it.
+constant INVALID: str
+    failure.INVALID
+
+# Nothing happened in the time `wait` was given.
+constant TIMEOUT: str
+    failure.TIMEOUT
+
+# The system has no native user interface this package reaches, or the call
+# came from a thread other than `main`'s. `open` fails with it, and so does
+# a native call the system offers no path for.
+constant UNSUPPORTED: str
+    failure.UNSUPPORTED
+
+# A native app is open already in this process. `open` fails with it.
+constant EXISTS: str
+    failure.EXISTS
+
+# The system has no memory or no room for what was asked. The makers and
+# `open` fail with it.
+constant LIMIT: str
+    failure.LIMIT
+
+# The system refused for a reason none of the above names; the message
+# carries its words. Every call that reaches the native side fails with it.
+constant FAILED: str
+    failure.FAILED
+
+## The app
+
+# The most points a size, a position, a spacing, a padding or a margin
+# takes, on both axes: a million, past every screen.
+constant MOST_SIZE: i64
+    1000000
+
+# The highest weight a widget, a column or a row stretches by.
+constant MOST_STRETCH: i64
+    1000
+
+# Which side an app opens on.
+variant Backend
+    # The system's own widgets where this machine offers them to this
+    # session, the headless side where it does not.
+    automatic
+    # The system's own widgets, or `unsupported`.
+    native
+    # This package's data alone, drawn as text by `render`.
+    headless
+
+# An open user interface: its windows, its widgets and their state, made by
+# `open` and ended by `close`. It is an address of the platform layer, so a
+# program holds one in one place and hands it on with `@`; a copy made
+# before `close` holds a handle whose life has ended, and handing it to any
+# function here aborts (spec § 13).
+record App
+    # The floor's handle, `nullptr` once `close` has emptied this place.
+    handle: hero_ui.App
+    # The layer's number for the app, which each of its widgets carries.
+    number: i64
+    # Whether the app stands on the system's own widgets.
+    native: bool
+    # The widgets as data. Only this package reads it.
+    table: model.Model
+    # The inputs `inject` queued and `wait` has not given yet, in order.
+    inputs: [Input]
+    # The events made and not yet answered by `wait`, in order.
+    events: [Event]
+    # The answers `inject` queued for message boxes, in order.
+    answers: [Answer]
+    # The choices `inject` queued for file dialogs, in order.
+    choices: [Choice]
+    # The app's clock in nanoseconds since it opened. A headless app's moves
+    # only as far as `wait` lets time pass, so its timers fire on the same
+    # waits on every machine; a native app's follows the monotonic clock.
+    clock: i64
+    # The monotonic clock's reading when a native app opened.
+    opened: time.Mark
+
+# A new app on `backend`.
+#
+# - `backend`: `.native` for the system's own widgets, `.headless` for this
+#   package's data alone, `.automatic` for the first where this machine
+#   offers it and the second where it does not.
+#
+# Fails `unsupported` where `.native` was asked of a machine with no native
+# side for this session, or where the calling thread is not `main`'s;
+# `exists` where a native app is open already; `limit`. See also `close`.
+function open(backend: Backend) -> App?
+    return makers.open(backend)
+
+# Closes `app`: every window and widget it holds is destroyed, every queue
+# emptied, and the place emptied, so every later call through it fails
+# `closed`.
+#
+# - `app`: the caller's place holding the app; emptied whatever the answer.
+#
+# Fails `closed` where it is closed already. See also `open`.
+function close(@app: App) -> ()?
+    return makers.close(@app)
+
+# Whether `app` stands on the system's own widgets.
+#
+# - `app`: the app asked.
+function is_native(app: App) -> bool
+    return app.native
+
+## Widgets
+
+# A widget, a box, a window, a menu, a menu item or a timer of an app: a
+# number its app gave it, which every event about it names. Made only by
+# this package's makers; compare two with `==`.
+record Widget
+    # The number of the app that made it.
+    app: i64
+    # The app's number for it, from 1, never given twice by one app.
+    id: i64
+
+# What a widget is.
+variant Kind
+    # A top-level window, laying its children out in a column.
+    window
+    # A box laying its children out side by side.
+    row
+    # A box laying its children out one under another.
+    column
+    # A box laying its children out in cells, row after row.
+    grid
+    # A text the person reads.
+    label
+    # A button the person presses.
+    button
+    # One line of text the person types.
+    text_field
+    # Many lines of text the person types.
+    text_area
+    # A box the person checks and unchecks, with its text.
+    checkbox
+    # Items of which the person chooses one, each with its round button.
+    radio_group
+    # Items in a box, of which the person chooses one, or several.
+    list
+    # Items in a button that opens them, of which the person chooses one.
+    combo
+    # A bar filled as far as a value goes.
+    progress
+    # A knob the person drags between two values.
+    slider
+    # An image shown.
+    picture
+    # A menu of a window's menu bar.
+    menu
+    # An item of a menu.
+    menu_item
+    # A line between a menu's items.
+    menu_separator
+    # A clock that fires at a period.
+    timer
+    # The system's web view. No maker makes one yet: `ui/webview` will.
+    webview
+
+# What `widget` is.
+#
+# - `app`: the app holding it.
+# - `widget`: the widget asked about.
+#
+# Fails `closed` where its life has ended, `invalid` where it is another
+# app's.
+function kind_of(app: App, widget: Widget) -> Kind?
+    return state.kind_of(app, widget: widget)
+
+# Destroys `widget` and everything it holds: a window's widgets and menus,
+# a box's widgets, a menu's items; a timer stops.
+#
+# - `app`: the app holding it.
+# - `widget`: the widget destroyed; every later call on it, or on what it
+#   held, fails `closed`.
+#
+# Fails `closed` where its life has ended already, `invalid` where it is
+# another app's, `failed` where the system refused.
+function destroy(@app: App, widget: Widget) -> ()?
+    return makers.destroy(@app, widget: widget)
+
+# A rectangle in a window's content, in points from its top-left corner,
+# the y axis down.
+record Rect
+    # The left edge.
+    x: i64
+    # The top edge.
+    y: i64
+    # The width, 0 or more.
+    width: i64
+    # The height, 0 or more.
+    height: i64
+
+# Where `widget` stands in its window's content, laid out first where
+# anything changed; for a window, its content's size at 0, 0.
+#
+# - `app`: the app holding it; its windows are laid out where needed.
+# - `widget`: a window, or a widget or a box a window holds.
+#
+# A hidden widget answers where it stood last. Fails `closed`, `invalid`
+# for a menu, a menu item or a timer, which stand in no window's content.
+function rect_of(@app: App, widget: Widget) -> Rect?
+    return state.rect_of(@app, widget: widget)
+
+## Windows
+
+# A new window, titled `title`, its content `width` by `height` points or
+# what it needs if that is more. It lays its children out in a column, with
+# `model.WINDOW_PADDING` points inside its edges; it is shown at the next
+# `wait`, laid out, unless hidden first.
+#
+# - `app`: the app it is made in.
+# - `title`: its title, without a zero byte.
+# - `width`: its content's width in points, 0 to `MOST_SIZE`.
+# - `height`: its content's height in points, 0 to `MOST_SIZE`.
+#
+# Fails `invalid`, `closed` where `app` is, `limit` and `failed`.
+function window(@app: App, title: str, width: i64, height: i64) -> Widget?
+    return makers.window(@app, title: title, width: width, height: height)
+
+# Gives window `widget` a content of `width` by `height` points, or what it
+# needs if that is more. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `width`: points, 0 to `MOST_SIZE`.
+# - `height`: points, 0 to `MOST_SIZE`.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_size(@app: App, widget: Widget, width: i64, height: i64) -> ()?
+    return state.set_size(@app, window: widget, width: width, height: height)
+
+# Lets the person resize window `widget`, or keeps its size.
+#
+# - `app`: the app holding it.
+# - `widget`: the window.
+# - `on`: true to let the person resize it, as a new window does.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_resizable(@app: App, widget: Widget, on: bool) -> ()?
+    return state.set_resizable(@app, window: widget, on: on)
+
+## Layout
+
+# A new box in `into` that lays its children out side by side, from the
+# left, `model.SPACING` points between two.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+#
+# Fails `closed`, `invalid` where `into` holds no widgets.
+function row(@app: App, into: Widget) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_ROW, text: "", items: [])
+
+# A new box in `into` that lays its children out one under another, from
+# the top, `model.SPACING` points between two.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+#
+# Fails `closed`, `invalid` where `into` holds no widgets.
+function column(@app: App, into: Widget) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_COLUMN, text: "", items: [])
+
+# A new box in `into` that lays its children out in cells, `columns` to a
+# row, row after row; each column as wide as its widest child, each row as
+# high as its highest.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `columns`: the cells of a row, 1 to `MOST_STRETCH`.
+#
+# Fails `closed`, `invalid`. See also `set_grid_stretch`.
+function grid(@app: App, into: Widget, columns: i64) -> Widget?
+    return makers.grid(@app, into: into, columns: columns)
+
+# Where a widget stands across its box's line when it does not fill it.
+variant Align
+    # At the left of a column's room, the top of a row's.
+    start
+    # In the middle.
+    center
+    # At the right of a column's room, the bottom of a row's.
+    end
+
+# How a widget, or a box, takes room in the box holding it. In a grid,
+# `fill` and `align` hold on both axes of the cell.
+record Fit
+    # Its share of the room the box has left along its line, against its
+    # siblings' weights; 0 keeps its least size. 0 to `MOST_STRETCH`.
+    stretch: i64
+    # Whether it takes the whole room across the box's line.
+    fill: bool
+    # Where it stands across the line when it does not fill.
+    align: Align
+    # The least width it takes, in points, whatever the system draws it
+    # at; 0 to `MOST_SIZE`.
+    min_width: i64
+    # The least height it takes, in points; 0 to `MOST_SIZE`.
+    min_height: i64
+    # The room kept around it on every side, in points; 0 to `MOST_SIZE`.
+    margin: i64
+
+# The fit every widget starts with: no stretch, no fill, at the start, no
+# least size of its own, no margin.
+function default_fit() -> Fit
+    return Fit(stretch: 0, fill: false, align: .start, min_width: 0, min_height: 0, margin: 0)
+
+# Gives `widget` the fit `fit` in the box holding it.
+#
+# - `app`: the app holding it.
+# - `widget`: a widget or a box a window holds.
+# - `fit`: how it takes room; every number within its field's range.
+#
+# Fails `closed`, `invalid` for a window, a menu, an item or a timer, or a
+# number out of its range.
+function set_fit(@app: App, widget: Widget, fit: Fit) -> ()?
+    return state.set_fit(@app, widget: widget, fit: fit)
+
+# Gives box or window `box` `spacing` points between two of its children and
+# `padding` points inside its edges.
+#
+# - `app`: the app holding it.
+# - `box`: a window, a row, a column or a grid.
+# - `spacing`: points, 0 to `MOST_SIZE`.
+# - `padding`: points, 0 to `MOST_SIZE`.
+#
+# Fails `closed`, `invalid`.
+function set_spacing(@app: App, box: Widget, spacing: i64, padding: i64) -> ()?
+    return state.set_spacing(@app, box: box, spacing: spacing, padding: padding)
+
+# Gives grid `widget`'s columns and rows their weights for the room it has
+# left, one weight a column and one a row, in order.
+#
+# - `app`: the app holding it.
+# - `widget`: the grid.
+# - `columns`: a weight for each column from the first, 0 to
+#   `MOST_STRETCH`; a column with none takes 0.
+# - `rows`: a weight for each row from the first, likewise.
+#
+# Fails `closed`, `invalid`.
+function set_grid_stretch(@app: App, widget: Widget, columns: [i64], rows: [i64]) -> ()?
+    return state.set_grid_stretch(@app, grid: widget, columns: columns, rows: rows)
+
+## Widgets the person uses
+
+# A new label in `into` showing `text`, a line feed starting a new line.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it shows, without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function label(@app: App, into: Widget, text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_LABEL, text: text, items: [])
+
+# A new button in `into` showing `text`; pressing it is `.clicked`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it shows, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function button(@app: App, into: Widget, text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_BUTTON, text: text, items: [])
+
+# A new text field in `into` holding `text`, one line the person types;
+# each change is `.text_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it holds first, one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function text_field(@app: App, into: Widget, text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_TEXT_FIELD, text: text, items: [])
+
+# A new text area in `into` holding `text`, lines the person types; each
+# change is `.text_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it holds first, without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function text_area(@app: App, into: Widget, text: str) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_TEXT_AREA, text: text, items: [])
+
+# A new checkbox in `into` showing `text`, checked or not; each click is
+# `.toggled`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `text`: what it shows beside its box, one line without a zero byte.
+# - `checked`: whether it starts checked.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function checkbox(@app: App, into: Widget, text: str, checked: bool) -> Widget?
+    return makers.checkbox(@app, into: into, text: text, checked: checked)
+
+# A new radio group in `into` holding `items`, one under another, the first
+# chosen; each choice is `.selection_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `items`: the items, each one line without a zero byte; none makes a
+#   group with nothing chosen.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function radio_group(@app: App, into: Widget, items: [str]) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_RADIO_GROUP, text: "", items: items)
+
+# A new list in `into` holding `items`, nothing chosen; each change of what
+# is chosen is `.selection_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `items`: the items, each one line without a zero byte.
+# - `multiple`: whether the person may choose several.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function list(@app: App, into: Widget, items: [str], multiple: bool) -> Widget?
+    kind = if multiple
+        hero_ui.HERO_UI_LIST_MULTIPLE
+    else
+        hero_ui.HERO_UI_LIST
+
+    return makers.make(@app, into: into, kind: kind, text: "", items: items)
+
+# A new combo box in `into` holding `items`, the first chosen: a button
+# showing the item chosen, which opens the others; each choice is
+# `.selection_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `items`: the items, each one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function combo(@app: App, into: Widget, items: [str]) -> Widget?
+    return makers.make(@app, into: into, kind: hero_ui.HERO_UI_COMBO, text: "", items: items)
+
+# A new progress bar in `into`, empty, filled as its value goes from 0 to
+# `most`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `most`: the value that fills it, 1 or more.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `set_value`.
+function progress(@app: App, into: Widget, most: i64) -> Widget?
+    return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_PROGRESS, least: 0, most: most, value: 0)
+
+# A new slider in `into`, its knob at `value` between `least` and `most`;
+# each move by the person is `.value_changed`.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `least`: the value at its start, below `most`.
+# - `most`: the value at its end.
+# - `value`: where the knob starts, from `least` to `most`.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function slider(@app: App, into: Widget, least: i64, most: i64, value: i64) -> Widget?
+    return makers.ranged(@app, into: into, kind: hero_ui.HERO_UI_SLIDER, least: least, most: most, value: value)
+
+# A new picture in `into` showing `img` at one point a pixel.
+#
+# - `app`: the app it is made in.
+# - `into`: a window, a row, a column or a grid.
+# - `img`: the image, of any format, shown as 8-bit RGBA; its sides 0 to
+#   `MOST_SIZE`.
+#
+# Fails `closed`, `invalid` where `img` is not valid, `limit`, `failed`.
+function picture(@app: App, into: Widget, img: image.Image) -> Widget?
+    return makers.picture(@app, into: into, img: img)
+
+## What a widget shows
+
+# Sets what `widget` shows as its text: a window's title, a label's, a
+# button's, a checkbox's, a menu's or a menu item's text, or the whole text
+# of a text field or a text area. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: one of the kinds above.
+# - `text`: without a zero byte, one line for all but a label and a text
+#   area.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_text(@app: App, widget: Widget, text: str) -> ()?
+    return state.set_text(@app, widget: widget, text: text)
+
+# The text `widget` shows: for a text field or a text area, what the person
+# has typed into it as it stands now.
+#
+# - `app`: the app holding it.
+# - `widget`: one of the kinds `set_text` sets.
+#
+# Fails `closed`, `invalid`, `failed`.
+function text_of(app: App, widget: Widget) -> str?
+    return state.text_of(app, widget: widget)
+
+# Lets the person use `widget`, or greys it out; a widget greyed out gives
+# no event.
+#
+# - `app`: the app holding it.
+# - `widget`: any widget but a window, a box or a timer.
+# - `on`: true to let the person use it, as a new widget does.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_enabled(@app: App, widget: Widget, on: bool) -> ()?
+    return state.set_enabled(@app, widget: widget, on: on)
+
+# Shows or hides `widget`; a hidden widget or box takes no room, and what
+# it holds is hidden with it.
+#
+# - `app`: the app holding it.
+# - `widget`: a window, or a widget or a box a window holds.
+# - `on`: true to show it, as a new widget is.
+#
+# Fails `closed`, `invalid` for a menu, an item or a timer, `failed`.
+function set_visible(@app: App, widget: Widget, on: bool) -> ()?
+    return state.set_visible(@app, widget: widget, on: on)
+
+# Checks or unchecks checkbox `widget`. No event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: the checkbox.
+# - `checked`: whether it is checked.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_checked(@app: App, widget: Widget, checked: bool) -> ()?
+    return state.set_value(@app, widget: widget, value: check.number_of(checked), kind: hero_ui.HERO_UI_CHECKBOX)
+
+# Whether checkbox `widget` is checked now.
+#
+# - `app`: the app holding it.
+# - `widget`: the checkbox.
+#
+# Fails `closed`, `invalid`, `failed`.
+function is_checked(app: App, widget: Widget) -> bool?
+    return ok(state.value_of(app, widget: widget, kind: hero_ui.HERO_UI_CHECKBOX)? == 1)
+
+# Moves a slider's knob, or fills a progress bar, to `value`. No event comes
+# of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a slider or a progress bar.
+# - `value`: from its lowest value to its highest.
+#
+# Fails `closed`, `invalid`, `failed`. See also `set_range`.
+function set_value(@app: App, widget: Widget, value: i64) -> ()?
+    return state.set_value(@app, widget: widget, value: value, kind: hero_ui.HERO_UI_SLIDER)
+
+# The value a slider's knob or a progress bar stands at now.
+#
+# - `app`: the app holding it.
+# - `widget`: a slider or a progress bar.
+#
+# Fails `closed`, `invalid`, `failed`.
+function value_of(app: App, widget: Widget) -> i64?
+    return state.value_of(app, widget: widget, kind: hero_ui.HERO_UI_SLIDER)
+
+# Makes slider or progress bar `widget` run from `least` to `most`, its
+# value moved inside where it falls outside.
+#
+# - `app`: the app holding it.
+# - `widget`: a slider or a progress bar.
+# - `least`: its lowest value, below `most`; 0 for a progress bar.
+# - `most`: its highest value.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_range(@app: App, widget: Widget, least: i64, most: i64) -> ()?
+    return state.set_range(@app, widget: widget, least: least, most: most)
+
+# Gives a list, a combo box or a radio group the items `items`: a list then
+# has nothing chosen, a combo box and a radio group their first. No event
+# comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a list, a combo box or a radio group.
+# - `items`: each one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_items(@app: App, widget: Widget, items: [str]) -> ()?
+    return state.set_items(@app, widget: widget, items: items)
+
+# Chooses the items at `indices` of a list, a combo box or a radio group. No
+# event comes of it.
+#
+# - `app`: the app holding it.
+# - `widget`: a list, a combo box or a radio group.
+# - `indices`: item indices, ascending and each once, at most one but for a
+#   list of several choices; none chooses nothing.
+#
+# Fails `closed`, `invalid` where an index is past the items or the indices
+# are out of order, `failed`.
+function set_selection(@app: App, widget: Widget, indices: [i64]) -> ()?
+    return state.set_selection(@app, widget: widget, indices: indices)
+
+# The indices of the items a list, a combo box or a radio group has chosen
+# now, ascending; empty where none is.
+#
+# - `app`: the app holding it.
+# - `widget`: a list, a combo box or a radio group.
+#
+# Fails `closed`, `invalid`, `failed`.
+function selection_of(app: App, widget: Widget) -> [i64]?
+    return state.selection_of(app, widget: widget)
+
+# Shows `img` in picture `widget`, which takes its size.
+#
+# - `app`: the app holding it.
+# - `widget`: a picture.
+# - `img`: the image, of any format; its sides 0 to `MOST_SIZE`.
+#
+# Fails `closed`, `invalid`, `failed`.
+function set_picture(@app: App, widget: Widget, img: image.Image) -> ()?
+    return state.set_picture(@app, widget: widget, img: img)
+
+## Menus
+
+# A new menu titled `title` at the end of window `into`'s menu bar. On
+# macOS the menu bar at the top of the screen shows the menus of the window
+# in front, after the application's own menu.
+#
+# - `app`: the app it is made in.
+# - `into`: the window.
+# - `title`: one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function menu(@app: App, into: Widget, title: str) -> Widget?
+    return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU, text: title)
+
+# A new item at the end of menu `into`, showing `text`; choosing it, by the
+# mouse or its shortcut, is `.menu_chosen`.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu.
+# - `text`: one line without a zero byte.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`. See also `set_shortcut`.
+function menu_item(@app: App, into: Widget, text: str) -> Widget?
+    return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU_ITEM, text: text)
+
+# A new line at the end of menu `into`, between the items before and after.
+#
+# - `app`: the app it is made in.
+# - `into`: the menu.
+#
+# Fails `closed`, `invalid`, `limit`, `failed`.
+function menu_separator(@app: App, into: Widget) -> Widget?
+    return makers.menu_part(@app, into: into, kind: hero_ui.HERO_UI_MENU_SEPARATOR, text: "")
+
+# A key and the keys held with it, which choose a menu item.
+record Shortcut
+    # The key: one letter `a` to `z`, one digit, or one of `F1` to `F12`,
+    # `Enter`, `Escape`, `Tab`, `Space`, `Delete`, `Backspace`, `Up`,
+    # `Down`, `Left`, `Right`, `Home`, `End`, `PageUp`, `PageDown`; empty
+    # for no shortcut.
+    key: str
+    # Whether the system's own key for shortcuts is held: Command on macOS,
+    # Control elsewhere.
+    primary: bool
+    # Whether Shift is held.
+    shift: bool
+    # Whether Alt is held, Option on macOS.
+    alt: bool
+
+# Gives menu item `item` the shortcut `shortcut`, or takes it away with an
+# empty key.
+#
+# - `app`: the app holding it.
+# - `item`: the menu item.
+# - `shortcut`: its key, one the record names.
+#
+# Fails `closed`, `invalid` for a key the record does not name, `failed`.
+function set_shortcut(@app: App, item: Widget, shortcut: Shortcut) -> ()?
+    return state.set_shortcut(@app, item: item, shortcut: shortcut)
+
+## Timers
+
+# A new timer of `app` that fires every `every`, as `.timer_fired`, the
+# first time `every` from now, until destroyed. A timer that fell behind
+# fires once and counts its next period from then.
+#
+# - `app`: the app whose `wait` it fires in.
+# - `every`: its period, from a millisecond to a day.
+#
+# Fails `closed`, `invalid`. See also `destroy`.
+function timer(@app: App, every: time.Duration) -> Widget?
+    return makers.timer(@app, every: every)
+
+## Events
+
+# What the person did, as `wait` answers it, naming the widget by the
+# handle the program holds. Nothing the program sets is answered.
+variant Event
+    # A button was pressed.
+    clicked
+        # The button.
+        widget: Widget
+    # The person changed the text of a text field or a text area.
+    text_changed
+        # The text field or the text area.
+        widget: Widget
+        # Its whole text now.
+        text: str
+    # The person changed what a list, a combo box or a radio group has
+    # chosen.
+    selection_changed
+        # The list, the combo box or the radio group.
+        widget: Widget
+        # The indices chosen now, ascending; empty where none is.
+        indices: [i64]
+    # The person checked or unchecked a checkbox.
+    toggled
+        # The checkbox.
+        widget: Widget
+        # Whether it is checked now.
+        checked: bool
+    # The person moved a slider's knob.
+    value_changed
+        # The slider.
+        widget: Widget
+        # Its value now.
+        value: i64
+    # The person chose a menu item, by the mouse or its shortcut.
+    menu_chosen
+        # The menu item.
+        item: Widget
+    # The person asked a window to close, by its close button or the
+    # system's quit. Nothing is closed: the program destroys the window, or
+    # keeps it.
+    close_asked
+        # The window.
+        window: Widget
+    # A timer's period passed.
+    timer_fired
+        # The timer.
+        timer: Widget
+    # A window's content took a new size; its widgets are laid out again
+    # already.
+    resized
+        # The window.
+        window: Widget
+        # Its content's width now, in points.
+        width: i64
+        # Its content's height now, in points.
+        height: i64
+    # A web view's page sent a text. No side sends it yet: `ui/webview`
+    # will.
+    message
+        # The web view.
+        widget: Widget
+        # What the page sent.
+        text: str
+
+# The next thing the person did, waiting at most `within` for it: windows
+# made or changed are laid out and shown first, then the inputs `inject`
+# queued are given one at a time, then the system's own events and the
+# timers come in the order they happened.
+#
+# - `app`: the app waited on.
+# - `within`: the most time to wait, 0 to answer only what is ready; a
+#   headless app's clock moves by it, a native app waits it.
+#
+# Fails `timeout` where nothing came in `within`; `closed` where `app` is,
+# or where a headless app's injected inputs are spent and no timer runs, so
+# that a demo's loop ends where its inputs do; `invalid` for a time below
+# zero; `failed`.
+function wait(@app: App, within: time.Duration) -> Event?
+    return loop.wait(@app, within: within)
+
+## Input from the program
+
+# What a person does, given by the program: to drive a headless app, whose
+# person is the program itself, or a native one in a test.
+variant Input
+    # Presses a button.
+    click
+        # The button.
+        widget: Widget
+    # Replaces the whole text of a text field or a text area, as typing
+    # would.
+    type_text
+        # The text field or the text area.
+        widget: Widget
+        # Its text after it, one line for a text field.
+        text: str
+    # Chooses items of a list, a combo box or a radio group, as clicks would.
+    choose
+        # The list, the combo box or the radio group.
+        widget: Widget
+        # The indices, ascending and each once: exactly one for a combo box
+        # or a radio group, at most one for a list of one choice.
+        indices: [i64]
+    # Clicks a checkbox.
+    toggle
+        # The checkbox.
+        widget: Widget
+    # Drags a slider's knob to a value.
+    slide
+        # The slider.
+        widget: Widget
+        # The value, from its lowest to its highest.
+        value: i64
+    # Chooses a menu item.
+    choose_menu
+        # The menu item.
+        item: Widget
+    # Presses a window's close button.
+    ask_close
+        # The window.
+        window: Widget
+    # Drags a window's edge so its content is a new size.
+    resize
+        # The window.
+        window: Widget
+        # The width asked, 0 to `MOST_SIZE`; the window keeps what it needs.
+        width: i64
+        # The height asked, 0 to `MOST_SIZE`.
+        height: i64
+    # Presses a button of the next message box `message` shows.
+    answer
+        # The button.
+        answer: Answer
+    # Chooses files in the next file dialog `open_files` or `save_file`
+    # shows.
+    pick_files
+        # The paths chosen, one or more; exactly one for `save_file`.
+        paths: [str]
+    # Cancels the next file dialog.
+    cancel_files
+
+# Queues `input`, what a person does: the next `wait` that has no event
+# ready gives it, through the system's own path on the native side, so its
+# event comes as the person's would; an answer or a file dialog's choice
+# waits for the next dialog instead. An input on a widget greyed out,
+# hidden, or destroyed before it is given, gives no event, as a person's
+# could not.
+#
+# - `app`: the app it is given to.
+# - `input`: the input, checked now against the widget as it stands.
+#
+# Fails `closed` where `app` or the widget is, `invalid` where the widget is
+# of another kind than the input acts on or a value is outside its range.
+function inject(@app: App, input: Input) -> ()?
+    return loop.inject(@app, input: input)
+
+## Dialogs
+
+# The tone of a message box, which its icon shows.
+variant Tone
+    # A fact the person is told.
+    info
+    # Something to think about before going on.
+    warning
+    # Something that failed.
+    error
+
+# The buttons of a message box.
+variant Buttons
+    # OK alone.
+    ok
+    # OK and Cancel.
+    ok_cancel
+    # Yes and No.
+    yes_no
+    # Yes, No and Cancel.
+    yes_no_cancel
+
+# The button the person pressed in a message box.
+variant Answer
+    # OK.
+    ok
+    # Cancel, or the box closed by Escape.
+    cancel
+    # Yes.
+    yes
+    # No.
+    no
+
+# Files a file dialog offers, by their extensions.
+record Filter
+    # What the person reads: `Images`.
+    name: str
+    # The extensions without their dot, `png`, `jpg`; none for every file.
+    extensions: [str]
+
+# What the person did in a file dialog.
+variant Choice
+    # They cancelled it.
+    cancelled
+    # They chose files.
+    chosen
+        # The paths, one or more; one for a save.
+        paths: [str]
+
+# Shows a message box over window `over` and waits for the person to press
+# one of its buttons; an answer `inject` queued is taken instead, and no box
+# is shown.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `text`: what it says, without a zero byte.
+# - `tone`: its tone.
+# - `buttons`: its buttons.
+#
+# Fails `closed`; `invalid` where an injected answer is no button of the
+# box; `closed` on a headless app where no answer was injected, since no
+# person will ever answer; `failed`.
+function message(@app: App, over: Widget, title: str, text: str, tone: Tone, buttons: Buttons) -> Answer?
+    return dialogs.message(@app, over: over, title: title, text: text, tone: tone, buttons: buttons)
+
+# Shows the system's dialog to open files over window `over` and waits for
+# the person; a choice `inject` queued is taken instead, and no dialog is
+# shown.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `filters`: the files offered; none offers every file.
+# - `multiple`: whether the person may choose several.
+#
+# Fails `closed`, and `closed` on a headless app where no choice was
+# injected; `invalid` where an injected choice holds several paths and
+# `multiple` is false; `failed`.
+function open_files(@app: App, over: Widget, title: str, filters: [Filter], multiple: bool) -> Choice?
+    return dialogs.files(@app, over: over, title: title, name: "", filters: filters, save: false, multiple: multiple)
+
+# Shows the system's dialog to save a file over window `over`, proposing the
+# name `name`, and waits for the person; a choice `inject` queued is taken
+# instead.
+#
+# - `app`: the app showing it.
+# - `over`: the window it stands over.
+# - `title`: its title, one line without a zero byte.
+# - `name`: the file name proposed, without a zero byte.
+# - `filters`: the files offered; none offers every file.
+#
+# Fails `closed`, and `closed` on a headless app where no choice was
+# injected; `invalid` where an injected choice holds more than one path;
+# `failed`.
+function save_file(@app: App, over: Widget, title: str, name: str, filters: [Filter]) -> Choice?
+    return dialogs.files(@app, over: over, title: title, name: name, filters: filters, save: true, multiple: false)
+
+## Drawing as text
+
+# Every window of `app` as text, laid out first where anything changed: a
+# line for each window, then each widget it holds, two spaces deeper for
+# each box or menu around it, in the order made. A line names the kind and
+# the number, then what it shows and its state, then `at X,Y WxH`
+# where the layout placed it; a window says its title and its content's
+# size, a hidden widget `hidden` and no place, a greyed-out one `disabled`.
+# Texts are quoted, a quote, a backslash, a line feed and a tab escaped. The
+# same app draws the same lines on every machine and on both sides.
+#
+# On the headless side each widget takes the size `ui/internal/sizes` gives
+# its kind: a column of text 8 points wide, a line of a label 16 high, a
+# button its text and 24 around it by 24, a text field 160 by 24, a text
+# area 240 by 96, a checkbox its text and 24 by 20, a radio group its
+# widest item and 24 by 20 an item, a list 160 by 96, a combo box its widest
+# item and 40, at least 80, by 24, a progress bar 160 by 16, a slider 160
+# by 24, a picture its pixels.
+#
+# - `app`: the app drawn; its windows are laid out where needed.
+#
+# Fails `closed` where `app` is.
+function render(@app: App) -> [str]?
+    return drawing.lines(@app)
+
+## Tests
+
+test "render: every kind of widget in one window, drawn as text"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    m = menu(@app, into: w, title: "File").must()
+    open_item = menu_item(@app, into: m, text: "Open").must()
+    set_shortcut(@app, item: open_item, shortcut: Shortcut(key: "o", primary: true, shift: false, alt: false)).must()
+    _ = menu_separator(@app, into: m).must()
+    r = row(@app, into: w).must()
+    _ = label(@app, into: r, text: "Name").must()
+    _ = text_field(@app, into: r, text: "Ada").must()
+    _ = text_area(@app, into: w, text: "one\ntwo \"quoted\"").must()
+    g = grid(@app, into: w, columns: 2).must()
+    _ = checkbox(@app, into: g, text: "Wrap", checked: true).must()
+    _ = radio_group(@app, into: g, items: ["S", "M"]).must()
+    _ = list(@app, into: g, items: ["a", "b"], multiple: true).must()
+    _ = combo(@app, into: g, items: ["x"]).must()
+    p = progress(@app, into: w, most: 10).must()
+    set_value(@app, widget: p, value: 4).must()
+    _ = slider(@app, into: w, least: -5, most: 5, value: 1).must()
+    _ = picture(@app, into: w, img: image.blank(width: 3, height: 2, format: .rgba).must()).must()
+    b = button(@app, into: w, text: "Go").must()
+    set_enabled(@app, widget: b, on: false).must()
+    lines = render(@app).must()
+    assert lines == ["window #1 \"Test\" 300x388", "  menu #2 \"File\"", "    menu_item #3 \"Open\" primary+o", "    menu_separator #4", "  row #5 at 12,12 198x24", "    label #6 \"Name\" at 12,12 32x16", "    text_field #7 \"Ada\" at 50,12 160x24", "  text_area #8 \"one\\ntwo \\\"quoted\\\"\" at 12,42 240x96", "  grid #9 2 columns at 12,144 246x142", "    checkbox #10 [x] \"Wrap\" at 12,144 56x20", "    radio_group #11 [\"S\", \"M\"] chosen [0] at 178,144 32x40", "    list #12 multiple [\"a\", \"b\"] chosen [] at 12,190 160x96", "    combo #13 [\"x\"] chosen [0] at 178,190 80x24", "  progress #14 value 4 in 0..10 at 12,292 160x16", "  slider #15 value 1 in -5..5 at 12,314 160x24", "  picture #16 at 12,344 3x2", "  button #17 \"Go\" disabled at 12,352 40x24"]
+    close(@app).must()
+
+test "wait: every event kind a person gives, in the order injected"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    f = text_field(@app, into: w, text: "").must()
+    a = text_area(@app, into: w, text: "").must()
+    c = checkbox(@app, into: w, text: "On", checked: true).must()
+    g = radio_group(@app, into: w, items: ["a", "b"]).must()
+    l = list(@app, into: w, items: ["a", "b", "c"], multiple: false).must()
+    k = combo(@app, into: w, items: ["x", "y"]).must()
+    s = slider(@app, into: w, least: 0, most: 10, value: 0).must()
+    m = menu(@app, into: w, title: "Edit").must()
+    item = menu_item(@app, into: m, text: "Copy").must()
+    inputs: [Input] = [
+        .click(widget: b)
+        .type_text(widget: f, text: "x")
+        .type_text(widget: a, text: "a\nb")
+        .toggle(widget: c)
+        .choose(widget: g, indices: [1])
+        .choose(widget: l, indices: [2])
+        .choose(widget: k, indices: [1])
+        .slide(widget: s, value: 7)
+        .choose_menu(item: item)
+        .ask_close(window: w)
+        .resize(window: w, width: 900, height: 900)
+    ]
+
+    for input in inputs
+        inject(@app, input: input).must()
+
+    expected: [Event] = [
+        .clicked(widget: b)
+        .text_changed(widget: f, text: "x")
+        .text_changed(widget: a, text: "a\nb")
+        .toggled(widget: c, checked: false)
+        .selection_changed(widget: g, indices: [1])
+        .selection_changed(widget: l, indices: [2])
+        .selection_changed(widget: k, indices: [1])
+        .value_changed(widget: s, value: 7)
+        .menu_chosen(item: item)
+        .close_asked(window: w)
+        .resized(window: w, width: 900, height: 900)
+    ]
+
+    for e in expected
+        assert wait(@app, within: time.nanoseconds(0)).must() == e
+
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(0))) == CLOSED
+    close(@app).must()
+
+test "inject: what a person could not give makes no event: a hidden box's button, a choice that changes nothing, a slide to where it stands"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    r = row(@app, into: w).must()
+    b = button(@app, into: r, text: "In").must()
+    set_visible(@app, widget: r, on: false).must()
+    g = radio_group(@app, into: w, items: ["a", "b"]).must()
+    s = slider(@app, into: w, least: 0, most: 10, value: 3).must()
+    inject(@app, input: .click(widget: b)).must()
+    inject(@app, input: .choose(widget: g, indices: [0])).must()
+    inject(@app, input: .slide(widget: s, value: 3)).must()
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(0))) == CLOSED
+    close(@app).must()
+
+test "inject: an input on a widget destroyed before it is given makes no event, and an event of a widget destroyed is dropped"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    gone = button(@app, into: w, text: "Gone").must()
+    kept = button(@app, into: w, text: "Kept").must()
+    inject(@app, input: .click(widget: gone)).must()
+    inject(@app, input: .click(widget: kept)).must()
+    destroy(@app, widget: gone).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: kept)
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(0))) == CLOSED
+    close(@app).must()
+
+test "inject: refused as a value where the input does not fit its widget"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    f = text_field(@app, into: w, text: "").must()
+    g = radio_group(@app, into: w, items: ["a", "b"]).must()
+    l = list(@app, into: w, items: ["a", "b"], multiple: false).must()
+    s = slider(@app, into: w, least: 0, most: 10, value: 0).must()
+    assert fixture.code_of(inject(@app, input: .toggle(widget: b))) == INVALID
+    assert fixture.code_of(inject(@app, input: .type_text(widget: f, text: "two\nlines"))) == INVALID
+    assert fixture.code_of(inject(@app, input: .choose(widget: g, indices: []))) == INVALID
+    assert fixture.code_of(inject(@app, input: .choose(widget: l, indices: [0, 1]))) == INVALID
+    assert fixture.code_of(inject(@app, input: .choose(widget: l, indices: [2]))) == INVALID
+    assert fixture.code_of(inject(@app, input: .slide(widget: s, value: 11))) == INVALID
+    assert fixture.code_of(inject(@app, input: .resize(window: w, width: -1, height: 10))) == INVALID
+    assert fixture.code_of(inject(@app, input: .pick_files(paths: []))) == INVALID
+    assert fixture.code_of(inject(@app, input: .ask_close(window: b))) == INVALID
+    close(@app).must()
+
+test "destroy: every call on a widget of a destroyed window is closed, never a fault"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    l = list(@app, into: w, items: ["a"], multiple: false).must()
+    destroy(@app, widget: w).must()
+    assert fixture.code_of(set_text(@app, widget: b, text: "x")) == CLOSED
+    assert fixture.code_of(text_of(app, widget: b)) == CLOSED
+    assert fixture.code_of(selection_of(app, widget: l)) == CLOSED
+    assert fixture.code_of(rect_of(@app, widget: b)) == CLOSED
+    assert fixture.code_of(inject(@app, input: .click(widget: b))) == CLOSED
+    assert fixture.code_of(destroy(@app, widget: w)) == CLOSED
+    assert fixture.code_of(label(@app, into: w, text: "late")) == CLOSED
+    assert render(@app).must().len() == 0
+    close(@app).must()
+
+test "close: every call on a closed app, and on a widget it made, is closed"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    close(@app).must()
+    assert fixture.code_of(set_text(@app, widget: b, text: "x")) == CLOSED
+    assert fixture.code_of(window(@app, title: "again", width: 10, height: 10)) == CLOSED
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(0))) == CLOSED
+    assert fixture.code_of(render(@app)) == CLOSED
+    assert fixture.code_of(close(@app)) == CLOSED
+
+test "kind_of: a widget of another app is invalid, never another app's widget"
+    first @= fixture.test_app()
+    second @= fixture.test_app()
+    b = button(@first, into: fixture.window_of(first), text: "OK").must()
+    assert fixture.code_of(kind_of(second, widget: b)) == INVALID
+    assert fixture.code_of(set_text(@second, widget: b, text: "x")) == INVALID
+    close(@first).must()
+    close(@second).must()
+
+test "window: a title of two lines, a zero byte, sizes below zero and past the most, refused"
+    app @= open(.headless).must()
+    assert fixture.code_of(window(@app, title: "a\nb", width: 10, height: 10)) == INVALID
+    assert fixture.code_of(window(@app, title: bytes.to_text([97, 0]).must(), width: 10, height: 10)) == INVALID
+    assert fixture.code_of(window(@app, title: "x", width: -1, height: 10)) == INVALID
+    assert fixture.code_of(window(@app, title: "x", width: 10, height: MOST_SIZE + 1)) == INVALID
+    assert !window(@app, title: "x", width: 0, height: MOST_SIZE).is_err()
+    close(@app).must()
+
+test "makers: a widget into a button, a menu into a box, an item into a window, a range upside down, a grid of no column, refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    r = row(@app, into: w).must()
+    assert fixture.code_of(label(@app, into: b, text: "x")) == INVALID
+    assert fixture.code_of(menu(@app, into: r, title: "File")) == INVALID
+    assert fixture.code_of(menu_item(@app, into: w, text: "Open")) == INVALID
+    assert fixture.code_of(slider(@app, into: w, least: 5, most: 5, value: 5)) == INVALID
+    assert fixture.code_of(slider(@app, into: w, least: 0, most: 5, value: 6)) == INVALID
+    assert fixture.code_of(progress(@app, into: w, most: 0)) == INVALID
+    assert fixture.code_of(grid(@app, into: w, columns: 0)) == INVALID
+    assert fixture.code_of(button(@app, into: w, text: "two\nlines")) == INVALID
+    assert fixture.code_of(list(@app, into: w, items: ["a", "b\nc"], multiple: false)) == INVALID
+    close(@app).must()
+
+test "setters: a kind the setter does not set, and values out of range, refused and nothing changed"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    b = button(@app, into: w, text: "OK").must()
+    s = slider(@app, into: w, least: 0, most: 10, value: 5).must()
+    l = list(@app, into: w, items: ["a", "b"], multiple: false).must()
+    m = menu(@app, into: w, title: "File").must()
+    assert fixture.code_of(set_checked(@app, widget: b, checked: true)) == INVALID
+    assert fixture.code_of(set_value(@app, widget: s, value: 11)) == INVALID
+    assert value_of(app, widget: s).must() == 5
+    assert fixture.code_of(set_selection(@app, widget: l, indices: [1, 0])) == INVALID
+    assert fixture.code_of(set_text(@app, widget: s, text: "x")) == INVALID
+    assert fixture.code_of(set_fit(@app, widget: m, fit: default_fit())) == INVALID
+    assert fixture.code_of(set_visible(@app, widget: m, on: false)) == INVALID
+    assert fixture.code_of(set_enabled(@app, widget: w, on: false)) == INVALID
+    assert fixture.code_of(set_range(@app, widget: s, least: 3, most: 2)) == INVALID
+    bad @= default_fit()
+    bad.stretch @ MOST_STRETCH + 1
+    assert fixture.code_of(set_fit(@app, widget: b, fit: bad)) == INVALID
+    assert fixture.code_of(set_shortcut(@app, item: m, shortcut: Shortcut(key: "o", primary: true, shift: false, alt: false))) == INVALID
+    close(@app).must()
+
+test "wait: a time below zero is invalid, and a headless app with nothing to give and no timer is closed at once"
+    app @= fixture.test_app()
+    assert fixture.code_of(wait(@app, within: time.nanoseconds(-1))) == INVALID
+    assert fixture.code_of(wait(@app, within: time.max_duration())) == CLOSED
+    close(@app).must()
+
+test "timer: two timers fire in order of their times on the headless clock, a destroyed one never again"
+    app @= open(.headless).must()
+    fast = timer(@app, every: time.milliseconds(300).must()).must()
+    slow = timer(@app, every: time.milliseconds(500).must()).must()
+    second = time.seconds(1).must()
+    fired: [Widget] @= []
+
+    for _ in range(from: 0, to: 4)
+        match wait(@app, within: second).must()
+            .timer_fired t => fired @ fired.push(t.timer)
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ =>
+                assert false
+
+    assert fired == [fast, slow, fast, fast]
+    destroy(@app, widget: fast).must()
+    assert wait(@app, within: second).must() == .timer_fired(timer: slow)
+    destroy(@app, widget: slow).must()
+    assert fixture.code_of(wait(@app, within: second)) == CLOSED
+    assert fixture.code_of(timer(@app, every: time.nanoseconds(10))) == INVALID
+    close(@app).must()
+
+test "wait: a timer due after the time given is a timeout, and fires on a later wait"
+    app @= open(.headless).must()
+    t = timer(@app, every: time.seconds(5).must()).must()
+    assert fixture.code_of(wait(@app, within: time.seconds(2).must())) == TIMEOUT
+    assert fixture.code_of(wait(@app, within: time.seconds(2).must())) == TIMEOUT
+    assert wait(@app, within: time.seconds(2).must()).must() == .timer_fired(timer: t)
+    close(@app).must()
+
+test "resize: a window asked smaller than its content needs keeps its need, and its widgets are laid out again"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    f = text_field(@app, into: w, text: "").must()
+    fit @= default_fit()
+    fit.fill @ true
+    set_fit(@app, widget: f, fit: fit).must()
+    inject(@app, input: .resize(window: w, width: 10, height: 10)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .resized(window: w, width: 184, height: 48)
+    assert rect_of(@app, widget: f).must() == Rect(x: 12, y: 12, width: 160, height: 24)
+    inject(@app, input: .resize(window: w, width: 400, height: 100)).must()
+    _ = wait(@app, within: time.nanoseconds(0)).must()
+    assert rect_of(@app, widget: f).must() == Rect(x: 12, y: 12, width: 376, height: 24)
+    close(@app).must()
+
+test "message: no answer injected on a headless app is closed, an answer that is no button of the box invalid"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    assert fixture.code_of(message(@app, over: w, title: "Hi", text: "Hello", tone: .info, buttons: .ok)) == CLOSED
+    inject(@app, input: .answer(answer: .yes)).must()
+    assert fixture.code_of(message(@app, over: w, title: "Hi", text: "Hello", tone: .info, buttons: .ok_cancel)) == INVALID
+    inject(@app, input: .answer(answer: .cancel)).must()
+    assert message(@app, over: w, title: "Hi", text: "Hello", tone: .error, buttons: .ok_cancel).must() == .cancel
+    close(@app).must()
+
+test "open_files: several paths for a dialog of one, and none injected on a headless app, refused"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
+    assert fixture.code_of(open_files(@app, over: w, title: "Open", filters: [], multiple: false)) == INVALID
+    inject(@app, input: .pick_files(paths: ["/a", "/b"])).must()
+    assert open_files(@app, over: w, title: "Open", filters: [], multiple: true).must() == .chosen(paths: ["/a", "/b"])
+    assert fixture.code_of(save_file(@app, over: w, title: "Save", name: "x", filters: [Filter(name: "Text", extensions: ["txt"])])) == CLOSED
+    assert fixture.code_of(open_files(@app, over: w, title: "Open", filters: [Filter(name: "Bad", extensions: [".txt"])], multiple: false)) == INVALID
+    close(@app).must()
+
+test "set_items: a combo box and a radio group refilled choose their first, emptied choose none"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    c = combo(@app, into: w, items: ["a"]).must()
+    set_items(@app, widget: c, items: ["x", "y"]).must()
+    assert selection_of(app, widget: c).must() == [0]
+    set_items(@app, widget: c, items: []).must()
+    assert selection_of(app, widget: c).must().len() == 0
+    close(@app).must()
+
+test "set_text: a longer label widens its window's layout, and a text area keeps its lines"
+    app @= fixture.test_app()
+    w = fixture.window_of(app)
+    l = label(@app, into: w, text: "a").must()
+    assert rect_of(@app, widget: l).must().width == 8
+    set_text(@app, widget: l, text: "a longer text").must()
+    assert rect_of(@app, widget: l).must().width == 104
+    set_text(@app, widget: w, text: "Renamed").must()
+    assert text_of(app, widget: w).must() == "Renamed"
+    close(@app).must()
+
+## Examples
+
+# A headless app opened, a window made in it, and the app closed.
+test "open: a headless app with a window"
+    app @= open(.headless).must()
+    assert !is_native(app)
+    _ = window(@app, title: "Hello", width: 200, height: 80).must()
+    close(@app).must()
+
+# Closing an app twice: the second is told.
+test "close: once, then again"
+    app @= open(.headless).must()
+    close(@app).must()
+    assert close(@app).is_err()
+
+# The side an app stands on.
+test "is_native: a headless app is not"
+    app @= open(.headless).must()
+    assert !is_native(app)
+    close(@app).must()
+
+# What a widget is, and that a destroyed one is told.
+test "kind_of: a button, then destroyed"
+    app @= open(.headless).must()
+    w = window(@app, title: "Kinds", width: 100, height: 50).must()
+    b = button(@app, into: w, text: "OK").must()
+    assert kind_of(app, widget: b).must() == .button
+    destroy(@app, widget: b).must()
+
+    match kind_of(app, widget: b)
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@app).must()
+
+# A window destroyed with what it holds.
+test "destroy: a window and its button"
+    app @= open(.headless).must()
+    w = window(@app, title: "Gone", width: 100, height: 50).must()
+    b = button(@app, into: w, text: "OK").must()
+    destroy(@app, widget: w).must()
+    assert set_text(@app, widget: b, text: "Still?").is_err()
+    close(@app).must()
+
+# Where a button stands once laid out: inside the window's padding.
+test "rect_of: a button in a window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Where", width: 200, height: 100).must()
+    b = button(@app, into: w, text: "OK").must()
+    assert rect_of(@app, widget: b).must() == Rect(x: 12, y: 12, width: 40, height: 24)
+    assert rect_of(@app, widget: w).must() == Rect(x: 0, y: 0, width: 200, height: 100)
+    close(@app).must()
+
+# A window and its title as text.
+test "window: titled, and its size"
+    app @= open(.headless).must()
+    _ = window(@app, title: "Notes", width: 320, height: 200).must()
+    assert render(@app).must() == ["window #1 \"Notes\" 320x200"]
+    close(@app).must()
+
+# A window made bigger by the program.
+test "set_size: a window grown"
+    app @= open(.headless).must()
+    w = window(@app, title: "Grow", width: 100, height: 50).must()
+    set_size(@app, widget: w, width: 300, height: 150).must()
+    assert rect_of(@app, widget: w).must() == Rect(x: 0, y: 0, width: 300, height: 150)
+    close(@app).must()
+
+# A window the person may not resize: an injected resize gives no event.
+test "set_resizable: a fixed window"
+    app @= open(.headless).must()
+    w = window(@app, title: "Fixed", width: 100, height: 50).must()
+    set_resizable(@app, widget: w, on: false).must()
+    inject(@app, input: .resize(window: w, width: 300, height: 300)).must()
+    assert wait(@app, within: time.nanoseconds(0)).is_err()
+    assert render(@app).must() == ["window #1 \"Fixed\" 100x50 fixed"]
+    close(@app).must()
+
+# Two buttons side by side.
+test "row: two buttons"
+    app @= open(.headless).must()
+    w = window(@app, title: "Row", width: 200, height: 60).must()
+    r = row(@app, into: w).must()
+    _ = button(@app, into: r, text: "Yes").must()
+    _ = button(@app, into: r, text: "No").must()
+    assert render(@app).must()[3] == "    button #4 \"No\" at 66,12 40x24"
+    close(@app).must()
+
+# A label over a text field.
+test "column: a label over a field"
+    app @= open(.headless).must()
+    w = window(@app, title: "Column", width: 200, height: 100).must()
+    c = column(@app, into: w).must()
+    _ = label(@app, into: c, text: "Name").must()
+    f = text_field(@app, into: c, text: "").must()
+    assert rect_of(@app, widget: f).must() == Rect(x: 12, y: 34, width: 160, height: 24)
+    close(@app).must()
+
+# Labels and fields in a grid of two columns.
+test "grid: a form of two rows"
+    app @= open(.headless).must()
+    w = window(@app, title: "Form", width: 300, height: 100).must()
+    g = grid(@app, into: w, columns: 2).must()
+    _ = label(@app, into: g, text: "Name").must()
+    _ = text_field(@app, into: g, text: "").must()
+    _ = label(@app, into: g, text: "Mail").must()
+    mail = text_field(@app, into: g, text: "").must()
+    assert rect_of(@app, widget: mail).must() == Rect(x: 50, y: 42, width: 160, height: 24)
+    close(@app).must()
+
+# The fit a widget starts with.
+test "default_fit: no stretch, no fill"
+    f = default_fit()
+    assert f.stretch == 0 && !f.fill && f.align == .start
+
+# A text field stretched to the width the row leaves.
+test "set_fit: a field that takes the room left"
+    app @= open(.headless).must()
+    w = window(@app, title: "Fit", width: 400, height: 60).must()
+    r = row(@app, into: w).must()
+    f = text_field(@app, into: r, text: "").must()
+    _ = button(@app, into: r, text: "Go").must()
+    fit @= default_fit()
+    fit.stretch @ 1
+    set_fit(@app, widget: f, fit: fit).must()
+    fill @= default_fit()
+    fill.fill @ true
+    set_fit(@app, widget: r, fit: fill).must()
+    assert rect_of(@app, widget: f).must() == Rect(x: 12, y: 12, width: 330, height: 24)
+    close(@app).must()
+
+# A window with no padding and no spacing.
+test "set_spacing: a window packed tight"
+    app @= open(.headless).must()
+    w = window(@app, title: "Tight", width: 100, height: 100).must()
+    set_spacing(@app, box: w, spacing: 0, padding: 0).must()
+    b = button(@app, into: w, text: "A").must()
+    assert rect_of(@app, widget: b).must() == Rect(x: 0, y: 0, width: 32, height: 24)
+    close(@app).must()
+
+# A grid whose second column takes the room left.
+test "set_grid_stretch: the fields column grows"
+    app @= open(.headless).must()
+    w = window(@app, title: "Grow", width: 400, height: 60).must()
+    g = grid(@app, into: w, columns: 2).must()
+    fit @= default_fit()
+    fit.fill @ true
+    set_fit(@app, widget: g, fit: fit).must()
+    set_grid_stretch(@app, widget: g, columns: [0, 1], rows: []).must()
+    _ = label(@app, into: g, text: "Name").must()
+    f = text_field(@app, into: g, text: "").must()
+    set_fit(@app, widget: f, fit: fit).must()
+    assert rect_of(@app, widget: f).must() == Rect(x: 50, y: 12, width: 338, height: 24)
+    close(@app).must()
+
+# A label of two lines.
+test "label: two lines"
+    app @= open(.headless).must()
+    w = window(@app, title: "Label", width: 100, height: 60).must()
+    l = label(@app, into: w, text: "one\ntwo").must()
+    assert rect_of(@app, widget: l).must() == Rect(x: 12, y: 12, width: 24, height: 32)
+    close(@app).must()
+
+# A button clicked by an injected input.
+test "button: clicked"
+    app @= open(.headless).must()
+    w = window(@app, title: "Click", width: 100, height: 60).must()
+    b = button(@app, into: w, text: "OK").must()
+    inject(@app, input: .click(widget: b)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .clicked(widget: b)
+    close(@app).must()
+
+# A field the person types into.
+test "text_field: typed into"
+    app @= open(.headless).must()
+    w = window(@app, title: "Type", width: 200, height: 60).must()
+    f = text_field(@app, into: w, text: "").must()
+    inject(@app, input: .type_text(widget: f, text: "hello")).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .text_changed(widget: f, text: "hello")
+    assert text_of(app, widget: f).must() == "hello"
+    close(@app).must()
+
+# An area holding lines.
+test "text_area: two lines"
+    app @= open(.headless).must()
+    w = window(@app, title: "Area", width: 300, height: 200).must()
+    a = text_area(@app, into: w, text: "first\nsecond").must()
+    assert text_of(app, widget: a).must() == "first\nsecond"
+    close(@app).must()
+
+# A checkbox toggled by the person.
+test "checkbox: toggled"
+    app @= open(.headless).must()
+    w = window(@app, title: "Check", width: 200, height: 60).must()
+    c = checkbox(@app, into: w, text: "Wrap", checked: false).must()
+    inject(@app, input: .toggle(widget: c)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .toggled(widget: c, checked: true)
+    assert is_checked(app, widget: c).must()
+    close(@app).must()
+
+# A radio group, its first item chosen, the person choosing the third.
+test "radio_group: a size chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Size", width: 200, height: 100).must()
+    g = radio_group(@app, into: w, items: ["Small", "Medium", "Large"]).must()
+    assert selection_of(app, widget: g).must() == [0]
+    inject(@app, input: .choose(widget: g, indices: [2])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: g, indices: [2])
+    close(@app).must()
+
+# A list of several choices.
+test "list: two chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "List", width: 200, height: 150).must()
+    l = list(@app, into: w, items: ["a", "b", "c"], multiple: true).must()
+    assert selection_of(app, widget: l).must().len() == 0
+    inject(@app, input: .choose(widget: l, indices: [0, 2])).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .selection_changed(widget: l, indices: [0, 2])
+    close(@app).must()
+
+# A combo box, its first item chosen.
+test "combo: a day"
+    app @= open(.headless).must()
+    w = window(@app, title: "Day", width: 200, height: 60).must()
+    c = combo(@app, into: w, items: ["Monday", "Tuesday"]).must()
+    assert selection_of(app, widget: c).must() == [0]
+    close(@app).must()
+
+# A progress bar filled half way.
+test "progress: half way"
+    app @= open(.headless).must()
+    w = window(@app, title: "Work", width: 200, height: 60).must()
+    p = progress(@app, into: w, most: 10).must()
+    set_value(@app, widget: p, value: 5).must()
+    assert value_of(app, widget: p).must() == 5
+    close(@app).must()
+
+# A slider moved by the person.
+test "slider: dragged"
+    app @= open(.headless).must()
+    w = window(@app, title: "Volume", width: 200, height: 60).must()
+    s = slider(@app, into: w, least: 0, most: 100, value: 50).must()
+    inject(@app, input: .slide(widget: s, value: 80)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .value_changed(widget: s, value: 80)
+    close(@app).must()
+
+# A picture of a decoded image, which takes its size.
+test "picture: two by one"
+    app @= open(.headless).must()
+    w = window(@app, title: "Picture", width: 100, height: 60).must()
+    img = image.blank(width: 2, height: 1, format: .rgb).must()
+    p = picture(@app, into: w, img: img).must()
+    assert rect_of(@app, widget: p).must() == Rect(x: 12, y: 12, width: 2, height: 1)
+    close(@app).must()
+
+# A label's text changed by the program.
+test "set_text: a label"
+    app @= open(.headless).must()
+    w = window(@app, title: "Text", width: 100, height: 60).must()
+    l = label(@app, into: w, text: "Ready").must()
+    set_text(@app, widget: l, text: "Done").must()
+    assert text_of(app, widget: l).must() == "Done"
+    close(@app).must()
+
+# The text a field holds.
+test "text_of: a field's first text"
+    app @= open(.headless).must()
+    w = window(@app, title: "Text", width: 200, height: 60).must()
+    f = text_field(@app, into: w, text: "abc").must()
+    assert text_of(app, widget: f).must() == "abc"
+    close(@app).must()
+
+# A button greyed out: a click on it gives nothing.
+test "set_enabled: a button greyed out"
+    app @= open(.headless).must()
+    w = window(@app, title: "Off", width: 100, height: 60).must()
+    b = button(@app, into: w, text: "OK").must()
+    set_enabled(@app, widget: b, on: false).must()
+    inject(@app, input: .click(widget: b)).must()
+
+    match wait(@app, within: time.nanoseconds(0))
+        .ok _  => assert false
+        .err e => assert e.code == CLOSED
+
+    close(@app).must()
+
+# A hidden label takes no room.
+test "set_visible: a label hidden"
+    app @= open(.headless).must()
+    w = window(@app, title: "Hide", width: 100, height: 60).must()
+    l = label(@app, into: w, text: "Gone").must()
+    b = button(@app, into: w, text: "OK").must()
+    set_visible(@app, widget: l, on: false).must()
+    assert rect_of(@app, widget: b).must() == Rect(x: 12, y: 12, width: 40, height: 24)
+    close(@app).must()
+
+# A checkbox checked by the program.
+test "set_checked: checked"
+    app @= open(.headless).must()
+    w = window(@app, title: "Check", width: 100, height: 60).must()
+    c = checkbox(@app, into: w, text: "On", checked: false).must()
+    set_checked(@app, widget: c, checked: true).must()
+    assert is_checked(app, widget: c).must()
+    close(@app).must()
+
+# Whether a checkbox is checked.
+test "is_checked: as made"
+    app @= open(.headless).must()
+    w = window(@app, title: "Check", width: 100, height: 60).must()
+    c = checkbox(@app, into: w, text: "On", checked: true).must()
+    assert is_checked(app, widget: c).must()
+    close(@app).must()
+
+# A slider moved by the program.
+test "set_value: a slider"
+    app @= open(.headless).must()
+    w = window(@app, title: "Value", width: 200, height: 60).must()
+    s = slider(@app, into: w, least: -10, most: 10, value: 0).must()
+    set_value(@app, widget: s, value: -10).must()
+    assert value_of(app, widget: s).must() == -10
+    close(@app).must()
+
+# Where a slider stands.
+test "value_of: a slider as made"
+    app @= open(.headless).must()
+    w = window(@app, title: "Value", width: 200, height: 60).must()
+    s = slider(@app, into: w, least: 0, most: 10, value: 3).must()
+    assert value_of(app, widget: s).must() == 3
+    close(@app).must()
+
+# A slider's range narrowed, its value moved inside it.
+test "set_range: narrowed"
+    app @= open(.headless).must()
+    w = window(@app, title: "Range", width: 200, height: 60).must()
+    s = slider(@app, into: w, least: 0, most: 100, value: 90).must()
+    set_range(@app, widget: s, least: 0, most: 50).must()
+    assert value_of(app, widget: s).must() == 50
+    close(@app).must()
+
+# A list given new items, nothing chosen.
+test "set_items: a list refilled"
+    app @= open(.headless).must()
+    w = window(@app, title: "Items", width: 200, height: 150).must()
+    l = list(@app, into: w, items: ["a"], multiple: false).must()
+    set_items(@app, widget: l, items: ["x", "y"]).must()
+    assert selection_of(app, widget: l).must().len() == 0
+    close(@app).must()
+
+# An item chosen by the program.
+test "set_selection: the second"
+    app @= open(.headless).must()
+    w = window(@app, title: "Choose", width: 200, height: 150).must()
+    l = list(@app, into: w, items: ["a", "b"], multiple: false).must()
+    set_selection(@app, widget: l, indices: [1]).must()
+    assert selection_of(app, widget: l).must() == [1]
+    close(@app).must()
+
+# What a radio group has chosen.
+test "selection_of: a radio group as made"
+    app @= open(.headless).must()
+    w = window(@app, title: "Choose", width: 200, height: 100).must()
+    g = radio_group(@app, into: w, items: ["a", "b"]).must()
+    assert selection_of(app, widget: g).must() == [0]
+    close(@app).must()
+
+# A picture given a bigger image.
+test "set_picture: a bigger image"
+    app @= open(.headless).must()
+    w = window(@app, title: "Picture", width: 100, height: 60).must()
+    p = picture(@app, into: w, img: image.blank(width: 1, height: 1, format: .gray).must()).must()
+    set_picture(@app, widget: p, img: image.blank(width: 4, height: 3, format: .rgba).must()).must()
+    assert rect_of(@app, widget: p).must().width == 4
+    close(@app).must()
+
+# A menu bar with a File menu.
+test "menu: File"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    _ = menu(@app, into: w, title: "File").must()
+    assert render(@app).must()[1] == "  menu #2 \"File\""
+    close(@app).must()
+
+# An item chosen from a menu.
+test "menu_item: chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    m = menu(@app, into: w, title: "File").must()
+    item = menu_item(@app, into: m, text: "Open").must()
+    inject(@app, input: .choose_menu(item: item)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .menu_chosen(item: item)
+    close(@app).must()
+
+# A line between two items.
+test "menu_separator: between two items"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    m = menu(@app, into: w, title: "File").must()
+    _ = menu_item(@app, into: m, text: "Open").must()
+    _ = menu_separator(@app, into: m).must()
+    assert render(@app).must()[3] == "    menu_separator #4"
+    close(@app).must()
+
+# Command-O on macOS, Control-O elsewhere.
+test "set_shortcut: the primary key and o"
+    app @= open(.headless).must()
+    w = window(@app, title: "Menus", width: 100, height: 60).must()
+    m = menu(@app, into: w, title: "File").must()
+    item = menu_item(@app, into: m, text: "Open").must()
+    set_shortcut(@app, item: item, shortcut: Shortcut(key: "o", primary: true, shift: false, alt: false)).must()
+    assert render(@app).must()[2] == "    menu_item #3 \"Open\" primary+o"
+    close(@app).must()
+
+# A timer firing on a headless app's clock.
+test "timer: every second"
+    app @= open(.headless).must()
+    t = timer(@app, every: time.seconds(1).must()).must()
+    assert wait(@app, within: time.seconds(2).must()).must() == .timer_fired(timer: t)
+    close(@app).must()
+
+# The loop of a program: wait, then match what the person did.
+test "wait: one click, then the inputs are spent"
+    app @= open(.headless).must()
+    w = window(@app, title: "Loop", width: 100, height: 60).must()
+    b = button(@app, into: w, text: "OK").must()
+    inject(@app, input: .click(widget: b)).must()
+    clicks @= 0
+
+    while true
+        match wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                if event == .clicked(widget: b)
+                    clicks @ clicks + 1
+            .err e =>
+                assert e.code == CLOSED
+                break
+
+    assert clicks == 1
+    close(@app).must()
+
+# The close button pressed, which the program answers by destroying the
+# window.
+test "inject: the close button"
+    app @= open(.headless).must()
+    w = window(@app, title: "Bye", width: 100, height: 60).must()
+    inject(@app, input: .ask_close(window: w)).must()
+    assert wait(@app, within: time.nanoseconds(0)).must() == .close_asked(window: w)
+    destroy(@app, widget: w).must()
+    close(@app).must()
+
+# A question answered Yes by an injected answer.
+test "message: answered yes"
+    app @= open(.headless).must()
+    w = window(@app, title: "Ask", width: 100, height: 60).must()
+    inject(@app, input: .answer(answer: .yes)).must()
+    assert message(@app, over: w, title: "Save?", text: "Save the changes?", tone: .warning, buttons: .yes_no).must() == .yes
+    close(@app).must()
+
+# A file chosen to open.
+test "open_files: one chosen"
+    app @= open(.headless).must()
+    w = window(@app, title: "Open", width: 100, height: 60).must()
+    inject(@app, input: .pick_files(paths: ["/tmp/a.txt"])).must()
+    chosen = open_files(
+        @app,
+        over: w,
+        title: "Open",
+        filters: [Filter(name: "Text", extensions: ["txt"])],
+        multiple: false
+    ).must()
+    assert chosen == .chosen(paths: ["/tmp/a.txt"])
+    close(@app).must()
+
+# A save dialog cancelled.
+test "save_file: cancelled"
+    app @= open(.headless).must()
+    w = window(@app, title: "Save", width: 100, height: 60).must()
+    inject(@app, input: .cancel_files).must()
+    assert save_file(@app, over: w, title: "Save", name: "notes.txt", filters: []).must() == .cancelled
+    close(@app).must()
+
+# A small window drawn as text.
+test "render: a window with a label and a button"
+    app @= open(.headless).must()
+    w = window(@app, title: "Hi", width: 200, height: 80).must()
+    _ = label(@app, into: w, text: "Hello").must()
+    _ = button(@app, into: w, text: "OK").must()
+    lines = render(@app).must()
+    assert lines == ["window #1 \"Hi\" 200x80", "  label #2 \"Hello\" at 12,12 40x16", "  button #3 \"OK\" at 12,34 40x24"]
+    close(@app).must()

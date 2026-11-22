@@ -1,0 +1,21 @@
+# What the tests of `ui` share: a headless app holding one window, and the
+# code a call failed with. Nothing here is reached outside a test.
+
+use ui
+
+# A headless app with one window, "Test", of 300 by 200 points; the window
+# is the app's first widget, number 1.
+function test_app() -> ui.App
+    made @= ui.open(.headless).must()
+    _ = ui.window(@made, title: "Test", width: 300, height: 200).must()
+    return made
+
+# The window `app` made first.
+function window_of(app: ui.App) -> ui.Widget
+    return ui.Widget(app: app.number, id: 1)
+
+# The code `r` failed with, or "" where it did not fail.
+function code_of<T>(r: T?) -> str
+    match r
+        .ok _  => return ""
+        .err e => return e.code

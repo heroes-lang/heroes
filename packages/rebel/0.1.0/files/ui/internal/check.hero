@@ -1,0 +1,158 @@
+# The checks every call of `ui` makes before it changes anything: the app
+# open, the widget its own and alive, of a kind the call acts on, and every
+# text, size, weight and index within its range. A call that fails here has
+# changed nothing, on either side.
+
+use bytes
+use ui
+use ui/hero_ui
+use ui/internal/failure
+use ui/internal/model
+
+# Fails `closed` where `app` has been closed.
+function opened(app: ui.App) -> ()?
+    if app.handle == nullptr
+        return fail(code: failure.CLOSED, msg: "the app is closed")
+    return ok()
+
+# The node `widget` names in `app`. Fails `closed` where the app is closed
+# or the widget's life has ended, `invalid` where it is another app's.
+function node_of(app: ui.App, widget: ui.Widget) -> model.Node?
+    opened(app)?
+
+    if widget.app != app.number
+        return fail(
+            code: failure.INVALID,
+            msg: f"widget {widget.id} was made by app {widget.app}, and this is app {app.number}"
+        )
+    return model.node_of(app.table, id: widget.id)
+
+# The node `widget` names in `app`, of one of `kinds`; `what` names those
+# kinds in the message where it is of another.
+function node_kind(app: ui.App, widget: ui.Widget, kinds: [i64], what: str) -> model.Node?
+    n = node_of(app, widget: widget)?
+
+    for k in kinds
+        if n.kind == k
+            return ok(n)
+
+    return fail(code: failure.INVALID, msg: f"widget {n.id} is a {model.kind_name(n.kind)}, not {what}")
+
+# The handle for node `id` of `app`.
+function widget_of(app: ui.App, id: i64) -> ui.Widget
+    return ui.Widget(app: app.number, id: id)
+
+# Fails `invalid` where `text` holds a zero byte, which no system's widget
+# holds, or is longer than the layer takes; or, where `one_line`, a line
+# feed. `what` names the text in the message.
+function text_ok(text: str, one_line: bool, what: str) -> ()?
+    if text.len() > hero_ui.HERO_UI_TEXT_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"{what} takes {text.len()} bytes, past the {hero_ui.HERO_UI_TEXT_MOST} a widget holds"
+        )
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == 0
+            return fail(code: failure.INVALID, msg: f"{what} holds a zero byte at byte {at}, which no widget shows")
+
+        if one_line && text[at] == '\n'
+            return fail(code: failure.INVALID, msg: f"{what} holds a line feed at byte {at}, and shows one line")
+
+    return ok()
+
+# Fails `invalid` where an item of `items` is no text one line holds, or
+# the items together are longer than the layer takes.
+function items_ok(items: [str]) -> ()?
+    total @= 0
+
+    for i in range(from: 0, to: items.len())
+        text_ok(text: items[i], one_line: true, what: f"item {i}")?
+        total @ total + items[i].len() + 1
+
+    if total > hero_ui.HERO_UI_TEXT_MOST
+        return fail(
+            code: failure.INVALID,
+            msg: f"the items take {total} bytes, past the {hero_ui.HERO_UI_TEXT_MOST} a widget holds"
+        )
+    return ok()
+
+# Fails `invalid` where `value`, a size in points, is outside 0 to
+# `ui.MOST_SIZE`; `what` names it.
+function size_ok(value: i64, what: str) -> ()?
+    if value < 0 || value > ui.MOST_SIZE
+        return fail(code: failure.INVALID, msg: f"{what} is {value}, outside 0 to {ui.MOST_SIZE}")
+    return ok()
+
+# Fails `invalid` where `value`, a weight, is outside 0 to
+# `ui.MOST_STRETCH`; `what` names it.
+function weight_ok(value: i64, what: str) -> ()?
+    if value < 0 || value > ui.MOST_STRETCH
+        return fail(code: failure.INVALID, msg: f"{what} is {value}, outside 0 to {ui.MOST_STRETCH}")
+    return ok()
+
+# Fails `invalid` where `indices` are not item indices of `n` in ascending
+# order each once, or are more than `n` may choose: one for a combo box, a
+# radio group or a list of one choice.
+function indices_ok(n: model.Node, indices: [i64]) -> ()?
+    for i in range(from: 0, to: indices.len())
+        at = indices[i]
+
+        if at < 0 || at >= n.items.len()
+            return fail(code: failure.INVALID, msg: f"index {at} is past the {n.items.len()} items of widget {n.id}")
+
+        if i > 0 && at <= indices[i - 1]
+            return fail(
+                code: failure.INVALID,
+                msg: f"the indices are not ascending, each once: {at} comes after {indices[i - 1]}"
+            )
+
+    if indices.len() > 1 && n.kind != hero_ui.HERO_UI_LIST_MULTIPLE
+        return fail(
+            code: failure.INVALID,
+            msg: f"widget {n.id}, a {model.kind_name(n.kind)} of one choice, is given {indices.len()} items"
+        )
+    return ok()
+
+# 1 for true, 0 for false: how the layer takes a state.
+function number_of(on: bool) -> i64
+    if on
+        return 1
+    return 0
+
+## Tests
+
+test "text_ok: a text of one line, a line feed where one line is shown, a zero byte, and many bytes"
+    assert !text_ok(text: "café", one_line: true, what: "the title").is_err()
+    assert !text_ok(text: "a\nb", one_line: false, what: "the text").is_err()
+
+    match text_ok(text: "a\nb", one_line: true, what: "the title")
+        .ok _ => assert false
+        .err e =>
+            assert e.code == failure.INVALID
+            assert e.msg == "the title holds a line feed at byte 1, and shows one line"
+
+    match text_ok(text: bytes.to_text([97, 0, 98]).must(), one_line: false, what: "the label")
+        .ok _  => assert false
+        .err e => assert e.msg == "the label holds a zero byte at byte 1, which no widget shows"
+
+test "size_ok and weight_ok: the edges of their ranges"
+    assert !size_ok(0, what: "w").is_err()
+    assert !size_ok(ui.MOST_SIZE, what: "w").is_err()
+    assert size_ok(-1, what: "w").is_err()
+    assert size_ok(ui.MOST_SIZE + 1, what: "w").is_err()
+    assert !weight_ok(ui.MOST_STRETCH, what: "s").is_err()
+    assert weight_ok(-1, what: "s").is_err()
+
+test "indices_ok: none, one, several for a list of several, out of order, twice, past the end"
+    n @= model.blank(id: 4, kind: hero_ui.HERO_UI_LIST, parent: 0, window: 0)
+    n.items @ ["a", "b", "c"]
+    assert !indices_ok(n, indices: []).is_err()
+    assert !indices_ok(n, indices: [2]).is_err()
+    assert indices_ok(n, indices: [0, 1]).is_err()
+    assert indices_ok(n, indices: [3]).is_err()
+    assert indices_ok(n, indices: [-1]).is_err()
+    n.kind @ hero_ui.HERO_UI_LIST_MULTIPLE
+    assert !indices_ok(n, indices: [0, 2]).is_err()
+    assert indices_ok(n, indices: [2, 0]).is_err()
+    assert indices_ok(n, indices: [1, 1]).is_err()

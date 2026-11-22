@@ -1,0 +1,261 @@
+# The event loop: `wait` and `inject`, and the layout every window gets
+# before it is shown, drawn or read.
+#
+# **What `wait` answers, in order.** First, the windows changed since the
+# last layout are laid out, placed on the native side, and a window not yet
+# shown is shown. Then each turn of its loop answers the first of: an event
+# already made and not answered (a resize's, an injected input's on the
+# headless side); the next injected input, given (through the system's own
+# path on the native side, whose event the turns after read; applied to the
+# table on the headless side, which makes its event); the system's next
+# event, on the native side; a timer due. Where none is, it lets time pass
+# toward the earlier of its deadline and the next timer: on the native side
+# by running the system's loop for that long, on the headless side by moving
+# the app's clock, which fails `closed` instead where no input is queued and
+# no timer runs, since nothing can ever come.
+#
+# **Every turn moves**: it answers, takes an input or an event off a queue,
+# or lets time pass toward a deadline that is never past, so the loop ends
+# within its time on both sides.
+#
+# An event naming a widget whose life ended before it was answered (the
+# program destroyed it after the person acted) is dropped.
+
+use time
+use ui
+use ui/hero_ui
+use ui/internal/check
+use ui/internal/clock
+use ui/internal/failure
+use ui/internal/give
+use ui/internal/layout
+use ui/internal/model
+use ui/internal/native
+
+# The longest the system's loop runs in one turn, in milliseconds, so a
+# very long wait still reads the clock now and then.
+constant TURN_MOST: i64
+    1000
+
+# The next thing the person did (`ui.wait`).
+function wait(@app: ui.App, within: time.Duration) -> ui.Event?
+    check.opened(app)?
+
+    if within.nanoseconds < 0
+        return fail(code: failure.INVALID, msg: f"a wait of {within.nanoseconds} nanoseconds; it takes 0 or more")
+    deadline = clock.later(at: clock.now(app)?, more: within.nanoseconds)
+    settle(@app)?
+
+    while true
+        if app.events.len() > 0
+            first = app.events[0]
+            app.events @ app.events.slice(from: 1, to: app.events.len())
+
+            if alive(app, event: first)
+                return ok(first)
+            continue
+
+        if app.inputs.len() > 0
+            input = app.inputs[0]
+            app.inputs @ app.inputs.slice(from: 1, to: app.inputs.len())
+            given(@app, input: input)?
+            continue
+
+        if app.native
+            taken = native.take(app)?
+
+            if taken.len() > 0
+                read(@app, taken: taken)?
+                continue
+        now = clock.now(app)?
+
+        timer = next_timer(app)
+
+        if timer != 0 && app.table.nodes[timer].must().due <= now
+            return ok(fired(@app, id: timer, now: now))
+
+        # Asked before the deadline: a headless app with nothing left to
+        # give and no timer will never answer, however long it is given.
+        if timer == 0 && !app.native
+            return fail(
+                code: failure.CLOSED,
+                msg: "the inputs injected into this headless app are spent, and no timer runs"
+            )
+
+        if now >= deadline
+            return fail(code: failure.TIMEOUT, msg: f"nothing happened in {within.nanoseconds} nanoseconds")
+        target @= deadline
+
+        if timer != 0 && app.table.nodes[timer].must().due < target
+            target @ app.table.nodes[timer].must().due
+
+        if app.native
+            native.pump(app, ms: milliseconds(target - now))?
+        else
+            app.clock @ target
+
+    return fail(code: failure.FAILED, msg: "the event loop ended")
+
+# Queues `input` (`ui.inject`), checked against its widget now.
+function inject(@app: ui.App, input: ui.Input) -> ()?
+    check.opened(app)?
+    give.checked(app, input: input)?
+
+    match input
+        .answer a     => app.answers @ app.answers.push(a.answer)
+        .pick_files p => app.choices @ app.choices.push(.chosen(paths: p.paths))
+        .cancel_files => app.choices @ app.choices.push(.cancelled)
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ =>
+            app.inputs @ app.inputs.push(input)
+
+    return ok()
+
+# Gives `input`, queued earlier, now: on the headless side to the table,
+# whose event joins the queue; on the native side through the system. An
+# input whose widget has ended since gives nothing.
+function given(@app: ui.App, input: ui.Input) -> ()?
+    if !give.alive(app, input: input)
+        return ok()
+
+    if app.native
+        return native.give(app, input: input)
+
+    for event in give.applied(@app, input: input)
+        app.events @ app.events.push(event)
+
+    settle(@app)?
+    return ok()
+
+# Reads the system's event `taken`, `[kind, id, value, second]`: what it
+# changed is put in the table, and its event joins the queue. One naming a
+# widget the table no longer holds is dropped.
+function read(@app: ui.App, taken: [i64]) -> ()?
+    kind = taken[0]
+    id = taken[1]
+    found = model.node_of(app.table, id: id)
+
+    if found.is_err()
+        return ok()
+    n @= found.must()
+    w = check.widget_of(app, id: id)
+
+    if kind == hero_ui.HERO_UI_EVENT_CLICK
+        app.events @ app.events.push(.clicked(widget: w))
+    else if kind == hero_ui.HERO_UI_EVENT_TEXT
+        n.text @ native.read_text(app, id: id)?
+        model.put(@app.table, n: n)
+        app.events @ app.events.push(.text_changed(widget: w, text: n.text))
+    else if kind == hero_ui.HERO_UI_EVENT_SELECT
+        n.chosen @ native.read_selection(app, id: id)?
+        model.put(@app.table, n: n)
+        app.events @ app.events.push(.selection_changed(widget: w, indices: n.chosen))
+    else if kind == hero_ui.HERO_UI_EVENT_TOGGLE
+        n.value @ taken[2]
+        model.put(@app.table, n: n)
+        app.events @ app.events.push(.toggled(widget: w, checked: taken[2] == 1))
+    else if kind == hero_ui.HERO_UI_EVENT_VALUE
+        n.value @ taken[2]
+        model.put(@app.table, n: n)
+        app.events @ app.events.push(.value_changed(widget: w, value: taken[2]))
+    else if kind == hero_ui.HERO_UI_EVENT_MENU
+        app.events @ app.events.push(.menu_chosen(item: w))
+    else if kind == hero_ui.HERO_UI_EVENT_CLOSE
+        app.events @ app.events.push(.close_asked(window: w))
+    else if kind == hero_ui.HERO_UI_EVENT_RESIZE
+        n.width @ taken[2]
+        n.height @ taken[3]
+        n.dirty @ true
+        model.put(@app.table, n: n)
+        settle(@app)?
+        laid = model.node_of(app.table, id: id)?
+        app.events @ app.events.push(.resized(window: w, width: laid.w, height: laid.h))
+    else if kind == hero_ui.HERO_UI_EVENT_MESSAGE
+        app.events @ app.events.push(.message(widget: w, text: native.event_text(app)?))
+    return ok()
+
+# Lays out every window marked for it, places its widgets on the native
+# side, and shows each window not shown yet and not hidden by the program.
+function settle(@app: ui.App) -> ()?
+    for window in app.table.windows
+        w = model.node_of(app.table, id: window)?
+
+        if w.dirty
+            nodes @= app.table.nodes
+            layout.lay_out(@nodes, window: window)
+            app.table.nodes @ nodes
+
+            if app.native
+                native.placed(app, nodes: app.table.nodes, window: window)?
+        laid @= model.node_of(app.table, id: window)?
+
+        if !laid.shown && laid.visible
+            if app.native && hero_ui.set_visible(app.handle, id: window, on: 1) < 0
+                return failure.last(f"showing window {window}")
+            laid.shown @ true
+            model.put(@app.table, n: laid)
+
+    return ok()
+
+# The timer that fires first: the earliest due, the first made among those
+# due together; 0, the number no widget takes, where none runs.
+function next_timer(app: ui.App) -> i64
+    best @= 0
+    best_due @= 0
+
+    for id in app.table.timers
+        due = app.table.nodes[id].must().due
+
+        if best == 0 || due < best_due
+            best @ id
+            best_due @ due
+
+    return best
+
+# Fires timer `id` at `now`: its next time is a period after its due time,
+# or after `now` where it fell a period or more behind, so it fires once for
+# the periods it missed.
+function fired(@app: ui.App, id: i64, now: i64) -> ui.Event
+    t @= app.table.nodes[id].must()
+    next = clock.later(at: t.due, more: t.every)
+
+    t.due @ if next <= now
+        clock.later(at: now, more: t.every)
+    else
+        next
+
+    model.put(@app.table, n: t)
+    return .timer_fired(timer: check.widget_of(app, id: id))
+
+# Whether the widget `event` names still lives.
+function alive(app: ui.App, event: ui.Event) -> bool
+    id = match event
+        .clicked c           => c.widget.id
+        .text_changed t      => t.widget.id
+        .selection_changed s => s.widget.id
+        .toggled t           => t.widget.id
+        .value_changed v     => v.widget.id
+        .menu_chosen m       => m.item.id
+        .close_asked c       => c.window.id
+        .timer_fired t       => t.timer.id
+        .resized r           => r.window.id
+        .message m           => m.widget.id
+
+    return !model.node_of(app.table, id: id).is_err()
+
+# `nanoseconds` as whole milliseconds, rounded up so a wait never wakes
+# before its time, and at most `TURN_MOST`.
+function milliseconds(nanoseconds: i64) -> i64
+    ms = (nanoseconds + 999999) / 1000000
+
+    if ms > TURN_MOST
+        return TURN_MOST
+    return ms
+
+## Tests
+
+test "milliseconds: none, a nanosecond, a millisecond and one more, past a turn"
+    assert milliseconds(0) == 0
+    assert milliseconds(1) == 1
+    assert milliseconds(1000000) == 1
+    assert milliseconds(1000001) == 2
+    assert milliseconds(5000000000) == 1000

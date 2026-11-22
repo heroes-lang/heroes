@@ -1,0 +1,181 @@
+# The size the headless side draws each kind of widget at, where no system
+# measures it: a fixed rule of the text's width on a screen and the kind's
+# own room, the same on every machine, so a headless app's layout, and the
+# transcript a demo prints of it, are one text everywhere. A text's width
+# is its columns as a terminal shows them (`unicode/segment`'s `width_of`,
+# a wide character two), each `COLUMN` points.
+
+use ui/hero_ui
+use ui/internal/model
+use unicode/segment
+
+# Points a column of text takes.
+constant COLUMN: i64
+    8
+
+# Points a line of a label's text takes, high.
+constant LINE: i64
+    16
+
+# Points a control of one line takes, high: a button, a text field, a combo
+# box, a slider.
+constant CONTROL: i64
+    24
+
+# Points a checkbox or one item of a radio group takes, high.
+constant MARK: i64
+    20
+
+# The room a button's text has on its two sides together, and a checkbox's
+# box and the gap after it.
+constant AROUND: i64
+    24
+
+# The width a text field, a list, a progress bar and a slider take where
+# nothing else decides it.
+constant FIELD: i64
+    160
+
+# The size of a text area.
+constant AREA_WIDTH: i64
+    240
+
+# The height of a text area and a list.
+constant AREA_HEIGHT: i64
+    96
+
+# The room a combo box keeps beside its longest item for its arrow, and the
+# least width it takes.
+constant ARROW: i64
+    40
+
+# The least width of a combo box.
+constant COMBO_LEAST: i64
+    80
+
+# The size of a web view where nothing else decides it.
+constant VIEW_WIDTH: i64
+    320
+
+# The height of a web view.
+constant VIEW_HEIGHT: i64
+    240
+
+# The size `n` is drawn at by the headless side, as `[width, height]` in
+# points: what a native side's `preferred` answers for it. A window, a box, a
+# menu and a timer have none, `[0, 0]`.
+function of(n: model.Node) -> [i64]
+    k = n.kind
+
+    if k == hero_ui.HERO_UI_LABEL
+        lines = lines_of(n.text)
+        return [widest(lines) * COLUMN, lines.len() * LINE]
+
+    if k == hero_ui.HERO_UI_BUTTON
+        return [segment.width_of(n.text) * COLUMN + AROUND, CONTROL]
+
+    if k == hero_ui.HERO_UI_TEXT_FIELD
+        return [FIELD, CONTROL]
+
+    if k == hero_ui.HERO_UI_TEXT_AREA
+        return [AREA_WIDTH, AREA_HEIGHT]
+
+    if k == hero_ui.HERO_UI_CHECKBOX
+        return [segment.width_of(n.text) * COLUMN + AROUND, MARK]
+
+    if k == hero_ui.HERO_UI_RADIO_GROUP
+        if n.items.len() == 0
+            return [0, 0]
+        return [widest(n.items) * COLUMN + AROUND, n.items.len() * MARK]
+
+    if k == hero_ui.HERO_UI_LIST || k == hero_ui.HERO_UI_LIST_MULTIPLE
+        return [FIELD, AREA_HEIGHT]
+
+    if k == hero_ui.HERO_UI_COMBO
+        wide = widest(n.items) * COLUMN + ARROW
+
+        if wide < COMBO_LEAST
+            return [COMBO_LEAST, CONTROL]
+        return [wide, CONTROL]
+
+    if k == hero_ui.HERO_UI_PROGRESS
+        return [FIELD, LINE]
+
+    if k == hero_ui.HERO_UI_SLIDER
+        return [FIELD, CONTROL]
+
+    if k == hero_ui.HERO_UI_IMAGE
+        return [n.width, n.height]
+
+    if k == hero_ui.HERO_UI_WEBVIEW
+        return [VIEW_WIDTH, VIEW_HEIGHT]
+    return [0, 0]
+
+# The columns of the widest of `texts`, 0 for none.
+function widest(texts: [str]) -> i64
+    most @= 0
+
+    for t in texts
+        w = segment.width_of(t)
+
+        if w > most
+            most @ w
+
+    return most
+
+# The lines of `text`, cut at each line feed; an empty text is one empty
+# line, so a label holding nothing still takes a line's height.
+function lines_of(text: str) -> [str]
+    out: [str] @= []
+    start @= 0
+
+    for at in range(from: 0, to: text.len())
+        if text[at] == '\n'
+            out @ out.push(text.slice(from: start, to: at))
+            start @ at + 1
+
+    out @ out.push(text.slice(from: start, to: text.len()))
+    return out
+
+## Tests
+
+test "of: a label is its widest line's columns by its lines, an empty one a line high"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_LABEL, parent: 0, window: 0)
+    n.text @ "Name"
+    assert of(n) == [32, 16]
+    n.text @ "a\nlonger"
+    assert of(n) == [48, 32]
+    n.text @ ""
+    assert of(n) == [0, 16]
+
+test "of: a wide character takes two columns, an accented letter one"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_BUTTON, parent: 0, window: 0)
+    n.text @ "日本"
+    assert of(n) == [56, 24]
+    n.text @ "café"
+    assert of(n) == [56, 24]
+
+test "of: a radio group with no item takes no room, with items the widest by their count"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_RADIO_GROUP, parent: 0, window: 0)
+    assert of(n) == [0, 0]
+    n.items @ ["S", "Medium", "L"]
+    assert of(n) == [72, 60]
+
+test "of: a combo box keeps room for its arrow and is never narrower than its least"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_COMBO, parent: 0, window: 0)
+    assert of(n) == [80, 24]
+    n.items @ ["Monday", "Wednesday"]
+    assert of(n) == [112, 24]
+
+test "of: an image is its pixels, and the kinds no system draws are nothing"
+    n @= model.blank(id: 1, kind: hero_ui.HERO_UI_IMAGE, parent: 0, window: 0)
+    n.width @ 32
+    n.height @ 20
+    assert of(n) == [32, 20]
+    assert of(model.blank(id: 2, kind: hero_ui.HERO_UI_ROW, parent: 0, window: 0)) == [0, 0]
+    assert of(model.blank(id: 3, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: 0)) == [0, 0]
+
+test "lines_of: no line feed, one at either end, and two together"
+    assert lines_of("abc") == ["abc"]
+    assert lines_of("\nabc\n") == ["", "abc", ""]
+    assert lines_of("a\n\nb") == ["a", "", "b"]

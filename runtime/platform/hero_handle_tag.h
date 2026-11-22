@@ -78,6 +78,8 @@
 #define HERO_HANDLE_TAG_ODBC 13
 /* `hero_watch.c`'s watches (2026-11-18). */
 #define HERO_HANDLE_TAG_WATCH 14
-/* 15 is free, the last of four bits; the next member takes 15. */
+/* `hero_ui.c`'s apps (2026-11-22), the last of four bits: a member that
+ * issues handles after it widens `HERO_HANDLE_TAG_BITS` first. */
+#define HERO_HANDLE_TAG_UI 15
 
 #endif

@@ -1,0 +1,501 @@
+# Where every widget of a window stands, computed by Rebel the same on every
+# platform, in the manner of wxWidgets' sizers: a window lays its children
+# out in a column, a row side by side, a column one under another, a grid
+# in cells row after row. The native side only places each widget at the
+# rectangle this module gives it.
+#
+# **Two passes.** `measure` walks a window's tree from the leaves up and
+# writes in each node the least room it needs: a widget its drawn size
+# (`preferred_width` and `preferred_height`, which the system or the
+# headless measure gave) or the least the program asked, whichever is more,
+# with its margin on every side; a box the sum of its children along its
+# line, with the spacing between them, and the most of them across, with
+# its padding inside. `arrange` walks it from the window down and gives each
+# node its rectangle: along a box's line, each child its least, and the room
+# left shared among the children that stretch, by their weights; across
+# it, the whole room to a child that fills, its least to one that does not,
+# placed at the start, the middle or the end.
+#
+# **The room shared is exact**: a child's share is the room left times the
+# weights up to and including it, divided by all the weights, less what the
+# children before it took, so the shares add up to the room left whatever
+# the weights, the rounding falling the same way every time.
+#
+# **A window is never smaller than it needs**: its content is the size the
+# program asked or the least its children need, whichever is more on each
+# axis. A box given less than it needs lays its children out at their least
+# all the same, past its own edge. A hidden widget takes no room and gets no
+# spacing.
+
+use ui/hero_ui
+use ui/internal/model
+
+# Lays out window `window` of `nodes`: every node under it measured and
+# placed, the window's own rectangle its content at 0, 0, and its mark of
+# needing a layout taken away. Aborts where `window` names no node.
+function lay_out(@nodes: {i64: model.Node}, window: i64)
+    need = measure(@nodes, id: window)
+    w @= nodes[window].must()
+    width = most(a: w.width, b: need[0])
+    height = most(a: w.height, b: need[1])
+    arrange(@nodes, id: window, x: 0, y: 0, width: width, height: height)
+    w @ nodes[window].must()
+    w.dirty @ false
+    nodes[window] @ w
+
+# The least room node `id` needs, as `[width, height]`, its margin included,
+# written into it and into every node under it.
+function measure(@nodes: {i64: model.Node}, id: i64) -> [i64]
+    n @= nodes[id].must()
+
+    if !n.visible
+        n.need_width @ 0
+        n.need_height @ 0
+        nodes[id] @ n
+        return [0, 0]
+    inner: [i64] @= [n.preferred_width, n.preferred_height]
+
+    if model.holds_widgets(n.kind)
+        sizes: [[i64]] @= []
+
+        for child in shown(nodes, ids: n.children)
+            sizes @ sizes.push(measure(@nodes, id: child))
+
+        inner @ box_need(n, sizes: sizes)
+    width = most(a: inner[0], b: n.min_width) + 2 * n.margin
+    height = most(a: inner[1], b: n.min_height) + 2 * n.margin
+    n @ nodes[id].must()
+    n.need_width @ width
+    n.need_height @ height
+    nodes[id] @ n
+    return [width, height]
+
+# The least room box `n` needs inside its margin, for its shown children's
+# needs `sizes`, in order.
+function box_need(n: model.Node, sizes: [[i64]]) -> [i64]
+    pad = 2 * n.padding
+
+    if sizes.len() == 0
+        return [pad, pad]
+
+    if n.kind == hero_ui.HERO_UI_ROW
+        return [
+            sum_of(sizes, axis: 0) + gaps(spacing: n.spacing, count: sizes.len()) + pad
+            most_of(sizes, axis: 1) + pad
+        ]
+
+    if n.kind == hero_ui.HERO_UI_GRID
+        cells = grid_lines(n, sizes: sizes)
+        return [
+            sum_list(cells[0]) + gaps(spacing: n.spacing, count: cells[0].len()) + pad
+            sum_list(cells[1]) + gaps(spacing: n.spacing, count: cells[1].len()) + pad
+        ]
+    return [most_of(sizes, axis: 0) + pad, sum_of(sizes, axis: 1) + gaps(spacing: n.spacing, count: sizes.len()) + pad]
+
+# Gives node `id` the slot at `x`, `y`, `width` by `height`, its margin
+# inside the slot, and arranges what it holds. A slot smaller than the
+# margins leaves the node no room, never a size below zero.
+function arrange(@nodes: {i64: model.Node}, id: i64, x: i64, y: i64, width: i64, height: i64)
+    n @= nodes[id].must()
+    n.x @ x + n.margin
+    n.y @ y + n.margin
+    n.w @ most(a: width - 2 * n.margin, b: 0)
+    n.h @ most(a: height - 2 * n.margin, b: 0)
+    nodes[id] @ n
+
+    if !model.holds_widgets(n.kind)
+        return
+    kids = shown(nodes, ids: n.children)
+
+    if kids.len() == 0
+        return
+    ix = n.x + n.padding
+    iy = n.y + n.padding
+    iw = most(a: n.w - 2 * n.padding, b: 0)
+    ih = most(a: n.h - 2 * n.padding, b: 0)
+
+    if n.kind == hero_ui.HERO_UI_GRID
+        arrange_grid(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih])
+    else if n.kind == hero_ui.HERO_UI_ROW
+        arrange_line(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih], along: 0)
+    else
+        arrange_line(@nodes, box: n, kids: kids, area: [ix, iy, iw, ih], along: 1)
+
+# Arranges `kids`, the shown children of `box`, along one line of `area`
+# (`[x, y, width, height]`): `along` 0 for a row, side by side from the left,
+# 1 for a column or a window, one under another from the top.
+function arrange_line(@nodes: {i64: model.Node}, box: model.Node, kids: [i64], area: [i64], along: i64)
+    across = 1 - along
+    needs: [i64] @= []
+    weights: [i64] @= []
+
+    for k in kids
+        kid = nodes[k].must()
+        needs @ needs.push(need_on(kid, axis: along))
+        weights @ weights.push(kid.stretch)
+
+    room = area[2 + along] - sum_list(needs) - gaps(spacing: box.spacing, count: kids.len())
+    lengths = shared(needs: needs, weights: weights, room: room)
+    cursor @= area[along]
+
+    for i in range(from: 0, to: kids.len())
+        kid = nodes[kids[i]].must()
+        cross = placed_across(kid, axis: across, start: area[across], room: area[2 + across])
+        slot: [i64] @= [0, 0, 0, 0]
+        slot[along] @ cursor
+        slot[2 + along] @ lengths[i]
+        slot[across] @ cross[0]
+        slot[2 + across] @ cross[1]
+        arrange(@nodes, id: kids[i], x: slot[0], y: slot[1], width: slot[2], height: slot[3])
+        cursor @ cursor + lengths[i] + box.spacing
+
+# Arranges `kids`, the shown children of grid `box`, in cells of `area`, row
+# after row, `box.columns` to a row.
+function arrange_grid(@nodes: {i64: model.Node}, box: model.Node, kids: [i64], area: [i64])
+    sizes: [[i64]] @= []
+
+    for k in kids
+        kid = nodes[k].must()
+        sizes @ sizes.push([kid.need_width, kid.need_height])
+
+    lines = grid_lines(box, sizes: sizes)
+    room_x = area[2] - sum_list(lines[0]) - gaps(spacing: box.spacing, count: lines[0].len())
+    room_y = area[3] - sum_list(lines[1]) - gaps(spacing: box.spacing, count: lines[1].len())
+    widths = shared(needs: lines[0], weights: weights_for(box.grow_columns, count: lines[0].len()), room: room_x)
+    heights = shared(needs: lines[1], weights: weights_for(box.grow_rows, count: lines[1].len()), room: room_y)
+    lefts = starts(widths, from: area[0], spacing: box.spacing)
+    tops = starts(heights, from: area[1], spacing: box.spacing)
+    columns = lines[0].len()
+
+    for i in range(from: 0, to: kids.len())
+        kid = nodes[kids[i]].must()
+        column = i % columns
+        line = i / columns
+        across_x = placed_across(kid, axis: 0, start: lefts[column], room: widths[column])
+        across_y = placed_across(kid, axis: 1, start: tops[line], room: heights[line])
+        arrange(@nodes, id: kids[i], x: across_x[0], y: across_y[0], width: across_x[1], height: across_y[1])
+
+# The widths of a grid's columns and the heights of its rows for its shown
+# children's needs `sizes`, as `[widths, heights]`: each column as wide as
+# its widest child, each row as high as its highest.
+function grid_lines(box: model.Node, sizes: [[i64]]) -> [[i64]]
+    columns = least(a: box.columns, b: sizes.len())
+    rows = (sizes.len() + columns - 1) / columns
+    widths: [i64] @= []
+    heights: [i64] @= []
+
+    for _ in range(from: 0, to: columns)
+        widths @ widths.push(0)
+
+    for _ in range(from: 0, to: rows)
+        heights @ heights.push(0)
+
+    for i in range(from: 0, to: sizes.len())
+        widths[i % columns] @ most(a: widths[i % columns], b: sizes[i][0])
+        heights[i / columns] @ most(a: heights[i / columns], b: sizes[i][1])
+
+    return [widths, heights]
+
+# The weights of `count` lines from `given`, a missing one 0 and one past
+# `count` dropped.
+function weights_for(given: [i64], count: i64) -> [i64]
+    out: [i64] @= []
+
+    for i in range(from: 0, to: count)
+        if i < given.len()
+            out @ out.push(given[i])
+        else
+            out @ out.push(0)
+
+    return out
+
+# Each line's length: its least `needs`, and of `room`, where it is above
+# 0, a share by `weights`, exact (the module's opening comment).
+function shared(needs: [i64], weights: [i64], room: i64) -> [i64]
+    total = sum_list(weights)
+    out: [i64] @= []
+    seen @= 0
+    given @= 0
+
+    for i in range(from: 0, to: needs.len())
+        share @= 0
+
+        if room > 0 && total > 0 && weights[i] > 0
+            seen @ seen + weights[i]
+            share @ room * seen / total - given
+            given @ given + share
+        out @ out.push(needs[i] + share)
+
+    return out
+
+# Where each line starts, the first at `from`, each next after the one
+# before and `spacing`.
+function starts(lengths: [i64], from: i64, spacing: i64) -> [i64]
+    out: [i64] @= []
+    at @= from
+
+    for length in lengths
+        out @ out.push(at)
+        at @ at + length + spacing
+
+    return out
+
+# Where `kid` stands across a line that runs from `start` for `room`, as
+# `[start, length]` on `axis` (0 across a column, 1 across a row): the whole
+# room where it fills, else its least, at the start, the middle or the end.
+function placed_across(kid: model.Node, axis: i64, start: i64, room: i64) -> [i64]
+    if kid.fill
+        return [start, room]
+    length = need_on(kid, axis: axis)
+    left = room - length
+
+    if left <= 0 || kid.align == 0
+        return [start, length]
+
+    if kid.align == 1
+        return [start + left / 2, length]
+    return [start + left, length]
+
+# The least room `kid` needs on `axis`, 0 its width and 1 its height.
+function need_on(kid: model.Node, axis: i64) -> i64
+    if axis == 0
+        return kid.need_width
+    return kid.need_height
+
+# The shown nodes among `ids`, in order.
+function shown(nodes: {i64: model.Node}, ids: [i64]) -> [i64]
+    out: [i64] @= []
+
+    for id in ids
+        if nodes[id].must().visible
+            out @ out.push(id)
+
+    return out
+
+# The spacing `count` lines take between them.
+function gaps(spacing: i64, count: i64) -> i64
+    if count <= 1
+        return 0
+    return spacing * (count - 1)
+
+# The sum of `sizes`' values on `axis`.
+function sum_of(sizes: [[i64]], axis: i64) -> i64
+    total @= 0
+
+    for s in sizes
+        total @ total + s[axis]
+
+    return total
+
+# The most of `sizes`' values on `axis`, 0 for none.
+function most_of(sizes: [[i64]], axis: i64) -> i64
+    top @= 0
+
+    for s in sizes
+        top @ most(a: top, b: s[axis])
+
+    return top
+
+# The sum of `values`.
+function sum_list(values: [i64]) -> i64
+    total @= 0
+
+    for v in values
+        total @ total + v
+
+    return total
+
+# The greater of `a` and `b`.
+function most(a: i64, b: i64) -> i64
+    if a > b
+        return a
+    return b
+
+# The lesser of `a` and `b`.
+function least(a: i64, b: i64) -> i64
+    if a < b
+        return a
+    return b
+
+## Tests
+
+# A window numbered 1 of `width` by `height`, its padding and spacing those
+# of a box so the arithmetic below reads plainly, in a table of its own.
+function window_of(width: i64, height: i64) -> {i64: model.Node}
+    w @= model.blank(id: 1, kind: hero_ui.HERO_UI_WINDOW, parent: 0, window: 1)
+    w.width @ width
+    w.height @ height
+    w.padding @ 10
+    w.spacing @ 5
+    nodes: {i64: model.Node} @= {}
+    nodes[1] @ w
+    return nodes
+
+# A leaf numbered `id` in `parent`, drawn at `width` by `height`.
+function leaf(@nodes: {i64: model.Node}, id: i64, parent: i64, width: i64, height: i64)
+    n @= model.blank(id: id, kind: hero_ui.HERO_UI_BUTTON, parent: parent, window: 1)
+    n.preferred_width @ width
+    n.preferred_height @ height
+    nodes[id] @ n
+    p @= nodes[parent].must()
+    p.children @ p.children.push(id)
+    nodes[parent] @ p
+
+# The rectangle node `id` was placed at, as `[x, y, width, height]`.
+function rect(nodes: {i64: model.Node}, id: i64) -> [i64]
+    n = nodes[id].must()
+    return [n.x, n.y, n.w, n.h]
+
+test "lay_out: an empty window keeps the size asked, and needs its padding alone"
+    nodes @= window_of(width: 200, height: 100)
+    lay_out(@nodes, window: 1)
+    assert rect(nodes, id: 1) == [0, 0, 200, 100]
+    assert nodes[1].must().need_width == 20
+    assert !nodes[1].must().dirty
+
+test "lay_out: one widget stands inside the padding at its own size, at the start"
+    nodes @= window_of(width: 200, height: 100)
+    leaf(@nodes, id: 2, parent: 1, width: 60, height: 24)
+    lay_out(@nodes, window: 1)
+    assert rect(nodes, id: 2) == [10, 10, 60, 24]
+
+test "lay_out: a window asked smaller than it needs grows to its need"
+    nodes @= window_of(width: 10, height: 10)
+    leaf(@nodes, id: 2, parent: 1, width: 60, height: 24)
+    leaf(@nodes, id: 3, parent: 1, width: 40, height: 30)
+    lay_out(@nodes, window: 1)
+    assert rect(nodes, id: 1) == [0, 0, 80, 79]
+    assert rect(nodes, id: 3) == [10, 39, 40, 30]
+
+test "lay_out: in a row, the room left goes to the stretching children by weight, exactly"
+    nodes @= window_of(width: 0, height: 0)
+    r @= model.blank(id: 2, kind: hero_ui.HERO_UI_ROW, parent: 1, window: 1)
+    r.spacing @ 4
+    r.fill @ true
+    nodes[2] @ r
+    w @= nodes[1].must()
+    w.children @ [2]
+    w.width @ 120
+    nodes[1] @ w
+    leaf(@nodes, id: 3, parent: 2, width: 10, height: 10)
+    leaf(@nodes, id: 4, parent: 2, width: 10, height: 20)
+    leaf(@nodes, id: 5, parent: 2, width: 10, height: 10)
+    a @= nodes[3].must()
+    a.stretch @ 1
+    nodes[3] @ a
+    c @= nodes[5].must()
+    c.stretch @ 2
+    nodes[5] @ c
+    lay_out(@nodes, window: 1)
+
+    # The row is 100 wide inside the padding; 30 are needed and 8 of
+    # spacing, so 62 are shared, one third and two thirds: 20 and 42.
+    assert rect(nodes, id: 2) == [10, 10, 100, 20]
+    assert rect(nodes, id: 3) == [10, 10, 30, 10]
+    assert rect(nodes, id: 4) == [44, 10, 10, 20]
+    assert rect(nodes, id: 5) == [58, 10, 52, 10]
+
+test "lay_out: across a column, a filling child takes the width, the others stand at start, middle and end"
+    nodes @= window_of(width: 100, height: 0)
+    leaf(@nodes, id: 2, parent: 1, width: 20, height: 10)
+    leaf(@nodes, id: 3, parent: 1, width: 20, height: 10)
+    leaf(@nodes, id: 4, parent: 1, width: 20, height: 10)
+    leaf(@nodes, id: 5, parent: 1, width: 20, height: 10)
+    b @= nodes[3].must()
+    b.fill @ true
+    nodes[3] @ b
+    c @= nodes[4].must()
+    c.align @ 1
+    nodes[4] @ c
+    d @= nodes[5].must()
+    d.align @ 2
+    nodes[5] @ d
+    lay_out(@nodes, window: 1)
+    assert rect(nodes, id: 2) == [10, 10, 20, 10]
+    assert rect(nodes, id: 3) == [10, 25, 80, 10]
+    assert rect(nodes, id: 4) == [40, 40, 20, 10]
+    assert rect(nodes, id: 5) == [70, 55, 20, 10]
+
+test "lay_out: a widget's least size the program asked wins over its drawn size, and its margin stands around it"
+    nodes @= window_of(width: 0, height: 0)
+    leaf(@nodes, id: 2, parent: 1, width: 20, height: 10)
+    n @= nodes[2].must()
+    n.min_width @ 50
+    n.min_height @ 5
+    n.margin @ 3
+    nodes[2] @ n
+    lay_out(@nodes, window: 1)
+    assert nodes[2].must().need_width == 56
+    assert nodes[2].must().need_height == 16
+    assert rect(nodes, id: 2) == [13, 13, 50, 10]
+
+test "lay_out: a hidden widget takes no room and no spacing, and a box of nothing needs its padding"
+    nodes @= window_of(width: 0, height: 0)
+    leaf(@nodes, id: 2, parent: 1, width: 20, height: 10)
+    leaf(@nodes, id: 3, parent: 1, width: 20, height: 10)
+    leaf(@nodes, id: 4, parent: 1, width: 20, height: 10)
+    h @= nodes[3].must()
+    h.visible @ false
+    nodes[3] @ h
+    lay_out(@nodes, window: 1)
+    assert rect(nodes, id: 4) == [10, 25, 20, 10]
+    assert rect(nodes, id: 1) == [0, 0, 40, 45]
+
+test "lay_out: boxes nested two deep add their needs up and place their children inside their own rectangles"
+    nodes @= window_of(width: 0, height: 0)
+    outer @= model.blank(id: 2, kind: hero_ui.HERO_UI_ROW, parent: 1, window: 1)
+    outer.padding @ 2
+    outer.spacing @ 1
+    nodes[2] @ outer
+    w @= nodes[1].must()
+    w.children @ [2]
+    nodes[1] @ w
+    inner @= model.blank(id: 3, kind: hero_ui.HERO_UI_COLUMN, parent: 2, window: 1)
+    inner.spacing @ 1
+    nodes[3] @ inner
+    o @= nodes[2].must()
+    o.children @ [3]
+    nodes[2] @ o
+    leaf(@nodes, id: 4, parent: 3, width: 10, height: 10)
+    leaf(@nodes, id: 5, parent: 3, width: 30, height: 10)
+    leaf(@nodes, id: 6, parent: 2, width: 5, height: 40)
+    lay_out(@nodes, window: 1)
+    assert nodes[3].must().need_width == 30
+    assert nodes[3].must().need_height == 21
+    assert nodes[2].must().need_width == 40
+    assert nodes[2].must().need_height == 44
+    assert rect(nodes, id: 3) == [12, 12, 30, 21]
+    assert rect(nodes, id: 5) == [12, 23, 30, 10]
+    assert rect(nodes, id: 6) == [43, 12, 5, 40]
+
+test "lay_out: a grid of two columns, its widest and highest deciding, the room left to the column that grows"
+    nodes @= window_of(width: 0, height: 0)
+    g @= model.blank(id: 2, kind: hero_ui.HERO_UI_GRID, parent: 1, window: 1)
+    g.columns @ 2
+    g.spacing @ 2
+    g.fill @ true
+    g.grow_columns @ [0, 1]
+    nodes[2] @ g
+    w @= nodes[1].must()
+    w.children @ [2]
+    w.width @ 100
+    nodes[1] @ w
+    leaf(@nodes, id: 3, parent: 2, width: 10, height: 8)
+    leaf(@nodes, id: 4, parent: 2, width: 20, height: 12)
+    leaf(@nodes, id: 5, parent: 2, width: 30, height: 8)
+    f @= nodes[4].must()
+    f.fill @ true
+    nodes[4] @ f
+    lay_out(@nodes, window: 1)
+
+    # Columns 30 and 20, rows 12 and 8; the grid is 80 wide, 28 left over go
+    # to the second column, which is 48.
+    assert rect(nodes, id: 3) == [10, 10, 10, 8]
+    assert rect(nodes, id: 4) == [42, 10, 48, 12]
+    assert rect(nodes, id: 5) == [10, 24, 30, 8]
+
+test "shared: no room, room and no weight, and weights whose shares round, adding up to the room"
+    assert shared(needs: [5, 5], weights: [1, 1], room: 0) == [5, 5]
+    assert shared(needs: [5, 5], weights: [0, 0], room: 9) == [5, 5]
+    assert shared(needs: [0, 0, 0], weights: [1, 1, 1], room: 10) == [3, 3, 4]
+    assert shared(needs: [1, 1], weights: [1, 1], room: -4) == [1, 1]
