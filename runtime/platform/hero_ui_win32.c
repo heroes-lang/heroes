@@ -33,6 +33,9 @@
 #include <commctrl.h>
 #include <commdlg.h>
 #include <cderr.h>
+#include <objbase.h>
+#include <shobjidl.h>
+#include <shlobj.h>
 #include <dwmapi.h>
 #include <wchar.h>
 #include "hero_ui_web_win32.h"
@@ -127,6 +130,7 @@
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "msimg32.lib")
+#pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "dwmapi.lib")
 #endif
 
@@ -163,8 +167,11 @@ _Static_assert(sizeof(LONG_PTR) == sizeof(int64_t), "a control's GWLP_USERDATA h
 /* A monitor's own scale, `GetDpiForMonitor`'s effective one. */
 #define HERO_UI_WIN_EFFECTIVE_DPI 0
 /* How long `press_key` waits for the key it sent to come back through the
- * queue. */
+ * queue, and how long the clipboard is asked of another program holding it. */
 #define HERO_UI_WIN_KEY_WAIT_MS 2000u
+#define HERO_UI_WIN_CLIPBOARD_TRIES 50
+/* The first command number of a message box's button (`TaskDialogIndirect`). */
+#define HERO_UI_WIN_ASK_FIRST 100
 
 static const wchar_t hero_ui_win_window_class[] = L"HeroesUiWindow";
 static const wchar_t hero_ui_win_panel_class[] = L"HeroesUiPanel";
@@ -243,7 +250,8 @@ struct hero_ui_native {
     /* A window's place among the screens (WINDOWS ON THE SCREEN): whether
      * it is watched, the state and the screen last told, in full screen with
      * the style and the place to give back, framed, made modal, disabled by
-     * another window's modality, its backdrop. */
+     * another window's modality or by a dialog standing over none, its
+     * backdrop. */
     bool watched;
     int64_t state_told;
     int64_t screen_told;
@@ -256,6 +264,7 @@ struct hero_ui_native {
     bool unframed;
     bool modal;
     bool held_by_modal;
+    bool held_by_dialog;
     int64_t backdrop;
     /* A window's control that had the keys when it was left, given them
      * again when it is activated (THE WIDGET WITH THE KEYS); whether it was
@@ -304,11 +313,16 @@ static _Thread_local int64_t hero_ui_win_injecting;
 static _Thread_local uint8_t *hero_ui_win_paths;
 static _Thread_local int64_t hero_ui_win_paths_count;
 
-/* `shcore`'s scale of a monitor (Windows 8.1), found by `GetProcAddress`
- * where this Windows has it, since a program's import of it would stop it
- * loading where it does not. */
+/* `shcore`'s scale of a monitor (Windows 8.1) and `comctl32` version 6's
+ * task dialog, each found by `GetProcAddress` where this Windows has them,
+ * since a program's import of either would stop it loading where it does
+ * not (version 5 of the common controls, which a program with no manifest
+ * binds, has no task dialog). */
 typedef HRESULT(WINAPI *hero_ui_win_monitor_dpi)(HMONITOR, int, UINT *, UINT *);
+typedef HRESULT(WINAPI *hero_ui_win_task_dialog)(const TASKDIALOGCONFIG *, int *, int *, BOOL *);
 static _Thread_local hero_ui_win_monitor_dpi hero_ui_win_dpi_for_monitor;
+static _Thread_local hero_ui_win_task_dialog hero_ui_win_task;
+static _Thread_local bool hero_ui_win_task_asked;
 /* Above 0 while the program's own call moves a window or changes its
  * state, so WINDOWS ON THE SCREEN tells none of it as the person's. */
 static _Thread_local int64_t hero_ui_win_quiet;
@@ -316,6 +330,12 @@ static _Thread_local int64_t hero_ui_win_quiet;
 static _Thread_local int64_t hero_ui_win_modal;
 /* The app's icon, NULL for the system's own. */
 static _Thread_local HICON hero_ui_win_icon;
+/* The hidden window the clipboard is opened by, made at its first use. */
+static _Thread_local HWND hero_ui_win_clip_owner;
+/* What the last read of the clipboard found, in `hero_ui_clipboard_write`'s
+ * form; NULL with -1 bytes where no read found anything. */
+static _Thread_local uint8_t *hero_ui_win_clip;
+static _Thread_local int64_t hero_ui_win_clip_count = -1;
 
 /* -- Words, numbers and text ------------------------------------------------ */
 
@@ -1729,7 +1749,14 @@ void hero_ui_arm_close(void) {
     hero_layer_free(hero_ui_win_paths);
     hero_ui_win_paths = NULL;
     hero_ui_win_paths_count = 0;
+    hero_layer_free(hero_ui_win_clip);
+    hero_ui_win_clip = NULL;
+    hero_ui_win_clip_count = -1;
     hero_ui_win_modal = 0;
+    if (hero_ui_win_clip_owner != NULL) {
+        (void)DestroyWindow(hero_ui_win_clip_owner);
+        hero_ui_win_clip_owner = NULL;
+    }
     if (hero_ui_win_icon != NULL) {
         (void)DestroyIcon(hero_ui_win_icon);
         hero_ui_win_icon = NULL;
@@ -4683,52 +4710,663 @@ int64_t hero_ui_arm_set_moving(int64_t id, int64_t on) {
     return HERO_UI_OK;
 }
 
-/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS -------------- */
+/* -- THE CLIPBOARD -----------------------------------------------------------
+ *
+ * Opened by a hidden window of this arm's own, since a clipboard emptied by
+ * no window takes no data; another program holding it open is waited for a
+ * little, then told. Text is `CF_UNICODETEXT`, its lines ended by CR LF as
+ * Windows' programs write them and read back as a line feed (the arm's one
+ * rule for text, so a text written is the text read); paths are `CF_HDROP`,
+ * a `DROPFILES` of UTF-16 paths, each as given; an image is `CF_DIBV5`,
+ * 32 bits a pixel with its alpha straight, rows from the top, and an image
+ * another program put is read from it, else from `CF_DIB` (24 or 32 bits,
+ * either way up), else from `CF_BITMAP` through GDI. Windows makes
+ * `CF_DIB` and `CF_BITMAP` of a `CF_DIBV5`, and each text format of
+ * another, but never text of paths or of an image, so what a write puts is
+ * found as its own kind alone. */
 
-int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
-    (void)multiple;
-    (void)title;
-    (void)title_count;
-    (void)bytes;
-    return HERO_UI_UNSUPPORTED;
+/* Opens the clipboard by this arm's hidden window, waiting a little for
+ * another program that holds it; false with the failure said. */
+static bool hero_ui_win_open_clipboard(int64_t *answer) {
+    if (hero_ui_win_clip_owner == NULL) {
+        hero_ui_win_clip_owner = CreateWindowExW(0, hero_ui_win_panel_class, L"", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, GetModuleHandleW(NULL), NULL);
+        if (hero_ui_win_clip_owner == NULL) {
+            *answer = hero_ui_win_failed("making the window the clipboard is opened by", GetLastError());
+            return false;
+        }
+    }
+    for (int tried = 0; tried < HERO_UI_WIN_CLIPBOARD_TRIES; tried += 1) {
+        if (OpenClipboard(hero_ui_win_clip_owner)) {
+            return true;
+        }
+        Sleep(10);
+    }
+    *answer = hero_ui_win_failed("opening the clipboard, which another program holds", GetLastError());
+    return false;
 }
 
-int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
-    (void)tone;
-    (void)title;
-    (void)title_count;
-    (void)text;
-    (void)text_count;
-    (void)buttons;
-    (void)buttons_count;
-    (void)cancel;
-    (void)pressed;
-    return HERO_UI_UNSUPPORTED;
+/* A movable global block of `bytes` bytes, zeroed, or NULL. */
+static HGLOBAL hero_ui_win_block(size_t bytes) {
+    return GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, bytes);
 }
 
-/* -- THE CLIPBOARD --------------------------------------------------------- */
+/* The global block of what `kind` puts, the bytes checked by the entry
+ * point: NULL with `*answer` set where it cannot be made. */
+static HGLOBAL hero_ui_win_clip_block(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height, UINT *format, int64_t *answer) {
+    HGLOBAL block = NULL;
+    uint8_t *into;
+
+    *answer = HERO_UI_LIMIT;
+    if (kind == HERO_UI_CLIP_TEXT) {
+        wchar_t *wide = hero_ui_win_wide(bytes, count, HERO_UI_WIN_LINES);
+        size_t units = wide != NULL ? wcslen(wide) + 1 : 0;
+
+        *format = CF_UNICODETEXT;
+        block = wide != NULL ? hero_ui_win_block(units * sizeof(wchar_t)) : NULL;
+        if (block != NULL && (into = GlobalLock(block)) != NULL) {
+            memcpy(into, wide, units * sizeof(wchar_t));
+            (void)GlobalUnlock(block);
+        }
+        hero_layer_free(wide);
+        return block;
+    }
+    if (kind == HERO_UI_CLIP_FILES) {
+        /* The paths' bytes as they are, each zero after a path a zero unit
+         * after it, and the block's own zero, one more, after the last. */
+        int units = MultiByteToWideChar(CP_UTF8, 0, (const char *)bytes, (int)count, NULL, 0);
+
+        *format = CF_HDROP;
+        if (units <= 0) {
+            *answer = hero_ui_win_failed("writing the clipboard's paths as UTF-16", GetLastError());
+            return NULL;
+        }
+        block = hero_ui_win_block(sizeof(DROPFILES) + ((size_t)units + 1) * sizeof(wchar_t));
+        if (block != NULL && (into = GlobalLock(block)) != NULL) {
+            DROPFILES *head = (DROPFILES *)(void *)into;
+
+            head->pFiles = (DWORD)sizeof(DROPFILES);
+            head->fWide = TRUE;
+            (void)MultiByteToWideChar(CP_UTF8, 0, (const char *)bytes, (int)count, (wchar_t *)(void *)(into + sizeof(DROPFILES)), units);
+            (void)GlobalUnlock(block);
+        }
+        return block;
+    }
+    {
+        BITMAPV5HEADER head;
+        size_t pixels = (size_t)width * (size_t)height;
+
+        *format = CF_DIBV5;
+        memset(&head, 0, sizeof head);
+        head.bV5Size = (DWORD)sizeof head;
+        head.bV5Width = (LONG)width;
+        head.bV5Height = -(LONG)height;
+        head.bV5Planes = 1;
+        head.bV5BitCount = 32;
+        head.bV5Compression = BI_BITFIELDS;
+        head.bV5SizeImage = (DWORD)(pixels * 4);
+        head.bV5RedMask = 0x00FF0000u;
+        head.bV5GreenMask = 0x0000FF00u;
+        head.bV5BlueMask = 0x000000FFu;
+        head.bV5AlphaMask = 0xFF000000u;
+        head.bV5CSType = LCS_sRGB;
+        head.bV5Intent = LCS_GM_IMAGES;
+        if (width > INT32_MAX || height > INT32_MAX) {
+            return NULL;
+        }
+        block = hero_ui_win_block(sizeof head + pixels * 4);
+        if (block != NULL && (into = GlobalLock(block)) != NULL) {
+            memcpy(into, &head, sizeof head);
+            for (size_t i = 0; i < pixels; i += 1) {
+                into[sizeof head + i * 4 + 0] = bytes[i * 4 + 2];
+                into[sizeof head + i * 4 + 1] = bytes[i * 4 + 1];
+                into[sizeof head + i * 4 + 2] = bytes[i * 4 + 0];
+                into[sizeof head + i * 4 + 3] = bytes[i * 4 + 3];
+            }
+            (void)GlobalUnlock(block);
+        }
+        return block;
+    }
+}
 
 int64_t hero_ui_arm_clipboard_set(int64_t kind, const uint8_t *bytes, int64_t count, int64_t width, int64_t height) {
-    (void)kind;
-    (void)bytes;
-    (void)count;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    int64_t answer = HERO_UI_OK;
+    HGLOBAL block = NULL;
+    UINT format = 0;
+
+    if (kind != HERO_UI_CLIP_NOTHING) {
+        block = hero_ui_win_clip_block(kind, bytes, count, width, height, &format, &answer);
+        if (block == NULL) {
+            return answer;
+        }
+    }
+    if (!hero_ui_win_open_clipboard(&answer)) {
+        if (block != NULL) {
+            (void)GlobalFree(block);
+        }
+        return answer;
+    }
+    if (!EmptyClipboard()) {
+        answer = hero_ui_win_failed("emptying the clipboard", GetLastError());
+    } else if (block != NULL && SetClipboardData(format, block) == NULL) {
+        answer = hero_ui_win_failed("putting data on the clipboard", GetLastError());
+    } else {
+        /* The system owns the block now. */
+        block = NULL;
+    }
+    (void)CloseClipboard();
+    if (block != NULL) {
+        (void)GlobalFree(block);
+    }
+    return answer;
+}
+
+/* Keeps `count` bytes at `kept`, a block of `hero_layer_alloc`, as what the
+ * last read found. */
+static void hero_ui_win_keep_clip(uint8_t *kept, int64_t count) {
+    hero_layer_free(hero_ui_win_clip);
+    hero_ui_win_clip = kept;
+    hero_ui_win_clip_count = count;
+}
+
+/* The paths of a `DROPFILES` block of `size` bytes at `head`, each as UTF-8
+ * followed by one zero byte, into `*paths`; `HERO_UI_NOT_FOUND` where it
+ * holds none. A path no UTF-8 names (an unpaired surrogate) is read with
+ * U+FFFD in its place. */
+static int64_t hero_ui_win_read_drop(const uint8_t *head, size_t size, uint8_t **paths, int64_t *count) {
+    const DROPFILES *drop = (const DROPFILES *)(const void *)head;
+    int64_t room = 0;
+
+    *paths = NULL;
+    *count = 0;
+    if (size < sizeof(DROPFILES) || drop->pFiles < sizeof(DROPFILES) || drop->pFiles >= size) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if (drop->fWide) {
+        const wchar_t *at = (const wchar_t *)(const void *)(head + drop->pFiles);
+        size_t units = (size - drop->pFiles) / sizeof(wchar_t);
+        size_t start = 0;
+
+        for (size_t i = 0; i < units; i += 1) {
+            if (at[i] != 0) {
+                continue;
+            }
+            if (i == start) {
+                break;
+            }
+            if (!hero_ui_win_keep_path(at + start, (int)(i - start), paths, count, &room)) {
+                hero_layer_free(*paths);
+                *paths = NULL;
+                return HERO_UI_LIMIT;
+            }
+            start = i + 1;
+        }
+    } else {
+        /* Paths of the system's code page, as an older program writes. */
+        const char *at = (const char *)head + drop->pFiles;
+        size_t bytes = size - drop->pFiles;
+        size_t start = 0;
+
+        for (size_t i = 0; i < bytes; i += 1) {
+            int units;
+            wchar_t *wide;
+
+            if (at[i] != 0) {
+                continue;
+            }
+            if (i == start) {
+                break;
+            }
+            units = MultiByteToWideChar(CP_ACP, 0, at + start, (int)(i - start), NULL, 0);
+            wide = units > 0 ? hero_layer_alloc((size_t)units * sizeof(wchar_t)) : NULL;
+            if (wide == NULL || MultiByteToWideChar(CP_ACP, 0, at + start, (int)(i - start), wide, units) != units || !hero_ui_win_keep_path(wide, units, paths, count, &room)) {
+                hero_layer_free(wide);
+                hero_layer_free(*paths);
+                *paths = NULL;
+                return HERO_UI_LIMIT;
+            }
+            hero_layer_free(wide);
+            start = i + 1;
+        }
+    }
+    return *count > 0 ? HERO_UI_OK : HERO_UI_NOT_FOUND;
+}
+
+/* The pixels of a device-independent bitmap of `size` bytes at `head`, its
+ * header a `BITMAPINFOHEADER` or a later one, as RGBA rows from the top
+ * into `*pixels`: 32 bits a pixel, by its masks where it names them, its
+ * alpha taken where any pixel has one (a bitmap of `BI_RGB` writes 0 in the
+ * fourth byte and means opaque), or 24. `HERO_UI_NOT_FOUND` for any other
+ * depth, which the caller then reads through GDI. */
+static int64_t hero_ui_win_read_dib(const uint8_t *head, size_t size, uint8_t **pixels, int64_t *width, int64_t *height) {
+    const BITMAPINFOHEADER *info = (const BITMAPINFOHEADER *)(const void *)head;
+    DWORD masks[4] = {0x00FF0000u, 0x0000FF00u, 0x000000FFu, 0};
+    size_t offset;
+    size_t stride;
+    int64_t wide;
+    int64_t high;
+    bool down;
+    bool alpha = false;
+    uint8_t *out;
+
+    if (size < sizeof *info || info->biSize < sizeof *info || info->biSize > size || info->biWidth <= 0 || info->biHeight == 0 || info->biPlanes != 1) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if ((info->biBitCount != 32 && info->biBitCount != 24) || (info->biCompression != BI_RGB && info->biCompression != BI_BITFIELDS)) {
+        return HERO_UI_NOT_FOUND;
+    }
+    offset = info->biSize;
+    if (info->biCompression == BI_BITFIELDS) {
+        if (info->biSize >= sizeof(BITMAPV4HEADER)) {
+            const BITMAPV4HEADER *v4 = (const BITMAPV4HEADER *)(const void *)head;
+
+            masks[0] = v4->bV4RedMask;
+            masks[1] = v4->bV4GreenMask;
+            masks[2] = v4->bV4BlueMask;
+            masks[3] = v4->bV4AlphaMask;
+        } else {
+            if (size < offset + 12) {
+                return HERO_UI_NOT_FOUND;
+            }
+            memcpy(masks, head + offset, 12);
+            offset += 12;
+        }
+    }
+    offset += (size_t)info->biClrUsed * 4;
+    wide = info->biWidth;
+    high = info->biHeight < 0 ? -(int64_t)info->biHeight : info->biHeight;
+    down = info->biHeight < 0;
+    stride = (((size_t)wide * info->biBitCount + 31) / 32) * 4;
+    if (wide > 32768 || high > 32768 || offset > size || stride * (size_t)high > size - offset) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if ((uint64_t)wide * (uint64_t)high * 4 > (uint64_t)HERO_UI_CLIP_MOST) {
+        return HERO_UI_LIMIT;
+    }
+    out = hero_layer_alloc((size_t)wide * (size_t)high * 4);
+    if (out == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    for (int64_t y = 0; y < high; y += 1) {
+        const uint8_t *row = head + offset + stride * (size_t)(down ? y : high - 1 - y);
+
+        for (int64_t x = 0; x < wide; x += 1) {
+            uint8_t *to = out + ((size_t)y * (size_t)wide + (size_t)x) * 4;
+
+            if (info->biBitCount == 24) {
+                to[0] = row[x * 3 + 2];
+                to[1] = row[x * 3 + 1];
+                to[2] = row[x * 3 + 0];
+                to[3] = 255;
+                continue;
+            }
+            {
+                DWORD value;
+
+                memcpy(&value, row + x * 4, 4);
+                for (int c = 0; c < 4; c += 1) {
+                    DWORD mask = c == 3 && masks[3] == 0 && info->biCompression == BI_RGB ? 0xFF000000u : masks[c];
+                    unsigned shift = 0;
+
+                    if (mask == 0) {
+                        to[c] = 255;
+                        continue;
+                    }
+                    while (((mask >> shift) & 1u) == 0) {
+                        shift += 1;
+                    }
+                    to[c] = (uint8_t)(((value & mask) >> shift) * 255u / (mask >> shift));
+                }
+                alpha = alpha || to[3] != 0;
+            }
+        }
+    }
+    if (info->biBitCount == 32 && !alpha) {
+        /* No pixel holds an alpha: the fourth byte is unused, as `BI_RGB`
+         * writes it, and the image is opaque. */
+        for (size_t i = 0; i < (size_t)wide * (size_t)high; i += 1) {
+            out[i * 4 + 3] = 255;
+        }
+    }
+    *pixels = out;
+    *width = wide;
+    *height = high;
+    return HERO_UI_OK;
+}
+
+/* The pixels of the clipboard's `CF_BITMAP` read through GDI as 32 bits,
+ * opaque, for a depth `hero_ui_win_read_dib` does not read. */
+static int64_t hero_ui_win_read_bitmap(HBITMAP bitmap, uint8_t **pixels, int64_t *width, int64_t *height) {
+    BITMAP shape;
+    BITMAPINFO want;
+    HDC screen;
+    uint8_t *out;
+    int rows;
+
+    if (GetObjectW(bitmap, (int)sizeof shape, &shape) != (int)sizeof shape || shape.bmWidth <= 0 || shape.bmHeight <= 0) {
+        return HERO_UI_NOT_FOUND;
+    }
+    if ((uint64_t)shape.bmWidth * (uint64_t)shape.bmHeight * 4 > (uint64_t)HERO_UI_CLIP_MOST) {
+        return HERO_UI_LIMIT;
+    }
+    out = hero_layer_alloc((size_t)shape.bmWidth * (size_t)shape.bmHeight * 4);
+    if (out == NULL) {
+        return HERO_UI_LIMIT;
+    }
+    memset(&want, 0, sizeof want);
+    want.bmiHeader.biSize = (DWORD)sizeof want.bmiHeader;
+    want.bmiHeader.biWidth = shape.bmWidth;
+    want.bmiHeader.biHeight = -shape.bmHeight;
+    want.bmiHeader.biPlanes = 1;
+    want.bmiHeader.biBitCount = 32;
+    want.bmiHeader.biCompression = BI_RGB;
+    screen = GetDC(NULL);
+    rows = screen != NULL ? GetDIBits(screen, bitmap, 0, (UINT)shape.bmHeight, out, &want, DIB_RGB_COLORS) : 0;
+    if (screen != NULL) {
+        (void)ReleaseDC(NULL, screen);
+    }
+    if (rows != shape.bmHeight) {
+        hero_layer_free(out);
+        return HERO_UI_NOT_FOUND;
+    }
+    for (size_t i = 0; i < (size_t)shape.bmWidth * (size_t)shape.bmHeight; i += 1) {
+        uint8_t blue = out[i * 4 + 0];
+
+        out[i * 4 + 0] = out[i * 4 + 2];
+        out[i * 4 + 2] = blue;
+        out[i * 4 + 3] = 255;
+    }
+    *pixels = out;
+    *width = shape.bmWidth;
+    *height = shape.bmHeight;
+    return HERO_UI_OK;
+}
+
+/* What the open clipboard holds of `kind`, into `*kept`. */
+static int64_t hero_ui_win_read_clip(int64_t kind, uint8_t **kept, int64_t *bytes, int64_t *width, int64_t *height) {
+    static const UINT images[] = {CF_DIBV5, CF_DIB};
+    HANDLE data;
+    const uint8_t *head;
+    int64_t answer = HERO_UI_NOT_FOUND;
+
+    if (kind == HERO_UI_CLIP_TEXT) {
+        size_t size;
+
+        data = IsClipboardFormatAvailable(CF_UNICODETEXT) ? GetClipboardData(CF_UNICODETEXT) : NULL;
+        head = data != NULL ? GlobalLock(data) : NULL;
+        if (head == NULL) {
+            return HERO_UI_NOT_FOUND;
+        }
+        size = GlobalSize(data) / sizeof(wchar_t);
+        if (size > (size_t)HERO_UI_CLIP_MOST) {
+            (void)GlobalUnlock(data);
+            return HERO_UI_LIMIT;
+        }
+        {
+            const wchar_t *text = (const wchar_t *)(const void *)head;
+            size_t units = 0;
+
+            while (units < size && text[units] != 0) {
+                units += 1;
+            }
+            *kept = hero_ui_win_narrow(text, (int)units, true, bytes);
+        }
+        (void)GlobalUnlock(data);
+        return *kept == NULL ? HERO_UI_LIMIT : *bytes > HERO_UI_CLIP_MOST ? HERO_UI_LIMIT : HERO_UI_OK;
+    }
+    if (kind == HERO_UI_CLIP_FILES) {
+        data = IsClipboardFormatAvailable(CF_HDROP) ? GetClipboardData(CF_HDROP) : NULL;
+        head = data != NULL ? GlobalLock(data) : NULL;
+        if (head == NULL) {
+            return HERO_UI_NOT_FOUND;
+        }
+        answer = hero_ui_win_read_drop(head, GlobalSize(data), kept, bytes);
+        (void)GlobalUnlock(data);
+        return answer;
+    }
+    for (size_t i = 0; i < sizeof images / sizeof images[0] && answer == HERO_UI_NOT_FOUND; i += 1) {
+        data = IsClipboardFormatAvailable(images[i]) ? GetClipboardData(images[i]) : NULL;
+        head = data != NULL ? GlobalLock(data) : NULL;
+        if (head != NULL) {
+            answer = hero_ui_win_read_dib(head, GlobalSize(data), kept, width, height);
+            (void)GlobalUnlock(data);
+        }
+    }
+    if (answer == HERO_UI_NOT_FOUND && IsClipboardFormatAvailable(CF_BITMAP)) {
+        data = GetClipboardData(CF_BITMAP);
+        answer = data != NULL ? hero_ui_win_read_bitmap((HBITMAP)data, kept, width, height) : HERO_UI_NOT_FOUND;
+    }
+    if (answer == HERO_UI_OK) {
+        *bytes = *width * *height * 4;
+    }
+    return answer;
 }
 
 int64_t hero_ui_arm_clipboard_get(int64_t kind, int64_t *bytes, int64_t *width, int64_t *height) {
-    (void)kind;
-    (void)bytes;
-    (void)width;
-    (void)height;
-    return HERO_UI_UNSUPPORTED;
+    uint8_t *kept = NULL;
+    int64_t answer = HERO_UI_OK;
+
+    *bytes = 0;
+    if (!hero_ui_win_open_clipboard(&answer)) {
+        return answer;
+    }
+    answer = hero_ui_win_read_clip(kind, &kept, bytes, width, height);
+    (void)CloseClipboard();
+    if (answer != HERO_UI_OK) {
+        hero_layer_free(kept);
+        *width = 0;
+        *height = 0;
+        *bytes = 0;
+        return answer;
+    }
+    hero_ui_win_keep_clip(kept, *bytes);
+    return HERO_UI_OK;
 }
 
 int64_t hero_ui_arm_clipboard_bytes(uint8_t *buffer, int64_t count) {
-    (void)buffer;
-    (void)count;
-    return -1;
+    if (hero_ui_win_clip_count < 0) {
+        return -1;
+    }
+    if (hero_ui_win_clip_count > 0 && hero_ui_win_clip_count <= count) {
+        memcpy(buffer, hero_ui_win_clip, (size_t)hero_ui_win_clip_count);
+    }
+    return hero_ui_win_clip_count;
+}
+
+/* -- A FOLDER CHOSEN, AND A MESSAGE BOX OF THE PROGRAM'S WORDS --------------
+ *
+ * The folder dialog is the shell's Common Item Dialog, `IFileOpenDialog`
+ * told `FOS_PICKFOLDERS`, reached through COM, which the UI thread joins as
+ * a single-threaded apartment for the dialog's time where it is in none
+ * (and uses as it is where it is in one already); the message box of the
+ * program's buttons is version 6 of the common controls' task dialog,
+ * found in the module the activation context gives (THE SYSTEM'S CURRENT
+ * LOOK), so a program on a Windows without it still loads and is told. The
+ * layer hands neither a window to stand over, so each stands over none and
+ * holds the app's windows disabled while it waits, as `MessageBoxW` does
+ * with `MB_TASKMODAL`. */
+
+/* The class and the interface of the Common Item Dialog that opens, as
+ * `shobjidl.h` names them, written here so no import library is needed. */
+static const CLSID hero_ui_win_open_dialog_class = {0xDC1C5A9C, 0xE88A, 0x4DDE, {0xA5, 0xA1, 0x60, 0xF8, 0x2A, 0x20, 0xAE, 0xF7}};
+static const IID hero_ui_win_open_dialog_face = {0xD57C7288, 0xD4AD, 0x4768, {0xBE, 0x02, 0x9D, 0x96, 0x95, 0x32, 0xD9, 0x60}};
+
+/* Holds every enabled window of the app disabled, `hold`, or gives back
+ * the ones it held, while a dialog standing over none waits. */
+static void hero_ui_win_hold_all(bool hold) {
+    for (size_t at = 0; at < hero_ui_map_room(); at += 1) {
+        hero_ui_native *window = hero_ui_at(at);
+
+        if (window == NULL || window->kind != HERO_UI_WINDOW) {
+            continue;
+        }
+        if (hold && IsWindowEnabled(window->hwnd)) {
+            window->held_by_dialog = true;
+            (void)EnableWindow(window->hwnd, FALSE);
+        } else if (!hold && window->held_by_dialog) {
+            window->held_by_dialog = false;
+            (void)EnableWindow(window->hwnd, TRUE);
+        }
+    }
+}
+
+/* Keeps the file-system path of shell item `item` at the end of the paths
+ * answered; false where memory ran out. An item with no such path is passed
+ * over, `FOS_FORCEFILESYSTEM` letting the person choose none. */
+static bool hero_ui_win_keep_item(IShellItem *item, uint8_t **paths, int64_t *count, int64_t *room) {
+    wchar_t *path = NULL;
+    bool kept = true;
+
+    if (SUCCEEDED(item->lpVtbl->GetDisplayName(item, SIGDN_FILESYSPATH, &path)) && path != NULL) {
+        kept = hero_ui_win_keep_path(path, (int)wcslen(path), paths, count, room);
+        CoTaskMemFree(path);
+    }
+    return kept;
+}
+
+int64_t hero_ui_arm_folder_dialog(int64_t multiple, const uint8_t *title, int64_t title_count, int64_t *bytes) {
+    HRESULT joined = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    IFileOpenDialog *dialog = NULL;
+    wchar_t *heading = hero_ui_win_wide(title, title_count, 0);
+    uint8_t *paths = NULL;
+    int64_t paths_count = 0;
+    int64_t paths_room = 0;
+    int64_t answer = HERO_UI_OK;
+    HRESULT shown;
+    FILEOPENDIALOGOPTIONS options = 0;
+
+    *bytes = 0;
+    if (heading == NULL) {
+        if (SUCCEEDED(joined)) {
+            CoUninitialize();
+        }
+        return HERO_UI_LIMIT;
+    }
+    if (FAILED(joined) && joined != RPC_E_CHANGED_MODE) {
+        hero_layer_free(heading);
+        return hero_ui_win_failed("joining COM for the folder dialog", (DWORD)joined);
+    }
+    shown = CoCreateInstance(&hero_ui_win_open_dialog_class, NULL, CLSCTX_INPROC_SERVER, &hero_ui_win_open_dialog_face, (void **)&dialog);
+    if (FAILED(shown) || dialog == NULL) {
+        answer = hero_ui_win_failed("making the folder dialog", (DWORD)shown);
+    } else {
+        (void)dialog->lpVtbl->GetOptions(dialog, &options);
+        options |= FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_NOCHANGEDIR | (multiple == 1 ? FOS_ALLOWMULTISELECT : 0);
+        (void)dialog->lpVtbl->SetOptions(dialog, options);
+        if (title_count > 0) {
+            (void)dialog->lpVtbl->SetTitle(dialog, heading);
+        }
+        hero_ui_win_hold_all(true);
+        shown = dialog->lpVtbl->Show(dialog, NULL);
+        hero_ui_win_hold_all(false);
+        if (shown == HRESULT_FROM_WIN32(ERROR_CANCELLED)) {
+            answer = HERO_UI_OK;
+        } else if (FAILED(shown)) {
+            answer = hero_ui_win_failed("showing the folder dialog", (DWORD)shown);
+        } else {
+            IShellItemArray *chosen = NULL;
+            DWORD each = 0;
+
+            if (SUCCEEDED(dialog->lpVtbl->GetResults(dialog, &chosen)) && chosen != NULL) {
+                (void)chosen->lpVtbl->GetCount(chosen, &each);
+                for (DWORD i = 0; i < each && answer == HERO_UI_OK; i += 1) {
+                    IShellItem *item = NULL;
+
+                    if (SUCCEEDED(chosen->lpVtbl->GetItemAt(chosen, i, &item)) && item != NULL) {
+                        answer = hero_ui_win_keep_item(item, &paths, &paths_count, &paths_room) ? HERO_UI_OK : HERO_UI_LIMIT;
+                        item->lpVtbl->Release(item);
+                    }
+                }
+                chosen->lpVtbl->Release(chosen);
+            }
+        }
+        dialog->lpVtbl->Release(dialog);
+    }
+    hero_layer_free(heading);
+    if (SUCCEEDED(joined)) {
+        CoUninitialize();
+    }
+    if (answer != HERO_UI_OK) {
+        hero_layer_free(paths);
+        return answer;
+    }
+    hero_layer_free(hero_ui_win_paths);
+    hero_ui_win_paths = paths;
+    hero_ui_win_paths_count = paths_count;
+    *bytes = paths_count;
+    return HERO_UI_OK;
+}
+
+int64_t hero_ui_arm_ask(int64_t tone, const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count, const uint8_t *buttons, int64_t buttons_count, int64_t cancel, int64_t *pressed) {
+    TASKDIALOG_BUTTON choices[HERO_UI_ASK_BUTTONS_MOST];
+    wchar_t *labels[HERO_UI_ASK_BUTTONS_MOST];
+    TASKDIALOGCONFIG config;
+    wchar_t *heading;
+    wchar_t *said;
+    int64_t count = hero_ui_texts_in(buttons, buttons_count);
+    int64_t answer = HERO_UI_OK;
+    int button = 0;
+    HRESULT shown;
+
+    if (!hero_ui_win_task_asked) {
+        /* Under the activation context the name is version 6's module. */
+        HMODULE controls = LoadLibraryW(L"comctl32.dll");
+
+        hero_ui_win_task_asked = true;
+        if (controls != NULL) {
+            hero_ui_win_find_function(controls, "TaskDialogIndirect", &hero_ui_win_task, sizeof hero_ui_win_task);
+        }
+    }
+    if (hero_ui_win_task == NULL) {
+        return hero_ui_refused(HERO_UI_UNSUPPORTED, "Windows' task dialog, which shows buttons of the program's words, is version 6 of the common controls', which this process could not load");
+    }
+    if (count < 1 || count > HERO_UI_ASK_BUTTONS_MOST) {
+        return HERO_UI_INVALID;
+    }
+    heading = hero_ui_win_wide(title, title_count, 0);
+    said = hero_ui_win_wide(text, text_count, HERO_UI_WIN_LINES);
+    memset(labels, 0, sizeof labels);
+    for (int64_t i = 0; i < count; i += 1) {
+        int64_t length = 0;
+        const uint8_t *label = hero_ui_text_at(buttons, buttons_count, i, &length);
+
+        labels[i] = hero_ui_win_wide(label, length, HERO_UI_WIN_PREFIX);
+        choices[i].nButtonID = (int)(HERO_UI_WIN_ASK_FIRST + i);
+        choices[i].pszButtonText = labels[i];
+        answer = labels[i] == NULL ? HERO_UI_LIMIT : answer;
+    }
+    if (heading == NULL || said == NULL) {
+        answer = HERO_UI_LIMIT;
+    }
+    if (answer == HERO_UI_OK) {
+        memset(&config, 0, sizeof config);
+        config.cbSize = (UINT)sizeof config;
+        config.hInstance = GetModuleHandleW(NULL);
+        config.dwFlags = TDF_POSITION_RELATIVE_TO_WINDOW | (cancel >= 0 ? TDF_ALLOW_DIALOG_CANCELLATION : 0);
+        config.pszWindowTitle = heading;
+        config.pszMainIcon = tone == HERO_UI_TONE_ERROR ? TD_ERROR_ICON : tone == HERO_UI_TONE_WARNING ? TD_WARNING_ICON : TD_INFORMATION_ICON;
+        config.pszContent = said;
+        config.cButtons = (UINT)count;
+        config.pButtons = choices;
+        config.nDefaultButton = HERO_UI_WIN_ASK_FIRST;
+        hero_ui_win_hold_all(true);
+        shown = hero_ui_win_task(&config, &button, NULL, NULL);
+        hero_ui_win_hold_all(false);
+        if (FAILED(shown)) {
+            answer = hero_ui_win_failed("showing a message box", (DWORD)shown);
+        } else if (button == IDCANCEL && cancel >= 0) {
+            *pressed = cancel;
+        } else if (button >= HERO_UI_WIN_ASK_FIRST && button < HERO_UI_WIN_ASK_FIRST + count) {
+            *pressed = button - HERO_UI_WIN_ASK_FIRST;
+        } else {
+            *pressed = -1;
+        }
+    }
+    hero_layer_free(heading);
+    hero_layer_free(said);
+    for (int64_t i = 0; i < count; i += 1) {
+        hero_layer_free(labels[i]);
+    }
+    return answer;
 }
 
 /* -- BOXES THE SYSTEM DRAWS ------------------------------------------------ */

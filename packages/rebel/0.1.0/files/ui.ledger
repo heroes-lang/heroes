@@ -380,7 +380,7 @@ capability ui/folder-dialog  the system's dialog to choose a folder, or several
   rust    -
   python  filedialog.askdirectory, filedialog.Directory
   wx      wxDirDialog (wxDD_MULTIPLE, GetPath, GetPaths)
-  note    it waits for the person, as the file dialogs do, an injected choice taken first; macOS by `NSOpenPanel` choosing folders, Windows pending (`IFileOpenDialog` with `FOS_PICKFOLDERS`), Linux pending (`GtkFileDialog`'s `select_folder`)
+  note    it waits for the person, as the file dialogs do, an injected choice taken first; macOS by `NSOpenPanel` choosing folders, Windows by `IFileOpenDialog` with `FOS_PICKFOLDERS` and `FOS_FORCEFILESYSTEM`, the app's windows held disabled while it stands, Linux pending (`GtkFileDialog`'s `select_folder`)
 
 capability ui/ask  a message box whose buttons say the program's own words: Save, Don't Save, Cancel
   heroes  ui.ask, ui.Answer
@@ -388,7 +388,7 @@ capability ui/ask  a message box whose buttons say the program's own words: Save
   rust    -
   python  -
   wx      wxMessageDialog (SetYesNoCancelLabels, SetOKCancelLabels)
-  note    the first button is pressed by Return and the one the program names by Escape; it answers the button's index and waits for the person, as `message` does; macOS by `NSAlert`'s buttons, Windows pending (`TaskDialogIndirect`'s buttons), Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
+  note    the first button is pressed by Return and the one the program names by Escape; it answers the button's index and waits for the person, as `message` does; macOS by `NSAlert`'s buttons, Windows by `TaskDialogIndirect`'s buttons, found in version 6 of the common controls at run time, Linux pending (`GtkAlertDialog`'s buttons, with its cancel and default buttons)
 
 capability ui/ask-value  a dialog asking one value, a text or a number
   heroes  refused: a window the program makes with a field and two buttons asks it, and the three libraries' differ by system
@@ -465,7 +465,7 @@ capability ui/clipboard  the system's clipboard: text, files and an image copied
   rust    -
   python  tkinter.Misc.clipboard_get, tkinter.Misc.clipboard_append, tkinter.Misc.clipboard_clear
   wx      wxClipboard (SetData, GetData, IsSupported, Clear), wxTextDataObject, wxFileDataObject, wxBitmapDataObject
-  note    catalogue CB01, CB02, CB03; macOS by `NSPasteboard.general`, measured on this Mac to find what the program put as its own kind alone; Windows pending (`OpenClipboard`, `SetClipboardData` with `CF_UNICODETEXT`, `CF_HDROP`, `CF_DIBV5`), Linux pending (`GdkClipboard`, whose read answers later and which the arm waits for); rich text and a web page's HTML (CB04), a format of the program's own (CB05) and an event when another program copies (CB06) are not offered
+  note    catalogue CB01, CB02, CB03; macOS by `NSPasteboard.general`, measured on this Mac to find what the program put as its own kind alone; Windows by `OpenClipboard` and `SetClipboardData` with `CF_UNICODETEXT`, `CF_HDROP` and `CF_DIBV5`, an image read also from `CF_DIB` and `CF_BITMAP`, Linux pending (`GdkClipboard`, whose read answers later and which the arm waits for); rich text and a web page's HTML (CB04), a format of the program's own (CB05) and an event when another program copies (CB06) are not offered
 
 capability ui/pickers  a date, a colour or a font chosen in the system's own picker
   heroes  pending
