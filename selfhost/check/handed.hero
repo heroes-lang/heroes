@@ -1,0 +1,50 @@
+# What a value holds that crosses between threads only by hand-over (spec
+# § 11; panel 254's S11 and R3): a C handle or a thread, which belongs to the
+# thread holding it. The checker asks it of a `spawn`'s argument, which may
+# hold none, and of a send's value, which is written `m.send(@v)` where it
+# holds one; the emitter asks it of every type it writes a hand-over for.
+
+use ast
+use check/state
+use check/table
+use emit/synth
+use handles
+
+# The first C handle or thread a value of `ty` holds, in words, or absent. A
+# mailbox crosses as itself, whatever it carries, so its element is not
+# walked, nor a thread's answer, which crosses at its own wait. Total by the
+# set of type ids walked, as `emit/key_pointer.hero`'s walk is.
+function held_handle(c: state.Checked, decls: [ast.Decl], ty: i64) -> str?
+    seen: {i64: bool} @= {}
+    stack: [i64] @= [ty]
+
+    while stack.len() > 0
+        at = stack[stack.len() - 1]
+        stack @ stack.slice(from: 0, to: stack.len() - 1)
+
+        if !seen[at].is_err()
+            continue
+        seen[at] @ true
+
+        match table.get(c.types, at)
+            .thread_ty  => return ok("a thread")
+            .array arr  => stack @ stack.push(arr.element)
+            .fallible o => stack @ stack.push(o.payload)
+            .map m      => stack @ stack.push(m.key).push(m.value)
+            .named n =>
+                if handles.is_handle(decls[n.decl])
+                    return ok("a C handle")
+
+                for inner in synth.field_types(c, decls, decl: n.decl)
+                    stack @ stack.push(inner)
+            .case_ty vc =>
+                for inner in synth.field_types(c, decls, decl: vc.decl)
+                    stack @ stack.push(inner)
+            .int_ty | .float_ty | .bool | .str | .unit | .fixed | .ptr | .cstr => continue
+            .mailbox_ty | .function_ty | .failure | .generic | .error          => continue
+
+    return fail(code: "none", msg: "no handle")
+
+# Whether a value of `ty` holds one.
+function holds(c: state.Checked, decls: [ast.Decl], ty: i64) -> bool
+    return !held_handle(c, decls, ty: ty).is_err()

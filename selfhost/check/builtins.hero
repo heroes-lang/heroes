@@ -53,7 +53,7 @@ function expectation(c: state.Checker, name: str, before: [i64]) -> i64?
     if name == "push" && index == 1
         match table.get(c.out.types, first)
             .array a => return ok(a.element)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
                 code: "absent",
                 msg: "not an array"
             )
@@ -63,7 +63,7 @@ function expectation(c: state.Checker, name: str, before: [i64]) -> i64?
     if name == "default" && index == 1
         match table.get(c.out.types, first)
             .fallible o => return ok(o.payload)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return fail(
                 code: "absent",
                 msg: "not fallible"
             )
@@ -135,7 +135,7 @@ function conversion_call(@c: state.Checker, s: source.Source, decls: [ast.Decl],
         # A `cstr` is not here: it aborted where `spec § 11 Built-ins` promised it could not (panel 090).
         keeps = match table.get(c.out.types, given[0])
             .int_ty | .float_ty | .bool | .str => true
-            .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error => false
+            .cstr | .ptr | .unit | .array | .fixed | .map | .fallible | .function_ty | .named | .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
         if keeps
             return ok(table.str_ty(c.out.types))
@@ -180,10 +180,10 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
         # measured the stale enumeration in the milestone that added them).
         for arg in given
             printable = match table.get(c.out.types, arg)
-                .int_ty | .float_ty | .bool | .str            => true
-                .ptr | .cstr | .unit | .array | .fixed | .map => false
-                .fallible | .function_ty | .named | .case_ty  => false
-                .failure | .generic | .error                  => false
+                .int_ty | .float_ty | .bool | .str                      => true
+                .ptr | .cstr | .unit | .array | .fixed | .map           => false
+                .fallible | .function_ty | .named | .case_ty            => false
+                .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
             if !printable
                 return ok(
@@ -197,7 +197,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
             .str | .array | .map                                        => true
             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
             .fallible | .function_ty | .named | .case_ty                => false
-            .failure | .generic | .error                                => false
+            .failure | .generic | .error | .thread_ty | .mailbox_ty     => false
 
         if sized
             return ok(table.int_ty_id(c.out.types))
@@ -210,7 +210,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
                     return ok(given[0])
                 mismatch(@c, s, decls, want: a.element, got: given[1], span: span)
                 return ok(state.error_ty_of(c))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 arg_error(@c, s, decls, name: "push", allowed: "`[T]`", got: given[0], span: span)
             )
             .fixed | .map | .fallible | .function_ty | .named => return ok(
@@ -239,7 +239,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
             .str | .array                                               => true
             .int_ty | .float_ty | .bool | .ptr | .cstr | .unit | .fixed => false
             .map | .fallible | .function_ty | .named | .case_ty         => false
-            .failure | .generic | .error                                => false
+            .failure | .generic | .error | .thread_ty | .mailbox_ty     => false
 
         if sliceable
             return ok(given[0])
@@ -252,7 +252,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
     if name == "keys" && given.len() == 1
         match table.get(c.out.types, given[0])
             .map m => return ok(table.intern(@c.out.types, .array(element: m.key)))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 arg_error(@c, s, decls, name: "keys", allowed: "`{K: V}`", got: given[0], span: span)
             )
             .fixed | .array | .fallible | .function_ty | .named => return ok(
@@ -309,7 +309,7 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
                     )
                     return ok(state.error_ty_of(c))
                 return ok(given[0])
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 arg_error(@c, s, decls, name: "sort", allowed: "`[T]`", got: given[0], span: span)
             )
             .fixed | .map | .fallible | .function_ty | .named => return ok(
@@ -326,24 +326,24 @@ function builtin_call(@c: state.Checker, s: source.Source, decls: [ast.Decl], na
 
 function is_int(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .int_ty                                                  => true
-        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-        .fixed | .map | .fallible | .function_ty | .named        => false
-        .case_ty | .failure | .generic | .error                  => false
+        .int_ty                                                            => true
+        .float_ty | .bool | .str | .ptr | .cstr | .unit | .array           => false
+        .fixed | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 function is_float(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
-        .float_ty                                              => true
-        .int_ty | .bool | .str | .ptr | .cstr | .unit | .array => false
-        .fixed | .map | .fallible | .function_ty | .named      => false
-        .case_ty | .failure | .generic | .error                => false
+        .float_ty                                                          => true
+        .int_ty | .bool | .str | .ptr | .cstr | .unit | .array             => false
+        .fixed | .map | .fallible | .function_ty | .named                  => false
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => false
 
 function is_generic(c: state.Checker, ty: i64) -> bool
     return match table.get(c.out.types, ty)
         .generic                                                   => true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit  => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
-        .case_ty | .failure | .error                               => false
+        .case_ty | .failure | .error | .thread_ty | .mailbox_ty    => false
 
 ## The three T? readers
 
@@ -354,7 +354,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
     if name == "must" && given.len() == 1
         match table.get(c.out.types, given[0])
             .fallible o => return ok(o.payload)
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 unwrapping_nothing(@c, s, decls, name: "must", got: given[0], span: span)
             )
             .array | .fixed | .map | .function_ty | .named => return ok(
@@ -371,7 +371,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
                     return ok(o.payload)
                 mismatch(@c, s, decls, want: o.payload, got: given[1], span: span)
                 return ok(state.error_ty_of(c))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 unwrapping_nothing(@c, s, decls, name: "default", got: given[0], span: span)
             )
             .array | .fixed | .map | .function_ty | .named => return ok(
@@ -384,7 +384,7 @@ function fallible_builtin(@c: state.Checker, s: source.Source, decls: [ast.Decl]
     if name == "is_err" && given.len() == 1
         match table.get(c.out.types, given[0])
             .fallible o => return ok(nested.is_err_type(@c, s, decls, payload: o.payload, span: span))
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return ok(
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit | .thread_ty | .mailbox_ty => return ok(
                 arg_error(@c, s, decls, name: "is_err", allowed: "a fallible value", got: given[0], span: span)
             )
             .array | .fixed | .map | .function_ty | .named => return ok(

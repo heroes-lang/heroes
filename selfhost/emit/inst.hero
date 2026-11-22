@@ -101,10 +101,10 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
     storageless: bool @= false
 
     match table.get(c.types, inst.ty)
-        .fixed                                                    => storageless @ true
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => storageless @ storageless
-        .array | .map | .fallible | .function_ty | .named         => storageless @ storageless
-        .case_ty | .failure | .generic | .error                   => storageless @ storageless
+        .fixed                                                             => storageless @ true
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => storageless @ storageless
+        .array | .map | .fallible | .function_ty | .named                  => storageless @ storageless
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => storageless @ storageless
 
     target: str? @= fail(code: "none", msg: "no destination")
 
@@ -124,6 +124,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                     .int_ty ik                                                 => kind @ ok(ik.kind)
                     .float_ty ft                                               => narrow @ widths.float_bits(ft.kind) == 32
                     .bool | .str | .ptr | .cstr | .unit                        => kind @ kind
+                    .thread_ty | .mailbox_ty                                   => kind @ kind
                     .array | .fixed | .map | .fallible | .function_ty | .named => kind @ kind
                     .case_ty | .failure | .generic | .error                    => kind @ kind
 
@@ -255,6 +256,7 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
                 run: cl.arguments,
                 arguments: large_value.direct_arguments(f, names, callee: cl.callee, run: cl.arguments, rendered: rendered, result: inst.ty, target: target),
                 target: large_value.direct_target(names, callee: cl.callee, result: inst.ty, target: target),
+                result: inst.ty,
                 instance: instances.named_at(f, c, at: inst.span.end),
                 site: site
             )
@@ -265,10 +267,10 @@ function emit(@w: writer.Writer, p: instances.Held, c: state.Checked, names: cty
             is_str: bool @= false
 
             match table.get(c.types, containers.value_type(f, ix.base))
-                .str                                                       => is_str @ true
-                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit         => is_str @ is_str
-                .array | .fixed | .map | .fallible | .function_ty | .named => is_str @ is_str
-                .case_ty | .failure | .generic | .error                    => is_str @ is_str
+                .str                                                               => is_str @ true
+                .int_ty | .float_ty | .bool | .ptr | .cstr | .unit                 => is_str @ is_str
+                .array | .fixed | .map | .fallible | .function_ty | .named         => is_str @ is_str
+                .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => is_str @ is_str
 
             if is_str
                 access.string_byte(@w, s, f, base: ix.base, index: ix.at, target: target, site: site)
@@ -375,6 +377,7 @@ function is_ptr(c: state.Checked, ty: i64) -> bool
     return match table.get(c.types, ty)
         .ptr                                                       => true
         .int_ty | .float_ty | .bool | .str | .cstr | .unit         => false
+        .thread_ty | .mailbox_ty                                   => false
         .array | .fixed | .map | .fallible | .function_ty | .named => false
         .case_ty | .failure | .generic | .error                    => false
 

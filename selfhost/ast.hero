@@ -351,6 +351,11 @@ variant TypeKind
         # records what was written and judges none of it.
         labels: [token.Span]
         result: i64
+    # `(thread T)` and `(mailbox T)` (spec § 3; feature 2647).
+    thread_of
+        element: i64
+    mailbox_of
+        element: i64
     # Recovery: the type could not be read. A diagnostic says why, and the tree
     # keeps its shape so the errors after this one are still found.
     error

@@ -79,7 +79,7 @@ function field_type(@names: {i64: {str: i64}}, decls: [ast.Decl], c: state.Check
                 )
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no fields")
         .array | .fixed | .map | .fallible | .function_ty         => return fail(code: "absent", msg: "no fields")
-        .failure | .generic | .error                              => return fail(code: "absent", msg: "no fields")
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return fail(code: "absent", msg: "no fields")
 
     return fail(code: "absent", msg: "unreached")
 
@@ -112,7 +112,7 @@ function field_index(@names: {i64: {str: i64}}, decls: [ast.Decl], c: state.Chec
         .failure                                                  => return position(FAILURE_FIELDS, wanted)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "absent", msg: "no fields")
         .array | .fixed | .map | .fallible | .function_ty         => return fail(code: "absent", msg: "no fields")
-        .generic | .error                                         => return fail(code: "absent", msg: "no fields")
+        .generic | .error | .thread_ty | .mailbox_ty              => return fail(code: "absent", msg: "no fields")
 
     return fail(code: "absent", msg: "unreached")
 

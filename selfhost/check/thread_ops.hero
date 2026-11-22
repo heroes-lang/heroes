@@ -1,0 +1,245 @@
+# The typing of threads and mailboxes (spec § 3, § 11; feature 2647):
+# `spawn(f, x)`, `spawn_sized(f, x, bytes: n)` and `mailbox()` by their names,
+# and a thread's `t.wait()` and a mailbox's `m.send(v)`, `m.receive(within_ms:
+# n)` and `m.close()` after a dot, chosen by the receiver's type alone.
+#
+#   spawn(f, x)              f: (function(A) -> T), x: A      (thread T)?
+#   spawn_sized(f, x, bytes: n)   the same, n: i64             (thread T)?
+#   mailbox()                the context's (mailbox T)          (mailbox T)
+#   t.wait()                 t: (thread T)                      T
+#   m.send(v)                m: (mailbox T), v: T               ()?
+#   m.send(@v)               the same, `v` holding a handle     ()?
+#   m.receive(within_ms: n)  m: (mailbox T), n: i64             T?
+#   m.close()                m: (mailbox T)                     ()
+#
+# A ring with `check/walk.hero`, whose `synth` and `check` type the arguments
+# and whose `named_call` and `method` hand these calls here: the walk is the
+# entry, this file the leaf it calls back into.
+
+use ast
+use check/crossing
+use check/markers
+use check/state
+use check/table
+use check/thread_types
+use check/walk
+use data_errors
+use diag
+use emit/key_pointer
+use inventory
+use label_errors
+use resolved
+use source
+use thread_errors
+use token
+use value_errors
+
+# Whether the built-in at `at` is one of the three called by name.
+function by_name(at: i64) -> bool
+    name = inventory.name_of(at)
+    return name == "spawn" || name == "spawn_sized" || name == "mailbox"
+
+# Whether the dotted call at `at` is a thread's or a mailbox's operation: its
+# name is one of the four, and the receiver is a thread or a mailbox, or no
+# function of the program's takes that name.
+function dotted(c: state.Checker, r: resolved.Resolved, at: i64, receiver_ty: i64, name: str) -> bool
+    if inventory.operation_of(name).is_err()
+        return false
+
+    if !thread_types.element_of(c.out.types, receiver_ty).is_err()
+        return true
+
+    return match r.uses[at]
+        .builtin                              => true
+        .top | .local | .module | .unresolved => false
+
+# `spawn`, `spawn_sized` and `mailbox`, called by name.
+function named(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], at: i64, given: [ast.Arg], expected: i64?, span: token.Span) -> i64
+    name = inventory.name_of(at)
+
+    if name == "mailbox"
+        if given.len() > 0
+            state.push_diagnostic(@c, arity(name: name, expected: 0, got: given.len(), span: span))
+            walk_all(@c, a, r, s, decls, given)
+            return state.error_ty_of(c)
+
+        if !expected.is_err() && !thread_types.mailbox_element(c.out.types, expected.must()).is_err()
+            return expected.must()
+        state.push_diagnostic(@c, thread_errors.mailbox_needs_type(span))
+        return state.error_ty_of(c)
+    wanted: i64 @= 2
+
+    if name == "spawn_sized"
+        wanted @ 3
+
+    if given.len() != wanted
+        state.push_diagnostic(@c, arity(name: name, expected: wanted, got: given.len(), span: span))
+        walk_all(@c, a, r, s, decls, given)
+        return state.error_ty_of(c)
+    unlabelled(@c, s, name: name, given: [given[0], given[1]])
+    body_ty = walk.synth(@c, a, r, s, decls, given[0].value)
+    body_span = a.exprs[given[0].value].span
+    one = one_parameter(c, body_ty)
+
+    if one.is_err()
+        if !table.poisoned(c.out.types, body_ty)
+            state.push_diagnostic(
+                @c,
+                thread_errors.not_a_thread_body(got: state.show(c, s, decls, body_ty), span: body_span)
+            )
+        walk_all(@c, a, r, s, decls, [given[1]])
+
+        if wanted == 3
+            walk_all(@c, a, r, s, decls, [given[2]])
+        return state.error_ty_of(c)
+    walk.check(@c, a, r, s, decls, id: given[1].value, expected: one.must().param)
+
+    if wanted == 3
+        bound(@c, a, r, s, decls, holder: name, label: "bytes", arg: given[2])
+    crosses(@c, s, decls, ty: one.must().param, shown: body_ty, span: body_span)
+    crosses(@c, s, decls, ty: one.must().result, shown: body_ty, span: body_span)
+    handed = crossing.held_handle(c, decls, ty: one.must().param)
+
+    if !handed.is_err() && !table.poisoned(c.out.types, one.must().param)
+        shown = state.show(c, s, decls, one.must().param)
+        state.push_diagnostic(
+            @c,
+            thread_errors.handle_into_spawn(shown: shown, holds: handed.must(), span: a.exprs[given[1].value].span)
+        )
+    thread = table.intern(@c.out.types, .thread_ty(element: one.must().result))
+    return table.intern(@c.out.types, .fallible(payload: thread))
+
+# A thread's or a mailbox's operation after a dot.
+function operation(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], receiver_ty: i64, called: token.Span, given: [ast.Arg], span: token.Span) -> i64
+    name = source.span_text(s, called)
+    of_thread = thread_types.thread_element(c.out.types, receiver_ty)
+    of_mailbox = thread_types.mailbox_element(c.out.types, receiver_ty)
+    belongs = name == "wait" && !of_thread.is_err() || name != "wait" && !of_mailbox.is_err()
+
+    if !belongs
+        if !table.poisoned(c.out.types, receiver_ty)
+            state.push_diagnostic(
+                @c,
+                thread_errors.not_its_operation(name: name, got: state.show(c, s, decls, receiver_ty), span: called)
+            )
+        walk_all(@c, a, r, s, decls, given)
+        return state.error_ty_of(c)
+    takes: i64 @= 0
+
+    if name == "send" || name == "receive"
+        takes @ 1
+
+    if given.len() != takes
+        state.push_diagnostic(@c, arity(name: name, expected: takes + 1, got: given.len() + 1, span: span))
+        walk_all(@c, a, r, s, decls, given)
+        return state.error_ty_of(c)
+
+    if name == "wait"
+        return of_thread.must()
+
+    if name == "close"
+        return table.unit_ty(c.out.types)
+
+    if name == "send"
+        unlabelled(@c, s, name: name, given: given)
+        walk.check(@c, a, r, s, decls, id: given[0].value, expected: of_mailbox.must())
+        marked(@c, a, r, s, decls, element: of_mailbox.must(), arg: given[0])
+        return table.intern(@c.out.types, .fallible(payload: table.unit_ty(c.out.types)))
+    bound(@c, a, r, s, decls, holder: name, label: "within_ms", arg: given[0])
+    return table.intern(@c.out.types, .fallible(payload: of_mailbox.must()))
+
+## The parts
+
+# A function value's one parameter and its result.
+record OneParameter
+    param: i64
+    result: i64
+
+function one_parameter(c: state.Checker, ty: i64) -> OneParameter?
+    match table.get(c.out.types, ty)
+        .function_ty f =>
+            params = table.params_of(c.out.types, f.params)
+
+            if params.len() == 1
+                return ok(OneParameter(param: params[0], result: f.result))
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return fail(code: "none", msg: "not a function")
+        .thread_ty | .mailbox_ty | .array | .fixed | .map         => return fail(code: "none", msg: "not a function")
+        .fallible | .named | .case_ty | .failure | .generic       => return fail(code: "none", msg: "not a function")
+        .error                                                    => return fail(code: "none", msg: "not a function")
+
+    return fail(code: "none", msg: "not a function of one parameter")
+
+# A send's `@` (panel 254's S11): written where the value holds a C handle or a
+# thread, which the send hands over and empties, and nowhere else, `@` on a
+# copy being a claim about the call that is false.
+function marked(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], element: i64, arg: ast.Arg)
+    if table.poisoned(c.out.types, element)
+        return
+    holds = !crossing.held_handle(c, decls, ty: element).is_err()
+
+    if arg.mutable != holds
+        blocked: str @= ""
+
+        if holds
+            blocked @ markers.blocked(a, r, s, arg.value)
+        d: diag.Diagnostic @= data_errors.marker_mismatch(
+            name: "send",
+            wants: holds,
+            blocked: blocked,
+            span: a.exprs[arg.value].span
+        )
+        d.notes @ d.notes.push(thread_errors.send_marker_note(holds: holds, shown: state.show(c, s, decls, element)))
+        state.push_diagnostic(@c, d)
+
+# A value that crosses between threads may reach no `ptr` and no `cstr`.
+function crosses(@c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, shown: i64, span: token.Span)
+    if table.poisoned(c.out.types, ty)
+        return
+    reached = key_pointer.reaches_pointer(c.out, decls, ty: ty)
+
+    if !reached.is_err()
+        state.push_diagnostic(
+            @c,
+            thread_errors.never_crosses(shown: state.show(c, s, decls, shown), reached: reached.must(), span: span)
+        )
+
+# A bound named by its unit: `within_ms:` or `bytes:`, an `i64`.
+function bound(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], holder: str, label: str, arg: ast.Arg)
+    value_span = a.exprs[arg.value].span
+
+    if arg.name.is_err()
+        state.push_diagnostic(
+            @c,
+            thread_errors.bound_unnamed(holder: holder, label: label, span: value_span, at: value_span.start)
+        )
+    else if source.span_text(s, arg.name.must()) != label
+        written = source.span_text(s, arg.name.must())
+        state.push_diagnostic(
+            @c,
+            label_errors.wrong_label(holder: holder, written: written, expected: label, elsewhere: false, doubled: false, others: [], span: arg.name.must())
+        )
+    walk.check(@c, a, r, s, decls, id: arg.value, expected: table.int_ty_id(c.out.types))
+
+# Arguments a call takes by position: a label on one is refused.
+function unlabelled(@c: state.Checker, s: source.Source, name: str, given: [ast.Arg])
+    for arg in given
+        if !arg.name.is_err()
+            label = arg.name.must()
+            state.push_diagnostic(
+                @c,
+                label_errors.label_on_builtin(holder: name, written: source.span_text(s, label), elsewhere: false, span: label)
+            )
+
+# Every argument typed, so a mistake inside one is told beside the call's.
+function walk_all(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl], given: [ast.Arg])
+    for arg in given
+        _ = walk.synth(@c, a, r, s, decls, arg.value)
+
+function arity(name: str, expected: i64, got: i64, span: token.Span) -> diag.Diagnostic
+    return value_errors.arity(
+        name: name,
+        expected: expected,
+        got: got,
+        declared: fail(code: "absent", msg: "a built-in has no line to cite"),
+        span: span
+    )

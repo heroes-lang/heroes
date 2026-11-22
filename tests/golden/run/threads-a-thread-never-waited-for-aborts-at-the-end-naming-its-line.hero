@@ -1,0 +1,11 @@
+# A thread nobody waits for aborts when `main` returns, saying how many, and
+# names the line its `spawn` stands on (spec § 13; panel 251's R2; feature
+# 2647).
+
+function one(n: i64) -> i64
+    return n
+
+function main()
+    t = spawn(one, 1).must()
+    _ = t
+    print("forgot")

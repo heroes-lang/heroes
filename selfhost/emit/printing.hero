@@ -46,9 +46,9 @@ function print_call(@w: writer.Writer, f: containers.Function, c: state.Checked,
                     # hero_print_int, covering nothing but a future
                     # mistake — the checker accepts exactly these.
 
-                    .ptr | .cstr | .unit | .array | .fixed | .map => printer @ printer
-                    .fallible | .function_ty | .named | .case_ty  => printer @ printer
-                    .failure | .generic | .error                  => printer @ printer
+                    .ptr | .cstr | .unit | .array | .fixed | .map           => printer @ printer
+                    .fallible | .function_ty | .named | .case_ty            => printer @ printer
+                    .failure | .generic | .error | .thread_ty | .mailbox_ty => printer @ printer
 
                 if printer == ""
                     writer.line(

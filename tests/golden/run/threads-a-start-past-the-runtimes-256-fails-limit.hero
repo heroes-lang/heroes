@@ -1,0 +1,30 @@
+# A program runs at most 256 threads of its own at once: the start past them
+# fails `limit`, its message saying why, rather than aborting, so a server
+# can refuse a connection and go on (spec § 11; panel 254's S1). Each thread
+# waits on one mailbox until it is closed, then every one is waited for.
+
+function hold(gate: (mailbox i64)) -> i64
+    return gate.receive(within_ms: 0 - 1).default(1)
+
+function main()
+    gate: (mailbox i64) = mailbox()
+    running: [(thread i64)] @= []
+    refused: bool @= false
+
+    while !refused
+        got = spawn(hold, gate)
+
+        match got
+            .ok t => running @ running.push(t)
+            .err e =>
+                print(e.code, ": ", e.msg)
+                refused @ true
+
+    print(running.len())
+    gate.close()
+    sum: i64 @= 0
+
+    for t in running
+        sum @ sum + t.wait()
+
+    print(sum)

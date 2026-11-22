@@ -43,7 +43,7 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
         .function_ty w                                            => wl @ table.labels_of(t, w.labels)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .array | .fixed | .map | .fallible | .named | .case_ty    => return false
-        .failure | .generic | .error                              => return false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
 
     if wl.len() == 0
         return false
@@ -76,7 +76,7 @@ function fits(@t: table.Types, wanted: i64, got: i64) -> bool
                 i @ i + 1
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .array | .fixed | .map | .fallible | .named | .case_ty    => return false
-        .failure | .generic | .error                              => return false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
 
     return table.intern_function(@t, spelled, filled, result: result) == wanted
 
@@ -132,10 +132,10 @@ function names_alone(t: table.Types, written: {i64: i64}, nameless: i64, named: 
                     return false
                 .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
                 .array | .fixed | .map | .fallible | .named | .case_ty    => return false
-                .failure | .generic | .error                              => return false
+                .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
         .array | .fixed | .map | .fallible | .named | .case_ty    => return false
-        .failure | .generic | .error                              => return false
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => return false
 
     return false
 

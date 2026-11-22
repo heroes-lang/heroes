@@ -50,7 +50,7 @@ function started(body: (function(str) -> str), text: str) -> Started
     else
         f"{control.address.port} {text}"
 
-    t = threads.spawn_text(body: body, arg: given).must()
+    t = threads.start_text(body: body, arg: given).must()
     said = told(control)
     net.close_listener(@control).must()
     return Started(port: port_told(said).must(), thread: t)

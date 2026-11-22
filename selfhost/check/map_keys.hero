@@ -48,6 +48,7 @@ function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
                 if !written.is_err()
                     refuse(@c, s, decls, key: written.must(), span: a.types[m.key].span)
             .named | .unit | .array_of | .fixed | .fallible | .function_type | .error => node @ node
+            .thread_of | .mailbox_of                                                  => node @ node
 
         node @ node + 1
 
@@ -63,6 +64,7 @@ function check(@c: state.Checker, a: ast.Ast, s: source.Source, decls: [ast.Decl
                     match table.get(c.out.types, c.out.expr_types[at])
                         .map m => refuse(@c, s, decls, key: m.key, span: a.exprs[entries.entries[0].key].span)
                         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => at @ at
+                        .thread_ty | .mailbox_ty => at @ at
                         .array | .fixed | .fallible | .function_ty | .named => at @ at
                         .case_ty | .failure | .generic | .error => at @ at
             .int_lit | .char_lit | .float_lit | .str_lit | .interp | .bool_lit | .null_ptr     => at @ at
@@ -184,6 +186,7 @@ function reaches_float(c: state.Checker, s: source.Source, decls: [ast.Decl], ty
             .map m =>
                 inner @ [Standing(ty: m.key, through: here.through), Standing(ty: m.value, through: here.through)]
             .int_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .thread_ty | .mailbox_ty                               => continue
             .function_ty | .case_ty | .failure | .generic | .error => continue
 
         back: i64 @= inner.len() - 1

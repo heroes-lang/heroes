@@ -26,6 +26,7 @@ use check/acquiring
 use check/const_steps
 use check/contracts
 use check/counted
+use check/crossing
 use check/decls as check_decls
 use check/endless
 use check/ffi_sweep
@@ -183,6 +184,10 @@ function typed(a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.D
     # the lowering fills. Asking first is silent: it finds nothing and
     # passes.
     map_keys.check(@c, a, s, decls)
+
+    # What a thread or a mailbox carries, asked of the same table for the
+    # same reason (feature 2647).
+    crossing.check(@c, a, s, decls)
 
     # §4.9 through a function VALUE (defect 026): the same table, the same
     # reason it is asked after the declarations, and the same shape of rule —

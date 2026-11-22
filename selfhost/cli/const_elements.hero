@@ -147,9 +147,9 @@ function arrays_of(a: layout_runs.Asking, rows: [str], opened: {i64: i64}, laid:
                         if !ffi_const_element.group_record(a.decls, decl: n.decl).is_err()
                             for inner in arrays_of(a, rows: rows, opened: opened, laid: laid, decl: n.decl, depth: depth + 1)
                                 out @ out.push(name + "." + inner)
-                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-                    .array | .map | .fallible | .function_ty                  => continue
-                    .case_ty | .failure | .generic | .error                   => continue
+                    .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+                    .array | .map | .fallible | .function_ty                           => continue
+                    .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
         .constant_decl | .function_decl | .variant_decl | .test_decl => return out
 
     return out
@@ -171,6 +171,7 @@ function may_hold(a: layout_runs.Asking, ty: i64) -> bool
         .named n => return !ffi_const_element.group_record(a.decls, decl: n.decl).is_err()
         .fixed => return true
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => return false
+        .thread_ty | .mailbox_ty => return false
         .array | .map | .fallible | .function_ty => return false
         .case_ty | .failure | .generic | .error => return false
 

@@ -108,7 +108,7 @@ function declaration_of(c: state.Checked, id: i64) -> i64?
         .case_ty vc                                               => ok(vc.decl)
         .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => fail(code: "absent", msg: "names no declaration")
         .array | .fixed | .map | .fallible | .function_ty         => fail(code: "absent", msg: "names no declaration")
-        .failure | .generic | .error                              => fail(code: "absent", msg: "names no declaration")
+        .failure | .generic | .error | .thread_ty | .mailbox_ty   => fail(code: "absent", msg: "names no declaration")
 
 # The types a type's rendering writes inside it, in its order:
 # `table.contained`'s, and a fixed-size array's element, which that walk
@@ -118,10 +118,10 @@ function declaration_of(c: state.Checked, id: i64) -> i64?
 # - `id`: the type.
 function written_inside(c: state.Checked, id: i64) -> [i64]
     return match table.get(c.types, id)
-        .fixed x                                                  => [x.element]
-        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => table.contained(c.types, id)
-        .array | .map | .fallible | .function_ty | .named         => table.contained(c.types, id)
-        .case_ty | .failure | .generic | .error                   => table.contained(c.types, id)
+        .fixed x                                                           => [x.element]
+        .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => table.contained(c.types, id)
+        .array | .map | .fallible | .function_ty | .named                  => table.contained(c.types, id)
+        .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => table.contained(c.types, id)
 
 ## Tests
 

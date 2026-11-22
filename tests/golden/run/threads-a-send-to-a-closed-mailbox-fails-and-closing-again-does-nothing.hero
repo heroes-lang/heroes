@@ -1,0 +1,29 @@
+# A close is for every copy of a mailbox, and closing it again does nothing;
+# a send to a closed mailbox never waits and fails `closed`, the value sent
+# left as it was, so the program can say what it could not deliver (spec
+# § 11; panel 254's S6 and S8). What was in it before the close is still
+# received, oldest first.
+
+record Note
+    text: str
+    marks: [i64]
+
+function main()
+    m: (mailbox Note) = mailbox()
+    copy = m
+    m.send(Note(text: "before", marks: [1, 2])).must()
+    copy.close()
+    m.close()
+    note = Note(text: "after", marks: [3])
+    refused = m.send(note)
+
+    match refused
+        .ok    => print("sent")
+        .err e => print(e.code, ": ", e.msg)
+
+    print(note.text, " ", note.marks.len())
+    print(m.receive(within_ms: 0).must().text)
+
+    match m.receive(within_ms: 0 - 1)
+        .ok n  => print("got ", n.text)
+        .err e => print(e.code)

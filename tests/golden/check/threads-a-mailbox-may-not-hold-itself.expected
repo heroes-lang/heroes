@@ -1,0 +1,5 @@
+tests/golden/check/threads-a-mailbox-may-not-hold-itself.hero:12:13: error[mailbox_holds_itself]: `(mailbox Sub)` carries values that may hold `(mailbox Sub)` itself, so its queue could hold a copy of itself and never be given back
+tests/golden/check/threads-a-mailbox-may-not-hold-itself.hero:15:11: error[mailbox_holds_itself]: `(mailbox Pong)` carries values that may hold `(mailbox Pong)` itself, so its queue could hold a copy of itself and never be given back
+tests/golden/check/threads-a-mailbox-may-not-hold-itself.hero:18:11: error[mailbox_holds_itself]: `(mailbox Ping)` carries values that may hold `(mailbox Ping)` itself, so its queue could hold a copy of itself and never be given back
+tests/golden/check/threads-a-mailbox-may-not-hold-itself.hero:22:16: error[mailbox_holds_itself]: `(mailbox Event)` carries values that may hold `(mailbox Event)` itself, so its queue could hold a copy of itself and never be given back
+tests/golden/check/threads-a-mailbox-may-not-hold-itself.hero:26:21: error[mailbox_holds_itself]: `(mailbox Answered)` carries values that may hold `(mailbox Answered)` itself, so its queue could hold a copy of itself and never be given back

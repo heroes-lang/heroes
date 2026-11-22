@@ -1,0 +1,19 @@
+# A handle belongs to the thread that holds it (spec § 11; panel 254's R3): a
+# copy kept from before `m.send(@v)` is not the sender's any more, so
+# reaching C through it while a mailbox carries the handle aborts, naming the
+# call. Without the check, the sender and the receiver would reach one C
+# object at once.
+
+extern "threads-a-copy-kept-from-before-a-send-is-not-the-senders.h"
+    record Counter tag counter
+    function counter_new(n: i64) -> Counter acquires counter_free
+    function counter_free(c: Counter consumes)
+    function counter_add(c: Counter, by: i64) -> i64
+
+function main()
+    inbox: (mailbox Counter) = mailbox()
+    c: Counter @= counter_new(n: 1)
+    keep = c
+    inbox.send(@c).must()
+    print("sent")
+    print(counter_add(c: keep, by: 1))

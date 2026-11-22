@@ -873,6 +873,13 @@ false failures). Committed work goes by `git push win main:main`. The box is
 `docs/environment/windows/WINDOWS-MACHINE.md`: paid by the hour, usually off, and
 only the author can start it, so ask, and do the machine-free work meanwhile.
 
+**Amended 2026-11-20 by author instruction**, meant as: *the agents turn it on
+by themselves, with the script, when their work needs it*. The last sentence
+above no longer holds: a session starts the box itself with
+`docs/platforms/windows/power-on.py`, which does what the appOnFly console's
+buttons do over the portal's own API. Who may, and what binds them, is
+`.claude/rules/platforms.md` § The Windows box.
+
 ## CL-050 — Measuring in a copy of the tree
 Date not recorded in the contract · § Verification
 

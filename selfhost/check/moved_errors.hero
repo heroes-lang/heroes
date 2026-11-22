@@ -26,11 +26,15 @@ function refusal(f: flow.Flow, s: source.Source, read: token.Span, path: [str], 
 
     if found.is_err()
         return fail(code: "none", msg: "alive")
+
     whole = found.must().path.len() > path.len()
     return ok(used_after_end(s, read: read, shown: source.span_text(s, read), ended: found.must(), whole: whole))
 
 function used_after_end(s: source.Source, read: token.Span, shown: str, ended: flow_groups.Dead, whole: bool) -> diag.Diagnostic
     where = where_it_ended(s, read: read, ended: ended)
+
+    if ended.callee == ".wait()"
+        return waited_after(read: read, ended: ended, where: where)
 
     message = if whole
         "`" + shown + "` is handed to C whole here, and its `" + ended.shown + "` was given to `" + ended.callee + "` " + where + ", which ended its life"
@@ -42,6 +46,19 @@ function used_after_end(s: source.Source, read: token.Span, shown: str, ended: f
     )
     d.notes @ d.notes.push(
         "this is decided one function at a time, and only where the life ended on every path to the read: an end on one branch, in an earlier turn of a loop, under `when`, through a copy or inside a helper is the runtime's to stop, before C"
+    )
+    return d
+
+# A thread waited for, and used again (feature 2647; panel 254's S3): `wait`
+# ends its life as a `consumes` call ends a handle's.
+function waited_after(read: token.Span, ended: flow_groups.Dead, where: str) -> diag.Diagnostic
+    d: diag.Diagnostic @= diag.new_diagnostic(
+        code: "handle_used_after_end",
+        message: "`" + ended.shown + "`'s life ended at `" + ended.shown + ".wait()` " + where + ", for every copy of it, and this uses it again",
+        span: read
+    )
+    d.notes @ d.notes.push(
+        "a thread's `wait` ends its life once: on every path that reaches this line it has ended, so there is no thread to wait for or hand on. Use it before the line that ends it, or start another with `spawn`"
     )
     return d
 

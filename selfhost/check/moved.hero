@@ -39,6 +39,7 @@
 # a function value carries no declaration and no mark, so it ends nothing.
 
 use ast
+use check/crossing
 use check/moved_calls as calls
 use check/moved_walk as walk
 use check/state
@@ -50,7 +51,11 @@ use source
 # The rule, over every body. A program in which no `extern` ends a life pays
 # nothing here, the early exit `check/lending.hero` takes for the same reason.
 function not_read_after_its_end(@c: state.Checker, a: ast.Ast, r: resolved.Resolved, s: source.Source, decls: [ast.Decl])
-    if !calls.ends_a_life(decls)
+    # A thread's and a mailbox's operations, whose `wait` ends a life (feature
+    # 2647).
+    handed = crossing.operations(c, a, s)
+
+    if !calls.ends_a_life(decls) && handed.len() == 0
         return
     by_start: {i64: i64} @= {}
     index: i64 @= 0
@@ -63,10 +68,10 @@ function not_read_after_its_end(@c: state.Checker, a: ast.Ast, r: resolved.Resol
         match decl.kind
             .function_decl fd =>
                 if !fd.value.is_extern && !fd.value.body.is_err()
-                    for d in walk.run(a, r, s, decls, body: fd.value.body.must(), by_start: by_start)
+                    for d in walk.run(a, r, s, decls, body: fd.value.body.must(), by_start: by_start, handed: handed)
                         state.push_diagnostic(@c, d)
             .test_decl t =>
-                for d in walk.run(a, r, s, decls, body: t.body, by_start: by_start)
+                for d in walk.run(a, r, s, decls, body: t.body, by_start: by_start, handed: handed)
                     state.push_diagnostic(@c, d)
             .constant_decl | .record_decl | .variant_decl => continue
 

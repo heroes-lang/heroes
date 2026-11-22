@@ -156,9 +156,9 @@ function handle_suffixes(out: state.Checked, s: source.Source, decls: [ast.Decl]
                 while at < x.length
                     inner @ inner.push(Visit(ty: x.element, prefix: here.prefix + "[" + at.to_str() + "]", leaving: -1))
                     at @ at + 1
-            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
-            .array | .map | .fallible | .function_ty                  => continue
-            .case_ty | .failure | .generic | .error                   => continue
+            .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit          => continue
+            .array | .map | .fallible | .function_ty                           => continue
+            .case_ty | .failure | .generic | .error | .thread_ty | .mailbox_ty => continue
 
         back: i64 @= inner.len() - 1
 
@@ -255,6 +255,7 @@ function walk(c: state.Checker, s: source.Source, decls: [ast.Decl], ty: i64, an
                     Step(ty: m.value, path: here.path, anchor: here.anchor)
                 ]
             .int_ty | .float_ty | .bool | .str | .ptr | .cstr | .unit => continue
+            .thread_ty | .mailbox_ty                                  => continue
             .function_ty | .case_ty | .failure | .generic | .error    => continue
 
         back: i64 @= inner.len() - 1
