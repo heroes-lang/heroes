@@ -6599,8 +6599,8 @@ static int64_t hero_ui_win_table_inject(hero_ui_native *table, int64_t kind, int
  * are shown unfolded. Folding an item whose descendant is chosen lets the
  * choice go before the fold, as the layer's other systems do, where the
  * tree view would move it to the folded item; Rebel tells that choice gone
- * after the fold it was told. A double click or Return opens the item
- * chosen. */
+ * after the fold it was told; an item taken out takes the choice under it
+ * with it. A double click or Return opens the item chosen. */
 
 /* The item of tree `tree` numbered `item`, or NULL; 0, the top, is none. */
 static hero_ui_win_node *hero_ui_win_node_of(const hero_ui_native *tree, int64_t item) {
@@ -6780,6 +6780,11 @@ int64_t hero_ui_arm_tree_remove(int64_t id, int64_t item) {
     }
     under = node->under;
     hero_ui_mute(1);
+    /* The choice of the item or of one under it goes with it, where the
+     * tree view would move it to a neighbour. */
+    if (hero_ui_win_item_chosen(tree) == item || hero_ui_win_under(tree, hero_ui_win_item_chosen(tree), item)) {
+        (void)SendMessageW(tree->hwnd, TVM_SELECTITEM, TVGN_CARET, 0);
+    }
     (void)SendMessageW(tree->hwnd, TVM_DELETEITEM, 0, (LPARAM)node->handle);
     /* The tree view took the items under it with it: so does the arm. */
     for (int64_t i = 0; i < tree->node_count; i += 1) {
