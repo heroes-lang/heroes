@@ -3637,6 +3637,10 @@ int64_t hero_ui_arm_system_words(char *words, int64_t count) {
     return hero_ui_arm_words(words, count);
 }
 
+/* The Win32 arm draws the appearance and accessible names in its own member
+ * (`hero_ui_win32.c`), so these five refuse for the GTK 4 arm alone. */
+#if !defined(_WIN32)
+
 int64_t hero_ui_arm_appearance(int64_t *appearance) {
     (void)appearance;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the appearance on macOS alone, and this system's arm has no such call");
@@ -3667,6 +3671,8 @@ int64_t hero_ui_arm_set_label_for(int64_t id, int64_t label) {
     (void)label;
     return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer ties a label to its field on macOS alone, and this system's arm has no such call");
 }
+
+#endif /* !_WIN32 */
 
 #endif
 
