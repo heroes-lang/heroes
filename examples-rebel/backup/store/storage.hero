@@ -1,0 +1,171 @@
+# The storage a repository speaks to: a folder or a bucket, each object
+# put, read, listed and deleted by key through the same four calls, so
+# everything above this module is written once for both. A bucket counts
+# its requests and retries, which is why every call takes the storage
+# with `@`.
+
+use <rebel>/s3
+use <rebel>/time
+
+use store/bucket
+use store/folder
+use store/location
+use store/objects
+
+## Storages
+
+# Where a repository's objects are.
+variant Storage
+    # A folder of this machine.
+    folder
+        # The folder's path.
+        root: str
+    # A bucket of an S3 service.
+    remote
+        # The bucket, its client and its retries.
+        b: bucket.Bucket
+
+# The storage `l` names, its S3 requests signed with `credentials` and
+# tried again up to `attempts` times.
+#
+# - `l`: the location.
+# - `credentials`: the keys of an S3 location, read where the caller found
+#   them: the environment, the shared AWS files, or the demo's own.
+# - `region`: the region an S3 endpoint is signed for; Amazon's own is
+#   read from the environment where this is "".
+# - `attempts`: the most attempts of one request, at least 1.
+#
+# Fails `invalid` where the retries' policy is refused, and as
+# `s3.client_from_env` fails for Amazon's own endpoint.
+function storage_of(l: location.Location, credentials: s3.Credentials, region: str, attempts: i64) -> Storage?
+    match l
+        .folder f => return ok(.folder(root: f.root))
+        .bucket b =>
+            policy = bucket.policy_of(first: time.milliseconds(50)?, longest: time.seconds(5)?, attempts: attempts)?
+
+            client @= if b.endpoint == ""
+                s3.client_from_env()?
+            else
+                s3.minio_client(endpoint: b.endpoint, credentials: credentials)
+
+            if b.endpoint == "" || region != ""
+                client.credentials @ credentials
+
+            if region != ""
+                client.region @ region
+            return ok(.remote(b: bucket.bucket(client, name: b.name, prefix: b.prefix, policy: policy, fraction: -1.0)))
+
+# Writes `data` as the object `key`, replacing any of that key.
+#
+# - `s`: the storage.
+# - `key`: the key, as `objects.is_key` takes it.
+# - `data`: the bytes.
+#
+# Fails `invalid` for a key that is not one, and as the folder or the
+# bucket fails.
+function put(@s: Storage, key: str, data: [u8]) -> ()?
+    match s
+        .folder f => return folder.put(root: f.root, key: key, data: data)
+        .remote r =>
+            b @= r.b
+            answered = bucket.send(@b, r: .put(key: key, data: data))
+            s @ .remote(b: b)
+            _ = answered?
+            return ok()
+
+# The bytes of the object `key`.
+#
+# - `s`: the storage.
+# - `key`: the key.
+#
+# Fails `not_found` where no such object is there, and as the folder or the
+# bucket fails.
+function get(@s: Storage, key: str) -> [u8]?
+    match s
+        .folder f => return folder.get(root: f.root, key: key)
+        .remote r =>
+            b @= r.b
+            answered = bucket.send(@b, r: .get(key: key))
+            s @ .remote(b: b)
+            return ok(answered?.data)
+
+# Every object whose key begins with `prefix`, sorted by key.
+#
+# - `s`: the storage.
+# - `prefix`: a folder of the layout with its `/`, or "" for every object.
+#
+# Fails as the folder or the bucket fails.
+function list(@s: Storage, prefix: str) -> [objects.Item]?
+    match s
+        .folder f => return folder.list(root: f.root, prefix: prefix)
+        .remote r =>
+            b @= r.b
+            answered = bucket.send(@b, r: .listing(prefix: prefix))
+            s @ .remote(b: b)
+            return ok(answered?.items)
+
+# Removes the object `key`; one that is not there is no failure.
+#
+# - `s`: the storage.
+# - `key`: the key.
+#
+# Fails as the folder or the bucket fails.
+function delete(@s: Storage, key: str) -> ()?
+    match s
+        .folder f => return folder.delete(root: f.root, key: key)
+        .remote r =>
+            b @= r.b
+            answered = bucket.send(@b, r: .delete(key: key))
+            s @ .remote(b: b)
+            _ = answered?
+            return ok()
+
+# What a bucket counted: its requests, and those sent again; zero for a
+# folder.
+record Traffic
+    # The requests sent, retries included.
+    requests: i64
+    # The requests sent again after a failure that may pass.
+    retried: i64
+
+# What `s` has counted so far.
+#
+# - `s`: the storage.
+function traffic_of(s: Storage lent) -> Traffic
+    return match s
+        .folder _ => Traffic(requests: 0, retried: 0)
+        .remote r => Traffic(requests: r.b.requests, retried: r.b.retried)
+
+# A name a person reads for `s`, its credentials never among it.
+#
+# - `s`: the storage.
+function describe(s: Storage lent) -> str
+    return match s
+        .folder f => f.root
+        .remote r =>
+            if r.b.prefix == ""
+                f"s3 bucket {r.b.name}"
+            else
+                f"s3 bucket {r.b.name}, prefix {r.b.prefix}"
+
+test "storage_of: a folder is the folder, and counts nothing"
+    s = storage_of(
+        location.parse_location("repo").must(),
+        credentials: s3.Credentials(access_key_id: "", secret_access_key: "", session_token: ""),
+        region: "",
+        attempts: 3
+    ).must()
+    assert describe(s) == "repo"
+    assert traffic_of(s) == Traffic(requests: 0, retried: 0)
+
+test "storage_of: an endpoint's bucket, its client signed for the region given"
+    s = storage_of(
+        location.parse_location("s3:http://127.0.0.1:9000/repo/hosts/a").must(),
+        credentials: s3.Credentials(access_key_id: "AKID", secret_access_key: "s", session_token: ""),
+        region: "eu-west-1",
+        attempts: 3
+    ).must()
+
+    match s
+        .folder _ => assert false
+        .remote r => assert r.b.client.region == "eu-west-1" && r.b.client.max_attempts == 1 && r.b.prefix == "hosts/a"

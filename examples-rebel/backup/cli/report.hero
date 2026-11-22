@@ -1,0 +1,174 @@
+# What the commands print: the lines of a run, a restore, a prune, a
+# forget and a copy, and the table of snapshots. They are written here
+# once, so the real commands and the demo print the same words, and no
+# line holds a time of the run, a path of the machine or a byte of a key:
+# only counts, sizes and names the repository itself gives.
+#
+# A size is written in powers of 1024 with one decimal, as `du -h` and
+# restic write them; a ratio is computed in integers, so it reads the same
+# on every machine.
+
+use <rebel>/numbers
+use <rebel>/term
+use <rebel>/time
+
+use engine/checker
+use engine/exporter
+use engine/pruner
+use engine/restorer
+use engine/retention
+use engine/transfer
+use model/snapshot
+use repo/repository
+
+## Numbers
+
+# `n` bytes as a person reads them: `152.3 KiB`.
+#
+# - `n`: the bytes.
+function size(n: i64) -> str
+    return numbers.format_size(size: n, units: .binary, precision: 1)
+
+# `whole` over `part` as a ratio with two decimals, `3.42x`; `-` where
+# `part` is zero.
+#
+# - `whole`: the bytes the snapshots hold.
+# - `part`: the bytes the repository stored for them.
+function ratio(whole: i64, part: i64) -> str
+    if part <= 0
+        return "-"
+    hundredths = (whole * 100 + part / 2) / part
+    cents = hundredths % 100
+
+    pad = if cents < 10
+        "0"
+    else
+        ""
+
+    return f"{hundredths / 100}.{pad}{cents}x"
+
+# `n` and `word`, the word made plural where `n` is not one: `1 file`,
+# `3 files`.
+#
+# - `n`: the count.
+# - `word`: the word for one.
+function counted(n: i64, word: str) -> str
+    if n == 1
+        return f"{n} {word}"
+    return f"{n} {word}s"
+
+## Runs
+
+# The lines a backup run prints.
+#
+# - `s`: the snapshot it saved.
+# - `c`: what it asked of the repository.
+# - `parent`: the parent snapshot's short name, "" for none.
+function run_lines(s: snapshot.Snapshot, c: repository.Counts, parent: str) -> [str]
+    t = s.totals
+    unchanged = t.files - t.read
+
+    from_parent = if parent == ""
+        "no parent snapshot"
+    else
+        f"{unchanged} unchanged since {parent}"
+
+    return [
+        f"snapshot {snapshot.short_id(s)} saved: {counted(t.files, word: "file")}, {counted(t.dirs, word: "folder")}, {counted(t.links, word: "link")}, {size(t.bytes)}"
+        f"  files read: {t.read}, {from_parent}"
+        f"  chunks: {t.chunks}, new {t.new_chunks}: {size(t.new_bytes)} plain, {size(t.stored_bytes)} stored, {c.stored_raw} kept uncompressed"
+        f"  lookups: {c.lookups}, new by the summary alone {c.summary_new}, held already {c.index_held}, false maybes {c.false_maybes}; index read {counted(c.index_reads, word: "time")}"
+        f"  written: {counted(c.packs_written, word: "pack")}, {counted(c.trees_written, word: "tree")}"
+    ]
+
+# The table of snapshots, newest first: name, time, host, folder, files
+# and size.
+#
+# - `found`: the snapshots, newest first.
+function snapshot_table(found: [snapshot.Snapshot]) -> str
+    rows: [[str]] @= []
+
+    for s in found
+        rows @ rows.push(
+            [snapshot.short_id(s), time.format(s.taken, layout: .date_time), s.host, s.source, to_str(s.totals.files), size(s.totals.bytes)]
+        )
+
+    return term.format_table(
+        term.Table(header: ["id", "time (UTC)", "host", "folder", "files", "size"], rows: rows, align: [], border: .simple)
+    )
+
+# The lines a restore prints.
+#
+# - `done`: what it wrote.
+# - `c`: what it asked of the repository.
+function restore_lines(done: restorer.Restored, c: repository.Counts) -> [str]
+    return [
+        f"restored {counted(done.files, word: "file")}, {counted(done.dirs, word: "folder")}, {counted(done.links, word: "link")}, {size(done.bytes)}"
+        f"  chunks checked: {c.chunks_checked}, packs read: {c.packs_read}"
+    ]
+
+# The lines a forget prints.
+#
+# - `verdicts`: what the policy decided, newest first.
+# - `p`: the policy.
+function forget_lines(verdicts: [retention.Verdict], p: retention.Policy) -> [str]
+    lines: [str] @= [f"policy: {retention.describe(p)}"]
+
+    for v in verdicts
+        if v.kept
+            lines @ lines.push(
+                f"  keep   {snapshot.short_id(v.s)} {time.format(v.s.taken, layout: .date_time)} ({v.reasons.join(", ")})"
+            )
+        else
+            lines @ lines.push(f"  forget {snapshot.short_id(v.s)} {time.format(v.s.taken, layout: .date_time)}")
+
+    return lines
+
+# The lines a prune prints.
+#
+# - `p`: what it did.
+function prune_lines(p: pruner.Pruned) -> [str]
+    return [
+        f"pruned: {counted(p.snapshots, word: "snapshot")} walked, {counted(p.trees_kept, word: "tree")} kept, {counted(p.trees_removed, word: "tree")} removed"
+        f"  chunks: {p.chunks_kept} kept, {p.chunks_removed} removed, {p.chunks_missing} missing"
+        f"  packs: {p.packs_kept} kept, {p.packs_removed} removed, {p.packs_rewritten} rewritten into {p.packs_written}"
+        f"  freed: {size(p.bytes_freed)}"
+    ]
+
+# The line an export prints.
+#
+# - `e`: what it wrote.
+function export_line(e: exporter.Exported) -> str
+    return f"exported {counted(e.files, word: "file")}, {counted(e.dirs, word: "folder")}, {counted(e.links, word: "link")}, {size(e.bytes)}"
+
+# The lines a check prints: the count, then each damaged chunk with its
+# pack, by the first twelve digits of their names.
+#
+# - `c`: what the check found.
+function check_lines(c: checker.Checked) -> [str]
+    lines: [str] @= [
+        f"checked {counted(c.chunks, word: "chunk")} in {counted(c.packs, word: "pack")}: {c.damaged.len()} damaged"
+    ]
+
+    for d in c.damaged
+        lines @ lines.push(f"  chunk {d.id.slice(from: 0, to: 12)} in pack {d.pack.slice(from: 0, to: 12)}")
+
+    return lines
+
+# The line a copy prints.
+#
+# - `c`: what it did.
+function copy_line(c: transfer.Copied) -> str
+    return f"copied {counted(c.objects, word: "object")}, {size(c.bytes)}; {c.present} there already"
+
+test "ratio: two decimals, rounded, and none for nothing stored"
+    assert ratio(whole: 342, part: 100) == "3.42x"
+    assert ratio(whole: 301, part: 100) == "3.01x"
+    assert ratio(whole: 2, part: 3) == "0.67x"
+    assert ratio(whole: 5, part: 0) == "-"
+
+test "counted: one is singular, the rest plural"
+    assert counted(1, word: "file") == "1 file" && counted(0, word: "file") == "0 files"
+
+test "size: bytes, then KiB with one decimal"
+    assert size(999) == "999 B" && size(1536) == "1.5 KiB"

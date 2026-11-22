@@ -1,0 +1,92 @@
+# Check: every chunk the index lists read from its pack, opened under the
+# master key, decompressed and named again, as `restic check --read-data`
+# reads a repository; and every pack's own header read, so a pack whose
+# chunks the index places wrongly is told. Nothing is changed: a damaged
+# chunk is named, with its pack, for a person to decide.
+#
+# A pack is read once for all its chunks, so a check reads the storage
+# once over.
+
+use repo/codec
+use repo/index
+use repo/layout
+use repo/pack
+use repo/repository
+use store/storage
+use vault/master
+
+## Checking
+
+# One chunk that did not hold.
+record Damage
+    # The chunk's name.
+    id: str
+    # The pack it is in.
+    pack: str
+    # What was wrong.
+    why: str
+
+# What a check found.
+record Checked
+    # The packs read.
+    packs: i64
+    # The chunks opened and named again.
+    chunks: i64
+    # The chunks that did not hold, in the index's order.
+    damaged: [Damage]
+
+# Every chunk of `r` read and checked.
+#
+# - `r`: the repository; its index is read.
+#
+# Fails as the index and the storage fail; a chunk that does not hold is
+# no failure of the check but a finding in its answer.
+function check(@r: repository.Repository) -> Checked?
+    repository.read_index(@r)?
+    listing = index.listing_of(r.chunk_index)
+    done @= Checked(packs: 0, chunks: 0, damaged: [])
+
+    for k in range(from: 0, to: listing.packs.len())
+        name = listing.packs[k]
+        done.packs @ done.packs + 1
+
+        match storage.get(@r.store, key: layout.pack(name))
+            .err e =>
+                for entry in listing.entries[k]
+                    done.damaged @ done.damaged.push(Damage(id: entry.id, pack: name, why: e.msg))
+            .ok data =>
+                header_ok = !pack.entries_of(r.key, data: data).is_err()
+
+                for entry in listing.entries[k]
+                    done.chunks @ done.chunks + 1
+
+                    match chunk_holds(r.key, data: data, entry: entry)
+                        .ok _ =>
+                            if !header_ok
+                                done.damaged @ done.damaged.push(
+                                    Damage(id: entry.id, pack: name, why: "the pack's header does not open")
+                                )
+                        .err e => done.damaged @ done.damaged.push(Damage(id: entry.id, pack: name, why: e.msg))
+
+    return ok(done)
+
+# Nothing, where `entry`'s chunk in the pack `data` opens and gives its
+# name.
+#
+# - `key`: the master key.
+# - `data`: the pack.
+# - `entry`: the chunk's entry, as the index gives it.
+#
+# Fails `invalid` where it lies outside the pack, does not open or does
+# not give its name.
+function chunk_holds(key: master.Master lent, data: [u8] lent, entry: pack.Entry) -> ()?
+    stored = pack.stored_of(data, e: entry)?
+    plain = codec.decode(key, stored: stored, bound: "data " + entry.id, limit: entry.raw)?
+
+    if plain.len() != entry.raw || master.name_of(key, data: plain) != entry.id
+        return fail(code: codec.INVALID, msg: "its bytes do not give its name")
+    return ok()
+
+test "Checked: a check that found nothing wrong holds no damage"
+    c = Checked(packs: 0, chunks: 0, damaged: [])
+    assert c.damaged.len() == 0

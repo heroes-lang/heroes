@@ -1,0 +1,240 @@
+# The summary: a Bloom filter of every chunk the index holds, kept beside
+# the index as `summary`, so a run asks it first and reads the index only
+# where the answer may be yes. It is the "summary vector" of Zhu, Li and
+# Patterson ("Avoiding the Disk Bottleneck in the Data Domain
+# Deduplication File System", FAST 2008): a chunk the filter has never
+# seen is new for certain, so a run that writes new data, or a first run
+# into a repository on a bucket, never downloads the index at all.
+#
+# A filter answers "maybe" for a chunk it holds and, rarely, for one it
+# does not; it never answers "no" for a chunk it holds, which is the one
+# answer that would lose data. Its bits are a `containers/bits` set; a
+# chunk's seven places are drawn from two XXH64 hashes of its name, the
+# double hashing of Kirsch and Mitzenmacher ("Less Hashing, Same
+# Performance", 2006). Ten bits per chunk make about one false "maybe" in
+# a hundred.
+#
+# The filter names the index files it was built from; a repository whose
+# index files are not those builds it again from the index.
+
+use <rebel>/bytes
+use <rebel>/containers/bits
+use <rebel>/hash
+use <rebel>/json
+
+use repo/codec
+use vault/master
+
+## Codes
+
+# The code of a summary that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# What the summary is bound to.
+constant BOUND: str
+    "summary"
+
+# The places each chunk sets.
+constant HASHES: i64
+    7
+
+# The bits kept per chunk the filter is sized for.
+constant BITS_PER_CHUNK: i64
+    10
+
+# The fewest bits of a filter.
+constant LEAST_BITS: i64
+    1024
+
+# The seed of the second hash, the golden ratio's bits as XXH64's own
+# constants are chosen.
+constant SECOND_SEED: u64
+    0x9e37_79b9_7f4a_7c15
+
+# The most bytes a summary may decompress to: 1 GiB.
+constant LIMIT: i64
+    1_073_741_824
+
+## The filter
+
+# A Bloom filter of chunk names.
+record Summary
+    # The bits.
+    set: bits.Bits
+    # How many chunks were added.
+    count: i64
+    # How many chunks it was sized for: past them, its false "maybe"s grow
+    # and it is built again larger.
+    capacity: i64
+    # The index files it was built from and has been kept in step with,
+    # sorted.
+    covers: [str]
+
+# An empty filter sized for `capacity` chunks.
+#
+# - `capacity`: the chunks expected; below 1 counts as 1.
+function sized(capacity: i64) -> Summary
+    wanted = if capacity < 1
+        1
+    else
+        capacity
+
+    size = if wanted * BITS_PER_CHUNK < LEAST_BITS
+        LEAST_BITS
+    else
+        wanted * BITS_PER_CHUNK
+
+    return Summary(set: bits.new(size), count: 0, capacity: wanted, covers: [])
+
+# The places `id` sets in a filter of `size` bits.
+#
+# - `id`: the chunk's name.
+# - `size`: the filter's bits, at least 1.
+function places_of(id: str, size: i64) -> [i64]
+    m = to_u64(size).must()
+    first = hash.xxh64_text(id, seed: 0) % m
+    step = hash.xxh64_text(id, seed: SECOND_SEED) % m
+    out: [i64] @= []
+
+    for i in range(from: 0, to: HASHES)
+        out @ out.push(to_i64((first + to_u64(i).must() * step) % m).must())
+
+    return out
+
+# Adds `id` to `s`.
+#
+# - `s`: the filter; up to `HASHES` bits are set and its count grows.
+# - `id`: the chunk's name.
+function add(@s: Summary, id: str)
+    for at in places_of(id, size: bits.size(s.set))
+        bits.set_bit(@s.set, at)
+
+    s.count @ s.count + 1
+
+# Whether `s` may hold `id`: false is certain, true is not.
+#
+# - `s`: the filter.
+# - `id`: the chunk's name.
+function may_hold(s: Summary lent, id: str) -> bool
+    for at in places_of(id, size: bits.size(s.set))
+        if !bits.is_set(s.set, at)
+            return false
+
+    return true
+
+# Whether `s` holds more chunks than it was sized for.
+#
+# - `s`: the filter.
+function is_overfull(s: Summary lent) -> bool
+    return s.count > s.capacity
+
+## On the storage
+
+# `s` as the sealed object `summary`.
+#
+# - `m`: the master key.
+# - `s`: the filter.
+#
+# Fails as the JSON and the sealing fail.
+function encode(m: master.Master lent, s: Summary) -> [u8]?
+    covered: [json.Value] @= []
+
+    for c in s.covers
+        covered @ covered.push(.text(v: c))
+
+    members: {str: json.Value} = {
+        "size": json.from_int(bits.size(s.set))?
+        "count": json.from_int(s.count)?
+        "capacity": json.from_int(s.capacity)?
+        "covers": .list(items: covered)
+        "bits": .text(v: bytes.format_base64(bits.to_bytes(s.set)))
+    }
+    text = json.format(.object(members: members))?
+    return ok(codec.encode(m, plain: bytes.from_text(text), bound: BOUND, level: 3, squeeze: true)?.stored)
+
+# The filter the object `summary` holds.
+#
+# - `m`: the master key.
+# - `stored`: its bytes.
+#
+# Fails `invalid` where it does not open or is not a summary.
+function decode(m: master.Master lent, stored: [u8]) -> Summary?
+    plain = codec.decode(m, stored: stored, bound: BOUND, limit: LIMIT)?
+
+    v = match json.parse(bytes.to_text_lossy(plain))
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "a summary is JSON: " + e.msg)
+
+    size = number_of(v, name: "size")?
+
+    held = match bytes.parse_base64(json.text_of(json.member(v, "bits").default(.null_value)).default(""))
+        .ok b  => b
+        .err _ => return fail(code: INVALID, msg: "a summary's bits are base 64")
+
+    if size < 1 || held.len() != (size + 7) / 8
+        return fail(code: INVALID, msg: f"a summary of {size} bits holds {held.len()} bytes")
+    covers: [str] @= []
+
+    for item in json.items_of(json.member(v, "covers").default(.null_value)).default([])
+        covers @ covers.push(json.text_of(item).default(""))
+
+    return ok(
+        Summary(set: bits.with_size(bits.from_bytes(held), size), count: number_of(v, name: "count")?, capacity: number_of(v, name: "capacity")?, covers: covers)
+    )
+
+# The integer member `name` of `v`.
+#
+# - `v`: the summary's object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not an integer.
+function number_of(v: json.Value, name: str) -> i64?
+    return match json.int_of(json.member(v, name).default(.null_value))
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"a summary holds its {name} as an integer")
+
+test "sized: never fewer than the least bits, ten per chunk past them"
+    assert bits.size(sized(0).set) == LEAST_BITS
+    assert bits.size(sized(1000).set) == 10_000
+    assert sized(-5).capacity == 1
+
+test "may_hold: every chunk added is held; most others are not"
+    s @= sized(500)
+
+    for i in range(from: 0, to: 500)
+        add(@s, id: f"chunk-{i}")
+
+    for i in range(from: 0, to: 500)
+        assert may_hold(s, id: f"chunk-{i}")
+
+    wrong @= 0
+
+    for i in range(from: 0, to: 1000)
+        if may_hold(s, id: f"other-{i}")
+            wrong @ wrong + 1
+
+    assert wrong < 50
+    assert !is_overfull(s)
+    add(@s, id: "one more")
+    assert is_overfull(s)
+
+test "places_of: seven places inside the filter, the same every time"
+    p = places_of("abc", size: 1024)
+    assert p.len() == HASHES && p == places_of("abc", size: 1024)
+
+    for at in p
+        assert at >= 0 && at < 1024
+
+test "encode: a filter read back holds what it held"
+    if !master.is_ready()
+        skip_test(reason: "this machine's cryptography has no AES-256-GCM")
+    m @= master.from_material(bytes.repeated([8], n: 64)).must()
+    s @= sized(10)
+    add(@s, id: "a")
+    s.covers @ ["one", "two"]
+    back = decode(m, stored: encode(m, s: s).must()).must()
+    assert back == s && may_hold(back, id: "a")
+    master.close(@m).must()

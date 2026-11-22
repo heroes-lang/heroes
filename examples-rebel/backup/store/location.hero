@@ -1,0 +1,133 @@
+# Where a repository lives, as a person writes it on the command line:
+# a folder of this machine, or a bucket of an S3 service with a prefix
+# inside it. The S3 forms are restic's, so a person who knows one tool
+# writes the other's locations without looking:
+#
+# - `s3:http://127.0.0.1:9000/bucket/some/prefix`, any server of the S3
+#   API at the endpoint written before the bucket;
+# - `s3://bucket/some/prefix`, Amazon S3, its region and keys read from the
+#   environment and the shared AWS files;
+# - anything else, a folder, cleaned as `path.clean` cleans it.
+
+use <rebel>/path
+use <rebel>/s3
+use <rebel>/strings
+
+## Codes
+
+# The code of a location that names no folder and no bucket.
+constant INVALID: str
+    "invalid"
+
+## Locations
+
+# A repository's place.
+variant Location
+    # A folder of this machine.
+    folder
+        # The folder's path, cleaned.
+        root: str
+    # A bucket of an S3 service.
+    bucket
+        # The service's endpoint, `http://127.0.0.1:9000`; "" for Amazon's
+        # own, reached by the region the environment names.
+        endpoint: str
+        # The bucket's name, as `s3.is_bucket_name` accepts it.
+        name: str
+        # The prefix every key of the repository stands under, without a `/`
+        # at either end; "" for the bucket's root.
+        prefix: str
+
+# The location `text` writes.
+#
+# - `text`: `s3:<endpoint>/<bucket>[/<prefix>]`, `s3://<bucket>[/<prefix>]`
+#   or a folder's path.
+#
+# Fails `invalid` where `text` is empty, where an S3 form names no bucket
+# or a name S3 refuses, and where an endpoint is not `http://` or
+# `https://`.
+function parse_location(text: str) -> Location?
+    if strings.trim(text) == ""
+        return fail(code: INVALID, msg: "a repository's location is a folder or an S3 bucket, and none was given")
+
+    if strings.has_prefix(s: text, prefix: "s3://")
+        return bucket_of(endpoint: "", rest: text.slice(from: 5, to: text.len()), written: text)
+
+    if strings.has_prefix(s: text, prefix: "s3:")
+        address = text.slice(from: 3, to: text.len())
+
+        scheme_end = match strings.index_of(s: address, substr: "://")
+            .ok at => at
+            .err _ => return fail(code: INVALID, msg: f"\"{text}\" names no endpoint: write s3:http://host:port/bucket")
+
+        scheme = address.slice(from: 0, to: scheme_end)
+
+        if scheme != "http" && scheme != "https"
+            return fail(
+                code: INVALID,
+                msg: f"\"{text}\" names an endpoint of {scheme}, and S3 is spoken over http or https"
+            )
+        after = address.slice(from: scheme_end + 3, to: address.len())
+
+        match strings.split_once(s: after, sep: "/")
+            .err _ => return fail(code: INVALID, msg: f"\"{text}\" names an endpoint and no bucket")
+            .ok h =>
+                if h.before == ""
+                    return fail(code: INVALID, msg: f"\"{text}\" names no host")
+                return bucket_of(endpoint: f"{scheme}://{h.before}", rest: h.after, written: text)
+    return ok(.folder(root: path.clean(text)))
+
+# The bucket and prefix `rest` names behind `endpoint`.
+#
+# - `endpoint`: the endpoint, "" for Amazon's.
+# - `rest`: `<bucket>[/<prefix>]`.
+# - `written`: the whole location, for the message.
+#
+# Fails `invalid` where the bucket is missing or not a name S3 takes.
+function bucket_of(endpoint: str, rest: str, written: str) -> Location?
+    parts = strings.split_n(s: strings.trim_suffix_all(s: rest, suffix: "/"), sep: "/", n: 2)
+    name = parts[0]
+
+    if !s3.is_bucket_name(name)
+        return fail(code: INVALID, msg: f"\"{written}\" names \"{name}\", which is not a bucket's name S3 takes")
+
+    prefix = if parts.len() == 2
+        strings.trim_prefix_all(s: parts[1], prefix: "/")
+    else
+        ""
+    return ok(.bucket(endpoint: endpoint, name: name, prefix: prefix))
+
+# `l` written as `parse_location` reads it back.
+#
+# - `l`: the location.
+function format_location(l: Location) -> str
+    return match l
+        .folder f => f.root
+        .bucket b =>
+            tail = if b.prefix == ""
+                ""
+            else
+                "/" + b.prefix
+
+            if b.endpoint == ""
+                f"s3://{b.name}{tail}"
+            else
+                f"s3:{b.endpoint}/{b.name}{tail}"
+
+test "parse_location: an empty text, a bucket refused and an endpoint of another scheme are refused"
+    assert parse_location("").is_err()
+    assert parse_location("  ").is_err()
+    assert parse_location("s3://No_Such").is_err()
+    assert parse_location("s3:ftp://host/bucket").is_err()
+    assert parse_location("s3:http://127.0.0.1:9000").is_err()
+    assert parse_location("s3:http:///bucket").is_err()
+
+test "parse_location: a folder is cleaned, and each S3 form read with and without a prefix"
+    assert parse_location("backups/./repo/").must() == .folder(root: "backups/repo")
+    assert parse_location("s3://my-backups").must() == .bucket(endpoint: "", name: "my-backups", prefix: "")
+    assert parse_location("s3://my-backups/hosts/a/").must() == .bucket(endpoint: "", name: "my-backups", prefix: "hosts/a")
+    assert parse_location("s3:http://127.0.0.1:9000/repo/x").must() == .bucket(endpoint: "http://127.0.0.1:9000", name: "repo", prefix: "x")
+
+test "format_location: each form written back as it is read"
+    for text in ["/var/backups", "s3://my-backups", "s3://my-backups/hosts/a", "s3:https://minio.example:9000/repo/x/y"]
+        assert format_location(parse_location(text).must()) == text

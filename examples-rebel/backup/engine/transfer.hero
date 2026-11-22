@@ -1,0 +1,137 @@
+# A repository copied to another storage as it is: every object the
+# destination lacks is read from the source and written there, byte for
+# byte, still sealed. A copy needs no password, since it opens nothing,
+# so a machine that only moves backups offsite never holds the key; and
+# the destination is the same repository, opened with the same
+# passwords. A copy run again sends only what the source gained since.
+#
+# The objects go in the order that keeps the destination whole if a copy
+# stops: packs, trees, index files and the summary first, the key files
+# and settings next, the snapshots last, so the destination never holds a
+# snapshot naming what it does not hold. A destination holding another
+# repository's settings is refused before anything is written.
+
+use <rebel>/strings
+
+use engine/meter
+use repo/layout
+use store/objects
+use store/storage
+
+## Codes
+
+# The code of a destination that holds another repository.
+constant EXISTS: str
+    "exists"
+
+# The code of a source that holds no repository.
+constant NOT_FOUND: str
+    "not_found"
+
+## Copying
+
+# What a copy did.
+record Copied
+    # The objects written to the destination.
+    objects: i64
+    # Their bytes.
+    bytes: i64
+    # The objects the destination held already.
+    present: i64
+
+# Copies every object of `from` that `to` lacks.
+#
+# - `from`: the source storage.
+# - `to`: the destination; it holds nothing, or the same repository.
+# - `shown`: whether a progress bar is drawn.
+#
+# Fails `not_found` where the source holds no repository, `exists` where
+# the destination holds another, and as the storages fail.
+function copy_all(@from: storage.Storage, @to: storage.Storage, shown: bool) -> Copied?
+    config = match storage.get(@from, key: layout.CONFIG)
+        .ok c => c
+        .err e =>
+            if e.code == objects.NOT_FOUND
+                return fail(code: NOT_FOUND, msg: f"{storage.describe(from)} holds no repository")
+            return fail(code: e.code, msg: e.msg)
+
+    match storage.get(@to, key: layout.CONFIG)
+        .ok there =>
+            if there != config
+                return fail(code: EXISTS, msg: f"{storage.describe(to)} holds another repository")
+        .err e =>
+            if e.code != objects.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+    held: {str: i64} @= {}
+
+    for item in storage.list(@to, prefix: "")?
+        held[item.key] @ item.size
+
+    wanted: [objects.Item] @= []
+    owed @= 0
+    done @= Copied(objects: 0, bytes: 0, present: 0)
+
+    for item in in_order(storage.list(@from, prefix: "")?)
+        if held[item.key].default(-1) == item.size
+            done.present @ done.present + 1
+        else
+            wanted @ wanted.push(item)
+            owed @ owed + item.size
+
+    m @= meter.meter("copy", total: owed, shown: shown)
+
+    for item in wanted
+        data = storage.get(@from, key: item.key)?
+        storage.put(@to, key: item.key, data: data)?
+        done.objects @ done.objects + 1
+        done.bytes @ done.bytes + data.len()
+        meter.tick(@m, n: data.len())
+
+    meter.done(@m)
+    return ok(done)
+
+# `items` in the order a copy writes them: packs, trees, index files, the
+# summary, key files, the settings, then snapshots, each group by key.
+#
+# - `items`: the source's objects, sorted by key.
+function in_order(items: [objects.Item]) -> [objects.Item]
+    groups = [layout.DATA, layout.TREES, layout.INDEX, layout.SUMMARY, layout.KEYS, layout.CONFIG, layout.SNAPSHOTS]
+    out: [objects.Item] @= []
+
+    for g in groups
+        for item in items
+            if group_of(item.key) == g
+                out @ out.push(item)
+
+    return out
+
+# The group of `key`: its first folder with its `/`, or the key itself
+# for an object at the root.
+#
+# - `key`: the key.
+function group_of(key: str) -> str
+    return match strings.split_once(s: key, sep: "/")
+        .ok h  => h.before + "/"
+        .err _ => key
+
+test "in_order: packs first, snapshots last, an object of no group left out"
+    items = [
+        objects.Item(key: "config", size: 1)
+        objects.Item(key: "data/ab/ab1", size: 1)
+        objects.Item(key: "index/i", size: 1)
+        objects.Item(key: "keys/k", size: 1)
+        objects.Item(key: "notes.txt", size: 1)
+        objects.Item(key: "snapshots/s", size: 1)
+        objects.Item(key: "summary", size: 1)
+        objects.Item(key: "trees/t", size: 1)
+    ]
+    ordered: [str] @= []
+
+    for item in in_order(items)
+        ordered @ ordered.push(item.key)
+
+    assert ordered == ["data/ab/ab1", "trees/t", "index/i", "summary", "keys/k", "config", "snapshots/s"]
+
+test "group_of: a folder's key, and a key at the root"
+    assert group_of("data/ab/x") == "data/" && group_of("config") == "config"

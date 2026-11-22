@@ -1,0 +1,169 @@
+# The demo's proofs that the repository holds what it says: the account
+# of what the snapshots hold against what the packs hold, the newest
+# snapshot exported as a tar archive and read back by `archive`, its
+# extraction compared with the folder, and one byte of a pack changed on
+# the storage for the check to find.
+
+use <rebel>/archive
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+
+use cli/report
+use demo/compare
+use engine/checker
+use engine/exporter
+use model/snapshot
+use repo/layout
+use repo/records
+use repo/repository
+use store/storage
+
+# The bytes the snapshots hold, the bytes the packs hold, and the objects
+# of the repository by kind.
+#
+# - `r`: the repository.
+# - `found`: its snapshots.
+function told(@r: repository.Repository, found: [snapshot.Snapshot])
+    held @= 0
+
+    for s in found
+        held @ held + s.totals.bytes
+
+    kinds = [layout.DATA, layout.TREES, layout.INDEX, layout.SNAPSHOTS, layout.KEYS]
+    words = ["pack", "tree", "index file", "snapshot", "key file"]
+    counts: [str] @= []
+    packed @= 0
+
+    for k in range(from: 0, to: kinds.len())
+        items = storage.list(@r.store, prefix: kinds[k]).default([])
+        counts @ counts.push(report.counted(items.len(), word: words[k]))
+
+        if k == 0
+            for item in items
+                packed @ packed + item.size
+
+    print(
+        f"the snapshots hold {report.size(held)}, the packs {report.size(packed)}: deduplicated and compressed {report.ratio(whole: held, part: packed)}"
+    )
+    print("the repository holds " + counts.join(", "))
+
+# The snapshot `id` written as a tar archive, which `archive` then lists
+# and extracts, and the extraction compared with the folder.
+#
+# - `r`: the repository.
+# - `id`: the snapshot's name.
+# - `root`: the demo's folder, where the archive and its extraction go.
+# - `source`: the folder backed up.
+function exported(@r: repository.Repository, id: str, root: str, source: str) -> i64
+    file = path.join_all([root, "latest.tar"])
+
+    match export_to(@r, id: id, file: file)
+        .err e =>
+            print("demo: export: " + e.msg)
+            return 1
+        .ok done => print(report.export_line(done))
+
+    data = fs.read_bytes(file).default([])
+    print(f"latest.tar: {data.len()} bytes, sha256 {bytes.format_hex(crypto.sha256(data)).slice(from: 0, to: 16)}")
+
+    match read_back(file: file, into: path.join_all([root, "from-tar"]), source: source)
+        .err e =>
+            print("demo: reading the archive back: " + e.msg)
+            return 1
+        .ok found => print(
+            f"read back by archive: {found} entries; extracted and compared with the folder: 0 differences of content"
+        )
+
+    return 0
+
+# Writes the snapshot `id` as a plain tar archive at `file`.
+#
+# - `r`: the repository.
+# - `id`: the snapshot's name.
+# - `file`: the archive's path.
+#
+# Fails as the snapshot, the file and the export fail.
+function export_to(@r: repository.Repository, id: str, file: str) -> exporter.Exported?
+    s = records.load_snapshot(@r, id: id)?
+    stream @= fs.create(file)?
+    done = exporter.export_tar(@r, s: s, to: stream, compression: .none, shown: false)
+    closed = io.close(@stream)
+    closed?
+    return done
+
+# The entries of the archive `file` counted, the archive extracted into
+# `into`, and the extraction compared with the folder by content.
+#
+# - `file`: the archive.
+# - `into`: the folder extracted into.
+# - `source`: the folder backed up.
+#
+# Fails `invalid` where the extraction differs from the folder, and as
+# `archive` fails.
+function read_back(file: str, into: str, source: str) -> i64?
+    listed @= fs.open(file)?
+    entries = archive.list_tar(listed, compression: .none, limit: 100_000_000)
+    _ = io.close(@listed).is_err()
+    extracting @= fs.open(file)?
+    extracted = archive.extract_tar(extracting, compression: .none, to: into, limit: 100_000_000)
+    _ = io.close(@extracting).is_err()
+    _ = extracted?
+    found = compare.differences(expected: source, actual: into, facts: false)?
+
+    if found.len() > 0
+        return fail(code: "invalid", msg: "the archive differs from the folder: " + found.join("; "))
+    return ok(entries?.len())
+
+# One byte of the first pack changed on the storage, and the check run
+# again: it names the chunk the change broke.
+#
+# - `store`: the local repository's storage.
+# - `password`: the repository's password.
+function tampered(store: storage.Storage, password: str) -> i64
+    print("== one byte of a pack changed on the storage, then the check run again")
+    s @= store
+
+    match storage.list(@s, prefix: layout.DATA)
+        .err e =>
+            print("demo: the packs: " + e.msg)
+            return 1
+        .ok items =>
+            if items.len() == 0
+                print("demo: no pack to change")
+                return 1
+            key = items[0].key
+            data @= storage.get(@s, key: key).default([])
+
+            if data.len() < 40
+                print("demo: the pack is too short to change")
+                return 1
+            data[30] @ 255 - data[30]
+
+            if storage.put(@s, key: key, data: data).is_err()
+                print("demo: the pack could not be written")
+                return 1
+
+    r @= match repository.open(s, password: password)
+        .ok opened => opened
+        .err e =>
+            print("demo: opening: " + e.msg)
+            return 1
+
+    checked = checker.check(@r)
+    repository.close(@r)
+
+    return match checked
+        .err e =>
+            print("demo: check: " + e.msg)
+            1
+        .ok c =>
+            for line in report.check_lines(c)
+                print(line)
+
+            if c.damaged.len() == 1
+                0
+            else
+                1

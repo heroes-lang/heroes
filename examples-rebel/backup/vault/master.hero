@@ -1,0 +1,127 @@
+# A repository's master key: 64 bytes drawn once when the repository is
+# made, kept only sealed under each password (`vault/keyfile`). Its first
+# half seals every object the repository writes with AES-256-GCM
+# (`crypto/seal`), so a storage that is read or changed by somebody else
+# gives away nothing and accepts no change unseen; its second half keys
+# the HMAC-SHA256 that names every chunk and tree.
+#
+# A chunk is named by a keyed hash rather than a plain one so that a
+# reader of the storage, who sees the names, cannot test whether the
+# repository holds a file they can guess (the attack borg's documentation
+# calls fingerprinting). Each sealed object is bound to its name and kind
+# by the associated data, so an object copied under another name, or a
+# tree put where a chunk was, does not open.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/crypto/seal
+
+## Codes
+
+# The code of key material of the wrong length, and of sealed bytes that
+# do not open: changed, cut, sealed under another key or for another name.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The bytes of a master key: 32 to seal, 32 to name.
+constant MASTER_BYTES: i64
+    64
+
+## The key
+
+# Whether this machine's cryptography seals with AES-256-GCM, which every
+# repository needs: false on a Linux machine with no `libcrypto.so.3`.
+function is_ready() -> bool
+    return seal.is_available(.aes_256_gcm)
+
+# A repository's open master key. It holds a handle of the system's
+# cryptography: `close` closes it, overwriting its secret.
+record Master
+    # The key every object is sealed with.
+    sealing: seal.Key
+    # The key of the HMAC that names chunks and trees, 32 bytes.
+    naming: [u8]
+
+# The master key whose 64 bytes are `material`.
+#
+# - `material`: the bytes, as drawn when the repository was made or opened
+#   from a key file.
+#
+# The key is the caller's to close. Fails `invalid` where `material` is not
+# `MASTER_BYTES` long, and as `seal.from_secret` fails.
+function from_material(material: [u8]) -> Master?
+    if material.len() != MASTER_BYTES
+        return fail(code: INVALID, msg: f"a master key is {MASTER_BYTES} bytes, and these are {material.len()}")
+    sealing = seal.from_secret(.aes_256_gcm, secret: material.slice(from: 0, to: 32))?
+    return ok(Master(sealing: sealing, naming: material.slice(from: 32, to: MASTER_BYTES)))
+
+# Closes `m`, overwriting its sealing secret in the system's memory.
+#
+# - `m`: the key, closed.
+#
+# Fails as `seal.close` fails.
+function close(@m: Master) -> ()?
+    return seal.close(@m.sealing)
+
+# The name of `data`: its HMAC-SHA256 under the naming key, in lower-case
+# hexadecimal.
+#
+# - `m`: the key.
+# - `data`: the bytes named.
+function name_of(m: Master lent, data: [u8]) -> str
+    return bytes.format_hex(crypto.hmac(.sha256, key: m.naming, data: data))
+
+# `data` sealed under `m`, bound to `bound`: a nonce, the ciphertext and a
+# tag, `seal.OVERHEAD` bytes more than `data`.
+#
+# - `m`: the key.
+# - `data`: the bytes to seal.
+# - `bound`: what the sealed bytes belong to, `data <name>` or `config`;
+#   `open` must be given the same.
+#
+# Fails as `seal.seal` fails.
+function seal_bytes(m: Master lent, data: [u8], bound: str) -> [u8]?
+    return seal.seal(key: m.sealing, text: data, associated: bytes.from_text(bound))
+
+# The bytes `sealed` holds, opened under `m` and checked to belong to
+# `bound`.
+#
+# - `m`: the key.
+# - `sealed`: bytes as `seal_bytes` writes them.
+# - `bound`: what they must belong to.
+#
+# Fails `invalid` where they were changed, cut, sealed under another key or
+# for another `bound`.
+function open_bytes(m: Master lent, sealed: [u8], bound: str) -> [u8]?
+    return match seal.open(key: m.sealing, sealed: sealed, associated: bytes.from_text(bound))
+        .ok data => ok(data)
+        .err e   => fail(code: INVALID, msg: f"the object {bound} does not open: {e.msg}")
+
+test "from_material: 63 bytes are refused"
+    assert from_material(bytes.repeated([7], n: 63)).is_err()
+
+test "seal_bytes: opened for its own name, refused for another, a changed byte refused"
+    if !is_ready()
+        skip_test(reason: "this machine's cryptography has no AES-256-GCM")
+    m @= from_material(bytes.repeated([7], n: 64)).must()
+    sealed = seal_bytes(m, data: [1, 2, 3], bound: "data ab").must()
+    assert sealed.len() == 3 + seal.OVERHEAD
+    assert open_bytes(m, sealed: sealed, bound: "data ab").must() == [1, 2, 3]
+    assert open_bytes(m, sealed: sealed, bound: "tree ab").is_err()
+    changed @= sealed
+    changed[13] @ 255 - changed[13]
+    assert open_bytes(m, sealed: changed, bound: "data ab").is_err()
+    close(@m).must()
+
+test "name_of: keyed, so another master names the same bytes otherwise"
+    if !is_ready()
+        skip_test(reason: "this machine's cryptography has no AES-256-GCM")
+    one @= from_material(bytes.repeated([1], n: 64)).must()
+    two @= from_material(bytes.repeated([2], n: 64)).must()
+    assert name_of(one, data: [5]).len() == 64
+    assert name_of(one, data: [5]) == name_of(one, data: [5])
+    assert name_of(one, data: [5]) != name_of(two, data: [5])
+    close(@one).must()
+    close(@two).must()

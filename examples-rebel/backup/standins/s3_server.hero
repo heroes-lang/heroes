@@ -1,0 +1,156 @@
+# The demo's S3 service: one bucket served over HTTP/1.1 on 127.0.0.1, at
+# a port the system chooses, addressed by path (`/<bucket>/<key>`) as
+# MinIO is. Every request's Signature Version 4 is checked
+# (`standins/sigv4`) before anything else is read of it; the objects and
+# the listings are `standins/s3_bucket`'s.
+#
+# It runs on a thread of its own, tells the demo its port once it
+# listens (`standins/ready`), and serves one connection after another,
+# since the S3 client closes its connection after each request, until
+# the program is asked to stop (`os.ask_stop`), which ends the wait for
+# the next connection. The thread then answers its account.
+
+use <rebel>/http
+use <rebel>/io
+use <rebel>/net
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+
+use standins/ready
+use standins/s3_bucket
+use standins/sigv4
+
+## Bounds
+
+# How long, in milliseconds, one connection may take to be read and
+# answered.
+constant CONNECTION_MS: i64
+    30_000
+
+# The most bytes one request's body may hold: 256 MiB.
+constant BODY_BYTES: i64
+    268_435_456
+
+## Serving
+
+# The service's thread: it listens, tells the demo its port, and serves
+# until stopped. Answers its account as one line.
+#
+# - `arg`: the setup, as `s3_bucket.format_setup` writes it.
+function run(arg: str) -> str
+    return match served(arg)
+        .ok b  => s3_bucket.account(b)
+        .err e => "s3: " + e.msg
+
+# Every connection served until the program is asked to stop.
+#
+# - `arg`: the setup.
+#
+# Fails as the setup, `net.listen` and `ready.tell` fail.
+function served(arg: str) -> s3_bucket.Bucket?
+    setup = s3_bucket.parse_setup(arg)?
+    listener @= net.listen(host: "127.0.0.1", port: 0)?
+
+    match ready.tell(control_port: setup.control_port, service: "s3", port: listener.address.port)
+        .err e =>
+            _ = net.close_listener(@listener).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok _ => _ = 0
+
+    b @= s3_bucket.bucket_of(setup)
+
+    while true
+        match net.accept(listener, deadline_ms: CONNECTION_MS)
+            .err _ => break
+            .ok made =>
+                conn @= made
+                conversation(@b, conn: conn)
+                _ = io.close(@conn.stream).is_err()
+
+    _ = net.close_listener(@listener).is_err()
+    return ok(b)
+
+# The requests of one connection answered until the client closes it.
+#
+# - `b`: the bucket.
+# - `conn`: the connection; its owner closes it.
+function conversation(@b: s3_bucket.Bucket, conn: net.Conn)
+    reader @= io.reader(conn.stream)
+    limits = http.Limits(head_bytes: 65_536, field_count: 200, body_bytes: BODY_BYTES)
+
+    while true
+        match http.next_request(@reader, limits: limits)
+            .err _ => break
+            .ok r =>
+                answer = handled(@b, r: r)
+
+                if http.write_answer(conn.stream, r: r, response: answer).is_err() || r.closing || answer.closing
+                    break
+
+# The answer to `r`: its signature checked, then the operation its method
+# and path name.
+#
+# - `b`: the bucket.
+# - `r`: the request.
+function handled(@b: s3_bucket.Bucket, r: http.Request) -> http.Response
+    now = time.now().default(time.epoch())
+
+    match sigv4.check(r, key_id: b.setup.key_id, secret: b.setup.secret, region: b.setup.region, now: now)
+        .err e =>
+            b.refused @ b.refused + 1
+
+            status = if e.code == sigv4.INVALID
+                400
+            else
+                403
+
+            return match strings.split_once(s: e.msg, sep: ": ")
+                .ok h  => s3_bucket.error_answer(status, code: h.before, message: h.after, resource: r.url.path)
+                .err _ => s3_bucket.error_answer(status, code: "AccessDenied", message: e.msg, resource: r.url.path)
+        .ok _ => _ = 0
+
+    parts = strings.split_n(s: strings.trim_prefix(s: r.url.path, prefix: "/"), sep: "/", n: 2)
+
+    if parts[0] != b.setup.bucket
+        return s3_bucket.error_answer(
+            404,
+            code: "NoSuchBucket",
+            message: "The specified bucket does not exist",
+            resource: r.url.path
+        )
+
+    if parts.len() == 1 || parts[1] == ""
+        if r.method != "GET"
+            return s3_bucket.error_answer(
+                405,
+                code: "MethodNotAllowed",
+                message: "The specified method is not allowed against this resource.",
+                resource: r.url.path
+            )
+
+        return match url.parse_query(r.url.query)
+            .ok pairs => s3_bucket.listing(@b, pairs: pairs)
+            .err _ => s3_bucket.error_answer(
+                400,
+                code: "InvalidArgument",
+                message: "The query is not one.",
+                resource: r.url.path
+            )
+
+    return match url.unescape(parts[1])
+        .ok key => s3_bucket.object_request(@b, r: r, key: key, now: now)
+        .err _ => s3_bucket.error_answer(
+            400,
+            code: "InvalidURI",
+            message: "Couldn't parse the specified URI.",
+            resource: r.url.path
+        )
+
+test "handled: an unsigned request is refused 403"
+    b @= s3_bucket.bucket_of(
+        s3_bucket.Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
+    )
+    r = http.request(method: "GET", target: "/repo/config").must()
+    assert handled(@b, r: r).status == 403
+    assert b.refused == 1

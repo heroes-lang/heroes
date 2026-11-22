@@ -1,0 +1,374 @@
+# The S3 stand-in's one bucket: objects held in memory, put, read, asked
+# about, deleted and listed by ListObjectsV2, each answered as S3's API
+# reference gives it (the ETag the MD5 of the body in quotes, errors as an
+# `<Error>` document with S3's code, a listing as a `ListBucketResult`
+# with its continuation token). A put carrying `x-amz-checksum-crc32` is
+# checked against its body and refused `BadDigest` where they differ, as
+# S3 refuses it.
+#
+# The demo asks it to fail chosen requests, by their number among the
+# puts or the gets since it started: a put answered `503 SlowDown`, as
+# S3 answers under load, and a get answered `500 InternalError`. The
+# client's order of requests is the same on every run, so the same
+# requests fail, and the backup's retries meet a real failure each time.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/hash
+use <rebel>/http
+use <rebel>/numbers
+use <rebel>/strings
+use <rebel>/time
+use <rebel>/url
+
+## Codes
+
+# The code of a setup that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The most keys one page of a listing holds, S3's own.
+constant PAGE_KEYS: i64
+    1000
+
+## Setup
+
+# What the stand-in is told when it starts.
+record Setup
+    # The demo's control port, where readiness is told.
+    control_port: i64
+    # The bucket's name.
+    bucket: str
+    # The region it answers for.
+    region: str
+    # The one access key's id it knows.
+    key_id: str
+    # Its secret.
+    secret: str
+    # The puts answered `503 SlowDown`, by their number from 1.
+    refuse_puts: [i64]
+    # The gets answered `500 InternalError`, by their number from 1.
+    refuse_gets: [i64]
+
+# `s` as the text a thread is handed: one `name=value` line per field,
+# lists joined by commas.
+#
+# - `s`: the setup.
+function format_setup(s: Setup) -> str
+    return [f"control_port={s.control_port}", f"bucket={s.bucket}", f"region={s.region}", f"key_id={s.key_id}", f"secret={s.secret}", "refuse_puts=" + joined(s.refuse_puts), "refuse_gets=" + joined(s.refuse_gets)].join(
+        "\n"
+    )
+
+# `ns` joined by commas.
+#
+# - `ns`: the numbers.
+function joined(ns: [i64]) -> str
+    texts: [str] @= []
+
+    for n in ns
+        texts @ texts.push(to_str(n))
+
+    return texts.join(",")
+
+# The setup `text` holds.
+#
+# - `text`: as `format_setup` writes it.
+#
+# Fails `invalid` where a field is missing or a number is not one.
+function parse_setup(text: str) -> Setup?
+    fields: {str: str} @= {}
+
+    for line in strings.lines(text)
+        match strings.split_once(s: line, sep: "=")
+            .ok h  => fields[h.before] @ h.after
+            .err _ => _ = 0
+
+    port = match numbers.parse_int(fields["control_port"].default(""))
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: "a setup names its control port")
+
+    return ok(
+        Setup(control_port: port, bucket: fields["bucket"].default(""), region: fields["region"].default(""), key_id: fields["key_id"].default(""), secret: fields["secret"].default(""), refuse_puts: numbers_of(fields["refuse_puts"].default(""))?, refuse_gets: numbers_of(fields["refuse_gets"].default(""))?)
+    )
+
+# The numbers `text` lists, joined by commas; none for "".
+#
+# - `text`: the list.
+#
+# Fails `invalid` where one is not a number.
+function numbers_of(text: str) -> [i64]?
+    out: [i64] @= []
+
+    for part in strings.split(s: text, sep: ",")
+        if part != ""
+            match numbers.parse_int(part)
+                .ok n  => out @ out.push(n)
+                .err _ => return fail(code: INVALID, msg: f"\"{part}\" is not a request's number")
+
+    return ok(out)
+
+## The bucket
+
+# One object.
+record Object
+    # Its bytes.
+    data: [u8]
+    # Its ETag, the MD5 of its bytes in quotes.
+    etag: str
+    # When it was last written.
+    modified: time.Instant
+
+# The bucket and what it has answered.
+record Bucket
+    # Its setup.
+    setup: Setup
+    # The objects by key.
+    objects: {str: Object}
+    # The puts asked, refused ones included.
+    puts: i64
+    # The gets and heads asked, refused ones included.
+    gets: i64
+    # The listings answered.
+    listings: i64
+    # The deletes answered.
+    deletes: i64
+    # The requests refused on purpose.
+    injected: i64
+    # The requests refused for their signature.
+    refused: i64
+
+# An empty bucket of `setup`.
+#
+# - `setup`: the setup.
+function bucket_of(setup: Setup) -> Bucket
+    return Bucket(setup: setup, objects: {}, puts: 0, gets: 0, listings: 0, deletes: 0, injected: 0, refused: 0)
+
+# The answer to a request for the object `key`.
+#
+# - `b`: the bucket; its counts grow, and a put or a delete changes it.
+# - `r`: the request.
+# - `key`: the object's key, decoded.
+# - `now`: the server's clock.
+function object_request(@b: Bucket, r: http.Request, key: str, now: time.Instant) -> http.Response
+    return match r.method
+        "PUT"  => put(@b, r: r, key: key, now: now)
+        "GET"  => get(@b, key: key, head: false)
+        "HEAD" => get(@b, key: key, head: true)
+        "DELETE" =>
+            b.deletes @ b.deletes + 1
+            b.objects @ without(b.objects, key: key)
+            http.respond_status(204)
+        _ => error_answer(
+            405,
+            code: "MethodNotAllowed",
+            message: "The specified method is not allowed against this resource.",
+            resource: key
+        )
+
+# `objects` without `key`.
+#
+# - `objects`: the objects.
+# - `key`: the key taken out; one that is not there takes nothing.
+function without(objects: {str: Object}, key: str) -> {str: Object}
+    out: {str: Object} @= {}
+
+    for k in keys(objects)
+        if k != key
+            out[k] @ objects[k].must()
+
+    return out
+
+# A put: refused on purpose where its number says, its checksum checked,
+# then stored.
+#
+# - `b`: the bucket.
+# - `r`: the request.
+# - `key`: the key.
+# - `now`: the server's clock.
+function put(@b: Bucket, r: http.Request, key: str, now: time.Instant) -> http.Response
+    b.puts @ b.puts + 1
+
+    if is_listed(b.setup.refuse_puts, n: b.puts)
+        b.injected @ b.injected + 1
+        return error_answer(503, code: "SlowDown", message: "Please reduce your request rate.", resource: key)
+
+    match http.value_of(r.headers, name: "x-amz-checksum-crc32")
+        .ok sent =>
+            if sent != bytes.format_base64(bytes.encode_u32_be(hash.crc32(r.body)))
+                return error_answer(
+                    400,
+                    code: "BadDigest",
+                    message: "The CRC32 you specified did not match the calculated checksum.",
+                    resource: key
+                )
+        .err _ => _ = 0
+
+    etag = "\"" + bytes.format_hex(crypto.md5(r.body)) + "\""
+    b.objects[key] @ Object(data: r.body, etag: etag, modified: now)
+    answer @= http.respond_status(200)
+    answer.headers @ [http.Header(name: "ETag", value: etag)]
+    return answer
+
+# A get or a head: refused on purpose where its number says, else the
+# object or `NoSuchKey`.
+#
+# - `b`: the bucket.
+# - `key`: the key.
+# - `head`: whether the body is left out.
+function get(@b: Bucket, key: str, head: bool) -> http.Response
+    b.gets @ b.gets + 1
+
+    if is_listed(b.setup.refuse_gets, n: b.gets)
+        b.injected @ b.injected + 1
+        return error_answer(
+            500,
+            code: "InternalError",
+            message: "We encountered an internal error. Please try again.",
+            resource: key
+        )
+
+    return match b.objects[key]
+        .err _ => error_answer(404, code: "NoSuchKey", message: "The specified key does not exist.", resource: key)
+        .ok o =>
+            nothing: [u8] = []
+
+            body = if head
+                nothing
+            else
+                o.data
+
+            answer @= http.respond(200, content_type: "application/octet-stream", body: body)
+            answer.headers @ answer.headers.push(http.Header(name: "ETag", value: o.etag))
+            answer.headers @ answer.headers.push(
+                http.Header(name: "Last-Modified", value: time.format(o.modified, layout: .http))
+            )
+            answer
+
+# The answer to a ListObjectsV2: the keys under `prefix` after the
+# continuation token, a page at most.
+#
+# - `b`: the bucket; its count of listings grows.
+# - `pairs`: the request's query.
+function listing(@b: Bucket, pairs: [url.Pair]) -> http.Response
+    b.listings @ b.listings + 1
+    prefix = value_in(pairs, name: "prefix")
+    after = value_in(pairs, name: "continuation-token")
+    rows: [str] @= []
+    count @= 0
+    last @= ""
+    truncated @= false
+
+    for k in sort(keys(b.objects))
+        if strings.has_prefix(s: k, prefix: prefix) && (after == "" || strings.compare(a: k, b: after) > 0)
+            if count == PAGE_KEYS
+                truncated @ true
+                break
+            o = b.objects[k].must()
+            rows @ rows.push(
+                f"<Contents><Key>{escaped(k)}</Key><LastModified>{time.format(o.modified, layout: .rfc3339_milliseconds)}</LastModified><ETag>{escaped(o.etag)}</ETag><Size>{o.data.len()}</Size><StorageClass>STANDARD</StorageClass></Contents>"
+            )
+            count @ count + 1
+            last @ k
+
+    next = if truncated
+        f"<NextContinuationToken>{escaped(last)}</NextContinuationToken>"
+    else
+        ""
+
+    document = f"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ListBucketResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"><Name>{b.setup.bucket}</Name><Prefix>{escaped(prefix)}</Prefix><KeyCount>{count}</KeyCount><MaxKeys>{PAGE_KEYS}</MaxKeys><IsTruncated>{truncated}</IsTruncated>{next}" + rows.join("") + "</ListBucketResult>"
+    return http.respond(200, content_type: "application/xml", body: bytes.from_text(document))
+
+# Whether `ns` holds `n`.
+#
+# - `ns`: the numbers.
+# - `n`: the number asked about.
+function is_listed(ns: [i64], n: i64) -> bool
+    for x in ns
+        if x == n
+            return true
+
+    return false
+
+# The value of the query's `name`; "" where it is not there.
+#
+# - `pairs`: the query.
+# - `name`: the name.
+function value_in(pairs: [url.Pair], name: str) -> str
+    for p in pairs
+        if p.key == name
+            return p.value
+
+    return ""
+
+# S3's error document, with `status`.
+#
+# - `status`: the HTTP status.
+# - `code`: S3's error code.
+# - `message`: its message.
+# - `resource`: the path asked.
+function error_answer(status: i64, code: str, message: str, resource: str) -> http.Response
+    document = f"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>{code}</Code><Message>{escaped(message)}</Message><Resource>{escaped(resource)}</Resource><RequestId>0000000000000000</RequestId></Error>"
+    return http.respond(status, content_type: "application/xml", body: bytes.from_text(document))
+
+# `s` with XML's five special characters escaped.
+#
+# - `s`: the text.
+function escaped(s: str) -> str
+    return strings.replace_pairs(s, pairs: {"&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&apos;"})
+
+# The bucket's account: what it holds and what it answered.
+#
+# - `b`: the bucket.
+function account(b: Bucket lent) -> str
+    total @= 0
+
+    for k in keys(b.objects)
+        total @ total + b.objects[k].must().data.len()
+
+    return f"s3: {b.objects.len()} objects, {total} bytes in {b.setup.bucket}; {b.puts} puts, {b.gets} gets, {b.listings} listings, {b.deletes} deletes; {b.injected} refused on purpose, {b.refused} refused for their signature"
+
+test "parse_setup: what format_setup writes reads back; a port that is not a number is refused"
+    s = Setup(
+        control_port: 5,
+        bucket: "repo",
+        region: "us-east-1",
+        key_id: "K",
+        secret: "S",
+        refuse_puts: [2, 9],
+        refuse_gets: []
+    )
+    assert parse_setup(format_setup(s)).must() == s
+    assert parse_setup("control_port=x").is_err()
+    assert parse_setup("control_port=1\nrefuse_puts=a").is_err()
+
+test "put: the second put refused on purpose, a wrong checksum refused, a put then read back"
+    b @= bucket_of(
+        Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [2], refuse_gets: [])
+    )
+    r = http.with_body(http.request(method: "PUT", target: "/repo/a").must(), content_type: "", body: [1])
+    now = time.epoch()
+    assert put(@b, r: r, key: "a", now: now).status == 200
+    assert put(@b, r: r, key: "a", now: now).status == 503
+    bad @= r
+    bad.headers @ bad.headers.push(http.Header(name: "x-amz-checksum-crc32", value: "AAAAAA=="))
+    assert put(@b, r: bad, key: "a", now: now).status == 400
+    assert get(@b, key: "a", head: false).body == [1]
+    assert get(@b, key: "nothing", head: false).status == 404
+    assert b.injected == 1
+
+test "listing: the keys under a prefix, sorted"
+    b @= bucket_of(
+        Setup(control_port: 1, bucket: "repo", region: "us-east-1", key_id: "K", secret: "S", refuse_puts: [], refuse_gets: [])
+    )
+    b.objects["p/b"] @ Object(data: [1], etag: "\"x\"", modified: time.epoch())
+    b.objects["p/a"] @ Object(data: [1, 2], etag: "\"y\"", modified: time.epoch())
+    b.objects["q"] @ Object(data: [], etag: "\"z\"", modified: time.epoch())
+    text = bytes.to_text(listing(@b, pairs: [url.Pair(key: "prefix", value: "p/")]).body).must()
+    assert strings.contains(s: text, substr: "<KeyCount>2</KeyCount>")
+    assert strings.index_of(s: text, substr: "p/a").must() < strings.index_of(s: text, substr: "p/b").must()
+    assert !strings.contains(s: text, substr: "<Key>q</Key>")
+
+test "escaped: the five characters of XML"
+    assert escaped("a&b<c>\"'") == "a&amp;b&lt;c&gt;&quot;&apos;"

@@ -1,0 +1,116 @@
+# What a repository's bytes become before they are stored, and back:
+# compressed by Zstandard where that makes them smaller, then sealed under
+# the master key and bound to what they are. The first byte inside the
+# seal says how the rest is held, so a reader never guesses.
+#
+# Data that is compressed already is not given to Zstandard at all: a
+# file that begins as gzip or zlib (`compress.format_of`) or as a
+# Zstandard frame (`zstd.frame_info`) would cost the compressor's time for
+# no gain, as borg's `auto` compression reasons. The test is made once per
+# file, on its first bytes, since a later chunk of a gzip file holds no
+# header to be told by; for every other chunk, the compressed form is kept
+# only where it is the smaller.
+
+use <rebel>/bytes
+use <rebel>/compress
+use <rebel>/compress/zstd
+
+use vault/master
+
+## Codes
+
+# The code of stored bytes that do not open, decompress or match their
+# name.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The first byte of bytes held as they are.
+constant RAW: u8
+    0
+
+# The first byte of bytes held as a Zstandard frame.
+constant ZSTD: u8
+    1
+
+## Encoding
+
+# Bytes ready to store.
+record Encoded
+    # The sealed bytes.
+    stored: [u8]
+    # Whether they hold a Zstandard frame.
+    compressed: bool
+
+# `plain` compressed where it is worth it and sealed under `m`, bound to
+# `bound`.
+#
+# - `m`: the master key.
+# - `plain`: the bytes.
+# - `bound`: what they are, `data <id>` or `tree <id>`.
+# - `level`: the Zstandard level.
+# - `squeeze`: whether to try Zstandard at all; false for the chunks of a
+#   file compressed already.
+#
+# Fails as `zstd.compress` and `master.seal_bytes` fail.
+function encode(m: master.Master lent, plain: [u8], bound: str, level: i64, squeeze: bool) -> Encoded?
+    held: [u8] @= [RAW]
+    compressed @= false
+
+    if squeeze && plain.len() > 0
+        opts @= zstd.default_options()
+        opts.level @ level
+        opts.checksum @ false
+        frame = zstd.compress(plain, opts)?
+
+        if frame.len() < plain.len()
+            held @ [ZSTD]
+            compressed @ true
+            bytes.push_all(to: @held, from: frame)
+
+    if !compressed
+        bytes.push_all(to: @held, from: plain)
+    return ok(Encoded(stored: master.seal_bytes(m, data: held, bound: bound)?, compressed: compressed))
+
+# The plain bytes `stored` holds, opened under `m` for `bound` and
+# decompressed to at most `limit` bytes.
+#
+# - `m`: the master key.
+# - `stored`: bytes as `encode` writes them.
+# - `bound`: what they must be.
+# - `limit`: the most bytes the plain form may hold.
+#
+# Fails `invalid` where they do not open, their first byte is neither
+# form, or the frame is not Zstandard, and `limit` where it would pass
+# `limit`.
+function decode(m: master.Master lent, stored: [u8], bound: str, limit: i64) -> [u8]?
+    held = master.open_bytes(m, sealed: stored, bound: bound)?
+
+    if held.len() == 0
+        return fail(code: INVALID, msg: f"the object {bound} is empty inside its seal")
+    rest = held.slice(from: 1, to: held.len())
+
+    if held[0] == RAW
+        return ok(rest)
+
+    if held[0] == ZSTD
+        return zstd.decompress(rest, limit: limit)
+    return fail(code: INVALID, msg: f"the object {bound} is held in a form this tool does not know, {held[0]}")
+
+# Whether `head`, a file's first bytes, begins as data compressed already:
+# gzip, zlib or a Zstandard frame.
+#
+# - `head`: the file's first bytes, a few or all of them.
+function is_compressed(head: [u8]) -> bool
+    if head.len() < 4
+        return false
+    return !compress.format_of(head).is_err() || !zstd.frame_info(head).is_err()
+
+test "is_compressed: gzip, zlib and Zstandard are, text and a short file are not"
+    text: [u8] = [104, 101, 108, 108, 111, 32, 104, 101, 108, 108, 111]
+    assert is_compressed(compress.compress(text, compress.default_options(.gzip)).must())
+    assert is_compressed(compress.compress(text, compress.default_options(.zlib)).must())
+    assert is_compressed(zstd.compress(text, zstd.default_options()).must())
+    assert !is_compressed(text)
+    assert !is_compressed([0x1f, 0x8b])

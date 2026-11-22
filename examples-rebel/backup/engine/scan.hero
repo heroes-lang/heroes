@@ -1,0 +1,139 @@
+# What a backup reads of a folder before it reads any file: every path
+# under it, depth first and each folder's entries by their names' bytes,
+# with the facts the system gives of each (kind, size, permission bits,
+# time of last write, a link's target). A folder may hold a
+# `.backupignore` file, read as git reads a `.gitignore` (gitignore(5)),
+# whose patterns leave paths out of the backup and keep the walk out of
+# the folders they name.
+#
+# A path that is neither a file, a folder nor a link (a pipe, a socket, a
+# device) is counted and left out, as restic leaves sockets out.
+
+use <rebel>/fs
+use <rebel>/path
+use <rebel>/strings
+
+use model/tree
+
+## Bounds
+
+# The name of the file of patterns every folder may hold.
+constant IGNORE_FILE: str
+    ".backupignore"
+
+## Entries
+
+# One path a backup will record.
+record Found
+    # Its path below the folder backed up, its parts joined by `/`; "" for
+    # the folder itself.
+    rel: str
+    # What it is.
+    kind: tree.Kind
+    # Its permission bits.
+    mode: i64
+    # When its content was last written, in nanoseconds since 1970.
+    modified: i64
+    # A file's size; 0 for the rest.
+    size: i64
+    # A link's target; "" for the rest.
+    target: str
+
+# What a scan found.
+record Scan
+    # The folder itself first, then every path to record, depth first.
+    found: [Found]
+    # The paths left out for their kind.
+    skipped: [str]
+
+# Every path under `root` a backup records, the folder itself first.
+#
+# - `root`: the folder backed up.
+#
+# Fails `not_a_directory` where `root` is not a folder, and as `fs.info`,
+# `fs.walk_ignoring` and `fs.read_link` fail.
+function scan(root: str) -> Scan?
+    top = fs.info(root)?
+
+    if top.kind != .directory
+        return fail(code: fs.NOT_A_DIRECTORY, msg: f"\"{root}\" is not a folder, and a backup is of a folder")
+    found: [Found] @= [
+        Found(rel: "", kind: .directory, mode: top.permission, modified: top.written.unix_nanoseconds, size: 0, target: "")
+    ]
+    skipped: [str] @= []
+
+    for entry in fs.walk_ignoring(root: root, ignores: path.parse_ignore(""), name: IGNORE_FILE)?
+        full = path.join_all([root, entry.name])
+        rel = path.to_slash(entry.name)
+        facts = fs.link_info(full)?
+
+        match entry.kind
+            .file      => found @ found.push(
+                Found(rel: rel, kind: .file, mode: facts.permission, modified: facts.written.unix_nanoseconds, size: facts.size, target: "")
+            )
+            .directory => found @ found.push(
+                Found(rel: rel, kind: .directory, mode: facts.permission, modified: facts.written.unix_nanoseconds, size: 0, target: "")
+            )
+            .link      => found @ found.push(
+                Found(rel: rel, kind: .symlink, mode: facts.permission, modified: facts.written.unix_nanoseconds, size: 0, target: fs.read_link(full)?)
+            )
+            .other     => skipped @ skipped.push(rel)
+
+    return ok(Scan(found: found, skipped: skipped))
+
+# The folder `rel` stands in, "" for the root.
+#
+# - `rel`: a path below the root, parts joined by `/`.
+function parent_of(rel: str) -> str
+    return match strings.split_once_last(s: rel, sep: "/")
+        .ok h  => h.before
+        .err _ => ""
+
+# The last part of `rel`.
+#
+# - `rel`: a path below the root, parts joined by `/`.
+function name_of(rel: str) -> str
+    return match strings.split_once_last(s: rel, sep: "/")
+        .ok h  => h.after
+        .err _ => rel
+
+# Whether `name` may name a node: one part, not empty, not `.` or `..`.
+#
+# - `name`: the name.
+function is_name(name: str) -> bool
+    return name != "" && name != "." && name != ".." && !strings.contains(s: name, substr: "/")
+
+test "scan: a file is no folder to back up"
+    root = "build/backup-tests/scan-file"
+    _ = fs.remove_all(root).is_err()
+    fs.make_dir_all(root).must()
+    write_file(path: root + "/f", text: "x").must()
+    assert scan(root + "/f").is_err()
+    assert scan(root + "/nothing").is_err()
+    fs.remove_all(root).must()
+
+test "scan: the root first, then depth first, an ignored folder never entered"
+    root = "build/backup-tests/scan-tree"
+    _ = fs.remove_all(root).is_err()
+    fs.make_dir_all(root + "/b/cache").must()
+    write_file(path: root + "/a.txt", text: "a").must()
+    write_file(path: root + "/b/c.txt", text: "cc").must()
+    write_file(path: root + "/b/cache/big", text: "x").must()
+    write_file(path: root + "/" + IGNORE_FILE, text: "cache/\n").must()
+    s = scan(root).must()
+    rels: [str] @= []
+
+    for f in s.found
+        rels @ rels.push(f.rel)
+
+    assert rels == ["", IGNORE_FILE, "a.txt", "b", "b/c.txt"]
+    assert s.found[4].size == 2 && s.found[3].kind == .directory
+    fs.remove_all(root).must()
+
+test "parent_of: of a nested path, of a top one; name_of the last part"
+    assert parent_of("a/b/c") == "a/b" && parent_of("a") == ""
+    assert name_of("a/b/c") == "c" && name_of("a") == "a"
+
+test "is_name: an empty name, the dots and a separator are refused"
+    assert !is_name("") && !is_name(".") && !is_name("..") && !is_name("a/b")
+    assert is_name("résumé.txt")

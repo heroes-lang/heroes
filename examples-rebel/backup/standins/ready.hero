@@ -1,0 +1,89 @@
+# How a stand-in started on a thread tells the demo it listens, and on
+# which port. A thread is handed one text and gives one back only when it
+# ends (spec § 13), so the demo listens on a control port of its own
+# first, hands that port to the thread, and the thread, once its own
+# listener is open on a port the system chose, connects there and writes
+# one line, `READY <service> <port>`. Nothing that needs the service runs
+# before that line has come, so no request races the listener.
+
+use <rebel>/io
+use <rebel>/net
+use <rebel>/numbers
+use <rebel>/strings
+
+## Codes
+
+# The code of a line that is not a readiness line.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# How long, in milliseconds, the line may take to be written or to come.
+constant WAIT_MS: i64
+    10_000
+
+## The line
+
+# What a stand-in said once it listened.
+record Ready
+    # The service, one word.
+    service: str
+    # Its port, 1 to 65535.
+    port: i64
+
+# Tells the demo listening on `control_port` that `service` listens on
+# `port`.
+#
+# - `control_port`: the demo's control port on 127.0.0.1.
+# - `service`: the service, one word.
+# - `port`: the service's port.
+#
+# Fails as `net.connect` and `io.write_text` fail.
+function tell(control_port: i64, service: str, port: i64) -> ()?
+    made = net.connect(host: "127.0.0.1", port: control_port, deadline_ms: WAIT_MS)?
+    conn @= made
+    written = io.write_text(conn.stream, text: f"READY {service} {port}\n")
+    _ = io.close(@conn.stream).is_err()
+    return written
+
+# The next readiness line `control` receives.
+#
+# - `control`: the demo's control listener.
+#
+# Fails `invalid` where what came is not such a line, and as `net.accept`
+# and `io.read_all_text` fail, `timeout` where nothing came in `WAIT_MS`.
+function await_ready(control: net.Listener) -> Ready?
+    made = net.accept(control, deadline_ms: WAIT_MS)?
+    conn @= made
+    text = io.read_all_text(conn.stream)
+    _ = io.close(@conn.stream).is_err()
+    return parse_ready(text?)
+
+# The readiness line `text` holds.
+#
+# - `text`: `READY <service> <port>` and a line feed.
+#
+# Fails `invalid` where it is not of that form or the port is outside 1 to
+# 65535.
+function parse_ready(text: str) -> Ready?
+    words = strings.words(strings.trim(text))
+
+    if words.len() != 3 || words[0] != "READY"
+        return fail(
+            code: INVALID,
+            msg: f"a stand-in says READY <service> <port>, and this one said \"{strings.trim(text)}\""
+        )
+    port = numbers.parse_int(words[2]).default(0)
+
+    if port < 1 || port > 65535
+        return fail(code: INVALID, msg: f"{words[1]} said no port from 1 to 65535")
+    return ok(Ready(service: words[1], port: port))
+
+test "parse_ready: a line read back, and a line of another form or port refused"
+    assert parse_ready("READY s3 9000\n").must() == Ready(service: "s3", port: 9000)
+    assert parse_ready("").is_err()
+    assert parse_ready("READY s3").is_err()
+    assert parse_ready("HELLO s3 9000").is_err()
+    assert parse_ready("READY s3 0").is_err()
+    assert parse_ready("READY s3 65536").is_err()

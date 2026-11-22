@@ -1,0 +1,212 @@
+# A snapshot: one run's record of a folder, written once and never
+# changed: when it was taken, of which folder on which host, the tree its
+# folder was, the snapshot it was compared against, and the counts of
+# what the run read and stored. A snapshot is named by the HMAC of its
+# JSON, so its name says what it holds and no two runs share one.
+
+use <rebel>/json
+use <rebel>/numbers
+use <rebel>/time
+
+## Codes
+
+# The code of a snapshot that is not one.
+constant INVALID: str
+    "invalid"
+
+## Snapshots
+
+# What a run read and stored.
+record Totals
+    # The files it found.
+    files: i64
+    # The folders it found, the root among them.
+    dirs: i64
+    # The symbolic links it found.
+    links: i64
+    # The bytes of every file it found.
+    bytes: i64
+    # The files it read, the rest taken unchanged from the parent.
+    read: i64
+    # The chunks of every file, each counted once per place it stands.
+    chunks: i64
+    # The chunks the repository did not hold and the run stored.
+    new_chunks: i64
+    # The plain bytes of those chunks.
+    new_bytes: i64
+    # The bytes the run wrote for them, compressed and sealed.
+    stored_bytes: i64
+
+# One run's record.
+record Snapshot
+    # Its name, 64 hexadecimal digits; "" before it is saved.
+    id: str
+    # When it was taken.
+    taken: time.Instant
+    # The host it was taken on.
+    host: str
+    # The folder it is of, as the run was given it.
+    source: str
+    # The name of the folder's tree.
+    tree: str
+    # The snapshot it was compared against; "" for none.
+    parent: str
+    # Words a person gave it.
+    tags: [str]
+    # What the run read and stored.
+    totals: Totals
+
+# Totals of nothing.
+function no_totals() -> Totals
+    return Totals(
+        files: 0,
+        dirs: 0,
+        links: 0,
+        bytes: 0,
+        read: 0,
+        chunks: 0,
+        new_chunks: 0,
+        new_bytes: 0,
+        stored_bytes: 0
+    )
+
+# The first eight digits of `s`'s name, as a person reads and types it.
+#
+# - `s`: the snapshot.
+function short_id(s: Snapshot lent) -> str
+    if s.id.len() < 8
+        return s.id
+    return s.id.slice(from: 0, to: 8)
+
+# `s` as the JSON its object holds; its name is not in it.
+#
+# - `s`: the snapshot.
+#
+# Fails as `json.format` fails.
+function encode(s: Snapshot) -> str?
+    tags: [json.Value] @= []
+
+    for t in s.tags
+        tags @ tags.push(.text(v: t))
+
+    t = s.totals
+    totals: {str: json.Value} = {
+        "files": json.from_int(t.files)?
+        "dirs": json.from_int(t.dirs)?
+        "links": json.from_int(t.links)?
+        "bytes": json.from_int(t.bytes)?
+        "read": json.from_int(t.read)?
+        "chunks": json.from_int(t.chunks)?
+        "new_chunks": json.from_int(t.new_chunks)?
+        "new_bytes": json.from_int(t.new_bytes)?
+        "stored_bytes": json.from_int(t.stored_bytes)?
+    }
+    members: {str: json.Value} = {
+        "time": .text(v: time.format(s.taken, layout: .rfc3339))
+        "host": .text(v: s.host)
+        "source": .text(v: s.source)
+        "tree": .text(v: s.tree)
+        "parent": .text(v: s.parent)
+        "tags": .list(items: tags)
+        "totals": .object(members: totals)
+    }
+    return json.format(.object(members: members))
+
+# The snapshot `text` holds, named `id`.
+#
+# - `text`: the JSON `encode` writes.
+# - `id`: the object's name.
+#
+# Fails `invalid` where it is not a snapshot.
+function decode(text: str, id: str) -> Snapshot?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "a snapshot is JSON: " + e.msg)
+
+    taken = match time.parse(text_member(v, name: "time")?, layout: .rfc3339)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "a snapshot's time is RFC 3339")
+
+    tags: [str] @= []
+
+    for item in json.items_of(json.member(v, "tags").default(.null_value)).default([])
+        tags @ tags.push(json.text_of(item).default(""))
+
+    t = json.member(v, "totals").default(.null_value)
+    return ok(
+        Snapshot(id: id, taken: taken, host: text_member(v, name: "host")?, source: text_member(v, name: "source")?, tree: text_member(v, name: "tree")?, parent: text_member(v, name: "parent")?, tags: tags, totals: Totals(files: int_member(t, name: "files")?, dirs: int_member(t, name: "dirs")?, links: int_member(t, name: "links")?, bytes: int_member(t, name: "bytes")?, read: int_member(t, name: "read")?, chunks: int_member(t, name: "chunks")?, new_chunks: int_member(t, name: "new_chunks")?, new_bytes: int_member(t, name: "new_bytes")?, stored_bytes: int_member(t, name: "stored_bytes")?))
+    )
+
+# The text member `name` of `v`.
+#
+# - `v`: the snapshot's object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not a text.
+function text_member(v: json.Value, name: str) -> str?
+    return match json.text_of(json.member(v, name).default(.null_value))
+        .ok s  => ok(s)
+        .err _ => fail(code: INVALID, msg: f"a snapshot holds its {name} as a text")
+
+# The integer member `name` of `v`.
+#
+# - `v`: an object of the snapshot.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not an integer.
+function int_member(v: json.Value, name: str) -> i64?
+    return match json.int_of(json.member(v, name).default(.null_value))
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"a snapshot holds its {name} as an integer")
+
+# The snapshots of `all` newest first, two of one time by their names.
+#
+# - `found`: the snapshots, in any order.
+function newest_first(found: [Snapshot]) -> [Snapshot]
+    by_key: {str: Snapshot} @= {}
+
+    for s in found
+        stamp = numbers.format_int(n: time.unix_seconds(s.taken) + 100_000_000_000, base: 10)
+        by_key[stamp + " " + s.id] @ s
+
+    ordered = sort(keys(by_key))
+    out: [Snapshot] @= []
+    at @= ordered.len() - 1
+
+    while at >= 0
+        out @ out.push(by_key[ordered[at]].must())
+        at @ at - 1
+
+    return out
+
+test "encode: a snapshot read back whole, its name given apart"
+    s = Snapshot(
+        id: "abc",
+        taken: time.date(year: 2026, month: 3, day: 1).must(),
+        host: "laptop",
+        source: "/home/ada",
+        tree: "ff",
+        parent: "",
+        tags: ["daily"],
+        totals: Totals(files: 3, dirs: 1, links: 0, bytes: 10, read: 3, chunks: 4, new_chunks: 4, new_bytes: 10, stored_bytes: 99)
+    )
+    assert decode(text: encode(s).must(), id: "abc").must() == s
+    assert decode(text: "{}", id: "x").is_err()
+
+test "newest_first: by time, newest first; short_id cuts eight digits"
+    one = Snapshot(
+        id: "aaaaaaaaaa",
+        taken: time.date(year: 2026, month: 3, day: 1).must(),
+        host: "",
+        source: "",
+        tree: "",
+        parent: "",
+        tags: [],
+        totals: no_totals()
+    )
+    two @= one
+    two.id @ "bbbbbbbbbb"
+    two.taken @ time.date(year: 2026, month: 3, day: 2).must()
+    assert newest_first([one, two]) == [two, one]
+    assert newest_first([]) == []
+    assert short_id(one) == "aaaaaaaa"

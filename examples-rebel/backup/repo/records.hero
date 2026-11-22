@@ -1,0 +1,173 @@
+# A repository's trees and snapshots: each an object of its own, sealed
+# and named by the HMAC of its JSON. A tree is written only where it is
+# not known to be stored, so a folder that did not change since the
+# parent snapshot costs no write; a tree read back is named again, so a
+# changed tree fails as a changed chunk does.
+#
+# A snapshot is found by the first digits of its name, as a person types
+# it, or by `latest`.
+
+use <rebel>/bytes
+use <rebel>/strings
+
+use model/snapshot
+use model/tree
+use repo/codec
+use repo/layout
+use repo/repository
+use store/storage
+use vault/master
+
+## Codes
+
+# The code of a tree or a snapshot that is not one, or whose bytes do not
+# give its name.
+constant INVALID: str
+    "invalid"
+
+# The code of a snapshot no name or prefix finds.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# The most bytes a tree or a snapshot may decompress to: 256 MiB.
+constant LIMIT: i64
+    268_435_456
+
+## Trees
+
+# Stores `t` where it is not known to be stored, and answers its name.
+#
+# - `r`: the repository; the tree joins the trees known.
+# - `t`: the tree.
+#
+# Fails as the encoding and the storage fail.
+function save_tree(@r: repository.Repository, t: tree.Tree) -> str?
+    text = tree.encode(t)?
+    id = master.name_of(r.key, data: bytes.from_text(text))
+
+    if !r.trees_known[id].default(false)
+        encoded = codec.encode(r.key, plain: bytes.from_text(text), bound: "tree " + id, level: r.config.level, squeeze: true)?
+        storage.put(@r.store, key: layout.tree(id), data: encoded.stored)?
+        r.trees_known[id] @ true
+        r.counts.trees_written @ r.counts.trees_written + 1
+    return ok(id)
+
+# The tree named `id`, checked against its name.
+#
+# - `r`: the repository; the tree joins the trees known.
+# - `id`: the tree's name.
+#
+# Fails `invalid` where its bytes do not give its name or it is no tree,
+# and as the storage and the opening fail.
+function load_tree(@r: repository.Repository, id: str) -> tree.Tree?
+    stored = storage.get(@r.store, key: layout.tree(id))?
+    plain = codec.decode(r.key, stored: stored, bound: "tree " + id, limit: LIMIT)?
+
+    if master.name_of(r.key, data: plain) != id
+        return fail(code: INVALID, msg: f"the tree {id} does not hold the bytes its name was made of")
+    r.trees_known[id] @ true
+    return tree.decode(bytes.to_text_lossy(plain))
+
+## Snapshots
+
+# Stores `s`, named by the HMAC of its JSON, and answers it with its name.
+#
+# - `r`: the repository.
+# - `s`: the snapshot; its `id` is set here.
+#
+# Fails as the encoding and the storage fail.
+function save_snapshot(@r: repository.Repository, s: snapshot.Snapshot) -> snapshot.Snapshot?
+    text = snapshot.encode(s)?
+    id = master.name_of(r.key, data: bytes.from_text(text))
+    encoded = codec.encode(r.key, plain: bytes.from_text(text), bound: "snapshot " + id, level: r.config.level, squeeze: true)?
+    storage.put(@r.store, key: layout.snapshot(id), data: encoded.stored)?
+    named @= s
+    named.id @ id
+    return ok(named)
+
+# The snapshot named `id`.
+#
+# - `r`: the repository.
+# - `id`: its whole name.
+#
+# Fails as the storage, the opening and `snapshot.decode` fail.
+function load_snapshot(@r: repository.Repository, id: str) -> snapshot.Snapshot?
+    stored = storage.get(@r.store, key: layout.snapshot(id))?
+    plain = codec.decode(r.key, stored: stored, bound: "snapshot " + id, limit: LIMIT)?
+    return snapshot.decode(text: bytes.to_text_lossy(plain), id: id)
+
+# Every snapshot of the repository, newest first.
+#
+# - `r`: the repository.
+#
+# Fails as the storage and the snapshots fail.
+function list_snapshots(@r: repository.Repository) -> [snapshot.Snapshot]?
+    found: [snapshot.Snapshot] @= []
+
+    for item in storage.list(@r.store, prefix: layout.SNAPSHOTS)?
+        found @ found.push(load_snapshot(@r, id: layout.name_in(key: item.key, folder: layout.SNAPSHOTS))?)
+
+    return ok(snapshot.newest_first(found))
+
+# The snapshot `wanted` names: `latest`, the newest, or the one whose name
+# begins with it.
+#
+# - `r`: the repository.
+# - `wanted`: `latest` or a name's first digits, four at least.
+#
+# Fails `not_found` where none is found, `invalid` where the digits are
+# fewer than four or begin more than one name.
+function find_snapshot(@r: repository.Repository, wanted: str) -> snapshot.Snapshot?
+    found = list_snapshots(@r)?
+
+    if wanted == "latest"
+        if found.len() == 0
+            return fail(code: NOT_FOUND, msg: "the repository holds no snapshot")
+        return ok(found[0])
+
+    if wanted.len() < 4
+        return fail(
+            code: INVALID,
+            msg: f"a snapshot is named by four digits of its name at least, and \"{wanted}\" is shorter"
+        )
+    matching: [snapshot.Snapshot] @= []
+
+    for s in found
+        if strings.has_prefix(s: s.id, prefix: wanted)
+            matching @ matching.push(s)
+
+    if matching.len() == 0
+        return fail(code: NOT_FOUND, msg: f"no snapshot's name begins with {wanted}")
+
+    if matching.len() > 1
+        return fail(code: INVALID, msg: f"{matching.len()} snapshots' names begin with {wanted}: give more digits")
+    return ok(matching[0])
+
+# Removes the snapshot named `id`; its trees and chunks stay until a prune.
+#
+# - `r`: the repository.
+# - `id`: its whole name.
+#
+# Fails as the storage fails.
+function forget_snapshot(@r: repository.Repository, id: str) -> ()?
+    return storage.delete(@r.store, key: layout.snapshot(id))
+
+# The snapshot of `source` on `host` taken last, the one a new run of the
+# same folder compares against.
+#
+# - `r`: the repository.
+# - `host`: the host.
+# - `source`: the folder, as the run was given it.
+#
+# Fails `not_found` where there is none, and as `list_snapshots` fails.
+function parent_of(@r: repository.Repository, host: str, source: str) -> snapshot.Snapshot?
+    for s in list_snapshots(@r)?
+        if s.host == host && s.source == source
+            return ok(s)
+
+    return fail(code: NOT_FOUND, msg: f"no snapshot of {source} on {host}")
+
+test "LIMIT: a tree or a snapshot may be larger than a chunk"
+    assert LIMIT > 16_777_216

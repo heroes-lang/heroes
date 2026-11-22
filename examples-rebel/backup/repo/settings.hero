@@ -1,0 +1,167 @@
+# A repository's settings, fixed when it is made and kept sealed under
+# its master key as `config`: what names it, how its files are cut, how
+# large a pack grows and how hard a chunk is compressed. They are sealed
+# because the chunker's seed is a secret as much as the master key is:
+# with it, a reader of the storage could compute the cuts of a file they
+# guess and match them against the sizes of the chunks.
+
+use <rebel>/compress/zstd
+use <rebel>/json
+use <rebel>/numbers
+
+use chunking/gear
+
+## Codes
+
+# The code of settings that are not this tool's.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# The version of the repository's format this tool reads and writes.
+constant VERSION: i64
+    1
+
+# The bytes a pack grows to before it is written, unless told otherwise:
+# 16 MiB, restic's default.
+constant PACK_BYTES: i64
+    16_777_216
+
+## Settings
+
+# A repository's settings.
+record Settings
+    # The format's version, `VERSION`.
+    version: i64
+    # The repository's name, 32 hexadecimal digits drawn when it was made.
+    id: str
+    # The seed of the chunker's table.
+    seed: u64
+    # Where files are cut.
+    cutting: gear.Params
+    # The bytes a pack grows to before it is written.
+    pack_bytes: i64
+    # The Zstandard level chunks are compressed at.
+    level: i64
+
+# `s`, checked.
+#
+# - `s`: the settings.
+#
+# Fails `invalid` for another version, a pack size below 4 KiB, a level
+# Zstandard has not, and cutting `gear.checked` refuses.
+function checked(s: Settings) -> Settings?
+    if s.version != VERSION
+        return fail(
+            code: INVALID,
+            msg: f"this repository's format is version {s.version}, and this tool reads version {VERSION}"
+        )
+
+    if s.pack_bytes < 4096
+        return fail(code: INVALID, msg: f"a pack grows to 4096 bytes at least, and {s.pack_bytes} was asked")
+
+    if s.level < zstd.MIN_LEVEL || s.level > zstd.MAX_LEVEL
+        return fail(
+            code: INVALID,
+            msg: f"Zstandard's levels are {zstd.MIN_LEVEL} to {zstd.MAX_LEVEL}, and {s.level} was asked"
+        )
+    _ = gear.checked(s.cutting)?
+    return ok(s)
+
+# `s` as the JSON `config` seals.
+#
+# - `s`: the settings.
+#
+# Fails as `json.format` fails, which settings' numbers never make it.
+function encode(s: Settings) -> str?
+    cutting: {str: json.Value} = {
+        "min": json.from_int(s.cutting.min)?
+        "bits": json.from_int(s.cutting.bits)?
+        "max": json.from_int(s.cutting.max)?
+    }
+    members: {str: json.Value} = {
+        "version": json.from_int(s.version)?
+        "id": .text(v: s.id)
+        "seed": .text(v: numbers.format_u64(s.seed, base: 16))
+        "cutting": .object(members: cutting)
+        "pack_bytes": json.from_int(s.pack_bytes)?
+        "level": json.from_int(s.level)?
+    }
+    return json.format(.object(members: members))
+
+# The settings `text` holds, checked.
+#
+# - `text`: the JSON `encode` writes.
+#
+# Fails `invalid` where it is not JSON, lacks a member, or `checked`
+# refuses what it holds.
+function decode(text: str) -> Settings?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "the settings are JSON: " + e.msg)
+
+    cutting = member_of(v, name: "cutting")?
+
+    seed = match numbers.parse_u64_base(text_of(v, name: "seed")?, base: 16)
+        .ok n  => n
+        .err _ => return fail(code: INVALID, msg: "the settings' seed is hexadecimal")
+
+    return checked(
+        Settings(version: int_of(v, name: "version")?, id: text_of(v, name: "id")?, seed: seed, cutting: gear.Params(min: int_of(cutting, name: "min")?, bits: int_of(cutting, name: "bits")?, max: int_of(cutting, name: "max")?), pack_bytes: int_of(v, name: "pack_bytes")?, level: int_of(v, name: "level")?)
+    )
+
+# The member `name` of `v`.
+#
+# - `v`: an object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing.
+function member_of(v: json.Value, name: str) -> json.Value?
+    return match json.member(v, name)
+        .ok m  => ok(m)
+        .err _ => fail(code: INVALID, msg: f"the settings hold no {name}")
+
+# The text of the member `name` of `v`.
+#
+# - `v`: an object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not a text.
+function text_of(v: json.Value, name: str) -> str?
+    return match json.text_of(member_of(v, name: name)?)
+        .ok s  => ok(s)
+        .err _ => fail(code: INVALID, msg: f"the settings' {name} is a text")
+
+# The integer of the member `name` of `v`.
+#
+# - `v`: an object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not an integer.
+function int_of(v: json.Value, name: str) -> i64?
+    return match json.int_of(member_of(v, name: name)?)
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"the settings' {name} is an integer")
+
+test "decode: another version, a pack too small and a member missing are refused"
+    s = Settings(version: VERSION, id: "00", seed: 1, cutting: gear.default_params(), pack_bytes: PACK_BYTES, level: 3)
+    other @= s
+    other.version @ 2
+    assert decode(encode(other).must()).is_err()
+    small @= s
+    small.pack_bytes @ 100
+    assert decode(encode(small).must()).is_err()
+    assert decode("{\"version\": 1}").is_err()
+    assert decode("[").is_err()
+
+test "encode: read back the same, a seed past 2^63 kept whole"
+    s = Settings(
+        version: VERSION,
+        id: "0123456789abcdef0123456789abcdef",
+        seed: 18_446_744_073_709_551_615,
+        cutting: gear.Params(min: 512, bits: 10, max: 8192),
+        pack_bytes: 65_536,
+        level: 3
+    )
+    assert decode(encode(s).must()).must() == s

@@ -1,0 +1,75 @@
+# What a repository's storage holds, whichever kind it is: objects named
+# by keys whose parts are joined by `/`, each a run of bytes written
+# whole and read whole. A folder holds a key as a file under its root, a
+# bucket as an object under its prefix; the code of an object that is not
+# there is the same for both, so the repository never asks which kind it
+# speaks to.
+
+use <rebel>/strings
+
+## Codes
+
+# The code of an object the storage does not hold.
+constant NOT_FOUND: str
+    "not_found"
+
+# The code of a key that is not one: empty, absolute, or holding an empty
+# part, `.` or `..`.
+constant INVALID: str
+    "invalid"
+
+## Objects
+
+# One object a listing found.
+record Item
+    # Its key, the parts joined by `/`.
+    key: str
+    # Its size in bytes.
+    size: i64
+
+# Whether `key` may name an object: its parts are joined by `/`, none of
+# them empty, `.` or `..`, so a key never reaches outside the folder or
+# prefix it stands under.
+#
+# - `key`: the key asked about.
+function is_key(key: str) -> bool
+    if key == ""
+        return false
+
+    for part in strings.split(s: key, sep: "/")
+        if part == "" || part == "." || part == ".." || strings.contains(s: part, substr: "\\")
+            return false
+
+    return true
+
+# The items of `items` sorted by their keys' bytes, as S3 lists them.
+#
+# - `items`: the items, in any order.
+function sorted_items(items: [Item]) -> [Item]
+    by_key: {str: Item} @= {}
+
+    for item in items
+        by_key[item.key] @ item
+
+    out: [Item] @= []
+
+    for k in sort(keys(by_key))
+        out @ out.push(by_key[k].must())
+
+    return out
+
+test "is_key: an empty key, an absolute one and one climbing out are refused"
+    assert !is_key("")
+    assert !is_key("/config")
+    assert !is_key("data//x")
+    assert !is_key("data/../config")
+    assert !is_key("data/./x")
+    assert !is_key("data\\x")
+
+test "is_key: the keys of the layout are keys"
+    assert is_key("config") && is_key("data/ab/abcdef") && is_key("keys/default")
+
+test "sorted_items: by the keys' bytes, a key listed twice once"
+    items = [Item(key: "b", size: 1), Item(key: "a", size: 2), Item(key: "b", size: 3)]
+    assert sorted_items(items) == [Item(key: "a", size: 2), Item(key: "b", size: 3)]
+    assert sorted_items([]) == []

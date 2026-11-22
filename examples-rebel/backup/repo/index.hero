@@ -1,0 +1,295 @@
+# The chunk index: which pack holds each chunk, where in it, and how long
+# it is opened. It is a map that keeps its chunks in the order they were
+# first stored (`containers/indexed`), for three reasons a plain map does
+# not serve: a chunk's position is a small number the pruner marks in a
+# set of bits (`containers/bits`) while it walks every snapshot; an index
+# file written from it lists chunks in the order the runs stored them,
+# the same order every time; and a chunk the pruner drops is taken out
+# in place, the rest keeping their order.
+#
+# On the storage the index is one file per run under `index/`, each the
+# chunks of the packs that run wrote, compressed and sealed; the pruner
+# writes them all again as one.
+
+use <rebel>/bytes
+use <rebel>/containers/indexed
+use <rebel>/json
+
+use repo/codec
+use repo/pack
+use vault/master
+
+## Codes
+
+# The code of an index file that is not one.
+constant INVALID: str
+    "invalid"
+
+## Bounds
+
+# What an index file is bound to.
+constant BOUND: str
+    "index"
+
+# The most bytes an index file may decompress to: 1 GiB.
+constant LIMIT: i64
+    1_073_741_824
+
+## Places
+
+# Where a chunk is.
+record Place
+    # The name of the pack that holds it.
+    pack: str
+    # Where its sealed bytes begin in the pack.
+    offset: i64
+    # How many sealed bytes it has.
+    length: i64
+    # How many bytes it holds once opened and decompressed.
+    raw: i64
+
+## The index
+
+# The chunks a repository holds, in the order they were first stored.
+record Index
+    # The map's shape.
+    shape: indexed.Indexed
+    # The chunks' names, by position.
+    ids: [str]
+    # Their places, by position.
+    places: [Place]
+    # Each name's position.
+    lookup: {str: i64}
+
+# An empty index.
+function empty() -> Index
+    return Index(shape: indexed.new(), ids: [], places: [], lookup: {})
+
+# How many chunks `ix` holds.
+#
+# - `ix`: the index.
+function count(ix: Index lent) -> i64
+    return indexed.size(ix.shape)
+
+# Puts the chunk `id` at `place`, replacing a place it had, and answers its
+# position.
+#
+# - `ix`: the index; one entry is added or replaced.
+# - `id`: the chunk's name.
+# - `place`: where it is.
+function put(@ix: Index, id: str, place: Place) -> i64
+    return indexed.put(@ix.shape, @ix.ids, @ix.places, @ix.lookup, key: id, value: place)
+
+# Where the chunk `id` is.
+#
+# - `ix`: the index.
+# - `id`: the chunk's name.
+#
+# Fails `not_found` where the index holds no such chunk.
+function place_of(ix: Index lent, id: str) -> Place?
+    return indexed.get(ix.shape, ix.places, ix.lookup, key: id)
+
+# Whether the index holds the chunk `id`.
+#
+# - `ix`: the index.
+# - `id`: the chunk's name.
+function holds(ix: Index lent, id: str) -> bool
+    return indexed.contains(ix.shape, ix.lookup, key: id)
+
+# The position of the chunk `id`, from 0 in the order chunks were stored.
+#
+# - `ix`: the index.
+# - `id`: the chunk's name.
+#
+# Fails `not_found` where the index holds no such chunk.
+function position_of(ix: Index lent, id: str) -> i64?
+    return indexed.position_of(ix.shape, ix.lookup, key: id)
+
+# The name of the chunk at `at`.
+#
+# - `ix`: the index.
+# - `at`: a position, from 0 to the count less one.
+#
+# Aborts where `at` is outside the index.
+function id_at(ix: Index lent, at: i64) -> str
+    return indexed.key_at(ix.shape, ix.ids, at: at)
+
+# The place of the chunk at `at`.
+#
+# - `ix`: the index.
+# - `at`: a position, from 0 to the count less one.
+#
+# Aborts where `at` is outside the index.
+function place_at(ix: Index lent, at: i64) -> Place
+    return indexed.value_at(ix.shape, ix.places, at: at)
+
+# Takes the chunk `id` out, the chunks after it moving one place down, so
+# the rest keep their order.
+#
+# - `ix`: the index; one entry fewer.
+# - `id`: the chunk's name.
+#
+# Fails `not_found` where the index holds no such chunk.
+function remove(@ix: Index, id: str) -> ()?
+    _ = indexed.shift_remove(@ix.shape, @ix.ids, @ix.places, @ix.lookup, key: id)?
+    return ok()
+
+# Puts every chunk of the pack `finished` in `ix`.
+#
+# - `ix`: the index; grows.
+# - `name`: the pack's name.
+# - `entries`: its entries.
+function put_pack(@ix: Index, name: str, entries: [pack.Entry])
+    for e in entries
+        _ = put(@ix, id: e.id, place: Place(pack: name, offset: e.offset, length: e.length, raw: e.raw))
+
+## Index files
+
+# The chunks of some packs, as one index file lists them.
+record Listing
+    # Each pack's name.
+    packs: [str]
+    # Each pack's entries, in the order of `packs`.
+    entries: [[pack.Entry]]
+
+# The listing of every chunk `ix` holds, its packs in the order their
+# first chunk was stored.
+#
+# - `ix`: the index.
+function listing_of(ix: Index lent) -> Listing
+    names: [str] @= []
+    slots: {str: i64} @= {}
+    entries: [[pack.Entry]] @= []
+
+    for at in range(from: 0, to: count(ix))
+        p = place_at(ix, at: at)
+
+        slot = match slots[p.pack]
+            .ok k => k
+            .err _ =>
+                slots[p.pack] @ names.len()
+                names @ names.push(p.pack)
+                entries @ entries.push([])
+                names.len() - 1
+
+        grow(@entries[slot], e: pack.Entry(id: id_at(ix, at: at), offset: p.offset, length: p.length, raw: p.raw))
+
+    return Listing(packs: names, entries: entries)
+
+# Adds `e` to `list` in place: an element lent with `@` grows without the
+# copy a push through an index would make.
+#
+# - `list`: one pack's entries; grows by one.
+# - `e`: the entry.
+function grow(@list: [pack.Entry], e: pack.Entry)
+    list @ list.push(e)
+
+# `l` as the JSON an index file holds; an index file is named by the HMAC
+# of this text, so two runs that list the same packs name their files
+# alike, whatever nonce their seals drew.
+#
+# - `l`: the packs and their chunks.
+#
+# Fails as `json.format` fails.
+function text_of(l: Listing) -> str?
+    items: [json.Value] @= []
+
+    for i in range(from: 0, to: l.packs.len())
+        members: {str: json.Value} = {
+            "pack": .text(v: l.packs[i])
+            "chunks": .list(items: pack.entries_json(l.entries[i])?)
+        }
+        items @ items.push(.object(members: members))
+
+    return json.format(.list(items: items))
+
+# `l` as an index file: its JSON compressed and sealed, and its name.
+#
+# - `m`: the master key.
+# - `l`: the packs and their chunks.
+#
+# Fails as the JSON and the sealing fail.
+function encode(m: master.Master lent, l: Listing) -> Encoded?
+    text = text_of(l)?
+    stored = codec.encode(m, plain: bytes.from_text(text), bound: BOUND, level: 3, squeeze: true)?.stored
+    return ok(Encoded(name: master.name_of(m, data: bytes.from_text(text)), stored: stored))
+
+# An index file ready to store.
+record Encoded
+    # Its name: the HMAC of its JSON.
+    name: str
+    # Its sealed bytes.
+    stored: [u8]
+
+# The listing an index file holds.
+#
+# - `m`: the master key.
+# - `stored`: the index file's bytes.
+#
+# Fails `invalid` where it does not open or is not an index, `limit` where
+# it decompresses past `LIMIT`.
+function decode(m: master.Master lent, stored: [u8]) -> Listing?
+    plain = codec.decode(m, stored: stored, bound: BOUND, limit: LIMIT)?
+
+    text = match bytes.to_text(plain)
+        .ok t  => t
+        .err _ => return fail(code: INVALID, msg: "an index file is UTF-8")
+
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "an index file is JSON: " + e.msg)
+
+    items = match json.items_of(v)
+        .ok list => list
+        .err _   => return fail(code: INVALID, msg: "an index file is a list of packs")
+
+    names: [str] @= []
+    entries: [[pack.Entry]] @= []
+
+    for item in items
+        match json.text_of(json.member(item, "pack").default(.null_value))
+            .ok n  => names @ names.push(n)
+            .err _ => return fail(code: INVALID, msg: "an index file's pack has a name")
+
+        entries @ entries.push(pack.entries_from(json.member(item, "chunks").default(.null_value))?)
+
+    return ok(Listing(packs: names, entries: entries))
+
+test "put: positions in the order first stored, a chunk stored twice keeping its place"
+    ix @= empty()
+    assert put(@ix, id: "a", place: Place(pack: "p", offset: 0, length: 5, raw: 3)) == 0
+    assert put(@ix, id: "b", place: Place(pack: "q", offset: 0, length: 5, raw: 3)) == 1
+    assert put(@ix, id: "a", place: Place(pack: "r", offset: 9, length: 5, raw: 3)) == 0
+    assert count(ix) == 2 && holds(ix, id: "b") && !holds(ix, id: "c")
+    assert place_of(ix, id: "a").must().pack == "r"
+    assert place_of(ix, id: "c").is_err()
+
+test "remove: the chunks after it move down, keeping their order"
+    ix @= empty()
+
+    for id in ["a", "b", "c"]
+        _ = put(@ix, id: id, place: Place(pack: "p", offset: 0, length: 1, raw: 1))
+
+    remove(@ix, id: "a").must()
+    assert count(ix) == 2 && id_at(ix, at: 0) == "b" && position_of(ix, id: "c").must() == 1
+    assert remove(@ix, id: "a").is_err()
+
+test "listing_of: the packs in the order their first chunk came"
+    ix @= empty()
+    _ = put(@ix, id: "a", place: Place(pack: "q", offset: 0, length: 1, raw: 1))
+    _ = put(@ix, id: "b", place: Place(pack: "p", offset: 0, length: 1, raw: 1))
+    _ = put(@ix, id: "c", place: Place(pack: "q", offset: 1, length: 1, raw: 1))
+    l = listing_of(ix)
+    assert l.packs == ["q", "p"]
+    assert l.entries[0].len() == 2 && l.entries[0][1].id == "c"
+    assert listing_of(empty()).packs == []
+
+test "encode: an index file read back whole"
+    if !master.is_ready()
+        skip_test(reason: "this machine's cryptography has no AES-256-GCM")
+    m @= master.from_material(bytes.repeated([6], n: 64)).must()
+    l = Listing(packs: ["p"], entries: [[pack.Entry(id: "a", offset: 0, length: 40, raw: 12)]])
+    assert decode(m, stored: encode(m, l: l).must().stored).must() == l
+    assert encode(m, l: l).must().name == encode(m, l: l).must().name
+    assert decode(m, stored: [1, 2, 3]).is_err()
+    master.close(@m).must()

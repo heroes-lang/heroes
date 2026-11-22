@@ -1,0 +1,261 @@
+# A tree: what one folder held at a backup, each entry a node with its
+# kind, permission bits and time of last write, and for a file its size,
+# its chunks in order and the SHA-256 of its whole content, for a folder
+# the name of its own tree, for a link its target. A tree is stored as an
+# object named by the HMAC of its JSON, so a folder that did not change
+# between two runs is the same tree, stored once, and a snapshot's tree is
+# a Merkle tree of its folder: one name says everything below it.
+#
+# The nodes are sorted by their names' bytes, so the same folder always
+# writes the same JSON. A time is written as a decimal text of
+# nanoseconds, since JSON's numbers hold integers exactly only up to 2^53.
+
+use <rebel>/json
+use <rebel>/numbers
+
+## Codes
+
+# The code of a tree that is not one.
+constant INVALID: str
+    "invalid"
+
+## Nodes
+
+# What a node is.
+variant Kind
+    # A file of bytes.
+    file
+    # A folder.
+    directory
+    # A symbolic link.
+    symlink
+
+# One entry of a folder.
+record Node
+    # Its name in its folder, one part, never `.` or `..`.
+    name: str
+    # What it is.
+    kind: Kind
+    # Its permission bits, 0 to 0o7777.
+    mode: i64
+    # When its content was last written, in nanoseconds since 1970.
+    modified: i64
+    # A file's size in bytes; 0 for the rest.
+    size: i64
+    # A file's chunks, in order; empty for the rest and for an empty file.
+    chunks: [str]
+    # The SHA-256 of a file's whole content, hexadecimal; "" for the rest.
+    digest: str
+    # A folder's tree; "" for the rest.
+    subtree: str
+    # A link's target, as the link holds it; "" for the rest.
+    target: str
+
+# A folder's entries.
+record Tree
+    # The nodes, sorted by their names' bytes.
+    nodes: [Node]
+
+# The text `k` is written as.
+#
+# - `k`: the kind.
+function kind_name(k: Kind) -> str
+    return match k
+        .file      => "file"
+        .directory => "dir"
+        .symlink   => "symlink"
+
+# The kind `name` writes.
+#
+# - `name`: `file`, `dir` or `symlink`.
+#
+# Fails `invalid` for any other text.
+function parse_kind(name: str) -> Kind?
+    return match name
+        "file"    => ok(.file)
+        "dir"     => ok(.directory)
+        "symlink" => ok(.symlink)
+        _         => fail(code: INVALID, msg: f"a node is a file, a dir or a symlink, and \"{name}\" is none")
+
+# A tree of `nodes`, sorted by name; a name given twice is kept once, the
+# last.
+#
+# - `nodes`: the nodes, in any order.
+function tree_of(nodes: [Node]) -> Tree
+    by_name: {str: Node} @= {}
+
+    for n in nodes
+        by_name[n.name] @ n
+
+    sorted: [Node] @= []
+
+    for name in sort(keys(by_name))
+        sorted @ sorted.push(by_name[name].must())
+
+    return Tree(nodes: sorted)
+
+# The node named `name` in `t`.
+#
+# - `t`: the tree.
+# - `name`: the name.
+#
+# Fails `not_found` where it holds none.
+function node_named(t: Tree lent, name: str) -> Node?
+    for n in t.nodes
+        if n.name == name
+            return ok(n)
+
+    return fail(code: "not_found", msg: f"the folder holds no {name}")
+
+## JSON
+
+# `t` as the JSON its object holds.
+#
+# - `t`: the tree.
+#
+# Fails as `json.format` fails, which a tree's numbers never make it.
+function encode(t: Tree) -> str?
+    items: [json.Value] @= []
+
+    for n in t.nodes
+        listed: [json.Value] @= []
+
+        for c in n.chunks
+            listed @ listed.push(.text(v: c))
+
+        members: {str: json.Value} = {
+            "name": .text(v: n.name)
+            "kind": .text(v: kind_name(n.kind))
+            "mode": json.from_int(n.mode)?
+            "modified": .text(v: to_str(n.modified))
+            "size": json.from_int(n.size)?
+            "chunks": .list(items: listed)
+            "digest": .text(v: n.digest)
+            "subtree": .text(v: n.subtree)
+            "target": .text(v: n.target)
+        }
+        items @ items.push(.object(members: members))
+
+    return json.format(.object(members: {"nodes": .list(items: items)}))
+
+# The tree `text` holds.
+#
+# - `text`: the JSON `encode` writes.
+#
+# Fails `invalid` where it is not such a tree.
+function decode(text: str) -> Tree?
+    v = match json.parse(text)
+        .ok parsed => parsed
+        .err e     => return fail(code: INVALID, msg: "a tree is JSON: " + e.msg)
+
+    items = match json.items_of(json.member(v, "nodes").default(.null_value))
+        .ok list => list
+        .err _   => return fail(code: INVALID, msg: "a tree holds a list of nodes")
+
+    nodes: [Node] @= []
+
+    for item in items
+        chunk_ids: [str] @= []
+
+        for c in json.items_of(json.member(item, "chunks").default(.null_value)).default([])
+            chunk_ids @ chunk_ids.push(json.text_of(c).default(""))
+
+        modified = match numbers.parse_int(text_member(item, name: "modified")?)
+            .ok n  => n
+            .err _ => return fail(code: INVALID, msg: "a node's time is an integer of nanoseconds")
+
+        nodes @ nodes.push(
+            Node(name: text_member(item, name: "name")?, kind: parse_kind(text_member(item, name: "kind")?)?, mode: int_member(item, name: "mode")?, modified: modified, size: int_member(item, name: "size")?, chunks: chunk_ids, digest: text_member(item, name: "digest")?, subtree: text_member(item, name: "subtree")?, target: text_member(item, name: "target")?)
+        )
+
+    return ok(Tree(nodes: nodes))
+
+# The text member `name` of `item`.
+#
+# - `item`: a node's object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not a text.
+function text_member(item: json.Value, name: str) -> str?
+    return match json.text_of(json.member(item, name).default(.null_value))
+        .ok s  => ok(s)
+        .err _ => fail(code: INVALID, msg: f"a node holds its {name} as a text")
+
+# The integer member `name` of `item`.
+#
+# - `item`: a node's object.
+# - `name`: the member.
+#
+# Fails `invalid` where it is missing or not an integer.
+function int_member(item: json.Value, name: str) -> i64?
+    return match json.int_of(json.member(item, name).default(.null_value))
+        .ok n  => ok(n)
+        .err _ => fail(code: INVALID, msg: f"a node holds its {name} as an integer")
+
+# A node of a file.
+#
+# - `name`: its name.
+# - `mode`: its permission bits.
+# - `modified`: its time, in nanoseconds since 1970.
+# - `size`: its size.
+# - `chunks`: its chunks, in order.
+# - `digest`: the SHA-256 of its content.
+function file_node(name: str, mode: i64, modified: i64, size: i64, chunks: [str], digest: str) -> Node
+    return Node(
+        name: name,
+        kind: .file,
+        mode: mode,
+        modified: modified,
+        size: size,
+        chunks: chunks,
+        digest: digest,
+        subtree: "",
+        target: ""
+    )
+
+test "tree_of: sorted by the names' bytes, a name given twice kept once"
+    a = file_node(name: "b", mode: 0o644, modified: 1, size: 0, chunks: [], digest: "")
+    b = file_node(name: "a", mode: 0o644, modified: 2, size: 0, chunks: [], digest: "")
+    c = file_node(name: "b", mode: 0o600, modified: 3, size: 0, chunks: [], digest: "")
+    t = tree_of([a, b, c])
+    assert t.nodes.len() == 2 && t.nodes[0].name == "a" && t.nodes[1].mode == 0o600
+    assert tree_of([]).nodes == []
+
+test "encode: a tree of a file, a folder and a link read back, a time past 2^53 kept whole"
+    f = file_node(
+        name: "résumé.txt",
+        mode: 0o644,
+        modified: 1_767_225_600_123_456_789,
+        size: 3,
+        chunks: ["aa", "bb"],
+        digest: "dd"
+    )
+    d = Node(
+        name: "docs",
+        kind: .directory,
+        mode: 0o755,
+        modified: 5,
+        size: 0,
+        chunks: [],
+        digest: "",
+        subtree: "ff",
+        target: ""
+    )
+    l = Node(
+        name: "latest",
+        kind: .symlink,
+        mode: 0o777,
+        modified: 6,
+        size: 0,
+        chunks: [],
+        digest: "",
+        subtree: "",
+        target: "docs/a"
+    )
+    t = tree_of([f, d, l])
+    assert decode(encode(t).must()).must() == t
+
+test "decode: no JSON, no nodes and a kind of its own are refused"
+    assert decode("x").is_err()
+    assert decode("{}").is_err()
+    assert parse_kind("fifo").is_err()

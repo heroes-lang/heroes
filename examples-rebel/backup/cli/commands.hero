@@ -1,0 +1,197 @@
+# The command line of `backup`: every command declared with `flags`, so
+# `-h` on any of them prints its own help made from the declaration, the
+# arguments read with the environment's `BACKUP_REPOSITORY` and
+# `BACKUP_PASSWORD_FILE` standing in for `--repo` and `--password-file`,
+# and each command handed to `cli/actions`. A failure is written on the
+# standard error with the command's name, and the exit code says which
+# kind it was: 0 done, 1 failed, 2 the arguments were not understood.
+
+use <rebel>/flags
+use <rebel>/io
+use <rebel>/os
+
+use cli/actions
+use cli/upkeep
+use demo/script
+
+## The declaration
+
+# Every command and its arguments.
+function declaration() -> flags.Command
+    c @= flags.with_version(
+        flags.command(name: "backup", about: "Deduplicating, encrypted backups of folders, kept in a folder or an S3 bucket."),
+        version: "0.1.0"
+    )
+    init @= with_common(flags.command(name: "init", about: "Makes a repository, its first password asked twice."))
+    flags.add(
+        @init,
+        flags.with_default(flags.option(long: "chunk-size", short: "", value_name: "SIZE", help: "the average chunk, a power of two"), "1 MiB")
+    )
+    flags.add(
+        @init,
+        flags.with_default(flags.option(long: "pack-size", short: "", value_name: "SIZE", help: "the size a pack grows to"), "16 MiB")
+    )
+    flags.add(
+        @init,
+        flags.with_default(flags.with_kind(flags.option(long: "level", short: "", value_name: "N", help: "the Zstandard level, 1 to 22"), .integer), "3")
+    )
+    flags.add_command(c: @c, sub: init)
+    backup @= with_common(
+        flags.command(name: "run", about: "Backs a folder up as a new snapshot, storing only what the repository lacks.")
+    )
+    flags.add(@backup, flags.positional(name: "FOLDER", help: "the folder backed up"))
+    flags.add(
+        @backup,
+        flags.option(long: "tag", short: "t", value_name: "TAG", help: "a word given to the snapshot; may repeat")
+    )
+    flags.add(
+        @backup,
+        flags.option(long: "host", short: "", value_name: "HOST", help: "the host recorded, this machine's name by default")
+    )
+    flags.add_command(c: @c, sub: backup)
+    flags.add_command(
+        c: @c,
+        sub: with_common(flags.command(name: "snapshots", about: "Lists the snapshots, newest first."))
+    )
+    restore @= with_common(
+        flags.command(name: "restore", about: "Writes a snapshot, or one path of it, into a folder, checking every chunk.")
+    )
+    flags.add(@restore, flags.positional(name: "SNAPSHOT", help: "the snapshot's first digits, or latest"))
+    flags.add(
+        @restore,
+        flags.with_required(flags.option(long: "target", short: "", value_name: "DIR", help: "the folder written into"))
+    )
+    flags.add(
+        @restore,
+        flags.option(long: "path", short: "", value_name: "PATH", help: "one path of the snapshot, written alone")
+    )
+    flags.add_command(c: @c, sub: restore)
+    forget @= with_common(
+        flags.command(name: "forget", about: "Removes the snapshots a retention policy does not keep.")
+    )
+
+    for kind in ["last", "hourly", "daily", "weekly", "monthly", "yearly"]
+        flags.add(
+            @forget,
+            flags.with_kind(flags.option(long: "keep-" + kind, short: "", value_name: "N", help: f"keep {kind} N"), .integer)
+        )
+
+    flags.add(@forget, flags.flag(long: "prune", short: "", help: "prune after forgetting"))
+    flags.add_command(c: @c, sub: forget)
+    flags.add_command(
+        c: @c,
+        sub: with_common(flags.command(name: "prune", about: "Removes every pack, chunk and tree no snapshot reaches."))
+    )
+    flags.add_command(
+        c: @c,
+        sub: with_common(flags.command(name: "check", about: "Reads every chunk and checks it against its name."))
+    )
+    export @= with_common(
+        flags.command(name: "export", about: "Writes a snapshot as a tar archive, gzip for a name ending in .gz or .tgz.")
+    )
+    flags.add(@export, flags.positional(name: "SNAPSHOT", help: "the snapshot's first digits, or latest"))
+    flags.add(
+        @export,
+        flags.with_required(flags.option(long: "output", short: "o", value_name: "FILE", help: "the archive, - for the standard output"))
+    )
+    flags.add_command(c: @c, sub: export)
+    copy @= with_common(
+        flags.command(name: "copy", about: "Copies the repository's objects another storage lacks, still sealed, needing no password.")
+    )
+    flags.add(
+        @copy,
+        flags.with_required(flags.option(long: "to", short: "", value_name: "REPO", help: "the destination"))
+    )
+    flags.add_command(c: @c, sub: copy)
+    flags.add_command(
+        c: @c,
+        sub: flags.command(name: "demo", about: "Runs the scripted demonstration under build/backup-demo/.")
+    )
+    return c
+
+# `sub` with the arguments every command on a repository takes.
+#
+# - `sub`: the command.
+function with_common(sub: flags.Command) -> flags.Command
+    c @= sub
+    flags.add(
+        @c,
+        flags.with_env(flags.option(long: "repo", short: "r", value_name: "REPO", help: "the repository: a folder, s3:<endpoint>/<bucket>[/<prefix>] or s3://<bucket>[/<prefix>]"), "BACKUP_REPOSITORY")
+    )
+    flags.add(
+        @c,
+        flags.with_env(flags.option(long: "password-file", short: "p", value_name: "FILE", help: "a file whose first line is the password"), "BACKUP_PASSWORD_FILE")
+    )
+    flags.add(@c, flags.flag(long: "quiet", short: "q", help: "draw no progress bar"))
+    return c
+
+## Running
+
+# Runs the command `arguments` name and answers the exit code.
+#
+# - `arguments`: the program's arguments, its name left out.
+function run(arguments: [str]) -> i64
+    c = declaration()
+
+    found = match flags.parse_with_env(c, arguments, os.env_all().default({}))
+        .ok f => f
+        .err e =>
+            complain(e.msg)
+            return 2
+
+    if flags.is_help(found)
+        print(flags.help_text(found))
+        return 0
+
+    if flags.is_version(found)
+        print(flags.version_text(found))
+        return 0
+
+    sub = match flags.subcommand(found)
+        .ok s => s
+        .err _ =>
+            print(flags.help_of(c))
+            return 2
+
+    name = flags.name_of(sub)
+
+    if name == "demo"
+        return script.run()
+
+    done = match name
+        "init"      => actions.init(sub)
+        "run"       => actions.backup(sub)
+        "snapshots" => actions.snapshots(sub)
+        "restore"   => actions.restore(sub)
+        "forget"    => upkeep.forget(sub)
+        "prune"     => upkeep.prune(sub)
+        "check"     => upkeep.check(sub)
+        "export"    => upkeep.export(sub)
+        _           => upkeep.copy(sub)
+
+    return match done
+        .ok _ => 0
+        .err e =>
+            complain(f"backup {name}: {e.msg}")
+            1
+
+# Writes `message` on the standard error.
+#
+# - `message`: one line.
+function complain(message: str)
+    _ = io.write_line(io.stderr(), line: message).is_err()
+
+test "declaration: run takes a folder and tags; restore needs a target"
+    c = declaration()
+    found = flags.parse(c, ["run", "-r", "repo", "-t", "daily", "-t", "home", "/home/ada"]).must()
+    sub = flags.subcommand(found).must()
+    assert flags.name_of(sub) == "run" && flags.values_of(sub, "tag") == ["daily", "home"]
+    assert flags.value_of(sub, "FOLDER").must() == "/home/ada"
+    assert flags.parse(c, ["restore", "-r", "repo", "latest"]).is_err()
+
+test "declaration: forget reads its counts as integers"
+    sub = flags.subcommand(
+        flags.parse(declaration(), ["forget", "-r", "repo", "--keep-daily", "7", "--prune"]).must()
+    ).must()
+    assert flags.int_of(sub, "keep-daily").must() == 7 && flags.is_on(sub, "prune")
+    assert flags.int_of(sub, "keep-last").is_err()

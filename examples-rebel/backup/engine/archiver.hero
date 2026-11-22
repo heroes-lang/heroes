@@ -1,0 +1,370 @@
+# One backup run: a folder recorded as a snapshot, storing only what the
+# repository does not hold.
+#
+# The run first looks for its parent, the last snapshot of the same folder
+# on the same host, and takes from it every file whose size, permission
+# bits and time of last write are what they were: such a file is not read
+# at all, as restic and borg both decide. Every other file is read in
+# windows, cut where its content says (`chunking/cutter`), and each chunk
+# stored where the repository does not hold it (`repo/chunk_store`), while
+# the SHA-256 of the whole file is computed on the way, for a restore to
+# check the file whole as well as chunk by chunk.
+#
+# The folders are recorded deepest first, each as a tree named by its
+# content, so a folder whose entries did not change is the tree the
+# parent recorded and costs no write. What the run stores is written in
+# the order that keeps a repository whole if the run stops anywhere: full
+# packs and trees as the run goes, the last pack, the index file and the
+# summary at its end, and the snapshot after all of them, so no snapshot
+# ever names what is not stored.
+
+use <rebel>/bytes
+use <rebel>/crypto
+use <rebel>/fs
+use <rebel>/io
+use <rebel>/path
+use <rebel>/time
+
+use chunking/cutter
+use engine/meter
+use engine/scan
+use model/snapshot
+use model/tree
+use repo/chunk_store
+use repo/codec
+use repo/records
+use repo/repository
+
+## Bounds
+
+# The bytes asked of a file at each read.
+constant READ_BYTES: i64
+    65_536
+
+# The least bytes of a window a file is cut in: whole chunks are taken
+# from a window, and the bytes after its last cut wait for the next.
+constant LEAST_WINDOW: i64
+    1_048_576
+
+## A run
+
+# What a run is told.
+record Options
+    # The folder backed up, as the person wrote it.
+    source: str
+    # The host it runs on.
+    host: str
+    # Words to give the snapshot.
+    tags: [str]
+    # When the snapshot is taken.
+    taken: time.Instant
+    # Whether a progress bar is drawn.
+    shown: bool
+
+# What a run made.
+record Outcome
+    # The snapshot saved.
+    saved: snapshot.Snapshot
+    # The paths left out for their kind.
+    skipped: [str]
+
+# The folder `o.source` recorded in `r` as a new snapshot.
+#
+# - `r`: the repository; what the run stores is flushed before the
+#   snapshot is written, and its counts grow.
+# - `o`: what to back up, and how.
+#
+# Fails as the scan, the reading of a file and the repository fail; a run
+# that fails leaves no snapshot, and what it stored before is kept for the
+# next run to find.
+function run(@r: repository.Repository, o: Options) -> Outcome?
+    found = scan.scan(o.source)?
+
+    parent = match records.parent_of(@r, host: o.host, source: o.source)
+        .ok p => p
+        .err _ => snapshot.Snapshot(
+            id: "",
+            taken: o.taken,
+            host: o.host,
+            source: o.source,
+            tree: "",
+            parent: "",
+            tags: [],
+            totals: snapshot.no_totals()
+        )
+
+    none: {str: tree.Node} = {}
+
+    before = if parent.tree == ""
+        none
+    else
+        files_of(@r, root: parent.tree)?
+
+    owed @= 0
+
+    for f in found.found
+        if f.kind == .file && !is_unchanged(f, before: before)
+            owed @ owed + f.size
+
+    m @= meter.meter("backup", total: owed, shown: o.shown)
+    totals @= snapshot.no_totals()
+    slots: {str: i64} @= {}
+    lists: [[tree.Node]] @= []
+    folders: [scan.Found] @= []
+
+    for f in found.found
+        match f.kind
+            .directory =>
+                folders @ folders.push(f)
+                totals.dirs @ totals.dirs + 1
+            .symlink =>
+                totals.links @ totals.links + 1
+                put_node(
+                    @slots,
+                    @lists,
+                    folder: scan.parent_of(f.rel),
+                    node: tree.Node(name: scan.name_of(f.rel), kind: .symlink, mode: f.mode, modified: f.modified, size: 0, chunks: [], digest: "", subtree: "", target: f.target)
+                )
+            .file =>
+                totals.files @ totals.files + 1
+                node = file_node(@r, @m, @totals, f: f, root: o.source, before: before)?
+                totals.bytes @ totals.bytes + node.size
+                totals.chunks @ totals.chunks + node.chunks.len()
+                put_node(@slots, @lists, folder: scan.parent_of(f.rel), node: node)
+
+    meter.done(@m)
+    root_tree @= ""
+    at @= folders.len() - 1
+
+    while at >= 0
+        f = folders[at]
+        nodes = list_of(slots, lists: lists, folder: f.rel)
+        id = records.save_tree(@r, t: tree.tree_of(nodes))?
+
+        if f.rel == ""
+            root_tree @ id
+        else
+            put_node(
+                @slots,
+                @lists,
+                folder: scan.parent_of(f.rel),
+                node: tree.Node(name: scan.name_of(f.rel), kind: .directory, mode: f.mode, modified: f.modified, size: 0, chunks: [], digest: "", subtree: id, target: "")
+            )
+        at @ at - 1
+
+    chunk_store.flush(@r)?
+    totals.new_chunks @ r.counts.chunks_written
+    totals.stored_bytes @ r.counts.stored_bytes
+    taken = snapshot.Snapshot(
+        id: "",
+        taken: o.taken,
+        host: o.host,
+        source: o.source,
+        tree: root_tree,
+        parent: parent.id,
+        tags: o.tags,
+        totals: totals
+    )
+    return ok(Outcome(saved: records.save_snapshot(@r, s: taken)?, skipped: found.skipped))
+
+## Files
+
+# The node of the file `f`: the parent's own where the file is unchanged,
+# else the file read, cut and stored.
+#
+# - `r`: the repository.
+# - `m`: the meter; it counts the bytes read.
+# - `totals`: the run's totals; the files read and the new bytes grow.
+# - `f`: the file.
+# - `root`: the folder backed up.
+# - `before`: the parent's files by path.
+#
+# Fails as `fs.open`, `io.read` and the repository fail.
+function file_node(@r: repository.Repository, @m: meter.Meter, @totals: snapshot.Totals, f: scan.Found, root: str, before: {str: tree.Node} lent) -> tree.Node?
+    name = scan.name_of(f.rel)
+
+    if is_unchanged(f, before: before)
+        kept @= before[f.rel].must()
+        kept.name @ name
+        return ok(kept)
+    totals.read @ totals.read + 1
+    s @= fs.open(path.join_all([root, path.from_slash(f.rel)]))?
+    read = read_chunks(@r, @m, @totals, s: s)
+    _ = io.close(@s).is_err()
+    got = read?
+    return ok(
+        tree.file_node(name: name, mode: f.mode, modified: f.modified, size: got.size, chunks: got.chunks, digest: got.digest)
+    )
+
+# Whether `f` is a file the parent recorded with the same size,
+# permission bits and time of last write.
+#
+# - `f`: the file.
+# - `before`: the parent's files by path.
+function is_unchanged(f: scan.Found, before: {str: tree.Node} lent) -> bool
+    return match before[f.rel]
+        .err _ => false
+        .ok n  => n.kind == .file && n.size == f.size && n.mode == f.mode && n.modified == f.modified
+
+# What a file's reading gave.
+record Read
+    # Its chunks, in order.
+    chunks: [str]
+    # The SHA-256 of its whole content, hexadecimal.
+    digest: str
+    # The bytes read.
+    size: i64
+
+# The chunks of the stream `s`, read in windows, each stored where the
+# repository does not hold it.
+#
+# - `r`: the repository.
+# - `m`: the meter; it counts the bytes read.
+# - `totals`: the run's totals; the new bytes grow.
+# - `s`: the file's stream; the caller closes it.
+#
+# Fails as `io.read` and the repository fail.
+function read_chunks(@r: repository.Repository, @m: meter.Meter, @totals: snapshot.Totals, s: io.Stream) -> Read?
+    window = if r.config.cutting.max * 4 < LEAST_WINDOW
+        LEAST_WINDOW
+    else
+        r.config.cutting.max * 4
+
+    state @= crypto.start(.sha256)
+    pending: [u8] @= []
+    ids: [str] @= []
+    size @= 0
+    squeeze @= true
+    first @= true
+    at_end @= false
+
+    while !at_end
+        piece = io.read(s, n: READ_BYTES)?
+
+        if piece.len() == 0
+            at_end @ true
+        else
+            bytes.push_all(to: @pending, from: piece)
+            crypto.update(@state, data: piece)
+            size @ size + piece.len()
+            meter.tick(@m, n: piece.len())
+
+        if first && (pending.len() >= 16 || at_end)
+            squeeze @ !codec.is_compressed(pending)
+            first @ false
+
+        if at_end || pending.len() >= window
+            ends = cutter.cut_points(pending, t: r.table, p: r.config.cutting)
+
+            taken = if at_end
+                ends.len()
+            else
+                ends.len() - 1
+
+            start @= 0
+
+            for k in range(from: 0, to: taken)
+                stored = chunk_store.store_chunk(@r, plain: pending.slice(from: start, to: ends[k]), squeeze: squeeze)?
+                ids @ ids.push(stored.id)
+
+                if stored.fresh
+                    totals.new_bytes @ totals.new_bytes + ends[k] - start
+                start @ ends[k]
+
+            pending @ pending.slice(from: start, to: pending.len())
+
+    return ok(Read(chunks: ids, digest: bytes.format_hex(crypto.digest(state)), size: size))
+
+## Folders
+
+# Adds `node` to the entries of `folder`.
+#
+# - `slots`: each folder's place in `lists`; a new folder gets one.
+# - `lists`: the entries of each folder; one grows.
+# - `folder`: the folder's path below the root, "" for the root.
+# - `node`: the entry.
+function put_node(@slots: {str: i64}, @lists: [[tree.Node]], folder: str, node: tree.Node)
+    slot = match slots[folder]
+        .ok k => k
+        .err _ =>
+            slots[folder] @ lists.len()
+            lists @ lists.push([])
+            lists.len() - 1
+
+    grow(@lists[slot], node: node)
+
+# Adds `node` to `list` in place.
+#
+# - `list`: a folder's entries; grows by one.
+# - `node`: the entry.
+function grow(@list: [tree.Node], node: tree.Node)
+    list @ list.push(node)
+
+# The entries of `folder`, none where it holds nothing.
+#
+# - `slots`: each folder's place in `lists`.
+# - `lists`: the entries of each folder.
+# - `folder`: the folder's path below the root.
+function list_of(slots: {str: i64} lent, lists: [[tree.Node]] lent, folder: str) -> [tree.Node]
+    return match slots[folder]
+        .ok k  => lists[k]
+        .err _ => []
+
+# Every file of the snapshot whose root tree is `root`, by its path below
+# the root, the trees read from a list of their own rather than by
+# recursion, so no depth of folders runs the program out of stack.
+#
+# - `r`: the repository.
+# - `root`: the root tree's name.
+#
+# Fails as `records.load_tree` fails.
+function files_of(@r: repository.Repository, root: str) -> {str: tree.Node}?
+    files: {str: tree.Node} @= {}
+    prefixes: [str] @= [""]
+    ids: [str] @= [root]
+
+    next @= 0
+
+    while next < ids.len()
+        prefix = prefixes[next]
+        id = ids[next]
+        next @ next + 1
+
+        for n in records.load_tree(@r, id: id)?.nodes
+            rel = if prefix == ""
+                n.name
+            else
+                prefix + "/" + n.name
+
+            match n.kind
+                .file => files[rel] @ n
+                .directory =>
+                    prefixes @ prefixes.push(rel)
+                    ids @ ids.push(n.subtree)
+                .symlink => _ = 0
+
+    return ok(files)
+
+test "is_unchanged: a file the parent holds with its size, bits and time; any of them changed is not"
+    n = tree.file_node(name: "a", mode: 0o644, modified: 5, size: 3, chunks: ["x"], digest: "d")
+    before = {"d/a": n}
+    f = scan.Found(rel: "d/a", kind: .file, mode: 0o644, modified: 5, size: 3, target: "")
+    assert is_unchanged(f, before: before)
+    later @= f
+    later.modified @ 6
+    assert !is_unchanged(later, before: before)
+    other @= f
+    other.mode @ 0o600
+    assert !is_unchanged(other, before: before)
+    assert !is_unchanged(f, before: {})
+
+test "put_node: entries grouped by folder, an empty folder holding none"
+    slots: {str: i64} @= {}
+    lists: [[tree.Node]] @= []
+    n = tree.file_node(name: "a", mode: 0o644, modified: 5, size: 3, chunks: [], digest: "")
+    put_node(@slots, @lists, folder: "x", node: n)
+    put_node(@slots, @lists, folder: "", node: n)
+    put_node(@slots, @lists, folder: "x", node: n)
+    assert list_of(slots, lists: lists, folder: "x").len() == 2
+    assert list_of(slots, lists: lists, folder: "").len() == 1
+    assert list_of(slots, lists: lists, folder: "y") == []

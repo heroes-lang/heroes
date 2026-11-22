@@ -1,0 +1,313 @@
+# A repository opened: its storage, its master key, its settings, and
+# what it has read of its index so far. This module opens one
+# (`repo/making` makes one); `repo/chunks_store` writes and reads its chunks and
+# `repo/records` its trees and snapshots.
+#
+# The index is read from the storage only when something needs it: a
+# chunk the summary may hold, a chunk to restore, a prune. Until then the
+# index holds only the chunks this process wrote, which is why every
+# question about the index first asks the summary, then this process's
+# chunks, then reads the index files. A repository's summary that does
+# not cover its index files, because another program wrote one or the
+# summary was lost, is built again from the index when it is opened.
+
+use <rebel>/bytes
+
+use chunking/gear
+use repo/index
+use repo/layout
+use repo/pack
+use repo/settings
+use repo/summary
+use store/objects
+use store/storage
+use vault/keyfile
+use vault/master
+
+## Codes
+
+# The code of a password that opens no key file.
+constant PERMISSION: str
+    "permission"
+
+# The code of a storage that holds no repository.
+constant NOT_FOUND: str
+    "not_found"
+
+## Bounds
+
+# The packs a restore keeps read, so the chunks of files that take turns
+# between packs do not read a pack again for each.
+constant CACHED_PACKS: i64
+    4
+
+## Counts
+
+# What one command asked of the repository.
+record Counts
+    # The chunks asked about.
+    lookups: i64
+    # Those the summary alone answered as new.
+    summary_new: i64
+    # Those the repository held already: in the index, or in the pack being
+    # filled.
+    index_held: i64
+    # Those the summary may have held and the index did not: its false
+    # "maybe"s.
+    false_maybes: i64
+    # The times the index files were read from the storage.
+    index_reads: i64
+    # The packs written.
+    packs_written: i64
+    # The chunks written.
+    chunks_written: i64
+    # The bytes of those chunks as stored, compressed and sealed.
+    stored_bytes: i64
+    # The chunks written as they were, Zstandard not making them smaller
+    # or their file compressed already.
+    stored_raw: i64
+    # The trees written.
+    trees_written: i64
+    # The packs read.
+    packs_read: i64
+    # The chunks read, each opened, decompressed and checked against its
+    # name.
+    chunks_checked: i64
+
+# Counts of nothing.
+function no_counts() -> Counts
+    return Counts(
+        lookups: 0,
+        summary_new: 0,
+        index_held: 0,
+        false_maybes: 0,
+        index_reads: 0,
+        packs_written: 0,
+        chunks_written: 0,
+        stored_bytes: 0,
+        stored_raw: 0,
+        trees_written: 0,
+        packs_read: 0,
+        chunks_checked: 0
+    )
+
+## The repository
+
+# An open repository. It holds the master key's handle: `close` closes it.
+record Repository
+    # Where its objects are.
+    store: storage.Storage
+    # Its master key.
+    key: master.Master
+    # Its settings.
+    config: settings.Settings
+    # The chunker's table, drawn from the settings' seed.
+    table: gear.Table
+    # The chunks known: this process's, and every index file's once read.
+    chunk_index: index.Index
+    # Whether `chunk_index` holds every chunk of the storage: the index
+    # files have been read, or the storage held none when it was opened.
+    index_read: bool
+    # The index files the storage holds, sorted.
+    index_files: [str]
+    # The Bloom filter of every chunk the index holds.
+    filter: summary.Summary
+    # Whether the filter changed since it was read and is owed a write.
+    filter_owed: bool
+    # The pack being filled.
+    filling: pack.Builder
+    # The chunks of the pack being filled, which no index holds yet.
+    filling_ids: {str: bool}
+    # The packs this process wrote that no index file lists yet.
+    fresh: index.Listing
+    # The trees known to be stored: read, or written by this process.
+    trees_known: {str: bool}
+    # The names of the packs read last, at most `CACHED_PACKS`.
+    cache_names: [str]
+    # Their bytes, in the order of `cache_names`.
+    cache_packs: [[u8]]
+    # The place the next pack read replaces, once the cache is full.
+    cache_next: i64
+    # What this command asked.
+    counts: Counts
+
+# Opens the repository in `store` with `password`.
+#
+# - `store`: the storage.
+# - `password`: a password one of its key files opens with.
+#
+# The repository is the caller's to close. Fails `not_found` where the
+# storage holds no repository, `permission` where the password opens no
+# key file, and as the storage and the objects fail.
+function open(store: storage.Storage, password: str) -> Repository?
+    s @= store
+    files = storage.list(@s, prefix: layout.KEYS)?
+
+    if files.len() == 0
+        return fail(code: NOT_FOUND, msg: f"{storage.describe(s)} holds no repository: no key file is there")
+    material = unlocked(@s, files: files, password: password)?
+    key @= master.from_material(material)?
+
+    match configured(@s, key: key)
+        .err e =>
+            _ = master.close(@key).is_err()
+            return fail(code: e.code, msg: e.msg)
+        .ok config =>
+            match listed_index(@s)
+                .err e =>
+                    _ = master.close(@key).is_err()
+                    return fail(code: e.code, msg: e.msg)
+                .ok names =>
+                    r @= opened(store: s, key: key, config: config, index_files: names, bloom: summary.sized(0))
+
+                    match read_filter(@r)
+                        .err e =>
+                            close(@r)
+                            return fail(code: e.code, msg: e.msg)
+                        .ok _ => return ok(r)
+
+# A repository's record once its objects are read.
+#
+# - `store`: the storage.
+# - `key`: the master key.
+# - `config`: the settings.
+# - `index_files`: the index files, sorted.
+# - `bloom`: the summary.
+function opened(store: storage.Storage, key: master.Master, config: settings.Settings, index_files: [str], bloom: summary.Summary) -> Repository
+    return Repository(
+        store: store,
+        key: key,
+        config: config,
+        table: gear.table_of(config.seed),
+        chunk_index: index.empty(),
+        index_read: index_files.len() == 0,
+        index_files: index_files,
+        filter: bloom,
+        filter_owed: false,
+        filling: pack.builder(),
+        filling_ids: {},
+        fresh: index.Listing(packs: [], entries: []),
+        trees_known: {},
+        cache_names: [],
+        cache_packs: [],
+        cache_next: 0,
+        counts: no_counts()
+    )
+
+# Closes `r`'s master key. What is not flushed is lost.
+#
+# - `r`: the repository.
+function close(@r: Repository)
+    _ = master.close(@r.key).is_err()
+
+# The master key a key file of `files` opens with `password`.
+#
+# - `s`: the storage.
+# - `files`: the key files.
+# - `password`: the password.
+#
+# Fails `permission` where none opens, and as the storage fails.
+function unlocked(@s: storage.Storage, files: [objects.Item], password: str) -> [u8]?
+    for f in files
+        data = storage.get(@s, key: f.key)?
+
+        match keyfile.decode(bytes.to_text_lossy(data))
+            .err _ => _ = 0
+            .ok k =>
+                match keyfile.unlock(k, password: password)
+                    .ok material => return ok(material)
+                    .err _       => _ = 0
+
+    return fail(code: PERMISSION, msg: "the password opens no key of this repository")
+
+# The settings of the repository in `s`.
+#
+# - `s`: the storage.
+# - `key`: the master key.
+#
+# Fails as the storage, the seal and `settings.decode` fail.
+function configured(@s: storage.Storage, key: master.Master lent) -> settings.Settings?
+    sealed = storage.get(@s, key: layout.CONFIG)?
+    plain = master.open_bytes(key, sealed: sealed, bound: layout.CONFIG)?
+    return settings.decode(bytes.to_text_lossy(plain))
+
+# The names of the index files `s` holds, sorted.
+#
+# - `s`: the storage.
+#
+# Fails as the storage fails.
+function listed_index(@s: storage.Storage) -> [str]?
+    names: [str] @= []
+
+    for item in storage.list(@s, prefix: layout.INDEX)?
+        names @ names.push(layout.name_in(key: item.key, folder: layout.INDEX))
+
+    return ok(sort(names))
+
+# Reads the summary, building it again from the index where it is missing
+# or covers other index files than the storage holds.
+#
+# - `r`: the repository; its filter is set, and owed a write where it was
+#   built again.
+#
+# Fails as the storage and the index fail.
+function read_filter(@r: Repository) -> ()?
+    match storage.get(@r.store, key: layout.SUMMARY)
+        .ok stored =>
+            match summary.decode(r.key, stored: stored)
+                .ok s =>
+                    if s.covers == r.index_files
+                        r.filter @ s
+                        return ok()
+                .err _ => _ = 0
+        .err e =>
+            if e.code != objects.NOT_FOUND
+                return fail(code: e.code, msg: e.msg)
+
+            if r.index_files.len() == 0
+                r.filter @ summary.sized(0)
+                return ok()
+
+    return rebuild_filter(@r)
+
+# Builds the summary again from every chunk of the index, sized for twice
+# as many, so it is not built again soon.
+#
+# - `r`: the repository; its index is read where it was not, its filter
+#   replaced and owed a write.
+#
+# Fails as `read_index` fails.
+function rebuild_filter(@r: Repository) -> ()?
+    read_index(@r)?
+    fresh_filter @= summary.sized(index.count(r.chunk_index) * 2)
+
+    for at in range(from: 0, to: index.count(r.chunk_index))
+        summary.add(@fresh_filter, id: index.id_at(r.chunk_index, at: at))
+
+    fresh_filter.covers @ r.index_files
+    r.filter @ fresh_filter
+    r.filter_owed @ true
+    return ok()
+
+# Reads every index file into the index, once.
+#
+# - `r`: the repository; its index holds every chunk of the storage after.
+#
+# Fails as the storage and `index.decode` fail.
+function read_index(@r: Repository) -> ()?
+    if r.index_read
+        return ok()
+
+    for name in r.index_files
+        listing = index.decode(r.key, stored: storage.get(@r.store, key: layout.index_file(name))?)?
+
+        for i in range(from: 0, to: listing.packs.len())
+            index.put_pack(@r.chunk_index, name: listing.packs[i], entries: listing.entries[i])
+
+    r.index_read @ true
+    r.counts.index_reads @ r.counts.index_reads + 1
+    return ok()
+
+test "no_counts: every count zero"
+    c = no_counts()
+    assert c.lookups == 0 && c.chunks_checked == 0 && c.index_reads == 0
