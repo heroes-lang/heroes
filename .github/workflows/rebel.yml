@@ -222,6 +222,19 @@ jobs:
       - name: generators/html_entities, the HTML Standard's named character references of html
         run: ./heroes run generators/html_entities/main.hero -- check
 
+      # The five files of `generators/unicode_cases/main.hero`'s
+      # `AUXILIARY_URL` and `UCD_URL`; the generator holds each to its SHA-256.
+      - name: generators/unicode_cases, Unicode 17.0.0's conformance cases of unicode/segment and unicode/normalize
+        run: |
+          mkdir -p build/generators/ucd-17.0.0
+          for f in GraphemeBreakTest WordBreakTest SentenceBreakTest LineBreakTest; do
+            curl --fail --location --silent --show-error -o "build/generators/ucd-17.0.0/$f.txt" \
+              "https://www.unicode.org/Public/17.0.0/ucd/auxiliary/$f.txt"
+          done
+          curl --fail --location --silent --show-error -o build/generators/ucd-17.0.0/NormalizationTest.txt \
+            https://www.unicode.org/Public/17.0.0/ucd/NormalizationTest.txt
+          ./heroes run generators/unicode_cases/main.hero -- check build/generators/ucd-17.0.0
+
       # The tests of `generators/tablekit/`, the package every generator
       # writes its tables with. A generator's own tests are left to whoever
       # changes it: `heroes test` runs every test its program reaches, Rebel's
