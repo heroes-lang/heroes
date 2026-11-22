@@ -6,9 +6,10 @@
 # Its inputs are fetched into one folder and each held to its SHA-256 in
 # `INPUTS`: Adobe's `glyphlist.txt` and `zapfdingbats.txt` from
 # github.com/adobe-type-tools/agl-aglfn at `AGL_COMMIT` (BSD-3-Clause,
-# Copyright 2002-2019 Adobe), and the 14 Core AFM files as Matplotlib
-# `MATPLOTLIB_TAG` ships them (Adobe's notice in each). Run from the
-# repository's root:
+# Copyright 2002-2019 Adobe), the 14 Core AFM files as Matplotlib
+# `MATPLOTLIB_TAG` ships them (Adobe's notice in each), and unicode.org's
+# mapping files of Windows code page 1252 and Mac OS Roman, `CP1252.TXT` and
+# `ROMAN.TXT`, under `MAPPINGS_URL`. Run from the repository's root:
 #
 #     heroes run generators/pdf_tables/main.hero -- write <folder>
 #     heroes run generators/pdf_tables/main.hero -- check <folder>
@@ -21,7 +22,10 @@
 
 use <tablekit>/tablekit
 
+use afm
+use encodings
 use glyphs
+use metrics
 
 # The commit of agl-aglfn the two lists are read at, its last.
 constant AGL_COMMIT: str
@@ -30,6 +34,18 @@ constant AGL_COMMIT: str
 # Where the two lists are served at `AGL_COMMIT`, the file's name after it.
 constant AGL_URL: str
     "https://raw.githubusercontent.com/adobe-type-tools/agl-aglfn/4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6/"
+
+# The Matplotlib release the AFM files are read from, and where its folder
+# of them is served, the file's name after it.
+constant MATPLOTLIB_TAG: str
+    "3.10.0"
+
+constant AFM_URL: str
+    "https://raw.githubusercontent.com/matplotlib/matplotlib/v3.10.0/lib/matplotlib/mpl-data/fonts/pdfcorefonts/"
+
+# Where unicode.org serves the two mapping files.
+constant MAPPINGS_URL: str
+    "https://www.unicode.org/Public/MAPPINGS/VENDORS/"
 
 # The folder of the tables, from the repository's root.
 constant TABLES: str
@@ -40,6 +56,22 @@ constant INPUTS: [str]
     [
         "glyphlist.txt a3b2f61ced9f3644cc0d4ecde5c59df34ca286c689d9484a43a710a81c466789"
         "zapfdingbats.txt f6394e3cb8a447e84a1dad75d4baaf2aa7f45dc104faf369f4720e1a774ef2dc"
+        "Helvetica.afm db772f2830fb6d000907791d8d26a12524d96943a9a739e520ee855c6b25c96f"
+        "Helvetica-Bold.afm 8b697881c8ee617a177f6f2e2bbc88570b9fd2b9f0e89ecfc0f5507878f988fc"
+        "Helvetica-Oblique.afm 8556038366f9da4aad6d5782ce68afdb96d6d7261da64652f8b5e519110dd91b"
+        "Helvetica-BoldOblique.afm 526e4eeaa2b5d435cbb7cba3ff42285a473ce132aa1caddb39b48a52cc10aaf6"
+        "Times-Roman.afm 86136b527a5acee0c3283d56a6b68fc6a3d60982eb3bb0fb6cc54e83ecc8d77a"
+        "Times-Bold.afm 7104e6af62c53f029013fb0641a81e31c98589c8f27b5ea6289b25b092c74321"
+        "Times-Italic.afm 6cae69b92329193fd85082f0c89ad7a318df8fb5c939d7efe5343f88ab09473c"
+        "Times-BoldItalic.afm a7358e772726e91aa87015a001563926ad33dc5a7b2eea9680b34cc78aba385c"
+        "Courier.afm 31d72adad79910126b22a5579ec9e179eee86674ecebe3fcff6f76916193af0e"
+        "Courier-Bold.afm b080c323e07cd956770b4988fe61c5213099ecf567dfb00860cbf50ab1d7e2c1"
+        "Courier-Oblique.afm bd1426e63d6c4d4378862713d4f71567d3fd0d34d41e11337cf5ea514cd56611"
+        "Courier-BoldOblique.afm ce0eb54286c3dd853d5017c25e6be684135a14a9e8fb18fcb18d1bd91a607cbc"
+        "Symbol.afm 3f951aa17af8cb4aa1e1288c6b9baa8a30d3e990ebdbe8cf9a3d5acabcb9f771"
+        "ZapfDingbats.afm 66e3a6b7d19c2a87e374eabc92a84f86d00884ec242f6ad3253999c408c56a40"
+        "CP1252.TXT f607ae328b4dff5e9bfef725f5fff0ae23f38797f8a5b95998a0d2735c0e8fad"
+        "ROMAN.TXT 18e571645be895e9553ed5c842ea8f65f9c5d3c9ccb43e66e0c33a132ed0d721"
     ]
 
 # The text of the input `name` in `folder`, held to its pinned SHA-256.
@@ -63,11 +95,23 @@ function input(folder: str, name: str) -> str?
 # fail.
 function run(command: str, folder: str) -> i64?
     glyph_list = glyphs.merged([glyphs.read_list(input(folder: folder, name: "glyphlist.txt")?)?, glyphs.read_list(input(folder: folder, name: "zapfdingbats.txt")?)?])?
-    return tablekit.settle(
-        command: command,
-        path: TABLES + "glyph_list.hero",
-        text: glyphs.module_text(glyph_list, commit: AGL_COMMIT)?
+    fonts: [afm.Font] @= []
+
+    for name in metrics.FONTS
+        fonts @ fonts.push(afm.read_afm(name: name, text: input(folder: folder, name: name + ".afm")?)?)
+
+    tables = encodings.read_encodings(cp1252: input(folder: folder, name: "CP1252.TXT")?, roman: input(folder: folder, name: "ROMAN.TXT")?, helvetica: fonts[0], symbol: fonts[12], dingbats: fonts[13], list: glyph_list)?
+    code @= tablekit.settle(command: command, path: TABLES + "glyph_list.hero", text: glyphs.module_text(glyph_list, commit: AGL_COMMIT)?)?
+    points = encodings.points_by_name(glyph_list)?
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "metrics.hero", text: metrics.module_text(fonts, win_ansi: tables.win_ansi, points: points, tag: MATPLOTLIB_TAG)?)?
     )
+    code @ tablekit.worst(
+        a: code,
+        b: tablekit.settle(command: command, path: TABLES + "encodings.hero", text: encodings.module_text(tables)?)?
+    )
+    return ok(code)
 
 function main()
     words = tablekit.command_words("pdf_tables")

@@ -300,15 +300,25 @@ jobs:
             https://raw.githubusercontent.com/whatwg/html/efcc0bcdec596651e2cb316ab076c0bdc7c4d120/source
           ./heroes run generators/html_tables/main.hero -- check build/generators/whatwg-html/source
 
-      # `generators/pdf_tables/main.hero`'s `AGL_URL`; the generator holds
-      # each file to its SHA-256 in `INPUTS`.
-      - name: generators/pdf_tables, Adobe's Glyph List of pdf
+      # `generators/pdf_tables/main.hero`'s `AGL_URL`, `AFM_URL` and
+      # `MAPPINGS_URL`; the generator holds each file to its SHA-256 in
+      # `INPUTS`.
+      - name: generators/pdf_tables, the glyph list, the 14 fonts' metrics and the encodings of pdf
         run: |
           mkdir -p build/generators/pdf
           for f in glyphlist zapfdingbats; do
             curl --fail --location --silent --show-error -o "build/generators/pdf/$f.txt" \
               "https://raw.githubusercontent.com/adobe-type-tools/agl-aglfn/4036a9ca80a62f64f9de4f7321a9a045ad0ecfd6/$f.txt"
           done
+          for f in Helvetica Helvetica-Bold Helvetica-Oblique Helvetica-BoldOblique Times-Roman Times-Bold \
+            Times-Italic Times-BoldItalic Courier Courier-Bold Courier-Oblique Courier-BoldOblique Symbol ZapfDingbats; do
+            curl --fail --location --silent --show-error -o "build/generators/pdf/$f.afm" \
+              "https://raw.githubusercontent.com/matplotlib/matplotlib/v3.10.0/lib/matplotlib/mpl-data/fonts/pdfcorefonts/$f.afm"
+          done
+          curl --fail --location --silent --show-error -o build/generators/pdf/CP1252.TXT \
+            https://www.unicode.org/Public/MAPPINGS/VENDORS/MICSFT/WINDOWS/CP1252.TXT
+          curl --fail --location --silent --show-error -o build/generators/pdf/ROMAN.TXT \
+            https://www.unicode.org/Public/MAPPINGS/VENDORS/APPLE/ROMAN.TXT
           ./heroes run generators/pdf_tables/main.hero -- check build/generators/pdf
 
       # `generators/time_zones/main.hero`'s `SOURCE_URL`; the generator holds

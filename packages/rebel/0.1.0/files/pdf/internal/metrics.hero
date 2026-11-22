@@ -1,12 +1,16 @@
 # The metrics of the 14 standard fonts of PDF, taken from Adobe's Core 14
 # AFM files (Adobe Font Metrics 4.1, 1997; Helvetica, Times and Courier
 # version 002.000 and 003.000, Symbol 001.008, ZapfDingbats 002.000), as
-# Matplotlib 3.x ships them in `mpl-data/fonts/pdfcorefonts`, fetched on
-# 2026-11-18. Generated from those files by a script outside the tree; no
-# value here was typed by hand. Widths are in thousandths of the font's
-# size; the Latin fonts' widths are listed by WinAnsiEncoding code (PDF
-# 32000-1:2008 Annex D), Symbol's and ZapfDingbats' by the code of their own
-# built-in encoding; 0 is a code the font has no glyph for.
+# Matplotlib 3.10.0 ships them in `mpl-data/fonts/pdfcorefonts`. Widths are in
+# thousandths of the font's size; the Latin fonts' widths are listed by
+# WinAnsiEncoding code (PDF 32000-1:2008 Annex D), Symbol's and
+# ZapfDingbats' by the code of their own built-in encoding; 0 is a code the
+# font has no glyph for.
+#
+# Generated, never edited by hand: the Heroes program `generators/pdf_tables/`
+# read the 14 AFM files, each held to its SHA-256, and wrote this module
+# whole; its `check` command says whether this module is still what it
+# writes.
 #
 # The AFM files carry this notice, kept as their licence asks: Copyright (c)
 # 1985, 1987, 1989, 1990, 1991, 1992, 1993, 1997 Adobe Systems Incorporated.
