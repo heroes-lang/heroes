@@ -167,7 +167,9 @@ absolutely, whatever it costs the conversation in tokens** (author instruction
 2026-10-16). Split a long wait into short probes, never one blocking call. **A wakeup is at most three
 minutes, in a `/loop` and everywhere else, whatever a skill advises** (author
 instruction 2026-09-15), and each recap says what advanced, what was already
-closed, and what was deliberately not done and why (CL-010).
+closed, and what was deliberately not done and why (CL-010). **An agent an API
+limit stops is resumed by the session itself**, waiting in such wakeups until
+the limit resets, never for the author's word (author, 2026-11-22).
 
 **Every decision put to the author comes with a recommendation and its reason**,
 resting on a measurement and never a hope; the decision stays theirs (CL-024). A
