@@ -48,7 +48,13 @@
  * path, then the new), and a change made just before the stream began was
  * told. So this arm keeps, per path, the inode and the flags it last saw, and
  * tells what is NEW in an event's flags, reading the disk to tell whether the
- * path now stands (`hero_watch_fsevents_one`). The system watches a whole
+ * path now stands (`hero_watch_fsevents_one`). That earlier change can come in
+ * a callback of its own, 3 to 12 ms after the stream began, and then again,
+ * its flags accumulated, in the event of the change that took the path away
+ * (measured 2026-11-22: with the change 20 ms after the start, 40 trials of
+ * 40 split so, and none with the change at once); so a path found gone keeps
+ * its record until an event holding its removal or its rename is told, or its
+ * creation would be told twice (defect 2649). The system watches a whole
  * tree below the folder whatever is asked, so a watch of a folder's own
  * entries, or of one file, keeps its own from the tree's events.
  *
@@ -1513,8 +1519,14 @@ static void hero_watch_fsevents_one(hero_watch_state *st, const hero_watch_raw *
         }
         if ((e->flags & (removed | renamed)) != 0 && (known || (fresh & created) != 0 || (fresh & (removed | renamed)) != 0)) {
             hero_watch_tell(st, HERO_WATCH_REMOVED, dir, e->rel, e->rel_len, NULL, 0);
+            hero_watch_seen_del(st, e->rel, e->rel_len);
+            return;
         }
-        hero_watch_seen_del(st, e->rel, e->rel_len);
+        /* Gone, and the change that took it away not in these flags: a later
+         * event of the same inode tells it, its flags holding these too, so
+         * what these told is kept and the creation is not told again
+         * (defect 2649). */
+        hero_watch_seen_put(st, e->rel, e->rel_len, e->inode, e->flags | before);
         return;
     }
     hero_watch_seen_put(st, e->rel, e->rel_len, e->inode, e->flags);
