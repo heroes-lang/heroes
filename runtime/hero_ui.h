@@ -1068,4 +1068,23 @@ int64_t hero_ui_set_docked(hero_ui_app *app, int64_t on);
  * program nothing then. */
 int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count, const void *text, uint64_t text_count);
 
+/* -- THE DARK OR LIGHT APPEARANCE --------------------------------------------
+ *
+ * wxWidgets' `wxSystemAppearance::IsDark` and its change: the appearance the
+ * system draws the app's windows in, which the person turns in the system's
+ * settings, and which a drawing, a web view's page or a tray icon follows. */
+#define HERO_UI_APPEARANCE_LIGHT 1
+#define HERO_UI_APPEARANCE_DARK 2
+
+/* The app's appearance turned: `value` the new one, `HERO_UI_APPEARANCE_*`;
+ * `id` 0. Queued once each time it turns, a second turn before the first is
+ * taken replacing it. `hero_ui_inject` with this kind draws the app in
+ * appearance `value`, as the system's turn would, or in the system's own
+ * again where `value` is 0, `id` 0. */
+#define HERO_UI_EVENT_APPEARANCE 18
+
+/* Writes the appearance the app's windows are drawn in now through
+ * `appearance`. 0, or -1. */
+int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance);
+
 #endif

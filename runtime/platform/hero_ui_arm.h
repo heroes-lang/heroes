@@ -162,6 +162,13 @@ int64_t hero_ui_arm_set_docked(int64_t on);
 int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint8_t *text, int64_t text_count);
 int64_t hero_ui_arm_system_words(char *words, int64_t count);
 
+/* THE DARK OR LIGHT APPEARANCE (`hero_ui.h`): asked, and turned as the
+ * system would turn it for `hero_ui_inject`; on macOS the arm watches it
+ * from `open` to `close`, queuing `HERO_UI_EVENT_APPEARANCE`. Refusals for
+ * the Win32 and GTK 4 arms in `hero_ui.c`'s CALLS NO C ARM DRAWS YET. */
+int64_t hero_ui_arm_appearance(int64_t *appearance);
+int64_t hero_ui_arm_appearance_set(int64_t appearance);
+
 /* THE WAITING FORM of the dialogs, which the Win32 and GTK 4 arms define
  * and `hero_ui.c` wraps for them: each shows its dialog and returns once the
  * person has answered, writing the answer through its last parameter (the

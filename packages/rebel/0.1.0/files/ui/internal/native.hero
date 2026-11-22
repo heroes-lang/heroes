@@ -486,7 +486,22 @@ function give(app: ui.App, input: ui.Input) -> ()?
                 second: number_of(s.ascending),
                 text: ""
             )
+        .change_appearance c =>
+            return injected(
+                app,
+                kind: hero_ui.HERO_UI_EVENT_APPEARANCE,
+                id: 0,
+                value: appearance_code(c.appearance),
+                second: 0,
+                text: ""
+            )
         .answer _ | .pick_files _ | .cancel_files => return ok()
+
+# The layer's number for `appearance`.
+function appearance_code(appearance: ui.Appearance) -> i64
+    return match appearance
+        .light => hero_ui.HERO_UI_APPEARANCE_LIGHT
+        .dark  => hero_ui.HERO_UI_APPEARANCE_DARK
 
 # One act on window `id` among the screens, injected through the floor.
 function window_act(app: ui.App, kind: i64, id: i64, value: i64, second: i64, third: i64) -> ()?

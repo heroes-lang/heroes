@@ -6,8 +6,10 @@
  *
  * platform/hero_ui_appkit_system.swift: the macOS arm of `hero_ui.h`'s calls
  * on the system around the program rather than on a widget: a
- * notification of the system's. A Swift member of its own, compiled as a
- * module of its own (`selfhost/cli/layer_swift.hero`), reading none of
+ * notification of the system's, and the dark or light appearance, asked
+ * and watched (`NSApplication.effectiveAppearance`, observed for its change
+ * from the app's open to its close). A Swift member of its own, compiled as
+ * a module of its own (`selfhost/cli/layer_swift.hero`), reading none of
  * `hero_ui_appkit.swift`'s widgets.
  *
  * A NOTIFICATION NEEDS AN APPLICATION BUNDLE. `UNUserNotificationCenter`
@@ -30,10 +32,31 @@ import AppKit
 import UserNotifications
 
 private let answerOk: Int64 = 0
+private let answerInvalid: Int64 = 1
 private let answerUnsupported: Int64 = 4
+
+private let eventAppearance: Int64 = 18
+private let appearanceLight: Int64 = 1
+private let appearanceDark: Int64 = 2
+
+/// The function `hero_ui.c` queues an event by, as `hero_ui_appkit.swift`
+/// declares its own.
+public typealias HeroUiSystemPush = @convention(c) (Int64, Int64, Int64, Int64, UnsafePointer<UInt8>?, Int64) -> Void
 
 @MainActor
 private var said = ""
+// The observation of the app's appearance, and the appearance last told.
+@MainActor
+private var watching: NSKeyValueObservation?
+@MainActor
+private var told: Int64 = 0
+
+// The appearance the app's windows are drawn in now.
+@MainActor
+private func appearanceNow() -> Int64 {
+    let match = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua])
+    return match == .darkAqua ? appearanceDark : appearanceLight
+}
 
 // The text of `count` bytes at `bytes`.
 private func textOf(_ bytes: UnsafePointer<UInt8>?, _ count: Int64) -> String {
@@ -82,6 +105,61 @@ public func hero_ui_appkit_notify(_ title: UnsafePointer<UInt8>?, _ titleCount: 
             content.body = words
             let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
             UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+        }
+        return answerOk
+    }
+}
+
+// Writes the appearance the app's windows are drawn in now through
+// `appearance`, `HERO_UI_APPEARANCE_LIGHT` or `_DARK`.
+@c
+public func hero_ui_appkit_appearance(_ appearance: UnsafeMutablePointer<Int64>?) -> Int64 {
+    guard let appearance = appearance else {
+        return answerInvalid
+    }
+    appearance.pointee = MainActor.assumeIsolated { () -> Int64 in
+        return appearanceNow()
+    }
+    return answerOk
+}
+
+// Watches the app's appearance from now, queuing `HERO_UI_EVENT_APPEARANCE`
+// by `push` each time it turns, whether the system's or the app's own
+// changed it; `push` nil stops watching.
+@c
+public func hero_ui_appkit_appearance_watch(_ push: HeroUiSystemPush?) {
+    MainActor.assumeIsolated {
+        watching?.invalidate()
+        watching = nil
+        guard let push = push else {
+            return
+        }
+        told = appearanceNow()
+        watching = NSApp.observe(\.effectiveAppearance, options: [.new]) { _, _ in
+            MainActor.assumeIsolated {
+                let now = appearanceNow()
+                if now != told {
+                    told = now
+                    push(eventAppearance, 0, now, 0, nil, 0)
+                }
+            }
+        }
+    }
+}
+
+// Draws the app in `appearance`, as the system's change to it would turn
+// it, or in the system's own again where `appearance` is 0: what a case
+// injects, the app's own appearance standing over the system's.
+@c
+public func hero_ui_appkit_appearance_set(_ appearance: Int64) -> Int64 {
+    return MainActor.assumeIsolated { () -> Int64 in
+        switch appearance {
+        case appearanceLight:
+            NSApp.appearance = NSAppearance(named: .aqua)
+        case appearanceDark:
+            NSApp.appearance = NSAppearance(named: .darkAqua)
+        default:
+            NSApp.appearance = nil
         }
         return answerOk
     }

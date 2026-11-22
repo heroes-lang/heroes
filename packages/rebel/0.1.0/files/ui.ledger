@@ -537,7 +537,7 @@ capability ui/context-menu  a menu shown where the person right-clicks a widget
   rust    -
   python  tkinter.Menu.tk_popup, tkinter.Menu.post
   wx      wxContextMenuEvent, wxWindow (PopupMenu)
-  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
+  note    catalogue MN07 (must); a menu made once and shown by the system on the person's right click, its items made and chosen as a menu's; macOS by the widget's `NSView.menu` (a list's rows, a tree's outline, a text area's text, a window's content); Windows pending (`TrackPopupMenuEx` on `WM_CONTEXTMENU`; a web view's refused `unsupported`, WebView2 showing a menu of its own, lane-ui-win32's W2), Linux pending (`GtkPopoverMenu` on a `GtkGestureClick` of the secondary button); the row under the click told to the program, and a menu built at the moment of the click (`wxEVT_CONTEXT_MENU`), are not offered
 
 capability ui/text-selection  a text widget's selection and caret set and read, and its undo
   heroes  pending
@@ -556,12 +556,12 @@ capability ui/session-end  the person logging out or shutting down, asked of the
   note    catalogue AP04 (must); macOS `applicationShouldTerminate`, Windows `WM_QUERYENDSESSION` with `ShutdownBlockReasonCreate`, Linux GTK's `query-end` (unread)
 
 capability ui/appearance  the system's dark or light appearance, and its change
-  heroes  pending
+  heroes  ui.appearance_of, ui.Appearance, ui.Event.appearance_changed, ui.Input.change_appearance
   go      -
   rust    -
   python  -
   wx      wxSystemSettings (GetAppearance), wxSystemAppearance (IsDark), wxSysColourChangedEvent
-  note    catalogue SY13 (must); macOS `NSApp.effectiveAppearance` observed, Windows the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`, Linux `GtkSettings:gtk-application-prefer-dark-theme` or the portal's `color-scheme`
+  note    catalogue SY13 (must); told once a turn, a second turn before the first is taken replacing it; the headless side's own, light until an input turns it; macOS by `NSApp.effectiveAppearance` observed from the app's open to its close, an injected turn setting the app's own `NSApp.appearance` over the system's; Windows pending (the registry's `AppsUseLightTheme` with `WM_SETTINGCHANGE`), Linux pending (`GtkSettings`'s `gtk-interface-color-scheme`, 4.20, or the portal's `color-scheme`)
 
 capability ui/accessibility  each widget's name and its label read by the system's screen reader
   heroes  pending

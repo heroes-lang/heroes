@@ -78,6 +78,7 @@
 #elif defined(__APPLE__)
 #include <pthread.h>
 #include "hero_ui_appkit.h"
+#include "hero_ui_appkit_system.h"
 #else
 #include <dlfcn.h>
 #include <pthread.h>
@@ -154,6 +155,7 @@ int64_t hero_ui_last_message(void *buffer, uint64_t count) {
 }
 
 static void hero_ui_push(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
+static void hero_ui_dialog_told(int64_t kind, int64_t id, int64_t value, int64_t second, const uint8_t *text, int64_t count);
 static int64_t hero_ui_web_serve(int64_t id, const uint8_t *method, int64_t method_count, const uint8_t *url, int64_t url_count, int64_t *numbers, const uint8_t **texts);
 static int64_t hero_ui_web_ask(int64_t what, int64_t id, const uint8_t *url, int64_t count);
 static void hero_ui_web_gone(int64_t id);
@@ -174,10 +176,16 @@ int64_t hero_ui_arm_open(void) {
     int64_t count = 0;
     const char *bridge = hero_ui_web_bridge(&count);
 
-    return hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
+    int64_t kind = hero_ui_appkit_open(hero_ui_push, hero_ui_web_serve, hero_ui_web_ask, hero_ui_web_gone, (const uint8_t *)bridge, count);
+
+    if (kind == HERO_UI_OK) {
+        hero_ui_appkit_appearance_watch(hero_ui_dialog_told);
+    }
+    return kind;
 }
 
 void hero_ui_arm_close(void) {
+    hero_ui_appkit_appearance_watch(NULL);
     hero_ui_appkit_close();
 }
 
@@ -805,7 +813,7 @@ static hero_ui_slot *hero_ui_enter_native(hero_ui_app *app) {
 /* Whether two events of `kind` for one widget with nothing between are
  * queued once, the later's values kept. */
 static bool hero_ui_coalesced(int64_t kind) {
-    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE || kind == HERO_UI_EVENT_MOVE;
+    return kind == HERO_UI_EVENT_TEXT || kind == HERO_UI_EVENT_SELECT || kind == HERO_UI_EVENT_VALUE || kind == HERO_UI_EVENT_RESIZE || kind == HERO_UI_EVENT_MOVE || kind == HERO_UI_EVENT_APPEARANCE;
 }
 
 /* Queues an event on the native app's queue: what an arm calls, on the UI
@@ -1834,6 +1842,7 @@ int64_t hero_ui_number(hero_ui_app *app) {
 
 static int64_t hero_ui_elsewhere(const char *what);
 static int64_t hero_ui_answer_as_person(int64_t dialog, int64_t value, const void *paths, uint64_t count);
+static int64_t hero_ui_system_answered(int64_t kind, const char *what);
 static const char *hero_ui_making(int64_t kind);
 static const char *hero_ui_acting(int64_t act);
 
@@ -2158,6 +2167,12 @@ int64_t hero_ui_inject(hero_ui_app *app, int64_t kind, int64_t id, int64_t value
     }
     if (kind == HERO_UI_EVENT_DIALOG) {
         return hero_ui_answer_as_person(id, value, text, count);
+    }
+    if (kind == HERO_UI_EVENT_APPEARANCE) {
+        if (id != 0 || value < 0 || value > HERO_UI_APPEARANCE_DARK || count != 0) {
+            return hero_ui_said(HERO_UI_INVALID, "an appearance turned names no widget, 0, and is HERO_UI_APPEARANCE_* or 0 for the system's");
+        }
+        return hero_ui_system_answered(hero_ui_arm_appearance_set(value), "turning the appearance as the system would");
     }
     if (!hero_ui_id_given(id) || !hero_ui_text_given(text, count, "the text typed", false)) {
         return -1;
@@ -3566,8 +3581,6 @@ int64_t hero_ui_tree_unfold(hero_ui_app *app, int64_t id, int64_t item, int64_t 
 
 #if defined(__APPLE__)
 
-#include "hero_ui_appkit_system.h"
-
 int64_t hero_ui_arm_set_docked(int64_t on) {
     return hero_ui_appkit_set_docked(on);
 }
@@ -3578,6 +3591,14 @@ int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint
 
 int64_t hero_ui_arm_system_words(char *words, int64_t count) {
     return hero_ui_appkit_system_words(words, count);
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    return hero_ui_appkit_appearance(appearance);
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    return hero_ui_appkit_appearance_set(appearance);
 }
 
 #else
@@ -3602,6 +3623,16 @@ int64_t hero_ui_arm_notify(const uint8_t *title, int64_t title_count, const uint
 
 int64_t hero_ui_arm_system_words(char *words, int64_t count) {
     return hero_ui_arm_words(words, count);
+}
+
+int64_t hero_ui_arm_appearance(int64_t *appearance) {
+    (void)appearance;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer asks the appearance on macOS alone, and this system's arm has no such call");
+}
+
+int64_t hero_ui_arm_appearance_set(int64_t appearance) {
+    (void)appearance;
+    return hero_ui_refused(HERO_UI_UNSUPPORTED, "the layer turns the appearance on macOS alone, and this system's arm has no such call");
 }
 
 #endif
@@ -3643,4 +3674,14 @@ int64_t hero_ui_notify(hero_ui_app *app, const void *title, uint64_t title_count
         return hero_ui_said(HERO_UI_INVALID, "a notification's title is one line, not empty");
     }
     return hero_ui_system_answered(hero_ui_arm_notify(title, (int64_t)title_count, text, (int64_t)text_count), "showing a notification");
+}
+
+int64_t hero_ui_appearance(hero_ui_app *app, int64_t *appearance) {
+    if (hero_ui_enter_native(app) == NULL) {
+        return -1;
+    }
+    if (appearance == NULL) {
+        return hero_ui_said(HERO_UI_INVALID, "no place was given for the appearance");
+    }
+    return hero_ui_system_answered(hero_ui_arm_appearance(appearance), "asking the appearance");
 }

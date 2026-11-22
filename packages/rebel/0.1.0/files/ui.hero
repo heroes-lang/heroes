@@ -199,6 +199,9 @@ record App
     # The notifications the app showed (`notify`), in order. Only this
     # package reads it.
     notices: [desk.Notice]
+    # The appearance the app is drawn in as the last turn told, the
+    # headless side's own.
+    appearance: Appearance
     # The app's clock in nanoseconds since it opened. A headless app's moves
     # only as far as `wait` lets time pass, so its timers fire on the same
     # waits on every machine; a native app's follows the monotonic clock.
@@ -1196,6 +1199,25 @@ function tray(@app: App, text: str) -> Widget?
 function set_docked(@app: App, on: bool) -> ()?
     return desk.set_docked(@app, on: on)
 
+# The appearance the system draws a window in.
+variant Appearance
+    # Dark text on a light ground.
+    light
+    # Light text on a dark ground.
+    dark
+
+# The appearance the app's windows are drawn in now, as wxWidgets'
+# `wxSystemAppearance::IsDark`: the system's on the native side, which
+# `.appearance_changed` tells as it turns, and the headless side's own,
+# `.light` until `.change_appearance` turns it.
+#
+# - `app`: the app.
+#
+# Fails `closed`, `unsupported` where the system's arm has no such call
+# (Windows and Linux, pending), `failed`.
+function appearance_of(app: App) -> Appearance?
+    return desk.appearance_of(app)
+
 # Shows a notification of the system's, `title` and its words `text`, in
 # the system's own place beside every application's, as wxWidgets'
 # `wxNotificationMessage` and Electron's `Notification`. The system may hold
@@ -1704,6 +1726,12 @@ variant Event
         dialog: Dialog
         # What they chose.
         choice: Choice
+    # The appearance the app is drawn in turned, dark or light, as the
+    # person set it in the system's settings: a drawing, a page or a tray
+    # icon that follows it draws again.
+    appearance_changed
+        # The appearance now.
+        appearance: Appearance
 
 # The next thing the person did, waiting at most `within` for it: windows
 # made or changed are laid out and shown first, then the inputs `inject`
@@ -1829,6 +1857,12 @@ variant Input
         paths: [str]
     # Cancels the oldest file or folder dialog shown, or the next one.
     cancel_files
+    # Turns the appearance the app is drawn in, as the person's turn in the
+    # system's settings would: on macOS the app's own appearance is set,
+    # standing over the system's.
+    change_appearance
+        # The appearance.
+        appearance: Appearance
     # Has a web view's page send a text by its bridge, as its own script's
     # `heroes.send` would: given once the web view shows a page of the
     # app's own origin, which on the headless side is once `ui/webview`'s
@@ -2321,7 +2355,7 @@ test "timer: two timers fire in order of their times on the headless clock, a de
     for _ in range(from: 0, to: 4)
         match wait(@app, within: second).must()
             .timer_fired t => fired @ fired.push(t.timer)
-            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+            .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                 assert false
 
     assert fired == [fast, slow, fast, fast]

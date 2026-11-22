@@ -111,7 +111,7 @@ function inject(@app: ui.App, input: ui.Input) -> ()?
         .answer a     => dialogs.answered_by(@app, answer: a.answer)?
         .pick_files p => dialogs.chosen_by(@app, choice: .chosen(paths: p.paths))?
         .cancel_files => dialogs.chosen_by(@app, choice: .cancelled)?
-        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ =>
+        .click _ | .type_text _ | .choose _ | .toggle _ | .slide _ | .choose_menu _ | .ask_close _ | .resize _ | .send _ | .drag_window _ | .change_state _ | .activate _ | .submit _ | .sort _ | .unfold _ | .change_appearance _ =>
             app.inputs @ app.inputs.push(input)
 
     return ok()
@@ -144,6 +144,17 @@ function read(@app: ui.App, taken: [i64]) -> ()?
         for event in dialogs.read(@app, id: id, value: taken[2])?
             app.events @ app.events.push(event)
 
+        return ok()
+
+    # The appearance is the app's, of no widget.
+    if kind == hero_ui.HERO_UI_EVENT_APPEARANCE
+        turned: ui.Appearance = if taken[2] == hero_ui.HERO_UI_APPEARANCE_DARK
+            .dark
+        else
+            .light
+
+        app.appearance @ turned
+        app.events @ app.events.push(.appearance_changed(appearance: turned))
         return ok()
     found = model.node_of(app.table, id: id)
 
@@ -288,25 +299,26 @@ function fired(@app: ui.App, id: i64, now: i64) -> ui.Event
 # none, and the dialog it names ended with its window's life.
 function alive(app: ui.App, event: ui.Event) -> bool
     id = match event
-        .clicked c           => c.widget.id
-        .text_changed t      => t.widget.id
-        .selection_changed s => s.widget.id
-        .toggled t           => t.widget.id
-        .value_changed v     => v.widget.id
-        .menu_chosen m       => m.item.id
-        .close_asked c       => c.window.id
-        .timer_fired t       => t.timer.id
-        .resized r           => r.window.id
-        .moved m             => m.window.id
-        .state_changed s     => s.window.id
-        .screen_changed s    => s.window.id
-        .activated a         => a.widget.id
-        .sort_asked s        => s.widget.id
-        .unfolded u          => u.widget.id
-        .submitted s         => s.widget.id
-        .message m           => m.widget.id
-        .dialog_answered _   => 0
-        .files_chosen _      => 0
+        .clicked c            => c.widget.id
+        .text_changed t       => t.widget.id
+        .selection_changed s  => s.widget.id
+        .toggled t            => t.widget.id
+        .value_changed v      => v.widget.id
+        .menu_chosen m        => m.item.id
+        .close_asked c        => c.window.id
+        .timer_fired t        => t.timer.id
+        .resized r            => r.window.id
+        .moved m              => m.window.id
+        .state_changed s      => s.window.id
+        .screen_changed s     => s.window.id
+        .activated a          => a.widget.id
+        .sort_asked s         => s.widget.id
+        .unfolded u           => u.widget.id
+        .submitted s          => s.widget.id
+        .message m            => m.widget.id
+        .dialog_answered _    => 0
+        .files_chosen _       => 0
+        .appearance_changed _ => 0
 
     return id == 0 || !model.node_of(app.table, id: id).is_err()
 

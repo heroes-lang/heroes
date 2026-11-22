@@ -470,6 +470,23 @@ function notify(@app: ui.App, title: str, text: str) -> ()?
     app.notices @ app.notices.push(Notice(title: title, text: text))
     return ok()
 
+# The appearance the app's windows are drawn in (`ui.appearance_of`): the
+# system's on the native side, and the headless side's own, light until an
+# input turns it.
+function appearance_of(app: ui.App) -> ui.Appearance?
+    check.opened(app)?
+
+    if !app.native
+        return ok(app.appearance)
+    code @= 0
+
+    if hero_ui.appearance_now(app.handle, @code) < 0
+        return failure.last("asking the appearance")
+
+    if code == hero_ui.HERO_UI_APPEARANCE_DARK
+        return ok(.dark)
+    return ok(.light)
+
 # Gives the app its icon (`ui.set_icon`).
 function set_icon(@app: ui.App, img: image.Image) -> ()?
     check.opened(app)?
@@ -553,7 +570,7 @@ function names_of(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                         "another"
 
                 out @ out.push(name)
@@ -792,7 +809,7 @@ function names_of_waiting(@app: ui.App) -> [str]
                     .state_changed s  => f"state_changed {s.window.id} {state_code(s.state)}"
                     .screen_changed s => f"screen_changed {s.window.id} {s.screen}"
                     .resized r        => f"resized {r.window.id} {r.width}x{r.height}"
-                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .message _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ | .appearance_changed _ =>
                         "another"
 
                 out @ out.push(name)
@@ -829,3 +846,67 @@ test "notify: on the native side shown by the system, or refused by its words wh
     if refusal != ""
         skip_test(reason: refusal)
     shown.must()
+
+test "appearance_of: light on the headless side until an input turns it dark, told once a turn and not for a turn to what it is (catalogue SY13)"
+    app @= fixture.test_app()
+    assert ui.appearance_of(app).must() == .light
+    ui.inject(@app, input: .change_appearance(appearance: .dark)).must()
+    ui.inject(@app, input: .change_appearance(appearance: .dark)).must()
+    ui.inject(@app, input: .change_appearance(appearance: .light)).must()
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .appearance_changed(appearance: .dark)
+    assert ui.appearance_of(app).must() == .dark
+    assert ui.wait(@app, within: time.nanoseconds(0)).must() == .appearance_changed(appearance: .light)
+    assert fixture.code_of(ui.wait(@app, within: time.nanoseconds(0))) == ui.CLOSED
+    ui.close(@app).must()
+
+test "appearance_of: on the native side the system's, the app turned dark and light through AppKit's own appearance, each turn told, and the system's again after (catalogue SY13)"
+    if hero_ui.native_here() == 0
+        skip_test(reason: NO_NATIVE)
+    app @= ui.open(.native).must()
+    asked = ui.appearance_of(app)
+    refusal = fixture.unsupported_words(asked)
+
+    if refusal != ""
+        ui.close(@app).must()
+        skip_test(reason: refusal)
+    first = asked.must()
+
+    other: ui.Appearance = if first == .light
+        .dark
+    else
+        .light
+
+    ui.inject(@app, input: .change_appearance(appearance: other)).must()
+    came = events_of(@app)
+    turned = ui.appearance_of(app).must()
+    ui.inject(@app, input: .change_appearance(appearance: first)).must()
+    back = events_of(@app)
+    nothing: [u8] @= []
+    _ = hero_ui.inject(
+        app.handle,
+        kind: hero_ui.HERO_UI_EVENT_APPEARANCE,
+        id: 0,
+        value: 0,
+        second: 0,
+        @nothing,
+        count: 0
+    )
+    ui.close(@app).must()
+    assert came == [.appearance_changed(appearance: other)] && turned == other
+    assert back == [.appearance_changed(appearance: first)]
+
+# The appearance's turns a native app's wait gives within half a second, its
+# other events passed over.
+function events_of(@app: ui.App) -> [ui.Event]
+    out: [ui.Event] @= []
+
+    for _ in range(from: 0, to: 5)
+        match ui.wait(@app, within: time.milliseconds(100).must())
+            .ok event =>
+                match event
+                    .appearance_changed _ => out @ out.push(event)
+                    .clicked _ | .text_changed _ | .selection_changed _ | .toggled _ | .value_changed _ | .menu_chosen _ | .close_asked _ | .timer_fired _ | .resized _ | .message _ | .moved _ | .state_changed _ | .screen_changed _ | .activated _ | .sort_asked _ | .unfolded _ | .submitted _ | .dialog_answered _ | .files_chosen _ =>
+                        _ = 0
+            .err _ => _ = 0
+
+    return out
